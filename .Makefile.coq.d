@@ -4,3 +4,9 @@ theories/Syntax/Term.vo theories/Syntax/Term.glob theories/Syntax/Term.v.beautif
 theories/Syntax/Term.vos theories/Syntax/Term.vok theories/Syntax/Term.required_vos: theories/Syntax/Term.v theories/Syntax/Level.vos
 theories/Syntax/Subst.vo theories/Syntax/Subst.glob theories/Syntax/Subst.v.beautified theories/Syntax/Subst.required_vo: theories/Syntax/Subst.v theories/Syntax/Term.vo
 theories/Syntax/Subst.vos theories/Syntax/Subst.vok theories/Syntax/Subst.required_vos: theories/Syntax/Subst.v theories/Syntax/Term.vos
+theories/Syntax/NormalForms.vo theories/Syntax/NormalForms.glob theories/Syntax/NormalForms.v.beautified theories/Syntax/NormalForms.required_vo: theories/Syntax/NormalForms.v theories/Syntax/Subst.vo
+theories/Syntax/NormalForms.vos theories/Syntax/NormalForms.vok theories/Syntax/NormalForms.required_vos: theories/Syntax/NormalForms.v theories/Syntax/Subst.vos
+theories/Syntax/Reduction.vo theories/Syntax/Reduction.glob theories/Syntax/Reduction.v.beautified theories/Syntax/Reduction.required_vo: theories/Syntax/Reduction.v theories/Syntax/NormalForms.vo
+theories/Syntax/Reduction.vos theories/Syntax/Reduction.vok theories/Syntax/Reduction.required_vos: theories/Syntax/Reduction.v theories/Syntax/NormalForms.vos
+theories/Syntax/Weakening.vo theories/Syntax/Weakening.glob theories/Syntax/Weakening.v.beautified theories/Syntax/Weakening.required_vo: theories/Syntax/Weakening.v theories/Syntax/Subst.vo
+theories/Syntax/Weakening.vos theories/Syntax/Weakening.vok theories/Syntax/Weakening.required_vos: theories/Syntax/Weakening.v theories/Syntax/Subst.vos

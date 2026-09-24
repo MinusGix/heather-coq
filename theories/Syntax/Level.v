@@ -6,7 +6,7 @@
     valuation of the level variables (see M1_DESIGN.md).  The paper's
     algebraic rules are lemmas.  Evaluation with every variable at 0 is a
     well-founded measure for the logical relation's recursion on levels. *)
-From Coq Require Import Arith Lia.
+From Coq Require Export Arith Lia.
 
 Inductive lvl : Type :=
 | lvar (n : nat)
