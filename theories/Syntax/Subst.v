@@ -102,13 +102,22 @@ Qed.
 Lemma nf_lcomp d' d : nf_l (lcomp d' d).
 Proof. induction d'; cbn; auto using nf_lnorm, nf_lcons'. Qed.
 
+Lemma llk_glren d ξ n : llk (glren d ξ) n = gren_tm (llk d n) ξ.
+Proof. revert n; induction d as [k|d IH t]; intros n; cbn; auto. rewrite llk_lcons'. destruct n; cbn; auto. Qed.
+Lemma nf_glren d ξ : nf_l (glren d ξ).
+Proof. induction d; cbn; auto using nf_lcons'. Qed.
+Lemma llk_glsubst d σ n : llk (glsubst d σ) n = gsubst_tm (llk d n) σ.
+Proof. revert n; induction d as [k|d IH t]; intros n; cbn; auto. rewrite llk_lcons'. destruct n; cbn; auto. Qed.
+Lemma nf_glsubst d σ : nf_l (glsubst d σ).
+Proof. induction d; cbn; auto using nf_lcons'. Qed.
+
 Lemma llk_llift d n :
   llk (llift d) n = match n with 0 => var 0 | S n => ren_tm (llk d n) ↑ end.
 Proof. unfold llift; rewrite llk_lcons'; destruct n; cbn; auto using llk_lren. Qed.
 Lemma nf_llift d : nf_l (llift d).
 Proof. apply nf_lcons', nf_lren. Qed.
 
-#[export] Hint Resolve nf_lren nf_lcomp nf_llift nf_r2l nf_lnorm : nf.
+#[export] Hint Resolve nf_lren nf_lcomp nf_llift nf_r2l nf_lnorm nf_glren nf_glsubst : nf.
 
 (** ** The generic proof pattern *)
 
@@ -128,10 +137,13 @@ Ltac lk_cases :=
 
 Ltac syn_start :=
   intros ?Pty ?Ptm; apply syn_ind; subst Pty Ptm; cbn beta; intros; try exact I.
+(** Laws that also hold on contexts (the global operations traverse them). *)
+Ltac syn_start3 :=
+  intros ?Pty ?Ptm ?Pctx; apply syn_ind; subst Pty Ptm Pctx; cbn beta; intros; try exact I.
 
 Ltac lsub_eq :=
   apply l_canon; [auto with nf | auto with nf | intros ?n];
-  repeat first [ rewrite llk_lren | rewrite llk_lcomp ].
+  repeat first [ rewrite llk_lren | rewrite llk_lcomp | rewrite llk_glren | rewrite llk_glsubst ].
 
 Ltac law_auto :=
   cbn; try solve [eauto with subst | symmetry; eauto with subst];
@@ -166,7 +178,51 @@ Proof.
   all: now rewrite H.
 Qed.
 
+(** ** Global renaming *)
+
+Lemma gupr_ext ξ ζ : (forall i, ξ i = ζ i) -> forall i, gupr ξ i = gupr ζ i.
+Proof. intros H [|i]; cbn; auto. Qed.
+Lemma gupr_comp ξ ζ θ : (forall i, θ i = ζ (ξ i)) -> forall i, gupr θ i = gupr ζ (gupr ξ i).
+Proof. intros H [|i]; cbn; auto. Qed.
+#[export] Hint Resolve gupr_ext gupr_comp : subst.
+
+Lemma gren_ext_all :
+  let Pty T := forall ξ ζ, (forall i, ξ i = ζ i) -> gren_ty T ξ = gren_ty T ζ in
+  let Ptm t := forall ξ ζ, (forall i, ξ i = ζ i) -> gren_tm t ξ = gren_tm t ζ in
+  let Pctx Γ := forall ξ ζ, (forall i, ξ i = ζ i) -> gcren Γ ξ = gcren Γ ζ in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ, Pctx Γ) /\ (forall d, LK Ptm d).
+Proof. syn_start3; try lk_cases; law_auto. Qed.
+
+Lemma gren_gren_all :
+  let Pty T := forall ξ ζ θ, (forall i, θ i = ζ (ξ i)) -> gren_ty (gren_ty T ξ) ζ = gren_ty T θ in
+  let Ptm t := forall ξ ζ θ, (forall i, θ i = ζ (ξ i)) -> gren_tm (gren_tm t ξ) ζ = gren_tm t θ in
+  let Pctx Γ := forall ξ ζ θ, (forall i, θ i = ζ (ξ i)) -> gcren (gcren Γ ξ) ζ = gcren Γ θ in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ, Pctx Γ) /\ (forall d, LK Ptm d).
+Proof. syn_start3; try lk_cases; law_auto. Qed.
+
+(** Local renaming commutes with global renaming. *)
+Lemma gren_ren_all :
+  let Pty T := forall r ξ, gren_ty (ren_ty T r) ξ = ren_ty (gren_ty T ξ) r in
+  let Ptm t := forall r ξ, gren_tm (ren_tm t r) ξ = ren_tm (gren_tm t ξ) r in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall G : ctx, True) /\ (forall d, LK Ptm d).
+Proof. syn_start; try lk_cases; law_auto. Qed.
+
+Definition gren_gren_tm t := proj1 (proj2 gren_gren_all) t.
+Definition gren_ren_tm t := proj1 (proj2 gren_ren_all) t.
+
 (** ** Substitution *)
+
+Lemma gwk_ext d d' : (forall n, llk d n = llk d' n) -> forall n, llk (gwk d) n = llk (gwk d') n.
+Proof. intros H n; unfold gwk; rewrite !llk_glren; now rewrite H. Qed.
+Lemma gwk_rcomp r d d' : (forall n, llk d' n = llk d (rlk r n)) ->
+  forall n, llk (gwk d') n = llk (gwk d) (rlk r n).
+Proof. intros H n; unfold gwk; rewrite !llk_glren; now rewrite H. Qed.
+Lemma gwk_ren r d d' : (forall n, llk d' n = ren_tm (llk d n) r) ->
+  forall n, llk (gwk d') n = ren_tm (llk (gwk d) n) r.
+Proof. intros H n; unfold gwk; rewrite !llk_glren, H. apply gren_ren_tm. Qed.
+Lemma gwk_id d : (forall n, llk d n = var n) -> forall n, llk (gwk d) n = var n.
+Proof. intros H n; unfold gwk; rewrite llk_glren, H; reflexivity. Qed.
+#[export] Hint Resolve gwk_ext gwk_rcomp gwk_ren gwk_id : subst.
 
 Lemma llift_ext d d' : (forall n, llk d n = llk d' n) -> forall n, llk (llift d) n = llk (llift d') n.
 Proof. intros H [|n]; rewrite !llk_llift; auto. now rewrite H. Qed.
@@ -196,6 +252,30 @@ Proof.
 Qed.
 
 Definition ren_ren_tm t := proj1 (proj2 ren_ren_all) t.
+
+(** Global renaming distributes over local substitution. *)
+Lemma llift_gren d d' ξ : (forall n, llk d' n = gren_tm (llk d n) ξ) ->
+  forall n, llk (llift d') n = gren_tm (llk (llift d) n) ξ.
+Proof. intros H [|n]; rewrite !llk_llift; auto. rewrite H. symmetry; apply gren_ren_tm. Qed.
+Lemma gwk_gren d d' ξ : (forall n, llk d' n = gren_tm (llk d n) ξ) ->
+  forall n, llk (gwk d') n = gren_tm (llk (gwk d) n) (gupr ξ).
+Proof.
+  intros H n; unfold gwk; rewrite !llk_glren, H.
+  rewrite !(gren_gren_tm _ _ _ (fun i => S (ξ i))); auto.
+Qed.
+#[export] Hint Resolve llift_gren gwk_gren : subst.
+
+Lemma gren_subst_all :
+  let Pty T := forall d d' ξ, (forall n, llk d' n = gren_tm (llk d n) ξ) ->
+               gren_ty (subst_ty T d) ξ = subst_ty (gren_ty T ξ) d' in
+  let Ptm t := forall d d' ξ, (forall n, llk d' n = gren_tm (llk d n) ξ) ->
+               gren_tm (subst_tm t d) ξ = subst_tm (gren_tm t ξ) d' in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall G : ctx, True) /\ (forall d, LK Ptm d).
+Proof.
+  syn_start; try lk_cases; law_auto.
+  all: now rewrite H.
+Qed.
+Definition gren_subst_tm t := proj1 (proj2 gren_subst_all) t.
 
 Lemma rup_shift_l r m : rlk (rup r) m = rlk ↑ (rlk r m).
 Proof. rewrite rlk_rup; cbn; lia. Qed.
@@ -233,7 +313,13 @@ Proof.
   symmetry; apply ren_subst_tm. intros m.
   rewrite llk_lren; unfold rshift1 at 2; cbn [rlk]; rewrite Nat.add_1_r, llk_llift; reflexivity.
 Qed.
-#[export] Hint Resolve llift_subst : subst.
+Lemma gwk_subst d d' d'' : (forall n, llk d'' n = subst_tm (llk d n) d') ->
+  forall n, llk (gwk d'') n = subst_tm (llk (gwk d) n) (gwk d').
+Proof.
+  intros H n; unfold gwk; rewrite !llk_glren, H.
+  apply gren_subst_tm. intros m; apply llk_glren.
+Qed.
+#[export] Hint Resolve llift_subst gwk_subst : subst.
 
 Lemma subst_subst_all :
   let Pty T := forall d d' d'', (forall n, llk d'' n = subst_tm (llk d n) d') ->
@@ -255,12 +341,21 @@ Proof.
   assert (Hl : forall r d, (forall n, llk d n = var (rlk r n)) ->
             forall n, llk (llift d) n = var (rlk (rlift r) n)).
   { intros r d H [|n]; rewrite llk_llift, rlk_rlift; auto. rewrite H; cbn; f_equal; lia. }
+  assert (Hg : forall r d, (forall n, llk d n = var (rlk r n)) ->
+            forall n, llk (gwk d) n = var (rlk r n)).
+  { intros r d H n; unfold gwk; rewrite llk_glren, H; reflexivity. }
   syn_start; try lk_cases;
     cbn; try solve [symmetry; auto]; try solve [f_equal; eauto].
   all: f_equal; lsub_eq; eauto.
 Qed.
 
-(** ** Normal forms and identity laws *)
+(** ** Normal forms and identity laws
+
+    [nfty]/[nftm] constrain only what local operations traverse: the
+    stored local substitutions outside boxes.  Box contents and the [Δ]/[T]
+    of [□] and [letbox] live in their own local scope and are ignored, so
+    every local-operation output is normal.  The global identity law needs
+    the deep version ([dnf*], in [GSubst]). *)
 
 Fixpoint nfty (T : ty) : Prop :=
   match T with
@@ -268,6 +363,7 @@ Fixpoint nfty (T : ty) : Prop :=
   | tyPi _ _ A B => nfty A /\ nfty B
   | tyEl _ t => nftm t
   | tyGvar _ d => nfl d
+  | tyCTyp _ _ | tyCTrm _ _ _ => True
   end
 with nftm (t : tm) : Prop :=
   match t with
@@ -278,6 +374,8 @@ with nftm (t : tm) : Prop :=
   | lam _ _ A t => nfty A /\ nftm t
   | app t _ _ A B s => nftm t /\ nfty A /\ nfty B /\ nftm s
   | gvar _ d => nfl d
+  | boxT _ | boxt _ => True
+  | letboxT _ _ _ M t' t | letboxt _ _ _ _ M t' t => nfty M /\ nftm t' /\ nftm t
   end
 with nfl (d : lsub) : Prop :=
   match d with lshift _ => True | lcons d t => nfl d /\ nftm t /\ ~ labsorb d t end.

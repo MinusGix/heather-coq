@@ -152,6 +152,18 @@ Proof. apply ren_nf_all. Qed.
 Lemma ren_nf (t : tm) r : nftm t⟨r⟩.
 Proof. apply ren_nf_all. Qed.
 
+Lemma gren_nf_all :
+  let Pty T := nfty T -> forall ξ, nfty (gren_ty T ξ) in
+  let Ptm t := nftm t -> forall ξ, nftm (gren_tm t ξ) in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ : ctx, True) /\
+  (forall d, nfl d -> forall ξ, nfl (glren d ξ)).
+Proof.
+  intros Pty Ptm; apply syn_ind; subst Pty Ptm; cbn beta; intros; try exact I;
+    cbn in *; intuition auto using nfl_lcons'.
+Qed.
+Lemma gren_nf (t : tm) ξ : nftm t -> nftm t⟪ξ⟫.
+Proof. intros; now apply gren_nf_all. Qed.
+
 (** Identity renaming on renaming outputs. *)
 Lemma ren_id_ty (T : ty) : nfty T -> T⟨rshift 0⟩ = T.
 Proof.

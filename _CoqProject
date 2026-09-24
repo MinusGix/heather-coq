@@ -4,6 +4,7 @@
 theories/Syntax/Level.v
 theories/Syntax/Term.v
 theories/Syntax/Subst.v
+theories/Syntax/GSubst.v
 theories/Syntax/NormalForms.v
 theories/Syntax/Reduction.v
 theories/Syntax/Weakening.v

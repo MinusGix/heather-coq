@@ -15,7 +15,14 @@ Inductive red : tm -> tm -> Prop :=
 | red_beta l l' A b l1 l2 A' B s :
     red (app (lam l l' A b) l1 l2 A' B s) (b[lsingle s])
 | red_natrec l M s z t t' : red t t' -> red (natrec l M s z t) (natrec l M s z t')
-| red_app t t' l l' A B s : red t t' -> red (app t l l' A B s) (app t' l l' A B s).
+| red_app t t' l l' A B s : red t t' -> red (app t l l' A B s) (app t' l l' A B s)
+| red_letboxT_beta l' l Δ M t' T :
+    red (letboxT l' l Δ M t' (boxT T)) (t'⦃gsingle (GTy T)⦄)
+| red_letboxt_beta l' l Δ T M t' t :
+    red (letboxt l' l Δ T M t' (boxt t)) (t'⦃gsingle (GTm t)⦄)
+| red_letboxT l' l Δ M t' t t0 : red t t0 -> red (letboxT l' l Δ M t' t) (letboxT l' l Δ M t' t0)
+| red_letboxt l' l Δ T M t' t t0 : red t t0 ->
+    red (letboxt l' l Δ T M t' t) (letboxt l' l Δ T M t' t0).
 
 Inductive red_ty : ty -> ty -> Prop :=
 | red_El_nat l : red_ty (tyEl l tmNat) tyNat
@@ -41,7 +48,7 @@ Lemma whnf_no_red t v : whnf t -> ~ red t v.
 Proof. destruct 1; intros Hr; try (inversion Hr; fail). eapply whne_no_red; eauto. Qed.
 Lemma whnf_ty_no_red T U : whnf_ty T -> ~ red_ty T U.
 Proof.
-  destruct 1 as [T [|l t Ht]| | |]; intros Hr; inversion Hr; subst;
+  destruct 1 as [T [|l t Ht]| | | | |]; intros Hr; inversion Hr; subst;
     try (inversion Ht; fail). eapply whne_no_red; eauto.
 Qed.
 
@@ -54,6 +61,8 @@ Proof.
         | Hr : red zero _ |- _ => inversion Hr
         | Hr : red (succ _) _ |- _ => inversion Hr
         | Hr : red (lam _ _ _ _) _ |- _ => inversion Hr
+        | Hr : red (boxT _) _ |- _ => inversion Hr
+        | Hr : red (boxt _) _ |- _ => inversion Hr
         end;
     try (f_equal; auto).
 Qed.
@@ -94,6 +103,11 @@ Lemma reds_natrec l M s z t t' : reds t t' -> reds (natrec l M s z t) (natrec l 
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_app t t' l l' A B s : reds t t' -> reds (app t l l' A B s) (app t' l l' A B s).
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_letboxT l' l Δ M t' t t0 : reds t t0 -> reds (letboxT l' l Δ M t' t) (letboxT l' l Δ M t' t0).
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_letboxt l' l Δ T M t' t t0 : reds t t0 ->
+  reds (letboxt l' l Δ T M t' t) (letboxt l' l Δ T M t' t0).
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_El l t t' : reds t t' -> reds_ty (tyEl l t) (tyEl l t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 
@@ -120,6 +134,10 @@ Proof.
   - constructor.
   - change (ren_tm ?x ?r) with x⟨r⟩. rewrite lsingle2_ren. constructor.
   - change (ren_tm ?x ?r) with x⟨r⟩. rewrite lsingle_ren. constructor.
+  - now constructor.
+  - now constructor.
+  - cbn [ren_tm]. rewrite <- (gsubst_ren t'). constructor.
+  - cbn [ren_tm]. rewrite <- (gsubst_ren t'). constructor.
   - now constructor.
   - now constructor.
 Qed.

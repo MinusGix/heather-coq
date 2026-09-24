@@ -20,9 +20,11 @@ Lemma lk_ldrop k d : LK nftm d -> LK nftm (ldrop k d).
 Proof. intros H n; rewrite llk_ldrop; apply H. Qed.
 
 Lemma lk_llift d : LK nftm d -> LK nftm (llift d).
-Proof. intros H [|n]; rewrite llk_llift; cbn; [exact I | apply (ren_nf (llk d n))]. Qed.
+Proof. intros H [|n]; rewrite llk_llift; cbn; [exact I | apply ren_nf]. Qed.
+Lemma lk_gwk d : LK nftm d -> LK nftm (gwk d).
+Proof. intros H n; unfold gwk; rewrite llk_glren; apply gren_nf, H. Qed.
 
-#[export] Hint Resolve lk_llift lk_ldrop nfl_lnorm_lk : nf.
+#[export] Hint Resolve lk_llift lk_gwk lk_ldrop nfl_lnorm_lk : nf.
 
 Lemma subst_nf_all :
   let Pty T := nfty T -> forall d, LK nftm d -> nfty (subst_ty T d) in

@@ -3,13 +3,15 @@
     [W ::= Nat | Π | Ty l | V]         [V ::= U^δ | El l ν]
     [w ::= ν | Nat | Π | Ty l | 0 | succ t | λ]
     [ν ::= x | u^δ | elimN … ν | app ν …] *)
-From DeLaM.Syntax Require Export Subst.
+From DeLaM.Syntax Require Export GSubst.
 
 Inductive whne : tm -> Prop :=
 | whne_var n : whne (var n)
 | whne_gvar u d : whne (gvar u d)
 | whne_natrec l M s z t : whne t -> whne (natrec l M s z t)
-| whne_app t l l' A B s : whne t -> whne (app t l l' A B s).
+| whne_app t l l' A B s : whne t -> whne (app t l l' A B s)
+| whne_letboxT l' l Δ M t' t : whne t -> whne (letboxT l' l Δ M t' t)
+| whne_letboxt l' l Δ T M t' t : whne t -> whne (letboxt l' l Δ T M t' t).
 
 Inductive whnf : tm -> Prop :=
 | whnf_ne t : whne t -> whnf t
@@ -18,7 +20,9 @@ Inductive whnf : tm -> Prop :=
 | whnf_tmU l : whnf (tmU l)
 | whnf_zero : whnf zero
 | whnf_succ t : whnf (succ t)
-| whnf_lam l l' A t : whnf (lam l l' A t).
+| whnf_lam l l' A t : whnf (lam l l' A t)
+| whnf_boxT T : whnf (boxT T)
+| whnf_boxt t : whnf (boxt t).
 
 Inductive whne_ty : ty -> Prop :=
 | whne_tyGvar U d : whne_ty (tyGvar U d)
@@ -28,7 +32,9 @@ Inductive whnf_ty : ty -> Prop :=
 | whnf_ty_ne T : whne_ty T -> whnf_ty T
 | whnf_tyNat : whnf_ty tyNat
 | whnf_tyPi l l' A B : whnf_ty (tyPi l l' A B)
-| whnf_tyU l : whnf_ty (tyU l).
+| whnf_tyU l : whnf_ty (tyU l)
+| whnf_tyCTyp Δ l : whnf_ty (tyCTyp Δ l)
+| whnf_tyCTrm Δ T l : whnf_ty (tyCTrm Δ T l).
 
 #[export] Hint Constructors whne whnf whne_ty whnf_ty : whnf.
 
@@ -62,4 +68,12 @@ Proof. inversion 1. Qed.
 Lemma whne_ty_not_pi l l' A B : ~ whne_ty (tyPi l l' A B).
 Proof. inversion 1. Qed.
 Lemma whne_ty_not_U l : ~ whne_ty (tyU l).
+Proof. inversion 1. Qed.
+Lemma whne_not_boxT T : ~ whne (boxT T).
+Proof. inversion 1. Qed.
+Lemma whne_not_boxt t : ~ whne (boxt t).
+Proof. inversion 1. Qed.
+Lemma whne_ty_not_CTyp Δ l : ~ whne_ty (tyCTyp Δ l).
+Proof. inversion 1. Qed.
+Lemma whne_ty_not_CTrm Δ T l : ~ whne_ty (tyCTrm Δ T l).
 Proof. inversion 1. Qed.
