@@ -18,3 +18,7 @@ theories/Typing/Declarative.vo theories/Typing/Declarative.glob theories/Typing/
 theories/Typing/Declarative.vos theories/Typing/Declarative.vok theories/Typing/Declarative.required_vos: theories/Typing/Declarative.v theories/Typing/Context.vos
 theories/Typing/Properties.vo theories/Typing/Properties.glob theories/Typing/Properties.v.beautified theories/Typing/Properties.required_vo: theories/Typing/Properties.v theories/Typing/Declarative.vo
 theories/Typing/Properties.vos theories/Typing/Properties.vok theories/Typing/Properties.required_vos: theories/Typing/Properties.v theories/Typing/Declarative.vos
+theories/Typing/TypedRed.vo theories/Typing/TypedRed.glob theories/Typing/TypedRed.v.beautified theories/Typing/TypedRed.required_vo: theories/Typing/TypedRed.v theories/Typing/Properties.vo
+theories/Typing/TypedRed.vos theories/Typing/TypedRed.vok theories/Typing/TypedRed.required_vos: theories/Typing/TypedRed.v theories/Typing/Properties.vos
+theories/Typing/Generic.vo theories/Typing/Generic.glob theories/Typing/Generic.v.beautified theories/Typing/Generic.required_vo: theories/Typing/Generic.v theories/Typing/TypedRed.vo
+theories/Typing/Generic.vos theories/Typing/Generic.vok theories/Typing/Generic.required_vos: theories/Typing/Generic.v theories/Typing/TypedRed.vos

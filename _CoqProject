@@ -11,3 +11,5 @@ theories/Syntax/Commute.v
 theories/Typing/Context.v
 theories/Typing/Declarative.v
 theories/Typing/Properties.v
+theories/Typing/TypedRed.v
+theories/Typing/Generic.v
