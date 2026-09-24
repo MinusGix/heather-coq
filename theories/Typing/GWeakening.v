@@ -556,3 +556,9 @@ Lemma gwa_lsucc γ : lsucc⟦γ⟧ = lsucc.
 Proof. now destruct γ. Qed.
 Lemma gwa_lsingle2 (t q : tm) γ : (lsingle2 t q)⟦γ⟧ = lsingle2 t⟦γ⟧ q⟦γ⟧.
 Proof. now destruct γ. Qed.
+Lemma gwa_eqctx {γ G' G i Γ Γ'} : gwk_ok γ G' G -> [ ⊢ G' ] ->
+  [ G ⊢[ i ] Γ ≅ Γ' ] -> [ G' ⊢[ i ] Γ⟦γ⟧ ≅ Γ'⟦γ⟧ ].
+Proof.
+  intros Hγ HG' H. destruct γ as [|γ0|γ0] eqn:Eγ; cbn [gwa];
+    [rewrite (gwk_ok_id_inv Hγ); exact H | exact (gwk_eqctx Hγ HG' H) ..].
+Qed.

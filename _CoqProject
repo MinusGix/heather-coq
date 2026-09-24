@@ -20,6 +20,7 @@ theories/Typing/Substitution.v
 theories/Typing/Functionality.v
 theories/Typing/GSubstitution.v
 theories/Typing/Presupposition.v
+theories/Typing/CtxConv.v
 theories/Typing/TypedRed.v
 theories/Typing/Generic.v
 theories/Typing/DeclInstance.v
@@ -48,3 +49,4 @@ theories/Validity/CodePi.v
 theories/Validity/Fundamental.v
 theories/Validity/Consequences.v
 theories/Validity/DeclConsequences.v
+theories/Validity/Payload.v
