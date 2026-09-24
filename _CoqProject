@@ -34,3 +34,4 @@ theories/Validity/Pi.v
 theories/Validity/Red.v
 theories/Validity/App.v
 theories/Validity/Lam.v
+theories/Validity/PiComp.v
