@@ -33,3 +33,4 @@ theories/Validity/Basic.v
 theories/Validity/Pi.v
 theories/Validity/Red.v
 theories/Validity/App.v
+theories/Validity/Lam.v
