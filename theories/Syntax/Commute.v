@@ -54,6 +54,19 @@ Lemma ren_app t l l' A B s :
   (app t l l' A B s)⟨r⟩ = app t⟨r⟩ l l' A⟨r⟩ B⟨rlift r⟩ s⟨r⟩.
 Proof. reflexivity. Qed.
 
+Lemma ren_tyGvar U e : (tyGvar U e)⟨r⟩ = tyGvar U (lren e r). Proof. reflexivity. Qed.
+Lemma ren_tyCTyp Δ l : (tyCTyp Δ l)⟨r⟩ = tyCTyp Δ l. Proof. reflexivity. Qed.
+Lemma ren_tyCTrm Δ T l : (tyCTrm Δ T l)⟨r⟩ = tyCTrm Δ T l. Proof. reflexivity. Qed.
+Lemma ren_gvar u e : (gvar u e)⟨r⟩ = gvar u (lren e r). Proof. reflexivity. Qed.
+Lemma ren_boxT T : (boxT T)⟨r⟩ = boxT T. Proof. reflexivity. Qed.
+Lemma ren_boxt t : (boxt t)⟨r⟩ = boxt t. Proof. reflexivity. Qed.
+Lemma ren_letboxT l' l Δ M t' t :
+  (letboxT l' l Δ M t' t)⟨r⟩ = letboxT l' l Δ M⟨rlift r⟩ t'⟨r⟩ t⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma ren_letboxt l' l Δ T M t' t :
+  (letboxt l' l Δ T M t' t)⟨r⟩ = letboxt l' l Δ T M⟨rlift r⟩ t'⟨r⟩ t⟨r⟩.
+Proof. reflexivity. Qed.
+
 Lemma subst_tyNat : tyNat[d] = tyNat. Proof. reflexivity. Qed.
 Lemma subst_tyPi l l' A B : (tyPi l l' A B)[d] = tyPi l l' A[d] B[llift d]. Proof. reflexivity. Qed.
 Lemma subst_tyU l : (tyU l)[d] = tyU l. Proof. reflexivity. Qed.
@@ -71,15 +84,30 @@ Lemma subst_lam l l' A t : (lam l l' A t)[d] = lam l l' A[d] t[llift d]. Proof. 
 Lemma subst_app t l l' A B s :
   (app t l l' A B s)[d] = app t[d] l l' A[d] B[llift d] s[d].
 Proof. reflexivity. Qed.
+Lemma subst_tyGvar U e : (tyGvar U e)[d] = tyGvar U (lcomp e d). Proof. reflexivity. Qed.
+Lemma subst_tyCTyp Δ l : (tyCTyp Δ l)[d] = tyCTyp Δ l. Proof. reflexivity. Qed.
+Lemma subst_tyCTrm Δ T l : (tyCTrm Δ T l)[d] = tyCTrm Δ T l. Proof. reflexivity. Qed.
+Lemma subst_gvar u e : (gvar u e)[d] = gvar u (lcomp e d). Proof. reflexivity. Qed.
+Lemma subst_boxT T : (boxT T)[d] = boxT T. Proof. reflexivity. Qed.
+Lemma subst_boxt t : (boxt t)[d] = boxt t. Proof. reflexivity. Qed.
+Lemma subst_letboxT l' l Δ M t' t :
+  (letboxT l' l Δ M t' t)[d] = letboxT l' l Δ M[llift d] t'[gwk d] t[d].
+Proof. reflexivity. Qed.
+Lemma subst_letboxt l' l Δ T M t' t :
+  (letboxt l' l Δ T M t' t)[d] = letboxt l' l Δ T M[llift d] t'[gwk d] t[d].
+Proof. reflexivity. Qed.
 End Push.
 
 Ltac push_ren := repeat progress (
   rewrite ?ren_tyNat, ?ren_tyPi, ?ren_tyU, ?ren_tyEl, ?ren_var, ?ren_tmNat, ?ren_tmPi,
-          ?ren_tmU, ?ren_zero, ?ren_succ, ?ren_natrec, ?ren_lam, ?ren_app).
+          ?ren_tmU, ?ren_zero, ?ren_succ, ?ren_natrec, ?ren_lam, ?ren_app,
+          ?ren_tyGvar, ?ren_tyCTyp, ?ren_tyCTrm, ?ren_gvar, ?ren_boxT, ?ren_boxt,
+          ?ren_letboxT, ?ren_letboxt).
 Ltac push_subst := repeat progress (
   rewrite ?subst_tyNat, ?subst_tyPi, ?subst_tyU, ?subst_tyEl, ?subst_var, ?subst_tmNat,
           ?subst_tmPi, ?subst_tmU, ?subst_zero, ?subst_succ, ?subst_natrec, ?subst_lam,
-          ?subst_app).
+          ?subst_app, ?subst_tyGvar, ?subst_tyCTyp, ?subst_tyCTrm, ?subst_gvar, ?subst_boxT,
+          ?subst_boxt, ?subst_letboxT, ?subst_letboxt).
 
 (** ** Weakening past a binder *)
 

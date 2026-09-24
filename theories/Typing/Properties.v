@@ -1,9 +1,10 @@
 (** * Syntactic metatheory needed before the logical relation
 
     - context extraction ("boundary" for contexts), all layers;
-    - weakening of every judgment, for layers with [typeof i = i]
-      (D and M -- layer C would need the paper's lifting lemma). *)
-From DeLaM.Typing Require Export Declarative.
+    - (local) weakening of every judgment, at every layer: the weakened
+      context is well formed at [typeof i]; context extensions use lifting,
+      and the letbox body uses global weakening. *)
+From DeLaM.Typing Require Export Lifting.
 
 (** ** Lookup under weakening *)
 
@@ -49,6 +50,32 @@ Proof.
 Qed.
 
 #[export] Hint Constructors wkr : wk.
+
+Lemma wkr_tail r Δ Γ : wkr r Δ Γ -> ctx_tail Δ = ctx_tail Γ /\ forall n, rlk r (clen Γ + n) = clen Δ + n.
+Proof.
+  induction 1 as [Γ|r Δ Γ A l H [IH1 IH2]|r Δ Γ A l H [IH1 IH2]]; cbn [ctx_tail clen];
+    split; auto; intros n.
+  - rewrite rlk_rup, IH2; lia.
+  - replace (S (clen Γ) + n) with (S (clen Γ + n)) by lia.
+    rewrite rlk_rlift, IH2; lia.
+Qed.
+
+Lemma lsub_tail_wkr d Δ Γ Γ' r : wkr r Γ' Γ -> lsub_tail d Δ Γ -> lsub_tail (lren d r) Δ Γ'.
+Proof.
+  intros Hr [Ht Hl]. destruct (wkr_tail _ _ _ Hr) as [Ht' Hl']. split; [congruence|].
+  intros n; rewrite llk_lren, Hl; cbn; now rewrite Hl'.
+Qed.
+
+Lemma nfl_lren d r : nfl (lren d r).
+Proof. apply ren_nf_all. Qed.
+
+Lemma wkr_gren r Δ Γ ξ : wkr r Δ Γ -> wkr r Δ⟪ξ⟫ Γ⟪ξ⟫.
+Proof.
+  induction 1; rewrite ?gren_cext.
+  - apply wkr_id.
+  - now apply wkr_step.
+  - rewrite gren_ren_ty'. now apply wkr_up.
+Qed.
 
 (** ** Context extraction *)
 
@@ -107,7 +134,17 @@ Proof. now intros ? ->. Qed.
 Ltac fix_layer :=
   repeat match goal with
          | Hi : typeof ?i = ?i |- context [typeof ?i] => rewrite Hi
-         end.
+         end;
+  rewrite ?typeof_idem.
+
+Lemma ctx_glob G i Γ : [ G ; Γ ⊢[ i ] ] -> [ ⊢ G ].
+Proof. induction 1; auto. Qed.
+
+#[export] Hint Resolve wft_CTyp wft_CTrm : wk.
+#[export] Hint Extern 3 (wf_ty _ (typeof _) _ _ _) => eapply lift_ty; [ | apply lle_self_typeof ] : wk.
+#[export] Hint Extern 3 (wf_tm _ (typeof _) _ _ _ _) => eapply lift_tm; [ | apply lle_self_typeof ] : wk.
+#[export] Hint Extern 1 (wf_ctx _ (typeof (typeof _)) _) => rewrite typeof_idem : wk.
+#[export] Hint Resolve lsub_tail_wkr nfl_lren : wk.
 
 Ltac wk_premises := fix_layer; eauto 6 with wk.
 
@@ -117,20 +154,23 @@ Ltac wk_step :=
   | |- wf_ty _ _ _ _ _ =>
       first [ solve [eapply wft_nat; wk_premises] | solve [eapply wft_pi; wk_premises]
             | solve [eapply wft_U; wk_premises] | solve [eapply wft_El; wk_premises]
-            | solve [eapply wft_lconv; wk_premises] ]
+            | solve [eapply wft_lconv; wk_premises] | solve [eapply wft_CTyp; wk_premises]
+            | solve [eapply wft_CTrm; wk_premises] ]
   | |- wf_tm _ _ _ _ _ _ =>
       first [ solve [eapply wf_var; wk_premises] | solve [eapply wf_code_nat; wk_premises]
             | solve [eapply wf_code_U; wk_premises] | solve [eapply wf_code_pi; wk_premises]
             | solve [eapply wf_zero; wk_premises] | solve [eapply wf_succ; wk_premises]
             | solve [eapply wf_natrec; wk_premises] | solve [eapply wf_lam; wk_premises]
             | solve [eapply wf_app; wk_premises] | solve [eapply wf_conv; wk_premises]
-            | solve [eapply wf_lconv; wk_premises] ]
+            | solve [eapply wf_lconv; wk_premises] | solve [eapply wf_boxT; wk_premises]
+            | solve [eapply wf_boxt; wk_premises] ]
   | |- eq_ty _ _ _ _ _ _ =>
       first [ solve [eapply eqty_refl; wk_premises] | solve [eapply eqty_sym; wk_premises]
             | solve [eapply eqty_trans; wk_premises] | solve [eapply eqty_pi; wk_premises]
             | solve [eapply eqty_U; wk_premises] | solve [eapply eqty_El; wk_premises]
             | solve [eapply eqty_El_nat; wk_premises] | solve [eapply eqty_El_U; wk_premises]
-            | solve [eapply eqty_El_pi; wk_premises] | solve [eapply eqty_lconv; wk_premises] ]
+            | solve [eapply eqty_El_pi; wk_premises] | solve [eapply eqty_lconv; wk_premises]
+            | solve [eapply eqty_CTyp; wk_premises] | solve [eapply eqty_CTrm; wk_premises] ]
   | |- eq_tm _ _ _ _ _ _ _ =>
       first [ solve [eapply eqtm_refl; wk_premises] | solve [eapply eqtm_sym; wk_premises]
             | solve [eapply eqtm_trans; wk_premises] | solve [eapply eqtm_code_U; wk_premises]
@@ -140,13 +180,14 @@ Ltac wk_step :=
             | solve [eapply eqtm_lconv; wk_premises]
             | solve [eapply eqtm_natrec_zero; wk_premises]
             | solve [eapply eqtm_natrec_succ; wk_premises]
-            | solve [eapply eqtm_beta; wk_premises] | solve [eapply eqtm_eta; wk_premises] ]
+            | solve [eapply eqtm_beta; wk_premises] | solve [eapply eqtm_eta; wk_premises]
+            | solve [eapply eqtm_boxT; wk_premises] | solve [eapply eqtm_boxt; wk_premises] ]
   end.
 
-Lemma wf_ctx_nat G i Δ : i <> lV -> typeof i = i -> [ G ; Δ ⊢[ i ] ] ->
-  [ G ; Δ ,, tyNat @ lzero ⊢[ i ] ].
+Lemma wf_ctx_nat G i Δ : i <> lV -> [ G ; Δ ⊢[ typeof i ] ] ->
+  [ G ; Δ ,, tyNat @ lzero ⊢[ typeof i ] ].
 Proof.
-  intros Hv Hi HΔ. apply wfc_ext; [exact HΔ | apply wft_nat; [exact Hv | now rewrite Hi] | exact I].
+  intros Hv HΔ. apply wfc_ext; [exact HΔ | apply wft_nat; [destruct i; cbn; congruence | now rewrite typeof_idem] | exact I].
 Qed.
 #[export] Hint Resolve wf_ctx_nat : wk.
 Lemma compt_notV i : compt i -> i <> lV.
@@ -164,18 +205,83 @@ Ltac wk_premise :=
         | solve [eapply eq_tm_retype;
                  [match goal with IH : _ |- _ => eapply IH; solve [eauto 12 with wk] end | wk_eq]] ].
 
+(** The lookup-typed local substitution of [u^δ]/[U^δ]: its entries are
+    renamed, and its target context [Δ] is untouched. *)
+Ltac wk_entries :=
+  let n := fresh "n" in let A := fresh "A" in let k := fresh "k" in let Hin := fresh "Hin" in
+  intros n A k Hin; rewrite !llk_lren;
+  rewrite <- (subst_ren_ty A _ _ _ (fun m => llk_lren _ _ m));
+  match goal with IH : forall n A k (_ : in_ctx _ n A k), _ |- _ => eapply (IH n A k Hin) end;
+  eauto with wk.
+
+(** The letbox body: weaken [Γ⟪↑⟫] under [Ψ, U]. *)
+Ltac wk_body :=
+  match goal with
+  | IH : forall Δ' r', wkr r' Δ' (?Γ⟪S⟫) -> wf_ctx (gext ?G ?D) _ Δ' -> _,
+    Hr : wkr ?r ?Δ ?Γ, HΔ : wf_ctx ?G _ ?Δ |- _ =>
+      let X := fresh "X" in let Hg := fresh "Hg" in
+      assert (Hg : [ ⊢ gext G D ])
+        by (unfold gext; first [eapply wfg_ty | eapply wfg_tm];
+            first [exact (ctx_glob _ _ _ HΔ) | eassumption | left; reflexivity | right; reflexivity
+                  | cbn; eassumption | eapply lequiv_wf_l; eassumption]);
+      assert (X : [ gext G D ; Δ⟪S⟫ ⊢[ lM ] ]);
+      [ exact (proj1 (proj2 gweakening) _ _ _ HΔ (D :: gΨ G) (gwk_step gwk_id)
+                 (gwkwf_step _ _ _ _ (gwkwf_id _)) Hg)
+      | pose proof (IH _ _ (wkr_gren _ _ _ S Hr) X) as X';
+        rewrite single_ren_ty, <- gren_ren_ty', ?ren_boxT, ?ren_boxt in X'; exact X' ]
+  end.
+
 Ltac wk_manual :=
   match goal with
-  | |- wf_tm _ _ _ (natrec _ _ _ _ _) _ _ => eapply wf_natrec
-  | |- eq_tm _ _ _ (tmPi _ _ _ _) _ _ _ => eapply eqtm_code_pi
-  | |- eq_tm _ _ _ (natrec _ _ _ _ _) (natrec _ _ _ _ _) _ _ => eapply eqtm_natrec
-  | |- eq_tm _ _ _ (natrec _ _ _ _ zero) _ _ _ => eapply eqtm_natrec_zero
-  | |- eq_tm _ _ _ (natrec _ _ _ _ (succ _)) _ _ _ => eapply eqtm_natrec_succ
-  end; wk_premise.
+  | |- wf_tm _ _ _ (natrec _ _ _ _ _) _ _ => eapply wf_natrec; wk_premise
+  | |- eq_tm _ _ _ (tmPi _ _ _ _) _ _ _ => eapply eqtm_code_pi; wk_premise
+  | |- wf_tm _ _ _ (tmPi _ _ _ _) _ _ => eapply wf_code_pi; wk_premise
+  | |- eq_ty _ _ _ (tyPi _ _ _ _) (tyEl _ _) _ => eapply eqty_El_pi; wk_premise
+  | |- eq_ty _ _ _ (tyPi _ _ _ _) (tyPi _ _ _ _) _ => eapply eqty_pi; wk_premise
+  | |- eq_tm _ _ _ (lam _ _ _ _) (lam _ _ _ _) _ _ => eapply eqtm_lam; wk_premise
+  | |- eq_tm _ _ _ (app _ _ _ _ _ _) (app _ _ _ _ _ _) _ _ => eapply eqtm_app; wk_premise
+  | |- eq_tm _ _ _ (natrec _ _ _ _ zero) _ _ _ => eapply eqtm_natrec_zero; wk_premise
+  | |- eq_tm _ _ _ (natrec _ _ _ _ (succ _)) _ _ _ => eapply eqtm_natrec_succ; wk_premise
+  | |- eq_tm _ _ _ (natrec _ _ _ _ _) (natrec _ _ _ _ _) _ _ => eapply eqtm_natrec; wk_premise
+  | |- wf_ty _ _ _ (tyGvar _ _) _ => eapply wft_gvar; [ .. | wk_entries]; eauto with wk
+  | |- eq_ty _ _ _ (tyGvar _ _) _ _ =>
+      eapply eqty_gvar; [ .. | wk_entries | wk_entries | wk_entries]; eauto with wk
+  | |- wf_tm _ _ _ (gvar _ _) _ _ =>
+      rewrite (subst_ren_ty _ _ _ _ (fun m => llk_lren _ _ m));
+      eapply wf_gvar; [ .. | wk_entries]; eauto with wk
+  | |- eq_tm _ _ _ (gvar _ _) _ _ _ =>
+      rewrite (subst_ren_ty _ _ _ _ (fun m => llk_lren _ _ m));
+      eapply eqtm_gvar; [ .. | wk_entries | wk_entries | wk_entries]; eauto with wk
+  | |- wf_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ => eapply wf_letboxT; [ .. | wk_body | ]; wk_premise
+  | |- wf_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ => eapply wf_letboxt; [ .. | wk_body | ]; wk_premise
+  | |- eq_tm _ _ _ (letboxT _ _ _ _ _ (boxT _)) _ _ _ =>
+      rewrite <- gsubst_ren; eapply eqtm_letboxT_beta; [ .. | wk_body]; wk_premise
+  | |- eq_tm _ _ _ (letboxt _ _ _ _ _ _ (boxt _)) _ _ _ =>
+      rewrite <- gsubst_ren; eapply eqtm_letboxt_beta; [ .. | wk_body]; wk_premise
+  | |- eq_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ _ => eapply eqtm_letboxT; [ .. | wk_body | ]; wk_premise
+  | |- eq_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ _ => eapply eqtm_letboxt; [ .. | wk_body | ]; wk_premise
+  end.
 
-Theorem weakening_r :
+Theorem weakening_all :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] ->
+     forall Δ r, wkr r Δ Γ -> [ G ; Δ ⊢[ typeof i ] ] -> [ G ; Δ ⊢[ i ] T⟨r⟩ @ l ]) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] ->
+     forall Δ r, wkr r Δ Γ -> [ G ; Δ ⊢[ typeof i ] ] -> [ G ; Δ ⊢[ i ] t⟨r⟩ : T⟨r⟩ @ l ]) /\
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->
+     forall Δ r, wkr r Δ Γ -> [ G ; Δ ⊢[ typeof i ] ] -> [ G ; Δ ⊢[ i ] T⟨r⟩ ≅ T'⟨r⟩ @ l ]) /\
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] ->
+     forall Δ r, wkr r Δ Γ -> [ G ; Δ ⊢[ typeof i ] ] -> [ G ; Δ ⊢[ i ] t⟨r⟩ ≅ t'⟨r⟩ : T⟨r⟩ @ l ]) /\
+  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
+Proof.
+  apply typing_mut; intros; try exact I; cbn [typeof] in *; push_ren; wk_rewrite; push_ren.
+  all: try wk_step.
+  all: wk_manual.
+Qed.
+
+(** The M1 form: layers with [typeof i = i]. *)
+Theorem weakening_r :
   (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> typeof i = i ->
      forall Δ r, wkr r Δ Γ -> [ G ; Δ ⊢[ i ] ] -> [ G ; Δ ⊢[ i ] T⟨r⟩ @ l ]) /\
   (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> typeof i = i ->
@@ -185,9 +291,6 @@ Theorem weakening_r :
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> typeof i = i ->
      forall Δ r, wkr r Δ Γ -> [ G ; Δ ⊢[ i ] ] -> [ G ; Δ ⊢[ i ] t⟨r⟩ ≅ t'⟨r⟩ : T⟨r⟩ @ l ]).
 Proof.
-  apply typing_mut; intros; try exact I;
-    match goal with Hi : typeof ?i = ?i |- _ => rewrite ?Hi in * end;
-    push_ren; wk_rewrite; push_ren.
-  all: try wk_step.
-  all: wk_manual.
+  destruct weakening_all as (_ & _ & H1 & H2 & H3 & H4 & _).
+  refine (conj _ (conj _ (conj _ _))); intros * H Hi Δ r Hr HΔ; rewrite <- Hi in HΔ; eauto.
 Qed.

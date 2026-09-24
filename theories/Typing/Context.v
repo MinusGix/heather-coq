@@ -34,6 +34,7 @@ Inductive gdecl : Type :=
 | gdTm (Δ : ctx) (i : layer) (T : ty) (l : lvl).
 
 (** The universe context [L] (a number of level variables) and [Ψ]. *)
+#[projections(primitive)]
 Record gctx : Type := mkG { gL : nat ; gΨ : list gdecl }.
 
 Definition gctx_var (G : gctx) (g : nat) : Prop := nth_error (gΨ G) g = Some gdCtx.
