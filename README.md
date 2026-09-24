@@ -8,13 +8,13 @@ instantiated twice (Abel, Öhman & Vezzosi 2017), in the architecture of
 the universe hierarchy and level polymorphism fit (see
 `../logrel-coq-spike/SPIKE_UNIVERSES.md`).
 
-Status: **Milestone 1 (MLTT core) in progress.** Syntax, declarative
-typing with its syntactic metatheory (weakening, substitution, stability,
+Status: **Milestone 1 (MLTT core) complete.** Syntax, declarative typing
+with its syntactic metatheory (weakening, substitution, stability,
 functionality, presupposition), the generic-equivalence interface with the
-declarative instance, and the logical relation with escape, irrelevance,
-symmetry, transitivity, weakening, neutral reflection and anti-reduction are
-done, as is validity for every former except the code of Π (and `El` of it).
-No admits, no axioms.
+declarative instance, the logical relation with all its properties, validity
+of every rule, the fundamental theorem, and its consequences (reducibility,
+weak-head normalization, canonicity of `Nat`, Π/U injectivity). No admits,
+no axioms.
 See `M1_DESIGN.md` §"Status" for what's done and the ordered next steps.
 
 Documents:

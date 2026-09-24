@@ -127,12 +127,15 @@ milestone.
   by lookups, and carry `LK nftm d` (normal forms of the entries) for the
   identity laws.
 
-## Status (2026-09-24, session 2)
+## Status (2026-09-24, end of session 3): M1 complete
 
-About 4.5k lines, 25 files, **no admits, no axioms** (every proved theorem
-prints "Closed under the global context"). The full build takes about 20 s.
-The slowest files are `Typing/Functionality.v` (3.7 s),
-`Typing/Properties.v` (3.7 s) and `Typing/Substitution.v` (about 3 s).
+About 6.3k lines, 32 files, **no admits, no axioms** (every theorem prints
+"Closed under the global context"). A clean build takes about 23 s; no file
+takes more than 4 s.
+
+The fundamental theorem (`Validity/Fundamental.v`) holds for every
+`GenericEqLaws` instance, and the consequences are proved generically and
+then for the declarative instance at any computing layer.
 
 | File | Contents |
 |---|---|
@@ -158,14 +161,7 @@ The slowest files are `Typing/Functionality.v` (3.7 s),
 | `LogRel/Irrelevance.v` | `LR_irrel` (right irrelevance, as `releq`); inversion by the left normal form (`LR_inv_nat/U/ne/pi`) |
 | `LogRel/Symmetry.v` | `LR_sym` (`flipR`), by strong induction on the stage |
 | `LogRel/Transitivity.v` | `LR_irrel_left`, `LR_trans`, `LR_refl_l/r`, `LR_tm_refl_l` |
-
-## Next steps (in order)
-
-Done since the table above was written (session 2, all axiom-free):
-`LogRel/Weakening.v` (`LR_wk`), `LogRel/Neutral.v` (`LR_neutral`),
-`LogRel/Reduction.v` (`LR_red_ty`/`LR_red_tm`); the Kripke index of the
-Π case is now OPE data (`r : Δ ≤ Γ`, composable via `wk_comp`). Validity:
-
+| `LogRel/Weakening.v`, `Neutral.v`, `Reduction.v` | `LR_wk` (Kripke index = OPE data, composable via `wk_comp`), `LR_neutral`, `LR_red_ty`/`LR_red_tm` |
 | File | Contents |
 |---|---|
 | `Validity/Def.v` | `LRrel` (canonical relation = union over derivations, via irrelevance + saturation; plays the spike's "canon" role without axioms), `SubRel` (by recursion on `Γ`), `VTy`, `VTm`; `SubRel` is a Kripke PER giving typed substitutions |
@@ -175,23 +171,35 @@ Done since the table above was written (session 2, all axiom-free):
 | `Validity/Red.v` | typed app congruence, β through equivalent annotations |
 | `Validity/App.v`, `Lam.v`, `PiComp.v` | application, λ, `funext_K` (extensionality from the Kripke clause), β, η |
 | `Validity/Natrec.v` | `natrec_core` (by `NatRel_mut`: reduce to normal forms and move the types with `LRtm_conv_l/r`; zero/succ by anti-reduction; neutrals by `LR_neutral` + `gne_tm_natrec`), `V_natrec`, `V_natrec_zero`, `V_natrec_succ` (anti-reduction on the left only, `LRtm_red_l`) |
+| `Validity/CodePi.v` | `tyred_El_pi` (decoding a Π code, with annotations up to `≈`), `V_code_pi`, `V_El_pi` (both via `LR_pi_here` with `V_El` of the component codes) |
+| `Validity/Fundamental.v` | rule-shaped wrappers `ft_*` (derive the validity lemmas' extra typing premises by presupposition and stability); `fundamental` by `typing_mut` with motive `i = ge_layer -> V…`; each case closed by the first lemma that applies (`ft_case`), so no dependence on constructor order |
+| `Validity/Consequences.v` | `SubRel_id`; `reducible_ty/tm/eqty/eqtm`; `nat_canonicity`; `pi_inj`, `U_inj`; `whnf_normalization_ty/tm` |
+| `Validity/DeclConsequences.v` | the same for the declarative system at a computing layer `i`: `decl_pi_inj`, `decl_U_inj`, `decl_whnf_normalization_ty/tm` |
 
-1. ~~Finish `Validity/Natrec.v`~~ (done). Interface note for the FT:
-   `V_natrec` takes the right-hand typing premises in their natural
-   contexts **at the right annotation `l'`** (`M'` in `Γ,Nat` at `l'`,
-   `s' : M'[0] @ l'`, `z'` in `Γ,Nat,M' @ l'` at `l'`); the FT case
-   `eqtm_natrec` gets them from presupposition + stability (`stab_tm`
-   with a level change) + `wf_conv`/`wf_lconv`.
-2. Remaining formers: code of Π (`wf_code_pi`, `eqtm_code_pi`) and
-   `eqty_El_pi` (El of a Π code reduces to a Π of Els, then `LR_pi_here`-
-   like construction with domain from the code's `URel` decodings).
-3. `Fundamental.v`: `typing_mut` induction at `ge_layer`: ctx → True,
-   `wf_ty` → `VTy T T l`, `wf_tm` → `VTm t t T l`, `eq_ty` → `VTy T T' l`,
-   `eq_tm` → `VTm t t' T l`; structural cases via `VTy/VTm` PER,
-   `VTm_conv`, `VTy_lconv`/`VTm_lconv`; formers via the lemmas above.
-4. Consequences: identity substitution is related (`SubRel Γ Γ` from the
-   FT on the context types + neutral reflection of variables), then
-   normalization, canonicity for `Nat`, Π/U injectivity.
+Notes on the final interfaces:
+- `V_natrec` takes the right-hand typing premises at the right annotation
+  `l'`; `ft_natrec_eq` derives them (presupposition, `stab_tm` with a level
+  change, `eqty_single`, `lsub_wf_lsucc`).
+- `V_code_pi` takes `s ≅ s'` declaratively (the FT has it; `wf_code_pi` uses
+  reflexivity), to move `t'` into the context `Γ, El l3 s'`.
+- `nat_canonicity` says every typed natural reduces to `zero`, a successor of
+  a related natural, or a neutral. Excluding neutrals in the empty context
+  also needs an empty *global* context, since global variables are neutral
+  heads.
+
+## Next steps (not yet decided; a design fork for the user)
+
+1. **M1 polish** (small): closed canonicity (no neutrals when `Γ = ·` and
+   `Ψ = ·`); injectivity/discrimination of the remaining formers (`Nat` vs Π
+   vs `U`, via `LR_inv_*` + whnf determinacy); deep normalization if wanted.
+2. **Algorithmic instance** (logrel-coq's second instance): algorithmic
+   conversion as a `GenericEqLaws` instance, giving decidability of
+   conversion and of type checking. It was deliberately left out of M1.
+3. **M2, modal core**: global contexts in use (`U`/`u` declarations, global
+   substitutions), Kripke quantification over global weakenings (θ) in
+   `LRpi`/`PiRel`, then `□`/`box`/`letbox` at layers C/D/M, following
+   ch. 7 §§ on the layered relation. `SYNTAX_SPIKE.md` holds the
+   global-substitution representation.
 
 ## Proof-engineering gotchas (learned the hard way)
 
