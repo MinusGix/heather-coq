@@ -9,8 +9,10 @@ the universe hierarchy and level polymorphism fit (see
 `../logrel-coq-spike/SPIKE_UNIVERSES.md`).
 
 Status: **Milestone 1 (MLTT core) in progress.** Syntax, declarative
-typing, weakening, the generic-equivalence interface and the logical
-relation's definition plus its first lemmas are done. No admits, no axioms.
+typing with its syntactic metatheory (weakening, substitution, stability,
+functionality, presupposition), the generic-equivalence interface with the
+declarative instance, and the logical relation with escape, irrelevance,
+symmetry and transitivity are done. No admits, no axioms.
 See `M1_DESIGN.md` §"Status" for what's done and the ordered next steps.
 
 Documents:

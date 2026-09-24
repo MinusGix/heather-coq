@@ -94,15 +94,45 @@ milestone.
   (`LR_lconv`).
 - **Term relations depend on both sides' types** (the paper's symmetric
   presentation: `NeRel V V'`, `PiRel … A B A' B'`, duplicated premises).
-  Consequently the relation is determined up to `⇔` only for a fixed pair
-  `(T, T')`. Irrelevance (changing the right-hand type) must go through
-  conversion, not syntactic equality.
+  Irrelevance (`LR_irrel`: same left type, any right types) goes through
+  conversion.
+- **Saturation** (`LogRel/Def.v`). Every case accepts any term relation
+  `R` with `releq R canonical`. Symmetry must build the Π derivation with
+  the flipped domain relation, but the induction hypothesis only yields
+  `∃R', … ∧ R' ⇔ flip domR`, and a `Prop` existential can't be turned into
+  a function. Saturation makes `flip domR` itself acceptable
+  (`LR_releq`). This replaces the crux spike's canon/packs (propext +
+  funext): **the logical relation's metatheory is axiom-free so far.**
+- **The universe case is indexed by the level read off the left type's
+  normal form** (`URel rec G Γ l1` for `T ⤳* U l1`), so two derivations for
+  the same left type have literally the same relation.
+- **`URel` quantifies over equivalent `El` annotations**: decodings
+  `El la w` / `El lb w'` are related for all `la, lb ≈ l`. This is the same
+  device as the paper's application annotations in the Π case. It makes
+  symmetry and level conversion of the universe case go through, since
+  otherwise they need an "annotation irrelevance" for `El`. The fundamental
+  theorem can provide it, because `El` reduction ignores annotations.
+- **`LRpi` records the generic equality of domains and codomains**
+  (`A ≈ A'`, and `B ≈ B'` under the left domain) instead of the whole Π
+  types (derivable by `geq_ty_pi`). Needed by irrelevance and
+  transitivity, which otherwise need Π-injectivity of the generic
+  equivalence.
+- **Generic laws include context conversion** of the last entry (with a
+  level change), as the paper uses in right irrelevance. The declarative
+  instance gets it from stability.
+- **Syntactic metatheory before the relation** (as in the paper's ch. 5,
+  unlike logrel-coq): substitution, stability, functionality and
+  presupposition are proved directly for the declarative system, for layers
+  with `typeof i = i`. Typed local substitutions are defined extensionally,
+  by lookups, and carry `LK nftm d` (normal forms of the entries) for the
+  identity laws.
 
-## Status (2026-09-24)
+## Status (2026-09-24, session 2)
 
-About 2.2k lines, 16 files, **no admits, no axioms**. Every proved theorem
-prints "Closed under the global context". The slowest file
-(`Typing/Properties.v`) takes 3.7 s.
+About 4.5k lines, 25 files, **no admits, no axioms** (every proved theorem
+prints "Closed under the global context"). The full build takes about 20 s.
+The slowest files are `Typing/Functionality.v` (3.7 s),
+`Typing/Properties.v` (3.7 s) and `Typing/Substitution.v` (about 3 s).
 
 | File | Contents |
 |---|---|
@@ -111,39 +141,58 @@ prints "Closed under the global context". The slowest file
 | `Syntax/Subst.v` | the substitution algebra (spike laws for three sorts) |
 | `Syntax/NormalForms.v`, `Reduction.v` | whnf/whne; annotation-agnostic weak-head reduction, determinacy, renaming stability |
 | `Syntax/Commute.v` | `push_ren`/`push_subst` constructor equations; commutations for single substitutions; renaming outputs are normal |
+| `Syntax/SubstCommute.v` | substitution preserves normal forms; an arbitrary substitution commutes with the rules' own substitutions |
 | `Syntax/Weakening.v` | OPE data `wk`, `wk_wf`, composition |
 | `Typing/Context.v` | layers + `typeof`/`compt`, `gdecl`/`gctx`, `in_ctx` |
 | `Typing/Declarative.v` | the six mutual judgments with layer gating; `typing_mut` scheme |
 | `Typing/Properties.v` | `ctx_extract` (all layers); `wkr` renaming-weakenings; `weakening_r` for `typeof i = i` |
+| `Typing/Substitution.v` | typed terms are normal (`typed_nf`); typed local substitutions `[Δ ⊢ d : Γ]` by lookups; `substitution` |
+| `Typing/Functionality.v` | single substitutions; stability (`stab_*`, last entry, with level change); `functionality` |
+| `Typing/Presupposition.v` | `presupposition` + named corollaries (`wf_tm_ty`, `eqty_wf_l/r`, `eqtm_wf_l/r/ty`) |
 | `Typing/TypedRed.v` | `tyred`/`tmred`, refl/trans/conv/lconv, weakening, whnf determinacy |
-| `Typing/Generic.v` | `GenericEq` (fixed computing layer) + `GenericEqLaws` |
-| `Typing/DeclInstance.v` | `DeclEq i Hi` / `DeclEqLaws`: the declarative instance at a computing layer `i` (neutral = both `whne` + `≅`) |
-| `LogRel/Def.v` | `NatRel`/`NatNf`, `URel`, `NeRel`, `PiRel`, staged `LR`, `LogRel` |
+| `Typing/Generic.v` | `GenericEq` (fixed computing layer) + `GenericEqLaws` (incl. context conversion) |
+| `Typing/DeclInstance.v` | `DeclEq i Hi` / `DeclEqLaws`: the declarative instance at a computing layer `i` |
+| `LogRel/Def.v` | `releq`, `NatRel`/`NatNf`, `URel`, `NeRel`, `PiRel`, staged saturated `LR`, `LogRel` |
 | `LogRel/Escape.v` | `escape_ty`, `escape_tm`; conversion helpers |
-| `LogRel/Basics.v` | `cumul_up`, `cumul_down`, `LogRel_stage`, `LR_lconv` |
+| `LogRel/Basics.v` | `cumul_up`, `cumul_down`, `LogRel_stage`, `LR_releq`, `LR_lconv` |
+| `LogRel/Irrelevance.v` | `LR_irrel` (right irrelevance, as `releq`); inversion by the left normal form (`LR_inv_nat/U/ne/pi`) |
+| `LogRel/Symmetry.v` | `LR_sym` (`flipR`), by strong induction on the stage |
+| `LogRel/Transitivity.v` | `LR_irrel_left`, `LR_trans`, `LR_refl_l/r`, `LR_tm_refl_l` |
 
 ## Next steps (in order)
 
-1. **Irrelevance**: for a fixed `(T, T')`, two derivations give `⇔`
-   relations. This is the crux spike's `LRN_det` (whnf determinacy of typed
-   reduction + shape discrimination). Then the right-hand-type change, via
-   conversion. `canon`/packs (crux spike) are needed where a `Type`-level
-   pack must be built from a `Prop` fact, notably decoding universe terms.
-   That will add propext + funext (the spike's only axioms).
-2. Symmetry, transitivity, weakening of the relation (`wkr`), neutral
-   reflection (variables and neutrals are related), closure under typed
-   anti-reduction.
-3. `Validity/` (contexts as lists of related types stable under
-   substitution, logrel-coq style), per-former introduction lemmas,
+1. Weakening of the relation (`wkr`), neutral reflection (variables and
+   neutrals are related), closure under typed anti-reduction. Paper ch. 7
+   §"Properties for Logical Relations When j = prog".
+2. `Validity/`: contexts as lists of related types stable under
+   substitution (logrel-coq style), per-former introduction lemmas,
    `Fundamental`. The per-former files are independent and could run as
-   parallel agents if the user opts into a workflow.
-4. Consequences: normalization (typed reduction to whnf), canonicity for
+   parallel agents if the user opts into a workflow. The El/U cases must
+   produce the annotation-quantified `URel`.
+3. Consequences: normalization (typed reduction to whnf), canonicity for
    `Nat`, injectivity of Π and U.
 
 ## Proof-engineering gotchas (learned the hard way)
 
 - `constructor` on a declarative equality goal happily applies `eqty_sym`
-  / `eqtm_sym` (always unifiable). Apply the intended rule by name.
+  / `eqtm_sym` (always unifiable). Apply the intended rule by name. Since
+  saturation, the same holds for `LR`: every constructor's conclusion is
+  `LR … R` with `R` a variable, so `econstructor` always picks `LRnat`.
+- Section-local lemmas with explicit section hypotheses (`Hi`, `Hv`) keep
+  only the ones they use, so their arity varies. Pass arguments by name
+  (`(lemma (x := …))`) or with `eapply … ; eassumption`.
+- `match goal with IH : _ |- _ => exact (IH …) end`: an ill-typed
+  application raises an error that `match` doesn't backtrack on. Filter the
+  hypothesis by shape first (`IH : _ = _ -> _`) or use `eapply`.
+- A section `Context` hypothesis about the indices (e.g. `H : LR … T …`)
+  blocks `destruct H` from substituting into other hypotheses. `revert`
+  them first (see `LR_inv_*`).
+- Avoid broad `Hint Extern` on `eq_ty (subst _ _) (subst _ _)`-like goals.
+  One such hint made `Functionality.v` search for over 100 s. Prefer
+  per-case manual steps with pre-asserted facts.
+- Probe goals in a scratch file under the session scratchpad:
+  `coqc -Q theories DeLaM file.v` inside `nix develop`, with `Show.` before
+  `Admitted.`
 - **Never `cbn` the mutual substitution fixpoints.** It exposes raw `fix`
   bodies. Use `push_ren`/`push_subst` (rewriting with per-constructor
   equations in notation form), then the commutation lemmas (`wk_rewrite`
