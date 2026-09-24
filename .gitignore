@@ -10,3 +10,4 @@ Makefile.coq.conf
 .lia.cache
 .nia.cache
 result
+.Makefile.coq.d

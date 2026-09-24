@@ -60,7 +60,7 @@ milestone.
 3. `LogRel/`: `Def` (all cases in one inductive), `Escape`, `Basics`
    (stages, level conversion), then Irrelevance, Symmetry, Transitivity,
    Weakening, Neutral, Reduction. [`LogicalRelation/*`]
-4. `Validity/` and `Fundamental`. [`Validity/*`, `Fundamental`]
+3. `Validity/` and `Fundamental`. [`Validity/*`, `Fundamental`]
 5. `Consequences`: normalization, canonicity, Π/U injectivity.
    [`LogRelConsequences`]
 
@@ -100,7 +100,7 @@ milestone.
 
 ## Status (2026-09-24)
 
-About 2.1k lines, 15 files, **no admits, no axioms**. Every proved theorem
+About 2.2k lines, 16 files, **no admits, no axioms**. Every proved theorem
 prints "Closed under the global context". The slowest file
 (`Typing/Properties.v`) takes 3.7 s.
 
@@ -117,35 +117,33 @@ prints "Closed under the global context". The slowest file
 | `Typing/Properties.v` | `ctx_extract` (all layers); `wkr` renaming-weakenings; `weakening_r` for `typeof i = i` |
 | `Typing/TypedRed.v` | `tyred`/`tmred`, refl/trans/conv/lconv, weakening, whnf determinacy |
 | `Typing/Generic.v` | `GenericEq` (fixed computing layer) + `GenericEqLaws` |
+| `Typing/DeclInstance.v` | `DeclEq i Hi` / `DeclEqLaws`: the declarative instance at a computing layer `i` (neutral = both `whne` + `≅`) |
 | `LogRel/Def.v` | `NatRel`/`NatNf`, `URel`, `NeRel`, `PiRel`, staged `LR`, `LogRel` |
 | `LogRel/Escape.v` | `escape_ty`, `escape_tm`; conversion helpers |
 | `LogRel/Basics.v` | `cumul_up`, `cumul_down`, `LogRel_stage`, `LR_lconv` |
 
 ## Next steps (in order)
 
-1. **`Typing/DeclInstance.v`**: the weak declarative instance of
-   `GenericEqLaws` (logrel-coq's `WeakDeclarativeTypingData`). Neutral
-   relations = both sides `whne` + declarative equality; the others =
-   declarative equality. `geq_tm_funext` follows from the η rule and
-   λ-congruence.
-2. **Irrelevance**: for a fixed `(T, T')`, two derivations give `⇔`
+1. **Irrelevance**: for a fixed `(T, T')`, two derivations give `⇔`
    relations. This is the crux spike's `LRN_det` (whnf determinacy of typed
    reduction + shape discrimination). Then the right-hand-type change, via
    conversion. `canon`/packs (crux spike) are needed where a `Type`-level
    pack must be built from a `Prop` fact, notably decoding universe terms.
    That will add propext + funext (the spike's only axioms).
-3. Symmetry, transitivity, weakening of the relation (`wkr`), neutral
+2. Symmetry, transitivity, weakening of the relation (`wkr`), neutral
    reflection (variables and neutrals are related), closure under typed
    anti-reduction.
-4. `Validity/` (contexts as lists of related types stable under
+3. `Validity/` (contexts as lists of related types stable under
    substitution, logrel-coq style), per-former introduction lemmas,
    `Fundamental`. The per-former files are independent and could run as
    parallel agents if the user opts into a workflow.
-5. Consequences: normalization (typed reduction to whnf), canonicity for
+4. Consequences: normalization (typed reduction to whnf), canonicity for
    `Nat`, injectivity of Π and U.
 
 ## Proof-engineering gotchas (learned the hard way)
 
+- `constructor` on a declarative equality goal happily applies `eqty_sym`
+  / `eqtm_sym` (always unifiable). Apply the intended rule by name.
 - **Never `cbn` the mutual substitution fixpoints.** It exposes raw `fix`
   bodies. Use `push_ren`/`push_subst` (rewriting with per-constructor
   equations in notation form), then the commutation lemmas (`wk_rewrite`
