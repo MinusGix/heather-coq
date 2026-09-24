@@ -5,7 +5,7 @@
     two relations are declarative equality.  Parameterised by a computing
     layer [i] (D or M); at such a layer [typeof i = i], so weakening and
     conversion stay inside the layer. *)
-From DeLaM.Typing Require Export Generic.
+From DeLaM.Typing Require Export Generic Presupposition.
 
 Section Decl.
 Context (i : layer) (Hi : compt i).
@@ -71,6 +71,8 @@ Proof.
   1-4: intros; intuition eauto using eqty_lconv, eqtm_lconv.
   (* weakening *)
   1-4: intros; intuition eauto using whne_ty_ren, whne_ren, decl_wk_eqty, decl_wk_eqtm.
+  (* context conversion *)
+  1-4: intros; intuition eauto using stab_eqty, stab_eqtm.
   (* weak head closure *)
   - intros * [_ _ HT] [_ _ HT'] HW.
     eauto using eqty_trans, eqty_sym.

@@ -13,7 +13,11 @@
     [lmeasure l]; stages are related by cumulativity.
 
     Level equivalences are folded into each case (the paper's separate
-    level-conversion case becomes a lemma). *)
+    level-conversion case becomes a lemma).  The universe case is indexed
+    by the level read off the left type's normal form, so that two
+    derivations for the same type have syntactically the same relation.
+    The Π case records the generic equality of domains and codomains (the
+    paper records it for the whole Π type, which is derivable). *)
 From DeLaM.Typing Require Export Generic.
 
 Section LRDef.
@@ -83,11 +87,10 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
     lequiv (gL G) l lzero ->
     [ G ; Γ ⊢g T ⤳* tyNat @ l ] -> [ G ; Γ ⊢g T' ⤳* tyNat @ l ] ->
     LR n rec G Γ T T' l (NatRel G Γ)
-| LRU G Γ T T' l l0 l1 l2 :
-    lequiv (gL G) l (lsuc l0) -> lequiv (gL G) l1 l0 -> lequiv (gL G) l2 l0 ->
-    lmeasure l0 < n ->
+| LRU G Γ T T' l l1 l2 :
+    lequiv (gL G) l (lsuc l1) -> lequiv (gL G) l2 l1 -> lmeasure l1 < n ->
     [ G ; Γ ⊢g T ⤳* tyU l1 @ l ] -> [ G ; Γ ⊢g T' ⤳* tyU l2 @ l ] ->
-    LR n rec G Γ T T' l (URel rec G Γ l0)
+    LR n rec G Γ T T' l (URel rec G Γ l1)
 | LRne G Γ T T' l V V' :
     [ G ; Γ ⊢g T ⤳* V @ l ] -> [ G ; Γ ⊢g T' ⤳* V' @ l ] -> [ G ; Γ ⊢ V ~ V' @ l ] ->
     LR n rec G Γ T T' l (NeRel G Γ V V' l)
@@ -98,7 +101,7 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
     [ G ; Γ ⊢g T ⤳* tyPi l1 l2 A B @ l ] -> [ G ; Γ ⊢g T' ⤳* tyPi l3 l4 A' B' @ l ] ->
     [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢g A' @ l1 ] ->
     [ G ; Γ ,, A @ l1 ⊢g B @ l2 ] -> [ G ; Γ ,, A' @ l1 ⊢g B' @ l2 ] ->
-    [ G ; Γ ⊢ tyPi l1 l2 A B ≈ tyPi l3 l4 A' B' @ lmax l1 l2 ] ->
+    [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
     (forall Δ r (Hr : wkr r Δ Γ) (HΔ : [ G ; Δ ⊢g ]),
         LR n rec G Δ A⟨r⟩ A'⟨r⟩ l1 (domR Δ r Hr HΔ)) ->
     (forall Δ r (Hr : wkr r Δ Γ) (HΔ : [ G ; Δ ⊢g ]) a a' (ha : domR Δ r Hr HΔ a a'),

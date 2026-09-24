@@ -30,7 +30,7 @@ Theorem cumul_up n m G Γ T T' l R :
 Proof.
   intros Hnm H; induction H.
   - econstructor; eauto.
-  - rewrite (URel_below n m) by lia. eapply LRU with (l1 := l1) (l2 := l2); eauto; lia.
+  - rewrite (URel_below n m) by lia. eapply LRU with (l2 := l2); eauto; lia.
   - econstructor; eauto.
   - eapply LRpi; eauto.
 Qed.
@@ -40,10 +40,10 @@ Theorem cumul_down n m G Γ T T' l R :
 Proof.
   intros Hl H; revert Hl; induction H; intros Hle.
   - econstructor; eauto.
-  - assert (lmeasure l0 < n).
-    { match goal with Hs : lequiv _ l (lsuc l0) |- _ =>
+  - assert (lmeasure l1 < n).
+    { match goal with Hs : lequiv _ l (lsuc l1) |- _ =>
         rewrite (lequiv_measure_eq _ _ _ Hs), lmeasure_suc in Hle end. lia. }
-    rewrite (URel_below m n) by lia. eapply LRU with (l1 := l1) (l2 := l2); eauto.
+    rewrite (URel_below m n) by lia. eapply LRU with (l2 := l2); eauto.
   - econstructor; eauto.
   - match goal with Hs : lequiv _ l (lmax l1 l2) |- _ =>
       rewrite (lequiv_measure_eq _ _ _ Hs), lmeasure_max in Hle end.
@@ -78,15 +78,15 @@ Theorem LR_lconv n rec G Γ T T' l l' R :
   exists R', LR n rec G Γ T T' l' R' /\ releq R R'.
 Proof.
   destruct 1 as [G Γ T T' l Hl HT HT'
-                | G Γ T T' l l0 l1 l2 Hl Hl1 Hl2 Hn HT HT'
+                | G Γ T T' l l1 l2 Hl Hl2 Hn HT HT'
                 | G Γ T T' l V V' HT HT' HV
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HP domAd codAd];
+                    HA HA' HB HB' HAA HBB domAd codAd];
     intros Hl'.
   - eexists; split; [|intros ??; reflexivity].
     constructor; eauto using lequiv_trans, tyred_lconv.
   - eexists; split; [|intros ??; reflexivity].
-    eapply (LRU n rec G Γ T T' l' l0 l1 l2); eauto using lequiv_trans, tyred_lconv.
+    eapply (LRU n rec G Γ T T' l' l1 l2); eauto using lequiv_trans, tyred_lconv.
   - exists (NeRel G Γ V V' l'); split; [|now apply NeRel_lconv].
     constructor; eauto using tyred_lconv, gne_ty_lconv.
   - eexists; split; [|intros ??; reflexivity].

@@ -94,6 +94,21 @@ Class GenericEqLaws `{GenericEq} := {
   geq_tm_wk {G Γ Δ r t t' T l} : wkr r Δ Γ -> [ G ; Δ ⊢g ] ->
     [ G ; Γ ⊢ t ≈ t' : T @ l ] -> [ G ; Δ ⊢ t⟨r⟩ ≈ t'⟨r⟩ : T⟨r⟩ @ l ] ;
 
+  (** Context conversion of the last entry (also changing its level
+      annotation to an equivalent one) *)
+  gne_ty_ctxconv {G Γ A A' la la' V V' l} :
+    [ G ; Γ ⊢g A ≅ A' @ la ] -> lequiv (gL G) la la' -> [ G ; Γ ,, A' @ la' ⊢g ] ->
+    [ G ; Γ ,, A @ la ⊢ V ~ V' @ l ] -> [ G ; Γ ,, A' @ la' ⊢ V ~ V' @ l ] ;
+  geq_ty_ctxconv {G Γ A A' la la' T T' l} :
+    [ G ; Γ ⊢g A ≅ A' @ la ] -> lequiv (gL G) la la' -> [ G ; Γ ,, A' @ la' ⊢g ] ->
+    [ G ; Γ ,, A @ la ⊢ T ≈ T' @ l ] -> [ G ; Γ ,, A' @ la' ⊢ T ≈ T' @ l ] ;
+  gne_tm_ctxconv {G Γ A A' la la' t t' T l} :
+    [ G ; Γ ⊢g A ≅ A' @ la ] -> lequiv (gL G) la la' -> [ G ; Γ ,, A' @ la' ⊢g ] ->
+    [ G ; Γ ,, A @ la ⊢ t ~ t' : T @ l ] -> [ G ; Γ ,, A' @ la' ⊢ t ~ t' : T @ l ] ;
+  geq_tm_ctxconv {G Γ A A' la la' t t' T l} :
+    [ G ; Γ ⊢g A ≅ A' @ la ] -> lequiv (gL G) la la' -> [ G ; Γ ,, A' @ la' ⊢g ] ->
+    [ G ; Γ ,, A @ la ⊢ t ≈ t' : T @ l ] -> [ G ; Γ ,, A' @ la' ⊢ t ≈ t' : T @ l ] ;
+
   (** Weak head closure *)
   geq_ty_exp {G Γ T T' W W' l} :
     [ G ; Γ ⊢g T ⤳* W @ l ] -> [ G ; Γ ⊢g T' ⤳* W' @ l ] ->

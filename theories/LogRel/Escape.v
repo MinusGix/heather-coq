@@ -42,17 +42,17 @@ Theorem escape_ty n rec G Γ T T' l R :
   [ G ; Γ ⊢g T @ l ] /\ [ G ; Γ ⊢g T' @ l ] /\ [ G ; Γ ⊢ T ≈ T' @ l ].
 Proof.
   destruct 1 as [G Γ T T' l Hl HT HT'
-                | G Γ T T' l l0 l1 l2 Hl Hl1 Hl2 Hn HT HT'
+                | G Γ T T' l l1 l2 Hl Hl2 Hn HT HT'
                 | G Γ T T' l V V' HT HT' HV
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HP domAd codAd].
+                    HA HA' HB HB' HAA HBB domAd codAd].
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
   - eapply geq_ty_lconv; [eapply geq_ty_U; [eapply tyred_ctx, HT|]|].
-    + eapply lequiv_trans; [exact Hl1|]. now apply lequiv_sym.
-    + eapply lequiv_trans; [exact Hl|]. apply lequiv_suc. now apply lequiv_sym.
+    + now apply lequiv_sym.
+    + exact Hl.
   - now apply gne_ty_geq.
-  - eapply geq_ty_lconv; eauto.
+  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_pi; auto using lequiv_sym.
 Qed.
 
 (** ** Escape for terms *)
@@ -62,10 +62,10 @@ Theorem escape_tm n rec G Γ T T' l R :
   [ G ; Γ ⊢g t : T @ l ] /\ [ G ; Γ ⊢g t' : T @ l ] /\ [ G ; Γ ⊢ t ≈ t' : T @ l ].
 Proof.
   destruct 1 as [G Γ T T' l Hl HT HT'
-                | G Γ T T' l l0 l1 l2 Hl Hl1 Hl2 Hn HT HT'
+                | G Γ T T' l l1 l2 Hl Hl2 Hn HT HT'
                 | G Γ T T' l V V' HT HT' HV
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HP domAd codAd];
+                    HA HA' HB HB' HAA HBB domAd codAd];
     intros t t' Htt.
   - (* Nat *)
     destruct Htt as [t t' w w' Hw Hw' Heq _].
@@ -77,12 +77,7 @@ Proof.
     + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTN | exact Hl'].
   - (* U *)
     destruct Htt as (w & w' & Hw & Hw' & _ & _ & Heq & _).
-    assert (HTU : [ G ; Γ ⊢g T ≅ tyU l0 @ l ]).
-    { eapply eqty_trans; [apply HT|]. eapply eqty_lconv; [eapply eqty_U|].
-      - exact ge_notV.
-      - rewrite ge_typeof. eapply tyred_ctx, HT.
-      - exact Hl1.
-      - eapply lequiv_trans; [exact Hl|]. apply lequiv_suc. now apply lequiv_sym. }
+    assert (HTU : [ G ; Γ ⊢g T ≅ tyU l1 @ l ]) by apply HT.
     repeat split.
     + eapply conv_tm; [apply Hw | exact HTU | exact Hl].
     + eapply conv_tm; [apply Hw' | exact HTU | exact Hl].
@@ -102,7 +97,7 @@ Proof.
     destruct Htt as (w & w' & Hw & Hw' & _ & _ & Heq & _ & _).
     assert (HTP : [ G ; Γ ⊢g T ≅ tyPi l1 l2 A B @ l ]) by apply HT.
     assert (HPP : [ G ; Γ ⊢g tyPi l1 l2 A B ≅ tyPi l3 l4 A' B' @ lmax l1 l2 ])
-      by now apply geq_ty_sound.
+      by (apply geq_ty_sound, geq_ty_pi; auto using lequiv_sym).
     assert (Hw'' : [ G ; Γ ⊢g t' ⤳* w' : tyPi l1 l2 A B @ lmax l1 l2 ]).
     { eapply tmred_conv; [apply ge_typeof | exact Hw' | now apply eqty_sym]. }
     repeat split.
