@@ -32,6 +32,15 @@ Proof.
   apply eqty_sym, eqty_El_pi; eauto using ge_compt, lequiv_wf_l.
 Qed.
 
+(** Decoding under global weakenings. *)
+Lemma V_ElG {G Γ l l' t t'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTmG G Γ t t' (tyU l) (lsuc l) -> VTyG G Γ (tyEl l t) (tyEl l' t') l.
+Proof.
+  intros Hwl Hl Ht G' γ Hγ. rewrite !gwa_tyEl.
+  pose proof (Ht _ _ Hγ) as X. rewrite gwa_tyU in X.
+  destruct Hγ as [HL _]. apply V_El; [rewrite HL; exact Hwl | rewrite HL; exact Hl | exact X].
+Qed.
+
 (** ** The code of Π *)
 
 Section CodePiV.
@@ -42,8 +51,8 @@ Context {G : gctx} {Γ : ctx} {l1 l2 l3 l4 : lvl} {s s' t t' : tm}
   (Hss : [ G ; Γ ⊢g s ≅ s' : tyU l1 @ lsuc l1 ])
   (Ht : [ G ; Γ ,, tyEl l1 s @ l1 ⊢g t : tyU l2 @ lsuc l2 ])
   (Ht' : [ G ; Γ ,, tyEl l1 s @ l1 ⊢g t' : tyU l2 @ lsuc l2 ])
-  (Vs : VTm G Γ s s' (tyU l1) (lsuc l1))
-  (Vt : VTm G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) (lsuc l2)).
+  (Vs : VTmG G Γ s s' (tyU l1) (lsuc l1))
+  (Vt : VTmG G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) (lsuc l2)).
 
 Lemma V_code_pi :
   VTm G Γ (tmPi l1 l2 s t) (tmPi l3 l4 s' t') (tyU (lmax l1 l2)) (lsuc (lmax l1 l2)).
@@ -56,7 +65,7 @@ Proof.
   pose proof (stab_tm ge_typeof HAA' (lequiv_refl _ _ Hw1) HΓA' Ht') as Ht''.
   destruct (El_annot Ht (lequiv_refl _ _ Hw2)) as [HB _].
   destruct (El_annot Ht'' (lequiv_sym _ _ _ H24)) as [HB' _].
-  pose proof (V_El Hw1 H13 Vs) as VA. pose proof (V_El Hw2 H24 Vt) as VB.
+  pose proof (V_ElG Hw1 H13 Vs) as VA. pose proof (V_ElG Hw2 H24 Vt) as VB.
   (* at a pair of related substitutions *)
   intros Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ.
   pose proof (SubRel_wf_l _ _ _ _ _ Hd) as Hwd. pose proof (SubRel_wf_r Hd) as Hwd'.
@@ -66,8 +75,8 @@ Proof.
   pose proof (wf_tm_subst ge_typeof Ht'' (lsub_wf_lift _ _ ge_typeof _ _ _ _ _ Hwd' HA'd' Hw1)) as Ht'd'.
   rewrite !subst_tyU, !subst_tyEl in *.
   assert (Hlift : SubRel G (Γ ,, tyEl l1 s @ l1) (Δ ,, tyEl l1 s[d] @ l1) (llift d) (llift d'))
-    by exact (SubRel_lift Hd (VTy_refl_l VA) HAd Hw1).
-  pose proof (Vt _ _ _ Hlift) as Xt. pose proof (Vs _ _ _ Hd) as Xs. rewrite !subst_tyU in Xs, Xt.
+    by exact (SubRel_lift Hd (VTy_refl_l (VTyG_loc VA)) HAd Hw1).
+  pose proof (VTmG_loc Vt _ _ _ Hlift) as Xt. pose proof (VTmG_loc Vs _ _ _ Hd) as Xs. rewrite !subst_tyU in Xs, Xt.
   assert (Hgeq : [ G ; Δ ⊢ tmPi l1 l2 s[d] t[llift d] ≈ tmPi l3 l4 s'[d'] t'[llift d']
                      : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ])
     by exact (geq_tm_code_pi H13 H24 Hsd (LRtm_geq Xs) (LRtm_geq Xt)).
@@ -92,13 +101,13 @@ End CodePiV.
 Lemma V_El_pi {G Γ l l' s t} :
   lwf (gL G) l -> lwf (gL G) l' ->
   [ G ; Γ ⊢g s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢g t : tyU l' @ lsuc l' ] ->
-  VTm G Γ s s (tyU l) (lsuc l) -> VTm G (Γ ,, tyEl l s @ l) t t (tyU l') (lsuc l') ->
+  VTmG G Γ s s (tyU l) (lsuc l) -> VTmG G (Γ ,, tyEl l s @ l) t t (tyU l') (lsuc l') ->
   VTy G Γ (tyPi l l' (tyEl l s) (tyEl l' t)) (tyEl (lmax l l') (tmPi l l' s t)) (lmax l l').
 Proof.
   intros Hw Hw' Hs Ht Vs Vt Δ d d' Hd.
   destruct (El_annot Hs (lequiv_refl _ _ Hw)) as [HA _].
   destruct (El_annot Ht (lequiv_refl _ _ Hw')) as [HB _].
-  pose proof (V_El Hw (lequiv_refl _ _ Hw) Vs) as VA. pose proof (V_El Hw' (lequiv_refl _ _ Hw') Vt) as VB.
+  pose proof (V_ElG Hw (lequiv_refl _ _ Hw) Vs) as VA. pose proof (V_ElG Hw' (lequiv_refl _ _ Hw') Vt) as VB.
   pose proof (LR_pi_here Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') HB HB VA VB _ _ _ Hd) as HP.
   destruct (escape_ty _ _ _ _ _ _ _ _ HP) as (HPd & _ & _).
   pose proof (SubRel_wf_r Hd) as Hwd'.

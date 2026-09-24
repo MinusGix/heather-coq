@@ -196,6 +196,31 @@ live in a class `GenericEqM EP EM` over the two instances. As landed
   doesn't clash with `gwk d`, the local substitution moved under a global
   binder.
 
+## Decisions taken while implementing (global Kripke, step 4a)
+
+- **Kripke weakenings are one record** `kwk G Γ` (`LogRel/Def.v`): a
+  global weakening `γ : G' ≤ G` (`gwk_ok`), then a local one
+  `r : Δ ≤ Γ⟦γ⟧`, with `[G' ; Δ ⊢]`. `DomRel`/`CodRel`/`PiRel`/`LRpi`
+  quantify over it; the action on syntax is `kty`/`ktm`/`ktyl`/`ktml`;
+  `kw_comp` composes (`gwk_comp`, `wk_comp`) and `kw_loc` embeds M1's
+  purely local weakenings.
+- **`x⟦γ⟧` (`gwa`) instead of `x⟪γ⟫` in the Kripke index**: it is the
+  identity *by definition* at `gwk_id` (renaming by the identity function
+  is the identity only on deep-normal syntax). So `kw_loc`'s action is
+  literally M1's `x⟨r⟩`, and M1's proofs at local weakenings go through
+  unchanged.
+- **Weakening of the relation** is `LR_kwk` (global and local at once);
+  M1's `LR_wk` is its `kw_loc` corollary.
+- **Validity under global weakenings**: `VTyG`/`VTmG` quantify over
+  `γ : G' ≤ G` in front of M1's `VTy`/`VTm` (D6's first quantifier, with
+  σ still the identity). The Π-family lemmas (`V_pi`, `V_lam`, `V_app`,
+  `V_eta`, `V_code_pi`, `V_El_pi`) take `VTyG`/`VTmG` premises, because
+  the Π domain now ranges over global weakenings. All other M1 lemmas are
+  unchanged. The FT's motives are `VTyG`/`VTmG`; each case is proved at
+  an arbitrary `G' ≥ G` by a generic lifting tactic (`gl_lift`: weaken
+  every hypothesis at `G`, push `⟦γ⟧` through the syntax) followed by M1's
+  case tactic.
+
 ## Static-code payload (decided 2026-09-24)
 
 The payload of `box c` in the `□` relation, and of the C-layer entries of

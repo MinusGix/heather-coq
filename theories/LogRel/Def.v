@@ -64,16 +64,55 @@ Definition NeRel (G : gctx) (Γ : ctx) (V V' : ty) (l : lvl) : tm -> tm -> Prop 
     [ G ; Γ ⊢g t ⤳* ν : V @ l ] /\ [ G ; Γ ⊢g t' ⤳* ν' : V' @ l ] /\
     [ G ; Γ ⊢ ν ~ ν' : V @ l ] /\ [ G ; Γ ⊢ ν ~ ν' : V' @ l ].
 
+(** ** Kripke weakenings
+
+    [ρ : (G', Δ) ≤ (G, Γ)]: a global weakening [γ : G' ≤ G] followed by a
+    local one [r : Δ ≤ Γ⟦γ⟧] (OPE data for both, closed under
+    composition).  The generic laws take the underlying renamings.  With
+    [γ] the identity, the action on syntax is literally the local one. *)
+
+Record kwk (G : gctx) (Γ : ctx) : Type := mkKwk {
+  kw_G : gctx ;
+  kw_Δ : ctx ;
+  kw_γ : gweak ;
+  kw_r : wk ;
+  kw_gok : gwk_ok kw_γ kw_G G ;
+  kw_wf : kw_r : kw_Δ ≤ Γ⟦kw_γ⟧ ;
+  kw_ctx : [ kw_G ; kw_Δ ⊢g ]
+}.
+Arguments kw_G {G Γ}. Arguments kw_Δ {G Γ}. Arguments kw_γ {G Γ}. Arguments kw_r {G Γ}.
+Arguments kw_gok {G Γ}. Arguments kw_wf {G Γ}. Arguments kw_ctx {G Γ}.
+
+Definition kty {G Γ} (ρ : kwk G Γ) (T : ty) : ty := T⟦kw_γ ρ⟧⟨kw_r ρ⟩.
+Definition ktm {G Γ} (ρ : kwk G Γ) (t : tm) : tm := t⟦kw_γ ρ⟧⟨kw_r ρ⟩.
+(** Under one local binder. *)
+Definition ktyl {G Γ} (ρ : kwk G Γ) (T : ty) : ty := T⟦kw_γ ρ⟧⟨rlift (kw_r ρ)⟩.
+Definition ktml {G Γ} (ρ : kwk G Γ) (t : tm) : tm := t⟦kw_γ ρ⟧⟨rlift (kw_r ρ)⟩.
+
+(** A purely local weakening. *)
+Definition kw_loc {G Γ Δ} (r : wk) (Hr : r : Δ ≤ Γ) (HΔ : [ G ; Δ ⊢g ]) : kwk G Γ :=
+  {| kw_G := G ; kw_Δ := Δ ; kw_γ := gwk_id ; kw_r := r ;
+     kw_gok := gwk_ok_id G ; kw_wf := Hr ; kw_ctx := HΔ |}.
+
+(** Composition: first [ρ], then [ρ']. *)
+Lemma kw_comp_wf {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) :
+  wk_comp (kw_r ρ') (kw_r ρ) : kw_Δ ρ' ≤ Γ⟦gwk_comp (kw_γ ρ') (kw_γ ρ)⟧.
+Proof.
+  rewrite <- gwa_comp_ctx. eapply wk_comp_wf; [exact (kw_wf ρ') | apply wk_wf_gwa, kw_wf].
+Qed.
+
+Definition kw_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) : kwk G Γ :=
+  {| kw_G := kw_G ρ' ; kw_Δ := kw_Δ ρ' ; kw_γ := gwk_comp (kw_γ ρ') (kw_γ ρ) ;
+     kw_r := wk_comp (kw_r ρ') (kw_r ρ) ; kw_gok := gwk_ok_comp (kw_gok ρ') (kw_gok ρ) ;
+     kw_wf := kw_comp_wf ρ ρ' ; kw_ctx := kw_ctx ρ' |}.
+
 (** ** Dependent functions
 
-    Kripke quantification is over order-preserving embeddings [r : Δ ≤ Γ]
-    (OPE data, closed under composition); the generic laws take the
-    underlying renaming ([wk_wf_wkr]). *)
+    Kripke quantification is over [kwk]. *)
 
-Definition DomRel (G : gctx) (Γ : ctx) :=
-  forall Δ (r : wk), wk_wf r Δ Γ -> [ G ; Δ ⊢g ] -> tm -> tm -> Prop.
+Definition DomRel (G : gctx) (Γ : ctx) := kwk G Γ -> tm -> tm -> Prop.
 Definition CodRel (G : gctx) (Γ : ctx) (domR : DomRel G Γ) :=
-  forall Δ (r : wk) (Hr : wk_wf r Δ Γ) (HΔ : [ G ; Δ ⊢g ]) a a', domR Δ r Hr HΔ a a' -> tm -> tm -> Prop.
+  forall (ρ : kwk G Γ) a a', domR ρ a a' -> tm -> tm -> Prop.
 
 (** Related functions: reduce to related weak-head normal forms whose
     applications to related arguments are related, in every weakening, for
@@ -86,13 +125,14 @@ Definition PiRel (G : gctx) (Γ : ctx) (l1 l2 l3 l4 : lvl) (A B A' B' : ty)
     whnf w /\ whnf w' /\
     [ G ; Γ ⊢ w ≈ w' : tyPi l1 l2 A B @ lmax l1 l2 ] /\
     [ G ; Γ ⊢ w ≈ w' : tyPi l3 l4 A' B' @ lmax l1 l2 ] /\
-    forall Δ (r : wk) (Hr : wk_wf r Δ Γ) (HΔ : [ G ; Δ ⊢g ]) a a' (ha : domR Δ r Hr HΔ a a')
-      la lb la' lb' A1 B1 A1' B1',
+    forall (ρ : kwk G Γ) a a' (ha : domR ρ a a') la lb la' lb' A1 B1 A1' B1',
       lequiv (gL G) la l1 -> lequiv (gL G) lb l2 ->
       lequiv (gL G) la' l1 -> lequiv (gL G) lb' l2 ->
-      [ G ; Δ ⊢ A⟨r⟩ ≈ A1 @ l1 ] -> [ G ; Δ ,, A⟨r⟩ @ l1 ⊢ B⟨rlift r⟩ ≈ B1 @ l2 ] ->
-      [ G ; Δ ⊢ A'⟨r⟩ ≈ A1' @ l1 ] -> [ G ; Δ ,, A'⟨r⟩ @ l1 ⊢ B'⟨rlift r⟩ ≈ B1' @ l2 ] ->
-      codR Δ r Hr HΔ a a' ha (app w⟨r⟩ la lb A1 B1 a) (app w'⟨r⟩ la' lb' A1' B1' a').
+      [ kw_G ρ ; kw_Δ ρ ⊢ kty ρ A ≈ A1 @ l1 ] ->
+      [ kw_G ρ ; kw_Δ ρ ,, kty ρ A @ l1 ⊢ ktyl ρ B ≈ B1 @ l2 ] ->
+      [ kw_G ρ ; kw_Δ ρ ⊢ kty ρ A' ≈ A1' @ l1 ] ->
+      [ kw_G ρ ; kw_Δ ρ ,, kty ρ A' @ l1 ⊢ ktyl ρ B' ≈ B1' @ l2 ] ->
+      codR ρ a a' ha (app (ktm ρ w) la lb A1 B1 a) (app (ktm ρ w') la' lb' A1' B1' a').
 
 (** ** The relation, stage [n] *)
 
@@ -119,11 +159,10 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
     [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢g A' @ l1 ] ->
     [ G ; Γ ,, A @ l1 ⊢g B @ l2 ] -> [ G ; Γ ,, A' @ l1 ⊢g B' @ l2 ] ->
     [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
-    (forall Δ (r : wk) (Hr : wk_wf r Δ Γ) (HΔ : [ G ; Δ ⊢g ]),
-        LR n rec G Δ A⟨r⟩ A'⟨r⟩ l1 (domR Δ r Hr HΔ)) ->
-    (forall Δ (r : wk) (Hr : wk_wf r Δ Γ) (HΔ : [ G ; Δ ⊢g ]) a a' (ha : domR Δ r Hr HΔ a a'),
-        LR n rec G Δ B⟨rlift r⟩[lsingle a] B'⟨rlift r⟩[lsingle a'] l2
-           (codR Δ r Hr HΔ a a' ha)) ->
+    (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ A) (kty ρ A') l1 (domR ρ)) ->
+    (forall (ρ : kwk G Γ) a a' (ha : domR ρ a a'),
+        LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ B)[lsingle a] (ktyl ρ B')[lsingle a'] l2
+           (codR ρ a a' ha)) ->
     releq R (PiRel G Γ l1 l2 l3 l4 A B A' B' domR codR) ->
     LR n rec G Γ T T' l R.
 
@@ -145,3 +184,7 @@ Proof.
 Qed.
 
 End LRDef.
+
+Arguments mkKwk {E G Γ}.
+Arguments kw_G {E G Γ}. Arguments kw_Δ {E G Γ}. Arguments kw_γ {E G Γ}. Arguments kw_r {E G Γ}.
+Arguments kw_gok {E G Γ}. Arguments kw_wf {E G Γ}. Arguments kw_ctx {E G Γ}.

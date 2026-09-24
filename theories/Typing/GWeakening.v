@@ -350,3 +350,209 @@ Lemma gwk_eqctx {i Γ Γ'} : [ G ⊢[ i ] Γ ≅ Γ' ] -> [ G' ⊢[ i ] Γ⟪γ�
 Proof. gwk_named (proj2 (proj2 (proj2 (proj2 (proj2 (proj2 gweakening)))))). Qed.
 
 End Named.
+
+(** ** Reduction under global renaming *)
+
+Lemma red_gren t u ξ : red t u -> red t⟪ξ⟫ u⟪ξ⟫.
+Proof.
+  induction 1; cbn [gren GRen_tm gren_tm]; change (gren_tm ?x ?ξ) with x⟪ξ⟫.
+  all: rewrite ?gren_single2, ?gren_single, ?gren_gsingle; try now constructor.
+  all: constructor; auto.
+Qed.
+Lemma red_ty_gren T U ξ : red_ty T U -> red_ty T⟪ξ⟫ U⟪ξ⟫.
+Proof. destruct 1; cbn; constructor; auto using red_gren. Qed.
+Lemma reds_gren t u ξ : reds t u -> reds t⟪ξ⟫ u⟪ξ⟫.
+Proof. unfold reds; induction 1; [constructor|econstructor; eauto using red_gren]. Qed.
+Lemma reds_ty_gren T U ξ : reds_ty T U -> reds_ty T⟪ξ⟫ U⟪ξ⟫.
+Proof. unfold reds_ty; induction 1; [constructor|econstructor; eauto using red_ty_gren]. Qed.
+
+(** ** Local weakenings under global renaming *)
+
+Lemma wk_wf_gren (ρ : wk) Δ Γ ξ : ρ : Δ ≤ Γ -> ρ : Δ⟪ξ⟫ ≤ Γ⟪ξ⟫.
+Proof.
+  induction 1; cbn [gren GRen_ctx gcren]; change (gren_ty ?A ?ξ) with A⟪ξ⟫;
+    change (gcren ?A ?ξ) with A⟪ξ⟫; try rewrite gren_ren_ty'; now constructor.
+Qed.
+
+(** ** Composition of global weakenings *)
+
+Fixpoint gwk_comp (γ' γ : gweak) : gweak :=          (* first γ, then γ' *)
+  match γ', γ with
+  | gwk_id, γ => γ
+  | gwk_step γ', γ => gwk_step (gwk_comp γ' γ)
+  | gwk_up γ', gwk_id => gwk_up γ'
+  | gwk_up γ', gwk_step γ => gwk_step (gwk_comp γ' γ)
+  | gwk_up γ', gwk_up γ => gwk_up (gwk_comp γ' γ)
+  end.
+
+Lemma gwk_fn_comp γ' γ n : gwk_comp γ' γ n = γ' (γ n).
+Proof.
+  revert γ n; induction γ' as [|γ' IH|γ' IH]; intros γ n.
+  - destruct γ; reflexivity.
+  - cbn. now rewrite IH.
+  - destruct γ as [|γ|γ]; cbn; [reflexivity | now rewrite IH |].
+    destruct n; cbn; [reflexivity | now rewrite IH].
+Qed.
+
+Lemma gwk_comp_id_r γ : gwk_comp γ gwk_id = γ.
+Proof. induction γ; cbn; congruence. Qed.
+
+Lemma gwk_comp_wf γ' γ Ψ'' Ψ' Ψ : gwk_wf γ' Ψ'' Ψ' -> gwk_wf γ Ψ' Ψ -> gwk_wf (gwk_comp γ' γ) Ψ'' Ψ.
+Proof.
+  intros H'; revert γ Ψ; induction H' as [Θ|γ' Ξ Θ D H' IH|γ' Ξ Θ D H' IH]; intros γ Ψ0 H.
+  - destruct γ; exact H.
+  - constructor; auto.
+  - inversion H as [Θ0|γ0 Θ0 Ψ1 D0 H0|γ0 Θ0 Ψ1 D0 H0]; subst; cbn.
+    + constructor; auto.
+    + constructor; auto.
+    + rewrite (gdecl_ren_comp _ _ _ (gwk_comp γ' γ0)) by (intros; apply gwk_fn_comp).
+      constructor; auto.
+Qed.
+
+Lemma gwk_ok_id G : gwk_ok gwk_id G G.
+Proof. split; [reflexivity | constructor]. Qed.
+Lemma gwk_ok_id_inv {G' G} : gwk_ok gwk_id G' G -> G' = G.
+Proof.
+  destruct G' as [L' Ψ'], G as [L Ψ]; intros [Hl Hw]; cbn in *; subst.
+  inversion Hw; subst; reflexivity.
+Qed.
+Lemma gwk_ok_comp {γ' γ G'' G' G} : gwk_ok γ' G'' G' -> gwk_ok γ G' G ->
+  gwk_ok (gwk_comp γ' γ) G'' G.
+Proof. intros [H1 H2] [H3 H4]; split; [congruence | eapply gwk_comp_wf; eauto]. Qed.
+
+(** ** The action of a global weakening
+
+    [x⟦γ⟧] is [x⟪γ⟫], except that the identity weakening acts as the
+    identity *by definition* (renaming by the identity function is the
+    identity only on deep-normal syntax).  The Kripke quantification of the
+    logical relation uses it, so that its purely local instances are
+    literally M1's. *)
+
+Definition gwa {X} `{GRen X} (γ : gweak) (x : X) : X :=
+  match γ with gwk_id => x | _ => x⟪γ⟫ end.
+Notation "x ⟦ γ ⟧" := (gwa γ x) (at level 5, format "x ⟦ γ ⟧").
+
+Lemma gwa_gren {X} `{GRen X} (γ : gweak) (x : X) : γ <> gwk_id -> x⟦γ⟧ = x⟪γ⟫.
+Proof. destruct γ; cbn; congruence. Qed.
+
+(** Composition, for each syntactic class. *)
+Lemma gwk_comp_not_id γ' γ : γ <> gwk_id -> gwk_comp γ' γ <> gwk_id.
+Proof. destruct γ', γ; cbn; congruence. Qed.
+
+Lemma gwa_comp_gen {X} `{GRen X}
+  (gg : forall (x : X) ξ ζ θ, (forall i, θ i = ζ (ξ i)) -> x⟪ξ⟫⟪ζ⟫ = x⟪θ⟫)
+  (x : X) γ' γ : x⟦γ⟧⟦γ'⟧ = x⟦gwk_comp γ' γ⟧.
+Proof.
+  destruct γ' as [|γ1|γ1]; [reflexivity|..];
+    (destruct γ as [|γ2|γ2]; [now rewrite gwk_comp_id_r|..]);
+    rewrite !gwa_gren by (discriminate || (apply gwk_comp_not_id; discriminate));
+    apply gg; intros; apply gwk_fn_comp.
+Qed.
+
+Lemma gwa_comp_ty (T : ty) γ' γ : T⟦γ⟧⟦γ'⟧ = T⟦gwk_comp γ' γ⟧.
+Proof. apply gwa_comp_gen, gren_gren_ty. Qed.
+Lemma gwa_comp_tm (t : tm) γ' γ : t⟦γ⟧⟦γ'⟧ = t⟦gwk_comp γ' γ⟧.
+Proof. apply gwa_comp_gen, gren_gren_tm'. Qed.
+Lemma gwa_comp_ctx (Γ : ctx) γ' γ : Γ⟦γ⟧⟦γ'⟧ = Γ⟦gwk_comp γ' γ⟧.
+Proof. apply gwa_comp_gen, gcren_gcren. Qed.
+
+(** Commutation with the local operations. *)
+Lemma gwa_ren_ty (T : ty) (r : rsub) γ : T⟨r⟩⟦γ⟧ = T⟦γ⟧⟨r⟩.
+Proof. destruct γ; cbn [gwa]; auto using gren_ren_ty. Qed.
+Lemma gwa_ren (t : tm) (r : rsub) γ : t⟨r⟩⟦γ⟧ = t⟦γ⟧⟨r⟩.
+Proof. destruct γ; cbn [gwa]; auto using gren_ren. Qed.
+Lemma gwa_subst_ty (T : ty) d γ : T[d]⟦γ⟧ = T⟦γ⟧[d⟦γ⟧].
+Proof. destruct γ; cbn [gwa]; auto using gren_subst_ty. Qed.
+Lemma gwa_subst (t : tm) d γ : t[d]⟦γ⟧ = t⟦γ⟧[d⟦γ⟧].
+Proof. destruct γ; cbn [gwa]; auto using gren_subst. Qed.
+Lemma gwa_lsingle (a : tm) γ : (lsingle a)⟦γ⟧ = lsingle a⟦γ⟧.
+Proof. destruct γ; reflexivity. Qed.
+
+(** Constructor equations. *)
+Section PushGwa.
+Variable (γ : gweak).
+Lemma gwa_tyNat : tyNat⟦γ⟧ = tyNat. Proof. now destruct γ. Qed.
+Lemma gwa_tyPi l l' A B : (tyPi l l' A B)⟦γ⟧ = tyPi l l' A⟦γ⟧ B⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tyU l : (tyU l)⟦γ⟧ = tyU l. Proof. now destruct γ. Qed.
+Lemma gwa_tyEl l t : (tyEl l t)⟦γ⟧ = tyEl l t⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tyCTyp Δ l : (tyCTyp Δ l)⟦γ⟧ = tyCTyp Δ⟦γ⟧ l. Proof. now destruct γ. Qed.
+Lemma gwa_tyCTrm Δ T l : (tyCTrm Δ T l)⟦γ⟧ = tyCTrm Δ⟦γ⟧ T⟦γ⟧ l. Proof. now destruct γ. Qed.
+Lemma gwa_var n : (var n)⟦γ⟧ = var n. Proof. now destruct γ. Qed.
+Lemma gwa_zero : zero⟦γ⟧ = zero. Proof. now destruct γ. Qed.
+Lemma gwa_succ t : (succ t)⟦γ⟧ = succ t⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tmNat : tmNat⟦γ⟧ = tmNat. Proof. now destruct γ. Qed.
+Lemma gwa_tmU l : (tmU l)⟦γ⟧ = tmU l. Proof. now destruct γ. Qed.
+Lemma gwa_tmPi l l' s t : (tmPi l l' s t)⟦γ⟧ = tmPi l l' s⟦γ⟧ t⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_lam l l' A t : (lam l l' A t)⟦γ⟧ = lam l l' A⟦γ⟧ t⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_app t l l' A B s : (app t l l' A B s)⟦γ⟧ = app t⟦γ⟧ l l' A⟦γ⟧ B⟦γ⟧ s⟦γ⟧.
+Proof. now destruct γ. Qed.
+Lemma gwa_natrec l M s z t : (natrec l M s z t)⟦γ⟧ = natrec l M⟦γ⟧ s⟦γ⟧ z⟦γ⟧ t⟦γ⟧.
+Proof. now destruct γ. Qed.
+Lemma gwa_cext Γ A l : (Γ ,, A @ l)⟦γ⟧ = Γ⟦γ⟧ ,, A⟦γ⟧ @ l. Proof. now destruct γ. Qed.
+Lemma gwa_cnil : cnil⟦γ⟧ = cnil. Proof. now destruct γ. Qed.
+Lemma gwa_cvar g : (cvar g)⟦γ⟧ = cvar (γ g). Proof. now destruct γ. Qed.
+End PushGwa.
+
+Ltac push_gwa := repeat progress (
+  rewrite ?gwa_tyNat, ?gwa_tyPi, ?gwa_tyU, ?gwa_tyEl, ?gwa_tyCTyp, ?gwa_tyCTrm,
+          ?gwa_var, ?gwa_zero, ?gwa_succ, ?gwa_tmNat, ?gwa_tmU, ?gwa_tmPi, ?gwa_lam, ?gwa_app,
+          ?gwa_natrec, ?gwa_cext).
+
+(** Normal forms, reduction, local weakenings. *)
+Lemma whne_gwa t γ : whne t -> whne t⟦γ⟧.
+Proof. destruct γ; cbn [gwa]; auto using whne_gren. Qed.
+Lemma whnf_gwa t γ : whnf t -> whnf t⟦γ⟧.
+Proof. destruct γ; cbn [gwa]; auto using whnf_gren. Qed.
+Lemma whne_ty_gwa T γ : whne_ty T -> whne_ty T⟦γ⟧.
+Proof. destruct γ; cbn [gwa]; auto using whne_ty_gren. Qed.
+Lemma whnf_ty_gwa T γ : whnf_ty T -> whnf_ty T⟦γ⟧.
+Proof. destruct γ; cbn [gwa]; auto using whnf_ty_gren. Qed.
+Lemma reds_gwa t u γ : reds t u -> reds t⟦γ⟧ u⟦γ⟧.
+Proof. destruct γ; cbn [gwa]; auto using reds_gren. Qed.
+Lemma reds_ty_gwa T U γ : reds_ty T U -> reds_ty T⟦γ⟧ U⟦γ⟧.
+Proof. destruct γ; cbn [gwa]; auto using reds_ty_gren. Qed.
+Lemma wk_wf_gwa (ρ : wk) Δ Γ γ : ρ : Δ ≤ Γ -> ρ : Δ⟦γ⟧ ≤ Γ⟦γ⟧.
+Proof. destruct γ; cbn [gwa]; auto using wk_wf_gren. Qed.
+
+(** Judgments. *)
+Section NamedGwa.
+Context {γ : gweak} {G' G : gctx} (Hγ : gwk_ok γ G' G) (HG' : [ ⊢ G' ]).
+
+Ltac gwa_named k :=
+  destruct γ as [|γ0|γ0] eqn:Eγ; cbn [gwa];
+  [ rewrite (gwk_ok_id_inv Hγ); auto
+  | rewrite <- Eγ in *; apply (k _ _ _ Hγ HG') .. ].
+
+Lemma gwa_ctx {i Γ} : [ G ; Γ ⊢[ i ] ] -> [ G' ; Γ⟦γ⟧ ⊢[ i ] ].
+Proof. gwa_named @gwk_ctx. Qed.
+Lemma gwa_ty {i Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] -> [ G' ; Γ⟦γ⟧ ⊢[ i ] T⟦γ⟧ @ l ].
+Proof. gwa_named @gwk_ty. Qed.
+Lemma gwa_tm {i Γ t T l} : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G' ; Γ⟦γ⟧ ⊢[ i ] t⟦γ⟧ : T⟦γ⟧ @ l ].
+Proof. gwa_named @gwk_tm. Qed.
+Lemma gwa_eqty {i Γ T T' l} : [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->
+  [ G' ; Γ⟦γ⟧ ⊢[ i ] T⟦γ⟧ ≅ T'⟦γ⟧ @ l ].
+Proof. gwa_named @gwk_eqty. Qed.
+Lemma gwa_eqtm {i Γ t t' T l} : [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] ->
+  [ G' ; Γ⟦γ⟧ ⊢[ i ] t⟦γ⟧ ≅ t'⟦γ⟧ : T⟦γ⟧ @ l ].
+Proof. gwa_named @gwk_eqtm. Qed.
+
+End NamedGwa.
+
+(** Local substitutions under [⟦γ⟧]. *)
+Lemma llk_gwa (d : lsub) γ n : llk d⟦γ⟧ n = (llk d n)⟦γ⟧.
+Proof. destruct γ; cbn [gwa]; auto using llk_glren. Qed.
+Lemma dnf_gwa (t : tm) γ : dnftm t -> dnftm t⟦γ⟧.
+Proof. destruct γ; cbn [gwa]; auto; intros; apply gren_dnf_all. Qed.
+Lemma lsub_tail_gwa d Δ Γ γ : lsub_tail d Δ Γ -> lsub_tail d⟦γ⟧ Δ⟦γ⟧ Γ⟦γ⟧.
+Proof. destruct γ; cbn [gwa]; auto using lsub_tail_gren. Qed.
+Lemma llk_llift_gwa (d : lsub) γ n : llk (llift d)⟦γ⟧ n = llk (llift d⟦γ⟧) n.
+Proof.
+  rewrite llk_gwa, !llk_llift. destruct n; [now rewrite gwa_var|].
+  change (ren_tm ?x ?r) with x⟨r⟩. now rewrite gwa_ren, llk_gwa.
+Qed.
+Lemma in_ctx_gwa Γ n T l γ : in_ctx Γ n T l -> in_ctx Γ⟦γ⟧ n T⟦γ⟧ l.
+Proof. destruct γ; cbn [gwa]; auto using in_ctx_gren. Qed.
+Lemma gwa_lsucc γ : lsucc⟦γ⟧ = lsucc.
+Proof. now destruct γ. Qed.
+Lemma gwa_lsingle2 (t q : tm) γ : (lsingle2 t q)⟦γ⟧ = lsingle2 t⟦γ⟧ q⟦γ⟧.
+Proof. now destruct γ. Qed.

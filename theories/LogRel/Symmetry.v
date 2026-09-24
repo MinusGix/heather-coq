@@ -74,9 +74,9 @@ Qed.
 (** ** Π *)
 
 Definition flipD {G Γ} (domR : DomRel G Γ) : DomRel G Γ :=
-  fun Δ r Hr HΔ => flipR (domR Δ r Hr HΔ).
+  fun ρ => flipR (domR ρ).
 Definition flipC {G Γ} {domR : DomRel G Γ} (codR : CodRel G Γ domR) : CodRel G Γ (flipD domR) :=
-  fun Δ r Hr HΔ a a' ha => flipR (codR Δ r Hr HΔ a' a ha).
+  fun ρ a a' ha => flipR (codR ρ a' a ha).
 
 Section PiFlip.
 Context {G : gctx} {Γ : ctx} {l1 l2 l3 l4 : lvl} {A B A' B' : ty}
@@ -96,21 +96,21 @@ Proof.
   - eapply tmred_lconv; [exact Hw1 | exact Hm].
   - eapply geq_tm_lconv; [apply geq_tm_sym, Heq2 | exact Hm].
   - eapply geq_tm_lconv; [apply geq_tm_sym, Heq1 | exact Hm].
-  - intros Δ r Hr HΔ a a' ha la lb la' lb' A1 B1 A1' B1' Hla Hlb Hla' Hlb' HA1 HB1 HA1' HB1'.
+  - intros ρ a a' ha la lb la' lb' A1 B1 A1' B1' Hla Hlb Hla' Hlb' HA1 HB1 HA1' HB1'.
     unfold flipC, flipR.
-    assert (HAr : [ G ; Δ ⊢g A⟨r⟩ @ l1 ]) by exact (wf_ty_wk Hr HΔ HA).
-    assert (HA'r : [ G ; Δ ⊢g A'⟨r⟩ @ l1 ]) by exact (wf_ty_wk Hr HΔ HA').
-    apply (HK Δ r Hr HΔ a' a ha la' lb' la lb A1' B1' A1 B1).
+    pose proof (kw_ty ρ HA) as HAr. pose proof (kw_ty ρ HA') as HA'r.
+    pose proof (kw_lequiv ρ H13) as H13'. pose proof (kw_lequiv ρ H24) as H24'.
+    apply (HK ρ a' a ha la' lb' la lb A1' B1' A1 B1).
     + eapply lequiv_trans; eassumption.
     + eapply lequiv_trans; eassumption.
     + eapply lequiv_trans; eassumption.
     + eapply lequiv_trans; eassumption.
-    + eapply geq_ty_lconv; [exact HA1' | apply lequiv_sym, H13].
-    + eapply geq_ty_lconv; [|apply lequiv_sym, H24].
-      eapply ctx_lvl_geq; [eapply lconv_ty; [exact HAr | apply lequiv_sym, H13] | exact H13 | exact HB1'].
-    + eapply geq_ty_lconv; [exact HA1 | apply lequiv_sym, H13].
-    + eapply geq_ty_lconv; [|apply lequiv_sym, H24].
-      eapply ctx_lvl_geq; [eapply lconv_ty; [exact HA'r | apply lequiv_sym, H13] | exact H13 | exact HB1].
+    + eapply geq_ty_lconv; [exact HA1' | apply lequiv_sym, H13'].
+    + eapply geq_ty_lconv; [|apply lequiv_sym, H24'].
+      eapply ctx_lvl_geq; [eapply lconv_ty; [exact HAr | apply lequiv_sym, H13'] | exact H13' | exact HB1'].
+    + eapply geq_ty_lconv; [exact HA1 | apply lequiv_sym, H13'].
+    + eapply geq_ty_lconv; [|apply lequiv_sym, H24'].
+      eapply ctx_lvl_geq; [eapply lconv_ty; [exact HA'r | apply lequiv_sym, H13'] | exact H13' | exact HB1].
 Qed.
 
 End PiFlip.
@@ -181,8 +181,8 @@ Proof.
     + eapply geq_ty_lconv; [|exact Hl4].
       eapply geq_ty_ctxconv; [apply geq_ty_sound, HAA | now apply lequiv_sym | | apply geq_ty_sym, HBB].
       apply ext_wf_g; [exact HA'3 | eauto using lequiv_wf_l].
-    + intros Δ r Hr HΔ. eapply LR_lconv; [exact (IHdom Δ r Hr HΔ) | exact Hl3].
-    + intros Δ r Hr HΔ a a' ha. eapply LR_lconv; [exact (IHcod Δ r Hr HΔ a' a ha) | exact Hl4].
+    + intros ρ. eapply LR_lconv; [exact (IHdom ρ) | exact (kw_lequiv ρ Hl3)].
+    + intros ρ a a' ha. eapply LR_lconv; [exact (IHcod ρ a' a ha) | exact (kw_lequiv ρ Hl4)].
     + intros t t'; unfold flipR at 1; rewrite (HR t' t); split.
       * apply PiRel_flip; auto.
       * intros H. apply (PiRel_flip (A := A') (A' := A) (domR := flipD domR) (codR := flipC codR));

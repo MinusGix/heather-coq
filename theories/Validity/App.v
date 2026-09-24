@@ -29,18 +29,18 @@ Lemma PiRel_id {G Δ l1 l2 l3 l4 A B A' B' domR codR t t'} (HΔ : [ G ; Δ ⊢g 
   PiRel G Δ l1 l2 l3 l4 A B A' B' domR codR t t' ->
   exists w w', [ G ; Δ ⊢g t ⤳* w : tyPi l1 l2 A B @ lmax l1 l2 ] /\
     [ G ; Δ ⊢g t' ⤳* w' : tyPi l3 l4 A' B' @ lmax l1 l2 ] /\
-    forall a a' (ha : domR Δ wk_id (wkwf_id Δ) HΔ a a') la lb la' lb' A1 B1 A1' B1',
+    forall a a' (ha : domR (kw_loc wk_id (wkwf_id Δ) HΔ) a a') la lb la' lb' A1 B1 A1' B1',
       lequiv (gL G) la l1 -> lequiv (gL G) lb l2 ->
       lequiv (gL G) la' l1 -> lequiv (gL G) lb' l2 ->
       [ G ; Δ ⊢ A ≈ A1 @ l1 ] -> [ G ; Δ ,, A @ l1 ⊢ B ≈ B1 @ l2 ] ->
       [ G ; Δ ⊢ A' ≈ A1' @ l1 ] -> [ G ; Δ ,, A' @ l1 ⊢ B' ≈ B1' @ l2 ] ->
-      codR Δ wk_id (wkwf_id Δ) HΔ a a' ha (app w la lb A1 B1 a) (app w' la' lb' A1' B1' a').
+      codR (kw_loc wk_id (wkwf_id Δ) HΔ) a a' ha (app w la lb A1 B1 a) (app w' la' lb' A1' B1' a').
 Proof.
   intros NA NA' NB NB' (w & w' & Hw & Hw' & _ & _ & _ & _ & HK).
   exists w, w'. refine (conj Hw (conj Hw' _)).
   intros a a' ha la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1'.
-  pose proof (HK Δ wk_id (wkwf_id Δ) HΔ a a' ha la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4) as K.
-  cbn [wk_ren] in K.
+  pose proof (HK (kw_loc wk_id (wkwf_id Δ) HΔ) a a' ha la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4) as K.
+  unfold kty, ktm, ktyl, kw_loc in K; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in K.
   rewrite (ren_id_tm w), (ren_id_tm w') in K
     by (eapply wf_tm_nf, eqtm_wf_r; [apply ge_typeof | apply tmred_eq; eassumption]).
   rewrite (ren_id_ty A), (ren_id_ty A'), (ren_lift_id_ty B), (ren_lift_id_ty B') in K by assumption.
@@ -54,16 +54,17 @@ Context {G : gctx} {Γ : ctx} {l l' l3 l4 : lvl} {A A' B B' t t' s s' : _}
   (Hwl : lwf (gL G) l) (Hwl' : lwf (gL G) l')
   (H3 : lequiv (gL G) l3 l) (H4 : lequiv (gL G) l4 l')
   (HB : [ G ; Γ ,, A @ l ⊢g B @ l' ])
-  (VA : VTy G Γ A A' l) (VB : VTy G (Γ ,, A @ l) B B' l')
+  (VA : VTyG G Γ A A' l) (VB : VTyG G (Γ ,, A @ l) B B' l')
   (Vt : VTm G Γ t t' (tyPi l l' A B) (lmax l l')) (Vs : VTm G Γ s s' A l).
 
 Lemma V_app : VTm G Γ (app t l l' A B s) (app t' l3 l4 A' B' s') B[lsingle s] l'.
 Proof.
   intros Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ.
   destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
+  pose proof (LR_pi_here Hwl Hwl' (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') HB HB
+                (VTyG_refl_l VA) (VTyG_refl_l VB) _ _ _ Hd) as HP.
+  apply VTyG_loc in VA, VB.
   pose proof (VTy_refl_l VA) as VAA. pose proof (VTy_refl_l VB) as VBB.
-  pose proof (LR_pi_here Hwl Hwl' (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') HB HB VAA VBB
-                _ _ _ Hd) as HP.
   pose proof (LRtm_inv HP (Vt _ _ _ Hd)) as HPi.
   (* facts about the domain and the codomain *)
   destruct (VA _ _ _ Hd) as [RA HRA]. destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HAd & HA'd' & _).
@@ -87,7 +88,7 @@ Proof.
   { cbn [wk_ren]. rewrite !ren_id_ty by eauto using wf_ty_nf.
     apply (LRtm_stage (l := l)); [rewrite lmeasure_max; lia | exact Hs]. }
   pose proof (K s[d] s'[d'] ha l l' l3 l4 A[d] B[llift d] A'[d'] B'[llift d']) as K1.
-  unfold piCod in K1; cbn [wk_ren] in K1.
+  unfold piCod, kty, ktm, ktyl, kw_loc in K1; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in K1.
   rewrite !ren_lift_id_ty in K1 by eauto using wf_ty_nf.
   (* reflexive left annotations *)
   destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (_ & _ & HAA).

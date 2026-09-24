@@ -32,7 +32,7 @@ Lemma ft_code_U_eq {l l'} :
 Proof. intros Hl; exact (V_code_U (lequiv_wf_l _ _ _ Hl) Hl). Qed.
 
 Lemma ft_pi {l l' A B} : lwf (gL G) l -> lwf (gL G) l' ->
-  [ G ; Γ ,, A @ l ⊢g B @ l' ] -> VTy G Γ A A l -> VTy G (Γ ,, A @ l) B B l' ->
+  [ G ; Γ ,, A @ l ⊢g B @ l' ] -> VTyG G Γ A A l -> VTyG G (Γ ,, A @ l) B B l' ->
   VTy G Γ (tyPi l l' A B) (tyPi l l' A B) (lmax l l').
 Proof.
   intros Hw Hw' HB VA VB. exact (V_pi Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') HB HB VA VB).
@@ -41,7 +41,7 @@ Qed.
 Lemma ft_pi_eq {l1 l2 l3 l4 A A' B B'} :
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   [ G ; Γ ⊢g A ≅ A' @ l1 ] -> [ G ; Γ ,, A @ l1 ⊢g B ≅ B' @ l2 ] ->
-  VTy G Γ A A' l1 -> VTy G (Γ ,, A @ l1) B B' l2 ->
+  VTyG G Γ A A' l1 -> VTyG G (Γ ,, A @ l1) B B' l2 ->
   VTy G Γ (tyPi l1 l2 A B) (tyPi l3 l4 A' B') (lmax l1 l2).
 Proof.
   intros H13 H24 HAA HBB VA VB.
@@ -54,7 +54,7 @@ Qed.
 
 Lemma ft_code_pi {l l' s t} : lwf (gL G) l -> lwf (gL G) l' ->
   [ G ; Γ ⊢g s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢g t : tyU l' @ lsuc l' ] ->
-  VTm G Γ s s (tyU l) (lsuc l) -> VTm G (Γ ,, tyEl l s @ l) t t (tyU l') (lsuc l') ->
+  VTmG G Γ s s (tyU l) (lsuc l) -> VTmG G (Γ ,, tyEl l s @ l) t t (tyU l') (lsuc l') ->
   VTm G Γ (tmPi l l' s t) (tmPi l l' s t) (tyU (lmax l l')) (lsuc (lmax l l')).
 Proof.
   intros Hw Hw' Hs Ht Vs Vt.
@@ -66,7 +66,7 @@ Lemma ft_code_pi_eq {l1 l2 l3 l4 s s' t t'} :
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   [ G ; Γ ⊢g s : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢g s ≅ s' : tyU l1 @ lsuc l1 ] ->
   [ G ; Γ ,, tyEl l1 s @ l1 ⊢g t ≅ t' : tyU l2 @ lsuc l2 ] ->
-  VTm G Γ s s' (tyU l1) (lsuc l1) -> VTm G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) (lsuc l2) ->
+  VTmG G Γ s s' (tyU l1) (lsuc l1) -> VTmG G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) (lsuc l2) ->
   VTm G Γ (tmPi l1 l2 s t) (tmPi l3 l4 s' t') (tyU (lmax l1 l2)) (lsuc (lmax l1 l2)).
 Proof.
   intros H13 H24 Hs Hss Htt Vs Vt.
@@ -117,27 +117,27 @@ Proof.
 Qed.
 
 Lemma ft_lam {l l' A B t} : lwf (gL G) l -> lwf (gL G) l' ->
-  [ G ; Γ ,, A @ l ⊢g t : B @ l' ] -> VTy G Γ A A l -> VTm G (Γ ,, A @ l) t t B l' ->
+  [ G ; Γ ,, A @ l ⊢g t : B @ l' ] -> VTyG G Γ A A l -> VTmG G (Γ ,, A @ l) t t B l' ->
   VTm G Γ (lam l l' A t) (lam l l' A t) (tyPi l l' A B) (lmax l l').
 Proof.
   intros Hw Hw' Ht VA Vt.
   exact (V_lam Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') (wf_tm_ty ge_typeof Ht) Ht Ht VA
-           (VTm_ty Vt) Vt).
+           (VTmG_ty Vt) Vt).
 Qed.
 
 Lemma ft_lam_eq {l1 l2 l3 l4 A A' B t t'} :
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
-  [ G ; Γ ,, A @ l1 ⊢g t ≅ t' : B @ l2 ] -> VTy G Γ A A' l1 -> VTm G (Γ ,, A @ l1) t t' B l2 ->
+  [ G ; Γ ,, A @ l1 ⊢g t ≅ t' : B @ l2 ] -> VTyG G Γ A A' l1 -> VTmG G (Γ ,, A @ l1) t t' B l2 ->
   VTm G Γ (lam l1 l2 A t) (lam l3 l4 A' t') (tyPi l1 l2 A B) (lmax l1 l2).
 Proof.
   intros H13 H24 Htt VA Vt.
   exact (V_lam (lequiv_wf_l _ _ _ H13) (lequiv_wf_l _ _ _ H24) (lequiv_sym _ _ _ H13) (lequiv_sym _ _ _ H24)
            (eqtm_wf_ty ge_typeof Htt) (eqtm_wf_l ge_typeof Htt) (eqtm_wf_r ge_typeof Htt) VA
-           (VTm_ty Vt) Vt).
+           (VTmG_ty Vt) Vt).
 Qed.
 
 Lemma ft_app {l l' A B t s} : lwf (gL G) l -> lwf (gL G) l' ->
-  [ G ; Γ ,, A @ l ⊢g B @ l' ] -> VTy G Γ A A l -> VTy G (Γ ,, A @ l) B B l' ->
+  [ G ; Γ ,, A @ l ⊢g B @ l' ] -> VTyG G Γ A A l -> VTyG G (Γ ,, A @ l) B B l' ->
   VTm G Γ t t (tyPi l l' A B) (lmax l l') -> VTm G Γ s s A l ->
   VTm G Γ (app t l l' A B s) (app t l l' A B s) B[lsingle s] l'.
 Proof.
@@ -147,7 +147,7 @@ Qed.
 
 Lemma ft_app_eq {l1 l2 l3 l4 A A' B B' t t' s s'} :
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
-  [ G ; Γ ,, A @ l1 ⊢g B ≅ B' @ l2 ] -> VTy G Γ A A' l1 -> VTy G (Γ ,, A @ l1) B B' l2 ->
+  [ G ; Γ ,, A @ l1 ⊢g B ≅ B' @ l2 ] -> VTyG G Γ A A' l1 -> VTyG G (Γ ,, A @ l1) B B' l2 ->
   VTm G Γ t t' (tyPi l1 l2 A B) (lmax l1 l2) -> VTm G Γ s s' A l1 ->
   VTm G Γ (app t l1 l2 A B s) (app t' l3 l4 A' B' s') B[lsingle s] l2.
 Proof.
@@ -186,6 +186,49 @@ Ltac ft_case :=
   | solve [eapply V_natrec_zero; eassumption] | solve [eapply V_natrec_succ; eassumption]
   | solve [eapply V_beta; eassumption] | solve [eapply V_eta; eassumption] ].
 
+(** ** Lifting to global weakenings
+
+    Each case is proved at an arbitrary global weakening [γ : G' ≤ G] of
+    its rule's global context: the hypotheses at [G] are weakened, [⟦γ⟧]
+    is pushed through the syntax, and the case's lemma applies at [G']. *)
+
+Ltac gl_weaken :=
+  match goal with Hγ : gwk_ok ?γ ?G' ?G, HG' : [ ⊢ ?G' ] |- _ =>
+    repeat match goal with
+    | H : VTyG G _ _ _ _ |- _ =>
+        pose proof (VTyG_gwk H Hγ); pose proof (VTyG_loc (VTyG_gwk H Hγ)); clear H
+    | H : VTmG G _ _ _ _ _ |- _ =>
+        pose proof (VTmG_gwk H Hγ); pose proof (VTmG_loc (VTmG_gwk H Hγ)); clear H
+    | H : wf_ctx G _ _ |- _ => pose proof (gwa_ctx Hγ HG' H); clear H
+    | H : wf_ty G _ _ _ _ |- _ => pose proof (gwa_ty Hγ HG' H); clear H
+    | H : wf_tm G _ _ _ _ _ |- _ => pose proof (gwa_tm Hγ HG' H); clear H
+    | H : eq_ty G _ _ _ _ _ |- _ => pose proof (gwa_eqty Hγ HG' H); clear H
+    | H : eq_tm G _ _ _ _ _ _ |- _ => pose proof (gwa_eqtm Hγ HG' H); clear H
+    | H : in_ctx ?Γ0 _ _ _ |- _ =>
+        lazymatch Γ0 with gwa _ _ => fail | _ => pose proof (in_ctx_gwa _ _ _ _ γ H); clear H end
+    | H : lequiv (gL G) _ _ |- _ => rewrite <- (proj1 Hγ) in H
+    | H : lwf (gL G) _ |- _ => rewrite <- (proj1 Hγ) in H
+    end
+  end.
+
+Ltac gl_push :=
+  repeat progress (
+    rewrite ?gwa_subst_ty, ?gwa_subst, ?gwa_lsingle, ?gwa_lsingle2, ?gwa_lsucc, ?gwa_ren, ?gwa_ren_ty in *;
+    rewrite ?gwa_tyNat, ?gwa_tyPi, ?gwa_tyU, ?gwa_tyEl, ?gwa_var, ?gwa_zero, ?gwa_succ, ?gwa_tmNat,
+            ?gwa_tmU, ?gwa_tmPi, ?gwa_lam, ?gwa_app, ?gwa_natrec, ?gwa_cext in *).
+
+Ltac gl_lift :=
+  first [apply VTyG_intro | apply VTmG_intro]; intros ? ? ? ?; gl_weaken; gl_push.
+
+Ltac ftG_case :=
+  first
+  [ exact I
+  | solve [eapply VTyG_sym; eassumption] | solve [eapply VTyG_trans; eassumption]
+  | solve [eapply VTmG_sym; eassumption] | solve [eapply VTmG_trans; eassumption]
+  | solve [eapply VTyG_lconv; eassumption] | solve [eapply VTmG_lconv; eassumption]
+  | solve [eapply VTmG_conv; eassumption]
+  | solve [gl_lift; ft_case] ].
+
 (** M2 transition (M2_DESIGN.md): until the layered relation is in place,
     the theorem is stated for the P layer and global contexts that bind
     context variables only.  The new rules then never apply: [□], [box]
@@ -195,11 +238,11 @@ Definition ctx_only (G : gctx) : Prop := forall n D, in_gctx (gΨ G) n D -> D = 
 Theorem fundamental : ge_layer = lD ->
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
-  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = ge_layer -> ctx_only G -> VTy G Γ T T l) /\
-  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = ge_layer -> ctx_only G -> VTm G Γ t t T l) /\
-  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = ge_layer -> ctx_only G -> VTy G Γ T T' l) /\
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = ge_layer -> ctx_only G -> VTyG G Γ T T l) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = ge_layer -> ctx_only G -> VTmG G Γ t t T l) /\
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = ge_layer -> ctx_only G -> VTyG G Γ T T' l) /\
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = ge_layer -> ctx_only G ->
-     VTm G Γ t t' T l) /\
+     VTmG G Γ t t' T l) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
   intros Hgl.
@@ -211,7 +254,7 @@ Proof.
         end;
     ft_prep;
     repeat match goal with Hc : ctx_only ?G, IH : ctx_only ?G -> _ |- _ => specialize (IH Hc) end;
-    ft_case.
+    ftG_case.
 Qed.
 
 End Fundamental.

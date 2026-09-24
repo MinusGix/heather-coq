@@ -18,7 +18,7 @@ Proof.
   cbn [ldrop llk]. split; [exact Hsh|].
   assert (E1 : A[lshift 1] = A⟨↑⟩) by (symmetry; apply ren_as_subst_ty; reflexivity).
   change (LRtm l G (Γ ,, A @ l) A[lshift 1] A[lshift 1] (var 0) (var 0)). rewrite E1. apply var0_LRtm; [|exact HΓ].
-  pose proof (proj1 (proj2 (proj2 (fundamental Hgl))) _ _ _ _ _ HA eq_refl HG _ _ _ Hsh) as X.
+  pose proof (VTyG_loc (proj1 (proj2 (proj2 (fundamental Hgl))) _ _ _ _ _ HA eq_refl HG) _ _ _ Hsh) as X.
   now rewrite E1 in X.
 Qed.
 
@@ -27,7 +27,7 @@ Qed.
 Lemma reducible_eqty {G Γ T T' l} : ctx_only G -> [ G ; Γ ⊢g T ≅ T' @ l ] -> LRty l G Γ T T'.
 Proof.
   intros HG H. pose proof (ctx_of_ty (eqty_wf_l ge_typeof H)) as HΓ.
-  pose proof (proj1 (proj2 (proj2 (proj2 (proj2 (fundamental Hgl))))) _ _ _ _ _ _ H eq_refl HG
+  pose proof (VTyG_loc (proj1 (proj2 (proj2 (proj2 (proj2 (fundamental Hgl))))) _ _ _ _ _ _ H eq_refl HG)
                 _ _ _ (SubRel_id HG _ HΓ)) as X.
   rewrite !nf_id_ty in X; [exact X | exact (wf_ty_nf (eqty_wf_r ge_typeof H))
                           | exact (wf_ty_nf (eqty_wf_l ge_typeof H))].
@@ -39,8 +39,8 @@ Proof. intros HG H; apply reducible_eqty, eqty_refl, H; exact HG. Qed.
 Lemma reducible_eqtm {G Γ t t' T l} : ctx_only G -> [ G ; Γ ⊢g t ≅ t' : T @ l ] -> LRtm l G Γ T T t t'.
 Proof.
   intros HG H. pose proof (ctx_of_tm (eqtm_wf_l ge_typeof H)) as HΓ.
-  pose proof (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 (fundamental Hgl)))))) _ _ _ _ _ _ _ H eq_refl HG
-                _ _ _ (SubRel_id HG _ HΓ)) as X.
+  pose proof (VTmG_loc (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 (fundamental Hgl)))))) _ _ _ _ _ _ _ H
+                eq_refl HG) _ _ _ (SubRel_id HG _ HΓ)) as X.
   pose proof (wf_ty_nf (eqtm_wf_ty ge_typeof H)) as NT.
   rewrite !nf_id_ty, !nf_id in X by first [exact NT | exact (wf_tm_nf (eqtm_wf_l ge_typeof H))
                                          | exact (wf_tm_nf (eqtm_wf_r ge_typeof H))].

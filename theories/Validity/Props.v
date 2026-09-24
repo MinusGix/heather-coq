@@ -116,6 +116,28 @@ Proof. intros H Hl Δ d d' Hd. exact (LRty_lconv (H _ _ _ Hd) Hl). Qed.
 Lemma VTm_lconv {G Γ t t' T l l'} : VTm G Γ t t' T l' -> lequiv (gL G) l l' -> VTm G Γ t t' T l.
 Proof. intros H Hl Δ d d' Hd. exact (LRtm_lconv (H _ _ _ Hd) Hl). Qed.
 
+(** ** Under global weakenings *)
+
+Lemma VTyG_sym {G Γ T T' l} : VTyG G Γ T T' l -> VTyG G Γ T' T l.
+Proof. intros H G' γ Hγ. exact (VTy_sym (H _ _ Hγ)). Qed.
+Lemma VTyG_trans {G Γ T1 T2 T3 l} : VTyG G Γ T1 T2 l -> VTyG G Γ T2 T3 l -> VTyG G Γ T1 T3 l.
+Proof. intros H1 H2 G' γ Hγ. exact (VTy_trans (H1 _ _ Hγ) (H2 _ _ Hγ)). Qed.
+Lemma VTyG_refl_l {G Γ T T' l} : VTyG G Γ T T' l -> VTyG G Γ T T l.
+Proof. intros H G' γ Hγ. exact (VTy_refl_l (H _ _ Hγ)). Qed.
+Lemma VTmG_ty {G Γ t t' T l} : VTmG G Γ t t' T l -> VTyG G Γ T T l.
+Proof. intros H G' γ Hγ. exact (VTm_ty (H _ _ Hγ)). Qed.
+Lemma VTmG_sym {G Γ t t' T l} : VTmG G Γ t t' T l -> VTmG G Γ t' t T l.
+Proof. intros H G' γ Hγ. exact (VTm_sym (H _ _ Hγ)). Qed.
+Lemma VTmG_trans {G Γ t1 t2 t3 T l} :
+  VTmG G Γ t1 t2 T l -> VTmG G Γ t2 t3 T l -> VTmG G Γ t1 t3 T l.
+Proof. intros H1 H2 G' γ Hγ. exact (VTm_trans (H1 _ _ Hγ) (H2 _ _ Hγ)). Qed.
+Lemma VTmG_conv {G Γ t t' T T' l} : VTmG G Γ t t' T' l -> VTyG G Γ T T' l -> VTmG G Γ t t' T l.
+Proof. intros H1 H2 G' γ Hγ. exact (VTm_conv (H1 _ _ Hγ) (H2 _ _ Hγ)). Qed.
+Lemma VTyG_lconv {G Γ T T' l l'} : VTyG G Γ T T' l' -> lequiv (gL G) l l' -> VTyG G Γ T T' l.
+Proof. intros H Hl G' γ Hγ. apply (VTy_lconv (H _ _ Hγ)). now rewrite (proj1 Hγ). Qed.
+Lemma VTmG_lconv {G Γ t t' T l l'} : VTmG G Γ t t' T l' -> lequiv (gL G) l l' -> VTmG G Γ t t' T l.
+Proof. intros H Hl G' γ Hγ. apply (VTm_lconv (H _ _ Hγ)). now rewrite (proj1 Hγ). Qed.
+
 (** ** Extending related substitutions *)
 
 Lemma SubRel_cons {G Γ Δ d d' A l a a'} :

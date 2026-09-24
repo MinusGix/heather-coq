@@ -146,6 +146,87 @@ Proof.
   - rewrite !llk_lren, <- !ldrop_lren_ty. exact (LRtm_wk Hρ HΔ' Hh).
 Qed.
 
+(** Kripke weakenings (global, then local). *)
+
+Lemma LRtm_kw {l G Γ} (ρ : kwk G Γ) {T T' t t'} :
+  LRtm l G Γ T T' t t' ->
+  LRtm l (kw_G ρ) (kw_Δ ρ) (kty ρ T) (kty ρ T') (ktm ρ t) (ktm ρ t').
+Proof.
+  intros (R & H & Ht).
+  destruct (LR_kwk _ _ _ _ _ _ _ H ρ) as (R' & H' & HR').
+  exists R'; split; [exact H' | now apply HR'].
+Qed.
+
+(** The substitution a Kripke weakening induces on a substitution into [Δ]. *)
+Definition kwsub {G Δ} (ρ : kwk G Δ) (d : lsub) : lsub := lren d⟦kw_γ ρ⟧ (kw_r ρ).
+
+Lemma llk_kwsub {G Δ} (ρ : kwk G Δ) d n : llk (kwsub ρ d) n = ktm ρ (llk d n).
+Proof. unfold kwsub, ktm. now rewrite llk_lren, llk_gwa. Qed.
+
+Lemma kty_subst {G Δ} (ρ : kwk G Δ) (T : ty) d : kty ρ T[d] = T⟦kw_γ ρ⟧[kwsub ρ d].
+Proof. unfold kty, kwsub. now rewrite gwa_subst_ty, subst_ren_lren_ty. Qed.
+
+Lemma SubRel_kw G Γ : forall Δ (ρ : kwk G Δ) d d', SubRel G Γ Δ d d' ->
+  SubRel (kw_G ρ) Γ⟦kw_γ ρ⟧ (kw_Δ ρ) (kwsub ρ d) (kwsub ρ d').
+Proof.
+  induction Γ as [| g | Γ IH A l]; intros Δ ρ d d'.
+  1-2: cbn [SubRel]; intros (_ & N1 & N2 & T1 & T2);
+    pose proof (lsub_tail_gwa _ _ _ (kw_γ ρ) T1) as T1';
+    pose proof (lsub_tail_gwa _ _ _ (kw_γ ρ) T2) as T2';
+    rewrite ?gwa_cnil, ?gwa_cvar in *; cbn [SubRel];
+    refine (conj (kw_ctx ρ) (conj _ (conj _ (conj _ _))));
+    try (intros n; rewrite llk_kwsub; unfold ktm; apply ren_dnf, dnf_gwa; auto);
+    unfold kwsub; eapply lsub_tail_wkr; first [exact (wk_wf_wkr _ _ _ (kw_wf ρ)) | eassumption].
+  - rewrite gwa_cext. cbn [SubRel]. intros [Ht Hh]; split.
+    + refine (SubRel_ext _ _ _ _ _ _ _ _ _ (IH _ ρ _ _ Ht));
+        intros n; rewrite !llk_ldrop, !llk_kwsub, llk_ldrop; reflexivity.
+    + pose proof (LRtm_kw ρ Hh) as X. rewrite !kty_subst, <- !llk_kwsub in X.
+      rewrite (subst_ext_ty _ (ldrop 1 (kwsub ρ d)) (kwsub ρ (ldrop 1 d))),
+              (subst_ext_ty _ (ldrop 1 (kwsub ρ d')) (kwsub ρ (ldrop 1 d'))).
+      * exact X.
+      * intros n; rewrite llk_ldrop, !llk_kwsub, llk_ldrop; reflexivity.
+      * intros n; rewrite llk_ldrop, !llk_kwsub, llk_ldrop; reflexivity.
+Qed.
+
+(** ** Validity under global weakenings
+
+    The Π case of the relation is Kripke over global weakenings, so the
+    fundamental theorem's motive must be too. *)
+
+Definition VTyG G Γ T T' l := forall G' γ, gwk_ok γ G' G -> VTy G' Γ⟦γ⟧ T⟦γ⟧ T'⟦γ⟧ l.
+Definition VTmG G Γ t t' T l := forall G' γ, gwk_ok γ G' G -> VTm G' Γ⟦γ⟧ t⟦γ⟧ t'⟦γ⟧ T⟦γ⟧ l.
+
+Lemma VTyG_loc {G Γ T T' l} : VTyG G Γ T T' l -> VTy G Γ T T' l.
+Proof. intros H; exact (H G gwk_id (gwk_ok_id G)). Qed.
+Lemma VTmG_loc {G Γ t t' T l} : VTmG G Γ t t' T l -> VTm G Γ t t' T l.
+Proof. intros H; exact (H G gwk_id (gwk_ok_id G)). Qed.
+
+Lemma VTyG_gwk {G Γ T T' l G' γ} : VTyG G Γ T T' l -> gwk_ok γ G' G ->
+  VTyG G' Γ⟦γ⟧ T⟦γ⟧ T'⟦γ⟧ l.
+Proof.
+  intros H Hγ G'' γ' Hγ'. rewrite !gwa_comp_ty, gwa_comp_ctx. exact (H _ _ (gwk_ok_comp Hγ' Hγ)).
+Qed.
+Lemma VTmG_gwk {G Γ t t' T l G' γ} : VTmG G Γ t t' T l -> gwk_ok γ G' G ->
+  VTmG G' Γ⟦γ⟧ t⟦γ⟧ t'⟦γ⟧ T⟦γ⟧ l.
+Proof.
+  intros H Hγ G'' γ' Hγ'. rewrite !gwa_comp_ty, !gwa_comp_tm, gwa_comp_ctx.
+  exact (H _ _ (gwk_ok_comp Hγ' Hγ)).
+Qed.
+
+Lemma VTyG_intro {G Γ T T' l} :
+  (forall G' γ, gwk_ok γ G' G -> [ ⊢ G' ] -> VTy G' Γ⟦γ⟧ T⟦γ⟧ T'⟦γ⟧ l) -> VTyG G Γ T T' l.
+Proof. intros H G' γ Hγ Δ d d' Hd. exact (H G' γ Hγ (ctx_glob _ _ _ (SubRel_ctx Hd)) Δ d d' Hd). Qed.
+Lemma VTmG_intro {G Γ t t' T l} :
+  (forall G' γ, gwk_ok γ G' G -> [ ⊢ G' ] -> VTm G' Γ⟦γ⟧ t⟦γ⟧ t'⟦γ⟧ T⟦γ⟧ l) -> VTmG G Γ t t' T l.
+Proof. intros H G' γ Hγ Δ d d' Hd. exact (H G' γ Hγ (ctx_glob _ _ _ (SubRel_ctx Hd)) Δ d d' Hd). Qed.
+
+(** A valid type at a Kripke weakening of a related substitution. *)
+Lemma VTyG_kw {G Γ A A' l Δ d d'} (ρ : kwk G Δ) : VTyG G Γ A A' l -> SubRel G Γ Δ d d' ->
+  LRty l (kw_G ρ) (kw_Δ ρ) (kty ρ A[d]) (kty ρ A'[d']).
+Proof.
+  intros VA Hd. rewrite !kty_subst. exact (VA _ _ (kw_gok ρ) _ _ _ (SubRel_kw _ _ _ ρ _ _ Hd)).
+Qed.
+
 (** Related substitutions are typed substitutions. *)
 
 Lemma LRtm_escape {l G Γ T T' t t'} :

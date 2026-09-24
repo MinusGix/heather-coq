@@ -11,24 +11,6 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws}.
 
 (** ** Declarative helpers at the instance's layer *)
 
-Lemma wf_ty_wkr {G Γ Δ r T l} :
-  wkr r Δ Γ -> [ G ; Δ ⊢g ] -> [ G ; Γ ⊢g T @ l ] -> [ G ; Δ ⊢g T⟨r⟩ @ l ].
-Proof. intros; eapply weakening_r; eauto using ge_typeof. Qed.
-
-(** The Kripke index is OPE data; the generic laws take its renaming. *)
-Lemma wf_ty_wk {G Γ Δ} {ρ : wk} {T l} :
-  ρ : Δ ≤ Γ -> [ G ; Δ ⊢g ] -> [ G ; Γ ⊢g T @ l ] -> [ G ; Δ ⊢g T⟨ρ⟩ @ l ].
-Proof. intros Hρ; apply wf_ty_wkr, wk_wf_wkr, Hρ. Qed.
-Lemma geq_ty_wk' {G Γ Δ} {ρ : wk} {T T' l} :
-  ρ : Δ ≤ Γ -> [ G ; Δ ⊢g ] -> [ G ; Γ ⊢ T ≈ T' @ l ] -> [ G ; Δ ⊢ T⟨ρ⟩ ≈ T'⟨ρ⟩ @ l ].
-Proof. intros Hρ; apply geq_ty_wk, wk_wf_wkr, Hρ. Qed.
-Lemma wkr_lift {Γ Δ} {ρ : wk} {A l} :
-  ρ : Δ ≤ Γ -> wkr (rlift ρ) (Δ ,, A⟨ρ⟩ @ l) (Γ ,, A @ l).
-Proof. intros Hρ; constructor; now apply wk_wf_wkr. Qed.
-
-Lemma ext_wf_g {G Γ A l} : [ G ; Γ ⊢g A @ l ] -> lwf (gL G) l -> [ G ; Γ ,, A @ l ⊢g ].
-Proof. intros; apply wfc_ext; eauto using ctx_of_ty. Qed.
-
 Lemma tyred_eq' {G Γ T W l} : [ G ; Γ ⊢g T ⤳* W @ l ] -> [ G ; Γ ⊢g T ≅ W @ l ].
 Proof. now intros []. Qed.
 
@@ -94,9 +76,8 @@ Context {G Γ l1 l2 l3 l4 m3 m4 A B A' B' A'' B''}
   (HAA' : [ G ; Γ ⊢ A ≈ A' @ l1 ]) (HAA'' : [ G ; Γ ⊢ A ≈ A'' @ l1 ])
   (HBB' : [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ]) (HBB'' : [ G ; Γ ,, A @ l1 ⊢ B ≈ B'' @ l2 ])
   (HP : [ G ; Γ ⊢g tyPi l3 l4 A' B' ≅ tyPi m3 m4 A'' B'' @ lmax l1 l2 ])
-  (Hdom : forall Δ (r : wk) Hr HΔ, releq (domR Δ r Hr HΔ) (domR' Δ r Hr HΔ))
-  (Hcod : forall Δ (r : wk) Hr HΔ a a' ha ha',
-            releq (codR Δ r Hr HΔ a a' ha) (codR' Δ r Hr HΔ a a' ha')).
+  (Hdom : forall ρ, releq (domR ρ) (domR' ρ))
+  (Hcod : forall ρ a a' ha ha', releq (codR ρ a a' ha) (codR' ρ a a' ha')).
 
 Lemma PiRel_dir t t' :
   PiRel G Γ l1 l2 l3 l4 A B A' B' domR codR t t' ->
@@ -106,27 +87,23 @@ Proof.
   exists w, w'. refine (conj Hw (conj _ (conj Hnf (conj Hnf' (conj Heq (conj _ _)))))).
   - eapply tmred_conv; eauto using ge_typeof.
   - eapply geq_tm_conv; eauto.
-  - intros Δ r Hr HΔ a a' ha' la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1'.
-    pose proof ((proj2 (Hdom Δ r Hr HΔ a a')) ha') as ha.
-    apply (Hcod Δ r Hr HΔ a a' ha ha').
+  - intros ρ a a' ha' la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1'.
+    pose proof ((proj2 (Hdom ρ a a')) ha') as ha.
+    apply (Hcod ρ a a' ha ha').
     (* the annotations of the right application, in terms of [A'], [B'] *)
-    assert (HAr : [ G ; Δ ⊢g A⟨r⟩ @ l1 ]) by exact (wf_ty_wk Hr HΔ HA).
-    assert (HA'r : [ G ; Δ ⊢g A'⟨r⟩ @ l1 ]) by exact (wf_ty_wk Hr HΔ HA').
-    assert (HA''r : [ G ; Δ ⊢g A''⟨r⟩ @ l1 ]) by exact (wf_ty_wk Hr HΔ HA'').
-    assert (HΔA : [ G ; Δ ,, A⟨r⟩ @ l1 ⊢g ]) by now apply ext_wf_g.
-    assert (HΔA' : [ G ; Δ ,, A'⟨r⟩ @ l1 ⊢g ]) by now apply ext_wf_g.
-    assert (HΔA'' : [ G ; Δ ,, A''⟨r⟩ @ l1 ⊢g ]) by now apply ext_wf_g.
-    assert (Hrr : wkr (rlift r) (Δ ,, A⟨r⟩ @ l1) (Γ ,, A @ l1)) by exact (wkr_lift Hr).
-    assert (E1 : [ G ; Δ ⊢ A⟨r⟩ ≈ A'⟨r⟩ @ l1 ]) by exact (geq_ty_wk' Hr HΔ HAA').
-    assert (E2 : [ G ; Δ ⊢ A⟨r⟩ ≈ A''⟨r⟩ @ l1 ]) by exact (geq_ty_wk' Hr HΔ HAA'').
-    assert (E3 : [ G ; Δ ,, A⟨r⟩ @ l1 ⊢ B'⟨rlift r⟩ ≈ B''⟨rlift r⟩ @ l2 ]).
-    { eapply geq_ty_trans; [apply geq_ty_sym, (geq_ty_wk Hrr HΔA HBB')
-                            | exact (geq_ty_wk Hrr HΔA HBB'')]. }
-    refine (HK Δ r Hr HΔ a a' ha la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4 HA1 HB1 _ _).
+    pose proof (kw_lwf ρ Hl1) as Hl1'.
+    pose proof (kw_ext ρ HA'' Hl1) as HΔA''.
+    pose proof (kw_ext ρ HA' Hl1) as HΔA'.
+    assert (E1 : [ kw_G ρ ; kw_Δ ρ ⊢ kty ρ A ≈ kty ρ A' @ l1 ]) by exact (kw_geq_ty ρ HAA').
+    assert (E2 : [ kw_G ρ ; kw_Δ ρ ⊢ kty ρ A ≈ kty ρ A'' @ l1 ]) by exact (kw_geq_ty ρ HAA'').
+    assert (E3 : [ kw_G ρ ; kw_Δ ρ ,, kty ρ A @ l1 ⊢ ktyl ρ B' ≈ ktyl ρ B'' @ l2 ]).
+    { eapply geq_ty_trans; [apply geq_ty_sym, (kw_geq_ty_l ρ HA Hl1 HBB')
+                            | exact (kw_geq_ty_l ρ HA Hl1 HBB'')]. }
+    refine (HK ρ a a' ha la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4 HA1 HB1 _ _).
     + eapply geq_ty_trans; [|exact HA1'].
       eapply geq_ty_trans; [apply geq_ty_sym, E1 | exact E2].
     + (* move [B'⟨r⟩ ≈ B''⟨r⟩] to [Δ, A''⟨r⟩], compose, move to [Δ, A'⟨r⟩] *)
-      assert (E4 : [ G ; Δ ,, A''⟨r⟩ @ l1 ⊢ B'⟨rlift r⟩ ≈ B1' @ l2 ]).
+      assert (E4 : [ kw_G ρ ; kw_Δ ρ ,, kty ρ A'' @ l1 ⊢ ktyl ρ B' ≈ B1' @ l2 ]).
       { eapply geq_ty_trans; [|exact HB1'].
         eapply geq_ty_ctxconv; [apply geq_ty_sound, E2 | now apply lequiv_refl | exact HΔA'' | exact E3]. }
       eapply geq_ty_ctxconv; [| now apply lequiv_refl | exact HΔA' | exact E4].
@@ -166,12 +143,11 @@ Proof.
         assert (HP : [ G ; Γ ⊢g tyPi l3 l4 A' B' ≅ tyPi k3 k4 C' D' @ lmax l1 l2 ])
           by (eapply (eqty_trans _ _ _ _ (tyPi l1 l2 A B)); [apply eqty_sym|];
               apply geq_ty_sound, geq_ty_pi; eauto using lequiv_sym);
-        assert (Hdom : forall Δ (r : wk) Hr HΔ, releq (dR Δ r Hr HΔ) (dR' Δ r Hr HΔ))
-          by (intros; match goal with IH : forall Δ (r : wk) Hr HΔ T'' R', _ -> releq (dR _ _ _ _) _ |- _ =>
+        assert (Hdom : forall ρ, releq (dR ρ) (dR' ρ))
+          by (intros; match goal with IH : forall (ρ : kwk _ _) T'' R', _ -> releq (dR _) _ |- _ =>
                                           eapply IH end; eauto);
-        assert (Hcod : forall Δ (r : wk) Hr HΔ a a' ha ha',
-                   releq (cR Δ r Hr HΔ a a' ha) (cR' Δ r Hr HΔ a a' ha'))
-          by (intros; match goal with IH : forall Δ (r : wk) Hr HΔ a a' ha T'' R', _ -> releq (cR _ _ _ _ _ _ _) _ |- _ =>
+        assert (Hcod : forall ρ a a' ha ha', releq (cR ρ a a' ha) (cR' ρ a a' ha'))
+          by (intros; match goal with IH : forall (ρ : kwk _ _) a a' ha T'' R', _ -> releq (cR _ _ _ _) _ |- _ =>
                                           eapply IH end; eauto)
     end.
     intros t t'; split.
@@ -233,11 +209,10 @@ Lemma LR_inv_pi {m1 m2 C D l'} : [ G ; Γ ⊢g T ⤳* tyPi m1 m2 C D @ l' ] ->
     [ G ; Γ ⊢g C @ m1 ] /\ [ G ; Γ ⊢g C' @ m1 ] /\
     [ G ; Γ ,, C @ m1 ⊢g D @ m2 ] /\ [ G ; Γ ,, C' @ m1 ⊢g D' @ m2 ] /\
     [ G ; Γ ⊢ C ≈ C' @ m1 ] /\ [ G ; Γ ,, C @ m1 ⊢ D ≈ D' @ m2 ] /\
-    (forall Δ (r : wk) (Hr : wk_wf r Δ Γ) (HΔ : [ G ; Δ ⊢g ]),
-        LR n rec G Δ C⟨r⟩ C'⟨r⟩ m1 (domR Δ r Hr HΔ)) /\
-    (forall Δ (r : wk) (Hr : wk_wf r Δ Γ) (HΔ : [ G ; Δ ⊢g ]) a a' (ha : domR Δ r Hr HΔ a a'),
-        LR n rec G Δ D⟨rlift r⟩[lsingle a] D'⟨rlift r⟩[lsingle a'] m2
-           (codR Δ r Hr HΔ a a' ha)) /\
+    (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ C) (kty ρ C') m1 (domR ρ)) /\
+    (forall (ρ : kwk G Γ) a a' (ha : domR ρ a a'),
+        LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ D)[lsingle a] (ktyl ρ D')[lsingle a'] m2
+           (codR ρ a a' ha)) /\
     releq R (PiRel G Γ m1 m2 m3 m4 C D C' D' domR codR).
 Proof.
   intros HN; revert HN.
