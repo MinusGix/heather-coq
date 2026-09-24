@@ -26,3 +26,5 @@ theories/LogRel/Def.vo theories/LogRel/Def.glob theories/LogRel/Def.v.beautified
 theories/LogRel/Def.vos theories/LogRel/Def.vok theories/LogRel/Def.required_vos: theories/LogRel/Def.v theories/Typing/Generic.vos
 theories/LogRel/Escape.vo theories/LogRel/Escape.glob theories/LogRel/Escape.v.beautified theories/LogRel/Escape.required_vo: theories/LogRel/Escape.v theories/LogRel/Def.vo
 theories/LogRel/Escape.vos theories/LogRel/Escape.vok theories/LogRel/Escape.required_vos: theories/LogRel/Escape.v theories/LogRel/Def.vos
+theories/LogRel/Basics.vo theories/LogRel/Basics.glob theories/LogRel/Basics.v.beautified theories/LogRel/Basics.required_vo: theories/LogRel/Basics.v theories/LogRel/Escape.vo
+theories/LogRel/Basics.vos theories/LogRel/Basics.vok theories/LogRel/Basics.required_vos: theories/LogRel/Basics.v theories/LogRel/Escape.vos
