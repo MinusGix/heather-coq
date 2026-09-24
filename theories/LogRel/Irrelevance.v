@@ -51,7 +51,8 @@ Ltac agree :=
       first [ discriminate Heq
             | injection Heq; intros; subst
             | subst W1
-            | subst W2 ]
+            | subst W2
+            | clear Heq ]
   end.
 
 Ltac ne_absurd :=
@@ -169,5 +170,75 @@ Proof.
       * intros; apply releq_sym, Hdom.
       * intros; apply releq_sym, Hcod.
 Qed.
+
+(** ** Inversion by the left type's normal form *)
+
+Section Inversion.
+Context {n : nat} {rec : lvl -> RedRel} {G : gctx} {Γ : ctx} {T T' : ty} {l : lvl}
+  {R : tm -> tm -> Prop} (H : LR n rec G Γ T T' l R).
+
+Lemma LR_inv_nat {l'} : [ G ; Γ ⊢g T ⤳* tyNat @ l' ] ->
+  lequiv (gL G) l lzero /\ [ G ; Γ ⊢g T' ⤳* tyNat @ l ] /\ releq R (NatRel G Γ).
+Proof.
+  intros HN; revert HN.
+  destruct H as [G Γ T T' l R Hl HT HT' HR
+                | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
+                | G Γ T T' l V V' R HT HT' HV HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                    HA HA' HB HB' HAA HBB domAd codAd HR];
+    intros HN; agree; try ne_absurd; auto.
+Qed.
+
+Lemma LR_inv_U {l1 l'} : [ G ; Γ ⊢g T ⤳* tyU l1 @ l' ] ->
+  exists l2, lequiv (gL G) l (lsuc l1) /\ lequiv (gL G) l2 l1 /\ lmeasure l1 < n /\
+    [ G ; Γ ⊢g T' ⤳* tyU l2 @ l ] /\ releq R (URel rec G Γ l1).
+Proof.
+  intros HN; revert HN.
+  destruct H as [G Γ T T' l R Hl HT HT' HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
+                | G Γ T T' l V V' R HT HT' HV HR
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                    HA HA' HB HB' HAA HBB domAd codAd HR];
+    intros HN; agree; try ne_absurd; eauto 7.
+Qed.
+
+Lemma LR_inv_ne {V l'} : [ G ; Γ ⊢g T ⤳* V @ l' ] -> whne_ty V ->
+  exists V', [ G ; Γ ⊢g T' ⤳* V' @ l ] /\ [ G ; Γ ⊢ V ~ V' @ l ] /\ releq R (NeRel G Γ V V' l).
+Proof.
+  intros HN HV0; revert HN.
+  destruct H as [G Γ T T' l R Hl HT HT' HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
+                | G Γ T T' l W W' R HT HT' HW HR
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                    HA HA' HB HB' HAA HBB domAd codAd HR];
+    intros HN; agree; try solve [inversion HV0]; eauto.
+Qed.
+
+Lemma LR_inv_pi {m1 m2 C D l'} : [ G ; Γ ⊢g T ⤳* tyPi m1 m2 C D @ l' ] ->
+  exists m3 m4 C' D' (domR : DomRel G Γ) (codR : CodRel G Γ domR),
+    lequiv (gL G) l (lmax m1 m2) /\ lequiv (gL G) m3 m1 /\ lequiv (gL G) m4 m2 /\
+    lwf (gL G) m1 /\ lwf (gL G) m2 /\
+    [ G ; Γ ⊢g T' ⤳* tyPi m3 m4 C' D' @ l ] /\
+    [ G ; Γ ⊢g C @ m1 ] /\ [ G ; Γ ⊢g C' @ m1 ] /\
+    [ G ; Γ ,, C @ m1 ⊢g D @ m2 ] /\ [ G ; Γ ,, C' @ m1 ⊢g D' @ m2 ] /\
+    [ G ; Γ ⊢ C ≈ C' @ m1 ] /\ [ G ; Γ ,, C @ m1 ⊢ D ≈ D' @ m2 ] /\
+    (forall Δ r (Hr : wkr r Δ Γ) (HΔ : [ G ; Δ ⊢g ]),
+        LR n rec G Δ C⟨r⟩ C'⟨r⟩ m1 (domR Δ r Hr HΔ)) /\
+    (forall Δ r (Hr : wkr r Δ Γ) (HΔ : [ G ; Δ ⊢g ]) a a' (ha : domR Δ r Hr HΔ a a'),
+        LR n rec G Δ D⟨rlift r⟩[lsingle a] D'⟨rlift r⟩[lsingle a'] m2
+           (codR Δ r Hr HΔ a a' ha)) /\
+    releq R (PiRel G Γ m1 m2 m3 m4 C D C' D' domR codR).
+Proof.
+  intros HN; revert HN.
+  destruct H as [G Γ T T' l R Hl HT HT' HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
+                | G Γ T T' l V V' R HT HT' HV HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                    HA HA' HB HB' HAA HBB domAd codAd HR];
+    intros HN; agree; try ne_absurd.
+  do 6 eexists; eauto 20.
+Qed.
+
+End Inversion.
 
 End Irrelevance.
