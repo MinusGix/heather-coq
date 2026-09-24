@@ -28,3 +28,4 @@ theories/LogRel/Weakening.v
 theories/LogRel/Neutral.v
 theories/LogRel/Reduction.v
 theories/Validity/Def.v
+theories/Validity/Props.v
