@@ -7,7 +7,7 @@
     (for decidability).  Typing itself stays declarative, as in the paper.
 
     An instance fixes one computing layer [ge_layer] ([compt]: D or M). *)
-From DeLaM.Typing Require Export TypedRed.
+From DeLaM.Typing Require Export TypedRed Presupposition.
 
 Class GenericEq := {
   ge_layer : layer ;

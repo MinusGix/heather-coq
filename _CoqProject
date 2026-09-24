@@ -22,3 +22,4 @@ theories/LogRel/Def.v
 theories/LogRel/Escape.v
 theories/LogRel/Basics.v
 theories/LogRel/Irrelevance.v
+theories/LogRel/Symmetry.v
