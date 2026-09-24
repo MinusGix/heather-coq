@@ -1,2 +1,6 @@
 -Q theories DeLaM
 -arg -w -arg -notation-overridden
+
+theories/Syntax/Level.v
+theories/Syntax/Term.v
+theories/Syntax/Subst.v
