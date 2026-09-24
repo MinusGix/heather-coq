@@ -8,9 +8,6 @@
 From Coq Require Import Relations Lia.
 From DeLaM.Syntax Require Export NormalForms.
 
-(** [z[t/x, r/y]] for the successor branch of [elimN] (x = 1, y = 0). *)
-Definition lsingle2 (t r : tm) : lsub := lcons (lcons (lshift 0) t) r.
-
 Inductive red : tm -> tm -> Prop :=
 | red_natrec_zero l M s z : red (natrec l M s z zero) s
 | red_natrec_succ l M s z t :

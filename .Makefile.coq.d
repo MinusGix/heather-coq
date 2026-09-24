@@ -10,3 +10,7 @@ theories/Syntax/Reduction.vo theories/Syntax/Reduction.glob theories/Syntax/Redu
 theories/Syntax/Reduction.vos theories/Syntax/Reduction.vok theories/Syntax/Reduction.required_vos: theories/Syntax/Reduction.v theories/Syntax/NormalForms.vos
 theories/Syntax/Weakening.vo theories/Syntax/Weakening.glob theories/Syntax/Weakening.v.beautified theories/Syntax/Weakening.required_vo: theories/Syntax/Weakening.v theories/Syntax/Subst.vo
 theories/Syntax/Weakening.vos theories/Syntax/Weakening.vok theories/Syntax/Weakening.required_vos: theories/Syntax/Weakening.v theories/Syntax/Subst.vos
+theories/Typing/Context.vo theories/Typing/Context.glob theories/Typing/Context.v.beautified theories/Typing/Context.required_vo: theories/Typing/Context.v theories/Syntax/Weakening.vo
+theories/Typing/Context.vos theories/Typing/Context.vok theories/Typing/Context.required_vos: theories/Typing/Context.v theories/Syntax/Weakening.vos
+theories/Typing/Declarative.vo theories/Typing/Declarative.glob theories/Typing/Declarative.v.beautified theories/Typing/Declarative.required_vo: theories/Typing/Declarative.v theories/Typing/Context.vo
+theories/Typing/Declarative.vos theories/Typing/Declarative.vok theories/Typing/Declarative.required_vos: theories/Typing/Declarative.v theories/Typing/Context.vos
