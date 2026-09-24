@@ -51,50 +51,51 @@ Proof. intros; apply subst_id_ty; auto; intros; cbn; f_equal; lia. Qed.
 Lemma nf_id (t : tm) : nftm t -> t[lshift 0] = t.
 Proof. intros; apply subst_id; auto; intros; cbn; f_equal; lia. Qed.
 
-Lemma lsub_wf_conv {Γ A A' l} :
-  [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ,, A' @ l ⊢[ i ] ] ->
-  [ G ; Γ ,, A' @ l ⊢[ i ] lshift 0 : Γ ,, A @ l ].
+(** The entry may also change its level annotation to an equivalent one. *)
+Lemma lsub_wf_conv {Γ A A' l l'} :
+  [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> lequiv (gL G) l l' -> [ G ; Γ ,, A' @ l' ⊢[ i ] ] ->
+  [ G ; Γ ,, A' @ l' ⊢[ i ] lshift 0 : Γ ,, A @ l ].
 Proof.
-  intros HA HΓ'. refine (conj HΓ' (conj (fun n => I) _)).
-  intros n T l' Hin. rewrite nf_id_ty by eauto using in_ctx_nf. cbn; rewrite Nat.add_0_r.
-  inversion Hin as [Γ0 A0 l0|Γ0 A0 l0 T0 l1 m Hm]; subst.
-  - eapply wf_conv; [apply var0_wf; auto|].
+  intros HA Hl HΓ'. refine (conj HΓ' (conj (fun n => I) _)).
+  intros n T l0 Hin. rewrite nf_id_ty by eauto using in_ctx_nf. cbn; rewrite Nat.add_0_r.
+  inversion Hin as [Γ0 A0 l1|Γ0 A0 l1 T0 l2 m Hm]; subst.
+  - eapply wf_conv; [eapply wf_lconv; [apply var0_wf; auto | exact Hl]|].
     rewrite Hi. apply wk1_eqty; auto.
   - apply wf_var; [now rewrite Hi | now constructor].
 Qed.
 
-Lemma stab_ty {Γ A A' l T l'} :
-  [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ,, A' @ l ⊢[ i ] ] ->
-  [ G ; Γ ,, A @ l ⊢[ i ] T @ l' ] -> [ G ; Γ ,, A' @ l ⊢[ i ] T @ l' ].
+Section Stab.
+Context {Γ A A' l l'} (HA : [ G ; Γ ⊢[ i ] A ≅ A' @ l ]) (Hl : lequiv (gL G) l l')
+  (HΓ : [ G ; Γ ,, A' @ l' ⊢[ i ] ]).
+
+Lemma stab_ty {T k} : [ G ; Γ ,, A @ l ⊢[ i ] T @ k ] -> [ G ; Γ ,, A' @ l' ⊢[ i ] T @ k ].
 Proof.
-  intros HA HΓ H. rewrite <- (nf_id_ty T) by exact (wf_ty_nf H).
+  intros H. rewrite <- (nf_id_ty T) by exact (wf_ty_nf H).
   eapply wf_ty_subst; eauto using lsub_wf_conv.
 Qed.
-Lemma stab_tm {Γ A A' l t T l'} :
-  [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ,, A' @ l ⊢[ i ] ] ->
-  [ G ; Γ ,, A @ l ⊢[ i ] t : T @ l' ] -> [ G ; Γ ,, A' @ l ⊢[ i ] t : T @ l' ].
+Lemma stab_tm {t T k} :
+  [ G ; Γ ,, A @ l ⊢[ i ] t : T @ k ] -> [ G ; Γ ,, A' @ l' ⊢[ i ] t : T @ k ].
 Proof.
-  intros HA HΓ H. rewrite <- (nf_id_ty T) by exact (wf_tm_nf_ty H).
+  intros H. rewrite <- (nf_id_ty T) by exact (wf_tm_nf_ty H).
   rewrite <- (nf_id t) by exact (wf_tm_nf H).
   eapply wf_tm_subst; eauto using lsub_wf_conv.
 Qed.
-Lemma stab_eqty {Γ A A' l T T' l'} :
-  [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ,, A' @ l ⊢[ i ] ] ->
-  [ G ; Γ ,, A @ l ⊢[ i ] T ≅ T' @ l' ] -> [ G ; Γ ,, A' @ l ⊢[ i ] T ≅ T' @ l' ].
+Lemma stab_eqty {T T' k} :
+  [ G ; Γ ,, A @ l ⊢[ i ] T ≅ T' @ k ] -> [ G ; Γ ,, A' @ l' ⊢[ i ] T ≅ T' @ k ].
 Proof.
-  intros HA HΓ H. pose proof (proj1 (proj2 (proj2 (proj2 (proj2 typed_nf)))) _ _ _ _ _ _ H) as [N1 N2].
+  intros H. pose proof (proj1 (proj2 (proj2 (proj2 (proj2 typed_nf)))) _ _ _ _ _ _ H) as [N1 N2].
   rewrite <- (nf_id_ty T), <- (nf_id_ty T') by assumption.
   eapply eqty_subst; eauto using lsub_wf_conv.
 Qed.
-Lemma stab_eqtm {Γ A A' l t t' T l'} :
-  [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ,, A' @ l ⊢[ i ] ] ->
-  [ G ; Γ ,, A @ l ⊢[ i ] t ≅ t' : T @ l' ] -> [ G ; Γ ,, A' @ l ⊢[ i ] t ≅ t' : T @ l' ].
+Lemma stab_eqtm {t t' T k} :
+  [ G ; Γ ,, A @ l ⊢[ i ] t ≅ t' : T @ k ] -> [ G ; Γ ,, A' @ l' ⊢[ i ] t ≅ t' : T @ k ].
 Proof.
-  intros HA HΓ H. pose proof (proj2 (proj2 (proj2 (proj2 (proj2 typed_nf)))) _ _ _ _ _ _ _ H)
+  intros H. pose proof (proj2 (proj2 (proj2 (proj2 (proj2 typed_nf)))) _ _ _ _ _ _ _ H)
     as (N1 & N2 & N3).
   rewrite <- (nf_id_ty T), <- (nf_id t), <- (nf_id t') by assumption.
   eapply eqtm_subst; eauto using lsub_wf_conv.
 Qed.
+End Stab.
 
 End Corollaries.
 

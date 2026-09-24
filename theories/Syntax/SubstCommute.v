@@ -101,6 +101,10 @@ Lemma shift2_as (u : tm) : u⟨↑⟩⟨↑⟩ = u[lshift 2].
 Proof. rewrite ren_ren_comp; apply ren_as_subst; intros; rlk_simpl; cbn; f_equal; lia. Qed.
 Lemma shift_cons2 (u x : tm) : u⟨↑⟩[lcons (lshift 2) x] = u[lshift 2].
 Proof. apply ren_subst; intros; rlk_simpl; cbn; f_equal; lia. Qed.
+Lemma shift2_as_ty (T : ty) : T⟨↑⟩⟨↑⟩ = T[lshift 2].
+Proof. rewrite ren_ren_comp_ty; apply ren_as_subst_ty; intros; rlk_simpl; cbn; f_equal; lia. Qed.
+Lemma shift_cons2_ty (T : ty) x : T⟨↑⟩[lcons (lshift 2) x] = T[lshift 2].
+Proof. apply ren_subst_ty; intros; rlk_simpl; cbn; f_equal; lia. Qed.
 
 Lemma liftshift_llift_ty (B : ty) d : B⟨rlift ↑⟩[llift (llift d)] = B[llift d]⟨rlift ↑⟩.
 Proof.
