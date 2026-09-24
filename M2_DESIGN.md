@@ -181,41 +181,28 @@ validity's quantifier over `k`.
   doesn't clash with `gwk d`, the local substitution moved under a global
   binder.
 
-## Fork, with the chosen default
+## Static-code payload (decided 2026-09-24)
 
-**Static-code payload.** The simplified payload (`⊢_C` plus `⊩^{≥P}_P`)
-suffices for `letbox`. The paper's inductive `⊩^C_P` record is what the
-recursors need. Default: simplified now, behind an interface (constructor
-lemmas plus projection to `⊩^{≥P}_P`), so that M3 swaps the definition and
-reproves only the interface lemmas and the FT cases that build payloads.
-The alternative, the full record now, costs a k = C obligation for every
-C-layer rule in the FT right away.
+The payload of `box c` in the `□` relation, and of the C-layer entries of
+related global substitutions, is **the simple one**: `⊢_C c` plus
+`⊩^{≥P}_P c` (validity at P and M, under global weakenings and related
+local substitutions).
 
-## Status (2026-09-24, session 3)
-
-Steps 1–2 are done: syntax and all of the declarative metatheory. The tree
-is green, with no admits and no axioms. A clean build takes about 37 s.
-
-| File | Contents |
-|---|---|
-| `Syntax/Term.v` | `CTyp`, `CTrm`, `box`, `letbox` constructors; global renaming and substitution (`gobj`, `gup`, `pty/ptm/pctx`, `gsingle`), notations `x⟪ξ⟫`, `x⦃σ⦄` |
-| `Syntax/GSubst.v` | global laws (ext, composition with local and global operations, identity on deep-normal input), `dnf*` and its preservation |
-| `Syntax/NormalForms.v`, `Reduction.v` | `box` whnf, `letbox` neutral, letbox β on `box`, scrutinee congruence |
-| `Typing/Declarative.v` | global bindings, `U^δ`/`u^δ`, `□`, `box`, `letbox`, their congruences and β, `eq_ctx` |
-| `Typing/GWeakening.v` | `gweakening` (global weakening, every judgment and layer) |
-| `Typing/Lifting.v` | `lifting` (`i ≤ j`) |
-| `Typing/Properties.v` | `weakening_all` (local, every layer) |
-| `Typing/Substitution.v` | `typed_dnf`; `lsub_wf` record with tails; `substitution_all` |
-| `Typing/Functionality.v` | `functionality_all` (every layer) |
-| `Typing/GSubstitution.v` | typed global substitutions; `gsubstitution` (context variables to context variables); declared bindings are well formed; single substitutions |
-| `Typing/Presupposition.v` | presupposition incl. context equivalence (`eqctx_id`: conversion), letbox β via `gsubstitution` |
-
-**Transition state of the semantics.** M1's logical relation and validity
-are unchanged, apart from `SubRel` carrying tails and deep normal forms.
-The fundamental theorem and its consequences are restricted to `ge_layer
-= lD` and to global contexts with context-variable bindings only
-(`ctx_only`), because the new rules live at M or need term/type bindings.
-Steps 3–6 lift the restriction.
+- **Some semantic payload is necessary.** In the FT case `u^δ` under `σ`,
+  `σ(u)` is code from a related scrutinee. Its derivation is not a
+  subderivation, so typing alone gives no induction hypothesis.
+- **The paper's inductive `⊩^C_P` record (07a:118) is only needed by the
+  recursors (M3).** They recurse into code coming from `σ`, and subterm
+  validity doesn't follow from whole-term validity.
+- **Interface.** The `□` cases of `LR` take the payload as a parameter,
+  with a laws record (sym, trans, local and global weakening, projection to
+  `⊩^{≥P}_P`). Proofs about the `□` cases use only the laws.
+- **M3 upgrade.** The payload becomes "simple ∧ record". Projection uses
+  are unchanged; only construction sites change:
+  - the FT `box` case, where the record comes from the FT's own induction
+    at C, since the boxed derivation is a subderivation there;
+  - the `σ` extension in `letbox`;
+  - the global-substitution relation.
 
 ## Order of work
 
