@@ -60,22 +60,22 @@ Inductive in_gctx : list gdecl -> nat -> gdecl -> Prop :=
     As for local weakenings ([wk]), the data is first-order; [gwk_fn]
     gives the underlying renaming of global indices. *)
 
-Inductive gwk : Type := gwk_id | gwk_step (γ : gwk) | gwk_up (γ : gwk).
+Inductive gweak : Type := gwk_id | gwk_step (γ : gweak) | gwk_up (γ : gweak).
 
-Fixpoint gwk_fn (γ : gwk) : nat -> nat :=
+Fixpoint gwk_fn (γ : gweak) : nat -> nat :=
   match γ with
   | gwk_id => fun n => n
   | gwk_step γ => fun n => S (gwk_fn γ n)
   | gwk_up γ => gupr (gwk_fn γ)
   end.
 
-Inductive gwk_wf : gwk -> list gdecl -> list gdecl -> Prop :=
+Inductive gwk_wf : gweak -> list gdecl -> list gdecl -> Prop :=
 | gwkwf_id Ψ : gwk_wf gwk_id Ψ Ψ
 | gwkwf_step γ Ψ' Ψ D : gwk_wf γ Ψ' Ψ -> gwk_wf (gwk_step γ) (D :: Ψ') Ψ
 | gwkwf_up γ Ψ' Ψ D : gwk_wf γ Ψ' Ψ -> gwk_wf (gwk_up γ) (gdecl_ren D (gwk_fn γ) :: Ψ') (D :: Ψ).
 
 (** [γ : G' ≤ G]: same universe context, [Ψ'] embeds [Ψ]. *)
-Definition gwk_ok (γ : gwk) (G' G : gctx) : Prop := gL G' = gL G /\ gwk_wf γ (gΨ G') (gΨ G).
+Definition gwk_ok (γ : gweak) (G' G : gctx) : Prop := gL G' = gL G /\ gwk_wf γ (gΨ G') (gΨ G).
 
 (** ** Shape of local contexts *)
 

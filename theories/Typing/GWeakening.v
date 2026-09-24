@@ -6,7 +6,7 @@
     context globally shifted: it is handled by [gwk_up]. *)
 From DeLaM.Typing Require Export Declarative.
 
-Coercion gwk_fn : gwk >-> Funclass.
+Coercion gwk_fn : gweak >-> Funclass.
 
 (** ** Syntax under global renaming *)
 
@@ -254,7 +254,7 @@ Ltac gw_entries :=
 (** The letbox body, typed under [Ψ, U] with the local context shifted. *)
 Ltac gw_body :=
   match goal with
-  | IH : forall Ψ'' (γ' : gwk), gwk_wf γ' Ψ'' (gΨ (gext ?G ?D)) -> _,
+  | IH : forall Ψ'' (γ' : gweak), gwk_wf γ' Ψ'' (gΨ (gext ?G ?D)) -> _,
     Hγ : gwk_wf ?γ ?Ψ' (gΨ ?G) |- _ =>
       let X := fresh "X" in let Hw := fresh "Hw" in
       assert (Hw : [ ⊢ gwk_to (gext G D) (gdecl_ren D γ :: Ψ') ])
@@ -305,17 +305,17 @@ Ltac gw_manual :=
 
 Theorem gweakening :
   (forall G, [ ⊢ G ] -> True) /\
-  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> forall Ψ' (γ : gwk), gwk_wf γ Ψ' (gΨ G) ->
+  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> forall Ψ' (γ : gweak), gwk_wf γ Ψ' (gΨ G) ->
      [ ⊢ gwk_to G Ψ' ] -> [ gwk_to G Ψ' ; Γ⟪γ⟫ ⊢[ i ] ]) /\
-  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> forall Ψ' (γ : gwk), gwk_wf γ Ψ' (gΨ G) ->
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> forall Ψ' (γ : gweak), gwk_wf γ Ψ' (gΨ G) ->
      [ ⊢ gwk_to G Ψ' ] -> [ gwk_to G Ψ' ; Γ⟪γ⟫ ⊢[ i ] T⟪γ⟫ @ l ]) /\
-  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> forall Ψ' (γ : gwk), gwk_wf γ Ψ' (gΨ G) ->
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> forall Ψ' (γ : gweak), gwk_wf γ Ψ' (gΨ G) ->
      [ ⊢ gwk_to G Ψ' ] -> [ gwk_to G Ψ' ; Γ⟪γ⟫ ⊢[ i ] t⟪γ⟫ : T⟪γ⟫ @ l ]) /\
-  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> forall Ψ' (γ : gwk), gwk_wf γ Ψ' (gΨ G) ->
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> forall Ψ' (γ : gweak), gwk_wf γ Ψ' (gΨ G) ->
      [ ⊢ gwk_to G Ψ' ] -> [ gwk_to G Ψ' ; Γ⟪γ⟫ ⊢[ i ] T⟪γ⟫ ≅ T'⟪γ⟫ @ l ]) /\
-  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> forall Ψ' (γ : gwk), gwk_wf γ Ψ' (gΨ G) ->
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> forall Ψ' (γ : gweak), gwk_wf γ Ψ' (gΨ G) ->
      [ ⊢ gwk_to G Ψ' ] -> [ gwk_to G Ψ' ; Γ⟪γ⟫ ⊢[ i ] t⟪γ⟫ ≅ t'⟪γ⟫ : T⟪γ⟫ @ l ]) /\
-  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> forall Ψ' (γ : gwk), gwk_wf γ Ψ' (gΨ G) ->
+  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> forall Ψ' (γ : gweak), gwk_wf γ Ψ' (gΨ G) ->
      [ ⊢ gwk_to G Ψ' ] -> [ gwk_to G Ψ' ⊢[ i ] Γ⟪γ⟫ ≅ Γ'⟪γ⟫ ]).
 Proof.
   apply typing_mut; intros; try exact I; unfold gwk_to in *; push_gren; gren_rewrite; push_gren.

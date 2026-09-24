@@ -332,3 +332,25 @@ Lemma subst_dnf_ty (T : ty) d : dnfty T -> LK dnftm d -> dnfty T[d].
 Proof. intros; now apply subst_dnf_all. Qed.
 Lemma dnfl_lcomp d0 d : dnfl d0 -> LK dnftm d -> dnfl (lcomp d0 d).
 Proof. intros; now apply subst_dnf_all. Qed.
+
+Definition dnfo (o : gobj) : Prop :=
+  match o with GId _ => True | GCtx Γ => dnfctx Γ | GTy T => dnfty T | GTm t => dnftm t end.
+
+Lemma dnfo_goren o ξ : dnfo (goren o ξ).
+Proof. destruct o; cbn; [exact I | apply gren_dnf_all..]. Qed.
+
+Lemma gsubst_dnf_all :
+  let Pty T := dnfty T -> forall σ, (forall i, dnfo (σ i)) -> dnfty (gsubst_ty T σ) in
+  let Ptm t := dnftm t -> forall σ, (forall i, dnfo (σ i)) -> dnftm (gsubst_tm t σ) in
+  let Pctx Γ := dnfctx Γ -> forall σ, (forall i, dnfo (σ i)) -> dnfctx (gcsubst Γ σ) in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ, Pctx Γ) /\
+  (forall d, dnfl d -> forall σ, (forall i, dnfo (σ i)) -> dnfl (glsubst d σ)).
+Proof.
+  assert (Hup : forall σ, (forall i, dnfo (σ i)) -> forall i, dnfo (gup σ i)).
+  { intros σ H [|i]; cbn; auto using dnfo_goren. }
+  intros Pty Ptm Pctx; apply syn_ind; subst Pty Ptm Pctx; cbn beta; intros; try exact I;
+    cbn in *; intuition auto using dnfl_lcons'.
+  all: match goal with Hs : forall i, dnfo (?σ i) |- context [?σ ?u] =>
+         let Hu := fresh "Hu" in pose proof (Hs u) as Hu; destruct (σ u); cbn in *; auto end.
+  all: apply subst_dnf_all; auto; intros n; apply dnfl_llk; auto.
+Qed.
