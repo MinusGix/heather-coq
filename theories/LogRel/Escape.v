@@ -41,11 +41,11 @@ Theorem escape_ty n rec G Γ T T' l R :
   LR n rec G Γ T T' l R ->
   [ G ; Γ ⊢g T @ l ] /\ [ G ; Γ ⊢g T' @ l ] /\ [ G ; Γ ⊢ T ≈ T' @ l ].
 Proof.
-  destruct 1 as [G Γ T T' l Hl HT HT'
-                | G Γ T T' l l1 l2 Hl Hl2 Hn HT HT'
-                | G Γ T T' l V V' HT HT' HV
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd].
+  destruct 1 as [G Γ T T' l R Hl HT HT' HR
+                | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
+                | G Γ T T' l V V' R HT HT' HV HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                    HA HA' HB HB' HAA HBB domAd codAd HR].
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
   - eapply geq_ty_lconv; [eapply geq_ty_U; [eapply tyred_ctx, HT|]|].
@@ -61,12 +61,12 @@ Theorem escape_tm n rec G Γ T T' l R :
   LR n rec G Γ T T' l R -> forall t t', R t t' ->
   [ G ; Γ ⊢g t : T @ l ] /\ [ G ; Γ ⊢g t' : T @ l ] /\ [ G ; Γ ⊢ t ≈ t' : T @ l ].
 Proof.
-  destruct 1 as [G Γ T T' l Hl HT HT'
-                | G Γ T T' l l1 l2 Hl Hl2 Hn HT HT'
-                | G Γ T T' l V V' HT HT' HV
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd];
-    intros t t' Htt.
+  destruct 1 as [G Γ T T' l R Hl HT HT' HR
+                | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
+                | G Γ T T' l V V' R HT HT' HV HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                    HA HA' HB HB' HAA HBB domAd codAd HR];
+    intros t t' Htt; apply HR in Htt.
   - (* Nat *)
     destruct Htt as [t t' w w' Hw Hw' Heq _].
     assert (HTN : [ G ; Γ ⊢g T ≅ tyNat @ l ]) by apply HT.

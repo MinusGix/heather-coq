@@ -25,6 +25,12 @@ Context `{E : GenericEq}.
 
 Definition RedRel := gctx -> ctx -> ty -> ty -> lvl -> (tm -> tm -> Prop) -> Prop.
 
+(** Equivalence of term relations.  Every case of the relation accepts any
+    term relation equivalent to its canonical one ("saturation"), so that
+    constructions like symmetry can name their term relations explicitly
+    (e.g. [flip domR]) without choice or extensionality axioms. *)
+Definition releq (R R' : tm -> tm -> Prop) := forall t t', R t t' <-> R' t t'.
+
 (** ** Natural numbers *)
 
 Inductive NatRel (G : gctx) (Γ : ctx) : tm -> tm -> Prop :=
@@ -39,13 +45,17 @@ with NatNf (G : gctx) (Γ : ctx) : tm -> tm -> Prop :=
 Scheme NatRel_mut := Induction for NatRel Sort Prop
   with NatNf_mut := Induction for NatNf Sort Prop.
 
-(** ** Universes: codes whose decodings are related one stage down *)
+(** ** Universes: codes whose decodings are related one stage down
+
+    As for the annotations of applications in the Π case, the decodings
+    are related for every choice of equivalent annotations on [El]. *)
 
 Definition URel (rec : lvl -> RedRel) (G : gctx) (Γ : ctx) (l0 : lvl) : tm -> tm -> Prop :=
   fun t t' => exists w w',
     [ G ; Γ ⊢g t ⤳* w : tyU l0 @ lsuc l0 ] /\ [ G ; Γ ⊢g t' ⤳* w' : tyU l0 @ lsuc l0 ] /\
     whnf w /\ whnf w' /\ [ G ; Γ ⊢ w ≈ w' : tyU l0 @ lsuc l0 ] /\
-    exists R, rec l0 G Γ (tyEl l0 w) (tyEl l0 w') l0 R.
+    forall la lb, lequiv (gL G) la l0 -> lequiv (gL G) lb l0 ->
+      exists R, rec l0 G Γ (tyEl la w) (tyEl lb w') l0 R.
 
 (** ** Neutral types *)
 
@@ -83,19 +93,22 @@ Definition PiRel (G : gctx) (Γ : ctx) (l1 l2 l3 l4 : lvl) (A B A' B' : ty)
 (** ** The relation, stage [n] *)
 
 Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
-| LRnat G Γ T T' l :
+| LRnat G Γ T T' l R :
     lequiv (gL G) l lzero ->
     [ G ; Γ ⊢g T ⤳* tyNat @ l ] -> [ G ; Γ ⊢g T' ⤳* tyNat @ l ] ->
-    LR n rec G Γ T T' l (NatRel G Γ)
-| LRU G Γ T T' l l1 l2 :
+    releq R (NatRel G Γ) ->
+    LR n rec G Γ T T' l R
+| LRU G Γ T T' l l1 l2 R :
     lequiv (gL G) l (lsuc l1) -> lequiv (gL G) l2 l1 -> lmeasure l1 < n ->
     [ G ; Γ ⊢g T ⤳* tyU l1 @ l ] -> [ G ; Γ ⊢g T' ⤳* tyU l2 @ l ] ->
-    LR n rec G Γ T T' l (URel rec G Γ l1)
-| LRne G Γ T T' l V V' :
+    releq R (URel rec G Γ l1) ->
+    LR n rec G Γ T T' l R
+| LRne G Γ T T' l V V' R :
     [ G ; Γ ⊢g T ⤳* V @ l ] -> [ G ; Γ ⊢g T' ⤳* V' @ l ] -> [ G ; Γ ⊢ V ~ V' @ l ] ->
-    LR n rec G Γ T T' l (NeRel G Γ V V' l)
+    releq R (NeRel G Γ V V' l) ->
+    LR n rec G Γ T T' l R
 | LRpi G Γ T T' l l1 l2 l3 l4 A B A' B'
-    (domR : DomRel G Γ) (codR : CodRel G Γ domR) :
+    (domR : DomRel G Γ) (codR : CodRel G Γ domR) R :
     lequiv (gL G) l (lmax l1 l2) -> lequiv (gL G) l3 l1 -> lequiv (gL G) l4 l2 ->
     lwf (gL G) l1 -> lwf (gL G) l2 ->
     [ G ; Γ ⊢g T ⤳* tyPi l1 l2 A B @ l ] -> [ G ; Γ ⊢g T' ⤳* tyPi l3 l4 A' B' @ l ] ->
@@ -107,7 +120,8 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
     (forall Δ r (Hr : wkr r Δ Γ) (HΔ : [ G ; Δ ⊢g ]) a a' (ha : domR Δ r Hr HΔ a a'),
         LR n rec G Δ B⟨rlift r⟩[lsingle a] B'⟨rlift r⟩[lsingle a'] l2
            (codR Δ r Hr HΔ a a' ha)) ->
-    LR n rec G Γ T T' l (PiRel G Γ l1 l2 l3 l4 A B A' B' domR codR).
+    releq R (PiRel G Γ l1 l2 l3 l4 A B A' B' domR codR) ->
+    LR n rec G Γ T T' l R.
 
 (** ** Stages *)
 

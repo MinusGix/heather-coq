@@ -129,21 +129,22 @@ Theorem LR_irrel n rec G Γ T T' T'' l R R' :
   LR n rec G Γ T T' l R -> LR n rec G Γ T T'' l R' -> releq R R'.
 Proof.
   intros H1; revert T'' R'.
-  induction H1 as [G Γ T T' l Hl HT HT'
-                  | G Γ T T' l l1 l2 Hl Hl2 Hn HT HT'
-                  | G Γ T T' l V V' HT HT' HV
-                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                      HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod];
+  induction H1 as [G Γ T T' l R Hl HT HT' HR
+                  | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
+                  | G Γ T T' l V V' R HT HT' HV HR
+                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                      HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR];
     intros T'' R' H2;
-    inversion H2 as [? ? ? ? ? Hk HTk HTk'
-                    | ? ? ? ? ? k1 k2 Hk Hk2 Hkn HTk HTk'
-                    | ? ? ? ? ? W W' HTk HTk' HW
-                    | ? ? ? ? ? k1 k2 k3 k4 C D C' D' domR' codR' Hk Hk3 Hk4 Hkw1 Hkw2 HTk HTk'
-                        HC HC' HD HD' HCC HDD domAd' codAd'];
+    inversion H2 as [? ? ? ? ? ? Hk HTk HTk' HkR
+                    | ? ? ? ? ? k1 k2 ? Hk Hk2 Hkn HTk HTk' HkR
+                    | ? ? ? ? ? W W' ? HTk HTk' HW HkR
+                    | ? ? ? ? ? k1 k2 k3 k4 C D C' D' domR' codR' ? Hk Hk3 Hk4 Hkw1 Hkw2 HTk HTk'
+                        HC HC' HD HD' HCC HDD domAd' codAd' HkR];
     subst; try (agree; try ne_absurd).
+  all: eapply releq_trans; [exact HR | eapply releq_trans; [| apply releq_sym, HkR]].
   (* same shape *)
-  - intros ??; reflexivity.
-  - intros ??; reflexivity.
+  - apply releq_refl.
+  - apply releq_refl.
   - assert (HVV : [ G ; Γ ⊢g V' ≅ W' @ l ]).
     { eapply eqty_trans; [apply eqty_sym|]; apply geq_ty_sound, gne_ty_geq; eassumption. }
     intros t t'; split; apply NeRel_conv; [exact HVV | now apply eqty_sym].
@@ -165,8 +166,8 @@ Proof.
     + eapply PiRel_dir; eassumption.
     + eapply PiRel_dir; try eassumption.
       * now apply eqty_sym.
-      * intros; intros ??; symmetry; apply Hdom.
-      * intros; intros ??; symmetry; apply Hcod.
+      * intros; apply releq_sym, Hdom.
+      * intros; apply releq_sym, Hcod.
 Qed.
 
 End Irrelevance.
