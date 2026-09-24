@@ -143,16 +143,16 @@ Proof.
     assert (Hl13 : lequiv (gL G) l1 l3) by now apply lequiv_sym.
     assert (Hl24 : lequiv (gL G) l2 l4) by now apply lequiv_sym.
     (* the composite domain and its relation to the second *)
-    assert (Hdom3 : forall Δ r Hr HΔ, LR n (LRbelow n) G Δ A1⟨r⟩ A3⟨r⟩ l1 (domR1 Δ r Hr HΔ))
+    assert (Hdom3 : forall Δ (r : wk) Hr HΔ, LR n (LRbelow n) G Δ A1⟨r⟩ A3⟨r⟩ l1 (domR1 Δ r Hr HΔ))
       by (intros; exact (proj1 (IHdom Δ r Hr HΔ _ _ (LR_lconv _ _ _ _ _ _ _ _ _ (domAd2 Δ r Hr HΔ) Hl13)))).
-    assert (Hrefl : forall Δ r Hr HΔ a a', domR1 Δ r Hr HΔ a a' -> domR1 Δ r Hr HΔ a a).
+    assert (Hrefl : forall Δ (r : wk) Hr HΔ a a', domR1 Δ r Hr HΔ a a' -> domR1 Δ r Hr HΔ a a).
     { intros Δ r Hr HΔ a a' ha.
       exact (proj2 (IHdom Δ r Hr HΔ _ _ (LR_sym _ _ _ _ _ _ _ (domAd1 Δ r Hr HΔ))) a a' a ha ha). }
-    assert (H12 : forall Δ r Hr HΔ a a', domR1 Δ r Hr HΔ a a' -> domR2 Δ r Hr HΔ a a').
+    assert (H12 : forall Δ (r : wk) Hr HΔ a a', domR1 Δ r Hr HΔ a a' -> domR2 Δ r Hr HΔ a a').
     { intros Δ r Hr HΔ a a' ha.
       exact (proj1 (LR_irrel_left _ _ _ _ _ _ _ _ _ (Hdom3 Δ r Hr HΔ)
                       (LR_lconv _ _ _ _ _ _ _ _ _ (domAd2 Δ r Hr HΔ) Hl13) a a') ha). }
-    assert (Hcodirr : forall Δ r Hr HΔ a a1 a2 (h1 : domR1 Δ r Hr HΔ a a1) (h2 : domR1 Δ r Hr HΔ a a2),
+    assert (Hcodirr : forall Δ (r : wk) Hr HΔ a a1 a2 (h1 : domR1 Δ r Hr HΔ a a1) (h2 : domR1 Δ r Hr HΔ a a2),
                releq (codR1 Δ r Hr HΔ a a1 h1) (codR1 Δ r Hr HΔ a a2 h2))
       by (intros; eapply LR_irrel; [apply codAd1 | apply codAd1]).
     (* generic and declarative facts about the composite *)
@@ -169,9 +169,9 @@ Proof.
     assert (HP23 : [ G ; Γ ⊢ tyPi l3 l4 A2 B2 ≈ tyPi k3 k4 A3 B3 @ lmax l1 l2 ]).
     { eapply geq_ty_lconv; [apply geq_ty_pi; auto using lequiv_sym | now apply lequiv_max]. }
     assert (HR12 : releq R (PiRel G Γ l1 l2 k3 k4 A1 B1 A3 B3 domR1 codR1)).
-    { assert (Hd : forall Δ r Hr HΔ, releq (domR1 Δ r Hr HΔ) (domR1 Δ r Hr HΔ))
+    { assert (Hd : forall Δ (r : wk) Hr HΔ, releq (domR1 Δ r Hr HΔ) (domR1 Δ r Hr HΔ))
         by (intros; apply releq_refl).
-      assert (Hc : forall Δ r Hr HΔ a a' (ha ha' : domR1 Δ r Hr HΔ a a'),
+      assert (Hc : forall Δ (r : wk) Hr HΔ a a' (ha ha' : domR1 Δ r Hr HΔ a a'),
                  releq (codR1 Δ r Hr HΔ a a' ha) (codR1 Δ r Hr HΔ a a' ha'))
         by (intros; apply Hcodirr).
       pose proof (geq_ty_sound HP23) as HP.
@@ -211,14 +211,14 @@ Proof.
         assert (HΔ1 : [ G ; Δ ,, A1⟨r⟩ @ l1 ⊢g ]) by now apply ext_wf_g.
         assert (HΔ2 : [ G ; Δ ,, A2⟨r⟩ @ l1 ⊢g ]) by now apply ext_wf_g.
         assert (HΔ3 : [ G ; Δ ,, A3⟨r⟩ @ l3 ⊢g ]) by (apply ext_wf_g; eauto using lequiv_wf_l).
-        assert (E12 : [ G ; Δ ⊢ A1⟨r⟩ ≈ A2⟨r⟩ @ l1 ]) by exact (geq_ty_wk Hr HΔ HA12).
-        assert (E23 : [ G ; Δ ⊢ A2⟨r⟩ ≈ A3⟨r⟩ @ l3 ]) by exact (geq_ty_wk Hr HΔ HA23).
+        assert (E12 : [ G ; Δ ⊢ A1⟨r⟩ ≈ A2⟨r⟩ @ l1 ]) by exact (geq_ty_wk' Hr HΔ HA12).
+        assert (E23 : [ G ; Δ ⊢ A2⟨r⟩ ≈ A3⟨r⟩ @ l3 ]) by exact (geq_ty_wk' Hr HΔ HA23).
         (* reflexive annotations on the middle application *)
         assert (RA2 : [ G ; Δ ⊢ A2⟨r⟩ ≈ A2⟨r⟩ @ l1 ]) by exact (geq_ty_refl_r E12).
         assert (RB2 : [ G ; Δ ,, A2⟨r⟩ @ l1 ⊢ B2⟨rlift r⟩ ≈ B2⟨rlift r⟩ @ l2 ]).
         { apply (geq_ty_refl_r (T := B1⟨rlift r⟩)).
           eapply geq_ty_ctxconv; [apply geq_ty_sound, E12 | now apply lequiv_refl | exact HΔ2 |].
-          apply (geq_ty_wk (Γ := Γ ,, A1 @ l1)); [now constructor | exact HΔ1 | exact HB12]. }
+          apply (geq_ty_wk (Γ := Γ ,, A1 @ l1)); [exact (wkr_lift Hr) | exact HΔ1 | exact HB12]. }
         pose proof (HK1 Δ r Hr HΔ a a haa la lb l1 l2 A4 B4 A2⟨r⟩ B2⟨rlift r⟩ Hla Hlb
                       (lequiv_refl _ _ Hw1) (lequiv_refl _ _ Hw2) HA4 HB4 RA2 RB2) as X1.
         assert (X2 : codR2 Δ r Hr HΔ a a' h2 (app w2⟨r⟩ l1 l2 A2⟨r⟩ B2⟨rlift r⟩ a)
@@ -234,7 +234,7 @@ Proof.
           - (* [B3 ≈ B5] under [A3]: through [B2] under [A2] *)
             assert (F : [ G ; Δ ,, A2⟨r⟩ @ l3 ⊢ B3⟨rlift r⟩ ≈ B5 @ l4 ]).
             { eapply (geq_ty_trans (T' := B2⟨rlift r⟩)).
-              - apply geq_ty_sym. apply (geq_ty_wk (Γ := Γ ,, A2 @ l3) (T := B2)); [now constructor | |exact HB23].
+              - apply geq_ty_sym. apply (geq_ty_wk (Γ := Γ ,, A2 @ l3) (T := B2)); [exact (wkr_lift Hr) | |exact HB23].
                 apply ext_wf_g; [exact HA2r3 | eauto using lequiv_wf_l].
               - eapply geq_ty_lconv; [|exact Hl4].
                 eapply ctx_lvl_geq; [exact HA2r | exact Hl13 | exact HB5]. }

@@ -64,12 +64,16 @@ Definition NeRel (G : gctx) (Γ : ctx) (V V' : ty) (l : lvl) : tm -> tm -> Prop 
     [ G ; Γ ⊢g t ⤳* ν : V @ l ] /\ [ G ; Γ ⊢g t' ⤳* ν' : V' @ l ] /\
     [ G ; Γ ⊢ ν ~ ν' : V @ l ] /\ [ G ; Γ ⊢ ν ~ ν' : V' @ l ].
 
-(** ** Dependent functions *)
+(** ** Dependent functions
+
+    Kripke quantification is over order-preserving embeddings [r : Δ ≤ Γ]
+    (OPE data, closed under composition); the generic laws take the
+    underlying renaming ([wk_wf_wkr]). *)
 
 Definition DomRel (G : gctx) (Γ : ctx) :=
-  forall Δ r, wkr r Δ Γ -> [ G ; Δ ⊢g ] -> tm -> tm -> Prop.
+  forall Δ (r : wk), wk_wf r Δ Γ -> [ G ; Δ ⊢g ] -> tm -> tm -> Prop.
 Definition CodRel (G : gctx) (Γ : ctx) (domR : DomRel G Γ) :=
-  forall Δ r (Hr : wkr r Δ Γ) (HΔ : [ G ; Δ ⊢g ]) a a', domR Δ r Hr HΔ a a' -> tm -> tm -> Prop.
+  forall Δ (r : wk) (Hr : wk_wf r Δ Γ) (HΔ : [ G ; Δ ⊢g ]) a a', domR Δ r Hr HΔ a a' -> tm -> tm -> Prop.
 
 (** Related functions: reduce to related weak-head normal forms whose
     applications to related arguments are related, in every weakening, for
@@ -82,7 +86,7 @@ Definition PiRel (G : gctx) (Γ : ctx) (l1 l2 l3 l4 : lvl) (A B A' B' : ty)
     whnf w /\ whnf w' /\
     [ G ; Γ ⊢ w ≈ w' : tyPi l1 l2 A B @ lmax l1 l2 ] /\
     [ G ; Γ ⊢ w ≈ w' : tyPi l3 l4 A' B' @ lmax l1 l2 ] /\
-    forall Δ r (Hr : wkr r Δ Γ) (HΔ : [ G ; Δ ⊢g ]) a a' (ha : domR Δ r Hr HΔ a a')
+    forall Δ (r : wk) (Hr : wk_wf r Δ Γ) (HΔ : [ G ; Δ ⊢g ]) a a' (ha : domR Δ r Hr HΔ a a')
       la lb la' lb' A1 B1 A1' B1',
       lequiv (gL G) la l1 -> lequiv (gL G) lb l2 ->
       lequiv (gL G) la' l1 -> lequiv (gL G) lb' l2 ->
@@ -115,9 +119,9 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
     [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢g A' @ l1 ] ->
     [ G ; Γ ,, A @ l1 ⊢g B @ l2 ] -> [ G ; Γ ,, A' @ l1 ⊢g B' @ l2 ] ->
     [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
-    (forall Δ r (Hr : wkr r Δ Γ) (HΔ : [ G ; Δ ⊢g ]),
+    (forall Δ (r : wk) (Hr : wk_wf r Δ Γ) (HΔ : [ G ; Δ ⊢g ]),
         LR n rec G Δ A⟨r⟩ A'⟨r⟩ l1 (domR Δ r Hr HΔ)) ->
-    (forall Δ r (Hr : wkr r Δ Γ) (HΔ : [ G ; Δ ⊢g ]) a a' (ha : domR Δ r Hr HΔ a a'),
+    (forall Δ (r : wk) (Hr : wk_wf r Δ Γ) (HΔ : [ G ; Δ ⊢g ]) a a' (ha : domR Δ r Hr HΔ a a'),
         LR n rec G Δ B⟨rlift r⟩[lsingle a] B'⟨rlift r⟩[lsingle a'] l2
            (codR Δ r Hr HΔ a a' ha)) ->
     releq R (PiRel G Γ l1 l2 l3 l4 A B A' B' domR codR) ->
