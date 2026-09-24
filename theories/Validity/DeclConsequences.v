@@ -8,7 +8,6 @@ From DeLaM.Validity Require Export Consequences.
 
 Section DeclConsequences.
 
-Definition compt_D : compt lD := or_introl eq_refl.
 Local Notation DE := (DeclEq lD compt_D).
 Local Notation DEL := (DeclEqLaws lD compt_D).
 

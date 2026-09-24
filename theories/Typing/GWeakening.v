@@ -322,3 +322,31 @@ Proof.
   all: try gw_step.
   all: gw_manual.
 Qed.
+
+(** ** Named corollaries, for a weakening [γ : G' ≤ G] *)
+
+Section Named.
+Context {γ : gweak} {G' G : gctx} (Hγ : gwk_ok γ G' G) (HG' : [ ⊢ G' ]).
+
+Ltac gwk_named k :=
+  destruct G' as [L' Ψ']; destruct Hγ as [Hl Hw]; cbn in Hl, Hw; subst L';
+  intros H; exact (k _ _ _ _ _ _ H _ _ Hw HG') || exact (k _ _ _ _ _ H _ _ Hw HG')
+  || exact (k _ _ _ _ _ _ _ H _ _ Hw HG') || exact (k _ _ _ H _ _ Hw HG')
+  || exact (k _ _ _ _ H _ _ Hw HG').
+
+Lemma gwk_ctx {i Γ} : [ G ; Γ ⊢[ i ] ] -> [ G' ; Γ⟪γ⟫ ⊢[ i ] ].
+Proof. gwk_named (proj1 (proj2 gweakening)). Qed.
+Lemma gwk_ty {i Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] -> [ G' ; Γ⟪γ⟫ ⊢[ i ] T⟪γ⟫ @ l ].
+Proof. gwk_named (proj1 (proj2 (proj2 gweakening))). Qed.
+Lemma gwk_tm {i Γ t T l} : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G' ; Γ⟪γ⟫ ⊢[ i ] t⟪γ⟫ : T⟪γ⟫ @ l ].
+Proof. gwk_named (proj1 (proj2 (proj2 (proj2 gweakening)))). Qed.
+Lemma gwk_eqty {i Γ T T' l} : [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->
+  [ G' ; Γ⟪γ⟫ ⊢[ i ] T⟪γ⟫ ≅ T'⟪γ⟫ @ l ].
+Proof. gwk_named (proj1 (proj2 (proj2 (proj2 (proj2 gweakening))))). Qed.
+Lemma gwk_eqtm {i Γ t t' T l} : [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] ->
+  [ G' ; Γ⟪γ⟫ ⊢[ i ] t⟪γ⟫ ≅ t'⟪γ⟫ : T⟪γ⟫ @ l ].
+Proof. gwk_named (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 gweakening)))))). Qed.
+Lemma gwk_eqctx {i Γ Γ'} : [ G ⊢[ i ] Γ ≅ Γ' ] -> [ G' ⊢[ i ] Γ⟪γ⟫ ≅ Γ'⟪γ⟫ ].
+Proof. gwk_named (proj2 (proj2 (proj2 (proj2 (proj2 (proj2 gweakening)))))). Qed.
+
+End Named.

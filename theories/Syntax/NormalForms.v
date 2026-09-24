@@ -49,6 +49,17 @@ Proof. destruct 1; cbn; constructor; auto using whne_ren. Qed.
 Lemma whnf_ty_ren T r : whnf_ty T -> whnf_ty T⟨r⟩.
 Proof. destruct 1; cbn; auto using whne_ty_ren with whnf. Qed.
 
+(** ** Stability under global renaming *)
+
+Lemma whne_gren t ξ : whne t -> whne t⟪ξ⟫.
+Proof. induction 1; cbn; constructor; auto. Qed.
+Lemma whnf_gren t ξ : whnf t -> whnf t⟪ξ⟫.
+Proof. destruct 1; cbn; auto using whne_gren with whnf. Qed.
+Lemma whne_ty_gren T ξ : whne_ty T -> whne_ty T⟪ξ⟫.
+Proof. destruct 1; cbn; constructor; auto using whne_gren. Qed.
+Lemma whnf_ty_gren T ξ : whnf_ty T -> whnf_ty T⟪ξ⟫.
+Proof. destruct 1; cbn; auto using whne_ty_gren with whnf. Qed.
+
 (** ** Canonical shapes *)
 
 Lemma whne_not_zero : ~ whne zero.

@@ -98,6 +98,61 @@ Proof.
     refine (conj _ (conj _ _)); [constructor; auto .. |]. now apply eqtm_natrec.
   - intros * Hl1 Hl2 HA HAA HB (Hn & Hn' & Heq) Hs.
     refine (conj _ (conj _ _)); [constructor; auto .. |]. now apply eqtm_app.
+  (* global weakening *)
+  - intros * Hγ HG' (Hn & Hn' & H).
+    exact (conj (whne_ty_gren _ _ Hn) (conj (whne_ty_gren _ _ Hn') (gwk_eqty Hγ HG' H))).
+  - intros * Hγ HG' H; exact (gwk_eqty Hγ HG' H).
+  - intros * Hγ HG' (Hn & Hn' & H).
+    exact (conj (whne_gren _ _ Hn) (conj (whne_gren _ _ Hn') (gwk_eqtm Hγ HG' H))).
+  - intros * Hγ HG' H; exact (gwk_eqtm Hγ HG' H).
+  (* global variables *)
+  - intros * Hin Hl [HΓ Ht Hd Ht' Hd' Hw Hw' He]; cbn in *.
+    refine (conj _ (conj _ _)); [constructor .. |].
+    eapply eqty_gvar; eauto. now rewrite Hty.
+  - intros * Hin Hl [HΓ Ht Hd Ht' Hd' Hw Hw' He]; cbn in *.
+    refine (conj _ (conj _ _)); [constructor .. |].
+    eapply eqtm_gvar; eauto. now rewrite Hty.
 Qed.
 
+Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].
+Proof. exact (@geq_ctx_sound _ DeclEqLaws G Γ Γ'). Qed.
+
 End Decl.
+
+Definition compt_D : compt lD := or_introl eq_refl.
+Definition compt_M : compt lM := or_intror eq_refl.
+
+(** Conversion along a context equivalence at P (and a level equivalence). *)
+Lemma decl_ty_ctxconv_D {G Δ Δ' T l l'} : [ G ⊢[ lD ] Δ ≅ Δ' ] -> [ G ; Δ ⊢[ lD ] T @ l ] ->
+  lequiv (gL G) l l' -> [ G ; Δ' ⊢[ lD ] T @ l' ].
+Proof.
+  intros Hc HT Hl.
+  pose proof (wf_ty_subst (i := lD) eq_refl HT (eqctx_id (i := lD) eq_refl Hc)) as X.
+  rewrite nf_id_ty in X by exact (wf_ty_nf HT).
+  eapply wft_lconv; [exact X | now apply lequiv_sym].
+Qed.
+
+(** The layer-M laws, relating the instances at P and M. *)
+#[export] Instance DeclEqM : GenericEqM (DeclEq lD compt_D) (DeclEq lM compt_M).
+Proof.
+  constructor; cbn; unfold decl_ne_tm; [reflexivity | reflexivity | ..].
+  - intros * HΓ HΔ Hl. apply eqty_CTyp; [exact HΓ | exact (decl_geq_ctx _ _ HΔ) | exact Hl].
+  - intros * HΓ HΔ HT HTT Hl. pose proof (decl_geq_ctx _ _ HΔ) as HΔ'.
+    apply eqty_CTrm; [exact HΓ | exact (eqctx_wf_l (i := lD) eq_refl HΔ') | exact HΔ' | exact HT
+                     | exact HTT | exact Hl].
+  - intros; now apply eqtm_boxT.
+  - intros; now apply eqtm_boxt.
+  - intros * Hl1 Hl2 HΔ HM HMM HM' Ht Ht2 (Hn & Hn' & Hν).
+    pose proof (decl_geq_ctx _ _ HΔ) as HΔ'.
+    refine (conj _ (conj _ _)); [constructor; auto .. |].
+    apply eqtm_letboxT; auto.
+    + exact (eqctx_wf_l (i := lD) eq_refl HΔ').
+    + exact (eqctx_wf_r (i := lD) eq_refl HΔ').
+  - intros * Hl1 Hl2 HΔ HT HTT HM HMM HM' Ht Ht2 (Hn & Hn' & Hν).
+    pose proof (decl_geq_ctx _ _ HΔ) as HΔ'.
+    refine (conj _ (conj _ _)); [constructor; auto .. |].
+    apply eqtm_letboxt; auto.
+    + exact (eqctx_wf_l (i := lD) eq_refl HΔ').
+    + exact (eqctx_wf_r (i := lD) eq_refl HΔ').
+    + exact (decl_ty_ctxconv_D HΔ' (eqty_wf_r (i := lD) eq_refl HTT) Hl2).
+Qed.

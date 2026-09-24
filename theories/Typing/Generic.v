@@ -43,6 +43,27 @@ Notation "[ G ; Γ ⊢g T ⤳* W @ l ]" := (tyred G ge_layer Γ T W l)
 Notation "[ G ; Γ ⊢g t ⤳* w : T @ l ]" := (tmred G ge_layer Γ t w T l)
   (at level 0, G, Γ, t, w, T, l at level 50).
 
+(** Relations induced on local contexts and local substitutions (07:68).
+    Substitutions carry what the declarative rules for global variables
+    need: tails, deep normality, typing of both sides, and pairwise
+    relatedness of the entries. *)
+Inductive geq_ctx `{GenericEq} (G : gctx) : ctx -> ctx -> Prop :=
+| gqc_nil : [ ⊢ G ] -> geq_ctx G cnil cnil
+| gqc_var g : [ ⊢ G ] -> gctx_var G g -> geq_ctx G (cvar g) (cvar g)
+| gqc_ext Γ Γ' A A' l l' : geq_ctx G Γ Γ' -> [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
+    lequiv (gL G) l l' -> geq_ctx G (Γ ,, A @ l) (Γ' ,, A' @ l').
+
+Record geq_lsub `{GenericEq} G Γ d d' Δ : Prop := {
+  gls_ctx : [ G ; Γ ⊢g ] ;
+  gls_tail_l : lsub_tail d Δ Γ ;
+  gls_dnf_l : dnfl d ;
+  gls_tail_r : lsub_tail d' Δ Γ ;
+  gls_dnf_r : dnfl d' ;
+  gls_wf_l : forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢g llk d n : A[d] @ k ] ;
+  gls_wf_r : forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢g llk d' n : A[d'] @ k ] ;
+  gls_eq : forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢ llk d n ≈ llk d' n : A[d] @ k ]
+}.
+
 Class GenericEqLaws `{GenericEq} := {
   (** Subsumption *)
   gne_ty_geq {G Γ V V' l} : [ G ; Γ ⊢ V ~ V' @ l ] -> [ G ; Γ ⊢ V ≈ V' @ l ] ;
@@ -166,5 +187,76 @@ Class GenericEqLaws `{GenericEq} := {
     [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
     [ G ; Γ ⊢ ν ~ ν' : tyPi l1 l2 A B @ lmax l1 l2 ] ->
     [ G ; Γ ⊢ s ≈ s' : A @ l1 ] ->
-    [ G ; Γ ⊢ app ν l1 l2 A B s ~ app ν' l3 l4 A' B' s' : B[lsingle s] @ l2 ]
+    [ G ; Γ ⊢ app ν l1 l2 A B s ~ app ν' l3 l4 A' B' s' : B[lsingle s] @ l2 ] ;
+
+  (** Global weakening ([γ : G' ≤ G]) *)
+  gne_ty_gwk {G G' γ Γ V V' l} : gwk_ok γ G' G -> [ ⊢ G' ] ->
+    [ G ; Γ ⊢ V ~ V' @ l ] -> [ G' ; Γ⟪γ⟫ ⊢ V⟪γ⟫ ~ V'⟪γ⟫ @ l ] ;
+  geq_ty_gwk {G G' γ Γ T T' l} : gwk_ok γ G' G -> [ ⊢ G' ] ->
+    [ G ; Γ ⊢ T ≈ T' @ l ] -> [ G' ; Γ⟪γ⟫ ⊢ T⟪γ⟫ ≈ T'⟪γ⟫ @ l ] ;
+  gne_tm_gwk {G G' γ Γ t t' T l} : gwk_ok γ G' G -> [ ⊢ G' ] ->
+    [ G ; Γ ⊢ t ~ t' : T @ l ] -> [ G' ; Γ⟪γ⟫ ⊢ t⟪γ⟫ ~ t'⟪γ⟫ : T⟪γ⟫ @ l ] ;
+  geq_tm_gwk {G G' γ Γ t t' T l} : gwk_ok γ G' G -> [ ⊢ G' ] ->
+    [ G ; Γ ⊢ t ≈ t' : T @ l ] -> [ G' ; Γ⟪γ⟫ ⊢ t⟪γ⟫ ≈ t'⟪γ⟫ : T⟪γ⟫ @ l ] ;
+
+  (** Neutral global variables (07:268, 07:290) *)
+  gne_ty_gvar {G Γ U Δ i' l d d'} : in_gctx (gΨ G) U (gdTy Δ i' l) -> lle i' ge_layer ->
+    geq_lsub G Γ d d' Δ -> [ G ; Γ ⊢ tyGvar U d ~ tyGvar U d' @ l ] ;
+  gne_tm_gvar {G Γ u Δ i' T l d d'} : in_gctx (gΨ G) u (gdTm Δ i' T l) -> lle i' ge_layer ->
+    geq_lsub G Γ d d' Δ -> [ G ; Γ ⊢ gvar u d ~ gvar u d' : T[d] @ l ]
+}.
+
+Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].
+Proof.
+  induction 1; [now apply eqc_nil | now apply eqc_var |].
+  apply eqc_ext; auto using geq_ty_sound.
+Qed.
+
+(** * Laws at layer M (07:299–369)
+
+    They relate an instance [EM] at M with an instance [EP] at P: the
+    contexts and types of contextual types are related at P.  [box]
+    relates code that is declaratively equal at C, which by the Static
+    Code Lemma is syntactic equality up to level equivalence. *)
+Class GenericEqM (EP EM : GenericEq) := {
+  gm_layer_P : @ge_layer EP = lD ;
+  gm_layer_M : @ge_layer EM = lM ;
+
+  geq_ty_CTyp {G Γ Δ Δ' l l'} : [ G ; Γ ⊢[ lM ] ] -> @geq_ctx EP G Δ Δ' -> lequiv (gL G) l l' ->
+    @geq_ty EM G Γ (tyCTyp Δ l) (tyCTyp Δ' l') lzero ;
+  geq_ty_CTrm {G Γ Δ Δ' T T' l l'} : [ G ; Γ ⊢[ lM ] ] -> @geq_ctx EP G Δ Δ' ->
+    [ G ; Δ ⊢[ lD ] T @ l ] -> @geq_ty EP G Δ T T' l -> lequiv (gL G) l l' ->
+    @geq_ty EM G Γ (tyCTrm Δ T l) (tyCTrm Δ' T' l') lzero ;
+
+  geq_tm_boxT {G Γ Δ T T' l} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
+    [ G ; Δ ⊢[ lC ] T @ l ] -> [ G ; Δ ⊢[ lC ] T' @ l ] -> [ G ; Δ ⊢[ lC ] T ≅ T' @ l ] ->
+    @geq_tm EM G Γ (boxT T) (boxT T') (tyCTyp Δ l) lzero ;
+  geq_tm_boxt {G Γ Δ t t' T l} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
+    [ G ; Δ ⊢[ lD ] T @ l ] ->
+    [ G ; Δ ⊢[ lC ] t : T @ l ] -> [ G ; Δ ⊢[ lC ] t' : T @ l ] -> [ G ; Δ ⊢[ lC ] t ≅ t' : T @ l ] ->
+    @geq_tm EM G Γ (boxt t) (boxt t') (tyCTrm Δ T l) lzero ;
+
+  gne_tm_letboxT {G Γ l1 l2 l3 l4 Δ Δ' M M' t1 t2 ν ν'} :
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 -> @geq_ctx EP G Δ Δ' ->
+    [ G ; Γ ,, tyCTyp Δ l2 @ lzero ⊢[ lM ] M @ l1 ] ->
+    @geq_ty EM G (Γ ,, tyCTyp Δ l2 @ lzero) M M' l1 ->
+    [ G ; Γ ,, tyCTyp Δ' l4 @ lzero ⊢[ lM ] M' @ l3 ] ->
+    @geq_tm EM (gext G (gdTy Δ lC l2)) Γ⟪S⟫ t1 t2
+      (M⟪S⟫[lsingle (boxT (tyGvar 0 (lshift 0)))]) l1 ->
+    [ gext G (gdTy Δ' lC l4) ; Γ⟪S⟫ ⊢[ lM ] t2
+        : M'⟪S⟫[lsingle (boxT (tyGvar 0 (lshift 0)))] @ l3 ] ->
+    @gne_tm EM G Γ ν ν' (tyCTyp Δ l2) lzero ->
+    @gne_tm EM G Γ (letboxT l1 l2 Δ M t1 ν) (letboxT l3 l4 Δ' M' t2 ν') (M[lsingle ν]) l1 ;
+  gne_tm_letboxt {G Γ l1 l2 l3 l4 Δ Δ' T T' M M' t1 t2 ν ν'} :
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 -> @geq_ctx EP G Δ Δ' ->
+    [ G ; Δ ⊢[ lD ] T @ l2 ] -> @geq_ty EP G Δ T T' l2 ->
+    [ G ; Γ ,, tyCTrm Δ T l2 @ lzero ⊢[ lM ] M @ l1 ] ->
+    @geq_ty EM G (Γ ,, tyCTrm Δ T l2 @ lzero) M M' l1 ->
+    [ G ; Γ ,, tyCTrm Δ' T' l4 @ lzero ⊢[ lM ] M' @ l3 ] ->
+    @geq_tm EM (gext G (gdTm Δ lC T l2)) Γ⟪S⟫ t1 t2
+      (M⟪S⟫[lsingle (boxt (gvar 0 (lshift 0)))]) l1 ->
+    [ gext G (gdTm Δ' lC T' l4) ; Γ⟪S⟫ ⊢[ lM ] t2
+        : M'⟪S⟫[lsingle (boxt (gvar 0 (lshift 0)))] @ l3 ] ->
+    @gne_tm EM G Γ ν ν' (tyCTrm Δ T l2) lzero ->
+    @gne_tm EM G Γ (letboxt l1 l2 Δ T M t1 ν) (letboxt l3 l4 Δ' T' M' t2 ν') (M[lsingle ν]) l1
 }.

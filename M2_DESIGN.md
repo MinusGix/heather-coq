@@ -86,8 +86,23 @@ separately. M2 adds:
 - weakening laws for global weakenings;
 - the declarative instance at `lD` and `lM`.
 
-No cross-layer law is needed: the P and M relations interact only through
-validity's quantifier over `k`.
+**Correction (step 3):** the M-only laws *are* cross-layer. The paper
+states them with P-layer premises (`Δ ≈ Δ'` and `T ≈ T'` at P for
+`CTyp`/`CTrm`/`letbox`, 07:299–369), and escape for `□` needs exactly that
+(the context relation of `⊩^{≥P}_P` escapes to the P instance). So they
+live in a class `GenericEqM EP EM` over the two instances. As landed
+(`Typing/Generic.v`, `Typing/DeclInstance.v`, axiom-free):
+- `GenericEqLaws` (both layers) gains global weakening (`gwk_ok γ G' G`)
+  and neutral `U^δ`/`u^δ`. Relatedness of substitutions is `geq_lsub`
+  (tails, `dnfl`, typing of both sides, pairwise `≈` of entries), and of
+  contexts `geq_ctx` (07:68), with `geq_ctx_sound`.
+- `GenericEqM` holds `CTyp`/`CTrm` (levels up to `lequiv`), `box` for
+  code that is declaratively equal at C (Static Code makes this `≡ₗ`;
+  it subsumes the paper's reflexive law), and neutral `letbox`. The
+  `letbox` laws keep the declarative typing premises of the declarative
+  congruence rule (`M`, `M'`, the right-hand body), as M1's `natrec` law
+  does.
+- `DeclEqM : GenericEqM (DeclEq lD compt_D) (DeclEq lM compt_M)`.
 
 ### D5. The relation: a `j` index, a validity parameter, global Kripke
 
