@@ -13,4 +13,5 @@ theories/Typing/Declarative.v
 theories/Typing/Properties.v
 theories/Typing/TypedRed.v
 theories/Typing/Generic.v
-theories/LogRel/Definition.v
+theories/LogRel/Def.v
+theories/LogRel/Escape.v

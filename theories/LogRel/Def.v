@@ -17,7 +17,7 @@
 From DeLaM.Typing Require Export Generic.
 
 Section LRDef.
-Context `{GenericEq}.
+Context `{E : GenericEq}.
 
 Definition RedRel := gctx -> ctx -> ty -> ty -> lvl -> (tm -> tm -> Prop) -> Prop.
 
