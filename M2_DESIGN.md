@@ -166,6 +166,15 @@ validity's quantifier over `k`.
   context extensions. The `letbox` body is handled by global weakening by
   one binding (`gwk d` under the binder). The M1 statements (`typeof i =
   i`) are kept as corollaries.
+- **Global substitution lemma** (`Typing/GSubstitution.v`, all layers,
+  all judgments). `[G' ⊢ σ : G]` sends each binding to an object typed at
+  the binding's layer, or to a variable of `G'` with the same binding.
+  Its objects are deep-normal. **M2 restriction:** a context variable `g`
+  is sent only to a context variable (`GId`), never to a concrete context.
+  Instantiating `g` needs the tail-expansion argument (`δ` must then send
+  the new explicit entries of `σ(g)` to the matching variables). That only
+  becomes necessary with `CΠ` (M2b), and validity in M2 only quantifies over
+  such `σ`.
 - **`gctx` is a primitive record** (definitional eta), so `[⊢ G]` and
   `[⊢ mkG (gL G) (gΨ G)]` are interchangeable.
 - The inductive type of global weakenings is called `gweak`, so that it
