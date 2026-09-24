@@ -30,3 +30,4 @@ theories/LogRel/Reduction.v
 theories/Validity/Def.v
 theories/Validity/Props.v
 theories/Validity/Basic.v
+theories/Validity/Pi.v
