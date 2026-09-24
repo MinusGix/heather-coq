@@ -173,8 +173,8 @@ then for the declarative instance at any computing layer.
 | `Validity/Natrec.v` | `natrec_core` (by `NatRel_mut`: reduce to normal forms and move the types with `LRtm_conv_l/r`; zero/succ by anti-reduction; neutrals by `LR_neutral` + `gne_tm_natrec`), `V_natrec`, `V_natrec_zero`, `V_natrec_succ` (anti-reduction on the left only, `LRtm_red_l`) |
 | `Validity/CodePi.v` | `tyred_El_pi` (decoding a Π code, with annotations up to `≈`), `V_code_pi`, `V_El_pi` (both via `LR_pi_here` with `V_El` of the component codes) |
 | `Validity/Fundamental.v` | rule-shaped wrappers `ft_*` (derive the validity lemmas' extra typing premises by presupposition and stability); `fundamental` by `typing_mut` with motive `i = ge_layer -> V…`; each case closed by the first lemma that applies (`ft_case`), so no dependence on constructor order |
-| `Validity/Consequences.v` | `SubRel_id`; `reducible_ty/tm/eqty/eqtm`; `nat_canonicity`; `pi_inj`, `U_inj`; `whnf_normalization_ty/tm` |
-| `Validity/DeclConsequences.v` | the same for the declarative system at a computing layer `i`: `decl_pi_inj`, `decl_U_inj`, `decl_whnf_normalization_ty/tm` |
+| `Validity/Consequences.v` | `SubRel_id`; `reducible_ty/tm/eqty/eqtm`; `nat_canonicity`; `pi_inj`, `U_inj`; `whnf_normalization_ty/tm`; `no_closed_neutral`, `closed_nat_canonicity` (closed naturals are equal to numerals); `nat_not_pi`, `nat_not_U`, `U_not_pi` |
+| `Validity/DeclConsequences.v` | the same for the declarative system at a computing layer `i` (`decl_*`) |
 
 Notes on the final interfaces:
 - `V_natrec` takes the right-hand typing premises at the right annotation
@@ -182,24 +182,18 @@ Notes on the final interfaces:
   change, `eqty_single`, `lsub_wf_lsucc`).
 - `V_code_pi` takes `s ≅ s'` declaratively (the FT has it; `wf_code_pi` uses
   reflexivity), to move `t'` into the context `Γ, El l3 s'`.
-- `nat_canonicity` says every typed natural reduces to `zero`, a successor of
-  a related natural, or a neutral. Excluding neutrals in the empty context
-  also needs an empty *global* context, since global variables are neutral
-  heads.
+- `closed_nat_canonicity` needs only an empty *local* context: M1 has no
+  typing rule for global variables, so every typed neutral has a local
+  variable at its head (`no_closed_neutral`). **Revisit in M2**, when
+  `u^δ` becomes typable: closed canonicity will then need an empty global
+  context too.
 
-## Next steps (not yet decided; a design fork for the user)
+## Next steps
 
-1. **M1 polish** (small): closed canonicity (no neutrals when `Γ = ·` and
-   `Ψ = ·`); injectivity/discrimination of the remaining formers (`Nat` vs Π
-   vs `U`, via `LR_inv_*` + whnf determinacy); deep normalization if wanted.
-2. **Algorithmic instance** (logrel-coq's second instance): algorithmic
-   conversion as a `GenericEqLaws` instance, giving decidability of
-   conversion and of type checking. It was deliberately left out of M1.
-3. **M2, modal core**: global contexts in use (`U`/`u` declarations, global
-   substitutions), Kripke quantification over global weakenings (θ) in
-   `LRpi`/`PiRel`, then `□`/`box`/`letbox` at layers C/D/M, following
-   ch. 7 §§ on the layered relation. `SYNTAX_SPIKE.md` holds the
-   global-substitution representation.
+M1 polish is done (closed canonicity, discrimination of `Nat`/Π/`U`). Deep
+normalization (full normal forms) is deferred: M2 doesn't need it, and it
+belongs with the algorithmic instance, which is also deferred. Next is M2,
+the modal core (see `M2_DESIGN.md` once written).
 
 ## Proof-engineering gotchas (learned the hard way)
 

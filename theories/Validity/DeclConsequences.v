@@ -30,4 +30,15 @@ Proof.
   exists W; split; [exact (tyred_red _ _ _ _ _ _ HW) | exact HWh].
 Qed.
 
+Theorem decl_closed_nat_canonicity {G t} : [ G ; cnil ⊢[ i ] t : tyNat @ lzero ] ->
+  exists n, [ G ; cnil ⊢[ i ] t ≅ numeral n : tyNat @ lzero ].
+Proof. exact (@closed_nat_canonicity (DeclEq i Hi) (DeclEqLaws i Hi) G t). Qed.
+
+Theorem decl_nat_not_pi {G Γ k l l' A B} : ~ [ G ; Γ ⊢[ i ] tyNat ≅ tyPi l l' A B @ k ].
+Proof. exact (@nat_not_pi (DeclEq i Hi) (DeclEqLaws i Hi) G Γ k l l' A B). Qed.
+Theorem decl_nat_not_U {G Γ k l} : ~ [ G ; Γ ⊢[ i ] tyNat ≅ tyU l @ k ].
+Proof. exact (@nat_not_U (DeclEq i Hi) (DeclEqLaws i Hi) G Γ k l). Qed.
+Theorem decl_U_not_pi {G Γ k l l1 l2 A B} : ~ [ G ; Γ ⊢[ i ] tyU l ≅ tyPi l1 l2 A B @ k ].
+Proof. exact (@U_not_pi (DeclEq i Hi) (DeclEqLaws i Hi) G Γ k l l1 l2 A B). Qed.
+
 End DeclConsequences.

@@ -132,4 +132,60 @@ Proof.
   exact (LR_whnf_tm _ _ _ _ _ _ _ _ HR _ _ Ht).
 Qed.
 
+(** ** Closed canonicity
+
+    M1 has no typing rule for global variables, so a typed neutral needs a
+    local variable at its head: there are no closed neutrals. *)
+
+Lemma no_closed_neutral {G i Γ t T l} : [ G ; Γ ⊢[ i ] t : T @ l ] -> Γ = cnil -> ~ whne t.
+Proof.
+  induction 1; intros -> Hne; inversion Hne; subst;
+    match goal with
+    | H : in_ctx cnil _ _ _ |- _ => inversion H
+    | IH : cnil = cnil -> ~ whne ?x, H : whne ?x |- _ => exact (IH eq_refl H)
+    end.
+Qed.
+
+Fixpoint numeral (n : nat) : tm := match n with 0 => zero | S n => succ (numeral n) end.
+
+Theorem closed_nat_canonicity {G t} : [ G ; cnil ⊢g t : tyNat @ lzero ] ->
+  exists n, [ G ; cnil ⊢g t ≅ numeral n : tyNat @ lzero ].
+Proof.
+  intros H. pose proof (nat_canonicity H) as Hn.
+  refine (NatRel_mut G cnil (fun t _ _ => exists n, [ G ; cnil ⊢g t ≅ numeral n : tyNat @ lzero ])
+            (fun w _ _ => exists n, [ G ; cnil ⊢g w ≅ numeral n : tyNat @ lzero ]) _ _ _ _ t t Hn).
+  - intros t0 t0' w w' Hw _ _ _ (n & Hwn). exists n.
+    eapply eqtm_trans; [exact (tmred_eq _ _ _ _ _ _ _ Hw) | exact Hwn].
+  - exists 0. apply eqtm_refl, wf_zero; [exact ge_notV | rewrite ge_typeof; eapply ctx_of_tm, H].
+  - intros t0 t0' _ (n & Hn'). exists (S n). cbn. apply eqtm_succ; [exact ge_notV | exact Hn'].
+  - intros ν ν' Hνν. exfalso.
+    exact (no_closed_neutral (gne_tm_typed_l Hνν) eq_refl (gne_tm_whne_l Hνν)).
+Qed.
+
+(** ** Discrimination of type formers *)
+
+Lemma nat_not_pi {G Γ k l l' A B} : ~ [ G ; Γ ⊢g tyNat ≅ tyPi l l' A B @ k ].
+Proof.
+  intros H. destruct (reducible_eqty H) as [R HR].
+  destruct (LR_inv_nat HR (tyred_refl _ _ (eqty_wf_l ge_typeof H))) as (_ & HT' & _).
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' (tyred_refl _ _ (eqty_wf_r ge_typeof H))
+                whnf_tyNat (whnf_tyPi _ _ _ _)) as Heq. discriminate.
+Qed.
+
+Lemma nat_not_U {G Γ k l} : ~ [ G ; Γ ⊢g tyNat ≅ tyU l @ k ].
+Proof.
+  intros H. destruct (reducible_eqty H) as [R HR].
+  destruct (LR_inv_nat HR (tyred_refl _ _ (eqty_wf_l ge_typeof H))) as (_ & HT' & _).
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' (tyred_refl _ _ (eqty_wf_r ge_typeof H))
+                whnf_tyNat (whnf_tyU _)) as Heq. discriminate.
+Qed.
+
+Lemma U_not_pi {G Γ k l l1 l2 A B} : ~ [ G ; Γ ⊢g tyU l ≅ tyPi l1 l2 A B @ k ].
+Proof.
+  intros H. destruct (reducible_eqty H) as [R HR].
+  destruct (LR_inv_U HR (tyred_refl _ _ (eqty_wf_l ge_typeof H))) as (l2' & _ & _ & _ & HT' & _).
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' (tyred_refl _ _ (eqty_wf_r ge_typeof H))
+                (whnf_tyU _) (whnf_tyPi _ _ _ _)) as Heq. discriminate.
+Qed.
+
 End Consequences.
