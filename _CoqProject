@@ -37,3 +37,4 @@ theories/Validity/Lam.v
 theories/Validity/PiComp.v
 theories/Validity/Natrec.v
 theories/Validity/CodePi.v
+theories/Validity/Fundamental.v
