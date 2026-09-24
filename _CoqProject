@@ -25,3 +25,4 @@ theories/LogRel/Irrelevance.v
 theories/LogRel/Symmetry.v
 theories/LogRel/Transitivity.v
 theories/LogRel/Weakening.v
+theories/LogRel/Neutral.v
