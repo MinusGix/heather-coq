@@ -1,5 +1,5 @@
 (** * Validity of variables, natural numbers, universes, codes and [El] *)
-From DeLaM.Validity Require Export CtxRel.
+From DeLaM.Validity Require Export SubstV.
 
 Section Basic.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
