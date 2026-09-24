@@ -6,6 +6,8 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 
 Lemma ge_typeof : typeof ge_layer = ge_layer.
 Proof. apply compt_typeof_self, ge_compt. Qed.
+Lemma ge_lle_D : lle lD ge_layer.
+Proof. destruct ge_compt as [-> | ->]; unfold lle; cbn; lia. Qed.
 Lemma ge_notV : ge_layer <> lV.
 Proof. destruct ge_compt as [-> | ->]; discriminate. Qed.
 

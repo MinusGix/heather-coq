@@ -161,8 +161,8 @@ End Wrappers.
 (** ** The theorem *)
 
 Ltac ft_prep :=
-  subst; rewrite ?ge_typeof in *;
-  repeat match goal with H : ge_layer = ge_layer -> _ |- _ => specialize (H eq_refl) end.
+  subst; cbn [typeof] in *;
+  repeat match goal with H : ?x = ?x -> _ |- _ => specialize (H eq_refl) end.
 
 Ltac ft_case :=
   first
@@ -217,8 +217,19 @@ Ltac gl_push :=
     rewrite ?gwa_tyNat, ?gwa_tyPi, ?gwa_tyU, ?gwa_tyEl, ?gwa_var, ?gwa_zero, ?gwa_succ, ?gwa_tmNat,
             ?gwa_tmU, ?gwa_tmPi, ?gwa_lam, ?gwa_app, ?gwa_natrec, ?gwa_cext in *).
 
+(** P-derivations are validated at an instance of any layer [≥ P]: their
+    typing hypotheses are lifted to the instance's layer. *)
+Ltac gl_liftD :=
+  repeat match goal with
+  | H : wf_ctx _ lD _ |- _ => pose proof (lift_ctx H ge_lle_D); clear H
+  | H : wf_ty _ lD _ _ _ |- _ => pose proof (lift_ty H ge_lle_D); clear H
+  | H : wf_tm _ lD _ _ _ _ |- _ => pose proof (lift_tm H ge_lle_D); clear H
+  | H : eq_ty _ lD _ _ _ _ |- _ => pose proof (lift_eqty H ge_lle_D); clear H
+  | H : eq_tm _ lD _ _ _ _ _ |- _ => pose proof (lift_eqtm H ge_lle_D); clear H
+  end.
+
 Ltac gl_lift :=
-  first [apply VTyG_intro | apply VTmG_intro]; intros ? ? ? ?; gl_weaken; gl_push.
+  first [apply VTyG_intro | apply VTmG_intro]; intros ? ? ? ?; gl_weaken; gl_push; gl_liftD.
 
 Ltac ftG_case :=
   first
@@ -229,25 +240,25 @@ Ltac ftG_case :=
   | solve [eapply VTmG_conv; eassumption]
   | solve [gl_lift; ft_case] ].
 
-(** M2 transition (M2_DESIGN.md): until the layered relation is in place,
-    the theorem is stated for the P layer and global contexts that bind
-    context variables only.  The new rules then never apply: [□], [box]
-    and [letbox] live at M, and [U^δ]/[u^δ] need a type/term binding. *)
+(** M2 transition (M2_DESIGN.md): until validity quantifies over global
+    substitutions, the theorem is stated for derivations at layer P (at an
+    instance of any layer [≥ P]) and global contexts that bind context
+    variables only.  The new rules then never apply: [□], [box] and
+    [letbox] live at M, and [U^δ]/[u^δ] need a type/term binding. *)
 Definition ctx_only (G : gctx) : Prop := forall n D, in_gctx (gΨ G) n D -> D = gdCtx.
 
-Theorem fundamental : ge_layer = lD ->
+Theorem fundamental :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
-  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = ge_layer -> ctx_only G -> VTyG G Γ T T l) /\
-  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = ge_layer -> ctx_only G -> VTmG G Γ t t T l) /\
-  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = ge_layer -> ctx_only G -> VTyG G Γ T T' l) /\
-  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = ge_layer -> ctx_only G ->
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = lD -> ctx_only G -> VTyG G Γ T T l) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = lD -> ctx_only G -> VTmG G Γ t t T l) /\
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = lD -> ctx_only G -> VTyG G Γ T T' l) /\
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = lD -> ctx_only G ->
      VTmG G Γ t t' T l) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  intros Hgl.
   apply typing_mut; intros; try exact I;
-    try match goal with H : lM = ge_layer |- _ => rewrite Hgl in H; discriminate end;
+    try match goal with H : lM = lD |- _ => discriminate H end;
     try match goal with
         | Hc : ctx_only _, Hin : in_gctx _ _ (gdTm _ _ _ _) |- _ => discriminate (Hc _ _ Hin)
         | Hc : ctx_only _, Hin : in_gctx _ _ (gdTy _ _ _) |- _ => discriminate (Hc _ _ Hin)

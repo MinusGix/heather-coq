@@ -244,6 +244,39 @@ local substitutions).
   - the `σ` extension in `letbox`;
   - the global-substitution relation.
 
+## Validity with global substitutions (decided 2026-09-24, option B)
+
+Level-equivalent static code is related by `box`, so the `letbox`
+congruence needs pairs `σ ≈ σ'` with `σ ≠ σ'`. As in the paper, validity
+is two-sided in the substitutions:
+- **One-sided local layer.** M1's `SubRel`/`VTy`/`VTm` stay as they are
+  and are applied at the *left* context `Γ⦃σ⦄`. A context relation
+  (`Γ ≈ Γ'`, entries related by local validity on each side) and a
+  transport lemma move local validity between related contexts. The FT
+  motives carry context validity, so the symmetry, transitivity and
+  conversion cases can transport.
+- **`⊩^{≥P}_P`** (07a:21–60) quantifies over weakenings, `k ≥ P` and
+  related local substitutions, *not* over global substitutions. It is
+  therefore `VTyG`/`VTmG` at the P instance and at the M instance (`j =
+  P`). The M-level payload `vpM` is built from it; no circularity with the
+  global-substitution relation.
+- **Related global substitutions** are defined pointwise over `in_gctx`,
+  like `gsub_wf`: a context variable goes to the same context variable;
+  a type/term binding at layer `i'` goes to the same global variable, or
+  to objects typed at `i'` whose `⊩^{≥P}_P` relation holds in the
+  substituted context, on both sides.
+- **Validity at layer `i`** quantifies over related `σ σ'` and then uses
+  `VTyG`/`VTmG` at `Γ⦃σ⦄` for every instance `k ≥ i` (so global
+  weakenings after `σ` come for free). Layer C: lift the derivation to P.
+- **Order.** FT for P-derivations at both instances, then C (lifting),
+  then M (`box` uses FT at C for the payload; `letbox` extends `σ`).
+
+Sub-steps: (5a) FT for P-derivations at an instance of layer ≥ P;
+(5b) context relation and transport; (5c) validity of local substitutions
+and composition; (5d) `vpM` and its laws; (5e) related global
+substitutions; (5f) validity with σ and the FTs; (5g) consequences at M,
+dropping `ctx_only`.
+
 ## Order of work
 
 1. Syntax: new constructors, global renaming/substitution, laws, whnf and
