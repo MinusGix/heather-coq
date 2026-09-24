@@ -1,0 +1,100 @@
+(** * Related local contexts, and transport of validity along them
+
+    With pairs of global substitutions [σ ≈ σ'], a judgment's context
+    becomes two contexts [Γ⦃σ⦄] and [Γ⦃σ'⦄].  Validity stays one-sided (at
+    the left context); [CtxRel] relates the two contexts entrywise, each
+    entry valid over its own side, and transport moves validity between
+    related contexts (M2_DESIGN.md, option B). *)
+From DeLaM.Validity Require Export Props.
+
+Section CtxRel.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+
+Fixpoint CtxRel (G : gctx) (Γ Γ' : ctx) : Prop :=
+  match Γ, Γ' with
+  | cnil, cnil => True
+  | cvar g, cvar g' => g = g'
+  | cext Γ A l, cext Γ' A' l' =>
+      CtxRel G Γ Γ' /\ lequiv (gL G) l l' /\ VTy G Γ A A' l /\ VTy G Γ' A' A l'
+  | _, _ => False
+  end.
+
+Lemma CtxRel_sym G : forall Γ Γ', CtxRel G Γ Γ' -> CtxRel G Γ' Γ.
+Proof.
+  induction Γ as [| g | Γ IH A l]; intros [| g' | Γ' A' l']; cbn [CtxRel]; try tauto; [congruence|].
+  intros (HΓ & Hl & HA & HA'). refine (conj (IH _ HΓ) (conj (lequiv_sym _ _ _ Hl) (conj HA' HA))).
+Qed.
+
+(** ** Transport of related substitutions *)
+
+Lemma SubRel_transport G : forall Γ Γ' Δ d d',
+  CtxRel G Γ Γ' -> SubRel G Γ' Δ d d' -> SubRel G Γ Δ d d'.
+Proof.
+  induction Γ as [| g | Γ IH A l]; intros [| g' | Γ' A' l'] Δ d d'; cbn [CtxRel]; try tauto.
+  - intros ->; tauto.
+  - intros (HΓ & Hl & HA & _) [Ht Hh]. cbn [SubRel].
+    pose proof (IH _ _ _ _ HΓ Ht) as Ht'. split; [exact Ht'|].
+    pose proof (LRtm_lconv Hh Hl) as Hh'.
+    eapply LRtm_irrel_r; [eapply LRtm_irrel_l; [exact Hh' | exact (HA _ _ _ Ht')]|].
+    exact (VTy_refl_l HA _ _ _ Ht').
+Qed.
+
+Lemma CtxRel_trans G : forall Γ1 Γ2 Γ3, CtxRel G Γ1 Γ2 -> CtxRel G Γ2 Γ3 -> CtxRel G Γ1 Γ3.
+Proof.
+  induction Γ1 as [| g | Γ1 IH A1 l1]; intros [| g2 | Γ2 A2 l2] [| g3 | Γ3 A3 l3]; cbn [CtxRel];
+    try tauto; [congruence|].
+  intros (H12 & Hl12 & HA12 & HA21) (H23 & Hl23 & HA23 & HA32).
+  refine (conj (IH _ _ H12 H23) (conj (lequiv_trans _ _ _ _ Hl12 Hl23) (conj _ _))).
+  - (* [A2 ≈ A3] over [Γ2], moved to [Γ1] *)
+    eapply VTy_trans; [exact HA12|].
+    intros Δ d d' Hd. apply (SubRel_transport _ _ _ _ _ _ (CtxRel_sym _ _ _ H12)) in Hd.
+    exact (LRty_lconv (HA23 _ _ _ Hd) Hl12).
+  - eapply VTy_trans; [exact HA32|].
+    intros Δ d d' Hd. apply (SubRel_transport _ _ _ _ _ _ H23) in Hd.
+    exact (LRty_lconv (HA21 _ _ _ Hd) (lequiv_sym _ _ _ Hl23)).
+Qed.
+
+Lemma VTy_transport {G Γ Γ' T T' l} : CtxRel G Γ Γ' -> VTy G Γ T T' l -> VTy G Γ' T T' l.
+Proof.
+  intros HΓ H Δ d d' Hd. exact (H _ _ _ (SubRel_transport _ _ _ _ _ _ HΓ Hd)).
+Qed.
+Lemma VTm_transport {G Γ Γ' t t' T l} : CtxRel G Γ Γ' -> VTm G Γ t t' T l -> VTm G Γ' t t' T l.
+Proof.
+  intros HΓ H Δ d d' Hd. exact (H _ _ _ (SubRel_transport _ _ _ _ _ _ HΓ Hd)).
+Qed.
+
+(** ** Under global weakenings *)
+
+Definition CtxRelG (G : gctx) (Γ Γ' : ctx) : Prop :=
+  forall G' γ, gwk_ok γ G' G -> CtxRel G' Γ⟦γ⟧ Γ'⟦γ⟧.
+
+Lemma CtxRelG_sym {G Γ Γ'} : CtxRelG G Γ Γ' -> CtxRelG G Γ' Γ.
+Proof. intros H G' γ Hγ. exact (CtxRel_sym _ _ _ (H _ _ Hγ)). Qed.
+Lemma CtxRelG_trans {G Γ1 Γ2 Γ3} : CtxRelG G Γ1 Γ2 -> CtxRelG G Γ2 Γ3 -> CtxRelG G Γ1 Γ3.
+Proof. intros H1 H2 G' γ Hγ. exact (CtxRel_trans _ _ _ _ (H1 _ _ Hγ) (H2 _ _ Hγ)). Qed.
+
+Lemma CtxRelG_gwk {G Γ Γ' G' γ} : CtxRelG G Γ Γ' -> gwk_ok γ G' G -> CtxRelG G' Γ⟦γ⟧ Γ'⟦γ⟧.
+Proof.
+  intros H Hγ G'' γ' Hγ'. rewrite !gwa_comp_ctx. exact (H _ _ (gwk_ok_comp Hγ' Hγ)).
+Qed.
+
+Lemma VTyG_transport {G Γ Γ' T T' l} : CtxRelG G Γ Γ' -> VTyG G Γ T T' l -> VTyG G Γ' T T' l.
+Proof. intros HΓ H G' γ Hγ. exact (VTy_transport (HΓ _ _ Hγ) (H _ _ Hγ)). Qed.
+Lemma VTmG_transport {G Γ Γ' t t' T l} : CtxRelG G Γ Γ' -> VTmG G Γ t t' T l -> VTmG G Γ' t t' T l.
+Proof. intros HΓ H G' γ Hγ. exact (VTm_transport (HΓ _ _ Hγ) (H _ _ Hγ)). Qed.
+
+(** Constructors. *)
+Lemma CtxRelG_nil {G} : CtxRelG G cnil cnil.
+Proof. intros G' γ Hγ. now rewrite gwa_cnil. Qed.
+Lemma CtxRelG_var {G g} : CtxRelG G (cvar g) (cvar g).
+Proof. intros G' γ Hγ. now rewrite gwa_cvar. Qed.
+Lemma CtxRelG_ext {G Γ Γ' A A' l l'} :
+  CtxRelG G Γ Γ' -> lequiv (gL G) l l' -> VTyG G Γ A A' l -> VTyG G Γ' A' A l' ->
+  CtxRelG G (Γ ,, A @ l) (Γ' ,, A' @ l').
+Proof.
+  intros HΓ Hl HA HA' G' γ Hγ. rewrite !gwa_cext; cbn [CtxRel].
+  refine (conj (HΓ _ _ Hγ) (conj _ (conj (HA _ _ Hγ) (HA' _ _ Hγ)))).
+  now rewrite (proj1 Hγ).
+Qed.
+
+End CtxRel.

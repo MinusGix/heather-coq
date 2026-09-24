@@ -35,6 +35,7 @@ theories/LogRel/Neutral.v
 theories/LogRel/Reduction.v
 theories/Validity/Def.v
 theories/Validity/Props.v
+theories/Validity/CtxRel.v
 theories/Validity/Basic.v
 theories/Validity/Pi.v
 theories/Validity/Red.v
