@@ -22,3 +22,5 @@ theories/Typing/TypedRed.vo theories/Typing/TypedRed.glob theories/Typing/TypedR
 theories/Typing/TypedRed.vos theories/Typing/TypedRed.vok theories/Typing/TypedRed.required_vos: theories/Typing/TypedRed.v theories/Typing/Properties.vos
 theories/Typing/Generic.vo theories/Typing/Generic.glob theories/Typing/Generic.v.beautified theories/Typing/Generic.required_vo: theories/Typing/Generic.v theories/Typing/TypedRed.vo
 theories/Typing/Generic.vos theories/Typing/Generic.vok theories/Typing/Generic.required_vos: theories/Typing/Generic.v theories/Typing/TypedRed.vos
+theories/LogRel/Definition.vo theories/LogRel/Definition.glob theories/LogRel/Definition.v.beautified theories/LogRel/Definition.required_vo: theories/LogRel/Definition.v theories/Typing/Generic.vo
+theories/LogRel/Definition.vos theories/LogRel/Definition.vok theories/LogRel/Definition.required_vos: theories/LogRel/Definition.v theories/Typing/Generic.vos
