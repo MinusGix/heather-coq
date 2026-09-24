@@ -182,5 +182,8 @@ Notation "x [ d ]" := (subst x d) (at level 5, format "x [ d ]").
 Definition lsingle (a : tm) : lsub := lcons (lshift 0) a.
 (** [z[t/x, r/y]] for the successor branch of [elimN] (x = 1, y = 0). *)
 Definition lsingle2 (t r : tm) : lsub := lcons (lcons (lshift 0) t) r.
+(** The substitution in the successor branch of [elimN]: in context
+    [Γ, x : Nat, y : M], the type [M[succ x/x]]. *)
+Definition lsucc : lsub := lcons (lshift 2) (succ (var 1)).
 (** [↑]: weakening by one local variable. *)
 Notation "↑" := rshift1.

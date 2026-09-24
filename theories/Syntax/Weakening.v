@@ -4,7 +4,7 @@
     tail ([·] or a context variable [g]): weakenings only add explicit
     entries.  This is the Kripke index of the logical relation for local
     contexts (M1_DESIGN.md: global/universe weakenings extend this later). *)
-From DeLaM.Syntax Require Export Subst.
+From DeLaM.Syntax Require Export Commute.
 
 Inductive wk : Type := wk_id | wk_step (ρ : wk) | wk_up (ρ : wk).
 

@@ -41,7 +41,3 @@ Notation "Γ ,, A @ l" := (cext Γ A l) (at level 20, A at next level).
 Inductive in_ctx : ctx -> nat -> ty -> lvl -> Prop :=
 | in_here Γ A l : in_ctx (Γ ,, A @ l) 0 A⟨↑⟩ l
 | in_there Γ A l B l' n : in_ctx Γ n A l -> in_ctx (Γ ,, B @ l') (S n) A⟨↑⟩ l.
-
-(** The substitution in the successor branch of [elimN]: in context
-    [Γ, x : Nat, y : M], the type [M[succ x/x]]. *)
-Definition lsucc : lsub := lcons (lshift 2) (succ (var 1)).

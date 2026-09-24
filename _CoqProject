@@ -7,5 +7,7 @@ theories/Syntax/Subst.v
 theories/Syntax/NormalForms.v
 theories/Syntax/Reduction.v
 theories/Syntax/Weakening.v
+theories/Syntax/Commute.v
 theories/Typing/Context.v
 theories/Typing/Declarative.v
+theories/Typing/Properties.v
