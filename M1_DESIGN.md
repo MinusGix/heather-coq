@@ -161,16 +161,44 @@ The slowest files are `Typing/Functionality.v` (3.7 s),
 
 ## Next steps (in order)
 
-1. Weakening of the relation (`wkr`), neutral reflection (variables and
-   neutrals are related), closure under typed anti-reduction. Paper ch. 7
-   §"Properties for Logical Relations When j = prog".
-2. `Validity/`: contexts as lists of related types stable under
-   substitution (logrel-coq style), per-former introduction lemmas,
-   `Fundamental`. The per-former files are independent and could run as
-   parallel agents if the user opts into a workflow. The El/U cases must
-   produce the annotation-quantified `URel`.
-3. Consequences: normalization (typed reduction to whnf), canonicity for
-   `Nat`, injectivity of Π and U.
+Done since the table above was written (session 2, all axiom-free):
+`LogRel/Weakening.v` (`LR_wk`), `LogRel/Neutral.v` (`LR_neutral`),
+`LogRel/Reduction.v` (`LR_red_ty`/`LR_red_tm`); the Kripke index of the
+Π case is now OPE data (`r : Δ ≤ Γ`, composable via `wk_comp`). Validity:
+
+| File | Contents |
+|---|---|
+| `Validity/Def.v` | `LRrel` (canonical relation = union over derivations, via irrelevance + saturation; plays the spike's "canon" role without axioms), `SubRel` (by recursion on `Γ`), `VTy`, `VTm`; `SubRel` is a Kripke PER giving typed substitutions |
+| `Validity/Props.v` | stages, irrelevance/level conversion of `LRtm`, `VTy`/`VTm` PER + `VTm_conv`, `SubRel_cons`, `SubRel_lift` (var 0 by neutral reflection) |
+| `Validity/Basic.v` | variables, `Nat`, `zero`, `succ`, `U`, `El`, codes of `Nat`/`U`, `Nat ≅ El 0 ⌜Nat⌝`, `U ≅ El (1+l) ⌜U⌝` |
+| `Validity/Pi.v` | `LR_pi_here` / `V_pi` (domain/codomain relations `piDom`/`piCod` = `LRrel`) |
+| `Validity/Red.v` | typed app congruence, β through equivalent annotations |
+| `Validity/App.v`, `Lam.v`, `PiComp.v` | application, λ, `funext_K` (extensionality from the Kripke clause), β, η |
+| `Validity/Natrec.v` | **in progress**: helpers only (`LRtm_conv_l/r`, `NatRel_refl_l/r`, `NatRel_to_nf`, typed natrec reductions, substitution lemmas) |
+
+1. **Finish `Validity/Natrec.v`**: the core lemma by `NatRel_mut`
+   induction (for fixed related `d d'`): `natrec … n ~ natrec' … n'` at
+   `M[↑d][n]` / `M'[↑d'][n']`. NatRel case: IH at the normal forms, move
+   the types with `LRtm_conv_l/r` (types related via `VM` at
+   `NatRel n w` from `NatRel_to_nf`), then `LR_red_tm` with
+   `tmred_natrec_cong`. zero: `Vs` + `tmred_natrec_zero`. succ: `Vz` at
+   `lcons (lcons d n) (natrec … n)` (`lsucc_cons2_ty`, `lift2_single2`) +
+   `tmred_natrec_succ`. neutral: `LR_neutral` with `gne_tm_natrec`
+   (escape of `VM`, `Vs`, `Vz` at double lifts). Then `V_natrec`,
+   `V_natrec_zero`, `V_natrec_succ` (anti-reduction on the left only).
+   Take the right-hand typing premises in their natural contexts
+   (`M'` in `Γ,Nat`, `s' : M'[0]`, `z'` in `Γ,Nat,M'`); the FT gets them
+   from presupposition + stability.
+2. Remaining formers: code of Π (`wf_code_pi`, `eqtm_code_pi`) and
+   `eqty_El_pi` (El of a Π code reduces to a Π of Els, then `LR_pi_here`-
+   like construction with domain from the code's `URel` decodings).
+3. `Fundamental.v`: `typing_mut` induction at `ge_layer`: ctx → True,
+   `wf_ty` → `VTy T T l`, `wf_tm` → `VTm t t T l`, `eq_ty` → `VTy T T' l`,
+   `eq_tm` → `VTm t t' T l`; structural cases via `VTy/VTm` PER,
+   `VTm_conv`, `VTy_lconv`/`VTm_lconv`; formers via the lemmas above.
+4. Consequences: identity substitution is related (`SubRel Γ Γ` from the
+   FT on the context types + neutral reflection of variables), then
+   normalization, canonicity for `Nat`, Π/U injectivity.
 
 ## Proof-engineering gotchas (learned the hard way)
 
