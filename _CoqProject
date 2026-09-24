@@ -31,3 +31,5 @@ theories/Validity/Def.v
 theories/Validity/Props.v
 theories/Validity/Basic.v
 theories/Validity/Pi.v
+theories/Validity/Red.v
+theories/Validity/App.v
