@@ -41,7 +41,8 @@ Definition LRtm l G Γ T T' t t' := LRrel (lmeasure l) G Γ T T' l t t'.
 
 Fixpoint SubRel (G : gctx) (Γ Δ : ctx) (d d' : lsub) {struct Γ} : Prop :=
   match Γ with
-  | cnil | cvar _ => [ G ; Δ ⊢g ] /\ LK nftm d /\ LK nftm d'
+  | cnil | cvar _ =>
+      [ G ; Δ ⊢g ] /\ LK dnftm d /\ LK dnftm d' /\ lsub_tail d Γ Δ /\ lsub_tail d' Γ Δ
   | cext Γ A l =>
       SubRel G Γ Δ (ldrop 1 d) (ldrop 1 d') /\
       LRtm l G Δ A[ldrop 1 d] A[ldrop 1 d'] (llk d 0) (llk d' 0)
@@ -64,13 +65,16 @@ Proof. apply subst_ren_ty; intros n; now rewrite !llk_ldrop, llk_lren. Qed.
 
 (** ** Basic properties of related substitutions *)
 
+Lemma lsub_tail_ext d d2 Γ Δ : (forall n, llk d n = llk d2 n) -> lsub_tail d Γ Δ -> lsub_tail d2 Γ Δ.
+Proof. intros H [Ht Hl]; split; [exact Ht | intros n; rewrite <- H; apply Hl]. Qed.
+
 Lemma SubRel_ext G Γ : forall Δ d1 d1' d2 d2',
   (forall n, llk d1 n = llk d2 n) -> (forall n, llk d1' n = llk d2' n) ->
   SubRel G Γ Δ d1 d1' -> SubRel G Γ Δ d2 d2'.
 Proof.
   induction Γ as [| g | Γ IH A l]; intros Δ d1 d1' d2 d2' H H'; cbn [SubRel].
-  - intros (HΔ & N1 & N2); refine (conj HΔ (conj _ _)); intros n; [rewrite <- H | rewrite <- H']; auto.
-  - intros (HΔ & N1 & N2); refine (conj HΔ (conj _ _)); intros n; [rewrite <- H | rewrite <- H']; auto.
+  1-2: intros (HΔ & N1 & N2 & T1 & T2); refine (conj HΔ (conj _ (conj _ (conj _ _))));
+    eauto using lsub_tail_ext; intros n; [rewrite <- H | rewrite <- H']; auto.
   - intros (Ht & Hh). split.
     + refine (IH _ _ _ _ _ _ _ Ht); intros n; rewrite !llk_ldrop; auto.
     + rewrite <- H, <- H'.
@@ -81,7 +85,7 @@ Qed.
 Lemma SubRel_ctx {G Γ Δ d d'} : SubRel G Γ Δ d d' -> [ G ; Δ ⊢g ].
 Proof.
   revert d d'; induction Γ as [| g | Γ IH A l]; cbn [SubRel]; intros d d'.
-  1-2: now intros [].
+  1-2: now intros (? & _).
   intros [Ht _]; exact (IH _ _ Ht).
 Qed.
 
@@ -101,7 +105,7 @@ Qed.
 Lemma SubRel_sym G Γ : forall Δ d d', SubRel G Γ Δ d d' -> SubRel G Γ Δ d' d.
 Proof.
   induction Γ as [| g | Γ IH A l]; cbn [SubRel]; intros Δ d d'.
-  1-2: intros (HΔ & N1 & N2); auto.
+  1-2: intros (HΔ & N1 & N2 & T1 & T2); auto.
   intros [Ht Hh]; split; [now apply IH | now apply LRtm_sym].
 Qed.
 
@@ -109,7 +113,7 @@ Lemma SubRel_trans G Γ : forall Δ d1 d2 d3,
   SubRel G Γ Δ d1 d2 -> SubRel G Γ Δ d2 d3 -> SubRel G Γ Δ d1 d3.
 Proof.
   induction Γ as [| g | Γ IH A l]; cbn [SubRel]; intros Δ d1 d2 d3.
-  1-2: intros (HΔ & N1 & N2) (_ & _ & N3); auto.
+  1-2: intros (HΔ & N1 & N2 & T1 & T2) (_ & _ & N3 & _ & T3); auto.
   intros [Ht1 Hh1] [Ht2 Hh2]; split; [eapply IH; eauto | eapply LRtm_trans; eauto].
 Qed.
 
@@ -133,7 +137,9 @@ Lemma SubRel_wk G Γ : forall Δ Δ' (ρ : wk) d d', ρ : Δ' ≤ Δ -> [ G ; Δ
   SubRel G Γ Δ d d' -> SubRel G Γ Δ' (lren d ρ) (lren d' ρ).
 Proof.
   induction Γ as [| g | Γ IH A l]; cbn [SubRel]; intros Δ Δ' ρ d d' Hρ HΔ'.
-  1-2: intros _; refine (conj HΔ' (conj _ _)); intros n; rewrite llk_lren; apply ren_nf.
+  1-2: intros (_ & N1 & N2 & T1 & T2); refine (conj HΔ' (conj _ (conj _ (conj _ _))));
+    try (intros n; rewrite llk_lren; apply ren_dnf; auto);
+    eapply lsub_tail_wkr; eauto using wk_wf_wkr.
   intros [Ht Hh]; split.
   - refine (SubRel_ext _ _ _ _ _ _ _ _ _ (IH _ _ _ _ _ Hρ HΔ' Ht));
       intros n; rewrite !llk_ldrop, !llk_lren, llk_ldrop; reflexivity.
@@ -146,21 +152,38 @@ Lemma LRtm_escape {l G Γ T T' t t'} :
   LRtm l G Γ T T' t t' -> [ G ; Γ ⊢g t : T @ l ] /\ [ G ; Γ ⊢g t' : T @ l ].
 Proof. intros (R & H & Ht). destruct (escape_tm _ _ _ _ _ _ _ _ H _ _ Ht) as (? & ? & _). auto. Qed.
 
-Lemma SubRel_nf G Γ : forall Δ d d', SubRel G Γ Δ d d' -> LK nftm d /\ LK nftm d'.
+Lemma SubRel_dnf G Γ : forall Δ d d', SubRel G Γ Δ d d' -> LK dnftm d /\ LK dnftm d'.
 Proof.
   induction Γ as [| g | Γ IH A l]; cbn [SubRel]; intros Δ d d'.
-  1-2: intros (_ & N1 & N2); auto.
+  1-2: intros (_ & N1 & N2 & _); auto.
   intros [Ht Hh]. destruct (IH _ _ _ Ht) as [N1 N2]. destruct (LRtm_escape Hh) as [H1 H2].
   split; intros [|n].
-  - exact (wf_tm_nf H1).
+  - exact (wf_tm_dnf H1).
   - specialize (N1 n). now rewrite llk_ldrop in N1.
-  - exact (wf_tm_nf H2).
+  - exact (wf_tm_dnf H2).
   - specialize (N2 n). now rewrite llk_ldrop in N2.
+Qed.
+
+Lemma SubRel_nf G Γ : forall Δ d d', SubRel G Γ Δ d d' -> LK nftm d /\ LK nftm d'.
+Proof.
+  intros Δ d d' H; destruct (SubRel_dnf _ _ _ _ _ H) as [N1 N2].
+  split; intros n; apply dnftm_nftm; auto.
+Qed.
+
+Lemma SubRel_tail G Γ : forall Δ d d', SubRel G Γ Δ d d' -> lsub_tail d Γ Δ /\ lsub_tail d' Γ Δ.
+Proof.
+  induction Γ as [| g | Γ IH A l]; cbn [SubRel]; intros Δ d d'.
+  1-2: intros (_ & _ & _ & T1 & T2); auto.
+  intros [Ht _]. destruct (IH _ _ _ Ht) as [[T1 L1] [T2 L2]].
+  split; split; auto; intros n; cbn [clen];
+    replace (S (clen Γ) + n) with (1 + (clen Γ + n)) by lia; rewrite <- llk_ldrop; auto.
 Qed.
 
 Lemma SubRel_wf_l G Γ : forall Δ d d', SubRel G Γ Δ d d' -> lsub_wf G ge_layer Δ d Γ.
 Proof.
-  intros Δ d d' H. refine (conj (SubRel_ctx H) (conj (proj1 (SubRel_nf _ _ _ _ _ H)) _)).
+  intros Δ d d' H. constructor;
+    [rewrite ge_typeof; exact (SubRel_ctx H) | exact (proj1 (SubRel_dnf _ _ _ _ _ H))
+    | exact (proj1 (SubRel_tail _ _ _ _ _ H)) |].
   intros n T l Hin; revert Δ d d' H; induction Hin as [Γ A l|Γ A l B l' n Hin IH]; 
     cbn [SubRel]; intros Δ d d' [Ht Hh].
   - rewrite shift_subst_ty. exact (proj1 (LRtm_escape Hh)).

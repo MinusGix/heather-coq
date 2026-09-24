@@ -191,6 +191,32 @@ reproves only the interface lemmas and the FT cases that build payloads.
 The alternative, the full record now, costs a k = C obligation for every
 C-layer rule in the FT right away.
 
+## Status (2026-09-24, session 3)
+
+Steps 1–2 are done: syntax and all of the declarative metatheory. The tree
+is green, with no admits and no axioms. A clean build takes about 37 s.
+
+| File | Contents |
+|---|---|
+| `Syntax/Term.v` | `CTyp`, `CTrm`, `box`, `letbox` constructors; global renaming and substitution (`gobj`, `gup`, `pty/ptm/pctx`, `gsingle`), notations `x⟪ξ⟫`, `x⦃σ⦄` |
+| `Syntax/GSubst.v` | global laws (ext, composition with local and global operations, identity on deep-normal input), `dnf*` and its preservation |
+| `Syntax/NormalForms.v`, `Reduction.v` | `box` whnf, `letbox` neutral, letbox β on `box`, scrutinee congruence |
+| `Typing/Declarative.v` | global bindings, `U^δ`/`u^δ`, `□`, `box`, `letbox`, their congruences and β, `eq_ctx` |
+| `Typing/GWeakening.v` | `gweakening` (global weakening, every judgment and layer) |
+| `Typing/Lifting.v` | `lifting` (`i ≤ j`) |
+| `Typing/Properties.v` | `weakening_all` (local, every layer) |
+| `Typing/Substitution.v` | `typed_dnf`; `lsub_wf` record with tails; `substitution_all` |
+| `Typing/Functionality.v` | `functionality_all` (every layer) |
+| `Typing/GSubstitution.v` | typed global substitutions; `gsubstitution` (context variables to context variables); declared bindings are well formed; single substitutions |
+| `Typing/Presupposition.v` | presupposition incl. context equivalence (`eqctx_id`: conversion), letbox β via `gsubstitution` |
+
+**Transition state of the semantics.** M1's logical relation and validity
+are unchanged, apart from `SubRel` carrying tails and deep normal forms.
+The fundamental theorem and its consequences are restricted to `ge_layer
+= lD` and to global contexts with context-variable bindings only
+(`ctx_only`), because the new rules live at M or need term/type bindings.
+Steps 3–6 lift the restriction.
+
 ## Order of work
 
 1. Syntax: new constructors, global renaming/substitution, laws, whnf and

@@ -29,7 +29,7 @@ Proof.
   eapply tyred_lconv; [|exact Hm].
   apply tyred_step; [exact HEl | constructor |].
   eapply eqty_trans; [exact HEq|].
-  apply eqty_sym, eqty_El_pi; eauto using ge_notV, lequiv_wf_l.
+  apply eqty_sym, eqty_El_pi; eauto using ge_compt, lequiv_wf_l.
 Qed.
 
 (** ** The code of Π *)

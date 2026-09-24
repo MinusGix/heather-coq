@@ -168,7 +168,7 @@ Lemma natrec_prems_subst {G Γ Δ d l M s z} :
 Proof.
   intros Hd Hwl HM Hs Hz. pose proof (lsub_wf_nf Hd) as Nd.
   assert (HN : [ G ; Δ ⊢g tyNat @ lzero ])
-    by (apply wft_nat; [exact ge_notV | rewrite ge_typeof; exact (lsub_wf_ctx Hd)]).
+    by (apply wft_nat; [exact ge_notV | exact (lsub_wf_ctx Hd)]).
   assert (Hd1 : lsub_wf G ge_layer (Δ ,, tyNat @ lzero) (llift d) (Γ ,, tyNat @ lzero))
     by (eapply (lsub_wf_lift' _ _ ge_typeof); [exact Hd | exact HN | exact I | reflexivity]).
   pose proof (wf_ty_subst ge_typeof HM Hd1) as HMd.

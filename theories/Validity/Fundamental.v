@@ -186,15 +186,32 @@ Ltac ft_case :=
   | solve [eapply V_natrec_zero; eassumption] | solve [eapply V_natrec_succ; eassumption]
   | solve [eapply V_beta; eassumption] | solve [eapply V_eta; eassumption] ].
 
-Theorem fundamental :
+(** M2 transition (M2_DESIGN.md): until the layered relation is in place,
+    the theorem is stated for the P layer and global contexts that bind
+    context variables only.  The new rules then never apply: [□], [box]
+    and [letbox] live at M, and [U^δ]/[u^δ] need a type/term binding. *)
+Definition ctx_only (G : gctx) : Prop := forall n D, in_gctx (gΨ G) n D -> D = gdCtx.
+
+Theorem fundamental : ge_layer = lD ->
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
-  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = ge_layer -> VTy G Γ T T l) /\
-  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = ge_layer -> VTm G Γ t t T l) /\
-  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = ge_layer -> VTy G Γ T T' l) /\
-  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = ge_layer -> VTm G Γ t t' T l).
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = ge_layer -> ctx_only G -> VTy G Γ T T l) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = ge_layer -> ctx_only G -> VTm G Γ t t T l) /\
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = ge_layer -> ctx_only G -> VTy G Γ T T' l) /\
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = ge_layer -> ctx_only G ->
+     VTm G Γ t t' T l) /\
+  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; try exact I; ft_prep; ft_case.
+  intros Hgl.
+  apply typing_mut; intros; try exact I;
+    try match goal with H : lM = ge_layer |- _ => rewrite Hgl in H; discriminate end;
+    try match goal with
+        | Hc : ctx_only _, Hin : in_gctx _ _ (gdTm _ _ _ _) |- _ => discriminate (Hc _ _ Hin)
+        | Hc : ctx_only _, Hin : in_gctx _ _ (gdTy _ _ _) |- _ => discriminate (Hc _ _ Hin)
+        end;
+    ft_prep;
+    repeat match goal with Hc : ctx_only ?G, IH : ctx_only ?G -> _ |- _ => specialize (IH Hc) end;
+    ft_case.
 Qed.
 
 End Fundamental.

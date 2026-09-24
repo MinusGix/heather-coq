@@ -160,7 +160,7 @@ Proof.
     by (apply wf_code_nat; [exact ge_notV | now rewrite ge_typeof]).
   destruct (El_annot Hc Hl) as [HEl HEq].
   apply tyred_step; [exact HEl | constructor |].
-  eapply eqty_trans; [exact HEq|]. apply eqty_sym, eqty_El_nat; [exact ge_notV | now rewrite ge_typeof].
+  eapply eqty_trans; [exact HEq|]. apply eqty_sym, eqty_El_nat; [exact ge_compt | now rewrite ge_typeof].
 Qed.
 
 Lemma V_code_nat {G Γ} : VTm G Γ tmNat tmNat (tyU lzero) (lsuc lzero).
@@ -190,7 +190,7 @@ Proof.
   destruct (El_annot Hc Hl) as [HEl HEq].
   apply tyred_step; [exact HEl | constructor |].
   eapply eqty_trans; [exact HEq|].
-  apply eqty_sym, eqty_El_U; [exact ge_notV | now rewrite ge_typeof | exact Hw0].
+  apply eqty_sym, eqty_El_U; [exact ge_compt | now rewrite ge_typeof | exact Hw0].
 Qed.
 
 Lemma V_code_U {G Γ l l'} :
