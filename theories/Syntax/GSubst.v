@@ -230,3 +230,36 @@ Proof. intros; apply (proj1 (proj2 (proj2 gsubst_id_all))); auto. Qed.
 End GLaws.
 
 Print Assumptions gsubst_gsubst.
+
+(** ** Global renaming: outputs are deep-normal; identity on deep-normal input *)
+
+Lemma dnfl_lcons' d t : dnfl d -> dnftm t -> dnfl (lcons' d t).
+Proof.
+  intros Hd Ht. destruct d as [[|k]|]; destruct t; cbn in *; try tauto.
+  destruct (Nat.eqb_spec n k); cbn; auto.
+Qed.
+
+Lemma gren_dnf_all :
+  let Pty T := forall ξ, dnfty (gren_ty T ξ) in
+  let Ptm t := forall ξ, dnftm (gren_tm t ξ) in
+  let Pctx Γ := forall ξ, dnfctx (gcren Γ ξ) in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ, Pctx Γ) /\ (forall d, forall ξ, dnfl (glren d ξ)).
+Proof.
+  intros Pty Ptm Pctx; apply syn_ind; subst Pty Ptm Pctx; cbn beta; intros; try exact I;
+    cbn; intuition auto using dnfl_lcons'.
+Qed.
+
+Lemma gren_id_all :
+  let Pty T := dnfty T -> forall ξ, (forall i, ξ i = i) -> gren_ty T ξ = T in
+  let Ptm t := dnftm t -> forall ξ, (forall i, ξ i = i) -> gren_tm t ξ = t in
+  let Pctx Γ := dnfctx Γ -> forall ξ, (forall i, ξ i = i) -> gcren Γ ξ = Γ in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ, Pctx Γ) /\ (forall d, dnfl d -> LK Ptm d).
+Proof.
+  assert (Hup : forall ξ, (forall i, ξ i = i) -> forall i, gupr ξ i = i).
+  { intros ξ H [|i]; cbn; auto. }
+  syn_start3; try lk_cases_dnf; cbn in *; try tauto;
+    try solve [f_equal; intuition eauto].
+  all: try match goal with Hs : forall i, ?ξ i = i |- context [?ξ ?u] => rewrite Hs end.
+  all: f_equal; apply l_canon; auto with nf; intros n;
+    rewrite llk_glren; match goal with IH : dnfl ?d -> LK _ ?d |- _ => apply IH end; auto with nf.
+Qed.

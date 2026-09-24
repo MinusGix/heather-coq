@@ -12,6 +12,7 @@ theories/Syntax/Commute.v
 theories/Syntax/SubstCommute.v
 theories/Typing/Context.v
 theories/Typing/Declarative.v
+theories/Typing/GWeakening.v
 theories/Typing/Properties.v
 theories/Typing/Substitution.v
 theories/Typing/Functionality.v

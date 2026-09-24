@@ -58,10 +58,12 @@ Theorem ctx_extract :
   (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ typeof i ] ]) /\
   (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ typeof i ] ]) /\
   (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> [ G ; Γ ⊢[ typeof i ] ]) /\
-  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> [ G ; Γ ⊢[ typeof i ] ]).
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> [ G ; Γ ⊢[ typeof i ] ]) /\
+  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
   apply typing_mut; intros; rewrite ?typeof_idem in *; auto.
-  all: destruct i; cbn in *; auto.
+  all: try solve [destruct i; cbn in *; auto].
+  all: match goal with H : wf_ctx _ _ (cext _ _ _) |- _ => inversion H; subst; auto end.
 Qed.
 
 (** ** Weakening *)
