@@ -36,8 +36,9 @@ milestone.
 
 - Kripke quantification over *global* and *universe* weakenings. The paper's
   weakening triple is ψ = (θ, γ, τ). M1's relation is Kripke in local
-  weakenings only, packaged behind an abstract weakening type so that adding
-  θ/γ extends the type rather than the relation's definition.
+  weakenings only: renamings `r` with `wkr r Δ Γ` (`Typing/Properties.v`).
+  Adding θ/γ changes the Kripke quantifier in `LRpi`/`PiRel` and the
+  weakening lemmas, not the other cases.
 - `UΠ` / level binders and ω's semantics (checked in the universe spike).
 - The algorithmic instance and checkers.
 - Layers C and V in the fundamental theorem: M1 proves it for the computing
