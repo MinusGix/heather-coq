@@ -8,9 +8,11 @@ theories/Syntax/NormalForms.v
 theories/Syntax/Reduction.v
 theories/Syntax/Weakening.v
 theories/Syntax/Commute.v
+theories/Syntax/SubstCommute.v
 theories/Typing/Context.v
 theories/Typing/Declarative.v
 theories/Typing/Properties.v
+theories/Typing/Substitution.v
 theories/Typing/TypedRed.v
 theories/Typing/Generic.v
 theories/Typing/DeclInstance.v
