@@ -174,21 +174,14 @@ Done since the table above was written (session 2, all axiom-free):
 | `Validity/Pi.v` | `LR_pi_here` / `V_pi` (domain/codomain relations `piDom`/`piCod` = `LRrel`) |
 | `Validity/Red.v` | typed app congruence, β through equivalent annotations |
 | `Validity/App.v`, `Lam.v`, `PiComp.v` | application, λ, `funext_K` (extensionality from the Kripke clause), β, η |
-| `Validity/Natrec.v` | **in progress**: helpers only (`LRtm_conv_l/r`, `NatRel_refl_l/r`, `NatRel_to_nf`, typed natrec reductions, substitution lemmas) |
+| `Validity/Natrec.v` | `natrec_core` (by `NatRel_mut`: reduce to normal forms and move the types with `LRtm_conv_l/r`; zero/succ by anti-reduction; neutrals by `LR_neutral` + `gne_tm_natrec`), `V_natrec`, `V_natrec_zero`, `V_natrec_succ` (anti-reduction on the left only, `LRtm_red_l`) |
 
-1. **Finish `Validity/Natrec.v`**: the core lemma by `NatRel_mut`
-   induction (for fixed related `d d'`): `natrec … n ~ natrec' … n'` at
-   `M[↑d][n]` / `M'[↑d'][n']`. NatRel case: IH at the normal forms, move
-   the types with `LRtm_conv_l/r` (types related via `VM` at
-   `NatRel n w` from `NatRel_to_nf`), then `LR_red_tm` with
-   `tmred_natrec_cong`. zero: `Vs` + `tmred_natrec_zero`. succ: `Vz` at
-   `lcons (lcons d n) (natrec … n)` (`lsucc_cons2_ty`, `lift2_single2`) +
-   `tmred_natrec_succ`. neutral: `LR_neutral` with `gne_tm_natrec`
-   (escape of `VM`, `Vs`, `Vz` at double lifts). Then `V_natrec`,
-   `V_natrec_zero`, `V_natrec_succ` (anti-reduction on the left only).
-   Take the right-hand typing premises in their natural contexts
-   (`M'` in `Γ,Nat`, `s' : M'[0]`, `z'` in `Γ,Nat,M'`); the FT gets them
-   from presupposition + stability.
+1. ~~Finish `Validity/Natrec.v`~~ (done). Interface note for the FT:
+   `V_natrec` takes the right-hand typing premises in their natural
+   contexts **at the right annotation `l'`** (`M'` in `Γ,Nat` at `l'`,
+   `s' : M'[0] @ l'`, `z'` in `Γ,Nat,M' @ l'` at `l'`); the FT case
+   `eqtm_natrec` gets them from presupposition + stability (`stab_tm`
+   with a level change) + `wf_conv`/`wf_lconv`.
 2. Remaining formers: code of Π (`wf_code_pi`, `eqtm_code_pi`) and
    `eqty_El_pi` (El of a Π code reduces to a Π of Els, then `LR_pi_here`-
    like construction with domain from the code's `URel` decodings).
