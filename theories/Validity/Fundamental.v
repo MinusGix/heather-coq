@@ -35,7 +35,7 @@ Lemma ft_pi {l l' A B} : lwf (gL G) l -> lwf (gL G) l' ->
   [ G ; Γ ,, A @ l ⊢g B @ l' ] -> VTyG G Γ A A l -> VTyG G (Γ ,, A @ l) B B l' ->
   VTy G Γ (tyPi l l' A B) (tyPi l l' A B) (lmax l l').
 Proof.
-  intros Hw Hw' HB VA VB. exact (V_pi Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') HB HB VA VB).
+  intros Hw Hw' HB VA VB. exact (V_pi Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') HB VA VB).
 Qed.
 
 Lemma ft_pi_eq {l1 l2 l3 l4 A A' B B'} :
@@ -46,10 +46,8 @@ Lemma ft_pi_eq {l1 l2 l3 l4 A A' B B'} :
 Proof.
   intros H13 H24 HAA HBB VA VB.
   pose proof (lequiv_wf_l _ _ _ H13) as Hw1.
-  assert (HΓ : [ G ; Γ ,, A' @ l1 ⊢g ]) by (apply ext_wf_g; [exact (eqty_wf_r ge_typeof HAA) | exact Hw1]).
-  pose proof (stab_ty ge_typeof HAA (lequiv_refl _ _ Hw1) HΓ (eqty_wf_r ge_typeof HBB)) as HB'.
   exact (V_pi Hw1 (lequiv_wf_l _ _ _ H24) (lequiv_sym _ _ _ H13) (lequiv_sym _ _ _ H24)
-           (eqty_wf_l ge_typeof HBB) HB' VA VB).
+           (eqty_wf_l ge_typeof HBB) VA VB).
 Qed.
 
 Lemma ft_code_pi {l l' s t} : lwf (gL G) l -> lwf (gL G) l' ->
@@ -58,8 +56,7 @@ Lemma ft_code_pi {l l' s t} : lwf (gL G) l -> lwf (gL G) l' ->
   VTm G Γ (tmPi l l' s t) (tmPi l l' s t) (tyU (lmax l l')) (lsuc (lmax l l')).
 Proof.
   intros Hw Hw' Hs Ht Vs Vt.
-  exact (V_code_pi Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') Hs Hs (eqtm_refl _ _ _ _ _ _ Hs)
-           Ht Ht Vs Vt).
+  exact (V_code_pi Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') Hs Ht Vs Vt).
 Qed.
 
 Lemma ft_code_pi_eq {l1 l2 l3 l4 s s' t t'} :
@@ -70,8 +67,8 @@ Lemma ft_code_pi_eq {l1 l2 l3 l4 s s' t t'} :
   VTm G Γ (tmPi l1 l2 s t) (tmPi l3 l4 s' t') (tyU (lmax l1 l2)) (lsuc (lmax l1 l2)).
 Proof.
   intros H13 H24 Hs Hss Htt Vs Vt.
-  exact (V_code_pi (lequiv_wf_l _ _ _ H13) (lequiv_wf_l _ _ _ H24) H13 H24 Hs (eqtm_wf_r ge_typeof Hss) Hss
-           (eqtm_wf_l ge_typeof Htt) (eqtm_wf_r ge_typeof Htt) Vs Vt).
+  exact (V_code_pi (lequiv_wf_l _ _ _ H13) (lequiv_wf_l _ _ _ H24) H13 H24 Hs
+           (eqtm_wf_l ge_typeof Htt) Vs Vt).
 Qed.
 
 Lemma ft_natrec {l M s z t} : lwf (gL G) l ->
@@ -82,7 +79,7 @@ Lemma ft_natrec {l M s z t} : lwf (gL G) l ->
   VTm G Γ (natrec l M s z t) (natrec l M s z t) M[lsingle t] l.
 Proof.
   intros Hwl HM Hs Hz VM Vs Vz Vt.
-  exact (V_natrec Hwl (lequiv_refl _ _ Hwl) HM HM Hs Hs Hz Hz VM Vs Vz Vt).
+  exact (V_natrec Hwl (lequiv_refl _ _ Hwl) HM Hs Hz VM Vs Vz Vt).
 Qed.
 
 Lemma ft_natrec_eq {l l' M M' s s' z z' t t'} : lequiv (gL G) l l' ->
@@ -94,25 +91,7 @@ Lemma ft_natrec_eq {l l' M M' s s' z z' t t'} : lequiv (gL G) l l' ->
   VTm G Γ (natrec l M s z t) (natrec l' M' s' z' t') M[lsingle t] l.
 Proof.
   intros Hll HM HMM Hss Hzz VM Vs Vz Vt.
-  pose proof (lequiv_wf_l _ _ _ Hll) as Hwl.
-  pose proof (lconv_ty (eqty_wf_r ge_typeof HMM) Hll) as HM'.
-  (* [s' : M'[0] @ l'] *)
-  pose proof (eqtm_wf_r ge_typeof Hss) as Hs'0.
-  assert (H0 : [ G ; Γ ⊢g zero : tyNat @ lzero ])
-    by (apply wf_zero; [exact ge_notV | rewrite ge_typeof; eapply ctx_of_tm, Hs'0]).
-  pose proof (eqty_single ge_typeof HMM H0) as HM0.
-  assert (Hs' : [ G ; Γ ⊢g s' : M'[lsingle zero] @ l' ]).
-  { eapply wf_lconv; [|apply lequiv_sym, Hll].
-    eapply wf_conv; [exact Hs'0 | rewrite ge_typeof; now apply eqty_sym]. }
-  (* [z'] in [Γ, Nat, M' @ l'] at [M'[↑]] *)
-  assert (HΓ' : [ G ; Γ ,, tyNat @ lzero ,, M' @ l' ⊢g ])
-    by (apply ext_wf_g; [exact HM' | exact (lequiv_wf_r _ _ _ Hll)]).
-  pose proof (stab_tm ge_typeof HMM Hll HΓ' (eqtm_wf_r ge_typeof Hzz)) as Hz'1.
-  pose proof (eqty_subst ge_typeof HMM (lsub_wf_lsucc ge_typeof ge_notV HΓ')) as Hsucc.
-  assert (Hz' : [ G ; Γ ,, tyNat @ lzero ,, M' @ l' ⊢g z' : M'[lsucc] @ l' ]).
-  { eapply wf_lconv; [|apply lequiv_sym, Hll].
-    eapply wf_conv; [exact Hz'1 | rewrite ge_typeof; now apply eqty_sym]. }
-  exact (V_natrec Hwl Hll HM HM' (eqtm_wf_l ge_typeof Hss) Hs' (eqtm_wf_l ge_typeof Hzz) Hz'
+  exact (V_natrec (lequiv_wf_l _ _ _ Hll) Hll HM (eqtm_wf_l ge_typeof Hss) (eqtm_wf_l ge_typeof Hzz)
            VM Vs Vz Vt).
 Qed.
 
@@ -121,7 +100,7 @@ Lemma ft_lam {l l' A B t} : lwf (gL G) l -> lwf (gL G) l' ->
   VTm G Γ (lam l l' A t) (lam l l' A t) (tyPi l l' A B) (lmax l l').
 Proof.
   intros Hw Hw' Ht VA Vt.
-  exact (V_lam Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') (wf_tm_ty ge_typeof Ht) Ht Ht VA
+  exact (V_lam Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') (wf_tm_ty ge_typeof Ht) Ht VA
            (VTmG_ty Vt) Vt).
 Qed.
 
@@ -132,7 +111,7 @@ Lemma ft_lam_eq {l1 l2 l3 l4 A A' B t t'} :
 Proof.
   intros H13 H24 Htt VA Vt.
   exact (V_lam (lequiv_wf_l _ _ _ H13) (lequiv_wf_l _ _ _ H24) (lequiv_sym _ _ _ H13) (lequiv_sym _ _ _ H24)
-           (eqtm_wf_ty ge_typeof Htt) (eqtm_wf_l ge_typeof Htt) (eqtm_wf_r ge_typeof Htt) VA
+           (eqtm_wf_ty ge_typeof Htt) (eqtm_wf_l ge_typeof Htt) VA
            (VTmG_ty Vt) Vt).
 Qed.
 

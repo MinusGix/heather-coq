@@ -37,8 +37,7 @@ Section PiTy.
 Context {G : gctx} {Γ : ctx} {l l' l3 l4 : lvl} {A A' B B' : ty}
   (Hwl : lwf (gL G) l) (Hwl' : lwf (gL G) l')
   (H3 : lequiv (gL G) l3 l) (H4 : lequiv (gL G) l4 l')
-  (HA : [ G ; Γ ⊢g A @ l ]) (HA' : [ G ; Γ ⊢g A' @ l ])
-  (HB : [ G ; Γ ,, A @ l ⊢g B @ l' ]) (HB' : [ G ; Γ ,, A' @ l ⊢g B' @ l' ])
+  (HB : [ G ; Γ ,, A @ l ⊢g B @ l' ])
   (VA : VTyG G Γ A A' l) (VB : VTyG G (Γ ,, A @ l) B B' l').
 
 Let N := lmeasure (lmax l l').
@@ -66,12 +65,13 @@ Proof.
   assert (HΔA' : [ G ; Δ ,, A'[d'] @ l ⊢g ]) by now apply ext_wf_g.
   assert (HBd : [ G ; Δ ,, A[d] @ l ⊢g B[llift d] @ l' ])
     by (eapply (wf_ty_subst ge_typeof HB); now apply (lsub_wf_lift _ _ ge_typeof)).
-  assert (HB'd : [ G ; Δ ,, A'[d'] @ l ⊢g B'[llift d'] @ l' ])
-    by (eapply (wf_ty_subst ge_typeof HB'); now apply (lsub_wf_lift _ _ ge_typeof)).
   assert (Hlift : SubRel G (Γ ,, A @ l) (Δ ,, A[d] @ l) (llift d) (llift d'))
     by (apply SubRel_lift; [exact Hd | exact (VTy_refl_l (VTyG_loc VA)) | exact HAd | exact Hwl]).
   destruct (VTyG_loc VB _ _ _ Hlift) as [RB HRB].
-  destruct (escape_ty _ _ _ _ _ _ _ _ HRB) as (_ & _ & HBB).
+  destruct (escape_ty _ _ _ _ _ _ _ _ HRB) as (_ & HB'd0 & HBB).
+  (* the right codomain, moved to its own domain *)
+  assert (HB'd : [ G ; Δ ,, A'[d'] @ l ⊢g B'[llift d'] @ l' ])
+    by exact (stab_ty ge_typeof (geq_ty_sound HAA) (lequiv_refl _ _ Hwl) HΔA' HB'd0).
   assert (Hm : lequiv (gL G) (lmax l3 l4) (lmax l l')) by now apply lequiv_max.
   push_subst.
   eapply (LRpi N (LRbelow N) G Δ _ _ (lmax l l') l l' l3 l4 A[d] B[llift d] A'[d'] B'[llift d']

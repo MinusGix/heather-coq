@@ -163,7 +163,7 @@ Lemma V_eta : VTm G Γ (lam l l' A (app t⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑
 Proof.
   intros Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ.
   pose proof (SubRel_wf_l _ _ _ _ _ Hd) as Hsd.
-  pose proof (LR_pi_here Hwl Hwl' (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') HB HB VA VB
+  pose proof (LR_pi_here Hwl Hwl' (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') HB VA VB
                 _ _ _ Hd) as HP.
   pose proof (VTyG_loc VA) as VAl. pose proof (VTyG_loc VB) as VBl.
   eapply LRtm_of; [exact HP|].

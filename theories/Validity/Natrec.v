@@ -185,10 +185,9 @@ Qed.
 Section NatrecCore.
 Context {G : gctx} {Γ : ctx} {l l' : lvl} {M M' : ty} {s s' z z' : tm}
   (Hwl : lwf (gL G) l) (Hll : lequiv (gL G) l l')
-  (HM : [ G ; Γ ,, tyNat @ lzero ⊢g M @ l ]) (HM' : [ G ; Γ ,, tyNat @ lzero ⊢g M' @ l' ])
-  (Hs : [ G ; Γ ⊢g s : M[lsingle zero] @ l ]) (Hs' : [ G ; Γ ⊢g s' : M'[lsingle zero] @ l' ])
+  (HM : [ G ; Γ ,, tyNat @ lzero ⊢g M @ l ])
+  (Hs : [ G ; Γ ⊢g s : M[lsingle zero] @ l ])
   (Hz : [ G ; Γ ,, tyNat @ lzero ,, M @ l ⊢g z : M[lsucc] @ l ])
-  (Hz' : [ G ; Γ ,, tyNat @ lzero ,, M' @ l' ⊢g z' : M'[lsucc] @ l' ])
   (VM : VTy G (Γ ,, tyNat @ lzero) M M' l)
   (Vs : VTm G Γ s s' M[lsingle zero] l)
   (Vz : VTm G (Γ ,, tyNat @ lzero ,, M @ l) z z' M[lsucc] l).
@@ -215,8 +214,33 @@ Proof.
   intros Hd. pose proof (SubRel_ctx Hd) as HΔ. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   pose proof (VTy_refl_l VM) as VMM. pose proof (VTy_refl_l (VTy_sym VM)) as VM'M'.
   destruct (natrec_prems_subst (SubRel_wf_l _ _ _ _ _ Hd) Hwl HM Hs Hz) as (HMd & Hsd & Hzd).
-  destruct (natrec_prems_subst (SubRel_wf_r Hd) (lequiv_wf_r _ _ _ Hll) HM' Hs' Hz')
-    as (HMd' & Hsd' & Hzd').
+  (* the right-hand premises, by escape at the right substitution *)
+  assert (HNat : [ G ; Δ ⊢g tyNat @ lzero ])
+    by (apply wft_nat; [exact ge_notV | now rewrite ge_typeof]).
+  assert (HN0 : [ G ; Δ ⊢g zero : tyNat @ lzero ])
+    by (apply wf_zero; [exact ge_notV | now rewrite ge_typeof]).
+  assert (Hlift' : SubRel G (Γ ,, tyNat @ lzero) (Δ ,, tyNat @ lzero) (llift d') (llift d'))
+    by exact (SubRel_lift (A := tyNat) (SubRel_refl_r Hd) V_nat HNat I).
+  destruct (VM _ _ _ Hlift') as [RM' HRM']. destruct (escape_ty _ _ _ _ _ _ _ _ HRM') as (HMd'0 & HM'd' & EqM').
+  pose proof (geq_ty_sound EqM') as EqM'd.
+  assert (HMd' : [ G ; Δ ,, tyNat @ lzero ⊢g M'[llift d'] @ l' ])
+    by (eapply wft_lconv; [exact HM'd' | now apply lequiv_sym]).
+  assert (Hsd' : [ G ; Δ ⊢g s'[d'] : M'[llift d'][lsingle zero] @ l' ]).
+  { pose proof (Vs _ _ _ (SubRel_refl_r Hd)) as Xs'. rewrite !single_zero_subst_ty in Xs' by assumption.
+    destruct (LRtm_escape Xs') as [_ Hs'0].
+    eapply wf_lconv; [|apply lequiv_sym, Hll].
+    eapply wf_conv; [exact Hs'0 | rewrite ge_typeof].
+    apply eqty_sym, (eqty_single ge_typeof EqM'd HN0). }
+  assert (HΓ' : [ G ; Δ ,, tyNat @ lzero ,, M'[llift d'] @ l' ⊢g ])
+    by (apply ext_wf_g; [exact HMd' | exact (lequiv_wf_r _ _ _ Hll)]).
+  assert (Hzd' : [ G ; Δ ,, tyNat @ lzero ,, M'[llift d'] @ l' ⊢g z'[llift (llift d')]
+                     : M'[llift d'][lsucc] @ l' ]).
+  { pose proof (Vz _ _ _ (SubRel_lift Hlift' VMM HMd'0 Hwl)) as Xz'. rewrite !lsucc_subst_ty in Xz'.
+    destruct (LRtm_escape Xz') as [_ Hz'0].
+    pose proof (stab_tm ge_typeof EqM'd Hll HΓ' Hz'0) as Hz'1.
+    pose proof (eqty_subst ge_typeof EqM'd (lsub_wf_lsucc ge_typeof ge_notV HΓ')) as Hsucc.
+    eapply wf_lconv; [|apply lequiv_sym, Hll].
+    eapply wf_conv; [exact Hz'1 | rewrite ge_typeof; now apply eqty_sym]. }
   (* the right-hand reductions, at level [l] *)
   assert (Rcong : forall n w, [ G ; Δ ⊢g n ⤳* w : tyNat @ lzero ] ->
             [ G ; Δ ⊢g NR' d' n ⤳* NR' d' w : M'[llift d'][lsingle n] @ l ])
@@ -302,7 +326,7 @@ Proof.
   intros Vt Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   destruct (natrec_prems_subst (SubRel_wf_l _ _ _ _ _ Hd) Hwl HM Hs Hz) as (HMd & Hsd & Hzd).
   pose proof (proj1 LRtm_nat (Vt _ _ _ Hd)) as Htt.
-  pose proof (natrec_core Hwl (lequiv_refl _ _ Hwl) HM HM Hs Hs Hz Hz VM Vs Vz Hd _ _ Htt) as IH.
+  pose proof (natrec_core Hwl (lequiv_refl _ _ Hwl) HM Hs Hz VM Vs Vz Hd _ _ Htt) as IH.
   pose proof (natrec_step VM Vz Hd Htt IH) as X.
   rewrite single_subst_ty, single_subst_ty, single2_subst by assumption. push_subst.
   destruct (NatRel_escape Htt) as (Ht & _ & _).

@@ -28,14 +28,14 @@ Context {G : gctx} {Γ : ctx} {l l' l3 l4 : lvl} {A A' B : ty} {t t' : tm}
   (Hwl : lwf (gL G) l) (Hwl' : lwf (gL G) l')
   (H3 : lequiv (gL G) l3 l) (H4 : lequiv (gL G) l4 l')
   (HB : [ G ; Γ ,, A @ l ⊢g B @ l' ])
-  (Ht : [ G ; Γ ,, A @ l ⊢g t : B @ l' ]) (Ht' : [ G ; Γ ,, A @ l ⊢g t' : B @ l' ])
+  (Ht : [ G ; Γ ,, A @ l ⊢g t : B @ l' ])
   (VA : VTyG G Γ A A' l) (VB : VTyG G (Γ ,, A @ l) B B l')
   (Vt : VTmG G (Γ ,, A @ l) t t' B l').
 
 Lemma V_lam : VTm G Γ (lam l l' A t) (lam l3 l4 A' t') (tyPi l l' A B) (lmax l l').
 Proof.
   intros Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ.
-  pose proof (LR_pi_here Hwl Hwl' (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') HB HB
+  pose proof (LR_pi_here Hwl Hwl' (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') HB
                 (VTyG_refl_l VA) VB _ _ _ Hd) as HP.
   pose proof (VTyG_loc VA) as VAl. pose proof (VTyG_loc VB) as VBl.
   pose proof (VTy_refl_l VAl) as VAA.
@@ -55,7 +55,10 @@ Proof.
   pose proof (wf_ty_subst ge_typeof HB Hld) as HBd.
   pose proof (wf_ty_subst ge_typeof HB Hld') as HBd'.
   pose proof (wf_tm_subst ge_typeof Ht Hld) as Htd.
-  pose proof (wf_tm_subst ge_typeof Ht' Hld') as Ht'd'.
+  (* the right body, by escape at the right substitution *)
+  assert (Hlift' : SubRel G (Γ ,, A @ l) (Δ ,, A[d'] @ l) (llift d') (llift d'))
+    by (apply SubRel_lift; [exact (SubRel_refl_r Hd) | exact VAA | exact HAd' | exact Hwl]).
+  pose proof (proj2 (LRtm_escape (VTmG_loc Vt _ _ _ Hlift'))) as Ht'd'.
   assert (Hlift : SubRel G (Γ ,, A @ l) (Δ ,, A[d] @ l) (llift d) (llift d'))
     by (apply SubRel_lift; [exact Hd | exact VAA | exact HAd | exact Hwl]).
   assert (Hliftd : SubRel G (Γ ,, A @ l) (Δ ,, A[d] @ l) (llift d) (llift d))

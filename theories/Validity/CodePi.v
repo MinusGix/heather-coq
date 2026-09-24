@@ -47,10 +47,8 @@ Section CodePiV.
 Context {G : gctx} {Γ : ctx} {l1 l2 l3 l4 : lvl} {s s' t t' : tm}
   (Hw1 : lwf (gL G) l1) (Hw2 : lwf (gL G) l2)
   (H13 : lequiv (gL G) l1 l3) (H24 : lequiv (gL G) l2 l4)
-  (Hs : [ G ; Γ ⊢g s : tyU l1 @ lsuc l1 ]) (Hs' : [ G ; Γ ⊢g s' : tyU l1 @ lsuc l1 ])
-  (Hss : [ G ; Γ ⊢g s ≅ s' : tyU l1 @ lsuc l1 ])
+  (Hs : [ G ; Γ ⊢g s : tyU l1 @ lsuc l1 ])
   (Ht : [ G ; Γ ,, tyEl l1 s @ l1 ⊢g t : tyU l2 @ lsuc l2 ])
-  (Ht' : [ G ; Γ ,, tyEl l1 s @ l1 ⊢g t' : tyU l2 @ lsuc l2 ])
   (Vs : VTmG G Γ s s' (tyU l1) (lsuc l1))
   (Vt : VTmG G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) (lsuc l2)).
 
@@ -59,24 +57,25 @@ Lemma V_code_pi :
 Proof.
   (* facts in [Γ] *)
   destruct (El_annot Hs (lequiv_refl _ _ Hw1)) as [HA _].
-  destruct (El_annot Hs' (lequiv_sym _ _ _ H13)) as [HA' _].
-  assert (HAA' : [ G ; Γ ⊢g tyEl l1 s ≅ tyEl l3 s' @ l1 ]) by (apply eqty_El; auto using ge_notV).
-  assert (HΓA' : [ G ; Γ ,, tyEl l3 s' @ l1 ⊢g ]) by now apply ext_wf_g.
-  pose proof (stab_tm ge_typeof HAA' (lequiv_refl _ _ Hw1) HΓA' Ht') as Ht''.
   destruct (El_annot Ht (lequiv_refl _ _ Hw2)) as [HB _].
-  destruct (El_annot Ht'' (lequiv_sym _ _ _ H24)) as [HB' _].
   pose proof (V_ElG Hw1 H13 Vs) as VA. pose proof (V_ElG Hw2 H24 Vt) as VB.
   (* at a pair of related substitutions *)
   intros Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ.
-  pose proof (SubRel_wf_l _ _ _ _ _ Hd) as Hwd. pose proof (SubRel_wf_r Hd) as Hwd'.
-  pose proof (wf_ty_subst ge_typeof HA Hwd) as HAd. pose proof (wf_ty_subst ge_typeof HA' Hwd') as HA'd'.
-  pose proof (wf_tm_subst ge_typeof Hs Hwd) as Hsd. pose proof (wf_tm_subst ge_typeof Hs' Hwd') as Hs'd'.
+  pose proof (SubRel_wf_l _ _ _ _ _ Hd) as Hwd.
+  pose proof (wf_ty_subst ge_typeof HA Hwd) as HAd.
+  pose proof (wf_tm_subst ge_typeof Hs Hwd) as Hsd.
   pose proof (wf_tm_subst ge_typeof Ht (lsub_wf_lift _ _ ge_typeof _ _ _ _ _ Hwd HAd Hw1)) as Htd.
-  pose proof (wf_tm_subst ge_typeof Ht'' (lsub_wf_lift _ _ ge_typeof _ _ _ _ _ Hwd' HA'd' Hw1)) as Ht'd'.
   rewrite !subst_tyU, !subst_tyEl in *.
   assert (Hlift : SubRel G (Γ ,, tyEl l1 s @ l1) (Δ ,, tyEl l1 s[d] @ l1) (llift d) (llift d'))
     by exact (SubRel_lift Hd (VTy_refl_l (VTyG_loc VA)) HAd Hw1).
   pose proof (VTmG_loc Vt _ _ _ Hlift) as Xt. pose proof (VTmG_loc Vs _ _ _ Hd) as Xs. rewrite !subst_tyU in Xs, Xt.
+  (* the right-hand codes, by escape *)
+  pose proof (proj2 (LRtm_escape Xs)) as Hs'd'.
+  destruct (El_annot Hs'd' (lequiv_sym _ _ _ H13)) as [HA'd' _].
+  assert (HAA'd : [ G ; Δ ⊢g tyEl l1 s[d] ≅ tyEl l3 s'[d'] @ l1 ])
+    by exact (eqty_El _ _ _ _ _ _ _ ge_notV H13 (geq_tm_sound (LRtm_geq Xs))).
+  assert (HΔA' : [ G ; Δ ,, tyEl l3 s'[d'] @ l1 ⊢g ]) by now apply ext_wf_g.
+  pose proof (stab_tm ge_typeof HAA'd (lequiv_refl _ _ Hw1) HΔA' (proj2 (LRtm_escape Xt))) as Ht'd'.
   assert (Hgeq : [ G ; Δ ⊢ tmPi l1 l2 s[d] t[llift d] ≈ tmPi l3 l4 s'[d'] t'[llift d']
                      : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ])
     by exact (geq_tm_code_pi H13 H24 Hsd (LRtm_geq Xs) (LRtm_geq Xt)).
@@ -88,7 +87,7 @@ Proof.
            (conj (whnf_tmPi _ _ _ _) (conj (whnf_tmPi _ _ _ _) (conj Hgeq _))))).
   intros la lb Hla Hlb. rewrite LRbelow_spec by (rewrite ?lmeasure_suc; lia).
   eexists. eapply LR_red_ty;
-    [exact (LR_pi_here Hw1 Hw2 (lequiv_sym _ _ _ H13) (lequiv_sym _ _ _ H24) HB HB' VA VB _ _ _ Hd)
+    [exact (LR_pi_here Hw1 Hw2 (lequiv_sym _ _ _ H13) (lequiv_sym _ _ _ H24) HB VA VB _ _ _ Hd)
     | | ]; push_subst.
   - apply tyred_El_pi; auto using lequiv_refl.
   - apply tyred_El_pi; auto using lequiv_sym.
@@ -108,7 +107,7 @@ Proof.
   destruct (El_annot Hs (lequiv_refl _ _ Hw)) as [HA _].
   destruct (El_annot Ht (lequiv_refl _ _ Hw')) as [HB _].
   pose proof (V_ElG Hw (lequiv_refl _ _ Hw) Vs) as VA. pose proof (V_ElG Hw' (lequiv_refl _ _ Hw') Vt) as VB.
-  pose proof (LR_pi_here Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') HB HB VA VB _ _ _ Hd) as HP.
+  pose proof (LR_pi_here Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') HB VA VB _ _ _ Hd) as HP.
   destruct (escape_ty _ _ _ _ _ _ _ _ HP) as (HPd & _ & _).
   pose proof (SubRel_wf_r Hd) as Hwd'.
   pose proof (wf_ty_subst ge_typeof HA Hwd') as HAd'.

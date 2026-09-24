@@ -61,7 +61,7 @@ Lemma V_app : VTm G Γ (app t l l' A B s) (app t' l3 l4 A' B' s') B[lsingle s] l
 Proof.
   intros Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ.
   destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
-  pose proof (LR_pi_here Hwl Hwl' (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') HB HB
+  pose proof (LR_pi_here Hwl Hwl' (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') HB
                 (VTyG_refl_l VA) (VTyG_refl_l VB) _ _ _ Hd) as HP.
   apply VTyG_loc in VA, VB.
   pose proof (VTy_refl_l VA) as VAA. pose proof (VTy_refl_l VB) as VBB.
