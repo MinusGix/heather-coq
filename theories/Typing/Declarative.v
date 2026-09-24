@@ -126,11 +126,11 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] tyU l ≅ tyU l' @ lsuc l ]
 | eqty_El G i Γ l l' t t' : i <> lV -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] t ≅ t' : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] tyEl l t ≅ tyEl l' t' @ l ]
-| eqty_El_nat G i Γ : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] ->
+| eqty_El_nat G i Γ : compt i -> [ G ; Γ ⊢[ typeof i ] ] ->
     [ G ; Γ ⊢[ i ] tyNat ≅ tyEl lzero tmNat @ lzero ]
-| eqty_El_U G i Γ l : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
+| eqty_El_U G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tyU l ≅ tyEl (lsuc l) (tmU l) @ lsuc l ]
-| eqty_El_pi G i Γ l l' s t : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
+| eqty_El_pi G i Γ l l' s t : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ] ->
     [ G ; Γ ⊢[ i ] tyPi l l' (tyEl l s) (tyEl l' t) ≅ tyEl (lmax l l') (tmPi l l' s t) @ lmax l l' ]

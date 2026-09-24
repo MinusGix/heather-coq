@@ -132,6 +132,46 @@ validity's quantifier over `k`.
 - There is **one FT** over all judgments at C, P and M, proved in the order
   M, P, C (07b:216). The M1 FT becomes its `j = P`, `σ = id` fragment.
 
+## Decisions taken while implementing (typing)
+
+- **Seventh judgment `eq_ctx`** (`[G ⊢[i] Γ ≅ Γ']`), for the congruences of
+  `□`. `typing_mut` gains a seventh component, appended last, so M1's
+  positional projections of the first six stay valid.
+- **Typed local substitutions carry the paper's tail condition**
+  (`lsub_tail`, 04:990). Past the variables of the domain, `δ` is the
+  shift by `|Γ|`, and both contexts end the same way. Lookup typing alone
+  can't see how a context variable's own variables are sent, and global
+  substitution of `g` would break. `lsub_wf` is now a record
+  (`lsw_ctx/lsw_dnf/lsw_tail/lsw_var`), with its context at `typeof i`.
+- **Normal forms:** `nf*` constrains only what local operations traverse
+  (box contents and the `Δ`/`T` of `□`/`letbox` are ignored), so local
+  outputs stay normal unconditionally. The *deep* forms `dnf*` include
+  them. Global identity laws need `dnf`, typed terms are `dnf`
+  (`typed_dnf`), and the global-variable rules require `dnfl δ`.
+- **Redundant well-formedness premises** (the M1 convention) were added where
+  a proof otherwise needs a context fact that its premises only imply via
+  presupposition:
+  - `[Δ ⊢_P]` on the `box` rules, `wft_CTrm`/`eqty_CTrm`, and the
+    `letbox` congruences/β-rules;
+  - the second substitution of the `U^δ`/`u^δ` congruences is typed at its
+    own type `A[δ']`, not at `A[δ]`. This is just as redundant, and
+    functionality then needs no conversion.
+- **`El`-decoding equations are gated by `compt i`.** The paper puts them at
+  every layer but V (04:638), which contradicts its own Static Code Lemma
+  (05:1055): at C, `Nat` and `El 0 ⌜Nat⌝` must stay distinct code. We
+  follow the Static Code Lemma.
+- **Metatheory at every layer:** global weakening, lifting, local
+  weakening, and the substitution lemma are proved for all layers.
+  Weakening/substitution use a target context at `typeof i` and lifting for
+  context extensions. The `letbox` body is handled by global weakening by
+  one binding (`gwk d` under the binder). The M1 statements (`typeof i =
+  i`) are kept as corollaries.
+- **`gctx` is a primitive record** (definitional eta), so `[⊢ G]` and
+  `[⊢ mkG (gL G) (gΨ G)]` are interchangeable.
+- The inductive type of global weakenings is called `gweak`, so that it
+  doesn't clash with `gwk d`, the local substitution moved under a global
+  binder.
+
 ## Fork, with the chosen default
 
 **Static-code payload.** The simplified payload (`⊢_C` plus `⊩^{≥P}_P`)
