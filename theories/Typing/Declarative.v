@@ -196,26 +196,34 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n ≅ llk d' n : A[d] @ k ]) ->
     [ G ; Γ ⊢[ i ] gvar u d ≅ gvar u d' : T[d] @ l ]
 | eqtm_boxT G Γ Δ T T' l : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
-    [ G ; Δ ⊢[ lC ] T @ l ] -> [ G ; Δ ⊢[ lC ] T ≅ T' @ l ] ->
+    [ G ; Δ ⊢[ lC ] T @ l ] -> [ G ; Δ ⊢[ lC ] T' @ l ] -> [ G ; Δ ⊢[ lC ] T ≅ T' @ l ] ->
     [ G ; Γ ⊢[ lM ] boxT T ≅ boxT T' : tyCTyp Δ l @ lzero ]
 | eqtm_boxt G Γ Δ t t' T l : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
-    [ G ; Δ ⊢[ lC ] t : T @ l ] -> [ G ; Δ ⊢[ lC ] t ≅ t' : T @ l ] ->
+    [ G ; Δ ⊢[ lC ] t : T @ l ] -> [ G ; Δ ⊢[ lC ] t' : T @ l ] -> [ G ; Δ ⊢[ lC ] t ≅ t' : T @ l ] ->
     [ G ; Γ ⊢[ lM ] boxt t ≅ boxt t' : tyCTrm Δ T l @ lzero ]
 | eqtm_letboxT G Γ l1 l2 l3 l4 Δ Δ' M M' t1 t2 t t0 :
-    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 -> [ G ; Δ ⊢[ lD ] ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] ] ->
+    [ G ⊢[ lD ] Δ ≅ Δ' ] ->
     [ G ; Γ ,, tyCTyp Δ l2 @ lzero ⊢[ lM ] M @ l1 ] ->
     [ G ; Γ ,, tyCTyp Δ l2 @ lzero ⊢[ lM ] M ≅ M' @ l1 ] ->
+    [ G ; Γ ,, tyCTyp Δ' l4 @ lzero ⊢[ lM ] M' @ l3 ] ->
     [ gext G (gdTy Δ lC l2) ; Γ⟪S⟫ ⊢[ lM ] t1 ≅ t2
         : M⟪S⟫[lsingle (boxT (tyGvar 0 (lshift 0)))] @ l1 ] ->
+    [ gext G (gdTy Δ' lC l4) ; Γ⟪S⟫ ⊢[ lM ] t2
+        : M'⟪S⟫[lsingle (boxT (tyGvar 0 (lshift 0)))] @ l3 ] ->
     [ G ; Γ ⊢[ lM ] t ≅ t0 : tyCTyp Δ l2 @ lzero ] ->
     [ G ; Γ ⊢[ lM ] letboxT l1 l2 Δ M t1 t ≅ letboxT l3 l4 Δ' M' t2 t0 : M[lsingle t] @ l1 ]
 | eqtm_letboxt G Γ l1 l2 l3 l4 Δ Δ' T T' M M' t1 t2 t t0 :
-    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 -> [ G ; Δ ⊢[ lD ] ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
-    [ G ; Δ ⊢[ lD ] T @ l2 ] -> [ G ; Δ ⊢[ lD ] T ≅ T' @ l2 ] ->
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] ] ->
+    [ G ⊢[ lD ] Δ ≅ Δ' ] ->
+    [ G ; Δ ⊢[ lD ] T @ l2 ] -> [ G ; Δ' ⊢[ lD ] T' @ l4 ] -> [ G ; Δ ⊢[ lD ] T ≅ T' @ l2 ] ->
     [ G ; Γ ,, tyCTrm Δ T l2 @ lzero ⊢[ lM ] M @ l1 ] ->
     [ G ; Γ ,, tyCTrm Δ T l2 @ lzero ⊢[ lM ] M ≅ M' @ l1 ] ->
+    [ G ; Γ ,, tyCTrm Δ' T' l4 @ lzero ⊢[ lM ] M' @ l3 ] ->
     [ gext G (gdTm Δ lC T l2) ; Γ⟪S⟫ ⊢[ lM ] t1 ≅ t2
         : M⟪S⟫[lsingle (boxt (gvar 0 (lshift 0)))] @ l1 ] ->
+    [ gext G (gdTm Δ' lC T' l4) ; Γ⟪S⟫ ⊢[ lM ] t2
+        : M'⟪S⟫[lsingle (boxt (gvar 0 (lshift 0)))] @ l3 ] ->
     [ G ; Γ ⊢[ lM ] t ≅ t0 : tyCTrm Δ T l2 @ lzero ] ->
     [ G ; Γ ⊢[ lM ] letboxt l1 l2 Δ T M t1 t ≅ letboxt l3 l4 Δ' T' M' t2 t0 : M[lsingle t] @ l1 ]
 (* computation rules: layers D and M only *)

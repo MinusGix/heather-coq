@@ -285,17 +285,17 @@ Ltac gw_manual :=
       gw_Δ ltac:(fun D => eapply eqtm_gvar with (Δ := D));
       [ .. | gw_entries | gw_entries | gw_entries]; eauto with gwk
   | |- wf_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ =>
-      eapply wf_letboxT; [ .. | gw_body | ]; gw_premise
+      eapply wf_letboxT; try gw_body; gw_premise
   | |- wf_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ =>
-      eapply wf_letboxt; [ .. | gw_body | ]; gw_premise
+      eapply wf_letboxt; try gw_body; gw_premise
   | |- eq_tm _ _ _ (letboxT _ _ _ _ _ (boxT _)) _ _ _ =>
-      cbn [goren]; eapply eqtm_letboxT_beta; [ .. | gw_body]; gw_premise
+      cbn [goren]; eapply eqtm_letboxT_beta; try gw_body; gw_premise
   | |- eq_tm _ _ _ (letboxt _ _ _ _ _ _ (boxt _)) _ _ _ =>
-      cbn [goren]; eapply eqtm_letboxt_beta; [ .. | gw_body]; gw_premise
+      cbn [goren]; eapply eqtm_letboxt_beta; try gw_body; gw_premise
   | |- eq_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ _ =>
-      eapply eqtm_letboxT; [ .. | gw_body | ]; gw_premise
+      eapply eqtm_letboxT; try gw_body; gw_premise
   | |- eq_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ _ =>
-      eapply eqtm_letboxt; [ .. | gw_body | ]; gw_premise
+      eapply eqtm_letboxt; try gw_body; gw_premise
   | |- wf_tm _ _ _ (natrec _ _ _ _ _) _ _ => eapply wf_natrec; gw_premise
   | |- eq_tm _ _ _ (natrec _ _ _ _ zero) _ _ _ => eapply eqtm_natrec_zero; gw_premise
   | |- eq_tm _ _ _ (natrec _ _ _ _ (succ _)) _ _ _ => eapply eqtm_natrec_succ; gw_premise

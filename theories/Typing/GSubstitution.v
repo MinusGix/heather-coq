@@ -418,16 +418,16 @@ Ltac gs_manual2 :=
   | |- eq_tm _ _ _ (natrec _ _ _ _ (succ _)) _ _ _ => eapply eqtm_natrec_succ; gs_premise
   | |- eq_tm _ _ _ (natrec _ _ _ _ _) (natrec _ _ _ _ _) _ _ => eapply eqtm_natrec; gs_premise
   | |- eq_tm _ _ _ (lam _ _ _ _) _ _ _ => eapply eqtm_eta; gs_premise
-  | |- wf_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ => eapply wf_letboxT; [ .. | gs_body | ]; gs_premise
-  | |- wf_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ => eapply wf_letboxt; [ .. | gs_body | ]; gs_premise
+  | |- wf_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ => eapply wf_letboxT; try gs_body; gs_premise
+  | |- wf_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ => eapply wf_letboxt; try gs_body; gs_premise
   | Hσ : gsub_wf _ _ _ |- eq_tm _ _ _ (letboxT _ _ _ _ _ (boxT _)) _ _ _ =>
       rewrite (gs_gsingle _ _ _ (gsw_dnf _ _ _ Hσ)); cbn [gosubst];
-      eapply eqtm_letboxT_beta; [ .. | gs_body]; gs_premise
+      eapply eqtm_letboxT_beta; try gs_body; gs_premise
   | Hσ : gsub_wf _ _ _ |- eq_tm _ _ _ (letboxt _ _ _ _ _ _ (boxt _)) _ _ _ =>
       rewrite (gs_gsingle _ _ _ (gsw_dnf _ _ _ Hσ)); cbn [gosubst];
-      eapply eqtm_letboxt_beta; [ .. | gs_body]; gs_premise
-  | |- eq_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ _ => eapply eqtm_letboxT; [ .. | gs_body | ]; gs_premise
-  | |- eq_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ _ => eapply eqtm_letboxt; [ .. | gs_body | ]; gs_premise
+      eapply eqtm_letboxt_beta; try gs_body; gs_premise
+  | |- eq_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ _ => eapply eqtm_letboxT; try gs_body; gs_premise
+  | |- eq_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ _ => eapply eqtm_letboxt; try gs_body; gs_premise
   end.
 
 Theorem gsubstitution :

@@ -223,7 +223,7 @@ Ltac wk_body :=
       assert (Hg : [ ⊢ gext G D ])
         by (unfold gext; first [eapply wfg_ty | eapply wfg_tm];
             first [exact (ctx_glob _ _ _ HΔ) | eassumption | left; reflexivity | right; reflexivity
-                  | cbn; eassumption | eapply lequiv_wf_l; eassumption]);
+                  | cbn; eassumption | eapply lequiv_wf_l; eassumption | eapply lequiv_wf_r; eassumption]);
       assert (X : [ gext G D ; Δ⟪S⟫ ⊢[ lM ] ]);
       [ exact (proj1 (proj2 gweakening) _ _ _ HΔ (D :: gΨ G) (gwk_step gwk_id)
                  (gwkwf_step _ _ _ _ (gwkwf_id _)) Hg)
@@ -252,14 +252,14 @@ Ltac wk_manual :=
   | |- eq_tm _ _ _ (gvar _ _) _ _ _ =>
       rewrite (subst_ren_ty _ _ _ _ (fun m => llk_lren _ _ m));
       eapply eqtm_gvar; [ .. | wk_entries | wk_entries | wk_entries]; eauto with wk
-  | |- wf_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ => eapply wf_letboxT; [ .. | wk_body | ]; wk_premise
-  | |- wf_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ => eapply wf_letboxt; [ .. | wk_body | ]; wk_premise
+  | |- wf_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ => eapply wf_letboxT; try wk_body; wk_premise
+  | |- wf_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ => eapply wf_letboxt; try wk_body; wk_premise
   | |- eq_tm _ _ _ (letboxT _ _ _ _ _ (boxT _)) _ _ _ =>
-      rewrite <- gsubst_ren; eapply eqtm_letboxT_beta; [ .. | wk_body]; wk_premise
+      rewrite <- gsubst_ren; eapply eqtm_letboxT_beta; try wk_body; wk_premise
   | |- eq_tm _ _ _ (letboxt _ _ _ _ _ _ (boxt _)) _ _ _ =>
-      rewrite <- gsubst_ren; eapply eqtm_letboxt_beta; [ .. | wk_body]; wk_premise
-  | |- eq_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ _ => eapply eqtm_letboxT; [ .. | wk_body | ]; wk_premise
-  | |- eq_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ _ => eapply eqtm_letboxt; [ .. | wk_body | ]; wk_premise
+      rewrite <- gsubst_ren; eapply eqtm_letboxt_beta; try wk_body; wk_premise
+  | |- eq_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ _ => eapply eqtm_letboxT; try wk_body; wk_premise
+  | |- eq_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ _ => eapply eqtm_letboxt; try wk_body; wk_premise
   end.
 
 Theorem weakening_all :

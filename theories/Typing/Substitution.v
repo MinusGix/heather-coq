@@ -413,7 +413,7 @@ Ltac sub_body :=
       assert (Hg : [ ⊢ gext G D ])
         by (unfold gext; first [eapply wfg_ty | eapply wfg_tm];
             first [exact (ctx_glob _ _ _ (lsub_wf_ctx Hd)) | eassumption | left; reflexivity
-                  | right; reflexivity | cbn; eassumption | eapply lequiv_wf_l; eassumption]);
+                  | right; reflexivity | cbn; eassumption | eapply lequiv_wf_l; eassumption | eapply lequiv_wf_r; eassumption]);
       pose proof (IH _ _ (lsub_wf_gwk _ _ _ _ _ _ Hg Hd)) as X;
       rewrite body_subst_ty in X by (eauto with nf; reflexivity); exact X
   end.
@@ -432,14 +432,14 @@ Ltac sub_manual2 :=
       match goal with Hd : lsub_wf _ _ _ ?d _ |- context [(?T[?e])[?d]] =>
         rewrite (subst_subst_ty T e d (lcomp e d) (fun m => llk_lcomp e d m)) end;
       eapply eqtm_gvar; [ .. | sub_entries | sub_entries | sub_entries]; sub_gvar_side
-  | |- wf_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ => eapply wf_letboxT; [ .. | sub_body | ]; sub_premise
-  | |- wf_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ => eapply wf_letboxt; [ .. | sub_body | ]; sub_premise
+  | |- wf_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ => eapply wf_letboxT; try sub_body; sub_premise
+  | |- wf_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ => eapply wf_letboxt; try sub_body; sub_premise
   | |- eq_tm _ _ _ (letboxT _ _ _ _ _ (boxT _)) _ _ _ =>
-      rewrite gsingle_subst by eauto with nf; eapply eqtm_letboxT_beta; [ .. | sub_body]; sub_premise
+      rewrite gsingle_subst by eauto with nf; eapply eqtm_letboxT_beta; try sub_body; sub_premise
   | |- eq_tm _ _ _ (letboxt _ _ _ _ _ _ (boxt _)) _ _ _ =>
-      rewrite gsingle_subst by eauto with nf; eapply eqtm_letboxt_beta; [ .. | sub_body]; sub_premise
-  | |- eq_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ _ => eapply eqtm_letboxT; [ .. | sub_body | ]; sub_premise
-  | |- eq_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ _ => eapply eqtm_letboxt; [ .. | sub_body | ]; sub_premise
+      rewrite gsingle_subst by eauto with nf; eapply eqtm_letboxt_beta; try sub_body; sub_premise
+  | |- eq_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ _ => eapply eqtm_letboxT; try sub_body; sub_premise
+  | |- eq_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ _ => eapply eqtm_letboxt; try sub_body; sub_premise
   | |- wf_tm _ _ _ (boxT _) _ _ => eapply wf_boxT; sub_premise
   | |- wf_tm _ _ _ (boxt _) _ _ => eapply wf_boxt; sub_premise
   | |- eq_tm _ _ _ (boxT _) _ _ _ => eapply eqtm_boxT; sub_premise
