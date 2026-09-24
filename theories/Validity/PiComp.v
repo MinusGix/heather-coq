@@ -134,4 +134,84 @@ Qed.
 
 End Beta.
 
+(** ** η *)
+
+Section Eta.
+Context {G : gctx} {Γ : ctx} {l l' : lvl} {A B : ty} {t : tm}
+  (Hwl : lwf (gL G) l) (Hwl' : lwf (gL G) l')
+  (HA : [ G ; Γ ⊢g A @ l ]) (HB : [ G ; Γ ,, A @ l ⊢g B @ l' ])
+  (Ht : [ G ; Γ ⊢g t : tyPi l l' A B @ lmax l l' ])
+  (VA : VTy G Γ A A l) (VB : VTy G (Γ ,, A @ l) B B l')
+  (Vt : VTm G Γ t t (tyPi l l' A B) (lmax l l')).
+
+Lemma V_eta : VTm G Γ (lam l l' A (app t⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0))) t
+                (tyPi l l' A B) (lmax l l').
+Proof.
+  intros Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ.
+  pose proof (SubRel_wf_l _ _ _ _ _ Hd) as Hsd.
+  pose proof (LR_pi_here Hwl Hwl' (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') HB HB VA VB
+                _ _ _ Hd) as HP.
+  eapply LRtm_of; [exact HP|].
+  pose proof (LRtm_inv HP (Vt _ _ _ Hd)) as Hti.
+  destruct Hti as (wd & w' & Hwd & Hw' & Hnfd & Hnf' & _ & _ & Kt).
+  (* typing of the substituted η-expansion *)
+  pose proof (wf_tm_subst ge_typeof (pre_eta_l ge_typeof ge_notV Hwl Hwl' HA HB Ht) Hsd) as HL.
+  rewrite subst_lam in HL |- *. rewrite subst_tyPi in HL.
+  destruct (VA _ _ _ Hd) as [RA HRA]. destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HAd & _ & _).
+  assert (Hld : lsub_wf G ge_layer (Δ ,, A[d] @ l) (llift d) (Γ ,, A @ l))
+    by now apply (lsub_wf_lift _ _ ge_typeof).
+  pose proof (wf_ty_subst ge_typeof HB Hld) as HBd.
+  pose proof (wf_tm_subst ge_typeof Ht Hsd) as Htd. rewrite subst_tyPi in Htd.
+  destruct (escape_ty _ _ _ _ _ _ _ _ HP) as (_ & _ & HPi). rewrite !subst_tyPi in HPi.
+  pose proof (geq_ty_sound HPi) as HPiEq.
+  assert (Hw'Π : [ G ; Δ ⊢g w' : tyPi l l' A[d] B[llift d] @ lmax l l' ]).
+  { eapply wf_conv; [exact (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ Hw')) | rewrite ge_typeof].
+    exact HPiEq. }
+  set (L := lam l l' A[d] (app t⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0))[llift d]).
+  assert (K : @PiK G l l' A B Δ d d' L w').
+  { intros Δ' ρ Hρ HΔ' a a' ha la lb la' lb' A1 B1 A1' B1' Hla Hlb Hla' Hlb' HA1 HB1 HA1' HB1'.
+    pose proof (wk_wf_wkr _ _ _ Hρ) as Hr.
+    assert (HAdρ : [ G ; Δ' ⊢g A[d]⟨ρ⟩ @ l ]) by exact (wf_ty_wk Hρ HΔ' HAd).
+    assert (HΔ'A : [ G ; Δ' ,, A[d]⟨ρ⟩ @ l ⊢g ]) by now apply ext_wf_g.
+    assert (RAρ : [ G ; Δ' ⊢ A[d]⟨ρ⟩ ≈ A[d]⟨ρ⟩ @ l ]).
+    { destruct (VA _ _ _ (SubRel_wk _ _ _ _ _ _ _ Hρ HΔ' (SubRel_refl_l Hd))) as [R0 HR0].
+      rewrite <- !subst_ren_lren_ty in HR0. apply (escape_ty _ _ _ _ _ _ _ _ HR0). }
+    assert (RBρ : [ G ; Δ' ,, A[d]⟨ρ⟩ @ l ⊢ B[llift d]⟨rlift ρ⟩ ≈ B[llift d]⟨rlift ρ⟩ @ l' ]).
+    { assert (Hliftd : SubRel G (Γ ,, A @ l) (Δ ,, A[d] @ l) (llift d) (llift d))
+        by (apply SubRel_lift; [exact (SubRel_refl_l Hd) | exact VA | exact HAd | exact Hwl]).
+      destruct (VB _ _ _ Hliftd) as [RB0 HRB0].
+      apply (geq_ty_wk (wkr_lift Hρ) HΔ'A (proj2 (proj2 (escape_ty _ _ _ _ _ _ _ _ HRB0)))). }
+    pose proof (Kt Δ' ρ Hρ HΔ' a a' ha l l' la' lb' A[d]⟨ρ⟩ B[llift d]⟨rlift ρ⟩ A1' B1'
+                  (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') Hla' Hlb' RAρ RBρ HA1' HB1') as X.
+    unfold piCod in X |- *. destruct X as (R & HR & HX). exists R; split; [exact HR|].
+    unfold piDom in ha.
+    assert (Ha0 : LRtm l G Δ' A[d]⟨ρ⟩ A[d']⟨ρ⟩ a a')
+      by (apply (LRtm_stage (n := lmeasure (lmax l l'))); [rewrite lmeasure_max; lia | exact ha]).
+    destruct (LRtm_escape Ha0) as [Haρ _].
+    destruct (escape_tm _ _ _ _ _ _ _ _ HR _ _ HX) as (_ & Hx2 & _).
+    destruct (escape_ty _ _ _ _ _ _ _ _ HR) as (_ & _ & HBB).
+    eapply LR_red_tm; [exact HR | exact HX | |].
+    - (* β, then the head reduction of [t[d]] *)
+      eapply tmred_trans.
+      + subst L. push_ren. apply tmred_beta; auto.
+        * exact (wf_ty_wkr (wkr_lift Hρ) HΔ'A HBd).
+        * eapply (wf_tm_wkr (wkr_lift Hρ) HΔ'A).
+          exact (wf_tm_subst ge_typeof (pre_eta_body ge_typeof ge_notV Hwl Hwl' HA HB Ht) Hld).
+        * now apply geq_ty_sound.
+        * now apply geq_ty_sound.
+      + rewrite eta_body_subst_ren, eta_body_single by auto using ren_nf, ren_nf_ty.
+        apply tmred_app_cong; auto.
+        * exact (wf_ty_wkr (wkr_lift Hρ) HΔ'A HBd).
+        * exact (tmred_wk' Hρ HΔ' Hwd).
+    - apply tmred_refl. eapply wf_conv; [exact Hx2 | rewrite ge_typeof].
+      apply eqty_sym, geq_ty_sound, HBB. }
+  exists L, w'.
+  pose proof (funext_K Hwl Hwl' HB VA VB _ _ _ _ _ Hd HL Hw'Π K) as GEQ.
+  refine (conj (tmred_refl _ _ _ HL) (conj Hw' (conj (whnf_lam _ _ _ _) (conj Hnf'
+            (conj GEQ (conj _ K)))))).
+  eapply geq_tm_conv; [exact GEQ | exact HPiEq].
+Qed.
+
+End Eta.
+
 End PiComp.

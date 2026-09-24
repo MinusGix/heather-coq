@@ -235,23 +235,29 @@ Proof.
   - apply wf_natrec; auto.
 Qed.
 
-Lemma pre_eta_l {Γ l l' A B t} :
+Lemma pre_eta_body {Γ l l' A B t} :
   lwf (gL G) l -> lwf (gL G) l' ->
   [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
   [ G ; Γ ⊢[ i ] t : tyPi l l' A B @ lmax l l' ] ->
-  [ G ; Γ ⊢[ i ] lam l l' A (app t⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0)) : tyPi l l' A B @ lmax l l' ].
+  [ G ; Γ ,, A @ l ⊢[ i ] app t⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0) : B @ l' ].
 Proof.
   intros Hl Hl' HA HB Ht.
   assert (HΓA : [ G ; Γ ,, A @ l ⊢[ i ] ]) by (apply ext_wf; auto).
   assert (HA1 : [ G ; Γ ,, A @ l ⊢[ i ] A⟨↑⟩ @ l ]) by (apply wk1_ty; auto).
   assert (HΓAA : [ G ; Γ ,, A @ l ,, A⟨↑⟩ @ l ⊢[ i ] ]) by (apply ext_wf; auto).
-  apply wf_lam; auto.
   rewrite <- (liftshift_single_var_ty B) at 2 by exact (wf_ty_nf HB).
   apply wf_app; auto.
   - eapply weakening_r; eauto. apply wkr_up, wkr_shift1.
   - exact (wk1_tm G i Hi _ _ _ _ _ _ HΓA Ht).
   - now apply var0_wf.
 Qed.
+
+Lemma pre_eta_l {Γ l l' A B t} :
+  lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ⊢[ i ] t : tyPi l l' A B @ lmax l l' ] ->
+  [ G ; Γ ⊢[ i ] lam l l' A (app t⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0)) : tyPi l l' A B @ lmax l l' ].
+Proof. intros; apply wf_lam; auto using pre_eta_body. Qed.
 
 End Aux.
 
