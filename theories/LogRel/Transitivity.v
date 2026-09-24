@@ -9,7 +9,7 @@
 From DeLaM.LogRel Require Export Symmetry.
 
 Section Transitivity.
-Context `{E : GenericEq} `{EL : !GenericEqLaws}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
 (** ** Left irrelevance *)
 
@@ -114,7 +114,8 @@ Proof.
                  | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR
                  | G Γ T1 T2 l V1 V2 R HT1 HT2 HV HR
                  | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2
-                     HA1 HA2 HB1 HB2 HA12 HB12 domAd1 IHdom codAd1 IHcod HR];
+                     HA1 HA2 HB1 HB2 HA12 HB12 domAd1 IHdom codAd1 IHcod HR
+                 | G Γ T1 T2 l R Hj HM];
     intros T3 R23 H2.
   - (* Nat *)
     destruct (LR_inv_nat H2 HT2) as (_ & HT3 & HR2).
@@ -244,6 +245,12 @@ Proof.
         pose proof (proj2 (IHcod ρ a a haa _ _
                              (LR_lconv _ _ _ _ _ _ _ _ _ (codAd2 ρ a a' h2) Hl24')) _ _ _ X1 X2) as X3.
         exact (proj1 (Hcodirr ρ a a a' haa ha _ _) X3).
+  - (* contextual types *)
+    assert (HM2 : ModRel G Γ T2 T3 l R23)
+      by (destruct (ModRel_red_r HM) as [(Δ & k & HT2) | (Δ & A & k & HT2)];
+          [exact (proj2 (LR_inv_CTyp H2 HT2)) | exact (proj2 (LR_inv_CTrm H2 HT2))]).
+    destruct (ModRel_trans HM HM2) as [H13 Htr].
+    split; [now apply LRmod | exact Htr].
 Qed.
 
 Theorem LR_trans n : Ptrans n.

@@ -2,7 +2,7 @@
 From DeLaM.Validity Require Export PiComp.
 
 Section Natrec.
-Context `{E : GenericEq} `{EL : !GenericEqLaws}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
 (** ** Syntax *)
 

@@ -2,7 +2,7 @@
 From DeLaM.LogRel Require Export Escape.
 
 Section Basics.
-Context `{E : GenericEq} `{EL : !GenericEqLaws}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
 (** ** Measures of levels *)
 
@@ -34,6 +34,7 @@ Proof.
     eapply LRU with (l1 := l1) (l2 := l2); eauto; lia.
   - eapply LRne; eauto.
   - eapply LRpi; eauto.
+  - eapply LRmod; eauto.
 Qed.
 
 Theorem cumul_down n m G Γ T T' l R :
@@ -51,6 +52,7 @@ Proof.
       rewrite (lequiv_measure_eq _ _ _ Hs), lmeasure_max in Hle end.
     eapply LRpi; eauto.
     all: intros; match goal with IH : _ |- LR _ _ _ _ _ _ _ _ => eapply IH; lia end.
+  - eapply LRmod; eauto.
 Qed.
 
 (** A type at level [l] is related identically at every stage above
@@ -83,6 +85,24 @@ Proof. intros H ??; symmetry; apply H. Qed.
 Lemma releq_trans R R' R'' : releq R R' -> releq R' R'' -> releq R R''.
 Proof. intros H H' ??; etransitivity; [apply H | apply H']. Qed.
 
+Lemma ModRel_releq G Γ T T' l R R' : ModRel G Γ T T' l R -> releq R R' -> ModRel G Γ T T' l R'.
+Proof.
+  destruct 1; intros HR'.
+  - eapply MRctyp; eauto using releq_trans, releq_sym.
+  - eapply MRctrm; eauto using releq_trans, releq_sym.
+Qed.
+
+Lemma ModRel_lconv G Γ T T' l l' R :
+  ModRel G Γ T T' l R -> lequiv (gL G) l' l -> ModRel G Γ T T' l' R.
+Proof.
+  destruct 1 as [T T' l Δ Δ' k k' R Hl Hk HT HT' HΔ Hgeq HR
+                | T T' l Δ Δ' A A' k k' R Hl Hk HT HT' HΔ HA HA' Hgeq HR]; intros Hl'.
+  - exact (MRctyp _ _ _ _ _ _ _ _ _ _ (lequiv_trans _ _ _ _ Hl' Hl) Hk
+             (tyred_lconv _ _ _ _ HT Hl') (tyred_lconv _ _ _ _ HT' Hl') HΔ Hgeq HR).
+  - exact (MRctrm _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_trans _ _ _ _ Hl' Hl) Hk
+             (tyred_lconv _ _ _ _ HT Hl') (tyred_lconv _ _ _ _ HT' Hl') HΔ HA HA' Hgeq HR).
+Qed.
+
 Lemma LR_releq n rec G Γ T T' l R R' :
   LR n rec G Γ T T' l R -> releq R R' -> LR n rec G Γ T T' l R'.
 Proof.
@@ -91,6 +111,7 @@ Proof.
   - eapply LRU; eauto using releq_trans, releq_sym.
   - eapply LRne; eauto using releq_trans, releq_sym.
   - eapply LRpi; eauto using releq_trans, releq_sym.
+  - eapply LRmod; eauto using ModRel_releq.
 Qed.
 
 Theorem LR_lconv n rec G Γ T T' l l' R :
@@ -100,7 +121,8 @@ Proof.
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR];
+                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l R Hj HM];
     intros Hl'.
   - eapply LRnat; eauto using lequiv_trans, tyred_lconv.
   - eapply (LRU n rec G Γ T T' l' l1 l2); eauto using lequiv_trans, tyred_lconv.
@@ -108,6 +130,7 @@ Proof.
     eapply releq_trans; [exact HR | now apply NeRel_lconv].
   - eapply (LRpi n rec G Γ T T' l' l1 l2 l3 l4 A B A' B' domR codR);
       eauto using lequiv_trans, tyred_lconv.
+  - apply LRmod; [exact Hj | exact (ModRel_lconv _ _ _ _ _ _ _ HM Hl')].
 Qed.
 
 End Basics.

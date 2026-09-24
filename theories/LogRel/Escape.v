@@ -2,7 +2,7 @@
 From DeLaM.LogRel Require Export Def.
 
 Section Escape.
-Context `{E : GenericEq} `{EL : !GenericEqLaws}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
 Lemma ge_typeof : typeof ge_layer = ge_layer.
 Proof. apply compt_typeof_self, ge_compt. Qed.
@@ -35,6 +35,42 @@ Qed.
 Lemma tyred_ctx {G Γ T W l} : [ G ; Γ ⊢g T ⤳* W @ l ] -> [ G ; Γ ⊢g ].
 Proof. intros []; eauto using ctx_of_ty. Qed.
 
+(** ** Escape for contextual types *)
+
+Lemma ModRel_escape_ty {G Γ T T' l R} : ModRel G Γ T T' l R ->
+  [ G ; Γ ⊢g T @ l ] /\ [ G ; Γ ⊢g T' @ l ] /\ [ G ; Γ ⊢ T ≈ T' @ l ].
+Proof.
+  destruct 1 as [T T' l Δ Δ' k k' R Hl Hk HT HT' HΔ Hgeq HR
+                | T T' l Δ Δ' A A' k k' R Hl Hk HT HT' HΔ HA HA' Hgeq HR].
+  all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
+  all: eapply geq_ty_lconv; [exact Hgeq | exact Hl].
+Qed.
+
+(** The shape shared by the two term relations of contextual types. *)
+Lemma box_escape_tm {G Γ T C C' l t t' w w'} :
+  [ G ; Γ ⊢g T ≅ C @ l ] -> lequiv (gL G) l lzero -> [ G ; Γ ⊢ C ≈ C' @ lzero ] ->
+  [ G ; Γ ⊢g t ⤳* w : C @ lzero ] -> [ G ; Γ ⊢g t' ⤳* w' : C' @ lzero ] ->
+  [ G ; Γ ⊢ w ≈ w' : C @ lzero ] ->
+  [ G ; Γ ⊢g t : T @ l ] /\ [ G ; Γ ⊢g t' : T @ l ] /\ [ G ; Γ ⊢ t ≈ t' : T @ l ].
+Proof.
+  intros HTC Hl HCC Hw Hw' Heq.
+  assert (Hw'' : [ G ; Γ ⊢g t' ⤳* w' : C @ lzero ]).
+  { eapply tmred_conv; [apply ge_typeof | exact Hw' | apply eqty_sym, geq_ty_sound, HCC]. }
+  repeat split.
+  - eapply conv_tm; [apply Hw | exact HTC | exact Hl].
+  - eapply conv_tm; [apply Hw'' | exact HTC | exact Hl].
+  - eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTC | exact Hl].
+Qed.
+
+Lemma ModRel_escape_tm {G Γ T T' l R} : ModRel G Γ T T' l R -> forall t t', R t t' ->
+  [ G ; Γ ⊢g t : T @ l ] /\ [ G ; Γ ⊢g t' : T @ l ] /\ [ G ; Γ ⊢ t ≈ t' : T @ l ].
+Proof.
+  destruct 1 as [T T' l Δ Δ' k k' R Hl Hk HT HT' HΔ Hgeq HR
+                | T T' l Δ Δ' A A' k k' R Hl Hk HT HT' HΔ HA HA' Hgeq HR];
+    intros t t' Htt; apply HR in Htt; destruct Htt as (w & w' & Hw & Hw' & Heq & _ & _ & _).
+  all: exact (box_escape_tm (tyred_eq _ _ _ _ _ _ HT) Hl Hgeq Hw Hw' Heq).
+Qed.
+
 (** ** Escape for types *)
 
 Theorem escape_ty n rec G Γ T T' l R :
@@ -45,7 +81,9 @@ Proof.
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR].
+                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l R Hj HM].
+  all: try solve [exact (ModRel_escape_ty HM)].
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
   - eapply geq_ty_lconv; [eapply geq_ty_U; [eapply tyred_ctx, HT|]|].
@@ -65,8 +103,9 @@ Proof.
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR];
-    intros t t' Htt; apply HR in Htt.
+                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l R Hj HM];
+    intros t t' Htt; first [exact (ModRel_escape_tm HM _ _ Htt) | apply HR in Htt].
   - (* Nat *)
     destruct Htt as [t t' w w' Hw Hw' Heq _].
     assert (HTN : [ G ; Γ ⊢g T ≅ tyNat @ l ]) by apply HT.

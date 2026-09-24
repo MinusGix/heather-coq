@@ -2,7 +2,7 @@
 From DeLaM.Validity Require Export Pi.
 
 Section Red.
-Context `{E : GenericEq} `{EL : !GenericEqLaws}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
 Lemma tmred_app_cong {G Γ l l' A B t w s} :
   lwf (gL G) l -> lwf (gL G) l' ->

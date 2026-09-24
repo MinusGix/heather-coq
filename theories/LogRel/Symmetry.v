@@ -9,7 +9,7 @@ From DeLaM.LogRel Require Export Irrelevance.
 Definition flipR (R : tm -> tm -> Prop) : tm -> tm -> Prop := fun t t' => R t' t.
 
 Section Symmetry.
-Context `{E : GenericEq} `{EL : !GenericEqLaws}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
 (** ** Declarative and generic helpers *)
 
@@ -146,7 +146,8 @@ Proof.
                  | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                  | G Γ T T' l V V' R HT HT' HV HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                     HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR].
+                     HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR
+                 | G Γ T T' l R Hj HM].
   - eapply LRnat; eauto.
     intros t t'; unfold flipR; rewrite (HR t' t); apply NatRel_flip.
   - assert (Hm : lmeasure l2 = lmeasure l1) by (eapply lequiv_measure; eauto).
@@ -187,6 +188,7 @@ Proof.
       * apply PiRel_flip; auto.
       * intros H. apply (PiRel_flip (A := A') (A' := A) (domR := flipD domR) (codR := flipC codR));
           auto using lequiv_sym.
+  - apply LRmod; [exact Hj | exact (ModRel_sym HM)].
 Qed.
 
 Theorem LR_sym n : Psym n.

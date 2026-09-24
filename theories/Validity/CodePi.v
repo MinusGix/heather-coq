@@ -2,7 +2,7 @@
 From DeLaM.Validity Require Export Natrec.
 
 Section CodePi.
-Context `{E : GenericEq} `{EL : !GenericEqLaws}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
 Lemma lwf_max {G l l'} : lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) (lmax l l').
 Proof. intros; eapply lequiv_wf_l, lequiv_max; now apply lequiv_refl. Qed.

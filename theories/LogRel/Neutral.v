@@ -7,7 +7,7 @@
 From DeLaM.LogRel Require Export Weakening.
 
 Section Neutral.
-Context `{E : GenericEq} `{EL : !GenericEqLaws}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
 (** ** Helpers *)
 
@@ -28,6 +28,21 @@ Lemma gne_tmred_refl {G Γ ν ν' T l} : [ G ; Γ ⊢ ν ~ ν' : T @ l ] ->
   [ G ; Γ ⊢g ν ⤳* ν : T @ l ] /\ [ G ; Γ ⊢g ν' ⤳* ν' : T @ l ].
 Proof. intros H; split; apply tmred_refl; eauto using gne_tm_typed_l, gne_tm_typed_r. Qed.
 
+(** ** Contextual types *)
+
+Lemma ModRel_neutral {G Γ T T' l R} : ModRel G Γ T T' l R -> forall ν ν',
+  [ G ; Γ ⊢ ν ~ ν' : T @ l ] -> [ G ; Γ ⊢ ν ~ ν' : T' @ l ] -> R ν ν'.
+Proof.
+  destruct 1 as [T T' l Δ Δ' k k' R Hl Hk HT HT' HΔ Hgeq HR
+                | T T' l Δ Δ' A A' k k' R Hl Hk HT HT' HΔ HA HA' Hgeq HR];
+    intros ν ν' Hν Hν'; apply HR;
+    pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as H1;
+    pose proof (gne_tm_red Hν' HT' (lequiv_sym _ _ _ Hl)) as H2;
+    destruct (gne_tmred_refl H1) as [R1 _]; destruct (gne_tmred_refl H2) as [_ R2];
+    exists ν, ν'; refine (conj R1 (conj R2 (conj (gne_tm_geq H1) (conj (gne_tm_geq H2) (conj _ _)))));
+    constructor; assumption.
+Qed.
+
 (** ** Reflection *)
 
 Theorem LR_neutral n G Γ T T' l R :
@@ -38,8 +53,9 @@ Proof.
                  | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                  | G Γ T T' l V V' R HT HT' HV HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                     HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR];
-    intros ν ν' Hν Hν'; apply HR.
+                     HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR
+                 | G Γ T T' l R Hj HM];
+    intros ν ν' Hν Hν'; first [exact (ModRel_neutral HM _ _ Hν Hν') | apply HR].
   - (* Nat *)
     pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HN.
     destruct (gne_tmred_refl HN) as [H1 H2].

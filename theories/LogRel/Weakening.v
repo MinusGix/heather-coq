@@ -8,7 +8,7 @@
 From DeLaM.LogRel Require Export Transitivity.
 
 Section Weakening.
-Context `{E : GenericEq} `{EL : !GenericEqLaws}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
 (** ** Term relations *)
 
@@ -74,7 +74,8 @@ Proof.
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR].
+                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l R Hj HM].
   - exists (NatRel (kw_G ρ) (kw_Δ ρ)). split.
     + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
       rewrite kty_tyNat in X, X'.
@@ -129,6 +130,8 @@ Proof.
       rewrite <- kty_comp in HA1, HA1'. rewrite <- ktyl_comp, <- kty_comp in HB1, HB1'.
       rewrite kw_gL in H1, H2, H3, H4.
       exact (HK (kw_comp ρ ρ') a a' ha la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1').
+  - destruct (ModRel_kwk ρ HM) as (R' & HM' & HR'). exists R'.
+    split; [now apply LRmod | exact HR'].
 Qed.
 
 Theorem LR_kwk n : Pwk n.

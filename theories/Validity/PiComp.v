@@ -2,7 +2,7 @@
 From DeLaM.Validity Require Export Lam.
 
 Section PiComp.
-Context `{E : GenericEq} `{EL : !GenericEqLaws}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
 (** ** Syntax *)
 
@@ -56,14 +56,14 @@ Context {G : gctx} {Γ : ctx} {l l' : lvl} {A B : ty}
   (VA : VTy G Γ A A l) (VB : VTy G (Γ ,, A @ l) B B l').
 
 Definition PiK Δ d d' w w' :=
-  forall (ρ : kwk G Δ) a a' (ha : @piDom E G l l' A A Δ d d' ρ a a') la lb la' lb' A1 B1 A1' B1',
+  forall (ρ : kwk G Δ) a a' (ha : @piDom E LP G l l' A A Δ d d' ρ a a') la lb la' lb' A1 B1 A1' B1',
     lequiv (gL G) la l -> lequiv (gL G) lb l' ->
     lequiv (gL G) la' l -> lequiv (gL G) lb' l' ->
     [ kw_G ρ ; kw_Δ ρ ⊢ kty ρ A[d] ≈ A1 @ l ] ->
     [ kw_G ρ ; kw_Δ ρ ,, kty ρ A[d] @ l ⊢ ktyl ρ B[llift d] ≈ B1 @ l' ] ->
     [ kw_G ρ ; kw_Δ ρ ⊢ kty ρ A[d'] ≈ A1' @ l ] ->
     [ kw_G ρ ; kw_Δ ρ ,, kty ρ A[d'] @ l ⊢ ktyl ρ B[llift d'] ≈ B1' @ l' ] ->
-    @piCod E G l l' A A B B Δ d d' ρ a a' ha
+    @piCod E LP G l l' A A B B Δ d d' ρ a a' ha
       (app (ktm ρ w) la lb A1 B1 a) (app (ktm ρ w') la' lb' A1' B1' a').
 
 Lemma funext_K Δ d d' w w' : SubRel G Γ Δ d d' ->

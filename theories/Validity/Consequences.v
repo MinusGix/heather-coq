@@ -2,7 +2,7 @@
 From DeLaM.Validity Require Export Fundamental.
 
 Section Consequences.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} (Hgl : ge_layer = lD).
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} (Hgl : ge_layer = lD).
 
 (** ** The identity substitution is related to itself *)
 
@@ -98,8 +98,21 @@ Proof.
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR];
+                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l R Hj HM];
+    try match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
     eexists; split; eauto using whnf_ty, gne_ty_whne_l.
+Qed.
+
+Lemma ModRel_whnf_tm {G Γ T T' l R} : ModRel G Γ T T' l R -> forall t t', R t t' ->
+  exists w, [ G ; Γ ⊢g t ⤳* w : T @ l ] /\ whnf w.
+Proof.
+  destruct 1 as [T T' l Δ Δ' k k' R Hl Hk HT HT' HΔ Hgeq HR
+                | T T' l Δ Δ' A A' k k' R Hl Hk HT HT' HΔ HA HA' Hgeq HR];
+    intros t t' Ht; apply HR in Ht; destruct Ht as (w & w' & Hw & _ & _ & _ & Hn & _);
+    exists w; (split; [exact (tmred_back Hw HT Hl) |]).
+  - exact (CTypNf_whnf_l Hn).
+  - exact (CTrmNf_whnf_l Hn).
 Qed.
 
 Lemma LR_whnf_tm n rec G Γ T T' l R :
@@ -110,8 +123,9 @@ Proof.
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR];
-    intros t t' Ht; apply HR in Ht.
+                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l R Hj HM];
+    intros t t' Ht; first [exact (ModRel_whnf_tm HM _ _ Ht) | apply HR in Ht].
   - destruct Ht as [t t' w w' Hw _ _ Hnf]. exists w; split; [exact (tmred_back Hw HT Hl)|].
     destruct Hnf; eauto using whnf, gne_tm_whne_l.
   - destruct Ht as (w & w' & Hw & _ & Hwh & _). exists w; split; [exact (tmred_back Hw HT Hl) | exact Hwh].

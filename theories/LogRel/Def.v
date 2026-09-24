@@ -20,8 +20,72 @@
     paper records it for the whole Π type, which is derivable). *)
 From DeLaM.Typing Require Export Generic.
 
+(** ** Parameters of the layered relation (M2_DESIGN.md, D5)
+
+    [lr_j] is the paper's [j]: at [jM] the relation also has the cases of
+    contextual types.  Those cases refer to the [j = P] relation at both
+    typing layers ([⊩^{≥P}_P]) and to the static-code payload, never back
+    to the relation being defined, so they are parameters ([VParam]),
+    instantiated once the [j = P] relation exists.  Proofs about the
+    [□] cases use only [VPLaws]. *)
+
+Inductive ljay := jP | jM.
+
+Record VParam := {
+  vp_ctx : gctx -> ctx -> ctx -> Prop ;                  (* [⊩^{≥P}_P Δ ≈ Δ'] *)
+  vp_ty : gctx -> ctx -> ty -> ty -> lvl -> Prop ;       (* [Δ ⊩^{≥P}_P T ≈ T' @ l] *)
+  vp_tyc : gctx -> ctx -> ty -> ty -> lvl -> Prop ;      (* payload of [box T], [box T'] *)
+  vp_tmc : gctx -> ctx -> ty -> tm -> tm -> lvl -> Prop  (* payload of [box t], [box t'] *)
+}.
+
+Class LRParams := { lr_j : ljay ; lr_vp : VParam }.
+
+Class VPLaws (vp : VParam) := {
+  vpl_ctx_sym {G Δ Δ'} : vp_ctx vp G Δ Δ' -> vp_ctx vp G Δ' Δ ;
+  vpl_ctx_trans {G Δ1 Δ2 Δ3} : vp_ctx vp G Δ1 Δ2 -> vp_ctx vp G Δ2 Δ3 -> vp_ctx vp G Δ1 Δ3 ;
+  vpl_ty_sym {G Δ T T' l} : vp_ty vp G Δ T T' l -> vp_ty vp G Δ T' T l ;
+  vpl_ty_trans {G Δ T1 T2 T3 l} : vp_ty vp G Δ T1 T2 l -> vp_ty vp G Δ T2 T3 l -> vp_ty vp G Δ T1 T3 l ;
+  vpl_tyc_sym {G Δ T T' l} : vp_tyc vp G Δ T T' l -> vp_tyc vp G Δ T' T l ;
+  vpl_tyc_trans {G Δ T1 T2 T3 l} :
+    vp_tyc vp G Δ T1 T2 l -> vp_tyc vp G Δ T2 T3 l -> vp_tyc vp G Δ T1 T3 l ;
+  vpl_tmc_sym {G Δ T t t' l} : vp_tmc vp G Δ T t t' l -> vp_tmc vp G Δ T t' t l ;
+  vpl_tmc_trans {G Δ T t1 t2 t3 l} :
+    vp_tmc vp G Δ T t1 t2 l -> vp_tmc vp G Δ T t2 t3 l -> vp_tmc vp G Δ T t1 t3 l ;
+  (* conversion along related contexts, types and levels *)
+  vpl_ty_ctx {G Δ Δ' T T' l} : vp_ctx vp G Δ Δ' -> vp_ty vp G Δ T T' l -> vp_ty vp G Δ' T T' l ;
+  vpl_tyc_ctx {G Δ Δ' T T' l} : vp_ctx vp G Δ Δ' -> vp_tyc vp G Δ T T' l -> vp_tyc vp G Δ' T T' l ;
+  vpl_tmc_ctx {G Δ Δ' T t t' l} :
+    vp_ctx vp G Δ Δ' -> vp_tmc vp G Δ T t t' l -> vp_tmc vp G Δ' T t t' l ;
+  vpl_tmc_ty {G Δ T T' t t' l} : vp_ty vp G Δ T T' l -> vp_tmc vp G Δ T t t' l -> vp_tmc vp G Δ T' t t' l ;
+  vpl_ty_lconv {G Δ T T' l l'} : lequiv (gL G) l l' -> vp_ty vp G Δ T T' l -> vp_ty vp G Δ T T' l' ;
+  vpl_tyc_lconv {G Δ T T' l l'} : lequiv (gL G) l l' -> vp_tyc vp G Δ T T' l -> vp_tyc vp G Δ T T' l' ;
+  vpl_tmc_lconv {G Δ T t t' l l'} :
+    lequiv (gL G) l l' -> vp_tmc vp G Δ T t t' l -> vp_tmc vp G Δ T t t' l' ;
+  (* global weakening *)
+  vpl_ctx_gwk {γ G' G Δ Δ'} : gwk_ok γ G' G -> [ ⊢ G' ] ->
+    vp_ctx vp G Δ Δ' -> vp_ctx vp G' Δ⟦γ⟧ Δ'⟦γ⟧ ;
+  vpl_ty_gwk {γ G' G Δ T T' l} : gwk_ok γ G' G -> [ ⊢ G' ] ->
+    vp_ty vp G Δ T T' l -> vp_ty vp G' Δ⟦γ⟧ T⟦γ⟧ T'⟦γ⟧ l ;
+  vpl_tyc_gwk {γ G' G Δ T T' l} : gwk_ok γ G' G -> [ ⊢ G' ] ->
+    vp_tyc vp G Δ T T' l -> vp_tyc vp G' Δ⟦γ⟧ T⟦γ⟧ T'⟦γ⟧ l ;
+  vpl_tmc_gwk {γ G' G Δ T t t' l} : gwk_ok γ G' G -> [ ⊢ G' ] ->
+    vp_tmc vp G Δ T t t' l -> vp_tmc vp G' Δ⟦γ⟧ T⟦γ⟧ t⟦γ⟧ t'⟦γ⟧ l
+}.
+
+(** The empty parameter, for relations at [jP] (the [□] cases are then
+    unreachable anyway). *)
+Definition vp_empty : VParam :=
+  {| vp_ctx := fun _ _ _ => False ; vp_ty := fun _ _ _ _ _ => False ;
+     vp_tyc := fun _ _ _ _ _ => False ; vp_tmc := fun _ _ _ _ _ _ => False |}.
+
+#[export] Instance vp_empty_laws : VPLaws vp_empty.
+Proof. constructor; cbn; tauto. Qed.
+
+(** The parameters of the [j = P] relation. *)
+Definition LR_P : LRParams := {| lr_j := jP ; lr_vp := vp_empty |}.
+
 Section LRDef.
-Context `{E : GenericEq}.
+Context `{E : GenericEq} `{LP : LRParams}.
 
 Definition RedRel := gctx -> ctx -> ty -> ty -> lvl -> (tm -> tm -> Prop) -> Prop.
 
@@ -134,6 +198,48 @@ Definition PiRel (G : gctx) (Γ : ctx) (l1 l2 l3 l4 : lvl) (A B A' B' : ty)
       [ kw_G ρ ; kw_Δ ρ ,, kty ρ A' @ l1 ⊢ ktyl ρ B' ≈ B1' @ l2 ] ->
       codR ρ a a' ha (app (ktm ρ w) la lb A1 B1 a) (app (ktm ρ w') la' lb' A1' B1' a').
 
+(** ** Contextual types (07a:686–765), [j = M] only
+
+    A weak-head normal form of [□] is a [box] of static code, related by
+    the payload, or a neutral.  Normal forms are related at the contexts
+    (and annotations) of both sides, which makes symmetry immediate. *)
+
+Inductive CTypNf (G : gctx) (Γ Δ : ctx) (k : lvl) : tm -> tm -> Prop :=
+| ctyn_box T1 T1' : vp_tyc lr_vp G Δ T1 T1' k -> CTypNf G Γ Δ k (boxT T1) (boxT T1')
+| ctyn_ne ν ν' : [ G ; Γ ⊢ ν ~ ν' : tyCTyp Δ k @ lzero ] -> CTypNf G Γ Δ k ν ν'.
+
+Inductive CTrmNf (G : gctx) (Γ Δ : ctx) (A : ty) (k : lvl) : tm -> tm -> Prop :=
+| ctrn_box t1 t1' : vp_tmc lr_vp G Δ A t1 t1' k -> CTrmNf G Γ Δ A k (boxt t1) (boxt t1')
+| ctrn_ne ν ν' : [ G ; Γ ⊢ ν ~ ν' : tyCTrm Δ A k @ lzero ] -> CTrmNf G Γ Δ A k ν ν'.
+
+Definition CTypRel (G : gctx) (Γ Δ Δ' : ctx) (k k' : lvl) : tm -> tm -> Prop :=
+  fun t t' => exists w w',
+    [ G ; Γ ⊢g t ⤳* w : tyCTyp Δ k @ lzero ] /\ [ G ; Γ ⊢g t' ⤳* w' : tyCTyp Δ' k' @ lzero ] /\
+    [ G ; Γ ⊢ w ≈ w' : tyCTyp Δ k @ lzero ] /\ [ G ; Γ ⊢ w ≈ w' : tyCTyp Δ' k' @ lzero ] /\
+    CTypNf G Γ Δ k w w' /\ CTypNf G Γ Δ' k' w w'.
+
+Definition CTrmRel (G : gctx) (Γ Δ Δ' : ctx) (A A' : ty) (k k' : lvl) : tm -> tm -> Prop :=
+  fun t t' => exists w w',
+    [ G ; Γ ⊢g t ⤳* w : tyCTrm Δ A k @ lzero ] /\ [ G ; Γ ⊢g t' ⤳* w' : tyCTrm Δ' A' k' @ lzero ] /\
+    [ G ; Γ ⊢ w ≈ w' : tyCTrm Δ A k @ lzero ] /\ [ G ; Γ ⊢ w ≈ w' : tyCTrm Δ' A' k' @ lzero ] /\
+    CTrmNf G Γ Δ A k w w' /\ CTrmNf G Γ Δ' A' k' w w'.
+
+Inductive ModRel (G : gctx) (Γ : ctx) : ty -> ty -> lvl -> (tm -> tm -> Prop) -> Prop :=
+| MRctyp T T' l Δ Δ' k k' R :
+    lequiv (gL G) l lzero -> lequiv (gL G) k k' ->
+    [ G ; Γ ⊢g T ⤳* tyCTyp Δ k @ l ] -> [ G ; Γ ⊢g T' ⤳* tyCTyp Δ' k' @ l ] ->
+    vp_ctx lr_vp G Δ Δ' ->
+    [ G ; Γ ⊢ tyCTyp Δ k ≈ tyCTyp Δ' k' @ lzero ] ->
+    releq R (CTypRel G Γ Δ Δ' k k') ->
+    ModRel G Γ T T' l R
+| MRctrm T T' l Δ Δ' A A' k k' R :
+    lequiv (gL G) l lzero -> lequiv (gL G) k k' ->
+    [ G ; Γ ⊢g T ⤳* tyCTrm Δ A k @ l ] -> [ G ; Γ ⊢g T' ⤳* tyCTrm Δ' A' k' @ l ] ->
+    vp_ctx lr_vp G Δ Δ' -> vp_ty lr_vp G Δ A A' k -> vp_ty lr_vp G Δ' A' A k' ->
+    [ G ; Γ ⊢ tyCTrm Δ A k ≈ tyCTrm Δ' A' k' @ lzero ] ->
+    releq R (CTrmRel G Γ Δ Δ' A A' k k') ->
+    ModRel G Γ T T' l R.
+
 (** ** The relation, stage [n] *)
 
 Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
@@ -164,6 +270,9 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
         LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ B)[lsingle a] (ktyl ρ B')[lsingle a'] l2
            (codR ρ a a' ha)) ->
     releq R (PiRel G Γ l1 l2 l3 l4 A B A' B' domR codR) ->
+    LR n rec G Γ T T' l R
+| LRmod G Γ T T' l R :
+    lr_j = jM -> ModRel G Γ T T' l R ->
     LR n rec G Γ T T' l R.
 
 (** ** Stages *)

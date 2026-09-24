@@ -14,7 +14,7 @@
 From DeLaM.LogRel Require Export Reduction.
 
 Section Validity.
-Context `{E : GenericEq} `{EL : !GenericEqLaws}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
 (** ** The canonical term relation *)
 

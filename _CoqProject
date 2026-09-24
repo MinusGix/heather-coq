@@ -26,6 +26,7 @@ theories/Typing/DeclInstance.v
 theories/LogRel/Def.v
 theories/LogRel/Escape.v
 theories/LogRel/Basics.v
+theories/LogRel/Modal.v
 theories/LogRel/Irrelevance.v
 theories/LogRel/Symmetry.v
 theories/LogRel/Transitivity.v

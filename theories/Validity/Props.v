@@ -2,7 +2,7 @@
 From DeLaM.Validity Require Export Def.
 
 Section Props.
-Context `{E : GenericEq} `{EL : !GenericEqLaws}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
 (** ** Stages *)
 

@@ -2,7 +2,7 @@
 From DeLaM.Validity Require Export App.
 
 Section Lam.
-Context `{E : GenericEq} `{EL : !GenericEqLaws}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
 Lemma subst_lift_ren_single_tm (b : tm) d (ρ : rsub) a :
   b[llift d]⟨rlift ρ⟩[lsingle a] = b[lcons (lren d ρ) a].
@@ -84,7 +84,7 @@ Proof.
   pose proof (geq_ty_sound HPi) as HPiEq.
   (* the Kripke clause: β on both sides *)
   assert (Hw3 : lwf (gL G) l3) by exact (lequiv_wf_l _ _ _ H3).
-  assert (K : forall (ρ : kwk G Δ) a a' (ha : @piDom E G l l' A A Δ d d' ρ a a')
+  assert (K : forall (ρ : kwk G Δ) a a' (ha : @piDom E LP G l l' A A Δ d d' ρ a a')
             la lb la' lb' A1 B1 A1' B1',
             lequiv (gL G) la l -> lequiv (gL G) lb l' ->
             lequiv (gL G) la' l -> lequiv (gL G) lb' l' ->
@@ -92,7 +92,7 @@ Proof.
             [ kw_G ρ ; kw_Δ ρ ,, kty ρ A[d] @ l ⊢ ktyl ρ B[llift d] ≈ B1 @ l' ] ->
             [ kw_G ρ ; kw_Δ ρ ⊢ kty ρ A[d'] ≈ A1' @ l ] ->
             [ kw_G ρ ; kw_Δ ρ ,, kty ρ A[d'] @ l ⊢ ktyl ρ B[llift d'] ≈ B1' @ l' ] ->
-            @piCod E G l l' A A B B Δ d d' ρ a a' ha
+            @piCod E LP G l l' A A B B Δ d d' ρ a a' ha
               (app (ktm ρ (lam l l' A[d] t[llift d])) la lb A1 B1 a)
               (app (ktm ρ (lam l3 l4 A'[d'] t'[llift d'])) la' lb' A1' B1' a')).
   { intros ρ a a' ha la lb la' lb' A1 B1 A1' B1' Hla Hlb Hla' Hlb' HA1 HB1 HA1' HB1'.

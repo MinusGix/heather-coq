@@ -4,10 +4,10 @@
     give equivalent term relations.  The left type fixes the shape (weak
     head normal forms are unique), the universe level and the Π components;
     the right-hand types only enter through conversion. *)
-From DeLaM.LogRel Require Export Basics.
+From DeLaM.LogRel Require Export Modal.
 
 Section Irrelevance.
-Context `{E : GenericEq} `{EL : !GenericEqLaws}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
 (** ** Declarative helpers at the instance's layer *)
 
@@ -47,6 +47,10 @@ Ltac agree :=
             | subst W2
             | clear Heq ]
   end.
+
+(** Expose the reduction of the left type of a contextual-type case. *)
+Ltac open_mod :=
+  match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end.
 
 Ltac ne_absurd :=
   match goal with
@@ -122,14 +126,19 @@ Proof.
                   | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                   | G Γ T T' l V V' R HT HT' HV HR
                   | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                      HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR];
+                      HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR
+                  | G Γ T T' l R Hj HM];
     intros T'' R' H2;
     inversion H2 as [? ? ? ? ? ? Hk HTk HTk' HkR
                     | ? ? ? ? ? k1 k2 ? Hk Hk2 Hkn HTk HTk' HkR
                     | ? ? ? ? ? W W' ? HTk HTk' HW HkR
                     | ? ? ? ? ? k1 k2 k3 k4 C D C' D' domR' codR' ? Hk Hk3 Hk4 Hkw1 Hkw2 HTk HTk'
-                        HC HC' HD HD' HCC HDD domAd' codAd' HkR];
+                        HC HC' HD HD' HCC HDD domAd' codAd' HkR
+                    | ? ? ? ? ? ? Hkj HkM];
     subst; try (agree; try ne_absurd).
+  (* contextual types, and mismatches with them *)
+  all: try solve [eapply ModRel_irrel; eassumption].
+  all: try solve [open_mod; agree; try ne_absurd].
   all: eapply releq_trans; [exact HR | eapply releq_trans; [| apply releq_sym, HkR]].
   (* same shape *)
   - apply releq_refl.
@@ -172,8 +181,9 @@ Proof.
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR];
-    intros HN; agree; try ne_absurd; auto.
+                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l R Hj HM];
+    intros HN; try open_mod; agree; try ne_absurd; auto.
 Qed.
 
 Lemma LR_inv_U {l1 l'} : [ G ; Γ ⊢g T ⤳* tyU l1 @ l' ] ->
@@ -185,8 +195,9 @@ Proof.
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR];
-    intros HN; agree; try ne_absurd; eauto 7.
+                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l R Hj HM];
+    intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
 Lemma LR_inv_ne {V l'} : [ G ; Γ ⊢g T ⤳* V @ l' ] -> whne_ty V ->
@@ -197,8 +208,9 @@ Proof.
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l W W' R HT HT' HW HR
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR];
-    intros HN; agree; try solve [inversion HV0]; eauto.
+                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l R Hj HM];
+    intros HN; try open_mod; agree; try solve [inversion HV0]; eauto.
 Qed.
 
 Lemma LR_inv_pi {m1 m2 C D l'} : [ G ; Γ ⊢g T ⤳* tyPi m1 m2 C D @ l' ] ->
@@ -220,9 +232,34 @@ Proof.
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR];
-    intros HN; agree; try ne_absurd.
+                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l R Hj HM];
+    intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; eauto 20.
+Qed.
+
+Lemma LR_inv_CTyp {Δ k l'} : [ G ; Γ ⊢g T ⤳* tyCTyp Δ k @ l' ] -> lr_j = jM /\ ModRel G Γ T T' l R.
+Proof.
+  intros HN; revert HN.
+  destruct H as [G Γ T T' l R Hl HT HT' HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
+                | G Γ T T' l V V' R HT HT' HV HR
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l R Hj HM];
+    intros HN; [agree; try ne_absurd .. | exact (conj Hj HM)].
+Qed.
+
+Lemma LR_inv_CTrm {Δ A k l'} : [ G ; Γ ⊢g T ⤳* tyCTrm Δ A k @ l' ] -> lr_j = jM /\ ModRel G Γ T T' l R.
+Proof.
+  intros HN; revert HN.
+  destruct H as [G Γ T T' l R Hl HT HT' HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
+                | G Γ T T' l V V' R HT HT' HV HR
+                | G Γ T T' l k1 k2 l3 l4 A0 B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l R Hj HM];
+    intros HN; [agree; try ne_absurd .. | exact (conj Hj HM)].
 Qed.
 
 End Inversion.

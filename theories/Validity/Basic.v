@@ -2,7 +2,7 @@
 From DeLaM.Validity Require Export Props.
 
 Section Basic.
-Context `{E : GenericEq} `{EL : !GenericEqLaws}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
 (** ** Declarative helpers at the instance's layer *)
 

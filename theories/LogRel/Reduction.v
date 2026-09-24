@@ -5,7 +5,7 @@
 From DeLaM.LogRel Require Export Neutral.
 
 Section Reduction.
-Context `{E : GenericEq} `{EL : !GenericEqLaws}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
 Lemma tmred_along {G Γ t u T W l l'} :
   [ G ; Γ ⊢g t ⤳* u : T @ l ] -> [ G ; Γ ⊢g T ⤳* W @ l ] -> lequiv (gL G) l' l ->
@@ -13,6 +13,29 @@ Lemma tmred_along {G Γ t u T W l l'} :
 Proof.
   intros Ht HT Hl. eapply tmred_lconv; [|exact Hl].
   eapply tmred_conv; [apply ge_typeof | exact Ht | apply HT].
+Qed.
+
+Lemma ModRel_red_ty {G Γ T T' l R T1 T1'} : ModRel G Γ T T' l R ->
+  [ G ; Γ ⊢g T1 ⤳* T @ l ] -> [ G ; Γ ⊢g T1' ⤳* T' @ l ] -> ModRel G Γ T1 T1' l R.
+Proof.
+  destruct 1 as [T T' l Δ Δ' k k' R Hl Hk HT HT' HΔ Hgeq HR
+                | T T' l Δ Δ' A A' k k' R Hl Hk HT HT' HΔ HA HA' Hgeq HR]; intros H1 H1'.
+  - exact (MRctyp _ _ _ _ _ _ _ _ _ _ Hl Hk (tyred_trans _ _ _ _ H1 HT) (tyred_trans _ _ _ _ H1' HT')
+             HΔ Hgeq HR).
+  - exact (MRctrm _ _ _ _ _ _ _ _ _ _ _ _ Hl Hk (tyred_trans _ _ _ _ H1 HT)
+             (tyred_trans _ _ _ _ H1' HT') HΔ HA HA' Hgeq HR).
+Qed.
+
+Lemma ModRel_red_tm {G Γ T T' l R} : ModRel G Γ T T' l R -> forall t t' t1 t1', R t t' ->
+  [ G ; Γ ⊢g t1 ⤳* t : T @ l ] -> [ G ; Γ ⊢g t1' ⤳* t' : T' @ l ] -> R t1 t1'.
+Proof.
+  destruct 1 as [T T' l Δ Δ' k k' R Hl Hk HT HT' HΔ Hgeq HR
+                | T T' l Δ Δ' A A' k k' R Hl Hk HT HT' HΔ HA HA' Hgeq HR];
+    intros t t' t1 t1' Htt H1 H1'; apply HR; apply HR in Htt;
+    destruct Htt as (w & w' & Hw & Hw' & Htt);
+    exists w, w'; refine (conj _ (conj _ Htt)).
+  all: eapply tmred_trans; [|eassumption].
+  all: eapply tmred_along; [eassumption | eassumption | now apply lequiv_sym].
 Qed.
 
 Theorem LR_red_ty n rec G Γ T T' l R :
@@ -23,12 +46,14 @@ Proof.
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR];
+                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l R Hj HM];
     intros T1 T1' H1 H1'.
   - eapply LRnat; eauto using tyred_trans.
   - eapply LRU with (l1 := l1) (l2 := l2); eauto using tyred_trans.
   - eapply LRne with (V := V) (V' := V'); eauto using tyred_trans.
   - eapply (LRpi n rec G Γ T1 T1' l l1 l2 l3 l4 A B A' B' domR codR); eauto using tyred_trans.
+  - apply LRmod; [exact Hj | exact (ModRel_red_ty HM H1 H1')].
 Qed.
 
 Theorem LR_red_tm n rec G Γ T T' l R :
@@ -39,8 +64,10 @@ Proof.
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR];
-    intros t t' t1 t1' Htt H1 H1'; apply HR; apply HR in Htt.
+                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l R Hj HM];
+    intros t t' t1 t1' Htt H1 H1';
+    first [exact (ModRel_red_tm HM _ _ _ _ Htt H1 H1') | apply HR; apply HR in Htt].
   - inversion Htt as [? ? w w' Hw Hw' Heq Hnf]; subst.
     econstructor; [| |exact Heq|exact Hnf].
     + eapply tmred_trans; [|exact Hw]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
