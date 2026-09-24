@@ -3,7 +3,7 @@
     Every judgment's components are well formed: the type of a typed term,
     both sides of a type equality, both sides of a term equality (and its
     type).  For layers with [typeof i = i]. *)
-From DeLaM.Typing Require Export Functionality.
+From DeLaM.Typing Require Export GSubstitution.
 
 Section Aux.
 Context {G : gctx} {i : layer} (Hi : typeof i = i) (Hv : i <> lV).
@@ -25,7 +25,8 @@ Lemma lsub_wf_single2 {Γ M t q l} :
   [ G ; Γ ⊢[ i ] lsingle2 t q : Γ ,, tyNat @ lzero ,, M @ l ].
 Proof.
   intros HΓ Ht Hq.
-  refine (conj HΓ (conj (lk_lsingle2 _ _ (wf_tm_nf Ht) (wf_tm_nf Hq)) _)).
+  constructor; [rewrite Hi; exact HΓ | apply lk_dnf_lsingle2; eauto using wf_tm_dnf
+               | split; auto; intros n; cbn; f_equal; lia |].
   intros n T l' Hin.
   inversion Hin as [Γ0 A0 l0|Γ0 A0 l0 T0 l1 m Hm]; subst; cbn.
   - rewrite (ren_subst_ty _ _ _ (lsingle t)); [exact Hq|].
@@ -40,7 +41,8 @@ Lemma lsub_wf_lsucc {Γ M l} :
   [ G ; Γ ,, tyNat @ lzero ,, M @ l ⊢[ i ] ] ->
   [ G ; Γ ,, tyNat @ lzero ,, M @ l ⊢[ i ] lsucc : Γ ,, tyNat @ lzero ].
 Proof.
-  intros HΓ. refine (conj HΓ (conj lk_lsucc _)).
+  intros HΓ. constructor; [rewrite Hi; exact HΓ | apply lk_dnf_lsucc
+                          | split; auto; intros n; cbn; f_equal; lia |].
   intros n T l' Hin.
   inversion Hin as [Γ0 A0 l0|Γ0 A0 l0 T0 l1 m Hm]; subst; cbn.
   - apply wf_succ; auto. apply wf_var; [now rewrite Hi | ].
@@ -259,7 +261,208 @@ Lemma pre_eta_l {Γ l l' A B t} :
   [ G ; Γ ⊢[ i ] lam l l' A (app t⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0)) : tyPi l l' A B @ lmax l l' ].
 Proof. intros; apply wf_lam; auto using pre_eta_body. Qed.
 
+(** ** Global variables *)
+
+Lemma lle_D_i : lle lD i.
+Proof. destruct i; cbn in Hi, Hv; try congruence; unfold lle; cbn; lia. Qed.
+
+Lemma lsub_wf_prem {Γ Δ d} :
+  [ G ; Γ ⊢[ i ] ] -> lsub_tail d Δ Γ -> dnfl d ->
+  (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n : A[d] @ k ]) ->
+  [ G ; Γ ⊢[ i ] d : Δ ].
+Proof. intros HΓ Ht Hd He; constructor; [rewrite Hi; exact HΓ | intros n; apply dnfl_llk; exact Hd | exact Ht | exact He]. Qed.
+
+Lemma pre_gvar_ty {Γ u Δ i' T l d} :
+  [ G ; Γ ⊢[ i ] ] -> in_gctx (gΨ G) u (gdTm Δ i' T l) -> [ G ; Γ ⊢[ i ] d : Δ ] ->
+  [ G ; Γ ⊢[ i ] T[d] @ l ].
+Proof.
+  intros HΓ Hin Hd. destruct (gctx_decl_ok _ _ _ (ctx_glob _ _ _ HΓ) Hin) as (_ & HT & _).
+  exact (wf_ty_subst_g (lift_ty HT lle_D_i) Hd).
+Qed.
+
+Lemma pre_gvar_r {Γ u Δ i' T l d d'} :
+  [ G ; Γ ⊢[ i ] ] -> in_gctx (gΨ G) u (gdTm Δ i' T l) -> lle i' i ->
+  [ G ; Γ ⊢[ i ] d : Δ ] -> lsub_tail d' Δ Γ -> dnfl d' ->
+  (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d' n : A[d'] @ k ]) ->
+  (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n ≅ llk d' n : A[d] @ k ]) ->
+  [ G ; Γ ⊢[ i ] gvar u d' : T[d] @ l ].
+Proof.
+  intros HΓ Hin Hi' Hd Ht' Hn' Hv' He.
+  destruct (gctx_decl_ok _ _ _ (ctx_glob _ _ _ HΓ) Hin) as (_ & HT & _).
+  pose proof (lsub_wf_prem HΓ Ht' Hn' Hv') as Hd'.
+  eapply conv_tm'.
+  - eapply wf_gvar; [rewrite Hi; exact HΓ | exact Hin | exact Hi' | exact Ht' | exact Hn' | exact Hv'].
+  - exact (proj1 (proj2 (proj2 functionality_all)) _ _ _ _ _ (lift_ty HT lle_D_i) _ _ _
+             (conj Hd (conj Hd' He))).
+Qed.
+
+(** ** Context conversion *)
+
+Lemma ctx_conv_ext {Γ Γ' A A' l l'} :
+  [ G ; Γ' ⊢[ i ] lshift 0 : Γ ] -> [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ i ] A' @ l ] -> lequiv (gL G) l l' ->
+  [ G ; Γ' ,, A' @ l' ⊢[ i ] ] /\ [ G ; Γ' ,, A' @ l' ⊢[ i ] lshift 0 : Γ ,, A @ l ].
+Proof.
+  intros Hid HA HAA HA' Hl.
+  assert (HΓ' : [ G ; Γ' ⊢[ i ] ]) by (rewrite <- Hi; exact (lsub_wf_ctx Hid)).
+  pose proof (wf_ty_subst Hi HA' Hid) as HA'1. rewrite nf_id_ty in HA'1 by exact (wf_ty_nf HA').
+  pose proof (eqty_subst Hi HAA Hid) as HAA1.
+  rewrite !nf_id_ty in HAA1 by first [exact (wf_ty_nf HA) | exact (wf_ty_nf HA')].
+  assert (HA'l : [ G ; Γ' ⊢[ i ] A' @ l' ]) by (eapply wft_lconv; [exact HA'1 | now apply lequiv_sym]).
+  assert (HΓ'A : [ G ; Γ' ,, A' @ l' ⊢[ i ] ]) by (apply wfc_ext; eauto using lequiv_wf_r).
+  split; [exact HΓ'A|].
+  destruct (lsub_wf_tail Hid) as [Ht Hlen].
+  assert (Hc : clen Γ = clen Γ') by (specialize (Hlen 0); cbn in Hlen; injection Hlen; lia).
+  constructor; [rewrite Hi; exact HΓ'A | apply lk_dnf_lshift | split; [exact Ht|] |].
+  - intros n; cbn; f_equal; lia.
+  - intros n T k Hin. rewrite nf_id_ty by eauto using in_ctx_nf. cbn; rewrite Nat.add_0_r.
+    inversion Hin as [Γ0 A0 l0|Γ0 A0 l0 T0 l1 m Hm]; subst.
+    + eapply wf_conv; [eapply wf_lconv; [apply var0_wf; auto | exact Hl]|].
+      rewrite Hi. apply wk1_eqty; auto.
+    + pose proof (lsub_wf_var Hid Hm) as Hv'. rewrite nf_id_ty in Hv' by eauto using in_ctx_nf.
+      cbn in Hv'; rewrite Nat.add_0_r in Hv'.
+      pose proof (wk1_tm G i Hi _ _ _ _ _ _ HΓ'A Hv') as X. cbn in X. rewrite Nat.add_1_r in X. exact X.
+Qed.
+
 End Aux.
+
+(** ** Contextual types and letbox (layer M) *)
+
+Lemma lM_notV : lM <> lV.
+Proof. discriminate. Qed.
+
+Lemma ctx_of_ext {G i Γ A l} : [ G ; Γ ,, A @ l ⊢[ i ] ] -> [ G ; Γ ⊢[ i ] ].
+Proof. inversion 1; auto. Qed.
+
+Lemma pre_CTrm_r {G Γ Δ Δ' T' l l'} :
+  [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ' ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] lshift 0 : Δ ] ->
+  [ G ; Δ ⊢[ lD ] T' @ l ] -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ lM ] tyCTrm Δ' T' l' @ lzero ].
+Proof.
+  intros HΓ HΔ' Hid HT' Hl. apply wft_CTrm; eauto using lequiv_wf_r.
+  pose proof (wf_ty_subst (i := lD) eq_refl HT' Hid) as X. rewrite nf_id_ty in X by exact (wf_ty_nf HT').
+  eapply wft_lconv; [exact X | now apply lequiv_sym].
+Qed.
+
+Lemma pre_letbox_ty {G Γ l1 l2 A M M' t t0} :
+  [ G ; Γ ,, A @ l2 ⊢[ lM ] M ≅ M' @ l1 ] -> [ G ; Γ ,, A @ l2 ⊢[ lM ] M' @ l1 ] ->
+  [ G ; Γ ⊢[ lM ] t ≅ t0 : A @ l2 ] -> [ G ; Γ ⊢[ lM ] t : A @ l2 ] -> [ G ; Γ ⊢[ lM ] t0 : A @ l2 ] ->
+  [ G ; Γ ⊢[ lM ] M[lsingle t] ≅ M'[lsingle t0] @ l1 ].
+Proof.
+  intros HMM HM' Htt Ht Ht0. eapply eqty_trans.
+  - exact (eqty_single (i := lM) eq_refl HMM Ht).
+  - apply (wf_ty_func (i := lM) eq_refl HM' (d' := lsingle t0)).
+    now apply (lsub_eq_single (i := lM) eq_refl).
+Qed.
+
+Lemma pre_letboxT_r {G Γ l1 l2 l3 l4 Δ Δ' M M' t2 t t0} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 -> [ G ; Δ' ⊢[ lD ] ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
+  [ G ; Γ ,, tyCTyp Δ l2 @ lzero ⊢[ lM ] M ≅ M' @ l1 ] ->
+  [ G ; Γ ,, tyCTyp Δ l2 @ lzero ⊢[ lM ] M' @ l1 ] ->
+  [ G ; Γ ,, tyCTyp Δ' l4 @ lzero ⊢[ lM ] M' @ l3 ] ->
+  [ gext G (gdTy Δ' lC l4) ; Γ⟪S⟫ ⊢[ lM ] t2 : M'⟪S⟫[lsingle (boxT (tyGvar 0 (lshift 0)))] @ l3 ] ->
+  [ G ; Γ ⊢[ lM ] t ≅ t0 : tyCTyp Δ l2 @ lzero ] ->
+  [ G ; Γ ⊢[ lM ] t : tyCTyp Δ l2 @ lzero ] -> [ G ; Γ ⊢[ lM ] t0 : tyCTyp Δ l2 @ lzero ] ->
+  [ G ; Γ ⊢[ lM ] letboxT l3 l4 Δ' M' t2 t0 : M[lsingle t] @ l1 ].
+Proof.
+  intros H13 H24 HΔ' Hc HMM HM' HM'3 Ht2 Htt Ht Ht0.
+  pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
+  assert (HCC : [ G ; Γ ⊢[ lM ] tyCTyp Δ l2 ≅ tyCTyp Δ' l4 @ lzero ]) by (apply eqty_CTyp; auto).
+  eapply wf_lconv with (l' := l3); [|exact H13].
+  eapply (conv_tm' (i := lM) eq_refl (T' := M'[lsingle t0])).
+  - apply wf_letboxT; eauto using lequiv_wf_r.
+    eapply (conv_tm' (i := lM) eq_refl); [exact Ht0 | now apply eqty_sym].
+  - eapply eqty_lconv; [exact (pre_letbox_ty HMM HM' Htt Ht Ht0) | now apply lequiv_sym].
+Qed.
+
+Lemma pre_letboxt_r {G Γ l1 l2 l3 l4 Δ Δ' T T' M M' t2 t t0} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] ] ->
+  [ G ⊢[ lD ] Δ ≅ Δ' ] -> [ G ; Δ ⊢[ lD ] T @ l2 ] -> [ G ; Δ' ⊢[ lD ] T' @ l4 ] ->
+  [ G ; Δ ⊢[ lD ] T ≅ T' @ l2 ] ->
+  [ G ; Γ ,, tyCTrm Δ T l2 @ lzero ⊢[ lM ] M ≅ M' @ l1 ] ->
+  [ G ; Γ ,, tyCTrm Δ T l2 @ lzero ⊢[ lM ] M' @ l1 ] ->
+  [ G ; Γ ,, tyCTrm Δ' T' l4 @ lzero ⊢[ lM ] M' @ l3 ] ->
+  [ gext G (gdTm Δ' lC T' l4) ; Γ⟪S⟫ ⊢[ lM ] t2 : M'⟪S⟫[lsingle (boxt (gvar 0 (lshift 0)))] @ l3 ] ->
+  [ G ; Γ ⊢[ lM ] t ≅ t0 : tyCTrm Δ T l2 @ lzero ] ->
+  [ G ; Γ ⊢[ lM ] t : tyCTrm Δ T l2 @ lzero ] -> [ G ; Γ ⊢[ lM ] t0 : tyCTrm Δ T l2 @ lzero ] ->
+  [ G ; Γ ⊢[ lM ] letboxt l3 l4 Δ' T' M' t2 t0 : M[lsingle t] @ l1 ].
+Proof.
+  intros H13 H24 HΔ HΔ' Hc HT HT' HTT HMM HM' HM'3 Ht2 Htt Ht Ht0.
+  pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
+  assert (HCC : [ G ; Γ ⊢[ lM ] tyCTrm Δ T l2 ≅ tyCTrm Δ' T' l4 @ lzero ]) by (apply eqty_CTrm; auto).
+  eapply wf_lconv with (l' := l3); [|exact H13].
+  eapply (conv_tm' (i := lM) eq_refl (T' := M'[lsingle t0])).
+  - apply wf_letboxt; eauto using lequiv_wf_r.
+    eapply (conv_tm' (i := lM) eq_refl); [exact Ht0 | now apply eqty_sym].
+  - eapply eqty_lconv; [exact (pre_letbox_ty HMM HM' Htt Ht Ht0) | now apply lequiv_sym].
+Qed.
+
+(** letbox β: the contractum is typed by the global substitution lemma. *)
+Lemma pre_letbox_beta_r {G Γ D o t' M b b' l'} :
+  [ G ; Γ ⊢[ lM ] ] -> dnfo o -> gobj_wf G o (gdecl_gsubst (gdecl_ren D S) (gsingle o)) ->
+  b⦃gsingle o⦄ = b' -> dnfty M ->
+  [ gext G D ; Γ⟪S⟫ ⊢[ lM ] t' : M⟪S⟫[lsingle b] @ l' ] ->
+  [ G ; Γ ⊢[ lM ] t'⦃gsingle o⦄ : M[lsingle b'] @ l' ].
+Proof.
+  intros HΓ Ho Hwf Hb HM Ht'.
+  pose proof (gsub_wf_single G D o (ctx_glob _ _ _ HΓ) Ho Hwf) as Hσ.
+  pose proof (proj1 (proj2 (proj2 (proj2 gsubstitution))) _ _ _ _ _ _ Ht' (gΨ G) _ Hσ) as X.
+  unfold gwk_to in X; cbn in X.
+  rewrite (gsubst_gren_ctx _ _ _ (fun j => GId j)), gsubst_id_ctx in X
+    by first [reflexivity | exact (wf_ctx_dnf HΓ) | auto].
+  rewrite gs_single_ty, Hb, (gsubst_gren_ty _ _ _ (fun j => GId j)), gsubst_id_ty in X
+    by first [reflexivity | auto].
+  exact X.
+Qed.
+
+Lemma pre_letboxT_beta_r {G Γ l' l Δ M t' T} :
+  [ G ; Γ ,, tyCTyp Δ l @ lzero ⊢[ lM ] M @ l' ] -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lC ] T @ l ] ->
+  [ gext G (gdTy Δ lC l) ; Γ⟪S⟫ ⊢[ lM ] t' : M⟪S⟫[lsingle (boxT (tyGvar 0 (lshift 0)))] @ l' ] ->
+  [ G ; Γ ⊢[ lM ] t'⦃gsingle (GTy T)⦄ : M[lsingle (boxT T)] @ l' ].
+Proof.
+  intros HM HΔ HT Ht'.
+  eapply pre_letbox_beta_r; [ | | | | exact (wf_ty_dnf HM) | exact Ht'].
+  - exact (ctx_of_ext (ctx_of_wf_ty (i := lM) eq_refl HM)).
+  - exact (wf_ty_dnf HT).
+  - rewrite gdecl_gsubst_ren_single by exact (wf_ctx_dnf HΔ). exact HT.
+  - cbn. change (subst_ty T (glsubst (lshift 0) (gsingle (GTy T)))) with T[lshift 0].
+    now rewrite nf_id_ty by exact (wf_ty_nf HT).
+Qed.
+
+Lemma pre_letboxt_beta_r {G Γ l' l Δ T M t' t} :
+  [ G ; Γ ,, tyCTrm Δ T l @ lzero ⊢[ lM ] M @ l' ] -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] T @ l ] ->
+  [ G ; Δ ⊢[ lC ] t : T @ l ] ->
+  [ gext G (gdTm Δ lC T l) ; Γ⟪S⟫ ⊢[ lM ] t' : M⟪S⟫[lsingle (boxt (gvar 0 (lshift 0)))] @ l' ] ->
+  [ G ; Γ ⊢[ lM ] t'⦃gsingle (GTm t)⦄ : M[lsingle (boxt t)] @ l' ].
+Proof.
+  intros HM HΔ HT Ht Ht'.
+  eapply pre_letbox_beta_r; [ | | | | exact (wf_ty_dnf HM) | exact Ht'].
+  - exact (ctx_of_ext (ctx_of_wf_ty (i := lM) eq_refl HM)).
+  - exact (wf_tm_dnf Ht).
+  - rewrite gdecl_gsubst_ren_single by (cbn; split; [exact (wf_ctx_dnf HΔ) | exact (wf_ty_dnf HT)]).
+    exact Ht.
+  - cbn. change (subst_tm t (glsubst (lshift 0) (gsingle (GTm t)))) with t[lshift 0].
+    now rewrite nf_id by exact (wf_tm_nf Ht).
+Qed.
+
+Lemma typeof_self_notV i : typeof i = i -> i <> lV.
+Proof. destruct i; cbn; congruence. Qed.
+
+Lemma ctx_of_tm_M {G Γ t T l} : [ G ; Γ ⊢[ lM ] t : T @ l ] -> [ G ; Γ ⊢[ lM ] ].
+Proof. exact (ctx_of_wf_tm (i := lM) eq_refl). Qed.
+Lemma ctx_of_ty_M {G Γ T l} : [ G ; Γ ⊢[ lM ] T @ l ] -> [ G ; Γ ⊢[ lM ] ].
+Proof. exact (ctx_of_wf_ty (i := lM) eq_refl). Qed.
+Lemma ctx_of_eqtm_M {G Γ t t' T l} : [ G ; Γ ⊢[ lM ] t ≅ t' : T @ l ] -> [ G ; Γ ⊢[ lM ] ].
+Proof. exact (ctx_of_eqtm (i := lM) eq_refl). Qed.
+
+Lemma ctx_conv_ext1 {G i} (Hi : typeof i = i) {Γ Γ' A A' l l'} :
+  [ G ; Γ' ⊢[ i ] lshift 0 : Γ ] -> [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ i ] A' @ l ] -> lequiv (gL G) l l' -> [ G ; Γ' ,, A' @ l' ⊢[ i ] ].
+Proof. intros H1 H2 H3 H4 H5; exact (proj1 (ctx_conv_ext Hi H1 H2 H3 H4 H5)). Qed.
+Lemma ctx_conv_ext2 {G i} (Hi : typeof i = i) {Γ Γ' A A' l l'} :
+  [ G ; Γ' ⊢[ i ] lshift 0 : Γ ] -> [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ i ] A' @ l ] -> lequiv (gL G) l l' -> [ G ; Γ' ,, A' @ l' ⊢[ i ] lshift 0 : Γ ,, A @ l ].
+Proof. intros H1 H2 H3 H4 H5; exact (proj2 (ctx_conv_ext Hi H1 H2 H3 H4 H5)). Qed.
 
 #[export] Hint Resolve wft_nat wft_pi wft_U wft_El wf_code_nat wf_code_U wf_code_pi wf_zero
   wf_succ wf_natrec wf_lam wf_app wfc_ext in_ctx_wf wf_ty_single wf_tm_single
@@ -278,19 +481,53 @@ Theorem presupposition :
   (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> typeof i = i ->
      [ G ; Γ ⊢[ i ] T @ l ] /\ [ G ; Γ ⊢[ i ] T' @ l ]) /\
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> typeof i = i ->
-     [ G ; Γ ⊢[ i ] t : T @ l ] /\ [ G ; Γ ⊢[ i ] t' : T @ l ] /\ [ G ; Γ ⊢[ i ] T @ l ]).
+     [ G ; Γ ⊢[ i ] t : T @ l ] /\ [ G ; Γ ⊢[ i ] t' : T @ l ] /\ [ G ; Γ ⊢[ i ] T @ l ]) /\
+  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> typeof i = i ->
+     [ G ; Γ ⊢[ i ] ] /\ [ G ; Γ' ⊢[ i ] ] /\ [ G ; Γ' ⊢[ i ] lshift 0 : Γ ]).
 Proof.
   apply typing_mut; intros; try exact I;
     match goal with Hi : typeof ?i = ?i |- _ => rewrite ?Hi in * end;
     repeat match goal with IH : ?i = ?i -> _ |- _ => specialize (IH eq_refl) end;
+    repeat match goal with IH : typeof ?j = ?j -> _ |- _ => specialize (IH eq_refl) end;
     repeat match goal with H : _ /\ _ |- _ => destruct H end;
     try match goal with c : compt ?i |- _ => pose proof (compt_notV _ c) end.
-  all: repeat split.
+  all: repeat match goal with |- _ /\ _ => split end.
   all: try solve [eauto 4 with presup].
   (* level and type conversions *)
   all: try solve [eapply wft_lconv; eassumption].
   all: try solve [eapply wf_lconv; eassumption].
   all: try solve [eapply conv_tm'; eassumption].
+  (* contexts *)
+  all: try solve [apply wfc_nil; auto | apply wfc_var; auto].
+  all: try solve [eapply lsub_wf_id; eauto using wfc_nil, wfc_var].
+  all: try solve [eapply ext_wf; eauto].
+  all: try solve [match goal with
+                  | Hid : lsub_wf _ _ ?Γ' _ ?Γ, HAA : eq_ty _ _ ?Γ ?A ?A' ?l, HA : wf_ty _ _ ?Γ ?A ?l,
+                    HA' : wf_ty _ _ ?Γ ?A' ?l, Hl : lequiv _ ?l ?l', Hi : typeof ?i = ?i
+                    |- _ => first [exact (ctx_conv_ext1 Hi Hid HA HAA HA' Hl)
+                                 | exact (ctx_conv_ext2 Hi Hid HA HAA HA' Hl)]
+                  end].
+  (* global variables *)
+  all: try solve [first [eapply wft_gvar | eapply wf_gvar]; eauto;
+                  match goal with Hi : typeof ?i = ?i |- _ => rewrite Hi end; eauto].
+  all: try solve [eapply pre_gvar_ty; eauto using typeof_self_notV;
+                  eapply lsub_wf_prem; eauto using typeof_self_notV].
+  all: try solve [eapply pre_gvar_r; eauto using typeof_self_notV, lsub_wf_prem].
+  (* contextual types, box, letbox *)
+  all: try solve [eapply wft_CTyp; eauto using lequiv_wf_l, lequiv_wf_r, ctx_of_tm_M, ctx_of_eqtm_M].
+  all: try solve [eapply wft_CTrm; eauto using lequiv_wf_l, lequiv_wf_r, ctx_of_tm_M, ctx_of_eqtm_M].
+  all: try solve [eapply pre_CTrm_r; eauto].
+  all: try solve [eapply (wf_ty_single (i := lM) eq_refl); [eassumption|];
+                  first [eapply wf_boxT | eapply wf_boxt]; eauto using ctx_of_ext, ctx_of_ty_M].
+  all: try solve [first [eapply wf_boxT | eapply wf_boxt]; eauto].
+  all: try solve [first [eapply wf_letboxT | eapply wf_letboxt]; eauto using lequiv_wf_l, lequiv_wf_r;
+                  first [eapply wf_boxT | eapply wf_boxt]; eauto using ctx_of_ext, ctx_of_ty_M].
+  all: try solve [eapply pre_letboxT_r; eauto].
+  all: try solve [match goal with |- wf_tm _ _ _ (letboxt _ _ ?D' ?T' _ _ _) _ _ =>
+                    match goal with Hc : eq_ctx _ _ ?D ?D', HTT : eq_ty _ _ ?D ?T ?T' _ |- _ =>
+                      eapply (pre_letboxt_r (Δ := D) (T := T)); eauto end end].
+  all: try solve [eapply pre_letboxT_beta_r; eauto].
+  all: try solve [eapply pre_letboxt_beta_r; eauto].
   (* right-hand sides of congruences *)
   all: first [ solve [eapply pre_pi_r; eassumption] | solve [eapply pre_U_r; eauto with presup]
              | solve [eapply pre_El_r; eassumption] | solve [eapply pre_codeU_r; eauto with presup]
@@ -307,7 +544,8 @@ Context {G : gctx} {i : layer} (Hi : typeof i = i).
 
 Let P4 := proj1 (proj2 (proj2 (proj2 presupposition))).
 Let P5 := proj1 (proj2 (proj2 (proj2 (proj2 presupposition)))).
-Let P6 := proj2 (proj2 (proj2 (proj2 (proj2 presupposition)))).
+Let P6 := proj1 (proj2 (proj2 (proj2 (proj2 (proj2 presupposition))))).
+Let P7 := proj2 (proj2 (proj2 (proj2 (proj2 (proj2 presupposition))))).
 
 Lemma wf_tm_ty {Γ t T l} : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ i ] T @ l ].
 Proof. intros H; exact (P4 _ _ _ _ _ _ H Hi). Qed.
@@ -321,5 +559,13 @@ Lemma eqtm_wf_r {Γ t t' T l} : [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> [ G ; Γ
 Proof. intros H; exact (proj1 (proj2 (P6 _ _ _ _ _ _ _ H Hi))). Qed.
 Lemma eqtm_wf_ty {Γ t t' T l} : [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> [ G ; Γ ⊢[ i ] T @ l ].
 Proof. intros H; exact (proj2 (proj2 (P6 _ _ _ _ _ _ _ H Hi))). Qed.
+
+Lemma eqctx_wf_l {Γ Γ'} : [ G ⊢[ i ] Γ ≅ Γ' ] -> [ G ; Γ ⊢[ i ] ].
+Proof. intros H; exact (proj1 (P7 _ _ _ _ H Hi)). Qed.
+Lemma eqctx_wf_r {Γ Γ'} : [ G ⊢[ i ] Γ ≅ Γ' ] -> [ G ; Γ' ⊢[ i ] ].
+Proof. intros H; exact (proj1 (proj2 (P7 _ _ _ _ H Hi))). Qed.
+(** Context conversion: the identity substitution between equivalent contexts. *)
+Lemma eqctx_id {Γ Γ'} : [ G ⊢[ i ] Γ ≅ Γ' ] -> [ G ; Γ' ⊢[ i ] lshift 0 : Γ ].
+Proof. intros H; exact (proj2 (proj2 (P7 _ _ _ _ H Hi))). Qed.
 
 End Named.

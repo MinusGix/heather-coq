@@ -450,3 +450,65 @@ Proof.
   all: try gs_manual.
   all: try gs_manual2.
 Qed.
+
+(** ** Declared bindings are well formed *)
+
+Definition decl_ok (G : gctx) (D : gdecl) : Prop :=
+  match D with
+  | gdCtx => True
+  | gdTy Δ i l => [ G ; Δ ⊢[ lD ] ] /\ lwf (gL G) l
+  | gdTm Δ i T l => [ G ; Δ ⊢[ lD ] ] /\ [ G ; Δ ⊢[ lD ] T @ l ] /\ lwf (gL G) l
+  end.
+
+Lemma decl_ok_wk1 L Ψ D0 D : [ ⊢ mkG L (D0 :: Ψ) ] -> decl_ok (mkG L Ψ) D ->
+  decl_ok (mkG L (D0 :: Ψ)) (gdecl_ren D S).
+Proof.
+  intros Hg HD.
+  assert (Hw : gwk_wf (gwk_step gwk_id) (D0 :: Ψ) Ψ) by (constructor; constructor).
+  destruct D; cbn in *; auto.
+  - destruct HD as [HΔ Hl]. split; [|exact Hl].
+    exact (proj1 (proj2 gweakening) _ _ _ HΔ _ _ Hw Hg).
+  - destruct HD as (HΔ & HT & Hl). refine (conj _ (conj _ Hl)).
+    + exact (proj1 (proj2 gweakening) _ _ _ HΔ _ _ Hw Hg).
+    + exact (proj1 (proj2 (proj2 gweakening)) _ _ _ _ _ HT _ _ Hw Hg).
+Qed.
+
+Lemma gctx_decl_ok G n D : [ ⊢ G ] -> in_gctx (gΨ G) n D -> decl_ok G D.
+Proof.
+  destruct G as [L Ψ]; cbn. intros Hg Hin; revert Hg; induction Hin as [Ψ D | Ψ D D' n Hin IH]; intros Hg.
+  - apply decl_ok_wk1; [exact Hg|]. inversion Hg; subst; cbn; auto.
+    repeat split; auto. exact (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ ltac:(eassumption)).
+  - apply decl_ok_wk1; [exact Hg|]. apply IH. inversion Hg; subst; assumption.
+Qed.
+
+(** ** Single global substitutions (the letbox β-rules) *)
+
+Lemma gdecl_gsubst_ren_single D o : dnf_decl D -> gdecl_gsubst (gdecl_ren D S) (gsingle o) = D.
+Proof.
+  intros HD; destruct D; cbn in *; f_equal; try reflexivity.
+  all: first
+    [ rewrite (gsubst_gren_ctx _ _ _ (fun j => GId j)) by reflexivity; apply gsubst_id_ctx; [tauto | auto]
+    | rewrite (gsubst_gren_ty _ _ _ (fun j => GId j)) by reflexivity; apply gsubst_id_ty; [tauto | auto] ].
+Qed.
+
+Lemma in_gctx_ctx_var' Ψ L n D : in_gctx Ψ n D -> D = gdCtx -> gctx_var (mkG L Ψ) n.
+Proof.
+  unfold gctx_var; cbn. induction 1 as [Ψ D | Ψ D D' n Hin IH]; intros HD.
+  - destruct D; cbn in HD; try discriminate; reflexivity.
+  - destruct D; cbn in HD; try discriminate. now apply IH.
+Qed.
+Lemma in_gctx_ctx_var Ψ L n : in_gctx Ψ n gdCtx -> gctx_var (mkG L Ψ) n.
+Proof. intros H; exact (in_gctx_ctx_var' _ _ _ _ H eq_refl). Qed.
+
+Lemma gsub_wf_single G D o :
+  [ ⊢ G ] -> dnfo o -> gobj_wf G o (gdecl_gsubst (gdecl_ren D S) (gsingle o)) ->
+  [ G ⊢ gsingle o : gext G D ].
+Proof.
+  intros Hg Ho Hwf. constructor; [exact Hg | intros [|n]; cbn; auto |].
+  intros n D0 Hin. inversion Hin as [Ψ0 D1 | Ψ0 D1 D2 m Hm]; subst; cbn [gsingle]; [exact Hwf|].
+  rewrite gdecl_gsubst_ren_single by exact (in_gctx_dnf _ _ _ Hm).
+  destruct D1; cbn.
+  - destruct G as [L Ψ]; exact (in_gctx_ctx_var _ _ _ Hm).
+  - exists i; split; [apply lle_refl | exact Hm].
+  - exists i; split; [apply lle_refl | exact Hm].
+Qed.
