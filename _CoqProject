@@ -50,3 +50,4 @@ theories/Validity/Fundamental.v
 theories/Validity/Consequences.v
 theories/Validity/DeclConsequences.v
 theories/Validity/Payload.v
+theories/Validity/GSubRel.v
