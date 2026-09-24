@@ -263,3 +263,72 @@ Proof.
   all: f_equal; apply l_canon; auto with nf; intros n;
     rewrite llk_glren; match goal with IH : dnfl ?d -> LK _ ?d |- _ => apply IH end; auto with nf.
 Qed.
+
+(** ** Deep normal forms: preserved by the local operations; imply [nf] *)
+
+Lemma dnf_nf_all :
+  let Pty T := dnfty T -> nfty T in
+  let Ptm t := dnftm t -> nftm t in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall G : ctx, True) /\ (forall d, dnfl d -> nfl d).
+Proof.
+  intros Pty Ptm; apply syn_ind; subst Pty Ptm; cbn beta; intros; try exact I; cbn in *; intuition.
+Qed.
+Lemma dnfl_nfl d : dnfl d -> nfl d.
+Proof. apply dnf_nf_all. Qed.
+Lemma dnftm_nftm t : dnftm t -> nftm t.
+Proof. apply dnf_nf_all. Qed.
+Lemma dnfty_nfty T : dnfty T -> nfty T.
+Proof. apply dnf_nf_all. Qed.
+
+Lemma dnfl_r2l r : dnfl (r2l r).
+Proof. induction r; cbn; auto. apply dnfl_lcons'; cbn; auto. Qed.
+Lemma dnfl_lnorm d : dnfl d -> dnfl (lnorm d).
+Proof. induction d; cbn; intuition auto using dnfl_lcons'. Qed.
+
+Lemma ren_dnf_all :
+  let Pty T := dnfty T -> forall r, dnfty (ren_ty T r) in
+  let Ptm t := dnftm t -> forall r, dnftm (ren_tm t r) in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall G : ctx, True) /\
+  (forall d, dnfl d -> forall r, dnfl (lren d r)).
+Proof.
+  intros Pty Ptm; apply syn_ind; subst Pty Ptm; cbn beta; intros; try exact I;
+    cbn in *; intuition auto using dnfl_r2l, dnfl_lcons'.
+Qed.
+Lemma ren_dnf (t : tm) r : dnftm t -> dnftm t⟨r⟩.
+Proof. intros; now apply ren_dnf_all. Qed.
+Lemma ren_dnf_ty (T : ty) r : dnfty T -> dnfty T⟨r⟩.
+Proof. intros; now apply ren_dnf_all. Qed.
+Lemma dnfl_lren d r : dnfl d -> dnfl (lren d r).
+Proof. intros; now apply ren_dnf_all. Qed.
+
+Lemma dnfl_ldrop k d : dnfl d -> dnfl (ldrop k d).
+Proof. revert d; induction k; intros [m|d t]; cbn; intuition. Qed.
+Lemma dnfl_lnorm_lk d : LK dnftm d -> dnfl (lnorm d).
+Proof.
+  induction d as [k|d IH t]; intros H; cbn; auto.
+  apply dnfl_lcons'; [apply IH; intros n; exact (H (S n)) | exact (H 0)].
+Qed.
+Lemma lk_dnf_llift d : LK dnftm d -> LK dnftm (llift d).
+Proof. intros H [|n]; rewrite llk_llift; cbn; [exact I | apply ren_dnf, H]. Qed.
+Lemma lk_dnf_gwk d : LK dnftm d -> LK dnftm (gwk d).
+Proof. intros H n; unfold gwk; rewrite llk_glren; apply gren_dnf_all. Qed.
+Lemma lk_dnf_ldrop k d : LK dnftm d -> LK dnftm (ldrop k d).
+Proof. intros H n; rewrite llk_ldrop; apply H. Qed.
+#[export] Hint Resolve lk_dnf_llift lk_dnf_gwk lk_dnf_ldrop dnfl_lnorm_lk : nf.
+
+Lemma subst_dnf_all :
+  let Pty T := dnfty T -> forall d, LK dnftm d -> dnfty (subst_ty T d) in
+  let Ptm t := dnftm t -> forall d, LK dnftm d -> dnftm (subst_tm t d) in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall G : ctx, True) /\
+  (forall d0, dnfl d0 -> forall d, LK dnftm d -> dnfl (lcomp d0 d)).
+Proof.
+  intros Pty Ptm; apply syn_ind; subst Pty Ptm; cbn beta; intros; try exact I;
+    cbn in *; intuition eauto 6 with nf.
+  apply dnfl_lcons'; intuition eauto.
+Qed.
+Lemma subst_dnf (t : tm) d : dnftm t -> LK dnftm d -> dnftm t[d].
+Proof. intros; now apply subst_dnf_all. Qed.
+Lemma subst_dnf_ty (T : ty) d : dnfty T -> LK dnftm d -> dnfty T[d].
+Proof. intros; now apply subst_dnf_all. Qed.
+Lemma dnfl_lcomp d0 d : dnfl d0 -> LK dnftm d -> dnfl (lcomp d0 d).
+Proof. intros; now apply subst_dnf_all. Qed.

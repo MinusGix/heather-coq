@@ -66,8 +66,8 @@ Proof.
   intros n; rewrite llk_lren, Hl; cbn; now rewrite Hl'.
 Qed.
 
-Lemma nfl_lren d r : nfl (lren d r).
-Proof. apply ren_nf_all. Qed.
+Lemma nfl_lren d r : dnfl d -> dnfl (lren d r).
+Proof. apply dnfl_lren. Qed.
 
 Lemma wkr_gren r Δ Γ ξ : wkr r Δ Γ -> wkr r Δ⟪ξ⟫ Γ⟪ξ⟫.
 Proof.

@@ -46,8 +46,8 @@ Proof.
   - intros n; rewrite !clen_gren. cbn [gren GRen_lsub]. rewrite llk_glren, Hl; reflexivity.
 Qed.
 
-Lemma nfl_gren d ξ : nfl d -> nfl d⟪ξ⟫.
-Proof. intros; now apply gren_nf_all. Qed.
+Lemma nfl_gren d ξ : dnfl d -> dnfl d⟪ξ⟫.
+Proof. intros; apply gren_dnf_all. Qed.
 
 Lemma gren_lsingle a ξ : (lsingle a)⟪ξ⟫ = lsingle a⟪ξ⟫.
 Proof. reflexivity. Qed.

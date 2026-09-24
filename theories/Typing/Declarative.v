@@ -50,7 +50,7 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] T @ l ]
 (* global type variables, with their local substitution typed by lookups *)
 | wft_gvar G i Γ U Δ i' l d : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] ->
-    in_gctx (gΨ G) U (gdTy Δ i' l) -> lle i' i -> lsub_tail d Δ Γ -> nfl d ->
+    in_gctx (gΨ G) U (gdTy Δ i' l) -> lle i' i -> lsub_tail d Δ Γ -> dnfl d ->
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n : A[d] @ k ]) ->
     [ G ; Γ ⊢[ i ] tyGvar U d @ l ]
 (* contextual types (layer M only) *)
@@ -92,7 +92,7 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] t : T @ l ]
 (* global term variables: every layer from the binding's upward, incl. V *)
 | wf_gvar G i Γ u Δ i' T l d : [ G ; Γ ⊢[ typeof i ] ] ->
-    in_gctx (gΨ G) u (gdTm Δ i' T l) -> lle i' i -> lsub_tail d Δ Γ -> nfl d ->
+    in_gctx (gΨ G) u (gdTm Δ i' T l) -> lle i' i -> lsub_tail d Δ Γ -> dnfl d ->
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n : A[d] @ k ]) ->
     [ G ; Γ ⊢[ i ] gvar u d : T[d] @ l ]
 (* code (layer M only; the code itself lives at layer C) *)
@@ -137,7 +137,7 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] T ≅ T' @ l ]
 | eqty_gvar G i Γ U Δ i' l d d' : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] ->
     in_gctx (gΨ G) U (gdTy Δ i' l) -> lle i' i ->
-    lsub_tail d Δ Γ -> nfl d -> lsub_tail d' Δ Γ -> nfl d' ->
+    lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n : A[d] @ k ]) ->
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d' n : A[d] @ k ]) ->
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n ≅ llk d' n : A[d] @ k ]) ->
@@ -189,7 +189,7 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ]
 | eqtm_gvar G i Γ u Δ i' T l d d' : [ G ; Γ ⊢[ typeof i ] ] ->
     in_gctx (gΨ G) u (gdTm Δ i' T l) -> lle i' i ->
-    lsub_tail d Δ Γ -> nfl d -> lsub_tail d' Δ Γ -> nfl d' ->
+    lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n : A[d] @ k ]) ->
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d' n : A[d] @ k ]) ->
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n ≅ llk d' n : A[d] @ k ]) ->
