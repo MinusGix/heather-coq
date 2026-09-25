@@ -161,4 +161,123 @@ Proof.
   - exact (VS_boxt EP EM HΓ Hl HΔ HT Ht VP VM VTP VTM VtP VtM).
 Qed.
 
+(** ** [letbox] *)
+
+Local Notation MbT M := (M⟪S⟫[lsingle (boxT (tyGvar 0 (lshift 0)))]).
+Local Notation Mbt M := (M⟪S⟫[lsingle (boxt (gvar 0 (lshift 0)))]).
+
+Lemma FM_letboxT_cong {G Γ l1 l2 l3 l4 Δ Δ' M M' t1 t2 t t0} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] ] ->
+  [ G ⊢[ lD ] Δ ≅ Δ' ] ->
+  [ G ; Γ ,, tyCTyp Δ l2 @ lzero ⊢[ lM ] M @ l1 ] -> [ G ; Γ ,, tyCTyp Δ' l4 @ lzero ⊢[ lM ] M' @ l3 ] ->
+  [ gext G (gdTy Δ lC l2) ; Γ⟪S⟫ ⊢[ lM ] t1 ≅ t2 : MbT M @ l1 ] ->
+  [ gext G (gdTy Δ' lC l4) ; Γ⟪S⟫ ⊢[ lM ] t2 : MbT M' @ l3 ] ->
+  [ G ; Γ ⊢[ lM ] t ≅ t0 : tyCTyp Δ l2 @ lzero ] ->
+  SemCtxP G Δ -> SemCtxEqP G Δ Δ' -> SemTyM G (Γ ,, tyCTyp Δ l2 @ lzero) M M' l1 ->
+  SemTmM (gext G (gdTy Δ lC l2)) Γ⟪S⟫ t1 t2 (MbT M) l1 ->
+  SemTmM (gext G (gdTy Δ' lC l4)) Γ⟪S⟫ t2 t2 (MbT M') l3 ->
+  SemTmM G Γ t t0 (tyCTyp Δ l2) lzero ->
+  SemTmM G Γ (letboxT l1 l2 Δ M t1 t) (letboxT l3 l4 Δ' M' t2 t0) M[lsingle t] l1.
+Proof.
+  intros Hl13 Hl24 HΔ HΔ' HΔΔ' HM HM' Hb Hb' Htt (_ & VΔP & VΔM) [VEP VEM] (_ & VM) (_ & _ & Vb)
+    (_ & _ & Vb') ((HG & VΓ) & VT & Vt).
+  pose proof (eqtm_wf_l (i := lM) eq_refl Hb) as Ht1. pose proof (eqtm_wf_r (i := lM) eq_refl Hb) as Ht2.
+  pose proof (eqtm_wf_l (i := lM) eq_refl Htt) as Ht. pose proof (eqtm_wf_r (i := lM) eq_refl Htt) as Ht0.
+  pose proof (ctx_of_ext (ctx_of_wf_ty (i := lM) eq_refl HM)) as HΓ.
+  pose proof (VTySM_refl_l HG (VCtxS_ext EP EM HG VΓ (VS_CTyp EP EM HΓ HΔ HΔ (lequiv_wf_l _ _ _ Hl24)
+                (lequiv_refl _ _ (lequiv_wf_l _ _ _ Hl24)) VΔP VΔM) I) VM) as VMM.
+  split; [exact (conj HG VΓ) | split].
+  - exact (VTyS_single EP EM VMM (VTmSM_refl_l HG VΓ VT Vt)).
+  - exact (VS_letboxT EP EM HG Hl13 Hl24 (lequiv_wf_l _ _ _ Hl13) (lequiv_wf_l _ _ _ Hl24) HΔ HΔ' HΔΔ'
+             HM HM' Ht1 Ht2 Hb' Ht Ht0 VΓ VΔP VΔM VEP VEM VM Vb Vb' Vt).
+Qed.
+
+Lemma FM_letboxT {G Γ l' l Δ M t' t} : lwf (gL G) l' -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
+  [ G ; Γ ,, tyCTyp Δ l @ lzero ⊢[ lM ] M @ l' ] ->
+  [ gext G (gdTy Δ lC l) ; Γ⟪S⟫ ⊢[ lM ] t' : MbT M @ l' ] -> [ G ; Γ ⊢[ lM ] t : tyCTyp Δ l @ lzero ] ->
+  SemCtxP G Δ -> SemTyM G (Γ ,, tyCTyp Δ l @ lzero) M M l' ->
+  SemTmM (gext G (gdTy Δ lC l)) Γ⟪S⟫ t' t' (MbT M) l' -> SemTmM G Γ t t (tyCTyp Δ l) lzero ->
+  SemTmM G Γ (letboxT l' l Δ M t' t) (letboxT l' l Δ M t' t) M[lsingle t] l'.
+Proof.
+  intros Hl' Hl HΔ HM Ht' Ht SΔ SM Sb St. pose proof SΔ as (_ & VP & VM).
+  apply FM_letboxT_cong; try assumption; try (apply lequiv_refl; assumption).
+  - now apply eqc_refl.
+  - now apply eqtm_refl.
+  - now apply eqtm_refl.
+  - exact (conj VP VM).
+Qed.
+
+Lemma FM_letboxT_beta {G Γ l' l Δ M t' T} : lwf (gL G) l' -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
+  [ G ; Δ ⊢[ lC ] T @ l ] -> [ G ; Γ ,, tyCTyp Δ l @ lzero ⊢[ lM ] M @ l' ] ->
+  [ gext G (gdTy Δ lC l) ; Γ⟪S⟫ ⊢[ lM ] t' : MbT M @ l' ] ->
+  SemTyP G Δ T T l -> SemTyM G (Γ ,, tyCTyp Δ l @ lzero) M M l' ->
+  SemTmM (gext G (gdTy Δ lC l)) Γ⟪S⟫ t' t' (MbT M) l' ->
+  SemTmM G Γ (letboxT l' l Δ M t' (boxT T)) t'⦃gsingle (GTy T)⦄ M[lsingle (boxT T)] l'.
+Proof.
+  intros Hl' Hl HΔ HT HM Ht' ((HG & VP & VM') & VTP & VTM) ((_ & VΓ) & VM) (_ & _ & Vb).
+  pose proof (ctx_of_ext (ctx_of_wf_ty (i := lM) eq_refl HM)) as HΓ.
+  split; [exact (conj HG (VCtxS_tl EP EM VΓ)) | split].
+  - exact (VTyS_single EP EM VM (VS_boxT EP EM HΓ Hl HΔ HT VP VM' VTP VTM)).
+  - exact (VS_letboxT_beta EP EM HG Hl' Hl HΔ HT HM Ht' VP VM' VTP VTM Vb).
+Qed.
+
+Lemma FM_letboxt_cong {G Γ l1 l2 l3 l4 Δ Δ' A A' M M' t1 t2 t t0} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] ] ->
+  [ G ⊢[ lD ] Δ ≅ Δ' ] -> [ G ; Δ ⊢[ lD ] A @ l2 ] -> [ G ; Δ' ⊢[ lD ] A' @ l4 ] ->
+  [ G ; Δ ⊢[ lD ] A ≅ A' @ l2 ] ->
+  [ G ; Γ ,, tyCTrm Δ A l2 @ lzero ⊢[ lM ] M @ l1 ] -> [ G ; Γ ,, tyCTrm Δ' A' l4 @ lzero ⊢[ lM ] M' @ l3 ] ->
+  [ gext G (gdTm Δ lC A l2) ; Γ⟪S⟫ ⊢[ lM ] t1 ≅ t2 : Mbt M @ l1 ] ->
+  [ gext G (gdTm Δ' lC A' l4) ; Γ⟪S⟫ ⊢[ lM ] t2 : Mbt M' @ l3 ] ->
+  [ G ; Γ ⊢[ lM ] t ≅ t0 : tyCTrm Δ A l2 @ lzero ] ->
+  SemCtxEqP G Δ Δ' -> SemTyP G Δ A A' l2 -> SemTyM G (Γ ,, tyCTrm Δ A l2 @ lzero) M M' l1 ->
+  SemTmM (gext G (gdTm Δ lC A l2)) Γ⟪S⟫ t1 t2 (Mbt M) l1 ->
+  SemTmM (gext G (gdTm Δ' lC A' l4)) Γ⟪S⟫ t2 t2 (Mbt M') l3 ->
+  SemTmM G Γ t t0 (tyCTrm Δ A l2) lzero ->
+  SemTmM G Γ (letboxt l1 l2 Δ A M t1 t) (letboxt l3 l4 Δ' A' M' t2 t0) M[lsingle t] l1.
+Proof.
+  intros Hl13 Hl24 HΔ HΔ' HΔΔ' HA HA' HAA' HM HM' Hb Hb' Htt [VEP VEM] ((_ & VΔP & VΔM) & VAP & VAM)
+    (_ & VM) (_ & _ & Vb) (_ & _ & Vb') ((HG & VΓ) & VT & Vt).
+  pose proof (eqtm_wf_l (i := lM) eq_refl Hb) as Ht1. pose proof (eqtm_wf_r (i := lM) eq_refl Hb) as Ht2.
+  pose proof (eqtm_wf_l (i := lM) eq_refl Htt) as Ht. pose proof (eqtm_wf_r (i := lM) eq_refl Htt) as Ht0.
+  pose proof (ctx_of_ext (ctx_of_wf_ty (i := lM) eq_refl HM)) as HΓ.
+  pose proof (VTyS_trans EP EM VAP (VTyS_sym EP EM HG VΔP VAP)) as VAAP.
+  pose proof (VTyS_trans EP EM VAM (VTyS_sym EP EM HG VΔM VAM)) as VAAM.
+  pose proof (VTySM_refl_l HG (VCtxS_ext EP EM HG VΓ (VS_CTrm EP EM HG HΓ HΔ HΔ HA HA (lequiv_wf_l _ _ _ Hl24)
+                (lequiv_refl _ _ (lequiv_wf_l _ _ _ Hl24)) VΔP VΔM VΔP VΔM VAAP VAAM) I) VM) as VMM.
+  split; [exact (conj HG VΓ) | split].
+  - exact (VTyS_single EP EM VMM (VTmSM_refl_l HG VΓ VT Vt)).
+  - exact (VS_letboxt EP EM HG Hl13 Hl24 (lequiv_wf_l _ _ _ Hl13) (lequiv_wf_l _ _ _ Hl24) HΔ HΔ' HΔΔ'
+             HA HA' HAA' HM HM' Ht1 Ht2 Hb' Ht Ht0 VΓ VΔP VΔM VEP VEM VAP VAM VM Vb Vb' Vt).
+Qed.
+
+Lemma FM_letboxt {G Γ l' l Δ A M t' t} : lwf (gL G) l' -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
+  [ G ; Δ ⊢[ lD ] A @ l ] -> [ G ; Γ ,, tyCTrm Δ A l @ lzero ⊢[ lM ] M @ l' ] ->
+  [ gext G (gdTm Δ lC A l) ; Γ⟪S⟫ ⊢[ lM ] t' : Mbt M @ l' ] -> [ G ; Γ ⊢[ lM ] t : tyCTrm Δ A l @ lzero ] ->
+  SemTyP G Δ A A l -> SemTyM G (Γ ,, tyCTrm Δ A l @ lzero) M M l' ->
+  SemTmM (gext G (gdTm Δ lC A l)) Γ⟪S⟫ t' t' (Mbt M) l' -> SemTmM G Γ t t (tyCTrm Δ A l) lzero ->
+  SemTmM G Γ (letboxt l' l Δ A M t' t) (letboxt l' l Δ A M t' t) M[lsingle t] l'.
+Proof.
+  intros Hl' Hl HΔ HA HM Ht' Ht SA SM Sb St. pose proof SA as ((_ & VP & VM) & _).
+  apply FM_letboxt_cong; try assumption; try (apply lequiv_refl; assumption).
+  - now apply eqc_refl.
+  - now apply eqty_refl.
+  - now apply eqtm_refl.
+  - now apply eqtm_refl.
+  - exact (conj VP VM).
+Qed.
+
+Lemma FM_letboxt_beta {G Γ l' l Δ A M t' c} : lwf (gL G) l' -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
+  [ G ; Δ ⊢[ lC ] c : A @ l ] -> [ G ; Δ ⊢[ lD ] A @ l ] -> [ G ; Γ ,, tyCTrm Δ A l @ lzero ⊢[ lM ] M @ l' ] ->
+  [ gext G (gdTm Δ lC A l) ; Γ⟪S⟫ ⊢[ lM ] t' : Mbt M @ l' ] ->
+  SemTmP G Δ c c A l -> SemTyM G (Γ ,, tyCTrm Δ A l @ lzero) M M l' ->
+  SemTmM (gext G (gdTm Δ lC A l)) Γ⟪S⟫ t' t' (Mbt M) l' ->
+  SemTmM G Γ (letboxt l' l Δ A M t' (boxt c)) t'⦃gsingle (GTm c)⦄ M[lsingle (boxt c)] l'.
+Proof.
+  intros Hl' Hl HΔ Hc HA HM Ht' ((HG & VP & VM') & VAP & VAM & VcP & VcM) ((_ & VΓ) & VM) (_ & _ & Vb).
+  pose proof (ctx_of_ext (ctx_of_wf_ty (i := lM) eq_refl HM)) as HΓ.
+  split; [exact (conj HG (VCtxS_tl EP EM VΓ)) | split].
+  - exact (VTyS_single EP EM VM (VS_boxt EP EM HΓ Hl HΔ HA Hc VP VM' VAP VAM VcP VcM)).
+  - exact (VS_letboxt_beta EP EM HG Hl' Hl HΔ HA Hc HM Ht' VP VM' VAP VAM VcP VcM Vb).
+Qed.
+
 End FundamentalM.
