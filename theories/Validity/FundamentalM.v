@@ -281,3 +281,145 @@ Proof.
 Qed.
 
 End FundamentalM.
+
+(** ** The theorem *)
+
+Section FundamentalMThm.
+Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM} {EMl : GenericEqM EP EM}.
+Local Notation LRM := (LR_M EP EM).
+#[local] Instance LR_M_lawsT' : VPLaws (@lr_vp LRM) := vpM_laws EP EM.
+
+Ltac m_lwf :=
+  first [ eassumption | exact I | eapply lequiv_wf_l; eassumption | eapply lequiv_wf_r; eassumption
+        | progress cbn [lwf]; first [split; m_lwf | m_lwf] ].
+Ltac m_side :=
+  first [ eassumption | typeclasses eauto | apply lequiv_refl; m_lwf | apply lequiv_sym; eassumption | m_lwf
+        | apply (lle_ge_M EP EM) | reflexivity | apply eqc_refl; eassumption ].
+
+Ltac m_types :=
+  repeat match goal with
+  | H : wf_tm ?G lM ?Γ ?t ?T ?l |- _ =>
+      lazymatch goal with
+      | _ : wf_ty G lM Γ T l |- _ => fail
+      | _ => pose proof (wf_tm_ty (i := lM) eq_refl H)
+      end
+  | H : eq_ty ?G lM ?Γ ?T ?T' ?l |- _ =>
+      lazymatch goal with
+      | _ : wf_ty G lM Γ T l |- _ => fail
+      | _ => pose proof (eqty_wf_l (i := lM) eq_refl H)
+      end
+  | H : eq_tm ?G lM ?Γ ?t ?t' ?T ?l |- _ =>
+      lazymatch goal with
+      | _ : wf_tm G lM Γ t T l |- _ => fail
+      | _ => pose proof (eqtm_wf_l (i := lM) eq_refl H)
+      end
+  end.
+
+(** Premises at C and P: the fundamental theorem at P. *)
+Ltac m_P :=
+  repeat match goal with
+  | H : wf_glob ?G |- _ =>
+      lazymatch goal with _ : GValid EP EM G |- _ => fail | _ =>
+        pose proof (proj1 (fundamentalS EP EM) _ H) end
+  | H : wf_ctx ?G lD ?Δ |- _ =>
+      lazymatch goal with _ : SemCtx EP EM G Δ |- _ => fail | _ =>
+        pose proof (proj1 (proj2 (fundamentalS EP EM)) _ _ _ H eq_refl) end
+  | H : wf_ty ?G ?i ?Δ ?T ?l |- _ =>
+      lazymatch i with lM => fail | _ => idtac end;
+      lazymatch goal with _ : SemTy EP EM G Δ T T l |- _ => fail | _ =>
+        pose proof (proj1 (proj2 (fundamentalS_le EP EM)) _ _ _ _ _ H ltac:(unfold lle; cbn; lia)) end
+  | H : wf_tm ?G ?i ?Δ ?t ?T ?l |- _ =>
+      lazymatch i with lM => fail | _ => idtac end;
+      lazymatch goal with _ : SemTm EP EM G Δ t t T l |- _ => fail | _ =>
+        pose proof (proj1 (proj2 (proj2 (fundamentalS_le EP EM))) _ _ _ _ _ _ H ltac:(unfold lle; cbn; lia)) end
+  | H : eq_ty ?G ?i ?Δ ?T ?T' ?l |- _ =>
+      lazymatch i with lM => fail | _ => idtac end;
+      lazymatch goal with _ : SemTy EP EM G Δ T T' l |- _ => fail | _ =>
+        pose proof (proj1 (proj2 (proj2 (proj2 (fundamentalS_le EP EM)))) _ _ _ _ _ _ H
+                      ltac:(unfold lle; cbn; lia)) end
+  | H : eq_ctx ?G lD ?Δ ?Δ' |- _ =>
+      lazymatch goal with _ : SemCtxEq EP EM G Δ Δ' |- _ => fail | _ =>
+        pose proof (proj2 (proj2 (proj2 (proj2 (proj2 (proj2 (fundamentalS EP EM)))))) _ _ _ _ H eq_refl) end
+  end.
+
+Ltac m_ctx :=
+  first [ eassumption | apply VCtxS_nil | solve [simple eapply VCtxS_var; m_side]
+        | solve [simple eapply VCtxS_tl; m_side]
+        | solve [simple eapply VCtxS_ext; m_side] ].
+
+Ltac m_rules :=
+  first
+  [ solve [simple eapply VS_var; m_side]
+  | solve [simple eapply VS_nat; m_side] | solve [simple eapply VS_zero; m_side] | solve [simple eapply VS_code_nat; m_side]
+  | solve [simple eapply VS_El_nat; m_side]
+  | solve [simple eapply VS_succ; m_side]
+  | solve [simple eapply VS_U; m_side] | solve [simple eapply VS_El; m_side]
+  | solve [simple eapply VS_code_U; m_side] | solve [simple eapply VS_El_U; m_side]
+  | solve [simple eapply VS_pi; m_side] | solve [simple eapply VS_app; m_side]
+  | solve [simple eapply VS_lam; m_side] | solve [simple eapply VS_natrec; m_side]
+  | solve [simple eapply VS_code_pi; m_side]
+  | solve [simple eapply VS_beta; m_side] | solve [simple eapply VS_eta; m_side]
+  | solve [simple eapply VS_natrec_zero; m_side] | solve [simple eapply VS_natrec_succ; m_side]
+  | solve [simple eapply VS_El_pi; m_side] ].
+
+Ltac m_ty :=
+  first
+  [ eassumption
+  | solve [simple eapply VTyS_sym; m_side] | solve [simple eapply VTyS_trans; m_side]
+  | solve [simple eapply VTyS_lconv; m_side]
+  | solve [simple eapply VTyS_trans; [eassumption | simple eapply VTyS_sym; m_side]]
+  | solve [simple eapply VTyS_trans; [simple eapply VTyS_sym; m_side | eassumption]]
+  | solve [simple eapply VTyS_lookup; m_side]
+  | solve [simple eapply VTyS_single; m_side]
+  | m_rules
+  | solve [simple eapply VTyS_single; [eassumption | m_rules]]
+  | solve [simple eapply VTyS_single;
+           [ first [eassumption | simple eapply VTyS_trans; [eassumption | simple eapply VTyS_sym; m_side]]
+           | first [eassumption | simple eapply VTmS_trans; [eassumption | simple eapply VTmS_sym; m_side]]]] ].
+
+Ltac m_tm :=
+  first
+  [ eassumption
+  | solve [simple eapply VTmS_sym; m_side] | solve [simple eapply VTmS_trans; m_side]
+  | solve [simple eapply VTmS_conv; m_side] | solve [simple eapply VTmS_lconv; m_side]
+  | m_rules ].
+
+Ltac m_goal :=
+  lazymatch goal with
+  | |- GValid _ _ _ => eassumption
+  | |- @VCtxS _ _ _ _ _ _ => m_ctx
+  | |- @VTyS _ _ _ _ _ _ _ _ _ => m_ty
+  | |- @VTmS _ _ _ _ _ _ _ _ _ _ => m_tm
+  end.
+
+Theorem fundamentalM :
+  (forall G, [ ⊢ G ] -> True) /\
+  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> i = lM -> SemCtxM EP EM G Γ) /\
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = lM -> SemTyM EP EM G Γ T T l) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = lM -> SemTmM EP EM G Γ t t T l) /\
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = lM -> SemTyM EP EM G Γ T T' l) /\
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = lM -> SemTmM EP EM G Γ t t' T l) /\
+  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
+Proof.
+  apply typing_mut; intros; try exact I;
+    try match goal with H : ?x = lM |- _ => lazymatch x with lM => fail | _ => discriminate H end end;
+    ft_prep;
+    repeat match goal with
+      | IH : forall n A k, in_ctx _ n A k -> ?x = ?x -> _ |- _ =>
+          pose proof (fun n A k h => IH n A k h eq_refl); clear IH
+      end;
+    try solve [ first [simple eapply (FM_tygvar EP EM) | simple eapply (FM_gvar EP EM)]; eassumption ].
+  all: m_P.
+  all: try solve [ first [ simple eapply (FM_CTyp EP EM) | simple eapply (FM_CTyp_eq EP EM)
+                         | simple eapply (FM_CTrm EP EM) | simple eapply (FM_CTrm_eq EP EM)
+                         | simple eapply (FM_boxT EP EM) | simple eapply (FM_boxt EP EM)
+                         | simple eapply (FM_letboxT EP EM) | simple eapply (FM_letboxT_cong EP EM)
+                         | simple eapply (FM_letboxT_beta EP EM)
+                         | simple eapply (FM_letboxt EP EM) | simple eapply (FM_letboxt_cong EP EM)
+                         | simple eapply (FM_letboxt_beta EP EM) ]; eassumption ].
+  all: unfold SemTyM, SemTmM, SemCtxM in *;
+    repeat match goal with H : _ /\ _ |- _ => destruct H end; m_types; repeat split.
+  all: m_goal.
+Qed.
+
+End FundamentalMThm.
