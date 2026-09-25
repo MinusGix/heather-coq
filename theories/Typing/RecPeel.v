@@ -1,0 +1,256 @@
+(** * A β reduct is its branch at extended substitutions (M3_DESIGN.md E13)
+
+    Peeling a wrapped branch with lists of levels, global images and
+    local terms is the triple substitution of the branch body by the
+    lists, the first peeled binder being the outermost (highest index).
+    For a branch moved into a scope by [φ], [σ] and [e] (as a bundle
+    under substitution is, [mkrb_usubst]/[mkrb_gsubst]/[mkrb_subst]),
+    the reduct is the body at the extensions [uext ls φ], [gext_s os σ],
+    [lext as e]. *)
+From DeLaM.Typing Require Export RecInst.
+Import ListNotations.
+
+(** ** Peeling lists of binders *)
+
+Fixpoint peelUs (b : tm) (ls : list lvl) : tm :=
+  match ls with [] => b | l :: ls => peelUs (peelU b l) ls end.
+Fixpoint peelGs (b : tm) (os : list gobj) : tm :=
+  match os with [] => b | o :: os => peelGs (peelG b o) os end.
+Fixpoint peelLs (b : tm) (xs : list tm) : tm :=
+  match xs with [] => b | a :: xs => peelLs (peelL b a) xs end.
+
+(** The extensions: the list's last element is index 0. *)
+Definition uext (ls : list lvl) (φ : nat -> lvl) : nat -> lvl :=
+  fun i => if i <? length ls then nth (length ls - S i) ls lzero else φ (i - length ls).
+Definition gext_s (os : list gobj) (σ : gsub) : gsub :=
+  fun i => if i <? length os then nth (length os - S i) os (GId 0) else σ (i - length os).
+Definition lext (xs : list tm) (e : lsub) : lsub := fold_left lcons xs e.
+
+Lemma llk_lext xs : forall e i, llk (lext xs e) i =
+  if i <? length xs then nth (length xs - S i) xs tmErr else llk e (i - length xs).
+Proof.
+  induction xs as [|a xs IH]; intros e i; cbn [lext fold_left length].
+  - rewrite Nat.sub_0_r; reflexivity.
+  - change (fold_left lcons xs (lcons e a)) with (lext xs (lcons e a)). rewrite IH.
+    destruct (Nat.ltb_spec i (length xs)), (Nat.ltb_spec i (S (length xs))); try lia.
+    + replace (S (length xs) - S i) with (S (length xs - S i)) by lia. reflexivity.
+    + replace (i - length xs) with 0 by lia. replace (S (length xs) - S i) with 0 by lia. reflexivity.
+    + replace (i - length xs) with (S (i - S (length xs))) by lia. reflexivity.
+Qed.
+
+(** ** Peeling a wrapped term *)
+
+Lemma peelUs_wrapU ls : forall n b, length ls = n -> dnftm b ->
+  peelUs (wrapU n b) ls = usubst_tm b (uext ls lvar).
+Proof.
+  induction ls as [|l ls IH]; intros n b Hn Hb; cbn in Hn; subst n; cbn [peelUs wrapU].
+  - symmetry; apply (proj1 (proj2 usubst_id_all)); [exact Hb|]. intros i; unfold uext; cbn; f_equal; lia.
+  - cbn [peelU]. rewrite wrapU_usubst, (IH _ _ eq_refl (proj1 (proj2 usubst_dnf_all) _ _)).
+    apply (proj1 (proj2 usubst_usubst_all)). intros i. unfold uext; cbn [length].
+    destruct (Nat.ltb_spec i (length ls)) as [Hi | Hi].
+    + rewrite uupn_lt by exact Hi. cbn [lvsubst]. unfold uext.
+      destruct (Nat.ltb_spec i (length ls)), (Nat.ltb_spec i (S (length ls))); try lia.
+      replace (S (length ls) - S i) with (S (length ls - S i)) by lia. reflexivity.
+    + assert (Hj : exists j, i = length ls + j) by (exists (i - length ls); lia).
+      destruct Hj as [j ->]. rewrite uupn_ush.
+      rewrite (lvren_lvsubst _ _ _ (fun m => uext ls lvar (length ls + m))) by reflexivity.
+      assert (Hid : forall m, uext ls lvar (length ls + m) = lvar m).
+      { intros m; unfold uext. destruct (Nat.ltb_spec (length ls + m) (length ls)); [lia|]. f_equal; lia. }
+      destruct j as [|m].
+      * rewrite Nat.add_0_r. destruct (Nat.ltb_spec (length ls) (S (length ls))); [|lia].
+        rewrite Nat.sub_diag. cbn [usingle nth]. symmetry; apply lvsubst_id, Hid.
+      * destruct (Nat.ltb_spec (length ls + S m) (S (length ls))); [lia|].
+        cbn [usingle lvsubst]. rewrite Hid. f_equal; lia.
+Qed.
+
+Lemma gosubst_goren' o ξ τ : gosubst (goren o ξ) τ = gosubst o (fun i => τ (ξ i)).
+Proof.
+  destruct o; cbn [goren gosubst]; [reflexivity | f_equal ..].
+  - now apply (proj1 (proj2 (proj2 gsubst_gren_all))).
+  - now apply (proj1 gsubst_gren_all).
+  - now apply (proj1 (proj2 gsubst_gren_all)).
+Qed.
+Lemma gosubst_id o τ : dnfo o -> (forall i, τ i = GId i) -> gosubst o τ = o.
+Proof.
+  intros Ho Hτ; destruct o; cbn [gosubst dnfo] in *; [apply Hτ | f_equal ..].
+  - now apply (proj1 (proj2 (proj2 gsubst_id_all))).
+  - now apply (proj1 gsubst_id_all).
+  - now apply (proj1 (proj2 gsubst_id_all)).
+Qed.
+
+Lemma peelGs_wrapG os : forall n b, length os = n -> Forall dnfo os -> dnftm b ->
+  peelGs (wrapG n b) os = gsubst_tm b (gext_s os (fun i => GId i)).
+Proof.
+  induction os as [|o os IH]; intros n b Hn Ho Hb; cbn in Hn; subst n; cbn [peelGs wrapG].
+  - symmetry; apply (proj1 (proj2 gsubst_id_all)); [exact Hb|]. intros i; unfold gext_s; cbn; f_equal; lia.
+  - inversion Ho as [| ? ? Ho0 Hos]; subst. cbn [peelG].
+    change (gsubst_tm (wrapG (length os) b) (gsingle o)) with (wrapG (length os) b)⦃gsingle o⦄.
+    rewrite wrapG_gsubst.
+    assert (Hd : forall i, dnfo (gupn (length os) (gsingle o) i)) by (apply gdnf_gupn; intros [|i]; cbn; auto).
+    etransitivity; [exact (IH _ _ eq_refl Hos (proj1 (proj2 gsubst_dnf_all) _ Hb _ Hd)) |].
+    apply (proj1 (proj2 gsubst_gsubst_all)). intros i. unfold gext_s at 1; cbn [length].
+    destruct (Nat.ltb_spec i (length os)) as [Hi | Hi].
+    + rewrite gupn_lt by exact Hi. cbn [gosubst]. unfold gext_s.
+      destruct (Nat.ltb_spec i (length os)), (Nat.ltb_spec i (S (length os))); try lia.
+      replace (S (length os) - S i) with (S (length os - S i)) by lia. reflexivity.
+    + assert (Hj : exists j, i = length os + j) by (exists (i - length os); lia).
+      destruct Hj as [j ->]. rewrite gupn_ush by (destruct j; cbn; auto).
+      rewrite gosubst_goren'.
+      assert (Hid : forall m, gext_s os (fun i => GId i) (length os + m) = GId m).
+      { intros m; unfold gext_s. destruct (Nat.ltb_spec (length os + m) (length os)); [lia|]. f_equal; lia. }
+      destruct j as [|m].
+      * rewrite Nat.add_0_r. destruct (Nat.ltb_spec (length os) (S (length os))); [|lia].
+        rewrite Nat.sub_diag. cbn [gsingle nth]. symmetry; apply gosubst_id; [exact Ho0 | exact Hid].
+      * destruct (Nat.ltb_spec (length os + S m) (S (length os))); [lia|].
+        cbn [gsingle gosubst]. rewrite Hid. f_equal; lia.
+Qed.
+
+Lemma llk_lliftn_lt nl d n : n < nl -> llk (lliftn nl d) n = var n.
+Proof.
+  revert n; induction nl; intros n Hn; [lia|]. rewrite lliftn_S, llk_llift.
+  destruct n; [reflexivity|]. rewrite IHnl by lia. cbn [ren_tm]. rewrite rlk_shift1. reflexivity.
+Qed.
+
+Lemma peelLs_wrapL xs : forall n b, length xs = n -> Forall dnftm xs -> dnftm b ->
+  peelLs (wrapL n b) xs = subst_tm b (lext xs (lshift 0)).
+Proof.
+  induction xs as [|a xs IH]; intros n b Hn Ha Hb; cbn in Hn; subst n; cbn [peelLs wrapL].
+  - symmetry; apply subst_id; [exact (dnftm_nftm _ Hb) | intros i; cbn; f_equal; lia].
+  - inversion Ha as [| ? ? Ha0 Has]; subst. cbn [peelL].
+    change (subst_tm (wrapL (length xs) b) (lsingle a)) with (wrapL (length xs) b)[lsingle a].
+    rewrite wrapL_subst.
+    assert (Hs : LK dnftm (lsingle a)) by (intros [|m]; cbn; auto).
+    etransitivity; [exact (IH _ _ eq_refl Has (subst_dnf _ _ Hb (lk_dnf_lliftn _ _ Hs))) |].
+    apply subst_subst. intros i. rewrite !llk_lext; cbn [length].
+    destruct (Nat.ltb_spec i (length xs)) as [Hi | Hi].
+    + rewrite llk_lliftn_lt by exact Hi. cbn [subst Subst_tm subst_tm]. rewrite llk_lext.
+      destruct (Nat.ltb_spec i (length xs)), (Nat.ltb_spec i (S (length xs))); try lia.
+      first [ replace (S (length xs) - S i) with (S (length xs - S i)) by lia; reflexivity
+            | replace (length xs - i) with (S (length xs - S i)) by lia; reflexivity ].
+    + assert (Hj : exists j, i = j + length xs) by (exists (i - length xs); lia).
+      destruct Hj as [j ->]. rewrite llk_lliftn by (intros [|m]; cbn; auto using dnftm_nftm).
+      rewrite (ren_subst _ _ _ (lshift 0)).
+      * destruct j as [|m]; cbn [llk lsingle].
+        -- destruct (Nat.ltb_spec (0 + length xs) (S (length xs))); [|lia].
+           replace (S (length xs) - S (0 + length xs)) with 0 by lia. cbn [nth].
+           symmetry; apply subst_id; [exact (dnftm_nftm _ Ha0) | intros; cbn; f_equal; lia].
+        -- destruct (Nat.ltb_spec (S m + length xs) (S (length xs))); [lia|].
+           cbn. f_equal; lia.
+      * intros m. rewrite llk_lext. destruct (Nat.ltb_spec (rlk (rshift (length xs)) m) (length xs)).
+        -- cbn in *; lia.
+        -- cbn. f_equal. cbn in *; lia.
+Qed.
+
+Lemma dnf_wrapG n b : dnftm b -> dnftm (wrapG n b).
+Proof. induction n; cbn; auto. Qed.
+Lemma dnf_wrapL n b : dnftm b -> dnftm (wrapL n b).
+Proof. induction n; cbn; auto. Qed.
+
+Lemma peel_wrap nu ng nl b ls os xs : length ls = nu -> length os = ng -> length xs = nl ->
+  Forall dnfo os -> Forall dnftm xs -> dnftm b ->
+  peelLs (peelGs (peelUs (wrap nu ng nl b) ls) os) xs =
+  ((usubst_tm b (uext ls lvar))⦃gext_s os (fun i => GId i)⦄)[lext xs (lshift 0)].
+Proof.
+  intros Hu Hg Hl Ho Hx Hb. unfold wrap.
+  rewrite (peelUs_wrapU _ _ _ Hu (dnf_wrapG _ _ (dnf_wrapL _ _ Hb))), wrapG_usubst, wrapL_usubst.
+  pose proof (proj1 (proj2 usubst_dnf_all) b (uext ls lvar)) as Hb'.
+  rewrite (peelGs_wrapG _ _ _ Hg Ho (dnf_wrapL _ _ Hb')).
+  change (gsubst_tm (wrapL nl ?x) ?s) with (wrapL nl x)⦃s⦄. rewrite wrapL_gsubst.
+  apply (peelLs_wrapL _ _ _ Hl Hx).
+  apply (proj1 (proj2 gsubst_dnf_all)); [exact Hb'|]. intros i; unfold gext_s.
+  destruct (Nat.ltb_spec i (length os)); [|exact I].
+  rewrite Forall_forall in Ho. destruct (Nat.lt_ge_cases (length os - S i) (length os)) as [Hlt | Hge].
+  - apply Ho, nth_In, Hlt.
+  - rewrite nth_overflow by exact Hge; exact I.
+Qed.
+
+(** ** Pointwise descriptions of the composite substitutions *)
+
+Lemma uext_uupn ls φ i : lvsubst (uupn (length ls) φ i) (uext ls lvar) = uext ls φ i.
+Proof.
+  unfold uext at 2. destruct (Nat.ltb_spec i (length ls)) as [Hi | Hi].
+  - rewrite uupn_lt by exact Hi. cbn [lvsubst]. unfold uext.
+    destruct (Nat.ltb_spec i (length ls)); [reflexivity | lia].
+  - replace i with (length ls + (i - length ls)) at 1 by lia. rewrite uupn_ush.
+    rewrite (lvren_lvsubst _ _ _ lvar); [apply lvsubst_id; reflexivity|].
+    intros m; unfold uext, ush. destruct (Nat.ltb_spec (length ls + m) (length ls)); [lia|]. f_equal; lia.
+Qed.
+
+Lemma gousubst_gouren' o ρ φ : gousubst (gouren o ρ) φ = gousubst o (fun i => φ (ρ i)).
+Proof.
+  destruct o; cbn [gouren gousubst]; [reflexivity | f_equal ..].
+  - now apply (proj1 (proj2 (proj2 uren_usubst_all))).
+  - now apply (proj1 uren_usubst_all).
+  - now apply (proj1 (proj2 uren_usubst_all)).
+Qed.
+Lemma gousubst_id o φ : dnfo o -> (forall i, φ i = lvar i) -> gousubst o φ = o.
+Proof.
+  intros Ho Hφ; destruct o; cbn [gousubst dnfo] in *; [reflexivity | f_equal ..].
+  - now apply (proj1 (proj2 (proj2 usubst_id_all))).
+  - now apply (proj1 usubst_id_all).
+  - now apply (proj1 (proj2 usubst_id_all)).
+Qed.
+
+Lemma gext_gbsub ls os σ i : gdnf σ ->
+  gosubst (gousubst (gupn (length os) (guwkn (length ls) σ) i) (uext ls lvar)) (gext_s os (fun j => GId j)) =
+  gext_s os σ i.
+Proof.
+  intros Hσ. unfold gext_s at 2. destruct (Nat.ltb_spec i (length os)) as [Hi | Hi].
+  - rewrite gupn_lt by exact Hi. cbn [gousubst gosubst]. unfold gext_s.
+    destruct (Nat.ltb_spec i (length os)); [reflexivity | lia].
+  - replace i with (length os + (i - length os)) at 1 by lia.
+    rewrite gupn_ush by (rewrite guwkn_lk by apply Hσ; apply dnfo_gouren).
+    rewrite gousubst_goren, guwkn_lk by apply Hσ. rewrite gousubst_gouren', gosubst_goren'.
+    rewrite gousubst_id; [apply gosubst_id; [apply Hσ|] | apply Hσ |].
+    + intros m; unfold gext_s, ush. destruct (Nat.ltb_spec (length os + m) (length os)); [lia|]. f_equal; lia.
+    + intros m; unfold uext, ush. destruct (Nat.ltb_spec (length ls + m) (length ls)); [lia|]. f_equal; lia.
+Qed.
+
+Lemma lext_bsub ls os xs e n : LK dnftm e ->
+  (gsubst_tm (usubst_tm (llk (lliftn (length xs) (gwkn (length os) (uwkn (length ls) e))) n) (uext ls lvar))
+     (gext_s os (fun j => GId j)))[lext xs (lshift 0)] = llk (lext xs e) n.
+Proof.
+  intros He. rewrite (llk_lext xs e). destruct (Nat.ltb_spec n (length xs)) as [Hn | Hn].
+  - rewrite llk_lliftn_lt by exact Hn. cbn [usubst_tm gsubst_tm subst Subst_tm subst_tm].
+    rewrite llk_lext. destruct (Nat.ltb_spec n (length xs)); [reflexivity | lia].
+  - assert (Hj : exists m, n = m + length xs) by (exists (n - length xs); lia). destruct Hj as [m ->].
+    replace (m + length xs - length xs) with m by lia.
+    assert (He' : LK dnftm (gwkn (length os) (uwkn (length ls) e))) by auto with nf.
+    rewrite llk_lliftn by (intros k; apply dnftm_nftm, He').
+    rewrite llk_gwkn by auto with nf. rewrite llk_uwkn by exact He.
+    rewrite (proj1 (proj2 usubst_ren_all)), (proj1 (proj2 usubst_gren_all)).
+    rewrite (proj1 (proj2 uren_usubst_all) _ _ _ lvar).
+    2: { intros k; unfold uext, ush. destruct (Nat.ltb_spec (length ls + k) (length ls)); [lia|]. f_equal; lia. }
+    rewrite (proj1 (proj2 usubst_id_all) _ (He m) lvar (fun _ => eq_refl)).
+    change (gsubst_tm (ren_tm ?x ?r) ?s) with (x⟨r⟩⦃s⦄). rewrite gsubst_ren. cbn [gsubst GSubst_tm].
+    rewrite (proj1 (proj2 gsubst_gren_all) _ _ _ (fun j => GId j)).
+    2: { intros k; unfold gext_s, ush. destruct (Nat.ltb_spec (length os + k) (length os)); [lia|]. f_equal; lia. }
+    rewrite (proj1 (proj2 gsubst_id_all) _ (He m) (fun j => GId j) (fun _ => eq_refl)).
+    rewrite (ren_subst _ _ _ (lshift 0)).
+    + apply subst_id; [exact (dnftm_nftm _ (He m)) | intros; cbn; f_equal; lia].
+    + intros k. rewrite llk_lext. destruct (Nat.ltb_spec (rlk (rshift (length xs)) k) (length xs)).
+      * cbn in *; lia.
+      * cbn. f_equal. cbn in *; lia.
+Qed.
+
+(** A reduct of a bundle moved by [φ], [σ], [e]: the branch body at the
+    extended substitutions. *)
+Lemma branch_inst b φ σ e ls os xs : Forall dnfo os -> Forall dnftm xs -> dnftm b -> gdnf σ -> LK dnftm e ->
+  peelLs (peelGs (peelUs (wrap (length ls) (length os) (length xs)
+    (((usubst_tm b (uupn (length ls) φ))⦃gupn (length os) (guwkn (length ls) σ)⦄)
+       [lliftn (length xs) (gwkn (length os) (uwkn (length ls) e))])) ls) os) xs =
+  ((usubst_tm b (uext ls φ))⦃gext_s os σ⦄)[lext xs e].
+Proof.
+  intros Ho Hx Hb Hσ He.
+  rewrite peel_wrap by first
+    [ reflexivity | assumption
+    | exact (subst_dnf _ _ (proj1 (proj2 gsubst_dnf_all) _ (proj1 (proj2 usubst_dnf_all) _ _) _
+                              (gdnf_gupn _ _ (gdnf_guwkn _ _ Hσ)))
+               (lk_dnf_lliftn _ _ (lk_dnf_gwkn _ _ (lk_dnf_uwkn _ _ He)))) ].
+  rewrite usubst_subst, usubst_gsubst.
+  rewrite (usubst_usubst _ _ _ (uext ls φ)) by (intros; symmetry; apply uext_uupn).
+  rewrite gsubst_subst.
+  rewrite (gsubst_gsubst _ _ _ (gext_s os σ)) by (intros; symmetry; apply gext_gbsub, Hσ).
+  apply subst_subst. intros n. symmetry.
+  rewrite llk_glsubst, llk_ulsubst. apply lext_bsub, He.
+Qed.
