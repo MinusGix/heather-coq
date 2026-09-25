@@ -2886,4 +2886,46 @@ Proof.
   exact Hg.
 Qed.
 
+
+Lemma EP_br k : k < 13 ->
+  @geq_tm EM (brG k G') (brΓ k Θ (wrapMT MTL) (wrapMt MtL) (lvsubst l1 φ) (lvsubst l2 φ)) (bsL k) (bsR k)
+    (brRes k (wrapMT MTL) (wrapMt MtL)) (brLv k (lvsubst l1 φ) (lvsubst l2 φ)).
+Proof.
+  intros Hk.
+  pose proof (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as HG'.
+  pose proof (usub_ok_uupn (br_nu k) _ _ _ Hφ) as Hψ.
+  pose proof (VBr k Hk _ _ Hψ) as V. pose proof (VΓbr k Hk _ _ Hψ) as VC.
+  unfold G_us in V, VC. rewrite (brG_usubst k G0 L' φ Hk) in V, VC.
+  rewrite (brΓ_usubst k Γ0 _ _ l1 l2 φ Hk) in V, VC.
+  rewrite (brRes_usubst k _ _ φ Hk), brLv_usubst in V.
+  rewrite wrapMT_usubst, wrapMt_usubst in V, VC.
+  (* the global substitution: [nu] fresh levels, then the branch's bindings *)
+  pose proof (GSubRel_uwkn EP EM (n := br_nu k) HG0 Hσ) as X1.
+  pose proof (GSubRel_gupn EP EM (brDecls k) X1 (closed_brDecls k Hk) (wf_brG HG' k Hk)) as X2.
+  rewrite (brDecls_len k Hk) in X2.
+  change (gupn (br_ng k) (guwkn (br_nu k) σ)) with (gbsub k σ) in X2.
+  change (gupn (br_ng k) (guwkn (br_nu k) σ')) with (gbsub k σ') in X2.
+  pose proof (V _ _ _ X2 _ gwk_id (gwk_ok_id _)) as V'. cbn [gwa] in V'.
+  pose proof (VC _ _ _ (GSubRel_refl_l EP EM X2) _ gwk_id (gwk_ok_id _)) as C. cbn [gwa] in C.
+  rewrite (brΓ_gsubst _ _ _ _ _ _ _ Hk Nσ), (brRes_gsubst _ _ _ _ Hk Nσ) in V'.
+  rewrite (brΓ_gsubst _ _ _ _ _ _ _ Hk Nσ) in C.
+  rewrite ?wrapMT_gsubst, ?wrapMt_gsubst in V', C.
+  (* the local substitution: its fresh levels and bindings, then the recursive calls *)
+  pose proof (wf_ctx_lwf (gs_ctx EP EM Hσ HΓ0 compt_M)) as WΓ1.
+  pose proof (SubRel_uwkn (n := br_nu k) HG' WΓ1 He) as H1.
+  destruct (brDecls_cons k Hk) as (D1 & Ds & ED).
+  assert (HGb : [ ⊢ mkG (gL (gctx_uwk (br_nu k) G')) ((D1 :: Ds) ++ gΨ (gctx_uwk (br_nu k) G')) ]).
+  { rewrite <- ED. exact (wf_brG HG' k Hk). }
+  pose proof (SubRel_gwkn H1 HGb) as H2. rewrite <- ED, (brDecls_len k Hk) in H2.
+  change (gwkn (br_ng k) (uwkn (br_nu k) e)) with (bsub k e) in H2.
+  change (gwkn (br_ng k) (uwkn (br_nu k) e')) with (bsub k e') in H2.
+  unfold brΓ in C.
+  pose proof (SubRel_cexts _ _ _ _ _ H2 C (brLocs_lwf k _ _ _ _ _ Hk
+                (lwf_lvren _ _ _ _ (uren_ok_ush _ _) (proj1 HrbL))
+                (lwf_lvren _ _ _ _ (uren_ok_ush _ _) (proj1 (proj2 HrbL))))) as H3.
+  rewrite (brLocs_subst _ _ _ _ _ _ Hk De), (brLocs_len _ _ _ _ _ Hk) in H3.
+  pose proof (V' _ _ _ H3) as Y. rewrite (brRes_subst _ _ _ _ Hk De) in Y.
+  exact (LRtm_geq Y).
+Qed.
+
 End Rec.
