@@ -54,6 +54,8 @@ theories/Validity/Consequences.v
 theories/Validity/DeclConsequences.v
 theories/Validity/Payload.v
 theories/Validity/GSubRel.v
+theories/Validity/GSubRelW.v
+theories/Validity/GSubRelE.v
 theories/Validity/ValidS.v
 theories/Validity/RulesS.v
 theories/Validity/GvarS.v
