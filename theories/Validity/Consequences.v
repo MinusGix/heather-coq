@@ -40,6 +40,16 @@ Proof.
   injection Heq as <- <- <- <-. auto.
 Qed.
 
+(** A type convertible to a [Π] reduces to one. *)
+Lemma pi_red {G Γ l l1 l2 A B T} : [ G ; Γ ⊢g tyPi l1 l2 A B ≅ T @ l ] ->
+  exists l3 l4 C D, [ G ; Γ ⊢g T ⤳* tyPi l3 l4 C D @ l ].
+Proof.
+  intros H. destruct (red_eqty _ _ _ _ _ H) as [R HR].
+  pose proof (eqty_wf_l ge_typeof H) as HP.
+  destruct (LR_inv_pi HR (tyred_refl _ _ HP)) as (m3 & m4 & C' & D' & _ & _ & _ & _ & _ & _ & _ & HT' & _).
+  eauto.
+Qed.
+
 Lemma U_inj {G Γ l l' k} : [ G ; Γ ⊢g tyU l ≅ tyU l' @ k ] -> lequiv (gL G) l' l.
 Proof.
   intros H. destruct (red_eqty _ _ _ _ _ H) as [R HR].

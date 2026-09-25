@@ -8,7 +8,7 @@
     code's pieces, [e] by the recursive calls), and proves the recursion
     lemmas by induction on the code's C-typing. *)
 From DeLaM.Typing Require Export RecPeel.
-From DeLaM.Validity Require Export RecObj LetboxS.
+From DeLaM.Validity Require Export RecObj LetboxS DeclConsequencesP.
 
 (** ** Pointwise equal substitutions *)
 
