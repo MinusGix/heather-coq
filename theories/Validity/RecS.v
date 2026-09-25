@@ -28,6 +28,151 @@ Qed.
 Lemma gext_s_one o σ i : gext_s (o :: nil) σ i = gcons σ o i.
 Proof. unfold gext_s; destruct i; cbn; [reflexivity | f_equal; lia]. Qed.
 
+(** ** The motives' instances at convertible scrutinees *)
+
+Lemma motT_eq_scrut {G Γ MT l1 l Δ t t'} :
+  [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
+  [ G ; Γ ⊢[ lM ] t ≅ t' : tyCTyp Δ l @ lzero ] ->
+  [ G ; Γ ⊢[ lM ] motT (wrapMT MT) l Δ t ≅ motT (wrapMT MT) l Δ t' @ l1 ].
+Proof.
+  destruct G as [L Ψ]. intros HMT Hl HΔ Htt.
+  pose proof (eqtm_wf_l (i := lM) eq_refl Htt) as Ht. pose proof (eqtm_wf_r (i := lM) eq_refl Htt) as Ht'.
+  pose proof (ctx_glob _ _ _ (ctx_of_wf_tm (i := lM) eq_refl Ht)) as Hg.
+  pose proof (proj1 (proj2 (proj2 usubstitution)) _ _ _ _ _ HMT L (usingle l) (usub_ok_single L l Hl)) as X1.
+  rewrite (G_us_recGT _ _ _ Hg), lvsubst_ush1_single in X1.
+  assert (Hσ : [ mkG L Ψ ⊢ gsingle (GCtx Δ) : mkG L (gdCtx :: Ψ) ]).
+  { apply (gsub_wf_single (mkG L Ψ) gdCtx); [exact Hg | exact (wf_ctx_dnf HΔ) | exact HΔ]. }
+  pose proof (proj1 (proj2 (proj2 gsubstitution)) _ _ _ _ _ X1 Ψ _ Hσ) as X2.
+  unfold gwk_to in X2; cbn [gL] in X2. change (gsubst ?x ?s) with (gcsubst x s) in X2 at 1.
+  rewrite (recΓT_inst _ _ _ (wf_ctx_dnf (ctx_of_wf_tm (i := lM) eq_refl Ht))) in X2.
+  exact (wf_ty_func (i := lM) eq_refl X2 (lsub_eq_single (i := lM) eq_refl Ht Ht' Htt)).
+Qed.
+
+Lemma mott_eq_scrut {G Γ Mt l2 l Δ T t t'} :
+  [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
+  [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Γ ⊢[ lM ] t ≅ t' : tyCTrm Δ T l @ lzero ] ->
+  [ G ; Γ ⊢[ lM ] mott (wrapMt Mt) l Δ T t ≅ mott (wrapMt Mt) l Δ T t' @ l2 ].
+Proof.
+  destruct G as [L Ψ]. intros HMt Hl HΔ HT Htt.
+  pose proof (eqtm_wf_l (i := lM) eq_refl Htt) as Ht. pose proof (eqtm_wf_r (i := lM) eq_refl Htt) as Ht'.
+  pose proof (ctx_glob _ _ _ (ctx_of_wf_tm (i := lM) eq_refl Ht)) as Hg.
+  pose proof (proj1 (proj2 (proj2 usubstitution)) _ _ _ _ _ HMt L (usingle l) (usub_ok_single L l Hl)) as X1.
+  rewrite (G_us_recGt _ _ _ Hg), lvsubst_ush1_single in X1.
+  assert (Hσ0 : [ mkG L Ψ ⊢ gsingle (GCtx Δ) : mkG L (gdCtx :: Ψ) ]).
+  { apply (gsub_wf_single (mkG L Ψ) gdCtx); [exact Hg | exact (wf_ctx_dnf HΔ) | exact HΔ]. }
+  assert (Hg1 : [ ⊢ mkG L (gdTy Δ lD l :: Ψ) ]) by (apply wfg_ty; auto).
+  assert (Hσ1 : [ mkG L (gdTy Δ lD l :: Ψ) ⊢ gup (gsingle (GCtx Δ)) : mkG L (gdTy (cvar 0) lD l :: gdCtx :: Ψ) ])
+    by exact (gsub_wf_up _ _ _ (gdTy (cvar 0) lD l) Hσ0 Hg1).
+  assert (Hσ2 : [ mkG L Ψ ⊢ gsingle (GTy T) : mkG L (gdTy Δ lD l :: Ψ) ]).
+  { apply (gsub_wf_single (mkG L Ψ) (gdTy Δ lD l)); [exact Hg | exact (wf_ty_dnf HT) |].
+    rewrite gdecl_gsubst_ren_single by exact (wf_ctx_dnf HΔ). exact HT. }
+  pose proof (proj1 (proj2 (proj2 gsubstitution)) _ _ _ _ _ X1 _ _ Hσ1) as X2.
+  unfold gwk_to in X2; cbn [gL] in X2.
+  pose proof (proj1 (proj2 (proj2 gsubstitution)) _ _ _ _ _ X2 Ψ _ Hσ2) as X3.
+  unfold gwk_to in X3; cbn [gL] in X3.
+  change (gsubst (gsubst ?x ?s1) ?s2) with (gcsubst (gcsubst x s1) s2) in X3 at 1.
+  rewrite (recΓt_inst _ _ _ _ (wf_ctx_dnf (ctx_of_wf_tm (i := lM) eq_refl Ht)) (wf_ctx_dnf HΔ) (wf_ty_nf HT)) in X3.
+  exact (wf_ty_func (i := lM) eq_refl X3 (lsub_eq_single (i := lM) eq_refl Ht Ht' Htt)).
+Qed.
+
+(** ** Typed reductions of the recursors *)
+
+Lemma reds_elimT' l1 l2 rb l Δ t t0 : reds t t0 -> reds (elimT l1 l2 rb l Δ t) (elimT l1 l2 rb l Δ t0).
+Proof. induction 1; [constructor | econstructor; [apply red_elimT; eassumption | assumption]]. Qed.
+Lemma reds_elimt' l1 l2 rb l Δ T t t0 : reds t t0 -> reds (elimt l1 l2 rb l Δ T t) (elimt l1 l2 rb l Δ T t0).
+Proof. induction 1; [constructor | econstructor; [apply red_elimt; eassumption | assumption]]. Qed.
+
+Section RecRed.
+Context {G : gctx} {Θ : ctx} {l1 l2 : lvl} {MT Mt : ty} {bs : nat -> tm} {l : lvl} {Δ : ctx}
+  (Hrb : RBwf G Θ l1 l2 MT Mt bs) (Hl : lwf (gL G) l) (HΔ : [ G ; Δ ⊢[ lD ] ]).
+
+Lemma tmred_elimT_cong {s w} : [ G ; Θ ⊢[ lM ] s ⤳* w : tyCTyp Δ l @ lzero ] ->
+  [ G ; Θ ⊢[ lM ] elimT l1 l2 (mkrb MT Mt bs) l Δ s ⤳* elimT l1 l2 (mkrb MT Mt bs) l Δ w
+      : motT (wrapMT MT) l Δ s @ l1 ].
+Proof.
+  intros [Hs Hr Heq]. destruct Hrb as (Hl1 & Hl2 & HMT & HMt & Hc & Hb). split.
+  - now apply wf_elimT'.
+  - now apply reds_elimT'.
+  - apply eqtm_elimT; try assumption; try (apply lequiv_refl; assumption).
+    + exact (motT_eq_scrut HMT Hl HΔ Heq).
+    + now apply eqc_refl.
+    + now apply eqty_refl.
+    + now apply eqty_refl.
+    + intros k Hk; apply eqtm_refl, Hb, Hk.
+Qed.
+
+Lemma tmred_elimT_beta {c r} : [ G ; Δ ⊢[ lC ] c @ l ] -> redT l1 l2 (mkrb MT Mt bs) l Δ c = Some r ->
+  [ G ; Θ ⊢[ lM ] r : motT (wrapMT MT) l Δ (boxT c) @ l1 ] ->
+  [ G ; Θ ⊢[ lM ] elimT l1 l2 (mkrb MT Mt bs) l Δ (boxT c) ⤳* r : motT (wrapMT MT) l Δ (boxT c) @ l1 ].
+Proof.
+  intros Hc Hred Hr. pose proof (ctx_of_wf_tm (i := lM) eq_refl Hr) as HΘ.
+  assert (Hw : [ G ; Θ ⊢[ lM ] elimT l1 l2 (mkrb MT Mt bs) l Δ (boxT c) : motT (wrapMT MT) l Δ (boxT c) @ l1 ])
+    by (apply wf_elimT'; auto; apply wf_boxT; auto).
+  split.
+  - exact Hw.
+  - econstructor; [apply red_elimT_beta, Hred | constructor].
+  - apply eqtm_elimT_beta; assumption.
+Qed.
+
+End RecRed.
+
+Section RecRedt.
+Context {G : gctx} {Θ : ctx} {l1 l2 : lvl} {MT Mt : ty} {bs : nat -> tm} {l : lvl} {Δ : ctx} {T : ty}
+  (Hrb : RBwf G Θ l1 l2 MT Mt bs) (Hl : lwf (gL G) l) (HΔ : [ G ; Δ ⊢[ lD ] ]) (HT : [ G ; Δ ⊢[ lD ] T @ l ]).
+
+Lemma tmred_elimt_cong {s w} : [ G ; Θ ⊢[ lM ] s ⤳* w : tyCTrm Δ T l @ lzero ] ->
+  [ G ; Θ ⊢[ lM ] elimt l1 l2 (mkrb MT Mt bs) l Δ T s ⤳* elimt l1 l2 (mkrb MT Mt bs) l Δ T w
+      : mott (wrapMt Mt) l Δ T s @ l2 ].
+Proof.
+  intros [Hs Hr Heq]. destruct Hrb as (Hl1 & Hl2 & HMT & HMt & Hc & Hb). split.
+  - now apply wf_elimt'.
+  - now apply reds_elimt'.
+  - apply eqtm_elimt; try assumption; try (apply lequiv_refl; assumption).
+    + exact (mott_eq_scrut HMt Hl HΔ HT Heq).
+    + now apply eqc_refl.
+    + now apply eqty_refl.
+    + now apply eqty_refl.
+    + now apply eqty_refl.
+    + intros k Hk; apply eqtm_refl, Hb, Hk.
+Qed.
+
+Lemma tmred_elimt_beta {c r} : [ G ; Δ ⊢[ lC ] c : T @ l ] -> redt l1 l2 (mkrb MT Mt bs) l Δ T c = Some r ->
+  [ G ; Θ ⊢[ lM ] r : mott (wrapMt Mt) l Δ T (boxt c) @ l2 ] ->
+  [ G ; Θ ⊢[ lM ] elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt c) ⤳* r : mott (wrapMt Mt) l Δ T (boxt c) @ l2 ].
+Proof.
+  intros Hc Hred Hr. pose proof (ctx_of_wf_tm (i := lM) eq_refl Hr) as HΘ.
+  assert (Hw : [ G ; Θ ⊢[ lM ] elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt c) : mott (wrapMt Mt) l Δ T (boxt c) @ l2 ])
+    by (apply wf_elimt'; auto; apply wf_boxt; auto).
+  split.
+  - exact Hw.
+  - econstructor; [apply red_elimt_beta, Hred | constructor].
+  - apply eqtm_elimt_beta; assumption.
+Qed.
+
+(** The index is reduced under a boxed [λ]; the instances' equation is a
+    premise (the recursion lemma has it semantically). *)
+Lemma tmred_elimt_idx {W k k' A b} : [ G ; Δ ⊢[ lD ] T ⤳* W @ l ] ->
+  [ G ; Θ ⊢[ lM ] boxt (lam k k' A b) : tyCTrm Δ T l @ lzero ] ->
+  [ G ; Θ ⊢[ lM ] mott (wrapMt Mt) l Δ T (boxt (lam k k' A b)) ≅ mott (wrapMt Mt) l Δ W (boxt (lam k k' A b)) @ l2 ] ->
+  [ G ; Θ ⊢[ lM ] elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt (lam k k' A b)) ⤳*
+                 elimt l1 l2 (mkrb MT Mt bs) l Δ W (boxt (lam k k' A b)) : mott (wrapMt Mt) l Δ T (boxt (lam k k' A b)) @ l2 ].
+Proof.
+  intros [HT0 Hr HTW] Hs Hinst. destruct Hrb as (Hl1 & Hl2 & HMT & HMt & Hc & Hb).
+  pose proof (eqty_wf_r (i := lD) eq_refl HTW) as HW.
+  split.
+  - now apply wf_elimt'.
+  - clear -Hr. induction Hr as [|T U W0 Hs Hrs IH]; [constructor|].
+    econstructor; [apply red_elimt_idx, Hs | exact IH].
+  - apply eqtm_elimt; try assumption; try (apply lequiv_refl; assumption).
+    + now apply eqc_refl.
+    + now apply eqty_refl.
+    + now apply eqty_refl.
+    + intros k0 Hk; apply eqtm_refl, Hb, Hk.
+    + now apply eqtm_refl.
+Qed.
+
+End RecRedt.
+
 Section RecS.
 Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM} {EMl : GenericEqM EP EM}.
 
