@@ -62,3 +62,4 @@ theories/Validity/GvarS.v
 theories/Validity/ModalS.v
 theories/Validity/LetboxS.v
 theories/Validity/FundamentalS.v
+theories/Validity/FundamentalM.v
