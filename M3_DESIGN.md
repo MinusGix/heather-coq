@@ -183,21 +183,25 @@ through its induction hypotheses (the `regty` step up to the operation's
 `motT`/`mott` law); `RecInst` builds them when a recursor is constructed
 from scratch.
 
-### E6'. Validity is two-sided in the universe substitution (user decision, 2026-09-25)
+### E6'. Equivalent level instantiations: a level-invariant relation (user decision, 2026-09-25)
 
-E6 as first stated (one `φ`) is too weak for the recursion lemmas, which
-relate two *equivalent* level instantiations:
+E6 as first stated (validity at one `φ`) is too weak on its own for the
+recursion lemmas, which relate two *equivalent* level instantiations:
 - the congruence `elim_Trm … l …  ≅ elim_Trm … l' …` with `l ≡ l'`: the
   variable branch is instantiated at `ℓ := l` on one side and `ℓ := l'` on
   the other;
 - the `Π` β step: the recursor's type is `M_Typ[l/ℓ, …]` with the index
   level `l`, the reduct's is `M_Typ[l₁ ⊔ l₂/ℓ, …]` with the code's levels,
   and `l ≡ l₁ ⊔ l₂` only up to equivalence (level conversion in the code's
-  typing).
-As in the paper (07b:1428, `φ ≈ φ'`), the FT at M relates `J[φ]` with
-`J[φ']` in `G[φ]; Γ[φ]` for pointwise-equivalent `φ ≈ φ' : L' ⇒ L`. The
-right-hand instances are typed by a declarative functionality lemma for
-universe substitution in equivalent levels (`J[φ] ≅ J[φ']`).
+  typing); likewise the codes of a related pair of boxes are only
+  `≡ₗ`-related (E11).
+First decided: validity two-sided in `φ ≈ φ'` (as 07b:1428). Revised after
+costing (user decision): keep the one-sided FT (`fundamentalM_us`) and add
+**level invariance of the relation**: the relation is unchanged when
+well-typed syntax is replaced by `≡ₗ`-related well-typed syntax. It uses
+the Static Code Lemma at every layer (declarative equality of typed
+`≡ₗ`-related syntax) and a generic law saying the generic relations
+respect `≡ₗ` (declaratively: static code and transitivity).
 
 ### E11. Boxed code is compared up to level equivalence (user decision, 2026-09-25; revises M2 D3)
 
