@@ -300,7 +300,28 @@ context (`FundamentalS.fundamentalS`, no `ctx_only`, no axioms).
   image's relation (`⊩^{≥P}_P`, P ∧ M instances) to the instance at hand.
   At P it is `proj1`/`proj2`; at M with `LR_M` it will be the Layering
   Restriction.
-- **Next:** the FT at C (lift to P), then at M (`box`, `letbox`).
+- **FT at C** (and V): lift the derivation to P (`fundamentalS_le`).
+- **Layering Restriction** (`LogRel/Layering`, `Validity/LayerV`). On
+  MLTT types (no `□` in the type structure) the relation does not depend
+  on its parameters. This discharges the global-variable projections at M.
+- **At M** (in progress):
+  - `ModalS` covers `□` formation and `box`. Formation escapes the related
+    contexts at the P instance. A `box` of static code is related to
+    itself.
+  - `letbox` plan:
+    - Validity with σ is first reduced to validity without the
+      global-weakening quantifier (`GSubRel` is closed under
+      post-composition with weakenings).
+    - `box` scrutinee: β-reduce, then use the body's validity at `σ`
+      extended by the (literally equal) code.
+    - Neutral scrutinee: use the generic neutral `letbox` law, escaping
+      the body's validity at the pair `(⇑σ, ⇑σ')`. Here `⇑` sends the
+      fresh binding to `GTy (U₀^id)` on both sides, like the paper's
+      `U^id`, not to `GId 0`. `⇑σ'` must be typed into
+      `Ψ, U : DTyp Δ⦃σ⦄` while its binding is `Δ⦃σ'⦄`, and `U₀^id`
+      has that typing up to context conversion (`gobj_wf` for `GId`
+      is syntactic). This needs no change to the syntactic
+      metatheory.
 
 ## Order of work
 
