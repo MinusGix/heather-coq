@@ -457,3 +457,34 @@ Qed.
 (** [mkrb] is injective in its motives. *)
 Lemma mkrb_inj_MT {MT Mt bs MT' Mt' bs'} : mkrb MT Mt bs = mkrb MT' Mt' bs' -> MT = MT' /\ Mt = Mt'.
 Proof. unfold mkrb, wrapMT, wrapMt. intros H; injection H; intros; subst; auto. Qed.
+
+(** Variants with explicit arities, for rewriting. *)
+Lemma lvren_ush_uext' l n ls φ : length ls = n -> lvsubst (lvren l (ush n)) (uext ls φ) = lvsubst l φ.
+Proof. intros <-; apply lvren_ush_uext. Qed.
+
+Lemma motT_wkb_inst' MT nu ng nl ls os xs φ σ e d lv g c :
+  length ls = nu -> length os = ng -> length xs = nl -> d = lext xs e ->
+  gdnf (gext_s os σ) -> LK dnftm d ->
+  ((usubst_ty (motT (wkb nu ng nl (wrapMT MT)) lv g c) (uext ls φ))⦃gext_s os σ⦄)[d] =
+  motT (wrapMT ((usubst_ty MT (uup φ))⦃gup (guwk σ)⦄[llift (gwk (uwk e))])) (lvsubst lv (uext ls φ))
+    ((ucsubst g (uext ls φ))⦃gext_s os σ⦄) (((usubst_tm c (uext ls φ))⦃gext_s os σ⦄)[d]).
+Proof. intros <- <- <- -> Hσ He. exact (motT_wkb_inst MT ls os xs φ σ e lv g c Hσ He). Qed.
+
+Lemma mott_wkb_inst' Mt nu ng nl ls os xs φ σ e d lv g U c :
+  length ls = nu -> length os = ng -> length xs = nl -> d = lext xs e ->
+  gdnf (gext_s os σ) -> LK dnftm d ->
+  ((usubst_ty (mott (wkb nu ng nl (wrapMt Mt)) lv g U c) (uext ls φ))⦃gext_s os σ⦄)[d] =
+  mott (wrapMt ((usubst_ty Mt (uup φ))⦃gup (gup (guwk σ))⦄[llift (gwk (gwk (uwk e)))]))
+    (lvsubst lv (uext ls φ)) ((ucsubst g (uext ls φ))⦃gext_s os σ⦄) ((usubst_ty U (uext ls φ))⦃gext_s os σ⦄)
+    (((usubst_tm c (uext ls φ))⦃gext_s os σ⦄)[d]).
+Proof. intros <- <- <- -> Hσ He. exact (mott_wkb_inst Mt ls os xs φ σ e lv g U c Hσ He). Qed.
+
+Lemma wkc_inst' nu ng Γ ls os φ σ : length ls = nu -> length os = ng ->
+  (ucsubst (wkc nu ng Γ) (uext ls φ))⦃gext_s os σ⦄ = (ucsubst Γ φ)⦃σ⦄.
+Proof. exact (wkc_inst nu ng Γ ls os φ σ). Qed.
+
+(** Code pieces substituted by the identity. *)
+Lemma subst_lshift0_ty (T : ty) : nfty T -> T[lshift 0] = T.
+Proof. intros H; apply subst_id_ty; [exact H | intros; cbn; f_equal; lia]. Qed.
+Lemma subst_lshift0 (t : tm) : nftm t -> t[lshift 0] = t.
+Proof. intros H; apply subst_id; [exact H | intros; cbn; f_equal; lia]. Qed.
