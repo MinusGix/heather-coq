@@ -144,7 +144,7 @@ Proof.
     [exact (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) | exact (gsw_dnf _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ))].
 Qed.
 
-Lemma VSubKS {G Γ Δ d d'} : [ G ; Γ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] ] -> VCtxS G Δ ->
+Lemma VSubKS {i0 G Γ Δ d d'} : [ G ; Γ ⊢[ i0 ] ] -> [ G ; Δ ⊢[ lD ] ] -> VCtxS G Δ ->
   lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
   (forall n A k, in_ctx Δ n A k -> VTmS G Γ (llk d n) (llk d' n) A[d] k) ->
   forall G' σ σ', GSubRel G' G σ σ' -> VSubK G' Γ⦃σ⦄ d⦃σ⦄ d'⦃σ'⦄ Δ⦃σ⦄.
@@ -165,7 +165,7 @@ Proof.
     rewrite gsubst_subst_ty, gwa_subst_ty in X. rewrite !llk_gwa, !llk_glsubst. exact X.
 Qed.
 
-Lemma VTyS_inst {G Γ Δ A d d' l} : [ G ; Γ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] ] -> VCtxS G Δ ->
+Lemma VTyS_inst {i0 G Γ Δ A d d' l} : [ G ; Γ ⊢[ i0 ] ] -> [ G ; Δ ⊢[ lD ] ] -> VCtxS G Δ ->
   lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
   (forall n B k, in_ctx Δ n B k -> VTmS G Γ (llk d n) (llk d' n) B[d] k) ->
   VTyS G Δ A A l -> VTyS G Γ A[d] A[d'] l.
@@ -179,15 +179,16 @@ Qed.
     the instance at hand; the images are MLTT types and terms, as they
     are formed below layer M (Layering Restriction). *)
 
-Lemma VS_tygvar {G Γ U Δ i' l d d'}
+Lemma VS_tygvar {i0 G Γ U Δ i' l d d'}
   (proj : forall G' Δ T T' l, mltt_ctx Δ -> mltt_ty T -> mltt_ty T' ->
             @VTyG EP LR_P G' Δ T T' l /\ @VTyG EM LR_P G' Δ T T' l -> @VTyG E LP G' Δ T T' l) :
-  in_gctx (gΨ G) U (gdTy Δ i' l) -> lle i' lD -> [ G ; Γ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] ] -> VCtxS G Δ ->
+  in_gctx (gΨ G) U (gdTy Δ i' l) -> lle i' ge_layer -> i' <> lM -> [ G ; Γ ⊢[ i0 ] ] -> [ G ; Δ ⊢[ lD ] ] ->
+  VCtxS G Δ ->
   lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
   (forall n A k, in_ctx Δ n A k -> VTmS G Γ (llk d n) (llk d' n) A[d] k) ->
   VTyS G Γ (tyGvar U d) (tyGvar U d') l.
 Proof.
-  intros Hin Hi HΓ HΔ VΔ Ht Nd Ht' Nd' Hv G' σ σ' Hσ.
+  intros Hin Hi HiM HΓ HΔ VΔ Ht Nd Ht' Nd' Hv G' σ σ' Hσ.
   pose proof (VSubKS HΓ HΔ VΔ Ht Nd Ht' Nd' Hv _ _ _ Hσ) as K.
   destruct (dnfl_gs (d := d) Hσ Nd) as [Nd1 _]. destruct (dnfl_gs (d := d') Hσ Nd') as [_ Nd2].
   pose proof (gsr_rel _ _ _ _ _ _ Hσ _ _ Hin) as R.
@@ -198,14 +199,14 @@ Proof.
   cbn in R, W, W'. destruct (σ U) as [x | | T | ], (σ' U) as [x' | | T' | ]; cbn in R, W, W' |- *;
     try contradiction.
   - subst x'. destruct W as (i'' & Hi'' & Hin'').
-    exact (VTyG_gvar_ne Hin'' (lle_trans _ _ _ Hi'' (lle_trans _ _ _ Hi ge_lle_D)) Nd1 Nd2 K).
-  - exact (VTyG_inst (proj _ _ _ _ _ MΔ (mltt_wf_ty W (lle_D_notM Hi)) (mltt_wf_ty W' (lle_D_notM Hi)) R) K).
+    exact (VTyG_gvar_ne Hin'' (lle_trans _ _ _ Hi'' Hi) Nd1 Nd2 K).
+  - exact (VTyG_inst (proj _ _ _ _ _ MΔ (mltt_wf_ty W HiM) (mltt_wf_ty W' HiM) R) K).
 Qed.
 
-Lemma VS_gvar {G Γ u Δ i' A l d d'}
+Lemma VS_gvar {i0 G Γ u Δ i' A l d d'}
   (proj : forall G' Δ t t' A l, mltt_ctx Δ -> mltt_ty A ->
             @VTmG EP LR_P G' Δ t t' A l /\ @VTmG EM LR_P G' Δ t t' A l -> @VTmG E LP G' Δ t t' A l) :
-  in_gctx (gΨ G) u (gdTm Δ i' A l) -> lle i' lD -> [ G ; Γ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] A @ l ] ->
+  in_gctx (gΨ G) u (gdTm Δ i' A l) -> lle i' ge_layer -> [ G ; Γ ⊢[ i0 ] ] -> [ G ; Δ ⊢[ lD ] A @ l ] ->
   VCtxS G Δ ->
   VTyS G Δ A A l ->
   lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
@@ -226,7 +227,7 @@ Proof.
   rewrite gsubst_subst_ty. cbn [gsubst GSubst_tm gsubst_tm]. fold (d⦃σ⦄) (d'⦃σ'⦄).
   cbn in R, W. destruct (σ u) as [x | | | t], (σ' u) as [x' | | | t']; cbn in R, W |- *; try contradiction.
   - subst x'. destruct W as (i'' & Hi'' & Hin'').
-    exact (VTmG_gvar_ne Hin'' (lle_trans _ _ _ Hi'' (lle_trans _ _ _ Hi ge_lle_D)) Nd1 Nd2 K Kd VA').
+    exact (VTmG_gvar_ne Hin'' (lle_trans _ _ _ Hi'' Hi) Nd1 Nd2 K Kd VA').
   - exact (VTmG_inst (proj _ _ _ _ _ _ MΔ MA R) VA' K Kd).
 Qed.
 

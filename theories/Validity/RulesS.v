@@ -47,20 +47,20 @@ End Along.
     premises. *)
 Ltac s_types :=
   repeat match goal with
-  | H : wf_tm ?G lD ?Γ ?t ?T ?l |- _ =>
+  | Hi : typeof ?i = ?i, H : wf_tm ?G ?i ?Γ ?t ?T ?l |- _ =>
       lazymatch goal with
-      | _ : wf_ty G lD Γ T l |- _ => fail
-      | _ => pose proof (wf_tm_ty (i := lD) eq_refl H)
+      | _ : wf_ty G i Γ T l |- _ => fail
+      | _ => pose proof (wf_tm_ty Hi H)
       end
-  | H : eq_ty ?G lD ?Γ ?T ?T' ?l |- _ =>
+  | Hi : typeof ?i = ?i, H : eq_ty ?G ?i ?Γ ?T ?T' ?l |- _ =>
       lazymatch goal with
-      | _ : wf_ty G lD Γ T l |- _ => fail
-      | _ => pose proof (eqty_wf_l (i := lD) eq_refl H)
+      | _ : wf_ty G i Γ T l |- _ => fail
+      | _ => pose proof (eqty_wf_l Hi H)
       end
-  | H : eq_tm ?G lD ?Γ ?t ?t' ?T ?l |- _ =>
+  | Hi : typeof ?i = ?i, H : eq_tm ?G ?i ?Γ ?t ?t' ?T ?l |- _ =>
       lazymatch goal with
-      | _ : wf_tm G lD Γ t T l |- _ => fail
-      | _ => pose proof (eqtm_wf_l (i := lD) eq_refl H)
+      | _ : wf_tm G i Γ t T l |- _ => fail
+      | _ => pose proof (eqtm_wf_l Hi H)
       end
   end.
 
@@ -113,17 +113,27 @@ Ltac fts_case :=
   | solve [simple eapply V_code_U; s_side] | solve [simple eapply V_code_pi; s_side]
   | solve [simple eapply V_natrec; s_side] | solve [simple eapply V_lam; s_side] | solve [simple eapply V_app; s_side] ].
 
+(** Typings at a layer below the instance's are lifted to it. *)
+Ltac gl_liftL :=
+  repeat match goal with
+  | Hl : lle ?i (@ge_layer _), H : wf_ctx _ ?i _ |- _ => pose proof (lift_ctx H Hl); clear H
+  | Hl : lle ?i (@ge_layer _), H : wf_ty _ ?i _ _ _ |- _ => pose proof (lift_ty H Hl); clear H
+  | Hl : lle ?i (@ge_layer _), H : wf_tm _ ?i _ _ _ _ |- _ => pose proof (lift_tm H Hl); clear H
+  | Hl : lle ?i (@ge_layer _), H : eq_ty _ ?i _ _ _ _ |- _ => pose proof (lift_eqty H Hl); clear H
+  | Hl : lle ?i (@ge_layer _), H : eq_tm _ ?i _ _ _ _ _ |- _ => pose proof (lift_eqtm H Hl); clear H
+  end.
+
 Ltac s_lift :=
   s_types;
   match goal with
   | |- @VTyS _ _ _ _ _ _ _ _ _ => intros ? ? ? ?
   | |- @VTmS _ _ _ _ _ _ _ _ _ _ => intros ? ? ? ?
   end;
-  s_along; s_push; gl_lift; fts_case.
+  s_along; s_push; gl_lift; gl_liftL; fts_case.
 
 (** At a substitution related to itself, the rule-shaped wrappers apply. *)
 Tactic Notation "s_diag" uconstr(lem) :=
-  s_types; intros ? ? ?; s_along; s_push; gl_lift; simple eapply lem; eassumption.
+  s_types; intros ? ? ?; s_along; s_push; gl_lift; gl_liftL; simple eapply lem; eassumption.
 
 
 (** ** The rules *)
@@ -158,69 +168,78 @@ Proof. s_lift. Qed.
 Lemma VS_El_U {G Γ l} : lwf (gL G) l -> VTyS G Γ (tyU l) (tyEl (lsuc l) (tmU l)) (lsuc l).
 Proof. intros; s_lift. Qed.
 
-Lemma VS_pi {G Γ l l' l3 l4 A A' B B'} : lwf (gL G) l -> lwf (gL G) l' ->
-  lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢[ lD ] B @ l' ] ->
+Lemma VS_pi {ly G Γ l l' l3 l4 A A' B B'} : lwf (gL G) l -> lwf (gL G) l' ->
+  lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢[ ly ] B @ l' ] ->
+  lle ly ge_layer -> typeof ly = ly ->
   VTyS G Γ A A' l -> VTyS G (Γ ,, A @ l) B B' l' ->
   VTyS G Γ (tyPi l l' A B) (tyPi l3 l4 A' B') (lmax l l').
 Proof. intros; s_lift. Qed.
 
-Lemma VS_app {G Γ l l' l3 l4 A A' B B' t t' s s'} : lwf (gL G) l -> lwf (gL G) l' ->
-  lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢[ lD ] B @ l' ] ->
+Lemma VS_app {ly G Γ l l' l3 l4 A A' B B' t t' s s'} : lwf (gL G) l -> lwf (gL G) l' ->
+  lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢[ ly ] B @ l' ] ->
+  lle ly ge_layer -> typeof ly = ly ->
   VTyS G Γ A A' l -> VTyS G (Γ ,, A @ l) B B' l' ->
   VTmS G Γ t t' (tyPi l l' A B) (lmax l l') -> VTmS G Γ s s' A l ->
   VTmS G Γ (app t l l' A B s) (app t' l3 l4 A' B' s') B[lsingle s] l'.
 Proof. intros; s_lift. Qed.
 
-Lemma VS_lam {G Γ l l' l3 l4 A A' B t t'} : lwf (gL G) l -> lwf (gL G) l' ->
-  lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢[ lD ] B @ l' ] ->
-  [ G ; Γ ,, A @ l ⊢[ lD ] t : B @ l' ] ->
+Lemma VS_lam {ly G Γ l l' l3 l4 A A' B t t'} : lwf (gL G) l -> lwf (gL G) l' ->
+  lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢[ ly ] B @ l' ] ->
+  [ G ; Γ ,, A @ l ⊢[ ly ] t : B @ l' ] ->
+  lle ly ge_layer -> typeof ly = ly ->
   VTyS G Γ A A' l -> VTyS G (Γ ,, A @ l) B B l' -> VTmS G (Γ ,, A @ l) t t' B l' ->
   VTmS G Γ (lam l l' A t) (lam l3 l4 A' t') (tyPi l l' A B) (lmax l l').
 Proof. intros; s_lift. Qed.
 
-Lemma VS_natrec {G Γ l l' M M' s s' z z' t t'} : lwf (gL G) l -> lequiv (gL G) l l' ->
-  [ G ; Γ ,, tyNat @ lzero ⊢[ lD ] M @ l ] -> [ G ; Γ ⊢[ lD ] s : M[lsingle zero] @ l ] ->
-  [ G ; Γ ,, tyNat @ lzero ,, M @ l ⊢[ lD ] z : M[lsucc] @ l ] ->
+Lemma VS_natrec {ly G Γ l l' M M' s s' z z' t t'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  [ G ; Γ ,, tyNat @ lzero ⊢[ ly ] M @ l ] -> [ G ; Γ ⊢[ ly ] s : M[lsingle zero] @ l ] ->
+  [ G ; Γ ,, tyNat @ lzero ,, M @ l ⊢[ ly ] z : M[lsucc] @ l ] ->
+  lle ly ge_layer -> typeof ly = ly ->
   VTyS G (Γ ,, tyNat @ lzero) M M' l -> VTmS G Γ s s' M[lsingle zero] l ->
   VTmS G (Γ ,, tyNat @ lzero ,, M @ l) z z' M[lsucc] l -> VTmS G Γ t t' tyNat lzero ->
   VTmS G Γ (natrec l M s z t) (natrec l' M' s' z' t') M[lsingle t] l.
 Proof. intros; s_lift. Qed.
 
-Lemma VS_code_pi {G Γ l1 l2 l3 l4 s s' t t'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
+Lemma VS_code_pi {ly G Γ l1 l2 l3 l4 s s' t t'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
-  [ G ; Γ ⊢[ lD ] s : tyU l1 @ lsuc l1 ] -> [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ lD ] t : tyU l2 @ lsuc l2 ] ->
+  [ G ; Γ ⊢[ ly ] s : tyU l1 @ lsuc l1 ] -> [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ ly ] t : tyU l2 @ lsuc l2 ] ->
+  lle ly ge_layer -> typeof ly = ly ->
   VTmS G Γ s s' (tyU l1) (lsuc l1) -> VTmS G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) (lsuc l2) ->
   VTmS G Γ (tmPi l1 l2 s t) (tmPi l3 l4 s' t') (tyU (lmax l1 l2)) (lsuc (lmax l1 l2)).
 Proof. intros; s_lift. Qed.
 
 (** ** Computation rules *)
 
-Lemma VS_beta {G Γ l l' A B t s} : lwf (gL G) l -> lwf (gL G) l' ->
-  [ G ; Γ ,, A @ l ⊢[ lD ] B @ l' ] -> [ G ; Γ ,, A @ l ⊢[ lD ] t : B @ l' ] ->
+Lemma VS_beta {ly G Γ l l' A B t s} : lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ,, A @ l ⊢[ ly ] B @ l' ] -> [ G ; Γ ,, A @ l ⊢[ ly ] t : B @ l' ] ->
+  lle ly ge_layer -> typeof ly = ly ->
   VTyS G Γ A A l -> VTmS G (Γ ,, A @ l) t t B l' -> VTmS G Γ s s A l ->
   VTmS G Γ (app (lam l l' A t) l l' A B s) t[lsingle s] B[lsingle s] l'.
 Proof.
   intros. eapply (VTmS_trans_diag EP EM (t2 := t[lsingle s])); [s_diag V_beta | eapply VTmS_single; eassumption].
 Qed.
 
-Lemma VS_eta {G Γ l l' A B t} : lwf (gL G) l -> lwf (gL G) l' ->
-  [ G ; Γ ⊢[ lD ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ lD ] B @ l' ] ->
-  [ G ; Γ ⊢[ lD ] t : tyPi l l' A B @ lmax l l' ] ->
+Lemma VS_eta {ly G Γ l l' A B t} : lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ ly ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ ly ] B @ l' ] ->
+  [ G ; Γ ⊢[ ly ] t : tyPi l l' A B @ lmax l l' ] ->
+  lle ly ge_layer -> typeof ly = ly ->
   VTyS G Γ A A l -> VTyS G (Γ ,, A @ l) B B l' -> VTmS G Γ t t (tyPi l l' A B) (lmax l l') ->
   VTmS G Γ (lam l l' A (app t⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0))) t (tyPi l l' A B) (lmax l l').
 Proof. intros. eapply (VTmS_trans_diag EP EM (t2 := t)); [s_diag V_eta | eassumption]. Qed.
 
-Lemma VS_natrec_zero {G Γ l M s z} : lwf (gL G) l ->
-  [ G ; Γ ,, tyNat @ lzero ⊢[ lD ] M @ l ] -> [ G ; Γ ⊢[ lD ] s : M[lsingle zero] @ l ] ->
-  [ G ; Γ ,, tyNat @ lzero ,, M @ l ⊢[ lD ] z : M[lsucc] @ l ] ->
+Lemma VS_natrec_zero {ly G Γ l M s z} : lwf (gL G) l ->
+  [ G ; Γ ,, tyNat @ lzero ⊢[ ly ] M @ l ] -> [ G ; Γ ⊢[ ly ] s : M[lsingle zero] @ l ] ->
+  [ G ; Γ ,, tyNat @ lzero ,, M @ l ⊢[ ly ] z : M[lsucc] @ l ] ->
+  lle ly ge_layer -> typeof ly = ly ->
   VTyS G (Γ ,, tyNat @ lzero) M M l -> VTmS G Γ s s M[lsingle zero] l ->
   VTmS G (Γ ,, tyNat @ lzero ,, M @ l) z z M[lsucc] l ->
   VTmS G Γ (natrec l M s z zero) s M[lsingle zero] l.
 Proof. intros. eapply (VTmS_trans_diag EP EM (t2 := s)); [s_diag V_natrec_zero | eassumption]. Qed.
 
-Lemma VS_natrec_succ {G Γ l M s z t} : lwf (gL G) l ->
-  [ G ; Γ ,, tyNat @ lzero ⊢[ lD ] M @ l ] -> [ G ; Γ ⊢[ lD ] s : M[lsingle zero] @ l ] ->
-  [ G ; Γ ,, tyNat @ lzero ,, M @ l ⊢[ lD ] z : M[lsucc] @ l ] ->
+Lemma VS_natrec_succ {ly G Γ l M s z t} : lwf (gL G) l ->
+  [ G ; Γ ,, tyNat @ lzero ⊢[ ly ] M @ l ] -> [ G ; Γ ⊢[ ly ] s : M[lsingle zero] @ l ] ->
+  [ G ; Γ ,, tyNat @ lzero ,, M @ l ⊢[ ly ] z : M[lsucc] @ l ] ->
+  lle ly ge_layer -> typeof ly = ly ->
   VTyS G (Γ ,, tyNat @ lzero) M M l -> VTmS G Γ s s M[lsingle zero] l ->
   VTmS G (Γ ,, tyNat @ lzero ,, M @ l) z z M[lsucc] l -> VTmS G Γ t t tyNat lzero ->
   VTmS G Γ (natrec l M s z (succ t)) z[lsingle2 t (natrec l M s z t)] M[lsingle (succ t)] l.
@@ -230,12 +249,13 @@ Proof.
   eapply VS_natrec; try eassumption. apply lequiv_refl; assumption.
 Qed.
 
-Lemma VS_El_pi {G Γ l l' s t} : lwf (gL G) l -> lwf (gL G) l' ->
-  [ G ; Γ ⊢[ lD ] s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢[ lD ] t : tyU l' @ lsuc l' ] ->
+Lemma VS_El_pi {ly G Γ l l' s t} : lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ ly ] s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢[ ly ] t : tyU l' @ lsuc l' ] ->
+  lle ly ge_layer -> typeof ly = ly ->
   VTmS G Γ s s (tyU l) (lsuc l) -> VTmS G (Γ ,, tyEl l s @ l) t t (tyU l') (lsuc l') ->
   VTyS G Γ (tyPi l l' (tyEl l s) (tyEl l' t)) (tyEl (lmax l l') (tmPi l l' s t)) (lmax l l').
 Proof.
-  intros Hw Hw' Hs Ht Vs Vt. eapply (VTyS_trans_diag EP EM (T2 := tyEl (lmax l l') (tmPi l l' s t))); [s_diag V_El_pi|].
+  intros Hw Hw' Hs Ht Hly Hty Vs Vt. eapply (VTyS_trans_diag EP EM (T2 := tyEl (lmax l l') (tmPi l l' s t))); [s_diag V_El_pi|].
   apply VS_El; [exact (lwf_max Hw Hw') | apply lequiv_refl, lwf_max; assumption |].
   eapply VS_code_pi; try eassumption; apply lequiv_refl; assumption.
 Qed.
