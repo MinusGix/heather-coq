@@ -1449,4 +1449,105 @@ Proof.
   exact (LRtm_red W R1 R2').
 Qed.
 
+(** ** The term heads *)
+
+(** Anti-reduction for a term head, from the related reducts. *)
+Lemma rec_t_fin {ΔL ΔR kL kR TL TR cL cR rL rR} : [ G' ; ΔL ⊢[ lD ] ] -> [ G' ; ΔR ⊢[ lD ] ] ->
+  lwf L' kL -> lwf L' kR -> [ G' ; ΔL ⊢[ lD ] TL @ kL ] -> [ G' ; ΔR ⊢[ lD ] TR @ kR ] ->
+  [ G' ; ΔL ⊢[ lC ] cL : TL @ kL ] -> [ G' ; ΔR ⊢[ lC ] cR : TR @ kR ] ->
+  redt (lvsubst l1 φ) (lvsubst l2 φ) (mkrb MTL MtL bsL) kL ΔL TL cL = Some rL ->
+  redt (lvsubst l1' φ) (lvsubst l2' φ) (mkrb MTR MtR bsR) kR ΔR TR cR = Some rR ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) kL ΔL TL (boxt cL)) (mott (wrapMt MtR) kR ΔR TR (boxt cR)) rL rR ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) kL ΔL TL (boxt cL)) (mott (wrapMt MtR) kR ΔR TR (boxt cR))
+    (rectL kL ΔL TL cL) (rectR kR ΔR TR cR).
+Proof.
+  intros HΔL HΔR HkL HkR HTL HTR HcL HcR HredL HredR W.
+  assert (Hl2g : lequiv (gL G') (lvsubst l2 φ) (lvsubst l2' φ)) by (rewrite EL; exact Hl2).
+  destruct (LRtm_escape W) as [HrL _]. destruct (LRtm_escape (LRtm_sym W)) as [HrR _].
+  rewrite (@gm_layer_M EP EM EMl) in HrL, HrR.
+  pose proof (tmred_elimt_beta HrbL (eq_ind_r (fun L => lwf L kL) HkL EL) HΔL HTL HcL HredL HrL) as R1.
+  pose proof (tmred_elimt_beta HrbR (eq_ind_r (fun L => lwf L kR) HkR EL) HΔR HTR HcR HredR
+                (wf_lconv _ _ _ _ _ _ _ HrR (lequiv_sym _ _ _ Hl2g))) as R2.
+  pose proof (tmred_lconv _ _ _ _ _ R2 Hl2g) as R2'.
+  rewrite <- (@gm_layer_M EP EM EMl) in R1, R2'.
+  exact (LRtm_red W R1 R2').
+Qed.
+
+Lemma rec_t_nat {ΔL ΔR kL kR TL TR} : [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
+  lequiv L' (lsuc lzero) kL -> lequiv L' (lsuc lzero) kR ->
+  [ G' ; ΔL ⊢[ lD ] tyU lzero ≅ TL @ lsuc lzero ] -> [ G' ; ΔL ⊢[ lD ] tyU lzero ≅ TR @ lsuc lzero ] ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) kL ΔL TL (boxt tmNat)) (mott (wrapMt MtR) kR ΔR TR (boxt tmNat))
+    (rectL kL ΔL TL tmNat) (rectR kR ΔR TR tmNat).
+Proof.
+  intros HΔL HΔ HkL HkR HTL HTR.
+  pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR. pose proof EL as EL'.
+  pose proof (wf_ctx_dnf HΔL) as NΔL. pose proof (wf_ctx_dnf HΔR) as NΔR.
+  assert (Hn : lC <> lV) by discriminate.
+  assert (Hw0 : lwf L' (lsuc lzero)) by exact I.
+  assert (HwL : lwf L' kL) by exact (lequiv_wf_r _ _ _ HkL). assert (HwR : lwf L' kR) by exact (lequiv_wf_r _ _ _ HkR).
+  assert (Hwl2 : lwf L' (lvsubst l2 φ)) by (rewrite <- EL; exact (proj1 (proj2 HrbL))).
+  assert (Hwl2' : lwf L' (lvsubst l2' φ)) by exact (lequiv_wf_r _ _ _ Hl2).
+  assert (Hl2g : lequiv (gL G') (lvsubst l2 φ) (lvsubst l2' φ)) by (rewrite EL; exact Hl2).
+  assert (HkLg : lequiv (gL G') (lsuc lzero) kL) by (rewrite EL; exact HkL).
+  assert (HkRg : lequiv (gL G') (lsuc lzero) kR) by (rewrite EL; exact HkR).
+  (* the index types *)
+  assert (HU0 : forall Δ, [ G' ; Δ ⊢[ lD ] ] -> [ G' ; Δ ⊢[ lD ] tyU lzero @ lsuc lzero ])
+    by (intros; apply wft_U; [discriminate | assumption | exact I]).
+  pose proof (eqty_wf_r (i := lD) eq_refl HTL) as HTL0. pose proof (eqty_wf_r (i := lD) eq_refl HTR) as HTR0.
+  assert (HTLk : [ G' ; ΔL ⊢[ lD ] TL @ kL ]) by (eapply wft_lconv; [exact HTL0 | rewrite EL; apply lequiv_sym, HkL]).
+  assert (HTRk : [ G' ; ΔR ⊢[ lD ] TR @ kR ]).
+  { eapply wft_lconv; [exact (ctxconv_ty HΔ (i := lD) eq_refl HTR0) | rewrite EL; apply lequiv_sym, HkR]. }
+  assert (HcN : forall Δ T k, [ G' ; Δ ⊢[ lD ] ] -> [ G' ; Δ ⊢[ lD ] tyU lzero ≅ T @ lsuc lzero ] ->
+                  lequiv L' (lsuc lzero) k -> [ G' ; Δ ⊢[ lC ] tmNat : T @ k ]).
+  { intros Δ T k HΔ0 HT Hk. eapply wf_lconv; [| rewrite EL; apply lequiv_sym, Hk].
+    eapply wf_conv; [apply wf_code_nat; [exact Hn | exact HΔ0] | apply eqty_sym, HT]. }
+  pose proof (HcN _ _ _ HΔL HTL HkL) as HcL.
+  pose proof (HcN _ _ _ HΔR (ctxconv_eqty HΔ (i := lD) eq_refl HTR) HkR) as HcR.
+  pose proof (HcN _ _ _ HΔL (eqty_refl _ _ _ _ _ (HU0 _ HΔL)) (lequiv_refl _ _ Hw0)) as HcL0.
+  pose proof (HcN _ _ _ HΔR (eqty_refl _ _ _ _ _ (HU0 _ HΔR)) (lequiv_refl _ _ Hw0)) as HcR0.
+  pose proof (box_rel_tm HTLk HwL HcL HcL (tm_leq_refl _)) as BL.
+  pose proof (box_rel_tm (HU0 _ HΔL) Hw0 HcL0 HcL0 (tm_leq_refl _)) as B0.
+  pose proof (box_rel_tm HTRk HwR HcR HcR (tm_leq_refl _)) as BR.
+  pose proof (box_rel_tm (HU0 _ HΔR) Hw0 HcR0 HcR0 (tm_leq_refl _)) as BR0.
+  (* the reducts *)
+  set (rL := ((usubst_tm (bs 5) (uext nil φ))⦃gext_s (GCtx ΔL :: nil) σ⦄)[lext nil e]).
+  set (rR := ((usubst_tm (bs' 5) (uext nil φ))⦃gext_s (GCtx ΔR :: nil) σ'⦄)[lext nil e']).
+  assert (HredL : redt (lvsubst l1 φ) (lvsubst l2 φ) (mkrb MTL MtL bsL) kL ΔL TL tmNat = Some rL)
+    by (apply redt_nat_inst; first [exact (wf_tm_dnf (Hbs 5 ltac:(lia))) | exact Nσ | exact De | exact NΔL]).
+  assert (HredR : redt (lvsubst l1' φ) (lvsubst l2' φ) (mkrb MTR MtR bsR) kR ΔR TR tmNat = Some rR)
+    by (apply redt_nat_inst; first [exact (wf_tm_dnf (Hbs' 5 ltac:(lia))) | exact Nσ' | exact De' | exact NΔR]).
+  refine (rec_t_fin HΔL HΔR HwL HwR HTLk HTRk HcL HcR HredL HredR _).
+  (* the branch *)
+  refine (br_core 5 nil nil (GCtx ΔL :: nil) (GCtx ΔR :: nil) nil nil _ _ _ ltac:(lia) eq_refl eq_refl
+            (Forall_nil _) (Forall_nil _) (fun i => leqv_refl _)
+            (GS_ctx0 EP EM 5 nil eq_refl eq_refl Hσ HΔL HΔ)
+            (GS_ctx0 EP EM 5 nil eq_refl eq_refl (GSubRel_refl_r EP EM Hσ) HΔR (eqc_refl _ _ _ HΔR)) _ _ _ _ _ _ _).
+  - cbn [brΓ brLocs cexts br_nu br_ng br_nl br_ar]. rewrite (wkc_inst' 0 1 Γ0 nil (GCtx ΔL :: nil) φ σ eq_refl eq_refl). exact He.
+  - cbn [brΓ brLocs cexts br_nu br_ng br_nl br_ar]. rewrite (wkc_inst' 0 1 Γ0 nil (GCtx ΔR :: nil) φ σ' eq_refl eq_refl). exact He'r.
+  - cbn [brRes]. rewrite (mott_wkb_inst' Mt 0 1 0 nil (GCtx ΔL :: nil) nil φ σ e (lext nil e))
+      by first [reflexivity | apply gdnf_gext_s; [forall_tac | exact Nσ] | exact De].
+    inst_cbn.
+    exact (MotRel_t EP EM G0 Γ0 L' φ Mt Mt l2 l2 HMt HMt (lequiv_refl _ _ Hwl2) Hφ VMtl VMtl VΓ G' σ σ Θ e e
+             (GSubRel_refl_l EP EM Hσ) (SubRel_refl_l He) HwL (lequiv_sym _ _ _ HkL) HΔL (eqc_refl _ _ _ HΔL)
+             (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ HTL) (lequiv_sym _ _ _ HkLg))
+             (HU0 _ HΔL) BL B0).
+  - cbn [brRes]. rewrite (mott_wkb_inst' Mt 0 1 0 nil (GCtx ΔL :: nil) nil φ σ e' (lext nil e'))
+      by first [reflexivity | apply gdnf_gext_s; [forall_tac | exact Nσ] | exact De'].
+    inst_cbn.
+    exact (MotRel_t EP EM G0 Γ0 L' φ Mt Mt' l2 l2' HMt HMt' Hl2 Hφ VMt VMtr VΓ G' σ σ' Θ e' e' Hσ He'l
+             Hw0 HkR HΔL HΔ HTR HTRk B0 BR).
+  - cbn [brRes]. rewrite (mott_wkb_inst' Mt' 0 1 0 nil (GCtx ΔR :: nil) nil φ σ' e' (lext nil e'))
+      by first [reflexivity | apply gdnf_gext_s; [forall_tac | exact Nσ'] | exact De'].
+    inst_cbn.
+    refine (LRty_lconv (MotRel_t EP EM G0 Γ0 L' φ Mt' Mt' l2' l2' HMt' HMt' (lequiv_refl _ _ Hwl2') Hφ VMtr VMtr VΓ
+                          G' σ' σ' Θ e' e' (GSubRel_refl_r EP EM Hσ) He'r HwR
+                          (lequiv_trans _ _ _ _ (lequiv_sym _ _ _ HkR) (lequiv_refl _ _ Hw0)) HΔR (eqc_refl _ _ _ HΔR)
+                          _ (HU0 _ HΔR) BR BR0) Hl2g).
+    exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (ctxconv_eqty HΔ (i := lD) eq_refl HTR)) (lequiv_sym _ _ _ HkRg)).
+  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+    rewrite (lvren_ush_uext' l2 0 nil φ eq_refl). apply lequiv_refl; rewrite EL; exact Hwl2.
+  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+    rewrite (lvren_ush_uext' l2' 0 nil φ eq_refl). exact Hl2g.
+Qed.
+
 End Rec.
