@@ -51,7 +51,6 @@ theories/Validity/Natrec.v
 theories/Validity/CodePi.v
 theories/Validity/Fundamental.v
 theories/Validity/Consequences.v
-theories/Validity/DeclConsequences.v
 theories/Validity/Payload.v
 theories/Validity/GSubRel.v
 theories/Validity/GSubRelW.v
@@ -64,3 +63,4 @@ theories/Validity/LetboxS.v
 theories/Validity/FundamentalS.v
 theories/Validity/FundamentalM.v
 theories/Validity/Reducible.v
+theories/Validity/DeclConsequences.v

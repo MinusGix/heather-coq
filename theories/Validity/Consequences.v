@@ -1,69 +1,37 @@
-(** * Consequences of the fundamental theorem *)
+(** * Consequences of reducibility
+
+    Canonicity, injectivity and discrimination of type formers, and
+    weak-head normalization follow from the reducibility of every
+    judgment, which the fundamental theorems give ([Reducible]).  Closed
+    canonicity also needs a global context without type or term
+    bindings, since global variables are closed neutrals. *)
 From DeLaM.Validity Require Export Fundamental.
 
 Section Consequences.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} (Hgl : ge_layer = lD).
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}
+  (red_eqty : forall G Γ T T' l, [ G ; Γ ⊢g T ≅ T' @ l ] -> LRty l G Γ T T')
+  (red_eqtm : forall G Γ t t' T l, [ G ; Γ ⊢g t ≅ t' : T @ l ] -> LRtm l G Γ T T t t').
 
-(** ** The identity substitution is related to itself *)
+Lemma reducible_ty {G Γ T l} : [ G ; Γ ⊢g T @ l ] -> LRty l G Γ T T.
+Proof. intros H; apply red_eqty, eqty_refl, H. Qed.
 
-Lemma SubRel_id {G} (HG : ctx_only G) : forall Γ, [ G ; Γ ⊢g ] -> SubRel G Γ Γ (lshift 0) (lshift 0).
-Proof.
-  induction Γ as [| g | Γ IH A l]; intros HΓ; cbn [SubRel].
-  1-2: refine (conj HΓ (conj _ (conj _ (conj _ _)))); try apply tail_id; intros n; exact I.
-  inversion HΓ as [| | ? ? ? ? ? HΓ0 HA Hl]; subst.
-  assert (Hw : wk_step wk_id : (Γ ,, A @ l) ≤ Γ) by (constructor; constructor).
-  assert (Hsh : SubRel G Γ (Γ ,, A @ l) (lshift 1) (lshift 1)).
-  { eapply SubRel_ext; [| | exact (SubRel_wk _ _ _ _ _ _ _ Hw HΓ (IH HΓ0))];
-      intros n; rewrite llk_lren; cbn; f_equal; lia. }
-  cbn [ldrop llk]. split; [exact Hsh|].
-  assert (E1 : A[lshift 1] = A⟨↑⟩) by (symmetry; apply ren_as_subst_ty; reflexivity).
-  change (LRtm l G (Γ ,, A @ l) A[lshift 1] A[lshift 1] (var 0) (var 0)). rewrite E1. apply var0_LRtm; [|exact HΓ].
-  pose proof (VTyG_loc (proj1 (proj2 (proj2 fundamental)) _ _ _ _ _ HA Hgl HG) _ _ _ Hsh) as X.
-  now rewrite E1 in X.
-Qed.
-
-(** ** Reducibility of every judgment *)
-
-Lemma reducible_eqty {G Γ T T' l} : ctx_only G -> [ G ; Γ ⊢g T ≅ T' @ l ] -> LRty l G Γ T T'.
-Proof.
-  intros HG H. pose proof (ctx_of_ty (eqty_wf_l ge_typeof H)) as HΓ.
-  pose proof (VTyG_loc (proj1 (proj2 (proj2 (proj2 (proj2 fundamental)))) _ _ _ _ _ _ H Hgl HG)
-                _ _ _ (SubRel_id HG _ HΓ)) as X.
-  rewrite !nf_id_ty in X; [exact X | exact (wf_ty_nf (eqty_wf_r ge_typeof H))
-                          | exact (wf_ty_nf (eqty_wf_l ge_typeof H))].
-Qed.
-
-Lemma reducible_ty {G Γ T l} : ctx_only G -> [ G ; Γ ⊢g T @ l ] -> LRty l G Γ T T.
-Proof. intros HG H; apply reducible_eqty, eqty_refl, H; exact HG. Qed.
-
-Lemma reducible_eqtm {G Γ t t' T l} : ctx_only G -> [ G ; Γ ⊢g t ≅ t' : T @ l ] -> LRtm l G Γ T T t t'.
-Proof.
-  intros HG H. pose proof (ctx_of_tm (eqtm_wf_l ge_typeof H)) as HΓ.
-  pose proof (VTmG_loc (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 fundamental))))) _ _ _ _ _ _ _ H
-                Hgl HG) _ _ _ (SubRel_id HG _ HΓ)) as X.
-  pose proof (wf_ty_nf (eqtm_wf_ty ge_typeof H)) as NT.
-  rewrite !nf_id_ty, !nf_id in X by first [exact NT | exact (wf_tm_nf (eqtm_wf_l ge_typeof H))
-                                         | exact (wf_tm_nf (eqtm_wf_r ge_typeof H))].
-  exact X.
-Qed.
-
-Lemma reducible_tm {G Γ t T l} : ctx_only G -> [ G ; Γ ⊢g t : T @ l ] -> LRtm l G Γ T T t t.
-Proof. intros HG H; apply reducible_eqtm, eqtm_refl, H; exact HG. Qed.
+Lemma reducible_tm {G Γ t T l} : [ G ; Γ ⊢g t : T @ l ] -> LRtm l G Γ T T t t.
+Proof. intros H; apply red_eqtm, eqtm_refl, H. Qed.
 
 (** ** Canonicity of natural numbers: every typed natural reduces to a
     related normal form ([zero], a successor, or a neutral). *)
 
-Lemma nat_canonicity {G Γ t} : ctx_only G -> [ G ; Γ ⊢g t : tyNat @ lzero ] -> NatRel G Γ t t.
-Proof. intros HG H; exact (proj1 LRtm_nat (reducible_tm HG H)). Qed.
+Lemma nat_canonicity {G Γ t} : [ G ; Γ ⊢g t : tyNat @ lzero ] -> NatRel G Γ t t.
+Proof. intros H; exact (proj1 LRtm_nat (reducible_tm H)). Qed.
 
 (** ** Injectivity of type formers *)
 
-Lemma pi_inj {G Γ l l1 l2 l3 l4 A A' B B'} : ctx_only G ->
+Lemma pi_inj {G Γ l l1 l2 l3 l4 A A' B B'} :
   [ G ; Γ ⊢g tyPi l1 l2 A B ≅ tyPi l3 l4 A' B' @ l ] ->
   lequiv (gL G) l3 l1 /\ lequiv (gL G) l4 l2 /\
   [ G ; Γ ⊢ A ≈ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ].
 Proof.
-  intros HG H. destruct (reducible_eqty HG H) as [R HR].
+  intros H. destruct (red_eqty _ _ _ _ _ H) as [R HR].
   pose proof (eqty_wf_l ge_typeof H) as HP.
   destruct (LR_inv_pi HR (tyred_refl _ _ HP))
     as (m3 & m4 & C' & D' & domR & codR & _ & H3 & H4 & _ & _ & HT' & _ & _ & _ & _ & HAA & HBB & _).
@@ -72,9 +40,9 @@ Proof.
   injection Heq as <- <- <- <-. auto.
 Qed.
 
-Lemma U_inj {G Γ l l' k} : ctx_only G -> [ G ; Γ ⊢g tyU l ≅ tyU l' @ k ] -> lequiv (gL G) l' l.
+Lemma U_inj {G Γ l l' k} : [ G ; Γ ⊢g tyU l ≅ tyU l' @ k ] -> lequiv (gL G) l' l.
 Proof.
-  intros HG H. destruct (reducible_eqty HG H) as [R HR].
+  intros H. destruct (red_eqty _ _ _ _ _ H) as [R HR].
   destruct (LR_inv_U HR (tyred_refl _ _ (eqty_wf_l ge_typeof H))) as (l2 & _ & Hl2 & _ & HT' & _).
   pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' (tyred_refl _ _ (eqty_wf_r ge_typeof H))
                 (whnf_tyU _) (whnf_tyU _)) as Heq.
@@ -135,14 +103,14 @@ Proof.
   - destruct Ht as (w & w' & Hw & _ & Hwh & _). exists w; split; [exact (tmred_back Hw HT Hl) | exact Hwh].
 Qed.
 
-Theorem whnf_normalization_ty {G Γ T l} : ctx_only G -> [ G ; Γ ⊢g T @ l ] ->
+Theorem whnf_normalization_ty {G Γ T l} : [ G ; Γ ⊢g T @ l ] ->
   exists W, [ G ; Γ ⊢g T ⤳* W @ l ] /\ whnf_ty W.
-Proof. intros HG H. destruct (reducible_ty HG H) as [R HR]. exact (LR_whnf_ty _ _ _ _ _ _ _ _ HR). Qed.
+Proof. intros H. destruct (reducible_ty H) as [R HR]. exact (LR_whnf_ty _ _ _ _ _ _ _ _ HR). Qed.
 
-Theorem whnf_normalization_tm {G Γ t T l} : ctx_only G -> [ G ; Γ ⊢g t : T @ l ] ->
+Theorem whnf_normalization_tm {G Γ t T l} : [ G ; Γ ⊢g t : T @ l ] ->
   exists w, [ G ; Γ ⊢g t ⤳* w : T @ l ] /\ whnf w.
 Proof.
-  intros HG H. destruct (reducible_tm HG H) as (R & HR & Ht).
+  intros H. destruct (reducible_tm H) as (R & HR & Ht).
   exact (LR_whnf_tm _ _ _ _ _ _ _ _ HR _ _ Ht).
 Qed.
 
@@ -167,7 +135,7 @@ Fixpoint numeral (n : nat) : tm := match n with 0 => zero | S n => succ (numeral
 Theorem closed_nat_canonicity {G t} : ctx_only G -> [ G ; cnil ⊢g t : tyNat @ lzero ] ->
   exists n, [ G ; cnil ⊢g t ≅ numeral n : tyNat @ lzero ].
 Proof.
-  intros HG H. pose proof (nat_canonicity HG H) as Hn.
+  intros HG H. pose proof (nat_canonicity H) as Hn.
   refine (NatRel_mut G cnil (fun t _ _ => exists n, [ G ; cnil ⊢g t ≅ numeral n : tyNat @ lzero ])
             (fun w _ _ => exists n, [ G ; cnil ⊢g w ≅ numeral n : tyNat @ lzero ]) _ _ _ _ t t Hn).
   - intros t0 t0' w w' Hw _ _ _ (n & Hwn). exists n.
@@ -180,25 +148,25 @@ Qed.
 
 (** ** Discrimination of type formers *)
 
-Lemma nat_not_pi {G Γ k l l' A B} : ctx_only G -> ~ [ G ; Γ ⊢g tyNat ≅ tyPi l l' A B @ k ].
+Lemma nat_not_pi {G Γ k l l' A B} : ~ [ G ; Γ ⊢g tyNat ≅ tyPi l l' A B @ k ].
 Proof.
-  intros HG H. destruct (reducible_eqty HG H) as [R HR].
+  intros H. destruct (red_eqty _ _ _ _ _ H) as [R HR].
   destruct (LR_inv_nat HR (tyred_refl _ _ (eqty_wf_l ge_typeof H))) as (_ & HT' & _).
   pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' (tyred_refl _ _ (eqty_wf_r ge_typeof H))
                 whnf_tyNat (whnf_tyPi _ _ _ _)) as Heq. discriminate.
 Qed.
 
-Lemma nat_not_U {G Γ k l} : ctx_only G -> ~ [ G ; Γ ⊢g tyNat ≅ tyU l @ k ].
+Lemma nat_not_U {G Γ k l} : ~ [ G ; Γ ⊢g tyNat ≅ tyU l @ k ].
 Proof.
-  intros HG H. destruct (reducible_eqty HG H) as [R HR].
+  intros H. destruct (red_eqty _ _ _ _ _ H) as [R HR].
   destruct (LR_inv_nat HR (tyred_refl _ _ (eqty_wf_l ge_typeof H))) as (_ & HT' & _).
   pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' (tyred_refl _ _ (eqty_wf_r ge_typeof H))
                 whnf_tyNat (whnf_tyU _)) as Heq. discriminate.
 Qed.
 
-Lemma U_not_pi {G Γ k l l1 l2 A B} : ctx_only G -> ~ [ G ; Γ ⊢g tyU l ≅ tyPi l1 l2 A B @ k ].
+Lemma U_not_pi {G Γ k l l1 l2 A B} : ~ [ G ; Γ ⊢g tyU l ≅ tyPi l1 l2 A B @ k ].
 Proof.
-  intros HG H. destruct (reducible_eqty HG H) as [R HR].
+  intros H. destruct (red_eqty _ _ _ _ _ H) as [R HR].
   destruct (LR_inv_U HR (tyred_refl _ _ (eqty_wf_l ge_typeof H))) as (l2' & _ & _ & _ & HT' & _).
   pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' (tyred_refl _ _ (eqty_wf_r ge_typeof H))
                 (whnf_tyU _) (whnf_tyPi _ _ _ _)) as Heq. discriminate.

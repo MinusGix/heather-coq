@@ -7,7 +7,7 @@
     is related only to itself (06:534).  The declarative equalities at P
     make the payload convertible along related contexts and types. *)
 From DeLaM.Typing Require Export CtxConv.
-From DeLaM.Validity Require Export DeclConsequences.
+From DeLaM.Validity Require Export Consequences.
 
 #[local] Existing Instance LR_P.
 
