@@ -42,27 +42,25 @@ substitution `x[φ]ᵤ` (`φ : nat -> lvl`) on `lvl`, `ty`, `tm`, `ctx`,
 global operations leave levels alone and never pass under anything but
 their own binders, *except* at the new scope marker (E2).
 
-### E2. Branch syntax: a scope marker and a pairing node
+### E2. Branch syntax: single-step binder markers in one bundle
 
 A branch binds `nu` levels, `ng` globals and `nl` locals (e.g. `t_Π`
-binds `ℓ, ℓ'; g, U_S, U_T; x_S, x_T`). Two junk-sorted `tm` constructors,
-never typed on their own (like `tmErr`):
-- `tmBind nu ng nl b` marks `b`'s scope. Every operation passes under it
-  generically: `ren` by `rlift^nl`, local substitution by
-  `llift^nl ∘ gwk^ng ∘ uwk^nu`, global renaming by `gupr^ng`, global
-  substitution by `gup^ng` of the universe-weakened images, universe
-  operations by their `nu`-fold lift.
-- `tmTup s t` pairs; the branch bundle is a fixed-shape nest of 13
-  `tmBind`s.
+binds `ℓ, ℓ'; g, U_S, U_T; x_S, x_T`). Junk `tm` constructors, never typed
+on their own (like `tmErr`), carry the scoping:
+- `bindU b`, `bindG b`, `bindL b` each bind one level, global or local
+  variable. Every operation passes under them with its existing
+  single-step lift (`uwk`/`gwk`/`llift` for local substitutions,
+  `guwk`/`gup` for global ones, `uupr`/`uup`, `gupr`, `rlift`), so the
+  existing single-step hint lemmas discharge the new cases.
+- `tmTy T` embeds a motive; `tmTup s t` pairs.
 
-The four mutual sorts stay as they are, so no existing `*_all` law
-statement changes; the new cases are handled by `law_auto` once the
-iterated-lift hint lemmas exist.
-
-The recursors are
-`elimT l₁ l₂ MT Mt bs l Δ t` and `elimt l₁ l₂ MT Mt bs l Δ T t`,
-where `MT` binds `ℓ; g; x_T` and `Mt` binds `ℓ; g, U_T; x_t` (fixed
-arities, handled in the recursor cases directly).
+A component is wrapped levels outermost, then globals, then locals, in
+the paper's binding order. The recursors are `elimT l₁ l₂ rb l Δ t` and
+`elimt l₁ l₂ rb l Δ T t`, where the bundle
+`rb = mkrb MT Mt bs` (`Syntax/Recursor.v`) nests the two wrapped motives
+(`MT` binds `ℓ; g; x_T`, `Mt` binds `ℓ; g, U_T; x_t`) and the 13 wrapped
+branches (arity table `br_ar`). The four mutual sorts are unchanged, so
+no existing `*_all` law statement changed.
 
 ### E3. Typing: the branch group as one premise
 
@@ -121,7 +119,7 @@ recursor case needs `∀φ` for the branch premises, which are typed under
 
 ## Order of work
 
-1. **Syntax.** Level renaming and substitution; `tmBind`, `tmTup`,
+1. **Syntax** (done). Level renaming and substitution; the bundle nodes,
    `elimT`, `elimt`; every existing operation extended; universe
    operations on all sorts; laws (the existing ones for the new
    constructors, plus the universe laws and their commutation with the
