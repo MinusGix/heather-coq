@@ -202,6 +202,14 @@ well-typed syntax is replaced by `≡ₗ`-related well-typed syntax. It uses
 the Static Code Lemma at every layer (declarative equality of typed
 `≡ₗ`-related syntax) and a generic law saying the generic relations
 respect `≡ₗ` (declaratively: static code and transitivity).
+Implemented as: `LevelRed.v` (reduction simulates across `≡ₗ`; the
+weak-head normal forms of related syntax are related), generic laws
+`g{ne,eq}_{ty,tm}_leq` in diagonal form (each side related to itself),
+`VParam` laws `vpl_*_leq`, and `LevelInv.LR_leq`: `LR T1 T2 R`,
+`LR T3 T3 R3`, `T2 ≡ₗ T3` give `LR T1 T3 R` and `R t1 t2 → R3 t3 t3 →
+t2 ≡ₗ t3 → R t1 t3` (induction as for transitivity; the `□` cases by a
+diagonal bridge composed with `ModRel_trans`). Lifted to validity in
+`CtxRel.v` (`VTy(G)_leq`, `VTm(G)_leq`, `CtxRel(G)_leq`).
 
 ### E11. Boxed code is compared up to level equivalence (user decision, 2026-09-25; revises M2 D3)
 

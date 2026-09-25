@@ -496,3 +496,19 @@ Proof.
   intros [-> | ->] Ht Ht' E;
     [exact (static_code_tm (lle_refl lD) Ht Ht' E) | exact (eqtm_leq _ _ _ _ _ _ Ht Ht' E)].
 Qed.
+
+Lemma leq_eqctx_D {G} : forall Γ Γ', [ G ; Γ ⊢[ lD ] ] -> [ G ; Γ' ⊢[ lD ] ] -> ctx_leq Γ Γ' ->
+  [ G ⊢[ lD ] Γ ≅ Γ' ].
+Proof.
+  induction Γ as [| g | Γ IH A l]; intros [| g' | Γ' A' l'] H H' Ex; cbn in Ex; try contradiction.
+  - now apply eqc_refl.
+  - subst g'; now apply eqc_refl.
+  - destruct Ex as (EΓ & EA & El).
+    inversion H as [| | ? ? ? ? ? HΓ HA Hl]; subst.
+    inversion H' as [| | ? ? ? ? ? HΓ' HA' Hl']; subst.
+    pose proof (IH _ HΓ HΓ' EΓ) as Hc.
+    pose proof (leqv_lequiv _ _ _ Hl Hl' El) as Q.
+    apply eqc_ext; [exact Hc | exact HA | | exact Q].
+    apply (leq_eqty compt_D HA); [| exact EA].
+    eapply wft_lconv; [exact (ctxconv_ty (eqctx_sym_D Hc) (i := lD) eq_refl HA') | exact Q].
+Qed.

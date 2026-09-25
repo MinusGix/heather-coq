@@ -47,6 +47,7 @@ theories/LogRel/Transitivity.v
 theories/LogRel/Weakening.v
 theories/LogRel/Neutral.v
 theories/LogRel/Reduction.v
+theories/LogRel/LevelInv.v
 theories/Validity/Def.v
 theories/Validity/Props.v
 theories/Validity/CtxRel.v

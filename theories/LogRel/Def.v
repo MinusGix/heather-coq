@@ -61,6 +61,14 @@ Class VPLaws (vp : VParam) := {
   vpl_tyc_lconv {G Δ T T' l l'} : lequiv (gL G) l l' -> vp_tyc vp G Δ T T' l -> vp_tyc vp G Δ T T' l' ;
   vpl_tmc_lconv {G Δ T t t' l l'} :
     lequiv (gL G) l l' -> vp_tmc vp G Δ T t t' l -> vp_tmc vp G Δ T t t' l' ;
+  (* level equivalence of syntax (M3_DESIGN.md E6'): [≡ₗ]-related
+     syntax, each side related to itself, is related *)
+  vpl_ctx_leq {G Δ Δ'} : vp_ctx vp G Δ Δ -> vp_ctx vp G Δ' Δ' -> ctx_leq Δ Δ' -> vp_ctx vp G Δ Δ' ;
+  vpl_ty_leq {G Δ T T' l} : vp_ty vp G Δ T T l -> vp_ty vp G Δ T' T' l -> ty_leq T T' -> vp_ty vp G Δ T T' l ;
+  vpl_tyc_leq {G Δ T T' l} :
+    vp_tyc vp G Δ T T l -> vp_tyc vp G Δ T' T' l -> ty_leq T T' -> vp_tyc vp G Δ T T' l ;
+  vpl_tmc_leq {G Δ A t t' l} :
+    vp_tmc vp G Δ A t t l -> vp_tmc vp G Δ A t' t' l -> tm_leq t t' -> vp_tmc vp G Δ A t t' l ;
   (* global weakening *)
   vpl_ctx_gwk {γ G' G Δ Δ'} : gwk_ok γ G' G -> [ ⊢ G' ] ->
     vp_ctx vp G Δ Δ' -> vp_ctx vp G' Δ⟦γ⟧ Δ'⟦γ⟧ ;

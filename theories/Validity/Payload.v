@@ -33,11 +33,6 @@ Definition vpM : VParam := {|
     tm_leq t t' /\ [ G ; Δ ⊢[ lC ] t : A @ l ] /\ [ G ; Δ ⊢[ lC ] t' : A @ l ] /\
     VTmGP G Δ t t' A l /\ VTmGM G Δ t t' A l |}.
 
-Lemma ty_leq_gwa (T T' : ty) γ : ty_leq T T' -> ty_leq T⟦γ⟧ T'⟦γ⟧.
-Proof. destruct γ; cbn; auto; apply (proj1 leq_gren_all). Qed.
-Lemma tm_leq_gwa (t t' : tm) γ : tm_leq t t' -> tm_leq t⟦γ⟧ t'⟦γ⟧.
-Proof. destruct γ; cbn; auto; apply (proj1 (proj2 leq_gren_all)). Qed.
-
 Local Ltac vp_split := repeat match goal with |- _ /\ _ => split end.
 
 #[export] Instance vpM_laws : VPLaws vpM.
@@ -86,6 +81,17 @@ Proof.
   - intros * Hl (E & H & H' & HP & HM). pose proof (lequiv_sym _ _ _ Hl) as Hl'.
     vp_split; [exact E | eapply wf_lconv; eassumption | eapply wf_lconv; eassumption
               | exact (VTmG_lconv HP Hl') | exact (VTmG_lconv HM Hl')].
+  (* level equivalence of syntax *)
+  - intros * (H & HP & HM) (H' & HP' & HM') Ex.
+    vp_split; [exact (leq_eqctx_D _ _ (eqctx_wf_l (i := lD) eq_refl H) (eqctx_wf_l (i := lD) eq_refl H') Ex)
+              | exact (CtxRelG_leq HP HP' Ex) | exact (CtxRelG_leq HM HM' Ex)].
+  - intros * (H & HP & HM) (H' & HP' & HM') Ex.
+    vp_split; [exact (leq_eqty compt_D (eqty_wf_l (i := lD) eq_refl H) (eqty_wf_l (i := lD) eq_refl H') Ex)
+              | exact (VTyG_leq HP HP' Ex) | exact (VTyG_leq HM HM' Ex)].
+  - intros * (E & H & _ & HP & HM) (E' & H' & _ & HP' & HM') Ex.
+    vp_split; [exact Ex | exact H | exact H' | exact (VTyG_leq HP HP' Ex) | exact (VTyG_leq HM HM' Ex)].
+  - intros * (E & H & _ & HP & HM) (E' & H' & _ & HP' & HM') Ex.
+    vp_split; [exact Ex | exact H | exact H' | exact (VTmG_leq HP HP' Ex) | exact (VTmG_leq HM HM' Ex)].
   (* global weakening *)
   - intros * Hγ HG' (H & HP & HM).
     vp_split; [exact (gwa_eqctx Hγ HG' H) | exact (CtxRelG_gwk HP Hγ) | exact (CtxRelG_gwk HM Hγ)].

@@ -141,3 +141,63 @@ Proof.
 Qed.
 
 End CtxRel.
+
+(** ** Level equivalence of syntax (M3_DESIGN.md E6')
+
+    Validity is invariant under [≡ₗ]: related syntax, each side valid on
+    its own, is related. From the relation's level invariance. *)
+
+Section LevelEq.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+
+Lemma LRty_leq {l G Γ T1 T2 T3} : LRty l G Γ T1 T2 -> LRty l G Γ T3 T3 -> ty_leq T2 T3 -> LRty l G Γ T1 T3.
+Proof. intros [R H] [R3 H3] Ex. exists R. exact (LogRel_leq_ty H H3 Ex). Qed.
+
+Lemma LRtm_leq {l G Γ T T' t1 t2 t3} :
+  LRtm l G Γ T T' t1 t2 -> LRtm l G Γ T' T' t3 t3 -> tm_leq t2 t3 -> LRtm l G Γ T T' t1 t3.
+Proof.
+  intros (R & H & Ht) (R3 & H3 & Ht3) Ex. exists R; split; [exact H|].
+  exact (LogRel_leq_tm H H3 (ty_leq_refl _) Ht Ht3 Ex).
+Qed.
+
+Lemma VTy_leq {G Γ T T' l} : VTy G Γ T T l -> VTy G Γ T' T' l -> ty_leq T T' -> VTy G Γ T T' l.
+Proof.
+  intros V V' Ex Δ d d' Hd.
+  exact (LRty_leq (V _ _ _ Hd) (V' _ _ _ (SubRel_refl_r Hd)) (subst_leq_ty _ _ _ Ex)).
+Qed.
+
+Lemma VTm_leq {G Γ t t' T l} : VTm G Γ t t T l -> VTm G Γ t' t' T l -> tm_leq t t' -> VTm G Γ t t' T l.
+Proof.
+  intros V V' Ex Δ d d' Hd.
+  refine (LRtm_leq (V _ _ _ Hd) (V' _ _ _ (SubRel_refl_r Hd)) _).
+  apply (proj1 (proj2 leq_subst_all)); [apply lsub_leq_refl | exact Ex].
+Qed.
+
+Lemma VTyG_leq {G Γ T T' l} : VTyG G Γ T T l -> VTyG G Γ T' T' l -> ty_leq T T' -> VTyG G Γ T T' l.
+Proof. intros V V' Ex G' γ Hγ. exact (VTy_leq (V _ _ Hγ) (V' _ _ Hγ) (ty_leq_gwa _ _ _ Ex)). Qed.
+Lemma VTmG_leq {G Γ t t' T l} : VTmG G Γ t t T l -> VTmG G Γ t' t' T l -> tm_leq t t' -> VTmG G Γ t t' T l.
+Proof. intros V V' Ex G' γ Hγ. exact (VTm_leq (V _ _ Hγ) (V' _ _ Hγ) (tm_leq_gwa _ _ _ Ex)). Qed.
+
+Lemma CtxRel_leq G : forall Γ Γ', CtxRel G Γ Γ -> CtxRel G Γ' Γ' -> ctx_leq Γ Γ' -> CtxRel G Γ Γ'.
+Proof.
+  induction Γ as [| g | Γ IH A l]; intros [| g' | Γ' A' l']; cbn [CtxRel ctx_leq]; try tauto.
+  intros (HΓ & Hl & HA & _) (HΓ' & Hl' & HA' & _) (EΓ & EA & El).
+  pose proof (IH _ HΓ HΓ' EΓ) as H.
+  pose proof (leqv_lequiv _ _ _ (lequiv_wf_l _ _ _ Hl) (lequiv_wf_l _ _ _ Hl') El) as Q.
+  (* [A'] over [Γ] at [l] *)
+  assert (HA'' : VTy G Γ A' A' l)
+    by (intros Δ d d' Hd; exact (LRty_lconv (HA' _ _ _ (SubRel_transport _ _ _ _ _ _ (CtxRel_sym _ _ _ H) Hd)) Q)).
+  pose proof (VTy_leq HA HA'' EA) as HAA.
+  refine (conj H (conj Q (conj HAA _))).
+  intros Δ d d' Hd.
+  exact (LRty_lconv (VTy_sym HAA _ _ _ (SubRel_transport _ _ _ _ _ _ H Hd))
+           (lequiv_sym _ _ _ Q)).
+Qed.
+
+Lemma CtxRelG_leq {G Γ Γ'} : CtxRelG G Γ Γ -> CtxRelG G Γ' Γ' -> ctx_leq Γ Γ' -> CtxRelG G Γ Γ'.
+Proof.
+  intros H H' Ex G' γ Hγ. apply CtxRel_leq; [exact (H _ _ Hγ) | exact (H' _ _ Hγ)|].
+  destruct γ; cbn; auto; apply (proj1 (proj2 (proj2 leq_gren_all))), Ex.
+Qed.
+
+End LevelEq.

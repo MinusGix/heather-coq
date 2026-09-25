@@ -11,7 +11,7 @@
     union over derivations, which irrelevance makes equivalent to each of
     them and saturation makes usable as a relation.  It gives the Π case
     its domain/codomain functions without choice or extensionality. *)
-From DeLaM.LogRel Require Export Reduction.
+From DeLaM.LogRel Require Export LevelInv.
 
 Section Validity.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
