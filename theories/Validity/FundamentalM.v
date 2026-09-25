@@ -94,6 +94,41 @@ Proof.
              (fun n B k h => proj2 (proj2 (Hv n B k h))) (fun n B k h => proj2 (proj2 (Hvv n B k h)))).
 Qed.
 
+(** The same, with the entries' induction hypotheses at a universe
+    substitution [φ] (the global variable's context is [Δ[φ]]). *)
+Lemma entries_us {Δ d d' φ} {P : tm -> tm -> ty -> lvl -> Prop} :
+  (forall n B k, in_ctx Δ n B k -> P (usubst_tm (llk d n) φ) (usubst_tm (llk d' n) φ) (usubst_ty B[d] φ) (lvsubst k φ)) ->
+  forall n B k, in_ctx (ucsubst Δ φ) n B k -> P (llk (ulsubst d φ) n) (llk (ulsubst d' φ) n) B[ulsubst d φ] k.
+Proof.
+  intros H n B k Hin. destruct (in_ctx_usubst_inv _ _ _ _ _ Hin) as (B0 & k0 & HB0 & -> & ->).
+  rewrite !llk_ulsubst, <- usubst_subst_ty'. exact (H _ _ _ HB0).
+Qed.
+
+Lemma FM_tygvar_us {G Γ U Δ i' l d d' φ} : SemCtxM G Γ -> in_gctx (gΨ G) U (gdTy (ucsubst Δ φ) i' l) ->
+  [ G ; Γ ⊢[ lM ] ] -> lsub_tail (ulsubst d φ) (ucsubst Δ φ) Γ -> dnfl (ulsubst d φ) ->
+  lsub_tail (ulsubst d' φ) (ucsubst Δ φ) Γ -> dnfl (ulsubst d' φ) ->
+  (forall n B k, in_ctx Δ n B k ->
+     SemTmM G Γ (usubst_tm (llk d n) φ) (usubst_tm (llk d' n) φ) (usubst_ty B[d] φ) (lvsubst k φ)) ->
+  SemTyM G Γ (tyGvar U (ulsubst d φ)) (tyGvar U (ulsubst d' φ)) l.
+Proof.
+  intros HS Hin HΓ Ht Nd Ht' Nd' Hv. eapply FM_tygvar; try eassumption.
+  exact (entries_us (P := fun a b B k => SemTmM G Γ a b B k) Hv).
+Qed.
+
+Lemma FM_gvar_us {G Γ u Δ i' A l d d' φ} : SemCtxM G Γ -> in_gctx (gΨ G) u (gdTm (ucsubst Δ φ) i' A l) ->
+  [ G ; Γ ⊢[ lM ] ] -> lsub_tail (ulsubst d φ) (ucsubst Δ φ) Γ -> dnfl (ulsubst d φ) ->
+  lsub_tail (ulsubst d' φ) (ucsubst Δ φ) Γ -> dnfl (ulsubst d' φ) ->
+  (forall n B k, in_ctx Δ n B k ->
+     SemTmM G Γ (usubst_tm (llk d n) φ) (usubst_tm (llk d' n) φ) (usubst_ty B[d] φ) (lvsubst k φ)) ->
+  (forall n B k, in_ctx Δ n B k ->
+     SemTmM G Γ (usubst_tm (llk d n) φ) (usubst_tm (llk d n) φ) (usubst_ty B[d] φ) (lvsubst k φ)) ->
+  SemTmM G Γ (gvar u (ulsubst d φ)) (gvar u (ulsubst d' φ)) A[ulsubst d φ] l.
+Proof.
+  intros HS Hin HΓ Ht Nd Ht' Nd' Hv Hvv. eapply FM_gvar; try eassumption.
+  - exact (entries_us (P := fun a b B k => SemTmM G Γ a b B k) Hv).
+  - exact (entries_us (P := fun a b B k => SemTmM G Γ a b B k) Hvv).
+Qed.
+
 (** ** Contextual types and [box] *)
 
 Local Notation SemCtxP := (SemCtx EP EM).
@@ -392,13 +427,68 @@ Ltac m_goal :=
   | |- @VTmS _ _ _ _ _ _ _ _ _ _ => m_tm
   end.
 
-Theorem fundamentalM :
+(** ** Moving a case to its instance at a universe substitution [φ]
+
+    The theorem quantifies over [φ : L' ⇒ gL G] (M3_DESIGN.md E6): every
+    case is the case at the instance [J[φ]], its typing premises moved
+    along [φ] by the universe substitution lemma. *)
+Ltac us_move :=
+  match goal with Hφ : usub_ok ?φ ?L' (gL ?G) |- _ =>
+  repeat match goal with
+  | H : wf_glob ?G0 |- _ => lazymatch G0 with G_us _ _ _ => fail | _ => idtac end;
+      pose proof (proj1 usubstitution _ H _ _ Hφ); clear H
+  | H : wf_ctx ?G0 _ _ |- _ => lazymatch G0 with G_us _ _ _ => fail | _ => idtac end;
+      pose proof (proj1 (proj2 usubstitution) _ _ _ H _ _ Hφ); clear H
+  | H : wf_ty ?G0 _ _ _ _ |- _ => lazymatch G0 with G_us _ _ _ => fail | _ => idtac end;
+      pose proof (proj1 (proj2 (proj2 usubstitution)) _ _ _ _ _ H _ _ Hφ); clear H
+  | H : wf_tm ?G0 _ _ _ _ _ |- _ => lazymatch G0 with G_us _ _ _ => fail | _ => idtac end;
+      pose proof (proj1 (proj2 (proj2 (proj2 usubstitution))) _ _ _ _ _ _ H _ _ Hφ); clear H
+  | H : eq_ty ?G0 _ _ _ _ _ |- _ => lazymatch G0 with G_us _ _ _ => fail | _ => idtac end;
+      pose proof (proj1 (proj2 (proj2 (proj2 (proj2 usubstitution)))) _ _ _ _ _ _ H _ _ Hφ); clear H
+  | H : eq_tm ?G0 _ _ _ _ _ _ |- _ => lazymatch G0 with G_us _ _ _ => fail | _ => idtac end;
+      pose proof (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 usubstitution))))) _ _ _ _ _ _ _ H _ _ Hφ);
+      clear H
+  | H : eq_ctx ?G0 _ _ _ |- _ => lazymatch G0 with G_us _ _ _ => fail | _ => idtac end;
+      pose proof (proj2 (proj2 (proj2 (proj2 (proj2 (proj2 usubstitution))))) _ _ _ _ H _ _ Hφ); clear H
+  | H : in_gctx (gΨ G) _ _ |- _ => pose proof (in_gctx_usubst _ _ _ φ H); clear H
+  | H : gctx_var G _ |- _ => pose proof (gctx_var_usubst _ _ L' φ H); clear H
+  | H : lwf (gL G) _ |- _ => pose proof (lwf_lvsubst _ _ _ _ Hφ H); clear H
+  | H : lequiv (gL G) _ _ |- _ => pose proof (lequiv_lvsubst _ _ _ _ _ Hφ H); clear H
+  | H : lsub_tail ?d _ _ |- _ => lazymatch d with ulsubst _ _ => fail | _ => idtac end;
+      pose proof (lsub_tail_usubst _ _ _ φ H); clear H
+  | H : dnfl ?d |- _ => lazymatch d with ulsubst _ _ => fail | _ => idtac end;
+      pose proof (dnfl_usubst d φ); clear H
+  | H : in_ctx ?Γ0 _ _ _ |- _ => lazymatch Γ0 with ucsubst _ _ => fail | _ => idtac end;
+      pose proof (in_ctx_usubst _ _ _ _ φ H); clear H
+  end end.
+
+(** The global variables' entries: their induction hypotheses at [φ]. *)
+Ltac us_entries_sem :=
+  repeat match goal with
+  | IH : forall n A k, in_ctx ?Δ n A k -> forall L' φ, usub_ok φ L' (gL ?G) -> _,
+    Hφ : usub_ok ?φ ?L' (gL ?G) |- _ =>
+      pose proof (fun n A k h => IH n A k h L' φ Hφ); clear IH
+  end.
+
+Lemma usubst_ren_mix (t : tm) r φ : usubst_tm t⟨r⟩ φ = (usubst_tm t φ)⟨r⟩.
+Proof. exact (proj1 (proj2 usubst_ren_all) t r φ). Qed.
+Lemma usubst_ren_ty_mix (T : ty) r φ : usubst_ty T⟨r⟩ φ = (usubst_ty T φ)⟨r⟩.
+Proof. exact (proj1 usubst_ren_all T r φ). Qed.
+
+Theorem fundamentalM_us :
   (forall G, [ ⊢ G ] -> True) /\
-  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> i = lM -> SemCtxM EP EM G Γ) /\
-  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = lM -> SemTyM EP EM G Γ T T l) /\
-  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = lM -> SemTmM EP EM G Γ t t T l) /\
-  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = lM -> SemTyM EP EM G Γ T T' l) /\
-  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = lM -> SemTmM EP EM G Γ t t' T l) /\
+  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> i = lM -> forall L' φ, usub_ok φ L' (gL G) ->
+     SemCtxM EP EM (G_us G L' φ) (ucsubst Γ φ)) /\
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = lM -> forall L' φ, usub_ok φ L' (gL G) ->
+     SemTyM EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_ty T φ) (usubst_ty T φ) (lvsubst l φ)) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = lM -> forall L' φ, usub_ok φ L' (gL G) ->
+     SemTmM EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_tm t φ) (usubst_tm t φ) (usubst_ty T φ)
+       (lvsubst l φ)) /\
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = lM -> forall L' φ, usub_ok φ L' (gL G) ->
+     SemTyM EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_ty T φ) (usubst_ty T' φ) (lvsubst l φ)) /\
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = lM -> forall L' φ, usub_ok φ L' (gL G) ->
+     SemTmM EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_tm t φ) (usubst_tm t' φ) (usubst_ty T φ)
+       (lvsubst l φ)) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
   apply typing_mut; intros; try exact I;
@@ -408,7 +498,8 @@ Proof.
       | IH : forall n A k, in_ctx _ n A k -> ?x = ?x -> _ |- _ =>
           pose proof (fun n A k h => IH n A k h eq_refl); clear IH
       end;
-    try solve [ first [simple eapply (FM_tygvar EP EM) | simple eapply (FM_gvar EP EM)]; eassumption ].
+    us_spec; us_entries_sem; us_move; us_rewrite_all; rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix.
+  all: try solve [ first [simple eapply (FM_tygvar_us EP EM) | simple eapply (FM_gvar_us EP EM)]; eassumption ].
   all: m_P.
   all: try solve [ first [ simple eapply (FM_CTyp EP EM) | simple eapply (FM_CTyp_eq EP EM)
                          | simple eapply (FM_CTrm EP EM) | simple eapply (FM_CTrm_eq EP EM)
@@ -419,7 +510,8 @@ Proof.
                          | simple eapply (FM_letboxt_beta EP EM) ]; eassumption ].
   all: unfold SemTyM, SemTmM, SemCtxM in *;
     repeat match goal with H : _ /\ _ |- _ => destruct H end; m_types; repeat split.
-  all: m_goal.
-Qed.
+  all: try m_goal.
+  all: match goal with |- ?g => lazymatch g with context [elimT] => idtac "REC-T" | context [elimt] => idtac "REC-t" | _ => idtac "OTHER" g end end.
+Abort.
 
 End FundamentalMThm.
