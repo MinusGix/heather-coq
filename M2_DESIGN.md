@@ -283,45 +283,54 @@ and composition; (5d) `vpM` and its laws; (5e) related global
 substitutions; (5f) validity with σ and the FTs; (5g) consequences at M,
 dropping `ctx_only`.
 
-Status of 5f: the FT for P-derivations holds with σ at every global
-context (`FundamentalS.fundamentalS`, no `ctx_only`, no axioms).
-- **Global contexts are semantic.** The `wf_glob` motive is `GValid G`:
-  every binding's context (and type) is valid at P and M. It gives
-  `VCtxS` for the binding's context in the global-variable cases, and
-  symmetry of related substitutions.
-- **Global variables** (`GvarS.v`). Under σ, `U^δ` goes to one of two
-  things:
-  - a global variable, which is a neutral by the generic `gne_*_gvar`
-    laws;
-  - `T[δ⦃σ⦄]`, where `T` is related in the substituted binding context
-    and is instantiated at the related local substitutions (`VSubKS`,
-    built with `VSub_intro`).
-- **Projection hypothesis.** The rule lemmas take a projection from the
-  image's relation (`⊩^{≥P}_P`, P ∧ M instances) to the instance at hand.
-  At P it is `proj1`/`proj2`; at M with `LR_M` it will be the Layering
-  Restriction.
-- **FT at C** (and V): lift the derivation to P (`fundamentalS_le`).
-- **Layering Restriction** (`LogRel/Layering`, `Validity/LayerV`). On
+Status (M2 complete, 2026-09-25, axiom-free, clean build about 50 s at
+`-j4`):
+- **5f, FT at P** (`FundamentalS.fundamentalS`) holds with σ at every
+  global context.
+  - The `wf_glob` motive is `GValid G`: every binding's context (and
+    type) is valid at P and M. It gives `VCtxS` for the binding's context
+    in the global-variable cases, and symmetry of related substitutions.
+  - Context equality has the two-sided motive `VCtxEqS` (the premise of
+    the `□` congruences).
+  - Under σ, `U^δ` goes either to a global variable (neutral, by the
+    generic `gne_*_gvar` laws) or to `T[δ⦃σ⦄]`, with `T` related in the
+    substituted binding context and instantiated at related local
+    substitutions (`GvarS.VSubKS`).
+  - The rule lemmas take a projection from `⊩^{≥P}_P` (P ∧ M instances)
+    to the instance at hand, with the images' MLTT-ness.
+- **FT at C and V** (`fundamentalS_le`): lift the derivation to P.
+- **Layering Restriction** (`LogRel/Layering`, `Validity/LayerV`): on
   MLTT types (no `□` in the type structure) the relation does not depend
-  on its parameters. This discharges the global-variable projections at M.
-- **At M** (in progress):
-  - `ModalS` covers `□` formation and `box`. Formation escapes the related
-    contexts at the P instance. A `box` of static code is related to
-    itself.
-  - `letbox` plan:
-    - Validity with σ is first reduced to validity without the
-      global-weakening quantifier (`GSubRel` is closed under
-      post-composition with weakenings).
-    - `box` scrutinee: β-reduce, then use the body's validity at `σ`
-      extended by the (literally equal) code.
-    - Neutral scrutinee: use the generic neutral `letbox` law, escaping
-      the body's validity at the pair `(⇑σ, ⇑σ')`. Here `⇑` sends the
-      fresh binding to `GTy (U₀^id)` on both sides, like the paper's
-      `U^id`, not to `GId 0`. `⇑σ'` must be typed into
-      `Ψ, U : DTyp Δ⦃σ⦄` while its binding is `Δ⦃σ'⦄`, and `U₀^id`
-      has that typing up to context conversion (`gobj_wf` for `GId`
-      is syntactic). This needs no change to the syntactic
-      metatheory.
+  on its parameters (`j`, the payload), with the same term relations.
+  Types formed below M are MLTT types.
+- **Related global substitutions** (`GSubRel*`):
+  - Images of static (C/V) bindings are literally equal (07a:390).
+  - They stay related after a global weakening (`GSubRel_wk`), so
+    validity with σ can be proved without its weakening quantifier.
+  - They extend by an object related to itself (`GSubRel_cons`) and push
+    under a binding with `U₀^id` on both sides (`GSubRel_up_id`, with
+    `equiv_gsubst`: `U` and `U^id` agree on well-typed syntax).
+  - Static code is sent to the same code by related substitutions
+    (`GStatic.static_gsubst`).
+- **FT at M** (`FundamentalM.fundamentalM`), for `LR_M` at the M instance:
+  - `ModalS`: `□` formation escapes the related contexts at the P
+    instance (`CtxRel_escape`); a `box` of static code is related to
+    itself, with its payload from the FT at P.
+  - `LetboxS`: a `box` scrutinee β-reduces and the body is related at σ
+    extended by the code; a neutral scrutinee uses the generic neutral
+    `letbox` law, with the body escaped at the `U₀^id` up-pair. The
+    β-rules anti-reduce to the body at the extended substitutions.
+  - Global variables go through the Layering Restriction.
+- **5g** (`Reducible`, `Consequences`, `DeclConsequences`).
+  - The identity global substitution is related to itself, which gives
+    reducibility at P and M for every well-formed global context.
+  - Consequences are proved from reducibility; `ctx_only` survives only
+    as the condition of closed canonicity.
+  - New at M: injectivity of `□` (`declM_CTyp_inj`, `declM_CTrm_inj`),
+    and closed canonicity for contextual types (closed terms are `box`es
+    of static code; an extra, not in the paper).
+- **Deviation (user decision):** the `box` congruence is literal equality,
+  as in the paper; see D3.
 
 ## Order of work
 

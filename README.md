@@ -8,15 +8,21 @@ instantiated twice (Abel, Öhman & Vezzosi 2017), in the architecture of
 the universe hierarchy and level polymorphism fit (see
 `../logrel-coq-spike/SPIKE_UNIVERSES.md`).
 
-Status: **Milestone 1 (MLTT core) complete; Milestone 2 (modal core) in
-progress.** M2 has the syntax (global variables, contextual types, `box`,
-`letbox`, global renaming/substitution with their laws) and the whole
-declarative metatheory at every layer: global and local weakening,
-lifting, substitution, functionality, the global substitution lemma, and
-presupposition. The M1 fundamental theorem is temporarily restricted to
-layer P with context-variable-only global contexts, until the layered
-logical relation lands. No admits, no axioms.
-See `M2_DESIGN.md` (current milestone) and `M1_DESIGN.md` for status and next steps.
+Status: **Milestones 1 (MLTT core) and 2 (modal core) complete.** M2 has:
+- the syntax (global variables, contextual types, `box`, `letbox`);
+- the declarative metatheory at every layer;
+- the layered logical relation (`j ∈ {P, M}`, Kripke over global
+  weakenings);
+- the fundamental theorem with related global substitutions at layers
+  C, P and M (`FundamentalS`, `FundamentalM`), which shows the Layering
+  Restriction on the way;
+- the consequences at P and M for arbitrary global contexts:
+  - weak-head normalization;
+  - injectivity and discrimination of type formers, including `□`;
+  - canonicity for `Nat` and for contextual types.
+
+No admits, no axioms. See `M2_DESIGN.md` and `M1_DESIGN.md` for decisions,
+deviations from the paper and gotchas.
 
 Documents:
 
