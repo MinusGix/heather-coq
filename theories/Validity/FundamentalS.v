@@ -180,4 +180,22 @@ Proof.
   all: f_goal.
 Qed.
 
+(** ** Layers below P (C, V): lift the derivation to P *)
+
+Corollary fundamentalS_le :
+  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> lle i lD -> SemCtx G Γ) /\
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> lle i lD -> SemTy G Γ T T l) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> lle i lD -> SemTm G Γ t t T l) /\
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> lle i lD -> SemTy G Γ T T' l) /\
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> lle i lD -> SemTm G Γ t t' T l).
+Proof.
+  destruct fundamentalS as (_ & Hc & Hty & Htm & Heqty & Heqtm & _).
+  split; [| split; [| split; [| split]]].
+  - intros G i Γ Hd Hi. exact (Hc _ _ _ (lift_ctx Hd Hi) eq_refl).
+  - intros G i Γ T l Hd Hi. exact (Hty _ _ _ _ _ (lift_ty Hd Hi) eq_refl).
+  - intros G i Γ t T l Hd Hi. exact (Htm _ _ _ _ _ _ (lift_tm Hd Hi) eq_refl).
+  - intros G i Γ T T' l Hd Hi. exact (Heqty _ _ _ _ _ _ (lift_eqty Hd Hi) eq_refl).
+  - intros G i Γ t t' T l Hd Hi. exact (Heqtm _ _ _ _ _ _ _ (lift_eqtm Hd Hi) eq_refl).
+Qed.
+
 End FundamentalS.
