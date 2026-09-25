@@ -34,3 +34,117 @@ Proof.
 Qed.
 
 End RecNe.
+
+(** ** Global substitutions: universe weakening, and a fresh binding *)
+
+Definition decl_lvl (D : gdecl) : lvl := match D with gdCtx => lzero | gdTy _ _ l | gdTm _ _ _ l => l end.
+Definition decl_layer_ok (D : gdecl) : Prop :=
+  match D with gdCtx => True | gdTy _ i _ | gdTm _ i _ _ => lle i lD end.
+
+Section GS.
+Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM}.
+
+Lemma GObjRel_uwk {L Ψ D D' o o'} : [ ⊢ mkG L Ψ ] -> lwf L (decl_lvl D) -> decl_layer_ok D ->
+  gobj_wf (mkG L Ψ) o D -> gobj_wf (mkG L Ψ) o' D' -> GObjRel EP EM (mkG L Ψ) D o o' ->
+  GObjRel EP EM (gctx_uwk 1 (mkG L Ψ)) (gdecl_uren D S) (gouren o S) (gouren o' S).
+Proof.
+  intros HG Hl Hi Ho Ho'. destruct D as [|Δ i k|Δ i A k]; destruct o, o'; cbn [GObjRel gouren gdecl_uren] in *;
+    try tauto; try (intros; assumption).
+  - (* contexts *)
+    destruct D' as [|Δ' i' k'|Δ' i' A' k']; cbn in Ho'; try contradiction.
+    intros (HP & HM). pose proof (wf_ctx_dnf Ho) as N. pose proof (wf_ctx_dnf Ho') as N'.
+    pose proof (wf_ctx_lwf Ho) as W. pose proof (wf_ctx_lwf Ho') as W'.
+    exact (conj (CtxRelG_uwk (E := EP) HG N N' W W' HP) (CtxRelG_uwk (E := EM) HG N N' W W' HM)).
+  - (* types *)
+    destruct D' as [|Δ' i' k'|Δ' i' A' k']; cbn in Ho'; try contradiction.
+    intros (HE & HP & HM). cbn in Hl.
+    pose proof (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ Ho) as HΔ.
+    pose proof (wf_ctx_dnf HΔ) as N. pose proof (wf_ctx_lwf HΔ) as W.
+    pose proof (wf_ty_lwf Ho) as WT. pose proof (wf_ty_lwf Ho') as WT'.
+    refine (conj _ (conj (VTyG_uwk (E := EP) HG N W WT WT' Hl HP) (VTyG_uwk (E := EM) HG N W WT WT' Hl HM))).
+    intros Hic. apply (proj1 leq_uren_all), HE, Hic.
+  - (* terms *)
+    destruct D' as [|Δ' i' k'|Δ' i' A' k']; cbn in Ho'; try contradiction.
+    intros (HE & HP & HM). cbn in Hl.
+    pose proof (lift_tm Ho Hi) as HoD.
+    pose proof (wf_tm_ty (i := lD) eq_refl HoD) as HA.
+    pose proof (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ HA) as HΔ.
+    pose proof (wf_ctx_dnf HΔ) as N. pose proof (wf_ctx_lwf HΔ) as W. pose proof (wf_ty_lwf HA) as WA.
+    pose proof (wf_tm_lwf Ho) as Wt. pose proof (wf_tm_lwf Ho') as Wt'.
+    refine (conj _ (conj (VTmG_uwk (E := EP) HG N W Wt Wt' WA Hl HP) (VTmG_uwk (E := EM) HG N W Wt Wt' WA Hl HM))).
+    apply (proj1 (proj2 leq_uren_all)), HE.
+Qed.
+
+End GS.
+
+Lemma decl_lvl_ren D ξ : decl_lvl (gdecl_ren D ξ) = decl_lvl D.
+Proof. now destruct D. Qed.
+Lemma decl_layer_ren D ξ : decl_layer_ok (gdecl_ren D ξ) <-> decl_layer_ok D.
+Proof. now destruct D. Qed.
+Lemma decl_lvl_gsubst D σ : decl_lvl (gdecl_gsubst D σ) = decl_lvl D.
+Proof. now destruct D. Qed.
+Lemma decl_layer_gsubst D σ : decl_layer_ok (gdecl_gsubst D σ) <-> decl_layer_ok D.
+Proof. now destruct D. Qed.
+
+Lemma wfg_in {L Ψ n D} : [ ⊢ mkG L Ψ ] -> in_gctx Ψ n D -> lwf L (decl_lvl D) /\ decl_layer_ok D.
+Proof.
+  intros HG Hin; revert HG. induction Hin as [Ψ D | Ψ D D' n Hin IH]; intros HG;
+    rewrite decl_lvl_ren, decl_layer_ren.
+  - inversion HG; subst; cbn; split; auto; unfold lle; cbn;
+      match goal with H : _ = _ \/ _ = _ |- _ => destruct H as [-> | ->]; cbn; lia end.
+  - apply IH. inversion HG; subst; assumption.
+Qed.
+
+Section GS2.
+Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM}.
+
+Lemma GSubRel_uwk {G' G σ σ'} : [ ⊢ G ] -> GSubRel EP EM G' G σ σ' ->
+  GSubRel EP EM (gctx_uwk 1 G') (gctx_uwk 1 G) (guwk σ) (guwk σ').
+Proof.
+  intros HG [HL Hl Hr H1 H2 H3]. destruct G' as [L' Ψ']. destruct G as [L Ψ].
+  pose proof (gsw_glob _ _ _ Hl) as HG'. pose proof (gsw_dnf _ _ _ Hl) as Nσ. pose proof (gsw_dnf _ _ _ Hr) as Nσ'.
+  assert (Fact : forall n D0, in_gctx Ψ n D0 -> forall τ, lwf L' (decl_lvl (gdecl_gsubst D0 τ)) /\
+                    decl_layer_ok (gdecl_gsubst D0 τ)).
+  { intros n D0 Hin τ. destruct (wfg_in HG Hin) as [Hlv Hly].
+    rewrite decl_lvl_gsubst, decl_layer_gsubst. split; [exact (lwf_weaken _ _ _ HL Hlv) | exact Hly]. }
+  assert (R : forall τ τ', [ mkG L' Ψ' ⊢ τ : mkG L Ψ ] -> [ mkG L' Ψ' ⊢ τ' : mkG L Ψ ] -> gdnf τ ->
+            GRel0 EP EM (mkG L' Ψ') (mkG L Ψ) τ τ' ->
+            GRel0 EP EM (gctx_uwk 1 (mkG L' Ψ')) (gctx_uwk 1 (mkG L Ψ)) (guwk τ) (guwk τ')).
+  { intros τ τ' Hτ Hτ' Nτ Hrel n D Hin. unfold gctx_uwk in Hin; cbn [gΨ] in Hin.
+    destruct (in_gctx_uren_inv _ _ _ _ Hin) as (D0 & HD0 & ->).
+    change (guwk τ) with (guwkn 1 τ). rewrite (gdecl_gsubst_uren D0 1 τ Nτ).
+    destruct (Fact _ _ HD0 τ) as [Hlv Hly].
+    exact (GObjRel_uwk EP EM HG' Hlv Hly (gsw_var _ _ _ Hτ _ _ HD0) (gsw_var _ _ _ Hτ' _ _ HD0) (Hrel _ _ HD0)). }
+  constructor.
+  - cbn in HL |- *; lia.
+  - exact (gsub_wf_uwkn 1 _ _ _ Hl).
+  - exact (gsub_wf_uwkn 1 _ _ _ Hr).
+  - exact (R _ _ Hl Hr Nσ H1).
+  - exact (R _ _ Hl Hl Nσ H2).
+  - exact (R _ _ Hr Hr Nσ' H3).
+Qed.
+
+(** A fresh binding, sent to itself. *)
+Lemma GSubRel_gup {G' G σ σ' D} : GSubRel EP EM G' G σ σ' ->
+  [ ⊢ gext G' (gdecl_gsubst D σ) ] -> gdecl_gsubst D σ' = gdecl_gsubst D σ ->
+  GSubRel EP EM (gext G' (gdecl_gsubst D σ)) (gext G D) (gup σ) (gup σ').
+Proof.
+  intros Hσ HG ED.
+  assert (Hγ : gwk_ok (gwk_step gwk_id) (gext G' (gdecl_gsubst D σ)) G')
+    by (split; [reflexivity | constructor; constructor]).
+  pose proof (GSubRel_wk EP EM Hσ Hγ HG) as Hs.
+  assert (Hw : forall τ, gdecl_gsubst D τ = gdecl_gsubst D σ ->
+             gobj_wf (gext G' (gdecl_gsubst D σ)) (GId 0) (gdecl_gsubst D (gsub_wk τ (gwk_step gwk_id)))).
+  { intros τ Eτ. rewrite <- gdecl_gsubst_wk by discriminate. rewrite Eτ.
+    destruct D; cbn [gdecl_gsubst gdecl_ren gobj_wf].
+    - unfold gctx_var; cbn. reflexivity.
+    - exists i; split; [apply lle_refl | exact (ing_here _ (gdTy _ _ _))].
+    - exists i; split; [apply lle_refl | exact (ing_here _ (gdTm _ _ _ _))]. }
+  refine (GSubRel_ext EP EM _ _ (GSubRel_cons EP EM (o := GId 0) Hs I (Hw _ eq_refl) (Hw _ ED) _ _)).
+  - intros [|n]; reflexivity.
+  - intros [|n]; reflexivity.
+  - destruct D; cbn; reflexivity.
+  - destruct D; cbn; reflexivity.
+Qed.
+
+End GS2.
