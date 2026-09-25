@@ -30,27 +30,57 @@ Proof.
   - replace n with (clen Δ + (n - clen Δ)) by lia. rewrite Hl. exact I.
 Qed.
 
+Lemma wrapU_lwf n L b : tm_lwf L (wrapU n b) <-> tm_lwf (n + L) b.
+Proof. revert L; induction n as [|n IH]; intros L; cbn; [reflexivity|]. rewrite IH; cbn. now rewrite Nat.add_succ_r. Qed.
+Lemma wrapG_lwf n L b : tm_lwf L (wrapG n b) <-> tm_lwf L b.
+Proof. induction n; cbn; tauto. Qed.
+Lemma wrapL_lwf n L b : tm_lwf L (wrapL n b) <-> tm_lwf L b.
+Proof. induction n; cbn; tauto. Qed.
+Lemma wrap_lwf nu ng nl L b : tm_lwf L (wrap nu ng nl b) <-> tm_lwf (nu + L) b.
+Proof. unfold wrap. rewrite wrapU_lwf, wrapG_lwf, wrapL_lwf. reflexivity. Qed.
+
+Lemma mkrb_lwf L MT Mt bs : ty_lwf (S L) MT -> ty_lwf (S L) Mt ->
+  (forall k, k < 13 -> tm_lwf (br_nu k + L) (bs k)) -> tm_lwf L (mkrb MT Mt bs).
+Proof.
+  intros HT Ht Hb. unfold mkrb, wrapMT, wrapMt. cbn [tup_from br_ar tm_lwf].
+  repeat split; auto;
+    match goal with |- tm_lwf _ (wrap _ _ _ (bs ?k)) => apply wrap_lwf; apply (Hb k); lia end.
+Qed.
+
+Lemma elimT_lwf L l1 l2 MT Mt bs l Δ t : lwf L l1 -> lwf L l2 -> lwf L l -> ctx_lwf L Δ -> tm_lwf L t ->
+  ty_lwf (S L) MT -> ty_lwf (S L) Mt -> (forall k, k < 13 -> tm_lwf (br_nu k + L) (bs k)) ->
+  tm_lwf L (elimT l1 l2 (mkrb MT Mt bs) l Δ t).
+Proof. intros. exact (conj H (conj H0 (conj (mkrb_lwf L MT Mt bs H4 H5 H6) (conj H1 (conj H2 H3))))). Qed.
+Lemma elimt_lwf L l1 l2 MT Mt bs l Δ T t : lwf L l1 -> lwf L l2 -> lwf L l -> ctx_lwf L Δ ->
+  ty_lwf L T -> tm_lwf L t ->
+  ty_lwf (S L) MT -> ty_lwf (S L) Mt -> (forall k, k < 13 -> tm_lwf (br_nu k + L) (bs k)) ->
+  tm_lwf L (elimt l1 l2 (mkrb MT Mt bs) l Δ T t).
+Proof.
+  intros. exact (conj H (conj H0 (conj (mkrb_lwf L MT Mt bs H5 H6 H7) (conj H1 (conj H2 (conj H3 H4)))))).
+Qed.
+
 Theorem typed_lwf :
   (forall G, [ ⊢ G ] -> True) /\
-  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
-  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> lle i lD -> ty_lwf (gL G) T) /\
-  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> lle i lD -> tm_lwf (gL G) t) /\
+  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> ctx_lwf (gL G) Γ) /\
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> ty_lwf (gL G) T) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> tm_lwf (gL G) t) /\
   (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> True) /\
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
   apply typing_mut; intros; try exact I;
-    try match goal with H : lle lM lD |- _ => destruct (lle_D_notM' H eq_refl) end;
-    repeat match goal with IH : lle ?j lD -> _, H : lle ?j lD |- _ => specialize (IH H) end;
-    cbn; try tauto.
-  all: eapply lsub_lwf_entries; [eassumption|];
-    intros ?n ?A ?k ?Hin; match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ =>
-      eapply IH; [eassumption | eauto using lle_trans] end.
+    try solve [apply elimT_lwf; auto | apply elimt_lwf; auto];
+    cbn [ty_lwf tm_lwf ctx_lwf lsub_lwf]; try tauto.
+  (* global variables: the entries of the local substitution *)
+  all: try solve [eapply lsub_lwf_entries; [eassumption|]; intros ?n ?A ?k ?Hin;
+                  match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH; eassumption end].
 Qed.
 
-Lemma wf_ty_lwf {G i Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] -> lle i lD -> ty_lwf (gL G) T.
+Lemma wf_ty_lwf {G i Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] -> ty_lwf (gL G) T.
 Proof. apply typed_lwf. Qed.
-Lemma wf_tm_lwf {G i Γ t T l} : [ G ; Γ ⊢[ i ] t : T @ l ] -> lle i lD -> tm_lwf (gL G) t.
+Lemma wf_tm_lwf {G i Γ t T l} : [ G ; Γ ⊢[ i ] t : T @ l ] -> tm_lwf (gL G) t.
+Proof. apply typed_lwf. Qed.
+Lemma wf_ctx_lwf {G i Γ} : [ G ; Γ ⊢[ i ] ] -> ctx_lwf (gL G) Γ.
 Proof. apply typed_lwf. Qed.
 
 (** ** Levels *)
@@ -444,11 +474,11 @@ Qed.
 Lemma static_code_ty {G i Γ T T' l} : lle i lD -> [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T' @ l ] ->
   ty_leq T T' -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ].
 Proof.
-  intros Hi HT HT' E. exact (proj2 (proj1 (proj2 (proj2 static_code)) _ _ _ _ _ HT Hi _ E (wf_ty_lwf HT' Hi))).
+  intros Hi HT HT' E. exact (proj2 (proj1 (proj2 (proj2 static_code)) _ _ _ _ _ HT Hi _ E (wf_ty_lwf HT'))).
 Qed.
 Lemma static_code_tm {G i Γ t t' T l} : lle i lD -> [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ i ] t' : T @ l ] ->
   tm_leq t t' -> [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ].
 Proof.
   intros Hi Ht Ht' E.
-  exact (proj2 (proj1 (proj2 (proj2 (proj2 static_code))) _ _ _ _ _ _ Ht Hi _ E (wf_tm_lwf Ht' Hi))).
+  exact (proj2 (proj1 (proj2 (proj2 (proj2 static_code))) _ _ _ _ _ _ Ht Hi _ E (wf_tm_lwf Ht'))).
 Qed.
