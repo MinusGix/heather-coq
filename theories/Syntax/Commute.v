@@ -66,6 +66,10 @@ Proof. reflexivity. Qed.
 Lemma ren_letboxt l' l Δ T M t' t :
   (letboxt l' l Δ T M t' t)⟨r⟩ = letboxt l' l Δ T M⟨rlift r⟩ t'⟨r⟩ t⟨r⟩.
 Proof. reflexivity. Qed.
+Lemma ren_elimT l1 l2 rb l Δ t : (elimT l1 l2 rb l Δ t)⟨r⟩ = elimT l1 l2 rb⟨r⟩ l Δ t⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma ren_elimt l1 l2 rb l Δ T t : (elimt l1 l2 rb l Δ T t)⟨r⟩ = elimt l1 l2 rb⟨r⟩ l Δ T t⟨r⟩.
+Proof. reflexivity. Qed.
 
 Lemma subst_tyNat : tyNat[d] = tyNat. Proof. reflexivity. Qed.
 Lemma subst_tyPi l l' A B : (tyPi l l' A B)[d] = tyPi l l' A[d] B[llift d]. Proof. reflexivity. Qed.
@@ -96,18 +100,22 @@ Proof. reflexivity. Qed.
 Lemma subst_letboxt l' l Δ T M t' t :
   (letboxt l' l Δ T M t' t)[d] = letboxt l' l Δ T M[llift d] t'[gwk d] t[d].
 Proof. reflexivity. Qed.
+Lemma subst_elimT l1 l2 rb l Δ t : (elimT l1 l2 rb l Δ t)[d] = elimT l1 l2 rb[d] l Δ t[d].
+Proof. reflexivity. Qed.
+Lemma subst_elimt l1 l2 rb l Δ T t : (elimt l1 l2 rb l Δ T t)[d] = elimt l1 l2 rb[d] l Δ T t[d].
+Proof. reflexivity. Qed.
 End Push.
 
 Ltac push_ren := repeat progress (
   rewrite ?ren_tyNat, ?ren_tyPi, ?ren_tyU, ?ren_tyEl, ?ren_var, ?ren_tmNat, ?ren_tmPi,
           ?ren_tmU, ?ren_zero, ?ren_succ, ?ren_natrec, ?ren_lam, ?ren_app,
           ?ren_tyGvar, ?ren_tyCTyp, ?ren_tyCTrm, ?ren_gvar, ?ren_boxT, ?ren_boxt,
-          ?ren_letboxT, ?ren_letboxt).
+          ?ren_letboxT, ?ren_letboxt, ?ren_elimT, ?ren_elimt).
 Ltac push_subst := repeat progress (
   rewrite ?subst_tyNat, ?subst_tyPi, ?subst_tyU, ?subst_tyEl, ?subst_var, ?subst_tmNat,
           ?subst_tmPi, ?subst_tmU, ?subst_zero, ?subst_succ, ?subst_natrec, ?subst_lam,
           ?subst_app, ?subst_tyGvar, ?subst_tyCTyp, ?subst_tyCTrm, ?subst_gvar, ?subst_boxT,
-          ?subst_boxt, ?subst_letboxT, ?subst_letboxt).
+          ?subst_boxt, ?subst_letboxT, ?subst_letboxt, ?subst_elimT, ?subst_elimt).
 
 (** ** Weakening past a binder *)
 

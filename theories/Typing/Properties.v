@@ -77,6 +77,47 @@ Proof.
   - rewrite gren_ren_ty'. now apply wkr_up.
 Qed.
 
+(** ** Context extensions (the recursors' branch contexts) *)
+
+Lemma cexts_snoc Γ As A l : cexts Γ (As ++ (A, l) :: nil) = cexts Γ As ,, A @ l.
+Proof. revert Γ; induction As as [|[B k] As IH]; intros Γ; cbn; auto. Qed.
+
+Lemma cexts_inv Γ0 As Θ : cexts Γ0 As = Θ ->
+  (As = nil /\ Γ0 = Θ) \/
+  (exists As' A l Θ', As = As' ++ (A, l) :: nil /\ Θ = Θ' ,, A @ l /\ Θ' = cexts Γ0 As').
+Proof.
+  revert Γ0; induction As as [|[A l] As IH] using rev_ind; intros Γ0 H.
+  - left; auto.
+  - right. rewrite cexts_snoc in H. exists As, A, l, (cexts Γ0 As); auto.
+Qed.
+
+Lemma cexts_ren_snoc As A l r :
+  cexts_ren (As ++ (A, l) :: nil) r = cexts_ren As r ++ (A⟨rliftn (length As) r⟩, l) :: nil.
+Proof.
+  revert r; induction As as [|[B k] As IH]; intros r; cbn [cexts_ren List.app length]; auto.
+  rewrite IH. change (rliftn (S (length As)) r) with (rlift (rliftn (length As) r)).
+  now rewrite rliftn_succ.
+Qed.
+
+Lemma wkr_cexts r Δ Γ0 As : wkr r Δ Γ0 ->
+  wkr (rliftn (length As) r) (cexts Δ (cexts_ren As r)) (cexts Γ0 As).
+Proof.
+  revert r Δ Γ0; induction As as [|[A l] As IH]; intros r Δ Γ0 H; cbn [cexts cexts_ren length]; auto.
+  change (rliftn (S (length As)) r) with (rlift (rliftn (length As) r)).
+  rewrite rliftn_succ. apply IH. now constructor.
+Qed.
+
+Lemma wkr_uren r Δ Γ ρ : wkr r Δ Γ -> wkr r (ucren Δ ρ) (ucren Γ ρ).
+Proof.
+  induction 1; cbn [ucren].
+  - apply wkr_id.
+  - now apply wkr_step.
+  - rewrite (proj1 uren_ren_all). now apply wkr_up.
+Qed.
+
+Lemma wkr_wkc r Δ Γ nu ng : wkr r Δ Γ -> wkr r (wkc nu ng Δ) (wkc nu ng Γ).
+Proof. intros H; unfold wkc. apply (wkr_gren _ _ _ (ush ng)), wkr_uren, H. Qed.
+
 (** ** Context extraction *)
 
 Theorem ctx_extract :
@@ -106,7 +147,8 @@ Ltac fold_subst :=
 
 Ltac wk_rewrite :=
   rewrite ?single_ren_ty, ?single_ren, ?lsucc_ren_ty, ?single2_ren,
-          ?shift_lift, ?shift_lift_ty, ?liftshift_lift_ty.
+          ?shift_lift, ?shift_lift_ty, ?liftshift_lift_ty,
+          ?mkrb_ren, ?motT_ren, ?mott_ren, ?wrapMT_ren, ?wrapMt_ren.
 
 #[export] Hint Resolve wfc_ext : wk.
 #[export] Hint Resolve in_ctx_wkr : wk.
@@ -230,6 +272,97 @@ Ltac wk_body :=
         rewrite single_ren_ty, <- gren_ren_ty', ?ren_boxT, ?ren_boxt in X'; exact X' ]
   end.
 
+(** ** The recursors' scopes of a weakened context *)
+
+Definition gwk_stepn (n : nat) : gweak := Nat.iter n gwk_step gwk_id.
+Lemma gwk_stepn_fn n i : gwk_fn (gwk_stepn n) i = n + i.
+Proof. induction n; cbn; auto. Qed.
+Lemma gwk_stepn_wf Ds Ψ : gwk_wf (gwk_stepn (length Ds)) (Ds ++ Ψ) Ψ.
+Proof. induction Ds; cbn; constructor; auto. Qed.
+
+(** [Δ] at [n] fresh levels and under [ng] fresh global bindings [Ds]. *)
+Lemma wf_wkc G i Δ nu Ds : [ G ; Δ ⊢[ i ] ] ->
+  [ ⊢ mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G)) ] ->
+  [ mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G)) ; wkc nu (length Ds) Δ ⊢[ i ] ].
+Proof.
+  intros HΔ HG.
+  pose proof (proj1 (proj2 usubstitution) _ _ _ HΔ (nu + gL G) _ (usub_ok_ush nu (gL G))) as X.
+  rewrite <- gctx_uwk_as in X.
+  rewrite <- (proj1 (proj2 (proj2 uren_as_usubst_all)) Δ (ush nu)) in X by reflexivity.
+  pose proof (proj1 (proj2 gweakening) _ _ _ X _ _ (gwk_stepn_wf Ds _) HG) as Y.
+  unfold wkc. rewrite (proj1 (proj2 (proj2 gren_ext_all)) _ (ush (length Ds)) (gwk_fn (gwk_stepn (length Ds)))).
+  - exact Y.
+  - intros; now rewrite gwk_stepn_fn.
+Qed.
+
+Lemma wf_wkc_br G Δ k : k < 13 -> [ G ; Δ ⊢[ lM ] ] -> [ brG k G ; wkc (br_nu k) (br_ng k) Δ ⊢[ lM ] ].
+Proof.
+  intros Hk HΔ. pose proof (wf_brG (ctx_glob _ _ _ HΔ) k Hk) as HG.
+  rewrite <- (brDecls_len k Hk). apply (wf_wkc _ _ _ _ (brDecls k) HΔ HG).
+Qed.
+
+Lemma wf_recΓT G Δ : [ G ; Δ ⊢[ lM ] ] -> [ recGT G ; recΓT Δ ⊢[ lM ] ].
+Proof.
+  intros HΔ. pose proof (wf_recGT (ctx_glob _ _ _ HΔ)) as HG.
+  unfold recΓT. apply wfc_ext; [ | | exact I].
+  - apply (wf_wkc _ _ _ 1 (gdCtx :: nil) HΔ HG).
+  - apply wft_CTyp; [apply (wf_wkc _ _ _ 1 (gdCtx :: nil) HΔ HG) | apply wfc_var; [exact HG | reflexivity]
+                    | cbn; lia].
+Qed.
+
+Lemma wf_recΓt G Δ : [ G ; Δ ⊢[ lM ] ] -> [ recGt G ; recΓt Δ ⊢[ lM ] ].
+Proof.
+  intros HΔ. pose proof (wf_recGt (ctx_glob _ _ _ HΔ)) as HG.
+  assert (HΔ' : [ recGt G ; wkc 1 2 Δ ⊢[ lM ] ]) by apply (wf_wkc _ _ _ 1 (_ :: gdCtx :: nil) HΔ HG).
+  unfold recΓt. apply wfc_ext; [exact HΔ' | | exact I].
+  apply wft_CTrm; [exact HΔ' | apply wfc_var; [exact HG | reflexivity] | | cbn; lia].
+  eapply wf_gv; [discriminate | apply wfc_var; [exact HG | reflexivity] | glookup | unfold lle; cbn; lia | reflexivity].
+Qed.
+
+Lemma wkr_recΓT r Δ Γ : wkr r Δ Γ -> wkr (rlift r) (recΓT Δ) (recΓT Γ).
+Proof. intros H; unfold recΓT. apply wkr_up'; [exact (wkr_wkc _ _ _ 1 1 H) | reflexivity]. Qed.
+Lemma wkr_recΓt r Δ Γ : wkr r Δ Γ -> wkr (rlift r) (recΓt Δ) (recΓt Γ).
+Proof. intros H; unfold recΓt. apply wkr_up'; [exact (wkr_wkc _ _ _ 1 2 H) | reflexivity]. Qed.
+
+Lemma wkr_brΓ k r Δ Γ wT wt l1 l2 : k < 13 -> wkr r Δ Γ ->
+  wkr (rliftn (br_nl k) r) (brΓ k Δ wT⟨r⟩ wt⟨r⟩ l1 l2) (brΓ k Γ wT wt l1 l2).
+Proof.
+  intros Hk H. unfold brΓ.
+  rewrite <- (brLocs_len k wT wt (lvren l1 (ush (br_nu k))) (lvren l2 (ush (br_nu k))) Hk).
+  rewrite <- brLocs_ren by exact Hk. apply wkr_cexts, wkr_wkc, H.
+Qed.
+
+(** The recursors' premises: motives under [⇑r], branch contexts and
+    branches under [⇑ⁿr]. *)
+Ltac wk_motive :=
+  match goal with
+  | IH : forall Δ r, wkr r Δ (recΓT ?Γ) -> _ -> _, Hr : wkr ?r ?Δ ?Γ, HΔ : wf_ctx _ _ ?Δ |- _ =>
+      apply IH; [apply wkr_recΓT, Hr | apply wf_recΓT, HΔ]
+  | IH : forall Δ r, wkr r Δ (recΓt ?Γ) -> _ -> _, Hr : wkr ?r ?Δ ?Γ, HΔ : wf_ctx _ _ ?Δ |- _ =>
+      apply IH; [apply wkr_recΓt, Hr | apply wf_recΓt, HΔ]
+  end.
+Ltac wk_brctx :=
+  let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
+  match goal with
+  | IH : forall k, k < 13 -> forall Γ0 As, brΓ k ?Γ ?wT ?wt ?l1 ?l2 = cexts Γ0 As -> _,
+    Hr : wkr ?r ?Δ ?Γ, HΔ : wf_ctx _ _ ?Δ |- _ =>
+      let X := fresh "X" in
+      pose proof (IH k Hk _ _ eq_refl _ _ (wkr_wkc _ _ _ (br_nu k) (br_ng k) Hr) (wf_wkc_br _ _ k Hk HΔ)) as X;
+      rewrite brLocs_ren in X by exact Hk; exact X
+  end.
+Ltac wk_branches :=
+  let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
+  match goal with
+  | IH : forall k, k < 13 -> forall Δ r, wkr r Δ (brΓ k ?Γ ?wT ?wt ?l1 ?l2) -> _ -> _,
+    IHc : forall k, k < 13 -> forall Γ0 As, brΓ k ?Γ ?wT ?wt ?l1 ?l2 = cexts Γ0 As -> _,
+    Hr : wkr ?r ?Δ ?Γ, HΔ : wf_ctx _ _ ?Δ |- _ =>
+      let X := fresh "X" in let C := fresh "C" in
+      pose proof (IHc k Hk _ _ eq_refl _ _ (wkr_wkc _ _ _ (br_nu k) (br_ng k) Hr) (wf_wkc_br _ _ k Hk HΔ)) as C;
+      rewrite brLocs_ren in C by exact Hk;
+      pose proof (IH k Hk _ _ (wkr_brΓ k _ _ _ wT wt l1 l2 Hk Hr) C) as X;
+      rewrite brRes_ren in X by exact Hk; exact X
+  end.
+
 Ltac wk_manual :=
   match goal with
   | |- wf_tm _ _ _ (natrec _ _ _ _ _) _ _ => eapply wf_natrec; wk_premise
@@ -259,11 +392,50 @@ Ltac wk_manual :=
       rewrite <- gsubst_ren; eapply eqtm_letboxt_beta; try wk_body; wk_premise
   | |- eq_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ _ => eapply eqtm_letboxT; try wk_body; wk_premise
   | |- eq_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ _ => eapply eqtm_letboxt; try wk_body; wk_premise
+  | |- wf_tm _ _ _ (elimT _ _ _ _ _ _) _ _ =>
+      eapply wf_elimT; [ .. | wk_motive | wk_motive | wk_brctx | wk_branches | ]; wk_premise
+  | |- wf_tm _ _ _ (elimt _ _ _ _ _ _ _) _ _ =>
+      eapply wf_elimt; [ .. | wk_motive | wk_motive | wk_brctx | wk_branches | | ]; wk_premise
+  | |- eq_tm _ _ _ (elimT _ _ _ _ _ (boxT _)) _ _ _ =>
+      eapply eqtm_elimT_beta; [wk_premise | now apply redT_ren]
+  | |- eq_tm _ _ _ (elimt _ _ _ _ _ _ (boxt _)) _ _ _ =>
+      eapply eqtm_elimt_beta; [wk_premise | now apply redt_ren]
+  | |- eq_tm _ _ _ (elimT _ _ _ _ _ _) _ _ _ =>
+      eapply eqtm_elimT;
+      [ .. | wk_motive | wk_motive | wk_motive | wk_motive | wk_motive | wk_motive
+           | wk_brctx | wk_brctx | wk_branches | wk_branches | ]; wk_premise
+  | |- eq_tm _ _ _ (elimt _ _ _ _ _ _ _) _ _ _ =>
+      eapply eqtm_elimt;
+      [ .. | wk_motive | wk_motive | wk_motive | wk_motive | wk_motive | wk_motive
+           | wk_brctx | wk_brctx | wk_branches | wk_branches | ]; wk_premise
+  end.
+
+(** The context cases: a prefix [Γ] of [cexts Γ As] is weakened. *)
+Ltac wk_ctx :=
+  match goal with
+  | Heq : _ = cexts ?Γ0 ?As, Hr : wkr ?r ?Δ ?Γ0, HΔ : wf_ctx _ _ ?Δ |- _ =>
+      let As' := fresh "As'" in let A' := fresh "A'" in let l' := fresh "l'" in
+      let Θ' := fresh "Θ'" in let Hθ := fresh "Hθ" in
+      destruct (cexts_inv _ _ _ (eq_sym Heq)) as [[-> ?] | (As' & A' & l' & Θ' & -> & Hθ & ->)];
+      [ cbn; exact HΔ
+      | first [ discriminate Hθ
+              | let HΓ := fresh "HΓ" in
+                injection Hθ as HΓ <- <-; rewrite cexts_ren_snoc, cexts_snoc;
+                match goal with
+                | IHc : forall Γ As, _ = cexts Γ As -> _, IHt : forall Δ r, wkr r Δ _ -> _ -> _ |- _ =>
+                    let X := fresh "X" in
+                    pose proof (IHc _ _ HΓ _ _ Hr HΔ) as X;
+                    apply wfc_ext; [ exact X
+                                   | apply IHt; [ rewrite HΓ; now apply wkr_cexts
+                                                | eapply lift_ctx; [exact X | apply lle_self_typeof] ]
+                                   | assumption ]
+                end ] ]
   end.
 
 Theorem weakening_all :
   (forall G, [ ⊢ G ] -> True) /\
-  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
+  (forall G i Θ, [ G ; Θ ⊢[ i ] ] -> forall Γ As, Θ = cexts Γ As ->
+     forall Δ r, wkr r Δ Γ -> [ G ; Δ ⊢[ i ] ] -> [ G ; cexts Δ (cexts_ren As r) ⊢[ i ] ]) /\
   (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] ->
      forall Δ r, wkr r Δ Γ -> [ G ; Δ ⊢[ typeof i ] ] -> [ G ; Δ ⊢[ i ] T⟨r⟩ @ l ]) /\
   (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] ->
@@ -274,7 +446,7 @@ Theorem weakening_all :
      forall Δ r, wkr r Δ Γ -> [ G ; Δ ⊢[ typeof i ] ] -> [ G ; Δ ⊢[ i ] t⟨r⟩ ≅ t'⟨r⟩ : T⟨r⟩ @ l ]) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; try exact I; cbn [typeof] in *; push_ren; wk_rewrite; push_ren.
+  apply typing_mut; intros; try exact I; try wk_ctx; cbn [typeof] in *; push_ren; wk_rewrite; push_ren.
   all: try wk_step.
   all: wk_manual.
 Qed.

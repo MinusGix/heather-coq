@@ -117,6 +117,44 @@ substitution lemma). No relation-level stability under `φ` is needed. The
 recursor case needs `∀φ` for the branch premises, which are typed under
 `L + nu` and instantiated at `(φ, levels of the code)`.
 
+### E7. Branch contexts: a context premise, prefix-wise weakening and substitution
+
+A branch is typed in a context extended by the types of its recursive
+calls (motive instances). Local weakening and local substitution cannot
+rebuild that extended context from their induction hypotheses, since the
+entries' derivations are not premises. So the recursor rules carry the
+branch contexts' well-formedness as a premise
+(`[brG k G ; brΓ k Γ … ⊢M]`, redundant as in logrel-coq-style rules), and
+the context motives of local weakening and local substitution are
+prefix-wise: for `Θ = cexts Γ As`, weakening/substituting `Γ` lifts through
+`As` (`cexts_ren`, `cexts_sub`). Universe substitution and global
+weakening already have context motives that absorb it.
+
+Operations commute with peeling only on terms not headed by a (global)
+variable (`hd_ok`); the bundles built by `mkrb`/`wrapMT`/`wrapMt` satisfy
+this by computation, and a typed recursor's bundle is literally
+`mkrb MT Mt bs` (`elimT_rb_shape`).
+
+### E8. Functionality in two stages
+
+Functionality of a recursor needs the branch entries converted between
+`d` and `d'`: motive instances, whose equality is derived with the global
+substitution lemma. The global substitution lemma in turn uses
+functionality for global type/term variables, whose images are typed at
+C/P and so contain no recursor. Hence: functionality first for
+recursor-free subjects (`norec`), then global substitution, then
+functionality for everything (`FunctionalityM`).
+
+### E9. Global substitution of context variables by concrete contexts
+
+The recursor's result type `M_Typ[l/ℓ, Δ/g, t/x_T]`, its β reducts, and
+the branch scopes' instances `(g, x : U_S^id)/g` instantiate a context
+variable with a concrete context. M2 restricted the global substitution
+lemma to context variables ↦ context variables (deferred to M2b's `CΠ`);
+M3 lifts the restriction ("tail expansion": a context ending in `g`
+becomes the entries followed by the image, lengths and the tail
+condition of typed local substitutions shift accordingly).
+
 ## Order of work
 
 1. **Syntax** (done). Level renaming and substitution; the bundle nodes,

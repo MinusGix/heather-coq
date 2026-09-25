@@ -320,8 +320,8 @@ Ltac fung_entries :=
       rewrite <- (subst_subst_ty A e d0 (lcomp e d0) (fun m => llk_lcomp e d0 m))
   end;
   first
-  [ match goal with IH : forall n A k (_ : in_ctx _ n A k) Δ d d', _ |- _ =>
-      eapply (IH n A k Hin); eassumption end
+  [ match goal with IH : forall n A k (_ : in_ctx _ n A k) (_ : norec_tm _) Δ d d', _ |- _ =>
+      eapply (IH n A k Hin); [apply norec_llk; assumption | eassumption] end
   | match goal with
     | w : forall n A k (_ : in_ctx _ n A k), wf_tm _ _ _ _ _ _, Hd : lsub_eq _ _ _ _ _ _ |- _ =>
         eapply (wf_tm_subst_g (w n A k Hin)); first [exact (lsub_eq_l Hd) | exact (lsub_eq_r Hd)]
@@ -386,18 +386,33 @@ Ltac fung_manual :=
       eauto 6 using eqc_refl, lequiv_refl, eqty_refl, wf_ty_subst_g, lequiv_wf_l with fung
   end.
 
+(** Functionality for recursor-free subjects (M3_DESIGN.md E8); the full
+    statement is [FunctionalityM.functionality_full]. *)
+#[export] Hint Extern 1 (norec_tm _) =>
+  first [assumption | apply norec_llk; assumption | cbn; tauto] : fung.
+#[export] Hint Extern 1 (norec_ty _) => first [assumption | cbn; tauto] : fung.
+
+Ltac norec_split :=
+  cbn [norec_ty norec_tm norec_ctx norec_l] in *;
+  repeat match goal with H : _ /\ _ |- _ => destruct H end;
+  try contradiction;
+  repeat match goal with
+         | IH : norec_tm ?t -> _, H : norec_tm ?t |- _ => specialize (IH H)
+         | IH : norec_ty ?t -> _, H : norec_ty ?t |- _ => specialize (IH H)
+         end.
+
 Theorem functionality_all :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
-  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] ->
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> norec_ty T ->
      forall Δ d d', [ G ; Δ ⊢[ i ] d ≅ d' : Γ ] -> [ G ; Δ ⊢[ i ] T[d] ≅ T[d'] @ l ]) /\
-  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] ->
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> norec_tm t ->
      forall Δ d d', [ G ; Δ ⊢[ i ] d ≅ d' : Γ ] -> [ G ; Δ ⊢[ i ] t[d] ≅ t[d'] : T[d] @ l ]) /\
   (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> True) /\
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; try exact I;
+  apply typing_mut; intros; try exact I; norec_split;
     try match goal with c : compt ?i |- _ => pose proof (compt_notV _ c) end;
     try match goal with Hd : lsub_eq _ _ _ _ _ _ |- _ => pose proof (lsub_eq_l Hd) end;
     cbn [typeof] in *; sub_rw.
@@ -440,9 +455,9 @@ Qed.
 Theorem functionality :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
-  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> typeof i = i ->
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> typeof i = i -> norec_ty T ->
      forall Δ d d', [ G ; Δ ⊢[ i ] d ≅ d' : Γ ] -> [ G ; Δ ⊢[ i ] T[d] ≅ T[d'] @ l ]) /\
-  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> typeof i = i ->
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> typeof i = i -> norec_tm t ->
      forall Δ d d', [ G ; Δ ⊢[ i ] d ≅ d' : Γ ] -> [ G ; Δ ⊢[ i ] t[d] ≅ t[d'] : T[d] @ l ]) /\
   (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> True) /\
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
@@ -451,3 +466,51 @@ Proof.
   destruct functionality_all as (_ & _ & H1 & H2 & _).
   refine (conj (fun _ _ => I) (conj (fun _ _ _ _ => I) (conj _ (conj _ (conj _ _))))); intros; eauto.
 Qed.
+
+(** ** Typed below layer M: recursor-free *)
+
+Lemma in_ctx_lt Δ n : n < clen Δ -> exists A k, in_ctx Δ n A k.
+Proof.
+  revert n; induction Δ as [| g | Δ IH A k]; intros n Hn; cbn in Hn; try lia.
+  destruct n as [|n].
+  - exists A⟨↑⟩, k; constructor.
+  - destruct (IH n ltac:(lia)) as (B & k' & HB). exists B⟨↑⟩, k'; now constructor.
+Qed.
+
+Lemma norec_l_lk d : (forall n, norec_tm (llk d n)) -> norec_l d.
+Proof.
+  induction d as [k|d IH t]; intros H; cbn; auto.
+  split; [apply IH; intros n; exact (H (S n)) | exact (H 0)].
+Qed.
+
+Lemma norec_lsub d Δ Γ : lsub_tail d Δ Γ ->
+  (forall n A k, in_ctx Δ n A k -> norec_tm (llk d n)) -> norec_l d.
+Proof.
+  intros [_ Ht] H. apply norec_l_lk. intros n.
+  destruct (Nat.lt_ge_cases n (clen Δ)) as [Hn|Hn].
+  - destruct (in_ctx_lt _ _ Hn) as (A & k & HA); eauto.
+  - replace n with (clen Δ + (n - clen Δ)) by lia. rewrite Ht. exact I.
+Qed.
+
+Theorem low_norec :
+  (forall G, [ ⊢ G ] -> True) /\
+  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i <> lM -> norec_ty T) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i <> lM -> norec_tm t) /\
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> True) /\
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
+  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
+Proof.
+  apply typing_mut; intros; try exact I; cbn; try congruence;
+    repeat match goal with
+           | H : ?i <> lM -> _, Hi : ?i <> lM |- _ => specialize (H Hi)
+           end;
+    try (eapply norec_lsub; [eassumption | intros; eauto]);
+    intuition auto.
+Qed.
+
+Lemma wf_ty_norec {G i Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] -> i <> lM -> norec_ty T.
+Proof. intros H; exact (proj1 (proj2 (proj2 low_norec)) _ _ _ _ _ H). Qed.
+Lemma wf_tm_norec {G i Γ t T l} : [ G ; Γ ⊢[ i ] t : T @ l ] -> i <> lM -> norec_tm t.
+Proof. intros H; exact (proj1 (proj2 (proj2 (proj2 low_norec))) _ _ _ _ _ _ H). Qed.
+

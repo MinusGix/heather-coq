@@ -141,3 +141,40 @@ Definition redt (l : lvl) (Δ : ctx) (T : ty) (c : tm) : option tm :=
   end.
 
 End Reducts.
+
+(** ** Recursor-free syntax (M3_DESIGN.md E8) *)
+
+Fixpoint norec_ty (T : ty) : Prop :=
+  match T with
+  | tyErr | tyNat | tyU _ => True
+  | tyPi _ _ A B => norec_ty A /\ norec_ty B
+  | tyEl _ t => norec_tm t
+  | tyGvar _ d => norec_l d
+  | tyCTyp Δ _ => norec_ctx Δ
+  | tyCTrm Δ T _ => norec_ctx Δ /\ norec_ty T
+  end
+with norec_tm (t : tm) : Prop :=
+  match t with
+  | var _ | tmErr | tmNat | tmU _ | zero => True
+  | tmPi _ _ s t => norec_tm s /\ norec_tm t
+  | succ t => norec_tm t
+  | natrec _ M s z t => norec_ty M /\ norec_tm s /\ norec_tm z /\ norec_tm t
+  | lam _ _ A t => norec_ty A /\ norec_tm t
+  | app t _ _ A B s => norec_tm t /\ norec_ty A /\ norec_ty B /\ norec_tm s
+  | gvar _ d => norec_l d
+  | boxT T => norec_ty T
+  | boxt t => norec_tm t
+  | letboxT _ _ Δ M t' t => norec_ctx Δ /\ norec_ty M /\ norec_tm t' /\ norec_tm t
+  | letboxt _ _ Δ T M t' t => norec_ctx Δ /\ norec_ty T /\ norec_ty M /\ norec_tm t' /\ norec_tm t
+  | tmTy T => norec_ty T
+  | tmTup s t => norec_tm s /\ norec_tm t
+  | bindU b | bindG b | bindL b => norec_tm b
+  | elimT _ _ _ _ _ _ | elimt _ _ _ _ _ _ _ => False
+  end
+with norec_ctx (Γ : ctx) : Prop :=
+  match Γ with cnil | cvar _ => True | cext Γ A _ => norec_ctx Γ /\ norec_ty A end
+with norec_l (d : lsub) : Prop :=
+  match d with lshift _ => True | lcons d t => norec_l d /\ norec_tm t end.
+
+Lemma norec_llk d n : norec_l d -> norec_tm (llk d n).
+Proof. revert n; induction d as [k|d IH t]; intros [|n] H; cbn in *; try tauto; apply IH; tauto. Qed.

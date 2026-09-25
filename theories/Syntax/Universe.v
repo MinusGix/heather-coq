@@ -159,6 +159,18 @@ Proof.
     rewrite llk_ulsubst; match goal with IH : dnfl ?d -> LK _ ?d |- _ => apply IH end; auto with nf.
 Qed.
 
+(** Universe substitution outputs are deep-normal (it never instantiates a
+    global or local variable). *)
+Lemma usubst_dnf_all :
+  let Pty T := forall φ, dnfty (usubst_ty T φ) in
+  let Ptm t := forall φ, dnftm (usubst_tm t φ) in
+  let Pctx Γ := forall φ, dnfctx (ucsubst Γ φ) in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ, Pctx Γ) /\ (forall d, forall φ, dnfl (ulsubst d φ)).
+Proof.
+  intros Pty Ptm Pctx; apply syn_ind; subst Pty Ptm Pctx; cbn beta; intros; try exact I;
+    cbn; intuition auto using dnfl_lcons'.
+Qed.
+
 (** ** Exported laws, in notation form *)
 
 Section ULaws.
