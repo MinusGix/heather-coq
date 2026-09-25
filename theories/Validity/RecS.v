@@ -392,7 +392,7 @@ End RecS.
 
 
 (** ** β reducts of a moved bundle at the type heads *)
-Ltac forall_tac := solve [repeat (apply Forall_cons; [assumption|]); apply Forall_nil].
+Ltac forall_tac := solve [repeat (apply Forall_cons; [first [assumption | exact I]|]); apply Forall_nil].
 
 Section Red.
 Variables (MT Mt : ty) (bs : nat -> tm) (φ : nat -> lvl) (σ : gsub) (e : lsub) (l1 l2 : lvl).
@@ -426,6 +426,70 @@ Lemma redT_El_inst k0 Δ k t : dnftm (bs 3) -> gdnf σ -> LK dnftm e -> dnfctx �
   Some (((usubst_tm (bs 3) (uext (k :: nil) φ))⦃gext_s (GCtx Δ :: GTm t :: nil) σ⦄)
           [lext (elimt l1 l2 rb (lsuc k) Δ (tyU k) (boxt t) :: nil) e]).
 Proof. intros Hb Hσ He HΔ Ht H1. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+(** Term heads. *)
+Local Notation rect k Δ T c := (elimt l1 l2 rb k Δ T (boxt c)).
+Local Notation recT k Δ c := (elimT l1 l2 rb k Δ (boxT c)).
+
+Lemma redt_var_inst k0 Δ T n : dnftm (bs 4) -> gdnf σ -> LK dnftm e -> dnfctx Δ -> dnfty T ->
+  redt l1 l2 rb k0 Δ T (var n) =
+  Some (((usubst_tm (bs 4) (uext (k0 :: nil) φ))⦃gext_s (GCtx Δ :: GTy T :: GTm (var n) :: nil) σ⦄)[lext nil e]).
+Proof. intros. rewrite <- branch_inst by first [forall_tac | assumption | exact I]. reflexivity. Qed.
+
+Lemma redt_nat_inst k0 Δ T : dnftm (bs 5) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  redt l1 l2 rb k0 Δ T tmNat =
+  Some (((usubst_tm (bs 5) (uext nil φ))⦃gext_s (GCtx Δ :: nil) σ⦄)[lext nil e]).
+Proof. intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_pi_inst k0 Δ T k k' s0 t0 : dnftm (bs 6) -> gdnf σ -> LK dnftm e -> dnfctx Δ -> dnftm s0 -> dnftm t0 ->
+  dnftm (rect (lsuc k) Δ (tyU k) s0) -> dnftm (rect (lsuc k') (cext Δ (tyEl k s0) k) (tyU k') t0) ->
+  redt l1 l2 rb k0 Δ T (tmPi k k' s0 t0) =
+  Some (((usubst_tm (bs 6) (uext (k :: k' :: nil) φ))⦃gext_s (GCtx Δ :: GTm s0 :: GTm t0 :: nil) σ⦄)
+          [lext (rect (lsuc k) Δ (tyU k) s0 :: rect (lsuc k') (cext Δ (tyEl k s0) k) (tyU k') t0 :: nil) e]).
+Proof. intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_U_inst k0 Δ T k : dnftm (bs 7) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  redt l1 l2 rb k0 Δ T (tmU k) =
+  Some (((usubst_tm (bs 7) (uext (k :: nil) φ))⦃gext_s (GCtx Δ :: nil) σ⦄)[lext nil e]).
+Proof. intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_zero_inst k0 Δ T : dnftm (bs 8) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  redt l1 l2 rb k0 Δ T zero =
+  Some (((usubst_tm (bs 8) (uext nil φ))⦃gext_s (GCtx Δ :: nil) σ⦄)[lext nil e]).
+Proof. intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_succ_inst k0 Δ T t0 : dnftm (bs 9) -> gdnf σ -> LK dnftm e -> dnfctx Δ -> dnftm t0 ->
+  dnftm (rect lzero Δ tyNat t0) ->
+  redt l1 l2 rb k0 Δ T (succ t0) =
+  Some (((usubst_tm (bs 9) (uext nil φ))⦃gext_s (GCtx Δ :: GTm t0 :: nil) σ⦄)[lext (rect lzero Δ tyNat t0 :: nil) e]).
+Proof. intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_natrec_inst k0 Δ T k M s0 z0 t0 : dnftm (bs 10) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  dnfty M -> dnftm s0 -> dnftm z0 -> dnftm t0 ->
+  dnftm (recT k (cext Δ tyNat lzero) M) -> dnftm (rect k Δ (subst_ty M (lsingle zero)) s0) ->
+  dnftm (rect k (cext (cext Δ tyNat lzero) M k) (subst_ty M lsucc) z0) -> dnftm (rect lzero Δ tyNat t0) ->
+  redt l1 l2 rb k0 Δ T (natrec k M s0 z0 t0) =
+  Some (((usubst_tm (bs 10) (uext (k :: nil) φ))⦃gext_s (GCtx Δ :: GTy M :: GTm s0 :: GTm z0 :: GTm t0 :: nil) σ⦄)
+          [lext (recT k (cext Δ tyNat lzero) M :: rect k Δ (subst_ty M (lsingle zero)) s0 ::
+                 rect k (cext (cext Δ tyNat lzero) M k) (subst_ty M lsucc) z0 :: rect lzero Δ tyNat t0 :: nil) e]).
+Proof. intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_lam_inst k0 Δ k1 k2 C B k k' A b : dnftm (bs 11) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  dnfty A -> dnfty B -> dnftm b ->
+  dnftm (recT k Δ A) -> dnftm (rect k' (cext Δ A k) B b) ->
+  redt l1 l2 rb k0 Δ (tyPi k1 k2 C B) (lam k k' A b) =
+  Some (((usubst_tm (bs 11) (uext (k :: k' :: nil) φ))⦃gext_s (GCtx Δ :: GTy A :: GTy B :: GTm b :: nil) σ⦄)
+          [lext (recT k Δ A :: rect k' (cext Δ A k) B b :: nil) e]).
+Proof. intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_app_inst k0 Δ T k k' A B f a : dnftm (bs 12) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  dnfty A -> dnfty B -> dnftm f -> dnftm a ->
+  dnftm (recT k Δ A) -> dnftm (recT k' (cext Δ A k) B) ->
+  dnftm (rect (lmax k k') Δ (tyPi k k' A B) f) -> dnftm (rect k Δ A a) ->
+  redt l1 l2 rb k0 Δ T (app f k k' A B a) =
+  Some (((usubst_tm (bs 12) (uext (k :: k' :: nil) φ))⦃gext_s (GCtx Δ :: GTy A :: GTy B :: GTm f :: GTm a :: nil) σ⦄)
+          [lext (recT k Δ A :: recT k' (cext Δ A k) B :: rect (lmax k k') Δ (tyPi k k' A B) f :: rect k Δ A a :: nil) e]).
+Proof. intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
 
 End Red.
 
@@ -645,6 +709,42 @@ Proof.
   destruct (CtxRelG_of_eq EP EM (eqc_refl _ _ _ HΔ)) as [CP CM].
   apply (LRtm_boxt EP EM HΘ HΔ HA Ht Ht' E); [rewrite EL; exact Hk | | exact AP | exact AM | exact VP | exact VM].
   exact (conj (eqc_refl _ _ _ HΔ) (conj CP CM)).
+Qed.
+
+(** ** The common part of a branch case
+
+    Both reducts come from the branches' validity; the right one is
+    switched from the left levels to its own by level invariance. *)
+
+Lemma br_core k ls ls' os os' xsL xsR goalL goalR l : k < 13 ->
+  length ls = br_nu k -> length ls' = br_nu k -> Forall (lwf L') ls -> Forall (lwf L') ls' ->
+  (forall i, leqv (uext ls φ i) (uext ls' φ i)) ->
+  GSubRel G' (G_us (brG k G0) L' (uext ls φ)) (gext_s os σ) (gext_s os' σ') ->
+  GSubRel G' (G_us (brG k G0) L' (uext ls' φ)) (gext_s os' σ') (gext_s os' σ') ->
+  SubRelM G' ((ucsubst (brΓ k Γ0 (wrapMT MT) (wrapMt Mt) l1 l2) (uext ls φ))⦃gext_s os σ⦄) Θ (lext xsL e) (lext xsR e') ->
+  SubRelM G' ((ucsubst (brΓ k Γ0 (wrapMT MT') (wrapMt Mt') l1' l2') (uext ls' φ))⦃gext_s os' σ'⦄) Θ
+    (lext xsR e') (lext xsR e') ->
+  LRtyM l G' Θ goalL (((usubst_ty (brRes k (wrapMT MT) (wrapMt Mt)) (uext ls φ))⦃gext_s os σ⦄)[lext xsL e]) ->
+  LRtyM l G' Θ (((usubst_ty (brRes k (wrapMT MT) (wrapMt Mt)) (uext ls φ))⦃gext_s os σ⦄)[lext xsR e']) goalR ->
+  LRtyM l G' Θ goalR (((usubst_ty (brRes k (wrapMT MT') (wrapMt Mt')) (uext ls' φ))⦃gext_s os' σ'⦄)[lext xsR e']) ->
+  lequiv (gL G') l (lvsubst (brLv k l1 l2) (uext ls φ)) ->
+  lequiv (gL G') l (lvsubst (brLv k l1' l2') (uext ls' φ)) ->
+  LRtmM l G' Θ goalL goalR (((usubst_tm (bs k) (uext ls φ))⦃gext_s os σ⦄)[lext xsL e])
+    (((usubst_tm (bs' k) (uext ls' φ))⦃gext_s os' σ'⦄)[lext xsR e']).
+Proof.
+  intros Hk Hn Hn' Hls Hls' Eψ GS1 GS2 SR1 SR2 T1 T2 T3 Hl Hl'.
+  assert (Hψ : usub_ok (uext ls φ) L' (gL (brG k G0))).
+  { unfold brG, gctx_uwk; cbn [gL]. rewrite <- Hn. exact (usub_ok_uext ls φ L' (gL G0) Hls Hφ). }
+  assert (Hψ' : usub_ok (uext ls' φ) L' (gL (brG k G0))).
+  { unfold brG, gctx_uwk; cbn [gL]. rewrite <- Hn'. exact (usub_ok_uext ls' φ L' (gL G0) Hls' Hφ). }
+  pose proof (VBr k Hk _ _ Hψ _ _ _ GS1 G' gwk_id (gwk_ok_id G') _ _ _ SR1) as Z1; cbn [gwa] in Z1.
+  pose proof (VBr' k Hk _ _ Hψ' _ _ _ GS2 G' gwk_id (gwk_ok_id G') _ _ _ SR2) as Z2; cbn [gwa] in Z2.
+  pose proof (LRtm_conv_r (LRtm_conv_l (LRtm_lconv Z1 Hl) T1) T2) as W1.
+  pose proof (LRtm_conv_r (LRtm_conv_l (LRtm_lconv Z2 Hl') T3) (LRty_sym T3)) as W2.
+  refine (LRtm_leq W1 W2 _).
+  apply (proj1 (proj2 leq_subst_all)); [apply lsub_leq_refl |].
+  apply (proj1 (proj2 leq_gsubst_all)); [intros; apply gobj_leq_refl |].
+  apply (proj1 (proj2 leq_usubst_all)); [exact Eψ | apply tm_leq_refl].
 Qed.
 
 (** ** Natural numbers *)
