@@ -244,6 +244,43 @@ paper: the declarative system has one more (admissible) rule at M. Each
 typing induction has one more case, closed by the `≡ₗ` closure lemmas
 of `LevelEq.v`.
 
+### E13. The recursion lemmas: architecture
+
+The FT case for `elim_Typ` (congruence form; typing is the reflexive
+instance, β follows by anti-reduction) unfolds validity to: related
+global substitutions `σ ≈ σ'` into `G[φ]`, related local ones `e ≈ e'`
+into `Γ[φ]⦃σ⦄`, and a scrutinee whose whnfs are either related neutrals
+or `box c`, `box c'` with `c ≡ₗ c'` C-typed in `Δ⦃σ⦄` (the payload).
+- **Recursion lemmas** (`rec_T`, `rec_t`, mutual): by induction on the
+  C-typing derivation of `c` *at the target* `G'` (E5: no semantic
+  record), for all related contexts `Δ ≈ Δ'` (P, both instances, and
+  declaratively) and `c' ≡ₗ c`, `elimT … (box c)` and `elimT' … (box c')`
+  are related at the motive instances. `rec_t` quantifies over index
+  types convertible to the derivation's type (the conversion case, and
+  the `λ` case, which reads the index's whnf).
+- **A β reduct is a substitution instance of its branch**: peeling a
+  wrapped branch with level, global and local lists is the triple
+  substitution by `ulist`/`glist`/`llist` (`peel_wrap`). The branch's
+  validity (the FT's `∀ψ` induction hypothesis) is instantiated at
+  `ψ = levels(c) ++ φ`, at `σ` extended by the code's pieces (`GCtx Δ`,
+  `GTy A`, …), and at `e` extended by the recursive calls (related by the
+  recursion hypotheses). Left and right codes have `≡ₗ`-related levels:
+  both reducts are instantiated at the left levels, then the right one is
+  switched back by level invariance (E6').
+- **Images are related from syntax**: a pair of well-typed images at a
+  static declaration (`≡ₗ`-related at C, declaratively equal at P/V,
+  contexts declaratively equal) is `GObjRel`-related, by the FT at P at
+  the identity instance and `VTyG_leq`. This builds the extensions of
+  `σ` by code pieces, and the universe weakening `GSubRel_uwk` that the
+  neutral case needs (the branches are compared under their `nu` level
+  binders at `ψ = uupn nu φ`); the relation itself is never universe
+  weakened (M4).
+- **Neutral scrutinees** (neutral, or a boxed global variable): the
+  neutral recursion laws, whose `ElimPrem` comes from the motives' and
+  branches' validity at the identity extension of `σ` (escape).
+- **Typed reductions**: the reduct's typing comes by escape from its
+  reducibility (E10).
+
 ## Order of work
 
 1. **Syntax** (done). Level renaming and substitution; the bundle nodes,
