@@ -130,6 +130,12 @@ Proof.
   eapply wft_lconv; [exact X | now apply lequiv_sym].
 Qed.
 
+Ltac decl_elim_prem :=
+  match goal with HΔ : @geq_ctx _ _ _ _ |- _ =>
+    let HΔ' := fresh "HΔ'" in pose proof (decl_geq_ctx _ _ HΔ) as HΔ';
+    pose proof (eqctx_wf_l (i := lD) eq_refl HΔ'); pose proof (eqctx_wf_r (i := lD) eq_refl HΔ')
+  end.
+
 (** The layer-M laws, relating the instances at P and M. *)
 #[export] Instance DeclEqM : GenericEqM (DeclEq lD compt_D) (DeclEq lM compt_M).
 Proof.
@@ -153,4 +159,13 @@ Proof.
     + exact (eqctx_wf_l (i := lD) eq_refl HΔ').
     + exact (eqctx_wf_r (i := lD) eq_refl HΔ').
     + exact (decl_ty_ctxconv_D HΔ' (eqty_wf_r (i := lD) eq_refl HTT) Hl2).
+  (* neutral recursion on code *)
+  - intros * Hmot [H1 H2 H3 HΔ HMT HMTe HMT' HMt HMte HMt' Hc Hc' Hb Hb'] (Hn & Hn' & Hν).
+    decl_elim_prem. refine (conj _ (conj _ _)); [whne_step .. |]. apply eqtm_elimT; auto.
+  - intros * Hmot [H1 H2 H3 HΔ HMT HMTe HMT' HMt HMte HMt' Hc Hc' Hb Hb'] Ht.
+    decl_elim_prem. refine (conj _ (conj _ _)); [whne_step .. |]. apply eqtm_elimT; auto using eqtm_refl.
+  - intros * Hmot [H1 H2 H3 HΔ HMT HMTe HMT' HMt HMte HMt' Hc Hc' Hb Hb'] HT HT' HTT (Hn & Hn' & Hν).
+    decl_elim_prem. refine (conj _ (conj _ _)); [whne_step .. |]. apply eqtm_elimt; auto.
+  - intros * Hmot [H1 H2 H3 HΔ HMT HMTe HMT' HMt HMte HMt' Hc Hc' Hb Hb'] HT HT' HTT Ht.
+    decl_elim_prem. refine (conj _ (conj _ _)); [whne_step .. |]. apply eqtm_elimt; auto using eqtm_refl.
 Qed.

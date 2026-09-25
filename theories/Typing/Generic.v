@@ -212,6 +212,28 @@ Proof.
   apply eqc_ext; auto using geq_ty_sound.
 Qed.
 
+(** The recursors' common premises for the neutral recursion laws: levels,
+    index contexts, both sides' motives and branches (typed, and related by
+    the generic equivalence at M). *)
+Record ElimPrem (EP EM : GenericEq) G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' : Prop := {
+  ep_l1 : lequiv (gL G) l1 l1' ;
+  ep_l2 : lequiv (gL G) l2 l2' ;
+  ep_l : lequiv (gL G) l l' ;
+  ep_Δ : @geq_ctx EP G Δ Δ' ;
+  ep_MT : [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] ;
+  ep_MTeq : @geq_ty EM (recGT G) (recΓT Γ) MT MT' (lvren l1 (ush 1)) ;
+  ep_MT' : [ recGT G ; recΓT Γ ⊢[ lM ] MT' @ lvren l1' (ush 1) ] ;
+  ep_Mt : [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] ;
+  ep_Mteq : @geq_ty EM (recGt G) (recΓt Γ) Mt Mt' (lvren l2 (ush 1)) ;
+  ep_Mt' : [ recGt G ; recΓt Γ ⊢[ lM ] Mt' @ lvren l2' (ush 1) ] ;
+  ep_brctx : forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ] ;
+  ep_brctx' : forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ] ;
+  ep_br : forall k, k < 13 -> @geq_tm EM (brG k G) (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+                                (bs k) (bs' k) (brRes k (wrapMT MT) (wrapMt Mt)) (brLv k l1 l2) ;
+  ep_br' : forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+                                bs' k : brRes k (wrapMT MT') (wrapMt Mt') @ brLv k l1' l2' ]
+}.
+
 (** * Laws at layer M (07:299–369)
 
     They relate an instance [EM] at M with an instance [EP] at P: the
@@ -257,5 +279,40 @@ Class GenericEqM (EP EM : GenericEq) := {
     [ gext G (gdTm Δ' lC T' l4) ; Γ⟪S⟫ ⊢[ lM ] t2
         : M'⟪S⟫[lsingle (boxt (gvar 0 (lshift 0)))] @ l3 ] ->
     @gne_tm EM G Γ ν ν' (tyCTrm Δ T l2) lzero ->
-    @gne_tm EM G Γ (letboxt l1 l2 Δ T M t1 ν) (letboxt l3 l4 Δ' T' M' t2 ν') (M[lsingle ν]) l1
+    @gne_tm EM G Γ (letboxt l1 l2 Δ T M t1 ν) (letboxt l3 l4 Δ' T' M' t2 ν') (M[lsingle ν]) l1 ;
+
+  (* neutral recursion on code (07:371–400): the scrutinee is neutral or
+     a boxed global variable. The motives and branches are related by the
+     generic equivalence at M; the instances' equation is declarative
+     (M3_DESIGN.md E10) *)
+  gne_tm_elimT {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' ν ν'} :
+    [ G ; Γ ⊢[ lM ] motT (wrapMT MT) l Δ ν ≅ motT (wrapMT MT') l' Δ' ν' @ l1 ] ->
+    ElimPrem EP EM G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' ->
+    @gne_tm EM G Γ ν ν' (tyCTyp Δ l) lzero ->
+    @gne_tm EM G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ ν) (elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' ν')
+      (motT (wrapMT MT) l Δ ν) l1 ;
+  gne_tm_elimT_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' U d} :
+    [ G ; Γ ⊢[ lM ] motT (wrapMT MT) l Δ (boxT (tyGvar U d))
+                  ≅ motT (wrapMT MT') l' Δ' (boxT (tyGvar U d)) @ l1 ] ->
+    ElimPrem EP EM G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' ->
+    [ G ; Γ ⊢[ lM ] boxT (tyGvar U d) : tyCTyp Δ l @ lzero ] ->
+    @gne_tm EM G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ (boxT (tyGvar U d)))
+      (elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' (boxT (tyGvar U d)))
+      (motT (wrapMT MT) l Δ (boxT (tyGvar U d))) l1 ;
+  gne_tm_elimt {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' ν ν'} :
+    [ G ; Γ ⊢[ lM ] mott (wrapMt Mt) l Δ T ν ≅ mott (wrapMt Mt') l' Δ' T' ν' @ l2 ] ->
+    ElimPrem EP EM G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' ->
+    [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Δ' ⊢[ lD ] T' @ l' ] -> @geq_ty EP G Δ T T' l ->
+    @gne_tm EM G Γ ν ν' (tyCTrm Δ T l) lzero ->
+    @gne_tm EM G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T ν) (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' ν')
+      (mott (wrapMt Mt) l Δ T ν) l2 ;
+  gne_tm_elimt_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' u d} :
+    [ G ; Γ ⊢[ lM ] mott (wrapMt Mt) l Δ T (boxt (gvar u d))
+                  ≅ mott (wrapMt Mt') l' Δ' T' (boxt (gvar u d)) @ l2 ] ->
+    ElimPrem EP EM G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' ->
+    [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Δ' ⊢[ lD ] T' @ l' ] -> @geq_ty EP G Δ T T' l ->
+    [ G ; Γ ⊢[ lM ] boxt (gvar u d) : tyCTrm Δ T l @ lzero ] ->
+    @gne_tm EM G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt (gvar u d)))
+      (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt (gvar u d)))
+      (mott (wrapMt Mt) l Δ T (boxt (gvar u d))) l2
 }.
