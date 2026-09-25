@@ -121,4 +121,59 @@ Proof.
   exact (CtxRel_pull Hp Hγ _ _ NΓ NΓ' (H _ _ (gwk_pull Hp HG Hγ))).
 Qed.
 
+(** ** Universe weakening of validity: growth by one level, then the
+    rotation (M3_DESIGN.md E14) *)
+
+Section Uwk.
+Context {L : nat} {Ψ : list gdecl} (HG : [ ⊢ mkG L Ψ ]).
+Let Hgrow : gwk_ok gwk_id (mkG (S L) Ψ) (mkG L Ψ) := conj (le_S _ _ (le_n _)) (gwkwf_id _).
+Let HG' : [ ⊢ mkG (S L) Ψ ] := wfg_grow L (S L) Ψ (le_S _ _ (le_n _)) HG.
+Let EG : Gp (rot L) (mkG (S L) Ψ) = gctx_uwk 1 (mkG L Ψ).
+Proof. unfold Gp, G_us, gctx_usubst, gctx_uwk; cbn. f_equal. exact (rot_decls L Ψ (wfg_lwf _ HG)). Qed.
+Let Eag : forall m, m < L -> pφ (rot L) m = pφ (ush 1) m := fun m Hm => rot_ush L m Hm.
+
+Lemma VTyG_uwk {Γ T T' l} : dnfctx Γ -> ctx_lwf L Γ -> ty_lwf L T -> ty_lwf L T' -> lwf L l ->
+  VTyG (mkG L Ψ) Γ T T' l ->
+  VTyG (gctx_uwk 1 (mkG L Ψ)) Γ⟨ush 1⟩ᵤ T⟨ush 1⟩ᵤ T'⟨ush 1⟩ᵤ (lvren l (ush 1)).
+Proof.
+  intros NΓ WΓ WT WT' Wl HV. pose proof (VTyG_gwk HV Hgrow) as X; cbn [gwa] in X.
+  pose proof (VTyG_perm (G := mkG (S L) Ψ) (uperm_rot L) HG' NΓ X) as Y.
+  rewrite EG, (lwf_us_ext_ctx WΓ Eag), (lwf_us_ext_ty WT Eag), (lwf_us_ext_ty WT' Eag),
+    (lvsubst_ext_lwf _ _ _ _ Wl Eag), <- !uren_us_ty, <- uren_us_ctx,
+    <- (lvren_as_lvsubst _ _ (pφ (ush 1))) in Y by reflexivity.
+  exact Y.
+Qed.
+
+Lemma VTmG_uwk {Γ t t' T l} : dnfctx Γ -> ctx_lwf L Γ -> tm_lwf L t -> tm_lwf L t' -> ty_lwf L T -> lwf L l ->
+  VTmG (mkG L Ψ) Γ t t' T l ->
+  VTmG (gctx_uwk 1 (mkG L Ψ)) Γ⟨ush 1⟩ᵤ t⟨ush 1⟩ᵤ t'⟨ush 1⟩ᵤ T⟨ush 1⟩ᵤ (lvren l (ush 1)).
+Proof.
+  intros NΓ WΓ Wt Wt' WT Wl HV. pose proof (VTmG_gwk HV Hgrow) as X; cbn [gwa] in X.
+  pose proof (VTmG_perm (G := mkG (S L) Ψ) (uperm_rot L) HG' NΓ X) as Y.
+  rewrite EG, (lwf_us_ext_ctx WΓ Eag), (lwf_us_ext_tm Wt Eag), (lwf_us_ext_tm Wt' Eag),
+    (lwf_us_ext_ty WT Eag), (lvsubst_ext_lwf _ _ _ _ Wl Eag), <- !uren_us_tm, <- uren_us_ty, <- uren_us_ctx,
+    <- (lvren_as_lvsubst _ _ (pφ (ush 1))) in Y by reflexivity.
+  exact Y.
+Qed.
+
+Lemma CtxRelG_uwk {Γ Γ'} : dnfctx Γ -> dnfctx Γ' -> ctx_lwf L Γ -> ctx_lwf L Γ' ->
+  CtxRelG (mkG L Ψ) Γ Γ' -> CtxRelG (gctx_uwk 1 (mkG L Ψ)) Γ⟨ush 1⟩ᵤ Γ'⟨ush 1⟩ᵤ.
+Proof.
+  intros NΓ NΓ' WΓ WΓ' HV. pose proof (CtxRelG_gwk HV Hgrow) as X; cbn [gwa] in X.
+  pose proof (CtxRelG_perm (G := mkG (S L) Ψ) (uperm_rot L) HG' NΓ NΓ' X) as Y.
+  rewrite EG, (lwf_us_ext_ctx WΓ Eag), (lwf_us_ext_ctx WΓ' Eag), <- !uren_us_ctx in Y.
+  exact Y.
+Qed.
+
+End Uwk.
+
+Lemma lsub_wf_lwf {G i Δ d Γ} : [ G ; Δ ⊢[ i ] d : Γ ] -> LK (tm_lwf (gL G)) d.
+Proof.
+  intros Hd n. destruct (lt_dec n (clen Γ)) as [Hlt|Hge].
+  - destruct (in_ctx_of_lt _ _ Hlt) as (A & k & Hin). exact (wf_tm_lwf (lsw_var _ _ _ _ _ Hd _ _ _ Hin)).
+  - replace n with (clen Γ + (n - clen Γ)) by lia. rewrite (proj2 (lsw_tail _ _ _ _ _ Hd)). exact I.
+Qed.
+
+
+
 End UPermV.
