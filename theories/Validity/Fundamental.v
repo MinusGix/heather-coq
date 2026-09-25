@@ -1,9 +1,10 @@
-(** * The fundamental theorem: well-typed terms are valid
+(** * The cases of the fundamental theorem
 
-    By mutual induction over the declarative judgments at the layer of the
-    generic equivalence ([ge_layer]). Each case is closed by the validity
-    lemma of its rule; the wrappers below derive the extra typing premises
-    of those lemmas (presupposition, stability) from the rule's own. *)
+    Each rule is closed by its validity lemma; the wrappers below derive
+    the extra typing premises of those lemmas (presupposition, stability)
+    from the rule's own, and the tactics lift a case to global weakenings.
+    The theorem itself quantifies over related global substitutions:
+    [FundamentalS] (layers C and P) and [FundamentalM] (layer M). *)
 From DeLaM.Validity Require Export CodePi.
 
 Section Fundamental.
@@ -211,45 +212,3 @@ Ltac gl_liftD :=
 
 Ltac gl_lift :=
   first [apply VTyG_intro | apply VTmG_intro]; intros ? ? ? ?; gl_weaken; gl_push; gl_liftD.
-
-Ltac ftG_case :=
-  first
-  [ exact I
-  | solve [eapply VTyG_sym; eassumption] | solve [eapply VTyG_trans; eassumption]
-  | solve [eapply VTmG_sym; eassumption] | solve [eapply VTmG_trans; eassumption]
-  | solve [eapply VTyG_lconv; eassumption] | solve [eapply VTmG_lconv; eassumption]
-  | solve [eapply VTmG_conv; eassumption]
-  | solve [gl_lift; ft_case] ].
-
-(** M2 transition (M2_DESIGN.md): until validity quantifies over global
-    substitutions, the theorem is stated for derivations at layer P (at an
-    instance of any layer [≥ P]) and global contexts that bind context
-    variables only.  The new rules then never apply: [□], [box] and
-    [letbox] live at M, and [U^δ]/[u^δ] need a type/term binding. *)
-Definition ctx_only (G : gctx) : Prop := forall n D, in_gctx (gΨ G) n D -> D = gdCtx.
-
-Section FundamentalThm.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
-
-Theorem fundamental :
-  (forall G, [ ⊢ G ] -> True) /\
-  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
-  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = lD -> ctx_only G -> VTyG G Γ T T l) /\
-  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = lD -> ctx_only G -> VTmG G Γ t t T l) /\
-  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = lD -> ctx_only G -> VTyG G Γ T T' l) /\
-  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = lD -> ctx_only G ->
-     VTmG G Γ t t' T l) /\
-  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
-Proof.
-  apply typing_mut; intros; try exact I;
-    try match goal with H : lM = lD |- _ => discriminate H end;
-    try match goal with
-        | Hc : ctx_only _, Hin : in_gctx _ _ (gdTm _ _ _ _) |- _ => discriminate (Hc _ _ Hin)
-        | Hc : ctx_only _, Hin : in_gctx _ _ (gdTy _ _ _) |- _ => discriminate (Hc _ _ Hin)
-        end;
-    ft_prep;
-    repeat match goal with Hc : ctx_only ?G, IH : ctx_only ?G -> _ |- _ => specialize (IH Hc) end;
-    ftG_case.
-Qed.
-
-End FundamentalThm.

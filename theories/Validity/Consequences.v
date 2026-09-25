@@ -119,6 +119,9 @@ Qed.
     With no term bindings in the global context, a typed neutral needs a
     local variable at its head: there are no closed neutrals. *)
 
+(** Global contexts binding context variables only. *)
+Definition ctx_only (G : gctx) : Prop := forall n D, in_gctx (gΨ G) n D -> D = gdCtx.
+
 Lemma no_closed_neutral {G i Γ t T l} :
   [ G ; Γ ⊢[ i ] t : T @ l ] -> Γ = cnil -> ctx_only G -> ~ whne t.
 Proof.
