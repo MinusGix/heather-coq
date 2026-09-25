@@ -171,6 +171,10 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d' n : A[d'] @ k ]) ->
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n ≅ llk d' n : A[d] @ k ]) ->
     [ G ; Γ ⊢[ i ] tyGvar U d ≅ tyGvar U d' @ l ]
+(* level equivalence at layer M: admissible below M (StaticCode), a rule
+   here, validated by the relation's level invariance (M3_DESIGN.md E12) *)
+| eqty_leq G Γ T T' l : [ G ; Γ ⊢[ lM ] T @ l ] -> [ G ; Γ ⊢[ lM ] T' @ l ] -> ty_leq T T' ->
+    [ G ; Γ ⊢[ lM ] T ≅ T' @ l ]
 | eqty_CTyp G Γ Δ Δ' l l' : [ G ; Γ ⊢[ lM ] ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ lM ] tyCTyp Δ l ≅ tyCTyp Δ' l' @ lzero ]
 | eqty_CTrm G Γ Δ Δ' T T' l l' : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
@@ -223,6 +227,8 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d' n : A[d'] @ k ]) ->
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n ≅ llk d' n : A[d] @ k ]) ->
     [ G ; Γ ⊢[ i ] gvar u d ≅ gvar u d' : T[d] @ l ]
+| eqtm_leq G Γ t t' T l : [ G ; Γ ⊢[ lM ] t : T @ l ] -> [ G ; Γ ⊢[ lM ] t' : T @ l ] -> tm_leq t t' ->
+    [ G ; Γ ⊢[ lM ] t ≅ t' : T @ l ]
 (* [box] congruence: code up to level equivalence (the Static Code Lemma,
    05:1055; M3_DESIGN.md E11), with its C-equation *)
 | eqtm_boxT G Γ Δ T T' l : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->

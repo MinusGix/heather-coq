@@ -320,6 +320,10 @@ Ltac sub_rw :=
 
 #[export] Hint Resolve lsub_wf_ctx : sub.
 #[export] Hint Resolve wfc_ext wft_nat wft_El lequiv_wf_l lequiv_wf_r wf_ctx_nat compt_notV : sub.
+#[export] Hint Extern 1 (ty_leq _ _) =>
+  apply (proj1 leq_subst_all); [apply lsub_leq_refl | assumption] : sub.
+#[export] Hint Extern 1 (tm_leq _ _) =>
+  apply (proj1 (proj2 leq_subst_all)); [apply lsub_leq_refl | assumption] : sub.
 #[export] Hint Extern 2 (lsub_wf _ _ _ (llift _) _) =>
   eapply lsub_wf_lift'; [ .. | sub_rw; reflexivity ] : sub.
 #[export] Hint Extern 20 (wf_tm _ _ _ _ _ _) => eapply wf_tm_retype : sub.
@@ -949,6 +953,8 @@ Ltac sub_manual2 :=
       sub_rec_rw; eapply eqtm_elimt;
       [ .. | sub_motive | sub_motive | sub_motive | sub_motive | sub_motive | sub_motive
            | sub_brctx | sub_brctx | sub_branches | sub_branches | ]; sub_premise
+  | |- eq_ty _ lM _ _ _ _ => eapply eqty_leq; sub_premise
+  | |- eq_tm _ lM _ _ _ _ _ => eapply eqtm_leq; sub_premise
   end.
 
 Theorem substitution_all :

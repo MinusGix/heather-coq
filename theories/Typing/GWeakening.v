@@ -533,6 +533,8 @@ Ltac gw_manual :=
   | |- eq_tm _ _ _ (natrec _ _ _ _ (succ _)) _ _ _ => eapply eqtm_natrec_succ; gw_premise
   | |- eq_tm _ _ _ (natrec _ _ _ _ _) (natrec _ _ _ _ _) _ _ => eapply eqtm_natrec; gw_premise
   | |- eq_tm _ _ _ (lam _ _ _ _) _ _ _ => eapply eqtm_eta; gw_premise
+  | |- eq_ty _ lM _ _ _ _ => eapply eqty_leq; gw_premise
+  | |- eq_tm _ lM _ _ _ _ _ => eapply eqtm_leq; gw_premise
   end.
 
 Theorem gweakening :

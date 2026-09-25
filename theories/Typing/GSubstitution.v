@@ -661,6 +661,9 @@ Ltac gs_rec :=
       gs_rec_rw; eapply eqtm_elimt;
       [ .. | gs_motive | gs_motive | gs_motive | gs_motive | gs_motive | gs_motive
            | gs_branches | gs_branches | gs_branches | gs_branches | ]; gs_premise
+  (* level equivalence at M *)
+  | |- eq_ty _ lM _ _ _ _ => eapply eqty_leq; gs_premise
+  | |- eq_tm _ lM _ _ _ _ _ => eapply eqtm_leq; gs_premise
   end.
 
 Ltac notrec := lazymatch goal with

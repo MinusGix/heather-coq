@@ -153,6 +153,8 @@ Ltac wk_rewrite :=
 #[export] Hint Resolve wfc_ext : wk.
 #[export] Hint Resolve in_ctx_wkr : wk.
 #[export] Hint Resolve wft_nat wft_El lequiv_wf_l lequiv_wf_r : wk.
+#[export] Hint Extern 1 (ty_leq _ _) => apply (proj1 leq_ren_all); assumption : wk.
+#[export] Hint Extern 1 (tm_leq _ _) => apply (proj1 (proj2 leq_ren_all)); assumption : wk.
 
 Lemma wkr_up' r Δ Γ A A' l : wkr r Δ Γ -> A' = A⟨r⟩ -> wkr (rlift r) (Δ ,, A' @ l) (Γ ,, A @ l).
 Proof. intros ? ->; now constructor. Qed.
@@ -414,6 +416,9 @@ Ltac wk_manual :=
       eapply eqtm_elimt;
       [ .. | wk_motive | wk_motive | wk_motive | wk_motive | wk_motive | wk_motive
            | wk_brctx | wk_brctx | wk_branches | wk_branches | ]; wk_premise
+
+  | |- eq_ty _ lM _ _ _ _ => eapply eqty_leq; wk_premise
+  | |- eq_tm _ lM _ _ _ _ _ => eapply eqtm_leq; wk_premise
   end.
 
 (** The context cases: a prefix [Γ] of [cexts Γ As] is weakened. *)

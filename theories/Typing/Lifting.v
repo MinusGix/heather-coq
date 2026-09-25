@@ -58,7 +58,8 @@ Ltac lift_step :=
             | solve [eapply eqty_El_nat; lift_premises] | solve [eapply eqty_El_U; lift_premises]
             | solve [eapply eqty_El_pi; lift_premises] | solve [eapply eqty_lconv; lift_premises]
             | solve [eapply eqty_gvar; lift_premises]
-            | solve [eapply eqty_CTyp; lift_premises] | solve [eapply eqty_CTrm; lift_premises] ]
+            | solve [eapply eqty_CTyp; lift_premises] | solve [eapply eqty_CTrm; lift_premises]
+            | solve [eapply eqty_leq; lift_premises] ]
   | |- eq_tm _ _ _ _ _ _ _ =>
       first [ solve [eapply eqtm_refl; lift_premises] | solve [eapply eqtm_sym; lift_premises]
             | solve [eapply eqtm_trans; lift_premises] | solve [eapply eqtm_code_U; lift_premises]
@@ -75,7 +76,8 @@ Ltac lift_step :=
             | solve [eapply eqtm_elimT; lift_premises] | solve [eapply eqtm_elimt; lift_premises]
             | solve [eapply eqtm_boxT; lift_premises] | solve [eapply eqtm_boxt; lift_premises]
             | solve [eapply eqtm_elimT_beta; lift_premises]
-            | solve [eapply eqtm_elimt_beta; lift_premises] ]
+            | solve [eapply eqtm_elimt_beta; lift_premises]
+            | solve [eapply eqtm_leq; lift_premises] ]
   end.
 
 Theorem lifting :

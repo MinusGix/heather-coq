@@ -220,6 +220,22 @@ C-level code up to level equivalence, and we now follow it:
   static images agree up to `≡ₗ`, still a syntactic induction (the reason
   M2 retired the C-equality congruence does not apply to `≡ₗ`).
 
+### E12. Level equivalence at M is a rule (user decision, 2026-09-25)
+
+E6' needs, at every layer, that well-typed `≡ₗ`-related syntax is
+declaratively equal. Below M this is the Static Code Lemma
+(`StaticCode.static_code`, by induction on the left derivation). At M we
+take it as a rule instead: `eqty_leq`/`eqtm_leq` (layer `lM` only, both
+sides typed at the same type and level). Proving it at M would need two
+lemmas used nowhere else: global-context conversion for `letbox` bodies
+(`gext G (gdTy Δ …)` to `gext G (gdTy Δ' …)`) and branch-context
+conversion for the recursors (`brΓ k` with `MT` to `brΓ k` with `MT'`,
+13 shapes). The rule is admissible and its validity case is exactly the
+relation's level invariance, which E6' proves anyway. Deviation from the
+paper: the declarative system has one more (admissible) rule at M. Each
+typing induction has one more case, closed by the `≡ₗ` closure lemmas
+of `LevelEq.v`.
+
 ## Order of work
 
 1. **Syntax** (done). Level renaming and substitution; the bundle nodes,
