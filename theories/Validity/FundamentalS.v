@@ -40,9 +40,9 @@ Proof.
   pose proof (in_gctx_DWf (ctx_glob _ _ _ HΓ) Hin) as HΔ; cbn in HΔ.
   destruct (HG _ _ Hin) as [VP VM].
   split; [exact HS | split].
-  - exact (VS_tygvar EP EM (fun _ _ _ _ _ H => proj1 H) Hin Hi HΓ HΔ VP Ht Nd Ht' Nd'
+  - exact (VS_tygvar EP EM (fun _ _ _ _ _ _ _ _ H => proj1 H) Hin Hi HΓ HΔ VP Ht Nd Ht' Nd'
              (fun n B k h => proj1 (proj2 (proj2 (proj2 (Hv n B k h)))))).
-  - exact (VS_tygvar EP EM (fun _ _ _ _ _ H => proj2 H) Hin Hi HΓ HΔ VM Ht Nd Ht' Nd'
+  - exact (VS_tygvar EP EM (fun _ _ _ _ _ _ _ _ H => proj2 H) Hin Hi HΓ HΔ VM Ht Nd Ht' Nd'
              (fun n B k h => proj2 (proj2 (proj2 (proj2 (Hv n B k h)))))).
 Qed.
 
@@ -61,10 +61,10 @@ Proof.
              (fun n B k h => proj1 (proj2 (proj2 (proj2 (Hvv n B k h))))) VAP).
   - exact (VTyS_inst EP EM HΓ HΔ VM Ht Nd Ht Nd
              (fun n B k h => proj2 (proj2 (proj2 (proj2 (Hvv n B k h))))) VAM).
-  - exact (VS_gvar EP EM (fun _ _ _ _ _ _ H => proj1 H) Hin Hi HΓ HΔ VP VAP Ht Nd Ht' Nd'
+  - exact (VS_gvar EP EM (fun _ _ _ _ _ _ _ _ H => proj1 H) Hin Hi HΓ HT VP VAP Ht Nd Ht' Nd'
              (fun n B k h => proj1 (proj2 (proj2 (proj2 (Hv n B k h)))))
              (fun n B k h => proj1 (proj2 (proj2 (proj2 (Hvv n B k h)))))).
-  - exact (VS_gvar EP EM (fun _ _ _ _ _ _ H => proj2 H) Hin Hi HΓ HΔ VM VAM Ht Nd Ht' Nd'
+  - exact (VS_gvar EP EM (fun _ _ _ _ _ _ _ _ H => proj2 H) Hin Hi HΓ HT VM VAM Ht Nd Ht' Nd'
              (fun n B k h => proj2 (proj2 (proj2 (proj2 (Hv n B k h)))))
              (fun n B k h => proj2 (proj2 (proj2 (proj2 (Hvv n B k h)))))).
 Qed.

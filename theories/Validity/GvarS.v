@@ -5,7 +5,7 @@
     global variables) or to objects related by [⊩^{≥P}_P] in the
     substituted binding context, which are instantiated at the related
     local substitutions ([VSub]). *)
-From DeLaM.Validity Require Export RulesS.
+From DeLaM.Validity Require Export RulesS LayerV.
 
 #[local] Existing Instance LR_P.
 
@@ -124,6 +124,9 @@ Proof.
     rewrite llk_glsubst, Hl; reflexivity.
 Qed.
 
+Lemma lle_D_notM {i} : lle i lD -> i <> lM.
+Proof. intros Hi ->; discriminate (lle_M _ Hi). Qed.
+
 (** ** With global substitutions *)
 
 Section GvarS.
@@ -173,11 +176,12 @@ Qed.
 
 (** A global variable is valid when its local substitution is.  [proj]
     projects the images' relatedness at [⊩^{≥P}_P] (both instances) to
-    the instance at hand. *)
+    the instance at hand; the images are MLTT types and terms, as they
+    are formed below layer M (Layering Restriction). *)
 
 Lemma VS_tygvar {G Γ U Δ i' l d d'}
-  (proj : forall G' Δ T T' l, @VTyG EP LR_P G' Δ T T' l /\ @VTyG EM LR_P G' Δ T T' l ->
-            @VTyG E LP G' Δ T T' l) :
+  (proj : forall G' Δ T T' l, mltt_ctx Δ -> mltt_ty T -> mltt_ty T' ->
+            @VTyG EP LR_P G' Δ T T' l /\ @VTyG EM LR_P G' Δ T T' l -> @VTyG E LP G' Δ T T' l) :
   in_gctx (gΨ G) U (gdTy Δ i' l) -> lle i' lD -> [ G ; Γ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] ] -> VCtxS G Δ ->
   lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
   (forall n A k, in_ctx Δ n A k -> VTmS G Γ (llk d n) (llk d' n) A[d] k) ->
@@ -188,24 +192,31 @@ Proof.
   destruct (dnfl_gs (d := d) Hσ Nd) as [Nd1 _]. destruct (dnfl_gs (d := d') Hσ Nd') as [_ Nd2].
   pose proof (gsr_rel _ _ _ _ _ _ Hσ _ _ Hin) as R.
   pose proof (gsw_var _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ) _ _ Hin) as W.
+  pose proof (gsw_var _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ) _ _ Hin) as W'.
+  pose proof (mltt_wf_ctx (gs_ctx EP EM Hσ HΔ) ltac:(discriminate)) as MΔ.
   cbn [gsubst GSubst_ty gsubst_ty]. fold (d⦃σ⦄) (d'⦃σ'⦄).
-  cbn in R, W. destruct (σ U) as [x | | T | ], (σ' U) as [x' | | T' | ]; cbn in R, W |- *; try contradiction.
+  cbn in R, W, W'. destruct (σ U) as [x | | T | ], (σ' U) as [x' | | T' | ]; cbn in R, W, W' |- *;
+    try contradiction.
   - subst x'. destruct W as (i'' & Hi'' & Hin'').
     exact (VTyG_gvar_ne Hin'' (lle_trans _ _ _ Hi'' (lle_trans _ _ _ Hi ge_lle_D)) Nd1 Nd2 K).
-  - exact (VTyG_inst (proj _ _ _ _ _ R) K).
+  - exact (VTyG_inst (proj _ _ _ _ _ MΔ (mltt_wf_ty W (lle_D_notM Hi)) (mltt_wf_ty W' (lle_D_notM Hi)) R) K).
 Qed.
 
 Lemma VS_gvar {G Γ u Δ i' A l d d'}
-  (proj : forall G' Δ t t' A l, @VTmG EP LR_P G' Δ t t' A l /\ @VTmG EM LR_P G' Δ t t' A l ->
-            @VTmG E LP G' Δ t t' A l) :
-  in_gctx (gΨ G) u (gdTm Δ i' A l) -> lle i' lD -> [ G ; Γ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] ] -> VCtxS G Δ ->
+  (proj : forall G' Δ t t' A l, mltt_ctx Δ -> mltt_ty A ->
+            @VTmG EP LR_P G' Δ t t' A l /\ @VTmG EM LR_P G' Δ t t' A l -> @VTmG E LP G' Δ t t' A l) :
+  in_gctx (gΨ G) u (gdTm Δ i' A l) -> lle i' lD -> [ G ; Γ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] A @ l ] ->
+  VCtxS G Δ ->
   VTyS G Δ A A l ->
   lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
   (forall n B k, in_ctx Δ n B k -> VTmS G Γ (llk d n) (llk d' n) B[d] k) ->
   (forall n B k, in_ctx Δ n B k -> VTmS G Γ (llk d n) (llk d n) B[d] k) ->
   VTmS G Γ (gvar u d) (gvar u d') A[d] l.
 Proof.
-  intros Hin Hi HΓ HΔ VΔ VA Ht Nd Ht' Nd' Hv Hvv G' σ σ' Hσ.
+  intros Hin Hi HΓ HA VΔ VA Ht Nd Ht' Nd' Hv Hvv G' σ σ' Hσ.
+  pose proof (ctx_of_wf_ty (i := lD) eq_refl HA) as HΔ.
+  pose proof (mltt_wf_ctx (gs_ctx EP EM Hσ HΔ) ltac:(discriminate)) as MΔ.
+  pose proof (mltt_wf_ty (gs_ty EP EM Hσ HA) ltac:(discriminate)) as MA.
   pose proof (VSubKS HΓ HΔ VΔ Ht Nd Ht' Nd' Hv _ _ _ Hσ) as K.
   pose proof (VSubKS HΓ HΔ VΔ Ht Nd Ht Nd Hvv _ _ _ (GSubRel_refl_l _ _ Hσ)) as Kd.
   pose proof (VA _ _ _ (GSubRel_refl_l _ _ Hσ)) as VA'.
@@ -216,7 +227,7 @@ Proof.
   cbn in R, W. destruct (σ u) as [x | | | t], (σ' u) as [x' | | | t']; cbn in R, W |- *; try contradiction.
   - subst x'. destruct W as (i'' & Hi'' & Hin'').
     exact (VTmG_gvar_ne Hin'' (lle_trans _ _ _ Hi'' (lle_trans _ _ _ Hi ge_lle_D)) Nd1 Nd2 K Kd VA').
-  - exact (VTmG_inst (proj _ _ _ _ _ _ R) VA' K Kd).
+  - exact (VTmG_inst (proj _ _ _ _ _ _ MΔ MA R) VA' K Kd).
 Qed.
 
 End GvarS.

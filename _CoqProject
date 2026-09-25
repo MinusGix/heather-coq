@@ -25,6 +25,7 @@ theories/Typing/TypedRed.v
 theories/Typing/Generic.v
 theories/Typing/DeclInstance.v
 theories/LogRel/Def.v
+theories/LogRel/Layering.v
 theories/LogRel/Escape.v
 theories/LogRel/Basics.v
 theories/LogRel/Modal.v
@@ -35,6 +36,7 @@ theories/LogRel/Weakening.v
 theories/LogRel/Neutral.v
 theories/LogRel/Reduction.v
 theories/Validity/Def.v
+theories/Validity/LayerV.v
 theories/Validity/Props.v
 theories/Validity/CtxRel.v
 theories/Validity/SubstV.v
