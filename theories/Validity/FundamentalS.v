@@ -27,6 +27,8 @@ Definition SemTy (G : gctx) (Γ : ctx) (T T' : ty) (l : lvl) : Prop :=
 Definition SemTm (G : gctx) (Γ : ctx) (t t' : tm) (T : ty) (l : lvl) : Prop :=
   SemCtx G Γ /\ @VTyS EP EM EP LR_P G Γ T T l /\ @VTyS EP EM EM LR_P G Γ T T l /\
   @VTmS EP EM EP LR_P G Γ t t' T l /\ @VTmS EP EM EM LR_P G Γ t t' T l.
+Definition SemCtxEq (G : gctx) (Γ Γ' : ctx) : Prop :=
+  @VCtxEqS EP LR_P EP EM G Γ Γ' /\ @VCtxEqS EM LR_P EP EM G Γ Γ'.
 End Sem.
 
 (** ** Global variables *)
@@ -150,6 +152,9 @@ Ltac f_goal :=
   | |- GValid (mkG _ (_ :: _)) => apply GValid_ext; [assumption | cbn [DValid]; repeat split; assumption]
   | |- GValid _ => eassumption
   | |- @VCtxS _ _ _ _ _ _ => f_ctx
+  | |- @VCtxEqS _ _ _ _ _ _ _ =>
+      first [ apply VCtxEqS_nil | solve [simple eapply VCtxEqS_var; f_side]
+            | solve [simple eapply VCtxEqS_ext; f_side] ]
   | |- @VTyS _ _ _ _ _ _ _ _ _ => f_ty
   | |- @VTmS _ _ _ _ _ _ _ _ _ _ => f_tm
   end.
@@ -164,7 +169,7 @@ Theorem fundamentalS :
   (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = lD -> SemTy G Γ T T' l) /\
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = lD ->
      SemTm G Γ t t' T l) /\
-  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
+  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> i = lD -> SemCtxEq G Γ Γ').
 Proof.
   apply typing_mut; intros; try exact I;
     try match goal with H : lM = lD |- _ => discriminate H end;
@@ -174,7 +179,7 @@ Proof.
           pose proof (fun n A k h => IH n A k h eq_refl); clear IH
       end;
     try solve [ first [simple eapply FS_tygvar | simple eapply FS_gvar]; eassumption ];
-    unfold SemTy, SemTm in *; unfold SemCtx in *;
+    unfold SemTy, SemTm, SemCtxEq in *; unfold SemCtx in *;
     repeat match goal with H : _ /\ _ |- _ => destruct H end;
     f_types;
     repeat split.

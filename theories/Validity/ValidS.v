@@ -147,6 +147,26 @@ Proof.
   intros H1 H2 G' σ σ' Hσ. exact (VTyG_trans (H1 _ _ _ (GSubRel_refl_l _ _ Hσ)) (H2 _ _ _ Hσ)).
 Qed.
 
+(** Related contexts: two-sided context validity. *)
+Definition VCtxEqS (G : gctx) (Γ Γ' : ctx) : Prop :=
+  forall G' σ σ', GSubRel G' G σ σ' -> @CtxRelG E LP G' Γ⦃σ⦄ Γ'⦃σ'⦄.
+
+Lemma VCtxEqS_nil {G} : VCtxEqS G cnil cnil.
+Proof. exact VCtxS_nil. Qed.
+Lemma VCtxEqS_var {G g} : gctx_var G g -> VCtxEqS G (cvar g) (cvar g).
+Proof. exact VCtxS_var. Qed.
+
+Lemma VCtxEqS_ext {G Γ Γ' A A' l l'} : GValid G -> VCtxS G Γ -> VCtxEqS G Γ Γ' ->
+  VTyS G Γ A A' l -> lequiv (gL G) l l' -> VCtxEqS G (Γ ,, A @ l) (Γ' ,, A' @ l').
+Proof.
+  intros HG HΓ HΓΓ' HA Hl G' σ σ' Hσ. rewrite !gs_cext.
+  pose proof (GSubRel_sym _ _ HG Hσ) as Hσ'.
+  apply CtxRelG_ext; [exact (HΓΓ' _ _ _ Hσ) | now rewrite (gsr_L _ _ _ _ _ _ Hσ) | exact (HA _ _ _ Hσ) |].
+  refine (VTyG_transport (HΓΓ' _ _ _ (GSubRel_refl_l _ _ Hσ')) _).
+  eapply VTyG_lconv; [exact (VTyS_sym HG HΓ HA _ _ _ Hσ') |].
+  apply lequiv_sym. now rewrite (gsr_L _ _ _ _ _ _ Hσ).
+Qed.
+
 Lemma VTmS_sym {G Γ t t' T l} : GValid G -> VCtxS G Γ -> VTyS G Γ T T l ->
   VTmS G Γ t t' T l -> VTmS G Γ t' t T l.
 Proof.

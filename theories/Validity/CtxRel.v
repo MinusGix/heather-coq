@@ -97,4 +97,47 @@ Proof.
   now rewrite (proj1 Hγ).
 Qed.
 
+(** ** The identity substitution, and escape
+
+    A context related to another one has valid entries, so the identity
+    substitution is related to itself there (as [Consequences.SubRel_id]
+    obtains from the fundamental theorem), and related contexts escape to
+    the generic relation. *)
+
+Lemma SubRel_id_rel {G} : forall Γ Γ', CtxRel G Γ Γ' -> [ G ; Γ ⊢g ] ->
+  SubRel G Γ Γ (lshift 0) (lshift 0).
+Proof.
+  induction Γ as [| g | Γ IH A l]; intros Γ' HR HΓ; cbn [SubRel].
+  1-2: refine (conj HΓ (conj _ (conj _ (conj _ _)))); try apply tail_id; intros n; exact I.
+  destruct Γ' as [| g' | Γ' A' l']; cbn in HR; try contradiction.
+  destruct HR as (HR & _ & HA & _).
+  inversion HΓ as [| | ? ? ? ? ? HΓ0 HAw Hl]; subst.
+  assert (Hw : wk_step wk_id : (Γ ,, A @ l) ≤ Γ) by (constructor; constructor).
+  assert (Hsh : SubRel G Γ (Γ ,, A @ l) (lshift 1) (lshift 1)).
+  { eapply SubRel_ext; [| | exact (SubRel_wk _ _ _ _ _ _ _ Hw HΓ (IH _ HR HΓ0))];
+      intros n; rewrite llk_lren; cbn; f_equal; lia. }
+  cbn [ldrop llk]. split; [exact Hsh|].
+  assert (E1 : A[lshift 1] = A⟨↑⟩) by (symmetry; apply ren_as_subst_ty; reflexivity).
+  change (LRtm l G (Γ ,, A @ l) A[lshift 1] A[lshift 1] (var 0) (var 0)). rewrite E1.
+  apply var0_LRtm; [| exact HΓ].
+  pose proof (VTy_refl_l HA _ _ _ Hsh) as X. now rewrite E1 in X.
+Qed.
+
+Lemma CtxRel_escape {G} : forall Γ Γ', CtxRel G Γ Γ' -> [ G ; Γ ⊢g ] -> [ G ; Γ' ⊢g ] ->
+  geq_ctx G Γ Γ'.
+Proof.
+  induction Γ as [| g | Γ IH A l]; intros Γ' HR HΓ HΓ';
+    destruct Γ' as [| g' | Γ' A' l']; cbn in HR; try contradiction.
+  - constructor; exact (ctx_glob _ _ _ HΓ).
+  - subst g'. inversion HΓ; subst. constructor; assumption.
+  - destruct HR as (HR & Hl & HA & _).
+    inversion HΓ as [| | ? ? ? ? ? HΓ0 HAw Hlw]; subst.
+    inversion HΓ' as [| | ? ? ? ? ? HΓ0' HAw' Hlw']; subst.
+    constructor; [exact (IH _ HR HΓ0 HΓ0') | exact HAw | | exact Hl].
+    destruct (HA _ _ _ (SubRel_id_rel _ _ HR HΓ0)) as [R HRA].
+    destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (_ & _ & X).
+    assert (Hid : forall n, llk (lshift 0) n = var n) by (intros n; cbn; f_equal; lia).
+    rewrite (subst_id_ty _ _ (wf_ty_nf HAw) Hid), (subst_id_ty _ _ (wf_ty_nf HAw') Hid) in X. exact X.
+Qed.
+
 End CtxRel.
