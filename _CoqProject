@@ -76,6 +76,7 @@ theories/Validity/LetboxS.v
 theories/Validity/FundamentalS.v
 theories/Validity/ReducibleP.v
 theories/Validity/RecObj.v
+theories/Validity/RecS.v
 theories/Validity/DeclConsequencesP.v
 theories/Validity/FundamentalM.v
 theories/Validity/Reducible.v
