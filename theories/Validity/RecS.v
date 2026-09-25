@@ -2928,4 +2928,101 @@ Proof.
   exact (LRtm_geq Y).
 Qed.
 
+
+Lemma EP_all {kL kR ΔL ΔR} : lequiv (gL G') kL kR -> @geq_ctx EP G' ΔL ΔR ->
+  ElimPrem EP EM G' Θ (lvsubst l1 φ) (lvsubst l2 φ) (lvsubst l1' φ) (lvsubst l2' φ) MTL MTR MtL MtR bsL bsR
+    kL kR ΔL ΔR.
+Proof.
+  intros Hk HΔ.
+  destruct HrbL as (_ & _ & HMTL & HMtL & HbcL & HbL). destruct HrbR as (_ & _ & HMTR & HMtR & HbcR & HbR).
+  constructor; first [ assumption | rewrite EL; assumption | exact EP_MT | exact EP_Mt | exact EP_br ].
+Qed.
+
+(** The neutral recursion on types. *)
+Lemma rec_T_ne {ΔL ΔR kL kR ν ν'} : [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
+  lwf L' kL -> lequiv L' kL kR -> @geq_ctx EP G' ΔL ΔR ->
+  @CtxRelG EP LR_P G' ΔL ΔR -> @CtxRelG EM LR_P G' ΔL ΔR ->
+  @gne_tm EM G' Θ ν ν' (tyCTyp ΔL kL) lzero ->
+  LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) kL ΔL ν) (motT (wrapMT MTR) kR ΔR ν')
+    (elimT (lvsubst l1 φ) (lvsubst l2 φ) (mkrb MTL MtL bsL) kL ΔL ν)
+    (elimT (lvsubst l1' φ) (lvsubst l2' φ) (mkrb MTR MtR bsR) kR ΔR ν').
+Proof.
+  intros HΔL HΔ Hw Hk HgΔ CP CM Hν.
+  pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR.
+  assert (HΘ : [ G' ; Θ ⊢[ lM ] ]) by (pose proof (SubRel_ctx He) as X; rewrite (@gm_layer_M EP EM EMl) in X; exact X).
+  assert (Hwg : lwf (gL G') kL) by (rewrite EL; exact Hw).
+  assert (Hkg : lequiv (gL G') kL kR) by (rewrite EL; exact Hk).
+  assert (HwR : lwf (gL G') kR) by exact (lequiv_wf_r _ _ _ Hkg).
+  pose proof (CtxRelG_trans CP (CtxRelG_sym CP)) as CPL. pose proof (CtxRelG_trans CM (CtxRelG_sym CM)) as CML.
+  pose proof (CtxRelG_trans (CtxRelG_sym CP) CP) as CPR. pose proof (CtxRelG_trans (CtxRelG_sym CM) CM) as CMR.
+  pose proof (LR_ctyp EP EM HΘ HΔL HΔL Hwg (lequiv_refl _ _ Hwg) (conj (eqc_refl _ _ _ HΔL) (conj CPL CML))) as LL.
+  pose proof (LR_ctyp EP EM HΘ HΔR HΔR HwR (lequiv_refl _ _ HwR) (conj (eqc_refl _ _ _ HΔR) (conj CPR CMR))) as LR0.
+  assert (HCC : [ G' ; Θ ⊢[ lM ] tyCTyp ΔL kL ≅ tyCTyp ΔR kR @ lzero ]) by (apply eqty_CTyp; assumption).
+  assert (Hν'R : @gne_tm EM G' Θ ν' ν' (tyCTyp ΔR kR) lzero).
+  { apply (gne_tm_conv (gne_tm_refl_r Hν)). rewrite (@gm_layer_M EP EM EMl). exact HCC. }
+  assert (BL : LRtmM lzero G' Θ (tyCTyp ΔL kL) (tyCTyp ΔL kL) ν ν')
+    by (exists (@CTypRel EM LRM G' Θ ΔL ΔL kL kL); exact (conj LL (LR_neutral _ _ _ _ _ _ _ LL _ _ Hν Hν))).
+  assert (BR : LRtmM lzero G' Θ (tyCTyp ΔR kR) (tyCTyp ΔR kR) ν' ν')
+    by (exists (@CTypRel EM LRM G' Θ ΔR ΔR kR kR); exact (conj LR0 (LR_neutral _ _ _ _ _ _ _ LR0 _ _ Hν'R Hν'R))).
+  pose proof (MotRel_T EP EM G0 Γ0 L' φ MT MT' l1 l1' HMT HMT' Hl1 Hφ VMT VMTr VΓ G' σ σ' Θ e e' Hσ He EL
+                (kL := kL) (kR := kR) Hw Hk HΔL HΔ BL BR) as Mot.
+  pose proof (LRty_eqM Mot) as Meq.
+  pose proof (gne_tm_elimT (EP := EP) (EM := EM) Meq (EP_all Hkg HgΔ) Hν) as Hne.
+  destruct Mot as [R HR].
+  exists R. split; [exact HR|].
+  apply (LR_neutral _ _ _ _ _ _ _ HR _ _ Hne).
+  apply (gne_tm_conv Hne). rewrite (@gm_layer_M EP EM EMl). exact Meq.
+Qed.
+
+(** The neutral recursion on terms. *)
+Lemma rec_t_ne {ΔL ΔR kL kR TL TR ν ν'} : [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
+  lwf L' kL -> lequiv L' kL kR -> @geq_ctx EP G' ΔL ΔR ->
+  @CtxRelG EP LR_P G' ΔL ΔR -> @CtxRelG EM LR_P G' ΔL ΔR ->
+  [ G' ; ΔL ⊢[ lD ] TL @ kL ] -> [ G' ; ΔL ⊢[ lD ] TL ≅ TR @ kL ] ->
+  @VTyG EP LR_P G' ΔL TL TR kL -> @VTyG EM LR_P G' ΔL TL TR kL ->
+  @gne_tm EM G' Θ ν ν' (tyCTrm ΔL TL kL) lzero ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) kL ΔL TL ν) (mott (wrapMt MtR) kR ΔR TR ν')
+    (elimt (lvsubst l1 φ) (lvsubst l2 φ) (mkrb MTL MtL bsL) kL ΔL TL ν)
+    (elimt (lvsubst l1' φ) (lvsubst l2' φ) (mkrb MTR MtR bsR) kR ΔR TR ν').
+Proof.
+  intros HΔL HΔ Hw Hk HgΔ CP CM HTL HTT VP VM Hν.
+  pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR.
+  assert (HΘ : [ G' ; Θ ⊢[ lM ] ]) by (pose proof (SubRel_ctx He) as X; rewrite (@gm_layer_M EP EM EMl) in X; exact X).
+  assert (Hwg : lwf (gL G') kL) by (rewrite EL; exact Hw).
+  assert (Hkg : lequiv (gL G') kL kR) by (rewrite EL; exact Hk).
+  assert (HwR : lwf (gL G') kR) by exact (lequiv_wf_r _ _ _ Hkg).
+  pose proof (eqty_wf_r (i := lD) eq_refl HTT) as HTRL.
+  assert (HTR : [ G' ; ΔR ⊢[ lD ] TR @ kR ]).
+  { eapply wft_lconv; [exact (ctxconv_ty HΔ (i := lD) eq_refl HTRL) | exact (lequiv_sym _ _ _ Hkg)]. }
+  pose proof (CtxRelG_trans CP (CtxRelG_sym CP)) as CPL. pose proof (CtxRelG_trans CM (CtxRelG_sym CM)) as CML.
+  pose proof (CtxRelG_trans (CtxRelG_sym CP) CP) as CPR. pose proof (CtxRelG_trans (CtxRelG_sym CM) CM) as CMR.
+  destruct (VTyG_escape_P EP EM CPL HΔL HTL HTRL VP) as [HgT _].
+  (* the contextual types, each related to itself *)
+  assert (VPL : @VTyG EP LR_P G' ΔL TL TL kL) by exact (VTyG_trans VP (VTyG_sym VP)).
+  assert (VML : @VTyG EM LR_P G' ΔL TL TL kL) by exact (VTyG_trans VM (VTyG_sym VM)).
+  assert (VPR : @VTyG EP LR_P G' ΔR TR TR kR).
+  { eapply VTyG_lconv; [exact (VTyG_transport CP (VTyG_trans (VTyG_sym VP) VP)) | exact (lequiv_sym _ _ _ Hkg)]. }
+  assert (VMR : @VTyG EM LR_P G' ΔR TR TR kR).
+  { eapply VTyG_lconv; [exact (VTyG_transport CM (VTyG_trans (VTyG_sym VM) VM)) | exact (lequiv_sym _ _ _ Hkg)]. }
+  pose proof (LR_ctrm EP EM HΘ HΔL HΔL HTL HTL Hwg (lequiv_refl _ _ Hwg) (conj (eqc_refl _ _ _ HΔL) (conj CPL CML))
+                (conj (eqty_refl _ _ _ _ _ HTL) (conj VPL VML)) (conj (eqty_refl _ _ _ _ _ HTL) (conj VPL VML))) as LL.
+  pose proof (LR_ctrm EP EM HΘ HΔR HΔR HTR HTR HwR (lequiv_refl _ _ HwR) (conj (eqc_refl _ _ _ HΔR) (conj CPR CMR))
+                (conj (eqty_refl _ _ _ _ _ HTR) (conj VPR VMR)) (conj (eqty_refl _ _ _ _ _ HTR) (conj VPR VMR))) as LR0.
+  assert (HCC : [ G' ; Θ ⊢[ lM ] tyCTrm ΔL TL kL ≅ tyCTrm ΔR TR kR @ lzero ]) by (apply eqty_CTrm; assumption).
+  assert (Hν'R : @gne_tm EM G' Θ ν' ν' (tyCTrm ΔR TR kR) lzero).
+  { apply (gne_tm_conv (gne_tm_refl_r Hν)). rewrite (@gm_layer_M EP EM EMl). exact HCC. }
+  assert (BL : LRtmM lzero G' Θ (tyCTrm ΔL TL kL) (tyCTrm ΔL TL kL) ν ν')
+    by (exists (@CTrmRel EM LRM G' Θ ΔL ΔL TL TL kL kL); exact (conj LL (LR_neutral _ _ _ _ _ _ _ LL _ _ Hν Hν))).
+  assert (BR : LRtmM lzero G' Θ (tyCTrm ΔR TR kR) (tyCTrm ΔR TR kR) ν' ν')
+    by (exists (@CTrmRel EM LRM G' Θ ΔR ΔR TR TR kR kR); exact (conj LR0 (LR_neutral _ _ _ _ _ _ _ LR0 _ _ Hν'R Hν'R))).
+  pose proof (MotRel_t EP EM G0 Γ0 L' φ Mt Mt' l2 l2' HMt HMt' Hl2 Hφ VMt VMtr VΓ G' σ σ' Θ e e' Hσ He EL
+                (kL := kL) (kR := kR) Hw Hk HΔL HΔ HTT HTR BL BR) as Mot.
+  pose proof (LRty_eqM Mot) as Meq.
+  pose proof (gne_tm_elimt (EP := EP) (EM := EM) Meq (EP_all Hkg HgΔ) HTL HTR HgT Hν) as Hne.
+  destruct Mot as [R HR].
+  exists R. split; [exact HR|].
+  apply (LR_neutral _ _ _ _ _ _ _ HR _ _ Hne).
+  apply (gne_tm_conv Hne). rewrite (@gm_layer_M EP EM EMl). exact Meq.
+Qed.
+
 End Rec.
