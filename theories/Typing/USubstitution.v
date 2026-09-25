@@ -327,3 +327,17 @@ Proof.
   - match goal with Hm : in_ctx _ _ _ _ |- _ => destruct (IH _ _ _ Hm) as (T0 & l0 & HT0 & -> & ->) end.
     exists T0⟨↑⟩, l0; split; [now apply in_there | split; [symmetry; apply (proj1 uren_ren_all) | reflexivity]].
 Qed.
+Lemma uwk_eqtm n {G i Γ t t' T l} : [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] ->
+  [ gctx_uwk n G ; ucren Γ (ush n) ⊢[ i ] uren_tm t (ush n) ≅ uren_tm t' (ush n) : uren_ty T (ush n)
+    @ lvren l (ush n) ].
+Proof.
+  intros H. rewrite gctx_uwk_as, uren_ush_ctx, !uren_ush_tm, uren_ush_ty, lvren_ush.
+  exact (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 usubstitution))))) _ _ _ _ _ _ _ H _ _
+           (usub_ok_ush n (gL G))).
+Qed.
+Lemma uwk_ty n {G i Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] ->
+  [ gctx_uwk n G ; ucren Γ (ush n) ⊢[ i ] uren_ty T (ush n) @ lvren l (ush n) ].
+Proof.
+  intros H. rewrite gctx_uwk_as, uren_ush_ctx, uren_ush_ty, lvren_ush.
+  exact (proj1 (proj2 (proj2 usubstitution)) _ _ _ _ _ H _ _ (usub_ok_ush n (gL G))).
+Qed.

@@ -135,17 +135,18 @@ variable (`hd_ok`); the bundles built by `mkrb`/`wrapMT`/`wrapMt` satisfy
 this by computation, and a typed recursor's bundle is literally
 `mkrb MT Mt bs` (`elimT_rb_shape`).
 
-### E8. Functionality in two stages
+### E8. Functionality with a prefix-wise context motive
 
-Functionality of a recursor needs the branch entries converted between
-`d` and `d'`: motive instances, whose equality is derived with the global
-substitution lemma. The global substitution lemma in turn uses
-functionality for global type/term variables, whose images are typed at
-C/P and so contain no recursor. Hence: functionality first for
-recursor-free subjects (`norec`), then global substitution, then
-functionality for everything (`FunctionalityM`).
+Functionality of a recursor needs its branch contexts' entries (motive
+instances) related under `d` and `d'`. The context motive of functionality
+is prefix-wise and yields the lifted equal substitutions directly: from
+`Δ ⊢ d ≅ d' : Γ` it gives
+`cexts Δ As[d] ⊢ lliftⁿ d ≅ lliftⁿ d' : cexts Γ As`, the entries'
+equalities coming from the type induction hypotheses of the branch-context
+premise (E7). No global substitution is needed, so the metatheory order
+is unchanged.
 
-### E9. Global substitution of context variables by concrete contexts
+### E9. Global substitution of context variables by concrete contexts (user decision, 2026-09-25: inside M3)
 
 The recursor's result type `M_Typ[l/ℓ, Δ/g, t/x_T]`, its β reducts, and
 the branch scopes' instances `(g, x : U_S^id)/g` instantiate a context
@@ -153,7 +154,10 @@ variable with a concrete context. M2 restricted the global substitution
 lemma to context variables ↦ context variables (deferred to M2b's `CΠ`);
 M3 lifts the restriction ("tail expansion": a context ending in `g`
 becomes the entries followed by the image, lengths and the tail
-condition of typed local substitutions shift accordingly).
+condition of typed local substitutions shift accordingly), in the
+syntactic lemma and in related global substitutions (a context variable
+goes to related contexts, as in 07a), since the recursor FT instantiates
+branch validity at `σ, Δ/g, …`.
 
 ## Order of work
 

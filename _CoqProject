@@ -24,6 +24,7 @@ theories/Typing/Properties.v
 
 theories/Typing/Substitution.v
 theories/Typing/Functionality.v
+theories/Typing/RecGSubst.v
 theories/Typing/GSubstitution.v
 theories/Typing/GStatic.v
 theories/Typing/Presupposition.v

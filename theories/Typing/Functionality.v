@@ -17,6 +17,51 @@ Lemma eqtm_subst_g {G i Γ t t' T l Δ d} :
   [ G ; Δ ⊢[ i ] t[d] ≅ t'[d] : T[d] @ l ].
 Proof. intros; eapply substitution_all; eauto. Qed.
 
+(** ** The recursors' scopes under a typed substitution, as lemmas *)
+
+Section RecScopes.
+Context {G : gctx} {Γ Δ : ctx} {d : lsub} (Hd : [ G ; Δ ⊢[ lM ] d : Γ ]).
+
+Lemma brctx_subst k MT Mt l1 l2 : k < 13 ->
+  [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ] ->
+  [ brG k G ; brΓ k Δ (wrapMT MT)[d] (wrapMt Mt)[d] l1 l2 ⊢[ lM ] ].
+Proof.
+  intros Hk H. pose proof (proj1 (proj2 substitution_all) _ _ _ H _ _ eq_refl _ _ (lsub_wf_bsub k _ _ _ _ Hk Hd))
+    as X.
+  rewrite brLocs_subst in X by (first [exact Hk | exact (lsub_wf_dnf Hd)]). exact X.
+Qed.
+
+Lemma brsub_wf k MT Mt l1 l2 : k < 13 ->
+  [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ] ->
+  [ brG k G ; brΓ k Δ (wrapMT MT)[d] (wrapMt Mt)[d] l1 l2 ⊢[ lM ]
+      lliftn (br_nl k) (bsub k d) : brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ].
+Proof.
+  intros Hk H. pose proof (brctx_subst k MT Mt l1 l2 Hk H) as C. unfold brΓ in C |- *.
+  rewrite <- (brLocs_len k (wrapMT MT) (wrapMt Mt) (lvren l1 (ush (br_nu k))) (lvren l2 (ush (br_nu k))) Hk).
+  rewrite <- brLocs_subst in C |- * by (first [exact Hk | exact (lsub_wf_dnf Hd)]).
+  apply lsub_wf_cexts; [apply lsub_wf_bsub; assumption | exact C].
+Qed.
+
+Lemma branch_subst k MT Mt l1 l2 b : k < 13 ->
+  [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ] ->
+  [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] b : brRes k (wrapMT MT) (wrapMt Mt)
+      @ brLv k l1 l2 ] ->
+  [ brG k G ; brΓ k Δ (wrapMT MT)[d] (wrapMt Mt)[d] l1 l2 ⊢[ lM ] b[lliftn (br_nl k) (bsub k d)]
+      : brRes k (wrapMT MT)[d] (wrapMt Mt)[d] @ brLv k l1 l2 ].
+Proof.
+  intros Hk HC Hb. pose proof (wf_tm_subst_g Hb (brsub_wf k MT Mt l1 l2 Hk HC)) as X.
+  rewrite brRes_subst in X by (first [exact Hk | exact (lsub_wf_dnf Hd)]). exact X.
+Qed.
+
+Lemma motT_subst_wf MT l : [ recGT G ; recΓT Γ ⊢[ lM ] MT @ l ] ->
+  [ recGT G ; recΓT Δ ⊢[ lM ] MT[llift (gwk (uwk d))] @ l ].
+Proof. intros H; exact (wf_ty_subst_g H (lsub_wf_recΓT _ _ _ _ Hd)). Qed.
+Lemma mott_subst_wf Mt l : [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ l ] ->
+  [ recGt G ; recΓt Δ ⊢[ lM ] Mt[llift (gwk (gwk (uwk d)))] @ l ].
+Proof. intros H; exact (wf_ty_subst_g H (lsub_wf_recΓt _ _ _ _ Hd)). Qed.
+
+End RecScopes.
+
 Section Corollaries.
 Context {G : gctx} {i : layer} (Hi : typeof i = i).
 
@@ -265,6 +310,67 @@ Proof.
   apply wft_CTrm; auto. exact (lsub_wf_ctx Hd).
 Qed.
 
+(** ** Equal substitutions in the recursors' scopes *)
+
+Lemma lsub_eq_uwkn nu G i Δ d d' Γ : [ G ; Δ ⊢[ i ] d ≅ d' : Γ ] ->
+  [ gctx_uwk nu G ; ucren Δ (ush nu) ⊢[ i ] uwkn nu d ≅ uwkn nu d' : ucren Γ (ush nu) ].
+Proof.
+  intros (Hd & Hd' & He). refine (conj (lsub_wf_uwkn _ _ _ _ _ _ Hd) (conj (lsub_wf_uwkn _ _ _ _ _ _ Hd') _)).
+  intros m T l Hin. destruct (in_ctx_uren_inv _ _ _ _ _ Hin) as (T0 & l0 & HT0 & -> & ->).
+  rewrite !llk_uwkn by eauto using lsub_wf_dnf.
+  replace ((uren_ty T0 (ush nu))[uwkn nu d]) with (uren_ty (T0[d]) (ush nu)).
+  - apply uwk_eqtm, He, HT0.
+  - apply (proj1 uren_subst_all). intros; now rewrite llk_uwkn by eauto using lsub_wf_dnf.
+Qed.
+
+Lemma lsub_eq_gwkn L Ψ Ds i Δ d d' Γ : [ ⊢ mkG L (Ds ++ Ψ) ] -> [ mkG L Ψ ; Δ ⊢[ i ] d ≅ d' : Γ ] ->
+  [ mkG L (Ds ++ Ψ) ; gcren Δ (ush (length Ds)) ⊢[ i ] gwkn (length Ds) d ≅ gwkn (length Ds) d'
+    : gcren Γ (ush (length Ds)) ].
+Proof.
+  intros HG (Hd & Hd' & He).
+  refine (conj (lsub_wf_gwkn _ _ _ _ _ _ _ HG Hd) (conj (lsub_wf_gwkn _ _ _ _ _ _ _ HG Hd') _)).
+  pose proof (gwk_stepn_wf Ds Ψ) as Hw.
+  assert (Hξ : forall j, gwk_fn (gwk_stepn (length Ds)) j = ush (length Ds) j) by apply gwk_stepn_fn.
+  intros m A k Hin. change (gcren ?x ?y) with x⟪y⟫ in Hin.
+  destruct (in_ctx_gren_inv _ _ _ _ _ Hin) as (A0 & HA0 & ->).
+  rewrite !llk_gwkn by eauto using lsub_wf_dnf.
+  replace (A0⟪ush (length Ds)⟫[gwkn (length Ds) d]) with ((A0[d])⟪ush (length Ds)⟫).
+  - pose proof (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 gweakening))))) _ _ _ _ _ _ _ (He _ _ _ HA0)
+                  _ _ Hw HG) as X.
+    rewrite (proj1 (proj2 (proj2 gren_ext_all)) _ _ _ Hξ), !(proj1 (proj2 gren_ext_all) _ _ _ Hξ),
+      (proj1 gren_ext_all _ _ _ Hξ) in X.
+    exact X.
+  - apply (proj1 gren_subst_all). intros; now rewrite llk_gwkn by eauto using lsub_wf_dnf.
+Qed.
+
+Lemma lsub_eq_bsub k G Δ d d' Γ : k < 13 -> [ G ; Δ ⊢[ lM ] d ≅ d' : Γ ] ->
+  [ brG k G ; wkc (br_nu k) (br_ng k) Δ ⊢[ lM ] bsub k d ≅ bsub k d' : wkc (br_nu k) (br_ng k) Γ ].
+Proof.
+  intros Hk Hd. pose proof (wf_brG (ctx_glob _ _ _ (lsub_wf_ctx (lsub_eq_l Hd))) k Hk) as HG.
+  unfold bsub, wkc, brG. rewrite <- (brDecls_len k Hk).
+  apply (lsub_eq_gwkn _ (gΨ (gctx_uwk (br_nu k) G)) (brDecls k)); [exact HG|].
+  apply lsub_eq_uwkn, Hd.
+Qed.
+
+Lemma lsub_eq_recΓT G Δ d d' Γ : [ G ; Δ ⊢[ lM ] d ≅ d' : Γ ] ->
+  [ recGT G ; recΓT Δ ⊢[ lM ] llift (gwk (uwk d)) ≅ llift (gwk (uwk d')) : recΓT Γ ].
+Proof.
+  intros Hd. pose proof (wf_recΓT _ _ (lsub_wf_ctx (lsub_eq_l Hd))) as HΘ.
+  unfold recΓT in *. inversion HΘ as [| |? ? ? A l HΔ HA Hl]; subst.
+  eapply (lsub_eq_lift (i := lM) eq_refl); [ | exact HA | exact I | apply eqty_refl, HA | reflexivity].
+  pose proof (wf_recGT (ctx_glob _ _ _ (lsub_wf_ctx (lsub_eq_l Hd)))) as HG.
+  apply (lsub_eq_gwkn _ _ (gdCtx :: nil)); [exact HG|]. apply (lsub_eq_uwkn 1), Hd.
+Qed.
+Lemma lsub_eq_recΓt G Δ d d' Γ : [ G ; Δ ⊢[ lM ] d ≅ d' : Γ ] ->
+  [ recGt G ; recΓt Δ ⊢[ lM ] llift (gwk (gwk (uwk d))) ≅ llift (gwk (gwk (uwk d'))) : recΓt Γ ].
+Proof.
+  intros Hd. pose proof (wf_recΓt _ _ (lsub_wf_ctx (lsub_eq_l Hd))) as HΘ.
+  unfold recΓt in *. inversion HΘ as [| |? ? ? A l HΔ HA Hl]; subst.
+  eapply (lsub_eq_lift (i := lM) eq_refl); [ | exact HA | exact I | apply eqty_refl, HA | reflexivity].
+  pose proof (wf_recGt (ctx_glob _ _ _ (lsub_wf_ctx (lsub_eq_l Hd)))) as HG.
+  apply (lsub_eq_gwkn _ _ (_ :: gdCtx :: nil)); [exact HG|]. apply (lsub_eq_uwkn 1), Hd.
+Qed.
+
 #[export] Hint Resolve lsub_eq_l lsub_eq_r lsub_eq_typeof lsub_wf_typeof : fung.
 #[export] Hint Extern 3 (wf_tm _ _ _ (subst _ _) _ _) => eapply wf_tm_subst_g : fung.
 #[export] Hint Extern 3 (wf_ty _ _ _ (subst _ _) _) => eapply wf_ty_subst_g : fung.
@@ -320,8 +426,8 @@ Ltac fung_entries :=
       rewrite <- (subst_subst_ty A e d0 (lcomp e d0) (fun m => llk_lcomp e d0 m))
   end;
   first
-  [ match goal with IH : forall n A k (_ : in_ctx _ n A k) (_ : norec_tm _) Δ d d', _ |- _ =>
-      eapply (IH n A k Hin); [apply norec_llk; assumption | eassumption] end
+  [ match goal with IH : forall n A k (_ : in_ctx _ n A k) Δ d d', _ |- _ =>
+      eapply (IH n A k Hin); eassumption end
   | match goal with
     | w : forall n A k (_ : in_ctx _ n A k), wf_tm _ _ _ _ _ _, Hd : lsub_eq _ _ _ _ _ _ |- _ =>
         eapply (wf_tm_subst_g (w n A k Hin)); first [exact (lsub_eq_l Hd) | exact (lsub_eq_r Hd)]
@@ -386,37 +492,100 @@ Ltac fung_manual :=
       eauto 6 using eqc_refl, lequiv_refl, eqty_refl, wf_ty_subst_g, lequiv_wf_l with fung
   end.
 
-(** Functionality for recursor-free subjects (M3_DESIGN.md E8); the full
-    statement is [FunctionalityM.functionality_full]. *)
-#[export] Hint Extern 1 (norec_tm _) =>
-  first [assumption | apply norec_llk; assumption | cbn; tauto] : fung.
-#[export] Hint Extern 1 (norec_ty _) => first [assumption | cbn; tauto] : fung.
+(** The context cases: equal substitutions of a prefix, lifted through the
+    rest (M3_DESIGN.md E8). *)
+Ltac fun_ctx :=
+  match goal with
+  | Heq : _ = cexts ?Γ0 ?As, Hd : lsub_eq _ _ _ ?d ?d' ?Γ0 |- _ =>
+      let As' := fresh "As'" in let A' := fresh "A'" in let l' := fresh "l'" in
+      let Θ' := fresh "Θ'" in let Hθ := fresh "Hθ" in
+      destruct (cexts_inv _ _ _ (eq_sym Heq)) as [[-> ?] | (As' & A' & l' & Θ' & -> & Hθ & ->)];
+      [ exact Hd
+      | first [ discriminate Hθ
+              | let HΓ := fresh "HΓ" in
+                injection Hθ as HΓ <- <-;
+                rewrite cexts_sub_snoc, !cexts_snoc, length_app, Nat.add_comm; cbn [Nat.add];
+                rewrite !lliftn_S;
+                match goal with
+                | IHc : forall Γ As, _ = cexts Γ As -> _,
+                  IHt : forall Δ d d', lsub_eq _ _ Δ d d' _ -> eq_ty _ _ _ _ _ _,
+                  w : wf_ty _ _ _ _ _ |- _ =>
+                    let X := fresh "X" in
+                    pose proof (IHc _ _ HΓ _ _ _ Hd) as X; rewrite <- HΓ in X |- *;
+                    eapply lsub_eq_lift_g;
+                    [ exact X
+                    | eapply lift_ty; [exact (wf_ty_subst_g w (lsub_eq_l X)) | apply lle_self_typeof]
+                    | assumption
+                    | eapply lift_eqty; [exact (IHt _ _ _ X) | apply lle_self_typeof]
+                    | reflexivity ]
+                end ] ]
+  end.
 
-Ltac norec_split :=
-  cbn [norec_ty norec_tm norec_ctx norec_l] in *;
-  repeat match goal with H : _ /\ _ |- _ => destruct H end;
-  try contradiction;
-  repeat match goal with
-         | IH : norec_tm ?t -> _, H : norec_tm ?t |- _ => specialize (IH H)
-         | IH : norec_ty ?t -> _, H : norec_ty ?t |- _ => specialize (IH H)
-         end.
+(** The recursors' premises. *)
+Ltac fun_rec_prem :=
+  match goal with
+  | |- eq_ty _ lD _ ?T ?T _ => apply eqty_refl; assumption
+  | Hd : lsub_eq _ _ _ ?d ?d' ?Γ |- wf_ty (recGT _) _ _ _ _ =>
+      eapply motT_subst_wf; [ first [exact (lsub_eq_l Hd) | exact (lsub_eq_r Hd)] | eassumption ]
+  | Hd : lsub_eq _ _ _ ?d ?d' ?Γ |- wf_ty (recGt _) _ _ _ _ =>
+      eapply mott_subst_wf; [ first [exact (lsub_eq_l Hd) | exact (lsub_eq_r Hd)] | eassumption ]
+  | Hd : lsub_eq _ _ _ ?d ?d' ?Γ, IH : forall Δ d d', lsub_eq _ _ Δ d d' (recΓT ?Γ) -> _
+    |- eq_ty (recGT _) _ _ _ _ _ => apply IH, lsub_eq_recΓT, Hd
+  | Hd : lsub_eq _ _ _ ?d ?d' ?Γ, IH : forall Δ d d', lsub_eq _ _ Δ d d' (recΓt ?Γ) -> _
+    |- eq_ty (recGt _) _ _ _ _ _ => apply IH, lsub_eq_recΓt, Hd
+  | Hd : lsub_eq _ _ _ ?d ?d' ?Γ |- forall k, k < 13 -> wf_ctx (brG k _) _ _ =>
+      let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
+      eapply brctx_subst; [ first [exact (lsub_eq_l Hd) | exact (lsub_eq_r Hd)] | exact Hk
+                          | match goal with w : forall k, k < 13 -> wf_ctx _ _ _ |- _ => apply w, Hk end ]
+  | Hd : lsub_eq _ _ _ ?d ?d' ?Γ |- forall k, k < 13 -> wf_tm (brG k _) _ _ _ _ _ =>
+      let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
+      eapply branch_subst; [ exact (lsub_eq_r Hd) | exact Hk
+                           | match goal with w : forall k, k < 13 -> wf_ctx _ _ _ |- _ => apply w, Hk end
+                           | match goal with w : forall k, k < 13 -> wf_tm _ _ _ _ _ _ |- _ => apply w, Hk end ]
+  | Hd : lsub_eq ?G _ ?Δ ?d ?d' ?Γ |- forall k, k < 13 -> eq_tm (brG k _) _ _ _ _ _ _ =>
+      let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
+      match goal with
+      | IHc : forall k, k < 13 -> forall Γ0 As, brΓ k Γ (wrapMT ?MT) (wrapMt ?Mt) ?l1 ?l2 = cexts Γ0 As -> _,
+        IH : forall k, k < 13 -> forall Δ d d', lsub_eq _ _ Δ d d' (brΓ k Γ _ _ _ _) -> _ |- _ =>
+          let X := fresh "X" in let Y := fresh "Y" in
+          pose proof (IHc k Hk _ _ eq_refl _ _ _ (lsub_eq_bsub k _ _ _ _ _ Hk Hd)) as X;
+          rewrite brLocs_subst in X by (first [exact Hk | exact (lsub_wf_dnf (lsub_eq_l Hd))]);
+          rewrite brLocs_len in X by exact Hk;
+          pose proof (IH k Hk _ _ _ X) as Y;
+          rewrite brRes_subst in Y by (first [exact Hk | exact (lsub_wf_dnf (lsub_eq_l Hd))]);
+          exact Y
+      end
+  end.
+
+Ltac fun_rec :=
+  match goal with
+  | Hd : lsub_eq _ _ _ ?d ?d' _ |- eq_tm _ _ _ (elimT _ _ _ _ _ _) _ _ _ =>
+      rewrite ?mkrb_subst; rewrite ?motT_subst by first [hd_tac | exact (lsub_wf_dnf (lsub_eq_l Hd))];
+      eapply eqtm_elimT; first [fun_rec_prem | fung_premise]
+  | Hd : lsub_eq _ _ _ ?d ?d' _ |- eq_tm _ _ _ (elimt _ _ _ _ _ _ _) _ _ _ =>
+      rewrite ?mkrb_subst; rewrite ?mott_subst by first [hd_tac | exact (lsub_wf_dnf (lsub_eq_l Hd))];
+      eapply eqtm_elimt; first [fun_rec_prem | fung_premise]
+  end.
 
 Theorem functionality_all :
   (forall G, [ ⊢ G ] -> True) /\
-  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
-  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> norec_ty T ->
+  (forall G i Θ, [ G ; Θ ⊢[ i ] ] -> forall Γ As, Θ = cexts Γ As ->
+     forall Δ d d', [ G ; Δ ⊢[ i ] d ≅ d' : Γ ] ->
+     [ G ; cexts Δ (cexts_sub As d) ⊢[ i ] lliftn (length As) d ≅ lliftn (length As) d' : cexts Γ As ]) /\
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] ->
      forall Δ d d', [ G ; Δ ⊢[ i ] d ≅ d' : Γ ] -> [ G ; Δ ⊢[ i ] T[d] ≅ T[d'] @ l ]) /\
-  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> norec_tm t ->
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] ->
      forall Δ d d', [ G ; Δ ⊢[ i ] d ≅ d' : Γ ] -> [ G ; Δ ⊢[ i ] t[d] ≅ t[d'] : T[d] @ l ]) /\
   (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> True) /\
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; try exact I; norec_split;
+  apply typing_mut; intros; try exact I; try fun_ctx;
     try match goal with c : compt ?i |- _ => pose proof (compt_notV _ c) end;
     try match goal with Hd : lsub_eq _ _ _ _ _ _ |- _ => pose proof (lsub_eq_l Hd) end;
     cbn [typeof] in *; sub_rw.
   all: try solve [eapply lsub_eq_var; eassumption].
+  all: try fun_rec.
   all: try fung_manual.
   all: try (timeout 3 fung_step).
   (* code of Π and natrec: the binder premises need the substituted
@@ -455,9 +624,9 @@ Qed.
 Theorem functionality :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
-  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> typeof i = i -> norec_ty T ->
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> typeof i = i ->
      forall Δ d d', [ G ; Δ ⊢[ i ] d ≅ d' : Γ ] -> [ G ; Δ ⊢[ i ] T[d] ≅ T[d'] @ l ]) /\
-  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> typeof i = i -> norec_tm t ->
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> typeof i = i ->
      forall Δ d d', [ G ; Δ ⊢[ i ] d ≅ d' : Γ ] -> [ G ; Δ ⊢[ i ] t[d] ≅ t[d'] : T[d] @ l ]) /\
   (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> True) /\
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
@@ -466,51 +635,3 @@ Proof.
   destruct functionality_all as (_ & _ & H1 & H2 & _).
   refine (conj (fun _ _ => I) (conj (fun _ _ _ _ => I) (conj _ (conj _ (conj _ _))))); intros; eauto.
 Qed.
-
-(** ** Typed below layer M: recursor-free *)
-
-Lemma in_ctx_lt Δ n : n < clen Δ -> exists A k, in_ctx Δ n A k.
-Proof.
-  revert n; induction Δ as [| g | Δ IH A k]; intros n Hn; cbn in Hn; try lia.
-  destruct n as [|n].
-  - exists A⟨↑⟩, k; constructor.
-  - destruct (IH n ltac:(lia)) as (B & k' & HB). exists B⟨↑⟩, k'; now constructor.
-Qed.
-
-Lemma norec_l_lk d : (forall n, norec_tm (llk d n)) -> norec_l d.
-Proof.
-  induction d as [k|d IH t]; intros H; cbn; auto.
-  split; [apply IH; intros n; exact (H (S n)) | exact (H 0)].
-Qed.
-
-Lemma norec_lsub d Δ Γ : lsub_tail d Δ Γ ->
-  (forall n A k, in_ctx Δ n A k -> norec_tm (llk d n)) -> norec_l d.
-Proof.
-  intros [_ Ht] H. apply norec_l_lk. intros n.
-  destruct (Nat.lt_ge_cases n (clen Δ)) as [Hn|Hn].
-  - destruct (in_ctx_lt _ _ Hn) as (A & k & HA); eauto.
-  - replace n with (clen Δ + (n - clen Δ)) by lia. rewrite Ht. exact I.
-Qed.
-
-Theorem low_norec :
-  (forall G, [ ⊢ G ] -> True) /\
-  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
-  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i <> lM -> norec_ty T) /\
-  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i <> lM -> norec_tm t) /\
-  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> True) /\
-  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
-  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
-Proof.
-  apply typing_mut; intros; try exact I; cbn; try congruence;
-    repeat match goal with
-           | H : ?i <> lM -> _, Hi : ?i <> lM |- _ => specialize (H Hi)
-           end;
-    try (eapply norec_lsub; [eassumption | intros; eauto]);
-    intuition auto.
-Qed.
-
-Lemma wf_ty_norec {G i Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] -> i <> lM -> norec_ty T.
-Proof. intros H; exact (proj1 (proj2 (proj2 low_norec)) _ _ _ _ _ H). Qed.
-Lemma wf_tm_norec {G i Γ t T l} : [ G ; Γ ⊢[ i ] t : T @ l ] -> i <> lM -> norec_tm t.
-Proof. intros H; exact (proj1 (proj2 (proj2 (proj2 low_norec))) _ _ _ _ _ _ H). Qed.
-

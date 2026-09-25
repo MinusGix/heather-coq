@@ -962,6 +962,7 @@ Proof.
   all: sub_manual2.
 Qed.
 
+
 Theorem substitution :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
