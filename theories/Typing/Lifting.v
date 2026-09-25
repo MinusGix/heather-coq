@@ -73,6 +73,7 @@ Ltac lift_step :=
             | solve [eapply eqtm_letboxT_beta; lift_premises]
             | solve [eapply eqtm_letboxt_beta; lift_premises]
             | solve [eapply eqtm_elimT; lift_premises] | solve [eapply eqtm_elimt; lift_premises]
+            | solve [eapply eqtm_boxT; lift_premises] | solve [eapply eqtm_boxt; lift_premises]
             | solve [eapply eqtm_elimT_beta; lift_premises]
             | solve [eapply eqtm_elimt_beta; lift_premises] ]
   end.

@@ -419,6 +419,10 @@ Ltac gs_eq := push_gsubst; gs_rewrite; push_gsubst; first [reflexivity | f_equal
 #[export] Hint Extern 1 (lequiv _ _ _) => (cbn; assumption) : gsub.
 #[export] Hint Extern 1 (lle _ _) => assumption : gsub.
 #[export] Hint Extern 1 (_ <> _) => assumption : gsub.
+#[export] Hint Extern 1 (ty_leq _ _) =>
+  apply (proj1 leq_gsubst_all); [intros; apply gobj_leq_refl | assumption] : gsub.
+#[export] Hint Extern 1 (tm_leq _ _) =>
+  apply (proj1 (proj2 leq_gsubst_all)); [intros; apply gobj_leq_refl | assumption] : gsub.
 #[export] Hint Extern 1 (compt _) =>
   first [assumption | apply compt_typeof | (left; reflexivity) | (right; reflexivity)] : gsub.
 #[export] Hint Extern 1 (_ = _ \/ _ = _) => first [left; reflexivity | right; reflexivity] : gsub.
@@ -452,7 +456,8 @@ Ltac gs_step :=
             | solve [eapply eqty_El_pi; gs_premises] | solve [eapply eqty_lconv; gs_premises]
             | solve [eapply eqty_CTyp; gs_premises] | solve [eapply eqty_CTrm; gs_premises] ]
   | |- eq_tm _ _ _ _ _ _ _ =>
-      first [ solve [eapply eqtm_refl; gs_premises] | solve [eapply eqtm_sym; gs_premises]
+      first [ solve [eapply eqtm_boxT; gs_premises] | solve [eapply eqtm_boxt; gs_premises]
+            | solve [eapply eqtm_refl; gs_premises] | solve [eapply eqtm_sym; gs_premises]
             | solve [eapply eqtm_trans; gs_premises] | solve [eapply eqtm_code_U; gs_premises]
             | solve [eapply eqtm_code_pi; gs_premises] | solve [eapply eqtm_succ; gs_premises]
             | solve [eapply eqtm_lam; gs_premises]

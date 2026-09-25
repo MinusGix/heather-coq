@@ -362,6 +362,8 @@ Ltac gw_eq := push_gren; gren_rewrite; push_gren; first [reflexivity | f_equal; 
 #[export] Hint Extern 1 (lle _ _) => assumption : gwk.
 #[export] Hint Extern 1 (_ <> _) => assumption : gwk.
 #[export] Hint Extern 1 (compt _) => assumption : gwk.
+#[export] Hint Extern 1 (ty_leq _ _) => apply (proj1 leq_gren_all); assumption : gwk.
+#[export] Hint Extern 1 (tm_leq _ _) => apply (proj1 (proj2 leq_gren_all)); assumption : gwk.
 #[export] Hint Extern 1 (_ = _ \/ _ = _) => first [left; reflexivity | right; reflexivity] : gwk.
 
 Ltac gw_premises := eauto 6 with gwk.
@@ -524,6 +526,8 @@ Ltac gw_manual :=
       [ .. | gw_motT | gw_motT | gw_motT | gw_mott | gw_mott | gw_mott
            | gw_branches | gw_branches | gw_branches | gw_branches | ];
       gw_premise
+  | |- eq_tm _ _ _ (boxT _) _ _ _ => eapply eqtm_boxT; gw_premise
+  | |- eq_tm _ _ _ (boxt _) _ _ _ => eapply eqtm_boxt; gw_premise
   | |- wf_tm _ _ _ (natrec _ _ _ _ _) _ _ => eapply wf_natrec; gw_premise
   | |- eq_tm _ _ _ (natrec _ _ _ _ zero) _ _ _ => eapply eqtm_natrec_zero; gw_premise
   | |- eq_tm _ _ _ (natrec _ _ _ _ (succ _)) _ _ _ => eapply eqtm_natrec_succ; gw_premise

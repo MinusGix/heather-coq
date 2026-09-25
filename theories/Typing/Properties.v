@@ -214,7 +214,8 @@ Ltac wk_step :=
             | solve [eapply eqty_El_pi; wk_premises] | solve [eapply eqty_lconv; wk_premises]
             | solve [eapply eqty_CTyp; wk_premises] | solve [eapply eqty_CTrm; wk_premises] ]
   | |- eq_tm _ _ _ _ _ _ _ =>
-      first [ solve [eapply eqtm_refl; wk_premises] | solve [eapply eqtm_sym; wk_premises]
+      first [ solve [eapply eqtm_boxT; wk_premises] | solve [eapply eqtm_boxt; wk_premises]
+            | solve [eapply eqtm_refl; wk_premises] | solve [eapply eqtm_sym; wk_premises]
             | solve [eapply eqtm_trans; wk_premises] | solve [eapply eqtm_code_U; wk_premises]
             | solve [eapply eqtm_code_pi; wk_premises] | solve [eapply eqtm_succ; wk_premises]
             | solve [eapply eqtm_natrec; wk_premises] | solve [eapply eqtm_lam; wk_premises]

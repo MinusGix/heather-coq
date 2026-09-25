@@ -106,6 +106,10 @@ Proof. reflexivity. Qed.
   match goal with Hin : in_gctx _ _ _ |- _ => exact (in_gctx_usubst _ _ _ _ Hin) end : us.
 #[local] Hint Extern 1 (compt _) => assumption : us.
 #[local] Hint Extern 1 (lle _ _) => assumption : us.
+#[local] Hint Extern 1 (ty_leq _ _) =>
+  apply (proj1 leq_usubst_all); [intros; apply leqv_refl | assumption] : us.
+#[local] Hint Extern 1 (tm_leq _ _) =>
+  apply (proj1 (proj2 leq_usubst_all)); [intros; apply leqv_refl | assumption] : us.
 
 Lemma us_wf_regty G i Δ x T T' l :
   [ G ; Δ ⊢[ i ] x : T' @ l ] -> T' = T -> [ G ; Δ ⊢[ i ] x : T @ l ].

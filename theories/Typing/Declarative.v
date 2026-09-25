@@ -223,7 +223,15 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d' n : A[d'] @ k ]) ->
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n ≅ llk d' n : A[d] @ k ]) ->
     [ G ; Γ ⊢[ i ] gvar u d ≅ gvar u d' : T[d] @ l ]
-(* no congruence for [box]: boxed code is equal only to itself (06:534) *)
+(* [box] congruence: code up to level equivalence (the Static Code Lemma,
+   05:1055; M3_DESIGN.md E11), with its C-equation *)
+| eqtm_boxT G Γ Δ T T' l : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
+    [ G ; Δ ⊢[ lC ] T @ l ] -> [ G ; Δ ⊢[ lC ] T' @ l ] -> [ G ; Δ ⊢[ lC ] T ≅ T' @ l ] -> ty_leq T T' ->
+    [ G ; Γ ⊢[ lM ] boxT T ≅ boxT T' : tyCTyp Δ l @ lzero ]
+| eqtm_boxt G Γ Δ t t' T l : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
+    [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Δ ⊢[ lC ] t : T @ l ] -> [ G ; Δ ⊢[ lC ] t' : T @ l ] ->
+    [ G ; Δ ⊢[ lC ] t ≅ t' : T @ l ] -> tm_leq t t' ->
+    [ G ; Γ ⊢[ lM ] boxt t ≅ boxt t' : tyCTrm Δ T l @ lzero ]
 | eqtm_letboxT G Γ l1 l2 l3 l4 Δ Δ' M M' t1 t2 t t0 :
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] ] ->
     [ G ⊢[ lD ] Δ ≅ Δ' ] ->
