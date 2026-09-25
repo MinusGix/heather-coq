@@ -64,10 +64,17 @@ M1's metatheory assumed `typeof i = i`. M2 needs, per ch. 5:
 - **lifting** (`i ≤ i'` preserves judgments, 05:996);
 - **unlifting** P→C for types and terms whose syntax is MLTT-only (05:1039);
 - **Static Code** (05:1055): at C, equality is syntactic *modulo level
-  equivalence*. Our levels carry semantic `≈`, so we define `≡ₗ`
-  (syntactic equality with `lequiv` on every level annotation) and state
-  Static Code with it. Everything that the paper phrases as "`t = t'`" for
-  C-layer code (global substitution relation, the `box` clause) uses `≡ₗ`.
+  equivalence*. **Superseded (2026-09-25, user decision):** the places
+  where the paper says "`t = t'`" for C-layer code use literal equality,
+  as the paper does. These are the `box` congruence (06:534), the `box`
+  payload and the C/V images of related global substitutions (07a:390).
+  `eqtm_boxT`/`eqtm_boxt` are retired (`box c ≅ box c` is reflexivity),
+  and the generic `box` laws are reflexive. With `C`-equal (not literal)
+  `box` congruence, the FT at M needed `box T⦃σ⦄ ≅ box T⦃σ'⦄` at C for
+  related `σ ≈ σ'`. That meant either presupposition at C plus a typed
+  C-functionality theorem, or a two-way `≡ₗ` Static Code development. With
+  literal equality, `T⦃σ⦄ = T⦃σ'⦄` for C-typed `T` is a syntactic
+  induction.
 - substitution and presupposition extended to C;
 - **global weakening** and the **global substitution lemma** (05:1075),
   the latter restricted to the P/M range for context statements;
@@ -96,9 +103,8 @@ live in a class `GenericEqM EP EM` over the two instances. As landed
   and neutral `U^δ`/`u^δ`. Relatedness of substitutions is `geq_lsub`
   (tails, `dnfl`, typing of both sides, pairwise `≈` of entries), and of
   contexts `geq_ctx` (07:68), with `geq_ctx_sound`.
-- `GenericEqM` holds `CTyp`/`CTrm` (levels up to `lequiv`), `box` for
-  code that is declaratively equal at C (Static Code makes this `≡ₗ`;
-  it subsumes the paper's reflexive law), and neutral `letbox`. The
+- `GenericEqM` holds `CTyp`/`CTrm` (levels up to `lequiv`), reflexive
+  `box` (the paper's law; see D3), and neutral `letbox`. The
   `letbox` laws keep the declarative typing premises of the declarative
   congruence rule (`M`, `M'`, the right-hand body), as M1's `natrec` law
   does.

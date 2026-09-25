@@ -303,8 +303,7 @@ Ltac gs_step :=
             | solve [eapply eqtm_lam; gs_premises]
             | solve [eapply eqtm_app; gs_premises] | solve [eapply eqtm_conv; gs_premises]
             | solve [eapply eqtm_lconv; gs_premises]
-            | solve [eapply eqtm_beta; gs_premises]
-            | solve [eapply eqtm_boxT; gs_premises] | solve [eapply eqtm_boxt; gs_premises] ]
+            | solve [eapply eqtm_beta; gs_premises] ]
   end.
 
 Ltac gs_premise :=

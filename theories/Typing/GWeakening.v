@@ -228,8 +228,7 @@ Ltac gw_step :=
             | solve [eapply eqtm_lconv; gw_premises]
             | solve [eapply eqtm_natrec_zero; gw_premises]
             | solve [eapply eqtm_natrec_succ; gw_premises]
-            | solve [eapply eqtm_beta; gw_premises] | solve [eapply eqtm_eta; gw_premises]
-            | solve [eapply eqtm_boxT; gw_premises] | solve [eapply eqtm_boxt; gw_premises] ]
+            | solve [eapply eqtm_beta; gw_premises] | solve [eapply eqtm_eta; gw_premises] ]
   end.
 
 (** One premise: directly, or through an induction hypothesis up to a type equation. *)

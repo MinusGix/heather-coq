@@ -180,8 +180,7 @@ Ltac wk_step :=
             | solve [eapply eqtm_lconv; wk_premises]
             | solve [eapply eqtm_natrec_zero; wk_premises]
             | solve [eapply eqtm_natrec_succ; wk_premises]
-            | solve [eapply eqtm_beta; wk_premises] | solve [eapply eqtm_eta; wk_premises]
-            | solve [eapply eqtm_boxT; wk_premises] | solve [eapply eqtm_boxt; wk_premises] ]
+            | solve [eapply eqtm_beta; wk_premises] | solve [eapply eqtm_eta; wk_premises] ]
   end.
 
 Lemma wf_ctx_nat G i Δ : i <> lV -> [ G ; Δ ⊢[ typeof i ] ] ->
