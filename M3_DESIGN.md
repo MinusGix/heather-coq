@@ -311,6 +311,23 @@ The generic laws gain stability of `~`/`≈` under universe substitutions
 (declaratively: the universe substitution lemma), and `VPLaws` gains the
 same for the parameters.
 
+**E14 status (2026-09-25).** Done: `gwk_ok` and `GSubRel` allow level
+growth (`gL G <= gL G'`; RecS keeps `gL G' = L'` as a section hypothesis,
+supplied after re-levelling the source to the target's count); generic
+laws for universe substitution; `LR_perm` (LogRel/UPermLR.v), `LR_uwk`;
+validity forms and `vpM` along permutations (Validity/UPermV.v). The
+scoping fact is `typed_lwf` (StaticCode) with `lwf_us_ext_*` (UPerm).
+
+**Remaining for the recursors' FT (E13).**
+1. Neutral scrutinees: `ElimPrem` at the target from the motives' and
+   branches' validity, at the identity extension of `σ` (global: `gup`
+   of `guwk σ`, images universe-weakened via growth + rotation; local:
+   `llift (gwk (uwk e))`, the fresh variables related as neutrals).
+2. The recursion lemma proper: induction on the C-typing of the code;
+   the right code's components are typed by `static_code` from `≡ₗ`.
+3. The FT cases (typing, congruence, β for both recursors): scrutinee
+   whnf is `box c` (recursion lemma) or neutral (1); anti-reduction.
+
 ## Order of work
 
 1. **Syntax** (done). Level renaming and substitution; the bundle nodes,
