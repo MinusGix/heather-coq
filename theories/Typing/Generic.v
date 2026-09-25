@@ -210,6 +210,16 @@ Class GenericEqLaws `{GenericEq} := {
   geq_tm_gwk {G G' γ Γ t t' T l} : gwk_ok γ G' G -> [ ⊢ G' ] ->
     [ G ; Γ ⊢ t ≈ t' : T @ l ] -> [ G' ; Γ⟪γ⟫ ⊢ t⟪γ⟫ ≈ t'⟪γ⟫ : T⟪γ⟫ @ l ] ;
 
+  (** Universe substitution ([φ : L' ⇒ gL G], M3_DESIGN.md E14) *)
+  gne_ty_us {G Γ V V' l L' φ} : usub_ok φ L' (gL G) -> [ G ; Γ ⊢ V ~ V' @ l ] ->
+    [ G_us G L' φ ; ucsubst Γ φ ⊢ usubst_ty V φ ~ usubst_ty V' φ @ lvsubst l φ ] ;
+  geq_ty_us {G Γ T T' l L' φ} : usub_ok φ L' (gL G) -> [ G ; Γ ⊢ T ≈ T' @ l ] ->
+    [ G_us G L' φ ; ucsubst Γ φ ⊢ usubst_ty T φ ≈ usubst_ty T' φ @ lvsubst l φ ] ;
+  gne_tm_us {G Γ t t' T l L' φ} : usub_ok φ L' (gL G) -> [ G ; Γ ⊢ t ~ t' : T @ l ] ->
+    [ G_us G L' φ ; ucsubst Γ φ ⊢ usubst_tm t φ ~ usubst_tm t' φ : usubst_ty T φ @ lvsubst l φ ] ;
+  geq_tm_us {G Γ t t' T l L' φ} : usub_ok φ L' (gL G) -> [ G ; Γ ⊢ t ≈ t' : T @ l ] ->
+    [ G_us G L' φ ; ucsubst Γ φ ⊢ usubst_tm t φ ≈ usubst_tm t' φ : usubst_ty T φ @ lvsubst l φ ] ;
+
   (** Neutral global variables (07:268, 07:290) *)
   gne_ty_gvar {G Γ U Δ i' l d d'} : in_gctx (gΨ G) U (gdTy Δ i' l) -> lle i' ge_layer ->
     geq_lsub G Γ d d' Δ -> [ G ; Γ ⊢ tyGvar U d ~ tyGvar U d' @ l ] ;

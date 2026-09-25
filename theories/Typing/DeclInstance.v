@@ -112,6 +112,15 @@ Proof.
   - intros * Hγ HG' (Hn & Hn' & H).
     exact (conj (whne_gren _ _ Hn) (conj (whne_gren _ _ Hn') (gwk_eqtm Hγ HG' H))).
   - intros * Hγ HG' H; exact (gwk_eqtm Hγ HG' H).
+  (* universe substitution *)
+  - intros * Hφ (Hn & Hn' & H).
+    exact (conj (whne_ty_usubst _ _ Hn) (conj (whne_ty_usubst _ _ Hn')
+            (proj1 (proj2 (proj2 (proj2 (proj2 usubstitution)))) _ _ _ _ _ _ H _ _ Hφ))).
+  - intros * Hφ H; exact (proj1 (proj2 (proj2 (proj2 (proj2 usubstitution)))) _ _ _ _ _ _ H _ _ Hφ).
+  - intros * Hφ (Hn & Hn' & H).
+    exact (conj (whne_usubst _ _ Hn) (conj (whne_usubst _ _ Hn')
+            (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 usubstitution))))) _ _ _ _ _ _ _ H _ _ Hφ))).
+  - intros * Hφ H; exact (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 usubstitution))))) _ _ _ _ _ _ _ H _ _ Hφ).
   (* global variables *)
   - intros * Hin Hl [HΓ Ht Hd Ht' Hd' Hw Hw' He]; cbn in *.
     refine (conj _ (conj _ _)); [constructor .. |].

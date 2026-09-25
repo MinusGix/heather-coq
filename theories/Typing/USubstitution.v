@@ -345,3 +345,35 @@ Proof.
   intros H. rewrite gctx_uwk_as, uren_ush_ctx, uren_ush_ty, lvren_ush.
   exact (proj1 (proj2 (proj2 usubstitution)) _ _ _ _ _ H _ _ (usub_ok_ush n (gL G))).
 Qed.
+
+(** ** Weak-head normal forms and reduction under universe substitution
+    (M3_DESIGN.md E14) *)
+
+Lemma whne_usubst t φ : whne t -> whne (usubst_tm t φ).
+Proof. induction 1; cbn; whne_step. Qed.
+Lemma whnf_usubst t φ : whnf t -> whnf (usubst_tm t φ).
+Proof. destruct 1; cbn; auto using whne_usubst with whnf. Qed.
+Lemma whne_ty_usubst T φ : whne_ty T -> whne_ty (usubst_ty T φ).
+Proof. destruct 1; cbn; constructor; auto using whne_usubst. Qed.
+Lemma whnf_ty_usubst T φ : whnf_ty T -> whnf_ty (usubst_ty T φ).
+Proof. destruct 1; cbn; auto using whne_ty_usubst with whnf. Qed.
+
+Lemma red_usubst_both :
+  (forall t u, red t u -> forall φ, red (usubst_tm t φ) (usubst_tm u φ)) /\
+  (forall T U, red_ty T U -> forall φ, red_ty (usubst_ty T φ) (usubst_ty U φ)).
+Proof.
+  apply red_both; intros; cbn [usubst_tm usubst_ty ucsubst gousubst];
+    rewrite ?usubst_lsingle, ?usubst_lsingle2, ?usubst_gsingle; try now constructor.
+  all: try (constructor; auto; fail).
+  - constructor. now apply redT_usubst.
+  - constructor. now apply redt_usubst.
+Qed.
+
+Lemma red_usubst t u φ : red t u -> red (usubst_tm t φ) (usubst_tm u φ).
+Proof. intros H; now apply red_usubst_both. Qed.
+Lemma red_ty_usubst T U φ : red_ty T U -> red_ty (usubst_ty T φ) (usubst_ty U φ).
+Proof. intros H; now apply red_usubst_both. Qed.
+Lemma reds_usubst t u φ : reds t u -> reds (usubst_tm t φ) (usubst_tm u φ).
+Proof. unfold reds; induction 1; [constructor|econstructor; eauto using red_usubst]. Qed.
+Lemma reds_ty_usubst T U φ : reds_ty T U -> reds_ty (usubst_ty T φ) (usubst_ty U φ).
+Proof. unfold reds_ty; induction 1; [constructor|econstructor; eauto using red_ty_usubst]. Qed.
