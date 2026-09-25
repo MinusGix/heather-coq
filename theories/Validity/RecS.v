@@ -3104,4 +3104,309 @@ Proof.
   apply (gne_tm_conv Hne). rewrite (@gm_layer_M EP EM EMl). exact (LRty_eqM (ex_intro _ R HR)).
 Qed.
 
+
+(** ** The recursion lemmas proper (M3_DESIGN.md E13)
+
+    By induction on the left code's C-typing at [G']: for every context
+    [ΔR] equal to its context, every right code [≡ₗ]-related to it (with
+    well-formed levels, hence typed by the static code lemma), and every
+    pair of index types (terms) or levels equivalent to its own, the two
+    recursions are related at the motives' instances. *)
+
+Definition RT Δ c k := [ G' ; Δ ⊢[ lC ] c @ k ] ->
+  forall ΔR kL kR c', [ G' ⊢[ lD ] Δ ≅ ΔR ] -> lequiv L' k kL -> lequiv L' k kR ->
+  ty_leq c c' -> ty_lwf L' c' ->
+  LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) kL Δ (boxT c)) (motT (wrapMT MTR) kR ΔR (boxT c'))
+    (recTL kL Δ c) (recTR kR ΔR c').
+Definition Rt Δ c T k := [ G' ; Δ ⊢[ lC ] c : T @ k ] ->
+  forall ΔR kL kR TL TR c', [ G' ⊢[ lD ] Δ ≅ ΔR ] -> lequiv L' k kL -> lequiv L' k kR ->
+  [ G' ; Δ ⊢[ lD ] T ≅ TL @ k ] -> [ G' ; Δ ⊢[ lD ] T ≅ TR @ k ] ->
+  tm_leq c c' -> tm_lwf L' c' ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) kL Δ TL (boxt c)) (mott (wrapMt MtR) kR ΔR TR (boxt c'))
+    (rectL kL Δ TL c) (rectR kR ΔR TR c').
+
+Lemma HCD : lle lC lD. Proof. unfold lle; cbn; lia. Qed.
+
+Lemma scr_ty {Δ c c' k} : [ G' ; Δ ⊢[ lC ] c @ k ] -> ty_leq c c' -> ty_lwf L' c' ->
+  [ G' ; Δ ⊢[ lC ] c' @ k ] /\ [ G' ; Δ ⊢[ lD ] c ≅ c' @ k ].
+Proof.
+  intros H E W. rewrite <- EL in W.
+  destruct (proj1 (proj2 (proj2 static_code)) _ _ _ _ _ H HCD _ E W) as [H1 H2].
+  exact (conj H1 (lift_eqty H2 HCD)).
+Qed.
+Lemma scr_tm {Δ c c' T k} : [ G' ; Δ ⊢[ lC ] c : T @ k ] -> tm_leq c c' -> tm_lwf L' c' ->
+  [ G' ; Δ ⊢[ lC ] c' : T @ k ] /\ [ G' ; Δ ⊢[ lD ] c ≅ c' : T @ k ].
+Proof.
+  intros H E W. rewrite <- EL in W.
+  destruct (proj1 (proj2 (proj2 (proj2 static_code))) _ _ _ _ _ _ H HCD _ E W) as [H1 H2].
+  exact (conj H1 (lift_eqtm H2 HCD)).
+Qed.
+
+Lemma ceq_ext {Δ ΔR A A' k k'} : [ G' ⊢[ lD ] Δ ≅ ΔR ] -> [ G' ; Δ ⊢[ lD ] A @ k ] ->
+  [ G' ; Δ ⊢[ lD ] A ≅ A' @ k ] -> lequiv L' k k' -> [ G' ⊢[ lD ] Δ ,, A @ k ≅ ΔR ,, A' @ k' ].
+Proof. intros; apply eqc_ext; [assumption | assumption | assumption | rewrite EL; assumption]. Qed.
+
+Lemma eq_self_l {Δ T T' k} : [ G' ; Δ ⊢[ lD ] T ≅ T' @ k ] -> [ G' ; Δ ⊢[ lD ] T ≅ T @ k ].
+Proof. intros H; exact (eqty_trans _ _ _ _ _ _ _ H (eqty_sym _ _ _ _ _ _ H)). Qed.
+
+Ltac leq_inv := match goal with
+  | E : ty_leq _ ?c, W : ty_lwf _ ?c |- _ => is_var c; destruct c; cbn in E, W; try contradiction
+  | E : tm_leq _ ?c, W : tm_lwf _ ?c |- _ => is_var c; destruct c; cbn in E, W; try contradiction
+  end; repeat match goal with H : _ /\ _ |- _ => destruct H end.
+
+Lemma RT_nat {Δ} : RT Δ tyNat lzero.
+Proof.
+  intros Hc ΔR kL kR c' HΔ HkL HkR E W. pose proof (sc_ctx HCD Hc) as HΔL. leq_inv.
+  exact (rec_T_nat HΔL HΔ HkL HkR).
+Qed.
+
+Lemma RT_U {Δ k} : RT Δ (tyU k) (lsuc k).
+Proof.
+  intros Hc ΔR kL kR c' HΔ HkL HkR E W. pose proof (sc_ctx HCD Hc) as HΔL.
+  pose proof (lequiv_wf_l _ _ _ HkL) as Hw; cbn in Hw. leq_inv.
+  exact (rec_T_U HΔL HΔ HkL HkR Hw W E).
+Qed.
+
+Lemma RT_lconv {Δ c k k'} : lequiv (gL G') k k' -> [ G' ; Δ ⊢[ lC ] c @ k' ] -> RT Δ c k' -> RT Δ c k.
+Proof.
+  intros Q Hc' IH _ ΔR kL kR c' HΔ HkL HkR E W. rewrite EL in Q.
+  exact (IH Hc' ΔR kL kR c' HΔ (lequiv_trans _ _ _ _ (lequiv_sym _ _ _ Q) HkL)
+           (lequiv_trans _ _ _ _ (lequiv_sym _ _ _ Q) HkR) E W).
+Qed.
+
+Lemma RT_gvar {Δ U d k} : RT Δ (tyGvar U d) k.
+Proof.
+  intros Hc ΔR kL kR c' HΔ HkL HkR E W. pose proof (sc_ctx HCD Hc) as HΔL.
+  destruct (scr_ty Hc E W) as [Hc' _]. pose proof E as E0; revert E0. leq_inv. match goal with H : U = ?x |- _ => subst x end. intros E0.
+  exact (rec_T_gvar HΔL HΔ HkL HkR Hc Hc' E0).
+Qed.
+
+Lemma RT_pi {Δ k1 k2 A B} : lwf (gL G') k1 -> lwf (gL G') k2 ->
+  [ G' ; Δ ⊢[ lC ] A @ k1 ] -> [ G' ; Δ ,, A @ k1 ⊢[ lC ] B @ k2 ] ->
+  RT Δ A k1 -> RT (Δ ,, A @ k1) B k2 -> RT Δ (tyPi k1 k2 A B) (lmax k1 k2).
+Proof.
+  intros Hw1 Hw2 HA HB IHA IHB Hc ΔR kL kR c' HΔ HkL HkR E W. rewrite EL in Hw1, Hw2.
+  pose proof (sc_ctx HCD Hc) as HΔL. leq_inv.
+  destruct (scr_ty HA ltac:(eassumption) ltac:(eassumption)) as [HA' HAA].
+  destruct (scr_ty HB ltac:(eassumption) ltac:(eassumption)) as [HB' HBB].
+  refine (rec_T_pi HΔL HΔ HkL HkR Hw1 Hw2 _ _ _ _ HA HB HA' HB' _ _ _ _); try eassumption.
+  - refine (IHA HA _ _ _ _ HΔ (lequiv_refl _ _ Hw1) (lq Hw1 _ _) _ _); eassumption.
+  - refine (IHB HB _ _ _ _ (ceq_ext HΔ (lift_ty HA HCD) HAA (lq Hw1 _ _)) (lequiv_refl _ _ Hw2) (lq Hw2 _ _) _ _);
+      eassumption.
+Qed.
+
+Lemma RT_El {Δ k t} : lwf (gL G') k -> [ G' ; Δ ⊢[ lC ] t : tyU k @ lsuc k ] ->
+  Rt Δ t (tyU k) (lsuc k) -> RT Δ (tyEl k t) k.
+Proof.
+  intros Hw Ht IH Hc ΔR kL kR c' HΔ HkL HkR E W. rewrite EL in Hw.
+  pose proof (sc_ctx HCD Hc) as HΔL. leq_inv.
+  match goal with H : leqv k ?x |- _ => rename x into k1 end.
+  destruct (scr_tm Ht ltac:(eassumption) ltac:(eassumption)) as [Ht' _].
+  assert (Q : lequiv L' k k1) by (apply lq; assumption).
+  refine (rec_T_El HΔL HΔ HkL HkR Hw _ _ Ht Ht' _ _); try eassumption.
+  refine (IH Ht _ _ _ _ _ _ HΔ (lequiv_refl L' (lsuc k) Hw) (lequiv_lsuc' _ _ _ Q) _ _ _ _); try eassumption.
+  - apply eqty_refl, wft_U; [discriminate | exact HΔL | rewrite EL; exact Hw].
+  - apply eqty_U; [discriminate | exact HΔL | rewrite EL; exact Q].
+Qed.
+
+Lemma Rt_conv {Δ t T T' k} : [ G' ; Δ ⊢[ lD ] T ≅ T' @ k ] -> [ G' ; Δ ⊢[ lC ] t : T' @ k ] ->
+  Rt Δ t T' k -> Rt Δ t T k.
+Proof.
+  intros HT Ht IH _ ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W.
+  apply (IH Ht); try assumption;
+    [exact (eqty_trans _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ HT) HTL) | exact (eqty_trans _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ HT) HTR)].
+Qed.
+
+Lemma Rt_lconv {Δ t T k k'} : lequiv (gL G') k k' -> [ G' ; Δ ⊢[ lC ] t : T @ k' ] -> Rt Δ t T k' -> Rt Δ t T k.
+Proof.
+  intros Q Ht IH _ ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. pose proof Q as Qg. rewrite EL in Q.
+  exact (IH Ht ΔR kL kR TL TR c' HΔ (lequiv_trans _ _ _ _ (lequiv_sym _ _ _ Q) HkL)
+           (lequiv_trans _ _ _ _ (lequiv_sym _ _ _ Q) HkR)
+           (eqty_lconv _ _ _ _ _ _ _ HTL (lequiv_sym _ _ _ Qg)) (eqty_lconv _ _ _ _ _ _ _ HTR (lequiv_sym _ _ _ Qg)) E W).
+Qed.
+
+Lemma Rt_var {Δ n T k} : in_ctx Δ n T k -> Rt Δ (var n) T k.
+Proof.
+  intros Hin Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. pose proof (sc_ctx_tm HCD Hc) as HΔL. leq_inv. match goal with H : n = ?x |- _ => subst x end.
+  refine (rec_t_var HΔL HΔ HkL HkR HTL HTR _).
+  apply wf_var; assumption.
+Qed.
+
+Lemma Rt_gvar {Δ u d T k} : Rt Δ (gvar u d) T k.
+Proof.
+  intros Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. pose proof (sc_ctx_tm HCD Hc) as HΔL.
+  destruct (scr_tm Hc E W) as [Hc' _]. pose proof E as E0; revert E0. leq_inv. match goal with H : u = ?x |- _ => subst x end. intros E0.
+  exact (rec_t_gvar HΔL HΔ HkL HkR HTL HTR Hc Hc' E0).
+Qed.
+
+Lemma Rt_nat {Δ} : Rt Δ tmNat (tyU lzero) (lsuc lzero).
+Proof.
+  intros Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. pose proof (sc_ctx_tm HCD Hc) as HΔL. leq_inv.
+  exact (rec_t_nat HΔL HΔ HkL HkR HTL HTR).
+Qed.
+Lemma Rt_zero {Δ} : Rt Δ zero tyNat lzero.
+Proof.
+  intros Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. pose proof (sc_ctx_tm HCD Hc) as HΔL. leq_inv.
+  exact (rec_t_zero HΔL HΔ HkL HkR HTL HTR).
+Qed.
+Lemma Rt_U {Δ j} : Rt Δ (tmU j) (tyU (lsuc j)) (lsuc (lsuc j)).
+Proof.
+  intros Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. pose proof (sc_ctx_tm HCD Hc) as HΔL.
+  pose proof (lequiv_wf_l _ _ _ HkL) as Hw; cbn in Hw. leq_inv.
+  exact (rec_t_U HΔL HΔ HkL HkR Hw W E HTL HTR).
+Qed.
+
+Lemma Rt_succ {Δ t} : [ G' ; Δ ⊢[ lC ] t : tyNat @ lzero ] -> Rt Δ t tyNat lzero -> Rt Δ (succ t) tyNat lzero.
+Proof.
+  intros Ht IH Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. pose proof (sc_ctx_tm HCD Hc) as HΔL. leq_inv.
+  destruct (scr_tm Ht E W) as [Ht' _].
+  refine (rec_t_succ HΔL HΔ HkL HkR HTL HTR Ht Ht' E _).
+  assert (HN : [ G' ; Δ ⊢[ lD ] tyNat ≅ tyNat @ lzero ]) by (apply eqty_refl, wft_nat; [discriminate | exact HΔL]).
+  exact (IH Ht _ _ _ _ _ _ HΔ (lequiv_refl L' lzero I) (lequiv_refl L' lzero I) HN HN E W).
+Qed.
+
+Lemma Rt_pi {Δ k k' s t} : lwf (gL G') k -> lwf (gL G') k' ->
+  [ G' ; Δ ⊢[ lC ] s : tyU k @ lsuc k ] -> [ G' ; Δ ,, tyEl k s @ k ⊢[ lC ] t : tyU k' @ lsuc k' ] ->
+  Rt Δ s (tyU k) (lsuc k) -> Rt (Δ ,, tyEl k s @ k) t (tyU k') (lsuc k') ->
+  Rt Δ (tmPi k k' s t) (tyU (lmax k k')) (lsuc (lmax k k')).
+Proof.
+  intros Hw Hw' Hs Ht IHs IHt Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. rewrite EL in Hw, Hw'.
+  pose proof (sc_ctx_tm HCD Hc) as HΔL. pose proof (sc_ctx_tm HCD Ht) as HΔLs. leq_inv.
+  match goal with H : leqv k ?x |- _ => rename x into k1 end.
+  match goal with H : leqv k' ?x |- _ => rename x into k1' end.
+  destruct (scr_tm Hs ltac:(eassumption) ltac:(eassumption)) as [Hs' Hss].
+  destruct (scr_tm Ht ltac:(eassumption) ltac:(eassumption)) as [Ht' _].
+  assert (Q : lequiv L' k k1) by (apply lq; assumption). assert (Q' : lequiv L' k' k1') by (apply lq; assumption).
+  refine (rec_t_pi HΔL HΔ HkL HkR Hw Hw' _ _ _ _ HTL HTR Hs Hs' _ Ht Ht' _ _ _); try eassumption.
+  - refine (IHs Hs _ _ _ _ _ _ HΔ (lequiv_refl L' (lsuc k) Hw) (lequiv_lsuc' _ _ _ Q) _ _ _ _); try eassumption.
+    + apply eqty_refl, wft_U; [discriminate | exact HΔL | rewrite EL; exact Hw].
+    + apply eqty_U; [discriminate | exact HΔL | rewrite EL; exact Q].
+  - assert (HEl : [ G' ; Δ ⊢[ lD ] tyEl k s @ k ]) by (apply wft_El; [discriminate | rewrite EL; exact Hw | exact (lift_tm Hs HCD)]).
+    refine (IHt Ht _ _ _ _ _ _ (ceq_ext HΔ HEl _ Q) (lequiv_refl L' (lsuc k') Hw') (lequiv_lsuc' _ _ _ Q') _ _ _ _);
+      try eassumption.
+    + apply eqty_El; [discriminate | rewrite EL; exact Q | exact Hss].
+    + apply eqty_refl, wft_U; [discriminate | exact HΔLs | rewrite EL; exact Hw'].
+    + apply eqty_U; [discriminate | exact HΔLs | rewrite EL; exact Q'].
+Qed.
+
+Lemma Rt_lam {Δ k k' A B b} : lwf (gL G') k -> lwf (gL G') k' ->
+  [ G' ; Δ ⊢[ lC ] A @ k ] -> [ G' ; Δ ,, A @ k ⊢[ lC ] b : B @ k' ] ->
+  RT Δ A k -> Rt (Δ ,, A @ k) b B k' -> Rt Δ (lam k k' A b) (tyPi k k' A B) (lmax k k').
+Proof.
+  intros Hw Hw' HA Hb IHA IHb Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. rewrite EL in Hw, Hw'.
+  pose proof (sc_ctx_tm HCD Hc) as HΔL. leq_inv.
+  match goal with H : leqv k ?x |- _ => rename x into k1 end.
+  match goal with H : leqv k' ?x |- _ => rename x into k1' end.
+  destruct (scr_ty HA ltac:(eassumption) ltac:(eassumption)) as [HA' HAA].
+  destruct (scr_tm Hb ltac:(eassumption) ltac:(eassumption)) as [Hb' _].
+  assert (Q : lequiv L' k k1) by (apply lq; assumption). assert (Q' : lequiv L' k' k1') by (apply lq; assumption).
+  refine (rec_t_lam HΔL HΔ HkL HkR Hw Hw' _ _ _ _ HTL HTR HA HA' _ Hb Hb' _ _ _); try eassumption.
+  - exact (IHA HA _ _ _ _ HΔ (lequiv_refl _ _ Hw) Q ltac:(eassumption) ltac:(eassumption)).
+  - intros BL BR HBL HBR.
+    exact (IHb Hb _ _ _ _ _ _ (ceq_ext HΔ (lift_ty HA HCD) HAA Q) (lequiv_refl _ _ Hw') Q' HBL HBR
+             ltac:(eassumption) ltac:(eassumption)).
+Qed.
+
+Lemma Rt_app {Δ k k' A B f a} : lwf (gL G') k -> lwf (gL G') k' ->
+  [ G' ; Δ ⊢[ lC ] A @ k ] -> [ G' ; Δ ,, A @ k ⊢[ lC ] B @ k' ] ->
+  [ G' ; Δ ⊢[ lC ] f : tyPi k k' A B @ lmax k k' ] -> [ G' ; Δ ⊢[ lC ] a : A @ k ] ->
+  RT Δ A k -> RT (Δ ,, A @ k) B k' -> Rt Δ f (tyPi k k' A B) (lmax k k') -> Rt Δ a A k ->
+  Rt Δ (app f k k' A B a) (B[lsingle a]) k'.
+Proof.
+  intros Hw Hw' HA HB Hf Ha IHA IHB IHf IHa Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. rewrite EL in Hw, Hw'.
+  pose proof (sc_ctx_tm HCD Hc) as HΔL. leq_inv.
+  match goal with H : leqv k ?x |- _ => rename x into k1 end.
+  match goal with H : leqv k' ?x |- _ => rename x into k1' end.
+  match goal with H : ty_leq A ?x |- _ => rename x into A' end.
+  match goal with H : ty_leq B ?x |- _ => rename x into B' end.
+  destruct (scr_ty HA ltac:(eassumption) ltac:(eassumption)) as [HA' HAA].
+  destruct (scr_ty HB ltac:(eassumption) ltac:(eassumption)) as [HB' HBB].
+  destruct (scr_tm Hf ltac:(eassumption) ltac:(eassumption)) as [Hf' _].
+  destruct (scr_tm Ha ltac:(eassumption) ltac:(eassumption)) as [Ha' _].
+  assert (Q : lequiv L' k k1) by (apply lq; assumption). assert (Q' : lequiv L' k' k1') by (apply lq; assumption).
+  assert (X : [ G' ; Δ ⊢[ lD ] tyPi k k' A B ≅ tyPi k1 k1' A' B' @ lmax k k' ]).
+  { apply eqty_pi; [discriminate | rewrite EL; exact Q | rewrite EL; exact Q' | exact (lift_ty HA HCD) | exact HAA | exact HBB]. }
+  refine (rec_t_app HΔL HΔ HkL HkR Hw Hw' _ _ _ _ HTL HTR HA HA' _ HB HB' _ Hf Hf' _ Ha Ha' _ _ _ _ _);
+    try eassumption.
+  - exact (IHA HA _ _ _ _ HΔ (lequiv_refl _ _ Hw) Q ltac:(eassumption) ltac:(eassumption)).
+  - exact (IHB HB _ _ _ _ (ceq_ext HΔ (lift_ty HA HCD) HAA Q) (lequiv_refl _ _ Hw') Q'
+             ltac:(eassumption) ltac:(eassumption)).
+  - exact (IHf Hf _ _ _ _ _ _ HΔ (lequiv_refl L' (lmax k k') (conj Hw Hw')) (lequiv_lmax' _ _ _ _ _ Q Q')
+             (eq_self_l X) X ltac:(eassumption) ltac:(eassumption)).
+  - exact (IHa Ha _ _ _ _ _ _ HΔ (lequiv_refl _ _ Hw) Q (eq_self_l HAA) HAA ltac:(eassumption) ltac:(eassumption)).
+Qed.
+
+Lemma Rt_natrec {Δ k M s z t} : lwf (gL G') k ->
+  [ G' ; Δ ,, tyNat @ lzero ⊢[ lC ] M @ k ] -> [ G' ; Δ ⊢[ lC ] s : M[lsingle zero] @ k ] ->
+  [ G' ; Δ ,, tyNat @ lzero ,, M @ k ⊢[ lC ] z : M[lsucc] @ k ] -> [ G' ; Δ ⊢[ lC ] t : tyNat @ lzero ] ->
+  RT (Δ ,, tyNat @ lzero) M k -> Rt Δ s (M[lsingle zero]) k ->
+  Rt (Δ ,, tyNat @ lzero ,, M @ k) z (M[lsucc]) k -> Rt Δ t tyNat lzero ->
+  Rt Δ (natrec k M s z t) (M[lsingle t]) k.
+Proof.
+  intros Hw HM Hs Hz Ht IHM IHs IHz IHt Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. rewrite EL in Hw.
+  pose proof (sc_ctx_tm HCD Hc) as HΔL. leq_inv.
+  match goal with H : leqv k ?x |- _ => rename x into k1 end.
+  match goal with H : ty_leq M ?x |- _ => rename x into M' end.
+  destruct (scr_ty HM ltac:(eassumption) ltac:(eassumption)) as [HM' HMM].
+  destruct (scr_tm Hs ltac:(eassumption) ltac:(eassumption)) as [Hs' _].
+  destruct (scr_tm Hz ltac:(eassumption) ltac:(eassumption)) as [Hz' _].
+  destruct (scr_tm Ht ltac:(eassumption) ltac:(eassumption)) as [Ht' _].
+  assert (Q : lequiv L' k k1) by (apply lq; assumption).
+  assert (HN0 : [ G' ; Δ ⊢[ lD ] tyNat @ lzero ]) by (apply wft_nat; [discriminate | exact HΔL]).
+  assert (CN : [ G' ⊢[ lD ] Δ ,, tyNat @ lzero ≅ ΔR ,, tyNat @ lzero ])
+    by (apply ceq_ext; [exact HΔ | exact HN0 | apply eqty_refl, HN0 | apply lequiv_refl; exact I]).
+  pose proof (lift_ty HM HCD) as HMD.
+  assert (CNM : [ G' ⊢[ lD ] Δ ,, tyNat @ lzero ,, M @ k ≅ ΔR ,, tyNat @ lzero ,, M' @ k1 ])
+    by (apply ceq_ext; [exact CN | exact HMD | exact HMM | exact Q]).
+  pose proof (sc_ctx_tm HCD Hz) as HΔLNM.
+  assert (HM0 : [ G' ; Δ ⊢[ lD ] M[lsingle zero] ≅ M'[lsingle zero] @ k ])
+    by exact (eqty_single (i := lD) eq_refl HMM (wf_zero _ lD _ ltac:(discriminate) HΔL)).
+  assert (HMs : [ G' ; Δ ,, tyNat @ lzero ,, M @ k ⊢[ lD ] M[lsucc] ≅ M'[lsucc] @ k ])
+    by exact (eqty_subst (i := lD) eq_refl HMM (lsub_wf_lsucc (i := lD) eq_refl ltac:(discriminate) HΔLNM)).
+  assert (HNN : [ G' ; Δ ⊢[ lD ] tyNat ≅ tyNat @ lzero ]) by (apply eqty_refl, HN0).
+  refine (rec_t_natrec HΔL HΔ HkL HkR Hw _ _ HTL HTR HM HM' _ Hs Hs' _ Hz Hz' _ Ht Ht' _ _ _ _ _); try eassumption.
+  - exact (IHM HM _ _ _ _ CN (lequiv_refl _ _ Hw) Q ltac:(eassumption) ltac:(eassumption)).
+  - exact (IHs Hs _ _ _ _ _ _ HΔ (lequiv_refl _ _ Hw) Q (eq_self_l HM0) HM0 ltac:(eassumption) ltac:(eassumption)).
+  - exact (IHz Hz _ _ _ _ _ _ CNM (lequiv_refl _ _ Hw) Q (eq_self_l HMs) HMs ltac:(eassumption) ltac:(eassumption)).
+  - exact (IHt Ht _ _ _ _ _ _ HΔ (lequiv_refl L' lzero I) (lequiv_refl L' lzero I) HNN HNN
+             ltac:(eassumption) ltac:(eassumption)).
+Qed.
+
+Theorem rec_code :
+  (forall G, [ ⊢ G ] -> True) /\
+  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = lC -> G = G' -> RT Γ T l) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = lC -> G = G' -> Rt Γ t T l) /\
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> True) /\
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
+  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
+Proof.
+  apply typing_mut; intros; try exact I;
+    (* the rules at M do not type code *)
+    match goal with Ei : ?i = lC, EG : ?G = G' |- _ => first [discriminate Ei | subst i G] end;
+    repeat match goal with IH : lC = lC -> G' = G' -> _ |- _ => specialize (IH eq_refl eq_refl) end;
+    cbn [typeof] in *.
+  all: first
+    [ solve [apply RT_nat | apply RT_U | apply RT_gvar | apply Rt_nat | apply Rt_zero | apply Rt_U | apply Rt_gvar]
+    | solve [eapply Rt_var; eassumption]
+    | solve [eapply RT_pi; eassumption] | solve [eapply RT_El; eassumption] | solve [eapply RT_lconv; eassumption]
+    | solve [eapply Rt_succ; eassumption] | solve [eapply Rt_pi; eassumption] | solve [eapply Rt_natrec; eassumption]
+    | solve [eapply Rt_lam; eassumption] | solve [eapply Rt_app; eassumption]
+    | solve [eapply Rt_conv; eassumption] | solve [eapply Rt_lconv; eassumption] ].
+Qed.
+
+(** The recursion lemmas, for a code typed at C in the left context. *)
+Lemma rec_T {ΔL ΔR kL kR k c c'} : [ G' ; ΔL ⊢[ lC ] c @ k ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
+  lequiv L' k kL -> lequiv L' k kR -> ty_leq c c' -> ty_lwf L' c' ->
+  LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) kL ΔL (boxT c)) (motT (wrapMT MTR) kR ΔR (boxT c'))
+    (recTL kL ΔL c) (recTR kR ΔR c').
+Proof. intros Hc. exact (proj1 (proj2 (proj2 rec_code)) _ _ _ _ _ Hc eq_refl eq_refl Hc ΔR kL kR c'). Qed.
+
+Lemma rec_t {ΔL ΔR kL kR k T TL TR c c'} : [ G' ; ΔL ⊢[ lC ] c : T @ k ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
+  lequiv L' k kL -> lequiv L' k kR -> [ G' ; ΔL ⊢[ lD ] T ≅ TL @ k ] -> [ G' ; ΔL ⊢[ lD ] T ≅ TR @ k ] ->
+  tm_leq c c' -> tm_lwf L' c' ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) kL ΔL TL (boxt c)) (mott (wrapMt MtR) kR ΔR TR (boxt c'))
+    (rectL kL ΔL TL c) (rectR kR ΔR TR c').
+Proof. intros Hc. exact (proj1 (proj2 (proj2 (proj2 rec_code))) _ _ _ _ _ _ Hc eq_refl eq_refl Hc ΔR kL kR TL TR c'). Qed.
+
 End Rec.
