@@ -104,5 +104,130 @@ Proof. induction l; cbn; intuition lia. Qed.
 Lemma lequiv_weaken L L' l l' : L <= L' -> lequiv L l l' -> lequiv L' l l'.
 Proof. intros HL (? & ? & H); repeat split; eauto using lwf_weaken. Qed.
 
-(** Levels do not mention local or global variables. Level substitution
-    (for universe polymorphism) arrives with [UΠ]. *)
+(** ** Universe renaming and substitution (M3)
+
+    Level variables are de Bruijn indices ([lvar 0] is the most recently
+    bound level); binders are introduced by the code recursors' branches
+    (and later by [UΠ]). *)
+
+Definition uupr (ρ : nat -> nat) : nat -> nat :=
+  fun n => match n with 0 => 0 | S n => S (ρ n) end.
+
+Fixpoint lvren (l : lvl) (ρ : nat -> nat) : lvl :=
+  match l with
+  | lvar n => lvar (ρ n)
+  | lzero => lzero
+  | lsuc l => lsuc (lvren l ρ)
+  | lmax l l' => lmax (lvren l ρ) (lvren l' ρ)
+  | lomega => lomega
+  end.
+
+Fixpoint lvsubst (l : lvl) (φ : nat -> lvl) : lvl :=
+  match l with
+  | lvar n => φ n
+  | lzero => lzero
+  | lsuc l => lsuc (lvsubst l φ)
+  | lmax l l' => lmax (lvsubst l φ) (lvsubst l' φ)
+  | lomega => lomega
+  end.
+
+(** [φ] under one level binder. *)
+Definition uup (φ : nat -> lvl) : nat -> lvl :=
+  fun n => match n with 0 => lvar 0 | S n => lvren (φ n) S end.
+
+(** [l/ℓ]: instantiate the most recent level variable. *)
+Definition usingle (l : lvl) : nat -> lvl :=
+  fun n => match n with 0 => l | S n => lvar n end.
+
+Lemma leval_lvren v l ρ : leval v (lvren l ρ) = leval (fun n => v (ρ n)) l.
+Proof. induction l; cbn; auto. Qed.
+Lemma leval_lvsubst v l φ : leval v (lvsubst l φ) = leval (fun n => leval v (φ n)) l.
+Proof. induction l; cbn; auto. Qed.
+
+Lemma lvren_ext l ρ ρ' : (forall n, ρ n = ρ' n) -> lvren l ρ = lvren l ρ'.
+Proof. intros H; induction l; cbn; rewrite ?H; congruence. Qed.
+Lemma lvren_lvren l ρ ρ' ρ'' : (forall n, ρ'' n = ρ' (ρ n)) -> lvren (lvren l ρ) ρ' = lvren l ρ''.
+Proof. intros H; induction l; cbn; rewrite ?H; congruence. Qed.
+Lemma lvsubst_ext l φ φ' : (forall n, φ n = φ' n) -> lvsubst l φ = lvsubst l φ'.
+Proof. intros H; induction l; cbn; rewrite ?H; congruence. Qed.
+Lemma lvren_lvsubst l ρ φ φ' : (forall n, φ' n = φ (ρ n)) -> lvsubst (lvren l ρ) φ = lvsubst l φ'.
+Proof. intros H; induction l; cbn; rewrite ?H; congruence. Qed.
+Lemma lvsubst_lvren l φ ρ φ' : (forall n, φ' n = lvren (φ n) ρ) -> lvren (lvsubst l φ) ρ = lvsubst l φ'.
+Proof. intros H; induction l; cbn; rewrite ?H; congruence. Qed.
+Lemma lvsubst_lvsubst l φ ψ θ : (forall n, θ n = lvsubst (φ n) ψ) ->
+  lvsubst (lvsubst l φ) ψ = lvsubst l θ.
+Proof. intros H; induction l; cbn; rewrite ?H; congruence. Qed.
+Lemma lvren_id l ρ : (forall n, ρ n = n) -> lvren l ρ = l.
+Proof. intros H; induction l; cbn; rewrite ?H; congruence. Qed.
+Lemma lvsubst_id l φ : (forall n, φ n = lvar n) -> lvsubst l φ = l.
+Proof. intros H; induction l; cbn; rewrite ?H; congruence. Qed.
+Lemma lvren_as_lvsubst l ρ φ : (forall n, φ n = lvar (ρ n)) -> lvren l ρ = lvsubst l φ.
+Proof. intros H; induction l; cbn; rewrite ?H; congruence. Qed.
+
+Lemma uupr_ext ρ ρ' : (forall n, ρ n = ρ' n) -> forall n, uupr ρ n = uupr ρ' n.
+Proof. intros H [|n]; cbn; auto. Qed.
+Lemma uupr_comp ρ ρ' ρ'' : (forall n, ρ'' n = ρ' (ρ n)) -> forall n, uupr ρ'' n = uupr ρ' (uupr ρ n).
+Proof. intros H [|n]; cbn; auto. Qed.
+Lemma uupr_id ρ : (forall n, ρ n = n) -> forall n, uupr ρ n = n.
+Proof. intros H [|n]; cbn; auto. Qed.
+Lemma uup_ext φ φ' : (forall n, φ n = φ' n) -> forall n, uup φ n = uup φ' n.
+Proof. intros H [|n]; cbn; auto. now rewrite H. Qed.
+Lemma uup_uupr ρ φ φ' : (forall n, φ' n = φ (ρ n)) -> forall n, uup φ' n = uup φ (uupr ρ n).
+Proof. intros H [|n]; cbn; auto. now rewrite H. Qed.
+Lemma uup_lvren φ ρ φ' : (forall n, φ' n = lvren (φ n) ρ) ->
+  forall n, uup φ' n = lvren (uup φ n) (uupr ρ).
+Proof.
+  intros H [|n]; cbn; auto. rewrite H, !(lvren_lvren _ _ _ (fun m => S (ρ m))); auto.
+Qed.
+Lemma uup_lvsubst φ ψ θ : (forall n, θ n = lvsubst (φ n) ψ) ->
+  forall n, uup θ n = lvsubst (uup φ n) (uup ψ).
+Proof.
+  intros H [|n]; cbn; auto. rewrite H.
+  rewrite (lvsubst_lvren _ _ _ (fun m => lvren (ψ m) S)) by auto.
+  symmetry; apply lvren_lvsubst; auto.
+Qed.
+Lemma uup_id φ : (forall n, φ n = lvar n) -> forall n, uup φ n = lvar n.
+Proof. intros H [|n]; cbn; auto. now rewrite H. Qed.
+Lemma uup_as ρ φ : (forall n, φ n = lvar (ρ n)) -> forall n, uup φ n = lvar (uupr ρ n).
+Proof. intros H [|n]; cbn; auto. now rewrite H. Qed.
+
+(** ** Typed universe renamings and substitutions: [φ : L' ⇒ L] *)
+
+Definition uren_ok (ρ : nat -> nat) (L' L : nat) : Prop := forall n, n < L -> ρ n < L'.
+Definition usub_ok (φ : nat -> lvl) (L' L : nat) : Prop := forall n, n < L -> lwf L' (φ n).
+
+Lemma lwf_lvren L L' l ρ : uren_ok ρ L' L -> lwf L l -> lwf L' (lvren l ρ).
+Proof. intros H; induction l; cbn; intuition. Qed.
+Lemma lwf_lvsubst L L' l φ : usub_ok φ L' L -> lwf L l -> lwf L' (lvsubst l φ).
+Proof. intros H; induction l; cbn; intuition. Qed.
+Lemma lequiv_lvren L L' l l' ρ : uren_ok ρ L' L -> lequiv L l l' -> lequiv L' (lvren l ρ) (lvren l' ρ).
+Proof.
+  intros H (? & ? & E); repeat split; eauto using lwf_lvren.
+  intros v; rewrite !leval_lvren; apply E.
+Qed.
+Lemma lequiv_lvsubst L L' l l' φ : usub_ok φ L' L -> lequiv L l l' ->
+  lequiv L' (lvsubst l φ) (lvsubst l' φ).
+Proof.
+  intros H (? & ? & E); repeat split; eauto using lwf_lvsubst.
+  intros v; rewrite !leval_lvsubst; apply E.
+Qed.
+Lemma llt_lvsubst L L' l l' φ : usub_ok φ L' L -> llt L l l' -> llt L' (lvsubst l φ) (lvsubst l' φ).
+Proof.
+  intros H (? & ? & E); repeat split; eauto using lwf_lvsubst.
+  intros v; rewrite !leval_lvsubst; apply E.
+Qed.
+
+Lemma uren_ok_S L : uren_ok S (S L) L.
+Proof. intros n; lia. Qed.
+Lemma uren_ok_uupr ρ L' L : uren_ok ρ L' L -> uren_ok (uupr ρ) (S L') (S L).
+Proof. intros H [|n] Hn; cbn; [lia|]. specialize (H n); lia. Qed.
+Lemma usub_ok_uup φ L' L : usub_ok φ L' L -> usub_ok (uup φ) (S L') (S L).
+Proof.
+  intros H [|n] Hn; cbn; [lia|]. apply (lwf_lvren L'); [apply uren_ok_S | apply H; lia].
+Qed.
+Lemma usub_ok_single L l : lwf L l -> usub_ok (usingle l) L (S L).
+Proof. intros H [|n] Hn; cbn; auto. lia. Qed.
+Lemma usub_ok_id L : usub_ok lvar L L.
+Proof. intros n Hn; exact Hn. Qed.
+Lemma usub_ok_ren ρ L' L : uren_ok ρ L' L -> usub_ok (fun n => lvar (ρ n)) L' L.
+Proof. intros H n Hn; cbn; auto. Qed.

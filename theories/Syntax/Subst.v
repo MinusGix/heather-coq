@@ -111,13 +111,22 @@ Proof. revert n; induction d as [k|d IH t]; intros n; cbn; auto. rewrite llk_lco
 Lemma nf_glsubst d σ : nf_l (glsubst d σ).
 Proof. induction d; cbn; auto using nf_lcons'. Qed.
 
+Lemma llk_ulren d ρ n : llk (ulren d ρ) n = uren_tm (llk d n) ρ.
+Proof. revert n; induction d as [k|d IH t]; intros n; cbn; auto. rewrite llk_lcons'. destruct n; cbn; auto. Qed.
+Lemma nf_ulren d ρ : nf_l (ulren d ρ).
+Proof. induction d; cbn; auto using nf_lcons'. Qed.
+Lemma llk_ulsubst d φ n : llk (ulsubst d φ) n = usubst_tm (llk d n) φ.
+Proof. revert n; induction d as [k|d IH t]; intros n; cbn; auto. rewrite llk_lcons'. destruct n; cbn; auto. Qed.
+Lemma nf_ulsubst d φ : nf_l (ulsubst d φ).
+Proof. induction d; cbn; auto using nf_lcons'. Qed.
+
 Lemma llk_llift d n :
   llk (llift d) n = match n with 0 => var 0 | S n => ren_tm (llk d n) ↑ end.
 Proof. unfold llift; rewrite llk_lcons'; destruct n; cbn; auto using llk_lren. Qed.
 Lemma nf_llift d : nf_l (llift d).
 Proof. apply nf_lcons', nf_lren. Qed.
 
-#[export] Hint Resolve nf_lren nf_lcomp nf_llift nf_r2l nf_lnorm nf_glren nf_glsubst : nf.
+#[export] Hint Resolve nf_lren nf_lcomp nf_llift nf_r2l nf_lnorm nf_glren nf_glsubst nf_ulren nf_ulsubst : nf.
 
 (** ** The generic proof pattern *)
 
@@ -143,7 +152,8 @@ Ltac syn_start3 :=
 
 Ltac lsub_eq :=
   apply l_canon; [auto with nf | auto with nf | intros ?n];
-  repeat first [ rewrite llk_lren | rewrite llk_lcomp | rewrite llk_glren | rewrite llk_glsubst ].
+  repeat first [ rewrite llk_lren | rewrite llk_lcomp | rewrite llk_glren | rewrite llk_glsubst
+               | rewrite llk_ulren | rewrite llk_ulsubst ].
 
 Ltac law_auto :=
   cbn; try solve [eauto with subst | symmetry; eauto with subst];
@@ -210,6 +220,43 @@ Proof. syn_start; try lk_cases; law_auto. Qed.
 Definition gren_gren_tm t := proj1 (proj2 gren_gren_all) t.
 Definition gren_ren_tm t := proj1 (proj2 gren_ren_all) t.
 
+(** ** Universe renaming (M3): extensionality, composition, commutation
+    with the local and global renamings *)
+
+#[export] Hint Resolve uupr_ext uupr_comp lvren_ext lvren_lvren : subst.
+#[export] Hint Extern 1 (lvren _ _ = lvren _ _) => (apply lvren_lvren; intros; reflexivity) : subst.
+
+Lemma uren_ext_all :
+  let Pty T := forall ρ ρ', (forall n, ρ n = ρ' n) -> uren_ty T ρ = uren_ty T ρ' in
+  let Ptm t := forall ρ ρ', (forall n, ρ n = ρ' n) -> uren_tm t ρ = uren_tm t ρ' in
+  let Pctx Γ := forall ρ ρ', (forall n, ρ n = ρ' n) -> ucren Γ ρ = ucren Γ ρ' in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ, Pctx Γ) /\ (forall d, LK Ptm d).
+Proof. syn_start3; try lk_cases; law_auto. Qed.
+
+Lemma uren_uren_all :
+  let Pty T := forall ρ ρ' ρ'', (forall n, ρ'' n = ρ' (ρ n)) -> uren_ty (uren_ty T ρ) ρ' = uren_ty T ρ'' in
+  let Ptm t := forall ρ ρ' ρ'', (forall n, ρ'' n = ρ' (ρ n)) -> uren_tm (uren_tm t ρ) ρ' = uren_tm t ρ'' in
+  let Pctx Γ := forall ρ ρ' ρ'', (forall n, ρ'' n = ρ' (ρ n)) -> ucren (ucren Γ ρ) ρ' = ucren Γ ρ'' in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ, Pctx Γ) /\ (forall d, LK Ptm d).
+Proof. syn_start3; try lk_cases; law_auto. Qed.
+
+Lemma uren_ren_all :
+  let Pty T := forall r ρ, uren_ty (ren_ty T r) ρ = ren_ty (uren_ty T ρ) r in
+  let Ptm t := forall r ρ, uren_tm (ren_tm t r) ρ = ren_tm (uren_tm t ρ) r in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall G : ctx, True) /\ (forall d, LK Ptm d).
+Proof. syn_start; try lk_cases; law_auto. Qed.
+
+Lemma uren_gren_all :
+  let Pty T := forall ξ ρ, uren_ty (gren_ty T ξ) ρ = gren_ty (uren_ty T ρ) ξ in
+  let Ptm t := forall ξ ρ, uren_tm (gren_tm t ξ) ρ = gren_tm (uren_tm t ρ) ξ in
+  let Pctx Γ := forall ξ ρ, ucren (gcren Γ ξ) ρ = gcren (ucren Γ ρ) ξ in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ, Pctx Γ) /\ (forall d, LK Ptm d).
+Proof. syn_start3; try lk_cases; law_auto. Qed.
+
+Definition uren_uren_tm t := proj1 (proj2 uren_uren_all) t.
+Definition uren_ren_tm t := proj1 (proj2 uren_ren_all) t.
+Definition uren_gren_tm t := proj1 (proj2 uren_gren_all) t.
+
 (** ** Substitution *)
 
 Lemma gwk_ext d d' : (forall n, llk d n = llk d' n) -> forall n, llk (gwk d) n = llk (gwk d') n.
@@ -223,6 +270,30 @@ Proof. intros H n; unfold gwk; rewrite !llk_glren, H. apply gren_ren_tm. Qed.
 Lemma gwk_id d : (forall n, llk d n = var n) -> forall n, llk (gwk d) n = var n.
 Proof. intros H n; unfold gwk; rewrite llk_glren, H; reflexivity. Qed.
 #[export] Hint Resolve gwk_ext gwk_rcomp gwk_ren gwk_id : subst.
+
+Lemma uwk_ext d d' : (forall n, llk d n = llk d' n) -> forall n, llk (uwk d) n = llk (uwk d') n.
+Proof. intros H n; unfold uwk; rewrite !llk_ulren; now rewrite H. Qed.
+Lemma uwk_rcomp r d d' : (forall n, llk d' n = llk d (rlk r n)) ->
+  forall n, llk (uwk d') n = llk (uwk d) (rlk r n).
+Proof. intros H n; unfold uwk; rewrite !llk_ulren; now rewrite H. Qed.
+Lemma uwk_ren r d d' : (forall n, llk d' n = ren_tm (llk d n) r) ->
+  forall n, llk (uwk d') n = ren_tm (llk (uwk d) n) r.
+Proof. intros H n; unfold uwk; rewrite !llk_ulren, H. apply uren_ren_tm. Qed.
+Lemma uwk_id d : (forall n, llk d n = var n) -> forall n, llk (uwk d) n = var n.
+Proof. intros H n; unfold uwk; rewrite llk_ulren, H; reflexivity. Qed.
+Lemma gwk_uren d d' ρ : (forall n, llk d' n = uren_tm (llk d n) ρ) ->
+  forall n, llk (gwk d') n = uren_tm (llk (gwk d) n) ρ.
+Proof. intros H n; unfold gwk; rewrite !llk_glren, H. symmetry; apply uren_gren_tm. Qed.
+Lemma uwk_uren d d' ρ : (forall n, llk d' n = uren_tm (llk d n) ρ) ->
+  forall n, llk (uwk d') n = uren_tm (llk (uwk d) n) (uupr ρ).
+Proof.
+  intros H n; unfold uwk; rewrite !llk_ulren, H.
+  rewrite !(uren_uren_tm _ _ _ (fun m => S (ρ m))); auto.
+Qed.
+Lemma uwk_gren d d' ξ : (forall n, llk d' n = gren_tm (llk d n) ξ) ->
+  forall n, llk (uwk d') n = gren_tm (llk (uwk d) n) ξ.
+Proof. intros H n; unfold uwk; rewrite !llk_ulren, H. apply uren_gren_tm. Qed.
+#[export] Hint Resolve uwk_ext uwk_rcomp uwk_ren uwk_id gwk_uren uwk_uren uwk_gren : subst.
 
 Lemma llift_ext d d' : (forall n, llk d n = llk d' n) -> forall n, llk (llift d) n = llk (llift d') n.
 Proof. intros H [|n]; rewrite !llk_llift; auto. now rewrite H. Qed.
@@ -305,6 +376,32 @@ Qed.
 Definition subst_ren_tm t := proj1 (proj2 subst_ren_all) t.
 Definition ren_subst_tm t := proj1 (proj2 ren_subst_all) t.
 
+Lemma llift_uren d d' ρ : (forall n, llk d' n = uren_tm (llk d n) ρ) ->
+  forall n, llk (llift d') n = uren_tm (llk (llift d) n) ρ.
+Proof. intros H [|n]; rewrite !llk_llift; auto. rewrite H. symmetry; apply uren_ren_tm. Qed.
+#[export] Hint Resolve llift_uren : subst.
+
+(** Universe renaming distributes over local substitution. *)
+Lemma uren_subst_all :
+  let Pty T := forall d d' ρ, (forall n, llk d' n = uren_tm (llk d n) ρ) ->
+               uren_ty (subst_ty T d) ρ = subst_ty (uren_ty T ρ) d' in
+  let Ptm t := forall d d' ρ, (forall n, llk d' n = uren_tm (llk d n) ρ) ->
+               uren_tm (subst_tm t d) ρ = subst_tm (uren_tm t ρ) d' in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall G : ctx, True) /\ (forall d, LK Ptm d).
+Proof.
+  syn_start; try lk_cases; law_auto.
+  all: now rewrite H.
+Qed.
+Definition uren_subst_tm t := proj1 (proj2 uren_subst_all) t.
+
+Lemma uwk_subst d d' d'' : (forall n, llk d'' n = subst_tm (llk d n) d') ->
+  forall n, llk (uwk d'') n = subst_tm (llk (uwk d) n) (uwk d').
+Proof.
+  intros H n; unfold uwk; rewrite !llk_ulren, H.
+  apply uren_subst_tm. intros m; apply llk_ulren.
+Qed.
+#[export] Hint Resolve uwk_subst : subst.
+
 Lemma llift_subst d d' d'' : (forall n, llk d'' n = subst_tm (llk d n) d') ->
   forall n, llk (llift d'') n = subst_tm (llk (llift d) n) (llift d').
 Proof.
@@ -344,6 +441,9 @@ Proof.
   assert (Hg : forall r d, (forall n, llk d n = var (rlk r n)) ->
             forall n, llk (gwk d) n = var (rlk r n)).
   { intros r d H n; unfold gwk; rewrite llk_glren, H; reflexivity. }
+  assert (Hu : forall r d, (forall n, llk d n = var (rlk r n)) ->
+            forall n, llk (uwk d) n = var (rlk r n)).
+  { intros r d H n; unfold uwk; rewrite llk_ulren, H; reflexivity. }
   syn_start; try lk_cases;
     cbn; try solve [symmetry; auto]; try solve [f_equal; eauto].
   all: f_equal; lsub_eq; eauto.
@@ -376,6 +476,10 @@ with nftm (t : tm) : Prop :=
   | gvar _ d => nfl d
   | boxT _ | boxt _ => True
   | letboxT _ _ _ M t' t | letboxt _ _ _ _ M t' t => nfty M /\ nftm t' /\ nftm t
+  | tmTy T => nfty T
+  | tmTup s t => nftm s /\ nftm t
+  | bindU b | bindG b | bindL b => nftm b
+  | elimT _ _ rb _ _ t | elimt _ _ rb _ _ _ t => nftm rb /\ nftm t
   end
 with nfl (d : lsub) : Prop :=
   match d with lshift _ => True | lcons d t => nfl d /\ nftm t /\ ~ labsorb d t end.

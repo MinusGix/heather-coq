@@ -45,6 +45,17 @@ with tm : Type :=
     (* letbox_Typ^{l',l}_Δ (x_T.M) (U.t') t   M: +1 local, t': +1 global *)
 | letboxt (l' l : lvl) (Δ : ctx) (T : ty) (M : ty) (t' : tm) (t : tm)
     (* letbox_Trm^{l',l}_Δ T (x_t.M) (u.t') t  T in Δ; M: +1 local, t': +1 global *)
+(* The recursor bundle (M3_DESIGN E2): junk nodes, never typed on their own *)
+| tmTy (T : ty)                           (* a type (motive) inside the bundle *)
+| tmTup (s t : tm)                        (* pairing *)
+| bindU (b : tm)                          (* binds one level variable *)
+| bindG (b : tm)                          (* binds one global variable *)
+| bindL (b : tm)                          (* binds one local variable *)
+(* the recursors on code; [rb] bundles the two motives and 13 branches *)
+| elimT (l1 l2 : lvl) (rb : tm) (l : lvl) (Δ : ctx) (t : tm)
+    (* elim_Typ^{l1,l2} M⃗ b⃗ l Δ t *)
+| elimt (l1 l2 : lvl) (rb : tm) (l : lvl) (Δ : ctx) (T : ty) (t : tm)
+    (* elim_Trm^{l1,l2} M⃗ b⃗ l Δ T t        T in Δ *)
 with ctx : Type :=
 | cnil
 | cvar (g : nat)
@@ -138,6 +149,13 @@ with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   | boxt t => boxt t
   | letboxT l' l Δ M t' t => letboxT l' l Δ (ren_ty M (rlift r)) (ren_tm t' r) (ren_tm t r)
   | letboxt l' l Δ T M t' t => letboxt l' l Δ T (ren_ty M (rlift r)) (ren_tm t' r) (ren_tm t r)
+  | tmTy T => tmTy (ren_ty T r)
+  | tmTup s t => tmTup (ren_tm s r) (ren_tm t r)
+  | bindU b => bindU (ren_tm b r)
+  | bindG b => bindG (ren_tm b r)
+  | bindL b => bindL (ren_tm b (rlift r))
+  | elimT l1 l2 rb l Δ t => elimT l1 l2 (ren_tm rb r) l Δ (ren_tm t r)
+  | elimt l1 l2 rb l Δ T t => elimt l1 l2 (ren_tm rb r) l Δ T (ren_tm t r)
   end
 with lren (d : lsub) (r : rsub) {struct d} : lsub :=
   match d with
@@ -183,6 +201,13 @@ with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
       letboxT l' l (gcren Δ ξ) (gren_ty M ξ) (gren_tm t' (gupr ξ)) (gren_tm t ξ)
   | letboxt l' l Δ T M t' t =>
       letboxt l' l (gcren Δ ξ) (gren_ty T ξ) (gren_ty M ξ) (gren_tm t' (gupr ξ)) (gren_tm t ξ)
+  | tmTy T => tmTy (gren_ty T ξ)
+  | tmTup s t => tmTup (gren_tm s ξ) (gren_tm t ξ)
+  | bindU b => bindU (gren_tm b ξ)
+  | bindG b => bindG (gren_tm b (gupr ξ))
+  | bindL b => bindL (gren_tm b ξ)
+  | elimT l1 l2 rb l Δ t => elimT l1 l2 (gren_tm rb ξ) l (gcren Δ ξ) (gren_tm t ξ)
+  | elimt l1 l2 rb l Δ T t => elimt l1 l2 (gren_tm rb ξ) l (gcren Δ ξ) (gren_ty T ξ) (gren_tm t ξ)
   end
 with gcren (Γ : ctx) (ξ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -193,6 +218,63 @@ with glren (d : lsub) (ξ : nat -> nat) {struct d} : lsub :=
 
 (** A local substitution moved under one global binder. *)
 Definition gwk (d : lsub) : lsub := glren d S.
+
+(** ** Universe renaming (M3)
+
+    Traverses everything, box contents included; only level positions
+    change. *)
+
+Fixpoint uren_ty (T : ty) (ρ : nat -> nat) {struct T} : ty :=
+  match T with
+  | tyErr => tyErr | tyNat => tyNat
+  | tyPi l l' A B => tyPi (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_ty B ρ)
+  | tyU l => tyU (lvren l ρ)
+  | tyEl l t => tyEl (lvren l ρ) (uren_tm t ρ)
+  | tyGvar U d => tyGvar U (ulren d ρ)
+  | tyCTyp Δ l => tyCTyp (ucren Δ ρ) (lvren l ρ)
+  | tyCTrm Δ T l => tyCTrm (ucren Δ ρ) (uren_ty T ρ) (lvren l ρ)
+  end
+with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
+  match t with
+  | var n => var n
+  | tmErr => tmErr | tmNat => tmNat | zero => zero
+  | tmU l => tmU (lvren l ρ)
+  | tmPi l l' s t => tmPi (lvren l ρ) (lvren l' ρ) (uren_tm s ρ) (uren_tm t ρ)
+  | succ t => succ (uren_tm t ρ)
+  | natrec l M s z t =>
+      natrec (lvren l ρ) (uren_ty M ρ) (uren_tm s ρ) (uren_tm z ρ) (uren_tm t ρ)
+  | lam l l' A t => lam (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_tm t ρ)
+  | app t l l' A B s =>
+      app (uren_tm t ρ) (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_ty B ρ) (uren_tm s ρ)
+  | gvar u d => gvar u (ulren d ρ)
+  | boxT T => boxT (uren_ty T ρ)
+  | boxt t => boxt (uren_tm t ρ)
+  | letboxT l' l Δ M t' t =>
+      letboxT (lvren l' ρ) (lvren l ρ) (ucren Δ ρ) (uren_ty M ρ) (uren_tm t' ρ) (uren_tm t ρ)
+  | letboxt l' l Δ T M t' t =>
+      letboxt (lvren l' ρ) (lvren l ρ) (ucren Δ ρ) (uren_ty T ρ) (uren_ty M ρ)
+        (uren_tm t' ρ) (uren_tm t ρ)
+  | tmTy T => tmTy (uren_ty T ρ)
+  | tmTup s t => tmTup (uren_tm s ρ) (uren_tm t ρ)
+  | bindU b => bindU (uren_tm b (uupr ρ))
+  | bindG b => bindG (uren_tm b ρ)
+  | bindL b => bindL (uren_tm b ρ)
+  | elimT l1 l2 rb l Δ t =>
+      elimT (lvren l1 ρ) (lvren l2 ρ) (uren_tm rb ρ) (lvren l ρ) (ucren Δ ρ) (uren_tm t ρ)
+  | elimt l1 l2 rb l Δ T t =>
+      elimt (lvren l1 ρ) (lvren l2 ρ) (uren_tm rb ρ) (lvren l ρ) (ucren Δ ρ) (uren_ty T ρ)
+        (uren_tm t ρ)
+  end
+with ucren (Γ : ctx) (ρ : nat -> nat) {struct Γ} : ctx :=
+  match Γ with
+  | cnil => cnil | cvar g => cvar g
+  | cext Γ A l => cext (ucren Γ ρ) (uren_ty A ρ) (lvren l ρ)
+  end
+with ulren (d : lsub) (ρ : nat -> nat) {struct d} : lsub :=
+  match d with lshift k => lshift k | lcons d t => lcons' (ulren d ρ) (uren_tm t ρ) end.
+
+(** A local substitution moved under one level binder. *)
+Definition uwk (d : lsub) : lsub := ulren d S.
 
 (** ** Local substitution *)
 
@@ -224,6 +306,13 @@ with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
       letboxT l' l Δ (subst_ty M (llift d)) (subst_tm t' (gwk d)) (subst_tm t d)
   | letboxt l' l Δ T M t' t =>
       letboxt l' l Δ T (subst_ty M (llift d)) (subst_tm t' (gwk d)) (subst_tm t d)
+  | tmTy T => tmTy (subst_ty T d)
+  | tmTup s t => tmTup (subst_tm s d) (subst_tm t d)
+  | bindU b => bindU (subst_tm b (uwk d))
+  | bindG b => bindG (subst_tm b (gwk d))
+  | bindL b => bindL (subst_tm b (llift d))
+  | elimT l1 l2 rb l Δ t => elimT l1 l2 (subst_tm rb d) l Δ (subst_tm t d)
+  | elimt l1 l2 rb l Δ T t => elimt l1 l2 (subst_tm rb d) l Δ T (subst_tm t d)
   end
 with lcomp (d' : lsub) (d : lsub) {struct d'} : lsub :=       (* d' ∘ d *)
   match d' with
@@ -276,6 +365,15 @@ Definition goren (o : gobj) (ξ : nat -> nat) : gobj :=
 Definition gup (σ : gsub) : gsub :=
   fun n => match n with 0 => GId 0 | S n => goren (σ n) S end.
 
+Definition gouren (o : gobj) (ρ : nat -> nat) : gobj :=
+  match o with
+  | GId j => GId j | GCtx Γ => GCtx (ucren Γ ρ)
+  | GTy T => GTy (uren_ty T ρ) | GTm t => GTm (uren_tm t ρ)
+  end.
+
+(** A global substitution moved under one level binder. *)
+Definition guwk (σ : gsub) : gsub := fun n => gouren (σ n) S.
+
 (** Instantiation at a use site: [U^δ[σ] = σ(U)[δ[σ]]], [g[σ] = σ(g)]. *)
 Definition pty (o : gobj) (d : lsub) : ty :=
   match o with GId j => tyGvar j d | GTy T => subst_ty T d | _ => tyErr end.
@@ -310,6 +408,14 @@ with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
       letboxT l' l (gcsubst Δ σ) (gsubst_ty M σ) (gsubst_tm t' (gup σ)) (gsubst_tm t σ)
   | letboxt l' l Δ T M t' t =>
       letboxt l' l (gcsubst Δ σ) (gsubst_ty T σ) (gsubst_ty M σ) (gsubst_tm t' (gup σ)) (gsubst_tm t σ)
+  | tmTy T => tmTy (gsubst_ty T σ)
+  | tmTup s t => tmTup (gsubst_tm s σ) (gsubst_tm t σ)
+  | bindU b => bindU (gsubst_tm b (guwk σ))
+  | bindG b => bindG (gsubst_tm b (gup σ))
+  | bindL b => bindL (gsubst_tm b σ)
+  | elimT l1 l2 rb l Δ t => elimT l1 l2 (gsubst_tm rb σ) l (gcsubst Δ σ) (gsubst_tm t σ)
+  | elimt l1 l2 rb l Δ T t =>
+      elimt l1 l2 (gsubst_tm rb σ) l (gcsubst Δ σ) (gsubst_ty T σ) (gsubst_tm t σ)
   end
 with gcsubst (Γ : ctx) (σ : gsub) {struct Γ} : ctx :=
   match Γ with
@@ -322,6 +428,66 @@ Definition gosubst (o : gobj) (τ : gsub) : gobj :=
   match o with
   | GId j => τ j | GCtx Γ => GCtx (gcsubst Γ τ)
   | GTy T => GTy (gsubst_ty T τ) | GTm t => GTm (gsubst_tm t τ)
+  end.
+
+(** ** Universe substitution (M3) *)
+
+Fixpoint usubst_ty (T : ty) (φ : nat -> lvl) {struct T} : ty :=
+  match T with
+  | tyErr => tyErr | tyNat => tyNat
+  | tyPi l l' A B => tyPi (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_ty B φ)
+  | tyU l => tyU (lvsubst l φ)
+  | tyEl l t => tyEl (lvsubst l φ) (usubst_tm t φ)
+  | tyGvar U d => tyGvar U (ulsubst d φ)
+  | tyCTyp Δ l => tyCTyp (ucsubst Δ φ) (lvsubst l φ)
+  | tyCTrm Δ T l => tyCTrm (ucsubst Δ φ) (usubst_ty T φ) (lvsubst l φ)
+  end
+with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
+  match t with
+  | var n => var n
+  | tmErr => tmErr | tmNat => tmNat | zero => zero
+  | tmU l => tmU (lvsubst l φ)
+  | tmPi l l' s t => tmPi (lvsubst l φ) (lvsubst l' φ) (usubst_tm s φ) (usubst_tm t φ)
+  | succ t => succ (usubst_tm t φ)
+  | natrec l M s z t =>
+      natrec (lvsubst l φ) (usubst_ty M φ) (usubst_tm s φ) (usubst_tm z φ) (usubst_tm t φ)
+  | lam l l' A t => lam (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_tm t φ)
+  | app t l l' A B s =>
+      app (usubst_tm t φ) (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_ty B φ)
+        (usubst_tm s φ)
+  | gvar u d => gvar u (ulsubst d φ)
+  | boxT T => boxT (usubst_ty T φ)
+  | boxt t => boxt (usubst_tm t φ)
+  | letboxT l' l Δ M t' t =>
+      letboxT (lvsubst l' φ) (lvsubst l φ) (ucsubst Δ φ) (usubst_ty M φ) (usubst_tm t' φ)
+        (usubst_tm t φ)
+  | letboxt l' l Δ T M t' t =>
+      letboxt (lvsubst l' φ) (lvsubst l φ) (ucsubst Δ φ) (usubst_ty T φ) (usubst_ty M φ)
+        (usubst_tm t' φ) (usubst_tm t φ)
+  | tmTy T => tmTy (usubst_ty T φ)
+  | tmTup s t => tmTup (usubst_tm s φ) (usubst_tm t φ)
+  | bindU b => bindU (usubst_tm b (uup φ))
+  | bindG b => bindG (usubst_tm b φ)
+  | bindL b => bindL (usubst_tm b φ)
+  | elimT l1 l2 rb l Δ t =>
+      elimT (lvsubst l1 φ) (lvsubst l2 φ) (usubst_tm rb φ) (lvsubst l φ) (ucsubst Δ φ)
+        (usubst_tm t φ)
+  | elimt l1 l2 rb l Δ T t =>
+      elimt (lvsubst l1 φ) (lvsubst l2 φ) (usubst_tm rb φ) (lvsubst l φ) (ucsubst Δ φ)
+        (usubst_ty T φ) (usubst_tm t φ)
+  end
+with ucsubst (Γ : ctx) (φ : nat -> lvl) {struct Γ} : ctx :=
+  match Γ with
+  | cnil => cnil | cvar g => cvar g
+  | cext Γ A l => cext (ucsubst Γ φ) (usubst_ty A φ) (lvsubst l φ)
+  end
+with ulsubst (d : lsub) (φ : nat -> lvl) {struct d} : lsub :=
+  match d with lshift k => lshift k | lcons d t => lcons' (ulsubst d φ) (usubst_tm t φ) end.
+
+Definition gousubst (o : gobj) (φ : nat -> lvl) : gobj :=
+  match o with
+  | GId j => GId j | GCtx Γ => GCtx (ucsubst Γ φ)
+  | GTy T => GTy (usubst_ty T φ) | GTm t => GTm (usubst_tm t φ)
   end.
 
 (** [o/u], the single global substitution of the letbox β-rules. *)
@@ -343,3 +509,21 @@ Arguments gsubst {_ _} !_ _ /.
 
 Notation "x ⟪ ξ ⟫" := (gren x ξ) (at level 5, format "x ⟪ ξ ⟫").
 Notation "x ⦃ σ ⦄" := (gsubst x σ) (at level 5, format "x ⦃ σ ⦄").
+
+Class URen (X : Type) := uren : X -> (nat -> nat) -> X.
+Class USubst (X : Type) := usubst : X -> (nat -> lvl) -> X.
+#[export] Instance URen_lvl : URen lvl := lvren.
+#[export] Instance URen_ty : URen ty := uren_ty.
+#[export] Instance URen_tm : URen tm := uren_tm.
+#[export] Instance URen_ctx : URen ctx := ucren.
+#[export] Instance URen_lsub : URen lsub := ulren.
+#[export] Instance USubst_lvl : USubst lvl := lvsubst.
+#[export] Instance USubst_ty : USubst ty := usubst_ty.
+#[export] Instance USubst_tm : USubst tm := usubst_tm.
+#[export] Instance USubst_ctx : USubst ctx := ucsubst.
+#[export] Instance USubst_lsub : USubst lsub := ulsubst.
+Arguments uren {_ _} !_ _ /.
+Arguments usubst {_ _} !_ _ /.
+
+Notation "x ⟨ ρ ⟩ᵤ" := (uren x ρ) (at level 5, format "x ⟨ ρ ⟩ᵤ").
+Notation "x [ φ ]ᵤ" := (usubst x φ) (at level 5, format "x [ φ ]ᵤ").
