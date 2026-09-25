@@ -27,6 +27,8 @@ Local Notation VTmGM := (@VTmG EM LR_P).
 Definition GObjRel (G' : gctx) (D : gdecl) (o o' : gobj) : Prop :=
   match D, o, o' with
   | gdCtx, GId g, GId g' => g = g'
+  (* a context variable may go to related contexts (M3_DESIGN.md E9) *)
+  | gdCtx, GCtx Δ, GCtx Δ' => @CtxRelG EP LR_P G' Δ Δ' /\ @CtxRelG EM LR_P G' Δ Δ'
   | gdTy _ _ _, GId x, GId x' => x = x'
   | gdTy Δ i l, GTy T, GTy T' => (lle i lC -> T = T') /\ VTyGP G' Δ T T' l /\ VTyGM G' Δ T T' l
   | gdTm _ _ _ _, GId x, GId x' => x = x'
@@ -50,16 +52,6 @@ Lemma GSubRel_refl_l {G' G σ σ'} : GSubRel G' G σ σ' -> GSubRel G' G σ σ.
 Proof. intros []; now constructor. Qed.
 Lemma GSubRel_refl_r {G' G σ σ'} : GSubRel G' G σ σ' -> GSubRel G' G σ' σ'.
 Proof. intros []; now constructor. Qed.
-
-(** Related substitutions send context variables to context variables
-    (M2; the extension to related contexts is M3_DESIGN.md E9). *)
-Lemma gsr_cvars {G' G σ σ' i Γ} : GSubRel G' G σ σ' -> [ G ; Γ ⊢[ i ] ] -> gsub_cvars σ Γ /\ gsub_cvars σ' Γ.
-Proof.
-  intros Hσ HΓ. assert (H : forall g, ctx_tail Γ = cvar g -> exists j, σ g = GId j /\ σ' g = GId j).
-  { intros g Hg. pose proof (gsr_rel _ _ _ _ Hσ _ _ (gctx_var_in _ _ (wf_ctx_tail _ _ _ _ HΓ Hg))) as X.
-    cbn in X. destruct (σ g), (σ' g); try contradiction. subst; eauto. }
-  split; intros g Hg; destruct (H g Hg) as (j & E & E'); eauto.
-Qed.
 
 (** The universe context is shared, as the global substitution lemma
     requires. *)
@@ -163,7 +155,8 @@ Lemma GObjRel_sym {G' G D σ σ' n} : GValid G -> GSubRel G' G σ σ' -> in_gctx
 Proof.
   intros HG Hσ Hin. pose proof (HG _ _ Hin) as HD.
   destruct D as [| Δ i l | Δ i A l]; cbn in HD |- *;
-    destruct (σ n), (σ' n); cbn; try tauto; try congruence.
+    destruct (σ n), (σ' n); cbn; try tauto; try congruence;
+    try (intros [XP XM]; split; apply CtxRelG_sym; assumption).
   - destruct HD as [HP HM]. intros (XE & XP & XM).
     refine (conj (fun Hi => eq_sym (XE Hi)) (conj _ _));
       [exact (VTyG_transport (HP _ _ _ Hσ) (VTyG_sym XP)) | exact (VTyG_transport (HM _ _ _ Hσ) (VTyG_sym XM))].

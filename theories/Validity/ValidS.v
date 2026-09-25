@@ -110,10 +110,20 @@ Local Notation VTmS := (@VTmS EP EM E LP).
 Lemma VCtxS_nil {G} : VCtxS G cnil.
 Proof. intros G' σ σ' Hσ. exact CtxRelG_nil. Qed.
 
-Lemma VCtxS_var {G g} : gctx_var G g -> VCtxS G (cvar g).
+(** A context variable: the same variable, or related contexts (E9);
+    [proj] takes their relatedness at [⊩^{≥P}_P] (both instances, well
+    formed at P) to the instance at hand. *)
+Lemma VCtxS_var {G g}
+  (proj : forall G' Δ Δ', [ G' ; Δ ⊢[ lD ] ] -> [ G' ; Δ' ⊢[ lD ] ] ->
+            @CtxRelG EP LR_P G' Δ Δ' /\ @CtxRelG EM LR_P G' Δ Δ' -> @CtxRelG E LP G' Δ Δ') :
+  gctx_var G g -> VCtxS G (cvar g).
 Proof.
   intros Hg G' σ σ' Hσ. pose proof (gsr_rel _ _ _ _ _ _ Hσ _ _ (gctx_var_in _ _ Hg)) as X.
-  rewrite !gs_cvar. cbn in X. destruct (σ g), (σ' g); try contradiction. subst. exact CtxRelG_var.
+  pose proof (gsw_var _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ) _ _ (gctx_var_in _ _ Hg)) as W.
+  pose proof (gsw_var _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ) _ _ (gctx_var_in _ _ Hg)) as W'.
+  rewrite !gs_cvar. cbn in X, W, W'. destruct (σ g), (σ' g); cbn in X, W, W' |- *; try contradiction.
+  - subst. exact CtxRelG_var.
+  - exact (proj _ _ _ W W' X).
 Qed.
 
 Lemma VCtxS_ext {G Γ A l} : GValid G -> VCtxS G Γ -> VTyS G Γ A A l -> lwf (gL G) l ->
@@ -153,8 +163,11 @@ Definition VCtxEqS (G : gctx) (Γ Γ' : ctx) : Prop :=
 
 Lemma VCtxEqS_nil {G} : VCtxEqS G cnil cnil.
 Proof. exact VCtxS_nil. Qed.
-Lemma VCtxEqS_var {G g} : gctx_var G g -> VCtxEqS G (cvar g) (cvar g).
-Proof. exact VCtxS_var. Qed.
+Lemma VCtxEqS_var {G g}
+  (proj : forall G' Δ Δ', [ G' ; Δ ⊢[ lD ] ] -> [ G' ; Δ' ⊢[ lD ] ] ->
+            @CtxRelG EP LR_P G' Δ Δ' /\ @CtxRelG EM LR_P G' Δ Δ' -> @CtxRelG E LP G' Δ Δ') :
+  gctx_var G g -> VCtxEqS G (cvar g) (cvar g).
+Proof. exact (VCtxS_var proj). Qed.
 
 Lemma VCtxEqS_ext {G Γ Γ' A A' l l'} : GValid G -> VCtxS G Γ -> VCtxEqS G Γ Γ' ->
   VTyS G Γ A A' l -> lequiv (gL G) l l' -> VCtxEqS G (Γ ,, A @ l) (Γ' ,, A' @ l').

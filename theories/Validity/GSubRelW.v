@@ -51,6 +51,8 @@ Lemma GObjRel_gwk {G'' G' D o o' γ} : gwk_ok γ G'' G' -> γ <> gwk_id ->
 Proof.
   intros Hγ Hne. destruct D, o, o'; cbn [GObjRel gdecl_ren goren]; try tauto; try congruence;
     change (gren_ty ?x ?ξ) with (gren x ξ); change (gren_tm ?x ?ξ) with (gren x ξ).
+  - intros (HP & HM). change (gcren ?x ?ξ) with (gren x ξ). rewrite <- !(gwa_gren γ) by exact Hne.
+    split; eapply CtxRelG_gwk; eassumption.
   - intros (HE & HP & HM). refine (conj (fun Hi => f_equal (fun x => gren x γ) (HE Hi)) (conj _ _));
       rewrite <- !(gwa_gren γ) by exact Hne; apply (VTyG_gwk (G := G')); assumption.
   - intros (HE & HP & HM). refine (conj (f_equal (fun x => gren x γ) HE) (conj _ _));

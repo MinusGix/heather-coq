@@ -105,7 +105,9 @@ Ltac f_types :=
   end.
 
 Ltac f_ctx :=
-  first [ eassumption | apply VCtxS_nil | solve [simple eapply VCtxS_var; f_side]
+  first [ eassumption | apply VCtxS_nil
+        | solve [simple eapply VCtxS_var;
+                 first [exact (fun _ _ _ _ _ H => proj1 H) | exact (fun _ _ _ _ _ H => proj2 H) | f_side]]
         | solve [simple eapply VCtxS_tl; f_side]
         | solve [simple eapply VCtxS_ext; f_side] ].
 
@@ -153,7 +155,9 @@ Ltac f_goal :=
   | |- GValid _ => eassumption
   | |- @VCtxS _ _ _ _ _ _ => f_ctx
   | |- @VCtxEqS _ _ _ _ _ _ _ =>
-      first [ apply VCtxEqS_nil | solve [simple eapply VCtxEqS_var; f_side]
+      first [ apply VCtxEqS_nil
+            | solve [simple eapply VCtxEqS_var;
+                     first [exact (fun _ _ _ _ _ H => proj1 H) | exact (fun _ _ _ _ _ H => proj2 H) | f_side]]
             | solve [simple eapply VCtxEqS_ext; f_side] ]
   | |- @VTyS _ _ _ _ _ _ _ _ _ => f_ty
   | |- @VTmS _ _ _ _ _ _ _ _ _ _ => f_tm

@@ -9,7 +9,7 @@ From DeLaM.Typing Require Export GSubstitution.
 
 Definition static_decl (D : gdecl) : Prop :=
   match D with
-  | gdCtx => True
+  | gdCtx => False    (* code never mentions a context (its images may differ, E9) *)
   | gdTy _ i _ => lle i lC
   | gdTm _ i _ _ => lle i lC
   end.

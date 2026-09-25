@@ -378,7 +378,12 @@ Ltac m_P :=
   end.
 
 Ltac m_ctx :=
-  first [ eassumption | apply VCtxS_nil | solve [simple eapply VCtxS_var; m_side]
+  first [ eassumption | apply VCtxS_nil
+        | solve [simple eapply VCtxS_var;
+                 first [ exact (fun _ _ _ HΔ HΔ' H => proj1 (CtxRelG_layer LR_P LRM
+                                  (mltt_wf_ctx HΔ ltac:(discriminate)) (mltt_wf_ctx HΔ' ltac:(discriminate)))
+                                  (proj2 H))
+                       | m_side ]]
         | solve [simple eapply VCtxS_tl; m_side]
         | solve [simple eapply VCtxS_ext; m_side] ].
 

@@ -132,14 +132,14 @@ Proof.
     match goal with Hm : in_gctx ?Ψ _ _ |- _ => is_var Ψ; exact (IH _ _ Hm) end.
 Qed.
 
-(** The tail condition only depends on the contexts' shapes. *)
-Lemma lsub_tail_gsubst_r {d Δ Γ σ σ'} : gsub_cvars σ Δ -> gsub_cvars σ Γ ->
-  lsub_tail d Δ Γ -> lsub_tail d⦃σ'⦄ Δ⦃σ⦄ Γ⦃σ⦄.
+(** The tail condition only depends on the contexts' shapes (and both
+    contexts expand by the same image of their tail, E9). *)
+Lemma lsub_tail_gsubst_r {d Δ Γ σ σ'} : lsub_tail d Δ Γ -> lsub_tail d⦃σ'⦄ Δ⦃σ⦄ Γ⦃σ⦄.
 Proof.
-  intros HΔ HΓ [Ht Hl]; split.
-  - rewrite !ctx_tail_gsubst by assumption; now f_equal.
-  - intros n; rewrite !clen_gsubst by assumption. cbn [gsubst GSubst_lsub].
-    rewrite llk_glsubst, Hl; reflexivity.
+  intros [Ht Hl]; split.
+  - rewrite (ctx_tail_gsubst' Δ), (ctx_tail_gsubst' Γ); now rewrite Ht.
+  - intros n; rewrite !clen_gsubst'. assert (E : tlen σ Δ = tlen σ Γ) by (unfold tlen; now rewrite Ht).
+    rewrite E, <- !Nat.add_assoc. cbn [gsubst GSubst_lsub]. rewrite llk_glsubst, Hl; reflexivity.
 Qed.
 
 Lemma lle_D_notM {i} : lle i lD -> i <> lM.
@@ -168,19 +168,22 @@ Lemma VSubKS {i0 G Γ Δ d d'} : [ G ; Γ ⊢[ i0 ] ] -> [ G ; Δ ⊢[ lD ] ] ->
   forall G' σ σ', GSubRel G' G σ σ' -> VSubK G' Γ⦃σ⦄ d⦃σ⦄ d'⦃σ'⦄ Δ⦃σ⦄.
 Proof.
   intros HΓ HΔ VΔ Ht Nd Ht' Nd' Hv G' σ σ' Hσ G'' γ Hγ.
-  pose proof (proj1 (gsr_cvars _ _ Hσ HΓ)) as CΓ.
-  pose proof (proj1 (gsr_cvars _ _ Hσ HΔ)) as CΔ.
   destruct (dnfl_gs (d := d) Hσ Nd) as [Nd1 _]. destruct (dnfl_gs (d := d') Hσ Nd') as [_ Nd2].
   apply VSub_intro.
   - exact (VΔ _ _ _ (GSubRel_refl_l _ _ Hσ) _ _ Hγ).
-  - apply lsub_tail_gwa, lsub_tail_gsubst; assumption.
+  - apply lsub_tail_gwa, lsub_tail_gsubst'; assumption.
   - apply lsub_tail_gwa, lsub_tail_gsubst_r; assumption.
   - intros n; apply dnfl_llk, dnfl_gwa, Nd1.
   - intros n; apply dnfl_llk, dnfl_gwa, Nd2.
   - intros n A' k Hin. destruct (in_ctx_gwa_inv _ _ _ _ _ Hin) as (A0 & Hin0 & ->).
-    destruct (in_ctx_gsubst_inv _ _ _ _ _ CΔ Hin0) as (A & HinA & ->).
-    pose proof (Hv _ _ _ HinA _ _ _ Hσ _ _ Hγ) as X.
-    rewrite gsubst_subst_ty, gwa_subst_ty in X. rewrite !llk_gwa, !llk_glsubst. exact X.
+    destruct (in_ctx_gsubst_inv' _ _ _ _ _ Hin0) as [(A & HinA & ->) | (g & m & T1 & Hg & -> & Hm & ->)].
+    + pose proof (Hv _ _ _ HinA _ _ _ Hσ _ _ Hγ) as X.
+      rewrite gsubst_subst_ty, gwa_subst_ty in X. rewrite !llk_gwa, !llk_glsubst. exact X.
+    + (* an entry of the image of [Δ]'s context variable: a variable of [Γ⦃σ⦄] *)
+      rewrite !llk_gwa, (gs_tail_var d Δ Γ σ m Ht), (gs_tail_var d' Δ Γ σ' m Ht').
+      rewrite <- gwa_subst_ty, (tail_entry_ty d Δ Γ σ T1 Ht (in_ctx_nf _ _ _ _ Hm)), !gwa_var.
+      apply V_var, in_ctx_gwa, (in_ctx_gsubst_tail Γ g); [| exact Hm].
+      rewrite <- (proj1 Ht); exact Hg.
 Qed.
 
 Lemma VTyS_inst {i0 G Γ Δ A d d' l} : [ G ; Γ ⊢[ i0 ] ] -> [ G ; Δ ⊢[ lD ] ] -> VCtxS G Δ ->
