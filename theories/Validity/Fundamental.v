@@ -137,6 +137,8 @@ Qed.
 
 End Wrappers.
 
+End Fundamental.
+
 (** ** The theorem *)
 
 Ltac ft_prep :=
@@ -146,24 +148,24 @@ Ltac ft_prep :=
 Ltac ft_case :=
   first
   [ exact I | eassumption
-  | solve [eapply V_var; eassumption] | solve [eapply V_nat] | solve [eapply V_zero]
-  | solve [eapply V_code_nat] | solve [eapply V_succ; eassumption]
-  | solve [eapply V_El_nat] | solve [eapply V_El_U; eassumption]
-  | solve [eapply V_El_pi; eassumption]
-  | solve [eapply VTy_sym; eassumption] | solve [eapply VTy_trans; eassumption]
-  | solve [eapply VTm_sym; eassumption] | solve [eapply VTm_trans; eassumption]
-  | solve [eapply VTy_lconv; eassumption] | solve [eapply VTm_lconv; eassumption]
-  | solve [eapply VTm_conv; eassumption]
-  | solve [eapply ft_U; eassumption] | solve [eapply ft_U_eq; eassumption]
-  | solve [eapply ft_El; eassumption] | solve [eapply ft_El_eq; eassumption]
-  | solve [eapply ft_code_U; eassumption] | solve [eapply ft_code_U_eq; eassumption]
-  | solve [eapply ft_pi; eassumption] | solve [eapply ft_pi_eq; eassumption]
-  | solve [eapply ft_code_pi; eassumption] | solve [eapply ft_code_pi_eq; eassumption]
-  | solve [eapply ft_natrec; eassumption] | solve [eapply ft_natrec_eq; eassumption]
-  | solve [eapply ft_lam; eassumption] | solve [eapply ft_lam_eq; eassumption]
-  | solve [eapply ft_app; eassumption] | solve [eapply ft_app_eq; eassumption]
-  | solve [eapply V_natrec_zero; eassumption] | solve [eapply V_natrec_succ; eassumption]
-  | solve [eapply V_beta; eassumption] | solve [eapply V_eta; eassumption] ].
+  | solve [simple eapply V_var; eassumption] | solve [simple eapply V_nat] | solve [simple eapply V_zero]
+  | solve [simple eapply V_code_nat] | solve [simple eapply V_succ; eassumption]
+  | solve [simple eapply V_El_nat] | solve [simple eapply V_El_U; eassumption]
+  | solve [simple eapply V_El_pi; eassumption]
+  | solve [simple eapply VTy_sym; eassumption] | solve [simple eapply VTy_trans; eassumption]
+  | solve [simple eapply VTm_sym; eassumption] | solve [simple eapply VTm_trans; eassumption]
+  | solve [simple eapply VTy_lconv; eassumption] | solve [simple eapply VTm_lconv; eassumption]
+  | solve [simple eapply VTm_conv; eassumption]
+  | solve [simple eapply ft_U; eassumption] | solve [simple eapply ft_U_eq; eassumption]
+  | solve [simple eapply ft_El; eassumption] | solve [simple eapply ft_El_eq; eassumption]
+  | solve [simple eapply ft_code_U; eassumption] | solve [simple eapply ft_code_U_eq; eassumption]
+  | solve [simple eapply ft_pi; eassumption] | solve [simple eapply ft_pi_eq; eassumption]
+  | solve [simple eapply ft_code_pi; eassumption] | solve [simple eapply ft_code_pi_eq; eassumption]
+  | solve [simple eapply ft_natrec; eassumption] | solve [simple eapply ft_natrec_eq; eassumption]
+  | solve [simple eapply ft_lam; eassumption] | solve [simple eapply ft_lam_eq; eassumption]
+  | solve [simple eapply ft_app; eassumption] | solve [simple eapply ft_app_eq; eassumption]
+  | solve [simple eapply V_natrec_zero; eassumption] | solve [simple eapply V_natrec_succ; eassumption]
+  | solve [simple eapply V_beta; eassumption] | solve [simple eapply V_eta; eassumption] ].
 
 (** ** Lifting to global weakenings
 
@@ -226,6 +228,9 @@ Ltac ftG_case :=
     [letbox] live at M, and [U^δ]/[u^δ] need a type/term binding. *)
 Definition ctx_only (G : gctx) : Prop := forall n D, in_gctx (gΨ G) n D -> D = gdCtx.
 
+Section FundamentalThm.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+
 Theorem fundamental :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
@@ -247,4 +252,4 @@ Proof.
     ftG_case.
 Qed.
 
-End Fundamental.
+End FundamentalThm.

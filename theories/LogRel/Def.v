@@ -83,6 +83,7 @@ Proof. constructor; cbn; tauto. Qed.
 
 (** The parameters of the [j = P] relation. *)
 Definition LR_P : LRParams := {| lr_j := jP ; lr_vp := vp_empty |}.
+#[export] Instance LR_P_laws : VPLaws (@lr_vp LR_P) := vp_empty_laws.
 
 Section LRDef.
 Context `{E : GenericEq} `{LP : LRParams}.
