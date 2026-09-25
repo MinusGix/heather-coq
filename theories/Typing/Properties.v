@@ -274,7 +274,7 @@ Ltac wk_body :=
             first [exact (ctx_glob _ _ _ HΔ) | eassumption | left; reflexivity | right; reflexivity
                   | cbn; eassumption | eapply lequiv_wf_l; eassumption | eapply lequiv_wf_r; eassumption]);
       assert (X : [ gext G D ; Δ⟪S⟫ ⊢[ lM ] ]);
-      [ exact (proj1 (proj2 gweakening) _ _ _ HΔ (D :: gΨ G) (gwk_step gwk_id)
+      [ exact (proj1 (proj2 gweakening) _ _ _ HΔ _ (D :: gΨ G) (gwk_step gwk_id) (le_n _)
                  (gwkwf_step _ _ _ _ (gwkwf_id _)) Hg)
       | pose proof (IH _ _ (wkr_gren _ _ _ S Hr) X) as X';
         rewrite single_ren_ty, <- gren_ren_ty', ?ren_boxT, ?ren_boxt in X'; exact X' ]
@@ -297,7 +297,7 @@ Proof.
   pose proof (proj1 (proj2 usubstitution) _ _ _ HΔ (nu + gL G) _ (usub_ok_ush nu (gL G))) as X.
   rewrite <- gctx_uwk_as in X.
   rewrite <- (proj1 (proj2 (proj2 uren_as_usubst_all)) Δ (ush nu)) in X by reflexivity.
-  pose proof (proj1 (proj2 gweakening) _ _ _ X _ _ (gwk_stepn_wf Ds _) HG) as Y.
+  pose proof (proj1 (proj2 gweakening) _ _ _ X _ _ _ (le_n _) (gwk_stepn_wf Ds _) HG) as Y.
   unfold wkc. rewrite (proj1 (proj2 (proj2 gren_ext_all)) _ (ush (length Ds)) (gwk_fn (gwk_stepn (length Ds)))).
   - exact Y.
   - intros; now rewrite gwk_stepn_fn.

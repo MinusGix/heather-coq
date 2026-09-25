@@ -303,3 +303,11 @@ Proof. intros (_ & _ & H & _); exact H. Qed.
 
 Lemma lvren_uperm_inv π πi L l : uperm π πi L -> lvren (lvren l π) πi = l.
 Proof. intros (H1 & _); rewrite (lvren_lvren l π πi (fun n => n)) by auto; apply lvren_id; auto. Qed.
+
+(** Lift a level fact of a smaller universe context: [lup H] with
+    [H : L <= L']. *)
+Ltac lup H :=
+  match goal with
+  | |- lwf _ _ => eapply lwf_weaken; [exact H | first [eassumption | eauto using lequiv_wf_l, lequiv_wf_r]]
+  | |- lequiv _ _ _ => eapply lequiv_weaken; [exact H | first [eassumption | eauto using lequiv_sym]]
+  end.

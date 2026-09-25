@@ -38,7 +38,7 @@ Lemma V_ElG {G Γ l l' t t'} : lwf (gL G) l -> lequiv (gL G) l l' ->
 Proof.
   intros Hwl Hl Ht G' γ Hγ. rewrite !gwa_tyEl.
   pose proof (Ht _ _ Hγ) as X. rewrite gwa_tyU in X.
-  destruct Hγ as [HL _]. apply V_El; [rewrite HL; exact Hwl | rewrite HL; exact Hl | exact X].
+  destruct Hγ as [HL _]. apply V_El; [exact (lwf_weaken _ _ _ HL Hwl) | exact (lequiv_weaken _ _ _ _ HL Hl) | exact X].
 Qed.
 
 (** ** The code of Π *)

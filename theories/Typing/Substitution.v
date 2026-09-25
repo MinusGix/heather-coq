@@ -300,13 +300,13 @@ Proof.
   intros Hg [HΔ Hn Ht Hv].
   assert (Hw : gwk_wf (gwk_step gwk_id) (D :: gΨ G) (gΨ G)) by (constructor; constructor).
   constructor.
-  - exact (proj1 (proj2 gweakening) _ _ _ HΔ _ _ Hw Hg).
+  - exact (proj1 (proj2 gweakening) _ _ _ HΔ _ _ _ (le_n _) Hw Hg).
   - now apply lk_dnf_gwk.
   - exact (lsub_tail_gren _ _ _ S Ht).
   - intros n A k Hin. destruct (in_ctx_gren_inv _ _ _ _ _ Hin) as (A0 & HA0 & ->).
     unfold gwk; rewrite llk_glren. change (gren_tm ?x ?y) with x⟪y⟫.
     change (glren d S) with d⟪S⟫. rewrite <- gren_subst_ty.
-    exact (proj1 (proj2 (proj2 (proj2 gweakening))) _ _ _ _ _ _ (Hv _ _ _ HA0) _ _ Hw Hg).
+    exact (proj1 (proj2 (proj2 (proj2 gweakening))) _ _ _ _ _ _ (Hv _ _ _ HA0) _ _ _ (le_n _) Hw Hg).
 Qed.
 
 Lemma lsub_wf_typeof G i Δ d Γ : [ G ; Δ ⊢[ i ] d : Γ ] -> [ G ; Δ ⊢[ typeof i ] d : Γ ].
@@ -611,7 +611,7 @@ Proof.
   pose proof (gwk_stepn_wf Ds Ψ) as Hw.
   assert (Hξ : forall j, gwk_fn (gwk_stepn (length Ds)) j = ush (length Ds) j) by apply gwk_stepn_fn.
   constructor.
-  - pose proof (proj1 (proj2 gweakening) _ _ _ HΔ _ _ Hw HG) as X.
+  - pose proof (proj1 (proj2 gweakening) _ _ _ HΔ _ _ _ (le_n _) Hw HG) as X.
     rewrite (proj1 (proj2 (proj2 gren_ext_all)) _ _ _ Hξ) in X. exact X.
   - apply lk_dnf_gwkn, Hn.
   - destruct Ht as [Ht1 Ht2]. split.
@@ -622,7 +622,7 @@ Proof.
     destruct (in_ctx_gren_inv _ _ _ _ _ Hin) as (A0 & HA0 & ->).
     rewrite llk_gwkn by exact Hn.
     replace (A0⟪ush (length Ds)⟫[gwkn (length Ds) d]) with ((A0[d])⟪ush (length Ds)⟫).
-    + pose proof (proj1 (proj2 (proj2 (proj2 gweakening))) _ _ _ _ _ _ (Hv _ _ _ HA0) _ _ Hw HG) as X.
+    + pose proof (proj1 (proj2 (proj2 (proj2 gweakening))) _ _ _ _ _ _ (Hv _ _ _ HA0) _ _ _ (le_n _) Hw HG) as X.
       rewrite (proj1 (proj2 (proj2 gren_ext_all)) _ _ _ Hξ), (proj1 (proj2 gren_ext_all) _ _ _ Hξ),
         (proj1 gren_ext_all _ _ _ Hξ) in X.
       exact X.

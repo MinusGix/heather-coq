@@ -29,16 +29,32 @@ Proof.
     first [apply gren_gsubst_ctx | apply gren_gsubst_ty]; intros; apply gsub_wk_ne, Hγ.
 Qed.
 
-Lemma gwk_ok_to {γ G'' G'} : gwk_ok γ G'' G' -> G'' = gwk_to G' (gΨ G'').
-Proof. intros [HL _]. destruct G'' as [L'' Ψ'']; unfold gwk_to; cbn in *. now rewrite HL. Qed.
-
 Lemma gsub_wf_wk {G'' G' G γ σ} : [ G' ⊢ σ : G ] -> gwk_ok γ G'' G' -> [ ⊢ G'' ] -> γ <> gwk_id ->
   [ G'' ⊢ gsub_wk σ γ : G ].
 Proof.
   intros [Hg Hn Hv] Hγ HG Hne. constructor; [exact HG | intros n; rewrite gsub_wk_ne by exact Hne; apply dnfo_goren |].
   intros n D Hin. rewrite <- gdecl_gsubst_wk, gsub_wk_ne by exact Hne.
-  pose proof (gwk_ok_to Hγ) as EG. rewrite EG in HG |- *.
-  exact (gobj_wf_gwk _ _ _ γ _ (Hv _ _ Hin) (proj2 Hγ) HG).
+  destruct G'' as [L'' Ψ''].
+  exact (gobj_wf_gwk _ _ _ γ _ _ (Hv _ _ Hin) (proj2 Hγ) (proj1 Hγ) HG).
+Qed.
+
+(** Level growth of the target (M3_DESIGN.md E14). *)
+Lemma gobj_wf_grow {G'' G' o D} : gwk_ok gwk_id G'' G' -> [ ⊢ G'' ] -> gobj_wf G' o D -> gobj_wf G'' o D.
+Proof.
+  intros Hγ HG. pose proof (gwk_ok_id_inv Hγ) as EG.
+  destruct D, o; cbn [gobj_wf]; try tauto.
+  - rewrite EG. unfold gctx_var; cbn. tauto.
+  - intros H. exact (gwa_ctx (γ := gwk_id) Hγ HG H).
+  - intros (i' & Hi' & Hin). exists i'; split; [exact Hi' | rewrite EG; exact Hin].
+  - intros H. exact (gwa_ty (γ := gwk_id) Hγ HG H).
+  - intros (i' & Hi' & Hin). exists i'; split; [exact Hi' | rewrite EG; exact Hin].
+  - intros H. exact (gwa_tm (γ := gwk_id) Hγ HG H).
+Qed.
+
+Lemma gsub_wf_grow {G'' G' G σ} : [ G' ⊢ σ : G ] -> gwk_ok gwk_id G'' G' -> [ ⊢ G'' ] -> [ G'' ⊢ σ : G ].
+Proof.
+  intros [Hg Hn Hv] Hγ HG. constructor; [exact HG | exact Hn |].
+  intros n D Hin. exact (gobj_wf_grow Hγ HG (Hv _ _ Hin)).
 Qed.
 
 Section GSubRelW.
@@ -66,15 +82,32 @@ Proof.
   exact (GObjRel_gwk Hγ Hne (H _ _ Hin)).
 Qed.
 
+Lemma GObjRel_grow {G'' G' D o o'} : gwk_ok gwk_id G'' G' ->
+  GObjRel EP EM G' D o o' -> GObjRel EP EM G'' D o o'.
+Proof.
+  intros Hγ. pose proof (gwk_ok_id_inv Hγ) as EG.
+  destruct D, o, o'; cbn [GObjRel]; try tauto; try congruence.
+  - intros (HP & HM). split; (eapply (CtxRelG_gwk (γ := gwk_id)); [eassumption | exact Hγ]).
+  - intros (HE & HP & HM). refine (conj HE (conj _ _)); (eapply (VTyG_gwk (γ := gwk_id) (G := G')); [eassumption | exact Hγ]).
+  - intros (HE & HP & HM). refine (conj HE (conj _ _)); (eapply (VTmG_gwk (γ := gwk_id) (G := G')); [eassumption | exact Hγ]).
+Qed.
+
 Lemma GSubRel_wk {G'' G' G γ σ σ'} : GSubRel G' G σ σ' -> gwk_ok γ G'' G' -> [ ⊢ G'' ] ->
   GSubRel G'' G (gsub_wk σ γ) (gsub_wk σ' γ).
 Proof.
   intros Hσ Hγ HG.
   assert (Hc : γ = gwk_id \/ γ <> gwk_id) by (destruct γ; [left; reflexivity | right; discriminate ..]).
+  destruct Hσ as [HL Hl Hr H1 H2 H3].
   destruct Hc as [-> | Hne].
-  - cbn. now rewrite (gwk_ok_id_inv Hγ).
-  - destruct Hσ as [HL Hl Hr H1 H2 H3]. constructor.
-    + rewrite (proj1 Hγ); exact HL.
+  - cbn. constructor.
+    + exact (Nat.le_trans _ _ _ HL (proj1 Hγ)).
+    + exact (gsub_wf_grow Hl Hγ HG).
+    + exact (gsub_wf_grow Hr Hγ HG).
+    + intros n D Hin; exact (GObjRel_grow Hγ (H1 _ _ Hin)).
+    + intros n D Hin; exact (GObjRel_grow Hγ (H2 _ _ Hin)).
+    + intros n D Hin; exact (GObjRel_grow Hγ (H3 _ _ Hin)).
+  - constructor.
+    + exact (Nat.le_trans _ _ _ HL (proj1 Hγ)).
     + exact (gsub_wf_wk Hl Hγ HG Hne).
     + exact (gsub_wf_wk Hr Hγ HG Hne).
     + exact (GRel0_gwk Hγ Hne H1).

@@ -332,6 +332,7 @@ Ltac gren_rewrite :=
 
 Definition gwk_to (G : gctx) (Ψ' : list gdecl) : gctx := mkG (gL G) Ψ'.
 
+
 Lemma wf_tm_regty G i Δ x T T' l :
   [ G ; Δ ⊢[ i ] x : T' @ l ] -> T' = T -> [ G ; Δ ⊢[ i ] x : T @ l ].
 Proof. now intros ? ->. Qed.
@@ -359,6 +360,9 @@ Ltac gw_eq := push_gren; gren_rewrite; push_gren; first [reflexivity | f_equal; 
 #[export] Hint Extern 5 (eq_tm _ _ _ _ _ _ _) => eapply eq_tm_regty; [ | gw_eq ] : gwk.
 #[export] Hint Extern 1 (lwf _ _) => (cbn; first [exact I | assumption]) : gwk.
 #[export] Hint Extern 1 (lequiv _ _ _) => (cbn; assumption) : gwk.
+#[export] Hint Extern 2 (lwf _ _) => (cbn; eapply lwf_weaken; [| eassumption]; cbn; lia) : gwk.
+#[export] Hint Extern 2 (lequiv _ _ _) => (cbn; eapply lequiv_weaken; [| eassumption]; cbn; lia) : gwk.
+#[export] Hint Extern 1 (_ <= _) => (cbn; lia) : gwk.
 #[export] Hint Extern 1 (lle _ _) => assumption : gwk.
 #[export] Hint Extern 1 (_ <> _) => assumption : gwk.
 #[export] Hint Extern 1 (compt _) => assumption : gwk.
@@ -435,12 +439,12 @@ Ltac gw_entries :=
 (** The letbox body, typed under [Ψ, U] with the local context shifted. *)
 Ltac gw_body :=
   match goal with
-  | IH : forall Ψ'' (γ' : gweak), gwk_wf γ' Ψ'' (gΨ (gext ?G ?D)) -> _,
-    Hγ : gwk_wf ?γ ?Ψ' (gΨ ?G) |- _ =>
+  | IH : forall L'' Ψ'' (γ' : gweak), _ <= L'' -> gwk_wf γ' Ψ'' (gΨ (gext ?G ?D)) -> _,
+    Hγ : gwk_wf ?γ ?Ψ' (gΨ ?G), HL : gL ?G <= ?L' |- _ =>
       let X := fresh "X" in let Hw := fresh "Hw" in
-      assert (Hw : [ ⊢ gwk_to (gext G D) (gdecl_ren D γ :: Ψ') ])
-        by (unfold gwk_to; cbn [gdecl_ren gΨ gL gext]; eauto 7 with gwk);
-      pose proof (IH _ (gwk_up γ) (gwkwf_up _ _ _ D Hγ) Hw) as X;
+      assert (Hw : [ ⊢ mkG L' (gdecl_ren D γ :: Ψ') ])
+        by (cbn [gdecl_ren gΨ gL gext]; eauto 7 with gwk);
+      pose proof (IH L' _ (gwk_up γ) HL (gwkwf_up _ _ _ D Hγ) Hw) as X;
       cbn [gwk_fn] in X; rewrite gcren_shift_up in X;
       rewrite ?gren_letbox_ty in X by reflexivity; exact X
   end.
@@ -448,29 +452,29 @@ Ltac gw_body :=
 (** The recursors' motives and branches, under [⇑γ] and [⇑ⁿγ]. *)
 Ltac gw_motT :=
   match goal with
-  | IH : forall Ψ'' (γ' : gweak), gwk_wf γ' Ψ'' (gΨ (recGT ?G)) -> _,
-    Hγ : gwk_wf ?γ ?Ψ' (gΨ ?G), HG : [ ⊢ mkG (gL ?G) ?Ψ' ] |- _ =>
+  | IH : forall L'' Ψ'' (γ' : gweak), _ <= L'' -> gwk_wf γ' Ψ'' (gΨ (recGT ?G)) -> _,
+    Hγ : gwk_wf ?γ ?Ψ' (gΨ ?G), HL : gL ?G <= ?L', HG : [ ⊢ mkG ?L' ?Ψ' ] |- _ =>
       let X := fresh "X" in
-      pose proof (IH _ (gwk_up γ) (recGT_gwk γ (mkG (gL G) Ψ') G (conj eq_refl Hγ)) (wf_recGT HG)) as X;
+      pose proof (IH _ _ (gwk_up γ) (le_n_S _ _ HL) (recGT_gwk γ (mkG L' Ψ') G (conj HL Hγ)) (wf_recGT HG)) as X;
       cbn [gwk_fn] in X; rewrite recΓT_gren in X; exact X
   end.
 Ltac gw_mott :=
   match goal with
-  | IH : forall Ψ'' (γ' : gweak), gwk_wf γ' Ψ'' (gΨ (recGt ?G)) -> _,
-    Hγ : gwk_wf ?γ ?Ψ' (gΨ ?G), HG : [ ⊢ mkG (gL ?G) ?Ψ' ] |- _ =>
+  | IH : forall L'' Ψ'' (γ' : gweak), _ <= L'' -> gwk_wf γ' Ψ'' (gΨ (recGt ?G)) -> _,
+    Hγ : gwk_wf ?γ ?Ψ' (gΨ ?G), HL : gL ?G <= ?L', HG : [ ⊢ mkG ?L' ?Ψ' ] |- _ =>
       let X := fresh "X" in
-      pose proof (IH _ (gwk_up (gwk_up γ)) (recGt_gwk γ (mkG (gL G) Ψ') G (conj eq_refl Hγ))
+      pose proof (IH _ _ (gwk_up (gwk_up γ)) (le_n_S _ _ HL) (recGt_gwk γ (mkG L' Ψ') G (conj HL Hγ))
                     (wf_recGt HG)) as X;
       cbn [gwk_fn] in X; rewrite recΓt_gren in X; exact X
   end.
 Ltac gw_branches :=
   let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
   match goal with
-  | IH : forall k, k < 13 -> forall Ψ'' (γ' : gweak), gwk_wf γ' Ψ'' (gΨ (brG k ?G)) -> _,
-    Hγ : gwk_wf ?γ ?Ψ' (gΨ ?G), HG : [ ⊢ mkG (gL ?G) ?Ψ' ] |- _ =>
+  | IH : forall k, k < 13 -> forall L'' Ψ'' (γ' : gweak), _ <= L'' -> gwk_wf γ' Ψ'' (gΨ (brG k ?G)) -> _,
+    Hγ : gwk_wf ?γ ?Ψ' (gΨ ?G), HL : gL ?G <= ?L', HG : [ ⊢ mkG ?L' ?Ψ' ] |- _ =>
       let X := fresh "X" in
-      pose proof (IH k Hk _ (gwk_upn (br_ng k) γ) (brG_gwk k γ (mkG (gL G) Ψ') G Hk (conj eq_refl Hγ))
-                    (wf_brG HG k Hk)) as X;
+      pose proof (IH k Hk _ _ (gwk_upn (br_ng k) γ) (proj1 (Nat.add_le_mono_l _ _ (br_nu k)) HL)
+                    (brG_gwk k γ (mkG L' Ψ') G Hk (conj HL Hγ)) (wf_brG HG k Hk)) as X;
       rewrite ?gren_gwk_upn_ctx, ?gren_gwk_upn_tm, ?gren_gwk_upn_ty in X;
       rewrite brΓ_gren in X by exact Hk; rewrite ?brRes_gren in X by exact Hk;
       exact X
@@ -539,20 +543,20 @@ Ltac gw_manual :=
 
 Theorem gweakening :
   (forall G, [ ⊢ G ] -> True) /\
-  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> forall Ψ' (γ : gweak), gwk_wf γ Ψ' (gΨ G) ->
-     [ ⊢ gwk_to G Ψ' ] -> [ gwk_to G Ψ' ; Γ⟪γ⟫ ⊢[ i ] ]) /\
-  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> forall Ψ' (γ : gweak), gwk_wf γ Ψ' (gΨ G) ->
-     [ ⊢ gwk_to G Ψ' ] -> [ gwk_to G Ψ' ; Γ⟪γ⟫ ⊢[ i ] T⟪γ⟫ @ l ]) /\
-  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> forall Ψ' (γ : gweak), gwk_wf γ Ψ' (gΨ G) ->
-     [ ⊢ gwk_to G Ψ' ] -> [ gwk_to G Ψ' ; Γ⟪γ⟫ ⊢[ i ] t⟪γ⟫ : T⟪γ⟫ @ l ]) /\
-  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> forall Ψ' (γ : gweak), gwk_wf γ Ψ' (gΨ G) ->
-     [ ⊢ gwk_to G Ψ' ] -> [ gwk_to G Ψ' ; Γ⟪γ⟫ ⊢[ i ] T⟪γ⟫ ≅ T'⟪γ⟫ @ l ]) /\
-  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> forall Ψ' (γ : gweak), gwk_wf γ Ψ' (gΨ G) ->
-     [ ⊢ gwk_to G Ψ' ] -> [ gwk_to G Ψ' ; Γ⟪γ⟫ ⊢[ i ] t⟪γ⟫ ≅ t'⟪γ⟫ : T⟪γ⟫ @ l ]) /\
-  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> forall Ψ' (γ : gweak), gwk_wf γ Ψ' (gΨ G) ->
-     [ ⊢ gwk_to G Ψ' ] -> [ gwk_to G Ψ' ⊢[ i ] Γ⟪γ⟫ ≅ Γ'⟪γ⟫ ]).
+  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> forall L' Ψ' (γ : gweak), gL G <= L' -> gwk_wf γ Ψ' (gΨ G) ->
+     [ ⊢ mkG L' Ψ' ] -> [ mkG L' Ψ' ; Γ⟪γ⟫ ⊢[ i ] ]) /\
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> forall L' Ψ' (γ : gweak), gL G <= L' -> gwk_wf γ Ψ' (gΨ G) ->
+     [ ⊢ mkG L' Ψ' ] -> [ mkG L' Ψ' ; Γ⟪γ⟫ ⊢[ i ] T⟪γ⟫ @ l ]) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> forall L' Ψ' (γ : gweak), gL G <= L' -> gwk_wf γ Ψ' (gΨ G) ->
+     [ ⊢ mkG L' Ψ' ] -> [ mkG L' Ψ' ; Γ⟪γ⟫ ⊢[ i ] t⟪γ⟫ : T⟪γ⟫ @ l ]) /\
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> forall L' Ψ' (γ : gweak), gL G <= L' -> gwk_wf γ Ψ' (gΨ G) ->
+     [ ⊢ mkG L' Ψ' ] -> [ mkG L' Ψ' ; Γ⟪γ⟫ ⊢[ i ] T⟪γ⟫ ≅ T'⟪γ⟫ @ l ]) /\
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> forall L' Ψ' (γ : gweak), gL G <= L' -> gwk_wf γ Ψ' (gΨ G) ->
+     [ ⊢ mkG L' Ψ' ] -> [ mkG L' Ψ' ; Γ⟪γ⟫ ⊢[ i ] t⟪γ⟫ ≅ t'⟪γ⟫ : T⟪γ⟫ @ l ]) /\
+  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> forall L' Ψ' (γ : gweak), gL G <= L' -> gwk_wf γ Ψ' (gΨ G) ->
+     [ ⊢ mkG L' Ψ' ] -> [ mkG L' Ψ' ⊢[ i ] Γ⟪γ⟫ ≅ Γ'⟪γ⟫ ]).
 Proof.
-  apply typing_mut; intros; try exact I; unfold gwk_to in *; push_gren; gren_rewrite; push_gren.
+  apply typing_mut; intros; try exact I; push_gren; gren_rewrite; push_gren.
   all: try gw_step.
   all: gw_manual.
 Qed.
@@ -563,10 +567,10 @@ Section Named.
 Context {γ : gweak} {G' G : gctx} (Hγ : gwk_ok γ G' G) (HG' : [ ⊢ G' ]).
 
 Ltac gwk_named k :=
-  destruct G' as [L' Ψ']; destruct Hγ as [Hl Hw]; cbn in Hl, Hw; subst L';
-  intros H; exact (k _ _ _ _ _ _ H _ _ Hw HG') || exact (k _ _ _ _ _ H _ _ Hw HG')
-  || exact (k _ _ _ _ _ _ _ H _ _ Hw HG') || exact (k _ _ _ H _ _ Hw HG')
-  || exact (k _ _ _ _ H _ _ Hw HG').
+  destruct G' as [L' Ψ']; destruct Hγ as [Hl Hw]; cbn in Hl, Hw;
+  intros H; exact (k _ _ _ _ _ _ H _ _ _ Hl Hw HG') || exact (k _ _ _ _ _ H _ _ _ Hl Hw HG')
+  || exact (k _ _ _ _ _ _ _ H _ _ _ Hl Hw HG') || exact (k _ _ _ H _ _ _ Hl Hw HG')
+  || exact (k _ _ _ _ H _ _ _ Hl Hw HG').
 
 Lemma gwk_ctx {i Γ} : [ G ; Γ ⊢[ i ] ] -> [ G' ; Γ⟪γ⟫ ⊢[ i ] ].
 Proof. gwk_named (proj1 (proj2 gweakening)). Qed.
@@ -584,6 +588,7 @@ Lemma gwk_eqctx {i Γ Γ'} : [ G ⊢[ i ] Γ ≅ Γ' ] -> [ G' ⊢[ i ] Γ⟪γ�
 Proof. gwk_named (proj2 (proj2 (proj2 (proj2 (proj2 (proj2 gweakening)))))). Qed.
 
 End Named.
+
 
 (** ** Reduction under global renaming *)
 
@@ -653,15 +658,15 @@ Proof.
 Qed.
 
 Lemma gwk_ok_id G : gwk_ok gwk_id G G.
-Proof. split; [reflexivity | constructor]. Qed.
-Lemma gwk_ok_id_inv {G' G} : gwk_ok gwk_id G' G -> G' = G.
+Proof. split; [apply le_n | constructor]. Qed.
+Lemma gwk_ok_id_inv {G' G} : gwk_ok gwk_id G' G -> G' = mkG (gL G') (gΨ G).
 Proof.
-  destruct G' as [L' Ψ'], G as [L Ψ]; intros [Hl Hw]; cbn in *; subst.
+  destruct G' as [L' Ψ'], G as [L Ψ]; intros [Hl Hw]; cbn in *.
   inversion Hw; subst; reflexivity.
 Qed.
 Lemma gwk_ok_comp {γ' γ G'' G' G} : gwk_ok γ' G'' G' -> gwk_ok γ G' G ->
   gwk_ok (gwk_comp γ' γ) G'' G.
-Proof. intros [H1 H2] [H3 H4]; split; [congruence | eapply gwk_comp_wf; eauto]. Qed.
+Proof. intros [H1 H2] [H3 H4]; split; [lia | eapply gwk_comp_wf; eauto]. Qed.
 
 (** ** The action of a global weakening
 
@@ -758,12 +763,44 @@ Lemma wk_wf_gwa (ρ : wk) Δ Γ γ : ρ : Δ ≤ Γ -> ρ : Δ⟦γ⟧ ≤ Γ⟦
 Proof. destruct γ; cbn [gwa]; auto using wk_wf_gren. Qed.
 
 (** Judgments. *)
+(** The identity global renaming is the identity on deep-normal syntax. *)
+Lemma gren_id_ty' (T : ty) : dnfty T -> T⟪gwk_fn gwk_id⟫ = T.
+Proof. intros H; apply (proj1 gren_id_all); auto. Qed.
+Lemma gren_id_tm' (t : tm) : dnftm t -> t⟪gwk_fn gwk_id⟫ = t.
+Proof. intros H; apply (proj1 (proj2 gren_id_all)); auto. Qed.
+Lemma gren_id_ctx' (Γ : ctx) : dnfctx Γ -> Γ⟪gwk_fn gwk_id⟫ = Γ.
+Proof. intros H; apply (proj1 (proj2 (proj2 gren_id_all))); auto. Qed.
+
+(** Level growth of a global context (M3_DESIGN.md E14). *)
+Lemma wfg_grow L L' Ψ : L <= L' -> [ ⊢ mkG L Ψ ] -> [ ⊢ mkG L' Ψ ].
+Proof.
+  intros HL; induction Ψ as [|D Ψ IH]; intros H; [constructor|].
+  inversion H; subst; pose proof (IH ltac:(assumption)) as Hg.
+  - now constructor.
+  - econstructor; [exact Hg | | eassumption | eapply lwf_weaken; eassumption].
+    pose proof (proj1 (proj2 gweakening) _ _ _ ltac:(eassumption) L' Ψ gwk_id HL (gwkwf_id _) Hg) as X.
+    rewrite gren_id_ctx' in X by (eapply wf_ctx_dnf; eassumption). exact X.
+  - econstructor; [exact Hg | | eassumption | eapply lwf_weaken; eassumption].
+    pose proof (proj1 (proj2 (proj2 gweakening)) _ _ _ _ _ ltac:(eassumption) L' Ψ gwk_id HL (gwkwf_id _) Hg) as X.
+    rewrite gren_id_ctx', gren_id_ty' in X by first [eapply wf_ty_dnf_ctx; eassumption | eapply wf_ty_dnf; eassumption].
+    exact X.
+Qed.
+
+Ltac dnf_of H :=
+  first [ exact (wf_ctx_dnf H) | exact (wf_ty_dnf H) | exact (wf_ty_dnf_ctx H) | exact (wf_tm_dnf H)
+        | exact (wf_tm_dnf_ty H) | exact (wf_tm_dnf_ctx H) | exact (proj1 (eqty_dnf H))
+        | exact (proj2 (eqty_dnf H)) | exact (eqty_dnf_ctx H) | exact (proj1 (eqtm_dnf H))
+        | exact (proj1 (proj2 (eqtm_dnf H))) | exact (proj2 (proj2 (eqtm_dnf H))) | exact (eqtm_dnf_ctx H)
+        | exact (proj1 (eqctx_dnf H)) | exact (proj2 (eqctx_dnf H)) ].
+
 Section NamedGwa.
 Context {γ : gweak} {G' G : gctx} (Hγ : gwk_ok γ G' G) (HG' : [ ⊢ G' ]).
 
 Ltac gwa_named k :=
   destruct γ as [|γ0|γ0] eqn:Eγ; cbn [gwa];
-  [ rewrite (gwk_ok_id_inv Hγ); auto
+  [ let H := fresh "H" in let H0 := fresh "H0" in
+    intros H; pose proof H as H0; apply (k _ _ _ Hγ HG') in H;
+    rewrite ?gren_id_ctx', ?gren_id_ty', ?gren_id_tm' in H by dnf_of H0; exact H
   | rewrite <- Eγ in *; apply (k _ _ _ Hγ HG') .. ].
 
 Lemma gwa_ctx {i Γ} : [ G ; Γ ⊢[ i ] ] -> [ G' ; Γ⟦γ⟧ ⊢[ i ] ].
@@ -803,7 +840,9 @@ Lemma gwa_eqctx {γ G' G i Γ Γ'} : gwk_ok γ G' G -> [ ⊢ G' ] ->
   [ G ⊢[ i ] Γ ≅ Γ' ] -> [ G' ⊢[ i ] Γ⟦γ⟧ ≅ Γ'⟦γ⟧ ].
 Proof.
   intros Hγ HG' H. destruct γ as [|γ0|γ0] eqn:Eγ; cbn [gwa];
-    [rewrite (gwk_ok_id_inv Hγ); exact H | exact (gwk_eqctx Hγ HG' H) ..].
+    [ pose proof H as H0; apply (gwk_eqctx Hγ HG') in H;
+      rewrite ?gren_id_ctx' in H by dnf_of H0; exact H
+    | exact (gwk_eqctx Hγ HG' H) ..].
 Qed.
 
 (** Global variables and lookups under [⟦γ⟧]. *)

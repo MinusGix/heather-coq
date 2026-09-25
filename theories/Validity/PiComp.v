@@ -208,7 +208,7 @@ Proof.
                   (wf_tm_subst ge_typeof (pre_eta_body ge_typeof ge_notV Hwl Hwl' HA HB Ht) Hld)) as Hbodyρ.
     pose proof (kw_tmred ρ Hwd) as Hwdρ. rewrite kty_tyPi in Hwdρ.
     pose proof (kw_lwf ρ Hwl) as Hwlρ. pose proof (kw_lwf ρ Hwl') as Hwl'ρ.
-    rewrite <- (kw_gL ρ) in Hla, Hlb, Hla', Hlb'.
+    apply (kw_lequiv ρ) in Hla, Hlb, Hla', Hlb'.
     eapply LR_red_tm; [exact HR | exact HX | |].
     - (* β, then the head reduction of [t[d]] *)
       eapply tmred_trans.

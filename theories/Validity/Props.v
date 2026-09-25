@@ -134,9 +134,9 @@ Proof. intros H1 H2 G' γ Hγ. exact (VTm_trans (H1 _ _ Hγ) (H2 _ _ Hγ)). Qed.
 Lemma VTmG_conv {G Γ t t' T T' l} : VTmG G Γ t t' T' l -> VTyG G Γ T T' l -> VTmG G Γ t t' T l.
 Proof. intros H1 H2 G' γ Hγ. exact (VTm_conv (H1 _ _ Hγ) (H2 _ _ Hγ)). Qed.
 Lemma VTyG_lconv {G Γ T T' l l'} : VTyG G Γ T T' l' -> lequiv (gL G) l l' -> VTyG G Γ T T' l.
-Proof. intros H Hl G' γ Hγ. apply (VTy_lconv (H _ _ Hγ)). now rewrite (proj1 Hγ). Qed.
+Proof. intros H Hl G' γ Hγ. apply (VTy_lconv (H _ _ Hγ)). exact (lequiv_weaken _ _ _ _ (proj1 Hγ) Hl). Qed.
 Lemma VTmG_lconv {G Γ t t' T l l'} : VTmG G Γ t t' T l' -> lequiv (gL G) l l' -> VTmG G Γ t t' T l.
-Proof. intros H Hl G' γ Hγ. apply (VTm_lconv (H _ _ Hγ)). now rewrite (proj1 Hγ). Qed.
+Proof. intros H Hl G' γ Hγ. apply (VTm_lconv (H _ _ Hγ)). exact (lequiv_weaken _ _ _ _ (proj1 Hγ) Hl). Qed.
 
 (** ** Extending related substitutions *)
 

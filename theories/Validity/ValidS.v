@@ -131,7 +131,7 @@ Lemma VCtxS_ext {G Γ A l} : GValid G -> VCtxS G Γ -> VTyS G Γ A A l -> lwf (g
 Proof.
   intros HG HΓ HA Hl G' σ σ' Hσ. rewrite !gs_cext.
   apply CtxRelG_ext; [exact (HΓ _ _ _ Hσ) | | exact (HA _ _ _ Hσ) | exact (HA _ _ _ (GSubRel_sym _ _ HG Hσ))].
-  apply lequiv_refl. now rewrite (gsr_L _ _ _ _ _ _ Hσ).
+  apply lequiv_refl. lup (gsr_L _ _ _ _ _ _ Hσ).
 Qed.
 
 Lemma VCtxS_tl {G Γ A l} : VCtxS G (Γ ,, A @ l) -> VCtxS G Γ.
@@ -174,10 +174,10 @@ Lemma VCtxEqS_ext {G Γ Γ' A A' l l'} : GValid G -> VCtxS G Γ -> VCtxEqS G Γ 
 Proof.
   intros HG HΓ HΓΓ' HA Hl G' σ σ' Hσ. rewrite !gs_cext.
   pose proof (GSubRel_sym _ _ HG Hσ) as Hσ'.
-  apply CtxRelG_ext; [exact (HΓΓ' _ _ _ Hσ) | now rewrite (gsr_L _ _ _ _ _ _ Hσ) | exact (HA _ _ _ Hσ) |].
+  apply CtxRelG_ext; [exact (HΓΓ' _ _ _ Hσ) | lup (gsr_L _ _ _ _ _ _ Hσ) | exact (HA _ _ _ Hσ) |].
   refine (VTyG_transport (HΓΓ' _ _ _ (GSubRel_refl_l _ _ Hσ')) _).
   eapply VTyG_lconv; [exact (VTyS_sym HG HΓ HA _ _ _ Hσ') |].
-  apply lequiv_sym. now rewrite (gsr_L _ _ _ _ _ _ Hσ).
+  apply lequiv_sym. lup (gsr_L _ _ _ _ _ _ Hσ).
 Qed.
 
 Lemma VTmS_sym {G Γ t t' T l} : GValid G -> VCtxS G Γ -> VTyS G Γ T T l ->
@@ -200,11 +200,11 @@ Qed.
 
 Lemma VTyS_lconv {G Γ T T' l l'} : VTyS G Γ T T' l' -> lequiv (gL G) l l' -> VTyS G Γ T T' l.
 Proof.
-  intros H Hl G' σ σ' Hσ. apply (VTyG_lconv (H _ _ _ Hσ)). now rewrite (gsr_L _ _ _ _ _ _ Hσ).
+  intros H Hl G' σ σ' Hσ. apply (VTyG_lconv (H _ _ _ Hσ)). lup (gsr_L _ _ _ _ _ _ Hσ).
 Qed.
 Lemma VTmS_lconv {G Γ t t' T l l'} : VTmS G Γ t t' T l' -> lequiv (gL G) l l' -> VTmS G Γ t t' T l.
 Proof.
-  intros H Hl G' σ σ' Hσ. apply (VTmG_lconv (H _ _ _ Hσ)). now rewrite (gsr_L _ _ _ _ _ _ Hσ).
+  intros H Hl G' σ σ' Hσ. apply (VTmG_lconv (H _ _ _ Hσ)). lup (gsr_L _ _ _ _ _ _ Hσ).
 Qed.
 
 (** Validity of [VTmS] carries that of its type (left, at [σ ≈ σ]). *)
@@ -250,7 +250,7 @@ Proof.
   intros Hl Hc G' σ σ' Hσ. rewrite !gs_tyEl.
   pose proof (Hc _ _ _ Hσ) as X. rewrite gs_tyU in X.
   pose proof (gsr_L _ _ _ _ _ _ Hσ) as HL.
-  apply V_ElG; [rewrite HL; exact Hl | rewrite HL; now apply lequiv_refl | exact X].
+  apply V_ElG; [exact (lwf_weaken _ _ _ HL Hl) | apply lequiv_refl; exact (lwf_weaken _ _ _ HL Hl) | exact X].
 Qed.
 
 (** Transitivity through the diagonal: a first step validated only at

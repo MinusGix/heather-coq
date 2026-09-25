@@ -50,15 +50,15 @@ Definition Pwk n := forall G Γ T T' l R,
     forall t t', R t t' -> R' (ktm ρ t) (ktm ρ t').
 
 Lemma URel_kw n G Γ (ρ : kwk G Γ) l1 t t' :
-  Pwk (lmeasure l1) -> lmeasure l1 < n ->
+  Pwk (lmeasure l1) -> lmeasure l1 < n -> lwf (gL G) l1 ->
   URel (LRbelow n) G Γ l1 t t' -> URel (LRbelow n) (kw_G ρ) (kw_Δ ρ) l1 (ktm ρ t) (ktm ρ t').
 Proof.
-  intros Hwk Hn (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & HK).
+  intros Hwk Hn Hl1 (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & HK).
   exists (ktm ρ w), (ktm ρ w').
   pose proof (kw_tmred ρ Hw) as Hw1. pose proof (kw_tmred ρ Hw') as Hw1'.
   pose proof (kw_geq_tm ρ Heq) as Heq1. rewrite kty_tyU in Hw1, Hw1', Heq1.
   refine (conj Hw1 (conj Hw1' (conj (whnf_kw ρ _ Hnf) (conj (whnf_kw ρ _ Hnf') (conj Heq1 _))))).
-  intros la lb Hla Hlb. rewrite kw_gL in Hla, Hlb.
+  intros la lb Hla Hlb. apply (kw_lequiv_shrink ρ) in Hla, Hlb; [| exact Hl1 ..].
   destruct (HK la lb Hla Hlb) as [R0 H0].
   rewrite LRbelow_spec in H0 |- * by exact Hn.
   destruct (Hwk _ _ _ _ _ _ H0 ρ) as (R1 & H1 & _).
@@ -86,7 +86,7 @@ Proof.
       rewrite kty_tyU in X, X'.
       eapply LRU; [exact (kw_lequiv ρ Hl) | exact (kw_lequiv ρ Hl2) | exact Hn | exact X | exact X'
                   | apply releq_refl].
-    + intros t t' Ht. apply HR in Ht. eapply URel_kw; eauto; try apply IHn; lia.
+    + intros t t' Ht. apply HR in Ht. eapply URel_kw; eauto using lequiv_wf_r; try apply IHn; lia.
   - exists (NeRel (kw_G ρ) (kw_Δ ρ) (kty ρ V) (kty ρ V') l). split.
     + eapply LRne; [exact (kw_tyred ρ HT) | exact (kw_tyred ρ HT') | exact (kw_gne_ty ρ HV)
                    | apply releq_refl].
@@ -128,7 +128,8 @@ Proof.
       intros ρ' a a' ha la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1'.
       subst codR'; cbn beta. rewrite <- !ktm_comp.
       rewrite <- kty_comp in HA1, HA1'. rewrite <- ktyl_comp, <- kty_comp in HB1, HB1'.
-      rewrite kw_gL in H1, H2, H3, H4.
+      apply (kw_lequiv_shrink ρ) in H1, H3; [| exact Hw1 ..].
+      apply (kw_lequiv_shrink ρ) in H2, H4; [| exact Hw2 ..].
       exact (HK (kw_comp ρ ρ') a a' ha la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1').
   - destruct (ModRel_kwk ρ HM) as (R' & HM' & HR'). exists R'.
     split; [now apply LRmod | exact HR'].

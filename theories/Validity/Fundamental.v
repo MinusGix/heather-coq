@@ -188,8 +188,8 @@ Ltac gl_weaken :=
     | H : eq_tm G _ _ _ _ _ _ |- _ => pose proof (gwa_eqtm Hγ HG' H); clear H
     | H : in_ctx ?Γ0 _ _ _ |- _ =>
         lazymatch Γ0 with gwa _ _ => fail | _ => pose proof (in_ctx_gwa _ _ _ _ γ H); clear H end
-    | H : lequiv (gL G) _ _ |- _ => rewrite <- (proj1 Hγ) in H
-    | H : lwf (gL G) _ |- _ => rewrite <- (proj1 Hγ) in H
+    | H : lequiv (gL G) _ _ |- _ => apply (lequiv_weaken _ _ _ _ (proj1 Hγ)) in H
+    | H : lwf (gL G) _ |- _ => apply (lwf_weaken _ _ _ (proj1 Hγ)) in H
     end
   end.
 

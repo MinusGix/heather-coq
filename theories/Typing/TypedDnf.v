@@ -142,3 +142,33 @@ Proof. apply typed_dnf. Qed.
 Lemma wf_ctx_dnf {G i Γ} : [ G ; Γ ⊢[ i ] ] -> dnfctx Γ.
 Proof. apply typed_dnf. Qed.
 
+
+(** Every judgment's context is deep-normal. *)
+Theorem typed_dnf_ctx :
+  (forall G, [ ⊢ G ] -> True) /\
+  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> dnfctx Γ) /\
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> dnfctx Γ) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> dnfctx Γ) /\
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> dnfctx Γ) /\
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> dnfctx Γ) /\
+  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> dnfctx Γ /\ dnfctx Γ').
+Proof.
+  destruct typed_dnf as (_ & _ & Hty & _ & Heq & _).
+  apply typing_mut; intros; cbn in *; try exact I; eauto; try tauto.
+  all: repeat split; try tauto; eauto; eapply Heq; eassumption.
+Qed.
+
+Lemma wf_ty_dnf_ctx {G i Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] -> dnfctx Γ.
+Proof. apply typed_dnf_ctx. Qed.
+Lemma wf_tm_dnf_ctx {G i Γ t T l} : [ G ; Γ ⊢[ i ] t : T @ l ] -> dnfctx Γ.
+Proof. apply typed_dnf_ctx. Qed.
+Lemma eqty_dnf_ctx {G i Γ T T' l} : [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> dnfctx Γ.
+Proof. apply typed_dnf_ctx. Qed.
+Lemma eqtm_dnf_ctx {G i Γ t t' T l} : [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> dnfctx Γ.
+Proof. apply typed_dnf_ctx. Qed.
+Lemma eqty_dnf {G i Γ T T' l} : [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> dnfty T /\ dnfty T'.
+Proof. apply typed_dnf. Qed.
+Lemma eqtm_dnf {G i Γ t t' T l} : [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> dnftm t /\ dnftm t' /\ dnfty T.
+Proof. apply typed_dnf. Qed.
+Lemma eqctx_dnf {G i Γ Γ'} : [ G ⊢[ i ] Γ ≅ Γ' ] -> dnfctx Γ /\ dnfctx Γ'.
+Proof. apply typed_dnf_ctx. Qed.

@@ -77,7 +77,8 @@ Inductive gwk_wf : gweak -> list gdecl -> list gdecl -> Prop :=
 | gwkwf_up γ Ψ' Ψ D : gwk_wf γ Ψ' Ψ -> gwk_wf (gwk_up γ) (gdecl_ren D (gwk_fn γ) :: Ψ') (D :: Ψ).
 
 (** [γ : G' ≤ G]: same universe context, [Ψ'] embeds [Ψ]. *)
-Definition gwk_ok (γ : gweak) (G' G : gctx) : Prop := gL G' = gL G /\ gwk_wf γ (gΨ G') (gΨ G).
+(** A global weakening may also add levels at the top (M3_DESIGN.md E14). *)
+Definition gwk_ok (γ : gweak) (G' G : gctx) : Prop := gL G <= gL G' /\ gwk_wf γ (gΨ G') (gΨ G).
 
 (** ** Shape of local contexts *)
 

@@ -221,16 +221,16 @@ Qed.
 
 (** ** Pushing a typed global substitution under one global binder *)
 
-Lemma gobj_wf_gwk G' o D γ Ψ'' :
-  gobj_wf G' o D -> gwk_wf γ Ψ'' (gΨ G') -> [ ⊢ gwk_to G' Ψ'' ] ->
-  gobj_wf (gwk_to G' Ψ'') (goren o γ) (gdecl_ren D γ).
+Lemma gobj_wf_gwk G' o D γ L'' Ψ'' :
+  gobj_wf G' o D -> gwk_wf γ Ψ'' (gΨ G') -> gL G' <= L'' -> [ ⊢ mkG L'' Ψ'' ] ->
+  gobj_wf (mkG L'' Ψ'') (goren o γ) (gdecl_ren D γ).
 Proof.
-  intros Ho Hγ Hg. destruct D, o; cbn in *; try contradiction.
+  intros Ho Hγ HL Hg. destruct D, o; cbn in *; try contradiction.
   all: first
     [ eapply gctx_var_gwk; eauto
-    | exact (proj1 (proj2 gweakening) _ _ _ Ho _ _ Hγ Hg)
-    | exact (proj1 (proj2 (proj2 gweakening)) _ _ _ _ _ Ho _ _ Hγ Hg)
-    | exact (proj1 (proj2 (proj2 (proj2 gweakening))) _ _ _ _ _ _ Ho _ _ Hγ Hg)
+    | exact (proj1 (proj2 gweakening) _ _ _ Ho _ _ _ HL Hγ Hg)
+    | exact (proj1 (proj2 (proj2 gweakening)) _ _ _ _ _ Ho _ _ _ HL Hγ Hg)
+    | exact (proj1 (proj2 (proj2 (proj2 gweakening))) _ _ _ _ _ _ Ho _ _ _ HL Hγ Hg)
     | let i' := fresh "i'" in let Hi' := fresh "Hi'" in let Hin := fresh "Hin" in
       destruct Ho as (i' & Hi' & Hin); exists i'; split; [exact Hi'|];
       exact (in_gctx_gwk _ _ _ _ _ Hγ Hin) ].
@@ -247,8 +247,8 @@ Proof.
     + exists i; split; [apply lle_refl | exact (ing_here _ (gdTy _ _ _))].
     + exists i; split; [apply lle_refl | exact (ing_here _ (gdTm _ _ _ _))].
   - rewrite gdecl_gsubst_ren_up.
-    exact (gobj_wf_gwk _ _ _ (gwk_step gwk_id) _ (Hv _ _ Hm)
-             (gwkwf_step _ _ _ _ (gwkwf_id _)) Hg').
+    exact (gobj_wf_gwk _ _ _ (gwk_step gwk_id) _ _ (Hv _ _ Hm)
+             (gwkwf_step _ _ _ _ (gwkwf_id _)) (le_n _) Hg').
 Qed.
 
 (** ** Pushing a typed global substitution into the recursors' scopes *)
@@ -707,10 +707,10 @@ Proof.
   assert (Hw : gwk_wf (gwk_step gwk_id) (D0 :: Ψ) Ψ) by (constructor; constructor).
   destruct D; cbn in *; auto.
   - destruct HD as [HΔ Hl]. split; [|exact Hl].
-    exact (proj1 (proj2 gweakening) _ _ _ HΔ _ _ Hw Hg).
+    exact (proj1 (proj2 gweakening) _ _ _ HΔ _ _ _ (le_n _) Hw Hg).
   - destruct HD as (HΔ & HT & Hl). refine (conj _ (conj _ Hl)).
-    + exact (proj1 (proj2 gweakening) _ _ _ HΔ _ _ Hw Hg).
-    + exact (proj1 (proj2 (proj2 gweakening)) _ _ _ _ _ HT _ _ Hw Hg).
+    + exact (proj1 (proj2 gweakening) _ _ _ HΔ _ _ _ (le_n _) Hw Hg).
+    + exact (proj1 (proj2 (proj2 gweakening)) _ _ _ _ _ HT _ _ _ (le_n _) Hw Hg).
 Qed.
 
 Lemma gctx_decl_ok G n D : [ ⊢ G ] -> in_gctx (gΨ G) n D -> decl_ok G D.

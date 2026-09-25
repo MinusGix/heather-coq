@@ -113,8 +113,8 @@ Proof.
   pose proof (ctx_glob _ _ _ HΘ) as HG''.
   pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM Hσ HΔ compt_D)) as HD.
   pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM (GSubRel_refl_r EP EM Hσ) HΔ' compt_D)) as HD'.
-  assert (EL : gL G'' = gL G) by (rewrite (proj1 Hγ); exact (gsr_L _ _ _ _ _ _ Hσ)).
-  eexists. apply LR_ctyp; [exact HΘ | exact HD | exact HD' | now rewrite EL | now rewrite EL |].
+  assert (EL : gL G <= gL G'') by exact (Nat.le_trans _ _ _ (gsr_L _ _ _ _ _ _ Hσ) (proj1 Hγ)).
+  eexists. apply LR_ctyp; [exact HΘ | exact HD | exact HD' | lup EL | lup EL |].
   pose proof (CtxRelG_gwk (VP _ _ _ Hσ) Hγ) as XP. pose proof (CtxRelG_gwk (VM _ _ _ Hσ) Hγ) as XM.
   refine (conj _ (conj XP XM)). exact (proj2 (CtxRelG_escape_P XP HD HD')).
 Qed.
@@ -135,8 +135,8 @@ Proof.
   pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM Hσr HΔ' compt_D)) as HD'.
   pose proof (gwa_ty Hγ HG'' (gs_ty EP EM Hσ HA)) as HA1.
   pose proof (gwa_ty Hγ HG'' (gs_ty EP EM Hσr HA')) as HA1'.
-  assert (EL : gL G'' = gL G) by (rewrite (proj1 Hγ); exact (gsr_L _ _ _ _ _ _ Hσ)).
-  assert (Hll' : lequiv (gL G'') l' l) by (rewrite EL; exact (lequiv_sym _ _ _ Hll)).
+  assert (EL : gL G <= gL G'') by exact (Nat.le_trans _ _ _ (gsr_L _ _ _ _ _ _ Hσ) (proj1 Hγ)).
+  assert (Hll' : lequiv (gL G'') l' l) by (lup EL).
   (* the context *)
   pose proof (CtxRelG_gwk (VP _ _ _ Hσ) Hγ) as XP. pose proof (CtxRelG_gwk (VM _ _ _ Hσ) Hγ) as XM.
   (* the type, left to right *)
@@ -149,8 +149,8 @@ Proof.
   pose proof (CtxRelG_gwk (VP _ _ _ Hσr) Hγ) as XP'.
   pose proof (CtxRelG_escape_P XP HD HD') as [_ HDD].
   assert (HA1'D : [ G'' ; (Δ⦃σ⦄)⟦γ⟧ ⊢[ lD ] (A'⦃σ'⦄)⟦γ⟧ @ l ]).
-  { eapply wft_lconv; [exact (ctxconv_ty (i := lD) (eqctx_sym_D HDD) eq_refl HA1') | now rewrite EL]. }
-  eexists. apply LR_ctrm; try assumption; try (now rewrite EL).
+  { eapply wft_lconv; [exact (ctxconv_ty (i := lD) (eqctx_sym_D HDD) eq_refl HA1') | lup EL]. }
+  eexists. apply LR_ctrm; try assumption; try (lup EL).
   - exact (conj HDD (conj XP XM)).
   - refine (conj _ (conj YP YM)).
     exact (proj2 (VTyG_escape_P XP HD HA1 HA1'D YP)).
@@ -225,10 +225,10 @@ Proof.
   pose proof (SubRel_ctx He) as HΘ; rewrite (@gm_layer_M EP EM EMl) in HΘ.
   pose proof (ctx_glob _ _ _ HΘ) as HG''.
   pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM Hσ HΔ compt_D)) as HD.
-  assert (EL : gL G'' = gL G) by (rewrite (proj1 Hγ); exact (gsr_L _ _ _ _ _ _ Hσ)).
+  assert (EL : gL G <= gL G'') by exact (Nat.le_trans _ _ _ (gsr_L _ _ _ _ _ _ Hσ) (proj1 Hγ)).
   destruct (box_code_rel Hσ Hγ HG'' HΔ HT HT' E VΔP) as [HT1' E1].
   apply LRtm_boxT; [exact HΘ | exact HD | exact (gwa_ty Hγ HG'' (gs_ty EP EM Hσ HT)) | exact HT1' | exact E1
-                   | now rewrite EL
+                   | lup EL
                    | exact (vp_ctx_refl_l HD (CtxRelG_gwk (VΔP _ _ _ Hσ) Hγ) (CtxRelG_gwk (VΔM _ _ _ Hσ) Hγ))
                    | exact (VTyG_gwk (VTP _ _ _ Hσ) Hγ) | exact (VTyG_gwk (VTM _ _ _ Hσ) Hγ)].
 Qed.
@@ -293,11 +293,11 @@ Proof.
   pose proof (SubRel_ctx He) as HΘ; rewrite (@gm_layer_M EP EM EMl) in HΘ.
   pose proof (ctx_glob _ _ _ HΘ) as HG''.
   pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM Hσ HΔ compt_D)) as HD.
-  assert (EL : gL G'' = gL G) by (rewrite (proj1 Hγ); exact (gsr_L _ _ _ _ _ _ Hσ)).
+  assert (EL : gL G <= gL G'') by exact (Nat.le_trans _ _ _ (gsr_L _ _ _ _ _ _ Hσ) (proj1 Hγ)).
   pose proof (GSubRel_refl_l EP EM Hσ) as Hσl.
   destruct (box_code_rel_tm Hσ Hγ HG'' HA Ht Ht' E VΔP VAP) as [Ht1' E1].
   apply LRtm_boxt; [exact HΘ | exact HD | exact (gwa_ty Hγ HG'' (gs_ty EP EM Hσ HA))
-                   | exact (gwa_tm Hγ HG'' (gs_tm EP EM Hσ Ht)) | exact Ht1' | exact E1 | now rewrite EL
+                   | exact (gwa_tm Hγ HG'' (gs_tm EP EM Hσ Ht)) | exact Ht1' | exact E1 | lup EL
                    | exact (vp_ctx_refl_l HD (CtxRelG_gwk (VΔP _ _ _ Hσ) Hγ) (CtxRelG_gwk (VΔM _ _ _ Hσ) Hγ))
                    | exact (VTyG_gwk (VAP _ _ _ Hσl) Hγ) | exact (VTyG_gwk (VAM _ _ _ Hσl) Hγ)
                    | exact (VTmG_gwk (VtP _ _ _ Hσ) Hγ) | exact (VTmG_gwk (VtM _ _ _ Hσ) Hγ)].

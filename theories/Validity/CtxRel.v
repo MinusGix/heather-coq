@@ -94,7 +94,7 @@ Lemma CtxRelG_ext {G Γ Γ' A A' l l'} :
 Proof.
   intros HΓ Hl HA HA' G' γ Hγ. rewrite !gwa_cext; cbn [CtxRel].
   refine (conj (HΓ _ _ Hγ) (conj _ (conj (HA _ _ Hγ) (HA' _ _ Hγ)))).
-  now rewrite (proj1 Hγ).
+  exact (lequiv_weaken _ _ _ _ (proj1 Hγ) Hl).
 Qed.
 
 (** ** The identity substitution, and escape

@@ -41,7 +41,7 @@ Definition GRel0 (G' G : gctx) (σ σ' : gsub) : Prop :=
   forall n D, in_gctx (gΨ G) n D -> GObjRel G' (gdecl_gsubst D σ) (σ n) (σ' n).
 
 Record GSubRel (G' G : gctx) (σ σ' : gsub) : Prop := {
-  gsr_L : gL G' = gL G ;
+  gsr_L : gL G <= gL G' ;   (* the target may have more levels (M3_DESIGN.md E14) *)
   gsr_wf_l : [ G' ⊢ σ : G ] ;
   gsr_wf_r : [ G' ⊢ σ' : G ] ;
   gsr_rel : GRel0 G' G σ σ' ;
@@ -54,13 +54,7 @@ Proof. intros []; now constructor. Qed.
 Lemma GSubRel_refl_r {G' G σ σ'} : GSubRel G' G σ σ' -> GSubRel G' G σ' σ'.
 Proof. intros []; now constructor. Qed.
 
-(** The universe context is shared, as the global substitution lemma
-    requires. *)
-Lemma GSubRel_to {G' G σ σ'} : GSubRel G' G σ σ' -> G' = gwk_to G (gΨ G').
-Proof.
-  intros H. pose proof (gsr_L _ _ _ _ H) as HL. destruct G' as [L' Ψ']; cbn in HL.
-  unfold gwk_to; cbn. now rewrite HL.
-Qed.
+
 
 (** Related substitutions agree on static bindings up to level
     equivalence, so they send static code to level-equivalent code

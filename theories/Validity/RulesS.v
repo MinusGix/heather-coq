@@ -22,15 +22,35 @@ Local Notation GValid := (GValid EP EM).
 Section Along.
 Context {G' G : gctx} {σ σ' : gsub} (Hσ : GSubRel G' G σ σ').
 
+(** The source is first grown to the target's levels. *)
+Lemma gsub_wf_src {H0 τ H1 G1} : gΨ G1 = gΨ H1 -> [ H0 ⊢ τ : H1 ] -> [ H0 ⊢ τ : G1 ].
+Proof. intros E [Hg Hn Hv]; constructor; [exact Hg | exact Hn |]. rewrite E; exact Hv. Qed.
+
+Local Ltac glob_of H :=
+  first [ exact (ctx_glob _ _ _ H)
+        | eapply ctx_glob; exact (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ H)
+        | eapply ctx_glob; exact (proj1 (proj2 (proj2 (proj2 ctx_extract))) _ _ _ _ _ _ H)
+        | eapply ctx_glob; exact (proj1 (proj2 (proj2 (proj2 (proj2 ctx_extract)))) _ _ _ _ _ _ H)
+        | eapply ctx_glob; exact (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 ctx_extract))))) _ _ _ _ _ _ _ H) ].
+
 Local Ltac along k :=
-  intros H; pose proof (gsr_wf_l _ _ _ _ _ _ Hσ) as Hw; pose proof (GSubRel_to _ _ Hσ) as EG;
-  rewrite EG in Hw |- *; exact (k _ _ _ _ _ _ _ H _ _ Hw) || exact (k _ _ _ _ _ _ H _ _ Hw)
-  || exact (k _ _ _ _ _ H _ _ Hw) || exact (k _ _ _ _ H _ _ Hw) || exact (k _ _ _ H _ _ Hw).
+  intros H; pose proof (gsr_wf_l _ _ _ _ _ _ Hσ) as Hw; pose proof (gsr_L _ _ _ _ _ _ Hσ) as HL;
+  assert (Hg : [ ⊢ mkG (gL G') (gΨ G) ]) by (destruct G; apply (wfg_grow _ _ _ HL); glob_of H);
+  first [ apply (gwa_ctx (γ := gwk_id) (G' := mkG (gL G') (gΨ G)) (G := G) (conj HL (gwkwf_id _)) Hg) in H
+        | apply (gwa_ty (γ := gwk_id) (G' := mkG (gL G') (gΨ G)) (G := G) (conj HL (gwkwf_id _)) Hg) in H
+        | apply (gwa_tm (γ := gwk_id) (G' := mkG (gL G') (gΨ G)) (G := G) (conj HL (gwkwf_id _)) Hg) in H
+        | apply (gwa_eqty (γ := gwk_id) (G' := mkG (gL G') (gΨ G)) (G := G) (conj HL (gwkwf_id _)) Hg) in H
+        | apply (gwa_eqtm (γ := gwk_id) (G' := mkG (gL G') (gΨ G)) (G := G) (conj HL (gwkwf_id _)) Hg) in H ];
+  cbn [gwa] in H; apply (gsub_wf_src (H1 := G) (G1 := mkG (gL G') (gΨ G)) eq_refl) in Hw; destruct G' as [L' Ψ'];
+  first [ exact (k _ _ _ _ _ _ _ H _ _ Hw) | exact (k _ _ _ _ _ _ H _ _ Hw)
+        | exact (k _ _ _ _ _ H _ _ Hw) | exact (k _ _ _ _ H _ _ Hw) | exact (k _ _ _ H _ _ Hw) ].
 
 Lemma gs_ctx {i Γ} : [ G ; Γ ⊢[ i ] ] -> compt i -> [ G' ; Γ⦃σ⦄ ⊢[ i ] ].
 Proof.
-  intros H Hc; pose proof (gsr_wf_l _ _ _ _ _ _ Hσ) as Hw; pose proof (GSubRel_to _ _ Hσ) as EG.
-  rewrite EG in Hw |- *; exact (proj1 (proj2 gsubstitution) _ _ _ H _ _ Hw Hc).
+  intros H Hc; pose proof (gsr_wf_l _ _ _ _ _ _ Hσ) as Hw; pose proof (gsr_L _ _ _ _ _ _ Hσ) as HL.
+  assert (Hg : [ ⊢ mkG (gL G') (gΨ G) ]) by (destruct G; apply (wfg_grow _ _ _ HL); glob_of H).
+  apply (gwa_ctx (γ := gwk_id) (G' := mkG (gL G') (gΨ G)) (G := G) (conj HL (gwkwf_id _)) Hg) in H; cbn [gwa] in H; apply (gsub_wf_src (H1 := G) (G1 := mkG (gL G') (gΨ G)) eq_refl) in Hw; destruct G' as [L' Ψ'].
+  exact (proj1 (proj2 gsubstitution) _ _ _ H _ _ Hw Hc).
 Qed.
 Lemma gs_ty {i Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] -> [ G' ; Γ⦃σ⦄ ⊢[ i ] T⦃σ⦄ @ l ].
 Proof. along (proj1 (proj2 (proj2 gsubstitution))). Qed.
@@ -84,8 +104,8 @@ Ltac s_along_at E0 LP0 :=
     | H : eq_tm G _ _ _ _ _ _ |- _ => pose proof (gs_eqtm Hσ H); clear H
     | H : in_ctx ?Γ0 _ _ _ |- _ =>
         lazymatch Γ0 with gsubst _ _ => fail | _ => pose proof (in_ctx_gsubst _ _ _ _ σ H); clear H end
-    | H : lequiv (gL G) _ _ |- _ => rewrite <- (gsr_L _ _ _ _ _ _ Hσ) in H
-    | H : lwf (gL G) _ |- _ => rewrite <- (gsr_L _ _ _ _ _ _ Hσ) in H
+    | H : lequiv (gL G) _ _ |- _ => apply (lequiv_weaken _ _ _ _ (gsr_L _ _ _ _ _ _ Hσ)) in H
+    | H : lwf (gL G) _ |- _ => apply (lwf_weaken _ _ _ (gsr_L _ _ _ _ _ _ Hσ)) in H
     end
   end.
 

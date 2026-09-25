@@ -92,7 +92,7 @@ Proof.
     refine (conj H1 (conj H2 (conj _ (conj _ (conj (gne_tm_geq HP) (conj (gne_tm_geq HP') _)))))).
     1-2: constructor; eauto using gne_tm_whne_l, gne_tm_whne_r.
     intros ρ a a' ha la lb la' lb' A1 B1 A1' B1' Hla Hlb Hla' Hlb' HA1 HB1 HA1' HB1'.
-    rewrite <- (kw_gL ρ) in Hla, Hlb, Hla', Hlb'.
+    apply (kw_lequiv ρ) in Hla, Hlb, Hla', Hlb'.
     pose proof (kw_lwf ρ Hw1) as Hw1'.
     (* facts in the weakened context *)
     assert (HAr : [ kw_G ρ ; kw_Δ ρ ⊢g kty ρ A @ l1 ]) by exact (kw_ty ρ HA).

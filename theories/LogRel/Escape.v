@@ -201,8 +201,14 @@ Proof. intros; apply wfc_ext; eauto using ctx_of_ty. Qed.
 
 Ltac gwa_generic :=
   intros Hγ HG H; match type of Hγ with gwk_ok ?g _ _ => destruct g end; cbn [gwa];
-    [rewrite (gwk_ok_id_inv Hγ); exact H | first [ exact (gne_ty_gwk Hγ HG H) | exact (geq_ty_gwk Hγ HG H)
-                                          | exact (gne_tm_gwk Hγ HG H) | exact (geq_tm_gwk Hγ HG H) ] ..].
+    [ let D := fresh "D" in
+      first [ pose proof (geq_ty_sound (gne_ty_geq H)) as D | pose proof (geq_ty_sound H) as D
+            | pose proof (geq_tm_sound (gne_tm_geq H)) as D | pose proof (geq_tm_sound H) as D ];
+      first [ apply (gne_ty_gwk Hγ HG) in H | apply (geq_ty_gwk Hγ HG) in H
+            | apply (gne_tm_gwk Hγ HG) in H | apply (geq_tm_gwk Hγ HG) in H ];
+      rewrite ?gren_id_ctx', ?gren_id_ty', ?gren_id_tm' in H by dnf_of D; exact H
+    | first [ exact (gne_ty_gwk Hγ HG H) | exact (geq_ty_gwk Hγ HG H)
+            | exact (gne_tm_gwk Hγ HG H) | exact (geq_tm_gwk Hγ HG H) ] ..].
 
 Lemma gne_ty_gwa {γ G' G Γ V V' l} : gwk_ok γ G' G -> [ ⊢ G' ] ->
   [ G ; Γ ⊢ V ~ V' @ l ] -> [ G' ; Γ⟦γ⟧ ⊢ V⟦γ⟧ ~ V'⟦γ⟧ @ l ].
@@ -226,14 +232,19 @@ Proof. intros Hγ HG []; split; eauto using gwa_tm, reds_gwa, gwa_eqtm. Qed.
 
 (** ** Kripke weakenings *)
 
-Lemma kw_gL {G Γ} (ρ : kwk G Γ) : gL (kw_G ρ) = gL G.
+Lemma kw_gL {G Γ} (ρ : kwk G Γ) : gL G <= gL (kw_G ρ).
 Proof. exact (proj1 (kw_gok ρ)). Qed.
 Lemma kw_glob {G Γ} (ρ : kwk G Γ) : [ ⊢ kw_G ρ ].
 Proof. exact (ctx_glob _ _ _ (kw_ctx ρ)). Qed.
 Lemma kw_lequiv {G Γ} (ρ : kwk G Γ) {l l'} : lequiv (gL G) l l' -> lequiv (gL (kw_G ρ)) l l'.
-Proof. now rewrite kw_gL. Qed.
+Proof. apply lequiv_weaken, kw_gL. Qed.
 Lemma kw_lwf {G Γ} (ρ : kwk G Γ) {l} : lwf (gL G) l -> lwf (gL (kw_G ρ)) l.
-Proof. now rewrite kw_gL. Qed.
+Proof. apply lwf_weaken, kw_gL. Qed.
+(** A level of the world equivalent to one of the base is one of the base
+    (M3_DESIGN.md E14). *)
+Lemma kw_lequiv_shrink {G Γ} (ρ : kwk G Γ) {l l'} : lequiv (gL (kw_G ρ)) l l' -> lwf (gL G) l' ->
+  lequiv (gL G) l l'.
+Proof. apply lequiv_shrink. Qed.
 
 Section Kw.
 Context {G : gctx} {Γ : ctx} (ρ : kwk G Γ).

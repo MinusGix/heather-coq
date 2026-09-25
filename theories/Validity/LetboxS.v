@@ -181,7 +181,6 @@ Proof. now destruct γ. Qed.
 Lemma VSubK_id {G X} : [ G ; X ⊢[ lD ] ] -> CtxRelG G X X -> VSubK G X (lshift 0) (lshift 0) X.
 Proof.
   intros HX HR G' γ Hγ. rewrite gwa_lshift0.
-  pose proof (gwk_ok_to Hγ) as EG.
   apply VSub_intro; [exact (HR _ _ Hγ) | apply tail_id | apply tail_id | intros n; exact I | intros n; exact I |].
   intros n A k Hin Θ d d' Hd. pose proof (ctx_glob _ _ _ (SubRel_ctx Hd)) as HG'.
   pose proof (in_ctx_wf (i := lD) eq_refl (gwa_ctx Hγ HG' HX) Hin) as HA.
@@ -241,7 +240,7 @@ Proof.
   pose proof (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as HG'.
   pose proof (GSubRel_refl_l EP EM Hσ) as Hσl. pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
   pose proof (GSubRel_sym EP EM HG Hσ) as Hσs.
-  assert (EL : gL G' = gL G) by exact (gsr_L _ _ _ _ _ _ Hσ).
+  assert (EL : gL G <= gL G') by exact (gsr_L _ _ _ _ _ _ Hσ).
   pose proof (SubRel_ctx He) as HΘ; rewrite (@gm_layer_M EP EM EMl) in HΘ.
   destruct (SubRel_nf _ _ _ _ _ He) as [Ne Ne'].
   pose proof (SubRel_refl_r He) as He'.
@@ -268,7 +267,7 @@ Proof.
   rewrite gs_single_ty, !single_subst_ty by assumption.
   (* the scrutinee: related at [□Δ⦃σ⦄] *)
   pose proof (vp_ctx_refl_l EP EM HD (VΔP _ _ _ Hσ) (VΔM _ _ _ Hσ)) as VD.
-  assert (Hl2' : lwf (gL G') l2) by (now rewrite EL).
+  assert (Hl2' : lwf (gL G') l2) by (lup EL).
   pose proof (LR_ctyp EP EM HΘ HD HD Hl2' (lequiv_refl _ _ Hl2') VD) as HLc.
   assert (Vss : forall d d', @SubRel EM LRM G' Γ⦃σ⦄ Θ d d' ->
             @LRtm EM LRM lzero G' Θ (tyCTyp Δ⦃σ⦄ l2) (tyCTyp Δ⦃σ⦄ l2) (t⦃σ⦄)[d] (t0⦃σ'⦄)[d']).
@@ -304,7 +303,7 @@ Proof.
     rewrite !lift_single_ty by assumption.
     pose proof (VTy_refl_l (VM _ _ _ Hσ _ _ (gwk_ok_id G'))) as Y; cbn [gwa] in Y. rewrite gs_cext, gs_tyCTyp in Y.
     apply Y, SubRel_cons; [exact Hd | exact Ha]. }
-  assert (Hl13' : lequiv (gL G') l1 l3) by (now rewrite EL).
+  assert (Hl13' : lequiv (gL G') l1 l3) by (lup EL).
   (* conversion to the goal's types and anti-reduction: what the cases share *)
   assert (Fin : forall u u',
     @LRtm EM LRM l1 G' Θ (M⦃σ⦄)[llift e][lsingle w] (M'⦃σ'⦄)[llift e'][lsingle w'] u u' ->
@@ -325,13 +324,13 @@ Proof.
     rewrite (@gm_layer_M EP EM EMl).
     eapply (tmred_conv _ _ _ _ _ eq_refl); [exact (tmred_lconv _ _ _ _ _ Hu' Hl13') |].
     exact (eqty_sym _ _ _ _ _ _ HTTd). }
-  assert (Hl1' : lwf (gL G') l1) by (now rewrite EL).
+  assert (Hl1' : lwf (gL G') l1) by (lup EL).
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
   pose proof (gsw_dnf _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ)) as Nσ'.
   destruct (SubRel_dnf _ _ _ _ _ He) as [De De'].
   (* the right scrutinee, at the right-hand contextual type *)
   assert (HCC : [ G' ; Θ ⊢[ lM ] tyCTyp Δ⦃σ⦄ l2 ≅ tyCTyp Δ'⦃σ'⦄ l4 @ lzero ])
-    by (apply eqty_CTyp; [exact HΘ | exact HDD' | now rewrite EL]).
+    by (apply eqty_CTyp; [exact HΘ | exact HDD' | lup EL]).
   pose proof (tmred_conv _ _ _ _ _ eq_refl Hs'w HCC) as Hs'w4.
   destruct Hn as [T1 T1' HV | ν ν' Hνν].
   - (* box: β-reduce, and use the body at the extended substitutions *)
@@ -365,9 +364,9 @@ Proof.
       pose proof (geq_ty_sound HTT) as HTTd. rewrite (@gm_layer_M EP EM EMl) in HTTd. exact HTTd.
     + rewrite <- letbox_reduct by assumption.
       assert (Hl3' : lwf (gL G') l3) by exact (lequiv_wf_r _ _ _ Hl13').
-      assert (Hl4' : lwf (gL G') l4) by (rewrite EL; exact (lequiv_wf_r _ _ _ Hl24)).
+      assert (Hl4' : lwf (gL G') l4) by (lup EL).
       assert (HT1' : [ G' ; Δ'⦃σ'⦄ ⊢[ lC ] T1' @ l4 ]).
-      { eapply wft_lconv; [exact (ctxconv_ty (i := lC) HDD' eq_refl HT1c) | rewrite EL; exact (lequiv_sym _ _ _ Hl24)]. }
+      { eapply wft_lconv; [exact (ctxconv_ty (i := lC) HDD' eq_refl HT1c) | lup EL]. }
       eapply tmred_trans; [exact (tmred_letboxT_cong Hl3' Hl4' HD'w HM1' Hb2 Hs'w4) |].
       eapply (tmred_conv _ _ _ _ _ eq_refl); [exact (tmred_letboxT_beta Hl3' Hl4' HD'w HM1' Hb2 HT1') |].
       pose proof (LRty_trans (LRty_sym (VMat _ _ _ _ He' (LRtm_trans (LRtm_sym HLww) HLww)))
@@ -377,7 +376,7 @@ Proof.
       eapply eqty_lconv; [exact HTTd | exact (lequiv_sym _ _ _ Hl13')].
   - (* neutral: letbox is neutral *)
     assert (Hl3' : lwf (gL G') l3) by exact (lequiv_wf_r _ _ _ Hl13').
-    assert (Hl24' : lequiv (gL G') l2 l4) by (now rewrite EL).
+    assert (Hl24' : lequiv (gL G') l2 l4) by (lup EL).
     (* the motives, related *)
     pose proof (VS_CTyp EP EM (ctx_of_wf_tm (i := lM) eq_refl Ht) HΔ HΔ Hl2 (lequiv_refl _ _ Hl2) VΔP VΔM) as VC.
     pose proof (VC _ _ _ Hσl _ _ (gwk_ok_id G')) as VCa; cbn [gwa] in VCa. rewrite gs_tyCTyp in VCa.
@@ -478,7 +477,7 @@ Proof.
   pose proof (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as HG'.
   pose proof (GSubRel_refl_l EP EM Hσ) as Hσl. pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
   pose proof (GSubRel_sym EP EM HG Hσ) as Hσs.
-  assert (EL : gL G' = gL G) by exact (gsr_L _ _ _ _ _ _ Hσ).
+  assert (EL : gL G <= gL G') by exact (gsr_L _ _ _ _ _ _ Hσ).
   pose proof (SubRel_ctx He) as HΘ; rewrite (@gm_layer_M EP EM EMl) in HΘ.
   destruct (SubRel_nf _ _ _ _ _ He) as [Ne Ne'].
   pose proof (SubRel_refl_r He) as He'.
@@ -509,7 +508,7 @@ Proof.
   rewrite gs_single_ty, !single_subst_ty by assumption.
   (* the scrutinee: related at [□Δ⦃σ⦄] *)
   pose proof (vp_ctx_refl_l EP EM HD (VΔP _ _ _ Hσ) (VΔM _ _ _ Hσ)) as VD.
-  assert (Hl2' : lwf (gL G') l2) by (now rewrite EL).
+  assert (Hl2' : lwf (gL G') l2) by (lup EL).
   assert (VA : vp_ty (vpM EP EM) G' Δ⦃σ⦄ A⦃σ⦄ A⦃σ⦄ l2).
   { refine (conj (eqty_refl _ _ _ _ _ HAw) (conj _ _)).
     - exact (VAAP _ _ _ Hσl). - exact (VAAM _ _ _ Hσl). }
@@ -548,7 +547,7 @@ Proof.
     rewrite !lift_single_ty by assumption.
     pose proof (VTy_refl_l (VM _ _ _ Hσ _ _ (gwk_ok_id G'))) as Y; cbn [gwa] in Y. rewrite gs_cext, gs_tyCTrm in Y.
     apply Y, SubRel_cons; [exact Hd | exact Ha]. }
-  assert (Hl13' : lequiv (gL G') l1 l3) by (now rewrite EL).
+  assert (Hl13' : lequiv (gL G') l1 l3) by (lup EL).
   (* conversion to the goal's types and anti-reduction: what the cases share *)
   assert (Fin : forall u u',
     @LRtm EM LRM l1 G' Θ (M⦃σ⦄)[llift e][lsingle w] (M'⦃σ'⦄)[llift e'][lsingle w'] u u' ->
@@ -569,12 +568,12 @@ Proof.
     rewrite (@gm_layer_M EP EM EMl).
     eapply (tmred_conv _ _ _ _ _ eq_refl); [exact (tmred_lconv _ _ _ _ _ Hu' Hl13') |].
     exact (eqty_sym _ _ _ _ _ _ HTTd). }
-  assert (Hl1' : lwf (gL G') l1) by (now rewrite EL).
+  assert (Hl1' : lwf (gL G') l1) by (lup EL).
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
   pose proof (gsw_dnf _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ)) as Nσ'.
   destruct (SubRel_dnf _ _ _ _ _ He) as [De De'].
   (* the right scrutinee, at the right-hand contextual type *)
-  assert (Hl24' : lequiv (gL G') l2 l4) by (now rewrite EL).
+  assert (Hl24' : lequiv (gL G') l2 l4) by (lup EL).
   assert (HA'D : [ G' ; Δ⦃σ⦄ ⊢[ lD ] A'⦃σ'⦄ @ l2 ]).
   { eapply wft_lconv; [exact (ctxconv_ty (i := lD) (eqctx_sym_D HDD') eq_refl HA'w) | exact Hl24']. }
   destruct (VTyG_escape_P EP EM (VΔP _ _ _ Hσ) HD HAw HA'D (VAP _ _ _ Hσ)) as [HgAA' HAA'd].
@@ -722,7 +721,7 @@ Proof.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
   pose proof (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as HG'.
   pose proof (GSubRel_refl_l EP EM Hσ) as Hσl. pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
-  assert (EL : gL G' = gL G) by exact (gsr_L _ _ _ _ _ _ Hσ).
+  assert (EL : gL G <= gL G') by exact (gsr_L _ _ _ _ _ _ Hσ).
   destruct (SubRel_nf _ _ _ _ _ He) as [Ne Ne'].
   destruct (SubRel_dnf _ _ _ _ _ He) as [De De'].
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
@@ -763,7 +762,7 @@ Proof.
   cbn [subst Subst_tm subst_tm].
   rewrite (gs_gsingle _ _ _ Nσ'), (gup_single_tm _ _ _ Nσ'). cbn [gosubst].
   change (gsubst_ty T σ') with T⦃σ'⦄.
-  assert (Hl'1 : lwf (gL G') l') by (now rewrite EL). assert (Hl1 : lwf (gL G') l) by (now rewrite EL).
+  assert (Hl'1 : lwf (gL G') l') by (lup EL). assert (Hl1 : lwf (gL G') l) by (lup EL).
   eapply LRtm_red_l; [exact Y |]. rewrite (@gm_layer_M EP EM EMl), <- letbox_reduct by assumption.
   exact (tmred_letboxT_beta Hl'1 Hl1 HDw HM1 Hb1 HT1).
 Qed.
@@ -781,7 +780,7 @@ Proof.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
   pose proof (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as HG'.
   pose proof (GSubRel_refl_l EP EM Hσ) as Hσl. pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
-  assert (EL : gL G' = gL G) by exact (gsr_L _ _ _ _ _ _ Hσ).
+  assert (EL : gL G <= gL G') by exact (gsr_L _ _ _ _ _ _ Hσ).
   destruct (SubRel_nf _ _ _ _ _ He) as [Ne Ne'].
   destruct (SubRel_dnf _ _ _ _ _ He) as [De De'].
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
@@ -823,7 +822,7 @@ Proof.
   cbn [subst Subst_tm subst_tm].
   rewrite (gs_gsingle _ _ _ Nσ'), (gup_single_tm _ _ _ Nσ'). cbn [gosubst].
   change (gsubst_tm c σ') with c⦃σ'⦄.
-  assert (Hl'1 : lwf (gL G') l') by (now rewrite EL). assert (Hl1 : lwf (gL G') l) by (now rewrite EL).
+  assert (Hl'1 : lwf (gL G') l') by (lup EL). assert (Hl1 : lwf (gL G') l) by (lup EL).
   eapply LRtm_red_l; [exact Y |]. rewrite (@gm_layer_M EP EM EMl), <- letbox_reduct by assumption.
   exact (tmred_letboxt_beta Hl'1 Hl1 HDw HAw HM1 Hb1 Hc1).
 Qed.

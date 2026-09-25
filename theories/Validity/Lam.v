@@ -115,7 +115,7 @@ Proof.
     pose proof (kw_ext ρ HA'3 Hw3) as HΔ'A'3. pose proof (kw_ty ρ HAd) as HAdρ. pose proof (kw_ty ρ HA'3) as HA'3ρ.
     pose proof (kw_lequiv ρ H3) as H3ρ. pose proof (kw_lequiv ρ H4) as H4ρ.
     pose proof (kw_lwf ρ Hwl) as Hwlρ. pose proof (kw_lwf ρ Hwl') as Hwl'ρ.
-    rewrite <- (kw_gL ρ) in Hla, Hlb, Hla', Hlb'.
+    apply (kw_lequiv ρ) in Hla, Hlb, Hla', Hlb'.
     eapply LR_red_tm; [exact HR | exact HX | |].
     - apply tmred_beta; auto using geq_ty_sound.
     - eapply (tmred_lconv _ _ _ _ l4); [|now apply lequiv_sym].
