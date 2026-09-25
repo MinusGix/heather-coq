@@ -297,3 +297,77 @@ Proof.
   rewrite branch_inst; [reflexivity | repeat constructor; assumption | repeat constructor; exact Ha
                        | exact HM | exact Hσ | exact He].
 Qed.
+
+(** ** The scopes at instantiated levels *)
+
+Lemma uext_ush ls φ i : uext ls φ (length ls + i) = φ i.
+Proof. unfold uext. destruct (Nat.ltb_spec (length ls + i) (length ls)); [lia|]. f_equal; lia. Qed.
+
+Lemma usub_ok_uext ls φ L' L : Forall (lwf L') ls -> usub_ok φ L' L -> usub_ok (uext ls φ) L' (length ls + L).
+Proof.
+  intros Hl Hφ i Hi. unfold uext. destruct (Nat.ltb_spec i (length ls)) as [Hi' | Hi'].
+  - rewrite Forall_forall in Hl. apply Hl, nth_In; lia.
+  - apply Hφ; lia.
+Qed.
+
+Lemma lvren_ush_uext l ls φ : lvsubst (lvren l (ush (length ls))) (uext ls φ) = lvsubst l φ.
+Proof. apply lvren_lvsubst; intros n; symmetry; apply uext_ush. Qed.
+
+Lemma gdecl_uren_uext D ls φ :
+  gdecl_usubst (gdecl_uren D (ush (length ls))) (uext ls φ) = gdecl_usubst D φ.
+Proof.
+  destruct D; cbn [gdecl_uren gdecl_usubst]; f_equal; rewrite ?lvren_ush_uext; auto.
+  all: first [ apply (proj1 (proj2 (proj2 uren_usubst_all))) | apply (proj1 uren_usubst_all) ];
+    intros; symmetry; apply uext_ush.
+Qed.
+
+Lemma map_uren_uext Ψ ls φ :
+  map (fun D => gdecl_usubst D (uext ls φ)) (map (fun D => gdecl_uren D (ush (length ls))) Ψ) =
+  map (fun D => gdecl_usubst D φ) Ψ.
+Proof. rewrite map_map. apply map_ext; intros; apply gdecl_uren_uext. Qed.
+
+Lemma G_us_recGT_uext G L' φ k :
+  G_us (recGT G) L' (uext (k :: nil) φ) = gext (G_us G L' φ) gdCtx.
+Proof.
+  unfold G_us, gctx_usubst, recGT, gctx_uwk, gext; cbn [gL gΨ map gdecl_usubst]. f_equal. f_equal.
+  exact (map_uren_uext _ (k :: nil) φ).
+Qed.
+Lemma G_us_recGt_uext G L' φ k :
+  G_us (recGt G) L' (uext (k :: nil) φ) = gext (gext (G_us G L' φ) gdCtx) (gdTy (cvar 0) lD k).
+Proof.
+  unfold G_us, gctx_usubst, recGt, gctx_uwk, gext; cbn [gL gΨ map gdecl_usubst]. f_equal. f_equal. f_equal.
+  exact (map_uren_uext _ (k :: nil) φ).
+Qed.
+Lemma G_us_brG_uext k G L' φ ls : length ls = br_nu k ->
+  G_us (brG k G) L' (uext ls φ) =
+  mkG L' (map (fun D => gdecl_usubst D (uext ls φ)) (brDecls k) ++ gΨ (G_us G L' φ)).
+Proof.
+  intros Hn. unfold G_us, gctx_usubst, brG, gctx_uwk; cbn [gL gΨ]. f_equal.
+  rewrite map_app. f_equal. rewrite <- Hn. exact (map_uren_uext _ ls φ).
+Qed.
+
+Lemma wkc_inst nu ng Γ ls os φ σ : length ls = nu -> length os = ng ->
+  gcsubst (ucsubst (wkc nu ng Γ) (uext ls φ)) (gext_s os σ) = gcsubst (ucsubst Γ φ) σ.
+Proof.
+  intros <- <-. unfold wkc. rewrite usubst_gren_ctx'.
+  rewrite (proj1 (proj2 (proj2 uren_usubst_all)) _ _ _ φ) by (intros; symmetry; apply uext_ush).
+  apply (proj1 (proj2 (proj2 gsubst_gren_all))). intros i; unfold gext_s, ush.
+  destruct (Nat.ltb_spec (length os + i) (length os)); [lia|]. f_equal; lia.
+Qed.
+
+Lemma recΓT_inst' Γ k φ Δ σ :
+  gcsubst (ucsubst (recΓT Γ) (uext (k :: nil) φ)) (gext_s (GCtx Δ :: nil) σ) =
+  gcsubst (ucsubst Γ φ) σ ,, tyCTyp Δ k @ lzero.
+Proof.
+  unfold recΓT. cbn [ucsubst gcsubst usubst_ty gsubst_ty lvsubst]. f_equal.
+  apply (wkc_inst 1 1 Γ (k :: nil) (GCtx Δ :: nil)); reflexivity.
+Qed.
+
+Lemma recΓt_inst' Γ k φ Δ U σ : nfty U ->
+  gcsubst (ucsubst (recΓt Γ) (uext (k :: nil) φ)) (gext_s (GCtx Δ :: GTy U :: nil) σ) =
+  gcsubst (ucsubst Γ φ) σ ,, tyCTrm Δ U k @ lzero.
+Proof.
+  intros HU. unfold recΓt, gv. cbn [ucsubst gcsubst usubst_ty gsubst_ty lvsubst ulsubst glsubst]. f_equal.
+  - apply (wkc_inst 1 2 Γ (k :: nil) (GCtx Δ :: GTy U :: nil)); reflexivity.
+  - f_equal. unfold gext_s; cbn. apply subst_id_ty; [exact HU | intros; cbn; f_equal; lia].
+Qed.
