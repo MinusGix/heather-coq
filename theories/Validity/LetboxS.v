@@ -335,15 +335,19 @@ Proof.
   pose proof (tmred_conv _ _ _ _ _ eq_refl Hs'w HCC) as Hs'w4.
   destruct Hn as [T1 T1' HV | ν ν' Hνν].
   - (* box: β-reduce, and use the body at the extended substitutions *)
-    destruct HV as (HE & HT1 & VT1P & VT1M). subst T1'.
-    assert (Hσx : GSubRel G' (gext G (gdTy Δ lC l2)) (gcons σ (GTy T1)) (gcons σ' (GTy T1))).
-    { apply (GSubRel_cons EP EM Hσ); cbn [gdecl_gsubst gobj_wf dnfo GObjRel].
+    destruct HV as (HE & HT1 & HT1c & VT1P & VT1M).
+    assert (Hσx : GSubRel G' (gext G (gdTy Δ lC l2)) (gcons σ (GTy T1)) (gcons σ' (GTy T1'))).
+    { apply (GSubRel_cons2 EP EM Hσ); cbn [gdecl_gsubst gobj_wf dnfo GObjRel].
       - exact (wf_ty_dnf HT1).
+      - exact (wf_ty_dnf HT1c).
       - exact HT1.
-      - exact (ctxconv_ty (i := lC) HDDr eq_refl HT1).
-      - exact (conj (fun _ => eq_refl) (conj VT1P VT1M)).
-      - exact (conj (fun _ => eq_refl) (conj (VTyG_transport (VΔP _ _ _ Hσ) VT1P)
-                                              (VTyG_transport (VΔM _ _ _ Hσ) VT1M))). }
+      - exact (ctxconv_ty (i := lC) HDDr eq_refl HT1c).
+      - exact (conj (fun _ => HE) (conj VT1P VT1M)).
+      - exact (conj (fun _ => ty_leq_refl _)
+                 (conj (VTyG_trans VT1P (VTyG_sym VT1P)) (VTyG_trans VT1M (VTyG_sym VT1M)))).
+      - exact (conj (fun _ => ty_leq_refl _)
+                 (conj (VTyG_transport (VΔP _ _ _ Hσ) (VTyG_trans (VTyG_sym VT1P) VT1P))
+                       (VTyG_transport (VΔM _ _ _ Hσ) (VTyG_trans (VTyG_sym VT1M) VT1M)))). }
     pose proof (Vb _ _ _ Hσx G' gwk_id (gwk_ok_id G')) as Y; cbn [gwa] in Y.
     rewrite gcons_shift_ctx in Y. specialize (Y _ _ _ He).
     assert (Eb : (boxT (tyGvar 0 (lshift 0)))⦃gcons σ (GTy T1)⦄ = boxT T1).
@@ -362,11 +366,12 @@ Proof.
     + rewrite <- letbox_reduct by assumption.
       assert (Hl3' : lwf (gL G') l3) by exact (lequiv_wf_r _ _ _ Hl13').
       assert (Hl4' : lwf (gL G') l4) by (rewrite EL; exact (lequiv_wf_r _ _ _ Hl24)).
-      assert (HT1' : [ G' ; Δ'⦃σ'⦄ ⊢[ lC ] T1 @ l4 ]).
-      { eapply wft_lconv; [exact (ctxconv_ty (i := lC) HDD' eq_refl HT1) | rewrite EL; exact (lequiv_sym _ _ _ Hl24)]. }
+      assert (HT1' : [ G' ; Δ'⦃σ'⦄ ⊢[ lC ] T1' @ l4 ]).
+      { eapply wft_lconv; [exact (ctxconv_ty (i := lC) HDD' eq_refl HT1c) | rewrite EL; exact (lequiv_sym _ _ _ Hl24)]. }
       eapply tmred_trans; [exact (tmred_letboxT_cong Hl3' Hl4' HD'w HM1' Hb2 Hs'w4) |].
       eapply (tmred_conv _ _ _ _ _ eq_refl); [exact (tmred_letboxT_beta Hl3' Hl4' HD'w HM1' Hb2 HT1') |].
-      pose proof (LRty_trans (LRty_sym (VMat _ _ _ _ He' HLww)) (VMat _ _ _ _ He' (LRtm_sym HLs'w'))) as [RT HRT].
+      pose proof (LRty_trans (LRty_sym (VMat _ _ _ _ He' (LRtm_trans (LRtm_sym HLww) HLww)))
+                    (VMat _ _ _ _ He' (LRtm_sym HLs'w'))) as [RT HRT].
       destruct (escape_ty _ _ _ _ _ _ _ _ HRT) as (_ & _ & HTT).
       pose proof (geq_ty_sound HTT) as HTTd. rewrite (@gm_layer_M EP EM EMl) in HTTd.
       eapply eqty_lconv; [exact HTTd | exact (lequiv_sym _ _ _ Hl13')].
@@ -401,8 +406,8 @@ Proof.
       - exact HG1.
       - exact (wf_ty_gvar_id Hin0 (eqc_refl _ _ _ HDs)).
       - exact (wf_ty_gvar_id Hin0 (gwk_eqctx Hγ1 HG1 HDDr)).
-      - exact (conj (fun _ => eq_refl) (conj UP UM)).
-      - exact (conj (fun _ => eq_refl)
+      - exact (conj (fun _ => ty_leq_refl _) (conj UP UM)).
+      - exact (conj (fun _ => ty_leq_refl _)
                  (conj (VTyG_transport (CtxRelG_gwk (VΔP _ _ _ Hσ) Hγ1) UP)
                        (VTyG_transport (CtxRelG_gwk (VΔM _ _ _ Hσ) Hγ1) UM))). }
     pose proof (Vb _ _ _ Hσu _ _ (gwk_ok_id _)) as Yb; cbn [gwa] in Yb.
@@ -582,16 +587,19 @@ Proof.
   destruct (VTyG_escape_P EP EM (VΔP _ _ _ Hσ) HD HAw HAσ'D (VAAP _ _ _ Hσ)) as [_ HAAr].
   destruct Hn as [c c' HV | ν ν' Hνν].
   - (* box: β-reduce, and use the body at the extended substitutions *)
-    destruct HV as (HE & Hc & VcP & VcM). subst c'.
-    assert (Hσx : GSubRel G' (gext G (gdTm Δ lC A l2)) (gcons σ (GTm c)) (gcons σ' (GTm c))).
-    { apply (GSubRel_cons EP EM Hσ); cbn [gdecl_gsubst gobj_wf dnfo GObjRel].
+    destruct HV as (HE & Hc & Hcc & VcP & VcM).
+    pose proof (VTmG_trans (VTmG_sym VcP) VcP) as VcPr. pose proof (VTmG_trans (VTmG_sym VcM) VcM) as VcMr.
+    assert (Hσx : GSubRel G' (gext G (gdTm Δ lC A l2)) (gcons σ (GTm c)) (gcons σ' (GTm c'))).
+    { apply (GSubRel_cons2 EP EM Hσ); cbn [gdecl_gsubst gobj_wf dnfo GObjRel].
       - exact (wf_tm_dnf Hc).
+      - exact (wf_tm_dnf Hcc).
       - exact Hc.
-      - exact (ctxconv_tm (i := lC) HDDr eq_refl (wf_conv _ _ _ _ _ _ _ Hc (eqty_sym _ _ _ _ _ _ HAAr))).
-      - exact (conj eq_refl (conj VcP VcM)).
-      - refine (conj eq_refl (conj _ _)).
-        + exact (VTmG_conv (VTmG_transport (VΔP _ _ _ Hσ) VcP) (VTyG_sym (VTyG_transport (VΔP _ _ _ Hσ) (VAAP _ _ _ Hσ)))).
-        + exact (VTmG_conv (VTmG_transport (VΔM _ _ _ Hσ) VcM) (VTyG_sym (VTyG_transport (VΔM _ _ _ Hσ) (VAAM _ _ _ Hσ)))). }
+      - exact (ctxconv_tm (i := lC) HDDr eq_refl (wf_conv _ _ _ _ _ _ _ Hcc (eqty_sym _ _ _ _ _ _ HAAr))).
+      - exact (conj HE (conj VcP VcM)).
+      - exact (conj (tm_leq_refl _) (conj (VTmG_trans VcP (VTmG_sym VcP)) (VTmG_trans VcM (VTmG_sym VcM)))).
+      - refine (conj (tm_leq_refl _) (conj _ _)).
+        + exact (VTmG_conv (VTmG_transport (VΔP _ _ _ Hσ) VcPr) (VTyG_sym (VTyG_transport (VΔP _ _ _ Hσ) (VAAP _ _ _ Hσ)))).
+        + exact (VTmG_conv (VTmG_transport (VΔM _ _ _ Hσ) VcMr) (VTyG_sym (VTyG_transport (VΔM _ _ _ Hσ) (VAAM _ _ _ Hσ)))). }
     pose proof (Vb _ _ _ Hσx G' gwk_id (gwk_ok_id G')) as Y; cbn [gwa] in Y.
     rewrite gcons_shift_ctx in Y. specialize (Y _ _ _ He).
     assert (Eb : (boxt (gvar 0 (lshift 0)))⦃gcons σ (GTm c)⦄ = boxt c).
@@ -610,12 +618,13 @@ Proof.
     + rewrite <- letbox_reduct by assumption.
       assert (Hl3' : lwf (gL G') l3) by exact (lequiv_wf_r _ _ _ Hl13').
       assert (Hl4' : lwf (gL G') l4) by exact (lequiv_wf_r _ _ _ Hl24').
-      assert (Hc' : [ G' ; Δ'⦃σ'⦄ ⊢[ lC ] c : A'⦃σ'⦄ @ l4 ]).
+      assert (Hc' : [ G' ; Δ'⦃σ'⦄ ⊢[ lC ] c' : A'⦃σ'⦄ @ l4 ]).
       { eapply wf_lconv; [| exact (lequiv_sym _ _ _ Hl24')].
-        exact (ctxconv_tm (i := lC) HDD' eq_refl (wf_conv _ _ _ _ _ _ _ Hc (eqty_sym _ _ _ _ _ _ HAA'd))). }
+        exact (ctxconv_tm (i := lC) HDD' eq_refl (wf_conv _ _ _ _ _ _ _ Hcc (eqty_sym _ _ _ _ _ _ HAA'd))). }
       eapply tmred_trans; [exact (tmred_letboxt_cong Hl3' Hl4' HD'w HA'w HM1' Hb2 Hs'w4) |].
       eapply (tmred_conv _ _ _ _ _ eq_refl); [exact (tmred_letboxt_beta Hl3' Hl4' HD'w HA'w HM1' Hb2 Hc') |].
-      pose proof (LRty_trans (LRty_sym (VMat _ _ _ _ He' HLww)) (VMat _ _ _ _ He' (LRtm_sym HLs'w'))) as [RT HRT].
+      pose proof (LRty_trans (LRty_sym (VMat _ _ _ _ He' (LRtm_trans (LRtm_sym HLww) HLww)))
+                    (VMat _ _ _ _ He' (LRtm_sym HLs'w'))) as [RT HRT].
       destruct (escape_ty _ _ _ _ _ _ _ _ HRT) as (_ & _ & HTT).
       pose proof (geq_ty_sound HTT) as HTTd. rewrite (@gm_layer_M EP EM EMl) in HTTd.
       eapply eqty_lconv; [exact HTTd | exact (lequiv_sym _ _ _ Hl13')].
@@ -658,8 +667,8 @@ Proof.
       - exact HG1.
       - exact (wf_tm_gvar_id Hin0 (eqc_refl _ _ _ HDs) HAs).
       - exact (ctxconv_tm (i := lC) HDDrs eq_refl (wf_conv _ _ _ _ _ _ _ (wf_tm_gvar_id Hin0 (eqc_refl _ _ _ HDs) HAs) (eqty_sym _ _ _ _ _ _ HAArs))).
-      - exact (conj eq_refl (conj UP UM)).
-      - refine (conj eq_refl (conj _ _)).
+      - exact (conj (tm_leq_refl _) (conj UP UM)).
+      - refine (conj (tm_leq_refl _) (conj _ _)).
         + exact (VTmG_conv (VTmG_transport (CtxRelG_gwk (VΔP _ _ _ Hσ) Hγ1) UP)
                    (VTyG_sym (VTyG_transport (CtxRelG_gwk (VΔP _ _ _ Hσ) Hγ1) (VTyG_gwk (VAAP _ _ _ Hσ) Hγ1)))).
         + exact (VTmG_conv (VTmG_transport (CtxRelG_gwk (VΔM _ _ _ Hσ) Hγ1) UM)
@@ -732,14 +741,16 @@ Proof.
   rewrite gs_letboxT, subst_letboxT, gs_boxT in X. cbn [subst Subst_tm subst_tm] in X.
   destruct (letboxT_inv X) as (_ & _ & HDw & HM1 & Hb1 & _ & _ & _). clear X.
   (* the extended substitutions *)
-  assert (Hσx : GSubRel G' (gext G (gdTy Δ lC l)) (gcons σ (GTy T⦃σ⦄)) (gcons σ' (GTy T⦃σ⦄))).
-  { apply (GSubRel_cons EP EM Hσ); cbn [gdecl_gsubst gobj_wf dnfo GObjRel].
+  pose proof (gs_ty EP EM Hσr HT) as HT1r.
+  assert (Hσx : GSubRel G' (gext G (gdTy Δ lC l)) (gcons σ (GTy T⦃σ⦄)) (gcons σ' (GTy T⦃σ'⦄))).
+  { apply (GSubRel_cons2 EP EM Hσ); cbn [gdecl_gsubst gobj_wf dnfo GObjRel].
     - exact (wf_ty_dnf HT1).
+    - exact (wf_ty_dnf HT1r).
     - exact HT1.
-    - exact (ctxconv_ty (i := lC) HDDr eq_refl HT1).
-    - exact (conj (fun _ => eq_refl) (conj (VTP _ _ _ Hσl) (VTM _ _ _ Hσl))).
-    - exact (conj (fun _ => eq_refl) (conj (VTyG_transport (VΔP _ _ _ Hσ) (VTP _ _ _ Hσl))
-                                            (VTyG_transport (VΔM _ _ _ Hσ) (VTM _ _ _ Hσl)))). }
+    - exact HT1r.
+    - exact (conj (fun _ => ET) (conj (VTP _ _ _ Hσ) (VTM _ _ _ Hσ))).
+    - exact (conj (fun _ => ty_leq_refl _) (conj (VTP _ _ _ Hσl) (VTM _ _ _ Hσl))).
+    - exact (conj (fun _ => ty_leq_refl _) (conj (VTP _ _ _ Hσr) (VTM _ _ _ Hσr))). }
   pose proof (Vb _ _ _ Hσx G' gwk_id (gwk_ok_id G')) as Y; cbn [gwa] in Y.
   rewrite gcons_shift_ctx in Y. specialize (Y _ _ _ He).
   assert (Eb : (boxT (tyGvar 0 (lshift 0)))⦃gcons σ (GTy T⦃σ⦄)⦄ = boxT T⦃σ⦄).
@@ -751,7 +762,7 @@ Proof.
   rewrite gs_letboxT, subst_letboxT, gs_boxT, gs_single_ty, gs_boxT, !single_subst_ty by assumption.
   cbn [subst Subst_tm subst_tm].
   rewrite (gs_gsingle _ _ _ Nσ'), (gup_single_tm _ _ _ Nσ'). cbn [gosubst].
-  change (gsubst_ty T σ') with T⦃σ'⦄. rewrite <- ET.
+  change (gsubst_ty T σ') with T⦃σ'⦄.
   assert (Hl'1 : lwf (gL G') l') by (now rewrite EL). assert (Hl1 : lwf (gL G') l) by (now rewrite EL).
   eapply LRtm_red_l; [exact Y |]. rewrite (@gm_layer_M EP EM EMl), <- letbox_reduct by assumption.
   exact (tmred_letboxT_beta Hl'1 Hl1 HDw HM1 Hb1 HT1).
@@ -791,17 +802,16 @@ Proof.
   pose proof (wf_tm_subst (i := lM) eq_refl (gs_tm EP EM Hσ Hw) Hew) as X.
   rewrite gs_letboxt, subst_letboxt, gs_boxt in X. cbn [subst Subst_tm subst_tm] in X.
   destruct (letboxt_inv X) as (_ & _ & HDw & HAw & HM1 & Hb1 & _ & _ & _). clear X.
-  assert (Hσx : GSubRel G' (gext G (gdTm Δ lC A l)) (gcons σ (GTm c⦃σ⦄)) (gcons σ' (GTm c⦃σ⦄))).
-  { apply (GSubRel_cons EP EM Hσ); cbn [gdecl_gsubst gobj_wf dnfo GObjRel].
+  pose proof (gs_tm EP EM Hσr Hc) as Hc1r.
+  assert (Hσx : GSubRel G' (gext G (gdTm Δ lC A l)) (gcons σ (GTm c⦃σ⦄)) (gcons σ' (GTm c⦃σ'⦄))).
+  { apply (GSubRel_cons2 EP EM Hσ); cbn [gdecl_gsubst gobj_wf dnfo GObjRel].
     - exact (wf_tm_dnf Hc1).
+    - exact (wf_tm_dnf Hc1r).
     - exact Hc1.
-    - exact (ctxconv_tm (i := lC) HDDr eq_refl (wf_conv _ _ _ _ _ _ _ Hc1 (eqty_sym _ _ _ _ _ _ HAAr))).
-    - exact (conj eq_refl (conj (VcP _ _ _ Hσl) (VcM _ _ _ Hσl))).
-    - refine (conj eq_refl (conj _ _)).
-      + exact (VTmG_conv (VTmG_transport (VΔP _ _ _ Hσ) (VcP _ _ _ Hσl))
-                 (VTyG_sym (VTyG_transport (VΔP _ _ _ Hσ) (VAP _ _ _ Hσ)))).
-      + exact (VTmG_conv (VTmG_transport (VΔM _ _ _ Hσ) (VcM _ _ _ Hσl))
-                 (VTyG_sym (VTyG_transport (VΔM _ _ _ Hσ) (VAM _ _ _ Hσ)))). }
+    - exact Hc1r.
+    - exact (conj Ec (conj (VcP _ _ _ Hσ) (VcM _ _ _ Hσ))).
+    - exact (conj (tm_leq_refl _) (conj (VcP _ _ _ Hσl) (VcM _ _ _ Hσl))).
+    - exact (conj (tm_leq_refl _) (conj (VcP _ _ _ Hσr) (VcM _ _ _ Hσr))). }
   pose proof (Vb _ _ _ Hσx G' gwk_id (gwk_ok_id G')) as Y; cbn [gwa] in Y.
   rewrite gcons_shift_ctx in Y. specialize (Y _ _ _ He).
   assert (Eb : (boxt (gvar 0 (lshift 0)))⦃gcons σ (GTm c⦃σ⦄)⦄ = boxt c⦃σ⦄).
@@ -812,7 +822,7 @@ Proof.
   rewrite gs_letboxt, subst_letboxt, gs_boxt, gs_single_ty, gs_boxt, !single_subst_ty by assumption.
   cbn [subst Subst_tm subst_tm].
   rewrite (gs_gsingle _ _ _ Nσ'), (gup_single_tm _ _ _ Nσ'). cbn [gosubst].
-  change (gsubst_tm c σ') with c⦃σ'⦄. rewrite <- Ec.
+  change (gsubst_tm c σ') with c⦃σ'⦄.
   assert (Hl'1 : lwf (gL G') l') by (now rewrite EL). assert (Hl1 : lwf (gL G') l) by (now rewrite EL).
   eapply LRtm_red_l; [exact Y |]. rewrite (@gm_layer_M EP EM EMl), <- letbox_reduct by assumption.
   exact (tmred_letboxt_beta Hl'1 Hl1 HDw HAw HM1 Hb1 Hc1).

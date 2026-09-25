@@ -14,9 +14,10 @@ Definition static_decl (D : gdecl) : Prop :=
   | gdTm _ i _ _ => lle i lC
   end.
 
-(** [σ] and [σ'] agree on the static bindings of [G]. *)
+(** [σ] and [σ'] agree on the static bindings of [G], up to level
+    equivalence (M3_DESIGN.md E11). *)
 Definition gsub_agree (G : gctx) (σ σ' : gsub) : Prop :=
-  forall n D, in_gctx (gΨ G) n D -> static_decl D -> σ n = σ' n.
+  forall n D, in_gctx (gΨ G) n D -> static_decl D -> gobj_leq (σ n) (σ' n).
 
 Lemma in_ctx_of_lt Δ n : n < clen Δ -> exists A k, in_ctx Δ n A k.
 Proof.
@@ -43,6 +44,22 @@ Proof.
   - replace n with (clen Δ + (n - clen Δ)) by lia. rewrite Hl. reflexivity.
 Qed.
 
+Lemma glsubst_leq (d : lsub) σ σ' : (forall n, tm_leq (llk d n)⦃σ⦄ (llk d n)⦃σ'⦄) -> lsub_leq d⦃σ⦄ d⦃σ'⦄.
+Proof.
+  induction d as [k | d IH t]; intros H; [reflexivity |].
+  cbn [gsubst GSubst_lsub glsubst]. change (glsubst d σ) with d⦃σ⦄. change (glsubst d σ') with d⦃σ'⦄.
+  apply lcons'_leq; [exact (IH (fun n => H (S n))) | exact (H 0)].
+Qed.
+
+Lemma glsubst_leq_entries {d Δ Γ σ σ'} : lsub_tail d Δ Γ ->
+  (forall n A k, in_ctx Δ n A k -> tm_leq (llk d n)⦃σ⦄ (llk d n)⦃σ'⦄) -> lsub_leq d⦃σ⦄ d⦃σ'⦄.
+Proof.
+  intros [_ Hl] H. apply glsubst_leq. intros n.
+  destruct (Nat.lt_ge_cases n (clen Δ)) as [Hn | Hn].
+  - destruct (in_ctx_of_lt _ _ Hn) as (A & k & HA). exact (H _ _ _ HA).
+  - replace n with (clen Δ + (n - clen Δ)) by lia. rewrite Hl. reflexivity.
+Qed.
+
 Lemma lle_C_notM {i} : lle i lC -> i <> lM.
 Proof. intros Hi ->. discriminate (lle_M _ Hi). Qed.
 
@@ -50,9 +67,9 @@ Theorem static_gsubst :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
   (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> lle i lC ->
-     forall σ σ', gsub_agree G σ σ' -> T⦃σ⦄ = T⦃σ'⦄) /\
+     forall σ σ', gsub_agree G σ σ' -> ty_leq T⦃σ⦄ T⦃σ'⦄) /\
   (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> lle i lC ->
-     forall σ σ', gsub_agree G σ σ' -> t⦃σ⦄ = t⦃σ'⦄) /\
+     forall σ σ', gsub_agree G σ σ' -> tm_leq t⦃σ⦄ t⦃σ'⦄) /\
   (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> True) /\
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
@@ -62,14 +79,14 @@ Proof.
     try match goal with Hi : lle ?i lC |- _ =>
       repeat match goal with IH : lle i lC -> _ |- _ => specialize (IH Hi) end end;
     cbn [gsubst GSubst_ty GSubst_tm]; simpl;
-    try solve [eauto | f_equal; eauto].
-  (* global variables: the same image, at the same local substitution *)
+    try solve [eauto | cbn; intuition (eauto with leq)].
+  (* global variables: level-equivalent images, at level-equivalent local substitutions *)
   all: match goal with
        | Ha : gsub_agree _ ?σ ?σ', Hin : in_gctx _ ?x ?D, Hl : lle _ ?i, Hi : lle ?i lC |- _ =>
-           rewrite (Ha _ _ Hin (lle_trans _ _ _ Hl Hi))
+           first [apply pty_leq | apply ptm_leq]; [exact (Ha _ _ Hin (lle_trans _ _ _ Hl Hi)) |]
        end;
-    change (glsubst ?d ?s) with d⦃s⦄; f_equal;
-    (eapply glsubst_agree_entries; [eassumption |]);
+    change (glsubst ?d ?s) with d⦃s⦄;
+    (eapply glsubst_leq_entries; [eassumption |]);
     intros ?n ?A ?k HA; match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH end;
     eassumption.
 Qed.

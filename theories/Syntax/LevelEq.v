@@ -282,3 +282,76 @@ Lemma tm_leq_trans t1 t2 t3 : tm_leq t1 t2 -> tm_leq t2 t3 -> tm_leq t1 t3. Proo
 Lemma gobj_leq_refl o : gobj_leq o o.
 Proof. destruct o; cbn; auto using ctx_leq_refl, ty_leq_refl, tm_leq_refl. Qed.
 #[export] Hint Resolve ty_leq_refl tm_leq_refl ctx_leq_refl lsub_leq_refl gobj_leq_refl : leq.
+
+(** ** Well-formed level annotations
+
+    [x] has every level annotation well formed in [L]. With [≡ₗ], this
+    gives level equivalence of the annotations ([leqv_lequiv]). *)
+
+Fixpoint ty_lwf (L : nat) (T : ty) {struct T} : Prop :=
+  match T with
+  | tyErr | tyNat => True
+  | tyPi l1 l2 A B => lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ ty_lwf L B
+  | tyU l => lwf L l
+  | tyEl l t => lwf L l /\ tm_lwf L t
+  | tyGvar _ d => lsub_lwf L d
+  | tyCTyp Δ l => ctx_lwf L Δ /\ lwf L l
+  | tyCTrm Δ A l => ctx_lwf L Δ /\ ty_lwf L A /\ lwf L l
+  end
+with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
+  match t with
+  | var _ | tmErr | tmNat | zero => True
+  | tmPi l1 l2 s t => lwf L l1 /\ lwf L l2 /\ tm_lwf L s /\ tm_lwf L t
+  | tmU l => lwf L l
+  | succ t => tm_lwf L t
+  | natrec l M s z t => lwf L l /\ ty_lwf L M /\ tm_lwf L s /\ tm_lwf L z /\ tm_lwf L t
+  | lam l1 l2 A t => lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ tm_lwf L t
+  | app t l1 l2 A B s => tm_lwf L t /\ lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ ty_lwf L B /\ tm_lwf L s
+  | gvar _ d => lsub_lwf L d
+  | boxT T => ty_lwf L T
+  | boxt t => tm_lwf L t
+  | letboxT l1 l2 Δ M t1 t => lwf L l1 /\ lwf L l2 /\ ctx_lwf L Δ /\ ty_lwf L M /\ tm_lwf L t1 /\ tm_lwf L t
+  | letboxt l1 l2 Δ A M t1 t =>
+      lwf L l1 /\ lwf L l2 /\ ctx_lwf L Δ /\ ty_lwf L A /\ ty_lwf L M /\ tm_lwf L t1 /\ tm_lwf L t
+  | tmTy T => ty_lwf L T
+  | tmTup s t => tm_lwf L s /\ tm_lwf L t
+  | bindU b => tm_lwf (S L) b
+  | bindG b | bindL b => tm_lwf L b
+  | elimT l1 l2 rb l Δ t => lwf L l1 /\ lwf L l2 /\ tm_lwf L rb /\ lwf L l /\ ctx_lwf L Δ /\ tm_lwf L t
+  | elimt l1 l2 rb l Δ A t =>
+      lwf L l1 /\ lwf L l2 /\ tm_lwf L rb /\ lwf L l /\ ctx_lwf L Δ /\ ty_lwf L A /\ tm_lwf L t
+  end
+with ctx_lwf (L : nat) (Γ : ctx) {struct Γ} : Prop :=
+  match Γ with
+  | cnil | cvar _ => True
+  | cext Γ A l => ctx_lwf L Γ /\ ty_lwf L A /\ lwf L l
+  end
+with lsub_lwf (L : nat) (d : lsub) {struct d} : Prop :=
+  match d with lshift _ => True | lcons d t => lsub_lwf L d /\ tm_lwf L t end.
+
+Lemma llk_lwf L d n : lsub_lwf L d -> tm_lwf L (llk d n).
+Proof. revert n; induction d as [k | d IH t]; intros [|n] H; cbn in *; tauto || apply IH; tauto. Qed.
+
+(** [≡ₗ] preserves deep normality (which never looks at levels). *)
+Lemma leq_labsorb d d' t t' : lsub_leq d d' -> tm_leq t t' -> labsorb d t -> labsorb d' t'.
+Proof.
+  intros Hd Ht H. destruct d as [[|k] | d0 t0]; cbn in H; try contradiction.
+  destruct d' as [k' | d0' t0']; cbn in Hd; try contradiction. subst k'.
+  destruct t; cbn in H; try contradiction. destruct t'; cbn in Ht; try contradiction.
+  cbn; congruence.
+Qed.
+
+Lemma leq_dnf_all :
+  let Pty T := forall T', ty_leq T T' -> dnfty T -> dnfty T' in
+  let Ptm t := forall t', tm_leq t t' -> dnftm t -> dnftm t' in
+  let Pctx Γ := forall Γ', ctx_leq Γ Γ' -> dnfctx Γ -> dnfctx Γ' in
+  let Pl d := forall d', lsub_leq d d' -> dnfl d -> dnfl d' in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ, Pctx Γ) /\ (forall d, Pl d).
+Proof.
+  leq_start; try leq_cases; cbn in *; try contradiction; intuition (subst; eauto using leq_sym_all).
+  match goal with
+  | H : labsorb ?d' ?t', Hn : labsorb ?d ?t -> False, Hd : lsub_leq ?d ?d', Ht : tm_leq ?t ?t' |- False =>
+      exact (Hn (leq_labsorb _ _ _ _ (proj2 (proj2 (proj2 leq_sym_all)) _ _ Hd)
+                   (proj1 (proj2 leq_sym_all) _ _ Ht) H))
+  end.
+Qed.

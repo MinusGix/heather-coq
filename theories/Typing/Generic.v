@@ -7,7 +7,7 @@
     (for decidability).  Typing itself stays declarative, as in the paper.
 
     An instance fixes one computing layer [ge_layer] ([compt]: D or M). *)
-From DeLaM.Typing Require Export TypedRed Presupposition.
+From DeLaM.Typing Require Export TypedRed Presupposition StaticCode.
 
 Class GenericEq := {
   ge_layer : layer ;
@@ -250,12 +250,14 @@ Class GenericEqM (EP EM : GenericEq) := {
     [ G ; Δ ⊢[ lD ] T @ l ] -> @geq_ty EP G Δ T T' l -> lequiv (gL G) l l' ->
     @geq_ty EM G Γ (tyCTrm Δ T l) (tyCTrm Δ' T' l') lzero ;
 
-  (* boxed code is equal only to itself (06:534) *)
-  geq_tm_boxT {G Γ Δ T l} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
-    [ G ; Δ ⊢[ lC ] T @ l ] -> @geq_tm EM G Γ (boxT T) (boxT T) (tyCTyp Δ l) lzero ;
-  geq_tm_boxt {G Γ Δ t T l} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
-    [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Δ ⊢[ lC ] t : T @ l ] ->
-    @geq_tm EM G Γ (boxt t) (boxt t) (tyCTrm Δ T l) lzero ;
+  (* boxed code is compared up to level equivalence (05:1055, E11) *)
+  geq_tm_boxT {G Γ Δ T T' l} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
+    [ G ; Δ ⊢[ lC ] T @ l ] -> [ G ; Δ ⊢[ lC ] T' @ l ] -> [ G ; Δ ⊢[ lC ] T ≅ T' @ l ] -> ty_leq T T' ->
+    @geq_tm EM G Γ (boxT T) (boxT T') (tyCTyp Δ l) lzero ;
+  geq_tm_boxt {G Γ Δ t t' T l} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
+    [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Δ ⊢[ lC ] t : T @ l ] -> [ G ; Δ ⊢[ lC ] t' : T @ l ] ->
+    [ G ; Δ ⊢[ lC ] t ≅ t' : T @ l ] -> tm_leq t t' ->
+    @geq_tm EM G Γ (boxt t) (boxt t') (tyCTrm Δ T l) lzero ;
 
   gne_tm_letboxT {G Γ l1 l2 l3 l4 Δ Δ' M M' t1 t2 ν ν'} :
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 -> @geq_ctx EP G Δ Δ' ->

@@ -184,7 +184,17 @@ Lemma FM_boxT {G Γ Δ T l} : SemCtxM G Γ -> [ G ; Γ ⊢[ lM ] ] -> lwf (gL G)
 Proof.
   intros HS HΓ Hl HΔ HT ((HG & VP & VM) & VTP & VTM). split; [exact HS | split].
   - exact (VS_CTyp EP EM HΓ HΔ HΔ Hl (lequiv_refl _ _ Hl) VP VM).
-  - exact (VS_boxT EP EM HΓ Hl HΔ HT VP VM VTP VTM).
+  - exact (VS_boxT EP EM HΓ Hl HΔ HT HT (ty_leq_refl _) VP VM VTP VTM).
+Qed.
+
+(** The congruence: code up to level equivalence (E11). *)
+Lemma FM_boxT_eq {G Γ Δ T T' l} : SemCtxM G Γ -> [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
+  [ G ; Δ ⊢[ lC ] T @ l ] -> [ G ; Δ ⊢[ lC ] T' @ l ] -> ty_leq T T' -> SemTyP G Δ T T' l ->
+  SemTmM G Γ (boxT T) (boxT T') (tyCTyp Δ l) lzero.
+Proof.
+  intros HS HΓ Hl HΔ HT HT' E ((HG & VP & VM) & VTP & VTM). split; [exact HS | split].
+  - exact (VS_CTyp EP EM HΓ HΔ HΔ Hl (lequiv_refl _ _ Hl) VP VM).
+  - exact (VS_boxT EP EM HΓ Hl HΔ HT HT' E VP VM VTP VTM).
 Qed.
 
 Lemma FM_boxt {G Γ Δ T t l} : SemCtxM G Γ -> [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
@@ -193,7 +203,17 @@ Lemma FM_boxt {G Γ Δ T t l} : SemCtxM G Γ -> [ G ; Γ ⊢[ lM ] ] -> lwf (gL 
 Proof.
   intros HS HΓ Hl HΔ HT Ht ((HG & VP & VM) & VTP & VTM & VtP & VtM). split; [exact HS | split].
   - exact (VS_CTrm EP EM HG HΓ HΔ HΔ HT HT Hl (lequiv_refl _ _ Hl) VP VM VP VM VTP VTM).
-  - exact (VS_boxt EP EM HΓ Hl HΔ HT Ht VP VM VTP VTM VtP VtM).
+  - exact (VS_boxt EP EM HΓ Hl HΔ HT Ht Ht (tm_leq_refl _) VP VM VTP VTM VtP VtM).
+Qed.
+
+Lemma FM_boxt_eq {G Γ Δ T t t' l} : SemCtxM G Γ -> [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
+  [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Δ ⊢[ lC ] t : T @ l ] -> [ G ; Δ ⊢[ lC ] t' : T @ l ] -> tm_leq t t' ->
+  SemTmP G Δ t t' T l ->
+  SemTmM G Γ (boxt t) (boxt t') (tyCTrm Δ T l) lzero.
+Proof.
+  intros HS HΓ Hl HΔ HT Ht Ht' E ((HG & VP & VM) & VTP & VTM & VtP & VtM). split; [exact HS | split].
+  - exact (VS_CTrm EP EM HG HΓ HΔ HΔ HT HT Hl (lequiv_refl _ _ Hl) VP VM VP VM VTP VTM).
+  - exact (VS_boxt EP EM HΓ Hl HΔ HT Ht Ht' E VP VM VTP VTM VtP VtM).
 Qed.
 
 (** ** [letbox] *)
@@ -252,7 +272,7 @@ Proof.
   intros Hl' Hl HΔ HT HM Ht' ((HG & VP & VM') & VTP & VTM) ((_ & VΓ) & VM) (_ & _ & Vb).
   pose proof (ctx_of_ext (ctx_of_wf_ty (i := lM) eq_refl HM)) as HΓ.
   split; [exact (conj HG (VCtxS_tl EP EM VΓ)) | split].
-  - exact (VTyS_single EP EM VM (VS_boxT EP EM HΓ Hl HΔ HT VP VM' VTP VTM)).
+  - exact (VTyS_single EP EM VM (VS_boxT EP EM HΓ Hl HΔ HT HT (ty_leq_refl _) VP VM' VTP VTM)).
   - exact (VS_letboxT_beta EP EM HG Hl' Hl HΔ HT HM Ht' VP VM' VTP VTM Vb).
 Qed.
 
@@ -311,7 +331,7 @@ Proof.
   intros Hl' Hl HΔ Hc HA HM Ht' ((HG & VP & VM') & VAP & VAM & VcP & VcM) ((_ & VΓ) & VM) (_ & _ & Vb).
   pose proof (ctx_of_ext (ctx_of_wf_ty (i := lM) eq_refl HM)) as HΓ.
   split; [exact (conj HG (VCtxS_tl EP EM VΓ)) | split].
-  - exact (VTyS_single EP EM VM (VS_boxt EP EM HΓ Hl HΔ HA Hc VP VM' VAP VAM VcP VcM)).
+  - exact (VTyS_single EP EM VM (VS_boxt EP EM HΓ Hl HΔ HA Hc Hc (tm_leq_refl _) VP VM' VAP VAM VcP VcM)).
   - exact (VS_letboxt_beta EP EM HG Hl' Hl HΔ HA Hc HM Ht' VP VM' VAP VAM VcP VcM Vb).
 Qed.
 
@@ -371,6 +391,11 @@ Ltac m_P :=
       lazymatch i with lM => fail | _ => idtac end;
       lazymatch goal with _ : SemTy EP EM G Δ T T' l |- _ => fail | _ =>
         pose proof (proj1 (proj2 (proj2 (proj2 (fundamentalS_le EP EM)))) _ _ _ _ _ _ H
+                      ltac:(unfold lle; cbn; lia)) end
+  | H : eq_tm ?G ?i ?Δ ?t ?t' ?T ?l |- _ =>
+      lazymatch i with lM => fail | _ => idtac end;
+      lazymatch goal with _ : SemTm EP EM G Δ t t' T l |- _ => fail | _ =>
+        pose proof (proj2 (proj2 (proj2 (proj2 (fundamentalS_le EP EM)))) _ _ _ _ _ _ _ H
                       ltac:(unfold lle; cbn; lia)) end
   | H : eq_ctx ?G lD ?Δ ?Δ' |- _ =>
       lazymatch goal with _ : SemCtxEq EP EM G Δ Δ' |- _ => fail | _ =>
@@ -465,6 +490,10 @@ Ltac us_move :=
       pose proof (dnfl_usubst d φ); clear H
   | H : in_ctx ?Γ0 _ _ _ |- _ => lazymatch Γ0 with ucsubst _ _ => fail | _ => idtac end;
       pose proof (in_ctx_usubst _ _ _ _ φ H); clear H
+  | H : ty_leq ?T _ |- _ => lazymatch T with usubst_ty _ _ => fail | _ => idtac end;
+      pose proof (proj1 leq_usubst_all _ _ φ φ (fun _ => leqv_refl _) H); clear H
+  | H : tm_leq ?t _ |- _ => lazymatch t with usubst_tm _ _ => fail | _ => idtac end;
+      pose proof (proj1 (proj2 leq_usubst_all) _ _ φ φ (fun _ => leqv_refl _) H); clear H
   end end.
 
 (** The global variables' entries: their induction hypotheses at [φ]. *)
@@ -509,6 +538,7 @@ Proof.
   all: try solve [ first [ simple eapply (FM_CTyp EP EM) | simple eapply (FM_CTyp_eq EP EM)
                          | simple eapply (FM_CTrm EP EM) | simple eapply (FM_CTrm_eq EP EM)
                          | simple eapply (FM_boxT EP EM) | simple eapply (FM_boxt EP EM)
+                         | simple eapply (FM_boxT_eq EP EM) | simple eapply (FM_boxt_eq EP EM)
                          | simple eapply (FM_letboxT EP EM) | simple eapply (FM_letboxT_cong EP EM)
                          | simple eapply (FM_letboxT_beta EP EM)
                          | simple eapply (FM_letboxt EP EM) | simple eapply (FM_letboxt_cong EP EM)

@@ -31,6 +31,7 @@ theories/Typing/GStatic.v
 theories/Typing/RecInst.v
 theories/Typing/Presupposition.v
 theories/Typing/CtxConv.v
+theories/Typing/StaticCode.v
 theories/Typing/TypedRed.v
 theories/Typing/Generic.v
 theories/Typing/DeclInstance.v
@@ -70,6 +71,8 @@ theories/Validity/GvarS.v
 theories/Validity/ModalS.v
 theories/Validity/LetboxS.v
 theories/Validity/FundamentalS.v
+theories/Validity/ReducibleP.v
+theories/Validity/DeclConsequencesP.v
 theories/Validity/FundamentalM.v
 theories/Validity/Reducible.v
 theories/Validity/DeclConsequences.v

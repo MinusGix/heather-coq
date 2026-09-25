@@ -144,8 +144,8 @@ Proof.
   - intros * HΓ HΔ HT HTT Hl. pose proof (decl_geq_ctx _ _ HΔ) as HΔ'.
     apply eqty_CTrm; [exact HΓ | exact (eqctx_wf_l (i := lD) eq_refl HΔ') | exact HΔ' | exact HT
                      | exact HTT | exact Hl].
-  - intros; apply eqtm_refl; now apply wf_boxT.
-  - intros; apply eqtm_refl; now apply wf_boxt.
+  - intros; now apply eqtm_boxT.
+  - intros; now apply eqtm_boxt.
   - intros * Hl1 Hl2 HΔ HM HMM HM' Ht Ht2 (Hn & Hn' & Hν).
     pose proof (decl_geq_ctx _ _ HΔ) as HΔ'.
     refine (conj _ (conj _ _)); [constructor; auto .. |].

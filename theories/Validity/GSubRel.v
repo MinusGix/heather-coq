@@ -30,9 +30,10 @@ Definition GObjRel (G' : gctx) (D : gdecl) (o o' : gobj) : Prop :=
   (* a context variable may go to related contexts (M3_DESIGN.md E9) *)
   | gdCtx, GCtx Δ, GCtx Δ' => @CtxRelG EP LR_P G' Δ Δ' /\ @CtxRelG EM LR_P G' Δ Δ'
   | gdTy _ _ _, GId x, GId x' => x = x'
-  | gdTy Δ i l, GTy T, GTy T' => (lle i lC -> T = T') /\ VTyGP G' Δ T T' l /\ VTyGM G' Δ T T' l
+  (* static images are compared up to level equivalence (E11) *)
+  | gdTy Δ i l, GTy T, GTy T' => (lle i lC -> ty_leq T T') /\ VTyGP G' Δ T T' l /\ VTyGM G' Δ T T' l
   | gdTm _ _ _ _, GId x, GId x' => x = x'
-  | gdTm Δ _ A l, GTm t, GTm t' => t = t' /\ VTmGP G' Δ t t' A l /\ VTmGM G' Δ t t' A l
+  | gdTm Δ _ A l, GTm t, GTm t' => tm_leq t t' /\ VTmGP G' Δ t t' A l /\ VTmGM G' Δ t t' A l
   | _, _, _ => False
   end.
 
@@ -61,14 +62,15 @@ Proof.
   unfold gwk_to; cbn. now rewrite HL.
 Qed.
 
-(** Related substitutions agree on static bindings, so they send static
-    code to the same code ([static_gsubst]). *)
+(** Related substitutions agree on static bindings up to level
+    equivalence, so they send static code to level-equivalent code
+    ([static_gsubst]). *)
 Lemma GSubRel_agree {G' G σ σ'} : GSubRel G' G σ σ' -> gsub_agree G σ σ'.
 Proof.
   intros Hσ n D Hin HS. pose proof (gsr_rel _ _ _ _ Hσ _ _ Hin) as R.
-  destruct D; cbn in R, HS; destruct (σ n), (σ' n); cbn in R; try contradiction; try congruence.
-  - f_equal; exact (proj1 R HS).
-  - f_equal; exact (proj1 R).
+  destruct D; cbn in R, HS; destruct (σ n), (σ' n); cbn in R |- *; try contradiction; try congruence.
+  - exact (proj1 R HS).
+  - exact (proj1 R).
 Qed.
 
 (** ** Restriction to a prefix of the global context *)
@@ -158,9 +160,9 @@ Proof.
     destruct (σ n), (σ' n); cbn; try tauto; try congruence;
     try (intros [XP XM]; split; apply CtxRelG_sym; assumption).
   - destruct HD as [HP HM]. intros (XE & XP & XM).
-    refine (conj (fun Hi => eq_sym (XE Hi)) (conj _ _));
+    refine (conj (fun Hi => ty_leq_sym _ _ (XE Hi)) (conj _ _));
       [exact (VTyG_transport (HP _ _ _ Hσ) (VTyG_sym XP)) | exact (VTyG_transport (HM _ _ _ Hσ) (VTyG_sym XM))].
-  - destruct HD as (HP & HM & HAP & HAM). intros (<- & XP & XM). split; [reflexivity | split].
+  - destruct HD as (HP & HM & HAP & HAM). intros (XE & XP & XM). split; [exact (tm_leq_sym _ _ XE) | split].
     + apply (VTmG_transport (HP _ _ _ Hσ)) in XP.
       eapply VTmG_conv; [exact (VTmG_sym XP)|].
       apply VTyG_sym, (VTyG_transport (HP _ _ _ Hσ)), (HAP _ _ _ Hσ).

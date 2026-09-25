@@ -53,9 +53,9 @@ Proof.
     change (gren_ty ?x ?ξ) with (gren x ξ); change (gren_tm ?x ?ξ) with (gren x ξ).
   - intros (HP & HM). change (gcren ?x ?ξ) with (gren x ξ). rewrite <- !(gwa_gren γ) by exact Hne.
     split; eapply CtxRelG_gwk; eassumption.
-  - intros (HE & HP & HM). refine (conj (fun Hi => f_equal (fun x => gren x γ) (HE Hi)) (conj _ _));
+  - intros (HE & HP & HM). refine (conj (fun Hi => proj1 leq_gren_all _ _ _ (HE Hi)) (conj _ _));
       rewrite <- !(gwa_gren γ) by exact Hne; apply (VTyG_gwk (G := G')); assumption.
-  - intros (HE & HP & HM). refine (conj (f_equal (fun x => gren x γ) HE) (conj _ _));
+  - intros (HE & HP & HM). refine (conj (proj1 (proj2 leq_gren_all) _ _ _ HE) (conj _ _));
       rewrite <- !(gwa_gren γ) by exact Hne; apply (VTmG_gwk (G := G')); assumption.
 Qed.
 

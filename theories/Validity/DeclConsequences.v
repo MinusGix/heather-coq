@@ -7,7 +7,7 @@
     or term bindings ([ctx_only]), whose global variables would be closed
     neutrals. *)
 From DeLaM.Typing Require Export DeclInstance.
-From DeLaM.Validity Require Export Reducible.
+From DeLaM.Validity Require Export Reducible DeclConsequencesP.
 
 Section DeclConsequences.
 
@@ -22,50 +22,10 @@ Local Instance LRM_laws : VPLaws (@lr_vp LRM) := vpM_laws DEP DEM.
 
 (** ** Reducibility *)
 
-Lemma redP_eqty G Γ T T' l : [ G ; Γ ⊢[ lD ] T ≅ T' @ l ] -> @LRty DEP LR_P l G Γ T T'.
-Proof. intros H; exact (proj1 (reducibleP_eqty DEP DEM H)). Qed.
-Lemma redP_eqtm G Γ t t' T l : [ G ; Γ ⊢[ lD ] t ≅ t' : T @ l ] -> @LRtm DEP LR_P l G Γ T T t t'.
-Proof. intros H; exact (proj1 (reducibleP_eqtm DEP DEM H)). Qed.
 Lemma redM_eqty G Γ T T' l : [ G ; Γ ⊢[ lM ] T ≅ T' @ l ] -> @LRty DEM LRM l G Γ T T'.
 Proof. intros H; exact (reducibleM_eqty DEP DEM H). Qed.
 Lemma redM_eqtm G Γ t t' T l : [ G ; Γ ⊢[ lM ] t ≅ t' : T @ l ] -> @LRtm DEM LRM l G Γ T T t t'.
 Proof. intros H; exact (reducibleM_eqtm DEP DEM H). Qed.
-
-(** ** Layer P *)
-
-Theorem decl_pi_inj {G Γ l l1 l2 l3 l4 A A' B B'} :
-  [ G ; Γ ⊢[ lD ] tyPi l1 l2 A B ≅ tyPi l3 l4 A' B' @ l ] ->
-  lequiv (gL G) l3 l1 /\ lequiv (gL G) l4 l2 /\
-  [ G ; Γ ⊢[ lD ] A ≅ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢[ lD ] B ≅ B' @ l2 ].
-Proof. exact (pi_inj (E := DEP) (LP := LR_P) redP_eqty). Qed.
-
-Theorem decl_U_inj {G Γ l l' k} : [ G ; Γ ⊢[ lD ] tyU l ≅ tyU l' @ k ] -> lequiv (gL G) l' l.
-Proof. exact (U_inj (E := DEP) (LP := LR_P) redP_eqty). Qed.
-
-Theorem decl_whnf_normalization_tm {G Γ t T l} : [ G ; Γ ⊢[ lD ] t : T @ l ] ->
-  exists w, reds t w /\ whnf w.
-Proof.
-  intros H. destruct (whnf_normalization_tm (E := DEP) (LP := LR_P) redP_eqtm H) as (w & Hw & Hwh).
-  exists w; split; [exact (tmred_red _ _ _ _ _ _ _ Hw) | exact Hwh].
-Qed.
-
-Theorem decl_whnf_normalization_ty {G Γ T l} : [ G ; Γ ⊢[ lD ] T @ l ] ->
-  exists W, reds_ty T W /\ whnf_ty W.
-Proof.
-  intros H. destruct (whnf_normalization_ty (E := DEP) (LP := LR_P) redP_eqty H) as (W & HW & HWh).
-  exists W; split; [exact (tyred_red _ _ _ _ _ _ HW) | exact HWh].
-Qed.
-
-Theorem decl_closed_nat_canonicity {G t} : ctx_only G -> [ G ; cnil ⊢[ lD ] t : tyNat @ lzero ] ->
-  exists n, [ G ; cnil ⊢[ lD ] t ≅ numeral n : tyNat @ lzero ].
-Proof. exact (closed_nat_canonicity (E := DEP) (LP := LR_P) redP_eqtm). Qed.
-
-Theorem decl_nat_not_pi {G Γ k l l' A B} : ~ [ G ; Γ ⊢[ lD ] tyNat ≅ tyPi l l' A B @ k ].
-Proof. exact (nat_not_pi (E := DEP) (LP := LR_P) redP_eqty). Qed.
-Theorem decl_nat_not_U {G Γ k l} : ~ [ G ; Γ ⊢[ lD ] tyNat ≅ tyU l @ k ].
-Proof. exact (nat_not_U (E := DEP) (LP := LR_P) redP_eqty). Qed.
-Theorem decl_U_not_pi {G Γ k l l1 l2 A B} : ~ [ G ; Γ ⊢[ lD ] tyU l ≅ tyPi l1 l2 A B @ k ].
-Proof. exact (U_not_pi (E := DEP) (LP := LR_P) redP_eqty). Qed.
 
 (** ** Layer M *)
 

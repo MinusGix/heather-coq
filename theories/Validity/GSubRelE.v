@@ -94,6 +94,22 @@ Proof.
   - exact (GRel0_cons H3 R').
 Qed.
 
+(** Extension by related objects, one on each side. *)
+Lemma GSubRel_cons2 {G' G σ σ' D o o'} : GSubRel G' G σ σ' -> dnfo o -> dnfo o' ->
+  gobj_wf G' o (gdecl_gsubst D σ) -> gobj_wf G' o' (gdecl_gsubst D σ') ->
+  GObjRel G' (gdecl_gsubst D σ) o o' -> GObjRel G' (gdecl_gsubst D σ) o o ->
+  GObjRel G' (gdecl_gsubst D σ') o' o' ->
+  GSubRel G' (gext G D) (gcons σ o) (gcons σ' o').
+Proof.
+  intros [HL Hl Hr H1 H2 H3] Ho Ho' Hw Hw' R Rl Rr. constructor.
+  - exact HL.
+  - exact (gsub_wf_cons Hl Ho Hw).
+  - exact (gsub_wf_cons Hr Ho' Hw').
+  - exact (GRel0_cons H1 R).
+  - exact (GRel0_cons H2 Rl).
+  - exact (GRel0_cons H3 Rr).
+Qed.
+
 (** Pushing under the binding. *)
 Lemma GSubRel_up_id {G' G σ σ' D} : GSubRel G' G σ σ' ->
   [ ⊢ gext G' (gdecl_gsubst D σ) ] ->
