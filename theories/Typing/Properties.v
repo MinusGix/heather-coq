@@ -244,7 +244,12 @@ Ltac wk_premise :=
         | solve [eapply wf_tm_retype;
                  [match goal with IH : _ |- _ => eapply IH; solve [eauto 12 with wk] end | wk_eq]]
         | solve [eapply eq_tm_retype;
-                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 12 with wk] end | wk_eq]] ].
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 12 with wk] end | wk_eq]]
+        (* the recursors' motive instances (M3_DESIGN.md E10) *)
+        | solve [eapply wf_ty_regty;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 12 with wk] end | wk_eq]]
+        | solve [eapply eq_ty_regty;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 12 with wk] end | wk_eq | wk_eq]] ].
 
 (** The lookup-typed local substitution of [u^δ]/[U^δ]: its entries are
     renamed, and its target context [Δ] is untouched. *)
@@ -397,9 +402,9 @@ Ltac wk_manual :=
   | |- wf_tm _ _ _ (elimt _ _ _ _ _ _ _) _ _ =>
       eapply wf_elimt; [ .. | wk_motive | wk_motive | wk_brctx | wk_branches | | ]; wk_premise
   | |- eq_tm _ _ _ (elimT _ _ _ _ _ (boxT _)) _ _ _ =>
-      eapply eqtm_elimT_beta; [wk_premise | now apply redT_ren]
+      eapply eqtm_elimT_beta; [wk_premise | now apply redT_ren | wk_premise]
   | |- eq_tm _ _ _ (elimt _ _ _ _ _ _ (boxt _)) _ _ _ =>
-      eapply eqtm_elimt_beta; [wk_premise | now apply redt_ren]
+      eapply eqtm_elimt_beta; [wk_premise | now apply redt_ren | wk_premise]
   | |- eq_tm _ _ _ (elimT _ _ _ _ _ _) _ _ _ =>
       eapply eqtm_elimT;
       [ .. | wk_motive | wk_motive | wk_motive | wk_motive | wk_motive | wk_motive

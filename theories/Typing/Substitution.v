@@ -363,6 +363,9 @@ Ltac sub_step :=
             | solve [eapply eqtm_beta; sub_premises] | solve [eapply eqtm_eta; sub_premises] ]
   end.
 
+(** The recursors' specification laws (defined below). *)
+Ltac sub_rec_rw := fail.
+
 Ltac sub_premise :=
   fix_layer;
   first [ solve [eauto 8 with sub]
@@ -371,7 +374,14 @@ Ltac sub_premise :=
                  | sub_rw; reflexivity]]
         | solve [eapply eq_tm_retype;
                  [match goal with IH : _ |- _ => eapply IH; solve [eauto 12 with sub] end
-                 | sub_rw; reflexivity]] ].
+                 | sub_rw; reflexivity]]
+        (* the recursors' motive instances (M3_DESIGN.md E10) *)
+        | solve [eapply wf_ty_regty;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 12 with sub] end
+                 | sub_rec_rw; reflexivity]]
+        | solve [eapply eq_ty_regty;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 12 with sub] end
+                 | sub_rec_rw; reflexivity | sub_rec_rw; reflexivity]] ].
 
 Ltac sub_manual :=
   match goal with
@@ -877,7 +887,7 @@ Ltac sub_branches :=
         rewrite brRes_subst in X by (first [exact Hk | exact (lsub_wf_dnf Hd)]); exact X ]
   end.
 
-Ltac sub_rec_rw :=
+Ltac sub_rec_rw ::=
   match goal with Hd : lsub_wf _ _ _ ?d _ |- _ =>
     rewrite ?mkrb_subst;
     rewrite ?motT_subst, ?mott_subst by first [hd_tac | exact (lsub_wf_dnf Hd)]
@@ -921,13 +931,13 @@ Ltac sub_manual2 :=
       match goal with
       | w : wf_tm _ _ _ (elimT _ _ _ _ _ (boxT _)) _ _, Hd : lsub_wf _ _ _ ?d _ |- _ =>
           destruct (elimT_rb_shape _ _ _ _ _ _ _ _ _ _ _ w) as (? & ? & ? & ->);
-          eapply eqtm_elimT_beta; [sub_premise | apply redT_subst; [exact (lsub_wf_dnf Hd) | assumption]]
+          eapply eqtm_elimT_beta; [sub_premise | apply redT_subst; [exact (lsub_wf_dnf Hd) | assumption] | sub_premise]
       end
   | |- eq_tm _ _ _ (elimt _ _ _ _ _ _ (boxt _)) _ _ _ =>
       match goal with
       | w : wf_tm _ _ _ (elimt _ _ _ _ _ _ (boxt _)) _ _, Hd : lsub_wf _ _ _ ?d _ |- _ =>
           destruct (elimt_rb_shape _ _ _ _ _ _ _ _ _ _ _ _ w) as (? & ? & ? & ->);
-          eapply eqtm_elimt_beta; [sub_premise | apply redt_subst; [exact (lsub_wf_dnf Hd) | assumption]]
+          eapply eqtm_elimt_beta; [sub_premise | apply redt_subst; [exact (lsub_wf_dnf Hd) | assumption] | sub_premise]
       end
   | |- eq_tm _ _ _ (elimT _ _ _ _ _ _) _ _ _ =>
       sub_rec_rw; eapply eqtm_elimT;

@@ -461,12 +461,22 @@ Ltac gs_step :=
             | solve [eapply eqtm_beta; gs_premises] ]
   end.
 
+(** The recursors' specification laws (defined below). *)
+Ltac gs_rec_rw := fail.
+
 Ltac gs_premise :=
   first [ solve [eauto 6 with gsub]
         | solve [eapply gs_tm_regty;
                  [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gsub] end | gs_eq]]
         | solve [eapply gs_eqtm_regty;
-                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gsub] end | gs_eq]] ].
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gsub] end | gs_eq]]
+        (* the recursors' motive instances (M3_DESIGN.md E10) *)
+        | solve [eapply wf_ty_regty;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gsub] end
+                 | gs_rec_rw; reflexivity]]
+        | solve [eapply eq_ty_regty;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gsub] end
+                 | gs_rec_rw; reflexivity | gs_rec_rw; reflexivity]] ].
 
 (** The lookup-typed substitution of [u^δ]/[U^δ], under [σ]. *)
 Ltac gs_entries :=
@@ -609,7 +619,7 @@ Ltac gs_branches :=
       rewrite ?wrapMT_gsubst, ?wrapMt_gsubst in X; exact X
   end.
 
-Ltac gs_rec_rw :=
+Ltac gs_rec_rw ::=
   match goal with Hσ : gsub_wf _ ?σ _ |- _ =>
     rewrite ?mkrb_gsubst;
     rewrite ?motT_gsubst, ?mott_gsubst by first [hd_tac | exact (gsw_dnf _ _ _ Hσ)];
@@ -629,14 +639,14 @@ Ltac gs_rec :=
       | w : wf_tm _ _ _ (elimT _ _ _ _ _ (boxT _)) _ _ |- _ =>
           destruct (elimT_rb_shape _ _ _ _ _ _ _ _ _ _ _ w) as (? & ? & ? & ->);
           eapply eqtm_elimT_beta;
-          [ gs_premise | apply redT_gsubst; [exact (gsw_dnf _ _ _ Hσ) | assumption] ]
+          [ gs_premise | apply redT_gsubst; [exact (gsw_dnf _ _ _ Hσ) | assumption] | gs_premise ]
       end
   | Hσ : gsub_wf _ ?σ _ |- eq_tm _ _ _ (elimt _ _ _ _ _ _ (boxt _)) _ _ _ =>
       match goal with
       | w : wf_tm _ _ _ (elimt _ _ _ _ _ _ (boxt _)) _ _ |- _ =>
           destruct (elimt_rb_shape _ _ _ _ _ _ _ _ _ _ _ _ w) as (? & ? & ? & ->);
           eapply eqtm_elimt_beta;
-          [ gs_premise | apply redt_gsubst; [exact (gsw_dnf _ _ _ Hσ) | assumption] ]
+          [ gs_premise | apply redt_gsubst; [exact (gsw_dnf _ _ _ Hσ) | assumption] | gs_premise ]
       end
   | |- eq_tm _ _ _ (elimT _ _ _ _ _ _) _ _ _ =>
       gs_rec_rw; eapply eqtm_elimT;

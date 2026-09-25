@@ -31,8 +31,8 @@ Definition SemTmM (G : gctx) (Γ : ctx) (t t' : tm) (T : ty) (l : lvl) : Prop :=
 Lemma VCtxS_toM {G Δ} : [ G ; Δ ⊢[ lD ] ] -> @VCtxS EP EM EM LR_P G Δ -> VCtxSM G Δ.
 Proof.
   intros HΔ H G' σ σ' Hσ.
-  apply (proj1 (CtxRelG_layer LR_P LRM (mltt_wf_ctx (gs_ctx EP EM Hσ HΔ) ltac:(discriminate))
-                  (mltt_wf_ctx (gs_ctx EP EM (GSubRel_refl_r EP EM Hσ) HΔ) ltac:(discriminate)))).
+  apply (proj1 (CtxRelG_layer LR_P LRM (mltt_wf_ctx (gs_ctx EP EM Hσ HΔ compt_D) ltac:(discriminate))
+                  (mltt_wf_ctx (gs_ctx EP EM (GSubRel_refl_r EP EM Hσ) HΔ compt_D) ltac:(discriminate)))).
   exact (H _ _ _ Hσ).
 Qed.
 
@@ -41,7 +41,7 @@ Lemma VTyS_toM {G Δ A A' l} : [ G ; Δ ⊢[ lD ] A @ l ] -> [ G ; Δ ⊢[ lD ] 
 Proof.
   intros HA HA' H G' σ σ' Hσ.
   pose proof (ctx_of_wf_ty (i := lD) eq_refl HA) as HΔ.
-  apply (proj1 (VTyG_layer LR_P LRM (mltt_wf_ctx (gs_ctx EP EM Hσ HΔ) ltac:(discriminate))
+  apply (proj1 (VTyG_layer LR_P LRM (mltt_wf_ctx (gs_ctx EP EM Hσ HΔ compt_D) ltac:(discriminate))
                   (mltt_wf_ty (gs_ty EP EM Hσ HA) ltac:(discriminate))
                   (mltt_wf_ty (gs_ty EP EM (GSubRel_refl_r EP EM Hσ) HA') ltac:(discriminate)))).
   exact (H _ _ _ Hσ).

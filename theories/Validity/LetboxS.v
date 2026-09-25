@@ -246,8 +246,8 @@ Proof.
   destruct (SubRel_nf _ _ _ _ _ He) as [Ne Ne'].
   pose proof (SubRel_refl_r He) as He'.
   (* the contexts *)
-  pose proof (gs_ctx EP EM Hσ HΔ) as HD. pose proof (gs_ctx EP EM Hσr HΔ') as HD'.
-  pose proof (gs_ctx EP EM Hσr HΔ) as HDr.
+  pose proof (gs_ctx EP EM Hσ HΔ compt_D) as HD. pose proof (gs_ctx EP EM Hσr HΔ' compt_D) as HD'.
+  pose proof (gs_ctx EP EM Hσr HΔ compt_D) as HDr.
   pose proof (VΓ _ _ _ Hσ _ _ (gwk_ok_id G')) as XΓ; cbn [gwa] in XΓ.
   pose proof (SubRel_transport _ _ _ _ _ _ (CtxRel_sym _ _ _ XΓ) He') as He'r.
   pose proof (CtxRelG_escape_P EP EM (VEqP _ _ _ Hσ) HD HD') as [HgDD' HDD'].
@@ -478,8 +478,8 @@ Proof.
   destruct (SubRel_nf _ _ _ _ _ He) as [Ne Ne'].
   pose proof (SubRel_refl_r He) as He'.
   (* the contexts *)
-  pose proof (gs_ctx EP EM Hσ HΔ) as HD. pose proof (gs_ctx EP EM Hσr HΔ') as HD'.
-  pose proof (gs_ctx EP EM Hσr HΔ) as HDr.
+  pose proof (gs_ctx EP EM Hσ HΔ compt_D) as HD. pose proof (gs_ctx EP EM Hσr HΔ' compt_D) as HD'.
+  pose proof (gs_ctx EP EM Hσr HΔ compt_D) as HDr.
   pose proof (VΓ _ _ _ Hσ _ _ (gwk_ok_id G')) as XΓ; cbn [gwa] in XΓ.
   pose proof (SubRel_transport _ _ _ _ _ _ (CtxRel_sym _ _ _ XΓ) He') as He'r.
   pose proof (CtxRelG_escape_P EP EM (VEqP _ _ _ Hσ) HD HD') as [HgDD' HDD'].
@@ -718,7 +718,7 @@ Proof.
   destruct (SubRel_dnf _ _ _ _ _ He) as [De De'].
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
   pose proof (gsw_dnf _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ)) as Nσ'.
-  pose proof (gs_ctx EP EM Hσ HΔ) as HD. pose proof (gs_ctx EP EM Hσr HΔ) as HDr.
+  pose proof (gs_ctx EP EM Hσ HΔ compt_D) as HD. pose proof (gs_ctx EP EM Hσr HΔ compt_D) as HDr.
   pose proof (CtxRelG_escape_P EP EM (VΔP _ _ _ Hσ) HD HDr) as [_ HDDr].
   (* the code is static: the same under both substitutions *)
   pose proof ((proj1 (proj2 (proj2 static_gsubst))) _ _ _ _ _ HT (lle_refl _) _ _ (GSubRel_agree EP EM Hσ)) as ET.
@@ -775,7 +775,7 @@ Proof.
   destruct (SubRel_dnf _ _ _ _ _ He) as [De De'].
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
   pose proof (gsw_dnf _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ)) as Nσ'.
-  pose proof (gs_ctx EP EM Hσ HΔ) as HD. pose proof (gs_ctx EP EM Hσr HΔ) as HDr.
+  pose proof (gs_ctx EP EM Hσ HΔ compt_D) as HD. pose proof (gs_ctx EP EM Hσr HΔ compt_D) as HDr.
   pose proof (CtxRelG_escape_P EP EM (VΔP _ _ _ Hσ) HD HDr) as [_ HDDr].
   pose proof (gs_ty EP EM Hσ HA) as HA1.
   assert (HAσ'D : [ G' ; Δ⦃σ⦄ ⊢[ lD ] A⦃σ'⦄ @ l ])

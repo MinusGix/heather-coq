@@ -117,6 +117,86 @@ Proof. intros Hx. cbn. f_equal. exact (lnorm_nf _ Hx). Qed.
 Lemma ptm_id_obj j x : nf_l x -> ptm (GTm (gvar j (lshift 0))) x = ptm (GId j) x.
 Proof. intros Hx. cbn. f_equal. exact (lnorm_nf _ Hx). Qed.
 
+(** Equivalent substitutions in the recursors' scopes. *)
+Lemma gsub_equiv_up' L Ψ D σ τ : gsub_equiv (mkG L Ψ) σ τ -> gsub_equiv (mkG L (D :: Ψ)) (gup σ) (gup τ).
+Proof. exact (gsub_equiv_up D). Qed.
+
+Lemma guwkn_pt n σ m : guwkn n σ m = Nat.iter n (fun o => gouren o S) (σ m).
+Proof.
+  induction n as [|n IH]; [reflexivity|].
+  change (guwkn (S n) σ m) with (gouren (guwkn n σ m) S). now rewrite IH.
+Qed.
+Lemma iter_gouren_GId n j : Nat.iter n (fun o => gouren o S) (GId j) = GId j.
+Proof.
+  induction n as [|n IH]; [reflexivity|].
+  change (gouren (Nat.iter n (fun o => gouren o S) (GId j)) S = GId j). now rewrite IH.
+Qed.
+Lemma iter_gouren_id_obj n D j ρ :
+  Nat.iter n (fun o => gouren o S) (id_obj D j) = id_obj (gdecl_uren D ρ) j.
+Proof.
+  induction n as [|n IH]; [destruct D; reflexivity|].
+  change (gouren (Nat.iter n (fun o => gouren o S) (id_obj D j)) S = id_obj (gdecl_uren D ρ) j).
+  rewrite IH. destruct D; reflexivity.
+Qed.
+
+Lemma gsub_equiv_uwkn n G σ τ : gsub_equiv G σ τ -> gsub_equiv (gctx_uwk n G) (guwkn n σ) (guwkn n τ).
+Proof.
+  intros H m D' Hin. unfold gctx_uwk in Hin; cbn [gΨ] in Hin.
+  destruct (in_gctx_uren_inv _ _ _ _ Hin) as (D & HD & ->).
+  rewrite !guwkn_pt. destruct (H _ _ HD) as [E | (j & E1 & E2)].
+  - left; now rewrite E.
+  - right; exists j; rewrite E1, E2, iter_gouren_GId, (iter_gouren_id_obj _ _ _ (ush n)); split; reflexivity.
+Qed.
+
+Lemma gsub_equiv_recGT G σ τ : gsub_equiv G σ τ -> gsub_equiv (recGT G) (gup (guwk σ)) (gup (guwk τ)).
+Proof.
+  intros H. pose proof (gsub_equiv_uwkn 1 _ _ _ H) as Hu.
+  unfold recGT, gctx_uwk in *; cbn [gL gΨ] in *. apply gsub_equiv_up'; exact Hu.
+Qed.
+Lemma gsub_equiv_recGt G σ τ :
+  gsub_equiv G σ τ -> gsub_equiv (recGt G) (gup (gup (guwk σ))) (gup (gup (guwk τ))).
+Proof.
+  intros H. pose proof (gsub_equiv_uwkn 1 _ _ _ H) as Hu.
+  unfold recGt, gctx_uwk in *; cbn [gL gΨ] in *. apply gsub_equiv_up', gsub_equiv_up'; exact Hu.
+Qed.
+Lemma gsub_equiv_brG k G σ τ : k < 13 -> gsub_equiv G σ τ -> gsub_equiv (brG k G) (gbsub k σ) (gbsub k τ).
+Proof.
+  intros Hk H. pose proof (gsub_equiv_uwkn (br_nu k) _ _ _ H) as Hu.
+  unfold brG, gbsub, gctx_uwk in *; cbn [gL gΨ] in *.
+  do 13 (destruct k; [cbn [brDecls List.app br_ng br_nu br_ar gupn Nat.iter] in *;
+                      repeat apply gsub_equiv_up'; exact Hu|]).
+  lia.
+Qed.
+
+Lemma mkrb_congr MT MT' Mt Mt' bs bs' : MT = MT' -> Mt = Mt' -> (forall k, k < 13 -> bs k = bs' k) ->
+  mkrb MT Mt bs = mkrb MT' Mt' bs'.
+Proof.
+  intros -> -> H. unfold mkrb. cbn [tup_from br_ar].
+  repeat (rewrite H by lia). reflexivity.
+Qed.
+
+Ltac gst_scope :=
+  match goal with
+  | Hτ : forall n, dnfo (?τ n), IH : forall σ' τ', gsub_equiv (recGT _) σ' τ' -> _ -> _ |- _ =>
+      apply IH; [apply gsub_equiv_recGT; assumption | exact (gdnf_gup _ (gdnf_guwk _))]
+  | Hτ : forall n, dnfo (?τ n), IH : forall σ' τ', gsub_equiv (recGt _) σ' τ' -> _ -> _ |- _ =>
+      apply IH; [apply gsub_equiv_recGt; assumption | exact (gdnf_gup _ (gdnf_gup _ (gdnf_guwk _)))]
+  end.
+Ltac gst_branch :=
+  let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
+  match goal with
+  | Hτ : forall n, dnfo (?τ n),
+    IH : forall k, k < 13 -> forall σ' τ', gsub_equiv (brG k _) σ' τ' -> _ -> _ |- _ =>
+      apply (IH k Hk); [apply gsub_equiv_brG; assumption | exact (gdnf_gbsub _ _ Hτ)]
+  end.
+Ltac gst_rec :=
+  lazymatch goal with
+  | |- (elimT _ _ (mkrb _ _ _) _ _ _)⦃_⦄ = _ => rewrite !gs_elimT
+  | |- (elimt _ _ (mkrb _ _ _) _ _ _ _)⦃_⦄ = _ => rewrite !gs_elimt
+  end;
+  rewrite !mkrb_gsubst; f_equal;
+  try (apply mkrb_congr; [gst_scope | gst_scope | gst_branch]); eauto.
+
 Theorem equiv_gsubst :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] ->
@@ -129,9 +209,10 @@ Theorem equiv_gsubst :
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; try exact I;
-    cbn [gsubst GSubst_ty GSubst_tm GSubst_ctx]; simpl;
-    try solve [eauto | f_equal; eauto].
+  apply typing_mut; intros; try exact I.
+  (* the recursors: their scopes *)
+  all: try solve [gst_rec].
+  all: cbn [gsubst GSubst_ty GSubst_tm GSubst_ctx]; simpl; try solve [eauto | f_equal; eauto].
   (* context variables *)
   1: match goal with
     | Ha : gsub_equiv _ ?σ ?τ, Hc : gctx_var _ ?g |- _ =>

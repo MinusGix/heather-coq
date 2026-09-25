@@ -27,6 +27,7 @@ theories/Typing/Functionality.v
 theories/Typing/RecGSubst.v
 theories/Typing/GSubstitution.v
 theories/Typing/GStatic.v
+theories/Typing/RecInst.v
 theories/Typing/Presupposition.v
 theories/Typing/CtxConv.v
 theories/Typing/TypedRed.v

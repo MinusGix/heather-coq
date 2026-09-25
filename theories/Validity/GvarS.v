@@ -168,8 +168,8 @@ Lemma VSubKS {i0 G Γ Δ d d'} : [ G ; Γ ⊢[ i0 ] ] -> [ G ; Δ ⊢[ lD ] ] ->
   forall G' σ σ', GSubRel G' G σ σ' -> VSubK G' Γ⦃σ⦄ d⦃σ⦄ d'⦃σ'⦄ Δ⦃σ⦄.
 Proof.
   intros HΓ HΔ VΔ Ht Nd Ht' Nd' Hv G' σ σ' Hσ G'' γ Hγ.
-  pose proof (gsub_cvars_wf _ _ _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ) HΓ) as CΓ.
-  pose proof (gsub_cvars_wf _ _ _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ) HΔ) as CΔ.
+  pose proof (proj1 (gsr_cvars _ _ Hσ HΓ)) as CΓ.
+  pose proof (proj1 (gsr_cvars _ _ Hσ HΔ)) as CΔ.
   destruct (dnfl_gs (d := d) Hσ Nd) as [Nd1 _]. destruct (dnfl_gs (d := d') Hσ Nd') as [_ Nd2].
   apply VSub_intro.
   - exact (VΔ _ _ _ (GSubRel_refl_l _ _ Hσ) _ _ Hγ).
@@ -212,7 +212,7 @@ Proof.
   pose proof (gsr_rel _ _ _ _ _ _ Hσ _ _ Hin) as R.
   pose proof (gsw_var _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ) _ _ Hin) as W.
   pose proof (gsw_var _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ) _ _ Hin) as W'.
-  pose proof (mltt_wf_ctx (gs_ctx EP EM Hσ HΔ) ltac:(discriminate)) as MΔ.
+  pose proof (mltt_wf_ctx (gs_ctx EP EM Hσ HΔ compt_D) ltac:(discriminate)) as MΔ.
   cbn [gsubst GSubst_ty gsubst_ty]. fold (d⦃σ⦄) (d'⦃σ'⦄).
   cbn in R, W, W'. destruct (σ U) as [x | | T | ], (σ' U) as [x' | | T' | ]; cbn in R, W, W' |- *;
     try contradiction.
@@ -234,7 +234,7 @@ Lemma VS_gvar {i0 G Γ u Δ i' A l d d'}
 Proof.
   intros Hin Hi HΓ HA VΔ VA Ht Nd Ht' Nd' Hv Hvv G' σ σ' Hσ.
   pose proof (ctx_of_wf_ty (i := lD) eq_refl HA) as HΔ.
-  pose proof (mltt_wf_ctx (gs_ctx EP EM Hσ HΔ) ltac:(discriminate)) as MΔ.
+  pose proof (mltt_wf_ctx (gs_ctx EP EM Hσ HΔ compt_D) ltac:(discriminate)) as MΔ.
   pose proof (mltt_wf_ty (gs_ty EP EM Hσ HA) ltac:(discriminate)) as MA.
   pose proof (VSubKS HΓ HΔ VΔ Ht Nd Ht' Nd' Hv _ _ _ Hσ) as K.
   pose proof (VSubKS HΓ HΔ VΔ Ht Nd Ht Nd Hvv _ _ _ (GSubRel_refl_l _ _ Hσ)) as Kd.

@@ -238,9 +238,9 @@ Ltac us_manual :=
   | |- wf_tm _ _ _ (elimt _ _ _ _ _ _ _) _ _ =>
       eapply wf_elimt; [ .. | us_branches | us_branches | | ]; eauto with us
   | |- eq_tm _ _ _ (elimT _ _ _ _ _ (boxT _)) _ _ _ =>
-      eapply eqtm_elimT_beta; [eauto | now apply redT_usubst]
+      eapply eqtm_elimT_beta; [eauto | now apply redT_usubst | eauto]
   | |- eq_tm _ _ _ (elimt _ _ _ _ _ _ (boxt _)) _ _ _ =>
-      eapply eqtm_elimt_beta; [eauto | now apply redt_usubst]
+      eapply eqtm_elimt_beta; [eauto | now apply redt_usubst | eauto]
   | |- eq_tm _ _ _ (elimT _ _ _ _ _ _) _ _ _ =>
       eapply eqtm_elimT; [ .. | us_branches | us_branches | us_branches | us_branches | ];
       eauto with us

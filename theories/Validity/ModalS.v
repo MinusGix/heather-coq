@@ -111,8 +111,8 @@ Proof.
   rewrite !gs_tyCTyp, !gwa_tyCTyp. cbn [subst Subst_ty subst_ty].
   pose proof (SubRel_ctx He) as HΘ; rewrite (@gm_layer_M EP EM EMl) in HΘ.
   pose proof (ctx_glob _ _ _ HΘ) as HG''.
-  pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM Hσ HΔ)) as HD.
-  pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM (GSubRel_refl_r EP EM Hσ) HΔ')) as HD'.
+  pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM Hσ HΔ compt_D)) as HD.
+  pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM (GSubRel_refl_r EP EM Hσ) HΔ' compt_D)) as HD'.
   assert (EL : gL G'' = gL G) by (rewrite (proj1 Hγ); exact (gsr_L _ _ _ _ _ _ Hσ)).
   eexists. apply LR_ctyp; [exact HΘ | exact HD | exact HD' | now rewrite EL | now rewrite EL |].
   pose proof (CtxRelG_gwk (VP _ _ _ Hσ) Hγ) as XP. pose proof (CtxRelG_gwk (VM _ _ _ Hσ) Hγ) as XM.
@@ -131,8 +131,8 @@ Proof.
   pose proof (SubRel_ctx He) as HΘ; rewrite (@gm_layer_M EP EM EMl) in HΘ.
   pose proof (ctx_glob _ _ _ HΘ) as HG''.
   pose proof (GSubRel_refl_r EP EM Hσ) as Hσr. pose proof (GSubRel_sym EP EM HG Hσ) as Hσs.
-  pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM Hσ HΔ)) as HD.
-  pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM Hσr HΔ')) as HD'.
+  pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM Hσ HΔ compt_D)) as HD.
+  pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM Hσr HΔ' compt_D)) as HD'.
   pose proof (gwa_ty Hγ HG'' (gs_ty EP EM Hσ HA)) as HA1.
   pose proof (gwa_ty Hγ HG'' (gs_ty EP EM Hσr HA')) as HA1'.
   assert (EL : gL G'' = gL G) by (rewrite (proj1 Hγ); exact (gsr_L _ _ _ _ _ _ Hσ)).
@@ -201,7 +201,7 @@ Proof.
   intros G'' γ Hγ Θ e e' He. rewrite !gwa_boxT, !gwa_tyCTyp. cbn [subst Subst_ty Subst_tm subst_ty subst_tm].
   pose proof (SubRel_ctx He) as HΘ; rewrite (@gm_layer_M EP EM EMl) in HΘ.
   pose proof (ctx_glob _ _ _ HΘ) as HG''.
-  pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM Hσ HΔ)) as HD.
+  pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM Hσ HΔ compt_D)) as HD.
   assert (EL : gL G'' = gL G) by (rewrite (proj1 Hγ); exact (gsr_L _ _ _ _ _ _ Hσ)).
   pose proof (GSubRel_refl_l EP EM Hσ) as Hσl.
   apply LRtm_boxT; [exact HΘ | exact HD | exact (gwa_ty Hγ HG'' (gs_ty EP EM Hσ HT)) | now rewrite EL
@@ -242,7 +242,7 @@ Proof.
   intros G'' γ Hγ Θ e e' He. rewrite !gwa_boxt, !gwa_tyCTrm. cbn [subst Subst_ty Subst_tm subst_ty subst_tm].
   pose proof (SubRel_ctx He) as HΘ; rewrite (@gm_layer_M EP EM EMl) in HΘ.
   pose proof (ctx_glob _ _ _ HΘ) as HG''.
-  pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM Hσ HΔ)) as HD.
+  pose proof (gwa_ctx Hγ HG'' (gs_ctx EP EM Hσ HΔ compt_D)) as HD.
   assert (EL : gL G'' = gL G) by (rewrite (proj1 Hγ); exact (gsr_L _ _ _ _ _ _ Hσ)).
   pose proof (GSubRel_refl_l EP EM Hσ) as Hσl.
   apply LRtm_boxt; [exact HΘ | exact HD | exact (gwa_ty Hγ HG'' (gs_ty EP EM Hσ HA))

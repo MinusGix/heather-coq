@@ -114,8 +114,12 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ lM ] letboxt l' l Δ T M t' t : M[lsingle t] @ l' ]
 (* the recursors on code (04:1127–1310; branch scopes in RecSpec). The
    branch contexts' well-formedness is a premise: their entries are motive
-   instances, and weakening/substitution need them as induction hypotheses *)
+   instances, and weakening/substitution need them as induction hypotheses.
+   The result type (a motive instance) is a premise too, as are the
+   congruences' instance equation and the β reducts' typing: the
+   metatheory needs them before global substitution (M3_DESIGN.md E10) *)
 | wf_elimT G Γ l1 l2 MT Mt bs l Δ t :
+    [ G ; Γ ⊢[ lM ] motT (wrapMT MT) l Δ t @ l1 ] ->
     lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
     [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] ->
     [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] ->
@@ -125,6 +129,7 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ lM ] t : tyCTyp Δ l @ lzero ] ->
     [ G ; Γ ⊢[ lM ] elimT l1 l2 (mkrb MT Mt bs) l Δ t : motT (wrapMT MT) l Δ t @ l1 ]
 | wf_elimt G Γ l1 l2 MT Mt bs l Δ T t :
+    [ G ; Γ ⊢[ lM ] mott (wrapMt Mt) l Δ T t @ l2 ] ->
     lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
     [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] ->
     [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] ->
@@ -245,6 +250,7 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ lM ] t ≅ t0 : tyCTrm Δ T l2 @ lzero ] ->
     [ G ; Γ ⊢[ lM ] letboxt l1 l2 Δ T M t1 t ≅ letboxt l3 l4 Δ' T' M' t2 t0 : M[lsingle t] @ l1 ]
 | eqtm_elimT G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' t t' :
+    [ G ; Γ ⊢[ lM ] motT (wrapMT MT) l Δ t ≅ motT (wrapMT MT') l' Δ' t' @ l1 ] ->
     lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' -> lequiv (gL G) l l' ->
     [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
     [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] ->
@@ -263,6 +269,7 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ lM ] elimT l1 l2 (mkrb MT Mt bs) l Δ t ≅ elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' t'
                   : motT (wrapMT MT) l Δ t @ l1 ]
 | eqtm_elimt G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' t t' :
+    [ G ; Γ ⊢[ lM ] mott (wrapMt Mt) l Δ T t ≅ mott (wrapMt Mt') l' Δ' T' t' @ l2 ] ->
     lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' -> lequiv (gL G) l l' ->
     [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
     [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Δ' ⊢[ lD ] T' @ l' ] -> [ G ; Δ ⊢[ lD ] T ≅ T' @ l ] ->
@@ -281,12 +288,14 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ lM ] t ≅ t' : tyCTrm Δ T l @ lzero ] ->
     [ G ; Γ ⊢[ lM ] elimt l1 l2 (mkrb MT Mt bs) l Δ T t ≅ elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' t'
                   : mott (wrapMt Mt) l Δ T t @ l2 ]
-(* the schematic β rules (M3_DESIGN.md E4) *)
+(* the schematic β rules (M3_DESIGN.md E4); the reduct's typing is a premise (E10) *)
 | eqtm_elimT_beta G Γ l1 l2 rb l Δ c T k r :
     [ G ; Γ ⊢[ lM ] elimT l1 l2 rb l Δ (boxT c) : T @ k ] -> redT l1 l2 rb l Δ c = Some r ->
+    [ G ; Γ ⊢[ lM ] r : T @ k ] ->
     [ G ; Γ ⊢[ lM ] elimT l1 l2 rb l Δ (boxT c) ≅ r : T @ k ]
 | eqtm_elimt_beta G Γ l1 l2 rb l Δ T0 c T k r :
     [ G ; Γ ⊢[ lM ] elimt l1 l2 rb l Δ T0 (boxt c) : T @ k ] -> redt l1 l2 rb l Δ T0 c = Some r ->
+    [ G ; Γ ⊢[ lM ] r : T @ k ] ->
     [ G ; Γ ⊢[ lM ] elimt l1 l2 rb l Δ T0 (boxt c) ≅ r : T @ k ]
 (* computation rules: layers D and M only *)
 | eqtm_natrec_zero G i Γ l M s z : compt i -> lwf (gL G) l ->

@@ -159,6 +159,30 @@ syntactic lemma and in related global substitutions (a context variable
 goes to related contexts, as in 07a), since the recursor FT instantiates
 branch validity at `σ, Δ/g, …`.
 
+### E10. Recursor rules carry their presuppositions (logrel-coq style)
+
+Three premises are added to the recursor rules, each admissible in the
+paper's system:
+- `wf_elimT`/`wf_elimt`: the result type (the motive instance
+  `motT (wrapMT MT) l Δ t`, resp. `mott`) is well formed;
+- `eqtm_elimT`/`eqtm_elimt`: the two motive instances are equal;
+- `eqtm_elimT_beta`/`eqtm_elimt_beta`: the reduct is typed.
+
+Why: functionality has no induction hypothesis for equations, so it
+needs the instance's typing to relate its two substitution instances, and
+the instance lemma (`RecInst`: universe, then global with `g ↦ Δ`, then
+local substitution) comes after global substitution, which uses
+functionality. The instance equation of a congruence would need
+functionality of universe substitution in equivalent levels and of global
+substitution in convertible contexts (the latter after context
+conversion). The reduct's typing (subject reduction for the 13 heads) is
+needed only by presupposition: typed reductions carry their equations
+(logrel-coq), and the recursion lemma gets the reduct's typing by escape
+from its reducibility. Every metatheory lemma transports the new premises
+through its induction hypotheses (the `regty` step up to the operation's
+`motT`/`mott` law); `RecInst` builds them when a recursor is constructed
+from scratch.
+
 ## Order of work
 
 1. **Syntax** (done). Level renaming and substitution; the bundle nodes,

@@ -27,8 +27,11 @@ Local Ltac along k :=
   rewrite EG in Hw |- *; exact (k _ _ _ _ _ _ _ H _ _ Hw) || exact (k _ _ _ _ _ _ H _ _ Hw)
   || exact (k _ _ _ _ _ H _ _ Hw) || exact (k _ _ _ _ H _ _ Hw) || exact (k _ _ _ H _ _ Hw).
 
-Lemma gs_ctx {i Γ} : [ G ; Γ ⊢[ i ] ] -> [ G' ; Γ⦃σ⦄ ⊢[ i ] ].
-Proof. along (proj1 (proj2 gsubstitution)). Qed.
+Lemma gs_ctx {i Γ} : [ G ; Γ ⊢[ i ] ] -> compt i -> [ G' ; Γ⦃σ⦄ ⊢[ i ] ].
+Proof.
+  intros H Hc; pose proof (gsr_wf_l _ _ _ _ _ _ Hσ) as Hw; pose proof (GSubRel_to _ _ Hσ) as EG.
+  rewrite EG in Hw |- *; exact (proj1 (proj2 gsubstitution) _ _ _ H _ _ Hw Hc).
+Qed.
 Lemma gs_ty {i Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] -> [ G' ; Γ⦃σ⦄ ⊢[ i ] T⦃σ⦄ @ l ].
 Proof. along (proj1 (proj2 (proj2 gsubstitution))). Qed.
 Lemma gs_tm {i Γ t T l} : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G' ; Γ⦃σ⦄ ⊢[ i ] t⦃σ⦄ : T⦃σ⦄ @ l ].
@@ -73,7 +76,8 @@ Ltac s_along_at E0 LP0 :=
     | H : @VTmS _ _ _ _ G _ _ _ _ _ |- _ => clear H
     | H : @VCtxS _ _ _ _ G _ |- _ => clear H
     | H : GValid G |- _ => clear H
-    | H : wf_ctx G _ _ |- _ => pose proof (gs_ctx Hσ H); clear H
+    | H : wf_ctx G _ _ |- _ =>
+        pose proof (gs_ctx Hσ H ltac:(first [exact compt_D | exact compt_M | assumption])); clear H
     | H : wf_ty G _ _ _ _ |- _ => pose proof (gs_ty Hσ H); clear H
     | H : wf_tm G _ _ _ _ _ |- _ => pose proof (gs_tm Hσ H); clear H
     | H : eq_ty G _ _ _ _ _ |- _ => pose proof (gs_eqty Hσ H); clear H

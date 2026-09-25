@@ -12,6 +12,8 @@ Definition typeof (i : layer) : layer :=
 
 (** Layers with computation (β/η available). *)
 Definition compt (i : layer) : Prop := i = lD \/ i = lM.
+Definition compt_D : compt lD := or_introl eq_refl.
+Definition compt_M : compt lM := or_intror eq_refl.
 
 (** The layer order [V < C < D < M]. *)
 Definition lrank (i : layer) : nat := match i with lV => 0 | lC => 1 | lD => 2 | lM => 3 end.

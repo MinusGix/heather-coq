@@ -51,6 +51,16 @@ Proof. intros []; now constructor. Qed.
 Lemma GSubRel_refl_r {G' G σ σ'} : GSubRel G' G σ σ' -> GSubRel G' G σ' σ'.
 Proof. intros []; now constructor. Qed.
 
+(** Related substitutions send context variables to context variables
+    (M2; the extension to related contexts is M3_DESIGN.md E9). *)
+Lemma gsr_cvars {G' G σ σ' i Γ} : GSubRel G' G σ σ' -> [ G ; Γ ⊢[ i ] ] -> gsub_cvars σ Γ /\ gsub_cvars σ' Γ.
+Proof.
+  intros Hσ HΓ. assert (H : forall g, ctx_tail Γ = cvar g -> exists j, σ g = GId j /\ σ' g = GId j).
+  { intros g Hg. pose proof (gsr_rel _ _ _ _ Hσ _ _ (gctx_var_in _ _ (wf_ctx_tail _ _ _ _ HΓ Hg))) as X.
+    cbn in X. destruct (σ g), (σ' g); try contradiction. subst; eauto. }
+  split; intros g Hg; destruct (H g Hg) as (j & E & E'); eauto.
+Qed.
+
 (** The universe context is shared, as the global substitution lemma
     requires. *)
 Lemma GSubRel_to {G' G σ σ'} : GSubRel G' G σ σ' -> G' = gwk_to G (gΨ G').

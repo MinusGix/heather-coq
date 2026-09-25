@@ -525,6 +525,19 @@ Ltac fun_ctx :=
 Ltac fun_rec_prem :=
   match goal with
   | |- eq_ty _ lD _ ?T ?T _ => apply eqty_refl; assumption
+  (* the motive instance at [d] and [d'] (M3_DESIGN.md E10) *)
+  | Hd : lsub_eq _ _ _ ?d ?d' ?Γ |- eq_ty _ _ _ (motT _ _ _ _) (motT _ _ _ _) _ =>
+      eapply eq_ty_regty;
+      [ match goal with IH : forall Δ d d', lsub_eq _ _ Δ d d' Γ -> eq_ty _ _ _ _ _ _ |- _ =>
+          eapply IH; exact Hd end
+      | rewrite motT_subst by first [hd_tac | exact (lsub_wf_dnf (lsub_eq_l Hd))]; reflexivity
+      | rewrite motT_subst by first [hd_tac | exact (lsub_wf_dnf (lsub_eq_r Hd))]; reflexivity ]
+  | Hd : lsub_eq _ _ _ ?d ?d' ?Γ |- eq_ty _ _ _ (mott _ _ _ _ _) (mott _ _ _ _ _) _ =>
+      eapply eq_ty_regty;
+      [ match goal with IH : forall Δ d d', lsub_eq _ _ Δ d d' Γ -> eq_ty _ _ _ _ _ _ |- _ =>
+          eapply IH; exact Hd end
+      | rewrite mott_subst by first [hd_tac | exact (lsub_wf_dnf (lsub_eq_l Hd))]; reflexivity
+      | rewrite mott_subst by first [hd_tac | exact (lsub_wf_dnf (lsub_eq_r Hd))]; reflexivity ]
   | Hd : lsub_eq _ _ _ ?d ?d' ?Γ |- wf_ty (recGT _) _ _ _ _ =>
       eapply motT_subst_wf; [ first [exact (lsub_eq_l Hd) | exact (lsub_eq_r Hd)] | eassumption ]
   | Hd : lsub_eq _ _ _ ?d ?d' ?Γ |- wf_ty (recGt _) _ _ _ _ =>

@@ -122,6 +122,30 @@ Qed.
 (** Global contexts binding context variables only. *)
 Definition ctx_only (G : gctx) : Prop := forall n D, in_gctx (gΨ G) n D -> D = gdCtx.
 
+(** Boxed global variables mention a type or term binding. *)
+Lemma tyGvar_decl {G i Γ U d l} : [ G ; Γ ⊢[ i ] tyGvar U d @ l ] ->
+  exists Δ i' l', in_gctx (gΨ G) U (gdTy Δ i' l').
+Proof.
+  intros H; remember (tyGvar U d) as T eqn:Heq; revert Heq.
+  induction H; intros Heq; try discriminate; eauto. injection Heq as -> ->; eauto.
+Qed.
+Lemma gvar_decl {G i Γ u d A l} : [ G ; Γ ⊢[ i ] gvar u d : A @ l ] ->
+  exists Δ i' T l', in_gctx (gΨ G) u (gdTm Δ i' T l').
+Proof.
+  intros H; remember (gvar u d) as t eqn:Heq; revert Heq.
+  induction H; intros Heq; try discriminate; eauto. injection Heq as -> ->; eauto.
+Qed.
+Lemma boxT_inv {G i Γ T A l} : [ G ; Γ ⊢[ i ] boxT T : A @ l ] -> exists Δ l', [ G ; Δ ⊢[ lC ] T @ l' ].
+Proof.
+  intros H; remember (boxT T) as t eqn:Heq; revert Heq.
+  induction H; intros Heq; try discriminate; eauto. injection Heq as ->; eauto.
+Qed.
+Lemma boxt_inv {G i Γ t A l} : [ G ; Γ ⊢[ i ] boxt t : A @ l ] -> exists Δ T l', [ G ; Δ ⊢[ lC ] t : T @ l' ].
+Proof.
+  intros H; remember (boxt t) as x eqn:Heq; revert Heq.
+  induction H; intros Heq; try discriminate; eauto. injection Heq as ->; eauto.
+Qed.
+
 Lemma no_closed_neutral {G i Γ t T l} :
   [ G ; Γ ⊢[ i ] t : T @ l ] -> Γ = cnil -> ctx_only G -> ~ whne t.
 Proof.
@@ -130,6 +154,13 @@ Proof.
     | H : in_ctx cnil _ _ _ |- _ => inversion H
     | Hin : in_gctx _ _ (gdTm _ _ _ _) |- _ => discriminate (HG _ _ Hin)
     | IH : cnil = cnil -> ctx_only _ -> ~ whne ?x, H : whne ?x |- _ => exact (IH eq_refl HG H)
+    (* recursors on boxed global variables *)
+    | H : wf_tm _ _ _ (boxT (tyGvar _ _)) _ _ |- _ =>
+        destruct (boxT_inv H) as (? & ? & HT); destruct (tyGvar_decl HT) as (? & ? & ? & Hin);
+        discriminate (HG _ _ Hin)
+    | H : wf_tm _ _ _ (boxt (gvar _ _)) _ _ |- _ =>
+        destruct (boxt_inv H) as (? & ? & ? & Ht); destruct (gvar_decl Ht) as (? & ? & ? & ? & Hin);
+        discriminate (HG _ _ Hin)
     end.
 Qed.
 

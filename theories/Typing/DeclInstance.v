@@ -119,8 +119,6 @@ Proof. exact (@geq_ctx_sound _ DeclEqLaws G Γ Γ'). Qed.
 
 End Decl.
 
-Definition compt_D : compt lD := or_introl eq_refl.
-Definition compt_M : compt lM := or_intror eq_refl.
 
 (** Conversion along a context equivalence at P (and a level equivalence). *)
 Lemma decl_ty_ctxconv_D {G Δ Δ' T l l'} : [ G ⊢[ lD ] Δ ≅ Δ' ] -> [ G ; Δ ⊢[ lD ] T @ l ] ->

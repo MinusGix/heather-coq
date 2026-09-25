@@ -340,6 +340,11 @@ Lemma eq_tm_regty G i Δ x y T T' l :
 Proof. now intros ? ->. Qed.
 Lemma wf_ty_regctx G i Δ Δ' T l : [ G ; Δ' ⊢[ i ] T @ l ] -> Δ' = Δ -> [ G ; Δ ⊢[ i ] T @ l ].
 Proof. now intros ? ->. Qed.
+Lemma wf_ty_regty G i Δ A A' l : [ G ; Δ ⊢[ i ] A @ l ] -> A = A' -> [ G ; Δ ⊢[ i ] A' @ l ].
+Proof. now intros ? ->. Qed.
+Lemma eq_ty_regty G i Δ A B A' B' l :
+  [ G ; Δ ⊢[ i ] A ≅ B @ l ] -> A = A' -> B = B' -> [ G ; Δ ⊢[ i ] A' ≅ B' @ l ].
+Proof. now intros ? -> ->. Qed.
 
 Ltac gw_eq := push_gren; gren_rewrite; push_gren; first [reflexivity | f_equal; reflexivity].
 
@@ -407,7 +412,12 @@ Ltac gw_premise :=
         | solve [eapply wf_tm_regty;
                  [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq]]
         | solve [eapply eq_tm_regty;
-                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq]] ].
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq]]
+        (* the recursors' motive instances (M3_DESIGN.md E10) *)
+        | solve [eapply wf_ty_regty;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq]]
+        | solve [eapply eq_ty_regty;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq | gw_eq]] ].
 
 (** The lookup-typed local substitution of [u^δ]/[U^δ]. *)
 Ltac gw_entries :=
@@ -501,9 +511,9 @@ Ltac gw_manual :=
   | |- wf_tm _ _ _ (elimt _ _ _ _ _ _ _) _ _ =>
       eapply wf_elimt; [ .. | gw_motT | gw_mott | gw_branches | gw_branches | | ]; gw_premise
   | |- eq_tm _ _ _ (elimT _ _ _ _ _ (boxT _)) _ _ _ =>
-      eapply eqtm_elimT_beta; [gw_premise | now apply redT_gren]
+      eapply eqtm_elimT_beta; [gw_premise | now apply redT_gren | gw_premise]
   | |- eq_tm _ _ _ (elimt _ _ _ _ _ _ (boxt _)) _ _ _ =>
-      eapply eqtm_elimt_beta; [gw_premise | now apply redt_gren]
+      eapply eqtm_elimt_beta; [gw_premise | now apply redt_gren | gw_premise]
   | |- eq_tm _ _ _ (elimT _ _ _ _ _ _) _ _ _ =>
       eapply eqtm_elimT;
       [ .. | gw_motT | gw_motT | gw_motT | gw_mott | gw_mott | gw_mott

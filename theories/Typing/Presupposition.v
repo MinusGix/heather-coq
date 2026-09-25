@@ -455,6 +455,50 @@ Proof. exact (ctx_of_wf_ty (i := lM) eq_refl). Qed.
 Lemma ctx_of_eqtm_M {G Γ t t' T l} : [ G ; Γ ⊢[ lM ] t ≅ t' : T @ l ] -> [ G ; Γ ⊢[ lM ] ].
 Proof. exact (ctx_of_eqtm (i := lM) eq_refl). Qed.
 
+(** ** The recursors (layer M): the congruences' right-hand sides, typed at
+    their own data and converted along the instance equation (E10). *)
+
+Lemma pre_elimT_r {G Γ l1 l2 l1' l2' MT MT' Mt' bs' l l' Δ Δ' t t'} :
+  [ G ; Γ ⊢[ lM ] motT (wrapMT MT) l Δ t ≅ motT (wrapMT MT') l' Δ' t' @ l1 ] ->
+  [ G ; Γ ⊢[ lM ] motT (wrapMT MT') l' Δ' t' @ l1 ] ->
+  lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' -> lequiv (gL G) l l' ->
+  [ G ; Δ' ⊢[ lD ] ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
+  [ recGT G ; recΓT Γ ⊢[ lM ] MT' @ lvren l1' (ush 1) ] ->
+  [ recGt G ; recΓt Γ ⊢[ lM ] Mt' @ lvren l2' (ush 1) ] ->
+  (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ]) ->
+  (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+                         bs' k : brRes k (wrapMT MT') (wrapMt Mt') @ brLv k l1' l2' ]) ->
+  [ G ; Γ ⊢[ lM ] t' : tyCTyp Δ l @ lzero ] ->
+  [ G ; Γ ⊢[ lM ] elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' t' : motT (wrapMT MT) l Δ t @ l1 ].
+Proof.
+  intros HM HM' H1 H2 H3 HΔ' HΔΔ HMT' HMt' Hc Hb Ht'.
+  eapply wf_conv; [| exact HM]. eapply wf_lconv; [| exact H1].
+  apply wf_elimT; eauto using lequiv_wf_r.
+  - eapply wft_lconv; [exact HM' | now apply lequiv_sym].
+  - eapply wf_conv; [exact Ht' |]. apply eqty_sym, eqty_CTyp; [exact (ctx_of_tm_M Ht') | exact HΔΔ | exact H3].
+Qed.
+
+Lemma pre_elimt_r {G Γ l1 l2 l1' l2' MT' Mt Mt' bs' l l' Δ Δ' T T' t t'} :
+  [ G ; Γ ⊢[ lM ] mott (wrapMt Mt) l Δ T t ≅ mott (wrapMt Mt') l' Δ' T' t' @ l2 ] ->
+  [ G ; Γ ⊢[ lM ] mott (wrapMt Mt') l' Δ' T' t' @ l2 ] ->
+  lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' -> lequiv (gL G) l l' ->
+  [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
+  [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Δ' ⊢[ lD ] T' @ l' ] -> [ G ; Δ ⊢[ lD ] T ≅ T' @ l ] ->
+  [ recGT G ; recΓT Γ ⊢[ lM ] MT' @ lvren l1' (ush 1) ] ->
+  [ recGt G ; recΓt Γ ⊢[ lM ] Mt' @ lvren l2' (ush 1) ] ->
+  (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ]) ->
+  (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+                         bs' k : brRes k (wrapMT MT') (wrapMt Mt') @ brLv k l1' l2' ]) ->
+  [ G ; Γ ⊢[ lM ] t' : tyCTrm Δ T l @ lzero ] ->
+  [ G ; Γ ⊢[ lM ] elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' t' : mott (wrapMt Mt) l Δ T t @ l2 ].
+Proof.
+  intros HM HM' H1 H2 H3 HΔ HΔ' HΔΔ HT HT' HTT HMT' HMt' Hc Hb Ht'.
+  eapply wf_conv; [| exact HM]. eapply wf_lconv; [| exact H2].
+  apply wf_elimt; eauto using lequiv_wf_r.
+  - eapply wft_lconv; [exact HM' | now apply lequiv_sym].
+  - eapply wf_conv; [exact Ht' |]. apply eqty_sym, eqty_CTrm; [exact (ctx_of_tm_M Ht') | assumption ..].
+Qed.
+
 Lemma ctx_conv_ext1 {G i} (Hi : typeof i = i) {Γ Γ' A A' l l'} :
   [ G ; Γ' ⊢[ i ] lshift 0 : Γ ] -> [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
   [ G ; Γ ⊢[ i ] A' @ l ] -> lequiv (gL G) l l' -> [ G ; Γ' ,, A' @ l' ⊢[ i ] ].
@@ -528,6 +572,12 @@ Proof.
                       eapply (pre_letboxt_r (Δ := D) (T := T)); eauto end end].
   all: try solve [eapply pre_letboxT_beta_r; eauto].
   all: try solve [eapply pre_letboxt_beta_r; eauto].
+  (* the recursors *)
+  all: try solve [first [eapply wf_elimT | eapply wf_elimt]; eauto using lequiv_wf_l;
+                  (* the branches, from the branch equations *)
+                  intros ?k ?Hk; match goal with IH : forall k, k < 13 -> _ = _ -> _ /\ _ |- _ =>
+                    exact (proj1 (IH k Hk eq_refl)) end].
+  all: try solve [first [eapply pre_elimT_r | eapply pre_elimt_r]; eassumption].
   (* right-hand sides of congruences *)
   all: first [ solve [eapply pre_pi_r; eassumption] | solve [eapply pre_U_r; eauto with presup]
              | solve [eapply pre_El_r; eassumption] | solve [eapply pre_codeU_r; eauto with presup]
