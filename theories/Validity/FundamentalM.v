@@ -6,7 +6,7 @@
     which gives the static code's payload and the contexts of [□].  The
     global variables' images are MLTT types and terms, related at
     [⊩^{≥P}_P], which the Layering Restriction carries to [LR_M]. *)
-From DeLaM.Validity Require Export FundamentalS LetboxS.
+From DeLaM.Validity Require Export FundamentalS LetboxS RecFT.
 
 Section FundamentalM.
 Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM} {EMl : GenericEqM EP EM}.
@@ -335,6 +335,113 @@ Proof.
   - exact (VS_letboxt_beta EP EM HG Hl' Hl HΔ HA Hc HM Ht' VP VM' VAP VAM VcP VcM Vb).
 Qed.
 
+
+(** ** The recursors on code (M3_DESIGN.md E13)
+
+    The induction hypotheses as the theorem provides them: the motives'
+    and branches' at every universe substitution, the rest at [φ]. *)
+
+Lemma SemCtxEqP_refl {G Δ} : SemCtxP G Δ -> SemCtxEqP G Δ Δ.
+Proof. intros (_ & VP & VM). exact (conj VP VM). Qed.
+
+Section Rec.
+Variables (G : gctx) (Γ : ctx) (L' : nat) (φ : nat -> lvl) (l1 l2 l1' l2' : lvl)
+  (MT MT' Mt Mt' : ty) (bs bs' : nat -> tm).
+Hypothesis (Hφ : usub_ok φ L' (gL G))
+  (HMT : [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ])
+  (HMT' : [ recGT G ; recΓT Γ ⊢[ lM ] MT' @ lvren l1' (ush 1) ])
+  (Hl1 : lequiv L' (lvsubst l1 φ) (lvsubst l1' φ))
+  (IMT : forall L'' ψ, usub_ok ψ L'' (gL (recGT G)) ->
+     SemTyM (G_us (recGT G) L'' ψ) (ucsubst (recΓT Γ) ψ) (usubst_ty MT ψ) (usubst_ty MT' ψ)
+       (lvsubst (lvren l1 (ush 1)) ψ))
+  (IMTl : forall L'' ψ, usub_ok ψ L'' (gL (recGT G)) ->
+     SemTyM (G_us (recGT G) L'' ψ) (ucsubst (recΓT Γ) ψ) (usubst_ty MT ψ) (usubst_ty MT ψ)
+       (lvsubst (lvren l1 (ush 1)) ψ))
+  (IMTr : forall L'' ψ, usub_ok ψ L'' (gL (recGT G)) ->
+     SemTyM (G_us (recGT G) L'' ψ) (ucsubst (recΓT Γ) ψ) (usubst_ty MT' ψ) (usubst_ty MT' ψ)
+       (lvsubst (lvren l1' (ush 1)) ψ))
+  (HMt : [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ])
+  (HMt' : [ recGt G ; recΓt Γ ⊢[ lM ] Mt' @ lvren l2' (ush 1) ])
+  (Hl2 : lequiv L' (lvsubst l2 φ) (lvsubst l2' φ))
+  (IMt : forall L'' ψ, usub_ok ψ L'' (gL (recGt G)) ->
+     SemTyM (G_us (recGt G) L'' ψ) (ucsubst (recΓt Γ) ψ) (usubst_ty Mt ψ) (usubst_ty Mt' ψ)
+       (lvsubst (lvren l2 (ush 1)) ψ))
+  (IMtl : forall L'' ψ, usub_ok ψ L'' (gL (recGt G)) ->
+     SemTyM (G_us (recGt G) L'' ψ) (ucsubst (recΓt Γ) ψ) (usubst_ty Mt ψ) (usubst_ty Mt ψ)
+       (lvsubst (lvren l2 (ush 1)) ψ))
+  (IMtr : forall L'' ψ, usub_ok ψ L'' (gL (recGt G)) ->
+     SemTyM (G_us (recGt G) L'' ψ) (ucsubst (recΓt Γ) ψ) (usubst_ty Mt' ψ) (usubst_ty Mt' ψ)
+       (lvsubst (lvren l2' (ush 1)) ψ))
+  (Hbs : forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+                               bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ])
+  (Hbs' : forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+                               bs' k : brRes k (wrapMT MT') (wrapMt Mt') @ brLv k l1' l2' ])
+  (IBr : forall k, k < 13 -> lM = lM -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G)) ->
+     SemTmM (G_us (brG k G) L'' ψ) (ucsubst (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2) ψ)
+       (usubst_tm (bs k) ψ) (usubst_tm (bs' k) ψ)
+       (usubst_ty (brRes k (wrapMT MT) (wrapMt Mt)) ψ) (lvsubst (brLv k l1 l2) ψ))
+  (IBr' : forall k, k < 13 -> lM = lM -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G)) ->
+     SemTmM (G_us (brG k G) L'' ψ) (ucsubst (brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2') ψ)
+       (usubst_tm (bs' k) ψ) (usubst_tm (bs' k) ψ)
+       (usubst_ty (brRes k (wrapMT MT') (wrapMt Mt')) ψ) (lvsubst (brLv k l1' l2') ψ))
+  (IΓbr : forall k, k < 13 -> lM = lM -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G)) ->
+     SemCtxM (G_us (brG k G) L'' ψ) (ucsubst (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2) ψ))
+  (GV : GValid (G_us G L' φ)) (VΓ : VCtxSM (G_us G L' φ) (ucsubst Γ φ)).
+
+Local Notation Gφ := (G_us G L' φ).
+Local Notation Γφ := (ucsubst Γ φ).
+
+Lemma FM_elimT {k k' D D' s s' T0 T0' k0 k0'} :
+  lwf L' k -> lequiv L' k k' -> [ Gφ ; D ⊢[ lD ] ] -> [ Gφ ⊢[ lD ] D ≅ D' ] ->
+  SemCtxP Gφ D -> SemCtxEqP Gφ D D' ->
+  VTmSM Gφ Γφ s s' (tyCTyp D k) lzero ->
+  [ Gφ ; Γφ ⊢[ lM ] elimT (lvsubst l1 φ) (lvsubst l2 φ) (usubst_tm (mkrb MT Mt bs) φ) k D s : T0 @ k0 ] ->
+  [ Gφ ; Γφ ⊢[ lM ] elimT (lvsubst l1' φ) (lvsubst l2' φ) (usubst_tm (mkrb MT' Mt' bs') φ) k' D' s' : T0' @ k0' ] ->
+  VTmSM Gφ Γφ (elimT (lvsubst l1 φ) (lvsubst l2 φ) (usubst_tm (mkrb MT Mt bs) φ) k D s)
+    (elimT (lvsubst l1' φ) (lvsubst l2' φ) (usubst_tm (mkrb MT' Mt' bs') φ) k' D' s')
+    (motT (wrapMT (usubst_ty MT (uup φ))) k D s) (lvsubst l1 φ).
+Proof.
+  intros Hk Hkk HD HDD (_ & VDP & VDM) [VEqP VEqM] Vs Hw Hw'.
+  pose proof (ctx_of_wf_tm (i := lM) eq_refl Hw) as HΓ0. pose proof (ctx_glob _ _ _ HΓ0) as HG0.
+  exact (VS_elimT EP EM G Γ L' φ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' Hφ HMT HMT' Hl1
+           (fun L'' ψ H => proj2 (IMT L'' ψ H)) (fun L'' ψ H => proj2 (IMTl L'' ψ H))
+           (fun L'' ψ H => proj2 (IMTr L'' ψ H)) HMt HMt' Hl2
+           (fun L'' ψ H => proj2 (IMt L'' ψ H)) (fun L'' ψ H => proj2 (IMtl L'' ψ H))
+           (fun L'' ψ H => proj2 (IMtr L'' ψ H)) Hbs Hbs'
+           (fun k Hk L'' ψ H => proj2 (proj2 (IBr k Hk eq_refl L'' ψ H)))
+           (fun k Hk L'' ψ H => proj2 (proj2 (IBr' k Hk eq_refl L'' ψ H))) VΓ HG0 HΓ0
+           (fun L'' ψ H => proj2 (proj1 (IMTl L'' ψ H))) (fun L'' ψ H => proj2 (proj1 (IMtl L'' ψ H)))
+           (fun k Hk L'' ψ H => proj2 (IΓbr k Hk eq_refl L'' ψ H))
+           Hk Hkk HD HDD VDP VDM VEqP VEqM Vs Hw Hw').
+Qed.
+
+Lemma FM_elimt {k k' D D' U U' s s' T0 T0' k0 k0'} :
+  lwf L' k -> lequiv L' k k' -> [ Gφ ; D ⊢[ lD ] ] -> [ Gφ ⊢[ lD ] D ≅ D' ] ->
+  [ Gφ ; D ⊢[ lD ] U @ k ] -> [ Gφ ; D' ⊢[ lD ] U' @ k' ] ->
+  SemCtxP Gφ D -> SemCtxEqP Gφ D D' -> SemTyP Gφ D U U' k ->
+  VTmSM Gφ Γφ s s' (tyCTrm D U k) lzero ->
+  [ Gφ ; Γφ ⊢[ lM ] elimt (lvsubst l1 φ) (lvsubst l2 φ) (usubst_tm (mkrb MT Mt bs) φ) k D U s : T0 @ k0 ] ->
+  [ Gφ ; Γφ ⊢[ lM ] elimt (lvsubst l1' φ) (lvsubst l2' φ) (usubst_tm (mkrb MT' Mt' bs') φ) k' D' U' s' : T0' @ k0' ] ->
+  VTmSM Gφ Γφ (elimt (lvsubst l1 φ) (lvsubst l2 φ) (usubst_tm (mkrb MT Mt bs) φ) k D U s)
+    (elimt (lvsubst l1' φ) (lvsubst l2' φ) (usubst_tm (mkrb MT' Mt' bs') φ) k' D' U' s')
+    (mott (wrapMt (usubst_ty Mt (uup φ))) k D U s) (lvsubst l2 φ).
+Proof.
+  intros Hk Hkk HD HDD HU HU' (_ & VDP & VDM) [VEqP VEqM] (_ & VUP & VUM) Vs Hw Hw'.
+  pose proof (ctx_of_wf_tm (i := lM) eq_refl Hw) as HΓ0. pose proof (ctx_glob _ _ _ HΓ0) as HG0.
+  exact (VS_elimt EP EM G Γ L' φ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' Hφ HMT HMT' Hl1
+           (fun L'' ψ H => proj2 (IMT L'' ψ H)) (fun L'' ψ H => proj2 (IMTl L'' ψ H))
+           (fun L'' ψ H => proj2 (IMTr L'' ψ H)) HMt HMt' Hl2
+           (fun L'' ψ H => proj2 (IMt L'' ψ H)) (fun L'' ψ H => proj2 (IMtl L'' ψ H))
+           (fun L'' ψ H => proj2 (IMtr L'' ψ H)) Hbs Hbs'
+           (fun k Hk L'' ψ H => proj2 (proj2 (IBr k Hk eq_refl L'' ψ H)))
+           (fun k Hk L'' ψ H => proj2 (proj2 (IBr' k Hk eq_refl L'' ψ H))) VΓ HG0 HΓ0
+           (fun L'' ψ H => proj2 (proj1 (IMTl L'' ψ H))) (fun L'' ψ H => proj2 (proj1 (IMtl L'' ψ H)))
+           (fun k Hk L'' ψ H => proj2 (IΓbr k Hk eq_refl L'' ψ H))
+           Hk Hkk HD HDD HU HU' VDP VDM VEqP VEqM VUP VUM Vs Hw Hw').
+Qed.
+
+End Rec.
+
 End FundamentalM.
 
 (** ** The theorem *)
@@ -451,6 +558,14 @@ Ltac m_tm :=
   | solve [simple eapply VTmS_leq; m_side]
   | m_rules ].
 
+Ltac m_rec_side :=
+  first [ eassumption | apply lequiv_refl; eassumption | apply eqc_refl; eassumption
+        | apply (SemCtxEqP_refl EP EM); eassumption | eapply lequiv_wf_l; eassumption
+        | (* the branches' typings, from their congruence *)
+          let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
+          match goal with H : forall k, k < 13 -> eq_tm _ lM _ _ _ _ _ |- _ =>
+            exact (eqtm_wf_l (i := lM) eq_refl (H k Hk)) end ].
+
 Ltac m_goal :=
   lazymatch goal with
   | |- GValid _ _ _ => eassumption
@@ -520,6 +635,21 @@ Ltac us_keep :=
       lazymatch goal with _ : keep T |- _ => fail | _ => let X := fresh "K" in pose proof IH as X; change (keep T) in X end
   end.
 
+(** The recursors' judgments themselves, moved along [φ] with their
+    premises: the validity lemmas read the bundles' typings off them. *)
+Ltac rec_judg :=
+  try lazymatch goal with
+  | |- context [SemTmM _ _ (G_us ?G _ _) (ucsubst ?Γ _) (usubst_tm ?t _) (usubst_tm ?t' _) (usubst_ty ?T _) (lvsubst ?k _)] =>
+      lazymatch t with
+      | elimT _ _ _ _ _ _ =>
+          first [ assert (wf_tm G lM Γ t T k) by (apply wf_elimT; assumption)
+                | assert (eq_tm G lM Γ t t' T k) by (eapply eqtm_elimT; eassumption) ]
+      | elimt _ _ _ _ _ _ _ =>
+          first [ assert (wf_tm G lM Γ t T k) by (apply wf_elimt; assumption)
+                | assert (eq_tm G lM Γ t t' T k) by (eapply eqtm_elimt; eassumption) ]
+      end
+  end.
+
 Lemma usubst_ren_mix (t : tm) r φ : usubst_tm t⟨r⟩ φ = (usubst_tm t φ)⟨r⟩.
 Proof. exact (proj1 (proj2 usubst_ren_all) t r φ). Qed.
 Lemma usubst_ren_ty_mix (T : ty) r φ : usubst_ty T⟨r⟩ φ = (usubst_ty T φ)⟨r⟩.
@@ -548,7 +678,7 @@ Proof.
       | IH : forall n A k, in_ctx _ n A k -> ?x = ?x -> _ |- _ =>
           pose proof (fun n A k h => IH n A k h eq_refl); clear IH
       end;
-    us_keep; us_spec; us_entries_sem; us_move; us_rewrite_all; rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix.
+    rec_judg; us_keep; us_spec; us_entries_sem; us_move; us_rewrite_all; rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix.
   all: try solve [ first [simple eapply (FM_tygvar_us EP EM) | simple eapply (FM_gvar_us EP EM)]; eassumption ].
   all: m_P.
   all: try solve [ first [ simple eapply (FM_CTyp EP EM) | simple eapply (FM_CTyp_eq EP EM)
@@ -562,7 +692,61 @@ Proof.
   all: unfold SemTyM, SemTmM, SemCtxM in *;
     repeat match goal with H : _ /\ _ |- _ => destruct H end; m_types; repeat split.
   all: try m_goal.
-  all: match goal with |- ?g => lazymatch g with context [elimT] => idtac "REC-T" | context [elimt] => idtac "REC-t" | _ => idtac "OTHER" g end end.
-Abort.
+  (* the recursors on code *)
+  all: try match goal with
+           | H : eq_tm _ lM _ (elimT _ _ _ _ _ _) _ _ _ |- _ => pose proof (eqtm_wf_r (i := lM) eq_refl H)
+           | H : eq_tm _ lM _ (elimt _ _ _ _ _ _ _) _ _ _ |- _ => pose proof (eqtm_wf_r (i := lM) eq_refl H)
+           end.
+  all: first
+    [ solve [simple eapply (VS_elimT_beta EP EM);
+             [eassumption | apply redT_usubst; eassumption | eassumption | eassumption]]
+    | solve [simple eapply (VS_elimt_beta EP EM);
+             [eassumption | apply redt_usubst; eassumption | eassumption | eassumption]]
+    | solve [simple eapply (FM_elimT EP EM); m_rec_side]
+    | solve [simple eapply (FM_elimt EP EM); m_rec_side] ].
+Qed.
+
+(** ** At the identity universe substitution *)
+
+Lemma G_us_id G : [ ⊢ G ] -> G_us G (gL G) lvar = G.
+Proof.
+  intros HG. pose proof (wfg_dnf _ HG) as N. clear HG. destruct G as [L Ψ]. unfold G_us, gctx_usubst; cbn [gL gΨ] in *. f_equal.
+  induction N as [|D Ψ HD _ IH]; cbn; [reflexivity|]. f_equal; [|exact IH].
+  destruct D; cbn in HD |- *; f_equal; rewrite ?lvsubst_id by reflexivity; try reflexivity;
+    first [apply usubst_id_ctx | apply usubst_id_ty]; try reflexivity; tauto.
+Qed.
+
+Ltac us_id H :=
+  let HG := fresh "HG" in
+  first [ pose proof (ctx_glob _ _ _ H) as HG
+        | pose proof (ctx_glob _ _ _ (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ H)) as HG
+        | pose proof (ctx_glob _ _ _ (proj1 (proj2 (proj2 (proj2 ctx_extract))) _ _ _ _ _ _ H)) as HG
+        | pose proof (ctx_glob _ _ _ (proj1 (proj2 (proj2 (proj2 (proj2 ctx_extract)))) _ _ _ _ _ _ H)) as HG
+        | pose proof (ctx_glob _ _ _ (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 ctx_extract))))) _ _ _ _ _ _ _ H))
+            as HG ];
+  rewrite (G_us_id _ HG);
+  rewrite ?usubst_id_ctx, ?usubst_id_ty, ?usubst_id, ?lvsubst_id by first [reflexivity | dnf_of H].
+
+Theorem fundamentalM :
+  (forall G, [ ⊢ G ] -> True) /\
+  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> i = lM -> SemCtxM EP EM G Γ) /\
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = lM -> SemTyM EP EM G Γ T T l) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = lM -> SemTmM EP EM G Γ t t T l) /\
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = lM -> SemTyM EP EM G Γ T T' l) /\
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = lM -> SemTmM EP EM G Γ t t' T l) /\
+  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
+Proof.
+  destruct fundamentalM_us as (_ & Fc & Fty & Ftm & Feqty & Feqtm & _).
+  refine (conj (fun _ _ => I) (conj _ (conj _ (conj _ (conj _ (conj _ (fun _ _ _ _ _ => I))))))).
+  - intros G i Γ H Ei. pose proof (Fc _ _ _ H Ei (gL G) lvar (usub_ok_id _)) as X. subst i. revert X. us_id H. auto.
+  - intros G i Γ T l H Ei. pose proof (Fty _ _ _ _ _ H Ei (gL G) lvar (usub_ok_id _)) as X. subst i. revert X.
+    us_id H. auto.
+  - intros G i Γ t T l H Ei. pose proof (Ftm _ _ _ _ _ _ H Ei (gL G) lvar (usub_ok_id _)) as X. subst i. revert X.
+    us_id H. auto.
+  - intros G i Γ T T' l H Ei. pose proof (Feqty _ _ _ _ _ _ H Ei (gL G) lvar (usub_ok_id _)) as X. subst i.
+    revert X. us_id H. auto.
+  - intros G i Γ t t' T l H Ei. pose proof (Feqtm _ _ _ _ _ _ _ H Ei (gL G) lvar (usub_ok_id _)) as X. subst i.
+    revert X. us_id H. auto.
+Qed.
 
 End FundamentalMThm.

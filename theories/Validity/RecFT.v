@@ -170,12 +170,12 @@ Qed.
 
 End At.
 
-Lemma VS_elimT {k k' D D' s s'} :
+Lemma VS_elimT {k k' D D' s s' T0 T0' k0 k0'} :
   lwf L' k -> lequiv L' k k' -> [ Gφ ; D ⊢[ lD ] ] -> [ Gφ ⊢[ lD ] D ≅ D' ] ->
   VCtxSP Gφ D -> VCtxSPM Gφ D -> VCtxEqSP Gφ D D' -> VCtxEqSM Gφ D D' ->
   VTmSM Gφ Γφ s s' (tyCTyp D k) lzero ->
-  [ Gφ ; Γφ ⊢[ lM ] elimT (lvsubst l1 φ) (lvsubst l2 φ) rbL k D s : motT (wrapMT (usubst_ty MT (uup φ))) k D s @ lvsubst l1 φ ] ->
-  [ Gφ ; Γφ ⊢[ lM ] elimT (lvsubst l1' φ) (lvsubst l2' φ) rbR k' D' s' : motT (wrapMT (usubst_ty MT' (uup φ))) k' D' s' @ lvsubst l1' φ ] ->
+  [ Gφ ; Γφ ⊢[ lM ] elimT (lvsubst l1 φ) (lvsubst l2 φ) rbL k D s : T0 @ k0 ] ->
+  [ Gφ ; Γφ ⊢[ lM ] elimT (lvsubst l1' φ) (lvsubst l2' φ) rbR k' D' s' : T0' @ k0' ] ->
   VTmSM Gφ Γφ (elimT (lvsubst l1 φ) (lvsubst l2 φ) rbL k D s) (elimT (lvsubst l1' φ) (lvsubst l2' φ) rbR k' D' s')
     (motT (wrapMT (usubst_ty MT (uup φ))) k D s) (lvsubst l1 φ).
 Proof.
@@ -288,16 +288,14 @@ Proof.
     exact (eqty_sym _ _ _ _ _ _ HC).
 Qed.
 
-Lemma VS_elimt {k k' D D' U U' s s'} :
+Lemma VS_elimt {k k' D D' U U' s s' T0 T0' k0 k0'} :
   lwf L' k -> lequiv L' k k' -> [ Gφ ; D ⊢[ lD ] ] -> [ Gφ ⊢[ lD ] D ≅ D' ] ->
   [ Gφ ; D ⊢[ lD ] U @ k ] -> [ Gφ ; D' ⊢[ lD ] U' @ k' ] ->
   VCtxSP Gφ D -> VCtxSPM Gφ D -> VCtxEqSP Gφ D D' -> VCtxEqSM Gφ D D' ->
   @VTyS EP EM EP LR_P Gφ D U U' k -> @VTyS EP EM EM LR_P Gφ D U U' k ->
   VTmSM Gφ Γφ s s' (tyCTrm D U k) lzero ->
-  [ Gφ ; Γφ ⊢[ lM ] elimt (lvsubst l1 φ) (lvsubst l2 φ) rbL k D U s
-      : mott (wrapMt (usubst_ty Mt (uup φ))) k D U s @ lvsubst l2 φ ] ->
-  [ Gφ ; Γφ ⊢[ lM ] elimt (lvsubst l1' φ) (lvsubst l2' φ) rbR k' D' U' s'
-      : mott (wrapMt (usubst_ty Mt' (uup φ))) k' D' U' s' @ lvsubst l2' φ ] ->
+  [ Gφ ; Γφ ⊢[ lM ] elimt (lvsubst l1 φ) (lvsubst l2 φ) rbL k D U s : T0 @ k0 ] ->
+  [ Gφ ; Γφ ⊢[ lM ] elimt (lvsubst l1' φ) (lvsubst l2' φ) rbR k' D' U' s' : T0' @ k0' ] ->
   VTmSM Gφ Γφ (elimt (lvsubst l1 φ) (lvsubst l2 φ) rbL k D U s) (elimt (lvsubst l1' φ) (lvsubst l2' φ) rbR k' D' U' s')
     (mott (wrapMt (usubst_ty Mt (uup φ))) k D U s) (lvsubst l2 φ).
 Proof.
