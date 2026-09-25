@@ -352,14 +352,52 @@ End Named.
 
 (** ** Reduction under global renaming *)
 
-Lemma red_gren t u ξ : red t u -> red t⟪ξ⟫ u⟪ξ⟫.
+(** The reducts commute with global renaming. *)
+Lemma tup_nth_gren t k ξ : tup_nth t⟪ξ⟫ k = (tup_nth t k)⟪ξ⟫.
+Proof. revert t; induction k; intros []; cbn; auto. Qed.
+Lemma peelU_gren b l ξ : peelU b⟪ξ⟫ l = (peelU b l)⟪ξ⟫.
+Proof. destruct b; cbn; auto. apply usubst_gren. Qed.
+Lemma peelG_gren b o ξ : peelG b⟪ξ⟫ (goren o ξ) = (peelG b o)⟪ξ⟫.
+Proof. destruct b; cbn; auto. symmetry; apply gren_gsingle. Qed.
+Lemma peelL_gren b a ξ : peelL b⟪ξ⟫ a⟪ξ⟫ = (peelL b a)⟪ξ⟫.
+Proof. destruct b; cbn; auto. symmetry; apply gren_single. Qed.
+
+Lemma gren_ty_subst_raw M d ξ : gren_ty (subst_ty M d) ξ = subst_ty (gren_ty M ξ) (glren d ξ).
+Proof. exact (gren_subst_ty M d ξ). Qed.
+
+Ltac gpeel_push :=
+  repeat first [ rewrite <- peelL_gren | rewrite <- peelG_gren | rewrite <- peelU_gren ];
+  unfold rb_br; rewrite tup_nth_gren;
+  cbn [goren gren GRen_tm GRen_ty GRen_ctx gren_tm recT rect]; rewrite ?gren_ty_subst_raw;
+  reflexivity.
+
+Lemma redT_gren l1 l2 rb l Δ c v ξ : redT l1 l2 rb l Δ c = Some v ->
+  redT l1 l2 rb⟪ξ⟫ l Δ⟪ξ⟫ c⟪ξ⟫ = Some v⟪ξ⟫.
+Proof. destruct c; cbn [redT gren GRen_ty gren_ty]; intros E; inversion E; subst; f_equal; gpeel_push. Qed.
+Lemma redt_gren l1 l2 rb l Δ T c v ξ : redt l1 l2 rb l Δ T c = Some v ->
+  redt l1 l2 rb⟪ξ⟫ l Δ⟪ξ⟫ T⟪ξ⟫ c⟪ξ⟫ = Some v⟪ξ⟫.
 Proof.
-  induction 1; cbn [gren GRen_tm gren_tm]; change (gren_tm ?x ?ξ) with x⟪ξ⟫.
-  all: rewrite ?gren_single2, ?gren_single, ?gren_gsingle; try now constructor.
-  all: constructor; auto.
+  destruct c; cbn [redt gren GRen_tm gren_tm]; try destruct T; cbn [gren_ty];
+    intros E; inversion E; subst; f_equal; gpeel_push.
 Qed.
+
+Lemma red_gren_both :
+  (forall t u, red t u -> forall ξ, red t⟪ξ⟫ u⟪ξ⟫) /\
+  (forall T U, red_ty T U -> forall ξ, red_ty T⟪ξ⟫ U⟪ξ⟫).
+Proof.
+  apply red_both; intros; cbn [gren GRen_tm gren_tm GRen_ty gren_ty];
+    change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫;
+    change (gcren ?x ?ξ) with x⟪ξ⟫.
+  all: rewrite ?gren_single2, ?gren_single, ?gren_gsingle; try now constructor.
+  all: try (constructor; auto; fail).
+  - constructor. now apply redT_gren.
+  - constructor. now apply redt_gren.
+Qed.
+
+Lemma red_gren t u ξ : red t u -> red t⟪ξ⟫ u⟪ξ⟫.
+Proof. intros H; now apply red_gren_both. Qed.
 Lemma red_ty_gren T U ξ : red_ty T U -> red_ty T⟪ξ⟫ U⟪ξ⟫.
-Proof. destruct 1; cbn; constructor; auto using red_gren. Qed.
+Proof. intros H; now apply red_gren_both. Qed.
 Lemma reds_gren t u ξ : reds t u -> reds t⟪ξ⟫ u⟪ξ⟫.
 Proof. unfold reds; induction 1; [constructor|econstructor; eauto using red_gren]. Qed.
 Lemma reds_ty_gren T U ξ : reds_ty T U -> reds_ty T⟪ξ⟫ U⟪ξ⟫.

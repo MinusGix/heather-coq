@@ -2,8 +2,9 @@
 
     [W ::= Nat | Π | Ty l | V]         [V ::= U^δ | El l ν]
     [w ::= ν | Nat | Π | Ty l | 0 | succ t | λ]
-    [ν ::= x | u^δ | elimN … ν | app ν …] *)
-From DeLaM.Syntax Require Export GSubst.
+    [ν ::= x | u^δ | elimN … ν | app ν … | letbox … ν
+         | elim_Typ … ν | elim_Typ … (box U^δ) | elim_Trm … ν | elim_Trm … (box u^δ)] *)
+From DeLaM.Syntax Require Export Recursor.
 
 Inductive whne : tm -> Prop :=
 | whne_var n : whne (var n)
@@ -11,7 +12,12 @@ Inductive whne : tm -> Prop :=
 | whne_natrec l M s z t : whne t -> whne (natrec l M s z t)
 | whne_app t l l' A B s : whne t -> whne (app t l l' A B s)
 | whne_letboxT l' l Δ M t' t : whne t -> whne (letboxT l' l Δ M t' t)
-| whne_letboxt l' l Δ T M t' t : whne t -> whne (letboxt l' l Δ T M t' t).
+| whne_letboxt l' l Δ T M t' t : whne t -> whne (letboxt l' l Δ T M t' t)
+(* recursors on code: a neutral scrutinee, or a boxed global variable (07:371) *)
+| whne_elimT l1 l2 rb l Δ t : whne t -> whne (elimT l1 l2 rb l Δ t)
+| whne_elimT_gvar l1 l2 rb l Δ U d : whne (elimT l1 l2 rb l Δ (boxT (tyGvar U d)))
+| whne_elimt l1 l2 rb l Δ T t : whne t -> whne (elimt l1 l2 rb l Δ T t)
+| whne_elimt_gvar l1 l2 rb l Δ T u d : whne (elimt l1 l2 rb l Δ T (boxt (gvar u d))).
 
 Inductive whnf : tm -> Prop :=
 | whnf_ne t : whne t -> whnf t
@@ -40,8 +46,10 @@ Inductive whnf_ty : ty -> Prop :=
 
 (** ** Stability under renaming *)
 
+Ltac whne_step := first [ apply whne_elimT_gvar | apply whne_elimt_gvar | constructor; auto ].
+
 Lemma whne_ren t r : whne t -> whne t⟨r⟩.
-Proof. induction 1; cbn; constructor; auto. Qed.
+Proof. induction 1; cbn; whne_step. Qed.
 Lemma whnf_ren t r : whnf t -> whnf t⟨r⟩.
 Proof. destruct 1; cbn; auto using whne_ren with whnf. Qed.
 Lemma whne_ty_ren T r : whne_ty T -> whne_ty T⟨r⟩.
@@ -52,7 +60,7 @@ Proof. destruct 1; cbn; auto using whne_ty_ren with whnf. Qed.
 (** ** Stability under global renaming *)
 
 Lemma whne_gren t ξ : whne t -> whne t⟪ξ⟫.
-Proof. induction 1; cbn; constructor; auto. Qed.
+Proof. induction 1; cbn; whne_step. Qed.
 Lemma whnf_gren t ξ : whnf t -> whnf t⟪ξ⟫.
 Proof. destruct 1; cbn; auto using whne_gren with whnf. Qed.
 Lemma whne_ty_gren T ξ : whne_ty T -> whne_ty T⟪ξ⟫.

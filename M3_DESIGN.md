@@ -84,9 +84,14 @@ reduct functions `redT`/`redt` compute `t_k[levels][Δ/g, subcodes][rec
 calls]` by case on the head of `c` (and, for `λ` and variables, on the
 whnf of the index `T`). They return `None` on global-variable heads
 (neutral: 07:371). The premise is the typing of the left-hand side; the
-paper's 13 rules are derived lemmas. Reduction uses the same functions;
-it reduces the index of `elim_Trm` to whnf first, then the scrutinee
-(06:136–145).
+paper's 13 rules are derived lemmas. Reduction uses the same functions.
+
+Reduction order (small deviation from 06:136–145, which reduces the index
+of `elim_Trm` first and calls the order arbitrary): the index is reduced
+only when the scrutinee is a boxed `λ`, the one head whose reduct reads
+it. So `whne` does not mention types (a recursor is neutral when its
+scrutinee is neutral or a boxed global variable), and reduction stays
+deterministic. `red` and `red_ty` become mutually inductive (`red_both`).
 
 ### E5. The `⊩^C_P` record is syntactic; its semantics comes from the FT at P
 

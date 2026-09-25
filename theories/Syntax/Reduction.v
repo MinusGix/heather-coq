@@ -22,14 +22,29 @@ Inductive red : tm -> tm -> Prop :=
     red (letboxt l' l Δ T M t' (boxt t)) (t'⦃gsingle (GTm t)⦄)
 | red_letboxT l' l Δ M t' t t0 : red t t0 -> red (letboxT l' l Δ M t' t) (letboxT l' l Δ M t' t0)
 | red_letboxt l' l Δ T M t' t t0 : red t t0 ->
-    red (letboxt l' l Δ T M t' t) (letboxt l' l Δ T M t' t0).
+    red (letboxt l' l Δ T M t' t) (letboxt l' l Δ T M t' t0)
+(* recursors on code (M3_DESIGN.md E4): β by the reduct functions; the
+   index of [elim_Trm] is reduced only under a boxed [λ], the one head
+   whose reduct reads it *)
+| red_elimT_beta l1 l2 rb l Δ c r :
+    redT l1 l2 rb l Δ c = Some r -> red (elimT l1 l2 rb l Δ (boxT c)) r
+| red_elimT l1 l2 rb l Δ t t' : red t t' -> red (elimT l1 l2 rb l Δ t) (elimT l1 l2 rb l Δ t')
+| red_elimt_beta l1 l2 rb l Δ T c r :
+    redt l1 l2 rb l Δ T c = Some r -> red (elimt l1 l2 rb l Δ T (boxt c)) r
+| red_elimt l1 l2 rb l Δ T t t' : red t t' -> red (elimt l1 l2 rb l Δ T t) (elimt l1 l2 rb l Δ T t')
+| red_elimt_idx l1 l2 rb l Δ T T' k k' A b : red_ty T T' ->
+    red (elimt l1 l2 rb l Δ T (boxt (lam k k' A b))) (elimt l1 l2 rb l Δ T' (boxt (lam k k' A b)))
 
-Inductive red_ty : ty -> ty -> Prop :=
+with red_ty : ty -> ty -> Prop :=
 | red_El_nat l : red_ty (tyEl l tmNat) tyNat
 | red_El_U l l0 : red_ty (tyEl l (tmU l0)) (tyU l0)
 | red_El_pi l l1 l2 s t :
     red_ty (tyEl l (tmPi l1 l2 s t)) (tyPi l1 l2 (tyEl l1 s) (tyEl l2 t))
 | red_El l t t' : red t t' -> red_ty (tyEl l t) (tyEl l t').
+
+Scheme red_mut := Induction for red Sort Prop
+  with red_ty_mut := Induction for red_ty Sort Prop.
+Combined Scheme red_both from red_mut, red_ty_mut.
 
 Definition reds := clos_refl_trans_1n tm red.
 Definition reds_ty := clos_refl_trans_1n ty red_ty.
@@ -42,7 +57,12 @@ Lemma whne_no_red t v : whne t -> ~ red t v.
 Proof.
   intros H; revert v; induction H; intros v Hr; inversion Hr; subst.
   all: try solve [eapply IHwhne; eauto].
-  all: match goal with Hw : whne _ |- _ => inversion Hw end.
+  all: try match goal with Hw : whne _ |- _ => inversion Hw end.
+  all: match goal with
+       | Hr : red (boxT _) _ |- _ => inversion Hr
+       | Hr : red (boxt _) _ |- _ => inversion Hr
+       | He : _ = Some _ |- _ => discriminate He
+       end.
 Qed.
 Lemma whnf_no_red t v : whnf t -> ~ red t v.
 Proof. destruct 1; intros Hr; try (inversion Hr; fail). eapply whne_no_red; eauto. Qed.
@@ -54,25 +74,35 @@ Qed.
 
 (** ** Determinacy *)
 
-Lemma red_det t u u' : red t u -> red t u' -> u = u'.
+Lemma red_det_both :
+  (forall t u, red t u -> forall u', red t u' -> u = u') /\
+  (forall T U, red_ty T U -> forall U', red_ty T U' -> U = U').
 Proof.
-  intros H; revert u'; induction H; intros u' H'; inversion H'; subst; auto;
+  apply red_both; intros; match goal with H' : _ |- _ => inversion H' end;
+    subst; auto;
     try match goal with
         | Hr : red zero _ |- _ => inversion Hr
         | Hr : red (succ _) _ |- _ => inversion Hr
         | Hr : red (lam _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (boxT _) _ |- _ => inversion Hr
         | Hr : red (boxt _) _ |- _ => inversion Hr
+        | Hr : red tmNat _ |- _ => inversion Hr
+        | Hr : red (tmU _) _ |- _ => inversion Hr
+        | Hr : red (tmPi _ _ _ _) _ |- _ => inversion Hr
+        | Hr : red_ty (tyPi _ _ _ _) _ |- _ => inversion Hr
         end;
-    try (f_equal; auto).
+    try congruence; try (f_equal; eauto).
+  (* the λ-index rule against β: β needs a Π index, which does not reduce *)
+  all: match goal with
+       | He : redt _ _ _ _ _ ?T _ = Some _, Hr : red_ty ?T _ |- _ =>
+           destruct T; cbn in He; try discriminate; inversion Hr
+       end.
 Qed.
 
+Lemma red_det t u u' : red t u -> red t u' -> u = u'.
+Proof. intros H; now apply red_det_both. Qed.
 Lemma red_ty_det T U U' : red_ty T U -> red_ty T U' -> U = U'.
-Proof.
-  intros H; revert U'; destruct H; intros U' H'; inversion H'; subst; auto.
-  all: try solve [f_equal; eauto using red_det].
-  all: match goal with Hr : red _ _ |- _ => inversion Hr end.
-Qed.
+Proof. intros H; now apply red_det_both. Qed.
 
 Lemma reds_whnf_det t w w' : reds t w -> reds t w' -> whnf w -> whnf w' -> w = w'.
 Proof.
@@ -128,9 +158,35 @@ Proof.
     auto; f_equal; lia.
 Qed.
 
-Lemma red_ren t u r : red t u -> red t⟨r⟩ u⟨r⟩.
+(** The reducts commute with local renaming (which does not enter the
+    code, [Δ] or the index). *)
+Lemma tup_nth_ren t k r : tup_nth t⟨r⟩ k = (tup_nth t k)⟨r⟩.
+Proof. revert t; induction k; intros []; cbn; auto. Qed.
+Lemma peelU_ren b l r : peelU b⟨r⟩ l = (peelU b l)⟨r⟩.
+Proof. destruct b; cbn; auto. apply usubst_ren. Qed.
+Lemma peelG_ren b o r : peelG b⟨r⟩ o = (peelG b o)⟨r⟩.
+Proof. destruct b; cbn; auto. apply gsubst_ren. Qed.
+Lemma peelL_ren b a r : peelL b⟨r⟩ a⟨r⟩ = (peelL b a)⟨r⟩.
+Proof. destruct b; cbn; auto. symmetry; apply lsingle_ren. Qed.
+
+Ltac peel_push r :=
+  repeat first [ rewrite <- peelL_ren | rewrite <- peelG_ren | rewrite <- peelU_ren ];
+  unfold rb_br; rewrite tup_nth_ren; reflexivity.
+
+Lemma redT_ren l1 l2 rb l Δ c v r : redT l1 l2 rb l Δ c = Some v ->
+  redT l1 l2 rb⟨r⟩ l Δ c = Some v⟨r⟩.
+Proof. destruct c; cbn [redT]; intros [= <-]; f_equal; peel_push r. Qed.
+Lemma redt_ren l1 l2 rb l Δ T c v r : redt l1 l2 rb l Δ T c = Some v ->
+  redt l1 l2 rb⟨r⟩ l Δ T c = Some v⟨r⟩.
 Proof.
-  induction 1; cbn.
+  destruct c; cbn [redt]; try destruct T; intros E; inversion E; subst; f_equal; peel_push r.
+Qed.
+
+Lemma red_ren_both :
+  (forall t u, red t u -> forall r, red t⟨r⟩ u⟨r⟩) /\
+  (forall T U, red_ty T U -> forall r, red_ty T⟨r⟩ U⟨r⟩).
+Proof.
+  apply red_both; intros; cbn.
   - constructor.
   - change (ren_tm ?x ?r) with x⟨r⟩. rewrite lsingle2_ren. constructor.
   - change (ren_tm ?x ?r) with x⟨r⟩. rewrite lsingle_ren. constructor.
@@ -140,9 +196,21 @@ Proof.
   - cbn [ren_tm]. rewrite <- (gsubst_ren t'). constructor.
   - now constructor.
   - now constructor.
+  - constructor. now apply redT_ren.
+  - now constructor.
+  - constructor. now apply redt_ren.
+  - now constructor.
+  - now constructor.
+  - constructor.
+  - constructor.
+  - constructor.
+  - now constructor.
 Qed.
+
+Lemma red_ren t u r : red t u -> red t⟨r⟩ u⟨r⟩.
+Proof. intros H; now apply red_ren_both. Qed.
 Lemma red_ty_ren T U r : red_ty T U -> red_ty T⟨r⟩ U⟨r⟩.
-Proof. destruct 1; cbn; constructor; auto using red_ren. Qed.
+Proof. intros H; now apply red_ren_both. Qed.
 Lemma reds_ren t u r : reds t u -> reds t⟨r⟩ u⟨r⟩.
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto using red_ren]. Qed.
 Lemma reds_ty_ren T U r : reds_ty T U -> reds_ty T⟨r⟩ U⟨r⟩.
