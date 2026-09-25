@@ -183,11 +183,10 @@ through its induction hypotheses (the `regty` step up to the operation's
 `motT`/`mott` law); `RecInst` builds them when a recursor is constructed
 from scratch.
 
-### Open: E6 is too weak for the recursion lemmas (found 2026-09-25)
+### E6'. Validity is two-sided in the universe substitution (user decision, 2026-09-25)
 
-E6 quantifies validity over one universe substitution `φ` (validity of
-`J[φ]`). The recursion lemmas need two *equivalent* level instantiations
-related, which one-sided validity does not give:
+E6 as first stated (one `φ`) is too weak for the recursion lemmas, which
+relate two *equivalent* level instantiations:
 - the congruence `elim_Trm … l …  ≅ elim_Trm … l' …` with `l ≡ l'`: the
   variable branch is instantiated at `ℓ := l` on one side and `ℓ := l'` on
   the other;
@@ -195,10 +194,27 @@ related, which one-sided validity does not give:
   level `l`, the reduct's is `M_Typ[l₁ ⊔ l₂/ℓ, …]` with the code's levels,
   and `l ≡ l₁ ⊔ l₂` only up to equivalence (level conversion in the code's
   typing).
-The paper's lemma (07b:1428) indeed takes `φ ≈ φ'`. Candidate fix: make
-the FT at M two-sided in `φ ≈ φ'` (relate `J[φ]` with `J[φ']` in
-`G[φ]; Γ[φ]`), with a declarative functionality lemma for universe
-substitution in equivalent levels (the right-hand instances' typing).
+As in the paper (07b:1428, `φ ≈ φ'`), the FT at M relates `J[φ]` with
+`J[φ']` in `G[φ]; Γ[φ]` for pointwise-equivalent `φ ≈ φ' : L' ⇒ L`. The
+right-hand instances are typed by a declarative functionality lemma for
+universe substitution in equivalent levels (`J[φ] ≅ J[φ']`).
+
+### E11. Boxed code is compared up to level equivalence (user decision, 2026-09-25; revises M2 D3)
+
+M2 made `box` congruence literal (`box c ≅ box c` only). That makes
+`J[φ] ≅ J[φ']` false as soon as `J` mentions a level variable inside boxed
+code (`box (Ty ℓ)` at `ℓ := lzero` and `ℓ := lzero ⊔ lzero`), and with it
+the `Π` β step above. The paper's Static Code Lemma (05:1055) compares
+C-level code up to level equivalence, and we now follow it:
+- a syntactic relation `≡ₗ` (same shape, level annotations equal under
+  every valuation), closed under all syntactic operations;
+- `box` congruences `box T ≅ box T'` for C-typed `T ≡ₗ T'`
+  (`eqtm_boxT`/`eqtm_boxt` return, with `≡ₗ` in place of C-equality); the
+  generic `box` laws, the `□` payload and the C/V images of related global
+  substitutions compare code by `≡ₗ`;
+- the static-code lemma becomes `T⦃σ⦄ ≡ₗ T⦃σ'⦄` for substitutions whose
+  static images agree up to `≡ₗ`, still a syntactic induction (the reason
+  M2 retired the C-equality congruence does not apply to `≡ₗ`).
 
 ## Order of work
 
