@@ -318,15 +318,35 @@ laws for universe substitution; `LR_perm` (LogRel/UPermLR.v), `LR_uwk`;
 validity forms and `vpM` along permutations (Validity/UPermV.v). The
 scoping fact is `typed_lwf` (StaticCode) with `lwf_us_ext_*` (UPerm).
 
-**Remaining for the recursors' FT (E13).**
-1. Neutral scrutinees: `ElimPrem` at the target from the motives' and
-   branches' validity, at the identity extension of `σ` (global: `gup`
-   of `guwk σ`, images universe-weakened via growth + rotation; local:
-   `llift (gwk (uwk e))`, the fresh variables related as neutrals).
-2. The recursion lemma proper: induction on the C-typing of the code;
-   the right code's components are typed by `static_code` from `≡ₗ`.
-3. The FT cases (typing, congruence, β for both recursors): scrutinee
-   whnf is `box c` (recursion lemma) or neutral (1); anti-reduction.
+**M3 status (2026-09-25): complete.** No admits; `fundamentalM` and the
+consequences at M (normalization, canonicity) are closed under the global
+context. How the E13 pieces landed:
+1. **Neutral scrutinees** (`rec_T_ne`, `rec_t_ne`, `rec_*_gvar` in RecS):
+   `ElimPrem` from the motives' and branches' validity at the identity
+   extension of `σ` (RecExt: `GSubRel_uwkn`, `GSubRel_gupn`,
+   `SubRel_cexts`). The gvar laws take the boxes up to `≡ₗ`, so no
+   right-diagonal `ElimPrem` is needed.
+2. **The recursion lemma** (`rec_code`, with `rec_T`/`rec_t`): one
+   `typing_mut` induction on the left code's C-typing. The motives are
+   `RT`/`Rt` (every `ΔR ≅ Δ`, equivalent levels, index types convertible
+   to the derivation's, a right code `≡ₗ` with well-formed levels). Each
+   rule is one wrapper over the `rec_*` case lemmas, dispatched by goal
+   shape. The right code's pieces are typed by `static_code`.
+3. **The FT cases** (RecFT.v). `VS_elimT`/`VS_elimt` are in congruence
+   form (typing is the reflexive instance). Both scrutinee cases reduce
+   to `elim… w` on the whnf `w`; only the relation at `w` differs
+   (recursion lemma on `box`, neutral lemma otherwise). The source is
+   *re-levelled* to the target's level count (`GSubRel_relevel`:
+   `gsub_wf` and `GRel0` only see the declarations), which supplies
+   RecS's `gL G' = L'`. The bundles' `RBwf` is read off the recursors'
+   own typings (asserted before `us_move`, moved along `φ`; `mkrb`
+   injectivity).
+4. **β** needs neither the recursion lemma nor a relation on reducts. The
+   rule carries the reduct's typing (E10), whose induction hypothesis
+   makes the reduct valid, and the recursor anti-reduces to it
+   (`VS_elimT_beta`, with `redT_usubst`/`_gsubst`/`_subst`).
+5. `fundamentalM` is `fundamentalM_us` at `φ = lvar` (`G_us_id` from
+   `wfg_dnf`); Reducible and DeclConsequences are unchanged.
 
 ## Order of work
 
@@ -346,7 +366,7 @@ scoping fact is `typed_lwf` (StaticCode) with `lwf_us_ext_*` (UPerm).
 4. **Relation and validity.** `whne` gains the neutral recursors (the
    relation needs no new case: the recursors are eliminators). Validity
    and the FTs gain the `∀φ` quantifier.
-5. **Record and recursion lemmas.** The code-structure record, C-typing ⇒
-   record, and the two mutual recursion lemmas by induction on it.
-6. **FT cases** for the recursors at M (congruence, β), then the
-   consequences at M again (whnf, canonicity).
+5. **Recursion lemmas** (done). By induction on the C-typing itself (E5:
+   no semantic record).
+6. **FT cases** (done) for the recursors at M (typing, congruence, β),
+   then the consequences at M again (whnf, canonicity).

@@ -1,7 +1,7 @@
 # DeLaM formalization: notes for agents
 
-Start by reading `README.md`, then `M2_DESIGN.md` (current milestone) and
-`M1_DESIGN.md`. The latter holds the M1
+Start by reading `README.md`, then `M3_DESIGN.md` (latest milestone),
+`M2_DESIGN.md` and `M1_DESIGN.md`. The latter holds the M1
 current status, the ordered next steps, deviations from the paper, and a
 list of proof-engineering gotchas. Follow it.
 

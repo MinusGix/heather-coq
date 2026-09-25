@@ -21,8 +21,18 @@ Status: **Milestones 1 (MLTT core) and 2 (modal core) complete.** M2 has:
   - injectivity and discrimination of type formers, including `□`;
   - canonicity for `Nat` and for contextual types.
 
-No admits, no axioms. See `M2_DESIGN.md` and `M1_DESIGN.md` for decisions,
-deviations from the paper and gotchas.
+Milestone 3 (universe substitutions and the code recursors) is also
+complete:
+- universe renaming and substitution, and the universe substitution lemma;
+- validity quantified over universe substitutions;
+- the recursors `elim_Typ`/`elim_Trm`, with their schematic β rules and
+  the neutral recursion laws;
+- the recursion lemmas and the fundamental theorem at M with the
+  recursors. The consequences at M above still hold with the recursors
+  included.
+
+No admits, no axioms. See `M3_DESIGN.md`, `M2_DESIGN.md` and `M1_DESIGN.md`
+for decisions, deviations from the paper and gotchas.
 
 Documents:
 
