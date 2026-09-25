@@ -3025,4 +3025,83 @@ Proof.
   apply (gne_tm_conv Hne). rewrite (@gm_layer_M EP EM EMl). exact Meq.
 Qed.
 
+
+(** Boxed global variables: the recursions are neutral. *)
+Lemma rec_T_gvar {ΔL ΔR kL kR k U d d'} : [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
+  lequiv L' k kL -> lequiv L' k kR ->
+  [ G' ; ΔL ⊢[ lC ] tyGvar U d @ k ] -> [ G' ; ΔL ⊢[ lC ] tyGvar U d' @ k ] ->
+  ty_leq (tyGvar U d) (tyGvar U d') ->
+  LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) kL ΔL (boxT (tyGvar U d)))
+    (motT (wrapMT MTR) kR ΔR (boxT (tyGvar U d')))
+    (recTL kL ΔL (tyGvar U d)) (recTR kR ΔR (tyGvar U d')).
+Proof.
+  intros HΔL HΔ HkL HkR Hc Hc' Ec.
+  pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR.
+  assert (HΘ : [ G' ; Θ ⊢[ lM ] ]) by (pose proof (SubRel_ctx He) as X; rewrite (@gm_layer_M EP EM EMl) in X; exact X).
+  assert (HwL : lwf L' kL) by exact (lequiv_wf_r _ _ _ HkL). assert (HwR : lwf L' kR) by exact (lequiv_wf_r _ _ _ HkR).
+  assert (Q : lequiv L' kL kR) by exact (lequiv_trans _ _ _ _ (lequiv_sym _ _ _ HkL) HkR).
+  assert (Qg : lequiv (gL G') kL kR) by (rewrite EL; exact Q).
+  assert (HkLg : lequiv (gL G') k kL) by (rewrite EL; exact HkL). assert (HkRg : lequiv (gL G') k kR) by (rewrite EL; exact HkR).
+  assert (HcL : [ G' ; ΔL ⊢[ lC ] tyGvar U d @ kL ]) by (eapply wft_lconv; [exact Hc | apply lequiv_sym, HkLg]).
+  assert (Hc'L : [ G' ; ΔL ⊢[ lC ] tyGvar U d' @ kL ]) by (eapply wft_lconv; [exact Hc' | apply lequiv_sym, HkLg]).
+  assert (Hc'R : [ G' ; ΔR ⊢[ lC ] tyGvar U d' @ kR ]).
+  { eapply wft_lconv; [exact (ctxconv_ty HΔ (i := lC) eq_refl Hc') | apply lequiv_sym, HkRg]. }
+  pose proof (box_rel HΔL HwL HcL Hc'L Ec) as BLR. pose proof (box_rel HΔR HwR Hc'R Hc'R (ty_leq_refl _)) as BRR.
+  pose proof (MotRel_T EP EM G0 Γ0 L' φ MT MT' l1 l1' HMT HMT' Hl1 Hφ VMT VMTr VΓ G' σ σ' Θ e e' Hσ He EL
+                (kL := kL) (kR := kR) HwL Q HΔL HΔ BLR BRR) as Mot.
+  pose proof (LRty_eqM Mot) as Meq.
+  destruct (CtxRelG_of_eq EP EM HΔ) as [CP _].
+  destruct (CtxRelG_escape_P EP EM CP HΔL HΔR) as [HgΔ _].
+  pose proof (geq_tm_sound (LRtm_geq BLR)) as Hbox. rewrite (@gm_layer_M EP EM EMl) in Hbox.
+  pose proof (gne_tm_elimT_gvar (EP := EP) (EM := EM) Meq (EP_all Qg HgΔ) Hbox) as Hne.
+  destruct Mot as [R HR]. exists R. split; [exact HR|].
+  apply (LR_neutral _ _ _ _ _ _ _ HR _ _ Hne).
+  apply (gne_tm_conv Hne). rewrite (@gm_layer_M EP EM EMl). exact (LRty_eqM (ex_intro _ R HR)).
+Qed.
+
+Lemma rec_t_gvar {ΔL ΔR kL kR k T0 TL TR u d d'} : [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
+  lequiv L' k kL -> lequiv L' k kR ->
+  [ G' ; ΔL ⊢[ lD ] T0 ≅ TL @ k ] -> [ G' ; ΔL ⊢[ lD ] T0 ≅ TR @ k ] ->
+  [ G' ; ΔL ⊢[ lC ] gvar u d : T0 @ k ] -> [ G' ; ΔL ⊢[ lC ] gvar u d' : T0 @ k ] ->
+  tm_leq (gvar u d) (gvar u d') ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) kL ΔL TL (boxt (gvar u d)))
+    (mott (wrapMt MtR) kR ΔR TR (boxt (gvar u d')))
+    (rectL kL ΔL TL (gvar u d)) (rectR kR ΔR TR (gvar u d')).
+Proof.
+  intros HΔL HΔ HkL HkR HTL HTR Hc Hc' Ec.
+  pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR.
+  assert (HΘ : [ G' ; Θ ⊢[ lM ] ]) by (pose proof (SubRel_ctx He) as X; rewrite (@gm_layer_M EP EM EMl) in X; exact X).
+  assert (HwL : lwf L' kL) by exact (lequiv_wf_r _ _ _ HkL). assert (HwR : lwf L' kR) by exact (lequiv_wf_r _ _ _ HkR).
+  assert (Q : lequiv L' kL kR) by exact (lequiv_trans _ _ _ _ (lequiv_sym _ _ _ HkL) HkR).
+  assert (Qg : lequiv (gL G') kL kR) by (rewrite EL; exact Q).
+  assert (HkLg : lequiv (gL G') k kL) by (rewrite EL; exact HkL). assert (HkRg : lequiv (gL G') k kR) by (rewrite EL; exact HkR).
+  pose proof (eqty_wf_r (i := lD) eq_refl HTL) as HTL0. pose proof (eqty_wf_r (i := lD) eq_refl HTR) as HTR0.
+  assert (HTLk : [ G' ; ΔL ⊢[ lD ] TL @ kL ]) by (eapply wft_lconv; [exact HTL0 | apply lequiv_sym, HkLg]).
+  assert (HTRk : [ G' ; ΔR ⊢[ lD ] TR @ kR ]).
+  { eapply wft_lconv; [exact (ctxconv_ty HΔ (i := lD) eq_refl HTR0) | apply lequiv_sym, HkRg]. }
+  assert (HTLR : [ G' ; ΔL ⊢[ lD ] TL ≅ TR @ kL ]).
+  { eapply eqty_lconv; [exact (eqty_trans _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ HTL) HTR) | apply lequiv_sym, HkLg]. }
+  assert (HcL : [ G' ; ΔL ⊢[ lC ] gvar u d : TL @ kL ])
+    by (eapply wf_lconv; [eapply wf_conv; [exact Hc | apply eqty_sym, HTL] | apply lequiv_sym, HkLg]).
+  assert (Hc'L : [ G' ; ΔL ⊢[ lC ] gvar u d' : TL @ kL ])
+    by (eapply wf_lconv; [eapply wf_conv; [exact Hc' | apply eqty_sym, HTL] | apply lequiv_sym, HkLg]).
+  assert (Hc'R : [ G' ; ΔR ⊢[ lC ] gvar u d' : TR @ kR ]).
+  { refine (ctxconv_tm HΔ (i := lC) eq_refl _).
+    eapply wf_lconv; [eapply wf_conv; [exact Hc' | apply eqty_sym, HTR] | apply lequiv_sym, HkRg]. }
+  pose proof (box_rel_tm HTLk HwL HcL Hc'L Ec) as BLR.
+  pose proof (box_rel_tm HTRk HwR Hc'R Hc'R (tm_leq_refl _)) as BRR.
+  pose proof (MotRel_t EP EM G0 Γ0 L' φ Mt Mt' l2 l2' HMt HMt' Hl2 Hφ VMt VMtr VΓ G' σ σ' Θ e e' Hσ He EL
+                (kL := kL) (kR := kR) HwL Q HΔL HΔ HTLR HTRk BLR BRR) as Mot.
+  pose proof (LRty_eqM Mot) as Meq.
+  destruct (CtxRelG_of_eq EP EM HΔ) as [CP _]. destruct (CtxRelG_of_eq EP EM (eqc_refl _ _ _ HΔL)) as [CPL _].
+  destruct (CtxRelG_escape_P EP EM CP HΔL HΔR) as [HgΔ _].
+  destruct (VTyG_of_eq EP EM HTLR) as [VP _].
+  destruct (VTyG_escape_P EP EM CPL HΔL HTLk (eqty_wf_r (i := lD) eq_refl HTLR) VP) as [HgT _].
+  pose proof (geq_tm_sound (LRtm_geq BLR)) as Hbox. rewrite (@gm_layer_M EP EM EMl) in Hbox.
+  pose proof (gne_tm_elimt_gvar (EP := EP) (EM := EM) Meq (EP_all Qg HgΔ) HTLk HTRk HgT Hbox) as Hne.
+  destruct Mot as [R HR]. exists R. split; [exact HR|].
+  apply (LR_neutral _ _ _ _ _ _ _ HR _ _ Hne).
+  apply (gne_tm_conv Hne). rewrite (@gm_layer_M EP EM EMl). exact (LRty_eqM (ex_intro _ R HR)).
+Qed.
+
 End Rec.
