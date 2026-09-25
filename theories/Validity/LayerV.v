@@ -3,7 +3,7 @@
     On MLTT contexts and types, related substitutions, related types and
     terms, and validity (under global weakenings) do not depend on the
     relation's parameters. *)
-From DeLaM.Validity Require Export Def.
+From DeLaM.Validity Require Export CtxRel.
 From DeLaM.LogRel Require Export Layering.
 
 Section LayerV.
@@ -59,6 +59,21 @@ Lemma VTmG_layer {G Γ t t' T l} : mltt_ctx Γ -> mltt_ty T ->
 Proof.
   intros HΓ Hm; unfold VTmG; split; intros H G' γ Hγ;
     apply (VTm_layer (mltt_ctx_gwa _ _ HΓ) (mltt_gwa _ _ Hm)), H, Hγ.
+Qed.
+
+Lemma CtxRel_layer {G} : forall Γ Γ', mltt_ctx Γ -> mltt_ctx Γ' ->
+  (@CtxRel E LP1 G Γ Γ' <-> @CtxRel E LP2 G Γ Γ').
+Proof.
+  induction Γ as [| g | Γ IH A l]; intros [| g' | Γ' A' l'] Hm Hm'; cbn [CtxRel]; try reflexivity.
+  destruct Hm as [HmΓ HmA], Hm' as [HmΓ' HmA'].
+  rewrite (IH _ HmΓ HmΓ'), (VTy_layer HmΓ HmA HmA'), (VTy_layer HmΓ' HmA' HmA). reflexivity.
+Qed.
+
+Lemma CtxRelG_layer {G Γ Γ'} : mltt_ctx Γ -> mltt_ctx Γ' ->
+  (@CtxRelG E LP1 G Γ Γ' <-> @CtxRelG E LP2 G Γ Γ').
+Proof.
+  intros Hm Hm'; unfold CtxRelG; split; intros H G' γ Hγ;
+    apply (CtxRel_layer _ _ (mltt_ctx_gwa _ _ Hm) (mltt_ctx_gwa _ _ Hm')), H, Hγ.
 Qed.
 
 End LayerV.

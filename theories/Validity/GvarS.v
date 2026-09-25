@@ -114,6 +114,24 @@ Proof.
     first [eassumption | econstructor; eassumption].
 Qed.
 
+(** The layers of the bindings. *)
+Definition DLayer (D : gdecl) : Prop :=
+  match D with
+  | gdCtx => True
+  | gdTy _ i _ => i = lC \/ i = lD
+  | gdTm _ i _ _ => i = lV \/ i = lC
+  end.
+
+Lemma DLayer_ren D ξ : DLayer (gdecl_ren D ξ) = DLayer D.
+Proof. now destruct D. Qed.
+
+Lemma in_gctx_DLayer {G n D} : [ ⊢ G ] -> in_gctx (gΨ G) n D -> DLayer D.
+Proof.
+  intros HG; revert n D. induction HG as [L | L Ψ HG IH | L Ψ Δ i l HG IH HΔ Hi Hl | L Ψ Δ i T l HG IH HT Hi Hl];
+    intros n D Hin; cbn in Hin; inversion Hin; subst; rewrite ?DLayer_ren; cbn; auto;
+    match goal with Hm : in_gctx ?Ψ _ _ |- _ => is_var Ψ; exact (IH _ _ Hm) end.
+Qed.
+
 (** The tail condition only depends on the contexts' shapes. *)
 Lemma lsub_tail_gsubst_r {d Δ Γ σ σ'} : gsub_cvars σ Δ -> gsub_cvars σ Γ ->
   lsub_tail d Δ Γ -> lsub_tail d⦃σ'⦄ Δ⦃σ⦄ Γ⦃σ⦄.
