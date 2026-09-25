@@ -268,6 +268,28 @@ Proof.
   intros H1 H2 G' σ σ' Hσ. exact (VTmG_trans (H1 _ _ (GSubRel_refl_l _ _ Hσ)) (H2 _ _ _ Hσ)).
 Qed.
 
+(** ** Level equivalence of syntax (M3_DESIGN.md E6', E12) *)
+
+Lemma VTyS_leq {G Γ T T' l} : VCtxS G Γ -> VTyS G Γ T T l -> VTyS G Γ T' T' l -> ty_leq T T' ->
+  VTyS G Γ T T' l.
+Proof.
+  intros HΓ V V' Ex G' σ σ' Hσ. pose proof (V _ _ _ Hσ) as X.
+  pose proof (VTyG_transport (CtxRelG_sym (HΓ _ _ _ Hσ)) (V' _ _ _ (GSubRel_refl_r _ _ Hσ))) as Y.
+  refine (VTyG_trans X (VTyG_leq (VTyG_trans (VTyG_sym X) X) Y _)).
+  apply (proj1 leq_gsubst_all); [intros; apply gobj_leq_refl | exact Ex].
+Qed.
+
+Lemma VTmS_leq {G Γ t t' T l} : VCtxS G Γ -> VTyS G Γ T T l -> VTmS G Γ t t T l -> VTmS G Γ t' t' T l ->
+  tm_leq t t' -> VTmS G Γ t t' T l.
+Proof.
+  intros HΓ HT V V' Ex G' σ σ' Hσ. pose proof (V _ _ _ Hσ) as X.
+  pose proof (VTmG_transport (CtxRelG_sym (HΓ _ _ _ Hσ)) (V' _ _ _ (GSubRel_refl_r _ _ Hσ))) as Y0.
+  pose proof (VTmG_conv Y0 (HT _ _ _ Hσ)) as Y.
+  refine (VTmG_trans X (VTmG_leq (VTmG_trans (VTmG_sym X) X) Y _)).
+  apply (proj1 (proj2 leq_gsubst_all)); [intros; apply gobj_leq_refl | exact Ex].
+Qed.
+
 End S.
 
 End ValidS.
+

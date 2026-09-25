@@ -435,6 +435,7 @@ Ltac m_ty :=
   | solve [simple eapply VTyS_trans; [eassumption | simple eapply VTyS_sym; m_side]]
   | solve [simple eapply VTyS_trans; [simple eapply VTyS_sym; m_side | eassumption]]
   | solve [simple eapply VTyS_lookup; m_side]
+  | solve [simple eapply VTyS_leq; m_side]
   | solve [simple eapply VTyS_single; m_side]
   | m_rules
   | solve [simple eapply VTyS_single; [eassumption | m_rules]]
@@ -447,6 +448,7 @@ Ltac m_tm :=
   [ eassumption
   | solve [simple eapply VTmS_sym; m_side] | solve [simple eapply VTmS_trans; m_side]
   | solve [simple eapply VTmS_conv; m_side] | solve [simple eapply VTmS_lconv; m_side]
+  | solve [simple eapply VTmS_leq; m_side]
   | m_rules ].
 
 Ltac m_goal :=
