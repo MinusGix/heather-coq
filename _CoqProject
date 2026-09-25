@@ -81,8 +81,8 @@ theories/Validity/FundamentalS.v
 theories/Validity/ReducibleP.v
 theories/Validity/DeclConsequencesP.v
 theories/Validity/RecObj.v
+theories/Validity/RecExt.v
 theories/Validity/RecS.v
-theories/Validity/RecNe.v
 theories/Validity/FundamentalM.v
 theories/Validity/Reducible.v
 theories/Validity/DeclConsequences.v

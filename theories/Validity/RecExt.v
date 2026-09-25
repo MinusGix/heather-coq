@@ -1,4 +1,4 @@
-(** * Neutral scrutinees of the code recursors (M3_DESIGN.md E13, E14)
+(** * The identity extension for the code recursors (M3_DESIGN.md E13, E14)
 
     The neutral recursion laws need the motives and branches generically
     related under their binders ([ElimPrem]). They come from the motives'
@@ -6,7 +6,21 @@
     the level binders by universe weakening ([LR_uwk] and friends), the
     fresh global variables as identity images, the fresh local variables
     as neutrals at their (valid) types. *)
-From DeLaM.Validity Require Export RecS UPermV.
+From DeLaM.Validity Require Export LetboxS UPermV.
+
+Lemma gdecl_gsubst_ext D σ τ : (forall i, σ i = τ i) -> gdecl_gsubst D σ = gdecl_gsubst D τ.
+Proof.
+  intros H; destruct D; cbn [gdecl_gsubst]; f_equal.
+  all: first [ reflexivity | exact (proj1 (proj2 (proj2 gsubst_ext_all)) _ _ _ H)
+             | exact (proj1 gsubst_ext_all _ _ _ H) ].
+Qed.
+
+Lemma gsub_wf_ext {G' G σ τ} : (forall i, σ i = τ i) -> [ G' ⊢ σ : G ] -> [ G' ⊢ τ : G ].
+Proof.
+  intros H [Hg Hn Hv]. constructor; [exact Hg | intros i; rewrite <- H; apply Hn |].
+  intros n D Hin. rewrite <- H, <- (gdecl_gsubst_ext D σ τ H). exact (Hv _ _ Hin).
+Qed.
+
 
 Section RecNe.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VPP : VPPerm lr_vp}.
@@ -56,6 +70,25 @@ Proof.
 Qed.
 
 End RecNe.
+
+Section ExtRel.
+Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM}.
+Local Notation GSubRel := (GSubRel EP EM).
+
+Lemma GRel0_ext {G' G σ σ' τ τ'} : (forall i, σ i = τ i) -> (forall i, σ' i = τ' i) ->
+  GRel0 EP EM G' G σ σ' -> GRel0 EP EM G' G τ τ'.
+Proof.
+  intros H H' R n D Hin. rewrite <- H, <- H', <- (gdecl_gsubst_ext D σ τ H). exact (R _ _ Hin).
+Qed.
+
+Lemma GSubRel_ext {G' G σ σ' τ τ'} : (forall i, σ i = τ i) -> (forall i, σ' i = τ' i) ->
+  GSubRel G' G σ σ' -> GSubRel G' G τ τ'.
+Proof.
+  intros H H' [HL Hl Hr R Rl Rr]. constructor; [exact HL | exact (gsub_wf_ext H Hl) | exact (gsub_wf_ext H' Hr)
+    | exact (GRel0_ext H H' R) | exact (GRel0_ext H H Rl) | exact (GRel0_ext H' H' Rr)].
+Qed.
+
+End ExtRel.
 
 (** ** Global substitutions: universe weakening, and a fresh binding *)
 
@@ -227,3 +260,71 @@ Proof.
 Qed.
 
 End GS2.
+
+(** ** The identity extension: fresh globals and fresh locals *)
+
+Section Ext.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+
+Lemma SubRel_gwkn {G Γ Δ d d' D Ds} : SubRel G Γ Δ d d' ->
+  [ ⊢ mkG (gL G) ((D :: Ds) ++ gΨ G) ] ->
+  SubRel (mkG (gL G) ((D :: Ds) ++ gΨ G)) (gcren Γ (ush (length (D :: Ds))))
+    (gcren Δ (ush (length (D :: Ds)))) (gwkn (length (D :: Ds)) d) (gwkn (length (D :: Ds)) d').
+Proof.
+  intros Hd HG. destruct (SubRel_dnf _ _ _ _ _ Hd) as [N N'].
+  assert (Hγ : gwk_ok (gwk_stepn (length (D :: Ds))) (mkG (gL G) ((D :: Ds) ++ gΨ G)) G)
+    by (split; [reflexivity | apply gwk_stepn_wf]).
+  pose proof (SubRel_gwa Hd Hγ HG) as X.
+  assert (Ec : forall C : ctx, C⟦gwk_stepn (length (D :: Ds))⟧ = gcren C (ush (length (D :: Ds)))).
+  { intros C. unfold gwa, gwk_stepn; cbn [length]. rewrite Nat.iter_succ; cbn beta iota.
+    apply (proj1 (proj2 (proj2 gren_ext_all))); intros; exact (gwk_stepn_fn (S (length Ds)) _). }
+  rewrite !Ec in X.
+  refine (SubRel_ext _ _ _ _ _ _ _ _ _ X); intros m; unfold gwa, gwk_stepn; cbn [length];
+    rewrite Nat.iter_succ; cbn beta iota; cbn [gren GRen_lsub];
+    rewrite llk_glren, llk_gwkn by assumption;
+    apply (proj1 (proj2 gren_ext_all)); intros; exact (gwk_stepn_fn (S (length Ds)) _).
+Qed.
+
+Lemma CtxRel_cexts_pre {G} As : forall Γ Γ', CtxRel G (cexts Γ As) (cexts Γ' As) -> CtxRel G Γ Γ'.
+Proof.
+  induction As as [|[A l] As IH]; intros Γ Γ' H; cbn [cexts] in H; [exact H|].
+  exact (CtxRel_tl (IH _ _ H)).
+Qed.
+
+Lemma SubRel_cexts {G} As : forall Γ Δ d d', SubRel G Γ Δ d d' ->
+  CtxRel G (cexts Γ As) (cexts Γ As) -> Forall (fun '(_, l) => lwf (gL G) l) As ->
+  SubRel G (cexts Γ As) (cexts Δ (cexts_sub As d)) (lliftn (length As) d) (lliftn (length As) d').
+Proof.
+  induction As as [|[A l] As IH]; intros Γ Δ d d' Hd HC HL; cbn [cexts cexts_sub length]; [exact Hd|].
+  inversion HL as [|x y Hl HL']; subst.
+  pose proof (CtxRel_cexts_pre As (Γ ,, A @ l) (Γ ,, A @ l) HC) as HC0. cbn [CtxRel] in HC0. destruct HC0 as (_ & _ & HA & _).
+  pose proof (HA _ _ _ Hd) as [R HR]. destruct (escape_ty _ _ _ _ _ _ _ _ HR) as (HAd & _ & _).
+  pose proof (SubRel_lift Hd HA HAd Hl) as Hd1.
+  unfold lliftn in *. rewrite !Nat.iter_succ_r. exact (IH _ _ _ _ Hd1 HC HL').
+Qed.
+
+End Ext.
+
+Section ExtG.
+Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM}.
+
+Fixpoint closed_decls (Ds : list gdecl) : Prop :=
+  match Ds with
+  | nil => True
+  | D :: Ds => (forall τ, gdecl_gsubst D (gupn (length Ds) τ) = D) /\ closed_decls Ds
+  end.
+
+Lemma GSubRel_gupn {G' G σ σ'} Ds : GSubRel EP EM G' G σ σ' -> closed_decls Ds ->
+  [ ⊢ mkG (gL G') (Ds ++ gΨ G') ] ->
+  GSubRel EP EM (mkG (gL G') (Ds ++ gΨ G')) (mkG (gL G) (Ds ++ gΨ G)) (gupn (length Ds) σ) (gupn (length Ds) σ').
+Proof.
+  intros Hσ. induction Ds as [|D Ds IH]; intros HC HG; cbn [length List.app].
+  - destruct G' as [L' Ψ'], G as [L Ψ]; exact Hσ.
+  - destruct HC as [HD HC].
+    pose proof (wf_glob_cons _ _ _ HG) as HG0.
+    pose proof (IH HC HG0) as X.
+    pose proof (GSubRel_gup EP EM (D := D) X) as Y. unfold gext in Y; cbn [gL gΨ] in Y.
+    rewrite HD in Y. specialize (Y HG). rewrite !HD in Y. exact (Y eq_refl).
+Qed.
+
+End ExtG.

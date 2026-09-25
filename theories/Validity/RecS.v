@@ -8,22 +8,9 @@
     code's pieces, [e] by the recursive calls), and proves the recursion
     lemmas by induction on the code's C-typing. *)
 From DeLaM.Typing Require Export RecPeel.
-From DeLaM.Validity Require Export RecObj LetboxS DeclConsequencesP.
+From DeLaM.Validity Require Export RecObj LetboxS DeclConsequencesP RecExt.
 
 (** ** Pointwise equal substitutions *)
-
-Lemma gdecl_gsubst_ext D σ τ : (forall i, σ i = τ i) -> gdecl_gsubst D σ = gdecl_gsubst D τ.
-Proof.
-  intros H; destruct D; cbn [gdecl_gsubst]; f_equal.
-  all: first [ reflexivity | exact (proj1 (proj2 (proj2 gsubst_ext_all)) _ _ _ H)
-             | exact (proj1 gsubst_ext_all _ _ _ H) ].
-Qed.
-
-Lemma gsub_wf_ext {G' G σ τ} : (forall i, σ i = τ i) -> [ G' ⊢ σ : G ] -> [ G' ⊢ τ : G ].
-Proof.
-  intros H [Hg Hn Hv]. constructor; [exact Hg | intros i; rewrite <- H; apply Hn |].
-  intros n D Hin. rewrite <- H, <- (gdecl_gsubst_ext D σ τ H). exact (Hv _ _ Hin).
-Qed.
 
 Lemma gext_s_one o σ i : gext_s (o :: nil) σ i = gcons σ o i.
 Proof. unfold gext_s; destruct i; cbn; [reflexivity | f_equal; lia]. Qed.
@@ -187,18 +174,9 @@ Local Notation SubRelM := (@SubRel EM LRM).
 Local Notation LRtyM := (@LRty EM LRM).
 Local Notation LRtmM := (@LRtm EM LRM).
 
-Lemma GRel0_ext {G' G σ σ' τ τ'} : (forall i, σ i = τ i) -> (forall i, σ' i = τ' i) ->
-  GRel0 EP EM G' G σ σ' -> GRel0 EP EM G' G τ τ'.
-Proof.
-  intros H H' R n D Hin. rewrite <- H, <- H', <- (gdecl_gsubst_ext D σ τ H). exact (R _ _ Hin).
-Qed.
-
 Lemma GSubRel_ext {G' G σ σ' τ τ'} : (forall i, σ i = τ i) -> (forall i, σ' i = τ' i) ->
   GSubRel G' G σ σ' -> GSubRel G' G τ τ'.
-Proof.
-  intros H H' [HL Hl Hr R Rl Rr]. constructor; [exact HL | exact (gsub_wf_ext H Hl) | exact (gsub_wf_ext H' Hr)
-    | exact (GRel0_ext H H' R) | exact (GRel0_ext H H Rl) | exact (GRel0_ext H' H' Rr)].
-Qed.
+Proof. exact (RecExt.GSubRel_ext EP EM). Qed.
 
 (** Extension by a context, one on each side, related at P. *)
 Lemma GSubRel_ctx1 {G' G σ σ' Δ Δ'} : GSubRel G' G σ σ' -> [ G' ; Δ ⊢[ lD ] ] -> [ G' ⊢[ lD ] Δ ≅ Δ' ] ->
