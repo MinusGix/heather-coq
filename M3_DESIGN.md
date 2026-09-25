@@ -183,6 +183,23 @@ through its induction hypotheses (the `regty` step up to the operation's
 `motT`/`mott` law); `RecInst` builds them when a recursor is constructed
 from scratch.
 
+### Open: E6 is too weak for the recursion lemmas (found 2026-09-25)
+
+E6 quantifies validity over one universe substitution `φ` (validity of
+`J[φ]`). The recursion lemmas need two *equivalent* level instantiations
+related, which one-sided validity does not give:
+- the congruence `elim_Trm … l …  ≅ elim_Trm … l' …` with `l ≡ l'`: the
+  variable branch is instantiated at `ℓ := l` on one side and `ℓ := l'` on
+  the other;
+- the `Π` β step: the recursor's type is `M_Typ[l/ℓ, …]` with the index
+  level `l`, the reduct's is `M_Typ[l₁ ⊔ l₂/ℓ, …]` with the code's levels,
+  and `l ≡ l₁ ⊔ l₂` only up to equivalence (level conversion in the code's
+  typing).
+The paper's lemma (07b:1428) indeed takes `φ ≈ φ'`. Candidate fix: make
+the FT at M two-sided in `φ ≈ φ'` (relate `J[φ]` with `J[φ']` in
+`G[φ]; Γ[φ]`), with a declarative functionality lemma for universe
+substitution in equivalent levels (the right-hand instances' typing).
+
 ## Order of work
 
 1. **Syntax** (done). Level renaming and substitution; the bundle nodes,
