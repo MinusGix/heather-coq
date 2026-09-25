@@ -314,13 +314,14 @@ Class GenericEqM (EP EM : GenericEq) := {
     @gne_tm EM G Γ ν ν' (tyCTyp Δ l) lzero ->
     @gne_tm EM G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ ν) (elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' ν')
       (motT (wrapMT MT) l Δ ν) l1 ;
-  gne_tm_elimT_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' U d} :
+  (* the boxed variables are compared up to level equivalence (E11) *)
+  gne_tm_elimT_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' U d d'} :
     [ G ; Γ ⊢[ lM ] motT (wrapMT MT) l Δ (boxT (tyGvar U d))
-                  ≅ motT (wrapMT MT') l' Δ' (boxT (tyGvar U d)) @ l1 ] ->
+                  ≅ motT (wrapMT MT') l' Δ' (boxT (tyGvar U d')) @ l1 ] ->
     ElimPrem EP EM G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' ->
-    [ G ; Γ ⊢[ lM ] boxT (tyGvar U d) : tyCTyp Δ l @ lzero ] ->
+    [ G ; Γ ⊢[ lM ] boxT (tyGvar U d) ≅ boxT (tyGvar U d') : tyCTyp Δ l @ lzero ] ->
     @gne_tm EM G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ (boxT (tyGvar U d)))
-      (elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' (boxT (tyGvar U d)))
+      (elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' (boxT (tyGvar U d')))
       (motT (wrapMT MT) l Δ (boxT (tyGvar U d))) l1 ;
   gne_tm_elimt {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' ν ν'} :
     [ G ; Γ ⊢[ lM ] mott (wrapMt Mt) l Δ T ν ≅ mott (wrapMt Mt') l' Δ' T' ν' @ l2 ] ->
@@ -329,13 +330,13 @@ Class GenericEqM (EP EM : GenericEq) := {
     @gne_tm EM G Γ ν ν' (tyCTrm Δ T l) lzero ->
     @gne_tm EM G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T ν) (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' ν')
       (mott (wrapMt Mt) l Δ T ν) l2 ;
-  gne_tm_elimt_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' u d} :
+  gne_tm_elimt_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' u d d'} :
     [ G ; Γ ⊢[ lM ] mott (wrapMt Mt) l Δ T (boxt (gvar u d))
-                  ≅ mott (wrapMt Mt') l' Δ' T' (boxt (gvar u d)) @ l2 ] ->
+                  ≅ mott (wrapMt Mt') l' Δ' T' (boxt (gvar u d')) @ l2 ] ->
     ElimPrem EP EM G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' ->
     [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Δ' ⊢[ lD ] T' @ l' ] -> @geq_ty EP G Δ T T' l ->
-    [ G ; Γ ⊢[ lM ] boxt (gvar u d) : tyCTrm Δ T l @ lzero ] ->
+    [ G ; Γ ⊢[ lM ] boxt (gvar u d) ≅ boxt (gvar u d') : tyCTrm Δ T l @ lzero ] ->
     @gne_tm EM G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt (gvar u d)))
-      (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt (gvar u d)))
+      (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt (gvar u d')))
       (mott (wrapMt Mt) l Δ T (boxt (gvar u d))) l2
 }.
