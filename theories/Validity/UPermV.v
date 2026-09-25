@@ -167,6 +167,49 @@ Qed.
 
 End Uwk.
 
+Section Uwkn.
+Context {n L : nat} {Ψ : list gdecl} (HG : [ ⊢ mkG L Ψ ]).
+Let Hgrow : gwk_ok gwk_id (mkG (n + L) Ψ) (mkG L Ψ) := conj (Nat.le_add_l _ _) (gwkwf_id _).
+Let HG' : [ ⊢ mkG (n + L) Ψ ] := wfg_grow L (n + L) Ψ (Nat.le_add_l _ _) HG.
+Let EG : Gp (rotn n L) (mkG (n + L) Ψ) = gctx_uwk n (mkG L Ψ).
+Proof. unfold Gp, G_us, gctx_usubst, gctx_uwk; cbn. f_equal. exact (rotn_decls n L Ψ (wfg_lwf _ HG)). Qed.
+Let Eag : forall m, m < L -> pφ (rotn n L) m = pφ (ush n) m := fun m Hm => rotn_ush n L m Hm.
+
+Lemma VTyG_uwkn {Γ T T' l} : dnfctx Γ -> ctx_lwf L Γ -> ty_lwf L T -> ty_lwf L T' -> lwf L l ->
+  VTyG (mkG L Ψ) Γ T T' l ->
+  VTyG (gctx_uwk n (mkG L Ψ)) Γ⟨ush n⟩ᵤ T⟨ush n⟩ᵤ T'⟨ush n⟩ᵤ (lvren l (ush n)).
+Proof.
+  intros NΓ WΓ WT WT' Wl HV. pose proof (VTyG_gwk HV Hgrow) as X; cbn [gwa] in X.
+  pose proof (VTyG_perm (G := mkG (n + L) Ψ) (uperm_rotn n L) HG' NΓ X) as Y.
+  rewrite EG, (lwf_us_ext_ctx WΓ Eag), (lwf_us_ext_ty WT Eag), (lwf_us_ext_ty WT' Eag),
+    (lvsubst_ext_lwf _ _ _ _ Wl Eag), <- !uren_us_ty, <- uren_us_ctx,
+    <- (lvren_as_lvsubst _ _ (pφ (ush n))) in Y by reflexivity.
+  exact Y.
+Qed.
+
+Lemma VTmG_uwkn {Γ t t' T l} : dnfctx Γ -> ctx_lwf L Γ -> tm_lwf L t -> tm_lwf L t' -> ty_lwf L T -> lwf L l ->
+  VTmG (mkG L Ψ) Γ t t' T l ->
+  VTmG (gctx_uwk n (mkG L Ψ)) Γ⟨ush n⟩ᵤ t⟨ush n⟩ᵤ t'⟨ush n⟩ᵤ T⟨ush n⟩ᵤ (lvren l (ush n)).
+Proof.
+  intros NΓ WΓ Wt Wt' WT Wl HV. pose proof (VTmG_gwk HV Hgrow) as X; cbn [gwa] in X.
+  pose proof (VTmG_perm (G := mkG (n + L) Ψ) (uperm_rotn n L) HG' NΓ X) as Y.
+  rewrite EG, (lwf_us_ext_ctx WΓ Eag), (lwf_us_ext_tm Wt Eag), (lwf_us_ext_tm Wt' Eag),
+    (lwf_us_ext_ty WT Eag), (lvsubst_ext_lwf _ _ _ _ Wl Eag), <- !uren_us_tm, <- uren_us_ty, <- uren_us_ctx,
+    <- (lvren_as_lvsubst _ _ (pφ (ush n))) in Y by reflexivity.
+  exact Y.
+Qed.
+
+Lemma CtxRelG_uwkn {Γ Γ'} : dnfctx Γ -> dnfctx Γ' -> ctx_lwf L Γ -> ctx_lwf L Γ' ->
+  CtxRelG (mkG L Ψ) Γ Γ' -> CtxRelG (gctx_uwk n (mkG L Ψ)) Γ⟨ush n⟩ᵤ Γ'⟨ush n⟩ᵤ.
+Proof.
+  intros NΓ NΓ' WΓ WΓ' HV. pose proof (CtxRelG_gwk HV Hgrow) as X; cbn [gwa] in X.
+  pose proof (CtxRelG_perm (G := mkG (n + L) Ψ) (uperm_rotn n L) HG' NΓ NΓ' X) as Y.
+  rewrite EG, (lwf_us_ext_ctx WΓ Eag), (lwf_us_ext_ctx WΓ' Eag), <- !uren_us_ctx in Y.
+  exact Y.
+Qed.
+
+End Uwkn.
+
 Lemma lsub_wf_lwf {G i Δ d Γ} : [ G ; Δ ⊢[ i ] d : Γ ] -> LK (tm_lwf (gL G)) d.
 Proof.
   intros Hd n. destruct (lt_dec n (clen Γ)) as [Hlt|Hge].

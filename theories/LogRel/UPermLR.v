@@ -648,4 +648,47 @@ Proof.
   exact X.
 Qed.
 
+(** ** [n] fresh levels at once *)
+
+Definition rotn (n L : nat) : nat -> nat :=
+  fun m => if m <? L then n + m else if m <? n + L then m - L else m.
+Definition rotni (n L : nat) : nat -> nat :=
+  fun m => if m <? n then L + m else if m <? n + L then m - n else m.
+
+Lemma uperm_rotn n L : uperm (rotn n L) (rotni n L) (n + L).
+Proof.
+  unfold rotn, rotni; repeat split.
+  - intros m. destruct (Nat.ltb_spec m L).
+    + destruct (Nat.ltb_spec (n + m) n); [lia|]. destruct (Nat.ltb_spec (n + m) (n + L)); lia.
+    + destruct (Nat.ltb_spec m (n + L)).
+      * destruct (Nat.ltb_spec (m - L) n); lia.
+      * destruct (Nat.ltb_spec m n); [lia|]. destruct (Nat.ltb_spec m (n + L)); lia.
+  - intros m. destruct (Nat.ltb_spec m n).
+    + destruct (Nat.ltb_spec (L + m) L); [lia|]. destruct (Nat.ltb_spec (L + m) (n + L)); lia.
+    + destruct (Nat.ltb_spec m (n + L)).
+      * destruct (Nat.ltb_spec (m - n) L); lia.
+      * destruct (Nat.ltb_spec m L); [lia|]. destruct (Nat.ltb_spec m (n + L)); lia.
+  - intros m Hm. destruct (Nat.ltb_spec m L); [lia|]. destruct (Nat.ltb_spec m (n + L)); lia.
+  - intros m Hm. destruct (Nat.ltb_spec m L); [lia|]. destruct (Nat.ltb_spec m (n + L)); lia.
+Qed.
+
+Lemma rotn_ush n L m : m < L -> pφ (rotn n L) m = lvar (ush n m).
+Proof. intros Hm. unfold pφ, rotn, ush. destruct (Nat.ltb_spec m L); [reflexivity | lia]. Qed.
+
+Lemma rotn_decls n L Ψ : Forall (decl_lwf L) Ψ ->
+  map (fun D => gdecl_usubst D (pφ (rotn n L))) Ψ = map (fun D => gdecl_uren D (ush n)) Ψ.
+Proof.
+  induction 1 as [|D Ψ HD _ IH]; cbn; f_equal; auto.
+  assert (Eag : forall m, m < L -> pφ (rotn n L) m = pφ (ush n) m) by (intros; apply rotn_ush; assumption).
+  destruct D; cbn in HD |- *; [reflexivity | ..];
+    repeat match goal with H : _ /\ _ |- _ => destruct H end.
+  - f_equal; [rewrite uren_us_ctx; exact (lwf_us_ext_ctx ltac:(eassumption) Eag)
+             | rewrite (lvren_as_lvsubst _ _ (pφ (ush n))) by reflexivity;
+               exact (lvsubst_ext_lwf _ _ _ _ ltac:(eassumption) Eag)].
+  - f_equal; [rewrite uren_us_ctx; exact (lwf_us_ext_ctx ltac:(eassumption) Eag)
+             | rewrite uren_us_ty; exact (lwf_us_ext_ty ltac:(eassumption) Eag)
+             | rewrite (lvren_as_lvsubst _ _ (pφ (ush n))) by reflexivity;
+               exact (lvsubst_ext_lwf _ _ _ _ ltac:(eassumption) Eag)].
+Qed.
+
 End UPermLR.
