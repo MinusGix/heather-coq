@@ -33,6 +33,7 @@ Class VPPerm (vp : VParam) := {
 
 #[export] Instance vp_empty_perm : VPPerm vp_empty.
 Proof. constructor; cbn; tauto. Qed.
+#[export] Instance LR_P_perm : VPPerm (@lr_vp LR_P) := vp_empty_perm.
 
 Lemma Gp_rt {π πi G} : uperm π πi (gL G) -> [ ⊢ G ] -> Gp πi (Gp π G) = G.
 Proof. intros Hp HG. unfold Gp. exact (rt_gctx (proj1 Hp) G HG). Qed.

@@ -68,6 +68,7 @@ theories/Validity/CodePi.v
 theories/Validity/Fundamental.v
 theories/Validity/Consequences.v
 theories/Validity/Payload.v
+theories/Validity/UPermV.v
 theories/Validity/GSubRel.v
 theories/Validity/GSubRelW.v
 theories/Validity/GSubRelE.v
