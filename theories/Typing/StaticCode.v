@@ -482,3 +482,17 @@ Proof.
   intros Hi Ht Ht' E.
   exact (proj2 (proj1 (proj2 (proj2 (proj2 static_code))) _ _ _ _ _ _ Ht Hi _ E (wf_tm_lwf Ht'))).
 Qed.
+
+(** At a computing layer, typed [≡ₗ]-related syntax is equal: by the
+    lemma at P, by the rule at M (M3_DESIGN.md E12). *)
+Lemma leq_eqty {G i Γ T T' l} : compt i -> [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T' @ l ] ->
+  ty_leq T T' -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ].
+Proof.
+  intros [-> | ->] HT HT' E; [exact (static_code_ty (lle_refl lD) HT HT' E) | exact (eqty_leq _ _ _ _ _ HT HT' E)].
+Qed.
+Lemma leq_eqtm {G i Γ t t' T l} : compt i -> [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ i ] t' : T @ l ] ->
+  tm_leq t t' -> [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ].
+Proof.
+  intros [-> | ->] Ht Ht' E;
+    [exact (static_code_tm (lle_refl lD) Ht Ht' E) | exact (eqtm_leq _ _ _ _ _ _ Ht Ht' E)].
+Qed.

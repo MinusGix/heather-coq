@@ -10,6 +10,7 @@ theories/Syntax/Recursor.v
 theories/Syntax/LevelEq.v
 theories/Syntax/NormalForms.v
 theories/Syntax/Reduction.v
+theories/Syntax/LevelRed.v
 theories/Syntax/Weakening.v
 theories/Syntax/Commute.v
 theories/Syntax/SubstCommute.v

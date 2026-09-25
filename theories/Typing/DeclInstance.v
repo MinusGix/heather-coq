@@ -66,6 +66,13 @@ Proof.
   1-8: now intuition.
   (* PER *)
   1-8: intros; intuition eauto using eqty_sym, eqty_trans, eqtm_sym, eqtm_trans.
+  (* level equivalence *)
+  1: { intros * (Hn & _ & H) (_ & Hn' & H') E; refine (conj Hn (conj Hn' _)).
+        exact (leq_eqty Hi (eqty_wf_l Hty H) (eqty_wf_l Hty H') E). }
+  1: { intros * H H' E; exact (leq_eqty Hi (eqty_wf_l Hty H) (eqty_wf_l Hty H') E). }
+  1: { intros * (Hn & _ & H) (_ & Hn' & H') E; refine (conj Hn (conj Hn' _)).
+        exact (leq_eqtm Hi (eqtm_wf_l Hty H) (eqtm_wf_l Hty H') E). }
+  1: { intros * H H' E; exact (leq_eqtm Hi (eqtm_wf_l Hty H) (eqtm_wf_l Hty H') E). }
   (* conversion *)
   1-2: intros; intuition (eapply eqtm_conv; [eassumption | rewrite Hty; now apply eqty_sym]).
   1-4: intros; intuition eauto using eqty_lconv, eqtm_lconv.

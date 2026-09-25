@@ -91,6 +91,17 @@ Class GenericEqLaws `{GenericEq} := {
   geq_tm_trans {G Γ t t' t'' T l} :
     [ G ; Γ ⊢ t ≈ t' : T @ l ] -> [ G ; Γ ⊢ t' ≈ t'' : T @ l ] -> [ G ; Γ ⊢ t ≈ t'' : T @ l ] ;
 
+  (** Level equivalence of syntax (M3_DESIGN.md E6'): [≡ₗ]-related
+      syntax, each side related to itself, is related *)
+  gne_ty_leq {G Γ V V' l} :
+    [ G ; Γ ⊢ V ~ V @ l ] -> [ G ; Γ ⊢ V' ~ V' @ l ] -> ty_leq V V' -> [ G ; Γ ⊢ V ~ V' @ l ] ;
+  geq_ty_leq {G Γ T T' l} :
+    [ G ; Γ ⊢ T ≈ T @ l ] -> [ G ; Γ ⊢ T' ≈ T' @ l ] -> ty_leq T T' -> [ G ; Γ ⊢ T ≈ T' @ l ] ;
+  gne_tm_leq {G Γ t t' T l} :
+    [ G ; Γ ⊢ t ~ t : T @ l ] -> [ G ; Γ ⊢ t' ~ t' : T @ l ] -> tm_leq t t' -> [ G ; Γ ⊢ t ~ t' : T @ l ] ;
+  geq_tm_leq {G Γ t t' T l} :
+    [ G ; Γ ⊢ t ≈ t : T @ l ] -> [ G ; Γ ⊢ t' ≈ t' : T @ l ] -> tm_leq t t' -> [ G ; Γ ⊢ t ≈ t' : T @ l ] ;
+
   (** Type conversion (and level conversion) *)
   gne_tm_conv {G Γ t t' T T' l} :
     [ G ; Γ ⊢ t ~ t' : T @ l ] -> [ G ; Γ ⊢g T ≅ T' @ l ] -> [ G ; Γ ⊢ t ~ t' : T' @ l ] ;
