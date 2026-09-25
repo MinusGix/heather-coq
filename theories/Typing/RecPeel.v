@@ -254,3 +254,46 @@ Proof.
   apply subst_subst. intros n. symmetry.
   rewrite llk_glsubst, llk_ulsubst. apply lext_bsub, He.
 Qed.
+
+(** ** Building the extensions one image at a time *)
+
+Lemma gext_s_app os o σ i :
+  gext_s (os ++ [o]) σ i = match i with 0 => o | S j => gext_s os σ j end.
+Proof.
+  unfold gext_s. rewrite length_app; cbn [length]. rewrite Nat.add_1_r.
+  destruct i as [|i].
+  - destruct (Nat.ltb_spec 0 (S (length os))); [|lia].
+    replace (S (length os) - 1) with (length os) by lia. rewrite app_nth2 by lia.
+    rewrite Nat.sub_diag; reflexivity.
+  - destruct (Nat.ltb_spec (S i) (S (length os))), (Nat.ltb_spec i (length os)); try lia.
+    + rewrite app_nth1 by lia. f_equal; lia.
+    + f_equal; lia.
+Qed.
+
+(** ** The motives' instances *)
+
+Lemma motT_inst MT φ σ e k Δ a : dnfty MT -> gdnf σ -> LK dnftm e -> dnfctx Δ -> dnftm a ->
+  motT (wrapMT ((usubst_ty MT (uup φ))⦃gup (guwk σ)⦄[llift (gwk (uwk e))])) k Δ a =
+  ((usubst_ty MT (uext (k :: nil) φ))⦃gext_s (GCtx Δ :: nil) σ⦄)[lext (a :: nil) e].
+Proof.
+  intros HM Hσ He HΔ Ha.
+  transitivity (getTy (peelLs (peelGs (peelUs (wrap (length (k :: nil)) (length (GCtx Δ :: nil)) (length (a :: nil))
+    (((usubst_tm (tmTy MT) (uupn (length (k :: nil)) φ))⦃gupn (length (GCtx Δ :: nil)) (guwkn (length (k :: nil)) σ)⦄)
+       [lliftn (length (a :: nil)) (gwkn (length (GCtx Δ :: nil)) (uwkn (length (k :: nil)) e))])) (k :: nil)) (GCtx Δ :: nil)) (a :: nil)));
+    [reflexivity|].
+  rewrite branch_inst; [reflexivity | repeat constructor; exact HΔ | repeat constructor; exact Ha
+                       | exact HM | exact Hσ | exact He].
+Qed.
+
+Lemma mott_inst Mt φ σ e k Δ U a : dnfty Mt -> gdnf σ -> LK dnftm e -> dnfctx Δ -> dnfty U -> dnftm a ->
+  mott (wrapMt ((usubst_ty Mt (uup φ))⦃gup (gup (guwk σ))⦄[llift (gwk (gwk (uwk e)))])) k Δ U a =
+  ((usubst_ty Mt (uext (k :: nil) φ))⦃gext_s (GCtx Δ :: GTy U :: nil) σ⦄)[lext (a :: nil) e].
+Proof.
+  intros HM Hσ He HΔ HU Ha.
+  transitivity (getTy (peelLs (peelGs (peelUs (wrap (length (k :: nil)) (length (GCtx Δ :: GTy U :: nil)) (length (a :: nil))
+    (((usubst_tm (tmTy Mt) (uupn (length (k :: nil)) φ))⦃gupn (length (GCtx Δ :: GTy U :: nil)) (guwkn (length (k :: nil)) σ)⦄)
+       [lliftn (length (a :: nil)) (gwkn (length (GCtx Δ :: GTy U :: nil)) (uwkn (length (k :: nil)) e))])) (k :: nil)) (GCtx Δ :: GTy U :: nil)) (a :: nil)));
+    [reflexivity|].
+  rewrite branch_inst; [reflexivity | repeat constructor; assumption | repeat constructor; exact Ha
+                       | exact HM | exact Hσ | exact He].
+Qed.

@@ -506,6 +506,20 @@ Ltac us_entries_sem :=
       pose proof (fun n A k h => IH n A k h L' φ Hφ); clear IH
   end.
 
+(** The motives' induction hypotheses are also kept at every [ψ] (the
+    recursion lemmas instantiate them at the code's levels); [keep] hides
+    the copies from [us_spec]. *)
+Definition keep (P : Prop) : Prop := P.
+Ltac us_keep :=
+  repeat match goal with
+  | IH : forall L' φ, usub_ok φ L' (gL (recGT ?G)) -> _ |- _ =>
+      let T := type of IH in
+      lazymatch goal with _ : keep T |- _ => fail | _ => let X := fresh "K" in pose proof IH as X; change (keep T) in X end
+  | IH : forall L' φ, usub_ok φ L' (gL (recGt ?G)) -> _ |- _ =>
+      let T := type of IH in
+      lazymatch goal with _ : keep T |- _ => fail | _ => let X := fresh "K" in pose proof IH as X; change (keep T) in X end
+  end.
+
 Lemma usubst_ren_mix (t : tm) r φ : usubst_tm t⟨r⟩ φ = (usubst_tm t φ)⟨r⟩.
 Proof. exact (proj1 (proj2 usubst_ren_all) t r φ). Qed.
 Lemma usubst_ren_ty_mix (T : ty) r φ : usubst_ty T⟨r⟩ φ = (usubst_ty T φ)⟨r⟩.
@@ -534,7 +548,7 @@ Proof.
       | IH : forall n A k, in_ctx _ n A k -> ?x = ?x -> _ |- _ =>
           pose proof (fun n A k h => IH n A k h eq_refl); clear IH
       end;
-    us_spec; us_entries_sem; us_move; us_rewrite_all; rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix.
+    us_keep; us_spec; us_entries_sem; us_move; us_rewrite_all; rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix.
   all: try solve [ first [simple eapply (FM_tygvar_us EP EM) | simple eapply (FM_gvar_us EP EM)]; eassumption ].
   all: m_P.
   all: try solve [ first [ simple eapply (FM_CTyp EP EM) | simple eapply (FM_CTyp_eq EP EM)
