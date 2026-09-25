@@ -688,3 +688,134 @@ Proof.
 Qed.
 
 End Letboxt.
+
+(** ** The β-rules *)
+
+Section LetboxBeta.
+Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM} {EMl : GenericEqM EP EM}.
+
+Local Notation LRM := (LR_M EP EM).
+#[local] Instance LR_M_laws3 : VPLaws (@lr_vp LRM) := vpM_laws EP EM.
+Local Notation GSubRel := (GSubRel EP EM).
+Local Notation VTmSM := (@VTmS EP EM EM LRM).
+Local Notation VCtxSP := (@VCtxS EP EM EP LR_P).
+Local Notation VCtxSPM := (@VCtxS EP EM EM LR_P).
+
+Lemma VS_letboxT_beta {G Γ l' l Δ M t' T} :
+  GValid EP EM G -> lwf (gL G) l' -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lC ] T @ l ] ->
+  [ G ; Γ ,, tyCTyp Δ l @ lzero ⊢[ lM ] M @ l' ] ->
+  [ gext G (gdTy Δ lC l) ; Γ⟪S⟫ ⊢[ lM ] t' : M⟪S⟫[lsingle (boxT (tyGvar 0 (lshift 0)))] @ l' ] ->
+  VCtxSP G Δ -> VCtxSPM G Δ -> @VTyS EP EM EP LR_P G Δ T T l -> @VTyS EP EM EM LR_P G Δ T T l ->
+  VTmSM (gext G (gdTy Δ lC l)) Γ⟪S⟫ t' t' (M⟪S⟫[lsingle (boxT (tyGvar 0 (lshift 0)))]) l' ->
+  VTmSM G Γ (letboxT l' l Δ M t' (boxT T)) t'⦃gsingle (GTy T)⦄ M[lsingle (boxT T)] l'.
+Proof.
+  intros HG Hl' Hl HΔ HT HM Ht' VΔP VΔM VTP VTM Vb.
+  apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
+  pose proof (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as HG'.
+  pose proof (GSubRel_refl_l EP EM Hσ) as Hσl. pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
+  assert (EL : gL G' = gL G) by exact (gsr_L _ _ _ _ _ _ Hσ).
+  destruct (SubRel_nf _ _ _ _ _ He) as [Ne Ne'].
+  destruct (SubRel_dnf _ _ _ _ _ He) as [De De'].
+  pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
+  pose proof (gsw_dnf _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ)) as Nσ'.
+  pose proof (gs_ctx EP EM Hσ HΔ) as HD. pose proof (gs_ctx EP EM Hσr HΔ) as HDr.
+  pose proof (CtxRelG_escape_P EP EM (VΔP _ _ _ Hσ) HD HDr) as [_ HDDr].
+  (* the code is static: the same under both substitutions *)
+  pose proof ((proj1 (proj2 (proj2 static_gsubst))) _ _ _ _ _ HT (lle_refl _) _ _ (GSubRel_agree EP EM Hσ)) as ET.
+  pose proof (gs_ty EP EM Hσ HT) as HT1.
+  (* the left-hand side's typing, by inversion *)
+  assert (Hw : [ G ; Γ ⊢[ lM ] letboxT l' l Δ M t' (boxT T) : M[lsingle (boxT T)] @ l' ]).
+  { apply wf_letboxT; try assumption. apply wf_boxT; try assumption.
+    exact (ctx_of_ext (ctx_of_wf_ty (i := lM) eq_refl HM)). }
+  pose proof (SubRel_wf_l _ _ _ _ _ He) as Hew. rewrite (@gm_layer_M EP EM EMl) in Hew.
+  pose proof (wf_tm_subst (i := lM) eq_refl (gs_tm EP EM Hσ Hw) Hew) as X.
+  rewrite gs_letboxT, subst_letboxT, gs_boxT in X. cbn [subst Subst_tm subst_tm] in X.
+  destruct (letboxT_inv X) as (_ & _ & HDw & HM1 & Hb1 & _ & _ & _). clear X.
+  (* the extended substitutions *)
+  assert (Hσx : GSubRel G' (gext G (gdTy Δ lC l)) (gcons σ (GTy T⦃σ⦄)) (gcons σ' (GTy T⦃σ⦄))).
+  { apply (GSubRel_cons EP EM Hσ); cbn [gdecl_gsubst gobj_wf dnfo GObjRel].
+    - exact (wf_ty_dnf HT1).
+    - exact HT1.
+    - exact (ctxconv_ty (i := lC) HDDr eq_refl HT1).
+    - exact (conj (fun _ => eq_refl) (conj (VTP _ _ _ Hσl) (VTM _ _ _ Hσl))).
+    - exact (conj (fun _ => eq_refl) (conj (VTyG_transport (VΔP _ _ _ Hσ) (VTP _ _ _ Hσl))
+                                            (VTyG_transport (VΔM _ _ _ Hσ) (VTM _ _ _ Hσl)))). }
+  pose proof (Vb _ _ _ Hσx G' gwk_id (gwk_ok_id G')) as Y; cbn [gwa] in Y.
+  rewrite gcons_shift_ctx in Y. specialize (Y _ _ _ He).
+  assert (Eb : (boxT (tyGvar 0 (lshift 0)))⦃gcons σ (GTy T⦃σ⦄)⦄ = boxT T⦃σ⦄).
+  { change ((boxT (tyGvar 0 (lshift 0)))⦃gcons σ (GTy T⦃σ⦄)⦄) with (boxT T⦃σ⦄[lshift 0]).
+    now rewrite nf_id_ty by exact (wf_ty_nf HT1). }
+  rewrite gs_single_ty, gcons_shift_ty, Eb, !single_subst_ty in Y by assumption.
+  cbn [subst Subst_tm subst_tm] in Y.
+  (* the goal *)
+  rewrite gs_letboxT, subst_letboxT, gs_boxT, gs_single_ty, gs_boxT, !single_subst_ty by assumption.
+  cbn [subst Subst_tm subst_tm].
+  rewrite (gs_gsingle _ _ _ Nσ'), (gup_single_tm _ _ _ Nσ'). cbn [gosubst].
+  change (gsubst_ty T σ') with T⦃σ'⦄. rewrite <- ET.
+  assert (Hl'1 : lwf (gL G') l') by (now rewrite EL). assert (Hl1 : lwf (gL G') l) by (now rewrite EL).
+  eapply LRtm_red_l; [exact Y |]. rewrite (@gm_layer_M EP EM EMl), <- letbox_reduct by assumption.
+  exact (tmred_letboxT_beta Hl'1 Hl1 HDw HM1 Hb1 HT1).
+Qed.
+
+Lemma VS_letboxt_beta {G Γ l' l Δ A M t' c} :
+  GValid EP EM G -> lwf (gL G) l' -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] A @ l ] ->
+  [ G ; Δ ⊢[ lC ] c : A @ l ] -> [ G ; Γ ,, tyCTrm Δ A l @ lzero ⊢[ lM ] M @ l' ] ->
+  [ gext G (gdTm Δ lC A l) ; Γ⟪S⟫ ⊢[ lM ] t' : M⟪S⟫[lsingle (boxt (gvar 0 (lshift 0)))] @ l' ] ->
+  VCtxSP G Δ -> VCtxSPM G Δ -> @VTyS EP EM EP LR_P G Δ A A l -> @VTyS EP EM EM LR_P G Δ A A l ->
+  @VTmS EP EM EP LR_P G Δ c c A l -> @VTmS EP EM EM LR_P G Δ c c A l ->
+  VTmSM (gext G (gdTm Δ lC A l)) Γ⟪S⟫ t' t' (M⟪S⟫[lsingle (boxt (gvar 0 (lshift 0)))]) l' ->
+  VTmSM G Γ (letboxt l' l Δ A M t' (boxt c)) t'⦃gsingle (GTm c)⦄ M[lsingle (boxt c)] l'.
+Proof.
+  intros HG Hl' Hl HΔ HA Hc HM Ht' VΔP VΔM VAP VAM VcP VcM Vb.
+  apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
+  pose proof (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as HG'.
+  pose proof (GSubRel_refl_l EP EM Hσ) as Hσl. pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
+  assert (EL : gL G' = gL G) by exact (gsr_L _ _ _ _ _ _ Hσ).
+  destruct (SubRel_nf _ _ _ _ _ He) as [Ne Ne'].
+  destruct (SubRel_dnf _ _ _ _ _ He) as [De De'].
+  pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
+  pose proof (gsw_dnf _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ)) as Nσ'.
+  pose proof (gs_ctx EP EM Hσ HΔ) as HD. pose proof (gs_ctx EP EM Hσr HΔ) as HDr.
+  pose proof (CtxRelG_escape_P EP EM (VΔP _ _ _ Hσ) HD HDr) as [_ HDDr].
+  pose proof (gs_ty EP EM Hσ HA) as HA1.
+  assert (HAσ'D : [ G' ; Δ⦃σ⦄ ⊢[ lD ] A⦃σ'⦄ @ l ])
+    by exact (ctxconv_ty (i := lD) (eqctx_sym_D HDDr) eq_refl (gs_ty EP EM Hσr HA)).
+  destruct (VTyG_escape_P EP EM (VΔP _ _ _ Hσ) HD HA1 HAσ'D (VAP _ _ _ Hσ)) as [_ HAAr].
+  pose proof ((proj1 (proj2 (proj2 (proj2 static_gsubst)))) _ _ _ _ _ _ Hc (lle_refl _) _ _
+                (GSubRel_agree EP EM Hσ)) as Ec.
+  pose proof (gs_tm EP EM Hσ Hc) as Hc1.
+  assert (Hw : [ G ; Γ ⊢[ lM ] letboxt l' l Δ A M t' (boxt c) : M[lsingle (boxt c)] @ l' ]).
+  { apply wf_letboxt; try assumption. apply wf_boxt; try assumption.
+    exact (ctx_of_ext (ctx_of_wf_ty (i := lM) eq_refl HM)). }
+  pose proof (SubRel_wf_l _ _ _ _ _ He) as Hew. rewrite (@gm_layer_M EP EM EMl) in Hew.
+  pose proof (wf_tm_subst (i := lM) eq_refl (gs_tm EP EM Hσ Hw) Hew) as X.
+  rewrite gs_letboxt, subst_letboxt, gs_boxt in X. cbn [subst Subst_tm subst_tm] in X.
+  destruct (letboxt_inv X) as (_ & _ & HDw & HAw & HM1 & Hb1 & _ & _ & _). clear X.
+  assert (Hσx : GSubRel G' (gext G (gdTm Δ lC A l)) (gcons σ (GTm c⦃σ⦄)) (gcons σ' (GTm c⦃σ⦄))).
+  { apply (GSubRel_cons EP EM Hσ); cbn [gdecl_gsubst gobj_wf dnfo GObjRel].
+    - exact (wf_tm_dnf Hc1).
+    - exact Hc1.
+    - exact (ctxconv_tm (i := lC) HDDr eq_refl (wf_conv _ _ _ _ _ _ _ Hc1 (eqty_sym _ _ _ _ _ _ HAAr))).
+    - exact (conj eq_refl (conj (VcP _ _ _ Hσl) (VcM _ _ _ Hσl))).
+    - refine (conj eq_refl (conj _ _)).
+      + exact (VTmG_conv (VTmG_transport (VΔP _ _ _ Hσ) (VcP _ _ _ Hσl))
+                 (VTyG_sym (VTyG_transport (VΔP _ _ _ Hσ) (VAP _ _ _ Hσ)))).
+      + exact (VTmG_conv (VTmG_transport (VΔM _ _ _ Hσ) (VcM _ _ _ Hσl))
+                 (VTyG_sym (VTyG_transport (VΔM _ _ _ Hσ) (VAM _ _ _ Hσ)))). }
+  pose proof (Vb _ _ _ Hσx G' gwk_id (gwk_ok_id G')) as Y; cbn [gwa] in Y.
+  rewrite gcons_shift_ctx in Y. specialize (Y _ _ _ He).
+  assert (Eb : (boxt (gvar 0 (lshift 0)))⦃gcons σ (GTm c⦃σ⦄)⦄ = boxt c⦃σ⦄).
+  { change ((boxt (gvar 0 (lshift 0)))⦃gcons σ (GTm c⦃σ⦄)⦄) with (boxt c⦃σ⦄[lshift 0]).
+    now rewrite nf_id by exact (wf_tm_nf Hc1). }
+  rewrite gs_single_ty, gcons_shift_ty, Eb, !single_subst_ty in Y by assumption.
+  cbn [subst Subst_tm subst_tm] in Y.
+  rewrite gs_letboxt, subst_letboxt, gs_boxt, gs_single_ty, gs_boxt, !single_subst_ty by assumption.
+  cbn [subst Subst_tm subst_tm].
+  rewrite (gs_gsingle _ _ _ Nσ'), (gup_single_tm _ _ _ Nσ'). cbn [gosubst].
+  change (gsubst_tm c σ') with c⦃σ'⦄. rewrite <- Ec.
+  assert (Hl'1 : lwf (gL G') l') by (now rewrite EL). assert (Hl1 : lwf (gL G') l) by (now rewrite EL).
+  eapply LRtm_red_l; [exact Y |]. rewrite (@gm_layer_M EP EM EMl), <- letbox_reduct by assumption.
+  exact (tmred_letboxt_beta Hl'1 Hl1 HDw HAw HM1 Hb1 Hc1).
+Qed.
+
+End LetboxBeta.
