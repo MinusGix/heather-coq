@@ -420,3 +420,56 @@ Proof.
 Qed.
 
 End ElimT.
+
+(** ** β: the reduct is typed (a premise of the rule), hence valid; the
+    recursor anti-reduces to it *)
+
+Section Beta.
+Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM} {EMl : GenericEqM EP EM}.
+
+Local Notation LRM := (LR_M EP EM).
+Local Notation VTmSM := (@VTmS EP EM EM LRM).
+
+Lemma VS_elimT_beta {G Γ l1 l2 rb l Δ c T k r} :
+  [ G ; Γ ⊢[ lM ] elimT l1 l2 rb l Δ (boxT c) : T @ k ] -> redT l1 l2 rb l Δ c = Some r ->
+  [ G ; Γ ⊢[ lM ] r : T @ k ] -> VTmSM G Γ r r T k ->
+  VTmSM G Γ (elimT l1 l2 rb l Δ (boxT c)) r T k.
+Proof.
+  intros Hw Hred Hr Vr. destruct (elimT_prem Hw) as (MT & Mt & bs & -> & _).
+  apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
+  pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
+  destruct (SubRel_dnf _ _ _ _ _ He) as [De De'].
+  pose proof (SubRel_wf_l _ _ _ _ _ He) as Hew. rewrite (@gm_layer_M EP EM EMl) in Hew.
+  pose proof (wf_tm_subst (i := lM) eq_refl (gs_tm EP EM Hσ Hw) Hew) as X.
+  pose proof (wf_tm_subst (i := lM) eq_refl (gs_tm EP EM Hσ Hr) Hew) as Xr.
+  pose proof (Vr _ _ _ Hσ _ _ (gwk_ok_id G') _ _ _ He) as Y; cbn [gwa] in Y.
+  eapply LRtm_red_l; [exact Y |]. rewrite (@gm_layer_M EP EM EMl).
+  pose proof (redT_gsubst _ _ _ _ _ _ _ _ _ σ Nσ Hred) as Hred1. rewrite mkrb_gsubst in Hred1.
+  pose proof (redT_subst _ _ _ _ _ _ _ _ _ e De Hred1) as Hred2.
+  rewrite gs_elimT, subst_elimT, mkrb_gsubst in X |- *. cbn [gsubst GSubst_tm gsubst_tm subst Subst_tm subst_tm] in X |- *.
+  split; [exact X | econstructor; [apply red_elimT_beta; exact Hred2 | constructor] |].
+  apply eqtm_elimT_beta; assumption.
+Qed.
+
+Lemma VS_elimt_beta {G Γ l1 l2 rb l Δ U c T k r} :
+  [ G ; Γ ⊢[ lM ] elimt l1 l2 rb l Δ U (boxt c) : T @ k ] -> redt l1 l2 rb l Δ U c = Some r ->
+  [ G ; Γ ⊢[ lM ] r : T @ k ] -> VTmSM G Γ r r T k ->
+  VTmSM G Γ (elimt l1 l2 rb l Δ U (boxt c)) r T k.
+Proof.
+  intros Hw Hred Hr Vr. destruct (elimt_prem Hw) as (MT & Mt & bs & -> & _).
+  apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
+  pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
+  destruct (SubRel_dnf _ _ _ _ _ He) as [De De'].
+  pose proof (SubRel_wf_l _ _ _ _ _ He) as Hew. rewrite (@gm_layer_M EP EM EMl) in Hew.
+  pose proof (wf_tm_subst (i := lM) eq_refl (gs_tm EP EM Hσ Hw) Hew) as X.
+  pose proof (wf_tm_subst (i := lM) eq_refl (gs_tm EP EM Hσ Hr) Hew) as Xr.
+  pose proof (Vr _ _ _ Hσ _ _ (gwk_ok_id G') _ _ _ He) as Y; cbn [gwa] in Y.
+  eapply LRtm_red_l; [exact Y |]. rewrite (@gm_layer_M EP EM EMl).
+  pose proof (redt_gsubst _ _ _ _ _ _ _ _ _ _ σ Nσ Hred) as Hred1. rewrite mkrb_gsubst in Hred1.
+  pose proof (redt_subst _ _ _ _ _ _ _ _ _ _ e De Hred1) as Hred2.
+  rewrite gs_elimt, subst_elimt, mkrb_gsubst in X |- *. cbn [gsubst GSubst_tm gsubst_tm subst Subst_tm subst_tm] in X |- *.
+  split; [exact X | econstructor; [apply red_elimt_beta; exact Hred2 | constructor] |].
+  apply eqtm_elimt_beta; assumption.
+Qed.
+
+End Beta.
