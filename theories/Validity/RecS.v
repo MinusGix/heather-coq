@@ -2828,4 +2828,62 @@ Proof.
     rewrite (lvren_ush_uext' l2' 2 (k1 :: k1' :: nil) φ eq_refl). exact Hl2g.
 Qed.
 
+
+(** ** Neutral scrutinees: the motives and branches under their binders
+    (M3_DESIGN.md E13, E14) *)
+
+#[local] Instance LR_M_permRec : VPPerm (@lr_vp LRM) := vpM_perm EP EM.
+
+Hypothesis (HG0 : [ ⊢ G_us G0 L' φ ]) (HΓ0 : [ G_us G0 L' φ ; ucsubst Γ0 φ ⊢[ lM ] ])
+  (VΓT : forall L'' ψ, usub_ok ψ L'' (gL (recGT G0)) -> VCtxSM (G_us (recGT G0) L'' ψ) (ucsubst (recΓT Γ0) ψ))
+  (VΓt : forall L'' ψ, usub_ok ψ L'' (gL (recGt G0)) -> VCtxSM (G_us (recGt G0) L'' ψ) (ucsubst (recΓt Γ0) ψ))
+  (VΓbr : forall k, k < 13 -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
+     VCtxSM (G_us (brG k G0) L'' ψ) (ucsubst (brΓ k Γ0 (wrapMT MT) (wrapMt Mt) l1 l2) ψ)).
+
+Lemma EP_MT : @geq_ty EM (recGT G') (recΓT Θ) MTL MTR (lvren (lvsubst l1 φ) (ush 1)).
+Proof.
+  pose proof (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as HG'.
+  pose proof (VMT (S L') (uup φ) (usub_ok_uup _ _ _ Hφ)) as V.
+  pose proof (VΓT (S L') (uup φ) (usub_ok_uup _ _ _ Hφ)) as VC.
+  unfold G_us in V, VC. rewrite recGT_usubst, recΓT_usubst in V, VC. rewrite lvren_ush1_usubst in V.
+  pose proof (GSubRel_uwkn EP EM (n := 1) HG0 Hσ) as X1.
+  assert (HGr : [ ⊢ recGT G' ]) by exact (wf_recGT HG').
+  pose proof (GSubRel_gup EP EM (D := gdCtx) X1 HGr eq_refl) as X2.
+  change (guwkn 1 σ) with (guwk σ) in X2. change (guwkn 1 σ') with (guwk σ') in X2.
+  pose proof (V _ _ _ X2 _ gwk_id (gwk_ok_id _)) as V'. cbn [gwa] in V'.
+  pose proof (VC _ _ _ (GSubRel_refl_l EP EM X2) _ gwk_id (gwk_ok_id _)) as C. cbn [gwa] in C.
+  rewrite (recΓT_gsubst _ _ Nσ) in V', C.
+  pose proof (wf_ctx_lwf (gs_ctx EP EM Hσ HΓ0 compt_M)) as WΓ1.
+  pose proof (SubRel_uwkn (n := 1) HG' WΓ1 He) as H1.
+  pose proof (SubRel_gwkn (D := gdCtx) (Ds := nil) H1 HGr) as H2.
+  pose proof (SubRel_cexts ((tyCTyp (cvar 0) (lvar 0), lzero) :: nil) _ _ _ _ H2 C
+                ltac:(repeat constructor)) as H3.
+  destruct (V' _ _ _ H3) as [R HR]. destruct (escape_ty _ _ _ _ _ _ _ _ HR) as (_ & _ & Hg).
+  exact Hg.
+Qed.
+
+Lemma EP_Mt : @geq_ty EM (recGt G') (recΓt Θ) MtL MtR (lvren (lvsubst l2 φ) (ush 1)).
+Proof.
+  pose proof (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as HG'.
+  pose proof (VMt (S L') (uup φ) (usub_ok_uup _ _ _ Hφ)) as V.
+  pose proof (VΓt (S L') (uup φ) (usub_ok_uup _ _ _ Hφ)) as VC.
+  unfold G_us in V, VC. rewrite recGt_usubst, recΓt_usubst in V, VC. rewrite lvren_ush1_usubst in V.
+  pose proof (GSubRel_uwkn EP EM (n := 1) HG0 Hσ) as X1.
+  assert (HGr : [ ⊢ recGT G' ]) by exact (wf_recGT HG').
+  assert (HGr' : [ ⊢ recGt G' ]) by exact (wf_recGt HG').
+  pose proof (GSubRel_gup EP EM (D := gdCtx) X1 HGr eq_refl) as X2.
+  pose proof (GSubRel_gup EP EM (D := gdTy (cvar 0) lD (lvar 0)) X2 HGr' eq_refl) as X3.
+  change (guwkn 1 σ) with (guwk σ) in X3. change (guwkn 1 σ') with (guwk σ') in X3.
+  pose proof (V _ _ _ X3 _ gwk_id (gwk_ok_id _)) as V'. cbn [gwa] in V'.
+  pose proof (VC _ _ _ (GSubRel_refl_l EP EM X3) _ gwk_id (gwk_ok_id _)) as C. cbn [gwa] in C.
+  rewrite (recΓt_gsubst _ _ Nσ) in V', C.
+  pose proof (wf_ctx_lwf (gs_ctx EP EM Hσ HΓ0 compt_M)) as WΓ1.
+  pose proof (SubRel_uwkn (n := 1) HG' WΓ1 He) as H1.
+  pose proof (SubRel_gwkn (D := gdTy (cvar 0) lD (lvar 0)) (Ds := gdCtx :: nil) H1 HGr') as H2.
+  pose proof (SubRel_cexts ((tyCTrm (cvar 1) (gv 0) (lvar 0), lzero) :: nil) _ _ _ _ H2 C
+                ltac:(repeat constructor)) as H3.
+  destruct (V' _ _ _ H3) as [R HR]. destruct (escape_ty _ _ _ _ _ _ _ _ HR) as (_ & _ & Hg).
+  exact Hg.
+Qed.
+
 End Rec.

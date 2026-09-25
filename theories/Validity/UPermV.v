@@ -220,3 +220,34 @@ Qed.
 
 
 End UPermV.
+
+(** ** The parameters at M along permutations *)
+
+Section VPM.
+Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM}.
+
+#[export] Instance vpM_perm : VPPerm (vpM EP EM).
+Proof.
+  constructor.
+  - intros π πi G Δ Δ' Hp HG (Heq & HP & HM). cbn.
+    destruct (eqctx_dnf Heq) as [N N'].
+    refine (conj _ (conj (CtxRelG_perm (E := EP) (LP := LR_P) Hp HG N N' HP)
+                         (CtxRelG_perm (E := EM) (LP := LR_P) Hp HG N N' HM))).
+    exact (proj2 (proj2 (proj2 (proj2 (proj2 (proj2 usubstitution))))) _ _ _ _ Heq _ _ (uperm_usub_ok Hp)).
+  - intros π πi G Δ T T' l Hp HG (Heq & HP & HM). cbn.
+    pose proof (eqty_dnf_ctx Heq) as N.
+    exact (conj (p_eqty Hp Heq) (conj (VTyG_perm (E := EP) (LP := LR_P) Hp HG N HP)
+                                      (VTyG_perm (E := EM) (LP := LR_P) Hp HG N HM))).
+  - intros π πi G Δ T T' l Hp HG (Eq & H1 & H2 & HP & HM). cbn.
+    pose proof (wf_ty_dnf_ctx H1) as N.
+    refine (conj _ (conj (p_ty Hp H1) (conj (p_ty Hp H2) (conj (VTyG_perm (E := EP) (LP := LR_P) Hp HG N HP)
+                                                              (VTyG_perm (E := EM) (LP := LR_P) Hp HG N HM))))).
+    apply (proj1 leq_usubst_all); [intros; apply leqv_refl | exact Eq].
+  - intros π πi G Δ A t t' l Hp HG (Eq & H1 & H2 & HP & HM). cbn.
+    pose proof (wf_tm_dnf_ctx H1) as N.
+    refine (conj _ (conj (p_tm Hp H1) (conj (p_tm Hp H2) (conj (VTmG_perm (E := EP) (LP := LR_P) Hp HG N HP)
+                                                              (VTmG_perm (E := EM) (LP := LR_P) Hp HG N HM))))).
+    apply (proj1 (proj2 leq_usubst_all)); [intros; apply leqv_refl | exact Eq].
+Qed.
+
+End VPM.

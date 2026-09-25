@@ -47,10 +47,10 @@ Proof.
     symmetry; apply (proj1 (proj2 uren_as_usubst_all)); reflexivity.
 Qed.
 
-Lemma SubRel_uwkn {n L Ψ Γ Δ d d'} : [ ⊢ mkG L Ψ ] -> ctx_lwf L Γ ->
-  SubRel (mkG L Ψ) Γ Δ d d' -> SubRel (gctx_uwk n (mkG L Ψ)) Γ⟨ush n⟩ᵤ Δ⟨ush n⟩ᵤ (uwkn n d) (uwkn n d').
+Lemma SubRel_uwkn {n G Γ Δ d d'} : [ ⊢ G ] -> ctx_lwf (gL G) Γ ->
+  SubRel G Γ Δ d d' -> SubRel (gctx_uwk n G) Γ⟨ush n⟩ᵤ Δ⟨ush n⟩ᵤ (uwkn n d) (uwkn n d').
 Proof.
-  intros HG WΓ Hd.
+  destruct G as [L Ψ]. intros HG WΓ Hd.
   assert (Hgrow : gwk_ok gwk_id (mkG (n + L) Ψ) (mkG L Ψ)) by exact (conj (Nat.le_add_l _ _) (gwkwf_id _)).
   pose proof (wfg_grow L (n + L) Ψ (Nat.le_add_l _ _) HG) as HG'.
   assert (EG : Gp (rotn n L) (mkG (n + L) Ψ) = gctx_uwk n (mkG L Ψ)).
