@@ -231,3 +231,75 @@ Lemma usub_ok_id L : usub_ok lvar L L.
 Proof. intros n Hn; exact Hn. Qed.
 Lemma usub_ok_ren ρ L' L : uren_ok ρ L' L -> usub_ok (fun n => lvar (ρ n)) L' L.
 Proof. intros H n Hn; cbn; auto. Qed.
+
+(** ** Level growth: an equivalent level mentions only the variables it
+    must (M3_DESIGN.md E14). Worlds may add levels at the top; a level of
+    the grown context equivalent to one of the base context is itself
+    well formed in the base context. *)
+
+Lemma lwf_dec L l : {lwf L l} + {~ lwf L l}.
+Proof.
+  induction l as [n| |l IH|l IH l' IH'|]; cbn.
+  - apply lt_dec.
+  - left; exact I.
+  - exact IH.
+  - destruct IH, IH'; tauto.
+  - right; tauto.
+Qed.
+
+Lemma leval_ext_lwf L l v v' : lwf L l -> (forall n, n < L -> v n = v' n) -> leval v l = leval v' l.
+Proof. intros Hl Hv; induction l; cbn in *; intuition. Qed.
+
+Lemma lwf_var_escape L L' l : lwf L' l -> ~ lwf L l -> exists y, L <= y /\ forall v, v y <= leval v l.
+Proof.
+  induction l as [n| |l IH|l IH l' IH'|]; cbn; intros H1 H2.
+  - exists n; split; [lia | auto].
+  - tauto.
+  - destruct (IH H1 H2) as (y & Hy & Hv). exists y; split; [exact Hy | intros v; specialize (Hv v); lia].
+  - destruct (lwf_dec L l) as [Hl|Hl].
+    + destruct (IH' (proj2 H1) (fun H => H2 (conj Hl H))) as (y & Hy & Hv).
+      exists y; split; [exact Hy | intros v; specialize (Hv v); lia].
+    + destruct (IH (proj1 H1) Hl) as (y & Hy & Hv).
+      exists y; split; [exact Hy | intros v; specialize (Hv v); lia].
+  - tauto.
+Qed.
+
+Lemma lequiv_shrink L L' l l' : lequiv L' l l' -> lwf L l' -> lequiv L l l'.
+Proof.
+  intros (H1 & H2 & H) Hl'. repeat split; [| exact Hl' | exact H].
+  destruct (lwf_dec L l) as [Hl|Hl]; [exact Hl|exfalso].
+  destruct (lwf_var_escape L L' l H1 Hl) as (y & Hy & Hv).
+  set (v := fun n => if Nat.eqb n y then S (lmeasure l') else 0).
+  specialize (Hv v). rewrite (H v) in Hv.
+  rewrite (leval_ext_lwf L l' v (fun _ => 0) Hl') in Hv.
+  - unfold v in Hv. rewrite Nat.eqb_refl in Hv. unfold lmeasure in Hv. lia.
+  - intros n Hn. unfold v. destruct (Nat.eqb_spec n y); [lia | reflexivity].
+Qed.
+
+(** ** Level permutations (M3_DESIGN.md E14): bijections of the level
+    variables that fix every variable from [L] up. *)
+
+Definition uperm (π πi : nat -> nat) (L : nat) : Prop :=
+  (forall n, πi (π n) = n) /\ (forall n, π (πi n) = n) /\
+  (forall n, n < L -> π n < L) /\ (forall n, L <= n -> π n = n).
+
+Lemma uperm_inv π πi L : uperm π πi L -> uperm πi π L.
+Proof.
+  intros (H1 & H2 & H3 & H4). repeat split; auto.
+  - intros n Hn. destruct (lt_dec (πi n) L) as [Hlt|Hge]; [exact Hlt|].
+    rewrite <- (H2 n), (H4 (πi n)) in Hn by lia. lia.
+  - intros n Hn. rewrite <- (H4 n Hn) at 1. apply H1.
+Qed.
+
+Lemma uperm_grow π πi L L' : L <= L' -> uperm π πi L -> uperm π πi L'.
+Proof.
+  intros HL (H1 & H2 & H3 & H4). repeat split; auto.
+  - intros n Hn. destruct (lt_dec n L); [specialize (H3 n); lia | rewrite H4; lia].
+  - intros n Hn; apply H4; lia.
+Qed.
+
+Lemma uperm_ok π πi L : uperm π πi L -> uren_ok π L L.
+Proof. intros (_ & _ & H & _); exact H. Qed.
+
+Lemma lvren_uperm_inv π πi L l : uperm π πi L -> lvren (lvren l π) πi = l.
+Proof. intros (H1 & _); rewrite (lvren_lvren l π πi (fun n => n)) by auto; apply lvren_id; auto. Qed.

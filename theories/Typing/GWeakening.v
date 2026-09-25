@@ -4,7 +4,7 @@
     under [Ψ'], at every layer.  The only binder of the global dimension so
     far is [letbox]'s body, typed under [Ψ, U] / [Ψ, u] with the local
     context globally shifted: it is handled by [gwk_up]. *)
-From DeLaM.Typing Require Export RecWf.
+From DeLaM.Typing Require Export RecWf TypedDnf.
 
 Coercion gwk_fn : gweak >-> Funclass.
 

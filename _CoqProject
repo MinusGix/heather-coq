@@ -20,6 +20,7 @@ theories/Typing/Declarative.v
 theories/Typing/RecLaws.v
 theories/Typing/USubstitution.v
 theories/Typing/RecWf.v
+theories/Typing/TypedDnf.v
 theories/Typing/GWeakening.v
 theories/Typing/Lifting.v
 theories/Typing/Properties.v
