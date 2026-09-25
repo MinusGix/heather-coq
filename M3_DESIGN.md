@@ -281,6 +281,36 @@ or `box c`, `box c'` with `c ≡ₗ c'` C-typed in `Δ⦃σ⦄` (the payload).
 - **Typed reductions**: the reduct's typing comes by escape from its
   reducibility (E10).
 
+### E14. Universe weakening of the relation (user decision, 2026-09-25: inside M3)
+
+The neutral recursion laws need the motives and branches generically
+equal under their binders (`ElimPrem`), at `recGT G'` / `recΓT Θ` and
+the branch scopes. There the ambient M-context is universe weakened
+(`uwk`), so escaping from the motives' validity needs the related local
+substitution `e` to stay related after `uwk`: the relation must be stable
+under universe weakening. (The earlier plan kept this for M4's `UΠ`.)
+
+Rather than adding universe renamings to the Kripke worlds, which would
+make `VTyG` and every FT case work at renamed worlds, the stability is
+assembled from two cheaper facts:
+- **Level growth is a world.** `gwk_ok γ G' G` allows `gL G ≤ gL G'`
+  (fresh levels at the top; existing syntax is untouched). Annotations
+  quantified in the base world shrink back: a level equivalent to a
+  well-formed one mentions only its variables (occurrence lemma).
+- **Permutations.** A bijection `π` of level variables that fixes
+  everything from `gL G` up preserves the relation (`LR_perm`), with the
+  term relation transported explicitly
+  (`dnf t ∧ dnf t' ∧ R t⦅π⁻¹⦆ t'⦅π⁻¹⦆`, no choice). Π's Kripke worlds are
+  pulled back along `π⁻¹`; `URel`'s annotations are pulled back
+  syntactically.
+- `uwk` is growth by one followed by the rotation that sends the new top
+  level to `0`. On syntax scoped below `gL G` (every typed object:
+  scoping lemma) the rotation acts as `ush 1`.
+
+The generic laws gain stability of `~`/`≈` under universe substitutions
+(declaratively: the universe substitution lemma), and `VPLaws` gains the
+same for the parameters.
+
 ## Order of work
 
 1. **Syntax** (done). Level renaming and substitution; the bundle nodes,
