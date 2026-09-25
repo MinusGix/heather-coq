@@ -579,6 +579,41 @@ Proof.
   refine (GSubRel_code_tm _ _ _ eq_refl eq_refl Ht1 Ht2 Ht E); [exact (GSubRel_ctx1' Hσ HΔ1 HΔ) | reflexivity | reflexivity].
 Qed.
 
+(** Images at a declaration of any static layer. *)
+Lemma GSubRel_ty_i {G' G σ1 σ2 D o1 o2 Δ1 Δ2 T1 T2 i k} : lle i lD ->
+  GSubRel EP EM G' G σ1 σ2 -> gdecl_gsubst D σ1 = gdTy Δ1 i k -> gdecl_gsubst D σ2 = gdTy Δ2 i k ->
+  o1 = GTy T1 -> o2 = GTy T2 ->
+  [ G' ; Δ1 ⊢[ i ] T1 @ k ] -> [ G' ; Δ2 ⊢[ i ] T2 @ k ] -> [ G' ; Δ1 ⊢[ lD ] T1 ≅ T2 @ k ] ->
+  (lle i lC -> ty_leq T1 T2) -> GSubRel EP EM G' (gext G D) (gcons σ1 o1) (gcons σ2 o2).
+Proof.
+  intros Hi Hσ E1 E2 -> -> H1 H2 H12 E.
+  apply (GSubRel_cons2 EP EM Hσ); rewrite ?E1, ?E2; cbn [dnfo gobj_wf].
+  - exact (wf_ty_dnf H1).
+  - exact (wf_ty_dnf H2).
+  - exact H1.
+  - exact H2.
+  - exact (GObjRel_ty EP EM E H12).
+  - apply (GObjRel_ty EP EM); [intros; apply ty_leq_refl | exact (eqty_refl _ _ _ _ _ (lift_ty (j := lD) H1 Hi))].
+  - apply (GObjRel_ty EP EM); [intros; apply ty_leq_refl | exact (eqty_refl _ _ _ _ _ (lift_ty (j := lD) H2 Hi))].
+Qed.
+
+Lemma GSubRel_tm_i {G' G σ1 σ2 D o1 o2 Δ1 Δ2 A1 A2 t1 t2 i k} : lle i lD ->
+  GSubRel EP EM G' G σ1 σ2 -> gdecl_gsubst D σ1 = gdTm Δ1 i A1 k -> gdecl_gsubst D σ2 = gdTm Δ2 i A2 k ->
+  o1 = GTm t1 -> o2 = GTm t2 ->
+  [ G' ; Δ1 ⊢[ i ] t1 : A1 @ k ] -> [ G' ; Δ2 ⊢[ i ] t2 : A2 @ k ] -> [ G' ; Δ1 ⊢[ lD ] t1 ≅ t2 : A1 @ k ] ->
+  tm_leq t1 t2 -> GSubRel EP EM G' (gext G D) (gcons σ1 o1) (gcons σ2 o2).
+Proof.
+  intros Hi Hσ E1 E2 -> -> H1 H2 H12 E.
+  apply (GSubRel_cons2 EP EM Hσ); rewrite ?E1, ?E2; cbn [dnfo gobj_wf].
+  - exact (wf_tm_dnf H1).
+  - exact (wf_tm_dnf H2).
+  - exact H1.
+  - exact H2.
+  - exact (GObjRel_tm EP EM E H12).
+  - exact (GObjRel_tm EP EM (tm_leq_refl _) (eqtm_refl _ _ _ _ _ _ (lift_tm (j := lD) H1 Hi))).
+  - exact (GObjRel_tm EP EM (tm_leq_refl _) (eqtm_refl _ _ _ _ _ _ (lift_tm (j := lD) H2 Hi))).
+Qed.
+
 Lemma GS_pi {G0 L' φ G' σ1 σ2 Δ1 Δ2 A1 A2 B1 B2 k1 k2} :
   GSubRel EP EM G' (G_us G0 L' φ) σ1 σ2 -> [ G' ; Δ1 ⊢[ lD ] ] -> [ G' ⊢[ lD ] Δ1 ≅ Δ2 ] ->
   [ G' ; Δ1 ⊢[ lC ] A1 @ k1 ] -> [ G' ; Δ2 ⊢[ lC ] A2 @ k1 ] -> [ G' ; Δ1 ⊢[ lD ] A1 ≅ A2 @ k1 ] -> ty_leq A1 A2 ->
@@ -597,6 +632,162 @@ Proof.
   - refine (GSubRel_code _ _ _ eq_refl eq_refl HA1 HA2 HA EA); [exact (GSubRel_ctx1' Hσ HΔ1 HΔ) | reflexivity | reflexivity].
   - cbn; unfold gv; cbn. rewrite (subst_id_ty A1); [reflexivity | exact NA1 | intros; cbn; f_equal; lia].
   - cbn; unfold gv; cbn. rewrite (subst_id_ty A2); [reflexivity | exact NA2 | intros; cbn; f_equal; lia].
+Qed.
+
+Local Ltac decl_eq := first [ reflexivity
+  | cbn; unfold gv, gu; cbn; rewrite ?subst_lshift0_ty, ?subst_lshift0 by (apply dnfty_nfty || apply dnftm_nftm; assumption);
+    reflexivity ].
+Local Ltac lleC := unfold lle; cbn; lia.
+
+Lemma GS_ctx0 {G0 L' φ G' σ1 σ2 Δ1 Δ2} k ls : brDecls k = gdCtx :: nil -> length ls = br_nu k ->
+  GSubRel EP EM G' (G_us G0 L' φ) σ1 σ2 -> [ G' ; Δ1 ⊢[ lD ] ] -> [ G' ⊢[ lD ] Δ1 ≅ Δ2 ] ->
+  GSubRel EP EM G' (G_us (brG k G0) L' (uext ls φ)) (gext_s (GCtx Δ1 :: nil) σ1) (gext_s (GCtx Δ2 :: nil) σ2).
+Proof.
+  intros HD Hn Hσ HΔ1 HΔ. rewrite (G_us_brG_uext k G0 L' φ ls Hn), HD. exact (GSubRel_ctx1 EP EM Hσ HΔ1 HΔ).
+Qed.
+
+Lemma GS_var {G0 L' φ G' σ1 σ2 Δ1 Δ2 T1 T2 n k} :
+  GSubRel EP EM G' (G_us G0 L' φ) σ1 σ2 -> [ G' ; Δ1 ⊢[ lD ] ] -> [ G' ⊢[ lD ] Δ1 ≅ Δ2 ] ->
+  [ G' ; Δ1 ⊢[ lD ] T1 @ k ] -> [ G' ; Δ2 ⊢[ lD ] T2 @ k ] -> [ G' ; Δ1 ⊢[ lD ] T1 ≅ T2 @ k ] ->
+  [ G' ; Δ1 ⊢[ lV ] var n : T1 @ k ] -> [ G' ; Δ2 ⊢[ lV ] var n : T2 @ k ] ->
+  GSubRel EP EM G' (G_us (brG 4 G0) L' (uext (k :: nil) φ))
+    (gext_s (GCtx Δ1 :: GTy T1 :: GTm (var n) :: nil) σ1) (gext_s (GCtx Δ2 :: GTy T2 :: GTm (var n) :: nil) σ2).
+Proof.
+  intros Hσ HΔ1 HΔ HT1 HT2 HT Hv1 Hv2. pose proof (wf_ty_dnf HT1) as N1. pose proof (wf_ty_dnf HT2) as N2.
+  rewrite (G_us_brG_uext 4 G0 L' φ (k :: nil) eq_refl).
+  refine (GSubRel_ext EP EM (fun i => eq_sym (gext_s3 _ _ _ _ i)) (fun i => eq_sym (gext_s3 _ _ _ _ i)) _).
+  change (mkG L' (map (fun D => gdecl_usubst D (uext (k :: nil) φ)) (brDecls 4) ++ gΨ (G_us G0 L' φ))) with
+    (gext (gext (gext (G_us G0 L' φ) gdCtx) (gdTy (cvar 0) lD k)) (gdTm (cvar 1) lV (gv 0) k)).
+  refine (GSubRel_tm_i (i := lV) ltac:(lleC) _ _ _ eq_refl eq_refl Hv1 Hv2 _ (tm_leq_refl _)); [| decl_eq | decl_eq |].
+  - refine (GSubRel_ty_i (i := lD) ltac:(lleC) (GSubRel_ctx1' Hσ HΔ1 HΔ) _ _ eq_refl eq_refl HT1 HT2 HT
+             (fun H => ltac:(unfold lle in H; cbn in H; lia))); reflexivity.
+  - exact (eqtm_refl _ _ _ _ _ _ (lift_tm (j := lD) Hv1 ltac:(lleC))).
+Qed.
+
+Lemma GS_succ {G0 L' φ G' σ1 σ2 Δ1 Δ2 t1 t2} :
+  GSubRel EP EM G' (G_us G0 L' φ) σ1 σ2 -> [ G' ; Δ1 ⊢[ lD ] ] -> [ G' ⊢[ lD ] Δ1 ≅ Δ2 ] ->
+  [ G' ; Δ1 ⊢[ lC ] t1 : tyNat @ lzero ] -> [ G' ; Δ2 ⊢[ lC ] t2 : tyNat @ lzero ] ->
+  [ G' ; Δ1 ⊢[ lD ] t1 ≅ t2 : tyNat @ lzero ] -> tm_leq t1 t2 ->
+  GSubRel EP EM G' (G_us (brG 9 G0) L' (uext nil φ))
+    (gext_s (GCtx Δ1 :: GTm t1 :: nil) σ1) (gext_s (GCtx Δ2 :: GTm t2 :: nil) σ2).
+Proof.
+  intros Hσ HΔ1 HΔ Ht1 Ht2 Ht E.
+  rewrite (G_us_brG_uext 9 G0 L' φ nil eq_refl).
+  refine (GSubRel_ext EP EM (fun i => eq_sym (gext_s2 _ _ _ i)) (fun i => eq_sym (gext_s2 _ _ _ i)) _).
+  change (mkG L' (map (fun D => gdecl_usubst D (uext nil φ)) (brDecls 9) ++ gΨ (G_us G0 L' φ))) with
+    (gext (gext (G_us G0 L' φ) gdCtx) (gdTm (cvar 0) lC tyNat lzero)).
+  refine (GSubRel_tm_i (i := lC) ltac:(lleC) (GSubRel_ctx1' Hσ HΔ1 HΔ) _ _ eq_refl eq_refl Ht1 Ht2 Ht E); reflexivity.
+Qed.
+
+Lemma GS_pi' {G0 L' φ G' σ1 σ2 Δ1 Δ2 s1 s2 t1 t2 k k'} :
+  GSubRel EP EM G' (G_us G0 L' φ) σ1 σ2 -> [ G' ; Δ1 ⊢[ lD ] ] -> [ G' ⊢[ lD ] Δ1 ≅ Δ2 ] ->
+  [ G' ; Δ1 ⊢[ lC ] s1 : tyU k @ lsuc k ] -> [ G' ; Δ2 ⊢[ lC ] s2 : tyU k @ lsuc k ] ->
+  [ G' ; Δ1 ⊢[ lD ] s1 ≅ s2 : tyU k @ lsuc k ] -> tm_leq s1 s2 ->
+  [ G' ; Δ1 ,, tyEl k s1 @ k ⊢[ lC ] t1 : tyU k' @ lsuc k' ] -> [ G' ; Δ2 ,, tyEl k s2 @ k ⊢[ lC ] t2 : tyU k' @ lsuc k' ] ->
+  [ G' ; Δ1 ,, tyEl k s1 @ k ⊢[ lD ] t1 ≅ t2 : tyU k' @ lsuc k' ] -> tm_leq t1 t2 ->
+  GSubRel EP EM G' (G_us (brG 6 G0) L' (uext (k :: k' :: nil) φ))
+    (gext_s (GCtx Δ1 :: GTm s1 :: GTm t1 :: nil) σ1) (gext_s (GCtx Δ2 :: GTm s2 :: GTm t2 :: nil) σ2).
+Proof.
+  intros Hσ HΔ1 HΔ Hs1 Hs2 Hs Es Ht1 Ht2 Ht Et.
+  pose proof (wf_tm_dnf Hs1) as N1. pose proof (wf_tm_dnf Hs2) as N2.
+  rewrite (G_us_brG_uext 6 G0 L' φ (k :: k' :: nil) eq_refl).
+  refine (GSubRel_ext EP EM (fun i => eq_sym (gext_s3 _ _ _ _ i)) (fun i => eq_sym (gext_s3 _ _ _ _ i)) _).
+  change (mkG L' (map (fun D => gdecl_usubst D (uext (k :: k' :: nil) φ)) (brDecls 6) ++ gΨ (G_us G0 L' φ))) with
+    (gext (gext (gext (G_us G0 L' φ) gdCtx) (gdTm (cvar 0) lC (tyU k) (lsuc k)))
+       (gdTm (cvar 1 ,, tyEl k (gu 0) @ k) lC (tyU k') (lsuc k'))).
+  refine (GSubRel_tm_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl Ht1 Ht2 Ht Et); [| decl_eq | decl_eq].
+  refine (GSubRel_tm_i (i := lC) ltac:(lleC) (GSubRel_ctx1' Hσ HΔ1 HΔ) _ _ eq_refl eq_refl Hs1 Hs2 Hs Es); reflexivity.
+Qed.
+
+Lemma GS_natrec {G0 L' φ G' σ1 σ2 Δ1 Δ2 M1 M2 s1 s2 z1 z2 t1 t2 k} :
+  GSubRel EP EM G' (G_us G0 L' φ) σ1 σ2 -> [ G' ; Δ1 ⊢[ lD ] ] -> [ G' ⊢[ lD ] Δ1 ≅ Δ2 ] ->
+  [ G' ; Δ1 ,, tyNat @ lzero ⊢[ lC ] M1 @ k ] -> [ G' ; Δ2 ,, tyNat @ lzero ⊢[ lC ] M2 @ k ] ->
+  [ G' ; Δ1 ,, tyNat @ lzero ⊢[ lD ] M1 ≅ M2 @ k ] -> ty_leq M1 M2 ->
+  [ G' ; Δ1 ⊢[ lC ] s1 : M1[lsingle zero] @ k ] -> [ G' ; Δ2 ⊢[ lC ] s2 : M2[lsingle zero] @ k ] ->
+  [ G' ; Δ1 ⊢[ lD ] s1 ≅ s2 : M1[lsingle zero] @ k ] -> tm_leq s1 s2 ->
+  [ G' ; Δ1 ,, tyNat @ lzero ,, M1 @ k ⊢[ lC ] z1 : M1[lsucc] @ k ] ->
+  [ G' ; Δ2 ,, tyNat @ lzero ,, M2 @ k ⊢[ lC ] z2 : M2[lsucc] @ k ] ->
+  [ G' ; Δ1 ,, tyNat @ lzero ,, M1 @ k ⊢[ lD ] z1 ≅ z2 : M1[lsucc] @ k ] -> tm_leq z1 z2 ->
+  [ G' ; Δ1 ⊢[ lC ] t1 : tyNat @ lzero ] -> [ G' ; Δ2 ⊢[ lC ] t2 : tyNat @ lzero ] ->
+  [ G' ; Δ1 ⊢[ lD ] t1 ≅ t2 : tyNat @ lzero ] -> tm_leq t1 t2 ->
+  GSubRel EP EM G' (G_us (brG 10 G0) L' (uext (k :: nil) φ))
+    (gext_s (GCtx Δ1 :: GTy M1 :: GTm s1 :: GTm z1 :: GTm t1 :: nil) σ1)
+    (gext_s (GCtx Δ2 :: GTy M2 :: GTm s2 :: GTm z2 :: GTm t2 :: nil) σ2).
+Proof.
+  intros Hσ HΔ1 HΔ HM1 HM2 HM EM1 Hs1 Hs2 Hs Es Hz1 Hz2 Hz Ez Ht1 Ht2 Ht Et.
+  pose proof (wf_ty_dnf HM1) as N1. pose proof (wf_ty_dnf HM2) as N2.
+  rewrite (G_us_brG_uext 10 G0 L' φ (k :: nil) eq_refl).
+  assert (E5 : forall a b c d f τ i, gext_s (a :: b :: c :: d :: f :: nil) τ i =
+                                   gcons (gcons (gcons (gcons (gcons τ a) b) c) d) f i).
+  { intros; unfold gext_s; destruct i as [|[|[|[|[|i]]]]]; cbn; auto. f_equal; lia. }
+  refine (GSubRel_ext EP EM (fun i => eq_sym (E5 _ _ _ _ _ _ i)) (fun i => eq_sym (E5 _ _ _ _ _ _ i)) _).
+  change (mkG L' (map (fun D => gdecl_usubst D (uext (k :: nil) φ)) (brDecls 10) ++ gΨ (G_us G0 L' φ))) with
+    (gext (gext (gext (gext (gext (G_us G0 L' φ) gdCtx) (gdTy (cvar 0 ,, tyNat @ lzero) lC k))
+        (gdTm (cvar 1) lC (tyGvar 0 (lsingle zero)) k))
+        (gdTm (cvar 2 ,, tyNat @ lzero ,, gv 1 @ k) lC (tyGvar 1 lsucc) k))
+        (gdTm (cvar 3) lC tyNat lzero)).
+  refine (GSubRel_tm_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl Ht1 Ht2 Ht Et); [| reflexivity | reflexivity].
+  refine (GSubRel_tm_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl Hz1 Hz2 Hz Ez); [| decl_eq | decl_eq].
+  refine (GSubRel_tm_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl Hs1 Hs2 Hs Es); [| reflexivity | reflexivity].
+  refine (GSubRel_ty_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl HM1 HM2 HM (fun _ => EM1)); [| reflexivity | reflexivity].
+  exact (GSubRel_ctx1' Hσ HΔ1 HΔ).
+Qed.
+
+Lemma GS_lam {G0 L' φ G' σ1 σ2 Δ1 Δ2 A1 A2 B1 B2 b1 b2 k k'} :
+  GSubRel EP EM G' (G_us G0 L' φ) σ1 σ2 -> [ G' ; Δ1 ⊢[ lD ] ] -> [ G' ⊢[ lD ] Δ1 ≅ Δ2 ] ->
+  [ G' ; Δ1 ⊢[ lC ] A1 @ k ] -> [ G' ; Δ2 ⊢[ lC ] A2 @ k ] -> [ G' ; Δ1 ⊢[ lD ] A1 ≅ A2 @ k ] -> ty_leq A1 A2 ->
+  [ G' ; Δ1 ,, A1 @ k ⊢[ lD ] B1 @ k' ] -> [ G' ; Δ2 ,, A2 @ k ⊢[ lD ] B2 @ k' ] ->
+  [ G' ; Δ1 ,, A1 @ k ⊢[ lD ] B1 ≅ B2 @ k' ] ->
+  [ G' ; Δ1 ,, A1 @ k ⊢[ lC ] b1 : B1 @ k' ] -> [ G' ; Δ2 ,, A2 @ k ⊢[ lC ] b2 : B2 @ k' ] ->
+  [ G' ; Δ1 ,, A1 @ k ⊢[ lD ] b1 ≅ b2 : B1 @ k' ] -> tm_leq b1 b2 ->
+  GSubRel EP EM G' (G_us (brG 11 G0) L' (uext (k :: k' :: nil) φ))
+    (gext_s (GCtx Δ1 :: GTy A1 :: GTy B1 :: GTm b1 :: nil) σ1)
+    (gext_s (GCtx Δ2 :: GTy A2 :: GTy B2 :: GTm b2 :: nil) σ2).
+Proof.
+  intros Hσ HΔ1 HΔ HA1 HA2 HA EA HB1 HB2 HB Hb1 Hb2 Hb Eb.
+  pose proof (wf_ty_dnf HA1) as NA1. pose proof (wf_ty_dnf HA2) as NA2.
+  pose proof (wf_ty_dnf HB1) as NB1. pose proof (wf_ty_dnf HB2) as NB2.
+  rewrite (G_us_brG_uext 11 G0 L' φ (k :: k' :: nil) eq_refl).
+  assert (E4 : forall a b c d τ i, gext_s (a :: b :: c :: d :: nil) τ i = gcons (gcons (gcons (gcons τ a) b) c) d i).
+  { intros; unfold gext_s; destruct i as [|[|[|[|i]]]]; cbn; auto. f_equal; lia. }
+  refine (GSubRel_ext EP EM (fun i => eq_sym (E4 _ _ _ _ _ i)) (fun i => eq_sym (E4 _ _ _ _ _ i)) _).
+  change (mkG L' (map (fun D => gdecl_usubst D (uext (k :: k' :: nil) φ)) (brDecls 11) ++ gΨ (G_us G0 L' φ))) with
+    (gext (gext (gext (gext (G_us G0 L' φ) gdCtx) (gdTy (cvar 0) lC k)) (gdTy (cvar 1 ,, gv 0 @ k) lD k'))
+       (gdTm (cvar 2 ,, gv 1 @ k) lC (gv 0) k')).
+  refine (GSubRel_tm_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl Hb1 Hb2 Hb Eb); [| decl_eq | decl_eq].
+  refine (GSubRel_ty_i (i := lD) ltac:(lleC) _ _ _ eq_refl eq_refl HB1 HB2 HB _); [| decl_eq | decl_eq |].
+  - refine (GSubRel_ty_i (i := lC) ltac:(lleC) (GSubRel_ctx1' Hσ HΔ1 HΔ) _ _ eq_refl eq_refl HA1 HA2 HA (fun _ => EA)); reflexivity.
+  - intros H; unfold lle in H; cbn in H; lia.
+Qed.
+
+Lemma GS_app {G0 L' φ G' σ1 σ2 Δ1 Δ2 A1 A2 B1 B2 f1 f2 a1 a2 k k'} :
+  GSubRel EP EM G' (G_us G0 L' φ) σ1 σ2 -> [ G' ; Δ1 ⊢[ lD ] ] -> [ G' ⊢[ lD ] Δ1 ≅ Δ2 ] ->
+  [ G' ; Δ1 ⊢[ lC ] A1 @ k ] -> [ G' ; Δ2 ⊢[ lC ] A2 @ k ] -> [ G' ; Δ1 ⊢[ lD ] A1 ≅ A2 @ k ] -> ty_leq A1 A2 ->
+  [ G' ; Δ1 ,, A1 @ k ⊢[ lC ] B1 @ k' ] -> [ G' ; Δ2 ,, A2 @ k ⊢[ lC ] B2 @ k' ] ->
+  [ G' ; Δ1 ,, A1 @ k ⊢[ lD ] B1 ≅ B2 @ k' ] -> ty_leq B1 B2 ->
+  [ G' ; Δ1 ⊢[ lC ] f1 : tyPi k k' A1 B1 @ lmax k k' ] -> [ G' ; Δ2 ⊢[ lC ] f2 : tyPi k k' A2 B2 @ lmax k k' ] ->
+  [ G' ; Δ1 ⊢[ lD ] f1 ≅ f2 : tyPi k k' A1 B1 @ lmax k k' ] -> tm_leq f1 f2 ->
+  [ G' ; Δ1 ⊢[ lC ] a1 : A1 @ k ] -> [ G' ; Δ2 ⊢[ lC ] a2 : A2 @ k ] ->
+  [ G' ; Δ1 ⊢[ lD ] a1 ≅ a2 : A1 @ k ] -> tm_leq a1 a2 ->
+  GSubRel EP EM G' (G_us (brG 12 G0) L' (uext (k :: k' :: nil) φ))
+    (gext_s (GCtx Δ1 :: GTy A1 :: GTy B1 :: GTm f1 :: GTm a1 :: nil) σ1)
+    (gext_s (GCtx Δ2 :: GTy A2 :: GTy B2 :: GTm f2 :: GTm a2 :: nil) σ2).
+Proof.
+  intros Hσ HΔ1 HΔ HA1 HA2 HA EA HB1 HB2 HB EB Hf1 Hf2 Hf Ef Ha1 Ha2 Ha Ea.
+  pose proof (wf_ty_dnf HA1) as NA1. pose proof (wf_ty_dnf HA2) as NA2.
+  pose proof (wf_ty_dnf HB1) as NB1. pose proof (wf_ty_dnf HB2) as NB2.
+  rewrite (G_us_brG_uext 12 G0 L' φ (k :: k' :: nil) eq_refl).
+  assert (E5 : forall a b c d f τ i, gext_s (a :: b :: c :: d :: f :: nil) τ i =
+                                   gcons (gcons (gcons (gcons (gcons τ a) b) c) d) f i).
+  { intros; unfold gext_s; destruct i as [|[|[|[|[|i]]]]]; cbn; auto. f_equal; lia. }
+  refine (GSubRel_ext EP EM (fun i => eq_sym (E5 _ _ _ _ _ _ i)) (fun i => eq_sym (E5 _ _ _ _ _ _ i)) _).
+  change (mkG L' (map (fun D => gdecl_usubst D (uext (k :: k' :: nil) φ)) (brDecls 12) ++ gΨ (G_us G0 L' φ))) with
+    (gext (gext (gext (gext (gext (G_us G0 L' φ) gdCtx) (gdTy (cvar 0) lC k)) (gdTy (cvar 1 ,, gv 0 @ k) lC k'))
+       (gdTm (cvar 2) lC (tyPi k k' (gv 1) (gv 0)) (lmax k k'))) (gdTm (cvar 3) lC (gv 2) k)).
+  refine (GSubRel_tm_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl Ha1 Ha2 Ha Ea); [| decl_eq | decl_eq].
+  refine (GSubRel_tm_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl Hf1 Hf2 Hf Ef); [| decl_eq | decl_eq].
+  refine (GSubRel_ty_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl HB1 HB2 HB (fun _ => EB)); [| decl_eq | decl_eq].
+  refine (GSubRel_ty_i (i := lC) ltac:(lleC) (GSubRel_ctx1' Hσ HΔ1 HΔ) _ _ eq_refl eq_refl HA1 HA2 HA (fun _ => EA)); reflexivity.
 Qed.
 
 End GS.
