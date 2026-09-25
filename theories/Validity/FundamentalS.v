@@ -3,11 +3,10 @@
     Every P-derivation is valid at related global substitutions, at the P
     and the M instance ([⊩^{≥P}_P]), together with its context (and, for
     terms, its type).  Each case is one of the rule lemmas of [RulesS], a
-    PER/conversion lemma of [ValidS], or a context lemma.
-
-    M2 transition: still for global contexts that bind context variables
-    only; the global variables' cases come next. *)
-From DeLaM.Validity Require Export RulesS.
+    PER/conversion lemma of [ValidS], or a context lemma.  Well-formed
+    global contexts are semantic ([GValid]), which gives the validity of
+    the global variables' bindings. *)
+From DeLaM.Validity Require Export GvarS.
 
 #[local] Existing Instance LR_P.
 
@@ -30,8 +29,45 @@ Definition SemTm (G : gctx) (Γ : ctx) (t t' : tm) (T : ty) (l : lvl) : Prop :=
   @VTmS EP EM EP LR_P G Γ t t' T l /\ @VTmS EP EM EM LR_P G Γ t t' T l.
 End Sem.
 
-Lemma ctx_only_GValid {G} : ctx_only G -> GValid G.
-Proof. intros HG n D Hin. now rewrite (HG _ _ Hin). Qed.
+(** ** Global variables *)
+
+Lemma FS_tygvar {G Γ U Δ i' l d d'} : SemCtx G Γ -> in_gctx (gΨ G) U (gdTy Δ i' l) -> lle i' lD ->
+  [ G ; Γ ⊢[ lD ] ] -> lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
+  (forall n B k, in_ctx Δ n B k -> SemTm G Γ (llk d n) (llk d' n) B[d] k) ->
+  SemTy G Γ (tyGvar U d) (tyGvar U d') l.
+Proof.
+  intros HS Hin Hi HΓ Ht Nd Ht' Nd' Hv. pose proof HS as (HG & _ & _).
+  pose proof (in_gctx_DWf (ctx_glob _ _ _ HΓ) Hin) as HΔ; cbn in HΔ.
+  destruct (HG _ _ Hin) as [VP VM].
+  split; [exact HS | split].
+  - exact (VS_tygvar EP EM (fun _ _ _ _ _ H => proj1 H) Hin Hi HΓ HΔ VP Ht Nd Ht' Nd'
+             (fun n B k h => proj1 (proj2 (proj2 (proj2 (Hv n B k h)))))).
+  - exact (VS_tygvar EP EM (fun _ _ _ _ _ H => proj2 H) Hin Hi HΓ HΔ VM Ht Nd Ht' Nd'
+             (fun n B k h => proj2 (proj2 (proj2 (proj2 (Hv n B k h)))))).
+Qed.
+
+Lemma FS_gvar {G Γ u Δ i' A l d d'} : SemCtx G Γ -> in_gctx (gΨ G) u (gdTm Δ i' A l) -> lle i' lD ->
+  [ G ; Γ ⊢[ lD ] ] -> lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
+  (forall n B k, in_ctx Δ n B k -> SemTm G Γ (llk d n) (llk d' n) B[d] k) ->
+  (forall n B k, in_ctx Δ n B k -> SemTm G Γ (llk d n) (llk d n) B[d] k) ->
+  SemTm G Γ (gvar u d) (gvar u d') A[d] l.
+Proof.
+  intros HS Hin Hi HΓ Ht Nd Ht' Nd' Hv Hvv. pose proof HS as (HG & _ & _).
+  pose proof (in_gctx_DWf (ctx_glob _ _ _ HΓ) Hin) as HT; cbn in HT.
+  pose proof (ctx_of_wf_ty (i := lD) eq_refl HT) as HΔ.
+  destruct (HG _ _ Hin) as (VP & VM & VAP & VAM).
+  split; [exact HS | split; [| split; [| split]]].
+  - exact (VTyS_inst EP EM HΓ HΔ VP Ht Nd Ht Nd
+             (fun n B k h => proj1 (proj2 (proj2 (proj2 (Hvv n B k h))))) VAP).
+  - exact (VTyS_inst EP EM HΓ HΔ VM Ht Nd Ht Nd
+             (fun n B k h => proj2 (proj2 (proj2 (proj2 (Hvv n B k h))))) VAM).
+  - exact (VS_gvar EP EM (fun _ _ _ _ _ _ H => proj1 H) Hin Hi HΓ HΔ VP VAP Ht Nd Ht' Nd'
+             (fun n B k h => proj1 (proj2 (proj2 (proj2 (Hv n B k h)))))
+             (fun n B k h => proj1 (proj2 (proj2 (proj2 (Hvv n B k h)))))).
+  - exact (VS_gvar EP EM (fun _ _ _ _ _ _ H => proj2 H) Hin Hi HΓ HΔ VM VAM Ht Nd Ht' Nd'
+             (fun n B k h => proj2 (proj2 (proj2 (proj2 (Hv n B k h)))))
+             (fun n B k h => proj2 (proj2 (proj2 (proj2 (Hvv n B k h)))))).
+Qed.
 
 (** ** Case tactic
 
@@ -109,7 +145,9 @@ Ltac f_tm :=
 
 Ltac f_goal :=
   lazymatch goal with
-  | |- GValid _ => first [eassumption | apply ctx_only_GValid; assumption]
+  | |- GValid (mkG _ nil) => apply GValid_nil
+  | |- GValid (mkG _ (_ :: _)) => apply GValid_ext; [assumption | cbn [DValid]; repeat split; assumption]
+  | |- GValid _ => eassumption
   | |- @VCtxS _ _ _ _ _ _ => f_ctx
   | |- @VTyS _ _ _ _ _ _ _ _ _ => f_ty
   | |- @VTmS _ _ _ _ _ _ _ _ _ _ => f_tm
@@ -118,23 +156,23 @@ Ltac f_goal :=
 (** ** The theorem *)
 
 Theorem fundamentalS :
-  (forall G, [ ⊢ G ] -> True) /\
-  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> i = lD -> ctx_only G -> SemCtx G Γ) /\
-  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = lD -> ctx_only G -> SemTy G Γ T T l) /\
-  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = lD -> ctx_only G -> SemTm G Γ t t T l) /\
-  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = lD -> ctx_only G -> SemTy G Γ T T' l) /\
-  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = lD -> ctx_only G ->
+  (forall G, [ ⊢ G ] -> GValid G) /\
+  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> i = lD -> SemCtx G Γ) /\
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = lD -> SemTy G Γ T T l) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = lD -> SemTm G Γ t t T l) /\
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = lD -> SemTy G Γ T T' l) /\
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = lD ->
      SemTm G Γ t t' T l) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
   apply typing_mut; intros; try exact I;
     try match goal with H : lM = lD |- _ => discriminate H end;
-    try match goal with
-        | Hc : ctx_only _, Hin : in_gctx _ _ (gdTm _ _ _ _) |- _ => discriminate (Hc _ _ Hin)
-        | Hc : ctx_only _, Hin : in_gctx _ _ (gdTy _ _ _) |- _ => discriminate (Hc _ _ Hin)
-        end;
     ft_prep;
-    repeat match goal with Hc : ctx_only ?G, IH : ctx_only ?G -> _ |- _ => specialize (IH Hc) end;
+    repeat match goal with
+      | IH : forall n A k, in_ctx _ n A k -> ?x = ?x -> _ |- _ =>
+          pose proof (fun n A k h => IH n A k h eq_refl); clear IH
+      end;
+    try solve [ first [simple eapply FS_tygvar | simple eapply FS_gvar]; eassumption ];
     unfold SemTy, SemTm in *; unfold SemCtx in *;
     repeat match goal with H : _ /\ _ |- _ => destruct H end;
     f_types;

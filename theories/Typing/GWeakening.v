@@ -562,3 +562,32 @@ Proof.
   intros Hγ HG' H. destruct γ as [|γ0|γ0] eqn:Eγ; cbn [gwa];
     [rewrite (gwk_ok_id_inv Hγ); exact H | exact (gwk_eqctx Hγ HG' H) ..].
 Qed.
+
+(** Global variables and lookups under [⟦γ⟧]. *)
+Lemma gwa_tyGvar γ U d : (tyGvar U d)⟦γ⟧ = tyGvar (γ U) d⟦γ⟧.
+Proof. now destruct γ. Qed.
+Lemma gwa_gvar γ u d : (gvar u d)⟦γ⟧ = gvar (γ u) d⟦γ⟧.
+Proof. now destruct γ. Qed.
+Lemma dnfl_gwa (d : lsub) γ : dnfl d -> dnfl d⟦γ⟧.
+Proof. destruct γ; cbn [gwa]; auto; intros; apply gren_dnf_all. Qed.
+Lemma in_ctx_gwa_inv Γ n T l γ : in_ctx Γ⟦γ⟧ n T l -> exists T0, in_ctx Γ n T0 l /\ T = T0⟦γ⟧.
+Proof. destruct γ; cbn [gwa]; [eauto | apply in_ctx_gren_inv ..]. Qed.
+
+Definition gdecl_gwa (D : gdecl) (γ : gweak) : gdecl :=
+  match D with
+  | gdCtx => gdCtx
+  | gdTy Δ i l => gdTy Δ⟦γ⟧ i l
+  | gdTm Δ i T l => gdTm Δ⟦γ⟧ i T⟦γ⟧ l
+  end.
+
+Lemma gwk_wf_id_eq {Ψ' Ψ} : gwk_wf gwk_id Ψ' Ψ -> Ψ' = Ψ.
+Proof. intros H; inversion H; reflexivity. Qed.
+
+Lemma in_gctx_gwa {γ G' G n D} : gwk_ok γ G' G -> in_gctx (gΨ G) n D ->
+  in_gctx (gΨ G') (γ n) (gdecl_gwa D γ).
+Proof.
+  intros [_ Hw] Hin. destruct γ as [|γ0|γ0] eqn:Eγ.
+  - rewrite (gwk_wf_id_eq Hw). destruct D; exact Hin.
+  - rewrite <- Eγ in *. pose proof (in_gctx_gwk _ _ _ _ _ Hw Hin) as X. subst γ. destruct D; exact X.
+  - rewrite <- Eγ in *. pose proof (in_gctx_gwk _ _ _ _ _ Hw Hin) as X. subst γ. destruct D; exact X.
+Qed.

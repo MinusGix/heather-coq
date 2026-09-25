@@ -125,6 +125,15 @@ Proof.
   destruct D; cbn; intuition auto.
 Qed.
 
+Lemma GValid_nil L : GValid (mkG L nil).
+Proof. intros n D Hin; inversion Hin. Qed.
+
+Lemma GValid_ext {L Ψ D} : GValid (mkG L Ψ) -> DValid (mkG L Ψ) D -> GValid (mkG L (D :: Ψ)).
+Proof.
+  intros HG HD n D' Hin; inversion Hin; subst; apply DValid_tl; [exact HD |].
+  match goal with Hm : in_gctx Ψ _ _ |- _ => exact (HG _ _ Hm) end.
+Qed.
+
 (** ** Symmetry *)
 
 Lemma GObjRel_sym {G' G D σ σ' n} : GValid G -> GSubRel G' G σ σ' -> in_gctx (gΨ G) n D ->

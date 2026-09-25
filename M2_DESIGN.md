@@ -277,6 +277,25 @@ and composition; (5d) `vpM` and its laws; (5e) related global
 substitutions; (5f) validity with σ and the FTs; (5g) consequences at M,
 dropping `ctx_only`.
 
+Status of 5f: the FT for P-derivations holds with σ at every global
+context (`FundamentalS.fundamentalS`, no `ctx_only`, no axioms).
+- **Global contexts are semantic.** The `wf_glob` motive is `GValid G`:
+  every binding's context (and type) is valid at P and M. It gives
+  `VCtxS` for the binding's context in the global-variable cases, and
+  symmetry of related substitutions.
+- **Global variables** (`GvarS.v`). Under σ, `U^δ` goes to one of two
+  things:
+  - a global variable, which is a neutral by the generic `gne_*_gvar`
+    laws;
+  - `T[δ⦃σ⦄]`, where `T` is related in the substituted binding context
+    and is instantiated at the related local substitutions (`VSubKS`,
+    built with `VSub_intro`).
+- **Projection hypothesis.** The rule lemmas take a projection from the
+  image's relation (`⊩^{≥P}_P`, P ∧ M instances) to the instance at hand.
+  At P it is `proj1`/`proj2`; at M with `LR_M` it will be the Layering
+  Restriction.
+- **Next:** the FT at C (lift to P), then at M (`box`, `letbox`).
+
 ## Order of work
 
 1. Syntax: new constructors, global renaming/substitution, laws, whnf and
