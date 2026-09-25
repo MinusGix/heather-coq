@@ -538,4 +538,113 @@ Proof.
   apply LR_perm_step, IHn.
 Qed.
 
+(** ** Universe weakening: growth by one level, then the rotation
+    (M3_DESIGN.md E14) *)
+
+Definition rot (L : nat) : nat -> nat := fun n => if n <? L then S n else if n =? L then 0 else n.
+Definition roti (L : nat) : nat -> nat := fun n => match n with 0 => L | S m => if m <? L then m else n end.
+
+Lemma uperm_rot L : uperm (rot L) (roti L) (S L).
+Proof.
+  unfold rot, roti; repeat split.
+  - intros n. destruct (Nat.ltb_spec n L).
+    + destruct (Nat.ltb_spec n L); lia.
+    + destruct (Nat.eqb_spec n L); [lia |].
+      destruct n as [|m]; [lia |]. destruct (Nat.ltb_spec m L); lia.
+  - intros [|m].
+    + destruct (Nat.ltb_spec L L); [lia|]. rewrite Nat.eqb_refl; reflexivity.
+    + destruct (Nat.ltb_spec m L).
+      * destruct (Nat.ltb_spec m L); lia.
+      * destruct (Nat.ltb_spec (S m) L); [lia|]. destruct (Nat.eqb_spec (S m) L); lia.
+  - intros n Hn. destruct (Nat.ltb_spec n L); [lia|]. destruct (Nat.eqb_spec n L); lia.
+  - intros n Hn. destruct (Nat.ltb_spec n L); [lia|]. destruct (Nat.eqb_spec n L); lia.
+Qed.
+
+Lemma rot_ush L n : n < L -> pφ (rot L) n = lvar (ush 1 n).
+Proof. intros Hn. unfold pφ, rot, ush. destruct (Nat.ltb_spec n L); [reflexivity | lia]. Qed.
+
+Lemma uren_us_ty (T : ty) ρ : T⟨ρ⟩ᵤ = T[pφ ρ]ᵤ.
+Proof. apply (proj1 uren_as_usubst_all); reflexivity. Qed.
+Lemma uren_us_tm (t : tm) ρ : t⟨ρ⟩ᵤ = t[pφ ρ]ᵤ.
+Proof. apply (proj1 (proj2 uren_as_usubst_all)); reflexivity. Qed.
+Lemma uren_us_ctx (Γ : ctx) ρ : Γ⟨ρ⟩ᵤ = Γ[pφ ρ]ᵤ.
+Proof. apply (proj1 (proj2 (proj2 uren_as_usubst_all))); reflexivity. Qed.
+
+Definition decl_lwf (L : nat) (D : gdecl) : Prop :=
+  match D with gdCtx => True | gdTy Δ _ l => ctx_lwf L Δ /\ lwf L l | gdTm Δ _ T l => ctx_lwf L Δ /\ ty_lwf L T /\ lwf L l end.
+
+Lemma wfg_lwf G : [ ⊢ G ] -> Forall (decl_lwf (gL G)) (gΨ G).
+Proof.
+  induction 1 as [L | L Ψ HG IH | L Ψ Δ i l HG IH HΔ Hi Hl | L Ψ Δ i T l HG IH HT Hi Hl]; cbn in *.
+  - constructor.
+  - constructor; [exact I | exact IH].
+  - constructor; [split; [exact (wf_ctx_lwf HΔ) | exact Hl] | exact IH].
+  - constructor; [| exact IH].
+    refine (conj _ (conj (wf_ty_lwf HT) Hl)).
+    exact (wf_ctx_lwf (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ HT)).
+Qed.
+
+Lemma rot_decls L Ψ : Forall (decl_lwf L) Ψ ->
+  map (fun D => gdecl_usubst D (pφ (rot L))) Ψ = map (fun D => gdecl_uren D (ush 1)) Ψ.
+Proof.
+  induction 1 as [|D Ψ HD _ IH]; cbn; f_equal; auto.
+  assert (Eag : forall m, m < L -> pφ (rot L) m = pφ (ush 1) m) by (intros; apply rot_ush; assumption).
+  destruct D; cbn in HD |- *; [reflexivity | ..];
+    repeat match goal with H : _ /\ _ |- _ => destruct H end.
+  - f_equal; [rewrite uren_us_ctx; exact (lwf_us_ext_ctx ltac:(eassumption) Eag)
+             | rewrite (lvren_as_lvsubst _ _ (pφ (ush 1))) by reflexivity;
+               exact (lvsubst_ext_lwf _ _ _ _ ltac:(eassumption) Eag)].
+  - f_equal; [rewrite uren_us_ctx; exact (lwf_us_ext_ctx ltac:(eassumption) Eag)
+             | rewrite uren_us_ty; exact (lwf_us_ext_ty ltac:(eassumption) Eag)
+             | rewrite (lvren_as_lvsubst _ _ (pφ (ush 1))) by reflexivity;
+               exact (lvsubst_ext_lwf _ _ _ _ ltac:(eassumption) Eag)].
+Qed.
+
+Section Grow.
+Context {L : nat} {Ψ : list gdecl} {Γ : ctx} (HΓ : [ mkG L Ψ ; Γ ⊢g ]).
+
+Lemma grow_gok : gwk_ok gwk_id (mkG (S L) Ψ) (mkG L Ψ).
+Proof. split; [cbn; lia | constructor]. Qed.
+Lemma grow_ctx : [ mkG (S L) Ψ ; Γ ⊢g ].
+Proof.
+  exact (gwa_ctx (γ := gwk_id) grow_gok (wfg_grow L (S L) Ψ ltac:(lia) (ctx_glob _ _ _ HΓ)) HΓ).
+Qed.
+Definition kw_grow : kwk (mkG L Ψ) Γ :=
+  mkKwk (mkG (S L) Ψ) Γ gwk_id wk_id grow_gok (wkwf_id _) grow_ctx.
+
+End Grow.
+
+Lemma ren_id_tm' (t : tm) : nftm t -> t⟨rshift 0⟩ = t.
+Proof.
+  intros H. rewrite (ren_as_subst _ _ (lshift 0)); [apply subst_id; auto|]; intros; cbn; f_equal; lia.
+Qed.
+
+Theorem LR_uwk {n G Γ T T' l R} : LR n (LRbelow n) G Γ T T' l R -> lwf (gL G) l ->
+  exists R', LR n (LRbelow n) (gctx_uwk 1 G) Γ⟨ush 1⟩ᵤ T⟨ush 1⟩ᵤ T'⟨ush 1⟩ᵤ (lvren l (ush 1)) R' /\
+    forall t t', R t t' -> R' t⟨ush 1⟩ᵤ t'⟨ush 1⟩ᵤ.
+Proof.
+  intros H Hl. destruct G as [L Ψ].
+  destruct (escape_ty _ _ _ _ _ _ _ _ H) as (HT & HT' & _). pose proof (ctx_of_ty HT) as HΓ.
+  pose proof (ctx_glob _ _ _ HΓ) as HG.
+  destruct (LR_kwk n _ _ _ _ _ _ H (kw_grow HΓ)) as (R1 & H1 & E1).
+  unfold kty in H1; cbn [kw_grow kw_γ kw_r kw_G kw_Δ gwa] in H1.
+  cbn [wk_ren] in H1.
+  rewrite !ren_id_ty in H1 by first [exact (wf_ty_nf HT) | exact (wf_ty_nf HT')].
+  destruct (LR_perm n _ _ _ _ _ _ H1 (rot L) (roti L) (uperm_rot L)) as (R2 & H2 & E2).
+  assert (EG : Gp (rot L) (mkG (S L) Ψ) = gctx_uwk 1 (mkG L Ψ)).
+  { unfold Gp, G_us, gctx_usubst, gctx_uwk; cbn. f_equal. exact (rot_decls L Ψ (wfg_lwf _ HG)). }
+  assert (Eag : forall m, m < L -> pφ (rot L) m = pφ (ush 1) m) by (intros; apply rot_ush; assumption).
+  rewrite EG, (lwf_us_ext_ctx (wf_ctx_lwf HΓ) Eag), (lwf_us_ext_ty (wf_ty_lwf HT) Eag),
+    (lwf_us_ext_ty (wf_ty_lwf HT') Eag), (lvsubst_ext_lwf _ _ _ _ Hl Eag), <- !uren_us_ty, <- uren_us_ctx,
+    <- (lvren_as_lvsubst _ _ (pφ (ush 1))) in H2 by reflexivity.
+  exists R2. split; [exact H2 |].
+  intros t t' Ht. destruct (escape_tm _ _ _ _ _ _ _ _ H _ _ Ht) as (Ht1 & Ht2 & _).
+  pose proof (E1 t t' Ht) as X. unfold ktm in X; cbn [kw_grow kw_γ kw_r gwa] in X.
+  cbn [wk_ren] in X.
+  rewrite !ren_id_tm' in X by first [exact (wf_tm_nf Ht1) | exact (wf_tm_nf Ht2)].
+  apply (E2 _ _ (wf_tm_dnf Ht1) (wf_tm_dnf Ht2)) in X.
+  rewrite (lwf_us_ext_tm (wf_tm_lwf Ht1) Eag), (lwf_us_ext_tm (wf_tm_lwf Ht2) Eag), <- !uren_us_tm in X.
+  exact X.
+Qed.
+
 End UPermLR.

@@ -121,3 +121,30 @@ End Along.
 (** The permutation's level count only needs to bound its support. *)
 Lemma p_gL G L φ : gL (G_us G L φ) = L.
 Proof. reflexivity. Qed.
+
+(** ** Scoped syntax only sees its levels (M3_DESIGN.md E14) *)
+
+Lemma lvsubst_ext_lwf L l φ φ' : lwf L l -> (forall n, n < L -> φ n = φ' n) -> lvsubst l φ = lvsubst l φ'.
+Proof. intros Hl H; induction l; cbn in *; f_equal; intuition. Qed.
+
+Lemma uup_agree L φ φ' : (forall n, n < L -> φ n = φ' n) -> forall n, n < S L -> uup φ n = uup φ' n.
+Proof. intros H [|n] Hn; cbn; [reflexivity | f_equal; apply H; lia]. Qed.
+
+Lemma lwf_us_ext_all :
+  (forall T L φ φ', ty_lwf L T -> (forall n, n < L -> φ n = φ' n) -> usubst_ty T φ = usubst_ty T φ') /\
+  (forall t L φ φ', tm_lwf L t -> (forall n, n < L -> φ n = φ' n) -> usubst_tm t φ = usubst_tm t φ') /\
+  (forall Γ L φ φ', ctx_lwf L Γ -> (forall n, n < L -> φ n = φ' n) -> ucsubst Γ φ = ucsubst Γ φ') /\
+  (forall d L φ φ', lsub_lwf L d -> (forall n, n < L -> φ n = φ' n) -> ulsubst d φ = ulsubst d φ').
+Proof.
+  apply syn_ind; intros; cbn in *; try reflexivity;
+    repeat match goal with H : _ /\ _ |- _ => destruct H end;
+    f_equal; eauto using lvsubst_ext_lwf.
+  eapply H; [eassumption | apply uup_agree; assumption].
+Qed.
+
+Lemma lwf_us_ext_ty {L φ φ' T} : ty_lwf L T -> (forall n, n < L -> φ n = φ' n) -> T[φ]ᵤ = T[φ']ᵤ.
+Proof. apply lwf_us_ext_all. Qed.
+Lemma lwf_us_ext_tm {L φ φ' t} : tm_lwf L t -> (forall n, n < L -> φ n = φ' n) -> t[φ]ᵤ = t[φ']ᵤ.
+Proof. apply lwf_us_ext_all. Qed.
+Lemma lwf_us_ext_ctx {L φ φ' Γ} : ctx_lwf L Γ -> (forall n, n < L -> φ n = φ' n) -> Γ[φ]ᵤ = Γ[φ']ᵤ.
+Proof. apply lwf_us_ext_all. Qed.
