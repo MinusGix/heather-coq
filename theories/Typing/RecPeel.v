@@ -8,16 +8,15 @@
     the reduct is the body at the extensions [uext ls φ], [gext_s os σ],
     [lext as e]. *)
 From DeLaM.Typing Require Export RecInst.
-Import ListNotations.
 
 (** ** Peeling lists of binders *)
 
 Fixpoint peelUs (b : tm) (ls : list lvl) : tm :=
-  match ls with [] => b | l :: ls => peelUs (peelU b l) ls end.
+  match ls with nil => b | l :: ls => peelUs (peelU b l) ls end.
 Fixpoint peelGs (b : tm) (os : list gobj) : tm :=
-  match os with [] => b | o :: os => peelGs (peelG b o) os end.
+  match os with nil => b | o :: os => peelGs (peelG b o) os end.
 Fixpoint peelLs (b : tm) (xs : list tm) : tm :=
-  match xs with [] => b | a :: xs => peelLs (peelL b a) xs end.
+  match xs with nil => b | a :: xs => peelLs (peelL b a) xs end.
 
 (** The extensions: the list's last element is index 0. *)
 Definition uext (ls : list lvl) (φ : nat -> lvl) : nat -> lvl :=
@@ -258,7 +257,7 @@ Qed.
 (** ** Building the extensions one image at a time *)
 
 Lemma gext_s_app os o σ i :
-  gext_s (os ++ [o]) σ i = match i with 0 => o | S j => gext_s os σ j end.
+  gext_s (os ++ o :: nil) σ i = match i with 0 => o | S j => gext_s os σ j end.
 Proof.
   unfold gext_s. rewrite length_app; cbn [length]. rewrite Nat.add_1_r.
   destruct i as [|i].
@@ -371,3 +370,90 @@ Proof.
   - apply (wkc_inst 1 2 Γ (k :: nil) (GCtx Δ :: GTy U :: nil)); reflexivity.
   - f_equal. unfold gext_s; cbn. apply subst_id_ty; [exact HU | intros; cbn; f_equal; lia].
 Qed.
+
+(** ** Ambient terms weakened into a branch, then instantiated *)
+
+Lemma wkb_inst w ls os xs φ σ e :
+  ((usubst_tm (wkb (length ls) (length os) (length xs) w) (uext ls φ))⦃gext_s os σ⦄)[lext xs e] =
+  ((usubst_tm w φ)⦃σ⦄)[e].
+Proof.
+  unfold wkb. rewrite (proj1 (proj2 usubst_ren_all)), (proj1 (proj2 usubst_gren_all)).
+  rewrite (proj1 (proj2 uren_usubst_all) _ _ _ φ) by (intros; symmetry; apply uext_ush).
+  change (gsubst_tm (ren_tm ?x ?r) ?s) with (x⟨r⟩⦃s⦄). rewrite gsubst_ren. cbn [gsubst GSubst_tm].
+  rewrite (proj1 (proj2 gsubst_gren_all) _ _ _ σ).
+  2: { intros i; unfold gext_s, ush. destruct (Nat.ltb_spec (length os + i) (length os)); [lia|]. f_equal; lia. }
+  apply ren_subst. intros n. rewrite llk_lext.
+  destruct (Nat.ltb_spec (rlk (rshift (length xs)) n) (length xs)); cbn in *; [lia|]. f_equal; lia.
+Qed.
+
+Lemma motT_wkb_inst MT ls os xs φ σ e lv g c : gdnf (gext_s os σ) -> LK dnftm (lext xs e) ->
+  ((usubst_ty (motT (wkb (length ls) (length os) (length xs) (wrapMT MT)) lv g c) (uext ls φ))⦃gext_s os σ⦄)
+    [lext xs e] =
+  motT (wrapMT ((usubst_ty MT (uup φ))⦃gup (guwk σ)⦄[llift (gwk (uwk e))])) (lvsubst lv (uext ls φ))
+    ((ucsubst g (uext ls φ))⦃gext_s os σ⦄) (((usubst_tm c (uext ls φ))⦃gext_s os σ⦄)[lext xs e]).
+Proof.
+  intros Hσ He. rewrite motT_usubst.
+  rewrite motT_gsubst by first [exact Hσ | hd_tac].
+  rewrite motT_subst by first [exact He | hd_tac].
+  f_equal. rewrite wkb_inst. reflexivity.
+Qed.
+
+Lemma mott_wkb_inst Mt ls os xs φ σ e lv g U c : gdnf (gext_s os σ) -> LK dnftm (lext xs e) ->
+  ((usubst_ty (mott (wkb (length ls) (length os) (length xs) (wrapMt Mt)) lv g U c) (uext ls φ))⦃gext_s os σ⦄)
+    [lext xs e] =
+  mott (wrapMt ((usubst_ty Mt (uup φ))⦃gup (gup (guwk σ))⦄[llift (gwk (gwk (uwk e)))]))
+    (lvsubst lv (uext ls φ)) ((ucsubst g (uext ls φ))⦃gext_s os σ⦄) ((usubst_ty U (uext ls φ))⦃gext_s os σ⦄)
+    (((usubst_tm c (uext ls φ))⦃gext_s os σ⦄)[lext xs e]).
+Proof.
+  intros Hσ He. rewrite mott_usubst.
+  rewrite mott_gsubst by first [exact Hσ | hd_tac].
+  rewrite mott_subst by first [exact He | hd_tac].
+  f_equal. rewrite wkb_inst. reflexivity.
+Qed.
+
+(** ** The premises of a typed recursor, on their own
+
+    A bundle whose motives and branches are typed gives typed recursors
+    at any typed scrutinee (the result type by [RecInst]). *)
+
+Definition RBwf (G : gctx) (Γ : ctx) (l1 l2 : lvl) (MT Mt : ty) (bs : nat -> tm) : Prop :=
+  lwf (gL G) l1 /\ lwf (gL G) l2 /\
+  [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] /\
+  [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] /\
+  (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ]) /\
+  (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+                         bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ]).
+
+Lemma elimT_prem {G Γ l1 l2 rb l Δ t T k} : [ G ; Γ ⊢[ lM ] elimT l1 l2 rb l Δ t : T @ k ] ->
+  exists MT Mt bs, rb = mkrb MT Mt bs /\ RBwf G Γ l1 l2 MT Mt bs.
+Proof.
+  intros H; remember (elimT l1 l2 rb l Δ t) as x eqn:Hx; revert Hx.
+  induction H; intros Hx; try discriminate; eauto.
+  injection Hx; intros; subst. do 3 eexists; split; [reflexivity|]. repeat split; assumption.
+Qed.
+Lemma elimt_prem {G Γ l1 l2 rb l Δ T0 t T k} : [ G ; Γ ⊢[ lM ] elimt l1 l2 rb l Δ T0 t : T @ k ] ->
+  exists MT Mt bs, rb = mkrb MT Mt bs /\ RBwf G Γ l1 l2 MT Mt bs.
+Proof.
+  intros H; remember (elimt l1 l2 rb l Δ T0 t) as x eqn:Hx; revert Hx.
+  induction H; intros Hx; try discriminate; eauto.
+  injection Hx; intros; subst. do 3 eexists; split; [reflexivity|]. repeat split; assumption.
+Qed.
+
+Lemma wf_elimT' {G Γ l1 l2 MT Mt bs l Δ t} : RBwf G Γ l1 l2 MT Mt bs -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
+  [ G ; Γ ⊢[ lM ] t : tyCTyp Δ l @ lzero ] ->
+  [ G ; Γ ⊢[ lM ] elimT l1 l2 (mkrb MT Mt bs) l Δ t : motT (wrapMT MT) l Δ t @ l1 ].
+Proof.
+  intros (H1 & H2 & HT & Ht & Hc & Hb) Hl HΔ Hs.
+  apply wf_elimT; auto. exact (motT_wf _ _ _ _ _ _ _ HT Hl HΔ Hs).
+Qed.
+Lemma wf_elimt' {G Γ l1 l2 MT Mt bs l Δ T t} : RBwf G Γ l1 l2 MT Mt bs -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
+  [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Γ ⊢[ lM ] t : tyCTrm Δ T l @ lzero ] ->
+  [ G ; Γ ⊢[ lM ] elimt l1 l2 (mkrb MT Mt bs) l Δ T t : mott (wrapMt Mt) l Δ T t @ l2 ].
+Proof.
+  intros (H1 & H2 & HT & Ht & Hc & Hb) Hl HΔ HU Hs.
+  apply wf_elimt; auto. exact (mott_wf _ _ _ _ _ _ _ _ Ht Hl HΔ HU Hs).
+Qed.
+
+(** [mkrb] is injective in its motives. *)
+Lemma mkrb_inj_MT {MT Mt bs MT' Mt' bs'} : mkrb MT Mt bs = mkrb MT' Mt' bs' -> MT = MT' /\ Mt = Mt'.
+Proof. unfold mkrb, wrapMT, wrapMt. intros H; injection H; intros; subst; auto. Qed.
