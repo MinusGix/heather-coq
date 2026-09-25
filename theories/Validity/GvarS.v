@@ -200,7 +200,7 @@ Proof.
     try contradiction.
   - subst x'. destruct W as (i'' & Hi'' & Hin'').
     exact (VTyG_gvar_ne Hin'' (lle_trans _ _ _ Hi'' Hi) Nd1 Nd2 K).
-  - exact (VTyG_inst (proj _ _ _ _ _ MΔ (mltt_wf_ty W HiM) (mltt_wf_ty W' HiM) R) K).
+  - exact (VTyG_inst (proj _ _ _ _ _ MΔ (mltt_wf_ty W HiM) (mltt_wf_ty W' HiM) (proj2 R)) K).
 Qed.
 
 Lemma VS_gvar {i0 G Γ u Δ i' A l d d'}
@@ -228,7 +228,7 @@ Proof.
   cbn in R, W. destruct (σ u) as [x | | | t], (σ' u) as [x' | | | t']; cbn in R, W |- *; try contradiction.
   - subst x'. destruct W as (i'' & Hi'' & Hin'').
     exact (VTmG_gvar_ne Hin'' (lle_trans _ _ _ Hi'' Hi) Nd1 Nd2 K Kd VA').
-  - exact (VTmG_inst (proj _ _ _ _ _ _ MΔ MA R) VA' K Kd).
+  - exact (VTmG_inst (proj _ _ _ _ _ _ MΔ MA (proj2 R)) VA' K Kd).
 Qed.
 
 End GvarS.

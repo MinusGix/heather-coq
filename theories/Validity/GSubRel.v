@@ -5,9 +5,11 @@
     [G] to [G'] whose images are related pointwise: context variables to
     the same context variable, type and term bindings to the same global
     variable or to objects related by [⊩^{≥P}_P] in the left substituted
-    context.  Validity is one-sided, so [σ] and [σ'] are also each related
+    context; the images of static bindings (layers C and V) are moreover
+    equal (07a:390), as boxed code is equal only to itself.  Validity is one-sided, so [σ] and [σ'] are also each related
     to themselves.  Symmetry needs the validity of the bindings' contexts
     and types ([GValid]), which is part of the fundamental theorem. *)
+From DeLaM.Typing Require Export GStatic.
 From DeLaM.Validity Require Export Payload.
 
 #[local] Existing Instance LR_P.
@@ -26,9 +28,9 @@ Definition GObjRel (G' : gctx) (D : gdecl) (o o' : gobj) : Prop :=
   match D, o, o' with
   | gdCtx, GId g, GId g' => g = g'
   | gdTy _ _ _, GId x, GId x' => x = x'
-  | gdTy Δ _ l, GTy T, GTy T' => VTyGP G' Δ T T' l /\ VTyGM G' Δ T T' l
+  | gdTy Δ i l, GTy T, GTy T' => (lle i lC -> T = T') /\ VTyGP G' Δ T T' l /\ VTyGM G' Δ T T' l
   | gdTm _ _ _ _, GId x, GId x' => x = x'
-  | gdTm Δ _ A l, GTm t, GTm t' => VTmGP G' Δ t t' A l /\ VTmGM G' Δ t t' A l
+  | gdTm Δ _ A l, GTm t, GTm t' => t = t' /\ VTmGP G' Δ t t' A l /\ VTmGM G' Δ t t' A l
   | _, _, _ => False
   end.
 
@@ -55,6 +57,16 @@ Lemma GSubRel_to {G' G σ σ'} : GSubRel G' G σ σ' -> G' = gwk_to G (gΨ G').
 Proof.
   intros H. pose proof (gsr_L _ _ _ _ H) as HL. destruct G' as [L' Ψ']; cbn in HL.
   unfold gwk_to; cbn. now rewrite HL.
+Qed.
+
+(** Related substitutions agree on static bindings, so they send static
+    code to the same code ([static_gsubst]). *)
+Lemma GSubRel_agree {G' G σ σ'} : GSubRel G' G σ σ' -> gsub_agree G σ σ'.
+Proof.
+  intros Hσ n D Hin HS. pose proof (gsr_rel _ _ _ _ Hσ _ _ Hin) as R.
+  destruct D; cbn in R, HS; destruct (σ n), (σ' n); cbn in R; try contradiction; try congruence.
+  - f_equal; exact (proj1 R HS).
+  - f_equal; exact (proj1 R).
 Qed.
 
 (** ** Restriction to a prefix of the global context *)
@@ -142,9 +154,10 @@ Proof.
   intros HG Hσ Hin. pose proof (HG _ _ Hin) as HD.
   destruct D as [| Δ i l | Δ i A l]; cbn in HD |- *;
     destruct (σ n), (σ' n); cbn; try tauto; try congruence.
-  - destruct HD as [HP HM]. intros [XP XM].
-    exact (conj (VTyG_transport (HP _ _ _ Hσ) (VTyG_sym XP)) (VTyG_transport (HM _ _ _ Hσ) (VTyG_sym XM))).
-  - destruct HD as (HP & HM & HAP & HAM). intros [XP XM]. split.
+  - destruct HD as [HP HM]. intros (XE & XP & XM).
+    refine (conj (fun Hi => eq_sym (XE Hi)) (conj _ _));
+      [exact (VTyG_transport (HP _ _ _ Hσ) (VTyG_sym XP)) | exact (VTyG_transport (HM _ _ _ Hσ) (VTyG_sym XM))].
+  - destruct HD as (HP & HM & HAP & HAM). intros (<- & XP & XM). split; [reflexivity | split].
     + apply (VTmG_transport (HP _ _ _ Hσ)) in XP.
       eapply VTmG_conv; [exact (VTmG_sym XP)|].
       apply VTyG_sym, (VTyG_transport (HP _ _ _ Hσ)), (HAP _ _ _ Hσ).
