@@ -121,3 +121,5 @@ theories/Validity/TypeUniq.v
 theories/Validity/TCBase.v
 theories/Validity/TCType.v
 theories/Validity/TCSynth.v
+theories/Validity/TCCheck.v
+theories/Validity/TypeCheck.v
