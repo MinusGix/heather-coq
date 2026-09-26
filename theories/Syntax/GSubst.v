@@ -233,6 +233,8 @@ Fixpoint dnfty (T : ty) : Prop :=
   | tyCTyp Δ _ => dnfctx Δ
   | tyCTrm Δ T _ => dnfctx Δ /\ dnfty T
   | tyUPi _ _ T => dnfty T
+  | tyCPi _ T => dnfty T
+  | tyTPi Δ _ _ T => dnfctx Δ /\ dnfty T
   end
 with dnftm (t : tm) : Prop :=
   match t with
@@ -253,6 +255,9 @@ with dnftm (t : tm) : Prop :=
   | elimT _ _ rb _ Δ t => dnftm rb /\ dnfctx Δ /\ dnftm t
   | elimt _ _ rb _ Δ T t => dnftm rb /\ dnfctx Δ /\ dnfty T /\ dnftm t
   | ulam _ _ t | uapp t _ => dnftm t
+  | clam _ t | tlam _ _ t => dnftm t
+  | capp t Δ => dnftm t /\ dnfctx Δ
+  | tapp t T => dnftm t /\ dnfty T
   end
 with dnfctx (Γ : ctx) : Prop :=
   match Γ with cnil | cvar _ => True | cext Γ A _ => dnfctx Γ /\ dnfty A end

@@ -18,6 +18,8 @@ Fixpoint ty_leq (T T' : ty) {struct T} : Prop :=
   | tyCTyp Δ l, tyCTyp Δ' l' => ctx_leq Δ Δ' /\ leqv l l'
   | tyCTrm Δ A l, tyCTrm Δ' A' l' => ctx_leq Δ Δ' /\ ty_leq A A' /\ leqv l l'
   | tyUPi n l A, tyUPi n' l' A' => n = n' /\ leqv l l' /\ ty_leq A A'
+  | tyCPi l A, tyCPi l' A' => leqv l l' /\ ty_leq A A'
+  | tyTPi Δ l1 l2 A, tyTPi Δ' l1' l2' A' => ctx_leq Δ Δ' /\ leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A'
   | _, _ => False
   end
 with tm_leq (t t' : tm) {struct t} : Prop :=
@@ -50,6 +52,10 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
       tm_leq t t'
   | ulam n l t, ulam n' l' t' => n = n' /\ leqv l l' /\ tm_leq t t'
   | uapp t ls, uapp t' ls' => tm_leq t t' /\ Forall2 leqv ls ls'
+  | clam l t, clam l' t' => leqv l l' /\ tm_leq t t'
+  | capp t Δ, capp t' Δ' => tm_leq t t' /\ ctx_leq Δ Δ'
+  | tlam l1 l2 t, tlam l1' l2' t' => leqv l1 l1' /\ leqv l2 l2' /\ tm_leq t t'
+  | tapp t A, tapp t' A' => tm_leq t t' /\ ty_leq A A'
   | _, _ => False
   end
 with ctx_leq (Γ Γ' : ctx) {struct Γ} : Prop :=
@@ -327,6 +333,8 @@ Fixpoint ty_lwf (L : nat) (T : ty) {struct T} : Prop :=
   | tyCTyp Δ l => ctx_lwf L Δ /\ lwf L l
   | tyCTrm Δ A l => ctx_lwf L Δ /\ ty_lwf L A /\ lwf L l
   | tyUPi n l A => lwf (n + L) l /\ ty_lwf (n + L) A
+  | tyCPi l A => lwf L l /\ ty_lwf L A
+  | tyTPi Δ l1 l2 A => ctx_lwf L Δ /\ lwf L l1 /\ lwf L l2 /\ ty_lwf L A
   end
 with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   match t with
@@ -352,6 +360,10 @@ with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
       lwf L l1 /\ lwf L l2 /\ tm_lwf L rb /\ lwf L l /\ ctx_lwf L Δ /\ ty_lwf L A /\ tm_lwf L t
   | ulam n l t => lwf (n + L) l /\ tm_lwf (n + L) t
   | uapp t ls => tm_lwf L t /\ Forall (lwf L) ls
+  | clam l t => lwf L l /\ tm_lwf L t
+  | capp t Δ => tm_lwf L t /\ ctx_lwf L Δ
+  | tlam l1 l2 t => lwf L l1 /\ lwf L l2 /\ tm_lwf L t
+  | tapp t A => tm_lwf L t /\ ty_lwf L A
   end
 with ctx_lwf (L : nat) (Γ : ctx) {struct Γ} : Prop :=
   match Γ with

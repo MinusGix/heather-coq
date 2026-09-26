@@ -38,6 +38,11 @@ Inductive red : tm -> tm -> Prop :=
    arity check makes β commute with universe substitution *)
 | red_ubeta n l b ls : length ls = n -> red (uapp (ulam n l b) ls) b[uext ls lvar]ᵤ
 | red_uapp t t' ls : red t t' -> red (uapp t ls) (uapp t' ls)
+(* meta-functions (M5): β instantiates the global binder *)
+| red_cbeta l b Δ : red (capp (clam l b) Δ) b⦃gsingle (GCtx Δ)⦄
+| red_capp t t' Δ : red t t' -> red (capp t Δ) (capp t' Δ)
+| red_tbeta l l' b T : red (tapp (tlam l l' b) T) b⦃gsingle (GTy T)⦄
+| red_tapp t t' T : red t t' -> red (tapp t T) (tapp t' T)
 
 with red_ty : ty -> ty -> Prop :=
 | red_El_nat l : red_ty (tyEl l tmNat) tyNat
@@ -72,7 +77,7 @@ Lemma whnf_no_red t v : whnf t -> ~ red t v.
 Proof. destruct 1; intros Hr; try (inversion Hr; fail). eapply whne_no_red; eauto. Qed.
 Lemma whnf_ty_no_red T U : whnf_ty T -> ~ red_ty T U.
 Proof.
-  intros HW Hr; inversion Hr; subst; inversion HW as [? HT| | | | | |]; subst; inversion HT; subst;
+  intros HW Hr; inversion Hr; subst; inversion HW as [? HT| | | | | | | |]; subst; inversion HT; subst;
     try solve [match goal with Hw : whne _ |- _ => inversion Hw end].
   eapply whne_no_red; eauto.
 Qed.
@@ -90,6 +95,8 @@ Proof.
         | Hr : red (succ _) _ |- _ => inversion Hr
         | Hr : red (lam _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (ulam _ _ _) _ |- _ => inversion Hr
+        | Hr : red (clam _ _) _ |- _ => inversion Hr
+        | Hr : red (tlam _ _ _) _ |- _ => inversion Hr
         | Hr : red (boxT _) _ |- _ => inversion Hr
         | Hr : red (boxt _) _ |- _ => inversion Hr
         | Hr : red tmNat _ |- _ => inversion Hr
@@ -145,6 +152,10 @@ Lemma reds_letboxt l' l Δ T M t' t t0 : reds t t0 ->
   reds (letboxt l' l Δ T M t' t) (letboxt l' l Δ T M t' t0).
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_uapp t t' ls : reds t t' -> reds (uapp t ls) (uapp t' ls).
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_capp t t' Δ : reds t t' -> reds (capp t Δ) (capp t' Δ).
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_tapp t t' T : reds t t' -> reds (tapp t T) (tapp t' T).
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_El l t t' : reds t t' -> reds_ty (tyEl l t) (tyEl l t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.

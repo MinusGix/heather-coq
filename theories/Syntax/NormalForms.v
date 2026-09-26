@@ -1,8 +1,8 @@
 (** * Weak-head normal and neutral forms (ch. 6 §"Weak Head Normal Forms")
 
-    [W ::= Nat | Π | Ty l | □ | UΠ | V]         [V ::= U^δ | El l ν]
-    [w ::= ν | Nat | Π | Ty l | 0 | succ t | λ | box | Λ]
-    [ν ::= x | u^δ | elimN … ν | app ν … | letbox … ν | ν $ l⃗
+    [W ::= Nat | Π | Ty l | □ | UΠ | CΠ | TΠ | V]         [V ::= U^δ | El l ν]
+    [w ::= ν | Nat | Π | Ty l | 0 | succ t | λ | box | Λ | Λg | ΛU]
+    [ν ::= x | u^δ | elimN … ν | app ν … | letbox … ν | ν $ l⃗ | ν Δ | ν T
          | elim_Typ … ν | elim_Typ … (box U^δ) | elim_Trm … ν | elim_Trm … (box u^δ)] *)
 From DeLaM.Syntax Require Export LevelEq.
 
@@ -18,7 +18,9 @@ Inductive whne : tm -> Prop :=
 | whne_elimT_gvar l1 l2 rb l Δ U d : whne (elimT l1 l2 rb l Δ (boxT (tyGvar U d)))
 | whne_elimt l1 l2 rb l Δ T t : whne t -> whne (elimt l1 l2 rb l Δ T t)
 | whne_elimt_gvar l1 l2 rb l Δ T u d : whne (elimt l1 l2 rb l Δ T (boxt (gvar u d)))
-| whne_uapp t ls : whne t -> whne (uapp t ls).
+| whne_uapp t ls : whne t -> whne (uapp t ls)
+| whne_capp t Δ : whne t -> whne (capp t Δ)
+| whne_tapp t T : whne t -> whne (tapp t T).
 
 Inductive whnf : tm -> Prop :=
 | whnf_ne t : whne t -> whnf t
@@ -30,7 +32,9 @@ Inductive whnf : tm -> Prop :=
 | whnf_lam l l' A t : whnf (lam l l' A t)
 | whnf_boxT T : whnf (boxT T)
 | whnf_boxt t : whnf (boxt t)
-| whnf_ulam n l t : whnf (ulam n l t).
+| whnf_ulam n l t : whnf (ulam n l t)
+| whnf_clam l t : whnf (clam l t)
+| whnf_tlam l l' t : whnf (tlam l l' t).
 
 Inductive whne_ty : ty -> Prop :=
 | whne_tyGvar U d : whne_ty (tyGvar U d)
@@ -43,7 +47,9 @@ Inductive whnf_ty : ty -> Prop :=
 | whnf_tyU l : whnf_ty (tyU l)
 | whnf_tyCTyp Δ l : whnf_ty (tyCTyp Δ l)
 | whnf_tyCTrm Δ T l : whnf_ty (tyCTrm Δ T l)
-| whnf_tyUPi n l T : whnf_ty (tyUPi n l T).
+| whnf_tyUPi n l T : whnf_ty (tyUPi n l T)
+| whnf_tyCPi l T : whnf_ty (tyCPi l T)
+| whnf_tyTPi Δ l l' T : whnf_ty (tyTPi Δ l l' T).
 
 #[export] Hint Constructors whne whnf whne_ty whnf_ty : whnf.
 
@@ -102,4 +108,12 @@ Proof. inversion 1. Qed.
 Lemma whne_not_ulam n l t : ~ whne (ulam n l t).
 Proof. inversion 1. Qed.
 Lemma whne_ty_not_UPi n l T : ~ whne_ty (tyUPi n l T).
+Proof. inversion 1. Qed.
+Lemma whne_not_clam l t : ~ whne (clam l t).
+Proof. inversion 1. Qed.
+Lemma whne_not_tlam l l' t : ~ whne (tlam l l' t).
+Proof. inversion 1. Qed.
+Lemma whne_ty_not_CPi l T : ~ whne_ty (tyCPi l T).
+Proof. inversion 1. Qed.
+Lemma whne_ty_not_TPi Δ l l' T : ~ whne_ty (tyTPi Δ l l' T).
 Proof. inversion 1. Qed.

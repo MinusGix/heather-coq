@@ -26,6 +26,9 @@ Inductive ty : Type :=
 | tyCTyp (Δ : ctx) (l : lvl)              (* □(Δ ⊢ @l): code of types *)
 | tyCTrm (Δ : ctx) (T : ty) (l : lvl)     (* □(Δ ⊢ T @l): code of terms; T in Δ *)
 | tyUPi (n : nat) (l : lvl) (T : ty)      (* UΠ ℓ⃗. T @ l, |ℓ⃗| = n   l, T: +n levels *)
+(* meta-functions (M5): the body binds one global variable *)
+| tyCPi (l : lvl) (T : ty)                (* CΠ g. T @ l,  g : Ctx        T: +1 global *)
+| tyTPi (Δ : ctx) (l l' : lvl) (T : ty)   (* TΠ U[Δ]. T @ l', U : (Δ ⊢_P @l)   T: +1 global *)
 with tm : Type :=
 | var (n : nat)
 | tmErr
@@ -60,6 +63,11 @@ with tm : Type :=
 (* universe polymorphism (M4) *)
 | ulam (n : nat) (l : lvl) (t : tm)       (* Λ^l ℓ⃗. t, |ℓ⃗| = n    l, t: +n levels *)
 | uapp (t : tm) (ls : list lvl)           (* t $ l⃗ *)
+(* meta-functions (M5) *)
+| clam (l : lvl) (t : tm)                 (* Λ^l g. t                 t: +1 global *)
+| capp (t : tm) (Δ : ctx)                 (* t Δ *)
+| tlam (l l' : lvl) (t : tm)              (* Λ^{l,l'} U. t            t: +1 global *)
+| tapp (t : tm) (T : ty)                  (* t T                      T in U's context *)
 with ctx : Type :=
 | cnil
 | cvar (g : nat)
@@ -138,6 +146,8 @@ Fixpoint ren_ty (T : ty) (r : rsub) {struct T} : ty :=
   | tyCTyp Δ l => tyCTyp Δ l
   | tyCTrm Δ T l => tyCTrm Δ T l
   | tyUPi n l T => tyUPi n l (ren_ty T r)
+  | tyCPi l T => tyCPi l (ren_ty T r)
+  | tyTPi Δ l l' T => tyTPi Δ l l' (ren_ty T r)
   end
 with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   match t with
@@ -163,6 +173,10 @@ with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   | elimt l1 l2 rb l Δ T t => elimt l1 l2 (ren_tm rb r) l Δ T (ren_tm t r)
   | ulam n l t => ulam n l (ren_tm t r)
   | uapp t ls => uapp (ren_tm t r) ls
+  | clam l t => clam l (ren_tm t r)
+  | capp t Δ => capp (ren_tm t r) Δ
+  | tlam l l' t => tlam l l' (ren_tm t r)
+  | tapp t T => tapp (ren_tm t r) T
   end
 with lren (d : lsub) (r : rsub) {struct d} : lsub :=
   match d with
@@ -192,6 +206,8 @@ Fixpoint gren_ty (T : ty) (ξ : nat -> nat) {struct T} : ty :=
   | tyCTyp Δ l => tyCTyp (gcren Δ ξ) l
   | tyCTrm Δ T l => tyCTrm (gcren Δ ξ) (gren_ty T ξ) l
   | tyUPi n l T => tyUPi n l (gren_ty T ξ)
+  | tyCPi l T => tyCPi l (gren_ty T (gupr ξ))
+  | tyTPi Δ l l' T => tyTPi (gcren Δ ξ) l l' (gren_ty T (gupr ξ))
   end
 with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   match t with
@@ -218,6 +234,10 @@ with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   | elimt l1 l2 rb l Δ T t => elimt l1 l2 (gren_tm rb ξ) l (gcren Δ ξ) (gren_ty T ξ) (gren_tm t ξ)
   | ulam n l t => ulam n l (gren_tm t ξ)
   | uapp t ls => uapp (gren_tm t ξ) ls
+  | clam l t => clam l (gren_tm t (gupr ξ))
+  | capp t Δ => capp (gren_tm t ξ) (gcren Δ ξ)
+  | tlam l l' t => tlam l l' (gren_tm t (gupr ξ))
+  | tapp t T => tapp (gren_tm t ξ) (gren_ty T ξ)
   end
 with gcren (Γ : ctx) (ξ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -244,6 +264,8 @@ Fixpoint uren_ty (T : ty) (ρ : nat -> nat) {struct T} : ty :=
   | tyCTyp Δ l => tyCTyp (ucren Δ ρ) (lvren l ρ)
   | tyCTrm Δ T l => tyCTrm (ucren Δ ρ) (uren_ty T ρ) (lvren l ρ)
   | tyUPi n l T => tyUPi n (lvren l (uuprn n ρ)) (uren_ty T (uuprn n ρ))
+  | tyCPi l T => tyCPi (lvren l ρ) (uren_ty T ρ)
+  | tyTPi Δ l l' T => tyTPi (ucren Δ ρ) (lvren l ρ) (lvren l' ρ) (uren_ty T ρ)
   end
 with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   match t with
@@ -277,6 +299,10 @@ with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
         (uren_tm t ρ)
   | ulam n l t => ulam n (lvren l (uuprn n ρ)) (uren_tm t (uuprn n ρ))
   | uapp t ls => uapp (uren_tm t ρ) (map (fun l => lvren l ρ) ls)
+  | clam l t => clam (lvren l ρ) (uren_tm t ρ)
+  | capp t Δ => capp (uren_tm t ρ) (ucren Δ ρ)
+  | tlam l l' t => tlam (lvren l ρ) (lvren l' ρ) (uren_tm t ρ)
+  | tapp t T => tapp (uren_tm t ρ) (uren_ty T ρ)
   end
 with ucren (Γ : ctx) (ρ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -302,6 +328,8 @@ Fixpoint subst_ty (T : ty) (d : lsub) {struct T} : ty :=
   | tyCTyp Δ l => tyCTyp Δ l
   | tyCTrm Δ T l => tyCTrm Δ T l
   | tyUPi n l T => tyUPi n l (subst_ty T (uwkn n d))
+  | tyCPi l T => tyCPi l (subst_ty T (gwk d))
+  | tyTPi Δ l l' T => tyTPi Δ l l' (subst_ty T (gwk d))
   end
 with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   match t with
@@ -330,6 +358,10 @@ with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   | elimt l1 l2 rb l Δ T t => elimt l1 l2 (subst_tm rb d) l Δ T (subst_tm t d)
   | ulam n l t => ulam n l (subst_tm t (uwkn n d))
   | uapp t ls => uapp (subst_tm t d) ls
+  | clam l t => clam l (subst_tm t (gwk d))
+  | capp t Δ => capp (subst_tm t d) Δ
+  | tlam l l' t => tlam l l' (subst_tm t (gwk d))
+  | tapp t T => tapp (subst_tm t d) T
   end
 with lcomp (d' : lsub) (d : lsub) {struct d'} : lsub :=       (* d' ∘ d *)
   match d' with
@@ -410,6 +442,8 @@ Fixpoint gsubst_ty (T : ty) (σ : gsub) {struct T} : ty :=
   | tyCTyp Δ l => tyCTyp (gcsubst Δ σ) l
   | tyCTrm Δ T l => tyCTrm (gcsubst Δ σ) (gsubst_ty T σ) l
   | tyUPi n l T => tyUPi n l (gsubst_ty T (guwkn n σ))
+  | tyCPi l T => tyCPi l (gsubst_ty T (gup σ))
+  | tyTPi Δ l l' T => tyTPi (gcsubst Δ σ) l l' (gsubst_ty T (gup σ))
   end
 with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   match t with
@@ -437,6 +471,10 @@ with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
       elimt l1 l2 (gsubst_tm rb σ) l (gcsubst Δ σ) (gsubst_ty T σ) (gsubst_tm t σ)
   | ulam n l t => ulam n l (gsubst_tm t (guwkn n σ))
   | uapp t ls => uapp (gsubst_tm t σ) ls
+  | clam l t => clam l (gsubst_tm t (gup σ))
+  | capp t Δ => capp (gsubst_tm t σ) (gcsubst Δ σ)
+  | tlam l l' t => tlam l l' (gsubst_tm t (gup σ))
+  | tapp t T => tapp (gsubst_tm t σ) (gsubst_ty T σ)
   end
 with gcsubst (Γ : ctx) (σ : gsub) {struct Γ} : ctx :=
   match Γ with
@@ -463,6 +501,8 @@ Fixpoint usubst_ty (T : ty) (φ : nat -> lvl) {struct T} : ty :=
   | tyCTyp Δ l => tyCTyp (ucsubst Δ φ) (lvsubst l φ)
   | tyCTrm Δ T l => tyCTrm (ucsubst Δ φ) (usubst_ty T φ) (lvsubst l φ)
   | tyUPi n l T => tyUPi n (lvsubst l (uupn n φ)) (usubst_ty T (uupn n φ))
+  | tyCPi l T => tyCPi (lvsubst l φ) (usubst_ty T φ)
+  | tyTPi Δ l l' T => tyTPi (ucsubst Δ φ) (lvsubst l φ) (lvsubst l' φ) (usubst_ty T φ)
   end
 with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   match t with
@@ -499,6 +539,10 @@ with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
         (usubst_ty T φ) (usubst_tm t φ)
   | ulam n l t => ulam n (lvsubst l (uupn n φ)) (usubst_tm t (uupn n φ))
   | uapp t ls => uapp (usubst_tm t φ) (map (fun l => lvsubst l φ) ls)
+  | clam l t => clam (lvsubst l φ) (usubst_tm t φ)
+  | capp t Δ => capp (usubst_tm t φ) (ucsubst Δ φ)
+  | tlam l l' t => tlam (lvsubst l φ) (lvsubst l' φ) (usubst_tm t φ)
+  | tapp t T => tapp (usubst_tm t φ) (usubst_ty T φ)
   end
 with ucsubst (Γ : ctx) (φ : nat -> lvl) {struct Γ} : ctx :=
   match Γ with
@@ -514,7 +558,8 @@ Definition gousubst (o : gobj) (φ : nat -> lvl) : gobj :=
   | GTy T => GTy (usubst_ty T φ) | GTm t => GTm (usubst_tm t φ)
   end.
 
-(** [o/u], the single global substitution of the letbox β-rules. *)
+(** [o/u], the single global substitution of the letbox β-rules, and the
+    instances [T[Δ/g]], [T[T₂/U]] of the meta-functions (M5). *)
 Definition gsingle (o : gobj) : gsub := fun i => match i with 0 => o | S i => GId i end.
 
 (** Overloaded notations for the global operations. *)
