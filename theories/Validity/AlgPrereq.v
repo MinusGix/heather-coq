@@ -132,3 +132,232 @@ Proof.
   rewrite nf_id_ty in Hg; [exact Hg |].
   exact (wf_ty_nf (eqty_wf_l (i := lD) eq_refl HTTs)).
 Qed.
+
+(** ** Motives weakened into a branch scope
+
+    The branch scopes add [nu] levels, [ng] global bindings [Ds] and
+    local entries to the ambient scope; the motives are weakened under
+    their own binders ([wkb]). An equation between motives survives. *)
+
+Lemma motT_eq_wk {G Γ MT MT' k nu Ds Γ0 j} :
+  [ recGT G ; recΓT Γ ⊢[ lM ] MT ≅ MT' @ k ] ->
+  [ ⊢ mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G)) ] ->
+  wkr (rshift j) Γ0 (wkc nu (length Ds) Γ) ->
+  [ mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G)) ; Γ0 ⊢[ lM ] ] ->
+  [ recGT (mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G))) ; recΓT Γ0 ⊢[ lM ]
+      MT⟨uupr (ush nu)⟩ᵤ⟪gupr (ush (length Ds))⟫⟨rlift (rshift j)⟩
+      ≅ MT'⟨uupr (ush nu)⟩ᵤ⟪gupr (ush (length Ds))⟫⟨rlift (rshift j)⟩ @ lvren k (uupr (ush nu)) ].
+Proof.
+  intros H HG0 Hr HΓ0.
+  set (φ := fun j => lvar (ush nu j)).
+  pose proof (proj1 (proj2 (proj2 (proj2 (proj2 usubstitution)))) _ _ _ _ _ _ H (S (nu + gL G)) (uup φ)
+                (usub_ok_uup _ _ _ (usub_ok_ush nu (gL G)))) as X1.
+  unfold G_us in X1. rewrite recGT_usubst, recΓT_usubst, <- gctx_uwk_as in X1.
+  rewrite <- (proj1 (proj2 (proj2 uren_as_usubst_all)) Γ (ush nu)) in X1 by reflexivity.
+  assert (Eφ : forall n, uup φ n = lvar (uupr (ush nu) n)) by (intros [|n]; reflexivity).
+  rewrite <- !(proj1 uren_as_usubst_all _ _ _ Eφ), <- (lvren_as_lvsubst k _ _ Eφ) in X1.
+  set (G0 := mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G))) in *.
+  assert (Hok : gwk_ok (gwk_stepn (length Ds)) G0 (gctx_uwk nu G))
+    by (split; [reflexivity | apply gwk_stepn_wf]).
+  pose proof (proj1 (proj2 (proj2 (proj2 (proj2 gweakening)))) _ _ _ _ _ _ X1 (S (nu + gL G))
+                (gΨ (recGT G0)) (gwk_up (gwk_stepn (length Ds))) (le_n _) (recGT_gwk _ _ _ Hok)
+                (wf_recGT HG0)) as X2.
+  cbn [gwk_fn] in X2. rewrite recΓT_gren in X2.
+  assert (Eξ : forall i, gwk_fn (gwk_stepn (length Ds)) i = ush (length Ds) i)
+    by (intros; now rewrite gwk_stepn_fn).
+  assert (Eξ' : forall i, gupr (gwk_fn (gwk_stepn (length Ds))) i = gupr (ush (length Ds)) i)
+    by (intros [|i]; cbn; [reflexivity | now rewrite Eξ]).
+  rewrite (proj1 (proj2 (proj2 gren_ext_all)) _ _ _ Eξ), !(proj1 gren_ext_all _ _ _ Eξ') in X2.
+  exact (proj1 (proj2 (proj2 weakening_r)) _ _ _ _ _ _ X2 eq_refl _ _ (wkr_recΓT _ _ _ Hr)
+           (wf_recΓT _ _ HΓ0)).
+Qed.
+
+Lemma mott_eq_wk {G Γ Mt Mt' k nu Ds Γ0 j} :
+  [ recGt G ; recΓt Γ ⊢[ lM ] Mt ≅ Mt' @ k ] ->
+  [ ⊢ mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G)) ] ->
+  wkr (rshift j) Γ0 (wkc nu (length Ds) Γ) ->
+  [ mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G)) ; Γ0 ⊢[ lM ] ] ->
+  [ recGt (mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G))) ; recΓt Γ0 ⊢[ lM ]
+      Mt⟨uupr (ush nu)⟩ᵤ⟪gupr (gupr (ush (length Ds)))⟫⟨rlift (rshift j)⟩
+      ≅ Mt'⟨uupr (ush nu)⟩ᵤ⟪gupr (gupr (ush (length Ds)))⟫⟨rlift (rshift j)⟩ @ lvren k (uupr (ush nu)) ].
+Proof.
+  intros H HG0 Hr HΓ0.
+  set (φ := fun j => lvar (ush nu j)).
+  pose proof (proj1 (proj2 (proj2 (proj2 (proj2 usubstitution)))) _ _ _ _ _ _ H (S (nu + gL G)) (uup φ)
+                (usub_ok_uup _ _ _ (usub_ok_ush nu (gL G)))) as X1.
+  unfold G_us in X1. rewrite recGt_usubst, recΓt_usubst, <- gctx_uwk_as in X1.
+  rewrite <- (proj1 (proj2 (proj2 uren_as_usubst_all)) Γ (ush nu)) in X1 by reflexivity.
+  assert (Eφ : forall n, uup φ n = lvar (uupr (ush nu) n)) by (intros [|n]; reflexivity).
+  rewrite <- !(proj1 uren_as_usubst_all _ _ _ Eφ), <- (lvren_as_lvsubst k _ _ Eφ) in X1.
+  set (G0 := mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G))) in *.
+  assert (Hok : gwk_ok (gwk_stepn (length Ds)) G0 (gctx_uwk nu G))
+    by (split; [reflexivity | apply gwk_stepn_wf]).
+  pose proof (proj1 (proj2 (proj2 (proj2 (proj2 gweakening)))) _ _ _ _ _ _ X1 (S (nu + gL G))
+                (gΨ (recGt G0)) (gwk_up (gwk_up (gwk_stepn (length Ds)))) (le_n _) (recGt_gwk _ _ _ Hok)
+                (wf_recGt HG0)) as X2.
+  cbn [gwk_fn] in X2. rewrite recΓt_gren in X2.
+  assert (Eξ : forall i, gwk_fn (gwk_stepn (length Ds)) i = ush (length Ds) i)
+    by (intros; now rewrite gwk_stepn_fn).
+  assert (Eξ' : forall i, gupr (gupr (gwk_fn (gwk_stepn (length Ds)))) i = gupr (gupr (ush (length Ds))) i)
+    by (intros [|[|i]]; cbn; [reflexivity | reflexivity | now rewrite Eξ]).
+  rewrite (proj1 (proj2 (proj2 gren_ext_all)) _ _ _ Eξ), !(proj1 gren_ext_all _ _ _ Eξ') in X2.
+  exact (proj1 (proj2 (proj2 weakening_r)) _ _ _ _ _ _ X2 eq_refl _ _ (wkr_recΓt _ _ _ Hr)
+           (wf_recΓt _ _ HΓ0)).
+Qed.
+
+Lemma lvren_ush1_uupr l nu : lvren (lvren l (ush 1)) (uupr (ush nu)) = lvren (lvren l (ush nu)) (ush 1).
+Proof.
+  rewrite (lvren_lvren l _ _ (fun n => S (nu + n))) by reflexivity.
+  rewrite (lvren_lvren l _ _ (fun n => S (nu + n))) by reflexivity. reflexivity.
+Qed.
+
+(** An entry of a branch scope (or its result type): a motive instance at
+    fixed objects, equal at equal motives. *)
+Lemma motT_wkb_eq {G Γ MT MT' l1 nu Ds Γ0 j lv g c} :
+  [ recGT G ; recΓT Γ ⊢[ lM ] MT ≅ MT' @ lvren l1 (ush 1) ] ->
+  [ ⊢ mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G)) ] ->
+  wkr (rshift j) Γ0 (wkc nu (length Ds) Γ) ->
+  lwf (nu + gL G) lv ->
+  [ mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G)) ; g ⊢[ lD ] ] ->
+  [ mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G)) ; Γ0 ⊢[ lM ] c : tyCTyp g lv @ lzero ] ->
+  [ mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G)) ; Γ0 ⊢[ lM ]
+      motT (wkb nu (length Ds) j (wrapMT MT)) lv g c ≅ motT (wkb nu (length Ds) j (wrapMT MT')) lv g c
+      @ lvren l1 (ush nu) ].
+Proof.
+  intros H HG0 Hr Hlv Hg Hc.
+  pose proof (motT_eq_wk H HG0 Hr (ctx_of_wf_tm (i := lM) eq_refl Hc)) as X.
+  rewrite lvren_ush1_uupr in X.
+  exact (motT_eq_inst _ _ _ _ _ _ _ _ X Hlv Hg Hc).
+Qed.
+
+Lemma mott_wkb_eq {G Γ Mt Mt' l2 nu Ds Γ0 j lv g U c} :
+  [ recGt G ; recΓt Γ ⊢[ lM ] Mt ≅ Mt' @ lvren l2 (ush 1) ] ->
+  [ ⊢ mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G)) ] ->
+  wkr (rshift j) Γ0 (wkc nu (length Ds) Γ) ->
+  lwf (nu + gL G) lv ->
+  [ mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G)) ; g ⊢[ lD ] ] ->
+  [ mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G)) ; g ⊢[ lD ] U @ lv ] ->
+  [ mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G)) ; Γ0 ⊢[ lM ] c : tyCTrm g U lv @ lzero ] ->
+  [ mkG (nu + gL G) (Ds ++ map (fun D => gdecl_uren D (ush nu)) (gΨ G)) ; Γ0 ⊢[ lM ]
+      mott (wkb nu (length Ds) j (wrapMt Mt)) lv g U c ≅ mott (wkb nu (length Ds) j (wrapMt Mt')) lv g U c
+      @ lvren l2 (ush nu) ].
+Proof.
+  intros H HG0 Hr Hlv Hg HU Hc.
+  pose proof (mott_eq_wk H HG0 Hr (ctx_of_wf_tm (i := lM) eq_refl Hc)) as X.
+  rewrite lvren_ush1_uupr in X.
+  exact (mott_eq_inst _ _ _ _ _ _ _ _ _ X Hlv Hg HU Hc).
+Qed.
+
+(** ** The branch scopes at equal motives *)
+
+Lemma wfc_ext_inv {G i Γ A l} : [ G ; Γ ,, A @ l ⊢[ i ] ] ->
+  [ G ; Γ ⊢[ i ] ] /\ [ G ; Γ ⊢[ i ] A @ l ] /\ lwf (gL G) l.
+Proof. intros H; inversion H; subst; auto. Qed.
+
+Lemma wkr_shift_S {j Δ Γ A l} : wkr (rshift j) Δ Γ -> wkr (rshift (S j)) (Δ ,, A @ l) Γ.
+Proof. intros H. exact (wkr_step _ _ _ A l H). Qed.
+
+(** Global type variables at the non-identity instances of the [elimN]
+    branch ([U_M^{id, a/x}], [U_M^{id, succ x/x}]), at any index. *)
+Lemma wf_gv_single {G i i' g U A k l a} : i <> lV -> [ G ; cvar g ⊢[ typeof i ] ] ->
+  in_gctx (gΨ G) U (gdTy (cvar g ,, A @ k) i' l) -> lle i' i -> dnftm a ->
+  [ G ; cvar g ⊢[ i ] a : A @ k ] -> [ G ; cvar g ⊢[ i ] tyGvar U (lsingle a) @ l ].
+Proof.
+  intros Hv HΓ Hin Hle Ha Hat. eapply wft_gvar; [exact Hv | exact HΓ | exact Hin | exact Hle | | | ].
+  - split; [reflexivity | intros; cbn; f_equal; lia].
+  - cbn; tauto.
+  - intros n B k' HB. inversion HB as [? ? ? | ? ? ? ? ? ? HB']; subst; [|inversion HB'].
+    cbn. rewrite shift_single_ty by exact (wf_tm_nf_ty Hat). exact Hat.
+Qed.
+
+Lemma wf_gv_succ {G i i' g U l} : i <> lV ->
+  [ G ; cvar g ,, tyNat @ lzero ,, tyGvar U (lshift 0) @ l ⊢[ typeof i ] ] ->
+  in_gctx (gΨ G) U (gdTy (cvar g ,, tyNat @ lzero) i' l) -> lle i' i ->
+  [ G ; cvar g ,, tyNat @ lzero ,, tyGvar U (lshift 0) @ l ⊢[ i ] tyGvar U lsucc @ l ].
+Proof.
+  intros Hv HΓ Hin Hle. eapply wft_gvar; [exact Hv | exact HΓ | exact Hin | exact Hle | | | ].
+  - split; [reflexivity | intros; cbn; f_equal; lia].
+  - cbn; tauto.
+  - intros n A k HA. inversion HA as [? ? ? | ? ? ? ? ? ? HA']; subst; [|inversion HA'].
+    cbn. apply wf_succ; [exact Hv|].
+    exact (wf_var _ i _ 1 _ _ HΓ (in_there _ _ _ _ _ _ (in_here _ _ _))).
+Qed.
+
+(** Side conditions in a concrete branch scope: levels, lookups, weakenings,
+    and the typing of the objects (contexts at D, codes at C, boxes at M). *)
+Ltac br_lvl := cbn; repeat split; try lia.
+Ltac br_tac :=
+  repeat first
+    [ assumption | exact I | reflexivity | discriminate | apply lle_refl
+    | solve [unfold lle; cbn; lia] | solve [br_lvl] | glookup
+    | apply wkr_id | apply wkr_shift_S
+    | apply wfc_var | apply wfc_ext
+    | eapply wf_boxT | eapply wf_boxt
+    | apply wft_nat | apply wft_U | eapply wft_pi | eapply wft_El
+    | eapply wf_code_nat | eapply wf_code_U | eapply wf_code_pi
+    | apply wf_zero | apply wf_succ | eapply wf_natrec | eapply wf_lam | eapply wf_app
+    | eapply wf_gv | eapply wf_gu | eapply wf_gv_single | eapply wf_gv_succ ].
+
+Lemma lequiv_ush nu {L l l'} : lequiv L l l' -> lequiv (nu + L) (lvren l (ush nu)) (lvren l' (ush nu)).
+Proof. apply lequiv_lvren. intros n Hn; unfold ush; lia. Qed.
+
+(** One branch: invert its scope's well-formedness, relate the entries
+    pairwise, then the result types. *)
+Ltac br_eq HMT HMt HG0 :=
+  match goal with |- context [brG ?K _] =>
+    first [ eapply (motT_wkb_eq (Ds := brDecls K)) | eapply (mott_wkb_eq (Ds := brDecls K)) ];
+    [ first [exact HMT | exact HMt] | exact HG0 | .. ]; br_tac
+  end.
+Ltac br_solve HMT HMt HG0 HB :=
+  unfold brΓ, brLocs, brRes, brLv in *; cbn [cexts br_nu br_ng br_nl br_ar Nat.ltb Nat.leb] in *;
+  repeat match goal with H : wf_ctx _ _ (_ ,, _ @ _) |- _ =>
+    let H1 := fresh "HC" in let H2 := fresh "HA" in let H3 := fresh "Hl" in
+    destruct (wfc_ext_inv H) as (H1 & H2 & H3); clear H end;
+  split;
+  [ repeat (eapply eqc_ext; [ | eassumption | br_eq HMT HMt HG0 | apply lequiv_ush; assumption ]);
+    apply eqc_refl; exact HB
+  | br_eq HMT HMt HG0 ].
+
+Lemma brΓ_conv {G Γ MT MT' Mt Mt' l1 l2 l1' l2'} k : k < 13 ->
+  [ recGT G ; recΓT Γ ⊢[ lM ] MT ≅ MT' @ lvren l1 (ush 1) ] ->
+  [ recGt G ; recΓt Γ ⊢[ lM ] Mt ≅ Mt' @ lvren l2 (ush 1) ] ->
+  lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' -> [ G ; Γ ⊢[ lM ] ] ->
+  [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ] ->
+  [ brG k G ⊢[ lM ] brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ≅ brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ] /\
+  [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+      brRes k (wrapMT MT) (wrapMt Mt) ≅ brRes k (wrapMT MT') (wrapMt Mt') @ brLv k l1 l2 ].
+Proof.
+  intros Hk HMT HMt Hl1 Hl2 HΓ HC.
+  pose proof (wf_brG (ctx_glob _ _ _ HΓ) k Hk) as HG0.
+  pose proof (wf_wkc_br G Γ k Hk HΓ) as HB.
+  do 13 (try (destruct k as [|k])).
+  all: try (exfalso; lia).
+  all: br_solve HMT HMt HG0 HB.
+Qed.
+
+(** A branch typed in the right recursor's scope is typed in the left's. *)
+Lemma branch_conv {G Γ MT MT' Mt Mt' l1 l2 l1' l2' b} k : k < 13 ->
+  [ recGT G ; recΓT Γ ⊢[ lM ] MT ≅ MT' @ lvren l1 (ush 1) ] ->
+  [ recGt G ; recΓt Γ ⊢[ lM ] Mt ≅ Mt' @ lvren l2 (ush 1) ] ->
+  lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' -> [ G ; Γ ⊢[ lM ] ] ->
+  [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ] ->
+  [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ] ->
+  [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+      b : brRes k (wrapMT MT') (wrapMt Mt') @ brLv k l1' l2' ] ->
+  [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+      b : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ].
+Proof.
+  intros Hk HMT HMt Hl1 Hl2 HΓ HC HC' Hb.
+  assert (Hlv : lequiv (gL (brG k G)) (brLv k l1 l2) (brLv k l1' l2')).
+  { unfold brLv. destruct (Nat.ltb k 4); apply lequiv_ush; assumption. }
+  assert (HMT' : [ recGT G ; recΓT Γ ⊢[ lM ] MT' ≅ MT @ lvren l1' (ush 1) ]).
+  { eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ HMT) | apply lequiv_ush, lequiv_sym, Hl1]. }
+  assert (HMt' : [ recGt G ; recΓt Γ ⊢[ lM ] Mt' ≅ Mt @ lvren l2' (ush 1) ]).
+  { eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ HMt) | apply lequiv_ush, lequiv_sym, Hl2]. }
+  destruct (brΓ_conv k Hk HMT' HMt' (lequiv_sym _ _ _ Hl1) (lequiv_sym _ _ _ Hl2) HΓ HC') as [HCC _].
+  destruct (brΓ_conv k Hk HMT HMt Hl1 Hl2 HΓ HC) as [_ HR].
+  pose proof (wf_tm_subst (i := lM) eq_refl Hb (eqctx_id (i := lM) eq_refl HCC)) as X.
+  rewrite (nf_id_ty _ (wf_tm_nf_ty Hb)), (nf_id _ (wf_tm_nf Hb)) in X.
+  eapply wf_lconv; [| exact Hlv].
+  eapply wf_conv; [exact X |]. eapply eqty_lconv; [exact HR | exact (lequiv_sym _ _ _ Hlv)].
+Qed.
