@@ -78,7 +78,25 @@ has only the converse. Consequences:
 A syntactic mutual induction; the global-variable case needs the
 substitution entries (`telescope`-style).
 
-Status: planned.
+Status: **done** (`Typing/StaticCodeEq.v`), closed under the global
+context. As built:
+- `static_code_eq`: at `lle i lC`, equal types, terms and local contexts
+  are `≡ₗ`-related. The proof is an induction on `typing_mut`:
+  - the computing (`compt i`) and M-only rules are vacuous;
+  - the congruences map `lequiv` to `leqv` (`lequiv_leqv`);
+  - PER and conversion rules are immediate;
+  - global variables compare their substitutions entrywise.
+    `l_canon_leq`, the `≡ₗ` form of `l_canon`, says normal substitutions
+    are `≡ₗ` iff their lookups are. `lsub_leq_entries` covers the entries
+    past `Δ` using `lsub_tail`.
+- `static_code_iff_ty`/`_tm`: with the converse (`static_code_ty`/`_tm`),
+  equality of typed syntax at V and C is exactly `≡ₗ`.
+- `decl_eqty_dec_static`/`_tm`, and in `Validity/AlgDec.v`
+  `decl_eqty_dec_any`/`decl_eqtm_dec_any`: declarative equality of typed
+  syntax is decidable at every layer.
+- `eqtm_boxT'`/`eqtm_boxt'`: the paper's `box` congruence (06:534),
+  without the `≡ₗ` premise that `eqtm_boxT`/`eqtm_boxt` carry (M3 E11).
+  That premise is now shown admissible.
 
 ## B. Generalizations and packaging
 
@@ -145,5 +163,5 @@ Status: to design.
 
 ## Order
 
-A1 (done), A3, B1, A2, then B2. The C items are designed separately when
+A1 (done), A3 (done), B1, A2, then B2. The C items are designed separately when
 reached.

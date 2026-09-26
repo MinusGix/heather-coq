@@ -8,6 +8,7 @@
     negative answer inverts the algorithm on the left side's head ([ainv_*]);
     neutrals infer a unique type ([ac_infer_uniq]). Decidability is in
     [Prop] (H1). *)
+From DeLaM.Typing Require Export StaticCodeEq.
 From DeLaM.Validity Require Export AlgComplete.
 
 (** ** Uniqueness of the inferred type *)
@@ -1041,4 +1042,26 @@ Theorem decl_eqtm_dec {G i Γ t t' T k} : compt i ->
 Proof.
   intros Hc Ht Ht'. apply (dec_iff (P := ac_tm G Γ t t' T)); [| exact (ac_tm_dec Hc Ht Ht')].
   split; [intros D; exact (ac_tm_sound Hc D Ht Ht') | exact (ac_complete_tm Hc)].
+Qed.
+
+(** At every layer: below D, equality is [≡ₗ] ([StaticCodeEq]); at D and M,
+    by the algorithm. *)
+Theorem decl_eqty_dec_any {G i Γ T T' k} :
+  [ G ; Γ ⊢[ i ] T @ k ] -> [ G ; Γ ⊢[ i ] T' @ k ] -> Dec ([ G ; Γ ⊢[ i ] T ≅ T' @ k ]).
+Proof.
+  destruct i.
+  - apply decl_eqty_dec_static. unfold lle; cbn; lia.
+  - apply decl_eqty_dec_static. apply lle_refl.
+  - apply decl_eqty_dec, compt_D.
+  - apply decl_eqty_dec, compt_M.
+Qed.
+
+Theorem decl_eqtm_dec_any {G i Γ t t' T k} :
+  [ G ; Γ ⊢[ i ] t : T @ k ] -> [ G ; Γ ⊢[ i ] t' : T @ k ] -> Dec ([ G ; Γ ⊢[ i ] t ≅ t' : T @ k ]).
+Proof.
+  destruct i.
+  - apply decl_eqtm_dec_static. unfold lle; cbn; lia.
+  - apply decl_eqtm_dec_static. apply lle_refl.
+  - apply decl_eqtm_dec, compt_D.
+  - apply decl_eqtm_dec, compt_M.
 Qed.
