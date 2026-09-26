@@ -272,3 +272,7 @@ equal type. Three points the paper passes over:
 - Symmetry (`Validity/AlgPER.v`, `ac_sym_all`) is done, closed: on typed
   syntax, the swapped derivation exists (for neutrals, at some inferred
   type, equal to the other by soundness).
+- Transitivity (`ac_trans_all`) is done, closed: induction on the first
+  derivation, inversion of the second on the middle side's head (`ainv_*`),
+  the second moved to the first's binders by the conversion lemma. Step 4
+  is complete.
