@@ -74,6 +74,14 @@ Qed.
 Lemma leq_rb_br rb rb' k : tm_leq rb rb' -> tm_leq (rb_br rb k) (rb_br rb' k).
 Proof. apply leq_tup_nth. Qed.
 
+Lemma leqv_uext ls ls' φ : Forall2 leqv ls ls' -> forall i, leqv (uext ls φ i) (uext ls' φ i).
+Proof.
+  intros H i; unfold uext. rewrite <- (Forall2_length H).
+  destruct (i <? length ls); [|apply leqv_refl].
+  remember (length ls - S i) as k eqn:Ek; clear Ek. revert k; induction H; intros [|k]; cbn;
+    auto using leqv_refl.
+Qed.
+
 #[export] Hint Resolve leq_peelU leq_peelG leq_peelL leq_rb_br leq_lsingle : leq.
 
 (** ** The β reducts *)
@@ -137,11 +145,13 @@ Proof.
            | H : redt _ _ _ _ _ _ _ = Some _ |- _ =>
                eapply redt_leq in H; [destruct H as (? & ? & ?) | eassumption ..]
            end.
+  all: try match goal with H : Forall2 leqv ?ls ?ls' |- _ => pose proof (eq_sym (Forall2_length H)) end.
   all: eexists; split; [solve [eauto with red] |].
   all: try solve [cbn; repeat split; auto].
   all: first
     [ apply (proj1 (proj2 leq_subst_all)); cbn; repeat split; auto
-    | apply (proj1 (proj2 leq_gsubst_all)); [apply leq_gsingle; cbn; auto | auto] ].
+    | apply (proj1 (proj2 leq_gsubst_all)); [apply leq_gsingle; cbn; auto | auto]
+    | apply (proj1 (proj2 leq_usubst_all)); [apply leqv_uext; assumption | assumption] ].
 Qed.
 
 Lemma red_leq t u t' : red t u -> tm_leq t t' -> exists u', red t' u' /\ tm_leq u u'.

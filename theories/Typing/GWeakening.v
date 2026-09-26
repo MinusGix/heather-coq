@@ -601,8 +601,8 @@ Proof.
     change (gcren ?x ?ξ) with x⟪ξ⟫.
   all: rewrite ?gren_single2, ?gren_single, ?gren_gsingle; try now constructor.
   all: try (constructor; auto; fail).
-  - constructor. now apply redT_gren.
-  - constructor. now apply redt_gren.
+  all: first [ constructor; now apply redT_gren | constructor; now apply redt_gren
+             | rewrite <- usubst_gren; now constructor ].
 Qed.
 
 Lemma red_gren t u ξ : red t u -> red t⟪ξ⟫ u⟪ξ⟫.

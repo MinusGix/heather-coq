@@ -34,6 +34,10 @@ Inductive red : tm -> tm -> Prop :=
 | red_elimt l1 l2 rb l Δ T t t' : red t t' -> red (elimt l1 l2 rb l Δ T t) (elimt l1 l2 rb l Δ T t')
 | red_elimt_idx l1 l2 rb l Δ T T' k k' A b : red_ty T T' ->
     red (elimt l1 l2 rb l Δ T (boxt (lam k k' A b))) (elimt l1 l2 rb l Δ T' (boxt (lam k k' A b)))
+(* universe polymorphism (M4); as for [app], the annotation is ignored. The
+   arity check makes β commute with universe substitution *)
+| red_ubeta n l b ls : length ls = n -> red (uapp (ulam n l b) ls) b[uext ls lvar]ᵤ
+| red_uapp t t' ls : red t t' -> red (uapp t ls) (uapp t' ls)
 
 with red_ty : ty -> ty -> Prop :=
 | red_El_nat l : red_ty (tyEl l tmNat) tyNat
@@ -68,8 +72,9 @@ Lemma whnf_no_red t v : whnf t -> ~ red t v.
 Proof. destruct 1; intros Hr; try (inversion Hr; fail). eapply whne_no_red; eauto. Qed.
 Lemma whnf_ty_no_red T U : whnf_ty T -> ~ red_ty T U.
 Proof.
-  destruct 1 as [T [|l t Ht]| | | | |]; intros Hr; inversion Hr; subst;
-    try (inversion Ht; fail). eapply whne_no_red; eauto.
+  intros HW Hr; inversion Hr; subst; inversion HW as [? HT| | | | | |]; subst; inversion HT; subst;
+    try solve [match goal with Hw : whne _ |- _ => inversion Hw end].
+  eapply whne_no_red; eauto.
 Qed.
 
 (** ** Determinacy *)
@@ -84,6 +89,7 @@ Proof.
         | Hr : red zero _ |- _ => inversion Hr
         | Hr : red (succ _) _ |- _ => inversion Hr
         | Hr : red (lam _ _ _ _) _ |- _ => inversion Hr
+        | Hr : red (ulam _ _ _) _ |- _ => inversion Hr
         | Hr : red (boxT _) _ |- _ => inversion Hr
         | Hr : red (boxt _) _ |- _ => inversion Hr
         | Hr : red tmNat _ |- _ => inversion Hr
@@ -138,6 +144,8 @@ Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with 
 Lemma reds_letboxt l' l Δ T M t' t t0 : reds t t0 ->
   reds (letboxt l' l Δ T M t' t) (letboxt l' l Δ T M t' t0).
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_uapp t t' ls : reds t t' -> reds (uapp t ls) (uapp t' ls).
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_El l t t' : reds t t' -> reds_ty (tyEl l t) (tyEl l t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 
@@ -182,29 +190,20 @@ Proof.
   destruct c; cbn [redt]; try destruct T; intros E; inversion E; subst; f_equal; peel_push r.
 Qed.
 
+Lemma red_ubeta_ren n l b ls r : length ls = n -> red (uapp (ulam n l b⟨r⟩) ls) b[uext ls lvar]ᵤ⟨r⟩.
+Proof. intros; rewrite <- usubst_ren. now constructor. Qed.
+
 Lemma red_ren_both :
   (forall t u, red t u -> forall r, red t⟨r⟩ u⟨r⟩) /\
   (forall T U, red_ty T U -> forall r, red_ty T⟨r⟩ U⟨r⟩).
 Proof.
-  apply red_both; intros; cbn.
-  - constructor.
-  - change (ren_tm ?x ?r) with x⟨r⟩. rewrite lsingle2_ren. constructor.
-  - change (ren_tm ?x ?r) with x⟨r⟩. rewrite lsingle_ren. constructor.
-  - now constructor.
-  - now constructor.
-  - cbn [ren_tm]. rewrite <- (gsubst_ren t'). constructor.
-  - cbn [ren_tm]. rewrite <- (gsubst_ren t'). constructor.
-  - now constructor.
-  - now constructor.
-  - constructor. now apply redT_ren.
-  - now constructor.
-  - constructor. now apply redt_ren.
-  - now constructor.
-  - now constructor.
-  - constructor.
-  - constructor.
-  - constructor.
-  - now constructor.
+  apply red_both; intros; cbn;
+    first [ now constructor
+          | now apply red_ubeta_ren
+          | constructor; first [now apply redT_ren | now apply redt_ren]
+          | cbn [ren_tm]; rewrite <- gsubst_ren; constructor
+          | change (ren_tm ?x ?r) with x⟨r⟩;
+            first [rewrite lsingle2_ren | rewrite lsingle_ren]; constructor ].
 Qed.
 
 Lemma red_ren t u r : red t u -> red t⟨r⟩ u⟨r⟩.
