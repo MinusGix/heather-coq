@@ -39,8 +39,17 @@ complete; see `M4_DESIGN.md`:
 - consequences at ω: normalization, injectivity of `UΠ` (bodies
   included), and discrimination of `UΠ` against the other type formers.
 
-No admits, no axioms. See `M4_DESIGN.md`, `M3_DESIGN.md`, `M2_DESIGN.md` and `M1_DESIGN.md`
-for decisions, deviations from the paper and gotchas.
+Milestone 5 (the meta-functions `CΠ` and `TΠ`: abstraction over local
+contexts and over layer-P types) is complete; see `M5_DESIGN.md`:
+- the syntax, the sixteen typing rules (β and η included) and the typing
+  metatheory;
+- two new cases of the relation at `j = M`, with every property;
+- the semantic rules and the fundamental theorem at M;
+- consequences: normalization, injectivity of `CΠ`/`TΠ` (bodies
+  included), and discrimination against the other type formers.
+
+No admits, no axioms. See `M5_DESIGN.md`, `M4_DESIGN.md`, `M3_DESIGN.md`, `M2_DESIGN.md` and
+`M1_DESIGN.md` for decisions, deviations from the paper and gotchas.
 
 Documents:
 

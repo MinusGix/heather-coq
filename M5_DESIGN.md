@@ -275,9 +275,58 @@ The existing consequences keep their statements.
   local substitution is `gwk d`, not `d`.
 - `TΠ`'s level is `l'` (the body's), not `lmax l l'`.
 
+## Implementation notes (steps 5 and 6)
+
+- **Where the proofs live.** `Validity/MetaV.v` has the semantic rules:
+  `VS_cpi`, `VS_tpi`, `VS_clam`, `VS_capp`, `VS_cbeta`, `VS_ceta` and the
+  `TΠ` analogs, plus `VTyS_inst_c`/`VTyS_inst_t` (the instance types
+  `T⦃Δ/g⦄`, `T⦃A/U⦄` are valid when the body is). The `FM_*` wrappers and
+  their dispatch are in `FundamentalM.v`. The typed reductions (`β`, the
+  applications' congruences, the η bodies) are in `Typing/MInst.v`.
+- **Bodies at the growth instance.** `VTy_grow_c`/`VTm_grow_c` (and `_t`)
+  take the body's validity at `gsub_up_id D σ`, the substitution pushed
+  under the binder that sends it to itself. On typed syntax that is
+  `⇑σ` (`gsubst_up_id_ty`, via `equiv_gsubst`). Its escape gives the
+  bodies' typings and their generic equation for extensionality.
+- **Instances.** `kbody_inst`: `(kbody ρ T⦃⇑σ⦄[gwk d])⦃o/g⦄ =
+  T⦃(σ⟦γ⟧, o)⦄[kwsub ρ d]`, so an instance is the body's validity at
+  `GSubRel_ext_c`/`GSubRel_ext_t`. Those are `GSubRel_cons_c`/`_t`, which
+  the β rules also use, at the weakened substitutions.
+- **η without a weakened premise.** `UΠ`'s η needed the validity of
+  `u⟨ush n⟩`, since universe weakening is not a Kripke world. Global
+  weakening is one, so the whnf equation of `CΠ`/`TΠ` η takes `t`'s own
+  instance at the world one binding up (`kw_gstep`) at the bound variable
+  (`cvar 0`, or `U^id` related by `vp_ty_gvar0_at`). `kbody_gstep` and the
+  η identities (`eta_c_ty`, `eta_t_ty`) take it back to the body. The
+  injectivity consequences use the same world.
+- **`Λ(U : Δ)` congruence.** The right body is typed only at its own
+  binder level `l3` (E10), so `VS_tlam` also takes `t'`'s validity there
+  (`Vt3`). The FT supplies it from that premise. `tmred_teta_body_lv`
+  β-reduces a `tlam l3 l4` under an `l1` binding with `l1 ≡ l3`.
+- **β** is a direct anti-reduction onto the body's validity at the
+  extended substitutions, as for `letbox`, not through `VS_red`.
+- **Consequences.** Normalization needs no new statement: it is generic
+  over the relation. `declM_cpi_inj` gives `l' ≡ l` and the bodies at
+  `G_g; Γ⟪S⟫`. `declM_tpi_inj` also gives `Δ ≅ Δ'` at D and the levels
+  `l3 ≡ l1`, `l4 ≡ l2`. Discrimination: `declM_cpi_not`/`declM_tpi_not`
+  against any other whnf, and `declM_upi_not_cpi`/`_tpi`.
+- **Gotchas met.**
+  - `destruct (kw_γ ρ)` fails when a hypothesis depends on the world
+    (`h : vp_ty … Δ⟦kw_γ ρ⟧ …`). Use `dnf_gwa` instead.
+  - `LetboxS.gwk_ok_step G D` (explicit arguments) shadows
+    `MInst.gwk_ok_step` (implicit ones) in `Validity`.
+  - `wf_conv` turns `t : T'` into `t : T` from `T ≅ T'`: the target type
+    goes on the left of the equation.
+  - Section lemmas drop unused instance arguments (`VS_ceta` has no
+    `ELP`), so call them as `(VS_x EP EM) …` and let the instances be
+    inferred.
+  - The FT's pipeline does not push `usubst` through `t⟪S⟫` in the goal.
+    The η wrappers first rewrite with `usubst_gren_tm'`.
+
 ## Status
 
-In progress.
+Complete. `fundamentalM` and the consequences are closed under the
+global context: no admits, no axioms.
 - Step 1 (syntax) done.
 - Step 2 (typing and metatheory) done.
 - Step 3 (generic laws, declarative instance by η) done.
@@ -285,5 +334,5 @@ In progress.
   property (layering, escape, stages, irrelevance and inversion,
   symmetry, transitivity, weakening, reflection, anti-reduction, level
   invariance, permutations).
-- The FT at M admits its `CΠ`/`TΠ` cases, flagged in `fundamentalM_us`,
-  until step 5. Nothing else is admitted.
+- Step 5 (semantic rules, FT at M) done.
+- Step 6 (consequences, docs) done.
