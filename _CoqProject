@@ -17,6 +17,7 @@ theories/Syntax/Commute.v
 theories/Syntax/SubstCommute.v
 theories/Typing/Context.v
 theories/Typing/RecSpec.v
+theories/Typing/Algorithmic.v
 theories/Typing/Declarative.v
 theories/Typing/RecLaws.v
 theories/Typing/USubstitution.v
@@ -37,6 +38,7 @@ theories/Typing/RecPeel.v
 theories/Typing/UInst.v
 theories/Typing/MInst.v
 theories/Typing/Presupposition.v
+theories/Typing/Inversion.v
 theories/Typing/CtxConv.v
 theories/Typing/StaticCode.v
 theories/Typing/TypedRed.v
