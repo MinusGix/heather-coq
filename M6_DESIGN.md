@@ -263,4 +263,9 @@ equal type. Three points the paper passes over:
   context conversion (`Typing/GConv.v`): `GEq`, the transfer of every
   declarative judgment (`gconv_*`), and its closure under the rules'
   global extensions (`GEq_ext`, `GEq_ext_same`, `GEq_uwk`, `GEq_recGT`,
-  `GEq_recGt`, `GEq_brG`, `GEq_refl`).
+  `GEq_recGt`, `GEq_brG`, `GEq_refl`). Discrimination is uniform
+  (`eqty_head`: convertible whnf types have the same head; `decl_head_c`).
+  The conversion lemma itself (`Validity/AlgConv.v`, `ac_conv_all`) is
+  done, closed: a derivation over `(G, Γ)` at `T` holds over `(G2, Γ2)` at
+  `T2` for `GEq G G2`, `[G2 ⊢ Γ ≅ Γ2]` and `[G2; Γ ⊢ T2 ≅ T]`, the source
+  typed in `(G, Γ)`; neutrals infer an equal type.
