@@ -151,6 +151,43 @@ Proof.
   exact X.
 Qed.
 
+Lemma uwk_under_tm n {G i Γ t T l} : [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ i ] t : T @ l ] ->
+  [ gctx_uwk n (gctx_uwk n G) ; Γ⟨ush n⟩ᵤ⟨ush n⟩ᵤ ⊢[ i ] t⟨uuprn n (ush n)⟩ᵤ : T⟨uuprn n (ush n)⟩ᵤ
+    @ lvren l (uuprn n (ush n)) ].
+Proof.
+  intros H.
+  pose proof (proj1 (proj2 (proj2 (proj2 usubstitution))) _ _ _ _ _ _ H (n + (n + gL G))
+                (uupn n (fun j => lvar (ush n j))) (usub_ok_uupn _ _ _ _ (usub_ok_ush n (gL G)))) as X.
+  destruct (uwk_under_scope n G Γ) as [E1 E2]. rewrite E1, E2 in X.
+  rewrite <- (proj1 (proj2 uren_as_usubst_all) t (uuprn n (ush n)) (uupn n (fun j => lvar (ush n j)))) in X
+    by (intros; apply uupn_as; reflexivity).
+  rewrite <- (proj1 uren_as_usubst_all T (uuprn n (ush n)) (uupn n (fun j => lvar (ush n j)))) in X
+    by (intros; apply uupn_as; reflexivity).
+  rewrite <- (lvren_as_lvsubst l (uuprn n (ush n)) (uupn n (fun j => lvar (ush n j)))) in X
+    by (intros; apply uupn_as; reflexivity).
+  exact X.
+Qed.
+
+Lemma ueta_tm n (t : tm) : dnftm t -> t⟨uuprn n (ush n)⟩ᵤ[uext (ubvars n) lvar]ᵤ = t.
+Proof.
+  intros Ht. rewrite (proj1 (proj2 uren_usubst_all) _ _ _ lvar) by (intros; symmetry; apply ueta_var).
+  apply usubst_id; auto.
+Qed.
+
+(** The bound variables, instantiated. *)
+Lemma map_ubvars_uext n ls φ : length ls = n -> map (fun l => lvsubst l (uext ls φ)) (ubvars n) = ls.
+Proof.
+  intros Hn. apply (nth_ext _ _ lzero lzero).
+  - rewrite length_map, ubvars_length; auto.
+  - intros k Hk. rewrite length_map, ubvars_length in Hk.
+    rewrite (nth_indep _ _ (lvsubst (lvar 0) (uext ls φ))) by (rewrite length_map, ubvars_length; lia).
+    pose proof (map_nth (fun l => lvsubst l (uext ls φ)) (ubvars n) (lvar 0) k) as E. cbn beta in E.
+    rewrite E. unfold ubvars.
+    rewrite map_nth, rev_nth by (rewrite length_seq; lia). rewrite length_seq, seq_nth by lia.
+    cbn [lvsubst]. unfold uext. rewrite Hn. destruct (Nat.ltb_spec (0 + (n - S k)) n); [|lia].
+    f_equal; lia.
+Qed.
+
 (** ** Presuppositions of the new rules *)
 
 Section Presup.

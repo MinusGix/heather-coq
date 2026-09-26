@@ -86,6 +86,8 @@ theories/Validity/RecObj.v
 theories/Validity/RecExt.v
 theories/Validity/RecS.v
 theories/Validity/RecFT.v
+theories/Validity/OmegaV.v
+theories/Validity/UPiV.v
 theories/Validity/FundamentalM.v
 theories/Validity/Reducible.v
 theories/Validity/DeclConsequences.v
