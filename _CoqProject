@@ -42,6 +42,8 @@ theories/Typing/Inversion.v
 theories/Typing/RecEq.v
 theories/Typing/AlgStruct.v
 theories/Typing/CtxConv.v
+theories/Typing/InvAny.v
+theories/Typing/RecAdm.v
 theories/Typing/GConv.v
 theories/Typing/StaticCode.v
 theories/Typing/StaticCodeEq.v
