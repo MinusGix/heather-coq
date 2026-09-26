@@ -510,8 +510,9 @@ Proof.
   destruct (proj2 (proj2 (proj2 (proj2 (proj2 (proj2 (fundamentalS DEP DEM)))))) _ _ _ _ HΔ eq_refl)
     as [VEP VEM].
   pose proof (eqctx_wf_l (i := lD) eq_refl HΔ) as HD. pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HD'.
-  exact (escM_VTyS HΓ Hl (inst_c_ty HΓ HD HT) (inst_c_ty HΓ HD' HT)
-           (VTyS_inst_c2 DEP DEM HD HD' VEP VEM VT)).
+  pose proof (VTyS_inst_c2 DEP DEM HD HD' VEP VEM VT) as VI.
+  rewrite gcren_S_gsingle in VI by exact (wf_ctx_dnf HΓ).
+  exact (escM_VTyS HΓ Hl (inst_c_ty HΓ HD HT) (inst_c_ty HΓ HD' HT) VI).
 Qed.
 
 Theorem declM_inst_t_eq {G Γ Δ l T l' A A'} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l' ->
@@ -524,8 +525,9 @@ Proof.
     as ((_ & VΔP & VΔM) & VAP & VAM).
   pose proof (eqty_wf_l (i := lD) eq_refl HA) as HAl. pose proof (eqty_wf_r (i := lD) eq_refl HA) as HAr.
   pose proof (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ HAl) as HD.
-  exact (escM_VTyS HΓ Hl (inst_t_ty HΓ HAl HT) (inst_t_ty HΓ HAr HT)
-           (VTyS_inst_t2 DEP DEM HD HAl HAr VΔP VΔM VAP VAM VT)).
+  pose proof (VTyS_inst_t2 DEP DEM HD HAl HAr VΔP VΔM VAP VAM VT) as VI.
+  rewrite gcren_S_gsingle in VI by exact (wf_ctx_dnf HΓ).
+  exact (escM_VTyS HΓ Hl (inst_t_ty HΓ HAl HT) (inst_t_ty HΓ HAr HT) VI).
 Qed.
 
 End DeclConsequences.

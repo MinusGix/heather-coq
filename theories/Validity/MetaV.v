@@ -16,6 +16,11 @@ Proof.
   intros Hσ. apply gsubst_gsubst_ty. intros [|n]; cbn [gcons gup]; [reflexivity|].
   symmetry; apply gosubst_shift_single, Hσ.
 Qed.
+Lemma gup_single_ctx (Γ : ctx) σ o : gdnf σ -> Γ⦃gup σ⦄⦃gsingle o⦄ = Γ⦃gcons σ o⦄.
+Proof.
+  intros Hσ. apply gsubst_gsubst_ctx. intros [|n]; cbn [gcons gup]; [reflexivity|].
+  symmetry; apply gosubst_shift_single, Hσ.
+Qed.
 
 Lemma body_reduct_ty (T : ty) σ e o : gdnf σ -> LK dnftm e ->
   (T⦃gup σ⦄[gwk e])⦃gsingle o⦄ = T⦃gcons σ o⦄[e].
@@ -1196,9 +1201,10 @@ Qed.
 (** Two-sided instances: related objects give related instance types
     (global functionality; the soundness of algorithmic conversion needs it,
     M6_DESIGN.md H8). *)
-Lemma VTyS_inst_c2 {G Γ T l Δ1 Δ2} : [ G ; Δ1 ⊢[ lD ] ] -> [ G ; Δ2 ⊢[ lD ] ] ->
+Lemma VTyS_inst_c2 {G Γ1 T l Δ1 Δ2} : [ G ; Δ1 ⊢[ lD ] ] -> [ G ; Δ2 ⊢[ lD ] ] ->
   @VCtxEqS EP LR_P EP EM G Δ1 Δ2 -> @VCtxEqS EM LR_P EP EM G Δ1 Δ2 ->
-  VTySM (gext G gdCtx) Γ⟪S⟫ T T l -> VTySM G Γ T⦃gsingle (GCtx Δ1)⦄ T⦃gsingle (GCtx Δ2)⦄ l.
+  VTySM (gext G gdCtx) Γ1 T T l ->
+  VTySM G Γ1⦃gsingle (GCtx Δ1)⦄ T⦃gsingle (GCtx Δ1)⦄ T⦃gsingle (GCtx Δ2)⦄ l.
 Proof.
   intros HΔ1 HΔ2 VEP VEM VT.
   apply (VTyS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
@@ -1210,16 +1216,17 @@ Proof.
   assert (Hσx : GSubRel G' (gext G gdCtx) (gcons σ (GCtx Δ1⦃σ⦄)) (gcons σ' (GCtx Δ2⦃σ'⦄)))
     by exact (GSubRel_cons_c Hσ (conj HDDr (conj (VEP _ _ _ Hσ) (VEM _ _ _ Hσ)))).
   pose proof (VT _ _ _ Hσx G' gwk_id (gwk_ok_id G')) as Y; cbn [gwa] in Y.
-  rewrite gcons_shift_ctx in Y. specialize (Y _ _ _ He).
+  rewrite (gs_gsingle_ctx Γ1 _ σ Nσ), (gup_single_ctx _ σ _ Nσ) in He. specialize (Y _ _ _ He).
   rewrite (gs_gsingle_ty T _ σ Nσ), (gs_gsingle_ty T _ σ' Nσ'), (gup_single_ty _ σ _ Nσ),
     (gup_single_ty _ σ' _ Nσ').
   exact Y.
 Qed.
 
-Lemma VTyS_inst_t2 {G Γ T l l' Δ1 A A'} : [ G ; Δ1 ⊢[ lD ] ] -> [ G ; Δ1 ⊢[ lD ] A @ l ] ->
+Lemma VTyS_inst_t2 {G Γ1 T l l' Δ1 A A'} : [ G ; Δ1 ⊢[ lD ] ] -> [ G ; Δ1 ⊢[ lD ] A @ l ] ->
   [ G ; Δ1 ⊢[ lD ] A' @ l ] ->
   VCtxSP G Δ1 -> VCtxSPM G Δ1 -> @VTyS EP EM EP LR_P G Δ1 A A' l -> @VTyS EP EM EM LR_P G Δ1 A A' l ->
-  VTySM (gext G (gdTy Δ1 lD l)) Γ⟪S⟫ T T l' -> VTySM G Γ T⦃gsingle (GTy A)⦄ T⦃gsingle (GTy A')⦄ l'.
+  VTySM (gext G (gdTy Δ1 lD l)) Γ1 T T l' ->
+  VTySM G Γ1⦃gsingle (GTy A)⦄ T⦃gsingle (GTy A)⦄ T⦃gsingle (GTy A')⦄ l'.
 Proof.
   intros HΔ1 HA HA' VΔP VΔM VAP VAM VT.
   apply (VTyS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
@@ -1227,7 +1234,7 @@ Proof.
   pose proof (gsw_dnf _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ)) as Nσ'.
   pose proof (GSubRel_cons_t G Δ1 l HΔ1 VΔP VΔM Hσ (tapp_arg G Δ1 l A A' HΔ1 HA HA' VΔP VAP VAM Hσ)) as Hσx.
   pose proof (VT _ _ _ Hσx G' gwk_id (gwk_ok_id G')) as Y; cbn [gwa] in Y.
-  rewrite gcons_shift_ctx in Y. specialize (Y _ _ _ He).
+  rewrite (gs_gsingle_ctx Γ1 _ σ Nσ), (gup_single_ctx _ σ _ Nσ) in He. specialize (Y _ _ _ He).
   rewrite (gs_gsingle_ty T _ σ Nσ), (gs_gsingle_ty T _ σ' Nσ'), (gup_single_ty _ σ _ Nσ),
     (gup_single_ty _ σ' _ Nσ').
   exact Y.
