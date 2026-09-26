@@ -124,8 +124,15 @@ Definition m_only (t : tm) : Prop :=
   | _ => False
   end.
 
-Lemma typed_m_only {G i Γ t T k} : m_only t -> [ G ; Γ ⊢[ i ] t : T @ k ] -> i = lM.
-Proof. intros Hm H. induction H; cbn in Hm; first [contradiction | auto]. Qed.
+Lemma typed_m_only {G i Γ t T k} : [ G ; Γ ⊢[ i ] t : T @ k ] -> m_only t -> i = lM.
+Proof. intros H Hm. induction H; cbn in Hm; first [contradiction | auto]. Qed.
+
+(** The bundle's nodes and [tmErr] are never typed. *)
+Definition junk (t : tm) : Prop :=
+  match t with tmErr | tmTy _ | tmTup _ _ | bindU _ | bindG _ | bindL _ => True | _ => False end.
+
+Lemma no_junk {G i Γ t T k} : [ G ; Γ ⊢[ i ] t : T @ k ] -> junk t -> False.
+Proof. intros H Hj. induction H; cbn in Hj; first [contradiction | auto]. Qed.
 
 (** Not typed at V (the variables are). *)
 Definition v_typable (t : tm) : Prop := match t with var _ | gvar _ _ => True | _ => False end.

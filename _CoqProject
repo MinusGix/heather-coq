@@ -117,3 +117,4 @@ theories/Validity/Preservation.v
 theories/Validity/RecReduct.v
 theories/Validity/Uniform.v
 theories/Validity/TyInj.v
+theories/Validity/TypeUniq.v
