@@ -263,7 +263,39 @@ presupposition.
 4. Injectivity of the M formers; uniqueness of synthesized types.
 5. The decision procedure.
 
-Status: in progress.
+Status: done, closed. As built:
+- `Typing/InvAny.v`: inversion for the heads typed below M, with the
+  equation at `typeof i` (`inva_*`); presupposition at V and C by lifting;
+  `typed_m_only`, `no_junk` (bundle nodes are never typed), `no_ty_V`.
+- `Typing/RecAdm.v` (J3.3): the branch contexts and types are well formed
+  from the motives (`brΓ_wf`, `brRes_wf`), hence the recursor rules in the
+  paper's form (`wf_elimT_adm`, `wf_elimt_adm`). The motives are moved into
+  a branch scope by universe weakening under their binder, global
+  weakening past the branch's declarations and `motT_wf`; the scrutinees
+  (codes over the branch's variables) are typed by an extension of RecWf's
+  `wfd` with the term codes.
+- `Typing/DecSide.v` (J3.2): lookups, `lsub_tail`, `dnfl`, the bundle's
+  shape (an extraction `unrb` inverse to `mkrb`, `rb_view`), the fragment
+  `nlr`, and the size `sz`.
+- `Validity/TyInj.v`: J3.4's injectivity, corollaries of `declM_*_inj`.
+- `Validity/TypeUniq.v`: `type_uniq`, uniqueness of synthesized types and
+  levels (`lvl_eq`), by induction on the term; a checked function's type
+  has another former's head (`chk_at_whnf`).
+- `Validity/TCBase.v`, `TCType.v`, `TCSynth.v`, `TCCheck.v`: the four
+  problems (`TYD`, `CKD`, `SYD`, `CXD`) and one lemma per head, under the
+  hypothesis for smaller syntax (`IHsz`). Local substitutions are decided
+  as a telescope (`sub_dec`): an entry's type is well formed once the
+  later entries are typed. Checking an abstraction or `box` normalizes the
+  expected type and reads its head through views (`pi_view` and so on).
+- `Validity/TypeCheck.v`: the induction (`sz_all`) and the unconditional
+  statements `wf_glob_dec`, `wf_ctx_dec`, `wf_ty_dec`, `wf_tm_dec`,
+  `infer_dec`, for `nlr` syntax (`nlr_gctx` for the global context).
+
+Gotchas: several existing lemmas take their typing premise second, after
+a side condition that the typing determines (`typed_m_only` now takes the
+typing first); the elaboration order of `ltac:`/`I` arguments bit again.
+`repeat split` also splits `lequiv` (a conjunction of evaluations), so
+build conjunctions explicitly.
 
 #### C1b. Beyond the fragment (future)
 
@@ -298,5 +330,5 @@ Status: to design.
 
 ## Order
 
-A1, A3, B1, A2, B2: done. C1 (fragment, J1) in progress, then C1b. The
-other C items are designed separately when reached.
+A1, A3, B1, A2, B2, C1 (fragment, J1): done. Next: C1b, C2–C4, each
+designed when reached.
