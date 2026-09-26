@@ -7,6 +7,17 @@
     bindings, since global variables are closed neutrals. *)
 From DeLaM.Validity Require Export Fundamental.
 
+(** The head of a type, neutral types sharing one. *)
+Definition ty_head (T : ty) : nat :=
+  match T with
+  | tyGvar _ _ | tyEl _ _ => 0 | tyNat => 1 | tyU _ => 2 | tyPi _ _ _ _ => 3
+  | tyCTyp _ _ => 4 | tyCTrm _ _ _ => 5 | tyUPi _ _ _ => 6 | tyCPi _ _ => 7 | tyTPi _ _ _ _ => 8
+  | tyErr => 9
+  end.
+
+Lemma whne_ty_head V : whne_ty V -> ty_head V = 0.
+Proof. destruct 1; reflexivity. Qed.
+
 Section Consequences.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}
   (red_eqty : forall G Γ T T' l, [ G ; Γ ⊢g T ≅ T' @ l ] -> lwf (gL G) l -> LRty l G Γ T T')
@@ -225,6 +236,33 @@ Proof.
   destruct (LR_inv_U HR (tyred_refl _ _ (eqty_wf_l ge_typeof H))) as (l2' & _ & _ & _ & HT' & _).
   pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' (tyred_refl _ _ (eqty_wf_r ge_typeof H))
                 (whnf_tyU _) (whnf_tyPi _ _ _ _)) as Heq. discriminate.
+Qed.
+
+(** ** Discrimination, uniformly: convertible whnf types have the same head *)
+
+Lemma LR_head n rec G Γ T T' l R : LR n rec G Γ T T' l R ->
+  exists W W', ([ G ; Γ ⊢g T ⤳* W @ l ]) /\ ([ G ; Γ ⊢g T' ⤳* W' @ l ]) /\
+    whnf_ty W /\ whnf_ty W' /\ ty_head W = ty_head W'.
+Proof.
+  destruct 1; try match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
+  match goal with |- exists _ _, [ _ ; _ ⊢g ?a ⤳* _ @ _ ] /\ [ _ ; _ ⊢g ?b ⤳* _ @ _ ] /\ _ =>
+    match goal with HT : [ _ ; _ ⊢g a ⤳* ?X @ _ ], HT' : [ _ ; _ ⊢g b ⤳* ?X' @ _ ] |- _ =>
+      exists X, X'; refine (conj HT (conj HT' _)) end end;
+  first [ match goal with Hn : [ _ ; _ ⊢ _ ~ _ @ _ ] |- _ =>
+            pose proof (gne_ty_whne_l Hn); pose proof (gne_ty_whne_r Hn) end;
+          refine (conj _ (conj _ _)); [apply whnf_ty_ne; assumption | apply whnf_ty_ne; assumption |];
+          rewrite !whne_ty_head by assumption; reflexivity
+        | refine (conj _ (conj _ eq_refl)); eauto using whnf_ty ].
+Qed.
+
+Lemma eqty_head {G Γ W W' l} : [ G ; Γ ⊢g W ≅ W' @ l ] -> lwf (gL G) l -> whnf_ty W -> whnf_ty W' ->
+  ty_head W = ty_head W'.
+Proof.
+  intros H Hl Hw Hw'. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
+  destruct (LR_head _ _ _ _ _ _ _ _ HR) as (X & X' & HX & HX' & Hx & Hx' & Eh).
+  rewrite <- (tyred_whnf_det _ _ _ _ _ _ _ _ HX (tyred_refl _ _ (eqty_wf_l ge_typeof H)) Hx Hw).
+  rewrite <- (tyred_whnf_det _ _ _ _ _ _ _ _ HX' (tyred_refl _ _ (eqty_wf_r ge_typeof H)) Hx' Hw').
+  exact Eh.
 Qed.
 
 End Consequences.

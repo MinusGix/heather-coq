@@ -96,6 +96,21 @@ Qed.
 Theorem declM_U_inj {G Γ l l' k} : [ G ; Γ ⊢[ lM ] tyU l ≅ tyU l' @ k ] -> lequiv (gL G) l' l.
 Proof. intros H. exact (U_inj (E := DEM) (LP := LRM) redM_eqty H (lwfM_whnf_l H (whnf_tyU _) ltac:(not_upi))). Qed.
 
+(** Convertible whnf types have the same head (M6_DESIGN.md step 4); at ω
+    both are [UΠ]s. *)
+Theorem declM_head {G Γ W W' l} : [ G ; Γ ⊢[ lM ] W ≅ W' @ l ] -> whnf_ty W -> whnf_ty W' ->
+  ty_head W = ty_head W'.
+Proof.
+  intros H Hw Hw'. destruct (lvlM_eqty H) as [Hl | ->].
+  - exact (eqty_head (E := DEM) (LP := LRM) redM_eqty H Hl Hw Hw').
+  - destruct (omegaM_whnf_l H Hw) as (? & ? & ? & ->). destruct (omegaM_whnf_r H Hw') as (? & ? & ? & ->).
+    reflexivity.
+Qed.
+
+Theorem decl_head_c {G i Γ W W' l} : compt i -> [ G ; Γ ⊢[ i ] W ≅ W' @ l ] -> whnf_ty W -> whnf_ty W' ->
+  ty_head W = ty_head W'.
+Proof. intros [-> | ->]; [apply decl_head | apply declM_head]. Qed.
+
 Theorem declM_whnf_normalization_tm {G Γ t T l} : [ G ; Γ ⊢[ lM ] t : T @ l ] ->
   exists w, reds t w /\ whnf w.
 Proof.

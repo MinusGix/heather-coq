@@ -61,6 +61,11 @@ Proof. intros H; exact (pi_red (E := DEP) (LP := LR_P) redP_ty H (lwfD_eqty H)).
 Theorem decl_U_inj {G Γ l l' k} : [ G ; Γ ⊢[ lD ] tyU l ≅ tyU l' @ k ] -> lequiv (gL G) l' l.
 Proof. intros H; exact (U_inj (E := DEP) (LP := LR_P) redP_ty H (lwfD_eqty H)). Qed.
 
+(** Convertible whnf types have the same head (M6_DESIGN.md step 4). *)
+Theorem decl_head {G Γ W W' l} : [ G ; Γ ⊢[ lD ] W ≅ W' @ l ] -> whnf_ty W -> whnf_ty W' ->
+  ty_head W = ty_head W'.
+Proof. intros H; exact (eqty_head (E := DEP) (LP := LR_P) redP_ty H (lwfD_eqty H)). Qed.
+
 Theorem decl_whnf_normalization_tm {G Γ t T l} : [ G ; Γ ⊢[ lD ] t : T @ l ] ->
   exists w, reds t w /\ whnf w.
 Proof.
