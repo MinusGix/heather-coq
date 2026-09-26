@@ -901,3 +901,227 @@ Proof. intros H; ainv H. Qed.
 Lemma ainv_tapp {G Γ ν A X T} : ac_tmne G Γ (tapp ν A) X T ->
   exists Δ l l' T0 ν' A', X = tapp ν' A' /\ ac_tmnee G Γ ν ν' (tyTPi Δ l l' T0) /\ ac_ty G Δ A A'.
 Proof. intros H; ainv H. Qed.
+
+(** ** Transitivity: the statements
+
+    Induction on the first derivation, inversion of the second on the
+    middle side's head. The second derivation compares the middle side's
+    binders; the conversion lemma moves it to the left side's. *)
+
+Definition T_ty G Γ T T' : Prop := forall T'' i k k' k'', compt i ->
+  [ G ; Γ ⊢[ i ] T @ k ] -> [ G ; Γ ⊢[ i ] T' @ k' ] -> [ G ; Γ ⊢[ i ] T'' @ k'' ] ->
+  ac_ty G Γ T' T'' -> ac_ty G Γ T T''.
+Definition T_tynf G Γ T T' : Prop := forall T'' i k k' k'', compt i ->
+  [ G ; Γ ⊢[ i ] T @ k ] -> [ G ; Γ ⊢[ i ] T' @ k' ] -> [ G ; Γ ⊢[ i ] T'' @ k'' ] ->
+  ac_tynf G Γ T' T'' -> ac_tynf G Γ T T''.
+Definition T_tyne G Γ T T' : Prop := forall T'' i k k' k'', compt i ->
+  [ G ; Γ ⊢[ i ] T @ k ] -> [ G ; Γ ⊢[ i ] T' @ k' ] -> [ G ; Γ ⊢[ i ] T'' @ k'' ] ->
+  ac_tyne G Γ T' T'' -> ac_tyne G Γ T T''.
+Definition T_ctx G Δ Δ' : Prop := forall Δ'',
+  [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] ] -> [ G ; Δ'' ⊢[ lD ] ] -> ac_ctx G Δ' Δ'' -> ac_ctx G Δ Δ''.
+Definition T_tm G Γ t t' T : Prop := forall t'' i k, compt i ->
+  [ G ; Γ ⊢[ i ] t : T @ k ] -> [ G ; Γ ⊢[ i ] t' : T @ k ] -> [ G ; Γ ⊢[ i ] t'' : T @ k ] ->
+  ac_tm G Γ t' t'' T -> ac_tm G Γ t t'' T.
+Definition T_tmnf G Γ t t' T : Prop := forall t'' i k, compt i ->
+  [ G ; Γ ⊢[ i ] t : T @ k ] -> [ G ; Γ ⊢[ i ] t' : T @ k ] -> [ G ; Γ ⊢[ i ] t'' : T @ k ] ->
+  ac_tmnf G Γ t' t'' T -> ac_tmnf G Γ t t'' T.
+Definition T_ne G Γ ν ν' T : Prop := forall ν'' T' i k k' k'' A A' A'', compt i ->
+  [ G ; Γ ⊢[ i ] ν : A @ k ] -> [ G ; Γ ⊢[ i ] ν' : A' @ k' ] -> [ G ; Γ ⊢[ i ] ν'' : A'' @ k'' ] ->
+  ac_tmne G Γ ν' ν'' T' -> ac_tmne G Γ ν ν'' T.
+Definition T_nee G Γ ν ν' W : Prop := forall ν'' W' i k k' k'' A A' A'', compt i ->
+  [ G ; Γ ⊢[ i ] ν : A @ k ] -> [ G ; Γ ⊢[ i ] ν' : A' @ k' ] -> [ G ; Γ ⊢[ i ] ν'' : A'' @ k'' ] ->
+  ac_tmnee G Γ ν' ν'' W' -> ac_tmnee G Γ ν ν'' W.
+Definition T_sub G Γ d d' Θ : Prop := forall d'' i, compt i -> [ G ; Θ ⊢[ i ] ] ->
+  [ G ; Γ ⊢[ i ] d : Θ ] -> [ G ; Γ ⊢[ i ] d' : Θ ] -> [ G ; Γ ⊢[ i ] d'' : Θ ] ->
+  ac_sub G Γ d' d'' Θ -> ac_sub G Γ d d'' Θ.
+
+Lemma mvD {G Δ Δ' T l} : [ G ⊢[ lD ] Δ ≅ Δ' ] -> [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Δ' ⊢[ lD ] T @ l ].
+Proof. intros Hc HT. exact (decl_ty_ctxconv_D Hc HT (lequiv_refl _ _ (lwfD_ty HT))). Qed.
+
+(** ** Types *)
+
+Lemma T_act_red {G Γ T T' W W'} : reds_ty T W -> reds_ty T' W' -> whnf_ty W -> whnf_ty W' ->
+  T_tynf G Γ W W' -> T_ty G Γ T T'.
+Proof.
+  intros Hr Hr' Hw Hw' IH T'' i k k' k'' Hc HT HT' HT'' D2. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (ainv_ty D2) as (W2 & W3 & Hr2 & Hr3 & Hw2 & Hw3 & D2').
+  rewrite <- (reds_ty_whnf_det _ _ _ Hr' Hr2 Hw' Hw2) in D2'.
+  pose proof (eqty_wf_r Hi (red_ty_sound Hc HT Hr Hw)) as HW.
+  pose proof (eqty_wf_r Hi (red_ty_sound Hc HT' Hr' Hw')) as HW'.
+  pose proof (eqty_wf_r Hi (red_ty_sound Hc HT'' Hr3 Hw3)) as HW3.
+  eapply act_red; [exact Hr | exact Hr3 | exact Hw | exact Hw3 | exact (IH W3 i k k' k'' Hc HW HW' HW3 D2')].
+Qed.
+
+Lemma T_actnf_nat {G Γ} : T_tynf G Γ tyNat tyNat.
+Proof. red; intros * _ _ _ _ D2. rewrite (ainv_nat D2). apply actnf_nat. Qed.
+Lemma T_actnf_U {G Γ l l'} : leqv l l' -> T_tynf G Γ (tyU l) (tyU l').
+Proof.
+  intros Hl; red; intros * _ _ _ _ D2. destruct (ainv_U D2) as (l'' & -> & Hl2).
+  apply actnf_U, (leqv_trans _ _ _ Hl Hl2).
+Qed.
+
+Lemma T_actnf_pi {G Γ l1 l2 l3 l4 A A' B B'} : leqv l1 l3 -> leqv l2 l4 ->
+  ac_ty G Γ A A' -> T_ty G Γ A A' -> ac_ty G (Γ ,, A @ l1) B B' -> T_ty G (Γ ,, A @ l1) B B' ->
+  T_tynf G Γ (tyPi l1 l2 A B) (tyPi l3 l4 A' B').
+Proof.
+  intros H13 H24 DA IHA DB IHB T'' i k k' k'' Hc HT HT' HT'' D2. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (ainv_pi D2) as (l5 & l6 & A'' & B'' & -> & H35 & H46 & DA2 & DB2).
+  destruct (inv_ty_pi HT) as ((Hv & W1 & W2 & HA & HB) & _).
+  destruct (inv_ty_pi HT') as ((_ & W3 & W4 & HA' & HB') & _).
+  destruct (inv_ty_pi HT'') as ((_ & W5 & W6 & HA'' & HB'') & _).
+  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W3 W5 H35) as E35.
+  pose proof (ac_ty_sound Hc DA HA (wft_lconv _ _ _ _ _ _ HA' E13)) as EA.
+  pose proof (ac_ty_sound Hc DA2 HA' (wft_lconv _ _ _ _ _ _ HA'' E35)) as EA2.
+  pose proof (ctx_of_wf_ty Hi HA) as HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
+  assert (HΓA : [ G ; Γ ,, A @ l1 ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HA | exact W1]).
+  assert (HΓA' : [ G ; Γ ,, A' @ l3 ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HA' | exact W3]).
+  assert (EA' : [ G ; Γ ⊢[ i ] A' ≅ A @ l3 ])
+    by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | exact (lequiv_sym _ _ _ E13)]).
+  assert (EA2' : [ G ; Γ ⊢[ i ] A'' ≅ A' @ l5 ])
+    by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA2) | exact (lequiv_sym _ _ _ E35)]).
+  pose proof (lequiv_trans _ _ _ _ E13 E35) as E15.
+  assert (EA'' : [ G ; Γ ⊢[ i ] A'' ≅ A @ l5 ]).
+  { eapply eqty_lconv; [| exact (lequiv_sym _ _ _ E15)]. apply eqty_sym.
+    eapply eqty_trans; [exact EA | exact (eqty_lconv _ _ _ _ _ _ _ EA2 E13)]. }
+  pose proof (stab_ty Hi EA' (lequiv_sym _ _ _ E13) HΓA HB') as HB1.
+  pose proof (stab_ty Hi EA2' (lequiv_sym _ _ _ E35) HΓA' HB'') as HB2'.
+  pose proof (stab_ty Hi EA'' (lequiv_sym _ _ _ E15) HΓA HB'') as HB2.
+  assert (Hctx : [ G ⊢[ i ] Γ ,, A' @ l3 ≅ Γ ,, A @ l1 ])
+    by (apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | exact HA' | exact EA' | exact (lequiv_sym _ _ _ E13)]).
+  pose proof (cv_ty HG Hc DB2 Hctx HB' HB2') as DB2'.
+  apply actnf_pi; [exact (leqv_trans _ _ _ H13 H35) | exact (leqv_trans _ _ _ H24 H46)
+                  | exact (IHA A'' i _ _ _ Hc HA HA' HA'' DA2) | exact (IHB B'' i _ _ _ Hc HB HB1 HB2 DB2')].
+Qed.
+
+Lemma T_actnf_ne {G Γ V V'} : ac_tyne G Γ V V' -> T_tyne G Γ V V' -> T_tynf G Γ V V'.
+Proof.
+  intros D IH T'' i k k' k'' Hc HT HT' HT'' D2. apply actnf_ne.
+  exact (IH T'' i k k' k'' Hc HT HT' HT'' (ainv_nfne (proj2 (ac_tyne_whne D)) D2)).
+Qed.
+
+Lemma T_actnf_CTyp {G Γ Δ Δ' l l'} : T_ctx G Δ Δ' -> leqv l l' -> T_tynf G Γ (tyCTyp Δ l) (tyCTyp Δ' l').
+Proof.
+  intros IH Hl T'' i k k' k'' Hc HT HT' HT'' D2.
+  destruct (ainv_CTyp D2) as (Δ'' & l'' & -> & Dc2 & Hl2).
+  destruct (inv_ty_CTyp HT) as ((_ & _ & HΔ & _) & _). destruct (inv_ty_CTyp HT') as ((_ & _ & HΔ' & _) & _).
+  destruct (inv_ty_CTyp HT'') as ((_ & _ & HΔ'' & _) & _).
+  apply actnf_CTyp; [exact (IH Δ'' HΔ HΔ' HΔ'' Dc2) | exact (leqv_trans _ _ _ Hl Hl2)].
+Qed.
+
+Lemma T_actnf_CTrm {G Γ Δ Δ' T T' l l'} : ac_ctx G Δ Δ' -> T_ctx G Δ Δ' -> T_ty G Δ T T' -> leqv l l' ->
+  T_tynf G Γ (tyCTrm Δ T l) (tyCTrm Δ' T' l').
+Proof.
+  intros Dc IHc IHT Hl X'' i k k' k'' Hc HX HX' HX'' D2.
+  destruct (ainv_CTrm D2) as (Δ'' & T'' & l'' & -> & Dc2 & DT2 & Hl2).
+  destruct (inv_ty_CTrm HX) as ((_ & _ & HΔ & HT & _) & _).
+  destruct (inv_ty_CTrm HX') as ((_ & _ & HΔ' & HT' & _) & _).
+  destruct (inv_ty_CTrm HX'') as ((_ & _ & HΔ'' & HT'' & _) & _).
+  pose proof (ac_ctx_sound' Dc HΔ HΔ') as Ec. pose proof (ac_ctx_sound' Dc2 HΔ' HΔ'') as Ec2.
+  pose proof (eqctx_trans_D Ec Ec2) as Ec02.
+  pose proof (cv_ty (ctx_glob _ _ _ HΔ) compt_D DT2 (eqctx_sym_D Ec) HT' (mvD (eqctx_sym_D Ec2) HT'')) as DT2'.
+  apply actnf_CTrm; [exact (IHc Δ'' HΔ HΔ' HΔ'' Dc2) | | exact (leqv_trans _ _ _ Hl Hl2)].
+  exact (IHT T'' lD _ _ _ compt_D HT (mvD (eqctx_sym_D Ec) HT') (mvD (eqctx_sym_D Ec02) HT'') DT2').
+Qed.
+
+Lemma T_actnf_upi {G Γ n l l' T T'} : leqv l l' -> T_ty (gctx_uwk n G) Γ⟨ush n⟩ᵤ T T' ->
+  T_tynf G Γ (tyUPi n l T) (tyUPi n l' T').
+Proof.
+  intros Hl IH X'' i k k' k'' Hc HX HX' HX'' D2.
+  destruct (ainv_upi D2) as (l'' & T'' & -> & Hl2 & DT2).
+  destruct (inv_ty_upi HX) as ((-> & _ & _ & _ & HT) & _). destruct (inv_ty_upi HX') as ((_ & _ & _ & _ & HT') & _).
+  destruct (inv_ty_upi HX'') as ((_ & _ & _ & _ & HT'') & _).
+  apply actnf_upi; [exact (leqv_trans _ _ _ Hl Hl2) | exact (IH T'' lM _ _ _ compt_M HT HT' HT'' DT2)].
+Qed.
+
+Lemma T_actnf_cpi {G Γ l l' T T'} : leqv l l' -> T_ty (gext G gdCtx) Γ⟪S⟫ T T' ->
+  T_tynf G Γ (tyCPi l T) (tyCPi l' T').
+Proof.
+  intros Hl IH X'' i k k' k'' Hc HX HX' HX'' D2.
+  destruct (ainv_cpi D2) as (l'' & T'' & -> & Hl2 & DT2).
+  destruct (inv_ty_cpi HX) as ((-> & _ & _ & HT) & _). destruct (inv_ty_cpi HX') as ((_ & _ & _ & HT') & _).
+  destruct (inv_ty_cpi HX'') as ((_ & _ & _ & HT'') & _).
+  apply actnf_cpi; [exact (leqv_trans _ _ _ Hl Hl2) | exact (IH T'' lM _ _ _ compt_M HT HT' HT'' DT2)].
+Qed.
+
+(** Moving a judgment between two equal type bindings. *)
+Lemma GEq_bind {G Δ Δ' l l'} : [ ⊢ G ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] -> lequiv (gL G) l l' ->
+  GEq (gext G (gdTy Δ lD l)) (gext G (gdTy Δ' lD l')).
+Proof.
+  intros HG Ec El. apply (GEq_ext (GEq_refl _ HG)).
+  - apply (wfg_gext HG); [split; [exact (eqctx_wf_l (i := lD) eq_refl Ec) | exact (lequiv_wf_l _ _ _ El)]
+                         | right; reflexivity].
+  - apply (wfg_gext HG); [split; [exact (eqctx_wf_r (i := lD) eq_refl Ec) | exact (lequiv_wf_r _ _ _ El)]
+                         | right; reflexivity].
+  - exact (conj eq_refl (conj (or_intror eq_refl) (conj El Ec))).
+Qed.
+
+Lemma T_actnf_tpi {G Γ Δ Δ' l1 l2 l3 l4 T T'} : ac_ctx G Δ Δ' -> T_ctx G Δ Δ' -> leqv l1 l3 -> leqv l2 l4 ->
+  T_ty (gext G (gdTy Δ lD l1)) Γ⟪S⟫ T T' -> T_tynf G Γ (tyTPi Δ l1 l2 T) (tyTPi Δ' l3 l4 T').
+Proof.
+  intros Dc IHc H13 H24 IH X'' i k k' k'' Hc HX HX' HX'' D2.
+  destruct (ainv_tpi D2) as (Δ'' & l5 & l6 & T'' & -> & Dc2 & H35 & H46 & DT2).
+  destruct (inv_ty_tpi HX) as ((-> & HΓ & HΔ & W1 & W2 & HT) & _).
+  destruct (inv_ty_tpi HX') as ((_ & _ & HΔ' & W3 & W4 & HT') & _).
+  destruct (inv_ty_tpi HX'') as ((_ & _ & HΔ'' & W5 & W6 & HT'') & _).
+  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W3 W5 H35) as E35.
+  pose proof (ac_ctx_sound' Dc HΔ HΔ') as Ec. pose proof (ac_ctx_sound' Dc2 HΔ' HΔ'') as Ec2.
+  pose proof (ctx_glob _ _ _ HΓ) as HG.
+  pose proof (GEq_bind HG (eqctx_sym_D Ec) (lequiv_sym _ _ _ E13)) as HE10.
+  pose proof (GEq_bind HG (eqctx_sym_D Ec2) (lequiv_sym _ _ _ E35)) as HE21.
+  pose proof (GEq_bind HG (eqctx_sym_D (eqctx_trans_D Ec Ec2))
+                (lequiv_sym _ _ _ (lequiv_trans _ _ _ _ E13 E35))) as HE20.
+  pose proof (proj1 ac_conv_all _ _ _ _ DT2 lM _ _ _ _ compt_M HE10
+                (eqc_refl _ _ _ (gconv_ctx HE10 compt_M (ctx_of_wf_ty (i := lM) eq_refl HT'))) HT'
+                (gconv_ty HE21 HT'')) as DT2'.
+  apply actnf_tpi; [exact (IHc Δ'' HΔ HΔ' HΔ'' Dc2) | exact (leqv_trans _ _ _ H13 H35)
+                   | exact (leqv_trans _ _ _ H24 H46) |].
+  exact (IH T'' lM _ _ _ compt_M HT (gconv_ty HE10 HT') (gconv_ty HE20 HT'') DT2').
+Qed.
+
+Lemma T_actne_gvar {G Γ U Δ i' l d d'} : in_gctx (gΨ G) U (gdTy Δ i' l) -> T_sub G Γ d d' Δ ->
+  T_tyne G Γ (tyGvar U d) (tyGvar U d').
+Proof.
+  intros Hin IH X'' i k k' k'' Hc HX HX' HX'' D2. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (ainv_tygvar D2) as (Δ2 & i2 & l2 & d'' & -> & Hin2 & Ds2).
+  pose proof (in_gctx_det Hin Hin2) as E. injection E as <- <- <-.
+  destruct (inv_ty_gvar HX) as (Δ0 & i0 & l0 & (Hv & HΓ & Hin0 & Hle & Ht & Hn & He) & _).
+  destruct (inv_ty_gvar HX') as (Δ1 & i1 & l1 & (_ & _ & Hin1 & _ & Ht' & Hn' & He') & _).
+  destruct (inv_ty_gvar HX'') as (Δ3 & i3 & l3 & (_ & _ & Hin3 & _ & Ht'' & Hn'' & He'') & _).
+  pose proof (in_gctx_det Hin Hin0) as E0. injection E0 as <- <- <-.
+  pose proof (in_gctx_det Hin Hin1) as E1. injection E1 as <- <- <-.
+  pose proof (in_gctx_det Hin Hin3) as E3. injection E3 as <- <- <-.
+  rewrite Hi in HΓ.
+  destruct (gctx_decl_ok _ _ _ (ctx_glob _ _ _ HΓ) Hin) as (HΔ & _).
+  eapply actne_gvar; [exact Hin |].
+  exact (IH d'' i Hc (lift_ctx HΔ (lle_D_compt _ Hc)) (lsub_wf_prem Hi HΓ Ht Hn He)
+           (lsub_wf_prem Hi HΓ Ht' Hn' He') (lsub_wf_prem Hi HΓ Ht'' Hn'' He'') Ds2).
+Qed.
+
+Lemma T_actne_El {G Γ l l' ν ν' W} : leqv l l' -> T_nee G Γ ν ν' W -> T_tyne G Γ (tyEl l ν) (tyEl l' ν').
+Proof.
+  intros Hl IH X'' i k k' k'' Hc HX HX' HX'' D2.
+  destruct (ainv_El D2) as (l'' & ν'' & W2 & -> & Hl2 & Dν2).
+  destruct (inv_ty_El HX) as ((_ & _ & Hν) & _). destruct (inv_ty_El HX') as ((_ & _ & Hν') & _).
+  destruct (inv_ty_El HX'') as ((_ & _ & Hν'') & _).
+  eapply actne_El; [exact (leqv_trans _ _ _ Hl Hl2) | exact (IH ν'' W2 i _ _ _ _ _ _ Hc Hν Hν' Hν'' Dν2)].
+Qed.
+
+(** ** Local contexts *)
+
+Lemma T_acc_nil {G} : T_ctx G cnil cnil.
+Proof. red; intros * _ _ _ D2. rewrite (ainv_cnil D2). apply acc_nil. Qed.
+Lemma T_acc_var {G g} : T_ctx G (cvar g) (cvar g).
+Proof. red; intros * _ _ _ D2. rewrite (ainv_cvar D2). apply acc_var. Qed.
+
+Lemma T_acc_ext {G Γ Γ' A A' l l'} : ac_ctx G Γ Γ' -> T_ctx G Γ Γ' -> T_ty G Γ A A' -> leqv l l' ->
+  T_ctx G (Γ ,, A @ l) (Γ' ,, A' @ l').
+Proof.
+  intros Dc IHc IHA Hl X'' H H' H'' D2.
+  destruct (ainv_cext D2) as (Γ'' & A'' & l'' & -> & Dc2 & DA2 & Hl2).
+  destruct (wfc_ext_inv H) as (HΓ & HA & _). destruct (wfc_ext_inv H') as (HΓ' & HA' & _).
+  destruct (wfc_ext_inv H'') as (HΓ'' & HA'' & _).
+  pose proof (ac_ctx_sound' Dc HΓ HΓ') as Ec. pose proof (ac_ctx_sound' Dc2 HΓ' HΓ'') as Ec2.
+  pose proof (cv_ty (ctx_glob _ _ _ HΓ) compt_D DA2 (eqctx_sym_D Ec) HA' (mvD (eqctx_sym_D Ec2) HA'')) as DA2'.
+  apply acc_ext; [exact (IHc Γ'' HΓ HΓ' HΓ'' Dc2) | | exact (leqv_trans _ _ _ Hl Hl2)].
+  exact (IHA A'' lD _ _ _ compt_D HA (mvD (eqctx_sym_D Ec) HA') (mvD (eqctx_sym_D (eqctx_trans_D Ec Ec2)) HA'') DA2').
+Qed.
