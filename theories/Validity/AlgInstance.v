@@ -332,3 +332,175 @@ Proof.
 Qed.
 
 End Alg.
+
+(** ** The layer-M laws *)
+
+Section AlgM.
+
+Local Notation EP := (AlgEq lD compt_D).
+Local Notation EM := (AlgEq lM compt_M).
+Local Notation DEP := (DeclEq lD compt_D).
+Local Notation DEM := (DeclEq lM compt_M).
+
+Lemma alg_geq_ctx {G Δ Δ'} : @geq_ctx EP G Δ Δ' -> @geq_ctx DEP G Δ Δ' /\ ac_ctx G Δ Δ'.
+Proof.
+  induction 1 as [HG | g HG Hg | Γ Γ' A A' l l' Hc IH HA EA Hl].
+  - split; [constructor; exact HG | constructor].
+  - split; [constructor; assumption | constructor].
+  - destruct IH as [Hc' Dc]. destruct EA as (EA & DA).
+    split; [constructor; assumption | apply acc_ext; [exact Dc | exact DA | exact (lequiv_leqv _ _ _ Hl)]].
+Qed.
+
+Lemma alg_elim_prem {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ'} :
+  ElimPrem EP EM G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' ->
+  ElimPrem DEP DEM G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' /\
+  ac_ctx G Δ Δ' /\ ac_ty (recGT G) (recΓT Γ) MT MT' /\ ac_ty (recGt G) (recΓt Γ) Mt Mt' /\
+  (forall k, k < 13 -> ac_tm (brG k G) (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+                         (bs k) (bs' k) (brRes k (wrapMT MT) (wrapMt Mt))).
+Proof.
+  intros [H1 H2 H3 HΔ HMT (EMT & DMT) HMT' HMt (EMt & DMt) HMt' Hc Hc' Hb Hb'].
+  destruct (alg_geq_ctx HΔ) as [HΔ' Dc].
+  split; [constructor; auto; intros k Hk; exact (proj1 (Hb k Hk)) |].
+  refine (conj Dc (conj DMT (conj DMt _))). intros k Hk; exact (proj2 (Hb k Hk)).
+Qed.
+
+Lemma reds_uren_ush {t w} n : reds t w -> reds t⟨ush n⟩ᵤ w⟨ush n⟩ᵤ.
+Proof. intros H. rewrite !uren_ush_tm. exact (reds_usubst _ _ _ H). Qed.
+
+Lemma lequivs_lwf_l L ls ls' : Forall2 (lequiv L) ls ls' -> Forall (lwf L) ls.
+Proof. induction 1; constructor; eauto using lequiv_wf_l. Qed.
+Lemma lequivs_leqvs L ls ls' : Forall2 (lequiv L) ls ls' -> Forall2 leqv ls ls'.
+Proof. induction 1; constructor; eauto using lequiv_leqv. Qed.
+
+Lemma AlgEqM : GenericEqM EP EM.
+Proof.
+  constructor; cbn; unfold alg_ne_ty, alg_eq_ty, alg_ne_tm, alg_eq_tm, decl_ne_ty, decl_ne_tm;
+    [reflexivity | reflexivity | ..].
+  (* contextual types *)
+  - intros * HΓ HΔ Hl. destruct (alg_geq_ctx HΔ) as [HΔ' Dc].
+    refine (conj (@geq_ty_CTyp _ _ DeclEqM _ _ _ _ _ _ HΓ HΔ' Hl) _).
+    eapply act_red; [constructor | constructor | apply whnf_tyCTyp | apply whnf_tyCTyp |].
+    exact (actnf_CTyp _ _ _ _ _ _ Dc (lequiv_leqv _ _ _ Hl)).
+  - intros * HΓ HΔ HT (ET & DT) Hl. destruct (alg_geq_ctx HΔ) as [HΔ' Dc].
+    refine (conj (@geq_ty_CTrm _ _ DeclEqM _ _ _ _ _ _ _ _ HΓ HΔ' HT ET Hl) _).
+    eapply act_red; [constructor | constructor | apply whnf_tyCTrm | apply whnf_tyCTrm |].
+    exact (actnf_CTrm _ _ _ _ _ _ _ _ Dc DT (lequiv_leqv _ _ _ Hl)).
+  (* boxes *)
+  - intros * HΓ Hl HΔ HT HT' E Hq. refine (conj (@geq_tm_boxT _ _ DeclEqM _ _ _ _ _ _ HΓ Hl HΔ HT HT' E Hq) _).
+    eapply actm_red; [constructor | apply whnf_tyCTyp | constructor | constructor | apply whnf_boxT | apply whnf_boxT |].
+    exact (actmnf_boxT _ _ _ _ _ _ Hq).
+  - intros * HΓ Hl HΔ HT Ht Ht' E Hq. refine (conj (@geq_tm_boxt _ _ DeclEqM _ _ _ _ _ _ _ HΓ Hl HΔ HT Ht Ht' E Hq) _).
+    eapply actm_red; [constructor | apply whnf_tyCTrm | constructor | constructor | apply whnf_boxt | apply whnf_boxt |].
+    exact (actmnf_boxt _ _ _ _ _ _ _ Hq).
+  (* letbox *)
+  - intros * H13 H24 HΔ HM (EM & DM) HM' (Et & Dt) Ht2 ((Hn & Hn' & Eν) & T0 & Dν & ETν).
+    destruct (alg_geq_ctx HΔ) as [HΔ' Dc].
+    pose proof (@gne_tm_letboxT _ _ DeclEqM _ _ _ _ _ _ _ _ _ _ _ _ _ _ H13 H24 HΔ' HM EM HM' Et Ht2
+                  (conj Hn (conj Hn' Eν))) as X.
+    refine (conj X _). destruct X as (_ & _ & EX).
+    destruct (ne_nee lM compt_M Dν ETν) as (W0 & Xν & _).
+    exists M[lsingle ν]. split; [| exact (eqty_refl _ _ _ _ _ (eqtm_wf_ty (i := lM) eq_refl EX))].
+    exact (actmne_letboxT _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24) Dc DM Dt Xν).
+  - intros * H13 H24 HΔ HT (ET & DT) HM (EM & DM) HM' (Et & Dt) Ht2 ((Hn & Hn' & Eν) & T0 & Dν & ETν).
+    destruct (alg_geq_ctx HΔ) as [HΔ' Dc].
+    pose proof (@gne_tm_letboxt _ _ DeclEqM _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H13 H24 HΔ' HT ET HM EM HM' Et Ht2
+                  (conj Hn (conj Hn' Eν))) as X.
+    refine (conj X _). destruct X as (_ & _ & EX).
+    destruct (ne_nee lM compt_M Dν ETν) as (W0 & Xν & _).
+    exists M[lsingle ν]. split; [| exact (eqty_refl _ _ _ _ _ (eqtm_wf_ty (i := lM) eq_refl EX))].
+    exact (actmne_letboxt _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24)
+             Dc DT DM Dt Xν).
+  (* the recursors *)
+  - intros * Hmot HEP ((Hn & Hn' & Eν) & T0 & Dν & ETν).
+    pose proof HEP as [H1 H2 H3 _ _ _ _ _ _ _ _ _ _ _].
+    destruct (alg_elim_prem HEP) as (HEP' & Dc & DMT & DMt & Db).
+    pose proof (@gne_tm_elimT _ _ DeclEqM _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hmot HEP' (conj Hn (conj Hn' Eν))) as X.
+    refine (conj X _). destruct X as (_ & _ & EX).
+    destruct (ne_nee lM compt_M Dν ETν) as (W0 & Xν & _).
+    eexists. split; [| exact (eqty_refl _ _ _ _ _ (eqtm_wf_ty (i := lM) eq_refl EX))].
+    exact (actmne_elimT _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H1) (lequiv_leqv _ _ _ H2)
+             (lequiv_leqv _ _ _ H3) Dc DMT DMt Db Xν).
+  - intros * Hmot HEP Hbox.
+    pose proof HEP as [H1 H2 H3 _ _ _ _ _ _ _ _ _ _ _].
+    destruct (alg_elim_prem HEP) as (HEP' & Dc & DMT & DMt & Db).
+    pose proof (@gne_tm_elimT_gvar _ _ DeclEqM _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hmot HEP' Hbox) as X.
+    refine (conj X _). destruct X as (_ & _ & EX).
+    eexists. split; [| exact (eqty_refl _ _ _ _ _ (eqtm_wf_ty (i := lM) eq_refl EX))].
+    exact (actmne_elimT_gvar _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H1) (lequiv_leqv _ _ _ H2)
+             (lequiv_leqv _ _ _ H3) Dc DMT DMt Db (proj2 (declM_boxT_leq Hbox))).
+  - intros * Hmot HEP HT HT' (ET & DT) ((Hn & Hn' & Eν) & T0 & Dν & ETν).
+    pose proof HEP as [H1 H2 H3 _ _ _ _ _ _ _ _ _ _ _].
+    destruct (alg_elim_prem HEP) as (HEP' & Dc & DMT & DMt & Db).
+    pose proof (@gne_tm_elimt _ _ DeclEqM _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hmot HEP' HT HT' ET
+                  (conj Hn (conj Hn' Eν))) as X.
+    refine (conj X _). destruct X as (_ & _ & EX).
+    destruct (ne_nee lM compt_M Dν ETν) as (W0 & Xν & _).
+    eexists. split; [| exact (eqty_refl _ _ _ _ _ (eqtm_wf_ty (i := lM) eq_refl EX))].
+    exact (actmne_elimt _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H1) (lequiv_leqv _ _ _ H2)
+             (lequiv_leqv _ _ _ H3) Dc DT DMT DMt Db Xν).
+  - intros * Hmot HEP HT HT' (ET & DT) Hbox.
+    pose proof HEP as [H1 H2 H3 _ _ _ _ _ _ _ _ _ _ _].
+    destruct (alg_elim_prem HEP) as (HEP' & Dc & DMT & DMt & Db).
+    pose proof (@gne_tm_elimt_gvar _ _ DeclEqM _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hmot HEP' HT HT' ET Hbox) as X.
+    refine (conj X _). destruct X as (_ & _ & EX).
+    eexists. split; [| exact (eqty_refl _ _ _ _ _ (eqtm_wf_ty (i := lM) eq_refl EX))].
+    exact (actmne_elimt_gvar _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H1) (lequiv_leqv _ _ _ H2)
+             (lequiv_leqv _ _ _ H3) Dc DT DMT DMt Db (proj2 (declM_boxt_leq Hbox))).
+  (* universe polymorphism *)
+  - intros * HΓ Hn Hl HT (ET & DT). refine (conj (@geq_ty_upi _ _ DeclEqM _ _ _ _ _ _ _ HΓ Hn Hl HT ET) _).
+    eapply act_red; [constructor | constructor | apply whnf_tyUPi | apply whnf_tyUPi |].
+    exact (actnf_upi _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) DT).
+  - intros * Hn Hl HT Ht Ht' (E & D). refine (conj (@geq_tm_uext _ _ DeclEqM _ _ _ _ _ _ _ Hn Hl HT Ht Ht' E) _).
+    destruct (tgt_whnf_tm lM compt_M Ht) as (w & Hr & Hw). destruct (tgt_whnf_tm lM compt_M Ht') as (w' & Hr' & Hw').
+    eapply actm_red; [constructor | apply whnf_tyUPi | exact Hr | exact Hr' | exact Hw | exact Hw' |].
+    apply actmnf_ueta.
+    eapply ac_tm_red_r; [eapply ac_tm_red_l; [exact D |] |]; apply reds_uapp, reds_uren_ush; assumption.
+  - intros * Hl HT Hn Hls ((Hne & Hne' & Eν) & T0 & Dν & ETν).
+    pose proof (@gne_tm_uapp _ _ DeclEqM _ _ _ _ _ _ _ _ _ Hl HT Hn Hls (conj Hne (conj Hne' Eν))) as X.
+    refine (conj X _). destruct X as (_ & _ & EX).
+    destruct (ne_nee lM compt_M Dν ETν) as (W0 & Xν & Hw0 & EW).
+    destruct (head_upi W0 (eq_sym (decl_head_c compt_M EW (whnf_tyUPi _ _ _) Hw0))) as (n2 & m & T2 & ->).
+    destruct (declM_upi_inj EW) as (-> & _ & ET2).
+    exists T2[uext ls lvar]ᵤ. split; [exact (actmne_uapp _ _ _ _ _ _ _ _ _ Xν Hn (lequivs_leqvs _ _ _ Hls)) |].
+    subst n. pose proof (ctx_of_eqtm (i := lM) eq_refl Eν) as HΓ.
+    exact (uinst_eqty (ctx_glob _ _ _ HΓ) (wf_ctx_dnf HΓ) (lequivs_lwf_l _ _ _ Hls) ET2).
+  (* meta-functions *)
+  - intros * HΓ Hl HT (ET & DT). refine (conj (@geq_ty_cpi _ _ DeclEqM _ _ _ _ _ _ HΓ Hl HT ET) _).
+    eapply act_red; [constructor | constructor | apply whnf_tyCPi | apply whnf_tyCPi |].
+    exact (actnf_cpi _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) DT).
+  - intros * HΓ HΔ Hc H13 H24 HT (ET & DT) HT'. destruct (alg_geq_ctx Hc) as [Hc' Dc].
+    refine (conj (@geq_ty_tpi _ _ DeclEqM _ _ _ _ _ _ _ _ _ _ HΓ HΔ Hc' H13 H24 HT ET HT') _).
+    eapply act_red; [constructor | constructor | apply whnf_tyTPi | apply whnf_tyTPi |].
+    exact (actnf_tpi _ _ _ _ _ _ _ _ _ _ Dc (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24) DT).
+  - intros * Hl HT Ht Ht' (E & D). refine (conj (@geq_tm_cext _ _ DeclEqM _ _ _ _ _ _ Hl HT Ht Ht' E) _).
+    destruct (tgt_whnf_tm lM compt_M Ht) as (w & Hr & Hw). destruct (tgt_whnf_tm lM compt_M Ht') as (w' & Hr' & Hw').
+    eapply actm_red; [constructor | apply whnf_tyCPi | exact Hr | exact Hr' | exact Hw | exact Hw' |].
+    apply actmnf_ceta.
+    eapply ac_tm_red_r; [eapply ac_tm_red_l; [exact D |] |]; apply reds_capp, reds_gren; assumption.
+  - intros * HΔ Hl Hl' HT Ht Ht' (E & D).
+    refine (conj (@geq_tm_text _ _ DeclEqM _ _ _ _ _ _ _ _ HΔ Hl Hl' HT Ht Ht' E) _).
+    destruct (tgt_whnf_tm lM compt_M Ht) as (w & Hr & Hw). destruct (tgt_whnf_tm lM compt_M Ht') as (w' & Hr' & Hw').
+    eapply actm_red; [constructor | apply whnf_tyTPi | exact Hr | exact Hr' | exact Hw | exact Hw' |].
+    apply actmnf_teta.
+    eapply ac_tm_red_r; [eapply ac_tm_red_l; [exact D |] |]; apply reds_tapp, reds_gren; assumption.
+  - intros * Hl HT HΔ Hc HE ((Hne & Hne' & Eν) & T0 & Dν & ETν). destruct (alg_geq_ctx Hc) as [Hc' Dc].
+    pose proof (@gne_tm_capp _ _ DeclEqM _ _ _ _ _ _ _ _ Hl HT HΔ Hc' HE (conj Hne (conj Hne' Eν))) as X.
+    refine (conj X _).
+    destruct (ne_nee lM compt_M Dν ETν) as (W0 & Xν & Hw0 & EW).
+    destruct (head_cpi W0 (eq_sym (decl_head_c compt_M EW (whnf_tyCPi _ _) Hw0))) as (m & T2 & ->).
+    destruct (declM_cpi_inj EW) as (_ & ET2).
+    exists T2⦃gsingle (GCtx Δ)⦄. split; [exact (actmne_capp _ _ _ _ _ _ _ _ Xν Dc) |].
+    exact (inst_c_eqty (ctx_of_eqtm (i := lM) eq_refl Eν) HΔ ET2).
+  - intros * HΔ Hl Hl' HT HA (EA & DA) HE ((Hne & Hne' & Eν) & T0 & Dν & ETν).
+    pose proof (@gne_tm_tapp _ _ DeclEqM _ _ _ _ _ _ _ _ _ _ HΔ Hl Hl' HT HA EA HE (conj Hne (conj Hne' Eν))) as X.
+    refine (conj X _).
+    destruct (ne_nee lM compt_M Dν ETν) as (W0 & Xν & Hw0 & EW).
+    destruct (head_tpi W0 (eq_sym (decl_head_c compt_M EW (whnf_tyTPi _ _ _ _) Hw0))) as (Δ2 & m & m' & T2 & ->).
+    destruct (declM_tpi_inj EW) as (HΔΔ2 & _ & _ & ET2).
+    exists T2⦃gsingle (GTy A)⦄. split.
+    + eapply actmne_tapp; [exact Xν |].
+      exact (cv_ty (ctx_glob _ _ _ HΔ) compt_D DA HΔΔ2 HA (eqty_wf_r (i := lD) eq_refl EA)).
+    + exact (inst_t_eqty (ctx_of_eqtm (i := lM) eq_refl Eν) HA ET2).
+Qed.
+
+End AlgM.
