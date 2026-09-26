@@ -184,4 +184,14 @@ Proof.
     decl_elim_prem. refine (conj _ (conj _ _)); [whne_step .. |]. apply eqtm_elimt; auto.
   - intros * Hmot [H1 H2 H3 HΔ HMT HMTe HMT' HMt HMte HMt' Hc Hc' Hb Hb'] HT HT' HTT Ht.
     decl_elim_prem. refine (conj _ (conj _ _)); [whne_step .. |]. apply eqtm_elimt; auto.
+  (* universe polymorphism *)
+  - intros; now apply eqty_upi.
+  - (* extensionality: both sides are η-equal to their Λ at the bound variables *)
+    intros * Hn Hl HT Ht Ht' Happ.
+    pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
+    eapply eqtm_trans; [apply eqtm_sym, eqtm_ueta; eauto|].
+    eapply eqtm_trans; [|apply eqtm_ueta; eauto].
+    apply eqtm_ulam; auto using lequiv_refl.
+  - intros * Hl HT Hn Hls (Hne & Hne' & Hν).
+    refine (conj _ (conj _ _)); [constructor; auto .. |]. eapply eqtm_uapp; eauto.
 Qed.

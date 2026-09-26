@@ -338,5 +338,20 @@ Class GenericEqM (EP EM : GenericEq) := {
     [ G ; Γ ⊢[ lM ] boxt (gvar u d) ≅ boxt (gvar u d') : tyCTrm Δ T l @ lzero ] ->
     @gne_tm EM G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt (gvar u d)))
       (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt (gvar u d')))
-      (mott (wrapMt Mt) l Δ T (boxt (gvar u d))) l2
+      (mott (wrapMt Mt) l Δ T (boxt (gvar u d))) l2 ;
+
+  (* universe polymorphism (07:296–342, M4_DESIGN.md F4): congruence of
+     [UΠ], extensionality at the bound variables, neutral application *)
+  geq_ty_upi {G Γ n l l' T T'} : [ G ; Γ ⊢[ lM ] ] -> 0 < n -> lequiv (n + gL G) l l' ->
+    [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] -> @geq_ty EM (gctx_uwk n G) Γ⟨ush n⟩ᵤ T T' l ->
+    @geq_ty EM G Γ (tyUPi n l T) (tyUPi n l' T') lomega ;
+  geq_tm_uext {G Γ n l T t t'} : 0 < n -> lwf (n + gL G) l ->
+    [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] ->
+    [ G ; Γ ⊢[ lM ] t : tyUPi n l T @ lomega ] -> [ G ; Γ ⊢[ lM ] t' : tyUPi n l T @ lomega ] ->
+    @geq_tm EM (gctx_uwk n G) Γ⟨ush n⟩ᵤ (uapp t⟨ush n⟩ᵤ (ubvars n)) (uapp t'⟨ush n⟩ᵤ (ubvars n)) T l ->
+    @geq_tm EM G Γ t t' (tyUPi n l T) lomega ;
+  gne_tm_uapp {G Γ n l T ν ν' ls ls'} : lwf (n + gL G) l ->
+    [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] -> length ls = n -> Forall2 (lequiv (gL G)) ls ls' ->
+    @gne_tm EM G Γ ν ν' (tyUPi n l T) lomega ->
+    @gne_tm EM G Γ (uapp ν ls) (uapp ν' ls') T[uext ls lvar]ᵤ (lvsubst l (uext ls lvar))
 }.
