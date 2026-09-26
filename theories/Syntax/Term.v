@@ -61,12 +61,12 @@ with tm : Type :=
 | elimt (l1 l2 : lvl) (rb : tm) (l : lvl) (Δ : ctx) (T : ty) (t : tm)
     (* elim_Trm^{l1,l2} M⃗ b⃗ l Δ T t        T in Δ *)
 (* universe polymorphism (M4) *)
-| ulam (n : nat) (l : lvl) (t : tm)       (* Λ^l ℓ⃗. t, |ℓ⃗| = n    l, t: +n levels *)
+| ulam (n : nat) (l : lvl) (T : ty) (t : tm)  (* Λ^l ℓ⃗. t : T, |ℓ⃗| = n   l, T, t: +n levels *)
 | uapp (t : tm) (ls : list lvl)           (* t $ l⃗ *)
 (* meta-functions (M5) *)
-| clam (l : lvl) (t : tm)                 (* Λ^l g. t                 t: +1 global *)
+| clam (l : lvl) (T : ty) (t : tm)        (* Λ^l g. t : T             T, t: +1 global *)
 | capp (t : tm) (Δ : ctx)                 (* t Δ *)
-| tlam (l l' : lvl) (t : tm)              (* Λ^{l,l'} U. t            t: +1 global *)
+| tlam (Δ : ctx) (l l' : lvl) (T : ty) (t : tm)  (* Λ^{l,l'} U[Δ]. t : T   T, t: +1 global *)
 | tapp (t : tm) (T : ty)                  (* t T                      T in U's context *)
 with ctx : Type :=
 | cnil
@@ -171,11 +171,11 @@ with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   | bindL b => bindL (ren_tm b (rlift r))
   | elimT l1 l2 rb l Δ t => elimT l1 l2 (ren_tm rb r) l Δ (ren_tm t r)
   | elimt l1 l2 rb l Δ T t => elimt l1 l2 (ren_tm rb r) l Δ T (ren_tm t r)
-  | ulam n l t => ulam n l (ren_tm t r)
+  | ulam n l T t => ulam n l (ren_ty T r) (ren_tm t r)
   | uapp t ls => uapp (ren_tm t r) ls
-  | clam l t => clam l (ren_tm t r)
+  | clam l T t => clam l (ren_ty T r) (ren_tm t r)
   | capp t Δ => capp (ren_tm t r) Δ
-  | tlam l l' t => tlam l l' (ren_tm t r)
+  | tlam Δ l l' T t => tlam Δ l l' (ren_ty T r) (ren_tm t r)
   | tapp t T => tapp (ren_tm t r) T
   end
 with lren (d : lsub) (r : rsub) {struct d} : lsub :=
@@ -232,11 +232,11 @@ with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   | bindL b => bindL (gren_tm b ξ)
   | elimT l1 l2 rb l Δ t => elimT l1 l2 (gren_tm rb ξ) l (gcren Δ ξ) (gren_tm t ξ)
   | elimt l1 l2 rb l Δ T t => elimt l1 l2 (gren_tm rb ξ) l (gcren Δ ξ) (gren_ty T ξ) (gren_tm t ξ)
-  | ulam n l t => ulam n l (gren_tm t ξ)
+  | ulam n l T t => ulam n l (gren_ty T ξ) (gren_tm t ξ)
   | uapp t ls => uapp (gren_tm t ξ) ls
-  | clam l t => clam l (gren_tm t (gupr ξ))
+  | clam l T t => clam l (gren_ty T (gupr ξ)) (gren_tm t (gupr ξ))
   | capp t Δ => capp (gren_tm t ξ) (gcren Δ ξ)
-  | tlam l l' t => tlam l l' (gren_tm t (gupr ξ))
+  | tlam Δ l l' T t => tlam (gcren Δ ξ) l l' (gren_ty T (gupr ξ)) (gren_tm t (gupr ξ))
   | tapp t T => tapp (gren_tm t ξ) (gren_ty T ξ)
   end
 with gcren (Γ : ctx) (ξ : nat -> nat) {struct Γ} : ctx :=
@@ -297,11 +297,11 @@ with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   | elimt l1 l2 rb l Δ T t =>
       elimt (lvren l1 ρ) (lvren l2 ρ) (uren_tm rb ρ) (lvren l ρ) (ucren Δ ρ) (uren_ty T ρ)
         (uren_tm t ρ)
-  | ulam n l t => ulam n (lvren l (uuprn n ρ)) (uren_tm t (uuprn n ρ))
+  | ulam n l T t => ulam n (lvren l (uuprn n ρ)) (uren_ty T (uuprn n ρ)) (uren_tm t (uuprn n ρ))
   | uapp t ls => uapp (uren_tm t ρ) (map (fun l => lvren l ρ) ls)
-  | clam l t => clam (lvren l ρ) (uren_tm t ρ)
+  | clam l T t => clam (lvren l ρ) (uren_ty T ρ) (uren_tm t ρ)
   | capp t Δ => capp (uren_tm t ρ) (ucren Δ ρ)
-  | tlam l l' t => tlam (lvren l ρ) (lvren l' ρ) (uren_tm t ρ)
+  | tlam Δ l l' T t => tlam (ucren Δ ρ) (lvren l ρ) (lvren l' ρ) (uren_ty T ρ) (uren_tm t ρ)
   | tapp t T => tapp (uren_tm t ρ) (uren_ty T ρ)
   end
 with ucren (Γ : ctx) (ρ : nat -> nat) {struct Γ} : ctx :=
@@ -356,11 +356,11 @@ with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   | bindL b => bindL (subst_tm b (llift d))
   | elimT l1 l2 rb l Δ t => elimT l1 l2 (subst_tm rb d) l Δ (subst_tm t d)
   | elimt l1 l2 rb l Δ T t => elimt l1 l2 (subst_tm rb d) l Δ T (subst_tm t d)
-  | ulam n l t => ulam n l (subst_tm t (uwkn n d))
+  | ulam n l T t => ulam n l (subst_ty T (uwkn n d)) (subst_tm t (uwkn n d))
   | uapp t ls => uapp (subst_tm t d) ls
-  | clam l t => clam l (subst_tm t (gwk d))
+  | clam l T t => clam l (subst_ty T (gwk d)) (subst_tm t (gwk d))
   | capp t Δ => capp (subst_tm t d) Δ
-  | tlam l l' t => tlam l l' (subst_tm t (gwk d))
+  | tlam Δ l l' T t => tlam Δ l l' (subst_ty T (gwk d)) (subst_tm t (gwk d))
   | tapp t T => tapp (subst_tm t d) T
   end
 with lcomp (d' : lsub) (d : lsub) {struct d'} : lsub :=       (* d' ∘ d *)
@@ -469,11 +469,11 @@ with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   | elimT l1 l2 rb l Δ t => elimT l1 l2 (gsubst_tm rb σ) l (gcsubst Δ σ) (gsubst_tm t σ)
   | elimt l1 l2 rb l Δ T t =>
       elimt l1 l2 (gsubst_tm rb σ) l (gcsubst Δ σ) (gsubst_ty T σ) (gsubst_tm t σ)
-  | ulam n l t => ulam n l (gsubst_tm t (guwkn n σ))
+  | ulam n l T t => ulam n l (gsubst_ty T (guwkn n σ)) (gsubst_tm t (guwkn n σ))
   | uapp t ls => uapp (gsubst_tm t σ) ls
-  | clam l t => clam l (gsubst_tm t (gup σ))
+  | clam l T t => clam l (gsubst_ty T (gup σ)) (gsubst_tm t (gup σ))
   | capp t Δ => capp (gsubst_tm t σ) (gcsubst Δ σ)
-  | tlam l l' t => tlam l l' (gsubst_tm t (gup σ))
+  | tlam Δ l l' T t => tlam (gcsubst Δ σ) l l' (gsubst_ty T (gup σ)) (gsubst_tm t (gup σ))
   | tapp t T => tapp (gsubst_tm t σ) (gsubst_ty T σ)
   end
 with gcsubst (Γ : ctx) (σ : gsub) {struct Γ} : ctx :=
@@ -537,11 +537,11 @@ with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   | elimt l1 l2 rb l Δ T t =>
       elimt (lvsubst l1 φ) (lvsubst l2 φ) (usubst_tm rb φ) (lvsubst l φ) (ucsubst Δ φ)
         (usubst_ty T φ) (usubst_tm t φ)
-  | ulam n l t => ulam n (lvsubst l (uupn n φ)) (usubst_tm t (uupn n φ))
+  | ulam n l T t => ulam n (lvsubst l (uupn n φ)) (usubst_ty T (uupn n φ)) (usubst_tm t (uupn n φ))
   | uapp t ls => uapp (usubst_tm t φ) (map (fun l => lvsubst l φ) ls)
-  | clam l t => clam (lvsubst l φ) (usubst_tm t φ)
+  | clam l T t => clam (lvsubst l φ) (usubst_ty T φ) (usubst_tm t φ)
   | capp t Δ => capp (usubst_tm t φ) (ucsubst Δ φ)
-  | tlam l l' t => tlam (lvsubst l φ) (lvsubst l' φ) (usubst_tm t φ)
+  | tlam Δ l l' T t => tlam (ucsubst Δ φ) (lvsubst l φ) (lvsubst l' φ) (usubst_ty T φ) (usubst_tm t φ)
   | tapp t T => tapp (usubst_tm t φ) (usubst_ty T φ)
   end
 with ucsubst (Γ : ctx) (φ : nat -> lvl) {struct Γ} : ctx :=

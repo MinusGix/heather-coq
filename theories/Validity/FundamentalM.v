@@ -492,19 +492,22 @@ Proof.
   exact (VS_upi EP EM G Γ L' φ n Hφ HG HΓ Hn l l' T T' Hl (fun L'' ψ H => proj2 (IH L'' ψ H))).
 Qed.
 
-Lemma FM_ulam {l l' T t t'} : lequiv (n + gL G) l l' ->
+Lemma FM_ulam {l l' T T' t t'} : lequiv (n + gL G) l l' ->
   (forall L'' ψ, usub_ok ψ L'' (gL (gctx_uwk n G)) ->
      SemTyM (G_us (gctx_uwk n G) L'' ψ) (ucsubst Γ⟨ush n⟩ᵤ ψ) (usubst_ty T ψ) (usubst_ty T ψ) (lvsubst l ψ)) ->
   (forall L'' ψ, usub_ok ψ L'' (gL (gctx_uwk n G)) ->
+     SemTyM (G_us (gctx_uwk n G) L'' ψ) (ucsubst Γ⟨ush n⟩ᵤ ψ) (usubst_ty T ψ) (usubst_ty T' ψ) (lvsubst l ψ)) ->
+  (forall L'' ψ, usub_ok ψ L'' (gL (gctx_uwk n G)) ->
      SemTmM (G_us (gctx_uwk n G) L'' ψ) (ucsubst Γ⟨ush n⟩ᵤ ψ) (usubst_tm t ψ) (usubst_tm t' ψ) (usubst_ty T ψ) (lvsubst l ψ)) ->
-  SemTmMω (G_us G L' φ) (ucsubst Γ φ) (ulam n (lvsubst l (uupn n φ)) (usubst_tm t (uupn n φ)))
-    (ulam n (lvsubst l' (uupn n φ)) (usubst_tm t' (uupn n φ))) (tyUPi n (lvsubst l (uupn n φ)) (usubst_ty T (uupn n φ))).
+  SemTmMω (G_us G L' φ) (ucsubst Γ φ) (ulam n (lvsubst l (uupn n φ)) (usubst_ty T (uupn n φ)) (usubst_tm t (uupn n φ)))
+    (ulam n (lvsubst l' (uupn n φ)) (usubst_ty T' (uupn n φ)) (usubst_tm t' (uupn n φ)))
+    (tyUPi n (lvsubst l (uupn n φ)) (usubst_ty T (uupn n φ))).
 Proof.
-  intros Hl IT It. split; [exact HS | split].
+  intros Hl IT ITT It. split; [exact HS | split].
   - exact (VS_upi EP EM G Γ L' φ n Hφ HG HΓ Hn l l T T (lequiv_refl _ _ (lequiv_wf_l _ _ _ Hl))
              (fun L'' ψ H => proj2 (IT L'' ψ H))).
-  - exact (VS_ulam EP EM G Γ L' φ n Hφ HG HΓ Hn l l' T t t' Hl (fun L'' ψ H => proj2 (IT L'' ψ H))
-             (fun L'' ψ H => proj2 (proj2 (It L'' ψ H)))).
+  - exact (VS_ulam EP EM G Γ L' φ n Hφ HG HΓ Hn l l' T T' t t' Hl (fun L'' ψ H => proj2 (IT L'' ψ H))
+             (fun L'' ψ H => proj2 (ITT L'' ψ H)) (fun L'' ψ H => proj2 (proj2 (It L'' ψ H)))).
 Qed.
 
 (** The body's type at an instance: its validity at [uext ks φ]. *)
@@ -545,11 +548,11 @@ Lemma FM_ubeta {l T t ls} : length ls = n -> Forall (lwf (gL G)) ls ->
      SemTyM (G_us (gctx_uwk n G) L'' ψ) (ucsubst Γ⟨ush n⟩ᵤ ψ) (usubst_ty T ψ) (usubst_ty T ψ) (lvsubst l ψ)) ->
   (forall L'' ψ, usub_ok ψ L'' (gL (gctx_uwk n G)) ->
      SemTmM (G_us (gctx_uwk n G) L'' ψ) (ucsubst Γ⟨ush n⟩ᵤ ψ) (usubst_tm t ψ) (usubst_tm t ψ) (usubst_ty T ψ) (lvsubst l ψ)) ->
-  [ G_us G L' φ ; ucsubst Γ φ ⊢[ lM ] usubst_tm (uapp (ulam n l t) ls) φ : usubst_ty T[uext ls lvar]ᵤ φ
+  [ G_us G L' φ ; ucsubst Γ φ ⊢[ lM ] usubst_tm (uapp (ulam n l T t) ls) φ : usubst_ty T[uext ls lvar]ᵤ φ
       @ lvsubst (lvsubst l (uext ls lvar)) φ ] ->
-  [ G_us G L' φ ; ucsubst Γ φ ⊢[ lM ] usubst_tm (uapp (ulam n l t) ls) φ ≅ usubst_tm t[uext ls lvar]ᵤ φ
+  [ G_us G L' φ ; ucsubst Γ φ ⊢[ lM ] usubst_tm (uapp (ulam n l T t) ls) φ ≅ usubst_tm t[uext ls lvar]ᵤ φ
       : usubst_ty T[uext ls lvar]ᵤ φ @ lvsubst (lvsubst l (uext ls lvar)) φ ] ->
-  SemTmM (G_us G L' φ) (ucsubst Γ φ) (uapp (ulam n (lvsubst l (uupn n φ)) (usubst_tm t (uupn n φ)))
+  SemTmM (G_us G L' φ) (ucsubst Γ φ) (uapp (ulam n (lvsubst l (uupn n φ)) (usubst_ty T (uupn n φ)) (usubst_tm t (uupn n φ)))
       (map (fun l => lvsubst l φ) ls)) (usubst_tm t[uext ls lvar]ᵤ φ) (usubst_ty T[uext ls lvar]ᵤ φ)
     (lvsubst (lvsubst l (uext ls lvar)) φ).
 Proof.
@@ -564,7 +567,7 @@ Proof.
   split; [exact HS | split].
   - exact (FM_inst_ty Hks Wks IT).
   - apply (VS_red EP EM Hw Heq).
-    + intros σ e Nσ Ne. exact (red_ubeta_inst n _ _ ks σ e Hks Nσ Ne).
+    + intros σ e Nσ Ne. exact (red_ubeta_inst n _ _ _ ks σ e Hks Nσ Ne).
     + rewrite (uupn_uext_tm n ks φ t Hks), (uupn_uext_ty n ks φ T Hks), (uupn_uext_l n ks φ l Hks).
       assert (Hψ : usub_ok (uext ks φ) L' (gL (gctx_uwk n G)))
         by (cbn [gL gctx_uwk]; rewrite <- Hks; apply usub_ok_uext; assumption).
@@ -588,7 +591,7 @@ Lemma FM_ueta {l T t} : lwf (n + gL G) l ->
      SemTyM (G_us (gctx_uwk n G) L'' ψ) (ucsubst Γ⟨ush n⟩ᵤ ψ) (usubst_ty T ψ) (usubst_ty T ψ) (lvsubst l ψ)) ->
   (forall L'' ψ, usub_ok ψ L'' (gL G) ->
      SemTmMω (G_us G L'' ψ) (ucsubst Γ ψ) (usubst_tm t ψ) (usubst_tm t ψ) (usubst_ty (tyUPi n l T) ψ)) ->
-  SemTmMω (G_us G L' φ) (ucsubst Γ φ) (ulam n (lvsubst l (uupn n φ)) (uapp (usubst_tm t φ)⟨ush n⟩ᵤ (ubvars n)))
+  SemTmMω (G_us G L' φ) (ucsubst Γ φ) (ulam n (lvsubst l (uupn n φ)) (usubst_ty T (uupn n φ)) (uapp (usubst_tm t φ)⟨ush n⟩ᵤ (ubvars n)))
     (usubst_tm t φ) (tyUPi n (lvsubst l (uupn n φ)) (usubst_ty T (uupn n φ))).
 Proof.
   intros Hl IT It. pose proof (It _ _ Hφ) as (_ & VT & Vt).
@@ -645,20 +648,25 @@ Proof.
            SΔ SΔ (conj VP VM) ST ST).
 Qed.
 
-Lemma FM_clam_eq {G Γ l l' T t t'} : SemCtxM G Γ -> lequiv (gL G) l l' -> [ extC G ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
-  [ extC G ; Γ⟪S⟫ ⊢[ lM ] t ≅ t' : T @ l ] -> SemTmM (extC G) Γ⟪S⟫ t t' T l ->
-  SemTmM G Γ (clam l t) (clam l' t') (tyCPi l T) l.
+Lemma FM_clam_eq {G Γ l l' T T' t t'} : SemCtxM G Γ -> lequiv (gL G) l l' -> [ extC G ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
+  [ extC G ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l ] -> [ extC G ; Γ⟪S⟫ ⊢[ lM ] t ≅ t' : T @ l ] ->
+  SemTyM (extC G) Γ⟪S⟫ T T' l -> SemTmM (extC G) Γ⟪S⟫ t t' T l ->
+  SemTmM G Γ (clam l T t) (clam l' T' t') (tyCPi l T) l.
 Proof.
-  intros HS Hl HT Htt (_ & VT & Vt). split; [exact HS | split].
+  intros HS Hl HT HTT Htt (_ & VTT) (_ & VT & Vt). split; [exact HS | split].
   - exact (VS_cpi EP EM G Γ l l T T (lequiv_refl _ _ (lequiv_wf_l _ _ _ Hl)) HT HT VT).
-  - exact (VS_clam EP EM G Γ l l' T t t' Hl HT (eqtm_wf_l (i := lM) eq_refl Htt)
-             (eqtm_wf_r (i := lM) eq_refl Htt) VT Vt).
+  - exact (VS_clam EP EM G Γ l l' T T' t t' Hl HT (eqty_wf_r (i := lM) eq_refl HTT) (eqtm_wf_l (i := lM) eq_refl Htt)
+             (eqtm_wf_r (i := lM) eq_refl Htt) VT VTT Vt).
 Qed.
 
 Lemma FM_clam {G Γ l T t} : SemCtxM G Γ -> lwf (gL G) l -> [ extC G ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
   [ extC G ; Γ⟪S⟫ ⊢[ lM ] t : T @ l ] -> SemTmM (extC G) Γ⟪S⟫ t t T l ->
-  SemTmM G Γ (clam l t) (clam l t) (tyCPi l T) l.
-Proof. intros HS Hl HT Ht St. exact (FM_clam_eq HS (lequiv_refl _ _ Hl) HT (eqtm_refl _ _ _ _ _ _ Ht) St). Qed.
+  SemTmM G Γ (clam l T t) (clam l T t) (tyCPi l T) l.
+Proof.
+  intros HS Hl HT Ht St.
+  exact (FM_clam_eq HS (lequiv_refl _ _ Hl) HT (eqty_refl _ _ _ _ _ HT) (eqtm_refl _ _ _ _ _ _ Ht)
+           (conj (proj1 St) (proj1 (proj2 St))) St).
+Qed.
 
 Lemma FM_capp_eq {G Γ l T t t' Δ Δ'} : [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] ] -> SemCtxEqP G Δ Δ' ->
   SemTmM G Γ t t' (tyCPi l T) l -> SemTyM G Γ T⦃gsingle (GCtx Δ)⦄ T⦃gsingle (GCtx Δ')⦄ l ->
@@ -674,27 +682,33 @@ Lemma FM_capp {G Γ l T t Δ} : [ G ; Δ ⊢[ lD ] ] -> SemCtxP G Δ -> SemTmM G
   SemTmM G Γ (capp t Δ) (capp t Δ) T⦃gsingle (GCtx Δ)⦄ l.
 Proof. intros HΔ (_ & VP & VM). exact (FM_capp_eq HΔ HΔ (conj VP VM)). Qed.
 
-Lemma FM_tlam_eq {G Γ Δ l1 l2 l3 l4 T t t'} : SemCtxM G Γ -> [ G ; Δ ⊢[ lD ] ] ->
+Lemma FM_tlam_eq {G Γ Δ Δ' l1 l2 l3 l4 T T' t t'} : SemCtxM G Γ -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] ] ->
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 -> [ extT G Δ l1 ; Γ⟪S⟫ ⊢[ lM ] T @ l2 ] ->
-  [ extT G Δ l1 ; Γ⟪S⟫ ⊢[ lM ] t ≅ t' : T @ l2 ] -> [ extT G Δ l3 ; Γ⟪S⟫ ⊢[ lM ] t' : T @ l4 ] ->
-  SemCtxP G Δ -> SemTmM (extT G Δ l1) Γ⟪S⟫ t t' T l2 -> SemTmM (extT G Δ l3) Γ⟪S⟫ t' t' T l4 ->
-  SemTmM G Γ (tlam l1 l2 t) (tlam l3 l4 t') (tyTPi Δ l1 l2 T) l2.
+  [ extT G Δ l1 ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l2 ] ->
+  [ extT G Δ l1 ; Γ⟪S⟫ ⊢[ lM ] t ≅ t' : T @ l2 ] -> [ extT G Δ' l3 ; Γ⟪S⟫ ⊢[ lM ] t' : T' @ l4 ] ->
+  SemCtxP G Δ -> SemCtxP G Δ' -> SemCtxEqP G Δ Δ' ->
+  SemTyM (extT G Δ l1) Γ⟪S⟫ T T' l2 ->
+  SemTmM (extT G Δ l1) Γ⟪S⟫ t t' T l2 -> SemTmM (extT G Δ' l3) Γ⟪S⟫ t' t' T' l4 ->
+  SemTmM G Γ (tlam Δ l1 l2 T t) (tlam Δ' l3 l4 T' t') (tyTPi Δ l1 l2 T) l2.
 Proof.
-  intros HS HΔ H13 H24 HT Htt Ht3 SΔ (_ & VT & Vt) (_ & _ & Vt3). pose proof SΔ as (_ & VP & VM).
+  intros HS HΔ HΔ' H13 H24 HT HTT Htt Ht3 (_ & VP & VM) (_ & VP' & VM') [VEP _] (_ & VTT)
+    (_ & VT & Vt) (_ & _ & Vt3).
   split; [exact HS | split].
   - exact (VS_tpi EP EM G Γ Δ Δ l1 l2 l1 l2 T T (lequiv_refl _ _ (lequiv_wf_l _ _ _ H13))
              (lequiv_refl _ _ (lequiv_wf_l _ _ _ H24)) HΔ HΔ (proj2 HS) VP VM VP VM VP VM HT HT HT VT VT).
-  - exact (VS_tlam EP EM G Γ Δ l1 l2 l3 l4 T t t' H13 H24 HΔ (proj2 HS) VP VM HT
-             (eqtm_wf_l (i := lM) eq_refl Htt) (eqtm_wf_r (i := lM) eq_refl Htt) Ht3 VT Vt Vt3).
+  - exact (VS_tlam EP EM G Γ Δ Δ' l1 l2 l3 l4 T T' t t' H13 H24 HΔ HΔ' (proj2 HS) VP VM VP' VM' VEP HT
+             (eqty_wf_r (i := lM) eq_refl HTT) (eqtm_wf_l (i := lM) eq_refl Htt) (eqtm_wf_r (i := lM) eq_refl Htt)
+             Ht3 VT VTT Vt Vt3).
 Qed.
 
 Lemma FM_tlam {G Γ Δ l l' T t} : SemCtxM G Γ -> [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
   [ extT G Δ l ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] -> [ extT G Δ l ; Γ⟪S⟫ ⊢[ lM ] t : T @ l' ] ->
   SemCtxP G Δ -> SemTmM (extT G Δ l) Γ⟪S⟫ t t T l' ->
-  SemTmM G Γ (tlam l l' t) (tlam l l' t) (tyTPi Δ l l' T) l'.
+  SemTmM G Γ (tlam Δ l l' T t) (tlam Δ l l' T t) (tyTPi Δ l l' T) l'.
 Proof.
-  intros HS HΔ Hl Hl' HT Ht SΔ St.
-  exact (FM_tlam_eq HS HΔ (lequiv_refl _ _ Hl) (lequiv_refl _ _ Hl') HT (eqtm_refl _ _ _ _ _ _ Ht) Ht SΔ St St).
+  intros HS HΔ Hl Hl' HT Ht SΔ St. pose proof SΔ as (_ & VP & VM).
+  exact (FM_tlam_eq HS HΔ HΔ (lequiv_refl _ _ Hl) (lequiv_refl _ _ Hl') HT (eqty_refl _ _ _ _ _ HT)
+           (eqtm_refl _ _ _ _ _ _ Ht) Ht SΔ SΔ (conj VP VM) (conj (proj1 St) (proj1 (proj2 St))) St St).
 Qed.
 
 Lemma FM_tapp_eq {G Γ Δ l l' T t t' A A'} : [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] A ≅ A' @ l ] ->
@@ -718,7 +732,7 @@ Proof. intros HΔ HA. exact (FM_tapp_eq HΔ (eqty_refl _ _ _ _ _ HA)). Qed.
 Lemma FM_cbeta {G Γ l T t Δ} : SemCtxM G Γ -> lwf (gL G) l -> [ extC G ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
   [ extC G ; Γ⟪S⟫ ⊢[ lM ] t : T @ l ] -> [ G ; Δ ⊢[ lD ] ] -> SemCtxP G Δ ->
   SemTmM (extC G) Γ⟪S⟫ t t T l ->
-  SemTmM G Γ (capp (clam l t) Δ) t⦃gsingle (GCtx Δ)⦄ T⦃gsingle (GCtx Δ)⦄ l.
+  SemTmM G Γ (capp (clam l T t) Δ) t⦃gsingle (GCtx Δ)⦄ T⦃gsingle (GCtx Δ)⦄ l.
 Proof.
   intros HS Hl HT Ht HΔ (_ & VP & VM) (_ & VT & Vt). split; [exact HS | split].
   - exact (VTyS_inst_c EP EM HΔ VP VM VT).
@@ -728,7 +742,7 @@ Qed.
 Lemma FM_tbeta {G Γ Δ l l' T t A} : SemCtxM G Γ -> [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
   [ extT G Δ l ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] -> [ extT G Δ l ; Γ⟪S⟫ ⊢[ lM ] t : T @ l' ] ->
   [ G ; Δ ⊢[ lD ] A @ l ] -> SemCtxP G Δ -> SemTyP G Δ A A l -> SemTmM (extT G Δ l) Γ⟪S⟫ t t T l' ->
-  SemTmM G Γ (tapp (tlam l l' t) A) t⦃gsingle (GTy A)⦄ T⦃gsingle (GTy A)⦄ l'.
+  SemTmM G Γ (tapp (tlam Δ l l' T t) A) t⦃gsingle (GTy A)⦄ T⦃gsingle (GTy A)⦄ l'.
 Proof.
   intros HS HΔ Hl Hl' HT Ht HA (_ & VP & VM) (_ & VTP & VTM) (_ & VT & Vt). split; [exact HS | split].
   - exact (VTyS_inst_t EP EM HΔ HA VP VM VTP VTM VT).
@@ -736,11 +750,11 @@ Proof.
 Qed.
 
 Lemma FM_ceta {G Γ l T t} : SemTmM G Γ t t (tyCPi l T) l ->
-  SemTmM G Γ (clam l (capp t⟪S⟫ (cvar 0))) t (tyCPi l T) l.
+  SemTmM G Γ (clam l T (capp t⟪S⟫ (cvar 0))) t (tyCPi l T) l.
 Proof. intros (HS & VT & Vt). exact (conj HS (conj VT (VS_ceta EP EM G Γ l T t Vt))). Qed.
 
 Lemma FM_teta {G Γ Δ l l' T t} : [ G ; Δ ⊢[ lD ] ] -> SemCtxP G Δ -> SemTmM G Γ t t (tyTPi Δ l l' T) l' ->
-  SemTmM G Γ (tlam l l' (tapp t⟪S⟫ (tyGvar 0 (lshift 0)))) t (tyTPi Δ l l' T) l'.
+  SemTmM G Γ (tlam Δ l l' T (tapp t⟪S⟫ (tyGvar 0 (lshift 0)))) t (tyTPi Δ l l' T) l'.
 Proof.
   intros HΔ (_ & VP & VM) (HS & VT & Vt).
   exact (conj HS (conj VT (VS_teta EP EM G Γ Δ l l' T t HΔ VP VM Vt))).
@@ -1015,10 +1029,10 @@ Ltac w_absurd :=
 (** The [UΠ] β rule's judgments, before they are moved along [φ]. *)
 Ltac upi_judg :=
   try lazymatch goal with
-  | |- SemTmM _ _ (G_us ?G _ _) (ucsubst ?Γ _) (usubst_tm (uapp (ulam ?n ?l ?t) ?ls) _) _ (usubst_ty ?T0 _) (lvsubst ?k _) =>
-      assert (wf_tm G lM Γ (uapp (ulam n l t) ls) T0 k)
+  | |- SemTmM _ _ (G_us ?G _ _) (ucsubst ?Γ _) (usubst_tm (uapp (ulam ?n ?l ?B ?t) ?ls) _) _ (usubst_ty ?T0 _) (lvsubst ?k _) =>
+      assert (wf_tm G lM Γ (uapp (ulam n l B t) ls) T0 k)
         by (eapply pre_ubeta_l; first [eassumption | reflexivity]);
-      assert (eq_tm G lM Γ (uapp (ulam n l t) ls) t[uext ls lvar]ᵤ T0 k)
+      assert (eq_tm G lM Γ (uapp (ulam n l B t) ls) t[uext ls lvar]ᵤ T0 k)
         by (apply eqtm_ubeta; first [assumption | reflexivity])
   end.
 

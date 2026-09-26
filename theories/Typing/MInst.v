@@ -41,6 +41,15 @@ Proof.
   unfold gwk_to in X; cbn in X. rewrite gcren_S_gsingle in X by exact (wf_ctx_dnf HΓ). exact X.
 Qed.
 
+Lemma inst_eqty {D o T T' l} : dnfo o -> dnf_decl D -> gobj_wf G o D ->
+  [ gext G D ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l ] -> [ G ; Γ ⊢[ lM ] T⦃gsingle o⦄ ≅ T'⦃gsingle o⦄ @ l ].
+Proof.
+  intros Ho HD Hwf HT.
+  pose proof (proj1 (proj2 (proj2 (proj2 (proj2 gsubstitution)))) _ _ _ _ _ _ HT (gΨ G) _
+                (gsub_wf_single' Ho HD Hwf)) as X.
+  unfold gwk_to in X; cbn in X. rewrite gcren_S_gsingle in X by exact (wf_ctx_dnf HΓ). exact X.
+Qed.
+
 (** At a context and at a type of layer P. *)
 Lemma inst_c_ty {Δ T l} : [ G ; Δ ⊢[ lD ] ] -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
   [ G ; Γ ⊢[ lM ] T⦃gsingle (GCtx Δ)⦄ @ l ].
@@ -48,6 +57,13 @@ Proof. intros HΔ; apply inst_ty; [exact (wf_ctx_dnf HΔ) | exact I | exact HΔ]
 Lemma inst_c_tm {Δ t T l} : [ G ; Δ ⊢[ lD ] ] -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] t : T @ l ] ->
   [ G ; Γ ⊢[ lM ] t⦃gsingle (GCtx Δ)⦄ : T⦃gsingle (GCtx Δ)⦄ @ l ].
 Proof. intros HΔ; apply inst_tm; [exact (wf_ctx_dnf HΔ) | exact I | exact HΔ]. Qed.
+Lemma inst_c_eqty {Δ T T' l} : [ G ; Δ ⊢[ lD ] ] -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l ] ->
+  [ G ; Γ ⊢[ lM ] T⦃gsingle (GCtx Δ)⦄ ≅ T'⦃gsingle (GCtx Δ)⦄ @ l ].
+Proof. intros HΔ; apply inst_eqty; [exact (wf_ctx_dnf HΔ) | exact I | exact HΔ]. Qed.
+Lemma inst_t_eqty {Δ A l T T' l'} : [ G ; Δ ⊢[ lD ] A @ l ] ->
+  [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l' ] ->
+  [ G ; Γ ⊢[ lM ] T⦃gsingle (GTy A)⦄ ≅ T'⦃gsingle (GTy A)⦄ @ l' ].
+Proof. intros HA; apply inst_eqty; [exact (wf_ty_dnf HA) | exact (wf_ty_dnf_ctx HA) | exact HA]. Qed.
 Lemma inst_t_ty {Δ A l T l'} : [ G ; Δ ⊢[ lD ] A @ l ] ->
   [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] -> [ G ; Γ ⊢[ lM ] T⦃gsingle (GTy A)⦄ @ l' ].
 Proof. intros HA; apply inst_ty; [exact (wf_ty_dnf HA) | exact (wf_ty_dnf_ctx HA) | exact HA]. Qed.
@@ -148,31 +164,34 @@ Proof.
   apply wft_tpi; [exact HΓ | exact HΔ | exact (lequiv_wf_r _ _ _ H13) | exact (lequiv_wf_r _ _ _ H24) | exact HT].
 Qed.
 
-Lemma pre_clam_r {l l' T t'} : [ G ; Γ ⊢[ lM ] ] -> lequiv (gL G) l l' ->
-  [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] t' : T @ l ] ->
-  [ G ; Γ ⊢[ lM ] clam l' t' : tyCPi l T @ l ].
+Lemma pre_clam_r {l l' T T' t'} : [ G ; Γ ⊢[ lM ] ] -> lequiv (gL G) l l' ->
+  [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T' @ l ] ->
+  [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l ] -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] t' : T @ l ] ->
+  [ G ; Γ ⊢[ lM ] clam l' T' t' : tyCPi l T @ l ].
 Proof.
-  intros HΓ Hl HT Ht. eapply wf_conv.
+  intros HΓ Hl HT HT' HTT Ht. eapply wf_conv.
   - eapply wf_lconv; [| exact Hl].
     apply wf_clam; [exact HΓ | exact (lequiv_wf_r _ _ _ Hl) | |].
-    + eapply wft_lconv; [exact HT | apply lequiv_sym, Hl].
-    + eapply wf_lconv; [exact Ht | apply lequiv_sym, Hl].
-  - cbn [typeof]. apply eqty_cpi; [exact HΓ | exact Hl | exact HT | apply eqty_refl, HT].
+    + eapply wft_lconv; [exact HT' | apply lequiv_sym, Hl].
+    + eapply wf_lconv; [| apply lequiv_sym, Hl]. eapply wf_conv; [exact Ht | apply eqty_sym, HTT].
+  - cbn [typeof]. apply eqty_cpi; [exact HΓ | exact Hl | exact HT | exact HTT].
 Qed.
 
-Lemma pre_tlam_r {Δ l1 l2 l3 l4 T t'} : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] ->
+Lemma pre_tlam_r {Δ Δ' l1 l2 l3 l4 T T' t'} : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] ->
+  [ G ; Δ' ⊢[ lD ] ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   [ gext G (gdTy Δ lD l1) ; Γ⟪S⟫ ⊢[ lM ] T @ l2 ] ->
-  [ gext G (gdTy Δ lD l3) ; Γ⟪S⟫ ⊢[ lM ] T @ l4 ] ->
-  [ gext G (gdTy Δ lD l3) ; Γ⟪S⟫ ⊢[ lM ] t' : T @ l4 ] ->
-  [ G ; Γ ⊢[ lM ] tlam l3 l4 t' : tyTPi Δ l1 l2 T @ l2 ].
+  [ gext G (gdTy Δ lD l1) ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l2 ] ->
+  [ gext G (gdTy Δ' lD l3) ; Γ⟪S⟫ ⊢[ lM ] T' @ l4 ] ->
+  [ gext G (gdTy Δ' lD l3) ; Γ⟪S⟫ ⊢[ lM ] t' : T' @ l4 ] ->
+  [ G ; Γ ⊢[ lM ] tlam Δ' l3 l4 T' t' : tyTPi Δ l1 l2 T @ l2 ].
 Proof.
-  intros HΓ HΔ H13 H24 HT HT' Ht. eapply wf_conv.
+  intros HΓ HΔ HΔ' HΔΔ H13 H24 HT HTT HT' Ht. eapply wf_conv.
   - eapply wf_lconv; [| exact H24].
-    apply wf_tlam; [exact HΓ | exact HΔ | exact (lequiv_wf_r _ _ _ H13) | exact (lequiv_wf_r _ _ _ H24)
+    apply wf_tlam; [exact HΓ | exact HΔ' | exact (lequiv_wf_r _ _ _ H13) | exact (lequiv_wf_r _ _ _ H24)
                    | exact HT' | exact Ht].
-  - cbn [typeof]. eapply eqty_tpi; [exact HΓ | exact HΔ | exact HΔ | apply eqc_refl, HΔ | exact H13 | exact H24
-                                  | exact HT | apply eqty_refl, HT | exact HT'].
+  - cbn [typeof]. eapply eqty_tpi; [exact HΓ | exact HΔ | exact HΔ' | exact HΔΔ | exact H13 | exact H24
+                                  | exact HT | exact HTT | exact HT'].
 Qed.
 
 Lemma pre_capp_r {l T t' Δ Δ'} : lwf (gL G) l -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
@@ -198,7 +217,7 @@ Qed.
 
 Lemma pre_cbeta_l {l T t Δ} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l ->
   [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] t : T @ l ] ->
-  [ G ; Δ ⊢[ lD ] ] -> [ G ; Γ ⊢[ lM ] capp (clam l t) Δ : T⦃gsingle (GCtx Δ)⦄ @ l ].
+  [ G ; Δ ⊢[ lD ] ] -> [ G ; Γ ⊢[ lM ] capp (clam l T t) Δ : T⦃gsingle (GCtx Δ)⦄ @ l ].
 Proof.
   intros HΓ Hl HT Ht HΔ. apply wf_capp; [exact Hl | exact HT | exact HΔ | | exact (inst_c_ty HΓ HΔ HT)].
   apply wf_clam; assumption.
@@ -206,7 +225,7 @@ Qed.
 
 Lemma pre_tbeta_l {Δ l l' T t A} : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
   [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] -> [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] t : T @ l' ] ->
-  [ G ; Δ ⊢[ lD ] A @ l ] -> [ G ; Γ ⊢[ lM ] tapp (tlam l l' t) A : T⦃gsingle (GTy A)⦄ @ l' ].
+  [ G ; Δ ⊢[ lD ] A @ l ] -> [ G ; Γ ⊢[ lM ] tapp (tlam Δ l l' T t) A : T⦃gsingle (GTy A)⦄ @ l' ].
 Proof.
   intros HΓ HΔ Hl Hl' HT Ht HA.
   apply wf_tapp with (Δ := Δ) (l := l); [apply wf_tlam; assumption | assumption .. | exact (inst_t_ty HΓ HA HT)].
@@ -251,7 +270,7 @@ Qed.
 
 Lemma pre_ceta_l {l T t} : lwf (gL G) l -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
   [ G ; Γ ⊢[ lM ] t : tyCPi l T @ l ] ->
-  [ G ; Γ ⊢[ lM ] clam l (capp t⟪S⟫ (cvar 0)) : tyCPi l T @ l ].
+  [ G ; Γ ⊢[ lM ] clam l T (capp t⟪S⟫ (cvar 0)) : tyCPi l T @ l ].
 Proof.
   intros Hl HT Ht. pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
   apply wf_clam; [exact HΓ | exact Hl | exact HT | exact (wf_ceta_body Hl HT Ht)].
@@ -260,7 +279,7 @@ Qed.
 Lemma pre_teta_l {Δ l l' T t} : [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
   [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] ->
   [ G ; Γ ⊢[ lM ] t : tyTPi Δ l l' T @ l' ] ->
-  [ G ; Γ ⊢[ lM ] tlam l l' (tapp t⟪S⟫ (tyGvar 0 (lshift 0))) : tyTPi Δ l l' T @ l' ].
+  [ G ; Γ ⊢[ lM ] tlam Δ l l' T (tapp t⟪S⟫ (tyGvar 0 (lshift 0))) : tyTPi Δ l l' T @ l' ].
 Proof.
   intros HΔ Hl Hl' HT Ht. pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
   apply wf_tlam; [exact HΓ | exact HΔ | exact Hl | exact Hl' | exact HT | exact (wf_teta_body HΔ Hl Hl' HT Ht)].
@@ -270,7 +289,7 @@ Qed.
 
 Lemma tmred_cbeta_M {l B b Δ} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l ->
   [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] B @ l ] -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] b : B @ l ] -> [ G ; Δ ⊢[ lD ] ] ->
-  [ G ; Γ ⊢[ lM ] capp (clam l b) Δ ⤳* b⦃gsingle (GCtx Δ)⦄ : B⦃gsingle (GCtx Δ)⦄ @ l ].
+  [ G ; Γ ⊢[ lM ] capp (clam l B b) Δ ⤳* b⦃gsingle (GCtx Δ)⦄ : B⦃gsingle (GCtx Δ)⦄ @ l ].
 Proof.
   intros HΓ Hl HB Hb HΔ. constructor.
   - exact (pre_cbeta_l HΓ Hl HB Hb HΔ).
@@ -281,7 +300,7 @@ Qed.
 Lemma tmred_tbeta_M {Δ l l' B b A} : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
   [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] B @ l' ] -> [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] b : B @ l' ] ->
   [ G ; Δ ⊢[ lD ] A @ l ] ->
-  [ G ; Γ ⊢[ lM ] tapp (tlam l l' b) A ⤳* b⦃gsingle (GTy A)⦄ : B⦃gsingle (GTy A)⦄ @ l' ].
+  [ G ; Γ ⊢[ lM ] tapp (tlam Δ l l' B b) A ⤳* b⦃gsingle (GTy A)⦄ : B⦃gsingle (GTy A)⦄ @ l' ].
 Proof.
   intros HΓ HΔ Hl Hl' HB Hb HA. constructor.
   - exact (pre_tbeta_l HΓ HΔ Hl Hl' HB Hb HA).
@@ -318,7 +337,7 @@ End Pre.
 (** η's body: [(Λg. b)⟪↑⟫ g] reduces to [b]. *)
 Lemma tmred_ceta_body {G Γ l B b} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l ->
   [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] B @ l ] -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] b : B @ l ] ->
-  [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] capp (clam l b)⟪S⟫ (cvar 0) ⤳* b : B @ l ].
+  [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] capp (clam l B b)⟪S⟫ (cvar 0) ⤳* b : B @ l ].
 Proof.
   intros HΓ Hl HB Hb.
   pose proof (ctx_glob _ _ _ (ctx_of_wf_ty (i := lM) eq_refl HB)) as HG1.
@@ -339,7 +358,7 @@ Qed.
 Lemma tmred_teta_body_lv {G Γ Δ l k k' B b} : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] ->
   lequiv (gL G) l k -> lwf (gL G) k' ->
   [ gext G (gdTy Δ lD k) ; Γ⟪S⟫ ⊢[ lM ] B @ k' ] -> [ gext G (gdTy Δ lD k) ; Γ⟪S⟫ ⊢[ lM ] b : B @ k' ] ->
-  [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] tapp (tlam k k' b)⟪S⟫ (tyGvar 0 (lshift 0)) ⤳* b : B @ k' ].
+  [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] tapp (tlam Δ k k' B b)⟪S⟫ (tyGvar 0 (lshift 0)) ⤳* b : B @ k' ].
 Proof.
   intros HΓ HΔ Hlk Hk' HB Hb.
   pose proof (lequiv_wf_l _ _ _ Hlk) as Hl. pose proof (lequiv_wf_r _ _ _ Hlk) as Hk.
@@ -366,6 +385,6 @@ Qed.
 
 Lemma tmred_teta_body {G Γ Δ l l' B b} : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
   [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] B @ l' ] -> [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] b : B @ l' ] ->
-  [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] tapp (tlam l l' b)⟪S⟫ (tyGvar 0 (lshift 0)) ⤳* b : B @ l' ].
+  [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] tapp (tlam Δ l l' B b)⟪S⟫ (tyGvar 0 (lshift 0)) ⤳* b : B @ l' ].
 Proof. intros HΓ HΔ Hl Hl'. exact (tmred_teta_body_lv HΓ HΔ (lequiv_refl _ _ Hl) Hl'). Qed.
 

@@ -376,13 +376,13 @@ Lemma gs_elimt l1 l2 rb l Δ T t :
   (elimt l1 l2 rb l Δ T t)⦃σ⦄ = elimt l1 l2 rb⦃σ⦄ l Δ⦃σ⦄ T⦃σ⦄ t⦃σ⦄.
 Proof. reflexivity. Qed.
 Lemma gs_tyUPi n l T : (tyUPi n l T)⦃σ⦄ = tyUPi n l T⦃guwkn n σ⦄. Proof. reflexivity. Qed.
-Lemma gs_ulam n l t : (ulam n l t)⦃σ⦄ = ulam n l t⦃guwkn n σ⦄. Proof. reflexivity. Qed.
+Lemma gs_ulam n l T t : (ulam n l T t)⦃σ⦄ = ulam n l T⦃guwkn n σ⦄ t⦃guwkn n σ⦄. Proof. reflexivity. Qed.
 Lemma gs_uapp t ls : (uapp t ls)⦃σ⦄ = uapp t⦃σ⦄ ls. Proof. reflexivity. Qed.
 Lemma gs_tyCPi l T : (tyCPi l T)⦃σ⦄ = tyCPi l T⦃gup σ⦄. Proof. reflexivity. Qed.
 Lemma gs_tyTPi Δ l l' T : (tyTPi Δ l l' T)⦃σ⦄ = tyTPi Δ⦃σ⦄ l l' T⦃gup σ⦄. Proof. reflexivity. Qed.
-Lemma gs_clam l t : (clam l t)⦃σ⦄ = clam l t⦃gup σ⦄. Proof. reflexivity. Qed.
+Lemma gs_clam l T t : (clam l T t)⦃σ⦄ = clam l T⦃gup σ⦄ t⦃gup σ⦄. Proof. reflexivity. Qed.
 Lemma gs_capp t Δ : (capp t Δ)⦃σ⦄ = capp t⦃σ⦄ Δ⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tlam l l' t : (tlam l l' t)⦃σ⦄ = tlam l l' t⦃gup σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tlam Δ l l' T t : (tlam Δ l l' T t)⦃σ⦄ = tlam Δ⦃σ⦄ l l' T⦃gup σ⦄ t⦃gup σ⦄. Proof. reflexivity. Qed.
 Lemma gs_tapp t T : (tapp t T)⦃σ⦄ = tapp t⦃σ⦄ T⦃σ⦄. Proof. reflexivity. Qed.
 End PushGS.
 
@@ -623,12 +623,12 @@ Ltac gs_upi :=
   match goal with
   | |- wf_ty _ _ _ (tyUPi _ _ _) _ => eapply wft_upi; try gs_upi_body; gs_premise
   | |- eq_ty _ _ _ (tyUPi _ _ _) _ _ => eapply eqty_upi; try gs_upi_body; gs_premise
-  | |- wf_tm _ _ _ (ulam _ _ _) _ _ => eapply wf_ulam; try gs_upi_body; gs_premise
-  | |- eq_tm _ _ _ (ulam _ _ (uapp _ (ubvars _))) _ _ _ =>
+  | |- wf_tm _ _ _ (ulam _ _ _ _) _ _ => eapply wf_ulam; try gs_upi_body; gs_premise
+  | |- eq_tm _ _ _ (ulam _ _ _ (uapp _ (ubvars _))) _ _ _ =>
       gs_upi_rw; eapply eqtm_ueta; try gs_upi_body; gs_premise
-  | |- eq_tm _ _ _ (ulam _ _ _) _ _ _ => eapply eqtm_ulam; try gs_upi_body; gs_premise
+  | |- eq_tm _ _ _ (ulam _ _ _ _) _ _ _ => eapply eqtm_ulam; try gs_upi_body; gs_premise
   | |- wf_tm _ _ _ (uapp _ _) _ _ => gs_upi_rw; eapply wf_uapp; try gs_upi_body; gs_premise
-  | |- eq_tm _ _ _ (uapp (ulam _ _ _) _) _ _ _ =>
+  | |- eq_tm _ _ _ (uapp (ulam _ _ _ _) _) _ _ _ =>
       gs_upi_rw; eapply eqtm_ubeta; try gs_upi_body; gs_premise
   | |- eq_tm _ _ _ (uapp _ _) _ _ _ => gs_upi_rw; eapply eqtm_uapp; try gs_upi_body; gs_premise
   end.
@@ -659,16 +659,16 @@ Ltac gs_manual2 :=
   | |- wf_ty _ _ _ (tyTPi _ _ _ _) _ => eapply wft_tpi; try gs_body; gs_premise
   | |- eq_ty _ _ _ (tyCPi _ _) _ _ => eapply eqty_cpi; try gs_body; gs_premise
   | |- eq_ty _ _ _ (tyTPi _ _ _ _) _ _ => eapply eqty_tpi; try gs_body; gs_premise
-  | |- wf_tm _ _ _ (clam _ _) _ _ => eapply wf_clam; try gs_body; gs_premise
-  | |- wf_tm _ _ _ (tlam _ _ _) _ _ => eapply wf_tlam; try gs_body; gs_premise
+  | |- wf_tm _ _ _ (clam _ _ _) _ _ => eapply wf_clam; try gs_body; gs_premise
+  | |- wf_tm _ _ _ (tlam _ _ _ _ _) _ _ => eapply wf_tlam; try gs_body; gs_premise
   | |- wf_tm _ _ _ (capp _ _) _ _ => gs_mf_rw; eapply wf_capp; try gs_body; gs_premise
   | |- wf_tm _ _ _ (tapp _ _) _ _ => gs_mf_rw; eapply wf_tapp; try gs_body; gs_premise
-  | |- eq_tm _ _ _ (clam _ (capp _ _)) _ _ _ => gs_mf_rw; eapply eqtm_ceta; try gs_body; gs_premise
-  | |- eq_tm _ _ _ (tlam _ _ (tapp _ _)) _ _ _ => gs_mf_rw; eapply eqtm_teta; try gs_body; gs_premise
-  | |- eq_tm _ _ _ (clam _ _) _ _ _ => eapply eqtm_clam; try gs_body; gs_premise
-  | |- eq_tm _ _ _ (tlam _ _ _) _ _ _ => eapply eqtm_tlam; try gs_body; gs_premise
-  | |- eq_tm _ _ _ (capp (clam _ _) _) _ _ _ => gs_mf_rw; eapply eqtm_cbeta; try gs_body; gs_premise
-  | |- eq_tm _ _ _ (tapp (tlam _ _ _) _) _ _ _ => gs_mf_rw; eapply eqtm_tbeta; try gs_body; gs_premise
+  | |- eq_tm _ _ _ (clam _ _ (capp _ _)) _ _ _ => gs_mf_rw; eapply eqtm_ceta; try gs_body; gs_premise
+  | |- eq_tm _ _ _ (tlam _ _ _ _ (tapp _ _)) _ _ _ => gs_mf_rw; eapply eqtm_teta; try gs_body; gs_premise
+  | |- eq_tm _ _ _ (clam _ _ _) _ _ _ => eapply eqtm_clam; try gs_body; gs_premise
+  | |- eq_tm _ _ _ (tlam _ _ _ _ _) _ _ _ => eapply eqtm_tlam; try gs_body; gs_premise
+  | |- eq_tm _ _ _ (capp (clam _ _ _) _) _ _ _ => gs_mf_rw; eapply eqtm_cbeta; try gs_body; gs_premise
+  | |- eq_tm _ _ _ (tapp (tlam _ _ _ _ _) _) _ _ _ => gs_mf_rw; eapply eqtm_tbeta; try gs_body; gs_premise
   | |- eq_tm _ _ _ (capp _ _) _ _ _ => gs_mf_rw; eapply eqtm_capp; try gs_body; gs_premise
   | |- eq_tm _ _ _ (tapp _ _) _ _ _ => gs_mf_rw; eapply eqtm_tapp; try gs_body; gs_premise
   | |- wf_tm _ _ _ (natrec _ _ _ _ _) _ _ => eapply wf_natrec; gs_premise

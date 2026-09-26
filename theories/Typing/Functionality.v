@@ -527,8 +527,8 @@ Ltac fung_mf :=
   match goal with
   | |- eq_ty _ _ _ (tyCPi _ _) _ _ => fung_mf_setup; eapply eqty_cpi; eauto 6 with fung
   | |- eq_ty _ _ _ (tyTPi _ _ _ _) _ _ => fung_mf_setup; eapply eqty_tpi; eauto 6 with fung
-  | |- eq_tm _ _ _ (clam _ _) _ _ _ => fung_mf_setup; eapply eqtm_clam; eauto 6 with fung
-  | |- eq_tm _ _ _ (tlam _ _ _) _ _ _ =>
+  | |- eq_tm _ _ _ (clam _ _ _) _ _ _ => fung_mf_setup; eapply eqtm_clam; eauto 6 with fung
+  | |- eq_tm _ _ _ (tlam _ _ _ _ _) _ _ _ =>
       fung_mf_setup; eapply eqtm_tlam; try solve [eauto 6 with fung];
       match goal with
       | X : wf_tm _ _ _ ?t ?T' _, E : eq_ty _ _ _ ?T ?T' _ |- wf_tm _ _ _ ?t ?T _ => exact (wf_conv _ _ _ _ _ _ _ X E)
@@ -558,10 +558,10 @@ Ltac fung_upi :=
       eapply eqty_upi;
       [ exact (lsub_wf_ctx (lsub_eq_l Hd)) | assumption | apply lequiv_refl; assumption
       | fung_upi_wf | fung_upi_ih ]
-  | Hd : lsub_eq ?G _ ?Δ ?d ?d' ?Γ |- eq_tm _ _ _ (ulam _ _ _) _ _ _ =>
+  | Hd : lsub_eq ?G _ ?Δ ?d ?d' ?Γ |- eq_tm _ _ _ (ulam _ _ _ _) _ _ _ =>
       eapply eqtm_ulam;
       [ exact (lsub_wf_ctx (lsub_eq_l Hd)) | assumption | apply lequiv_refl; assumption
-      | fung_upi_wf | fung_upi_ih ]
+      | fung_upi_wf | fung_upi_ih | fung_upi_ih ]
   | Hd : lsub_eq ?G _ ?Δ ?d ?d' ?Γ, Hn : length ?ls = ?n |- eq_tm _ _ _ (uapp (subst ?t _) ?ls) _ _ _ =>
       rewrite (subst_uinst_ty n ls _ d Hn (lsub_wf_dnf (lsub_eq_l Hd)));
       eapply eqtm_uapp;

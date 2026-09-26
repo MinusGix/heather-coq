@@ -147,7 +147,8 @@ Proof.
     f_equal; eauto using lvsubst_ext_lwf.
   all: try solve [eapply H; [eassumption | apply uup_agree; assumption]].
   all: try solve [eapply lvsubst_ext_lwf; [eassumption | apply uupn_agree; assumption]].
-  all: try solve [eapply H; [eassumption | apply uupn_agree; assumption]].
+  all: try solve [match goal with IH : forall (L : nat) (φ φ' : nat -> lvl), _ |- _ =>
+                    eapply IH; [eassumption | apply uupn_agree; assumption] end].
   apply map_ext_in; intros l Hl. eapply lvsubst_ext_lwf; [|eassumption].
   eapply Forall_forall; eassumption.
 Qed.

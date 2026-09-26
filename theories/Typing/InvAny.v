@@ -120,7 +120,7 @@ Proof. inv_tm_any. Qed.
 Definition m_only (t : tm) : Prop :=
   match t with
   | boxT _ | boxt _ | letboxT _ _ _ _ _ _ | letboxt _ _ _ _ _ _ _ | elimT _ _ _ _ _ _
-  | elimt _ _ _ _ _ _ _ | ulam _ _ _ | uapp _ _ | clam _ _ | capp _ _ | tlam _ _ _ | tapp _ _ => True
+  | elimt _ _ _ _ _ _ _ | ulam _ _ _ _ | uapp _ _ | clam _ _ _ | capp _ _ | tlam _ _ _ _ _ | tapp _ _ => True
   | _ => False
   end.
 

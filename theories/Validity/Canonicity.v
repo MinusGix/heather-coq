@@ -23,9 +23,9 @@ Definition canon_head (h : nat) (w : tm) : Prop :=
   | 3 => exists l l' A t, w = lam l l' A t
   | 4 => exists T, w = boxT T
   | 5 => exists t, w = boxt t
-  | 6 => exists n l t, w = ulam n l t
-  | 7 => exists l t, w = clam l t
-  | 8 => exists l l' t, w = tlam l l' t
+  | 6 => exists n l T t, w = ulam n l T t
+  | 7 => exists l T t, w = clam l T t
+  | 8 => exists Δ l l' T t, w = tlam Δ l l' T t
   | _ => False
   end.
 

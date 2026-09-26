@@ -191,7 +191,7 @@ Proof.
     pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
     eapply eqtm_trans; [apply eqtm_sym, eqtm_ueta; eauto|].
     eapply eqtm_trans; [|apply eqtm_ueta; eauto].
-    apply eqtm_ulam; auto using lequiv_refl.
+    apply eqtm_ulam; auto using lequiv_refl, eqty_refl.
   - intros * Hl HT Hn Hls (Hne & Hne' & Hν).
     refine (conj _ (conj _ _)); [constructor; auto .. |]. eapply eqtm_uapp; eauto.
   (* meta-functions *)
@@ -202,11 +202,11 @@ Proof.
     intros * Hl HT Ht Ht' Happ. pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
     eapply eqtm_trans; [apply eqtm_sym, eqtm_ceta; eauto|].
     eapply eqtm_trans; [|apply eqtm_ceta; eauto].
-    apply eqtm_clam; auto using lequiv_refl.
+    apply eqtm_clam; auto using lequiv_refl, eqty_refl.
   - intros * HΔ Hl Hl' HT Ht Ht' Happ. pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
     eapply eqtm_trans; [apply eqtm_sym, eqtm_teta; eauto|].
     eapply eqtm_trans; [|apply eqtm_teta; eauto].
-    apply eqtm_tlam; auto using lequiv_refl. exact (eqtm_wf_r (i := lM) eq_refl Happ).
+    apply eqtm_tlam; auto using lequiv_refl, eqty_refl, eqc_refl. exact (eqtm_wf_r (i := lM) eq_refl Happ).
   - intros * Hl HT HΔ Hc HE (Hne & Hne' & Hν). pose proof (decl_geq_ctx _ _ Hc) as Hc'.
     refine (conj _ (conj _ _)); [constructor; auto .. |].
     apply eqtm_capp; auto. exact (eqctx_wf_r (i := lD) eq_refl Hc').

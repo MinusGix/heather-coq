@@ -155,7 +155,7 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 | wf_ulam G Γ n l T t : [ G ; Γ ⊢[ lM ] ] -> 0 < n -> lwf (n + gL G) l ->
     [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] ->
     [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] t : T @ l ] ->
-    [ G ; Γ ⊢[ lM ] ulam n l t : tyUPi n l T @ lomega ]
+    [ G ; Γ ⊢[ lM ] ulam n l T t : tyUPi n l T @ lomega ]
 | wf_uapp G Γ n l T t ls : lwf (n + gL G) l ->
     [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] ->
     length ls = n -> Forall (lwf (gL G)) ls ->
@@ -164,7 +164,7 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 | wf_clam G Γ l T t : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l ->
     [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
     [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] t : T @ l ] ->
-    [ G ; Γ ⊢[ lM ] clam l t : tyCPi l T @ l ]
+    [ G ; Γ ⊢[ lM ] clam l T t : tyCPi l T @ l ]
 (* the applications carry their result type, as the recursors do (M3 E10) *)
 | wf_capp G Γ l T t Δ : lwf (gL G) l -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
     [ G ; Δ ⊢[ lD ] ] -> [ G ; Γ ⊢[ lM ] t : tyCPi l T @ l ] ->
@@ -173,7 +173,7 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 | wf_tlam G Γ Δ l l' T t : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
     [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] ->
     [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] t : T @ l' ] ->
-    [ G ; Γ ⊢[ lM ] tlam l l' t : tyTPi Δ l l' T @ l' ]
+    [ G ; Γ ⊢[ lM ] tlam Δ l l' T t : tyTPi Δ l l' T @ l' ]
 (* the function's typing first: it fixes [U]'s level, absent from the conclusion *)
 | wf_tapp G Γ Δ l l' T t A : [ G ; Γ ⊢[ lM ] t : tyTPi Δ l l' T @ l' ] ->
     [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
@@ -401,10 +401,11 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ gext G (gdTm Δ lC T l) ; Γ⟪S⟫ ⊢[ lM ] t' : M⟪S⟫[lsingle (boxt (gvar 0 (lshift 0)))] @ l' ] ->
     [ G ; Γ ⊢[ lM ] letboxt l' l Δ T M t' (boxt t) ≅ t'⦃gsingle (GTm t)⦄ : M[lsingle (boxt t)] @ l' ]
 (* universe polymorphism: congruences, β, η *)
-| eqtm_ulam G Γ n l l' T t t' : [ G ; Γ ⊢[ lM ] ] -> 0 < n -> lequiv (n + gL G) l l' ->
+| eqtm_ulam G Γ n l l' T T' t t' : [ G ; Γ ⊢[ lM ] ] -> 0 < n -> lequiv (n + gL G) l l' ->
     [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] ->
+    [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T ≅ T' @ l ] ->
     [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] t ≅ t' : T @ l ] ->
-    [ G ; Γ ⊢[ lM ] ulam n l t ≅ ulam n l' t' : tyUPi n l T @ lomega ]
+    [ G ; Γ ⊢[ lM ] ulam n l T t ≅ ulam n l' T' t' : tyUPi n l T @ lomega ]
 | eqtm_uapp G Γ n l T t t' ls ls' : lwf (n + gL G) l ->
     [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] ->
     length ls = n -> Forall2 (lequiv (gL G)) ls ls' ->
@@ -414,30 +415,33 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] ->
     [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] t : T @ l ] ->
     length ls = n -> Forall (lwf (gL G)) ls ->
-    [ G ; Γ ⊢[ lM ] uapp (ulam n l t) ls ≅ t[uext ls lvar]ᵤ
+    [ G ; Γ ⊢[ lM ] uapp (ulam n l T t) ls ≅ t[uext ls lvar]ᵤ
                   : T[uext ls lvar]ᵤ @ lvsubst l (uext ls lvar) ]
 | eqtm_ueta G Γ n l T t : 0 < n -> lwf (n + gL G) l ->
     [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] ->
     [ G ; Γ ⊢[ lM ] t : tyUPi n l T @ lomega ] ->
-    [ G ; Γ ⊢[ lM ] ulam n l (uapp t⟨ush n⟩ᵤ (ubvars n)) ≅ t : tyUPi n l T @ lomega ]
+    [ G ; Γ ⊢[ lM ] ulam n l T (uapp t⟨ush n⟩ᵤ (ubvars n)) ≅ t : tyUPi n l T @ lomega ]
 (* meta-functions: congruences, β, η. The applications' instance equation
    and the right side of [ΛU]'s body are premises (M5_DESIGN.md G2) *)
-| eqtm_clam G Γ l l' T t t' : [ G ; Γ ⊢[ lM ] ] -> lequiv (gL G) l l' ->
+| eqtm_clam G Γ l l' T T' t t' : [ G ; Γ ⊢[ lM ] ] -> lequiv (gL G) l l' ->
     [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
+    [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l ] ->
     [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] t ≅ t' : T @ l ] ->
-    [ G ; Γ ⊢[ lM ] clam l t ≅ clam l' t' : tyCPi l T @ l ]
+    [ G ; Γ ⊢[ lM ] clam l T t ≅ clam l' T' t' : tyCPi l T @ l ]
 | eqtm_capp G Γ l T t t' Δ Δ' : lwf (gL G) l -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
     [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
     [ G ; Γ ⊢[ lM ] T⦃gsingle (GCtx Δ)⦄ ≅ T⦃gsingle (GCtx Δ')⦄ @ l ] ->
     [ G ; Γ ⊢[ lM ] t ≅ t' : tyCPi l T @ l ] ->
     [ G ; Γ ⊢[ lM ] capp t Δ ≅ capp t' Δ' : T⦃gsingle (GCtx Δ)⦄ @ l ]
-| eqtm_tlam G Γ Δ l1 l2 l3 l4 T t t' : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] ->
+| eqtm_tlam G Γ Δ Δ' l1 l2 l3 l4 T T' t t' : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] ->
+    [ G ; Δ' ⊢[ lD ] ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ gext G (gdTy Δ lD l1) ; Γ⟪S⟫ ⊢[ lM ] T @ l2 ] ->
+    [ gext G (gdTy Δ lD l1) ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l2 ] ->
     [ gext G (gdTy Δ lD l1) ; Γ⟪S⟫ ⊢[ lM ] t ≅ t' : T @ l2 ] ->
-    [ gext G (gdTy Δ lD l3) ; Γ⟪S⟫ ⊢[ lM ] T @ l4 ] ->
-    [ gext G (gdTy Δ lD l3) ; Γ⟪S⟫ ⊢[ lM ] t' : T @ l4 ] ->
-    [ G ; Γ ⊢[ lM ] tlam l1 l2 t ≅ tlam l3 l4 t' : tyTPi Δ l1 l2 T @ l2 ]
+    [ gext G (gdTy Δ' lD l3) ; Γ⟪S⟫ ⊢[ lM ] T' @ l4 ] ->
+    [ gext G (gdTy Δ' lD l3) ; Γ⟪S⟫ ⊢[ lM ] t' : T' @ l4 ] ->
+    [ G ; Γ ⊢[ lM ] tlam Δ l1 l2 T t ≅ tlam Δ' l3 l4 T' t' : tyTPi Δ l1 l2 T @ l2 ]
 | eqtm_tapp G Γ Δ l l' T t t' A A' : [ G ; Γ ⊢[ lM ] t ≅ t' : tyTPi Δ l l' T @ l' ] ->
     [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
     [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] ->
@@ -447,18 +451,18 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
 | eqtm_cbeta G Γ l T t Δ : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l ->
     [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
     [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] t : T @ l ] -> [ G ; Δ ⊢[ lD ] ] ->
-    [ G ; Γ ⊢[ lM ] capp (clam l t) Δ ≅ t⦃gsingle (GCtx Δ)⦄ : T⦃gsingle (GCtx Δ)⦄ @ l ]
+    [ G ; Γ ⊢[ lM ] capp (clam l T t) Δ ≅ t⦃gsingle (GCtx Δ)⦄ : T⦃gsingle (GCtx Δ)⦄ @ l ]
 | eqtm_tbeta G Γ Δ l l' T t A : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
     [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] ->
     [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] t : T @ l' ] -> [ G ; Δ ⊢[ lD ] A @ l ] ->
-    [ G ; Γ ⊢[ lM ] tapp (tlam l l' t) A ≅ t⦃gsingle (GTy A)⦄ : T⦃gsingle (GTy A)⦄ @ l' ]
+    [ G ; Γ ⊢[ lM ] tapp (tlam Δ l l' T t) A ≅ t⦃gsingle (GTy A)⦄ : T⦃gsingle (GTy A)⦄ @ l' ]
 | eqtm_ceta G Γ l T t : lwf (gL G) l -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
     [ G ; Γ ⊢[ lM ] t : tyCPi l T @ l ] ->
-    [ G ; Γ ⊢[ lM ] clam l (capp t⟪S⟫ (cvar 0)) ≅ t : tyCPi l T @ l ]
+    [ G ; Γ ⊢[ lM ] clam l T (capp t⟪S⟫ (cvar 0)) ≅ t : tyCPi l T @ l ]
 | eqtm_teta G Γ Δ l l' T t : [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
     [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] ->
     [ G ; Γ ⊢[ lM ] t : tyTPi Δ l l' T @ l' ] ->
-    [ G ; Γ ⊢[ lM ] tlam l l' (tapp t⟪S⟫ (tyGvar 0 (lshift 0))) ≅ t : tyTPi Δ l l' T @ l' ]
+    [ G ; Γ ⊢[ lM ] tlam Δ l l' T (tapp t⟪S⟫ (tyGvar 0 (lshift 0))) ≅ t : tyTPi Δ l l' T @ l' ]
 
 (** Context equivalence ([Ψ ⊢ᵢ Γ ≈ Δ], used by the congruences of [□]). *)
 with eq_ctx : gctx -> layer -> ctx -> ctx -> Prop :=

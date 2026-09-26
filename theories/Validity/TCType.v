@@ -9,17 +9,17 @@ From DeLaM.Validity Require Export TCBase.
 
 (** The induction hypothesis: every problem about syntax of size < [n]. *)
 Definition IHsz (n : nat) : Prop :=
-  (forall T, sz_ty T < n -> nlr_ty T -> TYD T) /\
-  (forall t, sz_tm t < n -> nlr_tm t -> CKD t) /\
-  (forall t, sz_tm t < n -> nlr_tm t -> synth t -> SYD t) /\
-  (forall Γ, sz_ctx Γ < n -> nlr_ctx Γ -> CXD Γ).
+  (forall T, sz_ty T < n -> TYD T) /\
+  (forall t, sz_tm t < n -> CKD t) /\
+  (forall t, sz_tm t < n -> synth t -> SYD t) /\
+  (forall Γ, sz_ctx Γ < n -> CXD Γ).
 
 Section Step.
 Context (n : nat) (IH : IHsz n).
 
-Let ihT T : sz_ty T < n -> nlr_ty T -> TYD T := proj1 IH T.
-Let ihC t : sz_tm t < n -> nlr_tm t -> CKD t := proj1 (proj2 IH) t.
-Let ihX Γ : sz_ctx Γ < n -> nlr_ctx Γ -> CXD Γ := proj2 (proj2 (proj2 IH)) Γ.
+Let ihT T : sz_ty T < n -> TYD T := proj1 IH T.
+Let ihC t : sz_tm t < n -> CKD t := proj1 (proj2 IH) t.
+Let ihX Γ : sz_ctx Γ < n -> CXD Γ := proj2 (proj2 (proj2 IH)) Γ.
 
 Ltac szl := cbn [sz_ty sz_tm sz_ctx sz_l] in *; lia.
 
@@ -54,37 +54,37 @@ Proof.
   - right; intros H; exact (Q (proj2 (inv_ty_U H))).
 Qed.
 
-Lemma dec_tyPi l l' A B : sz_ty (tyPi l l' A B) <= n -> nlr_ty (tyPi l l' A B) -> TYD (tyPi l l' A B).
+Lemma dec_tyPi l l' A B : sz_ty (tyPi l l' A B) <= n -> TYD (tyPi l l' A B).
 Proof.
-  intros Hsz [HnA HnB] G i Γ k HΓ. destruct (layer_eq_dec i lV) as [-> | Hv]; [right; apply no_ty_V |].
+  intros Hsz G i Γ k HΓ. destruct (layer_eq_dec i lV) as [-> | Hv]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_pi H) as ((_ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros H; destruct (inv_ty_pi H) as ((_ & _ & X & _) & _); contradiction].
-  destruct (ihT A ltac:(szl) HnA G i Γ l HΓ) as [HA | N];
+  destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
     [| right; intros H; destruct (inv_ty_pi H) as ((_ & _ & _ & X & _) & _); contradiction].
   assert (HΓA : [ G ; Γ ,, A @ l ⊢[ typeof i ] ]) by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HA) | exact Hl]).
-  destruct (ihT B ltac:(szl) HnB G i _ l' HΓA) as [HB | N];
+  destruct (ihT B ltac:(szl) G i _ l' HΓA) as [HB | N];
     [| right; intros H; destruct (inv_ty_pi H) as ((_ & _ & _ & _ & X) & _); contradiction].
   destruct (lvl_eq_dec (gL G) k (lmax l l')) as [Q | Q].
   - left; exact (wft_lvl Q (wft_pi _ _ _ _ _ _ _ Hv Hl Hl' HA HB)).
   - right; intros H; exact (Q (proj2 (inv_ty_pi H))).
 Qed.
 
-Lemma dec_tyEl l t : sz_ty (tyEl l t) <= n -> nlr_ty (tyEl l t) -> TYD (tyEl l t).
+Lemma dec_tyEl l t : sz_ty (tyEl l t) <= n -> TYD (tyEl l t).
 Proof.
-  intros Hsz Hn G i Γ k HΓ. destruct (layer_eq_dec i lV) as [-> | Hv]; [right; apply no_ty_V |].
+  intros Hsz G i Γ k HΓ. destruct (layer_eq_dec i lV) as [-> | Hv]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_El H) as ((_ & X & _) & _); contradiction].
   assert (HU : [ G ; Γ ⊢[ typeof i ] tyU l @ lsuc l ])
     by (apply wft_U; [exact (typeof_notV i) | rewrite typeof_idem; exact HΓ | exact Hl]).
-  destruct (ihC t ltac:(szl) Hn G i Γ _ _ HU) as [Ht | N];
+  destruct (ihC t ltac:(szl) G i Γ _ _ HU) as [Ht | N];
     [| right; intros H; destruct (inv_ty_El H) as ((_ & _ & X) & _); contradiction].
   destruct (lvl_eq_dec (gL G) k l) as [Q | Q].
   - left; exact (wft_lvl Q (wft_El _ _ _ _ _ Hv Hl Ht)).
   - right; intros H; exact (Q (proj2 (inv_ty_El H))).
 Qed.
 
-Lemma dec_tyGvar U d : sz_ty (tyGvar U d) <= n -> nlr_ty (tyGvar U d) -> TYD (tyGvar U d).
+Lemma dec_tyGvar U d : sz_ty (tyGvar U d) <= n -> TYD (tyGvar U d).
 Proof.
-  intros Hsz Hn G i Γ k HΓ. destruct (layer_eq_dec i lV) as [-> | Hv]; [right; apply no_ty_V |].
+  intros Hsz G i Γ k HΓ. destruct (layer_eq_dec i lV) as [-> | Hv]; [right; apply no_ty_V |].
   pose proof (ctx_glob _ _ _ HΓ) as HG.
   destruct (in_gctx_dec (gΨ G) U) as [(D & Hin) | N];
     [| right; intros H; destruct (inv_ty_gvar H) as (? & ? & ? & (_ & _ & X & _) & _); exact (N _ X)].
@@ -101,73 +101,73 @@ Proof.
   destruct (lsub_tail_dec d Δ Γ) as [Ht | N]; [| right; intros H; apply N, (Inv _ H)].
   destruct (dnfl_dec d) as [Hd | N]; [| right; intros H; apply N, (Inv _ H)].
   destruct (sub_dec Δ d HΓ HΔ Ht Hd
-              (fun m A k1 HA => ihC (llk d m) ltac:(pose proof (sz_llk d m); szl) (nlr_llk d m Hn) G i Γ A k1 HA))
+              (fun m A k1 HA => ihC (llk d m) ltac:(pose proof (sz_llk d m); szl) G i Γ A k1 HA))
     as [He | N]; [| right; intros H; apply N, (Inv _ H)].
   destruct (lvl_eq_dec (gL G) k l0) as [Q | Q].
   - left; exact (wft_lvl Q (wft_gvar _ _ _ _ _ _ _ _ Hv HΓ Hin Hle Ht Hd He)).
   - right; intros H; apply Q, (Inv _ H).
 Qed.
 
-Lemma dec_tyCTyp Δ l : sz_ty (tyCTyp Δ l) <= n -> nlr_ty (tyCTyp Δ l) -> TYD (tyCTyp Δ l).
+Lemma dec_tyCTyp Δ l : sz_ty (tyCTyp Δ l) <= n -> TYD (tyCTyp Δ l).
 Proof.
-  intros Hsz Hn G i Γ k HΓ. at_M @inv_ty_CTyp. pose proof (ctx_glob _ _ _ HΓ) as HG.
-  destruct (ihX Δ ltac:(szl) Hn G lD HG) as [HΔ | N]; [| right; intros H; destruct (inv_ty_CTyp H) as ((_ & _ & X & _) & _); contradiction].
+  intros Hsz G i Γ k HΓ. at_M @inv_ty_CTyp. pose proof (ctx_glob _ _ _ HΓ) as HG.
+  destruct (ihX Δ ltac:(szl) G lD HG) as [HΔ | N]; [| right; intros H; destruct (inv_ty_CTyp H) as ((_ & _ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_CTyp H) as ((_ & _ & _ & X) & _); contradiction].
   destruct (lvl_eq_dec (gL G) k lzero) as [Q | Q].
   - left; exact (wft_lvl Q (wft_CTyp _ _ _ _ HΓ HΔ Hl)).
   - right; intros H; exact (Q (proj2 (inv_ty_CTyp H))).
 Qed.
 
-Lemma dec_tyCTrm Δ A l : sz_ty (tyCTrm Δ A l) <= n -> nlr_ty (tyCTrm Δ A l) -> TYD (tyCTrm Δ A l).
+Lemma dec_tyCTrm Δ A l : sz_ty (tyCTrm Δ A l) <= n -> TYD (tyCTrm Δ A l).
 Proof.
-  intros Hsz [HnΔ HnA] G i Γ k HΓ. at_M @inv_ty_CTrm. pose proof (ctx_glob _ _ _ HΓ) as HG.
-  destruct (ihX Δ ltac:(szl) HnΔ G lD HG) as [HΔ | N]; [| right; intros H; destruct (inv_ty_CTrm H) as ((_ & _ & X & _) & _); contradiction].
+  intros Hsz G i Γ k HΓ. at_M @inv_ty_CTrm. pose proof (ctx_glob _ _ _ HΓ) as HG.
+  destruct (ihX Δ ltac:(szl) G lD HG) as [HΔ | N]; [| right; intros H; destruct (inv_ty_CTrm H) as ((_ & _ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_CTrm H) as ((_ & _ & _ & _ & X) & _); contradiction].
-  destruct (ihT A ltac:(szl) HnA G lD Δ l HΔ) as [HA | N]; [| right; intros H; destruct (inv_ty_CTrm H) as ((_ & _ & _ & X & _) & _); contradiction].
+  destruct (ihT A ltac:(szl) G lD Δ l HΔ) as [HA | N]; [| right; intros H; destruct (inv_ty_CTrm H) as ((_ & _ & _ & X & _) & _); contradiction].
   destruct (lvl_eq_dec (gL G) k lzero) as [Q | Q].
   - left; exact (wft_lvl Q (wft_CTrm _ _ _ _ _ HΓ HΔ HA Hl)).
   - right; intros H; exact (Q (proj2 (inv_ty_CTrm H))).
 Qed.
 
-Lemma dec_tyUPi m l T : sz_ty (tyUPi m l T) <= n -> nlr_ty (tyUPi m l T) -> TYD (tyUPi m l T).
+Lemma dec_tyUPi m l T : sz_ty (tyUPi m l T) <= n -> TYD (tyUPi m l T).
 Proof.
-  intros Hsz Hn G i Γ k HΓ. at_M @inv_ty_upi.
+  intros Hsz G i Γ k HΓ. at_M @inv_ty_upi.
   destruct (lt_dec 0 m) as [Hm | N]; [| right; intros H; destruct (inv_ty_upi H) as ((_ & _ & X & _) & _); contradiction].
   destruct (lwf_Dec (m + gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_upi H) as ((_ & _ & _ & X & _) & _); contradiction].
-  destruct (ihT T ltac:(szl) Hn (gctx_uwk m G) lM (Γ⟨ush m⟩ᵤ) l (uwk_ctx m HΓ)) as [HT | N];
+  destruct (ihT T ltac:(szl) (gctx_uwk m G) lM (Γ⟨ush m⟩ᵤ) l (uwk_ctx m HΓ)) as [HT | N];
     [| right; intros H; destruct (inv_ty_upi H) as ((_ & _ & _ & _ & X) & _); contradiction].
   destruct (lvl_eq_dec (gL G) k lomega) as [Q | Q].
   - left; exact (wft_lvl Q (wft_upi _ _ _ _ _ HΓ Hm Hl HT)).
   - right; intros H; exact (Q (proj2 (inv_ty_upi H))).
 Qed.
 
-Lemma dec_tyCPi l T : sz_ty (tyCPi l T) <= n -> nlr_ty (tyCPi l T) -> TYD (tyCPi l T).
+Lemma dec_tyCPi l T : sz_ty (tyCPi l T) <= n -> TYD (tyCPi l T).
 Proof.
-  intros Hsz Hn G i Γ k HΓ. at_M @inv_ty_cpi. pose proof (ctx_glob _ _ _ HΓ) as HG.
+  intros Hsz G i Γ k HΓ. at_M @inv_ty_cpi. pose proof (ctx_glob _ _ _ HΓ) as HG.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_cpi H) as ((_ & _ & X & _) & _); contradiction].
-  destruct (ihT T ltac:(szl) Hn (gext G gdCtx) lM Γ⟪S⟫ l (ctx_S (wfg_ctx' HG) HΓ)) as [HT | N];
+  destruct (ihT T ltac:(szl) (gext G gdCtx) lM Γ⟪S⟫ l (ctx_S (wfg_ctx' HG) HΓ)) as [HT | N];
     [| right; intros H; destruct (inv_ty_cpi H) as ((_ & _ & _ & X) & _); contradiction].
   destruct (lvl_eq_dec (gL G) k l) as [Q | Q].
   - left; exact (wft_lvl Q (wft_cpi _ _ _ _ HΓ Hl HT)).
   - right; intros H; exact (Q (proj2 (inv_ty_cpi H))).
 Qed.
 
-Lemma dec_tyTPi Δ l l' T : sz_ty (tyTPi Δ l l' T) <= n -> nlr_ty (tyTPi Δ l l' T) -> TYD (tyTPi Δ l l' T).
+Lemma dec_tyTPi Δ l l' T : sz_ty (tyTPi Δ l l' T) <= n -> TYD (tyTPi Δ l l' T).
 Proof.
-  intros Hsz [HnΔ HnT] G i Γ k HΓ. at_M @inv_ty_tpi. pose proof (ctx_glob _ _ _ HΓ) as HG.
-  destruct (ihX Δ ltac:(szl) HnΔ G lD HG) as [HΔ | N]; [| right; intros H; destruct (inv_ty_tpi H) as ((_ & _ & X & _) & _); contradiction].
+  intros Hsz G i Γ k HΓ. at_M @inv_ty_tpi. pose proof (ctx_glob _ _ _ HΓ) as HG.
+  destruct (ihX Δ ltac:(szl) G lD HG) as [HΔ | N]; [| right; intros H; destruct (inv_ty_tpi H) as ((_ & _ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_tpi H) as ((_ & _ & _ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros H; destruct (inv_ty_tpi H) as ((_ & _ & _ & _ & X & _) & _); contradiction].
-  destruct (ihT T ltac:(szl) HnT (gext G (gdTy Δ lD l)) lM Γ⟪S⟫ l' (ctx_S (wfg_ty' HΔ (or_intror eq_refl) Hl) HΓ))
+  destruct (ihT T ltac:(szl) (gext G (gdTy Δ lD l)) lM Γ⟪S⟫ l' (ctx_S (wfg_ty' HΔ (or_intror eq_refl) Hl) HΓ))
     as [HT | N]; [| right; intros H; destruct (inv_ty_tpi H) as ((_ & _ & _ & _ & _ & X) & _); contradiction].
   destruct (lvl_eq_dec (gL G) k l') as [Q | Q].
   - left; exact (wft_lvl Q (wft_tpi _ _ _ _ _ _ HΓ HΔ Hl Hl' HT)).
   - right; intros H; exact (Q (proj2 (inv_ty_tpi H))).
 Qed.
 
-Lemma ty_step T : sz_ty T <= n -> nlr_ty T -> TYD T.
+Lemma ty_step T : sz_ty T <= n -> TYD T.
 Proof.
-  intros Hsz Hn. destruct T;
+  intros Hsz. destruct T;
     first [ apply dec_tyErr | apply dec_tyNat | apply dec_tyU
           | apply dec_tyPi | apply dec_tyEl | apply dec_tyGvar | apply dec_tyCTyp | apply dec_tyCTrm
           | apply dec_tyUPi | apply dec_tyCPi | apply dec_tyTPi ]; assumption.
@@ -175,14 +175,13 @@ Qed.
 
 (** ** Contexts *)
 
-Lemma cx_step Γ : sz_ctx Γ <= n -> nlr_ctx Γ -> CXD Γ.
+Lemma cx_step Γ : sz_ctx Γ <= n -> CXD Γ.
 Proof.
-  intros Hsz Hn G i HG. destruct Γ as [| g | Γ A l].
+  intros Hsz G i HG. destruct Γ as [| g | Γ A l].
   - left; exact (wfc_nil _ _ HG).
   - destruct (gctx_var_dec G g) as [Y | N]; [left; exact (wfc_var _ _ _ HG Y) | right; intros H; inversion H; contradiction].
-  - destruct Hn as [HnΓ HnA].
-    destruct (ihX Γ ltac:(szl) HnΓ G i HG) as [HΓ | N]; [| right; intros H; inversion H; contradiction].
-    destruct (ihT A ltac:(szl) HnA G i Γ l (lift_ctx_typeof HΓ)) as [HA | N]; [| right; intros H; inversion H; contradiction].
+  - destruct (ihX Γ ltac:(szl) G i HG) as [HΓ | N]; [| right; intros H; inversion H; contradiction].
+    destruct (ihT A ltac:(szl) G i Γ l (lift_ctx_typeof HΓ)) as [HA | N]; [| right; intros H; inversion H; contradiction].
     destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; inversion H; contradiction].
     left; exact (wfc_ext _ _ _ _ _ HΓ HA Hl).
 Qed.

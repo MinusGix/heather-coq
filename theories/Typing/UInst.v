@@ -214,15 +214,17 @@ Proof.
   eapply wft_lconv; [exact HT | apply lequiv_sym, Hl].
 Qed.
 
-Lemma pre_ulam_r {n l l' T t'} : [ G ; Γ ⊢[ lM ] ] -> 0 < n -> lequiv (n + gL G) l l' ->
-  [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] -> [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] t' : T @ l ] ->
-  [ G ; Γ ⊢[ lM ] ulam n l' t' : tyUPi n l T @ lomega ].
+Lemma pre_ulam_r {n l l' T T' t'} : [ G ; Γ ⊢[ lM ] ] -> 0 < n -> lequiv (n + gL G) l l' ->
+  [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] -> [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T' @ l ] ->
+  [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T ≅ T' @ l ] ->
+  [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] t' : T @ l ] ->
+  [ G ; Γ ⊢[ lM ] ulam n l' T' t' : tyUPi n l T @ lomega ].
 Proof.
-  intros HΓ Hn Hl HT Ht. eapply wf_conv.
+  intros HΓ Hn Hl HT HT' HTT Ht. eapply wf_conv.
   - apply wf_ulam; [exact HΓ | exact Hn | exact (lequiv_wf_r _ _ _ Hl) | |].
-    + eapply wft_lconv; [exact HT | apply lequiv_sym, Hl].
-    + eapply wf_lconv; [exact Ht | apply lequiv_sym, Hl].
-  - apply eqty_upi; [exact HΓ | exact Hn | exact Hl | exact HT | apply eqty_refl, HT].
+    + eapply wft_lconv; [exact HT' | apply lequiv_sym, Hl].
+    + eapply wf_lconv; [| apply lequiv_sym, Hl]. eapply wf_conv; [exact Ht | apply eqty_sym, HTT].
+  - apply eqty_upi; [exact HΓ | exact Hn | exact Hl | exact HT | exact HTT].
 Qed.
 
 Lemma pre_uapp_l {n l T t ls} : lwf (n + gL G) l -> [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] ->
@@ -255,7 +257,7 @@ Qed.
 Lemma pre_ubeta_l {n l T t ls} : [ G ; Γ ⊢[ lM ] ] -> 0 < n -> lwf (n + gL G) l ->
   [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] -> [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] t : T @ l ] ->
   length ls = n -> Forall (lwf (gL G)) ls ->
-  [ G ; Γ ⊢[ lM ] uapp (ulam n l t) ls : T[uext ls lvar]ᵤ @ lvsubst l (uext ls lvar) ].
+  [ G ; Γ ⊢[ lM ] uapp (ulam n l T t) ls : T[uext ls lvar]ᵤ @ lvsubst l (uext ls lvar) ].
 Proof. intros; apply wf_uapp with (n := n); auto. apply wf_ulam; auto. Qed.
 
 Lemma pre_ubeta_r {n l T t ls} : [ G ; Γ ⊢[ lM ] ] ->
@@ -265,7 +267,7 @@ Proof. intros HΓ Ht Hn Hls. subst n. exact (uinst_tm (ctx_glob _ _ _ HΓ) (wf_c
 
 Lemma pre_ueta_l {n l T t} : 0 < n -> lwf (n + gL G) l ->
   [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] -> [ G ; Γ ⊢[ lM ] t : tyUPi n l T @ lomega ] ->
-  [ G ; Γ ⊢[ lM ] ulam n l (uapp t⟨ush n⟩ᵤ (ubvars n)) : tyUPi n l T @ lomega ].
+  [ G ; Γ ⊢[ lM ] ulam n l T (uapp t⟨ush n⟩ᵤ (ubvars n)) : tyUPi n l T @ lomega ].
 Proof.
   intros Hn Hl HT Ht. pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
   pose proof (wf_ty_dnf HT) as HTd.

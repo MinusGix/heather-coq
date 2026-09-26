@@ -125,9 +125,9 @@ Qed.
 
 End KwBody.
 
-Lemma eta_body_c l (t : tm) σ d : (clam l (capp t⟪S⟫ (cvar 0)))⦃σ⦄[d] = clam l (capp t⦃σ⦄[d]⟪S⟫ (cvar 0)).
+Lemma eta_body_c l T (t : tm) σ d : (clam l T (capp t⟪S⟫ (cvar 0)))⦃σ⦄[d] = clam l T⦃gup σ⦄[gwk d] (capp t⦃σ⦄[d]⟪S⟫ (cvar 0)).
 Proof.
-  transitivity (clam l (capp t⟪S⟫⦃gup σ⦄[gwk d] (cvar 0))); [reflexivity |].
+  transitivity (clam l T⦃gup σ⦄[gwk d] (capp t⟪S⟫⦃gup σ⦄[gwk d] (cvar 0))); [reflexivity |].
   rewrite gshift_up_tm, shift_gwk_subst. reflexivity.
 Qed.
 
@@ -138,10 +138,11 @@ Proof.
   apply gsubst_id; [exact Hx | reflexivity].
 Qed.
 
-Lemma eta_body_t l l' (t : tm) σ d :
-  (tlam l l' (tapp t⟪S⟫ (tyGvar 0 (lshift 0))))⦃σ⦄[d] = tlam l l' (tapp t⦃σ⦄[d]⟪S⟫ (tyGvar 0 (lshift 0))).
+Lemma eta_body_t Δ l l' T (t : tm) σ d :
+  (tlam Δ l l' T (tapp t⟪S⟫ (tyGvar 0 (lshift 0))))⦃σ⦄[d]
+  = tlam Δ⦃σ⦄ l l' T⦃gup σ⦄[gwk d] (tapp t⦃σ⦄[d]⟪S⟫ (tyGvar 0 (lshift 0))).
 Proof.
-  transitivity (tlam l l' (tapp t⟪S⟫⦃gup σ⦄[gwk d] (tyGvar 0 (lshift 0)))); [reflexivity |].
+  transitivity (tlam Δ⦃σ⦄ l l' T⦃gup σ⦄[gwk d] (tapp t⟪S⟫⦃gup σ⦄[gwk d] (tyGvar 0 (lshift 0)))); [reflexivity |].
   rewrite gshift_up_tm, shift_gwk_subst. reflexivity.
 Qed.
 
@@ -386,52 +387,55 @@ End CPi.
     by β. *)
 
 Section CLam.
-Variables (G : gctx) (Γ : ctx) (l l' : lvl) (T : ty) (t t' : tm).
+Variables (G : gctx) (Γ : ctx) (l l' : lvl) (T T' : ty) (t t' : tm).
 Hypothesis (Hl : lequiv (gL G) l l') (HT : [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ])
+  (HT' : [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T' @ l ])
   (Ht : [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] t : T @ l ]) (Ht' : [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] t' : T @ l ])
-  (VT : VTySM (gext G gdCtx) Γ⟪S⟫ T T l) (Vt : VTmSM (gext G gdCtx) Γ⟪S⟫ t t' T l).
+  (VT : VTySM (gext G gdCtx) Γ⟪S⟫ T T l) (VTT : VTySM (gext G gdCtx) Γ⟪S⟫ T T' l)
+  (Vt : VTmSM (gext G gdCtx) Γ⟪S⟫ t t' T l).
 
-Lemma VS_clam : VTmSM G Γ (clam l t) (clam l' t') (tyCPi l T) l.
+Lemma VS_clam : VTmSM G Γ (clam l T t) (clam l' T' t') (tyCPi l T) l.
 Proof.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Δ d d' Hd.
   pose proof (GSubRel_refl_l EP EM Hσ) as Hσσ.
-  set (A := T⦃gup σ⦄[gwk d]). set (Ar := T⦃gup σ⦄[gwk d']).
+  set (A := T⦃gup σ⦄[gwk d]). set (Ar := T⦃gup σ⦄[gwk d']). set (A' := T'⦃gup σ'⦄[gwk d']).
   set (b := t⦃gup σ⦄[gwk d]). set (b' := t'⦃gup σ'⦄[gwk d']).
   destruct (VTy_grow_c _ _ _ _ _ _ _ _ Hσσ Hd HT HT VT) as [R0 H0].
   destruct (escape_ty _ _ _ _ _ _ _ _ H0) as (HA & HAr & HAAr).
+  destruct (VTy_grow_c _ _ _ _ _ _ _ _ Hσ Hd HT HT' VTT) as [R1 H1].
+  destruct (escape_ty _ _ _ _ _ _ _ _ H1) as (_ & HA' & HAA').
   destruct (VTm_grow_c _ _ _ _ _ _ _ _ Hσ Hd Ht Ht' Vt) as (Rb & HRb & Hbb).
   destruct (escape_tm _ _ _ _ _ _ _ _ HRb _ _ Hbb) as (Hb & Hb' & Ebb).
-  pose proof (geq_ty_sound HAAr) as DAAr.
-  rewrite HM in HA, HAr, Hb, Hb', DAAr. fold A Ar b b' in HA, HAr, Hb, Hb', DAAr, Ebb.
+  pose proof (geq_ty_sound HAAr) as DAAr. pose proof (geq_ty_sound HAA') as DAA'.
+  rewrite HM in HA, HAr, HA', Hb, Hb', DAAr, DAA'. fold A Ar A' b b' in HA, HAr, HA', Hb, Hb', DAAr, DAA', Ebb.
   pose proof (SubRel_ctx Hd) as HΔ. rewrite HM in HΔ.
   assert (Hl1 : lequiv (gL G') l l') by exact (lequiv_weaken _ _ _ _ (gsr_L _ _ _ _ _ _ Hσ) Hl).
   pose proof (lequiv_wf_l _ _ _ Hl1) as Wl. pose proof (lequiv_wf_r _ _ _ Hl1) as Wl'.
   assert (DU : [ G' ; Δ ⊢[ lM ] tyCPi l A ≅ tyCPi l Ar @ l ])
     by (apply eqty_cpi; [exact HΔ | exact (lequiv_refl _ _ Wl) | exact HA | exact DAAr]).
-  assert (Hw : [ G' ; Δ ⊢[ lM ] clam l b : tyCPi l A @ l ])
+  assert (Hw : [ G' ; Δ ⊢[ lM ] clam l A b : tyCPi l A @ l ])
     by (apply wf_clam; [exact HΔ | exact Wl | exact HA | exact Hb]).
-  assert (Hw'A : [ G' ; Δ ⊢[ lM ] clam l' b' : tyCPi l A @ l ])
-    by (eapply pre_clam_r; [exact HΔ | exact Hl1 | exact HA | exact Hb']).
-  assert (Hw'Ar : [ G' ; Δ ⊢[ lM ] clam l' b' : tyCPi l Ar @ l ])
+  assert (Hw'A : [ G' ; Δ ⊢[ lM ] clam l' A' b' : tyCPi l A @ l ])
+    by (eapply pre_clam_r; [exact HΔ | exact Hl1 | exact HA | exact HA' | exact DAA' | exact Hb']).
+  assert (Hw'Ar : [ G' ; Δ ⊢[ lM ] clam l' A' b' : tyCPi l Ar @ l ])
     by (eapply wf_conv; [exact Hw'A | apply eqty_sym, DU]).
-  assert (HAl : [ gext G' gdCtx ; Δ⟪S⟫ ⊢[ lM ] A @ l' ])
-    by (eapply wft_lconv; [exact HA | apply lequiv_sym, Hl1]).
-  assert (Hb'l : [ gext G' gdCtx ; Δ⟪S⟫ ⊢[ lM ] b' : A @ l' ])
-    by (eapply wf_lconv; [exact Hb' | apply lequiv_sym, Hl1]).
-  assert (Hb'r : [ gext G' gdCtx ; Δ⟪S⟫ ⊢[ lM ] b' : Ar @ l' ])
-    by (eapply wf_conv; [exact Hb'l | apply eqty_sym; eapply eqty_lconv; [exact DAAr | apply lequiv_sym, Hl1]]).
-  assert (HArl : [ gext G' gdCtx ; Δ⟪S⟫ ⊢[ lM ] Ar @ l' ])
-    by (eapply wft_lconv; [exact HAr | apply lequiv_sym, Hl1]).
+  assert (HA'l : [ gext G' gdCtx ; Δ⟪S⟫ ⊢[ lM ] A' @ l' ])
+    by (eapply wft_lconv; [exact HA' | apply lequiv_sym, Hl1]).
+  assert (Hb'A' : [ gext G' gdCtx ; Δ⟪S⟫ ⊢[ lM ] b' : A' @ l ])
+    by (eapply wf_conv; [exact Hb' | apply eqty_sym, DAA']).
+  assert (Hb'l : [ gext G' gdCtx ; Δ⟪S⟫ ⊢[ lM ] b' : A' @ l' ])
+    by (eapply wf_lconv; [exact Hb'A' | apply lequiv_sym, Hl1]).
   pose proof (cpi_LR G Γ l l T T (lequiv_refl _ _ (lequiv_wf_l _ _ _ Hl)) HT HT VT Hσσ Hd) as HLR.
   (* extensionality: both sides, at the bound variable, β-reduce to the bodies *)
-  assert (E1 : [ G' ; Δ ⊢ clam l b ≈ clam l' b' : tyCPi l A @ l ]).
+  assert (E1 : [ G' ; Δ ⊢ clam l A b ≈ clam l' A' b' : tyCPi l A @ l ]).
   { apply geq_tm_cext; [exact Wl | exact HA | exact Hw | exact Hw'A |].
     eapply geq_tm_exp; [| | exact Ebb]; rewrite HM.
     - exact (tmred_ceta_body HΔ Wl HA Hb).
-    - eapply tmred_lconv; [exact (tmred_ceta_body HΔ Wl' HAl Hb'l) | exact Hl1]. }
+    - eapply (tmred_conv _ _ _ _ _ eq_refl); [| apply eqty_sym, DAA'].
+      eapply tmred_lconv; [exact (tmred_ceta_body HΔ Wl' HA'l Hb'l) | exact Hl1]. }
   eexists; split; [exact HLR |].
-  exists (clam l b), (clam l' b').
-  refine (conj _ (conj _ (conj (whnf_clam _ _) (conj (whnf_clam _ _) (conj E1 (conj _ _)))))).
+  exists (clam l A b), (clam l' A' b').
+  refine (conj _ (conj _ (conj (whnf_clam _ _ _) (conj (whnf_clam _ _ _) (conj E1 (conj _ _)))))).
   - rewrite HM. apply tmred_refl, Hw.
   - rewrite HM. apply tmred_refl, Hw'Ar.
   - eapply geq_tm_conv; [exact E1 |]. rewrite HM. exact DU.
@@ -445,15 +449,22 @@ Proof.
       by (rewrite gdecl_gwa_ctx; apply wfg_ctx, kw_glob).
     pose proof (eqctx_wf_l (i := lD) eq_refl (proj1 h)) as HΔ0.
     pose proof (eqctx_wf_r (i := lD) eq_refl (proj1 h)) as HΔ0'.
+    (* the right annotation is the right type, up to equality *)
+    assert (DA'Ar : [ gext G' gdCtx ; Δ⟪S⟫ ⊢[ lM ] A' ≅ Ar @ l' ]).
+    { eapply eqty_lconv; [| apply lequiv_sym, Hl1]. eapply eqty_trans; [apply eqty_sym, DAA' | exact DAAr]. }
     pose proof (kw_body_ty ρ HGc (ltac:(rewrite HM; exact HA))) as HAρ.
     pose proof (kw_body_tm ρ HGc (ltac:(rewrite HM; exact Hb))) as Hbρ.
-    pose proof (kw_body_ty ρ HGc (ltac:(rewrite HM; exact HArl))) as HArρ.
-    pose proof (kw_body_tm ρ HGc (ltac:(rewrite HM; exact Hb'r))) as Hb'ρ.
-    rewrite gdecl_gwa_ctx, HM in HAρ, Hbρ, HArρ, Hb'ρ.
+    pose proof (kw_body_ty ρ HGc (ltac:(rewrite HM; exact HA'l))) as HA'ρ.
+    pose proof (kw_body_tm ρ HGc (ltac:(rewrite HM; exact Hb'l))) as Hb'ρ.
+    pose proof (kw_body_eqty ρ HGc (ltac:(rewrite HM; exact DA'Ar))) as EA'ρ.
+    rewrite gdecl_gwa_ctx, HM in HAρ, Hbρ, HA'ρ, Hb'ρ, EA'ρ.
     pose proof (kw_lequiv ρ Hl1) as Hlρ.
     eapply (LR_red_tm _ _ _ _ _ _ _ _ HR' _ _ _ _ Hrel); rewrite HM, ktm_clam.
     + exact (tmred_cbeta_M HΔρ (lequiv_wf_l _ _ _ Hlρ) HAρ Hbρ HΔ0).
-    + eapply tmred_lconv; [exact (tmred_cbeta_M HΔρ (lequiv_wf_r _ _ _ Hlρ) HArρ Hb'ρ HΔ0') | exact Hlρ].
+    + eapply tmred_lconv; [| exact Hlρ].
+      eapply (tmred_conv _ _ _ _ _ eq_refl);
+        [exact (tmred_cbeta_M HΔρ (lequiv_wf_r _ _ _ Hlρ) HA'ρ Hb'ρ HΔ0') |].
+      exact (inst_c_eqty HΔρ HΔ0' EA'ρ).
 Qed.
 
 End CLam.
@@ -532,7 +543,7 @@ End CApp.
 Lemma VS_cbeta {G Γ l T t Δ1} : lwf (gL G) l -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
   [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] t : T @ l ] -> [ G ; Δ1 ⊢[ lD ] ] ->
   VCtxSP G Δ1 -> VCtxSPM G Δ1 -> VTmSM (gext G gdCtx) Γ⟪S⟫ t t T l ->
-  VTmSM G Γ (capp (clam l t) Δ1) t⦃gsingle (GCtx Δ1)⦄ T⦃gsingle (GCtx Δ1)⦄ l.
+  VTmSM G Γ (capp (clam l T t) Δ1) t⦃gsingle (GCtx Δ1)⦄ T⦃gsingle (GCtx Δ1)⦄ l.
 Proof.
   intros Hl HT Ht HΔ1 VΔP VΔM Vt.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
@@ -569,7 +580,7 @@ Section CEta.
 Variables (G : gctx) (Γ : ctx) (l : lvl) (T : ty) (t : tm).
 Hypothesis (Vt : VTmSM G Γ t t (tyCPi l T) l).
 
-Lemma VS_ceta : VTmSM G Γ (clam l (capp t⟪S⟫ (cvar 0))) t (tyCPi l T) l.
+Lemma VS_ceta : VTmSM G Γ (clam l T (capp t⟪S⟫ (cvar 0))) t (tyCPi l T) l.
 Proof.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ d d' Hd.
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
@@ -593,7 +604,7 @@ Proof.
   rewrite HM in HA, HAr, Hu, Hw, Hw', DU.
   pose proof (SubRel_ctx Hd) as HΘg. pose proof HΘg as HΘ. rewrite HM in HΘ.
   pose proof (ctx_glob _ _ _ HΘ) as HG'.
-  assert (Hw1 : [ G' ; Θ ⊢[ lM ] clam l (capp uσ⟪S⟫ (cvar 0)) : tyCPi l A @ l ])
+  assert (Hw1 : [ G' ; Θ ⊢[ lM ] clam l A (capp uσ⟪S⟫ (cvar 0)) : tyCPi l A @ l ])
     by exact (pre_ceta_l Wl HA Hu).
   assert (Hw'r : [ G' ; Θ ⊢[ lM ] w' : tyCPi l Ar @ l ])
     by exact (eqtm_wf_r (i := lM) eq_refl (tmred_eq _ _ _ _ _ _ _ Hw')).
@@ -606,14 +617,14 @@ Proof.
   destruct (escape_tm _ _ _ _ _ _ _ _ (HI ρS _ _ hS) _ _ (K ρS _ _ hS)) as (_ & _ & Eb).
   unfold ρS in Eb. rewrite !ktm_gstep, kbody_gstep, (eta_c_ty HA) in Eb.
   cbn [kw_gstep kw_G kw_Δ gwa] in Eb. change (Θ⟪gwk_step gwk_id⟫) with Θ⟪S⟫ in Eb.
-  assert (E1 : [ G' ; Θ ⊢ clam l (capp uσ⟪S⟫ (cvar 0)) ≈ w' : tyCPi l A @ l ]).
+  assert (E1 : [ G' ; Θ ⊢ clam l A (capp uσ⟪S⟫ (cvar 0)) ≈ w' : tyCPi l A @ l ]).
   { apply geq_tm_cext; [exact Wl | exact HA | exact Hw1 | exact Hw'l |].
     eapply geq_tm_exp; [| | exact Eb]; rewrite HM.
     - eapply tmred_trans; [exact (tmred_ceta_body HΘ Wl HA (wf_ceta_body Wl HA Hu)) |].
       exact (tmred_ceta_app Wl HA Hw).
     - apply tmred_refl, (wf_ceta_body Wl HA Hw'l). }
-  apply HR. exists (clam l (capp uσ⟪S⟫ (cvar 0))), w'.
-  refine (conj _ (conj _ (conj (whnf_clam _ _) (conj Nw' (conj E1 (conj _ _)))))).
+  apply HR. exists (clam l A (capp uσ⟪S⟫ (cvar 0))), w'.
+  refine (conj _ (conj _ (conj (whnf_clam _ _ _) (conj Nw' (conj E1 (conj _ _)))))).
   - rewrite HM. apply tmred_refl, Hw1.
   - rewrite HM. exact Hw'.
   - eapply geq_tm_conv; [exact E1 |]. rewrite HM. exact DU.
@@ -880,46 +891,83 @@ Qed.
 
 End TPi.
 
-(** ** [Λ(U : Δ)]: as [Λg]; the right-hand body is typed at its own binder
-    level ([l3]) *)
+(** η's body, for an abstraction whose binder's context is equal to (not
+    the same as) the ambient binder's. *)
+Lemma tmred_teta_body_ctx {G Γ Δ Δ' l k k' B b} : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] ] ->
+  [ G ⊢[ lD ] Δ ≅ Δ' ] -> lequiv (gL G) l k -> lwf (gL G) k' ->
+  [ gext G (gdTy Δ' lD k) ; Γ⟪S⟫ ⊢[ lM ] B @ k' ] -> [ gext G (gdTy Δ' lD k) ; Γ⟪S⟫ ⊢[ lM ] b : B @ k' ] ->
+  [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] tapp (tlam Δ' k k' B b)⟪S⟫ (tyGvar 0 (lshift 0)) ⤳* b : B @ k' ].
+Proof.
+  intros HΓ HΔ HΔ' HDD Hlk Hk' HB Hb.
+  pose proof (lequiv_wf_l _ _ _ Hlk) as Hl. pose proof (lequiv_wf_r _ _ _ Hlk) as Hk.
+  pose proof (ctx_glob _ _ _ HΓ) as HG.
+  assert (HG1 : [ ⊢ gext G (gdTy Δ lD l) ])
+    by (apply wfg_ty; [exact HG | exact HΔ | right; reflexivity | exact Hl]).
+  pose proof (gwk_ctx (gwk_ok_step G (gdTy Δ lD l)) HG1 HΓ) as HΓ1.
+  pose proof (gwk_ctx (gwk_ok_step G (gdTy Δ lD l)) HG1 HΔ) as HΔ1.
+  pose proof (gwk_ctx (gwk_ok_step G (gdTy Δ lD l)) HG1 HΔ') as HΔ'1.
+  pose proof (gwk_eqctx (gwk_ok_step G (gdTy Δ lD l)) HG1 HDD) as HDD1.
+  assert (HG2 : [ ⊢ gext (gext G (gdTy Δ lD l)) (gdTy Δ'⟪S⟫ lD k) ])
+    by (apply wfg_ty; [exact HG1 | exact HΔ'1 | right; reflexivity | exact Hk]).
+  pose proof (gwk_ty (gwk_ok_up_step (G := G) (D := gdTy Δ' lD k) (gdTy Δ lD l)) HG2 HB) as XB.
+  change (wf_ty (gext (gext G (gdTy Δ lD l)) (gdTy Δ'⟪S⟫ lD k)) lM (Γ⟪S⟫⟪gupr S⟫) B⟪gupr S⟫ k') in XB.
+  rewrite gcren_shift_up in XB.
+  pose proof (gwk_tm (gwk_ok_up_step (G := G) (D := gdTy Δ' lD k) (gdTy Δ lD l)) HG2 Hb) as Xb.
+  change (wf_tm (gext (gext G (gdTy Δ lD l)) (gdTy Δ'⟪S⟫ lD k)) lM (Γ⟪S⟫⟪gupr S⟫) b⟪gupr S⟫ B⟪gupr S⟫ k') in Xb.
+  rewrite gcren_shift_up in Xb.
+  assert (HU : [ gext G (gdTy Δ lD l) ; Δ'⟪S⟫ ⊢[ lD ] tyGvar 0 (lshift 0) @ k ]).
+  { eapply wft_lconv; [| exact (lequiv_sym _ _ _ Hlk)].
+    refine (ctxconv_ty HDD1 (i := lD) eq_refl _).
+    eapply wf_gv with (Δ := Δ⟪S⟫) (i' := lD);
+      [discriminate | exact HΔ1 | exact (ing_here (gΨ G) (gdTy Δ lD l)) | apply lle_refl | reflexivity]. }
+  pose proof (tmred_tbeta_M (G := gext G (gdTy Δ lD l)) (Γ := Γ⟪S⟫) HΓ1 HΔ'1 Hk Hk' XB Xb HU) as X.
+  rewrite (eta_t_tm Hb), (eta_t_ty HB) in X. exact X.
+Qed.
+
+(** ** [Λ(U : Δ)]: as [Λg]; the right-hand side has its own binder
+    ([Δ1'], [l3]) and annotation ([T']) *)
 
 Section TLam.
-Variables (G : gctx) (Γ Δ1 : ctx) (l1 l2 l3 l4 : lvl) (T : ty) (t t' : tm).
+Variables (G : gctx) (Γ Δ1 Δ1' : ctx) (l1 l2 l3 l4 : lvl) (T T' : ty) (t t' : tm).
 Hypothesis (H13 : lequiv (gL G) l1 l3) (H24 : lequiv (gL G) l2 l4)
-  (HΔ1 : [ G ; Δ1 ⊢[ lD ] ]) (VΓ : VCtxSM G Γ) (VΔP : VCtxSP G Δ1) (VΔM : VCtxSPM G Δ1)
+  (HΔ1 : [ G ; Δ1 ⊢[ lD ] ]) (HΔ1' : [ G ; Δ1' ⊢[ lD ] ])
+  (VΓ : VCtxSM G Γ) (VΔP : VCtxSP G Δ1) (VΔM : VCtxSPM G Δ1) (VΔP' : VCtxSP G Δ1') (VΔM' : VCtxSPM G Δ1')
+  (VEqP : @VCtxEqS EP LR_P EP EM G Δ1 Δ1')
   (HT : [ gext G (gdTy Δ1 lD l1) ; Γ⟪S⟫ ⊢[ lM ] T @ l2 ])
+  (HT' : [ gext G (gdTy Δ1 lD l1) ; Γ⟪S⟫ ⊢[ lM ] T' @ l2 ])
   (Ht : [ gext G (gdTy Δ1 lD l1) ; Γ⟪S⟫ ⊢[ lM ] t : T @ l2 ])
   (Ht' : [ gext G (gdTy Δ1 lD l1) ; Γ⟪S⟫ ⊢[ lM ] t' : T @ l2 ])
-  (Ht3 : [ gext G (gdTy Δ1 lD l3) ; Γ⟪S⟫ ⊢[ lM ] t' : T @ l4 ])
+  (Ht3 : [ gext G (gdTy Δ1' lD l3) ; Γ⟪S⟫ ⊢[ lM ] t' : T' @ l4 ])
   (VT : VTySM (gext G (gdTy Δ1 lD l1)) Γ⟪S⟫ T T l2)
+  (VTT : VTySM (gext G (gdTy Δ1 lD l1)) Γ⟪S⟫ T T' l2)
   (Vt : VTmSM (gext G (gdTy Δ1 lD l1)) Γ⟪S⟫ t t' T l2)
-  (Vt3 : VTmSM (gext G (gdTy Δ1 lD l3)) Γ⟪S⟫ t' t' T l4).
+  (Vt3 : VTmSM (gext G (gdTy Δ1' lD l3)) Γ⟪S⟫ t' t' T' l4).
 
-Lemma VS_tlam : VTmSM G Γ (tlam l1 l2 t) (tlam l3 l4 t') (tyTPi Δ1 l1 l2 T) l2.
+Lemma VS_tlam : VTmSM G Γ (tlam Δ1 l1 l2 T t) (tlam Δ1' l3 l4 T' t') (tyTPi Δ1 l1 l2 T) l2.
 Proof.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ d d' Hd.
-  pose proof (GSubRel_refl_l EP EM Hσ) as Hσσ.
+  pose proof (GSubRel_refl_l EP EM Hσ) as Hσσ. pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
+  pose proof (SubRel_r_at VΓ Hσ Hd) as Hdr.
   pose proof (lequiv_wf_l _ _ _ H13) as W1. pose proof (lequiv_wf_r _ _ _ H13) as W3.
   pose proof (lequiv_wf_l _ _ _ H24) as W2.
-  set (A := T⦃gup σ⦄[gwk d]). set (Ar := T⦃gup σ⦄[gwk d']).
+  set (A := T⦃gup σ⦄[gwk d]). set (Ar := T⦃gup σ⦄[gwk d']). set (A'' := T'⦃gup σ'⦄[gwk d']).
   set (b := t⦃gup σ⦄[gwk d]). set (b' := t'⦃gup σ'⦄[gwk d']).
   destruct (VTy_grow_t G Δ1 l1 HΔ1 VΔP VΔM Γ G' σ σ Θ d d' Hσσ Hd W1 HT HT VT) as [R0 H0].
   destruct (escape_ty _ _ _ _ _ _ _ _ H0) as (HA & HAr & HAAr).
+  destruct (VTy_grow_t G Δ1 l1 HΔ1 VΔP VΔM Γ G' σ σ' Θ d d' Hσ Hd W1 HT HT' VTT) as [R1 H1].
+  destruct (escape_ty _ _ _ _ _ _ _ _ H1) as (_ & _ & HAA'').
   destruct (VTm_grow_t G Δ1 l1 HΔ1 VΔP VΔM Γ G' σ σ' Θ d d' Hσ Hd W1 Ht Ht' Vt) as (Rb & HRb & Hbb).
   destruct (escape_tm _ _ _ _ _ _ _ _ HRb _ _ Hbb) as (Hb & Hb' & Ebb).
-  (* the right-hand body at its binder level, at both types *)
-  destruct (VTm_grow_t G Δ1 l3 HΔ1 VΔP VΔM Γ G' σ σ' Θ d d' Hσ Hd W3 Ht3 Ht3 Vt3) as (R3 & HR3 & H33).
-  destruct (escape_ty _ _ _ _ _ _ _ _ HR3) as (HA3 & _ & _).
+  (* the right-hand side, at its own binder *)
+  destruct (VTm_grow_t G Δ1' l3 HΔ1' VΔP' VΔM' Γ G' σ' σ' Θ d' d' Hσr Hdr W3 Ht3 Ht3 Vt3) as (R3 & HR3 & H33).
+  destruct (escape_ty _ _ _ _ _ _ _ _ HR3) as (HA''3 & _ & _).
   destruct (escape_tm _ _ _ _ _ _ _ _ HR3 _ _ H33) as (_ & Hb'3 & _).
-  destruct (VTm_grow_t G Δ1 l3 HΔ1 VΔP VΔM Γ G' σ σ' Θ d' d' Hσ (SubRel_refl_r Hd) W3 Ht3 Ht3 Vt3)
-    as (R4 & HR4 & H44).
-  destruct (escape_ty _ _ _ _ _ _ _ _ HR4) as (HAr3 & _ & _).
-  destruct (escape_tm _ _ _ _ _ _ _ _ HR4 _ _ H44) as (_ & Hb'r3 & _).
-  pose proof (geq_ty_sound HAAr) as DAAr.
-  rewrite HM in HA, HAr, Hb, Hb', HA3, Hb'3, HAr3, Hb'r3, DAAr.
-  fold A Ar b b' in HA, HAr, Hb, Hb', HA3, Hb'3, HAr3, Hb'r3, DAAr, Ebb.
+  pose proof (geq_ty_sound HAAr) as DAAr. pose proof (geq_ty_sound HAA'') as DAA''.
+  rewrite HM in HA, HAr, Hb, Hb', HA''3, Hb'3, DAAr, DAA''.
+  fold A Ar A'' b b' in HA, HAr, Hb, Hb', HA''3, Hb'3, DAAr, DAA'', Ebb.
   pose proof (SubRel_ctx Hd) as HΘ. rewrite HM in HΘ.
-  pose proof (gs_ctx EP EM Hσ HΔ1 compt_D) as HD.
+  pose proof (gs_ctx EP EM Hσ HΔ1 compt_D) as HD. pose proof (gs_ctx EP EM Hσr HΔ1' compt_D) as HD'.
+  destruct (CtxRelG_escape_P EP EM (VEqP _ _ _ Hσ) HD HD') as [_ HDD].
   pose proof (gsr_L _ _ _ _ _ _ Hσ) as EL.
   assert (H13' : lequiv (gL G') l1 l3) by exact (lequiv_weaken _ _ _ _ EL H13).
   assert (H24' : lequiv (gL G') l2 l4) by exact (lequiv_weaken _ _ _ _ EL H24).
@@ -928,23 +976,24 @@ Proof.
   assert (DU : [ G' ; Θ ⊢[ lM ] tyTPi Δ1⦃σ⦄ l1 l2 A ≅ tyTPi Δ1⦃σ⦄ l1 l2 Ar @ l2 ])
     by (apply eqty_tpi; [exact HΘ | exact HD | exact HD | apply eqc_refl, HD | exact (lequiv_refl _ _ Wl1)
                         | exact (lequiv_refl _ _ Wl2) | exact HA | exact DAAr | exact HAr]).
-  assert (Hw : [ G' ; Θ ⊢[ lM ] tlam l1 l2 b : tyTPi Δ1⦃σ⦄ l1 l2 A @ l2 ])
+  assert (Hw : [ G' ; Θ ⊢[ lM ] tlam Δ1⦃σ⦄ l1 l2 A b : tyTPi Δ1⦃σ⦄ l1 l2 A @ l2 ])
     by (apply wf_tlam; [exact HΘ | exact HD | exact Wl1 | exact Wl2 | exact HA | exact Hb]).
-  assert (Hw'A : [ G' ; Θ ⊢[ lM ] tlam l3 l4 b' : tyTPi Δ1⦃σ⦄ l1 l2 A @ l2 ])
-    by exact (pre_tlam_r HΘ HD H13' H24' HA HA3 Hb'3).
-  assert (Hw'Ar : [ G' ; Θ ⊢[ lM ] tlam l3 l4 b' : tyTPi Δ1⦃σ⦄ l1 l2 Ar @ l2 ])
+  assert (Hw'A : [ G' ; Θ ⊢[ lM ] tlam Δ1'⦃σ'⦄ l3 l4 A'' b' : tyTPi Δ1⦃σ⦄ l1 l2 A @ l2 ])
+    by exact (pre_tlam_r HΘ HD HD' HDD H13' H24' HA DAA'' HA''3 Hb'3).
+  assert (Hw'Ar : [ G' ; Θ ⊢[ lM ] tlam Δ1'⦃σ'⦄ l3 l4 A'' b' : tyTPi Δ1⦃σ⦄ l1 l2 Ar @ l2 ])
     by (eapply wf_conv; [exact Hw'A | apply eqty_sym, DU]).
   pose proof (tpi_LR G Γ Δ1 Δ1 l1 l2 l1 l2 T T (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HΔ1 HΔ1
                 VΓ VΔP VΔM VΔP VΔM VΔP VΔM HT HT HT VT VT Hσσ Hd) as HLR.
   (* extensionality *)
-  assert (E1 : [ G' ; Θ ⊢ tlam l1 l2 b ≈ tlam l3 l4 b' : tyTPi Δ1⦃σ⦄ l1 l2 A @ l2 ]).
+  assert (E1 : [ G' ; Θ ⊢ tlam Δ1⦃σ⦄ l1 l2 A b ≈ tlam Δ1'⦃σ'⦄ l3 l4 A'' b' : tyTPi Δ1⦃σ⦄ l1 l2 A @ l2 ]).
   { apply geq_tm_text; [exact HD | exact Wl1 | exact Wl2 | exact HA | exact Hw | exact Hw'A |].
     eapply geq_tm_exp; [| | exact Ebb]; rewrite HM.
     - exact (tmred_teta_body HΘ HD Wl1 Wl2 HA Hb).
-    - eapply tmred_lconv; [exact (tmred_teta_body_lv HΘ HD H13' Wl4 HA3 Hb'3) | exact H24']. }
+    - eapply (tmred_conv _ _ _ _ _ eq_refl); [| apply eqty_sym, DAA''].
+      eapply tmred_lconv; [exact (tmred_teta_body_ctx HΘ HD HD' HDD H13' Wl4 HA''3 Hb'3) | exact H24']. }
   eexists; split; [exact HLR |].
-  exists (tlam l1 l2 b), (tlam l3 l4 b').
-  refine (conj _ (conj _ (conj (whnf_tlam _ _ _) (conj (whnf_tlam _ _ _) (conj E1 (conj _ _)))))).
+  exists (tlam Δ1⦃σ⦄ l1 l2 A b), (tlam Δ1'⦃σ'⦄ l3 l4 A'' b').
+  refine (conj _ (conj _ (conj (whnf_tlam _ _ _ _ _) (conj (whnf_tlam _ _ _ _ _) (conj E1 (conj _ _)))))).
   - rewrite HM. apply tmred_refl, Hw.
   - rewrite HM. apply tmred_refl, Hw'Ar.
   - eapply geq_tm_conv; [exact E1 |]. rewrite HM. exact DU.
@@ -955,25 +1004,35 @@ Proof.
     exists R'. split; [exact HR' |].
     pose proof (kw_ctx ρ) as HΔρ. rewrite HM in HΔρ.
     pose proof (gwa_ctx (kw_gok ρ) (kw_glob ρ) HD) as HDρ.
+    pose proof (gwa_ctx (kw_gok ρ) (kw_glob ρ) HD') as HD'ρ.
+    pose proof (gwa_eqctx (kw_gok ρ) (kw_glob ρ) HDD) as HDDρ.
     pose proof (eqty_wf_l (i := lD) eq_refl (proj1 h)) as HA0.
     pose proof (eqty_wf_r (i := lD) eq_refl (proj1 h)) as HA0'.
     pose proof (ctx_glob _ _ _ (ctx_of_wf_ty (i := lM) eq_refl HA)) as HG1.
-    pose proof (ctx_glob _ _ _ (ctx_of_wf_ty (i := lM) eq_refl HA3)) as HG3.
+    pose proof (ctx_glob _ _ _ (ctx_of_wf_ty (i := lM) eq_refl HA''3)) as HG3.
     assert (HGc1 : [ ⊢ gext (kw_G ρ) (gdecl_gwa (kw_γ ρ) (gdTy Δ1⦃σ⦄ lD l1)) ])
       by (rewrite gdecl_gwa_ty; exact (kw_glob_ty ρ HG1)).
-    assert (HGc3 : [ ⊢ gext (kw_G ρ) (gdecl_gwa (kw_γ ρ) (gdTy Δ1⦃σ⦄ lD l3)) ])
+    assert (HGc3 : [ ⊢ gext (kw_G ρ) (gdecl_gwa (kw_γ ρ) (gdTy Δ1'⦃σ'⦄ lD l3)) ])
       by (rewrite gdecl_gwa_ty; exact (kw_glob_ty ρ HG3)).
+    (* the right annotation is the right type, up to equality *)
+    assert (EArA'' : [ gext G' (gdTy Δ1⦃σ⦄ lD l1) ; Θ⟪S⟫ ⊢[ lM ] Ar ≅ A'' @ l2 ])
+      by (eapply eqty_trans; [apply eqty_sym, DAAr | exact DAA'']).
     pose proof (kw_body_ty ρ HGc1 (ltac:(rewrite HM; exact HA))) as HAρ.
     pose proof (kw_body_tm ρ HGc1 (ltac:(rewrite HM; exact Hb))) as Hbρ.
-    pose proof (kw_body_ty ρ HGc3 (ltac:(rewrite HM; exact HAr3))) as HArρ.
-    pose proof (kw_body_tm ρ HGc3 (ltac:(rewrite HM; exact Hb'r3))) as Hb'ρ.
-    rewrite gdecl_gwa_ty, HM in HAρ, Hbρ, HArρ, Hb'ρ.
+    pose proof (kw_body_ty ρ HGc3 (ltac:(rewrite HM; exact HA''3))) as HA''ρ.
+    pose proof (kw_body_tm ρ HGc3 (ltac:(rewrite HM; exact Hb'3))) as Hb'ρ.
+    pose proof (kw_body_eqty ρ HGc1 (ltac:(rewrite HM; exact EArA''))) as Eρ.
+    rewrite gdecl_gwa_ty, HM in HAρ, Hbρ, HA''ρ, Hb'ρ, Eρ.
     pose proof (kw_lequiv ρ H13') as H13ρ. pose proof (kw_lequiv ρ H24') as H24ρ.
+    pose proof (inst_t_eqty HΔρ HA0' Eρ) as EI.
+    assert (HA0'3 : [ kw_G ρ ; Δ1'⦃σ'⦄⟦kw_γ ρ⟧ ⊢[ lD ] A0' @ l3 ]).
+    { eapply wft_lconv; [| apply lequiv_sym, H13ρ]. exact (ctxconv_ty HDDρ (i := lD) eq_refl HA0'). }
     eapply (LR_red_tm _ _ _ _ _ _ _ _ HR' _ _ _ _ Hrel); rewrite HM, ktm_tlam.
     + exact (tmred_tbeta_M HΔρ HDρ (lequiv_wf_l _ _ _ H13ρ) (lequiv_wf_l _ _ _ H24ρ) HAρ Hbρ HA0).
     + eapply tmred_lconv; [| exact H24ρ].
-      apply (tmred_tbeta_M HΔρ HDρ (lequiv_wf_r _ _ _ H13ρ) (lequiv_wf_r _ _ _ H24ρ) HArρ Hb'ρ).
-      eapply wft_lconv; [exact HA0' | apply lequiv_sym, H13ρ].
+      eapply (tmred_conv _ _ _ _ _ eq_refl);
+        [exact (tmred_tbeta_M HΔρ HD'ρ (lequiv_wf_r _ _ _ H13ρ) (lequiv_wf_r _ _ _ H24ρ) HA''ρ Hb'ρ HA0'3) |].
+      eapply eqty_lconv; [apply eqty_sym, EI | apply lequiv_sym, H24ρ].
 Qed.
 
 End TLam.
@@ -1059,7 +1118,7 @@ Lemma VS_tbeta {G Γ Δ1 l l' T t A} : lwf (gL G) l -> lwf (gL G) l' -> [ G ; Δ
   [ G ; Δ1 ⊢[ lD ] A @ l ] ->
   VCtxSP G Δ1 -> VCtxSPM G Δ1 -> @VTyS EP EM EP LR_P G Δ1 A A l -> @VTyS EP EM EM LR_P G Δ1 A A l ->
   VTmSM (gext G (gdTy Δ1 lD l)) Γ⟪S⟫ t t T l' ->
-  VTmSM G Γ (tapp (tlam l l' t) A) t⦃gsingle (GTy A)⦄ T⦃gsingle (GTy A)⦄ l'.
+  VTmSM G Γ (tapp (tlam Δ1 l l' T t) A) t⦃gsingle (GTy A)⦄ T⦃gsingle (GTy A)⦄ l'.
 Proof.
   intros Hl Hl' HΔ1 HT Ht HA VΔP VΔM VAP VAM Vt.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
@@ -1093,7 +1152,7 @@ Variables (G : gctx) (Γ Δ1 : ctx) (l l' : lvl) (T : ty) (t : tm).
 Hypothesis (HΔ1 : [ G ; Δ1 ⊢[ lD ] ]) (VΔP : VCtxSP G Δ1) (VΔM : VCtxSPM G Δ1)
   (Vt : VTmSM G Γ t t (tyTPi Δ1 l l' T) l').
 
-Lemma VS_teta : VTmSM G Γ (tlam l l' (tapp t⟪S⟫ (tyGvar 0 (lshift 0)))) t (tyTPi Δ1 l l' T) l'.
+Lemma VS_teta : VTmSM G Γ (tlam Δ1 l l' T (tapp t⟪S⟫ (tyGvar 0 (lshift 0)))) t (tyTPi Δ1 l l' T) l'.
 Proof.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ d d' Hd.
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
@@ -1118,7 +1177,7 @@ Proof.
   pose proof (SubRel_ctx Hd) as HΘg. pose proof HΘg as HΘ. rewrite HM in HΘ.
   pose proof (ctx_glob _ _ _ HΘ) as HG'.
   pose proof (gs_ctx EP EM Hσ HΔ1 compt_D) as HD.
-  assert (Hw1 : [ G' ; Θ ⊢[ lM ] tlam l l' (tapp uσ⟪S⟫ (tyGvar 0 (lshift 0))) : tyTPi Δ1⦃σ⦄ l l' A @ l' ])
+  assert (Hw1 : [ G' ; Θ ⊢[ lM ] tlam Δ1⦃σ⦄ l l' A (tapp uσ⟪S⟫ (tyGvar 0 (lshift 0))) : tyTPi Δ1⦃σ⦄ l l' A @ l' ])
     by exact (pre_teta_l HD Wl Wl' HA Hu).
   assert (Hw'r : [ G' ; Θ ⊢[ lM ] w' : tyTPi Δ1⦃σ⦄ l l' Ar @ l' ])
     by exact (eqtm_wf_r (i := lM) eq_refl (tmred_eq _ _ _ _ _ _ _ Hw')).
@@ -1131,14 +1190,14 @@ Proof.
   destruct (escape_tm _ _ _ _ _ _ _ _ (HI ρS _ _ hS) _ _ (K ρS _ _ hS)) as (_ & _ & Eb).
   unfold ρS in Eb. rewrite !ktm_gstep, kbody_gstep, (eta_t_ty HA) in Eb.
   cbn [kw_gstep kw_G kw_Δ gwa] in Eb. change (Θ⟪gwk_step gwk_id⟫) with Θ⟪S⟫ in Eb.
-  assert (E1 : [ G' ; Θ ⊢ tlam l l' (tapp uσ⟪S⟫ (tyGvar 0 (lshift 0))) ≈ w' : tyTPi Δ1⦃σ⦄ l l' A @ l' ]).
+  assert (E1 : [ G' ; Θ ⊢ tlam Δ1⦃σ⦄ l l' A (tapp uσ⟪S⟫ (tyGvar 0 (lshift 0))) ≈ w' : tyTPi Δ1⦃σ⦄ l l' A @ l' ]).
   { apply geq_tm_text; [exact HD | exact Wl | exact Wl' | exact HA | exact Hw1 | exact Hw'l |].
     eapply geq_tm_exp; [| | exact Eb]; rewrite HM.
     - eapply tmred_trans; [exact (tmred_teta_body HΘ HD Wl Wl' HA (wf_teta_body HD Wl Wl' HA Hu)) |].
       exact (tmred_teta_app HD Wl Wl' HA Hw).
     - apply tmred_refl, (wf_teta_body HD Wl Wl' HA Hw'l). }
-  apply HR. exists (tlam l l' (tapp uσ⟪S⟫ (tyGvar 0 (lshift 0)))), w'.
-  refine (conj _ (conj _ (conj (whnf_tlam _ _ _) (conj Nw' (conj E1 (conj _ _)))))).
+  apply HR. exists (tlam Δ1⦃σ⦄ l l' A (tapp uσ⟪S⟫ (tyGvar 0 (lshift 0)))), w'.
+  refine (conj _ (conj _ (conj (whnf_tlam _ _ _ _ _) (conj Nw' (conj E1 (conj _ _)))))).
   - rewrite HM. apply tmred_refl, Hw1.
   - rewrite HM. exact Hw'.
   - eapply geq_tm_conv; [exact E1 |]. rewrite HM. exact DU.

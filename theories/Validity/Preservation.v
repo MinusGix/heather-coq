@@ -180,11 +180,11 @@ Qed.
 
 (** ** Universe polymorphism *)
 
-Lemma RS_ubeta n l b ls : length ls = n -> RS_tm (uapp (ulam n l b) ls) b[uext ls lvar]ᵤ.
+Lemma RS_ubeta n l T1 b ls : length ls = n -> RS_tm (uapp (ulam n l T1 b) ls) b[uext ls lvar]ᵤ.
 Proof.
   intros Hn0 G i Γ X k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_uapp Hi Hx) as (n0 & l0 & T0 & (-> & Wl0 & HT0 & Hlen & Hls & Hf) & Hk & ET).
-  destruct (inv_ulam (i := lM) eq_refl Hf) as (T1 & (_ & HΓ & Hn & Wl & HT1 & Hb) & _ & EP).
+  destruct (inv_ulam (i := lM) eq_refl Hf) as ((_ & HΓ & Hn & Wl & HT1 & Hb) & _ & EP).
   destruct (declM_upi_inj EP) as (En & El & EB). subst n n0.
   pose proof (ctx_glob _ _ _ HΓ) as HG. pose proof (wf_ctx_dnf HΓ) as HΓd.
   pose proof (eqtm_ubeta _ _ _ _ _ _ _ HΓ Hn Wl HT1 Hb eq_refl Hls) as Eq.
@@ -204,20 +204,11 @@ Qed.
 
 (** ** Meta-functions *)
 
-Lemma inst_eqty {G Γ D o T T' l} : [ G ; Γ ⊢[ lM ] ] -> dnfo o -> dnf_decl D -> gobj_wf G o D ->
-  [ gext G D ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l ] -> [ G ; Γ ⊢[ lM ] T⦃gsingle o⦄ ≅ T'⦃gsingle o⦄ @ l ].
-Proof.
-  intros HΓ Ho HD Hwf E.
-  pose proof (proj1 (proj2 (proj2 (proj2 (proj2 gsubstitution)))) _ _ _ _ _ _ E (gΨ G) _
-                (gsub_wf_single' HΓ Ho HD Hwf)) as X.
-  unfold gwk_to in X; cbn in X. rewrite gcren_S_gsingle in X by exact (wf_ctx_dnf HΓ). exact X.
-Qed.
-
-Lemma RS_cbeta l b Δ : RS_tm (capp (clam l b) Δ) b⦃gsingle (GCtx Δ)⦄.
+Lemma RS_cbeta l T1 b Δ : RS_tm (capp (clam l T1 b) Δ) b⦃gsingle (GCtx Δ)⦄.
 Proof.
   intros G i Γ X k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_capp Hi Hx) as (l0 & T0 & (-> & Wl0 & HT0 & HΔ & Hf & HTs) & Hk & ET).
-  destruct (inv_clam (i := lM) eq_refl Hf) as (T1 & (_ & HΓ & Wl & HT1 & Hb) & _ & EP).
+  destruct (inv_clam (i := lM) eq_refl Hf) as ((_ & HΓ & Wl & HT1 & Hb) & _ & EP).
   destruct (declM_cpi_inj EP) as (El & EB).
   pose proof (eqtm_cbeta _ _ _ _ _ _ HΓ Wl HT1 Hb HΔ) as Eq.
   pose proof (inst_eqty (o := GCtx Δ) (D := gdCtx) HΓ (wf_ctx_dnf HΔ) I HΔ EB) as EBs.
@@ -234,11 +225,11 @@ Proof.
            (IH _ _ _ _ _ compt_M Hf)).
 Qed.
 
-Lemma RS_tbeta l l' b A : RS_tm (tapp (tlam l l' b) A) b⦃gsingle (GTy A)⦄.
+Lemma RS_tbeta Δ1 l l' T1 b A : RS_tm (tapp (tlam Δ1 l l' T1 b) A) b⦃gsingle (GTy A)⦄.
 Proof.
   intros G i Γ X k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_tapp Hi Hx) as (Δ0 & l0 & l0' & T0 & (-> & Hf & HΔ0 & Wl0 & Wl0' & HT0 & HA & HTs) & Hk & ET).
-  destruct (inv_tlam (i := lM) eq_refl Hf) as (Δ1 & T1 & (_ & HΓ & HΔ1 & Wl & Wl' & HT1 & Hb) & _ & EP).
+  destruct (inv_tlam (i := lM) eq_refl Hf) as ((_ & HΓ & HΔ1 & Wl & Wl' & HT1 & Hb) & _ & EP).
   destruct (declM_tpi_inj EP) as (Ec & E1 & E2 & EB).
   pose proof (wft_lconv _ _ _ _ _ _ (mvD Ec HA) E1) as HA1.
   pose proof (eqtm_tbeta _ _ _ _ _ _ _ _ HΓ HΔ1 Wl Wl' HT1 Hb HA1) as Eq.

@@ -511,8 +511,9 @@ with nftm (t : tm) : Prop :=
   | tmTup s t => nftm s /\ nftm t
   | bindU b | bindG b | bindL b => nftm b
   | elimT _ _ rb _ _ t | elimt _ _ rb _ _ _ t => nftm rb /\ nftm t
-  | ulam _ _ t | uapp t _ => nftm t
-  | clam _ t | capp t _ | tlam _ _ t | tapp t _ => nftm t
+  | uapp t _ => nftm t
+  | ulam _ _ T t | clam _ T t | tlam _ _ _ T t => nfty T /\ nftm t
+  | capp t _ | tapp t _ => nftm t
   end
 with nfl (d : lsub) : Prop :=
   match d with lshift _ => True | lcons d t => nfl d /\ nftm t /\ ~ labsorb d t end.

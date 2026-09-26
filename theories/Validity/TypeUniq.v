@@ -1,13 +1,12 @@
 (** * Uniqueness of synthesized types (M7_DESIGN.md C1, J2, J3.4)
 
-    A term whose type is determined by its syntax ([synth]: not an
-    abstraction or a [box]) has, in the redex-free fragment, one type up
-    to equality and one level up to equivalence ([type_uniq]). For most
-    heads, inversion equates both types with the same syntactic type. For
-    [uapp]/[capp]/[tapp] the function's types are equal (by induction; a
-    checked function has a former of another head, [chk_head], J1 excludes
-    the matching abstraction), so their bodies are ([upi_inj], [cpi_inj],
-    [tpi_inj]), and so are the instances. *)
+    A term whose type is determined by its syntax ([synth]: not a [λ] or a
+    [box]) has one type up to equality and one level up to equivalence
+    ([type_uniq]). For most heads, inversion equates both types with the
+    same syntactic type (the abstractions' annotated formers included, C1b).
+    For [uapp]/[capp]/[tapp] the function's types are equal (by induction;
+    a checked function has a former of another head, [chk_head]), so their
+    bodies are ([upi_inj], [cpi_inj], [tpi_inj]), and so are the instances. *)
 From DeLaM.Typing Require Export DecSide.
 From DeLaM.Validity Require Export TyInj.
 
@@ -54,17 +53,14 @@ Qed.
 (** ** Synthesizing and checked terms *)
 
 Definition synth (t : tm) : Prop :=
-  match t with lam _ _ _ _ | boxT _ | boxt _ | ulam _ _ _ | clam _ _ | tlam _ _ _ => False | _ => True end.
+  match t with lam _ _ _ _ | boxT _ | boxt _ => False | _ => True end.
 
 Lemma synth_dec t : synth t \/ ~ synth t.
 Proof. destruct t; cbn; tauto. Qed.
 
 (** The head of a checked term's type. *)
 Definition chk_head (t : tm) : nat :=
-  match t with
-  | lam _ _ _ _ => 3 | boxT _ => 4 | boxt _ => 5 | ulam _ _ _ => 6 | clam _ _ => 7 | tlam _ _ _ => 8
-  | _ => 0
-  end.
+  match t with lam _ _ _ _ => 3 | boxT _ => 4 | boxt _ => 5 | _ => 0 end.
 
 Lemma chk_ty {G i Γ t T k} : ~ synth t -> [ G ; Γ ⊢[ i ] t : T @ k ] ->
   exists F, whnf_ty F /\ ty_head F = chk_head t /\ [ G ; Γ ⊢[ typeof i ] T ≅ F @ k ].
@@ -75,12 +71,6 @@ Proof.
     eexists; split; [|split; [| exact E]]; auto with whnf.
   - pose proof (typed_m_only H I) as ->. destruct (inv_boxt eq_refl H) as (Δ & A & l & _ & _ & E).
     eexists; split; [|split; [| exact E]]; auto with whnf.
-  - pose proof (typed_m_only H I) as ->. destruct (inv_ulam eq_refl H) as (T0 & _ & _ & E).
-    eexists; split; [|split; [| exact E]]; auto with whnf.
-  - pose proof (typed_m_only H I) as ->. destruct (inv_clam eq_refl H) as (T0 & _ & _ & E).
-    eexists; split; [|split; [| exact E]]; auto with whnf.
-  - pose proof (typed_m_only H I) as ->. destruct (inv_tlam eq_refl H) as (Δ & T0 & _ & _ & E).
-    eexists; split; [|split; [| exact E]]; auto with whnf.
 Qed.
 
 Lemma chk_at_whnf {G i Γ t W k} : ~ synth t -> [ G ; Γ ⊢[ i ] t : W @ k ] -> whnf_ty W ->
@@ -90,30 +80,6 @@ Proof.
   rewrite <- Eh. exact (decl_head_c (compt_typeof i) E HW HF).
 Qed.
 
-(** ** Instances of equal bodies *)
-
-Section InstEq.
-Context {G : gctx} {Γ : ctx} (HΓ : [ G ; Γ ⊢[ lM ] ]).
-
-Lemma inst_eqty {D o T T' l} : dnfo o -> dnf_decl D -> gobj_wf G o D ->
-  [ gext G D ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l ] -> [ G ; Γ ⊢[ lM ] T⦃gsingle o⦄ ≅ T'⦃gsingle o⦄ @ l ].
-Proof.
-  intros Ho HD Hwf HT.
-  pose proof (proj1 (proj2 (proj2 (proj2 (proj2 gsubstitution)))) _ _ _ _ _ _ HT (gΨ G) _
-                (gsub_wf_single' HΓ Ho HD Hwf)) as X.
-  unfold gwk_to in X; cbn in X. rewrite gcren_S_gsingle in X by exact (wf_ctx_dnf HΓ). exact X.
-Qed.
-
-Lemma inst_c_eqty {Δ T T' l} : [ G ; Δ ⊢[ lD ] ] -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l ] ->
-  [ G ; Γ ⊢[ lM ] T⦃gsingle (GCtx Δ)⦄ ≅ T'⦃gsingle (GCtx Δ)⦄ @ l ].
-Proof. intros HΔ; apply inst_eqty; [exact (wf_ctx_dnf HΔ) | exact I | exact HΔ]. Qed.
-
-Lemma inst_t_eqty {Δ A l T T' l'} : [ G ; Δ ⊢[ lD ] A @ l ] ->
-  [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l' ] ->
-  [ G ; Γ ⊢[ lM ] T⦃gsingle (GTy A)⦄ ≅ T'⦃gsingle (GTy A)⦄ @ l' ].
-Proof. intros HA; apply inst_eqty; [exact (wf_ty_dnf HA) | exact (wf_ty_dnf_ctx HA) | exact HA]. Qed.
-
-End InstEq.
 
 (** ** The theorem *)
 
@@ -123,11 +89,11 @@ Ltac uq_same :=
     |- lvl_eq _ ?k ?k' /\ _ => exact (uniq_same Hk Hk' E E')
   end.
 
-Theorem type_uniq t : nlr_tm t -> synth t -> forall G i Γ T T' k k',
+Theorem type_uniq t : synth t -> forall G i Γ T T' k k',
   [ G ; Γ ⊢[ i ] t : T @ k ] -> [ G ; Γ ⊢[ i ] t : T' @ k' ] ->
   lvl_eq (gL G) k k' /\ [ G ; Γ ⊢[ typeof i ] T ≅ T' @ k ].
 Proof.
-  induction t; intros Hn Hs G0 i0 Γ0 Ty1 Ty2 k1 k2 H1 H2; cbn in Hn, Hs; try contradiction.
+  induction t; intros Hs G0 i0 Γ0 Ty1 Ty2 k1 k2 H1 H2; cbn in Hs; try contradiction.
   all: try (exfalso; exact (no_junk H1 I)).
   (* the M-only heads are typed at M *)
   all: try (pose proof (typed_m_only H1 I) as ->).
@@ -149,39 +115,36 @@ Proof.
       destruct (inv_elimt eq_refl H2) as (MT' & Mt' & bs' & (Er' & _) & Hk' & E');
       rewrite Er in Er'; destruct (mkrb_inj_MT Er') as [<- <-]; uq_same
   | wf_tm _ _ _ (uapp ?f ?ls) _ _ =>
-      destruct Hn as [Hu Hn];
       destruct (inv_uapp eq_refl H1) as (n & l & T0 & (_ & Hl & HT0 & Hlen & Hls & Ht) & Hk & E);
       destruct (inv_uapp eq_refl H2) as (n' & l' & T0' & (_ & Hl' & HT0' & Hlen' & _ & Ht') & Hk' & E');
       destruct (synth_dec f) as [Hst | Hst];
-      [ destruct (IHt Hn Hst _ _ _ _ _ _ _ Ht Ht') as (_ & EU);
+      [ destruct (IHt Hst _ _ _ _ _ _ _ Ht Ht') as (_ & EU);
         destruct (upi_inj EU) as (-> & Q & ET); subst n;
         let HΓ := fresh "HΓ" in pose proof (ctx_of_tm_any H1) as HΓ;
         refine (uniq_fin Hk Hk' _ E E' (uinst_eqty (ls := ls) (ctx_glob _ _ _ HΓ) (wf_ctx_dnf HΓ) Hls ET));
         right; exact (lequiv_lvsubst _ _ _ _ _ (usub_ok_uext _ _ _ _ Hls (usub_ok_id _)) Q)
       | let Eh := fresh "Eh" in pose proof (chk_at_whnf Hst Ht (whnf_tyUPi _ _ _)) as Eh;
-        destruct f; cbn in Eh, Hu; first [discriminate Eh | contradiction] ]
+        destruct f; cbn in Eh, Hst; first [discriminate Eh | exact (Hst I)] ]
   | wf_tm _ _ _ (capp ?f _) _ _ =>
-      destruct Hn as (Hc & Hn & _);
       destruct (inv_capp eq_refl H1) as (l & T0 & (_ & Hl & HT0 & HΔ & Ht & _) & Hk & E);
       destruct (inv_capp eq_refl H2) as (l' & T0' & (_ & Hl' & HT0' & _ & Ht' & _) & Hk' & E');
       destruct (synth_dec f) as [Hst | Hst];
-      [ destruct (IHt Hn Hst _ _ _ _ _ _ _ Ht Ht') as (_ & EC);
+      [ destruct (IHt Hst _ _ _ _ _ _ _ Ht Ht') as (_ & EC);
         destruct (cpi_inj EC) as (Q & ET);
         let HΓ := fresh "HΓ" in pose proof (ctx_of_tm_any H1) as HΓ;
         exact (uniq_fin Hk Hk' (or_intror Q) E E' (inst_c_eqty HΓ HΔ ET))
       | let Eh := fresh "Eh" in pose proof (chk_at_whnf Hst Ht (whnf_tyCPi _ _)) as Eh;
-        destruct f; cbn in Eh, Hc; first [discriminate Eh | contradiction] ]
+        destruct f; cbn in Eh, Hst; first [discriminate Eh | exact (Hst I)] ]
   | wf_tm _ _ _ (tapp ?f _) _ _ =>
-      destruct Hn as (Hc & Hn & _);
       destruct (inv_tapp eq_refl H1) as (Δ & l1 & l2 & T0 & (_ & Ht & HΔ & Hl1 & Hl2 & HT0 & HA & _) & Hk & E);
       destruct (inv_tapp eq_refl H2) as (Δ' & l1' & l2' & T0' & (_ & Ht' & _) & Hk' & E');
       destruct (synth_dec f) as [Hst | Hst];
-      [ destruct (IHt Hn Hst _ _ _ _ _ _ _ Ht Ht') as (Hl & EP);
+      [ destruct (IHt Hst _ _ _ _ _ _ _ Ht Ht') as (Hl & EP);
         destruct (tpi_inj EP) as (Q1 & Q2 & EΔ & ET);
         let HΓ := fresh "HΓ" in pose proof (ctx_of_tm_any H1) as HΓ;
         exact (uniq_fin Hk Hk' (or_intror Q2) E E' (inst_t_eqty HΓ HA ET))
       | let Eh := fresh "Eh" in pose proof (chk_at_whnf Hst Ht (whnf_tyTPi _ _ _ _)) as Eh;
-        destruct f; cbn in Eh, Hc; first [discriminate Eh | contradiction] ]
+        destruct f; cbn in Eh, Hst; first [discriminate Eh | exact (Hst I)] ]
   | _ =>
       first
       [ destruct (inva_code_nat H1) as (_ & Hk & E); destruct (inva_code_nat H2) as (_ & Hk' & E'); uq_same
@@ -192,6 +155,9 @@ Proof.
       | destruct (inva_natrec H1) as (_ & Hk & E); destruct (inva_natrec H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_app H1) as (_ & Hk & E); destruct (inva_app H2) as (_ & Hk' & E'); uq_same
       | destruct (inv_letboxT eq_refl H1) as (_ & Hk & E); destruct (inv_letboxT eq_refl H2) as (_ & Hk' & E'); uq_same
-      | destruct (inv_letboxt eq_refl H1) as (_ & Hk & E); destruct (inv_letboxt eq_refl H2) as (_ & Hk' & E'); uq_same ]
+      | destruct (inv_letboxt eq_refl H1) as (_ & Hk & E); destruct (inv_letboxt eq_refl H2) as (_ & Hk' & E'); uq_same
+      | destruct (inv_ulam eq_refl H1) as (_ & Hk & E); destruct (inv_ulam eq_refl H2) as (_ & Hk' & E'); uq_same
+      | destruct (inv_clam eq_refl H1) as (_ & Hk & E); destruct (inv_clam eq_refl H2) as (_ & Hk' & E'); uq_same
+      | destruct (inv_tlam eq_refl H1) as (_ & Hk & E); destruct (inv_tlam eq_refl H2) as (_ & Hk' & E'); uq_same ]
   end.
 Qed.

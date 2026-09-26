@@ -83,7 +83,7 @@ Definition tm_con (t : tm) : nat :=
   | natrec _ _ _ _ _ => 7 | lam _ _ _ _ => 8 | app _ _ _ _ _ _ => 9 | gvar _ _ => 10 | boxT _ => 11
   | boxt _ => 12 | letboxT _ _ _ _ _ _ => 13 | letboxt _ _ _ _ _ _ _ => 14 | tmTy _ => 15 | tmTup _ _ => 16
   | bindU _ => 17 | bindG _ => 18 | bindL _ => 19 | elimT _ _ _ _ _ _ => 20 | elimt _ _ _ _ _ _ _ => 21
-  | ulam _ _ _ => 22 | uapp _ _ => 23 | clam _ _ => 24 | capp _ _ => 25 | tlam _ _ _ => 26 | tapp _ _ => 27
+  | ulam _ _ _ _ => 22 | uapp _ _ => 23 | clam _ _ _ => 24 | capp _ _ => 25 | tlam _ _ _ _ _ => 26 | tapp _ _ => 27
   end.
 
 Lemma ac_tmne_con {G Γ ν ν' T} : ac_tmne G Γ ν ν' T -> tm_con ν = tm_con ν'.

@@ -176,8 +176,8 @@ Lemma inv_elimt {G i Γ l1 l2 rb l Δ A t T k} : typeof i = i ->
     lvl_eq (gL G) k l2 /\ [ G ; Γ ⊢[ i ] T ≅ mott (wrapMt Mt) l Δ A t @ k ].
 Proof. inv_tm. Qed.
 
-Lemma inv_ulam {G i Γ n l t T k} : typeof i = i -> [ G ; Γ ⊢[ i ] ulam n l t : T @ k ] ->
-  exists T0, (i = lM /\ [ G ; Γ ⊢[ lM ] ] /\ 0 < n /\ lwf (n + gL G) l /\
+Lemma inv_ulam {G i Γ n l T0 t T k} : typeof i = i -> [ G ; Γ ⊢[ i ] ulam n l T0 t : T @ k ] ->
+  (i = lM /\ [ G ; Γ ⊢[ lM ] ] /\ 0 < n /\ lwf (n + gL G) l /\
     [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T0 @ l ] /\
     [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] t : T0 @ l ]) /\
     lvl_eq (gL G) k lomega /\ [ G ; Γ ⊢[ i ] T ≅ tyUPi n l T0 @ k ].
@@ -189,8 +189,8 @@ Lemma inv_uapp {G i Γ t ls T k} : typeof i = i -> [ G ; Γ ⊢[ i ] uapp t ls :
     lvl_eq (gL G) k (lvsubst l (uext ls lvar)) /\ [ G ; Γ ⊢[ i ] T ≅ T0[uext ls lvar]ᵤ @ k ].
 Proof. inv_tm. Qed.
 
-Lemma inv_clam {G i Γ l t T k} : typeof i = i -> [ G ; Γ ⊢[ i ] clam l t : T @ k ] ->
-  exists T0, (i = lM /\ [ G ; Γ ⊢[ lM ] ] /\ lwf (gL G) l /\
+Lemma inv_clam {G i Γ l T0 t T k} : typeof i = i -> [ G ; Γ ⊢[ i ] clam l T0 t : T @ k ] ->
+  (i = lM /\ [ G ; Γ ⊢[ lM ] ] /\ lwf (gL G) l /\
     [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T0 @ l ] /\ [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] t : T0 @ l ]) /\
     lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ i ] T ≅ tyCPi l T0 @ k ].
 Proof. inv_tm. Qed.
@@ -202,8 +202,8 @@ Lemma inv_capp {G i Γ t Δ T k} : typeof i = i -> [ G ; Γ ⊢[ i ] capp t Δ :
     lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ i ] T ≅ T0⦃gsingle (GCtx Δ)⦄ @ k ].
 Proof. inv_tm. Qed.
 
-Lemma inv_tlam {G i Γ l l' t T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tlam l l' t : T @ k ] ->
-  exists Δ T0, (i = lM /\ [ G ; Γ ⊢[ lM ] ] /\ [ G ; Δ ⊢[ lD ] ] /\ lwf (gL G) l /\ lwf (gL G) l' /\
+Lemma inv_tlam {G i Γ Δ l l' T0 t T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tlam Δ l l' T0 t : T @ k ] ->
+  (i = lM /\ [ G ; Γ ⊢[ lM ] ] /\ [ G ; Δ ⊢[ lD ] ] /\ lwf (gL G) l /\ lwf (gL G) l' /\
     [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T0 @ l' ] /\
     [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] t : T0 @ l' ]) /\
     lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ i ] T ≅ tyTPi Δ l l' T0 @ k ].

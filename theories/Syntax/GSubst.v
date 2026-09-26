@@ -254,8 +254,9 @@ with dnftm (t : tm) : Prop :=
   | bindU b | bindG b | bindL b => dnftm b
   | elimT _ _ rb _ Δ t => dnftm rb /\ dnfctx Δ /\ dnftm t
   | elimt _ _ rb _ Δ T t => dnftm rb /\ dnfctx Δ /\ dnfty T /\ dnftm t
-  | ulam _ _ t | uapp t _ => dnftm t
-  | clam _ t | tlam _ _ t => dnftm t
+  | uapp t _ => dnftm t
+  | ulam _ _ T t | clam _ T t => dnfty T /\ dnftm t
+  | tlam Δ _ _ T t => dnfctx Δ /\ dnfty T /\ dnftm t
   | capp t Δ => dnftm t /\ dnfctx Δ
   | tapp t T => dnftm t /\ dnfty T
   end

@@ -354,6 +354,13 @@ Proof.
   intros HG H. pose proof (gwa_ty (kw_gok_up D) HG H) as X. rewrite gwa_up'_shift in X.
   exact (wf_ty_wkr kw_wkr_g (kw_body_ctx D HG) X).
 Qed.
+Lemma kw_body_eqty {D T T' l} : [ ⊢ gext (kw_G ρ) (gdecl_gwa (kw_γ ρ) D) ] ->
+  [ gext G D ; Γ⟪S⟫ ⊢g T ≅ T' @ l ] ->
+  [ gext (kw_G ρ) (gdecl_gwa (kw_γ ρ) D) ; (kw_Δ ρ)⟪S⟫ ⊢g kbody ρ T ≅ kbody ρ T' @ l ].
+Proof.
+  intros HG H. pose proof (gwa_eqty (kw_gok_up D) HG H) as X. rewrite !gwa_up'_shift in X.
+  exact (eqty_wkr kw_wkr_g (kw_body_ctx D HG) X).
+Qed.
 Lemma kw_body_tm {D t T l} : [ ⊢ gext (kw_G ρ) (gdecl_gwa (kw_γ ρ) D) ] ->
   [ gext G D ; Γ⟪S⟫ ⊢g t : T @ l ] ->
   [ gext (kw_G ρ) (gdecl_gwa (kw_γ ρ) D) ; (kw_Δ ρ)⟪S⟫ ⊢g kbodyt ρ t : kbody ρ T @ l ].
@@ -419,10 +426,10 @@ Lemma kty_tyCPi l T : kty ρ (tyCPi l T) = tyCPi l (kbody ρ T).
 Proof. unfold kty, kbody; now destruct (kw_γ ρ). Qed.
 Lemma kty_tyTPi Δ l l' T : kty ρ (tyTPi Δ l l' T) = tyTPi Δ⟦kw_γ ρ⟧ l l' (kbody ρ T).
 Proof. unfold kty, kbody; now destruct (kw_γ ρ). Qed.
-Lemma ktm_clam l t : ktm ρ (clam l t) = clam l (kbodyt ρ t).
-Proof. unfold ktm, kbodyt; now destruct (kw_γ ρ). Qed.
-Lemma ktm_tlam l l' t : ktm ρ (tlam l l' t) = tlam l l' (kbodyt ρ t).
-Proof. unfold ktm, kbodyt; now destruct (kw_γ ρ). Qed.
+Lemma ktm_clam l T t : ktm ρ (clam l T t) = clam l (kbody ρ T) (kbodyt ρ t).
+Proof. unfold ktm, kbody, kbodyt; now destruct (kw_γ ρ). Qed.
+Lemma ktm_tlam Δ l l' T t : ktm ρ (tlam Δ l l' T t) = tlam Δ⟦kw_γ ρ⟧ l l' (kbody ρ T) (kbodyt ρ t).
+Proof. unfold ktm, kbody, kbodyt; now destruct (kw_γ ρ). Qed.
 Lemma ktm_capp t Δ : ktm ρ (capp t Δ) = capp (ktm ρ t) Δ⟦kw_γ ρ⟧.
 Proof. unfold ktm; now destruct (kw_γ ρ). Qed.
 Lemma ktm_tapp t A : ktm ρ (tapp t A) = tapp (ktm ρ t) A⟦kw_γ ρ⟧.

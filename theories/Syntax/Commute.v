@@ -106,27 +106,27 @@ Lemma subst_elimt l1 l2 rb l Δ T t : (elimt l1 l2 rb l Δ T t)[d] = elimt l1 l2
 Proof. reflexivity. Qed.
 (** [UΠ] (M4): the body's scope, and its instances and weakenings. *)
 Lemma ren_tyUPi n l T : (tyUPi n l T)⟨r⟩ = tyUPi n l T⟨r⟩. Proof. reflexivity. Qed.
-Lemma ren_ulam n l t : (ulam n l t)⟨r⟩ = ulam n l t⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_ulam n l T t : (ulam n l T t)⟨r⟩ = ulam n l T⟨r⟩ t⟨r⟩. Proof. reflexivity. Qed.
 Lemma ren_uapp t ls : (uapp t ls)⟨r⟩ = uapp t⟨r⟩ ls. Proof. reflexivity. Qed.
 Lemma ren_usubst_ty (T : ty) φ : T[φ]ᵤ⟨r⟩ = T⟨r⟩[φ]ᵤ. Proof. symmetry; apply usubst_ren_ty. Qed.
 Lemma ren_usubst_tm (t : tm) φ : t[φ]ᵤ⟨r⟩ = t⟨r⟩[φ]ᵤ. Proof. symmetry; apply usubst_ren. Qed.
 Lemma ren_uren_tm (t : tm) ρ : t⟨ρ⟩ᵤ⟨r⟩ = t⟨r⟩⟨ρ⟩ᵤ. Proof. symmetry; apply uren_ren_all. Qed.
 Lemma subst_tyUPi n l T : (tyUPi n l T)[d] = tyUPi n l T[uwkn n d]. Proof. reflexivity. Qed.
-Lemma subst_ulam n l t : (ulam n l t)[d] = ulam n l t[uwkn n d]. Proof. reflexivity. Qed.
+Lemma subst_ulam n l T t : (ulam n l T t)[d] = ulam n l T[uwkn n d] t[uwkn n d]. Proof. reflexivity. Qed.
 Lemma subst_uapp t ls : (uapp t ls)[d] = uapp t[d] ls. Proof. reflexivity. Qed.
 (** The meta-functions (M5): the body under a global binder, the arguments
     in their own scopes. *)
 Lemma ren_tyCPi l T : (tyCPi l T)⟨r⟩ = tyCPi l T⟨r⟩. Proof. reflexivity. Qed.
 Lemma ren_tyTPi Δ l l' T : (tyTPi Δ l l' T)⟨r⟩ = tyTPi Δ l l' T⟨r⟩. Proof. reflexivity. Qed.
-Lemma ren_clam l t : (clam l t)⟨r⟩ = clam l t⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_clam l T t : (clam l T t)⟨r⟩ = clam l T⟨r⟩ t⟨r⟩. Proof. reflexivity. Qed.
 Lemma ren_capp t Δ : (capp t Δ)⟨r⟩ = capp t⟨r⟩ Δ. Proof. reflexivity. Qed.
-Lemma ren_tlam l l' t : (tlam l l' t)⟨r⟩ = tlam l l' t⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_tlam Δ l l' T t : (tlam Δ l l' T t)⟨r⟩ = tlam Δ l l' T⟨r⟩ t⟨r⟩. Proof. reflexivity. Qed.
 Lemma ren_tapp t T : (tapp t T)⟨r⟩ = tapp t⟨r⟩ T. Proof. reflexivity. Qed.
 Lemma subst_tyCPi l T : (tyCPi l T)[d] = tyCPi l T[gwk d]. Proof. reflexivity. Qed.
 Lemma subst_tyTPi Δ l l' T : (tyTPi Δ l l' T)[d] = tyTPi Δ l l' T[gwk d]. Proof. reflexivity. Qed.
-Lemma subst_clam l t : (clam l t)[d] = clam l t[gwk d]. Proof. reflexivity. Qed.
+Lemma subst_clam l T t : (clam l T t)[d] = clam l T[gwk d] t[gwk d]. Proof. reflexivity. Qed.
 Lemma subst_capp t Δ : (capp t Δ)[d] = capp t[d] Δ. Proof. reflexivity. Qed.
-Lemma subst_tlam l l' t : (tlam l l' t)[d] = tlam l l' t[gwk d]. Proof. reflexivity. Qed.
+Lemma subst_tlam Δ l l' T t : (tlam Δ l l' T t)[d] = tlam Δ l l' T[gwk d] t[gwk d]. Proof. reflexivity. Qed.
 Lemma subst_tapp t T : (tapp t T)[d] = tapp t[d] T. Proof. reflexivity. Qed.
 End Push.
 

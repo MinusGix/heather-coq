@@ -50,11 +50,11 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
   | elimt l1 l2 rb l Δ A t, elimt l1' l2' rb' l' Δ' A' t' =>
       leqv l1 l1' /\ leqv l2 l2' /\ tm_leq rb rb' /\ leqv l l' /\ ctx_leq Δ Δ' /\ ty_leq A A' /\
       tm_leq t t'
-  | ulam n l t, ulam n' l' t' => n = n' /\ leqv l l' /\ tm_leq t t'
+  | ulam n l T t, ulam n' l' T' t' => n = n' /\ leqv l l' /\ ty_leq T T' /\ tm_leq t t'
   | uapp t ls, uapp t' ls' => tm_leq t t' /\ Forall2 leqv ls ls'
-  | clam l t, clam l' t' => leqv l l' /\ tm_leq t t'
+  | clam l T t, clam l' T' t' => leqv l l' /\ ty_leq T T' /\ tm_leq t t'
   | capp t Δ, capp t' Δ' => tm_leq t t' /\ ctx_leq Δ Δ'
-  | tlam l1 l2 t, tlam l1' l2' t' => leqv l1 l1' /\ leqv l2 l2' /\ tm_leq t t'
+  | tlam Δ l1 l2 T t, tlam Δ' l1' l2' T' t' => ctx_leq Δ Δ' /\ leqv l1 l1' /\ leqv l2 l2' /\ ty_leq T T' /\ tm_leq t t'
   | tapp t A, tapp t' A' => tm_leq t t' /\ ty_leq A A'
   | _, _ => False
   end
@@ -358,11 +358,11 @@ with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   | elimT l1 l2 rb l Δ t => lwf L l1 /\ lwf L l2 /\ tm_lwf L rb /\ lwf L l /\ ctx_lwf L Δ /\ tm_lwf L t
   | elimt l1 l2 rb l Δ A t =>
       lwf L l1 /\ lwf L l2 /\ tm_lwf L rb /\ lwf L l /\ ctx_lwf L Δ /\ ty_lwf L A /\ tm_lwf L t
-  | ulam n l t => lwf (n + L) l /\ tm_lwf (n + L) t
+  | ulam n l T t => lwf (n + L) l /\ ty_lwf (n + L) T /\ tm_lwf (n + L) t
   | uapp t ls => tm_lwf L t /\ Forall (lwf L) ls
-  | clam l t => lwf L l /\ tm_lwf L t
+  | clam l T t => lwf L l /\ ty_lwf L T /\ tm_lwf L t
   | capp t Δ => tm_lwf L t /\ ctx_lwf L Δ
-  | tlam l1 l2 t => lwf L l1 /\ lwf L l2 /\ tm_lwf L t
+  | tlam Δ l1 l2 T t => ctx_lwf L Δ /\ lwf L l1 /\ lwf L l2 /\ ty_lwf L T /\ tm_lwf L t
   | tapp t A => tm_lwf L t /\ ty_lwf L A
   end
 with ctx_lwf (L : nat) (Γ : ctx) {struct Γ} : Prop :=

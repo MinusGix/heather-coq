@@ -36,12 +36,12 @@ Inductive red : tm -> tm -> Prop :=
     red (elimt l1 l2 rb l Δ T (boxt (lam k k' A b))) (elimt l1 l2 rb l Δ T' (boxt (lam k k' A b)))
 (* universe polymorphism (M4); as for [app], the annotation is ignored. The
    arity check makes β commute with universe substitution *)
-| red_ubeta n l b ls : length ls = n -> red (uapp (ulam n l b) ls) b[uext ls lvar]ᵤ
+| red_ubeta n l T b ls : length ls = n -> red (uapp (ulam n l T b) ls) b[uext ls lvar]ᵤ
 | red_uapp t t' ls : red t t' -> red (uapp t ls) (uapp t' ls)
 (* meta-functions (M5): β instantiates the global binder *)
-| red_cbeta l b Δ : red (capp (clam l b) Δ) b⦃gsingle (GCtx Δ)⦄
+| red_cbeta l T b Δ : red (capp (clam l T b) Δ) b⦃gsingle (GCtx Δ)⦄
 | red_capp t t' Δ : red t t' -> red (capp t Δ) (capp t' Δ)
-| red_tbeta l l' b T : red (tapp (tlam l l' b) T) b⦃gsingle (GTy T)⦄
+| red_tbeta Δ l l' B b T : red (tapp (tlam Δ l l' B b) T) b⦃gsingle (GTy T)⦄
 | red_tapp t t' T : red t t' -> red (tapp t T) (tapp t' T)
 
 with red_ty : ty -> ty -> Prop :=
@@ -94,9 +94,9 @@ Proof.
         | Hr : red zero _ |- _ => inversion Hr
         | Hr : red (succ _) _ |- _ => inversion Hr
         | Hr : red (lam _ _ _ _) _ |- _ => inversion Hr
-        | Hr : red (ulam _ _ _) _ |- _ => inversion Hr
-        | Hr : red (clam _ _) _ |- _ => inversion Hr
-        | Hr : red (tlam _ _ _) _ |- _ => inversion Hr
+        | Hr : red (ulam _ _ _ _) _ |- _ => inversion Hr
+        | Hr : red (clam _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tlam _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (boxT _) _ |- _ => inversion Hr
         | Hr : red (boxt _) _ |- _ => inversion Hr
         | Hr : red tmNat _ |- _ => inversion Hr
@@ -201,7 +201,7 @@ Proof.
   destruct c; cbn [redt]; try destruct T; intros E; inversion E; subst; f_equal; peel_push r.
 Qed.
 
-Lemma red_ubeta_ren n l b ls r : length ls = n -> red (uapp (ulam n l b⟨r⟩) ls) b[uext ls lvar]ᵤ⟨r⟩.
+Lemma red_ubeta_ren n l T b ls r : length ls = n -> red (uapp (ulam n l T⟨r⟩ b⟨r⟩) ls) b[uext ls lvar]ᵤ⟨r⟩.
 Proof. intros; rewrite <- usubst_ren. now constructor. Qed.
 
 Lemma red_ren_both :

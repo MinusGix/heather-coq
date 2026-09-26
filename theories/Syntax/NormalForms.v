@@ -32,9 +32,9 @@ Inductive whnf : tm -> Prop :=
 | whnf_lam l l' A t : whnf (lam l l' A t)
 | whnf_boxT T : whnf (boxT T)
 | whnf_boxt t : whnf (boxt t)
-| whnf_ulam n l t : whnf (ulam n l t)
-| whnf_clam l t : whnf (clam l t)
-| whnf_tlam l l' t : whnf (tlam l l' t).
+| whnf_ulam n l T t : whnf (ulam n l T t)
+| whnf_clam l T t : whnf (clam l T t)
+| whnf_tlam Δ l l' T t : whnf (tlam Δ l l' T t).
 
 Inductive whne_ty : ty -> Prop :=
 | whne_tyGvar U d : whne_ty (tyGvar U d)
@@ -105,13 +105,13 @@ Lemma whne_ty_not_CTyp Δ l : ~ whne_ty (tyCTyp Δ l).
 Proof. inversion 1. Qed.
 Lemma whne_ty_not_CTrm Δ T l : ~ whne_ty (tyCTrm Δ T l).
 Proof. inversion 1. Qed.
-Lemma whne_not_ulam n l t : ~ whne (ulam n l t).
+Lemma whne_not_ulam n l T t : ~ whne (ulam n l T t).
 Proof. inversion 1. Qed.
 Lemma whne_ty_not_UPi n l T : ~ whne_ty (tyUPi n l T).
 Proof. inversion 1. Qed.
-Lemma whne_not_clam l t : ~ whne (clam l t).
+Lemma whne_not_clam l T t : ~ whne (clam l T t).
 Proof. inversion 1. Qed.
-Lemma whne_not_tlam l l' t : ~ whne (tlam l l' t).
+Lemma whne_not_tlam Δ l l' T t : ~ whne (tlam Δ l l' T t).
 Proof. inversion 1. Qed.
 Lemma whne_ty_not_CPi l T : ~ whne_ty (tyCPi l T).
 Proof. inversion 1. Qed.

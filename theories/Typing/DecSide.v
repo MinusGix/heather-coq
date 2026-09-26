@@ -1,4 +1,4 @@
-(** * Decidable side conditions and the redex-free fragment (M7_DESIGN.md C1, J1, J3.2)
+(** * Decidable side conditions (M7_DESIGN.md C1, J3.2)
 
     The syntactic premises of the typing rules are decidable: context and
     global lookups (deterministic, [in_ctx_det], [in_gctx_det]), the tail
@@ -6,8 +6,7 @@
     and the shape of a recursor bundle ([rb_view], by an extraction
     [unrb] inverse to [mkrb]).
 
-    The fragment [nlr]: no [uapp (ulam …)], [capp (clam …)], [tapp (tlam …)]
-    anywhere (J1). The size [sz] is the induction measure of the
+    The size [sz] is the induction measure of the
     decision procedure: the entries of a local substitution and the parts
     of a bundle are smaller than the node holding them. *)
 From DeLaM.Syntax Require Export LevelDec.
@@ -238,85 +237,6 @@ Proof.
   - right; intros MT Mt bs ->. rewrite unrb_mkrb in E. discriminate.
 Qed.
 
-(** ** The redex-free fragment *)
-
-Definition not_ulam (t : tm) : Prop := match t with ulam _ _ _ => False | _ => True end.
-Definition not_clam (t : tm) : Prop := match t with clam _ _ => False | _ => True end.
-Definition not_tlam (t : tm) : Prop := match t with tlam _ _ _ => False | _ => True end.
-
-Fixpoint nlr_ty (T : ty) : Prop :=
-  match T with
-  | tyErr | tyNat | tyU _ => True
-  | tyPi _ _ A B => nlr_ty A /\ nlr_ty B
-  | tyEl _ t => nlr_tm t
-  | tyGvar _ d => nlr_l d
-  | tyCTyp Δ _ => nlr_ctx Δ
-  | tyCTrm Δ T _ => nlr_ctx Δ /\ nlr_ty T
-  | tyUPi _ _ T | tyCPi _ T => nlr_ty T
-  | tyTPi Δ _ _ T => nlr_ctx Δ /\ nlr_ty T
-  end
-with nlr_tm (t : tm) : Prop :=
-  match t with
-  | var _ | tmErr | tmNat | tmU _ | zero => True
-  | tmPi _ _ s t => nlr_tm s /\ nlr_tm t
-  | succ t => nlr_tm t
-  | natrec _ M s z t => nlr_ty M /\ nlr_tm s /\ nlr_tm z /\ nlr_tm t
-  | lam _ _ A t => nlr_ty A /\ nlr_tm t
-  | app t _ _ A B s => nlr_tm t /\ nlr_ty A /\ nlr_ty B /\ nlr_tm s
-  | gvar _ d => nlr_l d
-  | boxT T => nlr_ty T
-  | boxt t => nlr_tm t
-  | letboxT _ _ Δ M t' t => nlr_ctx Δ /\ nlr_ty M /\ nlr_tm t' /\ nlr_tm t
-  | letboxt _ _ Δ T M t' t => nlr_ctx Δ /\ nlr_ty T /\ nlr_ty M /\ nlr_tm t' /\ nlr_tm t
-  | tmTy T => nlr_ty T
-  | tmTup s t => nlr_tm s /\ nlr_tm t
-  | bindU b | bindG b | bindL b => nlr_tm b
-  | elimT _ _ rb _ Δ t => nlr_tm rb /\ nlr_ctx Δ /\ nlr_tm t
-  | elimt _ _ rb _ Δ T t => nlr_tm rb /\ nlr_ctx Δ /\ nlr_ty T /\ nlr_tm t
-  | ulam _ _ t | clam _ t | tlam _ _ t => nlr_tm t
-  | uapp t _ => not_ulam t /\ nlr_tm t
-  | capp t Δ => not_clam t /\ nlr_tm t /\ nlr_ctx Δ
-  | tapp t T => not_tlam t /\ nlr_tm t /\ nlr_ty T
-  end
-with nlr_ctx (Γ : ctx) : Prop :=
-  match Γ with cnil | cvar _ => True | cext Γ A _ => nlr_ctx Γ /\ nlr_ty A end
-with nlr_l (d : lsub) : Prop :=
-  match d with lshift _ => True | lcons d t => nlr_l d /\ nlr_tm t end.
-
-Lemma nlr_dec_all :
-  (forall T, Dec (nlr_ty T)) /\ (forall t, Dec (nlr_tm t)) /\ (forall Γ, Dec (nlr_ctx Γ)) /\ (forall d, Dec (nlr_l d)).
-Proof.
-  apply syn_ind; intros; cbn [nlr_ty nlr_tm nlr_ctx nlr_l];
-    repeat first [ apply dec_and | assumption | apply dec_True ].
-  all: match goal with
-       | |- Dec (not_ulam ?t) => destruct t; cbn; first [apply dec_True | apply dec_False]
-       | |- Dec (not_clam ?t) => destruct t; cbn; first [apply dec_True | apply dec_False]
-       | |- Dec (not_tlam ?t) => destruct t; cbn; first [apply dec_True | apply dec_False]
-       end.
-Qed.
-
-Lemma nlr_llk d n : nlr_l d -> nlr_tm (llk d n).
-Proof. revert n; induction d as [k | d IH t]; intros [|n] H; cbn in *; try tauto. apply IH; tauto. Qed.
-
-Lemma nlr_tup f k n : nlr_tm (tup_from f k n) -> forall j, k <= j -> j < k + n -> nlr_tm (f j).
-Proof.
-  revert k; induction n as [|n IH]; intros k H j Hj Hj'; [lia |]. cbn in H.
-  destruct (Nat.eq_dec j k) as [-> | N]; [exact (proj1 H) | apply (IH (S k)); [exact (proj2 H) | lia | lia]].
-Qed.
-
-Lemma nlr_wrap nu ng nl b : nlr_tm (wrap nu ng nl b) -> nlr_tm b.
-Proof.
-  unfold wrap. induction nu as [|nu IH]; cbn; [| exact IH].
-  induction ng as [|ng IHg]; cbn; [| exact IHg]. induction nl as [|nl IHl]; cbn; [auto | exact IHl].
-Qed.
-
-Lemma nlr_mkrb MT Mt bs : nlr_tm (mkrb MT Mt bs) -> nlr_ty MT /\ nlr_ty Mt /\ forall k, k < 13 -> nlr_tm (bs k).
-Proof.
-  rewrite mkrb_as. unfold wrapMT, wrapMt. cbn [nlr_tm]. intros (HT & Ht & Hb). refine (conj HT (conj Ht _)).
-  intros k Hk. pose proof (nlr_tup _ _ _ Hb k ltac:(lia) ltac:(lia)) as X.
-  unfold wrap_br in X. destruct (br_ar k) as [[nu ng] nl]. exact (nlr_wrap _ _ _ _ X).
-Qed.
-
 (** ** The size of syntax *)
 
 Fixpoint sz_ty (T : ty) : nat :=
@@ -348,7 +268,8 @@ with sz_tm (t : tm) : nat :=
   | bindU b | bindG b | bindL b => S (sz_tm b)
   | elimT _ _ rb _ Δ t => S (sz_tm rb + sz_ctx Δ + sz_tm t)
   | elimt _ _ rb _ Δ T t => S (sz_tm rb + sz_ctx Δ + sz_ty T + sz_tm t)
-  | ulam _ _ t | clam _ t | tlam _ _ t => S (sz_tm t)
+  | ulam _ _ T t | clam _ T t => S (sz_ty T + sz_tm t)
+  | tlam Δ _ _ T t => S (sz_ctx Δ + sz_ty T + sz_tm t)
   | uapp t _ => S (sz_tm t)
   | capp t Δ => S (sz_tm t + sz_ctx Δ)
   | tapp t T => S (sz_tm t + sz_ty T)
