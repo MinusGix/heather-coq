@@ -6,7 +6,7 @@
     ([Reducible]).  Closed canonicity needs a global context without type
     or term bindings ([ctx_only]), whose global variables would be closed
     neutrals. *)
-From DeLaM.Typing Require Export DeclInstance.
+From DeLaM.Typing Require Export DeclInstance RecEq.
 From DeLaM.Validity Require Export Reducible DeclConsequencesP.
 From Coq Require Import Lia.
 
@@ -528,6 +528,74 @@ Proof.
   pose proof (VTyS_inst_t2 DEP DEM HD HAl HAr VΔP VΔM VAP VAM VT) as VI.
   rewrite gcren_S_gsingle in VI by exact (wf_ctx_dnf HΓ).
   exact (escM_VTyS HΓ Hl (inst_t_ty HΓ HAl HT) (inst_t_ty HΓ HAr HT) VI).
+Qed.
+
+(** The motive instance of [elim_Typ]: the recursors' typing rules take its
+    equation as a premise (M3_DESIGN.md E10). It follows from its
+    ingredients: the motives' equation, the levels' equivalence (by [≡ₗ]),
+    the contexts' equivalence (global functionality, in the motive's scope
+    [Γ, x_T : CTyp g ℓ]) and the scrutinees' equation. *)
+Theorem declM_motT_eq {G Γ MT MT' l1 l l' Δ Δ' t t'} :
+  [ recGT G ; recΓT Γ ⊢[ lM ] MT ≅ MT' @ lvren l1 (ush 1) ] ->
+  lwf (gL G) l1 -> lequiv (gL G) l l' -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
+  [ G ; Γ ⊢[ lM ] t ≅ t' : tyCTyp Δ l @ lzero ] ->
+  [ G ; Γ ⊢[ lM ] motT (wrapMT MT) l Δ t ≅ motT (wrapMT MT') l' Δ' t' @ l1 ].
+Proof.
+  destruct G as [L Ψ]. intros HMM Hl1 Hll HΔ Htt. cbn [gL] in *.
+  pose proof (eqty_wf_r (i := lM) eq_refl HMM) as HMT'.
+  pose proof (eqtm_wf_l (i := lM) eq_refl Htt) as Ht.
+  pose proof (eqtm_wf_r (i := lM) eq_refl Htt) as Ht'.
+  pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
+  pose proof (ctx_glob _ _ _ HΓ) as Hg.
+  pose proof (eqctx_wf_l (i := lD) eq_refl HΔ) as HD. pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HD'.
+  pose proof (lequiv_wf_l _ _ _ Hll) as Hl. pose proof (lequiv_wf_r _ _ _ Hll) as Hl'.
+  assert (EC : [ mkG L Ψ ; Γ ⊢[ lM ] tyCTyp Δ l ≅ tyCTyp Δ' l' @ lzero ]) by (apply eqty_CTyp; auto).
+  assert (EC1 : [ mkG L Ψ ; Γ ⊢[ lM ] tyCTyp Δ l ≅ tyCTyp Δ l' @ lzero ])
+    by (apply eqty_CTyp; auto using eqc_refl).
+  assert (EC2 : [ mkG L Ψ ; Γ ⊢[ lM ] tyCTyp Δ' l' ≅ tyCTyp Δ l' @ lzero ])
+    by (apply eqty_CTyp; auto using eqctx_sym_D, lequiv_refl).
+  pose proof (wf_conv _ _ _ _ _ _ _ Ht (eqty_sym _ _ _ _ _ _ EC1)) as Ht1.
+  pose proof (wf_conv _ _ _ _ _ _ _ Ht (eqty_sym _ _ _ _ _ _ EC)) as Ht2.
+  pose proof (wf_conv _ _ _ _ _ _ _ Ht' (eqty_sym _ _ _ _ _ _ EC)) as Ht2'.
+  pose proof (eqtm_conv _ _ _ _ _ _ _ _ Htt (eqty_sym _ _ _ _ _ _ EC)) as Htt2.
+  (* the motive at the target's level, in the scope of the context variable *)
+  pose proof (proj1 (proj2 (proj2 usubstitution)) _ _ _ _ _ HMT' L (usingle l') (usub_ok_single L l' Hl'))
+    as X1.
+  rewrite (G_us_recGT _ _ _ Hg), lvsubst_ush1_single in X1.
+  set (Y := usubst_ty MT' (usingle l')) in X1.
+  assert (HΓx : forall D, [ mkG L Ψ ; D ⊢[ lD ] ] ->
+            [ mkG L Ψ ; Γ ,, tyCTyp D l' @ lzero ⊢[ lM ] Y⦃gsingle (GCtx D)⦄ @ l1 ]).
+  { intros D HD0.
+    assert (Hσ : [ mkG L Ψ ⊢ gsingle (GCtx D) : mkG L (gdCtx :: Ψ) ]).
+    { apply (gsub_wf_single (mkG L Ψ) gdCtx); [exact Hg | exact (wf_ctx_dnf HD0) | exact HD0]. }
+    pose proof (proj1 (proj2 (proj2 gsubstitution)) _ _ _ _ _ X1 Ψ _ Hσ) as X2.
+    unfold gwk_to in X2; cbn [gL] in X2. change (gsubst ?x ?s) with (gcsubst x s) in X2 at 1.
+    rewrite (recΓT_inst _ _ _ (wf_ctx_dnf HΓ)) in X2. exact X2. }
+  (* 1. the motives *)
+  pose proof (motT_eq_inst _ _ _ _ _ _ _ _ HMM Hl HD Ht) as E1.
+  (* 2. the levels *)
+  assert (E2 : [ mkG L Ψ ; Γ ⊢[ lM ] motT (wrapMT MT') l Δ t ≅ motT (wrapMT MT') l' Δ t @ l1 ]).
+  { apply eqty_leq.
+    - exact (motT_wf _ _ _ _ _ _ _ HMT' Hl HD Ht).
+    - exact (motT_wf _ _ _ _ _ _ _ HMT' Hl' HD Ht1).
+    - apply motT_leq; auto with leq. exact (lequiv_leqv _ _ _ Hll). }
+  (* 3. the contexts: global functionality in the scope [Γ, x_T : CTyp g ℓ'] *)
+  assert (E3 : [ mkG L Ψ ; Γ ⊢[ lM ] motT (wrapMT MT') l' Δ t ≅ motT (wrapMT MT') l' Δ' t @ l1 ]).
+  { destruct (proj1 (proj1 (proj2 (proj2 (fundamentalM DEP DEM))) _ _ _ _ _ X1 eq_refl) Hl1) as (_ & VT).
+    destruct (proj2 (proj2 (proj2 (proj2 (proj2 (proj2 (fundamentalS DEP DEM)))))) _ _ _ _ HΔ eq_refl)
+      as [VEP VEM].
+    pose proof (VTyS_inst_c2 DEP DEM HD HD' VEP VEM VT) as VI.
+    change (gsubst ?x ?s) with (gcsubst x s) in VI at 1.
+    rewrite (recΓT_inst _ _ _ (wf_ctx_dnf HΓ)) in VI.
+    assert (HΓ1 : [ mkG L Ψ ; Γ ,, tyCTyp Δ l' @ lzero ⊢[ lM ] ])
+      by (apply wfc_ext; [exact HΓ | apply wft_CTyp; auto | exact I]).
+    pose proof (escM_VTyS HΓ1 Hl1 (HΓx _ HD)
+                  (stab_ty (i := lM) eq_refl EC2 (lequiv_refl L lzero I) HΓ1 (HΓx _ HD')) VI) as E.
+    exact (eqty_single (i := lM) eq_refl E Ht1). }
+  (* 4. the scrutinees *)
+  assert (E4 : [ mkG L Ψ ; Γ ⊢[ lM ] motT (wrapMT MT') l' Δ' t ≅ motT (wrapMT MT') l' Δ' t' @ l1 ]).
+  { exact (wf_ty_func (i := lM) eq_refl (HΓx _ HD') (lsub_eq_single (i := lM) eq_refl Ht2 Ht2' Htt2)). }
+  eapply eqty_trans; [exact E1|]. eapply eqty_trans; [exact E2|]. eapply eqty_trans; [exact E3 | exact E4].
 Qed.
 
 End DeclConsequences.
