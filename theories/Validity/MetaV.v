@@ -16,6 +16,14 @@ Proof.
   intros Hσ. apply gsubst_gsubst_ty. intros [|n]; cbn [gcons gup]; [reflexivity|].
   symmetry; apply gosubst_shift_single, Hσ.
 Qed.
+(** Two objects at once (the instances of [elim_Trm]'s motive). *)
+Lemma gs_gcons2_ty (T : ty) o1 o2 σ :
+  T⦃gcons (gsingle o1) o2⦄⦃σ⦄ = T⦃gcons (gcons σ (gosubst o1 σ)) (gosubst o2 σ)⦄.
+Proof. apply gsubst_gsubst_ty. intros [|[|j]]; reflexivity. Qed.
+Lemma gs_gcons2_ctx (Γ : ctx) o1 o2 σ :
+  Γ⦃gcons (gsingle o1) o2⦄⦃σ⦄ = Γ⦃gcons (gcons σ (gosubst o1 σ)) (gosubst o2 σ)⦄.
+Proof. apply gsubst_gsubst_ctx. intros [|[|j]]; reflexivity. Qed.
+
 Lemma gup_single_ctx (Γ : ctx) σ o : gdnf σ -> Γ⦃gup σ⦄⦃gsingle o⦄ = Γ⦃gcons σ o⦄.
 Proof.
   intros Hσ. apply gsubst_gsubst_ctx. intros [|n]; cbn [gcons gup]; [reflexivity|].
@@ -1238,6 +1246,34 @@ Proof.
   rewrite (gs_gsingle_ty T _ σ Nσ), (gs_gsingle_ty T _ σ' Nσ'), (gup_single_ty _ σ _ Nσ),
     (gup_single_ty _ σ' _ Nσ').
   exact Y.
+Qed.
+
+(** Both objects of [elim_Trm]'s motive: a context and a type in it. *)
+Lemma VTyS_inst_ct2 {G Γ1 T l0 l Δ1 Δ2 A1 A2} :
+  [ G ; Δ1 ⊢[ lD ] ] -> [ G ; Δ2 ⊢[ lD ] ] -> VCtxSP G Δ1 ->
+  @VCtxEqS EP LR_P EP EM G Δ1 Δ2 -> @VCtxEqS EM LR_P EP EM G Δ1 Δ2 ->
+  [ G ; Δ1 ⊢[ lD ] A1 @ l0 ] -> [ G ; Δ1 ⊢[ lD ] A2 @ l0 ] ->
+  @VTyS EP EM EP LR_P G Δ1 A1 A2 l0 -> @VTyS EP EM EM LR_P G Δ1 A1 A2 l0 ->
+  VTySM (gext (gext G gdCtx) (gdTy (cvar 0) lD l0)) Γ1 T T l ->
+  VTySM G Γ1⦃gcons (gsingle (GCtx Δ1)) (GTy A1)⦄ T⦃gcons (gsingle (GCtx Δ1)) (GTy A1)⦄
+    T⦃gcons (gsingle (GCtx Δ2)) (GTy A2)⦄ l.
+Proof.
+  intros HΔ1 HΔ2 VΔP VEP VEM HA1 HA2 VAP VAM VT.
+  apply (VTyS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
+  pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
+  pose proof (gs_ctx EP EM Hσ HΔ1 compt_D) as HD. pose proof (gs_ctx EP EM Hσr HΔ2 compt_D) as HDr.
+  pose proof (CtxRelG_escape_P EP EM (VEP _ _ _ Hσ) HD HDr) as [_ HDDr].
+  pose proof (GSubRel_cons_c Hσ (conj HDDr (conj (VEP _ _ _ Hσ) (VEM _ _ _ Hσ)))) as Hσ1.
+  assert (Hg0 : gctx_var (gext G gdCtx) 0) by reflexivity.
+  assert (HΔc : [ gext G gdCtx ; cvar 0 ⊢[ lD ] ])
+    by (apply wfc_var; [apply wfg_ctx, (ctx_glob _ _ _ HΔ1) | exact Hg0]).
+  pose proof (@VCtxS_var EP LR_P EP EM (gext G gdCtx) 0 (fun _ _ _ _ _ H => proj1 H) Hg0) as VcP.
+  pose proof (@VCtxS_var EM LR_P EP EM (gext G gdCtx) 0 (fun _ _ _ _ _ H => proj2 H) Hg0) as VcM.
+  pose proof (GSubRel_cons_t (gext G gdCtx) (cvar 0) l0 HΔc VcP VcM Hσ1
+                (tapp_arg G Δ1 l0 A1 A2 HΔ1 HA1 HA2 VΔP VAP VAM Hσ)) as Hσ2.
+  pose proof (VT _ _ _ Hσ2 G' gwk_id (gwk_ok_id G')) as Y; cbn [gwa] in Y.
+  rewrite gs_gcons2_ctx in He. specialize (Y _ _ _ He).
+  rewrite !gs_gcons2_ty. exact Y.
 Qed.
 
 End MetaV.

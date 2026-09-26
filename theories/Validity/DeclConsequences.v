@@ -598,4 +598,89 @@ Proof.
   eapply eqty_trans; [exact E1|]. eapply eqty_trans; [exact E2|]. eapply eqty_trans; [exact E3 | exact E4].
 Qed.
 
+(** The motive instance of [elim_Trm], likewise; its global step sends both
+    the context and the type variable (two-object instance validity). *)
+Theorem declM_mott_eq {G Γ Mt Mt' l2 l l' Δ Δ' T T' t t'} :
+  [ recGt G ; recΓt Γ ⊢[ lM ] Mt ≅ Mt' @ lvren l2 (ush 1) ] ->
+  lwf (gL G) l2 -> lequiv (gL G) l l' -> [ G ⊢[ lD ] Δ ≅ Δ' ] -> [ G ; Δ ⊢[ lD ] T ≅ T' @ l ] ->
+  [ G ; Γ ⊢[ lM ] t ≅ t' : tyCTrm Δ T l @ lzero ] ->
+  [ G ; Γ ⊢[ lM ] mott (wrapMt Mt) l Δ T t ≅ mott (wrapMt Mt') l' Δ' T' t' @ l2 ].
+Proof.
+  destruct G as [L Ψ]. intros HMM Hl2 Hll HΔ HTT Htt. cbn [gL] in *.
+  pose proof (eqty_wf_r (i := lM) eq_refl HMM) as HMt'.
+  pose proof (eqtm_wf_l (i := lM) eq_refl Htt) as Ht.
+  pose proof (eqtm_wf_r (i := lM) eq_refl Htt) as Ht'.
+  pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
+  pose proof (ctx_glob _ _ _ HΓ) as Hg.
+  pose proof (eqctx_wf_l (i := lD) eq_refl HΔ) as HD. pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HD'.
+  pose proof (lequiv_wf_l _ _ _ Hll) as Hl. pose proof (lequiv_wf_r _ _ _ Hll) as Hl'.
+  pose proof (eqty_wf_l (i := lD) eq_refl HTT) as HT. pose proof (eqty_wf_r (i := lD) eq_refl HTT) as HT'.
+  pose proof (wft_lconv _ _ _ _ _ _ HT (lequiv_sym _ _ _ Hll)) as HT1.
+  pose proof (wft_lconv _ _ _ _ _ _ HT' (lequiv_sym _ _ _ Hll)) as HT1'.
+  pose proof (decl_ty_ctxconv_D HΔ HT' Hll) as HT2'.
+  pose proof (eqty_lconv _ _ _ _ _ _ _ HTT (lequiv_sym _ _ _ Hll)) as HTT1.
+  assert (EC : [ mkG L Ψ ; Γ ⊢[ lM ] tyCTrm Δ T l ≅ tyCTrm Δ' T' l' @ lzero ]) by (apply eqty_CTrm; auto).
+  assert (EC1 : [ mkG L Ψ ; Γ ⊢[ lM ] tyCTrm Δ T l ≅ tyCTrm Δ T l' @ lzero ])
+    by (apply eqty_CTrm; auto using eqc_refl, eqty_refl).
+  pose proof (eqty_trans _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ EC) EC1) as EC2.
+  pose proof (wf_conv _ _ _ _ _ _ _ Ht (eqty_sym _ _ _ _ _ _ EC1)) as Ht1.
+  pose proof (wf_conv _ _ _ _ _ _ _ Ht (eqty_sym _ _ _ _ _ _ EC)) as Ht2.
+  pose proof (wf_conv _ _ _ _ _ _ _ Ht' (eqty_sym _ _ _ _ _ _ EC)) as Ht2'.
+  pose proof (eqtm_conv _ _ _ _ _ _ _ _ Htt (eqty_sym _ _ _ _ _ _ EC)) as Htt2.
+  (* the motive at the target's level, in the scope of the context and type variables *)
+  pose proof (proj1 (proj2 (proj2 usubstitution)) _ _ _ _ _ HMt' L (usingle l') (usub_ok_single L l' Hl'))
+    as X1.
+  rewrite (G_us_recGt _ _ _ Hg), lvsubst_ush1_single in X1.
+  set (Y := usubst_ty Mt' (usingle l')) in X1.
+  assert (Hdn : forall D, [ mkG L Ψ ; D ⊢[ lD ] ] -> gdnf (gsingle (GCtx D))).
+  { intros D HD0 [|n]; cbn; [exact (wf_ctx_dnf HD0) | exact I]. }
+  assert (HΓx : forall D A, [ mkG L Ψ ; D ⊢[ lD ] ] -> [ mkG L Ψ ; D ⊢[ lD ] A @ l' ] ->
+            [ mkG L Ψ ; Γ ,, tyCTrm D A l' @ lzero ⊢[ lM ] Y⦃gup (gsingle (GCtx D))⦄⦃gsingle (GTy A)⦄ @ l2 ]).
+  { intros D A HD0 HA0.
+    assert (Hσ0 : [ mkG L Ψ ⊢ gsingle (GCtx D) : mkG L (gdCtx :: Ψ) ]).
+    { apply (gsub_wf_single (mkG L Ψ) gdCtx); [exact Hg | exact (wf_ctx_dnf HD0) | exact HD0]. }
+    assert (Hg1 : [ ⊢ mkG L (gdTy D lD l' :: Ψ) ]) by (apply wfg_ty; auto).
+    assert (Hσ1 : [ mkG L (gdTy D lD l' :: Ψ) ⊢ gup (gsingle (GCtx D))
+                    : mkG L (gdTy (cvar 0) lD l' :: gdCtx :: Ψ) ])
+      by exact (gsub_wf_up _ _ _ (gdTy (cvar 0) lD l') Hσ0 Hg1).
+    assert (Hσ2 : [ mkG L Ψ ⊢ gsingle (GTy A) : mkG L (gdTy D lD l' :: Ψ) ]).
+    { apply (gsub_wf_single (mkG L Ψ) (gdTy D lD l')); [exact Hg | exact (wf_ty_dnf HA0) |].
+      rewrite gdecl_gsubst_ren_single by exact (wf_ctx_dnf HD0). exact HA0. }
+    pose proof (proj1 (proj2 (proj2 gsubstitution)) _ _ _ _ _ X1 _ _ Hσ1) as X2.
+    unfold gwk_to in X2; cbn [gL] in X2.
+    pose proof (proj1 (proj2 (proj2 gsubstitution)) _ _ _ _ _ X2 Ψ _ Hσ2) as X3.
+    unfold gwk_to in X3; cbn [gL] in X3.
+    change (gsubst (gsubst ?x ?s1) ?s2) with (gcsubst (gcsubst x s1) s2) in X3 at 1.
+    rewrite (recΓt_inst _ _ _ _ (wf_ctx_dnf HΓ) (wf_ctx_dnf HD0) (wf_ty_nf HA0)) in X3. exact X3. }
+  (* 1. the motives *)
+  pose proof (mott_eq_inst _ _ _ _ _ _ _ _ _ HMM Hl HD HT Ht) as E1.
+  (* 2. the levels *)
+  assert (E2 : [ mkG L Ψ ; Γ ⊢[ lM ] mott (wrapMt Mt') l Δ T t ≅ mott (wrapMt Mt') l' Δ T t @ l2 ]).
+  { apply eqty_leq.
+    - exact (mott_wf _ _ _ _ _ _ _ _ HMt' Hl HD HT Ht).
+    - exact (mott_wf _ _ _ _ _ _ _ _ HMt' Hl' HD HT1 Ht1).
+    - apply mott_leq; auto with leq. exact (lequiv_leqv _ _ _ Hll). }
+  (* 3. the context and type objects: two-object global functionality *)
+  assert (E3 : [ mkG L Ψ ; Γ ⊢[ lM ] mott (wrapMt Mt') l' Δ T t ≅ mott (wrapMt Mt') l' Δ' T' t @ l2 ]).
+  { destruct (proj1 (proj1 (proj2 (proj2 (fundamentalM DEP DEM))) _ _ _ _ _ X1 eq_refl) Hl2) as (_ & VT).
+    destruct (proj2 (proj2 (proj2 (proj2 (proj2 (proj2 (fundamentalS DEP DEM)))))) _ _ _ _ HΔ eq_refl)
+      as [VEP VEM].
+    destruct (proj1 (proj2 (proj2 (proj2 (proj2 (fundamentalS DEP DEM))))) _ _ _ _ _ _ HTT1 eq_refl)
+      as ((_ & VΔP & _) & VAP & VAM).
+    pose proof (VTyS_inst_ct2 DEP DEM HD HD' VΔP VEP VEM HT1 HT1' VAP VAM VT) as VI.
+    rewrite <- (gup_single_ctx _ _ _ (Hdn _ HD)), <- (gup_single_ty _ _ _ (Hdn _ HD)),
+      <- (gup_single_ty _ _ _ (Hdn _ HD')) in VI.
+    change (gsubst (gsubst ?x ?s1) ?s2) with (gcsubst (gcsubst x s1) s2) in VI at 1.
+    rewrite (recΓt_inst _ _ _ _ (wf_ctx_dnf HΓ) (wf_ctx_dnf HD) (wf_ty_nf HT1)) in VI.
+    assert (HΓ1 : [ mkG L Ψ ; Γ ,, tyCTrm Δ T l' @ lzero ⊢[ lM ] ])
+      by (apply wfc_ext; [exact HΓ | apply wft_CTrm; auto | exact I]).
+    pose proof (escM_VTyS HΓ1 Hl2 (HΓx _ _ HD HT1)
+                  (stab_ty (i := lM) eq_refl EC2 (lequiv_refl L lzero I) HΓ1 (HΓx _ _ HD' HT2')) VI) as E.
+    exact (eqty_single (i := lM) eq_refl E Ht1). }
+  (* 4. the scrutinees *)
+  assert (E4 : [ mkG L Ψ ; Γ ⊢[ lM ] mott (wrapMt Mt') l' Δ' T' t ≅ mott (wrapMt Mt') l' Δ' T' t' @ l2 ]).
+  { exact (wf_ty_func (i := lM) eq_refl (HΓx _ _ HD' HT2') (lsub_eq_single (i := lM) eq_refl Ht2 Ht2' Htt2)). }
+  eapply eqty_trans; [exact E1|]. eapply eqty_trans; [exact E2|]. eapply eqty_trans; [exact E3 | exact E4].
+Qed.
+
 End DeclConsequences.
