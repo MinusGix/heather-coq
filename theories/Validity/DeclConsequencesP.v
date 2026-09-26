@@ -75,6 +75,16 @@ Proof.
   exists W; split; [exact (tyred_red _ _ _ _ _ _ HW) | exact HWh].
 Qed.
 
+(** The typed forms (the reduction with its equation), for the soundness of
+    algorithmic conversion (M6_DESIGN.md H6). *)
+Theorem decl_whnf_tyred {G Γ T l} : [ G ; Γ ⊢[ lD ] T @ l ] ->
+  exists W, [ G ; Γ ⊢[ lD ] T ⤳* W @ l ] /\ whnf_ty W.
+Proof. intros H. exact (whnf_normalization_ty (E := DEP) (LP := LR_P) redP_ty H (lwfD_ty H)). Qed.
+
+Theorem decl_whnf_tmred {G Γ t T l} : [ G ; Γ ⊢[ lD ] t : T @ l ] ->
+  exists w, [ G ; Γ ⊢[ lD ] t ⤳* w : T @ l ] /\ whnf w.
+Proof. intros H. exact (whnf_normalization_tm (E := DEP) (LP := LR_P) redP_tm H (lwfD_tm H)). Qed.
+
 Theorem decl_closed_nat_canonicity {G t} : ctx_only G -> [ G ; cnil ⊢[ lD ] t : tyNat @ lzero ] ->
   exists n, [ G ; cnil ⊢[ lD ] t ≅ numeral n : tyNat @ lzero ].
 Proof. exact (closed_nat_canonicity (E := DEP) (LP := LR_P) redP_tm). Qed.

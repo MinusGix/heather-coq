@@ -119,6 +119,28 @@ Proof.
     exists (tyUPi n l A); split; [exact (tyred_red _ _ _ _ _ _ HW) | apply whnf_tyUPi].
 Qed.
 
+(** The typed forms (M6_DESIGN.md H6). *)
+Theorem declM_whnf_tyred {G Γ T l} : [ G ; Γ ⊢[ lM ] T @ l ] ->
+  exists W, [ G ; Γ ⊢[ lM ] T ⤳* W @ l ] /\ whnf_ty W.
+Proof.
+  intros H. destruct (lvlM_ty H) as [Hl | ->].
+  - exact (whnf_normalization_ty (E := DEM) (LP := LRM) redM_eqty H Hl).
+  - destruct (omegaM_red_l (eqty_refl _ _ _ _ _ H)) as (n & l & A & HW).
+    exists (tyUPi n l A); split; [exact HW | apply whnf_tyUPi].
+Qed.
+
+Theorem declM_whnf_tmred {G Γ t T l} : [ G ; Γ ⊢[ lM ] t : T @ l ] ->
+  exists w, [ G ; Γ ⊢[ lM ] t ⤳* w : T @ l ] /\ whnf w.
+Proof.
+  intros H. destruct (lvlM_tm H) as [Hl | ->].
+  - exact (whnf_normalization_tm (E := DEM) (LP := LRM) redM_eqtm H Hl).
+  - destruct (reducibleM_eqtm_ω DEP DEM (eqtm_refl _ _ _ _ _ _ H)) as (R & HR & Ht).
+    destruct HR as [n l l' A A' iR _ _ HT _ _ _ HRR].
+    destruct (proj1 (HRR t t) Ht) as (w & w' & Hw & _ & Hwh & _).
+    exists w; split; [|exact Hwh].
+    exact (tmred_conv (i := lM) _ _ _ _ _ eq_refl Hw (eqty_sym _ _ _ _ _ _ (tyred_eq _ _ _ _ _ _ HT))).
+Qed.
+
 Theorem declM_closed_nat_canonicity {G t} : ctx_only G -> [ G ; cnil ⊢[ lM ] t : tyNat @ lzero ] ->
   exists n, [ G ; cnil ⊢[ lM ] t ≅ numeral n : tyNat @ lzero ].
 Proof. exact (closed_nat_canonicity (E := DEM) (LP := LRM) redM_eqtm). Qed.
