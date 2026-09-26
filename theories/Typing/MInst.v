@@ -7,7 +7,7 @@
     variable, of the function weakened under the binder; on typed syntax
     that instance is the identity ([equiv_gsubst]). Presuppositions of the
     new rules. *)
-From DeLaM.Typing Require Export UInst GStatic.
+From DeLaM.Typing Require Export UInst GStatic TypedRed.
 
 (** ** Single global substitutions *)
 
@@ -84,6 +84,33 @@ Lemma eta_t_ty {G Γ Δ l T l'} : [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] 
   T⟪gupr S⟫⦃gsingle (GTy (tyGvar 0 (lshift 0)))⦄ = T.
 Proof.
   apply eta_inst_ty; [| exact I].
+  intros j Hin. inversion Hin; subst. right; left. exists 0; split; reflexivity.
+Qed.
+
+Lemma eta_inst_tm {G Γ D o t T l} :
+  (forall j, in_gctx (D :: gΨ G) 0 j -> obj_equiv j (GId 0) o) -> dnfo o ->
+  [ gext G D ; Γ⟪S⟫ ⊢[ lM ] t : T @ l ] -> t⟪gupr S⟫⦃gsingle o⦄ = t.
+Proof.
+  intros Ho Hd Ht.
+  rewrite (gsubst_gren_tm _ _ _ (fun i => match i with 0 => o | S i => GId (S i) end))
+    by (intros [|i]; reflexivity).
+  transitivity t⦃fun i => GId i⦄; [| apply gsubst_id; [exact (wf_tm_dnf Ht) | reflexivity]].
+  symmetry. eapply (proj1 (proj2 (proj2 (proj2 equiv_gsubst)))); [exact Ht | |].
+  - intros n D0 Hin. destruct n as [|n]; [exact (Ho _ Hin) | left; reflexivity].
+  - intros [|n]; cbn; auto.
+Qed.
+
+Lemma eta_c_tm {G Γ t T l} : [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] t : T @ l ] ->
+  t⟪gupr S⟫⦃gsingle (GCtx (cvar 0))⦄ = t.
+Proof.
+  apply eta_inst_tm; [| exact I].
+  intros j Hin. inversion Hin; subst. right; right. exists 0; repeat split.
+Qed.
+
+Lemma eta_t_tm {G Γ Δ l t T l'} : [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] t : T @ l' ] ->
+  t⟪gupr S⟫⦃gsingle (GTy (tyGvar 0 (lshift 0)))⦄ = t.
+Proof.
+  apply eta_inst_tm; [| exact I].
   intros j Hin. inversion Hin; subst. right; left. exists 0; split; reflexivity.
 Qed.
 
@@ -223,4 +250,95 @@ Proof.
       [discriminate | exact HΔ1 | exact (ing_here (gΨ G) (gdTy Δ lD l)) | apply lle_refl | reflexivity].
 Qed.
 
+(** ** Typed reductions of the applications (layer M) *)
+
+Lemma tmred_cbeta_M {l B b Δ} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l ->
+  [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] B @ l ] -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] b : B @ l ] -> [ G ; Δ ⊢[ lD ] ] ->
+  [ G ; Γ ⊢[ lM ] capp (clam l b) Δ ⤳* b⦃gsingle (GCtx Δ)⦄ : B⦃gsingle (GCtx Δ)⦄ @ l ].
+Proof.
+  intros HΓ Hl HB Hb HΔ. constructor.
+  - exact (pre_cbeta_l HΓ Hl HB Hb HΔ).
+  - econstructor; [apply red_cbeta | constructor].
+  - apply eqtm_cbeta; assumption.
+Qed.
+
+Lemma tmred_tbeta_M {Δ l l' B b A} : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] B @ l' ] -> [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] b : B @ l' ] ->
+  [ G ; Δ ⊢[ lD ] A @ l ] ->
+  [ G ; Γ ⊢[ lM ] tapp (tlam l l' b) A ⤳* b⦃gsingle (GTy A)⦄ : B⦃gsingle (GTy A)⦄ @ l' ].
+Proof.
+  intros HΓ HΔ Hl Hl' HB Hb HA. constructor.
+  - exact (pre_tbeta_l HΓ HΔ Hl Hl' HB Hb HA).
+  - econstructor; [apply red_tbeta | constructor].
+  - eapply eqtm_tbeta; eassumption.
+Qed.
+
+Lemma tmred_capp_M {l B t w Δ} : lwf (gL G) l -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] B @ l ] -> [ G ; Δ ⊢[ lD ] ] ->
+  [ G ; Γ ⊢[ lM ] B⦃gsingle (GCtx Δ)⦄ @ l ] ->
+  [ G ; Γ ⊢[ lM ] t ⤳* w : tyCPi l B @ l ] ->
+  [ G ; Γ ⊢[ lM ] capp t Δ ⤳* capp w Δ : B⦃gsingle (GCtx Δ)⦄ @ l ].
+Proof.
+  intros Hl HB HΔ HI [Ht Hr He]. constructor.
+  - apply wf_capp; assumption.
+  - apply reds_capp, Hr.
+  - apply eqtm_capp; [exact Hl | exact HB | exact HΔ | exact HΔ | apply eqc_refl, HΔ | apply eqty_refl, HI | exact He].
+Qed.
+
+Lemma tmred_tapp_M {Δ l l' B t w A} : [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] B @ l' ] -> [ G ; Δ ⊢[ lD ] A @ l ] ->
+  [ G ; Γ ⊢[ lM ] B⦃gsingle (GTy A)⦄ @ l' ] ->
+  [ G ; Γ ⊢[ lM ] t ⤳* w : tyTPi Δ l l' B @ l' ] ->
+  [ G ; Γ ⊢[ lM ] tapp t A ⤳* tapp w A : B⦃gsingle (GTy A)⦄ @ l' ].
+Proof.
+  intros HΔ Hl Hl' HB HA HI [Ht Hr He]. constructor.
+  - apply wf_tapp with (Δ := Δ) (l := l); assumption.
+  - apply reds_tapp, Hr.
+  - eapply eqtm_tapp; [exact He | exact HΔ | exact Hl | exact Hl' | exact HB | exact HA | apply eqty_refl, HA
+                      | apply eqty_refl, HI].
+Qed.
+
 End Pre.
+
+(** η's body: [(Λg. b)⟪↑⟫ g] reduces to [b]. *)
+Lemma tmred_ceta_body {G Γ l B b} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l ->
+  [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] B @ l ] -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] b : B @ l ] ->
+  [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] capp (clam l b)⟪S⟫ (cvar 0) ⤳* b : B @ l ].
+Proof.
+  intros HΓ Hl HB Hb.
+  pose proof (ctx_glob _ _ _ (ctx_of_wf_ty (i := lM) eq_refl HB)) as HG1.
+  assert (HG2 : [ ⊢ gext (gext G gdCtx) gdCtx ]) by (apply wfg_ctx, HG1).
+  pose proof (ctx_of_wf_ty (i := lM) eq_refl HB) as HΓ1.
+  pose proof (gwk_ty (gwk_ok_up_step (G := G) (D := gdCtx) gdCtx) HG2 HB) as XB.
+  change (wf_ty (gext (gext G gdCtx) gdCtx) lM (Γ⟪S⟫⟪gupr S⟫) B⟪gupr S⟫ l) in XB.
+  rewrite gcren_shift_up in XB.
+  pose proof (gwk_tm (gwk_ok_up_step (G := G) (D := gdCtx) gdCtx) HG2 Hb) as Xb.
+  change (wf_tm (gext (gext G gdCtx) gdCtx) lM (Γ⟪S⟫⟪gupr S⟫) b⟪gupr S⟫ B⟪gupr S⟫ l) in Xb.
+  rewrite gcren_shift_up in Xb.
+  pose proof (tmred_cbeta_M (G := gext G gdCtx) (Γ := Γ⟪S⟫) (Δ := cvar 0) HΓ1 Hl XB Xb
+                (wfc_var _ _ 0 HG1 eq_refl)) as X.
+  rewrite (eta_c_tm Hb), (eta_c_ty HB) in X. exact X.
+Qed.
+
+Lemma tmred_teta_body {G Γ Δ l l' B b} : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] B @ l' ] -> [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] b : B @ l' ] ->
+  [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] tapp (tlam l l' b)⟪S⟫ (tyGvar 0 (lshift 0)) ⤳* b : B @ l' ].
+Proof.
+  intros HΓ HΔ Hl Hl' HB Hb.
+  pose proof (ctx_glob _ _ _ (ctx_of_wf_ty (i := lM) eq_refl HB)) as HG1.
+  pose proof (ctx_of_wf_ty (i := lM) eq_refl HB) as HΓ1.
+  pose proof (gwk_ctx (gwk_ok_step (G := G) (D := gdTy Δ lD l)) HG1 HΔ) as HΔ1.
+  assert (HG2 : [ ⊢ gext (gext G (gdTy Δ lD l)) (gdTy Δ⟪S⟫ lD l) ])
+    by (apply wfg_ty; [exact HG1 | exact HΔ1 | right; reflexivity | exact Hl]).
+  pose proof (gwk_ty (gwk_ok_up_step (G := G) (D := gdTy Δ lD l) (gdTy Δ lD l)) HG2 HB) as XB.
+  change (wf_ty (gext (gext G (gdTy Δ lD l)) (gdTy Δ⟪S⟫ lD l)) lM (Γ⟪S⟫⟪gupr S⟫) B⟪gupr S⟫ l') in XB.
+  rewrite gcren_shift_up in XB.
+  pose proof (gwk_tm (gwk_ok_up_step (G := G) (D := gdTy Δ lD l) (gdTy Δ lD l)) HG2 Hb) as Xb.
+  change (wf_tm (gext (gext G (gdTy Δ lD l)) (gdTy Δ⟪S⟫ lD l)) lM (Γ⟪S⟫⟪gupr S⟫) b⟪gupr S⟫ B⟪gupr S⟫ l') in Xb.
+  rewrite gcren_shift_up in Xb.
+  assert (HU : [ gext G (gdTy Δ lD l) ; Δ⟪S⟫ ⊢[ lD ] tyGvar 0 (lshift 0) @ l ]).
+  { eapply wf_gv with (Δ := Δ⟪S⟫) (i' := lD);
+      [discriminate | exact HΔ1 | exact (ing_here (gΨ G) (gdTy Δ lD l)) | apply lle_refl | reflexivity]. }
+  pose proof (tmred_tbeta_M (G := gext G (gdTy Δ lD l)) (Γ := Γ⟪S⟫) HΓ1 HΔ1 Hl Hl' XB Xb HU) as X.
+  rewrite (eta_t_tm Hb), (eta_t_ty HB) in X. exact X.
+Qed.
+
