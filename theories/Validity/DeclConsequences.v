@@ -484,4 +484,48 @@ Proof. apply declM_tpi_not; [apply whnf_tyCTyp | not_tpi]. Qed.
 Theorem declM_tpi_not_CTrm {G Γ Δ l l' T Θ A l0 k} : ~ [ G ; Γ ⊢[ lM ] tyTPi Δ l l' T ≅ tyCTrm Θ A l0 @ k ].
 Proof. apply declM_tpi_not; [apply whnf_tyCTrm | not_tpi]. Qed.
 
+(** ** Global functionality (M6_DESIGN.md H8)
+
+    Instances at equal objects are equal. The typing rules of the
+    applications take these equations as premises (M5_DESIGN.md G2); they
+    are consequences of the fundamental theorem. *)
+
+(** Escape at the identity substitutions, from validity at M. *)
+Lemma escM_VTyS {G Γ T T' l} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l ->
+  [ G ; Γ ⊢[ lM ] T @ l ] -> [ G ; Γ ⊢[ lM ] T' @ l ] ->
+  @VTyS DEP DEM DEM LRM G Γ T T' l -> [ G ; Γ ⊢[ lM ] T ≅ T' @ l ].
+Proof.
+  intros HΓ Hl HT HT' VT.
+  destruct (proj1 (proj2 (fundamentalM DEP DEM)) _ _ _ HΓ eq_refl) as (_ & VΓ).
+  destruct (VTyS_red DEP DEM (E := DEM) (LP := LRM) HT HT' VΓ VT) as [R HR].
+  exact (proj2 (proj2 (escape_ty _ _ _ _ _ _ _ _ HR))).
+Qed.
+
+Theorem declM_inst_c_eq {G Γ T l Δ Δ'} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l ->
+  [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
+  [ G ; Γ ⊢[ lM ] T⦃gsingle (GCtx Δ)⦄ ≅ T⦃gsingle (GCtx Δ')⦄ @ l ].
+Proof.
+  intros HΓ Hl HT HΔ.
+  destruct (proj1 (proj1 (proj2 (proj2 (fundamentalM DEP DEM))) _ _ _ _ _ HT eq_refl) Hl) as (_ & VT).
+  destruct (proj2 (proj2 (proj2 (proj2 (proj2 (proj2 (fundamentalS DEP DEM)))))) _ _ _ _ HΔ eq_refl)
+    as [VEP VEM].
+  pose proof (eqctx_wf_l (i := lD) eq_refl HΔ) as HD. pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HD'.
+  exact (escM_VTyS HΓ Hl (inst_c_ty HΓ HD HT) (inst_c_ty HΓ HD' HT)
+           (VTyS_inst_c2 DEP DEM HD HD' VEP VEM VT)).
+Qed.
+
+Theorem declM_inst_t_eq {G Γ Δ l T l' A A'} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l' ->
+  [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] -> [ G ; Δ ⊢[ lD ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ lM ] T⦃gsingle (GTy A)⦄ ≅ T⦃gsingle (GTy A')⦄ @ l' ].
+Proof.
+  intros HΓ Hl HT HA.
+  destruct (proj1 (proj1 (proj2 (proj2 (fundamentalM DEP DEM))) _ _ _ _ _ HT eq_refl) Hl) as (_ & VT).
+  destruct (proj1 (proj2 (proj2 (proj2 (proj2 (fundamentalS DEP DEM))))) _ _ _ _ _ _ HA eq_refl)
+    as ((_ & VΔP & VΔM) & VAP & VAM).
+  pose proof (eqty_wf_l (i := lD) eq_refl HA) as HAl. pose proof (eqty_wf_r (i := lD) eq_refl HA) as HAr.
+  pose proof (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ HAl) as HD.
+  exact (escM_VTyS HΓ Hl (inst_t_ty HΓ HAl HT) (inst_t_ty HΓ HAr HT)
+           (VTyS_inst_t2 DEP DEM HD HAl HAr VΔP VΔM VAP VAM VT)).
+Qed.
+
 End DeclConsequences.
