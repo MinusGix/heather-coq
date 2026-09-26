@@ -39,6 +39,7 @@ theories/Typing/UInst.v
 theories/Typing/MInst.v
 theories/Typing/Presupposition.v
 theories/Typing/Inversion.v
+theories/Typing/RecEq.v
 theories/Typing/CtxConv.v
 theories/Typing/StaticCode.v
 theories/Typing/TypedRed.v
