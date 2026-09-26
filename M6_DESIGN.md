@@ -228,5 +228,7 @@ only, and checks that there are as many as the `UΠ` binds: the instance
   etc.).
 - Step 2 done: soundness (`AlgSound.v`, `ac_sound_all`, closed under the
   global context). The `app` rule compares no type annotations (H9).
-- Step 3 in progress (`AlgStruct.v`): local weakening (`ac_wk_all`) and
-  global weakening along `gwk_ok` (`ac_gwk_all`) are done, closed.
+- Step 3 in progress (`AlgStruct.v`): local weakening (`ac_wk_all`),
+  global weakening along `gwk_ok` (`ac_gwk_all`) and universe
+  substitution (`ac_us_all`, for any `φ`: the judgments do not look at the
+  level context) are done, closed.

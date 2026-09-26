@@ -689,3 +689,384 @@ Proof.
     | solve [eapply G_actmne_tapp; eassumption] | solve [eapply G_actmnee_red; eassumption]
     | solve [eapply G_acs_pt; eassumption] ].
 Qed.
+
+(** ** Universe substitution
+
+    [φ] need not be well formed: the judgments do not look at the level
+    context. *)
+
+Ltac upush := cbn [usubst_ty usubst_tm ucsubst ulsubst lvsubst gousubst gdecl_usubst].
+Ltac upush_in H := cbn [usubst_ty usubst_tm ucsubst ulsubst lvsubst gousubst gdecl_usubst] in H.
+
+Lemma leqv_us {l l'} φ : leqv l l' -> leqv (lvsubst l φ) (lvsubst l' φ).
+Proof. intros H; apply leqv_lvsubst; [exact H | intros; apply leqv_refl]. Qed.
+
+Lemma posty_us W φ : posty W -> posty (usubst_ty W φ).
+Proof. destruct 1; upush; constructor; now apply whne_ty_usubst. Qed.
+
+Definition AU_ty G Γ T T' : Prop := forall L' φ,
+  ac_ty (gctx_usubst G L' φ) (ucsubst Γ φ) (usubst_ty T φ) (usubst_ty T' φ).
+Definition AU_tynf G Γ T T' : Prop := forall L' φ,
+  ac_tynf (gctx_usubst G L' φ) (ucsubst Γ φ) (usubst_ty T φ) (usubst_ty T' φ).
+Definition AU_tyne G Γ T T' : Prop := forall L' φ,
+  ac_tyne (gctx_usubst G L' φ) (ucsubst Γ φ) (usubst_ty T φ) (usubst_ty T' φ).
+Definition AU_ctx G Δ Δ' : Prop := forall L' φ,
+  ac_ctx (gctx_usubst G L' φ) (ucsubst Δ φ) (ucsubst Δ' φ).
+Definition AU_tm G Γ t t' T : Prop := forall L' φ,
+  ac_tm (gctx_usubst G L' φ) (ucsubst Γ φ) (usubst_tm t φ) (usubst_tm t' φ) (usubst_ty T φ).
+Definition AU_tmnf G Γ t t' T : Prop := forall L' φ,
+  ac_tmnf (gctx_usubst G L' φ) (ucsubst Γ φ) (usubst_tm t φ) (usubst_tm t' φ) (usubst_ty T φ).
+Definition AU_tmne G Γ t t' T : Prop := forall L' φ,
+  ac_tmne (gctx_usubst G L' φ) (ucsubst Γ φ) (usubst_tm t φ) (usubst_tm t' φ) (usubst_ty T φ).
+Definition AU_tmnee G Γ t t' T : Prop := forall L' φ,
+  ac_tmnee (gctx_usubst G L' φ) (ucsubst Γ φ) (usubst_tm t φ) (usubst_tm t' φ) (usubst_ty T φ).
+Definition AU_sub G Γ d d' Θ : Prop := forall L' φ,
+  ac_sub (gctx_usubst G L' φ) (ucsubst Γ φ) (ulsubst d φ) (ulsubst d' φ) (ucsubst Θ φ).
+
+Lemma U_act_red {G Γ T T' W W'} : reds_ty T W -> reds_ty T' W' -> whnf_ty W -> whnf_ty W' ->
+  AU_tynf G Γ W W' -> AU_ty G Γ T T'.
+Proof.
+  intros H1 H2 H3 H4 IH L' φ.
+  eapply act_red; [apply reds_ty_usubst, H1 | apply reds_ty_usubst, H2 | apply whnf_ty_usubst, H3
+                  | apply whnf_ty_usubst, H4 | exact (IH L' φ)].
+Qed.
+
+Lemma U_actnf_nat {G Γ} : AU_tynf G Γ tyNat tyNat.
+Proof. intros L' φ; upush; constructor. Qed.
+Lemma U_actnf_U {G Γ l l'} : leqv l l' -> AU_tynf G Γ (tyU l) (tyU l').
+Proof. intros Hl L' φ; upush; constructor; exact (leqv_us φ Hl). Qed.
+Lemma U_actnf_pi {G Γ l1 l2 l3 l4 A A' B B'} : leqv l1 l3 -> leqv l2 l4 ->
+  AU_ty G Γ A A' -> AU_ty G (Γ ,, A @ l1) B B' -> AU_tynf G Γ (tyPi l1 l2 A B) (tyPi l3 l4 A' B').
+Proof.
+  intros H13 H24 IHA IHB L' φ; upush.
+  pose proof (IHB L' φ) as XB; upush_in XB.
+  constructor; [exact (leqv_us φ H13) | exact (leqv_us φ H24) | exact (IHA L' φ) | exact XB].
+Qed.
+Lemma U_actnf_ne {G Γ V V'} : AU_tyne G Γ V V' -> AU_tynf G Γ V V'.
+Proof. intros IH L' φ; constructor; exact (IH L' φ). Qed.
+Lemma U_actnf_CTyp {G Γ Δ0 Δ0' l l'} : AU_ctx G Δ0 Δ0' -> leqv l l' ->
+  AU_tynf G Γ (tyCTyp Δ0 l) (tyCTyp Δ0' l').
+Proof. intros IH Hl L' φ; upush; constructor; [exact (IH L' φ) | exact (leqv_us φ Hl)]. Qed.
+Lemma U_actnf_CTrm {G Γ Δ0 Δ0' T T' l l'} : AU_ctx G Δ0 Δ0' -> AU_ty G Δ0 T T' -> leqv l l' ->
+  AU_tynf G Γ (tyCTrm Δ0 T l) (tyCTrm Δ0' T' l').
+Proof. intros IH IHT Hl L' φ; upush; constructor; [exact (IH L' φ) | exact (IHT L' φ) | exact (leqv_us φ Hl)]. Qed.
+Lemma U_actnf_upi {G Γ n l l' T T'} : leqv l l' -> AU_ty (gctx_uwk n G) Γ⟨ush n⟩ᵤ T T' ->
+  AU_tynf G Γ (tyUPi n l T) (tyUPi n l' T').
+Proof.
+  intros Hl IH L' φ; upush. pose proof (IH (n + L') (uupn n φ)) as X.
+  rewrite gctx_uwk_usubst, ucren_ush_usubst in X.
+  constructor; [exact (leqv_us _ Hl) | exact X].
+Qed.
+Lemma U_actnf_cpi {G Γ l l' T T'} : leqv l l' -> AU_ty (gext G gdCtx) Γ⟪S⟫ T T' ->
+  AU_tynf G Γ (tyCPi l T) (tyCPi l' T').
+Proof.
+  intros Hl IH L' φ; upush. pose proof (IH L' φ) as X. rewrite usubst_gren_ctx' in X.
+  constructor; [exact (leqv_us φ Hl) | exact X].
+Qed.
+Lemma U_actnf_tpi {G Γ Δ0 Δ0' l1 l2 l3 l4 T T'} : AU_ctx G Δ0 Δ0' -> leqv l1 l3 -> leqv l2 l4 ->
+  AU_ty (gext G (gdTy Δ0 lD l1)) Γ⟪S⟫ T T' -> AU_tynf G Γ (tyTPi Δ0 l1 l2 T) (tyTPi Δ0' l3 l4 T').
+Proof.
+  intros IHc H13 H24 IH L' φ; upush. pose proof (IH L' φ) as X. rewrite usubst_gren_ctx' in X.
+  constructor; [exact (IHc L' φ) | exact (leqv_us φ H13) | exact (leqv_us φ H24) | exact X].
+Qed.
+
+Lemma U_actne_gvar {G Γ U Δ0 i' l d d'} : in_gctx (gΨ G) U (gdTy Δ0 i' l) -> AU_sub G Γ d d' Δ0 ->
+  AU_tyne G Γ (tyGvar U d) (tyGvar U d').
+Proof.
+  intros Hin IH L' φ; upush. pose proof (in_gctx_usubst _ _ _ φ Hin) as X. upush_in X.
+  eapply actne_gvar; [exact X | exact (IH L' φ)].
+Qed.
+Lemma U_actne_El {G Γ l l' ν ν' W} : leqv l l' -> AU_tmnee G Γ ν ν' W -> AU_tyne G Γ (tyEl l ν) (tyEl l' ν').
+Proof. intros Hl IH L' φ; upush; eapply actne_El; [exact (leqv_us φ Hl) | exact (IH L' φ)]. Qed.
+
+Lemma U_acc_nil {G} : AU_ctx G cnil cnil.
+Proof. intros L' φ; constructor. Qed.
+Lemma U_acc_var {G g} : AU_ctx G (cvar g) (cvar g).
+Proof. intros L' φ; constructor. Qed.
+Lemma U_acc_ext {G Γ Γ' A A' l l'} : AU_ctx G Γ Γ' -> AU_ty G Γ A A' -> leqv l l' ->
+  AU_ctx G (Γ ,, A @ l) (Γ' ,, A' @ l').
+Proof. intros IH IHA Hl L' φ; upush; constructor; [exact (IH L' φ) | exact (IHA L' φ) | exact (leqv_us φ Hl)]. Qed.
+
+Lemma U_actm_red {G Γ t t' T w w' W} : reds_ty T W -> whnf_ty W -> reds t w -> reds t' w' ->
+  whnf w -> whnf w' -> AU_tmnf G Γ w w' W -> AU_tm G Γ t t' T.
+Proof.
+  intros H1 H2 H3 H4 H5 H6 IH L' φ.
+  eapply actm_red; [apply reds_ty_usubst, H1 | apply whnf_ty_usubst, H2 | apply reds_usubst, H3
+                   | apply reds_usubst, H4 | apply whnf_usubst, H5 | apply whnf_usubst, H6 | exact (IH L' φ)].
+Qed.
+
+Lemma U_actmnf_code_nat {G Γ l} : AU_tmnf G Γ tmNat tmNat (tyU l).
+Proof. intros L' φ; upush; constructor. Qed.
+Lemma U_actmnf_code_U {G Γ l k k'} : leqv k k' -> AU_tmnf G Γ (tmU k) (tmU k') (tyU l).
+Proof. intros Hk L' φ; upush; constructor; exact (leqv_us φ Hk). Qed.
+Lemma U_actmnf_code_pi {G Γ l l1 l2 l3 l4 s s' t t'} : leqv l1 l3 -> leqv l2 l4 ->
+  AU_tm G Γ s s' (tyU l1) -> AU_tm G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) ->
+  AU_tmnf G Γ (tmPi l1 l2 s t) (tmPi l3 l4 s' t') (tyU l).
+Proof.
+  intros H13 H24 IHs IHt L' φ; upush.
+  pose proof (IHs L' φ) as Xs; upush_in Xs. pose proof (IHt L' φ) as Xt; upush_in Xt.
+  constructor; [exact (leqv_us φ H13) | exact (leqv_us φ H24) | exact Xs | exact Xt].
+Qed.
+Lemma U_actmnf_zero {G Γ} : AU_tmnf G Γ zero zero tyNat.
+Proof. intros L' φ; constructor. Qed.
+Lemma U_actmnf_succ {G Γ t t'} : AU_tm G Γ t t' tyNat -> AU_tmnf G Γ (succ t) (succ t') tyNat.
+Proof. intros IH L' φ; upush; constructor; exact (IH L' φ). Qed.
+Lemma U_actmnf_ne {G Γ ν ν' W W'} : posty W -> AU_tmnee G Γ ν ν' W' -> AU_tmnf G Γ ν ν' W.
+Proof. intros Hp IH L' φ; eapply actmnf_ne; [exact (posty_us _ φ Hp) | exact (IH L' φ)]. Qed.
+Lemma U_actmnf_eta {G Γ l l' A B w w'} :
+  AU_tm G (Γ ,, A @ l) (app w⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0))
+                       (app w'⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0)) B ->
+  AU_tmnf G Γ w w' (tyPi l l' A B).
+Proof.
+  intros IH L' φ; upush. pose proof (IH L' φ) as X; upush_in X.
+  rewrite !usubst_ren', !usubst_ren_ty' in X. constructor; exact X.
+Qed.
+Lemma U_actmnf_ueta {G Γ n l T w w'} :
+  AU_tm (gctx_uwk n G) Γ⟨ush n⟩ᵤ (uapp w⟨ush n⟩ᵤ (ubvars n)) (uapp w'⟨ush n⟩ᵤ (ubvars n)) T ->
+  AU_tmnf G Γ w w' (tyUPi n l T).
+Proof.
+  intros IH L' φ; upush. pose proof (IH (n + L') (uupn n φ)) as X; upush_in X.
+  rewrite gctx_uwk_usubst, ucren_ush_usubst, !uren_ush_usubst_tm, ubvars_uupn in X.
+  constructor; exact X.
+Qed.
+Lemma U_actmnf_ceta {G Γ l T w w'} :
+  AU_tm (gext G gdCtx) Γ⟪S⟫ (capp w⟪S⟫ (cvar 0)) (capp w'⟪S⟫ (cvar 0)) T ->
+  AU_tmnf G Γ w w' (tyCPi l T).
+Proof.
+  intros IH L' φ; upush. pose proof (IH L' φ) as X; upush_in X.
+  rewrite usubst_gren_ctx', !usubst_gren_tm' in X. constructor; exact X.
+Qed.
+Lemma U_actmnf_teta {G Γ Δ0 l l' T w w'} :
+  AU_tm (gext G (gdTy Δ0 lD l)) Γ⟪S⟫ (tapp w⟪S⟫ (tyGvar 0 (lshift 0))) (tapp w'⟪S⟫ (tyGvar 0 (lshift 0))) T ->
+  AU_tmnf G Γ w w' (tyTPi Δ0 l l' T).
+Proof.
+  intros IH L' φ; upush. pose proof (IH L' φ) as X; upush_in X.
+  rewrite usubst_gren_ctx', !usubst_gren_tm' in X. constructor; exact X.
+Qed.
+Lemma U_actmnf_boxT {G Γ Δ0 l T T'} : ty_leq T T' -> AU_tmnf G Γ (boxT T) (boxT T') (tyCTyp Δ0 l).
+Proof.
+  intros H L' φ; upush. constructor.
+  apply (proj1 leq_usubst_all); [intros; apply leqv_refl | exact H].
+Qed.
+Lemma U_actmnf_boxt {G Γ Δ0 A l t t'} : tm_leq t t' -> AU_tmnf G Γ (boxt t) (boxt t') (tyCTrm Δ0 A l).
+Proof.
+  intros H L' φ; upush. constructor.
+  apply (proj1 (proj2 leq_usubst_all)); [intros; apply leqv_refl | exact H].
+Qed.
+
+Lemma U_actmne_var {G Γ n T l} : in_ctx Γ n T l -> AU_tmne G Γ (var n) (var n) T.
+Proof. intros Hin L' φ; upush. eapply actmne_var. exact (in_ctx_usubst _ _ _ _ φ Hin). Qed.
+
+Lemma U_actmne_gvar {G Γ u Δ0 i' T l d d'} : in_gctx (gΨ G) u (gdTm Δ0 i' T l) -> AU_sub G Γ d d' Δ0 ->
+  AU_tmne G Γ (gvar u d) (gvar u d') T[d].
+Proof.
+  intros Hin IH L' φ; upush. rewrite usubst_subst_ty'.
+  pose proof (in_gctx_usubst _ _ _ φ Hin) as X. upush_in X.
+  eapply actmne_gvar; [exact X | exact (IH L' φ)].
+Qed.
+
+Lemma U_actmne_natrec {G Γ l l' M M' s s' z z' ν ν' W} : leqv l l' ->
+  AU_ty G (Γ ,, tyNat @ lzero) M M' -> AU_tm G Γ s s' M[lsingle zero] ->
+  AU_tm G (Γ ,, tyNat @ lzero ,, M @ l) z z' M[lsucc] -> AU_tmnee G Γ ν ν' W ->
+  AU_tmne G Γ (natrec l M s z ν) (natrec l' M' s' z' ν') M[lsingle ν].
+Proof.
+  intros Hl IHM IHs IHz IHν L' φ; upush. rewrite usubst_lsingle_ty.
+  pose proof (IHM L' φ) as XM; upush_in XM.
+  pose proof (IHs L' φ) as Xs; rewrite usubst_lsingle_ty in Xs; upush_in Xs.
+  pose proof (IHz L' φ) as Xz; rewrite usubst_lsucc_ty in Xz; upush_in Xz.
+  eapply actmne_natrec; [exact (leqv_us φ Hl) | exact XM | exact Xs | exact Xz | exact (IHν L' φ)].
+Qed.
+
+Lemma U_actmne_app {G Γ l1 l2 l3 l4 A A' B B' ν ν' s s' m m' A0 B0} :
+  AU_tmnee G Γ ν ν' (tyPi m m' A0 B0) -> AU_tm G Γ s s' A0 ->
+  AU_tmne G Γ (app ν l1 l2 A B s) (app ν' l3 l4 A' B' s') B0[lsingle s].
+Proof.
+  intros IHν IHs L' φ; upush. rewrite usubst_lsingle_ty.
+  pose proof (IHν L' φ) as X; upush_in X.
+  eapply actmne_app; [exact X | exact (IHs L' φ)].
+Qed.
+
+Lemma U_actmne_letboxT {G Γ l1 l2 l3 l4 Δ0 Δ0' M M' t1 t2 ν ν' W} : leqv l1 l3 -> leqv l2 l4 ->
+  AU_ctx G Δ0 Δ0' -> AU_ty G (Γ ,, tyCTyp Δ0 l2 @ lzero) M M' ->
+  AU_tm (gext G (gdTy Δ0 lC l2)) Γ⟪S⟫ t1 t2 (M⟪S⟫[lsingle (boxT (tyGvar 0 (lshift 0)))]) ->
+  AU_tmnee G Γ ν ν' W ->
+  AU_tmne G Γ (letboxT l1 l2 Δ0 M t1 ν) (letboxT l3 l4 Δ0' M' t2 ν') M[lsingle ν].
+Proof.
+  intros H13 H24 IHc IHM IHt IHν L' φ; upush. rewrite usubst_lsingle_ty.
+  pose proof (IHM L' φ) as XM; upush_in XM.
+  pose proof (IHt L' φ) as Xt. rewrite usubst_gren_ctx', usubst_lsingle_ty, usubst_gren_ty' in Xt. upush_in Xt.
+  eapply actmne_letboxT; [exact (leqv_us φ H13) | exact (leqv_us φ H24) | exact (IHc L' φ) | exact XM
+                         | exact Xt | exact (IHν L' φ)].
+Qed.
+
+Lemma U_actmne_letboxt {G Γ l1 l2 l3 l4 Δ0 Δ0' T T' M M' t1 t2 ν ν' W} : leqv l1 l3 -> leqv l2 l4 ->
+  AU_ctx G Δ0 Δ0' -> AU_ty G Δ0 T T' -> AU_ty G (Γ ,, tyCTrm Δ0 T l2 @ lzero) M M' ->
+  AU_tm (gext G (gdTm Δ0 lC T l2)) Γ⟪S⟫ t1 t2 (M⟪S⟫[lsingle (boxt (gvar 0 (lshift 0)))]) ->
+  AU_tmnee G Γ ν ν' W ->
+  AU_tmne G Γ (letboxt l1 l2 Δ0 T M t1 ν) (letboxt l3 l4 Δ0' T' M' t2 ν') M[lsingle ν].
+Proof.
+  intros H13 H24 IHc IHT IHM IHt IHν L' φ; upush. rewrite usubst_lsingle_ty.
+  pose proof (IHM L' φ) as XM; upush_in XM.
+  pose proof (IHt L' φ) as Xt. rewrite usubst_gren_ctx', usubst_lsingle_ty, usubst_gren_ty' in Xt. upush_in Xt.
+  eapply actmne_letboxt; [exact (leqv_us φ H13) | exact (leqv_us φ H24) | exact (IHc L' φ) | exact (IHT L' φ)
+                         | exact XM | exact Xt | exact (IHν L' φ)].
+Qed.
+
+Lemma U_branches {G Γ MT Mt l1 l2 bs bs' L' φ} :
+  (forall j, j < 13 -> AU_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+                         (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
+  forall j, j < 13 -> ac_tm (brG j (gctx_usubst G L' φ))
+                       (brΓ j (ucsubst Γ φ) (wrapMT (usubst_ty MT (uup φ))) (wrapMt (usubst_ty Mt (uup φ)))
+                          (lvsubst l1 φ) (lvsubst l2 φ))
+                       (usubst_tm (bs j) (uupn (br_nu j) φ)) (usubst_tm (bs' j) (uupn (br_nu j) φ))
+                       (brRes j (wrapMT (usubst_ty MT (uup φ))) (wrapMt (usubst_ty Mt (uup φ)))).
+Proof.
+  intros IH j Hj. pose proof (IH j Hj (br_nu j + L') (uupn (br_nu j) φ)) as X.
+  rewrite brG_usubst, brΓ_usubst, brRes_usubst in X by exact Hj. exact X.
+Qed.
+
+Ltac U_motives IHT IHt L' φ :=
+  let XT := fresh "XT" in let Xt := fresh "Xt" in
+  pose proof (IHT (S L') (uup φ)) as XT; rewrite recGT_usubst, recΓT_usubst in XT;
+  pose proof (IHt (S L') (uup φ)) as Xt; rewrite recGt_usubst, recΓt_usubst in Xt.
+
+Lemma U_actmne_elimT {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ0 Δ0' ν ν' W} :
+  leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> AU_ctx G Δ0 Δ0' ->
+  AU_ty (recGT G) (recΓT Γ) MT MT' -> AU_ty (recGt G) (recΓt Γ) Mt Mt' ->
+  (forall j, j < 13 -> AU_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+                         (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
+  AU_tmnee G Γ ν ν' W ->
+  AU_tmne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ0 ν) (elimT l1' l2' (mkrb MT' Mt' bs') l' Δ0' ν')
+    (motT (wrapMT MT) l Δ0 ν).
+Proof.
+  intros H1 H2 Hl IHc IHT IHt IHb IHν L' φ; upush. rewrite !mkrb_usubst, motT_usubst, wrapMT_usubst.
+  U_motives IHT IHt L' φ.
+  eapply actmne_elimT; [exact (leqv_us φ H1) | exact (leqv_us φ H2) | exact (leqv_us φ Hl) | exact (IHc L' φ)
+                        | exact XT | exact Xt | exact (U_branches IHb) | exact (IHν L' φ)].
+Qed.
+
+Lemma U_actmne_elimT_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ0 Δ0' U d d'} :
+  leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> AU_ctx G Δ0 Δ0' ->
+  AU_ty (recGT G) (recΓT Γ) MT MT' -> AU_ty (recGt G) (recΓt Γ) Mt Mt' ->
+  (forall j, j < 13 -> AU_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+                         (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
+  lsub_leq d d' ->
+  AU_tmne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ0 (boxT (tyGvar U d)))
+    (elimT l1' l2' (mkrb MT' Mt' bs') l' Δ0' (boxT (tyGvar U d')))
+    (motT (wrapMT MT) l Δ0 (boxT (tyGvar U d))).
+Proof.
+  intros H1 H2 Hl IHc IHT IHt IHb Hd L' φ; upush. rewrite !mkrb_usubst, motT_usubst, wrapMT_usubst. upush.
+  U_motives IHT IHt L' φ.
+  eapply actmne_elimT_gvar; [exact (leqv_us φ H1) | exact (leqv_us φ H2) | exact (leqv_us φ Hl)
+                             | exact (IHc L' φ) | exact XT | exact Xt | exact (U_branches IHb)
+                             | apply (proj2 (proj2 (proj2 leq_usubst_all))); [intros; apply leqv_refl | exact Hd]].
+Qed.
+
+Lemma U_actmne_elimt {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ0 Δ0' T T' ν ν' W} :
+  leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> AU_ctx G Δ0 Δ0' -> AU_ty G Δ0 T T' ->
+  AU_ty (recGT G) (recΓT Γ) MT MT' -> AU_ty (recGt G) (recΓt Γ) Mt Mt' ->
+  (forall j, j < 13 -> AU_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+                         (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
+  AU_tmnee G Γ ν ν' W ->
+  AU_tmne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ0 T ν) (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ0' T' ν')
+    (mott (wrapMt Mt) l Δ0 T ν).
+Proof.
+  intros H1 H2 Hl IHc IHi IHT IHt IHb IHν L' φ; upush. rewrite !mkrb_usubst, mott_usubst, wrapMt_usubst.
+  U_motives IHT IHt L' φ.
+  eapply actmne_elimt; [exact (leqv_us φ H1) | exact (leqv_us φ H2) | exact (leqv_us φ Hl) | exact (IHc L' φ)
+                        | exact (IHi L' φ) | exact XT | exact Xt | exact (U_branches IHb) | exact (IHν L' φ)].
+Qed.
+
+Lemma U_actmne_elimt_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ0 Δ0' T T' u d d'} :
+  leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> AU_ctx G Δ0 Δ0' -> AU_ty G Δ0 T T' ->
+  AU_ty (recGT G) (recΓT Γ) MT MT' -> AU_ty (recGt G) (recΓt Γ) Mt Mt' ->
+  (forall j, j < 13 -> AU_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+                         (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
+  lsub_leq d d' ->
+  AU_tmne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ0 T (boxt (gvar u d)))
+    (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ0' T' (boxt (gvar u d')))
+    (mott (wrapMt Mt) l Δ0 T (boxt (gvar u d))).
+Proof.
+  intros H1 H2 Hl IHc IHi IHT IHt IHb Hd L' φ; upush. rewrite !mkrb_usubst, mott_usubst, wrapMt_usubst. upush.
+  U_motives IHT IHt L' φ.
+  eapply actmne_elimt_gvar; [exact (leqv_us φ H1) | exact (leqv_us φ H2) | exact (leqv_us φ Hl)
+                             | exact (IHc L' φ) | exact (IHi L' φ) | exact XT | exact Xt | exact (U_branches IHb)
+                             | apply (proj2 (proj2 (proj2 leq_usubst_all))); [intros; apply leqv_refl | exact Hd]].
+Qed.
+
+Lemma U_actmne_uapp {G Γ n l T ν ν' ls ls'} : AU_tmnee G Γ ν ν' (tyUPi n l T) -> length ls = n ->
+  Forall2 leqv ls ls' -> AU_tmne G Γ (uapp ν ls) (uapp ν' ls') T[uext ls lvar]ᵤ.
+Proof.
+  intros IH Hn Hls L' φ; upush. change (usubst_ty T[uext ls lvar]ᵤ φ) with (T[uext ls lvar]ᵤ[φ]ᵤ).
+  rewrite (usubst_ubeta_ty n ls φ T Hn).
+  pose proof (IH L' φ) as X; upush_in X.
+  eapply actmne_uapp; [exact X | now rewrite length_map | apply leqvs_lvsubst; [exact Hls | intros; apply leqv_refl]].
+Qed.
+
+Lemma U_actmne_capp {G Γ l T ν ν' Δ0 Δ0'} : AU_tmnee G Γ ν ν' (tyCPi l T) -> AU_ctx G Δ0 Δ0' ->
+  AU_tmne G Γ (capp ν Δ0) (capp ν' Δ0') T⦃gsingle (GCtx Δ0)⦄.
+Proof.
+  intros IH IHc L' φ; upush. rewrite usubst_gsingle_ty. cbn [gousubst].
+  pose proof (IH L' φ) as X; upush_in X.
+  eapply actmne_capp; [exact X | exact (IHc L' φ)].
+Qed.
+
+Lemma U_actmne_tapp {G Γ Δ0 l l' T ν ν' A A'} : AU_tmnee G Γ ν ν' (tyTPi Δ0 l l' T) -> AU_ty G Δ0 A A' ->
+  AU_tmne G Γ (tapp ν A) (tapp ν' A') T⦃gsingle (GTy A)⦄.
+Proof.
+  intros IH IHA L' φ; upush. rewrite usubst_gsingle_ty. cbn [gousubst].
+  pose proof (IH L' φ) as X; upush_in X.
+  eapply actmne_tapp; [exact X | exact (IHA L' φ)].
+Qed.
+
+Lemma U_actmnee_red {G Γ ν ν' T W} : AU_tmne G Γ ν ν' T -> reds_ty T W -> whnf_ty W ->
+  AU_tmnee G Γ ν ν' W.
+Proof.
+  intros IH Hr Hw L' φ.
+  eapply actmnee_red; [exact (IH L' φ) | apply reds_ty_usubst, Hr | apply whnf_ty_usubst, Hw].
+Qed.
+
+Lemma U_acs_pt {G Γ d d' Θ} :
+  (forall n A k, in_ctx Θ n A k -> AU_tm G Γ (llk d n) (llk d' n) A[d]) -> AU_sub G Γ d d' Θ.
+Proof.
+  intros IH L' φ. apply acs_pt. intros n A k Hin.
+  destruct (in_ctx_usubst_inv _ _ _ _ _ Hin) as (A0 & k0 & Hin0 & -> & ->).
+  rewrite !llk_ulsubst, <- usubst_subst_ty'. exact (IH n A0 k0 Hin0 L' φ).
+Qed.
+
+Theorem ac_us_all :
+  (forall G Γ T T', ac_ty G Γ T T' -> AU_ty G Γ T T') /\
+  (forall G Γ W W', ac_tynf G Γ W W' -> AU_tynf G Γ W W') /\
+  (forall G Γ V V', ac_tyne G Γ V V' -> AU_tyne G Γ V V') /\
+  (forall G Δ Δ', ac_ctx G Δ Δ' -> AU_ctx G Δ Δ') /\
+  (forall G Γ t t' T, ac_tm G Γ t t' T -> AU_tm G Γ t t' T) /\
+  (forall G Γ w w' W, ac_tmnf G Γ w w' W -> AU_tmnf G Γ w w' W) /\
+  (forall G Γ ν ν' T, ac_tmne G Γ ν ν' T -> AU_tmne G Γ ν ν' T) /\
+  (forall G Γ ν ν' W, ac_tmnee G Γ ν ν' W -> AU_tmnee G Γ ν ν' W) /\
+  (forall G Γ d d' Δ, ac_sub G Γ d d' Δ -> AU_sub G Γ d d' Δ).
+Proof.
+  apply ac_mut; intros;
+    first
+    [ solve [eapply U_act_red; eassumption] | solve [eapply U_actnf_nat] | solve [eapply U_actnf_U; eassumption]
+    | solve [eapply U_actnf_pi; eassumption] | solve [eapply U_actnf_ne; eassumption]
+    | solve [eapply U_actnf_CTyp; eassumption] | solve [eapply U_actnf_CTrm; eassumption]
+    | solve [eapply U_actnf_upi; eassumption] | solve [eapply U_actnf_cpi; eassumption]
+    | solve [eapply U_actnf_tpi; eassumption]
+    | solve [eapply U_actne_gvar; eassumption] | solve [eapply U_actne_El; eassumption]
+    | solve [eapply U_acc_nil] | solve [eapply U_acc_var] | solve [eapply U_acc_ext; eassumption]
+    | solve [eapply U_actm_red; eassumption]
+    | solve [eapply U_actmnf_code_nat] | solve [eapply U_actmnf_code_U; eassumption]
+    | solve [eapply U_actmnf_code_pi; eassumption] | solve [eapply U_actmnf_zero]
+    | solve [eapply U_actmnf_succ; eassumption] | solve [eapply U_actmnf_ne; eassumption]
+    | solve [eapply U_actmnf_eta; eassumption] | solve [eapply U_actmnf_ueta; eassumption]
+    | solve [eapply U_actmnf_ceta; eassumption] | solve [eapply U_actmnf_teta; eassumption]
+    | solve [eapply U_actmnf_boxT; eassumption] | solve [eapply U_actmnf_boxt; eassumption]
+    | solve [eapply U_actmne_var; eassumption] | solve [eapply U_actmne_gvar; eassumption]
+    | solve [eapply U_actmne_natrec; eassumption] | solve [eapply U_actmne_app; eassumption]
+    | solve [eapply U_actmne_letboxT; eassumption] | solve [eapply U_actmne_letboxt; eassumption]
+    | solve [eapply U_actmne_elimT; eassumption] | solve [eapply U_actmne_elimT_gvar; eassumption]
+    | solve [eapply U_actmne_elimt; eassumption] | solve [eapply U_actmne_elimt_gvar; eassumption]
+    | solve [eapply U_actmne_uapp; eassumption] | solve [eapply U_actmne_capp; eassumption]
+    | solve [eapply U_actmne_tapp; eassumption] | solve [eapply U_actmnee_red; eassumption]
+    | solve [eapply U_acs_pt; eassumption] ].
+Qed.
