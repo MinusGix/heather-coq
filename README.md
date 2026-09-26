@@ -31,6 +31,9 @@ complete:
   recursors. The consequences at M above still hold with the recursors
   included.
 
+Milestone 4 (universe polymorphism: `UΠ`, `Λ`, `$` and the level ω) is in
+design; see `M4_DESIGN.md`.
+
 No admits, no axioms. See `M3_DESIGN.md`, `M2_DESIGN.md` and `M1_DESIGN.md`
 for decisions, deviations from the paper and gotchas.
 
