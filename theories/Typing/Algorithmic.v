@@ -105,11 +105,12 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tm G (Γ ,, tyNat @ lzero ,, M @ l) z z' M[lsucc] ->
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (natrec l M s z ν) (natrec l' M' s' z' ν') M[lsingle ν]
-(* the annotations [A], [B] are the function's type up to equality, so
-   they are not compared (06:589; M6_DESIGN.md H9) *)
-| actmne_app G Γ l1 l2 l3 l4 A A' B B' ν ν' s s' W : leqv l1 l3 -> leqv l2 l4 ->
-    ac_tmnee G Γ ν ν' W -> ac_tm G Γ s s' A ->
-    ac_tmne G Γ (app ν l1 l2 A B s) (app ν' l3 l4 A' B' s') B[lsingle s]
+(* the annotations are the function's type up to equality: they are not
+   inspected, the argument is compared at the domain of the function's
+   inferred type (06:589; M6_DESIGN.md H9) *)
+| actmne_app G Γ l1 l2 l3 l4 A A' B B' ν ν' s s' m m' A0 B0 :
+    ac_tmnee G Γ ν ν' (tyPi m m' A0 B0) -> ac_tm G Γ s s' A0 ->
+    ac_tmne G Γ (app ν l1 l2 A B s) (app ν' l3 l4 A' B' s') B0[lsingle s]
 | actmne_letboxT G Γ l1 l2 l3 l4 Δ Δ' M M' t1 t2 ν ν' W : leqv l1 l3 -> leqv l2 l4 ->
     ac_ctx G Δ Δ' -> ac_ty G (Γ ,, tyCTyp Δ l2 @ lzero) M M' ->
     ac_tm (gext G (gdTy Δ lC l2)) Γ⟪S⟫ t1 t2 (M⟪S⟫[lsingle (boxT (tyGvar 0 (lshift 0)))]) ->

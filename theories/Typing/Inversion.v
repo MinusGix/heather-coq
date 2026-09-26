@@ -283,3 +283,50 @@ Lemma inv_ty_tpi {G i Γ Δ l l' T k} : [ G ; Γ ⊢[ i ] tyTPi Δ l l' T @ k ] 
   (i = lM /\ [ G ; Γ ⊢[ lM ] ] /\ [ G ; Δ ⊢[ lD ] ] /\ lwf (gL G) l /\ lwf (gL G) l' /\
     [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ]) /\ lvl_eq (gL G) k l'.
 Proof. inv_ty. Qed.
+
+(** ** Lookups are deterministic *)
+
+Lemma in_ctx_det {Γ n T l T' l'} : in_ctx Γ n T l -> in_ctx Γ n T' l' -> T = T' /\ l = l'.
+Proof.
+  intros H; revert T' l'; induction H as [Γ A l | Γ A l B l'' n H IH]; intros T' l' H';
+    inversion H' as [? ? ? | ? ? ? ? ? ? H'']; subst; auto.
+  destruct (IH _ _ H'') as [-> ->]; auto.
+Qed.
+
+Lemma in_gctx_det {Ψ n D D'} : in_gctx Ψ n D -> in_gctx Ψ n D' -> D = D'.
+Proof.
+  intros H; revert D'; induction H as [Ψ D | Ψ D D0 n H IH]; intros D' H';
+    inversion H' as [? ? | ? ? ? ? H'']; subst; auto.
+  now rewrite (IH _ H'').
+Qed.
+
+(** ** A type's level is unique (up to equivalence) *)
+
+Lemma lvl_eq_uniq {L k k' h} : lvl_eq L k h -> lvl_eq L k' h -> k = k' \/ lequiv L k k'.
+Proof.
+  intros [->|H] [->|H']; [left; reflexivity | right; exact (lequiv_sym _ _ _ H') | right; exact H |].
+  right; exact (lequiv_trans _ _ _ _ H (lequiv_sym _ _ _ H')).
+Qed.
+
+Lemma no_ty_err {G i Γ k} : ~ [ G ; Γ ⊢[ i ] tyErr @ k ].
+Proof. intros H; remember tyErr as X eqn:E; induction H; try discriminate; auto. Qed.
+
+Lemma ty_lvl_uniq {G i Γ T k k'} : [ G ; Γ ⊢[ i ] T @ k ] -> [ G ; Γ ⊢[ i ] T @ k' ] ->
+  k = k' \/ lequiv (gL G) k k'.
+Proof.
+  intros H H'. destruct T.
+  - exfalso; exact (no_ty_err H).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_nat H)) (proj2 (inv_ty_nat H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_pi H)) (proj2 (inv_ty_pi H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_U H)) (proj2 (inv_ty_U H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_El H)) (proj2 (inv_ty_El H'))).
+  - destruct (inv_ty_gvar H) as (Δ0 & i0 & l0 & (_ & _ & Hin & _) & Hk).
+    destruct (inv_ty_gvar H') as (Δ1 & i1 & l1 & (_ & _ & Hin' & _) & Hk').
+    pose proof (in_gctx_det Hin Hin') as E.
+    injection E as <- <- <-. exact (lvl_eq_uniq Hk Hk').
+  - exact (lvl_eq_uniq (proj2 (inv_ty_CTyp H)) (proj2 (inv_ty_CTyp H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_CTrm H)) (proj2 (inv_ty_CTrm H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_upi H)) (proj2 (inv_ty_upi H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_cpi H)) (proj2 (inv_ty_cpi H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_tpi H)) (proj2 (inv_ty_tpi H'))).
+Qed.

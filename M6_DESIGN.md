@@ -180,13 +180,17 @@ bound-variable world gives the codomain's reducibility.
 
 The lift must not need self-conversion of types, which would mean
 self-conversion of arbitrary terms (the arguments inside a neutral type),
-i.e. completeness, a cycle. So the algorithm's `app` rule does not compare
-the annotations `A`, `B`. They are the function's type up to equality
-(06:589), and soundness recovers `A ≅ A'`, `B ≅ B'` from the head's
-inferred type and `Π` injectivity. The level annotations are still compared,
-since the lift supplies them reflexively. `capp`/`tapp` compare their
-arguments (the lift uses `cvar 0`, and `U₀^id` whose identity substitution
-is itself lifted entrywise). `uapp` compares levels only.
+i.e. completeness, a cycle. And the conversion lemma (08:94) changes the
+η-expanded applications' annotations when it converts `Π A B` to `Π A₂ B₂`,
+which the paper passes over. So the algorithm's `app` rule inspects no
+annotations at all, levels included. The argument is compared at the domain
+of the function's inferred `Π`, and the result type is that `Π`'s codomain,
+as for `uapp`/`capp`/`tapp`. Soundness recovers the annotations' equalities
+from `Π` injectivity. For that, `S_ne` relates the two sides at independent
+levels, and a type's level is unique up to equivalence (`ty_lvl_uniq`).
+`capp`/`tapp` compare their arguments (the lift uses `cvar 0`, and `U₀^id`
+whose identity substitution is lifted entrywise). `uapp` compares levels
+only.
 
 ## Order of the proofs
 
