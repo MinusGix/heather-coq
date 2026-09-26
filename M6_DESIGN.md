@@ -107,6 +107,13 @@ The last is the paper's "hide a syntactic equivalence judgment inside"
 (08:195). It removes the left bias of inference, which makes symmetry,
 transitivity and type conversion provable (08:199).
 
+As built (`Validity/AlgInstance.v`), the bundle is the declarative
+equality itself beside the derivation: `alg_eq_ty` := `[T ≅ T']` ∧
+`ac_ty`, `alg_eq_tm` := `[t ≅ t' : T]` ∧ `ac_tm`, `alg_ne_tm` :=
+`decl_ne_tm` ∧ `∃ T0`, `ac_tmne ▷ T0` ∧ `[T ≅ T0]`. This is equivalent to
+the above via soundness and presupposition, and makes the laws that
+concern the declarative side (conversion, weakening, reduction) direct.
+
 ### H5. The recursor neutrals
 
 The algorithm compares the motives, the thirteen branches, `l`, `Δ` (and
@@ -283,3 +290,11 @@ equal type. Three points the paper passes over:
   `kw_gstep` world. `TΠ`'s argument `U₀^id` needs the identity substitution
   self-related (`ac_sub_id`, from the lift at D). At ω, `UΠ`'s body at a
   well-formed level (`lift_upi`).
+- The algorithmic instances (`Validity/AlgInstance.v`): `AlgEqLaws` at
+  both layers and `AlgEqM`, closed.
+- Completeness (`Validity/AlgComplete.v`, `ac_complete_ty`,
+  `ac_complete_tm`) is done, closed: the fundamental theorems at the
+  algorithmic pair, then escape. At ω (M), where no relation exists, both
+  sides reduce to `UΠ`s (`omegaM_red_l/r`); the bodies (for terms, the
+  η bodies `uapp t⟨ush n⟩ (ubvars n)`) are at a well-formed level, so
+  complete there, and `actnf_upi`/`actmnf_ueta` close. Step 5 is complete.

@@ -105,3 +105,4 @@ theories/Validity/AlgConv.v
 theories/Validity/AlgPER.v
 theories/Validity/AlgLift.v
 theories/Validity/AlgInstance.v
+theories/Validity/AlgComplete.v
