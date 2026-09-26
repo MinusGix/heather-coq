@@ -118,3 +118,6 @@ theories/Validity/RecReduct.v
 theories/Validity/Uniform.v
 theories/Validity/TyInj.v
 theories/Validity/TypeUniq.v
+theories/Validity/TCBase.v
+theories/Validity/TCType.v
+theories/Validity/TCSynth.v

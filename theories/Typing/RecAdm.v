@@ -245,7 +245,7 @@ End Adm.
 
 (** ** The recursor rules without the scope premises (paper form, 04:1127) *)
 
-Lemma wf_elimT' {G Γ l1 l2 MT Mt bs l Δ t} :
+Lemma wf_elimT_adm {G Γ l1 l2 MT Mt bs l Δ t} :
   lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
   [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] ->
@@ -260,7 +260,7 @@ Proof.
   - intros k Hk; exact (brΓ_wf HΓ Hl1 Hl2 HMT HMt k Hk).
 Qed.
 
-Lemma wf_elimt' {G Γ l1 l2 MT Mt bs l Δ T t} :
+Lemma wf_elimt_adm {G Γ l1 l2 MT Mt bs l Δ T t} :
   lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
   [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] ->
