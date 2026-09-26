@@ -8,6 +8,7 @@
     neutrals. *)
 From DeLaM.Typing Require Export DeclInstance.
 From DeLaM.Validity Require Export Reducible DeclConsequencesP.
+From Coq Require Import Lia.
 
 Section DeclConsequences.
 
@@ -229,9 +230,95 @@ Qed.
 
 (** ** At ω: [UΠ] (M4_DESIGN.md F6) *)
 
-(** Injectivity of [UΠ]: the arities agree, and the levels are equivalent. *)
+(** The bodies of convertible [UΠ]s, at the level scope extended by the
+    binder: the instance at the world that grows the scope by [n] levels,
+    at those levels, escaped and moved back by the inverse rotation
+    ([rotn], M3_DESIGN.md E14). *)
+(** The top [n] levels of [n + L], in [uext] order. *)
+Definition utop (n L : nat) : list lvl := map (fun k => lvar (L + k)) (rev (seq 0 n)).
+
+Lemma utop_length n L : length (utop n L) = n.
+Proof. unfold utop. now rewrite length_map, length_rev, length_seq. Qed.
+
+Lemma utop_lwf n L : Forall (lwf (n + L)) (utop n L).
+Proof.
+  unfold utop. apply Forall_map, Forall_forall. intros k Hk.
+  apply in_rev, in_seq in Hk. cbn [lwf]. lia.
+Qed.
+
+Lemma utop_rotn n L m : m < n + L -> lvsubst (uext (utop n L) lvar m) (pφ (rotn n L)) = lvar m.
+Proof.
+  intros Hm. unfold uext. rewrite utop_length. destruct (Nat.ltb_spec m n) as [Hlt | Hge].
+  - unfold utop. rewrite (nth_indep _ _ (lvar (L + 0))) by (rewrite length_map, length_rev, length_seq; lia).
+    rewrite (map_nth (fun k => lvar (L + k)) _ 0).
+    rewrite rev_nth by (rewrite length_seq; lia). rewrite length_seq, seq_nth by lia.
+    cbn [lvsubst]. unfold pφ, rotn. f_equal.
+    destruct (Nat.ltb_spec (L + (0 + (n - S (n - S m)))) L); [lia|].
+    destruct (Nat.ltb_spec (L + (0 + (n - S (n - S m)))) (n + L)); lia.
+  - cbn [lvsubst]. unfold pφ, rotn. f_equal.
+    destruct (Nat.ltb_spec (m - n) L); lia.
+Qed.
+
+Section Grow.
+Context {L n : nat} {Ψ : list gdecl} {Γ : ctx} (HΓ : [ mkG L Ψ ; Γ ⊢[ lM ] ]).
+
+Lemma grown_gok : gwk_ok gwk_id (mkG (n + L) Ψ) (mkG L Ψ).
+Proof. split; [cbn; lia | constructor]. Qed.
+Lemma grown_ctx : wf_ctx (mkG (n + L) Ψ) (@ge_layer DEM) Γ.
+Proof.
+  rewrite (@gm_layer_M DEP DEM _).
+  exact (gwa_ctx (γ := gwk_id) grown_gok (wfg_grow L (n + L) Ψ ltac:(lia) (ctx_glob _ _ _ HΓ)) HΓ).
+Qed.
+Definition kw_grown : @kwk DEM (mkG L Ψ) Γ :=
+  mkKwk (mkG (n + L) Ψ) Γ gwk_id wk_id grown_gok (wkwf_id _) grown_ctx.
+End Grow.
+
+Lemma declM_upi_body {G Γ n l A l' A'} : [ G ; Γ ⊢[ lM ] tyUPi n l A ≅ tyUPi n l' A' @ lomega ] ->
+  [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] A ≅ A' @ l ].
+Proof.
+  intros H. destruct G as [L Ψ].
+  pose proof (eqty_wf_l (i := lM) eq_refl H) as HU. pose proof (eqty_wf_r (i := lM) eq_refl H) as HU'.
+  pose proof (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ HU) as HΓ.
+  destruct (reducibleM_eqty_ω DEP DEM H) as [R HR].
+  destruct HR as [m l0 l0' A0 A0' iR _ Hll HT HT' _ HI _].
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT (tyred_refl _ _ HU) (whnf_tyUPi _ _ _) (whnf_tyUPi _ _ _)) as E.
+  injection E as -> -> ->.
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' (tyred_refl _ _ HU') (whnf_tyUPi _ _ _) (whnf_tyUPi _ _ _)) as E.
+  injection E as -> ->.
+  pose proof (HI (kw_grown (n := n) HΓ) (utop n L) (utop n L) (utop_length n L)
+                 (lequivs_refl _ _ (utop_lwf n L))) as X.
+  destruct (escape_ty _ _ _ _ _ _ _ _ X) as (_ & _ & Y). apply geq_ty_sound in Y.
+  unfold kty in Y; cbn [kw_grown kw_γ kw_r kw_G kw_Δ gwa wk_ren] in Y.
+  pose proof (wf_ty_nf HU) as NA. pose proof (wf_ty_nf HU') as NA'.
+  pose proof (wf_ty_dnf HU) as DA. pose proof (wf_ty_dnf HU') as DA'.
+  pose proof (wf_ty_lwf HU) as WA. pose proof (wf_ty_lwf HU') as WA'.
+  cbn in NA, NA', DA, DA', WA, WA'. destruct WA as [Wl WA]. destruct WA' as [_ WA'].
+  rewrite !ren_id_ty in Y by assumption. rewrite (@gm_layer_M DEP DEM _) in Y.
+  pose proof (proj1 (proj2 (proj2 (proj2 (proj2 usubstitution)))) _ _ _ _ _ _ Y (n + L) (pφ (rotn n L))
+                (uperm_usub_ok (uperm_rotn n L))) as Z.
+  pose proof (ctx_glob _ _ _ HΓ) as HG.
+  assert (EG : G_us (mkG (n + L) Ψ) (n + L) (pφ (rotn n L)) = gctx_uwk n (mkG L Ψ)).
+  { unfold G_us, gctx_usubst, gctx_uwk; cbn. f_equal. exact (rotn_decls n L Ψ (wfg_lwf _ HG)). }
+  assert (Eag : forall m, m < L -> pφ (rotn n L) m = pφ (ush n) m) by (intros; apply rotn_ush; assumption).
+  assert (Eid : forall m, m < n + L -> lvsubst (uext (utop n L) lvar m) (pφ (rotn n L)) = lvar m)
+    by exact (utop_rotn n L).
+  assert (EΓ : ucsubst Γ (pφ (rotn n L)) = Γ⟨ush n⟩ᵤ)
+    by (rewrite uren_us_ctx; exact (lwf_us_ext_ctx (wf_ctx_lwf HΓ) Eag)).
+  assert (EA : forall B, dnfty B -> ty_lwf (n + L) B -> usubst_ty B[uext (utop n L) lvar]ᵤ (pφ (rotn n L)) = B).
+  { intros B DB WB. change (B[uext (utop n L) lvar]ᵤ[pφ (rotn n L)]ᵤ = B).
+    rewrite (usubst_usubst_ty _ _ _ _ (fun _ => eq_refl)), (lwf_us_ext_ty WB Eid).
+    apply usubst_id_ty; [assumption | reflexivity]. }
+  assert (El : lvsubst (lvsubst l (uext (utop n L) lvar)) (pφ (rotn n L)) = l).
+  { rewrite (lvsubst_lvsubst _ _ _ _ (fun _ => eq_refl)), (lvsubst_ext_lwf _ _ _ _ Wl Eid).
+    apply lvsubst_id; reflexivity. }
+  rewrite EG, EΓ, (EA A DA WA), (EA A' DA' WA'), El in Z.
+  exact Z.
+Qed.
+
+(** Injectivity of [UΠ] (08:38): the arities agree, the levels are
+    equivalent, and the bodies are convertible in the extended scope. *)
 Theorem declM_upi_inj {G Γ n l A n' l' A' k} : [ G ; Γ ⊢[ lM ] tyUPi n l A ≅ tyUPi n' l' A' @ k ] ->
-  n' = n /\ lequiv (n + gL G) l l'.
+  n' = n /\ lequiv (n + gL G) l l' /\ [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] A ≅ A' @ l ].
 Proof.
   intros H. pose proof (upi_lvl (eqty_wf_l (i := lM) eq_refl H)) as ->.
   destruct (reducibleM_eqty_ω DEP DEM H) as [R HR].
@@ -240,7 +327,7 @@ Proof.
                 (whnf_tyUPi _ _ _) (whnf_tyUPi _ _ _)) as E. injection E as <- <- <-.
   pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' (tyred_refl _ _ (eqty_wf_r (i := lM) eq_refl H))
                 (whnf_tyUPi _ _ _) (whnf_tyUPi _ _ _)) as E. injection E as <- <- <-.
-  split; [reflexivity | exact Hll].
+  refine (conj eq_refl (conj Hll _)). exact (declM_upi_body H).
 Qed.
 
 (** Discrimination of [UΠ] against the other type formers. *)
