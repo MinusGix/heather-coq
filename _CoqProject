@@ -109,3 +109,4 @@ theories/Validity/AlgInstance.v
 theories/Validity/AlgComplete.v
 theories/Validity/AlgDec.v
 theories/Validity/Consistency.v
+theories/Validity/Canonicity.v

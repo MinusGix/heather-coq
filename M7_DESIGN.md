@@ -111,7 +111,23 @@ local context:
 
 From `no_closed_neutral`, normalization and head discrimination.
 
-Status: planned.
+Status: **done** (`Validity/Canonicity.v`), closed. As built, at D and M
+with `ctx_only G`:
+- `closed_type_canonicity`: a closed type reduces to a whnf that is not
+  neutral. A type variable would need a `gdTy` declaration, and `El` of
+  a closed neutral contradicts `no_closed_neutral`.
+- `closed_canonicity`: a closed term reduces to a non-neutral whnf `w`,
+  its type to a whnf `W`, and `canon_head (ty_head W) w`. The value's shape
+  is indexed by the type's head:
+  - `zero`/`succ` at `Nat`;
+  - a code (`tmNat`, `tmU`, `tmPi`) at a universe;
+  - `lam` at `Π`, `boxT`/`boxt` at `□`, `ulam` at `UΠ`, `clam` at `CΠ`,
+    `tlam` at `TΠ`.
+- `value_canon`: a typed value's shape matches its whnf type's head. Each
+  value's typing inversion ends in an equation with its canonical type
+  former; `decl_head_c` compares heads.
+- `closed_canonicity_whnf` (type already whnf) and `closed_pi_canonicity`
+  (closed functions compute to `λ`) as examples of use.
 
 ### B2. Uniform statements
 
@@ -163,5 +179,5 @@ Status: to design.
 
 ## Order
 
-A1 (done), A3 (done), B1, A2, then B2. The C items are designed separately when
+A1, A3, B1 (done); A2, then B2. The C items are designed separately when
 reached.

@@ -1,0 +1,98 @@
+(** * Closed canonicity at every type former (M7_DESIGN.md B1)
+
+    For a global context of context variables only and the empty local
+    context, at D and M:
+    - a well-formed type reduces to a whnf type former, not a neutral one
+      ([closed_type_canonicity]);
+    - a typed term reduces to a value whose shape the type's head
+      determines ([closed_canonicity], [canon_head]): a numeral constructor
+      at [Nat], a code at a universe, [λ] at [Π], [box] at [□], [Λ] at
+      [UΠ], a context or type abstraction at [CΠ]/[TΠ].
+
+    Closed whnfs are not neutral ([no_closed_neutral]). A value's typing
+    inversion equates its type with its canonical type former, and head
+    discrimination ([decl_head_c]) identifies that former's head with the
+    head of the type's whnf. *)
+From DeLaM.Validity Require Export Consistency.
+
+(** The values at a type head ([ty_head]). *)
+Definition canon_head (h : nat) (w : tm) : Prop :=
+  match h with
+  | 1 => w = zero \/ exists t, w = succ t
+  | 2 => w = tmNat \/ (exists l, w = tmU l) \/ exists l l' s t, w = tmPi l l' s t
+  | 3 => exists l l' A t, w = lam l l' A t
+  | 4 => exists T, w = boxT T
+  | 5 => exists t, w = boxt t
+  | 6 => exists n l t, w = ulam n l t
+  | 7 => exists l t, w = clam l t
+  | 8 => exists l l' t, w = tlam l l' t
+  | _ => False
+  end.
+
+(** A value has the canonical shape of its whnf type. *)
+Lemma value_canon {G i Γ w W k} : compt i -> whnf w -> ~ whne w -> whnf_ty W ->
+  [ G ; Γ ⊢[ i ] w : W @ k ] -> canon_head (ty_head W) w.
+Proof.
+  intros Hc Hw Hn HW Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct Hw; [contradiction | ..];
+    first [ pose proof (inv_code_nat Hi Hx) as X | pose proof (inv_code_U Hi Hx) as X
+          | pose proof (inv_code_pi Hi Hx) as X | pose proof (inv_zero Hi Hx) as X
+          | pose proof (inv_succ Hi Hx) as X | pose proof (inv_lam Hi Hx) as X
+          | pose proof (inv_boxT Hi Hx) as X | pose proof (inv_boxt Hi Hx) as X
+          | pose proof (inv_ulam Hi Hx) as X | pose proof (inv_clam Hi Hx) as X
+          | pose proof (inv_tlam Hi Hx) as X ];
+    repeat match goal with H : exists _, _ |- _ => destruct H | H : _ /\ _ |- _ => destruct H end;
+    match goal with E : [ _ ; _ ⊢[ _ ] W ≅ _ @ _ ] |- _ =>
+      rewrite (decl_head_c Hc E HW); [| auto with whnf] end;
+    cbn; eauto 10.
+Qed.
+
+(** ** Types *)
+
+Theorem closed_type_canonicity {G i T k} : compt i -> ctx_only G -> [ G ; cnil ⊢[ i ] T @ k ] ->
+  exists W, reds_ty T W /\ whnf_ty W /\ ~ whne_ty W /\ [ G ; cnil ⊢[ i ] T ≅ W @ k ].
+Proof.
+  intros Hc HG HT. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (tgt_whnf Hc HT) as (W & Hr & Hw & E). exists W; split; [exact Hr | split; [exact Hw | split; [| exact E]]].
+  pose proof (eqty_wf_r Hi E) as HW. intros Hn. destruct Hn as [U d | l ν Hν].
+  - destruct (tyGvar_decl HW) as (Δ & i' & l' & Hin). discriminate (HG _ _ Hin).
+  - destruct (inv_ty_El HW) as ((_ & _ & Ht) & _). exact (no_closed_neutral Ht eq_refl HG Hν).
+Qed.
+
+(** ** Terms *)
+
+Theorem closed_canonicity {G i t T k} : compt i -> ctx_only G -> [ G ; cnil ⊢[ i ] t : T @ k ] ->
+  exists W w, reds_ty T W /\ whnf_ty W /\ ~ whne_ty W /\
+    reds t w /\ whnf w /\ ~ whne w /\ [ G ; cnil ⊢[ i ] t ≅ w : T @ k ] /\ canon_head (ty_head W) w.
+Proof.
+  intros Hc HG Ht. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (closed_type_canonicity Hc HG (wf_tm_ty Hi Ht)) as (W & HrT & HW & HnW & E).
+  destruct (tgt_whnf_tm i Hc Ht) as (w & Hr & Hw).
+  pose proof (red_tm_sound Hc Ht Hr Hw) as Ew.
+  assert (EW : [ G ; cnil ⊢[ typeof i ] W ≅ T @ k ]) by (rewrite Hi; exact (eqty_sym _ _ _ _ _ _ E)).
+  pose proof (wf_conv _ _ _ _ _ _ _ (eqtm_wf_r Hi Ew) EW) as Hw0.
+  assert (Hn : ~ whne w) by exact (no_closed_neutral Hw0 eq_refl HG).
+  exists W, w. repeat split; try assumption. exact (value_canon Hc Hw Hn HW Hw0).
+Qed.
+
+(** At a type already in whnf, the value's shape is read off the type
+    itself; [cbn] on [canon_head (ty_head T) w] gives it. *)
+Corollary closed_canonicity_whnf {G i t T k} : compt i -> ctx_only G -> whnf_ty T ->
+  [ G ; cnil ⊢[ i ] t : T @ k ] ->
+  exists w, reds t w /\ whnf w /\ [ G ; cnil ⊢[ i ] t ≅ w : T @ k ] /\ canon_head (ty_head T) w.
+Proof.
+  intros Hc HG HwT Ht.
+  destruct (closed_canonicity Hc HG Ht) as (W & w & HrT & HW & _ & Hr & Hw & _ & E & C).
+  rewrite <- (reds_ty_whnf_det _ _ _ (Relation_Operators.rt1n_refl _ _ _) HrT HwT HW) in C.
+  exists w; repeat split; assumption.
+Qed.
+
+(** For example, closed functions compute to [λ]s. *)
+Corollary closed_pi_canonicity {G i t l l' A B k} : compt i -> ctx_only G ->
+  [ G ; cnil ⊢[ i ] t : tyPi l l' A B @ k ] ->
+  exists l1 l2 A' b, reds t (lam l1 l2 A' b) /\ [ G ; cnil ⊢[ i ] t ≅ lam l1 l2 A' b : tyPi l l' A B @ k ].
+Proof.
+  intros Hc HG Ht.
+  destruct (closed_canonicity_whnf Hc HG (whnf_tyPi _ _ _ _) Ht) as (w & Hr & _ & E & (l1 & l2 & A' & b & ->)).
+  exists l1, l2, A', b. split; assumption.
+Qed.
