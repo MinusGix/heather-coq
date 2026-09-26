@@ -103,3 +103,4 @@ theories/Validity/AlgPrereq.v
 theories/Validity/AlgSound.v
 theories/Validity/AlgConv.v
 theories/Validity/AlgPER.v
+theories/Validity/AlgLift.v
