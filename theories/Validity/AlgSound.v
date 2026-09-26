@@ -798,10 +798,11 @@ Proof.
   inversion W; inversion W'; subst. constructor; [apply leqv_lequiv; assumption | auto].
 Qed.
 
-Lemma S_actmne_uapp {G Γ n l T ν ν' ls ls'} : S_ne G Γ ν ν' (tyUPi n l T) -> Forall2 leqv ls ls' ->
+Lemma S_actmne_uapp {G Γ n l T ν ν' ls ls'} : S_ne G Γ ν ν' (tyUPi n l T) -> length ls = n ->
+  Forall2 leqv ls ls' ->
   S_ne G Γ (uapp ν ls) (uapp ν' ls') T[uext ls lvar]ᵤ.
 Proof.
-  intros IH Hls i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  intros IH _ Hls i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_uapp Hi Hx) as (n0 & l0 & T0 & (-> & W0 & HT0 & Hlen & Hw & Hν) & Hk & HX).
   destruct (inv_uapp Hi Hx') as (n1 & l1 & T1 & (_ & W1 & HT1 & Hlen' & Hw' & Hν') & Hk' & HX').
   destruct (IH lM lomega lomega _ _ compt_M Hν Hν') as (E0 & E1 & Eν).

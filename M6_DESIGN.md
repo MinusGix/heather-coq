@@ -190,7 +190,9 @@ from `Π` injectivity. For that, `S_ne` relates the two sides at independent
 levels, and a type's level is unique up to equivalence (`ty_lvl_uniq`).
 `capp`/`tapp` compare their arguments (the lift uses `cvar 0`, and `U₀^id`
 whose identity substitution is lifted entrywise). `uapp` compares levels
-only.
+only, and checks that there are as many as the `UΠ` binds: the instance
+`T[ℓ⃗]` commutes with a universe substitution only then
+(`usubst_ubeta_ty`).
 
 ## Order of the proofs
 

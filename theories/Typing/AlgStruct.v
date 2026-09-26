@@ -263,11 +263,12 @@ Proof.
                              | exact (W_branches Hr IHb) | exact Hd].
 Qed.
 
-Lemma W_actmne_uapp {G Γ n l T ν ν' ls ls'} : AW_tmnee G Γ ν ν' (tyUPi n l T) -> Forall2 leqv ls ls' ->
+Lemma W_actmne_uapp {G Γ n l T ν ν' ls ls'} : AW_tmnee G Γ ν ν' (tyUPi n l T) -> length ls = n ->
+  Forall2 leqv ls ls' ->
   AW_tmne G Γ (uapp ν ls) (uapp ν' ls') T[uext ls lvar]ᵤ.
 Proof.
-  intros IH Hls Δ r Hr. push_ren. pose proof (IH _ _ Hr) as X. push_ren_in X.
-  eapply actmne_uapp; [exact X | exact Hls].
+  intros IH Hn Hls Δ r Hr. push_ren. pose proof (IH _ _ Hr) as X. push_ren_in X.
+  eapply actmne_uapp; [exact X | exact Hn | exact Hls].
 Qed.
 
 Lemma W_actmne_capp {G Γ l T ν ν' Δ0 Δ0'} : AW_tmnee G Γ ν ν' (tyCPi l T) -> ac_ctx G Δ0 Δ0' ->
@@ -615,11 +616,12 @@ Proof.
                              | exact (proj2 (proj2 (proj2 leq_gren_all)) _ _ _ Hd)].
 Qed.
 
-Lemma G_actmne_uapp {G Γ n l T ν ν' ls ls'} : AG_tmnee G Γ ν ν' (tyUPi n l T) -> Forall2 leqv ls ls' ->
+Lemma G_actmne_uapp {G Γ n l T ν ν' ls ls'} : AG_tmnee G Γ ν ν' (tyUPi n l T) -> length ls = n ->
+  Forall2 leqv ls ls' ->
   AG_tmne G Γ (uapp ν ls) (uapp ν' ls') T[uext ls lvar]ᵤ.
 Proof.
-  intros IH Hls G' γ Hγ. push_gren. pose proof (IH _ _ Hγ) as X. push_gren_in X.
-  eapply actmne_uapp; [exact X | exact Hls].
+  intros IH Hn Hls G' γ Hγ. push_gren. pose proof (IH _ _ Hγ) as X. push_gren_in X.
+  eapply actmne_uapp; [exact X | exact Hn | exact Hls].
 Qed.
 
 Lemma G_actmne_capp {G Γ l T ν ν' Δ0 Δ0'} : AG_tmnee G Γ ν ν' (tyCPi l T) -> AG_ctx G Δ0 Δ0' ->

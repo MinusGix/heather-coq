@@ -155,7 +155,8 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tmne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt (gvar u d)))
       (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt (gvar u d')))
       (mott (wrapMt Mt) l Δ T (boxt (gvar u d)))
-| actmne_uapp G Γ n l T ν ν' ls ls' : ac_tmnee G Γ ν ν' (tyUPi n l T) -> Forall2 leqv ls ls' ->
+| actmne_uapp G Γ n l T ν ν' ls ls' : ac_tmnee G Γ ν ν' (tyUPi n l T) -> length ls = n ->
+    Forall2 leqv ls ls' ->
     ac_tmne G Γ (uapp ν ls) (uapp ν' ls') T[uext ls lvar]ᵤ
 | actmne_capp G Γ l T ν ν' Δ Δ' : ac_tmnee G Γ ν ν' (tyCPi l T) -> ac_ctx G Δ Δ' ->
     ac_tmne G Γ (capp ν Δ) (capp ν' Δ') T⦃gsingle (GCtx Δ)⦄
