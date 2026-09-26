@@ -63,7 +63,34 @@ Statements:
 This closes the deviation. The recursor β-steps are the bulk; the
 typed-reduction lemmas the logical relation uses likely cover them.
 
-Status: planned.
+Status: **A2a done** (`Validity/Preservation.v`), closed. **A2b in
+progress.**
+- A2a: `red_sound_all`, and the consequences `red_sound_tm`/`_ty`,
+  `preservation_tm`/`_ty`, `reds_sound_tm`/`_ty`, at D and M, premised on
+  `RecRedTyped` (a recursor's β-reduct is typed at the redex's type).
+  Each redex is inverted. The β rule applies at the inverted
+  annotations, and congruence moves back to the redex's, using:
+  - `pi_inj_c`, `declM_upi_inj`/`cpi_inj`/`tpi_inj`,
+    `declM_CTyp_inj`/`CTrm_inj`;
+  - instance equations under the universe (`uinst_eqty`) and global
+    (`inst_eqty`) substitutions.
+  The recursor congruences use `motT_eq_scrut`/`mott_eq_scrut`. The
+  index step under a boxed `λ` uses `declM_mott_eq` (functionality, a
+  consequence of the FT); the semantic proof took that equation as a
+  premise.
+- A2b: discharge `RecRedTyped`. The semantic proof (`RecS`) obtains a
+  reduct's typing from branch validity. Syntactically, a reduct is its
+  branch body at extended substitutions (`RecPeel`). Its typing is the
+  branch's typing (`brG k`/`brΓ k` at `brRes k`) under:
+  - the universe substitution by the code's levels;
+  - the global substitution by the code's pieces, typed from the code's
+    C-typing inversion;
+  - the local substitution by the recursive calls, typed by the recursor
+    rule at the sub-codes.
+  Then the instance equation with `motT`/`mott`, for each of the 13
+  code shapes.
+- At C: lifting to D and unlifting (05:1039) would transfer the result;
+  not yet stated.
 
 ### A3. Static Code, the paper's direction (05:1055)
 
