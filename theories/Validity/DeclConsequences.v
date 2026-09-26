@@ -265,6 +265,37 @@ Proof.
   - exfalso. exact (no_closed_neutral (gne_tm_typed_l Hνν) eq_refl HG (gne_tm_whne_l Hνν)).
 Qed.
 
+(** Equal boxes hold level-equivalent code (M6_DESIGN.md step 5): a box is
+    its own whnf, and not a neutral. *)
+Lemma reds_whnf_self {t w} : whnf t -> reds t w -> w = t.
+Proof. intros Hw H; inversion H; subst; [reflexivity | exfalso; eapply whnf_no_red; eassumption]. Qed.
+
+Theorem declM_boxT_leq {G Γ Δ l T T'} : [ G ; Γ ⊢[ lM ] boxT T ≅ boxT T' : tyCTyp Δ l @ lzero ] -> ty_leq T T'.
+Proof.
+  intros H. destruct (redM_eqtm _ _ _ _ _ _ H I) as (R & HR & Ht).
+  pose proof (eqtm_wf_ty (i := lM) eq_refl H) as HT.
+  destruct (LR_inv_CTyp HR (tyred_refl _ _ HT)) as [_ HM].
+  destruct (ModRel_CTyp_inv HM HT HT) as (_ & _ & HRel).
+  destruct (proj1 (HRel _ _) Ht) as (w & w' & Hw & Hw' & _ & _ & Hn & _).
+  rewrite (reds_whnf_self (whnf_boxT _) (tmred_red _ _ _ _ _ _ _ Hw)) in Hn.
+  rewrite (reds_whnf_self (whnf_boxT _) (tmred_red _ _ _ _ _ _ _ Hw')) in Hn.
+  inversion Hn as [T1 T1' (E & _) | ν ν' Hνν]; subst; [exact E |].
+  exfalso. pose proof (gne_tm_whne_l Hνν) as Hne. inversion Hne.
+Qed.
+
+Theorem declM_boxt_leq {G Γ Δ A l t t'} : [ G ; Γ ⊢[ lM ] boxt t ≅ boxt t' : tyCTrm Δ A l @ lzero ] -> tm_leq t t'.
+Proof.
+  intros H. destruct (redM_eqtm _ _ _ _ _ _ H I) as (R & HR & Ht).
+  pose proof (eqtm_wf_ty (i := lM) eq_refl H) as HT.
+  destruct (LR_inv_CTrm HR (tyred_refl _ _ HT)) as [_ HM].
+  destruct (ModRel_CTrm_inv HM HT HT) as (_ & _ & _ & HRel).
+  destruct (proj1 (HRel _ _) Ht) as (w & w' & Hw & Hw' & _ & _ & Hn & _).
+  rewrite (reds_whnf_self (whnf_boxt _) (tmred_red _ _ _ _ _ _ _ Hw)) in Hn.
+  rewrite (reds_whnf_self (whnf_boxt _) (tmred_red _ _ _ _ _ _ _ Hw')) in Hn.
+  inversion Hn as [c c' (E & _) | ν ν' Hνν]; subst; [exact E |].
+  exfalso. pose proof (gne_tm_whne_l Hνν) as Hne. inversion Hne.
+Qed.
+
 (** ** At ω: [UΠ] (M4_DESIGN.md F6) *)
 
 (** The bodies of convertible [UΠ]s, at the level scope extended by the
