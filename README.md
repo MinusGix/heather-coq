@@ -57,7 +57,11 @@ Milestone 6 (algorithmic convertibility) is complete; see `M6_DESIGN.md`:
 - decidability of algorithmic and of declarative equality of well-typed
   types and terms at D and M.
 
-No admits, no axioms. See `M6_DESIGN.md`, `M5_DESIGN.md`, `M4_DESIGN.md`, `M3_DESIGN.md`, `M2_DESIGN.md` and
+Milestone 7 (strengthening the base: consistency, preservation, the
+paper's direction of Static Code, general canonicity, and more ambitious
+items such as decidable type checking) is in progress; see `M7_DESIGN.md`.
+
+No admits, no axioms. See `M7_DESIGN.md`, `M6_DESIGN.md`, `M5_DESIGN.md`, `M4_DESIGN.md`, `M3_DESIGN.md`, `M2_DESIGN.md` and
 `M1_DESIGN.md` for decisions, deviations from the paper and gotchas.
 
 Documents:
