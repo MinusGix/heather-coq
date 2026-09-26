@@ -1411,3 +1411,120 @@ Proof.
     | solve [eapply L_actmne_tapp; eassumption] | solve [eapply L_actmnee_red; eassumption]
     | solve [eapply L_acs_pt; eassumption] ].
 Qed.
+
+(** ** Annotations along the head spine (M6_DESIGN.md H10)
+
+    [spa t t']: [t'] is [t] with the annotations of [app] nodes on its
+    head spine (through [app], [uapp], [capp], [tapp]) changed. Reduction
+    never reads them, and neither do the neutral rules, so the term
+    judgments are closed under [spa] on both sides. *)
+
+Inductive spa : tm -> tm -> Prop :=
+| spa_refl t : spa t t
+| spa_app f f' l1 l2 A B l1' l2' A' B' s : spa f f' -> spa (app f l1 l2 A B s) (app f' l1' l2' A' B' s)
+| spa_uapp f f' ls : spa f f' -> spa (uapp f ls) (uapp f' ls)
+| spa_capp f f' Δ0 : spa f f' -> spa (capp f Δ0) (capp f' Δ0)
+| spa_tapp f f' T : spa f f' -> spa (tapp f T) (tapp f' T).
+
+#[local] Hint Constructors spa : spa.
+
+Lemma spa_ren t t' r : spa t t' -> spa t⟨r⟩ t'⟨r⟩.
+Proof. induction 1; cbn; eauto with spa. Qed.
+Lemma spa_uren t t' ρ : spa t t' -> spa t⟨ρ⟩ᵤ t'⟨ρ⟩ᵤ.
+Proof. induction 1; cbn; eauto with spa. Qed.
+Lemma spa_gren t t' ξ : spa t t' -> spa t⟪ξ⟫ t'⟪ξ⟫.
+Proof. induction 1; cbn; eauto with spa. Qed.
+
+Lemma spa_whne t t' : spa t t' -> whne t -> whne t'.
+Proof. induction 1; intros Hw; [exact Hw | ..]; inversion Hw; subst; constructor; auto. Qed.
+
+Lemma spa_whnf t t' : spa t t' -> whnf t -> whnf t'.
+Proof.
+  intros H Hw. destruct H; [exact Hw | ..];
+    inversion Hw; subst; apply whnf_ne; (eapply spa_whne; [econstructor; eassumption | eassumption]).
+Qed.
+
+Lemma spa_red t t' : spa t t' -> forall u, red t u -> exists u', red t' u' /\ spa u u'.
+Proof.
+  induction 1; intros u Hr;
+    first [ solve [exists u; split; [exact Hr | apply spa_refl]] | inversion Hr; subst ].
+  all: first
+    [ match goal with Hs : spa (_ _ _ _ _) _ |- _ => inversion Hs; subst end;
+      eexists; split; [econstructor; try first [eassumption | reflexivity] | apply spa_refl]
+    | match goal with Hs : spa (_ _ _ _) _ |- _ => inversion Hs; subst end;
+      eexists; split; [econstructor; try first [eassumption | reflexivity] | apply spa_refl]
+    | match goal with Hs : spa (_ _ _) _ |- _ => inversion Hs; subst end;
+      eexists; split; [econstructor; try first [eassumption | reflexivity] | apply spa_refl]
+    | match goal with IH : forall u, red ?f u -> _, Hr' : red ?f ?f1 |- _ =>
+        destruct (IH _ Hr') as (f3 & Hr3 & Hs3) end;
+      eexists; split; [econstructor; exact Hr3 | constructor; exact Hs3] ].
+Qed.
+
+Lemma spa_reds t t' u : reds t u -> spa t t' -> exists u', reds t' u' /\ spa u u'.
+Proof.
+  intros H; revert t'; induction H as [t | t v u Htv Hvu IH]; intros t' Hs.
+  - exists t'; split; [constructor | exact Hs].
+  - destruct (spa_red _ _ Hs _ Htv) as (v' & Hv' & Hsv).
+    destruct (IH _ Hsv) as (u' & Hu' & Hsu). exists u'; split; [econstructor; eassumption | exact Hsu].
+Qed.
+
+Lemma spa_app_inv f l1 l2 A B s x : spa (app f l1 l2 A B s) x ->
+  exists f' l1' l2' A' B', x = app f' l1' l2' A' B' s /\ spa f f'.
+Proof. intros H; inversion H; subst; do 5 eexists; split; eauto with spa. Qed.
+Lemma spa_uapp_inv f ls x : spa (uapp f ls) x -> exists f', x = uapp f' ls /\ spa f f'.
+Proof. intros H; inversion H; subst; eexists; split; eauto with spa. Qed.
+Lemma spa_capp_inv f Δ0 x : spa (capp f Δ0) x -> exists f', x = capp f' Δ0 /\ spa f f'.
+Proof. intros H; inversion H; subst; eexists; split; eauto with spa. Qed.
+Lemma spa_tapp_inv f T x : spa (tapp f T) x -> exists f', x = tapp f' T /\ spa f f'.
+Proof. intros H; inversion H; subst; eexists; split; eauto with spa. Qed.
+
+Definition AP_tm G Γ t t' T : Prop := forall t2 t2', spa t t2 -> spa t' t2' -> ac_tm G Γ t2 t2' T.
+Definition AP_tmnf G Γ t t' T : Prop := forall t2 t2', spa t t2 -> spa t' t2' -> ac_tmnf G Γ t2 t2' T.
+Definition AP_tmne G Γ t t' T : Prop := forall t2 t2', spa t t2 -> spa t' t2' -> ac_tmne G Γ t2 t2' T.
+Definition AP_tmnee G Γ t t' T : Prop := forall t2 t2', spa t t2 -> spa t' t2' -> ac_tmnee G Γ t2 t2' T.
+
+(** A non-spine head is only related to itself. *)
+Ltac spa_triv :=
+  repeat match goal with Hs : spa ?t ?x |- _ =>
+    is_var x; tryif is_var t then fail else (inversion Hs; subst; clear Hs) end.
+
+Theorem ac_spa_all :
+  (forall G Γ T T', ac_ty G Γ T T' -> True) /\
+  (forall G Γ W W', ac_tynf G Γ W W' -> True) /\
+  (forall G Γ V V', ac_tyne G Γ V V' -> True) /\
+  (forall G Δ Δ', ac_ctx G Δ Δ' -> True) /\
+  (forall G Γ t t' T, ac_tm G Γ t t' T -> AP_tm G Γ t t' T) /\
+  (forall G Γ w w' W, ac_tmnf G Γ w w' W -> AP_tmnf G Γ w w' W) /\
+  (forall G Γ ν ν' T, ac_tmne G Γ ν ν' T -> AP_tmne G Γ ν ν' T) /\
+  (forall G Γ ν ν' W, ac_tmnee G Γ ν ν' W -> AP_tmnee G Γ ν ν' W) /\
+  (forall G Γ d d' Δ, ac_sub G Γ d d' Δ -> True).
+Proof.
+  apply ac_mut; intros; try exact I; intros x x' Hx Hx'.
+  (* only reflexive, or a positive type *)
+  all: try solve [spa_triv; econstructor; eauto].
+  (* reduction *)
+  all: try solve
+    [ match type of Hx with spa ?a _ => match goal with Hr : reds a _ |- _ =>
+        destruct (spa_reds _ _ _ Hr Hx) as (u2 & Hu2 & Hs2) end end;
+      match type of Hx' with spa ?a _ => match goal with Hr : reds a _ |- _ =>
+        destruct (spa_reds _ _ _ Hr Hx') as (u2' & Hu2' & Hs2') end end;
+      eapply actm_red; [eassumption | eassumption | exact Hu2 | exact Hu2' | eapply spa_whnf; eassumption
+                       | eapply spa_whnf; eassumption | auto] ].
+  (* η *)
+  all: try solve
+    [ first [apply actmnf_eta | apply actmnf_ueta | apply actmnf_ceta | apply actmnf_teta];
+      match goal with IH : AP_tm _ _ _ _ _ |- _ => apply IH end;
+      first [ apply spa_app, spa_ren | apply spa_uapp, spa_uren | apply spa_capp, spa_gren
+            | apply spa_tapp, spa_gren ]; assumption ].
+  (* spine heads *)
+  all: first
+    [ destruct (spa_app_inv _ _ _ _ _ _ _ Hx) as (hd & ? & ? & ? & ? & -> & Hf);
+      destruct (spa_app_inv _ _ _ _ _ _ _ Hx') as (hd' & ? & ? & ? & ? & -> & Hf')
+    | destruct (spa_uapp_inv _ _ _ Hx) as (hd & -> & Hf); destruct (spa_uapp_inv _ _ _ Hx') as (hd' & -> & Hf')
+    | destruct (spa_capp_inv _ _ _ Hx) as (hd & -> & Hf); destruct (spa_capp_inv _ _ _ Hx') as (hd' & -> & Hf')
+    | destruct (spa_tapp_inv _ _ _ Hx) as (hd & -> & Hf); destruct (spa_tapp_inv _ _ _ Hx') as (hd' & -> & Hf') ];
+    econstructor;
+    first [ match goal with IH : AP_tmnee _ _ _ _ _ |- _ => exact (IH _ _ Hf Hf') end
+          | match goal with IH : AP_tm _ _ _ _ _ |- _ => apply IH; apply spa_refl end
+          | eassumption ].
+Qed.

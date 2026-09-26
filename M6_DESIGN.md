@@ -194,6 +194,30 @@ only, and checks that there are as many as the `UΠ` binds: the instance
 `T[ℓ⃗]` commutes with a universe substitution only then
 (`usubst_ubeta_ty`).
 
+### H10. The conversion lemma: annotations, global contexts, typing
+
+The conversion lemma (08:94) moves a derivation to an equal context and an
+equal type. Three points the paper passes over:
+
+- **Annotations of η-expansions.** At `Π l l' A B` converted to
+  `Π m m' A₂ B₂`, the η premise changes the annotations of `app w↑ … (var 0)`.
+  Local substitution never enters boxes, and β ignores the annotations, so
+  it is enough to change annotations along the *head spine* (`app`, `uapp`,
+  `capp`, `tapp` heads: `spa`). There the inferred types do not depend on
+  them. Closure of `ac_tm*` under `spa` on both sides is a small induction
+  (`AlgStruct`).
+- **Global contexts.** Symmetry and transitivity compare `letbox`/`TΠ`
+  bodies under the other side's binding (`gdTy Δ'` for `gdTy Δ`). So the
+  conversion lemma also converts the global context along a pointwise
+  declarative equality of declarations (the paper's `Φ ≅ Ψ`). Declarative
+  judgments transfer along it by global substitution with the identity
+  objects (`id_obj`, equivalent to `gid` by `equiv_gsubst`). This
+  generalizes `gbind`.
+- **Typing.** The judgments are untyped, but converting the type needs its
+  whnf (normalization) and its shape (injectivity), and extending contexts
+  under binders needs the binder types well formed. So the motives carry
+  the typings of both sides, as in soundness, and the cases invert them.
+
 ## Order of the proofs
 
 1. **Levels** (`Syntax/LevelDec.v`): `leqv`, `lequiv`, `ty_leq`, `tm_leq`,
@@ -234,3 +258,5 @@ only, and checks that there are as many as the `UΠ` binds: the instance
   level context) and closure under `≡ₗ` on the right (`ac_leq_all`, via
   the simulation of reduction in `LevelRed` and the syntactic inversion
   `mkrb_leq_inv` of bundles) are done, closed.
+- Step 4 in progress: the closure of the term judgments under head-spine
+  annotation changes (`ac_spa_all`, H10) is done, closed.
