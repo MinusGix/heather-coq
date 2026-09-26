@@ -115,7 +115,10 @@ Proof.
                  | G Γ T1 T2 l V1 V2 R HT1 HT2 HV HR
                  | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2
                      HA1 HA2 HB1 HB2 HA12 HB12 domAd1 IHdom codAd1 IHcod HR
-                 | G Γ T1 T2 l R Hj HM];
+                 | G Γ T1 T2 l R Hj HM
+                 | G Γ T1 T2 l l1 l2 U1 U2 instR R Hj Hl Hl2 Hw1 HT1 HT2 HU1 HU2 Hgeq instAd IHinst HR
+                 | G Γ T1 T2 l Δ1 Δ2 l1 l2 l3 l4 U1 U2 instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HΔ HU1 HU2
+                     Hgeq instAd IHinst HR];
     intros T3 R23 H2.
   - (* Nat *)
     destruct (LR_inv_nat H2 HT2) as (_ & HT3 & HR2).
@@ -251,6 +254,104 @@ Proof.
           [exact (proj2 (LR_inv_CTyp H2 HT2)) | exact (proj2 (LR_inv_CTrm H2 HT2))]).
     destruct (ModRel_trans HM HM2) as [H13 Htr].
     split; [now apply LRmod | exact Htr].
+  - (* CΠ: the second instance at [(Δ', Δ')] *)
+    destruct (LR_inv_cpi H2 HT2) as (m2 & U3 & instR2 & _ & _ & Hm2 & _ & HT3 & _ & HU3 & Hgeq2 &
+      instAd2 & HR2).
+    pose proof (lequiv_trans _ _ _ _ Hm2 Hl2) as Hm21.
+    assert (Hdiag : forall (ρ : kwk G Γ) Δ Δ', vp_ctx lr_vp (kw_G ρ) Δ Δ' -> vp_ctx lr_vp (kw_G ρ) Δ' Δ')
+      by (intros ρ Δ Δ' h; exact (vpl_ctx_trans (vpl_ctx_sym h) h)).
+    assert (Hgeq13 : [ G ; Γ ⊢ tyCPi l1 U1 ≈ tyCPi m2 U3 @ l1 ])
+      by (eapply geq_ty_trans; [exact Hgeq | eapply geq_ty_lconv; [exact Hgeq2 | now apply lequiv_sym]]).
+    assert (HR13 : releq R (CPiRel G Γ l1 m2 U1 U3 instR)).
+    { assert (HP : [ G ; Γ ⊢g tyCPi l2 U2 ≅ tyCPi m2 U3 @ l1 ])
+        by (eapply eqty_lconv; [apply geq_ty_sound, Hgeq2 | now apply lequiv_sym]).
+      eapply releq_trans; [exact HR|]. intros t t'; split.
+      - apply (CPiRel_dir HP); intros; apply releq_refl.
+      - apply (CPiRel_dir (eqty_sym _ _ _ _ _ _ HP)); intros; apply releq_refl. }
+    split.
+    + eapply (LRcpi n (LRbelow n) G Γ T1 T3 l l1 m2 U1 U3 instR).
+      * exact Hj.
+      * exact Hl.
+      * exact Hm21.
+      * exact Hw1.
+      * exact HT1.
+      * eapply tyred_lconv; [exact HT3 | apply lequiv_refl; exact (lequiv_wf_l _ _ _ Hl)].
+      * exact HU1.
+      * exact (lconv_ty HU3 Hl2).
+      * exact Hgeq13.
+      * intros ρ Δ Δ' h.
+        exact (proj1 (IHinst ρ Δ Δ' h _ _
+                        (LR_lconv _ _ _ _ _ _ _ _ _ (instAd2 ρ Δ' Δ' (Hdiag ρ Δ Δ' h))
+                           (kw_lequiv ρ (lequiv_sym _ _ _ Hl2))))).
+      * exact HR13.
+    + intros t1 t2 t3 H12' H23'. apply HR. apply HR in H12'. apply HR2 in H23'.
+      destruct H12' as (w1 & w2 & Hw1r & Hw2r & Hnf1 & Hnf2 & Heq1 & Heq1' & HK1).
+      destruct H23' as (w2' & w3 & Hw2r' & Hw3r & Hnf2' & Hnf3 & Heq2 & Heq2' & HK2).
+      assert (w2' = w2) as -> by (eapply tmred_whnf_det; eauto).
+      pose proof (geq_ty_sound Hgeq) as E12. pose proof (geq_ty_sound Hgeq2) as E23.
+      exists w1, w3. refine (conj Hw1r (conj _ (conj Hnf1 (conj Hnf3 (conj _ (conj _ _)))))).
+      * eapply tmred_conv; [apply ge_typeof | eapply tmred_lconv; [exact Hw3r | exact (lequiv_sym _ _ _ Hl2)] |].
+        eapply eqty_lconv; [apply eqty_sym, E23 | exact (lequiv_sym _ _ _ Hl2)].
+      * eapply geq_tm_trans; [exact Heq1|].
+        eapply geq_tm_conv_l; [exact Heq2 | apply eqty_sym, E12 | exact (lequiv_sym _ _ _ Hl2)].
+      * eapply geq_tm_trans; [exact Heq1' | eapply geq_tm_lconv; [exact Heq2 | exact (lequiv_sym _ _ _ Hl2)]].
+      * intros ρ Δ Δ' h.
+        exact (proj2 (IHinst ρ Δ Δ' h _ _
+                        (LR_lconv _ _ _ _ _ _ _ _ _ (instAd2 ρ Δ' Δ' (Hdiag ρ Δ Δ' h))
+                           (kw_lequiv ρ (lequiv_sym _ _ _ Hl2))))
+                 _ _ _ (HK1 ρ Δ Δ' h) (HK2 ρ Δ' Δ' (Hdiag ρ Δ Δ' h))).
+  - (* TΠ: the second instance at [(A', A')], moved to its domain *)
+    destruct (LR_inv_tpi H2 HT2) as (Δ3 & m3 & m4 & U3 & instR2 & _ & _ & Hm3 & Hm4 & _ & _ & HT3 & HΔ23 &
+      _ & HU3 & Hgeq2 & instAd2 & HR2).
+    assert (Hdiag : forall (ρ : kwk G Γ) A A', vp_ty lr_vp (kw_G ρ) Δ1⟦kw_γ ρ⟧ A A' l1 ->
+                      vp_ty lr_vp (kw_G ρ) Δ2⟦kw_γ ρ⟧ A' A' l3)
+      by (intros ρ A A' h;
+          exact (vpl_ty_lconv (lequiv_sym _ _ _ (kw_lequiv ρ Hl3))
+                   (vpl_ty_ctx (vpl_ctx_gwk (kw_gok ρ) (kw_glob ρ) HΔ)
+                      (vpl_ty_trans (vpl_ty_sym h) h)))).
+    assert (Hgeq13 : [ G ; Γ ⊢ tyTPi Δ1 l1 l2 U1 ≈ tyTPi Δ3 m3 m4 U3 @ l2 ])
+      by (eapply geq_ty_trans; [exact Hgeq | eapply geq_ty_lconv; [exact Hgeq2 | now apply lequiv_sym]]).
+    assert (HR13 : releq R (TPiRel G Γ Δ1 Δ3 l1 l2 m3 m4 U1 U3 instR)).
+    { assert (HP : [ G ; Γ ⊢g tyTPi Δ2 l3 l4 U2 ≅ tyTPi Δ3 m3 m4 U3 @ l2 ])
+        by (eapply eqty_lconv; [apply geq_ty_sound, Hgeq2 | now apply lequiv_sym]).
+      eapply releq_trans; [exact HR|]. intros t t'; split.
+      - apply (TPiRel_dir HP); intros; apply releq_refl.
+      - apply (TPiRel_dir (eqty_sym _ _ _ _ _ _ HP)); intros; apply releq_refl. }
+    split.
+    + eapply (LRtpi n (LRbelow n) G Γ T1 T3 l Δ1 Δ3 l1 l2 m3 m4 U1 U3 instR).
+      * exact Hj.
+      * exact Hl.
+      * exact (lequiv_trans _ _ _ _ Hm3 Hl3).
+      * exact (lequiv_trans _ _ _ _ Hm4 Hl4).
+      * exact Hw1.
+      * exact Hw2.
+      * exact HT1.
+      * eapply tyred_lconv; [exact HT3 | apply lequiv_refl; exact (lequiv_wf_l _ _ _ Hl)].
+      * exact (vpl_ctx_trans HΔ HΔ23).
+      * exact HU1.
+      * exact HU3.
+      * exact Hgeq13.
+      * intros ρ A A' h.
+        exact (proj1 (IHinst ρ A A' h _ _
+                        (LR_lconv _ _ _ _ _ _ _ _ _ (instAd2 ρ A' A' (Hdiag ρ A A' h))
+                           (kw_lequiv ρ (lequiv_sym _ _ _ Hl4))))).
+      * exact HR13.
+    + intros t1 t2 t3 H12' H23'. apply HR. apply HR in H12'. apply HR2 in H23'.
+      destruct H12' as (w1 & w2 & Hw1r & Hw2r & Hnf1 & Hnf2 & Heq1 & Heq1' & HK1).
+      destruct H23' as (w2' & w3 & Hw2r' & Hw3r & Hnf2' & Hnf3 & Heq2 & Heq2' & HK2).
+      assert (w2' = w2) as -> by (eapply tmred_whnf_det; eauto).
+      pose proof (geq_ty_sound Hgeq) as E12. pose proof (geq_ty_sound Hgeq2) as E23.
+      exists w1, w3. refine (conj Hw1r (conj _ (conj Hnf1 (conj Hnf3 (conj _ (conj _ _)))))).
+      * eapply tmred_conv; [apply ge_typeof | eapply tmred_lconv; [exact Hw3r | exact (lequiv_sym _ _ _ Hl4)] |].
+        eapply eqty_lconv; [apply eqty_sym, E23 | exact (lequiv_sym _ _ _ Hl4)].
+      * eapply geq_tm_trans; [exact Heq1|].
+        eapply geq_tm_conv_l; [exact Heq2 | apply eqty_sym, E12 | exact (lequiv_sym _ _ _ Hl4)].
+      * eapply geq_tm_trans; [exact Heq1' | eapply geq_tm_lconv; [exact Heq2 | exact (lequiv_sym _ _ _ Hl4)]].
+      * intros ρ A A' h.
+        exact (proj2 (IHinst ρ A A' h _ _
+                        (LR_lconv _ _ _ _ _ _ _ _ _ (instAd2 ρ A' A' (Hdiag ρ A A' h))
+                           (kw_lequiv ρ (lequiv_sym _ _ _ Hl4))))
+                 _ _ _ (HK1 ρ A A' h) (HK2 ρ A' A' (Hdiag ρ A A' h))).
 Qed.
 
 Theorem LR_trans n : Ptrans n.

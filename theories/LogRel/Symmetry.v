@@ -115,6 +115,80 @@ Qed.
 
 End PiFlip.
 
+(** ** Meta-functions
+
+    The flipped instance at [h] is the original one at a proof derived
+    from [h]; going back needs the instances to be irrelevant in the
+    proof, which [LR_irrel] gives. *)
+
+Definition flipCI {G Γ} (instR : CInstRel G Γ) : CInstRel G Γ :=
+  fun ρ Δ Δ' h => flipR (instR ρ Δ' Δ (vpl_ctx_sym h)).
+
+Lemma CPiRel_flip {G Γ l1 l2 T1 T1'} {instR : CInstRel G Γ} :
+  lequiv (gL G) l2 l1 ->
+  (forall ρ Δ Δ' h h', releq (instR ρ Δ Δ' h) (instR ρ Δ Δ' h')) ->
+  releq (flipR (CPiRel G Γ l1 l2 T1 T1' instR)) (CPiRel G Γ l2 l1 T1' T1 (flipCI instR)).
+Proof.
+  intros Hl Hsame t t'; unfold flipR; split.
+  - intros (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK). exists w', w.
+    refine (conj _ (conj _ (conj Hnf' (conj Hnf (conj _ (conj _ _)))))).
+    + eapply tmred_lconv; [exact Hw' | exact Hl].
+    + eapply tmred_lconv; [exact Hw | exact Hl].
+    + eapply geq_tm_lconv; [apply geq_tm_sym, Heq' | exact Hl].
+    + eapply geq_tm_lconv; [apply geq_tm_sym, Heq | exact Hl].
+    + intros ρ Δ Δ' h. unfold flipCI, flipR. exact (HK ρ Δ' Δ (vpl_ctx_sym h)).
+  - intros (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK). exists w', w.
+    pose proof (lequiv_sym _ _ _ Hl) as Hl'.
+    refine (conj _ (conj _ (conj Hnf' (conj Hnf (conj _ (conj _ _)))))).
+    + eapply tmred_lconv; [exact Hw' | exact Hl'].
+    + eapply tmred_lconv; [exact Hw | exact Hl'].
+    + eapply geq_tm_lconv; [apply geq_tm_sym, Heq' | exact Hl'].
+    + eapply geq_tm_lconv; [apply geq_tm_sym, Heq | exact Hl'].
+    + intros ρ Δ Δ' h. apply (Hsame ρ Δ Δ' (vpl_ctx_sym (vpl_ctx_sym h)) h).
+      exact (HK ρ Δ' Δ (vpl_ctx_sym h)).
+Qed.
+
+(** The argument of the flipped [TΠ], moved to the left domain. *)
+Definition tflip_arg {G Γ Δ1 Δ1' l1 l3} (HΔ : vp_ctx lr_vp G Δ1 Δ1') (H13 : lequiv (gL G) l3 l1)
+    (ρ : kwk G Γ) {A A'} (h : vp_ty lr_vp (kw_G ρ) Δ1'⟦kw_γ ρ⟧ A A' l3) :
+    vp_ty lr_vp (kw_G ρ) Δ1⟦kw_γ ρ⟧ A' A l1 :=
+  vpl_ty_lconv (kw_lequiv ρ H13)
+    (vpl_ty_ctx (vpl_ctx_sym (vpl_ctx_gwk (kw_gok ρ) (kw_glob ρ) HΔ)) (vpl_ty_sym h)).
+
+Definition flipTI {G Γ Δ1 Δ1' l1 l3} (HΔ : vp_ctx lr_vp G Δ1 Δ1') (H13 : lequiv (gL G) l3 l1)
+    (instR : TInstRel G Γ Δ1 l1) : TInstRel G Γ Δ1' l3 :=
+  fun ρ A A' h => flipR (instR ρ A' A (tflip_arg HΔ H13 ρ h)).
+
+Lemma TPiRel_flip {G Γ Δ1 Δ1' l1 l2 l3 l4 T1 T1'} {instR : TInstRel G Γ Δ1 l1}
+  (HΔ : vp_ctx lr_vp G Δ1 Δ1') (H13 : lequiv (gL G) l3 l1) :
+  lequiv (gL G) l4 l2 ->
+  (forall ρ A A' h h', releq (instR ρ A A' h) (instR ρ A A' h')) ->
+  releq (flipR (TPiRel G Γ Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR))
+        (TPiRel G Γ Δ1' Δ1 l3 l4 l1 l2 T1' T1 (flipTI HΔ H13 instR)).
+Proof.
+  intros Hl Hsame t t'; unfold flipR; split.
+  - intros (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK). exists w', w.
+    refine (conj _ (conj _ (conj Hnf' (conj Hnf (conj _ (conj _ _)))))).
+    + eapply tmred_lconv; [exact Hw' | exact Hl].
+    + eapply tmred_lconv; [exact Hw | exact Hl].
+    + eapply geq_tm_lconv; [apply geq_tm_sym, Heq' | exact Hl].
+    + eapply geq_tm_lconv; [apply geq_tm_sym, Heq | exact Hl].
+    + intros ρ A A' h. unfold flipTI, flipR. exact (HK ρ A' A _).
+  - intros (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK). exists w', w.
+    pose proof (lequiv_sym _ _ _ Hl) as Hl'.
+    refine (conj _ (conj _ (conj Hnf' (conj Hnf (conj _ (conj _ _)))))).
+    + eapply tmred_lconv; [exact Hw' | exact Hl'].
+    + eapply tmred_lconv; [exact Hw | exact Hl'].
+    + eapply geq_tm_lconv; [apply geq_tm_sym, Heq' | exact Hl'].
+    + eapply geq_tm_lconv; [apply geq_tm_sym, Heq | exact Hl'].
+    + intros ρ A A' h.
+      (* the argument back at [Δ1'], at level [l3] *)
+      pose proof (vpl_ty_lconv (lequiv_sym _ _ _ (kw_lequiv ρ H13))
+                    (vpl_ty_ctx (vpl_ctx_gwk (kw_gok ρ) (kw_glob ρ) HΔ) (vpl_ty_sym h))) as h'.
+      apply (Hsame ρ A A' (tflip_arg HΔ H13 ρ h') h).
+      exact (HK ρ A' A h').
+Qed.
+
 (** ** The universe *)
 
 Definition Psym n := forall G Γ T T' l R,
@@ -147,7 +221,10 @@ Proof.
                  | G Γ T T' l V V' R HT HT' HV HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
                      HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR
-                 | G Γ T T' l R Hj HM].
+                 | G Γ T T' l R Hj HM
+                 | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd IHinst HR
+                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
+                     Hgeq instAd IHinst HR].
   - eapply LRnat; eauto.
     intros t t'; unfold flipR; rewrite (HR t' t); apply NatRel_flip.
   - assert (Hm : lmeasure l2 = lmeasure l1) by (eapply lequiv_measure; eauto).
@@ -189,6 +266,42 @@ Proof.
       * intros H. apply (PiRel_flip (A := A') (A' := A) (domR := flipD domR) (codR := flipC codR));
           auto using lequiv_sym.
   - apply LRmod; [exact Hj | exact (ModRel_sym HM)].
+  - (* CΠ *)
+    assert (Hsame : forall ρ Δ Δ' h h', releq (instR ρ Δ Δ' h) (instR ρ Δ Δ' h'))
+      by (intros; exact (LR_irrel _ _ _ _ _ _ _ _ _ _ (instAd ρ Δ Δ' h) (instAd ρ Δ Δ' h'))).
+    pose proof (lequiv_sym _ _ _ Hl2) as Hl2'.
+    eapply (LRcpi n (LRbelow n) G Γ T' T l l2 l1 T1' T1 (flipCI instR)).
+    + exact Hj.
+    + exact (lequiv_trans _ _ _ _ Hl Hl2').
+    + exact Hl2'.
+    + exact (lequiv_wf_l _ _ _ Hl2).
+    + exact HT'.
+    + exact HT.
+    + exact (lconv_ty HT1' Hl2').
+    + exact (lconv_ty HT1 Hl2').
+    + eapply geq_ty_lconv; [apply geq_ty_sym, Hgeq | exact Hl2].
+    + intros ρ Δ Δ' h. unfold flipCI.
+      eapply LR_lconv; [exact (IHinst ρ Δ' Δ (vpl_ctx_sym h)) | exact (kw_lequiv ρ Hl2)].
+    + exact (releq_trans _ _ _ (fun t t' => HR t' t) (CPiRel_flip Hl2 Hsame)).
+  - (* TΠ *)
+    assert (Hsame : forall ρ A A' h h', releq (instR ρ A A' h) (instR ρ A A' h'))
+      by (intros; exact (LR_irrel _ _ _ _ _ _ _ _ _ _ (instAd ρ A A' h) (instAd ρ A A' h'))).
+    eapply (LRtpi n (LRbelow n) G Γ T' T l Δ1' Δ1 l3 l4 l1 l2 T1' T1 (flipTI HΔ Hl3 instR)).
+    + exact Hj.
+    + exact (lequiv_trans _ _ _ _ Hl (lequiv_sym _ _ _ Hl4)).
+    + exact (lequiv_sym _ _ _ Hl3).
+    + exact (lequiv_sym _ _ _ Hl4).
+    + exact (lequiv_wf_l _ _ _ Hl3).
+    + exact (lequiv_wf_l _ _ _ Hl4).
+    + exact HT'.
+    + exact HT.
+    + exact (vpl_ctx_sym HΔ).
+    + exact HT1'.
+    + exact HT1.
+    + eapply geq_ty_lconv; [apply geq_ty_sym, Hgeq | exact Hl4].
+    + intros ρ A A' h. unfold flipTI.
+      eapply LR_lconv; [exact (IHinst ρ A' A _) | exact (kw_lequiv ρ Hl4)].
+    + exact (releq_trans _ _ _ (fun t t' => HR t' t) (TPiRel_flip HΔ Hl3 Hl4 Hsame)).
 Qed.
 
 Theorem LR_sym n : Psym n.

@@ -109,3 +109,37 @@ Qed.
 Definition LR_M : LRParams := {| lr_j := jM ; lr_vp := vpM |}.
 
 End Payload.
+
+(** The meta-functions' neutral applications at payload-related arguments
+    (M5_DESIGN.md G3): the payload's P-validity escapes at the identity
+    world to the generic equivalence at P. *)
+Section PayloadNe.
+Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM} {EGM : GenericEqM EP EM}.
+
+#[export] Instance VPNe_M : @VPNe EM (LR_M EP EM).
+Proof.
+  pose proof (@gm_layer_M EP EM EGM) as EM'. pose proof (@gm_layer_P EP EM EGM) as EP'.
+  constructor; cbn [lr_j lr_vp LR_M vpM vp_ctx vp_ty].
+  - intros G Γ l T ν ν' Δ Δ' _ Hl HT (HΔ & HP & _) HE Hν.
+    rewrite EM' in HT, HE.
+    apply gne_tm_capp; [exact Hl | exact HT | exact (eqctx_wf_l (i := lD) eq_refl HΔ) | | exact HE | exact Hν].
+    apply (CtxRel_escape (E := EP) (LP := LR_P)); [exact (HP _ _ (gwk_ok_id G)) | rewrite EP' ..].
+    + exact (eqctx_wf_l (i := lD) eq_refl HΔ).
+    + exact (eqctx_wf_r (i := lD) eq_refl HΔ).
+  - intros G Γ Δ l l' T ν ν' A A' _ Hl Hl' HT (_ & HPc & _) (HA & HPA & _) HE Hν.
+    rewrite EM' in HT, HE.
+    pose proof (eqty_wf_l (i := lD) eq_refl HA) as HAw.
+    pose proof (ctx_of_wf_ty (i := lD) eq_refl HAw) as HΔw.
+    apply (gne_tm_tapp (Δ := Δ) (l := l)); [exact HΔw | exact Hl | exact Hl' | exact HT | exact HAw | | exact HE | exact Hν].
+    (* the generic equivalence at P, from validity at the identity *)
+    assert (Hc : @CtxRel EP LR_P G Δ Δ) by exact (HPc _ _ (gwk_ok_id G)).
+    assert (HΔg : [ G ; Δ ⊢[ @ge_layer EP ] ]) by (rewrite EP'; exact HΔw).
+    destruct (HPA _ _ (gwk_ok_id G) _ _ _ (SubRel_id_rel _ _ Hc HΔg)) as [R HR].
+    destruct (escape_ty _ _ _ _ _ _ _ _ HR) as (_ & _ & X). cbn [gwa] in X.
+    assert (Hid : forall n, llk (lshift 0) n = var n) by (intros n; cbn; f_equal; lia).
+    rewrite (subst_id_ty _ _ (wf_ty_nf HAw) Hid),
+      (subst_id_ty _ _ (wf_ty_nf (eqty_wf_r (i := lD) eq_refl HA)) Hid) in X.
+    exact X.
+Qed.
+
+End PayloadNe.

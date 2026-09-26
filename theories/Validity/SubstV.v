@@ -6,7 +6,7 @@
 From DeLaM.Validity Require Export CtxRel.
 
 Section SubstV.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
 Definition VSub (G : gctx) (Γ : ctx) (δ δ' : lsub) (Δ : ctx) : Prop :=
   forall Θ d d', SubRel G Γ Θ d d' -> SubRel G Δ Θ δ[d] δ'[d'].

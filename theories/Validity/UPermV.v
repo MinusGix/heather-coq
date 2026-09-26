@@ -9,7 +9,7 @@ From DeLaM.Validity Require Export Payload.
 From DeLaM.LogRel Require Export UPermLR.
 
 Section UPermV.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VPP : VPPerm lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe} `{VPP : VPPerm lr_vp}.
 
 Lemma LRtm_perm {π πi l G Γ T T' t t'} : uperm π πi (gL G) -> LRtm l G Γ T T' t t' ->
   LRtm (lvsubst l (pφ π)) (Gp π G) Γ[pφ π]ᵤ T[pφ π]ᵤ T'[pφ π]ᵤ t[pφ π]ᵤ t'[pφ π]ᵤ.
@@ -248,6 +248,9 @@ Proof.
     refine (conj _ (conj (p_tm Hp H1) (conj (p_tm Hp H2) (conj (VTmG_perm (E := EP) (LP := LR_P) Hp HG N HP)
                                                               (VTmG_perm (E := EM) (LP := LR_P) Hp HG N HM))))).
     apply (proj1 (proj2 leq_usubst_all)); [intros; apply leqv_refl | exact Eq].
+  (* the meta-functions' arguments are deep-normal *)
+  - intros G Δ Δ' (Heq & _ & _). exact (eqctx_dnf Heq).
+  - intros G Δ A A' l (Heq & _ & _). exact (eqty_dnf Heq).
 Qed.
 
 End VPM.

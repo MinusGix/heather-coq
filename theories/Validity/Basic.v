@@ -2,7 +2,7 @@
 From DeLaM.Validity Require Export SubstV.
 
 Section Basic.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
 (** ** Declarative helpers at the instance's layer *)
 

@@ -14,7 +14,7 @@
 From DeLaM.LogRel Require Export LevelInv.
 
 Section Validity.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
 (** ** The canonical term relation *)
 

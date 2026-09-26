@@ -163,7 +163,7 @@ Tactic Notation "s_diag" uconstr(lem) :=
 (** ** The rules *)
 
 Section Rules.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
 Local Notation VCtxS := (@VCtxS EP EM E LP).
 Local Notation VTyS := (@VTyS EP EM E LP).

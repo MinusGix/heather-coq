@@ -14,7 +14,7 @@ From DeLaM.Validity Require Export GvarS.
 (** ** Escape of validity at the identity substitution *)
 
 Section Escape.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
 Lemma lshift0_id n : llk (lshift 0) n = var n.
 Proof. cbn; f_equal; lia. Qed.

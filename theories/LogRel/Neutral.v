@@ -6,8 +6,32 @@
     congruence law for application. *)
 From DeLaM.LogRel Require Export Weakening.
 
+(** ** The meta-functions' neutral applications at related arguments
+    (M5_DESIGN.md G3)
+
+    The laws ([gne_tm_capp], [gne_tm_tapp]) compare the arguments by the
+    generic equivalence at P, which the relation only sees through its
+    parameters. The class states the applications at parameter-related
+    arguments; it holds vacuously at [j = P], and at [j = M] by escape of
+    the payload (Payload.v). *)
+Class VPNe `{E : GenericEq} `{LP : LRParams} := {
+  vpn_capp {G Γ l T ν ν' Δ Δ'} : lr_j = jM -> lwf (gL G) l ->
+    [ gext G gdCtx ; Γ⟪S⟫ ⊢g T @ l ] -> vp_ctx lr_vp G Δ Δ' ->
+    [ G ; Γ ⊢g T⦃gsingle (GCtx Δ)⦄ ≅ T⦃gsingle (GCtx Δ')⦄ @ l ] ->
+    [ G ; Γ ⊢ ν ~ ν' : tyCPi l T @ l ] ->
+    [ G ; Γ ⊢ capp ν Δ ~ capp ν' Δ' : T⦃gsingle (GCtx Δ)⦄ @ l ] ;
+  vpn_tapp {G Γ Δ l l' T ν ν' A A'} : lr_j = jM -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢g T @ l' ] -> vp_ctx lr_vp G Δ Δ -> vp_ty lr_vp G Δ A A' l ->
+    [ G ; Γ ⊢g T⦃gsingle (GTy A)⦄ ≅ T⦃gsingle (GTy A')⦄ @ l' ] ->
+    [ G ; Γ ⊢ ν ~ ν' : tyTPi Δ l l' T @ l' ] ->
+    [ G ; Γ ⊢ tapp ν A ~ tapp ν' A' : T⦃gsingle (GTy A)⦄ @ l' ]
+}.
+
+#[export] Instance VPNe_P `{E : GenericEq} : @VPNe E LR_P.
+Proof. constructor; intros; discriminate. Qed.
+
 Section Neutral.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
 (** ** Helpers *)
 
@@ -54,7 +78,10 @@ Proof.
                  | G Γ T T' l V V' R HT HT' HV HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
                      HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR
-                 | G Γ T T' l R Hj HM];
+                 | G Γ T T' l R Hj HM
+                 | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd IHinst HR
+                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
+                     Hgeq instAd IHinst HR];
     intros ν ν' Hν Hν'; first [exact (ModRel_neutral HM _ _ Hν Hν') | apply HR].
   - (* Nat *)
     pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HN.
@@ -133,6 +160,44 @@ Proof.
     eapply gne_tm_conv; [exact X1|].
     destruct (escape_ty _ _ _ _ _ _ _ _ (codAd ρ a a' ha)) as (_ & _ & Hc).
     now apply geq_ty_sound.
+  - (* CΠ: the neutral application at every world and related contexts *)
+    pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HP.
+    pose proof (gne_tm_red Hν' HT' (lequiv_sym _ _ _ Hl)) as HP'.
+    destruct (gne_tmred_refl HP) as [H1 _]. destruct (gne_tmred_refl HP') as [_ H2].
+    exists ν, ν'.
+    refine (conj H1 (conj H2 (conj _ (conj _ (conj (gne_tm_geq HP) (conj (gne_tm_geq HP') _)))))).
+    1-2: constructor; eauto using gne_tm_whne_l, gne_tm_whne_r.
+    intros ρ Δ Δ' h.
+    pose proof (vpl_ctx_trans (vpl_ctx_sym h) h) as h'.
+    destruct (escape_ty _ _ _ _ _ _ _ _ (instAd ρ Δ Δ' h)) as (_ & _ & E1).
+    destruct (escape_ty _ _ _ _ _ _ _ _ (instAd ρ Δ' Δ' h')) as (_ & _ & E2).
+    assert (Einst : [ kw_G ρ ; kw_Δ ρ ⊢g (kbody ρ T1)⦃gsingle (GCtx Δ)⦄ ≅ (kbody ρ T1)⦃gsingle (GCtx Δ')⦄ @ l1 ])
+      by (apply geq_ty_sound; eapply geq_ty_trans; [exact E1 | apply geq_ty_sym, E2]).
+    assert (Hνr : [ kw_G ρ ; kw_Δ ρ ⊢ ktm ρ ν ~ ktm ρ ν' : tyCPi l1 (kbody ρ T1) @ l1 ])
+      by (pose proof (kw_gne_tm ρ HP) as Y; rewrite kty_tyCPi in Y; exact Y).
+    pose proof (vpn_capp Hj (kw_lwf ρ Hw1) (kw_body_ty_c ρ HT1) h Einst Hνr) as X.
+    apply (IHinst ρ Δ Δ' h); [exact X|].
+    eapply gne_tm_conv; [exact X | apply geq_ty_sound, E1].
+  - (* TΠ *)
+    pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HP.
+    pose proof (gne_tm_red Hν' HT' (lequiv_sym _ _ _ Hl)) as HP'.
+    destruct (gne_tmred_refl HP) as [H1 _]. destruct (gne_tmred_refl HP') as [_ H2].
+    exists ν, ν'.
+    refine (conj H1 (conj H2 (conj _ (conj _ (conj (gne_tm_geq HP) (conj (gne_tm_geq HP') _)))))).
+    1-2: constructor; eauto using gne_tm_whne_l, gne_tm_whne_r.
+    intros ρ A A' h.
+    pose proof (vpl_ty_trans (vpl_ty_sym h) h) as h'.
+    pose proof (vpl_ctx_gwk (kw_gok ρ) (kw_glob ρ) HΔ) as HΔr.
+    destruct (escape_ty _ _ _ _ _ _ _ _ (instAd ρ A A' h)) as (_ & _ & E1).
+    destruct (escape_ty _ _ _ _ _ _ _ _ (instAd ρ A' A' h')) as (_ & _ & E2).
+    assert (Einst : [ kw_G ρ ; kw_Δ ρ ⊢g (kbody ρ T1)⦃gsingle (GTy A)⦄ ≅ (kbody ρ T1)⦃gsingle (GTy A')⦄ @ l2 ])
+      by (apply geq_ty_sound; eapply geq_ty_trans; [exact E1 | apply geq_ty_sym, E2]).
+    assert (Hνr : [ kw_G ρ ; kw_Δ ρ ⊢ ktm ρ ν ~ ktm ρ ν' : tyTPi Δ1⟦kw_γ ρ⟧ l1 l2 (kbody ρ T1) @ l2 ])
+      by (pose proof (kw_gne_tm ρ HP) as Y; rewrite kty_tyTPi in Y; exact Y).
+    pose proof (vpn_tapp Hj (kw_lwf ρ Hw1) (kw_lwf ρ Hw2) (kw_body_ty_t ρ HT1)
+                  (vpl_ctx_trans HΔr (vpl_ctx_sym HΔr)) h Einst Hνr) as X.
+    apply (IHinst ρ A A' h); [exact X|].
+    eapply gne_tm_conv; [exact X | apply geq_ty_sound, E1].
 Qed.
 
 End Neutral.

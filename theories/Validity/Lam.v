@@ -2,7 +2,7 @@
 From DeLaM.Validity Require Export App.
 
 Section Lam.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
 Lemma subst_lift_ren_single_tm (b : tm) d (ρ : rsub) a :
   b[llift d]⟨rlift ρ⟩[lsingle a] = b[lcons (lren d ρ) a].

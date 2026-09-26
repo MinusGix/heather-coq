@@ -9,7 +9,7 @@ From DeLaM.LogRel Require Export Omega.
 From DeLaM.Validity Require Export ValidS GSubRelW.
 
 Section Local.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
 (** ** The relation, with its canonical term relation *)
 
@@ -141,7 +141,7 @@ End Local.
 
 Section Global.
 Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM}.
-Context {E : GenericEq} {EL : @GenericEqLaws E} {LP : LRParams} {VL : VPLaws lr_vp}.
+Context {E : GenericEq} {EL : @GenericEqLaws E} {LP : LRParams} {VL : VPLaws lr_vp} {VN : VPNe}.
 
 Local Notation GSubRel := (GSubRel EP EM).
 Local Notation GValid := (GValid EP EM).

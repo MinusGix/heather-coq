@@ -12,7 +12,7 @@ From DeLaM.Validity Require Export RulesS LayerV.
 (** ** Locally, and under global weakenings *)
 
 Section GvarG.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
 Lemma SubRel_geq G : forall Δ Θ e e', SubRel G Δ Θ e e' -> forall n A k, in_ctx Δ n A k ->
   [ G ; Θ ⊢ llk e n ≈ llk e' n : A[e] @ k ].
@@ -149,7 +149,7 @@ Proof. intros Hi ->; discriminate (lle_M _ Hi). Qed.
 
 Section GvarS.
 Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM}.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
 Local Notation GSubRel := (GSubRel EP EM).
 Local Notation VCtxS := (@VCtxS EP EM E LP).

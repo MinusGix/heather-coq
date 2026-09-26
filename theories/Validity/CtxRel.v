@@ -8,7 +8,7 @@
 From DeLaM.Validity Require Export Props.
 
 Section CtxRel.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
 Fixpoint CtxRel (G : gctx) (Γ Γ' : ctx) : Prop :=
   match Γ, Γ' with
@@ -148,7 +148,7 @@ End CtxRel.
     its own, is related. From the relation's level invariance. *)
 
 Section LevelEq.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
 Lemma LRty_leq {l G Γ T1 T2 T3} : LRty l G Γ T1 T2 -> LRty l G Γ T3 T3 -> ty_leq T2 T3 -> LRty l G Γ T1 T3.
 Proof. intros [R H] [R3 H3] Ex. exists R. exact (LogRel_leq_ty H H3 Ex). Qed.

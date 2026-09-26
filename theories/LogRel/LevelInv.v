@@ -29,6 +29,10 @@ Lemma ktyl_leq {G Γ} (ρ : kwk G Γ) T T' : ty_leq T T' -> ty_leq (ktyl ρ T) (
 Proof. intros H; unfold ktyl; apply (proj1 leq_ren_all), ty_leq_gwa, H. Qed.
 Lemma subst_leq_ty (T T' : ty) d : ty_leq T T' -> ty_leq T[d] T'[d].
 Proof. intros H; apply (proj1 leq_subst_all); [apply lsub_leq_refl | exact H]. Qed.
+Lemma kbody_leq {G Γ} (ρ : kwk G Γ) T T' : ty_leq T T' -> ty_leq (kbody ρ T) (kbody ρ T').
+Proof. intros H; unfold kbody; apply (proj1 leq_ren_all), ty_leq_gwa, H. Qed.
+Lemma gsingle_leq_ty (T T' : ty) o : ty_leq T T' -> ty_leq T⦃gsingle o⦄ T'⦃gsingle o⦄.
+Proof. intros H; apply (proj1 leq_gsubst_all); [intros; apply gobj_leq_refl | exact H]. Qed.
 
 (** ** Normal forms of related syntax *)
 
@@ -48,10 +52,14 @@ Proof.
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
                     HA HA' HB HB' HAA HBB domAd codAd HR
-                | G Γ T T' l R Hj HM].
-  1-4: eexists; split; [exact HT | first [exact (whnf_ty_ne _ (gne_ty_whne_l HV)) | solve [eauto with whnf]]].
-  match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
-    (eexists; split; [eassumption | eauto with whnf]).
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR].
+  all: first
+    [ solve [eexists; split; [exact HT | first [exact (whnf_ty_ne _ (gne_ty_whne_l HV)) | solve [eauto with whnf]]]]
+    | match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
+      (eexists; split; [eassumption | eauto with whnf]) ].
 Qed.
 
 (** ** Generic helpers *)
@@ -269,6 +277,12 @@ Lemma ty_leq_U_inv {l2 W} : ty_leq (tyU l2) W -> exists l3, W = tyU l3 /\ leqv l
 Proof. destruct W; cbn; try contradiction; eauto. Qed.
 Lemma ty_leq_nat_inv {W} : ty_leq tyNat W -> W = tyNat.
 Proof. destruct W; cbn; try contradiction; auto. Qed.
+Lemma ty_leq_cpi_inv {l2 U2 W} : ty_leq (tyCPi l2 U2) W ->
+  exists k U3, W = tyCPi k U3 /\ leqv l2 k /\ ty_leq U2 U3.
+Proof. destruct W; cbn; try contradiction; intros; do 2 eexists; intuition eauto. Qed.
+Lemma ty_leq_tpi_inv {Δ2 l3 l4 U2 W} : ty_leq (tyTPi Δ2 l3 l4 U2) W ->
+  exists Δ3 k3 k4 U3, W = tyTPi Δ3 k3 k4 U3 /\ ctx_leq Δ2 Δ3 /\ leqv l3 k3 /\ leqv l4 k4 /\ ty_leq U2 U3.
+Proof. destruct W; cbn; try contradiction; intros; do 4 eexists; intuition eauto. Qed.
 
 (** ** The universe *)
 
@@ -304,7 +318,10 @@ Proof.
                  | G Γ T1 T2 l V1 V2 R HT1 HT2 HV HR
                  | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2
                      HA1 HA2 HB1 HB2 HA12 HB12 domAd1 IHdom codAd1 IHcod HR
-                 | G Γ T1 T2 l R Hj HM];
+                 | G Γ T1 T2 l R Hj HM
+                 | G Γ T1 T2 l l1 l2 U1 U2 instR R Hj Hl Hl2 Hw1 HT1 HT2 HU1 HU2 Hgeq instAd IHinst HR
+                 | G Γ T1 T2 l Δ1 Δ2 l1 l2 l3 l4 U1 U2 instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HΔ HU1 HU2
+                     Hgeq instAd IHinst HR];
     intros T3 R3 H3 ET; destruct (LR_whnf_l H3) as (W3 & HT3 & Hnw3).
   - (* Nat *)
     pose proof (ty_leq_nat_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3)) as ->.
@@ -460,6 +477,122 @@ Proof.
     split; [apply LRmod; [exact Hj | exact HM13]|].
     intros t1 t2 t3 H12 H33 Et.
     exact (Hc13 t1 t2 t3 H12 (Hb t2 t3 (Hc22 t2 t1 t2 H12 H12) H33 Et)).
+  - (* CΠ *)
+    destruct (ty_leq_cpi_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3)) as (k3 & U3 & -> & E3 & EU).
+    destruct (LR_inv_cpi H3 HT3) as (m3 & U3' & instR3 & _ & _ & _ & Hwk3 & HT3' & HU3 & _ & Hgeq3 &
+      instAd3 & HR3).
+    assert (Heq : tyCPi m3 U3' = tyCPi k3 U3)
+      by (eapply tyred_whnf_det; [exact HT3' | exact HT3 | eauto with whnf | eauto with whnf]).
+    injection Heq as -> ->. clear HT3'.
+    assert (Q3 : lequiv (gL G) l2 k3) by exact (leqv_lequiv _ _ _ (lequiv_wf_l _ _ _ Hl2) Hwk3 E3).
+    assert (Q13 : lequiv (gL G) l1 k3) by (eapply lequiv_trans; [apply lequiv_sym, Hl2 | exact Q3]).
+    assert (Hdiag : forall (ρ : kwk G Γ) Δ Δ', vp_ctx lr_vp (kw_G ρ) Δ Δ' -> vp_ctx lr_vp (kw_G ρ) Δ' Δ')
+      by (intros ρ Δ Δ' h; exact (vpl_ctx_trans (vpl_ctx_sym h) h)).
+    assert (Hinst3 : forall ρ Δ Δ' (h : vp_ctx lr_vp (kw_G ρ) Δ Δ'),
+               LR n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kbody ρ U3)⦃gsingle (GCtx Δ')⦄ (kbody ρ U3)⦃gsingle (GCtx Δ')⦄
+                  l1 (instR3 ρ Δ' Δ' (Hdiag ρ Δ Δ' h)))
+      by (intros; exact (LR_lconv _ _ _ _ _ _ _ _ _ (instAd3 _ _ _ _) (kw_lequiv ρ Q13))).
+    assert (Einst : forall (ρ : kwk G Γ) Δ', ty_leq (kbody ρ U2)⦃gsingle (GCtx Δ')⦄ (kbody ρ U3)⦃gsingle (GCtx Δ')⦄)
+      by (intros; apply gsingle_leq_ty, kbody_leq, EU).
+    assert (HP23 : [ G ; Γ ⊢ tyCPi l2 U2 ≈ tyCPi k3 U3 @ l1 ])
+      by (apply geq_ty_leq; [exact (geq_ty_refl_r Hgeq) | exact (geq_ty_lconv Hgeq3 Q13) | cbn; auto]).
+    pose proof (geq_ty_sound HP23) as HP23d.
+    pose proof (geq_ty_sound (geq_ty_trans Hgeq HP23)) as HP13d.
+    assert (HR13 : releq R (CPiRel G Γ l1 k3 U1 U3 instR)).
+    { eapply releq_trans; [exact HR|]. intros t t'; split.
+      - apply (CPiRel_dir HP23d); intros; apply releq_refl.
+      - apply (CPiRel_dir (eqty_sym _ _ _ _ _ _ HP23d)); intros; apply releq_refl. }
+    split.
+    + apply (LRcpi n (LRbelow n) G Γ T1 T3 l l1 k3 U1 U3 instR R).
+      * exact Hj.
+      * exact Hl.
+      * apply lequiv_sym, Q13.
+      * exact Hw1.
+      * exact HT1.
+      * exact HT3.
+      * exact HU1.
+      * exact (lconv_ty HU3 (lequiv_sym _ _ _ Q13)).
+      * exact (geq_ty_trans Hgeq HP23).
+      * intros ρ Δ Δ' h. exact (proj1 (IHinst ρ Δ Δ' h _ _ (Hinst3 ρ Δ Δ' h) (Einst ρ Δ'))).
+      * exact HR13.
+    + intros t1 t2 t3 H12' H33' Et. apply HR. apply HR in H12'. apply HR3 in H33'.
+      destruct H12' as (w1 & w2 & Hw1r & Hw2r & Hnf1 & Hnf2 & Heq1 & Heq1' & HK1).
+      destruct H33' as (w3 & w3' & Hw3r & Hw3r' & Hnf3 & Hnf3' & Heq3 & _ & HK3).
+      assert (w3' = w3) as -> by (eapply tmred_whnf_det; eauto).
+      assert (Ew : tm_leq w2 w3) by exact (tmred_leq Et Hw2r Hw3r Hnf2 Hnf3).
+      exists w1, w3. refine (conj Hw1r (conj _ (conj Hnf1 (conj Hnf3 (conj _ (conj _ _)))))).
+      * eapply tmred_conv; [apply ge_typeof | eapply tmred_lconv; [exact Hw3r | exact Q13] |].
+        apply eqty_sym, HP23d.
+      * exact (geq_tm_leq_r Heq1 (geq_tm_conv_l Heq3 (eqty_sym _ _ _ _ _ _ HP13d) Q13) Ew).
+      * exact (geq_tm_leq_r Heq1' (geq_tm_conv_l Heq3 (eqty_sym _ _ _ _ _ _ HP23d) Q13) Ew).
+      * intros ρ Δ Δ' h.
+        refine (proj2 (IHinst ρ Δ Δ' h _ _ (Hinst3 ρ Δ Δ' h) (Einst ρ Δ')) _ _ _ (HK1 ρ Δ Δ' h)
+                  (HK3 ρ Δ' Δ' (Hdiag ρ Δ Δ' h)) _).
+        cbn; split; [apply ktm_leq, Ew | apply (proj1 (proj2 (proj2 leq_refl_all)))].
+  - (* TΠ *)
+    destruct (ty_leq_tpi_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3))
+      as (Δ3 & k3 & k4 & U3 & -> & EΔ & E3 & E4 & EU).
+    destruct (LR_inv_tpi H3 HT3) as (Δ3' & m3 & m4 & U3' & instR3 & _ & _ & _ & _ & Hwk3 & Hwk4 & HT3' &
+      HΔ33 & HU3 & _ & Hgeq3 & instAd3 & HR3).
+    assert (Heq : tyTPi Δ3' m3 m4 U3' = tyTPi Δ3 k3 k4 U3)
+      by (eapply tyred_whnf_det; [exact HT3' | exact HT3 | eauto with whnf | eauto with whnf]).
+    injection Heq as -> -> -> ->. clear HT3'.
+    assert (Q3 : lequiv (gL G) l3 k3) by exact (leqv_lequiv _ _ _ (lequiv_wf_l _ _ _ Hl3) Hwk3 E3).
+    assert (Q4 : lequiv (gL G) l4 k4) by exact (leqv_lequiv _ _ _ (lequiv_wf_l _ _ _ Hl4) Hwk4 E4).
+    assert (Q13 : lequiv (gL G) l1 k3) by (eapply lequiv_trans; [apply lequiv_sym, Hl3 | exact Q3]).
+    assert (Q24 : lequiv (gL G) l2 k4) by (eapply lequiv_trans; [apply lequiv_sym, Hl4 | exact Q4]).
+    assert (HΔ23 : vp_ctx lr_vp G Δ2 Δ3)
+      by exact (vpl_ctx_leq (vpl_ctx_trans (vpl_ctx_sym HΔ) HΔ) HΔ33 EΔ).
+    pose proof (vpl_ctx_trans HΔ HΔ23) as HΔ13.
+    assert (Hdiag : forall (ρ : kwk G Γ) A A', vp_ty lr_vp (kw_G ρ) Δ1⟦kw_γ ρ⟧ A A' l1 ->
+                      vp_ty lr_vp (kw_G ρ) Δ3⟦kw_γ ρ⟧ A' A' k3)
+      by (intros ρ A A' h;
+          exact (vpl_ty_lconv (kw_lequiv ρ Q13)
+                   (vpl_ty_ctx (vpl_ctx_gwk (kw_gok ρ) (kw_glob ρ) HΔ13) (vpl_ty_trans (vpl_ty_sym h) h)))).
+    assert (Hinst3 : forall ρ A A' (h : vp_ty lr_vp (kw_G ρ) Δ1⟦kw_γ ρ⟧ A A' l1),
+               LR n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kbody ρ U3)⦃gsingle (GTy A')⦄ (kbody ρ U3)⦃gsingle (GTy A')⦄
+                  l2 (instR3 ρ A' A' (Hdiag ρ A A' h)))
+      by (intros; exact (LR_lconv _ _ _ _ _ _ _ _ _ (instAd3 _ _ _ _) (kw_lequiv ρ Q24))).
+    assert (Einst : forall (ρ : kwk G Γ) A', ty_leq (kbody ρ U2)⦃gsingle (GTy A')⦄ (kbody ρ U3)⦃gsingle (GTy A')⦄)
+      by (intros; apply gsingle_leq_ty, kbody_leq, EU).
+    assert (HP23 : [ G ; Γ ⊢ tyTPi Δ2 l3 l4 U2 ≈ tyTPi Δ3 k3 k4 U3 @ l2 ])
+      by (apply geq_ty_leq; [exact (geq_ty_refl_r Hgeq) | exact (geq_ty_lconv Hgeq3 Q24) | cbn; auto]).
+    pose proof (geq_ty_sound HP23) as HP23d.
+    pose proof (geq_ty_sound (geq_ty_trans Hgeq HP23)) as HP13d.
+    assert (HR13 : releq R (TPiRel G Γ Δ1 Δ3 l1 l2 k3 k4 U1 U3 instR)).
+    { eapply releq_trans; [exact HR|]. intros t t'; split.
+      - apply (TPiRel_dir HP23d); intros; apply releq_refl.
+      - apply (TPiRel_dir (eqty_sym _ _ _ _ _ _ HP23d)); intros; apply releq_refl. }
+    split.
+    + apply (LRtpi n (LRbelow n) G Γ T1 T3 l Δ1 Δ3 l1 l2 k3 k4 U1 U3 instR R).
+      * exact Hj.
+      * exact Hl.
+      * apply lequiv_sym, Q13.
+      * apply lequiv_sym, Q24.
+      * exact Hw1.
+      * exact Hw2.
+      * exact HT1.
+      * exact HT3.
+      * exact HΔ13.
+      * exact HU1.
+      * exact HU3.
+      * exact (geq_ty_trans Hgeq HP23).
+      * intros ρ A A' h. exact (proj1 (IHinst ρ A A' h _ _ (Hinst3 ρ A A' h) (Einst ρ A'))).
+      * exact HR13.
+    + intros t1 t2 t3 H12' H33' Et. apply HR. apply HR in H12'. apply HR3 in H33'.
+      destruct H12' as (w1 & w2 & Hw1r & Hw2r & Hnf1 & Hnf2 & Heq1 & Heq1' & HK1).
+      destruct H33' as (w3 & w3' & Hw3r & Hw3r' & Hnf3 & Hnf3' & Heq3 & _ & HK3).
+      assert (w3' = w3) as -> by (eapply tmred_whnf_det; eauto).
+      assert (Ew : tm_leq w2 w3) by exact (tmred_leq Et Hw2r Hw3r Hnf2 Hnf3).
+      exists w1, w3. refine (conj Hw1r (conj _ (conj Hnf1 (conj Hnf3 (conj _ (conj _ _)))))).
+      * eapply tmred_conv; [apply ge_typeof | eapply tmred_lconv; [exact Hw3r | exact Q24] |].
+        apply eqty_sym, HP23d.
+      * exact (geq_tm_leq_r Heq1 (geq_tm_conv_l Heq3 (eqty_sym _ _ _ _ _ _ HP13d) Q24) Ew).
+      * exact (geq_tm_leq_r Heq1' (geq_tm_conv_l Heq3 (eqty_sym _ _ _ _ _ _ HP23d) Q24) Ew).
+      * intros ρ A A' h.
+        refine (proj2 (IHinst ρ A A' h _ _ (Hinst3 ρ A A' h) (Einst ρ A')) _ _ _ (HK1 ρ A A' h)
+                  (HK3 ρ A' A' (Hdiag ρ A A' h)) _).
+        cbn; split; [apply ktm_leq, Ew | apply (proj1 leq_refl_all)].
 Qed.
 
 Theorem LR_leq n : Pleq n.

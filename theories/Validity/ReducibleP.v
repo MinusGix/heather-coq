@@ -44,7 +44,7 @@ Qed.
 (** Validity with σ at the identities, then at the identity local
     substitution. *)
 Section At.
-Context {E : GenericEq} {EL : GenericEqLaws} {LP : LRParams} {VL : VPLaws lr_vp}.
+Context {E : GenericEq} {EL : GenericEqLaws} {LP : LRParams} {VL : VPLaws lr_vp} {VN : VPNe}.
 
 Lemma VTyS_red {G Γ T T' l} : [ G ; Γ ⊢g T @ l ] -> [ G ; Γ ⊢g T' @ l ] ->
   @VCtxS EP EM E LP G Γ -> @VTyS EP EM E LP G Γ T T' l -> LRty l G Γ T T'.

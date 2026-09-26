@@ -23,7 +23,7 @@ Qed.
 
 
 Section RecNe.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VPP : VPPerm lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe} `{VPP : VPPerm lr_vp}.
 
 Lemma SubRel_uwk {L Ψ Γ Δ d d'} : [ ⊢ mkG L Ψ ] -> ctx_lwf L Γ ->
   SubRel (mkG L Ψ) Γ Δ d d' -> SubRel (gctx_uwk 1 (mkG L Ψ)) Γ⟨ush 1⟩ᵤ Δ⟨ush 1⟩ᵤ (uwk d) (uwk d').
@@ -264,7 +264,7 @@ End GS2.
 (** ** The identity extension: fresh globals and fresh locals *)
 
 Section Ext.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
 Lemma SubRel_gwkn {G Γ Δ d d' D Ds} : SubRel G Γ Δ d d' ->
   [ ⊢ mkG (gL G) ((D :: Ds) ++ gΨ G) ] ->

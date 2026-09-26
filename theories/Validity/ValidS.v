@@ -8,7 +8,7 @@
 From DeLaM.Validity Require Export GSubRel.
 
 Section ValidS.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
 (** ** Locally *)
 

@@ -993,7 +993,7 @@ Proof.
            | H : eq_tm _ lM _ (elimt _ _ _ _ _ _ _) _ _ _ |- _ => pose proof (eqtm_wf_r (i := lM) eq_refl H)
            end.
   (* M5 WORK IN PROGRESS (M5_DESIGN.md G5, status): the rules of [CΠ]/[TΠ]
-     are admitted until their relation cases exist; nothing else is. *)
+     are admitted until their semantic rules exist; nothing else is. *)
   all: try (lazymatch goal with
             | |- context [tyCPi] => admit | |- context [tyTPi] => admit
             | |- context [clam] => admit | |- context [capp] => admit

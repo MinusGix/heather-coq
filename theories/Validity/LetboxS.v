@@ -171,7 +171,7 @@ Qed.
 (** ** The identity instance is valid *)
 
 Section IdInst.
-Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
 Lemma gwa_lshift0 γ : (lshift 0)⟦γ⟧ = lshift 0.
 Proof. now destruct γ. Qed.

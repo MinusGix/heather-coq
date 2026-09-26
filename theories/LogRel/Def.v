@@ -249,6 +249,59 @@ Inductive ModRel (G : gctx) (Γ : ctx) : ty -> ty -> lvl -> (tm -> tm -> Prop) -
     releq R (CTrmRel G Γ Δ Δ' A A' k k') ->
     ModRel G Γ T T' l R.
 
+(** ** Meta-functions (07a:766–845, M5_DESIGN.md G3), [j = M] only
+
+    The body lives under one global binder. A Kripke world moves it under
+    [⇑γ] and then its local renaming ([kbody]); the binder is then
+    instantiated at related contexts ([CΠ]) or related types of layer P
+    ([TΠ]). The domains are the [j = P] relation, the parameters [vp_ctx]
+    and [vp_ty], so the instances stay at stage [n]. As for Π, the
+    instances are quantified at the left domain only. *)
+
+(** [⇑γ], with the identity weakening kept literally the identity. *)
+Definition gwk_up' (γ : gweak) : gweak := match γ with gwk_id => gwk_id | _ => gwk_up γ end.
+(** The binding moved along [γ], likewise. *)
+Definition gdecl_gwa (γ : gweak) (D : gdecl) : gdecl :=
+  match γ with gwk_id => D | _ => gdecl_ren D γ end.
+
+Lemma gdecl_gwa_ctx γ : gdecl_gwa γ gdCtx = gdCtx.
+Proof. now destruct γ. Qed.
+Lemma gdecl_gwa_ty γ Δ i l : gdecl_gwa γ (gdTy Δ i l) = gdTy Δ⟦γ⟧ i l.
+Proof. now destruct γ. Qed.
+
+Lemma gwa_up'_shift (Γ : ctx) γ : Γ⟪S⟫⟦gwk_up' γ⟧ = Γ⟦γ⟧⟪S⟫.
+Proof.
+  destruct γ as [|γ0|γ0]; cbn [gwk_up' gwa]; [reflexivity | ..].
+  - exact (gcren_shift_up Γ (gwk_fn (gwk_step γ0))).
+  - exact (gcren_shift_up Γ (gwk_fn (gwk_up γ0))).
+Qed.
+
+Definition kbody {G Γ} (ρ : kwk G Γ) (T : ty) : ty := T⟦gwk_up' (kw_γ ρ)⟧⟨kw_r ρ⟩.
+Definition kbodyt {G Γ} (ρ : kwk G Γ) (t : tm) : tm := t⟦gwk_up' (kw_γ ρ)⟧⟨kw_r ρ⟩.
+
+Definition CInstRel (G : gctx) (Γ : ctx) :=
+  forall (ρ : kwk G Γ) Δ Δ', vp_ctx lr_vp (kw_G ρ) Δ Δ' -> tm -> tm -> Prop.
+Definition TInstRel (G : gctx) (Γ : ctx) (Δ1 : ctx) (l1 : lvl) :=
+  forall (ρ : kwk G Γ) A A', vp_ty lr_vp (kw_G ρ) Δ1⟦kw_γ ρ⟧ A A' l1 -> tm -> tm -> Prop.
+
+Definition CPiRel (G : gctx) (Γ : ctx) (l1 l2 : lvl) (T1 T1' : ty) (instR : CInstRel G Γ) :
+    tm -> tm -> Prop :=
+  fun t t' => exists w w',
+    [ G ; Γ ⊢g t ⤳* w : tyCPi l1 T1 @ l1 ] /\ [ G ; Γ ⊢g t' ⤳* w' : tyCPi l2 T1' @ l1 ] /\
+    whnf w /\ whnf w' /\
+    [ G ; Γ ⊢ w ≈ w' : tyCPi l1 T1 @ l1 ] /\ [ G ; Γ ⊢ w ≈ w' : tyCPi l2 T1' @ l1 ] /\
+    forall (ρ : kwk G Γ) Δ Δ' (h : vp_ctx lr_vp (kw_G ρ) Δ Δ'),
+      instR ρ Δ Δ' h (capp (ktm ρ w) Δ) (capp (ktm ρ w') Δ').
+
+Definition TPiRel (G : gctx) (Γ : ctx) (Δ1 Δ1' : ctx) (l1 l2 l3 l4 : lvl) (T1 T1' : ty)
+    (instR : TInstRel G Γ Δ1 l1) : tm -> tm -> Prop :=
+  fun t t' => exists w w',
+    [ G ; Γ ⊢g t ⤳* w : tyTPi Δ1 l1 l2 T1 @ l2 ] /\ [ G ; Γ ⊢g t' ⤳* w' : tyTPi Δ1' l3 l4 T1' @ l2 ] /\
+    whnf w /\ whnf w' /\
+    [ G ; Γ ⊢ w ≈ w' : tyTPi Δ1 l1 l2 T1 @ l2 ] /\ [ G ; Γ ⊢ w ≈ w' : tyTPi Δ1' l3 l4 T1' @ l2 ] /\
+    forall (ρ : kwk G Γ) A A' (h : vp_ty lr_vp (kw_G ρ) Δ1⟦kw_γ ρ⟧ A A' l1),
+      instR ρ A A' h (tapp (ktm ρ w) A) (tapp (ktm ρ w') A').
+
 (** ** The relation, stage [n] *)
 
 Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
@@ -282,6 +335,30 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
     LR n rec G Γ T T' l R
 | LRmod G Γ T T' l R :
     lr_j = jM -> ModRel G Γ T T' l R ->
+    LR n rec G Γ T T' l R
+| LRcpi G Γ T T' l l1 l2 T1 T1' (instR : CInstRel G Γ) R :
+    lr_j = jM ->
+    lequiv (gL G) l l1 -> lequiv (gL G) l2 l1 -> lwf (gL G) l1 ->
+    [ G ; Γ ⊢g T ⤳* tyCPi l1 T1 @ l ] -> [ G ; Γ ⊢g T' ⤳* tyCPi l2 T1' @ l ] ->
+    [ gext G gdCtx ; Γ⟪S⟫ ⊢g T1 @ l1 ] -> [ gext G gdCtx ; Γ⟪S⟫ ⊢g T1' @ l1 ] ->
+    [ G ; Γ ⊢ tyCPi l1 T1 ≈ tyCPi l2 T1' @ l1 ] ->
+    (forall (ρ : kwk G Γ) Δ Δ' (h : vp_ctx lr_vp (kw_G ρ) Δ Δ'),
+        LR n rec (kw_G ρ) (kw_Δ ρ) (kbody ρ T1)⦃gsingle (GCtx Δ)⦄ (kbody ρ T1')⦃gsingle (GCtx Δ')⦄
+           l1 (instR ρ Δ Δ' h)) ->
+    releq R (CPiRel G Γ l1 l2 T1 T1' instR) ->
+    LR n rec G Γ T T' l R
+| LRtpi G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' (instR : TInstRel G Γ Δ1 l1) R :
+    lr_j = jM ->
+    lequiv (gL G) l l2 -> lequiv (gL G) l3 l1 -> lequiv (gL G) l4 l2 ->
+    lwf (gL G) l1 -> lwf (gL G) l2 ->
+    [ G ; Γ ⊢g T ⤳* tyTPi Δ1 l1 l2 T1 @ l ] -> [ G ; Γ ⊢g T' ⤳* tyTPi Δ1' l3 l4 T1' @ l ] ->
+    vp_ctx lr_vp G Δ1 Δ1' ->
+    [ gext G (gdTy Δ1 lD l1) ; Γ⟪S⟫ ⊢g T1 @ l2 ] -> [ gext G (gdTy Δ1' lD l3) ; Γ⟪S⟫ ⊢g T1' @ l4 ] ->
+    [ G ; Γ ⊢ tyTPi Δ1 l1 l2 T1 ≈ tyTPi Δ1' l3 l4 T1' @ l2 ] ->
+    (forall (ρ : kwk G Γ) A A' (h : vp_ty lr_vp (kw_G ρ) Δ1⟦kw_γ ρ⟧ A A' l1),
+        LR n rec (kw_G ρ) (kw_Δ ρ) (kbody ρ T1)⦃gsingle (GTy A)⦄ (kbody ρ T1')⦃gsingle (GTy A')⦄
+           l2 (instR ρ A A' h)) ->
+    releq R (TPiRel G Γ Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR) ->
     LR n rec G Γ T T' l R.
 
 (** ** Stages *)

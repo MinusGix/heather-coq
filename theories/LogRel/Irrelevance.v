@@ -116,6 +116,33 @@ Qed.
 
 End PiDir.
 
+(** ** The meta-function cases, one direction *)
+
+Lemma CPiRel_dir {G Γ l1 l2 m2 T1 T1' T1''} {instR instR' : CInstRel G Γ} :
+  [ G ; Γ ⊢g tyCPi l2 T1' ≅ tyCPi m2 T1'' @ l1 ] ->
+  (forall ρ Δ Δ' h, releq (instR ρ Δ Δ' h) (instR' ρ Δ Δ' h)) ->
+  forall t t', CPiRel G Γ l1 l2 T1 T1' instR t t' -> CPiRel G Γ l1 m2 T1 T1'' instR' t t'.
+Proof.
+  intros HP Hinst t t' (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK).
+  exists w, w'. refine (conj Hw (conj _ (conj Hnf (conj Hnf' (conj Heq (conj _ _)))))).
+  - eapply tmred_conv; eauto using ge_typeof.
+  - eapply geq_tm_conv; eauto.
+  - intros ρ Δ Δ' h. apply (Hinst ρ Δ Δ' h), HK.
+Qed.
+
+Lemma TPiRel_dir {G Γ Δ1 Δ1' Δ1'' l1 l2 l3 l4 m3 m4 T1 T1' T1''} {instR instR' : TInstRel G Γ Δ1 l1} :
+  [ G ; Γ ⊢g tyTPi Δ1' l3 l4 T1' ≅ tyTPi Δ1'' m3 m4 T1'' @ l2 ] ->
+  (forall ρ A A' h, releq (instR ρ A A' h) (instR' ρ A A' h)) ->
+  forall t t', TPiRel G Γ Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR t t' ->
+    TPiRel G Γ Δ1 Δ1'' l1 l2 m3 m4 T1 T1'' instR' t t'.
+Proof.
+  intros HP Hinst t t' (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK).
+  exists w, w'. refine (conj Hw (conj _ (conj Hnf (conj Hnf' (conj Heq (conj _ _)))))).
+  - eapply tmred_conv; eauto using ge_typeof.
+  - eapply geq_tm_conv; eauto.
+  - intros ρ A A' h. apply (Hinst ρ A A' h), HK.
+Qed.
+
 (** ** Irrelevance *)
 
 Theorem LR_irrel n rec G Γ T T' T'' l R R' :
@@ -127,14 +154,20 @@ Proof.
                   | G Γ T T' l V V' R HT HT' HV HR
                   | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
                       HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR
-                  | G Γ T T' l R Hj HM];
+                  | G Γ T T' l R Hj HM
+                  | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd IHinst HR
+                  | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
+                      Hgeq instAd IHinst HR];
     intros T'' R' H2;
     inversion H2 as [? ? ? ? ? ? Hk HTk HTk' HkR
                     | ? ? ? ? ? k1 k2 ? Hk Hk2 Hkn HTk HTk' HkR
                     | ? ? ? ? ? W W' ? HTk HTk' HW HkR
                     | ? ? ? ? ? k1 k2 k3 k4 C D C' D' domR' codR' ? Hk Hk3 Hk4 Hkw1 Hkw2 HTk HTk'
                         HC HC' HD HD' HCC HDD domAd' codAd' HkR
-                    | ? ? ? ? ? ? Hkj HkM];
+                    | ? ? ? ? ? ? Hkj HkM
+                    | ? ? ? ? ? k1 k2 U1 U1' instR' ? Hkj Hk Hk2 Hkw1 HTk HTk' HU1 HU1' Hkgeq instAd' HkR
+                    | ? ? ? ? ? Θ1 Θ1' k1 k2 k3 k4 U1 U1' instR' ? Hkj Hk Hk3 Hk4 Hkw1 Hkw2 HTk HTk' HΘ
+                        HU1 HU1' Hkgeq instAd' HkR];
     subst; try (agree; try ne_absurd).
   (* contextual types, and mismatches with them *)
   all: try solve [eapply ModRel_irrel; eassumption].
@@ -165,6 +198,28 @@ Proof.
       * now apply eqty_sym.
       * intros; apply releq_sym, Hdom.
       * intros; apply releq_sym, Hcod.
+  - (* CΠ: the right types are convertible, the instances irrelevant *)
+    match goal with
+    | |- releq (CPiRel _ _ ?a1 ?a2 ?A1 ?A1' ?iR) (CPiRel _ _ _ ?b2 _ ?B1' ?iR') =>
+        assert (HP : [ G ; Γ ⊢g tyCPi a2 A1' ≅ tyCPi b2 B1' @ a1 ])
+          by (eapply eqty_trans; [apply eqty_sym, geq_ty_sound; eassumption | apply geq_ty_sound; eassumption]);
+        assert (Hinst : forall ρ Δ Δ' h, releq (iR ρ Δ Δ' h) (iR' ρ Δ Δ' h))
+          by (intros; eapply IHinst; eauto)
+    end.
+    intros t t'; split.
+    + eapply CPiRel_dir; eassumption.
+    + eapply CPiRel_dir; [now apply eqty_sym | intros; apply releq_sym, Hinst].
+  - (* TΠ *)
+    match goal with
+    | |- releq (TPiRel _ _ _ ?D1' ?a1 ?a2 ?a3 ?a4 _ ?A1' ?iR) (TPiRel _ _ _ ?E1' _ _ ?b3 ?b4 _ ?B1' ?iR') =>
+        assert (HP : [ G ; Γ ⊢g tyTPi D1' a3 a4 A1' ≅ tyTPi E1' b3 b4 B1' @ a2 ])
+          by (eapply eqty_trans; [apply eqty_sym, geq_ty_sound; eassumption | apply geq_ty_sound; eassumption]);
+        assert (Hinst : forall ρ A A' h, releq (iR ρ A A' h) (iR' ρ A A' h))
+          by (intros; eapply IHinst; eauto)
+    end.
+    intros t t'; split.
+    + eapply TPiRel_dir; eassumption.
+    + eapply TPiRel_dir; [now apply eqty_sym | intros; apply releq_sym, Hinst].
 Qed.
 
 (** ** Inversion by the left type's normal form *)
@@ -182,7 +237,10 @@ Proof.
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
                     HA HA' HB HB' HAA HBB domAd codAd HR
-                | G Γ T T' l R Hj HM];
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR];
     intros HN; try open_mod; agree; try ne_absurd; auto.
 Qed.
 
@@ -196,7 +254,10 @@ Proof.
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
                     HA HA' HB HB' HAA HBB domAd codAd HR
-                | G Γ T T' l R Hj HM];
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -209,7 +270,10 @@ Proof.
                 | G Γ T T' l W W' R HT HT' HW HR
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
                     HA HA' HB HB' HAA HBB domAd codAd HR
-                | G Γ T T' l R Hj HM];
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR];
     intros HN; try open_mod; agree; try solve [inversion HV0]; eauto.
 Qed.
 
@@ -233,7 +297,10 @@ Proof.
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
                     HA HA' HB HB' HAA HBB domAd codAd HR
-                | G Γ T T' l R Hj HM];
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; eauto 20.
 Qed.
@@ -246,8 +313,11 @@ Proof.
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
                     HA HA' HB HB' HAA HBB domAd codAd HR
-                | G Γ T T' l R Hj HM];
-    intros HN; [agree; try ne_absurd .. | exact (conj Hj HM)].
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR];
+    intros HN; first [exact (conj Hj HM) | agree; try ne_absurd].
 Qed.
 
 Lemma LR_inv_CTrm {Δ A k l'} : [ G ; Γ ⊢g T ⤳* tyCTrm Δ A k @ l' ] -> lr_j = jM /\ ModRel G Γ T T' l R.
@@ -258,8 +328,62 @@ Proof.
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l k1 k2 l3 l4 A0 B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
                     HA HA' HB HB' HAA HBB domAd codAd HR
-                | G Γ T T' l R Hj HM];
-    intros HN; [agree; try ne_absurd .. | exact (conj Hj HM)].
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR];
+    intros HN; first [exact (conj Hj HM) | agree; try ne_absurd].
+Qed.
+
+Lemma LR_inv_cpi {m1 U1 l'} : [ G ; Γ ⊢g T ⤳* tyCPi m1 U1 @ l' ] ->
+  exists m2 U1' (instR : CInstRel G Γ),
+    lr_j = jM /\ lequiv (gL G) l m1 /\ lequiv (gL G) m2 m1 /\ lwf (gL G) m1 /\
+    [ G ; Γ ⊢g T' ⤳* tyCPi m2 U1' @ l ] /\
+    [ gext G gdCtx ; Γ⟪S⟫ ⊢g U1 @ m1 ] /\ [ gext G gdCtx ; Γ⟪S⟫ ⊢g U1' @ m1 ] /\
+    [ G ; Γ ⊢ tyCPi m1 U1 ≈ tyCPi m2 U1' @ m1 ] /\
+    (forall (ρ : kwk G Γ) Δ Δ' (h : vp_ctx lr_vp (kw_G ρ) Δ Δ'),
+        LR n rec (kw_G ρ) (kw_Δ ρ) (kbody ρ U1)⦃gsingle (GCtx Δ)⦄ (kbody ρ U1')⦃gsingle (GCtx Δ')⦄
+           m1 (instR ρ Δ Δ' h)) /\
+    releq R (CPiRel G Γ m1 m2 U1 U1' instR).
+Proof.
+  intros HN; revert HN.
+  destruct H as [G Γ T T' l R Hl HT HT' HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
+                | G Γ T T' l V V' R HT HT' HV HR
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR];
+    intros HN; try open_mod; agree; try ne_absurd.
+  do 3 eexists; eauto 20.
+Qed.
+
+Lemma LR_inv_tpi {Θ m1 m2 U1 l'} : [ G ; Γ ⊢g T ⤳* tyTPi Θ m1 m2 U1 @ l' ] ->
+  exists Θ' m3 m4 U1' (instR : TInstRel G Γ Θ m1),
+    lr_j = jM /\ lequiv (gL G) l m2 /\ lequiv (gL G) m3 m1 /\ lequiv (gL G) m4 m2 /\
+    lwf (gL G) m1 /\ lwf (gL G) m2 /\
+    [ G ; Γ ⊢g T' ⤳* tyTPi Θ' m3 m4 U1' @ l ] /\ vp_ctx lr_vp G Θ Θ' /\
+    [ gext G (gdTy Θ lD m1) ; Γ⟪S⟫ ⊢g U1 @ m2 ] /\ [ gext G (gdTy Θ' lD m3) ; Γ⟪S⟫ ⊢g U1' @ m4 ] /\
+    [ G ; Γ ⊢ tyTPi Θ m1 m2 U1 ≈ tyTPi Θ' m3 m4 U1' @ m2 ] /\
+    (forall (ρ : kwk G Γ) A A' (h : vp_ty lr_vp (kw_G ρ) Θ⟦kw_γ ρ⟧ A A' m1),
+        LR n rec (kw_G ρ) (kw_Δ ρ) (kbody ρ U1)⦃gsingle (GTy A)⦄ (kbody ρ U1')⦃gsingle (GTy A')⦄
+           m2 (instR ρ A A' h)) /\
+    releq R (TPiRel G Γ Θ Θ' m1 m2 m3 m4 U1 U1' instR).
+Proof.
+  intros HN; revert HN.
+  destruct H as [G Γ T T' l R Hl HT HT' HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
+                | G Γ T T' l V V' R HT HT' HV HR
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR];
+    intros HN; try open_mod; agree; try ne_absurd.
+  do 5 eexists; eauto 20.
 Qed.
 
 End Inversion.

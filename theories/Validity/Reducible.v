@@ -8,7 +8,7 @@ From DeLaM.Validity Require Export ReducibleP FundamentalM.
 (** ** Validity at ω, at the identity substitutions *)
 Section AtOmega.
 Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM}.
-Context {E : GenericEq} {EL : GenericEqLaws} {LP : LRParams} {VL : VPLaws lr_vp}.
+Context {E : GenericEq} {EL : GenericEqLaws} {LP : LRParams} {VL : VPLaws lr_vp} {VN : VPNe}.
 
 Lemma VTySω_red {G Γ T T' l} : [ G ; Γ ⊢g T @ l ] -> [ G ; Γ ⊢g T' @ l ] ->
   @VCtxS EP EM E LP G Γ -> @VTySω EP EM E LP G Γ T T' -> LRtyω G Γ T T'.

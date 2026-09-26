@@ -186,6 +186,30 @@ Class VPNe (vp : VParam) := {
 It holds vacuously at `jP`. At `jM` it follows from `GenericEqM` and the
 escape of `vpM`'s P-validity (`CtxRel_escape`, the P FT's escape).
 
+Implemented shape (LogRel/Neutral.v): `VPNe` is a class over
+`(E, LP)`. Its `vpn_capp`/`vpn_tapp` take the body's typing, the
+instance equation (from the case's own instances at `(Δ, Δ')` and
+`(Δ', Δ')`) and, for `tapp`, `vp_ctx Δ Δ`: escaping `vp_ty` to the
+generic equivalence instantiates P-validity at the identity substitution,
+which needs the domain related to itself. The M instance is `VPNe_M`
+(Payload.v). Generic Validity sections carry `{VN : VPNe}`.
+
+Implementation notes (step 4):
+- `kbody ρ T := T⟦gwk_up' γ⟧⟨r⟩`, with `gwk_up' gwk_id := gwk_id`, so
+  that `kty ρ (tyCPi l T) = tyCPi l (kbody ρ T)` holds by computation
+  (`x⟦gwk_id⟧` is literally `x`, but `gwk_up gwk_id` is not
+  `gwk_id`). Composition: `gwk_up'` commutes with `gwk_comp`.
+- A world may grow the levels even at `γ = gwk_id`, so body typing moves
+  along `gwk_up' γ` on `gext G D` (`kw_gok_up`, `kw_body_ty`).
+- Symmetry flips the instance at `h` to the original one at a *derived*
+  proof (`vpl_ctx_sym h`, or for `TΠ` sym + context + level conversion,
+  `tflip_arg`). Coming back needs the instances irrelevant in the proof
+  of the domain relation, which `LR_irrel` gives on the instance family.
+- Weakening casts `Δ1⟦γ⟧⟦γ'⟧` to `Δ1⟦γ'∘γ⟧` in `vp_ty` (`vp_ty_comp`).
+- Permutations pull the arguments back along the inverse, and the round
+  trips need them deep-normal. `VPPerm` gains `vpp_ctx_dnf` and
+  `vpp_ty_dnf` (declarative at M).
+
 The other properties need no new parameter laws. They use `VPLaws`
 (sym/trans/ctx conversion/level conversion/`≡ₗ`/global weakening) and
 `VPPerm`:
@@ -255,7 +279,11 @@ The existing consequences keep their statements.
 
 In progress.
 - Step 1 (syntax) done.
+- Step 2 (typing and metatheory) done.
 - Step 3 (generic laws, declarative instance by η) done.
-- Step 2 (typing and metatheory) done. The FT at M admits its `CΠ`/`TΠ`
-  cases, flagged in `fundamentalM_us`, until step 5. Nothing else is
-  admitted.
+- Step 4 (the relation) done: `LRcpi`/`LRtpi`, `VPNe`, and every
+  property (layering, escape, stages, irrelevance and inversion,
+  symmetry, transitivity, weakening, reflection, anti-reduction, level
+  invariance, permutations).
+- The FT at M admits its `CΠ`/`TΠ` cases, flagged in `fundamentalM_us`,
+  until step 5. Nothing else is admitted.

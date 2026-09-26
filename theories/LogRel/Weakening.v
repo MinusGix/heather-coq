@@ -42,6 +42,39 @@ Proof. intros; apply whne_ty_ren, whne_ty_gwa; assumption. Qed.
 
 End KwRel.
 
+(** ** Meta-functions: the domain of [TΠ] at composite worlds *)
+
+Lemma vp_ty_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) {Δ A A' l} :
+  vp_ty lr_vp (kw_G ρ') Δ⟦kw_γ ρ⟧⟦kw_γ ρ'⟧ A A' l ->
+  vp_ty lr_vp (kw_G (kw_comp ρ ρ')) Δ⟦kw_γ (kw_comp ρ ρ')⟧ A A' l.
+Proof. cbn. rewrite gwa_comp_ctx. exact id. Qed.
+
+Lemma wf_gext_ty_inv {G Δ i l} : [ ⊢ gext G (gdTy Δ i l) ] -> [ G ; Δ ⊢[ lD ] ] /\ lwf (gL G) l.
+Proof. intros H; inversion H; subst; auto. Qed.
+
+(** The extended global context of a world. *)
+Lemma kw_glob_ctx {G Γ} (ρ : kwk G Γ) : [ ⊢ gext (kw_G ρ) gdCtx ].
+Proof. apply wfg_ctx, kw_glob. Qed.
+Lemma kw_glob_ty {G Γ} (ρ : kwk G Γ) {Δ l} : [ ⊢ gext G (gdTy Δ lD l) ] ->
+  [ ⊢ gext (kw_G ρ) (gdTy Δ⟦kw_γ ρ⟧ lD l) ].
+Proof.
+  intros H. destruct (wf_gext_ty_inv H) as [HΔ Hl].
+  apply wfg_ty; [apply kw_glob | exact (gwa_ctx (kw_gok ρ) (kw_glob ρ) HΔ) | right; reflexivity | exact (kw_lwf ρ Hl)].
+Qed.
+
+Lemma kw_body_ty_c {G Γ} (ρ : kwk G Γ) {T l} : [ gext G gdCtx ; Γ⟪S⟫ ⊢g T @ l ] ->
+  [ gext (kw_G ρ) gdCtx ; (kw_Δ ρ)⟪S⟫ ⊢g kbody ρ T @ l ].
+Proof.
+  intros H. pose proof (kw_body_ty ρ (D := gdCtx) (T := T) (l := l)) as X. rewrite gdecl_gwa_ctx in X.
+  exact (X (kw_glob_ctx ρ) H).
+Qed.
+Lemma kw_body_ty_t {G Γ} (ρ : kwk G Γ) {Δ l1 T l} : [ gext G (gdTy Δ lD l1) ; Γ⟪S⟫ ⊢g T @ l ] ->
+  [ gext (kw_G ρ) (gdTy Δ⟦kw_γ ρ⟧ lD l1) ; (kw_Δ ρ)⟪S⟫ ⊢g kbody ρ T @ l ].
+Proof.
+  intros H. pose proof (kw_body_ty ρ (D := gdTy Δ lD l1) (T := T) (l := l)) as X. rewrite gdecl_gwa_ty in X.
+  exact (X (kw_glob_ty ρ (ctx_glob _ _ _ (ctx_of_ty H))) H).
+Qed.
+
 (** ** The statement *)
 
 Definition Pwk n := forall G Γ T T' l R,
@@ -75,7 +108,10 @@ Proof.
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
                     HA HA' HB HB' HAA HBB domAd codAd HR
-                | G Γ T T' l R Hj HM].
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR].
   - exists (NatRel (kw_G ρ) (kw_Δ ρ)). split.
     + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
       rewrite kty_tyNat in X, X'.
@@ -133,6 +169,69 @@ Proof.
       exact (HK (kw_comp ρ ρ') a a' ha la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1').
   - destruct (ModRel_kwk ρ HM) as (R' & HM' & HR'). exists R'.
     split; [now apply LRmod | exact HR'].
+  - (* CΠ: the instances at composite worlds *)
+    set (instR' := fun (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) Δ Δ' (h : vp_ctx lr_vp (kw_G ρ') Δ Δ') =>
+                     instR (kw_comp ρ ρ') Δ Δ' h).
+    pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
+    rewrite kty_tyCPi in X, X'.
+    exists (CPiRel (kw_G ρ) (kw_Δ ρ) l1 l2 (kbody ρ T1) (kbody ρ T1') instR'). split.
+    + eapply (LRcpi n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ T) (kty ρ T') l l1 l2
+                (kbody ρ T1) (kbody ρ T1') instR').
+      * exact Hj.
+      * exact (kw_lequiv ρ Hl).
+      * exact (kw_lequiv ρ Hl2).
+      * exact (kw_lwf ρ Hw1).
+      * exact X.
+      * exact X'.
+      * exact (kw_body_ty_c ρ HT1).
+      * exact (kw_body_ty_c ρ HT1').
+      * pose proof (kw_geq_ty ρ Hgeq) as Y. rewrite !kty_tyCPi in Y. exact Y.
+      * intros ρ' Δ Δ' h. subst instR'; cbn beta.
+        rewrite <- !kbody_comp. exact (instAd (kw_comp ρ ρ') Δ Δ' h).
+      * apply releq_refl.
+    + intros t t' Ht. apply HR in Ht.
+      destruct Ht as (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK).
+      pose proof (kw_tmred ρ Hw) as Y. pose proof (kw_tmred ρ Hw') as Y'.
+      pose proof (kw_geq_tm ρ Heq) as Z. pose proof (kw_geq_tm ρ Heq') as Z'.
+      rewrite kty_tyCPi in Y, Y', Z, Z'.
+      exists (ktm ρ w), (ktm ρ w').
+      refine (conj Y (conj Y' (conj (whnf_kw ρ _ Hnf) (conj (whnf_kw ρ _ Hnf') (conj Z (conj Z' _)))))).
+      intros ρ' Δ Δ' h. subst instR'; cbn beta. rewrite <- !ktm_comp.
+      exact (HK (kw_comp ρ ρ') Δ Δ' h).
+  - (* TΠ: likewise, the domain moved along the composite *)
+    set (instR' := fun (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) A A'
+                     (h : vp_ty lr_vp (kw_G ρ') Δ1⟦kw_γ ρ⟧⟦kw_γ ρ'⟧ A A' l1) =>
+                     instR (kw_comp ρ ρ') A A' (vp_ty_comp ρ ρ' h)).
+    pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
+    rewrite kty_tyTPi in X, X'.
+    exists (TPiRel (kw_G ρ) (kw_Δ ρ) Δ1⟦kw_γ ρ⟧ Δ1'⟦kw_γ ρ⟧ l1 l2 l3 l4 (kbody ρ T1) (kbody ρ T1') instR').
+    split.
+    + eapply (LRtpi n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ T) (kty ρ T') l Δ1⟦kw_γ ρ⟧ Δ1'⟦kw_γ ρ⟧
+                l1 l2 l3 l4 (kbody ρ T1) (kbody ρ T1') instR').
+      * exact Hj.
+      * exact (kw_lequiv ρ Hl).
+      * exact (kw_lequiv ρ Hl3).
+      * exact (kw_lequiv ρ Hl4).
+      * exact (kw_lwf ρ Hw1).
+      * exact (kw_lwf ρ Hw2).
+      * exact X.
+      * exact X'.
+      * exact (vpl_ctx_gwk (kw_gok ρ) (kw_glob ρ) HΔ).
+      * exact (kw_body_ty_t ρ HT1).
+      * exact (kw_body_ty_t ρ HT1').
+      * pose proof (kw_geq_ty ρ Hgeq) as Y. rewrite !kty_tyTPi in Y. exact Y.
+      * intros ρ' A A' h. subst instR'; cbn beta.
+        rewrite <- !kbody_comp. exact (instAd (kw_comp ρ ρ') A A' (vp_ty_comp ρ ρ' h)).
+      * apply releq_refl.
+    + intros t t' Ht. apply HR in Ht.
+      destruct Ht as (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK).
+      pose proof (kw_tmred ρ Hw) as Y. pose proof (kw_tmred ρ Hw') as Y'.
+      pose proof (kw_geq_tm ρ Heq) as Z. pose proof (kw_geq_tm ρ Heq') as Z'.
+      rewrite kty_tyTPi in Y, Y', Z, Z'.
+      exists (ktm ρ w), (ktm ρ w').
+      refine (conj Y (conj Y' (conj (whnf_kw ρ _ Hnf) (conj (whnf_kw ρ _ Hnf') (conj Z (conj Z' _)))))).
+      intros ρ' A A' h. subst instR'; cbn beta. rewrite <- !ktm_comp.
+      exact (HK (kw_comp ρ ρ') A A' (vp_ty_comp ρ ρ' h)).
 Qed.
 
 Theorem LR_kwk n : Pwk n.

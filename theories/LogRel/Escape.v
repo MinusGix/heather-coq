@@ -84,7 +84,10 @@ Proof.
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
                     HA HA' HB HB' HAA HBB domAd codAd HR
-                | G Γ T T' l R Hj HM].
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR].
   all: try solve [exact (ModRel_escape_ty HM)].
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
@@ -93,6 +96,8 @@ Proof.
     + exact Hl.
   - now apply gne_ty_geq.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_pi; auto using lequiv_sym.
+  - eapply geq_ty_lconv; [exact Hgeq | exact Hl].
+  - eapply geq_ty_lconv; [exact Hgeq | exact Hl].
 Qed.
 
 (** ** Escape for terms *)
@@ -106,7 +111,10 @@ Proof.
                 | G Γ T T' l V V' R HT HT' HV HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
                     HA HA' HB HB' HAA HBB domAd codAd HR
-                | G Γ T T' l R Hj HM];
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR];
     intros t t' Htt; first [exact (ModRel_escape_tm HM _ _ Htt) | apply HR in Htt].
   - (* Nat *)
     destruct Htt as [t t' w w' Hw Hw' Heq _].
@@ -141,6 +149,26 @@ Proof.
       by (apply geq_ty_sound, geq_ty_pi; auto using lequiv_sym).
     assert (Hw'' : [ G ; Γ ⊢g t' ⤳* w' : tyPi l1 l2 A B @ lmax l1 l2 ]).
     { eapply tmred_conv; [apply ge_typeof | exact Hw' | now apply eqty_sym]. }
+    repeat split.
+    + eapply conv_tm; [apply Hw | exact HTP | exact Hl].
+    + eapply conv_tm; [apply Hw'' | exact HTP | exact Hl].
+    + eapply conv_geq_tm; [eapply geq_tm_exp; [exact Hw | exact Hw'' | exact Heq]
+                          | apply eqty_sym, HTP | exact Hl].
+  - (* CΠ *)
+    destruct Htt as (w & w' & Hw & Hw' & _ & _ & Heq & _ & _).
+    assert (HTP : [ G ; Γ ⊢g T ≅ tyCPi l1 T1 @ l ]) by apply HT.
+    assert (Hw'' : [ G ; Γ ⊢g t' ⤳* w' : tyCPi l1 T1 @ l1 ]).
+    { eapply tmred_conv; [apply ge_typeof | exact Hw' | apply eqty_sym, geq_ty_sound, Hgeq]. }
+    repeat split.
+    + eapply conv_tm; [apply Hw | exact HTP | exact Hl].
+    + eapply conv_tm; [apply Hw'' | exact HTP | exact Hl].
+    + eapply conv_geq_tm; [eapply geq_tm_exp; [exact Hw | exact Hw'' | exact Heq]
+                          | apply eqty_sym, HTP | exact Hl].
+  - (* TΠ *)
+    destruct Htt as (w & w' & Hw & Hw' & _ & _ & Heq & _ & _).
+    assert (HTP : [ G ; Γ ⊢g T ≅ tyTPi Δ1 l1 l2 T1 @ l ]) by apply HT.
+    assert (Hw'' : [ G ; Γ ⊢g t' ⤳* w' : tyTPi Δ1 l1 l2 T1 @ l2 ]).
+    { eapply tmred_conv; [apply ge_typeof | exact Hw' | apply eqty_sym, geq_ty_sound, Hgeq]. }
     repeat split.
     + eapply conv_tm; [apply Hw | exact HTP | exact Hl].
     + eapply conv_tm; [apply Hw'' | exact HTP | exact Hl].
@@ -300,6 +328,40 @@ Proof.
   intros HA Hl H. exact (geq_ty_wk kw_wkr_l (kw_ext HA Hl) (geq_ty_gwa Hγ HG' H)).
 Qed.
 
+(** Under one global binder (the meta-functions, M5): [⇑γ], then the
+    local renaming. *)
+Lemma kw_gok_up D : gwk_ok (gwk_up' (kw_γ ρ)) (gext (kw_G ρ) (gdecl_gwa (kw_γ ρ) D)) (gext G D).
+Proof.
+  pose proof (kw_gok ρ) as [HL Hw]. split; [exact HL|]. cbn [gΨ gext].
+  destruct (kw_γ ρ) as [|γ0|γ0] eqn:Eγ; cbn [gwk_up' gdecl_gwa].
+  - assert (EΨ : gΨ (kw_G ρ) = gΨ G) by (inversion Hw; reflexivity). rewrite EΨ. constructor.
+  - apply gwkwf_up. exact Hw.
+  - apply gwkwf_up. exact Hw.
+Qed.
+
+Lemma kw_body_ctx D : [ ⊢ gext (kw_G ρ) (gdecl_gwa (kw_γ ρ) D) ] ->
+  [ gext (kw_G ρ) (gdecl_gwa (kw_γ ρ) D) ; (kw_Δ ρ)⟪S⟫ ⊢g ].
+Proof.
+  intros HG. exact (gwk_ctx (gwk_ok_step (G := kw_G ρ) (D := gdecl_gwa (kw_γ ρ) D)) HG HΔ).
+Qed.
+
+Lemma kw_wkr_g : wkr (kw_r ρ) (kw_Δ ρ)⟪S⟫ (Γ⟦kw_γ ρ⟧)⟪S⟫.
+Proof. apply wkr_gren, wk_wf_wkr, Hr. Qed.
+
+Lemma kw_body_ty {D T l} : [ ⊢ gext (kw_G ρ) (gdecl_gwa (kw_γ ρ) D) ] ->
+  [ gext G D ; Γ⟪S⟫ ⊢g T @ l ] -> [ gext (kw_G ρ) (gdecl_gwa (kw_γ ρ) D) ; (kw_Δ ρ)⟪S⟫ ⊢g kbody ρ T @ l ].
+Proof.
+  intros HG H. pose proof (gwa_ty (kw_gok_up D) HG H) as X. rewrite gwa_up'_shift in X.
+  exact (wf_ty_wkr kw_wkr_g (kw_body_ctx D HG) X).
+Qed.
+Lemma kw_body_tm {D t T l} : [ ⊢ gext (kw_G ρ) (gdecl_gwa (kw_γ ρ) D) ] ->
+  [ gext G D ; Γ⟪S⟫ ⊢g t : T @ l ] ->
+  [ gext (kw_G ρ) (gdecl_gwa (kw_γ ρ) D) ; (kw_Δ ρ)⟪S⟫ ⊢g kbodyt ρ t : kbody ρ T @ l ].
+Proof.
+  intros HG H. pose proof (gwa_tm (kw_gok_up D) HG H) as X. rewrite gwa_up'_shift in X.
+  exact (wf_tm_wkr kw_wkr_g (kw_body_ctx D HG) X).
+Qed.
+
 End Kw.
 
 (** ** Composition of Kripke weakenings on syntax *)
@@ -324,6 +386,20 @@ Lemma ktyl_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) T :
   ktyl (kw_comp ρ ρ') T = ktyl ρ' (ktyl ρ T).
 Proof. unfold ktyl; cbn. now rewrite gwa_ren_ty, gwa_comp_ty, ren_wk_comp_lift_ty. Qed.
 
+Lemma gwk_up'_comp γ' γ : gwk_comp (gwk_up' γ') (gwk_up' γ) = gwk_up' (gwk_comp γ' γ).
+Proof. destruct γ', γ; cbn; rewrite ?gwk_comp_id_r; reflexivity. Qed.
+
+Lemma kbody_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) T :
+  kbody (kw_comp ρ ρ') T = kbody ρ' (kbody ρ T).
+Proof. unfold kbody; cbn. now rewrite gwa_ren_ty, gwa_comp_ty, gwk_up'_comp, ren_wk_comp_ty. Qed.
+Lemma kbodyt_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) t :
+  kbodyt (kw_comp ρ ρ') t = kbodyt ρ' (kbodyt ρ t).
+Proof. unfold kbodyt; cbn. now rewrite gwa_ren, gwa_comp_tm, gwk_up'_comp, ren_wk_comp. Qed.
+
+Lemma gwa_comp_ctx' (Δ : ctx) {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) :
+  Δ⟦kw_γ (kw_comp ρ ρ')⟧ = Δ⟦kw_γ ρ⟧⟦kw_γ ρ'⟧.
+Proof. cbn. now rewrite gwa_comp_ctx. Qed.
+
 (** ** Kripke weakenings on constructors *)
 
 Section KwPush.
@@ -338,6 +414,19 @@ Lemma ktm_zero : ktm ρ zero = zero. Proof. unfold ktm; now rewrite gwa_zero. Qe
 Lemma ktm_succ t : ktm ρ (succ t) = succ (ktm ρ t). Proof. unfold ktm; now rewrite gwa_succ. Qed.
 Lemma ktm_lam l l' A t : ktm ρ (lam l l' A t) = lam l l' (kty ρ A) (ktml ρ t).
 Proof. unfold ktm, kty, ktml; now rewrite gwa_lam. Qed.
+(** The meta-functions (M5): the body moves under [⇑γ]. *)
+Lemma kty_tyCPi l T : kty ρ (tyCPi l T) = tyCPi l (kbody ρ T).
+Proof. unfold kty, kbody; now destruct (kw_γ ρ). Qed.
+Lemma kty_tyTPi Δ l l' T : kty ρ (tyTPi Δ l l' T) = tyTPi Δ⟦kw_γ ρ⟧ l l' (kbody ρ T).
+Proof. unfold kty, kbody; now destruct (kw_γ ρ). Qed.
+Lemma ktm_clam l t : ktm ρ (clam l t) = clam l (kbodyt ρ t).
+Proof. unfold ktm, kbodyt; now destruct (kw_γ ρ). Qed.
+Lemma ktm_tlam l l' t : ktm ρ (tlam l l' t) = tlam l l' (kbodyt ρ t).
+Proof. unfold ktm, kbodyt; now destruct (kw_γ ρ). Qed.
+Lemma ktm_capp t Δ : ktm ρ (capp t Δ) = capp (ktm ρ t) Δ⟦kw_γ ρ⟧.
+Proof. unfold ktm; now destruct (kw_γ ρ). Qed.
+Lemma ktm_tapp t A : ktm ρ (tapp t A) = tapp (ktm ρ t) A⟦kw_γ ρ⟧.
+Proof. unfold ktm; now destruct (kw_γ ρ). Qed.
 End KwPush.
 
 End Escape.
