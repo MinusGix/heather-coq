@@ -56,7 +56,8 @@ reduction), 06:434–438, 06:518–523, 06:590–595 (algorithmic conversion),
   a context variable), and `tyTPi (Δ : ctx) (l l' : lvl) (T : ty)` (`T`
   binds one global variable, `U : (Δ ⊢_P @l)`; `Δ` is outside the
   binder).
-- New `tm`: `clam (l : lvl) (t : tm)`, `capp (t : tm) (Δ : ctx)`,
+- New `tm` (superseded in M7 C1b: `clam l T t`, `tlam Δ l l' T t`, annotated
+  with their formers): `clam (l : lvl) (t : tm)`, `capp (t : tm) (Δ : ctx)`,
   `tlam (l l' : lvl) (t : tm)`, `tapp (t : tm) (T : ty)`. `t` binds one
   global variable in `clam`/`tlam`. As in the paper, `tlam` does not
   carry `Δ`, and the applications carry no type annotations (they are not

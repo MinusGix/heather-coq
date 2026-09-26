@@ -52,6 +52,7 @@ semantic rules), 08:38 (injectivity).
 - New `ty`: `tyUPi (n : nat) (l : lvl) (T : ty)`, where `T` and `l` bind
   `n` levels.
 - New `tm`: `ulam (n : nat) (l : lvl) (t : tm)`, where `t` binds `n`
+  (superseded in M7 C1b: `ulam n l T t`, annotated with its body type)
   levels, and `uapp (t : tm) (ls : list lvl)`.
 - n-ary, as in the paper. A unary `UΠ` cannot be nested: the body of
   `UΠ` must be at a finite level, and `UΠ` lives at ω. `n > 0` is a typing

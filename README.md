@@ -60,10 +60,11 @@ Milestone 6 (algorithmic convertibility) is complete; see `M6_DESIGN.md`:
 Milestone 7 (strengthening the base) is in progress; see `M7_DESIGN.md`.
 Done: consistency, the paper's direction of Static Code, canonicity at
 every type former, soundness of reduction and preservation, uniform
-statements over D and M, and decidability of type checking (at every
-layer, for syntax without the redexes `uapp (ulam …)`, `capp (clam …)`,
-`tapp (tlam …)`), with uniqueness of synthesized types and the recursor
-rules without their scope premises.
+statements over D and M, and decidability of type checking for all
+terms at every layer (the meta-level abstractions now carry their
+formers, a deviation from the paper recorded in `M1_DESIGN.md`), with
+uniqueness of synthesized types and the recursor rules without their
+scope premises.
 
 No admits, no axioms. See `M7_DESIGN.md`, `M6_DESIGN.md`, `M5_DESIGN.md`, `M4_DESIGN.md`, `M3_DESIGN.md`, `M2_DESIGN.md` and
 `M1_DESIGN.md` for decisions, deviations from the paper and gotchas.

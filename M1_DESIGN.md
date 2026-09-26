@@ -73,6 +73,12 @@ milestone.
 
 ## Deviations from the paper (all admissible or harmless)
 
+- (M7 C1b) The abstractions of the meta level carry the former they
+  introduce: `ulam n l T t`, `clam l T t`, `tlam Δ l l' T t`. The paper's
+  are unannotated. This makes type checking decidable for all terms; a
+  paper term is typed iff some annotation of it is (the rules choose the
+  body type the annotation records). See `M7_DESIGN.md` C1b.
+
 - **Level equivalence is semantic** (see above).
 - **Reduction ignores annotations** (`Syntax/Reduction.v`). The paper's
   redexes repeat annotations (`El (l⊔l') (Π^{l,l'} …)`,

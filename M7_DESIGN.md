@@ -212,10 +212,11 @@ M-only.
 
 Decidability (in `Prop`, as M6 H1) of every judgment's well-formedness
 half at every layer V, C, D, M: `[⊢ G]`, `[G; Γ ⊢[i]]`, `[G; Γ ⊢[i] T @ l]`
-and `[G; Γ ⊢[i] t : T @ l]`, for syntax in the *redex-free fragment* (J1).
-The paper states it (08:236) without proof.
+and `[G; Γ ⊢[i] t : T @ l]`. First built for the *redex-free fragment*
+(J1), then for all terms once the abstractions were annotated (C1b). The
+paper states it (08:236) without proof.
 
-#### J1. The fragment (user decision)
+#### J1. The fragment (user decision; superseded by C1b)
 
 `uapp t ls`, `capp t Δ` and `tapp t A` do not record their function's
 body type, so a checker infers it from `t`. When `t` is itself the
@@ -317,9 +318,12 @@ unchanged. Congruences get annotation premises, as `app`'s: `T ≅ T'`
 (and `Δ ≅ Δ'`) in the binder's scope. β rules as before; η rules take the
 annotation from the type. Reduction and whnfs carry the fields along.
 
-Deviation from the paper (whose `ULAM` is unannotated). To be connected
-by an erasure theorem: a paper-syntax term is typed iff some annotation
-of it is.
+Deviation from the paper (whose `ULAM` is unannotated), recorded in
+M1_DESIGN.md. The rules are the paper's with the body type (and `TΠ`'s
+context) that a derivation chooses written into the term, so a paper term
+is typed iff some annotation of it is. The old syntax is gone, so this is
+by construction, not a formal theorem (a formal one would need the
+unannotated system alongside: future, if wanted).
 
 Rejected routes, recorded: deciding the unannotated judgment directly
 (anti-substitution of levels, context and type variables up to
@@ -327,7 +331,28 @@ conversion, principal types of checked bodies; needs C2; research-level;
 `tapp (tlam …)` has the variable's context nowhere); reducing redexes
 first (unsound: a redex can be untypable while its reduct is typed).
 
-Status: in progress.
+Status: done, closed. `wf_glob_dec`, `wf_ctx_dec`, `wf_ty_dec`,
+`wf_tm_dec` (TypeCheck.v) now have no hypotheses; `infer_dec` for every
+synthesizing term, which now includes the abstractions. As built:
+- Syntax and every operation carry the annotation as the former does
+  (`T` under the same binders as the body; `Δ` in the outer scope).
+- Rules: typing reads the annotation; congruences `eqtm_ulam`/`clam`/`tlam`
+  take `T ≅ T'` (and, for `tlam`, `Δ ≅ Δ'`, and the right body typed at its
+  own binder, as `eqty_tpi`); β and η carry the annotation.
+- Metatheory: mostly mechanical (patterns with one more field, one more
+  induction hypothesis in functionality). Presupposition helpers
+  (`pre_ulam_r`, `pre_clam_r`, `pre_tlam_r`) take the annotation equation
+  and the right annotation's well-formedness.
+- Semantics: `VS_ulam`, `VS_clam` take the validity of `T ≅ T'` and relate
+  the right annotation to the left type (escape), retyping the right
+  side's reductions (`tmred_conv`). `VS_tlam` now allows a different, equal
+  binder context on the right (as `VS_tpi` does); its η body uses
+  `tmred_teta_body_ctx`. New helpers: `kw_body_eqty`, `inst_eqty` and
+  friends in MInst.
+- C1: `synth` excludes only `λ` and `box`; the abstractions synthesize
+  (`sy_ulam`, `sy_clam`, `sy_tlam`); `nlr` and its premises are removed.
+  A checked head of `uapp`/`capp`/`tapp` (`λ` or `box`) has the wrong
+  former and is refuted by head discrimination.
 
 ### C2. Deep normalization
 
@@ -356,5 +381,5 @@ Status: to design.
 
 ## Order
 
-A1, A3, B1, A2, B2, C1 (fragment, J1): done. C1b (annotated
-abstractions) in progress. Then C2–C4, each designed when reached.
+A1, A3, B1, A2, B2, C1, C1b: done. Next: C2–C4, each designed when
+reached.
