@@ -297,11 +297,37 @@ typing first); the elaboration order of `ltac:`/`I` arguments bit again.
 `repeat split` also splits `lequiv` (a conjunction of evaluations), so
 build conjunctions explicitly.
 
-#### C1b. Beyond the fragment (future)
+#### C1b. All terms: annotated abstractions (user decision: route 1)
 
-Cover the three redex shapes: annotate `uapp`/`capp`/`tapp` with the
-body type (a syntax change through the whole development), or decide the
-inverse-substitution problem, or another route.
+The abstractions carry the type former they introduce:
+`ulam n l T t : UΠ n l T`, `clam l T t : CΠ l T`,
+`tlam Δ l l' T t : TΠ Δ l l' T` (scopes as the formers': `T` under the
+`n` levels, resp. the new global). Then every redex's head synthesizes,
+and J1's exclusion goes away: type checking is decidable for all terms.
+Only `box` and `lam`s whose body is checked stay checked-only.
+
+Chosen over annotating the applications (`uapp t n l T ls`, …):
+- neutrals are unchanged, so the algorithm's neutral comparison (M6) is
+  untouched; abstractions at `UΠ`/`CΠ`/`TΠ` are compared by η, so their
+  annotations are never compared;
+- fewer mentions (27 files against 34).
+
+Rules: the typing rules read `T` (and `Δ`) off the term, premises
+unchanged. Congruences get annotation premises, as `app`'s: `T ≅ T'`
+(and `Δ ≅ Δ'`) in the binder's scope. β rules as before; η rules take the
+annotation from the type. Reduction and whnfs carry the fields along.
+
+Deviation from the paper (whose `ULAM` is unannotated). To be connected
+by an erasure theorem: a paper-syntax term is typed iff some annotation
+of it is.
+
+Rejected routes, recorded: deciding the unannotated judgment directly
+(anti-substitution of levels, context and type variables up to
+conversion, principal types of checked bodies; needs C2; research-level;
+`tapp (tlam …)` has the variable's context nowhere); reducing redexes
+first (unsound: a redex can be untypable while its reduct is typed).
+
+Status: in progress.
 
 ### C2. Deep normalization
 
@@ -330,5 +356,5 @@ Status: to design.
 
 ## Order
 
-A1, A3, B1, A2, B2, C1 (fragment, J1): done. Next: C1b, C2–C4, each
-designed when reached.
+A1, A3, B1, A2, B2, C1 (fragment, J1): done. C1b (annotated
+abstractions) in progress. Then C2–C4, each designed when reached.
