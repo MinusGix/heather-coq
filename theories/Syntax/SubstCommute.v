@@ -27,7 +27,10 @@ Proof. intros H n; unfold gwk; rewrite llk_glren; apply gren_nf, H. Qed.
 Lemma lk_uwk d : LK nftm (uwk d).
 Proof. intros n; unfold uwk; rewrite llk_ulren; apply dnftm_nftm, uren_dnf_all. Qed.
 
-#[export] Hint Resolve lk_llift lk_gwk lk_ldrop nfl_lnorm_lk lk_uwk : nf.
+Lemma lk_uwkn k d : LK nftm d -> LK nftm (uwkn k d).
+Proof. intros H; unfold uwkn; induction k; [assumption | apply lk_uwk]. Qed.
+
+#[export] Hint Resolve lk_llift lk_gwk lk_ldrop nfl_lnorm_lk lk_uwk lk_uwkn : nf.
 
 Lemma subst_nf_all :
   let Pty T := nfty T -> forall d, LK nftm d -> nfty (subst_ty T d) in

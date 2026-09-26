@@ -8,7 +8,6 @@
     [Substitution]. *)
 From DeLaM.Typing Require Export Functionality.
 
-Definition guwkn (n : nat) (σ : gsub) : gsub := Nat.iter n guwk σ.
 Definition gupn (n : nat) (σ : gsub) : gsub := Nat.iter n gup σ.
 (** A global substitution moved into branch [k]'s scope. *)
 Definition gbsub (k : nat) (σ : gsub) : gsub := gupn (br_ng k) (guwkn (br_nu k) σ).

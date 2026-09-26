@@ -6,7 +6,7 @@
     valuation of the level variables (see M1_DESIGN.md).  The paper's
     algebraic rules are lemmas.  Evaluation with every variable at 0 is a
     well-founded measure for the logical relation's recursion on levels. *)
-From Coq Require Export Arith Lia.
+From Coq Require Export Arith Lia List.
 
 Inductive lvl : Type :=
 | lvar (n : nat)
@@ -135,6 +135,17 @@ Fixpoint lvsubst (l : lvl) (φ : nat -> lvl) : lvl :=
 Definition uup (φ : nat -> lvl) : nat -> lvl :=
   fun n => match n with 0 => lvar 0 | S n => lvren (φ n) S end.
 
+Lemma map_ext_id {A} (f : A -> A) ls : (forall x, f x = x) -> map f ls = ls.
+Proof. intros H; induction ls; cbn; f_equal; auto. Qed.
+
+(** Under [n] level binders. *)
+Definition uuprn (n : nat) (ρ : nat -> nat) : nat -> nat := Nat.iter n uupr ρ.
+Definition uupn (n : nat) (φ : nat -> lvl) : nat -> lvl := Nat.iter n uup φ.
+
+(** [ls/ℓ⃗] on top of [φ]: the list's last element is index 0. *)
+Definition uext (ls : list lvl) (φ : nat -> lvl) : nat -> lvl :=
+  fun i => if i <? length ls then nth (length ls - S i) ls lzero else φ (i - length ls).
+
 (** [l/ℓ]: instantiate the most recent level variable. *)
 Definition usingle (l : lvl) : nat -> lvl :=
   fun n => match n with 0 => l | S n => lvar n end.
@@ -190,6 +201,29 @@ Lemma uup_id φ : (forall n, φ n = lvar n) -> forall n, uup φ n = lvar n.
 Proof. intros H [|n]; cbn; auto. now rewrite H. Qed.
 Lemma uup_as ρ φ : (forall n, φ n = lvar (ρ n)) -> forall n, uup φ n = lvar (uupr ρ n).
 Proof. intros H [|n]; cbn; auto. now rewrite H. Qed.
+
+(** Under [k] binders (M4: the n-ary binder of [UΠ]). *)
+Lemma uuprn_ext k ρ ρ' : (forall n, ρ n = ρ' n) -> forall n, uuprn k ρ n = uuprn k ρ' n.
+Proof. intros H; unfold uuprn; induction k; [assumption | apply uupr_ext; assumption]. Qed.
+Lemma uuprn_comp k ρ ρ' ρ'' : (forall n, ρ'' n = ρ' (ρ n)) ->
+  forall n, uuprn k ρ'' n = uuprn k ρ' (uuprn k ρ n).
+Proof. intros H; unfold uuprn; induction k; [assumption | apply uupr_comp; assumption]. Qed.
+Lemma uuprn_id k ρ : (forall n, ρ n = n) -> forall n, uuprn k ρ n = n.
+Proof. intros H; unfold uuprn; induction k; [assumption | apply uupr_id; assumption]. Qed.
+Lemma uupn_ext k φ φ' : (forall n, φ n = φ' n) -> forall n, uupn k φ n = uupn k φ' n.
+Proof. intros H; unfold uupn; induction k; [assumption | apply uup_ext; assumption]. Qed.
+Lemma uupn_uuprn k ρ φ φ' : (forall n, φ' n = φ (ρ n)) -> forall n, uupn k φ' n = uupn k φ (uuprn k ρ n).
+Proof. intros H; unfold uupn, uuprn; induction k; [assumption | apply uup_uupr; assumption]. Qed.
+Lemma uupn_lvren k φ ρ φ' : (forall n, φ' n = lvren (φ n) ρ) ->
+  forall n, uupn k φ' n = lvren (uupn k φ n) (uuprn k ρ).
+Proof. intros H; unfold uupn, uuprn; induction k; [assumption | apply uup_lvren; assumption]. Qed.
+Lemma uupn_lvsubst k φ ψ θ : (forall n, θ n = lvsubst (φ n) ψ) ->
+  forall n, uupn k θ n = lvsubst (uupn k φ n) (uupn k ψ).
+Proof. intros H; unfold uupn; induction k; [assumption | apply uup_lvsubst; assumption]. Qed.
+Lemma uupn_id k φ : (forall n, φ n = lvar n) -> forall n, uupn k φ n = lvar n.
+Proof. intros H; unfold uupn; induction k; [assumption | apply uup_id; assumption]. Qed.
+Lemma uupn_as k ρ φ : (forall n, φ n = lvar (ρ n)) -> forall n, uupn k φ n = lvar (uuprn k ρ n).
+Proof. intros H; unfold uupn, uuprn; induction k; [assumption | apply uup_as; assumption]. Qed.
 
 (** ** Typed universe renamings and substitutions: [φ : L' ⇒ L] *)
 

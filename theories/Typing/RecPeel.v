@@ -19,8 +19,6 @@ Fixpoint peelLs (b : tm) (xs : list tm) : tm :=
   match xs with nil => b | a :: xs => peelLs (peelL b a) xs end.
 
 (** The extensions: the list's last element is index 0. *)
-Definition uext (ls : list lvl) (φ : nat -> lvl) : nat -> lvl :=
-  fun i => if i <? length ls then nth (length ls - S i) ls lzero else φ (i - length ls).
 Definition gext_s (os : list gobj) (σ : gsub) : gsub :=
   fun i => if i <? length os then nth (length os - S i) os (GId 0) else σ (i - length os).
 Definition lext (xs : list tm) (e : lsub) : lsub := fold_left lcons xs e.

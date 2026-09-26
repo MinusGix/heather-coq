@@ -91,6 +91,17 @@ Proof.
 Qed.
 #[export] Hint Resolve guwk_ext guwk_gupr guwk_goren gup_gouren guwk_gouren : subst.
 
+Lemma guwkn_ext k σ τ : (forall i, σ i = τ i) -> forall i, guwkn k σ i = guwkn k τ i.
+Proof. intros H; unfold guwkn; induction k; [assumption | apply guwk_ext; assumption]. Qed.
+Lemma guwkn_gupr k ξ σ τ : (forall i, τ i = σ (ξ i)) -> forall i, guwkn k τ i = guwkn k σ (ξ i).
+Proof. intros H; unfold guwkn; induction k; [assumption | apply guwk_gupr; assumption]. Qed.
+Lemma guwkn_goren k σ τ ξ : (forall i, τ i = goren (σ i) ξ) -> forall i, guwkn k τ i = goren (guwkn k σ i) ξ.
+Proof. intros H; unfold guwkn; induction k; [assumption | apply guwk_goren; assumption]. Qed.
+Lemma guwkn_gouren k σ τ ρ : (forall i, τ i = gouren (σ i) ρ) ->
+  forall i, guwkn k τ i = gouren (guwkn k σ i) (uuprn k ρ).
+Proof. intros H; unfold guwkn, uuprn; induction k; [assumption | apply guwk_gouren; assumption]. Qed.
+#[export] Hint Resolve guwkn_ext guwkn_gupr guwkn_goren guwkn_gouren : subst.
+
 Lemma pty_uren o e ρ : uren_ty (pty o e) ρ = pty (gouren o ρ) (ulren e ρ).
 Proof. destruct o; cbn; auto. apply (proj1 uren_subst_all). intros; apply llk_ulren. Qed.
 Lemma ptm_uren o e ρ : uren_tm (ptm o e) ρ = ptm (gouren o ρ) (ulren e ρ).
@@ -116,6 +127,10 @@ Proof.
   apply uren_gsubst_tm; reflexivity.
 Qed.
 #[export] Hint Resolve uwk_gsubst : subst.
+Lemma uwkn_gsubst k d d' σ : (forall n, llk d' n = gsubst_tm (llk d n) σ) ->
+  forall n, llk (uwkn k d') n = gsubst_tm (llk (uwkn k d) n) (guwkn k σ).
+Proof. intros H; unfold uwkn, guwkn; induction k; [assumption | apply uwk_gsubst; assumption]. Qed.
+#[export] Hint Resolve uwkn_gsubst : subst.
 
 Lemma gsubst_ext_all :
   let Pty T := forall σ τ, (forall i, σ i = τ i) -> gsubst_ty T σ = gsubst_ty T τ in
@@ -191,6 +206,10 @@ Qed.
 Lemma guwk_gosubst σ τ θ : (forall i, θ i = gosubst (σ i) τ) -> forall i, guwk θ i = gosubst (guwk σ i) (guwk τ).
 Proof. intros H i; unfold guwk at 1; rewrite H. apply gouren_gosubst. Qed.
 #[export] Hint Resolve gup_gosubst guwk_gosubst : subst.
+Lemma guwkn_gosubst k σ τ θ : (forall i, θ i = gosubst (σ i) τ) ->
+  forall i, guwkn k θ i = gosubst (guwkn k σ i) (guwkn k τ).
+Proof. intros H; unfold guwkn; induction k; [assumption | apply guwk_gosubst; assumption]. Qed.
+#[export] Hint Resolve guwkn_gosubst : subst.
 
 Lemma gsubst_gsubst_all :
   let Pty T := forall σ τ θ, (forall i, θ i = gosubst (σ i) τ) -> gsubst_ty (gsubst_ty T σ) τ = gsubst_ty T θ in
@@ -213,6 +232,7 @@ Fixpoint dnfty (T : ty) : Prop :=
   | tyGvar _ d => dnfl d
   | tyCTyp Δ _ => dnfctx Δ
   | tyCTrm Δ T _ => dnfctx Δ /\ dnfty T
+  | tyUPi _ _ T => dnfty T
   end
 with dnftm (t : tm) : Prop :=
   match t with
@@ -232,6 +252,7 @@ with dnftm (t : tm) : Prop :=
   | bindU b | bindG b | bindL b => dnftm b
   | elimT _ _ rb _ Δ t => dnftm rb /\ dnfctx Δ /\ dnftm t
   | elimt _ _ rb _ Δ T t => dnftm rb /\ dnfctx Δ /\ dnfty T /\ dnftm t
+  | ulam _ _ t | uapp t _ => dnftm t
   end
 with dnfctx (Γ : ctx) : Prop :=
   match Γ with cnil | cvar _ => True | cext Γ A _ => dnfctx Γ /\ dnfty A end
@@ -261,6 +282,8 @@ Proof.
   { intros σ H [|i]; cbn; auto. now rewrite H. }
   assert (Huw : forall σ, (forall i, σ i = GId i) -> forall i, guwk σ i = GId i).
   { intros σ H i; unfold guwk; now rewrite H. }
+  assert (Huwn : forall k σ, (forall i, σ i = GId i) -> forall i, guwkn k σ i = GId i).
+  { intros k σ H; unfold guwkn; induction k; [assumption | apply Huw; assumption]. }
   syn_start3; try lk_cases_dnf; cbn in *; try tauto;
     try solve [f_equal; intuition eauto].
   all: match goal with Hs : forall i, ?σ i = GId i |- context [?σ ?u] => rewrite Hs; cbn end;
@@ -399,7 +422,9 @@ Lemma lk_dnf_ldrop k d : LK dnftm d -> LK dnftm (ldrop k d).
 Proof. intros H n; rewrite llk_ldrop; apply H. Qed.
 Lemma lk_dnf_uwk d : LK dnftm (uwk d).
 Proof. intros n; unfold uwk; rewrite llk_ulren; apply uren_dnf_all. Qed.
-#[export] Hint Resolve lk_dnf_llift lk_dnf_gwk lk_dnf_ldrop dnfl_lnorm_lk lk_dnf_uwk : nf.
+Lemma lk_dnf_uwkn k d : LK dnftm d -> LK dnftm (uwkn k d).
+Proof. intros H; unfold uwkn; induction k; [assumption | apply lk_dnf_uwk]. Qed.
+#[export] Hint Resolve lk_dnf_llift lk_dnf_gwk lk_dnf_ldrop dnfl_lnorm_lk lk_dnf_uwk lk_dnf_uwkn : nf.
 
 Lemma subst_dnf_all :
   let Pty T := dnfty T -> forall d, LK dnftm d -> dnfty (subst_ty T d) in
@@ -437,6 +462,8 @@ Proof.
   { intros σ H [|i]; cbn; auto using dnfo_goren. }
   assert (Huw : forall σ, (forall i, dnfo (σ i)) -> forall i, dnfo (guwk σ i)).
   { intros σ H i; apply dnfo_gouren. }
+  assert (Huwn : forall k σ, (forall i, dnfo (σ i)) -> forall i, dnfo (guwkn k σ i)).
+  { intros k σ H; unfold guwkn; induction k; [assumption | apply Huw; assumption]. }
   intros Pty Ptm Pctx; apply syn_ind; subst Pty Ptm Pctx; cbn beta; intros; try exact I;
     cbn in *; intuition auto using dnfl_lcons'.
   all: match goal with Hs : forall i, dnfo (?σ i) |- context [?σ ?u] =>

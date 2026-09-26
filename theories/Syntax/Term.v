@@ -25,6 +25,7 @@ Inductive ty : Type :=
 | tyGvar (U : nat) (d : lsub)             (* U^δ *)
 | tyCTyp (Δ : ctx) (l : lvl)              (* □(Δ ⊢ @l): code of types *)
 | tyCTrm (Δ : ctx) (T : ty) (l : lvl)     (* □(Δ ⊢ T @l): code of terms; T in Δ *)
+| tyUPi (n : nat) (l : lvl) (T : ty)      (* UΠ ℓ⃗. T @ l, |ℓ⃗| = n   l, T: +n levels *)
 with tm : Type :=
 | var (n : nat)
 | tmErr
@@ -56,6 +57,9 @@ with tm : Type :=
     (* elim_Typ^{l1,l2} M⃗ b⃗ l Δ t *)
 | elimt (l1 l2 : lvl) (rb : tm) (l : lvl) (Δ : ctx) (T : ty) (t : tm)
     (* elim_Trm^{l1,l2} M⃗ b⃗ l Δ T t        T in Δ *)
+(* universe polymorphism (M4) *)
+| ulam (n : nat) (l : lvl) (t : tm)       (* Λ^l ℓ⃗. t, |ℓ⃗| = n    l, t: +n levels *)
+| uapp (t : tm) (ls : list lvl)           (* t $ l⃗ *)
 with ctx : Type :=
 | cnil
 | cvar (g : nat)
@@ -133,6 +137,7 @@ Fixpoint ren_ty (T : ty) (r : rsub) {struct T} : ty :=
   | tyGvar U d => tyGvar U (lren d r)
   | tyCTyp Δ l => tyCTyp Δ l
   | tyCTrm Δ T l => tyCTrm Δ T l
+  | tyUPi n l T => tyUPi n l (ren_ty T r)
   end
 with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   match t with
@@ -156,6 +161,8 @@ with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   | bindL b => bindL (ren_tm b (rlift r))
   | elimT l1 l2 rb l Δ t => elimT l1 l2 (ren_tm rb r) l Δ (ren_tm t r)
   | elimt l1 l2 rb l Δ T t => elimt l1 l2 (ren_tm rb r) l Δ T (ren_tm t r)
+  | ulam n l t => ulam n l (ren_tm t r)
+  | uapp t ls => uapp (ren_tm t r) ls
   end
 with lren (d : lsub) (r : rsub) {struct d} : lsub :=
   match d with
@@ -184,6 +191,7 @@ Fixpoint gren_ty (T : ty) (ξ : nat -> nat) {struct T} : ty :=
   | tyGvar U d => tyGvar (ξ U) (glren d ξ)
   | tyCTyp Δ l => tyCTyp (gcren Δ ξ) l
   | tyCTrm Δ T l => tyCTrm (gcren Δ ξ) (gren_ty T ξ) l
+  | tyUPi n l T => tyUPi n l (gren_ty T ξ)
   end
 with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   match t with
@@ -208,6 +216,8 @@ with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   | bindL b => bindL (gren_tm b ξ)
   | elimT l1 l2 rb l Δ t => elimT l1 l2 (gren_tm rb ξ) l (gcren Δ ξ) (gren_tm t ξ)
   | elimt l1 l2 rb l Δ T t => elimt l1 l2 (gren_tm rb ξ) l (gcren Δ ξ) (gren_ty T ξ) (gren_tm t ξ)
+  | ulam n l t => ulam n l (gren_tm t ξ)
+  | uapp t ls => uapp (gren_tm t ξ) ls
   end
 with gcren (Γ : ctx) (ξ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -233,6 +243,7 @@ Fixpoint uren_ty (T : ty) (ρ : nat -> nat) {struct T} : ty :=
   | tyGvar U d => tyGvar U (ulren d ρ)
   | tyCTyp Δ l => tyCTyp (ucren Δ ρ) (lvren l ρ)
   | tyCTrm Δ T l => tyCTrm (ucren Δ ρ) (uren_ty T ρ) (lvren l ρ)
+  | tyUPi n l T => tyUPi n (lvren l (uuprn n ρ)) (uren_ty T (uuprn n ρ))
   end
 with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   match t with
@@ -264,6 +275,8 @@ with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   | elimt l1 l2 rb l Δ T t =>
       elimt (lvren l1 ρ) (lvren l2 ρ) (uren_tm rb ρ) (lvren l ρ) (ucren Δ ρ) (uren_ty T ρ)
         (uren_tm t ρ)
+  | ulam n l t => ulam n (lvren l (uuprn n ρ)) (uren_tm t (uuprn n ρ))
+  | uapp t ls => uapp (uren_tm t ρ) (map (fun l => lvren l ρ) ls)
   end
 with ucren (Γ : ctx) (ρ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -273,8 +286,9 @@ with ucren (Γ : ctx) (ρ : nat -> nat) {struct Γ} : ctx :=
 with ulren (d : lsub) (ρ : nat -> nat) {struct d} : lsub :=
   match d with lshift k => lshift k | lcons d t => lcons' (ulren d ρ) (uren_tm t ρ) end.
 
-(** A local substitution moved under one level binder. *)
+(** A local substitution moved under one level binder, and under [n]. *)
 Definition uwk (d : lsub) : lsub := ulren d S.
+Definition uwkn (n : nat) (d : lsub) : lsub := Nat.iter n uwk d.
 
 (** ** Local substitution *)
 
@@ -287,6 +301,7 @@ Fixpoint subst_ty (T : ty) (d : lsub) {struct T} : ty :=
   | tyGvar U d' => tyGvar U (lcomp d' d)
   | tyCTyp Δ l => tyCTyp Δ l
   | tyCTrm Δ T l => tyCTrm Δ T l
+  | tyUPi n l T => tyUPi n l (subst_ty T (uwkn n d))
   end
 with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   match t with
@@ -313,6 +328,8 @@ with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   | bindL b => bindL (subst_tm b (llift d))
   | elimT l1 l2 rb l Δ t => elimT l1 l2 (subst_tm rb d) l Δ (subst_tm t d)
   | elimt l1 l2 rb l Δ T t => elimt l1 l2 (subst_tm rb d) l Δ T (subst_tm t d)
+  | ulam n l t => ulam n l (subst_tm t (uwkn n d))
+  | uapp t ls => uapp (subst_tm t d) ls
   end
 with lcomp (d' : lsub) (d : lsub) {struct d'} : lsub :=       (* d' ∘ d *)
   match d' with
@@ -371,8 +388,9 @@ Definition gouren (o : gobj) (ρ : nat -> nat) : gobj :=
   | GTy T => GTy (uren_ty T ρ) | GTm t => GTm (uren_tm t ρ)
   end.
 
-(** A global substitution moved under one level binder. *)
+(** A global substitution moved under one level binder, and under [n]. *)
 Definition guwk (σ : gsub) : gsub := fun n => gouren (σ n) S.
+Definition guwkn (n : nat) (σ : gsub) : gsub := Nat.iter n guwk σ.
 
 (** Instantiation at a use site: [U^δ[σ] = σ(U)[δ[σ]]], [g[σ] = σ(g)]. *)
 Definition pty (o : gobj) (d : lsub) : ty :=
@@ -391,6 +409,7 @@ Fixpoint gsubst_ty (T : ty) (σ : gsub) {struct T} : ty :=
   | tyGvar U d => pty (σ U) (glsubst d σ)
   | tyCTyp Δ l => tyCTyp (gcsubst Δ σ) l
   | tyCTrm Δ T l => tyCTrm (gcsubst Δ σ) (gsubst_ty T σ) l
+  | tyUPi n l T => tyUPi n l (gsubst_ty T (guwkn n σ))
   end
 with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   match t with
@@ -416,6 +435,8 @@ with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   | elimT l1 l2 rb l Δ t => elimT l1 l2 (gsubst_tm rb σ) l (gcsubst Δ σ) (gsubst_tm t σ)
   | elimt l1 l2 rb l Δ T t =>
       elimt l1 l2 (gsubst_tm rb σ) l (gcsubst Δ σ) (gsubst_ty T σ) (gsubst_tm t σ)
+  | ulam n l t => ulam n l (gsubst_tm t (guwkn n σ))
+  | uapp t ls => uapp (gsubst_tm t σ) ls
   end
 with gcsubst (Γ : ctx) (σ : gsub) {struct Γ} : ctx :=
   match Γ with
@@ -441,6 +462,7 @@ Fixpoint usubst_ty (T : ty) (φ : nat -> lvl) {struct T} : ty :=
   | tyGvar U d => tyGvar U (ulsubst d φ)
   | tyCTyp Δ l => tyCTyp (ucsubst Δ φ) (lvsubst l φ)
   | tyCTrm Δ T l => tyCTrm (ucsubst Δ φ) (usubst_ty T φ) (lvsubst l φ)
+  | tyUPi n l T => tyUPi n (lvsubst l (uupn n φ)) (usubst_ty T (uupn n φ))
   end
 with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   match t with
@@ -475,6 +497,8 @@ with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   | elimt l1 l2 rb l Δ T t =>
       elimt (lvsubst l1 φ) (lvsubst l2 φ) (usubst_tm rb φ) (lvsubst l φ) (ucsubst Δ φ)
         (usubst_ty T φ) (usubst_tm t φ)
+  | ulam n l t => ulam n (lvsubst l (uupn n φ)) (usubst_tm t (uupn n φ))
+  | uapp t ls => uapp (usubst_tm t φ) (map (fun l => lvsubst l φ) ls)
   end
 with ucsubst (Γ : ctx) (φ : nat -> lvl) {struct Γ} : ctx :=
   match Γ with

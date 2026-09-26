@@ -8,6 +8,7 @@ From Coq Require Import Arith Lia.
 From DeLaM.Syntax Require Export GSubst.
 
 #[export] Hint Resolve uup_ext uup_uupr uup_lvren uup_lvsubst uup_id : subst.
+#[export] Hint Resolve uupn_ext uupn_uuprn uupn_lvren uupn_lvsubst uupn_id : subst.
 #[export] Hint Resolve lvsubst_ext lvren_lvsubst lvsubst_lvren lvsubst_lvsubst : subst.
 
 (** ** Extensionality, commutation with the local and global renamings *)
@@ -63,8 +64,8 @@ Lemma uren_as_usubst_all :
 Proof.
   assert (Hl : forall l ρ φ, (forall n, φ n = lvar (ρ n)) -> lvren l ρ = lvsubst l φ).
   { intros; now apply lvren_as_lvsubst. }
-  syn_start3; try lk_cases; cbn; try solve [f_equal; eauto using uup_as].
-  all: f_equal; try lsub_eq; eauto using uup_as.
+  syn_start3; try lk_cases; cbn; try solve [f_equal; eauto using uup_as, uupn_as].
+  all: f_equal; try lsub_eq; try (apply map_ext; intros); eauto using uup_as, uupn_as.
 Qed.
 
 Definition usubst_ren_tm t := proj1 (proj2 usubst_ren_all) t.
@@ -88,6 +89,10 @@ Proof.
   symmetry; apply uren_usubst_tm; reflexivity.
 Qed.
 #[export] Hint Resolve llift_usubst gwk_usubst uwk_usubst : subst.
+Lemma uwkn_usubst k d d' φ : (forall n, llk d' n = usubst_tm (llk d n) φ) ->
+  forall n, llk (uwkn k d') n = usubst_tm (llk (uwkn k d) n) (uupn k φ).
+Proof. intros H; unfold uwkn, uupn; induction k; [assumption | apply uwk_usubst; assumption]. Qed.
+#[export] Hint Resolve uwkn_usubst : subst.
 
 Lemma usubst_subst_all :
   let Pty T := forall d d' φ, (forall n, llk d' n = usubst_tm (llk d n) φ) ->
@@ -126,6 +131,10 @@ Lemma guwk_gousubst σ τ φ : (forall i, τ i = gousubst (σ i) φ) ->
   forall i, guwk τ i = gousubst (guwk σ i) (uup φ).
 Proof. intros H i; unfold guwk; rewrite H. symmetry; apply gousubst_gouren. Qed.
 #[export] Hint Resolve gup_gousubst guwk_gousubst : subst.
+Lemma guwkn_gousubst k σ τ φ : (forall i, τ i = gousubst (σ i) φ) ->
+  forall i, guwkn k τ i = gousubst (guwkn k σ i) (uupn k φ).
+Proof. intros H; unfold guwkn, uupn; induction k; [assumption | apply guwk_gousubst; assumption]. Qed.
+#[export] Hint Resolve guwkn_gousubst : subst.
 
 Lemma pty_usubst o e φ : usubst_ty (pty o e) φ = pty (gousubst o φ) (ulsubst e φ).
 Proof. destruct o; cbn; auto. apply (proj1 usubst_subst_all). intros; apply llk_ulsubst. Qed.

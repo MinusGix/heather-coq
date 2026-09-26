@@ -10,8 +10,6 @@ From DeLaM.Typing Require Export Declarative.
 
 (** ** Iterated lifts *)
 
-Definition uupn (n : nat) (φ : nat -> lvl) : nat -> lvl := Nat.iter n uup φ.
-Definition uuprn (n : nat) (ρ : nat -> nat) : nat -> nat := Nat.iter n uupr ρ.
 
 Lemma uupn_S n φ : uupn (S n) φ = uup (uupn n φ).
 Proof. reflexivity. Qed.

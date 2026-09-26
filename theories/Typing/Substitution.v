@@ -356,7 +356,6 @@ Ltac sub_body :=
 
 (** ** The recursors' specification under local substitution *)
 
-Definition uwkn (n : nat) (d : lsub) : lsub := Nat.iter n uwk d.
 Definition gwkn (n : nat) (d : lsub) : lsub := Nat.iter n gwk d.
 Definition lliftn (n : nat) (d : lsub) : lsub := Nat.iter n llift d.
 (** A local substitution moved into branch [k]'s scope, before its locals. *)

@@ -224,6 +224,10 @@ Definition gren_ren_tm t := proj1 (proj2 gren_ren_all) t.
     with the local and global renamings *)
 
 #[export] Hint Resolve uupr_ext uupr_comp lvren_ext lvren_lvren : subst.
+#[export] Hint Resolve uuprn_ext uuprn_comp : subst.
+(** Level lists of [uapp] (M4): pointwise. *)
+#[export] Hint Extern 2 (map _ _ = map _ _) => (rewrite ?map_map; apply map_ext; intros) : subst.
+#[export] Hint Extern 2 (map _ ?ls = ?ls) => (apply map_ext_id; intros) : subst.
 #[export] Hint Extern 1 (lvren _ _ = lvren _ _) => (apply lvren_lvren; intros; reflexivity) : subst.
 
 Lemma uren_ext_all :
@@ -294,6 +298,24 @@ Lemma uwk_gren d d' ξ : (forall n, llk d' n = gren_tm (llk d n) ξ) ->
   forall n, llk (uwk d') n = gren_tm (llk (uwk d) n) ξ.
 Proof. intros H n; unfold uwk; rewrite !llk_ulren, H. apply uren_gren_tm. Qed.
 #[export] Hint Resolve uwk_ext uwk_rcomp uwk_ren uwk_id gwk_uren uwk_uren uwk_gren : subst.
+
+Lemma uwkn_ext k d d' : (forall n, llk d n = llk d' n) -> forall n, llk (uwkn k d) n = llk (uwkn k d') n.
+Proof. intros H; unfold uwkn; induction k; [assumption | apply uwk_ext; assumption]. Qed.
+Lemma uwkn_rcomp k r d d' : (forall n, llk d' n = llk d (rlk r n)) ->
+  forall n, llk (uwkn k d') n = llk (uwkn k d) (rlk r n).
+Proof. intros H; unfold uwkn; induction k; [assumption | apply uwk_rcomp; assumption]. Qed.
+Lemma uwkn_ren k r d d' : (forall n, llk d' n = ren_tm (llk d n) r) ->
+  forall n, llk (uwkn k d') n = ren_tm (llk (uwkn k d) n) r.
+Proof. intros H; unfold uwkn; induction k; [assumption | apply uwk_ren; assumption]. Qed.
+Lemma uwkn_id k d : (forall n, llk d n = var n) -> forall n, llk (uwkn k d) n = var n.
+Proof. intros H; unfold uwkn; induction k; [assumption | apply uwk_id; assumption]. Qed.
+Lemma uwkn_uren k d d' ρ : (forall n, llk d' n = uren_tm (llk d n) ρ) ->
+  forall n, llk (uwkn k d') n = uren_tm (llk (uwkn k d) n) (uuprn k ρ).
+Proof. intros H; unfold uwkn, uuprn; induction k; [assumption | apply uwk_uren; assumption]. Qed.
+Lemma uwkn_gren k d d' ξ : (forall n, llk d' n = gren_tm (llk d n) ξ) ->
+  forall n, llk (uwkn k d') n = gren_tm (llk (uwkn k d) n) ξ.
+Proof. intros H; unfold uwkn; induction k; [assumption | apply uwk_gren; assumption]. Qed.
+#[export] Hint Resolve uwkn_ext uwkn_rcomp uwkn_ren uwkn_id uwkn_uren uwkn_gren : subst.
 
 Lemma llift_ext d d' : (forall n, llk d n = llk d' n) -> forall n, llk (llift d) n = llk (llift d') n.
 Proof. intros H [|n]; rewrite !llk_llift; auto. now rewrite H. Qed.
@@ -401,6 +423,10 @@ Proof.
   apply uren_subst_tm. intros m; apply llk_ulren.
 Qed.
 #[export] Hint Resolve uwk_subst : subst.
+Lemma uwkn_subst k d d' d'' : (forall n, llk d'' n = subst_tm (llk d n) d') ->
+  forall n, llk (uwkn k d'') n = subst_tm (llk (uwkn k d) n) (uwkn k d').
+Proof. intros H; unfold uwkn; induction k; [assumption | apply uwk_subst; assumption]. Qed.
+#[export] Hint Resolve uwkn_subst : subst.
 
 Lemma llift_subst d d' d'' : (forall n, llk d'' n = subst_tm (llk d n) d') ->
   forall n, llk (llift d'') n = subst_tm (llk (llift d) n) (llift d').
@@ -444,6 +470,9 @@ Proof.
   assert (Hu : forall r d, (forall n, llk d n = var (rlk r n)) ->
             forall n, llk (uwk d) n = var (rlk r n)).
   { intros r d H n; unfold uwk; rewrite llk_ulren, H; reflexivity. }
+  assert (Hun : forall k r d, (forall n, llk d n = var (rlk r n)) ->
+            forall n, llk (uwkn k d) n = var (rlk r n)).
+  { intros k r d H; unfold uwkn; induction k; [assumption | apply Hu; assumption]. }
   syn_start; try lk_cases;
     cbn; try solve [symmetry; auto]; try solve [f_equal; eauto].
   all: f_equal; lsub_eq; eauto.
@@ -464,6 +493,7 @@ Fixpoint nfty (T : ty) : Prop :=
   | tyEl _ t => nftm t
   | tyGvar _ d => nfl d
   | tyCTyp _ _ | tyCTrm _ _ _ => True
+  | tyUPi _ _ T => nfty T
   end
 with nftm (t : tm) : Prop :=
   match t with
@@ -480,6 +510,7 @@ with nftm (t : tm) : Prop :=
   | tmTup s t => nftm s /\ nftm t
   | bindU b | bindG b | bindL b => nftm b
   | elimT _ _ rb _ _ t | elimt _ _ rb _ _ _ t => nftm rb /\ nftm t
+  | ulam _ _ t | uapp t _ => nftm t
   end
 with nfl (d : lsub) : Prop :=
   match d with lshift _ => True | lcons d t => nfl d /\ nftm t /\ ~ labsorb d t end.

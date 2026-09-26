@@ -130,6 +130,12 @@ Proof. intros Hl H; induction l; cbn in *; f_equal; intuition. Qed.
 Lemma uup_agree L φ φ' : (forall n, n < L -> φ n = φ' n) -> forall n, n < S L -> uup φ n = uup φ' n.
 Proof. intros H [|n] Hn; cbn; [reflexivity | f_equal; apply H; lia]. Qed.
 
+Lemma uupn_agree k L φ φ' : (forall n, n < L -> φ n = φ' n) -> forall n, n < k + L -> uupn k φ n = uupn k φ' n.
+Proof.
+  intros H; unfold uupn; induction k; [exact H|].
+  intros n Hn; apply (uup_agree (k + L)); [exact IHk | exact Hn].
+Qed.
+
 Lemma lwf_us_ext_all :
   (forall T L φ φ', ty_lwf L T -> (forall n, n < L -> φ n = φ' n) -> usubst_ty T φ = usubst_ty T φ') /\
   (forall t L φ φ', tm_lwf L t -> (forall n, n < L -> φ n = φ' n) -> usubst_tm t φ = usubst_tm t φ') /\
@@ -139,7 +145,11 @@ Proof.
   apply syn_ind; intros; cbn in *; try reflexivity;
     repeat match goal with H : _ /\ _ |- _ => destruct H end;
     f_equal; eauto using lvsubst_ext_lwf.
-  eapply H; [eassumption | apply uup_agree; assumption].
+  all: try solve [eapply H; [eassumption | apply uup_agree; assumption]].
+  all: try solve [eapply lvsubst_ext_lwf; [eassumption | apply uupn_agree; assumption]].
+  all: try solve [eapply H; [eassumption | apply uupn_agree; assumption]].
+  apply map_ext_in; intros l Hl. eapply lvsubst_ext_lwf; [|eassumption].
+  eapply Forall_forall; eassumption.
 Qed.
 
 Lemma lwf_us_ext_ty {L φ φ' T} : ty_lwf L T -> (forall n, n < L -> φ n = φ' n) -> T[φ]ᵤ = T[φ']ᵤ.

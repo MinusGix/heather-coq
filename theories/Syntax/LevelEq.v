@@ -17,6 +17,7 @@ Fixpoint ty_leq (T T' : ty) {struct T} : Prop :=
   | tyGvar U d, tyGvar U' d' => U = U' /\ lsub_leq d d'
   | tyCTyp Δ l, tyCTyp Δ' l' => ctx_leq Δ Δ' /\ leqv l l'
   | tyCTrm Δ A l, tyCTrm Δ' A' l' => ctx_leq Δ Δ' /\ ty_leq A A' /\ leqv l l'
+  | tyUPi n l A, tyUPi n' l' A' => n = n' /\ leqv l l' /\ ty_leq A A'
   | _, _ => False
   end
 with tm_leq (t t' : tm) {struct t} : Prop :=
@@ -47,6 +48,8 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
   | elimt l1 l2 rb l Δ A t, elimt l1' l2' rb' l' Δ' A' t' =>
       leqv l1 l1' /\ leqv l2 l2' /\ tm_leq rb rb' /\ leqv l l' /\ ctx_leq Δ Δ' /\ ty_leq A A' /\
       tm_leq t t'
+  | ulam n l t, ulam n' l' t' => n = n' /\ leqv l l' /\ tm_leq t t'
+  | uapp t ls, uapp t' ls' => tm_leq t t' /\ Forall2 leqv ls ls'
   | _, _ => False
   end
 with ctx_leq (Γ Γ' : ctx) {struct Γ} : Prop :=
@@ -99,7 +102,28 @@ Proof. intros (_ & _ & H); exact H. Qed.
 Lemma leqv_lequiv L l l' : lwf L l -> lwf L l' -> leqv l l' -> lequiv L l l'.
 Proof. intros; repeat split; auto. Qed.
 
-#[export] Hint Resolve leqv_refl leqv_sym leqv_lvren leqv_lvsubst leqv_uup : leq.
+Lemma leqv_uupn k φ φ' : (forall n, leqv (φ n) (φ' n)) -> forall n, leqv (uupn k φ n) (uupn k φ' n).
+Proof. intros H; unfold uupn; induction k; [assumption | apply leqv_uup; assumption]. Qed.
+
+(** Level lists (the arguments of [uapp]), pointwise. *)
+Lemma leqvs_refl ls : Forall2 leqv ls ls.
+Proof. induction ls; constructor; auto using leqv_refl. Qed.
+Lemma leqvs_sym ls ls' : Forall2 leqv ls ls' -> Forall2 leqv ls' ls.
+Proof. induction 1; constructor; auto using leqv_sym. Qed.
+Lemma leqvs_trans ls1 ls2 ls3 : Forall2 leqv ls1 ls2 -> Forall2 leqv ls2 ls3 -> Forall2 leqv ls1 ls3.
+Proof.
+  intros H; revert ls3; induction H; intros ls3 H'; inversion H'; subst; constructor;
+    eauto using leqv_trans.
+Qed.
+Lemma leqvs_lvren ls ls' ρ : Forall2 leqv ls ls' ->
+  Forall2 leqv (map (fun l => lvren l ρ) ls) (map (fun l => lvren l ρ) ls').
+Proof. induction 1; cbn; constructor; auto using leqv_lvren. Qed.
+Lemma leqvs_lvsubst ls ls' φ φ' : Forall2 leqv ls ls' -> (forall n, leqv (φ n) (φ' n)) ->
+  Forall2 leqv (map (fun l => lvsubst l φ) ls) (map (fun l => lvsubst l φ') ls').
+Proof. induction 1; cbn; constructor; auto using leqv_lvsubst. Qed.
+
+#[export] Hint Resolve leqv_refl leqv_sym leqv_lvren leqv_lvsubst leqv_uup leqv_uupn : leq.
+#[export] Hint Resolve leqvs_refl leqvs_sym leqvs_lvren leqvs_lvsubst : leq.
 
 (** ** Equivalence *)
 
@@ -139,7 +163,8 @@ Lemma leq_trans_all :
   let Pl d := forall d' d'', lsub_leq d d' -> lsub_leq d' d'' -> lsub_leq d d'' in
   (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ, Pctx Γ) /\ (forall d, Pl d).
 Proof.
-  leq_start; repeat leq_cases; cbn in *; try contradiction; intuition (subst; eauto using leqv_trans).
+  leq_start; repeat leq_cases; cbn in *; try contradiction;
+    intuition (subst; eauto using leqv_trans, leqvs_trans).
 Qed.
 
 (** ** Lookups and smart constructors *)
@@ -221,7 +246,9 @@ Lemma leq_gwk d d' : lsub_leq d d' -> lsub_leq (gwk d) (gwk d').
 Proof. intros H; apply (proj2 (proj2 (proj2 leq_gren_all))), H. Qed.
 Lemma leq_uwk d d' : lsub_leq d d' -> lsub_leq (uwk d) (uwk d').
 Proof. intros H; apply (proj2 (proj2 (proj2 leq_uren_all))), H. Qed.
-#[export] Hint Resolve leq_llift leq_gwk leq_uwk : leq.
+Lemma leq_uwkn k d d' : lsub_leq d d' -> lsub_leq (uwkn k d) (uwkn k d').
+Proof. intros H; unfold uwkn; induction k; [assumption | apply leq_uwk; assumption]. Qed.
+#[export] Hint Resolve leq_llift leq_gwk leq_uwk leq_uwkn : leq.
 
 Lemma leq_subst_all :
   let Pty T := forall T' d d', lsub_leq d d' -> ty_leq T T' -> ty_leq (subst_ty T d) (subst_ty T' d') in
@@ -259,7 +286,9 @@ Proof.
 Qed.
 Lemma pctx_leq o o' : gobj_leq o o' -> ctx_leq (pctx o) (pctx o').
 Proof. destruct o, o'; cbn; try contradiction; intros H; subst; auto. Qed.
-#[export] Hint Resolve gobj_leq_gup gobj_leq_guwk pty_leq ptm_leq pctx_leq : leq.
+Lemma gobj_leq_guwkn k σ σ' : (forall i, gobj_leq (σ i) (σ' i)) -> forall i, gobj_leq (guwkn k σ i) (guwkn k σ' i).
+Proof. intros H; unfold guwkn; induction k; [assumption | apply gobj_leq_guwk; assumption]. Qed.
+#[export] Hint Resolve gobj_leq_gup gobj_leq_guwk gobj_leq_guwkn pty_leq ptm_leq pctx_leq : leq.
 
 Lemma leq_gsubst_all :
   let Pty T := forall T' σ σ', (forall i, gobj_leq (σ i) (σ' i)) -> ty_leq T T' ->
@@ -297,6 +326,7 @@ Fixpoint ty_lwf (L : nat) (T : ty) {struct T} : Prop :=
   | tyGvar _ d => lsub_lwf L d
   | tyCTyp Δ l => ctx_lwf L Δ /\ lwf L l
   | tyCTrm Δ A l => ctx_lwf L Δ /\ ty_lwf L A /\ lwf L l
+  | tyUPi n l A => lwf (n + L) l /\ ty_lwf (n + L) A
   end
 with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   match t with
@@ -320,6 +350,8 @@ with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   | elimT l1 l2 rb l Δ t => lwf L l1 /\ lwf L l2 /\ tm_lwf L rb /\ lwf L l /\ ctx_lwf L Δ /\ tm_lwf L t
   | elimt l1 l2 rb l Δ A t =>
       lwf L l1 /\ lwf L l2 /\ tm_lwf L rb /\ lwf L l /\ ctx_lwf L Δ /\ ty_lwf L A /\ tm_lwf L t
+  | ulam n l t => lwf (n + L) l /\ tm_lwf (n + L) t
+  | uapp t ls => tm_lwf L t /\ Forall (lwf L) ls
   end
 with ctx_lwf (L : nat) (Γ : ctx) {struct Γ} : Prop :=
   match Γ with
