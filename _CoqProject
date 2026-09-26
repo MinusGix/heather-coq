@@ -101,3 +101,4 @@ theories/Validity/Reducible.v
 theories/Validity/DeclConsequences.v
 theories/Validity/AlgPrereq.v
 theories/Validity/AlgSound.v
+theories/Validity/AlgConv.v
