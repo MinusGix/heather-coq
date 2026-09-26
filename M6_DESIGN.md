@@ -231,4 +231,6 @@ only, and checks that there are as many as the `UΠ` binds: the instance
 - Step 3 in progress (`AlgStruct.v`): local weakening (`ac_wk_all`),
   global weakening along `gwk_ok` (`ac_gwk_all`) and universe
   substitution (`ac_us_all`, for any `φ`: the judgments do not look at the
-  level context) are done, closed.
+  level context) and closure under `≡ₗ` on the right (`ac_leq_all`, via
+  the simulation of reduction in `LevelRed` and the syntactic inversion
+  `mkrb_leq_inv` of bundles) are done, closed.

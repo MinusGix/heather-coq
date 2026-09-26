@@ -1,9 +1,11 @@
 (** * Structural properties of algorithmic conversion (M6_DESIGN.md step 3)
 
-    Local weakening. Each rule is a lemma over the induction hypotheses;
-    the mutual induction dispatches them. Local contexts of layer D (the
-    [Δ]s of contextual types) do not depend on the ambient context, so
-    [ac_ctx] is untouched. *)
+    Local and global weakening, universe substitution, closure under [≡ₗ].
+    Each rule is a lemma over the induction hypotheses; the mutual
+    induction dispatches them. Local contexts of layer D (the [Δ]s of
+    contextual types) do not depend on the ambient context, so local
+    weakening leaves [ac_ctx] untouched. *)
+From DeLaM.Syntax Require Export LevelRed.
 From DeLaM.Typing Require Export Algorithmic Properties GWeakening.
 
 Ltac push_ren_in H := revert H; push_ren; intros H.
@@ -1069,4 +1071,343 @@ Proof.
     | solve [eapply U_actmne_uapp; eassumption] | solve [eapply U_actmne_capp; eassumption]
     | solve [eapply U_actmne_tapp; eassumption] | solve [eapply U_actmnee_red; eassumption]
     | solve [eapply U_acs_pt; eassumption] ].
+Qed.
+
+(** ** Closure under [≡ₗ] on the right
+
+    With reflexivity, this gives the instances' [≡ₗ] laws. The right
+    side of a recursor is [≡ₗ]-related to a bundle, so it is a bundle. *)
+
+Lemma ctx_leq_trans Γ1 Γ2 Γ3 : ctx_leq Γ1 Γ2 -> ctx_leq Γ2 Γ3 -> ctx_leq Γ1 Γ3.
+Proof. apply leq_trans_all. Qed.
+Lemma lsub_leq_trans d1 d2 d3 : lsub_leq d1 d2 -> lsub_leq d2 d3 -> lsub_leq d1 d3.
+Proof. apply leq_trans_all. Qed.
+
+(** Destruct the variable a [≡ₗ] hypothesis is stuck on. *)
+Ltac lstep E :=
+  match type of E with
+  | ty_leq _ ?x => is_var x; destruct x
+  | tm_leq _ ?x => is_var x; destruct x
+  | ctx_leq _ ?x => is_var x; destruct x
+  | lsub_leq _ ?x => is_var x; destruct x
+  | context [match ?x with _ => _ end] => is_var x; destruct x
+  end; cbn [ty_leq tm_leq ctx_leq lsub_leq] in E; try contradiction.
+
+Fixpoint unwrap (n : nat) (t : tm) : tm :=
+  match n, t with
+  | S n, (bindU b | bindG b | bindL b) => unwrap n b
+  | _, _ => t
+  end.
+
+Lemma unwrap_wrap nu ng nl b : unwrap (nu + ng + nl) (wrap nu ng nl b) = b.
+Proof.
+  unfold wrap. induction nu as [|nu IH]; cbn [wrapU plus unwrap]; [|exact IH].
+  induction ng as [|ng IH']; cbn [wrapG plus unwrap]; [|exact IH'].
+  induction nl as [|nl IH'']; cbn [wrapL unwrap]; [reflexivity | exact IH''].
+Qed.
+
+Lemma leq_wrap_inv nu ng nl b x : tm_leq (wrap nu ng nl b) x -> exists b', x = wrap nu ng nl b' /\ tm_leq b b'.
+Proof.
+  unfold wrap. revert x; induction nu as [|nu IH]; intros x E; cbn [wrapU] in *.
+  - revert x E; induction ng as [|ng IH']; intros x E; cbn [wrapG] in *.
+    + revert x E; induction nl as [|nl IH'']; intros x E; cbn [wrapL] in *; [now exists x|].
+      destruct x; cbn [tm_leq] in E; try contradiction.
+      destruct (IH'' _ E) as (b' & -> & Eb). now exists b'.
+    + destruct x; cbn [tm_leq] in E; try contradiction.
+      destruct (IH' _ E) as (b' & -> & Eb). now exists b'.
+  - destruct x; cbn [tm_leq] in E; try contradiction.
+    destruct (IH _ E) as (b' & -> & Eb). now exists b'.
+Qed.
+
+Lemma tup_from_ext f g k n : (forall j, k <= j -> j < k + n -> f j = g j) -> tup_from f k n = tup_from g k n.
+Proof.
+  revert k; induction n as [|n IH]; intros k H; cbn [tup_from]; [reflexivity|].
+  f_equal; [apply H; lia | apply IH; intros j H1 H2; apply H; lia].
+Qed.
+
+Lemma leq_tup_from_inv f k n x : tm_leq (tup_from f k n) x ->
+  exists g, x = tup_from g k n /\ forall j, k <= j -> j < k + n -> tm_leq (f j) (g j).
+Proof.
+  revert k x; induction n as [|n IH]; intros k x E; cbn [tup_from] in *.
+  - lstep E. exists f; split; [reflexivity | intros; lia].
+  - lstep E. destruct E as [Ea Erest].
+    destruct (IH _ _ Erest) as (g & -> & Eg).
+    match type of Ea with tm_leq _ ?a => exists (fun j => if Nat.eqb j k then a else g j) end. split.
+    + rewrite Nat.eqb_refl. f_equal. apply tup_from_ext. intros j H1 _.
+      destruct (Nat.eqb_spec j k); [lia | reflexivity].
+    + intros j H1 H2. destruct (Nat.eqb_spec j k) as [->|Hne]; [exact Ea | apply Eg; lia].
+Qed.
+
+Lemma mkrb_leq_inv MT Mt bs rb : tm_leq (mkrb MT Mt bs) rb ->
+  exists MT2 Mt2 bs2, rb = mkrb MT2 Mt2 bs2 /\ ty_leq MT MT2 /\ ty_leq Mt Mt2 /\
+    forall k, k < 13 -> tm_leq (bs k) (bs2 k).
+Proof.
+  unfold mkrb, wrapMT, wrapMt. intros E.
+  lstep E. destruct E as [E1 E].
+  do 4 lstep E1.
+  match goal with |- context [tmTup (bindU (bindG (bindL (tmTy ?T)))) _] => exists T end.
+  lstep E. destruct E as [E2 E].
+  do 5 lstep E2.
+  match goal with |- context [tmTup (bindU (bindG (bindG (bindL (tmTy ?T))))) _] => exists T end.
+  destruct (leq_tup_from_inv _ _ _ _ E) as (g & -> & Eg).
+  exists (fun k => let '(nu, ng, nl) := br_ar k in unwrap (nu + ng + nl) (g k)).
+  split; [| split; [exact E1 | split; [exact E2 |]]].
+  - do 2 f_equal. apply tup_from_ext. intros j _ Hj. cbn in Hj.
+    specialize (Eg j (Nat.le_0_l j) Hj). destruct (br_ar j) as [[nu ng] nl].
+    destruct (leq_wrap_inv _ _ _ _ _ Eg) as (b' & -> & _). now rewrite unwrap_wrap.
+  - intros k Hk. specialize (Eg k (Nat.le_0_l k) Hk). destruct (br_ar k) as [[nu ng] nl].
+    destruct (leq_wrap_inv _ _ _ _ _ Eg) as (b' & -> & Eb). now rewrite unwrap_wrap.
+Qed.
+
+Ltac linv E := lstep E; repeat match type of E with _ /\ _ => let E' := fresh "E" in destruct E as [E' E] end.
+
+#[local] Hint Resolve leqv_trans leqvs_trans ty_leq_trans tm_leq_trans ctx_leq_trans lsub_leq_trans : lq.
+
+Definition AL_ty G Γ T T' : Prop := forall T2, ty_leq T' T2 -> ac_ty G Γ T T2.
+Definition AL_tynf G Γ T T' : Prop := forall T2, ty_leq T' T2 -> ac_tynf G Γ T T2.
+Definition AL_tyne G Γ T T' : Prop := forall T2, ty_leq T' T2 -> ac_tyne G Γ T T2.
+Definition AL_ctx G Δ Δ' : Prop := forall Δ2, ctx_leq Δ' Δ2 -> ac_ctx G Δ Δ2.
+Definition AL_tm G Γ t t' T : Prop := forall t2, tm_leq t' t2 -> ac_tm G Γ t t2 T.
+Definition AL_tmnf G Γ t t' T : Prop := forall t2, tm_leq t' t2 -> ac_tmnf G Γ t t2 T.
+Definition AL_tmne G Γ t t' T : Prop := forall t2, tm_leq t' t2 -> ac_tmne G Γ t t2 T.
+Definition AL_tmnee G Γ t t' T : Prop := forall t2, tm_leq t' t2 -> ac_tmnee G Γ t t2 T.
+Definition AL_sub G Γ d d' Θ : Prop := forall d2, lsub_leq d' d2 -> ac_sub G Γ d d2 Θ.
+
+Lemma L_act_red {G Γ T T' W W'} : reds_ty T W -> reds_ty T' W' -> whnf_ty W -> whnf_ty W' ->
+  AL_tynf G Γ W W' -> AL_ty G Γ T T'.
+Proof.
+  intros H1 H2 H3 H4 IH T2 E. destruct (reds_ty_leq _ _ _ H2 E) as (W2 & HW2 & EW).
+  eapply act_red; [exact H1 | exact HW2 | exact H3 | exact (whnf_ty_leq _ _ EW H4) | exact (IH _ EW)].
+Qed.
+
+Lemma L_actnf_nat {G Γ} : AL_tynf G Γ tyNat tyNat.
+Proof. intros T2 E; linv E. apply actnf_nat. Qed.
+Lemma L_actnf_U {G Γ l l'} : leqv l l' -> AL_tynf G Γ (tyU l) (tyU l').
+Proof. intros Hl T2 E; linv E. apply actnf_U; eauto with lq. Qed.
+Lemma L_actnf_pi {G Γ l1 l2 l3 l4 A A' B B'} : leqv l1 l3 -> leqv l2 l4 ->
+  AL_ty G Γ A A' -> AL_ty G (Γ ,, A @ l1) B B' -> AL_tynf G Γ (tyPi l1 l2 A B) (tyPi l3 l4 A' B').
+Proof. intros H13 H24 IHA IHB T2 E; linv E. apply actnf_pi; eauto with lq. Qed.
+Lemma L_actnf_ne {G Γ V V'} : AL_tyne G Γ V V' -> AL_tynf G Γ V V'.
+Proof. intros IH T2 E. apply actnf_ne, IH, E. Qed.
+Lemma L_actnf_CTyp {G Γ Δ0 Δ0' l l'} : AL_ctx G Δ0 Δ0' -> leqv l l' ->
+  AL_tynf G Γ (tyCTyp Δ0 l) (tyCTyp Δ0' l').
+Proof. intros IH Hl T2 E; linv E. apply actnf_CTyp; eauto with lq. Qed.
+Lemma L_actnf_CTrm {G Γ Δ0 Δ0' T T' l l'} : AL_ctx G Δ0 Δ0' -> AL_ty G Δ0 T T' -> leqv l l' ->
+  AL_tynf G Γ (tyCTrm Δ0 T l) (tyCTrm Δ0' T' l').
+Proof. intros IH IHT Hl T2 E; linv E. apply actnf_CTrm; eauto with lq. Qed.
+Lemma L_actnf_upi {G Γ n l l' T T'} : leqv l l' -> AL_ty (gctx_uwk n G) Γ⟨ush n⟩ᵤ T T' ->
+  AL_tynf G Γ (tyUPi n l T) (tyUPi n l' T').
+Proof. intros Hl IH T2 E; linv E. subst. apply actnf_upi; eauto with lq. Qed.
+Lemma L_actnf_cpi {G Γ l l' T T'} : leqv l l' -> AL_ty (gext G gdCtx) Γ⟪S⟫ T T' ->
+  AL_tynf G Γ (tyCPi l T) (tyCPi l' T').
+Proof. intros Hl IH T2 E; linv E. apply actnf_cpi; eauto with lq. Qed.
+Lemma L_actnf_tpi {G Γ Δ0 Δ0' l1 l2 l3 l4 T T'} : AL_ctx G Δ0 Δ0' -> leqv l1 l3 -> leqv l2 l4 ->
+  AL_ty (gext G (gdTy Δ0 lD l1)) Γ⟪S⟫ T T' -> AL_tynf G Γ (tyTPi Δ0 l1 l2 T) (tyTPi Δ0' l3 l4 T').
+Proof. intros IHc H13 H24 IH T2 E; linv E. apply actnf_tpi; eauto with lq. Qed.
+
+Lemma L_actne_gvar {G Γ U Δ0 i' l d d'} : in_gctx (gΨ G) U (gdTy Δ0 i' l) -> AL_sub G Γ d d' Δ0 ->
+  AL_tyne G Γ (tyGvar U d) (tyGvar U d').
+Proof. intros Hin IH T2 E; linv E. subst. eapply actne_gvar; [exact Hin | eauto]. Qed.
+Lemma L_actne_El {G Γ l l' ν ν' W} : leqv l l' -> AL_tmnee G Γ ν ν' W -> AL_tyne G Γ (tyEl l ν) (tyEl l' ν').
+Proof. intros Hl IH T2 E; linv E. eapply actne_El; eauto with lq. Qed.
+
+Lemma L_acc_nil {G} : AL_ctx G cnil cnil.
+Proof. intros Δ2 E; linv E. apply acc_nil. Qed.
+Lemma L_acc_var {G g} : AL_ctx G (cvar g) (cvar g).
+Proof. intros Δ2 E; linv E. subst. apply acc_var. Qed.
+Lemma L_acc_ext {G Γ Γ' A A' l l'} : AL_ctx G Γ Γ' -> AL_ty G Γ A A' -> leqv l l' ->
+  AL_ctx G (Γ ,, A @ l) (Γ' ,, A' @ l').
+Proof. intros IH IHA Hl Δ2 E; linv E. apply acc_ext; eauto with lq. Qed.
+
+Lemma L_actm_red {G Γ t t' T w w' W} : reds_ty T W -> whnf_ty W -> reds t w -> reds t' w' ->
+  whnf w -> whnf w' -> AL_tmnf G Γ w w' W -> AL_tm G Γ t t' T.
+Proof.
+  intros H1 H2 H3 H4 H5 H6 IH t2 E. destruct (reds_leq _ _ _ H4 E) as (w2 & Hw2 & Ew).
+  eapply actm_red; [exact H1 | exact H2 | exact H3 | exact Hw2 | exact H5 | exact (whnf_leq _ _ Ew H6)
+                   | exact (IH _ Ew)].
+Qed.
+
+Lemma L_actmnf_code_nat {G Γ l} : AL_tmnf G Γ tmNat tmNat (tyU l).
+Proof. intros t2 E; linv E. apply actmnf_code_nat. Qed.
+Lemma L_actmnf_code_U {G Γ l k k'} : leqv k k' -> AL_tmnf G Γ (tmU k) (tmU k') (tyU l).
+Proof. intros Hk t2 E; linv E. apply actmnf_code_U; eauto with lq. Qed.
+Lemma L_actmnf_code_pi {G Γ l l1 l2 l3 l4 s s' t t'} : leqv l1 l3 -> leqv l2 l4 ->
+  AL_tm G Γ s s' (tyU l1) -> AL_tm G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) ->
+  AL_tmnf G Γ (tmPi l1 l2 s t) (tmPi l3 l4 s' t') (tyU l).
+Proof. intros H13 H24 IHs IHt t2 E; linv E. apply actmnf_code_pi; eauto with lq. Qed.
+Lemma L_actmnf_zero {G Γ} : AL_tmnf G Γ zero zero tyNat.
+Proof. intros t2 E; linv E. apply actmnf_zero. Qed.
+Lemma L_actmnf_succ {G Γ t t'} : AL_tm G Γ t t' tyNat -> AL_tmnf G Γ (succ t) (succ t') tyNat.
+Proof. intros IH t2 E; linv E. apply actmnf_succ; eauto. Qed.
+Lemma L_actmnf_ne {G Γ ν ν' W W'} : posty W -> AL_tmnee G Γ ν ν' W' -> AL_tmnf G Γ ν ν' W.
+Proof. intros Hp IH t2 E. eapply actmnf_ne; [exact Hp | exact (IH _ E)]. Qed.
+Lemma L_actmnf_eta {G Γ l l' A B w w'} :
+  AL_tm G (Γ ,, A @ l) (app w⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0))
+                       (app w'⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0)) B ->
+  AL_tmnf G Γ w w' (tyPi l l' A B).
+Proof.
+  intros IH t2 E. apply actmnf_eta, IH. cbn [tm_leq].
+  repeat split; first [apply leq_ren_tm, E | apply leqv_refl | apply ty_leq_refl].
+Qed.
+Lemma L_actmnf_ueta {G Γ n l T w w'} :
+  AL_tm (gctx_uwk n G) Γ⟨ush n⟩ᵤ (uapp w⟨ush n⟩ᵤ (ubvars n)) (uapp w'⟨ush n⟩ᵤ (ubvars n)) T ->
+  AL_tmnf G Γ w w' (tyUPi n l T).
+Proof. intros IH t2 E. apply actmnf_ueta, IH. split; [apply leq_uren_tm, E | apply leqvs_refl]. Qed.
+Lemma L_actmnf_ceta {G Γ l T w w'} :
+  AL_tm (gext G gdCtx) Γ⟪S⟫ (capp w⟪S⟫ (cvar 0)) (capp w'⟪S⟫ (cvar 0)) T ->
+  AL_tmnf G Γ w w' (tyCPi l T).
+Proof. intros IH t2 E. apply actmnf_ceta, IH. split; [apply leq_gren_tm, E | reflexivity]. Qed.
+Lemma L_actmnf_teta {G Γ Δ0 l l' T w w'} :
+  AL_tm (gext G (gdTy Δ0 lD l)) Γ⟪S⟫ (tapp w⟪S⟫ (tyGvar 0 (lshift 0))) (tapp w'⟪S⟫ (tyGvar 0 (lshift 0))) T ->
+  AL_tmnf G Γ w w' (tyTPi Δ0 l l' T).
+Proof. intros IH t2 E. apply actmnf_teta, IH. split; [apply leq_gren_tm, E | apply ty_leq_refl]. Qed.
+Lemma L_actmnf_boxT {G Γ Δ0 l T T'} : ty_leq T T' -> AL_tmnf G Γ (boxT T) (boxT T') (tyCTyp Δ0 l).
+Proof. intros H t2 E; linv E. apply actmnf_boxT; eauto with lq. Qed.
+Lemma L_actmnf_boxt {G Γ Δ0 A l t t'} : tm_leq t t' -> AL_tmnf G Γ (boxt t) (boxt t') (tyCTrm Δ0 A l).
+Proof. intros H t2 E; linv E. apply actmnf_boxt; eauto with lq. Qed.
+
+Lemma L_actmne_var {G Γ n T l} : in_ctx Γ n T l -> AL_tmne G Γ (var n) (var n) T.
+Proof. intros Hin t2 E; linv E. subst. eapply actmne_var; exact Hin. Qed.
+Lemma L_actmne_gvar {G Γ u Δ0 i' T l d d'} : in_gctx (gΨ G) u (gdTm Δ0 i' T l) -> AL_sub G Γ d d' Δ0 ->
+  AL_tmne G Γ (gvar u d) (gvar u d') T[d].
+Proof. intros Hin IH t2 E; linv E. subst. eapply actmne_gvar; [exact Hin | eauto]. Qed.
+Lemma L_actmne_natrec {G Γ l l' M M' s s' z z' ν ν' W} : leqv l l' ->
+  AL_ty G (Γ ,, tyNat @ lzero) M M' -> AL_tm G Γ s s' M[lsingle zero] ->
+  AL_tm G (Γ ,, tyNat @ lzero ,, M @ l) z z' M[lsucc] -> AL_tmnee G Γ ν ν' W ->
+  AL_tmne G Γ (natrec l M s z ν) (natrec l' M' s' z' ν') M[lsingle ν].
+Proof. intros Hl IHM IHs IHz IHν t2 E; linv E. eapply actmne_natrec; eauto with lq. Qed.
+Lemma L_actmne_app {G Γ l1 l2 l3 l4 A A' B B' ν ν' s s' m m' A0 B0} :
+  AL_tmnee G Γ ν ν' (tyPi m m' A0 B0) -> AL_tm G Γ s s' A0 ->
+  AL_tmne G Γ (app ν l1 l2 A B s) (app ν' l3 l4 A' B' s') B0[lsingle s].
+Proof. intros IHν IHs t2 E; linv E. eapply actmne_app; eauto. Qed.
+Lemma L_actmne_letboxT {G Γ l1 l2 l3 l4 Δ0 Δ0' M M' t1 t2 ν ν' W} : leqv l1 l3 -> leqv l2 l4 ->
+  AL_ctx G Δ0 Δ0' -> AL_ty G (Γ ,, tyCTyp Δ0 l2 @ lzero) M M' ->
+  AL_tm (gext G (gdTy Δ0 lC l2)) Γ⟪S⟫ t1 t2 (M⟪S⟫[lsingle (boxT (tyGvar 0 (lshift 0)))]) ->
+  AL_tmnee G Γ ν ν' W ->
+  AL_tmne G Γ (letboxT l1 l2 Δ0 M t1 ν) (letboxT l3 l4 Δ0' M' t2 ν') M[lsingle ν].
+Proof. intros H13 H24 IHc IHM IHt IHν x E; linv E. eapply actmne_letboxT; eauto with lq. Qed.
+Lemma L_actmne_letboxt {G Γ l1 l2 l3 l4 Δ0 Δ0' T T' M M' t1 t2 ν ν' W} : leqv l1 l3 -> leqv l2 l4 ->
+  AL_ctx G Δ0 Δ0' -> AL_ty G Δ0 T T' -> AL_ty G (Γ ,, tyCTrm Δ0 T l2 @ lzero) M M' ->
+  AL_tm (gext G (gdTm Δ0 lC T l2)) Γ⟪S⟫ t1 t2 (M⟪S⟫[lsingle (boxt (gvar 0 (lshift 0)))]) ->
+  AL_tmnee G Γ ν ν' W ->
+  AL_tmne G Γ (letboxt l1 l2 Δ0 T M t1 ν) (letboxt l3 l4 Δ0' T' M' t2 ν') M[lsingle ν].
+Proof. intros H13 H24 IHc IHT IHM IHt IHν x E; linv E. eapply actmne_letboxt; eauto with lq. Qed.
+
+(** The right bundle, [≡ₗ]-related to [mkrb MT' Mt' bs'], is a bundle. *)
+Ltac L_bundle :=
+  match goal with Erb : tm_leq (mkrb _ _ _) _ |- _ =>
+    let MT2 := fresh "MT2" in let Mt2 := fresh "Mt2" in let bs2 := fresh "bs2" in
+    let EMT := fresh "EMT" in let EMt := fresh "EMt" in let Ebs := fresh "Ebs" in
+    destruct (mkrb_leq_inv _ _ _ _ Erb) as (MT2 & Mt2 & bs2 & -> & EMT & EMt & Ebs)
+  end.
+
+Lemma L_actmne_elimT {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ0 Δ0' ν ν' W} :
+  leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> AL_ctx G Δ0 Δ0' ->
+  AL_ty (recGT G) (recΓT Γ) MT MT' -> AL_ty (recGt G) (recΓt Γ) Mt Mt' ->
+  (forall j, j < 13 -> AL_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+                         (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
+  AL_tmnee G Γ ν ν' W ->
+  AL_tmne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ0 ν) (elimT l1' l2' (mkrb MT' Mt' bs') l' Δ0' ν')
+    (motT (wrapMT MT) l Δ0 ν).
+Proof.
+  intros H1 H2 Hl IHc IHT IHt IHb IHν x E; linv E. L_bundle.
+  eapply actmne_elimT; eauto with lq. intros k Hk. exact (IHb k Hk _ (Ebs k Hk)).
+Qed.
+
+Lemma L_actmne_elimT_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ0 Δ0' U d d'} :
+  leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> AL_ctx G Δ0 Δ0' ->
+  AL_ty (recGT G) (recΓT Γ) MT MT' -> AL_ty (recGt G) (recΓt Γ) Mt Mt' ->
+  (forall j, j < 13 -> AL_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+                         (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
+  lsub_leq d d' ->
+  AL_tmne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ0 (boxT (tyGvar U d)))
+    (elimT l1' l2' (mkrb MT' Mt' bs') l' Δ0' (boxT (tyGvar U d')))
+    (motT (wrapMT MT) l Δ0 (boxT (tyGvar U d))).
+Proof.
+  intros H1 H2 Hl IHc IHT IHt IHb Hd x E; linv E. L_bundle.
+  match goal with Es : context [match ?x with _ => _ end] |- _ => is_var x; linv Es; linv Es end. subst.
+  eapply actmne_elimT_gvar; eauto with lq. intros k Hk. exact (IHb k Hk _ (Ebs k Hk)).
+Qed.
+
+Lemma L_actmne_elimt {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ0 Δ0' T T' ν ν' W} :
+  leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> AL_ctx G Δ0 Δ0' -> AL_ty G Δ0 T T' ->
+  AL_ty (recGT G) (recΓT Γ) MT MT' -> AL_ty (recGt G) (recΓt Γ) Mt Mt' ->
+  (forall j, j < 13 -> AL_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+                         (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
+  AL_tmnee G Γ ν ν' W ->
+  AL_tmne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ0 T ν) (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ0' T' ν')
+    (mott (wrapMt Mt) l Δ0 T ν).
+Proof.
+  intros H1 H2 Hl IHc IHi IHT IHt IHb IHν x E; linv E. L_bundle.
+  eapply actmne_elimt; eauto with lq. intros k Hk. exact (IHb k Hk _ (Ebs k Hk)).
+Qed.
+
+Lemma L_actmne_elimt_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ0 Δ0' T T' u d d'} :
+  leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> AL_ctx G Δ0 Δ0' -> AL_ty G Δ0 T T' ->
+  AL_ty (recGT G) (recΓT Γ) MT MT' -> AL_ty (recGt G) (recΓt Γ) Mt Mt' ->
+  (forall j, j < 13 -> AL_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+                         (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
+  lsub_leq d d' ->
+  AL_tmne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ0 T (boxt (gvar u d)))
+    (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ0' T' (boxt (gvar u d')))
+    (mott (wrapMt Mt) l Δ0 T (boxt (gvar u d))).
+Proof.
+  intros H1 H2 Hl IHc IHi IHT IHt IHb Hd x E; linv E. L_bundle.
+  match goal with Es : context [match ?x with _ => _ end] |- _ => is_var x; linv Es; linv Es end. subst.
+  eapply actmne_elimt_gvar; eauto with lq. intros k Hk. exact (IHb k Hk _ (Ebs k Hk)).
+Qed.
+
+Lemma L_actmne_uapp {G Γ n l T ν ν' ls ls'} : AL_tmnee G Γ ν ν' (tyUPi n l T) -> length ls = n ->
+  Forall2 leqv ls ls' -> AL_tmne G Γ (uapp ν ls) (uapp ν' ls') T[uext ls lvar]ᵤ.
+Proof. intros IH Hn Hls t2 E; linv E. eapply actmne_uapp; eauto with lq. Qed.
+Lemma L_actmne_capp {G Γ l T ν ν' Δ0 Δ0'} : AL_tmnee G Γ ν ν' (tyCPi l T) -> AL_ctx G Δ0 Δ0' ->
+  AL_tmne G Γ (capp ν Δ0) (capp ν' Δ0') T⦃gsingle (GCtx Δ0)⦄.
+Proof. intros IH IHc t2 E; linv E. eapply actmne_capp; eauto. Qed.
+Lemma L_actmne_tapp {G Γ Δ0 l l' T ν ν' A A'} : AL_tmnee G Γ ν ν' (tyTPi Δ0 l l' T) -> AL_ty G Δ0 A A' ->
+  AL_tmne G Γ (tapp ν A) (tapp ν' A') T⦃gsingle (GTy A)⦄.
+Proof. intros IH IHA t2 E; linv E. eapply actmne_tapp; eauto. Qed.
+
+Lemma L_actmnee_red {G Γ ν ν' T W} : AL_tmne G Γ ν ν' T -> reds_ty T W -> whnf_ty W ->
+  AL_tmnee G Γ ν ν' W.
+Proof. intros IH Hr Hw t2 E. eapply actmnee_red; [exact (IH _ E) | exact Hr | exact Hw]. Qed.
+
+Lemma L_acs_pt {G Γ d d' Θ} :
+  (forall n A k, in_ctx Θ n A k -> AL_tm G Γ (llk d n) (llk d' n) A[d]) -> AL_sub G Γ d d' Θ.
+Proof. intros IH d2 E. apply acs_pt. intros n A k Hin. exact (IH n A k Hin _ (llk_leq _ _ n E)). Qed.
+
+Theorem ac_leq_all :
+  (forall G Γ T T', ac_ty G Γ T T' -> AL_ty G Γ T T') /\
+  (forall G Γ W W', ac_tynf G Γ W W' -> AL_tynf G Γ W W') /\
+  (forall G Γ V V', ac_tyne G Γ V V' -> AL_tyne G Γ V V') /\
+  (forall G Δ Δ', ac_ctx G Δ Δ' -> AL_ctx G Δ Δ') /\
+  (forall G Γ t t' T, ac_tm G Γ t t' T -> AL_tm G Γ t t' T) /\
+  (forall G Γ w w' W, ac_tmnf G Γ w w' W -> AL_tmnf G Γ w w' W) /\
+  (forall G Γ ν ν' T, ac_tmne G Γ ν ν' T -> AL_tmne G Γ ν ν' T) /\
+  (forall G Γ ν ν' W, ac_tmnee G Γ ν ν' W -> AL_tmnee G Γ ν ν' W) /\
+  (forall G Γ d d' Δ, ac_sub G Γ d d' Δ -> AL_sub G Γ d d' Δ).
+Proof.
+  apply ac_mut; intros;
+    first
+    [ solve [eapply L_act_red; eassumption] | solve [eapply L_actnf_nat] | solve [eapply L_actnf_U; eassumption]
+    | solve [eapply L_actnf_pi; eassumption] | solve [eapply L_actnf_ne; eassumption]
+    | solve [eapply L_actnf_CTyp; eassumption] | solve [eapply L_actnf_CTrm; eassumption]
+    | solve [eapply L_actnf_upi; eassumption] | solve [eapply L_actnf_cpi; eassumption]
+    | solve [eapply L_actnf_tpi; eassumption]
+    | solve [eapply L_actne_gvar; eassumption] | solve [eapply L_actne_El; eassumption]
+    | solve [eapply L_acc_nil] | solve [eapply L_acc_var] | solve [eapply L_acc_ext; eassumption]
+    | solve [eapply L_actm_red; eassumption]
+    | solve [eapply L_actmnf_code_nat] | solve [eapply L_actmnf_code_U; eassumption]
+    | solve [eapply L_actmnf_code_pi; eassumption] | solve [eapply L_actmnf_zero]
+    | solve [eapply L_actmnf_succ; eassumption] | solve [eapply L_actmnf_ne; eassumption]
+    | solve [eapply L_actmnf_eta; eassumption] | solve [eapply L_actmnf_ueta; eassumption]
+    | solve [eapply L_actmnf_ceta; eassumption] | solve [eapply L_actmnf_teta; eassumption]
+    | solve [eapply L_actmnf_boxT; eassumption] | solve [eapply L_actmnf_boxt; eassumption]
+    | solve [eapply L_actmne_var; eassumption] | solve [eapply L_actmne_gvar; eassumption]
+    | solve [eapply L_actmne_natrec; eassumption] | solve [eapply L_actmne_app; eassumption]
+    | solve [eapply L_actmne_letboxT; eassumption] | solve [eapply L_actmne_letboxt; eassumption]
+    | solve [eapply L_actmne_elimT; eassumption] | solve [eapply L_actmne_elimT_gvar; eassumption]
+    | solve [eapply L_actmne_elimt; eassumption] | solve [eapply L_actmne_elimt_gvar; eassumption]
+    | solve [eapply L_actmne_uapp; eassumption] | solve [eapply L_actmne_capp; eassumption]
+    | solve [eapply L_actmne_tapp; eassumption] | solve [eapply L_actmnee_red; eassumption]
+    | solve [eapply L_acs_pt; eassumption] ].
 Qed.
