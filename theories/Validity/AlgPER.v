@@ -723,3 +723,181 @@ Proof.
     | solve [eapply Y_actmne_tapp; eassumption] | solve [eapply Y_actmnee_red; eassumption]
     | solve [eapply Y_acs_pt; eassumption] ].
 Qed.
+
+(** ** Inversion of the algorithm on the left side's head *)
+
+(** A value is not neutral. *)
+Ltac kill_ne :=
+  match goal with
+  | H : ac_tmnee _ _ ?x _ _ |- _ =>
+      let Hw := fresh in destruct (ac_tmnee_whne H) as [Hw _]; solve [inversion Hw]
+  | H : ac_tmne _ _ ?x _ _ |- _ =>
+      let Hw := fresh in destruct (ac_tmne_whne H) as [Hw _]; solve [inversion Hw]
+  | H : ac_tyne _ _ ?x _ |- _ => solve [inversion H]
+  | H : posty _ |- _ => solve [inversion H; match goal with Hn : whne_ty _ |- _ => inversion Hn end]
+  end.
+
+Ltac ainv H := inversion H; subst; try kill_ne; eauto 12.
+
+Lemma ainv_ty {G Γ T X} : ac_ty G Γ T X -> exists W W', reds_ty T W /\ reds_ty X W' /\ whnf_ty W /\ whnf_ty W' /\
+  ac_tynf G Γ W W'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_nat {G Γ X} : ac_tynf G Γ tyNat X -> X = tyNat.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_U {G Γ l X} : ac_tynf G Γ (tyU l) X -> exists l', X = tyU l' /\ leqv l l'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_pi {G Γ l1 l2 A B X} : ac_tynf G Γ (tyPi l1 l2 A B) X ->
+  exists l3 l4 A' B', X = tyPi l3 l4 A' B' /\ leqv l1 l3 /\ leqv l2 l4 /\ ac_ty G Γ A A' /\
+    ac_ty G (Γ ,, A @ l1) B B'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_CTyp {G Γ Δ l X} : ac_tynf G Γ (tyCTyp Δ l) X ->
+  exists Δ' l', X = tyCTyp Δ' l' /\ ac_ctx G Δ Δ' /\ leqv l l'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_CTrm {G Γ Δ T l X} : ac_tynf G Γ (tyCTrm Δ T l) X ->
+  exists Δ' T' l', X = tyCTrm Δ' T' l' /\ ac_ctx G Δ Δ' /\ ac_ty G Δ T T' /\ leqv l l'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_upi {G Γ n l T X} : ac_tynf G Γ (tyUPi n l T) X ->
+  exists l' T', X = tyUPi n l' T' /\ leqv l l' /\ ac_ty (gctx_uwk n G) Γ⟨ush n⟩ᵤ T T'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_cpi {G Γ l T X} : ac_tynf G Γ (tyCPi l T) X ->
+  exists l' T', X = tyCPi l' T' /\ leqv l l' /\ ac_ty (gext G gdCtx) Γ⟪S⟫ T T'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_tpi {G Γ Δ l1 l2 T X} : ac_tynf G Γ (tyTPi Δ l1 l2 T) X ->
+  exists Δ' l3 l4 T', X = tyTPi Δ' l3 l4 T' /\ ac_ctx G Δ Δ' /\ leqv l1 l3 /\ leqv l2 l4 /\
+    ac_ty (gext G (gdTy Δ lD l1)) Γ⟪S⟫ T T'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_nfne {G Γ V X} : whne_ty V -> ac_tynf G Γ V X -> ac_tyne G Γ V X.
+Proof. intros Hn H; inversion H; subst; auto; inversion Hn. Qed.
+Lemma ainv_tygvar {G Γ U d X} : ac_tyne G Γ (tyGvar U d) X ->
+  exists Δ i' l d', X = tyGvar U d' /\ in_gctx (gΨ G) U (gdTy Δ i' l) /\ ac_sub G Γ d d' Δ.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_El {G Γ l ν X} : ac_tyne G Γ (tyEl l ν) X ->
+  exists l' ν' W, X = tyEl l' ν' /\ leqv l l' /\ ac_tmnee G Γ ν ν' W.
+Proof. intros H; ainv H. Qed.
+
+Lemma ainv_cnil {G X} : ac_ctx G cnil X -> X = cnil.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_cvar {G g X} : ac_ctx G (cvar g) X -> X = cvar g.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_cext {G Γ A l X} : ac_ctx G (Γ ,, A @ l) X ->
+  exists Γ' A' l', X = Γ' ,, A' @ l' /\ ac_ctx G Γ Γ' /\ ac_ty G Γ A A' /\ leqv l l'.
+Proof. intros H; ainv H. Qed.
+
+Lemma ainv_tm {G Γ t X T} : ac_tm G Γ t X T -> exists W w w', reds_ty T W /\ whnf_ty W /\
+  reds t w /\ reds X w' /\ whnf w /\ whnf w' /\ ac_tmnf G Γ w w' W.
+Proof. intros H; ainv H. Qed.
+
+Lemma ainv_code_nat {G Γ l X} : ac_tmnf G Γ tmNat X (tyU l) -> X = tmNat.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_code_U {G Γ l k X} : ac_tmnf G Γ (tmU k) X (tyU l) -> exists k', X = tmU k' /\ leqv k k'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_code_pi {G Γ l l1 l2 s t X} : ac_tmnf G Γ (tmPi l1 l2 s t) X (tyU l) ->
+  exists l3 l4 s' t', X = tmPi l3 l4 s' t' /\ leqv l1 l3 /\ leqv l2 l4 /\ ac_tm G Γ s s' (tyU l1) /\
+    ac_tm G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2).
+Proof. intros H; ainv H. Qed.
+Lemma ainv_zero {G Γ X} : ac_tmnf G Γ zero X tyNat -> X = zero.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_succ {G Γ t X} : ac_tmnf G Γ (succ t) X tyNat -> exists t', X = succ t' /\ ac_tm G Γ t t' tyNat.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_nfne_tm {G Γ ν X W} : posty W -> whne ν -> ac_tmnf G Γ ν X W -> exists W', ac_tmnee G Γ ν X W'.
+Proof. intros Hp Hn H; inversion H; subst; eauto; first [solve [inversion Hn] | solve [inversion Hp; match goal with Hv : whne_ty _ |- _ => inversion Hv end]]. Qed.
+Lemma ainv_eta {G Γ l l' A B w X} : ac_tmnf G Γ w X (tyPi l l' A B) ->
+  ac_tm G (Γ ,, A @ l) (app w⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0)) (app X⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0)) B.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_ueta {G Γ n l T w X} : ac_tmnf G Γ w X (tyUPi n l T) ->
+  ac_tm (gctx_uwk n G) Γ⟨ush n⟩ᵤ (uapp w⟨ush n⟩ᵤ (ubvars n)) (uapp X⟨ush n⟩ᵤ (ubvars n)) T.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_ceta {G Γ l T w X} : ac_tmnf G Γ w X (tyCPi l T) ->
+  ac_tm (gext G gdCtx) Γ⟪S⟫ (capp w⟪S⟫ (cvar 0)) (capp X⟪S⟫ (cvar 0)) T.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_teta {G Γ Δ l l' T w X} : ac_tmnf G Γ w X (tyTPi Δ l l' T) ->
+  ac_tm (gext G (gdTy Δ lD l)) Γ⟪S⟫ (tapp w⟪S⟫ (tyGvar 0 (lshift 0))) (tapp X⟪S⟫ (tyGvar 0 (lshift 0))) T.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_boxT {G Γ Δ l T X} : ac_tmnf G Γ (boxT T) X (tyCTyp Δ l) -> exists T', X = boxT T' /\ ty_leq T T'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_boxt {G Γ Δ A l t X} : ac_tmnf G Γ (boxt t) X (tyCTrm Δ A l) -> exists t', X = boxt t' /\ tm_leq t t'.
+Proof. intros H; ainv H. Qed.
+
+Lemma ainv_nee {G Γ ν X W} : ac_tmnee G Γ ν X W -> exists T, ac_tmne G Γ ν X T /\ reds_ty T W /\ whnf_ty W.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_sub {G Γ d X Θ} : ac_sub G Γ d X Θ ->
+  forall n A k, in_ctx Θ n A k -> ac_tm G Γ (llk d n) (llk X n) A[d].
+Proof. intros H; inversion H; subst; assumption. Qed.
+
+Ltac kill_box := try match goal with
+  | Hn : whne (boxT _) |- _ => solve [inversion Hn]
+  | Hn : whne (boxt _) |- _ => solve [inversion Hn]
+  end.
+
+Lemma ainv_var {G Γ n X T} : ac_tmne G Γ (var n) X T -> X = var n.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_gvar {G Γ u d X T} : ac_tmne G Γ (gvar u d) X T ->
+  exists Δ i' T0 l d', X = gvar u d' /\ in_gctx (gΨ G) u (gdTm Δ i' T0 l) /\ ac_sub G Γ d d' Δ.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_natrec {G Γ l M s z ν X T} : ac_tmne G Γ (natrec l M s z ν) X T ->
+  exists l' M' s' z' ν' W, X = natrec l' M' s' z' ν' /\ leqv l l' /\ ac_ty G (Γ ,, tyNat @ lzero) M M' /\
+    ac_tm G Γ s s' M[lsingle zero] /\ ac_tm G (Γ ,, tyNat @ lzero ,, M @ l) z z' M[lsucc] /\
+    ac_tmnee G Γ ν ν' W.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_app {G Γ l1 l2 A B ν s X T} : ac_tmne G Γ (app ν l1 l2 A B s) X T ->
+  exists l3 l4 A' B' ν' s' m m' A0 B0, X = app ν' l3 l4 A' B' s' /\
+    ac_tmnee G Γ ν ν' (tyPi m m' A0 B0) /\ ac_tm G Γ s s' A0.
+Proof. intros H; inversion H; subst; do 10 eexists; eauto. Qed.
+Lemma ainv_letboxT {G Γ l1 l2 Δ M t1 ν X T} : ac_tmne G Γ (letboxT l1 l2 Δ M t1 ν) X T ->
+  exists l3 l4 Δ' M' t2 ν' W, X = letboxT l3 l4 Δ' M' t2 ν' /\ leqv l1 l3 /\ leqv l2 l4 /\ ac_ctx G Δ Δ' /\
+    ac_ty G (Γ ,, tyCTyp Δ l2 @ lzero) M M' /\
+    ac_tm (gext G (gdTy Δ lC l2)) Γ⟪S⟫ t1 t2 (M⟪S⟫[lsingle (boxT (tyGvar 0 (lshift 0)))]) /\
+    ac_tmnee G Γ ν ν' W.
+Proof. intros H; inversion H; subst; do 7 eexists; eauto 10. Qed.
+Lemma ainv_letboxt {G Γ l1 l2 Δ T M t1 ν X T0} : ac_tmne G Γ (letboxt l1 l2 Δ T M t1 ν) X T0 ->
+  exists l3 l4 Δ' T' M' t2 ν' W, X = letboxt l3 l4 Δ' T' M' t2 ν' /\ leqv l1 l3 /\ leqv l2 l4 /\
+    ac_ctx G Δ Δ' /\ ac_ty G Δ T T' /\ ac_ty G (Γ ,, tyCTrm Δ T l2 @ lzero) M M' /\
+    ac_tm (gext G (gdTm Δ lC T l2)) Γ⟪S⟫ t1 t2 (M⟪S⟫[lsingle (boxt (gvar 0 (lshift 0)))]) /\
+    ac_tmnee G Γ ν ν' W.
+Proof. intros H; inversion H; subst; do 8 eexists; eauto 12. Qed.
+
+Lemma ainv_elimT {G Γ l1 l2 rb l Δ ν X T} : whne ν -> ac_tmne G Γ (elimT l1 l2 rb l Δ ν) X T ->
+  exists MT Mt bs l1' l2' MT' Mt' bs' l' Δ' ν' W, rb = mkrb MT Mt bs /\
+    X = elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' ν' /\ leqv l1 l1' /\ leqv l2 l2' /\ leqv l l' /\
+    ac_ctx G Δ Δ' /\ ac_ty (recGT G) (recΓT Γ) MT MT' /\ ac_ty (recGt G) (recΓt Γ) Mt Mt' /\
+    (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+                           (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) /\
+    ac_tmnee G Γ ν ν' W.
+Proof. intros Hn H; inversion H; subst; kill_box; do 12 eexists; eauto 20. Qed.
+Lemma ainv_elimT_gvar {G Γ l1 l2 rb l Δ U d X T} : ac_tmne G Γ (elimT l1 l2 rb l Δ (boxT (tyGvar U d))) X T ->
+  exists MT Mt bs l1' l2' MT' Mt' bs' l' Δ' d', rb = mkrb MT Mt bs /\
+    X = elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' (boxT (tyGvar U d')) /\ leqv l1 l1' /\ leqv l2 l2' /\
+    leqv l l' /\ ac_ctx G Δ Δ' /\ ac_ty (recGT G) (recΓT Γ) MT MT' /\ ac_ty (recGt G) (recΓt Γ) Mt Mt' /\
+    (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+                           (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) /\
+    lsub_leq d d'.
+Proof. intros H; inversion H; subst; try kill_ne; do 11 eexists; eauto 20. Qed.
+Lemma ainv_elimt {G Γ l1 l2 rb l Δ A ν X T} : whne ν -> ac_tmne G Γ (elimt l1 l2 rb l Δ A ν) X T ->
+  exists MT Mt bs l1' l2' MT' Mt' bs' l' Δ' A' ν' W, rb = mkrb MT Mt bs /\
+    X = elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' A' ν' /\ leqv l1 l1' /\ leqv l2 l2' /\ leqv l l' /\
+    ac_ctx G Δ Δ' /\ ac_ty G Δ A A' /\ ac_ty (recGT G) (recΓT Γ) MT MT' /\ ac_ty (recGt G) (recΓt Γ) Mt Mt' /\
+    (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+                           (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) /\
+    ac_tmnee G Γ ν ν' W.
+Proof. intros Hn H; inversion H; subst; kill_box; do 13 eexists; eauto 20. Qed.
+Lemma ainv_elimt_gvar {G Γ l1 l2 rb l Δ A u d X T} :
+  ac_tmne G Γ (elimt l1 l2 rb l Δ A (boxt (gvar u d))) X T ->
+  exists MT Mt bs l1' l2' MT' Mt' bs' l' Δ' A' d', rb = mkrb MT Mt bs /\
+    X = elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' A' (boxt (gvar u d')) /\ leqv l1 l1' /\ leqv l2 l2' /\
+    leqv l l' /\ ac_ctx G Δ Δ' /\ ac_ty G Δ A A' /\ ac_ty (recGT G) (recΓT Γ) MT MT' /\
+    ac_ty (recGt G) (recΓt Γ) Mt Mt' /\
+    (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+                           (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) /\
+    lsub_leq d d'.
+Proof. intros H; inversion H; subst; try kill_ne; do 12 eexists; eauto 20. Qed.
+
+Lemma ainv_uapp {G Γ ν ls X T} : ac_tmne G Γ (uapp ν ls) X T ->
+  exists n l T0 ν' ls', X = uapp ν' ls' /\ ac_tmnee G Γ ν ν' (tyUPi n l T0) /\ length ls = n /\
+    Forall2 leqv ls ls'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_capp {G Γ ν Δ X T} : ac_tmne G Γ (capp ν Δ) X T ->
+  exists l T0 ν' Δ', X = capp ν' Δ' /\ ac_tmnee G Γ ν ν' (tyCPi l T0) /\ ac_ctx G Δ Δ'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_tapp {G Γ ν A X T} : ac_tmne G Γ (tapp ν A) X T ->
+  exists Δ l l' T0 ν' A', X = tapp ν' A' /\ ac_tmnee G Γ ν ν' (tyTPi Δ l l' T0) /\ ac_ty G Δ A A'.
+Proof. intros H; ainv H. Qed.
