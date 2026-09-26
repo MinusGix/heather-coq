@@ -106,7 +106,7 @@ UPiRel G Γ n l l' T1 T1' instR : tm -> tm -> Prop :=
 
 LRω G Γ T T' R :=
   T ⤳* tyUPi n l T1 @ ω, T' ⤳* tyUPi n l' T1' @ ω, n > 0,
-  lequiv (n + gL G) l l', T1 and T1' well-formed at G⁺; Γ⁺,
+  lequiv (n + gL G) l l',
   UΠ ≈ UΠ' @ ω, and
   ∀ ρ ls ls', LogRel l[ls] (kw_G ρ) (kw_Δ ρ)
                 (kty ρ T1)[ls] (kty ρ T1')[ls'] l[ls] (instR ρ ls ls'),
@@ -132,13 +132,19 @@ are well-formed in the world's `gL`. Local and global renamings leave
 level binders alone, so `kty ρ` acts on `T1` unchanged.
 
 **Validity dispatch.** `LRty`/`LRtm`/`VTy`/`VTm` stay finite, and every
-existing file keeps them. New wrappers
-`LRtyW l := match l with lomega => ∃R, LRω … | _ => LRty l … end` (and
-likewise for terms, substitution-validity and the M forms) come with
-equations `l ≠ lomega -> LRtyW l = LRty l`, and `lwf` implies `l ≠ lomega`.
-Only the FT at M and the new files see the wrappers. Its motive switches
-to them: rules with `lwf` premises rewrite to the finite forms, and the
-generic rules case-split on `lomega`.
+existing file keeps them. The ω tier has its own forms (`LRtyω`,
+`LRtmω`, `VTyω`/`VTmω`, `VTyGω`/`VTmGω`, `VTySω`/`VTmSω`; OmegaV.v), not
+a `match` on the level. The FT at M has a two-part motive for every
+judgment at `l`:
+`(lwf (gL G) l -> … finite …) /\ (l = lomega -> … at ω …)`. Each
+induction hypothesis is used at its half: the finite half when its level
+is well formed, the ω half when it is ω. For a rule concluding at a
+well-formed level, the ω half is absurd (`w_absurd`). For a `UΠ` rule,
+the finite half is absurd. The level dichotomy `judg_lvl` (UInst.v) says
+every judgment's level is well formed, or ω at layer M.
+
+(Implemented: `LRω` has no well-formedness premise for `T1`, `T1'` at
+`G⁺; Γ⁺`. The semantic rules never needed it.)
 
 ### F4. Escape at ω: fresh levels at the top, then the rotation
 
@@ -151,14 +157,22 @@ Generic laws (07:296–342) added to `GenericEqLaws`:
 
 The declarative instance proves extensionality by η.
 
-Escape from `LRω` takes the world that grows `G` by `n` levels, and
-`ls` = the new top variables. The instance `T1[uext ls lvar]` is then
-`T1` under the rotation of M3 E14: bound variables go to the top, and the
-others move down by `n`. So the generic equality of the applications
-holds at the grown context. The generic laws' stability under the
-inverse rotation turns it into the `G⁺; Γ⁺` premise of `geq_tm_uext`. The
-rotation acts on the generic judgments only; the relation at ω itself is
-never permuted. Escape for types is analogous, via `geq_ty_upi`.
+Escape from `LRω` is direct (implemented): `LRupi` carries
+`UΠ ≈ UΠ' @ ω`, and `UPiRel` carries `w ≈ w'` at both types. The
+semantic rules establish both at the validity level, where the body's
+validity is quantified over universe substitutions: `geq_ty_upi` and
+`geq_tm_uext` get their `G⁺; Γ⁺` premises there (UPiV.v).
+
+The growth-and-rotation argument is used for **injectivity of `UΠ`**
+instead (DeclConsequences.v, `declM_upi_body`). Take the instance at the
+world that grows `G` by `n` levels (`kw_grown`), with `ls` = the new
+top variables (`utop`). The instance `T1[uext ls lvar]` is `T1` under the
+rotation of M3 E14: bound variables go to the top, and the others move
+down by `n`. Escape gives its conversion at the grown context. The
+universe substitution along `rotn` is the inverse rotation, and it moves
+the conversion back to `gctx_uwk n G; Γ⟨ush n⟩ᵤ`. The rotation acts on
+the declarative judgments only; the relation at ω itself is never
+permuted.
 
 Properties of `LRω`, one lemma each from the finite relation and
 determinism of whnf:
@@ -194,8 +208,16 @@ At ω, the M consequences are:
 - injectivity of `UΠ` (08:38);
 - discrimination of `UΠ` against the other type formers.
 
-The existing consequences keep their statements (they are at
-well-formed levels).
+The existing consequences keep their statements. The generic lemmas
+(Consequences.v) take the relation at well-formed levels only
+(`red_eqty : … -> lwf (gL G) l -> LRty …`), and gain an `lwf` premise.
+The declarative wrappers discharge it:
+- at P, by `judg_lvl` (ω is at M only);
+- at M, by `judg_lvl` plus the relation at ω. A whnf type other than a
+  `UΠ` is never at ω (`lwfM_whnf_l`).
+
+Normalization at M covers ω as well: types reduce to a `UΠ`, and terms
+reduce to a whnf by `UPiRel`.
 
 ## Order of work
 
@@ -220,6 +242,27 @@ well-formed levels).
 
 ## Status
 
+**M4 complete (2026-09-25).** No admits and no axioms: the consequences
+are closed under the global context.
+- Steps 1–2 (syntax, typing, metatheory): see History.
+- Steps 3–4: the generic laws (Generic.v, DeclInstance.v), the relation
+  at ω (LogRel/Omega.v) with its properties, and validity at ω
+  (Validity/OmegaV.v).
+- Step 5: the semantic rules (Validity/UPiV.v: `VS_upi`, `VS_ulam`,
+  `VS_uapp`, `VS_ueta`, `VS_red`), and the FT at M with the two-part
+  motive (FundamentalM.v, F3 above).
+  - The recursors' β rules are absurd at ω via `elimT_lvl_wf` /
+    `elimt_lvl_wf` (RecPeel.v).
+  - `fundamentalM` states both halves. `Reducible` adds
+    `reducibleM_eqty_ω` / `reducibleM_eqtm_ω`.
+- Step 6 (DeclConsequences.v):
+  - normalization at ω;
+  - `declM_upi_inj`: arity, level equivalence and bodies (08:38);
+  - discrimination of `UΠ` against ℕ, U, Π, `CTyp` and `CTrm`;
+  - `upi_lvl`: `UΠ` types live at ω only.
+
+### History
+
 **Steps 1–2 done (2026-09-25).** Syntax, operations, laws, reduction,
 the eight rules and the whole typing metatheory. Choices made on the way:
 - The n-ary binder's operations are `Nat.iter` of the single-step lifts
@@ -235,6 +278,5 @@ the eight rules and the whole typing metatheory. Choices made on the way:
   original scope), the facts for η's bound variables (`ubvars`), and
   the presuppositions of the new rules.
 
-**Temporary admit (flagged).** `fundamentalM_us` ends in `Admitted`. Only
-its `UΠ` goals are admitted (a `lazymatch` on `tyUPi`/`uapp`/`uext`).
-The consequences at M therefore depend on it until step 5 closes it.
+(The temporary admit of step 2 in `fundamentalM_us` was removed in
+step 5.)

@@ -31,10 +31,15 @@ complete:
   recursors. The consequences at M above still hold with the recursors
   included.
 
-Milestone 4 (universe polymorphism: `UΠ`, `Λ`, `$` and the level ω) is in
-design; see `M4_DESIGN.md`.
+Milestone 4 (universe polymorphism: `UΠ`, `Λ`, `$` and the level ω) is
+complete; see `M4_DESIGN.md`:
+- the n-ary level binder, its β and η rules, and the typing metatheory;
+- the relation at ω, a top tier over the finite relation;
+- the fundamental theorem at M, with a finite half and an ω half;
+- consequences at ω: normalization, injectivity of `UΠ` (bodies
+  included), and discrimination of `UΠ` against the other type formers.
 
-No admits, no axioms. See `M3_DESIGN.md`, `M2_DESIGN.md` and `M1_DESIGN.md`
+No admits, no axioms. See `M4_DESIGN.md`, `M3_DESIGN.md`, `M2_DESIGN.md` and `M1_DESIGN.md`
 for decisions, deviations from the paper and gotchas.
 
 Documents:
