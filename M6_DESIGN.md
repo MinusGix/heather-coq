@@ -269,3 +269,6 @@ equal type. Three points the paper passes over:
   done, closed: a derivation over `(G, Γ)` at `T` holds over `(G2, Γ2)` at
   `T2` for `GEq G G2`, `[G2 ⊢ Γ ≅ Γ2]` and `[G2; Γ ⊢ T2 ≅ T]`, the source
   typed in `(G, Γ)`; neutrals infer an equal type.
+- Symmetry (`Validity/AlgPER.v`, `ac_sym_all`) is done, closed: on typed
+  syntax, the swapped derivation exists (for neutrals, at some inferred
+  type, equal to the other by soundness).
