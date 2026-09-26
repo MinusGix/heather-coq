@@ -259,4 +259,8 @@ equal type. Three points the paper passes over:
   the simulation of reduction in `LevelRed` and the syntactic inversion
   `mkrb_leq_inv` of bundles) are done, closed.
 - Step 4 in progress: the closure of the term judgments under head-spine
-  annotation changes (`ac_spa_all`, H10) is done, closed.
+  annotation changes (`ac_spa_all`, H10) is done, closed. So is global
+  context conversion (`Typing/GConv.v`): `GEq`, the transfer of every
+  declarative judgment (`gconv_*`), and its closure under the rules'
+  global extensions (`GEq_ext`, `GEq_ext_same`, `GEq_uwk`, `GEq_recGT`,
+  `GEq_recGt`, `GEq_brG`, `GEq_refl`).
