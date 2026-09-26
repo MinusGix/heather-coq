@@ -210,15 +210,66 @@ M-only.
 
 ### C1. Decidability of type checking
 
-A bidirectional checker for the annotated syntax, with decidability of
-`[G; Γ ⊢[i] t : T @ l]` (and well-formedness of types, contexts, global
-contexts) for the computing layers. Uses M6 for conversion, injectivity
-for inversion, and normalization to expose type heads. The level
-annotations may make inference mostly syntax-directed. Open questions:
-- which annotations the syntax lacks (e.g. `box`'s local context);
-- the recursor bundles.
+Decidability (in `Prop`, as M6 H1) of every judgment's well-formedness
+half at every layer V, C, D, M: `[⊢ G]`, `[G; Γ ⊢[i]]`, `[G; Γ ⊢[i] T @ l]`
+and `[G; Γ ⊢[i] t : T @ l]`, for syntax in the *redex-free fragment* (J1).
+The paper states it (08:236) without proof.
 
-Status: to design.
+#### J1. The fragment (user decision)
+
+`uapp t ls`, `capp t Δ` and `tapp t A` do not record their function's
+body type, so a checker infers it from `t`. When `t` is itself the
+matching abstraction (`uapp (ulam …)`, `capp (clam …)`, `tapp (tlam …)`),
+the body is only checked, and the redex's type is not determined by its
+parts: checking it would invert a substitution (e.g. `ulam 1 l (boxT (Ty
+ℓ₀))` applied to `l₀`). The theorem is stated for syntax with no such
+redex anywhere (`nlr`), which contains every normal form. Annotating the
+three applications (as `app` carries `A`, `B`) or another way of covering
+all terms is a future goal (C1b).
+
+#### J2. Shape
+
+Induction on the size of the syntax (so that the branches inside a
+recursor bundle and the entries of a local substitution are reachable).
+Terms split by whether their type is determined by their syntax:
+- *synthesizing*: everything but `lam`, `boxT`, `boxt`, `ulam`, `clam`,
+  `tlam`. Annotations or the contexts fix the type: typability is decided
+  from the premises (typed at annotated types, checked first), and a
+  failure is refuted by inversion. *Uniqueness*: two types of a
+  synthesizing term are equal, their levels equivalent. Checking against a
+  given type is then M6 conversion (`decl_eqty_dec_lv`).
+- *checked*: the given type is normalized to whnf; its head must be the
+  construct's former (head discrimination otherwise refutes), whose
+  components give the body's type. Needs injectivity of `UΠ`, `CΠ`, `TΠ`,
+  `□Typ`, `□Trm` (via the algorithm: completeness, inversion, soundness).
+- the heads of `uapp`/`capp`/`tapp` are synthesizing (a checked head of
+  the wrong former is untypable by head discrimination; the matching one
+  is excluded by J1).
+
+Preconditions inside the induction: the context well formed at
+`typeof i`, and for checking, the given type well formed at `typeof i`.
+Unconditional statements follow: an ill-formed type or context refutes by
+presupposition.
+
+#### J3. Parts
+
+1. Inversion at every layer (conclusions at `typeof i`), presupposition at
+   V and C via lifting.
+2. Decidable side conditions: context and global lookups, `lsub_tail`,
+   `dnfl`, the bundle's shape (`mkrb`), level well-formedness.
+3. Admissibility of the recursor rules' scope premises: the branch
+   contexts and branch types are well formed when the motives are (also
+   C3's).
+4. Injectivity of the M formers; uniqueness of synthesized types.
+5. The decision procedure.
+
+Status: in progress.
+
+#### C1b. Beyond the fragment (future)
+
+Cover the three redex shapes: annotate `uapp`/`capp`/`tapp` with the
+body type (a syntax change through the whole development), or decide the
+inverse-substitution problem, or another route.
 
 ### C2. Deep normalization
 
@@ -247,5 +298,5 @@ Status: to design.
 
 ## Order
 
-A1, A3, B1, A2, B2: done. The C items are next, each to be designed first. The C items are designed separately when
-reached.
+A1, A3, B1, A2, B2: done. C1 (fragment, J1) in progress, then C1b. The
+other C items are designed separately when reached.
