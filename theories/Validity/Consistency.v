@@ -1,0 +1,102 @@
+(** * Consistency (08:48; M7_DESIGN.md A1)
+
+    The paper: no closed term of [Π (x : Ty ℓ). x]. Here, more generally,
+    at D and M, for a global context of context variables only and a local
+    context of universe variables only:
+    - no type variable [El l (var n)] is inhabited ([no_type_var_inhabitant]);
+    - no term has type [Π^{l1,l2} (x : Ty l). El l' x] ([consistency]).
+
+    A term of a type variable has a neutral whnf: completeness gives an
+    algorithmic derivation, and at a neutral type only the neutral rule
+    applies. A neutral in such a context has a universe type
+    ([neutral_univ]): its head is a local variable, and each eliminator's
+    scrutinee would need a type former other than a universe. A universe
+    is not a type variable (head discrimination). *)
+From DeLaM.Validity Require Export AlgComplete Consequences.
+
+(** A local context whose entries are universes. *)
+Definition univ_ctx (Γ : ctx) : Prop := forall n T k, in_ctx Γ n T k -> exists l, T = tyU l.
+
+Lemma univ_ctx_nil : univ_ctx cnil.
+Proof. intros n T k Hin; inversion Hin. Qed.
+
+Lemma univ_ctx_ext {Γ l k} : univ_ctx Γ -> univ_ctx (Γ ,, tyU l @ k).
+Proof.
+  intros HΓ n T k' Hin. inversion Hin as [Γ1 A1 l1 | Γ1 A1 l1 B1 l1' m Hm]; subst.
+  - exists l; reflexivity.
+  - destruct (HΓ _ _ _ Hm) as (l0 & ->). exists l0; reflexivity.
+Qed.
+
+(** A whnf type other than a universe is not equal to one. *)
+Lemma not_univ {G i Γ W l k} : compt i -> whnf_ty W -> ty_head W <> 2 -> ~ [ G ; Γ ⊢[ i ] W ≅ tyU l @ k ].
+Proof. intros Hc Hw Hh E. exact (Hh (decl_head_c Hc E Hw (whnf_tyU _))). Qed.
+
+Ltac scrutinee_clash IH :=
+  match goal with H : [ _ ; _ ⊢[ _ ] _ : ?W @ _ ] |- _ =>
+    let l0 := fresh "l0" in let E := fresh "E" in
+    destruct (IH _ _ H) as (l0 & E); exfalso;
+    refine (not_univ (W := W) _ _ _ E); [eassumption | auto with whnf | cbn; discriminate] end.
+
+(** In a universe context, with context variables only globally, a typed
+    neutral has a universe type. *)
+Lemma neutral_univ {G i Γ} : compt i -> ctx_only G -> univ_ctx Γ ->
+  forall ν, whne ν -> forall A k, [ G ; Γ ⊢[ i ] ν : A @ k ] -> exists l, [ G ; Γ ⊢[ i ] A ≅ tyU l @ k ].
+Proof.
+  intros Hc HG HΓ. pose proof (compt_typeof_self _ Hc) as Hi.
+  induction 1 as [n | u d | l M s z t Hn IH | t l1 l2 A0 B s Hn IH | l1 l2 Δ M t1 t Hn IH
+                  | l1 l2 Δ T M t1 t Hn IH | l1 l2 rb l Δ t Hn IH | l1 l2 rb l Δ U d
+                  | l1 l2 rb l Δ T t Hn IH | l1 l2 rb l Δ T u d | t ls Hn IH | t Δ Hn IH | t T Hn IH];
+    intros X k Hx.
+  - destruct (inv_var Hi Hx) as (T0 & l0 & (_ & Hin) & _ & E).
+    destruct (HΓ _ _ _ Hin) as (l & ->). exists l; exact E.
+  - destruct (inv_gvar Hi Hx) as (Δ & i' & T0 & l0 & (_ & Hin & _) & _). discriminate (HG _ _ Hin).
+  - destruct (inv_natrec Hi Hx) as ((_ & _ & _ & _ & _ & Ht) & _). scrutinee_clash IH.
+  - destruct (inv_app Hi Hx) as ((_ & _ & _ & _ & _ & Ht & _) & _). scrutinee_clash IH.
+  - destruct (inv_letboxT Hi Hx) as ((-> & _ & _ & _ & _ & _ & Ht) & _). scrutinee_clash IH.
+  - destruct (inv_letboxt Hi Hx) as ((-> & _ & _ & _ & _ & _ & _ & Ht) & _). scrutinee_clash IH.
+  - destruct (inv_elimT Hi Hx) as (MT & Mt & bs & (_ & -> & _ & _ & _ & _ & _ & _ & _ & _ & _ & Ht) & _).
+    scrutinee_clash IH.
+  - destruct (inv_elimT Hi Hx) as (MT & Mt & bs & (_ & -> & _ & _ & _ & _ & _ & _ & _ & _ & _ & Ht) & _).
+    destruct (boxT_inv Ht) as (? & ? & HT). destruct (tyGvar_decl HT) as (? & ? & ? & Hin).
+    discriminate (HG _ _ Hin).
+  - destruct (inv_elimt Hi Hx) as (MT & Mt & bs & (_ & -> & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Ht) & _).
+    scrutinee_clash IH.
+  - destruct (inv_elimt Hi Hx) as (MT & Mt & bs & (_ & -> & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Ht) & _).
+    destruct (boxt_inv Ht) as (? & ? & ? & Ht'). destruct (gvar_decl Ht') as (? & ? & ? & ? & Hin).
+    discriminate (HG _ _ Hin).
+  - destruct (inv_uapp Hi Hx) as (n & l & T0 & (-> & _ & _ & _ & _ & Ht) & _). scrutinee_clash IH.
+  - destruct (inv_capp Hi Hx) as (l & T0 & (-> & _ & _ & _ & Ht & _) & _). scrutinee_clash IH.
+  - destruct (inv_tapp Hi Hx) as (Δ0 & l & l' & T0 & (-> & Ht & _) & _). scrutinee_clash IH.
+Qed.
+
+(** ** No inhabitant of a type variable *)
+
+Theorem no_type_var_inhabitant {G i Γ t l n k} : compt i -> ctx_only G -> univ_ctx Γ ->
+  ~ [ G ; Γ ⊢[ i ] t : tyEl l (var n) @ k ].
+Proof.
+  intros Hc HG HΓ Ht. pose proof (compt_typeof_self _ Hc) as Hi.
+  assert (HV : whnf_ty (tyEl l (var n))) by (constructor; constructor; constructor).
+  destruct (ainv_tm (ac_complete_tm Hc (eqtm_refl _ _ _ _ _ _ Ht)))
+    as (W & w & w' & HrT & HwT & Hr & _ & Hw & _ & D).
+  rewrite <- (reds_ty_whnf_det _ _ _ (Relation_Operators.rt1n_refl _ _ _) HrT HV HwT) in D.
+  assert (Hn : whne w) by (inversion D; subst; exact (proj1 (ac_tmnee_whne ltac:(eassumption)))).
+  pose proof (eqtm_wf_r Hi (red_tm_sound Hc Ht Hr Hw)) as Hw0.
+  destruct (neutral_univ Hc HG HΓ w Hn _ _ Hw0) as (l0 & E).
+  exact (not_univ Hc HV ltac:(cbn; discriminate) E).
+Qed.
+
+(** ** Consistency *)
+
+Theorem consistency {G i Γ t l1 l2 l l' k} : compt i -> ctx_only G -> univ_ctx Γ ->
+  ~ [ G ; Γ ⊢[ i ] t : tyPi l1 l2 (tyU l) (tyEl l' (var 0)) @ k ].
+Proof.
+  intros Hc HG HΓ Ht. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_pi (wf_tm_ty Hi Ht)) as ((Hv & W1 & W2 & HA & HB) & Hk).
+  exact (no_type_var_inhabitant Hc HG (univ_ctx_ext HΓ)
+           (pre_eta_body Hi Hv W1 W2 HA HB (lvl_eq_tm' Hk Ht))).
+Qed.
+
+(** The paper's statement: the empty local context. *)
+Corollary consistency_closed {G i t l1 l2 l l' k} : compt i -> ctx_only G ->
+  ~ [ G ; cnil ⊢[ i ] t : tyPi l1 l2 (tyU l) (tyEl l' (var 0)) @ k ].
+Proof. intros Hc HG. exact (consistency Hc HG univ_ctx_nil). Qed.

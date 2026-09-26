@@ -27,7 +27,27 @@ Sketch:
   of a type other than `Ty l`.
 - `El l (var 0) ≅ Ty l` is then a head clash.
 
-Status: **in progress.**
+Status: **done** (`Validity/Consistency.v`), closed under the global
+context. As built:
+- `univ_ctx Γ`: every local entry is a universe. `ctx_only G`: every
+  global entry is a context variable.
+- `neutral_univ`: in such contexts, a typed neutral has a type equal to a
+  universe. Induction on `whne` with the typing inversion lemmas:
+  - a local variable has a universe type;
+  - a global variable, or a recursor over a boxed one, contradicts
+    `ctx_only`;
+  - each eliminator's scrutinee type (`Nat`, `Π`, `□`, `UΠ`, `CΠ`, `TΠ`)
+    clashes with a universe by head (`decl_head_c`).
+- `no_type_var_inhabitant`: no term of `El l (var n)`. Completeness gives
+  an algorithmic derivation. At the neutral type `El l (var n)` only the
+  neutral rule applies, so the whnf is neutral, and `neutral_univ` gives
+  `El l (var n) ≅ Ty l'`, a head clash. The algorithm replaces the
+  paper's argument through the relation at a neutral type.
+- `consistency`: no term of `Π^{l1,l2} (x : Ty l). El l' x` in any such
+  context. The η body `t x` would inhabit a type variable.
+  `consistency_closed` is the paper's statement: the empty local context.
+  It holds at any levels and any global context of context variables, at
+  D and M.
 
 ### A2. Soundness of plain reduction and preservation (06:148, 06:264)
 
@@ -125,5 +145,5 @@ Status: to design.
 
 ## Order
 
-A1, A3, B1, A2, then B2. The C items are designed separately when
+A1 (done), A3, B1, A2, then B2. The C items are designed separately when
 reached.
