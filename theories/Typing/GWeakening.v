@@ -75,12 +75,23 @@ Qed.
 Lemma gcren_shift_up (Γ : ctx) ξ : Γ⟪S⟫⟪gupr ξ⟫ = Γ⟪ξ⟫⟪S⟫.
 Proof. rewrite !(gcren_gcren _ _ _ (fun i => S (ξ i))); auto. Qed.
 
+(** η of the meta-functions (M5): the function weakened under the binder. *)
+Lemma gren_shift_up_tm (t : tm) ξ : t⟪S⟫⟪gupr ξ⟫ = t⟪ξ⟫⟪S⟫.
+Proof. rewrite !(gren_gren_tm _ _ _ (fun i => S (ξ i))); auto. Qed.
+
 (** Letbox β under global renaming: [t'⦃o/U⦄⟪ξ⟫ = t'⟪⇑ξ⟫⦃o⟪ξ⟫/U⦄]. *)
 Lemma gren_gsingle (t : tm) o ξ : t⦃gsingle o⦄⟪ξ⟫ = t⟪gupr ξ⟫⦃gsingle (goren o ξ)⦄.
 Proof.
   cbn [gsubst gren GSubst_tm GRen_tm].
   rewrite (proj1 (proj2 gren_gsubst_all) _ _ _ (fun i => goren (gsingle o i) ξ)) by auto.
   symmetry; apply (proj1 (proj2 gsubst_gren_all)). intros [|i]; reflexivity.
+Qed.
+(** The instances of the meta-functions (M5). *)
+Lemma gren_gsingle_ty (T : ty) o ξ : T⦃gsingle o⦄⟪ξ⟫ = T⟪gupr ξ⟫⦃gsingle (goren o ξ)⦄.
+Proof.
+  cbn [gsubst gren GSubst_ty GRen_ty].
+  rewrite (proj1 gren_gsubst_all _ _ _ (fun i => goren (gsingle o i) ξ)) by auto.
+  symmetry; apply (proj1 gsubst_gren_all). intros [|i]; reflexivity.
 Qed.
 
 (** The reducts commute with global renaming. *)
@@ -318,6 +329,12 @@ Proof. reflexivity. Qed.
 Lemma gren_tyUPi n l T : (tyUPi n l T)⟪ξ⟫ = tyUPi n l T⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_ulam n l t : (ulam n l t)⟪ξ⟫ = ulam n l t⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_uapp t ls : (uapp t ls)⟪ξ⟫ = uapp t⟪ξ⟫ ls. Proof. reflexivity. Qed.
+Lemma gren_tyCPi l T : (tyCPi l T)⟪ξ⟫ = tyCPi l T⟪gupr ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tyTPi Δ l l' T : (tyTPi Δ l l' T)⟪ξ⟫ = tyTPi Δ⟪ξ⟫ l l' T⟪gupr ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_clam l t : (clam l t)⟪ξ⟫ = clam l t⟪gupr ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_capp t Δ : (capp t Δ)⟪ξ⟫ = capp t⟪ξ⟫ Δ⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tlam l l' t : (tlam l l' t)⟪ξ⟫ = tlam l l' t⟪gupr ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tapp t T : (tapp t T)⟪ξ⟫ = tapp t⟪ξ⟫ T⟪ξ⟫. Proof. reflexivity. Qed.
 (** [UΠ]'s scope and instances. *)
 Lemma gren_uren_ctx (Γ : ctx) ρ : Γ⟨ρ⟩ᵤ⟪ξ⟫ = Γ⟪ξ⟫⟨ρ⟩ᵤ.
 Proof. symmetry; apply (proj1 (proj2 (proj2 uren_gren_all))). Qed.
@@ -335,11 +352,11 @@ Ltac push_gren := repeat progress (
           ?gren_lam, ?gren_app, ?gren_gvar, ?gren_boxT, ?gren_boxt, ?gren_letboxT, ?gren_letboxt,
           ?gren_cnil, ?gren_cvar, ?gren_cext, ?gren_lshift, ?gren_elimT, ?gren_elimt,
           ?gren_tyUPi, ?gren_ulam, ?gren_uapp, ?gren_uren_ctx, ?gren_uren_tm, ?gren_usubst_ty,
-          ?gren_usubst_tm).
+          ?gren_usubst_tm, ?gren_tyCPi, ?gren_tyTPi, ?gren_clam, ?gren_capp, ?gren_tlam, ?gren_tapp).
 
 Ltac gren_rewrite :=
   rewrite ?gren_single_ty, ?gren_single, ?gren_single2, ?gren_lsucc_ty, ?gren_ren_ty', ?gren_ren,
-          ?gren_letbox_ty, ?gcren_shift_up, ?gren_gsingle, ?mkrb_gren, ?motT_gren, ?mott_gren,
+          ?gren_letbox_ty, ?gcren_shift_up, ?gren_gsingle, ?gren_gsingle_ty, ?gren_shift_up_tm, ?mkrb_gren, ?motT_gren, ?mott_gren,
           ?wrapMT_gren, ?wrapMt_gren.
 
 (** ** The theorem *)
@@ -369,7 +386,7 @@ Ltac gw_eq := push_gren; gren_rewrite; push_gren; first [reflexivity | f_equal; 
   match goal with
   | Hγ : gwk_wf ?γ _ _, Hin : in_gctx _ _ _ |- _ => exact (in_gctx_gwk _ _ _ _ _ Hγ Hin)
   end : gwk.
-#[export] Hint Resolve wfc_nil wfc_var wfc_ext wfg_ty wfg_tm lequiv_wf_l lequiv_wf_r : gwk.
+#[export] Hint Resolve wfc_nil wfc_var wfc_ext wfg_ctx wfg_ty wfg_tm lequiv_wf_l lequiv_wf_r : gwk.
 #[export] Hint Extern 5 (wf_tm _ _ _ _ _ _) => eapply wf_tm_regty; [ | gw_eq ] : gwk.
 #[export] Hint Extern 5 (eq_tm _ _ _ _ _ _ _) => eapply eq_tm_regty; [ | gw_eq ] : gwk.
 #[export] Hint Extern 1 (lwf _ _) => (cbn; first [exact I | assumption]) : gwk.
@@ -558,6 +575,25 @@ Ltac gw_manual :=
       [ .. | gw_motT | gw_motT | gw_motT | gw_mott | gw_mott | gw_mott
            | gw_branches | gw_branches | gw_branches | gw_branches | ];
       gw_premise
+  (* meta-functions (M5): bodies under the global binder, as letbox's *)
+  | |- wf_ty _ _ _ (tyCPi _ _) _ => eapply wft_cpi; try gw_body; gw_premise
+  | |- wf_ty _ _ _ (tyTPi _ _ _ _) _ => eapply wft_tpi; try gw_body; gw_premise
+  | |- eq_ty _ _ _ (tyCPi _ _) _ _ => eapply eqty_cpi; try gw_body; gw_premise
+  | |- eq_ty _ _ _ (tyTPi _ _ _ _) _ _ => eapply eqty_tpi; try gw_body; gw_premise
+  | |- wf_tm _ _ _ (clam _ _) _ _ => eapply wf_clam; try gw_body; gw_premise
+  | |- wf_tm _ _ _ (tlam _ _ _) _ _ => eapply wf_tlam; try gw_body; gw_premise
+  | |- wf_tm _ _ _ (capp _ _) _ _ => eapply wf_capp; try gw_body; gw_premise
+  | Hb : wf_ty (gext _ (gdTy _ lD ?k)) _ _ _ _ |- wf_tm _ _ _ (tapp _ _) _ _ =>
+      eapply wf_tapp with (l := k); try gw_body; gw_premise
+  | |- eq_tm _ _ _ (clam _ (capp _ _)) _ _ _ => eapply eqtm_ceta; try gw_body; gw_premise
+  | |- eq_tm _ _ _ (tlam _ _ (tapp _ _)) _ _ _ => eapply eqtm_teta; try gw_body; gw_premise
+  | |- eq_tm _ _ _ (clam _ _) _ _ _ => eapply eqtm_clam; try gw_body; gw_premise
+  | |- eq_tm _ _ _ (tlam _ _ _) _ _ _ => eapply eqtm_tlam; try gw_body; gw_premise
+  | |- eq_tm _ _ _ (capp (clam _ _) _) _ _ _ => eapply eqtm_cbeta; try gw_body; gw_premise
+  | |- eq_tm _ _ _ (tapp (tlam _ _ _) _) _ _ _ => eapply eqtm_tbeta; try gw_body; gw_premise
+  | |- eq_tm _ _ _ (capp _ _) _ _ _ => eapply eqtm_capp; try gw_body; gw_premise
+  | Hb : wf_ty (gext _ (gdTy _ lD ?k)) _ _ _ _ |- eq_tm _ _ _ (tapp _ _) _ _ _ =>
+      eapply eqtm_tapp with (l := k); try gw_body; gw_premise
   | |- wf_ty _ _ _ (tyUPi _ _ _) _ => eapply wft_upi; try gw_upi_body; gw_premise
   | |- eq_ty _ _ _ (tyUPi _ _ _) _ _ => eapply eqty_upi; try gw_upi_body; gw_premise
   | |- wf_tm _ _ _ (ulam _ _ _) _ _ => eapply wf_ulam; try gw_upi_body; gw_premise

@@ -378,13 +378,20 @@ Proof. reflexivity. Qed.
 Lemma gs_tyUPi n l T : (tyUPi n l T)⦃σ⦄ = tyUPi n l T⦃guwkn n σ⦄. Proof. reflexivity. Qed.
 Lemma gs_ulam n l t : (ulam n l t)⦃σ⦄ = ulam n l t⦃guwkn n σ⦄. Proof. reflexivity. Qed.
 Lemma gs_uapp t ls : (uapp t ls)⦃σ⦄ = uapp t⦃σ⦄ ls. Proof. reflexivity. Qed.
+Lemma gs_tyCPi l T : (tyCPi l T)⦃σ⦄ = tyCPi l T⦃gup σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tyTPi Δ l l' T : (tyTPi Δ l l' T)⦃σ⦄ = tyTPi Δ⦃σ⦄ l l' T⦃gup σ⦄. Proof. reflexivity. Qed.
+Lemma gs_clam l t : (clam l t)⦃σ⦄ = clam l t⦃gup σ⦄. Proof. reflexivity. Qed.
+Lemma gs_capp t Δ : (capp t Δ)⦃σ⦄ = capp t⦃σ⦄ Δ⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tlam l l' t : (tlam l l' t)⦃σ⦄ = tlam l l' t⦃gup σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tapp t T : (tapp t T)⦃σ⦄ = tapp t⦃σ⦄ T⦃σ⦄. Proof. reflexivity. Qed.
 End PushGS.
 
 Ltac push_gsubst := repeat progress (
   rewrite ?gs_tyNat, ?gs_tyPi, ?gs_tyU, ?gs_tyEl, ?gs_tyCTyp, ?gs_tyCTrm, ?gs_var, ?gs_tmNat,
           ?gs_tmPi, ?gs_tmU, ?gs_zero, ?gs_succ, ?gs_natrec, ?gs_lam, ?gs_app, ?gs_boxT,
           ?gs_boxt, ?gs_letboxT, ?gs_letboxt, ?gs_cnil, ?gs_cext, ?gs_lshift,
-          ?gs_tyGvar, ?gs_gvar, ?gs_cvar, ?gs_elimT, ?gs_elimt, ?gs_tyUPi, ?gs_ulam, ?gs_uapp).
+          ?gs_tyGvar, ?gs_gvar, ?gs_cvar, ?gs_elimT, ?gs_elimt, ?gs_tyUPi, ?gs_ulam, ?gs_uapp,
+          ?gs_tyCPi, ?gs_tyTPi, ?gs_clam, ?gs_capp, ?gs_tlam, ?gs_tapp).
 
 Lemma gs_single_ty (M : ty) a σ : M[lsingle a]⦃σ⦄ = M⦃σ⦄[lsingle a⦃σ⦄].
 Proof. rewrite gsubst_subst_ty; reflexivity. Qed.
@@ -633,14 +640,37 @@ Ltac gs_body :=
     Hσ : gsub_wf _ ?σ ?G |- _ =>
       let X := fresh "X" in let Hg := fresh "Hg" in
       assert (Hg : [ ⊢ gext {| gL := gL G ; gΨ := _ |} (gdecl_gsubst D σ) ])
-        by (unfold gext; cbn [gdecl_gsubst gΨ gL]; first [eapply wfg_ty | eapply wfg_tm];
+        by (unfold gext; cbn [gdecl_gsubst gΨ gL]; first [eapply wfg_ctx | eapply wfg_ty | eapply wfg_tm];
             eauto with gsub);
       pose proof (IH _ (gup σ) (gsub_wf_up _ _ _ D Hσ Hg)) as X;
       rewrite gshift_up_ctx, ?gs_letbox_ty in X by reflexivity; exact X
   end.
 
+(** The meta-functions (M5): the instances under [σ]. *)
+Ltac gs_mf_rw :=
+  match goal with Hσ : gsub_wf _ ?σ _ |- _ =>
+    rewrite ?(gs_gsingle_ty _ _ σ (gsw_dnf _ _ _ Hσ)), ?(gs_gsingle _ _ σ (gsw_dnf _ _ _ Hσ)),
+      ?gshift_up_tm; cbn [gosubst]
+  end.
+
 Ltac gs_manual2 :=
   match goal with
+  | |- wf_ty _ _ _ (tyCPi _ _) _ => eapply wft_cpi; try gs_body; gs_premise
+  | |- wf_ty _ _ _ (tyTPi _ _ _ _) _ => eapply wft_tpi; try gs_body; gs_premise
+  | |- eq_ty _ _ _ (tyCPi _ _) _ _ => eapply eqty_cpi; try gs_body; gs_premise
+  | |- eq_ty _ _ _ (tyTPi _ _ _ _) _ _ => eapply eqty_tpi; try gs_body; gs_premise
+  | |- wf_tm _ _ _ (clam _ _) _ _ => eapply wf_clam; try gs_body; gs_premise
+  | |- wf_tm _ _ _ (tlam _ _ _) _ _ => eapply wf_tlam; try gs_body; gs_premise
+  | |- wf_tm _ _ _ (capp _ _) _ _ => gs_mf_rw; eapply wf_capp; try gs_body; gs_premise
+  | |- wf_tm _ _ _ (tapp _ _) _ _ => gs_mf_rw; eapply wf_tapp; try gs_body; gs_premise
+  | |- eq_tm _ _ _ (clam _ (capp _ _)) _ _ _ => gs_mf_rw; eapply eqtm_ceta; try gs_body; gs_premise
+  | |- eq_tm _ _ _ (tlam _ _ (tapp _ _)) _ _ _ => gs_mf_rw; eapply eqtm_teta; try gs_body; gs_premise
+  | |- eq_tm _ _ _ (clam _ _) _ _ _ => eapply eqtm_clam; try gs_body; gs_premise
+  | |- eq_tm _ _ _ (tlam _ _ _) _ _ _ => eapply eqtm_tlam; try gs_body; gs_premise
+  | |- eq_tm _ _ _ (capp (clam _ _) _) _ _ _ => gs_mf_rw; eapply eqtm_cbeta; try gs_body; gs_premise
+  | |- eq_tm _ _ _ (tapp (tlam _ _ _) _) _ _ _ => gs_mf_rw; eapply eqtm_tbeta; try gs_body; gs_premise
+  | |- eq_tm _ _ _ (capp _ _) _ _ _ => gs_mf_rw; eapply eqtm_capp; try gs_body; gs_premise
+  | |- eq_tm _ _ _ (tapp _ _) _ _ _ => gs_mf_rw; eapply eqtm_tapp; try gs_body; gs_premise
   | |- wf_tm _ _ _ (natrec _ _ _ _ _) _ _ => eapply wf_natrec; gs_premise
   | |- eq_tm _ _ _ (natrec _ _ _ _ zero) _ _ _ => eapply eqtm_natrec_zero; gs_premise
   | |- eq_tm _ _ _ (natrec _ _ _ _ (succ _)) _ _ _ => eapply eqtm_natrec_succ; gs_premise
@@ -691,7 +721,9 @@ Ltac gs_rec_rw ::=
     rewrite ?mkrb_gsubst;
     rewrite ?motT_gsubst, ?mott_gsubst by first [hd_tac | exact (gsw_dnf _ _ _ Hσ)];
     rewrite ?wrapMT_gsubst, ?wrapMt_gsubst
-  end.
+  end;
+  (* and the meta-functions' instances (M5) *)
+  try gs_mf_rw.
 
 Ltac gs_rec :=
   match goal with

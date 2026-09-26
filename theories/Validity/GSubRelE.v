@@ -44,7 +44,7 @@ Qed.
 Lemma gsub_equiv_up_id G D σ : gsub_equiv (gext G D) (gup σ) (gsub_up_id D σ).
 Proof.
   intros n D0 Hin. inversion Hin as [Ψ0 D1 | Ψ0 D1 D2 m Hm]; subst; cbn [gup gsub_up_id gcons].
-  - right. exists 0; split; [reflexivity|]. now destruct D.
+  - right; left. exists 0; split; [reflexivity|]. now destruct D.
   - left. reflexivity.
 Qed.
 

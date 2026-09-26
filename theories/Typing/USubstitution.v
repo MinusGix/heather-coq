@@ -82,9 +82,20 @@ Lemma usubst_subst_ty' (T : ty) d φ :
   usubst_ty (subst_ty T d) φ = subst_ty (usubst_ty T φ) (ulsubst d φ).
 Proof. apply (proj1 usubst_subst_all). intros; apply llk_ulsubst. Qed.
 
+(** The instances of the meta-functions (M5). *)
+Lemma usubst_gsingle_ty (T : ty) o φ :
+  usubst_ty (gsubst_ty T (gsingle o)) φ = gsubst_ty (usubst_ty T φ) (gsingle (gousubst o φ)).
+Proof.
+  rewrite (proj1 usubst_gsubst_all _ _ _ (fun i => gousubst (gsingle o i) φ)) by auto.
+  apply (proj1 gsubst_ext_all). intros [|i]; reflexivity.
+Qed.
+Lemma usubst_gren_tm' (t : tm) ξ φ : usubst_tm (gren_tm t ξ) φ = gren_tm (usubst_tm t φ) ξ.
+Proof. apply (proj1 (proj2 usubst_gren_all)). Qed.
+
 Ltac us_rewrite :=
   rewrite ?usubst_lsingle_ty, ?usubst_lsucc_ty, ?usubst_lsingle, ?usubst_lsingle2,
     ?usubst_ren_ty', ?usubst_ren', ?usubst_gren_ty', ?usubst_gren_ctx', ?usubst_gsingle,
+    ?usubst_gsingle_ty, ?usubst_gren_tm',
     ?usubst_subst_ty', ?motT_usubst, ?mott_usubst, ?mkrb_usubst, ?wrapMT_usubst, ?wrapMt_usubst.
 
 Ltac us_push :=
@@ -282,7 +293,8 @@ Ltac us_spec :=
 Ltac us_rewrite_all :=
   repeat match goal with H : _ |- _ => progress (rewrite ?usubst_lsingle_ty, ?usubst_lsucc_ty,
     ?usubst_lsingle, ?usubst_lsingle2, ?usubst_ren_ty', ?usubst_ren', ?usubst_gren_ty',
-    ?usubst_gren_ctx', ?usubst_gsingle, ?usubst_subst_ty', ?motT_usubst, ?mott_usubst,
+    ?usubst_gren_ctx', ?usubst_gsingle, ?usubst_gsingle_ty, ?usubst_gren_tm', ?usubst_subst_ty',
+    ?motT_usubst, ?mott_usubst,
     ?mkrb_usubst, ?wrapMT_usubst, ?wrapMt_usubst in H) end;
   us_rewrite; us_push.
 
@@ -330,6 +342,11 @@ Ltac us_manual :=
   | |- eq_tm _ _ _ (elimt _ _ _ _ _ _ _) _ _ _ =>
       eapply eqtm_elimt; [ .. | us_branches | us_branches | us_branches | us_branches | ];
       eauto with us
+  (* [t T] (M5): the binding's level is not in the conclusion *)
+  | Hb : wf_ty (gctx_usubst (gext _ (gdTy _ lD ?k)) _ ?φ) _ _ _ _ |- wf_tm _ _ _ (tapp _ _) _ _ =>
+      eapply wf_tapp with (l := lvsubst k φ); eauto with us
+  | Hb : wf_ty (gctx_usubst (gext _ (gdTy _ lD ?k)) _ ?φ) _ _ _ _ |- eq_tm _ _ _ (tapp _ _) _ _ _ =>
+      eapply eqtm_tapp with (l := lvsubst k φ); eauto with us
   | |- _ => solve [econstructor; eauto with us]
   end.
 

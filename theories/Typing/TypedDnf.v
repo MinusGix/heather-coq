@@ -109,6 +109,8 @@ Proof.
                    cbn; intuition auto ].
   all: try solve [ eapply dnf_redT; [ .. | eassumption ]; cbn; intuition auto
                  | eapply dnf_redt; [ .. | eassumption ]; cbn; intuition auto ].
+  (* η of the meta-functions (M5): the weakened function *)
+  all: apply gren_dnf_all.
 Qed.
 
 Theorem typed_nf :

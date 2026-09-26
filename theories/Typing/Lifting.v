@@ -41,7 +41,8 @@ Ltac lift_step :=
             | solve [eapply wft_U; lift_premises] | solve [eapply wft_El; lift_premises]
             | solve [eapply wft_lconv; lift_premises] | solve [eapply wft_gvar; lift_premises]
             | solve [eapply wft_CTyp; lift_premises] | solve [eapply wft_CTrm; lift_premises]
-            | solve [eapply wft_upi; lift_premises] ]
+            | solve [eapply wft_upi; lift_premises]
+            | solve [eapply wft_cpi; lift_premises] | solve [eapply wft_tpi; lift_premises] ]
   | |- wf_tm _ _ _ _ _ _ =>
       first [ solve [eapply wf_var; lift_premises] | solve [eapply wf_code_nat; lift_premises]
             | solve [eapply wf_code_U; lift_premises] | solve [eapply wf_code_pi; lift_premises]
@@ -52,7 +53,9 @@ Ltac lift_step :=
             | solve [eapply wf_boxT; lift_premises] | solve [eapply wf_boxt; lift_premises]
             | solve [eapply wf_letboxT; lift_premises] | solve [eapply wf_letboxt; lift_premises]
             | solve [eapply wf_elimT; lift_premises] | solve [eapply wf_elimt; lift_premises]
-            | solve [eapply wf_ulam; lift_premises] | solve [eapply wf_uapp; lift_premises] ]
+            | solve [eapply wf_ulam; lift_premises] | solve [eapply wf_uapp; lift_premises]
+            | solve [eapply wf_clam; lift_premises] | solve [eapply wf_capp; lift_premises]
+            | solve [eapply wf_tlam; lift_premises] | solve [eapply wf_tapp; lift_premises] ]
   | |- eq_ty _ _ _ _ _ _ =>
       first [ solve [eapply eqty_refl; lift_premises] | solve [eapply eqty_sym; lift_premises]
             | solve [eapply eqty_trans; lift_premises] | solve [eapply eqty_pi; lift_premises]
@@ -61,7 +64,8 @@ Ltac lift_step :=
             | solve [eapply eqty_El_pi; lift_premises] | solve [eapply eqty_lconv; lift_premises]
             | solve [eapply eqty_gvar; lift_premises]
             | solve [eapply eqty_CTyp; lift_premises] | solve [eapply eqty_CTrm; lift_premises]
-            | solve [eapply eqty_leq; lift_premises] | solve [eapply eqty_upi; lift_premises] ]
+            | solve [eapply eqty_leq; lift_premises] | solve [eapply eqty_upi; lift_premises]
+            | solve [eapply eqty_cpi; lift_premises] | solve [eapply eqty_tpi; lift_premises] ]
   | |- eq_tm _ _ _ _ _ _ _ =>
       first [ solve [eapply eqtm_refl; lift_premises] | solve [eapply eqtm_sym; lift_premises]
             | solve [eapply eqtm_trans; lift_premises] | solve [eapply eqtm_code_U; lift_premises]
@@ -81,7 +85,11 @@ Ltac lift_step :=
             | solve [eapply eqtm_elimt_beta; lift_premises]
             | solve [eapply eqtm_leq; lift_premises]
             | solve [eapply eqtm_ulam; lift_premises] | solve [eapply eqtm_uapp; lift_premises]
-            | solve [eapply eqtm_ubeta; lift_premises] | solve [eapply eqtm_ueta; lift_premises] ]
+            | solve [eapply eqtm_ubeta; lift_premises] | solve [eapply eqtm_ueta; lift_premises]
+            | solve [eapply eqtm_clam; lift_premises] | solve [eapply eqtm_capp; lift_premises]
+            | solve [eapply eqtm_tlam; lift_premises] | solve [eapply eqtm_tapp; lift_premises]
+            | solve [eapply eqtm_cbeta; lift_premises] | solve [eapply eqtm_tbeta; lift_premises]
+            | solve [eapply eqtm_ceta; lift_premises] | solve [eapply eqtm_teta; lift_premises] ]
   end.
 
 Theorem lifting :

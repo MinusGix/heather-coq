@@ -145,8 +145,12 @@ Ltac fold_subst :=
          | |- context [subst_ty ?x ?y] => change (subst_ty x y) with (@subst ty Subst_ty x y)
          end.
 
+(** The meta-functions' instances and η (M5). *)
+Lemma gsingle_ren_ty (T : ty) o r : T⦃gsingle o⦄⟨r⟩ = T⟨r⟩⦃gsingle o⦄.
+Proof. symmetry; apply (proj1 gsubst_ren_all). Qed.
+
 Ltac wk_rewrite :=
-  rewrite ?single_ren_ty, ?single_ren, ?lsucc_ren_ty, ?single2_ren,
+  rewrite ?single_ren_ty, ?single_ren, ?lsucc_ren_ty, ?single2_ren, ?gsingle_ren_ty, <- ?gren_ren,
           ?shift_lift, ?shift_lift_ty, ?liftshift_lift_ty,
           ?mkrb_ren, ?motT_ren, ?mott_ren, ?wrapMT_ren, ?wrapMt_ren.
 
@@ -340,6 +344,22 @@ Proof.
   rewrite <- brLocs_ren by exact Hk. apply wkr_cexts, wkr_wkc, H.
 Qed.
 
+(** The meta-functions' bodies (M5): under the global binder, as letbox's. *)
+Ltac wk_gbody :=
+  match goal with
+  | IH : forall Δ' r', wkr r' Δ' (?Γ⟪S⟫) -> wf_ctx (gext ?G ?D) _ Δ' -> _,
+    Hr : wkr ?r ?Δ ?Γ, HΔ : wf_ctx ?G _ ?Δ |- _ =>
+      let X := fresh "X" in let Hg := fresh "Hg" in
+      assert (Hg : [ ⊢ gext G D ])
+        by (unfold gext; first [eapply wfg_ctx | eapply wfg_ty | eapply wfg_tm];
+            first [exact (ctx_glob _ _ _ HΔ) | eassumption | left; reflexivity | right; reflexivity
+                  | cbn; eassumption | eapply lequiv_wf_l; eassumption | eapply lequiv_wf_r; eassumption]);
+      assert (X : [ gext G D ; Δ⟪S⟫ ⊢[ lM ] ]);
+      [ exact (proj1 (proj2 gweakening) _ _ _ HΔ _ (D :: gΨ G) (gwk_step gwk_id) (le_n _)
+                 (gwkwf_step _ _ _ _ (gwkwf_id _)) Hg)
+      | exact (IH _ _ (wkr_gren _ _ _ S Hr) X) ]
+  end.
+
 (** The recursors' premises: motives under [⇑r], branch contexts and
     branches under [⇑ⁿr]. *)
 Ltac wk_motive :=
@@ -381,6 +401,25 @@ Ltac wk_upi_body :=
 
 Ltac wk_manual :=
   match goal with
+  (* meta-functions (M5) *)
+  | |- wf_ty _ _ _ (tyCPi _ _) _ => eapply wft_cpi; try wk_gbody; wk_premise
+  | |- wf_ty _ _ _ (tyTPi _ _ _ _) _ => eapply wft_tpi; try wk_gbody; wk_premise
+  | |- eq_ty _ _ _ (tyCPi _ _) _ _ => eapply eqty_cpi; try wk_gbody; wk_premise
+  | |- eq_ty _ _ _ (tyTPi _ _ _ _) _ _ => eapply eqty_tpi; try wk_gbody; wk_premise
+  | |- wf_tm _ _ _ (clam _ _) _ _ => eapply wf_clam; try wk_gbody; wk_premise
+  | |- wf_tm _ _ _ (tlam _ _ _) _ _ => eapply wf_tlam; try wk_gbody; wk_premise
+  | |- wf_tm _ _ _ (capp _ _) _ _ => eapply wf_capp; try wk_gbody; wk_premise
+  | |- wf_tm _ _ _ (tapp _ _) _ _ => eapply wf_tapp; try wk_gbody; wk_premise
+  | |- eq_tm _ _ _ (clam _ (capp _ _)) _ _ _ => eapply eqtm_ceta; try wk_gbody; wk_premise
+  | |- eq_tm _ _ _ (tlam _ _ (tapp _ _)) _ _ _ => eapply eqtm_teta; try wk_gbody; wk_premise
+  | |- eq_tm _ _ _ (clam _ _) _ _ _ => eapply eqtm_clam; try wk_gbody; wk_premise
+  | |- eq_tm _ _ _ (tlam _ _ _) _ _ _ => eapply eqtm_tlam; try wk_gbody; wk_premise
+  | |- eq_tm _ _ _ (capp (clam _ _) _) _ _ _ =>
+      rewrite <- gsubst_ren; eapply eqtm_cbeta; try wk_gbody; wk_premise
+  | |- eq_tm _ _ _ (tapp (tlam _ _ _) _) _ _ _ =>
+      rewrite <- gsubst_ren; eapply eqtm_tbeta; try wk_gbody; wk_premise
+  | |- eq_tm _ _ _ (capp _ _) _ _ _ => eapply eqtm_capp; try wk_gbody; wk_premise
+  | |- eq_tm _ _ _ (tapp _ _) _ _ _ => eapply eqtm_tapp; try wk_gbody; wk_premise
   | |- wf_ty _ _ _ (tyUPi _ _ _) _ => eapply wft_upi; try wk_upi_body; wk_premise
   | |- eq_ty _ _ _ (tyUPi _ _ _) _ _ => eapply eqty_upi; try wk_upi_body; wk_premise
   | |- wf_tm _ _ _ (ulam _ _ _) _ _ => eapply wf_ulam; try wk_upi_body; wk_premise

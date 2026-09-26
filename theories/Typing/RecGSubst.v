@@ -114,6 +114,23 @@ Proof.
     symmetry; apply gsubst_id; auto.
 Qed.
 
+(** The meta-functions' instances (M5). *)
+Lemma gs_gsingle_ty (T : ty) o σ : gdnf σ ->
+  T⦃gsingle o⦄⦃σ⦄ = T⦃gup σ⦄⦃gsingle (gosubst o σ)⦄.
+Proof.
+  intros Hσ.
+  rewrite (gsubst_gsubst_ty T _ _ (fun i => match i with 0 => gosubst o σ | S i => σ i end)),
+          (gsubst_gsubst_ty T _ _ (fun i => match i with 0 => gosubst o σ | S i => σ i end));
+    auto; intros [|i]; cbn; auto.
+  specialize (Hσ i); destruct (σ i) as [j|G|T0|t0]; cbn in *; auto; f_equal.
+  - rewrite (proj1 (proj2 (proj2 gsubst_gren_all)) _ _ _ (fun j => GId j)) by auto.
+    symmetry; apply gsubst_id_ctx; auto.
+  - rewrite (proj1 gsubst_gren_all _ _ _ (fun j => GId j)) by auto.
+    symmetry; apply gsubst_id_ty; auto.
+  - rewrite (proj1 (proj2 gsubst_gren_all) _ _ _ (fun j => GId j)) by auto.
+    symmetry; apply gsubst_id; auto.
+Qed.
+
 Lemma gousubst_gouren_single o l : dnfo o -> gousubst (gouren o S) (usingle l) = o.
 Proof.
   destruct o; cbn; intros H; try reflexivity; f_equal.

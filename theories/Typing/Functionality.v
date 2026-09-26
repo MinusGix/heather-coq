@@ -492,6 +492,55 @@ Ltac fung_manual :=
       eauto 6 using eqc_refl, lequiv_refl, eqty_refl, wf_ty_subst_g, lequiv_wf_l with fung
   end.
 
+(** The meta-functions (M5): the bodies at [gwk d] and [gwk d']. *)
+Ltac fung_mf_setup :=
+  match goal with
+  | Hd : lsub_eq ?G ?i ?Δ ?d ?d' ?Γ, wT : wf_ty (gext ?G ?D) _ (?Γ⟪S⟫) ?T ?l |- _ =>
+      let Hg := fresh "Hg" in let Hgd := fresh "Hgd" in
+      assert (Hg : [ ⊢ gext G D ])
+        by exact (ctx_glob _ _ _ (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ wT));
+      assert (Hgd : lsub_eq (gext G D) i Δ⟪S⟫ (gwk d) (gwk d') Γ⟪S⟫)
+        by exact (lsub_eq_gwk _ _ _ _ _ _ _ Hg Hd);
+      pose proof (wf_ty_subst_g wT (lsub_eq_l Hgd));
+      pose proof (wf_ty_subst_g wT (lsub_eq_r Hgd));
+      try match goal with
+          | IH : forall Δ0 e e', lsub_eq (gext G D) _ Δ0 e e' (Γ⟪S⟫) -> eq_ty _ _ _ (subst T _) _ _ |- _ =>
+              pose proof (IH _ _ _ Hgd) end;
+      try match goal with
+          | wt : wf_tm (gext G D) _ (Γ⟪S⟫) ?t T _,
+            IH : forall Δ0 e e', lsub_eq (gext G D) _ Δ0 e e' (Γ⟪S⟫) -> eq_tm _ _ _ (subst ?t _) _ _ _ |- _ =>
+              pose proof (IH _ _ _ Hgd); pose proof (wf_tm_subst_g wt (lsub_eq_r Hgd)) end
+  end.
+Ltac fung_mf_rw :=
+  match goal with Hd : lsub_eq _ _ _ ?d _ _ |- _ =>
+    rewrite ?(gsingle_subst_ty _ d _ (lsub_wf_dnf (lsub_eq_l Hd))) end.
+(** The instance's reflexivity, from its well-formedness premise at [d]. *)
+Ltac fung_inst_refl :=
+  match goal with
+  | w : wf_ty ?G _ ?Γ ?T⦃gsingle ?o⦄ ?l, Hd : lsub_eq ?G _ ?Δ ?d _ ?Γ |- eq_ty _ _ _ _ _ _ =>
+      let X := fresh "X" in
+      pose proof (wf_ty_subst_g w (lsub_eq_l Hd)) as X;
+      rewrite (gsingle_subst_ty _ d _ (lsub_wf_dnf (lsub_eq_l Hd))) in X;
+      apply eqty_refl; exact X
+  end.
+Ltac fung_mf :=
+  match goal with
+  | |- eq_ty _ _ _ (tyCPi _ _) _ _ => fung_mf_setup; eapply eqty_cpi; eauto 6 with fung
+  | |- eq_ty _ _ _ (tyTPi _ _ _ _) _ _ => fung_mf_setup; eapply eqty_tpi; eauto 6 with fung
+  | |- eq_tm _ _ _ (clam _ _) _ _ _ => fung_mf_setup; eapply eqtm_clam; eauto 6 with fung
+  | |- eq_tm _ _ _ (tlam _ _ _) _ _ _ =>
+      fung_mf_setup; eapply eqtm_tlam; try solve [eauto 6 with fung];
+      match goal with
+      | X : wf_tm _ _ _ ?t ?T' _, E : eq_ty _ _ _ ?T ?T' _ |- wf_tm _ _ _ ?t ?T _ => exact (wf_conv _ _ _ _ _ _ _ X E)
+      end
+  | |- eq_tm _ _ _ (capp _ _) _ _ _ =>
+      fung_mf_rw; fung_mf_setup; eapply eqtm_capp; try solve [eauto 6 with fung];
+      fung_inst_refl
+  | |- eq_tm _ _ _ (tapp _ _) _ _ _ =>
+      fung_mf_rw; fung_mf_setup; eapply eqtm_tapp; try solve [eauto 6 with fung];
+      first [fung_inst_refl | apply eqty_refl; assumption]
+  end.
+
 (** [UΠ] (M4): the body at [uwkn n d] and [uwkn n d']. *)
 Ltac fung_upi_ih :=
   match goal with
@@ -629,6 +678,7 @@ Proof.
   all: try solve [eapply lsub_eq_var; eassumption].
   all: try fun_rec.
   all: try fung_upi.
+  all: try fung_mf.
   all: try fung_manual.
   all: try (timeout 3 fung_step).
   (* code of Π and natrec: the binder premises need the substituted

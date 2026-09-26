@@ -106,6 +106,31 @@ local/global/universe substitution, universe permutation, context
 conversion, presupposition, static code, typed deep normal forms,
 typed reduction, lifting and functionality.
 
+Premises beyond the paper's (implemented). Each is admissible there and
+follows M3 E10: rules carry what the metatheory needs before the global
+substitution lemma exists, since `Functionality` precedes
+`GSubstitution`.
+- `wf_capp`, `wf_tapp`: the result type `T[Δ/g]` / `T[A/U]` is
+  well-formed.
+- `eqtm_capp`, `eqtm_tapp`: the instance equation
+  `T[Δ/g] ≅ T[Δ'/g]` / `T[A/U] ≅ T[A'/U]`. The paper derives it by
+  functionality of global substitutions, which we do not have.
+- `eqty_tpi`: the right body `T'` at `U : (Δ' ⊢_P @l3)`. `eqtm_tlam`:
+  the right body (type and term) at `U : (Δ ⊢_P @l3)`. Moving a body
+  between equal bindings would need a global-context conversion lemma;
+  `letbox` avoids it the same way.
+- `wf_tapp`, `eqtm_tapp` list the function's typing first. It fixes `U`'s
+  level, which is absent from the conclusion, so `eapply … ; eauto` picks
+  the right one.
+
+Supporting facts (implemented):
+- `Typing/MInst.v`: instantiation of a body at `Δ/g` or `A/U` (the global
+  substitution lemma at `gsingle`), the η identities, and the
+  presuppositions of the new rules.
+- The η body's type is `T⟪⇑S⟫[g/g]` (resp. `[U^id/U]`). It equals `T` on
+  typed `T` by `GStatic.equiv_gsubst`, whose `obj_equiv` now also relates
+  `GId j` and `GCtx (cvar j)` at a context binding.
+
 ### G3. The relation: `LRcpi` and `LRtpi` at `j = M`
 
 Instances under a Kripke world `ρ` (global weakening `γ`, then local
@@ -229,3 +254,7 @@ The existing consequences keep their statements.
 ## Status
 
 In progress.
+- Step 1 (syntax) done.
+- Step 2 (typing and metatheory) done. The FT at M admits its `CΠ`/`TΠ`
+  cases, flagged in `fundamentalM_us`, until step 5. Nothing else is
+  admitted.

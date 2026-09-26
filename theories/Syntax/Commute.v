@@ -114,6 +114,20 @@ Lemma ren_uren_tm (t : tm) ρ : t⟨ρ⟩ᵤ⟨r⟩ = t⟨r⟩⟨ρ⟩ᵤ. Proof
 Lemma subst_tyUPi n l T : (tyUPi n l T)[d] = tyUPi n l T[uwkn n d]. Proof. reflexivity. Qed.
 Lemma subst_ulam n l t : (ulam n l t)[d] = ulam n l t[uwkn n d]. Proof. reflexivity. Qed.
 Lemma subst_uapp t ls : (uapp t ls)[d] = uapp t[d] ls. Proof. reflexivity. Qed.
+(** The meta-functions (M5): the body under a global binder, the arguments
+    in their own scopes. *)
+Lemma ren_tyCPi l T : (tyCPi l T)⟨r⟩ = tyCPi l T⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_tyTPi Δ l l' T : (tyTPi Δ l l' T)⟨r⟩ = tyTPi Δ l l' T⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_clam l t : (clam l t)⟨r⟩ = clam l t⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_capp t Δ : (capp t Δ)⟨r⟩ = capp t⟨r⟩ Δ. Proof. reflexivity. Qed.
+Lemma ren_tlam l l' t : (tlam l l' t)⟨r⟩ = tlam l l' t⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_tapp t T : (tapp t T)⟨r⟩ = tapp t⟨r⟩ T. Proof. reflexivity. Qed.
+Lemma subst_tyCPi l T : (tyCPi l T)[d] = tyCPi l T[gwk d]. Proof. reflexivity. Qed.
+Lemma subst_tyTPi Δ l l' T : (tyTPi Δ l l' T)[d] = tyTPi Δ l l' T[gwk d]. Proof. reflexivity. Qed.
+Lemma subst_clam l t : (clam l t)[d] = clam l t[gwk d]. Proof. reflexivity. Qed.
+Lemma subst_capp t Δ : (capp t Δ)[d] = capp t[d] Δ. Proof. reflexivity. Qed.
+Lemma subst_tlam l l' t : (tlam l l' t)[d] = tlam l l' t[gwk d]. Proof. reflexivity. Qed.
+Lemma subst_tapp t T : (tapp t T)[d] = tapp t[d] T. Proof. reflexivity. Qed.
 End Push.
 
 Ltac push_ren := repeat progress (
@@ -121,13 +135,15 @@ Ltac push_ren := repeat progress (
           ?ren_tmU, ?ren_zero, ?ren_succ, ?ren_natrec, ?ren_lam, ?ren_app,
           ?ren_tyGvar, ?ren_tyCTyp, ?ren_tyCTrm, ?ren_gvar, ?ren_boxT, ?ren_boxt,
           ?ren_letboxT, ?ren_letboxt, ?ren_elimT, ?ren_elimt,
-          ?ren_tyUPi, ?ren_ulam, ?ren_uapp, ?ren_usubst_ty, ?ren_usubst_tm, ?ren_uren_tm).
+          ?ren_tyUPi, ?ren_ulam, ?ren_uapp, ?ren_usubst_ty, ?ren_usubst_tm, ?ren_uren_tm,
+          ?ren_tyCPi, ?ren_tyTPi, ?ren_clam, ?ren_capp, ?ren_tlam, ?ren_tapp).
 Ltac push_subst := repeat progress (
   rewrite ?subst_tyNat, ?subst_tyPi, ?subst_tyU, ?subst_tyEl, ?subst_var, ?subst_tmNat,
           ?subst_tmPi, ?subst_tmU, ?subst_zero, ?subst_succ, ?subst_natrec, ?subst_lam,
           ?subst_app, ?subst_tyGvar, ?subst_tyCTyp, ?subst_tyCTrm, ?subst_gvar, ?subst_boxT,
           ?subst_boxt, ?subst_letboxT, ?subst_letboxt, ?subst_elimT, ?subst_elimt,
-          ?subst_tyUPi, ?subst_ulam, ?subst_uapp).
+          ?subst_tyUPi, ?subst_ulam, ?subst_uapp,
+          ?subst_tyCPi, ?subst_tyTPi, ?subst_clam, ?subst_capp, ?subst_tlam, ?subst_tapp).
 
 (** ** Weakening past a binder *)
 

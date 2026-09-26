@@ -293,6 +293,14 @@ Proof.
   intros Hd. rewrite gsubst_subst. symmetry; apply subst_ext. intros n; apply gwk_gsingle, Hd.
 Qed.
 
+(** The meta-functions (M5): instances and η under local substitution. *)
+Lemma gsingle_subst_ty (T : ty) d o : LK dnftm d -> (T⦃gsingle o⦄)[d] = (T[gwk d])⦃gsingle o⦄.
+Proof.
+  intros Hd. rewrite gsubst_subst_ty. symmetry; apply subst_ext_ty. intros n; apply gwk_gsingle, Hd.
+Qed.
+Lemma shift_gwk_subst (t : tm) d : t⟪S⟫[gwk d] = t[d]⟪S⟫.
+Proof. symmetry; apply gren_subst. Qed.
+
 (** A typed substitution under one global binder. *)
 Lemma lsub_wf_gwk G D i Δ d Γ : [ ⊢ gext G D ] -> [ G ; Δ ⊢[ i ] d : Γ ] ->
   [ gext G D ; Δ⟪S⟫ ⊢[ i ] gwk d : Γ⟪S⟫ ].
@@ -353,6 +361,24 @@ Ltac sub_body :=
       rewrite body_subst_ty in X by (eauto with nf; reflexivity); exact X
   end.
 
+
+(** The meta-functions' bodies (M5): no instance in the body's type. *)
+Ltac sub_gbody :=
+  match goal with
+  | IH : forall Δ' d', lsub_wf (gext ?G ?D) _ Δ' d' (?Γ⟪S⟫) -> _,
+    Hd : lsub_wf ?G _ ?Δ ?d ?Γ |- _ =>
+      let Hg := fresh "Hg" in
+      assert (Hg : [ ⊢ gext G D ])
+        by (unfold gext; first [eapply wfg_ctx | eapply wfg_ty | eapply wfg_tm];
+            first [exact (ctx_glob _ _ _ (lsub_wf_ctx Hd)) | eassumption | left; reflexivity
+                  | right; reflexivity | cbn; eassumption | eapply lequiv_wf_l; eassumption | eapply lequiv_wf_r; eassumption]);
+      exact (IH _ _ (lsub_wf_gwk _ _ _ _ _ _ Hg Hd))
+  end.
+Ltac sub_mf_rw :=
+  match goal with Hd : lsub_wf _ _ _ ?d _ |- _ =>
+    rewrite ?(gsingle_subst_ty _ d _ (lsub_wf_dnf Hd)), ?(gsingle_subst _ d _ (lsub_wf_dnf Hd)),
+      ?shift_gwk_subst
+  end.
 
 (** ** The recursors' specification under local substitution *)
 
@@ -797,7 +823,9 @@ Ltac sub_rec_rw ::=
   match goal with Hd : lsub_wf _ _ _ ?d _ |- _ =>
     rewrite ?mkrb_subst;
     rewrite ?motT_subst, ?mott_subst by first [hd_tac | exact (lsub_wf_dnf Hd)]
-  end.
+  end;
+  (* and the meta-functions' instance equations (M5) *)
+  try sub_mf_rw.
 
 Ltac sub_manual2 :=
   match goal with
@@ -855,6 +883,23 @@ Ltac sub_manual2 :=
       sub_rec_rw; eapply eqtm_elimt;
       [ .. | sub_motive | sub_motive | sub_motive | sub_motive | sub_motive | sub_motive
            | sub_brctx | sub_brctx | sub_branches | sub_branches | ]; sub_premise
+  (* meta-functions (M5) *)
+  | |- wf_ty _ _ _ (tyCPi _ _) _ => eapply wft_cpi; try sub_gbody; sub_premise
+  | |- wf_ty _ _ _ (tyTPi _ _ _ _) _ => eapply wft_tpi; try sub_gbody; sub_premise
+  | |- eq_ty _ _ _ (tyCPi _ _) _ _ => eapply eqty_cpi; try sub_gbody; sub_premise
+  | |- eq_ty _ _ _ (tyTPi _ _ _ _) _ _ => eapply eqty_tpi; try sub_gbody; sub_premise
+  | |- wf_tm _ _ _ (clam _ _) _ _ => eapply wf_clam; try sub_gbody; sub_premise
+  | |- wf_tm _ _ _ (tlam _ _ _) _ _ => eapply wf_tlam; try sub_gbody; sub_premise
+  | |- wf_tm _ _ _ (capp _ _) _ _ => sub_mf_rw; eapply wf_capp; try sub_gbody; sub_premise
+  | |- wf_tm _ _ _ (tapp _ _) _ _ => sub_mf_rw; eapply wf_tapp; try sub_gbody; sub_premise
+  | |- eq_tm _ _ _ (clam _ (capp _ _)) _ _ _ => sub_mf_rw; eapply eqtm_ceta; try sub_gbody; sub_premise
+  | |- eq_tm _ _ _ (tlam _ _ (tapp _ _)) _ _ _ => sub_mf_rw; eapply eqtm_teta; try sub_gbody; sub_premise
+  | |- eq_tm _ _ _ (clam _ _) _ _ _ => eapply eqtm_clam; try sub_gbody; sub_premise
+  | |- eq_tm _ _ _ (tlam _ _ _) _ _ _ => eapply eqtm_tlam; try sub_gbody; sub_premise
+  | |- eq_tm _ _ _ (capp (clam _ _) _) _ _ _ => sub_mf_rw; eapply eqtm_cbeta; try sub_gbody; sub_premise
+  | |- eq_tm _ _ _ (tapp (tlam _ _ _) _) _ _ _ => sub_mf_rw; eapply eqtm_tbeta; try sub_gbody; sub_premise
+  | |- eq_tm _ _ _ (capp _ _) _ _ _ => sub_mf_rw; eapply eqtm_capp; try sub_gbody; sub_premise
+  | |- eq_tm _ _ _ (tapp _ _) _ _ _ => sub_mf_rw; eapply eqtm_tapp; try sub_gbody; sub_premise
   | |- wf_ty _ _ _ (tyUPi _ _ _) _ => eapply wft_upi; try sub_upi_body; sub_premise
   | |- eq_ty _ _ _ (tyUPi _ _ _) _ _ => eapply eqty_upi; try sub_upi_body; sub_premise
   | |- wf_tm _ _ _ (ulam _ _ _) _ _ => eapply wf_ulam; try sub_upi_body; sub_premise

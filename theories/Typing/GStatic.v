@@ -108,8 +108,11 @@ Definition id_obj (D : gdecl) (j : nat) : gobj :=
   | gdTm _ _ _ _ => GTm (gvar j (lshift 0))
   end.
 
+(** A context variable may also be expanded to itself as a context (the
+    instance [T[g/g]] of η for [CΠ], M5). *)
 Definition obj_equiv (D : gdecl) (o o' : gobj) : Prop :=
-  o = o' \/ exists j, o = GId j /\ o' = id_obj D j.
+  o = o' \/ (exists j, o = GId j /\ o' = id_obj D j) \/
+  (exists j, D = gdCtx /\ o = GId j /\ o' = GCtx (cvar j)).
 
 Definition gsub_equiv (G : gctx) (σ τ : gsub) : Prop :=
   forall n D, in_gctx (gΨ G) n D -> obj_equiv D (σ n) (τ n).
@@ -117,8 +120,9 @@ Definition gsub_equiv (G : gctx) (σ τ : gsub) : Prop :=
 Lemma gsub_equiv_up {G σ τ} D : gsub_equiv G σ τ -> gsub_equiv (gext G D) (gup σ) (gup τ).
 Proof.
   intros H n D0 Hin. inversion Hin as [Ψ0 D1 | Ψ0 D1 D2 m Hm]; subst; cbn [gup]; [left; reflexivity|].
-  destruct (H _ _ Hm) as [-> | (j & -> & ->)]; [left; reflexivity | right].
-  exists (S j); split; [reflexivity|]. destruct D1; reflexivity.
+  destruct (H _ _ Hm) as [-> | [(j & -> & ->) | (j & -> & -> & ->)]]; [left; reflexivity | right; left |].
+  - exists (S j); split; [reflexivity|]. destruct D1; reflexivity.
+  - right; right. exists (S j); repeat split.
 Qed.
 
 Lemma lnorm_nf d : nf_l d -> lnorm d = d.
@@ -160,9 +164,12 @@ Lemma gsub_equiv_uwkn n G σ τ : gsub_equiv G σ τ -> gsub_equiv (gctx_uwk n G
 Proof.
   intros H m D' Hin. unfold gctx_uwk in Hin; cbn [gΨ] in Hin.
   destruct (in_gctx_uren_inv _ _ _ _ Hin) as (D & HD & ->).
-  rewrite !guwkn_pt. destruct (H _ _ HD) as [E | (j & E1 & E2)].
+  rewrite !guwkn_pt. destruct (H _ _ HD) as [E | [(j & E1 & E2) | (j & -> & E1 & E2)]].
   - left; now rewrite E.
-  - right; exists j; rewrite E1, E2, iter_gouren_GId, (iter_gouren_id_obj _ _ _ (ush n)); split; reflexivity.
+  - right; left; exists j; rewrite E1, E2, iter_gouren_GId, (iter_gouren_id_obj _ _ _ (ush n)); split; reflexivity.
+  - right; right; exists j; rewrite E1, E2, iter_gouren_GId; repeat split.
+    clear. induction n as [|n IH]; [reflexivity|].
+    change (gouren (Nat.iter n (fun o => gouren o S) (GCtx (cvar j))) S = GCtx (cvar j)). now rewrite IH.
 Qed.
 
 Lemma gsub_equiv_recGT G σ τ : gsub_equiv G σ τ -> gsub_equiv (recGT G) (gup (guwk σ)) (gup (guwk τ)).
@@ -234,10 +241,14 @@ Proof.
                    match goal with IH : forall σ τ, gsub_equiv (gctx_uwk _ _) σ τ -> _ -> _ |- _ =>
                      apply IH; [apply gsub_equiv_uwkn; assumption | apply gdnf_guwkn; assumption] end ].
   all: cbn [gsubst GSubst_ty GSubst_tm GSubst_ctx]; simpl; try solve [eauto | f_equal; eauto].
+  (* the meta-functions (M5), and letbox: under the new binding *)
+  all: try solve [ f_equal; eauto; match goal with IH : forall σ τ, gsub_equiv (gext _ _) σ τ -> _ |- _ =>
+         apply IH; [apply gsub_equiv_up; assumption | intros [|n]; cbn; auto using dnfo_goren] end ].
   (* context variables *)
   1: match goal with
     | Ha : gsub_equiv _ ?σ ?τ, Hc : gctx_var _ ?g |- _ =>
-        destruct (Ha _ _ (gctx_var_in _ _ Hc)) as [E | (j & E1 & E2)]; [now rewrite E | now rewrite E1, E2]
+        destruct (Ha _ _ (gctx_var_in _ _ Hc)) as [E | [(j & E1 & E2) | (j & _ & E1 & E2)]];
+          [now rewrite E | now rewrite E1, E2 | now rewrite E1, E2]
      end.
   (* global variables *)
   1-2: match goal with
@@ -250,7 +261,8 @@ Proof.
            assert (Nd : nf_l (glsubst d τ))
              by (apply dnfl_nf; change (glsubst d τ) with d⦃τ⦄;
                  apply (proj2 (proj2 (proj2 gsubst_dnf_all))); assumption);
-           rewrite Ed; destruct (Ha _ _ Hin) as [E | (j & E1 & E2)];
+           rewrite Ed; destruct (Ha _ _ Hin) as [E | [(j & E1 & E2) | (j & ? & _ & _)]];
+             [ | | discriminate];
              [now rewrite E | rewrite E1, E2; cbn [id_obj]]
        end.
   1: exact (eq_sym (pty_id_obj _ _ Nd)).
