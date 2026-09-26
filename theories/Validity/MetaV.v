@@ -633,6 +633,31 @@ End CEta.
 
 (** ** Type bindings of layer P *)
 
+Lemma wf_ty_gvar_id_D {G0 U Δ Y l} : in_gctx (gΨ G0) U (gdTy Δ lD l) -> [ G0 ⊢[ lD ] Δ ≅ Y ] ->
+  [ G0 ; Y ⊢[ lD ] tyGvar U (lshift 0) @ l ].
+Proof.
+  intros Hin Hc. destruct (eqctx_id_at Hc (i := lD) eq_refl) as [Hw Hn Ht Hv].
+  eapply wft_gvar; [discriminate | exact Hw | exact Hin | apply lle_refl | exact Ht | exact I | exact Hv].
+Qed.
+
+(** A type variable bound at [Δ], related to itself at the extended scope. *)
+Lemma vp_ty_gvar0_at {G Δ l} : [ G ; Δ ⊢[ lD ] ] -> [ ⊢ gext G (gdTy Δ lD l) ] ->
+  @CtxRelG EP LR_P G Δ Δ -> @CtxRelG EM LR_P G Δ Δ ->
+  vp_ty (vpM EP EM) (gext G (gdTy Δ lD l)) Δ⟪S⟫ (tyGvar 0 (lshift 0)) (tyGvar 0 (lshift 0)) l.
+Proof.
+  intros HD HG1 XP XM.
+  pose proof (gwk_ok_step G (gdTy Δ lD l)) as Hγ1.
+  pose proof (gwk_ctx Hγ1 HG1 HD) as HDs.
+  assert (Hin0 : in_gctx (gΨ (gext G (gdTy Δ lD l))) 0 (gdTy Δ⟪S⟫ lD l)) by exact (ing_here _ (gdTy Δ lD l)).
+  assert (Hc : [ gext G (gdTy Δ lD l) ⊢[ lD ] Δ⟪S⟫ ≅ Δ⟪S⟫ ]) by exact (eqc_refl _ _ _ HDs).
+  refine (conj (eqty_refl _ _ _ _ _ (wf_ty_gvar_id_D Hin0 Hc)) (conj _ _)).
+  - exact (VTyG_gvar_ne (E := EP) (LP := LR_P) (δ := lshift 0) (δ' := lshift 0) Hin0 ge_lle_D I I
+             (VSubK_id HDs (CtxRelG_gwk XP Hγ1))).
+  - exact (VTyG_gvar_ne (E := EM) (LP := LR_P) (δ := lshift 0) (δ' := lshift 0) Hin0 ge_lle_D I I
+             (VSubK_id HDs (CtxRelG_gwk XM Hγ1))).
+Qed.
+
+
 Section TBind.
 Variables (G : gctx) (Δ1 : ctx) (l1 : lvl).
 Hypothesis (HΔ1 : [ G ; Δ1 ⊢[ lD ] ]) (VΔP : VCtxSP G Δ1) (VΔM : VCtxSPM G Δ1).
@@ -673,31 +698,15 @@ Proof.
   exact (GSubRel_cons_t (GSubRel_wk EP EM Hσ (kw_gok ρ) (kw_glob ρ)) h).
 Qed.
 
-Lemma wf_ty_gvar_id_D {G0 U Δ Y l} : in_gctx (gΨ G0) U (gdTy Δ lD l) -> [ G0 ⊢[ lD ] Δ ≅ Y ] ->
-  [ G0 ; Y ⊢[ lD ] tyGvar U (lshift 0) @ l ].
-Proof.
-  intros Hin Hc. destruct (eqctx_id_at Hc (i := lD) eq_refl) as [Hw Hn Ht Hv].
-  eapply wft_gvar; [discriminate | exact Hw | exact Hin | apply lle_refl | exact Ht | exact I | exact Hv].
-Qed.
-
 (** The bound variable, related to itself. *)
 Lemma vp_ty_gvar0 {G' σ σ'} : GSubRel G' G σ σ' -> lwf (gL G') l1 ->
   vp_ty (vpM EP EM) (gext G' (gdTy Δ1⦃σ⦄ lD l1)) Δ1⦃σ⦄⟪S⟫ (tyGvar 0 (lshift 0)) (tyGvar 0 (lshift 0)) l1.
 Proof.
   intros Hσ Hl1'. pose proof (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as HG'.
   pose proof (gs_ctx EP EM Hσ HΔ1 compt_D) as HD.
-  pose proof (wf_gext_ty (i := lD) HG' HD (or_intror eq_refl) Hl1') as HG1.
-  pose proof (gwk_ok_step G' (gdTy Δ1⦃σ⦄ lD l1)) as Hγ1.
-  pose proof (gwk_ctx Hγ1 HG1 HD) as HDs.
-  pose proof (CtxRelG_trans (VΔP _ _ _ Hσ) (CtxRelG_sym (VΔP _ _ _ Hσ))) as XP.
-  pose proof (CtxRelG_trans (VΔM _ _ _ Hσ) (CtxRelG_sym (VΔM _ _ _ Hσ))) as XM.
-  assert (Hin0 : in_gctx (gΨ (gext G' (gdTy Δ1⦃σ⦄ lD l1))) 0 (gdTy Δ1⦃σ⦄⟪S⟫ lD l1))
-    by exact (ing_here _ (gdTy Δ1⦃σ⦄ lD l1)).
-  refine (conj (eqty_refl _ _ _ _ _ (wf_ty_gvar_id_D Hin0 (eqc_refl _ _ _ HDs))) (conj _ _)).
-  - exact (VTyG_gvar_ne (E := EP) (LP := LR_P) (δ := lshift 0) (δ' := lshift 0) Hin0 ge_lle_D I I
-             (VSubK_id HDs (CtxRelG_gwk XP Hγ1))).
-  - exact (VTyG_gvar_ne (E := EM) (LP := LR_P) (δ := lshift 0) (δ' := lshift 0) Hin0 ge_lle_D I I
-             (VSubK_id HDs (CtxRelG_gwk XM Hγ1))).
+  exact (vp_ty_gvar0_at HD (wf_gext_ty (i := lD) HG' HD (or_intror eq_refl) Hl1')
+           (CtxRelG_trans (VΔP _ _ _ Hσ) (CtxRelG_sym (VΔP _ _ _ Hσ)))
+           (CtxRelG_trans (VΔM _ _ _ Hσ) (CtxRelG_sym (VΔM _ _ _ Hσ)))).
 Qed.
 
 (** Pushed under the binder, to [U^id]. *)

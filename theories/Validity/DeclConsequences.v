@@ -349,4 +349,117 @@ Proof. apply declM_upi_not; [apply whnf_tyCTyp | not_upi]. Qed.
 Theorem declM_upi_not_CTrm {G Γ n l A Δ B l' k} : ~ [ G ; Γ ⊢[ lM ] tyUPi n l A ≅ tyCTrm Δ B l' @ k ].
 Proof. apply declM_upi_not; [apply whnf_tyCTrm | not_upi]. Qed.
 
+Theorem declM_upi_not_cpi {G Γ n l A l' B k} : ~ [ G ; Γ ⊢[ lM ] tyUPi n l A ≅ tyCPi l' B @ k ].
+Proof. apply declM_upi_not; [apply whnf_tyCPi | not_upi]. Qed.
+Theorem declM_upi_not_tpi {G Γ n l A Δ l1 l2 B k} : ~ [ G ; Γ ⊢[ lM ] tyUPi n l A ≅ tyTPi Δ l1 l2 B @ k ].
+Proof. apply declM_upi_not; [apply whnf_tyTPi | not_upi]. Qed.
+
+(** ** The meta-functions (M5_DESIGN.md G6)
+
+    Injectivity: the bodies of convertible [CΠ]s (or [TΠ]s) are
+    convertible under the binder, from the instance at the world one
+    binding up, at the bound variable; the η identities take the
+    instance's bodies back to the bodies themselves. *)
+
+Theorem declM_cpi_inj {G Γ l l' T T' k} : [ G ; Γ ⊢[ lM ] tyCPi l T ≅ tyCPi l' T' @ k ] ->
+  lequiv (gL G) l' l /\ [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l ].
+Proof.
+  intros H. destruct (redM_eqty _ _ _ _ _ H (lwfM_whnf_l H (whnf_tyCPi _ _) ltac:(not_upi))) as [R HR].
+  pose proof (eqty_wf_l (i := lM) eq_refl H) as HT. pose proof (eqty_wf_r (i := lM) eq_refl H) as HT'.
+  destruct (LR_inv_cpi HR (tyred_refl _ _ HT)) as (m2 & U1' & instR & _ & _ & Hm2 & _ & HTr & HU & HU' & _ & HI & _).
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HTr (tyred_refl _ _ HT') (whnf_tyCPi _ _) (whnf_tyCPi _ _)) as E.
+  injection E as -> ->.
+  split; [exact Hm2 |].
+  pose proof (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ HT) as HΓ.
+  assert (HΓg : [ G ; Γ ⊢g ]) by (rewrite (@gm_layer_M DEP DEM _); exact HΓ).
+  assert (HG1 : [ ⊢ gext G gdCtx ]) by (apply wfg_ctx, (ctx_glob _ _ _ HΓ)).
+  set (ρS := kw_gstep gdCtx HG1 HΓg).
+  assert (hS : vp_ctx (@lr_vp LRM) (kw_G ρS) (cvar 0) (cvar 0))
+    by exact (conj (eqc_var _ _ 0 HG1 eq_refl) (conj CtxRelG_var CtxRelG_var)).
+  destruct (escape_ty _ _ _ _ _ _ _ _ (HI ρS _ _ hS)) as (_ & _ & Y). apply geq_ty_sound in Y.
+  rewrite (@gm_layer_M DEP DEM _) in HU, HU', Y.
+  unfold ρS in Y. rewrite !kbody_gstep, (eta_c_ty HU), (eta_c_ty HU') in Y.
+  cbn [kw_gstep kw_G kw_Δ gwa] in Y. change (Γ⟪gwk_step gwk_id⟫) with Γ⟪S⟫ in Y. exact Y.
+Qed.
+
+Theorem declM_tpi_inj {G Γ Δ Δ' l1 l2 l3 l4 T T' k} :
+  [ G ; Γ ⊢[ lM ] tyTPi Δ l1 l2 T ≅ tyTPi Δ' l3 l4 T' @ k ] ->
+  [ G ⊢[ lD ] Δ ≅ Δ' ] /\ lequiv (gL G) l3 l1 /\ lequiv (gL G) l4 l2 /\
+  [ gext G (gdTy Δ lD l1) ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l2 ].
+Proof.
+  intros H. destruct (redM_eqty _ _ _ _ _ H (lwfM_whnf_l H (whnf_tyTPi _ _ _ _) ltac:(not_upi))) as [R HR].
+  pose proof (eqty_wf_l (i := lM) eq_refl H) as HT. pose proof (eqty_wf_r (i := lM) eq_refl H) as HT'.
+  destruct (LR_inv_tpi HR (tyred_refl _ _ HT))
+    as (Θ' & m3 & m4 & U1' & instR & _ & _ & H31 & H42 & Wl1 & _ & HTr & hΘ & HU & HU' & _ & HI & _).
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HTr (tyred_refl _ _ HT') (whnf_tyTPi _ _ _ _) (whnf_tyTPi _ _ _ _))
+    as E.
+  injection E as -> -> -> ->.
+  destruct hΘ as (HΔΔ & XP & XM).
+  refine (conj HΔΔ (conj H31 (conj H42 _))).
+  pose proof (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ HT) as HΓ.
+  assert (HΓg : [ G ; Γ ⊢g ]) by (rewrite (@gm_layer_M DEP DEM _); exact HΓ).
+  pose proof (eqctx_wf_l (i := lD) eq_refl HΔΔ) as HΔ.
+  assert (HG1 : [ ⊢ gext G (gdTy Δ lD l1) ])
+    by (apply wfg_ty; [exact (ctx_glob _ _ _ HΓ) | exact HΔ | right; reflexivity | exact Wl1]).
+  set (ρS := kw_gstep (gdTy Δ lD l1) HG1 HΓg).
+  pose proof (vp_ty_gvar0_at DEP DEM HΔ HG1 (CtxRelG_trans XP (CtxRelG_sym XP))
+                (CtxRelG_trans XM (CtxRelG_sym XM))) as hS.
+  destruct (escape_ty _ _ _ _ _ _ _ _ (HI ρS _ _ hS)) as (_ & _ & Y). apply geq_ty_sound in Y.
+  rewrite (@gm_layer_M DEP DEM _) in HU, HU', Y.
+  unfold ρS in Y. rewrite !kbody_gstep, (eta_t_ty HU), (eta_t_ty HU') in Y.
+  cbn [kw_gstep kw_G kw_Δ gwa] in Y. change (Γ⟪gwk_step gwk_id⟫) with Γ⟪S⟫ in Y. exact Y.
+Qed.
+
+(** Discrimination: the other side of a convertible [CΠ] (or [TΠ])
+    reduces to one. *)
+Lemma declM_cpi_not {G Γ l T X k} : whnf_ty X -> (forall m U, X <> tyCPi m U) ->
+  ~ [ G ; Γ ⊢[ lM ] tyCPi l T ≅ X @ k ].
+Proof.
+  intros Hw Hn H. destruct (redM_eqty _ _ _ _ _ H (lwfM_whnf_l H (whnf_tyCPi _ _) ltac:(not_upi))) as [R HR].
+  destruct (LR_inv_cpi HR (tyred_refl _ _ (eqty_wf_l (i := lM) eq_refl H)))
+    as (m2 & U1' & _ & _ & _ & _ & _ & HTr & _).
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HTr (tyred_refl _ _ (eqty_wf_r (i := lM) eq_refl H))
+                (whnf_tyCPi _ _) Hw) as E.
+  exact (Hn _ _ (eq_sym E)).
+Qed.
+
+Lemma declM_tpi_not {G Γ Δ l l' T X k} : whnf_ty X -> (forall Θ m m' U, X <> tyTPi Θ m m' U) ->
+  ~ [ G ; Γ ⊢[ lM ] tyTPi Δ l l' T ≅ X @ k ].
+Proof.
+  intros Hw Hn H. destruct (redM_eqty _ _ _ _ _ H (lwfM_whnf_l H (whnf_tyTPi _ _ _ _) ltac:(not_upi))) as [R HR].
+  destruct (LR_inv_tpi HR (tyred_refl _ _ (eqty_wf_l (i := lM) eq_refl H)))
+    as (Θ' & m3 & m4 & U1' & _ & _ & _ & _ & _ & _ & _ & HTr & _).
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HTr (tyred_refl _ _ (eqty_wf_r (i := lM) eq_refl H))
+                (whnf_tyTPi _ _ _ _) Hw) as E.
+  exact (Hn _ _ _ _ (eq_sym E)).
+Qed.
+
+Ltac not_cpi := let m := fresh in let U := fresh in let E := fresh in intros m U E; discriminate E.
+Ltac not_tpi := let a := fresh in let b := fresh in let c := fresh in let d := fresh in let E := fresh in
+  intros a b c d E; discriminate E.
+
+Theorem declM_cpi_not_nat {G Γ l T k} : ~ [ G ; Γ ⊢[ lM ] tyCPi l T ≅ tyNat @ k ].
+Proof. apply declM_cpi_not; [exact whnf_tyNat | not_cpi]. Qed.
+Theorem declM_cpi_not_U {G Γ l T l' k} : ~ [ G ; Γ ⊢[ lM ] tyCPi l T ≅ tyU l' @ k ].
+Proof. apply declM_cpi_not; [apply whnf_tyU | not_cpi]. Qed.
+Theorem declM_cpi_not_pi {G Γ l T l1 l2 A B k} : ~ [ G ; Γ ⊢[ lM ] tyCPi l T ≅ tyPi l1 l2 A B @ k ].
+Proof. apply declM_cpi_not; [apply whnf_tyPi | not_cpi]. Qed.
+Theorem declM_cpi_not_CTyp {G Γ l T Δ l' k} : ~ [ G ; Γ ⊢[ lM ] tyCPi l T ≅ tyCTyp Δ l' @ k ].
+Proof. apply declM_cpi_not; [apply whnf_tyCTyp | not_cpi]. Qed.
+Theorem declM_cpi_not_CTrm {G Γ l T Δ A l' k} : ~ [ G ; Γ ⊢[ lM ] tyCPi l T ≅ tyCTrm Δ A l' @ k ].
+Proof. apply declM_cpi_not; [apply whnf_tyCTrm | not_cpi]. Qed.
+Theorem declM_cpi_not_tpi {G Γ l T Δ l1 l2 B k} : ~ [ G ; Γ ⊢[ lM ] tyCPi l T ≅ tyTPi Δ l1 l2 B @ k ].
+Proof. apply declM_cpi_not; [apply whnf_tyTPi | not_cpi]. Qed.
+
+Theorem declM_tpi_not_nat {G Γ Δ l l' T k} : ~ [ G ; Γ ⊢[ lM ] tyTPi Δ l l' T ≅ tyNat @ k ].
+Proof. apply declM_tpi_not; [exact whnf_tyNat | not_tpi]. Qed.
+Theorem declM_tpi_not_U {G Γ Δ l l' T l0 k} : ~ [ G ; Γ ⊢[ lM ] tyTPi Δ l l' T ≅ tyU l0 @ k ].
+Proof. apply declM_tpi_not; [apply whnf_tyU | not_tpi]. Qed.
+Theorem declM_tpi_not_pi {G Γ Δ l l' T l1 l2 A B k} : ~ [ G ; Γ ⊢[ lM ] tyTPi Δ l l' T ≅ tyPi l1 l2 A B @ k ].
+Proof. apply declM_tpi_not; [apply whnf_tyPi | not_tpi]. Qed.
+Theorem declM_tpi_not_CTyp {G Γ Δ l l' T Θ l0 k} : ~ [ G ; Γ ⊢[ lM ] tyTPi Δ l l' T ≅ tyCTyp Θ l0 @ k ].
+Proof. apply declM_tpi_not; [apply whnf_tyCTyp | not_tpi]. Qed.
+Theorem declM_tpi_not_CTrm {G Γ Δ l l' T Θ A l0 k} : ~ [ G ; Γ ⊢[ lM ] tyTPi Δ l l' T ≅ tyCTrm Θ A l0 @ k ].
+Proof. apply declM_tpi_not; [apply whnf_tyCTrm | not_tpi]. Qed.
+
 End DeclConsequences.
