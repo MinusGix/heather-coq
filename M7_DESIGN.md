@@ -193,7 +193,18 @@ with `ctx_only G`:
 - `decl_eqty_dec` with the two sides at possibly different levels.
 - `decl ↔ ac` as one iff per judgment.
 
-Status: planned.
+Status: **done** (`Validity/Uniform.v`), closed:
+- `whnf_normalization_ty_c`/`_tm_c`, with the equation (the term form
+  via soundness of reduction, A2);
+- `closed_nat_canonicity_c`;
+- `ac_ty_iff`/`ac_tm_iff`;
+- `decl_eqty_dec_lv`: the sides at possibly different levels. Equal
+  types are well formed at the judgment's level, and levels of a type are
+  unique up to equivalence (`ty_lvl_uniq`).
+
+Injectivity of `Π` and `U` and head discrimination already had `compt i`
+forms (`pi_inj_c`, `U_inj_c`, `decl_head_c`); the other type formers are
+M-only.
 
 ## C. Ambitious
 
@@ -236,5 +247,5 @@ Status: to design.
 
 ## Order
 
-A1, A3, B1, A2 (done); then B2. The C items are designed separately when
+A1, A3, B1, A2, B2: done. The C items are next, each to be designed first. The C items are designed separately when
 reached.
