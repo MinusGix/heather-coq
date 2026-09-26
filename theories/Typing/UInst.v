@@ -188,6 +188,20 @@ Proof.
     f_equal; lia.
 Qed.
 
+(** Levels of context entries and of instances are never ω. *)
+Lemma in_ctx_lwf {G i Γ n A k} : [ G ; Γ ⊢[ i ] ] -> in_ctx Γ n A k -> lwf (gL G) k.
+Proof.
+  intros HΓ H; revert HΓ; induction H as [Γ A l | Γ A l B l' n H IH]; intros HΓ;
+    inversion HΓ; subst; auto.
+Qed.
+
+Lemma ilv_not_omega L n l ls : lwf (n + L) l -> length ls = n -> Forall (lwf L) ls ->
+  lvsubst l (uext ls lvar) <> lomega.
+Proof.
+  intros Hl Hn Hls. subst n. apply (lwf_not_omega L).
+  exact (lwf_lvsubst _ _ _ _ (usub_ok_uext _ _ _ _ Hls (usub_ok_id _)) Hl).
+Qed.
+
 (** ** Presuppositions of the new rules *)
 
 Section Presup.

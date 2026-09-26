@@ -6,7 +6,7 @@
     which gives the static code's payload and the contexts of [□].  The
     global variables' images are MLTT types and terms, related at
     [⊩^{≥P}_P], which the Layering Restriction carries to [LR_M]. *)
-From DeLaM.Validity Require Export FundamentalS LetboxS RecFT.
+From DeLaM.Validity Require Export FundamentalS LetboxS RecFT UPiV.
 
 Section FundamentalM.
 Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM} {EMl : GenericEqM EP EM}.
@@ -25,6 +25,13 @@ Definition SemCtxM (G : gctx) (Γ : ctx) : Prop := GValid G /\ VCtxSM G Γ.
 Definition SemTyM (G : gctx) (Γ : ctx) (T T' : ty) (l : lvl) : Prop := SemCtxM G Γ /\ VTySM G Γ T T' l.
 Definition SemTmM (G : gctx) (Γ : ctx) (t t' : tm) (T : ty) (l : lvl) : Prop :=
   SemCtxM G Γ /\ VTySM G Γ T T l /\ VTmSM G Γ t t' T l.
+
+(** At ω (M4_DESIGN.md F3): the relation at ω. *)
+Local Notation VTySωM := (@VTySω EP EM EM LRM).
+Local Notation VTmSωM := (@VTmSω EP EM EM LRM).
+Definition SemTyMω (G : gctx) (Γ : ctx) (T T' : ty) : Prop := SemCtxM G Γ /\ VTySωM G Γ T T'.
+Definition SemTmMω (G : gctx) (Γ : ctx) (t t' : tm) (T : ty) : Prop :=
+  SemCtxM G Γ /\ VTySωM G Γ T T /\ VTmSωM G Γ t t' T.
 
 (** ** From [⊩^{≥P}_P] at the M instance to [LR_M], on MLTT syntax *)
 
@@ -441,6 +448,163 @@ Proof.
 Qed.
 
 End Rec.
+
+(** ** At ω: the PER, conversion and level-equivalence rules *)
+
+Lemma FMω_ty_sym {G Γ T T'} : SemTyMω G Γ T T' -> SemTyMω G Γ T' T.
+Proof. intros ((HG & HΓ) & V). exact (conj (conj HG HΓ) (VTySω_sym EP EM HG HΓ V)). Qed.
+Lemma FMω_ty_trans {G Γ T1 T2 T3} : SemTyMω G Γ T1 T2 -> SemTyMω G Γ T2 T3 -> SemTyMω G Γ T1 T3.
+Proof. intros (HS & V1) (_ & V2). exact (conj HS (VTySω_trans EP EM V1 V2)). Qed.
+Lemma FMω_tm_sym {G Γ t t' T} : SemTmMω G Γ t t' T -> SemTmMω G Γ t' t T.
+Proof. intros ((HG & HΓ) & VT & V). exact (conj (conj HG HΓ) (conj VT (VTmSω_sym EP EM HG HΓ VT V))). Qed.
+Lemma FMω_tm_trans {G Γ t1 t2 t3 T} : SemTmMω G Γ t1 t2 T -> SemTmMω G Γ t2 t3 T -> SemTmMω G Γ t1 t3 T.
+Proof. intros (HS & VT & V1) (_ & _ & V2). exact (conj HS (conj VT (VTmSω_trans EP EM V1 V2))). Qed.
+Lemma FMω_conv {G Γ t t' T T'} : SemTmMω G Γ t t' T' -> SemTyMω G Γ T T' -> SemTmMω G Γ t t' T.
+Proof.
+  intros (HS & _ & V) ((HG & HΓ) & VT). split; [exact (conj HG HΓ) | split].
+  - exact (VTySω_trans EP EM VT (VTySω_sym EP EM HG HΓ VT)).
+  - exact (VTmSω_conv EP EM V VT).
+Qed.
+Lemma FMω_ty_leq {G Γ T T'} : SemTyMω G Γ T T -> SemTyMω G Γ T' T' -> ty_leq T T' -> SemTyMω G Γ T T'.
+Proof. intros ((HG & HΓ) & V) (_ & V') E. exact (conj (conj HG HΓ) (VTySω_leq EP EM HΓ V V' E)). Qed.
+Lemma FMω_tm_leq {G Γ t t' T} : SemTmMω G Γ t t T -> SemTmMω G Γ t' t' T -> tm_leq t t' -> SemTmMω G Γ t t' T.
+Proof.
+  intros ((HG & HΓ) & VT & V) (_ & _ & V') E. exact (conj (conj HG HΓ) (conj VT (VTmSω_leq EP EM HΓ VT V V' E))).
+Qed.
+
+(** ** Universe polymorphism (UPiV): the induction hypotheses as the
+    theorem provides them, the bodies' at every universe substitution *)
+
+Section UPiFM.
+Variables (G : gctx) (Γ : ctx) (L' : nat) (φ : nat -> lvl) (n : nat).
+Hypothesis (Hφ : usub_ok φ L' (gL G)) (HS : SemCtxM (G_us G L' φ) (ucsubst Γ φ))
+  (HΓ : [ G_us G L' φ ; ucsubst Γ φ ⊢[ lM ] ]) (Hn : 0 < n).
+
+Let HG := ctx_glob _ _ _ HΓ.
+
+Lemma FM_upi {l l' T T'} : lequiv (n + gL G) l l' ->
+  (forall L'' ψ, usub_ok ψ L'' (gL (gctx_uwk n G)) ->
+     SemTyM (G_us (gctx_uwk n G) L'' ψ) (ucsubst Γ⟨ush n⟩ᵤ ψ) (usubst_ty T ψ) (usubst_ty T' ψ) (lvsubst l ψ)) ->
+  SemTyMω (G_us G L' φ) (ucsubst Γ φ) (tyUPi n (lvsubst l (uupn n φ)) (usubst_ty T (uupn n φ)))
+    (tyUPi n (lvsubst l' (uupn n φ)) (usubst_ty T' (uupn n φ))).
+Proof.
+  intros Hl IH. split; [exact HS |].
+  exact (VS_upi EP EM G Γ L' φ n Hφ HG HΓ Hn l l' T T' Hl (fun L'' ψ H => proj2 (IH L'' ψ H))).
+Qed.
+
+Lemma FM_ulam {l l' T t t'} : lequiv (n + gL G) l l' ->
+  (forall L'' ψ, usub_ok ψ L'' (gL (gctx_uwk n G)) ->
+     SemTyM (G_us (gctx_uwk n G) L'' ψ) (ucsubst Γ⟨ush n⟩ᵤ ψ) (usubst_ty T ψ) (usubst_ty T ψ) (lvsubst l ψ)) ->
+  (forall L'' ψ, usub_ok ψ L'' (gL (gctx_uwk n G)) ->
+     SemTmM (G_us (gctx_uwk n G) L'' ψ) (ucsubst Γ⟨ush n⟩ᵤ ψ) (usubst_tm t ψ) (usubst_tm t' ψ) (usubst_ty T ψ) (lvsubst l ψ)) ->
+  SemTmMω (G_us G L' φ) (ucsubst Γ φ) (ulam n (lvsubst l (uupn n φ)) (usubst_tm t (uupn n φ)))
+    (ulam n (lvsubst l' (uupn n φ)) (usubst_tm t' (uupn n φ))) (tyUPi n (lvsubst l (uupn n φ)) (usubst_ty T (uupn n φ))).
+Proof.
+  intros Hl IT It. split; [exact HS | split].
+  - exact (VS_upi EP EM G Γ L' φ n Hφ HG HΓ Hn l l T T (lequiv_refl _ _ (lequiv_wf_l _ _ _ Hl))
+             (fun L'' ψ H => proj2 (IT L'' ψ H))).
+  - exact (VS_ulam EP EM G Γ L' φ n Hφ HG HΓ Hn l l' T t t' Hl (fun L'' ψ H => proj2 (IT L'' ψ H))
+             (fun L'' ψ H => proj2 (proj2 (It L'' ψ H)))).
+Qed.
+
+(** The body's type at an instance: its validity at [uext ks φ]. *)
+Lemma FM_inst_ty {l T ks} : length ks = n -> Forall (lwf L') ks ->
+  (forall L'' ψ, usub_ok ψ L'' (gL (gctx_uwk n G)) ->
+     SemTyM (G_us (gctx_uwk n G) L'' ψ) (ucsubst Γ⟨ush n⟩ᵤ ψ) (usubst_ty T ψ) (usubst_ty T ψ) (lvsubst l ψ)) ->
+  VTySM (G_us G L' φ) (ucsubst Γ φ) T[uupn n φ]ᵤ[uext ks lvar]ᵤ T[uupn n φ]ᵤ[uext ks lvar]ᵤ
+    (lvsubst (lvsubst l (uupn n φ)) (uext ks lvar)).
+Proof.
+  intros Hks Wks IT. rewrite (uupn_uext_ty n ks φ T Hks), (uupn_uext_l n ks φ l Hks).
+  assert (Hψ : usub_ok (uext ks φ) L' (gL (gctx_uwk n G)))
+    by (cbn [gL gctx_uwk]; rewrite <- Hks; apply usub_ok_uext; assumption).
+  pose proof (proj2 (IT _ _ Hψ)) as X. rewrite (G_us_uwk_uext_φ n _ _ ks φ Hks), (ctx_uwk_uext_φ n _ ks φ Hks) in X.
+  exact X.
+Qed.
+
+Lemma FM_uapp {l T t t' ls ls'} : lwf (n + gL G) l -> length ls = n -> Forall2 (lequiv (gL G)) ls ls' ->
+  (forall L'' ψ, usub_ok ψ L'' (gL (gctx_uwk n G)) ->
+     SemTyM (G_us (gctx_uwk n G) L'' ψ) (ucsubst Γ⟨ush n⟩ᵤ ψ) (usubst_ty T ψ) (usubst_ty T ψ) (lvsubst l ψ)) ->
+  SemTmMω (G_us G L' φ) (ucsubst Γ φ) (usubst_tm t φ) (usubst_tm t' φ)
+    (tyUPi n (lvsubst l (uupn n φ)) (usubst_ty T (uupn n φ))) ->
+  SemTmM (G_us G L' φ) (ucsubst Γ φ) (uapp (usubst_tm t φ) (map (fun l => lvsubst l φ) ls))
+    (uapp (usubst_tm t' φ) (map (fun l => lvsubst l φ) ls')) (usubst_ty T[uext ls lvar]ᵤ φ)
+    (lvsubst (lvsubst l (uext ls lvar)) φ).
+Proof.
+  intros Hl Hlen Hls IT (_ & _ & Vt).
+  pose proof (lequivs_usubst _ _ _ _ _ Hφ Hls) as Hks.
+  assert (Hlen' : length (map (fun l => lvsubst l φ) ls) = n) by (rewrite length_map; exact Hlen).
+  change (usubst_ty T[uext ls lvar]ᵤ φ) with (T[uext ls lvar]ᵤ[φ]ᵤ).
+  rewrite (usubst_ubeta_ty n ls φ T Hlen), (usubst_ubeta_lvl n ls φ l Hlen).
+  split; [exact HS | split].
+  - exact (FM_inst_ty Hlen' (lequivs_lwf_l _ _ _ Hks) IT).
+  - exact (VS_uapp EP EM G Γ L' φ n Hφ HG HΓ l T _ _ _ _ (fun L'' ψ H => proj2 (IT L'' ψ H)) Vt Hlen' Hks).
+Qed.
+
+Lemma FM_ubeta {l T t ls} : length ls = n -> Forall (lwf (gL G)) ls ->
+  (forall L'' ψ, usub_ok ψ L'' (gL (gctx_uwk n G)) ->
+     SemTyM (G_us (gctx_uwk n G) L'' ψ) (ucsubst Γ⟨ush n⟩ᵤ ψ) (usubst_ty T ψ) (usubst_ty T ψ) (lvsubst l ψ)) ->
+  (forall L'' ψ, usub_ok ψ L'' (gL (gctx_uwk n G)) ->
+     SemTmM (G_us (gctx_uwk n G) L'' ψ) (ucsubst Γ⟨ush n⟩ᵤ ψ) (usubst_tm t ψ) (usubst_tm t ψ) (usubst_ty T ψ) (lvsubst l ψ)) ->
+  [ G_us G L' φ ; ucsubst Γ φ ⊢[ lM ] usubst_tm (uapp (ulam n l t) ls) φ : usubst_ty T[uext ls lvar]ᵤ φ
+      @ lvsubst (lvsubst l (uext ls lvar)) φ ] ->
+  [ G_us G L' φ ; ucsubst Γ φ ⊢[ lM ] usubst_tm (uapp (ulam n l t) ls) φ ≅ usubst_tm t[uext ls lvar]ᵤ φ
+      : usubst_ty T[uext ls lvar]ᵤ φ @ lvsubst (lvsubst l (uext ls lvar)) φ ] ->
+  SemTmM (G_us G L' φ) (ucsubst Γ φ) (uapp (ulam n (lvsubst l (uupn n φ)) (usubst_tm t (uupn n φ)))
+      (map (fun l => lvsubst l φ) ls)) (usubst_tm t[uext ls lvar]ᵤ φ) (usubst_ty T[uext ls lvar]ᵤ φ)
+    (lvsubst (lvsubst l (uext ls lvar)) φ).
+Proof.
+  intros Hlen Wls IT It Hw Heq.
+  set (ks := map (fun l => lvsubst l φ) ls).
+  assert (Hks : length ks = n) by (unfold ks; rewrite length_map; exact Hlen).
+  assert (Wks : Forall (lwf L') ks) by exact (lwfs_usubst _ _ _ _ Hφ Wls).
+  change (usubst_ty T[uext ls lvar]ᵤ φ) with (T[uext ls lvar]ᵤ[φ]ᵤ) in *.
+  change (usubst_tm t[uext ls lvar]ᵤ φ) with (t[uext ls lvar]ᵤ[φ]ᵤ) in *.
+  rewrite (usubst_ubeta_ty n ls φ T Hlen), (usubst_ubeta_lvl n ls φ l Hlen), (usubst_ubeta n ls φ t Hlen) in *.
+  fold ks in Hw, Heq |- *.
+  split; [exact HS | split].
+  - exact (FM_inst_ty Hks Wks IT).
+  - apply (VS_red EP EM Hw Heq).
+    + intros σ e Nσ Ne. exact (red_ubeta_inst n _ _ ks σ e Hks Nσ Ne).
+    + rewrite (uupn_uext_tm n ks φ t Hks), (uupn_uext_ty n ks φ T Hks), (uupn_uext_l n ks φ l Hks).
+      assert (Hψ : usub_ok (uext ks φ) L' (gL (gctx_uwk n G)))
+        by (cbn [gL gctx_uwk]; rewrite <- Hks; apply usub_ok_uext; assumption).
+      pose proof (proj2 (proj2 (It _ _ Hψ))) as X.
+      rewrite (G_us_uwk_uext_φ n _ _ ks φ Hks), (ctx_uwk_uext_φ n _ ks φ Hks) in X. exact X.
+Qed.
+
+(** η: the function's validity at [φ] and at [φ] followed by [n] fresh levels. *)
+Lemma G_us_uwk_comp G0 L0 ψ0 : G_us G0 (n + L0) (fun i => lvren (ψ0 i) (ush n)) = gctx_uwk n (G_us G0 L0 ψ0).
+Proof.
+  unfold G_us, gctx_usubst, gctx_uwk; cbn [gL gΨ]. f_equal. rewrite map_map. apply map_ext. intros D.
+  destruct D; cbn [gdecl_usubst gdecl_uren]; f_equal;
+    first [ reflexivity
+          | symmetry; apply lvsubst_lvren; reflexivity
+          | symmetry; apply (proj1 (proj2 (proj2 usubst_uren_all))); reflexivity
+          | symmetry; apply (proj1 usubst_uren_all); reflexivity ].
+Qed.
+
+Lemma FM_ueta {l T t} : lwf (n + gL G) l ->
+  (forall L'' ψ, usub_ok ψ L'' (gL (gctx_uwk n G)) ->
+     SemTyM (G_us (gctx_uwk n G) L'' ψ) (ucsubst Γ⟨ush n⟩ᵤ ψ) (usubst_ty T ψ) (usubst_ty T ψ) (lvsubst l ψ)) ->
+  (forall L'' ψ, usub_ok ψ L'' (gL G) ->
+     SemTmMω (G_us G L'' ψ) (ucsubst Γ ψ) (usubst_tm t ψ) (usubst_tm t ψ) (usubst_ty (tyUPi n l T) ψ)) ->
+  SemTmMω (G_us G L' φ) (ucsubst Γ φ) (ulam n (lvsubst l (uupn n φ)) (uapp (usubst_tm t φ)⟨ush n⟩ᵤ (ubvars n)))
+    (usubst_tm t φ) (tyUPi n (lvsubst l (uupn n φ)) (usubst_ty T (uupn n φ))).
+Proof.
+  intros Hl IT It. pose proof (It _ _ Hφ) as (_ & VT & Vt).
+  assert (Hψ : usub_ok (fun i => lvren (φ i) (ush n)) (n + L') (gL G))
+    by (intros i Hi; apply (lwf_lvren _ _ _ _ (uren_ok_ush n L')), Hφ, Hi).
+  pose proof (It _ _ Hψ) as (_ & _ & Vw).
+  rewrite G_us_uwk_comp in Vw.
+  rewrite <- (proj1 (proj2 (proj2 usubst_uren_all)) Γ φ (ush n) _ (fun _ => eq_refl)) in Vw.
+  rewrite <- (proj1 (proj2 usubst_uren_all) t φ (ush n) _ (fun _ => eq_refl)) in Vw.
+  rewrite <- (proj1 usubst_uren_all (tyUPi n l T) φ (ush n) _ (fun _ => eq_refl)) in Vw.
+  split; [exact HS | split].
+  - exact VT.
+  - exact (VS_ueta EP EM G Γ L' φ n Hφ HG HΓ Hn l T _ (fun L'' ψ H => proj2 (IT L'' ψ H)) Vt Vw).
+Qed.
+
+End UPiFM.
 
 End FundamentalM.
 

@@ -105,6 +105,8 @@ Lemma lequiv_weaken L L' l l' : L <= L' -> lequiv L l l' -> lequiv L' l l'.
 Proof. intros HL (? & ? & H); repeat split; eauto using lwf_weaken. Qed.
 Lemma lequivs_refl L ls : Forall (lwf L) ls -> Forall2 (lequiv L) ls ls.
 Proof. induction 1; constructor; auto using lequiv_refl. Qed.
+Lemma lwf_not_omega L l : lwf L l -> l <> lomega.
+Proof. destruct l; cbn; intuition discriminate. Qed.
 Lemma lwfs_weaken L L' ls : L <= L' -> Forall (lwf L) ls -> Forall (lwf L') ls.
 Proof. intros HL H; induction H; constructor; eauto using lwf_weaken. Qed.
 Lemma lequivs_weaken L L' ls ls' : L <= L' -> Forall2 (lequiv L) ls ls' -> Forall2 (lequiv L') ls ls'.
