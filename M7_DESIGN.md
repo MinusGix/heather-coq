@@ -63,8 +63,11 @@ Statements:
 This closes the deviation. The recursor β-steps are the bulk; the
 typed-reduction lemmas the logical relation uses likely cover them.
 
-Status: **A2a done** (`Validity/Preservation.v`), closed. **A2b in
-progress.**
+Status: **done**, closed. The final statements, unconditional, are in
+`Validity/RecReduct.v`: `reduction_sound_tm`/`_ty`,
+`subject_reduction_tm`/`_ty`, `reductions_sound_tm`/`_ty` (at D and M).
+The M1 deviation (typed reduction carrying its equation) is now a design
+choice only: the paper's statements hold for plain reduction.
 - A2a: `red_sound_all`, and the consequences `red_sound_tm`/`_ty`,
   `preservation_tm`/`_ty`, `reds_sound_tm`/`_ty`, at D and M, premised on
   `RecRedTyped` (a recursor's β-reduct is typed at the redex's type).
@@ -89,6 +92,33 @@ progress.**
     rule at the sub-codes.
   Then the instance equation with `motT`/`mott`, for each of the 13
   code shapes.
+
+  As built (`Validity/RecReduct.v`):
+  - `br_typed`: a branch body is typed at typed extensions, via
+    `usubstitution`, `gsubstitution` and `substitution`. The extensions are
+    built one binding at a time (`gsub_wf_snoc`, `lsub_wf_lcons`). The
+    reduct's peel form becomes the triple substitution by
+    `RecPeel.peel_wrap`, and the instances are identified by
+    `motT_wkb_inst'`/`mott_wkb_inst'` with `motive_id_T`/`_t` (identity
+    substitutions on the motives).
+  - Type codes (`rr_T_nat`, `_pi`, `_U`, `_El`) invert the code's
+    C-typing, and `rr_T_all` moves to the redex's level (`motT_move`, by
+    `declM_motT_eq`).
+  - Term codes are shape lemmas at the natural instance (`rr_t_var`,
+    `_nat`, `_U`, `_zero`, `_succ`, `_pi`, `_natrec`, `_lam`, `_app`).
+    `rec_t_code` is an induction on the code's C-typing: the inversion
+    lemmas need `typeof i = i`, which fails at C. Its motive (`RTC`)
+    quantifies over the redex's index and level, equal to the code's type
+    and level, because the `λ` reduct reads the index's codomain
+    syntactically. Conversions of the code's typing are absorbed
+    (`C_conv`, `C_lconv`), and `mott_move` (by `declM_mott_eq`) moves to
+    the redex's instance.
+  - No induction on the recursion is needed: the recursive calls are
+    typed by the recursor rule at the sub-codes (`recT_wf`, `rect_wf`).
+  - Gotcha: after `cbn`, substitutions appear in raw form (`subst_ty`,
+    `gcsubst`) while the lemmas use the class notations. `sl0`/`sl0t`
+    cover both forms, and the target contexts are restated by `change`
+    rather than computed.
 - At C: lifting to D and unlifting (05:1039) would transfer the result;
   not yet stated.
 
@@ -206,5 +236,5 @@ Status: to design.
 
 ## Order
 
-A1, A3, B1 (done); A2, then B2. The C items are designed separately when
+A1, A3, B1, A2 (done); then B2. The C items are designed separately when
 reached.

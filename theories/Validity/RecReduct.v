@@ -768,4 +768,218 @@ Proof.
   sl0_rw_in HAd X. sl0_rw_in HBd X. sl0t_rw_in Hfd X. sl0t_rw_in Had X. exact X.
 Qed.
 
+(** ** From the natural instances to the redex's *)
+
+Lemma HMT_rr : [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ].
+Proof. exact (proj1 (proj2 (proj2 Hrb))). Qed.
+Lemma HMt_rr : [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ].
+Proof. exact (proj1 (proj2 (proj2 (proj2 Hrb)))). Qed.
+
+Lemma motT_move {l0 l Δ c r} : [ G ; Γ ⊢[ lM ] r : motT (wrapMT MT) l0 Δ (boxT c) @ l1 ] ->
+  lequiv (gL G) l0 l -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lC ] c @ l0 ] ->
+  [ G ; Γ ⊢[ lM ] r : motT (wrapMT MT) l Δ (boxT c) @ l1 ].
+Proof.
+  intros Hr El HΔ Hc.
+  assert (Hb : [ G ; Γ ⊢[ lM ] boxT c : tyCTyp Δ l0 @ lzero ])
+    by (apply wf_boxT; [exact HΓ | exact (lequiv_wf_l _ _ _ El) | exact HΔ | exact Hc]).
+  pose proof (declM_motT_eq (eqty_refl _ _ _ _ _ HMT_rr) Hl1 El (eqc_refl _ _ _ HΔ) (eqtm_refl _ _ _ _ _ _ Hb)) as E.
+  exact (wf_conv _ _ _ _ _ _ _ Hr (eqty_sym _ _ _ _ _ _ E)).
+Qed.
+
+Lemma mott_move {l0 l Δ U T c r} : [ G ; Γ ⊢[ lM ] r : mott (wrapMt Mt) l0 Δ U (boxt c) @ l2 ] ->
+  lequiv (gL G) l0 l -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] U ≅ T @ l0 ] -> [ G ; Δ ⊢[ lC ] c : U @ l0 ] ->
+  [ G ; Γ ⊢[ lM ] r : mott (wrapMt Mt) l Δ T (boxt c) @ l2 ].
+Proof.
+  intros Hr El HΔ EU Hc.
+  assert (Hb : [ G ; Γ ⊢[ lM ] boxt c : tyCTrm Δ U l0 @ lzero ])
+    by (apply wf_boxt; [exact HΓ | exact (lequiv_wf_l _ _ _ El) | exact HΔ | exact (ctm_ty Hc) | exact Hc]).
+  pose proof (declM_mott_eq (eqty_refl _ _ _ _ _ HMt_rr) Hl2 El (eqc_refl _ _ _ HΔ) EU (eqtm_refl _ _ _ _ _ _ Hb)) as E.
+  exact (wf_conv _ _ _ _ _ _ _ Hr (eqty_sym _ _ _ _ _ _ E)).
+Qed.
+
+Lemma lvl_eq_lequiv' {L k l} : lvl_eq L k l -> lwf L l -> lequiv L l k.
+Proof. intros [-> | E] W; [exact (lequiv_refl _ _ W) | exact (lequiv_sym _ _ _ E)]. Qed.
+
+(** The type recursor. *)
+Lemma rr_T_all {l Δ c r} : lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lC ] c @ l ] ->
+  redT l1 l2 (mkrb MT Mt bs) l Δ c = Some r -> [ G ; Γ ⊢[ lM ] r : motT (wrapMT MT) l Δ (boxT c) @ l1 ].
+Proof.
+  intros Wl HΔ Hc Hred.
+  destruct c; try (cbn in Hred; discriminate Hred).
+  - destruct (inv_ty_nat Hc) as (_ & Hk).
+    pose proof (lvl_eq_lequiv' Hk I) as E.
+    exact (motT_move (rr_T_nat HΔ Hred) E HΔ (wft_lconv _ _ _ _ _ _ Hc E)).
+  - destruct (inv_ty_pi Hc) as ((_ & Wk & Wk' & _ & _) & Hk).
+    pose proof (lvl_eq_lequiv' Hk (conj Wk Wk')) as E.
+    exact (motT_move (rr_T_pi HΔ Hc Hred) E HΔ (wft_lconv _ _ _ _ _ _ Hc E)).
+  - destruct (inv_ty_U Hc) as ((_ & _ & Wk) & Hk).
+    pose proof (lvl_eq_lequiv' Hk (lwf_suc Wk)) as E.
+    exact (motT_move (rr_T_U HΔ Hc Hred) E HΔ (wft_lconv _ _ _ _ _ _ Hc E)).
+  - destruct (inv_ty_El Hc) as ((_ & Wk & _) & Hk).
+    pose proof (lvl_eq_lequiv' Hk Wk) as E.
+    exact (motT_move (rr_T_El HΔ Hc Hred) E HΔ (wft_lconv _ _ _ _ _ _ Hc E)).
+Qed.
+
 End RR.
+
+(** ** The term recursor, by induction on the code's C-typing
+
+    The statement quantifies over the redex's index and level, equal to
+    the code's type and level: conversions of the code's typing are
+    absorbed, and the [λ] reduct reads the index's codomain. *)
+
+Definition RTC (G : gctx) (Δ : ctx) (c : tm) (U : ty) (l0 : lvl) : Prop :=
+  [ G ; Δ ⊢[ lC ] c : U @ l0 ] ->
+  forall Γ l1 l2 MT Mt bs, [ G ; Γ ⊢[ lM ] ] -> RBwf G Γ l1 l2 MT Mt bs -> [ G ; Δ ⊢[ lD ] ] ->
+  forall l T r, lequiv (gL G) l l0 -> [ G ; Δ ⊢[ lD ] T ≅ U @ l ] ->
+  redt l1 l2 (mkrb MT Mt bs) l Δ T c = Some r ->
+  [ G ; Γ ⊢[ lM ] r : mott (wrapMt Mt) l Δ T (boxt c) @ l2 ].
+
+(** At a natural instance, then moved. *)
+Lemma RTC_nat_inst {G Δ c U l0} :
+  (forall Γ l1 l2 MT Mt bs, [ G ; Γ ⊢[ lM ] ] -> RBwf G Γ l1 l2 MT Mt bs -> [ G ; Δ ⊢[ lD ] ] ->
+     forall l T r, redt l1 l2 (mkrb MT Mt bs) l Δ T c = Some r ->
+     [ G ; Γ ⊢[ lM ] r : mott (wrapMt Mt) l0 Δ U (boxt c) @ l2 ]) ->
+  RTC G Δ c U l0.
+Proof.
+  intros H Hc Γ l1 l2 MT Mt bs HΓ Hrb HΔ l T r El ET Hred.
+  refine (mott_move HΓ Hrb (H Γ l1 l2 MT Mt bs HΓ Hrb HΔ l T r Hred) (lequiv_sym _ _ _ El) HΔ _ Hc).
+  exact (eqty_sym _ _ _ _ _ _ (eqty_lconv _ _ _ _ _ _ _ ET (lequiv_sym _ _ _ El))).
+Qed.
+
+Lemma C_var {G Δ n U l0} : in_ctx Δ n U l0 -> RTC G Δ (var n) U l0.
+Proof.
+  intros Hin Hc Γ l1 l2 MT Mt bs HΓ Hrb HΔ l T r El ET Hred.
+  pose proof (eqty_wf_l (i := lD) eq_refl ET) as HT.
+  assert (HV : [ G ; Δ ⊢[ lV ] var n : T @ l ]).
+  { eapply wf_lconv; [| exact El]. eapply wf_conv; [exact (wf_var _ lV _ _ _ _ HΔ Hin) |].
+    exact (eqty_lconv _ _ _ _ _ _ _ ET (lequiv_sym _ _ _ El)). }
+  exact (rr_t_var HΓ Hrb HΔ (lequiv_wf_l _ _ _ El) HT HV Hred).
+Qed.
+
+Lemma C_nat {G Δ} : RTC G Δ tmNat (tyU lzero) (lsuc lzero).
+Proof. apply RTC_nat_inst. intros. exact (rr_t_nat H H0 H1 H2). Qed.
+Lemma C_zero {G Δ} : RTC G Δ zero tyNat lzero.
+Proof. apply RTC_nat_inst. intros. exact (rr_t_zero H H0 H1 H2). Qed.
+Lemma C_U {G Δ k} : lwf (gL G) k -> RTC G Δ (tmU k) (tyU (lsuc k)) (lsuc (lsuc k)).
+Proof. intros Wk. apply RTC_nat_inst. intros. exact (rr_t_U H H0 H1 Wk H2). Qed.
+Lemma C_succ {G Δ t} : [ G ; Δ ⊢[ lC ] t : tyNat @ lzero ] -> RTC G Δ (succ t) tyNat lzero.
+Proof. intros Ht. apply RTC_nat_inst. intros. exact (rr_t_succ H H0 H1 Ht H2). Qed.
+Lemma C_pi {G Δ k k' s t} : lwf (gL G) k -> lwf (gL G) k' -> [ G ; Δ ⊢[ lC ] s : tyU k @ lsuc k ] ->
+  [ G ; Δ ,, tyEl k s @ k ⊢[ lC ] t : tyU k' @ lsuc k' ] ->
+  RTC G Δ (tmPi k k' s t) (tyU (lmax k k')) (lsuc (lmax k k')).
+Proof. intros Wk Wk' Hs Ht. apply RTC_nat_inst. intros. exact (rr_t_pi H H0 H1 Wk Wk' Hs Ht H2). Qed.
+Lemma C_natrec {G Δ k M s z t} : lwf (gL G) k -> [ G ; Δ ,, tyNat @ lzero ⊢[ lC ] M @ k ] ->
+  [ G ; Δ ⊢[ lC ] s : M[lsingle zero] @ k ] -> [ G ; Δ ,, tyNat @ lzero ,, M @ k ⊢[ lC ] z : M[lsucc] @ k ] ->
+  [ G ; Δ ⊢[ lC ] t : tyNat @ lzero ] -> RTC G Δ (natrec k M s z t) M[lsingle t] k.
+Proof. intros Wk HM Hs Hz Ht. apply RTC_nat_inst. intros. exact (rr_t_natrec H H0 H1 Wk HM Hs Hz Ht H2). Qed.
+Lemma C_app {G Δ k k' A B f a} : lwf (gL G) k -> lwf (gL G) k' -> [ G ; Δ ⊢[ lC ] A @ k ] ->
+  [ G ; Δ ,, A @ k ⊢[ lC ] B @ k' ] -> [ G ; Δ ⊢[ lC ] f : tyPi k k' A B @ lmax k k' ] ->
+  [ G ; Δ ⊢[ lC ] a : A @ k ] -> RTC G Δ (app f k k' A B a) B[lsingle a] k'.
+Proof. intros Wk Wk' HA HB Hf Ha. apply RTC_nat_inst. intros. exact (rr_t_app H H0 H1 Wk Wk' HA HB Hf Ha H2). Qed.
+
+Lemma C_lam {G Δ k k' A B b} : lwf (gL G) k -> lwf (gL G) k' -> [ G ; Δ ⊢[ lC ] A @ k ] ->
+  [ G ; Δ ,, A @ k ⊢[ lC ] b : B @ k' ] -> RTC G Δ (lam k k' A b) (tyPi k k' A B) (lmax k k').
+Proof.
+  intros Wk Wk' HA Hb Hc Γ l1 l2 MT Mt bs HΓ Hrb HΔ l T r El ET Hred.
+  destruct T; try (cbn in Hred; discriminate Hred).
+  match type of Hred with context [ redt _ _ _ _ _ (tyPi ?a ?b' ?c ?d) _ ] =>
+    rename a into k1, b' into k2, c into A1, d into B1 end.
+  destruct (decl_pi_inj ET) as (E1 & E2 & EA & EB).
+  pose proof (lift_ty HA HCD') as HAD.
+  assert (HΔA : [ G ; Δ ,, A @ k ⊢[ lD ] ]) by (apply wfc_ext; [exact HΔ | exact HAD | exact Wk]).
+  assert (EB' : [ G ; Δ ,, A @ k ⊢[ lD ] B1 ≅ B @ k' ]).
+  { refine (eqty_lconv _ _ _ _ _ _ _ _ E2).
+    exact (stab_eqty (i := lD) eq_refl EA (lequiv_sym _ _ _ E1) HΔA EB). }
+  pose proof (eqty_wf_l (i := lD) eq_refl EB') as HB1.
+  pose proof (wf_conv _ _ _ _ _ _ _ Hb EB') as Hb1.
+  pose proof (rr_t_lam HΓ Hrb HΔ Wk Wk' HA HB1 Hb1 Hred) as X.
+  assert (EA' : [ G ; Δ ⊢[ lD ] A ≅ A1 @ k ])
+    by exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ EA) E1).
+  assert (EU : [ G ; Δ ⊢[ lD ] tyPi k k' A B1 ≅ tyPi k1 k2 A1 B1 @ lmax k k' ])
+    by (apply eqty_pi; [discriminate | exact E1 | exact E2 | exact HAD | exact EA' | exact (eqty_refl _ _ _ _ _ HB1)]).
+  assert (EP : [ G ; Δ ⊢[ lD ] tyPi k k' A B1 ≅ tyPi k k' A B @ lmax k k' ])
+    by (apply eqty_pi; [discriminate | exact (lequiv_refl _ _ Wk) | exact (lequiv_refl _ _ Wk') | exact HAD
+                       | exact (eqty_refl _ _ _ _ _ HAD) | exact EB']).
+  exact (mott_move HΓ Hrb X (lequiv_sym _ _ _ El) HΔ EU (wf_conv _ _ _ _ _ _ _ Hc EP)).
+Qed.
+
+Lemma C_conv {G Δ c U U' l0} : [ G ; Δ ⊢[ lC ] c : U' @ l0 ] -> [ G ; Δ ⊢[ lD ] U ≅ U' @ l0 ] ->
+  RTC G Δ c U' l0 -> RTC G Δ c U l0.
+Proof.
+  intros Hc' EU IH Hc Γ l1 l2 MT Mt bs HΓ Hrb HΔ l T r El ET Hred.
+  exact (IH Hc' Γ l1 l2 MT Mt bs HΓ Hrb HΔ l T r El
+           (eqty_trans _ _ _ _ _ _ _ ET (eqty_lconv _ _ _ _ _ _ _ EU El)) Hred).
+Qed.
+
+Lemma C_lconv {G Δ c U l0 l0'} : [ G ; Δ ⊢[ lC ] c : U @ l0' ] -> lequiv (gL G) l0 l0' ->
+  RTC G Δ c U l0' -> RTC G Δ c U l0.
+Proof.
+  intros Hc' E IH Hc Γ l1 l2 MT Mt bs HΓ Hrb HΔ l T r El ET Hred.
+  exact (IH Hc' Γ l1 l2 MT Mt bs HΓ Hrb HΔ l T r (lequiv_trans _ _ _ _ El E) ET Hred).
+Qed.
+
+Lemma rec_t_code {G i Δ c U l0} : [ G ; Δ ⊢[ i ] c : U @ l0 ] -> i = lC -> RTC G Δ c U l0.
+Proof.
+  induction 1; intros Ei; try discriminate Ei; subst;
+    repeat match goal with IH : lC = lC -> _ |- _ => specialize (IH eq_refl) end;
+    first
+    [ solve [eapply C_var; eassumption] | solve [eapply C_nat] | solve [eapply C_zero]
+    | solve [eapply C_U; eassumption] | solve [eapply C_succ; eassumption] | solve [eapply C_pi; eassumption]
+    | solve [eapply C_natrec; eassumption] | solve [eapply C_app; eassumption] | solve [eapply C_lam; eassumption]
+    | solve [eapply C_conv; eassumption] | solve [eapply C_lconv; eassumption]
+    | solve [intros _ ? ? ? ? ? ? _ _ _ ? ? ? _ _ Hred; cbn in Hred; discriminate Hred] ].
+Qed.
+
+(** ** The reducts are typed *)
+
+Theorem rec_red_typed : RecRedTyped.
+Proof.
+  split.
+  - intros G Γ l1 l2 rb l Δ c r T k Hx Hred.
+    destruct (elimT_prem Hx) as (MT & Mt & bs & -> & Hrb).
+    destruct (inv_elimT (i := lM) eq_refl Hx) as (MTa & Mta & bsa & (Erb & _ & _ & W1 & W2 & Wl & HΔ & _) & Hk & ET).
+    destruct (mkrb_inj_MT Erb) as [<- <-].
+    pose proof (ctx_of_wf_tm (i := lM) eq_refl Hx) as HΓ.
+    destruct (inv_elimT (i := lM) eq_refl Hx) as (MTb & Mtb & bsb & (_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Hs) & _).
+    destruct (inv_boxT (i := lM) eq_refl Hs) as (Δ1 & l1' & (_ & _ & _ & HΔ1 & Hc1) & _ & EC).
+    destruct (declM_CTyp_inj EC) as (Ec & El).
+    pose proof (wft_lconv _ _ _ _ _ _ (sc_cty (i := lC) HCD' (eqctx_sym_D Ec) Hc1) El) as Hc.
+    pose proof (rr_T_all HΓ Hrb Wl HΔ Hc Hred) as X.
+    refine (wf_conv _ lM _ _ _ _ _ _ ET).
+    destruct Hk as [-> | Hk]; [exact X | exact (wf_lconv _ _ _ _ _ _ _ X Hk)].
+  - intros G Γ l1 l2 rb l Δ A c r T k Hx Hred.
+    destruct (elimt_prem Hx) as (MT & Mt & bs & -> & Hrb).
+    destruct (inv_elimt (i := lM) eq_refl Hx)
+      as (MTa & Mta & bsa & (Erb & _ & _ & W1 & W2 & Wl & HΔ & _ & _ & _ & _ & HA & Hs) & Hk & ET).
+    destruct (mkrb_inj_MT Erb) as [<- <-].
+    pose proof (ctx_of_wf_tm (i := lM) eq_refl Hx) as HΓ.
+    destruct (inv_boxt (i := lM) eq_refl Hs) as (Δ1 & A1 & l1' & (_ & _ & _ & HΔ1 & HA1 & Hc1) & _ & EC).
+    destruct (declM_CTrm_inj EC) as (Ec & EA & El).
+    pose proof (sc_conv (i := lC) HCD' (wf_lconv _ _ _ _ _ _ _ (sc_ctm (i := lC) HCD' (eqctx_sym_D Ec) Hc1) El) EA) as Hc.
+    pose proof (rec_t_code Hc eq_refl Hc Γ l1 l2 MT Mt bs HΓ Hrb HΔ l A r (lequiv_refl _ _ Wl)
+                  (eqty_refl _ _ _ _ _ HA) Hred) as X.
+    refine (wf_conv _ lM _ _ _ _ _ _ ET).
+    destruct Hk as [-> | Hk]; [exact X | exact (wf_lconv _ _ _ _ _ _ _ X Hk)].
+Qed.
+
+(** ** Soundness of reduction and preservation, unconditionally *)
+
+Theorem reduction_sound_tm {G i Γ t t' T k} : compt i -> [ G ; Γ ⊢[ i ] t : T @ k ] -> red t t' ->
+  [ G ; Γ ⊢[ i ] t ≅ t' : T @ k ].
+Proof. exact (red_sound_tm rec_red_typed). Qed.
+Theorem reduction_sound_ty {G i Γ T T' k} : compt i -> [ G ; Γ ⊢[ i ] T @ k ] -> red_ty T T' ->
+  [ G ; Γ ⊢[ i ] T ≅ T' @ k ].
+Proof. exact (red_sound_ty rec_red_typed). Qed.
+Theorem subject_reduction_tm {G i Γ t t' T k} : compt i -> [ G ; Γ ⊢[ i ] t : T @ k ] -> red t t' ->
+  [ G ; Γ ⊢[ i ] t' : T @ k ].
+Proof. exact (preservation_tm rec_red_typed). Qed.
+Theorem subject_reduction_ty {G i Γ T T' k} : compt i -> [ G ; Γ ⊢[ i ] T @ k ] -> red_ty T T' ->
+  [ G ; Γ ⊢[ i ] T' @ k ].
+Proof. exact (preservation_ty rec_red_typed). Qed.
+Theorem reductions_sound_tm {G i Γ t t' T k} : compt i -> [ G ; Γ ⊢[ i ] t : T @ k ] -> reds t t' ->
+  [ G ; Γ ⊢[ i ] t ≅ t' : T @ k ].
+Proof. exact (reds_sound_tm rec_red_typed). Qed.
+Theorem reductions_sound_ty {G i Γ T T' k} : compt i -> [ G ; Γ ⊢[ i ] T @ k ] -> reds_ty T T' ->
+  [ G ; Γ ⊢[ i ] T ≅ T' @ k ].
+Proof. exact (reds_sound_ty rec_red_typed). Qed.
