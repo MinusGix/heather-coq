@@ -361,3 +361,45 @@ Proof.
   eapply wf_lconv; [| exact Hlv].
   eapply wf_conv; [exact X |]. eapply eqty_lconv; [exact HR | exact (lequiv_sym _ _ _ Hlv)].
 Qed.
+
+(** ** Local substitutions entrywise
+
+    The right entries of two substitutions are typed at [A[d']]; they are
+    converted to [A[d]] by the equation of the deeper entries (induction on
+    the domain, by the tails [ldrop 1]). *)
+
+Lemma shift_subst_ldrop1 (A : ty) d : A⟨↑⟩[d] = A[ldrop 1 d].
+Proof. apply ren_subst_ty. intros n; rewrite llk_ldrop; cbn; f_equal; lia. Qed.
+
+Lemma lsub_wf_drop1 {G i Γ Δ B lB d} : [ G ; Γ ⊢[ i ] d : Δ ,, B @ lB ] -> [ G ; Γ ⊢[ i ] ldrop 1 d : Δ ].
+Proof.
+  intros [HΓ Hn Ht Hv]. constructor; [exact HΓ | apply lk_dnf_ldrop, Hn | exact (tail_ldrop1' Ht) |].
+  intros n A k Hin. pose proof (Hv _ _ _ (in_there _ _ _ _ _ _ Hin)) as X.
+  rewrite shift_subst_ldrop1 in X. rewrite llk_ldrop. exact X.
+Qed.
+
+Lemma lsub_eq_pt {G i} (Hi : typeof i = i) : forall Δ Γ d d', [ G ; Δ ⊢[ i ] ] ->
+  [ G ; Γ ⊢[ i ] d : Δ ] -> [ G ; Γ ⊢[ i ] d' : Δ ] ->
+  (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d' n : A[d] @ k ] ->
+     [ G ; Γ ⊢[ i ] llk d n ≅ llk d' n : A[d] @ k ]) ->
+  [ G ; Γ ⊢[ i ] d ≅ d' : Δ ].
+Proof.
+  induction Δ as [| g | Δ0 IH B lB]; intros Γ d d' HΔ Hd Hd' Hpt.
+  - refine (conj Hd (conj Hd' _)). intros n A k Hin; inversion Hin.
+  - refine (conj Hd (conj Hd' _)). intros n A k Hin; exfalso; exact (no_in_ctx_var _ _ _ _ Hin).
+  - destruct (wfc_ext_inv HΔ) as (HΔ0 & HB & _).
+    assert (E0 : [ G ; Γ ⊢[ i ] ldrop 1 d ≅ ldrop 1 d' : Δ0 ]).
+    { apply IH; [exact HΔ0 | exact (lsub_wf_drop1 Hd) | exact (lsub_wf_drop1 Hd') |].
+      intros n A k Hin Hr. rewrite llk_ldrop in Hr. rewrite !llk_ldrop. cbn [Nat.add] in *.
+      pose proof (Hpt (S n) _ _ (in_there _ _ _ _ _ _ Hin)) as Y.
+      rewrite shift_subst_ldrop1 in Y. exact (Y Hr). }
+    refine (conj Hd (conj Hd' _)). intros n A k Hin.
+    inversion Hin as [Γ1 A1 l1 | Γ1 A1 l1 B1 l1' m Hm]; subst.
+    + apply Hpt; [constructor |].
+      pose proof (lsub_wf_var Hd' (in_here _ _ _)) as X.
+      rewrite shift_subst_ldrop1 in X |- *.
+      eapply wf_conv; [exact X |]. rewrite Hi.
+      exact (wf_ty_func Hi HB E0).
+    + pose proof (proj2 (proj2 E0) _ _ _ Hm) as X. rewrite !llk_ldrop in X. cbn [Nat.add] in X.
+      rewrite shift_subst_ldrop1. exact X.
+Qed.
