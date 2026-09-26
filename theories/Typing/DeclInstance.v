@@ -194,4 +194,22 @@ Proof.
     apply eqtm_ulam; auto using lequiv_refl.
   - intros * Hl HT Hn Hls (Hne & Hne' & Hν).
     refine (conj _ (conj _ _)); [constructor; auto .. |]. eapply eqtm_uapp; eauto.
+  (* meta-functions *)
+  - intros; now apply eqty_cpi.
+  - intros * HΓ HΔ Hc H13 H24 HT HTT HT'. pose proof (decl_geq_ctx _ _ Hc) as Hc'.
+    eapply eqty_tpi; eauto. exact (eqctx_wf_r (i := lD) eq_refl Hc').
+  - (* extensionality: both sides are η-equal to their Λ of the application to [g] *)
+    intros * Hl HT Ht Ht' Happ. pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
+    eapply eqtm_trans; [apply eqtm_sym, eqtm_ceta; eauto|].
+    eapply eqtm_trans; [|apply eqtm_ceta; eauto].
+    apply eqtm_clam; auto using lequiv_refl.
+  - intros * HΔ Hl Hl' HT Ht Ht' Happ. pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
+    eapply eqtm_trans; [apply eqtm_sym, eqtm_teta; eauto|].
+    eapply eqtm_trans; [|apply eqtm_teta; eauto].
+    apply eqtm_tlam; auto using lequiv_refl. exact (eqtm_wf_r (i := lM) eq_refl Happ).
+  - intros * Hl HT HΔ Hc HE (Hne & Hne' & Hν). pose proof (decl_geq_ctx _ _ Hc) as Hc'.
+    refine (conj _ (conj _ _)); [constructor; auto .. |].
+    apply eqtm_capp; auto. exact (eqctx_wf_r (i := lD) eq_refl Hc').
+  - intros * HΔ Hl Hl' HT HA HAA HE (Hne & Hne' & Hν).
+    refine (conj _ (conj _ _)); [constructor; auto .. |]. eapply eqtm_tapp; eauto.
 Qed.

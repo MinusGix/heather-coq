@@ -255,6 +255,7 @@ The existing consequences keep their statements.
 
 In progress.
 - Step 1 (syntax) done.
+- Step 3 (generic laws, declarative instance by η) done.
 - Step 2 (typing and metatheory) done. The FT at M admits its `CΠ`/`TΠ`
   cases, flagged in `fundamentalM_us`, until step 5. Nothing else is
   admitted.

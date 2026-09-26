@@ -353,5 +353,38 @@ Class GenericEqM (EP EM : GenericEq) := {
   gne_tm_uapp {G Γ n l T ν ν' ls ls'} : lwf (n + gL G) l ->
     [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] -> length ls = n -> Forall2 (lequiv (gL G)) ls ls' ->
     @gne_tm EM G Γ ν ν' (tyUPi n l T) lomega ->
-    @gne_tm EM G Γ (uapp ν ls) (uapp ν' ls') T[uext ls lvar]ᵤ (lvsubst l (uext ls lvar))
+    @gne_tm EM G Γ (uapp ν ls) (uapp ν' ls') T[uext ls lvar]ᵤ (lvsubst l (uext ls lvar)) ;
+
+  (* meta-functions (07:296–350, M5_DESIGN.md G4): congruences of [CΠ] and
+     [TΠ], extensionality at the bound variable, neutral applications. As
+     for the rules, the right body of [TΠ] and the applications' instance
+     equations are declarative premises (G2) *)
+  geq_ty_cpi {G Γ l l' T T'} : [ G ; Γ ⊢[ lM ] ] -> lequiv (gL G) l l' ->
+    [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] -> @geq_ty EM (gext G gdCtx) Γ⟪S⟫ T T' l ->
+    @geq_ty EM G Γ (tyCPi l T) (tyCPi l' T') l ;
+  geq_ty_tpi {G Γ Δ Δ' l1 l2 l3 l4 T T'} : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] ->
+    @geq_ctx EP G Δ Δ' -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ gext G (gdTy Δ lD l1) ; Γ⟪S⟫ ⊢[ lM ] T @ l2 ] -> @geq_ty EM (gext G (gdTy Δ lD l1)) Γ⟪S⟫ T T' l2 ->
+    [ gext G (gdTy Δ' lD l3) ; Γ⟪S⟫ ⊢[ lM ] T' @ l4 ] ->
+    @geq_ty EM G Γ (tyTPi Δ l1 l2 T) (tyTPi Δ' l3 l4 T') l2 ;
+  geq_tm_cext {G Γ l T t t'} : lwf (gL G) l -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
+    [ G ; Γ ⊢[ lM ] t : tyCPi l T @ l ] -> [ G ; Γ ⊢[ lM ] t' : tyCPi l T @ l ] ->
+    @geq_tm EM (gext G gdCtx) Γ⟪S⟫ (capp t⟪S⟫ (cvar 0)) (capp t'⟪S⟫ (cvar 0)) T l ->
+    @geq_tm EM G Γ t t' (tyCPi l T) l ;
+  geq_tm_text {G Γ Δ l l' T t t'} : [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] ->
+    [ G ; Γ ⊢[ lM ] t : tyTPi Δ l l' T @ l' ] -> [ G ; Γ ⊢[ lM ] t' : tyTPi Δ l l' T @ l' ] ->
+    @geq_tm EM (gext G (gdTy Δ lD l)) Γ⟪S⟫ (tapp t⟪S⟫ (tyGvar 0 (lshift 0))) (tapp t'⟪S⟫ (tyGvar 0 (lshift 0))) T l' ->
+    @geq_tm EM G Γ t t' (tyTPi Δ l l' T) l' ;
+  gne_tm_capp {G Γ l T ν ν' Δ Δ'} : lwf (gL G) l -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
+    [ G ; Δ ⊢[ lD ] ] -> @geq_ctx EP G Δ Δ' ->
+    [ G ; Γ ⊢[ lM ] T⦃gsingle (GCtx Δ)⦄ ≅ T⦃gsingle (GCtx Δ')⦄ @ l ] ->
+    @gne_tm EM G Γ ν ν' (tyCPi l T) l ->
+    @gne_tm EM G Γ (capp ν Δ) (capp ν' Δ') T⦃gsingle (GCtx Δ)⦄ l ;
+  gne_tm_tapp {G Γ Δ l l' T ν ν' A A'} : [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] ->
+    [ G ; Δ ⊢[ lD ] A @ l ] -> @geq_ty EP G Δ A A' l ->
+    [ G ; Γ ⊢[ lM ] T⦃gsingle (GTy A)⦄ ≅ T⦃gsingle (GTy A')⦄ @ l' ] ->
+    @gne_tm EM G Γ ν ν' (tyTPi Δ l l' T) l' ->
+    @gne_tm EM G Γ (tapp ν A) (tapp ν' A') T⦃gsingle (GTy A)⦄ l'
 }.
