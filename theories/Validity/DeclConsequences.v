@@ -22,10 +22,65 @@ Local Instance LRM_laws : VPLaws (@lr_vp LRM) := vpM_laws DEP DEM.
 
 (** ** Reducibility *)
 
-Lemma redM_eqty G Γ T T' l : [ G ; Γ ⊢[ lM ] T ≅ T' @ l ] -> @LRty DEM LRM l G Γ T T'.
-Proof. intros H; exact (reducibleM_eqty DEP DEM H). Qed.
-Lemma redM_eqtm G Γ t t' T l : [ G ; Γ ⊢[ lM ] t ≅ t' : T @ l ] -> @LRtm DEM LRM l G Γ T T t t'.
-Proof. intros H; exact (reducibleM_eqtm DEP DEM H). Qed.
+Lemma redM_eqty G Γ T T' l : [ G ; Γ ⊢[ lM ] T ≅ T' @ l ] -> lwf (gL G) l -> @LRty DEM LRM l G Γ T T'.
+Proof. intros H Hl; exact (reducibleM_eqty DEP DEM H Hl). Qed.
+Lemma redM_eqtm G Γ t t' T l : [ G ; Γ ⊢[ lM ] t ≅ t' : T @ l ] -> lwf (gL G) l ->
+  @LRtm DEM LRM l G Γ T T t t'.
+Proof. intros H Hl; exact (reducibleM_eqtm DEP DEM H Hl). Qed.
+
+(** ** Levels at M: well formed, or ω (M4_DESIGN.md F6) *)
+
+Lemma lvlM_ty {G Γ T l} : [ G ; Γ ⊢[ lM ] T @ l ] -> lwf (gL G) l \/ l = lomega.
+Proof. intros H. destruct (proj1 (proj2 (proj2 judg_lvl)) _ _ _ _ _ H) as [? | [_ ?]]; auto. Qed.
+Lemma lvlM_tm {G Γ t T l} : [ G ; Γ ⊢[ lM ] t : T @ l ] -> lwf (gL G) l \/ l = lomega.
+Proof. intros H. destruct (proj1 (proj2 (proj2 (proj2 judg_lvl))) _ _ _ _ _ _ H) as [? | [_ ?]]; auto. Qed.
+Lemma lvlM_eqty {G Γ T T' l} : [ G ; Γ ⊢[ lM ] T ≅ T' @ l ] -> lwf (gL G) l \/ l = lomega.
+Proof. intros H. destruct (proj1 (proj2 (proj2 (proj2 (proj2 judg_lvl)))) _ _ _ _ _ _ H) as [? | [_ ?]]; auto. Qed.
+
+(** [UΠ] types live at ω only. *)
+Lemma upi_lvl {G i Γ n l A k} : [ G ; Γ ⊢[ i ] tyUPi n l A @ k ] -> k = lomega.
+Proof.
+  intros H; remember (tyUPi n l A) as X eqn:HX; revert HX.
+  induction H; intros HX; try discriminate; auto.
+  exfalso. match goal with IH : _ -> ?l' = lomega, E : lequiv _ _ ?l' |- _ =>
+    rewrite (IH HX) in E; exact (lequiv_wf_r _ _ _ E) end.
+Qed.
+
+(** At ω, a type reduces to a [UΠ]. *)
+Lemma omegaM_red_l {G Γ T T'} : [ G ; Γ ⊢[ lM ] T ≅ T' @ lomega ] ->
+  exists n l A, [ G ; Γ ⊢[ lM ] T ⤳* tyUPi n l A @ lomega ].
+Proof.
+  intros H. destruct (reducibleM_eqty_ω DEP DEM H) as [R HR].
+  destruct HR as [n l l' A A' iR _ _ HT _ _ _ _]. eauto.
+Qed.
+Lemma omegaM_red_r {G Γ T T'} : [ G ; Γ ⊢[ lM ] T ≅ T' @ lomega ] ->
+  exists n l A, [ G ; Γ ⊢[ lM ] T' ⤳* tyUPi n l A @ lomega ].
+Proof. intros H. exact (omegaM_red_l (eqty_sym _ _ _ _ _ _ H)). Qed.
+
+Lemma omegaM_whnf_l {G Γ T T'} : [ G ; Γ ⊢[ lM ] T ≅ T' @ lomega ] -> whnf_ty T ->
+  exists n l A, T = tyUPi n l A.
+Proof.
+  intros H Hw. destruct (omegaM_red_l H) as (n & l & A & HR).
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HR (tyred_refl _ _ (eqty_wf_l (i := lM) eq_refl H))
+                (whnf_tyUPi _ _ _) Hw) as E. eauto.
+Qed.
+Lemma omegaM_whnf_r {G Γ T T'} : [ G ; Γ ⊢[ lM ] T ≅ T' @ lomega ] -> whnf_ty T' ->
+  exists n l A, T' = tyUPi n l A.
+Proof. intros H. exact (omegaM_whnf_l (eqty_sym _ _ _ _ _ _ H)). Qed.
+
+(** A whnf type other than a [UΠ] is at a well-formed level. *)
+Lemma lwfM_whnf_l {G Γ T T' l} : [ G ; Γ ⊢[ lM ] T ≅ T' @ l ] -> whnf_ty T ->
+  (forall n l0 A, T <> tyUPi n l0 A) -> lwf (gL G) l.
+Proof.
+  intros H Hw Hn. destruct (lvlM_eqty H) as [? | ->]; [assumption|].
+  destruct (omegaM_whnf_l H Hw) as (n & l0 & A & E). destruct (Hn _ _ _ E).
+Qed.
+Lemma lwfM_whnf_r {G Γ T T' l} : [ G ; Γ ⊢[ lM ] T ≅ T' @ l ] -> whnf_ty T' ->
+  (forall n l0 A, T' <> tyUPi n l0 A) -> lwf (gL G) l.
+Proof. intros H. exact (lwfM_whnf_l (eqty_sym _ _ _ _ _ _ H)). Qed.
+
+Ltac not_upi := let n := fresh in let l := fresh in let A := fresh in let E := fresh in
+  intros n l A E; discriminate E.
 
 (** ** Layer M *)
 
@@ -33,23 +88,34 @@ Theorem declM_pi_inj {G Γ l l1 l2 l3 l4 A A' B B'} :
   [ G ; Γ ⊢[ lM ] tyPi l1 l2 A B ≅ tyPi l3 l4 A' B' @ l ] ->
   lequiv (gL G) l3 l1 /\ lequiv (gL G) l4 l2 /\
   [ G ; Γ ⊢[ lM ] A ≅ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢[ lM ] B ≅ B' @ l2 ].
-Proof. exact (pi_inj (E := DEM) (LP := LRM) redM_eqty). Qed.
+Proof.
+  intros H. exact (pi_inj (E := DEM) (LP := LRM) redM_eqty H (lwfM_whnf_l H (whnf_tyPi _ _ _ _) ltac:(not_upi))).
+Qed.
 
 Theorem declM_U_inj {G Γ l l' k} : [ G ; Γ ⊢[ lM ] tyU l ≅ tyU l' @ k ] -> lequiv (gL G) l' l.
-Proof. exact (U_inj (E := DEM) (LP := LRM) redM_eqty). Qed.
+Proof. intros H. exact (U_inj (E := DEM) (LP := LRM) redM_eqty H (lwfM_whnf_l H (whnf_tyU _) ltac:(not_upi))). Qed.
 
 Theorem declM_whnf_normalization_tm {G Γ t T l} : [ G ; Γ ⊢[ lM ] t : T @ l ] ->
   exists w, reds t w /\ whnf w.
 Proof.
-  intros H. destruct (whnf_normalization_tm (E := DEM) (LP := LRM) redM_eqtm H) as (w & Hw & Hwh).
-  exists w; split; [exact (tmred_red _ _ _ _ _ _ _ Hw) | exact Hwh].
+  intros H. destruct (lvlM_tm H) as [Hl | ->].
+  - destruct (whnf_normalization_tm (E := DEM) (LP := LRM) redM_eqtm H Hl) as (w & Hw & Hwh).
+    exists w; split; [exact (tmred_red _ _ _ _ _ _ _ Hw) | exact Hwh].
+  - (* at ω: the relation at ω reduces the term to a whnf *)
+    destruct (reducibleM_eqtm_ω DEP DEM (eqtm_refl _ _ _ _ _ _ H)) as (R & HR & Ht).
+    destruct HR as [n l l' A A' iR _ _ _ _ _ _ HRR].
+    destruct (proj1 (HRR t t) Ht) as (w & w' & Hw & _ & Hwh & _).
+    exists w; split; [exact (tmred_red _ _ _ _ _ _ _ Hw) | exact Hwh].
 Qed.
 
 Theorem declM_whnf_normalization_ty {G Γ T l} : [ G ; Γ ⊢[ lM ] T @ l ] ->
   exists W, reds_ty T W /\ whnf_ty W.
 Proof.
-  intros H. destruct (whnf_normalization_ty (E := DEM) (LP := LRM) redM_eqty H) as (W & HW & HWh).
-  exists W; split; [exact (tyred_red _ _ _ _ _ _ HW) | exact HWh].
+  intros H. destruct (lvlM_ty H) as [Hl | ->].
+  - destruct (whnf_normalization_ty (E := DEM) (LP := LRM) redM_eqty H Hl) as (W & HW & HWh).
+    exists W; split; [exact (tyred_red _ _ _ _ _ _ HW) | exact HWh].
+  - destruct (omegaM_red_l (eqty_refl _ _ _ _ _ H)) as (n & l & A & HW).
+    exists (tyUPi n l A); split; [exact (tyred_red _ _ _ _ _ _ HW) | apply whnf_tyUPi].
 Qed.
 
 Theorem declM_closed_nat_canonicity {G t} : ctx_only G -> [ G ; cnil ⊢[ lM ] t : tyNat @ lzero ] ->
@@ -57,11 +123,11 @@ Theorem declM_closed_nat_canonicity {G t} : ctx_only G -> [ G ; cnil ⊢[ lM ] t
 Proof. exact (closed_nat_canonicity (E := DEM) (LP := LRM) redM_eqtm). Qed.
 
 Theorem declM_nat_not_pi {G Γ k l l' A B} : ~ [ G ; Γ ⊢[ lM ] tyNat ≅ tyPi l l' A B @ k ].
-Proof. exact (nat_not_pi (E := DEM) (LP := LRM) redM_eqty). Qed.
+Proof. intros H. exact (nat_not_pi (E := DEM) (LP := LRM) redM_eqty (lwfM_whnf_l H whnf_tyNat ltac:(not_upi)) H). Qed.
 Theorem declM_nat_not_U {G Γ k l} : ~ [ G ; Γ ⊢[ lM ] tyNat ≅ tyU l @ k ].
-Proof. exact (nat_not_U (E := DEM) (LP := LRM) redM_eqty). Qed.
+Proof. intros H. exact (nat_not_U (E := DEM) (LP := LRM) redM_eqty (lwfM_whnf_l H whnf_tyNat ltac:(not_upi)) H). Qed.
 Theorem declM_U_not_pi {G Γ k l l1 l2 A B} : ~ [ G ; Γ ⊢[ lM ] tyU l ≅ tyPi l1 l2 A B @ k ].
-Proof. exact (U_not_pi (E := DEM) (LP := LRM) redM_eqty). Qed.
+Proof. intros H. exact (U_not_pi (E := DEM) (LP := LRM) redM_eqty (lwfM_whnf_l H (whnf_tyU _) ltac:(not_upi)) H). Qed.
 
 (** ** Contextual types at M: injectivity and closed canonicity *)
 
@@ -118,7 +184,7 @@ End ModInv.
 Theorem declM_CTyp_inj {G Γ Δ Δ' l l' k} : [ G ; Γ ⊢[ lM ] tyCTyp Δ l ≅ tyCTyp Δ' l' @ k ] ->
   [ G ⊢[ lD ] Δ ≅ Δ' ] /\ lequiv (gL G) l l'.
 Proof.
-  intros H. destruct (redM_eqty _ _ _ _ _ H) as [R HR].
+  intros H. destruct (redM_eqty _ _ _ _ _ H (lwfM_whnf_l H (whnf_tyCTyp _ _) ltac:(not_upi))) as [R HR].
   pose proof (eqty_wf_l (i := lM) eq_refl H) as HT. pose proof (eqty_wf_r (i := lM) eq_refl H) as HT'.
   destruct (LR_inv_CTyp HR (tyred_refl _ _ HT)) as [_ HM].
   destruct (ModRel_CTyp_inv HM HT HT') as ((HDD & _) & Hl & _). split; assumption.
@@ -127,7 +193,7 @@ Qed.
 Theorem declM_CTrm_inj {G Γ Δ Δ' A A' l l' k} : [ G ; Γ ⊢[ lM ] tyCTrm Δ A l ≅ tyCTrm Δ' A' l' @ k ] ->
   [ G ⊢[ lD ] Δ ≅ Δ' ] /\ [ G ; Δ ⊢[ lD ] A ≅ A' @ l ] /\ lequiv (gL G) l l'.
 Proof.
-  intros H. destruct (redM_eqty _ _ _ _ _ H) as [R HR].
+  intros H. destruct (redM_eqty _ _ _ _ _ H (lwfM_whnf_l H (whnf_tyCTrm _ _ _) ltac:(not_upi))) as [R HR].
   pose proof (eqty_wf_l (i := lM) eq_refl H) as HT. pose proof (eqty_wf_r (i := lM) eq_refl H) as HT'.
   destruct (LR_inv_CTrm HR (tyred_refl _ _ HT)) as [_ HM].
   destruct (ModRel_CTrm_inv HM HT HT') as ((HDD & _) & (HAA & _) & Hl & _). exact (conj HDD (conj HAA Hl)).
@@ -137,7 +203,7 @@ Qed.
 Theorem declM_closed_CTyp_canonicity {G t Δ l} : ctx_only G -> [ G ; cnil ⊢[ lM ] t : tyCTyp Δ l @ lzero ] ->
   exists T, [ G ; Δ ⊢[ lC ] T @ l ] /\ [ G ; cnil ⊢[ lM ] t ≅ boxT T : tyCTyp Δ l @ lzero ].
 Proof.
-  intros HG H. destruct (redM_eqtm _ _ _ _ _ _ (eqtm_refl _ _ _ _ _ _ H)) as (R & HR & Ht).
+  intros HG H. destruct (redM_eqtm _ _ _ _ _ _ (eqtm_refl _ _ _ _ _ _ H) I) as (R & HR & Ht).
   pose proof (wf_tm_ty (i := lM) eq_refl H) as HT.
   destruct (LR_inv_CTyp HR (tyred_refl _ _ HT)) as [_ HM].
   destruct (ModRel_CTyp_inv HM HT HT) as (_ & _ & HRel).
@@ -151,7 +217,7 @@ Theorem declM_closed_CTrm_canonicity {G t Δ A l} : ctx_only G ->
   [ G ; cnil ⊢[ lM ] t : tyCTrm Δ A l @ lzero ] ->
   exists c, [ G ; Δ ⊢[ lC ] c : A @ l ] /\ [ G ; cnil ⊢[ lM ] t ≅ boxt c : tyCTrm Δ A l @ lzero ].
 Proof.
-  intros HG H. destruct (redM_eqtm _ _ _ _ _ _ (eqtm_refl _ _ _ _ _ _ H)) as (R & HR & Ht).
+  intros HG H. destruct (redM_eqtm _ _ _ _ _ _ (eqtm_refl _ _ _ _ _ _ H) I) as (R & HR & Ht).
   pose proof (wf_tm_ty (i := lM) eq_refl H) as HT.
   destruct (LR_inv_CTrm HR (tyred_refl _ _ HT)) as [_ HM].
   destruct (ModRel_CTrm_inv HM HT HT) as (_ & _ & _ & HRel).
@@ -160,5 +226,40 @@ Proof.
   - exists c. split; [exact Hc | exact (tmred_eq _ _ _ _ _ _ _ Hw)].
   - exfalso. exact (no_closed_neutral (gne_tm_typed_l Hνν) eq_refl HG (gne_tm_whne_l Hνν)).
 Qed.
+
+(** ** At ω: [UΠ] (M4_DESIGN.md F6) *)
+
+(** Injectivity of [UΠ]: the arities agree, and the levels are equivalent. *)
+Theorem declM_upi_inj {G Γ n l A n' l' A' k} : [ G ; Γ ⊢[ lM ] tyUPi n l A ≅ tyUPi n' l' A' @ k ] ->
+  n' = n /\ lequiv (n + gL G) l l'.
+Proof.
+  intros H. pose proof (upi_lvl (eqty_wf_l (i := lM) eq_refl H)) as ->.
+  destruct (reducibleM_eqty_ω DEP DEM H) as [R HR].
+  destruct HR as [m l0 l0' A0 A0' iR _ Hll HT HT' _ _ _].
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT (tyred_refl _ _ (eqty_wf_l (i := lM) eq_refl H))
+                (whnf_tyUPi _ _ _) (whnf_tyUPi _ _ _)) as E. injection E as <- <- <-.
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' (tyred_refl _ _ (eqty_wf_r (i := lM) eq_refl H))
+                (whnf_tyUPi _ _ _) (whnf_tyUPi _ _ _)) as E. injection E as <- <- <-.
+  split; [reflexivity | exact Hll].
+Qed.
+
+(** Discrimination of [UΠ] against the other type formers. *)
+Lemma declM_upi_not {G Γ n l A X k} : whnf_ty X -> (forall n0 l0 A0, X <> tyUPi n0 l0 A0) ->
+  ~ [ G ; Γ ⊢[ lM ] tyUPi n l A ≅ X @ k ].
+Proof.
+  intros Hw Hn H. pose proof (upi_lvl (eqty_wf_l (i := lM) eq_refl H)) as ->.
+  destruct (omegaM_whnf_r H Hw) as (n0 & l0 & A0 & E). exact (Hn _ _ _ E).
+Qed.
+
+Theorem declM_upi_not_nat {G Γ n l A k} : ~ [ G ; Γ ⊢[ lM ] tyUPi n l A ≅ tyNat @ k ].
+Proof. apply declM_upi_not; [exact whnf_tyNat | not_upi]. Qed.
+Theorem declM_upi_not_U {G Γ n l A l' k} : ~ [ G ; Γ ⊢[ lM ] tyUPi n l A ≅ tyU l' @ k ].
+Proof. apply declM_upi_not; [apply whnf_tyU | not_upi]. Qed.
+Theorem declM_upi_not_pi {G Γ n l A l1 l2 B C k} : ~ [ G ; Γ ⊢[ lM ] tyUPi n l A ≅ tyPi l1 l2 B C @ k ].
+Proof. apply declM_upi_not; [apply whnf_tyPi | not_upi]. Qed.
+Theorem declM_upi_not_CTyp {G Γ n l A Δ l' k} : ~ [ G ; Γ ⊢[ lM ] tyUPi n l A ≅ tyCTyp Δ l' @ k ].
+Proof. apply declM_upi_not; [apply whnf_tyCTyp | not_upi]. Qed.
+Theorem declM_upi_not_CTrm {G Γ n l A Δ B l' k} : ~ [ G ; Γ ⊢[ lM ] tyUPi n l A ≅ tyCTrm Δ B l' @ k ].
+Proof. apply declM_upi_not; [apply whnf_tyCTrm | not_upi]. Qed.
 
 End DeclConsequences.

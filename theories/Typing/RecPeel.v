@@ -437,6 +437,18 @@ Proof.
   injection Hx; intros; subst. do 3 eexists; split; [reflexivity|]. repeat split; assumption.
 Qed.
 
+(** The recursors are typed at well-formed levels only (never at ω, M4). *)
+Lemma elimT_lvl_wf {G Γ l1 l2 rb l Δ t T k} : [ G ; Γ ⊢[ lM ] elimT l1 l2 rb l Δ t : T @ k ] -> lwf (gL G) k.
+Proof.
+  intros H; remember (elimT l1 l2 rb l Δ t) as x eqn:Hx; revert Hx.
+  induction H; intros Hx; try discriminate; eauto using lequiv_wf_l, lequiv_wf_r.
+Qed.
+Lemma elimt_lvl_wf {G Γ l1 l2 rb l Δ T0 t T k} : [ G ; Γ ⊢[ lM ] elimt l1 l2 rb l Δ T0 t : T @ k ] -> lwf (gL G) k.
+Proof.
+  intros H; remember (elimt l1 l2 rb l Δ T0 t) as x eqn:Hx; revert Hx.
+  induction H; intros Hx; try discriminate; eauto using lequiv_wf_l, lequiv_wf_r.
+Qed.
+
 Lemma wf_elimT' {G Γ l1 l2 MT Mt bs l Δ t} : RBwf G Γ l1 l2 MT Mt bs -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
   [ G ; Γ ⊢[ lM ] t : tyCTyp Δ l @ lzero ] ->
   [ G ; Γ ⊢[ lM ] elimT l1 l2 (mkrb MT Mt bs) l Δ t : motT (wrapMT MT) l Δ t @ l1 ].

@@ -797,7 +797,122 @@ Ltac us_keep :=
   | IH : forall L' φ, usub_ok φ L' (gL (recGt ?G)) -> _ |- _ =>
       let T := type of IH in
       lazymatch goal with _ : keep T |- _ => fail | _ => let X := fresh "K" in pose proof IH as X; change (keep T) in X end
+  (* the [UΠ] rules use the body at every level substitution (M4) *)
+  | IH : forall L' φ, usub_ok φ L' (gL (gctx_uwk _ ?G)) -> _ |- _ =>
+      let T := type of IH in
+      lazymatch goal with _ : keep T |- _ => fail | _ => let X := fresh "K" in pose proof IH as X; change (keep T) in X end
+  (* η uses the function at [φ] followed by fresh levels (M4) *)
+  | IH : forall L' φ, usub_ok φ L' (gL ?G) -> SemTmMω _ _ _ _ _ _ _ |- _ =>
+      let T := type of IH in
+      lazymatch goal with _ : keep T |- _ => fail | _ => let X := fresh "K" in pose proof IH as X; change (keep T) in X end
   end.
+
+(** ** The two halves of a judgment's semantics (M4_DESIGN.md F3): at a
+    well-formed level, the finite relation; at ω, the relation at ω. *)
+
+Lemma brLv_lwf k G l1 l2 : lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL (brG k G)) (brLv k l1 l2).
+Proof.
+  intros H1 H2. unfold brLv, brG, gctx_uwk; cbn [gL].
+  destruct (k <? 4); (eapply lwf_lvren; [apply uren_ok_ush | assumption]).
+Qed.
+
+Ltac w_lwf :=
+  cbn [lwf]; repeat split;
+  first [ assumption | exact I | eapply lequiv_wf_l; eassumption | eapply lequiv_wf_r; eassumption
+        | eapply lwf_lvren; [apply uren_ok_ush | first [assumption | eapply lequiv_wf_l; eassumption
+                                                      | eapply lequiv_wf_r; eassumption]] ].
+
+(** Each induction hypothesis: its half at the premise's level. *)
+Ltac w_spec :=
+  repeat match goal with
+  | IH : (lwf ?L ?k -> ?A) /\ (?k = lomega -> ?B) |- _ =>
+      first [ let X := fresh "IH" in pose proof (proj1 IH ltac:(w_lwf)) as X; clear IH
+            | let X := fresh "IH" in pose proof (proj2 IH eq_refl) as X; clear IH
+            | match goal with Hk : k = lomega |- _ =>
+                let X := fresh "IH" in pose proof (proj2 IH Hk) as X; clear IH end ]
+  (* the entries of a global variable's substitution: its context's levels *)
+  | IH : forall n A k, in_ctx ?Δ n A k -> (lwf ?L k -> _) /\ _,
+    Hin : in_gctx (gΨ ?G) _ _, Hc : wf_ctx ?G _ _ |- _ =>
+      let HD := fresh "HD" in
+      pose proof (gctx_decl_ok _ _ _ (ctx_glob _ _ _ Hc) Hin) as HD; cbn [decl_ok] in HD;
+      let HΔ := fresh "HΔ" in
+      destruct HD as [HΔ _];
+      let X := fresh "IH" in pose proof (fun n A k h => proj1 (IH n A k h) (in_ctx_lwf HΔ h)) as X; clear IH
+  (* the recursors' branches *)
+  | IH : forall k, k < 13 -> ?x = ?x -> (lwf (gL (brG k ?G)) (brLv k ?l1 ?l2) -> _) /\ _ |- _ =>
+      let W1 := fresh "W" in let W2 := fresh "W" in
+      assert (W1 : lwf (gL G) l1) by w_lwf; assert (W2 : lwf (gL G) l2) by w_lwf;
+      let X := fresh "IH" in pose proof (fun k Hk e => proj1 (IH k Hk e) (brLv_lwf k G l1 l2 W1 W2)) as X;
+      clear IH W1 W2
+  end.
+
+(** At ω, a rule concluding at a well-formed level is impossible. *)
+Ltac w_absurd_rec :=
+  match goal with
+  | H : wf_tm _ _ _ (elimT _ _ _ _ _ _) _ ?k, Hlev : ?k = lomega |- _ =>
+      let X := fresh in pose proof (elimT_lvl_wf H) as X; rewrite Hlev in X; exact X
+  | H : wf_tm _ _ _ (elimt _ _ _ _ _ _ _) _ ?k, Hlev : ?k = lomega |- _ =>
+      let X := fresh in pose proof (elimt_lvl_wf H) as X; rewrite Hlev in X; exact X
+  end.
+
+Ltac w_absurd :=
+  first [ match goal with Hlev : lwf _ lomega |- _ => cbn [lwf] in Hlev; exact Hlev end
+        | w_absurd_rec
+        | idtac ] ;
+  match goal with Hlev : ?k = lomega |- _ =>
+    first [ discriminate Hlev
+          | subst; repeat match goal with H : lequiv _ _ _ |- _ => destruct H as (? & ? & ?) end;
+            cbn [lwf] in *; tauto
+          | subst; match goal with Hc : wf_ctx _ _ ?Γ, Hi : in_ctx ?Γ _ _ lomega |- _ =>
+              exact (in_ctx_lwf Hc Hi) end
+          | subst; match goal with Hin : in_gctx (gΨ ?G) _ ?D, Hc : wf_ctx ?G _ _ |- _ =>
+              let HD := fresh "HD" in pose proof (gctx_decl_ok _ _ _ (ctx_glob _ _ _ Hc) Hin) as HD;
+              cbn [decl_ok lwf] in HD; tauto end
+          | refine (ilv_not_omega _ _ _ _ _ _ _ Hlev);
+            first [eassumption | reflexivity | eapply lequivs_lwf_l; eassumption] ]
+  end.
+
+(** The [UΠ] β rule's judgments, before they are moved along [φ]. *)
+Ltac upi_judg :=
+  try lazymatch goal with
+  | |- SemTmM _ _ (G_us ?G _ _) (ucsubst ?Γ _) (usubst_tm (uapp (ulam ?n ?l ?t) ?ls) _) _ (usubst_ty ?T0 _) (lvsubst ?k _) =>
+      assert (wf_tm G lM Γ (uapp (ulam n l t) ls) T0 k)
+        by (eapply pre_ubeta_l; first [eassumption | reflexivity]);
+      assert (eq_tm G lM Γ (uapp (ulam n l t) ls) t[uext ls lvar]ᵤ T0 k)
+        by (apply eqtm_ubeta; first [assumption | reflexivity])
+  end.
+
+Ltac w_side := first [ eassumption | reflexivity | apply lequiv_refl; eassumption
+                     | apply lequivs_refl; eassumption ].
+
+(** [$] has no context premise: the context comes from the function. *)
+Ltac w_ctx :=
+  try match goal with
+  | IH : SemTmMω _ _ ?G ?Γ _ _ _ |- _ =>
+      lazymatch goal with _ : SemCtxM _ _ G Γ |- _ => fail | _ => pose proof (proj1 IH) end
+  end;
+  try match goal with
+  | H : [ ?G ; ?Γ ⊢[ lM ] _ : _ @ _ ] |- _ =>
+      lazymatch goal with _ : [ G ; Γ ⊢[ lM ] ] |- _ => fail | _ =>
+        pose proof (proj1 (proj2 (proj2 (proj2 ctx_extract))) _ _ _ _ _ _ H) end
+  | H : [ ?G ; ?Γ ⊢[ lM ] _ ≅ _ : _ @ _ ] |- _ =>
+      lazymatch goal with _ : [ G ; Γ ⊢[ lM ] ] |- _ => fail | _ =>
+        pose proof (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 ctx_extract))))) _ _ _ _ _ _ _ H) end
+  end.
+
+(** At ω and for [$] and its β: the semantic rules (UPiV). *)
+Ltac w_dispatch :=
+  try unfold keep in *;
+  first
+  [ eassumption
+  | solve [eapply FMω_ty_sym; eassumption] | solve [eapply FMω_ty_trans; eassumption]
+  | solve [eapply FMω_tm_sym; eassumption] | solve [eapply FMω_tm_trans; eassumption]
+  | solve [eapply FMω_conv; eassumption] | solve [eapply FMω_ty_leq; eassumption]
+  | solve [eapply FMω_tm_leq; eassumption]
+  | solve [eapply FM_upi; w_side] | solve [eapply FM_ulam; w_side]
+  | solve [rewrite uren_ush_usubst_tm, ubvars_uupn; w_ctx; eapply FM_ueta; w_side]
+  | solve [w_ctx; eapply FM_uapp; w_side]
+  | solve [eapply FM_ubeta; w_side] ].
 
 (** The recursors' judgments themselves, moved along [φ] with their
     premises: the validity lemmas read the bundles' typings off them. *)
@@ -823,16 +938,28 @@ Theorem fundamentalM_us :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> i = lM -> forall L' φ, usub_ok φ L' (gL G) ->
      SemCtxM EP EM (G_us G L' φ) (ucsubst Γ φ)) /\
-  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = lM -> forall L' φ, usub_ok φ L' (gL G) ->
-     SemTyM EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_ty T φ) (usubst_ty T φ) (lvsubst l φ)) /\
-  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = lM -> forall L' φ, usub_ok φ L' (gL G) ->
-     SemTmM EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_tm t φ) (usubst_tm t φ) (usubst_ty T φ)
-       (lvsubst l φ)) /\
-  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = lM -> forall L' φ, usub_ok φ L' (gL G) ->
-     SemTyM EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_ty T φ) (usubst_ty T' φ) (lvsubst l φ)) /\
-  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = lM -> forall L' φ, usub_ok φ L' (gL G) ->
-     SemTmM EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_tm t φ) (usubst_tm t' φ) (usubst_ty T φ)
-       (lvsubst l φ)) /\
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = lM ->
+     (lwf (gL G) l -> forall L' φ, usub_ok φ L' (gL G) ->
+        SemTyM EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_ty T φ) (usubst_ty T φ) (lvsubst l φ)) /\
+     (l = lomega -> forall L' φ, usub_ok φ L' (gL G) ->
+        SemTyMω EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_ty T φ) (usubst_ty T φ))) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = lM ->
+     (lwf (gL G) l -> forall L' φ, usub_ok φ L' (gL G) ->
+        SemTmM EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_tm t φ) (usubst_tm t φ) (usubst_ty T φ)
+          (lvsubst l φ)) /\
+     (l = lomega -> forall L' φ, usub_ok φ L' (gL G) ->
+        SemTmMω EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_tm t φ) (usubst_tm t φ) (usubst_ty T φ))) /\
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = lM ->
+     (lwf (gL G) l -> forall L' φ, usub_ok φ L' (gL G) ->
+        SemTyM EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_ty T φ) (usubst_ty T' φ) (lvsubst l φ)) /\
+     (l = lomega -> forall L' φ, usub_ok φ L' (gL G) ->
+        SemTyMω EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_ty T φ) (usubst_ty T' φ))) /\
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = lM ->
+     (lwf (gL G) l -> forall L' φ, usub_ok φ L' (gL G) ->
+        SemTmM EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_tm t φ) (usubst_tm t' φ) (usubst_ty T φ)
+          (lvsubst l φ)) /\
+     (l = lomega -> forall L' φ, usub_ok φ L' (gL G) ->
+        SemTmMω EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_tm t φ) (usubst_tm t' φ) (usubst_ty T φ))) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
   apply typing_mut; intros; try exact I;
@@ -842,7 +969,11 @@ Proof.
       | IH : forall n A k, in_ctx _ n A k -> ?x = ?x -> _ |- _ =>
           pose proof (fun n A k h => IH n A k h eq_refl); clear IH
       end;
-    rec_judg; us_keep; us_spec; us_entries_sem; us_move; us_rewrite_all; rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix.
+    lazymatch goal with |- (lwf _ _ -> _) /\ (_ = lomega -> _) => split; intros Hlev | _ => idtac end;
+    w_spec; try solve [exfalso; w_absurd]; try intros ?L' ?φ ?Hφ;
+    rec_judg; upi_judg; us_keep; us_spec; us_entries_sem; us_move; us_rewrite_all;
+    rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix.
+  all: try solve [w_dispatch].
   all: try solve [ first [simple eapply (FM_tygvar_us EP EM) | simple eapply (FM_gvar_us EP EM)]; eassumption ].
   all: m_P.
   all: try solve [ first [ simple eapply (FM_CTyp EP EM) | simple eapply (FM_CTyp_eq EP EM)
@@ -861,11 +992,6 @@ Proof.
            | H : eq_tm _ lM _ (elimT _ _ _ _ _ _) _ _ _ |- _ => pose proof (eqtm_wf_r (i := lM) eq_refl H)
            | H : eq_tm _ lM _ (elimt _ _ _ _ _ _ _) _ _ _ |- _ => pose proof (eqtm_wf_r (i := lM) eq_refl H)
            end.
-  (* M4 WORK IN PROGRESS (M4_DESIGN.md F5, status): the [UΠ] rules are
-     admitted until the relation at ω exists; nothing else is. *)
-  all: try (lazymatch goal with
-            | |- context [tyUPi] => admit | |- context [uapp] => admit | |- context [uext] => admit
-            end).
   all: first
     [ solve [simple eapply (VS_elimT_beta EP EM);
              [eassumption | apply redT_usubst; eassumption | eassumption | eassumption]]
@@ -873,7 +999,7 @@ Proof.
              [eassumption | apply redt_usubst; eassumption | eassumption | eassumption]]
     | solve [simple eapply (FM_elimT EP EM); m_rec_side]
     | solve [simple eapply (FM_elimt EP EM); m_rec_side] ].
-Admitted.
+Qed.
 
 (** ** At the identity universe substitution *)
 
@@ -896,26 +1022,35 @@ Ltac us_id H :=
   rewrite (G_us_id _ HG);
   rewrite ?usubst_id_ctx, ?usubst_id_ty, ?usubst_id, ?lvsubst_id by first [reflexivity | dnf_of H].
 
+(** At a well-formed level, the finite relation; at ω, the relation at ω
+    (M4_DESIGN.md F3). *)
 Theorem fundamentalM :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> i = lM -> SemCtxM EP EM G Γ) /\
-  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = lM -> SemTyM EP EM G Γ T T l) /\
-  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = lM -> SemTmM EP EM G Γ t t T l) /\
-  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = lM -> SemTyM EP EM G Γ T T' l) /\
-  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = lM -> SemTmM EP EM G Γ t t' T l) /\
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> i = lM ->
+     (lwf (gL G) l -> SemTyM EP EM G Γ T T l) /\ (l = lomega -> SemTyMω EP EM G Γ T T)) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> i = lM ->
+     (lwf (gL G) l -> SemTmM EP EM G Γ t t T l) /\ (l = lomega -> SemTmMω EP EM G Γ t t T)) /\
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> i = lM ->
+     (lwf (gL G) l -> SemTyM EP EM G Γ T T' l) /\ (l = lomega -> SemTyMω EP EM G Γ T T')) /\
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = lM ->
+     (lwf (gL G) l -> SemTmM EP EM G Γ t t' T l) /\ (l = lomega -> SemTmMω EP EM G Γ t t' T)) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
   destruct fundamentalM_us as (_ & Fc & Fty & Ftm & Feqty & Feqtm & _).
   refine (conj (fun _ _ => I) (conj _ (conj _ (conj _ (conj _ (conj _ (fun _ _ _ _ _ => I))))))).
-  - intros G i Γ H Ei. pose proof (Fc _ _ _ H Ei (gL G) lvar (usub_ok_id _)) as X. subst i. revert X. us_id H. auto.
-  - intros G i Γ T l H Ei. pose proof (Fty _ _ _ _ _ H Ei (gL G) lvar (usub_ok_id _)) as X. subst i. revert X.
-    us_id H. auto.
-  - intros G i Γ t T l H Ei. pose proof (Ftm _ _ _ _ _ _ H Ei (gL G) lvar (usub_ok_id _)) as X. subst i. revert X.
-    us_id H. auto.
-  - intros G i Γ T T' l H Ei. pose proof (Feqty _ _ _ _ _ _ H Ei (gL G) lvar (usub_ok_id _)) as X. subst i.
-    revert X. us_id H. auto.
-  - intros G i Γ t t' T l H Ei. pose proof (Feqtm _ _ _ _ _ _ _ H Ei (gL G) lvar (usub_ok_id _)) as X. subst i.
-    revert X. us_id H. auto.
+  { intros G i Γ H Ei. pose proof (Fc _ _ _ H Ei (gL G) lvar (usub_ok_id _)) as X. subst i. revert X. us_id H. auto. }
+  all: intros G i Γ; intros until 1; rename H into Hj; intros Ei;
+    match goal with
+    | F : forall G i Γ, _ |- _ =>
+        first [ pose proof (F _ _ _ _ _ _ _ Hj Ei) as [X1 X2]
+              | pose proof (F _ _ _ _ _ _ Hj Ei) as [X1 X2]
+              | pose proof (F _ _ _ _ _ Hj Ei) as [X1 X2] ]
+    end;
+    subst i; split; intros Hl;
+    [ specialize (X1 Hl (gL G) lvar (usub_ok_id _)); revert X1
+    | specialize (X2 Hl (gL G) lvar (usub_ok_id _)); revert X2 ];
+    us_id Hj; auto.
 Qed.
 
 End FundamentalMThm.

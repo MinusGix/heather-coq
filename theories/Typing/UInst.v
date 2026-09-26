@@ -280,3 +280,31 @@ Proof.
 Qed.
 
 End Presup.
+
+(** ** Judgment levels
+
+    Every judgment's level is well formed, or ω at layer M (the [UΠ]
+    rules, M4_DESIGN.md F2). *)
+Theorem judg_lvl :
+  (forall G, [ ⊢ G ] -> True) /\
+  (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
+  (forall G i Γ T l, [ G ; Γ ⊢[ i ] T @ l ] -> lwf (gL G) l \/ (i = lM /\ l = lomega)) /\
+  (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> lwf (gL G) l \/ (i = lM /\ l = lomega)) /\
+  (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> lwf (gL G) l \/ (i = lM /\ l = lomega)) /\
+  (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> lwf (gL G) l \/ (i = lM /\ l = lomega)) /\
+  (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
+Proof.
+  apply typing_mut; intros; auto; try (left; assumption); try (right; split; reflexivity);
+    try (left; cbn [lwf]; auto; fail).
+  all: try (left; cbn [lwf]; repeat split; first [assumption | eapply lequiv_wf_l; eassumption
+                                                  | eapply lequiv_wf_r; eassumption]; fail).
+  all: try (left; eapply in_ctx_lwf; eassumption).
+  all: try (left; match goal with Hin : in_gctx (gΨ ?G) _ _, Hc : wf_ctx ?G _ _ |- _ =>
+              let HD := fresh "HD" in pose proof (gctx_decl_ok _ _ _ (ctx_glob _ _ _ Hc) Hin) as HD;
+              cbn [decl_ok] in HD; tauto end).
+  all: try (left; eapply lwf_lvsubst;
+            [ apply usub_ok_uext; [first [eassumption | eapply lequivs_lwf_l; eassumption] | apply usub_ok_id]
+            | try match goal with Hn : length ?ls = ?n |- _ => rewrite Hn end; assumption ]).
+  all: try (match goal with IH : lwf _ ?k \/ _, E : lequiv _ _ ?k |- _ => left; eapply lequiv_wf_l; eassumption
+                           | IH : lwf _ ?k \/ _, E : lequiv _ ?k _ |- _ => left; eapply lequiv_wf_r; eassumption end).
+Qed.
