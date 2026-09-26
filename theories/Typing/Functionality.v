@@ -492,6 +492,35 @@ Ltac fung_manual :=
       eauto 6 using eqc_refl, lequiv_refl, eqty_refl, wf_ty_subst_g, lequiv_wf_l with fung
   end.
 
+(** [UΠ] (M4): the body at [uwkn n d] and [uwkn n d']. *)
+Ltac fung_upi_ih :=
+  match goal with
+  | Hd : lsub_eq ?G _ ?Δ ?d ?d' ?Γ, IH : forall Δ e e', lsub_eq (gctx_uwk ?n ?G) _ Δ e e' _ -> _ |- _ =>
+      apply IH, lsub_eq_uwkn, Hd
+  end.
+Ltac fung_upi_wf :=
+  match goal with
+  | Hd : lsub_eq ?G _ ?Δ ?d ?d' ?Γ |- wf_ty (gctx_uwk _ _) _ _ _ _ =>
+      eapply wf_ty_subst_g; [eassumption | apply lsub_wf_uwkn, (lsub_eq_l Hd)]
+  end.
+Ltac fung_upi :=
+  match goal with
+  | Hd : lsub_eq ?G _ ?Δ ?d ?d' ?Γ |- eq_ty _ _ _ (tyUPi _ _ _) _ _ =>
+      eapply eqty_upi;
+      [ exact (lsub_wf_ctx (lsub_eq_l Hd)) | assumption | apply lequiv_refl; assumption
+      | fung_upi_wf | fung_upi_ih ]
+  | Hd : lsub_eq ?G _ ?Δ ?d ?d' ?Γ |- eq_tm _ _ _ (ulam _ _ _) _ _ _ =>
+      eapply eqtm_ulam;
+      [ exact (lsub_wf_ctx (lsub_eq_l Hd)) | assumption | apply lequiv_refl; assumption
+      | fung_upi_wf | fung_upi_ih ]
+  | Hd : lsub_eq ?G _ ?Δ ?d ?d' ?Γ, Hn : length ?ls = ?n |- eq_tm _ _ _ (uapp (subst ?t _) ?ls) _ _ _ =>
+      rewrite (subst_uinst_ty n ls _ d Hn (lsub_wf_dnf (lsub_eq_l Hd)));
+      eapply eqtm_uapp;
+      [ eassumption | fung_upi_wf | exact Hn | apply lequivs_refl; assumption
+      | match goal with IH : forall Δ e e', lsub_eq G _ Δ e e' Γ -> eq_tm _ _ _ (subst t _) _ _ _ |- _ =>
+          apply IH, Hd end ]
+  end.
+
 (** The context cases: equal substitutions of a prefix, lifted through the
     rest (M3_DESIGN.md E8). *)
 Ltac fun_ctx :=
@@ -599,6 +628,7 @@ Proof.
     cbn [typeof] in *; sub_rw.
   all: try solve [eapply lsub_eq_var; eassumption].
   all: try fun_rec.
+  all: try fung_upi.
   all: try fung_manual.
   all: try (timeout 3 fung_step).
   (* code of Π and natrec: the binder premises need the substituted

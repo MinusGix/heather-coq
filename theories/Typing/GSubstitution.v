@@ -375,13 +375,16 @@ Proof. reflexivity. Qed.
 Lemma gs_elimt l1 l2 rb l Δ T t :
   (elimt l1 l2 rb l Δ T t)⦃σ⦄ = elimt l1 l2 rb⦃σ⦄ l Δ⦃σ⦄ T⦃σ⦄ t⦃σ⦄.
 Proof. reflexivity. Qed.
+Lemma gs_tyUPi n l T : (tyUPi n l T)⦃σ⦄ = tyUPi n l T⦃guwkn n σ⦄. Proof. reflexivity. Qed.
+Lemma gs_ulam n l t : (ulam n l t)⦃σ⦄ = ulam n l t⦃guwkn n σ⦄. Proof. reflexivity. Qed.
+Lemma gs_uapp t ls : (uapp t ls)⦃σ⦄ = uapp t⦃σ⦄ ls. Proof. reflexivity. Qed.
 End PushGS.
 
 Ltac push_gsubst := repeat progress (
   rewrite ?gs_tyNat, ?gs_tyPi, ?gs_tyU, ?gs_tyEl, ?gs_tyCTyp, ?gs_tyCTrm, ?gs_var, ?gs_tmNat,
           ?gs_tmPi, ?gs_tmU, ?gs_zero, ?gs_succ, ?gs_natrec, ?gs_lam, ?gs_app, ?gs_boxT,
           ?gs_boxt, ?gs_letboxT, ?gs_letboxt, ?gs_cnil, ?gs_cext, ?gs_lshift,
-          ?gs_tyGvar, ?gs_gvar, ?gs_cvar, ?gs_elimT, ?gs_elimt).
+          ?gs_tyGvar, ?gs_gvar, ?gs_cvar, ?gs_elimT, ?gs_elimt, ?gs_tyUPi, ?gs_ulam, ?gs_uapp).
 
 Lemma gs_single_ty (M : ty) a σ : M[lsingle a]⦃σ⦄ = M⦃σ⦄[lsingle a⦃σ⦄].
 Proof. rewrite gsubst_subst_ty; reflexivity. Qed.
@@ -564,6 +567,65 @@ Ltac gs_manual :=
         | split; [gs_lsub | split; [gs_lsub | gs_entries]] ] ]
   end.
 
+(** [UΠ] (M4): [σ] under the [n] level binders is [guwkn n σ]. *)
+Lemma uren_ush_gsubst_ctx n (Γ : ctx) σ : gdnf σ -> Γ⟨ush n⟩ᵤ⦃guwkn n σ⦄ = Γ⦃σ⦄⟨ush n⟩ᵤ.
+Proof. intros Hσ. symmetry; apply (proj1 (proj2 (proj2 uren_gsubst_all))). intros i; apply guwkn_lk, Hσ. Qed.
+Lemma uren_ush_gsubst_tm n (t : tm) σ : gdnf σ -> t⟨ush n⟩ᵤ⦃guwkn n σ⦄ = t⦃σ⦄⟨ush n⟩ᵤ.
+Proof. intros Hσ. symmetry; apply (proj1 (proj2 uren_gsubst_all)). intros i; apply guwkn_lk, Hσ. Qed.
+
+Lemma gousubst_gouren_uext o n ls : length ls = n -> dnfo o ->
+  gousubst (gouren o (ush n)) (uext ls lvar) = o.
+Proof.
+  intros Hn Ho. destruct o; cbn in *; f_equal.
+  - rewrite (proj1 (proj2 (proj2 uren_usubst_all)) _ _ _ lvar) by (intros; symmetry; apply uext_ush_lvar, Hn).
+    apply usubst_id_ctx; auto.
+  - rewrite (proj1 uren_usubst_all _ _ _ lvar) by (intros; symmetry; apply uext_ush_lvar, Hn).
+    apply usubst_id_ty; auto.
+  - rewrite (proj1 (proj2 uren_usubst_all) _ _ _ lvar) by (intros; symmetry; apply uext_ush_lvar, Hn).
+    apply usubst_id; auto.
+Qed.
+Lemma gsubst_uinst_ty n ls (T : ty) σ : length ls = n -> gdnf σ ->
+  T[uext ls lvar]ᵤ⦃σ⦄ = T⦃guwkn n σ⦄[uext ls lvar]ᵤ.
+Proof.
+  intros Hn Hσ. rewrite usubst_gsubst_ty. apply (proj1 gsubst_ext_all); intros i.
+  rewrite guwkn_lk by apply Hσ. symmetry; apply gousubst_gouren_uext; auto.
+Qed.
+Lemma gsubst_uinst_tm n ls (t : tm) σ : length ls = n -> gdnf σ ->
+  t[uext ls lvar]ᵤ⦃σ⦄ = t⦃guwkn n σ⦄[uext ls lvar]ᵤ.
+Proof.
+  intros Hn Hσ. rewrite usubst_gsubst. apply (proj1 (proj2 gsubst_ext_all)); intros i.
+  rewrite guwkn_lk by apply Hσ. symmetry; apply gousubst_gouren_uext; auto.
+Qed.
+
+Ltac gs_upi_body :=
+  match goal with
+  | IH : forall Ψ'' σ', gsub_wf (mkG (gL (gctx_uwk ?n ?G)) Ψ'') σ' (gctx_uwk ?n ?G) -> _,
+    Hσ : gsub_wf (mkG (gL ?G) ?Ψ') ?σ ?G |- _ =>
+      let X := fresh "X" in
+      pose proof (IH _ _ (gsub_wf_uwkn n _ _ _ Hσ)) as X;
+      rewrite (uren_ush_gsubst_ctx n _ _ (gsw_dnf _ _ _ Hσ)) in X; exact X
+  end.
+Ltac gs_upi_rw :=
+  match goal with Hσ : gsub_wf _ ?σ _ |- _ =>
+    try match goal with Hn : length ?ls = ?n |- _ =>
+      rewrite ?(gsubst_uinst_ty n ls _ σ Hn (gsw_dnf _ _ _ Hσ)),
+        ?(gsubst_uinst_tm n ls _ σ Hn (gsw_dnf _ _ _ Hσ)) end;
+    rewrite ?(uren_ush_gsubst_tm _ _ σ (gsw_dnf _ _ _ Hσ))
+  end.
+Ltac gs_upi :=
+  match goal with
+  | |- wf_ty _ _ _ (tyUPi _ _ _) _ => eapply wft_upi; try gs_upi_body; gs_premise
+  | |- eq_ty _ _ _ (tyUPi _ _ _) _ _ => eapply eqty_upi; try gs_upi_body; gs_premise
+  | |- wf_tm _ _ _ (ulam _ _ _) _ _ => eapply wf_ulam; try gs_upi_body; gs_premise
+  | |- eq_tm _ _ _ (ulam _ _ (uapp _ (ubvars _))) _ _ _ =>
+      gs_upi_rw; eapply eqtm_ueta; try gs_upi_body; gs_premise
+  | |- eq_tm _ _ _ (ulam _ _ _) _ _ _ => eapply eqtm_ulam; try gs_upi_body; gs_premise
+  | |- wf_tm _ _ _ (uapp _ _) _ _ => gs_upi_rw; eapply wf_uapp; try gs_upi_body; gs_premise
+  | |- eq_tm _ _ _ (uapp (ulam _ _ _) _) _ _ _ =>
+      gs_upi_rw; eapply eqtm_ubeta; try gs_upi_body; gs_premise
+  | |- eq_tm _ _ _ (uapp _ _) _ _ _ => gs_upi_rw; eapply eqtm_uapp; try gs_upi_body; gs_premise
+  end.
+
 (** The letbox body, typed under [Ψ, U], under [⇑σ]. *)
 Ltac gs_body :=
   match goal with
@@ -688,6 +750,7 @@ Proof.
   all: try (notrec; gs_step).
   all: try (notrec; gs_manual).
   all: try (notrec; gs_manual2).
+  all: try (notrec; gs_upi).
   all: gs_rec.
 Qed.
 

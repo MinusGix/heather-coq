@@ -105,7 +105,7 @@ Proof.
        | IH : forall k, k < 13 -> dnftm (?bs k) /\ _ |- dnftm (?bs ?n) => apply (IH n); lia
        end.
   all: try solve [ repeat first [ apply subst_dnf_ty | apply gsubst_dnf_all | apply usubst_dnf_all
-                                | apply dnfo_gup | apply dnfo_gsingle | apply lk_dnf_lsingle ];
+                                | apply uren_dnf_all | apply dnfo_gup | apply dnfo_gsingle | apply lk_dnf_lsingle ];
                    cbn; intuition auto ].
   all: try solve [ eapply dnf_redT; [ .. | eassumption ]; cbn; intuition auto
                  | eapply dnf_redt; [ .. | eassumption ]; cbn; intuition auto ].

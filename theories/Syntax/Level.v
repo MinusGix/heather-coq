@@ -103,6 +103,12 @@ Lemma lwf_weaken L L' l : L <= L' -> lwf L l -> lwf L' l.
 Proof. induction l; cbn; intuition lia. Qed.
 Lemma lequiv_weaken L L' l l' : L <= L' -> lequiv L l l' -> lequiv L' l l'.
 Proof. intros HL (? & ? & H); repeat split; eauto using lwf_weaken. Qed.
+Lemma lequivs_refl L ls : Forall (lwf L) ls -> Forall2 (lequiv L) ls ls.
+Proof. induction 1; constructor; auto using lequiv_refl. Qed.
+Lemma lwfs_weaken L L' ls : L <= L' -> Forall (lwf L) ls -> Forall (lwf L') ls.
+Proof. intros HL H; induction H; constructor; eauto using lwf_weaken. Qed.
+Lemma lequivs_weaken L L' ls ls' : L <= L' -> Forall2 (lequiv L) ls ls' -> Forall2 (lequiv L') ls ls'.
+Proof. intros HL H; induction H; constructor; eauto using lequiv_weaken. Qed.
 
 (** ** Universe renaming and substitution (M3)
 
@@ -145,6 +151,9 @@ Definition uupn (n : nat) (φ : nat -> lvl) : nat -> lvl := Nat.iter n uup φ.
 (** [ls/ℓ⃗] on top of [φ]: the list's last element is index 0. *)
 Definition uext (ls : list lvl) (φ : nat -> lvl) : nat -> lvl :=
   fun i => if i <? length ls then nth (length ls - S i) ls lzero else φ (i - length ls).
+
+(** The [n] bound level variables, in [uext] order ([lvar 0] last). *)
+Definition ubvars (n : nat) : list lvl := map lvar (rev (seq 0 n)).
 
 (** [l/ℓ]: instantiate the most recent level variable. *)
 Definition usingle (l : lvl) : nat -> lvl :=

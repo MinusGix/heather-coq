@@ -371,8 +371,24 @@ Ltac wk_branches :=
       rewrite brRes_ren in X by exact Hk; exact X
   end.
 
+(** [UΠ]'s body: the same renaming at the universe-weakened scope. *)
+Ltac wk_upi_body :=
+  match goal with
+  | IH : forall Δ r, wkr r Δ _ -> wf_ctx (gctx_uwk ?n ?G) _ Δ -> _,
+    Hr : wkr ?r ?Δ ?Γ, HΔ : wf_ctx ?G _ ?Δ |- _ =>
+      apply IH; [apply wkr_uren, Hr | apply uwk_ctx, HΔ]
+  end.
+
 Ltac wk_manual :=
   match goal with
+  | |- wf_ty _ _ _ (tyUPi _ _ _) _ => eapply wft_upi; try wk_upi_body; wk_premise
+  | |- eq_ty _ _ _ (tyUPi _ _ _) _ _ => eapply eqty_upi; try wk_upi_body; wk_premise
+  | |- wf_tm _ _ _ (ulam _ _ _) _ _ => eapply wf_ulam; try wk_upi_body; wk_premise
+  | |- eq_tm _ _ _ (ulam _ _ (uapp _ (ubvars _))) _ _ _ => eapply eqtm_ueta; try wk_upi_body; wk_premise
+  | |- eq_tm _ _ _ (ulam _ _ _) _ _ _ => eapply eqtm_ulam; try wk_upi_body; wk_premise
+  | |- wf_tm _ _ _ (uapp _ _) _ _ => eapply wf_uapp; try wk_upi_body; wk_premise
+  | |- eq_tm _ _ _ (uapp (ulam _ _ _) _) _ _ _ => eapply eqtm_ubeta; try wk_upi_body; wk_premise
+  | |- eq_tm _ _ _ (uapp _ _) _ _ _ => eapply eqtm_uapp; try wk_upi_body; wk_premise
   | |- wf_tm _ _ _ (natrec _ _ _ _ _) _ _ => eapply wf_natrec; wk_premise
   | |- eq_tm _ _ _ (tmPi _ _ _ _) _ _ _ => eapply eqtm_code_pi; wk_premise
   | |- wf_tm _ _ _ (tmPi _ _ _ _) _ _ => eapply wf_code_pi; wk_premise

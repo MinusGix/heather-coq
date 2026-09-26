@@ -217,3 +217,24 @@ well-formed levels).
   sides. The second `w` should be `w'`.
 - The paper's type relation at ω takes the same `l` in both `UΠ`s. We
   allow `l ≡ l'`, as `LRpi` does for its annotations.
+
+## Status
+
+**Steps 1–2 done (2026-09-25).** Syntax, operations, laws, reduction,
+the eight rules and the whole typing metatheory. Choices made on the way:
+- The n-ary binder's operations are `Nat.iter` of the single-step lifts
+  (`uuprn`, `uupn`, `uwkn`, `guwkn`, now in Syntax). Each single-step
+  hint lemma has an iterated twin, proved by induction on `n`.
+- Untyped β for `$` checks the arity (`length ls = n`). Without the
+  check, β does not commute with universe substitution.
+- The rules carry the body type's well-formedness (`T @ l` in the
+  extended scope) wherever the metatheory needs it before substitution,
+  as for the recursors (M3 E10).
+- `Typing/UInst.v` holds the instantiation lemmas (a judgment in the
+  extended scope, instantiated at `n` well-formed levels, holds in the
+  original scope), the facts for η's bound variables (`ubvars`), and
+  the presuppositions of the new rules.
+
+**Temporary admit (flagged).** `fundamentalM_us` ends in `Admitted`. Only
+its `UΠ` goals are admitted (a `lazymatch` on `tyUPi`/`uapp`/`uext`).
+The consequences at M therefore depend on it until step 5 closes it.

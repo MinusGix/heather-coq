@@ -315,13 +315,27 @@ Proof. reflexivity. Qed.
 Lemma gren_elimt l1 l2 rb l Δ T t :
   (elimt l1 l2 rb l Δ T t)⟪ξ⟫ = elimt l1 l2 rb⟪ξ⟫ l Δ⟪ξ⟫ T⟪ξ⟫ t⟪ξ⟫.
 Proof. reflexivity. Qed.
+Lemma gren_tyUPi n l T : (tyUPi n l T)⟪ξ⟫ = tyUPi n l T⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_ulam n l t : (ulam n l t)⟪ξ⟫ = ulam n l t⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_uapp t ls : (uapp t ls)⟪ξ⟫ = uapp t⟪ξ⟫ ls. Proof. reflexivity. Qed.
+(** [UΠ]'s scope and instances. *)
+Lemma gren_uren_ctx (Γ : ctx) ρ : Γ⟨ρ⟩ᵤ⟪ξ⟫ = Γ⟪ξ⟫⟨ρ⟩ᵤ.
+Proof. symmetry; apply (proj1 (proj2 (proj2 uren_gren_all))). Qed.
+Lemma gren_uren_tm (t : tm) ρ : t⟨ρ⟩ᵤ⟪ξ⟫ = t⟪ξ⟫⟨ρ⟩ᵤ.
+Proof. symmetry; apply (proj1 (proj2 uren_gren_all)). Qed.
+Lemma gren_usubst_ty (T : ty) φ : T[φ]ᵤ⟪ξ⟫ = T⟪ξ⟫[φ]ᵤ.
+Proof. symmetry; apply usubst_gren_ty. Qed.
+Lemma gren_usubst_tm (t : tm) φ : t[φ]ᵤ⟪ξ⟫ = t⟪ξ⟫[φ]ᵤ.
+Proof. symmetry; apply usubst_gren. Qed.
 End PushG.
 
 Ltac push_gren := repeat progress (
   rewrite ?gren_tyNat, ?gren_tyPi, ?gren_tyU, ?gren_tyEl, ?gren_tyGvar, ?gren_tyCTyp, ?gren_tyCTrm,
           ?gren_var, ?gren_tmNat, ?gren_tmPi, ?gren_tmU, ?gren_zero, ?gren_succ, ?gren_natrec,
           ?gren_lam, ?gren_app, ?gren_gvar, ?gren_boxT, ?gren_boxt, ?gren_letboxT, ?gren_letboxt,
-          ?gren_cnil, ?gren_cvar, ?gren_cext, ?gren_lshift, ?gren_elimT, ?gren_elimt).
+          ?gren_cnil, ?gren_cvar, ?gren_cext, ?gren_lshift, ?gren_elimT, ?gren_elimt,
+          ?gren_tyUPi, ?gren_ulam, ?gren_uapp, ?gren_uren_ctx, ?gren_uren_tm, ?gren_usubst_ty,
+          ?gren_usubst_tm).
 
 Ltac gren_rewrite :=
   rewrite ?gren_single_ty, ?gren_single, ?gren_single2, ?gren_lsucc_ty, ?gren_ren_ty', ?gren_ren,
@@ -363,6 +377,8 @@ Ltac gw_eq := push_gren; gren_rewrite; push_gren; first [reflexivity | f_equal; 
 #[export] Hint Extern 2 (lwf _ _) => (cbn; eapply lwf_weaken; [| eassumption]; cbn; lia) : gwk.
 #[export] Hint Extern 2 (lequiv _ _ _) => (cbn; eapply lequiv_weaken; [| eassumption]; cbn; lia) : gwk.
 #[export] Hint Extern 1 (_ <= _) => (cbn; lia) : gwk.
+#[export] Hint Extern 2 (Forall (lwf _) _) => (cbn; eapply lwfs_weaken; [| eassumption]; cbn; lia) : gwk.
+#[export] Hint Extern 2 (Forall2 (lequiv _) _ _) => (cbn; eapply lequivs_weaken; [| eassumption]; cbn; lia) : gwk.
 #[export] Hint Extern 1 (lle _ _) => assumption : gwk.
 #[export] Hint Extern 1 (_ <> _) => assumption : gwk.
 #[export] Hint Extern 1 (compt _) => assumption : gwk.
@@ -480,6 +496,18 @@ Ltac gw_branches :=
       exact X
   end.
 
+(** [UΠ]'s body, under [n] fresh levels: the same weakening at the
+    universe-weakened scope. *)
+Ltac gw_upi_body :=
+  match goal with
+  | IH : forall L'' Ψ'' (γ' : gweak), gL (gctx_uwk ?n ?G) <= L'' -> _,
+    Hγ : gwk_wf ?γ ?Ψ' (gΨ ?G), HL : gL ?G <= ?L', HG : [ ⊢ mkG ?L' ?Ψ' ] |- _ =>
+      let X := fresh "X" in
+      pose proof (IH (n + L') _ γ (proj1 (Nat.add_le_mono_l _ _ n) HL) (gwk_wf_uren _ _ _ (ush n) Hγ)
+                    (uwk_glob n _ HG)) as X;
+      rewrite gren_uren_ctx in X; exact X
+  end.
+
 Ltac gw_Δ tac :=
   match goal with
   | Hin : in_gctx _ _ (gdTy ?Δ _ _), Hγ : gwk_wf ?γ _ _ |- _ => tac (Δ⟪gwk_fn γ⟫)
@@ -530,6 +558,14 @@ Ltac gw_manual :=
       [ .. | gw_motT | gw_motT | gw_motT | gw_mott | gw_mott | gw_mott
            | gw_branches | gw_branches | gw_branches | gw_branches | ];
       gw_premise
+  | |- wf_ty _ _ _ (tyUPi _ _ _) _ => eapply wft_upi; try gw_upi_body; gw_premise
+  | |- eq_ty _ _ _ (tyUPi _ _ _) _ _ => eapply eqty_upi; try gw_upi_body; gw_premise
+  | |- wf_tm _ _ _ (ulam _ _ _) _ _ => eapply wf_ulam; try gw_upi_body; gw_premise
+  | |- eq_tm _ _ _ (ulam _ _ (uapp _ (ubvars _))) _ _ _ => eapply eqtm_ueta; try gw_upi_body; gw_premise
+  | |- eq_tm _ _ _ (ulam _ _ _) _ _ _ => eapply eqtm_ulam; try gw_upi_body; gw_premise
+  | |- wf_tm _ _ _ (uapp _ _) _ _ => eapply wf_uapp; try gw_upi_body; gw_premise
+  | |- eq_tm _ _ _ (uapp (ulam _ _ _) _) _ _ _ => eapply eqtm_ubeta; try gw_upi_body; gw_premise
+  | |- eq_tm _ _ _ (uapp _ _) _ _ _ => eapply eqtm_uapp; try gw_upi_body; gw_premise
   | |- eq_tm _ _ _ (boxT _) _ _ _ => eapply eqtm_boxT; gw_premise
   | |- eq_tm _ _ _ (boxt _) _ _ _ => eapply eqtm_boxt; gw_premise
   | |- wf_tm _ _ _ (natrec _ _ _ _ _) _ _ => eapply wf_natrec; gw_premise

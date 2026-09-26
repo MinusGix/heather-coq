@@ -3,7 +3,7 @@
     Every judgment's components are well formed: the type of a typed term,
     both sides of a type equality, both sides of a term equality (and its
     type).  For layers with [typeof i = i]. *)
-From DeLaM.Typing Require Export GSubstitution.
+From DeLaM.Typing Require Export UInst.
 
 Section Aux.
 Context {G : gctx} {i : layer} (Hi : typeof i = i) (Hv : i <> lV).
@@ -578,6 +578,14 @@ Proof.
                   intros ?k ?Hk; match goal with IH : forall k, k < 13 -> _ = _ -> _ /\ _ |- _ =>
                     exact (proj1 (IH k Hk eq_refl)) end].
   all: try solve [first [eapply pre_elimT_r | eapply pre_elimt_r]; eassumption].
+  (* universe polymorphism (UInst) *)
+  all: try solve [first [ solve [eapply wft_upi; eauto using lequiv_wf_l]
+                        | solve [eapply pre_upi_r; eauto] | solve [eapply pre_ulam_r; eauto]
+                        | solve [eapply wf_ulam; eauto using lequiv_wf_l]
+                        | solve [eapply wf_uapp; eauto using lequivs_lwf_l] | solve [eapply pre_uapp_r; eauto]
+                        | solve [eapply pre_ubeta_l; eauto] | solve [eapply pre_ubeta_r; eauto]
+                        | solve [eapply pre_ueta_l; eauto] ]].
+  all: try solve [eapply pre_uapp_l; eauto using lequivs_lwf_l; eapply wf_ulam; eassumption].
   (* right-hand sides of congruences *)
   all: first [ solve [eapply pre_pi_r; eassumption] | solve [eapply pre_U_r; eauto with presup]
              | solve [eapply pre_El_r; eassumption] | solve [eapply pre_codeU_r; eauto with presup]

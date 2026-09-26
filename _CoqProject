@@ -33,6 +33,7 @@ theories/Typing/GSubstitution.v
 theories/Typing/GStatic.v
 theories/Typing/RecInst.v
 theories/Typing/RecPeel.v
+theories/Typing/UInst.v
 theories/Typing/Presupposition.v
 theories/Typing/CtxConv.v
 theories/Typing/StaticCode.v

@@ -461,8 +461,6 @@ Proof.
   - rewrite uwkn_S. unfold uwk. rewrite llk_ulren, IHnu.
     apply (proj1 (proj2 uren_uren_all)); reflexivity.
 Qed.
-Lemma lk_dnf_uwkn nu d : LK dnftm d -> LK dnftm (uwkn nu d).
-Proof. intros Hd; destruct nu; [exact Hd | intros n; cbn; unfold uwk; rewrite llk_ulren; apply uren_dnf_all]. Qed.
 Lemma llk_gwkn ng d n : LK dnftm d -> llk (gwkn ng d) n = gren_tm (llk d n) (ush ng).
 Proof.
   intros Hd. induction ng.
@@ -697,6 +695,48 @@ Proof.
   rewrite IH. unfold lliftn. rewrite <- (Nat.iter_succ_r (length As) _ llift d). reflexivity.
 Qed.
 
+(** ** [UΠ] (M4): the body under [uwkn n d]; instances and η commute *)
+
+Lemma uext_ush_lvar ls n m : length ls = n -> uext ls lvar (ush n m) = lvar m.
+Proof.
+  intros Hn; unfold uext, ush; rewrite Hn.
+  destruct (Nat.ltb_spec (n + m) n); [lia|]. f_equal; lia.
+Qed.
+Lemma ulsubst_uwkn_uext n ls d i : length ls = n -> LK dnftm d ->
+  llk (ulsubst (uwkn n d) (uext ls lvar)) i = llk d i.
+Proof.
+  intros Hn Hd. rewrite llk_ulsubst, llk_uwkn by exact Hd.
+  rewrite (uren_usubst_tm _ _ _ lvar) by (intros m; symmetry; apply uext_ush_lvar, Hn).
+  apply usubst_id; [apply Hd | reflexivity].
+Qed.
+Lemma subst_uinst_ty n ls (T : ty) d : length ls = n -> LK dnftm d ->
+  T[uext ls lvar]ᵤ[d] = T[uwkn n d][uext ls lvar]ᵤ.
+Proof.
+  intros Hn Hd. rewrite usubst_subst_ty. apply subst_ext_ty; intros i.
+  symmetry; apply ulsubst_uwkn_uext; assumption.
+Qed.
+Lemma subst_uinst_tm n ls (t : tm) d : length ls = n -> LK dnftm d ->
+  t[uext ls lvar]ᵤ[d] = t[uwkn n d][uext ls lvar]ᵤ.
+Proof.
+  intros Hn Hd. rewrite usubst_subst. apply subst_ext; intros i.
+  symmetry; apply ulsubst_uwkn_uext; assumption.
+Qed.
+Lemma subst_uren_ush n (t : tm) d : LK dnftm d -> t⟨ush n⟩ᵤ[uwkn n d] = t[d]⟨ush n⟩ᵤ.
+Proof. intros Hd. symmetry; apply uren_subst_tm. intros i; apply llk_uwkn, Hd. Qed.
+
+Ltac sub_upi_body :=
+  match goal with
+  | IH : forall Δ d, lsub_wf (gctx_uwk ?n ?G) _ Δ d _ -> _, Hd : lsub_wf ?G _ ?Δ ?d ?Γ |- _ =>
+      apply IH, lsub_wf_uwkn, Hd
+  end.
+Ltac sub_upi_rw :=
+  match goal with Hd : lsub_wf _ _ _ ?d _ |- _ =>
+    try match goal with Hn : length ?ls = ?n |- _ =>
+      rewrite ?(subst_uinst_ty n ls _ d Hn (lsub_wf_dnf Hd)),
+        ?(subst_uinst_tm n ls _ d Hn (lsub_wf_dnf Hd)) end;
+    rewrite ?(subst_uren_ush _ _ d (lsub_wf_dnf Hd))
+  end.
+
 (** The context cases: a prefix [Γ] of [cexts Γ As] is substituted. *)
 Ltac sub_ctx :=
   match goal with
@@ -815,6 +855,16 @@ Ltac sub_manual2 :=
       sub_rec_rw; eapply eqtm_elimt;
       [ .. | sub_motive | sub_motive | sub_motive | sub_motive | sub_motive | sub_motive
            | sub_brctx | sub_brctx | sub_branches | sub_branches | ]; sub_premise
+  | |- wf_ty _ _ _ (tyUPi _ _ _) _ => eapply wft_upi; try sub_upi_body; sub_premise
+  | |- eq_ty _ _ _ (tyUPi _ _ _) _ _ => eapply eqty_upi; try sub_upi_body; sub_premise
+  | |- wf_tm _ _ _ (ulam _ _ _) _ _ => eapply wf_ulam; try sub_upi_body; sub_premise
+  | |- eq_tm _ _ _ (ulam _ _ (uapp _ (ubvars _))) _ _ _ =>
+      sub_upi_rw; eapply eqtm_ueta; try sub_upi_body; sub_premise
+  | |- eq_tm _ _ _ (ulam _ _ _) _ _ _ => eapply eqtm_ulam; try sub_upi_body; sub_premise
+  | |- wf_tm _ _ _ (uapp _ _) _ _ => sub_upi_rw; eapply wf_uapp; try sub_upi_body; sub_premise
+  | |- eq_tm _ _ _ (uapp (ulam _ _ _) _) _ _ _ =>
+      sub_upi_rw; eapply eqtm_ubeta; try sub_upi_body; sub_premise
+  | |- eq_tm _ _ _ (uapp _ _) _ _ _ => sub_upi_rw; eapply eqtm_uapp; try sub_upi_body; sub_premise
   | |- eq_ty _ lM _ _ _ _ => eapply eqty_leq; sub_premise
   | |- eq_tm _ lM _ _ _ _ _ => eapply eqtm_leq; sub_premise
   end.

@@ -229,6 +229,10 @@ Proof.
   apply typing_mut; intros; try exact I.
   (* the recursors: their scopes *)
   all: try solve [gst_rec].
+  (* [UΠ]: the body under [guwkn n] *)
+  all: try solve [ cbn [gsubst GSubst_ty GSubst_tm gsubst_ty gsubst_tm]; f_equal;
+                   match goal with IH : forall σ τ, gsub_equiv (gctx_uwk _ _) σ τ -> _ -> _ |- _ =>
+                     apply IH; [apply gsub_equiv_uwkn; assumption | apply gdnf_guwkn; assumption] end ].
   all: cbn [gsubst GSubst_ty GSubst_tm GSubst_ctx]; simpl; try solve [eauto | f_equal; eauto].
   (* context variables *)
   1: match goal with

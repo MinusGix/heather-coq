@@ -91,6 +91,82 @@ Ltac us_push :=
   cbn [usubst_ty usubst_tm ucsubst ulsubst lvsubst gousubst gctx_usubst gdecl_usubst map gL gΨ
        gext typeof uup] in *.
 
+(** ** The scope of [UΠ] (M4): [n] fresh levels *)
+
+Lemma gctx_uwk_usubst n G L' φ :
+  gctx_usubst (gctx_uwk n G) (n + L') (uupn n φ) = gctx_uwk n (gctx_usubst G L' φ).
+Proof.
+  unfold gctx_usubst, gctx_uwk; cbn [gL gΨ]. f_equal.
+  rewrite !map_map. apply map_ext; intros; apply gdecl_uren_usubst.
+Qed.
+Lemma ucren_ush_usubst n Γ φ : ucsubst (ucren Γ (ush n)) (uupn n φ) = ucren (ucsubst Γ φ) (ush n).
+Proof.
+  rewrite (proj1 (proj2 (proj2 uren_usubst_all)) _ _ _ (fun i => lvren (φ i) (ush n)))
+    by (intros; symmetry; apply uupn_ush).
+  symmetry; apply (proj1 (proj2 (proj2 usubst_uren_all))); reflexivity.
+Qed.
+Lemma uren_ush_usubst_tm n t φ : usubst_tm (uren_tm t (ush n)) (uupn n φ) = uren_tm (usubst_tm t φ) (ush n).
+Proof.
+  rewrite (proj1 (proj2 uren_usubst_all) _ _ _ (fun i => lvren (φ i) (ush n)))
+    by (intros; symmetry; apply uupn_ush).
+  symmetry; apply (proj1 (proj2 usubst_uren_all)); reflexivity.
+Qed.
+
+Lemma ubvars_length n : length (ubvars n) = n.
+Proof. unfold ubvars. now rewrite length_map, length_rev, length_seq. Qed.
+Lemma ubvars_uupn n φ : map (fun l => lvsubst l (uupn n φ)) (ubvars n) = ubvars n.
+Proof.
+  unfold ubvars. rewrite map_map. apply map_ext_in. intros a Ha.
+  apply in_rev, in_seq in Ha. cbn [lvsubst]. apply uupn_lt; lia.
+Qed.
+
+(** The [UΠ] β reduct commutes with universe substitution (M4). *)
+Lemma uext_usubst_lvl n ls φ i : length ls = n ->
+  lvsubst (uext ls lvar i) φ = lvsubst (uupn n φ i) (uext (map (fun l => lvsubst l φ) ls) lvar).
+Proof.
+  intros Hn. destruct (Nat.ltb_spec i n) as [Hi | Hi].
+  - rewrite uupn_lt by exact Hi. cbn [lvsubst]. unfold uext. rewrite length_map, Hn.
+    destruct (Nat.ltb_spec i n); [|lia].
+    rewrite <- (map_nth (fun l => lvsubst l φ) ls lzero). reflexivity.
+  - replace i with (n + (i - n)) by lia. rewrite uupn_ush.
+    rewrite (lvren_lvsubst _ _ _ lvar).
+    + rewrite (lvsubst_id (φ (i - n)) lvar) by reflexivity. unfold uext. subst n.
+      destruct (Nat.ltb_spec (length ls + (i - length ls)) (length ls)); [lia|].
+      cbn [lvsubst]. f_equal; lia.
+    + intros m; unfold ush, uext. rewrite length_map, Hn.
+      destruct (Nat.ltb_spec (n + m) n); [lia|]. f_equal; lia.
+Qed.
+
+Lemma usubst_ubeta n ls φ (b : tm) : length ls = n ->
+  b[uext ls lvar]ᵤ[φ]ᵤ = b[uupn n φ]ᵤ[uext (map (fun l => lvsubst l φ) ls) lvar]ᵤ.
+Proof.
+  intros Hn. rewrite (usubst_usubst b _ _ _ (fun i => eq_refl)).
+  rewrite (usubst_usubst b _ _ _ (fun i => eq_refl)).
+  apply (proj1 (proj2 usubst_ext_all)); intros i. apply uext_usubst_lvl, Hn.
+Qed.
+
+Lemma usubst_ubeta_ty n ls φ (T : ty) : length ls = n ->
+  T[uext ls lvar]ᵤ[φ]ᵤ = T[uupn n φ]ᵤ[uext (map (fun l => lvsubst l φ) ls) lvar]ᵤ.
+Proof.
+  intros Hn. rewrite (usubst_usubst_ty T _ _ _ (fun i => eq_refl)).
+  rewrite (usubst_usubst_ty T _ _ _ (fun i => eq_refl)).
+  apply (proj1 usubst_ext_all); intros i. apply uext_usubst_lvl, Hn.
+Qed.
+Lemma usubst_ubeta_lvl n ls φ l : length ls = n ->
+  lvsubst (lvsubst l (uext ls lvar)) φ = lvsubst (lvsubst l (uupn n φ)) (uext (map (fun l => lvsubst l φ) ls) lvar).
+Proof.
+  intros Hn. rewrite (lvsubst_lvsubst l _ _ _ (fun i => eq_refl)).
+  rewrite (lvsubst_lvsubst l _ _ _ (fun i => eq_refl)).
+  apply lvsubst_ext; intros i. apply uext_usubst_lvl, Hn.
+Qed.
+
+Lemma lwfs_usubst ls φ L' L : usub_ok φ L' L -> Forall (lwf L) ls ->
+  Forall (lwf L') (map (fun l => lvsubst l φ) ls).
+Proof. intros Hφ H; induction H; cbn; constructor; eauto using lwf_lvsubst. Qed.
+Lemma lequivs_usubst ls ls' φ L' L : usub_ok φ L' L -> Forall2 (lequiv L) ls ls' ->
+  Forall2 (lequiv L') (map (fun l => lvsubst l φ) ls) (map (fun l => lvsubst l φ) ls').
+Proof. intros Hφ H; induction H; cbn; constructor; eauto using lequiv_lvsubst. Qed.
+
 (** ** The theorem *)
 
 Definition G_us (G : gctx) (L' : nat) (φ : nat -> lvl) : gctx := gctx_usubst G L' φ.
@@ -99,7 +175,7 @@ Lemma us_ext G D L' φ : gctx_usubst (gext G D) L' φ = gext (gctx_usubst G L' �
 Proof. reflexivity. Qed.
 
 #[local] Hint Resolve lwf_lvsubst lequiv_lvsubst in_ctx_usubst in_gctx_usubst gctx_var_usubst
-  lsub_tail_usubst dnfl_usubst usub_ok_uup : us.
+  lsub_tail_usubst dnfl_usubst usub_ok_uup usub_ok_uupn lwfs_usubst lequivs_usubst : us.
 #[local] Hint Extern 1 (_ = _ \/ _ = _) => first [left; reflexivity | right; reflexivity] : us.
 #[local] Hint Extern 1 (_ <> _) => assumption : us.
 #[local] Hint Extern 1 (in_gctx _ _ _) =>
@@ -198,6 +274,9 @@ Ltac us_spec :=
   | IH : forall L' φ, usub_ok φ L' (gL (recGt ?G)) -> _, H : usub_ok ?φ ?L' (gL ?G) |- _ =>
       specialize (IH (S L') (uup φ) (usub_ok_uup _ _ _ H));
       rewrite recGt_usubst, recΓt_usubst, ?lvren_ush1_usubst in IH
+  | IH : forall L' φ, usub_ok φ L' (gL (gctx_uwk ?n ?G)) -> _, H : usub_ok ?φ ?L' (gL ?G) |- _ =>
+      specialize (IH (n + L') (uupn n φ) (usub_ok_uupn _ _ _ _ H));
+      rewrite gctx_uwk_usubst, ucren_ush_usubst in IH
   end.
 
 Ltac us_rewrite_all :=
@@ -254,6 +333,19 @@ Ltac us_manual :=
   | |- _ => solve [econstructor; eauto with us]
   end.
 
+(** [UΠ]'s elimination, β and η: commute [φ] with the instance, and with
+    η's bound variables. *)
+Ltac us_upi :=
+  match goal with
+  | Hn : length ?ls = ?n, H : usub_ok ?φ _ _ |- context [uapp _ (map _ ?ls)] =>
+      rewrite ?(usubst_ubeta_ty n ls φ _ Hn), ?(usubst_ubeta_lvl n ls φ _ Hn),
+        ?(usubst_ubeta n ls φ _ Hn);
+      first [ eapply wf_uapp | eapply eqtm_uapp | eapply eqtm_ubeta ];
+      eauto with us; now rewrite length_map
+  | |- context [ubvars ?n] =>
+      rewrite uren_ush_usubst_tm, ubvars_uupn; eapply eqtm_ueta; eauto with us
+  end.
+
 Theorem usubstitution :
   (forall G, [ ⊢ G ] -> forall L' φ, usub_ok φ L' (gL G) -> [ ⊢ G_us G L' φ ]) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> forall L' φ, usub_ok φ L' (gL G) ->
@@ -271,7 +363,7 @@ Theorem usubstitution :
 Proof.
   unfold G_us. apply typing_mut; intros; us_spec; us_push; us_rewrite_all.
   all: try us_step.
-  all: us_manual.
+  all: first [us_upi | us_manual].
 Qed.
 
 Print Assumptions usubstitution.
@@ -357,31 +449,6 @@ Lemma whne_ty_usubst T φ : whne_ty T -> whne_ty (usubst_ty T φ).
 Proof. destruct 1; cbn; constructor; auto using whne_usubst. Qed.
 Lemma whnf_ty_usubst T φ : whnf_ty T -> whnf_ty (usubst_ty T φ).
 Proof. destruct 1; cbn; auto using whne_ty_usubst with whnf. Qed.
-
-(** The [UΠ] β reduct commutes with universe substitution (M4). *)
-Lemma uext_usubst_lvl n ls φ i : length ls = n ->
-  lvsubst (uext ls lvar i) φ = lvsubst (uupn n φ i) (uext (map (fun l => lvsubst l φ) ls) lvar).
-Proof.
-  intros Hn. destruct (Nat.ltb_spec i n) as [Hi | Hi].
-  - rewrite uupn_lt by exact Hi. cbn [lvsubst]. unfold uext. rewrite length_map, Hn.
-    destruct (Nat.ltb_spec i n); [|lia].
-    rewrite <- (map_nth (fun l => lvsubst l φ) ls lzero). reflexivity.
-  - replace i with (n + (i - n)) by lia. rewrite uupn_ush.
-    rewrite (lvren_lvsubst _ _ _ lvar).
-    + rewrite (lvsubst_id (φ (i - n)) lvar) by reflexivity. unfold uext. subst n.
-      destruct (Nat.ltb_spec (length ls + (i - length ls)) (length ls)); [lia|].
-      cbn [lvsubst]. f_equal; lia.
-    + intros m; unfold ush, uext. rewrite length_map, Hn.
-      destruct (Nat.ltb_spec (n + m) n); [lia|]. f_equal; lia.
-Qed.
-
-Lemma usubst_ubeta n ls φ (b : tm) : length ls = n ->
-  b[uext ls lvar]ᵤ[φ]ᵤ = b[uupn n φ]ᵤ[uext (map (fun l => lvsubst l φ) ls) lvar]ᵤ.
-Proof.
-  intros Hn. rewrite (usubst_usubst b _ _ _ (fun i => eq_refl)).
-  rewrite (usubst_usubst b _ _ _ (fun i => eq_refl)).
-  apply (proj1 (proj2 usubst_ext_all)); intros i. apply uext_usubst_lvl, Hn.
-Qed.
 
 Lemma red_usubst_both :
   (forall t u, red t u -> forall φ, red (usubst_tm t φ) (usubst_tm u φ)) /\

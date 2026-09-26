@@ -104,18 +104,30 @@ Lemma subst_elimT l1 l2 rb l Δ t : (elimT l1 l2 rb l Δ t)[d] = elimT l1 l2 rb[
 Proof. reflexivity. Qed.
 Lemma subst_elimt l1 l2 rb l Δ T t : (elimt l1 l2 rb l Δ T t)[d] = elimt l1 l2 rb[d] l Δ T t[d].
 Proof. reflexivity. Qed.
+(** [UΠ] (M4): the body's scope, and its instances and weakenings. *)
+Lemma ren_tyUPi n l T : (tyUPi n l T)⟨r⟩ = tyUPi n l T⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_ulam n l t : (ulam n l t)⟨r⟩ = ulam n l t⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_uapp t ls : (uapp t ls)⟨r⟩ = uapp t⟨r⟩ ls. Proof. reflexivity. Qed.
+Lemma ren_usubst_ty (T : ty) φ : T[φ]ᵤ⟨r⟩ = T⟨r⟩[φ]ᵤ. Proof. symmetry; apply usubst_ren_ty. Qed.
+Lemma ren_usubst_tm (t : tm) φ : t[φ]ᵤ⟨r⟩ = t⟨r⟩[φ]ᵤ. Proof. symmetry; apply usubst_ren. Qed.
+Lemma ren_uren_tm (t : tm) ρ : t⟨ρ⟩ᵤ⟨r⟩ = t⟨r⟩⟨ρ⟩ᵤ. Proof. symmetry; apply uren_ren_all. Qed.
+Lemma subst_tyUPi n l T : (tyUPi n l T)[d] = tyUPi n l T[uwkn n d]. Proof. reflexivity. Qed.
+Lemma subst_ulam n l t : (ulam n l t)[d] = ulam n l t[uwkn n d]. Proof. reflexivity. Qed.
+Lemma subst_uapp t ls : (uapp t ls)[d] = uapp t[d] ls. Proof. reflexivity. Qed.
 End Push.
 
 Ltac push_ren := repeat progress (
   rewrite ?ren_tyNat, ?ren_tyPi, ?ren_tyU, ?ren_tyEl, ?ren_var, ?ren_tmNat, ?ren_tmPi,
           ?ren_tmU, ?ren_zero, ?ren_succ, ?ren_natrec, ?ren_lam, ?ren_app,
           ?ren_tyGvar, ?ren_tyCTyp, ?ren_tyCTrm, ?ren_gvar, ?ren_boxT, ?ren_boxt,
-          ?ren_letboxT, ?ren_letboxt, ?ren_elimT, ?ren_elimt).
+          ?ren_letboxT, ?ren_letboxt, ?ren_elimT, ?ren_elimt,
+          ?ren_tyUPi, ?ren_ulam, ?ren_uapp, ?ren_usubst_ty, ?ren_usubst_tm, ?ren_uren_tm).
 Ltac push_subst := repeat progress (
   rewrite ?subst_tyNat, ?subst_tyPi, ?subst_tyU, ?subst_tyEl, ?subst_var, ?subst_tmNat,
           ?subst_tmPi, ?subst_tmU, ?subst_zero, ?subst_succ, ?subst_natrec, ?subst_lam,
           ?subst_app, ?subst_tyGvar, ?subst_tyCTyp, ?subst_tyCTrm, ?subst_gvar, ?subst_boxT,
-          ?subst_boxt, ?subst_letboxT, ?subst_letboxt, ?subst_elimT, ?subst_elimt).
+          ?subst_boxt, ?subst_letboxT, ?subst_letboxt, ?subst_elimT, ?subst_elimt,
+          ?subst_tyUPi, ?subst_ulam, ?subst_uapp).
 
 (** ** Weakening past a binder *)
 

@@ -697,6 +697,11 @@ Proof.
            | H : eq_tm _ lM _ (elimT _ _ _ _ _ _) _ _ _ |- _ => pose proof (eqtm_wf_r (i := lM) eq_refl H)
            | H : eq_tm _ lM _ (elimt _ _ _ _ _ _ _) _ _ _ |- _ => pose proof (eqtm_wf_r (i := lM) eq_refl H)
            end.
+  (* M4 WORK IN PROGRESS (M4_DESIGN.md F5, status): the [UΠ] rules are
+     admitted until the relation at ω exists; nothing else is. *)
+  all: try (lazymatch goal with
+            | |- context [tyUPi] => admit | |- context [uapp] => admit | |- context [uext] => admit
+            end).
   all: first
     [ solve [simple eapply (VS_elimT_beta EP EM);
              [eassumption | apply redT_usubst; eassumption | eassumption | eassumption]]
@@ -704,7 +709,7 @@ Proof.
              [eassumption | apply redt_usubst; eassumption | eassumption | eassumption]]
     | solve [simple eapply (FM_elimT EP EM); m_rec_side]
     | solve [simple eapply (FM_elimt EP EM); m_rec_side] ].
-Qed.
+Admitted.
 
 (** ** At the identity universe substitution *)
 

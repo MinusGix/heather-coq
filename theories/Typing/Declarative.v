@@ -58,6 +58,11 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ lM ] tyCTyp Δ l @ lzero ]
 | wft_CTrm G Γ Δ T l : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] T @ l ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ lM ] tyCTrm Δ T l @ lzero ]
+(* universe polymorphism (layer M only; M4_DESIGN.md F2): the body lives
+   under [n] fresh levels, in the universe-weakened scope; [UΠ] lives at ω *)
+| wft_upi G Γ n l T : [ G ; Γ ⊢[ lM ] ] -> 0 < n -> lwf (n + gL G) l ->
+    [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] ->
+    [ G ; Γ ⊢[ lM ] tyUPi n l T @ lomega ]
 
 with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 | wf_var G i Γ n T l : [ G ; Γ ⊢[ typeof i ] ] -> in_ctx Γ n T l ->
@@ -139,6 +144,15 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Δ ⊢[ lD ] T @ l ] ->
     [ G ; Γ ⊢[ lM ] t : tyCTrm Δ T l @ lzero ] ->
     [ G ; Γ ⊢[ lM ] elimt l1 l2 (mkrb MT Mt bs) l Δ T t : mott (wrapMt Mt) l Δ T t @ l2 ]
+| wf_ulam G Γ n l T t : [ G ; Γ ⊢[ lM ] ] -> 0 < n -> lwf (n + gL G) l ->
+    [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] ->
+    [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] t : T @ l ] ->
+    [ G ; Γ ⊢[ lM ] ulam n l t : tyUPi n l T @ lomega ]
+| wf_uapp G Γ n l T t ls : lwf (n + gL G) l ->
+    [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] ->
+    length ls = n -> Forall (lwf (gL G)) ls ->
+    [ G ; Γ ⊢[ lM ] t : tyUPi n l T @ lomega ] ->
+    [ G ; Γ ⊢[ lM ] uapp t ls : T[uext ls lvar]ᵤ @ lvsubst l (uext ls lvar) ]
 
 with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
 | eqty_refl G i Γ T l : [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T @ l ]
@@ -180,6 +194,10 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
 | eqty_CTrm G Γ Δ Δ' T T' l l' : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
     [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Δ ⊢[ lD ] T ≅ T' @ l ] -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ lM ] tyCTrm Δ T l ≅ tyCTrm Δ' T' l' @ lzero ]
+| eqty_upi G Γ n l l' T T' : [ G ; Γ ⊢[ lM ] ] -> 0 < n -> lequiv (n + gL G) l l' ->
+    [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] ->
+    [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T ≅ T' @ l ] ->
+    [ G ; Γ ⊢[ lM ] tyUPi n l T ≅ tyUPi n l' T' @ lomega ]
 
 with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
 | eqtm_refl G i Γ t T l : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ i ] t ≅ t : T @ l ]
@@ -343,6 +361,26 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ,, tyCTrm Δ T l @ lzero ⊢[ lM ] M @ l' ] ->
     [ gext G (gdTm Δ lC T l) ; Γ⟪S⟫ ⊢[ lM ] t' : M⟪S⟫[lsingle (boxt (gvar 0 (lshift 0)))] @ l' ] ->
     [ G ; Γ ⊢[ lM ] letboxt l' l Δ T M t' (boxt t) ≅ t'⦃gsingle (GTm t)⦄ : M[lsingle (boxt t)] @ l' ]
+(* universe polymorphism: congruences, β, η *)
+| eqtm_ulam G Γ n l l' T t t' : [ G ; Γ ⊢[ lM ] ] -> 0 < n -> lequiv (n + gL G) l l' ->
+    [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] ->
+    [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] t ≅ t' : T @ l ] ->
+    [ G ; Γ ⊢[ lM ] ulam n l t ≅ ulam n l' t' : tyUPi n l T @ lomega ]
+| eqtm_uapp G Γ n l T t t' ls ls' : lwf (n + gL G) l ->
+    [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] ->
+    length ls = n -> Forall2 (lequiv (gL G)) ls ls' ->
+    [ G ; Γ ⊢[ lM ] t ≅ t' : tyUPi n l T @ lomega ] ->
+    [ G ; Γ ⊢[ lM ] uapp t ls ≅ uapp t' ls' : T[uext ls lvar]ᵤ @ lvsubst l (uext ls lvar) ]
+| eqtm_ubeta G Γ n l T t ls : [ G ; Γ ⊢[ lM ] ] -> 0 < n -> lwf (n + gL G) l ->
+    [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] ->
+    [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] t : T @ l ] ->
+    length ls = n -> Forall (lwf (gL G)) ls ->
+    [ G ; Γ ⊢[ lM ] uapp (ulam n l t) ls ≅ t[uext ls lvar]ᵤ
+                  : T[uext ls lvar]ᵤ @ lvsubst l (uext ls lvar) ]
+| eqtm_ueta G Γ n l T t : 0 < n -> lwf (n + gL G) l ->
+    [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T @ l ] ->
+    [ G ; Γ ⊢[ lM ] t : tyUPi n l T @ lomega ] ->
+    [ G ; Γ ⊢[ lM ] ulam n l (uapp t⟨ush n⟩ᵤ (ubvars n)) ≅ t : tyUPi n l T @ lomega ]
 
 (** Context equivalence ([Ψ ⊢ᵢ Γ ≈ Δ], used by the congruences of [□]). *)
 with eq_ctx : gctx -> layer -> ctx -> ctx -> Prop :=
