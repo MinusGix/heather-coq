@@ -454,28 +454,33 @@ Proof.
   - eapply eqtm_conv; [exact (lvl_eq_eqtm Hk Econg) | rewrite Hi; exact HX].
 Qed.
 
+(** [Π] injectivity at a computing layer. *)
+Lemma pi_inj_c {G i Γ l l1 l2 l3 l4 A A' B B'} : compt i ->
+  [ G ; Γ ⊢[ i ] tyPi l1 l2 A B ≅ tyPi l3 l4 A' B' @ l ] ->
+  [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ].
+Proof.
+  intros Hc H. destruct Hc as [-> | ->].
+  - destruct (decl_pi_inj H) as (? & ? & HA & HB). exact (conj HA HB).
+  - destruct (declM_pi_inj H) as (? & ? & HA & HB). exact (conj HA HB).
+Qed.
+
 Lemma S_actmne_app {G Γ l1 l2 l3 l4 A A' B B' ν ν' s s' W} : leqv l1 l3 -> leqv l2 l4 ->
-  S_ty G Γ A A' -> S_ty G (Γ ,, A @ l1) B B' -> S_ne G Γ ν ν' W -> S_tm G Γ s s' A ->
+  S_ne G Γ ν ν' W -> S_tm G Γ s s' A ->
   S_ne G Γ (app ν l1 l2 A B s) (app ν' l3 l4 A' B' s') B[lsingle s].
 Proof.
-  intros H13 H24 IHA IHB IHν IHs i k X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  intros H13 H24 IHν IHs i k X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_app Hi Hx) as ((Hv & W1 & W2 & HA & HB & Hν & Hs) & Hk & HX).
   destruct (inv_app Hi Hx') as ((_ & W3 & W4 & HA' & HB' & Hν' & Hs') & Hk' & HX').
   pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
-  pose proof (IHA i l1 Hc HA (wft_lconv _ _ _ _ _ _ HA' E13)) as EA.
-  assert (HΓA : [ G ; Γ ,, A @ l1 ⊢[ i ] ]) by (apply wfc_ext; [exact (ctx_of_wf_ty Hi HA) | exact HA | exact W1]).
-  assert (EA' : [ G ; Γ ⊢[ i ] A' ≅ A @ l3 ])
-    by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | exact (lequiv_sym _ _ _ E13)]).
-  pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi EA' (lequiv_sym _ _ _ E13) HΓA HB') E24) as HB1.
-  pose proof (IHB i l2 Hc HB HB1) as EB.
-  pose proof (eqty_pi _ _ _ _ _ _ _ _ _ _ _ Hv E13 E24 HA EA EB) as EP.
-  assert (Hν1 : [ G ; Γ ⊢[ i ] ν' : tyPi l1 l2 A B @ lmax l1 l2 ]).
-  { eapply wf_conv; [eapply wf_lconv; [exact Hν' | exact (lequiv_max _ _ _ _ _ E13 E24)] | rewrite Hi; exact EP]. }
-  destruct (IHν i (lmax l1 l2) _ _ Hc Hν Hν1) as (_ & _ & Eν).
+  pose proof (wf_lconv _ _ _ _ _ _ _ Hν' (lequiv_max _ _ _ _ _ E13 E24)) as Hν1.
+  destruct (IHν i (lmax l1 l2) _ _ Hc Hν Hν1) as (E0 & E1 & Eν).
+  (* the annotations agree: both are the function's type *)
+  destruct (pi_inj_c Hc (eqty_trans _ _ _ _ _ _ _ E0 (eqty_sym _ _ _ _ _ _ E1))) as (EA & EB).
   assert (Hs1 : [ G ; Γ ⊢[ i ] s' : A @ l1 ])
     by (eapply wf_conv; [eapply wf_lconv; [exact Hs' | exact E13] | rewrite Hi; exact EA]).
   pose proof (IHs i l1 Hc Hs Hs1) as Es.
   pose proof (eqtm_app _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hv E13 E24 HA EA EB Eν Es) as Econg.
+  pose proof (eqty_wf_r Hi EB) as HB1.
   assert (EBs : [ G ; Γ ⊢[ i ] B[lsingle s] ≅ B'[lsingle s'] @ l2 ]).
   { eapply eqty_trans; [exact (eqty_single Hi EB Hs) |].
     exact (wf_ty_func Hi HB1 (lsub_eq_single Hi Hs Hs1 Es)). }

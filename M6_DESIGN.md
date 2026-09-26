@@ -167,6 +167,27 @@ soundness must derive them:
   are typed at `A[d']`. Their conversion to `A[d]` needs the deeper
   entries' equations first (induction on `Δ`).
 
+### H9. Neutrals at function types: the lift, and `app` without annotations
+
+The relation's reflection of neutrals (`LR_neutral`) uses `gne_tm_geq` at
+`Π`, `CΠ`, `TΠ` types too. So the algorithmic instance must relate neutral
+pairs at function types: it η-expands them (`app ν↑ … (var 0)`, `capp ν↑
+(cvar 0)`, `tapp ν↑ (U₀^id)`, `uapp ν↑ ℓ⃗`). This is a *lift* lemma by
+induction on the declarative relation's reducibility of the type, as in
+Abel et al. (their `lift~toConv`). The bound variable is itself lifted at
+the domain (the recursion), and the relation's instance at the
+bound-variable world gives the codomain's reducibility.
+
+The lift must not need self-conversion of types, which would mean
+self-conversion of arbitrary terms (the arguments inside a neutral type),
+i.e. completeness, a cycle. So the algorithm's `app` rule does not compare
+the annotations `A`, `B`. They are the function's type up to equality
+(06:589), and soundness recovers `A ≅ A'`, `B ≅ B'` from the head's
+inferred type and `Π` injectivity. The level annotations are still compared,
+since the lift supplies them reflexively. `capp`/`tapp` compare their
+arguments (the lift uses `cvar 0`, and `U₀^id` whose identity substitution
+is itself lifted entrywise). `uapp` compares levels only.
+
 ## Order of the proofs
 
 1. **Levels** (`Syntax/LevelDec.v`): `leqv`, `lequiv`, `ty_leq`, `tm_leq`,
@@ -176,13 +197,15 @@ soundness must derive them:
    (`Validity/AlgSound.v`): algorithmic ⇒ declarative, for well-typed
    inputs.
 3. **Structural properties**: weakening (local, global, universe
-   substitution), `≡ₗ` closure, whnf ⇒ general, reflexivity of neutrals.
+   substitution), `≡ₗ` closure, closure under reduction (for `geq_*_exp`
+   and the extensionality laws), whnf ⇒ general.
 4. **Conversion lemma and PER** (08:94–229), using the declarative
    consequences: injectivity of every type former, discrimination, whnf
    determinism (`tyred_whnf_det`, `tmred_whnf_det`).
-5. **The instances** (`AlgInstance.v`): `GenericEqLaws` at D and M,
-   `GenericEqM`; completeness by `fundamental`/`fundamentalM` with the
-   algorithmic pair and escape.
+5. **The lift and the instances** (`AlgInstance.v`): the lift of neutrals
+   (H9), then `GenericEqLaws` at D and M and `GenericEqM`. Completeness
+   follows by `fundamental`/`fundamentalM` with the algorithmic pair and
+   escape.
 6. **Decidability** (08:236–372), by induction on one reflexive derivation
    and inversion of the other. The final theorem decides declarative
    equality of two well-typed types or terms.
@@ -193,7 +216,9 @@ soundness must derive them:
 - Step 2 in progress: the judgments (`Algorithmic.v`) and typing inversion
   (`Inversion.v`, with `lvl_eq`: equal or equivalent levels) are done.
   Of the H8 prerequisites, global functionality, the motive-instance
-  equations and global-binding conversion are done (`DeclConsequences.v`,
-  `RecEq.v`, `AlgPrereq.v`), as are the typed normalization forms
-  (`decl_whnf_tyred` etc.). Branch conversion and the substitution
-  induction remain, then the soundness induction itself.
+  equations, global-binding conversion, branch conversion and the
+  substitution induction are done (`DeclConsequences.v`, `RecEq.v`,
+  `AlgPrereq.v`), as are the typed normalization forms (`decl_whnf_tyred`
+  etc.).
+- Step 2 done: soundness (`AlgSound.v`, `ac_sound_all`, closed under the
+  global context). The `app` rule compares no type annotations (H9).
