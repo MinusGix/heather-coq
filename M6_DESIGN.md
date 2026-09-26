@@ -136,6 +136,37 @@ generic typing rules are `wf_conv` and `wf_lconv`, so inversion is by
 induction on typing. Inversion is new metatheory (`Typing/Inversion.v`),
 proved before soundness.
 
+### H8. What soundness needs beyond inversion
+
+Several typing rules take instance equations and right-hand typings as
+premises (M3 E10, M5 G2), and the algorithm checks none of them. So
+soundness must derive them:
+
+- **Global functionality** (`declM_inst_c_eq`, `declM_inst_t_eq`):
+  `T⦃Δ/g⦄ ≅ T⦃Δ'/g⦄` for `Δ ≅ Δ'`, and likewise for a type object. These
+  are consequences of the FT (two-sided instance validity
+  `VTyS_inst_c2`/`_t2`/`_ct2`, then escape at the identity). They show
+  that the G2 premises are admissible.
+- **Motive instances** (`declM_motT_eq`, `declM_mott_eq`): the E10
+  equation from its ingredients. It is the motives' equation instantiated
+  (`motT_eq_inst`), the levels by `≡ₗ` (`motT_leq`), the context and type
+  objects by global functionality in the motive's scope, and the
+  scrutinees by local functionality.
+- **Global-binding conversion** (`gbind_ty`, `gbind_tm`): a judgment under
+  `gext G D'` holds under `gext G D` for equal declarations (the new
+  binding goes to its identity instance, and typed syntax is unchanged).
+  It is needed for the right-hand bodies of `letbox` and `TΠ`.
+- **Branch conversion** (todo): the right recursor's branches are typed in
+  their own branch contexts (built from `MT'`). Comparing them with the
+  left ones needs the branch contexts and result types to be equal. The
+  entries are motive instances at fixed objects (`motT (wkb …) lv g c`).
+  So they follow from the motives' equation weakened into the branch scope
+  (universe `uup`, global `gup`, local `rlift`) and instantiated, which
+  needs each object `c` typed in its branch scope.
+- **Substitutions** (todo): `ac_sub` is pointwise, but the right entries
+  are typed at `A[d']`. Their conversion to `A[d]` needs the deeper
+  entries' equations first (induction on `Δ`).
+
 ## Order of the proofs
 
 1. **Levels** (`Syntax/LevelDec.v`): `leqv`, `lequiv`, `ty_leq`, `tm_leq`,
@@ -158,4 +189,11 @@ proved before soundness.
 
 ## Status
 
-Design only.
+- Step 1 done (`LevelDec.v`).
+- Step 2 in progress: the judgments (`Algorithmic.v`) and typing inversion
+  (`Inversion.v`, with `lvl_eq`: equal or equivalent levels) are done.
+  Of the H8 prerequisites, global functionality, the motive-instance
+  equations and global-binding conversion are done (`DeclConsequences.v`,
+  `RecEq.v`, `AlgPrereq.v`), as are the typed normalization forms
+  (`decl_whnf_tyred` etc.). Branch conversion and the substitution
+  induction remain, then the soundness induction itself.
