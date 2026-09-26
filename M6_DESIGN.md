@@ -226,3 +226,5 @@ only.
   etc.).
 - Step 2 done: soundness (`AlgSound.v`, `ac_sound_all`, closed under the
   global context). The `app` rule compares no type annotations (H9).
+- Step 3 in progress (`AlgStruct.v`): local weakening (`ac_wk_all`) and
+  global weakening along `gwk_ok` (`ac_gwk_all`) are done, closed.
