@@ -48,7 +48,16 @@ contexts and over layer-P types) is complete; see `M5_DESIGN.md`:
 - consequences: normalization, injectivity of `CΠ`/`TΠ` (bodies
   included), and discrimination against the other type formers.
 
-No admits, no axioms. See `M5_DESIGN.md`, `M4_DESIGN.md`, `M3_DESIGN.md`, `M2_DESIGN.md` and
+Milestone 6 (algorithmic convertibility) is complete; see `M6_DESIGN.md`:
+- the convertibility-checking judgments and their soundness;
+- their structural properties, the conversion lemma, symmetry and
+  transitivity;
+- the lift of neutrals and the algorithmic instance of the generic
+  equivalence, hence completeness through the fundamental theorems;
+- decidability of algorithmic and of declarative equality of well-typed
+  types and terms at D and M.
+
+No admits, no axioms. See `M6_DESIGN.md`, `M5_DESIGN.md`, `M4_DESIGN.md`, `M3_DESIGN.md`, `M2_DESIGN.md` and
 `M1_DESIGN.md` for decisions, deviations from the paper and gotchas.
 
 Documents:

@@ -298,3 +298,30 @@ equal type. Three points the paper passes over:
   sides reduce to `UΠ`s (`omegaM_red_l/r`); the bodies (for terms, the
   η bodies `uapp t⟨ush n⟩ (ubvars n)`) are at a well-formed level, so
   complete there, and `actnf_upi`/`actmnf_ueta` close. Step 5 is complete.
+- Step 6 done (`Validity/AlgDec.v`), closed: `ac_ty_dec`, `ac_tm_dec`, and
+  the final `decl_eqty_dec`, `decl_eqtm_dec` (declarative equality of two
+  well-formed types, or two terms typed at one type and level, at D or M, is
+  `Dec`). The shape of the proof:
+  - The motives `Dc_*` quantify over a typed right side. They ignore the
+    derivation's other side, so any derivation with the given left side
+    works; completeness supplies the reflexive one.
+  - The right side is normalized and compared by head. A component under
+    a binder is decided after the binder's components, and moved to the
+    left side's binders by soundness of the positive answer (as in
+    transitivity, with two sides instead of three).
+  - A negative answer inverts the algorithm on the left side's head.
+    Neutrals infer a unique type (`ac_infer_uniq_all`, syntactic), which
+    lets the inversion's inferred type be identified with the left
+    derivation's.
+  - Substitutions are decided from the context's deepest entry
+    (`sub_dec_pt`, as `lsub_eq_pt`): an entry's type is instantiated by
+    the deeper entries, which must be equal first.
+  - Recursor bundles are inverted through a projection (`elim_rb`):
+    `injection` would split `mkrb` into its tuple.
+  - Mismatched heads are refuted by a head index (`tm_con`,
+    `ty_head`, with `ac_tmne_con`, `ac_tmnf_con`, `ac_tynf_head`), not by
+    inverting the judgments. Inverting cost 48s for the file; the head
+    index brings it to a few seconds.
+
+M6 is complete: the algorithmic judgments are sound, complete, and
+decidable for well-typed input, and so is declarative equality.
