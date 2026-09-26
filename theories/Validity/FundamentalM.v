@@ -6,7 +6,7 @@
     which gives the static code's payload and the contexts of [□].  The
     global variables' images are MLTT types and terms, related at
     [⊩^{≥P}_P], which the Layering Restriction carries to [LR_M]. *)
-From DeLaM.Validity Require Export FundamentalS LetboxS RecFT UPiV.
+From DeLaM.Validity Require Export FundamentalS LetboxS RecFT UPiV MetaV.
 
 Section FundamentalM.
 Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM} {EMl : GenericEqM EP EM}.
@@ -606,6 +606,146 @@ Qed.
 
 End UPiFM.
 
+(** ** The meta-functions (M5_DESIGN.md G5) *)
+
+Local Notation extC G := (gext G gdCtx).
+Local Notation extT G Δ l := (gext G (gdTy Δ lD l)).
+
+Lemma FM_cpi_eq {G Γ l l' T T'} : SemCtxM G Γ -> lequiv (gL G) l l' -> [ extC G ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
+  [ extC G ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l ] -> SemTyM (extC G) Γ⟪S⟫ T T' l ->
+  SemTyM G Γ (tyCPi l T) (tyCPi l' T') l.
+Proof.
+  intros HS Hl HT HTT (_ & VT). split; [exact HS |].
+  exact (VS_cpi EP EM G Γ l l' T T' Hl HT (eqty_wf_r (i := lM) eq_refl HTT) VT).
+Qed.
+
+Lemma FM_cpi {G Γ l T} : SemCtxM G Γ -> lwf (gL G) l -> [ extC G ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
+  SemTyM (extC G) Γ⟪S⟫ T T l -> SemTyM G Γ (tyCPi l T) (tyCPi l T) l.
+Proof. intros HS Hl HT ST. exact (FM_cpi_eq HS (lequiv_refl _ _ Hl) HT (eqty_refl _ _ _ _ _ HT) ST). Qed.
+
+Lemma FM_tpi_eq {G Γ Δ Δ' l1 l2 l3 l4 T T'} : SemCtxM G Γ -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] ] ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 -> [ extT G Δ l1 ; Γ⟪S⟫ ⊢[ lM ] T @ l2 ] ->
+  [ extT G Δ l1 ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l2 ] -> [ extT G Δ' l3 ; Γ⟪S⟫ ⊢[ lM ] T' @ l4 ] ->
+  SemCtxP G Δ -> SemCtxP G Δ' -> SemCtxEqP G Δ Δ' ->
+  SemTyM (extT G Δ l1) Γ⟪S⟫ T T' l2 -> SemTyM (extT G Δ' l3) Γ⟪S⟫ T' T' l4 ->
+  SemTyM G Γ (tyTPi Δ l1 l2 T) (tyTPi Δ' l3 l4 T') l2.
+Proof.
+  intros HS HΔ HΔ' H13 H24 HT HTT HT' (_ & VP & VM) (_ & VP' & VM') [VEP VEM] (_ & VT) (_ & VT').
+  split; [exact HS |].
+  exact (VS_tpi EP EM G Γ Δ Δ' l1 l2 l3 l4 T T' H13 H24 HΔ HΔ' (proj2 HS) VP VM VP' VM' VEP VEM
+           HT (eqty_wf_r (i := lM) eq_refl HTT) HT' VT VT').
+Qed.
+
+Lemma FM_tpi {G Γ Δ l l' T} : SemCtxM G Γ -> [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ extT G Δ l ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] -> SemCtxP G Δ -> SemTyM (extT G Δ l) Γ⟪S⟫ T T l' ->
+  SemTyM G Γ (tyTPi Δ l l' T) (tyTPi Δ l l' T) l'.
+Proof.
+  intros HS HΔ Hl Hl' HT SΔ ST. pose proof SΔ as (_ & VP & VM).
+  exact (FM_tpi_eq HS HΔ HΔ (lequiv_refl _ _ Hl) (lequiv_refl _ _ Hl') HT (eqty_refl _ _ _ _ _ HT) HT
+           SΔ SΔ (conj VP VM) ST ST).
+Qed.
+
+Lemma FM_clam_eq {G Γ l l' T t t'} : SemCtxM G Γ -> lequiv (gL G) l l' -> [ extC G ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
+  [ extC G ; Γ⟪S⟫ ⊢[ lM ] t ≅ t' : T @ l ] -> SemTmM (extC G) Γ⟪S⟫ t t' T l ->
+  SemTmM G Γ (clam l t) (clam l' t') (tyCPi l T) l.
+Proof.
+  intros HS Hl HT Htt (_ & VT & Vt). split; [exact HS | split].
+  - exact (VS_cpi EP EM G Γ l l T T (lequiv_refl _ _ (lequiv_wf_l _ _ _ Hl)) HT HT VT).
+  - exact (VS_clam EP EM G Γ l l' T t t' Hl HT (eqtm_wf_l (i := lM) eq_refl Htt)
+             (eqtm_wf_r (i := lM) eq_refl Htt) VT Vt).
+Qed.
+
+Lemma FM_clam {G Γ l T t} : SemCtxM G Γ -> lwf (gL G) l -> [ extC G ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
+  [ extC G ; Γ⟪S⟫ ⊢[ lM ] t : T @ l ] -> SemTmM (extC G) Γ⟪S⟫ t t T l ->
+  SemTmM G Γ (clam l t) (clam l t) (tyCPi l T) l.
+Proof. intros HS Hl HT Ht St. exact (FM_clam_eq HS (lequiv_refl _ _ Hl) HT (eqtm_refl _ _ _ _ _ _ Ht) St). Qed.
+
+Lemma FM_capp_eq {G Γ l T t t' Δ Δ'} : [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ' ⊢[ lD ] ] -> SemCtxEqP G Δ Δ' ->
+  SemTmM G Γ t t' (tyCPi l T) l -> SemTyM G Γ T⦃gsingle (GCtx Δ)⦄ T⦃gsingle (GCtx Δ')⦄ l ->
+  SemTmM G Γ (capp t Δ) (capp t' Δ') T⦃gsingle (GCtx Δ)⦄ l.
+Proof.
+  intros HΔ HΔ' [VEP VEM] ((HG & VΓ) & _ & Vt) (_ & VI). split; [exact (conj HG VΓ) | split].
+  - exact (VTySM_refl_l HG VΓ VI).
+  - exact (VS_capp EP EM G Γ l T t t' Δ Δ' HΔ HΔ' VEP VEM Vt).
+Qed.
+
+Lemma FM_capp {G Γ l T t Δ} : [ G ; Δ ⊢[ lD ] ] -> SemCtxP G Δ -> SemTmM G Γ t t (tyCPi l T) l ->
+  SemTyM G Γ T⦃gsingle (GCtx Δ)⦄ T⦃gsingle (GCtx Δ)⦄ l ->
+  SemTmM G Γ (capp t Δ) (capp t Δ) T⦃gsingle (GCtx Δ)⦄ l.
+Proof. intros HΔ (_ & VP & VM). exact (FM_capp_eq HΔ HΔ (conj VP VM)). Qed.
+
+Lemma FM_tlam_eq {G Γ Δ l1 l2 l3 l4 T t t'} : SemCtxM G Γ -> [ G ; Δ ⊢[ lD ] ] ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 -> [ extT G Δ l1 ; Γ⟪S⟫ ⊢[ lM ] T @ l2 ] ->
+  [ extT G Δ l1 ; Γ⟪S⟫ ⊢[ lM ] t ≅ t' : T @ l2 ] -> [ extT G Δ l3 ; Γ⟪S⟫ ⊢[ lM ] t' : T @ l4 ] ->
+  SemCtxP G Δ -> SemTmM (extT G Δ l1) Γ⟪S⟫ t t' T l2 -> SemTmM (extT G Δ l3) Γ⟪S⟫ t' t' T l4 ->
+  SemTmM G Γ (tlam l1 l2 t) (tlam l3 l4 t') (tyTPi Δ l1 l2 T) l2.
+Proof.
+  intros HS HΔ H13 H24 HT Htt Ht3 SΔ (_ & VT & Vt) (_ & _ & Vt3). pose proof SΔ as (_ & VP & VM).
+  split; [exact HS | split].
+  - exact (VS_tpi EP EM G Γ Δ Δ l1 l2 l1 l2 T T (lequiv_refl _ _ (lequiv_wf_l _ _ _ H13))
+             (lequiv_refl _ _ (lequiv_wf_l _ _ _ H24)) HΔ HΔ (proj2 HS) VP VM VP VM VP VM HT HT HT VT VT).
+  - exact (VS_tlam EP EM G Γ Δ l1 l2 l3 l4 T t t' H13 H24 HΔ (proj2 HS) VP VM HT
+             (eqtm_wf_l (i := lM) eq_refl Htt) (eqtm_wf_r (i := lM) eq_refl Htt) Ht3 VT Vt Vt3).
+Qed.
+
+Lemma FM_tlam {G Γ Δ l l' T t} : SemCtxM G Γ -> [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ extT G Δ l ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] -> [ extT G Δ l ; Γ⟪S⟫ ⊢[ lM ] t : T @ l' ] ->
+  SemCtxP G Δ -> SemTmM (extT G Δ l) Γ⟪S⟫ t t T l' ->
+  SemTmM G Γ (tlam l l' t) (tlam l l' t) (tyTPi Δ l l' T) l'.
+Proof.
+  intros HS HΔ Hl Hl' HT Ht SΔ St.
+  exact (FM_tlam_eq HS HΔ (lequiv_refl _ _ Hl) (lequiv_refl _ _ Hl') HT (eqtm_refl _ _ _ _ _ _ Ht) Ht SΔ St St).
+Qed.
+
+Lemma FM_tapp_eq {G Γ Δ l l' T t t' A A'} : [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] A ≅ A' @ l ] ->
+  SemCtxP G Δ -> SemTyP G Δ A A' l -> SemTmM G Γ t t' (tyTPi Δ l l' T) l' ->
+  SemTyM G Γ T⦃gsingle (GTy A)⦄ T⦃gsingle (GTy A')⦄ l' ->
+  SemTmM G Γ (tapp t A) (tapp t' A') T⦃gsingle (GTy A)⦄ l'.
+Proof.
+  intros HΔ HAA (_ & VP & _) (_ & VTP & VTM) ((HG & VΓ) & _ & Vt) (_ & VI).
+  split; [exact (conj HG VΓ) | split].
+  - exact (VTySM_refl_l HG VΓ VI).
+  - exact (VS_tapp EP EM G Γ Δ l l' T t t' A A' HΔ (eqty_wf_l (i := lD) eq_refl HAA)
+             (eqty_wf_r (i := lD) eq_refl HAA) VP VTP VTM Vt).
+Qed.
+
+Lemma FM_tapp {G Γ Δ l l' T t A} : [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] A @ l ] ->
+  SemCtxP G Δ -> SemTyP G Δ A A l -> SemTmM G Γ t t (tyTPi Δ l l' T) l' ->
+  SemTyM G Γ T⦃gsingle (GTy A)⦄ T⦃gsingle (GTy A)⦄ l' ->
+  SemTmM G Γ (tapp t A) (tapp t A) T⦃gsingle (GTy A)⦄ l'.
+Proof. intros HΔ HA. exact (FM_tapp_eq HΔ (eqty_refl _ _ _ _ _ HA)). Qed.
+
+Lemma FM_cbeta {G Γ l T t Δ} : SemCtxM G Γ -> lwf (gL G) l -> [ extC G ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
+  [ extC G ; Γ⟪S⟫ ⊢[ lM ] t : T @ l ] -> [ G ; Δ ⊢[ lD ] ] -> SemCtxP G Δ ->
+  SemTmM (extC G) Γ⟪S⟫ t t T l ->
+  SemTmM G Γ (capp (clam l t) Δ) t⦃gsingle (GCtx Δ)⦄ T⦃gsingle (GCtx Δ)⦄ l.
+Proof.
+  intros HS Hl HT Ht HΔ (_ & VP & VM) (_ & VT & Vt). split; [exact HS | split].
+  - exact (VTyS_inst_c EP EM HΔ VP VM VT).
+  - exact (VS_cbeta EP EM Hl HT Ht HΔ VP VM Vt).
+Qed.
+
+Lemma FM_tbeta {G Γ Δ l l' T t A} : SemCtxM G Γ -> [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ extT G Δ l ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] -> [ extT G Δ l ; Γ⟪S⟫ ⊢[ lM ] t : T @ l' ] ->
+  [ G ; Δ ⊢[ lD ] A @ l ] -> SemCtxP G Δ -> SemTyP G Δ A A l -> SemTmM (extT G Δ l) Γ⟪S⟫ t t T l' ->
+  SemTmM G Γ (tapp (tlam l l' t) A) t⦃gsingle (GTy A)⦄ T⦃gsingle (GTy A)⦄ l'.
+Proof.
+  intros HS HΔ Hl Hl' HT Ht HA (_ & VP & VM) (_ & VTP & VTM) (_ & VT & Vt). split; [exact HS | split].
+  - exact (VTyS_inst_t EP EM HΔ HA VP VM VTP VTM VT).
+  - exact (VS_tbeta EP EM Hl Hl' HΔ HT Ht HA VP VM VTP VTM Vt).
+Qed.
+
+Lemma FM_ceta {G Γ l T t} : SemTmM G Γ t t (tyCPi l T) l ->
+  SemTmM G Γ (clam l (capp t⟪S⟫ (cvar 0))) t (tyCPi l T) l.
+Proof. intros (HS & VT & Vt). exact (conj HS (conj VT (VS_ceta EP EM G Γ l T t Vt))). Qed.
+
+Lemma FM_teta {G Γ Δ l l' T t} : [ G ; Δ ⊢[ lD ] ] -> SemCtxP G Δ -> SemTmM G Γ t t (tyTPi Δ l l' T) l' ->
+  SemTmM G Γ (tlam l l' (tapp t⟪S⟫ (tyGvar 0 (lshift 0)))) t (tyTPi Δ l l' T) l'.
+Proof.
+  intros HΔ (_ & VP & VM) (HS & VT & Vt).
+  exact (conj HS (conj VT (VS_teta EP EM G Γ Δ l l' T t HΔ VP VM Vt))).
+Qed.
+
 End FundamentalM.
 
 (** ** The theorem *)
@@ -984,6 +1124,17 @@ Proof.
                          | simple eapply (FM_letboxT_beta EP EM)
                          | simple eapply (FM_letboxt EP EM) | simple eapply (FM_letboxt_cong EP EM)
                          | simple eapply (FM_letboxt_beta EP EM) ]; eassumption ].
+  (* the meta-functions (M5) *)
+  all: try solve [ first
+    [ solve [simple eapply (FM_cpi EP EM); eassumption] | solve [simple eapply (FM_cpi_eq EP EM); eassumption]
+    | solve [simple eapply (FM_tpi EP EM); eassumption] | solve [simple eapply (FM_tpi_eq EP EM); eassumption]
+    | solve [simple eapply (FM_clam EP EM); eassumption] | solve [simple eapply (FM_clam_eq EP EM); eassumption]
+    | solve [simple eapply (FM_capp EP EM); eassumption] | solve [simple eapply (FM_capp_eq EP EM); eassumption]
+    | solve [simple eapply (FM_tlam EP EM); eassumption] | solve [simple eapply (FM_tlam_eq EP EM); eassumption]
+    | solve [simple eapply (FM_tapp EP EM); eassumption] | solve [simple eapply (FM_tapp_eq EP EM); eassumption]
+    | solve [simple eapply (FM_cbeta EP EM); eassumption] | solve [simple eapply (FM_tbeta EP EM); eassumption]
+    | solve [rewrite ?usubst_gren_tm'; simple eapply (FM_ceta EP EM); eassumption]
+    | solve [rewrite ?usubst_gren_tm'; simple eapply (FM_teta EP EM); eassumption] ] ].
   all: unfold SemTyM, SemTmM, SemCtxM in *;
     repeat match goal with H : _ /\ _ |- _ => destruct H end; m_types; repeat split.
   all: try m_goal.
@@ -992,15 +1143,6 @@ Proof.
            | H : eq_tm _ lM _ (elimT _ _ _ _ _ _) _ _ _ |- _ => pose proof (eqtm_wf_r (i := lM) eq_refl H)
            | H : eq_tm _ lM _ (elimt _ _ _ _ _ _ _) _ _ _ |- _ => pose proof (eqtm_wf_r (i := lM) eq_refl H)
            end.
-  (* M5 WORK IN PROGRESS (M5_DESIGN.md G5, status): the rules of [CΠ]/[TΠ]
-     are admitted until their semantic rules exist; nothing else is. *)
-  all: try (lazymatch goal with
-            | |- context [tyCPi] => admit | |- context [tyTPi] => admit
-            | |- context [clam] => admit | |- context [capp] => admit
-            | |- context [tlam] => admit | |- context [tapp] => admit
-            | H : context [gext _ gdCtx] |- context [gsingle (GCtx _)] => admit
-            | H : context [gdTy _ lD _] |- context [gsingle (GTy _)] => admit
-            end).
   all: first
     [ solve [simple eapply (VS_elimT_beta EP EM);
              [eassumption | apply redT_usubst; eassumption | eassumption | eassumption]]
@@ -1008,7 +1150,7 @@ Proof.
              [eassumption | apply redt_usubst; eassumption | eassumption | eassumption]]
     | solve [simple eapply (FM_elimT EP EM); m_rec_side]
     | solve [simple eapply (FM_elimt EP EM); m_rec_side] ].
-Admitted.
+Qed.
 
 (** ** At the identity universe substitution *)
 

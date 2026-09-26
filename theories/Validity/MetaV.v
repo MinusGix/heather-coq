@@ -1147,4 +1147,41 @@ Qed.
 
 End TEta.
 
+(** ** The instances' types: valid when the bodies' are *)
+
+Lemma VTyS_inst_c {G Γ T l Δ1} : [ G ; Δ1 ⊢[ lD ] ] -> VCtxSP G Δ1 -> VCtxSPM G Δ1 ->
+  VTySM (gext G gdCtx) Γ⟪S⟫ T T l -> VTySM G Γ T⦃gsingle (GCtx Δ1)⦄ T⦃gsingle (GCtx Δ1)⦄ l.
+Proof.
+  intros HΔ1 VΔP VΔM VT.
+  apply (VTyS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
+  pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
+  pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
+  pose proof (gsw_dnf _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ)) as Nσ'.
+  pose proof (gs_ctx EP EM Hσ HΔ1 compt_D) as HD. pose proof (gs_ctx EP EM Hσr HΔ1 compt_D) as HDr.
+  pose proof (CtxRelG_escape_P EP EM (VΔP _ _ _ Hσ) HD HDr) as [_ HDDr].
+  assert (Hσx : GSubRel G' (gext G gdCtx) (gcons σ (GCtx Δ1⦃σ⦄)) (gcons σ' (GCtx Δ1⦃σ'⦄)))
+    by exact (GSubRel_cons_c Hσ (conj HDDr (conj (VΔP _ _ _ Hσ) (VΔM _ _ _ Hσ)))).
+  pose proof (VT _ _ _ Hσx G' gwk_id (gwk_ok_id G')) as Y; cbn [gwa] in Y.
+  rewrite gcons_shift_ctx in Y. specialize (Y _ _ _ He).
+  rewrite (gs_gsingle_ty T _ σ Nσ), (gs_gsingle_ty T _ σ' Nσ'), (gup_single_ty _ σ _ Nσ),
+    (gup_single_ty _ σ' _ Nσ').
+  exact Y.
+Qed.
+
+Lemma VTyS_inst_t {G Γ T l l' Δ1 A} : [ G ; Δ1 ⊢[ lD ] ] -> [ G ; Δ1 ⊢[ lD ] A @ l ] ->
+  VCtxSP G Δ1 -> VCtxSPM G Δ1 -> @VTyS EP EM EP LR_P G Δ1 A A l -> @VTyS EP EM EM LR_P G Δ1 A A l ->
+  VTySM (gext G (gdTy Δ1 lD l)) Γ⟪S⟫ T T l' -> VTySM G Γ T⦃gsingle (GTy A)⦄ T⦃gsingle (GTy A)⦄ l'.
+Proof.
+  intros HΔ1 HA VΔP VΔM VAP VAM VT.
+  apply (VTyS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
+  pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
+  pose proof (gsw_dnf _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ)) as Nσ'.
+  pose proof (GSubRel_cons_t G Δ1 l HΔ1 VΔP VΔM Hσ (tapp_arg G Δ1 l A A HΔ1 HA HA VΔP VAP VAM Hσ)) as Hσx.
+  pose proof (VT _ _ _ Hσx G' gwk_id (gwk_ok_id G')) as Y; cbn [gwa] in Y.
+  rewrite gcons_shift_ctx in Y. specialize (Y _ _ _ He).
+  rewrite (gs_gsingle_ty T _ σ Nσ), (gs_gsingle_ty T _ σ' Nσ'), (gup_single_ty _ σ _ Nσ),
+    (gup_single_ty _ σ' _ Nσ').
+  exact Y.
+Qed.
+
 End MetaV.
