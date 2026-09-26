@@ -70,6 +70,45 @@ Proof.
   rewrite (ueta_tm n b (wf_tm_dnf Hb)), (ueta_ty n B (wf_ty_dnf HB)), ueta_lvl in X. exact X.
 Qed.
 
+(** ** η: syntax and reductions under universe weakening *)
+
+Lemma eta_body_inst m (u : tm) σ d : gdnf σ -> LK dnftm d ->
+  (uapp u⟨ush m⟩ᵤ (ubvars m))⦃guwkn m σ⦄[uwkn m d] = uapp u⦃σ⦄[d]⟨ush m⟩ᵤ (ubvars m).
+Proof.
+  intros Hσ Hd. transitivity (uapp (u⟨ush m⟩ᵤ⦃guwkn m σ⦄[uwkn m d]) (ubvars m)); [reflexivity|].
+  rewrite (uren_ush_gsubst_tm m u σ Hσ), (subst_uren_ush m _ d Hd). reflexivity.
+Qed.
+
+Lemma eta_inst_ls m (X : tm) ls : dnftm X -> length ls = m ->
+  (uapp X⟨ush m⟩ᵤ (ubvars m))[uext ls lvar]ᵤ = uapp X ls.
+Proof.
+  intros HX Hm.
+  transitivity (uapp (X⟨ush m⟩ᵤ[uext ls lvar]ᵤ) (map (fun l => lvsubst l (uext ls lvar)) (ubvars m)));
+    [reflexivity|].
+  rewrite (map_ubvars_uext m ls lvar Hm). f_equal.
+  rewrite (proj1 (proj2 uren_usubst_all) _ _ _ lvar) by (intros; symmetry; apply uext_ush_lvar, Hm).
+  apply usubst_id; auto.
+Qed.
+
+Lemma uwk_upi_inst m (X : ty) σ d : gdnf σ -> LK dnftm d -> dnfty X ->
+  (X⟨uuprn m (ush m)⟩ᵤ⦃guwkn m (guwkn m σ)⦄[uwkn m (uwkn m d)])[uext (ubvars m) lvar]ᵤ = X⦃guwkn m σ⦄[uwkn m d].
+Proof.
+  intros Hσ Hd HX.
+  rewrite <- (subst_uinst_ty m (ubvars m) _ (uwkn m d) (ubvars_length m) (lk_dnf_uwkn m d Hd)).
+  rewrite <- (gsubst_uinst_ty m (ubvars m) _ (guwkn m σ) (ubvars_length m) (gdnf_guwkn m σ Hσ)).
+  rewrite (ueta_ty m X HX). reflexivity.
+Qed.
+
+Lemma whnf_uren_ush t m : whnf t -> whnf t⟨ush m⟩ᵤ.
+Proof. intros H. change (whnf (uren_tm t (ush m))). rewrite uren_ush_tm. apply whnf_usubst, H. Qed.
+
+Lemma tmred_uwk m {G i Γ t w T l} : [ G ; Γ ⊢[ i ] t ⤳* w : T @ l ] ->
+  [ gctx_uwk m G ; Γ⟨ush m⟩ᵤ ⊢[ i ] t⟨ush m⟩ᵤ ⤳* w⟨ush m⟩ᵤ : T⟨ush m⟩ᵤ @ lvren l (ush m) ].
+Proof.
+  intros [Ht Hr He]. constructor; [exact (uwk_tm m Ht) | | exact (uwk_eqtm m He)].
+  change (reds (uren_tm t (ush m)) (uren_tm w (ush m))). rewrite !uren_ush_tm. apply reds_usubst, Hr.
+Qed.
+
 Section KwU.
 Context `{E : GenericEq}.
 
@@ -94,6 +133,14 @@ Proof.
   unfold ktm, kwsub. rewrite gwa_subst, subst_ren_lren, gwa_gsubst_tm. reflexivity.
 Qed.
 
+Lemma ktm_uren {G Γ} (ρ : kwk G Γ) (t : tm) ρu : ktm ρ t⟨ρu⟩ᵤ = (ktm ρ t)⟨ρu⟩ᵤ.
+Proof.
+  unfold ktm.
+  assert (Hg : forall γ, (t⟨ρu⟩ᵤ)⟦γ⟧ = (t⟦γ⟧)⟨ρu⟩ᵤ)
+    by (intros []; cbn [gwa]; [reflexivity | symmetry; apply (proj1 (proj2 uren_gren_all)) ..]).
+  rewrite Hg. symmetry. apply (proj1 (proj2 uren_ren_all)).
+Qed.
+
 Lemma ktm_ulam {G Γ} (ρ : kwk G Γ) n l b : ktm ρ (ulam n l b) = ulam n l (ktm ρ b).
 Proof. unfold ktm; destruct (kw_γ ρ); reflexivity. Qed.
 
@@ -110,6 +157,11 @@ Proof. exact (uwk_ctx n (kw_ctx ρ)). Qed.
 Definition kw_uwk n {G Γ} (ρ : kwk G Γ) : kwk (gctx_uwk n G) Γ⟨ush n⟩ᵤ :=
   mkKwk (gctx_uwk n (kw_G ρ)) (kw_Δ ρ)⟨ush n⟩ᵤ (kw_γ ρ) (kw_r ρ) (kw_uwk_gok n ρ) (kw_uwk_wf n ρ)
     (kw_uwk_ctx n ρ).
+
+Lemma ktm_kw_uwk n {G Γ} (ρ : kwk G Γ) t : ktm (kw_uwk n ρ) t = ktm ρ t.
+Proof. reflexivity. Qed.
+Lemma kty_kw_uwk n {G Γ} (ρ : kwk G Γ) T : kty (kw_uwk n ρ) T = kty ρ T.
+Proof. reflexivity. Qed.
 
 End KwU.
 
@@ -485,6 +537,135 @@ Proof.
 Qed.
 
 End App.
+
+(** ** η: [Λ ℓ⃗. u⟨↑ⁿ⟩ $ ℓ⃗] and [u] are related as [u] is to itself. The
+    whnf equation is extensionality, from the weakened [u] at the bound
+    variables (its validity at [φ] followed by [ush n]). *)
+
+Section Eta.
+Variables (l : lvl) (T : ty) (u : tm).
+Hypothesis (VT : forall L'' ψ, usub_ok ψ L'' (n + gL G0) ->
+     VTySM (G_us Gu L'' ψ) (ucsubst Γu ψ) T[ψ]ᵤ T[ψ]ᵤ (lvsubst l ψ))
+  (Vu : VTmSωM Gφ Γφ u u (tyUPi n (lvsubst l (uupn n φ)) T[uupn n φ]ᵤ))
+  (Vuw : VTmSωM (gctx_uwk n Gφ) Γφ⟨ush n⟩ᵤ u⟨ush n⟩ᵤ u⟨ush n⟩ᵤ
+           (tyUPi n (lvsubst l (uupn n φ)) T[uupn n φ]ᵤ)⟨ush n⟩ᵤ).
+
+Lemma VS_ueta : VTmSωM Gφ Γφ (ulam n (lvsubst l (uupn n φ)) (uapp u⟨ush n⟩ᵤ (ubvars n))) u
+  (tyUPi n (lvsubst l (uupn n φ)) T[uupn n φ]ᵤ).
+Proof.
+  apply VTmSω_intro_loc. intros G' σ σ' Hσ Δ d d' Hd.
+  pose proof (GSubRel_refl_l _ _ Hσ) as Hσσ.
+  pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
+  destruct (SubRel_dnf _ _ _ _ _ Hd) as [Nd Nd'].
+  set (lφ := lvsubst l (uupn n φ)).
+  pose proof (Vu _ _ _ Hσ G' gwk_id (gwk_ok_id G') Δ d d' Hd) as X. cbn [gwa] in X.
+  destruct X as (R & HLR & Hrel). pose proof HLR as HLR0.
+  destruct (LRω_escape_tm HLR _ _ Hrel) as (Hu & _ & _).
+  destruct HLR as [n2 l0 l0' A0 A0' iR Hn2 Hl02 HT HT' HTT HI HR].
+  destruct (tyred_upi_inv HT) as (-> & -> & ->). destruct (tyred_upi_inv HT') as (_ & -> & ->).
+  apply HR in Hrel. destruct Hrel as (w & w' & Hw & Hw' & Nw & Nw' & Ew & Ew' & K).
+  exists R. split; [exact HLR0 |].
+  assert (Eη : (ulam n lφ (uapp u⟨ush n⟩ᵤ (ubvars n)))⦃σ⦄[d] = ulam n lφ (uapp u⦃σ⦄[d]⟨ush n⟩ᵤ (ubvars n)))
+    by exact (f_equal (ulam n lφ) (eta_body_inst n u σ d Nσ Nd)).
+  rewrite Eη.
+  set (uσ := u⦃σ⦄[d]).
+  (* typings *)
+  destruct (upi_esc l T T VT G' σ σ Δ d d' Hσσ Hd) as [R0 H0].
+  destruct (escape_ty _ _ _ _ _ _ _ _ H0) as (HA & HAr & HAAr).
+  rewrite (@gm_layer_M EP EM EMl) in HA, HAr, Hu, Hw, Hw'.
+  pose proof (u_Δ _ _ _ _ _ Hd) as HΔ.
+  assert (Wlφ : lwf (n + gL G') lφ) by exact (lequiv_wf_l _ _ _ Hl02).
+  assert (DU : [ G' ; Δ ⊢[ lM ] tyUPi n lφ (Aσ T σ d) ≅ tyUPi n lφ (Aσ T σ d') @ lomega ]).
+  { pose proof (geq_ty_sound HTT) as X. rewrite (@gm_layer_M EP EM EMl) in X. exact X. }
+  assert (Hw1 : [ G' ; Δ ⊢[ lM ] ulam n lφ (uapp uσ⟨ush n⟩ᵤ (ubvars n)) : tyUPi n lφ (Aσ T σ d) @ lomega ])
+    by exact (pre_ueta_l Hn Wlφ HA Hu).
+  assert (Hw'r : [ G' ; Δ ⊢[ lM ] w' : tyUPi n lφ (Aσ T σ d') @ lomega ])
+    by exact (eqtm_wf_r (i := lM) eq_refl (tmred_eq _ _ _ _ _ _ _ Hw')).
+  assert (Hw'l : [ G' ; Δ ⊢[ lM ] w' : tyUPi n lφ (Aσ T σ d) @ lomega ])
+    by (eapply wf_conv; [exact Hw'r | exact DU]).
+  (* at the extended scope: the body and the weakened functions applied to the bound variables *)
+  assert (Wl2 : lwf (n + gL (gctx_uwk n G')) (lvren lφ (uuprn n (ush n))))
+    by exact (lwf_lvren _ _ _ _ (uwk_under_ok n (gL G')) Wlφ).
+  pose proof (uwk_under_ty n HA) as HA2.
+  pose proof (wf_ty_dnf HA) as DA.
+  assert (Happ : forall x, [ G' ; Δ ⊢[ lM ] x : tyUPi n lφ (Aσ T σ d) @ lomega ] ->
+            [ gctx_uwk n G' ; Δ⟨ush n⟩ᵤ ⊢[ lM ] uapp x⟨ush n⟩ᵤ (ubvars n) : Aσ T σ d @ lφ ]).
+  { intros x Hx. pose proof (uwk_tm n Hx) as Y. cbn [uren_ty lvren] in Y.
+    pose proof (wf_uapp _ _ _ _ _ _ (ubvars n) Wl2 HA2 (ubvars_length n) (lwfs_ubvars n _) Y) as Z.
+    rewrite (ueta_ty n _ DA), ueta_lvl in Z. exact Z. }
+  (* the whnf equation, by extensionality *)
+  assert (E1 : [ G' ; Δ ⊢ ulam n lφ (uapp uσ⟨ush n⟩ᵤ (ubvars n)) ≈ w' : tyUPi n lφ (Aσ T σ d) @ lomega ]).
+  { apply geq_tm_uext; [exact Hn | exact Wlφ | exact HA | exact Hw1 | exact Hw'l |].
+    (* the weakened [u], related at the extended scope *)
+    pose proof (Vuw _ _ _ (u_σn _ _ _ Hσ) _ gwk_id (gwk_ok_id _) _ _ _ (u_dn _ _ _ _ _ _ Hσ Hd)) as Y.
+    cbn [gwa] in Y.
+    rewrite (uren_ush_gsubst_tm n u σ Nσ), (uren_ush_gsubst_tm n u σ' (gsw_dnf _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ))),
+      (subst_uren_ush n _ d Nd), (subst_uren_ush n _ d' Nd') in Y.
+    destruct Y as (R2 & HLR2 & Hrel2).
+    destruct HLR2 as [n3 l3 l3' A3 A3' iR2 _ _ HT3 HT3' _ HI2 HR2].
+    destruct (tyred_upi_inv HT3) as (-> & -> & ->).
+    apply HR2 in Hrel2. destruct Hrel2 as (w2 & w2' & Hw2 & Hw2' & Nw2 & Nw2' & _ & _ & K2).
+    rewrite (@gm_layer_M EP EM EMl) in Hw2, Hw2'.
+    assert (w2 = w⟨ush n⟩ᵤ) as ->
+      by (eapply tmred_whnf_det; [exact Hw2 | exact (tmred_uwk n Hw) | exact Nw2 | exact (whnf_uren_ush _ _ Nw)]).
+    pose proof (tmred_uwk n Hw') as Hw'u.
+    assert (w2' = w'⟨ush n⟩ᵤ) as ->
+      by (eapply tmred_whnf_det; [exact Hw2' | exact Hw'u | exact Nw2' | exact (whnf_uren_ush _ _ Nw')]).
+    (* its instance at the bound variables, in the identity world *)
+    pose proof (SubRel_ctx (u_dn _ _ _ _ _ _ Hσ Hd)) as HΔ2g.
+    set (ρ0 := kw_loc wk_id (wkwf_id _) HΔ2g).
+    assert (Hbv : Forall2 (lequiv (gL (kw_G ρ0))) (ubvars n) (ubvars n))
+      by exact (lequivs_refl _ _ (lwfs_ubvars n (gL G'))).
+    pose proof (K2 ρ0 (ubvars n) (ubvars n) (ubvars_length n) Hbv) as Kb.
+    pose proof (HI2 ρ0 (ubvars n) (ubvars n) (ubvars_length n) Hbv) as HIb.
+    destruct (escape_tm _ _ _ _ _ _ _ _ HIb _ _ Kb) as (_ & _ & Eb).
+    assert (NW : nftm w⟨ush n⟩ᵤ) by exact (dnftm_nftm _ (proj1 (proj2 uren_dnf_all) w (ush n))).
+    assert (NW' : nftm w'⟨ush n⟩ᵤ) by exact (dnftm_nftm _ (proj1 (proj2 uren_dnf_all) w' (ush n))).
+    unfold ρ0, kty, ktm, kw_loc in Eb; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in Eb.
+    rewrite (ren_id_tm _ NW), (ren_id_tm _ NW') in Eb.
+    rewrite ren_id_ty in Eb by (apply dnfty_nfty, subst_dnf_ty;
+      [ apply (proj1 gsubst_dnf_all); [apply (proj1 uren_dnf_all) | exact (gdnf_guwkn _ _ (gdnf_guwkn _ _ Nσ))]
+      | exact (lk_dnf_uwkn _ _ (lk_dnf_uwkn _ _ Nd)) ]).
+    rewrite (uwk_upi_inst n _ σ d Nσ Nd (proj1 usubst_dnf_all _ _)), ueta_lvl in Eb.
+    eapply geq_tm_exp; [| | exact Eb]; rewrite (@gm_layer_M EP EM EMl).
+    - eapply tmred_trans; [exact (tmred_ueta_M HΔ Hn Wlφ HA (Happ uσ Hu)) |].
+      pose proof (tmred_uapp_M Wl2 HA2 (ubvars_length n) (lwfs_ubvars n _) (tmred_uwk n Hw)) as Z.
+      rewrite (ueta_ty n _ DA), ueta_lvl in Z. exact Z.
+    - apply tmred_refl, (Happ w' Hw'l). }
+  (* the relation, with its instances anti-reduced to [u]'s *)
+  apply HR. exists (ulam n lφ (uapp uσ⟨ush n⟩ᵤ (ubvars n))), w'.
+  refine (conj _ (conj _ (conj (whnf_ulam _ _ _) (conj Nw' (conj E1 (conj _ _)))))).
+  - rewrite (@gm_layer_M EP EM EMl). apply tmred_refl, Hw1.
+  - rewrite (@gm_layer_M EP EM EMl). exact Hw'.
+  - eapply geq_tm_conv; [exact E1 |]. rewrite (@gm_layer_M EP EM EMl). exact DU.
+  - intros ρ ls ls' Hlen Hls.
+    pose proof (lequivs_lwf_l _ _ _ Hls) as Wls. pose proof (lequivs_lwf_r _ _ _ Hls) as Wls'.
+    assert (Hlen' : length ls' = n) by (rewrite <- (Forall2_length Hls); exact Hlen).
+    pose proof (K ρ ls ls' Hlen Hls) as Kρ. pose proof (HI ρ ls ls' Hlen Hls) as HIρ.
+    pose proof (kw_ctx ρ) as HΔρ. rewrite (@gm_layer_M EP EM EMl) in HΔρ.
+    assert (Wlρ : lwf (n + gL (kw_G ρ)) lφ) by (eapply lwf_weaken; [| exact Wlφ]; pose proof (kw_gL ρ); lia).
+    pose proof (kw_ty (kw_uwk n ρ) (ltac:(rewrite (@gm_layer_M EP EM EMl); exact HA))) as HAρ.
+    pose proof (kw_tm (kw_uwk n ρ) (ltac:(rewrite (@gm_layer_M EP EM EMl); exact (Happ uσ Hu)))) as Hbρ.
+    pose proof (kw_tmred ρ (ltac:(rewrite (@gm_layer_M EP EM EMl); exact Hw))) as Hwρ.
+    pose proof (kw_tm ρ (ltac:(rewrite (@gm_layer_M EP EM EMl); exact Hw'r))) as Hw'ρ.
+    rewrite (@gm_layer_M EP EM EMl) in HAρ, Hbρ, Hwρ, Hw'ρ.
+    cbn [kw_uwk kw_G kw_Δ] in HAρ, Hbρ. rewrite kty_kw_uwk in HAρ, Hbρ. rewrite ktm_kw_uwk, ktm_uapp, ktm_uren in Hbρ.
+    rewrite kty_tyUPi in Hwρ, Hw'ρ.
+    assert (Nu : dnftm (ktm ρ uσ)).
+    { unfold ktm. apply ren_dnf. destruct (kw_γ ρ); cbn [gwa];
+        [| apply gren_dnf_all ..]. exact (wf_tm_dnf Hu). }
+    eapply (LR_red_tm _ _ _ _ _ _ _ _ HIρ _ _ _ _ Kρ); rewrite (@gm_layer_M EP EM EMl).
+    + rewrite ktm_ulam, ktm_uapp, ktm_uren.
+      eapply tmred_trans; [pose proof (tmred_ubeta_M HΔρ Hn Wlρ HAρ Hbρ Hlen Wls) as Z;
+                          rewrite (eta_inst_ls n _ ls Nu Hlen) in Z; exact Z |].
+      exact (tmred_uapp_M Wlρ HAρ Hlen Wls Hwρ).
+    + pose proof (kw_ty (kw_uwk n ρ) (ltac:(rewrite (@gm_layer_M EP EM EMl); exact HAr))) as HArρ.
+      rewrite (@gm_layer_M EP EM EMl) in HArρ. cbn [kw_uwk kw_G kw_Δ] in HArρ. rewrite kty_kw_uwk in HArρ.
+      apply tmred_refl. eapply wf_lconv; [exact (wf_uapp _ _ _ _ _ _ _ Wlρ HArρ Hlen' Wls' Hw'ρ) |].
+      exact (lequiv_ilv (kw_gL ρ) (lequiv_refl _ _ Wlφ) Hlen Hls).
+Qed.
+
+End Eta.
 
 (** ** β: the application of [Λ] reduces to the body's instance *)
 
