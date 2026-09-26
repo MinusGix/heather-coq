@@ -213,14 +213,14 @@ Proof.
 Qed.
 
 (** η: the body [t⟪↑⟫ g] (resp. [t⟪↑⟫ U^id]) has the body type. *)
-Lemma pre_ceta_l {l T t} : lwf (gL G) l -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
+(** The η bodies: the weakened function at the bound variable. *)
+Lemma wf_ceta_body {l T t} : lwf (gL G) l -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
   [ G ; Γ ⊢[ lM ] t : tyCPi l T @ l ] ->
-  [ G ; Γ ⊢[ lM ] clam l (capp t⟪S⟫ (cvar 0)) : tyCPi l T @ l ].
+  [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] capp t⟪S⟫ (cvar 0) : T @ l ].
 Proof.
-  intros Hl HT Ht. pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
+  intros Hl HT Ht.
   pose proof (ctx_glob _ _ _ (ctx_of_wf_ty (i := lM) eq_refl HT)) as HG1.
   assert (HG2 : [ ⊢ gext (gext G gdCtx) gdCtx ]) by (apply wfg_ctx, HG1).
-  apply wf_clam; [exact HΓ | exact Hl | exact HT |].
   pose proof (eta_c_ty HT) as E. rewrite <- E at 1.
   apply wf_capp; [exact Hl | | apply wfc_var; [exact HG1 | reflexivity] | | rewrite E; exact HT].
   - pose proof (gwk_ty (gwk_ok_up_step (G := G) (D := gdCtx) gdCtx) HG2 HT) as X.
@@ -229,17 +229,16 @@ Proof.
   - exact (gwk_tm (gwk_ok_step (G := G) (D := gdCtx)) HG1 Ht).
 Qed.
 
-Lemma pre_teta_l {Δ l l' T t} : [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
+Lemma wf_teta_body {Δ l l' T t} : [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
   [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] ->
   [ G ; Γ ⊢[ lM ] t : tyTPi Δ l l' T @ l' ] ->
-  [ G ; Γ ⊢[ lM ] tlam l l' (tapp t⟪S⟫ (tyGvar 0 (lshift 0))) : tyTPi Δ l l' T @ l' ].
+  [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] tapp t⟪S⟫ (tyGvar 0 (lshift 0)) : T @ l' ].
 Proof.
-  intros HΔ Hl Hl' HT Ht. pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
+  intros HΔ Hl Hl' HT Ht.
   pose proof (ctx_glob _ _ _ (ctx_of_wf_ty (i := lM) eq_refl HT)) as HG1.
   pose proof (gwk_ctx (gwk_ok_step (G := G) (D := gdTy Δ lD l)) HG1 HΔ) as HΔ1.
   assert (HG2 : [ ⊢ gext (gext G (gdTy Δ lD l)) (gdTy Δ⟪S⟫ lD l) ])
     by (apply wfg_ty; [exact HG1 | exact HΔ1 | right; reflexivity | exact Hl]).
-  apply wf_tlam; [exact HΓ | exact HΔ | exact Hl | exact Hl' | exact HT |].
   pose proof (eta_t_ty HT) as E. rewrite <- E at 1.
   apply wf_tapp with (Δ := Δ⟪S⟫) (l := l); [ | exact HΔ1 | exact Hl | exact Hl' | | | rewrite E; exact HT].
   - exact (gwk_tm (gwk_ok_step (G := G) (D := gdTy Δ lD l)) HG1 Ht).
@@ -248,6 +247,23 @@ Proof.
     rewrite gcren_shift_up in X. exact X.
   - eapply wf_gv with (Δ := Δ⟪S⟫) (i' := lD);
       [discriminate | exact HΔ1 | exact (ing_here (gΨ G) (gdTy Δ lD l)) | apply lle_refl | reflexivity].
+Qed.
+
+Lemma pre_ceta_l {l T t} : lwf (gL G) l -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
+  [ G ; Γ ⊢[ lM ] t : tyCPi l T @ l ] ->
+  [ G ; Γ ⊢[ lM ] clam l (capp t⟪S⟫ (cvar 0)) : tyCPi l T @ l ].
+Proof.
+  intros Hl HT Ht. pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
+  apply wf_clam; [exact HΓ | exact Hl | exact HT | exact (wf_ceta_body Hl HT Ht)].
+Qed.
+
+Lemma pre_teta_l {Δ l l' T t} : [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] ->
+  [ G ; Γ ⊢[ lM ] t : tyTPi Δ l l' T @ l' ] ->
+  [ G ; Γ ⊢[ lM ] tlam l l' (tapp t⟪S⟫ (tyGvar 0 (lshift 0))) : tyTPi Δ l l' T @ l' ].
+Proof.
+  intros HΔ Hl Hl' HT Ht. pose proof (ctx_of_wf_tm (i := lM) eq_refl Ht) as HΓ.
+  apply wf_tlam; [exact HΓ | exact HΔ | exact Hl | exact Hl' | exact HT | exact (wf_teta_body HΔ Hl Hl' HT Ht)].
 Qed.
 
 (** ** Typed reductions of the applications (layer M) *)
