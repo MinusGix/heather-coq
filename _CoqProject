@@ -111,3 +111,4 @@ theories/Validity/AlgDec.v
 theories/Validity/Consistency.v
 theories/Validity/Canonicity.v
 theories/Validity/Preservation.v
+theories/Validity/RecReduct.v
