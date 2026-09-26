@@ -276,3 +276,10 @@ equal type. Three points the paper passes over:
   derivation, inversion of the second on the middle side's head (`ainv_*`),
   the second moved to the first's binders by the conversion lemma. Step 4
   is complete.
+- Step 5 in progress: the lift (`Validity/AlgLift.v`, `lift_c`) is done,
+  closed. Induction on the declarative relation's reducibility
+  (`LR_lift_D`, `LR_lift_M`): positive heads directly; `Π` by η with the
+  bound variable reflected into the domain (`LR_neutral`); `CΠ`/`TΠ` at the
+  `kw_gstep` world. `TΠ`'s argument `U₀^id` needs the identity substitution
+  self-related (`ac_sub_id`, from the lift at D). At ω, `UΠ`'s body at a
+  well-formed level (`lift_upi`).
