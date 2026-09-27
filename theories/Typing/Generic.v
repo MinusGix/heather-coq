@@ -224,7 +224,38 @@ Class GenericEqLaws `{GenericEq} := {
   gne_ty_gvar {G Γ U Δ i' l d d'} : in_gctx (gΨ G) U (gdTy Δ i' l) -> lle i' ge_layer ->
     geq_lsub G Γ d d' Δ -> [ G ; Γ ⊢ tyGvar U d ~ tyGvar U d' @ l ] ;
   gne_tm_gvar {G Γ u Δ i' T l d d'} : in_gctx (gΨ G) u (gdTm Δ i' T l) -> lle i' ge_layer ->
-    geq_lsub G Γ d d' Δ -> [ G ; Γ ⊢ gvar u d ~ gvar u d' : T[d] @ l ]
+    geq_lsub G Γ d d' Δ -> [ G ; Γ ⊢ gvar u d ~ gvar u d' : T[d] @ l ] ;
+
+  (** Dependent pairs (M8_DESIGN.md I5): congruences, extensionality by
+      the projections (η), neutral projections *)
+  geq_ty_sig {G Γ l1 l2 l3 l4 A A' B B'} :
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
+    [ G ; Γ ⊢ tySig l1 l2 A B ≈ tySig l3 l4 A' B' @ lmax l1 l2 ] ;
+  geq_tm_code_sig {G Γ l1 l2 l3 l4 s s' t t'} :
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢g s : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢ s ≈ s' : tyU l1 @ lsuc l1 ] ->
+    [ G ; Γ ,, tyEl l1 s @ l1 ⊢ t ≈ t' : tyU l2 @ lsuc l2 ] ->
+    [ G ; Γ ⊢ tmSig l1 l2 s t ≈ tmSig l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ] ;
+  geq_tm_sig_ext {G Γ l l' A B p p'} : lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ,, A @ l ⊢g B @ l' ] ->
+    [ G ; Γ ⊢g p : tySig l l' A B @ lmax l l' ] -> [ G ; Γ ⊢g p' : tySig l l' A B @ lmax l l' ] ->
+    [ G ; Γ ⊢ tmFst l l' A B p ≈ tmFst l l' A B p' : A @ l ] ->
+    [ G ; Γ ⊢ tmSnd l l' A B p ≈ tmSnd l l' A B p' : B[lsingle (tmFst l l' A B p)] @ l' ] ->
+    [ G ; Γ ⊢ p ≈ p' : tySig l l' A B @ lmax l l' ] ;
+  gne_tm_fst {G Γ l1 l2 l3 l4 A A' B B' ν ν'} :
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
+    [ G ; Γ ⊢ ν ~ ν' : tySig l1 l2 A B @ lmax l1 l2 ] ->
+    [ G ; Γ ⊢ tmFst l1 l2 A B ν ~ tmFst l3 l4 A' B' ν' : A @ l1 ] ;
+  gne_tm_snd {G Γ l1 l2 l3 l4 A A' B B' ν ν'} :
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
+    [ G ; Γ ⊢ ν ~ ν' : tySig l1 l2 A B @ lmax l1 l2 ] ->
+    [ G ; Γ ⊢ tmSnd l1 l2 A B ν ~ tmSnd l3 l4 A' B' ν' : B[lsingle (tmFst l1 l2 A B ν)] @ l2 ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

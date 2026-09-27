@@ -59,6 +59,22 @@ Proof.
   apply eqtm_lam; auto using lequiv_refl, eqty_refl.
 Qed.
 
+(** Σ-extensionality: both sides are η-equal to the pair of their projections. *)
+Lemma decl_sig_ext G Γ l l' A B p p' :
+  lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ] ->
+  [ G ; Γ ⊢[ i ] p' : tySig l l' A B @ lmax l l' ] ->
+  [ G ; Γ ⊢[ i ] tmFst l l' A B p ≅ tmFst l l' A B p' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] tmSnd l l' A B p ≅ tmSnd l l' A B p' : B[lsingle (tmFst l l' A B p)] @ l' ] ->
+  [ G ; Γ ⊢[ i ] p ≅ p' : tySig l l' A B @ lmax l l' ].
+Proof.
+  intros Hl Hl' HA HB Hp Hp' Hf Hs.
+  eapply eqtm_trans; [apply eqtm_sym, eqtm_sig_eta; eauto|].
+  eapply eqtm_trans; [|apply eqtm_sig_eta; eauto].
+  apply eqtm_pair; auto using lequiv_refl, eqty_refl.
+Qed.
+
 #[export] Instance DeclEqLaws : @GenericEqLaws DeclEq.
 Proof.
   constructor; cbn; unfold decl_ne_ty, decl_ne_tm.
@@ -128,6 +144,14 @@ Proof.
   - intros * Hin Hl [HΓ Ht Hd Ht' Hd' Hw Hw' He]; cbn in *.
     refine (conj _ (conj _ _)); [constructor .. |].
     eapply eqtm_gvar; eauto. now rewrite Hty.
+  (* dependent pairs *)
+  - intros; apply eqty_sig; auto.
+  - intros; apply eqtm_code_sig; auto.
+  - exact decl_sig_ext.
+  - intros * Hl1 Hl2 HA HAA HB (Hn & Hn' & Heq).
+    refine (conj _ (conj _ _)); [constructor; auto .. |]. now apply eqtm_fst.
+  - intros * Hl1 Hl2 HA HAA HB (Hn & Hn' & Heq).
+    refine (conj _ (conj _ _)); [constructor; auto .. |]. now apply eqtm_snd.
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].

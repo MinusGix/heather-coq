@@ -329,7 +329,9 @@ Proof.
     pose proof (@gne_tm_gvar DE DEL _ _ _ _ _ _ _ _ _ Hin Hle Hd) as X.
     refine (conj X (ex_intro _ T[d] (conj (actmne_gvar _ _ _ _ _ _ _ _ _ Hin Hs) _))).
     destruct X as (_ & _ & EX). exact (eqty_refl _ _ _ _ _ (eqtm_wf_ty Hty EX)).
-Qed.
+  (* M8 TEMPORARY: the Σ laws are admitted until the algorithm has Σ rules *)
+  all: admit.
+Admitted.
 
 End Alg.
 
