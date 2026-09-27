@@ -441,8 +441,7 @@ Gaps and typos in P that a transcription must settle:
   only transports it; its one consumer, the FT's `box` case, gets it from
   `static_code_eq` (A3). The rule becomes the paper's.
 - 9, right-side premises of `eqty_tpi`, `eqtm_tlam`, `eqtm_letbox*`:
-  try to remove, if the lemma order allows global-binding conversion
-  (`gbind_*`) before the lemmas that consume them (presupposition).
+  tried; kept (see "As built").
 - 10, instance premises: keep. Admissible only through the FT; removing
   them would need syntactic global functionality.
 - 7, 8, 11, 13: keep (logrel-coq style; presupposition derives them).
@@ -455,6 +454,22 @@ As built:
   transported the premise. `FM_boxT_eq`/`FM_boxt_eq` take the C-equation
   and get `≡ₗ` from `static_code_eqty`/`_eqtm`. The primed rules
   `eqtm_boxT'`/`eqtm_boxt'` (A3) are gone.
+- 9 tried and reverted; the premises stay. Removing them breaks nothing
+  up to global substitution (weakening, substitution, functionality and
+  global substitution only transport them). Two consumers need them:
+  - `presupposition`, which must type the right body at the right
+    binding. That needs global-binding conversion (`gbind_*`, today in
+    `Validity/AlgPrereq.v`, after the FT) inside the presupposition
+    induction. It would work by stratifying: presupposition below M first,
+    then `gbind` from it, then presupposition at M.
+  - the FT (`FM_tpi_eq`, `FM_tlam_eq`, `FM_letbox*_cong`), which uses the
+    premises' validity at the right binding. Without them it needs a
+    semantic `gbind` (validity under `U : Δ` gives validity under
+    `U : Δ'` for valid `Δ ≅ Δ'`), which doesn't exist.
+
+  That is a lemma-order restructure plus a new semantic lemma, only to
+  change the rules' shape. C3 doesn't need it: after the FT, `gbind_*`
+  derives the premises, which is what P ⊆ O uses.
 
 ### C4. An executable checker
 
