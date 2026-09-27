@@ -7,6 +7,7 @@
     global variables' images are MLTT types and terms, related at
     [⊩^{≥P}_P], which the Layering Restriction carries to [LR_M]. *)
 From DeLaM.Validity Require Export FundamentalS LetboxS RecFT UPiV MetaV.
+From DeLaM.Typing Require Import StaticCodeEq.
 
 Section FundamentalM.
 Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM} {EMl : GenericEqM EP EM}.
@@ -194,14 +195,14 @@ Proof.
   - exact (VS_boxT EP EM HΓ Hl HΔ HT HT (ty_leq_refl _) VP VM VTP VTM).
 Qed.
 
-(** The congruence: code up to level equivalence (E11). *)
+(** The congruence: equal code is [≡ₗ]-related (Static Code, M7 A3; E11). *)
 Lemma FM_boxT_eq {G Γ Δ T T' l} : SemCtxM G Γ -> [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
-  [ G ; Δ ⊢[ lC ] T @ l ] -> [ G ; Δ ⊢[ lC ] T' @ l ] -> ty_leq T T' -> SemTyP G Δ T T' l ->
+  [ G ; Δ ⊢[ lC ] T @ l ] -> [ G ; Δ ⊢[ lC ] T' @ l ] -> [ G ; Δ ⊢[ lC ] T ≅ T' @ l ] -> SemTyP G Δ T T' l ->
   SemTmM G Γ (boxT T) (boxT T') (tyCTyp Δ l) lzero.
 Proof.
-  intros HS HΓ Hl HΔ HT HT' E ((HG & VP & VM) & VTP & VTM). split; [exact HS | split].
+  intros HS HΓ Hl HΔ HT HT' ET ((HG & VP & VM) & VTP & VTM). split; [exact HS | split].
   - exact (VS_CTyp EP EM HΓ HΔ HΔ Hl (lequiv_refl _ _ Hl) VP VM).
-  - exact (VS_boxT EP EM HΓ Hl HΔ HT HT' E VP VM VTP VTM).
+  - exact (VS_boxT EP EM HΓ Hl HΔ HT HT' (static_code_eqty (lle_refl lC) ET) VP VM VTP VTM).
 Qed.
 
 Lemma FM_boxt {G Γ Δ T t l} : SemCtxM G Γ -> [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
@@ -214,13 +215,13 @@ Proof.
 Qed.
 
 Lemma FM_boxt_eq {G Γ Δ T t t' l} : SemCtxM G Γ -> [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
-  [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Δ ⊢[ lC ] t : T @ l ] -> [ G ; Δ ⊢[ lC ] t' : T @ l ] -> tm_leq t t' ->
-  SemTmP G Δ t t' T l ->
+  [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Δ ⊢[ lC ] t : T @ l ] -> [ G ; Δ ⊢[ lC ] t' : T @ l ] ->
+  [ G ; Δ ⊢[ lC ] t ≅ t' : T @ l ] -> SemTmP G Δ t t' T l ->
   SemTmM G Γ (boxt t) (boxt t') (tyCTrm Δ T l) lzero.
 Proof.
-  intros HS HΓ Hl HΔ HT Ht Ht' E ((HG & VP & VM) & VTP & VTM & VtP & VtM). split; [exact HS | split].
+  intros HS HΓ Hl HΔ HT Ht Ht' Et ((HG & VP & VM) & VTP & VTM & VtP & VtM). split; [exact HS | split].
   - exact (VS_CTrm EP EM HG HΓ HΔ HΔ HT HT Hl (lequiv_refl _ _ Hl) VP VM VP VM VTP VTM).
-  - exact (VS_boxt EP EM HΓ Hl HΔ HT Ht Ht' E VP VM VTP VTM VtP VtM).
+  - exact (VS_boxt EP EM HΓ Hl HΔ HT Ht Ht' (static_code_eqtm (lle_refl lC) Et) VP VM VTP VTM VtP VtM).
 Qed.
 
 (** ** [letbox] *)

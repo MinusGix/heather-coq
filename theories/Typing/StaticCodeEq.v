@@ -112,20 +112,3 @@ Corollary decl_eqtm_dec_static {G i Γ t t' T l} : lle i lC -> [ G ; Γ ⊢[ i ]
   [ G ; Γ ⊢[ i ] t' : T @ l ] -> Dec ([ G ; Γ ⊢[ i ] t ≅ t' : T @ l ]).
 Proof. intros Hle Ht Ht'. exact (dec_iff (iff_sym (static_code_iff_tm Hle Ht Ht')) (tm_leq_dec t t')). Qed.
 
-(** ** The paper's [box] congruences (06:534): the [≡ₗ] premise is admissible *)
-
-Lemma eqtm_boxT' {G Γ Δ T T' l} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
-  [ G ; Δ ⊢[ lC ] T @ l ] -> [ G ; Δ ⊢[ lC ] T' @ l ] -> [ G ; Δ ⊢[ lC ] T ≅ T' @ l ] ->
-  [ G ; Γ ⊢[ lM ] boxT T ≅ boxT T' : tyCTyp Δ l @ lzero ].
-Proof.
-  intros HΓ Hl HΔ HT HT' E.
-  exact (eqtm_boxT _ _ _ _ _ _ HΓ Hl HΔ HT HT' E (static_code_eqty (lle_refl lC) E)).
-Qed.
-
-Lemma eqtm_boxt' {G Γ Δ t t' T l} : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
-  [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Δ ⊢[ lC ] t : T @ l ] -> [ G ; Δ ⊢[ lC ] t' : T @ l ] ->
-  [ G ; Δ ⊢[ lC ] t ≅ t' : T @ l ] -> [ G ; Γ ⊢[ lM ] boxt t ≅ boxt t' : tyCTrm Δ T l @ lzero ].
-Proof.
-  intros HΓ Hl HΔ HT Ht Ht' E.
-  exact (eqtm_boxt _ _ _ _ _ _ _ HΓ Hl HΔ HT Ht Ht' E (static_code_eqtm (lle_refl lC) E)).
-Qed.
