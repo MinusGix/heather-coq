@@ -432,6 +432,20 @@ Qed.
 
 End LRDef.
 
+Arguments pf_lvl {E G Γ F T T' l l1 l2 l3 l4 A B A' B'}.
+Arguments pf_l3 {E G Γ F T T' l l1 l2 l3 l4 A B A' B'}.
+Arguments pf_l4 {E G Γ F T T' l l1 l2 l3 l4 A B A' B'}.
+Arguments pf_w1 {E G Γ F T T' l l1 l2 l3 l4 A B A' B'}.
+Arguments pf_w2 {E G Γ F T T' l l1 l2 l3 l4 A B A' B'}.
+Arguments pf_red {E G Γ F T T' l l1 l2 l3 l4 A B A' B'}.
+Arguments pf_red' {E G Γ F T T' l l1 l2 l3 l4 A B A' B'}.
+Arguments pf_A {E G Γ F T T' l l1 l2 l3 l4 A B A' B'}.
+Arguments pf_A' {E G Γ F T T' l l1 l2 l3 l4 A B A' B'}.
+Arguments pf_B {E G Γ F T T' l l1 l2 l3 l4 A B A' B'}.
+Arguments pf_B' {E G Γ F T T' l l1 l2 l3 l4 A B A' B'}.
+Arguments pf_AA {E G Γ F T T' l l1 l2 l3 l4 A B A' B'}.
+Arguments pf_BB {E G Γ F T T' l l1 l2 l3 l4 A B A' B'}.
+
 (** Expose the facts of every [PolyFacts] hypothesis. *)
 Ltac open_poly :=
   repeat match goal with P : PolyFacts _ _ _ _ _ _ _ _ _ _ _ _ _ _ |- _ => destruct P end.

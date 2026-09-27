@@ -48,7 +48,7 @@ Proof.
   intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
   pose proof (eqty_wf_l ge_typeof H) as HP.
   destruct (LR_inv_pi HR (tyred_refl _ _ HP))
-    as (m3 & m4 & C' & D' & domR & codR & _ & H3 & H4 & _ & _ & HT' & _ & _ & _ & _ & HAA & HBB & _).
+    as (m3 & m4 & C' & D' & domR & codR & [_ H3 H4 _ _ _ HT' _ _ _ _ HAA HBB] & _).
   pose proof (tyred_refl _ _ (eqty_wf_r ge_typeof H)) as HT'0.
   pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' HT'0 (whnf_tyPi _ _ _ _) (whnf_tyPi _ _ _ _)) as Heq.
   injection Heq as <- <- <- <-. auto.
@@ -62,7 +62,7 @@ Proof.
   intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
   pose proof (eqty_wf_l ge_typeof H) as HP.
   destruct (LR_inv_sig HR (tyred_refl _ _ HP))
-    as (m3 & m4 & C' & D' & domR & codR & _ & H3 & H4 & _ & _ & HT' & _ & _ & _ & _ & HAA & HBB & _).
+    as (m3 & m4 & C' & D' & domR & codR & [_ H3 H4 _ _ _ HT' _ _ _ _ HAA HBB] & _).
   pose proof (tyred_refl _ _ (eqty_wf_r ge_typeof H)) as HT'0.
   pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' HT'0 (whnf_tySig _ _ _ _) (whnf_tySig _ _ _ _)) as Heq.
   injection Heq as <- <- <- <-. auto.
@@ -74,7 +74,7 @@ Lemma pi_red {G Γ l l1 l2 A B T} : [ G ; Γ ⊢g tyPi l1 l2 A B ≅ T @ l ] -> 
 Proof.
   intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
   pose proof (eqty_wf_l ge_typeof H) as HP.
-  destruct (LR_inv_pi HR (tyred_refl _ _ HP)) as (m3 & m4 & C' & D' & _ & _ & _ & _ & _ & _ & _ & HT' & _).
+  destruct (LR_inv_pi HR (tyred_refl _ _ HP)) as (m3 & m4 & C' & D' & _ & _ & [_ _ _ _ _ _ HT' _ _ _ _ _ _] & _).
   eauto.
 Qed.
 

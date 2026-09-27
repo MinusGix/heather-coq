@@ -105,6 +105,31 @@ Proof.
     exact (proj1 (Htr _ _ _ _ _ _ H1 _ _ (LR_lconv _ _ _ _ _ _ _ _ _ H2 (lequiv_sym _ _ _ Hl)))).
 Qed.
 
+(** ** The shared type-level data of a binder former, composed *)
+
+Lemma poly_trans {F G Γ T1 T2 T3 l l1 l2 l3 l4 k3 k4 A1 B1 A2 B2 A3 B3} :
+  PolyFacts G Γ F T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 ->
+  PolyFacts G Γ F T2 T3 l l3 l4 k3 k4 A2 B2 A3 B3 ->
+  PolyFacts G Γ F T1 T3 l l1 l2 k3 k4 A1 B1 A3 B3.
+Proof.
+  intros [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12]
+         [_ Hk3 Hk4 _ _ _ HT3 _ HA3 _ HB3 HA23 HB23].
+  assert (Hl13 : lequiv (gL G) l1 l3) by now apply lequiv_sym.
+  assert (Hl24 : lequiv (gL G) l2 l4) by now apply lequiv_sym.
+  assert (HA13 : [ G ; Γ ⊢ A1 ≈ A3 @ l1 ])
+    by (eapply geq_ty_trans; [exact HA12 | eapply geq_ty_lconv; [exact HA23 | exact Hl13]]).
+  assert (HB23' : [ G ; Γ ,, A1 @ l1 ⊢ B2 ≈ B3 @ l2 ]).
+  { eapply geq_ty_ctxconv; [| exact Hl3 | apply ext_wf_g; [exact HA1 | exact Hw1] |].
+    - eapply eqty_lconv; [apply eqty_sym, geq_ty_sound, HA12 | exact Hl3].
+    - eapply geq_ty_lconv; [exact HB23 | exact Hl24]. }
+  split; try eassumption.
+  - eapply lequiv_trans; eassumption.
+  - eapply lequiv_trans; eassumption.
+  - exact (lconv_ty HA3 Hl3).
+  - eapply (lconv_ty (l := l4)); [|exact Hl4]. eapply ctx_lvl_ty; [exact HA3 | exact Hl3 | exact HB3].
+  - eapply geq_ty_trans; eassumption.
+Qed.
+
 (** ** Transitivity *)
 
 Lemma LR_trans_step n : (forall m, m < n -> Ptrans m) -> Ptrans n.
@@ -113,12 +138,12 @@ Proof.
   induction H as [G Γ T1 T2 l R Hl HT1 HT2 HR
                  | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR
                  | G Γ T1 T2 l V1 V2 R HT1 HT2 HV HR
-                 | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12] domAd1 IHdom codAd1 IHcod HR
+                 | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R P1 domAd1 IHdom codAd1 IHcod HR
                  | G Γ T1 T2 l R Hj HM
                  | G Γ T1 T2 l l1 l2 U1 U2 instR R Hj Hl Hl2 Hw1 HT1 HT2 HU1 HU2 Hgeq instAd IHinst HR
                  | G Γ T1 T2 l Δ1 Δ2 l1 l2 l3 l4 U1 U2 instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HΔ HU1 HU2
                      Hgeq instAd IHinst HR
-                 | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12] domAd1 IHdom codAd1 IHcod HR];
+                 | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R P1 domAd1 IHdom codAd1 IHcod HR];
     intros T3 R23 H2.
   - (* Nat *)
     destruct (LR_inv_nat H2 HT2) as (_ & HT3 & HR2).
@@ -141,8 +166,11 @@ Proof.
     + intros t1 t2 t3 H12 H23. apply HR. apply HR in H12. apply HR2 in H23.
       eapply NeRel_trans; eauto.
   - (* Π *)
-    destruct (LR_inv_pi H2 HT2) as (k3 & k4 & A3 & B3 & domR2 & codR2 & Hk & Hk3 & Hk4 & _ & _ &
-      HT3 & HA2' & HA3 & HB2' & HB3 & HA23 & HB23 & domAd2 & codAd2 & HR2).
+    destruct (LR_inv_pi H2 (pf_red' P1)) as (k3 & k4 & A3 & B3 & domR2 & codR2 &
+      P2 & domAd2 & codAd2 & HR2).
+    pose proof (poly_trans P1 P2) as P13.
+    destruct P1 as [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12].
+    destruct P2 as [Hk Hk3 Hk4 _ _ _ HT3 HA2' HA3 HB2' HB3 HA23 HB23].
     assert (HΓ : [ G ; Γ ⊢g ]) by exact (ctx_of_ty HA1).
     assert (Hl13 : lequiv (gL G) l1 l3) by now apply lequiv_sym.
     assert (Hl24 : lequiv (gL G) l2 l4) by now apply lequiv_sym.
@@ -160,14 +188,7 @@ Proof.
                releq (codR1 ρ a a1 h1) (codR1 ρ a a2 h2))
       by (intros; eapply LR_irrel; [apply codAd1 | apply codAd1]).
     (* generic and declarative facts about the composite *)
-    assert (HA3' : [ G ; Γ ⊢g A3 @ l1 ]) by exact (lconv_ty HA3 Hl3).
-    assert (HA13 : [ G ; Γ ⊢ A1 ≈ A3 @ l1 ])
-      by (eapply geq_ty_trans; [exact HA12 | eapply geq_ty_lconv; [exact HA23 | exact Hl13]]).
-    assert (HB23' : [ G ; Γ ,, A1 @ l1 ⊢ B2 ≈ B3 @ l2 ]).
-    { eapply geq_ty_ctxconv; [| exact Hl3 | apply ext_wf_g; [exact HA1 | exact Hw1] |].
-      - eapply eqty_lconv; [apply eqty_sym, geq_ty_sound, HA12 | exact Hl3].
-      - eapply geq_ty_lconv; [exact HB23 | exact Hl24]. }
-    assert (HB13 : [ G ; Γ ,, A1 @ l1 ⊢ B1 ≈ B3 @ l2 ]) by (eapply geq_ty_trans; eassumption).
+    pose proof (pf_A' P13) as HA3'. pose proof (pf_AA P13) as HA13. pose proof (pf_BB P13) as HB13.
     assert (HP12 : [ G ; Γ ⊢ tyPi l1 l2 A1 B1 ≈ tyPi l3 l4 A2 B2 @ lmax l1 l2 ])
       by (apply geq_ty_pi; auto).
     assert (HP23 : [ G ; Γ ⊢ tyPi l3 l4 A2 B2 ≈ tyPi k3 k4 A3 B3 @ lmax l1 l2 ]).
@@ -181,11 +202,8 @@ Proof.
       - exact (PiRel_dir Hw1 HA1 HA2 HA3' HA12 HA13 HB12 HB13 HP Hd Hc t t').
       - exact (PiRel_dir Hw1 HA1 HA3' HA2 HA13 HA12 HB13 HB12 (eqty_sym _ _ _ _ _ _ HP) Hd Hc t t'). }
     split.
-    + eapply (LRpi n (LRbelow n) G Γ T1 T3 l l1 l2 k3 k4 A1 B1 A3 B3 domR1 codR1); [split|..].
+    + eapply (LRpi n (LRbelow n) G Γ T1 T3 l l1 l2 k3 k4 A1 B1 A3 B3 domR1 codR1); [exact P13|..].
       all: try eassumption.
-      * eapply lequiv_trans; eassumption.
-      * eapply lequiv_trans; eassumption.
-      * eapply (lconv_ty (l := l4)); [|exact Hl4]. eapply ctx_lvl_ty; [exact HA3 | exact Hl3 | exact HB3].
       * intros ρ a a' ha.
         pose proof (Hrefl ρ a a' ha) as haa.
         pose proof (H12 ρ a a' ha) as h2.
@@ -353,8 +371,11 @@ Proof.
                            (kw_lequiv ρ (lequiv_sym _ _ _ Hl4))))
                  _ _ _ (HK1 ρ A A' h) (HK2 ρ A' A' (Hdiag ρ A A' h))).
   - (* Σ *)
-    destruct (LR_inv_sig H2 HT2) as (k3 & k4 & A3 & B3 & domR2 & codR2 & Hk & Hk3 & Hk4 & _ & _ &
-      HT3 & HA2' & HA3 & HB2' & HB3 & HA23 & HB23 & domAd2 & codAd2 & HR2).
+    destruct (LR_inv_sig H2 (pf_red' P1)) as (k3 & k4 & A3 & B3 & domR2 & codR2 &
+      P2 & domAd2 & codAd2 & HR2).
+    pose proof (poly_trans P1 P2) as P13.
+    destruct P1 as [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12].
+    destruct P2 as [Hk Hk3 Hk4 _ _ _ HT3 HA2' HA3 HB2' HB3 HA23 HB23].
     assert (HΓ : [ G ; Γ ⊢g ]) by exact (ctx_of_ty HA1).
     assert (Hl13 : lequiv (gL G) l1 l3) by now apply lequiv_sym.
     assert (Hl24 : lequiv (gL G) l2 l4) by now apply lequiv_sym.
@@ -372,14 +393,7 @@ Proof.
                releq (codR1 ρ a a1 h1) (codR1 ρ a a2 h2))
       by (intros; eapply LR_irrel; [apply codAd1 | apply codAd1]).
     (* generic and declarative facts about the composite *)
-    assert (HA3' : [ G ; Γ ⊢g A3 @ l1 ]) by exact (lconv_ty HA3 Hl3).
-    assert (HA13 : [ G ; Γ ⊢ A1 ≈ A3 @ l1 ])
-      by (eapply geq_ty_trans; [exact HA12 | eapply geq_ty_lconv; [exact HA23 | exact Hl13]]).
-    assert (HB23' : [ G ; Γ ,, A1 @ l1 ⊢ B2 ≈ B3 @ l2 ]).
-    { eapply geq_ty_ctxconv; [| exact Hl3 | apply ext_wf_g; [exact HA1 | exact Hw1] |].
-      - eapply eqty_lconv; [apply eqty_sym, geq_ty_sound, HA12 | exact Hl3].
-      - eapply geq_ty_lconv; [exact HB23 | exact Hl24]. }
-    assert (HB13 : [ G ; Γ ,, A1 @ l1 ⊢ B1 ≈ B3 @ l2 ]) by (eapply geq_ty_trans; eassumption).
+    pose proof (pf_A' P13) as HA3'. pose proof (pf_AA P13) as HA13. pose proof (pf_BB P13) as HB13.
     assert (HP12 : [ G ; Γ ⊢ tySig l1 l2 A1 B1 ≈ tySig l3 l4 A2 B2 @ lmax l1 l2 ])
       by (apply geq_ty_sig; auto).
     assert (HP23 : [ G ; Γ ⊢ tySig l3 l4 A2 B2 ≈ tySig k3 k4 A3 B3 @ lmax l1 l2 ]).
@@ -393,11 +407,8 @@ Proof.
       - exact (SigRel_dir Hw1 HA1 HA2 HA3' HA12 HA13 HB12 HB13 HP Hd Hc t t').
       - exact (SigRel_dir Hw1 HA1 HA3' HA2 HA13 HA12 HB13 HB12 (eqty_sym _ _ _ _ _ _ HP) Hd Hc t t'). }
     split.
-    + eapply (LRsig n (LRbelow n) G Γ T1 T3 l l1 l2 k3 k4 A1 B1 A3 B3 domR1 codR1); [split|..].
+    + eapply (LRsig n (LRbelow n) G Γ T1 T3 l l1 l2 k3 k4 A1 B1 A3 B3 domR1 codR1); [exact P13|..].
       all: try eassumption.
-      * eapply lequiv_trans; eassumption.
-      * eapply lequiv_trans; eassumption.
-      * eapply (lconv_ty (l := l4)); [|exact Hl4]. eapply ctx_lvl_ty; [exact HA3 | exact Hl3 | exact HB3].
       * intros ρ a a' ha.
         pose proof (Hrefl ρ a a' ha) as haa.
         pose proof (H12 ρ a a' ha) as h2.

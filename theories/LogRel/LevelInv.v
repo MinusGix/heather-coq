@@ -358,8 +358,8 @@ Proof.
   - (* Π *)
     destruct (ty_leq_pi_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3))
       as (k3 & k4 & A3 & B3 & -> & E3 & E4 & EA & EB).
-    destruct (LR_inv_pi H3 HT3) as (k3' & k4' & A3' & B3' & domR3 & codR3 & _ & _ & _ & Hwk3 & Hwk4 &
-      HT3' & HA3 & _ & HB3 & _ & HA33 & HB33 & domAd3 & codAd3 & HR3).
+    destruct (LR_inv_pi H3 HT3) as (k3' & k4' & A3' & B3' & domR3 & codR3 &
+      [_ _ _ Hwk3 Hwk4 _ HT3' HA3 _ HB3 _ HA33 HB33] & domAd3 & codAd3 & HR3).
     assert (Heq : tyPi k3' k4' A3' B3' = tyPi k3 k4 A3 B3)
       by (eapply tyred_whnf_det; [exact HT3' | exact HT3 | eauto with whnf | eauto with whnf]).
     injection Heq as -> -> -> ->. clear HT3'.
@@ -599,8 +599,8 @@ Proof.
   - (* Σ *)
     destruct (ty_leq_sig_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3))
       as (k3 & k4 & A3 & B3 & -> & E3 & E4 & EA & EB).
-    destruct (LR_inv_sig H3 HT3) as (k3' & k4' & A3' & B3' & domR3 & codR3 & _ & _ & _ & Hwk3 & Hwk4 &
-      HT3' & HA3 & _ & HB3 & _ & HA33 & HB33 & domAd3 & codAd3 & HR3).
+    destruct (LR_inv_sig H3 HT3) as (k3' & k4' & A3' & B3' & domR3 & codR3 &
+      [_ _ _ Hwk3 Hwk4 _ HT3' HA3 _ HB3 _ HA33 HB33] & domAd3 & codAd3 & HR3).
     assert (Heq : tySig k3' k4' A3' B3' = tySig k3 k4 A3 B3)
       by (eapply tyred_whnf_det; [exact HT3' | exact HT3 | eauto with whnf | eauto with whnf]).
     injection Heq as -> -> -> ->. clear HT3'.

@@ -345,12 +345,7 @@ Qed.
 
 Lemma LR_inv_pi {m1 m2 C D l'} : [ G ; Γ ⊢g T ⤳* tyPi m1 m2 C D @ l' ] ->
   exists m3 m4 C' D' (domR : DomRel G Γ) (codR : CodRel G Γ domR),
-    lequiv (gL G) l (lmax m1 m2) /\ lequiv (gL G) m3 m1 /\ lequiv (gL G) m4 m2 /\
-    lwf (gL G) m1 /\ lwf (gL G) m2 /\
-    [ G ; Γ ⊢g T' ⤳* tyPi m3 m4 C' D' @ l ] /\
-    [ G ; Γ ⊢g C @ m1 ] /\ [ G ; Γ ⊢g C' @ m1 ] /\
-    [ G ; Γ ,, C @ m1 ⊢g D @ m2 ] /\ [ G ; Γ ,, C' @ m1 ⊢g D' @ m2 ] /\
-    [ G ; Γ ⊢ C ≈ C' @ m1 ] /\ [ G ; Γ ,, C @ m1 ⊢ D ≈ D' @ m2 ] /\
+    PolyFacts G Γ tyPi T T' l m1 m2 m3 m4 C D C' D' /\
     (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ C) (kty ρ C') m1 (domR ρ)) /\
     (forall (ρ : kwk G Γ) a a' (ha : domR ρ a a'),
         LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ D)[lsingle a] (ktyl ρ D')[lsingle a'] m2
@@ -368,17 +363,12 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
-  do 6 eexists; eauto 20.
+  do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
 
 Lemma LR_inv_sig {m1 m2 C D l'} : [ G ; Γ ⊢g T ⤳* tySig m1 m2 C D @ l' ] ->
   exists m3 m4 C' D' (domR : DomRel G Γ) (codR : CodRel G Γ domR),
-    lequiv (gL G) l (lmax m1 m2) /\ lequiv (gL G) m3 m1 /\ lequiv (gL G) m4 m2 /\
-    lwf (gL G) m1 /\ lwf (gL G) m2 /\
-    [ G ; Γ ⊢g T' ⤳* tySig m3 m4 C' D' @ l ] /\
-    [ G ; Γ ⊢g C @ m1 ] /\ [ G ; Γ ⊢g C' @ m1 ] /\
-    [ G ; Γ ,, C @ m1 ⊢g D @ m2 ] /\ [ G ; Γ ,, C' @ m1 ⊢g D' @ m2 ] /\
-    [ G ; Γ ⊢ C ≈ C' @ m1 ] /\ [ G ; Γ ,, C @ m1 ⊢ D ≈ D' @ m2 ] /\
+    PolyFacts G Γ tySig T T' l m1 m2 m3 m4 C D C' D' /\
     (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ C) (kty ρ C') m1 (domR ρ)) /\
     (forall (ρ : kwk G Γ) a a' (ha : domR ρ a a'),
         LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ D)[lsingle a] (ktyl ρ D')[lsingle a'] m2
@@ -396,7 +386,7 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
-  do 6 eexists; eauto 20.
+  do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
 
 Lemma LR_inv_CTyp {Δ k l'} : [ G ; Γ ⊢g T ⤳* tyCTyp Δ k @ l' ] -> lr_j = jM /\ ModRel G Γ T T' l R.
