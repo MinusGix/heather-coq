@@ -106,14 +106,12 @@ Proof.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR].
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR].
   - exists (NatRel (kw_G ρ) (kw_Δ ρ)). split.
     + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
       rewrite kty_tyNat in X, X'.
@@ -137,7 +135,7 @@ Proof.
     exists (PiRel (kw_G ρ) (kw_Δ ρ) l1 l2 l3 l4 (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B')
               domR' codR'). split.
     + eapply (LRpi n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ T) (kty ρ T') l l1 l2 l3 l4
-                (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B') domR' codR').
+                (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B') domR' codR'); [split|..].
       * exact (kw_lequiv ρ Hl).
       * exact (kw_lequiv ρ Hl3).
       * exact (kw_lequiv ρ Hl4).
@@ -242,7 +240,7 @@ Proof.
     exists (SigRel (kw_G ρ) (kw_Δ ρ) l1 l2 l3 l4 (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B')
               domR' codR'). split.
     + eapply (LRsig n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ T) (kty ρ T') l l1 l2 l3 l4
-                (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B') domR' codR').
+                (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B') domR' codR'); [split|..].
       * exact (kw_lequiv ρ Hl).
       * exact (kw_lequiv ρ Hl3).
       * exact (kw_lequiv ρ Hl4).

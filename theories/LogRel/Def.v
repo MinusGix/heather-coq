@@ -232,6 +232,29 @@ Definition SigRel (G : gctx) (Γ : ctx) (l1 l2 l3 l4 : lvl) (A B A' B' : ty)
       exists h : domR ρ (tmFst la lb A1 B1 (ktm ρ w)) (tmFst la' lb' A1' B1' (ktm ρ w')),
         codR ρ _ _ h (tmSnd la lb A1 B1 (ktm ρ w)) (tmSnd la' lb' A1' B1' (ktm ρ w')).
 
+(** ** The type-level data of a binder former
+
+    [Π] and [Σ] (and later formers of the same shape) share it: both sides
+    reduce to the former, the domains and families are well formed and
+    generically equal, and the levels agree. Only the term relation
+    differs between them. *)
+Record PolyFacts (G : gctx) (Γ : ctx) (F : lvl -> lvl -> ty -> ty -> ty) (T T' : ty)
+    (l l1 l2 l3 l4 : lvl) (A B A' B' : ty) : Prop := {
+  pf_lvl : lequiv (gL G) l (lmax l1 l2) ;
+  pf_l3 : lequiv (gL G) l3 l1 ;
+  pf_l4 : lequiv (gL G) l4 l2 ;
+  pf_w1 : lwf (gL G) l1 ;
+  pf_w2 : lwf (gL G) l2 ;
+  pf_red : [ G ; Γ ⊢g T ⤳* F l1 l2 A B @ l ] ;
+  pf_red' : [ G ; Γ ⊢g T' ⤳* F l3 l4 A' B' @ l ] ;
+  pf_A : [ G ; Γ ⊢g A @ l1 ] ;
+  pf_A' : [ G ; Γ ⊢g A' @ l1 ] ;
+  pf_B : [ G ; Γ ,, A @ l1 ⊢g B @ l2 ] ;
+  pf_B' : [ G ; Γ ,, A' @ l1 ⊢g B' @ l2 ] ;
+  pf_AA : [ G ; Γ ⊢ A ≈ A' @ l1 ] ;
+  pf_BB : [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ]
+}.
+
 (** ** Contextual types (07a:686–765), [j = M] only
 
     A weak-head normal form of [□] is a [box] of static code, related by
@@ -346,12 +369,7 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
     LR n rec G Γ T T' l R
 | LRpi G Γ T T' l l1 l2 l3 l4 A B A' B'
     (domR : DomRel G Γ) (codR : CodRel G Γ domR) R :
-    lequiv (gL G) l (lmax l1 l2) -> lequiv (gL G) l3 l1 -> lequiv (gL G) l4 l2 ->
-    lwf (gL G) l1 -> lwf (gL G) l2 ->
-    [ G ; Γ ⊢g T ⤳* tyPi l1 l2 A B @ l ] -> [ G ; Γ ⊢g T' ⤳* tyPi l3 l4 A' B' @ l ] ->
-    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢g A' @ l1 ] ->
-    [ G ; Γ ,, A @ l1 ⊢g B @ l2 ] -> [ G ; Γ ,, A' @ l1 ⊢g B' @ l2 ] ->
-    [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
+    PolyFacts G Γ tyPi T T' l l1 l2 l3 l4 A B A' B' ->
     (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ A) (kty ρ A') l1 (domR ρ)) ->
     (forall (ρ : kwk G Γ) a a' (ha : domR ρ a a'),
         LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ B)[lsingle a] (ktyl ρ B')[lsingle a'] l2
@@ -387,12 +405,7 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
     LR n rec G Γ T T' l R
 | LRsig G Γ T T' l l1 l2 l3 l4 A B A' B'
     (domR : DomRel G Γ) (codR : CodRel G Γ domR) R :
-    lequiv (gL G) l (lmax l1 l2) -> lequiv (gL G) l3 l1 -> lequiv (gL G) l4 l2 ->
-    lwf (gL G) l1 -> lwf (gL G) l2 ->
-    [ G ; Γ ⊢g T ⤳* tySig l1 l2 A B @ l ] -> [ G ; Γ ⊢g T' ⤳* tySig l3 l4 A' B' @ l ] ->
-    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢g A' @ l1 ] ->
-    [ G ; Γ ,, A @ l1 ⊢g B @ l2 ] -> [ G ; Γ ,, A' @ l1 ⊢g B' @ l2 ] ->
-    [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
+    PolyFacts G Γ tySig T T' l l1 l2 l3 l4 A B A' B' ->
     (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ A) (kty ρ A') l1 (domR ρ)) ->
     (forall (ρ : kwk G Γ) a a' (ha : domR ρ a a'),
         LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ B)[lsingle a] (ktyl ρ B')[lsingle a'] l2
@@ -418,6 +431,10 @@ Proof.
 Qed.
 
 End LRDef.
+
+(** Expose the facts of every [PolyFacts] hypothesis. *)
+Ltac open_poly :=
+  repeat match goal with P : PolyFacts _ _ _ _ _ _ _ _ _ _ _ _ _ _ |- _ => destruct P end.
 
 Arguments mkKwk {E G Γ}.
 Arguments kw_G {E G Γ}. Arguments kw_Δ {E G Γ}. Arguments kw_γ {E G Γ}. Arguments kw_r {E G Γ}.

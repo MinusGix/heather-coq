@@ -392,14 +392,12 @@ Proof.
   induction H as [G Γ T T' l R Hl HT HT' HR
                  | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                  | G Γ T T' l V V' R HT HT' HV HR
-                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                     HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
                  | G Γ T T' l R Hj HM
                  | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd IHinst HR
                  | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                      Hgeq instAd IHinst HR
-                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                     HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR];
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR];
     intros π πi Hp;
     pose proof (uperm_inv _ _ _ Hp) as Hpi;
     pose proof (proj1 Hp) as Hinv; pose proof (proj1 (proj2 Hp)) as Hinv';
@@ -479,7 +477,7 @@ Proof.
     exists (PiRel (Gp π G) Γ[pφ π]ᵤ k1 k2 (lvsubst l3 (pφ π)) (lvsubst l4 (pφ π)) Aπ Bπ A'π B'π domR' codR').
     split.
     + apply (LRpi n (LRbelow n) (Gp π G) Γ[pφ π]ᵤ T[pφ π]ᵤ T'[pφ π]ᵤ (lvsubst l (pφ π)) k1 k2
-               (lvsubst l3 (pφ π)) (lvsubst l4 (pφ π)) Aπ Bπ A'π B'π domR' codR').
+               (lvsubst l3 (pφ π)) (lvsubst l4 (pφ π)) Aπ Bπ A'π B'π domR' codR'); [split|..].
       * exact (pg_lequiv Hp Hl).
       * exact (pg_lequiv Hp Hl3).
       * exact (pg_lequiv Hp Hl4).
@@ -774,7 +772,7 @@ Proof.
     exists (SigRel (Gp π G) Γ[pφ π]ᵤ k1 k2 (lvsubst l3 (pφ π)) (lvsubst l4 (pφ π)) Aπ Bπ A'π B'π domR' codR').
     split.
     + apply (LRsig n (LRbelow n) (Gp π G) Γ[pφ π]ᵤ T[pφ π]ᵤ T'[pφ π]ᵤ (lvsubst l (pφ π)) k1 k2
-               (lvsubst l3 (pφ π)) (lvsubst l4 (pφ π)) Aπ Bπ A'π B'π domR' codR').
+               (lvsubst l3 (pφ π)) (lvsubst l4 (pφ π)) Aπ Bπ A'π B'π domR' codR'); [split|..].
       * exact (pg_lequiv Hp Hl).
       * exact (pg_lequiv Hp Hl3).
       * exact (pg_lequiv Hp Hl4).

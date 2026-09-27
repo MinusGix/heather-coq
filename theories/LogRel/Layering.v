@@ -103,13 +103,11 @@ Proof.
   intros Hrec G Γ T T' l R H.
   induction H as [G Γ T T' l R Hl HT HT' HR | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                  | G Γ T T' l V V' R HT HT' Hne HR
-                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl H3 H4 Hw1 Hw2 HT HT' HA HA' HB HB'
-                     HAA HBB Hdom IHdom Hcod IHcod HR
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl H3 H4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] Hdom IHdom Hcod IHcod HR
                  | G Γ T T' l R Hj HM
                  | G Γ T T' l l1 l2 T1 T1' instR R Hj
                  | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj
-                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl H3 H4 Hw1 Hw2 HT HT' HA HA' HB HB'
-                     HAA HBB Hdom IHdom Hcod IHcod HR ]; intros Hm Hm'.
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl H3 H4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] Hdom IHdom Hcod IHcod HR ]; intros Hm Hm'.
   - eapply LRnat; eassumption.
   - eapply LRU; try eassumption.
     intros t t'; rewrite (HR t t'); split; apply (URel_layer (n := n) Hn);
@@ -117,7 +115,7 @@ Proof.
   - eapply LRne; eassumption.
   - pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT) Hm) as [HmA HmB].
     pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT') Hm') as [HmA' HmB'].
-    eapply LRpi; try eassumption.
+    eapply LRpi; [split|..]; try eassumption.
     + intros ρ; apply IHdom; apply mltt_ren, mltt_gwa; assumption.
     + intros ρ a a' ha; apply IHcod; apply mltt_subst, mltt_ren, mltt_gwa; assumption.
   - destruct (ModRel_mltt HM Hm).
@@ -126,7 +124,7 @@ Proof.
   - match goal with HT : tyred _ _ _ T _ _ |- _ => exact (False_ind _ (mltt_red (tyred_red _ _ _ _ _ _ HT) Hm)) end.
   - pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT) Hm) as [HmA HmB].
     pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT') Hm') as [HmA' HmB'].
-    eapply LRsig; try eassumption.
+    eapply LRsig; [split|..]; try eassumption.
     + intros ρ; apply IHdom; apply mltt_ren, mltt_gwa; assumption.
     + intros ρ a a' ha; apply IHcod; apply mltt_subst, mltt_ren, mltt_gwa; assumption.
 Qed.

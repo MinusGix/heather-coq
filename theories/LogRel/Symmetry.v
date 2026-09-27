@@ -248,14 +248,12 @@ Proof.
   induction H as [G Γ T T' l R Hl HT HT' HR
                  | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                  | G Γ T T' l V V' R HT HT' HV HR
-                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                     HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
                  | G Γ T T' l R Hj HM
                  | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd IHinst HR
                  | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                      Hgeq instAd IHinst HR
-                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                     HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR].
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR].
   - eapply LRnat; eauto.
     intros t t'; unfold flipR; rewrite (HR t' t); apply NatRel_flip.
   - assert (Hm : lmeasure l2 = lmeasure l1) by (eapply lequiv_measure; eauto).
@@ -274,7 +272,7 @@ Proof.
     assert (HΓ : [ G ; Γ ⊢g ]) by exact (ctx_of_ty HA).
     assert (HA3 : [ G ; Γ ⊢g A @ l3 ]) by (eapply lconv_ty; [exact HA | now apply lequiv_sym]).
     assert (HA'3 : [ G ; Γ ⊢g A' @ l3 ]) by (eapply lconv_ty; [exact HA' | now apply lequiv_sym]).
-    eapply (LRpi n (LRbelow n) G Γ T' T l l3 l4 l1 l2 A' B' A B (flipD domR) (flipC codR)).
+    eapply (LRpi n (LRbelow n) G Γ T' T l l3 l4 l1 l2 A' B' A B (flipD domR) (flipC codR)); [split|..].
     + eapply lequiv_trans; [exact Hl | apply lequiv_sym, Hm].
     + now apply lequiv_sym.
     + now apply lequiv_sym.
@@ -337,7 +335,7 @@ Proof.
     assert (HΓ : [ G ; Γ ⊢g ]) by exact (ctx_of_ty HA).
     assert (HA3 : [ G ; Γ ⊢g A @ l3 ]) by (eapply lconv_ty; [exact HA | now apply lequiv_sym]).
     assert (HA'3 : [ G ; Γ ⊢g A' @ l3 ]) by (eapply lconv_ty; [exact HA' | now apply lequiv_sym]).
-    eapply (LRsig n (LRbelow n) G Γ T' T l l3 l4 l1 l2 A' B' A B (flipD domR) (flipC codR)).
+    eapply (LRsig n (LRbelow n) G Γ T' T l l3 l4 l1 l2 A' B' A B (flipD domR) (flipC codR)); [split|..].
     + eapply lequiv_trans; [exact Hl | apply lequiv_sym, Hm].
     + now apply lequiv_sym.
     + now apply lequiv_sym.

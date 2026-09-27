@@ -75,7 +75,7 @@ Proof.
   assert (Hm : lequiv (gL G) (lmax l3 l4) (lmax l l')) by now apply lequiv_max.
   push_subst.
   eapply (LRpi N (LRbelow N) G Δ _ _ (lmax l l') l l' l3 l4 A[d] B[llift d] A'[d'] B'[llift d']
-            (piDom Δ d d') (piCod Δ d d')).
+            (piDom Δ d d') (piCod Δ d d')); [split|..].
   - apply lequiv_refl; cbn; auto.
   - exact H3.
   - exact H4.

@@ -50,14 +50,12 @@ Proof.
   destruct 1 as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR].
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR].
   all: first
     [ solve [eexists; split; [exact HT | first [exact (whnf_ty_ne _ (gne_ty_whne_l HV)) | solve [eauto with whnf]]]]
     | match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
@@ -321,14 +319,12 @@ Proof.
   induction H as [G Γ T1 T2 l R Hl HT1 HT2 HR
                  | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR
                  | G Γ T1 T2 l V1 V2 R HT1 HT2 HV HR
-                 | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2
-                     HA1 HA2 HB1 HB2 HA12 HB12 domAd1 IHdom codAd1 IHcod HR
+                 | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12] domAd1 IHdom codAd1 IHcod HR
                  | G Γ T1 T2 l R Hj HM
                  | G Γ T1 T2 l l1 l2 U1 U2 instR R Hj Hl Hl2 Hw1 HT1 HT2 HU1 HU2 Hgeq instAd IHinst HR
                  | G Γ T1 T2 l Δ1 Δ2 l1 l2 l3 l4 U1 U2 instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HΔ HU1 HU2
                      Hgeq instAd IHinst HR
-                 | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2
-                     HA1 HA2 HB1 HB2 HA12 HB12 domAd1 IHdom codAd1 IHcod HR];
+                 | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12] domAd1 IHdom codAd1 IHcod HR];
     intros T3 R3 H3 ET; destruct (LR_whnf_l H3) as (W3 & HT3 & Hnw3).
   - (* Nat *)
     pose proof (ty_leq_nat_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3)) as ->.
@@ -419,7 +415,7 @@ Proof.
       - exact (PiRel_dir Hw1 HA1 HA2 HA3' HA12 HA13 HB12 HB13 HP23d Hd Hc t t').
       - exact (PiRel_dir Hw1 HA1 HA3' HA2 HA13 HA12 HB13 HB12 (eqty_sym _ _ _ _ _ _ HP23d) Hd Hc t t'). }
     split.
-    + apply (LRpi n (LRbelow n) G Γ T1 T3 l l1 l2 k3 k4 A1 B1 A3 B3 domR1 codR1 R).
+    + apply (LRpi n (LRbelow n) G Γ T1 T3 l l1 l2 k3 k4 A1 B1 A3 B3 domR1 codR1 R); [split|..].
       * exact Hl.
       * apply lequiv_sym, Q13.
       * apply lequiv_sym, Q24.
@@ -660,7 +656,7 @@ Proof.
       - exact (SigRel_dir Hw1 HA1 HA2 HA3' HA12 HA13 HB12 HB13 HP23d Hd Hc t t').
       - exact (SigRel_dir Hw1 HA1 HA3' HA2 HA13 HA12 HB13 HB12 (eqty_sym _ _ _ _ _ _ HP23d) Hd Hc t t'). }
     split.
-    + apply (LRsig n (LRbelow n) G Γ T1 T3 l l1 l2 k3 k4 A1 B1 A3 B3 domR1 codR1 R).
+    + apply (LRsig n (LRbelow n) G Γ T1 T3 l l1 l2 k3 k4 A1 B1 A3 B3 domR1 codR1 R); [split|..].
       * exact Hl.
       * apply lequiv_sym, Q13.
       * apply lequiv_sym, Q24.

@@ -113,14 +113,12 @@ Proof.
   induction H as [G Γ T1 T2 l R Hl HT1 HT2 HR
                  | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR
                  | G Γ T1 T2 l V1 V2 R HT1 HT2 HV HR
-                 | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2
-                     HA1 HA2 HB1 HB2 HA12 HB12 domAd1 IHdom codAd1 IHcod HR
+                 | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12] domAd1 IHdom codAd1 IHcod HR
                  | G Γ T1 T2 l R Hj HM
                  | G Γ T1 T2 l l1 l2 U1 U2 instR R Hj Hl Hl2 Hw1 HT1 HT2 HU1 HU2 Hgeq instAd IHinst HR
                  | G Γ T1 T2 l Δ1 Δ2 l1 l2 l3 l4 U1 U2 instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HΔ HU1 HU2
                      Hgeq instAd IHinst HR
-                 | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2
-                     HA1 HA2 HB1 HB2 HA12 HB12 domAd1 IHdom codAd1 IHcod HR];
+                 | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12] domAd1 IHdom codAd1 IHcod HR];
     intros T3 R23 H2.
   - (* Nat *)
     destruct (LR_inv_nat H2 HT2) as (_ & HT3 & HR2).
@@ -183,7 +181,7 @@ Proof.
       - exact (PiRel_dir Hw1 HA1 HA2 HA3' HA12 HA13 HB12 HB13 HP Hd Hc t t').
       - exact (PiRel_dir Hw1 HA1 HA3' HA2 HA13 HA12 HB13 HB12 (eqty_sym _ _ _ _ _ _ HP) Hd Hc t t'). }
     split.
-    + eapply (LRpi n (LRbelow n) G Γ T1 T3 l l1 l2 k3 k4 A1 B1 A3 B3 domR1 codR1).
+    + eapply (LRpi n (LRbelow n) G Γ T1 T3 l l1 l2 k3 k4 A1 B1 A3 B3 domR1 codR1); [split|..].
       all: try eassumption.
       * eapply lequiv_trans; eassumption.
       * eapply lequiv_trans; eassumption.
@@ -395,7 +393,7 @@ Proof.
       - exact (SigRel_dir Hw1 HA1 HA2 HA3' HA12 HA13 HB12 HB13 HP Hd Hc t t').
       - exact (SigRel_dir Hw1 HA1 HA3' HA2 HA13 HA12 HB13 HB12 (eqty_sym _ _ _ _ _ _ HP) Hd Hc t t'). }
     split.
-    + eapply (LRsig n (LRbelow n) G Γ T1 T3 l l1 l2 k3 k4 A1 B1 A3 B3 domR1 codR1).
+    + eapply (LRsig n (LRbelow n) G Γ T1 T3 l l1 l2 k3 k4 A1 B1 A3 B3 domR1 codR1); [split|..].
       all: try eassumption.
       * eapply lequiv_trans; eassumption.
       * eapply lequiv_trans; eassumption.

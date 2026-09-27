@@ -28,23 +28,23 @@ Proof. intros Hn Hm. apply URel_ext. now rewrite !LRbelow_spec. Qed.
 Theorem cumul_up n m G Γ T T' l R :
   n <= m -> LR n (LRbelow n) G Γ T T' l R -> LR m (LRbelow m) G Γ T T' l R.
 Proof.
-  intros Hnm H; induction H.
+  intros Hnm H; induction H; open_poly.
   - eapply LRnat; eauto.
   - match goal with HR : releq _ (URel _ _ _ _) |- _ => rewrite (URel_below n m) in HR by lia end.
     eapply LRU with (l1 := l1) (l2 := l2); eauto; lia.
   - eapply LRne; eauto.
-  - eapply LRpi; eauto.
+  - eapply LRpi; [split|..]; eauto.
   - eapply LRmod; eauto.
   - eapply LRcpi with (l1 := l1) (l2 := l2) (T1 := T1) (T1' := T1') (instR := instR); eassumption.
   - eapply LRtpi with (Δ1 := Δ1) (Δ1' := Δ1') (l1 := l1) (l2 := l2) (l3 := l3) (l4 := l4)
       (T1 := T1) (T1' := T1') (instR := instR); eassumption.
-  - eapply LRsig; eauto.
+  - eapply LRsig; [split|..]; eauto.
 Qed.
 
 Theorem cumul_down n m G Γ T T' l R :
   lmeasure l <= n -> LR m (LRbelow m) G Γ T T' l R -> LR n (LRbelow n) G Γ T T' l R.
 Proof.
-  intros Hl H; revert Hl; induction H; intros Hle.
+  intros Hl H; revert Hl; induction H; intros Hle; open_poly.
   - eapply LRnat; eauto.
   - assert (lmeasure l1 < n).
     { match goal with Hs : lequiv _ l (lsuc l1) |- _ =>
@@ -54,7 +54,7 @@ Proof.
   - eapply LRne; eauto.
   - match goal with Hs : lequiv _ l (lmax l1 l2) |- _ =>
       rewrite (lequiv_measure_eq _ _ _ Hs), lmeasure_max in Hle end.
-    eapply LRpi; eauto.
+    eapply LRpi; [split|..]; eauto.
     all: intros; match goal with IH : _ |- LR _ _ _ _ _ _ _ _ => eapply IH; lia end.
   - eapply LRmod; eauto.
   - match goal with Hs : lequiv _ l l1 |- _ => rewrite (lequiv_measure_eq _ _ _ Hs) in Hle end.
@@ -66,7 +66,7 @@ Proof.
     intros; match goal with IH : _ |- LR _ _ _ _ _ _ _ _ => eapply IH; lia end.
   - match goal with Hs : lequiv _ l (lmax l1 l2) |- _ =>
       rewrite (lequiv_measure_eq _ _ _ Hs), lmeasure_max in Hle end.
-    eapply LRsig; eauto.
+    eapply LRsig; [split|..]; eauto.
     all: intros; match goal with IH : _ |- LR _ _ _ _ _ _ _ _ => eapply IH; lia end.
 Qed.
 
@@ -140,25 +140,23 @@ Proof.
   destruct 1 as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
-                    HA HA' HB HB' HAA HBB domAd codAd HR];
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
     intros Hl'.
   - eapply LRnat; eauto using lequiv_trans, tyred_lconv.
   - eapply (LRU n rec G Γ T T' l' l1 l2); eauto using lequiv_trans, tyred_lconv.
   - eapply LRne; eauto using tyred_lconv, gne_ty_lconv.
     eapply releq_trans; [exact HR | now apply NeRel_lconv].
-  - eapply (LRpi n rec G Γ T T' l' l1 l2 l3 l4 A B A' B' domR codR);
+  - eapply (LRpi n rec G Γ T T' l' l1 l2 l3 l4 A B A' B' domR codR); [split|..];
       eauto using lequiv_trans, tyred_lconv.
   - apply LRmod; [exact Hj | exact (ModRel_lconv _ _ _ _ _ _ _ HM Hl')].
   - eapply (LRcpi n rec G Γ T T' l' l1 l2 T1 T1' instR); eauto using lequiv_trans, tyred_lconv.
   - eapply (LRtpi n rec G Γ T T' l' Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR); eauto using lequiv_trans, tyred_lconv.
-  - eapply (LRsig n rec G Γ T T' l' l1 l2 l3 l4 A B A' B' domR codR);
+  - eapply (LRsig n rec G Γ T T' l' l1 l2 l3 l4 A B A' B' domR codR); [split|..];
       eauto using lequiv_trans, tyred_lconv.
 Qed.
 
