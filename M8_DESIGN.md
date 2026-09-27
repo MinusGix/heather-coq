@@ -253,6 +253,17 @@ mathematics, measured against the Σ cost log.
   8.6 s → 12.2 s, dominated by the existing `push_gren` rewrite chain.
   Lesson: normalizing hypotheses per premise (1090 calls) cost 10 s;
   once per case, 70 calls.
+- **Finding for the other families.** Soundness, conversion, symmetry,
+  transitivity and decidability do not share this shape: a case inverts
+  both sides' typings, relates the annotations, moves the right premises
+  into the left context (`stab_*`, `cv_*`) and applies a declarative
+  congruence. What repeats there is not "every rule" but "every rule of a
+  shape": `Y_actnf_sig` is `Y_actnf_pi` with `pi` renamed, and likewise
+  the code rules, in all five families. The tool for that is a generic
+  lemma per shape (a binder type former, a binder code), taking the
+  former's inversion, congruence and algorithmic rule as arguments, with
+  Π and Σ (and later W) as one-line instances. It does not help
+  non-binder formers such as Unit, whose cases there are small anyway.
 
 ## Status
 
