@@ -431,6 +431,24 @@ Gaps and typos in P that a transcription must settle:
 - the `Π` β of `elim_Typ` concludes with `M_Trm` (should be `M_Typ`);
 - the `UΠ` formation premise is at layer "1" (should be M).
 
+#### K2. Reevaluation (user decision: do the two removals first)
+
+- Representation (1–6): keep. P over our syntax keeps canonical
+  substitutions (`dnfl`) on both sides; levels stay semantic in O, and
+  completeness of P's level axioms is a separate lemma (from `LevelDec`'s
+  normal form).
+- 12, the `≡ₗ` premise of the `box` congruence: remove. The metatheory
+  only transports it; its one consumer, the FT's `box` case, gets it from
+  `static_code_eq` (A3). The rule becomes the paper's.
+- 9, right-side premises of `eqty_tpi`, `eqtm_tlam`, `eqtm_letbox*`:
+  try to remove, if the lemma order allows global-binding conversion
+  (`gbind_*`) before the lemmas that consume them (presupposition).
+- 10, instance premises: keep. Admissible only through the FT; removing
+  them would need syntactic global functionality.
+- 7, 8, 11, 13: keep (logrel-coq style; presupposition derives them).
+- 14, `eqty_leq`/`eqtm_leq`: keep in O (used before `GConv`); C3 proves
+  them admissible in P.
+
 ### C4. An executable checker
 
 A fuel-based, `Type`-valued decision procedure for conversion (M6 H1)
