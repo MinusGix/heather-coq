@@ -20,6 +20,7 @@ theories/Typing/Context.v
 theories/Typing/RecSpec.v
 theories/Typing/Algorithmic.v
 theories/Typing/Declarative.v
+theories/Typing/Paper.v
 theories/Typing/RecLaws.v
 theories/Typing/USubstitution.v
 theories/Typing/RecWf.v
