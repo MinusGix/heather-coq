@@ -53,9 +53,9 @@ Recorded as a departure from Heather until M8d.
   Lives at `lmax l l'`.
 - `tmSig (l l' : lvl) (s t : tm)`: its code, `t` binds one local; decodes
   as `El (l⊔l') (Σ s t) ≅ Σ (El l s) (El l' t)`.
-- `pair (l l' : lvl) (A B : ty) (a b : tm)`: `B` binds one local.
-- `fst (l l' : lvl) (A B : ty) (p : tm)` and `snd (l l' : lvl) (A B : ty)
-  (p : tm)`: `B` binds one local.
+- `tmPair (l l' : lvl) (A B : ty) (a b : tm)`: `B` binds one local.
+- `tmFst (l l' : lvl) (A B : ty) (p : tm)` and `tmSnd (l l' : lvl) (A B : ty)
+  (p : tm)`: `B` binds one local. (Below, `pair`/`fst`/`snd` for short.)
 
 Annotations are sub-structure, as the recursor branches of M8d need
 (Heather: "fully annotated … so they infer"). Reduction ignores them
@@ -120,6 +120,34 @@ weakening immediate.
 `Validity/Sigma.v`: formation, code and decoding, pair, projections, β by
 anti-reduction, η from the projections' β at every instance.
 
+### I8. Algorithmic conversion
+
+- Types: `actnf_sig`, structural like `actnf_pi`; codes `actmnf_code_sig`.
+- Terms at a Σ type: `actmnf_sig_eta` compares `fst l l' A B w` at `A`
+  and `snd l l' A B w` at `B[fst l l' A B w]`, the annotations read off
+  the type (as Π's η takes them).
+- Neutral projections: `actmne_fst`/`actmne_snd` ignore their own
+  annotations (as `actmne_app` does) and read the result type off the
+  scrutinee's inferred `Σ m m' A0 B0`. For `snd` this is
+  `B0[fst m m' A0 B0 ν]`, the left scrutinee's first projection at the
+  *inferred* annotations, so the result type does not depend on the
+  node's annotations either.
+
+**Annotation changes (H10 revisited).** M6 closed the algorithm under
+changing the annotations of the head spine (`spa`) by a syntactic
+induction at a fixed type. That fails with Σ: the type of a second
+projection mentions its scrutinee, whose spine annotations `spa` changes
+(`snd (app w↑ …)` at `D[fst (app w↑ …)]`, when Π-η meets Σ-η). So `spa`
+now lives in `AlgConv` as a *typed* relation: each changed node carries
+the equations of its annotations (as the congruence rules need them), it
+extends through `tmFst`/`tmSnd`, and the conversion lemma carries it on
+its term motives (`C_tm` … `C_nee` take targets `x x'` with `spa t x`,
+`spa t' x'`). The types then move up to declarative equality, which the
+conversion lemma already allows, using `spa_eq` (related typed terms are
+equal). The old statement is the corollary `ac_conv_all` (targets =
+sources). Weakening lemmas `spa_wk`, `spa_uwk`, `spa_gext` serve the four
+η rules.
+
 ## Order of work (M8a)
 
 1. Syntax: constructors, every operation and law, `≡ₗ`, normal forms,
@@ -135,8 +163,34 @@ Record per step: the files touched and why, for M8b.
 
 ## Cost log (for M8b)
 
-(filled in as the steps land)
+M8a Σ, from the design commit to the finished algorithmic side: 56 files,
+about 4000 lines added, 330 changed.
+
+| Area | Files | Lines added |
+|---|---|---|
+| Syntax (operations, normal forms, reduction, commutations) | 7 | 117 |
+| Typing (rules, weakenings, substitutions, presupposition, inversion, static code, algorithmic rules and closure) | 16 | 815 |
+| LogRel (the Σ case of every relation property) | 12 | 773 |
+| Validity (semantic rules `Sigma.v` 863, FTs, consequences, algorithmic soundness, conversion, PER, lift, instance, decidability, type checking) | 21 | 2308 |
+
+Observations:
+- Most per-former cost is *boilerplate replicated per judgment family*:
+  each of the five structural families of `AlgStruct` (W/G/U/L), and each
+  of soundness, conversion, symmetry, transitivity and decidability, wants
+  one lemma per algorithmic rule, 5 rules for Σ. They follow the Π
+  templates almost verbatim (renaming `pi` to `sig`), which is what a
+  generic treatment should remove.
+- Positional intro patterns over the relation's constructors broke in
+  every `LR` induction (scripted with `lrpat.py`); appended cases and
+  dispatch lists kept the rest stable.
+- The genuinely new mathematics was small: `SigRel` and its Kripke
+  shape, `Sigma.v`, and the typed `spa` (I8).
 
 ## Status
 
-Design written; step 1 in progress.
+M8a (Σ) complete: syntax, typing and metatheory, generic laws and both
+instances, the relation, semantic rules, FTs at P and M, injectivity,
+canonicity, preservation, type checking, algorithmic conversion with
+soundness, conversion, PER, lift, completeness and decidability. No
+admits; `consistency`, `tyd`/`ckd`, `ac_tm_dec` and
+`decl_eqtm_dec_any` are closed. Next: M8b (genericity direction).

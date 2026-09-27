@@ -78,6 +78,52 @@ Proof.
                    | exact (whnf_ne _ Hn) | exact (whnf_ne _ Hn') | exact (actmnf_eta _ _ _ _ _ _ _ _ Xb)].
 Qed.
 
+(** [Σ]: η, the projections lifted at the components; the second's type
+    is the family at the first projection. *)
+Lemma lift_sig {G i Γ T l l1 l2 A B} : compt i -> [ G ; Γ ⊢[ i ] T ⤳* tySig l1 l2 A B @ l ] ->
+  lequiv (gL G) l (lmax l1 l2) -> lwf (gL G) l1 -> lwf (gL G) l2 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> Lift i G Γ A l1 ->
+  (forall p, whne p -> [ G ; Γ ⊢[ i ] p : tySig l1 l2 A B @ lmax l1 l2 ] ->
+     Lift i G Γ B[lsingle (tmFst l1 l2 A B p)] l2) ->
+  Lift i G Γ T l.
+Proof.
+  intros Hc HT Hl W1 W2 HA HB IHA IHB t t' T0 Ht Ht' D ET.
+  pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (lift_inferred Hc HT D ET) as (W0 & Xν & Hw0 & EW0).
+  destruct (head_sig W0 (eq_sym (decl_head_c Hc EW0 (whnf_tySig _ _ _ _) Hw0))) as (m & m' & A0 & B0 & ->).
+  destruct (sig_inj_c Hc EW0) as (Em & Em' & EA & EB).
+  pose proof (tyred_eq _ _ _ _ _ _ HT) as EP.
+  assert (Ht1 : [ G ; Γ ⊢[ i ] t : tySig l1 l2 A B @ lmax l1 l2 ])
+    by exact (retype Hi Ht (lequiv_sym _ _ _ Hl) (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ EP)
+                                                   (lequiv_sym _ _ _ Hl))).
+  assert (Ht1' : [ G ; Γ ⊢[ i ] t' : tySig l1 l2 A B @ lmax l1 l2 ])
+    by exact (retype Hi Ht' (lequiv_sym _ _ _ Hl) (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ EP)
+                                                    (lequiv_sym _ _ _ Hl))).
+  destruct (ac_tmne_whne D) as [Hn Hn'].
+  (* the first projections *)
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hc W1 W2 HA HB Ht1) as Hf.
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hc W1 W2 HA HB Ht1') as Hf'.
+  assert (D1 : ac_tmne G Γ (tmFst l1 l2 A B t) (tmFst l1 l2 A B t') A0) by (eapply actmne_fst; exact Xν).
+  pose proof (IHA _ _ _ Hf Hf' D1 EA) as X1.
+  (* the second projections, at the first's instance *)
+  destruct (ac_nee_sound' Xν Hc Ht1 Ht1') as (_ & _ & Ett).
+  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ Hc (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HA
+                (eqty_refl _ _ _ _ _ HA) (eqty_refl _ _ _ _ _ HB) Ett) as Ef.
+  pose proof (wf_snd _ _ _ _ _ _ _ _ Hc W1 W2 HA HB Ht1) as Hs.
+  pose proof (wf_snd _ _ _ _ _ _ _ _ Hc W1 W2 HA HB Ht1') as Hs'.
+  pose proof (sig_fam_eq Hi HB (eqty_refl _ _ _ _ _ HB) Ef Hf Hf') as EBs.
+  assert (Hs1 : [ G ; Γ ⊢[ i ] tmSnd l1 l2 A B t' : B[lsingle (tmFst l1 l2 A B t)] @ l2 ])
+    by (eapply wf_conv; [exact Hs' | rewrite Hi; exact EBs]).
+  assert (D2 : ac_tmne G Γ (tmSnd l1 l2 A B t) (tmSnd l1 l2 A B t') B0[lsingle (tmFst m m' A0 B0 t)])
+    by (eapply actmne_snd; exact Xν).
+  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ Hc (lequiv_sym _ _ _ Em) (lequiv_sym _ _ _ Em') HA EA EB
+                (eqtm_refl _ _ _ _ _ _ Ht1)) as Ef0.
+  pose proof (sig_fam_eq Hi HB EB Ef0 Hf (eqtm_wf_r Hi Ef0)) as E2.
+  pose proof (IHB t Hn Ht1 _ _ _ Hs Hs1 D2 E2) as X2.
+  eapply actm_red; [exact (tyred_red _ _ _ _ _ _ HT) | exact (whnf_tySig _ _ _ _) | constructor | constructor
+                   | exact (whnf_ne _ Hn) | exact (whnf_ne _ Hn') | apply actmnf_sig_eta; [exact X1 | exact X2]].
+Qed.
+
 (** ** The weakenings of the inferred function types *)
 
 Lemma gwk1_tmnee {G D Γ ν ν' W} : ac_tmnee G Γ ν ν' W -> ac_tmnee (gext G D) Γ⟪S⟫ ν⟪S⟫ ν'⟪S⟫ W⟪S⟫.
@@ -202,6 +248,19 @@ Proof.
     eapply eqtm_conv; [exact (eqtm_refl _ _ _ _ _ _ Hv) | rewrite Hty; exact (eqty_sym _ _ _ _ _ _ EA1)].
 Qed.
 
+(** A neutral of the domain, reflected into its relation. *)
+Lemma ne_dom {E : GenericEq} {EL : GenericEqLaws} {LP : LRParams} {VL : VPLaws lr_vp} {VN : VPNe}
+  {i Hi n G Γ A A' l1 R a} : E = DeclEq i Hi ->
+  @LR E LP n (@LRbelow E LP n) G Γ A A' l1 R -> whne a ->
+  [ G ; Γ ⊢[ i ] a : A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> R a a.
+Proof.
+  intros -> HR Hn Ha EA. pose proof (compt_typeof_self _ Hi) as Hty.
+  apply (LR_neutral _ _ _ _ _ _ _ HR).
+  - refine (conj Hn (conj Hn _)). exact (eqtm_refl _ _ _ _ _ _ Ha).
+  - refine (conj Hn (conj Hn _)).
+    eapply eqtm_conv; [exact (eqtm_refl _ _ _ _ _ _ Ha) | rewrite Hty; exact (eqty_sym _ _ _ _ _ _ EA)].
+Qed.
+
 Lemma LR_lift_D n G Γ T T' l R : @LR DEP LR_P n (@LRbelow DEP LR_P n) G Γ T T' l R -> Lift lD G Γ T l.
 Proof.
   induction 1 as [G Γ T T' l R Hl HT HT' HR
@@ -231,9 +290,19 @@ Proof.
     unfold ktyl, kw_loc in XB; cbn [kw_G kw_Δ kw_γ kw_r gwa] in XB. change (wk_ren wk1) with ↑ in XB.
     rewrite liftshift_single_var_ty in XB by exact (wf_ty_nf HB).
     exact (lift_pi compt_D HT Hl Hw1 Hw2 HA HB XA XB).
-  - (* M8 TEMPORARY: Σ, until the algorithm has Σ rules *)
-    admit.
-Admitted.
+  - assert (HΓ : [ G ; Γ ⊢[ lD ] ]) by exact (ctx_of_wf_ty (i := lD) eq_refl HA).
+    pose proof (IHdom (kw_loc (E := DEP) wk_id (wkwf_id Γ) HΓ)) as XA.
+    pose proof (domAd (kw_loc (E := DEP) wk_id (wkwf_id Γ) HΓ)) as HRA.
+    unfold kty, kw_loc in XA, HRA; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in XA, HRA.
+    rewrite ren_id_ty in XA by exact (wf_ty_nf HA).
+    rewrite !ren_id_ty in HRA by first [exact (wf_ty_nf HA) | exact (wf_ty_nf HA')].
+    apply (lift_sig compt_D HT Hl Hw1 Hw2 HA HB XA). intros p Hp Hpt.
+    pose proof (wf_fst _ _ _ _ _ _ _ _ compt_D Hw1 Hw2 HA HB Hpt) as Hf.
+    pose proof (ne_dom (i := lD) (Hi := compt_D) eq_refl HRA (whne_fst _ _ _ _ _ Hp) Hf HAA) as ha.
+    pose proof (IHcod (kw_loc (E := DEP) wk_id (wkwf_id Γ) HΓ) _ _ ha) as XB.
+    unfold ktyl, kw_loc in XB; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in XB.
+    rewrite ren_lift_id_ty in XB by exact (wf_ty_nf HB). exact XB.
+Qed.
 
 (** The identity substitution is related to itself. *)
 Lemma lift_D {G Γ T l} : [ G ; Γ ⊢[ lD ] T @ l ] -> Lift lD G Γ T l.
@@ -305,9 +374,19 @@ Proof.
     rewrite kbody_gstep, (eta_t_ty HT1) in X. cbn [kw_gstep kw_G kw_Δ gwa] in X.
     change (Γ⟪gwk_step gwk_id⟫) with Γ⟪S⟫ in X.
     exact (lift_tpi (@ac_sub_id) HT Hl Hw1 Hw2 HΔ1 HT1 X).
-  - (* M8 TEMPORARY: Σ, until the algorithm has Σ rules *)
-    admit.
-Admitted.
+  - assert (HΓ : [ G ; Γ ⊢[ lM ] ]) by exact (ctx_of_wf_ty (i := lM) eq_refl HA).
+    pose proof (IHdom (kw_loc (E := DEM) wk_id (wkwf_id Γ) HΓ)) as XA.
+    pose proof (domAd (kw_loc (E := DEM) wk_id (wkwf_id Γ) HΓ)) as HRA.
+    unfold kty, kw_loc in XA, HRA; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in XA, HRA.
+    rewrite ren_id_ty in XA by exact (wf_ty_nf HA).
+    rewrite !ren_id_ty in HRA by first [exact (wf_ty_nf HA) | exact (wf_ty_nf HA')].
+    apply (lift_sig compt_M HT Hl Hw1 Hw2 HA HB XA). intros p Hp Hpt.
+    pose proof (wf_fst _ _ _ _ _ _ _ _ compt_M Hw1 Hw2 HA HB Hpt) as Hf.
+    pose proof (ne_dom (i := lM) (Hi := compt_M) eq_refl HRA (whne_fst _ _ _ _ _ Hp) Hf HAA) as ha.
+    pose proof (IHcod (kw_loc (E := DEM) wk_id (wkwf_id Γ) HΓ) _ _ ha) as XB.
+    unfold ktyl, kw_loc in XB; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in XB.
+    rewrite ren_lift_id_ty in XB by exact (wf_ty_nf HB). exact XB.
+Qed.
 
 (** At M: at a well-formed level by reducibility, at ω through [UΠ]. *)
 Lemma lift_M_lwf {G Γ T l} : [ G ; Γ ⊢[ lM ] T @ l ] -> lwf (gL G) l -> Lift lM G Γ T l.

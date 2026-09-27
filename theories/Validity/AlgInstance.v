@@ -157,6 +157,70 @@ Proof.
   exact (eqty_single Hty EB0 Hs).
 Qed.
 
+(** [Σ] η: the terms reduce to whnfs, the projections along; the second
+    projections' type moves to the whnf's first projection. *)
+Lemma alg_sig_ext {G Γ l l' A B t t'} : lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ⊢[ i ] t : tySig l l' A B @ lmax l l' ] -> [ G ; Γ ⊢[ i ] t' : tySig l l' A B @ lmax l l' ] ->
+  ac_tm G Γ (tmFst l l' A B t) (tmFst l l' A B t') A ->
+  ac_tm G Γ (tmSnd l l' A B t) (tmSnd l l' A B t') B[lsingle (tmFst l l' A B t)] ->
+  ac_tm G Γ t t' (tySig l l' A B).
+Proof.
+  intros W1 W2 HA HB Ht Ht' D1 D2.
+  destruct (tgt_whnf_tm Ht) as (w & Hr & Hw). destruct (tgt_whnf_tm Ht') as (w' & Hr' & Hw').
+  pose proof (red_tm_sound Hi Ht Hr Hw) as Ew. pose proof (red_tm_sound Hi Ht' Hr' Hw') as Ew'.
+  pose proof (eqtm_wf_r Hty Ew) as Hwt. pose proof (eqtm_wf_r Hty Ew') as Hwt'.
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hi W1 W2 HA HB Ht) as Hf.
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hi W1 W2 HA HB Ht') as Hf'.
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hi W1 W2 HA HB Hwt) as Hfw.
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hi W1 W2 HA HB Hwt') as Hfw'.
+  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ Hi (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HA
+                (eqty_refl _ _ _ _ _ HA) (eqty_refl _ _ _ _ _ HB) Ew) as Efw.
+  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ Hi (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HA
+                (eqty_refl _ _ _ _ _ HA) (eqty_refl _ _ _ _ _ HB) Ew') as Efw'.
+  pose proof (ac_tm_sound Hi D1 Hf Hf') as E1.
+  pose proof (sig_fam_eq Hty HB (eqty_refl _ _ _ _ _ HB) Efw Hf Hfw) as EB.
+  pose proof (sig_fam_eq Hty HB (eqty_refl _ _ _ _ _ HB) (eqtm_trans _ _ _ _ _ _ _ _ E1 Efw') Hf Hfw') as EB'.
+  assert (Hs : [ G ; Γ ⊢[ i ] tmSnd l l' A B w : B[lsingle (tmFst l l' A B t)] @ l' ])
+    by (eapply wf_conv; [exact (wf_snd _ _ _ _ _ _ _ _ Hi W1 W2 HA HB Hwt) | rewrite Hty; exact EB]).
+  assert (Hs' : [ G ; Γ ⊢[ i ] tmSnd l l' A B w' : B[lsingle (tmFst l l' A B t)] @ l' ])
+    by (eapply wf_conv; [exact (wf_snd _ _ _ _ _ _ _ _ Hi W1 W2 HA HB Hwt') | rewrite Hty; exact EB']).
+  pose proof (ctx_of_wf_ty Hty HA) as HΓ.
+  eapply actm_red; [constructor | exact (whnf_tySig _ _ _ _) | exact Hr | exact Hr' | exact Hw | exact Hw' |].
+  apply actmnf_sig_eta.
+  - eapply ac_tm_red_r; [eapply ac_tm_red_l; [exact D1 |] |]; apply reds_fst; assumption.
+  - assert (D2' : ac_tm G Γ (tmSnd l l' A B w) (tmSnd l l' A B w') B[lsingle (tmFst l l' A B t)])
+      by (eapply ac_tm_red_r; [eapply ac_tm_red_l; [exact D2 |] |]; apply reds_snd; assumption).
+    exact (cv_tm (ctx_glob _ _ _ HΓ) Hi D2' (eqc_refl _ _ _ HΓ) Hs Hs' (eqty_sym _ _ _ _ _ _ EB)).
+Qed.
+
+Lemma alg_fst {G Γ l1 l2 l3 l4 A A' B B' ν ν' T0} :
+  [ G ; Γ ⊢[ i ] tySig l1 l2 A B ≅ T0 @ lmax l1 l2 ] -> ac_tmne G Γ ν ν' T0 ->
+  exists T1, ac_tmne G Γ (tmFst l1 l2 A B ν) (tmFst l3 l4 A' B' ν') T1 /\ [ G ; Γ ⊢[ i ] A ≅ T1 @ l1 ].
+Proof.
+  intros ET Dν. destruct (ne_nee Dν ET) as (W0 & Xν & Hw0 & EW).
+  destruct (head_sig W0 (eq_sym (decl_head_c Hi EW (whnf_tySig _ _ _ _) Hw0))) as (m & m' & A0 & B0 & ->).
+  destruct (sig_inj_c Hi EW) as (_ & _ & EA0 & _).
+  exists A0. split; [eapply actmne_fst; exact Xν | exact EA0].
+Qed.
+
+Lemma alg_snd {G Γ l1 l2 l3 l4 A A' B B' ν ν' T0} :
+  [ G ; Γ ⊢[ i ] tySig l1 l2 A B ≅ T0 @ lmax l1 l2 ] -> ac_tmne G Γ ν ν' T0 ->
+  [ G ; Γ ⊢[ i ] ν : tySig l1 l2 A B @ lmax l1 l2 ] ->
+  exists T1, ac_tmne G Γ (tmSnd l1 l2 A B ν) (tmSnd l3 l4 A' B' ν') T1 /\
+    [ G ; Γ ⊢[ i ] B[lsingle (tmFst l1 l2 A B ν)] ≅ T1 @ l2 ].
+Proof.
+  intros ET Dν Hν. destruct (ne_nee Dν ET) as (W0 & Xν & Hw0 & EW).
+  destruct (head_sig W0 (eq_sym (decl_head_c Hi EW (whnf_tySig _ _ _ _) Hw0))) as (m & m' & A0 & B0 & ->).
+  destruct (sig_inj_c Hi EW) as (Em1 & Em2 & EA0 & EB0).
+  pose proof (eqty_wf_l Hty EA0) as HA. pose proof (eqty_wf_l Hty EB0) as HB.
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hi (lequiv_wf_r _ _ _ Em1) (lequiv_wf_r _ _ _ Em2) HA HB Hν) as Hf.
+  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ Hi (lequiv_sym _ _ _ Em1) (lequiv_sym _ _ _ Em2) HA EA0 EB0
+                (eqtm_refl _ _ _ _ _ _ Hν)) as Ef0.
+  exists B0[lsingle (tmFst m m' A0 B0 ν)]. split; [eapply actmne_snd; exact Xν |].
+  exact (sig_fam_eq Hty HB EB0 Ef0 Hf (eqtm_wf_r Hty Ef0)).
+Qed.
+
 (** The substitutions of global variables. *)
 Lemma alg_lsub {G Γ d d' Δ} : @geq_lsub AlgEq G Γ d d' Δ -> @geq_lsub DE G Γ d d' Δ /\ ac_sub G Γ d d' Δ.
 Proof.
@@ -329,9 +393,25 @@ Proof.
     pose proof (@gne_tm_gvar DE DEL _ _ _ _ _ _ _ _ _ Hin Hle Hd) as X.
     refine (conj X (ex_intro _ T[d] (conj (actmne_gvar _ _ _ _ _ _ _ _ _ Hin Hs) _))).
     destruct X as (_ & _ & EX). exact (eqty_refl _ _ _ _ _ (eqtm_wf_ty Hty EX)).
-  (* M8 TEMPORARY: the Σ laws are admitted until the algorithm has Σ rules *)
-  all: admit.
-Admitted.
+  (* dependent pairs (M8) *)
+  - intros * H13 H24 HA (EA & DA) (EB & DB).
+    refine (conj (@geq_ty_sig DE DEL _ _ _ _ _ _ _ _ _ _ H13 H24 HA EA EB) _).
+    eapply act_red; [constructor | constructor | apply whnf_tySig | apply whnf_tySig |].
+    exact (actnf_sig _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24) DA DB).
+  - intros * H13 H24 Hs (Es & Ds) (Et & Dt).
+    refine (conj (@geq_tm_code_sig DE DEL _ _ _ _ _ _ _ _ _ _ H13 H24 Hs Es Et) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmSig | apply whnf_tmSig |].
+    exact (actmnf_code_sig _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24) Ds Dt).
+  - intros * Hl Hl' HA HB Hp Hp' (E1 & D1) (E2 & D2).
+    exact (conj (@geq_tm_sig_ext DE DEL _ _ _ _ _ _ _ _ Hl Hl' HA HB Hp Hp' E1 E2)
+                (alg_sig_ext Hl Hl' HA HB Hp Hp' D1 D2)).
+  - intros * H13 H24 HA (EA & DA) (EB & DB) ((Hn & Hn' & Eν) & T0 & Dν & ETν).
+    exact (conj (@gne_tm_fst DE DEL _ _ _ _ _ _ _ _ _ _ _ _ H13 H24 HA EA EB (conj Hn (conj Hn' Eν)))
+                (alg_fst ETν Dν)).
+  - intros * H13 H24 HA (EA & DA) (EB & DB) ((Hn & Hn' & Eν) & T0 & Dν & ETν).
+    exact (conj (@gne_tm_snd DE DEL _ _ _ _ _ _ _ _ _ _ _ _ H13 H24 HA EA EB (conj Hn (conj Hn' Eν)))
+                (alg_snd ETν Dν (eqtm_wf_l Hty Eν))).
+Qed.
 
 End Alg.
 
