@@ -207,6 +207,31 @@ Definition PiRel (G : gctx) (Γ : ctx) (l1 l2 l3 l4 : lvl) (A B A' B' : ty)
       [ kw_G ρ ; kw_Δ ρ ,, kty ρ A' @ l1 ⊢ ktyl ρ B' ≈ B1' @ l2 ] ->
       codR ρ a a' ha (app (ktm ρ w) la lb A1 B1 a) (app (ktm ρ w') la' lb' A1' B1' a').
 
+(** ** Dependent pairs (M8_DESIGN.md I6)
+
+    Related pairs reduce to related weak-head normal forms whose
+    projections are related, in every weakening and for every choice of
+    (equivalent) annotations on the projections: the first projections by
+    the domain relation, the second ones by the codomain relation at that
+    relation's proof. *)
+Definition SigRel (G : gctx) (Γ : ctx) (l1 l2 l3 l4 : lvl) (A B A' B' : ty)
+    (domR : DomRel G Γ) (codR : CodRel G Γ domR) : tm -> tm -> Prop :=
+  fun t t' => exists w w',
+    [ G ; Γ ⊢g t ⤳* w : tySig l1 l2 A B @ lmax l1 l2 ] /\
+    [ G ; Γ ⊢g t' ⤳* w' : tySig l3 l4 A' B' @ lmax l1 l2 ] /\
+    whnf w /\ whnf w' /\
+    [ G ; Γ ⊢ w ≈ w' : tySig l1 l2 A B @ lmax l1 l2 ] /\
+    [ G ; Γ ⊢ w ≈ w' : tySig l3 l4 A' B' @ lmax l1 l2 ] /\
+    forall (ρ : kwk G Γ) la lb la' lb' A1 B1 A1' B1',
+      lequiv (gL G) la l1 -> lequiv (gL G) lb l2 ->
+      lequiv (gL G) la' l1 -> lequiv (gL G) lb' l2 ->
+      [ kw_G ρ ; kw_Δ ρ ⊢ kty ρ A ≈ A1 @ l1 ] ->
+      [ kw_G ρ ; kw_Δ ρ ,, kty ρ A @ l1 ⊢ ktyl ρ B ≈ B1 @ l2 ] ->
+      [ kw_G ρ ; kw_Δ ρ ⊢ kty ρ A' ≈ A1' @ l1 ] ->
+      [ kw_G ρ ; kw_Δ ρ ,, kty ρ A' @ l1 ⊢ ktyl ρ B' ≈ B1' @ l2 ] ->
+      exists h : domR ρ (tmFst la lb A1 B1 (ktm ρ w)) (tmFst la' lb' A1' B1' (ktm ρ w')),
+        codR ρ _ _ h (tmSnd la lb A1 B1 (ktm ρ w)) (tmSnd la' lb' A1' B1' (ktm ρ w')).
+
 (** ** Contextual types (07a:686–765), [j = M] only
 
     A weak-head normal form of [□] is a [box] of static code, related by
@@ -359,6 +384,20 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
         LR n rec (kw_G ρ) (kw_Δ ρ) (kbody ρ T1)⦃gsingle (GTy A)⦄ (kbody ρ T1')⦃gsingle (GTy A')⦄
            l2 (instR ρ A A' h)) ->
     releq R (TPiRel G Γ Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR) ->
+    LR n rec G Γ T T' l R
+| LRsig G Γ T T' l l1 l2 l3 l4 A B A' B'
+    (domR : DomRel G Γ) (codR : CodRel G Γ domR) R :
+    lequiv (gL G) l (lmax l1 l2) -> lequiv (gL G) l3 l1 -> lequiv (gL G) l4 l2 ->
+    lwf (gL G) l1 -> lwf (gL G) l2 ->
+    [ G ; Γ ⊢g T ⤳* tySig l1 l2 A B @ l ] -> [ G ; Γ ⊢g T' ⤳* tySig l3 l4 A' B' @ l ] ->
+    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢g A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢g B @ l2 ] -> [ G ; Γ ,, A' @ l1 ⊢g B' @ l2 ] ->
+    [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
+    (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ A) (kty ρ A') l1 (domR ρ)) ->
+    (forall (ρ : kwk G Γ) a a' (ha : domR ρ a a'),
+        LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ B)[lsingle a] (ktyl ρ B')[lsingle a'] l2
+           (codR ρ a a' ha)) ->
+    releq R (SigRel G Γ l1 l2 l3 l4 A B A' B' domR codR) ->
     LR n rec G Γ T T' l R.
 
 (** ** Stages *)

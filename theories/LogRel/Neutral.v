@@ -81,7 +81,9 @@ Proof.
                  | G Γ T T' l R Hj HM
                  | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd IHinst HR
                  | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
-                     Hgeq instAd IHinst HR];
+                     Hgeq instAd IHinst HR
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                     HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR];
     intros ν ν' Hν Hν'; first [exact (ModRel_neutral HM _ _ Hν Hν') | apply HR].
   - (* Nat *)
     pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HN.
@@ -198,6 +200,60 @@ Proof.
                   (vpl_ctx_trans HΔr (vpl_ctx_sym HΔr)) h Einst Hνr) as X.
     apply (IHinst ρ A A' h); [exact X|].
     eapply gne_tm_conv; [exact X | apply geq_ty_sound, E1].
+  - (* Σ: the neutral projections *)
+    pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HP.
+    pose proof (gne_tm_red Hν' HT' (lequiv_sym _ _ _ Hl)) as HP'.
+    destruct (gne_tmred_refl HP) as [H1 _]. destruct (gne_tmred_refl HP') as [_ H2].
+    exists ν, ν'.
+    refine (conj H1 (conj H2 (conj _ (conj _ (conj (gne_tm_geq HP) (conj (gne_tm_geq HP') _)))))).
+    1-2: constructor; eauto using gne_tm_whne_l, gne_tm_whne_r.
+    intros ρ la lb la' lb' A1 B1 A1' B1' Hla Hlb Hla' Hlb' HA1 HB1 HA1' HB1'.
+    apply (kw_lequiv ρ) in Hla, Hlb, Hla', Hlb'.
+    pose proof (kw_lwf ρ Hw1) as Hw1'.
+    assert (HAr : [ kw_G ρ ; kw_Δ ρ ⊢g kty ρ A @ l1 ]) by exact (kw_ty ρ HA).
+    assert (HΔA : [ kw_G ρ ; kw_Δ ρ ,, kty ρ A @ l1 ⊢g ]) by exact (kw_ext ρ HA Hw1).
+    assert (EA : [ kw_G ρ ; kw_Δ ρ ⊢ kty ρ A ≈ kty ρ A' @ l1 ]) by exact (kw_geq_ty ρ HAA).
+    assert (EB : [ kw_G ρ ; kw_Δ ρ ,, kty ρ A @ l1 ⊢ ktyl ρ B ≈ ktyl ρ B' @ l2 ])
+      by exact (kw_geq_ty_l ρ HA Hw1 HBB).
+    assert (HA1w : [ kw_G ρ ; kw_Δ ρ ⊢g A1 @ la ]).
+    { eapply lconv_ty; [exact (eqty_wf_r ge_typeof (geq_ty_sound HA1)) | now apply lequiv_sym]. }
+    assert (HΔA1 : [ kw_G ρ ; kw_Δ ρ ,, A1 @ la ⊢g ]) by (apply ext_wf_g; eauto using lequiv_wf_l).
+    assert (EA1 : [ kw_G ρ ; kw_Δ ρ ⊢ A1 ≈ A1' @ la ]).
+    { eapply geq_ty_lconv; [|exact Hla].
+      eapply geq_ty_trans; [apply geq_ty_sym, HA1 | eapply geq_ty_trans; [exact EA | exact HA1']]. }
+    assert (EB1 : [ kw_G ρ ; kw_Δ ρ ,, A1 @ la ⊢ B1 ≈ B1' @ lb ]).
+    { eapply geq_ty_lconv; [|exact Hlb].
+      eapply geq_ty_ctxconv; [apply geq_ty_sound, HA1 | now apply lequiv_sym | exact HΔA1 |].
+      eapply geq_ty_trans; [apply geq_ty_sym, HB1 | eapply geq_ty_trans; [exact EB |]].
+      eapply geq_ty_ctxconv; [apply geq_ty_sound, geq_ty_sym, EA | apply lequiv_refl, Hw1'
+                             | exact HΔA | exact HB1']. }
+    assert (Hνr : [ kw_G ρ ; kw_Δ ρ ⊢ ktm ρ ν ~ ktm ρ ν' : tySig la lb A1 B1 @ lmax la lb ]).
+    { eapply (gne_tm_lconv (l' := lmax l1 l2)); [|now apply lequiv_max].
+      pose proof (kw_gne_tm ρ HP) as Y. rewrite kty_tySig in Y.
+      eapply gne_tm_conv; [exact Y|].
+      apply geq_ty_sound, geq_ty_sig; auto using lequiv_sym. }
+    pose proof (lequiv_trans _ _ _ _ Hla (lequiv_sym _ _ _ Hla')) as Qa.
+    pose proof (lequiv_trans _ _ _ _ Hlb (lequiv_sym _ _ _ Hlb')) as Qb.
+    (* the first projections, at both domains *)
+    assert (F1 : [ kw_G ρ ; kw_Δ ρ ⊢ tmFst la lb A1 B1 (ktm ρ ν) ~ tmFst la' lb' A1' B1' (ktm ρ ν')
+                     : kty ρ A @ l1 ]).
+    { eapply gne_tm_conv; [eapply gne_tm_lconv; [exact (gne_tm_fst Qa Qb HA1w EA1 EB1 Hνr)
+                                                | now apply lequiv_sym]|].
+      apply geq_ty_sound, geq_ty_sym, HA1. }
+    assert (F2 : [ kw_G ρ ; kw_Δ ρ ⊢ tmFst la lb A1 B1 (ktm ρ ν) ~ tmFst la' lb' A1' B1' (ktm ρ ν')
+                     : kty ρ A' @ l1 ]) by (eapply gne_tm_conv; [exact F1 | apply geq_ty_sound, EA]).
+    pose proof (IHdom ρ _ _ F1 F2) as h. exists h.
+    destruct (escape_tm _ _ _ _ _ _ _ _ (domAd ρ) _ _ h) as (Ha & _ & _).
+    (* the second projections, at the codomain instances *)
+    assert (X1 : [ kw_G ρ ; kw_Δ ρ ⊢ tmSnd la lb A1 B1 (ktm ρ ν) ~ tmSnd la' lb' A1' B1' (ktm ρ ν')
+                     : (ktyl ρ B)[lsingle (tmFst la lb A1 B1 (ktm ρ ν))] @ l2 ]).
+    { eapply gne_tm_conv; [eapply gne_tm_lconv; [exact (gne_tm_snd Qa Qb HA1w EA1 EB1 Hνr)
+                                                | now apply lequiv_sym]|].
+      apply (eqty_single ge_typeof (geq_ty_sound (geq_ty_sym HB1)) Ha). }
+    apply (IHcod ρ _ _ h); [exact X1|].
+    eapply gne_tm_conv; [exact X1|].
+    destruct (escape_ty _ _ _ _ _ _ _ _ (codAd ρ _ _ h)) as (_ & _ & Hc).
+    now apply geq_ty_sound.
 Qed.
 
 End Neutral.

@@ -38,6 +38,7 @@ Proof.
   - eapply LRcpi with (l1 := l1) (l2 := l2) (T1 := T1) (T1' := T1') (instR := instR); eassumption.
   - eapply LRtpi with (Δ1 := Δ1) (Δ1' := Δ1') (l1 := l1) (l2 := l2) (l3 := l3) (l4 := l4)
       (T1 := T1) (T1' := T1') (instR := instR); eassumption.
+  - eapply LRsig; eauto.
 Qed.
 
 Theorem cumul_down n m G Γ T T' l R :
@@ -63,6 +64,10 @@ Proof.
     eapply LRtpi with (Δ1 := Δ1) (Δ1' := Δ1') (l1 := l1) (l2 := l2) (l3 := l3) (l4 := l4)
       (T1 := T1) (T1' := T1') (instR := instR); try eassumption.
     intros; match goal with IH : _ |- LR _ _ _ _ _ _ _ _ => eapply IH; lia end.
+  - match goal with Hs : lequiv _ l (lmax l1 l2) |- _ =>
+      rewrite (lequiv_measure_eq _ _ _ Hs), lmeasure_max in Hle end.
+    eapply LRsig; eauto.
+    all: intros; match goal with IH : _ |- LR _ _ _ _ _ _ _ _ => eapply IH; lia end.
 Qed.
 
 (** A type at level [l] is related identically at every stage above
@@ -126,6 +131,7 @@ Proof.
       eauto using releq_trans, releq_sym.
   - eapply LRtpi with (Δ1 := Δ1) (Δ1' := Δ1') (l1 := l1) (l2 := l2) (l3 := l3) (l4 := l4)
       (T1 := T1) (T1' := T1') (instR := instR); eauto using releq_trans, releq_sym.
+  - eapply LRsig; eauto using releq_trans, releq_sym.
 Qed.
 
 Theorem LR_lconv n rec G Γ T T' l l' R :
@@ -139,7 +145,9 @@ Proof.
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
-                    Hgeq instAd HR];
+                    Hgeq instAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                    HA HA' HB HB' HAA HBB domAd codAd HR];
     intros Hl'.
   - eapply LRnat; eauto using lequiv_trans, tyred_lconv.
   - eapply (LRU n rec G Γ T T' l' l1 l2); eauto using lequiv_trans, tyred_lconv.
@@ -150,6 +158,8 @@ Proof.
   - apply LRmod; [exact Hj | exact (ModRel_lconv _ _ _ _ _ _ _ HM Hl')].
   - eapply (LRcpi n rec G Γ T T' l' l1 l2 T1 T1' instR); eauto using lequiv_trans, tyred_lconv.
   - eapply (LRtpi n rec G Γ T T' l' Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR); eauto using lequiv_trans, tyred_lconv.
+  - eapply (LRsig n rec G Γ T T' l' l1 l2 l3 l4 A B A' B' domR codR);
+      eauto using lequiv_trans, tyred_lconv.
 Qed.
 
 End Basics.

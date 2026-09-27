@@ -87,7 +87,9 @@ Proof.
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
-                    Hgeq instAd HR].
+                    Hgeq instAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                    HA HA' HB HB' HAA HBB domAd codAd HR].
   all: try solve [exact (ModRel_escape_ty HM)].
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
@@ -98,6 +100,7 @@ Proof.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_pi; auto using lequiv_sym.
   - eapply geq_ty_lconv; [exact Hgeq | exact Hl].
   - eapply geq_ty_lconv; [exact Hgeq | exact Hl].
+  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sig; auto using lequiv_sym.
 Qed.
 
 (** ** Escape for terms *)
@@ -114,7 +117,9 @@ Proof.
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
-                    Hgeq instAd HR];
+                    Hgeq instAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                    HA HA' HB HB' HAA HBB domAd codAd HR];
     intros t t' Htt; first [exact (ModRel_escape_tm HM _ _ Htt) | apply HR in Htt].
   - (* Nat *)
     destruct Htt as [t t' w w' Hw Hw' Heq _].
@@ -169,6 +174,18 @@ Proof.
     assert (HTP : [ G ; Γ ⊢g T ≅ tyTPi Δ1 l1 l2 T1 @ l ]) by apply HT.
     assert (Hw'' : [ G ; Γ ⊢g t' ⤳* w' : tyTPi Δ1 l1 l2 T1 @ l2 ]).
     { eapply tmred_conv; [apply ge_typeof | exact Hw' | apply eqty_sym, geq_ty_sound, Hgeq]. }
+    repeat split.
+    + eapply conv_tm; [apply Hw | exact HTP | exact Hl].
+    + eapply conv_tm; [apply Hw'' | exact HTP | exact Hl].
+    + eapply conv_geq_tm; [eapply geq_tm_exp; [exact Hw | exact Hw'' | exact Heq]
+                          | apply eqty_sym, HTP | exact Hl].
+  - (* Σ *)
+    destruct Htt as (w & w' & Hw & Hw' & _ & _ & Heq & _ & _).
+    assert (HTP : [ G ; Γ ⊢g T ≅ tySig l1 l2 A B @ l ]) by apply HT.
+    assert (HPP : [ G ; Γ ⊢g tySig l1 l2 A B ≅ tySig l3 l4 A' B' @ lmax l1 l2 ])
+      by (apply geq_ty_sound, geq_ty_sig; auto using lequiv_sym).
+    assert (Hw'' : [ G ; Γ ⊢g t' ⤳* w' : tySig l1 l2 A B @ lmax l1 l2 ]).
+    { eapply tmred_conv; [apply ge_typeof | exact Hw' | now apply eqty_sym]. }
     repeat split.
     + eapply conv_tm; [apply Hw | exact HTP | exact Hl].
     + eapply conv_tm; [apply Hw'' | exact HTP | exact Hl].
@@ -415,6 +432,15 @@ Lemma kty_tyNat : kty ρ tyNat = tyNat. Proof. unfold kty; now rewrite gwa_tyNat
 Lemma kty_tyU l : kty ρ (tyU l) = tyU l. Proof. unfold kty; now rewrite gwa_tyU. Qed.
 Lemma kty_tyPi l l' A B : kty ρ (tyPi l l' A B) = tyPi l l' (kty ρ A) (ktyl ρ B).
 Proof. unfold kty, ktyl; now rewrite gwa_tyPi. Qed.
+Lemma kty_tySig l l' A B : kty ρ (tySig l l' A B) = tySig l l' (kty ρ A) (ktyl ρ B).
+Proof. unfold kty, ktyl; now rewrite gwa_tySig. Qed.
+Lemma ktm_fst l l' A B p : ktm ρ (tmFst l l' A B p) = tmFst l l' (kty ρ A) (ktyl ρ B) (ktm ρ p).
+Proof. unfold ktm, kty, ktyl; now rewrite gwa_fst. Qed.
+Lemma ktm_snd l l' A B p : ktm ρ (tmSnd l l' A B p) = tmSnd l l' (kty ρ A) (ktyl ρ B) (ktm ρ p).
+Proof. unfold ktm, kty, ktyl; now rewrite gwa_snd. Qed.
+Lemma ktm_pair l l' A B a b :
+  ktm ρ (tmPair l l' A B a b) = tmPair l l' (kty ρ A) (ktyl ρ B) (ktm ρ a) (ktm ρ b).
+Proof. unfold ktm, kty, ktyl; now rewrite gwa_pair. Qed.
 Lemma kty_tyEl l t : kty ρ (tyEl l t) = tyEl l (ktm ρ t).
 Proof. unfold kty, ktm; now rewrite gwa_tyEl. Qed.
 Lemma ktm_zero : ktm ρ zero = zero. Proof. unfold ktm; now rewrite gwa_zero. Qed.

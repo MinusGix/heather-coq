@@ -829,12 +829,18 @@ Proof. now destruct γ. Qed.
 Lemma gwa_cext Γ A l : (Γ ,, A @ l)⟦γ⟧ = Γ⟦γ⟧ ,, A⟦γ⟧ @ l. Proof. now destruct γ. Qed.
 Lemma gwa_cnil : cnil⟦γ⟧ = cnil. Proof. now destruct γ. Qed.
 Lemma gwa_cvar g : (cvar g)⟦γ⟧ = cvar (γ g). Proof. now destruct γ. Qed.
+Lemma gwa_tySig l l' A B : (tySig l l' A B)⟦γ⟧ = tySig l l' A⟦γ⟧ B⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tmSig l l' s t : (tmSig l l' s t)⟦γ⟧ = tmSig l l' s⟦γ⟧ t⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_pair l l' A B a b : (tmPair l l' A B a b)⟦γ⟧ = tmPair l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧ b⟦γ⟧.
+Proof. now destruct γ. Qed.
+Lemma gwa_fst l l' A B p : (tmFst l l' A B p)⟦γ⟧ = tmFst l l' A⟦γ⟧ B⟦γ⟧ p⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_snd l l' A B p : (tmSnd l l' A B p)⟦γ⟧ = tmSnd l l' A⟦γ⟧ B⟦γ⟧ p⟦γ⟧. Proof. now destruct γ. Qed.
 End PushGwa.
 
 Ltac push_gwa := repeat progress (
   rewrite ?gwa_tyNat, ?gwa_tyPi, ?gwa_tyU, ?gwa_tyEl, ?gwa_tyCTyp, ?gwa_tyCTrm,
           ?gwa_var, ?gwa_zero, ?gwa_succ, ?gwa_tmNat, ?gwa_tmU, ?gwa_tmPi, ?gwa_lam, ?gwa_app,
-          ?gwa_natrec, ?gwa_cext).
+          ?gwa_natrec, ?gwa_cext, ?gwa_tySig, ?gwa_tmSig, ?gwa_pair, ?gwa_fst, ?gwa_snd).
 
 (** Normal forms, reduction, local weakenings. *)
 Lemma whne_gwa t γ : whne t -> whne t⟦γ⟧.

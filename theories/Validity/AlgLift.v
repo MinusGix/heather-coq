@@ -212,7 +212,9 @@ Proof.
                  | G Γ T T' l R Hj HM
                  | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd IHinst HR
                  | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
-                     Hgeq instAd IHinst HR];
+                     Hgeq instAd IHinst HR
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                     HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR];
     try (cbn in Hj; discriminate).
   - exact (lift_posty compt_D HT whnf_tyNat posty_nat).
   - exact (lift_posty compt_D HT (whnf_tyU _) (posty_U _)).
@@ -229,7 +231,9 @@ Proof.
     unfold ktyl, kw_loc in XB; cbn [kw_G kw_Δ kw_γ kw_r gwa] in XB. change (wk_ren wk1) with ↑ in XB.
     rewrite liftshift_single_var_ty in XB by exact (wf_ty_nf HB).
     exact (lift_pi compt_D HT Hl Hw1 Hw2 HA HB XA XB).
-Qed.
+  - (* M8 TEMPORARY: Σ, until the algorithm has Σ rules *)
+    admit.
+Admitted.
 
 (** The identity substitution is related to itself. *)
 Lemma lift_D {G Γ T l} : [ G ; Γ ⊢[ lD ] T @ l ] -> Lift lD G Γ T l.
@@ -257,7 +261,9 @@ Proof.
                  | G Γ T T' l R Hj HM
                  | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd IHinst HR
                  | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
-                     Hgeq instAd IHinst HR].
+                     Hgeq instAd IHinst HR
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                     HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR].
   - exact (lift_posty compt_M HT whnf_tyNat posty_nat).
   - exact (lift_posty compt_M HT (whnf_tyU _) (posty_U _)).
   - destruct HV as (HnV & _ & _). exact (lift_posty compt_M HT (whnf_ty_ne _ HnV) (posty_ne _ HnV)).
@@ -299,7 +305,9 @@ Proof.
     rewrite kbody_gstep, (eta_t_ty HT1) in X. cbn [kw_gstep kw_G kw_Δ gwa] in X.
     change (Γ⟪gwk_step gwk_id⟫) with Γ⟪S⟫ in X.
     exact (lift_tpi (@ac_sub_id) HT Hl Hw1 Hw2 HΔ1 HT1 X).
-Qed.
+  - (* M8 TEMPORARY: Σ, until the algorithm has Σ rules *)
+    admit.
+Admitted.
 
 (** At M: at a well-formed level by reducibility, at ω through [UΠ]. *)
 Lemma lift_M_lwf {G Γ T l} : [ G ; Γ ⊢[ lM ] T @ l ] -> lwf (gL G) l -> Lift lM G Γ T l.

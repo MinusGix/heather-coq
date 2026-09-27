@@ -15,7 +15,7 @@ From DeLaM.LogRel Require Export Def.
 
 Fixpoint mltt_ty (T : ty) : Prop :=
   match T with
-  | tyPi _ _ A B => mltt_ty A /\ mltt_ty B
+  | tyPi _ _ A B | tySig _ _ A B => mltt_ty A /\ mltt_ty B
   | tyCTyp _ _ | tyCTrm _ _ _ | tyCPi _ _ | tyTPi _ _ _ _ => False
   | _ => True
   end.
@@ -29,13 +29,13 @@ Fixpoint mltt_ctx (Γ : ctx) : Prop :=
 Lemma mltt_ren (T : ty) r0 : mltt_ty T -> mltt_ty T⟨r0⟩.
 Proof.
   revert r0; induction T; intros r0 H; cbn in *; try tauto.
-  destruct H; split; [apply IHT1 | apply IHT2]; assumption.
+  all: destruct H; split; [apply IHT1 | apply IHT2]; assumption.
 Qed.
 
 Lemma mltt_subst (T : ty) e : mltt_ty T -> mltt_ty T[e].
 Proof.
   revert e; induction T; intros e H; cbn in *; try tauto.
-  destruct H; split; [apply IHT1 | apply IHT2]; assumption.
+  all: destruct H; split; [apply IHT1 | apply IHT2]; assumption.
 Qed.
 
 Lemma mltt_gren (T : ty) ξ : mltt_ty T -> mltt_ty T⟪ξ⟫.
@@ -107,7 +107,9 @@ Proof.
                      HAA HBB Hdom IHdom Hcod IHcod HR
                  | G Γ T T' l R Hj HM
                  | G Γ T T' l l1 l2 T1 T1' instR R Hj
-                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj ]; intros Hm Hm'.
+                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl H3 H4 Hw1 Hw2 HT HT' HA HA' HB HB'
+                     HAA HBB Hdom IHdom Hcod IHcod HR ]; intros Hm Hm'.
   - eapply LRnat; eassumption.
   - eapply LRU; try eassumption.
     intros t t'; rewrite (HR t t'); split; apply (URel_layer (n := n) Hn);
@@ -122,6 +124,11 @@ Proof.
   (* meta-functions are not MLTT types *)
   - match goal with HT : tyred _ _ _ T _ _ |- _ => exact (False_ind _ (mltt_red (tyred_red _ _ _ _ _ _ HT) Hm)) end.
   - match goal with HT : tyred _ _ _ T _ _ |- _ => exact (False_ind _ (mltt_red (tyred_red _ _ _ _ _ _ HT) Hm)) end.
+  - pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT) Hm) as [HmA HmB].
+    pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT') Hm') as [HmA' HmB'].
+    eapply LRsig; try eassumption.
+    + intros ρ; apply IHdom; apply mltt_ren, mltt_gwa; assumption.
+    + intros ρ a a' ha; apply IHcod; apply mltt_subst, mltt_ren, mltt_gwa; assumption.
 Qed.
 
 End Layering.

@@ -50,7 +50,9 @@ Proof.
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l l1 l2 U1 U1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 U1 U1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
-                    Hgeq instAd HR];
+                    Hgeq instAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                    HA HA' HB HB' HAA HBB domAd codAd HR];
     intros T1 T1' H1 H1'.
   - eapply LRnat; eauto using tyred_trans.
   - eapply LRU with (l1 := l1) (l2 := l2); eauto using tyred_trans.
@@ -59,6 +61,7 @@ Proof.
   - apply LRmod; [exact Hj | exact (ModRel_red_ty HM H1 H1')].
   - eapply (LRcpi n rec G Γ T1 T1' l l1 l2 U1 U1' instR); eauto using tyred_trans.
   - eapply (LRtpi n rec G Γ T1 T1' l Δ1 Δ1' l1 l2 l3 l4 U1 U1' instR); eauto using tyred_trans.
+  - eapply (LRsig n rec G Γ T1 T1' l l1 l2 l3 l4 A B A' B' domR codR); eauto using tyred_trans.
 Qed.
 
 Theorem LR_red_tm n rec G Γ T T' l R :
@@ -73,7 +76,9 @@ Proof.
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
-                    Hgeq instAd HR];
+                    Hgeq instAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                    HA HA' HB HB' HAA HBB domAd codAd HR];
     intros t t' t1 t1' Htt H1 H1';
     first [exact (ModRel_red_tm HM _ _ _ _ Htt H1 H1') | apply HR; apply HR in Htt].
   - inversion Htt as [? ? w w' Hw Hw' Heq Hnf]; subst.
@@ -102,6 +107,11 @@ Proof.
     + eapply tmred_trans; [|exact Hw]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
     + eapply tmred_trans; [|exact Hw']. eapply tmred_along; [exact H1' | exact HT' | now apply lequiv_sym].
   - (* TΠ *)
+    destruct Htt as (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK).
+    exists w, w'. refine (conj _ (conj _ (conj Hnf (conj Hnf' (conj Heq (conj Heq' HK)))))).
+    + eapply tmred_trans; [|exact Hw]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hw']. eapply tmred_along; [exact H1' | exact HT' | now apply lequiv_sym].
+  - (* Σ *)
     destruct Htt as (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK).
     exists w, w'. refine (conj _ (conj _ (conj Hnf (conj Hnf' (conj Heq (conj Heq' HK)))))).
     + eapply tmred_trans; [|exact Hw]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].

@@ -113,6 +113,35 @@ Proof.
       eapply ctx_lvl_geq; [eapply lconv_ty; [exact HA'r | apply lequiv_sym, H13'] | exact H13' | exact HB1].
 Qed.
 
+Lemma SigRel_flip t t' :
+  SigRel G Γ l1 l2 l3 l4 A B A' B' domR codR t' t ->
+  SigRel G Γ l3 l4 l1 l2 A' B' A B (flipD domR) (flipC codR) t t'.
+Proof.
+  intros (w1 & w2 & Hw1 & Hw2 & Hnf1 & Hnf2 & Heq1 & Heq2 & HK).
+  assert (Hm : lequiv (gL G) (lmax l3 l4) (lmax l1 l2)) by now apply lequiv_max.
+  exists w2, w1.
+  refine (conj _ (conj _ (conj Hnf2 (conj Hnf1 (conj _ (conj _ _)))))).
+  - eapply tmred_lconv; [exact Hw2 | exact Hm].
+  - eapply tmred_lconv; [exact Hw1 | exact Hm].
+  - eapply geq_tm_lconv; [apply geq_tm_sym, Heq2 | exact Hm].
+  - eapply geq_tm_lconv; [apply geq_tm_sym, Heq1 | exact Hm].
+  - intros ρ la lb la' lb' A1 B1 A1' B1' Hla Hlb Hla' Hlb' HA1 HB1 HA1' HB1'.
+    unfold flipD, flipC, flipR.
+    pose proof (kw_ty ρ HA) as HAr. pose proof (kw_ty ρ HA') as HA'r.
+    pose proof (kw_lequiv ρ H13) as H13'. pose proof (kw_lequiv ρ H24) as H24'.
+    refine (HK ρ la' lb' la lb A1' B1' A1 B1 _ _ _ _ _ _ _ _).
+    + eapply lequiv_trans; eassumption.
+    + eapply lequiv_trans; eassumption.
+    + eapply lequiv_trans; eassumption.
+    + eapply lequiv_trans; eassumption.
+    + eapply geq_ty_lconv; [exact HA1' | apply lequiv_sym, H13'].
+    + eapply geq_ty_lconv; [|apply lequiv_sym, H24'].
+      eapply ctx_lvl_geq; [eapply lconv_ty; [exact HAr | apply lequiv_sym, H13'] | exact H13' | exact HB1'].
+    + eapply geq_ty_lconv; [exact HA1 | apply lequiv_sym, H13'].
+    + eapply geq_ty_lconv; [|apply lequiv_sym, H24'].
+      eapply ctx_lvl_geq; [eapply lconv_ty; [exact HA'r | apply lequiv_sym, H13'] | exact H13' | exact HB1].
+Qed.
+
 End PiFlip.
 
 (** ** Meta-functions
@@ -224,7 +253,9 @@ Proof.
                  | G Γ T T' l R Hj HM
                  | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd IHinst HR
                  | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
-                     Hgeq instAd IHinst HR].
+                     Hgeq instAd IHinst HR
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                     HA HA' HB HB' HAA HBB domAd IHdom codAd IHcod HR].
   - eapply LRnat; eauto.
     intros t t'; unfold flipR; rewrite (HR t' t); apply NatRel_flip.
   - assert (Hm : lmeasure l2 = lmeasure l1) by (eapply lequiv_measure; eauto).
@@ -302,6 +333,32 @@ Proof.
     + intros ρ A A' h. unfold flipTI.
       eapply LR_lconv; [exact (IHinst ρ A' A _) | exact (kw_lequiv ρ Hl4)].
     + exact (releq_trans _ _ _ (fun t t' => HR t' t) (TPiRel_flip HΔ Hl3 Hl4 Hsame)).
+  - assert (Hm : lequiv (gL G) (lmax l3 l4) (lmax l1 l2)) by now apply lequiv_max.
+    assert (HΓ : [ G ; Γ ⊢g ]) by exact (ctx_of_ty HA).
+    assert (HA3 : [ G ; Γ ⊢g A @ l3 ]) by (eapply lconv_ty; [exact HA | now apply lequiv_sym]).
+    assert (HA'3 : [ G ; Γ ⊢g A' @ l3 ]) by (eapply lconv_ty; [exact HA' | now apply lequiv_sym]).
+    eapply (LRsig n (LRbelow n) G Γ T' T l l3 l4 l1 l2 A' B' A B (flipD domR) (flipC codR)).
+    + eapply lequiv_trans; [exact Hl | apply lequiv_sym, Hm].
+    + now apply lequiv_sym.
+    + now apply lequiv_sym.
+    + eauto using lequiv_wf_l.
+    + eauto using lequiv_wf_l.
+    + exact HT'.
+    + exact HT.
+    + exact HA'3.
+    + exact HA3.
+    + eapply (lconv_ty (l := l2)); [|now apply lequiv_sym]. eapply ctx_lvl_ty; [exact HA' | now apply lequiv_sym | exact HB'].
+    + eapply (lconv_ty (l := l2)); [|now apply lequiv_sym]. eapply ctx_lvl_ty; [exact HA | now apply lequiv_sym | exact HB].
+    + eapply geq_ty_lconv; [apply geq_ty_sym, HAA | exact Hl3].
+    + eapply geq_ty_lconv; [|exact Hl4].
+      eapply geq_ty_ctxconv; [apply geq_ty_sound, HAA | now apply lequiv_sym | | apply geq_ty_sym, HBB].
+      apply ext_wf_g; [exact HA'3 | eauto using lequiv_wf_l].
+    + intros ρ. eapply LR_lconv; [exact (IHdom ρ) | exact (kw_lequiv ρ Hl3)].
+    + intros ρ a a' ha. eapply LR_lconv; [exact (IHcod ρ a' a ha) | exact (kw_lequiv ρ Hl4)].
+    + intros t t'; unfold flipR at 1; rewrite (HR t' t); split.
+      * apply SigRel_flip; auto.
+      * intros H. apply (SigRel_flip (A := A') (A' := A) (domR := flipD domR) (codR := flipC codR));
+          auto using lequiv_sym.
 Qed.
 
 Theorem LR_sym n : Psym n.

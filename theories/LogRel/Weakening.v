@@ -111,7 +111,9 @@ Proof.
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
-                    Hgeq instAd HR].
+                    Hgeq instAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R Hl Hl3 Hl4 Hw1 Hw2 HT HT'
+                    HA HA' HB HB' HAA HBB domAd codAd HR].
   - exists (NatRel (kw_G ρ) (kw_Δ ρ)). split.
     + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
       rewrite kty_tyNat in X, X'.
@@ -232,6 +234,46 @@ Proof.
       refine (conj Y (conj Y' (conj (whnf_kw ρ _ Hnf) (conj (whnf_kw ρ _ Hnf') (conj Z (conj Z' _)))))).
       intros ρ' A A' h. subst instR'; cbn beta. rewrite <- !ktm_comp.
       exact (HK (kw_comp ρ ρ') A A' (vp_ty_comp ρ ρ' h)).
+  - set (domR' := fun ρ' : kwk (kw_G ρ) (kw_Δ ρ) => domR (kw_comp ρ ρ')).
+    set (codR' := fun (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) a a' (ha : domR' ρ' a a') =>
+                    codR (kw_comp ρ ρ') a a' ha).
+    pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
+    rewrite kty_tySig in X, X'.
+    exists (SigRel (kw_G ρ) (kw_Δ ρ) l1 l2 l3 l4 (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B')
+              domR' codR'). split.
+    + eapply (LRsig n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ T) (kty ρ T') l l1 l2 l3 l4
+                (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B') domR' codR').
+      * exact (kw_lequiv ρ Hl).
+      * exact (kw_lequiv ρ Hl3).
+      * exact (kw_lequiv ρ Hl4).
+      * exact (kw_lwf ρ Hw1).
+      * exact (kw_lwf ρ Hw2).
+      * exact X.
+      * exact X'.
+      * exact (kw_ty ρ HA).
+      * exact (kw_ty ρ HA').
+      * exact (kw_ty_l ρ HA Hw1 HB).
+      * exact (kw_ty_l ρ HA' Hw1 HB').
+      * exact (kw_geq_ty ρ HAA).
+      * exact (kw_geq_ty_l ρ HA Hw1 HBB).
+      * intros ρ'. subst domR'; cbn beta.
+        rewrite <- !kty_comp. exact (domAd (kw_comp ρ ρ')).
+      * intros ρ' a a' ha. subst codR'; cbn beta.
+        rewrite <- !ktyl_comp. exact (codAd (kw_comp ρ ρ') a a' ha).
+      * apply releq_refl.
+    + intros t t' Ht. apply HR in Ht.
+      destruct Ht as (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK).
+      pose proof (kw_tmred ρ Hw) as Y. pose proof (kw_tmred ρ Hw') as Y'.
+      pose proof (kw_geq_tm ρ Heq) as Z. pose proof (kw_geq_tm ρ Heq') as Z'.
+      rewrite kty_tySig in Y, Y', Z, Z'.
+      exists (ktm ρ w), (ktm ρ w').
+      refine (conj Y (conj Y' (conj (whnf_kw ρ _ Hnf) (conj (whnf_kw ρ _ Hnf') (conj Z (conj Z' _)))))).
+      intros ρ' la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1'.
+      subst domR' codR'; cbn beta. rewrite <- !ktm_comp.
+      rewrite <- kty_comp in HA1, HA1'. rewrite <- ktyl_comp, <- kty_comp in HB1, HB1'.
+      apply (kw_lequiv_shrink ρ) in H1, H3; [| exact Hw1 ..].
+      apply (kw_lequiv_shrink ρ) in H2, H4; [| exact Hw2 ..].
+      exact (HK (kw_comp ρ ρ') la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1').
 Qed.
 
 Theorem LR_kwk n : Pwk n.
