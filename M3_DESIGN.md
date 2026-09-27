@@ -227,6 +227,8 @@ C-level code up to level equivalence, and we now follow it:
 - the static-code lemma becomes `T⦃σ⦄ ≡ₗ T⦃σ'⦄` for substitutions whose
   static images agree up to `≡ₗ`, still a syntactic induction (the reason
   M2 retired the C-equality congruence does not apply to `≡ₗ`).
+- (M7 C3 K2) The `box` congruences' `≡ₗ` premise was later removed: the
+  C-equation implies it (Static Code, M7 A3), as in the paper.
 
 ### E12. Level equivalence at M is a rule (user decision, 2026-09-25)
 

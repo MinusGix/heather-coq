@@ -151,9 +151,9 @@ context. As built:
 - `decl_eqty_dec_static`/`_tm`, and in `Validity/AlgDec.v`
   `decl_eqty_dec_any`/`decl_eqtm_dec_any`: declarative equality of typed
   syntax is decidable at every layer.
-- `eqtm_boxT'`/`eqtm_boxt'`: the paper's `box` congruence (06:534),
-  without the `≡ₗ` premise that `eqtm_boxT`/`eqtm_boxt` carry (M3 E11).
-  That premise is now shown admissible.
+- the `≡ₗ` premise of `eqtm_boxT`/`eqtm_boxt` (M3 E11) is admissible. It
+  was first packaged as primed rules; C3 K2 then removed the premise, so
+  the rules are the paper's `box` congruence (06:534).
 
 ## B. Generalizations and packaging
 
@@ -448,6 +448,13 @@ Gaps and typos in P that a transcription must settle:
 - 7, 8, 11, 13: keep (logrel-coq style; presupposition derives them).
 - 14, `eqty_leq`/`eqtm_leq`: keep in O (used before `GConv`); C3 proves
   them admissible in P.
+
+As built:
+- 12 done. `eqtm_boxT`/`eqtm_boxt` take the C-equation (and both sides
+  C-typed) only. The metatheory went through unchanged: it only
+  transported the premise. `FM_boxT_eq`/`FM_boxt_eq` take the C-equation
+  and get `≡ₗ` from `static_code_eqty`/`_eqtm`. The primed rules
+  `eqtm_boxT'`/`eqtm_boxt'` (A3) are gone.
 
 ### C4. An executable checker
 
