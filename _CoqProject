@@ -126,3 +126,4 @@ theories/Validity/TCType.v
 theories/Validity/TCSynth.v
 theories/Validity/TCCheck.v
 theories/Validity/TypeCheck.v
+theories/Validity/PaperSound.v
