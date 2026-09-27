@@ -264,6 +264,27 @@ mathematics, measured against the Σ cost log.
   former's inversion, congruence and algorithmic rule as arguments, with
   Π and Σ (and later W) as one-line instances. It does not help
   non-binder formers such as Unit, whose cases there are small anyway.
+- **Step 2, the relation (`LogRel`, `Pi.v`/`Sigma.v`).** `LRpi` and
+  `LRsig` take their thirteen type-level facts as one record,
+  `PolyFacts G Γ F T T' l l1 l2 l3 l4 A B A' B'`, parameterized by the
+  former `F`. The domain and codomain derivations stay direct constructor
+  arguments, so Coq's generated induction principle keeps their induction
+  hypotheses (a record containing `LR` would be a nested inductive and
+  lose them). Patterns bracket the record (`[Hl … HBB]`), so proofs that
+  only pass the facts through kept their names; `open_poly` exposes them
+  where the case is unnamed. The inversions `LR_inv_pi`/`LR_inv_sig`
+  return the record. Shared, once for any `F`: `poly_flip` (symmetry),
+  `poly_trans` (transitivity), `poly_kw` (Kripke weakening, given `F`'s
+  commutation with it), `poly_pg` (universe permutations, likewise),
+  `poly_here` (the validity side's type relation with Π's domain and
+  codomain relations, given `F`'s formation rule and substitution
+  commutation), and the Ltac `poly_irrel` (irrelevance). Net lines about
+  zero (376 added, 381 removed): the shared lemmas replace the Σ copies,
+  so the next binder former (W, `Wf`) pays only instances. Not shared:
+  level invariance, whose Π case is 240 lines of mostly term-level
+  reasoning reusing its intermediate facts, so a `poly_leq` would remove
+  only the thirteen construction bullets. The term relations (`PiRel`,
+  `SigRel`) and their lemmas are genuinely per former.
 
 ## Status
 
