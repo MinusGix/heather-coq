@@ -187,6 +187,73 @@ Observations:
 - The genuinely new mathematics was small: `SigRel` and its Kripke
   shape, `Sigma.v`, and the typed `spa` (I8).
 
+## M8b: the genericity direction
+
+### Where the cost is
+
+Σ's lines by kind (`git diff --stat 05ff08f c6b86c2`):
+
+| Kind | Lines | Generic? |
+|---|---|---|
+| New mathematics: rules, `SigRel`, `Sigma.v`, typed `spa` | ~1.3k | no (`Sigma.v` is the size of Π's five semantic files together) |
+| Per-*rule* cases of inductions over judgments: typing metatheory, `AlgStruct` W/G/U/L, soundness, conversion, PER, decidability | ~1.8k | mostly: W/G/U/L are one script with a different push tactic |
+| Per-*former* cases of inductions over `LR` | ~0.8k | partly: Π and Σ share the type-level half; positional patterns are pure churn |
+| Syntax | 0.1k | not worth it |
+
+The largest *future* cost is the recursor. Heather has 56 branches
+(derived from telescope specs, `H/crates/kernel/src/rec.rs`
+`branch_specs`); we have 13, hand-written, at 100–250 lines per branch
+in `RecS.v` alone, plus the other `Rec*` files.
+
+### J1. Decisions (taken)
+
+In order, cheapest first:
+
+1. **Tactics, not per-rule lemmas.** Each family (W/G/U/L, S, C, Y, T,
+   Dc, and the typing metatheory inductions) gets a closing tactic run on
+   every case of its mutual induction; named lemmas remain only for the
+   cases the tactic does not close. Applies to every future former,
+   positive or negative, and removes existing Π-era code too. Spike first
+   on `AlgStruct`'s W family to measure coverage and build time.
+2. **Record-packed `LR` cases** (logrel-coq style): each constructor
+   takes its data as one record, so adding a former no longer edits
+   positional patterns across a dozen files. Π and Σ then share the
+   domain/codomain record (logrel-coq's `PolyRed`/`ParamRedTy`), which W
+   and `Wf` will reuse.
+3. **Recursor branches from telescope descriptions.** A branch is
+   described by its sub-structures (kind, context extension, level,
+   index); `redT`/`redt` become one generic peel along the telescope, and
+   the `RecS` recursion lemma is proved once over descriptions (`br_core`
+   already factors part of this). Needs a design pass against Heather's
+   `branch_specs` before M8d.
+
+Not done: a generic binding signature or a binder-kind syntax
+(`tyBind Π|Σ`). It would undo the hand-written syntax decision
+(`SYNTAX_SPIKE.md`) to save about a hundred lines, the per-former parts
+(`PiRel` vs `SigRel`, the η forms) stay separate anyway, and logrel-coq
+does not do it either.
+
+Acceptance test: Unit (M8c) should then cost little beyond its own
+mathematics, measured against the Σ cost log.
+
+### J1 log
+
+- **Step 1, `AlgStruct` (W/G/U/L).** Each family is one tactic
+  (`W_case`, `G_case`, `U_case`, `L_case`) run on every case of `ac_mut`:
+  push the operation through the goal; instantiate each induction
+  hypothesis at the scope that reaches its context (`mk_wkr`, `mk_gwk`,
+  or by the shape of its global context for U) and normalize it once;
+  `econstructor`, closing judgment premises first (they fix the evars
+  side conditions share), then side conditions. Named lemmas remain only
+  for irregular premises: substitution entries (`G_acs_pt`, `U_acs_pt`,
+  `L_acs_pt`), recursor branches (`*_branches`), `uapp`'s level
+  instantiation (`U_actmne_uapp`), and the reductions under `≡ₗ`
+  (`L_act_red`, `L_actm_red`). 1566 → 515 lines; all 180 rule cases,
+  Σ's included, close without per-rule code. Build time of the file
+  8.6 s → 12.2 s, dominated by the existing `push_gren` rewrite chain.
+  Lesson: normalizing hypotheses per premise (1090 calls) cost 10 s;
+  once per case, 70 calls.
+
 ## Status
 
 M8a (Σ) complete: syntax, typing and metatheory, generic laws and both
