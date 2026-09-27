@@ -211,8 +211,9 @@ equal type. Three points the paper passes over:
   Local substitution never enters boxes, and β ignores the annotations, so
   it is enough to change annotations along the *head spine* (`app`, `uapp`,
   `capp`, `tapp` heads: `spa`). There the inferred types do not depend on
-  them. Closure of `ac_tm*` under `spa` on both sides is a small induction
-  (`AlgStruct`).
+  them. Closure of `ac_tm*` under `spa` on both sides was a small induction
+  (`AlgStruct`); since M8 (Σ) the conversion lemma carries a typed `spa`
+  instead (`AlgConv`, M8_DESIGN.md I8).
 - **Global contexts.** Symmetry and transitivity compare `letbox`/`TΠ`
   bodies under the other side's binding (`gdTy Δ'` for `gdTy Δ`). So the
   conversion lemma also converts the global context along a pointwise

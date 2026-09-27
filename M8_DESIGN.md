@@ -97,9 +97,10 @@ Added to `GenericEq`:
 - `geq_tm_sig_ext`: `fst p ≈ fst q : A` and `snd p ≈ snd q : B[fst p]`
   ⟹ `p ≈ q : Σ` (the extensionality form; the algorithmic instance
   compares projections at Σ, as it η-expands at Π);
-- `geq_tm_pair`: the pair congruence (the relation's whnf equality for
-  pairs);
 - `gne_tm_fst`, `gne_tm_snd`: neutral projections.
+
+No pair congruence law was needed: the relation compares Σ terms through
+their projections only, so a pair is never compared as a whnf.
 
 ### I6. The relation: `LRsig`
 
