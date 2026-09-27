@@ -49,55 +49,10 @@ Lemma LR_sig_here Δ d d' : SubRel G Γ Δ d d' ->
        (piDom (A := A) (A' := A') (l := l) (l' := l') Δ d d')
        (piCod (A := A) (A' := A') (B := B) (B' := B') (l := l) (l' := l') Δ d d')).
 Proof.
-  intros Hd. pose proof (SubRel_ctx Hd) as HΔ.
-  pose proof (SubRel_wf_l _ _ _ _ _ Hd) as Hwd. pose proof (SubRel_wf_r Hd) as Hwd'.
-  destruct (VTyG_loc VA _ _ _ Hd) as [RA HRA].
-  destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HAd & HA'd & HAA).
-  assert (HΔA : [ G ; Δ ,, A[d] @ l ⊢g ]) by now apply ext_wf_g.
-  assert (HΔA' : [ G ; Δ ,, A'[d'] @ l ⊢g ]) by now apply ext_wf_g.
-  assert (HBd : [ G ; Δ ,, A[d] @ l ⊢g B[llift d] @ l' ])
-    by (eapply (wf_ty_subst ge_typeof HB); now apply (lsub_wf_lift _ _ ge_typeof)).
-  assert (Hlift : SubRel G (Γ ,, A @ l) (Δ ,, A[d] @ l) (llift d) (llift d'))
-    by (apply SubRel_lift; [exact Hd | exact (VTy_refl_l (VTyG_loc VA)) | exact HAd | exact Hwl]).
-  destruct (VTyG_loc VB _ _ _ Hlift) as [RB HRB].
-  destruct (escape_ty _ _ _ _ _ _ _ _ HRB) as (_ & HB'd0 & HBB).
-  assert (HB'd : [ G ; Δ ,, A'[d'] @ l ⊢g B'[llift d'] @ l' ])
-    by exact (stab_ty ge_typeof (geq_ty_sound HAA) (lequiv_refl _ _ Hwl) HΔA' HB'd0).
-  assert (Hm : lequiv (gL G) (lmax l3 l4) (lmax l l')) by now apply lequiv_max.
-  push_subst.
-  eapply (LRsig N (LRbelow N) G Δ _ _ (lmax l l') l l' l3 l4 A[d] B[llift d] A'[d'] B'[llift d']
-            (piDom Δ d d') (piCod Δ d d')); [split|..].
-  - apply lequiv_refl; cbn; auto.
-  - exact H3.
-  - exact H4.
-  - exact Hwl.
-  - exact Hwl'.
-  - apply tyred_refl, wft_sig; auto using ge_compt.
-  - apply tyred_refl. eapply wft_lconv; [|apply lequiv_sym, Hm].
-    apply wft_sig; [exact ge_compt | eauto using lequiv_wf_l | eauto using lequiv_wf_l | |].
-    + eapply lconv_ty; [exact HA'd | now apply lequiv_sym].
-    + eapply (lconv_ty (l := l')); [|now apply lequiv_sym].
-      eapply ctx_lvl_ty; [exact HA'd | now apply lequiv_sym | exact HB'd].
-  - exact HAd.
-  - exact HA'd.
-  - exact HBd.
-  - exact HB'd.
-  - exact HAA.
-  - exact HBB.
-  - intros ρ. unfold piDom.
-    destruct (VTyG_kw ρ VA Hd) as [R HR].
-    exact (LR_canon _ _ _ _ _ _ _ (LogRel_up (N_l (l := l) (l' := l')) HR)).
-  - intros ρ a a' ha. unfold piCod.
-    pose proof (SubRel_kw _ _ _ ρ _ _ Hd) as Hdρ.
-    assert (Ha : LRtm l (kw_G ρ) (kw_Δ ρ) A⟦kw_γ ρ⟧[kwsub ρ d] A⟦kw_γ ρ⟧[kwsub ρ d'] a a').
-    { unfold piDom in ha. apply (LRtm_stage (N_l (l := l) (l' := l'))) in ha. rewrite !kty_subst in ha.
-      eapply LRtm_irrel_r; [exact ha|].
-      exact (VTy_refl_l (VA _ _ (kw_gok ρ)) _ _ _ Hdρ). }
-    pose proof (VB _ _ (kw_gok ρ)) as VBρ. rewrite gwa_cext in VBρ.
-    pose proof (VBρ _ _ _ (SubRel_cons Hdρ Ha)) as [R HR].
-    rewrite <- !ktyl_subst_single in HR.
-    exact (LR_canon _ _ _ _ _ _ _ (LogRel_up (N_l' (l := l) (l' := l')) HR)).
-  - apply releq_refl.
+  intros Hd.
+  destruct (poly_here (F := tySig) (A := A) (A' := A') (B := B) (B' := B') Hwl Hwl' H3 H4 HB VA VB Δ d d'
+              ltac:(intros; apply wft_sig; auto using ge_compt) ltac:(reflexivity) Hd) as (P & Hdom & Hcod).
+  exact (LRsig _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ P Hdom Hcod (releq_refl _)).
 Qed.
 
 Lemma V_sig : VTy G Γ (tySig l l' A B) (tySig l3 l4 A' B') (lmax l l').

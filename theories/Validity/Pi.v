@@ -53,11 +53,24 @@ Proof. unfold N; rewrite lmeasure_max; lia. Qed.
 Lemma N_l' : lmeasure l' <= N.
 Proof. unfold N; rewrite lmeasure_max; lia. Qed.
 
-Lemma LR_pi_here Δ d d' : SubRel G Γ Δ d d' ->
-  LogRel (lmax l l') G Δ (tyPi l l' A B)[d] (tyPi l3 l4 A' B')[d'] (lmax l l')
-    (PiRel G Δ l l' l3 l4 A[d] B[llift d] A'[d'] B'[llift d'] (piDom Δ d d') (piCod Δ d d')).
+(** The part of [LR_pi_here] shared by every binder former [F] with Π's
+    domain and codomain relations: the type-level facts and the domain and
+    codomain derivations. [F] is formed as Π is and commutes with
+    substitution as Π does. *)
+Lemma poly_here {F} Δ d d' :
+  (forall G Δ k k' C D, lwf (gL G) k -> lwf (gL G) k' -> [ G ; Δ ⊢g C @ k ] ->
+     [ G ; Δ ,, C @ k ⊢g D @ k' ] -> [ G ; Δ ⊢g F k k' C D @ lmax k k' ]) ->
+  (forall k k' C D e, (F k k' C D)[e] = F k k' C[e] D[llift e]) ->
+  SubRel G Γ Δ d d' ->
+  PolyFacts G Δ F (F l l' A B)[d] (F l3 l4 A' B')[d'] (lmax l l') l l' l3 l4
+    A[d] B[llift d] A'[d'] B'[llift d'] /\
+  (forall ρ : kwk G Δ, LR N (LRbelow N) (kw_G ρ) (kw_Δ ρ) (kty ρ A[d]) (kty ρ A'[d']) l
+                         (piDom Δ d d' ρ)) /\
+  (forall (ρ : kwk G Δ) a a' (ha : piDom Δ d d' ρ a a'),
+      LR N (LRbelow N) (kw_G ρ) (kw_Δ ρ) (ktyl ρ B[llift d])[lsingle a] (ktyl ρ B'[llift d'])[lsingle a'] l'
+        (piCod Δ d d' ρ a a' ha)).
 Proof.
-  intros Hd. pose proof (SubRel_ctx Hd) as HΔ.
+  intros HF HFs Hd. pose proof (SubRel_ctx Hd) as HΔ.
   pose proof (SubRel_wf_l _ _ _ _ _ Hd) as Hwd. pose proof (SubRel_wf_r Hd) as Hwd'.
   destruct (VTyG_loc VA _ _ _ Hd) as [RA HRA].
   destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HAd & HA'd & HAA).
@@ -73,17 +86,16 @@ Proof.
   assert (HB'd : [ G ; Δ ,, A'[d'] @ l ⊢g B'[llift d'] @ l' ])
     by exact (stab_ty ge_typeof (geq_ty_sound HAA) (lequiv_refl _ _ Hwl) HΔA' HB'd0).
   assert (Hm : lequiv (gL G) (lmax l3 l4) (lmax l l')) by now apply lequiv_max.
-  push_subst.
-  eapply (LRpi N (LRbelow N) G Δ _ _ (lmax l l') l l' l3 l4 A[d] B[llift d] A'[d'] B'[llift d']
-            (piDom Δ d d') (piCod Δ d d')); [split|..].
+  rewrite !HFs.
+  refine (conj _ (conj _ _)); [split|..].
   - apply lequiv_refl; cbn; auto.
   - exact H3.
   - exact H4.
   - exact Hwl.
   - exact Hwl'.
-  - apply tyred_refl, wft_pi; auto using ge_notV.
+  - apply tyred_refl, HF; auto.
   - apply tyred_refl. eapply wft_lconv; [|apply lequiv_sym, Hm].
-    apply wft_pi; [exact ge_notV | eauto using lequiv_wf_l | eauto using lequiv_wf_l | |].
+    apply HF; [eauto using lequiv_wf_l | eauto using lequiv_wf_l | |].
     + eapply lconv_ty; [exact HA'd | now apply lequiv_sym].
     + eapply (lconv_ty (l := l')); [|now apply lequiv_sym].
       eapply ctx_lvl_ty; [exact HA'd | now apply lequiv_sym | exact HB'd].
@@ -106,7 +118,16 @@ Proof.
     pose proof (VBρ _ _ _ (SubRel_cons Hdρ Ha)) as [R HR].
     rewrite <- !ktyl_subst_single in HR.
     exact (LR_canon _ _ _ _ _ _ _ (LogRel_up N_l' HR)).
-  - apply releq_refl.
+Qed.
+
+Lemma LR_pi_here Δ d d' : SubRel G Γ Δ d d' ->
+  LogRel (lmax l l') G Δ (tyPi l l' A B)[d] (tyPi l3 l4 A' B')[d'] (lmax l l')
+    (PiRel G Δ l l' l3 l4 A[d] B[llift d] A'[d'] B'[llift d'] (piDom Δ d d') (piCod Δ d d')).
+Proof.
+  intros Hd.
+  destruct (poly_here (F := tyPi) Δ d d' ltac:(intros; apply wft_pi; auto using ge_notV)
+              ltac:(reflexivity) Hd) as (P & Hdom & Hcod).
+  exact (LRpi _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ P Hdom Hcod (releq_refl _)).
 Qed.
 
 Lemma V_pi : VTy G Γ (tyPi l l' A B) (tyPi l3 l4 A' B') (lmax l l').
