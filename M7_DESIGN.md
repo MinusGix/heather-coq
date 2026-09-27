@@ -370,9 +370,8 @@ A theorem that our system derives exactly the paper's judgments:
   congruences (M1 deviation) are admissible;
 - `eqty_leq`/`eqtm_leq` at M (M3 E12) are admissible.
 
-Status: to design. First step: inventory the divergences (ours = O, the
-paper's ch. 4 = P) and reevaluate those that were expedients of the
-buildout.
+Status: P ⊆ O done (K3, K4); O ⊆ P open. The divergences (ours = O, the
+paper's ch. 4 = P) were inventoried and reevaluated first (K1, K2).
 
 #### K1. Divergence inventory (from a full read of ch. 4 against `Declarative.v`)
 
@@ -491,6 +490,47 @@ So P's rules can use `leqP` and O's `lequiv` is interchangeable with it:
 item 6 of K1 (semantic levels) is no longer a divergence of the judgments,
 only of their definition.
 
+#### K4. P as an inductive, and P ⊆ O (done)
+
+- `Typing/Paper.v`: P's judgments (`pwf_*`, `peq_*`, notation `⊢ₚ`,
+  scheme `ptyping_mut`) over our syntax, with K1's representation
+  (items 1–5) and the paper's rules: no reflexivity (a congruence per
+  former, including `Nat`, variables, `0` and the codes), the paper's
+  premises only, no instance or scope premises, no `≡ₗ` rule, the
+  paper's context equivalence, `leqP` for levels. The file header lists
+  how K1's gaps and typos are settled. Choices beyond K1's list:
+  - the `El` decoding rules take `compt i`: the paper states them among
+    the MLTT rules without it, but at C they would contradict its Static
+    Code Lemma (05:1055);
+  - the `UΠ`/`ULAM` congruences take `⊢ Γ` (the paper's omit it; getting
+    it from `Γ⟨ush n⟩ᵤ` needs a universe strengthening we don't have);
+  - the recursors' β: one schematic rule per recursor, premised on the
+    redex's P typing (which packs `G_A`, `⊢ Δ` and the code's typing);
+  - the recursors' congruences: every component's equation, typed in the
+    left scope, like the paper's other congruences.
+- `Typing/PresupC.v`: presupposition of equations at V and C
+  (`presupposition_C`, `eqty_wf_C`, `eqtm_wf_C`). O's presupposition only
+  covered `typeof i = i`; the paper's `box` congruences take only the
+  code's C-equation. Right-hand sides move by context conversion along an
+  equivalence at D (`CtxConv`), types by equations at D; the term `gvar`
+  case needs functionality at D.
+- `Validity/PaperSound.v`: `paper_sound`, P ⊆ O for all seven judgments,
+  by induction on P. The P rules with fewer premises than O's are
+  lemmas `ps_*`: presupposition (D/M, `PresupC`), type inversion
+  (`inv_ty_upi`/`cpi`/`tpi`), `gbind_*` for the right-hand bodies of
+  `TΠ`/`ΛU`/`letbox` (`move_tybind`, `gbind_obj_tm`), `RecAdm` and
+  `branch_conv` for the recursors' scopes, `declM_inst_*_eq`/
+  `declM_mot*_eq` for the instance equations, subject reduction for the
+  recursors' β reducts. So K2's reasoning held: O's extra premises are
+  all derivable after the FT. Closed under the global context.
+- Corollaries: `paper_consistency`, `paper_canonicity` (reduction to a
+  canonical value; the equation with it is O's until O ⊆ P).
+
+Open: O ⊆ P (P-reflexivity by induction on P typing; O's `≡ₗ` rule at M
+by the lemma L of K1's discussion: induction on the left P derivation
+with only an O typing of the right side). With it, O's decidability and
+the canonicity equations transfer to P.
+
 ### C4. An executable checker
 
 A fuel-based, `Type`-valued decision procedure for conversion (M6 H1)
@@ -500,5 +540,5 @@ Status: to design.
 
 ## Order
 
-A1, A3, B1, A2, B2, C1, C1b: done. Next: C2–C4, each designed when
-reached.
+A1, A3, B1, A2, B2, C1, C1b: done. C3: P ⊆ O done, O ⊆ P open. Next:
+C2–C4, each designed when reached.
