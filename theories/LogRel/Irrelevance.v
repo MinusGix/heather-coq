@@ -163,6 +163,29 @@ Qed.
 
 End SigDir.
 
+(** The binder cases ([Π], [Σ]): the right types are convertible, the
+    domain and codomain relations irrelevant, and the term relations move
+    along them by [dir]. *)
+Ltac poly_irrel F geqF dir :=
+  let HP := fresh "HP" in let Hdom := fresh "Hdom" in let Hcod := fresh "Hcod" in
+  match goal with
+  | |- releq (_ ?G ?Γ ?l1 ?l2 ?l3 ?l4 ?A ?B ?A' ?B' ?dR ?cR)
+             (_ _ _ _ _ ?k3 ?k4 _ _ ?C' ?D' ?dR' ?cR') =>
+      assert (HP : [ G ; Γ ⊢g F l3 l4 A' B' ≅ F k3 k4 C' D' @ lmax l1 l2 ])
+        by (eapply (eqty_trans _ _ _ _ (F l1 l2 A B)); [apply eqty_sym|];
+            apply geq_ty_sound, geqF; eauto using lequiv_sym);
+      assert (Hdom : forall ρ, releq (dR ρ) (dR' ρ))
+        by (intros; match goal with IH : forall (ρ : kwk _ _) T'' R', _ -> releq (dR _) _ |- _ =>
+                                        eapply IH end; eauto);
+      assert (Hcod : forall ρ a a' ha ha', releq (cR ρ a a' ha) (cR' ρ a a' ha'))
+        by (intros; match goal with IH : forall (ρ : kwk _ _) a a' ha T'' R', _ -> releq (cR _ _ _ _) _ |- _ =>
+                                        eapply IH end; eauto)
+  end;
+  intros t t'; split;
+  [ eapply dir; eassumption
+  | eapply dir; try eassumption;
+    [ now apply eqty_sym | intros; apply releq_sym, Hdom | intros; apply releq_sym, Hcod ] ].
+
 (** ** The meta-function cases, one direction *)
 
 Lemma CPiRel_dir {G Γ l1 l2 m2 T1 T1' T1''} {instR instR' : CInstRel G Γ} :
@@ -199,22 +222,26 @@ Proof.
   induction H1 as [G Γ T T' l R Hl HT HT' HR
                   | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                   | G Γ T T' l V V' R HT HT' HV HR
-                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
+                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                      [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
                   | G Γ T T' l R Hj HM
                   | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd IHinst HR
                   | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                       Hgeq instAd IHinst HR
-                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR];
+                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                      [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR];
     intros T'' R' H2;
     inversion H2 as [? ? ? ? ? ? Hk HTk HTk' HkR
                     | ? ? ? ? ? k1 k2 ? Hk Hk2 Hkn HTk HTk' HkR
                     | ? ? ? ? ? W W' ? HTk HTk' HW HkR
-                    | ? ? ? ? ? k1 k2 k3 k4 C D C' D' domR' codR' ? [Hk Hk3 Hk4 Hkw1 Hkw2 HTk HTk' HC HC' HD HD' HCC HDD] domAd' codAd' HkR
+                    | ? ? ? ? ? k1 k2 k3 k4 C D C' D' domR' codR' ?
+                        [Hk Hk3 Hk4 Hkw1 Hkw2 HTk HTk' HC HC' HD HD' HCC HDD] domAd' codAd' HkR
                     | ? ? ? ? ? ? Hkj HkM
                     | ? ? ? ? ? k1 k2 U1 U1' instR' ? Hkj Hk Hk2 Hkw1 HTk HTk' HU1 HU1' Hkgeq instAd' HkR
                     | ? ? ? ? ? Θ1 Θ1' k1 k2 k3 k4 U1 U1' instR' ? Hkj Hk Hk3 Hk4 Hkw1 Hkw2 HTk HTk' HΘ
                         HU1 HU1' Hkgeq instAd' HkR
-                    | ? ? ? ? ? k1 k2 k3 k4 C D C' D' domR' codR' ? [Hk Hk3 Hk4 Hkw1 Hkw2 HTk HTk' HC HC' HD HD' HCC HDD] domAd' codAd' HkR];
+                    | ? ? ? ? ? k1 k2 k3 k4 C D C' D' domR' codR' ?
+                        [Hk Hk3 Hk4 Hkw1 Hkw2 HTk HTk' HC HC' HD HD' HCC HDD] domAd' codAd' HkR];
     subst; try (agree; try ne_absurd).
   (* contextual types, and mismatches with them *)
   all: try solve [eapply ModRel_irrel; eassumption].
@@ -226,25 +253,7 @@ Proof.
   - assert (HVV : [ G ; Γ ⊢g V' ≅ W' @ l ]).
     { eapply eqty_trans; [apply eqty_sym|]; apply geq_ty_sound, gne_ty_geq; eassumption. }
     intros t t'; split; apply NeRel_conv; [exact HVV | now apply eqty_sym].
-  - match goal with
-    | |- releq (PiRel _ _ ?l1 ?l2 ?l3 ?l4 ?A ?B ?A' ?B' ?dR ?cR)
-               (PiRel _ _ _ _ ?k3 ?k4 _ _ ?C' ?D' ?dR' ?cR') =>
-        assert (HP : [ G ; Γ ⊢g tyPi l3 l4 A' B' ≅ tyPi k3 k4 C' D' @ lmax l1 l2 ])
-          by (eapply (eqty_trans _ _ _ _ (tyPi l1 l2 A B)); [apply eqty_sym|];
-              apply geq_ty_sound, geq_ty_pi; eauto using lequiv_sym);
-        assert (Hdom : forall ρ, releq (dR ρ) (dR' ρ))
-          by (intros; match goal with IH : forall (ρ : kwk _ _) T'' R', _ -> releq (dR _) _ |- _ =>
-                                          eapply IH end; eauto);
-        assert (Hcod : forall ρ a a' ha ha', releq (cR ρ a a' ha) (cR' ρ a a' ha'))
-          by (intros; match goal with IH : forall (ρ : kwk _ _) a a' ha T'' R', _ -> releq (cR _ _ _ _) _ |- _ =>
-                                          eapply IH end; eauto)
-    end.
-    intros t t'; split.
-    + eapply PiRel_dir; eassumption.
-    + eapply PiRel_dir; try eassumption.
-      * now apply eqty_sym.
-      * intros; apply releq_sym, Hdom.
-      * intros; apply releq_sym, Hcod.
+  - poly_irrel tyPi @geq_ty_pi @PiRel_dir.
   - (* CΠ: the right types are convertible, the instances irrelevant *)
     match goal with
     | |- releq (CPiRel _ _ ?a1 ?a2 ?A1 ?A1' ?iR) (CPiRel _ _ _ ?b2 _ ?B1' ?iR') =>
@@ -267,25 +276,7 @@ Proof.
     intros t t'; split.
     + eapply TPiRel_dir; eassumption.
     + eapply TPiRel_dir; [now apply eqty_sym | intros; apply releq_sym, Hinst].
-  - match goal with
-    | |- releq (SigRel _ _ ?l1 ?l2 ?l3 ?l4 ?A ?B ?A' ?B' ?dR ?cR)
-               (SigRel _ _ _ _ ?k3 ?k4 _ _ ?C' ?D' ?dR' ?cR') =>
-        assert (HP : [ G ; Γ ⊢g tySig l3 l4 A' B' ≅ tySig k3 k4 C' D' @ lmax l1 l2 ])
-          by (eapply (eqty_trans _ _ _ _ (tySig l1 l2 A B)); [apply eqty_sym|];
-              apply geq_ty_sound, geq_ty_sig; eauto using lequiv_sym);
-        assert (Hdom : forall ρ, releq (dR ρ) (dR' ρ))
-          by (intros; match goal with IH : forall (ρ : kwk _ _) T'' R', _ -> releq (dR _) _ |- _ =>
-                                          eapply IH end; eauto);
-        assert (Hcod : forall ρ a a' ha ha', releq (cR ρ a a' ha) (cR' ρ a a' ha'))
-          by (intros; match goal with IH : forall (ρ : kwk _ _) a a' ha T'' R', _ -> releq (cR _ _ _ _) _ |- _ =>
-                                          eapply IH end; eauto)
-    end.
-    intros t t'; split.
-    + eapply SigRel_dir; eassumption.
-    + eapply SigRel_dir; try eassumption.
-      * now apply eqty_sym.
-      * intros; apply releq_sym, Hdom.
-      * intros; apply releq_sym, Hcod.
+  - poly_irrel tySig @geq_ty_sig @SigRel_dir.
 Qed.
 
 (** ** Inversion by the left type's normal form *)
@@ -301,12 +292,14 @@ Proof.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
     intros HN; try open_mod; agree; try ne_absurd; auto.
 Qed.
 
@@ -318,12 +311,14 @@ Proof.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
-                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
-                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -334,12 +329,14 @@ Proof.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l W W' R HT HT' HW HR
-                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
-                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
     intros HN; try open_mod; agree; try solve [inversion HV0]; eauto.
 Qed.
 
@@ -356,12 +353,14 @@ Proof.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
@@ -379,12 +378,14 @@ Proof.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
@@ -395,12 +396,14 @@ Proof.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
-                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
-                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
     intros HN; first [exact (conj Hj HM) | agree; try ne_absurd].
 Qed.
 
@@ -410,12 +413,14 @@ Proof.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
-                | G Γ T T' l k1 k2 l3 l4 A0 B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l k1 k2 l3 l4 A0 B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
-                | G Γ T T' l k1 k2 l3 l4 A0 B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                | G Γ T T' l k1 k2 l3 l4 A0 B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
     intros HN; first [exact (conj Hj HM) | agree; try ne_absurd].
 Qed.
 
@@ -434,12 +439,14 @@ Proof.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
-                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
-                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 3 eexists; eauto 20.
 Qed.
@@ -460,12 +467,14 @@ Proof.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
-                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
-                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 5 eexists; eauto 20.
 Qed.

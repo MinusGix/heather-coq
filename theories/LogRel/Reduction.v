@@ -45,12 +45,14 @@ Proof.
   destruct 1 as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l l1 l2 U1 U1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 U1 U1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
     intros T1 T1' H1 H1'.
   - eapply LRnat; eauto using tyred_trans.
   - eapply LRU with (l1 := l1) (l2 := l2); eauto using tyred_trans.
@@ -69,12 +71,14 @@ Proof.
   destruct 1 as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
     intros t t' t1 t1' Htt H1 H1';
     first [exact (ModRel_red_tm HM _ _ _ _ Htt H1 H1') | apply HR; apply HR in Htt].
   - inversion Htt as [? ? w w' Hw Hw' Heq Hnf]; subst.
