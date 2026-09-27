@@ -499,6 +499,145 @@ Proof.
   - eapply eqtm_conv; [exact (lvl_eq_eqtm Hk Econg) | rewrite Hi; exact HX].
 Qed.
 
+(** ** Dependent pairs (M8) *)
+
+Lemma S_actnf_sig {G Γ l1 l2 l3 l4 A A' B B'} : leqv l1 l3 -> leqv l2 l4 ->
+  S_ty G Γ A A' -> S_ty G (Γ ,, A @ l1) B B' -> S_ty G Γ (tySig l1 l2 A B) (tySig l3 l4 A' B').
+Proof.
+  intros H13 H24 IHA IHB i k Hc HT HT'.
+  pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_sig HT) as ((Hv & W1 & W2 & HA & HB) & Hk).
+  destruct (inv_ty_sig HT') as ((_ & W3 & W4 & HA' & HB') & _).
+  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
+  pose proof (IHA i l1 Hc HA (wft_lconv _ _ _ _ _ _ HA' E13)) as EA.
+  assert (HΓA : [ G ; Γ ,, A @ l1 ⊢[ i ] ]) by (apply wfc_ext; [exact (ctx_of_wf_ty Hi HA) | exact HA | exact W1]).
+  assert (EA' : [ G ; Γ ⊢[ i ] A' ≅ A @ l3 ])
+    by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | exact (lequiv_sym _ _ _ E13)]).
+  pose proof (stab_ty Hi EA' (lequiv_sym _ _ _ E13) HΓA HB') as HB1.
+  pose proof (IHB i l2 Hc HB (wft_lconv _ _ _ _ _ _ HB1 E24)) as EB.
+  apply (lvl_eq_eqty Hk). apply eqty_sig; assumption.
+Qed.
+
+Lemma S_actmnf_code_sig {G Γ l l1 l2 l3 l4 s s' t t'} : leqv l1 l3 -> leqv l2 l4 ->
+  S_tm G Γ s s' (tyU l1) -> S_tm G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) ->
+  S_tm G Γ (tmSig l1 l2 s t) (tmSig l3 l4 s' t') (tyU l).
+Proof.
+  intros H13 H24 IHs IHt i k Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_code_sig Hi Hx) as ((Hc0 & W1 & W2 & Hs & Ht) & Hk & HT).
+  destruct (inv_code_sig Hi Hx') as ((_ & W3 & W4 & Hs' & Ht') & _).
+  pose proof (compt_notV _ Hc0) as Hv.
+  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
+  pose proof (ctx_of_wf_tm Hi Hs) as HΓ.
+  assert (HΓt : [ G ; Γ ⊢[ typeof i ] ]) by (rewrite Hi; exact HΓ).
+  assert (EU1 : [ G ; Γ ⊢[ i ] tyU l1 ≅ tyU l3 @ lsuc l1 ]) by (apply eqty_U; assumption).
+  assert (Hs1 : [ G ; Γ ⊢[ i ] s' : tyU l1 @ lsuc l1 ]).
+  { eapply wf_conv; [eapply wf_lconv; [exact Hs' | exact (lequiv_suc _ _ _ E13)] | rewrite Hi; exact EU1]. }
+  pose proof (IHs i (lsuc l1) Hc Hs Hs1) as Es.
+  assert (Es' : [ G ; Γ ⊢[ i ] s' ≅ s : tyU l3 @ lsuc l3 ]).
+  { eapply eqtm_lconv; [| exact (lequiv_suc _ _ _ (lequiv_sym _ _ _ E13))].
+    eapply eqtm_conv; [exact (eqtm_sym _ _ _ _ _ _ _ Es) | rewrite Hi; exact (eqty_sym _ _ _ _ _ _ EU1)]. }
+  assert (EEl : [ G ; Γ ⊢[ i ] tyEl l3 s' ≅ tyEl l1 s @ l3 ])
+    by (apply eqty_El; [exact Hv | exact (lequiv_sym _ _ _ E13) | exact Es']).
+  assert (HΓ1 : [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | apply wft_El; assumption | exact W1]).
+  pose proof (stab_tm Hi EEl (lequiv_sym _ _ _ E13) HΓ1 Ht') as Ht1.
+  assert (EU2 : [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] tyU l2 ≅ tyU l4 @ lsuc l2 ])
+    by (apply eqty_U; [exact Hv | rewrite Hi; exact HΓ1 | exact E24]).
+  assert (Ht2 : [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t' : tyU l2 @ lsuc l2 ]).
+  { eapply wf_conv; [eapply wf_lconv; [exact Ht1 | exact (lequiv_suc _ _ _ E24)] | rewrite Hi; exact EU2]. }
+  pose proof (IHt i (lsuc l2) Hc Ht Ht2) as Et.
+  eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
+  apply eqtm_code_sig; assumption.
+Qed.
+
+Lemma S_actmnf_sig_eta {G Γ l l' A B w w'} :
+  S_tm G Γ (tmFst l l' A B w) (tmFst l l' A B w') A ->
+  S_tm G Γ (tmSnd l l' A B w) (tmSnd l l' A B w') B[lsingle (tmFst l l' A B w)] ->
+  S_tm G Γ w w' (tySig l l' A B).
+Proof.
+  intros IH1 IH2 i k Hc Hw Hw'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_sig (wf_tm_ty Hi Hw)) as ((Hv & W1 & W2 & HA & HB) & Hk).
+  pose proof (lvl_eq_tm' Hk Hw) as Hw1. pose proof (lvl_eq_tm' Hk Hw') as Hw1'.
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hv W1 W2 HA HB Hw1) as Hf.
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hv W1 W2 HA HB Hw1') as Hf'.
+  pose proof (IH1 i l Hc Hf Hf') as E1.
+  pose proof (wf_snd _ _ _ _ _ _ _ _ Hv W1 W2 HA HB Hw1) as Hs.
+  pose proof (wf_snd _ _ _ _ _ _ _ _ Hv W1 W2 HA HB Hw1') as Hs'.
+  pose proof (sig_fam_eq Hi HB (eqty_refl _ _ _ _ _ HB) (eqtm_sym _ _ _ _ _ _ _ E1) Hf' Hf) as EB.
+  assert (Hs1 : [ G ; Γ ⊢[ i ] tmSnd l l' A B w' : B[lsingle (tmFst l l' A B w)] @ l' ])
+    by (eapply wf_conv; [exact Hs' | rewrite Hi; exact (eqty_sym _ _ _ _ _ _ EB)]).
+  pose proof (IH2 i l' Hc Hs Hs1) as E2.
+  apply (lvl_eq_eqtm Hk). exact (decl_sig_ext i Hc G Γ l l' A B w w' W1 W2 HA HB Hw1 Hw1' E1 E2).
+Qed.
+
+(** The annotations of a projection agree with the inferred [Σ] type. *)
+Lemma proj_annots {G i Γ l1 l2 l3 l4 A A' B B' m m' A0 B0} : typeof i = i -> compt i ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> lwf (gL G) l1 ->
+  [ G ; Γ ⊢[ i ] tySig l1 l2 A B ≅ tySig m m' A0 B0 @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ i ] tySig l3 l4 A' B' ≅ tySig m m' A0 B0 @ lmax l3 l4 ] ->
+  lequiv (gL G) l1 l3 /\ lequiv (gL G) l2 l4 /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] /\
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ].
+Proof.
+  intros Hi Hc HA W1 E0 E1.
+  destruct (sig_inj_c Hc E0) as (Em1 & Em2 & EA0 & EB0).
+  destruct (sig_inj_c Hc E1) as (Em3 & Em4 & EA1 & EB1).
+  pose proof (lequiv_trans _ _ _ _ (lequiv_sym _ _ _ Em1) Em3) as E13.
+  pose proof (lequiv_trans _ _ _ _ (lequiv_sym _ _ _ Em2) Em4) as E24.
+  assert (EA : [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ]).
+  { eapply eqty_trans; [exact EA0 |]. apply eqty_sym.
+    eapply eqty_lconv; [exact EA1 | exact E13]. }
+  assert (HΓA : [ G ; Γ ,, A @ l1 ⊢[ i ] ]) by (apply wfc_ext; [exact (ctx_of_wf_ty Hi HA) | exact HA | exact W1]).
+  assert (EA' : [ G ; Γ ⊢[ i ] A' ≅ A @ l3 ])
+    by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | exact (lequiv_sym _ _ _ E13)]).
+  pose proof (stab_eqty Hi EA' (lequiv_sym _ _ _ E13) HΓA EB1) as EB1'.
+  split; [exact E13 | split; [exact E24 | split; [exact EA |]]].
+  eapply eqty_trans; [exact EB0 |]. apply eqty_sym.
+  eapply eqty_lconv; [exact EB1' | exact E24].
+Qed.
+
+Lemma S_actmne_fst {G Γ l1 l2 l3 l4 A A' B B' ν ν' m m' A0 B0} :
+  S_ne G Γ ν ν' (tySig m m' A0 B0) ->
+  S_ne G Γ (tmFst l1 l2 A B ν) (tmFst l3 l4 A' B' ν') A0.
+Proof.
+  intros IHν i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_fst Hi Hx) as ((Hv & W1 & W2 & HA & HB & Hν) & Hk & HX).
+  destruct (inv_fst Hi Hx') as ((_ & W3 & W4 & HA' & HB' & Hν') & Hk' & HX').
+  destruct (IHν i _ _ _ _ Hc Hν Hν') as (E0 & E1 & Eν).
+  destruct (proj_annots Hi Hc HA W1 E0 E1) as (E13 & E24 & EA & EB).
+  destruct (sig_inj_c Hc E0) as (_ & _ & EA0 & _).
+  destruct (sig_inj_c Hc E1) as (_ & _ & EA1 & _).
+  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ Hv E13 E24 HA EA EB Eν) as Econg.
+  split; [| split].
+  - eapply eqty_trans; [exact HX | exact (lvl_eq_eqty Hk EA0)].
+  - eapply eqty_trans; [exact HX' | exact (lvl_eq_eqty Hk' EA1)].
+  - eapply eqtm_conv; [exact (lvl_eq_eqtm Hk Econg) | rewrite Hi; exact HX].
+Qed.
+
+Lemma S_actmne_snd {G Γ l1 l2 l3 l4 A A' B B' ν ν' m m' A0 B0} :
+  S_ne G Γ ν ν' (tySig m m' A0 B0) ->
+  S_ne G Γ (tmSnd l1 l2 A B ν) (tmSnd l3 l4 A' B' ν') B0[lsingle (tmFst m m' A0 B0 ν)].
+Proof.
+  intros IHν i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_snd Hi Hx) as ((Hv & W1 & W2 & HA & HB & Hν) & Hk & HX).
+  destruct (inv_snd Hi Hx') as ((_ & W3 & W4 & HA' & HB' & Hν') & Hk' & HX').
+  destruct (IHν i _ _ _ _ Hc Hν Hν') as (E0 & E1 & Eν).
+  destruct (proj_annots Hi Hc HA W1 E0 E1) as (E13 & E24 & EA & EB).
+  destruct (sig_inj_c Hc E0) as (Em1 & Em2 & EA0 & EB0).
+  pose proof (eqtm_snd _ _ _ _ _ _ _ _ _ _ _ _ _ Hv E13 E24 HA EA EB Eν) as Econg.
+  (* the first projections the types mention *)
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hv W1 W2 HA HB Hν) as Hf.
+  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ Hv (lequiv_sym _ _ _ Em1) (lequiv_sym _ _ _ Em2) HA EA0 EB0
+                (eqtm_refl _ _ _ _ _ _ Hν)) as Ef0.
+  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ Hv E13 E24 HA EA EB Eν) as Ef1.
+  pose proof (sig_fam_eq Hi HB EB0 Ef0 Hf (eqtm_wf_r Hi Ef0)) as EBB0.
+  pose proof (sig_fam_eq Hi HB EB Ef1 Hf (eqtm_wf_r Hi Ef1)) as EBB'.
+  split; [| split].
+  - eapply eqty_trans; [exact HX | exact (lvl_eq_eqty Hk EBB0)].
+  - eapply eqty_trans; [exact HX' | apply (lvl_eq_eqty Hk')].
+    eapply eqty_lconv; [| exact (lequiv_sym _ _ _ E24)].
+    eapply eqty_trans; [exact (eqty_sym _ _ _ _ _ _ EBB') | exact EBB0].
+  - eapply eqtm_conv; [exact (lvl_eq_eqtm Hk Econg) | rewrite Hi; exact HX].
+Qed.
+
 (** The body types of [letbox] under their binding, at equal motives. *)
 Lemma letboxT_body_eq {G Γ Δ l1 l2 M M'} : [ ⊢ gext G (gdTy Δ lC l2) ] -> [ G ; Δ ⊢[ lD ] ] ->
   lwf (gL G) l2 -> [ G ; Γ ,, tyCTyp Δ l2 @ lzero ⊢[ lM ] M ≅ M' @ l1 ] ->
@@ -936,7 +1075,10 @@ Proof.
     | solve [eapply S_actmne_elimt; eassumption] | solve [eapply S_actmne_elimt_gvar; eassumption]
     | solve [eapply S_actmne_uapp; eassumption] | solve [eapply S_actmne_capp; eassumption]
     | solve [eapply S_actmne_tapp; eassumption] | solve [eapply S_actmnee_red; eassumption]
-    | solve [eapply S_acs_pt; eassumption] ].
+    | solve [eapply S_acs_pt; eassumption]
+    | solve [eapply S_actnf_sig; eassumption] | solve [eapply S_actmnf_code_sig; eassumption]
+    | solve [eapply S_actmnf_sig_eta; eassumption] | solve [eapply S_actmne_fst; eassumption]
+    | solve [eapply S_actmne_snd; eassumption] ].
 Qed.
 
 (** Algorithmically convertible types (terms) of the computing layers,

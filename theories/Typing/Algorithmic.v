@@ -51,6 +51,10 @@ with ac_tynf : gctx -> ctx -> ty -> ty -> Prop :=
 | actnf_tpi G Γ Δ Δ' l1 l2 l3 l4 T T' : ac_ctx G Δ Δ' -> leqv l1 l3 -> leqv l2 l4 ->
     ac_ty (gext G (gdTy Δ lD l1)) Γ⟪S⟫ T T' ->
     ac_tynf G Γ (tyTPi Δ l1 l2 T) (tyTPi Δ' l3 l4 T')
+(* dependent pairs (M8) *)
+| actnf_sig G Γ l1 l2 l3 l4 A A' B B' : leqv l1 l3 -> leqv l2 l4 ->
+    ac_ty G Γ A A' -> ac_ty G (Γ ,, A @ l1) B B' ->
+    ac_tynf G Γ (tySig l1 l2 A B) (tySig l3 l4 A' B')
 
 with ac_tyne : gctx -> ctx -> ty -> ty -> Prop :=
 | actne_gvar G Γ U Δ i' l d d' : in_gctx (gΨ G) U (gdTy Δ i' l) -> ac_sub G Γ d d' Δ ->
@@ -94,6 +98,14 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tmnf G Γ w w' (tyTPi Δ l l' T)
 | actmnf_boxT G Γ Δ l T T' : ty_leq T T' -> ac_tmnf G Γ (boxT T) (boxT T') (tyCTyp Δ l)
 | actmnf_boxt G Γ Δ A l t t' : tm_leq t t' -> ac_tmnf G Γ (boxt t) (boxt t') (tyCTrm Δ A l)
+(* dependent pairs (M8): the code, and η by the projections *)
+| actmnf_code_sig G Γ l l1 l2 l3 l4 s s' t t' : leqv l1 l3 -> leqv l2 l4 ->
+    ac_tm G Γ s s' (tyU l1) -> ac_tm G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) ->
+    ac_tmnf G Γ (tmSig l1 l2 s t) (tmSig l3 l4 s' t') (tyU l)
+| actmnf_sig_eta G Γ l l' A B w w' :
+    ac_tm G Γ (tmFst l l' A B w) (tmFst l l' A B w') A ->
+    ac_tm G Γ (tmSnd l l' A B w) (tmSnd l l' A B w') B[lsingle (tmFst l l' A B w)] ->
+    ac_tmnf G Γ w w' (tySig l l' A B)
 
 with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_var G Γ n T l : in_ctx Γ n T l -> ac_tmne G Γ (var n) (var n) T
@@ -162,6 +174,16 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tmne G Γ (capp ν Δ) (capp ν' Δ') T⦃gsingle (GCtx Δ)⦄
 | actmne_tapp G Γ Δ l l' T ν ν' A A' : ac_tmnee G Γ ν ν' (tyTPi Δ l l' T) -> ac_ty G Δ A A' ->
     ac_tmne G Γ (tapp ν A) (tapp ν' A') T⦃gsingle (GTy A)⦄
+(* dependent pairs (M8): as for [app], the annotations are the pair's type
+   up to equality and are not inspected; the result type is read off the
+   inferred type, the first projection included, so that it does not
+   depend on the annotations either *)
+| actmne_fst G Γ l1 l2 l3 l4 A A' B B' ν ν' m m' A0 B0 :
+    ac_tmnee G Γ ν ν' (tySig m m' A0 B0) ->
+    ac_tmne G Γ (tmFst l1 l2 A B ν) (tmFst l3 l4 A' B' ν') A0
+| actmne_snd G Γ l1 l2 l3 l4 A A' B B' ν ν' m m' A0 B0 :
+    ac_tmnee G Γ ν ν' (tySig m m' A0 B0) ->
+    ac_tmne G Γ (tmSnd l1 l2 A B ν) (tmSnd l3 l4 A' B' ν') B0[lsingle (tmFst m m' A0 B0 ν)]
 
 with ac_tmnee : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmnee_red G Γ ν ν' T W : ac_tmne G Γ ν ν' T -> reds_ty T W -> whnf_ty W ->

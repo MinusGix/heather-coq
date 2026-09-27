@@ -975,6 +975,111 @@ Qed.
 
 (** ** Decidability *)
 
+(** ** Dependent pairs (M8) *)
+
+Lemma Dc_actnf_sig {G Γ l1 l2 l3 l4 A A0 B B0} :
+  Dc_ty G Γ A A0 -> Dc_ty G (Γ ,, A @ l1) B B0 -> Dc_tynf G Γ (tySig l1 l2 A B) (tySig l3 l4 A0 B0).
+Proof.
+  intros IHA IHB X i k k' Hc HX HX'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct X; try solve [refute_con | refute].
+  match goal with |- Dec (ac_tynf _ _ _ (tySig ?a ?b ?c ?d)) =>
+    rename a into l5, b into l6, c into A', d into B' end.
+  destruct (inv_ty_sig HX) as ((Hv & W1 & W2 & HA & HB) & _).
+  destruct (inv_ty_sig HX') as ((_ & W5 & W6 & HA' & HB') & _).
+  destruct (leqv_dec l1 l5) as [H15 | N]; [| refute]. destruct (leqv_dec l2 l6) as [H26 | N]; [| refute].
+  destruct (IHA A' i _ _ Hc HA HA') as [DA | N]; [| refute].
+  pose proof (leqv_lequiv _ _ _ W1 W5 H15) as E15.
+  pose proof (ac_ty_sound Hc DA HA (wft_lconv _ _ _ _ _ _ HA' E15)) as EA.
+  pose proof (ctx_of_wf_ty Hi HA) as HΓ.
+  assert (HΓA : [ G ; Γ ,, A @ l1 ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HA | exact W1]).
+  assert (EA' : [ G ; Γ ⊢[ i ] A' ≅ A @ l5 ])
+    by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | exact (lequiv_sym _ _ _ E15)]).
+  pose proof (stab_ty Hi EA' (lequiv_sym _ _ _ E15) HΓA HB') as HB1.
+  destruct (IHB B' i _ _ Hc HB HB1) as [DB | N]; [left; apply actnf_sig; assumption | refute].
+Qed.
+
+Lemma Dc_actmnf_code_sig {G Γ l l1 l2 l3 l4 s s0 t t0} :
+  Dc_tm G Γ s s0 (tyU l1) -> Dc_tm G (Γ ,, tyEl l1 s @ l1) t t0 (tyU l2) ->
+  Dc_tmnf G Γ (tmSig l1 l2 s t) (tmSig l3 l4 s0 t0) (tyU l).
+Proof.
+  intros IHs IHt x i k Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmnf _ _ _ (tmSig ?a ?b ?c ?d) _) =>
+    rename a into l5, b into l6, c into s', d into t' end.
+  destruct (code_sig_prem Hc Hx) as (Hv & W1 & W2 & Hs & Ht).
+  destruct (code_sig_prem Hc Hx') as (_ & W5 & W6 & Hs' & Ht').
+  destruct (leqv_dec l1 l5) as [H15 | N]; [| refute]. destruct (leqv_dec l2 l6) as [H26 | N]; [| refute].
+  pose proof (leqv_lequiv _ _ _ W1 W5 H15) as E15. pose proof (leqv_lequiv _ _ _ W2 W6 H26) as E26.
+  pose proof (ctx_of_wf_tm Hi Hs) as HΓ.
+  assert (HΓt : [ G ; Γ ⊢[ typeof i ] ]) by (rewrite Hi; exact HΓ).
+  assert (EU15 : [ G ; Γ ⊢[ i ] tyU l1 ≅ tyU l5 @ lsuc l1 ]) by (apply eqty_U; assumption).
+  assert (Hs1 : [ G ; Γ ⊢[ i ] s' : tyU l1 @ lsuc l1 ]).
+  { eapply wf_conv; [eapply wf_lconv; [exact Hs' | exact (lequiv_suc _ _ _ E15)] | rewrite Hi; exact EU15]. }
+  destruct (IHs s' i _ Hc Hs Hs1) as [Ds | N]; [| refute].
+  pose proof (ac_tm_sound Hc Ds Hs Hs1) as Es.
+  assert (HEl : [ G ; Γ ⊢[ i ] tyEl l1 s @ l1 ]) by (apply wft_El; assumption).
+  assert (EEl : [ G ; Γ ⊢[ i ] tyEl l1 s ≅ tyEl l5 s' @ l1 ]) by (apply eqty_El; [exact Hv | exact E15 | exact Es]).
+  assert (EEl' : [ G ; Γ ⊢[ i ] tyEl l5 s' ≅ tyEl l1 s @ l5 ])
+    by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EEl) | exact (lequiv_sym _ _ _ E15)]).
+  assert (HΓ1 : [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HEl | exact W1]).
+  assert (Ht1 : [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t' : tyU l2 @ lsuc l2 ]).
+  { eapply wf_conv; [eapply wf_lconv; [exact (stab_tm Hi EEl' (lequiv_sym _ _ _ E15) HΓ1 Ht') |
+                                       exact (lequiv_suc _ _ _ E26)] |].
+    rewrite Hi. apply eqty_U; [exact Hv | rewrite Hi; exact HΓ1 | exact E26]. }
+  destruct (IHt t' i _ Hc Ht Ht1) as [Dt | N]; [left; apply actmnf_code_sig; assumption | refute].
+Qed.
+
+Lemma Dc_actmnf_sig_eta {G Γ l l' A B w w0} :
+  Dc_tm G Γ (tmFst l l' A B w) (tmFst l l' A B w0) A ->
+  Dc_tm G Γ (tmSnd l l' A B w) (tmSnd l l' A B w0) B[lsingle (tmFst l l' A B w)] ->
+  Dc_tmnf G Γ w w0 (tySig l l' A B).
+Proof.
+  intros IH1 IH2 x i k Hc Hw Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_sig (wf_tm_ty Hi Hw)) as ((Hv & W1 & W2 & HA & HB) & Hk).
+  pose proof (lvl_eq_tm' Hk Hw) as Hw1. pose proof (lvl_eq_tm' Hk Hx) as Hx1.
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hv W1 W2 HA HB Hw1) as Hf.
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hv W1 W2 HA HB Hx1) as Hfx.
+  pose proof (wf_snd _ _ _ _ _ _ _ _ Hv W1 W2 HA HB Hw1) as Hs.
+  pose proof (wf_snd _ _ _ _ _ _ _ _ Hv W1 W2 HA HB Hx1) as Hsx.
+  destruct (IH1 _ i l Hc Hf Hfx) as [D1 | N]; [| right; intros D; exact (N (proj1 (ainv_sig_eta D)))].
+  pose proof (ac_tm_sound Hc D1 Hf Hfx) as E1.
+  pose proof (sig_fam_eq Hi HB (eqty_refl _ _ _ _ _ HB) (eqtm_sym _ _ _ _ _ _ _ E1) Hfx Hf) as EBs.
+  assert (Hsx1 : [ G ; Γ ⊢[ i ] tmSnd l l' A B x : B[lsingle (tmFst l l' A B w)] @ l' ])
+    by (eapply wf_conv; [exact Hsx | rewrite Hi; exact (eqty_sym _ _ _ _ _ _ EBs)]).
+  destruct (IH2 _ i l' Hc Hs Hsx1) as [D2 | N];
+    [left; apply actmnf_sig_eta; assumption | right; intros D; exact (N (proj2 (ainv_sig_eta D)))].
+Qed.
+
+Lemma Dc_actmne_fst {G Γ l1 l2 l3 l4 A A0 B Bb ν ν0 m m' A0' B0} :
+  ac_tmnee G Γ ν ν0 (tySig m m' A0' B0) -> Dc_nee G Γ ν ν0 (tySig m m' A0' B0) ->
+  Dc_ne G Γ (tmFst l1 l2 A B ν) (tmFst l3 l4 A0 Bb ν0) A0'.
+Proof.
+  intros Dν0 IHν x i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmne _ _ _ (tmFst ?a ?b ?c ?d ?e) _) =>
+    rename a into l5, b into l6, c into A', d into B', e into ν' end.
+  destruct (inv_fst Hi Hx) as ((_ & _ & _ & _ & _ & Hν) & _ & _).
+  destruct (inv_fst Hi Hx') as ((_ & _ & _ & _ & _ & Hν') & _ & _).
+  destruct (IHν ν' i _ _ _ _ Hc Hν Hν') as [Dν | N]; [left; eapply actmne_fst; exact Dν |].
+  right; intros D. destruct (ainv_fst D) as (l7 & l8 & A2 & B2 & ν2 & m2 & m2' & A1 & B1 & E & Dν2).
+  injection E as <- <- <- <- <-. rewrite <- (ac_nee_uniq Dν0 Dν2) in Dν2. exact (N Dν2).
+Qed.
+
+Lemma Dc_actmne_snd {G Γ l1 l2 l3 l4 A A0 B Bb ν ν0 m m' A0' B0} :
+  ac_tmnee G Γ ν ν0 (tySig m m' A0' B0) -> Dc_nee G Γ ν ν0 (tySig m m' A0' B0) ->
+  Dc_ne G Γ (tmSnd l1 l2 A B ν) (tmSnd l3 l4 A0 Bb ν0) B0[lsingle (tmFst m m' A0' B0 ν)].
+Proof.
+  intros Dν0 IHν x i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmne _ _ _ (tmSnd ?a ?b ?c ?d ?e) _) =>
+    rename a into l5, b into l6, c into A', d into B', e into ν' end.
+  destruct (inv_snd Hi Hx) as ((_ & _ & _ & _ & _ & Hν) & _ & _).
+  destruct (inv_snd Hi Hx') as ((_ & _ & _ & _ & _ & Hν') & _ & _).
+  destruct (IHν ν' i _ _ _ _ Hc Hν Hν') as [Dν | N]; [left; eapply actmne_snd; exact Dν |].
+  right; intros D. destruct (ainv_snd D) as (l7 & l8 & A2 & B2 & ν2 & m2 & m2' & A1 & B1 & E & Dν2).
+  injection E as <- <- <- <- <-. rewrite <- (ac_nee_uniq Dν0 Dν2) in Dν2. exact (N Dν2).
+Qed.
+
 Theorem ac_dec_all :
   (forall G Γ T T', ac_ty G Γ T T' -> Dc_ty G Γ T T') /\
   (forall G Γ W W', ac_tynf G Γ W W' -> Dc_tynf G Γ W W') /\
@@ -1009,7 +1114,10 @@ Proof.
     | solve [eapply Dc_actmne_elimt; eassumption] | solve [eapply Dc_actmne_elimt_gvar; eassumption]
     | solve [eapply Dc_actmne_uapp; eassumption] | solve [eapply Dc_actmne_capp; eassumption]
     | solve [eapply Dc_actmne_tapp; eassumption] | solve [eapply Dc_actmnee_red; eassumption]
-    | solve [eapply Dc_acs_pt; eassumption] ].
+    | solve [eapply Dc_acs_pt; eassumption]
+    | solve [eapply Dc_actnf_sig; eassumption] | solve [eapply Dc_actmnf_code_sig; eassumption]
+    | solve [eapply Dc_actmnf_sig_eta; eassumption] | solve [eapply Dc_actmne_fst; eassumption]
+    | solve [eapply Dc_actmne_snd; eassumption] ].
 Qed.
 
 (** Algorithmic conversion of well-formed types (typed terms) of the

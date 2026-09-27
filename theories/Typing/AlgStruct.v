@@ -298,6 +298,42 @@ Proof.
   rewrite <- (subst_ren_ty A _ _ _ (fun m => llk_lren _ _ m)). exact (IH n A k Hin _ _ Hr).
 Qed.
 
+(** Dependent pairs (M8). *)
+Lemma W_actnf_sig {G Γ l1 l2 l3 l4 A A' B B'} : leqv l1 l3 -> leqv l2 l4 ->
+  AW_ty G Γ A A' -> AW_ty G (Γ ,, A @ l1) B B' -> AW_tynf G Γ (tySig l1 l2 A B) (tySig l3 l4 A' B').
+Proof. intros H1 H2 IHA IHB Δ r Hr. push_ren. apply actnf_sig; auto. apply IHB. now constructor. Qed.
+Lemma W_actmnf_code_sig {G Γ l l1 l2 l3 l4 s s' t t'} : leqv l1 l3 -> leqv l2 l4 ->
+  AW_tm G Γ s s' (tyU l1) -> AW_tm G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) ->
+  AW_tmnf G Γ (tmSig l1 l2 s t) (tmSig l3 l4 s' t') (tyU l).
+Proof.
+  intros H1 H2 IHs IHt Δ r Hr. push_ren.
+  pose proof (wkr_up _ _ _ (tyEl l1 s) l1 Hr) as X. push_ren_in X.
+  apply actmnf_code_sig; [exact H1 | exact H2 | exact (IHs _ _ Hr) | exact (IHt _ _ X)].
+Qed.
+Lemma W_actmnf_sig_eta {G Γ l l' A B w w'} :
+  AW_tm G Γ (tmFst l l' A B w) (tmFst l l' A B w') A ->
+  AW_tm G Γ (tmSnd l l' A B w) (tmSnd l l' A B w') B[lsingle (tmFst l l' A B w)] ->
+  AW_tmnf G Γ w w' (tySig l l' A B).
+Proof.
+  intros IH1 IH2 Δ r Hr. push_ren. apply actmnf_sig_eta.
+  - pose proof (IH1 _ _ Hr) as X. push_ren_in X. exact X.
+  - pose proof (IH2 _ _ Hr) as X. rewrite single_ren_ty in X. push_ren_in X. exact X.
+Qed.
+Lemma W_actmne_fst {G Γ l1 l2 l3 l4 A A' B B' ν ν' m m' A0 B0} :
+  AW_tmnee G Γ ν ν' (tySig m m' A0 B0) ->
+  AW_tmne G Γ (tmFst l1 l2 A B ν) (tmFst l3 l4 A' B' ν') A0.
+Proof.
+  intros IHν Δ r Hr. push_ren. pose proof (IHν _ _ Hr) as X. push_ren_in X.
+  eapply actmne_fst; exact X.
+Qed.
+Lemma W_actmne_snd {G Γ l1 l2 l3 l4 A A' B B' ν ν' m m' A0 B0} :
+  AW_tmnee G Γ ν ν' (tySig m m' A0 B0) ->
+  AW_tmne G Γ (tmSnd l1 l2 A B ν) (tmSnd l3 l4 A' B' ν') B0[lsingle (tmFst m m' A0 B0 ν)].
+Proof.
+  intros IHν Δ r Hr. rewrite single_ren_ty. push_ren. pose proof (IHν _ _ Hr) as X. push_ren_in X.
+  eapply actmne_snd; exact X.
+Qed.
+
 Theorem ac_wk_all :
   (forall G Γ T T', ac_ty G Γ T T' -> AW_ty G Γ T T') /\
   (forall G Γ W W', ac_tynf G Γ W W' -> AW_tynf G Γ W W') /\
@@ -331,7 +367,10 @@ Proof.
     | solve [eapply W_actmne_elimt; eassumption] | solve [eapply W_actmne_elimt_gvar; eassumption]
     | solve [eapply W_actmne_uapp; eassumption] | solve [eapply W_actmne_capp; eassumption]
     | solve [eapply W_actmne_tapp; eassumption] | solve [eapply W_actmnee_red; eassumption]
-    | solve [eapply W_acs_pt; eassumption] ].
+    | solve [eapply W_acs_pt; eassumption]
+    | solve [eapply W_actnf_sig; eassumption] | solve [eapply W_actmnf_code_sig; eassumption]
+    | solve [eapply W_actmnf_sig_eta; eassumption] | solve [eapply W_actmne_fst; eassumption]
+    | solve [eapply W_actmne_snd; eassumption] ].
 Qed.
 
 (** ** Global weakening
@@ -655,6 +694,45 @@ Proof.
   rewrite !llk_glren, <- gren_subst_ty. exact (IH n A0 k Hin0 _ _ Hγ).
 Qed.
 
+(** Dependent pairs (M8). *)
+Lemma G_actnf_sig {G Γ l1 l2 l3 l4 A A' B B'} : leqv l1 l3 -> leqv l2 l4 ->
+  AG_ty G Γ A A' -> AG_ty G (Γ ,, A @ l1) B B' -> AG_tynf G Γ (tySig l1 l2 A B) (tySig l3 l4 A' B').
+Proof.
+  intros H1 H2 IHA IHB G' γ Hγ. push_gren.
+  pose proof (IHB _ _ Hγ) as X. push_gren_in X.
+  apply actnf_sig; [exact H1 | exact H2 | exact (IHA _ _ Hγ) | exact X].
+Qed.
+Lemma G_actmnf_code_sig {G Γ l l1 l2 l3 l4 s s' t t'} : leqv l1 l3 -> leqv l2 l4 ->
+  AG_tm G Γ s s' (tyU l1) -> AG_tm G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) ->
+  AG_tmnf G Γ (tmSig l1 l2 s t) (tmSig l3 l4 s' t') (tyU l).
+Proof.
+  intros H1 H2 IHs IHt G' γ Hγ. push_gren. pose proof (IHt _ _ Hγ) as X. push_gren_in X.
+  apply actmnf_code_sig; [exact H1 | exact H2 | exact (IHs _ _ Hγ) | exact X].
+Qed.
+Lemma G_actmnf_sig_eta {G Γ l l' A B w w'} :
+  AG_tm G Γ (tmFst l l' A B w) (tmFst l l' A B w') A ->
+  AG_tm G Γ (tmSnd l l' A B w) (tmSnd l l' A B w') B[lsingle (tmFst l l' A B w)] ->
+  AG_tmnf G Γ w w' (tySig l l' A B).
+Proof.
+  intros IH1 IH2 G' γ Hγ. push_gren. apply actmnf_sig_eta.
+  - pose proof (IH1 _ _ Hγ) as X. push_gren_in X. exact X.
+  - pose proof (IH2 _ _ Hγ) as X. rewrite gren_single_ty in X. push_gren_in X. exact X.
+Qed.
+Lemma G_actmne_fst {G Γ l1 l2 l3 l4 A A' B B' ν ν' m m' A0 B0} :
+  AG_tmnee G Γ ν ν' (tySig m m' A0 B0) ->
+  AG_tmne G Γ (tmFst l1 l2 A B ν) (tmFst l3 l4 A' B' ν') A0.
+Proof.
+  intros IHν G' γ Hγ. push_gren. pose proof (IHν _ _ Hγ) as X. push_gren_in X.
+  eapply actmne_fst; exact X.
+Qed.
+Lemma G_actmne_snd {G Γ l1 l2 l3 l4 A A' B B' ν ν' m m' A0 B0} :
+  AG_tmnee G Γ ν ν' (tySig m m' A0 B0) ->
+  AG_tmne G Γ (tmSnd l1 l2 A B ν) (tmSnd l3 l4 A' B' ν') B0[lsingle (tmFst m m' A0 B0 ν)].
+Proof.
+  intros IHν G' γ Hγ. rewrite gren_single_ty. push_gren. pose proof (IHν _ _ Hγ) as X. push_gren_in X.
+  eapply actmne_snd; exact X.
+Qed.
+
 Theorem ac_gwk_all :
   (forall G Γ T T', ac_ty G Γ T T' -> AG_ty G Γ T T') /\
   (forall G Γ W W', ac_tynf G Γ W W' -> AG_tynf G Γ W W') /\
@@ -689,7 +767,10 @@ Proof.
     | solve [eapply G_actmne_elimt; eassumption] | solve [eapply G_actmne_elimt_gvar; eassumption]
     | solve [eapply G_actmne_uapp; eassumption] | solve [eapply G_actmne_capp; eassumption]
     | solve [eapply G_actmne_tapp; eassumption] | solve [eapply G_actmnee_red; eassumption]
-    | solve [eapply G_acs_pt; eassumption] ].
+    | solve [eapply G_acs_pt; eassumption]
+    | solve [eapply G_actnf_sig; eassumption] | solve [eapply G_actmnf_code_sig; eassumption]
+    | solve [eapply G_actmnf_sig_eta; eassumption] | solve [eapply G_actmne_fst; eassumption]
+    | solve [eapply G_actmne_snd; eassumption] ].
 Qed.
 
 (** ** Universe substitution
@@ -1036,6 +1117,46 @@ Proof.
   rewrite !llk_ulsubst, <- usubst_subst_ty'. exact (IH n A0 k0 Hin0 L' φ).
 Qed.
 
+(** Dependent pairs (M8). *)
+Lemma U_actnf_sig {G Γ l1 l2 l3 l4 A A' B B'} : leqv l1 l3 -> leqv l2 l4 ->
+  AU_ty G Γ A A' -> AU_ty G (Γ ,, A @ l1) B B' -> AU_tynf G Γ (tySig l1 l2 A B) (tySig l3 l4 A' B').
+Proof.
+  intros H13 H24 IHA IHB L' φ; upush.
+  pose proof (IHB L' φ) as XB; upush_in XB.
+  apply actnf_sig; [exact (leqv_us φ H13) | exact (leqv_us φ H24) | exact (IHA L' φ) | exact XB].
+Qed.
+Lemma U_actmnf_code_sig {G Γ l l1 l2 l3 l4 s s' t t'} : leqv l1 l3 -> leqv l2 l4 ->
+  AU_tm G Γ s s' (tyU l1) -> AU_tm G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) ->
+  AU_tmnf G Γ (tmSig l1 l2 s t) (tmSig l3 l4 s' t') (tyU l).
+Proof.
+  intros H13 H24 IHs IHt L' φ; upush.
+  pose proof (IHs L' φ) as Xs; upush_in Xs. pose proof (IHt L' φ) as Xt; upush_in Xt.
+  apply actmnf_code_sig; [exact (leqv_us φ H13) | exact (leqv_us φ H24) | exact Xs | exact Xt].
+Qed.
+Lemma U_actmnf_sig_eta {G Γ l l' A B w w'} :
+  AU_tm G Γ (tmFst l l' A B w) (tmFst l l' A B w') A ->
+  AU_tm G Γ (tmSnd l l' A B w) (tmSnd l l' A B w') B[lsingle (tmFst l l' A B w)] ->
+  AU_tmnf G Γ w w' (tySig l l' A B).
+Proof.
+  intros IH1 IH2 L' φ; upush. apply actmnf_sig_eta.
+  - pose proof (IH1 L' φ) as X; upush_in X. exact X.
+  - pose proof (IH2 L' φ) as X. rewrite usubst_lsingle_ty in X. upush_in X. exact X.
+Qed.
+Lemma U_actmne_fst {G Γ l1 l2 l3 l4 A A' B B' ν ν' m m' A0 B0} :
+  AU_tmnee G Γ ν ν' (tySig m m' A0 B0) ->
+  AU_tmne G Γ (tmFst l1 l2 A B ν) (tmFst l3 l4 A' B' ν') A0.
+Proof.
+  intros IHν L' φ; upush. pose proof (IHν L' φ) as X; upush_in X.
+  eapply actmne_fst; exact X.
+Qed.
+Lemma U_actmne_snd {G Γ l1 l2 l3 l4 A A' B B' ν ν' m m' A0 B0} :
+  AU_tmnee G Γ ν ν' (tySig m m' A0 B0) ->
+  AU_tmne G Γ (tmSnd l1 l2 A B ν) (tmSnd l3 l4 A' B' ν') B0[lsingle (tmFst m m' A0 B0 ν)].
+Proof.
+  intros IHν L' φ. rewrite usubst_lsingle_ty. upush. pose proof (IHν L' φ) as X; upush_in X.
+  eapply actmne_snd; exact X.
+Qed.
+
 Theorem ac_us_all :
   (forall G Γ T T', ac_ty G Γ T T' -> AU_ty G Γ T T') /\
   (forall G Γ W W', ac_tynf G Γ W W' -> AU_tynf G Γ W W') /\
@@ -1070,7 +1191,10 @@ Proof.
     | solve [eapply U_actmne_elimt; eassumption] | solve [eapply U_actmne_elimt_gvar; eassumption]
     | solve [eapply U_actmne_uapp; eassumption] | solve [eapply U_actmne_capp; eassumption]
     | solve [eapply U_actmne_tapp; eassumption] | solve [eapply U_actmnee_red; eassumption]
-    | solve [eapply U_acs_pt; eassumption] ].
+    | solve [eapply U_acs_pt; eassumption]
+    | solve [eapply U_actnf_sig; eassumption] | solve [eapply U_actmnf_code_sig; eassumption]
+    | solve [eapply U_actmnf_sig_eta; eassumption] | solve [eapply U_actmne_fst; eassumption]
+    | solve [eapply U_actmne_snd; eassumption] ].
 Qed.
 
 (** ** Closure under [≡ₗ] on the right
@@ -1375,6 +1499,31 @@ Lemma L_acs_pt {G Γ d d' Θ} :
   (forall n A k, in_ctx Θ n A k -> AL_tm G Γ (llk d n) (llk d' n) A[d]) -> AL_sub G Γ d d' Θ.
 Proof. intros IH d2 E. apply acs_pt. intros n A k Hin. exact (IH n A k Hin _ (llk_leq _ _ n E)). Qed.
 
+(** Dependent pairs (M8). *)
+Lemma L_actnf_sig {G Γ l1 l2 l3 l4 A A' B B'} : leqv l1 l3 -> leqv l2 l4 ->
+  AL_ty G Γ A A' -> AL_ty G (Γ ,, A @ l1) B B' -> AL_tynf G Γ (tySig l1 l2 A B) (tySig l3 l4 A' B').
+Proof. intros H13 H24 IHA IHB T2 E; linv E. apply actnf_sig; eauto with lq. Qed.
+Lemma L_actmnf_code_sig {G Γ l l1 l2 l3 l4 s s' t t'} : leqv l1 l3 -> leqv l2 l4 ->
+  AL_tm G Γ s s' (tyU l1) -> AL_tm G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) ->
+  AL_tmnf G Γ (tmSig l1 l2 s t) (tmSig l3 l4 s' t') (tyU l).
+Proof. intros H13 H24 IHs IHt t2 E; linv E. apply actmnf_code_sig; eauto with lq. Qed.
+Lemma L_actmnf_sig_eta {G Γ l l' A B w w'} :
+  AL_tm G Γ (tmFst l l' A B w) (tmFst l l' A B w') A ->
+  AL_tm G Γ (tmSnd l l' A B w) (tmSnd l l' A B w') B[lsingle (tmFst l l' A B w)] ->
+  AL_tmnf G Γ w w' (tySig l l' A B).
+Proof.
+  intros IH1 IH2 t2 E. apply actmnf_sig_eta; [apply IH1 | apply IH2]; cbn [tm_leq];
+    repeat split; first [exact E | apply leqv_refl | apply ty_leq_refl].
+Qed.
+Lemma L_actmne_fst {G Γ l1 l2 l3 l4 A A' B B' ν ν' m m' A0 B0} :
+  AL_tmnee G Γ ν ν' (tySig m m' A0 B0) ->
+  AL_tmne G Γ (tmFst l1 l2 A B ν) (tmFst l3 l4 A' B' ν') A0.
+Proof. intros IHν t2 E; linv E. eapply actmne_fst; eauto. Qed.
+Lemma L_actmne_snd {G Γ l1 l2 l3 l4 A A' B B' ν ν' m m' A0 B0} :
+  AL_tmnee G Γ ν ν' (tySig m m' A0 B0) ->
+  AL_tmne G Γ (tmSnd l1 l2 A B ν) (tmSnd l3 l4 A' B' ν') B0[lsingle (tmFst m m' A0 B0 ν)].
+Proof. intros IHν t2 E; linv E. eapply actmne_snd; eauto. Qed.
+
 Theorem ac_leq_all :
   (forall G Γ T T', ac_ty G Γ T T' -> AL_ty G Γ T T') /\
   (forall G Γ W W', ac_tynf G Γ W W' -> AL_tynf G Γ W W') /\
@@ -1409,122 +1558,9 @@ Proof.
     | solve [eapply L_actmne_elimt; eassumption] | solve [eapply L_actmne_elimt_gvar; eassumption]
     | solve [eapply L_actmne_uapp; eassumption] | solve [eapply L_actmne_capp; eassumption]
     | solve [eapply L_actmne_tapp; eassumption] | solve [eapply L_actmnee_red; eassumption]
-    | solve [eapply L_acs_pt; eassumption] ].
+    | solve [eapply L_acs_pt; eassumption]
+    | solve [eapply L_actnf_sig; eassumption] | solve [eapply L_actmnf_code_sig; eassumption]
+    | solve [eapply L_actmnf_sig_eta; eassumption] | solve [eapply L_actmne_fst; eassumption]
+    | solve [eapply L_actmne_snd; eassumption] ].
 Qed.
 
-(** ** Annotations along the head spine (M6_DESIGN.md H10)
-
-    [spa t t']: [t'] is [t] with the annotations of [app] nodes on its
-    head spine (through [app], [uapp], [capp], [tapp]) changed. Reduction
-    never reads them, and neither do the neutral rules, so the term
-    judgments are closed under [spa] on both sides. *)
-
-Inductive spa : tm -> tm -> Prop :=
-| spa_refl t : spa t t
-| spa_app f f' l1 l2 A B l1' l2' A' B' s : spa f f' -> spa (app f l1 l2 A B s) (app f' l1' l2' A' B' s)
-| spa_uapp f f' ls : spa f f' -> spa (uapp f ls) (uapp f' ls)
-| spa_capp f f' Δ0 : spa f f' -> spa (capp f Δ0) (capp f' Δ0)
-| spa_tapp f f' T : spa f f' -> spa (tapp f T) (tapp f' T).
-
-#[local] Hint Constructors spa : spa.
-
-Lemma spa_ren t t' r : spa t t' -> spa t⟨r⟩ t'⟨r⟩.
-Proof. induction 1; cbn; eauto with spa. Qed.
-Lemma spa_uren t t' ρ : spa t t' -> spa t⟨ρ⟩ᵤ t'⟨ρ⟩ᵤ.
-Proof. induction 1; cbn; eauto with spa. Qed.
-Lemma spa_gren t t' ξ : spa t t' -> spa t⟪ξ⟫ t'⟪ξ⟫.
-Proof. induction 1; cbn; eauto with spa. Qed.
-
-Lemma spa_whne t t' : spa t t' -> whne t -> whne t'.
-Proof. induction 1; intros Hw; [exact Hw | ..]; inversion Hw; subst; constructor; auto. Qed.
-
-Lemma spa_whnf t t' : spa t t' -> whnf t -> whnf t'.
-Proof.
-  intros H Hw. destruct H; [exact Hw | ..];
-    inversion Hw; subst; apply whnf_ne; (eapply spa_whne; [econstructor; eassumption | eassumption]).
-Qed.
-
-Lemma spa_red t t' : spa t t' -> forall u, red t u -> exists u', red t' u' /\ spa u u'.
-Proof.
-  induction 1; intros u Hr;
-    first [ solve [exists u; split; [exact Hr | apply spa_refl]] | inversion Hr; subst ].
-  all: first
-    [ match goal with Hs : spa (_ _ _ _ _) _ |- _ => inversion Hs; subst end;
-      eexists; split; [econstructor; try first [eassumption | reflexivity] | apply spa_refl]
-    | match goal with Hs : spa (_ _ _ _) _ |- _ => inversion Hs; subst end;
-      eexists; split; [econstructor; try first [eassumption | reflexivity] | apply spa_refl]
-    | match goal with Hs : spa (_ _ _) _ |- _ => inversion Hs; subst end;
-      eexists; split; [econstructor; try first [eassumption | reflexivity] | apply spa_refl]
-    | match goal with IH : forall u, red ?f u -> _, Hr' : red ?f ?f1 |- _ =>
-        destruct (IH _ Hr') as (f3 & Hr3 & Hs3) end;
-      eexists; split; [econstructor; exact Hr3 | constructor; exact Hs3] ].
-Qed.
-
-Lemma spa_reds t t' u : reds t u -> spa t t' -> exists u', reds t' u' /\ spa u u'.
-Proof.
-  intros H; revert t'; induction H as [t | t v u Htv Hvu IH]; intros t' Hs.
-  - exists t'; split; [constructor | exact Hs].
-  - destruct (spa_red _ _ Hs _ Htv) as (v' & Hv' & Hsv).
-    destruct (IH _ Hsv) as (u' & Hu' & Hsu). exists u'; split; [econstructor; eassumption | exact Hsu].
-Qed.
-
-Lemma spa_app_inv f l1 l2 A B s x : spa (app f l1 l2 A B s) x ->
-  exists f' l1' l2' A' B', x = app f' l1' l2' A' B' s /\ spa f f'.
-Proof. intros H; inversion H; subst; do 5 eexists; split; eauto with spa. Qed.
-Lemma spa_uapp_inv f ls x : spa (uapp f ls) x -> exists f', x = uapp f' ls /\ spa f f'.
-Proof. intros H; inversion H; subst; eexists; split; eauto with spa. Qed.
-Lemma spa_capp_inv f Δ0 x : spa (capp f Δ0) x -> exists f', x = capp f' Δ0 /\ spa f f'.
-Proof. intros H; inversion H; subst; eexists; split; eauto with spa. Qed.
-Lemma spa_tapp_inv f T x : spa (tapp f T) x -> exists f', x = tapp f' T /\ spa f f'.
-Proof. intros H; inversion H; subst; eexists; split; eauto with spa. Qed.
-
-Definition AP_tm G Γ t t' T : Prop := forall t2 t2', spa t t2 -> spa t' t2' -> ac_tm G Γ t2 t2' T.
-Definition AP_tmnf G Γ t t' T : Prop := forall t2 t2', spa t t2 -> spa t' t2' -> ac_tmnf G Γ t2 t2' T.
-Definition AP_tmne G Γ t t' T : Prop := forall t2 t2', spa t t2 -> spa t' t2' -> ac_tmne G Γ t2 t2' T.
-Definition AP_tmnee G Γ t t' T : Prop := forall t2 t2', spa t t2 -> spa t' t2' -> ac_tmnee G Γ t2 t2' T.
-
-(** A non-spine head is only related to itself. *)
-Ltac spa_triv :=
-  repeat match goal with Hs : spa ?t ?x |- _ =>
-    is_var x; tryif is_var t then fail else (inversion Hs; subst; clear Hs) end.
-
-Theorem ac_spa_all :
-  (forall G Γ T T', ac_ty G Γ T T' -> True) /\
-  (forall G Γ W W', ac_tynf G Γ W W' -> True) /\
-  (forall G Γ V V', ac_tyne G Γ V V' -> True) /\
-  (forall G Δ Δ', ac_ctx G Δ Δ' -> True) /\
-  (forall G Γ t t' T, ac_tm G Γ t t' T -> AP_tm G Γ t t' T) /\
-  (forall G Γ w w' W, ac_tmnf G Γ w w' W -> AP_tmnf G Γ w w' W) /\
-  (forall G Γ ν ν' T, ac_tmne G Γ ν ν' T -> AP_tmne G Γ ν ν' T) /\
-  (forall G Γ ν ν' W, ac_tmnee G Γ ν ν' W -> AP_tmnee G Γ ν ν' W) /\
-  (forall G Γ d d' Δ, ac_sub G Γ d d' Δ -> True).
-Proof.
-  apply ac_mut; intros; try exact I; intros x x' Hx Hx'.
-  (* only reflexive, or a positive type *)
-  all: try solve [spa_triv; econstructor; eauto].
-  (* reduction *)
-  all: try solve
-    [ match type of Hx with spa ?a _ => match goal with Hr : reds a _ |- _ =>
-        destruct (spa_reds _ _ _ Hr Hx) as (u2 & Hu2 & Hs2) end end;
-      match type of Hx' with spa ?a _ => match goal with Hr : reds a _ |- _ =>
-        destruct (spa_reds _ _ _ Hr Hx') as (u2' & Hu2' & Hs2') end end;
-      eapply actm_red; [eassumption | eassumption | exact Hu2 | exact Hu2' | eapply spa_whnf; eassumption
-                       | eapply spa_whnf; eassumption | auto] ].
-  (* η *)
-  all: try solve
-    [ first [apply actmnf_eta | apply actmnf_ueta | apply actmnf_ceta | apply actmnf_teta];
-      match goal with IH : AP_tm _ _ _ _ _ |- _ => apply IH end;
-      first [ apply spa_app, spa_ren | apply spa_uapp, spa_uren | apply spa_capp, spa_gren
-            | apply spa_tapp, spa_gren ]; assumption ].
-  (* spine heads *)
-  all: first
-    [ destruct (spa_app_inv _ _ _ _ _ _ _ Hx) as (hd & ? & ? & ? & ? & -> & Hf);
-      destruct (spa_app_inv _ _ _ _ _ _ _ Hx') as (hd' & ? & ? & ? & ? & -> & Hf')
-    | destruct (spa_uapp_inv _ _ _ Hx) as (hd & -> & Hf); destruct (spa_uapp_inv _ _ _ Hx') as (hd' & -> & Hf')
-    | destruct (spa_capp_inv _ _ _ Hx) as (hd & -> & Hf); destruct (spa_capp_inv _ _ _ Hx') as (hd' & -> & Hf')
-    | destruct (spa_tapp_inv _ _ _ Hx) as (hd & -> & Hf); destruct (spa_tapp_inv _ _ _ Hx') as (hd' & -> & Hf') ];
-    econstructor;
-    first [ match goal with IH : AP_tmnee _ _ _ _ _ |- _ => exact (IH _ _ Hf Hf') end
-          | match goal with IH : AP_tm _ _ _ _ _ |- _ => apply IH; apply spa_refl end
-          | eassumption ].
-Qed.
