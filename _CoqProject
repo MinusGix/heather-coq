@@ -9,6 +9,7 @@ theories/Syntax/Universe.v
 theories/Syntax/Recursor.v
 theories/Syntax/LevelEq.v
 theories/Syntax/LevelDec.v
+theories/Syntax/LevelAx.v
 theories/Syntax/NormalForms.v
 theories/Syntax/Reduction.v
 theories/Syntax/LevelRed.v

@@ -391,9 +391,8 @@ Representation (same judgments, other encoding):
    index's whnf, not a literal `Π` (derivable in P by index congruence).
 5. C1b: `ulam`/`clam`/`tlam` carry their former (P's `TLAM` has no `Δ`).
 6. Level equivalence is semantic (equal evaluation), P's is the axioms of
-   ch. 4 §Universe Levels. Equal only if those axioms are complete; not
-   proved. `LevelDec` has the normal form (constant and offsets) a
-   completeness proof would use.
+   ch. 4 §Universe Levels. The axioms are complete, so the two agree on
+   well-formed levels (K3, `leqP_iff`).
 
 Extra premises, admissible (logrel-coq style):
 7. Explicit reflexivity instead of P's per-former congruences
@@ -470,6 +469,27 @@ As built:
   That is a lemma-order restructure plus a new semantic lemma, only to
   change the rules' shape. C3 doesn't need it: after the FT, `gbind_*`
   derives the premises, which is what P ⊆ O uses.
+
+#### K3. Level equivalence (done, `Syntax/LevelAx.v`)
+
+P's `L ⊢ l ≈ l' : Level` (04:251) is the inductive `leqP`: the PER rules,
+congruence for `1+` and `⊔`, and the six algebraic rules, verbatim. P's
+well-formedness judgment (04:229) is our `lwf` as is.
+
+- `leqP_iff : leqP L l l' <-> lequiv L l l'`. Soundness: each rule is a
+  Level.v lemma. Completeness: every well-formed `l` is `leqP`-equal to
+  the normal form `nf L (leval lz l) (loff l)` = `c ⊔ (⊔_{x<L} k_x + x)`
+  (`leqP_nf`; absent variables are `0`). The data `(leval lz l, loff l)`
+  is what `leqv_iff` (LevelDec, M6 H3) says `leqv` determines, so
+  equivalent levels have the same normal form. This is the paper's
+  `flatten (adjust (count l))` (04:410) without `adjust` (the redundant
+  constant stays; it is absorbed by the algebraic rules either way).
+- Corollaries: `leqP_lvsubst` (04:392) and `leqP_dec` (04:350), via the
+  semantic side. Closed under the global context.
+
+So P's rules can use `leqP` and O's `lequiv` is interchangeable with it:
+item 6 of K1 (semantic levels) is no longer a divergence of the judgments,
+only of their definition.
 
 ### C4. An executable checker
 
