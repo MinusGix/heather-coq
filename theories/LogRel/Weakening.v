@@ -40,6 +40,32 @@ Proof. intros; apply whnf_ren, whnf_gwa; assumption. Qed.
 Lemma whne_ty_kw V : whne_ty V -> whne_ty (kty ρ V).
 Proof. intros; apply whne_ty_ren, whne_ty_gwa; assumption. Qed.
 
+(** The shared type-level data of a binder former, weakened; [F] commutes
+    with the weakening as [Π] and [Σ] do. *)
+Lemma poly_kw {F T T' l l1 l2 l3 l4 A B A' B'} :
+  (forall k k' C D, kty ρ (F k k' C D) = F k k' (kty ρ C) (ktyl ρ D)) ->
+  PolyFacts G Γ F T T' l l1 l2 l3 l4 A B A' B' ->
+  PolyFacts (kw_G ρ) (kw_Δ ρ) F (kty ρ T) (kty ρ T') l l1 l2 l3 l4
+    (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B').
+Proof.
+  intros HF [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB].
+  pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'. rewrite HF in X, X'.
+  split.
+  - exact (kw_lequiv ρ Hl).
+  - exact (kw_lequiv ρ Hl3).
+  - exact (kw_lequiv ρ Hl4).
+  - exact (kw_lwf ρ Hw1).
+  - exact (kw_lwf ρ Hw2).
+  - exact X.
+  - exact X'.
+  - exact (kw_ty ρ HA).
+  - exact (kw_ty ρ HA').
+  - exact (kw_ty_l ρ HA Hw1 HB).
+  - exact (kw_ty_l ρ HA' Hw1 HB').
+  - exact (kw_geq_ty ρ HAA).
+  - exact (kw_geq_ty_l ρ HA Hw1 HBB).
+Qed.
+
 End KwRel.
 
 (** ** Meta-functions: the domain of [TΠ] at composite worlds *)
@@ -106,12 +132,12 @@ Proof.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd codAd HR
                 | G Γ T T' l R Hj HM
                 | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR].
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd codAd HR].
   - exists (NatRel (kw_G ρ) (kw_Δ ρ)). split.
     + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
       rewrite kty_tyNat in X, X'.
@@ -130,25 +156,13 @@ Proof.
   - set (domR' := fun ρ' : kwk (kw_G ρ) (kw_Δ ρ) => domR (kw_comp ρ ρ')).
     set (codR' := fun (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) a a' (ha : domR' ρ' a a') =>
                     codR (kw_comp ρ ρ') a a' ha).
-    pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
-    rewrite kty_tyPi in X, X'.
+    pose proof (poly_kw ρ (kty_tyPi ρ) P) as P'.
+    destruct P as [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB].
     exists (PiRel (kw_G ρ) (kw_Δ ρ) l1 l2 l3 l4 (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B')
               domR' codR'). split.
     + eapply (LRpi n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ T) (kty ρ T') l l1 l2 l3 l4
-                (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B') domR' codR'); [split|..].
-      * exact (kw_lequiv ρ Hl).
-      * exact (kw_lequiv ρ Hl3).
-      * exact (kw_lequiv ρ Hl4).
-      * exact (kw_lwf ρ Hw1).
-      * exact (kw_lwf ρ Hw2).
-      * exact X.
-      * exact X'.
-      * exact (kw_ty ρ HA).
-      * exact (kw_ty ρ HA').
-      * exact (kw_ty_l ρ HA Hw1 HB).
-      * exact (kw_ty_l ρ HA' Hw1 HB').
-      * exact (kw_geq_ty ρ HAA).
-      * exact (kw_geq_ty_l ρ HA Hw1 HBB).
+                (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B') domR' codR').
+      * exact P'.
       * intros ρ'. subst domR'; cbn beta.
         rewrite <- !kty_comp. exact (domAd (kw_comp ρ ρ')).
       * intros ρ' a a' ha. subst codR'; cbn beta.
@@ -235,25 +249,13 @@ Proof.
   - set (domR' := fun ρ' : kwk (kw_G ρ) (kw_Δ ρ) => domR (kw_comp ρ ρ')).
     set (codR' := fun (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) a a' (ha : domR' ρ' a a') =>
                     codR (kw_comp ρ ρ') a a' ha).
-    pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
-    rewrite kty_tySig in X, X'.
+    pose proof (poly_kw ρ (kty_tySig ρ) P) as P'.
+    destruct P as [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB].
     exists (SigRel (kw_G ρ) (kw_Δ ρ) l1 l2 l3 l4 (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B')
               domR' codR'). split.
     + eapply (LRsig n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ T) (kty ρ T') l l1 l2 l3 l4
-                (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B') domR' codR'); [split|..].
-      * exact (kw_lequiv ρ Hl).
-      * exact (kw_lequiv ρ Hl3).
-      * exact (kw_lequiv ρ Hl4).
-      * exact (kw_lwf ρ Hw1).
-      * exact (kw_lwf ρ Hw2).
-      * exact X.
-      * exact X'.
-      * exact (kw_ty ρ HA).
-      * exact (kw_ty ρ HA').
-      * exact (kw_ty_l ρ HA Hw1 HB).
-      * exact (kw_ty_l ρ HA' Hw1 HB').
-      * exact (kw_geq_ty ρ HAA).
-      * exact (kw_geq_ty_l ρ HA Hw1 HBB).
+                (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B') domR' codR').
+      * exact P'.
       * intros ρ'. subst domR'; cbn beta.
         rewrite <- !kty_comp. exact (domAd (kw_comp ρ ρ')).
       * intros ρ' a a' ha. subst codR'; cbn beta.
