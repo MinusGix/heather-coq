@@ -154,6 +154,10 @@ Proof.
       | destruct (inva_succ H1) as (_ & Hk & E); destruct (inva_succ H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_natrec H1) as (_ & Hk & E); destruct (inva_natrec H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_app H1) as (_ & Hk & E); destruct (inva_app H2) as (_ & Hk' & E'); uq_same
+      | destruct (inva_code_sig H1) as (_ & Hk & E); destruct (inva_code_sig H2) as (_ & Hk' & E'); uq_same
+      | destruct (inva_pair H1) as (_ & Hk & E); destruct (inva_pair H2) as (_ & Hk' & E'); uq_same
+      | destruct (inva_fst H1) as (_ & Hk & E); destruct (inva_fst H2) as (_ & Hk' & E'); uq_same
+      | destruct (inva_snd H1) as (_ & Hk & E); destruct (inva_snd H2) as (_ & Hk' & E'); uq_same
       | destruct (inv_letboxT eq_refl H1) as (_ & Hk & E); destruct (inv_letboxT eq_refl H2) as (_ & Hk' & E'); uq_same
       | destruct (inv_letboxt eq_refl H1) as (_ & Hk & E); destruct (inv_letboxt eq_refl H2) as (_ & Hk' & E'); uq_same
       | destruct (inv_ulam eq_refl H1) as (_ & Hk & E); destruct (inv_ulam eq_refl H2) as (_ & Hk' & E'); uq_same

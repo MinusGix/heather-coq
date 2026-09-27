@@ -128,6 +128,25 @@ Lemma subst_clam l T t : (clam l T t)[d] = clam l T[gwk d] t[gwk d]. Proof. refl
 Lemma subst_capp t Δ : (capp t Δ)[d] = capp t[d] Δ. Proof. reflexivity. Qed.
 Lemma subst_tlam Δ l l' T t : (tlam Δ l l' T t)[d] = tlam Δ l l' T[gwk d] t[gwk d]. Proof. reflexivity. Qed.
 Lemma subst_tapp t T : (tapp t T)[d] = tapp t[d] T. Proof. reflexivity. Qed.
+(** Dependent pairs (M8): the family binds one local. *)
+Lemma ren_tySig l l' A B : (tySig l l' A B)⟨r⟩ = tySig l l' A⟨r⟩ B⟨rlift r⟩. Proof. reflexivity. Qed.
+Lemma ren_tmSig l l' s t : (tmSig l l' s t)⟨r⟩ = tmSig l l' s⟨r⟩ t⟨rlift r⟩. Proof. reflexivity. Qed.
+Lemma ren_pair l l' A B a b :
+  (tmPair l l' A B a b)⟨r⟩ = tmPair l l' A⟨r⟩ B⟨rlift r⟩ a⟨r⟩ b⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma ren_fst l l' A B p : (tmFst l l' A B p)⟨r⟩ = tmFst l l' A⟨r⟩ B⟨rlift r⟩ p⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma ren_snd l l' A B p : (tmSnd l l' A B p)⟨r⟩ = tmSnd l l' A⟨r⟩ B⟨rlift r⟩ p⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma subst_tySig l l' A B : (tySig l l' A B)[d] = tySig l l' A[d] B[llift d]. Proof. reflexivity. Qed.
+Lemma subst_tmSig l l' s t : (tmSig l l' s t)[d] = tmSig l l' s[d] t[llift d]. Proof. reflexivity. Qed.
+Lemma subst_pair l l' A B a b :
+  (tmPair l l' A B a b)[d] = tmPair l l' A[d] B[llift d] a[d] b[d].
+Proof. reflexivity. Qed.
+Lemma subst_fst l l' A B p : (tmFst l l' A B p)[d] = tmFst l l' A[d] B[llift d] p[d].
+Proof. reflexivity. Qed.
+Lemma subst_snd l l' A B p : (tmSnd l l' A B p)[d] = tmSnd l l' A[d] B[llift d] p[d].
+Proof. reflexivity. Qed.
 End Push.
 
 Ltac push_ren := repeat progress (
@@ -136,14 +155,16 @@ Ltac push_ren := repeat progress (
           ?ren_tyGvar, ?ren_tyCTyp, ?ren_tyCTrm, ?ren_gvar, ?ren_boxT, ?ren_boxt,
           ?ren_letboxT, ?ren_letboxt, ?ren_elimT, ?ren_elimt,
           ?ren_tyUPi, ?ren_ulam, ?ren_uapp, ?ren_usubst_ty, ?ren_usubst_tm, ?ren_uren_tm,
-          ?ren_tyCPi, ?ren_tyTPi, ?ren_clam, ?ren_capp, ?ren_tlam, ?ren_tapp).
+          ?ren_tyCPi, ?ren_tyTPi, ?ren_clam, ?ren_capp, ?ren_tlam, ?ren_tapp,
+          ?ren_tySig, ?ren_tmSig, ?ren_pair, ?ren_fst, ?ren_snd).
 Ltac push_subst := repeat progress (
   rewrite ?subst_tyNat, ?subst_tyPi, ?subst_tyU, ?subst_tyEl, ?subst_var, ?subst_tmNat,
           ?subst_tmPi, ?subst_tmU, ?subst_zero, ?subst_succ, ?subst_natrec, ?subst_lam,
           ?subst_app, ?subst_tyGvar, ?subst_tyCTyp, ?subst_tyCTrm, ?subst_gvar, ?subst_boxT,
           ?subst_boxt, ?subst_letboxT, ?subst_letboxt, ?subst_elimT, ?subst_elimt,
           ?subst_tyUPi, ?subst_ulam, ?subst_uapp,
-          ?subst_tyCPi, ?subst_tyTPi, ?subst_clam, ?subst_capp, ?subst_tlam, ?subst_tapp).
+          ?subst_tyCPi, ?subst_tyTPi, ?subst_clam, ?subst_capp, ?subst_tlam, ?subst_tapp,
+          ?subst_tySig, ?subst_tmSig, ?subst_pair, ?subst_fst, ?subst_snd).
 
 (** ** Weakening past a binder *)
 

@@ -260,6 +260,21 @@ Ltac sub_manual :=
   | |- eq_tm _ _ _ (natrec _ _ _ _ zero) _ _ _ => eapply eqtm_natrec_zero
   | |- eq_tm _ _ _ (natrec _ _ _ _ (succ _)) _ _ _ => eapply eqtm_natrec_succ
   | |- eq_tm _ _ _ (lam _ _ _ _) _ _ _ => eapply eqtm_eta
+  (* dependent pairs (M8) *)
+  | |- wf_ty _ _ _ (tySig _ _ _ _) _ => eapply wft_sig
+  | |- eq_ty _ _ _ (tySig _ _ _ _) (tyEl _ _) _ => eapply eqty_El_sig
+  | |- eq_ty _ _ _ (tySig _ _ _ _) (tySig _ _ _ _) _ => eapply eqty_sig
+  | |- wf_tm _ _ _ (tmSig _ _ _ _) _ _ => eapply wf_code_sig
+  | |- eq_tm _ _ _ (tmSig _ _ _ _) _ _ _ => eapply eqtm_code_sig
+  | |- wf_tm _ _ _ (tmPair _ _ _ _ _ _) _ _ => eapply wf_pair
+  | |- wf_tm _ _ _ (tmFst _ _ _ _ _) _ _ => eapply wf_fst
+  | |- wf_tm _ _ _ (tmSnd _ _ _ _ _) _ _ => eapply wf_snd
+  | |- eq_tm _ _ _ (tmFst _ _ _ _ (tmPair _ _ _ _ _ _)) _ _ _ => eapply eqtm_fst_beta
+  | |- eq_tm _ _ _ (tmSnd _ _ _ _ (tmPair _ _ _ _ _ _)) _ _ _ => eapply eqtm_snd_beta
+  | |- eq_tm _ _ _ (tmPair _ _ _ _ (tmFst _ _ _ _ _) (tmSnd _ _ _ _ _)) _ _ _ => eapply eqtm_sig_eta
+  | |- eq_tm _ _ _ (tmPair _ _ _ _ _ _) (tmPair _ _ _ _ _ _) _ _ => eapply eqtm_pair
+  | |- eq_tm _ _ _ (tmFst _ _ _ _ _) (tmFst _ _ _ _ _) _ _ => eapply eqtm_fst
+  | |- eq_tm _ _ _ (tmSnd _ _ _ _ _) (tmSnd _ _ _ _ _) _ _ => eapply eqtm_snd
   end; sub_premise.
 
 (** Syntax for the new cases. *)

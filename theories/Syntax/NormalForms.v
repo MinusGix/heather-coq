@@ -20,7 +20,9 @@ Inductive whne : tm -> Prop :=
 | whne_elimt_gvar l1 l2 rb l Δ T u d : whne (elimt l1 l2 rb l Δ T (boxt (gvar u d)))
 | whne_uapp t ls : whne t -> whne (uapp t ls)
 | whne_capp t Δ : whne t -> whne (capp t Δ)
-| whne_tapp t T : whne t -> whne (tapp t T).
+| whne_tapp t T : whne t -> whne (tapp t T)
+| whne_fst l l' A B p : whne p -> whne (tmFst l l' A B p)
+| whne_snd l l' A B p : whne p -> whne (tmSnd l l' A B p).
 
 Inductive whnf : tm -> Prop :=
 | whnf_ne t : whne t -> whnf t
@@ -34,7 +36,9 @@ Inductive whnf : tm -> Prop :=
 | whnf_boxt t : whnf (boxt t)
 | whnf_ulam n l T t : whnf (ulam n l T t)
 | whnf_clam l T t : whnf (clam l T t)
-| whnf_tlam Δ l l' T t : whnf (tlam Δ l l' T t).
+| whnf_tlam Δ l l' T t : whnf (tlam Δ l l' T t)
+| whnf_tmSig l l' s t : whnf (tmSig l l' s t)
+| whnf_pair l l' A B a b : whnf (tmPair l l' A B a b).
 
 Inductive whne_ty : ty -> Prop :=
 | whne_tyGvar U d : whne_ty (tyGvar U d)
@@ -49,7 +53,8 @@ Inductive whnf_ty : ty -> Prop :=
 | whnf_tyCTrm Δ T l : whnf_ty (tyCTrm Δ T l)
 | whnf_tyUPi n l T : whnf_ty (tyUPi n l T)
 | whnf_tyCPi l T : whnf_ty (tyCPi l T)
-| whnf_tyTPi Δ l l' T : whnf_ty (tyTPi Δ l l' T).
+| whnf_tyTPi Δ l l' T : whnf_ty (tyTPi Δ l l' T)
+| whnf_tySig l l' A B : whnf_ty (tySig l l' A B).
 
 #[export] Hint Constructors whne whnf whne_ty whnf_ty : whnf.
 
@@ -116,4 +121,10 @@ Proof. inversion 1. Qed.
 Lemma whne_ty_not_CPi l T : ~ whne_ty (tyCPi l T).
 Proof. inversion 1. Qed.
 Lemma whne_ty_not_TPi Δ l l' T : ~ whne_ty (tyTPi Δ l l' T).
+Proof. inversion 1. Qed.
+Lemma whne_ty_not_Sig l l' A B : ~ whne_ty (tySig l l' A B).
+Proof. inversion 1. Qed.
+Lemma whne_not_code_sig l l' s t : ~ whne (tmSig l l' s t).
+Proof. inversion 1. Qed.
+Lemma whne_not_pair l l' A B a b : ~ whne (tmPair l l' A B a b).
 Proof. inversion 1. Qed.

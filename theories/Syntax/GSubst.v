@@ -227,7 +227,7 @@ Qed.
 Fixpoint dnfty (T : ty) : Prop :=
   match T with
   | tyErr | tyNat | tyU _ => True
-  | tyPi _ _ A B => dnfty A /\ dnfty B
+  | tyPi _ _ A B | tySig _ _ A B => dnfty A /\ dnfty B
   | tyEl _ t => dnftm t
   | tyGvar _ d => dnfl d
   | tyCTyp Δ _ => dnfctx Δ
@@ -239,7 +239,7 @@ Fixpoint dnfty (T : ty) : Prop :=
 with dnftm (t : tm) : Prop :=
   match t with
   | var _ | tmErr | tmNat | tmU _ | zero => True
-  | tmPi _ _ s t => dnftm s /\ dnftm t
+  | tmPi _ _ s t | tmSig _ _ s t => dnftm s /\ dnftm t
   | succ t => dnftm t
   | natrec _ M s z t => dnfty M /\ dnftm s /\ dnftm z /\ dnftm t
   | lam _ _ A t => dnfty A /\ dnftm t
@@ -259,6 +259,8 @@ with dnftm (t : tm) : Prop :=
   | tlam Δ _ _ T t => dnfctx Δ /\ dnfty T /\ dnftm t
   | capp t Δ => dnftm t /\ dnfctx Δ
   | tapp t T => dnftm t /\ dnfty T
+  | tmPair _ _ A B a b => dnfty A /\ dnfty B /\ dnftm a /\ dnftm b
+  | tmFst _ _ A B p | tmSnd _ _ A B p => dnfty A /\ dnfty B /\ dnftm p
   end
 with dnfctx (Γ : ctx) : Prop :=
   match Γ with cnil | cvar _ => True | cext Γ A _ => dnfctx Γ /\ dnfty A end

@@ -91,6 +91,62 @@ Proof.
            (eqty_refl _ _ _ _ _ HA) (eqty_refl _ _ _ _ _ HB) (IH _ _ _ _ _ Hc Hf) (eqtm_refl _ _ _ _ _ _ Ha)).
 Qed.
 
+(** ** Dependent pairs (M8) *)
+
+Lemma RS_fst_beta l l' A B a b k k' A' B' : RS_tm (tmFst k k' A' B' (tmPair l l' A B a b)) a.
+Proof.
+  intros G i Γ T k0 Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_fst Hi Hx) as ((_ & Wk & Wk' & HA1 & HB1 & Hp) & Hk & ET).
+  destruct (inv_pair Hi Hp) as ((_ & Wl & Wl' & HA0 & HB0 & Ha & Hb) & _ & EP).
+  destruct (sig_inj_c Hc EP) as (E1 & E2 & EA & EB).
+  (* the redex at the pair's annotations *)
+  assert (Eq1 : [ G ; Γ ⊢[ i ] tmFst k k' A' B' (tmPair l l' A B a b) ≅ tmFst l l' A B (tmPair l l' A B a b)
+                    : A' @ k ])
+    by (apply eqtm_fst; auto using lequiv_sym, eqtm_refl).
+  pose proof (eqtm_fst_beta _ _ _ _ _ _ _ _ _ Hc Wl Wl' HA0 HB0 Ha Hb) as Eq2.
+  assert (Eq2' : [ G ; Γ ⊢[ i ] tmFst l l' A B (tmPair l l' A B a b) ≅ a : A' @ k ]).
+  { eapply eqtm_conv; [exact (eqtm_lconv _ _ _ _ _ _ _ _ Eq2 (lequiv_sym _ _ _ E1)) | rewrite Hi; exact EA]. }
+  exact (retype_eqtm Hi (eqtm_trans _ _ _ _ _ _ _ _ Eq1 Eq2') Hk ET).
+Qed.
+
+Lemma RS_snd_beta l l' A B a b k k' A' B' : RS_tm (tmSnd k k' A' B' (tmPair l l' A B a b)) b.
+Proof.
+  intros G i Γ T k0 Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
+  destruct (inv_snd Hi Hx) as ((_ & Wk & Wk' & HA1 & HB1 & Hp) & Hk & ET).
+  destruct (inv_pair Hi Hp) as ((_ & Wl & Wl' & HA0 & HB0 & Ha & Hb) & _ & EP).
+  destruct (sig_inj_c Hc EP) as (E1 & E2 & EA & EB).
+  assert (Hf : [ G ; Γ ⊢[ i ] tmFst k k' A' B' (tmPair l l' A B a b) : A' @ k ])
+    by (apply wf_fst; assumption).
+  pose proof (RS_fst_beta _ _ _ _ _ _ _ _ _ _ G i Γ _ _ Hc Hf) as Ef.
+  assert (Ha' : [ G ; Γ ⊢[ i ] a : A' @ k ]) by exact (retype Hi Ha (lequiv_sym _ _ _ E1) EA).
+  assert (EBa : [ G ; Γ ⊢[ i ] B'[lsingle (tmFst k k' A' B' (tmPair l l' A B a b))] ≅ B[lsingle a] @ k' ])
+    by (eapply sig_fam_eq; first [exact Hi | exact Hv | eassumption]).
+  assert (Eq1 : [ G ; Γ ⊢[ i ] tmSnd k k' A' B' (tmPair l l' A B a b) ≅ tmSnd l l' A B (tmPair l l' A B a b)
+                    : B'[lsingle (tmFst k k' A' B' (tmPair l l' A B a b))] @ k' ])
+    by (apply eqtm_snd; auto using lequiv_sym, eqtm_refl).
+  pose proof (eqtm_snd_beta _ _ _ _ _ _ _ _ _ Hc Wl Wl' HA0 HB0 Ha Hb) as Eq2.
+  assert (Eq2' : [ G ; Γ ⊢[ i ] tmSnd l l' A B (tmPair l l' A B a b) ≅ b
+                     : B'[lsingle (tmFst k k' A' B' (tmPair l l' A B a b))] @ k' ]).
+  { eapply eqtm_conv; [exact (eqtm_lconv _ _ _ _ _ _ _ _ Eq2 (lequiv_sym _ _ _ E2)) | rewrite Hi; exact EBa]. }
+  exact (retype_eqtm Hi (eqtm_trans _ _ _ _ _ _ _ _ Eq1 Eq2') Hk ET).
+Qed.
+
+Lemma RS_fst l l' A B p p' : RS_tm p p' -> RS_tm (tmFst l l' A B p) (tmFst l l' A B p').
+Proof.
+  intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_fst Hi Hx) as ((_ & W1 & W2 & HA & HB & Hp) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  apply eqtm_fst; auto using lequiv_refl, eqty_refl.
+Qed.
+
+Lemma RS_snd l l' A B p p' : RS_tm p p' -> RS_tm (tmSnd l l' A B p) (tmSnd l l' A B p').
+Proof.
+  intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_snd Hi Hx) as ((_ & W1 & W2 & HA & HB & Hp) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  apply eqtm_snd; auto using lequiv_refl, eqty_refl.
+Qed.
+
 (** ** Decoding codes *)
 
 Lemma RS_El_nat l : RS_ty (tyEl l tmNat) tyNat.
@@ -124,6 +180,18 @@ Proof.
   apply (retype_eqty Hk). eapply eqty_trans.
   - exact (eqty_El _ _ _ _ _ _ _ Hv (lequiv_sym _ _ _ E0) (eqtm_refl _ _ _ _ _ _ Ht)).
   - exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (eqty_El_pi _ _ _ _ _ _ _ Hc W1 W2 Hs Hb))
+             (lequiv_sym _ _ _ E0)).
+Qed.
+
+Lemma RS_El_sig l l1 l2 s t : RS_ty (tyEl l (tmSig l1 l2 s t)) (tySig l1 l2 (tyEl l1 s) (tyEl l2 t)).
+Proof.
+  intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_El HT) as ((Hv & Wl & Ht) & Hk).
+  destruct (inv_code_sig Hi Ht) as ((_ & W1 & W2 & Hs & Hb) & _ & EU).
+  pose proof (U_inj_c Hc EU) as E0.
+  apply (retype_eqty Hk). eapply eqty_trans.
+  - exact (eqty_El _ _ _ _ _ _ _ Hv (lequiv_sym _ _ _ E0) (eqtm_refl _ _ _ _ _ _ Ht)).
+  - exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (eqty_El_sig _ _ _ _ _ _ _ Hc W1 W2 Hs Hb))
              (lequiv_sym _ _ _ E0)).
 Qed.
 
@@ -341,7 +409,9 @@ Proof.
     | solve [apply RS_cbeta] | solve [apply RS_capp; assumption]
     | solve [apply RS_tbeta] | solve [apply RS_tapp; assumption]
     | solve [apply RS_El_nat] | solve [apply RS_El_U] | solve [apply RS_El_pi]
-    | solve [apply RS_El; assumption] ].
+    | solve [apply RS_El; assumption]
+    | solve [apply RS_fst_beta] | solve [apply RS_snd_beta]
+    | solve [apply RS_fst; assumption] | solve [apply RS_snd; assumption] | solve [apply RS_El_sig] ].
 Qed.
 
 Section Consequences.

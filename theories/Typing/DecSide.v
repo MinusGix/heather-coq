@@ -72,6 +72,8 @@ Qed.
 
 Lemma layer_eq_dec (i j : layer) : Dec (i = j).
 Proof. destruct i, j; first [left; reflexivity | right; discriminate]. Qed.
+Lemma compt_dec (i : layer) : Dec (compt i).
+Proof. unfold Dec, compt; destruct i; intuition discriminate. Qed.
 
 (** ** Local substitutions *)
 
@@ -242,7 +244,7 @@ Qed.
 Fixpoint sz_ty (T : ty) : nat :=
   match T with
   | tyErr | tyNat | tyU _ => 1
-  | tyPi _ _ A B => S (sz_ty A + sz_ty B)
+  | tyPi _ _ A B | tySig _ _ A B => S (sz_ty A + sz_ty B)
   | tyEl _ t => S (sz_tm t)
   | tyGvar _ d => S (sz_l d)
   | tyCTyp Δ _ => S (sz_ctx Δ)
@@ -253,7 +255,7 @@ Fixpoint sz_ty (T : ty) : nat :=
 with sz_tm (t : tm) : nat :=
   match t with
   | var _ | tmErr | tmNat | tmU _ | zero => 1
-  | tmPi _ _ s t => S (sz_tm s + sz_tm t)
+  | tmPi _ _ s t | tmSig _ _ s t => S (sz_tm s + sz_tm t)
   | succ t => S (sz_tm t)
   | natrec _ M s z t => S (sz_ty M + sz_tm s + sz_tm z + sz_tm t)
   | lam _ _ A t => S (sz_ty A + sz_tm t)
@@ -273,6 +275,8 @@ with sz_tm (t : tm) : nat :=
   | uapp t _ => S (sz_tm t)
   | capp t Δ => S (sz_tm t + sz_ctx Δ)
   | tapp t T => S (sz_tm t + sz_ty T)
+  | tmPair _ _ A B a b => S (sz_ty A + sz_ty B + sz_tm a + sz_tm b)
+  | tmFst _ _ A B p | tmSnd _ _ A B p => S (sz_ty A + sz_ty B + sz_tm p)
   end
 with sz_ctx (Γ : ctx) : nat :=
   match Γ with cnil | cvar _ => 1 | cext Γ A _ => S (sz_ctx Γ + sz_ty A) end

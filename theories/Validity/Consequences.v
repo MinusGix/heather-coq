@@ -12,7 +12,7 @@ Definition ty_head (T : ty) : nat :=
   match T with
   | tyGvar _ _ | tyEl _ _ => 0 | tyNat => 1 | tyU _ => 2 | tyPi _ _ _ _ => 3
   | tyCTyp _ _ => 4 | tyCTrm _ _ _ => 5 | tyUPi _ _ _ => 6 | tyCPi _ _ => 7 | tyTPi _ _ _ _ => 8
-  | tyErr => 9
+  | tyErr => 9 | tySig _ _ _ _ => 10
   end.
 
 Lemma whne_ty_head V : whne_ty V -> ty_head V = 0.

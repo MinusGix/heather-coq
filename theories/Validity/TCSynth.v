@@ -377,6 +377,78 @@ Proof.
     exact (wft_lconv _ _ _ _ _ _ (ctxconv_ty (eqctx_sym_D EΔ) (i := lD) eq_refl HA') Q1).
 Qed.
 
+(** ** Dependent pairs (M8): at the computing layers only *)
+
+Lemma sy_codesig l l' s t : sz_tm (tmSig l l' s t) <= n -> SYD (tmSig l l' s t).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_code_sig H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_sig H) as ((_ & X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros T k H; destruct (inva_code_sig H) as ((_ & _ & X & _) & _); contradiction].
+  destruct (ihC s ltac:(szl) G i Γ _ _ (HUniv HΓ Hl)) as [Hs | N];
+    [| right; intros T k H; destruct (inva_code_sig H) as ((_ & _ & _ & X & _) & _); contradiction].
+  assert (HΓs : [ G ; Γ ,, tyEl l s @ l ⊢[ typeof i ] ]).
+  { apply wfc_ext; [exact HΓ | | exact Hl]. exact (wft_El _ _ _ _ _ (typeof_notV i) Hl (lift_to_typeof_tm Hs)). }
+  destruct (ihC t ltac:(szl) G i _ _ _ (HUniv HΓs Hl')) as [Ht | N];
+    [| right; intros T k H; destruct (inva_code_sig H) as ((_ & _ & _ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_code_sig _ _ _ _ _ _ _ Hc Hl Hl' Hs Ht).
+Qed.
+
+(** The annotations of a pair or a projection, decided in order. *)
+Lemma sy_sig_annot {G i Γ l l' A B} (P : Prop) :
+  sz_ty A < n -> sz_ty B < n -> [ G ; Γ ⊢[ typeof i ] ] ->
+  (P -> lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ]) ->
+  (lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ]) \/ ~ P.
+Proof.
+  intros HzA HzB HΓ Inv.
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; apply N, (Inv H)].
+  destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros H; apply N, (Inv H)].
+  destruct (ihT A HzA G i Γ l HΓ) as [HA | N]; [| right; intros H; apply N, (Inv H)].
+  assert (HΓA : [ G ; Γ ,, A @ l ⊢[ typeof i ] ]) by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HA) | exact Hl]).
+  destruct (ihT B HzB G i _ l' HΓA) as [HB | N]; [| right; intros H; apply N, (Inv H)].
+  left; auto.
+Qed.
+
+Lemma sy_pair l l' A B a b : sz_tm (tmPair l l' A B a b) <= n -> SYD (tmPair l l' A B a b).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_pair H) as ((X & _) & _); contradiction].
+  destruct (sy_sig_annot (l := l) (l' := l') (A := A) (B := B)
+              (exists T k, [ G ; Γ ⊢[ i ] tmPair l l' A B a b : T @ k ]) ltac:(szl) ltac:(szl) HΓ)
+    as [(Hl & Hl' & HA & HB) | N];
+    [ intros (T & k & H); destruct (inva_pair H) as ((_ & ? & ? & ? & ? & _) & _); auto
+    | | right; intros T k H; apply N; eauto ].
+  destruct (ihC a ltac:(szl) G i Γ _ _ (lift_to_typeof_ty HA)) as [Ha | N];
+    [| right; intros T k H; destruct (inva_pair H) as ((_ & _ & _ & _ & _ & X & _) & _); contradiction].
+  pose proof (wf_ty_single (i := typeof i) (typeof_idem i) (lift_to_typeof_ty HB) (lift_to_typeof_tm Ha)) as HBa.
+  destruct (ihC b ltac:(szl) G i Γ _ _ HBa) as [Hb | N];
+    [| right; intros T k H; destruct (inva_pair H) as ((_ & _ & _ & _ & _ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_pair _ _ _ _ _ _ _ _ _ Hc Hl Hl' HA HB Ha Hb).
+Qed.
+
+Lemma sy_proj (fs : bool) l l' A B p :
+  sz_tm (if fs then tmFst l l' A B p else tmSnd l l' A B p) <= n ->
+  SYD (if fs then tmFst l l' A B p else tmSnd l l' A B p).
+Proof.
+  intros Hsz G i Γ HΓ.
+  assert (Inv : forall T k, [ G ; Γ ⊢[ i ] (if fs then tmFst l l' A B p else tmSnd l l' A B p) : T @ k ] ->
+    compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\ [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ]).
+  { intros T k H; destruct fs; [exact (proj1 (inva_fst H)) | exact (proj1 (inva_snd H))]. }
+  assert (Hz : sz_ty A < n /\ sz_ty B < n /\ sz_tm p < n) by (destruct fs; cbn [sz_tm] in Hsz; lia).
+  destruct Hz as (HzA & HzB & Hzp).
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; apply N, (Inv _ _ H)].
+  destruct (sy_sig_annot (l := l) (l' := l')
+              (exists T k, [ G ; Γ ⊢[ i ] (if fs then tmFst l l' A B p else tmSnd l l' A B p) : T @ k ])
+              HzA HzB HΓ) as [(Hl & Hl' & HA & HB) | N];
+    [ intros (T & k & H); destruct (Inv _ _ H) as (_ & ? & ? & ? & ? & _); auto
+    | | right; intros T k H; apply N; eauto ].
+  pose proof (wft_sig _ _ _ _ _ _ _ (compt_typeof i) Hl Hl' (lift_to_typeof_ty HA) (lift_to_typeof_ty HB)) as HS.
+  destruct (ihC p Hzp G i Γ _ _ HS) as [Hp | N]; [| right; intros T k H; apply N, (Inv _ _ H)].
+  left; destruct fs; eexists; eexists; [exact (wf_fst _ _ _ _ _ _ _ _ Hc Hl Hl' HA HB Hp) |
+                                        exact (wf_snd _ _ _ _ _ _ _ _ Hc Hl Hl' HA HB Hp)].
+Qed.
+
 (** ** The step *)
 
 Lemma sy_step t : sz_tm t <= n -> synth t -> SYD t.
@@ -387,7 +459,9 @@ Proof.
           | apply sy_succ | apply sy_codepi | apply sy_natrec | apply sy_app | apply sy_gvar
           | apply sy_letboxT | apply sy_letboxt | apply sy_elimT | apply sy_elimt
           | apply sy_ulam | apply sy_clam | apply sy_tlam
-          | apply sy_uapp | apply sy_capp | apply sy_tapp ]; assumption.
+          | apply sy_uapp | apply sy_capp | apply sy_tapp
+          | apply sy_codesig | apply sy_pair
+          | apply (sy_proj true) | apply (sy_proj false) ]; assumption.
 Qed.
 
 End Step.

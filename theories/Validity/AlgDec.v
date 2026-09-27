@@ -84,6 +84,7 @@ Definition tm_con (t : tm) : nat :=
   | boxt _ => 12 | letboxT _ _ _ _ _ _ => 13 | letboxt _ _ _ _ _ _ _ => 14 | tmTy _ => 15 | tmTup _ _ => 16
   | bindU _ => 17 | bindG _ => 18 | bindL _ => 19 | elimT _ _ _ _ _ _ => 20 | elimt _ _ _ _ _ _ _ => 21
   | ulam _ _ _ _ => 22 | uapp _ _ => 23 | clam _ _ _ => 24 | capp _ _ => 25 | tlam _ _ _ _ _ => 26 | tapp _ _ => 27
+  | tmSig _ _ _ _ => 28 | tmPair _ _ _ _ _ _ => 29 | tmFst _ _ _ _ _ => 30 | tmSnd _ _ _ _ _ => 31
   end.
 
 Lemma ac_tmne_con {G Γ ν ν' T} : ac_tmne G Γ ν ν' T -> tm_con ν = tm_con ν'.

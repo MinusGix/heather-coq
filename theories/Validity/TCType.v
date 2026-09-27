@@ -165,12 +165,28 @@ Proof.
   - right; intros H; exact (Q (proj2 (inv_ty_tpi H))).
 Qed.
 
+Lemma dec_tySig l l' A B : sz_ty (tySig l l' A B) <= n -> TYD (tySig l l' A B).
+Proof.
+  intros Hsz G i Γ k HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros H; destruct (inv_ty_sig H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_sig H) as ((_ & X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros H; destruct (inv_ty_sig H) as ((_ & _ & X & _) & _); contradiction].
+  destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
+    [| right; intros H; destruct (inv_ty_sig H) as ((_ & _ & _ & X & _) & _); contradiction].
+  assert (HΓA : [ G ; Γ ,, A @ l ⊢[ typeof i ] ]) by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HA) | exact Hl]).
+  destruct (ihT B ltac:(szl) G i _ l' HΓA) as [HB | N];
+    [| right; intros H; destruct (inv_ty_sig H) as ((_ & _ & _ & _ & X) & _); contradiction].
+  destruct (lvl_eq_dec (gL G) k (lmax l l')) as [Q | Q].
+  - left; exact (wft_lvl Q (wft_sig _ _ _ _ _ _ _ Hc Hl Hl' HA HB)).
+  - right; intros H; exact (Q (proj2 (inv_ty_sig H))).
+Qed.
+
 Lemma ty_step T : sz_ty T <= n -> TYD T.
 Proof.
   intros Hsz. destruct T;
     first [ apply dec_tyErr | apply dec_tyNat | apply dec_tyU
           | apply dec_tyPi | apply dec_tyEl | apply dec_tyGvar | apply dec_tyCTyp | apply dec_tyCTrm
-          | apply dec_tyUPi | apply dec_tyCPi | apply dec_tyTPi ]; assumption.
+          | apply dec_tyUPi | apply dec_tyCPi | apply dec_tyTPi | apply dec_tySig ]; assumption.
 Qed.
 
 (** ** Contexts *)

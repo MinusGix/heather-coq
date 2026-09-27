@@ -29,6 +29,8 @@ Inductive ty : Type :=
 (* meta-functions (M5): the body binds one global variable *)
 | tyCPi (l : lvl) (T : ty)                (* CΠ g. T @ l,  g : Ctx        T: +1 global *)
 | tyTPi (Δ : ctx) (l l' : lvl) (T : ty)   (* TΠ U[Δ]. T @ l', U : (Δ ⊢_P @l)   T: +1 global *)
+(* dependent pairs (M8) *)
+| tySig (l l' : lvl) (A : ty) (B : ty)    (* Σ^{l,l'} x:A. B      B: +1 *)
 with tm : Type :=
 | var (n : nat)
 | tmErr
@@ -68,6 +70,11 @@ with tm : Type :=
 | capp (t : tm) (Δ : ctx)                 (* t Δ *)
 | tlam (Δ : ctx) (l l' : lvl) (T : ty) (t : tm)  (* Λ^{l,l'} U[Δ]. t : T   T, t: +1 global *)
 | tapp (t : tm) (T : ty)                  (* t T                      T in U's context *)
+(* dependent pairs (M8), annotated as [app] *)
+| tmSig (l l' : lvl) (s : tm) (t : tm)    (* code of Σ           t: +1 *)
+| tmPair (l l' : lvl) (A : ty) (B : ty) (a b : tm)  (* (a, b)^{l,l'}_{x:A.B}   B: +1 *)
+| tmFst (l l' : lvl) (A : ty) (B : ty) (p : tm)     (* fst^{l,l'}_{x:A.B} p     B: +1 *)
+| tmSnd (l l' : lvl) (A : ty) (B : ty) (p : tm)     (* snd^{l,l'}_{x:A.B} p     B: +1 *)
 with ctx : Type :=
 | cnil
 | cvar (g : nat)
@@ -148,6 +155,7 @@ Fixpoint ren_ty (T : ty) (r : rsub) {struct T} : ty :=
   | tyUPi n l T => tyUPi n l (ren_ty T r)
   | tyCPi l T => tyCPi l (ren_ty T r)
   | tyTPi Δ l l' T => tyTPi Δ l l' (ren_ty T r)
+  | tySig l l' A B => tySig l l' (ren_ty A r) (ren_ty B (rlift r))
   end
 with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   match t with
@@ -177,6 +185,10 @@ with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   | capp t Δ => capp (ren_tm t r) Δ
   | tlam Δ l l' T t => tlam Δ l l' (ren_ty T r) (ren_tm t r)
   | tapp t T => tapp (ren_tm t r) T
+  | tmSig l l' s t => tmSig l l' (ren_tm s r) (ren_tm t (rlift r))
+  | tmPair l l' A B a b => tmPair l l' (ren_ty A r) (ren_ty B (rlift r)) (ren_tm a r) (ren_tm b r)
+  | tmFst l l' A B p => tmFst l l' (ren_ty A r) (ren_ty B (rlift r)) (ren_tm p r)
+  | tmSnd l l' A B p => tmSnd l l' (ren_ty A r) (ren_ty B (rlift r)) (ren_tm p r)
   end
 with lren (d : lsub) (r : rsub) {struct d} : lsub :=
   match d with
@@ -208,6 +220,7 @@ Fixpoint gren_ty (T : ty) (ξ : nat -> nat) {struct T} : ty :=
   | tyUPi n l T => tyUPi n l (gren_ty T ξ)
   | tyCPi l T => tyCPi l (gren_ty T (gupr ξ))
   | tyTPi Δ l l' T => tyTPi (gcren Δ ξ) l l' (gren_ty T (gupr ξ))
+  | tySig l l' A B => tySig l l' (gren_ty A ξ) (gren_ty B ξ)
   end
 with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   match t with
@@ -238,6 +251,10 @@ with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   | capp t Δ => capp (gren_tm t ξ) (gcren Δ ξ)
   | tlam Δ l l' T t => tlam (gcren Δ ξ) l l' (gren_ty T (gupr ξ)) (gren_tm t (gupr ξ))
   | tapp t T => tapp (gren_tm t ξ) (gren_ty T ξ)
+  | tmSig l l' s t => tmSig l l' (gren_tm s ξ) (gren_tm t ξ)
+  | tmPair l l' A B a b => tmPair l l' (gren_ty A ξ) (gren_ty B ξ) (gren_tm a ξ) (gren_tm b ξ)
+  | tmFst l l' A B p => tmFst l l' (gren_ty A ξ) (gren_ty B ξ) (gren_tm p ξ)
+  | tmSnd l l' A B p => tmSnd l l' (gren_ty A ξ) (gren_ty B ξ) (gren_tm p ξ)
   end
 with gcren (Γ : ctx) (ξ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -266,6 +283,7 @@ Fixpoint uren_ty (T : ty) (ρ : nat -> nat) {struct T} : ty :=
   | tyUPi n l T => tyUPi n (lvren l (uuprn n ρ)) (uren_ty T (uuprn n ρ))
   | tyCPi l T => tyCPi (lvren l ρ) (uren_ty T ρ)
   | tyTPi Δ l l' T => tyTPi (ucren Δ ρ) (lvren l ρ) (lvren l' ρ) (uren_ty T ρ)
+  | tySig l l' A B => tySig (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_ty B ρ)
   end
 with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   match t with
@@ -303,6 +321,11 @@ with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   | capp t Δ => capp (uren_tm t ρ) (ucren Δ ρ)
   | tlam Δ l l' T t => tlam (ucren Δ ρ) (lvren l ρ) (lvren l' ρ) (uren_ty T ρ) (uren_tm t ρ)
   | tapp t T => tapp (uren_tm t ρ) (uren_ty T ρ)
+  | tmSig l l' s t => tmSig (lvren l ρ) (lvren l' ρ) (uren_tm s ρ) (uren_tm t ρ)
+  | tmPair l l' A B a b =>
+      tmPair (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_ty B ρ) (uren_tm a ρ) (uren_tm b ρ)
+  | tmFst l l' A B p => tmFst (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_ty B ρ) (uren_tm p ρ)
+  | tmSnd l l' A B p => tmSnd (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_ty B ρ) (uren_tm p ρ)
   end
 with ucren (Γ : ctx) (ρ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -330,6 +353,7 @@ Fixpoint subst_ty (T : ty) (d : lsub) {struct T} : ty :=
   | tyUPi n l T => tyUPi n l (subst_ty T (uwkn n d))
   | tyCPi l T => tyCPi l (subst_ty T (gwk d))
   | tyTPi Δ l l' T => tyTPi Δ l l' (subst_ty T (gwk d))
+  | tySig l l' A B => tySig l l' (subst_ty A d) (subst_ty B (llift d))
   end
 with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   match t with
@@ -362,6 +386,11 @@ with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   | capp t Δ => capp (subst_tm t d) Δ
   | tlam Δ l l' T t => tlam Δ l l' (subst_ty T (gwk d)) (subst_tm t (gwk d))
   | tapp t T => tapp (subst_tm t d) T
+  | tmSig l l' s t => tmSig l l' (subst_tm s d) (subst_tm t (llift d))
+  | tmPair l l' A B a b =>
+      tmPair l l' (subst_ty A d) (subst_ty B (llift d)) (subst_tm a d) (subst_tm b d)
+  | tmFst l l' A B p => tmFst l l' (subst_ty A d) (subst_ty B (llift d)) (subst_tm p d)
+  | tmSnd l l' A B p => tmSnd l l' (subst_ty A d) (subst_ty B (llift d)) (subst_tm p d)
   end
 with lcomp (d' : lsub) (d : lsub) {struct d'} : lsub :=       (* d' ∘ d *)
   match d' with
@@ -444,6 +473,7 @@ Fixpoint gsubst_ty (T : ty) (σ : gsub) {struct T} : ty :=
   | tyUPi n l T => tyUPi n l (gsubst_ty T (guwkn n σ))
   | tyCPi l T => tyCPi l (gsubst_ty T (gup σ))
   | tyTPi Δ l l' T => tyTPi (gcsubst Δ σ) l l' (gsubst_ty T (gup σ))
+  | tySig l l' A B => tySig l l' (gsubst_ty A σ) (gsubst_ty B σ)
   end
 with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   match t with
@@ -475,6 +505,11 @@ with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   | capp t Δ => capp (gsubst_tm t σ) (gcsubst Δ σ)
   | tlam Δ l l' T t => tlam (gcsubst Δ σ) l l' (gsubst_ty T (gup σ)) (gsubst_tm t (gup σ))
   | tapp t T => tapp (gsubst_tm t σ) (gsubst_ty T σ)
+  | tmSig l l' s t => tmSig l l' (gsubst_tm s σ) (gsubst_tm t σ)
+  | tmPair l l' A B a b =>
+      tmPair l l' (gsubst_ty A σ) (gsubst_ty B σ) (gsubst_tm a σ) (gsubst_tm b σ)
+  | tmFst l l' A B p => tmFst l l' (gsubst_ty A σ) (gsubst_ty B σ) (gsubst_tm p σ)
+  | tmSnd l l' A B p => tmSnd l l' (gsubst_ty A σ) (gsubst_ty B σ) (gsubst_tm p σ)
   end
 with gcsubst (Γ : ctx) (σ : gsub) {struct Γ} : ctx :=
   match Γ with
@@ -503,6 +538,7 @@ Fixpoint usubst_ty (T : ty) (φ : nat -> lvl) {struct T} : ty :=
   | tyUPi n l T => tyUPi n (lvsubst l (uupn n φ)) (usubst_ty T (uupn n φ))
   | tyCPi l T => tyCPi (lvsubst l φ) (usubst_ty T φ)
   | tyTPi Δ l l' T => tyTPi (ucsubst Δ φ) (lvsubst l φ) (lvsubst l' φ) (usubst_ty T φ)
+  | tySig l l' A B => tySig (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_ty B φ)
   end
 with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   match t with
@@ -543,6 +579,13 @@ with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   | capp t Δ => capp (usubst_tm t φ) (ucsubst Δ φ)
   | tlam Δ l l' T t => tlam (ucsubst Δ φ) (lvsubst l φ) (lvsubst l' φ) (usubst_ty T φ) (usubst_tm t φ)
   | tapp t T => tapp (usubst_tm t φ) (usubst_ty T φ)
+  | tmSig l l' s t => tmSig (lvsubst l φ) (lvsubst l' φ) (usubst_tm s φ) (usubst_tm t φ)
+  | tmPair l l' A B a b =>
+      tmPair (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_ty B φ) (usubst_tm a φ) (usubst_tm b φ)
+  | tmFst l l' A B p =>
+      tmFst (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_ty B φ) (usubst_tm p φ)
+  | tmSnd l l' A B p =>
+      tmSnd (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_ty B φ) (usubst_tm p φ)
   end
 with ucsubst (Γ : ctx) (φ : nat -> lvl) {struct Γ} : ctx :=
   match Γ with

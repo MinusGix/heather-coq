@@ -438,6 +438,22 @@ Ltac wk_manual :=
   | |- eq_tm _ _ _ (natrec _ _ _ _ zero) _ _ _ => eapply eqtm_natrec_zero; wk_premise
   | |- eq_tm _ _ _ (natrec _ _ _ _ (succ _)) _ _ _ => eapply eqtm_natrec_succ; wk_premise
   | |- eq_tm _ _ _ (natrec _ _ _ _ _) (natrec _ _ _ _ _) _ _ => eapply eqtm_natrec; wk_premise
+  (* dependent pairs (M8) *)
+  | |- wf_ty _ _ _ (tySig _ _ _ _) _ => eapply wft_sig; wk_premise
+  | |- eq_ty _ _ _ (tySig _ _ _ _) (tyEl _ _) _ => eapply eqty_El_sig; wk_premise
+  | |- eq_ty _ _ _ (tySig _ _ _ _) (tySig _ _ _ _) _ => eapply eqty_sig; wk_premise
+  | |- wf_tm _ _ _ (tmSig _ _ _ _) _ _ => eapply wf_code_sig; wk_premise
+  | |- eq_tm _ _ _ (tmSig _ _ _ _) _ _ _ => eapply eqtm_code_sig; wk_premise
+  | |- wf_tm _ _ _ (tmPair _ _ _ _ _ _) _ _ => eapply wf_pair; wk_premise
+  | |- wf_tm _ _ _ (tmFst _ _ _ _ _) _ _ => eapply wf_fst; wk_premise
+  | |- wf_tm _ _ _ (tmSnd _ _ _ _ _) _ _ => eapply wf_snd; wk_premise
+  | |- eq_tm _ _ _ (tmFst _ _ _ _ (tmPair _ _ _ _ _ _)) _ _ _ => eapply eqtm_fst_beta; wk_premise
+  | |- eq_tm _ _ _ (tmSnd _ _ _ _ (tmPair _ _ _ _ _ _)) _ _ _ => eapply eqtm_snd_beta; wk_premise
+  | |- eq_tm _ _ _ (tmPair _ _ _ _ (tmFst _ _ _ _ _) (tmSnd _ _ _ _ _)) _ _ _ =>
+      eapply eqtm_sig_eta; wk_premise
+  | |- eq_tm _ _ _ (tmPair _ _ _ _ _ _) (tmPair _ _ _ _ _ _) _ _ => eapply eqtm_pair; wk_premise
+  | |- eq_tm _ _ _ (tmFst _ _ _ _ _) (tmFst _ _ _ _ _) _ _ => eapply eqtm_fst; wk_premise
+  | |- eq_tm _ _ _ (tmSnd _ _ _ _ _) (tmSnd _ _ _ _ _) _ _ => eapply eqtm_snd; wk_premise
   | |- wf_ty _ _ _ (tyGvar _ _) _ => eapply wft_gvar; [ .. | wk_entries]; eauto with wk
   | |- eq_ty _ _ _ (tyGvar _ _) _ _ =>
       eapply eqty_gvar; [ .. | wk_entries | wk_entries | wk_entries]; eauto with wk

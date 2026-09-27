@@ -71,6 +71,10 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
 | wft_tpi G Γ Δ l l' T : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
     [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] ->
     [ G ; Γ ⊢[ lM ] tyTPi Δ l l' T @ l' ]
+(* dependent pairs (layers D and M; M8_DESIGN.md I1, I3) *)
+| wft_sig G i Γ l l' A B : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ⊢[ i ] tySig l l' A B @ lmax l l' ]
 
 with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 | wf_var G i Γ n T l : [ G ; Γ ⊢[ typeof i ] ] -> in_ctx Γ n T l ->
@@ -180,6 +184,23 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] -> [ G ; Δ ⊢[ lD ] A @ l ] ->
     [ G ; Γ ⊢[ lM ] T⦃gsingle (GTy A)⦄ @ l' ] ->
     [ G ; Γ ⊢[ lM ] tapp t A : T⦃gsingle (GTy A)⦄ @ l' ]
+(* dependent pairs (layers D and M) *)
+| wf_code_sig G i Γ l l' s t : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ] ->
+    [ G ; Γ ⊢[ i ] tmSig l l' s t : tyU (lmax l l') @ lsuc (lmax l l') ]
+| wf_pair G i Γ l l' A B a b : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] b : B[lsingle a] @ l' ] ->
+    [ G ; Γ ⊢[ i ] tmPair l l' A B a b : tySig l l' A B @ lmax l l' ]
+| wf_fst G i Γ l l' A B p : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ] ->
+    [ G ; Γ ⊢[ i ] tmFst l l' A B p : A @ l ]
+| wf_snd G i Γ l l' A B p : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ] ->
+    [ G ; Γ ⊢[ i ] tmSnd l l' A B p : B[lsingle (tmFst l l' A B p)] @ l' ]
 
 with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
 | eqty_refl G i Γ T l : [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T @ l ]
@@ -237,6 +258,16 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ gext G (gdTy Δ lD l1) ; Γ⟪S⟫ ⊢[ lM ] T ≅ T' @ l2 ] ->
     [ gext G (gdTy Δ' lD l3) ; Γ⟪S⟫ ⊢[ lM ] T' @ l4 ] ->
     [ G ; Γ ⊢[ lM ] tyTPi Δ l1 l2 T ≅ tyTPi Δ' l3 l4 T' @ l2 ]
+(* dependent pairs (layers D and M) *)
+| eqty_sig G i Γ l1 l2 l3 l4 A A' B B' : compt i ->
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+    [ G ; Γ ⊢[ i ] tySig l1 l2 A B ≅ tySig l3 l4 A' B' @ lmax l1 l2 ]
+| eqty_El_sig G i Γ l l' s t : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ] ->
+    [ G ; Γ ⊢[ i ] tySig l l' (tyEl l s) (tyEl l' t) ≅ tyEl (lmax l l') (tmSig l l' s t) @ lmax l l' ]
 
 with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
 | eqtm_refl G i Γ t T l : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ i ] t ≅ t : T @ l ]
@@ -463,6 +494,44 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] ->
     [ G ; Γ ⊢[ lM ] t : tyTPi Δ l l' T @ l' ] ->
     [ G ; Γ ⊢[ lM ] tlam Δ l l' T (tapp t⟪S⟫ (tyGvar 0 (lshift 0))) ≅ t : tyTPi Δ l l' T @ l' ]
+(* dependent pairs (layers D and M): congruences, β, η as surjective pairing *)
+| eqtm_code_sig G i Γ l1 l2 l3 l4 s s' t t' : compt i ->
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢[ i ] s : tyU l1 @ lsuc l1 ] ->
+    [ G ; Γ ⊢[ i ] s ≅ s' : tyU l1 @ lsuc l1 ] ->
+    [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t ≅ t' : tyU l2 @ lsuc l2 ] ->
+    [ G ; Γ ⊢[ i ] tmSig l1 l2 s t ≅ tmSig l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ]
+| eqtm_pair G i Γ l1 l2 l3 l4 A A' B B' a a' b b' : compt i ->
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+    [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] -> [ G ; Γ ⊢[ i ] b ≅ b' : B[lsingle a] @ l2 ] ->
+    [ G ; Γ ⊢[ i ] tmPair l1 l2 A B a b ≅ tmPair l3 l4 A' B' a' b' : tySig l1 l2 A B @ lmax l1 l2 ]
+| eqtm_fst G i Γ l1 l2 l3 l4 A A' B B' p p' : compt i ->
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+    [ G ; Γ ⊢[ i ] p ≅ p' : tySig l1 l2 A B @ lmax l1 l2 ] ->
+    [ G ; Γ ⊢[ i ] tmFst l1 l2 A B p ≅ tmFst l3 l4 A' B' p' : A @ l1 ]
+| eqtm_snd G i Γ l1 l2 l3 l4 A A' B B' p p' : compt i ->
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+    [ G ; Γ ⊢[ i ] p ≅ p' : tySig l1 l2 A B @ lmax l1 l2 ] ->
+    [ G ; Γ ⊢[ i ] tmSnd l1 l2 A B p ≅ tmSnd l3 l4 A' B' p' : B[lsingle (tmFst l1 l2 A B p)] @ l2 ]
+| eqtm_fst_beta G i Γ l l' A B a b : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] b : B[lsingle a] @ l' ] ->
+    [ G ; Γ ⊢[ i ] tmFst l l' A B (tmPair l l' A B a b) ≅ a : A @ l ]
+| eqtm_snd_beta G i Γ l l' A B a b : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] b : B[lsingle a] @ l' ] ->
+    [ G ; Γ ⊢[ i ] tmSnd l l' A B (tmPair l l' A B a b) ≅ b : B[lsingle a] @ l' ]
+| eqtm_sig_eta G i Γ l l' A B p : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ] ->
+    [ G ; Γ ⊢[ i ] tmPair l l' A B (tmFst l l' A B p) (tmSnd l l' A B p) ≅ p
+                  : tySig l l' A B @ lmax l l' ]
 
 (** Context equivalence ([Ψ ⊢ᵢ Γ ≈ Δ], used by the congruences of [□]). *)
 with eq_ctx : gctx -> layer -> ctx -> ctx -> Prop :=
@@ -488,3 +557,39 @@ Scheme wf_glob_mut := Induction for wf_glob Sort Prop
   with eq_ctx_mut := Induction for eq_ctx Sort Prop.
 Combined Scheme typing_mut from wf_glob_mut, wf_ctx_mut, wf_ty_mut, wf_tm_mut, eq_ty_mut, eq_tm_mut,
   eq_ctx_mut.
+
+(** Try every rule of the goal's judgment in turn, closing its premises with
+    [tac]. New rules need no entry in per-lemma rule lists (M8_DESIGN.md,
+    cost log). *)
+Ltac any_rule tac :=
+  first [ solve [econstructor 1; tac] | solve [econstructor 2; tac] | solve [econstructor 3; tac] |
+          solve [econstructor 4; tac] | solve [econstructor 5; tac] | solve [econstructor 6; tac] |
+          solve [econstructor 7; tac] | solve [econstructor 8; tac] | solve [econstructor 9; tac] |
+          solve [econstructor 10; tac] | solve [econstructor 11; tac] |
+          solve [econstructor 12; tac] | solve [econstructor 13; tac] |
+          solve [econstructor 14; tac] | solve [econstructor 15; tac] |
+          solve [econstructor 16; tac] | solve [econstructor 17; tac] |
+          solve [econstructor 18; tac] | solve [econstructor 19; tac] |
+          solve [econstructor 20; tac] | solve [econstructor 21; tac] |
+          solve [econstructor 22; tac] | solve [econstructor 23; tac] |
+          solve [econstructor 24; tac] | solve [econstructor 25; tac] |
+          solve [econstructor 26; tac] | solve [econstructor 27; tac] |
+          solve [econstructor 28; tac] | solve [econstructor 29; tac] |
+          solve [econstructor 30; tac] | solve [econstructor 31; tac] |
+          solve [econstructor 32; tac] | solve [econstructor 33; tac] |
+          solve [econstructor 34; tac] | solve [econstructor 35; tac] |
+          solve [econstructor 36; tac] | solve [econstructor 37; tac] |
+          solve [econstructor 38; tac] | solve [econstructor 39; tac] |
+          solve [econstructor 40; tac] | solve [econstructor 41; tac] |
+          solve [econstructor 42; tac] | solve [econstructor 43; tac] |
+          solve [econstructor 44; tac] | solve [econstructor 45; tac] |
+          solve [econstructor 46; tac] | solve [econstructor 47; tac] |
+          solve [econstructor 48; tac] | solve [econstructor 49; tac] |
+          solve [econstructor 50; tac] | solve [econstructor 51; tac] |
+          solve [econstructor 52; tac] | solve [econstructor 53; tac] |
+          solve [econstructor 54; tac] | solve [econstructor 55; tac] |
+          solve [econstructor 56; tac] | solve [econstructor 57; tac] |
+          solve [econstructor 58; tac] | solve [econstructor 59; tac] |
+          solve [econstructor 60; tac] | solve [econstructor 61; tac] |
+          solve [econstructor 62; tac] | solve [econstructor 63; tac] |
+          solve [econstructor 64; tac] ].

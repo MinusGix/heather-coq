@@ -117,6 +117,34 @@ Lemma inv_app {G i Γ l l' A B t s T k} : typeof i = i ->
     lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ i ] T ≅ B[lsingle s] @ k ].
 Proof. inv_tm. Qed.
 
+Lemma inv_code_sig {G i Γ l l' s t T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSig l l' s t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ]) /\
+    lvl_eq (gL G) k (lsuc (lmax l l')) /\ [ G ; Γ ⊢[ i ] T ≅ tyU (lmax l l') @ k ].
+Proof. inv_tm. Qed.
+
+Lemma inv_pair {G i Γ l l' A B a b T k} : typeof i = i ->
+  [ G ; Γ ⊢[ i ] tmPair l l' A B a b : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\ [ G ; Γ ⊢[ i ] a : A @ l ] /\
+    [ G ; Γ ⊢[ i ] b : B[lsingle a] @ l' ]) /\
+    lvl_eq (gL G) k (lmax l l') /\ [ G ; Γ ⊢[ i ] T ≅ tySig l l' A B @ k ].
+Proof. inv_tm. Qed.
+
+Lemma inv_fst {G i Γ l l' A B p T k} : typeof i = i ->
+  [ G ; Γ ⊢[ i ] tmFst l l' A B p : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\ [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ]) /\
+    lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ i ] T ≅ A @ k ].
+Proof. inv_tm. Qed.
+
+Lemma inv_snd {G i Γ l l' A B p T k} : typeof i = i ->
+  [ G ; Γ ⊢[ i ] tmSnd l l' A B p : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\ [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ]) /\
+    lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ i ] T ≅ B[lsingle (tmFst l l' A B p)] @ k ].
+Proof. inv_tm. Qed.
+
 Lemma inv_boxT {G i Γ C T k} : typeof i = i -> [ G ; Γ ⊢[ i ] boxT C : T @ k ] ->
   exists Δ l, (i = lM /\ [ G ; Γ ⊢[ lM ] ] /\ lwf (gL G) l /\ [ G ; Δ ⊢[ lD ] ] /\
     [ G ; Δ ⊢[ lC ] C @ l ]) /\
@@ -284,6 +312,11 @@ Lemma inv_ty_tpi {G i Γ Δ l l' T k} : [ G ; Γ ⊢[ i ] tyTPi Δ l l' T @ k ] 
     [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ]) /\ lvl_eq (gL G) k l'.
 Proof. inv_ty. Qed.
 
+Lemma inv_ty_sig {G i Γ l l' A B k} : [ G ; Γ ⊢[ i ] tySig l l' A B @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ]) /\ lvl_eq (gL G) k (lmax l l').
+Proof. inv_ty. Qed.
+
 (** ** Lookups are deterministic *)
 
 Lemma in_ctx_det {Γ n T l T' l'} : in_ctx Γ n T l -> in_ctx Γ n T' l' -> T = T' /\ l = l'.
@@ -329,4 +362,5 @@ Proof.
   - exact (lvl_eq_uniq (proj2 (inv_ty_upi H)) (proj2 (inv_ty_upi H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_cpi H)) (proj2 (inv_ty_cpi H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_tpi H)) (proj2 (inv_ty_tpi H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_sig H)) (proj2 (inv_ty_sig H'))).
 Qed.

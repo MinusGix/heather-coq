@@ -19,13 +19,15 @@ From DeLaM.Validity Require Export Consistency.
 Definition canon_head (h : nat) (w : tm) : Prop :=
   match h with
   | 1 => w = zero \/ exists t, w = succ t
-  | 2 => w = tmNat \/ (exists l, w = tmU l) \/ exists l l' s t, w = tmPi l l' s t
+  | 2 => w = tmNat \/ (exists l, w = tmU l) \/ (exists l l' s t, w = tmPi l l' s t) \/
+         exists l l' s t, w = tmSig l l' s t
   | 3 => exists l l' A t, w = lam l l' A t
   | 4 => exists T, w = boxT T
   | 5 => exists t, w = boxt t
   | 6 => exists n l T t, w = ulam n l T t
   | 7 => exists l T t, w = clam l T t
   | 8 => exists Δ l l' T t, w = tlam Δ l l' T t
+  | 10 => exists l l' A B a b, w = tmPair l l' A B a b
   | _ => False
   end.
 
@@ -40,7 +42,8 @@ Proof.
           | pose proof (inv_succ Hi Hx) as X | pose proof (inv_lam Hi Hx) as X
           | pose proof (inv_boxT Hi Hx) as X | pose proof (inv_boxt Hi Hx) as X
           | pose proof (inv_ulam Hi Hx) as X | pose proof (inv_clam Hi Hx) as X
-          | pose proof (inv_tlam Hi Hx) as X ];
+          | pose proof (inv_tlam Hi Hx) as X
+          | pose proof (inv_code_sig Hi Hx) as X | pose proof (inv_pair Hi Hx) as X ];
     repeat match goal with H : exists _, _ |- _ => destruct H | H : _ /\ _ |- _ => destruct H end;
     match goal with E : [ _ ; _ ⊢[ _ ] W ≅ _ @ _ ] |- _ =>
       rewrite (decl_head_c Hc E HW); [| auto with whnf] end;

@@ -43,13 +43,20 @@ Inductive red : tm -> tm -> Prop :=
 | red_capp t t' Δ : red t t' -> red (capp t Δ) (capp t' Δ)
 | red_tbeta Δ l l' B b T : red (tapp (tlam Δ l l' B b) T) b⦃gsingle (GTy T)⦄
 | red_tapp t t' T : red t t' -> red (tapp t T) (tapp t' T)
+(* dependent pairs (M8): projections of a pair, and in the scrutinee *)
+| red_fst_beta l l' A B a b k k' A' B' : red (tmFst k k' A' B' (tmPair l l' A B a b)) a
+| red_snd_beta l l' A B a b k k' A' B' : red (tmSnd k k' A' B' (tmPair l l' A B a b)) b
+| red_fst l l' A B p p' : red p p' -> red (tmFst l l' A B p) (tmFst l l' A B p')
+| red_snd l l' A B p p' : red p p' -> red (tmSnd l l' A B p) (tmSnd l l' A B p')
 
 with red_ty : ty -> ty -> Prop :=
 | red_El_nat l : red_ty (tyEl l tmNat) tyNat
 | red_El_U l l0 : red_ty (tyEl l (tmU l0)) (tyU l0)
 | red_El_pi l l1 l2 s t :
     red_ty (tyEl l (tmPi l1 l2 s t)) (tyPi l1 l2 (tyEl l1 s) (tyEl l2 t))
-| red_El l t t' : red t t' -> red_ty (tyEl l t) (tyEl l t').
+| red_El l t t' : red t t' -> red_ty (tyEl l t) (tyEl l t')
+| red_El_sig l l1 l2 s t :
+    red_ty (tyEl l (tmSig l1 l2 s t)) (tySig l1 l2 (tyEl l1 s) (tyEl l2 t)).
 
 Scheme red_mut := Induction for red Sort Prop
   with red_ty_mut := Induction for red_ty Sort Prop.
@@ -77,7 +84,8 @@ Lemma whnf_no_red t v : whnf t -> ~ red t v.
 Proof. destruct 1; intros Hr; try (inversion Hr; fail). eapply whne_no_red; eauto. Qed.
 Lemma whnf_ty_no_red T U : whnf_ty T -> ~ red_ty T U.
 Proof.
-  intros HW Hr; inversion Hr; subst; inversion HW as [? HT| | | | | | | |]; subst; inversion HT; subst;
+  intros HW Hr; inversion Hr; subst; inversion HW; subst;
+    match goal with HT : whne_ty _ |- _ => inversion HT; subst end;
     try solve [match goal with Hw : whne _ |- _ => inversion Hw end].
   eapply whne_no_red; eauto.
 Qed.
@@ -102,6 +110,8 @@ Proof.
         | Hr : red tmNat _ |- _ => inversion Hr
         | Hr : red (tmU _) _ |- _ => inversion Hr
         | Hr : red (tmPi _ _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmSig _ _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmPair _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red_ty (tyPi _ _ _ _) _ |- _ => inversion Hr
         end;
     try congruence; try (f_equal; eauto).
@@ -156,6 +166,10 @@ Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with 
 Lemma reds_capp t t' Δ : reds t t' -> reds (capp t Δ) (capp t' Δ).
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_tapp t t' T : reds t t' -> reds (tapp t T) (tapp t' T).
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_fst l l' A B p p' : reds p p' -> reds (tmFst l l' A B p) (tmFst l l' A B p').
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_snd l l' A B p p' : reds p p' -> reds (tmSnd l l' A B p) (tmSnd l l' A B p').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_El l t t' : reds t t' -> reds_ty (tyEl l t) (tyEl l t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.

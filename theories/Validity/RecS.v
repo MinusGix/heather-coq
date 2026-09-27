@@ -3385,7 +3385,9 @@ Proof.
     (* the rules at M do not type code *)
     match goal with Ei : ?i = lC, EG : ?G = G' |- _ => first [discriminate Ei | subst i G] end;
     repeat match goal with IH : lC = lC -> G' = G' -> _ |- _ => specialize (IH eq_refl eq_refl) end;
-    cbn [typeof] in *.
+    cbn [typeof] in *;
+    (* the rules of the computing layers do not type code (M8_DESIGN.md I1) *)
+    try match goal with c : compt lC |- _ => destruct c; discriminate end.
   all: first
     [ solve [apply RT_nat | apply RT_U | apply RT_gvar | apply Rt_nat | apply Rt_zero | apply Rt_U | apply Rt_gvar]
     | solve [eapply Rt_var; eassumption]

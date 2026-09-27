@@ -114,6 +114,31 @@ Lemma inva_app {G i Γ l l' A B t s T k} : [ G ; Γ ⊢[ i ] app t l l' A B s : 
     lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ typeof i ] T ≅ B[lsingle s] @ k ].
 Proof. inv_tm_any. Qed.
 
+Lemma inva_code_sig {G i Γ l l' s t T k} : [ G ; Γ ⊢[ i ] tmSig l l' s t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ]) /\
+    lvl_eq (gL G) k (lsuc (lmax l l')) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU (lmax l l') @ k ].
+Proof. inv_tm_any. Qed.
+
+Lemma inva_pair {G i Γ l l' A B a b T k} : [ G ; Γ ⊢[ i ] tmPair l l' A B a b : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\ [ G ; Γ ⊢[ i ] a : A @ l ] /\
+    [ G ; Γ ⊢[ i ] b : B[lsingle a] @ l' ]) /\
+    lvl_eq (gL G) k (lmax l l') /\ [ G ; Γ ⊢[ typeof i ] T ≅ tySig l l' A B @ k ].
+Proof. inv_tm_any. Qed.
+
+Lemma inva_fst {G i Γ l l' A B p T k} : [ G ; Γ ⊢[ i ] tmFst l l' A B p : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\ [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ]) /\
+    lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ typeof i ] T ≅ A @ k ].
+Proof. inv_tm_any. Qed.
+
+Lemma inva_snd {G i Γ l l' A B p T k} : [ G ; Γ ⊢[ i ] tmSnd l l' A B p : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\ [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ]) /\
+    lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ typeof i ] T ≅ B[lsingle (tmFst l l' A B p)] @ k ].
+Proof. inv_tm_any. Qed.
+
 (** ** The M-only heads *)
 
 (** Terms whose rules are at M only. *)
@@ -140,7 +165,8 @@ Definition v_typable (t : tm) : Prop := match t with var _ | gvar _ _ => True | 
 Lemma typed_V {G Γ t T k} : ~ v_typable t -> ~ [ G ; Γ ⊢[ lV ] t : T @ k ].
 Proof.
   intros Hv H. remember lV as i eqn:Ei. induction H; subst; cbn in Hv; try congruence; auto;
-    try match goal with Hm : lM = lV |- _ => discriminate Hm end.
+    try match goal with Hm : lM = lV |- _ => discriminate Hm end;
+    try match goal with c : compt lV |- _ => destruct c; discriminate end.
 Qed.
 
 (** No type is well formed at V. *)

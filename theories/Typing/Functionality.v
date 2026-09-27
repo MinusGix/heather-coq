@@ -410,6 +410,10 @@ Ltac fung_step :=
   | |- eq_tm _ _ _ (succ _) _ _ _ => eapply eqtm_succ
   | |- eq_tm _ _ _ (lam _ _ _ _) _ _ _ => eapply eqtm_lam
   | |- eq_tm _ _ _ (app _ _ _ _ _ _) _ _ _ => eapply eqtm_app
+  | |- eq_ty _ _ _ (tySig _ _ _ _) _ _ => eapply eqty_sig
+  | |- eq_tm _ _ _ (tmPair _ _ _ _ _ _) _ _ _ => eapply eqtm_pair
+  | |- eq_tm _ _ _ (tmFst _ _ _ _ _) _ _ _ => eapply eqtm_fst
+  | |- eq_tm _ _ _ (tmSnd _ _ _ _ _) _ _ _ => eapply eqtm_snd
   | Hc : eq_ty _ _ _ ?T ?T' ?l |- eq_tm _ _ _ _ _ (subst ?T _) ?l =>
       eapply eqtm_conv; [ | eapply eqty_subst_g ]
   | Hl : lequiv _ ?l ?l' |- eq_ty _ _ _ _ _ ?l => eapply eqty_lconv
@@ -712,6 +716,19 @@ Proof.
     eapply eqtm_natrec; try solve [eauto 6 with fung].
     all: eapply eq_tm_retype;
       [match goal with IH : _ |- _ => eapply IH; solve [eauto 6 with fung] end | sub_rw; reflexivity].
+  (* code of Σ (M8), as for Π *)
+  - match goal with
+    | Hd : lsub_eq _ _ ?Δ ?d ?d' ?Γ, Hw : lsub_wf ?G ?i ?Δ ?d ?Γ,
+      ws : wf_tm ?G _ ?Γ ?s (tyU ?l) ?ll
+      |- eq_tm _ _ _ (tmSig _ _ _ (@subst tm _ _ _)) _ _ _ =>
+        assert (wf_tm G i Δ s[d] (tyU l) ll) by exact (wf_tm_subst_g ws Hw);
+        assert (eq_tm G i Δ s[d] s[d'] (tyU l) ll)
+          by (match goal with IH : forall Δ d d', _ -> eq_tm _ _ _ (subst ?x _) _ _ _ |- _ =>
+                constr_eq x s; eapply IH; exact Hd end);
+        assert (eq_ty G i Δ (tyEl l s)[d] (tyEl l s)[d'] l)
+          by (push_subst; apply eqty_El; auto using lequiv_refl)
+    end.
+    eapply eqtm_code_sig; eauto 7 with fung.
 Qed.
 
 Theorem functionality :

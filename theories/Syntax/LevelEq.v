@@ -20,6 +20,7 @@ Fixpoint ty_leq (T T' : ty) {struct T} : Prop :=
   | tyUPi n l A, tyUPi n' l' A' => n = n' /\ leqv l l' /\ ty_leq A A'
   | tyCPi l A, tyCPi l' A' => leqv l l' /\ ty_leq A A'
   | tyTPi Δ l1 l2 A, tyTPi Δ' l1' l2' A' => ctx_leq Δ Δ' /\ leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A'
+  | tySig l1 l2 A B, tySig l1' l2' A' B' => leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B'
   | _, _ => False
   end
 with tm_leq (t t' : tm) {struct t} : Prop :=
@@ -56,6 +57,13 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
   | capp t Δ, capp t' Δ' => tm_leq t t' /\ ctx_leq Δ Δ'
   | tlam Δ l1 l2 T t, tlam Δ' l1' l2' T' t' => ctx_leq Δ Δ' /\ leqv l1 l1' /\ leqv l2 l2' /\ ty_leq T T' /\ tm_leq t t'
   | tapp t A, tapp t' A' => tm_leq t t' /\ ty_leq A A'
+  | tmSig l1 l2 s t, tmSig l1' l2' s' t' => leqv l1 l1' /\ leqv l2 l2' /\ tm_leq s s' /\ tm_leq t t'
+  | tmPair l1 l2 A B a b, tmPair l1' l2' A' B' a' b' =>
+      leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq a a' /\ tm_leq b b'
+  | tmFst l1 l2 A B p, tmFst l1' l2' A' B' p' =>
+      leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq p p'
+  | tmSnd l1 l2 A B p, tmSnd l1' l2' A' B' p' =>
+      leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq p p'
   | _, _ => False
   end
 with ctx_leq (Γ Γ' : ctx) {struct Γ} : Prop :=
@@ -326,7 +334,7 @@ Proof. destruct o; cbn; auto using ctx_leq_refl, ty_leq_refl, tm_leq_refl. Qed.
 Fixpoint ty_lwf (L : nat) (T : ty) {struct T} : Prop :=
   match T with
   | tyErr | tyNat => True
-  | tyPi l1 l2 A B => lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ ty_lwf L B
+  | tyPi l1 l2 A B | tySig l1 l2 A B => lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ ty_lwf L B
   | tyU l => lwf L l
   | tyEl l t => lwf L l /\ tm_lwf L t
   | tyGvar _ d => lsub_lwf L d
@@ -339,7 +347,7 @@ Fixpoint ty_lwf (L : nat) (T : ty) {struct T} : Prop :=
 with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   match t with
   | var _ | tmErr | tmNat | zero => True
-  | tmPi l1 l2 s t => lwf L l1 /\ lwf L l2 /\ tm_lwf L s /\ tm_lwf L t
+  | tmPi l1 l2 s t | tmSig l1 l2 s t => lwf L l1 /\ lwf L l2 /\ tm_lwf L s /\ tm_lwf L t
   | tmU l => lwf L l
   | succ t => tm_lwf L t
   | natrec l M s z t => lwf L l /\ ty_lwf L M /\ tm_lwf L s /\ tm_lwf L z /\ tm_lwf L t
@@ -364,6 +372,9 @@ with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   | capp t Δ => tm_lwf L t /\ ctx_lwf L Δ
   | tlam Δ l1 l2 T t => ctx_lwf L Δ /\ lwf L l1 /\ lwf L l2 /\ ty_lwf L T /\ tm_lwf L t
   | tapp t A => tm_lwf L t /\ ty_lwf L A
+  | tmPair l1 l2 A B a b => lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ ty_lwf L B /\ tm_lwf L a /\ tm_lwf L b
+  | tmFst l1 l2 A B p | tmSnd l1 l2 A B p =>
+      lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ ty_lwf L B /\ tm_lwf L p
   end
 with ctx_lwf (L : nat) (Γ : ctx) {struct Γ} : Prop :=
   match Γ with

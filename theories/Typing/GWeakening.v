@@ -335,6 +335,12 @@ Lemma gren_clam l T t : (clam l T t)⟪ξ⟫ = clam l T⟪gupr ξ⟫ t⟪gupr ξ
 Lemma gren_capp t Δ : (capp t Δ)⟪ξ⟫ = capp t⟪ξ⟫ Δ⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_tlam Δ l l' T t : (tlam Δ l l' T t)⟪ξ⟫ = tlam Δ⟪ξ⟫ l l' T⟪gupr ξ⟫ t⟪gupr ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_tapp t T : (tapp t T)⟪ξ⟫ = tapp t⟪ξ⟫ T⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tySig l l' A B : (tySig l l' A B)⟪ξ⟫ = tySig l l' A⟪ξ⟫ B⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tmSig l l' s t : (tmSig l l' s t)⟪ξ⟫ = tmSig l l' s⟪ξ⟫ t⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_pair l l' A B a b : (tmPair l l' A B a b)⟪ξ⟫ = tmPair l l' A⟪ξ⟫ B⟪ξ⟫ a⟪ξ⟫ b⟪ξ⟫.
+Proof. reflexivity. Qed.
+Lemma gren_fst l l' A B p : (tmFst l l' A B p)⟪ξ⟫ = tmFst l l' A⟪ξ⟫ B⟪ξ⟫ p⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_snd l l' A B p : (tmSnd l l' A B p)⟪ξ⟫ = tmSnd l l' A⟪ξ⟫ B⟪ξ⟫ p⟪ξ⟫. Proof. reflexivity. Qed.
 (** [UΠ]'s scope and instances. *)
 Lemma gren_uren_ctx (Γ : ctx) ρ : Γ⟨ρ⟩ᵤ⟪ξ⟫ = Γ⟪ξ⟫⟨ρ⟩ᵤ.
 Proof. symmetry; apply (proj1 (proj2 (proj2 uren_gren_all))). Qed.
@@ -352,7 +358,8 @@ Ltac push_gren := repeat progress (
           ?gren_lam, ?gren_app, ?gren_gvar, ?gren_boxT, ?gren_boxt, ?gren_letboxT, ?gren_letboxt,
           ?gren_cnil, ?gren_cvar, ?gren_cext, ?gren_lshift, ?gren_elimT, ?gren_elimt,
           ?gren_tyUPi, ?gren_ulam, ?gren_uapp, ?gren_uren_ctx, ?gren_uren_tm, ?gren_usubst_ty,
-          ?gren_usubst_tm, ?gren_tyCPi, ?gren_tyTPi, ?gren_clam, ?gren_capp, ?gren_tlam, ?gren_tapp).
+          ?gren_usubst_tm, ?gren_tyCPi, ?gren_tyTPi, ?gren_clam, ?gren_capp, ?gren_tlam, ?gren_tapp,
+          ?gren_tySig, ?gren_tmSig, ?gren_pair, ?gren_fst, ?gren_snd).
 
 Ltac gren_rewrite :=
   rewrite ?gren_single_ty, ?gren_single, ?gren_single2, ?gren_lsucc_ty, ?gren_ren_ty', ?gren_ren,
@@ -417,7 +424,7 @@ Ltac gw_step :=
       first [ solve [eapply wft_nat; gw_premises] | solve [eapply wft_pi; gw_premises]
             | solve [eapply wft_U; gw_premises] | solve [eapply wft_El; gw_premises]
             | solve [eapply wft_lconv; gw_premises] | solve [eapply wft_CTyp; gw_premises]
-            | solve [eapply wft_CTrm; gw_premises] ]
+            | solve [eapply wft_CTrm; gw_premises] | solve [eapply wft_sig; gw_premises] ]
   | |- wf_tm _ _ _ _ _ _ =>
       first [ solve [eapply wf_var; gw_premises] | solve [eapply wf_code_nat; gw_premises]
             | solve [eapply wf_code_U; gw_premises] | solve [eapply wf_code_pi; gw_premises]
@@ -425,14 +432,17 @@ Ltac gw_step :=
             | solve [eapply wf_natrec; gw_premises] | solve [eapply wf_lam; gw_premises]
             | solve [eapply wf_app; gw_premises] | solve [eapply wf_conv; gw_premises]
             | solve [eapply wf_lconv; gw_premises] | solve [eapply wf_boxT; gw_premises]
-            | solve [eapply wf_boxt; gw_premises] ]
+            | solve [eapply wf_boxt; gw_premises] | solve [eapply wf_code_sig; gw_premises]
+            | solve [eapply wf_pair; gw_premises] | solve [eapply wf_fst; gw_premises]
+            | solve [eapply wf_snd; gw_premises] ]
   | |- eq_ty _ _ _ _ _ _ =>
       first [ solve [eapply eqty_refl; gw_premises] | solve [eapply eqty_sym; gw_premises]
             | solve [eapply eqty_trans; gw_premises] | solve [eapply eqty_pi; gw_premises]
             | solve [eapply eqty_U; gw_premises] | solve [eapply eqty_El; gw_premises]
             | solve [eapply eqty_El_nat; gw_premises] | solve [eapply eqty_El_U; gw_premises]
             | solve [eapply eqty_El_pi; gw_premises] | solve [eapply eqty_lconv; gw_premises]
-            | solve [eapply eqty_CTyp; gw_premises] | solve [eapply eqty_CTrm; gw_premises] ]
+            | solve [eapply eqty_CTyp; gw_premises] | solve [eapply eqty_CTrm; gw_premises]
+            | solve [eapply eqty_sig; gw_premises] | solve [eapply eqty_El_sig; gw_premises] ]
   | |- eq_tm _ _ _ _ _ _ _ =>
       first [ solve [eapply eqtm_refl; gw_premises] | solve [eapply eqtm_sym; gw_premises]
             | solve [eapply eqtm_trans; gw_premises] | solve [eapply eqtm_code_U; gw_premises]
@@ -442,7 +452,11 @@ Ltac gw_step :=
             | solve [eapply eqtm_lconv; gw_premises]
             | solve [eapply eqtm_natrec_zero; gw_premises]
             | solve [eapply eqtm_natrec_succ; gw_premises]
-            | solve [eapply eqtm_beta; gw_premises] | solve [eapply eqtm_eta; gw_premises] ]
+            | solve [eapply eqtm_beta; gw_premises] | solve [eapply eqtm_eta; gw_premises]
+            | solve [eapply eqtm_code_sig; gw_premises] | solve [eapply eqtm_pair; gw_premises]
+            | solve [eapply eqtm_fst; gw_premises] | solve [eapply eqtm_snd; gw_premises]
+            | solve [eapply eqtm_fst_beta; gw_premises] | solve [eapply eqtm_snd_beta; gw_premises]
+            | solve [eapply eqtm_sig_eta; gw_premises] ]
   end.
 
 (** One premise: directly, or through an induction hypothesis up to a type equation. *)
@@ -609,6 +623,10 @@ Ltac gw_manual :=
   | |- eq_tm _ _ _ (natrec _ _ _ _ (succ _)) _ _ _ => eapply eqtm_natrec_succ; gw_premise
   | |- eq_tm _ _ _ (natrec _ _ _ _ _) (natrec _ _ _ _ _) _ _ => eapply eqtm_natrec; gw_premise
   | |- eq_tm _ _ _ (lam _ _ _ _) _ _ _ => eapply eqtm_eta; gw_premise
+  | |- wf_tm _ _ _ (tmPair _ _ _ _ _ _) _ _ => eapply wf_pair; gw_premise
+  | |- eq_tm _ _ _ (tmFst _ _ _ _ (tmPair _ _ _ _ _ _)) _ _ _ => eapply eqtm_fst_beta; gw_premise
+  | |- eq_tm _ _ _ (tmSnd _ _ _ _ (tmPair _ _ _ _ _ _)) _ _ _ => eapply eqtm_snd_beta; gw_premise
+  | |- eq_tm _ _ _ (tmPair _ _ _ _ _ _) (tmPair _ _ _ _ _ _) _ _ => eapply eqtm_pair; gw_premise
   | |- eq_ty _ lM _ _ _ _ => eapply eqty_leq; gw_premise
   | |- eq_tm _ lM _ _ _ _ _ => eapply eqtm_leq; gw_premise
   end.

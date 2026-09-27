@@ -324,6 +324,169 @@ Proof.
       pose proof (wk1_tm G i Hi _ _ _ _ _ _ HΓ'A Hv') as X. cbn in X. rewrite Nat.add_1_r in X. exact X.
 Qed.
 
+(** ** Dependent pairs (M8). Their rules are gated to the computing layers,
+    which are exactly the layers with [typeof i = i]. *)
+
+Lemma compt_self : compt i.
+Proof. destruct i; cbn in Hi, Hv; try congruence; unfold compt; auto. Qed.
+
+Lemma pre_sig_r {Γ l1 l2 l3 l4 A A' B'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] tySig l3 l4 A' B' @ lmax l1 l2 ].
+Proof.
+  intros H13 H24 HA HA' HB.
+  assert (HA3 : [ G ; Γ ⊢[ i ] A' @ l3 ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
+  eapply wft_lconv with (l' := lmax l3 l4); [|now apply lequiv_max].
+  apply wft_sig; try solve [eauto using lequiv_wf_r, compt_self].
+  eapply wft_lconv; [|apply lequiv_sym; exact H24].
+  eapply (stab_ty Hi HA H13); [apply ext_wf; eauto using lequiv_wf_r | exact HB].
+Qed.
+
+Lemma pre_codesig_r {Γ l1 l2 l3 l4 s s' t'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] s ≅ s' : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢[ i ] s' : tyU l1 @ lsuc l1 ] ->
+  [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t' : tyU l2 @ lsuc l2 ] ->
+  [ G ; Γ ⊢[ i ] tmSig l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ].
+Proof.
+  intros H13 H24 Hs Hs' Ht. pose proof (ctx_of_wf_tm Hi Hs') as HΓ.
+  assert (HEl : [ G ; Γ ⊢[ i ] tyEl l1 s ≅ tyEl l3 s' @ l1 ]) by (apply eqty_El; auto).
+  assert (Hs3 : [ G ; Γ ⊢[ i ] s' : tyU l3 @ lsuc l3 ]) by exact (conv_U Hs' H13).
+  eapply wf_lconv with (l' := lsuc (lmax l3 l4)); [|apply lequiv_suc, lequiv_max; eassumption].
+  eapply conv_tm'.
+  - apply wf_code_sig; try solve [eauto using lequiv_wf_r, compt_self].
+    apply (conv_U (l := l2)); [|exact H24].
+    eapply (stab_tm Hi HEl H13); [|exact Ht].
+    apply ext_wf; [apply wft_El; eauto using lequiv_wf_r | eauto using lequiv_wf_r].
+  - eapply eqty_lconv; [|apply lequiv_suc, lequiv_max; apply lequiv_sym; eassumption].
+    apply eqty_U; [exact Hv | now rewrite Hi | apply lequiv_max; eassumption].
+Qed.
+
+(** [B[a] ≅ B'[a']] from [B ≅ B'] and [a ≅ a']. *)
+Lemma sig_fam_eq {Γ l1 l2 A B B' a a'} :
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] -> [ G ; Γ ⊢[ i ] a : A @ l1 ] -> [ G ; Γ ⊢[ i ] a' : A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] B[lsingle a] ≅ B'[lsingle a'] @ l2 ].
+Proof.
+  intros HB HBB Haa Ha Ha'. eapply eqty_trans.
+  - apply (wf_ty_func HB (d' := lsingle a')). now apply lsub_eq_single.
+  - exact (eqty_single Hi HBB Ha').
+Qed.
+
+(** The Σ congruences' common setup: the right family in its own context,
+    and the Σ types equal. *)
+Lemma sig_r_setup {Γ l1 l2 l3 l4 A A' B B'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] A' @ l3 ] /\ [ G ; Γ ,, A' @ l3 ⊢[ i ] B' @ l4 ] /\
+  [ G ; Γ ⊢[ i ] tySig l1 l2 A B ≅ tySig l3 l4 A' B' @ lmax l3 l4 ].
+Proof.
+  intros H13 H24 HA HAA HA' HBB HB'.
+  assert (HA3 : [ G ; Γ ⊢[ i ] A' @ l3 ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
+  assert (HΓ' : [ G ; Γ ,, A' @ l3 ⊢[ i ] ]) by (apply ext_wf; eauto using lequiv_wf_r).
+  refine (conj HA3 (conj _ _)).
+  - eapply wft_lconv; [exact (stab_ty Hi HAA H13 HΓ' HB') | now apply lequiv_sym].
+  - eapply eqty_lconv; [|apply lequiv_max; apply lequiv_sym; eassumption].
+    apply eqty_sig; auto using compt_self.
+Qed.
+
+Lemma pre_pair_r {Γ l1 l2 l3 l4 A A' B B' a a' b'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] -> [ G ; Γ ⊢[ i ] a : A @ l1 ] -> [ G ; Γ ⊢[ i ] a' : A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] b' : B[lsingle a] @ l2 ] ->
+  [ G ; Γ ⊢[ i ] tmPair l3 l4 A' B' a' b' : tySig l1 l2 A B @ lmax l1 l2 ].
+Proof.
+  intros H13 H24 HA HAA HA' HB HBB HB' Haa Ha Ha' Hb'.
+  destruct (sig_r_setup H13 H24 HA HAA HA' HBB HB') as (HA3 & HB4 & HSig).
+  eapply wf_lconv with (l' := lmax l3 l4); [|now apply lequiv_max].
+  eapply conv_tm'; [|exact HSig].
+  apply wf_pair; eauto using lequiv_wf_r, compt_self.
+  - eapply wf_lconv with (l' := l1); [|now apply lequiv_sym].
+    eapply conv_tm'; [exact Ha'|]. now apply eqty_sym.
+  - eapply wf_lconv with (l' := l2); [|now apply lequiv_sym].
+    eapply conv_tm'; [exact Hb'|]. apply eqty_sym. exact (sig_fam_eq HB HBB Haa Ha Ha').
+Qed.
+
+Lemma pre_fst_r {Γ l1 l2 l3 l4 A A' B B' p'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] p' : tySig l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ i ] tmFst l3 l4 A' B' p' : A @ l1 ].
+Proof.
+  intros H13 H24 HA HAA HA' HBB HB' Hp'.
+  destruct (sig_r_setup H13 H24 HA HAA HA' HBB HB') as (HA3 & HB4 & HSig).
+  eapply wf_lconv with (l' := l3); [|exact H13].
+  eapply (conv_tm' (T' := A')).
+  - apply wf_fst; eauto using lequiv_wf_r, compt_self.
+    eapply wf_lconv with (l' := lmax l1 l2); [|apply lequiv_max; apply lequiv_sym; eassumption].
+    eapply conv_tm'; [exact Hp'|]. eapply eqty_lconv; [apply eqty_sym, HSig | now apply lequiv_max].
+  - eapply eqty_lconv; [exact HAA | now apply lequiv_sym].
+Qed.
+
+Lemma pre_snd_r {Γ l1 l2 l3 l4 A A' B B' p p'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] p ≅ p' : tySig l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ i ] p : tySig l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ i ] p' : tySig l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ i ] tmSnd l3 l4 A' B' p' : B[lsingle (tmFst l1 l2 A B p)] @ l2 ].
+Proof.
+  intros H13 H24 HA HAA HA' HB HBB HB' Hpp Hp Hp'.
+  destruct (sig_r_setup H13 H24 HA HAA HA' HBB HB') as (HA3 & HB4 & HSig).
+  assert (Hf : [ G ; Γ ⊢[ i ] tmFst l1 l2 A B p ≅ tmFst l3 l4 A' B' p' : A @ l1 ])
+    by (apply eqtm_fst; auto using compt_self).
+  assert (Hf1 : [ G ; Γ ⊢[ i ] tmFst l1 l2 A B p : A @ l1 ])
+    by (apply wf_fst; eauto using lequiv_wf_l, compt_self).
+  pose proof (pre_fst_r H13 H24 HA HAA HA' HBB HB' Hp') as Hf2.
+  eapply wf_lconv with (l' := l4); [|exact H24].
+  eapply conv_tm'.
+  - apply wf_snd; eauto using lequiv_wf_r, compt_self.
+    eapply wf_lconv with (l' := lmax l1 l2); [|apply lequiv_max; apply lequiv_sym; eassumption].
+    eapply conv_tm'; [exact Hp'|]. eapply eqty_lconv; [apply eqty_sym, HSig | now apply lequiv_max].
+  - eapply eqty_lconv with (l' := l2); [exact (sig_fam_eq HB HBB Hf Hf1 Hf2) | now apply lequiv_sym].
+Qed.
+
+Lemma pre_snd_beta_l {Γ l l' A B a b} :
+  lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] b : B[lsingle a] @ l' ] ->
+  [ G ; Γ ⊢[ i ] tmSnd l l' A B (tmPair l l' A B a b) : B[lsingle a] @ l' ].
+Proof.
+  intros Hl Hl' HA HB Ha Hb.
+  assert (Hp : [ G ; Γ ⊢[ i ] tmPair l l' A B a b : tySig l l' A B @ lmax l l' ])
+    by (apply wf_pair; auto using compt_self).
+  assert (Hf : [ G ; Γ ⊢[ i ] tmFst l l' A B (tmPair l l' A B a b) : A @ l ])
+    by (apply wf_fst; auto using compt_self).
+  eapply conv_tm'; [apply wf_snd; auto using compt_self|].
+  apply (wf_ty_func HB (d' := lsingle (tmFst l l' A B (tmPair l l' A B a b)))).
+  apply lsub_eq_single; auto. apply eqtm_sym, eqtm_fst_beta; auto using compt_self.
+Qed.
+
+Lemma pre_sig_eta_l {Γ l l' A B p} :
+  lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ] ->
+  [ G ; Γ ⊢[ i ] tmPair l l' A B (tmFst l l' A B p) (tmSnd l l' A B p) : tySig l l' A B @ lmax l l' ].
+Proof.
+  intros Hl Hl' HA HB Hp.
+  apply wf_pair; auto using compt_self; [apply wf_fst | apply wf_snd]; auto using compt_self.
+Qed.
+
+Lemma pre_snd_ty {Γ l l' A B p} :
+  lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ] ->
+  [ G ; Γ ⊢[ i ] B[lsingle (tmFst l l' A B p)] @ l' ].
+Proof. intros; eapply (wf_ty_single Hi); [eassumption | apply wf_fst; auto using compt_self]. Qed.
+
 End Aux.
 
 (** ** Contextual types and letbox (layer M) *)
@@ -510,6 +673,7 @@ Proof. intros H1 H2 H3 H4 H5; exact (proj2 (ctx_conv_ext Hi H1 H2 H3 H4 H5)). Qe
 
 #[export] Hint Resolve wft_nat wft_pi wft_U wft_El wf_code_nat wf_code_U wf_code_pi wf_zero
   wf_succ wf_natrec wf_lam wf_app wfc_ext in_ctx_wf wf_ty_single wf_tm_single
+  wft_sig wf_code_sig wf_pair wf_fst wf_snd
   ctx_of_wf_ty ctx_of_wf_tm ctx_of_eqty ctx_of_eqtm lequiv_wf_l lequiv_wf_r compt_notV : presup.
 #[export] Hint Extern 1 (lwf _ _) =>
   solve [cbn; intuition eauto using lequiv_wf_l, lequiv_wf_r] : presup.
@@ -606,7 +770,14 @@ Proof.
              | solve [eapply pre_lam_r; eassumption] | solve [eapply pre_app_r; eassumption]
              | solve [eapply pre_natrec_succ; eassumption]
              | solve [eapply pre_eta_l; eassumption]
-             | solve [eapply wf_natrec; eauto 4 with presup] ].
+             | solve [eapply wf_natrec; eauto 4 with presup]
+             (* dependent pairs (M8) *)
+             | solve [eapply pre_sig_r; eassumption] | solve [eapply pre_codesig_r; eassumption]
+             | solve [eapply pre_pair_r; eassumption] | solve [eapply pre_fst_r; eassumption]
+             | solve [eapply pre_snd_r; eassumption] | solve [eapply pre_snd_beta_l; eassumption]
+             | solve [eapply pre_sig_eta_l; eassumption] | solve [eapply pre_snd_ty; eassumption]
+             | solve [eapply wf_ty_single; [eassumption|]; eapply wf_fst; eassumption]
+             | solve [eapply wft_El; eauto with presup; eapply wf_code_sig; eassumption] ].
 Qed.
 
 Section Named.

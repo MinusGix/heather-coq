@@ -384,6 +384,12 @@ Lemma gs_clam l T t : (clam l T t)⦃σ⦄ = clam l T⦃gup σ⦄ t⦃gup σ⦄.
 Lemma gs_capp t Δ : (capp t Δ)⦃σ⦄ = capp t⦃σ⦄ Δ⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_tlam Δ l l' T t : (tlam Δ l l' T t)⦃σ⦄ = tlam Δ⦃σ⦄ l l' T⦃gup σ⦄ t⦃gup σ⦄. Proof. reflexivity. Qed.
 Lemma gs_tapp t T : (tapp t T)⦃σ⦄ = tapp t⦃σ⦄ T⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tySig l l' A B : (tySig l l' A B)⦃σ⦄ = tySig l l' A⦃σ⦄ B⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tmSig l l' s t : (tmSig l l' s t)⦃σ⦄ = tmSig l l' s⦃σ⦄ t⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_pair l l' A B a b : (tmPair l l' A B a b)⦃σ⦄ = tmPair l l' A⦃σ⦄ B⦃σ⦄ a⦃σ⦄ b⦃σ⦄.
+Proof. reflexivity. Qed.
+Lemma gs_fst l l' A B p : (tmFst l l' A B p)⦃σ⦄ = tmFst l l' A⦃σ⦄ B⦃σ⦄ p⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_snd l l' A B p : (tmSnd l l' A B p)⦃σ⦄ = tmSnd l l' A⦃σ⦄ B⦃σ⦄ p⦃σ⦄. Proof. reflexivity. Qed.
 End PushGS.
 
 Ltac push_gsubst := repeat progress (
@@ -391,7 +397,8 @@ Ltac push_gsubst := repeat progress (
           ?gs_tmPi, ?gs_tmU, ?gs_zero, ?gs_succ, ?gs_natrec, ?gs_lam, ?gs_app, ?gs_boxT,
           ?gs_boxt, ?gs_letboxT, ?gs_letboxt, ?gs_cnil, ?gs_cext, ?gs_lshift,
           ?gs_tyGvar, ?gs_gvar, ?gs_cvar, ?gs_elimT, ?gs_elimt, ?gs_tyUPi, ?gs_ulam, ?gs_uapp,
-          ?gs_tyCPi, ?gs_tyTPi, ?gs_clam, ?gs_capp, ?gs_tlam, ?gs_tapp).
+          ?gs_tyCPi, ?gs_tyTPi, ?gs_clam, ?gs_capp, ?gs_tlam, ?gs_tapp,
+          ?gs_tySig, ?gs_tmSig, ?gs_pair, ?gs_fst, ?gs_snd).
 
 Lemma gs_single_ty (M : ty) a σ : M[lsingle a]⦃σ⦄ = M⦃σ⦄[lsingle a⦃σ⦄].
 Proof. rewrite gsubst_subst_ty; reflexivity. Qed.
@@ -676,6 +683,21 @@ Ltac gs_manual2 :=
   | |- eq_tm _ _ _ (natrec _ _ _ _ (succ _)) _ _ _ => eapply eqtm_natrec_succ; gs_premise
   | |- eq_tm _ _ _ (natrec _ _ _ _ _) (natrec _ _ _ _ _) _ _ => eapply eqtm_natrec; gs_premise
   | |- eq_tm _ _ _ (lam _ _ _ _) _ _ _ => eapply eqtm_eta; gs_premise
+  (* dependent pairs (M8) *)
+  | |- wf_ty _ _ _ (tySig _ _ _ _) _ => eapply wft_sig; gs_premise
+  | |- eq_ty _ _ _ (tySig _ _ _ _) (tyEl _ _) _ => eapply eqty_El_sig; gs_premise
+  | |- eq_ty _ _ _ (tySig _ _ _ _) (tySig _ _ _ _) _ => eapply eqty_sig; gs_premise
+  | |- wf_tm _ _ _ (tmSig _ _ _ _) _ _ => eapply wf_code_sig; gs_premise
+  | |- eq_tm _ _ _ (tmSig _ _ _ _) _ _ _ => eapply eqtm_code_sig; gs_premise
+  | |- wf_tm _ _ _ (tmPair _ _ _ _ _ _) _ _ => eapply wf_pair; gs_premise
+  | |- wf_tm _ _ _ (tmFst _ _ _ _ _) _ _ => eapply wf_fst; gs_premise
+  | |- wf_tm _ _ _ (tmSnd _ _ _ _ _) _ _ => eapply wf_snd; gs_premise
+  | |- eq_tm _ _ _ (tmFst _ _ _ _ (tmPair _ _ _ _ _ _)) _ _ _ => eapply eqtm_fst_beta; gs_premise
+  | |- eq_tm _ _ _ (tmSnd _ _ _ _ (tmPair _ _ _ _ _ _)) _ _ _ => eapply eqtm_snd_beta; gs_premise
+  | |- eq_tm _ _ _ (tmPair _ _ _ _ (tmFst _ _ _ _ _) (tmSnd _ _ _ _ _)) _ _ _ => eapply eqtm_sig_eta; gs_premise
+  | |- eq_tm _ _ _ (tmPair _ _ _ _ _ _) (tmPair _ _ _ _ _ _) _ _ => eapply eqtm_pair; gs_premise
+  | |- eq_tm _ _ _ (tmFst _ _ _ _ _) (tmFst _ _ _ _ _) _ _ => eapply eqtm_fst; gs_premise
+  | |- eq_tm _ _ _ (tmSnd _ _ _ _ _) (tmSnd _ _ _ _ _) _ _ => eapply eqtm_snd; gs_premise
   | |- wf_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ => eapply wf_letboxT; try gs_body; gs_premise
   | |- wf_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ => eapply wf_letboxt; try gs_body; gs_premise
   | Hσ : gsub_wf _ _ _ |- eq_tm _ _ _ (letboxT _ _ _ _ _ (boxT _)) _ _ _ =>
