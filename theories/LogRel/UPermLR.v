@@ -83,6 +83,33 @@ Proof. exact (p_lequiv Hp). Qed.
 Lemma pg_lwf {l} : lwf (gL G) l -> lwf (gL (Gp π G)) (lvsubst l (pφ π)).
 Proof. exact (p_lwf Hp). Qed.
 
+(** The shared type-level data of a binder former, permuted; [F]
+    commutes with universe substitution as [Π] and [Σ] do. *)
+Lemma poly_pg {F Γ T T' l l1 l2 l3 l4 A B A' B'} :
+  (forall k k' C D φ, (F k k' C D)[φ]ᵤ = F (lvsubst k φ) (lvsubst k' φ) C[φ]ᵤ D[φ]ᵤ) ->
+  PolyFacts G Γ F T T' l l1 l2 l3 l4 A B A' B' ->
+  PolyFacts (Gp π G) Γ[pφ π]ᵤ F T[pφ π]ᵤ T'[pφ π]ᵤ (lvsubst l (pφ π))
+    (lvsubst l1 (pφ π)) (lvsubst l2 (pφ π)) (lvsubst l3 (pφ π)) (lvsubst l4 (pφ π))
+    A[pφ π]ᵤ B[pφ π]ᵤ A'[pφ π]ᵤ B'[pφ π]ᵤ.
+Proof.
+  intros HF [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB].
+  pose proof (pg_tyred HT) as X. pose proof (pg_tyred HT') as X'. rewrite HF in X, X'.
+  split.
+  - exact (pg_lequiv Hl).
+  - exact (pg_lequiv Hl3).
+  - exact (pg_lequiv Hl4).
+  - exact (pg_lwf Hw1).
+  - exact (pg_lwf Hw2).
+  - exact X.
+  - exact X'.
+  - exact (pg_ty HA).
+  - exact (pg_ty HA').
+  - exact (pg_ty HB).
+  - exact (pg_ty HB').
+  - exact (pg_geq_ty HAA).
+  - exact (pg_geq_ty HBB).
+Qed.
+
 End Along.
 
 Lemma kty_us {G0 Γ0} (ρ : kwk G0 Γ0) T φ : (kty ρ T)[φ]ᵤ = T[φ]ᵤ⟦kw_γ ρ⟧⟨kw_r ρ⟩.
@@ -392,12 +419,12 @@ Proof.
   induction H as [G Γ T T' l R Hl HT HT' HR
                  | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                  | G Γ T T' l V V' R HT HT' HV HR
-                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd IHdom codAd IHcod HR
                  | G Γ T T' l R Hj HM
                  | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd IHinst HR
                  | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                      Hgeq instAd IHinst HR
-                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR];
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd IHdom codAd IHcod HR];
     intros π πi Hp;
     pose proof (uperm_inv _ _ _ Hp) as Hpi;
     pose proof (proj1 Hp) as Hinv; pose proof (proj1 (proj2 Hp)) as Hinv';
@@ -426,6 +453,10 @@ Proof.
       rewrite (Gp_rt Hp HG), (rt_ctx Hinv _ HΓ), (rt_lvl Hinv), !(rt_ty Hinv), !(rt_tm Hinv) in X by assumption.
       exact X.
   - (* Π *)
+    pose proof (poly_pg Hp (fun _ _ _ _ _ => eq_refl) P) as P'.
+    destruct P as [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB].
+    destruct (tyred_glob HT) as (HG & HΓ & NT & NW); destruct (tyred_glob HT') as (_ & _ & NT' & NW');
+    pose proof (p_glob Hp HG) as HG'.
     set (Aπ := A[pφ π]ᵤ). set (A'π := A'[pφ π]ᵤ). set (Bπ := B[pφ π]ᵤ). set (B'π := B'[pφ π]ᵤ).
     set (k1 := lvsubst l1 (pφ π)). set (k2 := lvsubst l2 (pφ π)).
     pose proof (wf_ty_dnf HA) as NA. pose proof (wf_ty_dnf HA') as NA'.
@@ -477,20 +508,8 @@ Proof.
     exists (PiRel (Gp π G) Γ[pφ π]ᵤ k1 k2 (lvsubst l3 (pφ π)) (lvsubst l4 (pφ π)) Aπ Bπ A'π B'π domR' codR').
     split.
     + apply (LRpi n (LRbelow n) (Gp π G) Γ[pφ π]ᵤ T[pφ π]ᵤ T'[pφ π]ᵤ (lvsubst l (pφ π)) k1 k2
-               (lvsubst l3 (pφ π)) (lvsubst l4 (pφ π)) Aπ Bπ A'π B'π domR' codR'); [split|..].
-      * exact (pg_lequiv Hp Hl).
-      * exact (pg_lequiv Hp Hl3).
-      * exact (pg_lequiv Hp Hl4).
-      * exact (pg_lwf Hp Hw1).
-      * exact (pg_lwf Hp Hw2).
-      * exact (pg_tyred Hp HT).
-      * exact (pg_tyred Hp HT').
-      * exact (pg_ty Hp HA).
-      * exact (pg_ty Hp HA').
-      * exact (pg_ty Hp HB).
-      * exact (pg_ty Hp HB').
-      * exact (pg_geq_ty Hp HAA).
-      * exact (pg_geq_ty Hp HBB).
+               (lvsubst l3 (pφ π)) (lvsubst l4 (pφ π)) Aπ Bπ A'π B'π domR' codR').
+      * exact P'.
       * exact Hdom'.
       * exact Hcod'.
       * apply releq_refl.
@@ -721,6 +740,10 @@ Proof.
         cbn [usubst USubst_tm usubst_tm]. change (usubst_tm ?x ?φ) with x[φ]ᵤ.
         rewrite <- !(ktm_push Hp ρ), !(rt_tm Hinv') by assumption. exact h1.
   - (* Σ *)
+    pose proof (poly_pg Hp (fun _ _ _ _ _ => eq_refl) P) as P'.
+    destruct P as [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB].
+    destruct (tyred_glob HT) as (HG & HΓ & NT & NW); destruct (tyred_glob HT') as (_ & _ & NT' & NW');
+    pose proof (p_glob Hp HG) as HG'.
     set (Aπ := A[pφ π]ᵤ). set (A'π := A'[pφ π]ᵤ). set (Bπ := B[pφ π]ᵤ). set (B'π := B'[pφ π]ᵤ).
     set (k1 := lvsubst l1 (pφ π)). set (k2 := lvsubst l2 (pφ π)).
     pose proof (wf_ty_dnf HA) as NA. pose proof (wf_ty_dnf HA') as NA'.
@@ -772,20 +795,8 @@ Proof.
     exists (SigRel (Gp π G) Γ[pφ π]ᵤ k1 k2 (lvsubst l3 (pφ π)) (lvsubst l4 (pφ π)) Aπ Bπ A'π B'π domR' codR').
     split.
     + apply (LRsig n (LRbelow n) (Gp π G) Γ[pφ π]ᵤ T[pφ π]ᵤ T'[pφ π]ᵤ (lvsubst l (pφ π)) k1 k2
-               (lvsubst l3 (pφ π)) (lvsubst l4 (pφ π)) Aπ Bπ A'π B'π domR' codR'); [split|..].
-      * exact (pg_lequiv Hp Hl).
-      * exact (pg_lequiv Hp Hl3).
-      * exact (pg_lequiv Hp Hl4).
-      * exact (pg_lwf Hp Hw1).
-      * exact (pg_lwf Hp Hw2).
-      * exact (pg_tyred Hp HT).
-      * exact (pg_tyred Hp HT').
-      * exact (pg_ty Hp HA).
-      * exact (pg_ty Hp HA').
-      * exact (pg_ty Hp HB).
-      * exact (pg_ty Hp HB').
-      * exact (pg_geq_ty Hp HAA).
-      * exact (pg_geq_ty Hp HBB).
+               (lvsubst l3 (pφ π)) (lvsubst l4 (pφ π)) Aπ Bπ A'π B'π domR' codR').
+      * exact P'.
       * exact Hdom'.
       * exact Hcod'.
       * apply releq_refl.
