@@ -370,7 +370,7 @@ A theorem that our system derives exactly the paper's judgments:
   congruences (M1 deviation) are admissible;
 - `eqty_leq`/`eqtm_leq` at M (M3 E12) are admissible.
 
-Status: P ⊆ O done (K3, K4); O ⊆ P open. The divergences (ours = O, the
+Status: P ⊆ O done (K3, K4); O ⊆ P left open (K5). The divergences (ours = O, the
 paper's ch. 4 = P) were inventoried and reevaluated first (K1, K2).
 
 #### K1. Divergence inventory (from a full read of ch. 4 against `Declarative.v`)
@@ -526,10 +526,34 @@ only of their definition.
 - Corollaries: `paper_consistency`, `paper_canonicity` (reduction to a
   canonical value; the equation with it is O's until O ⊆ P).
 
-Open: O ⊆ P (P-reflexivity by induction on P typing; O's `≡ₗ` rule at M
-by the lemma L of K1's discussion: induction on the left P derivation
-with only an O typing of the right side). With it, O's decidability and
-the canonicity equations transfer to P.
+#### K5. O ⊆ P: analysis, left open (user decision)
+
+O ⊆ P would transfer O's decidability and the canonicity equations to P.
+It needs more than planned. By induction on O derivations, with P's
+reflexivity carried in the motive, most rules go through; two do not:
+- O's `eqc_ext` has fewer premises than P's (P wants the entry equation
+  and the right entry typed in the right context). Workable by
+  stratifying: D/C derivations contain no context equivalence and no M
+  judgment, so first O ⊆ P below M, then context equivalence at D by O's
+  context conversion and that result, then M (whose context equivalences
+  are all at D), then context equivalence at M likewise.
+- O's `≡ₗ` rule at M (`eqty_leq`/`eqtm_leq`). "Lemma L" (induction on
+  the left side, the right side O-typed) works for every former except
+  global variables: P's `gvar` congruence needs the right substitution's
+  entries P-typed, and P typing of `≡ₗ`-variants needs context conversion
+  along `≡ₗ`-related entries, hence P weakening (the variable case needs
+  the weakened entry's P typing). P weakening in turn needs P's global
+  and universe weakening for the bodies under global binders and `UΠ`
+  (their target contexts), i.e. a port of `Properties.v`'s weakening,
+  `GWeakening.v` and the universe weakening, or one Kripke-style
+  induction over all three.
+- The LR route (a generic-equality instance given by P equality) needs
+  the same P weakening laws, and its conversion law takes an O type
+  equation, which would need O ⊆ P for types first.
+
+Decision: stop C3 at P ⊆ O. Everything but the `≡ₗ` rule is a moderate
+proof along the stratification above, if wanted later; it would not
+transfer decidability, since O's algorithmic soundness uses `eqtm_leq`.
 
 ### C4. An executable checker
 
@@ -540,5 +564,5 @@ Status: to design.
 
 ## Order
 
-A1, A3, B1, A2, B2, C1, C1b: done. C3: P ⊆ O done, O ⊆ P open. Next:
+A1, A3, B1, A2, B2, C1, C1b: done. C3: P ⊆ O done, O ⊆ P left open (K5). Next:
 C2–C4, each designed when reached.
