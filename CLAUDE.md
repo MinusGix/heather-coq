@@ -1,6 +1,7 @@
 # DeLaM formalization: notes for agents
 
-Start by reading `README.md`, then `M7_DESIGN.md` (current work), `M6_DESIGN.md`, `M5_DESIGN.md`, `M4_DESIGN.md`, `M3_DESIGN.md`,
+Start by reading `README.md`, then `HEATHER.md` (Heather's extensions: the
+forward agenda), `M7_DESIGN.md` (latest milestone), `M6_DESIGN.md`, `M5_DESIGN.md`, `M4_DESIGN.md`, `M3_DESIGN.md`,
 `M2_DESIGN.md` and `M1_DESIGN.md`. The latter holds the M1
 current status, the ordered next steps, deviations from the paper, and a
 list of proof-engineering gotchas. Follow it.
