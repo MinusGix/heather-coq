@@ -370,7 +370,66 @@ A theorem that our system derives exactly the paper's judgments:
   congruences (M1 deviation) are admissible;
 - `eqty_leq`/`eqtm_leq` at M (M3 E12) are admissible.
 
-Status: to design.
+Status: to design. First step: inventory the divergences (ours = O, the
+paper's ch. 4 = P) and reevaluate those that were expedients of the
+buildout.
+
+#### K1. Divergence inventory (from a full read of ch. 4 against `Declarative.v`)
+
+Representation (same judgments, other encoding):
+1. De Bruijn indices; universe variables as `gctx_uwk n`/`Γ⟨ush n⟩ᵤ`
+   instead of `L, ℓ⃗`; the motives' `ℓ` as a level binder (`lvren _ (ush 1)`).
+2. Local substitutions: one `lshift k` for P's `·^k`, `·_g^k`, `wk_g^k`
+   (tail by `lsub_tail`), and global variables require canonical syntax
+   (`dnfl`: no absorbable trailing `x/x`). P's syntax admits the
+   non-canonical `wk_g^{k+1}, x/x`; O rejects it.
+3. The substitution judgments `Γ ⊢ δ : Δ`, `Γ ⊢ δ ≈ δ' : Δ` are replaced by
+   entrywise lookup premises (`∀ n A k, in_ctx Δ n A k → …`).
+4. Recursors: branches packed by `mkrb`, scopes schematic (`RecSpec`:
+   `brG`/`brΓ`/`brRes`/`brLv`), β by the reduct functions `redT`/`redt`
+   (P's per-head rules are derived lemmas). The `λ`/variable β read the
+   index's whnf, not a literal `Π` (derivable in P by index congruence).
+5. C1b: `ulam`/`clam`/`tlam` carry their former (P's `TLAM` has no `Δ`).
+6. Level equivalence is semantic (equal evaluation), P's is the axioms of
+   ch. 4 §Universe Levels. Equal only if those axioms are complete; not
+   proved. `LevelDec` has the normal form (constant and offsets) a
+   completeness proof would use.
+
+Extra premises, admissible (logrel-coq style):
+7. Explicit reflexivity instead of P's per-former congruences
+   (`Nat ≈ Nat`, `x ≈ x`, `0 ≈ 0`, code congruences).
+8. Left well-formedness premises on congruences: `eqty_pi` (`A`; P's Π
+   congruence has none), `eqtm_code_pi` (`s`), `eqtm_natrec` (`M`),
+   `eqty_CTrm` (`Δ`, `T`), `eqty_cpi`/`eqty_tpi`/`eqty_upi` (`T`), the
+   abstractions, letbox, recursors. Stability/functionality type the right
+   body in the extended context with them.
+9. Right-side premises (M5 G2, letbox): `eqty_tpi` (`T'`), `eqtm_tlam`
+   (`T'`, `t'`), `eqtm_letbox*` (`M'`, `t2` under `Δ'`). Reason then: no
+   global-context conversion. Now there is (`GConv`, `gbind_*`).
+10. Instance premises (M3 E10, M5 G2): recursor result type, recursor
+    congruence motive-instance equation, recursor β reduct typing,
+    `capp`/`tapp` result type and instance equation. Reason: functionality
+    precedes global substitution. Admissible since M6 H8
+    (`declM_inst_*_eq`, `declM_mot*_eq`) and A2 (subject reduction), both
+    via the FT.
+11. Recursors: branch-context well-formedness (`brΓ k`, `k < 13`).
+12. `box` congruence: `≡ₗ` premise (M3 E11; admissible by A3), both sides
+    typed at C, `Δ`/`T` well-formed.
+13. Context equivalence: O's `eqc_ext` has fewer premises (left only) than
+    P's (both sides typed and equal in both contexts).
+
+Extra rule:
+14. `eqty_leq`/`eqtm_leq` at M (M3 E12). Load-bearing in the early
+    metatheory: `UInst.v` (instantiation at equivalent level lists, before
+    `GConv`), and via `leq_eqty`/`leq_eqtm` in `DeclInstance`,
+    `AlgInstance`, `AlgSound`, `Payload`.
+
+Gaps and typos in P that a transcription must settle:
+- recursor congruences are not written ("propagate inwards");
+- recursor β rules are listed selectively;
+- `letbox` scrutinee typed `@ 1 + l` (Typ) and `@ l` (Trm); should be `0`;
+- the `Π` β of `elim_Typ` concludes with `M_Trm` (should be `M_Typ`);
+- the `UΠ` formation premise is at layer "1" (should be M).
 
 ### C4. An executable checker
 
