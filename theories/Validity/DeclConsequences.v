@@ -93,6 +93,14 @@ Proof.
   intros H. exact (pi_inj (E := DEM) (LP := LRM) redM_eqty H (lwfM_whnf_l H (whnf_tyPi _ _ _ _) ltac:(not_upi))).
 Qed.
 
+Theorem declM_sig_inj {G Γ l l1 l2 l3 l4 A A' B B'} :
+  [ G ; Γ ⊢[ lM ] tySig l1 l2 A B ≅ tySig l3 l4 A' B' @ l ] ->
+  lequiv (gL G) l3 l1 /\ lequiv (gL G) l4 l2 /\
+  [ G ; Γ ⊢[ lM ] A ≅ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢[ lM ] B ≅ B' @ l2 ].
+Proof.
+  intros H. exact (sig_inj (E := DEM) (LP := LRM) redM_eqty H (lwfM_whnf_l H (whnf_tySig _ _ _ _) ltac:(not_upi))).
+Qed.
+
 Theorem declM_U_inj {G Γ l l' k} : [ G ; Γ ⊢[ lM ] tyU l ≅ tyU l' @ k ] -> lequiv (gL G) l' l.
 Proof. intros H. exact (U_inj (E := DEM) (LP := LRM) redM_eqty H (lwfM_whnf_l H (whnf_tyU _) ltac:(not_upi))). Qed.
 

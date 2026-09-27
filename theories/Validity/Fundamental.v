@@ -5,7 +5,7 @@
     from the rule's own, and the tactics lift a case to global weakenings.
     The theorem itself quantifies over related global substitutions:
     [FundamentalS] (layers C and P) and [FundamentalM] (layer M). *)
-From DeLaM.Validity Require Export CodePi.
+From DeLaM.Validity Require Export Sigma.
 
 Section Fundamental.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
@@ -136,6 +136,106 @@ Proof.
            (eqty_wf_l ge_typeof HBB) VA VB Vt Vs).
 Qed.
 
+(** Dependent pairs (M8). *)
+Lemma ft_sig {l l' A B} : lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ,, A @ l ⊢g B @ l' ] -> VTyG G Γ A A l -> VTyG G (Γ ,, A @ l) B B l' ->
+  VTy G Γ (tySig l l' A B) (tySig l l' A B) (lmax l l').
+Proof.
+  intros Hw Hw' HB VA VB. exact (V_sig Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') HB VA VB).
+Qed.
+
+Lemma ft_sig_eq {l1 l2 l3 l4 A A' B B'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢g A ≅ A' @ l1 ] -> [ G ; Γ ,, A @ l1 ⊢g B ≅ B' @ l2 ] ->
+  VTyG G Γ A A' l1 -> VTyG G (Γ ,, A @ l1) B B' l2 ->
+  VTy G Γ (tySig l1 l2 A B) (tySig l3 l4 A' B') (lmax l1 l2).
+Proof.
+  intros H13 H24 HAA HBB VA VB.
+  exact (V_sig (lequiv_wf_l _ _ _ H13) (lequiv_wf_l _ _ _ H24) (lequiv_sym _ _ _ H13) (lequiv_sym _ _ _ H24)
+           (eqty_wf_l ge_typeof HBB) VA VB).
+Qed.
+
+Lemma ft_code_sig {l l' s t} : lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢g s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢g t : tyU l' @ lsuc l' ] ->
+  VTmG G Γ s s (tyU l) (lsuc l) -> VTmG G (Γ ,, tyEl l s @ l) t t (tyU l') (lsuc l') ->
+  VTm G Γ (tmSig l l' s t) (tmSig l l' s t) (tyU (lmax l l')) (lsuc (lmax l l')).
+Proof.
+  intros Hw Hw' Hs Ht Vs Vt.
+  exact (V_code_sig Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') Hs Ht Vs Vt).
+Qed.
+
+Lemma ft_code_sig_eq {l1 l2 l3 l4 s s' t t'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢g s : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢g s ≅ s' : tyU l1 @ lsuc l1 ] ->
+  [ G ; Γ ,, tyEl l1 s @ l1 ⊢g t ≅ t' : tyU l2 @ lsuc l2 ] ->
+  VTmG G Γ s s' (tyU l1) (lsuc l1) -> VTmG G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) (lsuc l2) ->
+  VTm G Γ (tmSig l1 l2 s t) (tmSig l3 l4 s' t') (tyU (lmax l1 l2)) (lsuc (lmax l1 l2)).
+Proof.
+  intros H13 H24 Hs Hss Htt Vs Vt.
+  exact (V_code_sig (lequiv_wf_l _ _ _ H13) (lequiv_wf_l _ _ _ H24) H13 H24 Hs
+           (eqtm_wf_l ge_typeof Htt) Vs Vt).
+Qed.
+
+Lemma ft_pair {l l' A B a b} : lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ,, A @ l ⊢g B @ l' ] -> VTyG G Γ A A l -> VTyG G (Γ ,, A @ l) B B l' ->
+  VTmG G Γ a a A l -> VTmG G Γ b b B[lsingle a] l' ->
+  VTm G Γ (tmPair l l' A B a b) (tmPair l l' A B a b) (tySig l l' A B) (lmax l l').
+Proof.
+  intros Hw Hw' HB VA VB Va Vb.
+  exact (V_pair Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') HB VA VB Va Vb).
+Qed.
+
+Lemma ft_pair_eq {l1 l2 l3 l4 A A' B B' a a' b b'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ,, A @ l1 ⊢g B ≅ B' @ l2 ] -> VTyG G Γ A A' l1 -> VTyG G (Γ ,, A @ l1) B B' l2 ->
+  VTmG G Γ a a' A l1 -> VTmG G Γ b b' B[lsingle a] l2 ->
+  VTm G Γ (tmPair l1 l2 A B a b) (tmPair l3 l4 A' B' a' b') (tySig l1 l2 A B) (lmax l1 l2).
+Proof.
+  intros H13 H24 HBB VA VB Va Vb.
+  exact (V_pair (lequiv_wf_l _ _ _ H13) (lequiv_wf_l _ _ _ H24) (lequiv_sym _ _ _ H13) (lequiv_sym _ _ _ H24)
+           (eqty_wf_l ge_typeof HBB) VA VB Va Vb).
+Qed.
+
+Lemma ft_fst {l l' A B p} : lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ,, A @ l ⊢g B @ l' ] -> VTyG G Γ A A l -> VTyG G (Γ ,, A @ l) B B l' ->
+  VTm G Γ p p (tySig l l' A B) (lmax l l') ->
+  VTm G Γ (tmFst l l' A B p) (tmFst l l' A B p) A l.
+Proof.
+  intros Hw Hw' HB VA VB Vp.
+  exact (V_fst Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') HB VA VB Vp).
+Qed.
+
+Lemma ft_fst_eq {l1 l2 l3 l4 A A' B B' p p'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ,, A @ l1 ⊢g B ≅ B' @ l2 ] -> VTyG G Γ A A' l1 -> VTyG G (Γ ,, A @ l1) B B' l2 ->
+  VTm G Γ p p' (tySig l1 l2 A B) (lmax l1 l2) ->
+  VTm G Γ (tmFst l1 l2 A B p) (tmFst l3 l4 A' B' p') A l1.
+Proof.
+  intros H13 H24 HBB VA VB Vp.
+  exact (V_fst (lequiv_wf_l _ _ _ H13) (lequiv_wf_l _ _ _ H24) (lequiv_sym _ _ _ H13) (lequiv_sym _ _ _ H24)
+           (eqty_wf_l ge_typeof HBB) VA VB Vp).
+Qed.
+
+Lemma ft_snd {l l' A B p} : lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ,, A @ l ⊢g B @ l' ] -> VTyG G Γ A A l -> VTyG G (Γ ,, A @ l) B B l' ->
+  VTm G Γ p p (tySig l l' A B) (lmax l l') ->
+  VTm G Γ (tmSnd l l' A B p) (tmSnd l l' A B p) B[lsingle (tmFst l l' A B p)] l'.
+Proof.
+  intros Hw Hw' HB VA VB Vp.
+  exact (V_snd Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') HB VA VB Vp).
+Qed.
+
+Lemma ft_snd_eq {l1 l2 l3 l4 A A' B B' p p'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ,, A @ l1 ⊢g B ≅ B' @ l2 ] -> VTyG G Γ A A' l1 -> VTyG G (Γ ,, A @ l1) B B' l2 ->
+  VTm G Γ p p' (tySig l1 l2 A B) (lmax l1 l2) ->
+  VTm G Γ (tmSnd l1 l2 A B p) (tmSnd l3 l4 A' B' p') B[lsingle (tmFst l1 l2 A B p)] l2.
+Proof.
+  intros H13 H24 HBB VA VB Vp.
+  exact (V_snd (lequiv_wf_l _ _ _ H13) (lequiv_wf_l _ _ _ H24) (lequiv_sym _ _ _ H13) (lequiv_sym _ _ _ H24)
+           (eqty_wf_l ge_typeof HBB) VA VB Vp).
+Qed.
+
 End Wrappers.
 
 End Fundamental.
@@ -166,7 +266,15 @@ Ltac ft_case :=
   | solve [simple eapply ft_lam; eassumption] | solve [simple eapply ft_lam_eq; eassumption]
   | solve [simple eapply ft_app; eassumption] | solve [simple eapply ft_app_eq; eassumption]
   | solve [simple eapply V_natrec_zero; eassumption] | solve [simple eapply V_natrec_succ; eassumption]
-  | solve [simple eapply V_beta; eassumption] | solve [simple eapply V_eta; eassumption] ].
+  | solve [simple eapply V_beta; eassumption] | solve [simple eapply V_eta; eassumption]
+  (* dependent pairs (M8) *)
+  | solve [simple eapply ft_sig; eassumption] | solve [simple eapply ft_sig_eq; eassumption]
+  | solve [simple eapply ft_code_sig; eassumption] | solve [simple eapply ft_code_sig_eq; eassumption]
+  | solve [simple eapply ft_pair; eassumption] | solve [simple eapply ft_pair_eq; eassumption]
+  | solve [simple eapply ft_fst; eassumption] | solve [simple eapply ft_fst_eq; eassumption]
+  | solve [simple eapply ft_snd; eassumption] | solve [simple eapply ft_snd_eq; eassumption]
+  | solve [simple eapply V_fst_beta; eassumption] | solve [simple eapply V_snd_beta; eassumption]
+  | solve [simple eapply V_sig_eta; eassumption] | solve [simple eapply V_El_sig; eassumption] ].
 
 (** ** Lifting to global weakenings
 
@@ -197,7 +305,8 @@ Ltac gl_push :=
   repeat progress (
     rewrite ?gwa_subst_ty, ?gwa_subst, ?gwa_lsingle, ?gwa_lsingle2, ?gwa_lsucc, ?gwa_ren, ?gwa_ren_ty in *;
     rewrite ?gwa_tyNat, ?gwa_tyPi, ?gwa_tyU, ?gwa_tyEl, ?gwa_var, ?gwa_zero, ?gwa_succ, ?gwa_tmNat,
-            ?gwa_tmU, ?gwa_tmPi, ?gwa_lam, ?gwa_app, ?gwa_natrec, ?gwa_cext in *).
+            ?gwa_tmU, ?gwa_tmPi, ?gwa_lam, ?gwa_app, ?gwa_natrec, ?gwa_cext,
+            ?gwa_tySig, ?gwa_tmSig, ?gwa_pair, ?gwa_fst, ?gwa_snd in *).
 
 (** P-derivations are validated at an instance of any layer [≥ P]: their
     typing hypotheses are lifted to the instance's layer. *)

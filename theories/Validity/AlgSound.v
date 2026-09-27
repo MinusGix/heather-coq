@@ -449,12 +449,11 @@ Lemma pi_inj_c {G i Γ l l1 l2 l3 l4 A A' B B'} : compt i ->
   [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ].
 Proof. intros Hc H. destruct Hc as [-> | ->]; [exact (decl_pi_inj H) | exact (declM_pi_inj H)]. Qed.
 
-(* M8 TEMPORARY: Σ injectivity, admitted until the relation has LRsig *)
 Lemma sig_inj_c {G i Γ l l1 l2 l3 l4 A A' B B'} : compt i ->
   [ G ; Γ ⊢[ i ] tySig l1 l2 A B ≅ tySig l3 l4 A' B' @ l ] ->
   lequiv (gL G) l3 l1 /\ lequiv (gL G) l4 l2 /\
   [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ].
-Admitted.
+Proof. intros Hc H. destruct Hc as [-> | ->]; [exact (decl_sig_inj H) | exact (declM_sig_inj H)]. Qed.
 
 Lemma S_actmne_app {G Γ l1 l2 l3 l4 A A' B B' ν ν' s s' m m' A0 B0} :
   S_ne G Γ ν ν' (tyPi m m' A0 B0) -> S_tm G Γ s s' A0 ->

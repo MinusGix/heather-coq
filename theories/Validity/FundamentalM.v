@@ -773,9 +773,13 @@ Local Notation LRM := (LR_M EP EM).
 Ltac m_lwf :=
   first [ eassumption | exact I | eapply lequiv_wf_l; eassumption | eapply lequiv_wf_r; eassumption
         | progress cbn [lwf]; first [split; m_lwf | m_lwf] ].
-Ltac m_side :=
+Ltac m_side0 :=
   first [ eassumption | typeclasses eauto | apply lequiv_refl; m_lwf | apply lequiv_sym; eassumption | m_lwf
         | apply (lle_ge_M EP EM) | reflexivity | apply eqc_refl; eassumption ].
+(** Reflexive validity from a related pair (the Σ congruences, M8). *)
+Ltac m_side :=
+  first [ m_side0 | solve [simple eapply VTyS_trans; [eassumption | simple eapply VTyS_sym; m_side0]]
+        | solve [simple eapply VTmS_trans; [eassumption | simple eapply VTmS_sym; m_side0]] ].
 
 Ltac m_types :=
   repeat match goal with
@@ -851,7 +855,13 @@ Ltac m_rules :=
   | solve [simple eapply VS_code_pi; m_side]
   | solve [simple eapply VS_beta; m_side] | solve [simple eapply VS_eta; m_side]
   | solve [simple eapply VS_natrec_zero; m_side] | solve [simple eapply VS_natrec_succ; m_side]
-  | solve [simple eapply VS_El_pi; m_side] ].
+  | solve [simple eapply VS_El_pi; m_side]
+  (* dependent pairs (M8) *)
+  | solve [simple eapply VS_sig; m_side] | solve [simple eapply VS_code_sig; m_side]
+  | solve [simple eapply VS_pair; m_side] | solve [simple eapply VS_fst; m_side]
+  | solve [simple eapply VS_snd; m_side]
+  | solve [simple eapply VS_fst_beta; m_side] | solve [simple eapply VS_snd_beta; m_side]
+  | solve [simple eapply VS_sig_eta; m_side] | solve [simple eapply VS_El_sig; m_side] ].
 
 Ltac m_ty :=
   first
@@ -865,6 +875,7 @@ Ltac m_ty :=
   | solve [simple eapply VTyS_single; m_side]
   | m_rules
   | solve [simple eapply VTyS_single; [eassumption | m_rules]]
+  | solve [simple eapply VTyS_single; [m_side | m_rules]]
   | solve [simple eapply VTyS_single;
            [ first [eassumption | simple eapply VTyS_trans; [eassumption | simple eapply VTyS_sym; m_side]]
            | first [eassumption | simple eapply VTmS_trans; [eassumption | simple eapply VTmS_sym; m_side]]]] ].
@@ -1164,10 +1175,8 @@ Proof.
     | solve [simple eapply (VS_elimt_beta EP EM);
              [eassumption | apply redt_usubst; eassumption | eassumption | eassumption]]
     | solve [simple eapply (FM_elimT EP EM); m_rec_side]
-    | solve [simple eapply (FM_elimt EP EM); m_rec_side]
-    (* M8 TEMPORARY: the Σ cases are admitted until the relation has LRsig *)
-    | admit ].
-Admitted.
+    | solve [simple eapply (FM_elimt EP EM); m_rec_side] ].
+Qed.
 
 (** ** At the identity universe substitution *)
 

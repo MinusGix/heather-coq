@@ -54,6 +54,20 @@ Proof.
   injection Heq as <- <- <- <-. auto.
 Qed.
 
+Lemma sig_inj {G Γ l l1 l2 l3 l4 A A' B B'} :
+  [ G ; Γ ⊢g tySig l1 l2 A B ≅ tySig l3 l4 A' B' @ l ] -> lwf (gL G) l ->
+  lequiv (gL G) l3 l1 /\ lequiv (gL G) l4 l2 /\
+  [ G ; Γ ⊢ A ≈ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ].
+Proof.
+  intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
+  pose proof (eqty_wf_l ge_typeof H) as HP.
+  destruct (LR_inv_sig HR (tyred_refl _ _ HP))
+    as (m3 & m4 & C' & D' & domR & codR & _ & H3 & H4 & _ & _ & HT' & _ & _ & _ & _ & HAA & HBB & _).
+  pose proof (tyred_refl _ _ (eqty_wf_r ge_typeof H)) as HT'0.
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' HT'0 (whnf_tySig _ _ _ _) (whnf_tySig _ _ _ _)) as Heq.
+  injection Heq as <- <- <- <-. auto.
+Qed.
+
 (** A type convertible to a [Π] reduces to one. *)
 Lemma pi_red {G Γ l l1 l2 A B T} : [ G ; Γ ⊢g tyPi l1 l2 A B ≅ T @ l ] -> lwf (gL G) l ->
   exists l3 l4 C D, [ G ; Γ ⊢g T ⤳* tyPi l3 l4 C D @ l ].

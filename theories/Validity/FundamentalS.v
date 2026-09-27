@@ -80,9 +80,14 @@ Qed.
 Ltac f_lwf :=
   first [ eassumption | exact I | eapply lequiv_wf_l; eassumption | eapply lequiv_wf_r; eassumption
         | progress cbn [lwf]; first [split; f_lwf | f_lwf] ].
-Ltac f_side :=
+Ltac f_side0 :=
   first [ eassumption | typeclasses eauto | apply lequiv_refl; f_lwf | apply lequiv_sym; eassumption | f_lwf
         | exact ge_lle_D | reflexivity ].
+(** A type related to another is related to itself (the Σ congruences
+    need the family's reflexive validity, M8). *)
+Ltac f_side :=
+  first [ f_side0 | solve [simple eapply VTyS_trans; [eassumption | simple eapply VTyS_sym; f_side0]]
+        | solve [simple eapply VTmS_trans; [eassumption | simple eapply VTmS_sym; f_side0]] ].
 
 (** Presupposed typings of left-hand sides and types. *)
 Ltac f_types :=
@@ -124,7 +129,13 @@ Ltac f_rules :=
   | solve [simple eapply VS_code_pi; f_side]
   | solve [simple eapply VS_beta; f_side] | solve [simple eapply VS_eta; f_side]
   | solve [simple eapply VS_natrec_zero; f_side] | solve [simple eapply VS_natrec_succ; f_side]
-  | solve [simple eapply VS_El_pi; f_side] ].
+  | solve [simple eapply VS_El_pi; f_side]
+  (* dependent pairs (M8) *)
+  | solve [simple eapply VS_sig; f_side] | solve [simple eapply VS_code_sig; f_side]
+  | solve [simple eapply VS_pair; f_side] | solve [simple eapply VS_fst; f_side]
+  | solve [simple eapply VS_snd; f_side]
+  | solve [simple eapply VS_fst_beta; f_side] | solve [simple eapply VS_snd_beta; f_side]
+  | solve [simple eapply VS_sig_eta; f_side] | solve [simple eapply VS_El_sig; f_side] ].
 
 Ltac f_ty :=
   first
@@ -137,6 +148,7 @@ Ltac f_ty :=
   | solve [simple eapply VTyS_single; f_side]
   | f_rules
   | solve [simple eapply VTyS_single; [eassumption | f_rules]]
+  | solve [simple eapply VTyS_single; [f_side | f_rules]]
   | solve [simple eapply VTyS_single;
            [ first [eassumption | simple eapply VTyS_trans; [eassumption | simple eapply VTyS_sym; f_side]]
            | first [eassumption | simple eapply VTmS_trans; [eassumption | simple eapply VTmS_sym; f_side]]]] ].
@@ -187,9 +199,8 @@ Proof.
     repeat match goal with H : _ /\ _ |- _ => destruct H end;
     f_types;
     repeat split.
-  (* M8 TEMPORARY: the Σ cases are admitted until the relation has LRsig *)
-  all: first [f_goal | admit].
-Admitted.
+  all: f_goal.
+Qed.
 
 (** ** Layers below P (C, V): lift the derivation to P *)
 
