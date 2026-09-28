@@ -285,6 +285,85 @@ mathematics, measured against the Σ cost log.
   reasoning reusing its intermediate facts, so a `poly_leq` would remove
   only the thirteen construction bullets. The term relations (`PiRel`,
   `SigRel`) and their lemmas are genuinely per former.
+- **Per-shape lemmas deferred to W.** Π's and Σ's inversion and
+  congruence rules have identical shapes up to the layer gate
+  (`i <> lV` vs `compt i`), so one lemma per shape per family (soundness,
+  conversion, symmetry, transitivity, decidability) would work. It saves
+  about 250–300 lines of Σ copies, but pays off only with a third binder
+  former (W), which comes well after Id, Empty and +. Done then.
+
+### J2. Recursor branches: proposal (step 3, before M8d)
+
+**Where the cost is.** Per-branch code is about 2.8k lines: `RecS.v`'s
+`rec_T_*`/`rec_t_*` (≈1.9k, 75–260 each) and `GS_*` (≈0.3k), and
+`RecReduct.v`'s `rr_*` (≈0.65k). The spec-level lemmas (`brLocs_usubst`,
+`brRes_gsubst`, `brΓ_wf`, …) are already one tactic under
+`do 13 (destruct k; …)` and grow by nothing but the constant.
+
+**Heather is not more generic here.** `rec.rs` `branch_specs` writes each
+of the 56 telescopes by hand as data (as our `brDecls`/`brLocs`/`brRes`
+do), and `reduce.rs` writes each β reduct by hand (as our `redT`/`redt`
+do) through one `fire` (our `branch_inst`/`peel_wrap`). What Heather
+shares is the consumer: one checker over the table. Ours is the proofs.
+
+**What a branch case repeats.** Every `rec_*` case (e.g. `rec_T_pi`)
+does, in order: (1) the typings of the sub-parts on both sides; (2) the
+reduct equations, `redT … = Some r` (`redT_*_inst`); (3) `GSubRel` of the
+global payloads against `brDecls k` (`GS_*`); (4) the local payloads
+(recursive calls) related, one `motT_wkb_inst'`/`mott_wkb_inst'` rewrite
+and `inst_cbn` per call, from the IHs via `MotRel_T`/`MotRel_t`; (5) both
+branches' validity (`VBr`, `VBr'`), level-switched and joined by
+`LRtm_leq`; (6) the result motives via `box_rel` + `MotRel_*` three
+times, and anti-reduction (`tmred_elimT_beta`, `LRtm_red`). Steps 4–6
+depend on the branch only through the lists `ls`, `os`, the call list and
+the head code; `rr_*` is steps 1–4 on one side plus `br_typed`.
+
+**Proposal.**
+
+- **S0. Branch count and kind as names.** `nbr := 13`, `br_isT k` (for
+  `Nat.ltb k 4` in `brLv` and elsewhere), and a `br_cases k` tactic for
+  `do 13 (destruct k; …)`. Extension branches are appended after 12 in
+  Heather's order (`ty_sigma` = 13, …), so no existing index moves and
+  `br_isT` becomes a table instead of `k < 4`. Mechanical; no proof
+  change.
+- **S1. Calls and results as data.** A call descriptor is pure
+  branch-scope syntax, `(isT, lv, g, U, c)` (motive kind, level, context,
+  index for term calls, boxed code), with no motive in it. `brLocs k wT wt
+  a1 a2 := mapi (mkLoc (br_nu k) (br_ng k) wT wt a1 a2) (br_calls k)` and
+  `brRes k wT wt := mkRes … (br_head k)`, where `mkLoc`/`mkRes` add the
+  motive instance `motT (wkb nu ng j w) …`/`mott …`. The instantiation
+  lemma (`motT_wkb_inst'` at each position) is then proved once over the
+  list (`brLocs_inst`), and the spec-level `do 13` lemmas become lemmas
+  about `mkLoc` (no case split at all).
+- **S2. One generic branch lemma per side.** `rec_br` (in `RecS`) states
+  steps 4–6 for any `k < nbr`, taking: the payload lists `ls ls' os os'`,
+  the call pairs as a `Forall2` of related recursive calls at the
+  instantiated descriptors, the `GSubRel` of the payloads, both reduct
+  equations, and the head code's typing on each side. `rr_br` (in
+  `RecReduct`) likewise, for typedness. `GS_*` becomes a fold over
+  `brDecls k` with one step lemma per declaration kind (`gdCtx`, `gdTy`,
+  `gdTm`), which exist already (`GSubRel_ctx1`, `GSubRel_ty_i`,
+  `GSubRel_tm_i`). A branch case keeps only step 1 (inversion, the right
+  side's typings) and the call list, closed by one tactic.
+- **Not done: a telescope DSL** that also derives `redT`/`redt` and
+  `brDecls` from one description. The reducts are short, hand-written in
+  Heather too, and their agreement with the calls (`redT_*_inst`) is one
+  `cbn; inst_cbn` per branch; a DSL would re-encode the syntax for no
+  saving in the proofs, where the cost is.
+
+**Irregular branches stay special:** `λ` (the index is reduced to its Π
+whnf first, `rec_t_fin_lam`), `var` (its payload is the variable, not a
+sub-code), and the neutral and `gvar` cases (no branch fires).
+
+**Acceptance.** Re-prove the 13 existing cases through `rec_br`/`rr_br`:
+the per-branch part of `RecS`+`RecReduct` should drop from ≈2.8k to well
+under 1k lines, so the 8 branches of M8d (and later Heather's other 35)
+cost ≈50–80 lines each instead of ≈250. Spike first on `rec_T_nat` and
+`rec_T_pi` (no calls, and two calls under a binder), and measure build
+time.
+
+**Order.** M8c (Unit at D and M) does not touch the recursor (I1), and
+it is J1's acceptance test for steps 1–2. So: M8c, then S0–S2, then M8d.
 
 ## Status
 
