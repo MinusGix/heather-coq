@@ -309,7 +309,7 @@ Ltac br_eq HMT HMt HG0 :=
     [ first [exact HMT | exact HMt] | exact HG0 | .. ]; br_tac
   end.
 Ltac br_solve HMT HMt HG0 HB :=
-  unfold brΓ, brLocs, brRes, brLv in *; cbn [cexts br_nu br_ng br_nl br_ar Nat.ltb Nat.leb] in *;
+  unfold brΓ, brLocs, brRes, brLv in *; cbn [cexts br_nu br_ng br_nl br_ar br_isT Nat.ltb Nat.leb] in *;
   repeat match goal with H : wf_ctx _ _ (_ ,, _ @ _) |- _ =>
     let H1 := fresh "HC" in let H2 := fresh "HA" in let H3 := fresh "Hl" in
     destruct (wfc_ext_inv H) as (H1 & H2 & H3); clear H end;
@@ -318,7 +318,7 @@ Ltac br_solve HMT HMt HG0 HB :=
     apply eqc_refl; exact HB
   | br_eq HMT HMt HG0 ].
 
-Lemma brΓ_conv {G Γ MT MT' Mt Mt' l1 l2 l1' l2'} k : k < 13 ->
+Lemma brΓ_conv {G Γ MT MT' Mt Mt' l1 l2 l1' l2'} k : k < nbr ->
   [ recGT G ; recΓT Γ ⊢[ lM ] MT ≅ MT' @ lvren l1 (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt ≅ Mt' @ lvren l2 (ush 1) ] ->
   lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' -> [ G ; Γ ⊢[ lM ] ] ->
@@ -330,13 +330,13 @@ Proof.
   intros Hk HMT HMt Hl1 Hl2 HΓ HC.
   pose proof (wf_brG (ctx_glob _ _ _ HΓ) k Hk) as HG0.
   pose proof (wf_wkc_br G Γ k Hk HΓ) as HB.
-  do 13 (try (destruct k as [|k])).
+  br_all ltac:(try (destruct k as [|k])).
   all: try (exfalso; lia).
   all: br_solve HMT HMt HG0 HB.
 Qed.
 
 (** A branch typed in the right recursor's scope is typed in the left's. *)
-Lemma branch_conv {G Γ MT MT' Mt Mt' l1 l2 l1' l2' b} k : k < 13 ->
+Lemma branch_conv {G Γ MT MT' Mt Mt' l1 l2 l1' l2' b} k : k < nbr ->
   [ recGT G ; recΓT Γ ⊢[ lM ] MT ≅ MT' @ lvren l1 (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt ≅ Mt' @ lvren l2 (ush 1) ] ->
   lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' -> [ G ; Γ ⊢[ lM ] ] ->
@@ -349,7 +349,7 @@ Lemma branch_conv {G Γ MT MT' Mt Mt' l1 l2 l1' l2' b} k : k < 13 ->
 Proof.
   intros Hk HMT HMt Hl1 Hl2 HΓ HC HC' Hb.
   assert (Hlv : lequiv (gL (brG k G)) (brLv k l1 l2) (brLv k l1' l2')).
-  { unfold brLv. destruct (Nat.ltb k 4); apply lequiv_ush; assumption. }
+  { unfold brLv. destruct (br_isT k); apply lequiv_ush; assumption. }
   assert (HMT' : [ recGT G ; recΓT Γ ⊢[ lM ] MT' ≅ MT @ lvren l1' (ush 1) ]).
   { eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ HMT) | apply lequiv_ush, lequiv_sym, Hl1]. }
   assert (HMt' : [ recGt G ; recΓt Γ ⊢[ lM ] Mt' ≅ Mt @ lvren l2' (ush 1) ]).

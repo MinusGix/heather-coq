@@ -45,9 +45,9 @@ Definition AW_sub G Γ d d' Θ : Prop := forall Δ r, wkr r Δ Γ -> ac_sub G Δ
 
 (** The recursors: motives under [⇑r], branches under [⇑ⁿr]. *)
 Lemma W_branches {G Γ MT Mt l1 l2 bs bs' Δ r} : wkr r Δ Γ ->
-  (forall j, j < 13 -> AW_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> AW_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
-  forall j, j < 13 -> ac_tm (brG j G) (brΓ j Δ (wrapMT MT⟨rlift r⟩) (wrapMt Mt⟨rlift r⟩) l1 l2)
+  forall j, j < nbr -> ac_tm (brG j G) (brΓ j Δ (wrapMT MT⟨rlift r⟩) (wrapMt Mt⟨rlift r⟩) l1 l2)
                        ((bs j)⟨rliftn (br_nl j) r⟩) ((bs' j)⟨rliftn (br_nl j) r⟩)
                        (brRes j (wrapMT MT⟨rlift r⟩) (wrapMt Mt⟨rlift r⟩)).
 Proof.
@@ -144,7 +144,7 @@ Lemma gwk_ok_recGT {γ G' G} : gwk_ok γ G' G -> gwk_ok (gwk_up γ) (recGT G') (
 Proof. intros H; split; [cbn; destruct H; lia | exact (recGT_gwk _ _ _ H)]. Qed.
 Lemma gwk_ok_recGt {γ G' G} : gwk_ok γ G' G -> gwk_ok (gwk_up (gwk_up γ)) (recGt G') (recGt G).
 Proof. intros H; split; [cbn; destruct H; lia | exact (recGt_gwk _ _ _ H)]. Qed.
-Lemma gwk_ok_brG {γ G' G} k : k < 13 -> gwk_ok γ G' G -> gwk_ok (gwk_upn (br_ng k) γ) (brG k G') (brG k G).
+Lemma gwk_ok_brG {γ G' G} k : k < nbr -> gwk_ok γ G' G -> gwk_ok (gwk_upn (br_ng k) γ) (brG k G') (brG k G).
 Proof. intros Hk H; split; [cbn; destruct H; lia | exact (brG_gwk _ _ _ _ Hk H)]. Qed.
 
 Definition AG_ty G Γ T T' : Prop := forall G' (γ : gweak), gwk_ok γ G' G -> ac_ty G' Γ⟪γ⟫ T⟪γ⟫ T'⟪γ⟫.
@@ -159,9 +159,9 @@ Definition AG_sub G Γ d d' Θ : Prop := forall G' (γ : gweak), gwk_ok γ G' G 
   ac_sub G' Γ⟪γ⟫ d⟪γ⟫ d'⟪γ⟫ Θ⟪γ⟫.
 
 Lemma G_branches {G Γ MT Mt l1 l2 bs bs' G' γ} : gwk_ok γ G' G ->
-  (forall j, j < 13 -> AG_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> AG_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
-  forall j, j < 13 -> ac_tm (brG j G') (brΓ j Γ⟪γ⟫ (wrapMT MT⟪gupr γ⟫) (wrapMt Mt⟪gupr (gupr γ)⟫) l1 l2)
+  forall j, j < nbr -> ac_tm (brG j G') (brΓ j Γ⟪γ⟫ (wrapMT MT⟪gupr γ⟫) (wrapMt Mt⟪gupr (gupr γ)⟫) l1 l2)
                        ((bs j)⟪guprn (br_ng j) γ⟫) ((bs' j)⟪guprn (br_ng j) γ⟫)
                        (brRes j (wrapMT MT⟪gupr γ⟫) (wrapMt Mt⟪gupr (gupr γ)⟫)).
 Proof.
@@ -275,9 +275,9 @@ Definition AU_sub G Γ d d' Θ : Prop := forall L' φ,
   ac_sub (gctx_usubst G L' φ) (ucsubst Γ φ) (ulsubst d φ) (ulsubst d' φ) (ucsubst Θ φ).
 
 Lemma U_branches {G Γ MT Mt l1 l2 bs bs' L' φ} :
-  (forall j, j < 13 -> AU_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> AU_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
-  forall j, j < 13 -> ac_tm (brG j (gctx_usubst G L' φ))
+  forall j, j < nbr -> ac_tm (brG j (gctx_usubst G L' φ))
                        (brΓ j (ucsubst Γ φ) (wrapMT (usubst_ty MT (uup φ))) (wrapMt (usubst_ty Mt (uup φ)))
                           (lvsubst l1 φ) (lvsubst l2 φ))
                        (usubst_tm (bs j) (uupn (br_nu j) φ)) (usubst_tm (bs' j) (uupn (br_nu j) φ))
@@ -432,7 +432,7 @@ Qed.
 
 Lemma mkrb_leq_inv MT Mt bs rb : tm_leq (mkrb MT Mt bs) rb ->
   exists MT2 Mt2 bs2, rb = mkrb MT2 Mt2 bs2 /\ ty_leq MT MT2 /\ ty_leq Mt Mt2 /\
-    forall k, k < 13 -> tm_leq (bs k) (bs2 k).
+    forall k, k < nbr -> tm_leq (bs k) (bs2 k).
 Proof.
   unfold mkrb, wrapMT, wrapMt. intros E.
   lstep E. destruct E as [E1 E].
@@ -505,7 +505,7 @@ Ltac L_prem :=
                   | apply leq_ren_tm; eassumption | apply leq_uren_tm; eassumption
                   | apply leq_gren_tm; eassumption ]
           end
-        | match goal with IHb : forall k, k < 13 -> forall x, _ -> _, Ebs : forall k, k < 13 -> _ |- _ =>
+        | match goal with IHb : forall k, k < nbr -> forall x, _ -> _, Ebs : forall k, k < nbr -> _ |- _ =>
             let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk; exact (IHb k Hk _ (Ebs k Hk))
           end ].
 

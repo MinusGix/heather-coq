@@ -337,7 +337,7 @@ Lemma ps_eq_elimT {Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' t t'} :
   lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' ->
   [ recGT G ; recΓT Γ ⊢[ lM ] MT ≅ MT' @ lvren l1 (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt ≅ Mt' @ lvren l2 (ush 1) ] ->
-  (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  (forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                          bs k ≅ bs' k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ]) ->
   lequiv (gL G) l l' -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
   [ G ; Γ ⊢[ lM ] t ≅ t' : tyCTyp Δ l @ lzero ] ->
@@ -357,7 +357,7 @@ Proof.
   pose proof (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ EMt) (lequiv_ush 1 (lequiv_sym _ _ _ E2))) as EMt'.
   pose proof (fun k Hk => brΓ_wf HΓ W1 W2 HMT HMt k Hk) as Hbc.
   pose proof (fun k Hk => brΓ_wf HΓ W1' W2' HMT' HMt' k Hk) as Hbc'.
-  assert (Hbs1 : forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+  assert (Hbs1 : forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
                                         bs' k : brRes k (wrapMT MT') (wrapMt Mt') @ brLv k l1' l2' ]).
   { intros k Hk. apply (branch_conv k Hk EMT' EMt' (lequiv_sym _ _ _ E1) (lequiv_sym _ _ _ E2) HΓ
                           (Hbc' k Hk) (Hbc k Hk)).
@@ -372,7 +372,7 @@ Lemma ps_eq_elimt {Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' t t'} 
   lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' ->
   [ recGT G ; recΓT Γ ⊢[ lM ] MT ≅ MT' @ lvren l1 (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt ≅ Mt' @ lvren l2 (ush 1) ] ->
-  (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  (forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                          bs k ≅ bs' k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ]) ->
   lequiv (gL G) l l' -> [ G ⊢[ lD ] Δ ≅ Δ' ] -> [ G ; Δ ⊢[ lD ] T ≅ T' @ l ] ->
   [ G ; Γ ⊢[ lM ] t ≅ t' : tyCTrm Δ T l @ lzero ] ->
@@ -392,7 +392,7 @@ Proof.
   pose proof (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ EMt) (lequiv_ush 1 (lequiv_sym _ _ _ E2))) as EMt'.
   pose proof (fun k Hk => brΓ_wf HΓ W1 W2 HMT HMt k Hk) as Hbc.
   pose proof (fun k Hk => brΓ_wf HΓ W1' W2' HMT' HMt' k Hk) as Hbc'.
-  assert (Hbs1 : forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+  assert (Hbs1 : forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
                                         bs' k : brRes k (wrapMT MT') (wrapMt Mt') @ brLv k l1' l2' ]).
   { intros k Hk. apply (branch_conv k Hk EMT' EMt' (lequiv_sym _ _ _ E1) (lequiv_sym _ _ _ E2) HΓ
                           (Hbc' k Hk) (Hbc k Hk)).

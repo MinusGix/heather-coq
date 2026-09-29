@@ -39,10 +39,10 @@ Proof.
   exact X.
 Qed.
 
-Lemma gwk_ok_br {G} k : k < 13 -> gwk_ok (gwk_stepn (br_ng k)) (brG k G) (gctx_uwk (br_nu k) G).
+Lemma gwk_ok_br {G} k : k < nbr -> gwk_ok (gwk_stepn (br_ng k)) (brG k G) (gctx_uwk (br_nu k) G).
 Proof. intros Hk. split; [cbn; lia |]. unfold brG; cbn [gΨ]. rewrite <- (brDecls_len k Hk). apply gwk_stepn_wf. Qed.
 
-Lemma MT_gwk {G Γ} k MT l : k < 13 -> [ ⊢ G ] ->
+Lemma MT_gwk {G Γ} k MT l : k < nbr -> [ ⊢ G ] ->
   [ recGT (gctx_uwk (br_nu k) G) ; recΓT Γ⟨ush (br_nu k)⟩ᵤ ⊢[ lM ] MT @ l ] ->
   [ recGT (brG k G) ; recΓT (wkc (br_nu k) (br_ng k) Γ) ⊢[ lM ] gren_ty MT (gupr (ush (br_ng k))) @ l ].
 Proof.
@@ -55,7 +55,7 @@ Proof.
   change (gcren ?Δ ?ξ) with (Δ⟪ξ⟫) in X. rewrite recΓT_gren in X. exact X.
 Qed.
 
-Lemma Mt_gwk {G Γ} k Mt l : k < 13 -> [ ⊢ G ] ->
+Lemma Mt_gwk {G Γ} k Mt l : k < nbr -> [ ⊢ G ] ->
   [ recGt (gctx_uwk (br_nu k) G) ; recΓt Γ⟨ush (br_nu k)⟩ᵤ ⊢[ lM ] Mt @ l ] ->
   [ recGt (brG k G) ; recΓt (wkc (br_nu k) (br_ng k) Γ) ⊢[ lM ] gren_ty Mt (gupr (gupr (ush (br_ng k)))) @ l ].
 Proof.
@@ -79,7 +79,7 @@ Proof.
 Qed.
 
 Section Br.
-Context {G : gctx} {Γ : ctx} (HΓ : [ G ; Γ ⊢[ lM ] ]) (k : nat) (Hk : k < 13).
+Context {G : gctx} {Γ : ctx} (HΓ : [ G ; Γ ⊢[ lM ] ]) (k : nat) (Hk : k < nbr).
 Let nu := br_nu k.
 Let ng := br_ng k.
 
@@ -224,20 +224,20 @@ Context {G : gctx} {Γ : ctx} (HΓ : [ G ; Γ ⊢[ lM ] ]) {l1 l2 : lvl} (Hl1 : 
   {MT Mt : ty} (HMT : [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ])
   (HMt : [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ]).
 
-Lemma brΓ_wf k : k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ].
+Lemma brΓ_wf k : k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ].
 Proof.
   intros Hk. pose proof (wf_brG (ctx_glob _ _ _ HΓ) k Hk) as HG'.
-  destruct k as [|[|[|[|[|[|[|[|[|[|[|[|[|k]]]]]]]]]]]]]; [..| exfalso; lia].
+  br_all ltac:(try (destruct k as [|k])). all: try (exfalso; lia).
   all: unfold brΓ; cbn [brLocs cexts].
   all: match goal with |- [ brG ?kk _ ; _ ⊢[ _ ] ] => br_ctx kk HΓ HMT HMt; br_side kk HΓ end.
 Qed.
 
-Lemma brRes_wf k : k < 13 ->
+Lemma brRes_wf k : k < nbr ->
   [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ].
 Proof.
   intros Hk. pose proof (wf_brG (ctx_glob _ _ _ HΓ) k Hk) as HG'.
-  destruct k as [|[|[|[|[|[|[|[|[|[|[|[|[|k]]]]]]]]]]]]]; [..| exfalso; lia].
-  all: unfold brΓ, brLv; cbn [brLocs cexts brRes Nat.ltb Nat.leb].
+  br_all ltac:(try (destruct k as [|k])). all: try (exfalso; lia).
+  all: unfold brΓ, brLv; cbn [brLocs cexts brRes br_isT].
   all: match goal with |- [ brG ?kk _ ; _ ⊢[ _ ] _ @ _ ] => br_inst kk HΓ HMT HMt; br_side kk HΓ end.
 Qed.
 
@@ -249,7 +249,7 @@ Lemma wf_elimT_adm {G Γ l1 l2 MT Mt bs l Δ t} :
   lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
   [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] ->
-  (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  (forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                          bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ]) ->
   [ G ; Γ ⊢[ lM ] t : tyCTyp Δ l @ lzero ] ->
   [ G ; Γ ⊢[ lM ] elimT l1 l2 (mkrb MT Mt bs) l Δ t : motT (wrapMT MT) l Δ t @ l1 ].
@@ -264,7 +264,7 @@ Lemma wf_elimt_adm {G Γ l1 l2 MT Mt bs l Δ T t} :
   lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
   [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] ->
-  (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  (forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                          bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ]) ->
   [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Γ ⊢[ lM ] t : tyCTrm Δ T l @ lzero ] ->
   [ G ; Γ ⊢[ lM ] elimt l1 l2 (mkrb MT Mt bs) l Δ T t : mott (wrapMt Mt) l Δ T t @ l2 ].

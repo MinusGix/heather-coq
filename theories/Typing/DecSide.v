@@ -185,7 +185,7 @@ Fixpoint unbrs (x : tm) (k n : nat) {struct n} : option (list tm) :=
 Definition unrb (rb : tm) : option (ty * ty * list tm) :=
   match rb with
   | tmTup (bindU (bindG (bindL (tmTy MT)))) (tmTup (bindU (bindG (bindG (bindL (tmTy Mt))))) r) =>
-      match unbrs r 0 13 with Some bs => Some (MT, Mt, bs) | None => None end
+      match unbrs r 0 nbr with Some bs => Some (MT, Mt, bs) | None => None end
   | _ => None
   end.
 
@@ -218,17 +218,17 @@ Proof.
       replace (j - k) with (S (j - S k)) by lia. reflexivity.
 Qed.
 
-Lemma mkrb_as MT Mt bs : mkrb MT Mt bs = tmTup (wrapMT MT) (tmTup (wrapMt Mt) (tup_from (wrap_br bs) 0 13)).
+Lemma mkrb_as MT Mt bs : mkrb MT Mt bs = tmTup (wrapMT MT) (tmTup (wrapMt Mt) (tup_from (wrap_br bs) 0 nbr)).
 Proof. reflexivity. Qed.
 
-Lemma unrb_mkrb MT Mt bs : unrb (mkrb MT Mt bs) = Some (MT, Mt, map bs (seq 0 13)).
+Lemma unrb_mkrb MT Mt bs : unrb (mkrb MT Mt bs) = Some (MT, Mt, map bs (seq 0 nbr)).
 Proof. rewrite mkrb_as. unfold unrb, wrapMT, wrapMt. rewrite unbrs_tup. reflexivity. Qed.
 
 Lemma unrb_inv rb MT Mt bs : unrb rb = Some (MT, Mt, bs) -> rb = mkrb MT Mt (fun k => nth k bs tmErr).
 Proof.
   unfold unrb. intros H. split_matches H. injection H as <- <- <-. subst.
   rewrite mkrb_as. unfold wrapMT, wrapMt. do 2 f_equal.
-  match goal with Er : unbrs _ 0 13 = Some _ |- _ => rewrite (unbrs_inv _ _ _ _ Er) end.
+  match goal with Er : unbrs _ 0 nbr = Some _ |- _ => rewrite (unbrs_inv _ _ _ _ Er) end.
   apply tup_from_ext. intros j _. unfold wrap_br. rewrite Nat.sub_0_r. reflexivity.
 Qed.
 
@@ -299,10 +299,10 @@ Proof.
 Qed.
 
 Lemma sz_mkrb MT Mt bs : sz_ty MT < sz_tm (mkrb MT Mt bs) /\ sz_ty Mt < sz_tm (mkrb MT Mt bs) /\
-  forall k, k < 13 -> sz_tm (bs k) < sz_tm (mkrb MT Mt bs).
+  forall k, k < nbr -> sz_tm (bs k) < sz_tm (mkrb MT Mt bs).
 Proof.
   rewrite mkrb_as. unfold wrapMT, wrapMt. cbn [sz_tm]. split; [lia | split; [lia |]].
-  intros k Hk. pose proof (sz_tup (wrap_br bs) 0 13 k ltac:(lia) ltac:(lia)) as X.
+  intros k Hk. pose proof (sz_tup (wrap_br bs) 0 nbr k ltac:(lia) ltac:(lia)) as X.
   assert (Y : sz_tm (bs k) <= sz_tm (wrap_br bs k))
     by (unfold wrap_br; destruct (br_ar k) as [[nu ng] nl]; apply sz_wrap).
   lia.

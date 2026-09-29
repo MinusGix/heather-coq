@@ -158,7 +158,7 @@ with pwf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     lwf (gL G) l1 -> lwf (gL G) l2 ->
     [ recGT G ; recΓT Γ ⊢ₚ[ lM ] MT @ lvren l1 (ush 1) ] ->
     [ recGt G ; recΓt Γ ⊢ₚ[ lM ] Mt @ lvren l2 (ush 1) ] ->
-    (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢ₚ[ lM ]
+    (forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢ₚ[ lM ]
                            bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ]) ->
     lwf (gL G) l -> [ G ; Δ ⊢ₚ[ lD ] ] -> [ G ; Γ ⊢ₚ[ lM ] t : tyCTyp Δ l @ lzero ] ->
     [ G ; Γ ⊢ₚ[ lM ] elimT l1 l2 (mkrb MT Mt bs) l Δ t : motT (wrapMT MT) l Δ t @ l1 ]
@@ -166,7 +166,7 @@ with pwf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     lwf (gL G) l1 -> lwf (gL G) l2 ->
     [ recGT G ; recΓT Γ ⊢ₚ[ lM ] MT @ lvren l1 (ush 1) ] ->
     [ recGt G ; recΓt Γ ⊢ₚ[ lM ] Mt @ lvren l2 (ush 1) ] ->
-    (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢ₚ[ lM ]
+    (forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢ₚ[ lM ]
                            bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ]) ->
     lwf (gL G) l -> [ G ; Δ ⊢ₚ[ lD ] ] -> [ G ; Δ ⊢ₚ[ lD ] T @ l ] ->
     [ G ; Γ ⊢ₚ[ lM ] t : tyCTrm Δ T l @ lzero ] ->
@@ -321,7 +321,7 @@ with peq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     leqP (gL G) l1 l1' -> leqP (gL G) l2 l2' ->
     [ recGT G ; recΓT Γ ⊢ₚ[ lM ] MT ≅ MT' @ lvren l1 (ush 1) ] ->
     [ recGt G ; recΓt Γ ⊢ₚ[ lM ] Mt ≅ Mt' @ lvren l2 (ush 1) ] ->
-    (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢ₚ[ lM ]
+    (forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢ₚ[ lM ]
                            bs k ≅ bs' k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ]) ->
     leqP (gL G) l l' -> [ G ⊢ₚ[ lD ] Δ ≅ Δ' ] ->
     [ G ; Γ ⊢ₚ[ lM ] t ≅ t' : tyCTyp Δ l @ lzero ] ->
@@ -331,7 +331,7 @@ with peq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     leqP (gL G) l1 l1' -> leqP (gL G) l2 l2' ->
     [ recGT G ; recΓT Γ ⊢ₚ[ lM ] MT ≅ MT' @ lvren l1 (ush 1) ] ->
     [ recGt G ; recΓt Γ ⊢ₚ[ lM ] Mt ≅ Mt' @ lvren l2 (ush 1) ] ->
-    (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢ₚ[ lM ]
+    (forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢ₚ[ lM ]
                            bs k ≅ bs' k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ]) ->
     leqP (gL G) l l' -> [ G ⊢ₚ[ lD ] Δ ≅ Δ' ] -> [ G ; Δ ⊢ₚ[ lD ] T ≅ T' @ l ] ->
     [ G ; Γ ⊢ₚ[ lM ] t ≅ t' : tyCTrm Δ T l @ lzero ] ->

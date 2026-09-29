@@ -555,19 +555,19 @@ Qed.
 Lemma Y_rec_core {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs'} :
   ac_ty (recGT G) (recΓT Γ) MT MT' -> Y_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> Y_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> Y_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> Y_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   [ G ; Γ ⊢[ lM ] ] -> lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' ->
   [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] -> [ recGT G ; recΓT Γ ⊢[ lM ] MT' @ lvren l1' (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] -> [ recGt G ; recΓt Γ ⊢[ lM ] Mt' @ lvren l2' (ush 1) ] ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ]) ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ]) ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ]) ->
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ]) ->
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                          bs j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ]) ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
                          bs' j : brRes j (wrapMT MT') (wrapMt Mt') @ brLv j l1' l2' ]) ->
   ac_ty (recGT G) (recΓT Γ) MT' MT /\ ac_ty (recGt G) (recΓt Γ) Mt' Mt /\
-  (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2')
+  (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2')
                          (bs' j) (bs j) (brRes j (wrapMT MT') (wrapMt Mt'))).
 Proof.
   intros DMT IHT DMt IHt IHb HΓ E1 E2 HMT HMT' HMt HMt' Hbc Hbc' Hbs Hbs'.
@@ -591,16 +591,16 @@ Ltac yrec_core IHT IHt IHb DMT DMt :=
   | W1 : lwf _ ?l1, W1' : lwf _ ?l1', H1 : leqv ?l1 ?l1', W2 : lwf _ ?l2, W2' : lwf _ ?l2', H2 : leqv ?l2 ?l2',
     HMT : [ recGT _ ; _ ⊢[ lM ] ?MT @ _ ], HMT' : [ recGT _ ; _ ⊢[ lM ] ?MT' @ _ ],
     HMt : [ recGt _ ; _ ⊢[ lM ] ?Mt @ _ ], HMt' : [ recGt _ ; _ ⊢[ lM ] ?Mt' @ _ ],
-    Hbc : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT ?MT) _ _ _ ⊢[ lM ] ],
-    Hbc' : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT ?MT') _ _ _ ⊢[ lM ] ],
-    Hbs : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT ?MT) _ _ _ ⊢[ lM ] _ : _ @ _ ],
-    Hbs' : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT ?MT') _ _ _ ⊢[ lM ] _ : _ @ _ ],
-    Eb : forall k, k < 13 -> ?bs k = _, Eb' : forall k, k < 13 -> ?bs' k = _ |- _ =>
+    Hbc : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT ?MT) _ _ _ ⊢[ lM ] ],
+    Hbc' : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT ?MT') _ _ _ ⊢[ lM ] ],
+    Hbs : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT ?MT) _ _ _ ⊢[ lM ] _ : _ @ _ ],
+    Hbs' : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT ?MT') _ _ _ ⊢[ lM ] _ : _ @ _ ],
+    Eb : forall k, k < nbr -> ?bs k = _, Eb' : forall k, k < nbr -> ?bs' k = _ |- _ =>
     let Hbs0 := fresh "Hbs0" in let Hbs1 := fresh "Hbs1" in
-    assert (Hbs0 : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT MT) _ _ _ ⊢[ lM ]
+    assert (Hbs0 : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT MT) _ _ _ ⊢[ lM ]
                                         bs j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ])
       by (intros j Hj; rewrite (Eb j Hj); exact (Hbs j Hj));
-    assert (Hbs1 : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT MT') _ _ _ ⊢[ lM ]
+    assert (Hbs1 : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT MT') _ _ _ ⊢[ lM ]
                                         bs' j : brRes j (wrapMT MT') (wrapMt Mt') @ brLv j l1' l2' ])
       by (intros j Hj; rewrite (Eb' j Hj); exact (Hbs' j Hj));
     destruct (Y_rec_core DMT IHT DMt IHt IHb HΓ (leqv_lequiv _ _ _ W1 W1' H1)
@@ -611,7 +611,7 @@ Lemma Y_actmne_elimT {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' ν ν'
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> Y_ctx G Δ Δ' ->
   ac_ty (recGT G) (recΓT Γ) MT MT' -> Y_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> Y_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> Y_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> Y_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   Y_nee G Γ ν ν' W ->
   Y_ne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ ν) (elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' ν')
@@ -628,7 +628,7 @@ Lemma Y_actmne_elimT_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' U
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> Y_ctx G Δ Δ' ->
   ac_ty (recGT G) (recΓT Γ) MT MT' -> Y_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> Y_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> Y_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> Y_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   lsub_leq d d' ->
   Y_ne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ (boxT (tyGvar U d)))
@@ -646,7 +646,7 @@ Lemma Y_actmne_elimt {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' �
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> ac_ctx G Δ Δ' -> Y_ctx G Δ Δ' -> Y_ty G Δ T T' ->
   ac_ty (recGT G) (recΓT Γ) MT MT' -> Y_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> Y_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> Y_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> Y_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   Y_nee G Γ ν ν' W ->
   Y_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T ν) (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' ν')
@@ -667,7 +667,7 @@ Lemma Y_actmne_elimt_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> ac_ctx G Δ Δ' -> Y_ctx G Δ Δ' -> Y_ty G Δ T T' ->
   ac_ty (recGT G) (recΓT Γ) MT MT' -> Y_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> Y_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> Y_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> Y_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   lsub_leq d d' ->
   Y_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt (gvar u d)))
@@ -987,7 +987,7 @@ Lemma ainv_elimT {G Γ l1 l2 rb l Δ ν X T} : whne ν -> ac_tmne G Γ (elimT l1
   exists MT Mt bs l1' l2' MT' Mt' bs' l' Δ' ν' W, rb = mkrb MT Mt bs /\
     X = elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' ν' /\ leqv l1 l1' /\ leqv l2 l2' /\ leqv l l' /\
     ac_ctx G Δ Δ' /\ ac_ty (recGT G) (recΓT Γ) MT MT' /\ ac_ty (recGt G) (recΓt Γ) Mt Mt' /\
-    (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+    (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                            (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) /\
     ac_tmnee G Γ ν ν' W.
 Proof. intros Hn H; inversion H; subst; kill_box; do 12 eexists; eauto 20. Qed.
@@ -995,7 +995,7 @@ Lemma ainv_elimT_gvar {G Γ l1 l2 rb l Δ U d X T} : ac_tmne G Γ (elimT l1 l2 r
   exists MT Mt bs l1' l2' MT' Mt' bs' l' Δ' d', rb = mkrb MT Mt bs /\
     X = elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' (boxT (tyGvar U d')) /\ leqv l1 l1' /\ leqv l2 l2' /\
     leqv l l' /\ ac_ctx G Δ Δ' /\ ac_ty (recGT G) (recΓT Γ) MT MT' /\ ac_ty (recGt G) (recΓt Γ) Mt Mt' /\
-    (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+    (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                            (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) /\
     lsub_leq d d'.
 Proof. intros H; inversion H; subst; try kill_ne; do 11 eexists; eauto 20. Qed.
@@ -1003,7 +1003,7 @@ Lemma ainv_elimt {G Γ l1 l2 rb l Δ A ν X T} : whne ν -> ac_tmne G Γ (elimt 
   exists MT Mt bs l1' l2' MT' Mt' bs' l' Δ' A' ν' W, rb = mkrb MT Mt bs /\
     X = elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' A' ν' /\ leqv l1 l1' /\ leqv l2 l2' /\ leqv l l' /\
     ac_ctx G Δ Δ' /\ ac_ty G Δ A A' /\ ac_ty (recGT G) (recΓT Γ) MT MT' /\ ac_ty (recGt G) (recΓt Γ) Mt Mt' /\
-    (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+    (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                            (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) /\
     ac_tmnee G Γ ν ν' W.
 Proof. intros Hn H; inversion H; subst; kill_box; do 13 eexists; eauto 20. Qed.
@@ -1013,7 +1013,7 @@ Lemma ainv_elimt_gvar {G Γ l1 l2 rb l Δ A u d X T} :
     X = elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' A' (boxt (gvar u d')) /\ leqv l1 l1' /\ leqv l2 l2' /\
     leqv l l' /\ ac_ctx G Δ Δ' /\ ac_ty G Δ A A' /\ ac_ty (recGT G) (recΓT Γ) MT MT' /\
     ac_ty (recGt G) (recΓt Γ) Mt Mt' /\
-    (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+    (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                            (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) /\
     lsub_leq d d'.
 Proof. intros H; inversion H; subst; try kill_ne; do 12 eexists; eauto 20. Qed.
@@ -1805,10 +1805,10 @@ Qed.
 Lemma T_rec_core {G Γ l1 l2 l1' l2' l1'' l2'' MT MT' MT'' Mt Mt' Mt'' bs bs' bs''} :
   ac_ty (recGT G) (recΓT Γ) MT MT' -> T_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> T_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> T_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> T_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   ac_ty (recGT G) (recΓT Γ) MT' MT'' -> ac_ty (recGt G) (recΓt Γ) Mt' Mt'' ->
-  (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2')
+  (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2')
                          (bs' j) (bs'' j) (brRes j (wrapMT MT') (wrapMt Mt'))) ->
   [ G ; Γ ⊢[ lM ] ] -> lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' ->
   lequiv (gL G) l1' l1'' -> lequiv (gL G) l2' l2'' ->
@@ -1816,17 +1816,17 @@ Lemma T_rec_core {G Γ l1 l2 l1' l2' l1'' l2'' MT MT' MT'' Mt Mt' Mt'' bs bs' bs
   [ recGT G ; recΓT Γ ⊢[ lM ] MT'' @ lvren l1'' (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] -> [ recGt G ; recΓt Γ ⊢[ lM ] Mt' @ lvren l2' (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt'' @ lvren l2'' (ush 1) ] ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ]) ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ]) ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT'') (wrapMt Mt'') l1'' l2'' ⊢[ lM ] ]) ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ]) ->
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ]) ->
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT'') (wrapMt Mt'') l1'' l2'' ⊢[ lM ] ]) ->
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                          bs j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ]) ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
                          bs' j : brRes j (wrapMT MT') (wrapMt Mt') @ brLv j l1' l2' ]) ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT'') (wrapMt Mt'') l1'' l2'' ⊢[ lM ]
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT'') (wrapMt Mt'') l1'' l2'' ⊢[ lM ]
                          bs'' j : brRes j (wrapMT MT'') (wrapMt Mt'') @ brLv j l1'' l2'' ]) ->
   ac_ty (recGT G) (recΓT Γ) MT MT'' /\ ac_ty (recGt G) (recΓt Γ) Mt Mt'' /\
-  (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs'' j) (brRes j (wrapMT MT) (wrapMt Mt))).
 Proof.
   intros DMT IHT DMt IHt IHb DMT2 DMt2 Db2 HΓ E1 E2 E1' E2' HMT HMT' HMT'' HMt HMt' HMt'' Hbc Hbc' Hbc''
@@ -1868,25 +1868,25 @@ Ltac trec_core IHT IHt IHb DMT DMt DMT2 DMt2 Db2 Eba :=
     HMT'' : [ recGT _ ; _ ⊢[ lM ] ?MT'' @ _ ],
     HMt : [ recGt _ ; _ ⊢[ lM ] ?Mt @ _ ], HMt' : [ recGt _ ; _ ⊢[ lM ] ?Mt' @ _ ],
     HMt'' : [ recGt _ ; _ ⊢[ lM ] ?Mt'' @ _ ],
-    Hbc : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT ?MT) _ _ _ ⊢[ lM ] ],
-    Hbc' : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT ?MT') _ _ _ ⊢[ lM ] ],
-    Hbc'' : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT ?MT'') _ _ _ ⊢[ lM ] ],
-    Hbs : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT ?MT) _ _ _ ⊢[ lM ] _ : _ @ _ ],
-    Hbs' : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT ?MT') _ _ _ ⊢[ lM ] _ : _ @ _ ],
-    Hbs'' : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT ?MT'') _ _ _ ⊢[ lM ] _ : _ @ _ ],
-    Eb : forall k, k < 13 -> ?bs k = _, Eb' : forall k, k < 13 -> ?bs' k = _,
-    Eb3 : forall k, k < 13 -> ?bs'' k = _ |- _ =>
+    Hbc : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT ?MT) _ _ _ ⊢[ lM ] ],
+    Hbc' : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT ?MT') _ _ _ ⊢[ lM ] ],
+    Hbc'' : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT ?MT'') _ _ _ ⊢[ lM ] ],
+    Hbs : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT ?MT) _ _ _ ⊢[ lM ] _ : _ @ _ ],
+    Hbs' : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT ?MT') _ _ _ ⊢[ lM ] _ : _ @ _ ],
+    Hbs'' : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT ?MT'') _ _ _ ⊢[ lM ] _ : _ @ _ ],
+    Eb : forall k, k < nbr -> ?bs k = _, Eb' : forall k, k < nbr -> ?bs' k = _,
+    Eb3 : forall k, k < nbr -> ?bs'' k = _ |- _ =>
     let Hbs0 := fresh "Hbs0" in let Hbs1 := fresh "Hbs1" in let Hbs2 := fresh "Hbs2" in let Db2' := fresh "Db2'" in
-    assert (Hbs0 : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT MT) _ _ _ ⊢[ lM ]
+    assert (Hbs0 : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT MT) _ _ _ ⊢[ lM ]
                                         bs j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ])
       by (intros j Hj; rewrite (Eb j Hj); exact (Hbs j Hj));
-    assert (Hbs1 : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT MT') _ _ _ ⊢[ lM ]
+    assert (Hbs1 : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT MT') _ _ _ ⊢[ lM ]
                                         bs' j : brRes j (wrapMT MT') (wrapMt Mt') @ brLv j l1' l2' ])
       by (intros j Hj; rewrite (Eb' j Hj); exact (Hbs' j Hj));
-    assert (Hbs2 : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT MT'') _ _ _ ⊢[ lM ]
+    assert (Hbs2 : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT MT'') _ _ _ ⊢[ lM ]
                                         bs'' j : brRes j (wrapMT MT'') (wrapMt Mt'') @ brLv j l1'' l2'' ])
       by (intros j Hj; rewrite (Eb3 j Hj); exact (Hbs'' j Hj));
-    assert (Db2' : forall j, j < 13 -> ac_tm _ (brΓ j _ (wrapMT MT') (wrapMt Mt') l1' l2')
+    assert (Db2' : forall j, j < nbr -> ac_tm _ (brΓ j _ (wrapMT MT') (wrapMt Mt') l1' l2')
                                         (bs' j) (bs'' j) (brRes j (wrapMT MT') (wrapMt Mt')))
       by (intros j Hj; rewrite (Eba j Hj); exact (Db2 j Hj));
     destruct (T_rec_core DMT IHT DMt IHt IHb DMT2 DMt2 Db2' HΓ (leqv_lequiv _ _ _ W1 W1' H1)
@@ -1898,7 +1898,7 @@ Lemma T_actmne_elimT {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' ν ν'
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> T_ctx G Δ Δ' ->
   ac_ty (recGT G) (recΓT Γ) MT MT' -> T_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> T_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> T_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> T_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   ac_tmnee G Γ ν ν' W -> T_nee G Γ ν ν' W ->
   T_ne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ ν) (elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' ν')
@@ -1923,7 +1923,7 @@ Lemma T_actmne_elimT_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' U
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> T_ctx G Δ Δ' ->
   ac_ty (recGT G) (recΓT Γ) MT MT' -> T_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> T_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> T_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> T_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   lsub_leq d d' ->
   T_ne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ (boxT (tyGvar U d)))
@@ -1949,7 +1949,7 @@ Lemma T_actmne_elimt {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' �
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> ac_ctx G Δ Δ' -> T_ctx G Δ Δ' -> T_ty G Δ T T' ->
   ac_ty (recGT G) (recΓT Γ) MT MT' -> T_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> T_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> T_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> T_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   ac_tmnee G Γ ν ν' W -> T_nee G Γ ν ν' W ->
   T_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T ν) (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' ν')
@@ -1978,7 +1978,7 @@ Lemma T_actmne_elimt_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> ac_ctx G Δ Δ' -> T_ctx G Δ Δ' -> T_ty G Δ T T' ->
   ac_ty (recGT G) (recΓT Γ) MT MT' -> T_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> T_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> T_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> T_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   lsub_leq d d' ->
   T_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt (gvar u d)))

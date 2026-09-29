@@ -647,8 +647,8 @@ Lemma pre_elimT_r {G Γ l1 l2 l1' l2' MT MT' Mt' bs' l l' Δ Δ' t t'} :
   [ G ; Δ' ⊢[ lD ] ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
   [ recGT G ; recΓT Γ ⊢[ lM ] MT' @ lvren l1' (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt' @ lvren l2' (ush 1) ] ->
-  (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ]) ->
-  (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+  (forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ]) ->
+  (forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
                          bs' k : brRes k (wrapMT MT') (wrapMt Mt') @ brLv k l1' l2' ]) ->
   [ G ; Γ ⊢[ lM ] t' : tyCTyp Δ l @ lzero ] ->
   [ G ; Γ ⊢[ lM ] elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' t' : motT (wrapMT MT) l Δ t @ l1 ].
@@ -668,8 +668,8 @@ Lemma pre_elimt_r {G Γ l1 l2 l1' l2' MT' Mt Mt' bs' l l' Δ Δ' T T' t t'} :
   [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Δ' ⊢[ lD ] T' @ l' ] -> [ G ; Δ ⊢[ lD ] T ≅ T' @ l ] ->
   [ recGT G ; recΓT Γ ⊢[ lM ] MT' @ lvren l1' (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt' @ lvren l2' (ush 1) ] ->
-  (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ]) ->
-  (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+  (forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ]) ->
+  (forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
                          bs' k : brRes k (wrapMT MT') (wrapMt Mt') @ brLv k l1' l2' ]) ->
   [ G ; Γ ⊢[ lM ] t' : tyCTrm Δ T l @ lzero ] ->
   [ G ; Γ ⊢[ lM ] elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' t' : mott (wrapMt Mt) l Δ T t @ l2 ].
@@ -758,7 +758,7 @@ Proof.
   (* the recursors *)
   all: try solve [first [eapply wf_elimT | eapply wf_elimt]; eauto using lequiv_wf_l;
                   (* the branches, from the branch equations *)
-                  intros ?k ?Hk; match goal with IH : forall k, k < 13 -> _ = _ -> _ /\ _ |- _ =>
+                  intros ?k ?Hk; match goal with IH : forall k, k < nbr -> _ = _ -> _ /\ _ |- _ =>
                     exact (proj1 (IH k Hk eq_refl)) end].
   all: try solve [first [eapply pre_elimT_r | eapply pre_elimt_r]; eassumption].
   (* universe polymorphism (UInst) *)

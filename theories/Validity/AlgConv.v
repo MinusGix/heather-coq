@@ -95,7 +95,7 @@ Proof.
   exact (eqctx_wkc _ _ _ _ 1 (_ :: gdCtx :: nil) H (wf_recGt (ctx_glob _ _ _ HΓ))).
 Qed.
 
-Lemma eqctx_brΓ {G Γ Γ2 wT wt l1 l2} k : k < 13 -> [ G ⊢[ lM ] Γ ≅ Γ2 ] ->
+Lemma eqctx_brΓ {G Γ Γ2 wT wt l1 l2} k : k < nbr -> [ G ⊢[ lM ] Γ ≅ Γ2 ] ->
   [ brG k G ; brΓ k Γ wT wt l1 l2 ⊢[ lM ] ] ->
   [ brG k G ⊢[ lM ] brΓ k Γ wT wt l1 l2 ≅ brΓ k Γ2 wT wt l1 l2 ].
 Proof.
@@ -998,20 +998,20 @@ Qed.
 Lemma C_rec_core {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' G2 Γ2} :
   ac_ty (recGT G) (recΓT Γ) MT MT' -> C_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> C_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> C_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> C_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   GEq G G2 -> [ G2 ⊢[ lM ] Γ ≅ Γ2 ] -> [ G ; Γ ⊢[ lM ] ] ->
   lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' ->
   [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] -> [ recGT G ; recΓT Γ ⊢[ lM ] MT' @ lvren l1' (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] -> [ recGt G ; recΓt Γ ⊢[ lM ] Mt' @ lvren l2' (ush 1) ] ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ]) ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ]) ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ]) ->
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ]) ->
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                          bs j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ]) ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
                          bs' j : brRes j (wrapMT MT') (wrapMt Mt') @ brLv j l1' l2' ]) ->
   ac_ty (recGT G2) (recΓT Γ2) MT MT' /\ ac_ty (recGt G2) (recΓt Γ2) Mt Mt' /\
-  (forall j, j < 13 -> ac_tm (brG j G2) (brΓ j Γ2 (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> ac_tm (brG j G2) (brΓ j Γ2 (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))).
 Proof.
   intros DMT IHT DMt IHt IHb HE Hctx HΓ E1 E2 HMT HMT' HMt HMt' Hbc Hbc' Hbs Hbs'.
@@ -1056,16 +1056,16 @@ Ltac rec_core IHT IHt IHb DMT DMt HE Hctx :=
   | W1 : lwf _ ?l1, W1' : lwf _ ?l1', H1 : leqv ?l1 ?l1', W2 : lwf _ ?l2, W2' : lwf _ ?l2', H2 : leqv ?l2 ?l2',
     HMT : [ recGT _ ; _ ⊢[ lM ] ?MT @ _ ], HMT' : [ recGT _ ; _ ⊢[ lM ] ?MT' @ _ ],
     HMt : [ recGt _ ; _ ⊢[ lM ] ?Mt @ _ ], HMt' : [ recGt _ ; _ ⊢[ lM ] ?Mt' @ _ ],
-    Hbc : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT ?MT) _ _ _ ⊢[ lM ] ],
-    Hbc' : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT ?MT') _ _ _ ⊢[ lM ] ],
-    Hbs : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT ?MT) _ _ _ ⊢[ lM ] _ : _ @ _ ],
-    Hbs' : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT ?MT') _ _ _ ⊢[ lM ] _ : _ @ _ ],
-    Eb : forall k, k < 13 -> ?bs k = _, Eb' : forall k, k < 13 -> ?bs' k = _ |- _ =>
+    Hbc : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT ?MT) _ _ _ ⊢[ lM ] ],
+    Hbc' : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT ?MT') _ _ _ ⊢[ lM ] ],
+    Hbs : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT ?MT) _ _ _ ⊢[ lM ] _ : _ @ _ ],
+    Hbs' : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT ?MT') _ _ _ ⊢[ lM ] _ : _ @ _ ],
+    Eb : forall k, k < nbr -> ?bs k = _, Eb' : forall k, k < nbr -> ?bs' k = _ |- _ =>
     let Hbs0 := fresh "Hbs0" in let Hbs1 := fresh "Hbs1" in
-    assert (Hbs0 : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT MT) _ _ _ ⊢[ lM ]
+    assert (Hbs0 : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT MT) _ _ _ ⊢[ lM ]
                                         bs j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ])
       by (intros j Hj; rewrite (Eb j Hj); exact (Hbs j Hj));
-    assert (Hbs1 : forall j, j < 13 -> [ _ ; brΓ j _ (wrapMT MT') _ _ _ ⊢[ lM ]
+    assert (Hbs1 : forall j, j < nbr -> [ _ ; brΓ j _ (wrapMT MT') _ _ _ ⊢[ lM ]
                                         bs' j : brRes j (wrapMT MT') (wrapMt Mt') @ brLv j l1' l2' ])
       by (intros j Hj; rewrite (Eb' j Hj); exact (Hbs' j Hj));
     destruct (C_rec_core DMT IHT DMt IHt IHb HE Hctx HΓ (leqv_lequiv _ _ _ W1 W1' H1)
@@ -1076,9 +1076,9 @@ Lemma C_actmne_elimT {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' ν ν'
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> ac_ctx G Δ Δ' -> C_ctx G Δ Δ' ->
   ac_ty (recGT G) (recΓT Γ) MT MT' -> C_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> C_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
-  (forall j, j < 13 -> C_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> C_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   ac_tmnee G Γ ν ν' W -> C_nee G Γ ν ν' W ->
   C_ne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ ν) (elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' ν')
@@ -1097,9 +1097,9 @@ Lemma C_actmne_elimT_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' U
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> ac_ctx G Δ Δ' -> C_ctx G Δ Δ' ->
   ac_ty (recGT G) (recΓT Γ) MT MT' -> C_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> C_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
-  (forall j, j < 13 -> C_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> C_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   lsub_leq d d' ->
   C_ne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ (boxT (tyGvar U d)))
@@ -1119,9 +1119,9 @@ Lemma C_actmne_elimt {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' �
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> ac_ctx G Δ Δ' -> C_ctx G Δ Δ' -> ac_ty G Δ T T' -> C_ty G Δ T T' ->
   ac_ty (recGT G) (recΓT Γ) MT MT' -> C_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> C_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
-  (forall j, j < 13 -> C_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> C_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   ac_tmnee G Γ ν ν' W -> C_nee G Γ ν ν' W ->
   C_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T ν) (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' ν')
@@ -1145,9 +1145,9 @@ Lemma C_actmne_elimt_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> ac_ctx G Δ Δ' -> C_ctx G Δ Δ' -> ac_ty G Δ T T' -> C_ty G Δ T T' ->
   ac_ty (recGT G) (recΓT Γ) MT MT' -> C_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> C_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
-  (forall j, j < 13 -> C_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> C_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   lsub_leq d d' ->
   C_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt (gvar u d)))

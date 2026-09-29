@@ -203,7 +203,7 @@ Proof.
   assert (Inv : forall T k, [ G ; Γ ⊢[ lM ] elimT l1 l2 (mkrb MT Mt bs) l Δ t : T @ k ] ->
     lwf (gL G) l1 /\ lwf (gL G) l2 /\ lwf (gL G) l /\ [ G ; Δ ⊢[ lD ] ] /\
     [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] /\ [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] /\
-    (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+    (forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                            bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ]) /\
     [ G ; Γ ⊢[ lM ] t : tyCTyp Δ l @ lzero ]).
   { intros T k H. destruct (inv_elimT eq_refl H) as (MT' & Mt' & bs' & (E & _ & _ & H1 & H2 & H3 & HΔ & HM1 & HM2 & _ & Hb & Ht) & _).
@@ -218,7 +218,7 @@ Proof.
   destruct (ihT Mt ltac:(szl) (recGt G) lM (recΓt Γ) (lvren l2 (ush 1)) (wf_recΓt _ _ HΓ)) as [HMt | N];
     [| right; intros T k H; apply N, (Inv _ _ H)].
   destruct (dec_forall_lt' (fun k => [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
-                           bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ]) 13
+                           bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ]) nbr
               (fun k Hk => ihC (bs k) ltac:(specialize (Sbs k Hk); szl) (brG k G) lM _ _ _
                              (brRes_wf HΓ Hl1 Hl2 HMT HMt k Hk))) as [Hb | N];
     [| right; intros T k H; apply N, (Inv _ _ H)].
@@ -237,7 +237,7 @@ Proof.
   assert (Inv : forall T k, [ G ; Γ ⊢[ lM ] elimt l1 l2 (mkrb MT Mt bs) l Δ A t : T @ k ] ->
     lwf (gL G) l1 /\ lwf (gL G) l2 /\ lwf (gL G) l /\ [ G ; Δ ⊢[ lD ] ] /\
     [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] /\ [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] /\
-    (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+    (forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                            bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ]) /\
     [ G ; Δ ⊢[ lD ] A @ l ] /\ [ G ; Γ ⊢[ lM ] t : tyCTrm Δ A l @ lzero ]).
   { intros T k H.
@@ -253,7 +253,7 @@ Proof.
   destruct (ihT Mt ltac:(szl) (recGt G) lM (recΓt Γ) (lvren l2 (ush 1)) (wf_recΓt _ _ HΓ)) as [HMt | N];
     [| right; intros T k H; apply N, (Inv _ _ H)].
   destruct (dec_forall_lt' (fun k => [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
-                           bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ]) 13
+                           bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ]) nbr
               (fun k Hk => ihC (bs k) ltac:(specialize (Sbs k Hk); szl) (brG k G) lM _ _ _
                              (brRes_wf HΓ Hl1 Hl2 HMT HMt k Hk))) as [Hb | N];
     [| right; intros T k H; apply N, (Inv _ _ H)].

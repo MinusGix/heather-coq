@@ -41,7 +41,7 @@ Proof. intros H [|i]; cbn; auto using dnfo_goren. Qed.
 (** Deep normal forms of the recursors' bundles, motive instances and reducts. *)
 Lemma dnf_wrap nu ng nl b : dnftm b -> dnftm (wrap nu ng nl b).
 Proof. intros H; unfold wrap. induction nu; cbn; auto. induction ng; cbn; auto. induction nl; cbn; auto. Qed.
-Lemma dnf_mkrb MT Mt bs : dnfty MT -> dnfty Mt -> (forall k, k < 13 -> dnftm (bs k)) ->
+Lemma dnf_mkrb MT Mt bs : dnfty MT -> dnfty Mt -> (forall k, k < nbr -> dnftm (bs k)) ->
   dnftm (mkrb MT Mt bs).
 Proof.
   intros H1 H2 H3. unfold mkrb. cbn [tup_from br_ar dnftm wrapMT wrapMt].
@@ -102,7 +102,7 @@ Proof.
   all: try solve [apply gsubst_dnf_all; auto; apply dnfo_gsingle; cbn; auto].
   (* the recursors: branches, motive instances, reducts *)
   all: try match goal with
-       | IH : forall k, k < 13 -> dnftm (?bs k) /\ _ |- dnftm (?bs ?n) => apply (IH n); lia
+       | IH : forall k, k < nbr -> dnftm (?bs k) /\ _ |- dnftm (?bs ?n) => apply (IH n); lia
        end.
   all: try solve [ repeat first [ apply subst_dnf_ty | apply gsubst_dnf_all | apply usubst_dnf_all
                                 | apply uren_dnf_all | apply dnfo_gup | apply dnfo_gsingle | apply lk_dnf_lsingle ];

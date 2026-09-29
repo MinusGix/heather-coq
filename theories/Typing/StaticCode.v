@@ -40,7 +40,7 @@ Lemma wrap_lwf nu ng nl L b : tm_lwf L (wrap nu ng nl b) <-> tm_lwf (nu + L) b.
 Proof. unfold wrap. rewrite wrapU_lwf, wrapG_lwf, wrapL_lwf. reflexivity. Qed.
 
 Lemma mkrb_lwf L MT Mt bs : ty_lwf (S L) MT -> ty_lwf (S L) Mt ->
-  (forall k, k < 13 -> tm_lwf (br_nu k + L) (bs k)) -> tm_lwf L (mkrb MT Mt bs).
+  (forall k, k < nbr -> tm_lwf (br_nu k + L) (bs k)) -> tm_lwf L (mkrb MT Mt bs).
 Proof.
   intros HT Ht Hb. unfold mkrb, wrapMT, wrapMt. cbn [tup_from br_ar tm_lwf].
   repeat split; auto;
@@ -48,12 +48,12 @@ Proof.
 Qed.
 
 Lemma elimT_lwf L l1 l2 MT Mt bs l Δ t : lwf L l1 -> lwf L l2 -> lwf L l -> ctx_lwf L Δ -> tm_lwf L t ->
-  ty_lwf (S L) MT -> ty_lwf (S L) Mt -> (forall k, k < 13 -> tm_lwf (br_nu k + L) (bs k)) ->
+  ty_lwf (S L) MT -> ty_lwf (S L) Mt -> (forall k, k < nbr -> tm_lwf (br_nu k + L) (bs k)) ->
   tm_lwf L (elimT l1 l2 (mkrb MT Mt bs) l Δ t).
 Proof. intros. exact (conj H (conj H0 (conj (mkrb_lwf L MT Mt bs H4 H5 H6) (conj H1 (conj H2 H3))))). Qed.
 Lemma elimt_lwf L l1 l2 MT Mt bs l Δ T t : lwf L l1 -> lwf L l2 -> lwf L l -> ctx_lwf L Δ ->
   ty_lwf L T -> tm_lwf L t ->
-  ty_lwf (S L) MT -> ty_lwf (S L) Mt -> (forall k, k < 13 -> tm_lwf (br_nu k + L) (bs k)) ->
+  ty_lwf (S L) MT -> ty_lwf (S L) Mt -> (forall k, k < nbr -> tm_lwf (br_nu k + L) (bs k)) ->
   tm_lwf L (elimt l1 l2 (mkrb MT Mt bs) l Δ T t).
 Proof.
   intros. exact (conj H (conj H0 (conj (mkrb_lwf L MT Mt bs H5 H6 H7) (conj H1 (conj H2 (conj H3 H4)))))).

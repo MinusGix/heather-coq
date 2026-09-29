@@ -692,7 +692,7 @@ Lemma ainv_elimT' {G Γ l1 l2 MT Mt bs l Δ ν l1' l2' MT' Mt' bs' l' Δ' ν' T}
   ac_tmne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ ν) (elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' ν') T ->
   leqv l1 l1' /\ leqv l2 l2' /\ leqv l l' /\ ac_ctx G Δ Δ' /\
   (ac_ty (recGT G) (recΓT Γ) MT MT' /\ ac_ty (recGt G) (recΓt Γ) Mt Mt' /\
-   (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+   (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                           (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt)))) /\
   exists W, ac_tmnee G Γ ν ν' W.
 Proof.
@@ -711,7 +711,7 @@ Lemma ainv_elimT_gvar' {G Γ l1 l2 MT Mt bs l Δ U d l1' l2' MT' Mt' bs' l' Δ' 
   ac_tmne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ (boxT (tyGvar U d))) (elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' ν') T ->
   leqv l1 l1' /\ leqv l2 l2' /\ leqv l l' /\ ac_ctx G Δ Δ' /\
   (ac_ty (recGT G) (recΓT Γ) MT MT' /\ ac_ty (recGt G) (recΓt Γ) Mt Mt' /\
-   (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+   (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                           (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt)))) /\
   exists d', ν' = boxT (tyGvar U d') /\ lsub_leq d d'.
 Proof.
@@ -730,7 +730,7 @@ Lemma ainv_elimt' {G Γ l1 l2 MT Mt bs l Δ A ν l1' l2' MT' Mt' bs' l' Δ' A' �
   ac_tmne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ A ν) (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' A' ν') T ->
   leqv l1 l1' /\ leqv l2 l2' /\ leqv l l' /\ ac_ctx G Δ Δ' /\ ac_ty G Δ A A' /\
   (ac_ty (recGT G) (recΓT Γ) MT MT' /\ ac_ty (recGt G) (recΓt Γ) Mt Mt' /\
-   (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+   (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                           (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt)))) /\
   exists W, ac_tmnee G Γ ν ν' W.
 Proof.
@@ -749,7 +749,7 @@ Lemma ainv_elimt_gvar' {G Γ l1 l2 MT Mt bs l Δ A u d l1' l2' MT' Mt' bs' l' Δ
   ac_tmne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ A (boxt (gvar u d))) (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' A' ν') T ->
   leqv l1 l1' /\ leqv l2 l2' /\ leqv l l' /\ ac_ctx G Δ Δ' /\ ac_ty G Δ A A' /\
   (ac_ty (recGT G) (recΓT Γ) MT MT' /\ ac_ty (recGt G) (recΓt Γ) Mt Mt' /\
-   (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+   (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                           (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt)))) /\
   exists d', ν' = boxt (gvar u d') /\ lsub_leq d d'.
 Proof.
@@ -791,19 +791,19 @@ Qed.
 (** The motives and branches, the right side's moved to the left's binders. *)
 Lemma Dc_rec_core {G Γ l1 l2 l1' l2' MT MT0 MT' Mt Mt0 Mt' bs bs0 bs'} :
   Dc_ty (recGT G) (recΓT Γ) MT MT0 -> Dc_ty (recGt G) (recΓt Γ) Mt Mt0 ->
-  (forall j, j < 13 -> Dc_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> Dc_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                           (bs j) (bs0 j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   [ G ; Γ ⊢[ lM ] ] -> lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' ->
   [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] -> [ recGT G ; recΓT Γ ⊢[ lM ] MT' @ lvren l1' (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] -> [ recGt G ; recΓt Γ ⊢[ lM ] Mt' @ lvren l2' (ush 1) ] ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ]) ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ]) ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ]) ->
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ]) ->
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                          bs j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ]) ->
-  (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+  (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
                          bs' j : brRes j (wrapMT MT') (wrapMt Mt') @ brLv j l1' l2' ]) ->
   Dec (ac_ty (recGT G) (recΓT Γ) MT MT' /\ ac_ty (recGt G) (recΓt Γ) Mt Mt' /\
-       (forall j, j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+       (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                               (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt)))).
 Proof.
   intros IHT IHt IHb HΓ E1 E2 HMT HMT' HMt HMt' Hbc Hbc' Hbs Hbs'.
@@ -813,9 +813,9 @@ Proof.
   destruct (IHt Mt' lM _ _ compt_M HMt HMt1) as [DMt | N]; [| right; tauto].
   pose proof (ac_ty_sound compt_M DMT HMT HMT1) as EMT.
   pose proof (ac_ty_sound compt_M DMt HMt HMt1) as EMt.
-  assert (Hd : Dec (forall j, j < 13 -> j < 13 -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  assert (Hd : Dec (forall j, j < nbr -> j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                                                   (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt)))).
-  { apply dec_forall_lt. intros j. destruct (Nat.lt_ge_cases j 13) as [Hj | Hj]; [| left; intros Hj'; lia].
+  { apply dec_forall_lt. intros j. destruct (Nat.lt_ge_cases j nbr) as [Hj | Hj]; [| left; intros Hj'; lia].
     pose proof (branch_conv j Hj EMT EMt E1 E2 HΓ (Hbc j Hj) (Hbc' j Hj) (Hbs' j Hj)) as Hb1.
     destruct (IHb j Hj (bs' j) lM _ compt_M (Hbs j Hj) Hb1) as [Y | N];
       [left; intros _; exact Y | right; intros Z; exact (N (Z Hj))]. }
@@ -825,7 +825,7 @@ Qed.
 
 Lemma Dc_actmne_elimT {G Γ l1 l2 l1b l2b MT MT0 Mt Mt0 bs bs0 l lb Δ Δ0 ν ν0 W} :
   Dc_ctx G Δ Δ0 -> Dc_ty (recGT G) (recΓT Γ) MT MT0 -> Dc_ty (recGt G) (recΓt Γ) Mt Mt0 ->
-  (forall j, j < 13 -> Dc_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> Dc_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                           (bs j) (bs0 j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   ac_tmnee G Γ ν ν0 W -> Dc_nee G Γ ν ν0 W ->
   Dc_ne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ ν) (elimT l1b l2b (mkrb MT0 Mt0 bs0) lb Δ0 ν0)
@@ -841,7 +841,7 @@ Proof.
   destruct (mkrb_inj_MT Erb) as [<- <-]. pose proof (mkrb_inj_br Erb) as Eb.
   destruct (inv_elimT Hi Hx') as (MT' & Mt' & bs' & (-> & _ & _ & W3 & W4 & Wl' & HΔ' & HMT' & HMt' & Hbc' & Hbs'
                                                      & Hν') & _ & _).
-  assert (Hbs0 : forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  assert (Hbs0 : forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                                        bs j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ])
     by (intros j Hj; rewrite (Eb j Hj); exact (Hbs j Hj)).
   pose proof (ctx_of_wf_tm (i := lM) eq_refl Hν) as HΓ.
@@ -861,7 +861,7 @@ Qed.
 
 Lemma Dc_actmne_elimT_gvar {G Γ l1 l2 l1b l2b MT MT0 Mt Mt0 bs bs0 l lb Δ Δ0 U d d0} :
   Dc_ctx G Δ Δ0 -> Dc_ty (recGT G) (recΓT Γ) MT MT0 -> Dc_ty (recGt G) (recΓt Γ) Mt Mt0 ->
-  (forall j, j < 13 -> Dc_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> Dc_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                           (bs j) (bs0 j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   Dc_ne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ (boxT (tyGvar U d)))
     (elimT l1b l2b (mkrb MT0 Mt0 bs0) lb Δ0 (boxT (tyGvar U d0)))
@@ -876,7 +876,7 @@ Proof.
   destruct (mkrb_inj_MT Erb) as [<- <-]. pose proof (mkrb_inj_br Erb) as Eb.
   destruct (inv_elimT Hi Hx') as (MT' & Mt' & bs' & (-> & _ & _ & W3 & W4 & Wl' & HΔ' & HMT' & HMt' & Hbc' & Hbs'
                                                      & Hν') & _ & _).
-  assert (Hbs0 : forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  assert (Hbs0 : forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                                        bs j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ])
     by (intros j Hj; rewrite (Eb j Hj); exact (Hbs j Hj)).
   pose proof (ctx_of_wf_tm (i := lM) eq_refl Hν) as HΓ.
@@ -897,7 +897,7 @@ Qed.
 
 Lemma Dc_actmne_elimt {G Γ l1 l2 l1b l2b MT MT0 Mt Mt0 bs bs0 l lb Δ Δ0 A A0 ν ν0 W} :
   Dc_ctx G Δ Δ0 -> Dc_ty G Δ A A0 -> Dc_ty (recGT G) (recΓT Γ) MT MT0 -> Dc_ty (recGt G) (recΓt Γ) Mt Mt0 ->
-  (forall j, j < 13 -> Dc_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> Dc_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                           (bs j) (bs0 j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   ac_tmnee G Γ ν ν0 W -> Dc_nee G Γ ν ν0 W ->
   Dc_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ A ν) (elimt l1b l2b (mkrb MT0 Mt0 bs0) lb Δ0 A0 ν0)
@@ -913,7 +913,7 @@ Proof.
   destruct (mkrb_inj_MT Erb) as [<- <-]. pose proof (mkrb_inj_br Erb) as Eb.
   destruct (inv_elimt Hi Hx') as (MT' & Mt' & bs' & (-> & _ & _ & W3 & W4 & Wl' & HΔ' & HMT' & HMt' & Hbc' & Hbs'
                                                      & HA' & Hν') & _ & _).
-  assert (Hbs0 : forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  assert (Hbs0 : forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                                        bs j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ])
     by (intros j Hj; rewrite (Eb j Hj); exact (Hbs j Hj)).
   pose proof (ctx_of_wf_tm (i := lM) eq_refl Hν) as HΓ.
@@ -936,7 +936,7 @@ Qed.
 
 Lemma Dc_actmne_elimt_gvar {G Γ l1 l2 l1b l2b MT MT0 Mt Mt0 bs bs0 l lb Δ Δ0 A A0 u d d0} :
   Dc_ctx G Δ Δ0 -> Dc_ty G Δ A A0 -> Dc_ty (recGT G) (recΓT Γ) MT MT0 -> Dc_ty (recGt G) (recΓt Γ) Mt Mt0 ->
-  (forall j, j < 13 -> Dc_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> Dc_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                           (bs j) (bs0 j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   Dc_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ A (boxt (gvar u d)))
     (elimt l1b l2b (mkrb MT0 Mt0 bs0) lb Δ0 A0 (boxt (gvar u d0)))
@@ -951,7 +951,7 @@ Proof.
   destruct (mkrb_inj_MT Erb) as [<- <-]. pose proof (mkrb_inj_br Erb) as Eb.
   destruct (inv_elimt Hi Hx') as (MT' & Mt' & bs' & (-> & _ & _ & W3 & W4 & Wl' & HΔ' & HMT' & HMt' & Hbc' & Hbs'
                                                      & HA' & Hν') & _ & _).
-  assert (Hbs0 : forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  assert (Hbs0 : forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                                        bs j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ])
     by (intros j Hj; rewrite (Eb j Hj); exact (Hbs j Hj)).
   pose proof (ctx_of_wf_tm (i := lM) eq_refl Hν) as HΓ.

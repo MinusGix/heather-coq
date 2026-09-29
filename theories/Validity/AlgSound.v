@@ -773,16 +773,16 @@ Qed.
 
 (** [mkrb] is injective in its branches (the thirteen that exist). *)
 Lemma mkrb_inj_br {MT Mt bs MT' Mt' bs'} : mkrb MT Mt bs = mkrb MT' Mt' bs' ->
-  forall k, k < 13 -> bs k = bs' k.
+  forall k, k < nbr -> bs k = bs' k.
 Proof.
   intros H k Hk. unfold mkrb in H. injection H; intros.
-  do 13 (destruct k as [|k]; [assumption|]). lia.
+  br_all ltac:(destruct k as [|k]; [assumption|]). lia.
 Qed.
 
 Lemma elimT_core {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' t t' i k k' X X'} :
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> S_ctx G Δ Δ' ->
   S_ty (recGT G) (recΓT Γ) MT MT' -> S_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> S_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> S_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   compt i ->
   [ G ; Γ ⊢[ i ] elimT l1 l2 (mkrb MT Mt bs) l Δ t : X @ k ] ->
@@ -808,13 +808,13 @@ Proof.
   assert (HCC : [ G ; Γ ⊢[ lM ] tyCTyp Δ l ≅ tyCTyp Δ' l' @ lzero ]) by (apply eqty_CTyp; assumption).
   pose proof (Ht Hν (wf_conv _ _ _ _ _ _ _ Hν' HCC)) as Eν.
   pose proof (declM_motT_eq EMT W1 El Ec Eν) as Emot.
-  assert (Hbs0 : forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  assert (Hbs0 : forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                                         bs j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ])
     by (intros j Hj; rewrite (Eb j Hj); exact (Hbs j Hj)).
-  assert (Hbs1 : forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+  assert (Hbs1 : forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
                                         bs' j : brRes j (wrapMT MT') (wrapMt Mt') @ brLv j l1' l2' ])
     by (intros j Hj; rewrite (Eb' j Hj); exact (Hbs' j Hj)).
-  assert (Ebr : forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  assert (Ebr : forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                                        bs j ≅ bs' j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ]).
   { intros j Hj. apply (IHb j Hj lM _ compt_M (Hbs0 j Hj)).
     exact (branch_conv j Hj EMT EMt E1 E2 HΓ (Hbc j Hj) (Hbc' j Hj) (Hbs1 j Hj)). }
@@ -829,7 +829,7 @@ Qed.
 Lemma S_actmne_elimT {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' ν ν' W} :
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> S_ctx G Δ Δ' ->
   S_ty (recGT G) (recΓT Γ) MT MT' -> S_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> S_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> S_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   S_ne G Γ ν ν' W ->
   S_ne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ ν) (elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' ν')
@@ -843,7 +843,7 @@ Qed.
 Lemma S_actmne_elimT_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' U d d'} :
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> S_ctx G Δ Δ' ->
   S_ty (recGT G) (recΓT Γ) MT MT' -> S_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> S_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> S_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   lsub_leq d d' ->
   S_ne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ (boxT (tyGvar U d)))
@@ -858,7 +858,7 @@ Qed.
 Lemma elimt_core {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' t t' i k k' X X'} :
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> S_ctx G Δ Δ' -> S_ty G Δ T T' ->
   S_ty (recGT G) (recΓT Γ) MT MT' -> S_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> S_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> S_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   compt i ->
   [ G ; Γ ⊢[ i ] elimt l1 l2 (mkrb MT Mt bs) l Δ T t : X @ k ] ->
@@ -885,13 +885,13 @@ Proof.
   assert (HCC : [ G ; Γ ⊢[ lM ] tyCTrm Δ T l ≅ tyCTrm Δ' T' l' @ lzero ]) by (apply eqty_CTrm; assumption).
   pose proof (Ht Hν (wf_conv _ _ _ _ _ _ _ Hν' HCC)) as Eν.
   pose proof (declM_mott_eq EMt W2 El Ec ET Eν) as Emot.
-  assert (Hbs0 : forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  assert (Hbs0 : forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                                         bs j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ])
     by (intros j Hj; rewrite (Eb j Hj); exact (Hbs j Hj)).
-  assert (Hbs1 : forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+  assert (Hbs1 : forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
                                         bs' j : brRes j (wrapMT MT') (wrapMt Mt') @ brLv j l1' l2' ])
     by (intros j Hj; rewrite (Eb' j Hj); exact (Hbs' j Hj)).
-  assert (Ebr : forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  assert (Ebr : forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                                        bs j ≅ bs' j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ]).
   { intros j Hj. apply (IHb j Hj lM _ compt_M (Hbs0 j Hj)).
     exact (branch_conv j Hj EMT EMt E1 E2 HΓ (Hbc j Hj) (Hbc' j Hj) (Hbs1 j Hj)). }
@@ -906,7 +906,7 @@ Qed.
 Lemma S_actmne_elimt {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' ν ν' W} :
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> S_ctx G Δ Δ' -> S_ty G Δ T T' ->
   S_ty (recGT G) (recΓT Γ) MT MT' -> S_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> S_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> S_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   S_ne G Γ ν ν' W ->
   S_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T ν) (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' ν')
@@ -920,7 +920,7 @@ Qed.
 Lemma S_actmne_elimt_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' u d d'} :
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> S_ctx G Δ Δ' -> S_ty G Δ T T' ->
   S_ty (recGT G) (recΓT Γ) MT MT' -> S_ty (recGt G) (recΓt Γ) Mt Mt' ->
-  (forall j, j < 13 -> S_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall j, j < nbr -> S_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   lsub_leq d d' ->
   S_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt (gvar u d)))

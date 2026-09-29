@@ -325,12 +325,12 @@ Proof.
   pose proof (gsub_wf_uwkn 1 _ _ _ Hσ) as Hu.
   unfold recGt, gctx_uwk in *; cbn [gL gΨ] in *. wf_suffixes. gs_ups. exact Hu.
 Qed.
-Lemma gsub_wf_brG k G' σ G : k < 13 -> [ G' ⊢ σ : G ] -> [ brG k G' ⊢ gbsub k σ : brG k G ].
+Lemma gsub_wf_brG k G' σ G : k < nbr -> [ G' ⊢ σ : G ] -> [ brG k G' ⊢ gbsub k σ : brG k G ].
 Proof.
   intros Hk Hσ. pose proof (wf_brG (gsw_glob _ _ _ Hσ) k Hk) as Hg.
   pose proof (gsub_wf_uwkn (br_nu k) _ _ _ Hσ) as Hu.
   unfold brG, gbsub, gctx_uwk in *; cbn [gL gΨ] in *.
-  do 13 (destruct k; [cbn [brDecls List.app br_ng br_nu br_ar gupn Nat.iter] in *;
+  br_all ltac:(destruct k; [cbn [brDecls List.app br_ng br_nu br_ar gupn Nat.iter] in *;
                       wf_suffixes; gs_ups; exact Hu|]).
   lia.
 Qed.
@@ -739,7 +739,7 @@ Ltac gs_motive :=
 Ltac gs_branches :=
   let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
   match goal with
-  | IH : forall k, k < 13 -> forall Ψ'' σ', gsub_wf (mkG (gL (brG k ?G)) Ψ'') σ' (brG k ?G) -> _,
+  | IH : forall k, k < nbr -> forall Ψ'' σ', gsub_wf (mkG (gL (brG k ?G)) Ψ'') σ' (brG k ?G) -> _,
     Hσ : gsub_wf (mkG (gL ?G) ?Ψ') ?σ ?G |- _ =>
       let X := fresh "X" in
       pose proof (IH k Hk _ _ (gsub_wf_brG k _ _ _ Hk Hσ)) as X;

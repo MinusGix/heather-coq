@@ -302,7 +302,7 @@ Ltac us_rewrite_all :=
 Ltac us_branches :=
   let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
   match goal with
-  | IH : forall k, k < 13 -> forall L' φ, usub_ok φ L' _ -> _, H : usub_ok ?φ ?L' _ |- _ =>
+  | IH : forall k, k < nbr -> forall L' φ, usub_ok φ L' _ -> _, H : usub_ok ?φ ?L' _ |- _ =>
       let X := fresh "X" in
       pose proof (IH k Hk (br_nu k + L') (uupn (br_nu k) φ) (usub_ok_uupn _ _ _ _ H)) as X;
       rewrite brG_usubst in X by exact Hk; rewrite brΓ_usubst in X by exact Hk;

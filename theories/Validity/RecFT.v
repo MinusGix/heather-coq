@@ -10,13 +10,13 @@ From DeLaM.Validity Require Export RecS.
 
 (** ** Syntax: the bundle's components from a recursor's typing *)
 
-Lemma mkrb_inj_bs {MT Mt bs MT' Mt' bs'} : mkrb MT Mt bs = mkrb MT' Mt' bs' -> forall k, k < 13 -> bs k = bs' k.
+Lemma mkrb_inj_bs {MT Mt bs MT' Mt' bs'} : mkrb MT Mt bs = mkrb MT' Mt' bs' -> forall k, k < nbr -> bs k = bs' k.
 Proof.
   unfold mkrb; cbn. intros H k Hk. injection H; intros.
-  do 13 (destruct k as [|k]; [assumption|]). lia.
+  br_all ltac:(destruct k as [|k]; [assumption|]). lia.
 Qed.
 
-Lemma RBwf_ext {G Γ l1 l2 MT Mt bs bs'} : (forall k, k < 13 -> bs k = bs' k) ->
+Lemma RBwf_ext {G Γ l1 l2 MT Mt bs bs'} : (forall k, k < nbr -> bs k = bs' k) ->
   RBwf G Γ l1 l2 MT Mt bs -> RBwf G Γ l1 l2 MT Mt bs'.
 Proof.
   intros E (H1 & H2 & H3 & H4 & H5 & H6). repeat split; try assumption.
@@ -123,15 +123,15 @@ Hypothesis (Hφ : usub_ok φ L' (gL G0))
   (VMtr : forall L'' ψ, usub_ok ψ L'' (gL (recGt G0)) ->
      VTySM (G_us (recGt G0) L'' ψ) (ucsubst (recΓt Γ0) ψ) (usubst_ty Mt' ψ) (usubst_ty Mt' ψ)
        (lvsubst (lvren l2' (ush 1)) ψ))
-  (Hbs : forall k, k < 13 -> [ brG k G0 ; brΓ k Γ0 (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  (Hbs : forall k, k < nbr -> [ brG k G0 ; brΓ k Γ0 (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                                bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ])
-  (Hbs' : forall k, k < 13 -> [ brG k G0 ; brΓ k Γ0 (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+  (Hbs' : forall k, k < nbr -> [ brG k G0 ; brΓ k Γ0 (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
                                bs' k : brRes k (wrapMT MT') (wrapMt Mt') @ brLv k l1' l2' ])
-  (VBr : forall k, k < 13 -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
+  (VBr : forall k, k < nbr -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
      VTmSM (G_us (brG k G0) L'' ψ) (ucsubst (brΓ k Γ0 (wrapMT MT) (wrapMt Mt) l1 l2) ψ)
        (usubst_tm (bs k) ψ) (usubst_tm (bs' k) ψ)
        (usubst_ty (brRes k (wrapMT MT) (wrapMt Mt)) ψ) (lvsubst (brLv k l1 l2) ψ))
-  (VBr' : forall k, k < 13 -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
+  (VBr' : forall k, k < nbr -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
      VTmSM (G_us (brG k G0) L'' ψ) (ucsubst (brΓ k Γ0 (wrapMT MT') (wrapMt Mt') l1' l2') ψ)
        (usubst_tm (bs' k) ψ) (usubst_tm (bs' k) ψ)
        (usubst_ty (brRes k (wrapMT MT') (wrapMt Mt')) ψ) (lvsubst (brLv k l1' l2') ψ))
@@ -139,7 +139,7 @@ Hypothesis (Hφ : usub_ok φ L' (gL G0))
   (HG0 : [ ⊢ G_us G0 L' φ ]) (HΓ0 : [ G_us G0 L' φ ; ucsubst Γ0 φ ⊢[ lM ] ])
   (VΓT : forall L'' ψ, usub_ok ψ L'' (gL (recGT G0)) -> VCtxSM (G_us (recGT G0) L'' ψ) (ucsubst (recΓT Γ0) ψ))
   (VΓt : forall L'' ψ, usub_ok ψ L'' (gL (recGt G0)) -> VCtxSM (G_us (recGt G0) L'' ψ) (ucsubst (recΓt Γ0) ψ))
-  (VΓbr : forall k, k < 13 -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
+  (VΓbr : forall k, k < nbr -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
      VCtxSM (G_us (brG k G0) L'' ψ) (ucsubst (brΓ k Γ0 (wrapMT MT) (wrapMt Mt) l1 l2) ψ)).
 
 Local Notation Gφ := (G_us G0 L' φ).

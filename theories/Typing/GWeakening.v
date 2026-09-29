@@ -185,21 +185,21 @@ Lemma cexts_gren Γ As ξ :
   (cexts Γ As)⟪ξ⟫ = cexts Γ⟪ξ⟫ (map (fun '(A, l) => (A⟪ξ⟫, l)) As).
 Proof. revert Γ; induction As as [|[A l] As IH]; intros Γ; cbn; auto. Qed.
 
-Lemma brLocs_gren k wT wt a1 a2 ξ : k < 13 ->
+Lemma brLocs_gren k wT wt a1 a2 ξ : k < nbr ->
   map (fun '(A, l) => (A⟪guprn (br_ng k) ξ⟫, l)) (brLocs k wT wt a1 a2) =
   brLocs k wT⟪ξ⟫ wt⟪ξ⟫ a1 a2.
 Proof.
-  intros Hk. do 13 (destruct k;
+  intros Hk. br_all ltac:(destruct k;
     [cbn [brLocs map br_ng br_ar]; rewrite ?motT_gren, ?mott_gren, ?wkb_gren; reflexivity|]).
   lia.
 Qed.
-Lemma brΓ_gren k Γ wT wt l1 l2 ξ : k < 13 ->
+Lemma brΓ_gren k Γ wT wt l1 l2 ξ : k < nbr ->
   (brΓ k Γ wT wt l1 l2)⟪guprn (br_ng k) ξ⟫ = brΓ k Γ⟪ξ⟫ wT⟪ξ⟫ wt⟪ξ⟫ l1 l2.
 Proof. intros Hk. unfold brΓ. now rewrite cexts_gren, wkc_gren, brLocs_gren. Qed.
-Lemma brRes_gren k wT wt ξ : k < 13 ->
+Lemma brRes_gren k wT wt ξ : k < nbr ->
   (brRes k wT wt)⟪guprn (br_ng k) ξ⟫ = brRes k wT⟪ξ⟫ wt⟪ξ⟫.
 Proof.
-  intros Hk. do 13 (destruct k;
+  intros Hk. br_all ltac:(destruct k;
     [cbn [brRes br_ng br_ar]; rewrite ?motT_gren, ?mott_gren, ?wkb_gren; reflexivity|]).
   lia.
 Qed.
@@ -259,11 +259,11 @@ Definition gwk_upn (n : nat) (γ : gweak) : gweak := Nat.iter n gwk_up γ.
 Lemma gwk_upn_fn n γ i : gwk_fn (gwk_upn n γ) i = guprn n (gwk_fn γ) i.
 Proof. revert i; induction n; intros [|i]; cbn; auto. Qed.
 
-Lemma brG_gwk k γ G' G : k < 13 -> gwk_ok γ G' G ->
+Lemma brG_gwk k γ G' G : k < nbr -> gwk_ok γ G' G ->
   gwk_wf (gwk_upn (br_ng k) γ) (gΨ (brG k G')) (gΨ (brG k G)).
 Proof.
   intros Hk [_ Hw]. apply (gwk_wf_uren _ _ _ (ush (br_nu k))) in Hw. unfold brG; cbn [gΨ gctx_uwk].
-  do 13 (destruct k; [cbn [brDecls List.app br_ng br_nu br_ar gwk_upn Nat.iter];
+  br_all ltac:(destruct k; [cbn [brDecls List.app br_ng br_nu br_ar gwk_upn Nat.iter];
                       repeat (apply gwkwf_up'; [|reflexivity]); exact Hw|]).
   lia.
 Qed.
@@ -525,7 +525,7 @@ Ltac gw_mott :=
 Ltac gw_branches :=
   let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
   match goal with
-  | IH : forall k, k < 13 -> forall L'' Ψ'' (γ' : gweak), _ <= L'' -> gwk_wf γ' Ψ'' (gΨ (brG k ?G)) -> _,
+  | IH : forall k, k < nbr -> forall L'' Ψ'' (γ' : gweak), _ <= L'' -> gwk_wf γ' Ψ'' (gΨ (brG k ?G)) -> _,
     Hγ : gwk_wf ?γ ?Ψ' (gΨ ?G), HL : gL ?G <= ?L', HG : [ ⊢ mkG ?L' ?Ψ' ] |- _ =>
       let X := fresh "X" in
       pose proof (IH k Hk _ _ (gwk_upn (br_ng k) γ) (proj1 (Nat.add_le_mono_l _ _ (br_nu k)) HL)

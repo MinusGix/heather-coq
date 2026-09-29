@@ -572,23 +572,23 @@ Ltac rec_subst_rw :=
   rewrite ?motT_subst, ?mott_subst by first [hd_tac | auto 8 with nf];
   rewrite ?wkb_subst0, ?wkb_subst1, ?wkb_subst2, ?wkb_subst3, ?wkb_subst by auto with nf.
 
-Lemma brLocs_subst k MT Mt a1 a2 d : k < 13 -> LK dnftm d ->
+Lemma brLocs_subst k MT Mt a1 a2 d : k < nbr -> LK dnftm d ->
   cexts_sub (brLocs k (wrapMT MT) (wrapMt Mt) a1 a2) (bsub k d) =
   brLocs k (wrapMT MT)[d] (wrapMt Mt)[d] a1 a2.
 Proof.
   intros Hk Hd.
   unfold bsub.
-  do 13 (destruct k; [cbn [brLocs cexts_sub br_ng br_nu br_ar]; rec_subst_rw; reflexivity|]).
+  br_all ltac:(destruct k; [cbn [brLocs cexts_sub br_ng br_nu br_ar]; rec_subst_rw; reflexivity|]).
   lia.
 Qed.
 
-Lemma brRes_subst k MT Mt d : k < 13 -> LK dnftm d ->
+Lemma brRes_subst k MT Mt d : k < nbr -> LK dnftm d ->
   (brRes k (wrapMT MT) (wrapMt Mt))[lliftn (br_nl k) (bsub k d)] =
   brRes k (wrapMT MT)[d] (wrapMt Mt)[d].
 Proof.
   intros Hk Hd.
   unfold bsub.
-  do 13 (destruct k; [cbn [brRes br_nl br_ng br_nu br_ar]; rec_subst_rw; reflexivity|]).
+  br_all ltac:(destruct k; [cbn [brRes br_nl br_ng br_nu br_ar]; rec_subst_rw; reflexivity|]).
   lia.
 Qed.
 
@@ -675,7 +675,7 @@ Proof.
     + apply (proj1 gren_subst_all). intros; now rewrite llk_gwkn.
 Qed.
 
-Lemma lsub_wf_bsub k G Δ d Γ : k < 13 -> [ G ; Δ ⊢[ lM ] d : Γ ] ->
+Lemma lsub_wf_bsub k G Δ d Γ : k < nbr -> [ G ; Δ ⊢[ lM ] d : Γ ] ->
   [ brG k G ; wkc (br_nu k) (br_ng k) Δ ⊢[ lM ] bsub k d : wkc (br_nu k) (br_ng k) Γ ].
 Proof.
   intros Hk Hd. pose proof (wf_brG (ctx_glob _ _ _ (lsub_wf_ctx Hd)) k Hk) as HG.
@@ -818,7 +818,7 @@ Ltac sub_motive :=
   end.
 Ltac sub_brctx_at k Hk :=
   match goal with
-  | IH : forall k, k < 13 -> forall Γ0 As, brΓ k ?Γ (wrapMT ?MT) (wrapMt ?Mt) ?l1 ?l2 = cexts Γ0 As -> _,
+  | IH : forall k, k < nbr -> forall Γ0 As, brΓ k ?Γ (wrapMT ?MT) (wrapMt ?Mt) ?l1 ?l2 = cexts Γ0 As -> _,
     Hd : lsub_wf _ _ ?Δ ?d ?Γ |- _ =>
       let X := fresh "X" in
       pose proof (IH k Hk _ _ eq_refl _ _ (lsub_wf_bsub k _ _ _ _ Hk Hd)) as X;
@@ -828,7 +828,7 @@ Ltac sub_brctx := let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk; sub
 Ltac sub_branches :=
   let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
   match goal with
-  | IH : forall k, k < 13 -> forall Δ d, lsub_wf _ _ Δ d (brΓ k ?Γ (wrapMT ?MT) (wrapMt ?Mt) ?l1 ?l2) -> _,
+  | IH : forall k, k < nbr -> forall Δ d, lsub_wf _ _ Δ d (brΓ k ?Γ (wrapMT ?MT) (wrapMt ?Mt) ?l1 ?l2) -> _,
     Hd : lsub_wf ?G _ ?Δ ?d ?Γ |- _ =>
       let C := fresh "C" in let W := fresh "W" in let X := fresh "X" in
       assert (C : [ brG k G ; brΓ k Δ (wrapMT MT)[d] (wrapMt Mt)[d] l1 l2 ⊢[ lM ] ]) by sub_brctx_at k Hk;

@@ -183,16 +183,16 @@ Proof.
   intros H. pose proof (gsub_equiv_uwkn 1 _ _ _ H) as Hu.
   unfold recGt, gctx_uwk in *; cbn [gL gΨ] in *. apply gsub_equiv_up', gsub_equiv_up'; exact Hu.
 Qed.
-Lemma gsub_equiv_brG k G σ τ : k < 13 -> gsub_equiv G σ τ -> gsub_equiv (brG k G) (gbsub k σ) (gbsub k τ).
+Lemma gsub_equiv_brG k G σ τ : k < nbr -> gsub_equiv G σ τ -> gsub_equiv (brG k G) (gbsub k σ) (gbsub k τ).
 Proof.
   intros Hk H. pose proof (gsub_equiv_uwkn (br_nu k) _ _ _ H) as Hu.
   unfold brG, gbsub, gctx_uwk in *; cbn [gL gΨ] in *.
-  do 13 (destruct k; [cbn [brDecls List.app br_ng br_nu br_ar gupn Nat.iter] in *;
+  br_all ltac:(destruct k; [cbn [brDecls List.app br_ng br_nu br_ar gupn Nat.iter] in *;
                       repeat apply gsub_equiv_up'; exact Hu|]).
   lia.
 Qed.
 
-Lemma mkrb_congr MT MT' Mt Mt' bs bs' : MT = MT' -> Mt = Mt' -> (forall k, k < 13 -> bs k = bs' k) ->
+Lemma mkrb_congr MT MT' Mt Mt' bs bs' : MT = MT' -> Mt = Mt' -> (forall k, k < nbr -> bs k = bs' k) ->
   mkrb MT Mt bs = mkrb MT' Mt' bs'.
 Proof.
   intros -> -> H. unfold mkrb. cbn [tup_from br_ar].
@@ -210,7 +210,7 @@ Ltac gst_branch :=
   let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
   match goal with
   | Hτ : forall n, dnfo (?τ n),
-    IH : forall k, k < 13 -> forall σ' τ', gsub_equiv (brG k _) σ' τ' -> _ -> _ |- _ =>
+    IH : forall k, k < nbr -> forall σ' τ', gsub_equiv (brG k _) σ' τ' -> _ -> _ |- _ =>
       apply (IH k Hk); [apply gsub_equiv_brG; assumption | exact (gdnf_gbsub _ _ Hτ)]
   end.
 Ltac gst_rec :=

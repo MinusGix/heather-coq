@@ -418,8 +418,8 @@ Definition RBwf (G : gctx) (Γ : ctx) (l1 l2 : lvl) (MT Mt : ty) (bs : nat -> tm
   lwf (gL G) l1 /\ lwf (gL G) l2 /\
   [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] /\
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] /\
-  (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ]) /\
-  (forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  (forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ]) /\
+  (forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                          bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ]).
 
 Lemma elimT_prem {G Γ l1 l2 rb l Δ t T k} : [ G ; Γ ⊢[ lM ] elimT l1 l2 rb l Δ t : T @ k ] ->

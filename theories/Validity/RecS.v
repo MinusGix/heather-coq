@@ -816,15 +816,15 @@ Hypothesis (Hφ : usub_ok φ L' (gL G0))
   (VMtr : forall L'' ψ, usub_ok ψ L'' (gL (recGt G0)) ->
      VTySM (G_us (recGt G0) L'' ψ) (ucsubst (recΓt Γ0) ψ) (usubst_ty Mt' ψ) (usubst_ty Mt' ψ)
        (lvsubst (lvren l2' (ush 1)) ψ))
-  (Hbs : forall k, k < 13 -> [ brG k G0 ; brΓ k Γ0 (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  (Hbs : forall k, k < nbr -> [ brG k G0 ; brΓ k Γ0 (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                                bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ])
-  (Hbs' : forall k, k < 13 -> [ brG k G0 ; brΓ k Γ0 (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+  (Hbs' : forall k, k < nbr -> [ brG k G0 ; brΓ k Γ0 (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
                                bs' k : brRes k (wrapMT MT') (wrapMt Mt') @ brLv k l1' l2' ])
-  (VBr : forall k, k < 13 -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
+  (VBr : forall k, k < nbr -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
      VTmSM (G_us (brG k G0) L'' ψ) (ucsubst (brΓ k Γ0 (wrapMT MT) (wrapMt Mt) l1 l2) ψ)
        (usubst_tm (bs k) ψ) (usubst_tm (bs' k) ψ)
        (usubst_ty (brRes k (wrapMT MT) (wrapMt Mt)) ψ) (lvsubst (brLv k l1 l2) ψ))
-  (VBr' : forall k, k < 13 -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
+  (VBr' : forall k, k < nbr -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
      VTmSM (G_us (brG k G0) L'' ψ) (ucsubst (brΓ k Γ0 (wrapMT MT') (wrapMt Mt') l1' l2') ψ)
        (usubst_tm (bs' k) ψ) (usubst_tm (bs' k) ψ)
        (usubst_ty (brRes k (wrapMT MT') (wrapMt Mt')) ψ) (lvsubst (brLv k l1' l2') ψ))
@@ -890,7 +890,7 @@ Qed.
     Both reducts come from the branches' validity; the right one is
     switched from the left levels to its own by level invariance. *)
 
-Lemma br_core k ls ls' os os' xsL xsR goalL goalR l : k < 13 ->
+Lemma br_core k ls ls' os os' xsL xsR goalL goalR l : k < nbr ->
   length ls = br_nu k -> length ls' = br_nu k -> Forall (lwf L') ls -> Forall (lwf L') ls' ->
   (forall i, leqv (uext ls φ i) (uext ls' φ i)) ->
   GSubRel G' (G_us (brG k G0) L' (uext ls φ)) (gext_s os σ) (gext_s os' σ') ->
@@ -954,7 +954,7 @@ Proof.
   replace ((ucsubst (wkc 0 1 Γ0) (uext nil φ))⦃gext_s (GCtx ΔL :: nil) σ⦄) with (gcsubst (ucsubst Γ0 φ) σ) in Y
     by (symmetry; exact (wkc_inst 0 1 Γ0 nil (GCtx ΔL :: nil) φ σ eq_refl eq_refl)).
   pose proof (Y _ _ _ He) as Z. clear X Y.
-  cbn [brRes br_nu br_ng br_nl br_ar] in Z. unfold brLv in Z. cbn [br_nu br_ar Nat.ltb Nat.leb] in Z.
+  cbn [brRes br_nu br_ng br_nl br_ar] in Z. unfold brLv in Z. cbn [br_nu br_ar br_isT] in Z.
   change (lvsubst (lvren l1 (ush 0)) (uext nil φ)) with (lvsubst (lvren l1 (ush (length (@nil lvl)))) (uext nil φ)) in Z.
   rewrite lvren_ush_uext in Z.
   change (wkb 0 1 0 (wrapMT MT)) with (wkb (length (@nil lvl)) (length (GCtx ΔL :: nil)) (length (@nil tm)) (wrapMT MT)) in Z.
@@ -1087,7 +1087,7 @@ Proof.
                                            | first [apply De | apply De']] ].
       inst_cbn. rewrite !subst_lshift0_ty by first [exact (dnfty_nfty _ NA) | exact (dnfty_nfty _ NB)]. exact X2. }
   pose proof (Y _ _ _ SR1) as Z1. clear Y SR1.
-  cbn [brRes] in Z1. unfold brLv in Z1. cbn [br_nu br_ar Nat.ltb Nat.leb] in Z1.
+  cbn [brRes] in Z1. unfold brLv in Z1. cbn [br_nu br_ar br_isT] in Z1.
   rewrite (lvren_ush_uext' l1 2 (k1 :: k2 :: nil) φ eq_refl) in Z1.
   rewrite (motT_wkb_inst' MT 2 3 2 (k1 :: k2 :: nil) (GCtx ΔL :: GTy A :: GTy B :: nil) xsL φ σ e),
           (motT_wkb_inst' MT 2 3 2 (k1 :: k2 :: nil) (GCtx ΔL :: GTy A :: GTy B :: nil) xsR φ σ e') in Z1
@@ -1122,7 +1122,7 @@ Proof.
                  | intros [|?n]; cbn [llk]; [exact (wf_tm_dnf Ha1') | apply De'] ].
       inst_cbn. rewrite !subst_lshift0_ty by first [exact (dnfty_nfty _ NA') | exact (dnfty_nfty _ NB')]. exact X2r. }
   pose proof (Y2 _ _ _ SR2) as Z2. clear Y2 SR2.
-  cbn [brRes] in Z2. unfold brLv in Z2. cbn [br_nu br_ar Nat.ltb Nat.leb] in Z2.
+  cbn [brRes] in Z2. unfold brLv in Z2. cbn [br_nu br_ar br_isT] in Z2.
   rewrite (lvren_ush_uext' l1' 2 (k1' :: k2' :: nil) φ eq_refl) in Z2.
   rewrite (motT_wkb_inst' MT' 2 3 2 (k1' :: k2' :: nil) (GCtx ΔR :: GTy A' :: GTy B' :: nil) xsR φ σ' e') in Z2
     by first [reflexivity | apply gdnf_gext_s; [forall_tac | exact Nσ']
@@ -1211,7 +1211,7 @@ Proof.
   cbn [brΓ brLocs cexts br_nu br_ng br_nl br_ar] in Y.
   rewrite (wkc_inst' 1 1 Γ0 (k :: nil) (GCtx ΔL :: nil) φ σ eq_refl eq_refl) in Y.
   pose proof (Y _ _ _ He) as Z1. clear Y.
-  cbn [brRes] in Z1. unfold brLv in Z1. cbn [br_nu br_ar Nat.ltb Nat.leb] in Z1.
+  cbn [brRes] in Z1. unfold brLv in Z1. cbn [br_nu br_ar br_isT] in Z1.
   rewrite (lvren_ush_uext' l1 1 (k :: nil) φ eq_refl) in Z1.
   change ((?T)[e]) with (T[lext nil e]) in Z1 at 1. change ((?T)[e']) with (T[lext nil e']) in Z1 at 1.
   rewrite (motT_wkb_inst' MT 1 1 0 (k :: nil) (GCtx ΔL :: nil) nil φ σ e (lext nil e)),
@@ -1229,7 +1229,7 @@ Proof.
   cbn [brΓ brLocs cexts br_nu br_ng br_nl br_ar] in Y2.
   rewrite (wkc_inst' 1 1 Γ0 (k' :: nil) (GCtx ΔR :: nil) φ σ' eq_refl eq_refl) in Y2.
   pose proof (Y2 _ _ _ He'r) as Z2. clear Y2.
-  cbn [brRes] in Z2. unfold brLv in Z2. cbn [br_nu br_ar Nat.ltb Nat.leb] in Z2.
+  cbn [brRes] in Z2. unfold brLv in Z2. cbn [br_nu br_ar br_isT] in Z2.
   rewrite (lvren_ush_uext' l1' 1 (k' :: nil) φ eq_refl) in Z2.
   change ((?T)[e']) with (T[lext nil e']) in Z2.
   rewrite !(motT_wkb_inst' MT' 1 1 0 (k' :: nil) (GCtx ΔR :: nil) nil φ σ' e' (lext nil e')) in Z2
@@ -1353,7 +1353,7 @@ Proof.
       by first [reflexivity | apply gdnf_gext_s; [forall_tac | exact Nσ] | exact De | exact De'].
     inst_cbn. rewrite !subst_lshift0 by exact (dnftm_nftm _ Nt). exact X1. }
   pose proof (Y _ _ _ SR1) as Z1. clear Y SR1.
-  cbn [brRes] in Z1. unfold brLv in Z1. cbn [br_nu br_ar Nat.ltb Nat.leb] in Z1.
+  cbn [brRes] in Z1. unfold brLv in Z1. cbn [br_nu br_ar br_isT] in Z1.
   rewrite (lvren_ush_uext' l1 1 (k :: nil) φ eq_refl) in Z1.
   rewrite (motT_wkb_inst' MT 1 2 1 (k :: nil) (GCtx ΔL :: GTm t :: nil) xsL φ σ e),
           (motT_wkb_inst' MT 1 2 1 (k :: nil) (GCtx ΔL :: GTm t :: nil) xsR φ σ e') in Z1
@@ -1380,7 +1380,7 @@ Proof.
       by first [reflexivity | apply gdnf_gext_s; [forall_tac | exact Nσ'] | exact De'].
     inst_cbn. rewrite !subst_lshift0 by exact (dnftm_nftm _ Nt'). exact X1r. }
   pose proof (Y2 _ _ _ SR2) as Z2. clear Y2 SR2.
-  cbn [brRes] in Z2. unfold brLv in Z2. cbn [br_nu br_ar Nat.ltb Nat.leb] in Z2.
+  cbn [brRes] in Z2. unfold brLv in Z2. cbn [br_nu br_ar br_isT] in Z2.
   rewrite (lvren_ush_uext' l1' 1 (k' :: nil) φ eq_refl) in Z2.
   rewrite (motT_wkb_inst' MT' 1 2 1 (k' :: nil) (GCtx ΔR :: GTm t' :: nil) xsR φ σ' e') in Z2
     by first [reflexivity | apply gdnf_gext_s; [forall_tac | exact Nσ']
@@ -1527,9 +1527,9 @@ Proof.
                           (lequiv_trans _ _ _ _ (lequiv_sym _ _ _ HkR) (lequiv_refl _ _ Hw0)) HΔR (eqc_refl _ _ _ HΔR)
                           _ (HU0 _ HΔR) BR BR0) Hl2g).
     exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (ctxconv_eqty HΔ (i := lD) eq_refl HTR)) (lequiv_sym _ _ _ HkRg)).
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2 0 nil φ eq_refl). apply lequiv_refl; rewrite EL; exact Hwl2.
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2' 0 nil φ eq_refl). exact Hl2g.
 Qed.
 
@@ -1604,9 +1604,9 @@ Proof.
                           (lequiv_trans _ _ _ _ (lequiv_sym _ _ _ HkR) (lequiv_refl _ _ Hw0)) HΔR (eqc_refl _ _ _ HΔR)
                           _ (HN0 _ HΔR) BR BR0) Hl2g).
     exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (ctxconv_eqty HΔ (i := lD) eq_refl HTR)) (lequiv_sym _ _ _ HkRg)).
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2 0 nil φ eq_refl). apply lequiv_refl; rewrite EL; exact Hwl2.
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2' 0 nil φ eq_refl). exact Hl2g.
 Qed.
 
@@ -1693,9 +1693,9 @@ Proof.
                           (lequiv_trans _ _ _ _ (lequiv_sym _ _ _ HkR) Q2) HΔR (eqc_refl _ _ _ HΔR)
                           _ (HU _ _ HΔR Hj') BR BR0) Hl2g).
     eapply eqty_lconv; [apply eqty_sym, HTRR |]. rewrite EL; eapply lequiv_trans; [apply lequiv_sym, HkR | exact Q2].
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2 1 (j :: nil) φ eq_refl). apply lequiv_refl; rewrite EL; exact Hwl2.
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2' 1 (j' :: nil) φ eq_refl). exact Hl2g.
 Qed.
 
@@ -1810,9 +1810,9 @@ Proof.
                           G' σ' σ' Θ e' e' (GSubRel_refl_r EP EM Hσ) He'r EL HwR (lequiv_sym _ _ _ HkR)
                           HΔR (eqc_refl _ _ _ HΔR) _ (HN0 _ HΔR) BR BR0) Hl2g).
     exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (ctxconv_eqty HΔ (i := lD) eq_refl HTR)) (lequiv_sym _ _ _ HkRg)).
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2 0 nil φ eq_refl). apply lequiv_refl; rewrite EL; exact Hwl2.
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2' 0 nil φ eq_refl). exact Hl2g.
 Qed.
 
@@ -2006,9 +2006,9 @@ Proof.
                           (lequiv_trans _ _ _ _ (lequiv_sym _ _ _ HkR) Qms) HΔR (eqc_refl _ _ _ HΔR)
                           _ (HU _ _ HΔR Hwm10) BR BR0) Hl2g).
     eapply eqty_lconv; [apply eqty_sym, HTRR |]. rewrite EL; eapply lequiv_trans; [apply lequiv_sym, HkR | exact Qms].
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2 2 (k :: k' :: nil) φ eq_refl). apply lequiv_refl; rewrite EL; exact Hwl2.
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2' 2 (k1 :: k1' :: nil) φ eq_refl). exact Hl2g.
 Qed.
 
@@ -2263,9 +2263,9 @@ Proof.
                           (lequiv_trans _ _ _ _ (lequiv_sym _ _ _ HkR) Q) HΔR (eqc_refl _ _ _ HΔR)
                           _ HT0R BR BR0) Hl2g).
     eapply eqty_lconv; [exact HTRM | apply lequiv_sym, HkRg].
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2 1 (k :: nil) φ eq_refl). apply lequiv_refl; rewrite EL; exact Hwl2.
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2' 1 (k1 :: nil) φ eq_refl). exact Hl2g.
 Qed.
 
@@ -2489,9 +2489,9 @@ Proof.
                           (lequiv_trans _ _ _ _ (lequiv_sym _ _ _ HkR) Q') HΔR (eqc_refl _ _ _ HΔR)
                           _ HT0R BR BR0) Hl2g).
     eapply eqty_lconv; [exact HTRM | apply lequiv_sym, HkRg].
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2 2 (k :: k' :: nil) φ eq_refl). apply lequiv_refl; rewrite EL; exact Hwl2.
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2' 2 (k1 :: k1' :: nil) φ eq_refl). exact Hl2g.
 Qed.
 
@@ -2567,9 +2567,9 @@ Proof.
     exact (LRty_lconv (MotRel_t EP EM G0 Γ0 L' φ Mt' Mt' l2' l2' HMt' HMt' (lequiv_refl _ _ Hwl2') Hφ VMtr VMtr VΓ
                           G' σ' σ' Θ e' e' (GSubRel_refl_r EP EM Hσ) He'r EL HwR (lequiv_refl _ _ HwR) HΔR (eqc_refl _ _ _ HΔR)
                           (eqty_refl _ _ _ _ _ HTRk) HTRk BR BR) Hl2g).
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2 1 (kL :: nil) φ eq_refl). apply lequiv_refl; rewrite EL; exact Hwl2.
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2' 1 (kR :: nil) φ eq_refl). exact Hl2g.
 Qed.
 
@@ -2822,9 +2822,9 @@ Proof.
                           (lequiv_trans _ _ _ _ (lequiv_sym _ _ _ HkR) Qm) HΔR (eqc_refl _ _ _ HΔR)
                           _ HΠR BR0 BRR) Hl2g).
     eapply eqty_lconv; [exact HTRΠ | apply lequiv_sym, HkRg].
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2 2 (k :: k' :: nil) φ eq_refl). apply lequiv_refl; rewrite EL; exact Hwl2.
-  - unfold brLv; cbn [br_nu br_ar Nat.ltb Nat.leb].
+  - unfold brLv; cbn [br_nu br_ar br_isT].
     rewrite (lvren_ush_uext' l2' 2 (k1 :: k1' :: nil) φ eq_refl). exact Hl2g.
 Qed.
 
@@ -2837,7 +2837,7 @@ Qed.
 Hypothesis (HG0 : [ ⊢ G_us G0 L' φ ]) (HΓ0 : [ G_us G0 L' φ ; ucsubst Γ0 φ ⊢[ lM ] ])
   (VΓT : forall L'' ψ, usub_ok ψ L'' (gL (recGT G0)) -> VCtxSM (G_us (recGT G0) L'' ψ) (ucsubst (recΓT Γ0) ψ))
   (VΓt : forall L'' ψ, usub_ok ψ L'' (gL (recGt G0)) -> VCtxSM (G_us (recGt G0) L'' ψ) (ucsubst (recΓt Γ0) ψ))
-  (VΓbr : forall k, k < 13 -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
+  (VΓbr : forall k, k < nbr -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
      VCtxSM (G_us (brG k G0) L'' ψ) (ucsubst (brΓ k Γ0 (wrapMT MT) (wrapMt Mt) l1 l2) ψ)).
 
 Lemma EP_MT : @geq_ty EM (recGT G') (recΓT Θ) MTL MTR (lvren (lvsubst l1 φ) (ush 1)).
@@ -2887,7 +2887,7 @@ Proof.
 Qed.
 
 
-Lemma EP_br k : k < 13 ->
+Lemma EP_br k : k < nbr ->
   @geq_tm EM (brG k G') (brΓ k Θ (wrapMT MTL) (wrapMt MtL) (lvsubst l1 φ) (lvsubst l2 φ)) (bsL k) (bsR k)
     (brRes k (wrapMT MTL) (wrapMt MtL)) (brLv k (lvsubst l1 φ) (lvsubst l2 φ)).
 Proof.

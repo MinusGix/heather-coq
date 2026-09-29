@@ -142,7 +142,7 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_elimT G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' ν ν' W :
     leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> ac_ctx G Δ Δ' ->
     ac_ty (recGT G) (recΓT Γ) MT MT' -> ac_ty (recGt G) (recΓt Γ) Mt Mt' ->
-    (forall k, k < 13 -> ac_tm (brG k G) (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+    (forall k, k < nbr -> ac_tm (brG k G) (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                            (bs k) (bs' k) (brRes k (wrapMT MT) (wrapMt Mt))) ->
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ ν) (elimT l1' l2' (mkrb MT' Mt' bs') l' Δ' ν')
@@ -150,7 +150,7 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_elimT_gvar G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' U d d' :
     leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> ac_ctx G Δ Δ' ->
     ac_ty (recGT G) (recΓT Γ) MT MT' -> ac_ty (recGt G) (recΓt Γ) Mt Mt' ->
-    (forall k, k < 13 -> ac_tm (brG k G) (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+    (forall k, k < nbr -> ac_tm (brG k G) (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                            (bs k) (bs' k) (brRes k (wrapMT MT) (wrapMt Mt))) ->
     lsub_leq d d' ->
     ac_tmne G Γ (elimT l1 l2 (mkrb MT Mt bs) l Δ (boxT (tyGvar U d)))
@@ -159,7 +159,7 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_elimt G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' ν ν' W :
     leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> ac_ctx G Δ Δ' -> ac_ty G Δ T T' ->
     ac_ty (recGT G) (recΓT Γ) MT MT' -> ac_ty (recGt G) (recΓt Γ) Mt Mt' ->
-    (forall k, k < 13 -> ac_tm (brG k G) (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+    (forall k, k < nbr -> ac_tm (brG k G) (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                            (bs k) (bs' k) (brRes k (wrapMT MT) (wrapMt Mt))) ->
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T ν) (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' ν')
@@ -167,7 +167,7 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_elimt_gvar G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' u d d' :
     leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> ac_ctx G Δ Δ' -> ac_ty G Δ T T' ->
     ac_ty (recGT G) (recΓT Γ) MT MT' -> ac_ty (recGt G) (recΓt Γ) Mt Mt' ->
-    (forall k, k < 13 -> ac_tm (brG k G) (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+    (forall k, k < nbr -> ac_tm (brG k G) (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                            (bs k) (bs' k) (brRes k (wrapMT MT) (wrapMt Mt))) ->
     lsub_leq d d' ->
     ac_tmne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt (gvar u d)))

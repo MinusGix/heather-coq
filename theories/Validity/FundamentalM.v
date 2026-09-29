@@ -380,19 +380,19 @@ Hypothesis (Hφ : usub_ok φ L' (gL G))
   (IMtr : forall L'' ψ, usub_ok ψ L'' (gL (recGt G)) ->
      SemTyM (G_us (recGt G) L'' ψ) (ucsubst (recΓt Γ) ψ) (usubst_ty Mt' ψ) (usubst_ty Mt' ψ)
        (lvsubst (lvren l2' (ush 1)) ψ))
-  (Hbs : forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+  (Hbs : forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                                bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ])
-  (Hbs' : forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+  (Hbs' : forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
                                bs' k : brRes k (wrapMT MT') (wrapMt Mt') @ brLv k l1' l2' ])
-  (IBr : forall k, k < 13 -> lM = lM -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G)) ->
+  (IBr : forall k, k < nbr -> lM = lM -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G)) ->
      SemTmM (G_us (brG k G) L'' ψ) (ucsubst (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2) ψ)
        (usubst_tm (bs k) ψ) (usubst_tm (bs' k) ψ)
        (usubst_ty (brRes k (wrapMT MT) (wrapMt Mt)) ψ) (lvsubst (brLv k l1 l2) ψ))
-  (IBr' : forall k, k < 13 -> lM = lM -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G)) ->
+  (IBr' : forall k, k < nbr -> lM = lM -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G)) ->
      SemTmM (G_us (brG k G) L'' ψ) (ucsubst (brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2') ψ)
        (usubst_tm (bs' k) ψ) (usubst_tm (bs' k) ψ)
        (usubst_ty (brRes k (wrapMT MT') (wrapMt Mt')) ψ) (lvsubst (brLv k l1' l2') ψ))
-  (IΓbr : forall k, k < 13 -> lM = lM -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G)) ->
+  (IΓbr : forall k, k < nbr -> lM = lM -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G)) ->
      SemCtxM (G_us (brG k G) L'' ψ) (ucsubst (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2) ψ))
   (GV : GValid (G_us G L' φ)) (VΓ : VCtxSM (G_us G L' φ) (ucsubst Γ φ)).
 
@@ -897,7 +897,7 @@ Ltac m_rec_side :=
         | apply (SemCtxEqP_refl EP EM); eassumption | eapply lequiv_wf_l; eassumption
         | (* the branches' typings, from their congruence *)
           let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
-          match goal with H : forall k, k < 13 -> eq_tm _ lM _ _ _ _ _ |- _ =>
+          match goal with H : forall k, k < nbr -> eq_tm _ lM _ _ _ _ _ |- _ =>
             exact (eqtm_wf_l (i := lM) eq_refl (H k Hk)) end ].
 
 Ltac m_goal :=
@@ -983,7 +983,7 @@ Ltac us_keep :=
 Lemma brLv_lwf k G l1 l2 : lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL (brG k G)) (brLv k l1 l2).
 Proof.
   intros H1 H2. unfold brLv, brG, gctx_uwk; cbn [gL].
-  destruct (k <? 4); (eapply lwf_lvren; [apply uren_ok_ush | assumption]).
+  destruct (br_isT k); (eapply lwf_lvren; [apply uren_ok_ush | assumption]).
 Qed.
 
 Ltac w_lwf :=
@@ -1009,7 +1009,7 @@ Ltac w_spec :=
       destruct HD as [HΔ _];
       let X := fresh "IH" in pose proof (fun n A k h => proj1 (IH n A k h) (in_ctx_lwf HΔ h)) as X; clear IH
   (* the recursors' branches *)
-  | IH : forall k, k < 13 -> ?x = ?x -> (lwf (gL (brG k ?G)) (brLv k ?l1 ?l2) -> _) /\ _ |- _ =>
+  | IH : forall k, k < nbr -> ?x = ?x -> (lwf (gL (brG k ?G)) (brLv k ?l1 ?l2) -> _) /\ _ |- _ =>
       let W1 := fresh "W" in let W2 := fresh "W" in
       assert (W1 : lwf (gL G) l1) by w_lwf; assert (W2 : lwf (gL G) l2) by w_lwf;
       let X := fresh "IH" in pose proof (fun k Hk e => proj1 (IH k Hk e) (brLv_lwf k G l1 l2 W1 W2)) as X;

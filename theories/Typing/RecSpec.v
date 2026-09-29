@@ -171,7 +171,7 @@ Definition brRes (k : nat) (wT wt : tm) : ty :=
 
 (** The branch's level: [l₁] for the type branches, [l₂] for the others. *)
 Definition brLv (k : nat) (l1 l2 : lvl) : lvl :=
-  lvren (if Nat.ltb k 4 then l1 else l2) (ush (br_nu k)).
+  lvren (if br_isT k then l1 else l2) (ush (br_nu k)).
 
 Fixpoint cexts (Γ : ctx) (As : list (ty * lvl)) : ctx :=
   match As with [] => Γ | (A, l) :: As => cexts (Γ ,, A @ l) As end.
@@ -183,7 +183,7 @@ Definition brΓ (k : nat) (Γ : ctx) (wT wt : tm) (l1 l2 : lvl) : ctx :=
     (brLocs k wT wt (lvren l1 (ush (br_nu k))) (lvren l2 (ush (br_nu k)))).
 
 (** Sanity: the declared scopes agree with the arity table. *)
-Lemma brDecls_len k : k < 13 -> length (brDecls k) = br_ng k.
-Proof. intros H; do 13 (destruct k; [reflexivity|]); lia. Qed.
-Lemma brLocs_len k wT wt a1 a2 : k < 13 -> length (brLocs k wT wt a1 a2) = br_nl k.
-Proof. intros H; do 13 (destruct k; [reflexivity|]); lia. Qed.
+Lemma brDecls_len k : k < nbr -> length (brDecls k) = br_ng k.
+Proof. intros H; br_all ltac:(destruct k; [reflexivity|]); lia. Qed.
+Lemma brLocs_len k wT wt a1 a2 : k < nbr -> length (brLocs k wT wt a1 a2) = br_nl k.
+Proof. intros H; br_all ltac:(destruct k; [reflexivity|]); lia. Qed.

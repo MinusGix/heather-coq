@@ -22,7 +22,7 @@ Proof. intros; eapply substitution_all; eauto. Qed.
 Section RecScopes.
 Context {G : gctx} {Γ Δ : ctx} {d : lsub} (Hd : [ G ; Δ ⊢[ lM ] d : Γ ]).
 
-Lemma brctx_subst k MT Mt l1 l2 : k < 13 ->
+Lemma brctx_subst k MT Mt l1 l2 : k < nbr ->
   [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ] ->
   [ brG k G ; brΓ k Δ (wrapMT MT)[d] (wrapMt Mt)[d] l1 l2 ⊢[ lM ] ].
 Proof.
@@ -31,7 +31,7 @@ Proof.
   rewrite brLocs_subst in X by (first [exact Hk | exact (lsub_wf_dnf Hd)]). exact X.
 Qed.
 
-Lemma brsub_wf k MT Mt l1 l2 : k < 13 ->
+Lemma brsub_wf k MT Mt l1 l2 : k < nbr ->
   [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ] ->
   [ brG k G ; brΓ k Δ (wrapMT MT)[d] (wrapMt Mt)[d] l1 l2 ⊢[ lM ]
       lliftn (br_nl k) (bsub k d) : brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ].
@@ -42,7 +42,7 @@ Proof.
   apply lsub_wf_cexts; [apply lsub_wf_bsub; assumption | exact C].
 Qed.
 
-Lemma branch_subst k MT Mt l1 l2 b : k < 13 ->
+Lemma branch_subst k MT Mt l1 l2 b : k < nbr ->
   [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ] ->
   [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] b : brRes k (wrapMT MT) (wrapMt Mt)
       @ brLv k l1 l2 ] ->
@@ -343,7 +343,7 @@ Proof.
   - apply (proj1 gren_subst_all). intros; now rewrite llk_gwkn by eauto using lsub_wf_dnf.
 Qed.
 
-Lemma lsub_eq_bsub k G Δ d d' Γ : k < 13 -> [ G ; Δ ⊢[ lM ] d ≅ d' : Γ ] ->
+Lemma lsub_eq_bsub k G Δ d d' Γ : k < nbr -> [ G ; Δ ⊢[ lM ] d ≅ d' : Γ ] ->
   [ brG k G ; wkc (br_nu k) (br_ng k) Δ ⊢[ lM ] bsub k d ≅ bsub k d' : wkc (br_nu k) (br_ng k) Γ ].
 Proof.
   intros Hk Hd. pose proof (wf_brG (ctx_glob _ _ _ (lsub_wf_ctx (lsub_eq_l Hd))) k Hk) as HG.
@@ -631,20 +631,20 @@ Ltac fun_rec_prem :=
     |- eq_ty (recGT _) _ _ _ _ _ => apply IH, lsub_eq_recΓT, Hd
   | Hd : lsub_eq _ _ _ ?d ?d' ?Γ, IH : forall Δ d d', lsub_eq _ _ Δ d d' (recΓt ?Γ) -> _
     |- eq_ty (recGt _) _ _ _ _ _ => apply IH, lsub_eq_recΓt, Hd
-  | Hd : lsub_eq _ _ _ ?d ?d' ?Γ |- forall k, k < 13 -> wf_ctx (brG k _) _ _ =>
+  | Hd : lsub_eq _ _ _ ?d ?d' ?Γ |- forall k, k < nbr -> wf_ctx (brG k _) _ _ =>
       let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
       eapply brctx_subst; [ first [exact (lsub_eq_l Hd) | exact (lsub_eq_r Hd)] | exact Hk
-                          | match goal with w : forall k, k < 13 -> wf_ctx _ _ _ |- _ => apply w, Hk end ]
-  | Hd : lsub_eq _ _ _ ?d ?d' ?Γ |- forall k, k < 13 -> wf_tm (brG k _) _ _ _ _ _ =>
+                          | match goal with w : forall k, k < nbr -> wf_ctx _ _ _ |- _ => apply w, Hk end ]
+  | Hd : lsub_eq _ _ _ ?d ?d' ?Γ |- forall k, k < nbr -> wf_tm (brG k _) _ _ _ _ _ =>
       let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
       eapply branch_subst; [ exact (lsub_eq_r Hd) | exact Hk
-                           | match goal with w : forall k, k < 13 -> wf_ctx _ _ _ |- _ => apply w, Hk end
-                           | match goal with w : forall k, k < 13 -> wf_tm _ _ _ _ _ _ |- _ => apply w, Hk end ]
-  | Hd : lsub_eq ?G _ ?Δ ?d ?d' ?Γ |- forall k, k < 13 -> eq_tm (brG k _) _ _ _ _ _ _ =>
+                           | match goal with w : forall k, k < nbr -> wf_ctx _ _ _ |- _ => apply w, Hk end
+                           | match goal with w : forall k, k < nbr -> wf_tm _ _ _ _ _ _ |- _ => apply w, Hk end ]
+  | Hd : lsub_eq ?G _ ?Δ ?d ?d' ?Γ |- forall k, k < nbr -> eq_tm (brG k _) _ _ _ _ _ _ =>
       let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
       match goal with
-      | IHc : forall k, k < 13 -> forall Γ0 As, brΓ k Γ (wrapMT ?MT) (wrapMt ?Mt) ?l1 ?l2 = cexts Γ0 As -> _,
-        IH : forall k, k < 13 -> forall Δ d d', lsub_eq _ _ Δ d d' (brΓ k Γ _ _ _ _) -> _ |- _ =>
+      | IHc : forall k, k < nbr -> forall Γ0 As, brΓ k Γ (wrapMT ?MT) (wrapMt ?Mt) ?l1 ?l2 = cexts Γ0 As -> _,
+        IH : forall k, k < nbr -> forall Δ d d', lsub_eq _ _ Δ d d' (brΓ k Γ _ _ _ _) -> _ |- _ =>
           let X := fresh "X" in let Y := fresh "Y" in
           pose proof (IHc k Hk _ _ eq_refl _ _ _ (lsub_eq_bsub k _ _ _ _ _ Hk Hd)) as X;
           rewrite brLocs_subst in X by (first [exact Hk | exact (lsub_wf_dnf (lsub_eq_l Hd))]);

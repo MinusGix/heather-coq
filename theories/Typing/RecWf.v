@@ -126,11 +126,11 @@ Proof.
   wfd_all.
 Qed.
 
-Lemma wf_brG k : k < 13 -> [ ⊢ brG k G ].
+Lemma wf_brG k : k < nbr -> [ ⊢ brG k G ].
 Proof.
   intros Hk. pose proof (uwk_glob (br_nu k) G HG) as Hu.
   unfold brG, gctx_uwk in *; cbn [gL gΨ] in *.
-  do 13 (destruct k; [cbn [brDecls List.app br_nu br_ar] in *; unfold gv, gu; wfd_all|]). lia.
+  br_all ltac:(destruct k; [cbn [brDecls List.app br_nu br_ar] in *; unfold gv, gu; wfd_all|]). lia.
 Qed.
 
 End Scopes.

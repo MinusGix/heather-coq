@@ -448,7 +448,7 @@ Lemma alg_elim_prem {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ'} :
   ElimPrem EP EM G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' ->
   ElimPrem DEP DEM G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' /\
   ac_ctx G Δ Δ' /\ ac_ty (recGT G) (recΓT Γ) MT MT' /\ ac_ty (recGt G) (recΓt Γ) Mt Mt' /\
-  (forall k, k < 13 -> ac_tm (brG k G) (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  (forall k, k < nbr -> ac_tm (brG k G) (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs k) (bs' k) (brRes k (wrapMT MT) (wrapMt Mt))).
 Proof.
   intros [H1 H2 H3 HΔ HMT (EMT & DMT) HMT' HMt (EMt & DMt) HMt' Hc Hc' Hb Hb'].

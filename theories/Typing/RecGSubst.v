@@ -228,17 +228,17 @@ Ltac rec_gsubst_rw Hσ :=
   rewrite ?motT_gsubst, ?mott_gsubst by first [hd_tac | exact Hσ];
   rewrite ?wkb_gsubst by exact Hσ.
 
-Lemma brLocs_gsubst k MT Mt a1 a2 σ : k < 13 -> gdnf σ ->
+Lemma brLocs_gsubst k MT Mt a1 a2 σ : k < nbr -> gdnf σ ->
   map (fun '(A, l) => (A⦃gbsub k σ⦄, l)) (brLocs k (wrapMT MT) (wrapMt Mt) a1 a2) =
   brLocs k (wrapMT MT)⦃σ⦄ (wrapMt Mt)⦃σ⦄ a1 a2.
 Proof.
   intros Hk Hσ. pose proof (gdnf_gbsub k σ Hσ) as Hb. unfold gbsub in Hb |- *.
-  do 13 (destruct k; [cbn [brLocs map br_ng br_nu br_ar] in Hb |- *; rec_gsubst_rw Hb;
+  br_all ltac:(destruct k; [cbn [brLocs map br_ng br_nu br_ar] in Hb |- *; rec_gsubst_rw Hb;
                       rewrite ?wkb_gsubst by exact Hσ; reflexivity|]).
   lia.
 Qed.
 
-Lemma brΓ_gsubst k Γ MT Mt l1 l2 σ : k < 13 -> gdnf σ ->
+Lemma brΓ_gsubst k Γ MT Mt l1 l2 σ : k < nbr -> gdnf σ ->
   (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2)⦃gbsub k σ⦄ =
   brΓ k Γ⦃σ⦄ (wrapMT MT)⦃σ⦄ (wrapMt Mt)⦃σ⦄ l1 l2.
 Proof.
@@ -246,11 +246,11 @@ Proof.
   unfold gbsub; rewrite wkc_gsubst by exact Hσ. reflexivity.
 Qed.
 
-Lemma brRes_gsubst k MT Mt σ : k < 13 -> gdnf σ ->
+Lemma brRes_gsubst k MT Mt σ : k < nbr -> gdnf σ ->
   (brRes k (wrapMT MT) (wrapMt Mt))⦃gbsub k σ⦄ = brRes k (wrapMT MT)⦃σ⦄ (wrapMt Mt)⦃σ⦄.
 Proof.
   intros Hk Hσ. pose proof (gdnf_gbsub k σ Hσ) as Hb. unfold gbsub in Hb |- *.
-  do 13 (destruct k; [cbn [brRes br_ng br_nu br_ar] in Hb |- *; rec_gsubst_rw Hb;
+  br_all ltac:(destruct k; [cbn [brRes br_ng br_nu br_ar] in Hb |- *; rec_gsubst_rw Hb;
                       rewrite ?wkb_gsubst by exact Hσ; reflexivity|]).
   lia.
 Qed.

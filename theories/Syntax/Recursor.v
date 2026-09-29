@@ -27,6 +27,12 @@ Fixpoint wrapG (n : nat) (b : tm) : tm := match n with 0 => b | S n => bindG (wr
 Fixpoint wrapL (n : nat) (b : tm) : tm := match n with 0 => b | S n => bindL (wrapL n b) end.
 Definition wrap (nu ng nl : nat) (b : tm) : tm := wrapU nu (wrapG ng (wrapL nl b)).
 
+(** The number of branches, and the branch-indexed case split: [br_all t]
+    runs [t] [nbr] times, as [do nbr t] would (M8_DESIGN.md J2, S0). *)
+Notation nbr := 13 (only parsing).
+Ltac br_do n tac := lazymatch n with O => idtac | S ?m => tac; br_do m tac end.
+Ltac br_all tac := br_do constr:(nbr) tac.
+
 (** Branch indices, in the paper's order (04:822–831). *)
 Definition bNat := 0.   Definition bPi := 1.    Definition bU := 2.     Definition bEl := 3.
 Definition bVar := 4.   Definition bNat' := 5.  Definition bPi' := 6.   Definition bU' := 7.
@@ -52,6 +58,11 @@ Definition br_ar (k : nat) : nat * nat * nat :=
   | _ => (0, 0, 0)
   end.
 
+(** Whether branch [k] is a type branch (typed at [l₁], recursing on
+    [elim_Typ]) or a term branch. *)
+Definition br_isT (k : nat) : bool :=
+  match k with 0 | 1 | 2 | 3 => true | _ => false end.
+
 Definition wrapMT (MT : ty) : tm := bindU (bindG (bindL (tmTy MT))).
 Definition wrapMt (Mt : ty) : tm := bindU (bindG (bindG (bindL (tmTy Mt)))).
 
@@ -60,7 +71,7 @@ Fixpoint tup_from (f : nat -> tm) (k n : nat) : tm :=
   match n with 0 => tmErr | S n => tmTup (f k) (tup_from f (S k) n) end.
 Definition mkrb (MT Mt : ty) (bs : nat -> tm) : tm :=
   tmTup (wrapMT MT) (tmTup (wrapMt Mt)
-    (tup_from (fun k => let '(nu, ng, nl) := br_ar k in wrap nu ng nl (bs k)) 0 13)).
+    (tup_from (fun k => let '(nu, ng, nl) := br_ar k in wrap nu ng nl (bs k)) 0 nbr)).
 
 Definition rb_br (rb : tm) (k : nat) : tm := tup_nth rb (2 + k).
 

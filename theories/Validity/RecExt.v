@@ -331,15 +331,15 @@ End ExtG.
 
 (** ** The branch scopes, per branch *)
 
-Lemma brDecls_cons k : k < 13 -> exists D Ds, brDecls k = D :: Ds.
-Proof. intros Hk; do 13 (destruct k; [cbn; eauto|]); lia. Qed.
+Lemma brDecls_cons k : k < nbr -> exists D Ds, brDecls k = D :: Ds.
+Proof. intros Hk; br_all ltac:(destruct k; [cbn; eauto|]); lia. Qed.
 
-Lemma closed_brDecls k : k < 13 -> closed_decls (brDecls k).
-Proof. intros Hk; do 13 (destruct k; [cbn; repeat split; intros; reflexivity|]); lia. Qed.
+Lemma closed_brDecls k : k < nbr -> closed_decls (brDecls k).
+Proof. intros Hk; br_all ltac:(destruct k; [cbn; repeat split; intros; reflexivity|]); lia. Qed.
 
-Lemma brLocs_lwf k wT wt a1 a2 L : k < 13 -> lwf L a1 -> lwf L a2 ->
+Lemma brLocs_lwf k wT wt a1 a2 L : k < nbr -> lwf L a1 -> lwf L a2 ->
   Forall (fun '(_, l) => lwf L l) (brLocs k wT wt a1 a2).
-Proof. intros Hk H1 H2; do 13 (destruct k; [cbn; repeat constructor; assumption|]); lia. Qed.
+Proof. intros Hk H1 H2; br_all ltac:(destruct k; [cbn; repeat constructor; assumption|]); lia. Qed.
 
 Lemma uren_ok_ush n L : uren_ok (ush n) (n + L) L.
 Proof. intros m Hm; unfold ush; lia. Qed.

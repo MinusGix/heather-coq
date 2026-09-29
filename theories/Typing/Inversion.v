@@ -192,8 +192,8 @@ Lemma inv_elimT {G i Γ l1 l2 rb l Δ t T k} : typeof i = i ->
     lwf (gL G) l1 /\ lwf (gL G) l2 /\ lwf (gL G) l /\ [ G ; Δ ⊢[ lD ] ] /\
     [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] /\
     [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] /\
-    (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ]) /\
-    (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+    (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ]) /\
+    (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                            bs j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ]) /\
     [ G ; Γ ⊢[ lM ] t : tyCTyp Δ l @ lzero ]) /\
     lvl_eq (gL G) k l1 /\ [ G ; Γ ⊢[ i ] T ≅ motT (wrapMT MT) l Δ t @ k ].
@@ -206,8 +206,8 @@ Lemma inv_elimt {G i Γ l1 l2 rb l Δ A t T k} : typeof i = i ->
     lwf (gL G) l1 /\ lwf (gL G) l2 /\ lwf (gL G) l /\ [ G ; Δ ⊢[ lD ] ] /\
     [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ] /\
     [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] /\
-    (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ]) /\
-    (forall j, j < 13 -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+    (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ]) /\
+    (forall j, j < nbr -> [ brG j G ; brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
                            bs j : brRes j (wrapMT MT) (wrapMt Mt) @ brLv j l1 l2 ]) /\
     [ G ; Δ ⊢[ lD ] A @ l ] /\
     [ G ; Γ ⊢[ lM ] t : tyCTrm Δ A l @ lzero ]) /\

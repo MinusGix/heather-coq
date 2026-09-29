@@ -307,7 +307,7 @@ Proof.
   - intros; now rewrite gwk_stepn_fn.
 Qed.
 
-Lemma wf_wkc_br G Δ k : k < 13 -> [ G ; Δ ⊢[ lM ] ] -> [ brG k G ; wkc (br_nu k) (br_ng k) Δ ⊢[ lM ] ].
+Lemma wf_wkc_br G Δ k : k < nbr -> [ G ; Δ ⊢[ lM ] ] -> [ brG k G ; wkc (br_nu k) (br_ng k) Δ ⊢[ lM ] ].
 Proof.
   intros Hk HΔ. pose proof (wf_brG (ctx_glob _ _ _ HΔ) k Hk) as HG.
   rewrite <- (brDecls_len k Hk). apply (wf_wkc _ _ _ _ (brDecls k) HΔ HG).
@@ -336,7 +336,7 @@ Proof. intros H; unfold recΓT. apply wkr_up'; [exact (wkr_wkc _ _ _ 1 1 H) | re
 Lemma wkr_recΓt r Δ Γ : wkr r Δ Γ -> wkr (rlift r) (recΓt Δ) (recΓt Γ).
 Proof. intros H; unfold recΓt. apply wkr_up'; [exact (wkr_wkc _ _ _ 1 2 H) | reflexivity]. Qed.
 
-Lemma wkr_brΓ k r Δ Γ wT wt l1 l2 : k < 13 -> wkr r Δ Γ ->
+Lemma wkr_brΓ k r Δ Γ wT wt l1 l2 : k < nbr -> wkr r Δ Γ ->
   wkr (rliftn (br_nl k) r) (brΓ k Δ wT⟨r⟩ wt⟨r⟩ l1 l2) (brΓ k Γ wT wt l1 l2).
 Proof.
   intros Hk H. unfold brΓ.
@@ -372,7 +372,7 @@ Ltac wk_motive :=
 Ltac wk_brctx :=
   let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
   match goal with
-  | IH : forall k, k < 13 -> forall Γ0 As, brΓ k ?Γ ?wT ?wt ?l1 ?l2 = cexts Γ0 As -> _,
+  | IH : forall k, k < nbr -> forall Γ0 As, brΓ k ?Γ ?wT ?wt ?l1 ?l2 = cexts Γ0 As -> _,
     Hr : wkr ?r ?Δ ?Γ, HΔ : wf_ctx _ _ ?Δ |- _ =>
       let X := fresh "X" in
       pose proof (IH k Hk _ _ eq_refl _ _ (wkr_wkc _ _ _ (br_nu k) (br_ng k) Hr) (wf_wkc_br _ _ k Hk HΔ)) as X;
@@ -381,8 +381,8 @@ Ltac wk_brctx :=
 Ltac wk_branches :=
   let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk;
   match goal with
-  | IH : forall k, k < 13 -> forall Δ r, wkr r Δ (brΓ k ?Γ ?wT ?wt ?l1 ?l2) -> _ -> _,
-    IHc : forall k, k < 13 -> forall Γ0 As, brΓ k ?Γ ?wT ?wt ?l1 ?l2 = cexts Γ0 As -> _,
+  | IH : forall k, k < nbr -> forall Δ r, wkr r Δ (brΓ k ?Γ ?wT ?wt ?l1 ?l2) -> _ -> _,
+    IHc : forall k, k < nbr -> forall Γ0 As, brΓ k ?Γ ?wT ?wt ?l1 ?l2 = cexts Γ0 As -> _,
     Hr : wkr ?r ?Δ ?Γ, HΔ : wf_ctx _ _ ?Δ |- _ =>
       let X := fresh "X" in let C := fresh "C" in
       pose proof (IHc k Hk _ _ eq_refl _ _ (wkr_wkc _ _ _ (br_nu k) (br_ng k) Hr) (wf_wkc_br _ _ k Hk HΔ)) as C;

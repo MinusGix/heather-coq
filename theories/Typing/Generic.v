@@ -288,11 +288,11 @@ Record ElimPrem (EP EM : GenericEq) G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l'
   ep_Mt : [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ] ;
   ep_Mteq : @geq_ty EM (recGt G) (recΓt Γ) Mt Mt' (lvren l2 (ush 1)) ;
   ep_Mt' : [ recGt G ; recΓt Γ ⊢[ lM ] Mt' @ lvren l2' (ush 1) ] ;
-  ep_brctx : forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ] ;
-  ep_brctx' : forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ] ;
-  ep_br : forall k, k < 13 -> @geq_tm EM (brG k G) (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2)
+  ep_brctx : forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ] ;
+  ep_brctx' : forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ] ] ;
+  ep_br : forall k, k < nbr -> @geq_tm EM (brG k G) (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                                 (bs k) (bs' k) (brRes k (wrapMT MT) (wrapMt Mt)) (brLv k l1 l2) ;
-  ep_br' : forall k, k < 13 -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+  ep_br' : forall k, k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
                                 bs' k : brRes k (wrapMT MT') (wrapMt Mt') @ brLv k l1' l2' ]
 }.
 

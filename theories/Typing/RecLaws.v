@@ -139,13 +139,13 @@ Proof.
       symmetry; apply (proj1 usubst_uren_all); reflexivity ].
 Qed.
 
-Lemma brDecls_usubst k n φ : k < 13 -> br_nu k = n ->
+Lemma brDecls_usubst k n φ : k < nbr -> br_nu k = n ->
   map (fun D => gdecl_usubst D (uupn n φ)) (brDecls k) = brDecls k.
 Proof.
-  intros Hk <-. do 13 (destruct k; [reflexivity|]); lia.
+  intros Hk <-. br_all ltac:(destruct k; [reflexivity|]); lia.
 Qed.
 
-Lemma brG_usubst k G L' φ : k < 13 ->
+Lemma brG_usubst k G L' φ : k < nbr ->
   gctx_usubst (brG k G) (br_nu k + L') (uupn (br_nu k) φ) = brG k (gctx_usubst G L' φ).
 Proof.
   intros Hk. unfold brG, gctx_usubst, gctx_uwk; cbn [gL gΨ]. f_equal.
@@ -157,18 +157,18 @@ Lemma cexts_usubst Γ As φ :
   ucsubst (cexts Γ As) φ = cexts (ucsubst Γ φ) (map (fun '(A, l) => (usubst_ty A φ, lvsubst l φ)) As).
 Proof. revert Γ; induction As as [|[A l] As IH]; intros Γ; cbn; auto. Qed.
 
-Lemma brLocs_usubst k wT wt a1 a2 φ : k < 13 ->
+Lemma brLocs_usubst k wT wt a1 a2 φ : k < nbr ->
   map (fun '(A, l) => (usubst_ty A (uupn (br_nu k) φ), lvsubst l (uupn (br_nu k) φ)))
       (brLocs k wT wt a1 a2) =
   brLocs k (usubst_tm wT φ) (usubst_tm wt φ) (lvsubst a1 (uupn (br_nu k) φ))
     (lvsubst a2 (uupn (br_nu k) φ)).
 Proof.
-  intros Hk. do 13 (destruct k;
+  intros Hk. br_all ltac:(destruct k;
     [cbn [brLocs map br_nu br_ar]; rewrite ?motT_usubst, ?mott_usubst, ?wkb_usubst; reflexivity|]).
   lia.
 Qed.
 
-Lemma brΓ_usubst k Γ wT wt l1 l2 φ : k < 13 ->
+Lemma brΓ_usubst k Γ wT wt l1 l2 φ : k < nbr ->
   ucsubst (brΓ k Γ wT wt l1 l2) (uupn (br_nu k) φ) =
   brΓ k (ucsubst Γ φ) (usubst_tm wT φ) (usubst_tm wt φ) (lvsubst l1 φ) (lvsubst l2 φ).
 Proof.
@@ -176,17 +176,17 @@ Proof.
   now rewrite !lvren_ush_usubst.
 Qed.
 
-Lemma brRes_usubst k wT wt φ : k < 13 ->
+Lemma brRes_usubst k wT wt φ : k < nbr ->
   usubst_ty (brRes k wT wt) (uupn (br_nu k) φ) = brRes k (usubst_tm wT φ) (usubst_tm wt φ).
 Proof.
-  intros Hk. do 13 (destruct k;
+  intros Hk. br_all ltac:(destruct k;
     [cbn [brRes br_nu br_ar]; rewrite ?motT_usubst, ?mott_usubst, ?wkb_usubst; reflexivity|]).
   lia.
 Qed.
 
 Lemma brLv_usubst k l1 l2 φ :
   lvsubst (brLv k l1 l2) (uupn (br_nu k) φ) = brLv k (lvsubst l1 φ) (lvsubst l2 φ).
-Proof. unfold brLv. destruct (Nat.ltb k 4); apply lvren_ush_usubst. Qed.
+Proof. unfold brLv. destruct (br_isT k); apply lvren_ush_usubst. Qed.
 
 (** The motive scopes. *)
 
@@ -305,17 +305,17 @@ Proof. exact (wkb_ren nu ng 2 w r). Qed.
 Lemma wkb_ren3 nu ng w r : (wkb nu ng 3 w)⟨rlift (rlift (rlift r))⟩ = wkb nu ng 3 w⟨r⟩.
 Proof. exact (wkb_ren nu ng 3 w r). Qed.
 
-Lemma brLocs_ren k wT wt a1 a2 r : k < 13 ->
+Lemma brLocs_ren k wT wt a1 a2 r : k < nbr ->
   cexts_ren (brLocs k wT wt a1 a2) r = brLocs k wT⟨r⟩ wt⟨r⟩ a1 a2.
 Proof.
   intros Hk.
-  do 13 (destruct k; [cbn [brLocs cexts_ren];
+  br_all ltac:(destruct k; [cbn [brLocs cexts_ren];
     rewrite ?motT_ren, ?mott_ren, ?wkb_ren0, ?wkb_ren1, ?wkb_ren2, ?wkb_ren3; reflexivity|]).
   lia.
 Qed.
 
-Lemma brRes_ren k wT wt r : k < 13 -> (brRes k wT wt)⟨rliftn (br_nl k) r⟩ = brRes k wT⟨r⟩ wt⟨r⟩.
+Lemma brRes_ren k wT wt r : k < nbr -> (brRes k wT wt)⟨rliftn (br_nl k) r⟩ = brRes k wT⟨r⟩ wt⟨r⟩.
 Proof.
-  intros Hk. do 13 (destruct k; [cbn [brRes br_nl br_ar]; rewrite ?motT_ren, ?mott_ren, ?wkb_ren; reflexivity|]).
+  intros Hk. br_all ltac:(destruct k; [cbn [brRes br_nl br_ar]; rewrite ?motT_ren, ?mott_ren, ?wkb_ren; reflexivity|]).
   lia.
 Qed.
