@@ -146,7 +146,8 @@ each one touched and why, then choose among 1–3 using that data.
 2. ~~Decide the genericity direction from that measurement.~~ Done: shared
    generic laws and algorithmic families (M8_DESIGN.md J1), recursor branches
    through one generic lemma per side (J2), shared call and binder bodies (L4).
-   Open: rule-list boilerplate (M8c cost log).
+   Rule lists: a rule with ordinary premises needs no entry in the
+   metatheory dispatch (M8_DESIGN.md L5).
 3. Bodied globals with layer-indexed δ: the one piece with no paper pass.
 4. `sEq`/`transp` and the strip rule, starting from MX §19.4.
 5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash).

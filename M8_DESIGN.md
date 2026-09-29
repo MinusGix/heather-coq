@@ -571,6 +571,38 @@ The ≈50–80 lines J2 predicted for a branch with calls now holds, except
 where a branch has its own mathematics (`snd`'s index at the first
 projection, `λ`'s index whnf).
 
+### L5. Rule lists (taken; the M8c cost log's follow-up)
+
+A new typing rule used to be named in about a dozen dispatch tactics,
+most of them in the metatheory files, far from the rule. Now:
+
+- **`any_rule tac`** (`Declarative.v`) is `solve [econstructor; tac]`:
+  `econstructor` backtracks over the constructors inside `solve`. It was a
+  hand-written list of `econstructor 1` … `econstructor 64`, which would
+  have silently missed a 65th rule.
+- **Weakening, global weakening, substitution, global substitution,
+  functionality** dispatch plain rules through `any_rule` with their
+  premise tactic (`wk_step`, `gw_step`, `sub_step`/`sub_manual`,
+  `gs_step`, plus a final `any_rule` pass with the stronger premise tactic
+  in `Properties`, `GSubstitution`, `Functionality`). Their manual tables
+  keep only the rules that need something special (a rewrite of the
+  result type, a body under a binder, the recursors, `gvar`, letbox).
+  A new rule with ordinary premises needs no entry.
+- **`vs_rules side`** (`RulesS.v`, beside the `VS_*` lemmas) is the one
+  list both fundamental theorems use (`f_rules`, `m_rules` were copies).
+
+What remains per rule is a list entry in the file that proves the rule's
+lemma: presupposition (`pre_*`, `pc_*`), `ft_case`, `fts_case`,
+`vs_rules`, the five algorithmic families (`S_`, `C_`, `Dc_`, `Y_`,
+`T_`), and the push-lemma lists. These name per-rule content, so a list
+entry beside it is the natural registration; `smpl` (in the flake,
+unused) would only move the line. Not done: generic push by `cbn`, which
+unfolds the operations out of their class notation.
+
+Cost: 342 lines removed, 41 added. `GSubstitution` 3–7 s slower (its
+final pass tries the structural rules with the stronger premise tactic),
+the others unchanged; a clean build is 8.5 min at `-j2`.
+
 ## Status
 
 M8a (Σ) complete: syntax, typing and metatheory, generic laws and both
