@@ -44,7 +44,7 @@ Proof. apply usubst_dnf_all. Qed.
 Lemma gdecl_ren_usubst D ξ φ : gdecl_usubst (gdecl_ren D ξ) φ = gdecl_ren (gdecl_usubst D φ) ξ.
 Proof.
   destruct D; cbn; f_equal; try reflexivity;
-    first [apply (proj1 (proj2 (proj2 usubst_gren_all))) | apply (proj1 usubst_gren_all)].
+    first [apply (proj1 (proj2 (proj2 usubst_gren_all))) | apply (proj1 usubst_gren_all) | apply (proj1 (proj2 usubst_gren_all))].
 Qed.
 
 Lemma in_gctx_usubst Ψ n D φ : in_gctx Ψ n D ->
@@ -81,6 +81,9 @@ Qed.
 Lemma usubst_subst_ty' (T : ty) d φ :
   usubst_ty (subst_ty T d) φ = subst_ty (usubst_ty T φ) (ulsubst d φ).
 Proof. apply (proj1 usubst_subst_all). intros; apply llk_ulsubst. Qed.
+Lemma usubst_subst' (t : tm) d φ :
+  usubst_tm (subst_tm t d) φ = subst_tm (usubst_tm t φ) (ulsubst d φ).
+Proof. apply (proj1 (proj2 usubst_subst_all)). intros; apply llk_ulsubst. Qed.
 
 (** The instances of the meta-functions (M5). *)
 Lemma usubst_gsingle_ty (T : ty) o φ :
@@ -228,43 +231,7 @@ Ltac us_entries :=
   match goal with IH : forall n A k (_ : in_ctx _ n A k), _ |- _ => eapply (IH n A0 k0 HA0) end;
   eauto with us.
 
-Ltac us_step :=
-  match goal with
-  | |- wf_glob _ =>
-      first [ solve [eapply wfg_nil] | solve [eapply wfg_ctx; us_prem]
-            | solve [eapply wfg_ty; us_prem] | solve [eapply wfg_tm; us_prem] ]
-  | |- wf_ctx _ _ _ =>
-      first [ solve [eapply wfc_nil; us_prem] | solve [eapply wfc_var; us_prem]
-            | solve [eapply wfc_ext; us_prem] ]
-  | |- eq_ctx _ _ _ _ =>
-      first [ solve [eapply eqc_nil; us_prem] | solve [eapply eqc_var; us_prem]
-            | solve [eapply eqc_ext; us_prem] ]
-  | |- wf_ty _ _ _ _ _ =>
-      first [ solve [eapply wft_nat; us_prem] | solve [eapply wft_pi; us_prem]
-            | solve [eapply wft_U; us_prem] | solve [eapply wft_El; us_prem]
-            | solve [eapply wft_lconv; us_prem] | solve [eapply wft_CTyp; us_prem]
-            | solve [eapply wft_CTrm; us_prem] ]
-  | |- wf_tm _ _ _ _ _ _ =>
-      first [ solve [eapply wf_var; us_prem] | solve [eapply wf_code_nat; us_prem]
-            | solve [eapply wf_code_U; us_prem] | solve [eapply wf_code_pi; us_prem]
-            | solve [eapply wf_zero; us_prem] | solve [eapply wf_succ; us_prem]
-            | solve [eapply wf_lam; us_prem] | solve [eapply wf_conv; us_prem]
-            | solve [eapply wf_lconv; us_prem] | solve [eapply wf_boxT; us_prem]
-            | solve [eapply wf_boxt; us_prem] ]
-  | |- eq_ty _ _ _ _ _ _ =>
-      first [ solve [eapply eqty_refl; us_prem] | solve [eapply eqty_sym; us_prem]
-            | solve [eapply eqty_trans; us_prem] | solve [eapply eqty_pi; us_prem]
-            | solve [eapply eqty_U; us_prem] | solve [eapply eqty_El; us_prem]
-            | solve [eapply eqty_El_nat; us_prem] | solve [eapply eqty_El_U; us_prem]
-            | solve [eapply eqty_El_pi; us_prem] | solve [eapply eqty_lconv; us_prem]
-            | solve [eapply eqty_CTyp; us_prem] | solve [eapply eqty_CTrm; us_prem] ]
-  | |- eq_tm _ _ _ _ _ _ _ =>
-      first [ solve [eapply eqtm_refl; us_prem] | solve [eapply eqtm_sym; us_prem]
-            | solve [eapply eqtm_trans; us_prem] | solve [eapply eqtm_code_U; us_prem]
-            | solve [eapply eqtm_code_pi; us_prem] | solve [eapply eqtm_succ; us_prem]
-            | solve [eapply eqtm_lam; us_prem] | solve [eapply eqtm_conv; us_prem]
-            | solve [eapply eqtm_lconv; us_prem] | solve [eapply eqtm_eta; us_prem] ]
-  end.
+Ltac us_step := any_rule us_prem.
 
 Lemma lvren_ush1_usubst l φ : lvsubst (lvren l (ush 1)) (uup φ) = lvren (lvsubst l φ) (ush 1).
 Proof. exact (lvren_ush_usubst l 1 φ). Qed.
@@ -313,6 +280,7 @@ Ltac us_Δ tac :=
   match goal with
   | Hin : in_gctx _ _ (gdTy ?Δ _ _), H : usub_ok ?φ _ _ |- _ => tac (ucsubst Δ φ)
   | Hin : in_gctx _ _ (gdTm ?Δ _ _ _), H : usub_ok ?φ _ _ |- _ => tac (ucsubst Δ φ)
+  | Hin : in_gctx _ _ (gdDef ?Δ _ _ _), H : usub_ok ?φ _ _ |- _ => tac (ucsubst Δ φ)
   end.
 
 Ltac us_manual :=
@@ -327,6 +295,15 @@ Ltac us_manual :=
   | |- eq_tm _ _ _ (gvar _ _) _ _ _ =>
       us_Δ ltac:(fun D => eapply eqtm_gvar with (Δ := D));
       [ .. | us_entries | us_entries | us_entries]; eauto with us
+  (* defined globals (M9) *)
+  | |- wf_tm _ _ _ (gdef _ _ _) _ _ =>
+      us_Δ ltac:(fun D => eapply wf_gdef with (Δ := D)); [ .. | us_entries | ]; eauto with us
+  | |- eq_tm _ _ _ (gdef _ _ _) (gdef _ _ _) _ _ =>
+      us_Δ ltac:(fun D => eapply eqtm_gdef with (Δ := D));
+      [ .. | us_entries | us_entries | us_entries | ]; eauto with us
+  | |- eq_tm _ _ _ (gdef _ _ _) _ _ _ =>
+      rewrite usubst_subst'; us_Δ ltac:(fun D => eapply eqtm_delta with (Δ := D));
+      [ .. | us_entries | ]; eauto with us
   | |- wf_tm _ _ _ (elimT _ _ _ _ _ _) _ _ =>
       eapply wf_elimT; [ .. | us_branches | us_branches | ]; eauto with us
   | |- wf_tm _ _ _ (elimt _ _ _ _ _ _ _) _ _ =>
@@ -395,7 +372,8 @@ Proof.
   destruct D; cbn [gdecl_uren gdecl_usubst]; f_equal; try reflexivity;
     first [ apply lvren_as_lvsubst; reflexivity
           | apply (proj1 (proj2 (proj2 uren_as_usubst_all))); reflexivity
-          | apply (proj1 uren_as_usubst_all); reflexivity ].
+          | apply (proj1 uren_as_usubst_all); reflexivity
+          | apply (proj1 (proj2 uren_as_usubst_all)); reflexivity ].
 Qed.
 
 Lemma gctx_uwk_as n G : gctx_uwk n G = gctx_usubst G (n + gL G) (fun j => lvar (ush n j)).
@@ -473,6 +451,8 @@ Proof.
   apply red_both; intros; cbn [usubst_tm usubst_ty ucsubst gousubst];
     rewrite ?usubst_lsingle, ?usubst_lsingle2, ?usubst_gsingle; try now constructor.
   all: try (constructor; auto; fail).
+  (* δ: the body's instance *)
+  all: try solve [change (usubst_tm (subst_tm ?b ?d) ?φ) with (b[d][φ]ᵤ); rewrite usubst_subst; constructor].
   - constructor. now apply redT_usubst.
   - constructor. now apply redt_usubst.
   - match goal with Hn : length ?ls = ?n |- _ => rewrite (usubst_ubeta n ls φ _ Hn) end.

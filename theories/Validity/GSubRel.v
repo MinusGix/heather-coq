@@ -34,6 +34,8 @@ Definition GObjRel (G' : gctx) (D : gdecl) (o o' : gobj) : Prop :=
   | gdTy Δ i l, GTy T, GTy T' => (lle i lC -> ty_leq T T') /\ VTyGP G' Δ T T' l /\ VTyGM G' Δ T T' l
   | gdTm _ _ _ _, GId x, GId x' => x = x'
   | gdTm Δ _ A l, GTm t, GTm t' => tm_leq t t' /\ VTmGP G' Δ t t' A l /\ VTmGM G' Δ t t' A l
+  (* a definition only to the same definition (M9_DESIGN.md) *)
+  | gdDef _ _ _ _, GId x, GId x' => x = x'
   | _, _, _ => False
   end.
 
@@ -74,7 +76,7 @@ Definition gsub_tl (σ : gsub) : gsub := fun n => σ (S n).
 Lemma gdecl_gsubst_tl D σ : gdecl_gsubst (gdecl_ren D S) σ = gdecl_gsubst D (gsub_tl σ).
 Proof.
   destruct D; unfold gdecl_gsubst, gdecl_ren; f_equal;
-    first [reflexivity | apply gsubst_gren_ctx | apply gsubst_gren_ty]; intros; reflexivity.
+    first [reflexivity | apply gsubst_gren_ctx | apply gsubst_gren_ty | apply gsubst_gren_tm]; intros; reflexivity.
 Qed.
 
 Lemma gsub_wf_tl {G' L D Ψ σ} : [ G' ⊢ σ : mkG L (D :: Ψ) ] -> [ G' ⊢ gsub_tl σ : mkG L Ψ ].
@@ -118,6 +120,9 @@ Definition DValid (G : gctx) (D : gdecl) : Prop :=
   | gdTy Δ _ _ => @VCtxS EP LR_P G Δ /\ @VCtxS EM LR_P G Δ
   | gdTm Δ _ A l =>
       @VCtxS EP LR_P G Δ /\ @VCtxS EM LR_P G Δ /\ @VTyS EP LR_P G Δ A A l /\ @VTyS EM LR_P G Δ A A l
+  (* as a term binding; the body's validity comes with each occurrence (M9_DESIGN.md N1) *)
+  | gdDef Δ A l _ =>
+      @VCtxS EP LR_P G Δ /\ @VCtxS EM LR_P G Δ /\ @VTyS EP LR_P G Δ A A l /\ @VTyS EM LR_P G Δ A A l
   end.
 
 Definition GValid (G : gctx) : Prop := forall n D, in_gctx (gΨ G) n D -> DValid G D.
@@ -150,7 +155,7 @@ Lemma GObjRel_sym {G' G D σ σ' n} : GValid G -> GSubRel G' G σ σ' -> in_gctx
   GObjRel G' (gdecl_gsubst D σ) (σ n) (σ' n) -> GObjRel G' (gdecl_gsubst D σ') (σ' n) (σ n).
 Proof.
   intros HG Hσ Hin. pose proof (HG _ _ Hin) as HD.
-  destruct D as [| Δ i l | Δ i A l]; cbn in HD |- *;
+  destruct D as [| Δ i l | Δ i A l | Δ A l t0]; cbn in HD |- *;
     destruct (σ n), (σ' n); cbn; try tauto; try congruence;
     try (intros [XP XM]; split; apply CtxRelG_sym; assumption).
   - destruct HD as [HP HM]. intros (XE & XP & XM).

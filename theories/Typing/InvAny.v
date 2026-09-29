@@ -68,6 +68,14 @@ Lemma inva_gvar {G i Γ u d T k} : [ G ; Γ ⊢[ i ] gvar u d : T @ k ] ->
     lvl_eq (gL G) k l0 /\ [ G ; Γ ⊢[ typeof i ] T ≅ T0[d] @ k ].
 Proof. inv_tm_any. Qed.
 
+Lemma inva_gdef {G i Γ u t d T k} : [ G ; Γ ⊢[ i ] gdef u t d : T @ k ] ->
+  exists Δ T0 l0 t0, ([ G ; Γ ⊢[ typeof i ] ] /\ in_gctx (gΨ G) u (gdDef Δ T0 l0 t0) /\ tm_leq t0 t /\
+    lle lC i /\ lsub_tail d Δ Γ /\ dnfl d /\
+    (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n : A[d] @ k ]) /\
+    [ G ; Δ ⊢[ i ] t : T0 @ l0 ]) /\
+    lvl_eq (gL G) k l0 /\ [ G ; Γ ⊢[ typeof i ] T ≅ T0[d] @ k ].
+Proof. inv_tm_any. Qed.
+
 Lemma inva_code_nat {G i Γ T k} : [ G ; Γ ⊢[ i ] tmNat : T @ k ] ->
   (i <> lV /\ [ G ; Γ ⊢[ typeof i ] ]) /\
     lvl_eq (gL G) k (lsuc lzero) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU lzero @ k ].
@@ -176,7 +184,8 @@ Lemma typed_V {G Γ t T k} : ~ v_typable t -> ~ [ G ; Γ ⊢[ lV ] t : T @ k ].
 Proof.
   intros Hv H. remember lV as i eqn:Ei. induction H; subst; cbn in Hv; try congruence; auto;
     try match goal with Hm : lM = lV |- _ => discriminate Hm end;
-    try match goal with c : compt lV |- _ => destruct c; discriminate end.
+    try match goal with c : compt lV |- _ => destruct c; discriminate end;
+    try match goal with Hl : lle lC lV |- _ => unfold lle in Hl; cbn in Hl; lia end.
 Qed.
 
 (** No type is well formed at V. *)

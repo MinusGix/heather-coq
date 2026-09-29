@@ -17,6 +17,8 @@ Definition gdecl_eq (G2 : gctx) (D D2 : gdecl) : Prop :=
   | gdTm Δ i T l, gdTm Δ2 i2 T2 l2 =>
       i2 = i /\ (i = lV \/ i = lC) /\ lequiv (gL G2) l l2 /\ [ G2 ⊢[ lD ] Δ ≅ Δ2 ] /\
       [ G2 ; Δ ⊢[ lD ] T ≅ T2 @ l ]
+  (* a definition only to itself: definitions are never bound by letbox (M9) *)
+  | gdDef Δ T l t, gdDef Δ2 T2 l2 t2 => Δ2 = Δ /\ T2 = T /\ l2 = l /\ t2 = t
   | _, _ => False
   end.
 
@@ -86,7 +88,8 @@ Proof.
   intros n D Hin. rewrite (gid_obj_in _ _ _ Hin).
   destruct (Hl _ _ Hin) as (D2 & Hin2 & Heq).
   pose proof (gctx_decl_ok _ _ _ HG Hin) as Hok.
-  destruct D as [| Δ i l | Δ i T l], D2 as [| Δ2 i2 l2 | Δ2 i2 T2 l2]; cbn in Heq; try contradiction;
+  destruct D as [| Δ i l | Δ i T l | Δ T l t], D2 as [| Δ2 i2 l2 | Δ2 i2 T2 l2 | Δ2 T2 l2 t2];
+    cbn in Heq; try contradiction;
     cbn [gdecl_gsubst id_obj gobj_wf].
   - destruct G2 as [L2 Ψ2]. exact (in_gctx_ctx_var _ _ _ Hin2).
   - destruct Hok as (HΔ & _). rewrite (gid_obj_ctx HΔ).
@@ -107,6 +110,8 @@ Proof.
     eapply wf_gvar; [rewrite Ht; exact (eqctx_wf_l (i := lD) eq_refl Hc)
                     | exact Hin2 | apply lle_refl | exact (lsw_tail _ _ _ _ _ Hid) | solve [cbn; auto] |].
     intros m A k HA. exact (var_layer (lsw_var _ _ _ _ _ Hid _ _ _ HA) i Ht).
+  - destruct Hok as (HΔ & HT & _ & Ht). destruct Heq as (-> & -> & -> & ->).
+    rewrite (gid_obj_ctx HΔ), (gid_obj_ty HT), (gid_obj_tm Ht). exact Hin2.
 Qed.
 
 (** ** Transfer of the judgments *)
@@ -131,6 +136,14 @@ Proof.
   intros Hi H. pose proof (proj1 (proj2 (proj2 (proj2 gsubstitution))) _ _ _ _ _ _ H _ _ (gconv_sub HE)) as X.
   now rewrite (GEq_to HE), (gid_obj_ctx (proj1 (proj2 (proj2 (proj2 ctx_extract))) _ _ _ _ _ _ H)),
     (gid_obj_ty (wf_tm_ty Hi H)), (gid_obj_tm H) in X.
+Qed.
+
+(** At any layer, given the type's well-formedness (a definition's body at C, M9). *)
+Lemma gconv_tm_at {i j Γ t T l} : [ G ; Γ ⊢[ j ] T @ l ] -> [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G2 ; Γ ⊢[ i ] t : T @ l ].
+Proof.
+  intros HT H. pose proof (proj1 (proj2 (proj2 (proj2 gsubstitution))) _ _ _ _ _ _ H _ _ (gconv_sub HE)) as X.
+  now rewrite (GEq_to HE), (gid_obj_ctx (proj1 (proj2 (proj2 (proj2 ctx_extract))) _ _ _ _ _ _ H)),
+    (gid_obj_ty HT), (gid_obj_tm H) in X.
 Qed.
 
 Lemma gconv_eqty {i Γ T T' l} : typeof i = i -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> [ G2 ; Γ ⊢[ i ] T ≅ T' @ l ].
@@ -168,13 +181,15 @@ Definition decl_layer (D : gdecl) : Prop :=
   | gdCtx => True
   | gdTy _ i _ => i = lC \/ i = lD
   | gdTm _ i _ _ => i = lV \/ i = lC
+  | gdDef _ _ _ _ => True
   end.
 
 Lemma wfg_cons_inv L Ψ D : [ ⊢ mkG L (D :: Ψ) ] ->
   [ ⊢ mkG L Ψ ] /\ decl_ok (mkG L Ψ) D /\ decl_layer D.
 Proof.
   intros H; inversion H; subst; cbn; repeat split; auto;
-    match goal with HT : [ _ ; _ ⊢[ _ ] _ @ _ ] |- _ => exact (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ HT) end.
+    first [ match goal with HT : [ _ ; _ ⊢[ _ ] _ @ _ ] |- _ => exact (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ HT) end
+          | eapply lift_tm; [eassumption | unfold lle; cbn; lia] ].
 Qed.
 
 Lemma wfg_cons L Ψ D : [ ⊢ mkG L Ψ ] -> decl_ok (mkG L Ψ) D -> decl_layer D -> [ ⊢ mkG L (D :: Ψ) ].
@@ -183,6 +198,7 @@ Proof.
   - now apply wfg_ctx.
   - destruct HD; now apply wfg_ty.
   - destruct HD as (? & ? & ?); now apply wfg_tm.
+  - destruct HD as (? & ? & ? & ?); now apply wfg_def.
 Qed.
 
 Lemma gdecl_eq_refl G D : decl_ok G D -> decl_layer D -> gdecl_eq G D D.
@@ -199,6 +215,9 @@ Proof.
   intros HE HD. pose proof HE as (_ & _ & HL & _). destruct D; cbn in *; auto; rewrite HL.
   - destruct HD as (HΔ & Hl). split; [exact (gconv_ctx HE compt_D HΔ) | exact Hl].
   - destruct HD as (HΔ & HT & Hl). split; [exact (gconv_ctx HE compt_D HΔ) | split; [exact (gconv_ty HE HT) | exact Hl]].
+  - destruct HD as (HΔ & HT & Hl & Ht).
+    refine (conj (gconv_ctx HE compt_D HΔ) (conj (gconv_ty HE HT) (conj Hl _))).
+    exact (gconv_tm_at HE HT Ht).
 Qed.
 
 Lemma gdecl_eq_wk1 {L Ψ D0 D D'} : [ ⊢ mkG L (D0 :: Ψ) ] -> gdecl_eq (mkG L Ψ) D D' ->
@@ -212,6 +231,7 @@ Proof.
   - destruct HD as (-> & Hi & Hl & Hc & HT). refine (conj eq_refl (conj Hi (conj Hl (conj _ _)))).
     + exact (proj2 (proj2 (proj2 (proj2 (proj2 (proj2 gweakening))))) _ _ _ _ Hc _ _ _ (le_n _) Hw Hg).
     + exact (proj1 (proj2 (proj2 (proj2 (proj2 gweakening)))) _ _ _ _ _ _ HT _ _ _ (le_n _) Hw Hg).
+  - destruct HD as (-> & -> & -> & ->); repeat split.
 Qed.
 
 Lemma GEq_ext {G G2 D D2} : GEq G G2 -> [ ⊢ gext G D ] -> [ ⊢ gext G2 D2 ] -> gdecl_eq G2 D D2 ->
@@ -270,6 +290,7 @@ Proof.
   - destruct HD as (-> & Hi & Hl & Hc & HT).
     refine (conj eq_refl (conj Hi (conj _ (conj (uwk_eqctx n Hc) (uwk_eqty n HT))))).
     rewrite !lvren_ush. exact (lequiv_lvsubst _ _ _ _ _ (usub_ok_ush n (gL G)) Hl).
+  - destruct HD as (-> & -> & -> & ->); repeat split.
 Qed.
 
 Lemma GEq_uwk n {G G2} : GEq G G2 -> GEq (gctx_uwk n G) (gctx_uwk n G2).

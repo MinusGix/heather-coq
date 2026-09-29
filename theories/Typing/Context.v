@@ -33,7 +33,9 @@ Proof. now intros [-> | ->]. Qed.
 Inductive gdecl : Type :=
 | gdCtx
 | gdTy (Δ : ctx) (i : layer) (l : lvl)
-| gdTm (Δ : ctx) (i : layer) (T : ty) (l : lvl).
+| gdTm (Δ : ctx) (i : layer) (T : ty) (l : lvl)
+(* a definition [u : Trm_c(Δ ⊢ T @ l) := t] (M9: Heather's bodied globals, layer C) *)
+| gdDef (Δ : ctx) (T : ty) (l : lvl) (t : tm).
 
 (** The universe context [L] (a number of level variables) and [Ψ]. *)
 #[projections(primitive)]
@@ -51,6 +53,7 @@ Definition gdecl_ren (D : gdecl) (ξ : nat -> nat) : gdecl :=
   | gdCtx => gdCtx
   | gdTy Δ i l => gdTy Δ⟪ξ⟫ i l
   | gdTm Δ i T l => gdTm Δ⟪ξ⟫ i T⟪ξ⟫ l
+  | gdDef Δ T l t => gdDef Δ⟪ξ⟫ T⟪ξ⟫ l t⟪ξ⟫
   end.
 
 Inductive in_gctx : list gdecl -> nat -> gdecl -> Prop :=

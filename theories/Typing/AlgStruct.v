@@ -101,7 +101,10 @@ Ltac W_prem :=
         | (* the entries of a local substitution *)
           let n := fresh "n" in let A := fresh "A" in let k := fresh "k" in let Hin := fresh "Hin" in
           intros n A k Hin; rewrite !llk_lren; rewrite <- (subst_ren_ty A _ _ _ (fun m => llk_lren _ _ m));
-          match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH; eassumption end ].
+          match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH; eassumption end
+        | match goal with |- boxed_global _ =>
+            solve [eauto using boxed_global_ren, boxed_global_usubst, boxed_global_leq, boxed_global_gren] end
+        | match goal with |- tm_leq _ _ => apply (proj1 (proj2 leq_ren_all)); assumption end ].
 
 Ltac W_case :=
   unfold AW_ty, AW_tynf, AW_tyne, AW_tm, AW_tmnf, AW_tmne, AW_tmnee, AW_sub in *;
@@ -218,7 +221,8 @@ Ltac G_prem :=
         | apply (proj1 leq_gren_all); assumption
         | apply (proj1 (proj2 leq_gren_all)); assumption
         | apply (proj2 (proj2 (proj2 leq_gren_all))); assumption
-        | solve [eapply G_branches; eassumption] ].
+        | solve [eapply G_branches; eassumption]
+        | apply boxed_global_gren; assumption ].
 
 Ltac G_case :=
   unfold AG_ty, AG_tynf, AG_tyne, AG_ctx, AG_tm, AG_tmnf, AG_tmne, AG_tmnee, AG_sub in *;
@@ -341,7 +345,9 @@ Ltac U_prem L' φ :=
         | apply (proj1 leq_usubst_all); [intros; apply leqv_refl | assumption]
         | apply (proj1 (proj2 leq_usubst_all)); [intros; apply leqv_refl | assumption]
         | apply (proj2 (proj2 (proj2 leq_usubst_all))); [intros; apply leqv_refl | assumption]
-        | solve [eapply U_branches; eassumption] ].
+        | solve [eapply U_branches; eassumption]
+        | match goal with |- boxed_global _ =>
+            solve [eauto using boxed_global_ren, boxed_global_usubst, boxed_global_leq, boxed_global_gren] end ].
 
 Ltac U_case :=
   unfold AU_ty, AU_tynf, AU_tyne, AU_ctx, AU_tm, AU_tmnf, AU_tmne, AU_tmnee, AU_sub in *;
@@ -507,7 +513,9 @@ Ltac L_prem :=
           end
         | match goal with IHb : forall k, k < nbr -> forall x, _ -> _, Ebs : forall k, k < nbr -> _ |- _ =>
             let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk; exact (IHb k Hk _ (Ebs k Hk))
-          end ].
+          end
+        | match goal with |- boxed_global _ =>
+            solve [eauto using boxed_global_ren, boxed_global_usubst, boxed_global_leq, boxed_global_gren] end ].
 
 Ltac L_case :=
   unfold AL_ty, AL_tynf, AL_tyne, AL_ctx, AL_tm, AL_tmnf, AL_tmne, AL_tmnee, AL_sub in *;
@@ -517,6 +525,24 @@ Ltac L_case :=
                  try match goal with Es : context [match ?x with _ => _ end] |- _ =>
                        is_var x; linv Es; linv Es end;
                  subst; econstructor; L_prem] ].
+
+(** A recursor at a boxed code, against a level-equivalent term. *)
+Lemma leq_elimt_boxt_inv {l1 l2 rb l Δ T c x} : tm_leq (elimt l1 l2 rb l Δ T (boxt c)) x ->
+  exists l1' l2' rb' l' Δ' T' c', x = elimt l1' l2' rb' l' Δ' T' (boxt c') /\
+    leqv l1 l1' /\ leqv l2 l2' /\ tm_leq rb rb' /\ leqv l l' /\ ctx_leq Δ Δ' /\ ty_leq T T' /\ tm_leq c c'.
+Proof.
+  intros E. lstep E. destruct E as (H1 & H2 & H3 & H4 & H5 & H6 & H7).
+  match type of H7 with context [match ?t with _ => _ end] => destruct t end; try contradiction.
+  do 7 eexists; split; [reflexivity | repeat split; eassumption].
+Qed.
+
+(** A boxed global (M9): its code is abstract, so invert only the right
+    side's recursor and box ([linv] would split both codes). *)
+Ltac L_case_glob :=
+  unfold AL_ty, AL_tynf, AL_tyne, AL_ctx, AL_tm, AL_tmnf, AL_tmne, AL_tmnee, AL_sub in *;
+  let x := fresh "x" in let E := fresh "E" in intros x E;
+  destruct (leq_elimt_boxt_inv E) as (? & ? & ? & ? & ? & ? & ? & -> & ? & ? & ?Erb & ? & ? & ? & ?);
+  try L_bundle; subst; eapply actmne_elimt_glob; L_prem.
 
 Theorem ac_leq_all :
   (forall G Γ T T', ac_ty G Γ T T' -> AL_ty G Γ T T') /\
@@ -531,6 +557,8 @@ Theorem ac_leq_all :
 Proof.
   apply ac_mut; intros;
     first [ solve [eapply L_act_red; eassumption] | solve [eapply L_actm_red; eassumption]
-          | solve [eapply L_acs_pt; eassumption] | L_case ].
+          | solve [eapply L_acs_pt; eassumption]
+          | match goal with |- AL_tmne _ _ (elimt _ _ _ _ _ _ (boxt _)) _ _ => solve [L_case_glob] end
+          | L_case ].
 Qed.
 

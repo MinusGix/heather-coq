@@ -216,7 +216,7 @@ Qed.
 Lemma gdecl_ren_comp D ξ ζ θ : (forall i, θ i = ζ (ξ i)) ->
   gdecl_ren (gdecl_ren D ξ) ζ = gdecl_ren D θ.
 Proof.
-  intros H; destruct D; cbn; f_equal; eauto using gcren_gcren, gren_gren_ty.
+  intros H; destruct D; cbn; f_equal; eauto using gcren_gcren, gren_gren_ty, gren_gren_tm'.
 Qed.
 
 Lemma in_gctx_gwk γ Ψ' Ψ n D : gwk_wf γ Ψ' Ψ -> in_gctx Ψ n D ->
@@ -244,7 +244,7 @@ Qed.
 Lemma gdecl_ren_uren D ξ ρ : gdecl_uren (gdecl_ren D ξ) ρ = gdecl_ren (gdecl_uren D ρ) ξ.
 Proof.
   destruct D; cbn; f_equal; try reflexivity;
-    first [apply (proj1 (proj2 (proj2 uren_gren_all))) | apply (proj1 uren_gren_all)].
+    first [apply (proj1 (proj2 (proj2 uren_gren_all))) | apply (proj1 uren_gren_all) | apply (proj1 (proj2 uren_gren_all))].
 Qed.
 
 Lemma gwk_wf_uren γ Ψ' Ψ ρ : gwk_wf γ Ψ' Ψ ->
@@ -309,6 +309,7 @@ Lemma gren_lam l l' A t : (lam l l' A t)⟪ξ⟫ = lam l l' A⟪ξ⟫ t⟪ξ⟫.
 Lemma gren_app t l l' A B s : (app t l l' A B s)⟪ξ⟫ = app t⟪ξ⟫ l l' A⟪ξ⟫ B⟪ξ⟫ s⟪ξ⟫.
 Proof. reflexivity. Qed.
 Lemma gren_gvar u d : (gvar u d)⟪ξ⟫ = gvar (ξ u) d⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_gdef u b d : (gdef u b d)⟪ξ⟫ = gdef (ξ u) b⟪ξ⟫ d⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_boxT T : (boxT T)⟪ξ⟫ = boxT T⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_boxt t : (boxt t)⟪ξ⟫ = boxt t⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_letboxT l' l Δ M t' t :
@@ -363,7 +364,7 @@ Ltac push_gren := repeat progress (
           ?gren_tyUPi, ?gren_ulam, ?gren_uapp, ?gren_uren_ctx, ?gren_uren_tm, ?gren_usubst_ty,
           ?gren_usubst_tm, ?gren_tyCPi, ?gren_tyTPi, ?gren_clam, ?gren_capp, ?gren_tlam, ?gren_tapp,
           ?gren_tySig, ?gren_tmSig, ?gren_pair, ?gren_fst, ?gren_snd,
-          ?gren_tyUnit, ?gren_tmUnit, ?gren_triv).
+          ?gren_tyUnit, ?gren_tmUnit, ?gren_triv, ?gren_gdef).
 
 Ltac gren_rewrite :=
   rewrite ?gren_single_ty, ?gren_single, ?gren_single2, ?gren_lsucc_ty, ?gren_ren_ty', ?gren_ren,
@@ -502,6 +503,7 @@ Ltac gw_Δ tac :=
   match goal with
   | Hin : in_gctx _ _ (gdTy ?Δ _ _), Hγ : gwk_wf ?γ _ _ |- _ => tac (Δ⟪gwk_fn γ⟫)
   | Hin : in_gctx _ _ (gdTm ?Δ _ _ _), Hγ : gwk_wf ?γ _ _ |- _ => tac (Δ⟪gwk_fn γ⟫)
+  | Hin : in_gctx _ _ (gdDef ?Δ _ _ _), Hγ : gwk_wf ?γ _ _ |- _ => tac (Δ⟪gwk_fn γ⟫)
   end.
 
 Ltac gw_manual :=
@@ -518,6 +520,17 @@ Ltac gw_manual :=
       rewrite gren_subst_ty;
       gw_Δ ltac:(fun D => eapply eqtm_gvar with (Δ := D));
       [ .. | gw_entries | gw_entries | gw_entries]; eauto with gwk
+  (* defined globals (M9) *)
+  | |- wf_tm _ _ _ (gdef _ _ _) _ _ =>
+      rewrite gren_subst_ty;
+      gw_Δ ltac:(fun D => eapply wf_gdef with (Δ := D)); [ .. | gw_entries | ]; eauto with gwk
+  | |- eq_tm _ _ _ (gdef _ _ _) (gdef _ _ _) _ _ =>
+      rewrite gren_subst_ty;
+      gw_Δ ltac:(fun D => eapply eqtm_gdef with (Δ := D));
+      [ .. | gw_entries | gw_entries | gw_entries | ]; eauto with gwk
+  | |- eq_tm _ _ _ (gdef _ _ _) _ _ _ =>
+      rewrite gren_subst_ty, gren_subst;
+      gw_Δ ltac:(fun D => eapply eqtm_delta with (Δ := D)); [ .. | gw_entries | ]; eauto with gwk
   | |- wf_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ =>
       eapply wf_letboxT; try gw_body; gw_premise
   | |- wf_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ =>
@@ -652,7 +665,9 @@ Proof.
   all: rewrite ?gren_single2, ?gren_single, ?gren_gsingle; try now constructor.
   all: try (constructor; auto; fail).
   all: first [ constructor; now apply redT_gren | constructor; now apply redt_gren
-             | rewrite <- usubst_gren; now constructor ].
+             | rewrite <- usubst_gren; now constructor
+             (* δ: the body's instance *)
+             | rewrite gren_subst; now constructor ].
 Qed.
 
 Lemma red_gren t u ξ : red t u -> red t⟪ξ⟫ u⟪ξ⟫.
@@ -844,6 +859,16 @@ Proof.
     pose proof (proj1 (proj2 (proj2 gweakening)) _ _ _ _ _ ltac:(eassumption) L' Ψ gwk_id HL (gwkwf_id _) Hg) as X.
     rewrite gren_id_ctx', gren_id_ty' in X by first [eapply wf_ty_dnf_ctx; eassumption | eapply wf_ty_dnf; eassumption].
     exact X.
+  - (* a definition (M9): its type and its body *)
+    econstructor; [exact Hg | | eapply lwf_weaken; eassumption | ].
+    + pose proof (proj1 (proj2 (proj2 gweakening)) _ _ _ _ _ ltac:(eassumption) L' Ψ gwk_id HL (gwkwf_id _) Hg) as X.
+      rewrite gren_id_ctx', gren_id_ty' in X by first [eapply wf_ty_dnf_ctx; eassumption | eapply wf_ty_dnf; eassumption].
+      exact X.
+    + match goal with Ht : wf_tm _ _ _ _ _ _ |- _ =>
+        pose proof (proj1 (proj2 (proj2 (proj2 gweakening))) _ _ _ _ _ _ Ht L' Ψ gwk_id HL (gwkwf_id _) Hg) as X end.
+      rewrite gren_id_ctx', gren_id_ty', gren_id_tm' in X
+        by first [eapply wf_ty_dnf_ctx; eassumption | eapply wf_ty_dnf; eassumption | eapply wf_tm_dnf; eassumption].
+      exact X.
 Qed.
 
 Ltac dnf_of H :=
@@ -910,6 +935,8 @@ Lemma gwa_tyGvar γ U d : (tyGvar U d)⟦γ⟧ = tyGvar (γ U) d⟦γ⟧.
 Proof. now destruct γ. Qed.
 Lemma gwa_gvar γ u d : (gvar u d)⟦γ⟧ = gvar (γ u) d⟦γ⟧.
 Proof. now destruct γ. Qed.
+Lemma gwa_gdef γ u b d : (gdef u b d)⟦γ⟧ = gdef (γ u) b⟦γ⟧ d⟦γ⟧.
+Proof. now destruct γ. Qed.
 Lemma dnfl_gwa (d : lsub) γ : dnfl d -> dnfl d⟦γ⟧.
 Proof. destruct γ; cbn [gwa]; auto; intros; apply gren_dnf_all. Qed.
 Lemma in_ctx_gwa_inv Γ n T l γ : in_ctx Γ⟦γ⟧ n T l -> exists T0, in_ctx Γ n T0 l /\ T = T0⟦γ⟧.
@@ -920,6 +947,7 @@ Definition gdecl_gwa (D : gdecl) (γ : gweak) : gdecl :=
   | gdCtx => gdCtx
   | gdTy Δ i l => gdTy Δ⟦γ⟧ i l
   | gdTm Δ i T l => gdTm Δ⟦γ⟧ i T⟦γ⟧ l
+  | gdDef Δ T l t => gdDef Δ⟦γ⟧ T⟦γ⟧ l t⟦γ⟧
   end.
 
 Lemma gwk_wf_id_eq {Ψ' Ψ} : gwk_wf gwk_id Ψ' Ψ -> Ψ' = Ψ.

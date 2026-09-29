@@ -43,7 +43,7 @@ Qed.
 Lemma rt_gdecl D : dnf_decl D -> gdecl_usubst (gdecl_usubst D (pφ π)) (pφ πi) = D.
 Proof.
   destruct D; cbn; intros H; f_equal; rewrite ?rt_lvl; try reflexivity;
-    first [apply rt_ctx | apply rt_ty]; tauto.
+    first [apply rt_ctx | apply rt_ty | apply rt_tm]; tauto.
 Qed.
 
 Lemma rt_gdecls Ψ : Forall dnf_decl Ψ ->
@@ -57,7 +57,8 @@ Lemma wfg_dnf G : [ ⊢ G ] -> Forall dnf_decl (gΨ G).
 Proof.
   induction 1; cbn; constructor; auto; cbn;
     first [ exact I | eapply wf_ctx_dnf; eassumption
-          | split; [eapply wf_ty_dnf_ctx; eassumption | eapply wf_ty_dnf; eassumption] ].
+          | split; [eapply wf_ty_dnf_ctx; eassumption | eapply wf_ty_dnf; eassumption]
+          | repeat split; first [eapply wf_ty_dnf_ctx | eapply wf_ty_dnf | eapply wf_tm_dnf]; eassumption ].
 Qed.
 
 Lemma rt_gctx {π πi} (Hinv : forall n, πi (π n) = n) G : [ ⊢ G ] ->

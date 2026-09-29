@@ -80,6 +80,9 @@ with tm : Type :=
 (* the unit type (M8c) *)
 | tmUnit (l : lvl)                        (* code of Unit^l : Ty l *)
 | tmTriv (l : lvl)                        (* ⟨⟩^l : Unit^l *)
+(* a defined global u^δ carrying its body t (M9_DESIGN.md, fork (b)); t lives in
+   the definition's local context, so local operations leave it alone *)
+| gdef (u : nat) (t : tm) (d : lsub)
 with ctx : Type :=
 | cnil
 | cvar (g : nat)
@@ -197,6 +200,7 @@ with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   | tmSnd l l' A B p => tmSnd l l' (ren_ty A r) (ren_ty B (rlift r)) (ren_tm p r)
   | tmUnit l => tmUnit l
   | tmTriv l => tmTriv l
+  | gdef u b d => gdef u b (lren d r)
   end
 with lren (d : lsub) (r : rsub) {struct d} : lsub :=
   match d with
@@ -266,6 +270,7 @@ with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   | tmSnd l l' A B p => tmSnd l l' (gren_ty A ξ) (gren_ty B ξ) (gren_tm p ξ)
   | tmUnit l => tmUnit l
   | tmTriv l => tmTriv l
+  | gdef u b d => gdef (ξ u) (gren_tm b ξ) (glren d ξ)
   end
 with gcren (Γ : ctx) (ξ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -340,6 +345,7 @@ with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   | tmSnd l l' A B p => tmSnd (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_ty B ρ) (uren_tm p ρ)
   | tmUnit l => tmUnit (lvren l ρ)
   | tmTriv l => tmTriv (lvren l ρ)
+  | gdef u b d => gdef u (uren_tm b ρ) (ulren d ρ)
   end
 with ucren (Γ : ctx) (ρ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -408,6 +414,7 @@ with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   | tmSnd l l' A B p => tmSnd l l' (subst_ty A d) (subst_ty B (llift d)) (subst_tm p d)
   | tmUnit l => tmUnit l
   | tmTriv l => tmTriv l
+  | gdef u b d' => gdef u b (lcomp d' d)
   end
 with lcomp (d' : lsub) (d : lsub) {struct d'} : lsub :=       (* d' ∘ d *)
   match d' with
@@ -475,6 +482,11 @@ Definition pty (o : gobj) (d : lsub) : ty :=
   match o with GId j => tyGvar j d | GTy T => subst_ty T d | _ => tyErr end.
 Definition ptm (o : gobj) (d : lsub) : tm :=
   match o with GId j => gvar j d | GTm t => subst_tm t d | _ => tmErr end.
+(** A defined global's instance: renamed with its (substituted) body. A
+    well-formed substitution sends a defined global to a defined one
+    (M9_DESIGN.md); the other case only makes the function total. *)
+Definition pdef (o : gobj) (b : tm) (d : lsub) : tm :=
+  match o with GId j => gdef j b d | _ => ptm o d end.
 Definition pctx (o : gobj) : ctx :=
   match o with GId j => cvar j | GCtx Γ => Γ | _ => cnil end.
 
@@ -530,6 +542,7 @@ with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   | tmSnd l l' A B p => tmSnd l l' (gsubst_ty A σ) (gsubst_ty B σ) (gsubst_tm p σ)
   | tmUnit l => tmUnit l
   | tmTriv l => tmTriv l
+  | gdef u b d => pdef (σ u) (gsubst_tm b σ) (glsubst d σ)
   end
 with gcsubst (Γ : ctx) (σ : gsub) {struct Γ} : ctx :=
   match Γ with
@@ -609,6 +622,7 @@ with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
       tmSnd (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_ty B φ) (usubst_tm p φ)
   | tmUnit l => tmUnit (lvsubst l φ)
   | tmTriv l => tmTriv (lvsubst l φ)
+  | gdef u b d => gdef u (usubst_tm b φ) (ulsubst d φ)
   end
 with ucsubst (Γ : ctx) (φ : nat -> lvl) {struct Γ} : ctx :=
   match Γ with

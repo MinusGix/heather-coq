@@ -210,8 +210,9 @@ Proof.
     decl_elim_prem. refine (conj _ (conj _ _)); [whne_step .. |]. apply eqtm_elimT; auto.
   - intros * Hmot [H1 H2 H3 HΔ HMT HMTe HMT' HMt HMte HMt' Hc Hc' Hb Hb'] HT HT' HTT (Hn & Hn' & Hν).
     decl_elim_prem. refine (conj _ (conj _ _)); [whne_step .. |]. apply eqtm_elimt; auto.
-  - intros * Hmot [H1 H2 H3 HΔ HMT HMTe HMT' HMt HMte HMt' Hc Hc' Hb Hb'] HT HT' HTT Ht.
-    decl_elim_prem. refine (conj _ (conj _ _)); [whne_step .. |]. apply eqtm_elimt; auto.
+  - intros * Hg Hg' Hmot [H1 H2 H3 HΔ HMT HMTe HMT' HMt HMte HMt' Hc Hc' Hb Hb'] HT HT' HTT Ht.
+    decl_elim_prem. refine (conj (whne_elimt_glob _ _ _ _ _ _ _ Hg) (conj (whne_elimt_glob _ _ _ _ _ _ _ Hg') _)).
+    apply eqtm_elimt; auto.
   (* universe polymorphism *)
   - intros; now apply eqty_upi.
   - (* extensionality: both sides are η-equal to their Λ at the bound variables *)

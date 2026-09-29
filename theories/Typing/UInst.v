@@ -14,7 +14,8 @@ Lemma gdecl_usubst_id D : dnf_decl D -> gdecl_usubst D lvar = D.
 Proof.
   intros HD; destruct D; cbn [gdecl_usubst dnf_decl] in *; f_equal.
   all: first [ reflexivity | apply lvsubst_id; reflexivity
-             | apply usubst_id_ctx; [tauto | auto] | apply usubst_id_ty; [tauto | auto] ].
+             | apply usubst_id_ctx; [tauto | auto] | apply usubst_id_ty; [tauto | auto]
+             | apply usubst_id; [tauto | auto] ].
 Qed.
 
 Lemma G_us_uwk_uext G ls : [ ⊢ G ] -> G_us (gctx_uwk (length ls) G) (gL G) (uext ls lvar) = G.

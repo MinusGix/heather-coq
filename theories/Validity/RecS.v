@@ -2742,16 +2742,16 @@ Proof.
   apply (gne_tm_conv Hne). rewrite (@gm_layer_M EP EM EMl). exact (LRty_eqM (ex_intro _ R HR)).
 Qed.
 
-Lemma rec_t_gvar {ΔL ΔR kL kR k T0 TL TR u d d'} : [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
+Lemma rec_t_glob {ΔL ΔR kL kR k T0 TL TR c c'} : boxed_global c -> boxed_global c' -> [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
   lequiv L' k kL -> lequiv L' k kR ->
   [ G' ; ΔL ⊢[ lD ] T0 ≅ TL @ k ] -> [ G' ; ΔL ⊢[ lD ] T0 ≅ TR @ k ] ->
-  [ G' ; ΔL ⊢[ lC ] gvar u d : T0 @ k ] -> [ G' ; ΔL ⊢[ lC ] gvar u d' : T0 @ k ] ->
-  tm_leq (gvar u d) (gvar u d') ->
-  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) kL ΔL TL (boxt (gvar u d)))
-    (mott (wrapMt MtR) kR ΔR TR (boxt (gvar u d')))
-    (rectL kL ΔL TL (gvar u d)) (rectR kR ΔR TR (gvar u d')).
+  [ G' ; ΔL ⊢[ lC ] c : T0 @ k ] -> [ G' ; ΔL ⊢[ lC ] c' : T0 @ k ] ->
+  tm_leq c c' ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) kL ΔL TL (boxt c))
+    (mott (wrapMt MtR) kR ΔR TR (boxt c'))
+    (rectL kL ΔL TL c) (rectR kR ΔR TR c').
 Proof.
-  intros HΔL HΔ HkL HkR HTL HTR Hc Hc' Ec.
+  intros Hg Hg' HΔL HΔ HkL HkR HTL HTR Hc Hc' Ec.
   pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR.
   assert (HΘ : [ G' ; Θ ⊢[ lM ] ]) by (pose proof (SubRel_ctx He) as X; rewrite (@gm_layer_M EP EM EMl) in X; exact X).
   assert (HwL : lwf L' kL) by exact (lequiv_wf_r _ _ _ HkL). assert (HwR : lwf L' kR) by exact (lequiv_wf_r _ _ _ HkR).
@@ -2764,11 +2764,11 @@ Proof.
   { eapply wft_lconv; [exact (ctxconv_ty HΔ (i := lD) eq_refl HTR0) | apply lequiv_sym, HkRg]. }
   assert (HTLR : [ G' ; ΔL ⊢[ lD ] TL ≅ TR @ kL ]).
   { eapply eqty_lconv; [exact (eqty_trans _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ HTL) HTR) | apply lequiv_sym, HkLg]. }
-  assert (HcL : [ G' ; ΔL ⊢[ lC ] gvar u d : TL @ kL ])
+  assert (HcL : [ G' ; ΔL ⊢[ lC ] c : TL @ kL ])
     by (eapply wf_lconv; [eapply wf_conv; [exact Hc | apply eqty_sym, HTL] | apply lequiv_sym, HkLg]).
-  assert (Hc'L : [ G' ; ΔL ⊢[ lC ] gvar u d' : TL @ kL ])
+  assert (Hc'L : [ G' ; ΔL ⊢[ lC ] c' : TL @ kL ])
     by (eapply wf_lconv; [eapply wf_conv; [exact Hc' | apply eqty_sym, HTL] | apply lequiv_sym, HkLg]).
-  assert (Hc'R : [ G' ; ΔR ⊢[ lC ] gvar u d' : TR @ kR ]).
+  assert (Hc'R : [ G' ; ΔR ⊢[ lC ] c' : TR @ kR ]).
   { refine (ctxconv_tm HΔ (i := lC) eq_refl _).
     eapply wf_lconv; [eapply wf_conv; [exact Hc' | apply eqty_sym, HTR] | apply lequiv_sym, HkRg]. }
   pose proof (box_rel_tm HTLk HwL HcL Hc'L Ec) as BLR.
@@ -2781,7 +2781,7 @@ Proof.
   destruct (VTyG_of_eq EP EM HTLR) as [VP _].
   destruct (VTyG_escape_P EP EM CPL HΔL HTLk (eqty_wf_r (i := lD) eq_refl HTLR) VP) as [HgT _].
   pose proof (geq_tm_sound (LRtm_geq BLR)) as Hbox. rewrite (@gm_layer_M EP EM EMl) in Hbox.
-  pose proof (gne_tm_elimt_gvar (EP := EP) (EM := EM) Meq (EP_all Qg HgΔ) HTLk HTRk HgT Hbox) as Hne.
+  pose proof (gne_tm_elimt_glob (EP := EP) (EM := EM) Hg Hg' Meq (EP_all Qg HgΔ) HTLk HTRk HgT Hbox) as Hne.
   destruct Mot as [R HR]. exists R. split; [exact HR|].
   apply (LR_neutral _ _ _ _ _ _ _ HR _ _ Hne).
   apply (gne_tm_conv Hne). rewrite (@gm_layer_M EP EM EMl). exact (LRty_eqM (ex_intro _ R HR)).
@@ -2919,7 +2919,15 @@ Lemma Rt_gvar {Δ u d T k} : Rt Δ (gvar u d) T k.
 Proof.
   intros Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. pose proof (sc_ctx_tm HCD Hc) as HΔL.
   destruct (scr_tm Hc E W) as [Hc' _]. pose proof E as E0; revert E0. leq_inv. match goal with H : u = ?x |- _ => subst x end. intros E0.
-  exact (rec_t_gvar HΔL HΔ HkL HkR HTL HTR Hc Hc' E0).
+  refine (rec_t_glob _ _ HΔL HΔ HkL HkR HTL HTR Hc Hc' E0); exact I.
+Qed.
+
+(** A defined global is code the recursor does not enter (M9). *)
+Lemma Rt_gdef {Δ u b d T k} : Rt Δ (gdef u b d) T k.
+Proof.
+  intros Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. pose proof (sc_ctx_tm HCD Hc) as HΔL.
+  destruct (scr_tm Hc E W) as [Hc' _].
+  refine (rec_t_glob _ _ HΔL HΔ HkL HkR HTL HTR Hc Hc' E); [exact I | exact (boxed_global_leq (gdef u b d) c' I E)].
 Qed.
 
 Lemma Rt_nat {Δ} : Rt Δ tmNat (tyU lzero) (lsuc lzero).
@@ -3214,7 +3222,7 @@ Proof.
     (* the rules of the computing layers do not type code (M8_DESIGN.md I1) *)
     try match goal with c : compt lC |- _ => destruct c; discriminate end.
   all: first
-    [ solve [apply RT_nat | apply RT_U | apply RT_gvar | apply Rt_nat | apply Rt_zero | apply Rt_U | apply Rt_gvar]
+    [ solve [apply RT_nat | apply RT_U | apply RT_gvar | apply Rt_nat | apply Rt_zero | apply Rt_U | apply Rt_gvar | apply Rt_gdef]
     | solve [eapply Rt_var; eassumption]
     | solve [eapply RT_pi; eassumption] | solve [eapply RT_El; eassumption] | solve [eapply RT_lconv; eassumption]
     | solve [eapply Rt_succ; eassumption] | solve [eapply Rt_pi; eassumption] | solve [eapply Rt_natrec; eassumption]

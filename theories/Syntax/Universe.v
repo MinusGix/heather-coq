@@ -140,6 +140,8 @@ Lemma pty_usubst o e φ : usubst_ty (pty o e) φ = pty (gousubst o φ) (ulsubst 
 Proof. destruct o; cbn; auto. apply (proj1 usubst_subst_all). intros; apply llk_ulsubst. Qed.
 Lemma ptm_usubst o e φ : usubst_tm (ptm o e) φ = ptm (gousubst o φ) (ulsubst e φ).
 Proof. destruct o; cbn; auto. apply (proj1 (proj2 usubst_subst_all)). intros; apply llk_ulsubst. Qed.
+Lemma pdef_usubst o b e φ : usubst_tm (pdef o b e) φ = pdef (gousubst o φ) (usubst_tm b φ) (ulsubst e φ).
+Proof. destruct o; try reflexivity; apply ptm_usubst. Qed.
 Lemma pctx_usubst o φ : ucsubst (pctx o) φ = pctx (gousubst o φ).
 Proof. destruct o; reflexivity. Qed.
 
@@ -149,7 +151,7 @@ Lemma usubst_gsubst_all :
   let Pctx Γ := forall σ φ τ, (forall i, τ i = gousubst (σ i) φ) -> ucsubst (gcsubst Γ σ) φ = gcsubst (ucsubst Γ φ) τ in
   (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ, Pctx Γ) /\ (forall d, LK Ptm d).
 Proof.
-  syn_start3; try lk_cases; cbn; rewrite ?pty_usubst, ?ptm_usubst, ?pctx_usubst; law_auto.
+  syn_start3; try lk_cases; cbn; rewrite ?pty_usubst, ?ptm_usubst, ?pdef_usubst, ?pctx_usubst; law_auto.
 Qed.
 
 (** ** Identity (deep normal forms, since universe substitution enters boxes) *)
@@ -164,8 +166,12 @@ Proof.
   { intros; now apply lvsubst_id. }
   syn_start3; try lk_cases_dnf; cbn in *; try tauto;
     try solve [f_equal; intuition eauto with subst].
-  all: f_equal; apply l_canon; auto with nf; intros n;
-    rewrite llk_ulsubst; match goal with IH : dnfl ?d -> LK _ ?d |- _ => apply IH end; auto with nf.
+  all: f_equal; repeat match goal with H : _ /\ _ |- _ => destruct H end.
+  all: first
+    [ (* a defined global's body *)
+      match goal with IH : dnftm ?b -> _ |- _ ?b _ = ?b => apply IH; assumption end
+    | apply l_canon; auto with nf; intros n;
+      rewrite llk_ulsubst; match goal with IH : dnfl ?d -> LK _ ?d |- _ => apply IH end; auto with nf ].
 Qed.
 
 (** Universe substitution outputs are deep-normal (it never instantiates a

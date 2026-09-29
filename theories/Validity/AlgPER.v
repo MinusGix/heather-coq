@@ -663,26 +663,26 @@ Proof.
   exact (cv_ty (ctx_glob _ _ _ HΔ) compt_D (IHi lD l l compt_D HT HT1) Ec HT1 HT).
 Qed.
 
-Lemma Y_actmne_elimt_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' u d d'} :
+Lemma Y_actmne_elimt_glob {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' c c'} :
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> ac_ctx G Δ Δ' -> Y_ctx G Δ Δ' -> Y_ty G Δ T T' ->
   ac_ty (recGT G) (recΓT Γ) MT MT' -> Y_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> Y_ty (recGt G) (recΓt Γ) Mt Mt' ->
   (forall j, j < nbr -> Y_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
-  lsub_leq d d' ->
-  Y_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt (gvar u d)))
-    (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt (gvar u d')))
-    (mott (wrapMt Mt) l Δ T (boxt (gvar u d))).
+  boxed_global c -> tm_leq c c' ->
+  Y_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt c))
+    (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt c'))
+    (mott (wrapMt Mt) l Δ T (boxt c)).
 Proof.
-  intros H1 H2 Hl Dc IHc IHi DMT IHT DMt IHt IHb Hd i k k' X X' Hc Hx Hx'.
+  intros H1 H2 Hl Dc IHc IHi DMT IHT DMt IHt IHb Hg Hd i k k' X X' Hc Hx Hx'.
   pose proof (compt_typeof_self _ Hc) as Hi. rec_inv Hi Hx Hx'. yrec_core IHT IHt IHb DMT DMt.
   pose proof (leqv_lequiv _ _ _ Wl Wl' Hl) as El.
   pose proof (ac_ctx_sound' Dc HΔ HΔ') as Ec.
   pose proof (decl_ty_ctxconv_D (eqctx_sym_D Ec) HT' (lequiv_sym _ _ _ El)) as HT1.
-  eexists. eapply actmne_elimt_gvar; [exact (leqv_sym _ _ H1) | exact (leqv_sym _ _ H2) | exact (leqv_sym _ _ Hl)
-                                     | exact (IHc HΔ HΔ') | | exact XMT | exact XMt | exact Xb |].
+  eexists. eapply actmne_elimt_glob; [exact (leqv_sym _ _ H1) | exact (leqv_sym _ _ H2) | exact (leqv_sym _ _ Hl)
+                                     | exact (IHc HΔ HΔ') | | exact XMT | exact XMt | exact Xb | exact (boxed_global_leq _ _ Hg Hd) |].
   - exact (cv_ty (ctx_glob _ _ _ HΔ) compt_D (IHi lD l l compt_D HT HT1) Ec HT1 HT).
-  - exact (proj2 (proj2 (proj2 leq_sym_all)) _ _ Hd).
+  - exact (tm_leq_sym _ _ Hd).
 Qed.
 
 (** ** Symmetry *)
@@ -836,7 +836,7 @@ Proof.
     | solve [eapply Y_actmne_natrec; eassumption] | solve [eapply Y_actmne_app; eassumption]
     | solve [eapply Y_actmne_letboxT; eassumption] | solve [eapply Y_actmne_letboxt; eassumption]
     | solve [eapply Y_actmne_elimT; eassumption] | solve [eapply Y_actmne_elimT_gvar; eassumption]
-    | solve [eapply Y_actmne_elimt; eassumption] | solve [eapply Y_actmne_elimt_gvar; eassumption]
+    | solve [eapply Y_actmne_elimt; eassumption] | solve [eapply Y_actmne_elimt_glob; eassumption]
     | solve [eapply Y_actmne_uapp; eassumption] | solve [eapply Y_actmne_capp; eassumption]
     | solve [eapply Y_actmne_tapp; eassumption] | solve [eapply Y_actmnee_red; eassumption]
     | solve [eapply Y_acs_pt; eassumption]
@@ -1007,16 +1007,16 @@ Lemma ainv_elimt {G Γ l1 l2 rb l Δ A ν X T} : whne ν -> ac_tmne G Γ (elimt 
                            (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) /\
     ac_tmnee G Γ ν ν' W.
 Proof. intros Hn H; inversion H; subst; kill_box; do 13 eexists; eauto 20. Qed.
-Lemma ainv_elimt_gvar {G Γ l1 l2 rb l Δ A u d X T} :
-  ac_tmne G Γ (elimt l1 l2 rb l Δ A (boxt (gvar u d))) X T ->
-  exists MT Mt bs l1' l2' MT' Mt' bs' l' Δ' A' d', rb = mkrb MT Mt bs /\
-    X = elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' A' (boxt (gvar u d')) /\ leqv l1 l1' /\ leqv l2 l2' /\
+Lemma ainv_elimt_glob {G Γ l1 l2 rb l Δ A c X T} : boxed_global c ->
+  ac_tmne G Γ (elimt l1 l2 rb l Δ A (boxt c)) X T ->
+  exists MT Mt bs l1' l2' MT' Mt' bs' l' Δ' A' c', rb = mkrb MT Mt bs /\
+    X = elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' A' (boxt c') /\ leqv l1 l1' /\ leqv l2 l2' /\
     leqv l l' /\ ac_ctx G Δ Δ' /\ ac_ty G Δ A A' /\ ac_ty (recGT G) (recΓT Γ) MT MT' /\
     ac_ty (recGt G) (recΓt Γ) Mt Mt' /\
     (forall j, j < nbr -> ac_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                            (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) /\
-    lsub_leq d d'.
-Proof. intros H; inversion H; subst; try kill_ne; do 12 eexists; eauto 20. Qed.
+    tm_leq c c'.
+Proof. intros Hg H; inversion H; subst; try kill_ne; do 12 eexists; eauto 20. Qed.
 
 Lemma ainv_uapp {G Γ ν ls X T} : ac_tmne G Γ (uapp ν ls) X T ->
   exists n l T0 ν' ls', X = uapp ν' ls' /\ ac_tmnee G Γ ν ν' (tyUPi n l T0) /\ length ls = n /\
@@ -1974,20 +1974,20 @@ Proof.
                        | exact XMT | exact XMt | exact Xb | exact (IHν ν'' W3 lM _ _ _ _ _ _ compt_M Hν Hν' Hν'' Dν2)].
 Qed.
 
-Lemma T_actmne_elimt_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' u d d'} :
+Lemma T_actmne_elimt_glob {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' c c'} :
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> ac_ctx G Δ Δ' -> T_ctx G Δ Δ' -> T_ty G Δ T T' ->
   ac_ty (recGT G) (recΓT Γ) MT MT' -> T_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> T_ty (recGt G) (recΓt Γ) Mt Mt' ->
   (forall j, j < nbr -> T_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
-  lsub_leq d d' ->
-  T_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt (gvar u d)))
-    (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt (gvar u d')))
-    (mott (wrapMt Mt) l Δ T (boxt (gvar u d))).
+  boxed_global c -> tm_leq c c' ->
+  T_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt c))
+    (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt c'))
+    (mott (wrapMt Mt) l Δ T (boxt c)).
 Proof.
-  intros H1 H2 Hl Dc IHc IHi DMT IHT DMt IHt IHb Hd x'' T0 i k k' k'' X X' X'' Hc Hx Hx' Hx'' D2.
+  intros H1 H2 Hl Dc IHc IHi DMT IHT DMt IHt IHb Hg Hd x'' T0 i k k' k'' X X' X'' Hc Hx Hx' Hx'' D2.
   pose proof (compt_typeof_self _ Hc) as Hi. rec_inv Hi Hx Hx'.
-  destruct (ainv_elimt_gvar D2)
+  destruct (ainv_elimt_glob (boxed_global_leq _ _ Hg Hd) D2)
     as (MTa & Mta & bsa & l1'' & l2'' & MTb & Mtb & bsb & l'' & Δ'' & T'' & d'' & Erba & -> & H1' & H2' & Hl'
         & Dc2 & DT2 & DMT2 & DMt2 & Db2 & Hd2).
   destruct (mkrb_inj_MT Erba) as [<- <-]. pose proof (mkrb_inj_br Erba) as Eba.
@@ -1997,11 +1997,11 @@ Proof.
   trec_core IHT IHt IHb DMT DMt DMT2 DMt2 Db2 Eba.
   pose proof (ac_ctx_sound' Dc HΔ HΔ') as Ec. pose proof (ac_ctx_sound' Dc2 HΔ' HΔ'') as Ec2.
   pose proof (cv_ty (ctx_glob _ _ _ HΔ) compt_D DT2 (eqctx_sym_D Ec) HT' (mvD (eqctx_sym_D Ec2) HT'')) as DT2'.
-  eapply actmne_elimt_gvar; [exact (leqv_trans _ _ _ H1 H1') | exact (leqv_trans _ _ _ H2 H2')
+  eapply actmne_elimt_glob; [exact (leqv_trans _ _ _ H1 H1') | exact (leqv_trans _ _ _ H2 H2')
                             | exact (leqv_trans _ _ _ Hl Hl') | exact (IHc Δ'' HΔ HΔ' HΔ'' Dc2)
                             | exact (IHi T'' lD _ _ _ compt_D HT (mvD (eqctx_sym_D Ec) HT')
                                        (mvD (eqctx_sym_D (eqctx_trans_D Ec Ec2)) HT'') DT2')
-                            | exact XMT | exact XMt | exact Xb | exact (lsub_leq_trans _ _ _ Hd Hd2)].
+                            | exact XMT | exact XMt | exact Xb | exact Hg | exact (tm_leq_trans _ _ _ Hd Hd2)].
 Qed.
 
 (** ** Transitivity *)
@@ -2219,7 +2219,7 @@ Proof.
     | solve [eapply T_actmne_natrec; eassumption] | solve [eapply T_actmne_app; eassumption]
     | solve [eapply T_actmne_letboxT; eassumption] | solve [eapply T_actmne_letboxt; eassumption]
     | solve [eapply T_actmne_elimT; eassumption] | solve [eapply T_actmne_elimT_gvar; eassumption]
-    | solve [eapply T_actmne_elimt; eassumption] | solve [eapply T_actmne_elimt_gvar; eassumption]
+    | solve [eapply T_actmne_elimt; eassumption] | solve [eapply T_actmne_elimt_glob; eassumption]
     | solve [eapply T_actmne_uapp; eassumption] | solve [eapply T_actmne_capp; eassumption]
     | solve [eapply T_actmne_tapp; eassumption] | solve [eapply T_actmnee_red; eassumption]
     | solve [eapply T_acs_pt; eassumption]

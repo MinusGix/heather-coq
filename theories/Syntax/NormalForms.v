@@ -18,6 +18,8 @@ Inductive whne : tm -> Prop :=
 | whne_elimT_gvar l1 l2 rb l Δ U d : whne (elimT l1 l2 rb l Δ (boxT (tyGvar U d)))
 | whne_elimt l1 l2 rb l Δ T t : whne t -> whne (elimt l1 l2 rb l Δ T t)
 | whne_elimt_gvar l1 l2 rb l Δ T u d : whne (elimt l1 l2 rb l Δ T (boxt (gvar u d)))
+(* a boxed defined global blocks it too: code does not unfold (M9) *)
+| whne_elimt_gdef l1 l2 rb l Δ T u b d : whne (elimt l1 l2 rb l Δ T (boxt (gdef u b d)))
 | whne_uapp t ls : whne t -> whne (uapp t ls)
 | whne_capp t Δ : whne t -> whne (capp t Δ)
 | whne_tapp t T : whne t -> whne (tapp t T)
@@ -61,9 +63,31 @@ Inductive whnf_ty : ty -> Prop :=
 
 #[export] Hint Constructors whne whnf whne_ty whnf_ty : whnf.
 
+(** A boxed global blocks the term recursor: a global variable, or a
+    defined global, which code does not unfold (M9). *)
+Definition boxed_global (c : tm) : Prop := match c with gvar _ _ | gdef _ _ _ => True | _ => False end.
+
+Lemma whne_elimt_glob l1 l2 rb l Δ T c : boxed_global c -> whne (elimt l1 l2 rb l Δ T (boxt c)).
+Proof. destruct c; cbn; try contradiction; intros _; first [apply whne_elimt_gvar | apply whne_elimt_gdef]. Qed.
+#[export] Hint Resolve whne_elimt_glob : whnf.
+Lemma boxed_global_leq c c' : boxed_global c -> tm_leq c c' -> boxed_global c'.
+Proof. destruct c; cbn; try contradiction; intros _; destruct c'; cbn; tauto. Qed.
+Lemma boxed_global_gren c ξ : boxed_global c -> boxed_global c⟪ξ⟫.
+Proof. destruct c; cbn; tauto. Qed.
+Lemma boxed_global_ren c r : boxed_global c -> boxed_global c⟨r⟩.
+Proof. destruct c; cbn; tauto. Qed.
+Lemma boxed_global_subst c d : boxed_global c -> boxed_global c[d].
+Proof. destruct c; cbn; tauto. Qed.
+Lemma boxed_global_uren c ρ : boxed_global c -> boxed_global (uren_tm c ρ).
+Proof. destruct c; cbn; tauto. Qed.
+Lemma boxed_global_usubst c φ : boxed_global c -> boxed_global (usubst_tm c φ).
+Proof. destruct c; cbn; tauto. Qed.
+#[export] Hint Resolve boxed_global_leq boxed_global_gren boxed_global_ren boxed_global_subst
+  boxed_global_uren boxed_global_usubst : whnf.
+
 (** ** Stability under renaming *)
 
-Ltac whne_step := first [ apply whne_elimT_gvar | apply whne_elimt_gvar | constructor; auto ].
+Ltac whne_step := first [ apply whne_elimT_gvar | apply whne_elimt_gvar | apply whne_elimt_gdef | constructor; auto ].
 
 Lemma whne_ren t r : whne t -> whne t⟨r⟩.
 Proof. induction 1; cbn; whne_step. Qed.
@@ -136,4 +160,6 @@ Proof. inversion 1. Qed.
 Lemma whne_not_code_unit l : ~ whne (tmUnit l).
 Proof. inversion 1. Qed.
 Lemma whne_not_triv l : ~ whne (tmTriv l).
+Proof. inversion 1. Qed.
+Lemma whne_not_gdef u b d : ~ whne (gdef u b d).
 Proof. inversion 1. Qed.

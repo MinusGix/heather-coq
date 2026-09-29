@@ -296,6 +296,32 @@ Proof.
              (conj Hd (conj Hd' He))).
 Qed.
 
+(** Defined globals (M9): as [gvar], their declaration at a definition. *)
+Lemma pre_gdef_ty {Γ u Δ T l t d} :
+  [ G ; Γ ⊢[ i ] ] -> in_gctx (gΨ G) u (gdDef Δ T l t) -> [ G ; Γ ⊢[ i ] d : Δ ] ->
+  [ G ; Γ ⊢[ i ] T[d] @ l ].
+Proof.
+  intros HΓ Hin Hd. destruct (gctx_decl_ok _ _ _ (ctx_glob _ _ _ HΓ) Hin) as (_ & HT & _).
+  exact (wf_ty_subst_g (lift_ty HT lle_D_i) Hd).
+Qed.
+
+Lemma pre_gdef_r {Γ u Δ T l t0 t' d d'} :
+  [ G ; Γ ⊢[ i ] ] -> in_gctx (gΨ G) u (gdDef Δ T l t0) -> tm_leq t0 t' -> lle lC i ->
+  [ G ; Γ ⊢[ i ] d : Δ ] -> lsub_tail d' Δ Γ -> dnfl d' ->
+  (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d' n : A[d'] @ k ]) ->
+  (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n ≅ llk d' n : A[d] @ k ]) ->
+  [ G ; Δ ⊢[ i ] t' : T @ l ] ->
+  [ G ; Γ ⊢[ i ] gdef u t' d' : T[d] @ l ].
+Proof.
+  intros HΓ Hin Hle Hi' Hd Ht' Hn' Hv' He Hb.
+  destruct (gctx_decl_ok _ _ _ (ctx_glob _ _ _ HΓ) Hin) as (_ & HT & _).
+  pose proof (lsub_wf_prem HΓ Ht' Hn' Hv') as Hd'.
+  eapply conv_tm'.
+  - eapply wf_gdef; [rewrite Hi; exact HΓ | exact Hin | exact Hle | exact Hi' | exact Ht' | exact Hn' | exact Hv' | exact Hb].
+  - exact (proj1 (proj2 (proj2 functionality_all)) _ _ _ _ _ (lift_ty HT lle_D_i) _ _ _
+             (conj Hd (conj Hd' He))).
+Qed.
+
 (** ** Context conversion *)
 
 Lemma ctx_conv_ext {Γ Γ' A A' l l'} :
@@ -744,11 +770,18 @@ Proof.
                                  | exact (ctx_conv_ext2 Hi Hid HA HAA HA' Hl)]
                   end].
   (* global variables *)
-  all: try solve [first [eapply wft_gvar | eapply wf_gvar]; eauto;
+  all: try solve [first [eapply wft_gvar | eapply wf_gvar | eapply wf_gdef]; eauto;
                   match goal with Hi : typeof ?i = ?i |- _ => rewrite Hi end; eauto].
   all: try solve [eapply pre_gvar_ty; eauto using typeof_self_notV;
                   eapply lsub_wf_prem; eauto using typeof_self_notV].
+  all: try solve [eapply pre_gdef_ty; eauto using typeof_self_notV;
+                  eapply lsub_wf_prem; eauto using typeof_self_notV].
   all: try solve [eapply pre_gvar_r; eauto using typeof_self_notV, lsub_wf_prem].
+  (* defined globals (M9): the other instance, and δ's reduct *)
+  all: try solve [eapply pre_gdef_r; eauto using typeof_self_notV, lsub_wf_prem].
+  all: try solve [eapply wf_gdef; eauto using compt_lle_C;
+                  match goal with Hi : typeof ?i = ?i |- _ => rewrite Hi end; eauto].
+  all: try solve [eapply wf_tm_subst_g; [eassumption | eapply lsub_wf_prem; eauto using typeof_self_notV]].
   (* contextual types, box, letbox *)
   all: try solve [eapply wft_CTyp; eauto using lequiv_wf_l, lequiv_wf_r, ctx_of_tm_M, ctx_of_eqtm_M].
   all: try solve [eapply wft_CTrm; eauto using lequiv_wf_l, lequiv_wf_r, ctx_of_tm_M, ctx_of_eqtm_M].

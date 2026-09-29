@@ -77,6 +77,7 @@ Proof.
     [ solve [apply ty_leq_refl | apply tm_leq_refl | apply ctx_leq_refl]
     | solve [eauto using ty_leq_sym, tm_leq_sym, ty_leq_trans, tm_leq_trans]
     | solve [split; [reflexivity | eapply lsub_leq_entries; eassumption]]
+    | solve [split; [reflexivity | split; [assumption | eapply lsub_leq_entries; eassumption]]]
     | solve [cbn; repeat split; try assumption; eapply lequiv_leqv; eassumption] ].
 Qed.
 

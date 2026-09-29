@@ -391,7 +391,7 @@ Qed.
 (** Peeling commutes with a substitution on terms not headed by a
     variable (a substitution may turn a variable into a binder node). The
     bundles built by [mkrb]/[wrapMT]/[wrapMt] satisfy this by computation. *)
-Definition hd_ok (t : tm) : Prop := match t with var _ | gvar _ _ => False | _ => True end.
+Definition hd_ok (t : tm) : Prop := match t with var _ | gvar _ _ | gdef _ _ _ => False | _ => True end.
 
 Lemma peelU_subst b l d : hd_ok b -> LK dnftm d -> peelU b[d] l = (peelU b l)[d].
 Proof.
@@ -804,6 +804,21 @@ Ltac sub_manual2 :=
       match goal with Hd : lsub_wf _ _ _ ?d _ |- context [(?T[?e])[?d]] =>
         rewrite (subst_subst_ty T e d (lcomp e d) (fun m => llk_lcomp e d m)) end;
       eapply eqtm_gvar; [ .. | sub_entries | sub_entries | sub_entries]; sub_gvar_side
+  (* defined globals (M9): the body stays in the definition's context *)
+  | |- wf_tm _ _ _ (gdef _ _ _) _ _ =>
+      match goal with Hd : lsub_wf _ _ _ ?d _ |- context [(?T[?e])[?d]] =>
+        rewrite (subst_subst_ty T e d (lcomp e d) (fun m => llk_lcomp e d m)) end;
+      eapply wf_gdef; [ .. | sub_entries | ]; sub_gvar_side
+  | |- eq_tm _ _ _ (gdef _ _ _) (gdef _ _ _) _ _ =>
+      match goal with Hd : lsub_wf _ _ _ ?d _ |- context [(?T[?e])[?d]] =>
+        rewrite (subst_subst_ty T e d (lcomp e d) (fun m => llk_lcomp e d m)) end;
+      eapply eqtm_gdef; [ .. | sub_entries | sub_entries | sub_entries | ]; sub_gvar_side
+  | |- eq_tm _ _ _ (gdef _ _ _) _ _ _ =>
+      match goal with Hd : lsub_wf _ _ _ ?d _ |- context [(?T[?e])[?d]] =>
+        rewrite (subst_subst_ty T e d (lcomp e d) (fun m => llk_lcomp e d m)) end;
+      match goal with Hd : lsub_wf _ _ _ ?d _ |- context [(?t[?e])[?d]] =>
+        rewrite (subst_subst t e d (lcomp e d) (fun m => llk_lcomp e d m)) end;
+      eapply eqtm_delta; [ .. | sub_entries | ]; sub_gvar_side
   | |- wf_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ => eapply wf_letboxT; try sub_body; sub_premise
   | |- wf_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ => eapply wf_letboxt; try sub_body; sub_premise
   | |- eq_tm _ _ _ (letboxT _ _ _ _ _ (boxT _)) _ _ _ =>

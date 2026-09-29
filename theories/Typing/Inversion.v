@@ -71,6 +71,16 @@ Lemma inv_gvar {G i Γ u d T k} : typeof i = i -> [ G ; Γ ⊢[ i ] gvar u d : T
     lvl_eq (gL G) k l0 /\ [ G ; Γ ⊢[ i ] T ≅ T0[d] @ k ].
 Proof. inv_tm. Qed.
 
+(** A defined global (M9): its carried body is level-equivalent to the
+    declared one and typed at the use's layer. *)
+Lemma inv_gdef {G i Γ u t d T k} : typeof i = i -> [ G ; Γ ⊢[ i ] gdef u t d : T @ k ] ->
+  exists Δ T0 l0 t0, ([ G ; Γ ⊢[ typeof i ] ] /\ in_gctx (gΨ G) u (gdDef Δ T0 l0 t0) /\ tm_leq t0 t /\
+    lle lC i /\ lsub_tail d Δ Γ /\ dnfl d /\
+    (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n : A[d] @ k ]) /\
+    [ G ; Δ ⊢[ i ] t : T0 @ l0 ]) /\
+    lvl_eq (gL G) k l0 /\ [ G ; Γ ⊢[ i ] T ≅ T0[d] @ k ].
+Proof. inv_tm. Qed.
+
 Lemma inv_code_nat {G i Γ T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmNat : T @ k ] ->
   (i <> lV /\ [ G ; Γ ⊢[ typeof i ] ]) /\
     lvl_eq (gL G) k (lsuc lzero) /\ [ G ; Γ ⊢[ i ] T ≅ tyU lzero @ k ].

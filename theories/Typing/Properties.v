@@ -207,6 +207,10 @@ Qed.
 Lemma compt_notV i : compt i -> i <> lV.
 Proof. now intros [-> | ->]. Qed.
 #[export] Hint Resolve compt_notV : wk.
+(** A computing layer sees layer-C definitions (M9). *)
+Lemma compt_lle_C i : compt i -> lle lC i.
+Proof. intros [-> | ->]; unfold lle; cbn; lia. Qed.
+#[export] Hint Resolve compt_lle_C : wk.
 
 Ltac wk_eq := push_ren; wk_rewrite; push_ren; reflexivity.
 
@@ -407,6 +411,16 @@ Ltac wk_manual :=
   | |- eq_tm _ _ _ (gvar _ _) _ _ _ =>
       rewrite (subst_ren_ty _ _ _ _ (fun m => llk_lren _ _ m));
       eapply eqtm_gvar; [ .. | wk_entries | wk_entries | wk_entries]; eauto with wk
+  (* defined globals (M9): the body stays in the definition's context *)
+  | |- wf_tm _ _ _ (gdef _ _ _) _ _ =>
+      rewrite (subst_ren_ty _ _ _ _ (fun m => llk_lren _ _ m));
+      eapply wf_gdef; [ .. | wk_entries | ]; eauto with wk
+  | |- eq_tm _ _ _ (gdef _ _ _) (gdef _ _ _) _ _ =>
+      rewrite (subst_ren_ty _ _ _ _ (fun m => llk_lren _ _ m));
+      eapply eqtm_gdef; [ .. | wk_entries | wk_entries | wk_entries | ]; eauto with wk
+  | |- eq_tm _ _ _ (gdef _ _ _) _ _ _ =>
+      rewrite (subst_ren_ty _ _ _ _ (fun m => llk_lren _ _ m)), (subst_ren _ _ _ _ (fun m => llk_lren _ _ m));
+      eapply eqtm_delta; [ .. | wk_entries | ]; eauto with wk
   | |- wf_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ => eapply wf_letboxT; try wk_body; wk_premise
   | |- wf_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ => eapply wf_letboxt; try wk_body; wk_premise
   | |- eq_tm _ _ _ (letboxT _ _ _ _ _ (boxT _)) _ _ _ =>

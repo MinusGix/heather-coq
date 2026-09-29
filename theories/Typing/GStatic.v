@@ -12,6 +12,7 @@ Definition static_decl (D : gdecl) : Prop :=
   | gdCtx => False    (* code never mentions a context (its images may differ, E9) *)
   | gdTy _ i _ => lle i lC
   | gdTm _ i _ _ => lle i lC
+  | gdDef _ _ _ _ => True    (* a definition is layer-C code's to mention (M9) *)
   end.
 
 (** [σ] and [σ'] agree on the static bindings of [G], up to level
@@ -82,6 +83,11 @@ Proof.
     try solve [eauto | cbn; intuition (eauto with leq)].
   (* global variables: level-equivalent images, at level-equivalent local substitutions *)
   all: match goal with
+       (* a defined global: the same name, and its body, related (M9) *)
+       | Ha : gsub_agree _ ?σ ?σ', Hin : in_gctx _ ?x (gdDef _ _ _ _) |- _ =>
+           apply pdef_leq; [ exact (Ha _ _ Hin I)
+                           | match goal with IHb : forall σ σ', gsub_agree _ σ σ' -> tm_leq _ _ |- _ =>
+                               exact (IHb _ _ Ha) end | ]
        | Ha : gsub_agree _ ?σ ?σ', Hin : in_gctx _ ?x ?D, Hl : lle _ ?i, Hi : lle ?i lC |- _ =>
            first [apply pty_leq | apply ptm_leq]; [exact (Ha _ _ Hin (lle_trans _ _ _ Hl Hi)) |]
        end;
@@ -106,6 +112,7 @@ Definition id_obj (D : gdecl) (j : nat) : gobj :=
   | gdCtx => GId j
   | gdTy _ _ _ => GTy (tyGvar j (lshift 0))
   | gdTm _ _ _ _ => GTm (gvar j (lshift 0))
+  | gdDef _ _ _ _ => GId j    (* a definition is only renamed (M9) *)
   end.
 
 (** A context variable may also be expanded to itself as a context (the
@@ -244,6 +251,20 @@ Proof.
   (* the meta-functions (M5), and letbox: under the new binding *)
   all: try solve [ f_equal; eauto; match goal with IH : forall σ τ, gsub_equiv (gext _ _) σ τ -> _ |- _ =>
          apply IH; [apply gsub_equiv_up; assumption | intros [|n]; cbn; auto using dnfo_goren] end ].
+  (* defined globals (M9): the same global, the body by its hypothesis *)
+  all: try solve [ match goal with
+         | Ha : gsub_equiv _ ?σ ?τ, Hin : in_gctx _ ?x (gdDef _ _ _ _), Hτ : forall n, dnfo (?τ n)
+           |- pdef _ _ _ = _ =>
+             assert (Ed : glsubst d σ = glsubst d τ)
+               by (change (glsubst d σ) with d⦃σ⦄; change (glsubst d τ) with d⦃τ⦄;
+                   eapply glsubst_agree_entries; [eassumption |];
+                   intros ?n ?A ?k HA; match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ =>
+                     eapply IH; eassumption end);
+             rewrite Ed;
+             destruct (Ha _ _ Hin) as [E | [(j & E1 & E2) | (j & ? & _ & _)]];
+               [rewrite E | rewrite E1, E2; cbn [id_obj] | discriminate];
+             f_equal; match goal with IH : forall σ τ, gsub_equiv _ σ τ -> _ |- _ => eapply IH; eassumption end
+         end ].
   (* context variables *)
   1: match goal with
     | Ha : gsub_equiv _ ?σ ?τ, Hc : gctx_var _ ?g |- _ =>

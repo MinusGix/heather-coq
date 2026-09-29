@@ -529,7 +529,7 @@ Corollary paper_canonicity {G i t T k} : compt i -> ctx_only G -> [ G ; cnil ⊢
     reds t w /\ whnf w /\ ~ whne w /\ canon_head (ty_head W) w.
 Proof.
   intros Hc HG H.
-  destruct (closed_canonicity Hc HG (proj1 (proj2 (proj2 (proj2 paper_sound))) _ _ _ _ _ _ H))
+  destruct (closed_canonicity Hc (or_introl HG) (proj1 (proj2 (proj2 (proj2 paper_sound))) _ _ _ _ _ _ H))
     as (W & w & ? & ? & ? & ? & ? & ? & _ & ?).
   exists W, w; repeat split; assumption.
 Qed.

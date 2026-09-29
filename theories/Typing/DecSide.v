@@ -51,7 +51,7 @@ Qed.
 
 Lemma gctx_var_dec G g : Dec (gctx_var G g).
 Proof.
-  unfold gctx_var. destruct (nth_error (gΨ G) g) as [[| |]|];
+  unfold gctx_var. destruct (nth_error (gΨ G) g) as [[| | |]|];
     first [left; reflexivity | right; discriminate].
 Qed.
 
@@ -261,6 +261,7 @@ with sz_tm (t : tm) : nat :=
   | lam _ _ A t => S (sz_ty A + sz_tm t)
   | app t _ _ A B s => S (sz_tm t + sz_ty A + sz_ty B + sz_tm s)
   | gvar _ d => S (sz_l d)
+  | gdef _ b d => S (sz_tm b + sz_l d)
   | boxT T => S (sz_ty T)
   | boxt t => S (sz_tm t)
   | letboxT _ _ Δ M t' t => S (sz_ctx Δ + sz_ty M + sz_tm t' + sz_tm t)

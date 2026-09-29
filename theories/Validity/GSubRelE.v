@@ -21,8 +21,11 @@ Proof. apply gsubst_gren_ctx; reflexivity. Qed.
 Lemma gcons_shift_ty (T : ty) σ o : T⟪S⟫⦃gcons σ o⦄ = T⦃σ⦄.
 Proof. apply gsubst_gren_ty; reflexivity. Qed.
 
+Lemma gcons_shift_tm (t : tm) σ o : t⟪S⟫⦃gcons σ o⦄ = t⦃σ⦄.
+Proof. apply gsubst_gren_tm; reflexivity. Qed.
+
 Lemma gdecl_gsubst_cons D σ o : gdecl_gsubst (gdecl_ren D S) (gcons σ o) = gdecl_gsubst D σ.
-Proof. destruct D; cbn [gdecl_gsubst gdecl_ren]; f_equal; auto using gcons_shift_ctx, gcons_shift_ty. Qed.
+Proof. destruct D; cbn [gdecl_gsubst gdecl_ren]; f_equal; auto using gcons_shift_ctx, gcons_shift_ty, gcons_shift_tm. Qed.
 
 Lemma gosubst_shift_single o' o : dnfo o' -> gosubst (goren o' S) (gsingle o) = o'.
 Proof.

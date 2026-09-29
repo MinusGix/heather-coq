@@ -15,7 +15,8 @@ Proof.
       [exact X|].
     destruct D; cbn; f_equal; try reflexivity;
       first [ symmetry; apply (proj1 (proj2 (proj2 gren_gren_all))); reflexivity
-            | symmetry; apply (proj1 gren_gren_all); reflexivity ].
+            | symmetry; apply (proj1 gren_gren_all); reflexivity
+            | symmetry; apply (proj1 (proj2 gren_gren_all)); reflexivity ].
 Qed.
 
 Lemma lsub_tail_id_var g : lsub_tail (lshift 0) (cvar g) (cvar g).

@@ -200,6 +200,12 @@ Proof.
   intros H; remember (gvar u d) as t eqn:Heq; revert Heq.
   induction H; intros Heq; try discriminate; eauto. injection Heq as -> ->; eauto.
 Qed.
+Lemma gdef_decl {G i Γ u b d A l} : [ G ; Γ ⊢[ i ] gdef u b d : A @ l ] ->
+  exists Δ T l' t0, in_gctx (gΨ G) u (gdDef Δ T l' t0).
+Proof.
+  intros H; remember (gdef u b d) as t eqn:Heq; revert Heq.
+  induction H; intros Heq; try discriminate; eauto. injection Heq as -> -> ->; eauto.
+Qed.
 Lemma boxT_inv {G i Γ T A l} : [ G ; Γ ⊢[ i ] boxT T : A @ l ] -> exists Δ l', [ G ; Δ ⊢[ lC ] T @ l' ].
 Proof.
   intros H; remember (boxT T) as t eqn:Heq; revert Heq.
@@ -226,7 +232,44 @@ Proof.
     | H : wf_tm _ _ _ (boxt (gvar _ _)) _ _ |- _ =>
         destruct (boxt_inv H) as (? & ? & ? & Ht); destruct (gvar_decl Ht) as (? & ? & ? & ? & Hin);
         discriminate (HG _ _ Hin)
+    | H : wf_tm _ _ _ (boxt (gdef _ _ _)) _ _ |- _ =>
+        destruct (boxt_inv H) as (? & ? & ? & Ht); destruct (gdef_decl Ht) as (? & ? & ? & ? & Hin);
+        discriminate (HG _ _ Hin)
     end.
+Qed.
+
+(** With definitions (M9): at D there are no boxes and no recursors, so a
+    global context of context variables and definitions has no closed
+    neutrals either. The argument stops at M: [elim(box(u^δ))] with [u]
+    defined is neutral ([whne_elimt_gdef]; Heather's rules keep it stuck,
+    M9_DESIGN.md step 4), and closed when [δ] is. *)
+Definition no_opaque (G : gctx) : Prop :=
+  forall n D, in_gctx (gΨ G) n D -> D = gdCtx \/ exists Δ T l t, D = gdDef Δ T l t.
+
+Lemma no_closed_neutral_D {G i Γ t T l} :
+  [ G ; Γ ⊢[ i ] t : T @ l ] -> Γ = cnil -> i = lD -> no_opaque G -> ~ whne t.
+Proof.
+  induction 1; intros -> Ei HG Hne; try discriminate Ei; subst; inversion Hne; subst;
+    match goal with
+    | H : in_ctx cnil _ _ _ |- _ => inversion H
+    | Hin : in_gctx _ _ (gdTm _ _ _ _) |- _ =>
+        destruct (HG _ _ Hin) as [Q | (? & ? & ? & ? & Q)]; discriminate Q
+    | IH : cnil = cnil -> ?j = lD -> no_opaque _ -> ~ whne ?x, H : whne ?x |- _ => exact (IH eq_refl eq_refl HG H)
+    end.
+Qed.
+
+(** The global contexts closed canonicity holds in, at layer [i]. *)
+Definition closed_ok (i : layer) (G : gctx) : Prop := ctx_only G \/ (i = lD /\ no_opaque G).
+
+Lemma no_closed_neutral_ok {G i t T l} : closed_ok i G -> [ G ; cnil ⊢[ i ] t : T @ l ] -> ~ whne t.
+Proof.
+  intros [HG | (Ei & HG)] Ht; [exact (no_closed_neutral Ht eq_refl HG) | exact (no_closed_neutral_D Ht eq_refl Ei HG)].
+Qed.
+
+Lemma closed_ok_tyGvar {G i U Δ i' l} : closed_ok i G -> ~ in_gctx (gΨ G) U (gdTy Δ i' l).
+Proof.
+  intros [HG | (_ & HG)] Hin; [discriminate (HG _ _ Hin) |].
+  destruct (HG _ _ Hin) as [Q | (? & ? & ? & ? & Q)]; discriminate Q.
 Qed.
 
 Fixpoint numeral (n : nat) : tm := match n with 0 => zero | S n => succ (numeral n) end.

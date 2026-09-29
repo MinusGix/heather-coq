@@ -405,6 +405,16 @@ Proof.
   - now apply eqtm_refl.
 Qed.
 
+(** δ: a defined global unfolds to its carried body's instance (M9). *)
+Lemma RS_delta u b d : RS_tm (gdef u b d) b[d].
+Proof.
+  intros G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_gdef Hi Hx) as (Δ & T0 & l0 & t0 & (HΓ & Hin & Hl & _ & Ht & Hn & He & Hb) & Hk & HT).
+  eapply eqtm_conv; [| rewrite Hi; exact HT].
+  destruct Hk as [-> | Hk]; [| eapply eqtm_lconv; [| exact Hk]];
+    (eapply eqtm_delta; [exact Hc | exact HΓ | exact Hin | exact Hl | exact Ht | exact Hn | exact He | exact Hb]).
+Qed.
+
 (** ** Soundness of reduction *)
 
 Theorem red_sound_all (HR : RecRedTyped) :
@@ -426,7 +436,7 @@ Proof.
     | solve [apply RS_El; assumption]
     | solve [apply RS_fst_beta] | solve [apply RS_snd_beta]
     | solve [apply RS_fst; assumption] | solve [apply RS_snd; assumption] | solve [apply RS_El_sig]
-    | solve [apply RS_El_unit] ].
+    | solve [apply RS_El_unit] | solve [apply RS_delta] ].
 Qed.
 
 Section Consequences.

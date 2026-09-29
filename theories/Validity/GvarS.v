@@ -98,6 +98,7 @@ Definition DWf (G : gctx) (D : gdecl) : Prop :=
   | gdCtx => True
   | gdTy Δ _ _ => [ G ; Δ ⊢[ lD ] ]
   | gdTm Δ _ T l => [ G ; Δ ⊢[ lD ] T @ l ]
+  | gdDef Δ T l _ => [ G ; Δ ⊢[ lD ] T @ l ]
   end.
 
 Lemma gwk_ok_wk1 L D Ψ : gwk_ok (gwk_step gwk_id) (mkG L (D :: Ψ)) (mkG L Ψ).
@@ -105,7 +106,7 @@ Proof. split; [reflexivity | constructor; constructor]. Qed.
 
 Lemma in_gctx_DWf {G n D} : [ ⊢ G ] -> in_gctx (gΨ G) n D -> DWf G D.
 Proof.
-  intros HG; revert n D. induction HG as [L | L Ψ HG IH | L Ψ Δ i l HG IH HΔ Hi Hl | L Ψ Δ i T l HG IH HT Hi Hl];
+  intros HG; revert n D. induction HG as [L | L Ψ HG IH | L Ψ Δ i l HG IH HΔ Hi Hl | L Ψ Δ i T l HG IH HT Hi Hl | L Ψ Δ T l t HG IH HT Hl Ht];
     intros n D Hin; cbn in Hin; inversion Hin; subst; try exact I.
   all: cbn [DWf gdecl_ren];
     try match goal with Hm : in_gctx ?Ψ _ ?D0 |- _ => is_var Ψ;
@@ -120,6 +121,7 @@ Definition DLayer (D : gdecl) : Prop :=
   | gdCtx => True
   | gdTy _ i _ => i = lC \/ i = lD
   | gdTm _ i _ _ => i = lV \/ i = lC
+  | gdDef _ _ _ _ => True
   end.
 
 Lemma DLayer_ren D ξ : DLayer (gdecl_ren D ξ) = DLayer D.
@@ -127,7 +129,7 @@ Proof. now destruct D. Qed.
 
 Lemma in_gctx_DLayer {G n D} : [ ⊢ G ] -> in_gctx (gΨ G) n D -> DLayer D.
 Proof.
-  intros HG; revert n D. induction HG as [L | L Ψ HG IH | L Ψ Δ i l HG IH HΔ Hi Hl | L Ψ Δ i T l HG IH HT Hi Hl];
+  intros HG; revert n D. induction HG as [L | L Ψ HG IH | L Ψ Δ i l HG IH HΔ Hi Hl | L Ψ Δ i T l HG IH HT Hi Hl | L Ψ Δ T l t HG IH HT Hl Ht];
     intros n D Hin; cbn in Hin; inversion Hin; subst; rewrite ?DLayer_ren; cbn; auto;
     match goal with Hm : in_gctx ?Ψ _ _ |- _ => is_var Ψ; exact (IH _ _ Hm) end.
 Qed.

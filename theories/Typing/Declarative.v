@@ -30,6 +30,9 @@ Inductive wf_glob : gctx -> Prop :=
     lwf L l -> [ ⊢ mkG L (gdTy Δ i l :: Ψ) ]
 | wfg_tm L Ψ Δ i T l : [ ⊢ mkG L Ψ ] -> [ mkG L Ψ ; Δ ⊢[ lD ] T @ l ] -> (i = lV \/ i = lC) ->
     lwf L l -> [ ⊢ mkG L (gdTm Δ i T l :: Ψ) ]
+(* a definition: its body checked at layer C, the binding's own (M9, Heather's wf-def) *)
+| wfg_def L Ψ Δ T l t : [ ⊢ mkG L Ψ ] -> [ mkG L Ψ ; Δ ⊢[ lD ] T @ l ] -> lwf L l ->
+    [ mkG L Ψ ; Δ ⊢[ lC ] t : T @ l ] -> [ ⊢ mkG L (gdDef Δ T l t :: Ψ) ]
 
 with wf_ctx : gctx -> layer -> ctx -> Prop :=
 | wfc_nil G i : [ ⊢ G ] -> [ G ; cnil ⊢[ i ] ]
@@ -115,6 +118,13 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     in_gctx (gΨ G) u (gdTm Δ i' T l) -> lle i' i -> lsub_tail d Δ Γ -> dnfl d ->
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n : A[d] @ k ]) ->
     [ G ; Γ ⊢[ i ] gvar u d : T[d] @ l ]
+(* a defined global carries its body, typed at the use's layer (M9_DESIGN.md N1),
+   level-equivalent to the declared one, as code is compared (N2) *)
+| wf_gdef G i Γ u Δ T l t0 t d : [ G ; Γ ⊢[ typeof i ] ] ->
+    in_gctx (gΨ G) u (gdDef Δ T l t0) -> tm_leq t0 t -> lle lC i -> lsub_tail d Δ Γ -> dnfl d ->
+    (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n : A[d] @ k ]) ->
+    [ G ; Δ ⊢[ i ] t : T @ l ] ->
+    [ G ; Γ ⊢[ i ] gdef u t d : T[d] @ l ]
 (* code (layer M only; the code itself lives at layer C) *)
 | wf_boxT G Γ Δ T l : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lC ] T @ l ] ->
     [ G ; Γ ⊢[ lM ] boxT T : tyCTyp Δ l @ lzero ]
@@ -204,7 +214,7 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
     [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ] ->
     [ G ; Γ ⊢[ i ] tmSnd l l' A B p : B[lsingle (tmFst l l' A B p)] @ l' ]
-(* the unit type (layers D and M) *)
+(* the unit type (every layer but V since M8d) *)
 | wf_code_unit G i Γ l : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tmUnit l : tyU l @ lsuc l ]
 | wf_triv G i Γ l : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
@@ -276,7 +286,7 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ] ->
     [ G ; Γ ⊢[ i ] tySig l l' (tyEl l s) (tyEl l' t) ≅ tyEl (lmax l l') (tmSig l l' s t) @ lmax l l' ]
-(* the unit type (layers D and M) *)
+(* the unit type (every layer but V since M8d) *)
 | eqty_unit G i Γ l l' : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] tyUnit l ≅ tyUnit l' @ l ]
 | eqty_El_unit G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
@@ -328,6 +338,20 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d' n : A[d'] @ k ]) ->
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n ≅ llk d' n : A[d] @ k ]) ->
     [ G ; Γ ⊢[ i ] gvar u d ≅ gvar u d' : T[d] @ l ]
+| eqtm_gdef G i Γ u Δ T l t0 t t' d d' : [ G ; Γ ⊢[ typeof i ] ] ->
+    in_gctx (gΨ G) u (gdDef Δ T l t0) -> tm_leq t0 t -> tm_leq t0 t' -> lle lC i ->
+    lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
+    (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n : A[d] @ k ]) ->
+    (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d' n : A[d'] @ k ]) ->
+    (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n ≅ llk d' n : A[d] @ k ]) ->
+    [ G ; Δ ⊢[ i ] t ≅ t' : T @ l ] ->
+    [ G ; Γ ⊢[ i ] gdef u t d ≅ gdef u t' d' : T[d] @ l ]
+(* δ, at the computing layers only: code keeps the global (M9_DESIGN.md) *)
+| eqtm_delta G i Γ u Δ T l t0 t d : compt i -> [ G ; Γ ⊢[ typeof i ] ] ->
+    in_gctx (gΨ G) u (gdDef Δ T l t0) -> tm_leq t0 t -> lsub_tail d Δ Γ -> dnfl d ->
+    (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n : A[d] @ k ]) ->
+    [ G ; Δ ⊢[ i ] t : T @ l ] ->
+    [ G ; Γ ⊢[ i ] gdef u t d ≅ t[d] : T[d] @ l ]
 | eqtm_leq G Γ t t' T l : [ G ; Γ ⊢[ lM ] t : T @ l ] -> [ G ; Γ ⊢[ lM ] t' : T @ l ] -> tm_leq t t' ->
     [ G ; Γ ⊢[ lM ] t ≅ t' : T @ l ]
 (* [box] congruence: the code's C-equation, as in the paper (06:534). The

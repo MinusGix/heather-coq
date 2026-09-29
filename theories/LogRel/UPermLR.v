@@ -919,16 +919,23 @@ Lemma uren_us_ctx (Γ : ctx) ρ : Γ⟨ρ⟩ᵤ = Γ[pφ ρ]ᵤ.
 Proof. apply (proj1 (proj2 (proj2 uren_as_usubst_all))); reflexivity. Qed.
 
 Definition decl_lwf (L : nat) (D : gdecl) : Prop :=
-  match D with gdCtx => True | gdTy Δ _ l => ctx_lwf L Δ /\ lwf L l | gdTm Δ _ T l => ctx_lwf L Δ /\ ty_lwf L T /\ lwf L l end.
+  match D with
+  | gdCtx => True | gdTy Δ _ l => ctx_lwf L Δ /\ lwf L l | gdTm Δ _ T l => ctx_lwf L Δ /\ ty_lwf L T /\ lwf L l
+  | gdDef Δ T l t => ctx_lwf L Δ /\ ty_lwf L T /\ lwf L l /\ tm_lwf L t
+  end.
 
 Lemma wfg_lwf G : [ ⊢ G ] -> Forall (decl_lwf (gL G)) (gΨ G).
 Proof.
-  induction 1 as [L | L Ψ HG IH | L Ψ Δ i l HG IH HΔ Hi Hl | L Ψ Δ i T l HG IH HT Hi Hl]; cbn in *.
+  induction 1 as [L | L Ψ HG IH | L Ψ Δ i l HG IH HΔ Hi Hl | L Ψ Δ i T l HG IH HT Hi Hl | L Ψ Δ T l t HG IH HT Hl Ht];
+    cbn in *.
   - constructor.
   - constructor; [exact I | exact IH].
   - constructor; [split; [exact (wf_ctx_lwf HΔ) | exact Hl] | exact IH].
   - constructor; [| exact IH].
     refine (conj _ (conj (wf_ty_lwf HT) Hl)).
+    exact (wf_ctx_lwf (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ HT)).
+  - constructor; [| exact IH].
+    refine (conj _ (conj (wf_ty_lwf HT) (conj Hl (wf_tm_lwf Ht)))).
     exact (wf_ctx_lwf (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ HT)).
 Qed.
 
@@ -946,6 +953,11 @@ Proof.
              | rewrite uren_us_ty; exact (lwf_us_ext_ty ltac:(eassumption) Eag)
              | rewrite (lvren_as_lvsubst _ _ (pφ (ush 1))) by reflexivity;
                exact (lvsubst_ext_lwf _ _ _ _ ltac:(eassumption) Eag)].
+  - f_equal; [rewrite uren_us_ctx; exact (lwf_us_ext_ctx ltac:(eassumption) Eag)
+             | rewrite uren_us_ty; exact (lwf_us_ext_ty ltac:(eassumption) Eag)
+             | rewrite (lvren_as_lvsubst _ _ (pφ (ush 1))) by reflexivity;
+               exact (lvsubst_ext_lwf _ _ _ _ ltac:(eassumption) Eag)
+             | rewrite uren_us_tm; exact (lwf_us_ext_tm ltac:(eassumption) Eag)].
 Qed.
 
 Section Grow.
@@ -1036,6 +1048,11 @@ Proof.
              | rewrite uren_us_ty; exact (lwf_us_ext_ty ltac:(eassumption) Eag)
              | rewrite (lvren_as_lvsubst _ _ (pφ (ush n))) by reflexivity;
                exact (lvsubst_ext_lwf _ _ _ _ ltac:(eassumption) Eag)].
+  - f_equal; [rewrite uren_us_ctx; exact (lwf_us_ext_ctx ltac:(eassumption) Eag)
+             | rewrite uren_us_ty; exact (lwf_us_ext_ty ltac:(eassumption) Eag)
+             | rewrite (lvren_as_lvsubst _ _ (pφ (ush n))) by reflexivity;
+               exact (lvsubst_ext_lwf _ _ _ _ ltac:(eassumption) Eag)
+             | rewrite uren_us_tm; exact (lwf_us_ext_tm ltac:(eassumption) Eag)].
 Qed.
 
 End UPermLR.

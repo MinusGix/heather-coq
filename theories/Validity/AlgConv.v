@@ -423,7 +423,7 @@ Proof.
   destruct (gctx_decl_ok _ _ _ (ctx_glob _ _ _ HΓ) Hin) as (HΔ & _).
   pose proof (lift_ctx HΔ (lle_D_compt _ Hc)) as HΔi.
   destruct HE as (HG & HG2 & HL & Hl). destruct (Hl _ _ Hin) as (D2 & Hin2 & HD2).
-  destruct D2 as [| Δ2 i2 l2 | ]; cbn in HD2; try contradiction. destruct HD2 as (-> & _ & _ & HΔΔ).
+  destruct D2 as [| Δ2 i2 l2 | |]; cbn in HD2; try contradiction. destruct HD2 as (-> & _ & _ & HΔΔ).
   eapply actne_gvar; [exact Hin2 |].
   exact (IH i G2 Γ2 Δ2 Hc (conj HG (conj HG2 (conj HL Hl))) Hctx HΔi
            (lsub_wf_prem Hi HΓ Ht Hn He) (lsub_wf_prem Hi HΓ Ht' Hn' He') HΔΔ).
@@ -751,7 +751,7 @@ Proof.
   pose proof (lift_ctx HΔ (lle_D_compt _ Hc)) as HΔi.
   pose proof (lsub_wf_prem Hi HΓi Ht Hn He) as Hd.
   pose proof HE as (_ & _ & _ & Hl). destruct (Hl _ _ Hin) as (D2 & Hin2 & HD2).
-  destruct D2 as [| | Δ2 i2 T2 l2]; cbn in HD2; try contradiction.
+  destruct D2 as [| | Δ2 i2 T2 l2 |]; cbn in HD2; try contradiction.
   destruct HD2 as (-> & _ & _ & HΔΔ & ET).
   exists T2[d]. split.
   - eapply actmne_gvar; [exact Hin2 |].
@@ -1141,7 +1141,7 @@ Proof.
              compt_M HE Hx Hx').
 Qed.
 
-Lemma C_actmne_elimt_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' u d d'} :
+Lemma C_actmne_elimt_glob {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' c c'} :
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> ac_ctx G Δ Δ' -> C_ctx G Δ Δ' -> ac_ty G Δ T T' -> C_ty G Δ T T' ->
   ac_ty (recGT G) (recΓT Γ) MT MT' -> C_ty (recGT G) (recΓT Γ) MT MT' ->
   ac_ty (recGt G) (recΓt Γ) Mt Mt' -> C_ty (recGt G) (recΓt Γ) Mt Mt' ->
@@ -1149,21 +1149,21 @@ Lemma C_actmne_elimt_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
   (forall j, j < nbr -> C_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
-  lsub_leq d d' ->
-  C_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt (gvar u d)))
-    (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt (gvar u d')))
-    (mott (wrapMt Mt) l Δ T (boxt (gvar u d))).
+  boxed_global c -> tm_leq c c' ->
+  C_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt c))
+    (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt c'))
+    (mott (wrapMt Mt) l Δ T (boxt c)).
 Proof.
-  intros H1 H2 Hl Dc IHc DT IHi DMT IHT DMt IHt Db IHb Hd i G2 Γ2 k k' X X' Hc HE Hctx Hx Hx' x x' Hsx Hsx'. spa_triv.
+  intros H1 H2 Hl Dc IHc DT IHi DMT IHT DMt IHt Db IHb Hg Hd i G2 Γ2 k k' X X' Hc HE Hctx Hx Hx' x x' Hsx Hsx'. spa_triv.
   pose proof (compt_typeof_self _ Hc) as Hi. rec_inv Hi Hx Hx'. rec_core IHT IHt IHb DMT DMt HE Hctx.
   pose proof (leqv_lequiv _ _ _ Wl Wl' Hl) as El.
   pose proof (ac_ctx_sound' Dc HΔ HΔ') as Ec.
   pose proof (decl_ty_ctxconv_D (eqctx_sym_D Ec) HT' (lequiv_sym _ _ _ El)) as HT1.
-  exists (mott (wrapMt Mt) l Δ T (boxt (gvar u d))). split.
-  - eapply actmne_elimt_gvar; [exact H1 | exact H2 | exact Hl | exact (IHc G2 HE HΔ HΔ')
+  exists (mott (wrapMt Mt) l Δ T (boxt c)). split.
+  - eapply actmne_elimt_glob; [exact H1 | exact H2 | exact Hl | exact (IHc G2 HE HΔ HΔ')
                               | exact (IHi lD G2 Δ l l compt_D HE (eqc_refl _ _ _ (gconv_ctx HE compt_D HΔ)) HT HT1)
-                              | exact XMT | exact XMt | exact Xb | exact Hd].
-  - exact (ne_refl (actmne_elimt_gvar _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H1 H2 Hl Dc DT DMT DMt Db Hd)
+                              | exact XMT | exact XMt | exact Xb | exact Hg | exact Hd].
+  - exact (ne_refl (actmne_elimt_glob _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H1 H2 Hl Dc DT DMT DMt Db Hg Hd)
              compt_M HE Hx Hx').
 Qed.
 
@@ -1364,7 +1364,7 @@ Proof.
     | solve [eapply C_actmne_natrec; eassumption] | solve [eapply C_actmne_app; eassumption]
     | solve [eapply C_actmne_letboxT; eassumption] | solve [eapply C_actmne_letboxt; eassumption]
     | solve [eapply C_actmne_elimT; eassumption] | solve [eapply C_actmne_elimT_gvar; eassumption]
-    | solve [eapply C_actmne_elimt; eassumption] | solve [eapply C_actmne_elimt_gvar; eassumption]
+    | solve [eapply C_actmne_elimt; eassumption] | solve [eapply C_actmne_elimt_glob; eassumption]
     | solve [eapply C_actmne_uapp; eassumption] | solve [eapply C_actmne_capp; eassumption]
     | solve [eapply C_actmne_tapp; eassumption] | solve [eapply C_actmnee_red; eassumption]
     | solve [eapply C_acs_pt; eassumption]

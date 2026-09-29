@@ -88,7 +88,7 @@ Proof.
   pose proof (ctx_glob _ _ _ HΓ) as HG.
   destruct (in_gctx_dec (gΨ G) U) as [(D & Hin) | N];
     [| right; intros H; destruct (inv_ty_gvar H) as (? & ? & ? & (_ & _ & X & _) & _); exact (N _ X)].
-  destruct D as [| Δ i' l0 | Δ i' T0 l0];
+  destruct D as [| Δ i' l0 | Δ i' T0 l0 |];
     try (right; intros H; destruct (inv_ty_gvar H) as (? & ? & ? & (_ & _ & X & _) & _);
          discriminate (in_gctx_det Hin X)).
   destruct (gctx_decl_ok _ _ _ HG Hin) as [HΔ _].

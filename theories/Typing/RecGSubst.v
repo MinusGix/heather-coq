@@ -158,7 +158,7 @@ Proof.
 Qed.
 
 Fixpoint gtup_ok (t : tm) : Prop :=
-  match t with tmTup _ r => gtup_ok r | gvar _ _ => False | _ => True end.
+  match t with tmTup _ r => gtup_ok r | gvar _ _ | gdef _ _ _ => False | _ => True end.
 Lemma tup_nth_gsubst t k σ : gtup_ok t -> tup_nth t⦃σ⦄ k = (tup_nth t k)⦃σ⦄.
 Proof. revert t; induction k; intros [] H; cbn in *; try contradiction; auto. Qed.
 

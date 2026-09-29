@@ -137,6 +137,145 @@ Proof.
   - exact (entries_us (P := fun a b B k => SemTmM G Γ a b B k) Hvv).
 Qed.
 
+(** ** Defined globals (M9): δ, then the PER laws, as at P *)
+
+Lemma FM_delta {G Γ u Δ T l t0 t d} : SemCtxM G Γ -> in_gctx (gΨ G) u (gdDef Δ T l t0) -> tm_leq t0 t ->
+  [ G ; Γ ⊢[ lM ] ] -> lsub_tail d Δ Γ -> dnfl d ->
+  (forall n B k, in_ctx Δ n B k -> [ G ; Γ ⊢[ lM ] llk d n : B[d] @ k ]) ->
+  (forall n B k, in_ctx Δ n B k -> SemTmM G Γ (llk d n) (llk d n) B[d] k) ->
+  [ G ; Δ ⊢[ lM ] t : T @ l ] -> SemTmM G Δ t t T l ->
+  SemTmM G Γ (gdef u t d) t[d] T[d] l.
+Proof.
+  intros HS Hin Hl HΓ Ht Nd He Hvv Hb Sb. pose proof HS as (HG & _).
+  pose proof (ctx_glob _ _ _ HΓ) as HGw.
+  pose proof (in_gctx_DWf HGw Hin) as HA; cbn in HA.
+  pose proof (ctx_of_wf_ty (i := lD) eq_refl HA) as HΔ.
+  destruct (HG _ _ Hin) as (_ & VM & _ & VAM).
+  pose proof (VTyS_toM HA HA VAM) as VA.
+  destruct Sb as (_ & _ & Vb).
+  assert (Hty : [ G ; Γ ⊢[ lM ] gdef u t d : T[d] @ l ])
+    by (eapply wf_gdef; eauto; unfold lle; cbn; lia).
+  split; [exact HS | split].
+  - exact (VTyS_inst EP EM HΓ HΔ (VCtxS_toM HΔ VM) Ht Nd Ht Nd
+             (fun n B k h => proj2 (proj2 (Hvv n B k h))) VA).
+  - refine (VS_delta EP EM (E := EM) (LP := LRM) Hin (lift_tm Hty (lle_ge_M _)) _).
+    exact (VTmS_inst EP EM (E := EM) (LP := LRM) HΓ HΔ (VCtxS_toM HΔ VM) Ht Nd Ht Nd
+             (fun n B k h => proj2 (proj2 (Hvv n B k h))) (fun n B k h => proj2 (proj2 (Hvv n B k h))) VA Vb).
+Qed.
+
+Lemma FM_gdef {G Γ u Δ T l t0 t d} : SemCtxM G Γ -> in_gctx (gΨ G) u (gdDef Δ T l t0) -> tm_leq t0 t ->
+  [ G ; Γ ⊢[ lM ] ] -> lsub_tail d Δ Γ -> dnfl d ->
+  (forall n B k, in_ctx Δ n B k -> [ G ; Γ ⊢[ lM ] llk d n : B[d] @ k ]) ->
+  (forall n B k, in_ctx Δ n B k -> SemTmM G Γ (llk d n) (llk d n) B[d] k) ->
+  [ G ; Δ ⊢[ lM ] t : T @ l ] -> SemTmM G Δ t t T l ->
+  SemTmM G Γ (gdef u t d) (gdef u t d) T[d] l.
+Proof.
+  intros HS Hin Hl HΓ Ht Nd He Hvv Hb Sb. pose proof HS as (HG & VC).
+  destruct (FM_delta HS Hin Hl HΓ Ht Nd He Hvv Hb Sb) as (_ & VT & X).
+  exact (conj HS (conj VT (VTmS_trans EP EM X (VTmS_sym EP EM HG VC VT X)))).
+Qed.
+
+Lemma FM_gdef_eq {G Γ u Δ T l t0 t t' d d'} : SemCtxM G Γ -> in_gctx (gΨ G) u (gdDef Δ T l t0) ->
+  tm_leq t0 t -> tm_leq t0 t' ->
+  [ G ; Γ ⊢[ lM ] ] -> lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
+  (forall n B k, in_ctx Δ n B k -> [ G ; Γ ⊢[ lM ] llk d n : B[d] @ k ]) ->
+  (forall n B k, in_ctx Δ n B k -> [ G ; Γ ⊢[ lM ] llk d' n : B[d'] @ k ]) ->
+  (forall n B k, in_ctx Δ n B k -> SemTmM G Γ (llk d n) (llk d n) B[d] k) ->
+  (forall n B k, in_ctx Δ n B k -> SemTmM G Γ (llk d' n) (llk d' n) B[d'] k) ->
+  (forall n B k, in_ctx Δ n B k -> SemTmM G Γ (llk d n) (llk d' n) B[d] k) ->
+  [ G ; Δ ⊢[ lM ] t ≅ t' : T @ l ] -> SemTmM G Δ t t' T l ->
+  SemTmM G Γ (gdef u t d) (gdef u t' d') T[d] l.
+Proof.
+  intros HS Hin Hl Hl' HΓ Ht Nd Ht' Nd' He He' Hvv Hvv' Hv Hbb Sb. pose proof HS as (HG & VC).
+  pose proof (ctx_glob _ _ _ HΓ) as HGw.
+  pose proof (in_gctx_DWf HGw Hin) as HA; cbn in HA.
+  pose proof (ctx_of_wf_ty (i := lD) eq_refl HA) as HΔ.
+  destruct (HG _ _ Hin) as (_ & VM & _ & VAM).
+  pose proof (VTyS_toM HA HA VAM) as VA.
+  destruct Sb as ((_ & VΔ) & VTb & Vb).
+  assert (Sl : SemTmM G Δ t t T l)
+    by exact (conj (conj HG VΔ) (conj VTb (VTmS_trans EP EM Vb (VTmS_sym EP EM HG VΔ VTb Vb)))).
+  assert (Sr : SemTmM G Δ t' t' T l)
+    by exact (conj (conj HG VΔ) (conj VTb (VTmS_trans EP EM (VTmS_sym EP EM HG VΔ VTb Vb) Vb))).
+  destruct (FM_delta HS Hin Hl HΓ Ht Nd He Hvv (eqtm_wf_l eq_refl Hbb) Sl) as (_ & VT & X).
+  destruct (FM_delta HS Hin Hl' HΓ Ht' Nd' He' Hvv' (eqtm_wf_r eq_refl Hbb) Sr) as (_ & VT' & Y).
+  refine (conj HS (conj VT (VTmS_trans EP EM X (VTmS_trans EP EM _ (VTmS_conv EP EM (VTmS_sym EP EM HG VC VT' Y) _))))).
+  - exact (VTmS_inst EP EM (E := EM) (LP := LRM) HΓ HΔ (VCtxS_toM HΔ VM) Ht Nd Ht' Nd'
+             (fun n B k h => proj2 (proj2 (Hv n B k h))) (fun n B k h => proj2 (proj2 (Hvv n B k h))) VA Vb).
+  - exact (VTyS_inst EP EM HΓ HΔ (VCtxS_toM HΔ VM) Ht Nd Ht' Nd'
+             (fun n B k h => proj2 (proj2 (Hv n B k h))) VA).
+Qed.
+
+(** Under a universe substitution [φ], as the global variables. *)
+Lemma entries_ty_us {G Γ Δ d i L' φ} : usub_ok φ L' (gL G) ->
+  (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n : A[d] @ k ]) ->
+  forall n B k, in_ctx (ucsubst Δ φ) n B k ->
+    [ G_us G L' φ ; ucsubst Γ φ ⊢[ i ] llk (ulsubst d φ) n : B[ulsubst d φ] @ k ].
+Proof.
+  intros Hφ H. apply (entries_us (d' := d) (P := fun a _ B k => [ G_us G L' φ ; ucsubst Γ φ ⊢[ i ] a : B @ k ])).
+  intros n B k Hin. exact (proj1 (proj2 (proj2 (proj2 usubstitution))) _ _ _ _ _ _ (H n B k Hin) _ _ Hφ).
+Qed.
+
+Lemma FM_gdef_us {G Γ u Δ T l t0 t d L' φ} : SemCtxM (G_us G L' φ) (ucsubst Γ φ) ->
+  in_gctx (gΨ (G_us G L' φ)) u (gdDef (ucsubst Δ φ) (usubst_ty T φ) (lvsubst l φ) (usubst_tm t0 φ)) ->
+  tm_leq (usubst_tm t0 φ) (usubst_tm t φ) -> [ G_us G L' φ ; ucsubst Γ φ ⊢[ lM ] ] ->
+  lsub_tail (ulsubst d φ) (ucsubst Δ φ) (ucsubst Γ φ) -> dnfl (ulsubst d φ) -> usub_ok φ L' (gL G) ->
+  (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ lM ] llk d n : A[d] @ k ]) ->
+  (forall n A k, in_ctx Δ n A k -> SemTmM (G_us G L' φ) (ucsubst Γ φ) (usubst_tm (llk d n) φ)
+     (usubst_tm (llk d n) φ) (usubst_ty A[d] φ) (lvsubst k φ)) ->
+  [ G_us G L' φ ; ucsubst Δ φ ⊢[ lM ] usubst_tm t φ : usubst_ty T φ @ lvsubst l φ ] ->
+  SemTmM (G_us G L' φ) (ucsubst Δ φ) (usubst_tm t φ) (usubst_tm t φ) (usubst_ty T φ) (lvsubst l φ) ->
+  SemTmM (G_us G L' φ) (ucsubst Γ φ) (gdef u (usubst_tm t φ) (ulsubst d φ)) (gdef u (usubst_tm t φ) (ulsubst d φ))
+    (usubst_ty T φ)[ulsubst d φ] (lvsubst l φ).
+Proof.
+  intros HS Hin Hl HΓ Ht Nd Hφ He Hvv Hb Sb.
+  exact (FM_gdef HS Hin Hl HΓ Ht Nd (entries_ty_us Hφ He)
+           (entries_us (P := fun a b B k => SemTmM (G_us G L' φ) (ucsubst Γ φ) a b B k) Hvv) Hb Sb).
+Qed.
+
+Lemma FM_delta_us {G Γ u Δ T l t0 t d L' φ} : SemCtxM (G_us G L' φ) (ucsubst Γ φ) ->
+  in_gctx (gΨ (G_us G L' φ)) u (gdDef (ucsubst Δ φ) (usubst_ty T φ) (lvsubst l φ) (usubst_tm t0 φ)) ->
+  tm_leq (usubst_tm t0 φ) (usubst_tm t φ) -> [ G_us G L' φ ; ucsubst Γ φ ⊢[ lM ] ] ->
+  lsub_tail (ulsubst d φ) (ucsubst Δ φ) (ucsubst Γ φ) -> dnfl (ulsubst d φ) -> usub_ok φ L' (gL G) ->
+  (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ lM ] llk d n : A[d] @ k ]) ->
+  (forall n A k, in_ctx Δ n A k -> SemTmM (G_us G L' φ) (ucsubst Γ φ) (usubst_tm (llk d n) φ)
+     (usubst_tm (llk d n) φ) (usubst_ty A[d] φ) (lvsubst k φ)) ->
+  [ G_us G L' φ ; ucsubst Δ φ ⊢[ lM ] usubst_tm t φ : usubst_ty T φ @ lvsubst l φ ] ->
+  SemTmM (G_us G L' φ) (ucsubst Δ φ) (usubst_tm t φ) (usubst_tm t φ) (usubst_ty T φ) (lvsubst l φ) ->
+  SemTmM (G_us G L' φ) (ucsubst Γ φ) (gdef u (usubst_tm t φ) (ulsubst d φ)) (usubst_tm t[d] φ)
+    (usubst_ty T φ)[ulsubst d φ] (lvsubst l φ).
+Proof.
+  intros HS Hin Hl HΓ Ht Nd Hφ He Hvv Hb Sb. rewrite usubst_subst'.
+  exact (FM_delta HS Hin Hl HΓ Ht Nd (entries_ty_us Hφ He)
+           (entries_us (P := fun a b B k => SemTmM (G_us G L' φ) (ucsubst Γ φ) a b B k) Hvv) Hb Sb).
+Qed.
+
+Lemma FM_gdef_eq_us {G Γ u Δ T l t0 t t' d d' L' φ} : SemCtxM (G_us G L' φ) (ucsubst Γ φ) ->
+  in_gctx (gΨ (G_us G L' φ)) u (gdDef (ucsubst Δ φ) (usubst_ty T φ) (lvsubst l φ) (usubst_tm t0 φ)) ->
+  tm_leq (usubst_tm t0 φ) (usubst_tm t φ) -> tm_leq (usubst_tm t0 φ) (usubst_tm t' φ) ->
+  [ G_us G L' φ ; ucsubst Γ φ ⊢[ lM ] ] ->
+  lsub_tail (ulsubst d φ) (ucsubst Δ φ) (ucsubst Γ φ) -> dnfl (ulsubst d φ) ->
+  lsub_tail (ulsubst d' φ) (ucsubst Δ φ) (ucsubst Γ φ) -> dnfl (ulsubst d' φ) -> usub_ok φ L' (gL G) ->
+  (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ lM ] llk d n : A[d] @ k ]) ->
+  (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ lM ] llk d' n : A[d'] @ k ]) ->
+  (forall n A k, in_ctx Δ n A k -> SemTmM (G_us G L' φ) (ucsubst Γ φ) (usubst_tm (llk d n) φ)
+     (usubst_tm (llk d n) φ) (usubst_ty A[d] φ) (lvsubst k φ)) ->
+  (forall n A k, in_ctx Δ n A k -> SemTmM (G_us G L' φ) (ucsubst Γ φ) (usubst_tm (llk d' n) φ)
+     (usubst_tm (llk d' n) φ) (usubst_ty A[d'] φ) (lvsubst k φ)) ->
+  (forall n A k, in_ctx Δ n A k -> SemTmM (G_us G L' φ) (ucsubst Γ φ) (usubst_tm (llk d n) φ)
+     (usubst_tm (llk d' n) φ) (usubst_ty A[d] φ) (lvsubst k φ)) ->
+  [ G_us G L' φ ; ucsubst Δ φ ⊢[ lM ] usubst_tm t φ ≅ usubst_tm t' φ : usubst_ty T φ @ lvsubst l φ ] ->
+  SemTmM (G_us G L' φ) (ucsubst Δ φ) (usubst_tm t φ) (usubst_tm t' φ) (usubst_ty T φ) (lvsubst l φ) ->
+  SemTmM (G_us G L' φ) (ucsubst Γ φ) (gdef u (usubst_tm t φ) (ulsubst d φ)) (gdef u (usubst_tm t' φ) (ulsubst d' φ))
+    (usubst_ty T φ)[ulsubst d φ] (lvsubst l φ).
+Proof.
+  intros HS Hin Hl Hl' HΓ Ht Nd Ht' Nd' Hφ He He' Hvv Hvv' Hv Hbb Sb.
+  exact (FM_gdef_eq HS Hin Hl Hl' HΓ Ht Nd Ht' Nd' (entries_ty_us Hφ He) (entries_ty_us Hφ He')
+           (entries_us (P := fun a b B k => SemTmM (G_us G L' φ) (ucsubst Γ φ) a b B k) Hvv)
+           (entries_us (P := fun a b B k => SemTmM (G_us G L' φ) (ucsubst Γ φ) a b B k) Hvv')
+           (entries_us (P := fun a b B k => SemTmM (G_us G L' φ) (ucsubst Γ φ) a b B k) Hv) Hbb Sb).
+Qed.
+
 (** ** Contextual types and [box] *)
 
 Local Notation SemCtxP := (SemCtx EP EM).
@@ -584,7 +723,8 @@ Proof.
     first [ reflexivity
           | symmetry; apply lvsubst_lvren; reflexivity
           | symmetry; apply (proj1 (proj2 (proj2 usubst_uren_all))); reflexivity
-          | symmetry; apply (proj1 usubst_uren_all); reflexivity ].
+          | symmetry; apply (proj1 usubst_uren_all); reflexivity
+            | symmetry; apply (proj1 (proj2 usubst_uren_all)); reflexivity ].
 Qed.
 
 Lemma FM_ueta {l T t} : lwf (n + gL G) l ->
@@ -1122,6 +1262,8 @@ Proof.
     rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix.
   all: try solve [w_dispatch].
   all: try solve [ first [simple eapply (FM_tygvar_us EP EM) | simple eapply (FM_gvar_us EP EM)]; eassumption ].
+  all: try solve [ first [ simple eapply (FM_gdef_us EP EM) | simple eapply (FM_gdef_eq_us EP EM)
+                         | simple eapply (FM_delta_us EP EM) ]; eassumption ].
   all: m_P.
   all: try solve [ first [ simple eapply (FM_CTyp EP EM) | simple eapply (FM_CTyp_eq EP EM)
                          | simple eapply (FM_CTrm EP EM) | simple eapply (FM_CTrm_eq EP EM)
@@ -1166,7 +1308,7 @@ Proof.
   intros HG. pose proof (wfg_dnf _ HG) as N. clear HG. destruct G as [L Ψ]. unfold G_us, gctx_usubst; cbn [gL gΨ] in *. f_equal.
   induction N as [|D Ψ HD _ IH]; cbn; [reflexivity|]. f_equal; [|exact IH].
   destruct D; cbn in HD |- *; f_equal; rewrite ?lvsubst_id by reflexivity; try reflexivity;
-    first [apply usubst_id_ctx | apply usubst_id_ty]; try reflexivity; tauto.
+    first [apply usubst_id_ctx | apply usubst_id_ty | apply usubst_id]; try reflexivity; tauto.
 Qed.
 
 Ltac us_id H :=

@@ -136,7 +136,10 @@ Proof.
       symmetry; apply (proj1 (proj2 (proj2 usubst_uren_all))); reflexivity
     | rewrite (proj1 uren_usubst_all _ _ _ (fun i => lvren (φ i) (ush n)))
         by (intros; symmetry; apply uupn_ush);
-      symmetry; apply (proj1 usubst_uren_all); reflexivity ].
+      symmetry; apply (proj1 usubst_uren_all); reflexivity
+    | rewrite (proj1 (proj2 uren_usubst_all) _ _ _ (fun i => lvren (φ i) (ush n)))
+        by (intros; symmetry; apply uupn_ush);
+      symmetry; apply (proj1 (proj2 usubst_uren_all)); reflexivity ].
 Qed.
 
 Lemma brDecls_usubst k n φ : k < nbr -> br_nu k = n ->

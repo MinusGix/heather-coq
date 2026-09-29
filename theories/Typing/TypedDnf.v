@@ -29,7 +29,10 @@ Lemma in_ctx_dnf Γ n T l : dnfctx Γ -> in_ctx Γ n T l -> dnfty T.
 Proof. intros H Hin; induction Hin; cbn in *; apply ren_dnf_ty; tauto. Qed.
 
 Definition dnf_decl (D : gdecl) : Prop :=
-  match D with gdCtx => True | gdTy Δ _ _ => dnfctx Δ | gdTm Δ _ T _ => dnfctx Δ /\ dnfty T end.
+  match D with
+  | gdCtx => True | gdTy Δ _ _ => dnfctx Δ | gdTm Δ _ T _ => dnfctx Δ /\ dnfty T
+  | gdDef Δ T _ t => dnfctx Δ /\ dnfty T /\ dnftm t
+  end.
 Lemma in_gctx_dnf Ψ n D : in_gctx Ψ n D -> dnf_decl D.
 Proof. destruct 1 as [? D0|? D0 ? ? _]; destruct D0; cbn; repeat split; apply gren_dnf_all. Qed.
 
@@ -99,6 +102,7 @@ Proof.
     intuition eauto using subst_dnf_ty, subst_dnf, ren_dnf_ty, ren_dnf, in_ctx_dnf with nf.
   all: try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle2; cbn; tauto]].
   all: try solve [apply subst_dnf_ty; auto; intros n; apply dnfl_llk; auto].
+  all: try solve [apply subst_dnf; auto; intros n; apply dnfl_llk; auto].
   all: try solve [apply gsubst_dnf_all; auto; apply dnfo_gsingle; cbn; auto].
   (* the recursors: branches, motive instances, reducts *)
   all: try match goal with

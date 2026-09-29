@@ -138,7 +138,7 @@ Proof.
   intros Hsz G i Γ HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
   destruct (in_gctx_dec (gΨ G) u) as [(D & Hin) | N];
     [| right; intros T k H; destruct (inva_gvar H) as (? & ? & ? & ? & (_ & X & _) & _); exact (N _ X)].
-  destruct D as [| Δ i' l0 | Δ i' T0 l0];
+  destruct D as [| Δ i' l0 | Δ i' T0 l0 | Δd Td ld td];
     try (right; intros T k H; destruct (inva_gvar H) as (? & ? & ? & ? & (_ & X & _) & _);
          discriminate (in_gctx_det Hin X)).
   destruct (gctx_decl_ok _ _ _ HG Hin) as (HΔ & _ & _).
@@ -154,6 +154,35 @@ Proof.
               (fun m A k1 HA => ihC (llk d m) ltac:(pose proof (sz_llk d m); szl) G i Γ A k1 HA))
     as [He | N]; [| right; intros T k H; apply N, (Inv _ _ H)].
   left; eexists; eexists; exact (wf_gvar _ _ _ _ _ _ _ _ _ HΓ Hin Hle Ht Hd He).
+Qed.
+
+(** A defined global (M9): [gvar]'s premises, the carried body level
+    equivalent to the declared one, and the body checked at the use layer. *)
+Lemma sy_gdef u b d : sz_tm (gdef u b d) <= n -> SYD (gdef u b d).
+Proof.
+  intros Hsz G i Γ HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
+  destruct (in_gctx_dec (gΨ G) u) as [(D & Hin) | N];
+    [| right; intros T k H; destruct (inva_gdef H) as (? & ? & ? & ? & (_ & X & _) & _); exact (N _ X)].
+  destruct D as [| Δy iy ly | Δm im Tm lm | Δ T0 l0 t0];
+    try (right; intros T k H; destruct (inva_gdef H) as (? & ? & ? & ? & (_ & X & _) & _);
+         discriminate (in_gctx_det Hin X)).
+  destruct (gctx_decl_ok _ _ _ HG Hin) as (HΔ & HT0 & _ & _).
+  assert (Inv : forall T k, [ G ; Γ ⊢[ i ] gdef u b d : T @ k ] ->
+    tm_leq t0 b /\ lle lC i /\ lsub_tail d Δ Γ /\ dnfl d /\
+    (forall m A k1, in_ctx Δ m A k1 -> [ G ; Γ ⊢[ i ] llk d m : A[d] @ k1 ]) /\
+    [ G ; Δ ⊢[ i ] b : T0 @ l0 ]).
+  { intros T k H. destruct (inva_gdef H) as (Δ' & T0' & l0' & t0' & (_ & X & Hl & Hle & Ht & Hd & He & Hb) & _).
+    pose proof (in_gctx_det Hin X) as E. injection E as <- <- <- <-. tauto. }
+  destruct (tm_leq_dec t0 b) as [Hl | N]; [| right; intros T k H; apply N, (Inv _ _ H)].
+  destruct (lle_dec lC i) as [Hle | N]; [| right; intros T k H; apply N, (Inv _ _ H)].
+  destruct (lsub_tail_dec d Δ Γ) as [Ht | N]; [| right; intros T k H; apply N, (Inv _ _ H)].
+  destruct (dnfl_dec d) as [Hd | N]; [| right; intros T k H; apply N, (Inv _ _ H)].
+  destruct (sub_dec Δ d HΓ HΔ Ht Hd
+              (fun m A k1 HA => ihC (llk d m) ltac:(pose proof (sz_llk d m); szl) G i Γ A k1 HA))
+    as [He | N]; [| right; intros T k H; apply N, (Inv _ _ H)].
+  destruct (ihC b ltac:(szl) G i Δ T0 l0 (lift_ty HT0 (lle_D_compt _ (compt_typeof i)))) as [Hb | N];
+    [| right; intros T k H; apply N, (Inv _ _ H)].
+  left; eexists; eexists; exact (wf_gdef _ _ _ _ _ _ _ _ _ _ HΓ Hin Hl Hle Ht Hd He Hb).
 Qed.
 
 Lemma sy_letboxT l' l Δ M t' t : sz_tm (letboxT l' l Δ M t' t) <= n ->
@@ -473,7 +502,7 @@ Proof.
   intros Hsz Hs. destruct t; cbn in Hs; try contradiction;
     first [ apply sy_var | apply sy_nat | apply sy_zero | apply sy_U
           | apply sy_junk; exact I
-          | apply sy_succ | apply sy_codepi | apply sy_natrec | apply sy_app | apply sy_gvar
+          | apply sy_succ | apply sy_codepi | apply sy_natrec | apply sy_app | apply sy_gvar | apply sy_gdef
           | apply sy_letboxT | apply sy_letboxt | apply sy_elimT | apply sy_elimt
           | apply sy_ulam | apply sy_clam | apply sy_tlam
           | apply sy_uapp | apply sy_capp | apply sy_tapp

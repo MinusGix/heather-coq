@@ -106,6 +106,10 @@ Proof.
       destruct (inva_gvar H1) as (Δ & j0 & T0 & l0 & (_ & Hin & _) & Hk & E);
       destruct (inva_gvar H2) as (Δ' & j1 & T1 & l1 & (_ & Hin' & _) & Hk' & E');
       let X := fresh "X" in pose proof (in_gctx_det Hin Hin') as X; injection X as <- <- <- <-; uq_same
+  | wf_tm _ _ _ (gdef _ _ _) _ _ =>
+      destruct (inva_gdef H1) as (Δ & T0 & l0 & t0 & (_ & Hin & _) & Hk & E);
+      destruct (inva_gdef H2) as (Δ' & T1 & l1 & t1 & (_ & Hin' & _) & Hk' & E');
+      let X := fresh "X" in pose proof (in_gctx_det Hin Hin') as X; injection X as <- <- <- <-; uq_same
   | wf_tm _ _ _ (elimT _ _ _ _ _ _) _ _ =>
       destruct (inv_elimT eq_refl H1) as (MT & Mt & bs & (Er & _) & Hk & E);
       destruct (inv_elimT eq_refl H2) as (MT' & Mt' & bs' & (Er' & _) & Hk' & E');

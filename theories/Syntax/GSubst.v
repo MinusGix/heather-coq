@@ -14,10 +14,14 @@ Lemma pty_ren o e r : ren_ty (pty o e) r = pty o (lren e r).
 Proof. destruct o; cbn; auto. apply (proj1 subst_ren_all). intros; apply llk_lren. Qed.
 Lemma ptm_ren o e r : ren_tm (ptm o e) r = ptm o (lren e r).
 Proof. destruct o; cbn; auto. apply (proj1 (proj2 subst_ren_all)). intros; apply llk_lren. Qed.
+Lemma pdef_ren o b e r : ren_tm (pdef o b e) r = pdef o b (lren e r).
+Proof. destruct o; try reflexivity; apply ptm_ren. Qed.
 Lemma pty_subst o e d : subst_ty (pty o e) d = pty o (lcomp e d).
 Proof. destruct o; cbn; auto. apply (proj1 subst_subst_all). intros; apply llk_lcomp. Qed.
 Lemma ptm_subst o e d : subst_tm (ptm o e) d = ptm o (lcomp e d).
 Proof. destruct o; cbn; auto. apply (proj1 (proj2 subst_subst_all)). intros; apply llk_lcomp. Qed.
+Lemma pdef_subst o b e d : subst_tm (pdef o b e) d = pdef o b (lcomp e d).
+Proof. destruct o; try reflexivity; apply ptm_subst. Qed.
 
 (** ** Global substitution commutes with local renaming and substitution *)
 
@@ -25,7 +29,7 @@ Lemma gsubst_ren_all :
   let Pty T := forall r σ, gsubst_ty (ren_ty T r) σ = ren_ty (gsubst_ty T σ) r in
   let Ptm t := forall r σ, gsubst_tm (ren_tm t r) σ = ren_tm (gsubst_tm t σ) r in
   (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall G : ctx, True) /\ (forall d, LK Ptm d).
-Proof. syn_start; try lk_cases; cbn; rewrite ?pty_ren, ?ptm_ren; law_auto. Qed.
+Proof. syn_start; try lk_cases; cbn; rewrite ?pty_ren, ?ptm_ren, ?pdef_ren; law_auto. Qed.
 Definition gsubst_ren_tm t := proj1 (proj2 gsubst_ren_all) t.
 
 Lemma llift_gsubst d d' σ : (forall n, llk d' n = gsubst_tm (llk d n) σ) ->
@@ -46,6 +50,8 @@ Lemma pty_gren o e ξ : gren_ty (pty o e) ξ = pty (goren o ξ) (glren e ξ).
 Proof. destruct o; cbn; auto. apply (proj1 gren_subst_all). intros; apply llk_glren. Qed.
 Lemma ptm_gren o e ξ : gren_tm (ptm o e) ξ = ptm (goren o ξ) (glren e ξ).
 Proof. destruct o; cbn; auto. apply (proj1 (proj2 gren_subst_all)). intros; apply llk_glren. Qed.
+Lemma pdef_gren o b e ξ : gren_tm (pdef o b e) ξ = pdef (goren o ξ) (gren_tm b ξ) (glren e ξ).
+Proof. destruct o; try reflexivity; apply ptm_gren. Qed.
 Lemma pctx_gren o ξ : gcren (pctx o) ξ = pctx (goren o ξ).
 Proof. destruct o; reflexivity. Qed.
 
@@ -106,6 +112,8 @@ Lemma pty_uren o e ρ : uren_ty (pty o e) ρ = pty (gouren o ρ) (ulren e ρ).
 Proof. destruct o; cbn; auto. apply (proj1 uren_subst_all). intros; apply llk_ulren. Qed.
 Lemma ptm_uren o e ρ : uren_tm (ptm o e) ρ = ptm (gouren o ρ) (ulren e ρ).
 Proof. destruct o; cbn; auto. apply (proj1 (proj2 uren_subst_all)). intros; apply llk_ulren. Qed.
+Lemma pdef_uren o b e ρ : uren_tm (pdef o b e) ρ = pdef (gouren o ρ) (uren_tm b ρ) (ulren e ρ).
+Proof. destruct o; try reflexivity; apply ptm_uren. Qed.
 Lemma pctx_uren o ρ : ucren (pctx o) ρ = pctx (gouren o ρ).
 Proof. destruct o; reflexivity. Qed.
 
@@ -116,7 +124,7 @@ Lemma uren_gsubst_all :
   let Pctx Γ := forall σ ρ τ, (forall i, τ i = gouren (σ i) ρ) -> ucren (gcsubst Γ σ) ρ = gcsubst (ucren Γ ρ) τ in
   (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ, Pctx Γ) /\ (forall d, LK Ptm d).
 Proof.
-  syn_start3; try lk_cases; cbn; rewrite ?pty_uren, ?ptm_uren, ?pctx_uren; law_auto.
+  syn_start3; try lk_cases; cbn; rewrite ?pty_uren, ?ptm_uren, ?pdef_uren, ?pctx_uren; law_auto.
 Qed.
 Definition uren_gsubst_tm t := proj1 (proj2 uren_gsubst_all) t.
 
@@ -152,7 +160,7 @@ Lemma gren_gsubst_all :
   let Pctx Γ := forall σ ξ τ, (forall i, τ i = goren (σ i) ξ) -> gcren (gcsubst Γ σ) ξ = gcsubst Γ τ in
   (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ, Pctx Γ) /\ (forall d, LK Ptm d).
 Proof.
-  syn_start3; try lk_cases; cbn; rewrite ?pty_gren, ?ptm_gren, ?pctx_gren; law_auto.
+  syn_start3; try lk_cases; cbn; rewrite ?pty_gren, ?ptm_gren, ?pdef_gren, ?pctx_gren; law_auto.
 Qed.
 
 Lemma gwk_gsubst d d' σ : (forall n, llk d' n = gsubst_tm (llk d n) σ) ->
@@ -172,7 +180,7 @@ Lemma gsubst_subst_all :
                gsubst_tm (subst_tm t d) σ = subst_tm (gsubst_tm t σ) d' in
   (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall G : ctx, True) /\ (forall d, LK Ptm d).
 Proof.
-  syn_start; try lk_cases; cbn; rewrite ?pty_subst, ?ptm_subst; law_auto.
+  syn_start; try lk_cases; cbn; rewrite ?pty_subst, ?ptm_subst, ?pdef_subst; law_auto.
   all: now rewrite H.
 Qed.
 
@@ -181,6 +189,8 @@ Lemma pty_gsubst o e τ : gsubst_ty (pty o e) τ = pty (gosubst o τ) (glsubst e
 Proof. destruct o; cbn; auto. apply (proj1 gsubst_subst_all). intros; apply llk_glsubst. Qed.
 Lemma ptm_gsubst o e τ : gsubst_tm (ptm o e) τ = ptm (gosubst o τ) (glsubst e τ).
 Proof. destruct o; cbn; auto. apply (proj1 (proj2 gsubst_subst_all)). intros; apply llk_glsubst. Qed.
+Lemma pdef_gsubst o b e τ : gsubst_tm (pdef o b e) τ = pdef (gosubst o τ) (gsubst_tm b τ) (glsubst e τ).
+Proof. destruct o; try reflexivity; apply ptm_gsubst. Qed.
 Lemma pctx_gsubst o τ : gcsubst (pctx o) τ = pctx (gosubst o τ).
 Proof. destruct o; reflexivity. Qed.
 
@@ -217,7 +227,7 @@ Lemma gsubst_gsubst_all :
   let Pctx Γ := forall σ τ θ, (forall i, θ i = gosubst (σ i) τ) -> gcsubst (gcsubst Γ σ) τ = gcsubst Γ θ in
   (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ, Pctx Γ) /\ (forall d, LK Ptm d).
 Proof.
-  syn_start3; try lk_cases; cbn; rewrite ?pty_gsubst, ?ptm_gsubst, ?pctx_gsubst; law_auto.
+  syn_start3; try lk_cases; cbn; rewrite ?pty_gsubst, ?ptm_gsubst, ?pdef_gsubst, ?pctx_gsubst; law_auto.
 Qed.
 
 (** Identity: needs the deep normal form (box contents and the contexts
@@ -245,6 +255,7 @@ with dnftm (t : tm) : Prop :=
   | lam _ _ A t => dnfty A /\ dnftm t
   | app t _ _ A B s => dnftm t /\ dnfty A /\ dnfty B /\ dnftm s
   | gvar _ d => dnfl d
+  | gdef _ b d => dnftm b /\ dnfl d
   | boxT T => dnfty T
   | boxt t => dnftm t
   | letboxT _ _ Δ M t' t => dnfctx Δ /\ dnfty M /\ dnftm t' /\ dnftm t
@@ -296,8 +307,12 @@ Proof.
     try solve [f_equal; intuition eauto].
   all: match goal with Hs : forall i, ?σ i = GId i |- context [?σ ?u] => rewrite Hs; cbn end;
     try reflexivity.
-  all: f_equal; apply l_canon; auto with nf; intros n;
-    rewrite llk_glsubst; match goal with IH : dnfl ?d -> LK _ ?d |- _ => apply IH end; auto with nf.
+  all: f_equal; repeat match goal with H : _ /\ _ |- _ => destruct H end.
+  all: first
+    [ (* a defined global's body *)
+      match goal with IH : dnftm ?b -> _ |- gsubst_tm ?b _ = ?b => apply IH; assumption end
+    | apply l_canon; auto with nf; intros n;
+      rewrite llk_glsubst; match goal with IH : dnfl ?d -> LK _ ?d |- _ => apply IH end; auto with nf ].
 Qed.
 
 (** ** Exported laws, in notation form *)
@@ -374,8 +389,12 @@ Proof.
   syn_start3; try lk_cases_dnf; cbn in *; try tauto;
     try solve [f_equal; intuition eauto].
   all: try match goal with Hs : forall i, ?ξ i = i |- context [?ξ ?u] => rewrite Hs end.
-  all: f_equal; apply l_canon; auto with nf; intros n;
-    rewrite llk_glren; match goal with IH : dnfl ?d -> LK _ ?d |- _ => apply IH end; auto with nf.
+  all: f_equal; repeat match goal with H : _ /\ _ |- _ => destruct H end.
+  all: first
+    [ (* a defined global's body *)
+      match goal with IH : dnftm ?b -> _ |- gren_tm ?b _ = ?b => apply IH; assumption end
+    | apply l_canon; auto with nf; intros n;
+      rewrite llk_glren; match goal with IH : dnfl ?d -> LK _ ?d |- _ => apply IH end; auto with nf ].
 Qed.
 
 (** ** Deep normal forms: preserved by the local operations; imply [nf] *)

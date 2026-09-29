@@ -26,7 +26,7 @@ Proof. destruct γ; [reflexivity | apply gren_gsubst_ctx; reflexivity ..]. Qed.
 Lemma gdecl_gsubst_wk D σ γ : γ <> gwk_id -> gdecl_ren (gdecl_gsubst D σ) γ = gdecl_gsubst D (gsub_wk σ γ).
 Proof.
   intros Hγ. destruct D; cbn [gdecl_gsubst gdecl_ren]; f_equal; try reflexivity;
-    first [apply gren_gsubst_ctx | apply gren_gsubst_ty]; intros; apply gsub_wk_ne, Hγ.
+    first [apply gren_gsubst_ctx | apply gren_gsubst_ty | apply gren_gsubst_tm]; intros; apply gsub_wk_ne, Hγ.
 Qed.
 
 Lemma gsub_wf_wk {G'' G' G γ σ} : [ G' ⊢ σ : G ] -> gwk_ok γ G'' G' -> [ ⊢ G'' ] -> γ <> gwk_id ->
@@ -49,6 +49,7 @@ Proof.
   - intros H. exact (gwa_ty (γ := gwk_id) Hγ HG H).
   - intros (i' & Hi' & Hin). exists i'; split; [exact Hi' | rewrite EG; exact Hin].
   - intros H. exact (gwa_tm (γ := gwk_id) Hγ HG H).
+  - intros Hin. rewrite EG; exact Hin.
 Qed.
 
 Lemma gsub_wf_grow {G'' G' G σ} : [ G' ⊢ σ : G ] -> gwk_ok gwk_id G'' G' -> [ ⊢ G'' ] -> [ G'' ⊢ σ : G ].

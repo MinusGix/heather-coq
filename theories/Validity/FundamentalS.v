@@ -6,7 +6,7 @@
     PER/conversion lemma of [ValidS], or a context lemma.  Well-formed
     global contexts are semantic ([GValid]), which gives the validity of
     the global variables' bindings. *)
-From DeLaM.Validity Require Export GvarS.
+From DeLaM.Validity Require Export Delta.
 
 #[local] Existing Instance LR_P.
 
@@ -69,6 +69,93 @@ Proof.
   - exact (VS_gvar EP EM (fun _ _ _ _ _ _ _ _ H => proj2 H) Hin (lle_trans _ _ _ Hi ge_lle_D) HΓ HT VM VAM Ht Nd Ht' Nd'
              (fun n B k h => proj2 (proj2 (proj2 (proj2 (Hv n B k h)))))
              (fun n B k h => proj2 (proj2 (proj2 (proj2 (Hvv n B k h)))))).
+Qed.
+
+(** ** Defined globals (M9): δ, then the PER laws *)
+
+Lemma FS_delta {G Γ u Δ T l t0 t d} : SemCtx G Γ -> in_gctx (gΨ G) u (gdDef Δ T l t0) -> tm_leq t0 t ->
+  [ G ; Γ ⊢[ lD ] ] -> lsub_tail d Δ Γ -> dnfl d ->
+  (forall n B k, in_ctx Δ n B k -> [ G ; Γ ⊢[ lD ] llk d n : B[d] @ k ]) ->
+  (forall n B k, in_ctx Δ n B k -> SemTm G Γ (llk d n) (llk d n) B[d] k) ->
+  [ G ; Δ ⊢[ lD ] t : T @ l ] -> SemTm G Δ t t T l ->
+  SemTm G Γ (gdef u t d) t[d] T[d] l.
+Proof.
+  intros HS Hin Hl HΓ Ht Nd He Hvv Hb Sb. pose proof HS as (HG & _ & _).
+  pose proof (in_gctx_DWf (ctx_glob _ _ _ HΓ) Hin) as HT; cbn in HT.
+  pose proof (ctx_of_wf_ty (i := lD) eq_refl HT) as HΔ.
+  destruct (HG _ _ Hin) as (VP & VM & VAP & VAM).
+  destruct Sb as (_ & _ & _ & VbP & VbM).
+  assert (Hty : [ G ; Γ ⊢[ lD ] gdef u t d : T[d] @ l ])
+    by (eapply wf_gdef; eauto; unfold lle; cbn; lia).
+  split; [exact HS | split; [| split; [| split]]].
+  - exact (VTyS_inst EP EM HΓ HΔ VP Ht Nd Ht Nd
+             (fun n B k h => proj1 (proj2 (proj2 (proj2 (Hvv n B k h))))) VAP).
+  - exact (VTyS_inst EP EM HΓ HΔ VM Ht Nd Ht Nd
+             (fun n B k h => proj2 (proj2 (proj2 (proj2 (Hvv n B k h))))) VAM).
+  - refine (VS_delta EP EM Hin (lift_tm Hty ge_lle_D) _).
+    exact (VTmS_inst EP EM HΓ HΔ VP Ht Nd Ht Nd
+             (fun n B k h => proj1 (proj2 (proj2 (proj2 (Hvv n B k h)))))
+             (fun n B k h => proj1 (proj2 (proj2 (proj2 (Hvv n B k h))))) VAP VbP).
+  - refine (VS_delta EP EM Hin (lift_tm Hty ge_lle_D) _).
+    exact (VTmS_inst EP EM HΓ HΔ VM Ht Nd Ht Nd
+             (fun n B k h => proj2 (proj2 (proj2 (proj2 (Hvv n B k h)))))
+             (fun n B k h => proj2 (proj2 (proj2 (proj2 (Hvv n B k h))))) VAM VbM).
+Qed.
+
+Lemma FS_gdef {G Γ u Δ T l t0 t d} : SemCtx G Γ -> in_gctx (gΨ G) u (gdDef Δ T l t0) -> tm_leq t0 t ->
+  [ G ; Γ ⊢[ lD ] ] -> lsub_tail d Δ Γ -> dnfl d ->
+  (forall n B k, in_ctx Δ n B k -> [ G ; Γ ⊢[ lD ] llk d n : B[d] @ k ]) ->
+  (forall n B k, in_ctx Δ n B k -> SemTm G Γ (llk d n) (llk d n) B[d] k) ->
+  [ G ; Δ ⊢[ lD ] t : T @ l ] -> SemTm G Δ t t T l ->
+  SemTm G Γ (gdef u t d) (gdef u t d) T[d] l.
+Proof.
+  intros HS Hin Hl HΓ Ht Nd He Hvv Hb Sb. pose proof HS as (HG & VCP & VCM).
+  destruct (FS_delta HS Hin Hl HΓ Ht Nd He Hvv Hb Sb) as (_ & VTP & VTM & XP & XM).
+  split; [exact HS | split; [exact VTP | split; [exact VTM | split]]].
+  - exact (VTmS_trans EP EM XP (VTmS_sym EP EM HG VCP VTP XP)).
+  - exact (VTmS_trans EP EM XM (VTmS_sym EP EM HG VCM VTM XM)).
+Qed.
+
+Lemma FS_gdef_eq {G Γ u Δ T l t0 t t' d d'} : SemCtx G Γ -> in_gctx (gΨ G) u (gdDef Δ T l t0) ->
+  tm_leq t0 t -> tm_leq t0 t' ->
+  [ G ; Γ ⊢[ lD ] ] -> lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
+  (forall n B k, in_ctx Δ n B k -> [ G ; Γ ⊢[ lD ] llk d n : B[d] @ k ]) ->
+  (forall n B k, in_ctx Δ n B k -> [ G ; Γ ⊢[ lD ] llk d' n : B[d'] @ k ]) ->
+  (forall n B k, in_ctx Δ n B k -> SemTm G Γ (llk d n) (llk d n) B[d] k) ->
+  (forall n B k, in_ctx Δ n B k -> SemTm G Γ (llk d' n) (llk d' n) B[d'] k) ->
+  (forall n B k, in_ctx Δ n B k -> SemTm G Γ (llk d n) (llk d' n) B[d] k) ->
+  [ G ; Δ ⊢[ lD ] t ≅ t' : T @ l ] -> SemTm G Δ t t' T l ->
+  SemTm G Γ (gdef u t d) (gdef u t' d') T[d] l.
+Proof.
+  intros HS Hin Hl Hl' HΓ Ht Nd Ht' Nd' He He' Hvv Hvv' Hv Hbb Sb. pose proof HS as (HG & VCP & VCM).
+  pose proof (in_gctx_DWf (ctx_glob _ _ _ HΓ) Hin) as HT; cbn in HT.
+  pose proof (ctx_of_wf_ty (i := lD) eq_refl HT) as HΔ.
+  destruct (HG _ _ Hin) as (VP & VM & VAP & VAM).
+  destruct Sb as (SΔ & VTbP & VTbM & VbP & VbM). pose proof SΔ as (_ & VΔP & VΔM).
+  (* each body related to itself *)
+  assert (Sl : SemTm G Δ t t T l).
+  { refine (conj SΔ (conj VTbP (conj VTbM (conj _ _))));
+      [exact (VTmS_trans EP EM VbP (VTmS_sym EP EM HG VΔP VTbP VbP))
+      | exact (VTmS_trans EP EM VbM (VTmS_sym EP EM HG VΔM VTbM VbM))]. }
+  assert (Sr : SemTm G Δ t' t' T l).
+  { refine (conj SΔ (conj VTbP (conj VTbM (conj _ _))));
+      [exact (VTmS_trans EP EM (VTmS_sym EP EM HG VΔP VTbP VbP) VbP)
+      | exact (VTmS_trans EP EM (VTmS_sym EP EM HG VΔM VTbM VbM) VbM)]. }
+  destruct (FS_delta HS Hin Hl HΓ Ht Nd He Hvv (eqtm_wf_l eq_refl Hbb) Sl) as (_ & VTP & VTM & XP & XM).
+  destruct (FS_delta HS Hin Hl' HΓ Ht' Nd' He' Hvv' (eqtm_wf_r eq_refl Hbb) Sr) as (_ & VTP' & VTM' & YP & YM).
+  split; [exact HS | split; [exact VTP | split; [exact VTM | split]]].
+  - refine (VTmS_trans EP EM XP (VTmS_trans EP EM _ (VTmS_conv EP EM (VTmS_sym EP EM HG VCP VTP' YP) _))).
+    + exact (VTmS_inst EP EM HΓ HΔ VP Ht Nd Ht' Nd'
+               (fun n B k h => proj1 (proj2 (proj2 (proj2 (Hv n B k h)))))
+               (fun n B k h => proj1 (proj2 (proj2 (proj2 (Hvv n B k h))))) VAP VbP).
+    + exact (VTyS_inst EP EM HΓ HΔ VP Ht Nd Ht' Nd'
+               (fun n B k h => proj1 (proj2 (proj2 (proj2 (Hv n B k h))))) VAP).
+  - refine (VTmS_trans EP EM XM (VTmS_trans EP EM _ (VTmS_conv EP EM (VTmS_sym EP EM HG VCM VTM' YM) _))).
+    + exact (VTmS_inst EP EM HΓ HΔ VM Ht Nd Ht' Nd'
+               (fun n B k h => proj2 (proj2 (proj2 (proj2 (Hv n B k h)))))
+               (fun n B k h => proj2 (proj2 (proj2 (proj2 (Hvv n B k h))))) VAM VbM).
+    + exact (VTyS_inst EP EM HΓ HΔ VM Ht Nd Ht' Nd'
+               (fun n B k h => proj2 (proj2 (proj2 (proj2 (Hv n B k h))))) VAM).
 Qed.
 
 (** ** Case tactic
@@ -176,6 +263,7 @@ Proof.
           pose proof (fun n A k h => IH n A k h eq_refl); clear IH
       end;
     try solve [ first [simple eapply FS_tygvar | simple eapply FS_gvar]; eassumption ];
+    try solve [ first [simple eapply FS_gdef | simple eapply FS_gdef_eq | simple eapply FS_delta]; eassumption ];
     unfold SemTy, SemTm, SemCtxEq in *; unfold SemCtx in *;
     repeat match goal with H : _ /\ _ |- _ => destruct H end;
     f_types;

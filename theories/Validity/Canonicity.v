@@ -1,7 +1,7 @@
 (** * Closed canonicity at every type former (M7_DESIGN.md B1)
 
     For a global context of context variables only and the empty local
-    context, at D and M:
+    context, at D and M; at D, also with definitions (M9, [closed_ok]):
     - a well-formed type reduces to a whnf type former, not a neutral one
       ([closed_type_canonicity]);
     - a typed term reduces to a value whose shape the type's head
@@ -55,19 +55,19 @@ Qed.
 
 (** ** Types *)
 
-Theorem closed_type_canonicity {G i T k} : compt i -> ctx_only G -> [ G ; cnil ⊢[ i ] T @ k ] ->
+Theorem closed_type_canonicity {G i T k} : compt i -> closed_ok i G -> [ G ; cnil ⊢[ i ] T @ k ] ->
   exists W, reds_ty T W /\ whnf_ty W /\ ~ whne_ty W /\ [ G ; cnil ⊢[ i ] T ≅ W @ k ].
 Proof.
   intros Hc HG HT. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (tgt_whnf Hc HT) as (W & Hr & Hw & E). exists W; split; [exact Hr | split; [exact Hw | split; [| exact E]]].
   pose proof (eqty_wf_r Hi E) as HW. intros Hn. destruct Hn as [U d | l ν Hν].
-  - destruct (tyGvar_decl HW) as (Δ & i' & l' & Hin). discriminate (HG _ _ Hin).
-  - destruct (inv_ty_El HW) as ((_ & _ & Ht) & _). exact (no_closed_neutral Ht eq_refl HG Hν).
+  - destruct (tyGvar_decl HW) as (Δ & i' & l' & Hin). exact (closed_ok_tyGvar HG Hin).
+  - destruct (inv_ty_El HW) as ((_ & _ & Ht) & _). exact (no_closed_neutral_ok HG Ht Hν).
 Qed.
 
 (** ** Terms *)
 
-Theorem closed_canonicity {G i t T k} : compt i -> ctx_only G -> [ G ; cnil ⊢[ i ] t : T @ k ] ->
+Theorem closed_canonicity {G i t T k} : compt i -> closed_ok i G -> [ G ; cnil ⊢[ i ] t : T @ k ] ->
   exists W w, reds_ty T W /\ whnf_ty W /\ ~ whne_ty W /\
     reds t w /\ whnf w /\ ~ whne w /\ [ G ; cnil ⊢[ i ] t ≅ w : T @ k ] /\ canon_head (ty_head W) w.
 Proof.
@@ -77,13 +77,13 @@ Proof.
   pose proof (red_tm_sound Hc Ht Hr Hw) as Ew.
   assert (EW : [ G ; cnil ⊢[ typeof i ] W ≅ T @ k ]) by (rewrite Hi; exact (eqty_sym _ _ _ _ _ _ E)).
   pose proof (wf_conv _ _ _ _ _ _ _ (eqtm_wf_r Hi Ew) EW) as Hw0.
-  assert (Hn : ~ whne w) by exact (no_closed_neutral Hw0 eq_refl HG).
+  assert (Hn : ~ whne w) by exact (no_closed_neutral_ok HG Hw0).
   exists W, w. repeat split; try assumption. exact (value_canon Hc Hw Hn HW Hw0).
 Qed.
 
 (** At a type already in whnf, the value's shape is read off the type
     itself; [cbn] on [canon_head (ty_head T) w] gives it. *)
-Corollary closed_canonicity_whnf {G i t T k} : compt i -> ctx_only G -> whnf_ty T ->
+Corollary closed_canonicity_whnf {G i t T k} : compt i -> closed_ok i G -> whnf_ty T ->
   [ G ; cnil ⊢[ i ] t : T @ k ] ->
   exists w, reds t w /\ whnf w /\ [ G ; cnil ⊢[ i ] t ≅ w : T @ k ] /\ canon_head (ty_head T) w.
 Proof.
@@ -94,7 +94,7 @@ Proof.
 Qed.
 
 (** For example, closed functions compute to [λ]s. *)
-Corollary closed_pi_canonicity {G i t l l' A B k} : compt i -> ctx_only G ->
+Corollary closed_pi_canonicity {G i t l l' A B k} : compt i -> closed_ok i G ->
   [ G ; cnil ⊢[ i ] t : tyPi l l' A B @ k ] ->
   exists l1 l2 A' b, reds t (lam l1 l2 A' b) /\ [ G ; cnil ⊢[ i ] t ≅ lam l1 l2 A' b : tyPi l l' A B @ k ].
 Proof.

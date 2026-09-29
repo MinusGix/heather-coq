@@ -48,6 +48,10 @@ Inductive red : tm -> tm -> Prop :=
 | red_snd_beta l l' A B a b k k' A' B' : red (tmSnd k k' A' B' (tmPair l l' A B a b)) b
 | red_fst l l' A B p p' : red p p' -> red (tmFst l l' A B p) (tmFst l l' A B p')
 | red_snd l l' A B p p' : red p p' -> red (tmSnd l l' A B p) (tmSnd l l' A B p')
+(* definitions (M9): δ unfolds a defined global to its body's instance. Reduction
+   is used at the computing layers only and never enters a box, so code keeps
+   the global (M9_DESIGN.md) *)
+| red_delta u b d : red (gdef u b d) (b[d])
 
 with red_ty : ty -> ty -> Prop :=
 | red_El_nat l : red_ty (tyEl l tmNat) tyNat
@@ -230,7 +234,9 @@ Proof.
           | constructor; first [now apply redT_ren | now apply redt_ren]
           | cbn [ren_tm]; rewrite <- gsubst_ren; constructor
           | change (ren_tm ?x ?r) with x⟨r⟩;
-            first [rewrite lsingle2_ren | rewrite lsingle_ren]; constructor ].
+            first [rewrite lsingle2_ren | rewrite lsingle_ren]; constructor
+          (* δ: the body's instance *)
+          | erewrite subst_ren by (intros; apply llk_lren); constructor ].
 Qed.
 
 Lemma red_ren t u r : red t u -> red t⟨r⟩ u⟨r⟩.

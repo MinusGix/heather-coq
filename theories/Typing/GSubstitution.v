@@ -16,6 +16,7 @@ Definition gdecl_gsubst (D : gdecl) (σ : gsub) : gdecl :=
   | gdCtx => gdCtx
   | gdTy Δ i l => gdTy Δ⦃σ⦄ i l
   | gdTm Δ i T l => gdTm Δ⦃σ⦄ i T⦃σ⦄ l
+  | gdDef Δ T l t => gdDef Δ⦃σ⦄ T⦃σ⦄ l t⦃σ⦄
   end.
 
 (** What a binding may be sent to. *)
@@ -27,6 +28,8 @@ Definition gobj_wf (G' : gctx) (o : gobj) (D : gdecl) : Prop :=
   | gdTy Δ i l, GTy T => [ G' ; Δ ⊢[ i ] T @ l ]
   | gdTm Δ i T l, GId j => exists i', lle i' i /\ in_gctx (gΨ G') j (gdTm Δ i' T l)
   | gdTm Δ i T l, GTm t => [ G' ; Δ ⊢[ i ] t : T @ l ]
+  (* a definition goes to a definition with the substituted body (M9_DESIGN.md) *)
+  | gdDef Δ T l t, GId j => in_gctx (gΨ G') j (gdDef Δ T l t)
   | _, _ => False
   end.
 
@@ -205,7 +208,7 @@ Qed.
 
 (** The binding lookups. *)
 Lemma gdecl_gsubst_ren_up D σ : gdecl_gsubst (gdecl_ren D S) (gup σ) = gdecl_ren (gdecl_gsubst D σ) S.
-Proof. destruct D; cbn; f_equal; auto using gshift_up_ctx, gshift_up_ty. Qed.
+Proof. destruct D; cbn; f_equal; auto using gshift_up_ctx, gshift_up_ty, gshift_up_tm. Qed.
 
 (** Well-formed contexts end in declared context variables. *)
 Lemma wf_ctx_tail G i Γ g : [ G ; Γ ⊢[ i ] ] -> ctx_tail Γ = cvar g -> gctx_var G g.
@@ -233,7 +236,8 @@ Proof.
     | exact (proj1 (proj2 (proj2 (proj2 gweakening))) _ _ _ _ _ _ Ho _ _ _ HL Hγ Hg)
     | let i' := fresh "i'" in let Hi' := fresh "Hi'" in let Hin := fresh "Hin" in
       destruct Ho as (i' & Hi' & Hin); exists i'; split; [exact Hi'|];
-      exact (in_gctx_gwk _ _ _ _ _ Hγ Hin) ].
+      exact (in_gctx_gwk _ _ _ _ _ Hγ Hin)
+    | exact (in_gctx_gwk _ _ _ _ _ Hγ Ho) ].
 Qed.
 
 Lemma gsub_wf_up G' σ G D :
@@ -246,6 +250,7 @@ Proof.
     + reflexivity.
     + exists i; split; [apply lle_refl | exact (ing_here _ (gdTy _ _ _))].
     + exists i; split; [apply lle_refl | exact (ing_here _ (gdTm _ _ _ _))].
+    + exact (ing_here _ (gdDef _ _ _ _)).
   - rewrite gdecl_gsubst_ren_up.
     exact (gobj_wf_gwk _ _ _ (gwk_step gwk_id) _ _ (Hv _ _ Hm)
              (gwkwf_step _ _ _ _ (gwkwf_id _)) (le_n _) Hg').
@@ -274,7 +279,8 @@ Proof.
   intros Hσ. assert (H : forall i, guwkn n σ i = gouren (σ i) (ush n)) by (intros; apply guwkn_lk, Hσ).
   destruct D; cbn; f_equal; try reflexivity; symmetry;
     first [ apply (proj1 (proj2 (proj2 uren_gsubst_all))); exact H
-          | apply (proj1 uren_gsubst_all); exact H ].
+          | apply (proj1 uren_gsubst_all); exact H
+          | apply (proj1 (proj2 uren_gsubst_all)); exact H ].
 Qed.
 
 Lemma gsub_wf_uwkn n G' σ G : [ G' ⊢ σ : G ] -> [ gctx_uwk n G' ⊢ guwkn n σ : gctx_uwk n G ].
@@ -292,6 +298,7 @@ Proof.
   - destruct Ho as (i' & Hi' & Hin'). exists i'; split; [exact Hi'|].
     exact (in_gctx_uren _ _ _ (ush n) Hin').
   - now apply uwk_tm.
+  - exact (in_gctx_uren _ _ _ (ush n) Ho).
 Qed.
 
 Lemma gsub_wf_up' L Ψ' L0 Ψ σ D D' :
@@ -393,6 +400,7 @@ Lemma gs_snd l l' A B p : (tmSnd l l' A B p)⦃σ⦄ = tmSnd l l' A⦃σ⦄ B⦃
 Lemma gs_tyUnit l : (tyUnit l)⦃σ⦄ = tyUnit l. Proof. reflexivity. Qed.
 Lemma gs_tmUnit l : (tmUnit l)⦃σ⦄ = tmUnit l. Proof. reflexivity. Qed.
 Lemma gs_triv l : (tmTriv l)⦃σ⦄ = tmTriv l. Proof. reflexivity. Qed.
+Lemma gs_gdef u b d : (gdef u b d)⦃σ⦄ = pdef (σ u) b⦃σ⦄ d⦃σ⦄. Proof. reflexivity. Qed.
 End PushGS.
 
 Ltac push_gsubst := repeat progress (
@@ -401,7 +409,7 @@ Ltac push_gsubst := repeat progress (
           ?gs_boxt, ?gs_letboxT, ?gs_letboxt, ?gs_cnil, ?gs_cext, ?gs_lshift,
           ?gs_tyGvar, ?gs_gvar, ?gs_cvar, ?gs_elimT, ?gs_elimt, ?gs_tyUPi, ?gs_ulam, ?gs_uapp,
           ?gs_tyCPi, ?gs_tyTPi, ?gs_clam, ?gs_capp, ?gs_tlam, ?gs_tapp,
-          ?gs_tySig, ?gs_tmSig, ?gs_pair, ?gs_fst, ?gs_snd, ?gs_tyUnit, ?gs_tmUnit, ?gs_triv).
+          ?gs_tySig, ?gs_tmSig, ?gs_pair, ?gs_fst, ?gs_snd, ?gs_tyUnit, ?gs_tmUnit, ?gs_triv, ?gs_gdef).
 
 Lemma gs_single_ty (M : ty) a σ : M[lsingle a]⦃σ⦄ = M⦃σ⦄[lsingle a⦃σ⦄].
 Proof. rewrite gsubst_subst_ty; reflexivity. Qed.
@@ -547,6 +555,22 @@ Ltac gs_manual :=
       | eapply (proj1 (proj2 (proj2 (proj2 functionality_all))));
         [ eapply lift_tm; [exact Ho | assumption]
         | split; [gs_lsub | split; [gs_lsub | gs_entries]] ] ]
+  (* defined globals (M9): a well-formed σ sends them to defined globals *)
+  | Hσ : gsub_wf _ ?σ _, Hin : in_gctx _ ?u (gdDef ?Δ _ _ _) |- wf_tm _ _ _ (pdef (?σ ?u) _ _) _ _ =>
+      let Ho := fresh "Ho" in pose proof (gsw_var _ _ _ Hσ _ _ Hin) as Ho; cbn in Ho;
+      rewrite gsubst_subst_ty; destruct (σ u); cbn in *; try contradiction;
+      eapply wf_gdef with (Δ := Δ⦃σ⦄); [ .. | gs_entries | gs_premise ];
+      first [exact Ho | assumption | gs_ctx | gs_tail | gs_dnfl | solve [eauto with gsub]]
+  | Hσ : gsub_wf _ ?σ _, Hin : in_gctx _ ?u (gdDef ?Δ _ _ _) |- eq_tm _ _ _ (pdef (?σ ?u) _ _) (pdef _ _ _) _ _ =>
+      let Ho := fresh "Ho" in pose proof (gsw_var _ _ _ Hσ _ _ Hin) as Ho; cbn in Ho;
+      rewrite gsubst_subst_ty; destruct (σ u); cbn in *; try contradiction;
+      eapply eqtm_gdef with (Δ := Δ⦃σ⦄); [ .. | gs_entries | gs_entries | gs_entries | gs_premise ];
+      first [exact Ho | assumption | gs_ctx | gs_tail | gs_dnfl | solve [eauto with gsub]]
+  | Hσ : gsub_wf _ ?σ _, Hin : in_gctx _ ?u (gdDef ?Δ _ _ _) |- eq_tm _ _ _ (pdef (?σ ?u) _ _) _ _ _ =>
+      let Ho := fresh "Ho" in pose proof (gsw_var _ _ _ Hσ _ _ Hin) as Ho; cbn in Ho;
+      rewrite gsubst_subst_ty, gsubst_subst; destruct (σ u); cbn in *; try contradiction;
+      eapply eqtm_delta with (Δ := Δ⦃σ⦄); [ .. | gs_entries | gs_premise ];
+      first [exact Ho | assumption | gs_ctx | gs_tail | gs_dnfl | solve [eauto with gsub]]
   end.
 
 (** [UΠ] (M4): [σ] under the [n] level binders is [guwkn n σ]. *)
@@ -765,6 +789,8 @@ Definition decl_ok (G : gctx) (D : gdecl) : Prop :=
   | gdCtx => True
   | gdTy Δ i l => [ G ; Δ ⊢[ lD ] ] /\ lwf (gL G) l
   | gdTm Δ i T l => [ G ; Δ ⊢[ lD ] ] /\ [ G ; Δ ⊢[ lD ] T @ l ] /\ lwf (gL G) l
+  | gdDef Δ T l t => [ G ; Δ ⊢[ lD ] ] /\ [ G ; Δ ⊢[ lD ] T @ l ] /\ lwf (gL G) l /\
+      [ G ; Δ ⊢[ lC ] t : T @ l ]
   end.
 
 Lemma decl_ok_wk1 L Ψ D0 D : [ ⊢ mkG L (D0 :: Ψ) ] -> decl_ok (mkG L Ψ) D ->
@@ -778,13 +804,19 @@ Proof.
   - destruct HD as (HΔ & HT & Hl). refine (conj _ (conj _ Hl)).
     + exact (proj1 (proj2 gweakening) _ _ _ HΔ _ _ _ (le_n _) Hw Hg).
     + exact (proj1 (proj2 (proj2 gweakening)) _ _ _ _ _ HT _ _ _ (le_n _) Hw Hg).
+  - destruct HD as (HΔ & HT & Hl & Ht). refine (conj _ (conj _ (conj Hl _))).
+    + exact (proj1 (proj2 gweakening) _ _ _ HΔ _ _ _ (le_n _) Hw Hg).
+    + exact (proj1 (proj2 (proj2 gweakening)) _ _ _ _ _ HT _ _ _ (le_n _) Hw Hg).
+    + exact (proj1 (proj2 (proj2 (proj2 gweakening))) _ _ _ _ _ _ Ht _ _ _ (le_n _) Hw Hg).
 Qed.
 
 Lemma gctx_decl_ok G n D : [ ⊢ G ] -> in_gctx (gΨ G) n D -> decl_ok G D.
 Proof.
   destruct G as [L Ψ]; cbn. intros Hg Hin; revert Hg; induction Hin as [Ψ D | Ψ D D' n Hin IH]; intros Hg.
   - apply decl_ok_wk1; [exact Hg|]. inversion Hg; subst; cbn; auto.
-    repeat split; auto. exact (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ ltac:(eassumption)).
+    all: repeat split; auto;
+      first [ exact (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ ltac:(eassumption))
+            | eapply lift_tm; [eassumption | unfold lle; cbn; lia] ].
   - apply decl_ok_wk1; [exact Hg|]. apply IH. inversion Hg; subst; assumption.
 Qed.
 
@@ -795,7 +827,8 @@ Proof.
   intros HD; destruct D; cbn in *; f_equal; try reflexivity.
   all: first
     [ rewrite (gsubst_gren_ctx _ _ _ (fun j => GId j)) by reflexivity; apply gsubst_id_ctx; [tauto | auto]
-    | rewrite (gsubst_gren_ty _ _ _ (fun j => GId j)) by reflexivity; apply gsubst_id_ty; [tauto | auto] ].
+    | rewrite (gsubst_gren_ty _ _ _ (fun j => GId j)) by reflexivity; apply gsubst_id_ty; [tauto | auto]
+    | rewrite (gsubst_gren_tm _ _ _ (fun j => GId j)) by reflexivity; apply gsubst_id; [tauto | auto] ].
 Qed.
 
 Lemma in_gctx_ctx_var' Ψ L n D : in_gctx Ψ n D -> D = gdCtx -> gctx_var (mkG L Ψ) n.
@@ -818,4 +851,5 @@ Proof.
   - destruct G as [L Ψ]; exact (in_gctx_ctx_var _ _ _ Hm).
   - exists i; split; [apply lle_refl | exact Hm].
   - exists i; split; [apply lle_refl | exact Hm].
+  - exact Hm.
 Qed.

@@ -531,14 +531,14 @@ Proof.
     eexists. split; [| exact (eqty_refl _ _ _ _ _ (eqtm_wf_ty (i := lM) eq_refl EX))].
     exact (actmne_elimt _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H1) (lequiv_leqv _ _ _ H2)
              (lequiv_leqv _ _ _ H3) Dc DT DMT DMt Db Xν).
-  - intros * Hmot HEP HT HT' (ET & DT) Hbox.
+  - intros * Hg Hg' Hmot HEP HT HT' (ET & DT) Hbox.
     pose proof HEP as [H1 H2 H3 _ _ _ _ _ _ _ _ _ _ _].
     destruct (alg_elim_prem HEP) as (HEP' & Dc & DMT & DMt & Db).
-    pose proof (@gne_tm_elimt_gvar _ _ DeclEqM _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hmot HEP' HT HT' ET Hbox) as X.
+    pose proof (@gne_tm_elimt_glob _ _ DeclEqM _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hg Hg' Hmot HEP' HT HT' ET Hbox) as X.
     refine (conj X _). destruct X as (_ & _ & EX).
     eexists. split; [| exact (eqty_refl _ _ _ _ _ (eqtm_wf_ty (i := lM) eq_refl EX))].
-    exact (actmne_elimt_gvar _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H1) (lequiv_leqv _ _ _ H2)
-             (lequiv_leqv _ _ _ H3) Dc DT DMT DMt Db (proj2 (declM_boxt_leq Hbox))).
+    exact (actmne_elimt_glob _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H1) (lequiv_leqv _ _ _ H2)
+             (lequiv_leqv _ _ _ H3) Dc DT DMT DMt Db Hg (declM_boxt_leq Hbox)).
   (* universe polymorphism *)
   - intros * HΓ Hn Hl HT (ET & DT). refine (conj (@geq_ty_upi _ _ DeclEqM _ _ _ _ _ _ _ HΓ Hn Hl HT ET) _).
     eapply act_red; [constructor | constructor | apply whnf_tyUPi | apply whnf_tyUPi |].

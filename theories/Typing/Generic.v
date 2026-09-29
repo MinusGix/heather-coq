@@ -371,15 +371,17 @@ Class GenericEqM (EP EM : GenericEq) := {
     @gne_tm EM G Γ ν ν' (tyCTrm Δ T l) lzero ->
     @gne_tm EM G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T ν) (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' ν')
       (mott (wrapMt Mt) l Δ T ν) l2 ;
-  gne_tm_elimt_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' u d d'} :
-    [ G ; Γ ⊢[ lM ] mott (wrapMt Mt) l Δ T (boxt (gvar u d))
-                  ≅ mott (wrapMt Mt') l' Δ' T' (boxt (gvar u d')) @ l2 ] ->
+  (* on a boxed global: a global variable, or a definition (M9) *)
+  gne_tm_elimt_glob {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' c c'} :
+    boxed_global c -> boxed_global c' ->
+    [ G ; Γ ⊢[ lM ] mott (wrapMt Mt) l Δ T (boxt c)
+                  ≅ mott (wrapMt Mt') l' Δ' T' (boxt c') @ l2 ] ->
     ElimPrem EP EM G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' ->
     [ G ; Δ ⊢[ lD ] T @ l ] -> [ G ; Δ' ⊢[ lD ] T' @ l' ] -> @geq_ty EP G Δ T T' l ->
-    [ G ; Γ ⊢[ lM ] boxt (gvar u d) ≅ boxt (gvar u d') : tyCTrm Δ T l @ lzero ] ->
-    @gne_tm EM G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt (gvar u d)))
-      (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt (gvar u d')))
-      (mott (wrapMt Mt) l Δ T (boxt (gvar u d))) l2 ;
+    [ G ; Γ ⊢[ lM ] boxt c ≅ boxt c' : tyCTrm Δ T l @ lzero ] ->
+    @gne_tm EM G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt c))
+      (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt c'))
+      (mott (wrapMt Mt) l Δ T (boxt c)) l2 ;
 
   (* universe polymorphism (07:296–342, M4_DESIGN.md F4): congruence of
      [UΠ], extensionality at the bound variables, neutral application *)

@@ -470,6 +470,11 @@ Ltac fung_manual :=
   | Hd : lsub_eq _ _ _ ?d _ _ |- eq_tm _ _ _ (gvar _ _) _ (subst (subst ?T ?e) ?d) _ =>
       rewrite (subst_subst_ty T e d (lcomp e d) (fun m => llk_lcomp e d m));
       eapply eqtm_gvar; [ .. | fung_entries | fung_entries | fung_entries]; fung_side
+  (* defined globals (M9): the body stays in the definition's context *)
+  | Hd : lsub_eq _ _ _ ?d _ _ |- eq_tm _ _ _ (gdef _ _ _) _ (subst (subst ?T ?e) ?d) _ =>
+      rewrite (subst_subst_ty T e d (lcomp e d) (fun m => llk_lcomp e d m));
+      eapply eqtm_gdef; [ .. | fung_entries | fung_entries | fung_entries | apply eqtm_refl; eassumption ];
+      fung_side
   | |- eq_tm _ _ _ (boxT _) _ _ _ => apply eqtm_refl; eapply wf_boxT; eauto; fung_side
   | |- eq_tm _ _ _ (boxt _) _ _ _ => apply eqtm_refl; eapply wf_boxt; eauto; fung_side
   | |- eq_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ _ =>

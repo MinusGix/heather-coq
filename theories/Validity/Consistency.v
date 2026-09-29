@@ -45,7 +45,7 @@ Proof.
   intros Hc HG HΓ. pose proof (compt_typeof_self _ Hc) as Hi.
   induction 1 as [n | u d | l M s z t Hn IH | t l1 l2 A0 B s Hn IH | l1 l2 Δ M t1 t Hn IH
                   | l1 l2 Δ T M t1 t Hn IH | l1 l2 rb l Δ t Hn IH | l1 l2 rb l Δ U d
-                  | l1 l2 rb l Δ T t Hn IH | l1 l2 rb l Δ T u d | t ls Hn IH | t Δ Hn IH | t T Hn IH
+                  | l1 l2 rb l Δ T t Hn IH | l1 l2 rb l Δ T u d | l1 l2 rb l Δ T u b d | t ls Hn IH | t Δ Hn IH | t T Hn IH
                   | l1 l2 A0 B p Hn IH | l1 l2 A0 B p Hn IH];
     intros X k Hx.
   - destruct (inv_var Hi Hx) as (T0 & l0 & (_ & Hin) & _ & E).
@@ -64,6 +64,9 @@ Proof.
     scrutinee_clash IH.
   - destruct (inv_elimt Hi Hx) as (MT & Mt & bs & (_ & -> & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Ht) & _).
     destruct (boxt_inv Ht) as (? & ? & ? & Ht'). destruct (gvar_decl Ht') as (? & ? & ? & ? & Hin).
+    discriminate (HG _ _ Hin).
+  - destruct (inv_elimt Hi Hx) as (MT & Mt & bs & (_ & -> & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Ht) & _).
+    destruct (boxt_inv Ht) as (? & ? & ? & Ht'). destruct (gdef_decl Ht') as (? & ? & ? & ? & Hin).
     discriminate (HG _ _ Hin).
   - destruct (inv_uapp Hi Hx) as (n & l & T0 & (-> & _ & _ & _ & _ & Ht) & _). scrutinee_clash IH.
   - destruct (inv_capp Hi Hx) as (l & T0 & (-> & _ & _ & _ & Ht & _) & _). scrutinee_clash IH.

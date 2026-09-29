@@ -14,7 +14,9 @@ Proof.
   destruct Hin as [<- | Hin]; inversion H; subst; eauto; cbn.
   all: first [ exact I | eapply wf_ctx_dnf; eassumption
              | split; [ eapply wf_ctx_dnf, (proj1 (proj2 (proj2 ctx_extract))); eassumption
-                      | eapply wf_ty_dnf; eassumption ] ].
+                      | eapply wf_ty_dnf; eassumption ]
+             | repeat split; first [ eapply wf_ctx_dnf, (proj1 (proj2 (proj2 ctx_extract))); eassumption
+                                   | eapply wf_ty_dnf; eassumption | eapply wf_tm_dnf; eassumption ] ].
 Qed.
 
 Lemma gdecl_us_ur_single D l : dnf_decl D -> gdecl_usubst (gdecl_uren D (ush 1)) (usingle l) = D.
@@ -25,7 +27,8 @@ Proof.
     | rewrite (lvren_lvsubst _ _ _ lvar) by reflexivity; apply lvsubst_id; reflexivity
     | rewrite (proj1 (proj2 (proj2 uren_usubst_all)) _ _ _ lvar) by reflexivity;
       apply usubst_id_ctx; [tauto | auto]
-    | rewrite (proj1 uren_usubst_all _ _ _ lvar) by reflexivity; apply usubst_id_ty; [tauto | auto] ].
+    | rewrite (proj1 uren_usubst_all _ _ _ lvar) by reflexivity; apply usubst_id_ty; [tauto | auto]
+    | rewrite (proj1 (proj2 uren_usubst_all) _ _ _ lvar) by reflexivity; apply usubst_id; [tauto | auto] ].
 Qed.
 
 Lemma map_us_ur_single L Ψ l : [ ⊢ mkG L Ψ ] ->

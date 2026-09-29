@@ -917,19 +917,19 @@ Proof.
   intros Hν Hν'. exact (proj2 (proj2 (IHν lM lzero lzero _ _ compt_M Hν Hν'))).
 Qed.
 
-Lemma S_actmne_elimt_gvar {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' u d d'} :
+Lemma S_actmne_elimt_glob {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' c c'} :
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> S_ctx G Δ Δ' -> S_ty G Δ T T' ->
   S_ty (recGT G) (recΓT Γ) MT MT' -> S_ty (recGt G) (recΓt Γ) Mt Mt' ->
   (forall j, j < nbr -> S_tm (brG j G) (brΓ j Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                          (bs j) (bs' j) (brRes j (wrapMT MT) (wrapMt Mt))) ->
-  lsub_leq d d' ->
-  S_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt (gvar u d)))
-    (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt (gvar u d')))
-    (mott (wrapMt Mt) l Δ T (boxt (gvar u d))).
+  boxed_global c -> tm_leq c c' ->
+  S_ne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt c))
+    (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt c'))
+    (mott (wrapMt Mt) l Δ T (boxt c)).
 Proof.
-  intros H1 H2 Hl IHc IHi IHT IHt IHb Hd i k k' X X' Hc Hx Hx'.
+  intros H1 H2 Hl IHc IHi IHT IHt IHb Hg Hd i k k' X X' Hc Hx Hx'.
   apply (elimt_core H1 H2 Hl IHc IHi IHT IHt IHb Hc Hx Hx').
-  intros Hν Hν'. exact (eqtm_leq _ _ _ _ _ _ Hν Hν' (conj eq_refl Hd)).
+  intros Hν Hν'. exact (eqtm_leq _ _ _ _ _ _ Hν Hν' Hd).
 Qed.
 
 (** ** The applications of [UΠ], [CΠ], [TΠ] *)
@@ -1099,7 +1099,7 @@ Proof.
     | solve [eapply S_actmne_natrec; eassumption] | solve [eapply S_actmne_app; eassumption]
     | solve [eapply S_actmne_letboxT; eassumption] | solve [eapply S_actmne_letboxt; eassumption]
     | solve [eapply S_actmne_elimT; eassumption] | solve [eapply S_actmne_elimT_gvar; eassumption]
-    | solve [eapply S_actmne_elimt; eassumption] | solve [eapply S_actmne_elimt_gvar; eassumption]
+    | solve [eapply S_actmne_elimt; eassumption] | solve [eapply S_actmne_elimt_glob; eassumption]
     | solve [eapply S_actmne_uapp; eassumption] | solve [eapply S_actmne_capp; eassumption]
     | solve [eapply S_actmne_tapp; eassumption] | solve [eapply S_actmnee_red; eassumption]
     | solve [eapply S_acs_pt; eassumption]

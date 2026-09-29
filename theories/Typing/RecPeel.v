@@ -314,7 +314,7 @@ Lemma gdecl_uren_uext D ls φ :
   gdecl_usubst (gdecl_uren D (ush (length ls))) (uext ls φ) = gdecl_usubst D φ.
 Proof.
   destruct D; cbn [gdecl_uren gdecl_usubst]; f_equal; rewrite ?lvren_ush_uext; auto.
-  all: first [ apply (proj1 (proj2 (proj2 uren_usubst_all))) | apply (proj1 uren_usubst_all) ];
+  all: first [ apply (proj1 (proj2 (proj2 uren_usubst_all))) | apply (proj1 uren_usubst_all) | apply (proj1 (proj2 uren_usubst_all)) ];
     intros; symmetry; apply uext_ush.
 Qed.
 

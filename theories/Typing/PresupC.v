@@ -351,6 +351,30 @@ Proof.
            (conj Hdd (conj Hdd' (fun n A k H => lift_eqtm (Hee _ _ _ H) HiD)))).
 Qed.
 
+(** Defined globals (M9): as [gvar], with the two carried bodies. *)
+Lemma pc_gdef {Γ u Δ T l t0 t t' d d'} : [ G ; Γ ⊢[ typeof i ] ] ->
+  in_gctx (gΨ G) u (gdDef Δ T l t0) -> tm_leq t0 t -> tm_leq t0 t' -> lle lC i ->
+  lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
+  (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n : A[d] @ k ]) ->
+  (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d' n : A[d'] @ k ]) ->
+  (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n ≅ llk d' n : A[d] @ k ]) ->
+  [ G ; Δ ⊢[ i ] t : T @ l ] -> [ G ; Δ ⊢[ i ] t' : T @ l ] ->
+  [ G ; Γ ⊢[ i ] gdef u t d : T[d] @ l ] /\ [ G ; Γ ⊢[ i ] gdef u t' d' : T[d] @ l ].
+Proof.
+  intros HΓ Hin Hl Hl' Hi' Ht Hn Ht' Hn' He He' Hee Hb Hb'. split; [eapply wf_gdef; eassumption|].
+  pose proof HΓ as HΓD; rewrite Hd in HΓD.
+  destruct (gctx_decl_ok _ _ _ (ctx_glob _ _ _ HΓD) Hin) as (_ & HT & _).
+  assert (Hdd : [ G ; Γ ⊢[ lD ] d : Δ ]).
+  { apply (lsub_wf_prem (i := lD) eq_refl); auto.
+    intros n A k H; exact (lift_tm (He _ _ _ H) HiD). }
+  assert (Hdd' : [ G ; Γ ⊢[ lD ] d' : Δ ]).
+  { apply (lsub_wf_prem (i := lD) eq_refl); auto.
+    intros n A k H; exact (lift_tm (He' _ _ _ H) HiD). }
+  apply (conv_at (T' := T[d'])); [eapply wf_gdef; eassumption|].
+  exact (proj1 (proj2 (proj2 functionality_all)) _ _ _ _ _ HT _ _ _
+           (conj Hdd (conj Hdd' (fun n A k H => lift_eqtm (Hee _ _ _ H) HiD)))).
+Qed.
+
 End Cases.
 
 Theorem presupposition_C :
@@ -382,7 +406,7 @@ Proof.
              | solve [eapply pc_U; eassumption] | solve [eapply pc_codeU; eassumption]
              | solve [eapply pc_codepi; eassumption] | solve [eapply pc_natrec; eassumption]
              | solve [eapply pc_lam; eassumption] | solve [eapply pc_app; eassumption]
-             | solve [eapply pc_gvar; eassumption]
+             | solve [eapply pc_gvar; eassumption] | solve [eapply pc_gdef; eassumption]
              | solve [eapply pc_sig; eassumption] | solve [eapply pc_codesig; eassumption]
              | solve [eapply pc_pair; eassumption] | solve [eapply pc_fst; eassumption]
              | solve [eapply pc_snd; eassumption] | solve [eapply pc_unit; eassumption]

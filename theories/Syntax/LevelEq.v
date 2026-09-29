@@ -37,6 +37,7 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
   | app t l1 l2 A B s, app t' l1' l2' A' B' s' =>
       tm_leq t t' /\ leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq s s'
   | gvar u d, gvar u' d' => u = u' /\ lsub_leq d d'
+  | gdef u b d, gdef u' b' d' => u = u' /\ tm_leq b b' /\ lsub_leq d d'
   | boxT T, boxT T' => ty_leq T T'
   | boxt t, boxt t' => tm_leq t t'
   | letboxT l1 l2 Δ M t1 t, letboxT l1' l2' Δ' M' t1' t' =>
@@ -300,11 +301,17 @@ Proof.
   destruct o, o'; cbn; try contradiction; intros H Hd; subst; cbn; auto;
     apply (proj1 (proj2 leq_subst_all)); assumption.
 Qed.
+Lemma pdef_leq o o' b b' d d' : gobj_leq o o' -> tm_leq b b' -> lsub_leq d d' ->
+  tm_leq (pdef o b d) (pdef o' b' d').
+Proof.
+  intros H Hb Hd. destruct o, o'; cbn in H; try contradiction; subst; cbn; auto;
+    apply (proj1 (proj2 leq_subst_all)); assumption.
+Qed.
 Lemma pctx_leq o o' : gobj_leq o o' -> ctx_leq (pctx o) (pctx o').
 Proof. destruct o, o'; cbn; try contradiction; intros H; subst; auto. Qed.
 Lemma gobj_leq_guwkn k σ σ' : (forall i, gobj_leq (σ i) (σ' i)) -> forall i, gobj_leq (guwkn k σ i) (guwkn k σ' i).
 Proof. intros H; unfold guwkn; induction k; [assumption | apply gobj_leq_guwk; assumption]. Qed.
-#[export] Hint Resolve gobj_leq_gup gobj_leq_guwk gobj_leq_guwkn pty_leq ptm_leq pctx_leq : leq.
+#[export] Hint Resolve gobj_leq_gup gobj_leq_guwk gobj_leq_guwkn pty_leq ptm_leq pdef_leq pctx_leq : leq.
 
 Lemma leq_gsubst_all :
   let Pty T := forall T' σ σ', (forall i, gobj_leq (σ i) (σ' i)) -> ty_leq T T' ->
@@ -356,6 +363,7 @@ with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   | lam l1 l2 A t => lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ tm_lwf L t
   | app t l1 l2 A B s => tm_lwf L t /\ lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ ty_lwf L B /\ tm_lwf L s
   | gvar _ d => lsub_lwf L d
+  | gdef _ b d => tm_lwf L b /\ lsub_lwf L d
   | boxT T => ty_lwf L T
   | boxt t => tm_lwf L t
   | letboxT l1 l2 Δ M t1 t => lwf L l1 /\ lwf L l2 /\ ctx_lwf L Δ /\ ty_lwf L M /\ tm_lwf L t1 /\ tm_lwf L t

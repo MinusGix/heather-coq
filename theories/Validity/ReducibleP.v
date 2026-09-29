@@ -13,7 +13,7 @@ Definition gid : gsub := fun n => GId n.
 Lemma gdecl_gsubst_gid D : dnf_decl D -> gdecl_gsubst D gid = D.
 Proof.
   destruct D; cbn [gdecl_gsubst dnf_decl]; intros HD; f_equal; try reflexivity;
-    first [apply gsubst_id_ctx | apply gsubst_id_ty]; first [tauto | intros; reflexivity].
+    first [apply gsubst_id_ctx | apply gsubst_id_ty | apply gsubst_id]; first [tauto | intros; reflexivity].
 Qed.
 
 Lemma gsub_wf_gid {G} : [ ⊢ G ] -> [ G ⊢ gid : G ].
@@ -24,6 +24,7 @@ Proof.
   - destruct G as [L Ψ]; exact (in_gctx_ctx_var _ _ _ Hin).
   - exists i; split; [apply lle_refl | exact Hin].
   - exists i; split; [apply lle_refl | exact Hin].
+  - exact Hin.
 Qed.
 
 Section Reducible.

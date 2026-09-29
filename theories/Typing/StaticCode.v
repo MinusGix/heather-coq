@@ -74,6 +74,9 @@ Proof.
   (* global variables: the entries of the local substitution *)
   all: try solve [eapply lsub_lwf_entries; [eassumption|]; intros ?n ?A ?k ?Hin;
                   match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH; eassumption end].
+  (* defined globals (M9): the body too *)
+  all: split; [assumption |]; eapply lsub_lwf_entries; [eassumption|]; intros ?n ?A ?k ?Hin;
+    match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH; eassumption end.
 Qed.
 
 Lemma wf_ty_lwf {G i Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] -> ty_lwf (gL G) T.
@@ -606,6 +609,19 @@ Ltac sc_gvar_case :=
       split; [ apply (sc_conv Hle (T' := T[d'])); [eapply wf_gvar; eassumption |];
                exact (wf_ty_func (i := lD) eq_refl HT Hdd)
              | eapply eqtm_gvar; eassumption ]
+  (* a defined global (M9): its carried body, by its hypothesis (M9_DESIGN.md N2) *)
+  | Hin : in_gctx _ _ (gdDef ?Δ ?T _ ?t0), E : lsub_leq ?d ?d', W : lsub_lwf _ ?d',
+    Hl0 : tm_leq ?t0 ?b, Eb : tm_leq ?b ?b', Wb : tm_lwf _ ?b',
+    IHb : forall x, tm_leq ?b x -> tm_lwf _ x -> _ /\ _,
+    HΓ : wf_ctx _ (typeof ?i) ?Γ, Hle : lle ?i lD |- _ =>
+      pose proof HΓ as HΓD; rewrite (lle_D_typeof _ Hle) in HΓD;
+      destruct (gctx_decl_ok _ _ _ (ctx_glob _ _ _ HΓD) Hin) as (HΔ & HT & _);
+      destruct (IHb _ Eb Wb) as [Hb' Hbb]; pose proof (tm_leq_trans _ _ _ Hl0 Eb) as Hl0';
+      destruct (sc_entries Hle HΓD HΔ ltac:(eassumption) ltac:(eassumption) E W
+                  ltac:(eassumption) ltac:(eassumption)) as (Ht' & Nd' & Hd' & Heq & Hdd);
+      split; [ apply (sc_conv Hle (T' := T[d'])); [eapply wf_gdef; eassumption |];
+               exact (wf_ty_func (i := lD) eq_refl HT Hdd)
+             | eapply eqtm_gdef; eassumption ]
   end.
 
 Theorem static_code :

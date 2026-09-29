@@ -39,7 +39,7 @@ Proof.
   destruct G as [L Ψ]. induction Ψ as [|D Ψ IHΨ].
   - left; constructor.
   - destruct IHΨ as [HG | N]; [| right; intros H; inversion H; contradiction].
-    destruct D as [| Δ i l | Δ i T l].
+    destruct D as [| Δ i l | Δ i T l | Δ T l t].
     + left; now constructor.
     + destruct (cxd Δ (mkG L Ψ) lD HG) as [HΔ | N]; [| right; intros H; inversion H; contradiction].
       destruct (layer_eq_dec i lC) as [Ei | Ni];
@@ -55,6 +55,12 @@ Proof.
              match goal with X : _ \/ _ |- _ => destruct X; contradiction end]].
       all: destruct (lwf_Dec L l) as [Hl | N]; [| right; intros H; inversion H; contradiction].
       all: left; constructor; auto.
+    + destruct (cxd Δ (mkG L Ψ) lD HG) as [HΔ | N];
+        [| right; intros H; inversion H; subst; apply N; exact (ctx_of_wf_ty (i := lD) eq_refl ltac:(eassumption))].
+      destruct (tyd T (mkG L Ψ) lD Δ l HΔ) as [HT | N]; [| right; intros H; inversion H; contradiction].
+      destruct (lwf_Dec L l) as [Hl | N]; [| right; intros H; inversion H; contradiction].
+      destruct (ckd t (mkG L Ψ) lC Δ T l HT) as [Ht | N]; [| right; intros H; inversion H; contradiction].
+      left; constructor; auto.
 Qed.
 
 (** ** Contexts, types, terms *)

@@ -24,12 +24,14 @@ Definition gdecl_uren (D : gdecl) (ρ : nat -> nat) : gdecl :=
   | gdCtx => gdCtx
   | gdTy Δ i l => gdTy (ucren Δ ρ) i (lvren l ρ)
   | gdTm Δ i T l => gdTm (ucren Δ ρ) i (uren_ty T ρ) (lvren l ρ)
+  | gdDef Δ T l t => gdDef (ucren Δ ρ) (uren_ty T ρ) (lvren l ρ) (uren_tm t ρ)
   end.
 Definition gdecl_usubst (D : gdecl) (φ : nat -> lvl) : gdecl :=
   match D with
   | gdCtx => gdCtx
   | gdTy Δ i l => gdTy (ucsubst Δ φ) i (lvsubst l φ)
   | gdTm Δ i T l => gdTm (ucsubst Δ φ) i (usubst_ty T φ) (lvsubst l φ)
+  | gdDef Δ T l t => gdDef (ucsubst Δ φ) (usubst_ty T φ) (lvsubst l φ) (usubst_tm t φ)
   end.
 
 (** [G[φ]] with [φ : L' ⇒ gL G], and weakening by [n] fresh levels. *)

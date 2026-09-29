@@ -164,15 +164,16 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T ν) (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' ν')
       (mott (wrapMt Mt) l Δ T ν)
-| actmne_elimt_gvar G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' u d d' :
+(* a boxed global (a global variable, or a definition, M9): its code compared as code *)
+| actmne_elimt_glob G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' T T' c c' :
     leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> ac_ctx G Δ Δ' -> ac_ty G Δ T T' ->
     ac_ty (recGT G) (recΓT Γ) MT MT' -> ac_ty (recGt G) (recΓt Γ) Mt Mt' ->
     (forall k, k < nbr -> ac_tm (brG k G) (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2)
                            (bs k) (bs' k) (brRes k (wrapMT MT) (wrapMt Mt))) ->
-    lsub_leq d d' ->
-    ac_tmne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt (gvar u d)))
-      (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt (gvar u d')))
-      (mott (wrapMt Mt) l Δ T (boxt (gvar u d)))
+    boxed_global c -> tm_leq c c' ->
+    ac_tmne G Γ (elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt c))
+      (elimt l1' l2' (mkrb MT' Mt' bs') l' Δ' T' (boxt c'))
+      (mott (wrapMt Mt) l Δ T (boxt c))
 | actmne_uapp G Γ n l T ν ν' ls ls' : ac_tmnee G Γ ν ν' (tyUPi n l T) -> length ls = n ->
     Forall2 leqv ls ls' ->
     ac_tmne G Γ (uapp ν ls) (uapp ν' ls') T[uext ls lvar]ᵤ
@@ -227,7 +228,7 @@ Lemma ac_tynf_whnf_l_all :
 Proof.
   apply ac_mut; intros; try exact I;
     repeat match goal with H : _ /\ _ |- _ => destruct H end;
-    split; auto using whne_elimT_gvar, whne_elimt_gvar with whnf.
+    split; eauto using whne_elimT_gvar, whne_elimt_glob, boxed_global_leq with whnf.
 Qed.
 
 Lemma ac_tynf_whnf {G Γ W W'} : ac_tynf G Γ W W' -> whnf_ty W /\ whnf_ty W'.
