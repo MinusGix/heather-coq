@@ -56,7 +56,7 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | `sEq`, `srefl`, `transp`, strip rule | strict equality, irrelevance | sprop-design | MX §18–22 | strip changes the evaluation notion; MX §19.4 substitution lemma is the named weak spot; completeness gap reaches type relations (MX §22.4) | — |
 | `sEmpty`, `elim_sEmpty` | irrelevant empty type | sprop-design | MX §18, §21.4 | — | — |
 | `Squash`, `ind_∥∥` | normalizing-total irrelevance | MX §27 | sketch only | full pass open (`issues/metatheory-ch07-squash.md`) | — |
-| Bodied globals `u := t`, δ at p/m only | not a former | DESIGN.md, MX §23–25 | **none** | ch. 07 bill unpaid (`issues/metatheory-ch07-definitions.md`) | — |
+| Bodied globals `u := t`, δ at p/m only | not a former | DESIGN.md, MX §23–25 | **none** | ch. 07 bill (`issues/metatheory-ch07-definitions.md`) | **done** (M9): occurrences carry their body (`gdef`); δ as reduction; §26 items 1–4; canonicity at D |
 | `NatLit`, evaluator accelerations | representation | DESIGN.md | n/a | claimed to have no semantic content; nothing to prove here | out of scope |
 
 Code recursor: the paper has 13 branches (indexed 0–12), Heather has 52.
@@ -91,6 +91,18 @@ Cross-checks between the two sides, newest last.
   relation on code; ours is M3_DESIGN.md E11) and which at D and M follows
   from η; and the relation for Unit keeps weak-head normal forms (M8_DESIGN.md
   K5), a semantic choice with no rule behind it.
+- **Bodied globals (M9).** Heather's rules went through, with a recorded
+  syntactic departure: an occurrence of a defined `u` is `gdef u t δ`,
+  carrying the body, so reduction stays context-free (M9_DESIGN.md (b)).
+  The ch. 07 bill of `issues/metatheory-ch07-definitions.md` is paid:
+  glueing is anti-reduction plus the body's validity, coherence across `□`
+  is structural, and no valid-global-context induction is needed, because
+  the use rule carries the body's typing at the use layer (N1). A second
+  addition: the carried body is the declared one up to level equivalence
+  (N2), forced by our Static Code lemma. One consequence for Heather's
+  design: since `elim(box(u^δ))` stays stuck, closed canonicity at M fails
+  for global contexts with definitions; at D it holds. This bears on
+  `issues/opaque-globals-analysis.md`.
 
 ## Beyond type formers
 
@@ -148,7 +160,8 @@ each one touched and why, then choose among 1–3 using that data.
    through one generic lemma per side (J2), shared call and binder bodies (L4).
    Rule lists: a rule with ordinary premises needs no entry in the
    metatheory dispatch (M8_DESIGN.md L5).
-3. Bodied globals with layer-indexed δ: the one piece with no paper pass.
+3. ~~Bodied globals with layer-indexed δ: the one piece with no paper pass.~~
+   Done (M9).
 4. `sEq`/`transp` and the strip rule, starting from MX §19.4.
 5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash).
 
