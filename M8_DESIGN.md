@@ -537,20 +537,39 @@ Per branch in `RecS`: no calls 24–31 lines (`rec_T_unit`,
 `rec_t_codeunit`, `rec_t_triv`), which is on J2's prediction; two to four
 calls under Σ's pieces 83–138 (`rec_T_sig` 83, `rec_t_codesig` 117,
 `rec_t_fst` 119, `rec_t_snd` 129, `rec_t_pair` 138), which is over the
-50–80 predicted. The excess is the part J2 left per branch: the right
+50–80 predicted. The excess was the part J2 left per branch: the right
 side's pieces in their own context and each call's `MotRel_*`
-conversion. Two sources of repetition are visible now:
-- `rec_T_sig`/`rec_t_codesig` are `rec_T_pi`/`rec_t_pi` with the former
-  renamed (≈200 lines). A lemma over the binder former (its typing rule,
-  congruence and branch index as parameters) would share them.
-- `rec_t_pair`/`rec_t_fst`/`rec_t_snd` share a ≈55-line prelude (the
-  pieces `A`, `B` on both sides and their two calls), as do `rec_t_app`
-  and `rec_t_lam`. A lemma for "a type and a family under it, with their
-  calls" would share it.
+conversion, and two copies (`rec_T_sig`/`rec_t_codesig` were
+`rec_T_pi`/`rec_t_pi` with the former renamed). L4 removed both.
 
-Both are follow-ups; neither is needed for Heather's remaining branches
-to go through, but each would roughly halve the per-branch cost for the
-binder-shaped ones.
+### L4. A sub-code and its call; shared binder bodies (taken)
+
+- **`Tcall`/`tcall`** (`RecS`): from a type (resp. term) sub-code on the
+  left, its level-equivalent copy, and the induction hypothesis for its
+  call, give the sub-code's equality, the right copy in the right
+  context at both level annotations, the extended contexts' equality (for
+  a type), and the call related with the left motive on both sides (what
+  `sr_ctx` reads). Every branch with calls now gets its pieces from them
+  (`rec_T_El`, `rec_t_succ`, `rec_t_natrec`, `rec_t_app`, `rec_t_lam`,
+  and the Σ branches).
+- **Normal forms read off typings.** `dnf_any` proves a `dnfctx`/`dnfty`/
+  `dnftm` side condition from a typing or a relation in the context, so
+  `sr_ctx`, `res_eq` and the reduct instances (`inst_side k`) need no
+  `pose proof (wf_*_dnf …)` lines.
+- **One body per binder former.** Π and Σ's type branches
+  (`rec_T_bind`, `rr_T_bind`) and code branches (`rec_t_bind`,
+  `rr_t_bind`), and `fst`/`snd` (`rec_t_proj_pre`, `rr_t_proj`), are one
+  tactic each, over the branch index, the former and its rules. These are
+  tactics, not lemmas: the result and scope equations (`res_eq`,
+  `rr_res`) compute `brRes k` on the concrete index. The tactics take the
+  lemma's variables as arguments; Ltac needs them bound.
+
+After L4, per branch in `RecS`: the Σ type and code branches 14 and 19
+lines (the shared bodies 32 and 50), pair 76, fst 72, snd 82 (their
+shared prelude 34). `RecS` 3797 → 3242 lines, `RecReduct` 1126 → 1021.
+The ≈50–80 lines J2 predicted for a branch with calls now holds, except
+where a branch has its own mathematics (`snd`'s index at the first
+projection, `λ`'s index whnf).
 
 ## Status
 
@@ -567,5 +586,5 @@ J2 (S0–S2) done: the recursor branches go through generic lemmas.
 
 M8d done: Σ and Unit are code (the rules at every layer but V, L1), with
 their eight recursor branches (13–20, L2) through the generic branch
-lemmas. No admits; the six theorems above are still closed under the
+lemmas. The binder-shaped branch cases share their bodies (L4). No admits; the six theorems above are still closed under the
 global context.
