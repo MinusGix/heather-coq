@@ -842,30 +842,7 @@ Ltac m_ctx :=
         | solve [simple eapply VCtxS_tl; m_side]
         | solve [simple eapply VCtxS_ext; m_side] ].
 
-Ltac m_rules :=
-  first
-  [ solve [simple eapply VS_var; m_side]
-  | solve [simple eapply VS_nat; m_side] | solve [simple eapply VS_zero; m_side] | solve [simple eapply VS_code_nat; m_side]
-  | solve [simple eapply VS_El_nat; m_side]
-  | solve [simple eapply VS_succ; m_side]
-  | solve [simple eapply VS_U; m_side] | solve [simple eapply VS_El; m_side]
-  | solve [simple eapply VS_code_U; m_side] | solve [simple eapply VS_El_U; m_side]
-  | solve [simple eapply VS_pi; m_side] | solve [simple eapply VS_app; m_side]
-  | solve [simple eapply VS_lam; m_side] | solve [simple eapply VS_natrec; m_side]
-  | solve [simple eapply VS_code_pi; m_side]
-  | solve [simple eapply VS_beta; m_side] | solve [simple eapply VS_eta; m_side]
-  | solve [simple eapply VS_natrec_zero; m_side] | solve [simple eapply VS_natrec_succ; m_side]
-  | solve [simple eapply VS_El_pi; m_side]
-  (* dependent pairs (M8) *)
-  | solve [simple eapply VS_sig; m_side] | solve [simple eapply VS_code_sig; m_side]
-  | solve [simple eapply VS_pair; m_side] | solve [simple eapply VS_fst; m_side]
-  | solve [simple eapply VS_snd; m_side]
-  | solve [simple eapply VS_fst_beta; m_side] | solve [simple eapply VS_snd_beta; m_side]
-  | solve [simple eapply VS_sig_eta; m_side] | solve [simple eapply VS_El_sig; m_side]
-  (* the unit type (M8c) *)
-  | solve [simple eapply VS_unit; m_side] | solve [simple eapply VS_code_unit; m_side]
-  | solve [simple eapply VS_triv; m_side] | solve [simple eapply VS_El_unit; m_side]
-  | solve [simple eapply VS_unit_eta; m_side] ].
+Ltac m_rules := vs_rules m_side.
 
 Ltac m_ty :=
   first

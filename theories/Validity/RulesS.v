@@ -382,3 +382,30 @@ Proof. intros; s_lift. Qed.
 End Rules.
 
 End RulesS.
+
+(** Each rule's semantic lemma, its side conditions closed by [side]
+    (the fundamental theorems at P and M). A new rule is added here. *)
+Ltac vs_rules side :=
+  first
+  [ solve [simple eapply VS_var; side]
+  | solve [simple eapply VS_nat; side] | solve [simple eapply VS_zero; side] | solve [simple eapply VS_code_nat; side]
+  | solve [simple eapply VS_El_nat; side]
+  | solve [simple eapply VS_succ; side]
+  | solve [simple eapply VS_U; side] | solve [simple eapply VS_El; side]
+  | solve [simple eapply VS_code_U; side] | solve [simple eapply VS_El_U; side]
+  | solve [simple eapply VS_pi; side] | solve [simple eapply VS_app; side]
+  | solve [simple eapply VS_lam; side] | solve [simple eapply VS_natrec; side]
+  | solve [simple eapply VS_code_pi; side]
+  | solve [simple eapply VS_beta; side] | solve [simple eapply VS_eta; side]
+  | solve [simple eapply VS_natrec_zero; side] | solve [simple eapply VS_natrec_succ; side]
+  | solve [simple eapply VS_El_pi; side]
+  (* dependent pairs (M8) *)
+  | solve [simple eapply VS_sig; side] | solve [simple eapply VS_code_sig; side]
+  | solve [simple eapply VS_pair; side] | solve [simple eapply VS_fst; side]
+  | solve [simple eapply VS_snd; side]
+  | solve [simple eapply VS_fst_beta; side] | solve [simple eapply VS_snd_beta; side]
+  | solve [simple eapply VS_sig_eta; side] | solve [simple eapply VS_El_sig; side]
+  (* the unit type (M8c) *)
+  | solve [simple eapply VS_unit; side] | solve [simple eapply VS_code_unit; side]
+  | solve [simple eapply VS_triv; side] | solve [simple eapply VS_El_unit; side]
+  | solve [simple eapply VS_unit_eta; side] ].
