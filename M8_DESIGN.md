@@ -365,6 +365,32 @@ time.
 **Order.** M8c (Unit at D and M) does not touch the recursor (I1), and
 it is J1's acceptance test for steps 1–2. So: M8c, then S0–S2, then M8d.
 
+### J2 log
+
+- **S0.** `nbr` (a parse-only notation for the branch count), `br_isT`
+  (the type branches, a table), `br_all` (for `do 13`). 36 files, no
+  proof change.
+- **S1.** `rcall` descriptors: `br_calls k` and `br_head k` are
+  branch-scope syntax, read by `mkLocs`/`call_ty` into `brLocs`/`brRes`
+  (same values). The spec-level lemmas still split on `k` and did not
+  need to change beyond their `cbn` lists.
+- **S2.** `rec_t_br` (with `rec_t_br_core`, for `λ`'s whnf-index finish)
+  and `rec_T_br` in `RecS`, `rr_br` in `RecReduct`. They absorb the
+  anti-reduction, `br_core`, the three result-motive relations, the branch
+  levels, `peel_wrap`/`br_typed`. The tactics `sr_ctx`/`res_eq` (and
+  `rr_ctx`/`rr_res`) instantiate the branch scope and result from the
+  branch data, reading the calls' prefix off the local substitution
+  (`wkb_rw`). All 13 branches go through them. `RecS` 3414 → 2847 lines,
+  `RecReduct` 985 → 838; build time unchanged. Per branch in `RecS`: no
+  calls 25–35 lines (was 75–100), one call 50–70 (was 117–151), four
+  calls 150–175 (was 226–257). What stays per branch is its own
+  mathematics: inverting the code's typing, the right side's pieces in
+  their own context, each call's motive conversion (`MotRel_*`), and the
+  global payloads' relation (`GS_*`) and typing (`gsub_wf_snoc`).
+- Not done: `GS_*` as a fold over `brDecls` (the lemmas differ in which
+  declaration kinds and conversions they need; they are 15–35 lines except
+  `GS_app`), and a lemma for the per-call motive conversion.
+
 ## M8c: Unit (layers D and M)
 
 Heather references: `H/docs/delam-extensions.md` §7.0–7.4, §11.2;
@@ -459,5 +485,7 @@ soundness, conversion, PER, lift, completeness and decidability.
 
 M8c (Unit at D and M) complete, through the same stack. No admits;
 `consistency`, `tyd`/`ckd`, `ac_tm_dec`, `decl_eqtm_dec_any` and
-`closed_canonicity` are closed under the global context. Next: J2
-(S0–S2, the recursor branches), then M8d.
+`closed_canonicity` are closed under the global context.
+
+J2 (S0–S2) done: the recursor branches go through generic lemmas. Next:
+M8d.
