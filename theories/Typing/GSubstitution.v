@@ -708,6 +708,7 @@ Ltac gs_manual2 :=
   | |- wf_tm _ _ _ (tmUnit _) _ _ => eapply wf_code_unit; gs_premise
   | |- wf_tm _ _ _ (tmTriv _) _ _ => eapply wf_triv; gs_premise
   | |- eq_tm _ _ _ (tmUnit _) (tmUnit _) _ _ => eapply eqtm_code_unit; gs_premise
+  | |- eq_tm _ _ _ (tmTriv _) (tmTriv _) _ _ => first [eapply eqtm_triv; gs_premise | eapply eqtm_unit_eta; gs_premise]
   | |- eq_tm _ _ _ _ _ (tyUnit _) _ => eapply eqtm_unit_eta; gs_premise
   | |- wf_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ => eapply wf_letboxT; try gs_body; gs_premise
   | |- wf_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ => eapply wf_letboxt; try gs_body; gs_premise

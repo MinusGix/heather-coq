@@ -11,7 +11,7 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 Lemma wft_unit_g {G Δ l k} : [ G ; Δ ⊢g ] -> lequiv (gL G) l k -> [ G ; Δ ⊢g tyUnit k @ l ].
 Proof.
   intros HΔ Hk. eapply wft_lconv; [|exact Hk].
-  apply wft_unit; [exact ge_compt | now rewrite ge_typeof | eauto using lequiv_wf_r].
+  apply wft_unit; [exact ge_notV | now rewrite ge_typeof | eauto using lequiv_wf_r].
 Qed.
 
 Lemma LR_unit_here {G Δ l l'} : [ G ; Δ ⊢g ] -> lwf (gL G) l -> lequiv (gL G) l l' ->
@@ -45,7 +45,7 @@ Proof.
   intros HΔ Hla Hk.
   pose proof (lequiv_wf_l _ _ _ Hk) as Hwk.
   assert (Hc0 : [ G ; Δ ⊢g tmUnit k : tyU k @ lsuc k ])
-    by (apply wf_code_unit; [exact ge_compt | now rewrite ge_typeof | exact Hwk]).
+    by (apply wf_code_unit; [exact ge_notV | now rewrite ge_typeof | exact Hwk]).
   pose proof (conv_U' Hc0 Hk) as Hc.
   destruct (El_annot Hc Hla) as [HEl HEq].
   apply tyred_step; [exact HEl | constructor |].
@@ -78,7 +78,7 @@ Proof.
   apply (LRtm_U (l := l) Hw).
   assert (Hc : forall k, lequiv (gL G) l k -> [ G ; Δ ⊢g tmUnit k : tyU l @ lsuc l ]).
   { intros k Hk. apply (conv_U' (l := k)); [|now apply lequiv_sym].
-    apply wf_code_unit; [exact ge_compt | now rewrite ge_typeof | eauto using lequiv_wf_r]. }
+    apply wf_code_unit; [exact ge_notV | now rewrite ge_typeof | eauto using lequiv_wf_r]. }
   exists (tmUnit l), (tmUnit l').
   refine (conj (tmred_refl _ _ _ (Hc _ (lequiv_refl _ _ Hw)))
             (conj (tmred_refl _ _ _ (Hc _ Hl)) (conj (whnf_tmUnit _) (conj (whnf_tmUnit _)
@@ -99,9 +99,9 @@ Proof.
   intros Hw Hl Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ. push_subst.
   apply (LRtm_unit Hw).
   assert (Hc : forall k, lequiv (gL G) l k -> [ G ; Δ ⊢g tmTriv k : tyUnit l @ l ]).
-  { intros k Hk. eapply conv_tm; [apply wf_triv; [exact ge_compt | now rewrite ge_typeof | eauto using lequiv_wf_r]
+  { intros k Hk. eapply conv_tm; [apply wf_triv; [exact ge_notV | now rewrite ge_typeof | eauto using lequiv_wf_r]
                                  | | exact Hk].
-    apply eqty_unit; [exact ge_compt | now rewrite ge_typeof | exact Hk]. }
+    apply eqty_unit; [exact ge_notV | now rewrite ge_typeof | exact Hk]. }
   exists (tmTriv l), (tmTriv l').
   exact (conj (tmred_refl _ _ _ (Hc _ (lequiv_refl _ _ Hw)))
            (conj (tmred_refl _ _ _ (Hc _ Hl)) (conj (whnf_triv _) (whnf_triv _)))).

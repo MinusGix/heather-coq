@@ -1,7 +1,7 @@
 (** * The recursor bundle and the β reducts of the code recursors (M3)
 
     [elim_Typ^{l₁,l₂} M⃗ b⃗ l Δ t] and [elim_Trm^{l₁,l₂} M⃗ b⃗ l Δ T t]
-    (04:816) carry a bundle [rb] of two motives and 13 branches
+    (04:816) carry a bundle [rb] of two motives and [nbr] branches
     (M3_DESIGN.md E2). A component with binders is wrapped in single-step
     markers, levels outermost, then globals, then locals, in the paper's
     binding order (so the last-bound variable is index 0):
@@ -29,7 +29,7 @@ Definition wrap (nu ng nl : nat) (b : tm) : tm := wrapU nu (wrapG ng (wrapL nl b
 
 (** The number of branches, and the branch-indexed case split: [br_all t]
     runs [t] [nbr] times, as [do nbr t] would (M8_DESIGN.md J2, S0). *)
-Notation nbr := 13 (only parsing).
+Notation nbr := 21 (only parsing).
 Ltac br_do n tac := lazymatch n with O => idtac | S ?m => tac; br_do m tac end.
 Ltac br_all tac := br_do constr:(nbr) tac.
 
@@ -38,6 +38,10 @@ Definition bNat := 0.   Definition bPi := 1.    Definition bU := 2.     Definiti
 Definition bVar := 4.   Definition bNat' := 5.  Definition bPi' := 6.   Definition bU' := 7.
 Definition bZero := 8.  Definition bSucc := 9.  Definition bNatrec := 10.
 Definition bLam := 11.  Definition bApp := 12.
+(** Heather's extension branches (M8_DESIGN.md L2), after ch. 04's, in
+    Heather's order ([rec.rs] [branch_specs]) among the formers we have. *)
+Definition bSig := 13.  Definition bUnit := 14.  Definition bSig' := 15.  Definition bPair := 16.
+Definition bFst := 17.  Definition bSnd := 18.  Definition bUnit' := 19. Definition bTriv := 20.
 
 (** The arity [(levels, globals, locals)] of branch [k]. *)
 Definition br_ar (k : nat) : nat * nat * nat :=
@@ -55,13 +59,21 @@ Definition br_ar (k : nat) : nat * nat * nat :=
   | 10 => (1, 5, 4)       (* ℓ; g U_M u_s u_s' u_t; x_M x_s x_s' x_t. t_elimN *)
   | 11 => (2, 4, 2)       (* ℓ ℓ'; g U_S U_T u_t; x_S x_t. t_λ *)
   | 12 => (2, 5, 4)       (* ℓ ℓ'; g U_S U_T u_t u_s; x_S x_T x_t x_s. t_app *)
+  | 13 => (2, 3, 2)       (* ℓ ℓ'; g U_S U_T; x_S x_T. t_Σ *)
+  | 14 => (1, 1, 0)       (* ℓ; g. t_Unit *)
+  | 15 => (2, 3, 2)       (* ℓ ℓ'; g u_s u_t; x_s x_t. t'_Σ *)
+  | 16 => (2, 5, 4)       (* ℓ ℓ'; g U_S U_T u_a u_b; x_S x_T x_a x_b. t_pair *)
+  | 17 => (2, 4, 3)       (* ℓ ℓ'; g U_S U_T u_p; x_S x_T x_p. t_fst *)
+  | 18 => (2, 4, 3)       (* ℓ ℓ'; g U_S U_T u_p; x_S x_T x_p. t_snd *)
+  | 19 => (1, 1, 0)       (* ℓ; g. t'_Unit *)
+  | 20 => (1, 1, 0)       (* ℓ; g. t_triv *)
   | _ => (0, 0, 0)
   end.
 
 (** Whether branch [k] is a type branch (typed at [l₁], recursing on
     [elim_Typ]) or a term branch. *)
 Definition br_isT (k : nat) : bool :=
-  match k with 0 | 1 | 2 | 3 => true | _ => false end.
+  match k with 0 | 1 | 2 | 3 | 13 | 14 => true | _ => false end.
 
 Definition wrapMT (MT : ty) : tm := bindU (bindG (bindL (tmTy MT))).
 Definition wrapMt (Mt : ty) : tm := bindU (bindG (bindG (bindL (tmTy Mt)))).
@@ -106,6 +118,11 @@ Definition redT (l : lvl) (Δ : ctx) (c : ty) : option tm :=
   | tyEl k t =>
       Some (peelL (peelG (peelG (peelU (rb_br rb bEl) k) (GCtx Δ)) (GTm t))
               (rect (lsuc k) Δ (tyU k) t))
+  | tySig k k' A B =>
+      Some (peelL (peelL (peelG (peelG (peelG (peelU (peelU (rb_br rb bSig) k) k')
+              (GCtx Δ)) (GTy A)) (GTy B))
+              (recT k Δ A)) (recT k' (cext Δ A k) B))
+  | tyUnit k => Some (peelG (peelU (rb_br rb bUnit) k) (GCtx Δ))
   | _ => None
   end.
 
@@ -148,6 +165,34 @@ Definition redt (l : lvl) (Δ : ctx) (T : ty) (c : tm) : option tm :=
               (recT k' (cext Δ A k) B))
               (rect (lmax k k') Δ (tyPi k k' A B) f))
               (rect k Δ A a))
+  | tmSig k k' s t =>
+      Some (peelL (peelL (peelG (peelG (peelG (peelU (peelU (rb_br rb bSig') k) k')
+              (GCtx Δ)) (GTm s)) (GTm t))
+              (rect (lsuc k) Δ (tyU k) s)) (rect (lsuc k') (cext Δ (tyEl k s) k) (tyU k') t))
+  | tmPair k k' A B a b =>
+      Some (peelL (peelL (peelL (peelL
+              (peelG (peelG (peelG (peelG (peelG (peelU (peelU (rb_br rb bPair) k) k')
+                 (GCtx Δ)) (GTy A)) (GTy B)) (GTm a)) (GTm b))
+              (recT k Δ A))
+              (recT k' (cext Δ A k) B))
+              (rect k Δ A a))
+              (rect k' Δ (subst_ty B (lsingle a)) b))
+  | tmFst k k' A B p =>
+      Some (peelL (peelL (peelL
+              (peelG (peelG (peelG (peelG (peelU (peelU (rb_br rb bFst) k) k')
+                 (GCtx Δ)) (GTy A)) (GTy B)) (GTm p))
+              (recT k Δ A))
+              (recT k' (cext Δ A k) B))
+              (rect (lmax k k') Δ (tySig k k' A B) p))
+  | tmSnd k k' A B p =>
+      Some (peelL (peelL (peelL
+              (peelG (peelG (peelG (peelG (peelU (peelU (rb_br rb bSnd) k) k')
+                 (GCtx Δ)) (GTy A)) (GTy B)) (GTm p))
+              (recT k Δ A))
+              (recT k' (cext Δ A k) B))
+              (rect (lmax k k') Δ (tySig k k' A B) p))
+  | tmUnit k => Some (peelG (peelU (rb_br rb bUnit') k) (GCtx Δ))
+  | tmTriv k => Some (peelG (peelU (rb_br rb bTriv) k) (GCtx Δ))
   | _ => None
   end.
 

@@ -392,8 +392,10 @@ Proof.
   - intros n A k h; apply sc_eqtm, (proj2 (X n A k h)).
 Qed.
 
-(** The unit type (M8c): only at D, like Σ. *)
-Lemma sc_unit {Γ l l'} : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+Lemma lD_notV_sc : lD <> lV. Proof. discriminate. Qed.
+
+(** The unit type (M8c): at every layer below D but V (code since M8d). *)
+Lemma sc_unit {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
   [ G ; Γ ⊢[ i ] tyUnit l' @ l ] /\ [ G ; Γ ⊢[ i ] tyUnit l ≅ tyUnit l' @ l ].
 Proof.
   intros Hc HΓ Hl Hl' E. pose proof (lq Hl Hl' E) as Q. split.
@@ -401,7 +403,7 @@ Proof.
   - apply eqty_unit; auto.
 Qed.
 
-Lemma sc_code_unit {Γ l l'} : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+Lemma sc_code_unit {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
   [ G ; Γ ⊢[ i ] tmUnit l' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmUnit l ≅ tmUnit l' : tyU l @ lsuc l ].
 Proof.
   intros Hc HΓ Hl Hl' E. pose proof (lq Hl Hl' E) as Q. split.
@@ -411,19 +413,19 @@ Proof.
   - apply eqtm_code_unit; auto.
 Qed.
 
-Lemma sc_triv {Γ l l'} : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+Lemma sc_triv {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
   [ G ; Γ ⊢[ i ] tmTriv l' : tyUnit l @ l ] /\ [ G ; Γ ⊢[ i ] tmTriv l ≅ tmTriv l' : tyUnit l @ l ].
 Proof.
   intros Hc HΓ Hl Hl' E. pose proof (lq Hl Hl' E) as Q.
   assert (H' : [ G ; Γ ⊢[ i ] tmTriv l' : tyUnit l @ l ]).
   { apply (sc_conv (T' := tyUnit l')).
     - eapply wf_lconv; [apply wf_triv; auto | exact Q].
-    - rewrite Hty in HΓ. apply eqty_unit; [exact compt_D | exact HΓ | exact Q]. }
-  split; [exact H' | apply eqtm_unit_eta; auto using wf_triv].
+    - rewrite Hty in HΓ. apply eqty_unit; [discriminate | exact HΓ | exact Q]. }
+  split; [exact H' | apply eqtm_triv; auto].
 Qed.
 
-(** Dependent pairs (M8): only at D ([compt i] below D). *)
-Lemma sc_sig {Γ l1 l2 l1' l2' A A' B B'} : compt i -> lwf (gL G) l1 -> lwf (gL G) l2 ->
+(** Dependent pairs (M8): likewise. *)
+Lemma sc_sig {Γ l1 l2 l1' l2' A A' B B'} : i <> lV -> lwf (gL G) l1 -> lwf (gL G) l2 ->
   lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
   [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
   [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] /\ [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
@@ -439,7 +441,7 @@ Proof.
   - apply eqty_sig; auto.
 Qed.
 
-Lemma sc_code_sig {Γ l1 l2 l1' l2' s s' t t'} : compt i -> lwf (gL G) l1 -> lwf (gL G) l2 ->
+Lemma sc_code_sig {Γ l1 l2 l1' l2' s s' t t'} : i <> lV -> lwf (gL G) l1 -> lwf (gL G) l2 ->
   lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
   [ G ; Γ ⊢[ i ] s : tyU l1 @ lsuc l1 ] ->
   [ G ; Γ ⊢[ i ] s' : tyU l1 @ lsuc l1 ] /\ [ G ; Γ ⊢[ i ] s ≅ s' : tyU l1 @ lsuc l1 ] ->
@@ -451,7 +453,7 @@ Proof.
   intros Hc H1 H2 H1' H2' E1 E2 Hs [Hs' Hss] [Ht' Htt].
   pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2.
   pose proof (sc_ctx_tm Hs) as HΓ.
-  assert (Hv : i <> lV) by (destruct Hc as [->| ->]; discriminate).
+  pose proof Hc as Hv.
   assert (HEl : [ G ; Γ ⊢[ i ] tyEl l1 s @ l1 ]) by (apply wft_El; auto).
   assert (HElE : [ G ; Γ ⊢[ i ] tyEl l1 s ≅ tyEl l1' s' @ l1 ]) by (apply eqty_El; auto).
   pose proof (sc_ext HEl HElE Q1) as Hx.
@@ -468,7 +470,7 @@ Proof.
   - apply eqtm_code_sig; auto.
 Qed.
 
-Lemma sc_pair {Γ l1 l2 l1' l2' A A' B B' a a' b b'} : compt i -> lwf (gL G) l1 -> lwf (gL G) l2 ->
+Lemma sc_pair {Γ l1 l2 l1' l2' A A' B B' a a' b b'} : i <> lV -> lwf (gL G) l1 -> lwf (gL G) l2 ->
   lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
   [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
   [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] ->
@@ -492,11 +494,11 @@ Proof.
       * apply (sc_conv (T' := B[lsingle a])); [eapply wf_lconv; [exact Hb' | apply lequiv_sym, Q2] |].
         eapply eqty_lconv; [apply eqty_sym | apply lequiv_sym, Q2].
         exact (eqty_subst_single_D (sc_eqty HBB) (sc_ty HB') (sc_eqtm Haa) (sc_tm Ha) (sc_tm Ha')).
-    + apply eqty_sig; auto using sc_ty, sc_eqty, compt_D.
+    + apply eqty_sig; auto using sc_ty, sc_eqty, lD_notV_sc.
   - apply eqtm_pair; auto.
 Qed.
 
-Lemma sc_fst {Γ l1 l2 l1' l2' A A' B B' p p'} : compt i -> lwf (gL G) l1 -> lwf (gL G) l2 ->
+Lemma sc_fst {Γ l1 l2 l1' l2' A A' B B' p p'} : i <> lV -> lwf (gL G) l1 -> lwf (gL G) l2 ->
   lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
   [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
   [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] ->
@@ -511,7 +513,7 @@ Proof.
   pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2.
   pose proof (sc_ext HA HAA Q1) as Hx.
   assert (HP : [ G ; Γ ⊢[ lD ] tySig l1' l2' A' B' ≅ tySig l1 l2 A B @ lmax l1' l2' ]).
-  { eapply eqty_lconv; [apply eqty_sym, eqty_sig; auto using sc_ty, sc_eqty, compt_D |].
+  { eapply eqty_lconv; [apply eqty_sym, eqty_sig; auto using sc_ty, sc_eqty, lD_notV_sc |].
     apply lequiv_sym, lequiv_lmax'; assumption. }
   split.
   - apply (sc_conv (T' := A')).
@@ -524,7 +526,7 @@ Proof.
   - apply eqtm_fst; auto.
 Qed.
 
-Lemma sc_snd {Γ l1 l2 l1' l2' A A' B B' p p'} : compt i -> lwf (gL G) l1 -> lwf (gL G) l2 ->
+Lemma sc_snd {Γ l1 l2 l1' l2' A A' B B' p p'} : i <> lV -> lwf (gL G) l1 -> lwf (gL G) l2 ->
   lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
   [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
   [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] ->
@@ -542,7 +544,7 @@ Proof.
     as [Hf' Hff].
   assert (Hf : [ G ; Γ ⊢[ i ] tmFst l1 l2 A B p : A @ l1 ]) by (apply wf_fst; auto).
   assert (HP : [ G ; Γ ⊢[ lD ] tySig l1' l2' A' B' ≅ tySig l1 l2 A B @ lmax l1' l2' ]).
-  { eapply eqty_lconv; [apply eqty_sym, eqty_sig; auto using sc_ty, sc_eqty, compt_D |].
+  { eapply eqty_lconv; [apply eqty_sym, eqty_sig; auto using sc_ty, sc_eqty, lD_notV_sc |].
     apply lequiv_sym, lequiv_lmax'; assumption. }
   split.
   - apply (sc_conv (T' := B'[lsingle (tmFst l1' l2' A' B' p')])).

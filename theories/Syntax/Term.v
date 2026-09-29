@@ -59,7 +59,7 @@ with tm : Type :=
 | bindU (b : tm)                          (* binds one level variable *)
 | bindG (b : tm)                          (* binds one global variable *)
 | bindL (b : tm)                          (* binds one local variable *)
-(* the recursors on code; [rb] bundles the two motives and 13 branches *)
+(* the recursors on code; [rb] bundles the two motives and [nbr] branches *)
 | elimT (l1 l2 : lvl) (rb : tm) (l : lvl) (Δ : ctx) (t : tm)
     (* elim_Typ^{l1,l2} M⃗ b⃗ l Δ t *)
 | elimt (l1 l2 : lvl) (rb : tm) (l : lvl) (Δ : ctx) (T : ty) (t : tm)

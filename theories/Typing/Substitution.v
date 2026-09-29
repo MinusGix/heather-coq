@@ -282,6 +282,7 @@ Ltac sub_manual :=
   | |- wf_tm _ _ _ (tmUnit _) _ _ => eapply wf_code_unit
   | |- wf_tm _ _ _ (tmTriv _) _ _ => eapply wf_triv
   | |- eq_tm _ _ _ (tmUnit _) (tmUnit _) _ _ => eapply eqtm_code_unit
+  | |- eq_tm _ _ _ (tmTriv _) (tmTriv _) _ _ => first [eapply eqtm_triv | eapply eqtm_unit_eta]
   | |- eq_tm _ _ _ _ _ (tyUnit _) _ => eapply eqtm_unit_eta
   end; sub_premise.
 

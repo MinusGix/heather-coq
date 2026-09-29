@@ -461,6 +461,7 @@ Ltac wk_manual :=
   | |- wf_tm _ _ _ (tmUnit _) _ _ => eapply wf_code_unit; wk_premise
   | |- wf_tm _ _ _ (tmTriv _) _ _ => eapply wf_triv; wk_premise
   | |- eq_tm _ _ _ (tmUnit _) (tmUnit _) _ _ => eapply eqtm_code_unit; wk_premise
+  | |- eq_tm _ _ _ (tmTriv _) (tmTriv _) _ _ => first [eapply eqtm_triv; wk_premise | eapply eqtm_unit_eta; wk_premise]
   | |- eq_tm _ _ _ _ _ (tyUnit _) _ => eapply eqtm_unit_eta; wk_premise
   | |- wf_ty _ _ _ (tyGvar _ _) _ => eapply wft_gvar; [ .. | wk_entries]; eauto with wk
   | |- eq_ty _ _ _ (tyGvar _ _) _ _ =>

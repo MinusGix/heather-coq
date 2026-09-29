@@ -14,6 +14,9 @@
     theorems here. *)
 From DeLaM.Validity Require Export Canonicity.
 
+(* the Σ rules ask for [i <> lV] (M8d); a computing layer is not V *)
+Local Hint Resolve compt_notV : core.
+
 (** ** Levels and types of an inverted typing *)
 
 Lemma retype_eqtm {G i Γ t t' T A k l} : typeof i = i -> [ G ; Γ ⊢[ i ] t ≅ t' : A @ l ] ->

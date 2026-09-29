@@ -115,37 +115,37 @@ Lemma inva_app {G i Γ l l' A B t s T k} : [ G ; Γ ⊢[ i ] app t l l' A B s : 
 Proof. inv_tm_any. Qed.
 
 Lemma inva_code_sig {G i Γ l l' s t T k} : [ G ; Γ ⊢[ i ] tmSig l l' s t : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ]) /\
     lvl_eq (gL G) k (lsuc (lmax l l')) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU (lmax l l') @ k ].
 Proof. inv_tm_any. Qed.
 
 Lemma inva_pair {G i Γ l l' A B a b T k} : [ G ; Γ ⊢[ i ] tmPair l l' A B a b : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
     [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\ [ G ; Γ ⊢[ i ] a : A @ l ] /\
     [ G ; Γ ⊢[ i ] b : B[lsingle a] @ l' ]) /\
     lvl_eq (gL G) k (lmax l l') /\ [ G ; Γ ⊢[ typeof i ] T ≅ tySig l l' A B @ k ].
 Proof. inv_tm_any. Qed.
 
 Lemma inva_fst {G i Γ l l' A B p T k} : [ G ; Γ ⊢[ i ] tmFst l l' A B p : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
     [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\ [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ]) /\
     lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ typeof i ] T ≅ A @ k ].
 Proof. inv_tm_any. Qed.
 
 Lemma inva_snd {G i Γ l l' A B p T k} : [ G ; Γ ⊢[ i ] tmSnd l l' A B p : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
     [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\ [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ]) /\
     lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ typeof i ] T ≅ B[lsingle (tmFst l l' A B p)] @ k ].
 Proof. inv_tm_any. Qed.
 
 Lemma inva_code_unit {G i Γ l T k} : [ G ; Γ ⊢[ i ] tmUnit l : T @ k ] ->
-  (compt i /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\
+  (i <> lV /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU l @ k ].
 Proof. inv_tm_any. Qed.
 
 Lemma inva_triv {G i Γ l T k} : [ G ; Γ ⊢[ i ] tmTriv l : T @ k ] ->
-  (compt i /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\
+  (i <> lV /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\
     lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyUnit l @ k ].
 Proof. inv_tm_any. Qed.
 

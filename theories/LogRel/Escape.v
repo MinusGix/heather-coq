@@ -42,7 +42,7 @@ Lemma unit_conv {G Γ t l l'} : lequiv (gL G) l l' ->
   [ G ; Γ ⊢g t : tyUnit l @ l ] -> [ G ; Γ ⊢g t : tyUnit l' @ l' ].
 Proof.
   intros Hl Ht. eapply conv_tm; [exact Ht | | exact (lequiv_sym _ _ _ Hl)].
-  apply eqty_unit; [exact ge_compt | rewrite ge_typeof; exact (ctx_of_tm Ht) | exact (lequiv_sym _ _ _ Hl)].
+  apply eqty_unit; [exact ge_notV | rewrite ge_typeof; exact (ctx_of_tm Ht) | exact (lequiv_sym _ _ _ Hl)].
 Qed.
 
 Lemma unit_tmred_conv {G Γ t w l l'} : lequiv (gL G) l l' ->
@@ -50,7 +50,7 @@ Lemma unit_tmred_conv {G Γ t w l l'} : lequiv (gL G) l l' ->
 Proof.
   intros Hl H. eapply tmred_lconv; [| exact (lequiv_sym _ _ _ Hl)].
   eapply tmred_conv; [apply ge_typeof | exact H |].
-  apply eqty_unit; [exact ge_compt | rewrite ge_typeof; exact (ctx_of_tm (tmred_wf _ _ _ _ _ _ _ H)) | exact Hl].
+  apply eqty_unit; [exact ge_notV | rewrite ge_typeof; exact (ctx_of_tm (tmred_wf _ _ _ _ _ _ _ H)) | exact Hl].
 Qed.
 
 Lemma UnitRel_lconv {G Γ l l'} : lequiv (gL G) l l' -> releq (UnitRel G Γ l) (UnitRel G Γ l').

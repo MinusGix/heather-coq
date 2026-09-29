@@ -529,7 +529,7 @@ Proof.
   intros H13 H24 IHs IHt i k Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_code_sig Hi Hx) as ((Hc0 & W1 & W2 & Hs & Ht) & Hk & HT).
   destruct (inv_code_sig Hi Hx') as ((_ & W3 & W4 & Hs' & Ht') & _).
-  pose proof (compt_notV _ Hc0) as Hv.
+  pose proof Hc0 as Hv.
   pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
   pose proof (ctx_of_wf_tm Hi Hs) as HΓ.
   assert (HΓt : [ G ; Γ ⊢[ typeof i ] ]) by (rewrite Hi; exact HΓ).
@@ -579,7 +579,7 @@ Lemma S_actnf_unit {G Γ l l'} : leqv l l' -> S_ty G Γ (tyUnit l) (tyUnit l').
 Proof.
   intros Hl i k Hc HT HT'.
   destruct (inv_ty_unit HT) as ((_ & HΓ & W) & Hk). destruct (inv_ty_unit HT') as ((_ & _ & W') & _).
-  apply (lvl_eq_eqty Hk). apply eqty_unit; [exact Hc | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
+  apply (lvl_eq_eqty Hk). apply eqty_unit; [exact (compt_notV _ Hc) | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
 Qed.
 
 Lemma S_actmnf_code_unit {G Γ l k k'} : leqv k k' -> S_tm G Γ (tmUnit k) (tmUnit k') (tyU l).
@@ -587,7 +587,7 @@ Proof.
   intros Hl i kk Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_code_unit Hi Ht) as ((_ & HΓ & W) & Hk & HT). destruct (inv_code_unit Hi Ht') as ((_ & _ & W') & _).
   eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
-  apply eqtm_code_unit; [exact Hc | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
+  apply eqtm_code_unit; [exact (compt_notV _ Hc) | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
 Qed.
 
 Lemma S_actmnf_unit_eta {G Γ l w w'} : S_tm G Γ w w' (tyUnit l).

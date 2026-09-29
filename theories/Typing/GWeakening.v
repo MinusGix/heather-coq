@@ -464,6 +464,7 @@ Ltac gw_step :=
             | solve [eapply eqtm_fst; gw_premises] | solve [eapply eqtm_snd; gw_premises]
             | solve [eapply eqtm_fst_beta; gw_premises] | solve [eapply eqtm_snd_beta; gw_premises]
             | solve [eapply eqtm_sig_eta; gw_premises] | solve [eapply eqtm_code_unit; gw_premises]
+            | solve [eapply eqtm_triv; gw_premises]
             | solve [eapply eqtm_unit_eta; gw_premises] ]
   end.
 

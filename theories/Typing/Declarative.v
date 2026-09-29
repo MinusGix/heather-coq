@@ -71,12 +71,12 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
 | wft_tpi G Γ Δ l l' T : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' ->
     [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] ->
     [ G ; Γ ⊢[ lM ] tyTPi Δ l l' T @ l' ]
-(* dependent pairs (layers D and M; M8_DESIGN.md I1, I3) *)
-| wft_sig G i Γ l l' A B : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+(* dependent pairs (every layer but V: code since M8d, M8_DESIGN.md L1) *)
+| wft_sig G i Γ l l' A B : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
     [ G ; Γ ⊢[ i ] tySig l l' A B @ lmax l l' ]
-(* the unit type (layers D and M; M8_DESIGN.md K2) *)
-| wft_unit G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
+(* the unit type (every layer but V since M8d; M8_DESIGN.md K2, L1) *)
+| wft_unit G i Γ l : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tyUnit l @ l ]
 
 with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
@@ -188,26 +188,26 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ lM ] T⦃gsingle (GTy A)⦄ @ l' ] ->
     [ G ; Γ ⊢[ lM ] tapp t A : T⦃gsingle (GTy A)⦄ @ l' ]
 (* dependent pairs (layers D and M) *)
-| wf_code_sig G i Γ l l' s t : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+| wf_code_sig G i Γ l l' s t : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ] ->
     [ G ; Γ ⊢[ i ] tmSig l l' s t : tyU (lmax l l') @ lsuc (lmax l l') ]
-| wf_pair G i Γ l l' A B a b : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+| wf_pair G i Γ l l' A B a b : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
     [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] b : B[lsingle a] @ l' ] ->
     [ G ; Γ ⊢[ i ] tmPair l l' A B a b : tySig l l' A B @ lmax l l' ]
-| wf_fst G i Γ l l' A B p : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+| wf_fst G i Γ l l' A B p : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
     [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ] ->
     [ G ; Γ ⊢[ i ] tmFst l l' A B p : A @ l ]
-| wf_snd G i Γ l l' A B p : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+| wf_snd G i Γ l l' A B p : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
     [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ] ->
     [ G ; Γ ⊢[ i ] tmSnd l l' A B p : B[lsingle (tmFst l l' A B p)] @ l' ]
 (* the unit type (layers D and M) *)
-| wf_code_unit G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
+| wf_code_unit G i Γ l : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tmUnit l : tyU l @ lsuc l ]
-| wf_triv G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
+| wf_triv G i Γ l : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tmTriv l : tyUnit l @ l ]
 
 with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
@@ -267,7 +267,7 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ gext G (gdTy Δ' lD l3) ; Γ⟪S⟫ ⊢[ lM ] T' @ l4 ] ->
     [ G ; Γ ⊢[ lM ] tyTPi Δ l1 l2 T ≅ tyTPi Δ' l3 l4 T' @ l2 ]
 (* dependent pairs (layers D and M) *)
-| eqty_sig G i Γ l1 l2 l3 l4 A A' B B' : compt i ->
+| eqty_sig G i Γ l1 l2 l3 l4 A A' B B' : i <> lV ->
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
     [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
@@ -277,7 +277,7 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ] ->
     [ G ; Γ ⊢[ i ] tySig l l' (tyEl l s) (tyEl l' t) ≅ tyEl (lmax l l') (tmSig l l' s t) @ lmax l l' ]
 (* the unit type (layers D and M) *)
-| eqty_unit G i Γ l l' : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+| eqty_unit G i Γ l l' : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] tyUnit l ≅ tyUnit l' @ l ]
 | eqty_El_unit G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tyUnit l ≅ tyEl l (tmUnit l) @ l ]
@@ -508,25 +508,25 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ lM ] t : tyTPi Δ l l' T @ l' ] ->
     [ G ; Γ ⊢[ lM ] tlam Δ l l' T (tapp t⟪S⟫ (tyGvar 0 (lshift 0))) ≅ t : tyTPi Δ l l' T @ l' ]
 (* dependent pairs (layers D and M): congruences, β, η as surjective pairing *)
-| eqtm_code_sig G i Γ l1 l2 l3 l4 s s' t t' : compt i ->
+| eqtm_code_sig G i Γ l1 l2 l3 l4 s s' t t' : i <> lV ->
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢[ i ] s : tyU l1 @ lsuc l1 ] ->
     [ G ; Γ ⊢[ i ] s ≅ s' : tyU l1 @ lsuc l1 ] ->
     [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t ≅ t' : tyU l2 @ lsuc l2 ] ->
     [ G ; Γ ⊢[ i ] tmSig l1 l2 s t ≅ tmSig l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ]
-| eqtm_pair G i Γ l1 l2 l3 l4 A A' B B' a a' b b' : compt i ->
+| eqtm_pair G i Γ l1 l2 l3 l4 A A' B B' a a' b b' : i <> lV ->
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
     [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
     [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] -> [ G ; Γ ⊢[ i ] b ≅ b' : B[lsingle a] @ l2 ] ->
     [ G ; Γ ⊢[ i ] tmPair l1 l2 A B a b ≅ tmPair l3 l4 A' B' a' b' : tySig l1 l2 A B @ lmax l1 l2 ]
-| eqtm_fst G i Γ l1 l2 l3 l4 A A' B B' p p' : compt i ->
+| eqtm_fst G i Γ l1 l2 l3 l4 A A' B B' p p' : i <> lV ->
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
     [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
     [ G ; Γ ⊢[ i ] p ≅ p' : tySig l1 l2 A B @ lmax l1 l2 ] ->
     [ G ; Γ ⊢[ i ] tmFst l1 l2 A B p ≅ tmFst l3 l4 A' B' p' : A @ l1 ]
-| eqtm_snd G i Γ l1 l2 l3 l4 A A' B B' p p' : compt i ->
+| eqtm_snd G i Γ l1 l2 l3 l4 A A' B B' p p' : i <> lV ->
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
     [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
@@ -545,10 +545,12 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ] ->
     [ G ; Γ ⊢[ i ] tmPair l l' A B (tmFst l l' A B p) (tmSnd l l' A B p) ≅ p
                   : tySig l l' A B @ lmax l l' ]
-(* the unit type (layers D and M): the code's congruence, and η as proof
-   irrelevance, which subsumes the congruence of [⟨⟩] *)
-| eqtm_code_unit G i Γ l l' : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+(* the unit type: the code's and [⟨⟩]'s congruences (every layer but V),
+   and η as proof irrelevance (computing layers only, M8_DESIGN.md L1) *)
+| eqtm_code_unit G i Γ l l' : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] tmUnit l ≅ tmUnit l' : tyU l @ lsuc l ]
+| eqtm_triv G i Γ l l' : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] tmTriv l ≅ tmTriv l' : tyUnit l @ l ]
 | eqtm_unit_eta G i Γ l t t' : compt i -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] t : tyUnit l @ l ] -> [ G ; Γ ⊢[ i ] t' : tyUnit l @ l ] ->
     [ G ; Γ ⊢[ i ] t ≅ t' : tyUnit l @ l ]

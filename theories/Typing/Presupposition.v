@@ -338,6 +338,15 @@ Proof.
   apply wft_unit; rewrite ?Hi; eauto using lequiv_wf_r, compt_self.
 Qed.
 
+Lemma pre_triv_r {Γ l l'} :
+  [ G ; Γ ⊢[ i ] ] -> lequiv (gL G) l l' -> [ G ; Γ ⊢[ i ] tmTriv l' : tyUnit l @ l ].
+Proof.
+  intros HΓ Hl. eapply wf_lconv with (l' := l'); [|exact Hl].
+  eapply conv_tm'; [apply wf_triv; rewrite ?Hi; eauto using lequiv_wf_r|].
+  eapply eqty_lconv; [|apply lequiv_sym, Hl].
+  apply eqty_unit; rewrite ?Hi; eauto using lequiv_sym.
+Qed.
+
 Lemma pre_El_unit {Γ l} :
   [ G ; Γ ⊢[ i ] ] -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] tyEl l (tmUnit l) @ l ].
 Proof. intros HΓ Hl. apply wft_El; auto. apply wf_code_unit; rewrite ?Hi; auto using compt_self. Qed.
@@ -800,7 +809,8 @@ Proof.
              (* the unit type (M8c) *)
              | solve [eapply pre_unit_r; eauto using lequiv_refl, lequiv_wf_l]
              | solve [eapply pre_El_unit; eassumption]
-             | solve [eapply pre_codeunit_r; eauto using lequiv_refl, lequiv_wf_l] ].
+             | solve [eapply pre_codeunit_r; eauto using lequiv_refl, lequiv_wf_l]
+             | solve [eapply pre_triv_r; eauto using lequiv_refl, lequiv_wf_l] ].
 Qed.
 
 Section Named.

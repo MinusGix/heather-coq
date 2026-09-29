@@ -110,6 +110,25 @@ Definition brDecls (k : nat) : list gdecl :=
            gdTm (cvar 2) lC (tyPi (lvar 1) (lvar 0) (gv 1) (gv 0)) (lmax (lvar 1) (lvar 0));
            gdTy (cvar 1 ,, gv 0 @ lvar 1) lC (lvar 0);
            gdTy (cvar 0) lC (lvar 1); gdCtx]
+  (* Heather's extension branches (M8_DESIGN.md L2) *)
+  (* ℓ ℓ'; g, U_S, U_T: as t_Π *)
+  | 13 => [gdTy (cvar 1 ,, gv 0 @ lvar 1) lC (lvar 0); gdTy (cvar 0) lC (lvar 1); gdCtx]
+  (* ℓ; g *)
+  | 14 => [gdCtx]
+  (* ℓ ℓ'; g, u_s, u_t: as t'_Π *)
+  | 15 => [gdTm (cvar 1 ,, tyEl (lvar 1) (gu 0) @ lvar 1) lC (tyU (lvar 0)) (lsuc (lvar 0));
+           gdTm (cvar 0) lC (tyU (lvar 1)) (lsuc (lvar 1)); gdCtx]
+  (* ℓ ℓ'; g, U_S, U_T, u_a : (g ⊢C U_S^id @ℓ), u_b : (g ⊢C U_T^{id,u_a^id/x} @ℓ') *)
+  | 16 => [gdTm (cvar 3) lC (tyGvar 1 (lsingle (gu 0))) (lvar 0);
+           gdTm (cvar 2) lC (gv 1) (lvar 1);
+           gdTy (cvar 1 ,, gv 0 @ lvar 1) lC (lvar 0);
+           gdTy (cvar 0) lC (lvar 1); gdCtx]
+  (* ℓ ℓ'; g, U_S, U_T, u_p : (g ⊢C Σ U_S^id U_T^id @ℓ⊔ℓ') *)
+  | 17 | 18 => [gdTm (cvar 2) lC (tySig (lvar 1) (lvar 0) (gv 1) (gv 0)) (lmax (lvar 1) (lvar 0));
+                gdTy (cvar 1 ,, gv 0 @ lvar 1) lC (lvar 0);
+                gdTy (cvar 0) lC (lvar 1); gdCtx]
+  (* ℓ; g *)
+  | 19 | 20 => [gdCtx]
   | _ => []
   end.
 
@@ -162,6 +181,17 @@ Definition br_calls (k : nat) : list rcall :=
             rcT (lvar 0) (cvar 4 ,, gv 3 @ lvar 1) (boxT (gv 2));
             rct (lmax (lvar 1) (lvar 0)) (cvar 4) (tyPi (lvar 1) (lvar 0) (gv 3) (gv 2)) (boxt (gu 1));
             rct (lvar 1) (cvar 4) (gv 3) (boxt (gu 0)) ]
+  | 13 => [ rcT (lvar 1) (cvar 2) (boxT (gv 1));
+            rcT (lvar 0) (cvar 2 ,, gv 1 @ lvar 1) (boxT (gv 0)) ]
+  | 15 => [ rct (lsuc (lvar 1)) (cvar 2) (tyU (lvar 1)) (boxt (gu 1));
+            rct (lsuc (lvar 0)) (cvar 2 ,, tyEl (lvar 1) (gu 1) @ lvar 1) (tyU (lvar 0)) (boxt (gu 0)) ]
+  | 16 => [ rcT (lvar 1) (cvar 4) (boxT (gv 3));
+            rcT (lvar 0) (cvar 4 ,, gv 3 @ lvar 1) (boxT (gv 2));
+            rct (lvar 1) (cvar 4) (gv 3) (boxt (gu 1));
+            rct (lvar 0) (cvar 4) (tyGvar 2 (lsingle (gu 1))) (boxt (gu 0)) ]
+  | 17 | 18 => [ rcT (lvar 1) (cvar 3) (boxT (gv 2));
+                 rcT (lvar 0) (cvar 3 ,, gv 2 @ lvar 1) (boxT (gv 1));
+                 rct (lmax (lvar 1) (lvar 0)) (cvar 3) (tySig (lvar 1) (lvar 0) (gv 2) (gv 1)) (boxt (gu 0)) ]
   | _ => []
   end.
 
@@ -185,6 +215,17 @@ Definition br_head (k : nat) : rcall :=
             (boxt (lam (lvar 1) (lvar 0) (gv 2) (gu 0)))
   | 12 => rct (lvar 0) (cvar 4) (tyGvar 2 (lsingle (gu 0)))
             (boxt (app (gu 1) (lvar 1) (lvar 0) (gv 3) (gv 2) (gu 0)))
+  | 13 => rcT (lmax (lvar 1) (lvar 0)) (cvar 2) (boxT (tySig (lvar 1) (lvar 0) (gv 1) (gv 0)))
+  | 14 => rcT (lvar 0) (cvar 0) (boxT (tyUnit (lvar 0)))
+  | 15 => rct (lsuc (lmax (lvar 1) (lvar 0))) (cvar 2) (tyU (lmax (lvar 1) (lvar 0)))
+            (boxt (tmSig (lvar 1) (lvar 0) (gu 1) (gu 0)))
+  | 16 => rct (lmax (lvar 1) (lvar 0)) (cvar 4) (tySig (lvar 1) (lvar 0) (gv 3) (gv 2))
+            (boxt (tmPair (lvar 1) (lvar 0) (gv 3) (gv 2) (gu 1) (gu 0)))
+  | 17 => rct (lvar 1) (cvar 3) (gv 2) (boxt (tmFst (lvar 1) (lvar 0) (gv 2) (gv 1) (gu 0)))
+  | 18 => rct (lvar 0) (cvar 3) (tyGvar 1 (lsingle (tmFst (lvar 1) (lvar 0) (gv 2) (gv 1) (gu 0))))
+            (boxt (tmSnd (lvar 1) (lvar 0) (gv 2) (gv 1) (gu 0)))
+  | 19 => rct (lsuc (lvar 0)) (cvar 0) (tyU (lvar 0)) (boxt (tmUnit (lvar 0)))
+  | 20 => rct (lvar 0) (cvar 0) (tyUnit (lvar 0)) (boxt (tmTriv (lvar 0)))
   | _ => rcT lzero cnil (boxT tyErr)
   end.
 

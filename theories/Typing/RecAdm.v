@@ -190,6 +190,11 @@ Lemma wf_app' G i Γ l l' A B t s T : T = B[lsingle s] -> i <> lV -> lwf (gL G) 
   [ G ; Γ ⊢[ i ] app t l l' A B s : T @ l' ].
 Proof. intros ->; apply wf_app. Qed.
 
+Lemma wf_snd' G i Γ l l' A B p T : T = B[lsingle (tmFst l l' A B p)] -> i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ] -> [ G ; Γ ⊢[ i ] tmSnd l l' A B p : T @ l' ].
+Proof. intros ->; apply wf_snd. Qed.
+
 Ltac code_side :=
   repeat match goal with
   | |- [ _ ; _ ⊢[ _ ] tyGvar _ lsucc @ _ ] => apply wf_UM_succ'; [ | glookup ]
@@ -204,6 +209,12 @@ Ltac code_side :=
   | |- [ _ ; _ ⊢[ _ ] natrec _ _ _ _ _ : _ @ _ ] => eapply wf_natrec'; [ reflexivity | discriminate | lvl_ok | .. ]
   | |- [ _ ; _ ⊢[ _ ] lam _ _ _ _ : _ @ _ ] => apply wf_lam; [ discriminate | lvl_ok | lvl_ok | | ]
   | |- [ _ ; _ ⊢[ _ ] app _ _ _ _ _ _ : _ @ _ ] => eapply wf_app'; [ reflexivity | discriminate | lvl_ok | lvl_ok | .. ]
+  | |- [ _ ; _ ⊢[ _ ] tmSig _ _ _ _ : _ @ _ ] => apply wf_code_sig; [ discriminate | lvl_ok | lvl_ok | | ]
+  | |- [ _ ; _ ⊢[ _ ] tmPair _ _ _ _ _ _ : _ @ _ ] => apply wf_pair; [ discriminate | lvl_ok | lvl_ok | .. ]
+  | |- [ _ ; _ ⊢[ _ ] tmFst _ _ _ _ _ : _ @ _ ] => apply wf_fst; [ discriminate | lvl_ok | lvl_ok | .. ]
+  | |- [ _ ; _ ⊢[ _ ] tmSnd _ _ _ _ _ : _ @ _ ] => eapply wf_snd'; [ reflexivity | discriminate | lvl_ok | lvl_ok | .. ]
+  | |- [ _ ; _ ⊢[ _ ] tmUnit _ : _ @ _ ] => apply wf_code_unit; [ discriminate | | lvl_ok ]
+  | |- [ _ ; _ ⊢[ _ ] tmTriv _ : _ @ _ ] => apply wf_triv; [ discriminate | | lvl_ok ]
   | |- [ _ ; _ ⊢[ _ ] ] => progress wfd
   | |- [ _ ; _ ⊢[ _ ] _ @ _ ] => progress wfd
   | |- [ _ ; _ ⊢[ _ ] _ : _ @ _ ] => progress wfd

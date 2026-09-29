@@ -101,22 +101,22 @@ Proof.
                                                     (lequiv_sym _ _ _ Hl))).
   destruct (ac_tmne_whne D) as [Hn Hn'].
   (* the first projections *)
-  pose proof (wf_fst _ _ _ _ _ _ _ _ Hc W1 W2 HA HB Ht1) as Hf.
-  pose proof (wf_fst _ _ _ _ _ _ _ _ Hc W1 W2 HA HB Ht1') as Hf'.
+  pose proof (wf_fst _ _ _ _ _ _ _ _ (compt_notV Hc) W1 W2 HA HB Ht1) as Hf.
+  pose proof (wf_fst _ _ _ _ _ _ _ _ (compt_notV Hc) W1 W2 HA HB Ht1') as Hf'.
   assert (D1 : ac_tmne G Γ (tmFst l1 l2 A B t) (tmFst l1 l2 A B t') A0) by (eapply actmne_fst; exact Xν).
   pose proof (IHA _ _ _ Hf Hf' D1 EA) as X1.
   (* the second projections, at the first's instance *)
   destruct (ac_nee_sound' Xν Hc Ht1 Ht1') as (_ & _ & Ett).
-  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ Hc (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HA
+  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ (compt_notV Hc) (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HA
                 (eqty_refl _ _ _ _ _ HA) (eqty_refl _ _ _ _ _ HB) Ett) as Ef.
-  pose proof (wf_snd _ _ _ _ _ _ _ _ Hc W1 W2 HA HB Ht1) as Hs.
-  pose proof (wf_snd _ _ _ _ _ _ _ _ Hc W1 W2 HA HB Ht1') as Hs'.
+  pose proof (wf_snd _ _ _ _ _ _ _ _ (compt_notV Hc) W1 W2 HA HB Ht1) as Hs.
+  pose proof (wf_snd _ _ _ _ _ _ _ _ (compt_notV Hc) W1 W2 HA HB Ht1') as Hs'.
   pose proof (sig_fam_eq Hi HB (eqty_refl _ _ _ _ _ HB) Ef Hf Hf') as EBs.
   assert (Hs1 : [ G ; Γ ⊢[ i ] tmSnd l1 l2 A B t' : B[lsingle (tmFst l1 l2 A B t)] @ l2 ])
     by (eapply wf_conv; [exact Hs' | rewrite Hi; exact EBs]).
   assert (D2 : ac_tmne G Γ (tmSnd l1 l2 A B t) (tmSnd l1 l2 A B t') B0[lsingle (tmFst m m' A0 B0 t)])
     by (eapply actmne_snd; exact Xν).
-  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ Hc (lequiv_sym _ _ _ Em) (lequiv_sym _ _ _ Em') HA EA EB
+  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ (compt_notV Hc) (lequiv_sym _ _ _ Em) (lequiv_sym _ _ _ Em') HA EA EB
                 (eqtm_refl _ _ _ _ _ _ Ht1)) as Ef0.
   pose proof (sig_fam_eq Hi HB EB Ef0 Hf (eqtm_wf_r Hi Ef0)) as E2.
   pose proof (IHB t Hn Ht1 _ _ _ Hs Hs1 D2 E2) as X2.
@@ -306,7 +306,7 @@ Proof.
     rewrite ren_id_ty in XA by exact (wf_ty_nf HA).
     rewrite !ren_id_ty in HRA by first [exact (wf_ty_nf HA) | exact (wf_ty_nf HA')].
     apply (lift_sig compt_D HT Hl Hw1 Hw2 HA HB XA). intros p Hp Hpt.
-    pose proof (wf_fst _ _ _ _ _ _ _ _ compt_D Hw1 Hw2 HA HB Hpt) as Hf.
+    pose proof (wf_fst _ _ _ _ _ _ _ _ (compt_notV compt_D) Hw1 Hw2 HA HB Hpt) as Hf.
     pose proof (ne_dom (i := lD) (Hi := compt_D) eq_refl HRA (whne_fst _ _ _ _ _ Hp) Hf HAA) as ha.
     pose proof (IHcod (kw_loc (E := DEP) wk_id (wkwf_id Γ) HΓ) _ _ ha) as XB.
     unfold ktyl, kw_loc in XB; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in XB.
@@ -392,7 +392,7 @@ Proof.
     rewrite ren_id_ty in XA by exact (wf_ty_nf HA).
     rewrite !ren_id_ty in HRA by first [exact (wf_ty_nf HA) | exact (wf_ty_nf HA')].
     apply (lift_sig compt_M HT Hl Hw1 Hw2 HA HB XA). intros p Hp Hpt.
-    pose proof (wf_fst _ _ _ _ _ _ _ _ compt_M Hw1 Hw2 HA HB Hpt) as Hf.
+    pose proof (wf_fst _ _ _ _ _ _ _ _ (compt_notV compt_M) Hw1 Hw2 HA HB Hpt) as Hf.
     pose proof (ne_dom (i := lM) (Hi := compt_M) eq_refl HRA (whne_fst _ _ _ _ _ Hp) Hf HAA) as ha.
     pose proof (IHcod (kw_loc (E := DEM) wk_id (wkwf_id Γ) HΓ) _ _ ha) as XB.
     unfold ktyl, kw_loc in XB; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in XB.

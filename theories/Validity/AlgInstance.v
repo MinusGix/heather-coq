@@ -170,21 +170,21 @@ Proof.
   destruct (tgt_whnf_tm Ht) as (w & Hr & Hw). destruct (tgt_whnf_tm Ht') as (w' & Hr' & Hw').
   pose proof (red_tm_sound Hi Ht Hr Hw) as Ew. pose proof (red_tm_sound Hi Ht' Hr' Hw') as Ew'.
   pose proof (eqtm_wf_r Hty Ew) as Hwt. pose proof (eqtm_wf_r Hty Ew') as Hwt'.
-  pose proof (wf_fst _ _ _ _ _ _ _ _ Hi W1 W2 HA HB Ht) as Hf.
-  pose proof (wf_fst _ _ _ _ _ _ _ _ Hi W1 W2 HA HB Ht') as Hf'.
-  pose proof (wf_fst _ _ _ _ _ _ _ _ Hi W1 W2 HA HB Hwt) as Hfw.
-  pose proof (wf_fst _ _ _ _ _ _ _ _ Hi W1 W2 HA HB Hwt') as Hfw'.
-  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ Hi (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HA
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hv W1 W2 HA HB Ht) as Hf.
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hv W1 W2 HA HB Ht') as Hf'.
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hv W1 W2 HA HB Hwt) as Hfw.
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hv W1 W2 HA HB Hwt') as Hfw'.
+  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ Hv (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HA
                 (eqty_refl _ _ _ _ _ HA) (eqty_refl _ _ _ _ _ HB) Ew) as Efw.
-  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ Hi (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HA
+  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ Hv (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HA
                 (eqty_refl _ _ _ _ _ HA) (eqty_refl _ _ _ _ _ HB) Ew') as Efw'.
   pose proof (ac_tm_sound Hi D1 Hf Hf') as E1.
   pose proof (sig_fam_eq Hty HB (eqty_refl _ _ _ _ _ HB) Efw Hf Hfw) as EB.
   pose proof (sig_fam_eq Hty HB (eqty_refl _ _ _ _ _ HB) (eqtm_trans _ _ _ _ _ _ _ _ E1 Efw') Hf Hfw') as EB'.
   assert (Hs : [ G ; Γ ⊢[ i ] tmSnd l l' A B w : B[lsingle (tmFst l l' A B t)] @ l' ])
-    by (eapply wf_conv; [exact (wf_snd _ _ _ _ _ _ _ _ Hi W1 W2 HA HB Hwt) | rewrite Hty; exact EB]).
+    by (eapply wf_conv; [exact (wf_snd _ _ _ _ _ _ _ _ Hv W1 W2 HA HB Hwt) | rewrite Hty; exact EB]).
   assert (Hs' : [ G ; Γ ⊢[ i ] tmSnd l l' A B w' : B[lsingle (tmFst l l' A B t)] @ l' ])
-    by (eapply wf_conv; [exact (wf_snd _ _ _ _ _ _ _ _ Hi W1 W2 HA HB Hwt') | rewrite Hty; exact EB']).
+    by (eapply wf_conv; [exact (wf_snd _ _ _ _ _ _ _ _ Hv W1 W2 HA HB Hwt') | rewrite Hty; exact EB']).
   pose proof (ctx_of_wf_ty Hty HA) as HΓ.
   eapply actm_red; [constructor | exact (whnf_tySig _ _ _ _) | exact Hr | exact Hr' | exact Hw | exact Hw' |].
   apply actmnf_sig_eta.
@@ -214,8 +214,8 @@ Proof.
   destruct (head_sig W0 (eq_sym (decl_head_c Hi EW (whnf_tySig _ _ _ _) Hw0))) as (m & m' & A0 & B0 & ->).
   destruct (sig_inj_c Hi EW) as (Em1 & Em2 & EA0 & EB0).
   pose proof (eqty_wf_l Hty EA0) as HA. pose proof (eqty_wf_l Hty EB0) as HB.
-  pose proof (wf_fst _ _ _ _ _ _ _ _ Hi (lequiv_wf_r _ _ _ Em1) (lequiv_wf_r _ _ _ Em2) HA HB Hν) as Hf.
-  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ Hi (lequiv_sym _ _ _ Em1) (lequiv_sym _ _ _ Em2) HA EA0 EB0
+  pose proof (wf_fst _ _ _ _ _ _ _ _ Hv (lequiv_wf_r _ _ _ Em1) (lequiv_wf_r _ _ _ Em2) HA HB Hν) as Hf.
+  pose proof (eqtm_fst _ _ _ _ _ _ _ _ _ _ _ _ _ Hv (lequiv_sym _ _ _ Em1) (lequiv_sym _ _ _ Em2) HA EA0 EB0
                 (eqtm_refl _ _ _ _ _ _ Hν)) as Ef0.
   exists B0[lsingle (tmFst m m' A0 B0 ν)]. split; [eapply actmne_snd; exact Xν |].
   exact (sig_fam_eq Hty HB EB0 Ef0 Hf (eqtm_wf_r Hty Ef0)).

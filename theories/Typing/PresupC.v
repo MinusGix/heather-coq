@@ -184,6 +184,151 @@ Proof.
     + exact (eqty_single (i := lD) eq_refl HBBd Hsd').
 Qed.
 
+(** Dependent pairs and the unit type, code since M8d. *)
+Lemma pc_sig {Γ l1 l2 l3 l4 A A' B B'} : i <> lV -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] tySig l1 l2 A B @ lmax l1 l2 ] /\ [ G ; Γ ⊢[ i ] tySig l3 l4 A' B' @ lmax l1 l2 ].
+Proof.
+  intros Hv H13 H24 HA HAA HA' HB HB'. split; [apply wft_sig; eauto using lequiv_wf_l|].
+  eapply wft_lconv with (l' := lmax l3 l4); [|now apply lequiv_max].
+  apply wft_sig; eauto using lequiv_wf_r.
+  - eapply wft_lconv; [exact HA' | now apply lequiv_sym].
+  - eapply wft_lconv; [exact (ctxconv_ty (extc HA HAA H13) Hd HB') | now apply lequiv_sym].
+Qed.
+
+Lemma pc_codesig {Γ l1 l2 l3 l4 s s' t t'} : i <> lV -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] s : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l1 @ lsuc l1 ] ->
+  [ G ; Γ ⊢[ i ] s' : tyU l1 @ lsuc l1 ] ->
+  [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t : tyU l2 @ lsuc l2 ] ->
+  [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t' : tyU l2 @ lsuc l2 ] ->
+  [ G ; Γ ⊢[ i ] tmSig l1 l2 s t : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ] /\
+  [ G ; Γ ⊢[ i ] tmSig l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ].
+Proof.
+  intros Hv H13 H24 Hs Hss Hs' Ht Ht'. split; [apply wf_code_sig; eauto using lequiv_wf_l|].
+  assert (HEl : [ G ; Γ ⊢[ i ] tyEl l1 s @ l1 ]) by (apply wft_El; eauto using lequiv_wf_l).
+  assert (HEE : [ G ; Γ ⊢[ i ] tyEl l1 s ≅ tyEl l3 s' @ l1 ]) by (apply eqty_El; auto).
+  apply (convU_at (l := lmax l3 l4)); [|apply lequiv_sym, lequiv_max; assumption].
+  apply wf_code_sig; eauto using lequiv_wf_r.
+  - exact (convU_at Hs' H13).
+  - exact (convU_at (ctxconv_tm (extc HEl HEE H13) Hd Ht') H24).
+Qed.
+
+(** The Σ types of a congruence, related at D. *)
+Lemma sig_eqD {Γ l1 l2 l3 l4 A A' B B'} : lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+  [ G ; Γ ⊢[ lD ] tySig l1 l2 A B ≅ tySig l3 l4 A' B' @ lmax l1 l2 ].
+Proof.
+  intros H13 H24 HA HAA HBB.
+  apply eqty_sig; [discriminate | assumption | assumption | exact (lift_ty HA HiD)
+                  | exact (lift_eqty HAA HiD) | exact (lift_eqty HBB HiD)].
+Qed.
+
+Lemma pc_pair {Γ l1 l2 l3 l4 A A' B B' a a' b b'} : i <> lV ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] -> [ G ; Γ ⊢[ i ] a : A @ l1 ] -> [ G ; Γ ⊢[ i ] a' : A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] b : B[lsingle a] @ l2 ] -> [ G ; Γ ⊢[ i ] b' : B[lsingle a] @ l2 ] ->
+  [ G ; Γ ⊢[ i ] tmPair l1 l2 A B a b : tySig l1 l2 A B @ lmax l1 l2 ] /\
+  [ G ; Γ ⊢[ i ] tmPair l3 l4 A' B' a' b' : tySig l1 l2 A B @ lmax l1 l2 ].
+Proof.
+  intros Hv H13 H24 HA HAA HA' HBB HB HB' Haa Ha Ha' Hb Hb'.
+  split; [apply wf_pair; eauto using lequiv_wf_l|].
+  pose proof (lift_eqty HBB HiD) as HBBd.
+  pose proof (lift_tm Ha HiD) as Had. pose proof (lift_tm Ha' HiD) as Had'.
+  eapply wf_lconv with (l' := lmax l3 l4); [|now apply lequiv_max].
+  apply (conv_at (T' := tySig l3 l4 A' B')).
+  - apply wf_pair; eauto using lequiv_wf_r.
+    + eapply wft_lconv; [exact HA' | now apply lequiv_sym].
+    + eapply wft_lconv; [exact (ctxconv_ty (extc HA HAA H13) Hd HB') | now apply lequiv_sym].
+    + eapply wf_lconv with (l' := l1); [|now apply lequiv_sym].
+      apply (conv_at Ha'). apply eqty_sym, (lift_eqty HAA HiD).
+    + eapply wf_lconv with (l' := l2); [|now apply lequiv_sym].
+      apply (conv_at Hb'). apply eqty_sym. eapply eqty_trans.
+      * apply (wf_ty_func (i := lD) eq_refl (lift_ty HB HiD) (d' := lsingle a')).
+        exact (lsub_eq_single (i := lD) eq_refl Had Had' (lift_eqtm Haa HiD)).
+      * exact (eqty_single (i := lD) eq_refl HBBd Had').
+  - eapply eqty_lconv; [|apply lequiv_max; apply lequiv_sym; eassumption].
+    exact (sig_eqD H13 H24 HA HAA HBB).
+Qed.
+
+Lemma pc_fst {Γ l1 l2 l3 l4 A A' B B' p p'} : i <> lV ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] p : tySig l1 l2 A B @ lmax l1 l2 ] -> [ G ; Γ ⊢[ i ] p' : tySig l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ i ] tmFst l1 l2 A B p : A @ l1 ] /\ [ G ; Γ ⊢[ i ] tmFst l3 l4 A' B' p' : A @ l1 ].
+Proof.
+  intros Hv H13 H24 HA HAA HA' HBB HB HB' Hp Hp'.
+  split; [apply wf_fst; eauto using lequiv_wf_l|].
+  eapply wf_lconv with (l' := l3); [|exact H13].
+  apply (conv_at (T' := A')).
+  - apply wf_fst; eauto using lequiv_wf_r.
+    + eapply wft_lconv; [exact HA' | now apply lequiv_sym].
+    + eapply wft_lconv; [exact (ctxconv_ty (extc HA HAA H13) Hd HB') | now apply lequiv_sym].
+    + eapply wf_lconv; [|apply lequiv_max; apply lequiv_sym; eassumption].
+      apply (conv_at Hp'). exact (eqty_sym _ _ _ _ _ _ (sig_eqD H13 H24 HA HAA HBB)).
+  - eapply eqty_lconv; [exact (lift_eqty HAA HiD) | now apply lequiv_sym].
+Qed.
+
+Lemma pc_snd {Γ l1 l2 l3 l4 A A' B B' p p'} : i <> lV ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] p ≅ p' : tySig l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ i ] p : tySig l1 l2 A B @ lmax l1 l2 ] -> [ G ; Γ ⊢[ i ] p' : tySig l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ i ] tmSnd l1 l2 A B p : B[lsingle (tmFst l1 l2 A B p)] @ l2 ] /\
+  [ G ; Γ ⊢[ i ] tmSnd l3 l4 A' B' p' : B[lsingle (tmFst l1 l2 A B p)] @ l2 ].
+Proof.
+  intros Hv H13 H24 HA HAA HA' HBB HB HB' Hpp Hp Hp'.
+  split; [apply wf_snd; eauto using lequiv_wf_l|].
+  pose proof (lift_eqty HBB HiD) as HBBd.
+  destruct (pc_fst Hv H13 H24 HA HAA HA' HBB HB HB' Hp Hp') as [Hf Hf'].
+  pose proof (lift_tm Hf HiD) as Hfd. pose proof (lift_tm Hf' HiD) as Hfd'.
+  assert (Eff : [ G ; Γ ⊢[ lD ] tmFst l1 l2 A B p ≅ tmFst l3 l4 A' B' p' : A @ l1 ]).
+  { apply eqtm_fst; [discriminate | assumption | assumption | exact (lift_ty HA HiD)
+                    | exact (lift_eqty HAA HiD) | exact HBBd | exact (lift_eqtm Hpp HiD)]. }
+  eapply wf_lconv with (l' := l4); [|exact H24].
+  apply (conv_at (T' := B'[lsingle (tmFst l3 l4 A' B' p')])).
+  - apply wf_snd; eauto using lequiv_wf_r.
+    + eapply wft_lconv; [exact HA' | now apply lequiv_sym].
+    + eapply wft_lconv; [exact (ctxconv_ty (extc HA HAA H13) Hd HB') | now apply lequiv_sym].
+    + eapply wf_lconv; [|apply lequiv_max; apply lequiv_sym; eassumption].
+      apply (conv_at Hp'). exact (eqty_sym _ _ _ _ _ _ (sig_eqD H13 H24 HA HAA HBB)).
+  - eapply eqty_lconv; [|apply lequiv_sym, H24].
+    eapply eqty_trans.
+    + apply (wf_ty_func (i := lD) eq_refl (lift_ty HB HiD) (d' := lsingle (tmFst l3 l4 A' B' p'))).
+      exact (lsub_eq_single (i := lD) eq_refl Hfd Hfd' Eff).
+    + exact (eqty_single (i := lD) eq_refl HBBd Hfd').
+Qed.
+
+Lemma pc_unit {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] tyUnit l @ l ] /\ [ G ; Γ ⊢[ i ] tyUnit l' @ l ].
+Proof.
+  intros Hv HΓ Hl. split; [apply wft_unit; eauto using lequiv_wf_l|].
+  eapply wft_lconv; [|exact Hl]. apply wft_unit; eauto using lequiv_wf_r.
+Qed.
+
+Lemma pc_codeunit {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] tmUnit l : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmUnit l' : tyU l @ lsuc l ].
+Proof.
+  intros Hv HΓ Hl. split; [apply wf_code_unit; eauto using lequiv_wf_l|].
+  apply (convU_at (l := l')); [apply wf_code_unit; eauto using lequiv_wf_r | now apply lequiv_sym].
+Qed.
+
+Lemma pc_triv {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] tmTriv l : tyUnit l @ l ] /\ [ G ; Γ ⊢[ i ] tmTriv l' : tyUnit l @ l ].
+Proof.
+  intros Hv HΓ Hl. split; [apply wf_triv; eauto using lequiv_wf_l|].
+  eapply wf_lconv with (l' := l'); [|exact Hl].
+  apply (conv_at (T' := tyUnit l')); [apply wf_triv; eauto using lequiv_wf_r|].
+  rewrite Hd in HΓ. eapply eqty_lconv; [apply eqty_unit; [discriminate | exact HΓ | exact Hl] | now apply lequiv_sym].
+Qed.
+
 Lemma pc_gvar {Γ u Δ i' T l d d'} : [ G ; Γ ⊢[ typeof i ] ] ->
   in_gctx (gΨ G) u (gdTm Δ i' T l) -> lle i' i ->
   lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
@@ -237,7 +382,11 @@ Proof.
              | solve [eapply pc_U; eassumption] | solve [eapply pc_codeU; eassumption]
              | solve [eapply pc_codepi; eassumption] | solve [eapply pc_natrec; eassumption]
              | solve [eapply pc_lam; eassumption] | solve [eapply pc_app; eassumption]
-             | solve [eapply pc_gvar; eassumption] ].
+             | solve [eapply pc_gvar; eassumption]
+             | solve [eapply pc_sig; eassumption] | solve [eapply pc_codesig; eassumption]
+             | solve [eapply pc_pair; eassumption] | solve [eapply pc_fst; eassumption]
+             | solve [eapply pc_snd; eassumption] | solve [eapply pc_unit; eassumption]
+             | solve [eapply pc_codeunit; eassumption] | solve [eapply pc_triv; eassumption] ].
 Qed.
 
 Lemma eqty_wf_C {G i Γ T T' l} : lle i lC -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->

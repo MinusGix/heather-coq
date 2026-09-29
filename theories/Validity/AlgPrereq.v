@@ -296,6 +296,8 @@ Ltac br_tac :=
     | apply wft_nat | apply wft_U | eapply wft_pi | eapply wft_El
     | eapply wf_code_nat | eapply wf_code_U | eapply wf_code_pi
     | apply wf_zero | apply wf_succ | eapply wf_natrec | eapply wf_lam | eapply wf_app
+    | eapply wft_sig | apply wft_unit | eapply wf_code_sig | apply wf_code_unit | apply wf_triv
+    | eapply wf_pair | eapply wf_fst | eapply wf_snd
     | eapply wf_gv | eapply wf_gu | eapply wf_gv_single | eapply wf_gv_succ ].
 
 Lemma lequiv_ush nu {L l l'} : lequiv L l l' -> lequiv (nu + L) (lvren l (ush nu)) (lvren l' (ush nu)).

@@ -82,7 +82,7 @@ Proof.
   destruct c; cbn [redt] in E; try destruct T; inversion E; subst; cbn in Hc, HT;
     repeat first [ apply dnf_peelL | apply dnf_peelG | apply dnf_peelU | apply dnf_tup_nth ];
     cbn [dnfo dnftm dnfty dnfctx recT rect]; intuition auto.
-  all: apply subst_dnf_ty; [intuition auto | first [apply lk_dnf_lsucc | apply lk_dnf_lsingle; exact I]].
+  all: apply subst_dnf_ty; [intuition auto | first [apply lk_dnf_lsucc | apply lk_dnf_lsingle; first [exact I | intuition auto]]].
 Qed.
 
 Theorem typed_dnf :

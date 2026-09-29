@@ -51,11 +51,11 @@ Proof.
   left; eexists; eexists; exact (wf_code_U _ _ _ _ Hv HΓ Hl).
 Qed.
 
-(** The unit type (M8c): the code and [⟨⟩], at the computing layers. *)
+(** The unit type (M8c): the code and [⟨⟩], at every layer but V (M8d). *)
 Lemma sy_code_unit l : SYD (tmUnit l).
 Proof.
   intros G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_code_unit H) as ((X & _) & _); contradiction].
+  notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_unit H) as ((_ & _ & X) & _); contradiction].
   left; eexists; eexists; exact (wf_code_unit _ _ _ _ Hc HΓ Hl).
 Qed.
@@ -63,7 +63,7 @@ Qed.
 Lemma sy_triv l : SYD (tmTriv l).
 Proof.
   intros G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_triv H) as ((X & _) & _); contradiction].
+  notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_triv H) as ((_ & _ & X) & _); contradiction].
   left; eexists; eexists; exact (wf_triv _ _ _ _ Hc HΓ Hl).
 Qed.
@@ -394,12 +394,12 @@ Proof.
     exact (wft_lconv _ _ _ _ _ _ (ctxconv_ty (eqctx_sym_D EΔ) (i := lD) eq_refl HA') Q1).
 Qed.
 
-(** ** Dependent pairs (M8): at the computing layers only *)
+(** ** Dependent pairs (M8): at every layer but V (M8d) *)
 
 Lemma sy_codesig l l' s t : sz_tm (tmSig l l' s t) <= n -> SYD (tmSig l l' s t).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_code_sig H) as ((X & _) & _); contradiction].
+  notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_sig H) as ((_ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros T k H; destruct (inva_code_sig H) as ((_ & _ & X & _) & _); contradiction].
   destruct (ihC s ltac:(szl) G i Γ _ _ (HUniv HΓ Hl)) as [Hs | N];
@@ -429,7 +429,7 @@ Qed.
 Lemma sy_pair l l' A B a b : sz_tm (tmPair l l' A B a b) <= n -> SYD (tmPair l l' A B a b).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_pair H) as ((X & _) & _); contradiction].
+  notV. rename Hv into Hc.
   destruct (sy_sig_annot (l := l) (l' := l') (A := A) (B := B)
               (exists T k, [ G ; Γ ⊢[ i ] tmPair l l' A B a b : T @ k ]) ltac:(szl) ltac:(szl) HΓ)
     as [(Hl & Hl' & HA & HB) | N];
@@ -449,18 +449,18 @@ Lemma sy_proj (fs : bool) l l' A B p :
 Proof.
   intros Hsz G i Γ HΓ.
   assert (Inv : forall T k, [ G ; Γ ⊢[ i ] (if fs then tmFst l l' A B p else tmSnd l l' A B p) : T @ k ] ->
-    compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
     [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\ [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ]).
   { intros T k H; destruct fs; [exact (proj1 (inva_fst H)) | exact (proj1 (inva_snd H))]. }
   assert (Hz : sz_ty A < n /\ sz_ty B < n /\ sz_tm p < n) by (destruct fs; cbn [sz_tm] in Hsz; lia).
   destruct Hz as (HzA & HzB & Hzp).
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; apply N, (Inv _ _ H)].
+  destruct (layer_eq_dec i lV) as [-> | Hc]; [right; intros T k H; apply (proj1 (Inv _ _ H)); reflexivity |].
   destruct (sy_sig_annot (l := l) (l' := l')
               (exists T k, [ G ; Γ ⊢[ i ] (if fs then tmFst l l' A B p else tmSnd l l' A B p) : T @ k ])
               HzA HzB HΓ) as [(Hl & Hl' & HA & HB) | N];
     [ intros (T & k & H); destruct (Inv _ _ H) as (_ & ? & ? & ? & ? & _); auto
     | | right; intros T k H; apply N; eauto ].
-  pose proof (wft_sig _ _ _ _ _ _ _ (compt_typeof i) Hl Hl' (lift_to_typeof_ty HA) (lift_to_typeof_ty HB)) as HS.
+  pose proof (wft_sig _ _ _ _ _ _ _ (typeof_notV i) Hl Hl' (lift_to_typeof_ty HA) (lift_to_typeof_ty HB)) as HS.
   destruct (ihC p Hzp G i Γ _ _ HS) as [Hp | N]; [| right; intros T k H; apply N, (Inv _ _ H)].
   left; destruct fs; eexists; eexists; [exact (wf_fst _ _ _ _ _ _ _ _ Hc Hl Hl' HA HB Hp) |
                                         exact (wf_snd _ _ _ _ _ _ _ _ Hc Hl Hl' HA HB Hp)].

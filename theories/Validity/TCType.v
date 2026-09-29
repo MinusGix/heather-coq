@@ -168,7 +168,7 @@ Qed.
 Lemma dec_tySig l l' A B : sz_ty (tySig l l' A B) <= n -> TYD (tySig l l' A B).
 Proof.
   intros Hsz G i Γ k HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros H; destruct (inv_ty_sig H) as ((X & _) & _); contradiction].
+  destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_sig H) as ((_ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros H; destruct (inv_ty_sig H) as ((_ & _ & X & _) & _); contradiction].
   destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
@@ -184,7 +184,7 @@ Qed.
 Lemma dec_tyUnit l : TYD (tyUnit l).
 Proof.
   intros G i Γ k HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros H; destruct (inv_ty_unit H) as ((X & _) & _); contradiction].
+  destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_unit H) as ((_ & _ & X) & _); contradiction].
   destruct (lvl_eq_dec (gL G) k l) as [Q | Q].
   - left; exact (wft_lvl Q (wft_unit _ _ _ _ Hc HΓ Hl)).
