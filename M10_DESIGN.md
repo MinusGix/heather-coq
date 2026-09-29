@@ -148,6 +148,72 @@ Recommendation, tentative: spend a bounded paper probe on (A). If no
 argument turns up, choose between (B) and (C) together with Heather's
 customer, and record the result in Heather either way.
 
+### S4. The paper check on (A) (2026-09-29)
+
+**No direct proof of strengthening found.** The attempts, and where each
+stops:
+
+- *Substitute an inhabitant for the new variable.* This works when the
+  added type is inhabited in `Γ`. It fails for exactly the types that
+  matter (`sEmpty`, `sEq` at distinct endpoints), and a Kripke weakening
+  may add them.
+- *Replace new locals by fresh globals.* A local `x : A` at the end of
+  `Δ` becomes a global `u : Trm(Γ ⊢ A)`, and `x := u^{id}` is a
+  substitution. This reduces local strengthening to global strengthening
+  ("an unused postulate adds no equation"), which is the same problem
+  one level up. It is still useful: global and local strengthening
+  stand or fall together.
+- *Induction on the derivation.* Transitivity (and symmetry,
+  conversion) pass through middle terms that may mention the removed
+  variable, and nothing smaller in the derivation is free of it. This is
+  why strengthening is normally a corollary of a syntax-directed
+  algorithm, and the algorithm is what the relation is building.
+
+So (A) as stated remains open. The check did find a way around the
+circularity:
+
+**(D) Stratify the strip premise by derivation depth.** Index the
+declarative judgments by a stage `n`. The strip rule at stage `n+1`
+takes its premise at stage `n` (`Γ ⊢ₙ a ≈ b`); every other rule keeps its
+stage. Stage 0 has no strip. There is no separate β rule, since β is
+admissible once injectivity of `sEq` is known. Every derivation has a
+finite nesting depth of strip premises, so the union of the stages is
+exactly Heather's declarative theory.
+
+The metatheory becomes one induction on `n`. At stage `n+1`, stage `n`'s
+metatheory is already available, and the strip's side condition
+`Γ ⊢ₙ a ≈ b` (with `a`, `b`, `I`, `Γ` checked at stage `n`) is:
+- **decidable**, from stage `n`'s type checking and conversion, so the
+  fundamental theorem's case split is constructive and needs no LEM;
+- **stable under weakening in both polarities**, from stage `n`'s
+  strengthening, which in turn follows from its syntax-directed
+  algorithms (checking, conversion) by induction on their derivations.
+
+So stage `n+1`'s reduction is deterministic, its normal forms survive
+Kripke weakening, and the relation, fundamental theorem and decidability
+go through at stage `n+1` as MX describes, with `⇝ₛ` read at stage `n`.
+
+What it costs, and what it leaves open:
+
+- A stage index on every judgment. Carrying it in the global context
+  record (like `gL G`) keeps the statements unchanged; the strip rule
+  reads the premise at the decremented stage.
+- Strengthening, local and global, for the algorithmic judgments and for
+  typing (via the checker). We have none today.
+- **Stabilization, for the union.** At a fixed stage, closed canonicity
+  can fail: a closed `transp` whose endpoints are equal at stage `n+1`
+  but not at `n` is stuck at stage `n+1`, and strips at `n+2`. Canonicity
+  and decidability of Heather's full theory need: for given well-typed
+  terms, the answers of stage `k` stop changing beyond some `k`. That is
+  plausible (the algorithm's query tree on normalizing terms is finite)
+  but not argued yet.
+
+Verdict: (D) is the first candidate that keeps Heather's rules as they
+are, with no axiom. The open part is stabilization, not a circularity.
+Next step on this track: argue stabilization on paper. If it holds, (D)
+becomes the M10b plan. If it fails, the counterexample is a Heather
+finding: full-theory canonicity would then depend on it.
+
 ## Staging
 
 **M10a: `sEq`, `srefl`, `sEmpty`, `elim_sEmpty`, irrelevance. No
