@@ -404,19 +404,6 @@ Ltac fung_premise :=
 
 Ltac fung_step :=
   match goal with
-  | |- eq_ty _ _ _ (tyPi _ _ _ _) _ _ => eapply eqty_pi
-  | |- eq_ty _ _ _ (tyEl _ _) _ _ => eapply eqty_El
-  | |- eq_tm _ _ _ (tmPi _ _ _ _) _ _ _ => eapply eqtm_code_pi
-  | |- eq_tm _ _ _ (succ _) _ _ _ => eapply eqtm_succ
-  | |- eq_tm _ _ _ (lam _ _ _ _) _ _ _ => eapply eqtm_lam
-  | |- eq_tm _ _ _ (app _ _ _ _ _ _) _ _ _ => eapply eqtm_app
-  | |- eq_ty _ _ _ (tySig _ _ _ _) _ _ => eapply eqty_sig
-  | |- eq_tm _ _ _ (tmPair _ _ _ _ _ _) _ _ _ => eapply eqtm_pair
-  | |- eq_tm _ _ _ (tmFst _ _ _ _ _) _ _ _ => eapply eqtm_fst
-  | |- eq_tm _ _ _ (tmSnd _ _ _ _ _) _ _ _ => eapply eqtm_snd
-  | |- eq_ty _ _ _ (tyUnit _) _ _ => eapply eqty_unit
-  | |- eq_tm _ _ _ (tmUnit _) _ _ _ => eapply eqtm_code_unit
-  | |- eq_tm _ _ _ (tmTriv _) _ _ _ => eapply eqtm_refl, wf_triv
   | Hc : eq_ty _ _ _ ?T ?T' ?l |- eq_tm _ _ _ _ _ (subst ?T _) ?l =>
       eapply eqtm_conv; [ | eapply eqty_subst_g ]
   | Hl : lequiv _ ?l ?l' |- eq_ty _ _ _ _ _ ?l => eapply eqty_lconv
@@ -687,6 +674,7 @@ Proof.
   all: try fung_upi.
   all: try fung_mf.
   all: try fung_manual.
+  all: try (timeout 3 any_rule fung_premise).
   all: try (timeout 3 fung_step).
   (* code of Π and natrec: the binder premises need the substituted
      derivation of the bound type first *)
