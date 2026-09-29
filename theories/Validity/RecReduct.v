@@ -125,6 +125,67 @@ Proof.
   rewrite (lvren_ush_uext' l1 (br_nu k) ls lvar Hn). apply lvsubst_id; reflexivity.
 Qed.
 
+Lemma brLv_t_id k ls : br_isT k = false -> length ls = br_nu k -> lvsubst (brLv k l1 l2) (uext ls lvar) = l2.
+Proof.
+  intros Hk Hn. unfold brLv. rewrite Hk.
+  rewrite (lvren_ush_uext' l2 (br_nu k) ls lvar Hn). apply lvsubst_id; reflexivity.
+Qed.
+
+(** ** A branch's reduct, generically (M8_DESIGN.md J2, S2)
+
+    The reduct peels the branch at the code's levels [ls], the global
+    payloads [os] and the recursive calls [xs]; it is typed at the result's
+    instance [T] and the branch level [lv]. The branch supplies the
+    payloads' typings ([Hσ], [Hd]) and the two instance equations. *)
+Lemma rr_br k ls os xs {T lv} : k < nbr -> length ls = br_nu k -> length os = br_ng k -> length xs = br_nl k ->
+  Forall (lwf (gL G)) ls -> Forall dnfo os -> Forall dnftm xs ->
+  [ G ⊢ gext_s os gid : mkG (gL G) (map (fun D => gdecl_usubst D (uext ls lvar)) (brDecls k) ++ gΨ G) ] ->
+  [ G ; Γ ⊢[ lM ] lext xs (lshift 0) : (ucsubst (brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2) (uext ls lvar))⦃gext_s os gid⦄ ] ->
+  ((usubst_ty (brRes k (wrapMT MT) (wrapMt Mt)) (uext ls lvar))⦃gext_s os gid⦄)[lext xs (lshift 0)] = T ->
+  lvsubst (brLv k l1 l2) (uext ls lvar) = lv ->
+  [ G ; Γ ⊢[ lM ] peelLs (peelGs (peelUs (wrap (br_nu k) (br_ng k) (br_nl k) (bs k)) ls) os) xs : T @ lv ].
+Proof.
+  intros Hk Hn Hng Hnl Hls Ho Hxs Hσ Hd <- <-.
+  rewrite peel_wrap by first [exact Hn | exact Hng | exact Hnl | exact Ho | exact Hxs | exact (Hbd k Hk)].
+  exact (br_typed Hrb HΓ Hk Hn Hls Hσ Hd).
+Qed.
+
+Ltac rr_side :=
+  first [ reflexivity | apply gdnf_gext_s; [assumption | intros ?i; exact I]
+        | apply lk_dnf_lext; [assumption | intros ?n; exact I]
+        | apply lk_dnf_lext; [repeat (apply Forall_cons; [eapply wf_tm_dnf; eassumption |]); apply Forall_nil
+                             | intros ?n; exact I]
+        | repeat (apply lk_dnf_lcons; [| eapply wf_tm_dnf; eassumption]); intros ?n; exact I ].
+Ltac rr_lext_base d := lazymatch d with lcons ?d' _ => rr_lext_base d' | lext _ ?e => e | _ => d end.
+Ltac rr_lext_split d :=
+  lazymatch d with
+  | lcons ?d' ?a => let xs := rr_lext_split d' in eval cbn [List.app] in (xs ++ a :: nil)
+  | lext ?xs _ => xs
+  | _ => constr:(@nil tm)
+  end.
+Ltac rr_wkb_rw :=
+  match goal with
+  | |- context [ ((usubst_ty (motT (wkb ?nu ?ng ?nl ?w) ?lv ?g ?c) (uext ?ls lvar))⦃gext_s ?os gid⦄)[?d] ] =>
+      let e0 := rr_lext_base d in let xs := rr_lext_split d in
+      rewrite (motT_wkb_inst' _ nu ng nl ls os xs lvar gid e0 d lv g c) by rr_side;
+      rewrite (motive_id_T _ HMTd)
+  | |- context [ ((usubst_ty (mott (wkb ?nu ?ng ?nl ?w) ?lv ?g ?U ?c) (uext ?ls lvar))⦃gext_s ?os gid⦄)[?d] ] =>
+      let e0 := rr_lext_base d in let xs := rr_lext_split d in
+      rewrite (mott_wkb_inst' _ nu ng nl ls os xs lvar gid e0 d lv g U c) by rr_side;
+      rewrite (motive_id_t _ HMtd)
+  end.
+Ltac rr_sl0 :=
+  repeat first [ rewrite subst_lshift0_ty by (apply dnfty_nfty; eassumption)
+               | rewrite subst_lshift0 by (apply dnftm_nftm; eassumption) ].
+Ltac rr_res := cbn [brRes call_ty br_head br_nu br_ng br_nl br_ar]; rr_wkb_rw; cbn; rr_sl0; rewrite ?Nat.add_0_r; reflexivity.
+Ltac rr_ctx :=
+  cbn [brΓ brLocs cexts br_nu br_ng br_nl br_ar ucsubst mkLocs call_ty call_lv br_calls lext fold_left];
+  rewrite ?gs_cext; rewrite wkc_inst' by reflexivity; rewrite Γ_id;
+  repeat apply lsub_wf_lcons; [exact (lsub_wf_id G lM eq_refl Γ HΓ) | ..];
+  repeat rr_wkb_rw; cbn;
+  rewrite ?lvren_ush_uext' by reflexivity;
+  rewrite ?(lvsubst_id l1 lvar (fun _ => eq_refl)), ?(lvsubst_id l2 lvar (fun _ => eq_refl)); rr_sl0.
+
 Lemma rr_T_nat {l Δ r} : [ G ; Δ ⊢[ lD ] ] -> redT l1 l2 (mkrb MT Mt bs) l Δ tyNat = Some r ->
   [ G ; Γ ⊢[ lM ] r : motT (wrapMT MT) lzero Δ (boxT tyNat) @ l1 ].
 Proof.
@@ -189,7 +250,6 @@ Proof.
     by (repeat apply Forall_cons; [exact HΔd | exact HAd | exact HBd | apply Forall_nil]).
   assert (Hxs : Forall dnftm (x1 :: x2 :: nil))
     by (repeat apply Forall_cons; [exact Hx1d | exact Hx2d | apply Forall_nil]).
-  rewrite peel_wrap by first [reflexivity | exact Ho | exact Hxs | exact Hb1].
   (* the global substitution *)
   assert (Hσ : [ G ⊢ gext_s (GCtx Δ :: GTy A :: GTy B :: nil) gid :
                  mkG (gL G) (map (fun D => gdecl_usubst D (uext (k :: k' :: nil) lvar)) (brDecls 1) ++ gΨ G) ]).
@@ -201,38 +261,11 @@ Proof.
     - cbn. exact HA.
     - cbn. sl0_rw HAd. exact HB. }
   (* the local substitution *)
-  assert (Hd : [ G ; Γ ⊢[ lM ] lext (x1 :: x2 :: nil) (lshift 0) :
-                 (ucsubst (brΓ 1 Γ (wrapMT MT) (wrapMt Mt) l1 l2) (uext (k :: k' :: nil) lvar))⦃gext_s (GCtx Δ :: GTy A :: GTy B :: nil) gid⦄ ]).
-  { change (lext (x1 :: x2 :: nil) (lshift 0)) with (lcons (lcons (lshift 0) x1) x2).
-    cbn [brΓ brLocs cexts br_nu br_ng br_ar mkLocs call_ty call_lv br_calls].
-    change ((ucsubst (wkc 2 3 Γ ,, ?T1 @ ?a ,, ?T2 @ ?a) ?φ)⦃?σ⦄)
-      with ((ucsubst (wkc 2 3 Γ) φ)⦃σ⦄ ,, (usubst_ty T1 φ)⦃σ⦄ @ lvsubst a φ ,, (usubst_ty T2 φ)⦃σ⦄ @ lvsubst a φ).
-    rewrite (wkc_inst' 2 3 Γ (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: nil) lvar gid eq_refl eq_refl), Γ_id.
-    apply lsub_wf_lcons; [apply lsub_wf_lcons; [exact (lsub_wf_id G lM eq_refl Γ HΓ) |] |].
-    - change (lshift 0) with (lext nil (lshift 0)).
-      rewrite (motT_wkb_inst' MT 2 3 0 (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: nil) nil lvar gid (lshift 0) _ _ _ _
-                 eq_refl eq_refl eq_refl eq_refl)
-        by first [apply gdnf_gext_s; [exact Ho | intros i; exact I]
-                 | apply lk_dnf_lext; [constructor | intros n; exact I]].
-      rewrite (motive_id_T MT HMTd). cbn. sl0_rw HAd.
-      rewrite (lvren_ush_uext' l1 2 (k :: k' :: nil) lvar eq_refl), (lvsubst_id l1 lvar (fun _ => eq_refl)).
-      exact Hx1.
-    - change (lcons (lshift 0) x1) with (lext (x1 :: nil) (lshift 0)).
-      rewrite (motT_wkb_inst' MT 2 3 1 (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: nil) (x1 :: nil) lvar gid (lshift 0)
-                 _ _ _ _ eq_refl eq_refl eq_refl eq_refl)
-        by first [apply gdnf_gext_s; [exact Ho | intros i; exact I]
-                 | apply lk_dnf_lext; [exact (Forall_cons _ Hx1d (Forall_nil _)) | intros n; exact I]].
-      rewrite (motive_id_T MT HMTd). cbn. sl0_rw HAd. sl0_rw HBd.
-      rewrite (lvren_ush_uext' l1 2 (k :: k' :: nil) lvar eq_refl), (lvsubst_id l1 lvar (fun _ => eq_refl)).
-      exact Hx2. }
-  pose proof (br_typed (k := 1) (ls := k :: k' :: nil) Hrb HΓ ltac:(lia) eq_refl
-                (Forall_cons _ Wk (Forall_cons _ Wk' (Forall_nil _))) Hσ Hd) as X.
-  rewrite (brLv_T_id 1 (k :: k' :: nil) eq_refl eq_refl) in X. cbn [brRes call_ty br_head br_nu br_ng br_nl br_ar] in X.
-  rewrite (motT_wkb_inst' MT 2 3 2 (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: nil) (x1 :: x2 :: nil) lvar gid (lshift 0)
-             _ _ _ _ eq_refl eq_refl eq_refl eq_refl) in X
-    by first [apply gdnf_gext_s; [exact Ho | intros i; exact I]
-             | apply lk_dnf_lext; [exact Hxs | intros n; exact I]].
-  rewrite (motive_id_T MT HMTd) in X. cbn in X. sl0_rw_in HAd X. sl0_rw_in HBd X. exact X.
+  refine (rr_br 1 (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: nil) (x1 :: x2 :: nil) ltac:(cbv; lia) eq_refl eq_refl eq_refl
+            (Forall_cons _ Wk (Forall_cons _ Wk' (Forall_nil _))) Ho Hxs Hσ _ _ _).
+  - rr_ctx; eassumption.
+  - rr_res.
+  - exact (brLv_T_id 1 (k :: k' :: nil) eq_refl eq_refl).
 Qed.
 
 Lemma rect_wf {l Δ T c} : lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] T @ l ] ->
@@ -240,11 +273,7 @@ Lemma rect_wf {l Δ T c} : lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[
   [ G ; Γ ⊢[ lM ] elimt l1 l2 (mkrb MT Mt bs) l Δ T (boxt c) : mott (wrapMt Mt) l Δ T (boxt c) @ l2 ].
 Proof. intros Hl HΔ HT Hc. apply (wf_elimt' Hrb Hl HΔ HT). apply wf_boxt; assumption. Qed.
 
-Lemma brLv_t_id k ls : br_isT k = false -> length ls = br_nu k -> lvsubst (brLv k l1 l2) (uext ls lvar) = l2.
-Proof.
-  intros Hk Hn. unfold brLv. rewrite Hk.
-  rewrite (lvren_ush_uext' l2 (br_nu k) ls lvar Hn). apply lvsubst_id; reflexivity.
-Qed.
+
 
 Lemma rr_T_U {l Δ k r} : [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lC ] tyU k @ l ] ->
   redT l1 l2 (mkrb MT Mt bs) l Δ (tyU k) = Some r ->
@@ -257,21 +286,15 @@ Proof.
     by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 2 ltac:(lia)) as Hb2.
   assert (Ho : Forall dnfo (GCtx Δ :: nil)) by (apply Forall_cons; [exact HΔd | apply Forall_nil]).
-  rewrite peel_wrap by first [reflexivity | exact Ho | apply Forall_nil | exact Hb2].
   assert (Hσ : [ G ⊢ gext_s (GCtx Δ :: nil) gid :
                  mkG (gL G) (map (fun D => gdecl_usubst D (uext (k :: nil) lvar)) (brDecls 2) ++ gΨ G) ]).
   { change (GCtx Δ :: nil) with (nil ++ GCtx Δ :: nil).
     destruct G as [L Ψ]. exact (gsub_wf_snoc (D := gdCtx) (o := GCtx Δ) (gsub_wf_nil HG) HΔd HΔ). }
-  assert (Hd : [ G ; Γ ⊢[ lM ] lext nil (lshift 0) :
-                 (ucsubst (brΓ 2 Γ (wrapMT MT) (wrapMt Mt) l1 l2) (uext (k :: nil) lvar))⦃gext_s (GCtx Δ :: nil) gid⦄ ]).
-  { cbn [brΓ brLocs cexts br_nu br_ng br_ar lext fold_left mkLocs call_ty call_lv br_calls].
-    rewrite (wkc_inst' 1 1 Γ (k :: nil) (GCtx Δ :: nil) lvar gid eq_refl eq_refl). rewrite Γ_id.
-    exact (lsub_wf_id G lM eq_refl Γ HΓ). }
-  pose proof (br_typed (k := 2) (ls := k :: nil) Hrb HΓ ltac:(lia) eq_refl (Forall_cons _ Wk (Forall_nil _)) Hσ Hd) as X.
-  rewrite (brLv_T_id 2 (k :: nil) eq_refl eq_refl) in X. cbn [brRes call_ty br_head br_nu br_ng br_nl br_ar] in X.
-  rewrite (motT_wkb_inst' MT 1 1 0 (k :: nil) (GCtx Δ :: nil) nil lvar gid (lshift 0) _ _ _ _ eq_refl eq_refl eq_refl eq_refl)
-    in X by first [apply gdnf_gext_s; [exact Ho | intros i; exact I] | apply lk_dnf_lext; [constructor | intros n; exact I]].
-  rewrite (motive_id_T MT HMTd) in X. exact X.
+  refine (rr_br 2 (k :: nil) (GCtx Δ :: nil) nil ltac:(cbv; lia) eq_refl eq_refl eq_refl
+            (Forall_cons _ Wk (Forall_nil _)) Ho (Forall_nil _) Hσ _ _ _).
+  - rr_ctx; eassumption.
+  - rr_res.
+  - exact (brLv_T_id 2 (k :: nil) eq_refl eq_refl).
 Qed.
 
 Lemma rr_T_El {l Δ k t r} : [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lC ] tyEl k t @ l ] ->
@@ -290,7 +313,6 @@ Proof.
   assert (Ho : Forall dnfo (GCtx Δ :: GTm t :: nil))
     by (repeat apply Forall_cons; [exact HΔd | exact Htd | apply Forall_nil]).
   assert (Hxs : Forall dnftm (x1 :: nil)) by (apply Forall_cons; [exact Hx1d | apply Forall_nil]).
-  rewrite peel_wrap by first [reflexivity | exact Ho | exact Hxs | exact Hb3].
   assert (Hσ : [ G ⊢ gext_s (GCtx Δ :: GTm t :: nil) gid :
                  mkG (gL G) (map (fun D => gdecl_usubst D (uext (k :: nil) lvar)) (brDecls 3) ++ gΨ G) ]).
   { change (GCtx Δ :: GTm t :: nil) with ((nil ++ GCtx Δ :: nil) ++ GTm t :: nil).
@@ -298,27 +320,11 @@ Proof.
     refine (gsub_wf_snoc (D := gdTm (cvar 0) lC (tyU k) (lsuc k)) (o := GTm t)
               (gsub_wf_snoc (D := gdCtx) (o := GCtx Δ) (gsub_wf_nil HG) HΔd HΔ) Htd _).
     cbn. exact Ht. }
-  assert (Hd : [ G ; Γ ⊢[ lM ] lext (x1 :: nil) (lshift 0) :
-                 (ucsubst (brΓ 3 Γ (wrapMT MT) (wrapMt Mt) l1 l2) (uext (k :: nil) lvar))⦃gext_s (GCtx Δ :: GTm t :: nil) gid⦄ ]).
-  { change (lext (x1 :: nil) (lshift 0)) with (lcons (lshift 0) x1).
-    cbn [brΓ brLocs cexts br_nu br_ng br_ar mkLocs call_ty call_lv br_calls].
-    change ((ucsubst (wkc 1 2 Γ ,, ?T1 @ ?a) ?φ)⦃?σ⦄)
-      with ((ucsubst (wkc 1 2 Γ) φ)⦃σ⦄ ,, (usubst_ty T1 φ)⦃σ⦄ @ lvsubst a φ).
-    rewrite (wkc_inst' 1 2 Γ (k :: nil) (GCtx Δ :: GTm t :: nil) lvar gid eq_refl eq_refl), Γ_id.
-    apply lsub_wf_lcons; [exact (lsub_wf_id G lM eq_refl Γ HΓ) |].
-    change (lshift 0) with (lext nil (lshift 0)).
-    rewrite (mott_wkb_inst' Mt 1 2 0 (k :: nil) (GCtx Δ :: GTm t :: nil) nil lvar gid (lshift 0) _ _ _ _ _
-               eq_refl eq_refl eq_refl eq_refl)
-      by first [apply gdnf_gext_s; [exact Ho | intros i; exact I] | apply lk_dnf_lext; [constructor | intros n; exact I]].
-    rewrite (motive_id_t Mt HMtd). cbn.
-    rewrite (lvren_ush_uext' l2 1 (k :: nil) lvar eq_refl), (lvsubst_id l2 lvar (fun _ => eq_refl)).
-    sl0t_rw Htd. exact Hx1. }
-  pose proof (br_typed (k := 3) (ls := k :: nil) Hrb HΓ ltac:(lia) eq_refl (Forall_cons _ Wk (Forall_nil _)) Hσ Hd) as X.
-  rewrite (brLv_T_id 3 (k :: nil) eq_refl eq_refl) in X. cbn [brRes call_ty br_head br_nu br_ng br_nl br_ar] in X.
-  rewrite (motT_wkb_inst' MT 1 2 1 (k :: nil) (GCtx Δ :: GTm t :: nil) (x1 :: nil) lvar gid (lshift 0) _ _ _ _
-             eq_refl eq_refl eq_refl eq_refl) in X
-    by first [apply gdnf_gext_s; [exact Ho | intros i; exact I] | apply lk_dnf_lext; [exact Hxs | intros n; exact I]].
-  rewrite (motive_id_T MT HMTd) in X. cbn in X. sl0t_rw_in Htd X. exact X.
+  refine (rr_br 3 (k :: nil) (GCtx Δ :: GTm t :: nil) (x1 :: nil) ltac:(cbv; lia) eq_refl eq_refl eq_refl
+            (Forall_cons _ Wk (Forall_nil _)) Ho Hxs Hσ _ _ _).
+  - rr_ctx; eassumption.
+  - rr_res.
+  - exact (brLv_T_id 3 (k :: nil) eq_refl eq_refl).
 Qed.
 
 (** ** Term codes: the reducts at their natural motive instances *)
@@ -334,7 +340,6 @@ Proof.
   subst r. pose proof HG_rr as HG. pose proof (Hbd 4 ltac:(lia)) as Hb.
   assert (Ho : Forall dnfo (GCtx Δ :: GTy T :: GTm (var n) :: nil))
     by (repeat apply Forall_cons; [exact HΔd | exact HTd | exact HVd | apply Forall_nil]).
-  rewrite peel_wrap by first [reflexivity | exact Ho | apply Forall_nil | exact Hb].
   assert (Hσ : [ G ⊢ gext_s (GCtx Δ :: GTy T :: GTm (var n) :: nil) gid :
                  mkG (gL G) (map (fun D => gdecl_usubst D (uext (l :: nil) lvar)) (brDecls 4) ++ gΨ G) ]).
   { change (GCtx Δ :: GTy T :: GTm (var n) :: nil) with (((nil ++ GCtx Δ :: nil) ++ GTy T :: nil) ++ GTm (var n) :: nil).
@@ -344,17 +349,11 @@ Proof.
                  (gsub_wf_snoc (D := gdCtx) (o := GCtx Δ) (gsub_wf_nil HG) HΔd HΔ) HTd _) HVd _).
     - cbn. exact HT.
     - cbn. sl0_rw HTd. exact HV. }
-  assert (Hd : [ G ; Γ ⊢[ lM ] lext nil (lshift 0) :
-                 (ucsubst (brΓ 4 Γ (wrapMT MT) (wrapMt Mt) l1 l2) (uext (l :: nil) lvar))⦃gext_s (GCtx Δ :: GTy T :: GTm (var n) :: nil) gid⦄ ]).
-  { cbn [brΓ brLocs cexts br_nu br_ng br_ar lext fold_left mkLocs call_ty call_lv br_calls].
-    rewrite (wkc_inst' 1 3 Γ (l :: nil) (GCtx Δ :: GTy T :: GTm (var n) :: nil) lvar gid eq_refl eq_refl). rewrite Γ_id.
-    exact (lsub_wf_id G lM eq_refl Γ HΓ). }
-  pose proof (br_typed (k := 4) (ls := l :: nil) Hrb HΓ ltac:(lia) eq_refl (Forall_cons _ Wl (Forall_nil _)) Hσ Hd) as X.
-  rewrite (brLv_t_id 4 (l :: nil) eq_refl eq_refl) in X. cbn [brRes call_ty br_head br_nu br_ng br_nl br_ar] in X.
-  rewrite (mott_wkb_inst' Mt 1 3 0 (l :: nil) (GCtx Δ :: GTy T :: GTm (var n) :: nil) nil lvar gid (lshift 0) _ _ _ _ _
-             eq_refl eq_refl eq_refl eq_refl) in X
-    by first [apply gdnf_gext_s; [exact Ho | intros i; exact I] | apply lk_dnf_lext; [constructor | intros m; exact I]].
-  rewrite (motive_id_t Mt HMtd) in X. cbn in X. sl0_rw_in HTd X. rewrite Nat.add_0_r in X. exact X.
+  refine (rr_br 4 (l :: nil) (GCtx Δ :: GTy T :: GTm (var n) :: nil) nil ltac:(cbv; lia) eq_refl eq_refl eq_refl
+            (Forall_cons _ Wl (Forall_nil _)) Ho (Forall_nil _) Hσ _ _ _).
+  - rr_ctx; eassumption.
+  - rr_res.
+  - exact (brLv_t_id 4 (l :: nil) eq_refl eq_refl).
 Qed.
 
 (** The codes without pieces: the branch at the context alone. *)
@@ -426,12 +425,11 @@ Proof.
   set (x1 := elimt l1 l2 (mkrb MT Mt bs) lzero Δ tyNat (boxt t)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 0 2 1 (bs 9)) nil) (GCtx Δ :: GTm t :: nil)) (x1 :: nil))
     by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
-  subst r. pose proof HG_rr as HG. pose proof (Hbd 9 ltac:(lia)) as Hb.
+  subst r. pose proof HG_rr as HG.
   pose proof (rect_wf (l := lzero) I HΔ (ctm_ty Ht) Ht) as Hx1. pose proof (wf_tm_dnf Hx1) as Hx1d.
   assert (Ho : Forall dnfo (GCtx Δ :: GTm t :: nil))
     by (repeat apply Forall_cons; [exact HΔd | exact Htd | apply Forall_nil]).
   assert (Hxs : Forall dnftm (x1 :: nil)) by (apply Forall_cons; [exact Hx1d | apply Forall_nil]).
-  rewrite peel_wrap by first [reflexivity | exact Ho | exact Hxs | exact Hb].
   assert (Hσ : [ G ⊢ gext_s (GCtx Δ :: GTm t :: nil) gid :
                  mkG (gL G) (map (fun D => gdecl_usubst D (uext nil lvar)) (brDecls 9) ++ gΨ G) ]).
   { change (GCtx Δ :: GTm t :: nil) with ((nil ++ GCtx Δ :: nil) ++ GTm t :: nil).
@@ -439,27 +437,11 @@ Proof.
     refine (gsub_wf_snoc (D := gdTm (cvar 0) lC tyNat lzero) (o := GTm t)
               (gsub_wf_snoc (D := gdCtx) (o := GCtx Δ) (gsub_wf_nil HG) HΔd HΔ) Htd _).
     cbn. exact Ht. }
-  assert (Hd : [ G ; Γ ⊢[ lM ] lext (x1 :: nil) (lshift 0) :
-                 (ucsubst (brΓ 9 Γ (wrapMT MT) (wrapMt Mt) l1 l2) (uext nil lvar))⦃gext_s (GCtx Δ :: GTm t :: nil) gid⦄ ]).
-  { change (lext (x1 :: nil) (lshift 0)) with (lcons (lshift 0) x1).
-    cbn [brΓ brLocs cexts br_nu br_ng br_ar mkLocs call_ty call_lv br_calls].
-    change ((ucsubst (wkc 0 2 Γ ,, ?T1 @ ?a) ?φ)⦃?σ⦄)
-      with ((ucsubst (wkc 0 2 Γ) φ)⦃σ⦄ ,, (usubst_ty T1 φ)⦃σ⦄ @ lvsubst a φ).
-    rewrite (wkc_inst' 0 2 Γ nil (GCtx Δ :: GTm t :: nil) lvar gid eq_refl eq_refl), Γ_id.
-    apply lsub_wf_lcons; [exact (lsub_wf_id G lM eq_refl Γ HΓ) |].
-    change (lshift 0) with (lext nil (lshift 0)).
-    rewrite (mott_wkb_inst' Mt 0 2 0 nil (GCtx Δ :: GTm t :: nil) nil lvar gid (lshift 0) _ _ _ _ _
-               eq_refl eq_refl eq_refl eq_refl)
-      by first [apply gdnf_gext_s; [exact Ho | intros i; exact I] | apply lk_dnf_lext; [constructor | intros n; exact I]].
-    rewrite (motive_id_t Mt HMtd). cbn.
-    rewrite (lvren_ush_uext' l2 0 nil lvar eq_refl), (lvsubst_id l2 lvar (fun _ => eq_refl)).
-    sl0t_rw Htd. exact Hx1. }
-  pose proof (br_typed (k := 9) (ls := nil) Hrb HΓ ltac:(lia) eq_refl (Forall_nil _) Hσ Hd) as X.
-  rewrite (brLv_t_id 9 nil eq_refl eq_refl) in X. cbn [brRes call_ty br_head br_nu br_ng br_nl br_ar] in X.
-  rewrite (mott_wkb_inst' Mt 0 2 1 nil (GCtx Δ :: GTm t :: nil) (x1 :: nil) lvar gid (lshift 0) _ _ _ _ _
-             eq_refl eq_refl eq_refl eq_refl) in X
-    by first [apply gdnf_gext_s; [exact Ho | intros i; exact I] | apply lk_dnf_lext; [exact Hxs | intros n; exact I]].
-  rewrite (motive_id_t Mt HMtd) in X. cbn in X. sl0t_rw_in Htd X. exact X.
+  refine (rr_br 9 nil (GCtx Δ :: GTm t :: nil) (x1 :: nil) ltac:(cbv; lia) eq_refl eq_refl eq_refl
+            (Forall_nil _) Ho Hxs Hσ _ _ _).
+  - rr_ctx. exact Hx1.
+  - rr_res.
+  - exact (brLv_t_id 9 nil eq_refl eq_refl).
 Qed.
 
 Lemma rr_t_pi {l Δ T k k' s t r} : [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) k -> lwf (gL G) k' ->
@@ -484,7 +466,6 @@ Proof.
     by (repeat apply Forall_cons; [exact HΔd | exact Hsd | exact Htd | apply Forall_nil]).
   assert (Hxs : Forall dnftm (x1 :: x2 :: nil))
     by (repeat apply Forall_cons; [exact Hx1d | exact Hx2d | apply Forall_nil]).
-  rewrite peel_wrap by first [reflexivity | exact Ho | exact Hxs | exact Hb].
   assert (Hσ : [ G ⊢ gext_s (GCtx Δ :: GTm s :: GTm t :: nil) gid :
                  mkG (gL G) (map (fun D => gdecl_usubst D (uext (k :: k' :: nil) lvar)) (brDecls 6) ++ gΨ G) ]).
   { change (GCtx Δ :: GTm s :: GTm t :: nil) with (((nil ++ GCtx Δ :: nil) ++ GTm s :: nil) ++ GTm t :: nil).
@@ -494,36 +475,11 @@ Proof.
                  (gsub_wf_snoc (D := gdCtx) (o := GCtx Δ) (gsub_wf_nil HG) HΔd HΔ) Hsd _) Htd _).
     - cbn. exact Hs.
     - cbn. sl0t_rw Hsd. exact Ht. }
-  assert (Hd : [ G ; Γ ⊢[ lM ] lext (x1 :: x2 :: nil) (lshift 0) :
-                 (ucsubst (brΓ 6 Γ (wrapMT MT) (wrapMt Mt) l1 l2) (uext (k :: k' :: nil) lvar))⦃gext_s (GCtx Δ :: GTm s :: GTm t :: nil) gid⦄ ]).
-  { change (lext (x1 :: x2 :: nil) (lshift 0)) with (lcons (lcons (lshift 0) x1) x2).
-    cbn [brΓ brLocs cexts br_nu br_ng br_ar mkLocs call_ty call_lv br_calls].
-    change ((ucsubst (wkc 2 3 Γ ,, ?T1 @ ?a ,, ?T2 @ ?a) ?φ)⦃?σ⦄)
-      with ((ucsubst (wkc 2 3 Γ) φ)⦃σ⦄ ,, (usubst_ty T1 φ)⦃σ⦄ @ lvsubst a φ ,, (usubst_ty T2 φ)⦃σ⦄ @ lvsubst a φ).
-    rewrite (wkc_inst' 2 3 Γ (k :: k' :: nil) (GCtx Δ :: GTm s :: GTm t :: nil) lvar gid eq_refl eq_refl), Γ_id.
-    apply lsub_wf_lcons; [apply lsub_wf_lcons; [exact (lsub_wf_id G lM eq_refl Γ HΓ) |] |].
-    - change (lshift 0) with (lext nil (lshift 0)).
-      rewrite (mott_wkb_inst' Mt 2 3 0 (k :: k' :: nil) (GCtx Δ :: GTm s :: GTm t :: nil) nil lvar gid (lshift 0) _ _ _ _ _
-                 eq_refl eq_refl eq_refl eq_refl)
-        by first [apply gdnf_gext_s; [exact Ho | intros i; exact I] | apply lk_dnf_lext; [constructor | intros n; exact I]].
-      rewrite (motive_id_t Mt HMtd). cbn. sl0t_rw Hsd.
-      rewrite (lvren_ush_uext' l2 2 (k :: k' :: nil) lvar eq_refl), (lvsubst_id l2 lvar (fun _ => eq_refl)).
-      exact Hx1.
-    - change (lcons (lshift 0) x1) with (lext (x1 :: nil) (lshift 0)).
-      rewrite (mott_wkb_inst' Mt 2 3 1 (k :: k' :: nil) (GCtx Δ :: GTm s :: GTm t :: nil) (x1 :: nil) lvar gid (lshift 0)
-                 _ _ _ _ _ eq_refl eq_refl eq_refl eq_refl)
-        by first [apply gdnf_gext_s; [exact Ho | intros i; exact I]
-                 | apply lk_dnf_lext; [exact (Forall_cons _ Hx1d (Forall_nil _)) | intros n; exact I]].
-      rewrite (motive_id_t Mt HMtd). cbn. sl0t_rw Hsd. sl0t_rw Htd.
-      rewrite (lvren_ush_uext' l2 2 (k :: k' :: nil) lvar eq_refl), (lvsubst_id l2 lvar (fun _ => eq_refl)).
-      exact Hx2. }
-  pose proof (br_typed (k := 6) (ls := k :: k' :: nil) Hrb HΓ ltac:(lia) eq_refl
-                (Forall_cons _ Wk (Forall_cons _ Wk' (Forall_nil _))) Hσ Hd) as X.
-  rewrite (brLv_t_id 6 (k :: k' :: nil) eq_refl eq_refl) in X. cbn [brRes call_ty br_head br_nu br_ng br_nl br_ar] in X.
-  rewrite (mott_wkb_inst' Mt 2 3 2 (k :: k' :: nil) (GCtx Δ :: GTm s :: GTm t :: nil) (x1 :: x2 :: nil) lvar gid (lshift 0)
-             _ _ _ _ _ eq_refl eq_refl eq_refl eq_refl) in X
-    by first [apply gdnf_gext_s; [exact Ho | intros i; exact I] | apply lk_dnf_lext; [exact Hxs | intros n; exact I]].
-  rewrite (motive_id_t Mt HMtd) in X. cbn in X. sl0t_rw_in Hsd X. sl0t_rw_in Htd X. exact X.
+  refine (rr_br 6 (k :: k' :: nil) (GCtx Δ :: GTm s :: GTm t :: nil) (x1 :: x2 :: nil) ltac:(cbv; lia) eq_refl eq_refl eq_refl
+            (Forall_cons _ Wk (Forall_cons _ Wk' (Forall_nil _))) Ho Hxs Hσ _ _ _).
+  - rr_ctx; eassumption.
+  - rr_res.
+  - exact (brLv_t_id 6 (k :: k' :: nil) eq_refl eq_refl).
 Qed.
 
 Lemma rr_t_natrec {l Δ T k M s z t r} : [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) k ->
@@ -557,7 +513,6 @@ Proof.
     by (repeat apply Forall_cons; [exact HΔd | exact HMd | exact Hsd | exact Hzd | exact Htd | apply Forall_nil]).
   assert (Hxs : Forall dnftm (x1 :: x2 :: x3 :: x4 :: nil))
     by (repeat apply Forall_cons; [exact Hx1d | exact Hx2d | exact Hx3d | exact Hx4d | apply Forall_nil]).
-  rewrite peel_wrap by first [reflexivity | exact Ho | exact Hxs | exact Hb].
   assert (Hσ : [ G ⊢ gext_s (GCtx Δ :: GTy M :: GTm s :: GTm z :: GTm t :: nil) gid :
                  mkG (gL G) (map (fun D => gdecl_usubst D (uext (k :: nil) lvar)) (brDecls 10) ++ gΨ G) ]).
   { change (GCtx Δ :: GTy M :: GTm s :: GTm z :: GTm t :: nil)
@@ -572,49 +527,11 @@ Proof.
     - cbn. exact Hs.
     - cbn. sl0_rw HMd. exact Hz.
     - cbn. exact Ht. }
-  assert (Hd : [ G ; Γ ⊢[ lM ] lext (x1 :: x2 :: x3 :: x4 :: nil) (lshift 0) :
-                 (ucsubst (brΓ 10 Γ (wrapMT MT) (wrapMt Mt) l1 l2) (uext (k :: nil) lvar))⦃gext_s (GCtx Δ :: GTy M :: GTm s :: GTm z :: GTm t :: nil) gid⦄ ]).
-  { change (lext (x1 :: x2 :: x3 :: x4 :: nil) (lshift 0)) with (lcons (lcons (lcons (lcons (lshift 0) x1) x2) x3) x4).
-    cbn [brΓ brLocs cexts br_nu br_ng br_ar mkLocs call_ty call_lv br_calls].
-    change ((ucsubst (wkc 1 5 Γ ,, ?T1 @ ?a ,, ?T2 @ ?b ,, ?T3 @ ?b ,, ?T4 @ ?b) ?φ)⦃?σ⦄)
-      with ((ucsubst (wkc 1 5 Γ) φ)⦃σ⦄ ,, (usubst_ty T1 φ)⦃σ⦄ @ lvsubst a φ ,, (usubst_ty T2 φ)⦃σ⦄ @ lvsubst b φ
-              ,, (usubst_ty T3 φ)⦃σ⦄ @ lvsubst b φ ,, (usubst_ty T4 φ)⦃σ⦄ @ lvsubst b φ).
-    rewrite (wkc_inst' 1 5 Γ (k :: nil) (GCtx Δ :: GTy M :: GTm s :: GTm z :: GTm t :: nil) lvar gid eq_refl eq_refl), Γ_id.
-    rewrite (lvren_ush_uext' l1 1 (k :: nil) lvar eq_refl), (lvsubst_id l1 lvar (fun _ => eq_refl)).
-    rewrite (lvren_ush_uext' l2 1 (k :: nil) lvar eq_refl), (lvsubst_id l2 lvar (fun _ => eq_refl)).
-    apply lsub_wf_lcons; [apply lsub_wf_lcons; [apply lsub_wf_lcons; [apply lsub_wf_lcons;
-      [exact (lsub_wf_id G lM eq_refl Γ HΓ) |] |] |] |].
-    - change (lshift 0) with (lext nil (lshift 0)).
-      rewrite (motT_wkb_inst' MT 1 5 0 (k :: nil) (GCtx Δ :: GTy M :: GTm s :: GTm z :: GTm t :: nil) nil lvar gid
-                 (lshift 0) _ _ _ _ eq_refl eq_refl eq_refl eq_refl)
-        by first [apply gdnf_gext_s; [exact Ho | intros i; exact I] | apply lk_dnf_lext; [constructor | intros n; exact I]].
-      rewrite (motive_id_T MT HMTd). cbn. sl0_rw HMd. exact Hx1.
-    - change (lcons (lshift 0) x1) with (lext (x1 :: nil) (lshift 0)).
-      rewrite (mott_wkb_inst' Mt 1 5 1 (k :: nil) (GCtx Δ :: GTy M :: GTm s :: GTm z :: GTm t :: nil) (x1 :: nil) lvar gid
-                 (lshift 0) _ _ _ _ _ eq_refl eq_refl eq_refl eq_refl)
-        by first [apply gdnf_gext_s; [exact Ho | intros i; exact I]
-                 | apply lk_dnf_lext; [exact (Forall_cons _ Hx1d (Forall_nil _)) | intros n; exact I]].
-      rewrite (motive_id_t Mt HMtd). cbn. sl0t_rw Hsd. exact Hx2.
-    - change (lcons (lcons (lshift 0) x1) x2) with (lext (x1 :: x2 :: nil) (lshift 0)).
-      rewrite (mott_wkb_inst' Mt 1 5 2 (k :: nil) (GCtx Δ :: GTy M :: GTm s :: GTm z :: GTm t :: nil) (x1 :: x2 :: nil)
-                 lvar gid (lshift 0) _ _ _ _ _ eq_refl eq_refl eq_refl eq_refl)
-        by first [apply gdnf_gext_s; [exact Ho | intros i; exact I]
-                 | apply lk_dnf_lext; [exact (Forall_cons _ Hx1d (Forall_cons _ Hx2d (Forall_nil _))) | intros n; exact I]].
-      rewrite (motive_id_t Mt HMtd). cbn. sl0_rw HMd. sl0t_rw Hzd. exact Hx3.
-    - change (lcons (lcons (lcons (lshift 0) x1) x2) x3) with (lext (x1 :: x2 :: x3 :: nil) (lshift 0)).
-      rewrite (mott_wkb_inst' Mt 1 5 3 (k :: nil) (GCtx Δ :: GTy M :: GTm s :: GTm z :: GTm t :: nil) (x1 :: x2 :: x3 :: nil)
-                 lvar gid (lshift 0) _ _ _ _ _ eq_refl eq_refl eq_refl eq_refl)
-        by first [apply gdnf_gext_s; [exact Ho | intros i; exact I]
-                 | apply lk_dnf_lext; [exact (Forall_cons _ Hx1d (Forall_cons _ Hx2d (Forall_cons _ Hx3d (Forall_nil _))))
-                                      | intros n; exact I]].
-      rewrite (motive_id_t Mt HMtd). cbn. sl0t_rw Htd. exact Hx4. }
-  pose proof (br_typed (k := 10) (ls := k :: nil) Hrb HΓ ltac:(lia) eq_refl (Forall_cons _ Wk (Forall_nil _)) Hσ Hd) as X.
-  rewrite (brLv_t_id 10 (k :: nil) eq_refl eq_refl) in X. cbn [brRes call_ty br_head br_nu br_ng br_nl br_ar] in X.
-  rewrite (mott_wkb_inst' Mt 1 5 4 (k :: nil) (GCtx Δ :: GTy M :: GTm s :: GTm z :: GTm t :: nil) (x1 :: x2 :: x3 :: x4 :: nil)
-             lvar gid (lshift 0) _ _ _ _ _ eq_refl eq_refl eq_refl eq_refl) in X
-    by first [apply gdnf_gext_s; [exact Ho | intros i; exact I] | apply lk_dnf_lext; [exact Hxs | intros n; exact I]].
-  rewrite (motive_id_t Mt HMtd) in X. cbn in X.
-  sl0_rw_in HMd X. sl0t_rw_in Hsd X. sl0t_rw_in Hzd X. sl0t_rw_in Htd X. exact X.
+  refine (rr_br 10 (k :: nil) (GCtx Δ :: GTy M :: GTm s :: GTm z :: GTm t :: nil) (x1 :: x2 :: x3 :: x4 :: nil) ltac:(cbv; lia) eq_refl eq_refl eq_refl
+            (Forall_cons _ Wk (Forall_nil _)) Ho Hxs Hσ _ _ _).
+  - rr_ctx; eassumption.
+  - rr_res.
+  - exact (brLv_t_id 10 (k :: nil) eq_refl eq_refl).
 Qed.
 
 Lemma rr_t_lam {l Δ k k' A b k1 k2 A1 B r} : [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) k -> lwf (gL G) k' ->
@@ -637,7 +554,6 @@ Proof.
   assert (Ho : Forall dnfo (GCtx Δ :: GTy A :: GTy B :: GTm b :: nil))
     by (repeat apply Forall_cons; [exact HΔd | exact HAd | exact HBd | exact Hbtd | apply Forall_nil]).
   assert (Hxs : Forall dnftm (x1 :: x2 :: nil)) by (repeat apply Forall_cons; [exact Hx1d | exact Hx2d | apply Forall_nil]).
-  rewrite peel_wrap by first [reflexivity | exact Ho | exact Hxs | exact Hb].
   assert (Hσ : [ G ⊢ gext_s (GCtx Δ :: GTy A :: GTy B :: GTm b :: nil) gid :
                  mkG (gL G) (map (fun D => gdecl_usubst D (uext (k :: k' :: nil) lvar)) (brDecls 11) ++ gΨ G) ]).
   { change (GCtx Δ :: GTy A :: GTy B :: GTm b :: nil)
@@ -650,34 +566,11 @@ Proof.
     - cbn. exact HA.
     - cbn. sl0_rw HAd. exact HB.
     - cbn. sl0_rw HAd. sl0_rw HBd. exact Hbt. }
-  assert (Hd : [ G ; Γ ⊢[ lM ] lext (x1 :: x2 :: nil) (lshift 0) :
-                 (ucsubst (brΓ 11 Γ (wrapMT MT) (wrapMt Mt) l1 l2) (uext (k :: k' :: nil) lvar))⦃gext_s (GCtx Δ :: GTy A :: GTy B :: GTm b :: nil) gid⦄ ]).
-  { change (lext (x1 :: x2 :: nil) (lshift 0)) with (lcons (lcons (lshift 0) x1) x2).
-    cbn [brΓ brLocs cexts br_nu br_ng br_ar mkLocs call_ty call_lv br_calls].
-    change ((ucsubst (wkc 2 4 Γ ,, ?T1 @ ?a ,, ?T2 @ ?b) ?φ)⦃?σ⦄)
-      with ((ucsubst (wkc 2 4 Γ) φ)⦃σ⦄ ,, (usubst_ty T1 φ)⦃σ⦄ @ lvsubst a φ ,, (usubst_ty T2 φ)⦃σ⦄ @ lvsubst b φ).
-    rewrite (wkc_inst' 2 4 Γ (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: GTm b :: nil) lvar gid eq_refl eq_refl), Γ_id.
-    rewrite (lvren_ush_uext' l1 2 (k :: k' :: nil) lvar eq_refl), (lvsubst_id l1 lvar (fun _ => eq_refl)).
-    rewrite (lvren_ush_uext' l2 2 (k :: k' :: nil) lvar eq_refl), (lvsubst_id l2 lvar (fun _ => eq_refl)).
-    apply lsub_wf_lcons; [apply lsub_wf_lcons; [exact (lsub_wf_id G lM eq_refl Γ HΓ) |] |].
-    - change (lshift 0) with (lext nil (lshift 0)).
-      rewrite (motT_wkb_inst' MT 2 4 0 (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: GTm b :: nil) nil lvar gid (lshift 0)
-                 _ _ _ _ eq_refl eq_refl eq_refl eq_refl)
-        by first [apply gdnf_gext_s; [exact Ho | intros i; exact I] | apply lk_dnf_lext; [constructor | intros n; exact I]].
-      rewrite (motive_id_T MT HMTd). cbn. sl0_rw HAd. exact Hx1.
-    - change (lcons (lshift 0) x1) with (lext (x1 :: nil) (lshift 0)).
-      rewrite (mott_wkb_inst' Mt 2 4 1 (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: GTm b :: nil) (x1 :: nil) lvar gid
-                 (lshift 0) _ _ _ _ _ eq_refl eq_refl eq_refl eq_refl)
-        by first [apply gdnf_gext_s; [exact Ho | intros i; exact I]
-                 | apply lk_dnf_lext; [exact (Forall_cons _ Hx1d (Forall_nil _)) | intros n; exact I]].
-      rewrite (motive_id_t Mt HMtd). cbn. sl0_rw HAd. sl0_rw HBd. sl0t_rw Hbtd. exact Hx2. }
-  pose proof (br_typed (k := 11) (ls := k :: k' :: nil) Hrb HΓ ltac:(lia) eq_refl
-                (Forall_cons _ Wk (Forall_cons _ Wk' (Forall_nil _))) Hσ Hd) as X.
-  rewrite (brLv_t_id 11 (k :: k' :: nil) eq_refl eq_refl) in X. cbn [brRes call_ty br_head br_nu br_ng br_nl br_ar] in X.
-  rewrite (mott_wkb_inst' Mt 2 4 2 (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: GTm b :: nil) (x1 :: x2 :: nil) lvar gid
-             (lshift 0) _ _ _ _ _ eq_refl eq_refl eq_refl eq_refl) in X
-    by first [apply gdnf_gext_s; [exact Ho | intros i; exact I] | apply lk_dnf_lext; [exact Hxs | intros n; exact I]].
-  rewrite (motive_id_t Mt HMtd) in X. cbn in X. sl0_rw_in HAd X. sl0_rw_in HBd X. sl0t_rw_in Hbtd X. exact X.
+  refine (rr_br 11 (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: GTm b :: nil) (x1 :: x2 :: nil) ltac:(cbv; lia) eq_refl eq_refl eq_refl
+            (Forall_cons _ Wk (Forall_cons _ Wk' (Forall_nil _))) Ho Hxs Hσ _ _ _).
+  - rr_ctx; eassumption.
+  - rr_res.
+  - exact (brLv_t_id 11 (k :: k' :: nil) eq_refl eq_refl).
 Qed.
 
 Lemma rr_t_app {l Δ T k k' A B f a r} : [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) k -> lwf (gL G) k' ->
@@ -707,7 +600,6 @@ Proof.
     by (repeat apply Forall_cons; [exact HΔd | exact HAd | exact HBd | exact Hfd | exact Had | apply Forall_nil]).
   assert (Hxs : Forall dnftm (x1 :: x2 :: x3 :: x4 :: nil))
     by (repeat apply Forall_cons; [exact Hx1d | exact Hx2d | exact Hx3d | exact Hx4d | apply Forall_nil]).
-  rewrite peel_wrap by first [reflexivity | exact Ho | exact Hxs | exact Hb].
   assert (Hσ : [ G ⊢ gext_s (GCtx Δ :: GTy A :: GTy B :: GTm f :: GTm a :: nil) gid :
                  mkG (gL G) (map (fun D => gdecl_usubst D (uext (k :: k' :: nil) lvar)) (brDecls 12) ++ gΨ G) ]).
   { change (GCtx Δ :: GTy A :: GTy B :: GTm f :: GTm a :: nil)
@@ -722,50 +614,11 @@ Proof.
     - cbn. sl0_rw HAd. exact HB.
     - cbn. sl0_rw HAd. sl0_rw HBd. exact Hf.
     - cbn. sl0_rw HAd. exact Ha. }
-  assert (Hd : [ G ; Γ ⊢[ lM ] lext (x1 :: x2 :: x3 :: x4 :: nil) (lshift 0) :
-                 (ucsubst (brΓ 12 Γ (wrapMT MT) (wrapMt Mt) l1 l2) (uext (k :: k' :: nil) lvar))⦃gext_s (GCtx Δ :: GTy A :: GTy B :: GTm f :: GTm a :: nil) gid⦄ ]).
-  { change (lext (x1 :: x2 :: x3 :: x4 :: nil) (lshift 0)) with (lcons (lcons (lcons (lcons (lshift 0) x1) x2) x3) x4).
-    cbn [brΓ brLocs cexts br_nu br_ng br_ar mkLocs call_ty call_lv br_calls].
-    change ((ucsubst (wkc 2 5 Γ ,, ?T1 @ ?a ,, ?T2 @ ?a ,, ?T3 @ ?b ,, ?T4 @ ?b) ?φ)⦃?σ⦄)
-      with ((ucsubst (wkc 2 5 Γ) φ)⦃σ⦄ ,, (usubst_ty T1 φ)⦃σ⦄ @ lvsubst a φ ,, (usubst_ty T2 φ)⦃σ⦄ @ lvsubst a φ
-              ,, (usubst_ty T3 φ)⦃σ⦄ @ lvsubst b φ ,, (usubst_ty T4 φ)⦃σ⦄ @ lvsubst b φ).
-    rewrite (wkc_inst' 2 5 Γ (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: GTm f :: GTm a :: nil) lvar gid eq_refl eq_refl), Γ_id.
-    rewrite (lvren_ush_uext' l1 2 (k :: k' :: nil) lvar eq_refl), (lvsubst_id l1 lvar (fun _ => eq_refl)).
-    rewrite (lvren_ush_uext' l2 2 (k :: k' :: nil) lvar eq_refl), (lvsubst_id l2 lvar (fun _ => eq_refl)).
-    apply lsub_wf_lcons; [apply lsub_wf_lcons; [apply lsub_wf_lcons; [apply lsub_wf_lcons;
-      [exact (lsub_wf_id G lM eq_refl Γ HΓ) |] |] |] |].
-    - change (lshift 0) with (lext nil (lshift 0)).
-      rewrite (motT_wkb_inst' MT 2 5 0 (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: GTm f :: GTm a :: nil) nil lvar gid
-                 (lshift 0) _ _ _ _ eq_refl eq_refl eq_refl eq_refl)
-        by first [apply gdnf_gext_s; [exact Ho | intros i; exact I] | apply lk_dnf_lext; [constructor | intros n; exact I]].
-      rewrite (motive_id_T MT HMTd). cbn. sl0_rw HAd. exact Hx1.
-    - change (lcons (lshift 0) x1) with (lext (x1 :: nil) (lshift 0)).
-      rewrite (motT_wkb_inst' MT 2 5 1 (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: GTm f :: GTm a :: nil) (x1 :: nil)
-                 lvar gid (lshift 0) _ _ _ _ eq_refl eq_refl eq_refl eq_refl)
-        by first [apply gdnf_gext_s; [exact Ho | intros i; exact I]
-                 | apply lk_dnf_lext; [exact (Forall_cons _ Hx1d (Forall_nil _)) | intros n; exact I]].
-      rewrite (motive_id_T MT HMTd). cbn. sl0_rw HAd. sl0_rw HBd. exact Hx2.
-    - change (lcons (lcons (lshift 0) x1) x2) with (lext (x1 :: x2 :: nil) (lshift 0)).
-      rewrite (mott_wkb_inst' Mt 2 5 2 (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: GTm f :: GTm a :: nil)
-                 (x1 :: x2 :: nil) lvar gid (lshift 0) _ _ _ _ _ eq_refl eq_refl eq_refl eq_refl)
-        by first [apply gdnf_gext_s; [exact Ho | intros i; exact I]
-                 | apply lk_dnf_lext; [exact (Forall_cons _ Hx1d (Forall_cons _ Hx2d (Forall_nil _))) | intros n; exact I]].
-      rewrite (motive_id_t Mt HMtd). cbn. sl0_rw HAd. sl0_rw HBd. sl0t_rw Hfd. exact Hx3.
-    - change (lcons (lcons (lcons (lshift 0) x1) x2) x3) with (lext (x1 :: x2 :: x3 :: nil) (lshift 0)).
-      rewrite (mott_wkb_inst' Mt 2 5 3 (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: GTm f :: GTm a :: nil)
-                 (x1 :: x2 :: x3 :: nil) lvar gid (lshift 0) _ _ _ _ _ eq_refl eq_refl eq_refl eq_refl)
-        by first [apply gdnf_gext_s; [exact Ho | intros i; exact I]
-                 | apply lk_dnf_lext; [exact (Forall_cons _ Hx1d (Forall_cons _ Hx2d (Forall_cons _ Hx3d (Forall_nil _))))
-                                      | intros n; exact I]].
-      rewrite (motive_id_t Mt HMtd). cbn. sl0_rw HAd. sl0t_rw Had. exact Hx4. }
-  pose proof (br_typed (k := 12) (ls := k :: k' :: nil) Hrb HΓ ltac:(lia) eq_refl
-                (Forall_cons _ Wk (Forall_cons _ Wk' (Forall_nil _))) Hσ Hd) as X.
-  rewrite (brLv_t_id 12 (k :: k' :: nil) eq_refl eq_refl) in X. cbn [brRes call_ty br_head br_nu br_ng br_nl br_ar] in X.
-  rewrite (mott_wkb_inst' Mt 2 5 4 (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: GTm f :: GTm a :: nil)
-             (x1 :: x2 :: x3 :: x4 :: nil) lvar gid (lshift 0) _ _ _ _ _ eq_refl eq_refl eq_refl eq_refl) in X
-    by first [apply gdnf_gext_s; [exact Ho | intros i; exact I] | apply lk_dnf_lext; [exact Hxs | intros n; exact I]].
-  rewrite (motive_id_t Mt HMtd) in X. cbn in X.
-  sl0_rw_in HAd X. sl0_rw_in HBd X. sl0t_rw_in Hfd X. sl0t_rw_in Had X. exact X.
+  refine (rr_br 12 (k :: k' :: nil) (GCtx Δ :: GTy A :: GTy B :: GTm f :: GTm a :: nil) (x1 :: x2 :: x3 :: x4 :: nil) ltac:(cbv; lia) eq_refl eq_refl eq_refl
+            (Forall_cons _ Wk (Forall_cons _ Wk' (Forall_nil _))) Ho Hxs Hσ _ _ _).
+  - rr_ctx; eassumption.
+  - rr_res.
+  - exact (brLv_t_id 12 (k :: k' :: nil) eq_refl eq_refl).
 Qed.
 
 (** ** From the natural instances to the redex's *)
