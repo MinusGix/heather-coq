@@ -46,8 +46,8 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | Piece | Kind | Heather rules | Paper pass | Known concerns | Ours |
 |---|---|---|---|---|---|
 | `Id`, `refl`, `J` | positive, propositional | ext §5 | MX §6 | Id at `□` types observes code conversion; funext must stay propositional (MX §6 audit) | — |
-| `Σ`, `pair`, `fst`/`snd` | negative, **η** | ext §6, §11.1 | MX §3 | surjective pairing is a genuinely new equation, not a congruence | — |
-| `Unit^l` | **η = proof irrelevance** | ext §7, §11.2 | MX §4 | level-indexed (see findings) | — |
+| `Σ`, `pair`, `fst`/`snd` | negative, **η** | ext §6, §11.1 | MX §3 | surjective pairing is a genuinely new equation, not a congruence | **done** (M8a, M8d): every layer but V, β/η at D and M, recursor branches 13, 15–18 |
+| `Unit^l` | **η = proof irrelevance** | ext §7, §11.2 | MX §4 | level-indexed (see findings) | **done** (M8c, M8d): as Σ; η as proof irrelevance; branches 14, 19, 20 |
 | `Empty^l`, `elim_Empty` | positive, no β | ext §7 | MX §2 | Empty-η still open (`issues/empty-eta-conversion.md`) | — |
 | `+`, `inl`/`inr`, `case` | positive | ext §8 | MX §2 | — | — |
 | `W`, `sup`, `elim_W` | positive, infinitary | ext §9 | MX §5 | β builds an ih λ; the heaviest LR case | — |
@@ -59,8 +59,9 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | Bodied globals `u := t`, δ at p/m only | not a former | DESIGN.md, MX §23–25 | **none** | ch. 07 bill unpaid (`issues/metatheory-ch07-definitions.md`) | — |
 | `NatLit`, evaluator accelerations | representation | DESIGN.md | n/a | claimed to have no semantic content; nothing to prove here | out of scope |
 
-Code recursor: the paper has 13 branches (our `Typing/RecSpec.v`, indexed
-0–12), Heather has 52. The declarative telescopes for ten of the new
+Code recursor: the paper has 13 branches (indexed 0–12), Heather has 52.
+Ours has 21 since M8d (`Typing/RecSpec.v`): Heather's Σ and Unit branches
+are 13–20, in Heather's order, and later ones append after them. The declarative telescopes for ten of the new
 recursive-call slots (`Vec`/`Wf`/`sEq`/`sEmpty` branches) are written
 nowhere outside the kernel (`issues/uncovered-formers-recursor-rules.md`).
 Transcribing those is where an error would go unnoticed on both sides, so
@@ -82,6 +83,14 @@ Cross-checks between the two sides, newest last.
   level-polymorphic instead was tried and reverted: it gives `box Unit`
   many types and breaks the recursor. Our Preservation lemma is the check
   when `Vec` lands.
+- **Σ and Unit (M8).** Heather's rules went through as written: the
+  formers at every layer but V, the computation rules (β, η, the codes'
+  decodings) at D and M only. Two additions of ours, neither a change to
+  Heather: `eqtm_triv`, the congruence of `⟨⟩` over level-equivalent
+  annotations, which Heather does not need (it has no level-equivalence
+  relation on code; ours is M3_DESIGN.md E11) and which at D and M follows
+  from η; and the relation for Unit keeps weak-head normal forms (M8_DESIGN.md
+  K5), a semantic choice with no rule behind it.
 
 ## Beyond type formers
 
@@ -132,8 +141,12 @@ each one touched and why, then choose among 1–3 using that data.
 
 ## Proposed order
 
-1. Σ with η, Unit with η: the two new equations; measure the per-former cost.
-2. Decide the genericity direction from that measurement.
+1. ~~Σ with η, Unit with η: the two new equations; measure the per-former cost.~~
+   Done (M8a–M8d).
+2. ~~Decide the genericity direction from that measurement.~~ Done: shared
+   generic laws and algorithmic families (M8_DESIGN.md J1), recursor branches
+   through one generic lemma per side (J2), shared call and binder bodies (L4).
+   Open: rule-list boilerplate (M8c cost log).
 3. Bodied globals with layer-indexed δ: the one piece with no paper pass.
 4. `sEq`/`transp` and the strip rule, starting from MX §19.4.
 5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash).
