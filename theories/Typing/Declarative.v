@@ -583,35 +583,4 @@ Combined Scheme typing_mut from wf_glob_mut, wf_ctx_mut, wf_ty_mut, wf_tm_mut, e
 (** Try every rule of the goal's judgment in turn, closing its premises with
     [tac]. New rules need no entry in per-lemma rule lists (M8_DESIGN.md,
     cost log). *)
-Ltac any_rule tac :=
-  first [ solve [econstructor 1; tac] | solve [econstructor 2; tac] | solve [econstructor 3; tac] |
-          solve [econstructor 4; tac] | solve [econstructor 5; tac] | solve [econstructor 6; tac] |
-          solve [econstructor 7; tac] | solve [econstructor 8; tac] | solve [econstructor 9; tac] |
-          solve [econstructor 10; tac] | solve [econstructor 11; tac] |
-          solve [econstructor 12; tac] | solve [econstructor 13; tac] |
-          solve [econstructor 14; tac] | solve [econstructor 15; tac] |
-          solve [econstructor 16; tac] | solve [econstructor 17; tac] |
-          solve [econstructor 18; tac] | solve [econstructor 19; tac] |
-          solve [econstructor 20; tac] | solve [econstructor 21; tac] |
-          solve [econstructor 22; tac] | solve [econstructor 23; tac] |
-          solve [econstructor 24; tac] | solve [econstructor 25; tac] |
-          solve [econstructor 26; tac] | solve [econstructor 27; tac] |
-          solve [econstructor 28; tac] | solve [econstructor 29; tac] |
-          solve [econstructor 30; tac] | solve [econstructor 31; tac] |
-          solve [econstructor 32; tac] | solve [econstructor 33; tac] |
-          solve [econstructor 34; tac] | solve [econstructor 35; tac] |
-          solve [econstructor 36; tac] | solve [econstructor 37; tac] |
-          solve [econstructor 38; tac] | solve [econstructor 39; tac] |
-          solve [econstructor 40; tac] | solve [econstructor 41; tac] |
-          solve [econstructor 42; tac] | solve [econstructor 43; tac] |
-          solve [econstructor 44; tac] | solve [econstructor 45; tac] |
-          solve [econstructor 46; tac] | solve [econstructor 47; tac] |
-          solve [econstructor 48; tac] | solve [econstructor 49; tac] |
-          solve [econstructor 50; tac] | solve [econstructor 51; tac] |
-          solve [econstructor 52; tac] | solve [econstructor 53; tac] |
-          solve [econstructor 54; tac] | solve [econstructor 55; tac] |
-          solve [econstructor 56; tac] | solve [econstructor 57; tac] |
-          solve [econstructor 58; tac] | solve [econstructor 59; tac] |
-          solve [econstructor 60; tac] | solve [econstructor 61; tac] |
-          solve [econstructor 62; tac] | solve [econstructor 63; tac] |
-          solve [econstructor 64; tac] ].
+Ltac any_rule tac := solve [econstructor; tac].

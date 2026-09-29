@@ -196,41 +196,7 @@ Proof. induction 1; auto. Qed.
 
 Ltac wk_premises := fix_layer; eauto 6 with wk.
 
-(** Try every constructor of the goal's judgment. *)
-Ltac wk_step :=
-  match goal with
-  | |- wf_ty _ _ _ _ _ =>
-      first [ solve [eapply wft_nat; wk_premises] | solve [eapply wft_pi; wk_premises]
-            | solve [eapply wft_U; wk_premises] | solve [eapply wft_El; wk_premises]
-            | solve [eapply wft_lconv; wk_premises] | solve [eapply wft_CTyp; wk_premises]
-            | solve [eapply wft_CTrm; wk_premises] ]
-  | |- wf_tm _ _ _ _ _ _ =>
-      first [ solve [eapply wf_var; wk_premises] | solve [eapply wf_code_nat; wk_premises]
-            | solve [eapply wf_code_U; wk_premises] | solve [eapply wf_code_pi; wk_premises]
-            | solve [eapply wf_zero; wk_premises] | solve [eapply wf_succ; wk_premises]
-            | solve [eapply wf_natrec; wk_premises] | solve [eapply wf_lam; wk_premises]
-            | solve [eapply wf_app; wk_premises] | solve [eapply wf_conv; wk_premises]
-            | solve [eapply wf_lconv; wk_premises] | solve [eapply wf_boxT; wk_premises]
-            | solve [eapply wf_boxt; wk_premises] ]
-  | |- eq_ty _ _ _ _ _ _ =>
-      first [ solve [eapply eqty_refl; wk_premises] | solve [eapply eqty_sym; wk_premises]
-            | solve [eapply eqty_trans; wk_premises] | solve [eapply eqty_pi; wk_premises]
-            | solve [eapply eqty_U; wk_premises] | solve [eapply eqty_El; wk_premises]
-            | solve [eapply eqty_El_nat; wk_premises] | solve [eapply eqty_El_U; wk_premises]
-            | solve [eapply eqty_El_pi; wk_premises] | solve [eapply eqty_lconv; wk_premises]
-            | solve [eapply eqty_CTyp; wk_premises] | solve [eapply eqty_CTrm; wk_premises] ]
-  | |- eq_tm _ _ _ _ _ _ _ =>
-      first [ solve [eapply eqtm_boxT; wk_premises] | solve [eapply eqtm_boxt; wk_premises]
-            | solve [eapply eqtm_refl; wk_premises] | solve [eapply eqtm_sym; wk_premises]
-            | solve [eapply eqtm_trans; wk_premises] | solve [eapply eqtm_code_U; wk_premises]
-            | solve [eapply eqtm_code_pi; wk_premises] | solve [eapply eqtm_succ; wk_premises]
-            | solve [eapply eqtm_natrec; wk_premises] | solve [eapply eqtm_lam; wk_premises]
-            | solve [eapply eqtm_app; wk_premises] | solve [eapply eqtm_conv; wk_premises]
-            | solve [eapply eqtm_lconv; wk_premises]
-            | solve [eapply eqtm_natrec_zero; wk_premises]
-            | solve [eapply eqtm_natrec_succ; wk_premises]
-            | solve [eapply eqtm_beta; wk_premises] | solve [eapply eqtm_eta; wk_premises] ]
-  end.
+Ltac wk_step := any_rule wk_premises.
 
 Lemma wf_ctx_nat G i Δ : i <> lV -> [ G ; Δ ⊢[ typeof i ] ] ->
   [ G ; Δ ,, tyNat @ lzero ⊢[ typeof i ] ].
@@ -428,41 +394,10 @@ Ltac wk_manual :=
   | |- wf_tm _ _ _ (uapp _ _) _ _ => eapply wf_uapp; try wk_upi_body; wk_premise
   | |- eq_tm _ _ _ (uapp (ulam _ _ _ _) _) _ _ _ => eapply eqtm_ubeta; try wk_upi_body; wk_premise
   | |- eq_tm _ _ _ (uapp _ _) _ _ _ => eapply eqtm_uapp; try wk_upi_body; wk_premise
-  | |- wf_tm _ _ _ (natrec _ _ _ _ _) _ _ => eapply wf_natrec; wk_premise
-  | |- eq_tm _ _ _ (tmPi _ _ _ _) _ _ _ => eapply eqtm_code_pi; wk_premise
-  | |- wf_tm _ _ _ (tmPi _ _ _ _) _ _ => eapply wf_code_pi; wk_premise
-  | |- eq_ty _ _ _ (tyPi _ _ _ _) (tyEl _ _) _ => eapply eqty_El_pi; wk_premise
-  | |- eq_ty _ _ _ (tyPi _ _ _ _) (tyPi _ _ _ _) _ => eapply eqty_pi; wk_premise
-  | |- eq_tm _ _ _ (lam _ _ _ _) (lam _ _ _ _) _ _ => eapply eqtm_lam; wk_premise
-  | |- eq_tm _ _ _ (app _ _ _ _ _ _) (app _ _ _ _ _ _) _ _ => eapply eqtm_app; wk_premise
-  | |- eq_tm _ _ _ (natrec _ _ _ _ zero) _ _ _ => eapply eqtm_natrec_zero; wk_premise
-  | |- eq_tm _ _ _ (natrec _ _ _ _ (succ _)) _ _ _ => eapply eqtm_natrec_succ; wk_premise
-  | |- eq_tm _ _ _ (natrec _ _ _ _ _) (natrec _ _ _ _ _) _ _ => eapply eqtm_natrec; wk_premise
   (* dependent pairs (M8) *)
-  | |- wf_ty _ _ _ (tySig _ _ _ _) _ => eapply wft_sig; wk_premise
-  | |- eq_ty _ _ _ (tySig _ _ _ _) (tyEl _ _) _ => eapply eqty_El_sig; wk_premise
-  | |- eq_ty _ _ _ (tySig _ _ _ _) (tySig _ _ _ _) _ => eapply eqty_sig; wk_premise
-  | |- wf_tm _ _ _ (tmSig _ _ _ _) _ _ => eapply wf_code_sig; wk_premise
-  | |- eq_tm _ _ _ (tmSig _ _ _ _) _ _ _ => eapply eqtm_code_sig; wk_premise
-  | |- wf_tm _ _ _ (tmPair _ _ _ _ _ _) _ _ => eapply wf_pair; wk_premise
-  | |- wf_tm _ _ _ (tmFst _ _ _ _ _) _ _ => eapply wf_fst; wk_premise
-  | |- wf_tm _ _ _ (tmSnd _ _ _ _ _) _ _ => eapply wf_snd; wk_premise
-  | |- eq_tm _ _ _ (tmFst _ _ _ _ (tmPair _ _ _ _ _ _)) _ _ _ => eapply eqtm_fst_beta; wk_premise
-  | |- eq_tm _ _ _ (tmSnd _ _ _ _ (tmPair _ _ _ _ _ _)) _ _ _ => eapply eqtm_snd_beta; wk_premise
   | |- eq_tm _ _ _ (tmPair _ _ _ _ (tmFst _ _ _ _ _) (tmSnd _ _ _ _ _)) _ _ _ =>
       eapply eqtm_sig_eta; wk_premise
-  | |- eq_tm _ _ _ (tmPair _ _ _ _ _ _) (tmPair _ _ _ _ _ _) _ _ => eapply eqtm_pair; wk_premise
-  | |- eq_tm _ _ _ (tmFst _ _ _ _ _) (tmFst _ _ _ _ _) _ _ => eapply eqtm_fst; wk_premise
-  | |- eq_tm _ _ _ (tmSnd _ _ _ _ _) (tmSnd _ _ _ _ _) _ _ => eapply eqtm_snd; wk_premise
   (* the unit type (M8c) *)
-  | |- wf_ty _ _ _ (tyUnit _) _ => eapply wft_unit; wk_premise
-  | |- eq_ty _ _ _ (tyUnit _) (tyEl _ _) _ => eapply eqty_El_unit; wk_premise
-  | |- eq_ty _ _ _ (tyUnit _) (tyUnit _) _ => eapply eqty_unit; wk_premise
-  | |- wf_tm _ _ _ (tmUnit _) _ _ => eapply wf_code_unit; wk_premise
-  | |- wf_tm _ _ _ (tmTriv _) _ _ => eapply wf_triv; wk_premise
-  | |- eq_tm _ _ _ (tmUnit _) (tmUnit _) _ _ => eapply eqtm_code_unit; wk_premise
-  | |- eq_tm _ _ _ (tmTriv _) (tmTriv _) _ _ => first [eapply eqtm_triv; wk_premise | eapply eqtm_unit_eta; wk_premise]
-  | |- eq_tm _ _ _ _ _ (tyUnit _) _ => eapply eqtm_unit_eta; wk_premise
   | |- wf_ty _ _ _ (tyGvar _ _) _ => eapply wft_gvar; [ .. | wk_entries]; eauto with wk
   | |- eq_ty _ _ _ (tyGvar _ _) _ _ =>
       eapply eqty_gvar; [ .. | wk_entries | wk_entries | wk_entries]; eauto with wk
@@ -497,8 +432,6 @@ Ltac wk_manual :=
       [ .. | wk_motive | wk_motive | wk_motive | wk_motive | wk_motive | wk_motive
            | wk_brctx | wk_brctx | wk_branches | wk_branches | ]; wk_premise
 
-  | |- eq_ty _ lM _ _ _ _ => eapply eqty_leq; wk_premise
-  | |- eq_tm _ lM _ _ _ _ _ => eapply eqtm_leq; wk_premise
   end.
 
 (** The context cases: a prefix [Γ] of [cexts Γ As] is weakened. *)
@@ -539,7 +472,8 @@ Theorem weakening_all :
 Proof.
   apply typing_mut; intros; try exact I; try wk_ctx; cbn [typeof] in *; push_ren; wk_rewrite; push_ren.
   all: try wk_step.
-  all: wk_manual.
+  all: try wk_manual.
+  all: any_rule wk_premise.
 Qed.
 
 (** The M1 form: layers with [typeof i = i]. *)

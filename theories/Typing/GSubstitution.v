@@ -449,42 +449,7 @@ Ltac gs_eq := push_gsubst; gs_rewrite; push_gsubst; first [reflexivity | f_equal
 
 Ltac gs_premises := eauto 6 with gsub.
 
-Ltac gs_step :=
-  match goal with
-  | |- wf_ctx _ _ _ =>
-      first [ solve [eapply wfc_nil; gs_premises] | solve [eapply wfc_ext; gs_premises] ]
-  | |- eq_ctx _ _ _ _ =>
-      first [ solve [eapply eqc_nil; gs_premises] | solve [eapply eqc_ext; gs_premises] ]
-  | |- wf_ty _ _ _ _ _ =>
-      first [ solve [eapply wft_nat; gs_premises] | solve [eapply wft_pi; gs_premises]
-            | solve [eapply wft_U; gs_premises] | solve [eapply wft_El; gs_premises]
-            | solve [eapply wft_lconv; gs_premises] | solve [eapply wft_CTyp; gs_premises]
-            | solve [eapply wft_CTrm; gs_premises] ]
-  | |- wf_tm _ _ _ _ _ _ =>
-      first [ solve [eapply wf_var; gs_premises] | solve [eapply wf_code_nat; gs_premises]
-            | solve [eapply wf_code_U; gs_premises] | solve [eapply wf_code_pi; gs_premises]
-            | solve [eapply wf_zero; gs_premises] | solve [eapply wf_succ; gs_premises]
-            | solve [eapply wf_lam; gs_premises]
-            | solve [eapply wf_app; gs_premises] | solve [eapply wf_conv; gs_premises]
-            | solve [eapply wf_lconv; gs_premises] | solve [eapply wf_boxT; gs_premises]
-            | solve [eapply wf_boxt; gs_premises] ]
-  | |- eq_ty _ _ _ _ _ _ =>
-      first [ solve [eapply eqty_refl; gs_premises] | solve [eapply eqty_sym; gs_premises]
-            | solve [eapply eqty_trans; gs_premises] | solve [eapply eqty_pi; gs_premises]
-            | solve [eapply eqty_U; gs_premises] | solve [eapply eqty_El; gs_premises]
-            | solve [eapply eqty_El_nat; gs_premises] | solve [eapply eqty_El_U; gs_premises]
-            | solve [eapply eqty_El_pi; gs_premises] | solve [eapply eqty_lconv; gs_premises]
-            | solve [eapply eqty_CTyp; gs_premises] | solve [eapply eqty_CTrm; gs_premises] ]
-  | |- eq_tm _ _ _ _ _ _ _ =>
-      first [ solve [eapply eqtm_boxT; gs_premises] | solve [eapply eqtm_boxt; gs_premises]
-            | solve [eapply eqtm_refl; gs_premises] | solve [eapply eqtm_sym; gs_premises]
-            | solve [eapply eqtm_trans; gs_premises] | solve [eapply eqtm_code_U; gs_premises]
-            | solve [eapply eqtm_code_pi; gs_premises] | solve [eapply eqtm_succ; gs_premises]
-            | solve [eapply eqtm_lam; gs_premises]
-            | solve [eapply eqtm_app; gs_premises] | solve [eapply eqtm_conv; gs_premises]
-            | solve [eapply eqtm_lconv; gs_premises]
-            | solve [eapply eqtm_beta; gs_premises] ]
-  end.
+Ltac gs_step := any_rule gs_premises.
 
 (** The recursors' specification laws (defined below). *)
 Ltac gs_rec_rw := fail.
@@ -681,35 +646,7 @@ Ltac gs_manual2 :=
   | |- eq_tm _ _ _ (tapp (tlam _ _ _ _ _) _) _ _ _ => gs_mf_rw; eapply eqtm_tbeta; try gs_body; gs_premise
   | |- eq_tm _ _ _ (capp _ _) _ _ _ => gs_mf_rw; eapply eqtm_capp; try gs_body; gs_premise
   | |- eq_tm _ _ _ (tapp _ _) _ _ _ => gs_mf_rw; eapply eqtm_tapp; try gs_body; gs_premise
-  | |- wf_tm _ _ _ (natrec _ _ _ _ _) _ _ => eapply wf_natrec; gs_premise
-  | |- eq_tm _ _ _ (natrec _ _ _ _ zero) _ _ _ => eapply eqtm_natrec_zero; gs_premise
-  | |- eq_tm _ _ _ (natrec _ _ _ _ (succ _)) _ _ _ => eapply eqtm_natrec_succ; gs_premise
-  | |- eq_tm _ _ _ (natrec _ _ _ _ _) (natrec _ _ _ _ _) _ _ => eapply eqtm_natrec; gs_premise
-  | |- eq_tm _ _ _ (lam _ _ _ _) _ _ _ => eapply eqtm_eta; gs_premise
-  (* dependent pairs (M8) *)
-  | |- wf_ty _ _ _ (tySig _ _ _ _) _ => eapply wft_sig; gs_premise
-  | |- eq_ty _ _ _ (tySig _ _ _ _) (tyEl _ _) _ => eapply eqty_El_sig; gs_premise
-  | |- eq_ty _ _ _ (tySig _ _ _ _) (tySig _ _ _ _) _ => eapply eqty_sig; gs_premise
-  | |- wf_tm _ _ _ (tmSig _ _ _ _) _ _ => eapply wf_code_sig; gs_premise
-  | |- eq_tm _ _ _ (tmSig _ _ _ _) _ _ _ => eapply eqtm_code_sig; gs_premise
-  | |- wf_tm _ _ _ (tmPair _ _ _ _ _ _) _ _ => eapply wf_pair; gs_premise
-  | |- wf_tm _ _ _ (tmFst _ _ _ _ _) _ _ => eapply wf_fst; gs_premise
-  | |- wf_tm _ _ _ (tmSnd _ _ _ _ _) _ _ => eapply wf_snd; gs_premise
-  | |- eq_tm _ _ _ (tmFst _ _ _ _ (tmPair _ _ _ _ _ _)) _ _ _ => eapply eqtm_fst_beta; gs_premise
-  | |- eq_tm _ _ _ (tmSnd _ _ _ _ (tmPair _ _ _ _ _ _)) _ _ _ => eapply eqtm_snd_beta; gs_premise
-  | |- eq_tm _ _ _ (tmPair _ _ _ _ (tmFst _ _ _ _ _) (tmSnd _ _ _ _ _)) _ _ _ => eapply eqtm_sig_eta; gs_premise
-  | |- eq_tm _ _ _ (tmPair _ _ _ _ _ _) (tmPair _ _ _ _ _ _) _ _ => eapply eqtm_pair; gs_premise
-  | |- eq_tm _ _ _ (tmFst _ _ _ _ _) (tmFst _ _ _ _ _) _ _ => eapply eqtm_fst; gs_premise
-  | |- eq_tm _ _ _ (tmSnd _ _ _ _ _) (tmSnd _ _ _ _ _) _ _ => eapply eqtm_snd; gs_premise
   (* the unit type (M8c) *)
-  | |- wf_ty _ _ _ (tyUnit _) _ => eapply wft_unit; gs_premise
-  | |- eq_ty _ _ _ (tyUnit _) (tyEl _ _) _ => eapply eqty_El_unit; gs_premise
-  | |- eq_ty _ _ _ (tyUnit _) (tyUnit _) _ => eapply eqty_unit; gs_premise
-  | |- wf_tm _ _ _ (tmUnit _) _ _ => eapply wf_code_unit; gs_premise
-  | |- wf_tm _ _ _ (tmTriv _) _ _ => eapply wf_triv; gs_premise
-  | |- eq_tm _ _ _ (tmUnit _) (tmUnit _) _ _ => eapply eqtm_code_unit; gs_premise
-  | |- eq_tm _ _ _ (tmTriv _) (tmTriv _) _ _ => first [eapply eqtm_triv; gs_premise | eapply eqtm_unit_eta; gs_premise]
-  | |- eq_tm _ _ _ _ _ (tyUnit _) _ => eapply eqtm_unit_eta; gs_premise
   | |- wf_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ => eapply wf_letboxT; try gs_body; gs_premise
   | |- wf_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ => eapply wf_letboxt; try gs_body; gs_premise
   | Hσ : gsub_wf _ _ _ |- eq_tm _ _ _ (letboxT _ _ _ _ _ (boxT _)) _ _ _ =>
@@ -816,6 +753,7 @@ Proof.
   all: try (notrec; gs_step).
   all: try (notrec; gs_manual).
   all: try (notrec; gs_manual2).
+  all: try (notrec; any_rule gs_premise).
   all: try (notrec; gs_upi).
   all: gs_rec.
 Qed.

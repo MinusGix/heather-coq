@@ -199,36 +199,7 @@ Ltac sub_rw :=
 
 Ltac sub_premises := fix_layer; eauto 6 with sub.
 
-Ltac sub_step :=
-  match goal with
-  | |- wf_ty _ _ _ _ _ =>
-      first [ solve [eapply wft_nat; sub_premises] | solve [eapply wft_pi; sub_premises]
-            | solve [eapply wft_U; sub_premises] | solve [eapply wft_El; sub_premises]
-            | solve [eapply wft_lconv; sub_premises] ]
-  | |- wf_tm _ _ _ _ _ _ =>
-      first [ solve [eapply wf_code_nat; sub_premises]
-            | solve [eapply wf_code_U; sub_premises] | solve [eapply wf_code_pi; sub_premises]
-            | solve [eapply wf_zero; sub_premises] | solve [eapply wf_succ; sub_premises]
-            | solve [eapply wf_natrec; sub_premises] | solve [eapply wf_lam; sub_premises]
-            | solve [eapply wf_app; sub_premises] | solve [eapply wf_conv; sub_premises]
-            | solve [eapply wf_lconv; sub_premises] ]
-  | |- eq_ty _ _ _ _ _ _ =>
-      first [ solve [eapply eqty_refl; sub_premises] | solve [eapply eqty_sym; sub_premises]
-            | solve [eapply eqty_trans; sub_premises] | solve [eapply eqty_pi; sub_premises]
-            | solve [eapply eqty_U; sub_premises] | solve [eapply eqty_El; sub_premises]
-            | solve [eapply eqty_El_nat; sub_premises] | solve [eapply eqty_El_U; sub_premises]
-            | solve [eapply eqty_El_pi; sub_premises] | solve [eapply eqty_lconv; sub_premises] ]
-  | |- eq_tm _ _ _ _ _ _ _ =>
-      first [ solve [eapply eqtm_refl; sub_premises] | solve [eapply eqtm_sym; sub_premises]
-            | solve [eapply eqtm_trans; sub_premises] | solve [eapply eqtm_code_U; sub_premises]
-            | solve [eapply eqtm_code_pi; sub_premises] | solve [eapply eqtm_succ; sub_premises]
-            | solve [eapply eqtm_natrec; sub_premises] | solve [eapply eqtm_lam; sub_premises]
-            | solve [eapply eqtm_app; sub_premises] | solve [eapply eqtm_conv; sub_premises]
-            | solve [eapply eqtm_lconv; sub_premises]
-            | solve [eapply eqtm_natrec_zero; sub_premises]
-            | solve [eapply eqtm_natrec_succ; sub_premises]
-            | solve [eapply eqtm_beta; sub_premises] | solve [eapply eqtm_eta; sub_premises] ]
-  end.
+Ltac sub_step := any_rule sub_premises.
 
 (** The recursors' specification laws (defined below). *)
 Ltac sub_rec_rw := fail.
@@ -250,41 +221,9 @@ Ltac sub_premise :=
                  [match goal with IH : _ |- _ => eapply IH; solve [eauto 12 with sub] end
                  | sub_rec_rw; reflexivity | sub_rec_rw; reflexivity]] ].
 
-Ltac sub_manual :=
-  match goal with
-  | |- wf_tm _ _ _ (tmPi _ _ _ _) _ _ => eapply wf_code_pi
-  | |- wf_tm _ _ _ (natrec _ _ _ _ _) _ _ => eapply wf_natrec
-  | |- eq_ty _ _ _ (tyPi _ _ _ _) (tyEl _ _) _ => eapply eqty_El_pi
-  | |- eq_tm _ _ _ (tmPi _ _ _ _) _ _ _ => eapply eqtm_code_pi
-  | |- eq_tm _ _ _ (natrec _ _ _ _ _) (natrec _ _ _ _ _) _ _ => eapply eqtm_natrec
-  | |- eq_tm _ _ _ (natrec _ _ _ _ zero) _ _ _ => eapply eqtm_natrec_zero
-  | |- eq_tm _ _ _ (natrec _ _ _ _ (succ _)) _ _ _ => eapply eqtm_natrec_succ
-  | |- eq_tm _ _ _ (lam _ _ _ _) _ _ _ => eapply eqtm_eta
-  (* dependent pairs (M8) *)
-  | |- wf_ty _ _ _ (tySig _ _ _ _) _ => eapply wft_sig
-  | |- eq_ty _ _ _ (tySig _ _ _ _) (tyEl _ _) _ => eapply eqty_El_sig
-  | |- eq_ty _ _ _ (tySig _ _ _ _) (tySig _ _ _ _) _ => eapply eqty_sig
-  | |- wf_tm _ _ _ (tmSig _ _ _ _) _ _ => eapply wf_code_sig
-  | |- eq_tm _ _ _ (tmSig _ _ _ _) _ _ _ => eapply eqtm_code_sig
-  | |- wf_tm _ _ _ (tmPair _ _ _ _ _ _) _ _ => eapply wf_pair
-  | |- wf_tm _ _ _ (tmFst _ _ _ _ _) _ _ => eapply wf_fst
-  | |- wf_tm _ _ _ (tmSnd _ _ _ _ _) _ _ => eapply wf_snd
-  | |- eq_tm _ _ _ (tmFst _ _ _ _ (tmPair _ _ _ _ _ _)) _ _ _ => eapply eqtm_fst_beta
-  | |- eq_tm _ _ _ (tmSnd _ _ _ _ (tmPair _ _ _ _ _ _)) _ _ _ => eapply eqtm_snd_beta
-  | |- eq_tm _ _ _ (tmPair _ _ _ _ (tmFst _ _ _ _ _) (tmSnd _ _ _ _ _)) _ _ _ => eapply eqtm_sig_eta
-  | |- eq_tm _ _ _ (tmPair _ _ _ _ _ _) (tmPair _ _ _ _ _ _) _ _ => eapply eqtm_pair
-  | |- eq_tm _ _ _ (tmFst _ _ _ _ _) (tmFst _ _ _ _ _) _ _ => eapply eqtm_fst
-  | |- eq_tm _ _ _ (tmSnd _ _ _ _ _) (tmSnd _ _ _ _ _) _ _ => eapply eqtm_snd
-  (* the unit type (M8c) *)
-  | |- wf_ty _ _ _ (tyUnit _) _ => eapply wft_unit
-  | |- eq_ty _ _ _ (tyUnit _) (tyEl _ _) _ => eapply eqty_El_unit
-  | |- eq_ty _ _ _ (tyUnit _) (tyUnit _) _ => eapply eqty_unit
-  | |- wf_tm _ _ _ (tmUnit _) _ _ => eapply wf_code_unit
-  | |- wf_tm _ _ _ (tmTriv _) _ _ => eapply wf_triv
-  | |- eq_tm _ _ _ (tmUnit _) (tmUnit _) _ _ => eapply eqtm_code_unit
-  | |- eq_tm _ _ _ (tmTriv _) (tmTriv _) _ _ => first [eapply eqtm_triv | eapply eqtm_unit_eta]
-  | |- eq_tm _ _ _ _ _ (tyUnit _) _ => eapply eqtm_unit_eta
-  end; sub_premise.
+(** The rules whose premises need the induction hypotheses at a rewritten
+    type ([sub_premise]). *)
+Ltac sub_manual := any_rule sub_premise.
 
 (** Syntax for the new cases. *)
 

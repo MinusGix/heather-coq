@@ -416,57 +416,7 @@ Ltac gw_eq := push_gren; gren_rewrite; push_gren; first [reflexivity | f_equal; 
 
 Ltac gw_premises := eauto 6 with gwk.
 
-Ltac gw_step :=
-  match goal with
-  | |- wf_ctx _ _ _ =>
-      first [ solve [eapply wfc_nil; gw_premises] | solve [eapply wfc_var; gw_premises]
-            | solve [eapply wfc_ext; gw_premises] ]
-  | |- eq_ctx _ _ _ _ =>
-      first [ solve [eapply eqc_nil; gw_premises] | solve [eapply eqc_var; gw_premises]
-            | solve [eapply eqc_ext; gw_premises] ]
-  | |- wf_ty _ _ _ _ _ =>
-      first [ solve [eapply wft_nat; gw_premises] | solve [eapply wft_pi; gw_premises]
-            | solve [eapply wft_U; gw_premises] | solve [eapply wft_El; gw_premises]
-            | solve [eapply wft_lconv; gw_premises] | solve [eapply wft_CTyp; gw_premises]
-            | solve [eapply wft_CTrm; gw_premises] | solve [eapply wft_sig; gw_premises]
-            | solve [eapply wft_unit; gw_premises] ]
-  | |- wf_tm _ _ _ _ _ _ =>
-      first [ solve [eapply wf_var; gw_premises] | solve [eapply wf_code_nat; gw_premises]
-            | solve [eapply wf_code_U; gw_premises] | solve [eapply wf_code_pi; gw_premises]
-            | solve [eapply wf_zero; gw_premises] | solve [eapply wf_succ; gw_premises]
-            | solve [eapply wf_natrec; gw_premises] | solve [eapply wf_lam; gw_premises]
-            | solve [eapply wf_app; gw_premises] | solve [eapply wf_conv; gw_premises]
-            | solve [eapply wf_lconv; gw_premises] | solve [eapply wf_boxT; gw_premises]
-            | solve [eapply wf_boxt; gw_premises] | solve [eapply wf_code_sig; gw_premises]
-            | solve [eapply wf_pair; gw_premises] | solve [eapply wf_fst; gw_premises]
-            | solve [eapply wf_snd; gw_premises] | solve [eapply wf_code_unit; gw_premises]
-            | solve [eapply wf_triv; gw_premises] ]
-  | |- eq_ty _ _ _ _ _ _ =>
-      first [ solve [eapply eqty_refl; gw_premises] | solve [eapply eqty_sym; gw_premises]
-            | solve [eapply eqty_trans; gw_premises] | solve [eapply eqty_pi; gw_premises]
-            | solve [eapply eqty_U; gw_premises] | solve [eapply eqty_El; gw_premises]
-            | solve [eapply eqty_El_nat; gw_premises] | solve [eapply eqty_El_U; gw_premises]
-            | solve [eapply eqty_El_pi; gw_premises] | solve [eapply eqty_lconv; gw_premises]
-            | solve [eapply eqty_CTyp; gw_premises] | solve [eapply eqty_CTrm; gw_premises]
-            | solve [eapply eqty_sig; gw_premises] | solve [eapply eqty_El_sig; gw_premises]
-            | solve [eapply eqty_unit; gw_premises] | solve [eapply eqty_El_unit; gw_premises] ]
-  | |- eq_tm _ _ _ _ _ _ _ =>
-      first [ solve [eapply eqtm_refl; gw_premises] | solve [eapply eqtm_sym; gw_premises]
-            | solve [eapply eqtm_trans; gw_premises] | solve [eapply eqtm_code_U; gw_premises]
-            | solve [eapply eqtm_code_pi; gw_premises] | solve [eapply eqtm_succ; gw_premises]
-            | solve [eapply eqtm_natrec; gw_premises] | solve [eapply eqtm_lam; gw_premises]
-            | solve [eapply eqtm_app; gw_premises] | solve [eapply eqtm_conv; gw_premises]
-            | solve [eapply eqtm_lconv; gw_premises]
-            | solve [eapply eqtm_natrec_zero; gw_premises]
-            | solve [eapply eqtm_natrec_succ; gw_premises]
-            | solve [eapply eqtm_beta; gw_premises] | solve [eapply eqtm_eta; gw_premises]
-            | solve [eapply eqtm_code_sig; gw_premises] | solve [eapply eqtm_pair; gw_premises]
-            | solve [eapply eqtm_fst; gw_premises] | solve [eapply eqtm_snd; gw_premises]
-            | solve [eapply eqtm_fst_beta; gw_premises] | solve [eapply eqtm_snd_beta; gw_premises]
-            | solve [eapply eqtm_sig_eta; gw_premises] | solve [eapply eqtm_code_unit; gw_premises]
-            | solve [eapply eqtm_triv; gw_premises]
-            | solve [eapply eqtm_unit_eta; gw_premises] ]
-  end.
+Ltac gw_step := any_rule gw_premises.
 
 (** One premise: directly, or through an induction hypothesis up to a type equation. *)
 Ltac gw_premise :=
