@@ -164,7 +164,9 @@ each one touched and why, then choose among 1–3 using that data.
    metatheory dispatch (M8_DESIGN.md L5).
 3. ~~Bodied globals with layer-indexed δ: the one piece with no paper pass.~~
    Done (M9).
-4. `sEq`/`transp` and the strip rule, starting from MX §19.4.
+4. `sEq`/`transp` and the strip rule: M10_DESIGN.md. M10a (`sEq`, `srefl`,
+   `sEmpty`, irrelevance) has no fork; `transp` waits on S3, since MX §19.2's
+   proposition turns out to be a strengthening lemma (S1).
 5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash).
 
 Side task, any time: the ITree depth-indexed bisimilarity question.
