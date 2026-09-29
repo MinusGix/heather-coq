@@ -309,7 +309,7 @@ Ltac br_eq HMT HMt HG0 :=
     [ first [exact HMT | exact HMt] | exact HG0 | .. ]; br_tac
   end.
 Ltac br_solve HMT HMt HG0 HB :=
-  unfold brΓ, brLocs, brRes, brLv in *; cbn [cexts br_nu br_ng br_nl br_ar br_isT Nat.ltb Nat.leb] in *;
+  unfold brΓ, brLocs, brRes, brLv in *; cbn [cexts br_nu br_ng br_nl br_ar br_isT Nat.ltb Nat.leb mkLocs call_ty call_lv br_calls br_head] in *;
   repeat match goal with H : wf_ctx _ _ (_ ,, _ @ _) |- _ =>
     let H1 := fresh "HC" in let H2 := fresh "HA" in let H3 := fresh "Hl" in
     destruct (wfc_ext_inv H) as (H1 & H2 & H3); clear H end;

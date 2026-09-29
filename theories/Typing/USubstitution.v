@@ -99,8 +99,7 @@ Ltac us_rewrite :=
     ?usubst_subst_ty', ?motT_usubst, ?mott_usubst, ?mkrb_usubst, ?wrapMT_usubst, ?wrapMt_usubst.
 
 Ltac us_push :=
-  cbn [usubst_ty usubst_tm ucsubst ulsubst lvsubst gousubst gctx_usubst gdecl_usubst map gL gΨ
-       gext typeof uup] in *.
+  cbn [usubst_ty usubst_tm ucsubst ulsubst lvsubst gousubst gctx_usubst gdecl_usubst map gL gΨ gext typeof uup] in *.
 
 (** ** The scope of [UΠ] (M4): [n] fresh levels *)
 

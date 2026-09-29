@@ -228,7 +228,7 @@ Lemma brΓ_wf k : k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2
 Proof.
   intros Hk. pose proof (wf_brG (ctx_glob _ _ _ HΓ) k Hk) as HG'.
   br_all ltac:(try (destruct k as [|k])). all: try (exfalso; lia).
-  all: unfold brΓ; cbn [brLocs cexts].
+  all: unfold brΓ; cbn [brLocs cexts mkLocs call_ty call_lv br_calls br_nu br_ng br_ar].
   all: match goal with |- [ brG ?kk _ ; _ ⊢[ _ ] ] => br_ctx kk HΓ HMT HMt; br_side kk HΓ end.
 Qed.
 
@@ -237,7 +237,7 @@ Lemma brRes_wf k : k < nbr ->
 Proof.
   intros Hk. pose proof (wf_brG (ctx_glob _ _ _ HΓ) k Hk) as HG'.
   br_all ltac:(try (destruct k as [|k])). all: try (exfalso; lia).
-  all: unfold brΓ, brLv; cbn [brLocs cexts brRes br_isT].
+  all: unfold brΓ, brLv; cbn [brLocs cexts brRes br_isT mkLocs call_ty call_lv br_calls br_nu br_ng br_ar br_head br_nl].
   all: match goal with |- [ brG ?kk _ ; _ ⊢[ _ ] _ @ _ ] => br_inst kk HΓ HMT HMt; br_side kk HΓ end.
 Qed.
 

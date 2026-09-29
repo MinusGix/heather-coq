@@ -578,7 +578,7 @@ Lemma brLocs_subst k MT Mt a1 a2 d : k < nbr -> LK dnftm d ->
 Proof.
   intros Hk Hd.
   unfold bsub.
-  br_all ltac:(destruct k; [cbn [brLocs cexts_sub br_ng br_nu br_ar]; rec_subst_rw; reflexivity|]).
+  br_all ltac:(destruct k; [cbn [brLocs cexts_sub br_ng br_nu br_ar mkLocs call_ty call_lv br_calls]; rec_subst_rw; reflexivity|]).
   lia.
 Qed.
 
@@ -588,7 +588,7 @@ Lemma brRes_subst k MT Mt d : k < nbr -> LK dnftm d ->
 Proof.
   intros Hk Hd.
   unfold bsub.
-  br_all ltac:(destruct k; [cbn [brRes br_nl br_ng br_nu br_ar]; rec_subst_rw; reflexivity|]).
+  br_all ltac:(destruct k; [cbn [brRes br_nl br_ng br_nu br_ar call_ty br_head]; rec_subst_rw; reflexivity|]).
   lia.
 Qed.
 

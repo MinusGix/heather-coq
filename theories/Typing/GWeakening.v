@@ -190,7 +190,7 @@ Lemma brLocs_gren k wT wt a1 a2 ξ : k < nbr ->
   brLocs k wT⟪ξ⟫ wt⟪ξ⟫ a1 a2.
 Proof.
   intros Hk. br_all ltac:(destruct k;
-    [cbn [brLocs map br_ng br_ar]; rewrite ?motT_gren, ?mott_gren, ?wkb_gren; reflexivity|]).
+    [cbn [brLocs map br_ng br_ar mkLocs call_ty call_lv br_calls br_nu]; rewrite ?motT_gren, ?mott_gren, ?wkb_gren; reflexivity|]).
   lia.
 Qed.
 Lemma brΓ_gren k Γ wT wt l1 l2 ξ : k < nbr ->
@@ -200,7 +200,7 @@ Lemma brRes_gren k wT wt ξ : k < nbr ->
   (brRes k wT wt)⟪guprn (br_ng k) ξ⟫ = brRes k wT⟪ξ⟫ wt⟪ξ⟫.
 Proof.
   intros Hk. br_all ltac:(destruct k;
-    [cbn [brRes br_ng br_ar]; rewrite ?motT_gren, ?mott_gren, ?wkb_gren; reflexivity|]).
+    [cbn [brRes br_ng br_ar call_ty br_head br_nu br_nl]; rewrite ?motT_gren, ?mott_gren, ?wkb_gren; reflexivity|]).
   lia.
 Qed.
 Lemma recΓT_gren Γ ξ : (recΓT Γ)⟪gupr ξ⟫ = recΓT Γ⟪ξ⟫.

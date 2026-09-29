@@ -164,7 +164,7 @@ Lemma brLocs_usubst k wT wt a1 a2 φ : k < nbr ->
     (lvsubst a2 (uupn (br_nu k) φ)).
 Proof.
   intros Hk. br_all ltac:(destruct k;
-    [cbn [brLocs map br_nu br_ar]; rewrite ?motT_usubst, ?mott_usubst, ?wkb_usubst; reflexivity|]).
+    [cbn [brLocs map br_nu br_ar mkLocs call_ty call_lv br_calls br_ng]; rewrite ?motT_usubst, ?mott_usubst, ?wkb_usubst; reflexivity|]).
   lia.
 Qed.
 
@@ -180,7 +180,7 @@ Lemma brRes_usubst k wT wt φ : k < nbr ->
   usubst_ty (brRes k wT wt) (uupn (br_nu k) φ) = brRes k (usubst_tm wT φ) (usubst_tm wt φ).
 Proof.
   intros Hk. br_all ltac:(destruct k;
-    [cbn [brRes br_nu br_ar]; rewrite ?motT_usubst, ?mott_usubst, ?wkb_usubst; reflexivity|]).
+    [cbn [brRes br_nu br_ar call_ty br_head br_ng br_nl]; rewrite ?motT_usubst, ?mott_usubst, ?wkb_usubst; reflexivity|]).
   lia.
 Qed.
 
@@ -309,13 +309,13 @@ Lemma brLocs_ren k wT wt a1 a2 r : k < nbr ->
   cexts_ren (brLocs k wT wt a1 a2) r = brLocs k wT⟨r⟩ wt⟨r⟩ a1 a2.
 Proof.
   intros Hk.
-  br_all ltac:(destruct k; [cbn [brLocs cexts_ren];
+  br_all ltac:(destruct k; [cbn [brLocs cexts_ren mkLocs call_ty call_lv br_calls br_nu br_ng br_ar];
     rewrite ?motT_ren, ?mott_ren, ?wkb_ren0, ?wkb_ren1, ?wkb_ren2, ?wkb_ren3; reflexivity|]).
   lia.
 Qed.
 
 Lemma brRes_ren k wT wt r : k < nbr -> (brRes k wT wt)⟨rliftn (br_nl k) r⟩ = brRes k wT⟨r⟩ wt⟨r⟩.
 Proof.
-  intros Hk. br_all ltac:(destruct k; [cbn [brRes br_nl br_ar]; rewrite ?motT_ren, ?mott_ren, ?wkb_ren; reflexivity|]).
+  intros Hk. br_all ltac:(destruct k; [cbn [brRes br_nl br_ar call_ty br_head br_nu br_ng]; rewrite ?motT_ren, ?mott_ren, ?wkb_ren; reflexivity|]).
   lia.
 Qed.

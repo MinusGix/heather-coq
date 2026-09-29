@@ -233,7 +233,7 @@ Lemma brLocs_gsubst k MT Mt a1 a2 σ : k < nbr -> gdnf σ ->
   brLocs k (wrapMT MT)⦃σ⦄ (wrapMt Mt)⦃σ⦄ a1 a2.
 Proof.
   intros Hk Hσ. pose proof (gdnf_gbsub k σ Hσ) as Hb. unfold gbsub in Hb |- *.
-  br_all ltac:(destruct k; [cbn [brLocs map br_ng br_nu br_ar] in Hb |- *; rec_gsubst_rw Hb;
+  br_all ltac:(destruct k; [cbn [brLocs map br_ng br_nu br_ar mkLocs call_ty call_lv br_calls] in Hb |- *; rec_gsubst_rw Hb;
                       rewrite ?wkb_gsubst by exact Hσ; reflexivity|]).
   lia.
 Qed.
@@ -250,7 +250,7 @@ Lemma brRes_gsubst k MT Mt σ : k < nbr -> gdnf σ ->
   (brRes k (wrapMT MT) (wrapMt Mt))⦃gbsub k σ⦄ = brRes k (wrapMT MT)⦃σ⦄ (wrapMt Mt)⦃σ⦄.
 Proof.
   intros Hk Hσ. pose proof (gdnf_gbsub k σ Hσ) as Hb. unfold gbsub in Hb |- *.
-  br_all ltac:(destruct k; [cbn [brRes br_ng br_nu br_ar] in Hb |- *; rec_gsubst_rw Hb;
+  br_all ltac:(destruct k; [cbn [brRes br_ng br_nu br_ar call_ty br_head br_nl] in Hb |- *; rec_gsubst_rw Hb;
                       rewrite ?wkb_gsubst by exact Hσ; reflexivity|]).
   lia.
 Qed.

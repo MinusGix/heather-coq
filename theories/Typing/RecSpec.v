@@ -117,57 +117,85 @@ Definition br_nu (k : nat) : nat := let '(nu, _, _) := br_ar k in nu.
 Definition br_ng (k : nat) : nat := let '(_, ng, _) := br_ar k in ng.
 Definition br_nl (k : nat) : nat := let '(_, _, nl) := br_ar k in nl.
 
+(** ** Recursive calls and results as data (M8_DESIGN.md J2, S1)
+
+    A recursive call (and a branch's result) is described by branch-scope
+    syntax only: the motive it instantiates ([rcT] for [M_Typ], [rct] for
+    [M_Trm]), the level, the index context, for a term call the index type,
+    and the boxed code. The motive itself is supplied when the descriptor
+    is read ([call_ty]): at call [j] of a branch with [nu] levels and [ng]
+    globals, it is weakened past the [j] earlier calls ([wkb nu ng j]). *)
+Inductive rcall : Type :=
+| rcT (lv : lvl) (g : ctx) (c : tm)
+| rct (lv : lvl) (g : ctx) (U : ty) (c : tm).
+
+Definition call_ty (nu ng j : nat) (wT wt : tm) (x : rcall) : ty :=
+  match x with
+  | rcT lv g c => motT (wkb nu ng j wT) lv g c
+  | rct lv g U c => mott (wkb nu ng j wt) lv g U c
+  end.
+Definition call_lv (a1 a2 : lvl) (x : rcall) : lvl :=
+  match x with rcT _ _ _ => a1 | rct _ _ _ _ => a2 end.
+
+Fixpoint mkLocs (nu ng j : nat) (wT wt : tm) (a1 a2 : lvl) (xs : list rcall) : list (ty * lvl) :=
+  match xs with
+  | [] => []
+  | x :: xs => (call_ty nu ng j wT wt x, call_lv a1 a2 x) :: mkLocs nu ng (S j) wT wt a1 a2 xs
+  end.
+
+(** The recursive calls, in binding order. *)
+Definition br_calls (k : nat) : list rcall :=
+  match k with
+  | 1 => [ rcT (lvar 1) (cvar 2) (boxT (gv 1));
+           rcT (lvar 0) (cvar 2 ,, gv 1 @ lvar 1) (boxT (gv 0)) ]
+  | 3 => [ rct (lsuc (lvar 0)) (cvar 1) (tyU (lvar 0)) (boxt (gu 0)) ]
+  | 6 => [ rct (lsuc (lvar 1)) (cvar 2) (tyU (lvar 1)) (boxt (gu 1));
+           rct (lsuc (lvar 0)) (cvar 2 ,, tyEl (lvar 1) (gu 1) @ lvar 1) (tyU (lvar 0)) (boxt (gu 0)) ]
+  | 9 => [ rct lzero (cvar 1) tyNat (boxt (gu 0)) ]
+  | 10 => [ rcT (lvar 0) (cvar 4 ,, tyNat @ lzero) (boxT (gv 3));
+            rct (lvar 0) (cvar 4) (tyGvar 3 (lsingle zero)) (boxt (gu 2));
+            rct (lvar 0) (cvar 4 ,, tyNat @ lzero ,, gv 3 @ lvar 0) (tyGvar 3 lsucc) (boxt (gu 1));
+            rct lzero (cvar 4) tyNat (boxt (gu 0)) ]
+  | 11 => [ rcT (lvar 1) (cvar 3) (boxT (gv 2));
+            rct (lvar 0) (cvar 3 ,, gv 2 @ lvar 1) (gv 1) (boxt (gu 0)) ]
+  | 12 => [ rcT (lvar 1) (cvar 4) (boxT (gv 3));
+            rcT (lvar 0) (cvar 4 ,, gv 3 @ lvar 1) (boxT (gv 2));
+            rct (lmax (lvar 1) (lvar 0)) (cvar 4) (tyPi (lvar 1) (lvar 0) (gv 3) (gv 2)) (boxt (gu 1));
+            rct (lvar 1) (cvar 4) (gv 3) (boxt (gu 0)) ]
+  | _ => []
+  end.
+
+(** The branch's result: the motive at the branch's code. *)
+Definition br_head (k : nat) : rcall :=
+  match k with
+  | 0 => rcT lzero (cvar 0) (boxT tyNat)
+  | 1 => rcT (lmax (lvar 1) (lvar 0)) (cvar 2) (boxT (tyPi (lvar 1) (lvar 0) (gv 1) (gv 0)))
+  | 2 => rcT (lsuc (lvar 0)) (cvar 0) (boxT (tyU (lvar 0)))
+  | 3 => rcT (lvar 0) (cvar 1) (boxT (tyEl (lvar 0) (gu 0)))
+  | 4 => rct (lvar 0) (cvar 2) (gv 1) (boxt (gu 0))
+  | 5 => rct (lsuc lzero) (cvar 0) (tyU lzero) (boxt tmNat)
+  | 6 => rct (lsuc (lmax (lvar 1) (lvar 0))) (cvar 2) (tyU (lmax (lvar 1) (lvar 0)))
+           (boxt (tmPi (lvar 1) (lvar 0) (gu 1) (gu 0)))
+  | 7 => rct (lsuc (lsuc (lvar 0))) (cvar 0) (tyU (lsuc (lvar 0))) (boxt (tmU (lvar 0)))
+  | 8 => rct lzero (cvar 0) tyNat (boxt zero)
+  | 9 => rct lzero (cvar 1) tyNat (boxt (succ (gu 0)))
+  | 10 => rct (lvar 0) (cvar 4) (tyGvar 3 (lsingle (gu 0)))
+            (boxt (natrec (lvar 0) (gv 3) (gu 2) (gu 1) (gu 0)))
+  | 11 => rct (lmax (lvar 1) (lvar 0)) (cvar 3) (tyPi (lvar 1) (lvar 0) (gv 2) (gv 1))
+            (boxt (lam (lvar 1) (lvar 0) (gv 2) (gu 0)))
+  | 12 => rct (lvar 0) (cvar 4) (tyGvar 2 (lsingle (gu 0)))
+            (boxt (app (gu 1) (lvar 1) (lvar 0) (gv 3) (gv 2) (gu 0)))
+  | _ => rcT lzero cnil (boxT tyErr)
+  end.
+
 (** The recursive calls' types, in binding order; [wT]/[wt] are the
     ambient wrapped motives, [a1]/[a2] the levels [l₁]/[l₂] already shifted
     past the branch's levels. *)
 Definition brLocs (k : nat) (wT wt : tm) (a1 a2 : lvl) : list (ty * lvl) :=
-  match k with
-  | 1 => [ (motT (wkb 2 3 0 wT) (lvar 1) (cvar 2) (boxT (gv 1)), a1);
-           (motT (wkb 2 3 1 wT) (lvar 0) (cvar 2 ,, gv 1 @ lvar 1) (boxT (gv 0)), a1) ]
-  | 3 => [ (mott (wkb 1 2 0 wt) (lsuc (lvar 0)) (cvar 1) (tyU (lvar 0)) (boxt (gu 0)), a2) ]
-  | 6 => [ (mott (wkb 2 3 0 wt) (lsuc (lvar 1)) (cvar 2) (tyU (lvar 1)) (boxt (gu 1)), a2);
-           (mott (wkb 2 3 1 wt) (lsuc (lvar 0)) (cvar 2 ,, tyEl (lvar 1) (gu 1) @ lvar 1)
-              (tyU (lvar 0)) (boxt (gu 0)), a2) ]
-  | 9 => [ (mott (wkb 0 2 0 wt) lzero (cvar 1) tyNat (boxt (gu 0)), a2) ]
-  | 10 => [ (motT (wkb 1 5 0 wT) (lvar 0) (cvar 4 ,, tyNat @ lzero) (boxT (gv 3)), a1);
-            (mott (wkb 1 5 1 wt) (lvar 0) (cvar 4) (tyGvar 3 (lsingle zero)) (boxt (gu 2)), a2);
-            (mott (wkb 1 5 2 wt) (lvar 0) (cvar 4 ,, tyNat @ lzero ,, gv 3 @ lvar 0)
-               (tyGvar 3 lsucc) (boxt (gu 1)), a2);
-            (mott (wkb 1 5 3 wt) lzero (cvar 4) tyNat (boxt (gu 0)), a2) ]
-  | 11 => [ (motT (wkb 2 4 0 wT) (lvar 1) (cvar 3) (boxT (gv 2)), a1);
-            (mott (wkb 2 4 1 wt) (lvar 0) (cvar 3 ,, gv 2 @ lvar 1) (gv 1) (boxt (gu 0)), a2) ]
-  | 12 => [ (motT (wkb 2 5 0 wT) (lvar 1) (cvar 4) (boxT (gv 3)), a1);
-            (motT (wkb 2 5 1 wT) (lvar 0) (cvar 4 ,, gv 3 @ lvar 1) (boxT (gv 2)), a1);
-            (mott (wkb 2 5 2 wt) (lmax (lvar 1) (lvar 0)) (cvar 4)
-               (tyPi (lvar 1) (lvar 0) (gv 3) (gv 2)) (boxt (gu 1)), a2);
-            (mott (wkb 2 5 3 wt) (lvar 1) (cvar 4) (gv 3) (boxt (gu 0)), a2) ]
-  | _ => []
-  end.
+  mkLocs (br_nu k) (br_ng k) 0 wT wt a1 a2 (br_calls k).
 
 (** The branch's type. *)
-Definition brRes (k : nat) (wT wt : tm) : ty :=
-  match k with
-  | 0 => motT (wkb 0 1 0 wT) lzero (cvar 0) (boxT tyNat)
-  | 1 => motT (wkb 2 3 2 wT) (lmax (lvar 1) (lvar 0)) (cvar 2)
-           (boxT (tyPi (lvar 1) (lvar 0) (gv 1) (gv 0)))
-  | 2 => motT (wkb 1 1 0 wT) (lsuc (lvar 0)) (cvar 0) (boxT (tyU (lvar 0)))
-  | 3 => motT (wkb 1 2 1 wT) (lvar 0) (cvar 1) (boxT (tyEl (lvar 0) (gu 0)))
-  | 4 => mott (wkb 1 3 0 wt) (lvar 0) (cvar 2) (gv 1) (boxt (gu 0))
-  | 5 => mott (wkb 0 1 0 wt) (lsuc lzero) (cvar 0) (tyU lzero) (boxt tmNat)
-  | 6 => mott (wkb 2 3 2 wt) (lsuc (lmax (lvar 1) (lvar 0))) (cvar 2)
-           (tyU (lmax (lvar 1) (lvar 0))) (boxt (tmPi (lvar 1) (lvar 0) (gu 1) (gu 0)))
-  | 7 => mott (wkb 1 1 0 wt) (lsuc (lsuc (lvar 0))) (cvar 0) (tyU (lsuc (lvar 0)))
-           (boxt (tmU (lvar 0)))
-  | 8 => mott (wkb 0 1 0 wt) lzero (cvar 0) tyNat (boxt zero)
-  | 9 => mott (wkb 0 2 1 wt) lzero (cvar 1) tyNat (boxt (succ (gu 0)))
-  | 10 => mott (wkb 1 5 4 wt) (lvar 0) (cvar 4) (tyGvar 3 (lsingle (gu 0)))
-            (boxt (natrec (lvar 0) (gv 3) (gu 2) (gu 1) (gu 0)))
-  | 11 => mott (wkb 2 4 2 wt) (lmax (lvar 1) (lvar 0)) (cvar 3)
-            (tyPi (lvar 1) (lvar 0) (gv 2) (gv 1)) (boxt (lam (lvar 1) (lvar 0) (gv 2) (gu 0)))
-  | 12 => mott (wkb 2 5 4 wt) (lvar 0) (cvar 4) (tyGvar 2 (lsingle (gu 0)))
-            (boxt (app (gu 1) (lvar 1) (lvar 0) (gv 3) (gv 2) (gu 0)))
-  | _ => tyErr
-  end.
+Definition brRes (k : nat) (wT wt : tm) : ty := call_ty (br_nu k) (br_ng k) (br_nl k) wT wt (br_head k).
 
 (** The branch's level: [l₁] for the type branches, [l₂] for the others. *)
 Definition brLv (k : nat) (l1 l2 : lvl) : lvl :=
