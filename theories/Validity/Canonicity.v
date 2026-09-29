@@ -8,7 +8,7 @@
       determines ([closed_canonicity], [canon_head]): a numeral constructor
       at [Nat], a code at a universe, [λ] at [Π], [box] at [□], [Λ] at
       [UΠ], a context or type abstraction at [CΠ]/[TΠ], a pair at [Σ], [⟨⟩]
-      at [Unit].
+      at [Unit], [srefl] at [sEq], and nothing at [sEmpty] (M10a).
 
     Closed whnfs are not neutral ([no_closed_neutral]). A value's typing
     inversion equates its type with its canonical type former, and head
@@ -30,6 +30,7 @@ Definition canon_head (h : nat) (w : tm) : Prop :=
   | 8 => exists Δ l l' T t, w = tlam Δ l l' T t
   | 10 => exists l l' A B a b, w = tmPair l l' A B a b
   | 11 => exists l, w = tmTriv l
+  | 12 => exists l A a, w = srefl l A a
   | _ => False
   end.
 
@@ -46,7 +47,8 @@ Proof.
           | pose proof (inv_ulam Hi Hx) as X | pose proof (inv_clam Hi Hx) as X
           | pose proof (inv_tlam Hi Hx) as X
           | pose proof (inv_code_sig Hi Hx) as X | pose proof (inv_pair Hi Hx) as X
-          | pose proof (inv_code_unit Hi Hx) as X | pose proof (inv_triv Hi Hx) as X ];
+          | pose proof (inv_code_unit Hi Hx) as X | pose proof (inv_triv Hi Hx) as X
+          | pose proof (inv_srefl Hi Hx) as X ];
     repeat match goal with H : exists _, _ |- _ => destruct H | H : _ /\ _ |- _ => destruct H end;
     match goal with E : [ _ ; _ ⊢[ _ ] W ≅ _ @ _ ] |- _ =>
       rewrite (decl_head_c Hc E HW); [| auto with whnf] end;
@@ -91,6 +93,36 @@ Proof.
   destruct (closed_canonicity Hc HG Ht) as (W & w & HrT & HW & _ & Hr & Hw & _ & E & C).
   rewrite <- (reds_ty_whnf_det _ _ _ (Relation_Operators.rt1n_refl _ _ _) HrT HwT HW) in C.
   exists w; repeat split; assumption.
+Qed.
+
+(** ** Strict equality (M10a) *)
+
+Lemma seq_inj_c {G i Γ l l1 l2 A A' a a' b b'} : compt i ->
+  [ G ; Γ ⊢[ i ] tySEq l1 A a b ≅ tySEq l2 A' a' b' @ l ] ->
+  lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] /\
+  [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] /\ [ G ; Γ ⊢[ i ] b ≅ b' : A @ l1 ].
+Proof. intros Hc H. destruct Hc as [-> | ->]; [exact (decl_seq_inj H) | exact (declM_seq_inj H)]. Qed.
+
+(** No closed proof of [sEmpty]: its canonical head admits no value. *)
+Corollary closed_sempty_empty {G i t l k} : compt i -> closed_ok i G ->
+  ~ [ G ; cnil ⊢[ i ] t : tySEmpty l @ k ].
+Proof.
+  intros Hc HG Ht. destruct (closed_canonicity_whnf Hc HG (whnf_tySEmpty _) Ht) as (w & _ & _ & _ & C).
+  exact C.
+Qed.
+
+(** A closed proof of [sEq^l(A; a; b)] computes to [srefl], and its
+    endpoints are then equal (MX §18: [sEq] imports no equation). *)
+Corollary closed_seq_canonicity {G i t l A a b k} : compt i -> closed_ok i G ->
+  [ G ; cnil ⊢[ i ] t : tySEq l A a b @ k ] ->
+  (exists l' A' a', reds t (srefl l' A' a')) /\ [ G ; cnil ⊢[ i ] a ≅ b : A @ l ].
+Proof.
+  intros Hc HG Ht. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (closed_canonicity_whnf Hc HG (whnf_tySEq _ _ _ _) Ht) as (w & Hr & _ & E & (l' & A' & a' & ->)).
+  split; [eauto|].
+  destruct (inv_srefl Hi (eqtm_wf_r Hi E)) as (_ & _ & ET).
+  destruct (seq_inj_c Hc ET) as (_ & _ & Ea & Eb).
+  exact (eqtm_trans _ _ _ _ _ _ _ _ Ea (eqtm_sym _ _ _ _ _ _ _ Eb)).
 Qed.
 
 (** For example, closed functions compute to [λ]s. *)

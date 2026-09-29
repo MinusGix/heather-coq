@@ -121,7 +121,8 @@ Ltac s_push :=
     rewrite ?gs_single_ty, ?gs_single, ?gs_single2, ?gs_lsucc_ty, ?gsubst_ren_ty', ?gs_ren in *;
     rewrite ?gs_tyNat, ?gs_tyPi, ?gs_tyU, ?gs_tyEl, ?gs_var, ?gs_tmNat, ?gs_tmPi, ?gs_tmU, ?gs_zero,
             ?gs_succ, ?gs_natrec, ?gs_lam, ?gs_app, ?gs_cnil, ?gs_cext,
-            ?gs_tySig, ?gs_tmSig, ?gs_pair, ?gs_fst, ?gs_snd, ?gs_tyUnit, ?gs_tmUnit, ?gs_triv in *).
+            ?gs_tySig, ?gs_tmSig, ?gs_pair, ?gs_fst, ?gs_snd, ?gs_tyUnit, ?gs_tmUnit, ?gs_triv,
+            ?gs_tySEq, ?gs_tySEmpty, ?gs_srefl, ?gs_elimSEmpty in *).
 
 (** Side conditions of the general lemmas: levels. *)
 Ltac s_lwf := first [eassumption | eapply lequiv_wf_l; eassumption | eapply lequiv_wf_r; eassumption].
@@ -140,7 +141,11 @@ Ltac fts_case :=
   | solve [simple eapply V_sig; s_side] | solve [simple eapply V_code_sig; s_side]
   | solve [simple eapply V_pair; s_side] | solve [simple eapply V_fst; s_side] | solve [simple eapply V_snd; s_side]
   | solve [simple eapply V_unit; s_side] | solve [simple eapply V_code_unit; s_side]
-  | solve [simple eapply V_triv; s_side] ].
+  | solve [simple eapply V_triv; s_side]
+  (* strict equality (M10a) *)
+  | solve [simple eapply V_seq; s_side] | solve [simple eapply V_sempty; s_side]
+  | solve [simple eapply V_srefl; s_side] | solve [simple eapply V_elimSEmpty; s_side]
+  | solve [simple eapply V_seq_irr; s_side] | solve [simple eapply V_sempty_irr; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=
@@ -379,6 +384,28 @@ Lemma VS_unit_eta {G Γ l t t'} : lwf (gL G) l ->
   VTmS G Γ t t (tyUnit l) l -> VTmS G Γ t' t' (tyUnit l) l -> VTmS G Γ t t' (tyUnit l) l.
 Proof. intros; s_lift. Qed.
 
+(** Strict equality (M10a). *)
+Lemma VS_seq {G Γ l l' A A' a a' b b'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTyS G Γ A A' l -> VTmS G Γ a a' A l -> VTmS G Γ b b' A l ->
+  VTyS G Γ (tySEq l A a b) (tySEq l' A' a' b') l.
+Proof. intros; s_lift. Qed.
+Lemma VS_sempty {G Γ l l'} : lwf (gL G) l -> lequiv (gL G) l l' -> VTyS G Γ (tySEmpty l) (tySEmpty l') l.
+Proof. intros; s_lift. Qed.
+Lemma VS_srefl {G Γ l l' A A' a a'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTyS G Γ A A' l -> VTmS G Γ a a' A l -> VTmS G Γ (srefl l A a) (srefl l' A' a') (tySEq l A a a) l.
+Proof. intros; s_lift. Qed.
+Lemma VS_elimSEmpty {G Γ l1 l2 l3 l4 M M' e e'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
+  lequiv (gL G) l3 l1 -> lequiv (gL G) l4 l2 ->
+  VTyS G Γ M M' l2 -> VTmS G Γ e e' (tySEmpty l1) l1 ->
+  VTmS G Γ (elimSEmpty l1 l2 M e) (elimSEmpty l3 l4 M' e') M l2.
+Proof. intros; s_lift. Qed.
+Lemma VS_seq_irr {G Γ l A a b t t'} :
+  VTmS G Γ t t (tySEq l A a b) l -> VTmS G Γ t' t' (tySEq l A a b) l -> VTmS G Γ t t' (tySEq l A a b) l.
+Proof. intros; s_lift. Qed.
+Lemma VS_sempty_irr {G Γ l t t'} : lwf (gL G) l ->
+  VTmS G Γ t t (tySEmpty l) l -> VTmS G Γ t' t' (tySEmpty l) l -> VTmS G Γ t t' (tySEmpty l) l.
+Proof. intros; s_lift. Qed.
+
 End Rules.
 
 End RulesS.
@@ -408,4 +435,8 @@ Ltac vs_rules side :=
   (* the unit type (M8c) *)
   | solve [simple eapply VS_unit; side] | solve [simple eapply VS_code_unit; side]
   | solve [simple eapply VS_triv; side] | solve [simple eapply VS_El_unit; side]
-  | solve [simple eapply VS_unit_eta; side] ].
+  | solve [simple eapply VS_unit_eta; side]
+  (* strict equality (M10a) *)
+  | solve [simple eapply VS_seq; side] | solve [simple eapply VS_sempty; side]
+  | solve [simple eapply VS_srefl; side] | solve [simple eapply VS_elimSEmpty; side]
+  | solve [simple eapply VS_seq_irr; side] | solve [simple eapply VS_sempty_irr; side] ].

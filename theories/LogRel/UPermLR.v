@@ -425,7 +425,9 @@ Proof.
                  | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                      Hgeq instAd IHinst HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd IHdom codAd IHcod HR
-                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
+                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros π πi Hp;
     pose proof (uperm_inv _ _ _ Hp) as Hpi;
     pose proof (proj1 Hp) as Hinv; pose proof (proj1 (proj2 Hp)) as Hinv';
@@ -878,6 +880,37 @@ Proof.
         rewrite (Gp_rt Hp HG), (rt_ctx Hinv _ HΓ), (rt_lvl Hinv), !(rt_tm Hinv) in Hr, Hr' by assumption.
         exists w[pφ πi]ᵤ, w'[pφ πi]ᵤ.
         exact (conj Hr (conj Hr' (conj (whnf_usubst _ _ Hf) (whnf_usubst _ _ Hf')))).
+  - (* sEq *)
+    cbn in NW. destruct NW as (NA & Na & Nb).
+    exists (SEqRel (Gp π G) Γ[pφ π]ᵤ (tySEq (lvsubst s1 (pφ π)) SA[pφ π]ᵤ sa[pφ π]ᵤ sb[pφ π]ᵤ)
+              (lvsubst s1 (pφ π))). split.
+    + eapply LRseq; [exact (pg_lequiv Hp Hl) | exact (pg_lequiv Hp Hl2) | exact (pg_lwf Hp Hw)
+                    | exact (pg_tyred Hp HT) | exact (pg_tyred Hp HT') | exact (pg_ty Hp HSA)
+                    | exact (pg_geq_ty Hp HSAA) | exact (pg_geq_tm Hp Hsaa) | exact (pg_geq_tm Hp Hsbb)
+                    | apply releq_refl].
+    + intros t t' Nt Nt'. rewrite (HR t t'). split.
+      * intros (w & w' & Hr & Hr' & Hf & Hf'). exists w[pφ π]ᵤ, w'[pφ π]ᵤ.
+        exact (conj (pg_tmred Hp Hr) (conj (pg_tmred Hp Hr') (conj (whnf_usubst _ _ Hf) (whnf_usubst _ _ Hf')))).
+      * intros (w & w' & Hr & Hr' & Hf & Hf'). apply (pg_tmred (G := Gp π G) Hpi) in Hr, Hr'.
+        change ((tySEq ?x ?A0 ?a0 ?b0)[?φ]ᵤ) with (tySEq (lvsubst x φ) A0[φ]ᵤ a0[φ]ᵤ b0[φ]ᵤ) in Hr, Hr'.
+        rewrite (Gp_rt Hp HG), (rt_ctx Hinv _ HΓ), (rt_lvl Hinv), (rt_ty Hinv _ NA), !(rt_tm Hinv) in Hr, Hr'
+          by assumption.
+        exists w[pφ πi]ᵤ, w'[pφ πi]ᵤ.
+        exact (conj Hr (conj Hr' (conj (whnf_usubst _ _ Hf) (whnf_usubst _ _ Hf')))).
+  - (* sEmpty *)
+    exists (SEmptyRel (Gp π G) Γ[pφ π]ᵤ (lvsubst s1 (pφ π))). split.
+    + eapply LRsempty; [exact (pg_lequiv Hp Hl) | exact (pg_lequiv Hp Hl2) | exact (pg_lwf Hp Hw)
+                       | exact (pg_tyred Hp HT) | exact (pg_tyred Hp HT') | apply releq_refl].
+    + intros t t' Nt Nt'. rewrite (HR t t'). split.
+      * intros (w & w' & Hr & Hr' & Hf & Hf'). exists w[pφ π]ᵤ, w'[pφ π]ᵤ.
+        exact (conj (pg_tmred Hp Hr) (conj (pg_tmred Hp Hr') (conj (pg_gne_tm Hp Hf) (pg_gne_tm Hp Hf')))).
+      * intros (w & w' & Hr & Hr' & Hf & Hf'). apply (pg_tmred (G := Gp π G) Hpi) in Hr, Hr'.
+        apply (pg_gne_tm (G := Gp π G) Hpi) in Hf, Hf'.
+        change ((tySEmpty ?x)[?φ]ᵤ) with (tySEmpty (lvsubst x φ)) in Hr, Hr', Hf, Hf'.
+        rewrite (Gp_rt Hp HG), (rt_ctx Hinv _ HΓ), (rt_lvl Hinv) in Hr, Hr', Hf, Hf'.
+        rewrite !(rt_tm Hinv) in Hr, Hr' by assumption.
+        exists w[pφ πi]ᵤ, w'[pφ πi]ᵤ.
+        exact (conj Hr (conj Hr' (conj Hf Hf'))).
 Qed.
 
 Theorem LR_perm n : Pperm n.

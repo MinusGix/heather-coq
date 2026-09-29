@@ -157,6 +157,17 @@ Lemma inva_triv {G i Γ l T k} : [ G ; Γ ⊢[ i ] tmTriv l : T @ k ] ->
     lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyUnit l @ k ].
 Proof. inv_tm_any. Qed.
 
+(** Strict equality (M10a). *)
+Lemma inva_srefl {G i Γ l A a T k} : [ G ; Γ ⊢[ i ] srefl l A a : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\
+    lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ typeof i ] T ≅ tySEq l A a a @ k ].
+Proof. inv_tm_any. Qed.
+
+Lemma inva_elimSEmpty {G i Γ l l' M e T k} : [ G ; Γ ⊢[ i ] elimSEmpty l l' M e : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] M @ l' ] /\
+    [ G ; Γ ⊢[ i ] e : tySEmpty l @ l ]) /\ lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ typeof i ] T ≅ M @ k ].
+Proof. inv_tm_any. Qed.
+
 (** ** The M-only heads *)
 
 (** Terms whose rules are at M only. *)

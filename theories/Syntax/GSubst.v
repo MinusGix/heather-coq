@@ -236,7 +236,8 @@ Qed.
 
 Fixpoint dnfty (T : ty) : Prop :=
   match T with
-  | tyErr | tyNat | tyU _ | tyUnit _ => True
+  | tyErr | tyNat | tyU _ | tyUnit _ | tySEmpty _ => True
+  | tySEq _ A a b => dnfty A /\ dnftm a /\ dnftm b
   | tyPi _ _ A B | tySig _ _ A B => dnfty A /\ dnfty B
   | tyEl _ t => dnftm t
   | tyGvar _ d => dnfl d
@@ -272,6 +273,7 @@ with dnftm (t : tm) : Prop :=
   | tapp t T => dnftm t /\ dnfty T
   | tmPair _ _ A B a b => dnfty A /\ dnfty B /\ dnftm a /\ dnftm b
   | tmFst _ _ A B p | tmSnd _ _ A B p => dnfty A /\ dnfty B /\ dnftm p
+  | srefl _ A a | elimSEmpty _ _ A a => dnfty A /\ dnftm a
   end
 with dnfctx (Γ : ctx) : Prop :=
   match Γ with cnil | cvar _ => True | cext Γ A _ => dnfctx Γ /\ dnfty A end

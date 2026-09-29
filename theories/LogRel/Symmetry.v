@@ -281,7 +281,9 @@ Proof.
                  | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                      Hgeq instAd IHinst HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd IHdom codAd IHcod HR
-                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR].
+                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR].
   - eapply LRnat; eauto.
     intros t t'; unfold flipR; rewrite (HR t' t); apply NatRel_flip.
   - assert (Hm : lmeasure l2 = lmeasure l1) by (eapply lequiv_measure; eauto).
@@ -361,6 +363,32 @@ Proof.
     + exact HT.
     + intros t t'; unfold flipR; rewrite (HR t' t), (UnitRel_lconv (lequiv_sym _ _ _ Hl2) t' t).
       split; apply UnitRel_sym.
+  - (* sEq *)
+    pose proof (lequiv_sym _ _ _ Hl2) as Hl2'.
+    pose proof (geq_ty_sound HSAA) as EA.
+    assert (HV : [ G ; Γ ⊢g tySEq s1 SA sa sb ≅ tySEq s2 SA' sa' sb' @ s1 ])
+      by (apply geq_ty_sound, geq_ty_seq; assumption).
+    eapply (LRseq n (LRbelow n) G Γ T' T l s2 s1 SA' SA sa' sa sb' sb).
+    + exact (lequiv_trans _ _ _ _ Hl Hl2').
+    + exact Hl2'.
+    + exact (lequiv_wf_l _ _ _ Hl2).
+    + exact HT'.
+    + exact HT.
+    + exact (lconv_ty (eqty_wf_r ge_typeof EA) Hl2').
+    + eapply geq_ty_lconv; [apply geq_ty_sym, HSAA | exact Hl2].
+    + eapply geq_tm_lconv; [eapply geq_tm_conv; [apply geq_tm_sym, Hsaa | exact EA] | exact Hl2].
+    + eapply geq_tm_lconv; [eapply geq_tm_conv; [apply geq_tm_sym, Hsbb | exact EA] | exact Hl2].
+    + intros t t'; unfold flipR; rewrite (HR t' t), <- (SEqRel_conv HV Hl2' t t').
+      split; apply SEqRel_sym.
+  - (* sEmpty *)
+    eapply (LRsempty n (LRbelow n) G Γ T' T l s2 s1).
+    + exact (lequiv_trans _ _ _ _ Hl (lequiv_sym _ _ _ Hl2)).
+    + exact (lequiv_sym _ _ _ Hl2).
+    + exact (lequiv_wf_l _ _ _ Hl2).
+    + exact HT'.
+    + exact HT.
+    + intros t t'; unfold flipR; rewrite (HR t' t), (SEmptyRel_lconv (lequiv_sym _ _ _ Hl2) t' t).
+      split; apply SEmptyRel_sym.
 Qed.
 
 Theorem LR_sym n : Psym n.

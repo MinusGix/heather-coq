@@ -21,7 +21,8 @@ Fixpoint ty_leq (T T' : ty) {struct T} : Prop :=
   | tyCPi l A, tyCPi l' A' => leqv l l' /\ ty_leq A A'
   | tyTPi Δ l1 l2 A, tyTPi Δ' l1' l2' A' => ctx_leq Δ Δ' /\ leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A'
   | tySig l1 l2 A B, tySig l1' l2' A' B' => leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B'
-  | tyUnit l, tyUnit l' => leqv l l'
+  | tyUnit l, tyUnit l' | tySEmpty l, tySEmpty l' => leqv l l'
+  | tySEq l A a b, tySEq l' A' a' b' => leqv l l' /\ ty_leq A A' /\ tm_leq a a' /\ tm_leq b b'
   | _, _ => False
   end
 with tm_leq (t t' : tm) {struct t} : Prop :=
@@ -67,6 +68,9 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
   | tmSnd l1 l2 A B p, tmSnd l1' l2' A' B' p' =>
       leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq p p'
   | tmUnit l, tmUnit l' | tmTriv l, tmTriv l' => leqv l l'
+  | srefl l A a, srefl l' A' a' => leqv l l' /\ ty_leq A A' /\ tm_leq a a'
+  | elimSEmpty l1 l2 M e, elimSEmpty l1' l2' M' e' =>
+      leqv l1 l1' /\ leqv l2 l2' /\ ty_leq M M' /\ tm_leq e e'
   | _, _ => False
   end
 with ctx_leq (Γ Γ' : ctx) {struct Γ} : Prop :=
@@ -344,7 +348,8 @@ Fixpoint ty_lwf (L : nat) (T : ty) {struct T} : Prop :=
   match T with
   | tyErr | tyNat => True
   | tyPi l1 l2 A B | tySig l1 l2 A B => lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ ty_lwf L B
-  | tyU l | tyUnit l => lwf L l
+  | tyU l | tyUnit l | tySEmpty l => lwf L l
+  | tySEq l A a b => lwf L l /\ ty_lwf L A /\ tm_lwf L a /\ tm_lwf L b
   | tyEl l t => lwf L l /\ tm_lwf L t
   | tyGvar _ d => lsub_lwf L d
   | tyCTyp Δ l => ctx_lwf L Δ /\ lwf L l
@@ -358,6 +363,8 @@ with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   | var _ | tmErr | tmNat | zero => True
   | tmPi l1 l2 s t | tmSig l1 l2 s t => lwf L l1 /\ lwf L l2 /\ tm_lwf L s /\ tm_lwf L t
   | tmU l | tmUnit l | tmTriv l => lwf L l
+  | srefl l A a => lwf L l /\ ty_lwf L A /\ tm_lwf L a
+  | elimSEmpty l1 l2 M e => lwf L l1 /\ lwf L l2 /\ ty_lwf L M /\ tm_lwf L e
   | succ t => tm_lwf L t
   | natrec l M s z t => lwf L l /\ ty_lwf L M /\ tm_lwf L s /\ tm_lwf L z /\ tm_lwf L t
   | lam l1 l2 A t => lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ tm_lwf L t

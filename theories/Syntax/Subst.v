@@ -488,7 +488,8 @@ Qed.
 
 Fixpoint nfty (T : ty) : Prop :=
   match T with
-  | tyErr | tyNat | tyU _ | tyUnit _ => True
+  | tyErr | tyNat | tyU _ | tyUnit _ | tySEmpty _ => True
+  | tySEq _ A a b => nfty A /\ nftm a /\ nftm b
   | tyPi _ _ A B | tySig _ _ A B => nfty A /\ nfty B
   | tyEl _ t => nftm t
   | tyGvar _ d => nfl d
@@ -516,6 +517,7 @@ with nftm (t : tm) : Prop :=
   | capp t _ | tapp t _ => nftm t
   | tmPair _ _ A B a b => nfty A /\ nfty B /\ nftm a /\ nftm b
   | tmFst _ _ A B p | tmSnd _ _ A B p => nfty A /\ nfty B /\ nftm p
+  | srefl _ A a | elimSEmpty _ _ A a => nfty A /\ nftm a
   end
 with nfl (d : lsub) : Prop :=
   match d with lshift _ => True | lcons d t => nfl d /\ nftm t /\ ~ labsorb d t end.

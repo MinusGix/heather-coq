@@ -154,6 +154,17 @@ Lemma ren_triv l : (tmTriv l)⟨r⟩ = tmTriv l. Proof. reflexivity. Qed.
 Lemma subst_tyUnit l : (tyUnit l)[d] = tyUnit l. Proof. reflexivity. Qed.
 Lemma subst_tmUnit l : (tmUnit l)[d] = tmUnit l. Proof. reflexivity. Qed.
 Lemma subst_triv l : (tmTriv l)[d] = tmTriv l. Proof. reflexivity. Qed.
+(** Strict equality (M10a). *)
+Lemma ren_tySEq l A a b : (tySEq l A a b)⟨r⟩ = tySEq l A⟨r⟩ a⟨r⟩ b⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_tySEmpty l : (tySEmpty l)⟨r⟩ = tySEmpty l. Proof. reflexivity. Qed.
+Lemma ren_srefl l A a : (srefl l A a)⟨r⟩ = srefl l A⟨r⟩ a⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_elimSEmpty l l' M e : (elimSEmpty l l' M e)⟨r⟩ = elimSEmpty l l' M⟨r⟩ e⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma subst_tySEq l A a b : (tySEq l A a b)[d] = tySEq l A[d] a[d] b[d]. Proof. reflexivity. Qed.
+Lemma subst_tySEmpty l : (tySEmpty l)[d] = tySEmpty l. Proof. reflexivity. Qed.
+Lemma subst_srefl l A a : (srefl l A a)[d] = srefl l A[d] a[d]. Proof. reflexivity. Qed.
+Lemma subst_elimSEmpty l l' M e : (elimSEmpty l l' M e)[d] = elimSEmpty l l' M[d] e[d].
+Proof. reflexivity. Qed.
 (** Defined globals (M9): the body stays in its own local scope. *)
 Lemma ren_gdef u b e : (gdef u b e)⟨r⟩ = gdef u b (lren e r). Proof. reflexivity. Qed.
 Lemma subst_gdef u b e : (gdef u b e)[d] = gdef u b (lcomp e d). Proof. reflexivity. Qed.
@@ -166,7 +177,8 @@ Ltac push_ren := repeat progress (
           ?ren_letboxT, ?ren_letboxt, ?ren_elimT, ?ren_elimt,
           ?ren_tyUPi, ?ren_ulam, ?ren_uapp, ?ren_usubst_ty, ?ren_usubst_tm, ?ren_uren_tm,
           ?ren_tyCPi, ?ren_tyTPi, ?ren_clam, ?ren_capp, ?ren_tlam, ?ren_tapp,
-          ?ren_tySig, ?ren_tmSig, ?ren_pair, ?ren_fst, ?ren_snd, ?ren_tyUnit, ?ren_tmUnit, ?ren_triv, ?ren_gdef).
+          ?ren_tySig, ?ren_tmSig, ?ren_pair, ?ren_fst, ?ren_snd, ?ren_tyUnit, ?ren_tmUnit, ?ren_triv, ?ren_gdef,
+          ?ren_tySEq, ?ren_tySEmpty, ?ren_srefl, ?ren_elimSEmpty).
 Ltac push_subst := repeat progress (
   rewrite ?subst_tyNat, ?subst_tyPi, ?subst_tyU, ?subst_tyEl, ?subst_var, ?subst_tmNat,
           ?subst_tmPi, ?subst_tmU, ?subst_zero, ?subst_succ, ?subst_natrec, ?subst_lam,
@@ -175,7 +187,8 @@ Ltac push_subst := repeat progress (
           ?subst_tyUPi, ?subst_ulam, ?subst_uapp,
           ?subst_tyCPi, ?subst_tyTPi, ?subst_clam, ?subst_capp, ?subst_tlam, ?subst_tapp,
           ?subst_tySig, ?subst_tmSig, ?subst_pair, ?subst_fst, ?subst_snd,
-          ?subst_tyUnit, ?subst_tmUnit, ?subst_triv, ?subst_gdef).
+          ?subst_tyUnit, ?subst_tmUnit, ?subst_triv, ?subst_gdef,
+          ?subst_tySEq, ?subst_tySEmpty, ?subst_srefl, ?subst_elimSEmpty).
 
 (** ** Weakening past a binder *)
 

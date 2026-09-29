@@ -110,6 +110,8 @@ Proof.
                  | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                      [Hl H3 H4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] Hdom IHdom Hcod IHcod HR
+                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                 | G Γ T T' l l1 l2 A A' a a' b b' R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HR
                  | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR ]; intros Hm Hm'.
   - eapply LRnat; eassumption.
   - eapply LRU; try eassumption.
@@ -131,6 +133,8 @@ Proof.
     + intros ρ; apply IHdom; apply mltt_ren, mltt_gwa; assumption.
     + intros ρ a a' ha; apply IHcod; apply mltt_subst, mltt_ren, mltt_gwa; assumption.
   - eapply LRunit; eassumption.
+  - eapply LRseq; eassumption.
+  - eapply LRsempty; eassumption.
 Qed.
 
 End Layering.

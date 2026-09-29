@@ -813,13 +813,18 @@ Lemma gwa_snd l l' A B p : (tmSnd l l' A B p)⟦γ⟧ = tmSnd l l' A⟦γ⟧ B�
 Lemma gwa_tyUnit l : (tyUnit l)⟦γ⟧ = tyUnit l. Proof. now destruct γ. Qed.
 Lemma gwa_tmUnit l : (tmUnit l)⟦γ⟧ = tmUnit l. Proof. now destruct γ. Qed.
 Lemma gwa_triv l : (tmTriv l)⟦γ⟧ = tmTriv l. Proof. now destruct γ. Qed.
+Lemma gwa_tySEq l A a b : (tySEq l A a b)⟦γ⟧ = tySEq l A⟦γ⟧ a⟦γ⟧ b⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tySEmpty l : (tySEmpty l)⟦γ⟧ = tySEmpty l. Proof. now destruct γ. Qed.
+Lemma gwa_srefl l A a : (srefl l A a)⟦γ⟧ = srefl l A⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_elimSEmpty l l' M e : (elimSEmpty l l' M e)⟦γ⟧ = elimSEmpty l l' M⟦γ⟧ e⟦γ⟧.
+Proof. now destruct γ. Qed.
 End PushGwa.
 
 Ltac push_gwa := repeat progress (
   rewrite ?gwa_tyNat, ?gwa_tyPi, ?gwa_tyU, ?gwa_tyEl, ?gwa_tyCTyp, ?gwa_tyCTrm,
           ?gwa_var, ?gwa_zero, ?gwa_succ, ?gwa_tmNat, ?gwa_tmU, ?gwa_tmPi, ?gwa_lam, ?gwa_app,
           ?gwa_natrec, ?gwa_cext, ?gwa_tySig, ?gwa_tmSig, ?gwa_pair, ?gwa_fst, ?gwa_snd,
-          ?gwa_tyUnit, ?gwa_tmUnit, ?gwa_triv).
+          ?gwa_tyUnit, ?gwa_tmUnit, ?gwa_triv, ?gwa_tySEq, ?gwa_tySEmpty, ?gwa_srefl, ?gwa_elimSEmpty).
 
 (** Normal forms, reduction, local weakenings. *)
 Lemma whne_gwa t γ : whne t -> whne t⟦γ⟧.

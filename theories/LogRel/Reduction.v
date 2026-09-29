@@ -53,7 +53,9 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros T1 T1' H1 H1'.
   - eapply LRnat; eauto using tyred_trans.
   - eapply LRU with (l1 := l1) (l2 := l2); eauto using tyred_trans.
@@ -64,6 +66,8 @@ Proof.
   - eapply (LRtpi n rec G Γ T1 T1' l Δ1 Δ1' l1 l2 l3 l4 U1 U1' instR); eauto using tyred_trans.
   - eapply (LRsig n rec G Γ T1 T1' l l1 l2 l3 l4 A B A' B' domR codR); [split|..]; eauto using tyred_trans.
   - eapply (LRunit n rec G Γ T1 T1' l l1 l2); eauto using tyred_trans.
+  - eapply (LRseq n rec G Γ T1 T1' l s1 s2); eauto using tyred_trans.
+  - eapply (LRsempty n rec G Γ T1 T1' l s1 s2); eauto using tyred_trans.
 Qed.
 
 Theorem LR_red_tm n rec G Γ T T' l R :
@@ -81,7 +85,9 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros t t' t1 t1' Htt H1 H1';
     first [exact (ModRel_red_tm HM _ _ _ _ Htt H1 H1') | apply HR; apply HR in Htt].
   - inversion Htt as [? ? w w' Hw Hw' Heq Hnf]; subst.
@@ -124,6 +130,20 @@ Proof.
     refine (conj _ (conj _ (conj Hn Hn'))).
     + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
     + eapply tmred_trans; [|exact Hr']. apply (unit_tmred_conv Hl2).
+      eapply tmred_along; [exact H1' | exact HT' | eapply lequiv_trans; [exact Hl2 | now apply lequiv_sym]].
+  - (* sEq: the right side at the left's type *)
+    destruct Htt as (w & w' & Hr & Hr' & Hn & Hn'). exists w, w'.
+    refine (conj _ (conj _ (conj Hn Hn'))).
+    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|now apply lequiv_sym].
+      eapply tmred_conv; [apply ge_typeof | exact H1' |].
+      eapply eqty_trans; [apply HT'|]. eapply eqty_lconv; [|exact Hl].
+      apply eqty_sym, geq_ty_sound, geq_ty_seq; auto using lequiv_sym.
+  - (* sEmpty *)
+    destruct Htt as (w & w' & Hr & Hr' & Hn & Hn'). exists w, w'.
+    refine (conj _ (conj _ (conj Hn Hn'))).
+    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hr']. apply (sempty_tmred_conv Hl2).
       eapply tmred_along; [exact H1' | exact HT' | eapply lequiv_trans; [exact Hl2 | now apply lequiv_sym]].
 Qed.
 

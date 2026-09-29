@@ -132,6 +132,20 @@ Proof.
                    | exact (whnf_ne _ Hn) | exact (whnf_ne _ Hn') | apply actmnf_unit_eta].
 Qed.
 
+(** Strict equality (M10a): irrelevance, whatever the neutrals. *)
+Lemma lift_seq {G i Γ T l l1 A a b} : [ G ; Γ ⊢[ i ] T ⤳* tySEq l1 A a b @ l ] -> Lift i G Γ T l.
+Proof.
+  intros HT t t' T0 Ht Ht' D ET. destruct (ac_tmne_whne D) as [Hn Hn'].
+  eapply actm_red; [exact (tyred_red _ _ _ _ _ _ HT) | exact (whnf_tySEq _ _ _ _) | constructor | constructor
+                   | exact (whnf_ne _ Hn) | exact (whnf_ne _ Hn') | apply actmnf_seq_irr].
+Qed.
+Lemma lift_sempty {G i Γ T l l1} : [ G ; Γ ⊢[ i ] T ⤳* tySEmpty l1 @ l ] -> Lift i G Γ T l.
+Proof.
+  intros HT t t' T0 Ht Ht' D ET. destruct (ac_tmne_whne D) as [Hn Hn'].
+  eapply actm_red; [exact (tyred_red _ _ _ _ _ _ HT) | exact (whnf_tySEmpty _) | constructor | constructor
+                   | exact (whnf_ne _ Hn) | exact (whnf_ne _ Hn') | apply actmnf_sempty_irr].
+Qed.
+
 (** ** The weakenings of the inferred function types *)
 
 Lemma gwk1_tmnee {G D Γ ν ν' W} : ac_tmnee G Γ ν ν' W -> ac_tmnee (gext G D) Γ⟪S⟫ ν⟪S⟫ ν'⟪S⟫ W⟪S⟫.
@@ -282,7 +296,9 @@ Proof.
                      Hgeq instAd IHinst HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                      [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
-                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
+                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     try (cbn in Hj; discriminate).
   - exact (lift_posty compt_D HT whnf_tyNat posty_nat).
   - exact (lift_posty compt_D HT (whnf_tyU _) (posty_U _)).
@@ -312,6 +328,8 @@ Proof.
     unfold ktyl, kw_loc in XB; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in XB.
     rewrite ren_lift_id_ty in XB by exact (wf_ty_nf HB). exact XB.
   - exact (lift_unit HT).
+  - exact (lift_seq HT).
+  - exact (lift_sempty HT).
 Qed.
 
 (** The identity substitution is related to itself. *)
@@ -343,7 +361,9 @@ Proof.
                      Hgeq instAd IHinst HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                      [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
-                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR].
+                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR].
   - exact (lift_posty compt_M HT whnf_tyNat posty_nat).
   - exact (lift_posty compt_M HT (whnf_tyU _) (posty_U _)).
   - destruct HV as (HnV & _ & _). exact (lift_posty compt_M HT (whnf_ty_ne _ HnV) (posty_ne _ HnV)).
@@ -398,6 +418,8 @@ Proof.
     unfold ktyl, kw_loc in XB; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in XB.
     rewrite ren_lift_id_ty in XB by exact (wf_ty_nf HB). exact XB.
   - exact (lift_unit HT).
+  - exact (lift_seq HT).
+  - exact (lift_sempty HT).
 Qed.
 
 (** At M: at a well-formed level by reducibility, at ω through [UΠ]. *)

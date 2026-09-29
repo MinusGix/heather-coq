@@ -156,6 +156,15 @@ Proof.
   - intros; apply eqty_unit; [exact Hv | now rewrite Hty | assumption].
   - intros; apply eqtm_code_unit; [exact Hv | now rewrite Hty | assumption].
   - intros; apply eqtm_unit_eta; auto.
+  (* strict equality *)
+  - intros; apply eqty_seq; auto.
+  - intros; apply eqty_sempty; [exact Hi | now rewrite Hty | assumption].
+  - intros; apply eqtm_seq_irr; auto.
+  - intros; apply eqtm_sempty_irr; auto.
+  - intros * Hl1 Hl2 HM HMM (Hn & _ & Hν) (Hn' & _ & Hν').
+    refine (conj _ (conj _ _)); [constructor; auto .. |].
+    apply eqtm_elimSEmpty; auto.
+    apply eqtm_sempty_irr; eauto using lequiv_wf_l, eqtm_wf_l.
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].

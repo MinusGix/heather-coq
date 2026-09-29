@@ -265,7 +265,29 @@ Class GenericEqLaws `{GenericEq} := {
     [ G ; Γ ⊢ tmUnit l ≈ tmUnit l' : tyU l @ lsuc l ] ;
   geq_tm_unit_eta {G Γ l t t'} : lwf (gL G) l ->
     [ G ; Γ ⊢g t : tyUnit l @ l ] -> [ G ; Γ ⊢g t' : tyUnit l @ l ] ->
-    [ G ; Γ ⊢ t ≈ t' : tyUnit l @ l ]
+    [ G ; Γ ⊢ t ≈ t' : tyUnit l @ l ] ;
+
+  (** Strict equality (M10_DESIGN.md, M10a): congruences, proof irrelevance
+      at [sEq] and [sEmpty] (where escape comes from, as at [Unit]), and the
+      neutral eliminator of [sEmpty], whose scrutinees are only required to
+      be neutral: they are never compared *)
+  geq_ty_seq {G Γ l l' A A' a a' b b'} : lequiv (gL G) l l' ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
+    [ G ; Γ ⊢ a ≈ a' : A @ l ] -> [ G ; Γ ⊢ b ≈ b' : A @ l ] ->
+    [ G ; Γ ⊢ tySEq l A a b ≈ tySEq l' A' a' b' @ l ] ;
+  geq_ty_sempty {G Γ l l'} : [ G ; Γ ⊢g ] -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢ tySEmpty l ≈ tySEmpty l' @ l ] ;
+  geq_tm_seq_irr {G Γ l A a b p p'} : lwf (gL G) l ->
+    [ G ; Γ ⊢g p : tySEq l A a b @ l ] -> [ G ; Γ ⊢g p' : tySEq l A a b @ l ] ->
+    [ G ; Γ ⊢ p ≈ p' : tySEq l A a b @ l ] ;
+  geq_tm_sempty_irr {G Γ l p p'} : lwf (gL G) l ->
+    [ G ; Γ ⊢g p : tySEmpty l @ l ] -> [ G ; Γ ⊢g p' : tySEmpty l @ l ] ->
+    [ G ; Γ ⊢ p ≈ p' : tySEmpty l @ l ] ;
+  gne_tm_elimSEmpty {G Γ l1 l2 l3 l4 M M' ν ν'} :
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢g M @ l2 ] -> [ G ; Γ ⊢ M ≈ M' @ l2 ] ->
+    [ G ; Γ ⊢ ν ~ ν : tySEmpty l1 @ l1 ] -> [ G ; Γ ⊢ ν' ~ ν' : tySEmpty l1 @ l1 ] ->
+    [ G ; Γ ⊢ elimSEmpty l1 l2 M ν ~ elimSEmpty l3 l4 M' ν' : M @ l2 ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

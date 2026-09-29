@@ -33,6 +33,9 @@ Inductive ty : Type :=
 | tySig (l l' : lvl) (A : ty) (B : ty)    (* Σ^{l,l'} x:A. B      B: +1 *)
 (* the unit type (M8c), level-indexed *)
 | tyUnit (l : lvl)                        (* Unit^l @ l *)
+(* strict equality and the irrelevant empty type (M10a), level-indexed *)
+| tySEq (l : lvl) (A : ty) (a b : tm)     (* sEq^l(A; a; b) @ l *)
+| tySEmpty (l : lvl)                      (* sEmpty^l @ l *)
 with tm : Type :=
 | var (n : nat)
 | tmErr
@@ -80,6 +83,9 @@ with tm : Type :=
 (* the unit type (M8c) *)
 | tmUnit (l : lvl)                        (* code of Unit^l : Ty l *)
 | tmTriv (l : lvl)                        (* ⟨⟩^l : Unit^l *)
+(* strict equality (M10a) *)
+| srefl (l : lvl) (A : ty) (a : tm)       (* srefl^l(A; a) : sEq^l(A; a; a) *)
+| elimSEmpty (l l' : lvl) (M : ty) (e : tm)  (* elim_sEmpty^{l,l'}(M; e) : M, e : sEmpty^l *)
 (* a defined global u^δ carrying its body t (M9_DESIGN.md, fork (b)); t lives in
    the definition's local context, so local operations leave it alone *)
 | gdef (u : nat) (t : tm) (d : lsub)
@@ -165,6 +171,8 @@ Fixpoint ren_ty (T : ty) (r : rsub) {struct T} : ty :=
   | tyTPi Δ l l' T => tyTPi Δ l l' (ren_ty T r)
   | tySig l l' A B => tySig l l' (ren_ty A r) (ren_ty B (rlift r))
   | tyUnit l => tyUnit l
+  | tySEq l A a b => tySEq l (ren_ty A r) (ren_tm a r) (ren_tm b r)
+  | tySEmpty l => tySEmpty l
   end
 with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   match t with
@@ -200,6 +208,8 @@ with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   | tmSnd l l' A B p => tmSnd l l' (ren_ty A r) (ren_ty B (rlift r)) (ren_tm p r)
   | tmUnit l => tmUnit l
   | tmTriv l => tmTriv l
+  | srefl l A a => srefl l (ren_ty A r) (ren_tm a r)
+  | elimSEmpty l l' M e => elimSEmpty l l' (ren_ty M r) (ren_tm e r)
   | gdef u b d => gdef u b (lren d r)
   end
 with lren (d : lsub) (r : rsub) {struct d} : lsub :=
@@ -234,6 +244,8 @@ Fixpoint gren_ty (T : ty) (ξ : nat -> nat) {struct T} : ty :=
   | tyTPi Δ l l' T => tyTPi (gcren Δ ξ) l l' (gren_ty T (gupr ξ))
   | tySig l l' A B => tySig l l' (gren_ty A ξ) (gren_ty B ξ)
   | tyUnit l => tyUnit l
+  | tySEq l A a b => tySEq l (gren_ty A ξ) (gren_tm a ξ) (gren_tm b ξ)
+  | tySEmpty l => tySEmpty l
   end
 with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   match t with
@@ -270,6 +282,8 @@ with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   | tmSnd l l' A B p => tmSnd l l' (gren_ty A ξ) (gren_ty B ξ) (gren_tm p ξ)
   | tmUnit l => tmUnit l
   | tmTriv l => tmTriv l
+  | srefl l A a => srefl l (gren_ty A ξ) (gren_tm a ξ)
+  | elimSEmpty l l' M e => elimSEmpty l l' (gren_ty M ξ) (gren_tm e ξ)
   | gdef u b d => gdef (ξ u) (gren_tm b ξ) (glren d ξ)
   end
 with gcren (Γ : ctx) (ξ : nat -> nat) {struct Γ} : ctx :=
@@ -301,6 +315,8 @@ Fixpoint uren_ty (T : ty) (ρ : nat -> nat) {struct T} : ty :=
   | tyTPi Δ l l' T => tyTPi (ucren Δ ρ) (lvren l ρ) (lvren l' ρ) (uren_ty T ρ)
   | tySig l l' A B => tySig (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_ty B ρ)
   | tyUnit l => tyUnit (lvren l ρ)
+  | tySEq l A a b => tySEq (lvren l ρ) (uren_ty A ρ) (uren_tm a ρ) (uren_tm b ρ)
+  | tySEmpty l => tySEmpty (lvren l ρ)
   end
 with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   match t with
@@ -345,6 +361,8 @@ with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   | tmSnd l l' A B p => tmSnd (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_ty B ρ) (uren_tm p ρ)
   | tmUnit l => tmUnit (lvren l ρ)
   | tmTriv l => tmTriv (lvren l ρ)
+  | srefl l A a => srefl (lvren l ρ) (uren_ty A ρ) (uren_tm a ρ)
+  | elimSEmpty l l' M e => elimSEmpty (lvren l ρ) (lvren l' ρ) (uren_ty M ρ) (uren_tm e ρ)
   | gdef u b d => gdef u (uren_tm b ρ) (ulren d ρ)
   end
 with ucren (Γ : ctx) (ρ : nat -> nat) {struct Γ} : ctx :=
@@ -375,6 +393,8 @@ Fixpoint subst_ty (T : ty) (d : lsub) {struct T} : ty :=
   | tyTPi Δ l l' T => tyTPi Δ l l' (subst_ty T (gwk d))
   | tySig l l' A B => tySig l l' (subst_ty A d) (subst_ty B (llift d))
   | tyUnit l => tyUnit l
+  | tySEq l A a b => tySEq l (subst_ty A d) (subst_tm a d) (subst_tm b d)
+  | tySEmpty l => tySEmpty l
   end
 with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   match t with
@@ -414,6 +434,8 @@ with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   | tmSnd l l' A B p => tmSnd l l' (subst_ty A d) (subst_ty B (llift d)) (subst_tm p d)
   | tmUnit l => tmUnit l
   | tmTriv l => tmTriv l
+  | srefl l A a => srefl l (subst_ty A d) (subst_tm a d)
+  | elimSEmpty l l' M e => elimSEmpty l l' (subst_ty M d) (subst_tm e d)
   | gdef u b d' => gdef u b (lcomp d' d)
   end
 with lcomp (d' : lsub) (d : lsub) {struct d'} : lsub :=       (* d' ∘ d *)
@@ -504,6 +526,8 @@ Fixpoint gsubst_ty (T : ty) (σ : gsub) {struct T} : ty :=
   | tyTPi Δ l l' T => tyTPi (gcsubst Δ σ) l l' (gsubst_ty T (gup σ))
   | tySig l l' A B => tySig l l' (gsubst_ty A σ) (gsubst_ty B σ)
   | tyUnit l => tyUnit l
+  | tySEq l A a b => tySEq l (gsubst_ty A σ) (gsubst_tm a σ) (gsubst_tm b σ)
+  | tySEmpty l => tySEmpty l
   end
 with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   match t with
@@ -542,6 +566,8 @@ with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   | tmSnd l l' A B p => tmSnd l l' (gsubst_ty A σ) (gsubst_ty B σ) (gsubst_tm p σ)
   | tmUnit l => tmUnit l
   | tmTriv l => tmTriv l
+  | srefl l A a => srefl l (gsubst_ty A σ) (gsubst_tm a σ)
+  | elimSEmpty l l' M e => elimSEmpty l l' (gsubst_ty M σ) (gsubst_tm e σ)
   | gdef u b d => pdef (σ u) (gsubst_tm b σ) (glsubst d σ)
   end
 with gcsubst (Γ : ctx) (σ : gsub) {struct Γ} : ctx :=
@@ -573,6 +599,8 @@ Fixpoint usubst_ty (T : ty) (φ : nat -> lvl) {struct T} : ty :=
   | tyTPi Δ l l' T => tyTPi (ucsubst Δ φ) (lvsubst l φ) (lvsubst l' φ) (usubst_ty T φ)
   | tySig l l' A B => tySig (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_ty B φ)
   | tyUnit l => tyUnit (lvsubst l φ)
+  | tySEq l A a b => tySEq (lvsubst l φ) (usubst_ty A φ) (usubst_tm a φ) (usubst_tm b φ)
+  | tySEmpty l => tySEmpty (lvsubst l φ)
   end
 with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   match t with
@@ -622,6 +650,8 @@ with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
       tmSnd (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_ty B φ) (usubst_tm p φ)
   | tmUnit l => tmUnit (lvsubst l φ)
   | tmTriv l => tmTriv (lvsubst l φ)
+  | srefl l A a => srefl (lvsubst l φ) (usubst_ty A φ) (usubst_tm a φ)
+  | elimSEmpty l l' M e => elimSEmpty (lvsubst l φ) (lvsubst l' φ) (usubst_ty M φ) (usubst_tm e φ)
   | gdef u b d => gdef u (usubst_tm b φ) (ulsubst d φ)
   end
 with ucsubst (Γ : ctx) (φ : nat -> lvl) {struct Γ} : ctx :=

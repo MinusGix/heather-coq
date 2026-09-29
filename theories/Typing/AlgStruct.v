@@ -104,6 +104,8 @@ Ltac W_prem :=
           match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH; eassumption end
         | match goal with |- boxed_global _ =>
             solve [eauto using boxed_global_ren, boxed_global_usubst, boxed_global_leq, boxed_global_gren] end
+        | match goal with |- whne _ =>
+            solve [eauto using whne_ren, whne_usubst, whne_leq, whne_gren] end
         | match goal with |- tm_leq _ _ => apply (proj1 (proj2 leq_ren_all)); assumption end ].
 
 Ltac W_case :=
@@ -222,7 +224,8 @@ Ltac G_prem :=
         | apply (proj1 (proj2 leq_gren_all)); assumption
         | apply (proj2 (proj2 (proj2 leq_gren_all))); assumption
         | solve [eapply G_branches; eassumption]
-        | apply boxed_global_gren; assumption ].
+        | apply boxed_global_gren; assumption
+        | apply whne_gren; assumption ].
 
 Ltac G_case :=
   unfold AG_ty, AG_tynf, AG_tyne, AG_ctx, AG_tm, AG_tmnf, AG_tmne, AG_tmnee, AG_sub in *;
@@ -347,7 +350,9 @@ Ltac U_prem L' φ :=
         | apply (proj2 (proj2 (proj2 leq_usubst_all))); [intros; apply leqv_refl | assumption]
         | solve [eapply U_branches; eassumption]
         | match goal with |- boxed_global _ =>
-            solve [eauto using boxed_global_ren, boxed_global_usubst, boxed_global_leq, boxed_global_gren] end ].
+            solve [eauto using boxed_global_ren, boxed_global_usubst, boxed_global_leq, boxed_global_gren] end
+        | match goal with |- whne _ =>
+            solve [eauto using whne_ren, whne_usubst, whne_leq, whne_gren] end ].
 
 Ltac U_case :=
   unfold AU_ty, AU_tynf, AU_tyne, AU_ctx, AU_tm, AU_tmnf, AU_tmne, AU_tmnee, AU_sub in *;
@@ -515,7 +520,9 @@ Ltac L_prem :=
             let k := fresh "k" in let Hk := fresh "Hk" in intros k Hk; exact (IHb k Hk _ (Ebs k Hk))
           end
         | match goal with |- boxed_global _ =>
-            solve [eauto using boxed_global_ren, boxed_global_usubst, boxed_global_leq, boxed_global_gren] end ].
+            solve [eauto using boxed_global_ren, boxed_global_usubst, boxed_global_leq, boxed_global_gren] end
+        | match goal with |- whne _ =>
+            solve [eauto using whne_ren, whne_usubst, whne_leq, whne_gren] end ].
 
 Ltac L_case :=
   unfold AL_ty, AL_tynf, AL_tyne, AL_ctx, AL_tm, AL_tmnf, AL_tmne, AL_tmnee, AL_sub in *;

@@ -64,6 +64,12 @@ Theorem decl_unit_inj {G Γ l l1 l2} :
   [ G ; Γ ⊢[ lD ] tyUnit l1 ≅ tyUnit l2 @ l ] -> lequiv (gL G) l2 l1.
 Proof. intros H; exact (unit_inj (E := DEP) (LP := LR_P) redP_ty H (lwfD_eqty H)). Qed.
 
+Theorem decl_seq_inj {G Γ l l1 l2 A A' a a' b b'} :
+  [ G ; Γ ⊢[ lD ] tySEq l1 A a b ≅ tySEq l2 A' a' b' @ l ] ->
+  lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢[ lD ] A ≅ A' @ l1 ] /\
+  [ G ; Γ ⊢[ lD ] a ≅ a' : A @ l1 ] /\ [ G ; Γ ⊢[ lD ] b ≅ b' : A @ l1 ].
+Proof. intros H; exact (seq_inj (E := DEP) (LP := LR_P) redP_ty H (lwfD_eqty H)). Qed.
+
 Theorem decl_pi_red {G Γ l l1 l2 A B T} : [ G ; Γ ⊢[ lD ] tyPi l1 l2 A B ≅ T @ l ] ->
   exists l3 l4 C D, [ G ; Γ ⊢[ lD ] T ⤳* tyPi l3 l4 C D @ l ].
 Proof. intros H; exact (pi_red (E := DEP) (LP := LR_P) redP_ty H (lwfD_eqty H)). Qed.

@@ -243,6 +243,25 @@ Definition UnitRel (G : gctx) (Γ : ctx) (l : lvl) : tm -> tm -> Prop :=
   fun t t' => exists w w',
     [ G ; Γ ⊢g t ⤳* w : tyUnit l @ l ] /\ [ G ; Γ ⊢g t' ⤳* w' : tyUnit l @ l ] /\ whnf w /\ whnf w'.
 
+(** ** Strict equality (M10_DESIGN.md, M10a)
+
+    [sEq] is proof irrelevant like [Unit]: any two terms with weak-head
+    normal forms at the (left) [sEq] type are related, and escape comes from
+    [geq_tm_seq_irr]. The type relation keeps only the generic equality of
+    the components: no term relation reads the carrier's relation, so none
+    is stored (a deviation from Heather's [Id]-shaped rule, MX §18).
+    [sEmpty]'s terms reduce to neutrals, each related to itself and never
+    to each other: the eliminator's neutral law needs neutral scrutinees
+    and compares nothing else. *)
+Definition SEqRel (G : gctx) (Γ : ctx) (V : ty) (l : lvl) : tm -> tm -> Prop :=
+  fun t t' => exists w w',
+    [ G ; Γ ⊢g t ⤳* w : V @ l ] /\ [ G ; Γ ⊢g t' ⤳* w' : V @ l ] /\ whnf w /\ whnf w'.
+
+Definition SEmptyRel (G : gctx) (Γ : ctx) (l : lvl) : tm -> tm -> Prop :=
+  fun t t' => exists ν ν',
+    [ G ; Γ ⊢g t ⤳* ν : tySEmpty l @ l ] /\ [ G ; Γ ⊢g t' ⤳* ν' : tySEmpty l @ l ] /\
+    [ G ; Γ ⊢ ν ~ ν : tySEmpty l @ l ] /\ [ G ; Γ ⊢ ν' ~ ν' : tySEmpty l @ l ].
+
 (** ** The type-level data of a binder former
 
     [Π] and [Σ] (and later formers of the same shape) share it: both sides
@@ -427,6 +446,18 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
     lequiv (gL G) l l1 -> lequiv (gL G) l2 l1 -> lwf (gL G) l1 ->
     [ G ; Γ ⊢g T ⤳* tyUnit l1 @ l ] -> [ G ; Γ ⊢g T' ⤳* tyUnit l2 @ l ] ->
     releq R (UnitRel G Γ l1) ->
+    LR n rec G Γ T T' l R
+| LRseq G Γ T T' l l1 l2 A A' a a' b b' R :
+    lequiv (gL G) l l1 -> lequiv (gL G) l2 l1 -> lwf (gL G) l1 ->
+    [ G ; Γ ⊢g T ⤳* tySEq l1 A a b @ l ] -> [ G ; Γ ⊢g T' ⤳* tySEq l2 A' a' b' @ l ] ->
+    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] ->
+    [ G ; Γ ⊢ a ≈ a' : A @ l1 ] -> [ G ; Γ ⊢ b ≈ b' : A @ l1 ] ->
+    releq R (SEqRel G Γ (tySEq l1 A a b) l1) ->
+    LR n rec G Γ T T' l R
+| LRsempty G Γ T T' l l1 l2 R :
+    lequiv (gL G) l l1 -> lequiv (gL G) l2 l1 -> lwf (gL G) l1 ->
+    [ G ; Γ ⊢g T ⤳* tySEmpty l1 @ l ] -> [ G ; Γ ⊢g T' ⤳* tySEmpty l2 @ l ] ->
+    releq R (SEmptyRel G Γ l1) ->
     LR n rec G Γ T T' l R.
 
 (** ** Stages *)

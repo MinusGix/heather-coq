@@ -384,6 +384,50 @@ Proof.
   apply wf_code_unit; rewrite ?Hi; eauto using lequiv_wf_r, compt_self.
 Qed.
 
+(** Strict equality (M10a), gated like Σ. *)
+Lemma pre_seq_r {Γ l l' A A' a' b'} :
+  lequiv (gL G) l l' -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a' : A @ l ] -> [ G ; Γ ⊢[ i ] b' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] tySEq l' A' a' b' @ l ].
+Proof.
+  intros Hl HAA HA' Ha Hb. eapply wft_lconv with (l' := l'); [|exact Hl].
+  apply wft_seq; eauto using compt_self, lequiv_wf_r.
+  - eapply wft_lconv; [exact HA' | now apply lequiv_sym].
+  - eapply wf_lconv; [eapply conv_tm'; [exact Ha | apply eqty_sym, HAA] | now apply lequiv_sym].
+  - eapply wf_lconv; [eapply conv_tm'; [exact Hb | apply eqty_sym, HAA] | now apply lequiv_sym].
+Qed.
+
+Lemma pre_sempty_r {Γ l l'} :
+  [ G ; Γ ⊢[ i ] ] -> lequiv (gL G) l l' -> [ G ; Γ ⊢[ i ] tySEmpty l' @ l ].
+Proof.
+  intros HΓ Hl. eapply wft_lconv with (l' := l'); [|exact Hl].
+  apply wft_sempty; rewrite ?Hi; eauto using lequiv_wf_r, compt_self.
+Qed.
+
+Lemma pre_srefl_r {Γ l l' A A' a a'} :
+  lequiv (gL G) l l' -> [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ i ] A' @ l ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] srefl l' A' a' : tySEq l A a a @ l ].
+Proof.
+  intros Hl HA HAA HA' Haa Ha'. eapply conv_tm'.
+  - eapply wf_lconv; [|exact Hl]. apply wf_srefl; eauto using compt_self, lequiv_wf_r.
+    + eapply wft_lconv; [exact HA' | now apply lequiv_sym].
+    + eapply wf_lconv; [eapply conv_tm'; [exact Ha' | apply eqty_sym, HAA] | now apply lequiv_sym].
+  - apply eqty_seq; auto using compt_self.
+Qed.
+
+Lemma pre_elimSEmpty_r {Γ l1 l2 l3 l4 M M' e'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] M ≅ M' @ l2 ] -> [ G ; Γ ⊢[ i ] M' @ l2 ] -> [ G ; Γ ⊢[ i ] e' : tySEmpty l1 @ l1 ] ->
+  [ G ; Γ ⊢[ i ] elimSEmpty l3 l4 M' e' : M @ l2 ].
+Proof.
+  intros H13 H24 HMM HM' He. eapply conv_tm'; [|exact HMM].
+  eapply wf_lconv; [|exact H24]. apply wf_elimSEmpty; eauto using compt_self, lequiv_wf_r.
+  - eapply wft_lconv; [exact HM' | now apply lequiv_sym].
+  - eapply wf_lconv; [eapply conv_tm'; [exact He|] | now apply lequiv_sym].
+    apply eqty_sym, eqty_sempty; [exact compt_self | rewrite Hi; exact (ctx_of_wf_tm Hi He) | exact H13].
+Qed.
+
 Lemma pre_sig_r {Γ l1 l2 l3 l4 A A' B'} :
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
@@ -727,7 +771,7 @@ Proof. intros H1 H2 H3 H4 H5; exact (proj2 (ctx_conv_ext Hi H1 H2 H3 H4 H5)). Qe
 
 #[export] Hint Resolve wft_nat wft_pi wft_U wft_El wf_code_nat wf_code_U wf_code_pi wf_zero
   wf_succ wf_natrec wf_lam wf_app wfc_ext in_ctx_wf wf_ty_single wf_tm_single
-  wft_sig wf_code_sig wf_pair wf_fst wf_snd
+  wft_sig wf_code_sig wf_pair wf_fst wf_snd wft_seq wf_srefl wf_elimSEmpty
   ctx_of_wf_ty ctx_of_wf_tm ctx_of_eqty ctx_of_eqtm lequiv_wf_l lequiv_wf_r compt_notV : presup.
 #[export] Hint Extern 1 (lwf _ _) =>
   solve [cbn; intuition eauto using lequiv_wf_l, lequiv_wf_r] : presup.
@@ -843,7 +887,12 @@ Proof.
              | solve [eapply pre_unit_r; eauto using lequiv_refl, lequiv_wf_l]
              | solve [eapply pre_El_unit; eassumption]
              | solve [eapply pre_codeunit_r; eauto using lequiv_refl, lequiv_wf_l]
-             | solve [eapply pre_triv_r; eauto using lequiv_refl, lequiv_wf_l] ].
+             | solve [eapply pre_triv_r; eauto using lequiv_refl, lequiv_wf_l]
+             (* strict equality (M10a) *)
+             | solve [eapply pre_seq_r; eassumption]
+             | solve [eapply pre_sempty_r; eauto using lequiv_refl, lequiv_wf_l]
+             | solve [eapply pre_srefl_r; eassumption]
+             | solve [eapply pre_elimSEmpty_r; eassumption] ].
 Qed.
 
 Section Named.

@@ -230,7 +230,9 @@ Proof.
                       Hgeq instAd IHinst HR
                   | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                       [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
-                  | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
+                  | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                  | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                  | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros T'' R' H2;
     inversion H2 as [? ? ? ? ? ? Hk HTk HTk' HkR
                     | ? ? ? ? ? k1 k2 ? Hk Hk2 Hkn HTk HTk' HkR
@@ -243,7 +245,9 @@ Proof.
                         HU1 HU1' Hkgeq instAd' HkR
                     | ? ? ? ? ? k1 k2 k3 k4 C D C' D' domR' codR' ?
                         [Hk Hk3 Hk4 Hkw1 Hkw2 HTk HTk' HC HC' HD HD' HCC HDD] domAd' codAd' HkR
-                    | ? ? ? ? ? k1 k2 ? Hk Hk2 Hkn HTk HTk' HkR];
+                    | ? ? ? ? ? k1 k2 ? Hk Hk2 Hkn HTk HTk' HkR
+                    | ? ? ? ? ? t1 t2 C C' c c' d d' ? Hk Hk2 Hkn HTk HTk' HC HCC Hcc Hdd HkR
+                    | ? ? ? ? ? t1 t2 ? Hk Hk2 Hkn HTk HTk' HkR];
     subst; try (agree; try ne_absurd).
   (* contextual types, and mismatches with them *)
   all: try solve [eapply ModRel_irrel; eassumption].
@@ -280,6 +284,8 @@ Proof.
     + eapply TPiRel_dir; [now apply eqty_sym | intros; apply releq_sym, Hinst].
   - poly_irrel tySig @geq_ty_sig @SigRel_dir.
   - apply releq_refl.
+  - apply releq_refl.
+  - apply releq_refl.
 Qed.
 
 (** ** Inversion by the left type's normal form *)
@@ -303,7 +309,9 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros HN; try open_mod; agree; try ne_absurd; auto.
 Qed.
 
@@ -323,7 +331,9 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -343,9 +353,58 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
+
+Lemma LR_inv_seq {l1 X x y l'} : [ G ; Γ ⊢g T ⤳* tySEq l1 X x y @ l' ] ->
+  exists l2 X' x' y', lequiv (gL G) l l1 /\ lequiv (gL G) l2 l1 /\ lwf (gL G) l1 /\
+    [ G ; Γ ⊢g T' ⤳* tySEq l2 X' x' y' @ l ] /\ [ G ; Γ ⊢g X @ l1 ] /\ [ G ; Γ ⊢ X ≈ X' @ l1 ] /\
+    [ G ; Γ ⊢ x ≈ x' : X @ l1 ] /\ [ G ; Γ ⊢ y ≈ y' : X @ l1 ] /\
+    releq R (SEqRel G Γ (tySEq l1 X x y) l1).
+Proof.
+  intros HN; revert HN.
+  destruct H as [G Γ T T' l R Hl HT HT' HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
+                | G Γ T T' l V V' R HT HT' HV HR
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+    intros HN; try open_mod; agree; try ne_absurd; eauto 15.
+Qed.
+
+Lemma LR_inv_sempty {l1 l'} : [ G ; Γ ⊢g T ⤳* tySEmpty l1 @ l' ] ->
+  exists l2, lequiv (gL G) l l1 /\ lequiv (gL G) l2 l1 /\ lwf (gL G) l1 /\
+    [ G ; Γ ⊢g T' ⤳* tySEmpty l2 @ l ] /\ releq R (SEmptyRel G Γ l1).
+Proof.
+  intros HN; revert HN.
+  destruct H as [G Γ T T' l R Hl HT HT' HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
+                | G Γ T T' l V V' R HT HT' HV HR
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+    intros HN; try open_mod; agree; try ne_absurd; eauto 7.
+Qed.
+
 
 Lemma LR_inv_ne {V l'} : [ G ; Γ ⊢g T ⤳* V @ l' ] -> whne_ty V ->
   exists V', [ G ; Γ ⊢g T' ⤳* V' @ l ] /\ [ G ; Γ ⊢ V ~ V' @ l ] /\ releq R (NeRel G Γ V V' l).
@@ -362,7 +421,9 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros HN; try open_mod; agree; try solve [inversion HV0]; eauto.
 Qed.
 
@@ -387,7 +448,9 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
@@ -413,7 +476,9 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
@@ -432,7 +497,9 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros HN; first [exact (conj Hj HM) | agree; try ne_absurd].
 Qed.
 
@@ -450,7 +517,9 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l k1 k2 l3 l4 A0 B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros HN; first [exact (conj Hj HM) | agree; try ne_absurd].
 Qed.
 
@@ -477,7 +546,9 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 3 eexists; eauto 20.
 Qed.
@@ -506,7 +577,9 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 5 eexists; eauto 20.
 Qed.

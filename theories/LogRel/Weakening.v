@@ -138,7 +138,9 @@ Proof.
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd codAd HR
-                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR].
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR].
   - exists (NatRel (kw_G ρ) (kw_Δ ρ)). split.
     + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
       rewrite kty_tyNat in X, X'.
@@ -284,6 +286,28 @@ Proof.
       pose proof (kw_tmred ρ Hr) as Y. pose proof (kw_tmred ρ Hr') as Y'.
       rewrite kty_tyUnit in Y, Y'. exists (ktm ρ w), (ktm ρ w').
       exact (conj Y (conj Y' (conj (whnf_kw ρ _ Hn) (whnf_kw ρ _ Hn')))).
+  - (* sEq *)
+    exists (SEqRel (kw_G ρ) (kw_Δ ρ) (tySEq s1 (kty ρ SA) (ktm ρ sa) (ktm ρ sb)) s1). split.
+    + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
+      rewrite kty_tySEq in X, X'.
+      eapply LRseq; [exact (kw_lequiv ρ Hl) | exact (kw_lequiv ρ Hl2) | exact (kw_lwf ρ Hw) | exact X | exact X'
+                    | exact (kw_ty ρ HSA) | exact (kw_geq_ty ρ HSAA) | exact (kw_geq_tm ρ Hsaa)
+                    | exact (kw_geq_tm ρ Hsbb) | apply releq_refl].
+    + intros t t' Ht. apply HR in Ht. destruct Ht as (w & w' & Hr & Hr' & Hn & Hn').
+      pose proof (kw_tmred ρ Hr) as Y. pose proof (kw_tmred ρ Hr') as Y'.
+      rewrite kty_tySEq in Y, Y'. exists (ktm ρ w), (ktm ρ w').
+      exact (conj Y (conj Y' (conj (whnf_kw ρ _ Hn) (whnf_kw ρ _ Hn')))).
+  - (* sEmpty *)
+    exists (SEmptyRel (kw_G ρ) (kw_Δ ρ) s1). split.
+    + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
+      rewrite kty_tySEmpty in X, X'.
+      eapply LRsempty; [exact (kw_lequiv ρ Hl) | exact (kw_lequiv ρ Hl2) | exact (kw_lwf ρ Hw) | exact X | exact X'
+                       | apply releq_refl].
+    + intros t t' Ht. apply HR in Ht. destruct Ht as (w & w' & Hr & Hr' & Hn & Hn').
+      pose proof (kw_tmred ρ Hr) as Y. pose proof (kw_tmred ρ Hr') as Y'.
+      pose proof (kw_gne_tm ρ Hn) as Z. pose proof (kw_gne_tm ρ Hn') as Z'.
+      rewrite kty_tySEmpty in Y, Y', Z, Z'. exists (ktm ρ w), (ktm ρ w').
+      exact (conj Y (conj Y' (conj Z Z'))).
 Qed.
 
 Theorem LR_kwk n : Pwk n.

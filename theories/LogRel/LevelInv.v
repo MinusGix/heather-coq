@@ -58,7 +58,9 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR].
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR].
   all: first
     [ solve [eexists; split; [exact HT | first [exact (whnf_ty_ne _ (gne_ty_whne_l HV)) | solve [eauto with whnf]]]]
     | match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
@@ -283,6 +285,11 @@ Lemma ty_leq_U_inv {l2 W} : ty_leq (tyU l2) W -> exists l3, W = tyU l3 /\ leqv l
 Proof. destruct W; cbn; try contradiction; eauto. Qed.
 Lemma ty_leq_unit_inv {l2 W} : ty_leq (tyUnit l2) W -> exists l3, W = tyUnit l3 /\ leqv l2 l3.
 Proof. destruct W; cbn; try contradiction; eauto. Qed.
+Lemma ty_leq_seq_inv {l2 A2 a2 b2 W} : ty_leq (tySEq l2 A2 a2 b2) W ->
+  exists l3 A3 a3 b3, W = tySEq l3 A3 a3 b3 /\ leqv l2 l3 /\ ty_leq A2 A3 /\ tm_leq a2 a3 /\ tm_leq b2 b3.
+Proof. destruct W; cbn; try contradiction; intros; do 4 eexists; intuition eauto. Qed.
+Lemma ty_leq_sempty_inv {l2 W} : ty_leq (tySEmpty l2) W -> exists l3, W = tySEmpty l3 /\ leqv l2 l3.
+Proof. destruct W; cbn; try contradiction; eauto. Qed.
 Lemma ty_leq_nat_inv {W} : ty_leq tyNat W -> W = tyNat.
 Proof. destruct W; cbn; try contradiction; auto. Qed.
 Lemma ty_leq_cpi_inv {l2 U2 W} : ty_leq (tyCPi l2 U2) W ->
@@ -332,7 +339,9 @@ Proof.
                      Hgeq instAd IHinst HR
                  | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R
                      [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12] domAd1 IHdom codAd1 IHcod HR
-                 | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR];
+                 | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR
+                 | G Γ T1 T2 l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hn HT1 HT2 HSA HSAA Hsaa Hsbb HR
+                 | G Γ T1 T2 l s1 s2 R Hl Hl2 Hn HT1 HT2 HR];
     intros T3 R3 H3 ET; destruct (LR_whnf_l H3) as (W3 & HT3 & Hnw3).
   - (* Nat *)
     pose proof (ty_leq_nat_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3)) as ->.
@@ -735,6 +744,40 @@ Proof.
     intros t1 t2 t3 H12 H33 Et. apply HR. apply HR in H12. apply HR3 in H33.
     destruct H12 as (w1 & _ & Hr1 & _ & Hf1 & _). destruct H33 as (w3 & _ & Hr3 & _ & Hf3 & _).
     exists w1, w3. exact (conj Hr1 (conj (unit_tmred_conv Hl31 Hr3) (conj Hf1 Hf3))).
+  - (* sEq *)
+    destruct (ty_leq_seq_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3))
+      as (s3 & A3 & a3 & b3 & -> & E3 & EA & Ea & Eb).
+    destruct (LR_inv_seq H3 HT3) as (s4 & A4 & a4 & b4 & _ & Hl4 & Hw3 & _ & HA3 & HA34 & Ha34 & Hb34 & HR3).
+    assert (Q : lequiv (gL G) s2 s3) by exact (leqv_lequiv _ _ _ (lequiv_wf_l _ _ _ Hl2) Hw3 E3).
+    assert (Hl31 : lequiv (gL G) s3 s1) by (eapply lequiv_trans; [apply lequiv_sym, Q | exact Hl2]).
+    assert (Hl13 : lequiv (gL G) s1 s3) by now apply lequiv_sym.
+    assert (EA13 : [ G ; Γ ⊢ SA ≈ A3 @ s1 ]).
+    { eapply geq_ty_leq_r; [exact HSAA | eapply geq_ty_lconv; [exact (geq_ty_refl_l HA34) | exact Hl13]
+                           | exact EA]. }
+    assert (DA31 : [ G ; Γ ⊢g A3 ≅ SA @ s1 ]) by (apply eqty_sym, geq_ty_sound, EA13).
+    assert (Ea13 : [ G ; Γ ⊢ sa ≈ a3 : SA @ s1 ]).
+    { eapply geq_tm_leq_r; [exact Hsaa | | exact Ea].
+      eapply geq_tm_conv; [eapply geq_tm_lconv; [exact (geq_tm_refl_l Ha34) | exact Hl13] | exact DA31]. }
+    assert (Eb13 : [ G ; Γ ⊢ sb ≈ b3 : SA @ s1 ]).
+    { eapply geq_tm_leq_r; [exact Hsbb | | exact Eb].
+      eapply geq_tm_conv; [eapply geq_tm_lconv; [exact (geq_tm_refl_l Hb34) | exact Hl13] | exact DA31]. }
+    split; [eapply (LRseq n (LRbelow n) G Γ T1 T3 l s1 s3 SA A3 sa a3 sb b3); eauto|].
+    intros t1 t2 t3 H12 H33 Et. apply HR. apply HR in H12. apply HR3 in H33.
+    assert (HV : [ G ; Γ ⊢g tySEq s3 A3 a3 b3 ≅ tySEq s1 SA sa sb @ s3 ]).
+    { eapply eqty_lconv; [apply eqty_sym, geq_ty_sound, geq_ty_seq; eauto | exact Hl31]. }
+    apply (SEqRel_conv HV Hl31) in H33.
+    destruct H12 as (w1 & _ & Hr1 & _ & Hf1 & _). destruct H33 as (w3 & _ & Hr3 & _ & Hf3 & _).
+    exists w1, w3. auto.
+  - (* sEmpty *)
+    destruct (ty_leq_sempty_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3)) as (s3 & -> & E3).
+    destruct (LR_inv_sempty H3 HT3) as (s4 & _ & Hl4 & Hw3 & _ & HR3).
+    assert (Q : lequiv (gL G) s2 s3) by exact (leqv_lequiv _ _ _ (lequiv_wf_l _ _ _ Hl2) Hw3 E3).
+    assert (Hl31 : lequiv (gL G) s3 s1) by (eapply lequiv_trans; [apply lequiv_sym, Q | exact Hl2]).
+    split; [eapply (LRsempty n (LRbelow n) G Γ T1 T3 l s1 s3); eauto|].
+    intros t1 t2 t3 H12 H33 Et. apply HR. apply HR in H12. apply HR3 in H33.
+    apply (SEmptyRel_lconv Hl31) in H33.
+    destruct H12 as (w1 & _ & Hr1 & _ & Hf1 & _). destruct H33 as (w3 & _ & Hr3 & _ & Hf3 & _).
+    exists w1, w3. auto.
 Qed.
 
 Theorem LR_leq n : Pleq n.

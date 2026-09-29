@@ -597,6 +597,62 @@ Proof.
   apply (lvl_eq_eqtm Hk). apply eqtm_unit_eta; [exact Hc | exact W | exact (lvl_eq_tm' Hk Ht) | exact (lvl_eq_tm' Hk Ht')].
 Qed.
 
+(** Strict equality (M10a). *)
+Lemma S_actnf_seq {G Γ l l' A A' a a' b b'} : leqv l l' ->
+  S_ty G Γ A A' -> S_tm G Γ a a' A -> S_tm G Γ b b' A -> S_ty G Γ (tySEq l A a b) (tySEq l' A' a' b').
+Proof.
+  intros Hl IHA IHa IHb i k Hc HT HT'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_seq HT) as ((_ & W & HA & Ha & Hb) & Hk).
+  destruct (inv_ty_seq HT') as ((_ & W' & HA' & Ha' & Hb') & _).
+  pose proof (leqv_lequiv _ _ _ W W' Hl) as E.
+  pose proof (IHA i l Hc HA (wft_lconv _ _ _ _ _ _ HA' E)) as EA.
+  assert (F : forall x, [ G ; Γ ⊢[ i ] x : A' @ l' ] -> [ G ; Γ ⊢[ i ] x : A @ l ]).
+  { intros x Hx. eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ Hx E) | rewrite Hi; exact EA]. }
+  pose proof (IHa i l Hc Ha (F _ Ha')) as Ea. pose proof (IHb i l Hc Hb (F _ Hb')) as Eb.
+  apply (lvl_eq_eqty Hk). apply eqty_seq; assumption.
+Qed.
+
+Lemma S_actnf_sempty {G Γ l l'} : leqv l l' -> S_ty G Γ (tySEmpty l) (tySEmpty l').
+Proof.
+  intros Hl i k Hc HT HT'.
+  destruct (inv_ty_sempty HT) as ((_ & HΓ & W) & Hk). destruct (inv_ty_sempty HT') as ((_ & _ & W') & _).
+  apply (lvl_eq_eqty Hk). apply eqty_sempty; [exact Hc | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
+Qed.
+
+Lemma S_actmnf_seq_irr {G Γ l A a b w w'} : S_tm G Γ w w' (tySEq l A a b).
+Proof.
+  intros i k Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_seq (wf_tm_ty Hi Ht)) as ((_ & W & _) & Hk).
+  apply (lvl_eq_eqtm Hk). apply eqtm_seq_irr; [exact Hc | exact W | exact (lvl_eq_tm' Hk Ht) | exact (lvl_eq_tm' Hk Ht')].
+Qed.
+
+Lemma S_actmnf_sempty_irr {G Γ l w w'} : S_tm G Γ w w' (tySEmpty l).
+Proof.
+  intros i k Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_sempty (wf_tm_ty Hi Ht)) as ((_ & _ & W) & Hk).
+  apply (lvl_eq_eqtm Hk). apply eqtm_sempty_irr; [exact Hc | exact W | exact (lvl_eq_tm' Hk Ht) | exact (lvl_eq_tm' Hk Ht')].
+Qed.
+
+Lemma S_actmne_elimSEmpty {G Γ l1 l2 l3 l4 M M' ν ν'} : leqv l1 l3 -> leqv l2 l4 ->
+  S_ty G Γ M M' -> S_ne G Γ (elimSEmpty l1 l2 M ν) (elimSEmpty l3 l4 M' ν') M.
+Proof.
+  intros H13 H24 IHM i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_elimSEmpty Hi Hx) as ((_ & W1 & W2 & HM & He) & Hk & HX).
+  destruct (inv_elimSEmpty Hi Hx') as ((_ & W3 & W4 & HM' & He') & Hk' & HX').
+  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
+  pose proof (IHM i l2 Hc HM (wft_lconv _ _ _ _ _ _ HM' E24)) as EM.
+  assert (He1 : [ G ; Γ ⊢[ i ] ν' : tySEmpty l1 @ l1 ]).
+  { eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ He' E13) | rewrite Hi].
+    apply eqty_sempty; [exact Hc | rewrite Hi; exact (ctx_of_wf_tm Hi He) | exact E13]. }
+  pose proof (eqtm_sempty_irr _ _ _ _ _ _ Hc W1 He He1) as Ee.
+  pose proof (eqtm_elimSEmpty _ _ _ _ _ _ _ _ _ _ _ Hc E13 E24 HM EM Ee) as Econg.
+  split; [| split].
+  - exact HX.
+  - eapply eqty_trans; [exact HX' |]. apply (lvl_eq_eqty Hk'), eqty_sym.
+    eapply eqty_lconv; [exact EM | exact (lequiv_sym _ _ _ E24)].
+  - eapply eqtm_conv; [exact (lvl_eq_eqtm Hk Econg) | rewrite Hi; exact HX].
+Qed.
+
 Lemma proj_annots {G i Γ l1 l2 l3 l4 A A' B B' m m' A0 B0} : typeof i = i -> compt i ->
   [ G ; Γ ⊢[ i ] A @ l1 ] -> lwf (gL G) l1 ->
   [ G ; Γ ⊢[ i ] tySig l1 l2 A B ≅ tySig m m' A0 B0 @ lmax l1 l2 ] ->
@@ -1107,7 +1163,10 @@ Proof.
     | solve [eapply S_actmnf_sig_eta; eassumption] | solve [eapply S_actmne_fst; eassumption]
     | solve [eapply S_actmne_snd; eassumption]
     | solve [eapply S_actnf_unit; eassumption] | solve [eapply S_actmnf_code_unit; eassumption]
-    | solve [eapply S_actmnf_unit_eta] ].
+    | solve [eapply S_actmnf_unit_eta]
+    | solve [eapply S_actnf_seq; eassumption] | solve [eapply S_actnf_sempty; eassumption]
+    | solve [eapply S_actmnf_seq_irr] | solve [eapply S_actmnf_sempty_irr]
+    | solve [eapply S_actmne_elimSEmpty; eassumption] ].
 Qed.
 
 (** Algorithmically convertible types (terms) of the computing layers,

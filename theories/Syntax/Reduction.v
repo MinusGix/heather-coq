@@ -52,6 +52,8 @@ Inductive red : tm -> tm -> Prop :=
    is used at the computing layers only and never enters a box, so code keeps
    the global (M9_DESIGN.md) *)
 | red_delta u b d : red (gdef u b d) (b[d])
+(* the irrelevant empty type (M10a): no β, only its scrutinee reduces *)
+| red_elimSEmpty l l' M e e' : red e e' -> red (elimSEmpty l l' M e) (elimSEmpty l l' M e')
 
 with red_ty : ty -> ty -> Prop :=
 | red_El_nat l : red_ty (tyEl l tmNat) tyNat
@@ -176,6 +178,8 @@ Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with 
 Lemma reds_fst l l' A B p p' : reds p p' -> reds (tmFst l l' A B p) (tmFst l l' A B p').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_snd l l' A B p p' : reds p p' -> reds (tmSnd l l' A B p) (tmSnd l l' A B p').
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_elimSEmpty l l' M e e' : reds e e' -> reds (elimSEmpty l l' M e) (elimSEmpty l l' M e').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_El l t t' : reds t t' -> reds_ty (tyEl l t) (tyEl l t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.

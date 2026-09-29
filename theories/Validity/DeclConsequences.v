@@ -101,6 +101,14 @@ Proof.
   intros H. exact (sig_inj (E := DEM) (LP := LRM) redM_eqty H (lwfM_whnf_l H (whnf_tySig _ _ _ _) ltac:(not_upi))).
 Qed.
 
+Theorem declM_seq_inj {G Γ l l1 l2 A A' a a' b b'} :
+  [ G ; Γ ⊢[ lM ] tySEq l1 A a b ≅ tySEq l2 A' a' b' @ l ] ->
+  lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢[ lM ] A ≅ A' @ l1 ] /\
+  [ G ; Γ ⊢[ lM ] a ≅ a' : A @ l1 ] /\ [ G ; Γ ⊢[ lM ] b ≅ b' : A @ l1 ].
+Proof.
+  intros H. exact (seq_inj (E := DEM) (LP := LRM) redM_eqty H (lwfM_whnf_l H (whnf_tySEq _ _ _ _) ltac:(not_upi))).
+Qed.
+
 Theorem declM_unit_inj {G Γ l l1 l2} :
   [ G ; Γ ⊢[ lM ] tyUnit l1 ≅ tyUnit l2 @ l ] -> lequiv (gL G) l2 l1.
 Proof.

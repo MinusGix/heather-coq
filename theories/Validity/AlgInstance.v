@@ -422,6 +422,27 @@ Proof.
     destruct (tgt_whnf_tm Ht) as (w & Hr & Hw). destruct (tgt_whnf_tm Ht') as (w' & Hr' & Hw').
     eapply actm_red; [constructor | apply whnf_tyUnit | exact Hr | exact Hr' | exact Hw | exact Hw' |].
     apply actmnf_unit_eta.
+  (* strict equality (M10a) *)
+  - intros * Hl HA (EA & DA) (Ea & Da) (Eb & Db).
+    refine (conj (@geq_ty_seq DE DEL _ _ _ _ _ _ _ _ _ _ Hl HA EA Ea Eb) _).
+    eapply act_red; [constructor | constructor | apply whnf_tySEq | apply whnf_tySEq |].
+    exact (actnf_seq _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) DA Da Db).
+  - intros * HΓ Hl. refine (conj (@geq_ty_sempty DE DEL _ _ _ _ HΓ Hl) _).
+    eapply act_red; [constructor | constructor | apply whnf_tySEmpty | apply whnf_tySEmpty |].
+    apply actnf_sempty, (lequiv_leqv _ _ _ Hl).
+  - intros * Hl Ht Ht'. refine (conj (@geq_tm_seq_irr DE DEL _ _ _ _ _ _ _ _ Hl Ht Ht') _).
+    destruct (tgt_whnf_tm Ht) as (w & Hr & Hw). destruct (tgt_whnf_tm Ht') as (w' & Hr' & Hw').
+    eapply actm_red; [constructor | apply whnf_tySEq | exact Hr | exact Hr' | exact Hw | exact Hw' |].
+    apply actmnf_seq_irr.
+  - intros * Hl Ht Ht'. refine (conj (@geq_tm_sempty_irr DE DEL _ _ _ _ _ Hl Ht Ht') _).
+    destruct (tgt_whnf_tm Ht) as (w & Hr & Hw). destruct (tgt_whnf_tm Ht') as (w' & Hr' & Hw').
+    eapply actm_red; [constructor | apply whnf_tySEmpty | exact Hr | exact Hr' | exact Hw | exact Hw' |].
+    apply actmnf_sempty_irr.
+  - intros * H13 H24 HM (EM & DM) ((Hn & Hn2 & Eν) & _) ((Hn' & Hn2' & Eν') & _).
+    refine (conj (@gne_tm_elimSEmpty DE DEL _ _ _ _ _ _ _ _ _ _ H13 H24 HM EM
+                   (conj Hn (conj Hn2 Eν)) (conj Hn' (conj Hn2' Eν'))) _).
+    exists M. split; [| exact (eqty_refl _ _ _ _ _ HM)].
+    exact (actmne_elimSEmpty _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24) DM Hn Hn').
 Qed.
 
 End Alg.

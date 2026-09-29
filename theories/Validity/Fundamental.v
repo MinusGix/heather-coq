@@ -5,7 +5,7 @@
     from the rule's own, and the tactics lift a case to global weakenings.
     The theorem itself quantifies over related global substitutions:
     [FundamentalS] (layers C and P) and [FundamentalM] (layer M). *)
-From DeLaM.Validity Require Export Unit.
+From DeLaM.Validity Require Export SEq.
 
 Section Fundamental.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
@@ -322,7 +322,8 @@ Ltac gl_push :=
     rewrite ?gwa_subst_ty, ?gwa_subst, ?gwa_lsingle, ?gwa_lsingle2, ?gwa_lsucc, ?gwa_ren, ?gwa_ren_ty in *;
     rewrite ?gwa_tyNat, ?gwa_tyPi, ?gwa_tyU, ?gwa_tyEl, ?gwa_var, ?gwa_zero, ?gwa_succ, ?gwa_tmNat,
             ?gwa_tmU, ?gwa_tmPi, ?gwa_lam, ?gwa_app, ?gwa_natrec, ?gwa_cext,
-            ?gwa_tySig, ?gwa_tmSig, ?gwa_pair, ?gwa_fst, ?gwa_snd, ?gwa_tyUnit, ?gwa_tmUnit, ?gwa_triv in *).
+            ?gwa_tySig, ?gwa_tmSig, ?gwa_pair, ?gwa_fst, ?gwa_snd, ?gwa_tyUnit, ?gwa_tmUnit, ?gwa_triv,
+            ?gwa_tySEq, ?gwa_tySEmpty, ?gwa_srefl, ?gwa_elimSEmpty in *).
 
 (** P-derivations are validated at an instance of any layer [≥ P]: their
     typing hypotheses are lifted to the instance's layer. *)

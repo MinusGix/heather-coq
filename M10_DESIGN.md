@@ -1,7 +1,7 @@
 # M10: strict equality (`sEq`, `srefl`, `transp`, `sEmpty`), design
 
-Status: **proposal, 2026-09-29.** One fork (the strip, S3) is open and
-waits on a decision; M10a does not depend on it.
+Status: **M10a done, 2026-09-29** (outcome at the end). The strip (S3)
+is open: (D) of S4 is the candidate, with stabilization to argue first.
 
 Heather's rules: `H/docs/sprop-design.md` (frozen rule set, §2–§6). Its
 paper pass: `H/docs/metatheory-ch07-extensions.md` Part III, §18–22 (MX
@@ -221,7 +221,7 @@ finding: full-theory canonicity would then depend on it.
 Scope as M8c: layers D and M, gated by `compt i` for the computation
 rules.
 
-- Syntax: `tySEq l I a b`, `tySEmpty l`, `srefl l I a`,
+- Syntax: `tySEq l A a b`, `tySEmpty l`, `srefl l A a`,
   `elimSEmpty l l' M e`; every operation's case (L5's lists).
 - Typing: formation and congruences; `srefl`; irrelevance at `sEq` and
   `sEmpty` (premise-free, like Unit η); `elim_sEmpty` and its congruence
@@ -250,3 +250,63 @@ Heather's order (`ty_seq`, `tm_seq`, `ty_sempty`, `tm_sempty`, `srefl`,
 until after M10b so the branch numbering matches Heather's without a gap.
 
 Measure against M8c (Unit at D/M) and M9; record the costs here.
+
+## M10a outcome
+
+Built as staged, with these decisions (the defaults of the plan unless
+marked):
+
+- **Syntax.** `tySEq l A a b`, `tySEmpty l`, `srefl l A a`,
+  `elimSEmpty l l' M e` (a non-dependent motive, as Heather's). No
+  universe codes yet (`TmSEq`, `TmSEmpty`, their `El` decodings): they
+  go with the recursor branches in M10c. Reduction: `elimSEmpty` reduces
+  its scrutinee only; it is `whne` on a neutral scrutinee.
+- **Rules**, all gated by `compt i`: formation and congruences, `srefl`,
+  `elim_sEmpty` and its congruence, and proof irrelevance at `sEq`
+  (`eqtm_seq_irr`) and at `sEmpty` (`eqtm_sempty_irr`). `srefl`'s
+  congruence (`eqtm_srefl`) is a rule although irrelevance derives it,
+  as `⟨⟩`'s is: the substitution lemmas then need no conversion of
+  `srefl`'s type.
+- **Relation** (`LRseq`, `LRsempty`). `sEq`'s type relation keeps only
+  the generic equalities of the carrier and endpoints, not the carrier's
+  relation: no term relation reads it, so the `Id`-shaped Kripke carrier
+  relation of MX §18 would be dead weight. Recorded as a deviation from
+  MX. The term relation at `sEq` keeps weak-head normal forms
+  (`SEqRel`, as K5). At `sEmpty` the terms reduce to neutrals each related
+  to itself (`SEmptyRel`), never to each other: the eliminator's neutral
+  law needs neutral scrutinees and compares nothing else. MX §18 has
+  total relations at both; ours keep what normalization and the
+  algorithm need.
+- **Generic laws.** Congruences of the two types, the two irrelevance
+  laws (escape at both types comes from them, MX §21.5), and
+  `gne_tm_elimSEmpty`, whose scrutinee premises are self-relations.
+- **Algorithm.** `actnf_seq` compares endpoints at the left carrier;
+  `actmnf_seq_irr`, `actmnf_sempty_irr` accept any two weak-head normal
+  forms (neither type is `posty`); `actmne_elimSEmpty` compares motives
+  and asks only that the scrutinees be `whne`. A first version asked
+  each scrutinee to be algorithmically related to itself; that premise
+  does not survive the `≡ₗ` inversions of `AlgStruct` (the right side's
+  variant is not self-related without symmetry and transitivity, which
+  come later). `whne` does, and it suffices for soundness because the
+  instances supply typing and irrelevance supplies the equation.
+  Decidability needed `whne` decided (`is_whne`, `whne_dec` in
+  `AlgDec`).
+- **Consequences.** `closed_sempty_empty`: no closed proof of `sEmpty`
+  (at D and M, `closed_ok`). `closed_seq_canonicity`: a closed proof of
+  `sEq^l(A; a; b)` computes to `srefl`, and then `a ≅ b`. This is MX
+  §18's "sEq imports no equation" for closed terms, now checked. Type
+  checking, uniqueness of types, preservation, decidability of
+  conversion all extend; `consistency`, `closed_canonicity`, `tyd`,
+  `ckd`, `ac_tm_dec`, `decl_eqtm_dec_any` stay closed under the global
+  context.
+
+**Cost.** 50 files, about 1450 lines added (170 of them the new
+`Validity/SEq.v`) and 60 changed, against 803 in 53 files for Unit at
+D/M (M8c) and about 990 in 64 files for M9. Two formers and five
+algorithmic rules, so per former it is below M8c. The bulk: the
+algorithmic families (PER, decidability, soundness, conversion: about
+310), the relation's properties (Escape, Irrelevance, LevelInv and the
+rest of LogRel: about 400), Static Code and presupposition (about 110).
+The L5 rule lists kept weakening, substitution and functionality at zero
+edits; the positional LR patterns (one pair of branches per induction,
+scripted) were the mechanical part.

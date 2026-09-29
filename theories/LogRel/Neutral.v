@@ -84,7 +84,9 @@ Proof.
                      Hgeq instAd IHinst HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                      [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
-                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
+                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros ν ν' Hν Hν'; first [exact (ModRel_neutral HM _ _ Hν Hν') | apply HR].
   - (* Nat *)
     pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HN.
@@ -268,6 +270,18 @@ Proof.
     exists ν, ν'. refine (conj (tmred_refl _ _ _ X1) (conj (tmred_refl _ _ _ X2) (conj _ _))).
     + constructor; exact (gne_tm_whne_l Hν).
     + constructor; exact (gne_tm_whne_r Hν').
+  - (* sEq: typed neutrals are related *)
+    pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HP.
+    destruct (gne_tmred_refl HP) as [H1 H2].
+    exists ν, ν'. refine (conj H1 (conj H2 (conj _ _))).
+    + constructor; exact (gne_tm_whne_l Hν).
+    + constructor; exact (gne_tm_whne_r Hν').
+  - (* sEmpty: each side a neutral related to itself *)
+    pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HP.
+    destruct (gne_tmred_refl HP) as [H1 H2].
+    exists ν, ν'. refine (conj H1 (conj H2 (conj _ _))).
+    + exact (gne_tm_trans HP (gne_tm_sym HP)).
+    + exact (gne_tm_trans (gne_tm_sym HP) HP).
 Qed.
 
 End Neutral.

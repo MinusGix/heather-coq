@@ -81,6 +81,12 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
 (* the unit type (every layer but V since M8d; M8_DESIGN.md K2, L1) *)
 | wft_unit G i Γ l : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tyUnit l @ l ]
+(* strict equality and the irrelevant empty type (layers D and M; M10_DESIGN.md) *)
+| wft_seq G i Γ l A a b : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] b : A @ l ] ->
+    [ G ; Γ ⊢[ i ] tySEq l A a b @ l ]
+| wft_sempty G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] tySEmpty l @ l ]
 
 with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 | wf_var G i Γ n T l : [ G ; Γ ⊢[ typeof i ] ] -> in_ctx Γ n T l ->
@@ -219,6 +225,13 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] tmUnit l : tyU l @ lsuc l ]
 | wf_triv G i Γ l : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tmTriv l : tyUnit l @ l ]
+(* strict equality (layers D and M): [srefl], and [sEmpty]'s eliminator (no β) *)
+| wf_srefl G i Γ l A a : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] ->
+    [ G ; Γ ⊢[ i ] srefl l A a : tySEq l A a a @ l ]
+| wf_elimSEmpty G i Γ l l' M e : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] M @ l' ] -> [ G ; Γ ⊢[ i ] e : tySEmpty l @ l ] ->
+    [ G ; Γ ⊢[ i ] elimSEmpty l l' M e : M @ l' ]
 
 with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
 | eqty_refl G i Γ T l : [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T @ l ]
@@ -291,6 +304,13 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] tyUnit l ≅ tyUnit l' @ l ]
 | eqty_El_unit G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tyUnit l ≅ tyEl l (tmUnit l) @ l ]
+(* strict equality (layers D and M) *)
+| eqty_seq G i Γ l l' A A' a a' b b' : compt i -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+    [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] -> [ G ; Γ ⊢[ i ] b ≅ b' : A @ l ] ->
+    [ G ; Γ ⊢[ i ] tySEq l A a b ≅ tySEq l' A' a' b' @ l ]
+| eqty_sempty G i Γ l l' : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] tySEmpty l ≅ tySEmpty l' @ l ]
 
 with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
 | eqtm_refl G i Γ t T l : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ i ] t ≅ t : T @ l ]
@@ -578,6 +598,24 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
 | eqtm_unit_eta G i Γ l t t' : compt i -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] t : tyUnit l @ l ] -> [ G ; Γ ⊢[ i ] t' : tyUnit l @ l ] ->
     [ G ; Γ ⊢[ i ] t ≅ t' : tyUnit l @ l ]
+(* strict equality (layers D and M): the congruences, and proof irrelevance
+   at [sEq] and [sEmpty]. Irrelevance subsumes [srefl]'s congruence; it is a
+   rule anyway, as [⟨⟩]'s is, so that the substitution lemmas need no
+   conversion of [srefl]'s type *)
+| eqtm_srefl G i Γ l l' A A' a a' : compt i -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+    [ G ; Γ ⊢[ i ] srefl l A a ≅ srefl l' A' a' : tySEq l A a a @ l ]
+| eqtm_elimSEmpty G i Γ l1 l2 l3 l4 M M' e e' : compt i ->
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢[ i ] M @ l2 ] -> [ G ; Γ ⊢[ i ] M ≅ M' @ l2 ] ->
+    [ G ; Γ ⊢[ i ] e ≅ e' : tySEmpty l1 @ l1 ] ->
+    [ G ; Γ ⊢[ i ] elimSEmpty l1 l2 M e ≅ elimSEmpty l3 l4 M' e' : M @ l2 ]
+| eqtm_seq_irr G i Γ l A a b p q : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] p : tySEq l A a b @ l ] -> [ G ; Γ ⊢[ i ] q : tySEq l A a b @ l ] ->
+    [ G ; Γ ⊢[ i ] p ≅ q : tySEq l A a b @ l ]
+| eqtm_sempty_irr G i Γ l p q : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] p : tySEmpty l @ l ] -> [ G ; Γ ⊢[ i ] q : tySEmpty l @ l ] ->
+    [ G ; Γ ⊢[ i ] p ≅ q : tySEmpty l @ l ]
 
 (** Context equivalence ([Ψ ⊢ᵢ Γ ≈ Δ], used by the congruences of [□]). *)
 with eq_ctx : gctx -> layer -> ctx -> ctx -> Prop :=

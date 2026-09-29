@@ -400,6 +400,10 @@ Lemma gs_snd l l' A B p : (tmSnd l l' A B p)⦃σ⦄ = tmSnd l l' A⦃σ⦄ B⦃
 Lemma gs_tyUnit l : (tyUnit l)⦃σ⦄ = tyUnit l. Proof. reflexivity. Qed.
 Lemma gs_tmUnit l : (tmUnit l)⦃σ⦄ = tmUnit l. Proof. reflexivity. Qed.
 Lemma gs_triv l : (tmTriv l)⦃σ⦄ = tmTriv l. Proof. reflexivity. Qed.
+Lemma gs_tySEq l A a b : (tySEq l A a b)⦃σ⦄ = tySEq l A⦃σ⦄ a⦃σ⦄ b⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tySEmpty l : (tySEmpty l)⦃σ⦄ = tySEmpty l. Proof. reflexivity. Qed.
+Lemma gs_srefl l A a : (srefl l A a)⦃σ⦄ = srefl l A⦃σ⦄ a⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_elimSEmpty l l' M e : (elimSEmpty l l' M e)⦃σ⦄ = elimSEmpty l l' M⦃σ⦄ e⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_gdef u b d : (gdef u b d)⦃σ⦄ = pdef (σ u) b⦃σ⦄ d⦃σ⦄. Proof. reflexivity. Qed.
 End PushGS.
 
@@ -409,7 +413,8 @@ Ltac push_gsubst := repeat progress (
           ?gs_boxt, ?gs_letboxT, ?gs_letboxt, ?gs_cnil, ?gs_cext, ?gs_lshift,
           ?gs_tyGvar, ?gs_gvar, ?gs_cvar, ?gs_elimT, ?gs_elimt, ?gs_tyUPi, ?gs_ulam, ?gs_uapp,
           ?gs_tyCPi, ?gs_tyTPi, ?gs_clam, ?gs_capp, ?gs_tlam, ?gs_tapp,
-          ?gs_tySig, ?gs_tmSig, ?gs_pair, ?gs_fst, ?gs_snd, ?gs_tyUnit, ?gs_tmUnit, ?gs_triv, ?gs_gdef).
+          ?gs_tySig, ?gs_tmSig, ?gs_pair, ?gs_fst, ?gs_snd, ?gs_tyUnit, ?gs_tmUnit, ?gs_triv, ?gs_gdef,
+          ?gs_tySEq, ?gs_tySEmpty, ?gs_srefl, ?gs_elimSEmpty).
 
 Lemma gs_single_ty (M : ty) a σ : M[lsingle a]⦃σ⦄ = M⦃σ⦄[lsingle a⦃σ⦄].
 Proof. rewrite gsubst_subst_ty; reflexivity. Qed.

@@ -144,6 +144,8 @@ Proof.
                  | G Γ T1 T2 l Δ1 Δ2 l1 l2 l3 l4 U1 U2 instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HΔ HU1 HU2
                      Hgeq instAd IHinst HR
                  | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R P1 domAd1 IHdom codAd1 IHcod HR
+                 | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR
+                 | G Γ T1 T2 l l1 l2 A1 A2 a1 a2 b1 b2 R Hl Hl2 Hn HT1 HT2 HA1 HA12 Ha12 Hb12 HR
                  | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR];
     intros T3 R23 H2.
   - (* Nat *)
@@ -480,6 +482,24 @@ Proof.
     split; [eapply (LRunit n (LRbelow n) G Γ T1 T3 l l1 l3); eauto using lequiv_trans|].
     intros t1 t2 t3 H12 H23. apply HR. apply HR in H12. apply HR2 in H23.
     apply (UnitRel_lconv Hl2) in H23. exact (UnitRel_trans H12 H23).
+  - (* sEq *)
+    destruct (LR_inv_seq H2 HT2) as (l3 & A3 & a3 & b3 & _ & Hl3 & _ & HT3 & _ & HA23 & Ha23 & Hb23 & HR2).
+    pose proof (lequiv_sym _ _ _ Hl2) as Hl2'.
+    assert (E12 : [ G ; Γ ⊢g A2 ≅ A1 @ l1 ]) by (apply eqty_sym, geq_ty_sound, HA12).
+    split.
+    + eapply (LRseq n (LRbelow n) G Γ T1 T3 l l1 l3 A1 A3 a1 a3 b1 b3); eauto using lequiv_trans.
+      * eapply geq_ty_trans; [exact HA12 | eapply geq_ty_lconv; [exact HA23 | exact Hl2']].
+      * eapply geq_tm_trans; [exact Ha12 | eapply geq_tm_conv; [eapply geq_tm_lconv; [exact Ha23 | exact Hl2'] | exact E12]].
+      * eapply geq_tm_trans; [exact Hb12 | eapply geq_tm_conv; [eapply geq_tm_lconv; [exact Hb23 | exact Hl2'] | exact E12]].
+    + assert (HV : [ G ; Γ ⊢g tySEq l2 A2 a2 b2 ≅ tySEq l1 A1 a1 b1 @ l2 ]).
+      { eapply eqty_lconv; [apply eqty_sym, geq_ty_sound, geq_ty_seq; eassumption | exact Hl2]. }
+      intros t1 t2 t3 H12 H23. apply HR. apply HR in H12. apply HR2 in H23.
+      apply (SEqRel_conv HV Hl2) in H23. exact (SEqRel_trans H12 H23).
+  - (* sEmpty *)
+    destruct (LR_inv_sempty H2 HT2) as (l3 & _ & Hl3 & _ & HT3 & HR2).
+    split; [eapply (LRsempty n (LRbelow n) G Γ T1 T3 l l1 l3); eauto using lequiv_trans|].
+    intros t1 t2 t3 H12 H23. apply HR. apply HR in H12. apply HR2 in H23.
+    apply (SEmptyRel_lconv Hl2) in H23. exact (SEmptyRel_trans H12 H23).
 Qed.
 
 Theorem LR_trans n : Ptrans n.

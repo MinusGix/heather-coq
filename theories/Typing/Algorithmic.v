@@ -57,6 +57,11 @@ with ac_tynf : gctx -> ctx -> ty -> ty -> Prop :=
     ac_tynf G Γ (tySig l1 l2 A B) (tySig l3 l4 A' B')
 (* the unit type (M8c) *)
 | actnf_unit G Γ l l' : leqv l l' -> ac_tynf G Γ (tyUnit l) (tyUnit l')
+(* strict equality (M10a): endpoints compared at the left carrier *)
+| actnf_seq G Γ l l' A A' a a' b b' : leqv l l' -> ac_ty G Γ A A' ->
+    ac_tm G Γ a a' A -> ac_tm G Γ b b' A ->
+    ac_tynf G Γ (tySEq l A a b) (tySEq l' A' a' b')
+| actnf_sempty G Γ l l' : leqv l l' -> ac_tynf G Γ (tySEmpty l) (tySEmpty l')
 
 with ac_tyne : gctx -> ctx -> ty -> ty -> Prop :=
 | actne_gvar G Γ U Δ i' l d d' : in_gctx (gΨ G) U (gdTy Δ i' l) -> ac_sub G Γ d d' Δ ->
@@ -112,6 +117,10 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
    weak-head normal forms, neutral or not; [Unit] is not [posty]) *)
 | actmnf_code_unit G Γ l k k' : leqv k k' -> ac_tmnf G Γ (tmUnit k) (tmUnit k') (tyU l)
 | actmnf_unit_eta G Γ l w w' : ac_tmnf G Γ w w' (tyUnit l)
+(* strict equality (M10a): proof irrelevance at [sEq] and [sEmpty], as at
+   [Unit] (neither is [posty]) *)
+| actmnf_seq_irr G Γ l A a b w w' : ac_tmnf G Γ w w' (tySEq l A a b)
+| actmnf_sempty_irr G Γ l w w' : ac_tmnf G Γ w w' (tySEmpty l)
 
 with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_var G Γ n T l : in_ctx Γ n T l -> ac_tmne G Γ (var n) (var n) T
@@ -191,6 +200,12 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_snd G Γ l1 l2 l3 l4 A A' B B' ν ν' m m' A0 B0 :
     ac_tmnee G Γ ν ν' (tySig m m' A0 B0) ->
     ac_tmne G Γ (tmSnd l1 l2 A B ν) (tmSnd l3 l4 A' B' ν') B0[lsingle (tmFst m m' A0 B0 ν)]
+(* the irrelevant empty type's eliminator (M10a): the scrutinees are
+   neutral and never compared (their typing, which the instances bundle,
+   makes them equal by irrelevance) *)
+| actmne_elimSEmpty G Γ l1 l2 l3 l4 M M' ν ν' : leqv l1 l3 -> leqv l2 l4 ->
+    ac_ty G Γ M M' -> whne ν -> whne ν' ->
+    ac_tmne G Γ (elimSEmpty l1 l2 M ν) (elimSEmpty l3 l4 M' ν') M
 
 with ac_tmnee : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmnee_red G Γ ν ν' T W : ac_tmne G Γ ν ν' T -> reds_ty T W -> whnf_ty W ->

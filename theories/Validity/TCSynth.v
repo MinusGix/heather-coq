@@ -495,6 +495,35 @@ Proof.
                                         exact (wf_snd _ _ _ _ _ _ _ _ Hc Hl Hl' HA HB Hp)].
 Qed.
 
+(** Strict equality (M10a): the computing layers only. *)
+Lemma sy_srefl l A a : sz_tm (srefl l A a) <= n -> SYD (srefl l A a).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_srefl H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_srefl H) as ((_ & X & _) & _); contradiction].
+  destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
+    [| right; intros T k H; destruct (inva_srefl H) as ((_ & _ & X & _) & _); contradiction].
+  destruct (ihC a ltac:(szl) G i Γ A l (lift_to_typeof_ty HA)) as [Ha | N];
+    [| right; intros T k H; destruct (inva_srefl H) as ((_ & _ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_srefl _ _ _ _ _ _ Hc Hl HA Ha).
+Qed.
+
+Lemma sy_elimSEmpty l l' M e : sz_tm (elimSEmpty l l' M e) <= n -> SYD (elimSEmpty l l' M e).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_elimSEmpty H) as ((X & _) & _); contradiction].
+  pose proof (compt_typeof_self _ Hc) as Hty.
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_elimSEmpty H) as ((_ & X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros T k H; destruct (inva_elimSEmpty H) as ((_ & _ & X & _) & _); contradiction].
+  destruct (ihT M ltac:(szl) G i Γ l' HΓ) as [HM | N];
+    [| right; intros T k H; destruct (inva_elimSEmpty H) as ((_ & _ & _ & X & _) & _); contradiction].
+  assert (HSE : [ G ; Γ ⊢[ typeof i ] tySEmpty l @ l ])
+    by (rewrite Hty; apply wft_sempty; [exact Hc | exact HΓ | exact Hl]).
+  destruct (ihC e ltac:(szl) G i Γ _ _ HSE) as [He | N];
+    [| right; intros T k H; destruct (inva_elimSEmpty H) as ((_ & _ & _ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_elimSEmpty _ _ _ _ _ _ _ Hc Hl Hl' HM He).
+Qed.
+
 (** ** The step *)
 
 Lemma sy_step t : sz_tm t <= n -> synth t -> SYD t.
@@ -507,7 +536,8 @@ Proof.
           | apply sy_ulam | apply sy_clam | apply sy_tlam
           | apply sy_uapp | apply sy_capp | apply sy_tapp
           | apply sy_codesig | apply sy_pair
-          | apply (sy_proj true) | apply (sy_proj false) | apply sy_code_unit | apply sy_triv ]; assumption.
+          | apply (sy_proj true) | apply (sy_proj false) | apply sy_code_unit | apply sy_triv
+          | apply sy_srefl | apply sy_elimSEmpty ]; assumption.
 Qed.
 
 End Step.

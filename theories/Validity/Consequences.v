@@ -12,7 +12,7 @@ Definition ty_head (T : ty) : nat :=
   match T with
   | tyGvar _ _ | tyEl _ _ => 0 | tyNat => 1 | tyU _ => 2 | tyPi _ _ _ _ => 3
   | tyCTyp _ _ => 4 | tyCTrm _ _ _ => 5 | tyUPi _ _ _ => 6 | tyCPi _ _ => 7 | tyTPi _ _ _ _ => 8
-  | tyErr => 9 | tySig _ _ _ _ => 10 | tyUnit _ => 11
+  | tyErr => 9 | tySig _ _ _ _ => 10 | tyUnit _ => 11 | tySEq _ _ _ _ => 12 | tySEmpty _ => 13
   end.
 
 Lemma whne_ty_head V : whne_ty V -> ty_head V = 0.
@@ -79,6 +79,30 @@ Proof.
   injection Heq as <-. exact H2.
 Qed.
 
+(** Strict equality (M10a): the components, and the level. *)
+Lemma seq_inj {G Γ l l1 l2 A A' a a' b b'} :
+  [ G ; Γ ⊢g tySEq l1 A a b ≅ tySEq l2 A' a' b' @ l ] -> lwf (gL G) l ->
+  lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢ A ≈ A' @ l1 ] /\ [ G ; Γ ⊢ a ≈ a' : A @ l1 ] /\ [ G ; Γ ⊢ b ≈ b' : A @ l1 ].
+Proof.
+  intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
+  pose proof (eqty_wf_l ge_typeof H) as HP.
+  destruct (LR_inv_seq HR (tyred_refl _ _ HP)) as (m2 & C' & c' & d' & _ & H2 & _ & HT' & _ & HAA & Haa & Hbb & _).
+  pose proof (tyred_refl _ _ (eqty_wf_r ge_typeof H)) as HT'0.
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' HT'0 (whnf_tySEq _ _ _ _) (whnf_tySEq _ _ _ _)) as Heq.
+  injection Heq as <- <- <- <-. auto.
+Qed.
+
+Lemma sempty_inj {G Γ l l1 l2} :
+  [ G ; Γ ⊢g tySEmpty l1 ≅ tySEmpty l2 @ l ] -> lwf (gL G) l -> lequiv (gL G) l2 l1.
+Proof.
+  intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
+  pose proof (eqty_wf_l ge_typeof H) as HP.
+  destruct (LR_inv_sempty HR (tyred_refl _ _ HP)) as (m2 & _ & H2 & _ & HT' & _).
+  pose proof (tyred_refl _ _ (eqty_wf_r ge_typeof H)) as HT'0.
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' HT'0 (whnf_tySEmpty _) (whnf_tySEmpty _)) as Heq.
+  injection Heq as <-. exact H2.
+Qed.
+
 (** A type convertible to a [Π] reduces to one. *)
 Lemma pi_red {G Γ l l1 l2 A B T} : [ G ; Γ ⊢g tyPi l1 l2 A B ≅ T @ l ] -> lwf (gL G) l ->
   exists l3 l4 C D, [ G ; Γ ⊢g T ⤳* tyPi l3 l4 C D @ l ].
@@ -122,7 +146,9 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     try match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
     eexists; split; eauto using whnf_ty, gne_ty_whne_l.
 Qed.
@@ -153,7 +179,9 @@ Proof.
                     Hgeq instAd HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros t t' Ht; first [exact (ModRel_whnf_tm HM _ _ Ht) | apply HR in Ht].
   - destruct Ht as [t t' w w' Hw _ _ Hnf]. exists w; split; [exact (tmred_back Hw HT Hl)|].
     destruct Hnf; eauto using whnf, gne_tm_whne_l.
@@ -166,6 +194,9 @@ Proof.
   - destruct Ht as (w & w' & Hw & _ & Hwh & _). exists w; split; [exact (tmred_back Hw HT Hl) | exact Hwh].
   - destruct Ht as (w & w' & Hw & _ & Hwh & _). exists w; split; [exact (tmred_back Hw HT Hl) | exact Hwh].
   - destruct Ht as (w & w' & Hr & _ & Hwh & _). exists w; split; [exact (tmred_back Hr HT Hl) | exact Hwh].
+  - destruct Ht as (w & w' & Hr & _ & Hwh & _). exists w; split; [exact (tmred_back Hr HT Hl) | exact Hwh].
+  - destruct Ht as (ν & ν' & Hν & _ & Hne & _). exists ν; split; [exact (tmred_back Hν HT Hl) |].
+    eauto using whnf, gne_tm_whne_l.
 Qed.
 
 Theorem whnf_normalization_ty {G Γ T l} : [ G ; Γ ⊢g T @ l ] -> lwf (gL G) l ->

@@ -1331,6 +1331,55 @@ Proof.
   apply actmnf_unit_eta.
 Qed.
 
+(** ** Strict equality (M10a) *)
+
+Lemma C_actnf_seq {G Γ l l' A A' a a' b b'} : leqv l l' ->
+  ac_ty G Γ A A' -> C_ty G Γ A A' -> ac_tm G Γ a a' A -> C_tm G Γ a a' A ->
+  ac_tm G Γ b b' A -> C_tm G Γ b b' A -> C_tynf G Γ (tySEq l A a b) (tySEq l' A' a' b').
+Proof.
+  intros Hl DA IHA Da IHa Db IHb i G2 Γ2 k k' Hc HE Hctx HT HT'.
+  pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_seq HT) as ((_ & W & HA & Ha & Hb) & _).
+  destruct (inv_ty_seq HT') as ((_ & W' & HA' & Ha' & Hb') & _).
+  pose proof (leqv_lequiv _ _ _ W W' Hl) as E.
+  pose proof (ac_ty_sound Hc DA HA (wft_lconv _ _ _ _ _ _ HA' E)) as EA.
+  assert (F : forall x, [ G ; Γ ⊢[ i ] x : A' @ l' ] -> [ G ; Γ ⊢[ i ] x : A @ l ]).
+  { intros x Hx. eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ Hx E) | rewrite Hi; exact EA]. }
+  pose proof (eqty_refl _ _ _ _ _ (gconv_ty HE HA)) as HAr.
+  apply actnf_seq; [exact Hl | exact (IHA i G2 Γ2 l l' Hc HE Hctx HA HA') |
+                    exact (IHa i G2 Γ2 A l Hc HE Hctx Ha (F _ Ha') HAr _ _ spa_refl spa_refl) |
+                    exact (IHb i G2 Γ2 A l Hc HE Hctx Hb (F _ Hb') HAr _ _ spa_refl spa_refl)].
+Qed.
+
+Lemma C_actnf_sempty {G Γ l l'} : leqv l l' -> C_tynf G Γ (tySEmpty l) (tySEmpty l').
+Proof. intros Hl; red; intros; now apply actnf_sempty. Qed.
+
+Lemma C_actmnf_seq_irr {G Γ l A a b w w'} : C_tmnf G Γ w w' (tySEq l A a b).
+Proof.
+  red; intros i G2 Γ2 W2 k Hc HE Hctx Ht Ht' EW Hw2 x x' Hsx Hsx'. new_head Hc EW Hw2 W2.
+  apply actmnf_seq_irr.
+Qed.
+
+Lemma C_actmnf_sempty_irr {G Γ l w w'} : C_tmnf G Γ w w' (tySEmpty l).
+Proof.
+  red; intros i G2 Γ2 W2 k Hc HE Hctx Ht Ht' EW Hw2 x x' Hsx Hsx'. new_head Hc EW Hw2 W2.
+  apply actmnf_sempty_irr.
+Qed.
+
+Lemma C_actmne_elimSEmpty {G Γ l1 l2 l3 l4 M M' ν ν'} : leqv l1 l3 -> leqv l2 l4 ->
+  ac_ty G Γ M M' -> C_ty G Γ M M' -> whne ν -> whne ν' ->
+  C_ne G Γ (elimSEmpty l1 l2 M ν) (elimSEmpty l3 l4 M' ν') M.
+Proof.
+  intros H13 H24 DM IHM Hn Hn' i G2 Γ2 k k' X X' Hc HE Hctx Hx Hx' x x' Hsx Hsx'. spa_triv.
+  pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_elimSEmpty Hi Hx) as ((_ & W1 & W2 & HM & _) & Hk & _).
+  destruct (inv_elimSEmpty Hi Hx') as ((_ & W3 & W4 & HM' & _) & _ & _).
+  exists M. split.
+  - apply actmne_elimSEmpty; [exact H13 | exact H24 | exact (IHM i G2 Γ2 l2 l4 Hc HE Hctx HM HM')
+                             | exact Hn | exact Hn'].
+  - apply (lvl_eq_eqty (lvl_eq_G2 HE Hk)), eqty_refl, (gconv_ty HE HM).
+Qed.
+
 (** ** The conversion lemma *)
 
 Theorem ac_conv_spa :
@@ -1372,7 +1421,10 @@ Proof.
     | solve [eapply C_actmnf_sig_eta; eassumption] | solve [eapply C_actmne_fst; eassumption]
     | solve [eapply C_actmne_snd; eassumption]
     | solve [eapply C_actnf_unit; eassumption] | solve [eapply C_actmnf_code_unit; eassumption]
-    | solve [eapply C_actmnf_unit_eta] ].
+    | solve [eapply C_actmnf_unit_eta]
+    | solve [eapply C_actnf_seq; eassumption] | solve [eapply C_actnf_sempty; eassumption]
+    | solve [eapply C_actmnf_seq_irr] | solve [eapply C_actmnf_sempty_irr]
+    | solve [eapply C_actmne_elimSEmpty; eassumption] ].
 Qed.
 
 (** The statement without annotation changes. *)

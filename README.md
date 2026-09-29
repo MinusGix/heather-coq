@@ -73,6 +73,9 @@ From M8 on, the milestones check the extensions of Heather's kernel
   lists); see `M8_DESIGN.md`.
 - Milestone 9: bodied globals (definitions, δ at the computing layers);
   see `M9_DESIGN.md`, which also lists its open items.
+- Milestone 10 (in progress): strict equality. M10a (`sEq`, `srefl`,
+  `sEmpty`, its eliminator, proof irrelevance) is done; `transp` and the
+  strip rule wait on a design question; see `M10_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
 `M9_DESIGN.md`) for decisions, deviations from the paper and gotchas.
