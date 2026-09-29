@@ -102,7 +102,9 @@ Cross-checks between the two sides, newest last.
   (N2), forced by our Static Code lemma. One consequence for Heather's
   design: since `elim(box(u^δ))` stays stuck, closed canonicity at M fails
   for global contexts with definitions; at D it holds. This bears on
-  `issues/opaque-globals-analysis.md`.
+  `issues/opaque-globals-analysis.md`. Loose ends (a checked witness of
+  the M failure, N1's admissibility, consistency with definitions) are
+  listed under M9_DESIGN.md, Open items.
 
 ## Beyond type formers
 

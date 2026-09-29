@@ -57,17 +57,25 @@ Milestone 6 (algorithmic convertibility) is complete; see `M6_DESIGN.md`:
 - decidability of algorithmic and of declarative equality of well-typed
   types and terms at D and M.
 
-Milestone 7 (strengthening the base) is in progress; see `M7_DESIGN.md`.
-Done: consistency, the paper's direction of Static Code, canonicity at
-every type former, soundness of reduction and preservation, uniform
-statements over D and M, and decidability of type checking for all
-terms at every layer (the meta-level abstractions now carry their
-formers, a deviation from the paper recorded in `M1_DESIGN.md`), with
-uniqueness of synthesized types and the recursor rules without their
-scope premises.
+Milestone 7 (strengthening the base) is complete; see `M7_DESIGN.md`:
+consistency, the paper's direction of Static Code, canonicity at every
+type former, soundness of reduction and preservation, uniform statements
+over D and M, and decidability of type checking for all terms at every
+layer (the meta-level abstractions now carry their formers, a deviation
+from the paper recorded in `M1_DESIGN.md`), with uniqueness of
+synthesized types and the recursor rules without their scope premises.
 
-No admits, no axioms. See `M7_DESIGN.md`, `M6_DESIGN.md`, `M5_DESIGN.md`, `M4_DESIGN.md`, `M3_DESIGN.md`, `M2_DESIGN.md` and
-`M1_DESIGN.md` for decisions, deviations from the paper and gotchas.
+From M8 on, the milestones check the extensions of Heather's kernel
+(`HEATHER.md`):
+- Milestone 8: Σ with η and `Unit` with η, as types and as code (eight
+  new recursor branches), and the genericity work that made a new former
+  cheap (shared generic laws, recursor branches through one lemma, rule
+  lists); see `M8_DESIGN.md`.
+- Milestone 9: bodied globals (definitions, δ at the computing layers);
+  see `M9_DESIGN.md`, which also lists its open items.
+
+No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
+`M9_DESIGN.md`) for decisions, deviations from the paper and gotchas.
 
 Documents:
 

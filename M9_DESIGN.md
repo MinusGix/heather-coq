@@ -167,3 +167,46 @@ preservation, canonicity ~150. The L5 rule lists kept most metatheory
 entries to one line; the new cases cluster in the files with manual
 dispatch (GSubstitution, GWeakening, Presupposition, the two fundamental
 theorems).
+
+## Open items (for later rounds)
+
+What M9 argued rather than proved, or left at the old scope. None blocks
+M10; each is a standalone round. Ordered by value to Heather first.
+
+1. **The M-canonicity witness.** Build a concrete typed instance: a global
+   context with one definition `u := t` (say a closed `Nat` code), and the
+   closed M-term `elim_Trm(box(gdef u t ·))` with some motive and branches.
+   Show it is typed, `whne` (`whne_elimt_gdef`), and not canonical, so
+   `closed_ok` cannot extend to M with definitions. This turns the
+   Outcome's canonicity finding into a checked counterexample for
+   `H/issues/opaque-globals-analysis.md`, which Heather closed its
+   definitions issue citing our check.
+2. **N1 is admissible.** Prove the premise `wf_gdef` adds (the body typed
+   at the use layer) is derivable from `⊢ Ψ`: the body is checked at C in
+   its prefix, lifted to `j ≥ C`, weakened to `Ψ`. With it, prove that the
+   translation from Heather's syntax (`u^δ ↦ gdef u t₀ δ` when `Ψ` defines
+   `u`, `gvar u δ` otherwise) is total and preserves typing, the claim (b)
+   rests on. Needs a lifting lemma C → j for terms and global weakening of
+   the prefix; check what `StaticCode.v` and `GWeakening.v` already give.
+3. **Consistency with definitions.** `consistency` and
+   `no_type_var_inhabitant` (`Validity/Consistency.v`) still assume
+   `ctx_only`. At D, `no_closed_neutral_D` suggests the same proof goes
+   through with `no_opaque` (`neutral_univ` is the lemma to generalize).
+   At M it is open: a stuck `elim(box(gdef …))` is a neutral whose type
+   is the motive at a stuck code. Whether it can inhabit `El x` in a
+   context of universe variables needs an argument: every branch but
+   the stuck one would also have to inhabit the motive, and the motive
+   at the stuck code is a stuck type, not `El x`. Settle it or find the
+   counterexample; either is a Heather finding.
+4. **Canonicity statements at the old scope.** `closed_canonicity` takes
+   `closed_ok`, but these still take `ctx_only`:
+   `closed_nat_canonicity` (`Consequences.v`), `decl_closed_nat_canonicity`
+   (`DeclConsequencesP.v`), the three `declM_closed_*_canonicity`
+   (`DeclConsequences.v`), `closed_nat_canonicity_c` (`Uniform.v`),
+   `paper_consistency` and `paper_canonicity` (`PaperSound.v`). Generalize
+   the D ones to `closed_ok`; the M ones stay at `ctx_only` by item 1.
+5. **A Heather-faithful rule set.** `Typing/Paper.v` (M7 C3) transcribes
+   the paper's rules and has no definitions. Heather's `u^δ` with δ
+   reading `Ψ` could be written there as a second faithful system and
+   shown equivalent to ours through item 2's translation. Low priority:
+   item 2 is the substance.
