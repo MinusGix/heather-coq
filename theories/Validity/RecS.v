@@ -1420,59 +1420,38 @@ Lemma rec_T_El {ΔL ΔR kL kR k k' t t'} : [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ l
 Proof.
   intros HΔL HΔ HkL HkR Hw Hw' E Ht Ht' Et IHt.
   pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR.
-  pose proof (wf_ctx_dnf HΔL) as NΔL. pose proof (wf_ctx_dnf HΔR) as NΔR.
   assert (Hl1c : lle lC lD) by (unfold lle; cbn; lia).
-  assert (Hn : lC <> lV) by discriminate.
   assert (Q : lequiv L' k k') by exact (leqv_lequiv _ _ _ Hw Hw' E).
-  assert (Qs : lequiv L' (lsuc k) (lsuc k')) by (apply lequiv_suc, Q).
   assert (Hl2'' : lequiv (gL G') (lvsubst l2' φ) (lvsubst l2 φ)) by (rewrite EL; exact (lequiv_sym _ _ _ Hl2)).
-  (* the pieces *)
-  pose proof (lift_eqtm (j := lD) (static_code_tm Hl1c Ht Ht' Et) Hl1c) as Htt.
-  assert (HU : forall Δ j, [ G' ; Δ ⊢[ lD ] ] -> lwf L' j -> [ G' ; Δ ⊢[ lD ] tyU j @ lsuc j ])
-    by (intros; apply wft_U; [discriminate | assumption | rewrite EL; assumption]).
   assert (HUU : [ G' ; ΔL ⊢[ lD ] tyU k ≅ tyU k' @ lsuc k ])
     by (apply eqty_U; [discriminate | exact HΔL | rewrite EL; exact Q]).
-  assert (Ht'R : [ G' ; ΔR ⊢[ lC ] t' : tyU k @ lsuc k ]) by exact (ctxconv_tm HΔ (i := lC) eq_refl Ht').
-  assert (Ht'R' : [ G' ; ΔR ⊢[ lC ] t' : tyU k' @ lsuc k' ]).
-  { eapply wf_conv; [eapply wf_lconv; [exact Ht'R | rewrite EL; apply lequiv_sym, Qs] |].
-    apply eqty_U; [discriminate | exact HΔR | rewrite EL; apply lequiv_sym, Q]. }
-  pose proof (wf_tm_dnf Ht) as Nt. pose proof (wf_tm_dnf Ht'R') as Nt'.
-  destruct (LRtm_escape IHt) as [Ha _]. destruct (LRtm_escape (LRtm_sym IHt)) as [Ha' _].
-  (* the recursive call *)
-  assert (X1 : LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) (lsuc k) ΔL (tyU k) (boxt t))
-                 (mott (wrapMt ((usubst_ty Mt (uup φ))⦃gup (gup (guwk σ))⦄[llift (gwk (gwk (uwk e')))]))
-                    (lsuc k) ΔL (tyU k) (boxt t))
-                 (rectL (lsuc k) ΔL (tyU k) t) (rectR (lsuc k') ΔR (tyU k') t')).
-  { refine (LRtm_conv_r IHt (LRty_sym _)).
-    exact (MotRel_t EP EM G0 Γ0 L' φ Mt Mt' l2 l2' HMt HMt' Hl2 Hφ VMt VMtr VΓ G' σ σ' Θ e' e' Hσ He'l EL
-             (kL := lsuc k) (kR := lsuc k') Hw Qs HΔL HΔ HUU (HU _ _ HΔR Hw')
-             (box_rel_tm (HU _ _ HΔL Hw) Hw Ht Ht' Et) (box_rel_tm (HU _ _ HΔR Hw') Hw' Ht'R' Ht'R' (tm_leq_refl _))). }
+  (* the code and its call *)
+  destruct (tcall (k := lsuc k) HΔL HΔ Hw (lequiv_suc _ _ _ Q) HUU Ht Ht' Et IHt) as (Htt & _ & Ht'R1 & _ & X1).
+  pose proof (ctxconv_tm HΔ (i := lC) eq_refl Ht') as Ht'R.
   pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHt) IHt) Hl2'') as X1r.
   (* the codes *)
   assert (HEl : forall Δ j j' u, lwf L' j -> [ G' ; Δ ⊢[ lC ] u : tyU j @ lsuc j ] -> lequiv L' j j' ->
                   [ G' ; Δ ⊢[ lC ] tyEl j u @ j' ]).
-  { intros Δ j j' u Hj Hu Hjj. eapply wft_lconv; [apply wft_El; [exact Hn | rewrite EL; exact Hj | exact Hu]
+  { intros Δ j j' u Hj Hu Hjj. eapply wft_lconv; [apply wft_El; [discriminate | rewrite EL; exact Hj | exact Hu]
                                                  | rewrite EL; apply lequiv_sym, Hjj]. }
-  assert (Ht'L' : [ G' ; ΔL ⊢[ lC ] t' : tyU k' @ lsuc k' ]) by exact (ctxconv_tm (eqctx_sym_D HΔ) (i := lC) eq_refl Ht'R').
-  set (xsL := rectL (lsuc k) ΔL (tyU k) t :: nil). set (xsR := rectR (lsuc k') ΔR (tyU k') t' :: nil).
-  refine (rec_T_br 3 (k :: nil) (k' :: nil) (GCtx ΔL :: GTm t :: nil) (GCtx ΔR :: GTm t' :: nil) xsL xsR
+  pose proof (ctxconv_tm (eqctx_sym_D HΔ) (i := lC) eq_refl Ht'R1) as Ht'L1.
+  refine (rec_T_br 3 (k :: nil) (k' :: nil) (GCtx ΔL :: GTm t :: nil) (GCtx ΔR :: GTm t' :: nil)
+            (rectL (lsuc k) ΔL (tyU k) t :: nil) (rectR (lsuc k') ΔR (tyU k') t' :: nil)
             ltac:(cbv; lia) eq_refl eq_refl eq_refl ltac:(repeat constructor; assumption)
             ltac:(repeat constructor; assumption) (uext_leqv (Forall2_cons _ _ E (Forall2_nil _)))
-            HΔL HΔ HkL HkR Q (HEl _ _ _ _ Hw Ht (lequiv_refl _ _ Hw)) (HEl _ _ _ _ Hw' Ht'L' (lequiv_sym _ _ _ Q))
-            (HEl _ _ _ _ Hw' Ht'R' (lequiv_refl _ _ Hw')) (conj E Et)
+            HΔL HΔ HkL HkR Q (HEl _ _ _ _ Hw Ht (lequiv_refl _ _ Hw)) (HEl _ _ _ _ Hw' Ht'L1 (lequiv_sym _ _ _ Q))
+            (HEl _ _ _ _ Hw' Ht'R1 (lequiv_refl _ _ Hw')) (conj E Et)
             (GS_El EP EM Hσ HΔL HΔ Ht Ht'R Htt Et)
-            (GS_El EP EM (GSubRel_refl_r EP EM Hσ) HΔR (eqc_refl _ _ _ HΔR) Ht'R' Ht'R'
-               (eqtm_refl _ _ _ _ _ _ (lift_tm (j := lD) Ht'R' Hl1c)) (tm_leq_refl _))
+            (GS_El EP EM (GSubRel_refl_r EP EM Hσ) HΔR (eqc_refl _ _ _ HΔR) Ht'R1 Ht'R1
+               (eqtm_refl _ _ _ _ _ _ (lift_tm (j := lD) Ht'R1 Hl1c)) (tm_leq_refl _))
             _ _ _ _ _ _ _).
   - sr_ctx. exact X1.
   - sr_ctx. exact X1r.
   - res_eq.
   - res_eq.
   - res_eq.
-  - apply redT_El_inst; first [exact (wf_tm_dnf (Hbs 3 ltac:(lia))) | exact Nσ | exact De | exact NΔL
-                              | exact Nt | exact (wf_tm_dnf Ha)].
-  - apply redT_El_inst; first [exact (wf_tm_dnf (Hbs' 3 ltac:(lia))) | exact Nσ' | exact De' | exact NΔR
-                              | exact Nt' | exact (wf_tm_dnf Ha')].
+  - apply redT_El_inst; inst_side 3.
+  - apply redT_El_inst; inst_side 3.
 Qed.
 
 
@@ -1795,32 +1774,20 @@ Lemma rec_t_succ {ΔL ΔR kL kR TL TR t t'} : [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢
 Proof.
   intros HΔL HΔ HkL HkR HTL HTR Ht Ht' Et IHt.
   pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR.
-  pose proof (wf_ctx_dnf HΔL) as NΔL. pose proof (wf_ctx_dnf HΔR) as NΔR.
   assert (Hl1c : lle lC lD) by (unfold lle; cbn; lia).
-  assert (Hw0 : lwf L' lzero) by exact I.
   assert (Hl2g' : lequiv (gL G') (lvsubst l2' φ) (lvsubst l2 φ)) by (rewrite EL; exact (lequiv_sym _ _ _ Hl2)).
   assert (HN0 : forall Δ, [ G' ; Δ ⊢[ lD ] ] -> [ G' ; Δ ⊢[ lD ] tyNat @ lzero ])
     by (intros; apply wft_nat; [discriminate | assumption]).
-  (* the codes *)
-  pose proof (lift_eqtm (j := lD) (static_code_tm Hl1c Ht Ht' Et) Hl1c) as Htt.
-  assert (Ht'R : [ G' ; ΔR ⊢[ lC ] t' : tyNat @ lzero ]) by exact (ctxconv_tm HΔ (i := lC) eq_refl Ht').
-  pose proof (wf_tm_dnf Ht) as Nt. pose proof (wf_tm_dnf Ht'R) as Nt'.
+  (* the code and its call *)
+  destruct (tcall (k := lzero) HΔL HΔ I (lequiv_refl L' lzero I) (eqty_refl _ _ _ _ _ (HN0 _ HΔL)) Ht Ht' Et IHt)
+    as (Htt & Ht'R & _ & _ & X1).
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHt) IHt) Hl2g') as X1r.
   assert (HcS : forall Δ u, [ G' ; Δ ⊢[ lC ] u : tyNat @ lzero ] -> [ G' ; Δ ⊢[ lC ] succ u : tyNat @ lzero ])
     by (intros; apply wf_succ; [discriminate | assumption]).
-  (* the recursive call *)
-  destruct (LRtm_escape IHt) as [Ha _]. destruct (LRtm_escape (LRtm_sym IHt)) as [Ha' _].
-  assert (X1 : LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) lzero ΔL tyNat (boxt t))
-                 (mott (wrapMt ((usubst_ty Mt (uup φ))⦃gup (gup (guwk σ))⦄[llift (gwk (gwk (uwk e')))])) lzero ΔL tyNat (boxt t))
-                 (rectL lzero ΔL tyNat t) (rectR lzero ΔR tyNat t')).
-  { refine (LRtm_conv_r IHt (LRty_sym _)).
-    exact (MotRel_t EP EM G0 Γ0 L' φ Mt Mt' l2 l2' HMt HMt' Hl2 Hφ VMt VMtr VΓ G' σ σ' Θ e' e' Hσ He'l EL
-             Hw0 (lequiv_refl _ _ Hw0) HΔL HΔ (eqty_refl _ _ _ _ _ (HN0 _ HΔL)) (HN0 _ HΔR)
-             (box_rel_tm (HN0 _ HΔL) Hw0 Ht Ht' Et) (box_rel_tm (HN0 _ HΔR) Hw0 Ht'R Ht'R (tm_leq_refl _))). }
-  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHt) IHt) Hl2g') as X1r.
-  set (xsL := rectL lzero ΔL tyNat t :: nil). set (xsR := rectR lzero ΔR tyNat t' :: nil).
-  refine (rec_t_br 9 nil nil (GCtx ΔL :: GTm t :: nil) (GCtx ΔR :: GTm t' :: nil) xsL xsR
+  refine (rec_t_br 9 nil nil (GCtx ΔL :: GTm t :: nil) (GCtx ΔR :: GTm t' :: nil)
+            (rectL lzero ΔL tyNat t :: nil) (rectR lzero ΔR tyNat t' :: nil)
             ltac:(cbv; lia) eq_refl eq_refl eq_refl (Forall_nil _) (Forall_nil _) (fun i => leqv_refl _)
-            HΔL HΔ HkL HkR (lequiv_refl _ _ Hw0) HTL HTR (eqty_refl _ _ _ _ _ (HN0 _ HΔR))
+            HΔL HΔ HkL HkR (lequiv_refl L' lzero I) HTL HTR (eqty_refl _ _ _ _ _ (HN0 _ HΔR))
             (HcS _ _ Ht) (HcS _ _ Ht') (HcS _ _ Ht'R) Et
             (GS_succ EP EM Hσ HΔL HΔ Ht Ht'R Htt Et)
             (GS_succ EP EM (GSubRel_refl_r EP EM Hσ) HΔR (eqc_refl _ _ _ HΔR) Ht'R Ht'R
@@ -1830,10 +1797,8 @@ Proof.
   - res_eq.
   - res_eq.
   - res_eq.
-  - apply redt_succ_inst; first [exact (wf_tm_dnf (Hbs 9 ltac:(lia))) | exact Nσ | exact De | exact NΔL
-                                | exact Nt | exact (wf_tm_dnf Ha)].
-  - apply redt_succ_inst; first [exact (wf_tm_dnf (Hbs' 9 ltac:(lia))) | exact Nσ' | exact De' | exact NΔR
-                                | exact Nt' | exact (wf_tm_dnf Ha')].
+  - apply redt_succ_inst; inst_side 9.
+  - apply redt_succ_inst; inst_side 9.
 Qed.
 
 (** A binder code ([Π], branch 6; [Σ], branch 15): its former [F], typing
@@ -1957,68 +1922,37 @@ Lemma rec_t_natrec {ΔL ΔR kL kR TL TR k k1 M M' s0 s1 z0 z1 t0 t1} :
     (rectL kL ΔL TL (natrec k M s0 z0 t0)) (rectR kR ΔR TR (natrec k1 M' s1 z1 t1)).
 Proof.
   intros HΔL HΔ HkL HkR Hw Hw1 E HTL HTR HM HM' EMM Hs Hs' Es Hz Hz' Ez Ht Ht' Et IHM IHs IHz IHt.
-  pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR. pose proof EL as EL'.
-  pose proof (wf_ctx_dnf HΔL) as NΔL. pose proof (wf_ctx_dnf HΔR) as NΔR.
+  pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR.
   assert (Hn : lC <> lV) by discriminate. assert (Hl1c : lle lC lD) by (unfold lle; cbn; lia).
   assert (Q : lequiv L' k k1) by exact (leqv_lequiv _ _ _ Hw Hw1 E).
   assert (Qg : lequiv (gL G') k k1) by (rewrite EL; exact Q).
-  assert (Hw0 : lwf L' lzero) by exact I.
-  assert (HwL : lwf L' kL) by exact (lequiv_wf_r _ _ _ HkL). assert (HwR : lwf L' kR) by exact (lequiv_wf_r _ _ _ HkR).
-  assert (Hwl1 : lwf L' (lvsubst l1 φ)) by (rewrite <- EL; exact (proj1 HrbL)).
-  assert (Hwl2 : lwf L' (lvsubst l2 φ)) by (rewrite <- EL; exact (proj1 (proj2 HrbL))).
-  assert (Hwl2' : lwf L' (lvsubst l2' φ)) by exact (lequiv_wf_r _ _ _ Hl2).
   assert (Hl1g' : lequiv (gL G') (lvsubst l1' φ) (lvsubst l1 φ)) by (rewrite EL; exact (lequiv_sym _ _ _ Hl1)).
-  assert (Hl2g : lequiv (gL G') (lvsubst l2 φ) (lvsubst l2' φ)) by (rewrite EL; exact Hl2).
   assert (Hl2g' : lequiv (gL G') (lvsubst l2' φ) (lvsubst l2 φ)) by (rewrite EL; exact (lequiv_sym _ _ _ Hl2)).
-  assert (HkLg : lequiv (gL G') k kL) by (rewrite EL; exact HkL).
-  assert (HkRg : lequiv (gL G') k kR) by (rewrite EL; exact HkR).
-  (* contexts *)
   assert (HN0 : forall Δ, [ G' ; Δ ⊢[ lD ] ] -> [ G' ; Δ ⊢[ lD ] tyNat @ lzero ])
     by (intros; apply wft_nat; [discriminate | assumption]).
-  assert (HNe : forall Δ, [ G' ; Δ ⊢[ lD ] ] -> [ G' ; Δ ,, tyNat @ lzero ⊢[ lD ] ])
-    by (intros; apply wfc_ext; [assumption | apply HN0; assumption | exact I]).
   assert (CN : [ G' ⊢[ lD ] ΔL ,, tyNat @ lzero ≅ ΔR ,, tyNat @ lzero ]).
   { apply eqc_ext; [exact HΔ | exact (HN0 _ HΔL) | apply eqty_refl, HN0, HΔL | apply lequiv_refl; exact I]. }
-  pose proof (HNe _ HΔL) as HΔLN. pose proof (HNe _ HΔR) as HΔRN.
-  pose proof (lift_ty (j := lD) HM Hl1c) as HMD.
-  pose proof (lift_eqty (j := lD) (static_code_ty Hl1c HM HM' EMM) Hl1c) as HMM.
-  assert (CNM : [ G' ⊢[ lD ] ΔL ,, tyNat @ lzero ,, M @ k ≅ ΔR ,, tyNat @ lzero ,, M' @ k1 ])
-    by (apply eqc_ext; [exact CN | exact HMD | exact HMM | exact Qg]).
-  assert (CNMk : [ G' ⊢[ lD ] ΔL ,, tyNat @ lzero ,, M @ k ≅ ΔR ,, tyNat @ lzero ,, M' @ k ])
-    by (apply eqc_ext; [exact CN | exact HMD | exact HMM | apply lequiv_refl; rewrite EL; exact Hw]).
-  assert (HΔLNM : [ G' ; ΔL ,, tyNat @ lzero ,, M @ k ⊢[ lD ] ]) by (apply wfc_ext; [exact HΔLN | exact HMD | rewrite EL; exact Hw]).
-  pose proof (eqctx_wf_r (i := lD) eq_refl CNM) as HΔRNM.
-  pose proof (eqctx_wf_r (i := lD) eq_refl CNMk) as HΔRNMk.
+  (* the motive and its call *)
+  destruct (Tcall (eqctx_wf_l (i := lD) eq_refl CN) CN Hw Q HM HM' EMM IHM) as (HMM & HM'R & HM'R1 & CNMk & CNM & X1).
+  pose proof (eqctx_wf_l (i := lD) eq_refl CNM) as HΔLNM.
   (* the motive's instances *)
-  assert (Hz0 : forall Δ, [ G' ; Δ ⊢[ lD ] ] -> [ G' ; Δ ⊢[ lD ] zero : tyNat @ lzero ])
-    by (intros; apply wf_zero; [discriminate | assumption]).
   assert (HM0 : [ G' ; ΔL ⊢[ lD ] M[lsingle zero] ≅ M'[lsingle zero] @ k ])
-    by exact (eqty_single (i := lD) eq_refl HMM (Hz0 _ HΔL)).
+    by exact (eqty_single (i := lD) eq_refl HMM (wf_zero _ lD _ ltac:(discriminate) HΔL)).
   assert (HMs : [ G' ; ΔL ,, tyNat @ lzero ,, M @ k ⊢[ lD ] M[lsucc] ≅ M'[lsucc] @ k ])
     by exact (eqty_subst (i := lD) eq_refl HMM (lsub_wf_lsucc (i := lD) eq_refl ltac:(discriminate) HΔLNM)).
-  pose proof (lift_tm (j := lD) Ht Hl1c) as HtD. pose proof (lift_tm (j := lD) Ht' Hl1c) as Ht'D.
-  pose proof (lift_eqtm (j := lD) (static_code_tm Hl1c Ht Ht' Et) Hl1c) as Htt.
-  pose proof (lift_eqtm (j := lD) (static_code_tm Hl1c Hs Hs' Es) Hl1c) as Hss.
-  pose proof (lift_eqtm (j := lD) (static_code_tm Hl1c Hz Hz' Ez) Hl1c) as Hzz.
+  (* the cases and the scrutinee, and their calls *)
+  destruct (tcall HΔL HΔ Hw Q HM0 Hs Hs' Es IHs) as (Hss & Hs'R & Hs'R1 & _ & X2).
+  destruct (tcall HΔLNM CNM Hw Q HMs Hz Hz' Ez IHz) as (Hzz & _ & Hz'R1 & _ & X3).
+  assert (Hz'R : [ G' ; ΔR ,, tyNat @ lzero ,, M' @ k ⊢[ lC ] z1 : M'[lsucc] @ k ]).
+  { refine (ctxconv_tm CNMk (i := lC) eq_refl _). eapply wf_conv; [exact Hz' | apply eqty_sym, HMs]. }
+  destruct (tcall (k := lzero) HΔL HΔ I (lequiv_refl L' lzero I) (eqty_refl _ _ _ _ _ (HN0 _ HΔL)) Ht Ht' Et IHt)
+    as (Htt & Ht'R & _ & _ & X4).
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHM) IHM) Hl1g') as X1r.
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHs) IHs) Hl2g') as X2r.
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHz) IHz) Hl2g') as X3r.
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHt) IHt) Hl2g') as X4r.
   assert (HMtt : [ G' ; ΔL ⊢[ lD ] M[lsingle t0] ≅ M'[lsingle t1] @ k ])
-    by exact (eqty_subst_single_D HMM (lift_ty (j := lD) HM' Hl1c) Htt HtD Ht'D).
-  (* the right pieces *)
-  assert (HM'R : [ G' ; ΔR ,, tyNat @ lzero ⊢[ lC ] M' @ k ]) by exact (ctxconv_ty CN (i := lC) eq_refl HM').
-  assert (HM'R1 : [ G' ; ΔR ,, tyNat @ lzero ⊢[ lC ] M' @ k1 ]) by (eapply wft_lconv; [exact HM'R | apply lequiv_sym, Qg]).
-  assert (Hs'L2 : [ G' ; ΔL ⊢[ lC ] s1 : M'[lsingle zero] @ k ]) by (eapply wf_conv; [exact Hs' | apply eqty_sym, HM0]).
-  assert (Hs'R : [ G' ; ΔR ⊢[ lC ] s1 : M'[lsingle zero] @ k ]) by exact (ctxconv_tm HΔ (i := lC) eq_refl Hs'L2).
-  assert (Hs'R1 : [ G' ; ΔR ⊢[ lC ] s1 : M'[lsingle zero] @ k1 ]) by (eapply wf_lconv; [exact Hs'R | apply lequiv_sym, Qg]).
-  assert (Hz'L2 : [ G' ; ΔL ,, tyNat @ lzero ,, M @ k ⊢[ lC ] z1 : M'[lsucc] @ k ])
-    by (eapply wf_conv; [exact Hz' | apply eqty_sym, HMs]).
-  assert (Hz'R : [ G' ; ΔR ,, tyNat @ lzero ,, M' @ k ⊢[ lC ] z1 : M'[lsucc] @ k ])
-    by exact (ctxconv_tm CNMk (i := lC) eq_refl Hz'L2).
-  assert (Hz'R1 : [ G' ; ΔR ,, tyNat @ lzero ,, M' @ k1 ⊢[ lC ] z1 : M'[lsucc] @ k1 ])
-    by (eapply wf_lconv; [exact (ctxconv_tm CNM (i := lC) eq_refl Hz'L2) | apply lequiv_sym, Qg]).
-  assert (Ht'R : [ G' ; ΔR ⊢[ lC ] t1 : tyNat @ lzero ]) by exact (ctxconv_tm HΔ (i := lC) eq_refl Ht').
-  pose proof (wf_ty_dnf HM) as NM. pose proof (wf_ty_dnf HM'R) as NM'.
-  pose proof (wf_tm_dnf Hs) as Ns. pose proof (wf_tm_dnf Hs'R) as Ns'.
-  pose proof (wf_tm_dnf Hz) as Nz. pose proof (wf_tm_dnf Hz'R) as Nz'.
-  pose proof (wf_tm_dnf Ht) as Nt. pose proof (wf_tm_dnf Ht'R) as Nt'.
+    by exact (eqty_subst_single_D HMM (lift_ty (j := lD) HM' Hl1c) Htt (lift_tm (j := lD) Ht Hl1c) (lift_tm (j := lD) Ht' Hl1c)).
   (* the codes *)
   assert (HcL0 : [ G' ; ΔL ⊢[ lC ] natrec k M s0 z0 t0 : M[lsingle t0] @ k ])
     by (apply wf_natrec; [exact Hn | rewrite EL; exact Hw | exact HM | exact Hs | exact Hz | exact Ht]).
@@ -2026,49 +1960,6 @@ Proof.
     by (apply wf_natrec; [exact Hn | rewrite EL; exact Hw1 | exact HM'R1 | exact Hs'R1 | exact Hz'R1 | exact Ht'R]).
   assert (HcRL : [ G' ; ΔL ⊢[ lC ] natrec k1 M' s1 z1 t1 : M[lsingle t0] @ k ]).
   { eapply wf_conv; [eapply wf_lconv; [exact (ctxconv_tm (eqctx_sym_D HΔ) (i := lC) eq_refl HcR0) | exact Qg] | exact HMtt]. }
-  assert (Ec : tm_leq (natrec k M s0 z0 t0) (natrec k1 M' s1 z1 t1)) by (cbn; repeat split; assumption).
-  (* the recursive calls *)
-  destruct (LRtm_escape IHM) as [Ha1 _]. destruct (LRtm_escape (LRtm_sym IHM)) as [Ha1' _].
-  destruct (LRtm_escape IHs) as [Ha2 _]. destruct (LRtm_escape (LRtm_sym IHs)) as [Ha2' _].
-  destruct (LRtm_escape IHz) as [Ha3 _]. destruct (LRtm_escape (LRtm_sym IHz)) as [Ha3' _].
-  destruct (LRtm_escape IHt) as [Ha4 _]. destruct (LRtm_escape (LRtm_sym IHt)) as [Ha4' _].
-  assert (HM'0 : [ G' ; ΔR ⊢[ lD ] M'[lsingle zero] @ k1 ])
-    by exact (wf_ty_single (i := lD) eq_refl (lift_ty (j := lD) HM'R1 Hl1c) (Hz0 _ HΔR)).
-  assert (HM's : [ G' ; ΔR ,, tyNat @ lzero ,, M' @ k1 ⊢[ lD ] M'[lsucc] @ k1 ])
-    by exact (wf_ty_subst (i := lD) eq_refl (lift_ty (j := lD) HM'R1 Hl1c) (lsub_wf_lsucc (i := lD) eq_refl ltac:(discriminate) HΔRNM)).
-  assert (X1 : LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) k (ΔL ,, tyNat @ lzero) (boxT M))
-                 (motT (wrapMT ((usubst_ty MT (uup φ))⦃gup (guwk σ)⦄[llift (gwk (uwk e'))])) k (ΔL ,, tyNat @ lzero) (boxT M))
-                 (recTL k (ΔL ,, tyNat @ lzero) M) (recTR k1 (ΔR ,, tyNat @ lzero) M')).
-  { refine (LRtm_conv_r IHM (LRty_sym _)).
-    exact (MotRel_T EP EM G0 Γ0 L' φ MT MT' l1 l1' HMT HMT' Hl1 Hφ VMT VMTr VΓ G' σ σ' Θ e' e' Hσ He'l EL
-             Hw Q HΔLN CN (box_rel HΔLN Hw HM HM' EMM) (box_rel HΔRN Hw1 HM'R1 HM'R1 (ty_leq_refl _))). }
-  assert (X2 : LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) k ΔL (M[lsingle zero]) (boxt s0))
-                 (mott (wrapMt ((usubst_ty Mt (uup φ))⦃gup (gup (guwk σ))⦄[llift (gwk (gwk (uwk e')))])) k ΔL (M[lsingle zero]) (boxt s0))
-                 (rectL k ΔL (M[lsingle zero]) s0) (rectR k1 ΔR (M'[lsingle zero]) s1)).
-  { refine (LRtm_conv_r IHs (LRty_sym _)).
-    exact (MotRel_t EP EM G0 Γ0 L' φ Mt Mt' l2 l2' HMt HMt' Hl2 Hφ VMt VMtr VΓ G' σ σ' Θ e' e' Hσ He'l EL
-             (kL := k) (kR := k1) Hw Q HΔL HΔ HM0 HM'0
-             (box_rel_tm (eqty_wf_l (i := lD) eq_refl HM0) Hw Hs Hs' Es) (box_rel_tm HM'0 Hw1 Hs'R1 Hs'R1 (tm_leq_refl _))). }
-  assert (X3 : LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) k (ΔL ,, tyNat @ lzero ,, M @ k) (M[lsucc]) (boxt z0))
-                 (mott (wrapMt ((usubst_ty Mt (uup φ))⦃gup (gup (guwk σ))⦄[llift (gwk (gwk (uwk e')))]))
-                    k (ΔL ,, tyNat @ lzero ,, M @ k) (M[lsucc]) (boxt z0))
-                 (rectL k (ΔL ,, tyNat @ lzero ,, M @ k) (M[lsucc]) z0) (rectR k1 (ΔR ,, tyNat @ lzero ,, M' @ k1) (M'[lsucc]) z1)).
-  { refine (LRtm_conv_r IHz (LRty_sym _)).
-    exact (MotRel_t EP EM G0 Γ0 L' φ Mt Mt' l2 l2' HMt HMt' Hl2 Hφ VMt VMtr VΓ G' σ σ' Θ e' e' Hσ He'l EL
-             (kL := k) (kR := k1) Hw Q HΔLNM CNM HMs HM's
-             (box_rel_tm (eqty_wf_l (i := lD) eq_refl HMs) Hw Hz Hz' Ez) (box_rel_tm HM's Hw1 Hz'R1 Hz'R1 (tm_leq_refl _))). }
-  assert (X4 : LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) lzero ΔL tyNat (boxt t0))
-                 (mott (wrapMt ((usubst_ty Mt (uup φ))⦃gup (gup (guwk σ))⦄[llift (gwk (gwk (uwk e')))])) lzero ΔL tyNat (boxt t0))
-                 (rectL lzero ΔL tyNat t0) (rectR lzero ΔR tyNat t1)).
-  { refine (LRtm_conv_r IHt (LRty_sym _)).
-    exact (MotRel_t EP EM G0 Γ0 L' φ Mt Mt' l2 l2' HMt HMt' Hl2 Hφ VMt VMtr VΓ G' σ σ' Θ e' e' Hσ He'l EL
-             Hw0 (lequiv_refl _ _ Hw0) HΔL HΔ (eqty_refl _ _ _ _ _ (HN0 _ HΔL)) (HN0 _ HΔR)
-             (box_rel_tm (HN0 _ HΔL) Hw0 Ht Ht' Et) (box_rel_tm (HN0 _ HΔR) Hw0 Ht'R Ht'R (tm_leq_refl _))). }
-  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHM) IHM) Hl1g') as X1r.
-  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHs) IHs) Hl2g') as X2r.
-  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHz) IHz) Hl2g') as X3r.
-  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHt) IHt) Hl2g') as X4r.
-  (* the reducts *)
   set (xsL := recTL k (ΔL ,, tyNat @ lzero) M :: rectL k ΔL (M[lsingle zero]) s0 ::
               rectL k (ΔL ,, tyNat @ lzero ,, M @ k) (M[lsucc]) z0 :: rectL lzero ΔL tyNat t0 :: nil).
   set (xsR := recTR k1 (ΔR ,, tyNat @ lzero) M' :: rectR k1 ΔR (M'[lsingle zero]) s1 ::
@@ -2077,7 +1968,8 @@ Proof.
             (GCtx ΔR :: GTy M' :: GTm s1 :: GTm z1 :: GTm t1 :: nil) xsL xsR ltac:(cbv; lia) eq_refl eq_refl eq_refl
             ltac:(repeat constructor; assumption) ltac:(repeat constructor; assumption)
             (uext_leqv (Forall2_cons _ _ E (Forall2_nil _)))
-            HΔL HΔ HkL HkR Q HTL HTR (ctxconv_eqty HΔ (i := lD) eq_refl HMtt) HcL0 HcRL HcR0 Ec
+            HΔL HΔ HkL HkR Q HTL HTR (ctxconv_eqty HΔ (i := lD) eq_refl HMtt) HcL0 HcRL HcR0
+            ltac:(cbn; repeat split; assumption)
             (GS_natrec EP EM Hσ HΔL HΔ HM HM'R HMM EMM Hs Hs'R Hss Es Hz Hz'R Hzz Ez Ht Ht'R Htt Et)
             (GS_natrec EP EM (GSubRel_refl_r EP EM Hσ) HΔR (eqc_refl _ _ _ HΔR) HM'R1 HM'R1
                (eqty_refl _ _ _ _ _ (lift_ty (j := lD) HM'R1 Hl1c)) (ty_leq_refl _)
@@ -2089,10 +1981,8 @@ Proof.
   - res_eq.
   - res_eq.
   - res_eq.
-  - apply redt_natrec_inst; first [exact (wf_tm_dnf (Hbs 10 ltac:(lia))) | exact Nσ | exact De | assumption
-                                  | exact (wf_tm_dnf Ha1) | exact (wf_tm_dnf Ha2) | exact (wf_tm_dnf Ha3) | exact (wf_tm_dnf Ha4)].
-  - apply redt_natrec_inst; first [exact (wf_tm_dnf (Hbs' 10 ltac:(lia))) | exact Nσ' | exact De' | assumption
-                                  | exact (wf_tm_dnf Ha1') | exact (wf_tm_dnf Ha2') | exact (wf_tm_dnf Ha3') | exact (wf_tm_dnf Ha4')].
+  - apply redt_natrec_inst; inst_side 10.
+  - apply redt_natrec_inst; inst_side 10.
 Qed.
 
 Lemma rec_t_app {ΔL ΔR kL kR TL TR k k' k1 k1' A B A' B' f f' a a'} :
@@ -2117,67 +2007,37 @@ Lemma rec_t_app {ΔL ΔR kL kR TL TR k k' k1 k1' A B A' B' f f' a a'} :
     (rectL kL ΔL TL (app f k k' A B a)) (rectR kR ΔR TR (app f' k1 k1' A' B' a')).
 Proof.
   intros HΔL HΔ HkL HkR Hw Hw' Hw1 Hw1' E E' HTL HTR HA HA' EA HB HB' EB Hf Hf' Ef Ha Ha' Ea IHA IHB IHf IHa.
-  pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR. pose proof EL as EL'.
-  pose proof (wf_ctx_dnf HΔL) as NΔL. pose proof (wf_ctx_dnf HΔR) as NΔR.
+  pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR.
   assert (Hn : lC <> lV) by discriminate. assert (Hl1c : lle lC lD) by (unfold lle; cbn; lia).
   assert (Q : lequiv L' k k1) by exact (leqv_lequiv _ _ _ Hw Hw1 E).
   assert (Q' : lequiv L' k' k1') by exact (leqv_lequiv _ _ _ Hw' Hw1' E').
   assert (Qg : lequiv (gL G') k k1) by (rewrite EL; exact Q). assert (Qg' : lequiv (gL G') k' k1') by (rewrite EL; exact Q').
   assert (Qm : lequiv L' (lmax k k') (lmax k1 k1')) by (apply lequiv_max; assumption).
   assert (Qmg : lequiv (gL G') (lmax k k') (lmax k1 k1')) by (rewrite EL; exact Qm).
-  assert (Hwm : lwf L' (lmax k k')) by (cbn; auto). assert (Hwm1 : lwf L' (lmax k1 k1')) by (cbn; auto).
-  assert (HwL : lwf L' kL) by exact (lequiv_wf_r _ _ _ HkL). assert (HwR : lwf L' kR) by exact (lequiv_wf_r _ _ _ HkR).
-  assert (Hwl1 : lwf L' (lvsubst l1 φ)) by (rewrite <- EL; exact (proj1 HrbL)).
-  assert (Hwl2 : lwf L' (lvsubst l2 φ)) by (rewrite <- EL; exact (proj1 (proj2 HrbL))).
-  assert (Hwl2' : lwf L' (lvsubst l2' φ)) by exact (lequiv_wf_r _ _ _ Hl2).
+  assert (Hwm : lwf L' (lmax k k')) by (cbn; auto).
   assert (Hl1g' : lequiv (gL G') (lvsubst l1' φ) (lvsubst l1 φ)) by (rewrite EL; exact (lequiv_sym _ _ _ Hl1)).
-  assert (Hl2g : lequiv (gL G') (lvsubst l2 φ) (lvsubst l2' φ)) by (rewrite EL; exact Hl2).
   assert (Hl2g' : lequiv (gL G') (lvsubst l2' φ) (lvsubst l2 φ)) by (rewrite EL; exact (lequiv_sym _ _ _ Hl2)).
-  assert (HkLg : lequiv (gL G') k' kL) by (rewrite EL; exact HkL).
-  assert (HkRg : lequiv (gL G') k' kR) by (rewrite EL; exact HkR).
-  (* declarative facts about the pieces *)
-  pose proof (lift_ty (j := lD) HA Hl1c) as HAD. pose proof (lift_ty (j := lD) HB Hl1c) as HBD.
-  pose proof (lift_eqty (j := lD) (static_code_ty Hl1c HA HA' EA) Hl1c) as HAA.
-  pose proof (lift_eqty (j := lD) (static_code_ty Hl1c HB HB' EB) Hl1c) as HBB.
-  pose proof (lift_eqtm (j := lD) (static_code_tm Hl1c Hf Hf' Ef) Hl1c) as Hff.
-  pose proof (lift_eqtm (j := lD) (static_code_tm Hl1c Ha Ha' Ea) Hl1c) as Haa.
-  pose proof (lift_tm (j := lD) Ha Hl1c) as HaD. pose proof (lift_tm (j := lD) Ha' Hl1c) as Ha'D.
-  assert (HΔLA : [ G' ; ΔL ,, A @ k ⊢[ lD ] ]) by (apply wfc_ext; [exact HΔL | exact HAD | rewrite EL; exact Hw]).
-  assert (CA : [ G' ⊢[ lD ] ΔL ,, A @ k ≅ ΔR ,, A' @ k ]).
-  { apply eqc_ext; [exact HΔ | exact HAD | exact HAA | apply lequiv_refl; rewrite EL; exact Hw]. }
-  assert (CA1 : [ G' ⊢[ lD ] ΔL ,, A @ k ≅ ΔR ,, A' @ k1 ]) by (apply eqc_ext; [exact HΔ | exact HAD | exact HAA | exact Qg]).
-  pose proof (eqctx_wf_r (i := lD) eq_refl CA1) as HΔRA1.
+  (* the pieces and their calls *)
+  destruct (Tcall HΔL HΔ Hw Q HA HA' EA IHA) as (HAA & HA'R & HA'R1 & CA & CA1 & X1).
+  destruct (Tcall (eqctx_wf_l (i := lD) eq_refl CA) CA1 Hw' Q' HB HB' EB IHB) as (HBB & _ & HB'R1 & _ & _ & X2).
+  pose proof (ctxconv_ty CA (i := lC) eq_refl HB') as HB'R.
+  pose proof (lift_ty (j := lD) HA'R1 Hl1c) as HA'R1D. pose proof (lift_ty (j := lD) HB'R1 Hl1c) as HB'R1D.
   assert (HPP : [ G' ; ΔL ⊢[ lD ] tyPi k k' A B ≅ tyPi k1 k1' A' B' @ lmax k k' ])
-    by (apply eqty_pi; [discriminate | exact Qg | exact Qg' | exact HAD | exact HAA | exact HBB]).
-  assert (HPPk : [ G' ; ΔL ⊢[ lD ] tyPi k k' A B ≅ tyPi k k' A' B' @ lmax k k' ])
-    by (apply eqty_pi; [discriminate | apply lequiv_refl; rewrite EL; exact Hw | apply lequiv_refl; rewrite EL; exact Hw'
-                       | exact HAD | exact HAA | exact HBB]).
-  pose proof (eqty_wf_l (i := lD) eq_refl HPP) as HPD.
+    by (apply eqty_pi; [discriminate | exact Qg | exact Qg' | exact (lift_ty (j := lD) HA Hl1c) | exact HAA | exact HBB]).
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHA) IHA) Hl1g') as X1r.
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHB) IHB) Hl1g') as X2r.
+  (* the function and the argument, and their calls *)
+  destruct (tcall HΔL HΔ Hwm Qm HPP Hf Hf' Ef IHf) as (Hff & Hf'R0 & Hf'R1 & _ & X3).
+  assert (Hf'R : [ G' ; ΔR ⊢[ lC ] f' : tyPi k k' A' B' @ lmax k k' ]).
+  { pose proof (lift_ty (j := lD) HA'R Hl1c) as HA'RD.
+    eapply wf_conv; [exact Hf'R0 |].
+    apply eqty_pi; [discriminate | exact Qg | exact Qg' | exact HA'RD | apply eqty_refl, HA'RD
+                   | apply eqty_refl, (lift_ty (j := lD) HB'R Hl1c)]. }
+  destruct (tcall HΔL HΔ Hw Q HAA Ha Ha' Ea IHa) as (Haa & Ha'R & Ha'R1 & _ & X4).
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHf) IHf) Hl2g') as X3r.
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHa) IHa) Hl2g') as X4r.
   assert (HBa : [ G' ; ΔL ⊢[ lD ] B[lsingle a] ≅ B'[lsingle a'] @ k' ])
-    by exact (eqty_subst_single_D HBB (lift_ty (j := lD) HB' Hl1c) Haa HaD Ha'D).
-  (* the right pieces, in the right context: at the left levels and at their own *)
-  assert (HA'R : [ G' ; ΔR ⊢[ lC ] A' @ k ]) by exact (ctxconv_ty HΔ (i := lC) eq_refl HA').
-  assert (HA'R1 : [ G' ; ΔR ⊢[ lC ] A' @ k1 ]) by (eapply wft_lconv; [exact HA'R | apply lequiv_sym, Qg]).
-  pose proof (lift_ty (j := lD) HA'R1 Hl1c) as HA'R1D.
-  assert (HB'R : [ G' ; ΔR ,, A' @ k ⊢[ lC ] B' @ k' ]) by exact (ctxconv_ty CA (i := lC) eq_refl HB').
-  assert (HB'R1 : [ G' ; ΔR ,, A' @ k1 ⊢[ lC ] B' @ k1' ])
-    by (eapply wft_lconv; [exact (ctxconv_ty CA1 (i := lC) eq_refl HB') | apply lequiv_sym, Qg']).
-  pose proof (lift_ty (j := lD) HB'R1 Hl1c) as HB'R1D.
-  assert (Hf'L2 : [ G' ; ΔL ⊢[ lC ] f' : tyPi k k' A' B' @ lmax k k' ]) by (eapply wf_conv; [exact Hf' | apply eqty_sym, HPPk]).
-  assert (Hf'R : [ G' ; ΔR ⊢[ lC ] f' : tyPi k k' A' B' @ lmax k k' ]) by exact (ctxconv_tm HΔ (i := lC) eq_refl Hf'L2).
-  assert (Hf'R1 : [ G' ; ΔR ⊢[ lC ] f' : tyPi k1 k1' A' B' @ lmax k1 k1' ]).
-  { eapply wf_lconv; [| apply lequiv_sym, Qmg]. eapply wf_conv; [exact Hf'R |].
-    eapply eqty_lconv; [| exact Qmg].
-    apply eqty_pi; [discriminate | apply lequiv_sym, Qg | apply lequiv_sym, Qg' | exact HA'R1D
-                   | apply eqty_refl, HA'R1D | apply eqty_refl, HB'R1D]. }
-  pose proof (wf_tm_ty (i := lD) eq_refl (lift_tm (j := lD) Hf'R1 Hl1c)) as HPR1.
-  assert (Ha'L2 : [ G' ; ΔL ⊢[ lC ] a' : A' @ k ]) by (eapply wf_conv; [exact Ha' | apply eqty_sym, HAA]).
-  assert (Ha'R : [ G' ; ΔR ⊢[ lC ] a' : A' @ k ]) by exact (ctxconv_tm HΔ (i := lC) eq_refl Ha'L2).
-  assert (Ha'R1 : [ G' ; ΔR ⊢[ lC ] a' : A' @ k1 ]) by (eapply wf_lconv; [exact Ha'R | apply lequiv_sym, Qg]).
-  pose proof (wf_ty_dnf HA) as NA. pose proof (wf_ty_dnf HA'R) as NA'.
-  pose proof (wf_ty_dnf HB) as NB. pose proof (wf_ty_dnf HB'R) as NB'.
-  pose proof (wf_tm_dnf Hf) as Nf. pose proof (wf_tm_dnf Hf'R) as Nf'.
-  pose proof (wf_tm_dnf Ha) as Na. pose proof (wf_tm_dnf Ha'R) as Na'.
+    by exact (eqty_subst_single_D HBB (lift_ty (j := lD) HB' Hl1c) Haa (lift_tm (j := lD) Ha Hl1c) (lift_tm (j := lD) Ha' Hl1c)).
   (* the codes *)
   assert (HcL0 : [ G' ; ΔL ⊢[ lC ] app f k k' A B a : B[lsingle a] @ k' ])
     by (apply wf_app; [exact Hn | rewrite EL; exact Hw | rewrite EL; exact Hw' | exact HA | exact HB | exact Hf | exact Ha]).
@@ -2185,51 +2045,14 @@ Proof.
     by (apply wf_app; [exact Hn | rewrite EL; exact Hw1 | rewrite EL; exact Hw1' | exact HA'R1 | exact HB'R1 | exact Hf'R1 | exact Ha'R1]).
   assert (HcRL : [ G' ; ΔL ⊢[ lC ] app f' k1 k1' A' B' a' : B[lsingle a] @ k' ]).
   { eapply wf_conv; [eapply wf_lconv; [exact (ctxconv_tm (eqctx_sym_D HΔ) (i := lC) eq_refl HcR0) | exact Qg'] | exact HBa]. }
-  assert (Ec : tm_leq (app f k k' A B a) (app f' k1 k1' A' B' a')) by (cbn; repeat split; assumption).
-  (* the recursive calls *)
-  destruct (LRtm_escape IHA) as [Ha1 _]. destruct (LRtm_escape (LRtm_sym IHA)) as [Ha1' _].
-  destruct (LRtm_escape IHB) as [Ha2 _]. destruct (LRtm_escape (LRtm_sym IHB)) as [Ha2' _].
-  destruct (LRtm_escape IHf) as [Ha3 _]. destruct (LRtm_escape (LRtm_sym IHf)) as [Ha3' _].
-  destruct (LRtm_escape IHa) as [Ha4 _]. destruct (LRtm_escape (LRtm_sym IHa)) as [Ha4' _].
-  assert (X1 : LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) k ΔL (boxT A))
-                 (motT (wrapMT ((usubst_ty MT (uup φ))⦃gup (guwk σ)⦄[llift (gwk (uwk e'))])) k ΔL (boxT A))
-                 (recTL k ΔL A) (recTR k1 ΔR A')).
-  { refine (LRtm_conv_r IHA (LRty_sym _)).
-    exact (MotRel_T EP EM G0 Γ0 L' φ MT MT' l1 l1' HMT HMT' Hl1 Hφ VMT VMTr VΓ G' σ σ' Θ e' e' Hσ He'l EL
-             Hw Q HΔL HΔ (box_rel HΔL Hw HA HA' EA) (box_rel HΔR Hw1 HA'R1 HA'R1 (ty_leq_refl _))). }
-  assert (X2 : LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) k' (ΔL ,, A @ k) (boxT B))
-                 (motT (wrapMT ((usubst_ty MT (uup φ))⦃gup (guwk σ)⦄[llift (gwk (uwk e'))])) k' (ΔL ,, A @ k) (boxT B))
-                 (recTL k' (ΔL ,, A @ k) B) (recTR k1' (ΔR ,, A' @ k1) B')).
-  { refine (LRtm_conv_r IHB (LRty_sym _)).
-    exact (MotRel_T EP EM G0 Γ0 L' φ MT MT' l1 l1' HMT HMT' Hl1 Hφ VMT VMTr VΓ G' σ σ' Θ e' e' Hσ He'l EL
-             Hw' Q' HΔLA CA1 (box_rel HΔLA Hw' HB HB' EB) (box_rel HΔRA1 Hw1' HB'R1 HB'R1 (ty_leq_refl _))). }
-  assert (X3 : LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) (lmax k k') ΔL (tyPi k k' A B) (boxt f))
-                 (mott (wrapMt ((usubst_ty Mt (uup φ))⦃gup (gup (guwk σ))⦄[llift (gwk (gwk (uwk e')))]))
-                    (lmax k k') ΔL (tyPi k k' A B) (boxt f))
-                 (rectL (lmax k k') ΔL (tyPi k k' A B) f) (rectR (lmax k1 k1') ΔR (tyPi k1 k1' A' B') f')).
-  { refine (LRtm_conv_r IHf (LRty_sym _)).
-    exact (MotRel_t EP EM G0 Γ0 L' φ Mt Mt' l2 l2' HMt HMt' Hl2 Hφ VMt VMtr VΓ G' σ σ' Θ e' e' Hσ He'l EL
-             (kL := lmax k k') (kR := lmax k1 k1') Hwm Qm HΔL HΔ HPP HPR1
-             (box_rel_tm HPD Hwm Hf Hf' Ef) (box_rel_tm HPR1 Hwm1 Hf'R1 Hf'R1 (tm_leq_refl _))). }
-  assert (X4 : LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) k ΔL A (boxt a))
-                 (mott (wrapMt ((usubst_ty Mt (uup φ))⦃gup (gup (guwk σ))⦄[llift (gwk (gwk (uwk e')))])) k ΔL A (boxt a))
-                 (rectL k ΔL A a) (rectR k1 ΔR A' a')).
-  { refine (LRtm_conv_r IHa (LRty_sym _)).
-    exact (MotRel_t EP EM G0 Γ0 L' φ Mt Mt' l2 l2' HMt HMt' Hl2 Hφ VMt VMtr VΓ G' σ σ' Θ e' e' Hσ He'l EL
-             (kL := k) (kR := k1) Hw Q HΔL HΔ HAA HA'R1D
-             (box_rel_tm HAD Hw Ha Ha' Ea) (box_rel_tm HA'R1D Hw1 Ha'R1 Ha'R1 (tm_leq_refl _))). }
-  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHA) IHA) Hl1g') as X1r.
-  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHB) IHB) Hl1g') as X2r.
-  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHf) IHf) Hl2g') as X3r.
-  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHa) IHa) Hl2g') as X4r.
-  (* the reducts *)
   set (xsL := recTL k ΔL A :: recTL k' (ΔL ,, A @ k) B :: rectL (lmax k k') ΔL (tyPi k k' A B) f :: rectL k ΔL A a :: nil).
   set (xsR := recTR k1 ΔR A' :: recTR k1' (ΔR ,, A' @ k1) B' :: rectR (lmax k1 k1') ΔR (tyPi k1 k1' A' B') f' :: rectR k1 ΔR A' a' :: nil).
   refine (rec_t_br 12 (k :: k' :: nil) (k1 :: k1' :: nil) (GCtx ΔL :: GTy A :: GTy B :: GTm f :: GTm a :: nil)
             (GCtx ΔR :: GTy A' :: GTy B' :: GTm f' :: GTm a' :: nil) xsL xsR ltac:(cbv; lia) eq_refl eq_refl eq_refl
             ltac:(repeat constructor; assumption) ltac:(repeat constructor; assumption)
             (uext_leqv (Forall2_cons _ _ E (Forall2_cons _ _ E' (Forall2_nil _))))
-            HΔL HΔ HkL HkR Q' HTL HTR (ctxconv_eqty HΔ (i := lD) eq_refl HBa) HcL0 HcRL HcR0 Ec
+            HΔL HΔ HkL HkR Q' HTL HTR (ctxconv_eqty HΔ (i := lD) eq_refl HBa) HcL0 HcRL HcR0
+            ltac:(cbn; repeat split; assumption)
             (GS_app EP EM Hσ HΔL HΔ HA HA'R HAA EA HB HB'R HBB EB Hf Hf'R Hff Ef Ha Ha'R Haa Ea)
             (GS_app EP EM (GSubRel_refl_r EP EM Hσ) HΔR (eqc_refl _ _ _ HΔR) HA'R1 HA'R1
                (eqty_refl _ _ _ _ _ HA'R1D) (ty_leq_refl _) HB'R1 HB'R1 (eqty_refl _ _ _ _ _ HB'R1D) (ty_leq_refl _)
@@ -2240,10 +2063,8 @@ Proof.
   - res_eq.
   - res_eq.
   - res_eq.
-  - apply redt_app_inst; first [exact (wf_tm_dnf (Hbs 12 ltac:(lia))) | exact Nσ | exact De | assumption
-                               | exact (wf_tm_dnf Ha1) | exact (wf_tm_dnf Ha2) | exact (wf_tm_dnf Ha3) | exact (wf_tm_dnf Ha4)].
-  - apply redt_app_inst; first [exact (wf_tm_dnf (Hbs' 12 ltac:(lia))) | exact Nσ' | exact De' | assumption
-                               | exact (wf_tm_dnf Ha1') | exact (wf_tm_dnf Ha2') | exact (wf_tm_dnf Ha3') | exact (wf_tm_dnf Ha4')].
+  - apply redt_app_inst; inst_side 12.
+  - apply redt_app_inst; inst_side 12.
 Qed.
 
 (** ** The Σ eliminations and introduction (M8d) *)
