@@ -43,7 +43,7 @@ This is coherent without any recursor change:
   lemmas) get new cases that are vacuous (`compt lC` is false).
 
 Heather used the same staging for `Vec`/`Fin`/`Wf` (its "phase gate").
-Recorded as a departure from Heather until M8d.
+Recorded as a departure from Heather until M8d, which lifted it (L1).
 
 ## Decisions (M8a: Σ)
 
@@ -476,6 +476,82 @@ lists, and `Arguments ... : simpl never`-style push by `cbn` for the
 formers whose operations are homomorphic. Not done now: neither blocks
 M8d.
 
+## M8d: Σ and Unit as code
+
+### L1. The gates (taken)
+
+Heather's gate for the Σ and Unit rules is "not V". So every formation,
+introduction, elimination and congruence rule of Σ and Unit (`wft_sig`,
+`wf_code_sig`, `wf_pair`, `wf_fst`, `wf_snd`, `wft_unit`, `wf_code_unit`,
+`wf_triv` and their congruences) now asks `i <> lV`, as Π's do. The
+computation rules stay `compt i`: the β and η rules of Σ, Unit's η, and
+the `El` decodings of the codes (`eqty_El_sig`, `eqty_El_unit`). C has
+no computation, as for Π.
+
+One new rule: `eqtm_triv`, the congruence of `⟨⟩` over level-equivalent
+annotations. At D and M it is admissible from Unit's η, which is
+computation and so not at C; the Static Code Lemma needs a congruence
+for each code former at C.
+
+What moved with the gate: the inversion lemmas state `i <> lV` for these
+rules; the static-code and presupposition-at-C cases (`StaticCode`,
+`PresupC`, 9 new `pc_*` cases); the type checker decides the layer by
+`layer_eq_dec i lV` rather than `compt_dec` (`TCType`, `TCSynth`); the
+consumers at computing layers pass `compt_notV` (the algorithmic files,
+and a local hint in `Preservation`).
+
+### L2. The branches: Heather's order, after 12
+
+`bSig` 13, `bUnit` 14 (type branches, `br_isT`), then `bSig'` 15 (the Σ
+code), `bPair` 16, `bFst` 17, `bSnd` 18, `bUnit'` 19 (the Unit code),
+`bTriv` 20; `nbr` = 21. No existing index moved. Scopes (`brDecls`),
+calls (`br_calls`) and heads (`br_head`) are data in `RecSpec`, reducts
+in `redT`/`redt` (`Recursor`). The Σ type and code branches share Π's
+scopes (`brDecls 13 = brDecls 1`, `brDecls 15 = brDecls 6`), and `fst`
+and `snd` share one. The pair's second component and `snd`'s index use
+a type variable at a single instance (`U_B^{id, u_a/x}`,
+`U_B^{id, fst …/x}`), typed by `wf_gv_single_var` (`RecWf`) and
+`wf_gv_single` (`AlgPrereq`).
+
+### L3. Small generalizations
+
+- `GS_pi` and `GS_pi'` take the branch index with `brDecls kb = brDecls 1`
+  (resp. 6), so Σ's type and code branches reuse them; `GS_fst` likewise
+  serves `fst` and `snd`.
+- `rr_T_all` selected its cases by `destruct c` and positional bullets;
+  now each case is a `solve` alternative chosen by shape.
+
+### M8d cost log (J2 acceptance test)
+
+About 1520 lines added (210 changed) in 31 files. By area:
+
+| Area | Lines added | Of which |
+|---|---|---|
+| Syntax, spec | ~95 | 8 `redT`/`redt` clauses, `brDecls`/`br_calls`/`br_head` entries, `br_ar`, `br_isT` |
+| Typing | ~300 | the gates; `eqtm_triv` in each metatheory tactic; `PresupC` (151); Static Code; `RecWf`, `RecAdm` |
+| `RecS` | 950 (2847 → 3797) | 8 `*_inst` (≈60), `GS_pair`/`GS_fst` (53), 8 `rec_*` (671), 8 `RT_`/`Rt_` (126) |
+| `RecReduct` | 288 (838 → 1126) | 8 `rr_*` (241), 6 `C_*`, the `rr_T_all` cases |
+| Others | ~120 | the gate in the algorithmic files, type checking |
+
+Per branch in `RecS`: no calls 24–31 lines (`rec_T_unit`,
+`rec_t_codeunit`, `rec_t_triv`), which is on J2's prediction; two to four
+calls under Σ's pieces 83–138 (`rec_T_sig` 83, `rec_t_codesig` 117,
+`rec_t_fst` 119, `rec_t_snd` 129, `rec_t_pair` 138), which is over the
+50–80 predicted. The excess is the part J2 left per branch: the right
+side's pieces in their own context and each call's `MotRel_*`
+conversion. Two sources of repetition are visible now:
+- `rec_T_sig`/`rec_t_codesig` are `rec_T_pi`/`rec_t_pi` with the former
+  renamed (≈200 lines). A lemma over the binder former (its typing rule,
+  congruence and branch index as parameters) would share them.
+- `rec_t_pair`/`rec_t_fst`/`rec_t_snd` share a ≈55-line prelude (the
+  pieces `A`, `B` on both sides and their two calls), as do `rec_t_app`
+  and `rec_t_lam`. A lemma for "a type and a family under it, with their
+  calls" would share it.
+
+Both are follow-ups; neither is needed for Heather's remaining branches
+to go through, but each would roughly halve the per-branch cost for the
+binder-shaped ones.
+
 ## Status
 
 M8a (Σ) complete: syntax, typing and metatheory, generic laws and both
@@ -487,5 +563,9 @@ M8c (Unit at D and M) complete, through the same stack. No admits;
 `consistency`, `tyd`/`ckd`, `ac_tm_dec`, `decl_eqtm_dec_any` and
 `closed_canonicity` are closed under the global context.
 
-J2 (S0–S2) done: the recursor branches go through generic lemmas. Next:
-M8d.
+J2 (S0–S2) done: the recursor branches go through generic lemmas.
+
+M8d done: Σ and Unit are code (the rules at every layer but V, L1), with
+their eight recursor branches (13–20, L2) through the generic branch
+lemmas. No admits; the six theorems above are still closed under the
+global context.
