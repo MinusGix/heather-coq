@@ -51,6 +51,23 @@ Proof.
   left; eexists; eexists; exact (wf_code_U _ _ _ _ Hv HΓ Hl).
 Qed.
 
+(** The unit type (M8c): the code and [⟨⟩], at the computing layers. *)
+Lemma sy_code_unit l : SYD (tmUnit l).
+Proof.
+  intros G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_code_unit H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_unit H) as ((_ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_code_unit _ _ _ _ Hc HΓ Hl).
+Qed.
+
+Lemma sy_triv l : SYD (tmTriv l).
+Proof.
+  intros G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_triv H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_triv H) as ((_ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_triv _ _ _ _ Hc HΓ Hl).
+Qed.
+
 Lemma HNat {G i Γ} : [ G ; Γ ⊢[ typeof i ] ] -> [ G ; Γ ⊢[ typeof i ] tyNat @ lzero ].
 Proof. intros HΓ; exact (wft_nat _ _ _ (typeof_notV i) (ctx_idem HΓ)). Qed.
 Lemma HUniv {G i Γ l} : [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l -> [ G ; Γ ⊢[ typeof i ] tyU l @ lsuc l ].
@@ -461,7 +478,7 @@ Proof.
           | apply sy_ulam | apply sy_clam | apply sy_tlam
           | apply sy_uapp | apply sy_capp | apply sy_tapp
           | apply sy_codesig | apply sy_pair
-          | apply (sy_proj true) | apply (sy_proj false) ]; assumption.
+          | apply (sy_proj true) | apply (sy_proj false) | apply sy_code_unit | apply sy_triv ]; assumption.
 Qed.
 
 End Step.

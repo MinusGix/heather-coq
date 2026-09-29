@@ -38,7 +38,9 @@ Inductive whnf : tm -> Prop :=
 | whnf_clam l T t : whnf (clam l T t)
 | whnf_tlam Δ l l' T t : whnf (tlam Δ l l' T t)
 | whnf_tmSig l l' s t : whnf (tmSig l l' s t)
-| whnf_pair l l' A B a b : whnf (tmPair l l' A B a b).
+| whnf_pair l l' A B a b : whnf (tmPair l l' A B a b)
+| whnf_tmUnit l : whnf (tmUnit l)
+| whnf_triv l : whnf (tmTriv l).
 
 Inductive whne_ty : ty -> Prop :=
 | whne_tyGvar U d : whne_ty (tyGvar U d)
@@ -54,7 +56,8 @@ Inductive whnf_ty : ty -> Prop :=
 | whnf_tyUPi n l T : whnf_ty (tyUPi n l T)
 | whnf_tyCPi l T : whnf_ty (tyCPi l T)
 | whnf_tyTPi Δ l l' T : whnf_ty (tyTPi Δ l l' T)
-| whnf_tySig l l' A B : whnf_ty (tySig l l' A B).
+| whnf_tySig l l' A B : whnf_ty (tySig l l' A B)
+| whnf_tyUnit l : whnf_ty (tyUnit l).
 
 #[export] Hint Constructors whne whnf whne_ty whnf_ty : whnf.
 
@@ -127,4 +130,10 @@ Proof. inversion 1. Qed.
 Lemma whne_not_code_sig l l' s t : ~ whne (tmSig l l' s t).
 Proof. inversion 1. Qed.
 Lemma whne_not_pair l l' A B a b : ~ whne (tmPair l l' A B a b).
+Proof. inversion 1. Qed.
+Lemma whne_ty_not_Unit l : ~ whne_ty (tyUnit l).
+Proof. inversion 1. Qed.
+Lemma whne_not_code_unit l : ~ whne (tmUnit l).
+Proof. inversion 1. Qed.
+Lemma whne_not_triv l : ~ whne (tmTriv l).
 Proof. inversion 1. Qed.

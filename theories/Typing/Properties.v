@@ -454,6 +454,14 @@ Ltac wk_manual :=
   | |- eq_tm _ _ _ (tmPair _ _ _ _ _ _) (tmPair _ _ _ _ _ _) _ _ => eapply eqtm_pair; wk_premise
   | |- eq_tm _ _ _ (tmFst _ _ _ _ _) (tmFst _ _ _ _ _) _ _ => eapply eqtm_fst; wk_premise
   | |- eq_tm _ _ _ (tmSnd _ _ _ _ _) (tmSnd _ _ _ _ _) _ _ => eapply eqtm_snd; wk_premise
+  (* the unit type (M8c) *)
+  | |- wf_ty _ _ _ (tyUnit _) _ => eapply wft_unit; wk_premise
+  | |- eq_ty _ _ _ (tyUnit _) (tyEl _ _) _ => eapply eqty_El_unit; wk_premise
+  | |- eq_ty _ _ _ (tyUnit _) (tyUnit _) _ => eapply eqty_unit; wk_premise
+  | |- wf_tm _ _ _ (tmUnit _) _ _ => eapply wf_code_unit; wk_premise
+  | |- wf_tm _ _ _ (tmTriv _) _ _ => eapply wf_triv; wk_premise
+  | |- eq_tm _ _ _ (tmUnit _) (tmUnit _) _ _ => eapply eqtm_code_unit; wk_premise
+  | |- eq_tm _ _ _ _ _ (tyUnit _) _ => eapply eqtm_unit_eta; wk_premise
   | |- wf_ty _ _ _ (tyGvar _ _) _ => eapply wft_gvar; [ .. | wk_entries]; eauto with wk
   | |- eq_ty _ _ _ (tyGvar _ _) _ _ =>
       eapply eqty_gvar; [ .. | wk_entries | wk_entries | wk_entries]; eauto with wk

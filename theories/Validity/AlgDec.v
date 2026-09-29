@@ -85,6 +85,7 @@ Definition tm_con (t : tm) : nat :=
   | bindU _ => 17 | bindG _ => 18 | bindL _ => 19 | elimT _ _ _ _ _ _ => 20 | elimt _ _ _ _ _ _ _ => 21
   | ulam _ _ _ _ => 22 | uapp _ _ => 23 | clam _ _ _ => 24 | capp _ _ => 25 | tlam _ _ _ _ _ => 26 | tapp _ _ => 27
   | tmSig _ _ _ _ => 28 | tmPair _ _ _ _ _ _ => 29 | tmFst _ _ _ _ _ => 30 | tmSnd _ _ _ _ _ => 31
+  | tmUnit _ => 32 | tmTriv _ => 33
   end.
 
 Lemma ac_tmne_con {G Γ ν ν' T} : ac_tmne G Γ ν ν' T -> tm_con ν = tm_con ν'.
@@ -1050,6 +1051,24 @@ Proof.
     [left; apply actmnf_sig_eta; assumption | right; intros D; exact (N (proj2 (ainv_sig_eta D)))].
 Qed.
 
+(** The unit type (M8c). *)
+Lemma Dc_actnf_unit {G Γ l l0} : Dc_tynf G Γ (tyUnit l) (tyUnit l0).
+Proof.
+  intros X *; destruct X; try solve [refute_con | refute]. intros.
+  match goal with |- Dec (ac_tynf _ _ _ (tyUnit ?l')) =>
+    destruct (leqv_dec l l') as [Hl | N]; [left; exact (actnf_unit _ _ _ _ Hl) | refute] end.
+Qed.
+
+Lemma Dc_actmnf_code_unit {G Γ l k k0} : Dc_tmnf G Γ (tmUnit k) (tmUnit k0) (tyU l).
+Proof.
+  intros x i k1 Hc Hx Hx'; destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmnf _ _ _ (tmUnit ?a) _) =>
+    destruct (leqv_dec k a) as [Hl | N]; [left; exact (actmnf_code_unit _ _ _ _ _ Hl) | refute] end.
+Qed.
+
+Lemma Dc_actmnf_unit_eta {G Γ l w w0} : Dc_tmnf G Γ w w0 (tyUnit l).
+Proof. intros x i k Hc Hw Hx. left; apply actmnf_unit_eta. Qed.
+
 Lemma Dc_actmne_fst {G Γ l1 l2 l3 l4 A A0 B Bb ν ν0 m m' A0' B0} :
   ac_tmnee G Γ ν ν0 (tySig m m' A0' B0) -> Dc_nee G Γ ν ν0 (tySig m m' A0' B0) ->
   Dc_ne G Γ (tmFst l1 l2 A B ν) (tmFst l3 l4 A0 Bb ν0) A0'.
@@ -1117,7 +1136,8 @@ Proof.
     | solve [eapply Dc_acs_pt; eassumption]
     | solve [eapply Dc_actnf_sig; eassumption] | solve [eapply Dc_actmnf_code_sig; eassumption]
     | solve [eapply Dc_actmnf_sig_eta; eassumption] | solve [eapply Dc_actmne_fst; eassumption]
-    | solve [eapply Dc_actmne_snd; eassumption] ].
+    | solve [eapply Dc_actmne_snd; eassumption]
+    | solve [eapply Dc_actnf_unit] | solve [eapply Dc_actmnf_code_unit] | solve [eapply Dc_actmnf_unit_eta] ].
 Qed.
 
 (** Algorithmic conversion of well-formed types (typed terms) of the

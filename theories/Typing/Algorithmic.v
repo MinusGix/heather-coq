@@ -55,6 +55,8 @@ with ac_tynf : gctx -> ctx -> ty -> ty -> Prop :=
 | actnf_sig G Γ l1 l2 l3 l4 A A' B B' : leqv l1 l3 -> leqv l2 l4 ->
     ac_ty G Γ A A' -> ac_ty G (Γ ,, A @ l1) B B' ->
     ac_tynf G Γ (tySig l1 l2 A B) (tySig l3 l4 A' B')
+(* the unit type (M8c) *)
+| actnf_unit G Γ l l' : leqv l l' -> ac_tynf G Γ (tyUnit l) (tyUnit l')
 
 with ac_tyne : gctx -> ctx -> ty -> ty -> Prop :=
 | actne_gvar G Γ U Δ i' l d d' : in_gctx (gΨ G) U (gdTy Δ i' l) -> ac_sub G Γ d d' Δ ->
@@ -106,6 +108,10 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tm G Γ (tmFst l l' A B w) (tmFst l l' A B w') A ->
     ac_tm G Γ (tmSnd l l' A B w) (tmSnd l l' A B w') B[lsingle (tmFst l l' A B w)] ->
     ac_tmnf G Γ w w' (tySig l l' A B)
+(* the unit type (M8c): the code, and η as proof irrelevance (any two
+   weak-head normal forms, neutral or not; [Unit] is not [posty]) *)
+| actmnf_code_unit G Γ l k k' : leqv k k' -> ac_tmnf G Γ (tmUnit k) (tmUnit k') (tyU l)
+| actmnf_unit_eta G Γ l w w' : ac_tmnf G Γ w w' (tyUnit l)
 
 with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_var G Γ n T l : in_ctx Γ n T l -> ac_tmne G Γ (var n) (var n) T

@@ -56,7 +56,8 @@ with red_ty : ty -> ty -> Prop :=
     red_ty (tyEl l (tmPi l1 l2 s t)) (tyPi l1 l2 (tyEl l1 s) (tyEl l2 t))
 | red_El l t t' : red t t' -> red_ty (tyEl l t) (tyEl l t')
 | red_El_sig l l1 l2 s t :
-    red_ty (tyEl l (tmSig l1 l2 s t)) (tySig l1 l2 (tyEl l1 s) (tyEl l2 t)).
+    red_ty (tyEl l (tmSig l1 l2 s t)) (tySig l1 l2 (tyEl l1 s) (tyEl l2 t))
+| red_El_unit l l0 : red_ty (tyEl l (tmUnit l0)) (tyUnit l0).
 
 Scheme red_mut := Induction for red Sort Prop
   with red_ty_mut := Induction for red_ty Sort Prop.
@@ -112,6 +113,7 @@ Proof.
         | Hr : red (tmPi _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSig _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmPair _ _ _ _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmUnit _) _ |- _ => inversion Hr
         | Hr : red_ty (tyPi _ _ _ _) _ |- _ => inversion Hr
         end;
     try congruence; try (f_equal; eauto).

@@ -232,6 +232,17 @@ Definition SigRel (G : gctx) (Γ : ctx) (l1 l2 l3 l4 : lvl) (A B A' B' : ty)
       exists h : domR ρ (tmFst la lb A1 B1 (ktm ρ w)) (tmFst la' lb' A1' B1' (ktm ρ w')),
         codR ρ _ _ h (tmSnd la lb A1 B1 (ktm ρ w)) (tmSnd la' lb' A1' B1' (ktm ρ w')).
 
+(** ** The unit type (M8_DESIGN.md K5)
+
+    Proof irrelevant: any two terms with weak-head normal forms at [Unit]
+    are related, whatever the forms. Escape comes from the generic law
+    [geq_tm_unit_eta]. The normal forms are kept (as logrel-coq's
+    [UnitRedTm] does, unlike Heather's pen-and-paper relation) so that
+    typed terms still normalize, which the algorithmic instance needs. *)
+Definition UnitRel (G : gctx) (Γ : ctx) (l : lvl) : tm -> tm -> Prop :=
+  fun t t' => exists w w',
+    [ G ; Γ ⊢g t ⤳* w : tyUnit l @ l ] /\ [ G ; Γ ⊢g t' ⤳* w' : tyUnit l @ l ] /\ whnf w /\ whnf w'.
+
 (** ** The type-level data of a binder former
 
     [Π] and [Σ] (and later formers of the same shape) share it: both sides
@@ -411,6 +422,11 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
         LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ B)[lsingle a] (ktyl ρ B')[lsingle a'] l2
            (codR ρ a a' ha)) ->
     releq R (SigRel G Γ l1 l2 l3 l4 A B A' B' domR codR) ->
+    LR n rec G Γ T T' l R
+| LRunit G Γ T T' l l1 l2 R :
+    lequiv (gL G) l l1 -> lequiv (gL G) l2 l1 -> lwf (gL G) l1 ->
+    [ G ; Γ ⊢g T ⤳* tyUnit l1 @ l ] -> [ G ; Γ ⊢g T' ⤳* tyUnit l2 @ l ] ->
+    releq R (UnitRel G Γ l1) ->
     LR n rec G Γ T T' l R.
 
 (** ** Stages *)

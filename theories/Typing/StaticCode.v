@@ -392,6 +392,36 @@ Proof.
   - intros n A k h; apply sc_eqtm, (proj2 (X n A k h)).
 Qed.
 
+(** The unit type (M8c): only at D, like Σ. *)
+Lemma sc_unit {Γ l l'} : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] tyUnit l' @ l ] /\ [ G ; Γ ⊢[ i ] tyUnit l ≅ tyUnit l' @ l ].
+Proof.
+  intros Hc HΓ Hl Hl' E. pose proof (lq Hl Hl' E) as Q. split.
+  - eapply wft_lconv; [apply wft_unit; auto | exact Q].
+  - apply eqty_unit; auto.
+Qed.
+
+Lemma sc_code_unit {Γ l l'} : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] tmUnit l' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmUnit l ≅ tmUnit l' : tyU l @ lsuc l ].
+Proof.
+  intros Hc HΓ Hl Hl' E. pose proof (lq Hl Hl' E) as Q. split.
+  - apply (sc_conv (T' := tyU l')).
+    + eapply wf_lconv; [apply wf_code_unit; auto | apply lequiv_lsuc', Q].
+    + rewrite Hty in HΓ. apply eqty_U; [discriminate | exact HΓ | exact Q].
+  - apply eqtm_code_unit; auto.
+Qed.
+
+Lemma sc_triv {Γ l l'} : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] tmTriv l' : tyUnit l @ l ] /\ [ G ; Γ ⊢[ i ] tmTriv l ≅ tmTriv l' : tyUnit l @ l ].
+Proof.
+  intros Hc HΓ Hl Hl' E. pose proof (lq Hl Hl' E) as Q.
+  assert (H' : [ G ; Γ ⊢[ i ] tmTriv l' : tyUnit l @ l ]).
+  { apply (sc_conv (T' := tyUnit l')).
+    - eapply wf_lconv; [apply wf_triv; auto | exact Q].
+    - rewrite Hty in HΓ. apply eqty_unit; [exact compt_D | exact HΓ | exact Q]. }
+  split; [exact H' | apply eqtm_unit_eta; auto using wf_triv].
+Qed.
+
 (** Dependent pairs (M8): only at D ([compt i] below D). *)
 Lemma sc_sig {Γ l1 l2 l1' l2' A A' B B'} : compt i -> lwf (gL G) l1 -> lwf (gL G) l2 ->
   lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
@@ -597,6 +627,7 @@ Proof.
     | solve [eapply sc_code_U; eauto] | solve [eapply sc_code_pi; eauto]
     | solve [eapply sc_lam; eauto] | solve [eapply sc_app; eauto] | solve [eapply sc_natrec; eauto]
     | solve [eapply sc_sig; eauto] | solve [eapply sc_code_sig; eauto]
+    | solve [eapply sc_unit; eauto] | solve [eapply sc_code_unit; eauto] | solve [eapply sc_triv; eauto]
     | solve [eapply sc_pair; eauto] | solve [eapply sc_fst; eauto] | solve [eapply sc_snd; eauto]
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x

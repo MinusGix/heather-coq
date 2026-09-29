@@ -57,7 +57,8 @@ Proof.
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
-                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR].
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR].
   all: first
     [ solve [eexists; split; [exact HT | first [exact (whnf_ty_ne _ (gne_ty_whne_l HV)) | solve [eauto with whnf]]]]
     | match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
@@ -280,6 +281,8 @@ Lemma ty_leq_sig_inv {l3 l4 A2 B2 W} : ty_leq (tySig l3 l4 A2 B2) W ->
 Proof. destruct W; cbn; try contradiction; intros; do 4 eexists; intuition eauto. Qed.
 Lemma ty_leq_U_inv {l2 W} : ty_leq (tyU l2) W -> exists l3, W = tyU l3 /\ leqv l2 l3.
 Proof. destruct W; cbn; try contradiction; eauto. Qed.
+Lemma ty_leq_unit_inv {l2 W} : ty_leq (tyUnit l2) W -> exists l3, W = tyUnit l3 /\ leqv l2 l3.
+Proof. destruct W; cbn; try contradiction; eauto. Qed.
 Lemma ty_leq_nat_inv {W} : ty_leq tyNat W -> W = tyNat.
 Proof. destruct W; cbn; try contradiction; auto. Qed.
 Lemma ty_leq_cpi_inv {l2 U2 W} : ty_leq (tyCPi l2 U2) W ->
@@ -328,7 +331,8 @@ Proof.
                  | G Γ T1 T2 l Δ1 Δ2 l1 l2 l3 l4 U1 U2 instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HΔ HU1 HU2
                      Hgeq instAd IHinst HR
                  | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R
-                     [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12] domAd1 IHdom codAd1 IHcod HR];
+                     [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12] domAd1 IHdom codAd1 IHcod HR
+                 | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR];
     intros T3 R3 H3 ET; destruct (LR_whnf_l H3) as (W3 & HT3 & Hnw3).
   - (* Nat *)
     pose proof (ty_leq_nat_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3)) as ->.
@@ -722,6 +726,15 @@ Proof.
         pose proof (proj2 (IHcod ρ _ _ h1 _ _ (LR_lconv _ _ _ _ _ _ _ _ _ (codAd3 ρ _ _ h3) Q24') Ec)
                       _ _ _ C1 C3 Es) as X.
         exact (proj1 (Hcodirr ρ _ _ _ h1 h _ _) X).
+  - (* Unit *)
+    destruct (ty_leq_unit_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3)) as (l3 & -> & E3).
+    destruct (LR_inv_unit H3 HT3) as (l4 & _ & Hl4 & Hw3 & _ & HR3).
+    assert (Q : lequiv (gL G) l2 l3) by exact (leqv_lequiv _ _ _ (lequiv_wf_l _ _ _ Hl2) Hw3 E3).
+    assert (Hl31 : lequiv (gL G) l3 l1) by (eapply lequiv_trans; [apply lequiv_sym, Q | exact Hl2]).
+    split; [eapply (LRunit n (LRbelow n) G Γ T1 T3 l l1 l3); eauto|].
+    intros t1 t2 t3 H12 H33 Et. apply HR. apply HR in H12. apply HR3 in H33.
+    destruct H12 as (w1 & _ & Hr1 & _ & Hf1 & _). destruct H33 as (w3 & _ & Hr3 & _ & Hf3 & _).
+    exists w1, w3. exact (conj Hr1 (conj (unit_tmred_conv Hl31 Hr3) (conj Hf1 Hf3))).
 Qed.
 
 Theorem LR_leq n : Pleq n.

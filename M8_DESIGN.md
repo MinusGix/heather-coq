@@ -365,11 +365,99 @@ time.
 **Order.** M8c (Unit at D and M) does not touch the recursor (I1), and
 it is J1's acceptance test for steps 1–2. So: M8c, then S0–S2, then M8d.
 
+## M8c: Unit (layers D and M)
+
+Heather references: `H/docs/delam-extensions.md` §7.0–7.4, §11.2;
+`H/docs/metatheory-ch07-extensions.md` §4.
+
+### K1. Syntax
+
+`tyUnit (l : lvl)` (`Unit^l @ l`), its code `tmUnit (l : lvl)`
+(`: Ty l @ 1+l`), and `tmTriv (l : lvl)` (`⟨⟩^l : Unit^l @ l`).
+Level-indexed, not level-polymorphic (Heather §7.0). No eliminator: η
+makes one derivable. `El l (tmUnit l0) ⤳ tyUnit l0`; `tyUnit`, `tmUnit`,
+`tmTriv` are whnf.
+
+### K2. Typing (all gated by `compt i`, as I1)
+
+`wft_unit`, `wf_code_unit`, `wf_triv` (premises: the context at
+`typeof i`, a well-formed level); `eqty_unit` and `eqtm_code_unit`
+(levels up to `≡`); `eqty_El_unit`; and η as proof irrelevance,
+`eqtm_unit_eta`: `t, t' : Unit^l @ l ⟹ t ≅ t' : Unit^l @ l`. η subsumes
+the congruence of `⟨⟩`, which is therefore not a rule.
+
+### K3. Algorithm
+
+`actnf_unit` (levels by `leqv`), `actmnf_code_unit`, and
+`actmnf_unit_eta`, which relates *any* two weak-head normal forms at
+`Unit`, neutral or not. `Unit` is not `posty`, so neutrals at `Unit` are
+compared by η too, never structurally (Heather §11.2, "order matters").
+
+### K4. Generic laws
+
+`geq_ty_unit`, `geq_tm_code_unit`, and `geq_tm_unit_eta` (both sides typed
+at `Unit`). The last one is where escape at `Unit` comes from.
+
+### K5. The relation: `LRunit` (deviation from Heather)
+
+Both sides reduce to `Unit` at equivalent levels. The term relation
+`UnitRel G Γ l` relates `t` and `t'` when **both reduce to weak-head
+normal forms at `Unit^l`**, whatever the forms. Heather's pen-and-paper
+relation asks only that both be typed. We keep the normal forms, as
+logrel-coq's `UnitRedTm` does, because the reducibility of typed terms
+must still give weak-head normalization (`whnf_normalization_tm`): the
+algorithmic instance uses it (`tgt_whnf_tm`) to find the forms that
+`actmnf_unit_eta` compares. Every property stays immediate: normal forms
+are preserved by weakening, universe permutation and level conversion,
+and weak-head expansion composes reductions.
+
+The `LR` constructor is appended after `LRsig`, so each positional
+pattern over `LR` gained a branch (27 patterns, scripted: the new branch
+copies the universe branch's shape). `LR_inv_unit` joins the inversions.
+
+### K6. Semantic rules
+
+`Validity/Unit.v`: `LR_unit_here`, `LRtm_unit`, and validity of
+formation, code, `⟨⟩`, decoding (`tyred_El_unit`) and η. η is stated
+with independent sides (`VTm t t1`, `VTm t' t1'` give `VTm t t1'`), so
+the rule-shaped wrapper at related global substitutions (`VS_unit_eta`)
+is proved by the same lifting as the other rules.
+
+### M8c cost log (J1 acceptance test)
+
+803 lines added (70 changed) in 53 files, against about 4000 in 56 files
+for Σ:
+
+| Area | Files | Lines added | Of which |
+|---|---|---|---|
+| Syntax | 7 | 55 | every operation's case, push lemmas |
+| Typing | 14 | 177 | 7 rules; one clause per rule in each metatheory tactic (weakening, global weakening and substitution, substitution, functionality, presupposition); inversion; Static Code |
+| LogRel | 12 | 196 | `UnitRel`, `LRunit`, a case in each property, `LR_inv_unit` |
+| Validity | 19 | 374 | `Unit.v` (120); FT wrappers and dispatch; algorithmic soundness, conversion, PER, decidability, lift, instance; type checking; canonicity; injectivity |
+
+Verdict: J1 steps 1–2 did what they promised where they applied.
+`AlgStruct` (W/G/U/L) took the three new algorithmic rules with no edit,
+and the algorithmic families needed one short lemma per rule, because a
+former without binders has none of Σ's per-shape work. What remains per
+former is **rule lists**: a new rule is named once in each of about a
+dozen dispatch tactics (`gw_step`, `gs_manual2`, `wk_manual`, the
+substitution and functionality steps, the presupposition dispatch,
+`ft_case`, `fts_case`, `f_rules`, `m_rules`, the five `ac_*_all`
+dispatches) and each former's push lemmas in five rewrite lists
+(`push_gren`, `push_gwa`, `gl_push`, `push_gsubst`, `s_push`). Two cheap
+follow-ups: a hint database per family instead of the `first [...]`
+lists, and `Arguments ... : simpl never`-style push by `cbn` for the
+formers whose operations are homomorphic. Not done now: neither blocks
+M8d.
+
 ## Status
 
 M8a (Σ) complete: syntax, typing and metatheory, generic laws and both
 instances, the relation, semantic rules, FTs at P and M, injectivity,
 canonicity, preservation, type checking, algorithmic conversion with
-soundness, conversion, PER, lift, completeness and decidability. No
-admits; `consistency`, `tyd`/`ckd`, `ac_tm_dec` and
-`decl_eqtm_dec_any` are closed. Next: M8b (genericity direction).
+soundness, conversion, PER, lift, completeness and decidability.
+
+M8c (Unit at D and M) complete, through the same stack. No admits;
+`consistency`, `tyd`/`ckd`, `ac_tm_dec`, `decl_eqtm_dec_any` and
+`closed_canonicity` are closed under the global context. Next: J2
+(S0–S2, the recursor branches), then M8d.

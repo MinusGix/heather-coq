@@ -121,7 +121,7 @@ Ltac s_push :=
     rewrite ?gs_single_ty, ?gs_single, ?gs_single2, ?gs_lsucc_ty, ?gsubst_ren_ty', ?gs_ren in *;
     rewrite ?gs_tyNat, ?gs_tyPi, ?gs_tyU, ?gs_tyEl, ?gs_var, ?gs_tmNat, ?gs_tmPi, ?gs_tmU, ?gs_zero,
             ?gs_succ, ?gs_natrec, ?gs_lam, ?gs_app, ?gs_cnil, ?gs_cext,
-            ?gs_tySig, ?gs_tmSig, ?gs_pair, ?gs_fst, ?gs_snd in *).
+            ?gs_tySig, ?gs_tmSig, ?gs_pair, ?gs_fst, ?gs_snd, ?gs_tyUnit, ?gs_tmUnit, ?gs_triv in *).
 
 (** Side conditions of the general lemmas: levels. *)
 Ltac s_lwf := first [eassumption | eapply lequiv_wf_l; eassumption | eapply lequiv_wf_r; eassumption].
@@ -138,7 +138,9 @@ Ltac fts_case :=
   | solve [simple eapply V_code_U; s_side] | solve [simple eapply V_code_pi; s_side]
   | solve [simple eapply V_natrec; s_side] | solve [simple eapply V_lam; s_side] | solve [simple eapply V_app; s_side]
   | solve [simple eapply V_sig; s_side] | solve [simple eapply V_code_sig; s_side]
-  | solve [simple eapply V_pair; s_side] | solve [simple eapply V_fst; s_side] | solve [simple eapply V_snd; s_side] ].
+  | solve [simple eapply V_pair; s_side] | solve [simple eapply V_fst; s_side] | solve [simple eapply V_snd; s_side]
+  | solve [simple eapply V_unit; s_side] | solve [simple eapply V_code_unit; s_side]
+  | solve [simple eapply V_triv; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=
@@ -362,6 +364,20 @@ Proof.
   apply VS_El; [exact (lwf_max Hw Hw') | apply lequiv_refl, lwf_max; assumption |].
   eapply VS_code_sig; try eassumption; apply lequiv_refl; assumption.
 Qed.
+
+(** The unit type (M8c). *)
+Lemma VS_unit {G Γ l l'} : lwf (gL G) l -> lequiv (gL G) l l' -> VTyS G Γ (tyUnit l) (tyUnit l') l.
+Proof. intros; s_lift. Qed.
+Lemma VS_code_unit {G Γ l l'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTmS G Γ (tmUnit l) (tmUnit l') (tyU l) (lsuc l).
+Proof. intros; s_lift. Qed.
+Lemma VS_triv {G Γ l l'} : lwf (gL G) l -> lequiv (gL G) l l' -> VTmS G Γ (tmTriv l) (tmTriv l') (tyUnit l) l.
+Proof. intros; s_lift. Qed.
+Lemma VS_El_unit {G Γ l} : lwf (gL G) l -> VTyS G Γ (tyUnit l) (tyEl l (tmUnit l)) l.
+Proof. intros; s_lift. Qed.
+Lemma VS_unit_eta {G Γ l t t'} : lwf (gL G) l ->
+  VTmS G Γ t t (tyUnit l) l -> VTmS G Γ t' t' (tyUnit l) l -> VTmS G Γ t t' (tyUnit l) l.
+Proof. intros; s_lift. Qed.
 
 End Rules.
 

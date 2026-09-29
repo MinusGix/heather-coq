@@ -330,6 +330,25 @@ Qed.
 Lemma compt_self : compt i.
 Proof. destruct i; cbn in Hi, Hv; try congruence; unfold compt; auto. Qed.
 
+(** The unit type (M8c), gated like Σ. *)
+Lemma pre_unit_r {Γ l l'} :
+  [ G ; Γ ⊢[ i ] ] -> lequiv (gL G) l l' -> [ G ; Γ ⊢[ i ] tyUnit l' @ l ].
+Proof.
+  intros HΓ Hl. eapply wft_lconv with (l' := l'); [|exact Hl].
+  apply wft_unit; rewrite ?Hi; eauto using lequiv_wf_r, compt_self.
+Qed.
+
+Lemma pre_El_unit {Γ l} :
+  [ G ; Γ ⊢[ i ] ] -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] tyEl l (tmUnit l) @ l ].
+Proof. intros HΓ Hl. apply wft_El; auto. apply wf_code_unit; rewrite ?Hi; auto using compt_self. Qed.
+
+Lemma pre_codeunit_r {Γ l l'} :
+  [ G ; Γ ⊢[ i ] ] -> lequiv (gL G) l l' -> [ G ; Γ ⊢[ i ] tmUnit l' : tyU l @ lsuc l ].
+Proof.
+  intros HΓ Hl. apply (conv_U (l := l')); [|now apply lequiv_sym].
+  apply wf_code_unit; rewrite ?Hi; eauto using lequiv_wf_r, compt_self.
+Qed.
+
 Lemma pre_sig_r {Γ l1 l2 l3 l4 A A' B'} :
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
@@ -777,7 +796,11 @@ Proof.
              | solve [eapply pre_snd_r; eassumption] | solve [eapply pre_snd_beta_l; eassumption]
              | solve [eapply pre_sig_eta_l; eassumption] | solve [eapply pre_snd_ty; eassumption]
              | solve [eapply wf_ty_single; [eassumption|]; eapply wf_fst; eassumption]
-             | solve [eapply wft_El; eauto with presup; eapply wf_code_sig; eassumption] ].
+             | solve [eapply wft_El; eauto with presup; eapply wf_code_sig; eassumption]
+             (* the unit type (M8c) *)
+             | solve [eapply pre_unit_r; eauto using lequiv_refl, lequiv_wf_l]
+             | solve [eapply pre_El_unit; eassumption]
+             | solve [eapply pre_codeunit_r; eauto using lequiv_refl, lequiv_wf_l] ].
 Qed.
 
 Section Named.

@@ -861,7 +861,11 @@ Ltac m_rules :=
   | solve [simple eapply VS_pair; m_side] | solve [simple eapply VS_fst; m_side]
   | solve [simple eapply VS_snd; m_side]
   | solve [simple eapply VS_fst_beta; m_side] | solve [simple eapply VS_snd_beta; m_side]
-  | solve [simple eapply VS_sig_eta; m_side] | solve [simple eapply VS_El_sig; m_side] ].
+  | solve [simple eapply VS_sig_eta; m_side] | solve [simple eapply VS_El_sig; m_side]
+  (* the unit type (M8c) *)
+  | solve [simple eapply VS_unit; m_side] | solve [simple eapply VS_code_unit; m_side]
+  | solve [simple eapply VS_triv; m_side] | solve [simple eapply VS_El_unit; m_side]
+  | solve [simple eapply VS_unit_eta; m_side] ].
 
 Ltac m_ty :=
   first

@@ -101,6 +101,12 @@ Proof.
   intros H. exact (sig_inj (E := DEM) (LP := LRM) redM_eqty H (lwfM_whnf_l H (whnf_tySig _ _ _ _) ltac:(not_upi))).
 Qed.
 
+Theorem declM_unit_inj {G Γ l l1 l2} :
+  [ G ; Γ ⊢[ lM ] tyUnit l1 ≅ tyUnit l2 @ l ] -> lequiv (gL G) l2 l1.
+Proof.
+  intros H. exact (unit_inj (E := DEM) (LP := LRM) redM_eqty H (lwfM_whnf_l H (whnf_tyUnit _) ltac:(not_upi))).
+Qed.
+
 Theorem declM_U_inj {G Γ l l' k} : [ G ; Γ ⊢[ lM ] tyU l ≅ tyU l' @ k ] -> lequiv (gL G) l' l.
 Proof. intros H. exact (U_inj (E := DEM) (LP := LRM) redM_eqty H (lwfM_whnf_l H (whnf_tyU _) ltac:(not_upi))). Qed.
 

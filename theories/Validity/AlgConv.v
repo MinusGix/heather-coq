@@ -1313,6 +1313,24 @@ Proof.
   eapply eqty_trans; [exact (eqty_sym _ _ _ _ _ _ EBh) | exact (gconv_eqty HE Hi EBB0)].
 Qed.
 
+(** ** The unit type (M8c) *)
+
+Lemma C_actnf_unit {G Γ l l'} : leqv l l' -> C_tynf G Γ (tyUnit l) (tyUnit l').
+Proof. intros Hl; red; intros; now apply actnf_unit. Qed.
+
+Lemma C_actmnf_code_unit {G Γ l k k'} : leqv k k' -> C_tmnf G Γ (tmUnit k) (tmUnit k') (tyU l).
+Proof.
+  intros Hl; red; intros i G2 Γ2 W2 kk Hc HE Hctx Ht Ht' EW Hw2 x x' Hsx Hsx'. spa_triv. new_head Hc EW Hw2 W2.
+  apply actmnf_code_unit; exact Hl.
+Qed.
+
+(** η: any targets, once the new type is [Unit] too. *)
+Lemma C_actmnf_unit_eta {G Γ l w w'} : C_tmnf G Γ w w' (tyUnit l).
+Proof.
+  red; intros i G2 Γ2 W2 k Hc HE Hctx Ht Ht' EW Hw2 x x' Hsx Hsx'. new_head Hc EW Hw2 W2.
+  apply actmnf_unit_eta.
+Qed.
+
 (** ** The conversion lemma *)
 
 Theorem ac_conv_spa :
@@ -1352,7 +1370,9 @@ Proof.
     | solve [eapply C_acs_pt; eassumption]
     | solve [eapply C_actnf_sig; eassumption] | solve [eapply C_actmnf_code_sig; eassumption]
     | solve [eapply C_actmnf_sig_eta; eassumption] | solve [eapply C_actmne_fst; eassumption]
-    | solve [eapply C_actmne_snd; eassumption] ].
+    | solve [eapply C_actmne_snd; eassumption]
+    | solve [eapply C_actnf_unit; eassumption] | solve [eapply C_actmnf_code_unit; eassumption]
+    | solve [eapply C_actmnf_unit_eta] ].
 Qed.
 
 (** The statement without annotation changes. *)

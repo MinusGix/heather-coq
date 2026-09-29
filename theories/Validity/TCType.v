@@ -181,12 +181,23 @@ Proof.
   - right; intros H; exact (Q (proj2 (inv_ty_sig H))).
 Qed.
 
+Lemma dec_tyUnit l : TYD (tyUnit l).
+Proof.
+  intros G i Γ k HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros H; destruct (inv_ty_unit H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_unit H) as ((_ & _ & X) & _); contradiction].
+  destruct (lvl_eq_dec (gL G) k l) as [Q | Q].
+  - left; exact (wft_lvl Q (wft_unit _ _ _ _ Hc HΓ Hl)).
+  - right; intros H; exact (Q (proj2 (inv_ty_unit H))).
+Qed.
+
 Lemma ty_step T : sz_ty T <= n -> TYD T.
 Proof.
   intros Hsz. destruct T;
     first [ apply dec_tyErr | apply dec_tyNat | apply dec_tyU
           | apply dec_tyPi | apply dec_tyEl | apply dec_tyGvar | apply dec_tyCTyp | apply dec_tyCTrm
-          | apply dec_tyUPi | apply dec_tyCPi | apply dec_tyTPi | apply dec_tySig ]; assumption.
+          | apply dec_tyUPi | apply dec_tyCPi | apply dec_tyTPi | apply dec_tySig | apply dec_tyUnit ];
+    assumption.
 Qed.
 
 (** ** Contexts *)

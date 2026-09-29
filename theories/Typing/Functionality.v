@@ -414,6 +414,9 @@ Ltac fung_step :=
   | |- eq_tm _ _ _ (tmPair _ _ _ _ _ _) _ _ _ => eapply eqtm_pair
   | |- eq_tm _ _ _ (tmFst _ _ _ _ _) _ _ _ => eapply eqtm_fst
   | |- eq_tm _ _ _ (tmSnd _ _ _ _ _) _ _ _ => eapply eqtm_snd
+  | |- eq_ty _ _ _ (tyUnit _) _ _ => eapply eqty_unit
+  | |- eq_tm _ _ _ (tmUnit _) _ _ _ => eapply eqtm_code_unit
+  | |- eq_tm _ _ _ (tmTriv _) _ _ _ => eapply eqtm_refl, wf_triv
   | Hc : eq_ty _ _ _ ?T ?T' ?l |- eq_tm _ _ _ _ _ (subst ?T _) ?l =>
       eapply eqtm_conv; [ | eapply eqty_subst_g ]
   | Hl : lequiv _ ?l ?l' |- eq_ty _ _ _ _ _ ?l => eapply eqty_lconv

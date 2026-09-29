@@ -139,6 +139,16 @@ Lemma inva_snd {G i Γ l l' A B p T k} : [ G ; Γ ⊢[ i ] tmSnd l l' A B p : T 
     lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ typeof i ] T ≅ B[lsingle (tmFst l l' A B p)] @ k ].
 Proof. inv_tm_any. Qed.
 
+Lemma inva_code_unit {G i Γ l T k} : [ G ; Γ ⊢[ i ] tmUnit l : T @ k ] ->
+  (compt i /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\
+    lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU l @ k ].
+Proof. inv_tm_any. Qed.
+
+Lemma inva_triv {G i Γ l T k} : [ G ; Γ ⊢[ i ] tmTriv l : T @ k ] ->
+  (compt i /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\
+    lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyUnit l @ k ].
+Proof. inv_tm_any. Qed.
+
 (** ** The M-only heads *)
 
 (** Terms whose rules are at M only. *)
@@ -171,4 +181,7 @@ Qed.
 
 (** No type is well formed at V. *)
 Lemma no_ty_V {G Γ T k} : ~ [ G ; Γ ⊢[ lV ] T @ k ].
-Proof. intros H. remember lV as i eqn:Ei. induction H; subst; try congruence; auto. Qed.
+Proof.
+  intros H. remember lV as i eqn:Ei. induction H; subst; try congruence; auto;
+    try match goal with c : compt lV |- _ => destruct c; discriminate end.
+Qed.

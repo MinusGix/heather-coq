@@ -255,7 +255,17 @@ Class GenericEqLaws `{GenericEq} := {
     [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] ->
     [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
     [ G ; Γ ⊢ ν ~ ν' : tySig l1 l2 A B @ lmax l1 l2 ] ->
-    [ G ; Γ ⊢ tmSnd l1 l2 A B ν ~ tmSnd l3 l4 A' B' ν' : B[lsingle (tmFst l1 l2 A B ν)] @ l2 ]
+    [ G ; Γ ⊢ tmSnd l1 l2 A B ν ~ tmSnd l3 l4 A' B' ν' : B[lsingle (tmFst l1 l2 A B ν)] @ l2 ] ;
+
+  (** The unit type (M8_DESIGN.md K4): congruences, and η as proof
+      irrelevance, which is where escape at [Unit] comes from *)
+  geq_ty_unit {G Γ l l'} : [ G ; Γ ⊢g ] -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢ tyUnit l ≈ tyUnit l' @ l ] ;
+  geq_tm_code_unit {G Γ l l'} : [ G ; Γ ⊢g ] -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢ tmUnit l ≈ tmUnit l' : tyU l @ lsuc l ] ;
+  geq_tm_unit_eta {G Γ l t t'} : lwf (gL G) l ->
+    [ G ; Γ ⊢g t : tyUnit l @ l ] -> [ G ; Γ ⊢g t' : tyUnit l @ l ] ->
+    [ G ; Γ ⊢ t ≈ t' : tyUnit l @ l ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

@@ -280,7 +280,8 @@ Proof.
                  | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd IHinst HR
                  | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                      Hgeq instAd IHinst HR
-                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd IHdom codAd IHcod HR].
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd IHdom codAd IHcod HR
+                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR].
   - eapply LRnat; eauto.
     intros t t'; unfold flipR; rewrite (HR t' t); apply NatRel_flip.
   - assert (Hm : lmeasure l2 = lmeasure l1) by (eapply lequiv_measure; eauto).
@@ -352,6 +353,14 @@ Proof.
       * apply SigRel_flip; auto.
       * intros H. open_poly. apply (SigRel_flip (A := A') (A' := A) (domR := flipD domR) (codR := flipC codR));
           auto using lequiv_sym.
+  - eapply (LRunit n (LRbelow n) G Γ T' T l l2 l1).
+    + exact (lequiv_trans _ _ _ _ Hl (lequiv_sym _ _ _ Hl2)).
+    + exact (lequiv_sym _ _ _ Hl2).
+    + exact (lequiv_wf_l _ _ _ Hl2).
+    + exact HT'.
+    + exact HT.
+    + intros t t'; unfold flipR; rewrite (HR t' t), (UnitRel_lconv (lequiv_sym _ _ _ Hl2) t' t).
+      split; apply UnitRel_sym.
 Qed.
 
 Theorem LR_sym n : Psym n.

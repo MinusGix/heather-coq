@@ -275,6 +275,14 @@ Ltac sub_manual :=
   | |- eq_tm _ _ _ (tmPair _ _ _ _ _ _) (tmPair _ _ _ _ _ _) _ _ => eapply eqtm_pair
   | |- eq_tm _ _ _ (tmFst _ _ _ _ _) (tmFst _ _ _ _ _) _ _ => eapply eqtm_fst
   | |- eq_tm _ _ _ (tmSnd _ _ _ _ _) (tmSnd _ _ _ _ _) _ _ => eapply eqtm_snd
+  (* the unit type (M8c) *)
+  | |- wf_ty _ _ _ (tyUnit _) _ => eapply wft_unit
+  | |- eq_ty _ _ _ (tyUnit _) (tyEl _ _) _ => eapply eqty_El_unit
+  | |- eq_ty _ _ _ (tyUnit _) (tyUnit _) _ => eapply eqty_unit
+  | |- wf_tm _ _ _ (tmUnit _) _ _ => eapply wf_code_unit
+  | |- wf_tm _ _ _ (tmTriv _) _ _ => eapply wf_triv
+  | |- eq_tm _ _ _ (tmUnit _) (tmUnit _) _ _ => eapply eqtm_code_unit
+  | |- eq_tm _ _ _ _ _ (tyUnit _) _ => eapply eqtm_unit_eta
   end; sub_premise.
 
 (** Syntax for the new cases. *)

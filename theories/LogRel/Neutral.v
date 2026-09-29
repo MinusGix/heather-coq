@@ -83,7 +83,8 @@ Proof.
                  | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                      Hgeq instAd IHinst HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
-                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR];
+                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
+                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
     intros ν ν' Hν Hν'; first [exact (ModRel_neutral HM _ _ Hν Hν') | apply HR].
   - (* Nat *)
     pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HN.
@@ -254,6 +255,19 @@ Proof.
     eapply gne_tm_conv; [exact X1|].
     destruct (escape_ty _ _ _ _ _ _ _ _ (codAd ρ _ _ h)) as (_ & _ & Hc).
     now apply geq_ty_sound.
+  - (* Unit: typed neutrals are related *)
+    assert (EU : [ G ; Γ ⊢g T ≅ tyUnit l1 @ l ]) by apply HT.
+    assert (EU' : [ G ; Γ ⊢g T' ≅ tyUnit l2 @ l ]) by apply HT'.
+    pose proof (lequiv_sym _ _ _ Hl) as Hl'.
+    pose proof (lequiv_trans _ _ _ _ Hl2 Hl') as Hl2'.
+    assert (X1 : [ G ; Γ ⊢g ν : tyUnit l1 @ l1 ]).
+    { eapply conv_tm; [exact (gne_tm_typed_l Hν) | eapply eqty_lconv; [apply eqty_sym, EU | exact Hl'] | exact Hl']. }
+    assert (X2 : [ G ; Γ ⊢g ν' : tyUnit l1 @ l1 ]).
+    { apply (unit_conv Hl2).
+      eapply conv_tm; [exact (gne_tm_typed_r Hν') | eapply eqty_lconv; [apply eqty_sym, EU' | exact Hl2'] | exact Hl2']. }
+    exists ν, ν'. refine (conj (tmred_refl _ _ _ X1) (conj (tmred_refl _ _ _ X2) (conj _ _))).
+    + constructor; exact (gne_tm_whne_l Hν).
+    + constructor; exact (gne_tm_whne_r Hν').
 Qed.
 
 End Neutral.

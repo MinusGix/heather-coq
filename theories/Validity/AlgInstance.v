@@ -411,6 +411,17 @@ Proof.
   - intros * H13 H24 HA (EA & DA) (EB & DB) ((Hn & Hn' & Eν) & T0 & Dν & ETν).
     exact (conj (@gne_tm_snd DE DEL _ _ _ _ _ _ _ _ _ _ _ _ H13 H24 HA EA EB (conj Hn (conj Hn' Eν)))
                 (alg_snd ETν Dν (eqtm_wf_l Hty Eν))).
+  (* the unit type (M8c) *)
+  - intros * HΓ Hl. refine (conj (@geq_ty_unit DE DEL _ _ _ _ HΓ Hl) _).
+    eapply act_red; [constructor | constructor | apply whnf_tyUnit | apply whnf_tyUnit |].
+    apply actnf_unit, (lequiv_leqv _ _ _ Hl).
+  - intros * HΓ Hl. refine (conj (@geq_tm_code_unit DE DEL _ _ _ _ HΓ Hl) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmUnit | apply whnf_tmUnit |].
+    apply actmnf_code_unit, (lequiv_leqv _ _ _ Hl).
+  - intros * Hl Ht Ht'. refine (conj (@geq_tm_unit_eta DE DEL _ _ _ _ _ Hl Ht Ht') _).
+    destruct (tgt_whnf_tm Ht) as (w & Hr & Hw). destruct (tgt_whnf_tm Ht') as (w' & Hr' & Hw').
+    eapply actm_red; [constructor | apply whnf_tyUnit | exact Hr | exact Hr' | exact Hw | exact Hw' |].
+    apply actmnf_unit_eta.
 Qed.
 
 End Alg.

@@ -147,6 +147,13 @@ Lemma subst_fst l l' A B p : (tmFst l l' A B p)[d] = tmFst l l' A[d] B[llift d] 
 Proof. reflexivity. Qed.
 Lemma subst_snd l l' A B p : (tmSnd l l' A B p)[d] = tmSnd l l' A[d] B[llift d] p[d].
 Proof. reflexivity. Qed.
+(** The unit type (M8c). *)
+Lemma ren_tyUnit l : (tyUnit l)⟨r⟩ = tyUnit l. Proof. reflexivity. Qed.
+Lemma ren_tmUnit l : (tmUnit l)⟨r⟩ = tmUnit l. Proof. reflexivity. Qed.
+Lemma ren_triv l : (tmTriv l)⟨r⟩ = tmTriv l. Proof. reflexivity. Qed.
+Lemma subst_tyUnit l : (tyUnit l)[d] = tyUnit l. Proof. reflexivity. Qed.
+Lemma subst_tmUnit l : (tmUnit l)[d] = tmUnit l. Proof. reflexivity. Qed.
+Lemma subst_triv l : (tmTriv l)[d] = tmTriv l. Proof. reflexivity. Qed.
 End Push.
 
 Ltac push_ren := repeat progress (
@@ -156,7 +163,7 @@ Ltac push_ren := repeat progress (
           ?ren_letboxT, ?ren_letboxt, ?ren_elimT, ?ren_elimt,
           ?ren_tyUPi, ?ren_ulam, ?ren_uapp, ?ren_usubst_ty, ?ren_usubst_tm, ?ren_uren_tm,
           ?ren_tyCPi, ?ren_tyTPi, ?ren_clam, ?ren_capp, ?ren_tlam, ?ren_tapp,
-          ?ren_tySig, ?ren_tmSig, ?ren_pair, ?ren_fst, ?ren_snd).
+          ?ren_tySig, ?ren_tmSig, ?ren_pair, ?ren_fst, ?ren_snd, ?ren_tyUnit, ?ren_tmUnit, ?ren_triv).
 Ltac push_subst := repeat progress (
   rewrite ?subst_tyNat, ?subst_tyPi, ?subst_tyU, ?subst_tyEl, ?subst_var, ?subst_tmNat,
           ?subst_tmPi, ?subst_tmU, ?subst_zero, ?subst_succ, ?subst_natrec, ?subst_lam,
@@ -164,7 +171,8 @@ Ltac push_subst := repeat progress (
           ?subst_boxt, ?subst_letboxT, ?subst_letboxt, ?subst_elimT, ?subst_elimt,
           ?subst_tyUPi, ?subst_ulam, ?subst_uapp,
           ?subst_tyCPi, ?subst_tyTPi, ?subst_clam, ?subst_capp, ?subst_tlam, ?subst_tapp,
-          ?subst_tySig, ?subst_tmSig, ?subst_pair, ?subst_fst, ?subst_snd).
+          ?subst_tySig, ?subst_tmSig, ?subst_pair, ?subst_fst, ?subst_snd,
+          ?subst_tyUnit, ?subst_tmUnit, ?subst_triv).
 
 (** ** Weakening past a binder *)
 

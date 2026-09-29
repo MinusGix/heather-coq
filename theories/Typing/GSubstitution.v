@@ -390,6 +390,9 @@ Lemma gs_pair l l' A B a b : (tmPair l l' A B a b)⦃σ⦄ = tmPair l l' A⦃σ�
 Proof. reflexivity. Qed.
 Lemma gs_fst l l' A B p : (tmFst l l' A B p)⦃σ⦄ = tmFst l l' A⦃σ⦄ B⦃σ⦄ p⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_snd l l' A B p : (tmSnd l l' A B p)⦃σ⦄ = tmSnd l l' A⦃σ⦄ B⦃σ⦄ p⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tyUnit l : (tyUnit l)⦃σ⦄ = tyUnit l. Proof. reflexivity. Qed.
+Lemma gs_tmUnit l : (tmUnit l)⦃σ⦄ = tmUnit l. Proof. reflexivity. Qed.
+Lemma gs_triv l : (tmTriv l)⦃σ⦄ = tmTriv l. Proof. reflexivity. Qed.
 End PushGS.
 
 Ltac push_gsubst := repeat progress (
@@ -398,7 +401,7 @@ Ltac push_gsubst := repeat progress (
           ?gs_boxt, ?gs_letboxT, ?gs_letboxt, ?gs_cnil, ?gs_cext, ?gs_lshift,
           ?gs_tyGvar, ?gs_gvar, ?gs_cvar, ?gs_elimT, ?gs_elimt, ?gs_tyUPi, ?gs_ulam, ?gs_uapp,
           ?gs_tyCPi, ?gs_tyTPi, ?gs_clam, ?gs_capp, ?gs_tlam, ?gs_tapp,
-          ?gs_tySig, ?gs_tmSig, ?gs_pair, ?gs_fst, ?gs_snd).
+          ?gs_tySig, ?gs_tmSig, ?gs_pair, ?gs_fst, ?gs_snd, ?gs_tyUnit, ?gs_tmUnit, ?gs_triv).
 
 Lemma gs_single_ty (M : ty) a σ : M[lsingle a]⦃σ⦄ = M⦃σ⦄[lsingle a⦃σ⦄].
 Proof. rewrite gsubst_subst_ty; reflexivity. Qed.
@@ -698,6 +701,14 @@ Ltac gs_manual2 :=
   | |- eq_tm _ _ _ (tmPair _ _ _ _ _ _) (tmPair _ _ _ _ _ _) _ _ => eapply eqtm_pair; gs_premise
   | |- eq_tm _ _ _ (tmFst _ _ _ _ _) (tmFst _ _ _ _ _) _ _ => eapply eqtm_fst; gs_premise
   | |- eq_tm _ _ _ (tmSnd _ _ _ _ _) (tmSnd _ _ _ _ _) _ _ => eapply eqtm_snd; gs_premise
+  (* the unit type (M8c) *)
+  | |- wf_ty _ _ _ (tyUnit _) _ => eapply wft_unit; gs_premise
+  | |- eq_ty _ _ _ (tyUnit _) (tyEl _ _) _ => eapply eqty_El_unit; gs_premise
+  | |- eq_ty _ _ _ (tyUnit _) (tyUnit _) _ => eapply eqty_unit; gs_premise
+  | |- wf_tm _ _ _ (tmUnit _) _ _ => eapply wf_code_unit; gs_premise
+  | |- wf_tm _ _ _ (tmTriv _) _ _ => eapply wf_triv; gs_premise
+  | |- eq_tm _ _ _ (tmUnit _) (tmUnit _) _ _ => eapply eqtm_code_unit; gs_premise
+  | |- eq_tm _ _ _ _ _ (tyUnit _) _ => eapply eqtm_unit_eta; gs_premise
   | |- wf_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ => eapply wf_letboxT; try gs_body; gs_premise
   | |- wf_tm _ _ _ (letboxt _ _ _ _ _ _ _) _ _ => eapply wf_letboxt; try gs_body; gs_premise
   | Hσ : gsub_wf _ _ _ |- eq_tm _ _ _ (letboxT _ _ _ _ _ (boxT _)) _ _ _ =>

@@ -137,7 +137,8 @@ Proof.
                 | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd codAd HR].
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd codAd HR
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR].
   - exists (NatRel (kw_G ρ) (kw_Δ ρ)). split.
     + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
       rewrite kty_tyNat in X, X'.
@@ -274,6 +275,15 @@ Proof.
       apply (kw_lequiv_shrink ρ) in H1, H3; [| exact Hw1 ..].
       apply (kw_lequiv_shrink ρ) in H2, H4; [| exact Hw2 ..].
       exact (HK (kw_comp ρ ρ') la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1').
+  - exists (UnitRel (kw_G ρ) (kw_Δ ρ) l1). split.
+    + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
+      rewrite kty_tyUnit in X, X'.
+      eapply LRunit; [exact (kw_lequiv ρ Hl) | exact (kw_lequiv ρ Hl2) | exact (kw_lwf ρ Hw) | exact X | exact X'
+                     | apply releq_refl].
+    + intros t t' Ht. apply HR in Ht. destruct Ht as (w & w' & Hr & Hr' & Hn & Hn').
+      pose proof (kw_tmred ρ Hr) as Y. pose proof (kw_tmred ρ Hr') as Y'.
+      rewrite kty_tyUnit in Y, Y'. exists (ktm ρ w), (ktm ρ w').
+      exact (conj Y (conj Y' (conj (whnf_kw ρ _ Hn) (whnf_kw ρ _ Hn')))).
 Qed.
 
 Theorem LR_kwk n : Pwk n.

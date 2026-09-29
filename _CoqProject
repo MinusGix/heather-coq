@@ -82,6 +82,7 @@ theories/Validity/PiComp.v
 theories/Validity/Natrec.v
 theories/Validity/CodePi.v
 theories/Validity/Sigma.v
+theories/Validity/Unit.v
 theories/Validity/Fundamental.v
 theories/Validity/Consequences.v
 theories/Validity/Payload.v

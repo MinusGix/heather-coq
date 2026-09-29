@@ -39,6 +39,7 @@ Proof.
   - eapply LRtpi with (Δ1 := Δ1) (Δ1' := Δ1') (l1 := l1) (l2 := l2) (l3 := l3) (l4 := l4)
       (T1 := T1) (T1' := T1') (instR := instR); eassumption.
   - eapply LRsig; [split|..]; eauto.
+  - eapply LRunit; eauto.
 Qed.
 
 Theorem cumul_down n m G Γ T T' l R :
@@ -68,6 +69,7 @@ Proof.
       rewrite (lequiv_measure_eq _ _ _ Hs), lmeasure_max in Hle end.
     eapply LRsig; [split|..]; eauto.
     all: intros; match goal with IH : _ |- LR _ _ _ _ _ _ _ _ => eapply IH; lia end.
+  - eapply LRunit; eauto.
 Qed.
 
 (** A type at level [l] is related identically at every stage above
@@ -132,6 +134,7 @@ Proof.
   - eapply LRtpi with (Δ1 := Δ1) (Δ1' := Δ1') (l1 := l1) (l2 := l2) (l3 := l3) (l4 := l4)
       (T1 := T1) (T1' := T1') (instR := instR); eauto using releq_trans, releq_sym.
   - eapply LRsig; eauto using releq_trans, releq_sym.
+  - eapply LRunit; eauto using releq_trans, releq_sym.
 Qed.
 
 Theorem LR_lconv n rec G Γ T T' l l' R :
@@ -147,7 +150,8 @@ Proof.
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
-                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
     intros Hl'.
   - eapply LRnat; eauto using lequiv_trans, tyred_lconv.
   - eapply (LRU n rec G Γ T T' l' l1 l2); eauto using lequiv_trans, tyred_lconv.
@@ -160,6 +164,7 @@ Proof.
   - eapply (LRtpi n rec G Γ T T' l' Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR); eauto using lequiv_trans, tyred_lconv.
   - eapply (LRsig n rec G Γ T T' l' l1 l2 l3 l4 A B A' B' domR codR); [split|..];
       eauto using lequiv_trans, tyred_lconv.
+  - eapply (LRunit n rec G Γ T T' l' l1 l2); eauto using lequiv_trans, tyred_lconv.
 Qed.
 
 End Basics.

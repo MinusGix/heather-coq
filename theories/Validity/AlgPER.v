@@ -797,6 +797,14 @@ Proof.
   eexists. eapply actmne_snd; exact Xν.
 Qed.
 
+(** The unit type (M8c). *)
+Lemma Y_actnf_unit {G Γ l l'} : leqv l l' -> Y_tynf G Γ (tyUnit l) (tyUnit l').
+Proof. intros Hl; red; intros; apply actnf_unit, leqv_sym, Hl. Qed.
+Lemma Y_actmnf_code_unit {G Γ l k k'} : leqv k k' -> Y_tmnf G Γ (tmUnit k) (tmUnit k') (tyU l).
+Proof. intros Hl; red; intros; apply actmnf_code_unit, leqv_sym, Hl. Qed.
+Lemma Y_actmnf_unit_eta {G Γ l w w'} : Y_tmnf G Γ w w' (tyUnit l).
+Proof. red; intros; apply actmnf_unit_eta. Qed.
+
 Theorem ac_sym_all :
   (forall G Γ T T', ac_ty G Γ T T' -> Y_ty G Γ T T') /\
   (forall G Γ W W', ac_tynf G Γ W W' -> Y_tynf G Γ W W') /\
@@ -834,7 +842,9 @@ Proof.
     | solve [eapply Y_acs_pt; eassumption]
     | solve [eapply Y_actnf_sig; eassumption] | solve [eapply Y_actmnf_code_sig; eassumption]
     | solve [eapply Y_actmnf_sig_eta; eassumption] | solve [eapply Y_actmne_fst; eassumption]
-    | solve [eapply Y_actmne_snd; eassumption] ].
+    | solve [eapply Y_actmne_snd; eassumption]
+    | solve [eapply Y_actnf_unit; eassumption] | solve [eapply Y_actmnf_code_unit; eassumption]
+    | solve [eapply Y_actmnf_unit_eta] ].
 Qed.
 
 (** ** Inversion of the algorithm on the left side's head *)
@@ -858,6 +868,8 @@ Proof. intros H; ainv H. Qed.
 Lemma ainv_nat {G Γ X} : ac_tynf G Γ tyNat X -> X = tyNat.
 Proof. intros H; ainv H. Qed.
 Lemma ainv_U {G Γ l X} : ac_tynf G Γ (tyU l) X -> exists l', X = tyU l' /\ leqv l l'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_unit {G Γ l X} : ac_tynf G Γ (tyUnit l) X -> exists l', X = tyUnit l' /\ leqv l l'.
 Proof. intros H; ainv H. Qed.
 Lemma ainv_pi {G Γ l1 l2 A B X} : ac_tynf G Γ (tyPi l1 l2 A B) X ->
   exists l3 l4 A' B', X = tyPi l3 l4 A' B' /\ leqv l1 l3 /\ leqv l2 l4 /\ ac_ty G Γ A A' /\
@@ -901,6 +913,8 @@ Lemma ainv_tm {G Γ t X T} : ac_tm G Γ t X T -> exists W w w', reds_ty T W /\ w
 Proof. intros H; ainv H. Qed.
 
 Lemma ainv_code_nat {G Γ l X} : ac_tmnf G Γ tmNat X (tyU l) -> X = tmNat.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_code_unit {G Γ l k X} : ac_tmnf G Γ (tmUnit k) X (tyU l) -> exists k', X = tmUnit k' /\ leqv k k'.
 Proof. intros H; ainv H. Qed.
 Lemma ainv_code_U {G Γ l k X} : ac_tmnf G Γ (tmU k) X (tyU l) -> exists k', X = tmU k' /\ leqv k k'.
 Proof. intros H; ainv H. Qed.
@@ -2160,6 +2174,20 @@ Proof.
   eapply actmne_snd. exact (IHν ν'' _ i _ _ _ _ _ _ Hc Hν Hν' Hν'' Dν2).
 Qed.
 
+(** The unit type (M8c). *)
+Lemma T_actnf_unit {G Γ l l'} : leqv l l' -> T_tynf G Γ (tyUnit l) (tyUnit l').
+Proof.
+  intros Hl; red; intros * _ _ _ _ D2. destruct (ainv_unit D2) as (l'' & -> & Hl2).
+  apply actnf_unit, (leqv_trans _ _ _ Hl Hl2).
+Qed.
+Lemma T_actmnf_code_unit {G Γ l k k'} : leqv k k' -> T_tmnf G Γ (tmUnit k) (tmUnit k') (tyU l).
+Proof.
+  intros Hl; red; intros * _ _ _ _ D2. destruct (ainv_code_unit D2) as (k'' & -> & Hl2).
+  apply actmnf_code_unit, (leqv_trans _ _ _ Hl Hl2).
+Qed.
+Lemma T_actmnf_unit_eta {G Γ l w w'} : T_tmnf G Γ w w' (tyUnit l).
+Proof. red; intros; apply actmnf_unit_eta. Qed.
+
 Theorem ac_trans_all :
   (forall G Γ T T', ac_ty G Γ T T' -> T_ty G Γ T T') /\
   (forall G Γ W W', ac_tynf G Γ W W' -> T_tynf G Γ W W') /\
@@ -2197,5 +2225,7 @@ Proof.
     | solve [eapply T_acs_pt; eassumption]
     | solve [eapply T_actnf_sig; eassumption] | solve [eapply T_actmnf_code_sig; eassumption]
     | solve [eapply T_actmnf_sig_eta; eassumption] | solve [eapply T_actmne_fst; eassumption]
-    | solve [eapply T_actmne_snd; eassumption] ].
+    | solve [eapply T_actmne_snd; eassumption]
+    | solve [eapply T_actnf_unit; eassumption] | solve [eapply T_actmnf_code_unit; eassumption]
+    | solve [eapply T_actmnf_unit_eta] ].
 Qed.

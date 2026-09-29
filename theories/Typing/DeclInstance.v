@@ -152,6 +152,10 @@ Proof.
     refine (conj _ (conj _ _)); [constructor; auto .. |]. now apply eqtm_fst.
   - intros * Hl1 Hl2 HA HAA HB (Hn & Hn' & Heq).
     refine (conj _ (conj _ _)); [constructor; auto .. |]. now apply eqtm_snd.
+  (* the unit type *)
+  - intros; apply eqty_unit; [exact Hi | now rewrite Hty | assumption].
+  - intros; apply eqtm_code_unit; [exact Hi | now rewrite Hty | assumption].
+  - intros; apply eqtm_unit_eta; auto.
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].

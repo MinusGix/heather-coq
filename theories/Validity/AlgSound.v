@@ -455,6 +455,10 @@ Lemma sig_inj_c {G i Γ l l1 l2 l3 l4 A A' B B'} : compt i ->
   [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ].
 Proof. intros Hc H. destruct Hc as [-> | ->]; [exact (decl_sig_inj H) | exact (declM_sig_inj H)]. Qed.
 
+Lemma unit_inj_c {G i Γ l l1 l2} : compt i ->
+  [ G ; Γ ⊢[ i ] tyUnit l1 ≅ tyUnit l2 @ l ] -> lequiv (gL G) l2 l1.
+Proof. intros Hc H. destruct Hc as [-> | ->]; [exact (decl_unit_inj H) | exact (declM_unit_inj H)]. Qed.
+
 Lemma S_actmne_app {G Γ l1 l2 l3 l4 A A' B B' ν ν' s s' m m' A0 B0} :
   S_ne G Γ ν ν' (tyPi m m' A0 B0) -> S_tm G Γ s s' A0 ->
   S_ne G Γ (app ν l1 l2 A B s) (app ν' l3 l4 A' B' s') B0[lsingle s].
@@ -570,6 +574,29 @@ Proof.
 Qed.
 
 (** The annotations of a projection agree with the inferred [Σ] type. *)
+(** The unit type (M8c). *)
+Lemma S_actnf_unit {G Γ l l'} : leqv l l' -> S_ty G Γ (tyUnit l) (tyUnit l').
+Proof.
+  intros Hl i k Hc HT HT'.
+  destruct (inv_ty_unit HT) as ((_ & HΓ & W) & Hk). destruct (inv_ty_unit HT') as ((_ & _ & W') & _).
+  apply (lvl_eq_eqty Hk). apply eqty_unit; [exact Hc | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
+Qed.
+
+Lemma S_actmnf_code_unit {G Γ l k k'} : leqv k k' -> S_tm G Γ (tmUnit k) (tmUnit k') (tyU l).
+Proof.
+  intros Hl i kk Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_code_unit Hi Ht) as ((_ & HΓ & W) & Hk & HT). destruct (inv_code_unit Hi Ht') as ((_ & _ & W') & _).
+  eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
+  apply eqtm_code_unit; [exact Hc | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
+Qed.
+
+Lemma S_actmnf_unit_eta {G Γ l w w'} : S_tm G Γ w w' (tyUnit l).
+Proof.
+  intros i k Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_unit (wf_tm_ty Hi Ht)) as ((_ & _ & W) & Hk).
+  apply (lvl_eq_eqtm Hk). apply eqtm_unit_eta; [exact Hc | exact W | exact (lvl_eq_tm' Hk Ht) | exact (lvl_eq_tm' Hk Ht')].
+Qed.
+
 Lemma proj_annots {G i Γ l1 l2 l3 l4 A A' B B' m m' A0 B0} : typeof i = i -> compt i ->
   [ G ; Γ ⊢[ i ] A @ l1 ] -> lwf (gL G) l1 ->
   [ G ; Γ ⊢[ i ] tySig l1 l2 A B ≅ tySig m m' A0 B0 @ lmax l1 l2 ] ->
@@ -1078,7 +1105,9 @@ Proof.
     | solve [eapply S_acs_pt; eassumption]
     | solve [eapply S_actnf_sig; eassumption] | solve [eapply S_actmnf_code_sig; eassumption]
     | solve [eapply S_actmnf_sig_eta; eassumption] | solve [eapply S_actmne_fst; eassumption]
-    | solve [eapply S_actmne_snd; eassumption] ].
+    | solve [eapply S_actmne_snd; eassumption]
+    | solve [eapply S_actnf_unit; eassumption] | solve [eapply S_actmnf_code_unit; eassumption]
+    | solve [eapply S_actmnf_unit_eta] ].
 Qed.
 
 (** Algorithmically convertible types (terms) of the computing layers,

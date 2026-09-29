@@ -243,7 +243,7 @@ Qed.
 
 Fixpoint sz_ty (T : ty) : nat :=
   match T with
-  | tyErr | tyNat | tyU _ => 1
+  | tyErr | tyNat | tyU _ | tyUnit _ => 1
   | tyPi _ _ A B | tySig _ _ A B => S (sz_ty A + sz_ty B)
   | tyEl _ t => S (sz_tm t)
   | tyGvar _ d => S (sz_l d)
@@ -254,7 +254,7 @@ Fixpoint sz_ty (T : ty) : nat :=
   end
 with sz_tm (t : tm) : nat :=
   match t with
-  | var _ | tmErr | tmNat | tmU _ | zero => 1
+  | var _ | tmErr | tmNat | tmU _ | zero | tmUnit _ | tmTriv _ => 1
   | tmPi _ _ s t | tmSig _ _ s t => S (sz_tm s + sz_tm t)
   | succ t => S (sz_tm t)
   | natrec _ M s z t => S (sz_ty M + sz_tm s + sz_tm z + sz_tm t)

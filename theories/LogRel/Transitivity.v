@@ -143,7 +143,8 @@ Proof.
                  | G Γ T1 T2 l l1 l2 U1 U2 instR R Hj Hl Hl2 Hw1 HT1 HT2 HU1 HU2 Hgeq instAd IHinst HR
                  | G Γ T1 T2 l Δ1 Δ2 l1 l2 l3 l4 U1 U2 instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HΔ HU1 HU2
                      Hgeq instAd IHinst HR
-                 | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R P1 domAd1 IHdom codAd1 IHcod HR];
+                 | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R P1 domAd1 IHdom codAd1 IHcod HR
+                 | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR];
     intros T3 R23 H2.
   - (* Nat *)
     destruct (LR_inv_nat H2 HT2) as (_ & HT3 & HR2).
@@ -474,6 +475,11 @@ Proof.
         pose proof (proj2 (IHcod ρ _ _ h1 _ _
                              (LR_lconv _ _ _ _ _ _ _ _ _ (codAd2 ρ _ _ h2) Hl24')) _ _ _ C1 C2) as X3.
         exact (proj1 (Hcodirr ρ _ _ _ h1 h _ _) X3).
+  - (* Unit *)
+    destruct (LR_inv_unit H2 HT2) as (l3 & _ & Hl3 & _ & HT3 & HR2).
+    split; [eapply (LRunit n (LRbelow n) G Γ T1 T3 l l1 l3); eauto using lequiv_trans|].
+    intros t1 t2 t3 H12 H23. apply HR. apply HR in H12. apply HR2 in H23.
+    apply (UnitRel_lconv Hl2) in H23. exact (UnitRel_trans H12 H23).
 Qed.
 
 Theorem LR_trans n : Ptrans n.

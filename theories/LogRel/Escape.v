@@ -37,6 +37,38 @@ Qed.
 Lemma tyred_ctx {G Γ T W l} : [ G ; Γ ⊢g T ⤳* W @ l ] -> [ G ; Γ ⊢g ].
 Proof. intros []; eauto using ctx_of_ty. Qed.
 
+(** The unit type's term relation at equivalent levels. *)
+Lemma unit_conv {G Γ t l l'} : lequiv (gL G) l l' ->
+  [ G ; Γ ⊢g t : tyUnit l @ l ] -> [ G ; Γ ⊢g t : tyUnit l' @ l' ].
+Proof.
+  intros Hl Ht. eapply conv_tm; [exact Ht | | exact (lequiv_sym _ _ _ Hl)].
+  apply eqty_unit; [exact ge_compt | rewrite ge_typeof; exact (ctx_of_tm Ht) | exact (lequiv_sym _ _ _ Hl)].
+Qed.
+
+Lemma unit_tmred_conv {G Γ t w l l'} : lequiv (gL G) l l' ->
+  [ G ; Γ ⊢g t ⤳* w : tyUnit l @ l ] -> [ G ; Γ ⊢g t ⤳* w : tyUnit l' @ l' ].
+Proof.
+  intros Hl H. eapply tmred_lconv; [| exact (lequiv_sym _ _ _ Hl)].
+  eapply tmred_conv; [apply ge_typeof | exact H |].
+  apply eqty_unit; [exact ge_compt | rewrite ge_typeof; exact (ctx_of_tm (tmred_wf _ _ _ _ _ _ _ H)) | exact Hl].
+Qed.
+
+Lemma UnitRel_lconv {G Γ l l'} : lequiv (gL G) l l' -> releq (UnitRel G Γ l) (UnitRel G Γ l').
+Proof.
+  intros Hl t t'; split; intros (w & w' & Hw & Hw' & Hn & Hn'); exists w, w';
+    refine (conj _ (conj _ (conj Hn Hn'))); eauto using unit_tmred_conv, lequiv_sym.
+Qed.
+
+Lemma UnitRel_sym {G Γ l t t'} : UnitRel G Γ l t t' -> UnitRel G Γ l t' t.
+Proof. intros (w & w' & Hw & Hw' & Hn & Hn'). exists w', w. auto. Qed.
+
+Lemma UnitRel_trans {G Γ l t1 t2 t3} : UnitRel G Γ l t1 t2 -> UnitRel G Γ l t2 t3 -> UnitRel G Γ l t1 t3.
+Proof. intros (w1 & _ & Hw1 & _ & Hn1 & _) (_ & w3 & _ & Hw3 & _ & Hn3). exists w1, w3. auto. Qed.
+
+Lemma UnitRel_wf {G Γ l t t'} : UnitRel G Γ l t t' ->
+  [ G ; Γ ⊢g t : tyUnit l @ l ] /\ [ G ; Γ ⊢g t' : tyUnit l @ l ].
+Proof. intros (w & w' & Hw & Hw' & _ & _). exact (conj (tmred_wf _ _ _ _ _ _ _ Hw) (tmred_wf _ _ _ _ _ _ _ Hw')). Qed.
+
 (** ** Escape for contextual types *)
 
 Lemma ModRel_escape_ty {G Γ T T' l R} : ModRel G Γ T T' l R ->
@@ -89,7 +121,8 @@ Proof.
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
-                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR].
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR].
   all: try solve [exact (ModRel_escape_ty HM)].
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
@@ -101,6 +134,7 @@ Proof.
   - eapply geq_ty_lconv; [exact Hgeq | exact Hl].
   - eapply geq_ty_lconv; [exact Hgeq | exact Hl].
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sig; auto using lequiv_sym.
+  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_unit; [eapply tyred_ctx, HT | now apply lequiv_sym].
 Qed.
 
 (** ** Escape for terms *)
@@ -119,7 +153,8 @@ Proof.
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                     Hgeq instAd HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
-                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
     intros t t' Htt; first [exact (ModRel_escape_tm HM _ _ Htt) | apply HR in Htt].
   - (* Nat *)
     destruct Htt as [t t' w w' Hw Hw' Heq _].
@@ -191,6 +226,13 @@ Proof.
     + eapply conv_tm; [apply Hw'' | exact HTP | exact Hl].
     + eapply conv_geq_tm; [eapply geq_tm_exp; [exact Hw | exact Hw'' | exact Heq]
                           | apply eqty_sym, HTP | exact Hl].
+  - (* Unit: irrelevant, escape from η *)
+    destruct (UnitRel_wf Htt) as [Ht Ht'].
+    assert (HTU : [ G ; Γ ⊢g T ≅ tyUnit l1 @ l ]) by apply HT.
+    repeat split.
+    + eapply conv_tm; [exact Ht | exact HTU | exact Hl].
+    + eapply conv_tm; [exact Ht' | exact HTU | exact Hl].
+    + eapply conv_geq_tm; [exact (geq_tm_unit_eta Hw Ht Ht') | apply eqty_sym, HTU | exact Hl].
 Qed.
 
 (** ** Local weakening at the instance's layer *)
@@ -430,6 +472,7 @@ Section KwPush.
 Context {G : gctx} {Γ : ctx} (ρ : kwk G Γ).
 Lemma kty_tyNat : kty ρ tyNat = tyNat. Proof. unfold kty; now rewrite gwa_tyNat. Qed.
 Lemma kty_tyU l : kty ρ (tyU l) = tyU l. Proof. unfold kty; now rewrite gwa_tyU. Qed.
+Lemma kty_tyUnit l : kty ρ (tyUnit l) = tyUnit l. Proof. unfold kty; now rewrite gwa_tyUnit. Qed.
 Lemma kty_tyPi l l' A B : kty ρ (tyPi l l' A B) = tyPi l l' (kty ρ A) (ktyl ρ B).
 Proof. unfold kty, ktyl; now rewrite gwa_tyPi. Qed.
 Lemma kty_tySig l l' A B : kty ρ (tySig l l' A B) = tySig l l' (kty ρ A) (ktyl ρ B).

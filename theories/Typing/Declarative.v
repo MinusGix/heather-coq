@@ -75,6 +75,9 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
 | wft_sig G i Γ l l' A B : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
     [ G ; Γ ⊢[ i ] tySig l l' A B @ lmax l l' ]
+(* the unit type (layers D and M; M8_DESIGN.md K2) *)
+| wft_unit G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] tyUnit l @ l ]
 
 with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 | wf_var G i Γ n T l : [ G ; Γ ⊢[ typeof i ] ] -> in_ctx Γ n T l ->
@@ -201,6 +204,11 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
     [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ] ->
     [ G ; Γ ⊢[ i ] tmSnd l l' A B p : B[lsingle (tmFst l l' A B p)] @ l' ]
+(* the unit type (layers D and M) *)
+| wf_code_unit G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] tmUnit l : tyU l @ lsuc l ]
+| wf_triv G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] tmTriv l : tyUnit l @ l ]
 
 with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
 | eqty_refl G i Γ T l : [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T @ l ]
@@ -268,6 +276,11 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ] ->
     [ G ; Γ ⊢[ i ] tySig l l' (tyEl l s) (tyEl l' t) ≅ tyEl (lmax l l') (tmSig l l' s t) @ lmax l l' ]
+(* the unit type (layers D and M) *)
+| eqty_unit G i Γ l l' : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] tyUnit l ≅ tyUnit l' @ l ]
+| eqty_El_unit G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] tyUnit l ≅ tyEl l (tmUnit l) @ l ]
 
 with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
 | eqtm_refl G i Γ t T l : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ i ] t ≅ t : T @ l ]
@@ -532,6 +545,13 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ] ->
     [ G ; Γ ⊢[ i ] tmPair l l' A B (tmFst l l' A B p) (tmSnd l l' A B p) ≅ p
                   : tySig l l' A B @ lmax l l' ]
+(* the unit type (layers D and M): the code's congruence, and η as proof
+   irrelevance, which subsumes the congruence of [⟨⟩] *)
+| eqtm_code_unit G i Γ l l' : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] tmUnit l ≅ tmUnit l' : tyU l @ lsuc l ]
+| eqtm_unit_eta G i Γ l t t' : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] t : tyUnit l @ l ] -> [ G ; Γ ⊢[ i ] t' : tyUnit l @ l ] ->
+    [ G ; Γ ⊢[ i ] t ≅ t' : tyUnit l @ l ]
 
 (** Context equivalence ([Ψ ⊢ᵢ Γ ≈ Δ], used by the congruences of [□]). *)
 with eq_ctx : gctx -> layer -> ctx -> ctx -> Prop :=

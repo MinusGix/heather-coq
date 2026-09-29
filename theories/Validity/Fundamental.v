@@ -5,7 +5,7 @@
     from the rule's own, and the tactics lift a case to global weakenings.
     The theorem itself quantifies over related global substitutions:
     [FundamentalS] (layers C and P) and [FundamentalM] (layer M). *)
-From DeLaM.Validity Require Export Sigma.
+From DeLaM.Validity Require Export Unit.
 
 Section Fundamental.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
@@ -19,6 +19,17 @@ Lemma ft_U {l} : lwf (gL G) l -> VTy G Γ (tyU l) (tyU l) (lsuc l).
 Proof. intros Hwl; exact (V_U Hwl (lequiv_refl _ _ Hwl)). Qed.
 Lemma ft_U_eq {l l'} : lequiv (gL G) l l' -> VTy G Γ (tyU l) (tyU l') (lsuc l).
 Proof. intros Hl; exact (V_U (lequiv_wf_l _ _ _ Hl) Hl). Qed.
+
+Lemma ft_unit {l} : lwf (gL G) l -> VTy G Γ (tyUnit l) (tyUnit l) l.
+Proof. intros Hwl; exact (V_unit Hwl (lequiv_refl _ _ Hwl)). Qed.
+Lemma ft_unit_eq {l l'} : lequiv (gL G) l l' -> VTy G Γ (tyUnit l) (tyUnit l') l.
+Proof. intros Hl; exact (V_unit (lequiv_wf_l _ _ _ Hl) Hl). Qed.
+Lemma ft_code_unit {l} : lwf (gL G) l -> VTm G Γ (tmUnit l) (tmUnit l) (tyU l) (lsuc l).
+Proof. intros Hwl; exact (V_code_unit Hwl (lequiv_refl _ _ Hwl)). Qed.
+Lemma ft_code_unit_eq {l l'} : lequiv (gL G) l l' -> VTm G Γ (tmUnit l) (tmUnit l') (tyU l) (lsuc l).
+Proof. intros Hl; exact (V_code_unit (lequiv_wf_l _ _ _ Hl) Hl). Qed.
+Lemma ft_triv {l} : lwf (gL G) l -> VTm G Γ (tmTriv l) (tmTriv l) (tyUnit l) l.
+Proof. intros Hwl; exact (V_triv Hwl (lequiv_refl _ _ Hwl)). Qed.
 
 Lemma ft_El {l t} : lwf (gL G) l -> VTm G Γ t t (tyU l) (lsuc l) -> VTy G Γ (tyEl l t) (tyEl l t) l.
 Proof. intros Hwl Vt; exact (V_El Hwl (lequiv_refl _ _ Hwl) Vt). Qed.
@@ -274,7 +285,12 @@ Ltac ft_case :=
   | solve [simple eapply ft_fst; eassumption] | solve [simple eapply ft_fst_eq; eassumption]
   | solve [simple eapply ft_snd; eassumption] | solve [simple eapply ft_snd_eq; eassumption]
   | solve [simple eapply V_fst_beta; eassumption] | solve [simple eapply V_snd_beta; eassumption]
-  | solve [simple eapply V_sig_eta; eassumption] | solve [simple eapply V_El_sig; eassumption] ].
+  | solve [simple eapply V_sig_eta; eassumption] | solve [simple eapply V_El_sig; eassumption]
+  (* the unit type (M8c) *)
+  | solve [simple eapply ft_unit; eassumption] | solve [simple eapply ft_unit_eq; eassumption]
+  | solve [simple eapply ft_code_unit; eassumption] | solve [simple eapply ft_code_unit_eq; eassumption]
+  | solve [simple eapply ft_triv; eassumption] | solve [simple eapply V_El_unit; eassumption]
+  | solve [simple eapply V_unit_eta; eassumption] ].
 
 (** ** Lifting to global weakenings
 
@@ -306,7 +322,7 @@ Ltac gl_push :=
     rewrite ?gwa_subst_ty, ?gwa_subst, ?gwa_lsingle, ?gwa_lsingle2, ?gwa_lsucc, ?gwa_ren, ?gwa_ren_ty in *;
     rewrite ?gwa_tyNat, ?gwa_tyPi, ?gwa_tyU, ?gwa_tyEl, ?gwa_var, ?gwa_zero, ?gwa_succ, ?gwa_tmNat,
             ?gwa_tmU, ?gwa_tmPi, ?gwa_lam, ?gwa_app, ?gwa_natrec, ?gwa_cext,
-            ?gwa_tySig, ?gwa_tmSig, ?gwa_pair, ?gwa_fst, ?gwa_snd in *).
+            ?gwa_tySig, ?gwa_tmSig, ?gwa_pair, ?gwa_fst, ?gwa_snd, ?gwa_tyUnit, ?gwa_tmUnit, ?gwa_triv in *).
 
 (** P-derivations are validated at an instance of any layer [≥ P]: their
     typing hypotheses are lifted to the instance's layer. *)

@@ -21,6 +21,7 @@ Fixpoint ty_leq (T T' : ty) {struct T} : Prop :=
   | tyCPi l A, tyCPi l' A' => leqv l l' /\ ty_leq A A'
   | tyTPi Δ l1 l2 A, tyTPi Δ' l1' l2' A' => ctx_leq Δ Δ' /\ leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A'
   | tySig l1 l2 A B, tySig l1' l2' A' B' => leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B'
+  | tyUnit l, tyUnit l' => leqv l l'
   | _, _ => False
   end
 with tm_leq (t t' : tm) {struct t} : Prop :=
@@ -64,6 +65,7 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
       leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq p p'
   | tmSnd l1 l2 A B p, tmSnd l1' l2' A' B' p' =>
       leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq p p'
+  | tmUnit l, tmUnit l' | tmTriv l, tmTriv l' => leqv l l'
   | _, _ => False
   end
 with ctx_leq (Γ Γ' : ctx) {struct Γ} : Prop :=
@@ -335,7 +337,7 @@ Fixpoint ty_lwf (L : nat) (T : ty) {struct T} : Prop :=
   match T with
   | tyErr | tyNat => True
   | tyPi l1 l2 A B | tySig l1 l2 A B => lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ ty_lwf L B
-  | tyU l => lwf L l
+  | tyU l | tyUnit l => lwf L l
   | tyEl l t => lwf L l /\ tm_lwf L t
   | tyGvar _ d => lsub_lwf L d
   | tyCTyp Δ l => ctx_lwf L Δ /\ lwf L l
@@ -348,7 +350,7 @@ with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   match t with
   | var _ | tmErr | tmNat | zero => True
   | tmPi l1 l2 s t | tmSig l1 l2 s t => lwf L l1 /\ lwf L l2 /\ tm_lwf L s /\ tm_lwf L t
-  | tmU l => lwf L l
+  | tmU l | tmUnit l | tmTriv l => lwf L l
   | succ t => tm_lwf L t
   | natrec l M s z t => lwf L l /\ ty_lwf L M /\ tm_lwf L s /\ tm_lwf L z /\ tm_lwf L t
   | lam l1 l2 A t => lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ tm_lwf L t

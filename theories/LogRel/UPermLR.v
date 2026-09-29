@@ -424,7 +424,8 @@ Proof.
                  | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd IHinst HR
                  | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
                      Hgeq instAd IHinst HR
-                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd IHdom codAd IHcod HR];
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd IHdom codAd IHcod HR
+                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
     intros π πi Hp;
     pose proof (uperm_inv _ _ _ Hp) as Hpi;
     pose proof (proj1 Hp) as Hinv; pose proof (proj1 (proj2 Hp)) as Hinv';
@@ -865,6 +866,18 @@ Proof.
         apply (ERc _ _ (proj2 (Nf _ _ _ _ _ NA1 NB1 (dnf_us_tm _ _)))
                        (proj2 (Nf _ _ _ _ _ NA1' NB1' (dnf_us_tm _ _)))).
         rewrite !usubst_snd', <- !(ktm_push Hp ρ), !(rt_tm Hinv') by assumption. exact c1.
+  - (* Unit *)
+    exists (UnitRel (Gp π G) Γ[pφ π]ᵤ (lvsubst l1 (pφ π))). split.
+    + eapply LRunit; [exact (pg_lequiv Hp Hl) | exact (pg_lequiv Hp Hl2) | exact (pg_lwf Hp Hw)
+                     | exact (pg_tyred Hp HT) | exact (pg_tyred Hp HT') | apply releq_refl].
+    + intros t t' Nt Nt'. rewrite (HR t t'). split.
+      * intros (w & w' & Hr & Hr' & Hf & Hf'). exists w[pφ π]ᵤ, w'[pφ π]ᵤ.
+        exact (conj (pg_tmred Hp Hr) (conj (pg_tmred Hp Hr') (conj (whnf_usubst _ _ Hf) (whnf_usubst _ _ Hf')))).
+      * intros (w & w' & Hr & Hr' & Hf & Hf'). apply (pg_tmred (G := Gp π G) Hpi) in Hr, Hr'.
+        change ((tyUnit ?x)[?φ]ᵤ) with (tyUnit (lvsubst x φ)) in Hr, Hr'.
+        rewrite (Gp_rt Hp HG), (rt_ctx Hinv _ HΓ), (rt_lvl Hinv), !(rt_tm Hinv) in Hr, Hr' by assumption.
+        exists w[pφ πi]ᵤ, w'[pφ πi]ᵤ.
+        exact (conj Hr (conj Hr' (conj (whnf_usubst _ _ Hf) (whnf_usubst _ _ Hf')))).
 Qed.
 
 Theorem LR_perm n : Pperm n.
