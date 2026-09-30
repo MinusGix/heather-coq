@@ -13,6 +13,33 @@ From DeLaM.Validity Require Export AlgComplete.
 
 (** ** Uniqueness of the inferred type *)
 
+Lemma elimT_inj {l1 l2 rb l Δ t l1' l2' rb' l' Δ' t'} :
+  elimT l1 l2 rb l Δ t = elimT l1' l2' rb' l' Δ' t' ->
+  l1 = l1' /\ l2 = l2' /\ rb = rb' /\ l = l' /\ Δ = Δ' /\ t = t'.
+Proof. intros H; injection H; auto 7. Qed.
+Lemma elimt_inj {l1 l2 rb l Δ T t l1' l2' rb' l' Δ' T' t'} :
+  elimt l1 l2 rb l Δ T t = elimt l1' l2' rb' l' Δ' T' t' ->
+  l1 = l1' /\ l2 = l2' /\ rb = rb' /\ l = l' /\ Δ = Δ' /\ T = T' /\ t = t'.
+Proof. intros H; injection H; auto 8. Qed.
+
+(** The components' equations, except the recursor block's (left to
+    [mkrb_inj_MT]). *)
+Ltac inj_small := repeat match goal with H : ?a = _ |- _ =>
+  lazymatch a with mkrb _ _ _ => fail | _ => injection H; intros; clear H end end.
+(** Inversion on the left term's head, cheaper than [inversion] (whose
+    proof terms dominated this file): [destruct] with the left index
+    remembered, mismatched heads closed by [discriminate]. The recursors go
+    through [elimT_inj]: [injection] would unfold the [mkrb] block. *)
+Ltac ne_inv D :=
+  let x := fresh "x" in let E := fresh "E" in
+  lazymatch type of D with ac_tmne _ _ ?v _ _ => remember v as x eqn:E in D end;
+  destruct D; try discriminate E;
+  lazymatch type of E with
+  | elimT _ _ _ _ _ _ = _ => apply elimT_inj in E; decompose [and] E; clear E; inj_small
+  | elimt _ _ _ _ _ _ _ = _ => apply elimt_inj in E; decompose [and] E; clear E; inj_small
+  | _ => injection E; intros
+  end; subst.
+
 Lemma ac_infer_uniq_all :
   (forall G Γ T T', ac_ty G Γ T T' -> True) /\
   (forall G Γ W W', ac_tynf G Γ W W' -> True) /\
@@ -26,7 +53,7 @@ Lemma ac_infer_uniq_all :
 Proof.
   apply ac_mut; intros; try exact I;
     lazymatch goal with D2 : ?J |- _ =>
-      lazymatch J with ac_tmne _ _ _ _ _ => inversion D2; subst; try kill_ne; try kill_box
+      lazymatch J with ac_tmne _ _ _ _ _ => ne_inv D2; try kill_ne; try kill_box
                  | ac_tmnee _ _ _ _ _ => inversion D2; subst end end;
     repeat match goal with E : mkrb _ _ _ = mkrb _ _ _ |- _ => destruct (mkrb_inj_MT E) as [<- <-]; clear E end;
     try reflexivity;
