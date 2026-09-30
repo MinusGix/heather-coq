@@ -222,7 +222,7 @@ Proof. destruct c; cbn [redT]; intros [= <-]; f_equal; peel_push r. Qed.
 Lemma redt_ren l1 l2 rb l Δ T c v r : redt l1 l2 rb l Δ T c = Some v ->
   redt l1 l2 rb⟨r⟩ l Δ T c = Some v⟨r⟩.
 Proof.
-  destruct c; cbn [redt]; try destruct T; intros E; inversion E; subst; f_equal; peel_push r.
+  destruct c; cbn [redt]; redt_case T; intros E; inversion E; subst; f_equal; peel_push r.
 Qed.
 
 Lemma red_ubeta_ren n l T b ls r : length ls = n -> red (uapp (ulam n l T⟨r⟩ b⟨r⟩) ls) b[uext ls lvar]ᵤ⟨r⟩.

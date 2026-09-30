@@ -69,7 +69,10 @@ Theorem typed_lwf :
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
   apply typing_mut; intros; try exact I;
-    try solve [apply elimT_lwf; auto | apply elimt_lwf; auto];
+    (* guarded: a failing [apply elimT_lwf] unfolds the recursor against every former *)
+    try solve [lazymatch goal with
+               | |- tm_lwf _ (elimT _ _ _ _ _ _) => apply elimT_lwf; auto
+               | |- tm_lwf _ (elimt _ _ _ _ _ _ _) => apply elimt_lwf; auto end];
     cbn [ty_lwf tm_lwf ctx_lwf lsub_lwf]; try tauto.
   (* global variables: the entries of the local substitution *)
   all: try solve [eapply lsub_lwf_entries; [eassumption|]; intros ?n ?A ?k ?Hin;

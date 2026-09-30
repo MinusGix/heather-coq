@@ -197,3 +197,10 @@ Definition redt (l : lvl) (Δ : ctx) (T : ty) (c : tm) : option tm :=
   end.
 
 End Reducts.
+
+(** Case on [redt]'s index where it is read (the λ case), after [cbn [redt]]:
+    a blanket [destruct c; destruct T] is quadratic in the formers. *)
+Ltac redt_case T := try lazymatch goal with
+  | |- context [match T with _ => _ end] => destruct T; cbn beta iota
+  | H : context [match T with _ => _ end] |- _ => destruct T; cbn beta iota in H
+  end.

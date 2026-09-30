@@ -119,7 +119,7 @@ Proof. destruct c; cbn [redT gren GRen_ty gren_ty]; intros E; inversion E; subst
 Lemma redt_gren l1 l2 rb l Δ T c v ξ : redt l1 l2 rb l Δ T c = Some v ->
   redt l1 l2 rb⟪ξ⟫ l Δ⟪ξ⟫ T⟪ξ⟫ c⟪ξ⟫ = Some v⟪ξ⟫.
 Proof.
-  destruct c; cbn [redt gren GRen_tm gren_tm]; try destruct T; cbn [gren_ty];
+  destruct c; cbn [redt gren GRen_tm gren_tm]; redt_case T; cbn [gren_ty];
     intros E; inversion E; subst; f_equal; gpeel_push.
 Qed.
 

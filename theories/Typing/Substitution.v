@@ -550,7 +550,7 @@ Lemma redt_subst_map l1 l2 MT Mt bs l Δ T c d : LK dnftm d ->
   redt l1 l2 (mkrb MT Mt bs)[d] l Δ T c =
   option_map (fun v => v[d]) (redt l1 l2 (mkrb MT Mt bs) l Δ T c).
 Proof.
-  intros Hd; destruct c; try destruct T; cbn [redt option_map]; try reflexivity; f_equal; speel_push.
+  intros Hd; destruct c; cbn [redt option_map]; redt_case T; cbn [redt option_map]; try reflexivity; f_equal; speel_push.
 Qed.
 Lemma redT_subst l1 l2 MT Mt bs l Δ c v d : LK dnftm d -> redT l1 l2 (mkrb MT Mt bs) l Δ c = Some v ->
   redT l1 l2 (mkrb MT Mt bs)[d] l Δ c = Some v[d].

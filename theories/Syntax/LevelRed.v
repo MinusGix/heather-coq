@@ -11,7 +11,7 @@ From DeLaM.Syntax Require Export Reduction.
 Ltac leq_cases' := first
   [ leq_cases
   | match goal with H : context [match ?x with _ => _ end] |- _ =>
-      is_var x; destruct x; cbn in H; try contradiction end ].
+      is_var x; destruct x; try exact (False_ind _ H); cbn in H; try contradiction end ].
 (** Split all relation hypotheses down to variables. *)
 Ltac leq_split := repeat first
   [ match goal with H : _ /\ _ |- _ => destruct H | H : False |- _ => destruct H end

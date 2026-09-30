@@ -293,6 +293,6 @@ Lemma redt_gsubst l1 l2 MT Mt bs l Δ T c v σ : gdnf σ ->
 Proof.
   intros Hσ E. pose proof E as E0. apply (f_equal (option_map (fun x => x⦃σ⦄))) in E.
   cbn [option_map] in E. rewrite <- E. clear E.
-  destruct c; try destruct T; cbn [redt] in E0; try discriminate E0;
+  destruct c; cbn [redt] in E0; redt_case T; try discriminate E0;
     cbn [redt option_map gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty]; f_equal; gpeel_push Hσ.
 Qed.

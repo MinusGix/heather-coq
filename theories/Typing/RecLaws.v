@@ -233,7 +233,7 @@ Lemma redt_usubst l1 l2 rb l Δ T c v φ : redt l1 l2 rb l Δ T c = Some v ->
   redt (lvsubst l1 φ) (lvsubst l2 φ) (usubst_tm rb φ) (lvsubst l φ) (ucsubst Δ φ) (usubst_ty T φ)
     (usubst_tm c φ) = Some (usubst_tm v φ).
 Proof.
-  destruct c; cbn [redt usubst_tm]; try destruct T; cbn [usubst_ty];
+  destruct c; cbn [redt usubst_tm]; redt_case T; cbn [usubst_ty];
     intros E; inversion E; subst; f_equal; upeel_push.
 Qed.
 

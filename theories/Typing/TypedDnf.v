@@ -82,7 +82,7 @@ Lemma dnf_redt l1 l2 rb l Δ T c r : dnftm rb -> dnfctx Δ -> dnfty T -> dnftm c
   redt l1 l2 rb l Δ T c = Some r -> dnftm r.
 Proof.
   intros Hrb HΔ HT Hc E. unfold rb_br in E.
-  destruct c; cbn [redt] in E; try destruct T; inversion E; subst; cbn in Hc, HT;
+  destruct c; cbn [redt] in E; redt_case T; inversion E; subst; cbn in Hc, HT;
     repeat first [ apply dnf_peelL | apply dnf_peelG | apply dnf_peelU | apply dnf_tup_nth ];
     cbn [dnfo dnftm dnfty dnfctx recT rect]; intuition auto.
   all: apply subst_dnf_ty; [intuition auto | first [apply lk_dnf_lsucc | apply lk_dnf_lsingle; first [exact I | intuition auto]]].

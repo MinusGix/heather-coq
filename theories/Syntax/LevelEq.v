@@ -149,12 +149,14 @@ Proof. induction 1; cbn; constructor; auto using leqv_lvsubst. Qed.
 (** ** Equivalence *)
 
 Ltac leq_start := intros ?Pty ?Ptm ?Pctx ?Pl; apply syn_ind; subst Pty Ptm Pctx Pl; cbn beta; intros.
-(** Case on the right-hand side of a relation hypothesis. *)
+(** Case on the right-hand side of a relation hypothesis. The mismatched
+    formers are closed by conversion before [cbn], which then runs on one
+    goal instead of one per former. *)
 Ltac leq_cases := match goal with
-  | H : ty_leq ?y ?x |- _ => is_var x; tryif is_var y then fail else (destruct x; cbn in H; try contradiction)
-  | H : tm_leq ?y ?x |- _ => is_var x; tryif is_var y then fail else (destruct x; cbn in H; try contradiction)
-  | H : ctx_leq ?y ?x |- _ => is_var x; tryif is_var y then fail else (destruct x; cbn in H; try contradiction)
-  | H : lsub_leq ?y ?x |- _ => is_var x; tryif is_var y then fail else (destruct x; cbn in H; try contradiction)
+  | H : ty_leq ?y ?x |- _ => is_var x; tryif is_var y then fail else (destruct x; try exact (False_ind _ H); cbn in H)
+  | H : tm_leq ?y ?x |- _ => is_var x; tryif is_var y then fail else (destruct x; try exact (False_ind _ H); cbn in H)
+  | H : ctx_leq ?y ?x |- _ => is_var x; tryif is_var y then fail else (destruct x; try exact (False_ind _ H); cbn in H)
+  | H : lsub_leq ?y ?x |- _ => is_var x; tryif is_var y then fail else (destruct x; try exact (False_ind _ H); cbn in H)
   end.
 
 Lemma leq_refl_all :
@@ -201,7 +203,7 @@ Lemma lcons'_leq d d' t t' : lsub_leq d d' -> tm_leq t t' -> lsub_leq (lcons' d 
 Proof.
   intros Hd Ht. destruct d as [k | d0 t0], d' as [k' | d0' t0']; cbn in Hd; try contradiction.
   - subst k'. destruct k as [|k]; [cbn; tauto|].
-    destruct t, t'; cbn in Ht; try contradiction; cbn; try tauto.
+    destruct t; leq_cases; cbn; try tauto.
     subst. destruct (Nat.eqb _ k); cbn; tauto.
   - cbn; tauto.
 Qed.
