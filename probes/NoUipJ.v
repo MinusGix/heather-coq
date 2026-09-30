@@ -21,6 +21,14 @@
     - β on the nose: at [u := a] and [e := refl], [ι] is the identity
       ([ι_refl]), so [J]'s objects are [c]'s ([J_beta_ob]) and its
       morphisms are [c]'s up to those equations ([J_beta_hom]).
+    - Stability under a substitution [σ : Δ → Γ]: [J(M; c; u; e)[σ] =
+      J(M[σ⁺⁺]; c[σ]; u[σ]; e[σ])], on objects ([J_stab_ob]) and on
+      morphisms up to those equations ([J_stab_hom]). Here [σ⁺ = liftA]
+      and [σ⁺⁺ = liftJ] lift [σ] through [Γ.A] and [Γ.A.Id], and [subS]
+      reindexes sections. [Id] and [refl] are stable by conversion
+      ([IdF_stab_fib], [IdF_stab_act], [refl_stab]). The one
+      non-definitional step is [ι_stab]: [σ⁺⁺(ι(d)) = ι(σ(d))], from
+      [σ]'s identity law.
 
     Groupoids here carry their laws, and their objects and morphisms form
     sets ([ob_set], [hom_set]), as in the set-theoretic model. This is what
@@ -31,10 +39,11 @@
     composition, and [J] needs none of their own laws. The context's
     unit laws are used, in [square].
 
-    Not mechanized: stability of [J] under substitution. It holds
-    because [J] is defined pointwise from its components, as for every
-    former in a split model. [J_example] instantiates everything at the
-    one-point context, which checks that the hypotheses are satisfiable. *)
+    [refl]'s morphism component ([reflS_hom]) is transparent, so that
+    [σ⁺⁺ ∘ ⟨a[σ], refl⟩] and [⟨a, refl⟩ ∘ σ] agree by conversion, and
+    [c[σ]] is [c]'s components verbatim. [J_example] instantiates
+    everything at the one-point context, which checks that the hypotheses
+    are satisfiable. *)
 From Coq Require Import Eqdep_dec PeanoNat.
 Set Primitive Projections.
 Set Implicit Arguments.
@@ -341,7 +350,7 @@ Definition IdT (b : Sec A) : Fam C := subF (pair0 b) IdF.
 (** [refl]: the identity morphism. *)
 Lemma reflS_hom {g g'} (f : chom C g g') :
   hom (fib (IdT a) g') (act (IdT a) f (idm (sob a g))) (idm (sob a g')).
-Proof. cbn. unfold IdAct; cbn. rewrite acth_idm, comp_idl. apply inv_r. Qed.
+Proof. cbn. unfold IdAct; cbn. rewrite acth_idm, comp_idl. apply inv_r. Defined.
 
 Definition reflS : Sec (IdT a).
 Proof.
@@ -443,6 +452,117 @@ Proof.
 Qed.
 End Beta.
 
+(** ** Stability of [J] under substitution *)
+
+(** A section's morphism component at a morphism equal to an identity or
+    a composite. *)
+Section Along.
+Context {C : Cat} (A : Fam C) (x : Sec A).
+
+Lemma shom_along_id {g} (m : chom C g g) (E : m = cid g) :
+  shom x m = eqh (eq_trans (f_equal (fun n => act A n (sob x g)) E) (act_id A g (sob x g))).
+Proof. subst m. rewrite (sec_id x g). apply eqh_irr. Qed.
+
+Lemma shom_along_comp {g1 g2 g3} (m : chom C g1 g3) (f1 : chom C g1 g2) (f2 : chom C g2 g3)
+  (E : m = ccomp f2 f1) :
+  shom x m = comp (shom x f2) (comp (acth A f2 (shom x f1))
+    (eqh (eq_trans (f_equal (fun n => act A n (sob x g1)) E) (act_comp A f1 f2 (sob x g1))))).
+Proof. subst m. rewrite (sec_comp x). eqh_unify. reflexivity. Qed.
+End Along.
+
+(** Reindexing a section: precomposition. *)
+Definition subS {D C : Cat} (s : Sub D C) (A : Fam C) (x : Sec A) : Sec (subF s A) :=
+  Build_Sec (subF s A) (fun d => sob x (so s d)) (fun d d' f => shom x (sh s f))
+    (fun d => shom_along_id A x (sh s (cid d)) (sh_id s d))
+    (fun d1 d2 d3 f1 f2 => shom_along_comp A x (sh s (ccomp f2 f1)) (sh s f1) (sh s f2) (sh_comp s _ _ _ f1 f2)).
+
+(** [σ⁺ : Δ.A[σ] → Γ.A]. *)
+Definition liftA {D C : Cat} (s : Sub D C) (A : Fam C) : Sub (ext (subF s A)) (ext A).
+Proof.
+  refine (Build_Sub (ext (subF s A)) (ext A) (fun o => mk_eob (so s (eb o)) (ey o))
+            (fun o o' m => @mk_ehom _ A (mk_eob (so s (eb o)) (ey o)) (mk_eob (so s (eb o')) (ey o')) (sh s (ea m)) (ef m))
+            _ _).
+  - intros o. match goal with |- ?m1 = ?m2 => apply (ehom_eq m1 m2 (sh_id s (eb o) : ea m1 = ea m2)) end.
+    cbn. rewrite eqh_trans. apply eqh_irr.
+  - intros o1 o2 o3 m1 m2.
+    match goal with |- ?n1 = ?n2 => apply (ehom_eq n1 n2 (sh_comp s _ _ _ (ea m1) (ea m2) : ea n1 = ea n2)) end.
+    cbn. rewrite !comp_assoc_r, eqh_trans. eqh_unify. reflexivity.
+Defined.
+
+Section Stab.
+Context {Γ Δ : Gpd} (σ : Sub (gcat Δ) (gcat Γ)) (A : Fam (gcat Γ)) (a : Sec A).
+
+Definition A' : Fam (gcat Δ) := subF σ A.
+Definition a' : Sec A' := subS σ A a.
+
+(** [σ⁺⁺ : Δ.A[σ].Id(a[σ]↑; var 0) → Γ.A.Id(a↑; var 0)]: the [Id] fibres
+    and actions agree by conversion. *)
+Definition liftJ : Sub (JC A' a') (JC A a).
+Proof.
+  refine (Build_Sub (JC A' a') (JC A a)
+            (fun o => @mk_eob _ (IdF A a) (so (liftA σ A) (eb o)) (ey o))
+            (fun o o' m => @mk_ehom _ (IdF A a) (@mk_eob _ (IdF A a) (so (liftA σ A) (eb o)) (ey o))
+                              (@mk_eob _ (IdF A a) (so (liftA σ A) (eb o')) (ey o')) (sh (liftA σ A) (ea m)) (ef m))
+            _ _).
+  - intros o. apply (ehom_eq_prop (IdF_prop A a)). apply (sh_id (liftA σ A)).
+  - intros o1 o2 o3 m1 m2. apply (ehom_eq_prop (IdF_prop A a)). apply (sh_comp (liftA σ A)).
+Defined.
+
+ (** [Id] and [refl] are stable on the nose: their fibres, actions and
+    points agree by conversion. *)
+Lemma IdF_stab_fib o : fib (IdF A' a') o = fib (IdF A a) (so (liftA σ A) o).
+Proof. reflexivity. Qed.
+Lemma IdF_stab_act {o o'} (m : chom (ext A') o o') p :
+  act (IdF A' a') m p = act (IdF A a) (sh (liftA σ A) m) p.
+Proof. reflexivity. Qed.
+Lemma refl_stab d : sob (reflS A' a') d = sob (reflS A a) (so σ d).
+Proof. reflexivity. Qed.
+
+Context (M : Fam (JC A a)) (c : Sec (subF (ar A a) M)) (u : Sec A) (e : Sec (IdT A a u)).
+
+Definition M' : Fam (JC A' a') := subF liftJ M.
+Definition u' : Sec A' := subS σ A u.
+
+(** [e[σ]]: its laws are equations in discrete fibres. *)
+Definition e' : Sec (IdT A' a' u').
+Proof.
+  refine (Build_Sec (IdT A' a' u') (fun d => sob e (so σ d)) (fun d d' f => shom e (sh σ f)) _ _).
+  all: intros; apply hom_set.
+Defined.
+
+(** [c[σ]]: [⟨a, refl⟩ ∘ σ] and [σ⁺⁺ ∘ ⟨a[σ], refl⟩] agree by conversion. *)
+Definition c' : Sec (subF (ar A' a') M').
+Proof.
+  refine (Build_Sec (subF (ar A' a') M') (fun d => sob c (so σ d)) (fun d d' f => shom c (sh σ f)) _ _).
+  - intros d. rewrite (shom_along_id _ c _ (sh_id σ d)). apply eqh_irr.
+  - intros d1 d2 d3 f1 f2. rewrite (shom_along_comp _ c _ _ _ (sh_comp σ _ _ _ f1 f2)). eqh_unify. reflexivity.
+Defined.
+
+(** [ι] commutes with [σ]. *)
+Lemma ι_stab d : sh liftJ (ι A' a' u' e' d) = ι A a u e (so σ d).
+Proof.
+  apply (ehom_eq_prop (IdF_prop A a)). cbn -[gcat].
+  match goal with |- ?m1 = ?m2 => apply (ehom_eq m1 m2 (sh_id σ d : ea m1 = ea m2)) end.
+  cbn -[gcat]. rewrite !comp_assoc_r, eqh_trans. eqh_unify. reflexivity.
+Qed.
+
+Definition J_stab_ob d : sob (J A' a' M' c' u' e') d = sob (J A a M c u e) (so σ d) :=
+  f_equal (fun m => act M m (sob c (so σ d))) (ι_stab d).
+
+(** [J(M; c; u; e)[σ] = J(M[σ⁺⁺]; c[σ]; u[σ]; e[σ])]: objects, and
+    morphisms up to those equations. *)
+Lemma J_stab_hom {d d'} (f : hom Δ d d') :
+  comp (eqh (J_stab_ob d')) (shom (J A' a' M' c' u' e') f) =
+  comp (shom (J A a M c u e) (sh σ f)) (eqh (f_equal (act M (sh (ue A a u e) (sh σ f))) (J_stab_ob d))).
+Proof.
+  cbn -[gcat]. unfold J_hom, J_stab_ob. rewrite comp_assoc_r.
+  rewrite (acth_along_r M (ι_stab d')
+             (shom c (sh σ f) : hom (fib M (so (ar A a) (so σ d'))) (act M (sh (ar A a) (sh σ f)) (sob c (so σ d)))
+                                   (sob c (so σ d')))).
+  eqh_norm. eqh_unify. reflexivity.
+Qed.
+End Stab.
+
 (** ** The hypotheses are satisfiable *)
 
 (** A constant family, over any base. *)
@@ -482,3 +602,5 @@ Print Assumptions J_beta_ob.
 Print Assumptions J_beta_hom.
 Print Assumptions IdF.
 Print Assumptions J_example.
+Print Assumptions J_stab_ob.
+Print Assumptions J_stab_hom.

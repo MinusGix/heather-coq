@@ -26,6 +26,7 @@ of the build (`_CoqProject` lists `theories/` only). Compile one with
   lawful groupoids whose objects and morphisms form sets, split families,
   and sections with their functor laws. It builds `Id(a↑; var 0)` over
   `Γ.A` as a split family, `refl`, and `J` as a section of `M[u/y, e/p]`
-  with both functor laws, and proves β on the nose. `J_example` shows
-  that the hypotheses are satisfiable. Stability under substitution is
-  not mechanized.
+  with both functor laws, and proves β on the nose. It also proves
+  stability under substitution: `J(M; c; u; e)[σ] = J(M[σ⁺⁺]; c[σ]; u[σ];
+  e[σ])` (`J_stab_ob`, `J_stab_hom`). `Id` and `refl` are stable by
+  conversion. `J_example` shows that the hypotheses are satisfiable.

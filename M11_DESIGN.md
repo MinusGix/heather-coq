@@ -255,4 +255,6 @@ groupoid model, and finds no conflict.
 `Id` family over `Γ.A`, `refl`, and `J` as a section of `M[u/y, e/p]`
 with its functor laws. β holds on the nose. It is closed under the global
 context; its groupoids have sets of objects and morphisms, as in the
-set-theoretic model. Stability under substitution is not mechanized.
+set-theoretic model. Stability under substitution is mechanized too
+(`J_stab_ob`, `J_stab_hom`). A substitution lifts through `Γ.A` and
+`Γ.A.Id`, and `Id` and `refl` are stable by conversion.
