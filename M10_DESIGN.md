@@ -1,7 +1,8 @@
 # M10: strict equality (`sEq`, `srefl`, `transp`, `sEmpty`), design
 
-Status: **M10a done, 2026-09-29** (outcome at the end). The strip (S3)
-is open: (D) of S4 is the candidate, with stabilization to argue first.
+Status: **M10a done, 2026-09-29** (outcome at the end). M10b is
+blocked: the strip is Werner's rule, whose normalization in a predicative
+theory is an open problem (S5). The candidate of S4, (D), fails.
 
 Heather's rules: `H/docs/sprop-design.md` (frozen rule set, §2–§6). Its
 paper pass: `H/docs/metatheory-ch07-extensions.md` Part III, §18–22 (MX
@@ -126,7 +127,9 @@ tracker, after we have tried the routes below.
   that an unused global postulate adds no equation), everything else is
   MX as written. Risk: unknown, possibly research-hard. Cheap to probe on
   paper before any Coq.
-- **(B) Change the strip premise to a context-free one.** For example,
+- **(B) Change the strip premise to a context-free one** (S5: this
+  changes only the operational side; the declarative theory is the same
+  for every premise). For example,
   `a` and `b` joinable under untyped `⇝ₛ` (which respects renaming in both
   directions, syntactically). This loses the type-directed conversions
   (η at Π/Σ/Unit, irrelevance): `x, y : Unit` would not strip. Heather's
@@ -213,6 +216,88 @@ are, with no axiom. The open part is stabilization, not a circularity.
 Next step on this track: argue stabilization on paper. If it holds, (D)
 becomes the M10b plan. If it fails, the counterexample is a Heather
 finding: full-theory canonicity would then depend on it.
+
+**Superseded by S5 (2026-09-30):** (D) fails already at stage 1.
+
+### S5. Second paper pass: (D) fails; the strip is Werner's rule (2026-09-30)
+
+**(D) fails at stage 1.** Each stage's congruence for `transp`'s
+endpoints lets the strip fire through equations of that same stage, so
+the stages separate nothing. Take `c := transp(Nat; _.Nat; 0; 0; srefl; 7)`:
+it strips at stage 1 (`0 ≈₀ 0`) and not at stage 0, which has no strip.
+Take `T := transp(Nat; _.Nat; c; 7; e; 5)` with `e : sEq(Nat; c; 7)` in
+the context. At stage 1, `T ≈ transp(Nat; _.Nat; 7; 7; e; 5)` by
+`transp`'s congruence (`c ≈₁ 7`, and `e`'s type converts), and that
+strips to `5`, since `7 ≈₀ 7`. So `T ≈₁ 5`. Stage 1's reduction tests the
+raw endpoints at stage 0, `c ≈₀ 7` fails, and `T` is a stuck neutral.
+Stage 1's fundamental theorem fails at the congruence rule. Testing the
+endpoints' normal forms instead makes the premise depend on stage 1's own
+conversion (η, irrelevance), which is the circularity again. In general,
+with congruence, the effective strip condition at stage `n+1` is
+`a ≈ₙ₊₁ b` as soon as the endpoints' class has a term typed at stage `n`.
+The argument that every derivation lives at some stage, so that the full
+theory inherits stage-wise strengthening, falls with it.
+
+**The declarative theory does not depend on the premise.** Take any
+strip rule whose premise `R` holds reflexively on typed terms, and add
+`transp`'s congruence and conversion. Together they derive
+`transp(I; P; a; b; e; t) ≈ t` from `a ≈ b`: convert `e` to
+`sEq(I; b; b)`, move `a` to `b` by congruence, and strip with `R b b`.
+So (B) changes only the operational side, and there it is incomplete
+for Heather's theory. For `x : Unit`, `transp(…; x; ⟨⟩; e; t) ≈ t`
+declaratively, but it is stuck under joinability. (B) is out, unless
+Heather drops the congruence of `transp`'s endpoints.
+
+**The strip is Werner's rule, and its normalization is open.** Heather's
+`transp` with the strip is the eliminator in Werner's proof-irrelevant
+type theory (LMCS 2008): `Eq_rec A P a b x e ⊳ x if a = b`, which ignores
+the proof and tests the endpoints.
+- Abel and Coquand (*Failure of normalization in impredicative type
+  theory with proof-irrelevant propositional equality*, LMCS 2020,
+  arXiv 1911.08174) show that it breaks normalization when propositions
+  are impredicative. The counterexample is Girard's, and it diverges only
+  under a hypothesis, so open terms fail to normalize. Consistency and
+  canonicity are not at stake.
+- Their open question (3) is exactly our case: does the rule preserve
+  normalization in the predicative case?
+- `sprop-design.md`'s introduction says predicativity "keeps us clear of
+  the Abel–Coquand failure mode". That is right about the
+  counterexample. It is not a proof of normalization.
+- Later work avoids the rule. Pujet and Tabareau's CCobs (POPL 2023)
+  keeps cast along reflexivity propositional (`castrefl`, Rule
+  Cast-Refl), and its cast computes on type structure. The TYPES 2024
+  implementation refuses the rule (S1).
+- A quick search found nothing since 2020 that settles question (3).
+
+So S1's strengthening is not a missing lemma. Any proof of it amounts to
+normalization for Werner's rule in a predicative theory, which is
+Abel–Coquand's question. A model without the Kripke quantifier (NbE with
+a PER model, where the strip compares read-back normal forms of
+context-free values) moves the problem rather than removing it.
+Validating the strip there needs values with equal normal forms to be
+semantically equal, which is the same substitution and soundness
+circularity. I found no way through.
+
+**Options as they stand:**
+- **(R) Research.** Try to answer question (3) for Heather. Unbounded,
+  and not a formalization step.
+- **(K) Canonicity only, with the strip as specified.** A model of
+  closed terms has no Kripke quantifier, so S1 does not arise. It proves
+  consistency and closed canonicity with `transp` and the strip as
+  specified. The stuck arm's split on `⊢ a ≈ b` at closed endpoints
+  needs `classic` in `Prop`, a new axiom to flag. It gives no
+  normalization of open terms and no decidability. The Kripke
+  development (the algorithm, `ac_tm_dec`, `tyd`) would have to leave
+  `transp` out, so the result is a second model next to the first.
+- **(C) Change Heather's eliminator** (S3), towards CCobs. The cast
+  computes on the motive's instances, and the strip either stays only at
+  neutral instances or becomes propositional (`castrefl`). This is known
+  to normalize in the predicative setting (TTobs, Pujet–Tabareau
+  POPL 2022). It is a Heather redesign, to settle against the customer
+  (`crates/elab/tests/indexed_route_2b.rs`): closed programs need the
+  cast to compute at data instances, which (C) keeps.
+
+This is Heather's call: `issues/sprop-strip-normalization-open.md` in H.
 
 ## Staging
 

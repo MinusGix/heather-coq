@@ -166,8 +166,11 @@ each one touched and why, then choose among 1–3 using that data.
    Done (M9).
 4. `sEq`/`transp` and the strip rule: M10_DESIGN.md. M10a (`sEq`, `srefl`,
    `sEmpty`, irrelevance) is done; `transp` waits on S3, since MX §19.2's
-   proposition turns out to be a strengthening lemma (S1). S4's candidate
-   (D), a staged strip premise, needs stabilization argued first.
+   proposition turns out to be a strengthening lemma (S1). The strip is
+   Werner's rule, whose normalization in a predicative theory is open
+   (Abel–Coquand 2020, question 3; S5). S4's candidate (D) fails.
+   Heather decides between a research attempt, canonicity only, and a
+   CCobs-style eliminator (H `issues/sprop-strip-normalization-open.md`).
 5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash).
 
 Side task, any time: the ITree depth-indexed bisimilarity question.
