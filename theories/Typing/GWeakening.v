@@ -620,8 +620,8 @@ Theorem gweakening :
      [ ⊢ mkG L' Ψ' ] -> [ mkG L' Ψ' ⊢[ i ] Γ⟪γ⟫ ≅ Γ'⟪γ⟫ ]).
 Proof.
   apply typing_mut; intros; try exact I; push_gren; gren_rewrite; push_gren.
-  all: try gw_step.
-  all: gw_manual.
+  (* manual cases first: a failing [gw_step] backtracks through every rule *)
+  all: first [solve [gw_manual] | gw_step].
 Qed.
 
 (** ** Named corollaries, for a weakening [γ : G' ≤ G] *)

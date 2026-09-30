@@ -798,7 +798,9 @@ Proof.
     repeat match goal with H : _ /\ _ |- _ => destruct H end;
     try match goal with c : compt ?i |- _ => pose proof (compt_notV _ c) end.
   all: repeat match goal with |- _ /\ _ => split end.
-  all: try solve [eauto 4 with presup].
+  (* depth 3 here, 4 only for the few goals left at the end: failing
+     depth-4 searches on the goals the passes below close cost most *)
+  all: try solve [eauto 3 with presup].
   (* level and type conversions *)
   all: try solve [eapply wft_lconv; eassumption].
   all: try solve [eapply wf_lconv; eassumption].
@@ -868,6 +870,7 @@ Proof.
          | solve [eapply inst_c_ty; eauto] | solve [eapply inst_c_tm; eauto]
          | solve [eapply inst_t_ty; eauto] | solve [eapply inst_t_tm; eauto] ]].
   (* right-hand sides of congruences *)
+  all: try solve [eauto 4 with presup].
   all: first [ solve [eapply pre_pi_r; eassumption] | solve [eapply pre_U_r; eauto with presup]
              | solve [eapply pre_El_r; eassumption] | solve [eapply pre_codeU_r; eauto with presup]
              | solve [eapply pre_codepi_r; eassumption]

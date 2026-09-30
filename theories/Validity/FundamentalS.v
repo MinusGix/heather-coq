@@ -162,7 +162,9 @@ Qed.
 
     Every goal is closed by a named lemma applied with [simple eapply] (a
     plain [eapply] unfolds the validity definitions while searching for the
-    arity, which is costly on large substituted terms). *)
+    arity, which is costly on large substituted terms). The rules come
+    before the generic sym/trans/conv lemmas: those apply to any goal and
+    fail slowly, while a rule fails at once on the wrong former. *)
 
 Ltac f_lwf :=
   first [ eassumption | exact I | eapply lequiv_wf_l; eassumption | eapply lequiv_wf_r; eassumption
@@ -208,13 +210,13 @@ Ltac f_rules := vs_rules f_side.
 Ltac f_ty :=
   first
   [ eassumption
+  | f_rules
   | solve [simple eapply VTyS_sym; f_side] | solve [simple eapply VTyS_trans; f_side]
   | solve [simple eapply VTyS_lconv; f_side]
   | solve [simple eapply VTyS_trans; [eassumption | simple eapply VTyS_sym; f_side]]
   | solve [simple eapply VTyS_trans; [simple eapply VTyS_sym; f_side | eassumption]]
   | solve [simple eapply VTyS_lookup; f_side]
   | solve [simple eapply VTyS_single; f_side]
-  | f_rules
   | solve [simple eapply VTyS_single; [eassumption | f_rules]]
   | solve [simple eapply VTyS_single; [f_side | f_rules]]
   | solve [simple eapply VTyS_single;
@@ -224,9 +226,9 @@ Ltac f_ty :=
 Ltac f_tm :=
   first
   [ eassumption
+  | f_rules
   | solve [simple eapply VTmS_sym; f_side] | solve [simple eapply VTmS_trans; f_side]
-  | solve [simple eapply VTmS_conv; f_side] | solve [simple eapply VTmS_lconv; f_side]
-  | f_rules ].
+  | solve [simple eapply VTmS_conv; f_side] | solve [simple eapply VTmS_lconv; f_side] ].
 
 Ltac f_goal :=
   lazymatch goal with

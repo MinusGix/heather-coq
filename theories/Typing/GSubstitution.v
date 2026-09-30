@@ -779,6 +779,9 @@ Theorem gsubstitution :
      [ gwk_to G Ψ' ⊢[ i ] Γ⦃σ⦄ ≅ Γ'⦃σ⦄ ]).
 Proof.
   apply typing_mut; intros; try exact I; unfold gwk_to in *; push_gsubst; gs_rewrite; push_gsubst.
+  (* manual cases first, when they close the goal: a failing [gs_step]
+     backtracks through every rule *)
+  all: try (notrec; first [solve [gs_manual] | solve [gs_manual2] | solve [gs_upi]]).
   all: try (notrec; gs_step).
   all: try (notrec; gs_manual).
   all: try (notrec; gs_manual2).

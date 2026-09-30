@@ -289,7 +289,7 @@ Ltac br_lvl := cbn; repeat split; try lia.
 Ltac br_tac :=
   repeat first
     [ assumption | exact I | reflexivity | discriminate | apply lle_refl
-    | solve [unfold lle; cbn; lia] | solve [br_lvl] | glookup
+    | glookup
     | apply wkr_id | apply wkr_shift_S
     | apply wfc_var | apply wfc_ext
     | eapply wf_boxT | eapply wf_boxt
@@ -298,7 +298,9 @@ Ltac br_tac :=
     | apply wf_zero | apply wf_succ | eapply wf_natrec | eapply wf_lam | eapply wf_app
     | eapply wft_sig | apply wft_unit | eapply wf_code_sig | apply wf_code_unit | apply wf_triv
     | eapply wf_pair | eapply wf_fst | eapply wf_snd
-    | eapply wf_gv | eapply wf_gu | eapply wf_gv_single | eapply wf_gv_succ ].
+    | eapply wf_gv | eapply wf_gu | eapply wf_gv_single | eapply wf_gv_succ
+    (* last: their [cbn] is the bulk of the cost when tried on every goal *)
+    | solve [unfold lle; cbn; lia] | solve [br_lvl] ].
 
 Lemma lequiv_ush nu {L l l'} : lequiv L l l' -> lequiv (nu + L) (lvren l (ush nu)) (lvren l' (ush nu)).
 Proof. apply lequiv_lvren. intros n Hn; unfold ush; lia. Qed.
@@ -307,7 +309,11 @@ Proof. apply lequiv_lvren. intros n Hn; unfold ush; lia. Qed.
     pairwise, then the result types. *)
 Ltac br_eq HMT HMt HG0 :=
   match goal with |- context [brG ?K _] =>
-    first [ eapply (motT_wkb_eq (Ds := brDecls K)) | eapply (mott_wkb_eq (Ds := brDecls K)) ];
+    (* by the head, with [nu] given: a failed [eapply motT_wkb_eq] costs a
+       conversion of the whole scope *)
+    lazymatch goal with
+    | |- eq_ty _ _ _ (motT _ _ _ _) _ _ => eapply (motT_wkb_eq (Ds := brDecls K) (nu := br_nu K))
+    | _ => eapply (mott_wkb_eq (Ds := brDecls K) (nu := br_nu K)) end;
     [ first [exact HMT | exact HMt] | exact HG0 | .. ]; br_tac
   end.
 Ltac br_solve HMT HMt HG0 HB :=
