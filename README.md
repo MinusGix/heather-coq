@@ -85,10 +85,12 @@ From M8 on, the milestones check the extensions of Heather's kernel
   `Id`. `Id` has a code, and the code recursor has its four branches
   (`t_Id`, `t'_Id`, `t_refl`, `t_J`). See `M11_DESIGN.md`.
 - Milestone 12: the empty type and binary sums. `Empty` with its
-  eliminator, and `+` with `inl`, `inr` and `case` (β, no η), hold at D
-  and M. Closed canonicity gives no closed term of `Empty` and the
-  disjunction property at `+`. The codes and recursor branches are next
-  (M12c). See `M12_DESIGN.md`.
+  eliminator, and `+` with `inl`, `inr` and `case`, hold at every layer
+  but V, with β and no η at D and M. Closed canonicity gives no closed
+  term of `Empty` and the disjunction property at `+`. Both have codes,
+  and the code recursor has their eight branches (`t_Empty`, `t'_Empty`,
+  `t_elimE`, `t_+`, `t'_+`, `t_inl`, `t_inr`, `t_case`). See
+  `M12_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
 `M12_DESIGN.md`) for decisions, deviations from the paper and gotchas.
