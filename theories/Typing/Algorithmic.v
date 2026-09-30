@@ -131,6 +131,10 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
    and a neutral are not ([Id] is [posty]) *)
 | actmnf_refl G Γ l A a b k k' C C' c c' :
     ac_tmnf G Γ (tmRefl k C c) (tmRefl k' C' c') (tyId l A a b)
+(* its code (M11b) *)
+| actmnf_code_id G Γ l k k' s s' t t' u u' : leqv k k' ->
+    ac_tm G Γ s s' (tyU k) -> ac_tm G Γ t t' (tyEl k s) -> ac_tm G Γ u u' (tyEl k s) ->
+    ac_tmnf G Γ (tmId k s t u) (tmId k' s' t' u') (tyU l)
 
 with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_var G Γ n T l : in_ctx Γ n T l -> ac_tmne G Γ (var n) (var n) T

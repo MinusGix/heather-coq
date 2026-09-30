@@ -248,6 +248,11 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] c : M[lsingle2 a (tmRefl l A a)] @ l' ] ->
     [ G ; Γ ⊢[ i ] u : A @ l ] -> [ G ; Γ ⊢[ i ] e : tyId l A a u @ l ] ->
     [ G ; Γ ⊢[ i ] tmJ l l' A a M c u e : M[lsingle2 u e] @ l' ]
+(* the identity type's code (M11b) *)
+| wf_code_id G i Γ l s t u : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+    [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u : tyEl l s @ l ] ->
+    [ G ; Γ ⊢[ i ] tmId l s t u : tyU l @ lsuc l ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -328,6 +333,10 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
     [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] -> [ G ; Γ ⊢[ i ] b ≅ b' : A @ l ] ->
     [ G ; Γ ⊢[ i ] tyId l A a b ≅ tyId l' A' a' b' @ l ]
+| eqty_El_id G i Γ l s t u : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+    [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u : tyEl l s @ l ] ->
+    [ G ; Γ ⊢[ i ] tyId l (tyEl l s) t u ≅ tyEl l (tmId l s t u) @ l ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -654,6 +663,10 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ,, A @ l ,, tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ i ] M @ l' ] ->
     [ G ; Γ ⊢[ i ] c : M[lsingle2 a (tmRefl l A a)] @ l' ] ->
     [ G ; Γ ⊢[ i ] tmJ l l' A a M c a (tmRefl l A a) ≅ c : M[lsingle2 a (tmRefl l A a)] @ l' ]
+| eqtm_code_id G i Γ l l' s s' t t' u u' : compt i -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+    [ G ; Γ ⊢[ i ] t ≅ t' : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u ≅ u' : tyEl l s @ l ] ->
+    [ G ; Γ ⊢[ i ] tmId l s t u ≅ tmId l' s' t' u' : tyU l @ lsuc l ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)

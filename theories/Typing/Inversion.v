@@ -181,6 +181,12 @@ Lemma inv_J {G i Γ l l' A a M c u e T k} : typeof i = i ->
     lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ i ] T ≅ M[lsingle2 u e] @ k ].
 Proof. inv_tm. Qed.
 
+Lemma inv_code_id {G i Γ l s t u T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmId l s t u : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+    [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] /\ [ G ; Γ ⊢[ i ] u : tyEl l s @ l ]) /\
+    lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ i ] T ≅ tyU l @ k ].
+Proof. inv_tm. Qed.
+
 (** Strict equality (M10a). *)
 Lemma inv_srefl {G i Γ l A a T k} : typeof i = i -> [ G ; Γ ⊢[ i ] srefl l A a : T @ k ] ->
   (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\

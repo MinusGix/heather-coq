@@ -406,6 +406,7 @@ Lemma gs_srefl l A a : (srefl l A a)⦃σ⦄ = srefl l A⦃σ⦄ a⦃σ⦄. Proo
 Lemma gs_elimSEmpty l l' M e : (elimSEmpty l l' M e)⦃σ⦄ = elimSEmpty l l' M⦃σ⦄ e⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_tyId l A a b : (tyId l A a b)⦃σ⦄ = tyId l A⦃σ⦄ a⦃σ⦄ b⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_refl l A a : (tmRefl l A a)⦃σ⦄ = tmRefl l A⦃σ⦄ a⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tmId l s t u : (tmId l s t u)⦃σ⦄ = tmId l s⦃σ⦄ t⦃σ⦄ u⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_J l l' A a M c u e :
   (tmJ l l' A a M c u e)⦃σ⦄ = tmJ l l' A⦃σ⦄ a⦃σ⦄ M⦃σ⦄ c⦃σ⦄ u⦃σ⦄ e⦃σ⦄.
 Proof. reflexivity. Qed.
@@ -465,6 +466,7 @@ Ltac push_gsubst_at h k := lazymatch h with
   | @elimSEmpty => k gs_elimSEmpty
   | @tyId => k gs_tyId
   | @tmRefl => k gs_refl
+  | @tmId => k gs_tmId
   | @tmJ => k gs_J
   end.
 Ltac push_gsubst := repeat match goal with

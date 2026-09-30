@@ -276,6 +276,7 @@ with dnftm (t : tm) : Prop :=
   | tmFst _ _ A B p | tmSnd _ _ A B p => dnfty A /\ dnfty B /\ dnftm p
   | srefl _ A a | elimSEmpty _ _ A a => dnfty A /\ dnftm a
   | tmRefl _ A a => dnfty A /\ dnftm a
+  | tmId _ s t u => dnftm s /\ dnftm t /\ dnftm u
   | tmJ _ _ A a M c u e => dnfty A /\ dnftm a /\ dnfty M /\ dnftm c /\ dnftm u /\ dnftm e
   end
 with dnfctx (Γ : ctx) : Prop :=

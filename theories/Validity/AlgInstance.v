@@ -461,6 +461,10 @@ Proof.
     + exact (actmne_J _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24)
                DA Da DM Dc Du Xν).
     + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
+  - intros * Hl Hs (Es & Ds) (Et & Dt) (Eu & Du).
+    refine (conj (@geq_tm_code_id DE DEL _ _ _ _ _ _ _ _ _ _ Hl Hs Es Et Eu) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmId | apply whnf_tmId |].
+    exact (actmnf_code_id _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) Ds Dt Du).
 Qed.
 
 End Alg.

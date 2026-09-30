@@ -352,6 +352,7 @@ Ltac gl_push_at h k := lazymatch h with
   | @elimSEmpty => k gwa_elimSEmpty
   | @tyId => k gwa_tyId
   | @tmRefl => k gwa_refl
+  | @tmId => k gwa_tmId
   | @tmJ => k gwa_J
   end.
 Ltac gl_push := repeat match goal with

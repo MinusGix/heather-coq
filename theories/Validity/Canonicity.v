@@ -22,7 +22,8 @@ Definition canon_head (h : nat) (w : tm) : Prop :=
   match h with
   | 1 => w = zero \/ exists t, w = succ t
   | 2 => w = tmNat \/ (exists l, w = tmU l) \/ (exists l l' s t, w = tmPi l l' s t) \/
-         (exists l l' s t, w = tmSig l l' s t) \/ exists l, w = tmUnit l
+         (exists l l' s t, w = tmSig l l' s t) \/ (exists l, w = tmUnit l) \/
+         exists l s t u, w = tmId l s t u
   | 3 => exists l l' A t, w = lam l l' A t
   | 4 => exists T, w = boxT T
   | 5 => exists t, w = boxt t
@@ -50,7 +51,8 @@ Proof.
           | pose proof (inv_tlam Hi Hx) as X
           | pose proof (inv_code_sig Hi Hx) as X | pose proof (inv_pair Hi Hx) as X
           | pose proof (inv_code_unit Hi Hx) as X | pose proof (inv_triv Hi Hx) as X
-          | pose proof (inv_srefl Hi Hx) as X | pose proof (inv_idrefl Hi Hx) as X ];
+          | pose proof (inv_srefl Hi Hx) as X | pose proof (inv_idrefl Hi Hx) as X
+          | pose proof (inv_code_id Hi Hx) as X ];
     repeat match goal with H : exists _, _ |- _ => destruct H | H : _ /\ _ |- _ => destruct H end;
     match goal with E : [ _ ; _ ⊢[ _ ] W ≅ _ @ _ ] |- _ =>
       rewrite (decl_head_c Hc E HW); [| auto with whnf] end;

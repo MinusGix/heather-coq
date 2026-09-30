@@ -314,6 +314,7 @@ Lemma gren_gvar u d : (gvar u d)⟪ξ⟫ = gvar (ξ u) d⟪ξ⟫. Proof. reflexi
 Lemma gren_gdef u b d : (gdef u b d)⟪ξ⟫ = gdef (ξ u) b⟪ξ⟫ d⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_tyId l A a b : (tyId l A a b)⟪ξ⟫ = tyId l A⟪ξ⟫ a⟪ξ⟫ b⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_refl l A a : (tmRefl l A a)⟪ξ⟫ = tmRefl l A⟪ξ⟫ a⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tmId l s t u : (tmId l s t u)⟪ξ⟫ = tmId l s⟪ξ⟫ t⟪ξ⟫ u⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_J l l' A a M c u e :
   (tmJ l l' A a M c u e)⟪ξ⟫ = tmJ l l' A⟪ξ⟫ a⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ u⟪ξ⟫ e⟪ξ⟫.
 Proof. reflexivity. Qed.
@@ -415,6 +416,7 @@ Ltac push_gren_at h k := lazymatch h with
   | @gdef => k gren_gdef
   | @tyId => k gren_tyId
   | @tmRefl => k gren_refl
+  | @tmId => k gren_tmId
   | @tmJ => k gren_J
   end.
 Ltac push_gren := repeat match goal with
@@ -888,6 +890,7 @@ Lemma gwa_elimSEmpty l l' M e : (elimSEmpty l l' M e)⟦γ⟧ = elimSEmpty l l' 
 Proof. now destruct γ. Qed.
 Lemma gwa_tyId l A a b : (tyId l A a b)⟦γ⟧ = tyId l A⟦γ⟧ a⟦γ⟧ b⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_refl l A a : (tmRefl l A a)⟦γ⟧ = tmRefl l A⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tmId l s t u : (tmId l s t u)⟦γ⟧ = tmId l s⟦γ⟧ t⟦γ⟧ u⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_J l l' A a M c u e :
   (tmJ l l' A a M c u e)⟦γ⟧ = tmJ l l' A⟦γ⟧ a⟦γ⟧ M⟦γ⟧ c⟦γ⟧ u⟦γ⟧ e⟦γ⟧.
 Proof. now destruct γ. Qed.
@@ -925,6 +928,7 @@ Ltac push_gwa_at h k := lazymatch h with
   | @elimSEmpty => k gwa_elimSEmpty
   | @tyId => k gwa_tyId
   | @tmRefl => k gwa_refl
+  | @tmId => k gwa_tmId
   | @tmJ => k gwa_J
   end.
 Ltac push_gwa := repeat match goal with

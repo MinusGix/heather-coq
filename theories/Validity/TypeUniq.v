@@ -168,6 +168,7 @@ Proof.
       | destruct (inva_elimSEmpty H1) as (_ & Hk & E); destruct (inva_elimSEmpty H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_idrefl H1) as (_ & Hk & E); destruct (inva_idrefl H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_J H1) as (_ & Hk & E); destruct (inva_J H2) as (_ & Hk' & E'); uq_same
+      | destruct (inva_code_id H1) as (_ & Hk & E); destruct (inva_code_id H2) as (_ & Hk' & E'); uq_same
       | destruct (inv_letboxT eq_refl H1) as (_ & Hk & E); destruct (inv_letboxT eq_refl H2) as (_ & Hk' & E'); uq_same
       | destruct (inv_letboxt eq_refl H1) as (_ & Hk & E); destruct (inv_letboxt eq_refl H2) as (_ & Hk' & E'); uq_same
       | destruct (inv_ulam eq_refl H1) as (_ & Hk & E); destruct (inv_ulam eq_refl H2) as (_ & Hk' & E'); uq_same

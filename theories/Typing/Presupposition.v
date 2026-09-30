@@ -453,6 +453,21 @@ Proof.
   - apply eqty_id; auto using compt_self.
 Qed.
 
+(** The identity type's code (M11b). *)
+Lemma pre_codeid_r {Γ l l' s s' t' u'} :
+  lequiv (gL G) l l' -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] t' : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u' : tyEl l s @ l ] ->
+  [ G ; Γ ⊢[ i ] tmId l' s' t' u' : tyU l @ lsuc l ].
+Proof.
+  intros Hl Hs Hs' Ht Hu.
+  assert (HEl : [ G ; Γ ⊢[ i ] tyEl l s ≅ tyEl l' s' @ l ]) by (apply eqty_El; auto).
+  assert (F : forall x, [ G ; Γ ⊢[ i ] x : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] x : tyEl l' s' @ l' ]).
+  { intros x Hx. eapply wf_lconv with (l' := l); [|now apply lequiv_sym].
+    eapply conv_tm'; [exact Hx | apply eqty_sym, HEl]. }
+  apply (conv_U (l := l')); [|now apply lequiv_sym].
+  apply wf_code_id; [exact compt_self | eauto using lequiv_wf_r | exact (conv_U Hs' Hl) | apply F, Ht | apply F, Hu].
+Qed.
+
 (** Two single substitutions at once, for [J]'s motive. *)
 Lemma lsub_wf_single2' {Γ A B t q l l'} :
   [ G ; Γ ⊢[ i ] ] -> [ G ; Γ ⊢[ i ] t : A @ l ] -> [ G ; Γ ⊢[ i ] q : B[lsingle t] @ l' ] ->
@@ -945,7 +960,7 @@ Proof. intros H1 H2 H3 H4 H5; exact (proj2 (ctx_conv_ext Hi H1 H2 H3 H4 H5)). Qe
 
 #[export] Hint Resolve wft_nat wft_pi wft_U wft_El wf_code_nat wf_code_U wf_code_pi wf_zero
   wf_succ wf_natrec wf_lam wf_app wfc_ext in_ctx_wf wf_ty_single wf_tm_single
-  wft_sig wf_code_sig wf_pair wf_fst wf_snd wft_seq wf_srefl wf_elimSEmpty wft_id wf_idrefl wf_J
+  wft_sig wf_code_sig wf_pair wf_fst wf_snd wft_seq wf_srefl wf_elimSEmpty wft_id wf_idrefl wf_J wf_code_id
   ctx_of_wf_ty ctx_of_wf_tm ctx_of_eqty ctx_of_eqtm lequiv_wf_l lequiv_wf_r compt_notV : presup.
 #[export] Hint Extern 1 (lwf _ _) =>
   solve [cbn; intuition eauto using lequiv_wf_l, lequiv_wf_r] : presup.
@@ -1075,7 +1090,11 @@ Proof.
              | solve [eapply pre_idrefl_r; eassumption]
              | solve [eapply pre_J_ty; eassumption]
              | solve [eapply pre_J_r; eassumption]
-             | solve [eapply wf_J; eauto 3 with presup] ].
+             | solve [eapply wf_J; eauto 3 with presup]
+             (* the identity type's code (M11b) *)
+             | solve [eapply pre_codeid_r; eassumption]
+             | solve [eapply wft_El; eauto with presup; eapply wf_code_id; eassumption]
+             | solve [eapply wft_id; eauto with presup; apply wft_El; eauto with presup] ].
 Qed.
 
 Section Named.

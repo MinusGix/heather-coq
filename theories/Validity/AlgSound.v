@@ -686,6 +686,52 @@ Proof.
   eapply eqtm_conv; [exact (lvl_eq_eqtm Hk Econg) | rewrite Hi; exact ET].
 Qed.
 
+(** The code of [Id] (M11b): its pieces, and the other side's at this
+    side's carrier. *)
+Lemma code_id_prem {G i Γ k s t u T m} : compt i -> [ G ; Γ ⊢[ i ] tmId k s t u : T @ m ] ->
+  lwf (gL G) k /\ [ G ; Γ ⊢[ i ] s : tyU k @ lsuc k ] /\
+  [ G ; Γ ⊢[ i ] t : tyEl k s @ k ] /\ [ G ; Γ ⊢[ i ] u : tyEl k s @ k ].
+Proof.
+  intros Hc H. destruct (proj1 (inv_code_id (compt_typeof_self _ Hc) H)) as (_ & W & Hs & Ht & Hu). auto.
+Qed.
+
+Lemma code_U_conv {G i Γ k k' s} : compt i -> lequiv (gL G) k k' ->
+  [ G ; Γ ⊢[ i ] s : tyU k' @ lsuc k' ] -> [ G ; Γ ⊢[ i ] s : tyU k @ lsuc k ].
+Proof.
+  intros Hc E Hs. pose proof (compt_typeof_self _ Hc) as Hi.
+  assert (Hv : i <> lV) by (destruct Hc as [-> | ->]; discriminate).
+  eapply wf_conv; [eapply wf_lconv; [exact Hs | exact (lequiv_suc _ _ _ E)] | rewrite Hi].
+  apply eqty_U; [exact Hv | rewrite Hi; exact (ctx_of_wf_tm Hi Hs) | exact E].
+Qed.
+
+Lemma code_El_conv {G i Γ k k' s s'} : compt i -> lequiv (gL G) k k' ->
+  [ G ; Γ ⊢[ i ] s ≅ s' : tyU k @ lsuc k ] ->
+  (forall x, [ G ; Γ ⊢[ i ] x : tyEl k' s' @ k' ] -> [ G ; Γ ⊢[ i ] x : tyEl k s @ k ]) /\
+  [ G ; Γ ⊢[ i ] tyEl k s ≅ tyEl k' s' @ k ].
+Proof.
+  intros Hc E Es. pose proof (compt_typeof_self _ Hc) as Hi.
+  assert (Hv : i <> lV) by (destruct Hc as [-> | ->]; discriminate).
+  assert (EEl : [ G ; Γ ⊢[ i ] tyEl k s ≅ tyEl k' s' @ k ]) by (apply eqty_El; assumption).
+  split; [| exact EEl].
+  intros x Hx. eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ Hx E) | rewrite Hi; exact EEl].
+Qed.
+
+Lemma S_actmnf_code_id {G Γ l k k' s s' t t' u u'} : leqv k k' ->
+  S_tm G Γ s s' (tyU k) -> S_tm G Γ t t' (tyEl k s) -> S_tm G Γ u u' (tyEl k s) ->
+  S_tm G Γ (tmId k s t u) (tmId k' s' t' u') (tyU l).
+Proof.
+  intros Hk0 IHs IHt IHu i m Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_code_id Hi Hx) as (_ & Hk & HT).
+  destruct (code_id_prem Hc Hx) as (W & Hs & Ht & Hu). destruct (code_id_prem Hc Hx') as (W' & Hs' & Ht' & Hu').
+  pose proof (leqv_lequiv _ _ _ W W' Hk0) as E.
+  pose proof (code_U_conv Hc E Hs') as Hs1.
+  pose proof (IHs i (lsuc k) Hc Hs Hs1) as Es.
+  destruct (code_El_conv Hc E Es) as (F & _).
+  pose proof (IHt i k Hc Ht (F _ Ht')) as Et. pose proof (IHu i k Hc Hu (F _ Hu')) as Eu.
+  eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
+  apply eqtm_code_id; assumption.
+Qed.
+
 (** [J]'s motive context at the other side's carrier and point. *)
 Lemma J_ctx_conv {G i Γ l1 l3 A A' a a'} : typeof i = i -> compt i -> lequiv (gL G) l1 l3 ->
   [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l3 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
@@ -1294,7 +1340,7 @@ Proof.
     | solve [eapply S_actmnf_seq_irr] | solve [eapply S_actmnf_sempty_irr]
     | solve [eapply S_actmne_elimSEmpty; eassumption]
     | solve [eapply S_actnf_id; eassumption] | solve [eapply S_actmnf_refl]
-    | solve [eapply S_actmne_J; eassumption] ].
+    | solve [eapply S_actmne_J; eassumption] | solve [eapply S_actmnf_code_id; eassumption] ].
 Qed.
 
 (** Algorithmically convertible types (terms) of the computing layers,

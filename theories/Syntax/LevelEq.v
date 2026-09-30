@@ -71,6 +71,7 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
   | tmUnit l, tmUnit l' | tmTriv l, tmTriv l' => leqv l l'
   | srefl l A a, srefl l' A' a' => leqv l l' /\ ty_leq A A' /\ tm_leq a a'
   | tmRefl l A a, tmRefl l' A' a' => leqv l l' /\ ty_leq A A' /\ tm_leq a a'
+  | tmId l s t u, tmId l' s' t' u' => leqv l l' /\ tm_leq s s' /\ tm_leq t t' /\ tm_leq u u'
   | tmJ l1 l2 A a M c u e, tmJ l1' l2' A' a' M' c' u' e' =>
       leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ tm_leq a a' /\ ty_leq M M' /\
       tm_leq c c' /\ tm_leq u u' /\ tm_leq e e'
@@ -373,6 +374,7 @@ with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   | tmU l | tmUnit l | tmTriv l => lwf L l
   | srefl l A a => lwf L l /\ ty_lwf L A /\ tm_lwf L a
   | tmRefl l A a => lwf L l /\ ty_lwf L A /\ tm_lwf L a
+  | tmId l s t u => lwf L l /\ tm_lwf L s /\ tm_lwf L t /\ tm_lwf L u
   | tmJ l1 l2 A a M c u e =>
       lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ tm_lwf L a /\ ty_lwf L M /\
       tm_lwf L c /\ tm_lwf L u /\ tm_lwf L e

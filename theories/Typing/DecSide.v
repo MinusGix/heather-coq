@@ -281,6 +281,7 @@ with sz_tm (t : tm) : nat :=
   | tmFst _ _ A B p | tmSnd _ _ A B p => S (sz_ty A + sz_ty B + sz_tm p)
   | srefl _ A a | elimSEmpty _ _ A a | tmRefl _ A a => S (sz_ty A + sz_tm a)
   | tmJ _ _ A a M c u e => S (sz_ty A + sz_tm a + sz_ty M + sz_tm c + sz_tm u + sz_tm e)
+  | tmId _ s t u => S (sz_tm s + sz_tm t + sz_tm u)
   end
 with sz_ctx (Γ : ctx) : nat :=
   match Γ with cnil | cvar _ => 1 | cext Γ A _ => S (sz_ctx Γ + sz_ty A) end

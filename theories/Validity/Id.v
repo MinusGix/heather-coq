@@ -156,6 +156,79 @@ Proof.
     exact (geq_ty_trans EA (geq_ty_sym EA)).
 Qed.
 
+(** ** The code (M11b) and its decoding *)
+
+(** Decoding a code whose annotation [k] is equivalent to the level [l]
+    at which its pieces are typed. *)
+Lemma tyred_El_id {G Δ la l k s t u} : lequiv (gL G) la l -> lequiv (gL G) k l ->
+  [ G ; Δ ⊢g s : tyU l @ lsuc l ] -> [ G ; Δ ⊢g t : tyEl l s @ l ] -> [ G ; Δ ⊢g u : tyEl l s @ l ] ->
+  [ G ; Δ ⊢g tyEl la (tmId k s t u) ⤳* tyId k (tyEl k s) t u @ l ].
+Proof.
+  intros Hla Hk Hs Ht Hu.
+  assert (Hkl : lequiv (gL G) l k) by now apply lequiv_sym.
+  pose proof (lequiv_wf_l _ _ _ Hk) as Hwk.
+  pose proof (conv_U' Hs Hkl) as Hsk.
+  assert (EEl : [ G ; Δ ⊢g tyEl k s ≅ tyEl l s @ k ])
+    by (apply eqty_El; [exact ge_notV | exact Hk | apply eqtm_refl, Hsk]).
+  assert (F : forall x, [ G ; Δ ⊢g x : tyEl l s @ l ] -> [ G ; Δ ⊢g x : tyEl k s @ k ]).
+  { intros x Hx. eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ Hx Hk) | rewrite ge_typeof; exact EEl]. }
+  assert (Hc : [ G ; Δ ⊢g tmId k s t u : tyU k @ lsuc k ])
+    by (apply wf_code_id; [exact ge_compt | exact Hwk | exact Hsk | apply F, Ht | apply F, Hu]).
+  pose proof (conv_U' Hc Hk) as Hcl.
+  destruct (El_annot Hcl Hla) as [HEl HEq].
+  apply tyred_step; [exact HEl | constructor |].
+  eapply eqty_trans; [exact HEq|].
+  eapply (eqty_trans _ _ _ _ (tyEl k (tmId k s t u))).
+  - apply eqty_El; [exact ge_notV | exact Hkl | apply eqtm_refl, Hcl].
+  - apply (eqty_lconv _ _ _ _ _ l k); [|exact Hkl].
+    apply eqty_sym, eqty_El_id; [exact ge_compt | exact Hwk | exact Hsk | apply F, Ht | apply F, Hu].
+Qed.
+
+Lemma V_El_id {G Γ l s t u} : lwf (gL G) l ->
+  VTm G Γ s s (tyU l) (lsuc l) -> VTm G Γ t t (tyEl l s) l -> VTm G Γ u u (tyEl l s) l ->
+  VTy G Γ (tyId l (tyEl l s) t u) (tyEl l (tmId l s t u)) l.
+Proof.
+  intros Hw Vs Vt Vu Δ d d' Hd.
+  pose proof (V_El Hw (lequiv_refl _ _ Hw) Vs) as VA.
+  destruct (V_id Hw (lequiv_refl _ _ Hw) VA Vt Vu _ _ _ Hd) as [R HR].
+  destruct (escape_ty _ _ _ _ _ _ _ _ HR) as (HP & _ & _).
+  pose proof (Vs _ _ _ (SubRel_refl_r Hd)) as Xs. pose proof (Vt _ _ _ (SubRel_refl_r Hd)) as Xt.
+  pose proof (Vu _ _ _ (SubRel_refl_r Hd)) as Xu.
+  rewrite !subst_tyU in Xs. rewrite !subst_tyEl in Xt, Xu.
+  exists R. eapply LR_red_ty; [exact HR | apply tyred_refl, HP |]. push_subst.
+  apply tyred_El_id; [now apply lequiv_refl | now apply lequiv_refl | exact (proj1 (LRtm_escape Xs))
+                     | exact (proj1 (LRtm_escape Xt)) | exact (proj1 (LRtm_escape Xu))].
+Qed.
+
+Lemma V_code_id {G Γ l l' s s' t t' u u'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTm G Γ s s' (tyU l) (lsuc l) -> VTm G Γ t t' (tyEl l s) l -> VTm G Γ u u' (tyEl l s) l ->
+  VTm G Γ (tmId l s t u) (tmId l' s' t' u') (tyU l) (lsuc l).
+Proof.
+  intros Hw Hl Vs Vt Vu Δ d d' Hd.
+  pose proof (V_El Hw Hl Vs) as VA.
+  destruct (V_id Hw Hl VA Vt Vu _ _ _ Hd) as [R HR].
+  pose proof (Vs _ _ _ Hd) as Xs. pose proof (Vt _ _ _ Hd) as Xt. pose proof (Vu _ _ _ Hd) as Xu.
+  rewrite !subst_tyU in Xs. rewrite !subst_tyEl in Xt, Xu.
+  destruct (LRtm_escape Xs) as [Hsd Hs'd'].
+  pose proof (geq_tm_code_id Hl Hsd (LRtm_geq Xs) (LRtm_geq Xt) (LRtm_geq Xu)) as Hgeq.
+  pose proof (geq_tm_sound Hgeq) as Hgeq'.
+  assert (EEl : [ G ; Δ ⊢g tyEl l s'[d'] ≅ tyEl l s[d] @ l ]).
+  { apply eqty_sym, eqty_El; [exact ge_notV | now apply lequiv_refl | exact (geq_tm_sound (LRtm_geq Xs))]. }
+  assert (F : forall x, [ G ; Δ ⊢g x : tyEl l s[d] @ l ] -> [ G ; Δ ⊢g x : tyEl l s'[d'] @ l ]).
+  { intros x Hx. eapply wf_conv; [exact Hx | rewrite ge_typeof; exact EEl]. }
+  push_subst. apply (LRtm_U Hw).
+  exists (tmId l s[d] t[d] u[d]), (tmId l' s'[d'] t'[d'] u'[d']).
+  refine (conj (tmred_refl _ _ _ (eqtm_wf_l ge_typeof Hgeq'))
+           (conj (tmred_refl _ _ _ (eqtm_wf_r ge_typeof Hgeq'))
+           (conj (whnf_tmId _ _ _ _) (conj (whnf_tmId _ _ _ _) (conj Hgeq _))))).
+  intros la lb Hla Hlb. rewrite LRbelow_spec by (rewrite ?lmeasure_suc; lia).
+  exists R. eapply LR_red_ty; [exact HR | |]; push_subst.
+  - apply tyred_El_id; [exact Hla | now apply lequiv_refl | exact Hsd
+                       | exact (proj1 (LRtm_escape Xt)) | exact (proj1 (LRtm_escape Xu))].
+  - apply tyred_El_id; [exact Hlb | now apply lequiv_sym | exact Hs'd'
+                       | exact (F _ (proj2 (LRtm_escape Xt))) | exact (F _ (proj2 (LRtm_escape Xu)))].
+Qed.
+
 (** ** [J] *)
 
 Section JAt.

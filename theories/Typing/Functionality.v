@@ -770,6 +770,13 @@ Proof.
           by (push_subst; apply eqty_El; auto using lequiv_refl)
     end.
     eapply eqtm_code_sig; eauto 7 with fung.
+  (* code of Id (M11b): the carrier code's substituted typing first *)
+  - match goal with
+    | Hw : lsub_wf ?G ?i ?Δ ?d ?Γ, ws : wf_tm ?G _ ?Γ ?s (tyU ?l) ?ll
+      |- eq_tm _ _ _ (tmId _ _ _ _) _ _ _ =>
+        assert (wf_tm G i Δ s[d] (tyU l) ll) by exact (wf_tm_subst_g ws Hw)
+    end.
+    eapply eqtm_code_id; eauto 7 with fung.
 Qed.
 
 Theorem functionality :

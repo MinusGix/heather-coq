@@ -520,6 +520,7 @@ with nftm (t : tm) : Prop :=
   | tmFst _ _ A B p | tmSnd _ _ A B p => nfty A /\ nfty B /\ nftm p
   | srefl _ A a | elimSEmpty _ _ A a => nfty A /\ nftm a
   | tmRefl _ A a => nfty A /\ nftm a
+  | tmId _ s t u => nftm s /\ nftm t /\ nftm u
   | tmJ _ _ A a M c u e => nfty A /\ nftm a /\ nfty M /\ nftm c /\ nftm u /\ nftm e
   end
 with nfl (d : lsub) : Prop :=

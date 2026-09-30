@@ -440,6 +440,22 @@ Proof.
   left; eexists; eexists; exact (wf_code_sig _ _ _ _ _ _ _ Hc Hl Hl' Hs Ht).
 Qed.
 
+(** The identity type's code (M11b): the computing layers only. *)
+Lemma sy_code_id l s t u : sz_tm (tmId l s t u) <= n -> SYD (tmId l s t u).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_code_id H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_id H) as ((_ & X & _) & _); contradiction].
+  destruct (ihC s ltac:(szl) G i Γ _ _ (HUniv HΓ Hl)) as [Hs | N];
+    [| right; intros T k H; destruct (inva_code_id H) as ((_ & _ & X & _) & _); contradiction].
+  pose proof (wft_El _ _ _ _ _ (typeof_notV i) Hl (lift_to_typeof_tm Hs)) as HEl.
+  destruct (ihC t ltac:(szl) G i Γ _ _ HEl) as [Ht | N];
+    [| right; intros T k H; destruct (inva_code_id H) as ((_ & _ & _ & X & _) & _); contradiction].
+  destruct (ihC u ltac:(szl) G i Γ _ _ HEl) as [Hu | N];
+    [| right; intros T k H; destruct (inva_code_id H) as ((_ & _ & _ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_code_id _ _ _ _ _ _ _ Hc Hl Hs Ht Hu).
+Qed.
+
 (** The annotations of a pair or a projection, decided in order. *)
 Lemma sy_sig_annot {G i Γ l l' A B} (P : Prop) :
   sz_ty A < n -> sz_ty B < n -> [ G ; Γ ⊢[ typeof i ] ] ->
@@ -583,7 +599,7 @@ Proof.
           | apply sy_uapp | apply sy_capp | apply sy_tapp
           | apply sy_codesig | apply sy_pair
           | apply (sy_proj true) | apply (sy_proj false) | apply sy_code_unit | apply sy_triv
-          | apply sy_srefl | apply sy_elimSEmpty | apply sy_refl | apply sy_J ]; assumption.
+          | apply sy_srefl | apply sy_elimSEmpty | apply sy_refl | apply sy_J | apply sy_code_id ]; assumption.
 Qed.
 
 End Step.

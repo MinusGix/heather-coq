@@ -149,6 +149,7 @@ Ltac s_push_at h k := lazymatch h with
   | @elimSEmpty => k gs_elimSEmpty
   | @tyId => k gs_tyId
   | @tmRefl => k gs_refl
+  | @tmId => k gs_tmId
   | @tmJ => k gs_J
   end.
 Ltac s_push := repeat match goal with
@@ -180,7 +181,8 @@ Ltac fts_case :=
   | solve [simple eapply V_seq_irr; s_side] | solve [simple eapply V_sempty_irr; s_side]
   (* the identity type (M11a) *)
   | solve [simple eapply V_id; s_side] | solve [simple eapply V_idrefl; s_side]
-  | solve [simple eapply V_J; s_side] ].
+  | solve [simple eapply V_J; s_side]
+  | solve [simple eapply V_code_id; s_side] | solve [simple eapply V_El_id; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=
@@ -466,6 +468,20 @@ Lemma VS_J_beta {G Γ l l' A a M c} : lwf (gL G) l -> lwf (gL G) l' ->
   VTmS G Γ (tmJ l l' A a M c a (tmRefl l A a)) c M[lsingle2 a (tmRefl l A a)] l'.
 Proof using EL VL VN. intros. eapply (VTmS_trans_diag EP EM (t2 := c)); [s_diag V_J_beta | eassumption]. Qed.
 
+(** The identity type's code (M11b). *)
+Lemma VS_code_id {G Γ l l' s s' t t' u u'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTmS G Γ s s' (tyU l) (lsuc l) -> VTmS G Γ t t' (tyEl l s) l -> VTmS G Γ u u' (tyEl l s) l ->
+  VTmS G Γ (tmId l s t u) (tmId l' s' t' u') (tyU l) (lsuc l).
+Proof using EL VL. intros; s_lift. Qed.
+Lemma VS_El_id {G Γ l s t u} : lwf (gL G) l ->
+  VTmS G Γ s s (tyU l) (lsuc l) -> VTmS G Γ t t (tyEl l s) l -> VTmS G Γ u u (tyEl l s) l ->
+  VTyS G Γ (tyId l (tyEl l s) t u) (tyEl l (tmId l s t u)) l.
+Proof using EL VL VN.
+  intros Hw Vs Vt Vu. eapply (VTyS_trans_diag EP EM (T2 := tyEl l (tmId l s t u))); [s_diag V_El_id|].
+  apply VS_El; [exact Hw | apply lequiv_refl, Hw |].
+  apply VS_code_id; [exact Hw | apply lequiv_refl, Hw | exact Vs | exact Vt | exact Vu].
+Qed.
+
 End Rules.
 
 End RulesS.
@@ -502,4 +518,5 @@ Ltac vs_rules side :=
   | solve [simple eapply VS_seq_irr; side] | solve [simple eapply VS_sempty_irr; side]
   (* the identity type (M11a) *)
   | solve [simple eapply VS_id; side] | solve [simple eapply VS_idrefl; side]
-  | solve [simple eapply VS_J; side] | solve [simple eapply VS_J_beta; side] ].
+  | solve [simple eapply VS_J; side] | solve [simple eapply VS_J_beta; side]
+  | solve [simple eapply VS_code_id; side] | solve [simple eapply VS_El_id; side] ].

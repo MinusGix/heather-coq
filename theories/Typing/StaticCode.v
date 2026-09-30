@@ -658,6 +658,20 @@ Proof.
   - exact (pre_J_r HD HDv Q1 Q2 HId HA HAA HA' Ha Haa Ha' HMM HM' Hc' Hu Huu Hu' He Hee He').
   - apply eqtm_J; auto using compt_D.
 Qed.
+
+(** The identity type's code (M11b), at D only. *)
+Lemma sc_code_id {Γ l l' s s' t t' u u'} : lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ lD ] s : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ lD ] s' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ lD ] s ≅ s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ lD ] t' : tyEl l s @ l ] /\ [ G ; Γ ⊢[ lD ] t ≅ t' : tyEl l s @ l ] ->
+  [ G ; Γ ⊢[ lD ] u' : tyEl l s @ l ] /\ [ G ; Γ ⊢[ lD ] u ≅ u' : tyEl l s @ l ] ->
+  [ G ; Γ ⊢[ lD ] tmId l' s' t' u' : tyU l @ lsuc l ] /\
+  [ G ; Γ ⊢[ lD ] tmId l s t u ≅ tmId l' s' t' u' : tyU l @ lsuc l ].
+Proof.
+  intros Hl Hl' E Hs [Hs' Hss] [Ht' Htt] [Hu' Huu]. pose proof (lq Hl Hl' E) as Q. split.
+  - exact (pre_codeid_r HD HDv Q Hss Hs' Ht' Hu').
+  - apply eqtm_code_id; auto using compt_D.
+Qed.
 End SCD.
 
 (** ** The lemma *)
@@ -752,7 +766,8 @@ Proof.
           solve [ eapply sc_seq; eauto | eapply sc_sempty; eauto | eapply sc_srefl; eauto
                 | eapply sc_elimSEmpty; eauto
                 (* the identity type (M11a) *)
-                | eapply sc_id; eauto | eapply sc_idrefl; eauto | eapply sc_J; eauto ]
+                | eapply sc_id; eauto | eapply sc_idrefl; eauto | eapply sc_J; eauto
+                | eapply sc_code_id; eauto ]
       end
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x
