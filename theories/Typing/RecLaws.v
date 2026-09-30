@@ -228,11 +228,16 @@ Lemma usubst_shift_ty (T : ty) φ : usubst_ty T⟨↑⟩ φ = (usubst_ty T φ)�
 Proof. exact (proj1 usubst_ren_all T _ φ). Qed.
 Lemma usubst_shift (t : tm) φ : usubst_tm t⟨↑⟩ φ = (usubst_tm t φ)⟨↑⟩.
 Proof. exact (proj1 (proj2 usubst_ren_all) t _ φ). Qed.
+(** [case]'s branch types (M12c) lift their motive past the payload. *)
+Lemma usubst_liftshift_ty (T : ty) φ : usubst_ty T⟨rlift ↑⟩ φ = (usubst_ty T φ)⟨rlift ↑⟩.
+Proof. exact (proj1 usubst_ren_all T _ φ). Qed.
 
 Ltac upeel_push :=
   repeat first [ rewrite <- peelL_usubst | rewrite <- peelG_usubst | rewrite <- peelU_usubst ];
   rewrite rb_br_usubst; cbn [gousubst usubst_tm ucsubst usubst_ty lvsubst recT rect];
-  rewrite ?usubst_lsingle_ty, ?usubst_lsucc_ty, ?usubst_lsingle2_ty, ?usubst_shift_ty, ?usubst_shift;
+  rewrite ?usubst_lsingle_ty, ?usubst_lsucc_ty, ?usubst_lsingle2_ty, ?usubst_shift_ty, ?usubst_shift,
+    ?usubst_liftshift_ty;
+  cbn [usubst_tm usubst_ty lvsubst]; rewrite ?usubst_shift_ty;
   reflexivity.
 
 Lemma redT_usubst l1 l2 rb l Δ c v φ : redT l1 l2 rb l Δ c = Some v ->

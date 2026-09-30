@@ -294,6 +294,23 @@ Lemma wf_J_eq G i Γ l l' A a M c u e T : T = M[lsingle2 u e] -> i <> lV -> lwf 
   [ G ; Γ ⊢[ i ] tmJ l l' A a M c u e : T @ l' ].
 Proof. intros ->; apply wf_J. Qed.
 
+(** [Empty]'s eliminator and [case] likewise (M12c); [case]'s branch types
+    in the substituted form of their scopes' declarations. *)
+Lemma wf_elimEmpty_eq G i Γ l l' M t T : T = M[lsingle t] -> i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ,, tyEmpty l' @ l' ⊢[ i ] M @ l ] -> [ G ; Γ ⊢[ i ] t : tyEmpty l' @ l' ] ->
+  [ G ; Γ ⊢[ i ] elimEmpty l l' M t : T @ l ].
+Proof. intros ->; apply wf_elimEmpty. Qed.
+Lemma wf_case_eq G i Γ l l' l'' A B M c1 c2 t T C1 C2 : T = M[lsingle t] ->
+  C1 = M[lcons (lshift 1) (tmInl l l' A⟨↑⟩ B⟨↑⟩ (var 0))] ->
+  C2 = M[lcons (lshift 1) (tmInr l l' A⟨↑⟩ B⟨↑⟩ (var 0))] ->
+  i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ,, tySum l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] c1 : C1 @ l'' ] -> [ G ; Γ ,, B @ l' ⊢[ i ] c2 : C2 @ l'' ] ->
+  [ G ; Γ ⊢[ i ] t : tySum l l' A B @ lmax l l' ] ->
+  [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 t : T @ l'' ].
+Proof. intros -> -> ->; intros; apply wf_case; rewrite ?liftshift_single_ty; assumption. Qed.
+
 (** Side conditions in a concrete branch scope: levels, lookups, weakenings,
     and the typing of the objects (contexts at D, codes at C, boxes at M). *)
 Ltac br_lvl := cbn; repeat split; try lia.
@@ -319,6 +336,12 @@ Ltac br_tac :=
     (* strict equality (M10c) *)
     | apply wft_seq | apply wft_sempty | apply wf_srefl | eapply wf_code_seq | apply wf_code_sempty
     | eapply wf_elimSEmpty
+    (* the empty type and binary sums (M12c) *)
+    | apply wft_empty | eapply wft_sum | apply wf_code_empty | eapply wf_code_sum
+    | eapply wf_inl | eapply wf_inr
+    | eapply wf_elimEmpty_eq; [reflexivity | ..]
+    | eapply wf_case_eq; [reflexivity | reflexivity | reflexivity | ..]
+    | eapply wf_gv_up_inst
     (* last: their [cbn] is the bulk of the cost when tried on every goal *)
     | solve [unfold lle; cbn; lia] | solve [br_lvl] ].
 

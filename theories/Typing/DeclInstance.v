@@ -175,7 +175,7 @@ Proof.
   - intros; apply eqtm_code_seq; auto.
   - intros; apply eqtm_code_sempty; [exact Hv | now rewrite Hty | assumption].
   (* the empty type *)
-  - intros; apply eqty_empty; [exact Hi | now rewrite Hty | assumption].
+  - intros; apply eqty_empty; [exact Hv | now rewrite Hty | assumption].
   - intros * Hl1 Hl2 HM HMM (Hn & Hn' & Hν).
     refine (conj _ (conj _ _)); [constructor; auto .. |]. apply eqtm_elimEmpty; auto.
   (* binary sums *)
@@ -185,7 +185,7 @@ Proof.
   - intros * H14 H25 H36 HA HAA HB HBB HM HMM Hc1 Hc2 (Hn & Hn' & Hν).
     refine (conj _ (conj _ _)); [constructor; auto .. |]. apply eqtm_case; auto.
   (* the codes of Empty and + *)
-  - intros; apply eqtm_code_empty; [exact Hi | now rewrite Hty | assumption].
+  - intros; apply eqtm_code_empty; [exact Hv | now rewrite Hty | assumption].
   - intros; apply eqtm_code_sum; auto.
 Qed.
 

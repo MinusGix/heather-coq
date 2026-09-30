@@ -87,6 +87,10 @@ Proof.
     cbn [dnfo dnftm dnfty dnfctx recT rect]; intuition auto.
   all: first
     [ apply ren_dnf_ty; intuition auto | apply ren_dnf; intuition auto
+    (* [case]'s branch types (M12c): the motive and the summands shifted *)
+    | solve [apply subst_dnf_ty; [apply ren_dnf_ty; intuition auto
+                                 | apply lk_dnf_lsingle; cbn [dnftm]; repeat split; try exact I;
+                                   apply ren_dnf_ty; intuition auto]]
     | apply subst_dnf_ty; [intuition auto | first [apply lk_dnf_lsucc | apply lk_dnf_lsingle; first [exact I | intuition auto]
                                                   | apply lk_dnf_lsingle2; cbn [dnftm]; intuition auto]] ].
 Qed.

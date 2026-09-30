@@ -277,6 +277,25 @@ Lemma gs_shift_ty' (A : ty) σ : (A⟨↑⟩)⦃σ⦄ = (A⦃σ⦄)⟨↑⟩.
 Proof. apply gsubst_ren_ty. Qed.
 Lemma gs_shift' (t : tm) σ : (t⟨↑⟩)⦃σ⦄ = (t⦃σ⦄)⟨↑⟩.
 Proof. apply gsubst_ren. Qed.
+(** [case]'s branch types (M12c): the motive lifted past the payload. *)
+Lemma gs_liftshift_ty' (A : ty) σ : (A⟨rlift ↑⟩)⦃σ⦄ = (A⦃σ⦄)⟨rlift ↑⟩.
+Proof. apply gsubst_ren_ty. Qed.
+Lemma gs_case_inl_ty' (M A B : ty) l l' σ :
+  (subst_ty M⟨rlift ↑⟩ (lsingle (tmInl l l' A⟨↑⟩ B⟨↑⟩ (var 0))))⦃σ⦄
+  = subst_ty M⦃σ⦄⟨rlift ↑⟩ (lsingle (tmInl l l' A⦃σ⦄⟨↑⟩ B⦃σ⦄⟨↑⟩ (var 0))).
+Proof.
+  rewrite gs_single_ty', gs_liftshift_ty'. f_equal. f_equal.
+  change ((tmInl l l' A⟨↑⟩ B⟨↑⟩ (var 0))⦃σ⦄) with (tmInl l l' (A⟨↑⟩)⦃σ⦄ (B⟨↑⟩)⦃σ⦄ (var 0)).
+  now rewrite !gs_shift_ty'.
+Qed.
+Lemma gs_case_inr_ty' (M A B : ty) l l' σ :
+  (subst_ty M⟨rlift ↑⟩ (lsingle (tmInr l l' A⟨↑⟩ B⟨↑⟩ (var 0))))⦃σ⦄
+  = subst_ty M⦃σ⦄⟨rlift ↑⟩ (lsingle (tmInr l l' A⦃σ⦄⟨↑⟩ B⦃σ⦄⟨↑⟩ (var 0))).
+Proof.
+  rewrite gs_single_ty', gs_liftshift_ty'. f_equal. f_equal.
+  change ((tmInr l l' A⟨↑⟩ B⟨↑⟩ (var 0))⦃σ⦄) with (tmInr l l' (A⟨↑⟩)⦃σ⦄ (B⟨↑⟩)⦃σ⦄ (var 0)).
+  now rewrite !gs_shift_ty'.
+Qed.
 
 Ltac gpeel_push Hσ :=
   repeat first [ rewrite <- peelL_gsubst by hd_tac
@@ -284,7 +303,8 @@ Ltac gpeel_push Hσ :=
                | rewrite <- peelU_gsubst by first [hd_tac | exact Hσ] ];
   unfold rb_br; rewrite tup_nth_gsubst by hd_tac;
   cbn [gosubst gsubst GSubst_tm GSubst_ty GSubst_ctx gsubst_tm gsubst_ty gcsubst recT rect];
-  rewrite ?gs_single_ty', ?gs_lsucc_ty', ?gs_single2_ty', ?gs_shift_ty', ?gs_shift'; reflexivity.
+  rewrite ?gs_case_inl_ty', ?gs_case_inr_ty',
+    ?gs_single_ty', ?gs_lsucc_ty', ?gs_single2_ty', ?gs_shift_ty', ?gs_shift'; reflexivity.
 
 Lemma redT_gsubst l1 l2 MT Mt bs l Δ c v σ : gdnf σ ->
   redT l1 l2 (mkrb MT Mt bs) l Δ c = Some v ->

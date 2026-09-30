@@ -483,6 +483,93 @@ Proof.
   apply (convU_at (l := l')); [apply wf_code_sempty; eauto using lequiv_wf_r | now apply lequiv_sym].
 Qed.
 
+
+(** The empty type and binary sums (every layer but V since M12c). *)
+Lemma pc_empty {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] tyEmpty l @ l ] /\ [ G ; Γ ⊢[ i ] tyEmpty l' @ l ].
+Proof.
+  intros Hv HΓ Hl. split; [apply wft_empty; eauto using lequiv_wf_l|].
+  eapply wft_lconv; [|exact Hl]. apply wft_empty; eauto using lequiv_wf_r.
+Qed.
+
+Lemma pc_elimEmpty {Γ l1 l2 l3 l4 M M' t t'} : i <> lV -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] M @ l1 ] -> [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] M ≅ M' @ l1 ] ->
+  [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] M' @ l1 ] ->
+  [ G ; Γ ⊢[ i ] t ≅ t' : tyEmpty l2 @ l2 ] ->
+  [ G ; Γ ⊢[ i ] t : tyEmpty l2 @ l2 ] -> [ G ; Γ ⊢[ i ] t' : tyEmpty l2 @ l2 ] ->
+  [ G ; Γ ⊢[ i ] elimEmpty l1 l2 M t : M[lsingle t] @ l1 ] /\
+  [ G ; Γ ⊢[ i ] elimEmpty l3 l4 M' t' : M[lsingle t] @ l1 ].
+Proof.
+  intros Hv H13 H24 HM HMM HM' Htt Ht Ht'.
+  split; [apply wf_elimEmpty; eauto using lequiv_wf_l | exact (sc_elimEmpty_q HiD Hv H13 H24 HM' HMM Ht Ht' Htt)].
+Qed.
+
+Lemma pc_sum {Γ l1 l2 l3 l4 A A' B B'} : i <> lV -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] -> [ G ; Γ ⊢[ i ] B @ l2 ] -> [ G ; Γ ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] tySum l1 l2 A B @ lmax l1 l2 ] /\ [ G ; Γ ⊢[ i ] tySum l3 l4 A' B' @ lmax l1 l2 ].
+Proof.
+  intros Hv H13 H24 HA HA' HB HB'.
+  split; [apply wft_sum; eauto using lequiv_wf_l | exact (sc_sum_q Hv H13 H24 HA' HB')].
+Qed.
+
+Lemma pc_inl {Γ l1 l2 l3 l4 A A' B B' a a'} : i <> lV -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ⊢[ i ] B @ l2 ] -> [ G ; Γ ⊢[ i ] B ≅ B' @ l2 ] -> [ G ; Γ ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l1 ] -> [ G ; Γ ⊢[ i ] a' : A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] tmInl l1 l2 A B a : tySum l1 l2 A B @ lmax l1 l2 ] /\
+  [ G ; Γ ⊢[ i ] tmInl l3 l4 A' B' a' : tySum l1 l2 A B @ lmax l1 l2 ].
+Proof.
+  intros Hv H13 H24 HA HAA HA' HB HBB HB' Ha Ha'.
+  split; [apply wf_inl; eauto using lequiv_wf_l | exact (sc_inl_q HiD Hv H13 H24 HA' HAA HB' HBB Ha')].
+Qed.
+
+Lemma pc_inr {Γ l1 l2 l3 l4 A A' B B' b b'} : i <> lV -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ⊢[ i ] B @ l2 ] -> [ G ; Γ ⊢[ i ] B ≅ B' @ l2 ] -> [ G ; Γ ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] b : B @ l2 ] -> [ G ; Γ ⊢[ i ] b' : B @ l2 ] ->
+  [ G ; Γ ⊢[ i ] tmInr l1 l2 A B b : tySum l1 l2 A B @ lmax l1 l2 ] /\
+  [ G ; Γ ⊢[ i ] tmInr l3 l4 A' B' b' : tySum l1 l2 A B @ lmax l1 l2 ].
+Proof.
+  intros Hv H13 H24 HA HAA HA' HB HBB HB' Hb Hb'.
+  split; [apply wf_inr; eauto using lequiv_wf_l | exact (sc_inr_q HiD Hv H13 H24 HA' HAA HB' HBB Hb')].
+Qed.
+
+Lemma pc_case {Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c1 c1' c2 c2' t t'} : i <> lV ->
+  lequiv (gL G) l1 l4 -> lequiv (gL G) l2 l5 -> lequiv (gL G) l3 l6 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ⊢[ i ] B @ l2 ] -> [ G ; Γ ⊢[ i ] B ≅ B' @ l2 ] -> [ G ; Γ ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢[ i ] M @ l3 ] ->
+  [ G ; Γ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢[ i ] M ≅ M' @ l3 ] ->
+  [ G ; Γ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢[ i ] M' @ l3 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] c1 : M⟨rlift ↑⟩[lsingle (tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] c1' : M⟨rlift ↑⟩[lsingle (tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] ->
+  [ G ; Γ ,, B @ l2 ⊢[ i ] c2 : M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] -> [ G ; Γ ,, B @ l2 ⊢[ i ] c2' : M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] ->
+  [ G ; Γ ⊢[ i ] t ≅ t' : tySum l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ i ] t : tySum l1 l2 A B @ lmax l1 l2 ] -> [ G ; Γ ⊢[ i ] t' : tySum l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ i ] tmCase l1 l2 l3 A B M c1 c2 t : M[lsingle t] @ l3 ] /\
+  [ G ; Γ ⊢[ i ] tmCase l4 l5 l6 A' B' M' c1' c2' t' : M[lsingle t] @ l3 ].
+Proof.
+  intros Hv H14 H25 H36 HA HAA HA' HB HBB HB' HM HMM HM' Hc1 Hc1' Hc2 Hc2' Htt Ht Ht'.
+  split; [apply wf_case; eauto using lequiv_wf_l |].
+  exact (sc_case_q HiD Hv H14 H25 H36 HA HA' HAA HB HB' HBB HM HM' HMM Hc1' Hc2' Ht Ht' Htt).
+Qed.
+
+Lemma pc_code_empty {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] tmEmpty l : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmEmpty l' : tyU l @ lsuc l ].
+Proof.
+  intros Hv HΓ Hl. split; [apply wf_code_empty; eauto using lequiv_wf_l|].
+  apply (convU_at (l := l')); [apply wf_code_empty; eauto using lequiv_wf_r | now apply lequiv_sym].
+Qed.
+
+Lemma pc_code_sum {Γ l1 l2 l3 l4 s s' t t'} : i <> lV -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] s : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢[ i ] s' : tyU l1 @ lsuc l1 ] ->
+  [ G ; Γ ⊢[ i ] t : tyU l2 @ lsuc l2 ] -> [ G ; Γ ⊢[ i ] t' : tyU l2 @ lsuc l2 ] ->
+  [ G ; Γ ⊢[ i ] tmSum l1 l2 s t : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ] /\
+  [ G ; Γ ⊢[ i ] tmSum l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ].
+Proof.
+  intros Hv H13 H24 Hs Hs' Ht Ht'.
+  split; [apply wf_code_sum; eauto using lequiv_wf_l | exact (sc_code_sum_q HiD Hv H13 H24 Hs' Ht')].
+Qed.
+
 End Cases.
 
 Theorem presupposition_C :
@@ -523,7 +610,12 @@ Proof.
              | solve [eapply pc_code_id; eassumption] | solve [eapply pc_J; eassumption]
              | solve [eapply pc_seq; eassumption] | solve [eapply pc_sempty; eassumption]
              | solve [eapply pc_srefl; eassumption] | solve [eapply pc_elimSEmpty; eassumption]
-             | solve [eapply pc_code_seq; eassumption] | solve [eapply pc_code_sempty; eassumption] ].
+             | solve [eapply pc_code_seq; eassumption] | solve [eapply pc_code_sempty; eassumption]
+             (* the empty type and binary sums, with their codes (M12c) *)
+             | solve [eapply pc_empty; eassumption] | solve [eapply pc_elimEmpty; eassumption]
+             | solve [eapply pc_sum; eassumption] | solve [eapply pc_inl; eassumption]
+             | solve [eapply pc_inr; eassumption] | solve [eapply pc_case; eassumption]
+             | solve [eapply pc_code_empty; eassumption] | solve [eapply pc_code_sum; eassumption] ].
 Qed.
 
 Lemma eqty_wf_C {G i Γ T T' l} : lle i lC -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->

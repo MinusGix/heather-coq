@@ -180,6 +180,9 @@ Qed.
     at the injection of that variable. *)
 Lemma liftshift_single_ty (M : ty) f : M⟨rlift ↑⟩[lsingle f] = M[lcons (lshift 1) f].
 Proof. apply ren_subst_ty; intros [|n]; rlk_simpl; cbn; [reflexivity | f_equal; lia]. Qed.
+(** The same in [subst_ty] form, as the recursor's [case] scopes present it (M12c). *)
+Lemma liftshift_cons_ty' (M : ty) f : subst_ty M (lcons (lshift 1) f) = subst_ty M⟨rlift ↑⟩ (lsingle f).
+Proof. symmetry; exact (liftshift_single_ty M f). Qed.
 Lemma shift_cons1_ty (T : ty) x : T⟨↑⟩[lcons (lshift 1) x] = T[lshift 1].
 Proof. apply ren_subst_ty; intros; rlk_simpl; cbn; f_equal; lia. Qed.
 Lemma shift1_as_ty (T : ty) : T⟨↑⟩ = T[lshift 1].

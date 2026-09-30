@@ -166,7 +166,7 @@ Proof.
 Qed.
 
 Lemma empty_eqty {G Γ l l'} : [ G ; Γ ⊢g ] -> lequiv (gL G) l l' -> [ G ; Γ ⊢g tyEmpty l ≅ tyEmpty l' @ l ].
-Proof. intros HΓ Hl. apply eqty_empty; [exact ge_compt | rewrite ge_typeof; exact HΓ | exact Hl]. Qed.
+Proof. intros HΓ Hl. apply eqty_empty; [exact ge_notV | rewrite ge_typeof; exact HΓ | exact Hl]. Qed.
 
 Lemma empty_tmred_conv {G Γ t w l l'} : lequiv (gL G) l l' ->
   [ G ; Γ ⊢g t ⤳* w : tyEmpty l @ l ] -> [ G ; Γ ⊢g t ⤳* w : tyEmpty l' @ l' ].

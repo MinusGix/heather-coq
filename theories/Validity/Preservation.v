@@ -490,7 +490,7 @@ Proof.
   intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_elimEmpty Hi Hx) as ((_ & W1 & W2 & HM & He) & Hk & ET).
   refine (retype_eqtm Hi _ Hk ET).
-  exact (eqtm_elimEmpty _ _ _ _ _ _ _ _ _ _ _ Hc (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HM
+  exact (eqtm_elimEmpty _ _ _ _ _ _ _ _ _ _ _ (compt_notV _ Hc) (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HM
            (eqty_refl _ _ _ _ _ HM) (IH _ _ _ _ _ Hc He)).
 Qed.
 
@@ -541,7 +541,7 @@ Proof.
   intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_case Hi Hx) as ((_ & W1 & W2 & W3 & HA & HB & HM & Hc1 & Hc2 & Ht) & Hk & ET).
   refine (retype_eqtm Hi _ Hk ET).
-  apply eqtm_case; [exact Hc | apply lequiv_refl, W1 | apply lequiv_refl, W2 | apply lequiv_refl, W3 | exact HA
+  apply eqtm_case; [now apply compt_notV | apply lequiv_refl, W1 | apply lequiv_refl, W2 | apply lequiv_refl, W3 | exact HA
                    | apply eqty_refl, HA | exact HB | apply eqty_refl, HB | exact HM | apply eqty_refl, HM
                    | apply eqtm_refl, Hc1 | apply eqtm_refl, Hc2 | exact (IH _ _ _ _ _ Hc Ht)].
 Qed.
@@ -556,11 +556,11 @@ Proof.
   destruct (sum_inj_c Hc EInl) as (Ekl & Ek'l' & EAC & EBD).
   pose proof (inl_payload Hc Ht) as Ha.
   assert (Hinl : [ G ; Γ ⊢[ i ] tmInl l l' A B a ≅ tmInl k k' C D a : tySum l l' A B @ lmax l l' ])
-    by (apply eqtm_inl; [exact Hc | apply lequiv_sym, Ekl | apply lequiv_sym, Ek'l' | exact EAC | exact EBD
+    by (apply eqtm_inl; [now apply compt_notV | apply lequiv_sym, Ekl | apply lequiv_sym, Ek'l' | exact EAC | exact EBD
                         | apply eqtm_refl, Ha]).
   assert (Hcong : [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 (tmInl k k' C D a)
                      ≅ tmCase l l' l'' A B M c1 c2 (tmInl l l' A B a) : M[lsingle (tmInl k k' C D a)] @ l'' ]).
-  { apply eqtm_case; [exact Hc | apply lequiv_refl, W1 | apply lequiv_refl, W2 | apply lequiv_refl, W3 | exact HA
+  { apply eqtm_case; [now apply compt_notV | apply lequiv_refl, W1 | apply lequiv_refl, W2 | apply lequiv_refl, W3 | exact HA
                      | apply eqty_refl, HA | exact HB | apply eqty_refl, HB | exact HM | apply eqty_refl, HM
                      | apply eqtm_refl, Hc1 | apply eqtm_refl, Hc2 | apply eqtm_sym, Hinl]. }
   pose proof (eqtm_case_inl _ _ _ _ _ _ _ _ _ _ _ _ Hc W1 W2 W3 HA HB HM Hc1 Hc2 Ha) as Hb.
@@ -579,11 +579,11 @@ Proof.
   destruct (sum_inj_c Hc EInr) as (Ekl & Ek'l' & EAC & EBD).
   pose proof (inr_payload Hc Ht) as Hb0.
   assert (Hinr : [ G ; Γ ⊢[ i ] tmInr l l' A B b ≅ tmInr k k' C D b : tySum l l' A B @ lmax l l' ])
-    by (apply eqtm_inr; [exact Hc | apply lequiv_sym, Ekl | apply lequiv_sym, Ek'l' | exact EAC | exact EBD
+    by (apply eqtm_inr; [now apply compt_notV | apply lequiv_sym, Ekl | apply lequiv_sym, Ek'l' | exact EAC | exact EBD
                         | apply eqtm_refl, Hb0]).
   assert (Hcong : [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 (tmInr k k' C D b)
                      ≅ tmCase l l' l'' A B M c1 c2 (tmInr l l' A B b) : M[lsingle (tmInr k k' C D b)] @ l'' ]).
-  { apply eqtm_case; [exact Hc | apply lequiv_refl, W1 | apply lequiv_refl, W2 | apply lequiv_refl, W3 | exact HA
+  { apply eqtm_case; [now apply compt_notV | apply lequiv_refl, W1 | apply lequiv_refl, W2 | apply lequiv_refl, W3 | exact HA
                      | apply eqty_refl, HA | exact HB | apply eqty_refl, HB | exact HM | apply eqty_refl, HM
                      | apply eqtm_refl, Hc1 | apply eqtm_refl, Hc2 | apply eqtm_sym, Hinr]. }
   pose proof (eqtm_case_inr _ _ _ _ _ _ _ _ _ _ _ _ Hc W1 W2 W3 HA HB HM Hc1 Hc2 Hb0) as Hb.

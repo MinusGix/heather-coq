@@ -447,7 +447,7 @@ Lemma S_actnf_empty {G Γ l l'} : leqv l l' -> S_ty G Γ (tyEmpty l) (tyEmpty l'
 Proof.
   intros Hl i k Hc HT HT'.
   destruct (inv_ty_empty HT) as ((_ & HΓ & W) & Hk). destruct (inv_ty_empty HT') as ((_ & _ & W') & _).
-  apply (lvl_eq_eqty Hk). apply eqty_empty; [exact Hc | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
+  apply (lvl_eq_eqty Hk). apply eqty_empty; [exact (compt_notV _ Hc) | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
 Qed.
 
 Lemma S_actmne_elimEmpty {G Γ l1 l2 l3 l4 M M' ν ν' W} : leqv l1 l3 -> leqv l2 l4 ->
@@ -461,16 +461,16 @@ Proof.
   pose proof (ctx_of_wf_tm Hi Hν) as HΓ.
   (* the right pieces at the left's types *)
   assert (HE : [ G ; Γ ⊢[ i ] tyEmpty l4 ≅ tyEmpty l2 @ l4 ])
-    by (apply eqty_empty; [exact Hc | rewrite Hi; exact HΓ | exact (lequiv_sym _ _ _ E24)]).
+    by (apply eqty_empty; [exact (compt_notV _ Hc) | rewrite Hi; exact HΓ | exact (lequiv_sym _ _ _ E24)]).
   assert (HΓE : [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] ])
-    by (apply wfc_ext; [exact HΓ | apply wft_empty; [exact Hc | rewrite Hi; exact HΓ | exact W2] | exact W2]).
+    by (apply wfc_ext; [exact HΓ | apply wft_empty; [exact (compt_notV _ Hc) | rewrite Hi; exact HΓ | exact W2] | exact W2]).
   pose proof (stab_ty Hi HE (lequiv_sym _ _ _ E24) HΓE HM') as HM'1.
   pose proof (IHM i l1 Hc HM (wft_lconv _ _ _ _ _ _ HM'1 E13)) as EM.
   assert (Hν'1 : [ G ; Γ ⊢[ i ] ν' : tyEmpty l2 @ l2 ])
     by (eapply wf_conv; [eapply wf_lconv; [exact Hν' | exact E24] | rewrite Hi; apply eqty_sym;
           eapply eqty_lconv; [exact HE | exact E24]]).
   destruct (IHν i l2 l2 (tyEmpty l2) (tyEmpty l2) Hc Hν Hν'1) as (_ & _ & Eν).
-  pose proof (eqtm_elimEmpty _ _ _ _ _ _ _ _ _ _ _ Hc E13 E24 HM EM Eν) as Econg.
+  pose proof (eqtm_elimEmpty _ _ _ _ _ _ _ _ _ _ _ (compt_notV _ Hc) E13 E24 HM EM Eν) as Econg.
   assert (EMν : [ G ; Γ ⊢[ i ] M[lsingle ν] ≅ M'[lsingle ν'] @ l1 ]).
   { eapply eqty_trans; [exact (eqty_single Hi EM Hν) |].
     exact (wf_ty_func Hi (wft_lconv _ _ _ _ _ _ HM'1 E13) (lsub_eq_single Hi Hν Hν'1 Eν)). }
@@ -536,7 +536,7 @@ Proof.
   pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
   pose proof (IHA i l1 Hc HA (wft_lconv _ _ _ _ _ _ HA' E13)) as EA.
   pose proof (IHB i l2 Hc HB (wft_lconv _ _ _ _ _ _ HB' E24)) as EB.
-  apply (lvl_eq_eqty Hk). apply eqty_sum; assumption.
+  apply (lvl_eq_eqty Hk). apply eqty_sum; [exact (compt_notV _ Hc) | ..]; assumption.
 Qed.
 
 (** Two injections at a [+] type: their payloads at its summand. *)
@@ -560,7 +560,7 @@ Proof.
   { eapply eqtm_conv; [eapply eqtm_lconv; [exact Ea | exact E1] | rewrite Hi].
     eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EAC) | exact E1]. }
   assert (Econg : [ G ; Γ ⊢[ i ] tmInl k1 k2 C D a ≅ tmInl k3 k4 C' D' a' : tySum k1 k2 C D @ lmax k1 k2 ])
-    by (apply eqtm_inl; first [exact Hc | now apply lequiv_sym | assumption]).
+    by (apply eqtm_inl; first [exact (compt_notV _ Hc) | now apply lequiv_sym | assumption]).
   eapply eqtm_conv; [exact (lvl_eq_eqtm Hk Econg) | rewrite Hi; exact ET].
 Qed.
 
@@ -584,7 +584,7 @@ Proof.
   { eapply eqtm_conv; [eapply eqtm_lconv; [exact Eb | exact E2] | rewrite Hi].
     eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EBD) | exact E2]. }
   assert (Econg : [ G ; Γ ⊢[ i ] tmInr k1 k2 C D b ≅ tmInr k3 k4 C' D' b' : tySum k1 k2 C D @ lmax k1 k2 ])
-    by (apply eqtm_inr; first [exact Hc | now apply lequiv_sym | assumption]).
+    by (apply eqtm_inr; first [exact (compt_notV _ Hc) | now apply lequiv_sym | assumption]).
   eapply eqtm_conv; [exact (lvl_eq_eqtm Hk Econg) | rewrite Hi; exact ET].
 Qed.
 
@@ -627,20 +627,20 @@ Proof.
   assert (EBA : [ G ; Γ ,, A @ l1 ⊢[ i ] M⟨rlift ↑⟩[lsingle (tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))]
                    ≅ M'⟨rlift ↑⟩[lsingle (tmInl l4 l5 A'⟨↑⟩ B'⟨↑⟩ (var 0))] @ l3 ]).
   { apply (case_branch_eq Hi HΓA HM EM HM'3).
-    - apply wf_inl; [exact Hc | exact W1 | exact W2 | exact (wk1_ty _ _ Hi _ _ _ _ _ HΓA HA)
+    - apply wf_inl; [exact Hv | exact W1 | exact W2 | exact (wk1_ty _ _ Hi _ _ _ _ _ HΓA HA)
                     | exact (wk1_ty _ _ Hi _ _ _ _ _ HΓA HB) | exact Hv0A].
     - exact (pre_inl_r Hi Hv E14 E25 (wk1_eqty _ _ Hi _ _ _ _ _ _ HΓA EA) (wk1_ty _ _ Hi _ _ _ _ _ HΓA HA'1)
                (wk1_eqty _ _ Hi _ _ _ _ _ _ HΓA EB) (wk1_ty _ _ Hi _ _ _ _ _ HΓA HB'2) Hv0A).
-    - apply eqtm_inl; [exact Hc | exact E14 | exact E25 | exact (wk1_eqty _ _ Hi _ _ _ _ _ _ HΓA EA)
+    - apply eqtm_inl; [exact Hv | exact E14 | exact E25 | exact (wk1_eqty _ _ Hi _ _ _ _ _ _ HΓA EA)
                       | exact (wk1_eqty _ _ Hi _ _ _ _ _ _ HΓA EB) | exact (eqtm_refl _ _ _ _ _ _ Hv0A)]. }
   assert (EBB : [ G ; Γ ,, B @ l2 ⊢[ i ] M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))]
                    ≅ M'⟨rlift ↑⟩[lsingle (tmInr l4 l5 A'⟨↑⟩ B'⟨↑⟩ (var 0))] @ l3 ]).
   { apply (case_branch_eq Hi HΓB HM EM HM'3).
-    - apply wf_inr; [exact Hc | exact W1 | exact W2 | exact (wk1_ty _ _ Hi _ _ _ _ _ HΓB HA)
+    - apply wf_inr; [exact Hv | exact W1 | exact W2 | exact (wk1_ty _ _ Hi _ _ _ _ _ HΓB HA)
                     | exact (wk1_ty _ _ Hi _ _ _ _ _ HΓB HB) | exact Hv0B].
     - exact (pre_inr_r Hi Hv E14 E25 (wk1_eqty _ _ Hi _ _ _ _ _ _ HΓB EA) (wk1_ty _ _ Hi _ _ _ _ _ HΓB HA'1)
                (wk1_eqty _ _ Hi _ _ _ _ _ _ HΓB EB) (wk1_ty _ _ Hi _ _ _ _ _ HΓB HB'2) Hv0B).
-    - apply eqtm_inr; [exact Hc | exact E14 | exact E25 | exact (wk1_eqty _ _ Hi _ _ _ _ _ _ HΓB EA)
+    - apply eqtm_inr; [exact Hv | exact E14 | exact E25 | exact (wk1_eqty _ _ Hi _ _ _ _ _ _ HΓB EA)
                       | exact (wk1_eqty _ _ Hi _ _ _ _ _ _ HΓB EB) | exact (eqtm_refl _ _ _ _ _ _ Hv0B)]. }
   assert (EA' : [ G ; Γ ⊢[ i ] A' ≅ A @ l4 ])
     by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | now apply lequiv_sym]).
@@ -677,7 +677,7 @@ Proof.
   destruct (IHν i (lmax l1 l2) (lmax l1 l2) (tySum l1 l2 A B) (tySum l1 l2 A B) Hc Hν Hν'1) as (_ & _ & Eν).
   assert (Econg : [ G ; Γ ⊢[ i ] tmCase l1 l2 l3 A B M c1 c2 ν ≅ tmCase l4 l5 l6 A' B' M' c1' c2' ν'
                      : M[lsingle ν] @ l3 ])
-    by (apply eqtm_case; assumption).
+    by (apply eqtm_case; [exact (compt_notV _ Hc) | ..]; assumption).
   assert (EMν : [ G ; Γ ⊢[ i ] M[lsingle ν] ≅ M'[lsingle ν'] @ l3 ]).
   { eapply eqty_trans; [exact (eqty_single Hi EM Hν) |].
     exact (wf_ty_func Hi HM'3 (lsub_eq_single Hi Hν Hν'1 Eν)). }
@@ -990,7 +990,7 @@ Proof.
   intros Hl i kk Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_code_empty Hi Ht) as ((_ & HΓ & W) & Hk & HT). destruct (inv_code_empty Hi Ht') as ((_ & _ & W') & _).
   eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
-  apply eqtm_code_empty; [exact Hc | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
+  apply eqtm_code_empty; [exact (compt_notV _ Hc) | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
 Qed.
 
 Lemma S_actmnf_code_sum {G Γ l l1 l2 l3 l4 s s' t t'} : leqv l1 l3 -> leqv l2 l4 ->
@@ -1003,7 +1003,7 @@ Proof.
   pose proof (IHs i (lsuc l1) Hc Hs (code_U_conv Hc E13 Hs')) as Es.
   pose proof (IHt i (lsuc l2) Hc Ht (code_U_conv Hc E24 Ht')) as Et.
   eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
-  apply eqtm_code_sum; assumption.
+  apply eqtm_code_sum; [exact (compt_notV _ Hc) | ..]; assumption.
 Qed.
 
 Lemma S_actmnf_code_sempty {G Γ l k k'} : leqv k k' -> S_tm G Γ (tmSEmpty k) (tmSEmpty k') (tyU l).

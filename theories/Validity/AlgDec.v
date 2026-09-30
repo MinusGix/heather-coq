@@ -1178,9 +1178,9 @@ Proof.
   pose proof (ctx_of_wf_tm Hi Hν) as HΓ.
   (* the other motive, in this context *)
   assert (HE : [ G ; Γ ⊢[ i ] tyEmpty l6 ≅ tyEmpty l2 @ l6 ])
-    by (apply eqty_empty; [exact Hc | rewrite Hi; exact HΓ | exact (lequiv_sym _ _ _ E26)]).
+    by (apply eqty_empty; [now apply compt_notV | rewrite Hi; exact HΓ | exact (lequiv_sym _ _ _ E26)]).
   assert (HΓE : [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] ])
-    by (apply wfc_ext; [exact HΓ | apply wft_empty; [exact Hc | rewrite Hi; exact HΓ | exact W2] | exact W2]).
+    by (apply wfc_ext; [exact HΓ | apply wft_empty; [now apply compt_notV | rewrite Hi; exact HΓ | exact W2] | exact W2]).
   pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi HE (lequiv_sym _ _ _ E26) HΓE HM') E15) as HM'1.
   destruct (IHM M' i _ _ Hc HM HM'1) as [DM | N]; [left; eapply actmne_elimEmpty; eassumption | refute].
 Qed.

@@ -819,8 +819,10 @@ Proof.
                         (Γ ,, tySum l l' A B @ lmax l l'))
           by (eapply lsub_eq_lift_g; [exact Hd | apply wft_sum_typeof; assumption | cbn; split; assumption
                                      | | reflexivity];
-              match goal with c : compt _ |- _ => rewrite (compt_typeof_self _ c) end;
-              push_subst; apply eqty_sum; auto using lequiv_refl);
+              push_subst; apply eqty_sum;
+              [destruct i; cbn; congruence | now apply lequiv_refl | now apply lequiv_refl
+              | eapply lift_eqty; [exact EA | apply lle_self_typeof]
+              | eapply lift_eqty; [exact EB | apply lle_self_typeof]]);
         assert (HnA : lsub_eq G i (Δ ,, A[d] @ l) (llift d) (llift d') (Γ ,, A @ l))
           by (eapply lsub_eq_lift_g; [exact Hd | eauto 6 with fung | assumption | eauto 6 with fung | reflexivity]);
         assert (HnB : lsub_eq G i (Δ ,, B[d] @ l') (llift d) (llift d') (Γ ,, B @ l'))

@@ -15,7 +15,7 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 Lemma wft_empty_g {G Δ l k} : [ G ; Δ ⊢g ] -> lequiv (gL G) l k -> [ G ; Δ ⊢g tyEmpty k @ l ].
 Proof.
   intros HΔ Hk. eapply wft_lconv; [|exact Hk].
-  apply wft_empty; [exact ge_compt | now rewrite ge_typeof | eauto using lequiv_wf_r].
+  apply wft_empty; [exact ge_notV | now rewrite ge_typeof | eauto using lequiv_wf_r].
 Qed.
 
 Lemma LR_empty_here {G Δ l l'} : [ G ; Δ ⊢g ] -> lwf (gL G) l -> lequiv (gL G) l l' ->
@@ -70,9 +70,9 @@ Lemma tmred_elimEmpty_cong {G Δ l l' M n w} : lwf (gL G) l -> lwf (gL G) l' ->
   [ G ; Δ ⊢g elimEmpty l l' M n ⤳* elimEmpty l l' M w : M[lsingle n] @ l ].
 Proof.
   intros H1 H2 HM [Hn Hr Heq]. split.
-  - apply wf_elimEmpty; auto using ge_compt.
+  - apply wf_elimEmpty; auto using ge_notV.
   - now apply reds_elimEmpty.
-  - apply eqtm_elimEmpty; auto using ge_compt, lequiv_refl, eqty_refl.
+  - apply eqtm_elimEmpty; auto using ge_notV, lequiv_refl, eqty_refl.
 Qed.
 
 Lemma V_elimEmpty {G Γ l1 l2 l3 l4 M M' t t'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
@@ -134,7 +134,7 @@ Proof.
   intros HΔ Hla Hk.
   pose proof (lequiv_wf_l _ _ _ Hk) as Hwk.
   assert (Hc0 : [ G ; Δ ⊢g tmEmpty k : tyU k @ lsuc k ])
-    by (apply wf_code_empty; [exact ge_compt | now rewrite ge_typeof | exact Hwk]).
+    by (apply wf_code_empty; [exact ge_notV | now rewrite ge_typeof | exact Hwk]).
   pose proof (conv_U' Hc0 Hk) as Hc.
   destruct (El_annot Hc Hla) as [HEl HEq].
   apply tyred_step; [exact HEl | constructor |].
@@ -164,7 +164,7 @@ Proof.
   apply (LRtm_U (l := l) Hw).
   assert (Hc : forall k, lequiv (gL G) l k -> [ G ; Δ ⊢g tmEmpty k : tyU l @ lsuc l ]).
   { intros k Hk. apply (conv_U' (l := k)); [|now apply lequiv_sym].
-    apply wf_code_empty; [exact ge_compt | now rewrite ge_typeof | eauto using lequiv_wf_r]. }
+    apply wf_code_empty; [exact ge_notV | now rewrite ge_typeof | eauto using lequiv_wf_r]. }
   exists (tmEmpty l), (tmEmpty l').
   refine (conj (tmred_refl _ _ _ (Hc _ (lequiv_refl _ _ Hw)))
             (conj (tmred_refl _ _ _ (Hc _ Hl)) (conj (whnf_tmEmpty _) (conj (whnf_tmEmpty _)

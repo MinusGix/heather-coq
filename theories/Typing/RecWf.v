@@ -109,6 +109,11 @@ Ltac wfd :=
   | |- [ _ ; _ ⊢[ _ ] tySEq _ _ _ _ @ _ ] => apply wft_seq; [ discriminate | lvl_ok | | | ]
   | |- [ _ ; _ ⊢[ _ ] tySEmpty _ @ _ ] => apply wft_sempty; [ discriminate | | lvl_ok ]
   | |- [ _ ; _ ⊢[ _ ] srefl _ _ _ : tySEq _ _ _ _ @ _ ] => apply wf_srefl; [ discriminate | lvl_ok | | ]
+  (* the empty type and binary sums (M12c) *)
+  | |- [ _ ; _ ⊢[ _ ] tyEmpty _ @ _ ] => apply wft_empty; [ discriminate | | lvl_ok ]
+  | |- [ _ ; _ ⊢[ _ ] tySum _ _ _ _ @ _ ] => apply wft_sum; [ discriminate | lvl_ok | lvl_ok | | ]
+  | |- [ _ ; _ ⊢[ _ ] tmInl _ _ _ _ _ : tySum _ _ _ _ @ _ ] => apply wf_inl; [ discriminate | lvl_ok | lvl_ok | | | ]
+  | |- [ _ ; _ ⊢[ _ ] tmInr _ _ _ _ _ : tySum _ _ _ _ @ _ ] => apply wf_inr; [ discriminate | lvl_ok | lvl_ok | | | ]
   | |- [ _ ; _ ,, tyGvar _ (lshift 0) @ _ ⊢[ _ ] var 0 : tyGvar _ (lshift 1) @ _ ] => apply wf_var0_gv
   | |- [ _ ; cvar _ ,, _ @ _ ⊢[ _ ] tyGvar _ (lshift 1) @ _ ] =>
       eapply wf_gv_up; [ discriminate | | glookup | unfold lle; cbn; lia ]
@@ -176,6 +181,18 @@ Proof.
       cbn [llk lsingle2]. rewrite shift2_single2_ty by exact HA. exact Ha.
 Qed.
 
+(** A type variable over one more local, at the injection of a new local
+    (M12c: [U_M^{↑, inl x/z}] in [case]'s branch scopes). *)
+Lemma wf_gv_up_inst G i g U A S la ls l X : i <> lV -> [ G ; cvar g ,, A @ la ⊢[ typeof i ] ] ->
+  in_gctx (gΨ G) U (gdTy (cvar g ,, S @ ls) lC l) -> lle lC i -> dnfl (lcons (lshift 1) X) ->
+  [ G ; cvar g ,, A @ la ⊢[ i ] X : S⟨↑⟩ @ ls ] -> [ G ; cvar g ,, A @ la ⊢[ i ] tyGvar U (lcons (lshift 1) X) @ l ].
+Proof.
+  intros Hv HΓ Hin Hle Hd HX. eapply wft_gvar; eauto.
+  - split; [reflexivity | intros; cbn; f_equal; lia].
+  - intros n A' k HA'. inversion HA' as [? ? ? | ? ? ? ? ? ? HA'']; subst; [|inversion HA''].
+    cbn [llk]. rewrite shift_cons1_ty, subst_lshift1_ty. exact HX.
+Qed.
+
 Ltac wfd_all :=
   wfd;
   repeat match goal with
@@ -185,6 +202,9 @@ Ltac wfd_all :=
       eapply wf_gv_single_var; [ discriminate | | glookup | unfold lle; cbn; lia | cbn; tauto | cbn; tauto | ]; wfd
   | |- [ _ ; cvar _ ⊢[ _ ] tyGvar _ (lsingle2 _ _) @ _ ] =>
       eapply wf_gv_single2; [ discriminate | | glookup | unfold lle; cbn; lia | cbn; tauto | cbn; tauto | | cbn ]; wfd
+  | |- [ _ ; cvar _ ,, _ @ _ ⊢[ _ ] tyGvar _ (lcons (lshift 1) _) @ _ ] =>
+      eapply wf_gv_up_inst; [ discriminate | | glookup | unfold lle; cbn; lia | cbn; tauto
+                            | cbn [ren Ren_ty Ren_tm ren_ty ren_tm lren r2l rdrop rshift1] ]; wfd
   end;
   try assumption.
 

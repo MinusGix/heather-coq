@@ -29,7 +29,7 @@ Definition wrap (nu ng nl : nat) (b : tm) : tm := wrapU nu (wrapG ng (wrapL nl b
 
 (** The number of branches, and the branch-indexed case split: [br_all t]
     runs [t] [nbr] times, as [do nbr t] would (M8_DESIGN.md J2, S0). *)
-Notation nbr := 31 (only parsing).
+Notation nbr := 39 (only parsing).
 Ltac br_do n tac := lazymatch n with O => idtac | S ?m => tac; br_do m tac end.
 Ltac br_all tac := br_do constr:(nbr) tac.
 
@@ -48,6 +48,11 @@ Definition bId := 21.   Definition bId' := 22.   Definition bRefl := 23.  Defini
     [t_srefl], [t_elim_sE] ([t_transp] is removed with [transp]). *)
 Definition bSEq := 25.  Definition bSEq' := 26.  Definition bSEmpty := 27. Definition bSEmpty' := 28.
 Definition bSrefl := 29. Definition bElimSEmpty := 30.
+(** The empty type's and binary sums' (M12c): Heather's [t_Empty], [t'_Empty],
+    [t_elimE], [t_+], [t'_+], [t_inl], [t_inr], [t_case]. *)
+Definition bEmpty := 31. Definition bEmpty' := 32. Definition bElimEmpty := 33.
+Definition bSum := 34.   Definition bSum' := 35.   Definition bInl := 36.   Definition bInr := 37.
+Definition bCase := 38.
 
 (** The arity [(levels, globals, locals)] of branch [k]. *)
 Definition br_ar (k : nat) : nat * nat * nat :=
@@ -83,13 +88,21 @@ Definition br_ar (k : nat) : nat * nat * nat :=
   | 28 => (1, 1, 0)       (* ℓ; g. t'_sEmpty *)
   | 29 => (1, 3, 2)       (* ℓ; g U_S u_t; x_S x_t. t_srefl *)
   | 30 => (2, 3, 2)       (* ℓ ℓ'; g U_M u_t; x_M x_t. t_elim_sE *)
+  | 31 => (1, 1, 0)       (* ℓ; g. t_Empty *)
+  | 32 => (1, 1, 0)       (* ℓ; g. t'_Empty *)
+  | 33 => (2, 3, 2)       (* ℓ ℓ'; g U_M u_t; x_M x_t. t_elimE *)
+  | 34 => (2, 3, 2)       (* ℓ ℓ'; g U_A U_B; x_A x_B. t_+ *)
+  | 35 => (2, 3, 2)       (* ℓ ℓ'; g u_a u_b; x_a x_b. t'_+ *)
+  | 36 => (2, 4, 3)       (* ℓ ℓ'; g U_A U_B u_a; x_A x_B x_a. t_inl *)
+  | 37 => (2, 4, 3)       (* ℓ ℓ'; g U_A U_B u_b; x_A x_B x_b. t_inr *)
+  | 38 => (3, 7, 6)       (* ℓ ℓ' ℓ''; g U_A U_B U_M u_l u_r u_t; x_A x_B x_M x_l x_r x_t. t_case *)
   | _ => (0, 0, 0)
   end.
 
 (** Whether branch [k] is a type branch (typed at [l₁], recursing on
     [elim_Typ]) or a term branch. *)
 Definition br_isT (k : nat) : bool :=
-  match k with 0 | 1 | 2 | 3 | 13 | 14 | 21 | 25 | 27 => true | _ => false end.
+  match k with 0 | 1 | 2 | 3 | 13 | 14 | 21 | 25 | 27 | 31 | 34 => true | _ => false end.
 
 Definition wrapMT (MT : ty) : tm := bindU (bindG (bindL (tmTy MT))).
 Definition wrapMt (Mt : ty) : tm := bindU (bindG (bindG (bindL (tmTy Mt)))).
@@ -148,6 +161,11 @@ Definition redT (l : lvl) (Δ : ctx) (c : ty) : option tm :=
               (GCtx Δ)) (GTy A)) (GTm a)) (GTm b))
               (recT k Δ A)) (rect k Δ A a)) (rect k Δ A b))
   | tySEmpty k => Some (peelG (peelU (rb_br rb bSEmpty) k) (GCtx Δ))
+  | tyEmpty k => Some (peelG (peelU (rb_br rb bEmpty) k) (GCtx Δ))
+  | tySum k k' A B =>
+      Some (peelL (peelL (peelG (peelG (peelG (peelU (peelU (rb_br rb bSum) k) k')
+              (GCtx Δ)) (GTy A)) (GTy B))
+              (recT k Δ A)) (recT k' Δ B))
   | _ => None
   end.
 
@@ -250,6 +268,36 @@ Definition redt (l : lvl) (Δ : ctx) (T : ty) (c : tm) : option tm :=
       Some (peelL (peelL (peelG (peelG (peelG (peelU (peelU (rb_br rb bElimSEmpty) k') k)
               (GCtx Δ)) (GTy M)) (GTm e))
               (recT k' Δ M)) (rect k Δ (tySEmpty k) e))
+  (* the empty type and binary sums (M12c) *)
+  | tmEmpty k => Some (peelG (peelU (rb_br rb bEmpty') k) (GCtx Δ))
+  (* the motive's level first, as [elimEmpty]'s and Heather's [t_elimE] *)
+  | elimEmpty k k' M t =>
+      Some (peelL (peelL (peelG (peelG (peelG (peelU (peelU (rb_br rb bElimEmpty) k) k')
+              (GCtx Δ)) (GTy M)) (GTm t))
+              (recT k (cext Δ (tyEmpty k') k') M)) (rect k' Δ (tyEmpty k') t))
+  | tmSum k k' s t =>
+      Some (peelL (peelL (peelG (peelG (peelG (peelU (peelU (rb_br rb bSum') k) k')
+              (GCtx Δ)) (GTm s)) (GTm t))
+              (rect (lsuc k) Δ (tyU k) s)) (rect (lsuc k') Δ (tyU k') t))
+  | tmInl k k' A B a =>
+      Some (peelL (peelL (peelL (peelG (peelG (peelG (peelG (peelU (peelU (rb_br rb bInl) k) k')
+              (GCtx Δ)) (GTy A)) (GTy B)) (GTm a))
+              (recT k Δ A)) (recT k' Δ B)) (rect k Δ A a))
+  | tmInr k k' A B b =>
+      Some (peelL (peelL (peelL (peelG (peelG (peelG (peelG (peelU (peelU (rb_br rb bInr) k) k')
+              (GCtx Δ)) (GTy A)) (GTy B)) (GTm b))
+              (recT k Δ A)) (recT k' Δ B)) (rect k' Δ B b))
+  | tmCase k k' k'' A B M c1 c2 t =>
+      Some (peelL (peelL (peelL (peelL (peelL (peelL
+              (peelG (peelG (peelG (peelG (peelG (peelG (peelG
+                 (peelU (peelU (peelU (rb_br rb bCase) k) k') k'')
+                 (GCtx Δ)) (GTy A)) (GTy B)) (GTy M)) (GTm c1)) (GTm c2)) (GTm t))
+              (recT k Δ A))
+              (recT k' Δ B))
+              (recT k'' (cext Δ (tySum k k' A B) (lmax k k')) M))
+              (rect k'' (cext Δ A k) (subst_ty M⟨rlift ↑⟩ (lsingle (tmInl k k' A⟨↑⟩ B⟨↑⟩ (var 0)))) c1))
+              (rect k'' (cext Δ B k') (subst_ty M⟨rlift ↑⟩ (lsingle (tmInr k k' A⟨↑⟩ B⟨↑⟩ (var 0)))) c2))
+              (rect (lmax k k') Δ (tySum k k' A B) t))
   | _ => None
   end.
 

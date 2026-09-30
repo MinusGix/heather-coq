@@ -926,14 +926,14 @@ Proof.
   destruct (inv_elimEmpty Hi Hx') as ((_ & W3 & W4 & HM' & Hν') & _ & _).
   pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
   pose proof (ctx_of_wf_tm Hi Hν) as HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
-  assert (HE2 : [ G ; Γ ⊢[ i ] tyEmpty l2 @ l2 ]) by (apply wft_empty; [exact Hc | rewrite Hi; exact HΓ | exact W2]).
+  assert (HE2 : [ G ; Γ ⊢[ i ] tyEmpty l2 @ l2 ]) by (apply wft_empty; [now apply compt_notV | rewrite Hi; exact HΓ | exact W2]).
   assert (HE : [ G ; Γ ⊢[ i ] tyEmpty l4 ≅ tyEmpty l2 @ l4 ])
-    by (apply eqty_empty; [exact Hc | rewrite Hi; exact HΓ | exact (lequiv_sym _ _ _ E24)]).
+    by (apply eqty_empty; [now apply compt_notV | rewrite Hi; exact HΓ | exact (lequiv_sym _ _ _ E24)]).
   assert (HΓE : [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HE2 | exact W2]).
   pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi HE (lequiv_sym _ _ _ E24) HΓE HM') E13) as HM'2.
   assert (Hctx : [ G ⊢[ i ] Γ ,, tyEmpty l2 @ l2 ≅ Γ ,, tyEmpty l4 @ l4 ])
     by (apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | exact HE2
-                       | apply eqty_empty; [exact Hc | rewrite Hi; exact HΓ | exact E24] | exact E24]).
+                       | apply eqty_empty; [now apply compt_notV | rewrite Hi; exact HΓ | exact E24] | exact E24]).
   destruct (IHν i _ _ _ _ Hc Hν Hν') as (W' & Xν).
   exists M'[lsingle ν']. eapply actmne_elimEmpty; [exact (leqv_sym _ _ H13) | exact (leqv_sym _ _ H24) | | exact Xν].
   exact (cv_ty HG Hc (IHM i l1 l1 Hc HM HM'2) Hctx HM'2 HM).
@@ -976,9 +976,9 @@ Proof.
   pose proof (ac_ty_sound Hc DM HM HM'3) as EM.
   destruct (Hbr HM EM Hc1' Hc2' Hν') as (EBA & EBB & Hc1'2 & Hc2'2 & _).
   pose proof (ctx_of_wf_ty Hi HA) as HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
-  assert (HS : [ G ; Γ ⊢[ i ] tySum l1 l2 A B @ lmax l1 l2 ]) by (apply wft_sum; assumption).
+  assert (HS : [ G ; Γ ⊢[ i ] tySum l1 l2 A B @ lmax l1 l2 ]) by (apply wft_sum; [now apply compt_notV | ..]; assumption).
   assert (HctxS : [ G ⊢[ i ] Γ ,, tySum l1 l2 A B @ lmax l1 l2 ≅ Γ ,, tySum l4 l5 A' B' @ lmax l4 l5 ])
-    by (apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | exact HS | apply eqty_sum; assumption
+    by (apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | exact HS | apply eqty_sum; [now apply compt_notV | ..]; assumption
                        | apply lequiv_max; assumption]).
   assert (HctxA : [ G ⊢[ i ] Γ ,, A @ l1 ≅ Γ ,, A' @ l4 ])
     by (apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | exact HA | exact EA | exact E14]).
@@ -2796,12 +2796,12 @@ Proof.
   assert (St : forall a b T k0, lwf (gL G) b -> lequiv (gL G) a b ->
             [ G ; Γ ,, tyEmpty a @ a ⊢[ i ] T @ k0 ] -> [ G ; Γ ,, tyEmpty b @ b ⊢[ i ] T @ k0 ]).
   { intros a b T k0 Wb Eab HT. refine (stab_ty Hi _ Eab _ HT).
-    - apply eqty_empty; [exact Hc | rewrite Hi; exact HΓ | exact Eab].
-    - apply wfc_ext; [exact HΓ | apply wft_empty; [exact Hc | rewrite Hi; exact HΓ | exact Wb] | exact Wb]. }
+    - apply eqty_empty; [now apply compt_notV | rewrite Hi; exact HΓ | exact Eab].
+    - apply wfc_ext; [exact HΓ | apply wft_empty; [now apply compt_notV | rewrite Hi; exact HΓ | exact Wb] | exact Wb]. }
   assert (Cx : forall a b, lwf (gL G) a -> lequiv (gL G) a b ->
             [ G ⊢[ i ] Γ ,, tyEmpty a @ a ≅ Γ ,, tyEmpty b @ b ]).
-  { intros a b Wa Eab. apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | apply wft_empty; [exact Hc | rewrite Hi; exact HΓ | exact Wa]
-                                      | apply eqty_empty; [exact Hc | rewrite Hi; exact HΓ | exact Eab] | exact Eab]. }
+  { intros a b Wa Eab. apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | apply wft_empty; [now apply compt_notV | rewrite Hi; exact HΓ | exact Wa]
+                                      | apply eqty_empty; [now apply compt_notV | rewrite Hi; exact HΓ | exact Eab] | exact Eab]. }
   pose proof (St _ _ _ _ W2 (lequiv_sym _ _ _ E24) HM') as HM'1.
   pose proof (St _ _ _ _ W2 (lequiv_sym _ _ _ (lequiv_trans _ _ _ _ E24 E46)) HM'') as HM''1.
   pose proof (St _ _ _ _ W4 (lequiv_sym _ _ _ E46) HM'') as HM''4.
@@ -2879,14 +2879,14 @@ Proof.
   pose proof (ac_ty_sound Hc DM2 HM' HM''6) as EM2.
   destruct (Hbr23 HM' EM2 Hc1'' Hc2'' Hν'') as (_ & _ & Hc1''6 & Hc2''6 & _).
   (* the middle's contexts, converted to the left's *)
-  assert (HS' : [ G ; Γ ⊢[ i ] tySum l4 l5 A' B' @ lmax l4 l5 ]) by (apply wft_sum; assumption).
+  assert (HS' : [ G ; Γ ⊢[ i ] tySum l4 l5 A' B' @ lmax l4 l5 ]) by (apply wft_sum; [now apply compt_notV | ..]; assumption).
   assert (EA' : [ G ; Γ ⊢[ i ] A' ≅ A @ l4 ])
     by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | now apply lequiv_sym]).
   assert (EB' : [ G ; Γ ⊢[ i ] B' ≅ B @ l5 ])
     by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EB) | now apply lequiv_sym]).
   assert (HctxS : [ G ⊢[ i ] Γ ,, tySum l4 l5 A' B' @ lmax l4 l5 ≅ Γ ,, tySum l1 l2 A B @ lmax l1 l2 ])
     by (apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | exact HS'
-                       | apply eqty_sum; [exact Hc | now apply lequiv_sym | now apply lequiv_sym | exact EA' | exact EB']
+                       | apply eqty_sum; [now apply compt_notV | now apply lequiv_sym | now apply lequiv_sym | exact EA' | exact EB']
                        | apply lequiv_max; now apply lequiv_sym]).
   assert (HctxA : [ G ⊢[ i ] Γ ,, A' @ l4 ≅ Γ ,, A @ l1 ])
     by (apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | exact HA' | exact EA' | now apply lequiv_sym]).

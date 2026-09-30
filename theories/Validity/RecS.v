@@ -622,6 +622,67 @@ Lemma redt_elimSEmpty_inst k0 Δ T k k' M e0 : dnftm (bs 30) -> gdnf σ -> LK dn
           [lext (recT k' Δ M :: rect k Δ (tySEmpty k) e0 :: nil) e]).
 Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
 
+(** The empty type and binary sums (M12c). *)
+Lemma redT_empty_inst k0 Δ k : dnftm (bs 31) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  redT l1 l2 rb k0 Δ (tyEmpty k) =
+  Some (((usubst_tm (bs 31) (uext (k :: nil) φ))⦃gext_s (GCtx Δ :: nil) σ⦄)[lext nil e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_codeempty_inst k0 Δ T k : dnftm (bs 32) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  redt l1 l2 rb k0 Δ T (tmEmpty k) =
+  Some (((usubst_tm (bs 32) (uext (k :: nil) φ))⦃gext_s (GCtx Δ :: nil) σ⦄)[lext nil e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_elimEmpty_inst k0 Δ T k k' M t : dnftm (bs 33) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  dnfty M -> dnftm t -> dnftm (recT k (cext Δ (tyEmpty k') k') M) -> dnftm (rect k' Δ (tyEmpty k') t) ->
+  redt l1 l2 rb k0 Δ T (elimEmpty k k' M t) =
+  Some (((usubst_tm (bs 33) (uext (k :: k' :: nil) φ))⦃gext_s (GCtx Δ :: GTy M :: GTm t :: nil) σ⦄)
+          [lext (recT k (cext Δ (tyEmpty k') k') M :: rect k' Δ (tyEmpty k') t :: nil) e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redT_sum_inst k0 Δ k k' A B : dnftm (bs 34) -> gdnf σ -> LK dnftm e -> dnfctx Δ -> dnfty A -> dnfty B ->
+  dnftm (recT k Δ A) -> dnftm (recT k' Δ B) ->
+  redT l1 l2 rb k0 Δ (tySum k k' A B) =
+  Some (((usubst_tm (bs 34) (uext (k :: k' :: nil) φ))⦃gext_s (GCtx Δ :: GTy A :: GTy B :: nil) σ⦄)
+          [lext (recT k Δ A :: recT k' Δ B :: nil) e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_codesum_inst k0 Δ T k k' s0 t0 : dnftm (bs 35) -> gdnf σ -> LK dnftm e -> dnfctx Δ -> dnftm s0 -> dnftm t0 ->
+  dnftm (rect (lsuc k) Δ (tyU k) s0) -> dnftm (rect (lsuc k') Δ (tyU k') t0) ->
+  redt l1 l2 rb k0 Δ T (tmSum k k' s0 t0) =
+  Some (((usubst_tm (bs 35) (uext (k :: k' :: nil) φ))⦃gext_s (GCtx Δ :: GTm s0 :: GTm t0 :: nil) σ⦄)
+          [lext (rect (lsuc k) Δ (tyU k) s0 :: rect (lsuc k') Δ (tyU k') t0 :: nil) e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_inl_inst k0 Δ T k k' A B a : dnftm (bs 36) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  dnfty A -> dnfty B -> dnftm a -> dnftm (recT k Δ A) -> dnftm (recT k' Δ B) -> dnftm (rect k Δ A a) ->
+  redt l1 l2 rb k0 Δ T (tmInl k k' A B a) =
+  Some (((usubst_tm (bs 36) (uext (k :: k' :: nil) φ))⦃gext_s (GCtx Δ :: GTy A :: GTy B :: GTm a :: nil) σ⦄)
+          [lext (recT k Δ A :: recT k' Δ B :: rect k Δ A a :: nil) e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_inr_inst k0 Δ T k k' A B b : dnftm (bs 37) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  dnfty A -> dnfty B -> dnftm b -> dnftm (recT k Δ A) -> dnftm (recT k' Δ B) -> dnftm (rect k' Δ B b) ->
+  redt l1 l2 rb k0 Δ T (tmInr k k' A B b) =
+  Some (((usubst_tm (bs 37) (uext (k :: k' :: nil) φ))⦃gext_s (GCtx Δ :: GTy A :: GTy B :: GTm b :: nil) σ⦄)
+          [lext (recT k Δ A :: recT k' Δ B :: rect k' Δ B b :: nil) e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_case_inst k0 Δ T k k' k'' A B M c1 c2 t : dnftm (bs 38) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  dnfty A -> dnfty B -> dnfty M -> dnftm c1 -> dnftm c2 -> dnftm t ->
+  dnftm (recT k Δ A) -> dnftm (recT k' Δ B) -> dnftm (recT k'' (cext Δ (tySum k k' A B) (lmax k k')) M) ->
+  dnftm (rect k'' (cext Δ A k) (subst_ty M⟨rlift ↑⟩ (lsingle (tmInl k k' A⟨↑⟩ B⟨↑⟩ (var 0)))) c1) ->
+  dnftm (rect k'' (cext Δ B k') (subst_ty M⟨rlift ↑⟩ (lsingle (tmInr k k' A⟨↑⟩ B⟨↑⟩ (var 0)))) c2) ->
+  dnftm (rect (lmax k k') Δ (tySum k k' A B) t) ->
+  redt l1 l2 rb k0 Δ T (tmCase k k' k'' A B M c1 c2 t) =
+  Some (((usubst_tm (bs 38) (uext (k :: k' :: k'' :: nil) φ))
+           ⦃gext_s (GCtx Δ :: GTy A :: GTy B :: GTy M :: GTm c1 :: GTm c2 :: GTm t :: nil) σ⦄)
+          [lext (recT k Δ A :: recT k' Δ B :: recT k'' (cext Δ (tySum k k' A B) (lmax k k')) M
+                 :: rect k'' (cext Δ A k) (subst_ty M⟨rlift ↑⟩ (lsingle (tmInl k k' A⟨↑⟩ B⟨↑⟩ (var 0)))) c1
+                 :: rect k'' (cext Δ B k') (subst_ty M⟨rlift ↑⟩ (lsingle (tmInr k k' A⟨↑⟩ B⟨↑⟩ (var 0)))) c2
+                 :: rect (lmax k k') Δ (tySum k k' A B) t :: nil) e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
 End Red.
 
 Lemma gdnf_gext_s os σ : Forall dnfo os -> gdnf σ -> gdnf (gext_s os σ).
@@ -1115,6 +1176,147 @@ Proof using ELM ELP.
   refine (GSubRel_tm_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl Hc1 Hc2 Hc Ec); [| decl_eq | decl_eq].
   refine (GSubRel_ty_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl HM1 HM2 HM (fun _ => EM1)); [| decl_eq | decl_eq].
   refine (GSubRel_tm_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl Ha1 Ha2 Ha Ea); [| decl_eq | decl_eq].
+  refine (GSubRel_ty_i (i := lC) ltac:(lleC) (GSubRel_ctx1' Hσ HΔ1 HΔ) _ _ eq_refl eq_refl HA1 HA2 HA (fun _ => EA)); reflexivity.
+Qed.
+
+(** For [Empty]'s eliminator (branch 33): the motive over the scrutinee. *)
+Lemma GS_elimEmpty {G0 L' φ G' σ1 σ2 Δ1 Δ2 M1 M2 t1 t2 k k'} :
+  GSubRel EP EM G' (G_us G0 L' φ) σ1 σ2 -> [ G' ; Δ1 ⊢[ lD ] ] -> [ G' ⊢[ lD ] Δ1 ≅ Δ2 ] ->
+  [ G' ; Δ1 ,, tyEmpty k' @ k' ⊢[ lC ] M1 @ k ] -> [ G' ; Δ2 ,, tyEmpty k' @ k' ⊢[ lC ] M2 @ k ] ->
+  [ G' ; Δ1 ,, tyEmpty k' @ k' ⊢[ lD ] M1 ≅ M2 @ k ] -> ty_leq M1 M2 ->
+  [ G' ; Δ1 ⊢[ lC ] t1 : tyEmpty k' @ k' ] -> [ G' ; Δ2 ⊢[ lC ] t2 : tyEmpty k' @ k' ] ->
+  [ G' ; Δ1 ⊢[ lD ] t1 ≅ t2 : tyEmpty k' @ k' ] -> tm_leq t1 t2 ->
+  GSubRel EP EM G' (G_us (brG 33 G0) L' (uext (k :: k' :: nil) φ))
+    (gext_s (GCtx Δ1 :: GTy M1 :: GTm t1 :: nil) σ1)
+    (gext_s (GCtx Δ2 :: GTy M2 :: GTm t2 :: nil) σ2).
+Proof using ELM ELP.
+  intros Hσ HΔ1 HΔ HM1 HM2 HM EM1 Ht1 Ht2 Ht Et.
+  rewrite (G_us_brG_uext 33 G0 L' φ (k :: k' :: nil) eq_refl).
+  refine (GSubRel_ext EP EM (fun i => eq_sym (gext_s3 _ _ _ _ i)) (fun i => eq_sym (gext_s3 _ _ _ _ i)) _).
+  change (mkG L' (map (fun D => gdecl_usubst D (uext (k :: k' :: nil) φ)) (brDecls 33) ++ gΨ (G_us G0 L' φ))) with
+    (gext (gext (gext (G_us G0 L' φ) gdCtx) (gdTy (cvar 0 ,, tyEmpty k' @ k') lC k)) (gdTm (cvar 1) lC (tyEmpty k') k')).
+  refine (GSubRel_tm_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl Ht1 Ht2 Ht Et); [| decl_eq | decl_eq].
+  refine (GSubRel_ty_i (i := lC) ltac:(lleC) (GSubRel_ctx1' Hσ HΔ1 HΔ) _ _ eq_refl eq_refl HM1 HM2 HM (fun _ => EM1)); reflexivity.
+Qed.
+
+(** For [+] (branch 34): two types over the context. *)
+Lemma GS_sum {G0 L' φ G' σ1 σ2 Δ1 Δ2 A1 A2 B1 B2 k k'} :
+  GSubRel EP EM G' (G_us G0 L' φ) σ1 σ2 -> [ G' ; Δ1 ⊢[ lD ] ] -> [ G' ⊢[ lD ] Δ1 ≅ Δ2 ] ->
+  [ G' ; Δ1 ⊢[ lC ] A1 @ k ] -> [ G' ; Δ2 ⊢[ lC ] A2 @ k ] -> [ G' ; Δ1 ⊢[ lD ] A1 ≅ A2 @ k ] -> ty_leq A1 A2 ->
+  [ G' ; Δ1 ⊢[ lC ] B1 @ k' ] -> [ G' ; Δ2 ⊢[ lC ] B2 @ k' ] -> [ G' ; Δ1 ⊢[ lD ] B1 ≅ B2 @ k' ] -> ty_leq B1 B2 ->
+  GSubRel EP EM G' (G_us (brG 34 G0) L' (uext (k :: k' :: nil) φ))
+    (gext_s (GCtx Δ1 :: GTy A1 :: GTy B1 :: nil) σ1) (gext_s (GCtx Δ2 :: GTy A2 :: GTy B2 :: nil) σ2).
+Proof using ELM ELP.
+  intros Hσ HΔ1 HΔ HA1 HA2 HA EA HB1 HB2 HB EB.
+  rewrite (G_us_brG_uext 34 G0 L' φ (k :: k' :: nil) eq_refl).
+  refine (GSubRel_ext EP EM (fun i => eq_sym (gext_s3 _ _ _ _ i)) (fun i => eq_sym (gext_s3 _ _ _ _ i)) _).
+  change (mkG L' (map (fun D => gdecl_usubst D (uext (k :: k' :: nil) φ)) (brDecls 34) ++ gΨ (G_us G0 L' φ))) with
+    (gext (gext (gext (G_us G0 L' φ) gdCtx) (gdTy (cvar 0) lC k)) (gdTy (cvar 1) lC k')).
+  refine (GSubRel_ty_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl HB1 HB2 HB (fun _ => EB)); [| decl_eq | decl_eq].
+  refine (GSubRel_ty_i (i := lC) ltac:(lleC) (GSubRel_ctx1' Hσ HΔ1 HΔ) _ _ eq_refl eq_refl HA1 HA2 HA (fun _ => EA)); reflexivity.
+Qed.
+
+(** For [+]'s code (branch 35). *)
+Lemma GS_codesum {G0 L' φ G' σ1 σ2 Δ1 Δ2 s1 s2 t1 t2 k k'} :
+  GSubRel EP EM G' (G_us G0 L' φ) σ1 σ2 -> [ G' ; Δ1 ⊢[ lD ] ] -> [ G' ⊢[ lD ] Δ1 ≅ Δ2 ] ->
+  [ G' ; Δ1 ⊢[ lC ] s1 : tyU k @ lsuc k ] -> [ G' ; Δ2 ⊢[ lC ] s2 : tyU k @ lsuc k ] ->
+  [ G' ; Δ1 ⊢[ lD ] s1 ≅ s2 : tyU k @ lsuc k ] -> tm_leq s1 s2 ->
+  [ G' ; Δ1 ⊢[ lC ] t1 : tyU k' @ lsuc k' ] -> [ G' ; Δ2 ⊢[ lC ] t2 : tyU k' @ lsuc k' ] ->
+  [ G' ; Δ1 ⊢[ lD ] t1 ≅ t2 : tyU k' @ lsuc k' ] -> tm_leq t1 t2 ->
+  GSubRel EP EM G' (G_us (brG 35 G0) L' (uext (k :: k' :: nil) φ))
+    (gext_s (GCtx Δ1 :: GTm s1 :: GTm t1 :: nil) σ1) (gext_s (GCtx Δ2 :: GTm s2 :: GTm t2 :: nil) σ2).
+Proof using ELM ELP.
+  intros Hσ HΔ1 HΔ Hs1 Hs2 Hs Es Ht1 Ht2 Ht Et.
+  rewrite (G_us_brG_uext 35 G0 L' φ (k :: k' :: nil) eq_refl).
+  refine (GSubRel_ext EP EM (fun i => eq_sym (gext_s3 _ _ _ _ i)) (fun i => eq_sym (gext_s3 _ _ _ _ i)) _).
+  change (mkG L' (map (fun D => gdecl_usubst D (uext (k :: k' :: nil) φ)) (brDecls 35) ++ gΨ (G_us G0 L' φ))) with
+    (gext (gext (gext (G_us G0 L' φ) gdCtx) (gdTm (cvar 0) lC (tyU k) (lsuc k))) (gdTm (cvar 1) lC (tyU k') (lsuc k'))).
+  refine (GSubRel_tm_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl Ht1 Ht2 Ht Et); [| decl_eq | decl_eq].
+  refine (GSubRel_tm_i (i := lC) ltac:(lleC) (GSubRel_ctx1' Hσ HΔ1 HΔ) _ _ eq_refl eq_refl Hs1 Hs2 Hs Es); reflexivity.
+Qed.
+
+(** For the injections (branches 36 and 37): the payload's type is the
+    first or the second summand. *)
+Lemma GS_inj {G0 L' φ G' σ1 σ2 Δ1 Δ2 A1 A2 B1 B2 C1 a1 a2 k k' kc} kb (U : nat) :
+  kb = 36 /\ U = 1 /\ C1 = A1 /\ kc = k \/ kb = 37 /\ U = 0 /\ C1 = B1 /\ kc = k' ->
+  GSubRel EP EM G' (G_us G0 L' φ) σ1 σ2 -> [ G' ; Δ1 ⊢[ lD ] ] -> [ G' ⊢[ lD ] Δ1 ≅ Δ2 ] ->
+  [ G' ; Δ1 ⊢[ lC ] A1 @ k ] -> [ G' ; Δ2 ⊢[ lC ] A2 @ k ] -> [ G' ; Δ1 ⊢[ lD ] A1 ≅ A2 @ k ] -> ty_leq A1 A2 ->
+  [ G' ; Δ1 ⊢[ lC ] B1 @ k' ] -> [ G' ; Δ2 ⊢[ lC ] B2 @ k' ] -> [ G' ; Δ1 ⊢[ lD ] B1 ≅ B2 @ k' ] -> ty_leq B1 B2 ->
+  [ G' ; Δ1 ⊢[ lC ] a1 : C1 @ kc ] -> [ G' ; Δ2 ⊢[ lC ] a2 : (if Nat.eqb U 1 then A2 else B2) @ kc ] ->
+  [ G' ; Δ1 ⊢[ lD ] a1 ≅ a2 : C1 @ kc ] -> tm_leq a1 a2 ->
+  GSubRel EP EM G' (G_us (brG kb G0) L' (uext (k :: k' :: nil) φ))
+    (gext_s (GCtx Δ1 :: GTy A1 :: GTy B1 :: GTm a1 :: nil) σ1)
+    (gext_s (GCtx Δ2 :: GTy A2 :: GTy B2 :: GTm a2 :: nil) σ2).
+Proof using ELM ELP.
+  intros Hkb Hσ HΔ1 HΔ HA1 HA2 HA EA HB1 HB2 HB EB Ha1 Ha2 Ha Ea.
+  pose proof (wf_ty_dnf HA1) as NA1. pose proof (wf_ty_dnf HA2) as NA2.
+  pose proof (wf_ty_dnf HB1) as NB1. pose proof (wf_ty_dnf HB2) as NB2.
+  assert (E4 : forall a b c d τ i, gext_s (a :: b :: c :: d :: nil) τ i = gcons (gcons (gcons (gcons τ a) b) c) d i).
+  { intros; unfold gext_s; destruct i as [|[|[|[|i]]]]; cbn; auto. f_equal; lia. }
+  destruct Hkb as [(-> & -> & -> & ->) | (-> & -> & -> & ->)]; cbn [Nat.eqb] in Ha2.
+  - rewrite (G_us_brG_uext 36 G0 L' φ (k :: k' :: nil) eq_refl).
+    refine (GSubRel_ext EP EM (fun i => eq_sym (E4 _ _ _ _ _ i)) (fun i => eq_sym (E4 _ _ _ _ _ i)) _).
+    change (mkG L' (map (fun D => gdecl_usubst D (uext (k :: k' :: nil) φ)) (brDecls 36) ++ gΨ (G_us G0 L' φ))) with
+      (gext (gext (gext (gext (G_us G0 L' φ) gdCtx) (gdTy (cvar 0) lC k)) (gdTy (cvar 1) lC k'))
+         (gdTm (cvar 2) lC (gv 1) k)).
+    refine (GSubRel_tm_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl Ha1 Ha2 Ha Ea); [| decl_eq | decl_eq].
+    refine (GSubRel_ty_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl HB1 HB2 HB (fun _ => EB)); [| decl_eq | decl_eq].
+    refine (GSubRel_ty_i (i := lC) ltac:(lleC) (GSubRel_ctx1' Hσ HΔ1 HΔ) _ _ eq_refl eq_refl HA1 HA2 HA (fun _ => EA)); reflexivity.
+  - rewrite (G_us_brG_uext 37 G0 L' φ (k :: k' :: nil) eq_refl).
+    refine (GSubRel_ext EP EM (fun i => eq_sym (E4 _ _ _ _ _ i)) (fun i => eq_sym (E4 _ _ _ _ _ i)) _).
+    change (mkG L' (map (fun D => gdecl_usubst D (uext (k :: k' :: nil) φ)) (brDecls 37) ++ gΨ (G_us G0 L' φ))) with
+      (gext (gext (gext (gext (G_us G0 L' φ) gdCtx) (gdTy (cvar 0) lC k)) (gdTy (cvar 1) lC k'))
+         (gdTm (cvar 2) lC (gv 0) k')).
+    refine (GSubRel_tm_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl Ha1 Ha2 Ha Ea); [| decl_eq | decl_eq].
+    refine (GSubRel_ty_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl HB1 HB2 HB (fun _ => EB)); [| decl_eq | decl_eq].
+    refine (GSubRel_ty_i (i := lC) ltac:(lleC) (GSubRel_ctx1' Hσ HΔ1 HΔ) _ _ eq_refl eq_refl HA1 HA2 HA (fun _ => EA)); reflexivity.
+Qed.
+
+(** For [case] (branch 38): the branches' types in the substituted form of
+    their scopes' declarations. *)
+Lemma GS_case {G0 L' φ G' σ1 σ2 Δ1 Δ2 A1 A2 B1 B2 M1 M2 c1 c1' c2 c2' t1 t2 k k' k''} :
+  GSubRel EP EM G' (G_us G0 L' φ) σ1 σ2 -> [ G' ; Δ1 ⊢[ lD ] ] -> [ G' ⊢[ lD ] Δ1 ≅ Δ2 ] ->
+  [ G' ; Δ1 ⊢[ lC ] A1 @ k ] -> [ G' ; Δ2 ⊢[ lC ] A2 @ k ] -> [ G' ; Δ1 ⊢[ lD ] A1 ≅ A2 @ k ] -> ty_leq A1 A2 ->
+  [ G' ; Δ1 ⊢[ lC ] B1 @ k' ] -> [ G' ; Δ2 ⊢[ lC ] B2 @ k' ] -> [ G' ; Δ1 ⊢[ lD ] B1 ≅ B2 @ k' ] -> ty_leq B1 B2 ->
+  [ G' ; Δ1 ,, tySum k k' A1 B1 @ lmax k k' ⊢[ lC ] M1 @ k'' ] ->
+  [ G' ; Δ2 ,, tySum k k' A2 B2 @ lmax k k' ⊢[ lC ] M2 @ k'' ] ->
+  [ G' ; Δ1 ,, tySum k k' A1 B1 @ lmax k k' ⊢[ lD ] M1 ≅ M2 @ k'' ] -> ty_leq M1 M2 ->
+  [ G' ; Δ1 ,, A1 @ k ⊢[ lC ] c1 : M1⟨rlift ↑⟩[lsingle (tmInl k k' A1⟨↑⟩ B1⟨↑⟩ (var 0))] @ k'' ] ->
+  [ G' ; Δ2 ,, A2 @ k ⊢[ lC ] c1' : M2⟨rlift ↑⟩[lsingle (tmInl k k' A2⟨↑⟩ B2⟨↑⟩ (var 0))] @ k'' ] ->
+  [ G' ; Δ1 ,, A1 @ k ⊢[ lD ] c1 ≅ c1' : M1⟨rlift ↑⟩[lsingle (tmInl k k' A1⟨↑⟩ B1⟨↑⟩ (var 0))] @ k'' ] ->
+  tm_leq c1 c1' ->
+  [ G' ; Δ1 ,, B1 @ k' ⊢[ lC ] c2 : M1⟨rlift ↑⟩[lsingle (tmInr k k' A1⟨↑⟩ B1⟨↑⟩ (var 0))] @ k'' ] ->
+  [ G' ; Δ2 ,, B2 @ k' ⊢[ lC ] c2' : M2⟨rlift ↑⟩[lsingle (tmInr k k' A2⟨↑⟩ B2⟨↑⟩ (var 0))] @ k'' ] ->
+  [ G' ; Δ1 ,, B1 @ k' ⊢[ lD ] c2 ≅ c2' : M1⟨rlift ↑⟩[lsingle (tmInr k k' A1⟨↑⟩ B1⟨↑⟩ (var 0))] @ k'' ] ->
+  tm_leq c2 c2' ->
+  [ G' ; Δ1 ⊢[ lC ] t1 : tySum k k' A1 B1 @ lmax k k' ] -> [ G' ; Δ2 ⊢[ lC ] t2 : tySum k k' A2 B2 @ lmax k k' ] ->
+  [ G' ; Δ1 ⊢[ lD ] t1 ≅ t2 : tySum k k' A1 B1 @ lmax k k' ] -> tm_leq t1 t2 ->
+  GSubRel EP EM G' (G_us (brG 38 G0) L' (uext (k :: k' :: k'' :: nil) φ))
+    (gext_s (GCtx Δ1 :: GTy A1 :: GTy B1 :: GTy M1 :: GTm c1 :: GTm c2 :: GTm t1 :: nil) σ1)
+    (gext_s (GCtx Δ2 :: GTy A2 :: GTy B2 :: GTy M2 :: GTm c1' :: GTm c2' :: GTm t2 :: nil) σ2).
+Proof using ELM ELP.
+  intros Hσ HΔ1 HΔ HA1 HA2 HA EA HB1 HB2 HB EB HM1 HM2 HM EM1 Hc1 Hc1' Hc1e Ec1 Hc2 Hc2' Hc2e Ec2 Ht1 Ht2 Ht Et.
+  rewrite liftshift_single_ty in Hc1, Hc1', Hc1e, Hc2, Hc2', Hc2e.
+  pose proof (wf_ty_dnf HA1) as NA1. pose proof (wf_ty_dnf HA2) as NA2.
+  pose proof (wf_ty_dnf HB1) as NB1. pose proof (wf_ty_dnf HB2) as NB2.
+  pose proof (wf_ty_dnf HM1) as NM1. pose proof (wf_ty_dnf HM2) as NM2.
+  rewrite (G_us_brG_uext 38 G0 L' φ (k :: k' :: k'' :: nil) eq_refl).
+  assert (E7 : forall a b c d f g h τ i, gext_s (a :: b :: c :: d :: f :: g :: h :: nil) τ i =
+                 gcons (gcons (gcons (gcons (gcons (gcons (gcons τ a) b) c) d) f) g) h i).
+  { intros; unfold gext_s; destruct i as [|[|[|[|[|[|[|i]]]]]]]; cbn; auto. f_equal; lia. }
+  refine (GSubRel_ext EP EM (fun i => eq_sym (E7 _ _ _ _ _ _ _ _ i)) (fun i => eq_sym (E7 _ _ _ _ _ _ _ _ i)) _).
+  change (mkG L' (map (fun D => gdecl_usubst D (uext (k :: k' :: k'' :: nil) φ)) (brDecls 38) ++ gΨ (G_us G0 L' φ))) with
+    (gext (gext (gext (gext (gext (gext (gext (G_us G0 L' φ) gdCtx) (gdTy (cvar 0) lC k))
+       (gdTy (cvar 1) lC k'))
+       (gdTy (cvar 2 ,, tySum k k' (gv 1) (gv 0) @ lmax k k') lC k''))
+       (gdTm (cvar 3 ,, gv 2 @ k) lC (tyGvar 0 (lcons (lshift 1) (tmInl k k' (gv 2)⟨↑⟩ (gv 1)⟨↑⟩ (var 0)))) k''))
+       (gdTm (cvar 4 ,, gv 2 @ k') lC (tyGvar 1 (lcons (lshift 1) (tmInr k k' (gv 3)⟨↑⟩ (gv 2)⟨↑⟩ (var 0)))) k''))
+       (gdTm (cvar 5) lC (tySum k k' (gv 4) (gv 3)) (lmax k k'))).
+  refine (GSubRel_tm_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl Ht1 Ht2 Ht Et); [| decl_eq | decl_eq].
+  refine (GSubRel_tm_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl Hc2 Hc2' Hc2e Ec2); [| decl_eq | decl_eq].
+  refine (GSubRel_tm_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl Hc1 Hc1' Hc1e Ec1); [| decl_eq | decl_eq].
+  refine (GSubRel_ty_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl HM1 HM2 HM (fun _ => EM1)); [| decl_eq | decl_eq].
+  refine (GSubRel_ty_i (i := lC) ltac:(lleC) _ _ _ eq_refl eq_refl HB1 HB2 HB (fun _ => EB)); [| decl_eq | decl_eq].
   refine (GSubRel_ty_i (i := lC) ltac:(lleC) (GSubRel_ctx1' Hσ HΔ1 HΔ) _ _ eq_refl eq_refl HA1 HA2 HA (fun _ => EA)); reflexivity.
 Qed.
 
@@ -3138,6 +3340,523 @@ Proof using EL ELM ELP EMl HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR Hσ H
   - apply redt_J_inst; inst_side 24.
 Qed.
 
+(** ** The empty type and binary sums (M12c) *)
+
+Lemma rec_T_empty {ΔL ΔR kL kR k k'} : [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
+  lequiv L' k kL -> lequiv L' k kR -> lwf L' k -> lwf L' k' -> leqv k k' ->
+  LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) kL ΔL (boxT (tyEmpty k))) (motT (wrapMT MTR) kR ΔR (boxT (tyEmpty k')))
+    (recTL kL ΔL (tyEmpty k)) (recTR kR ΔR (tyEmpty k')).
+Proof using EL ELM ELP EMl HMT HMT' Hbs Hbs' He Hl1 HrbL HrbR Hσ Hφ VBr VBr' VMT VMTl VMTr VΓ.
+  intros HΔL HΔ HkL HkR Hw Hw' E.
+  pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR.
+  assert (Q : lequiv L' k k') by exact (leqv_lequiv _ _ _ Hw Hw' E).
+  assert (HU : forall Δ j, [ G' ; Δ ⊢[ lD ] ] -> lwf L' j -> [ G' ; Δ ⊢[ lC ] tyEmpty j @ j ])
+    by (intros; apply wft_empty; [discriminate | assumption | rewrite EL; assumption]).
+  assert (HcRL : [ G' ; ΔL ⊢[ lC ] tyEmpty k' @ k ])
+    by (eapply wft_lconv; [exact (HU _ _ HΔL Hw') | rewrite EL; exact Q]).
+  refine (rec_T_br 31 (k :: nil) (k' :: nil) (GCtx ΔL :: nil) (GCtx ΔR :: nil) nil nil
+            ltac:(cbv; lia) eq_refl eq_refl eq_refl ltac:(repeat constructor; assumption)
+            ltac:(repeat constructor; assumption) (uext_leqv (Forall2_cons _ _ E (Forall2_nil _)))
+            HΔL HΔ HkL HkR Q (HU _ _ HΔL Hw) HcRL (HU _ _ HΔR Hw') E
+            (GS_ctx0 EP EM 31 (k :: nil) eq_refl eq_refl Hσ HΔL HΔ)
+            (GS_ctx0 EP EM 31 (k' :: nil) eq_refl eq_refl (GSubRel_refl_r EP EM Hσ) HΔR (eqc_refl _ _ _ HΔR))
+            _ _ _ _ _ _ _).
+  1-2: sr_ctx.
+  1-3: res_eq.
+  - apply redT_empty_inst; inst_side 31.
+  - apply redT_empty_inst; inst_side 31.
+Qed.
+
+Lemma rec_t_codeempty {ΔL ΔR kL kR TL TR j j'} : [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
+  lequiv L' (lsuc j) kL -> lequiv L' (lsuc j) kR -> lwf L' j -> lwf L' j' -> leqv j j' ->
+  [ G' ; ΔL ⊢[ lD ] tyU j ≅ TL @ lsuc j ] -> [ G' ; ΔL ⊢[ lD ] tyU j ≅ TR @ lsuc j ] ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) kL ΔL TL (boxt (tmEmpty j))) (mott (wrapMt MtR) kR ΔR TR (boxt (tmEmpty j')))
+    (rectL kL ΔL TL (tmEmpty j)) (rectR kR ΔR TR (tmEmpty j')).
+Proof using EL ELM ELP EMl HMt HMt' Hbs Hbs' He Hl2 HrbL HrbR Hσ Hφ VBr VBr' VMt VMtl VMtr VΓ.
+  intros HΔL HΔ HkL HkR Hj Hj' E HTL HTR.
+  pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR.
+  assert (Q : lequiv L' j j') by exact (leqv_lequiv _ _ _ Hj Hj' E).
+  assert (Q1 : lequiv L' (lsuc j) (lsuc j')) by (apply lequiv_suc; exact Q).
+  assert (HUU : forall Δ, [ G' ; Δ ⊢[ lD ] ] -> [ G' ; Δ ⊢[ lD ] tyU j ≅ tyU j' @ lsuc j ])
+    by (intros; apply eqty_U; [discriminate | assumption | rewrite EL; exact Q]).
+  assert (Hc : forall Δ i, [ G' ; Δ ⊢[ lD ] ] -> lwf L' i -> [ G' ; Δ ⊢[ lC ] tmEmpty i : tyU i @ lsuc i ])
+    by (intros; apply wf_code_empty; [discriminate | assumption | rewrite EL; assumption]).
+  assert (HcRL : [ G' ; ΔL ⊢[ lC ] tmEmpty j' : tyU j @ lsuc j ]).
+  { eapply wf_lconv; [| rewrite EL; exact Q1].
+    eapply wf_conv; [exact (Hc _ _ HΔL Hj') |].
+    eapply eqty_lconv; [exact (HUU _ HΔL) | rewrite EL; apply lequiv_sym, Q1]. }
+  refine (rec_t_br 32 (j :: nil) (j' :: nil) (GCtx ΔL :: nil) (GCtx ΔR :: nil) nil nil
+            ltac:(cbv; lia) eq_refl eq_refl eq_refl ltac:(repeat constructor; assumption)
+            ltac:(repeat constructor; assumption) (uext_leqv (Forall2_cons _ _ E (Forall2_nil _)))
+            HΔL HΔ HkL HkR Q1 HTL HTR (HUU _ HΔR)
+            (Hc _ _ HΔL Hj) HcRL (Hc _ _ HΔR Hj') E
+            (GS_ctx0 EP EM 32 (j :: nil) eq_refl eq_refl Hσ HΔL HΔ)
+            (GS_ctx0 EP EM 32 (j' :: nil) eq_refl eq_refl (GSubRel_refl_r EP EM Hσ) HΔR (eqc_refl _ _ _ HΔR))
+            _ _ _ _ _ _ _).
+  1-2: sr_ctx.
+  1-3: res_eq.
+  - apply redt_codeempty_inst; inst_side 32.
+  - apply redt_codeempty_inst; inst_side 32.
+Qed.
+
+(** [Empty]'s eliminator: the motive's call over the scrutinee, the
+    scrutinee's at [Empty]'s level. *)
+Lemma rec_t_elimEmpty {ΔL ΔR kL kR TL TR k k' k1 k1' M M' t t'} :
+  [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
+  lequiv L' k kL -> lequiv L' k kR -> lwf L' k -> lwf L' k' -> lwf L' k1 -> lwf L' k1' ->
+  leqv k k1 -> leqv k' k1' ->
+  [ G' ; ΔL ⊢[ lD ] M[lsingle t] ≅ TL @ k ] -> [ G' ; ΔL ⊢[ lD ] M[lsingle t] ≅ TR @ k ] ->
+  [ G' ; ΔL ,, tyEmpty k' @ k' ⊢[ lC ] M @ k ] -> [ G' ; ΔL ,, tyEmpty k' @ k' ⊢[ lC ] M' @ k ] -> ty_leq M M' ->
+  [ G' ; ΔL ⊢[ lC ] t : tyEmpty k' @ k' ] -> [ G' ; ΔL ⊢[ lC ] t' : tyEmpty k' @ k' ] -> tm_leq t t' ->
+  LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) k (ΔL ,, tyEmpty k' @ k') (boxT M))
+    (motT (wrapMT MTR) k1 (ΔR ,, tyEmpty k1' @ k1') (boxT M'))
+    (recTL k (ΔL ,, tyEmpty k' @ k') M) (recTR k1 (ΔR ,, tyEmpty k1' @ k1') M') ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) k' ΔL (tyEmpty k') (boxt t))
+    (mott (wrapMt MtR) k1' ΔR (tyEmpty k1') (boxt t'))
+    (rectL k' ΔL (tyEmpty k') t) (rectR k1' ΔR (tyEmpty k1') t') ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) kL ΔL TL (boxt (elimEmpty k k' M t)))
+    (mott (wrapMt MtR) kR ΔR TR (boxt (elimEmpty k1 k1' M' t')))
+    (rectL kL ΔL TL (elimEmpty k k' M t)) (rectR kR ΔR TR (elimEmpty k1 k1' M' t')).
+Proof using EL ELM ELP EMl HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR Hσ Hφ VBr VBr' VMT VMTl VMTr VMt VMtl VMtr VΓ.
+  intros HΔL HΔ HkL HkR Hw Hw' Hw1 Hw1' E E' HTL HTR HM HM' EM1 Ht Ht' Et IHM IHt.
+  pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR.
+  assert (Hn : lC <> lV) by discriminate. assert (Hl1c : lle lC lD) by (unfold lle; cbn; lia).
+  assert (Q : lequiv L' k k1) by exact (leqv_lequiv _ _ _ Hw Hw1 E).
+  assert (Q' : lequiv L' k' k1') by exact (leqv_lequiv _ _ _ Hw' Hw1' E').
+  assert (Qg : lequiv (gL G') k k1) by (rewrite EL; exact Q).
+  assert (Qg' : lequiv (gL G') k' k1') by (rewrite EL; exact Q').
+  assert (Hl1g' : lequiv (gL G') (lvsubst l1' φ) (lvsubst l1 φ)) by (rewrite EL; exact (lequiv_sym _ _ _ Hl1)).
+  assert (Hl2g' : lequiv (gL G') (lvsubst l2' φ) (lvsubst l2 φ)) by (rewrite EL; exact (lequiv_sym _ _ _ Hl2)).
+  (* the scrutinee's type, and the motive's context *)
+  assert (HED : [ G' ; ΔL ⊢[ lD ] tyEmpty k' @ k' ])
+    by (apply wft_empty; [discriminate | exact HΔL | rewrite EL; exact Hw']).
+  assert (HEE : forall j, lequiv L' k' j -> [ G' ; ΔL ⊢[ lD ] tyEmpty k' ≅ tyEmpty j @ k' ])
+    by (intros; apply eqty_empty; [discriminate | exact HΔL | rewrite EL; assumption]).
+  assert (CE : [ G' ⊢[ lD ] ΔL ,, tyEmpty k' @ k' ≅ ΔR ,, tyEmpty k' @ k' ])
+    by (apply eqc_ext; [exact HΔ | exact HED | exact (HEE _ (lequiv_refl _ _ Hw')) | rewrite EL; exact (lequiv_refl _ _ Hw')]).
+  assert (CE1 : [ G' ⊢[ lD ] ΔL ,, tyEmpty k' @ k' ≅ ΔR ,, tyEmpty k1' @ k1' ])
+    by (apply eqc_ext; [exact HΔ | exact HED | exact (HEE _ Q') | exact Qg']).
+  pose proof (eqctx_wf_l (i := lD) eq_refl CE) as HΔE.
+  (* the motive and the scrutinee, and their calls *)
+  destruct (Tcall HΔE CE1 Hw Q HM HM' EM1 IHM) as (HMM & _ & HM'R1 & _ & _ & X1).
+  pose proof (ctxconv_ty CE (i := lC) eq_refl HM') as HM'R.
+  destruct (tcall HΔL HΔ Hw' Q' (HEE _ Q') Ht Ht' Et IHt) as (Htt & Ht'R0 & Ht'R1 & _ & X2).
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHM) IHM) Hl1g') as X1r.
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHt) IHt) Hl2g') as X2r.
+  (* the right scrutinee at the left level's [Empty] *)
+  assert (Ht'R : [ G' ; ΔR ⊢[ lC ] t' : tyEmpty k' @ k' ]).
+  { eapply wf_conv; [exact Ht'R0 | exact (ctxconv_eqty HΔ (i := lD) eq_refl (HEE _ Q'))]. }
+  (* the result types *)
+  assert (Hr1 : [ G' ; ΔL ⊢[ lD ] M[lsingle t] ≅ M'[lsingle t'] @ k ])
+    by exact (eqty_subst_single_D HMM (lift_ty (j := lD) HM' Hl1c) Htt (lift_tm (j := lD) Ht Hl1c)
+                (lift_tm (j := lD) Ht' Hl1c)).
+  (* the codes *)
+  assert (HcL0 : [ G' ; ΔL ⊢[ lC ] elimEmpty k k' M t : M[lsingle t] @ k ])
+    by (apply wf_elimEmpty; [exact Hn | rewrite EL; exact Hw | rewrite EL; exact Hw' | exact HM | exact Ht]).
+  assert (HcR0 : [ G' ; ΔR ⊢[ lC ] elimEmpty k1 k1' M' t' : M'[lsingle t'] @ k1 ])
+    by (apply wf_elimEmpty; [exact Hn | rewrite EL; exact Hw1 | rewrite EL; exact Hw1' | exact HM'R1 | exact Ht'R1]).
+  assert (HcRL : [ G' ; ΔL ⊢[ lC ] elimEmpty k1 k1' M' t' : M[lsingle t] @ k ]).
+  { eapply wf_conv; [eapply wf_lconv; [exact (ctxconv_tm (eqctx_sym_D HΔ) (i := lC) eq_refl HcR0) | exact Qg]
+                    | exact Hr1]. }
+  assert (Ec : tm_leq (elimEmpty k k' M t) (elimEmpty k1 k1' M' t')) by (cbn; repeat split; assumption).
+  refine (rec_t_br 33 (k :: k' :: nil) (k1 :: k1' :: nil) (GCtx ΔL :: GTy M :: GTm t :: nil)
+            (GCtx ΔR :: GTy M' :: GTm t' :: nil)
+            (recTL k (ΔL ,, tyEmpty k' @ k') M :: rectL k' ΔL (tyEmpty k') t :: nil)
+            (recTR k1 (ΔR ,, tyEmpty k1' @ k1') M' :: rectR k1' ΔR (tyEmpty k1') t' :: nil)
+            ltac:(cbv; lia) eq_refl eq_refl eq_refl ltac:(repeat constructor; assumption)
+            ltac:(repeat constructor; assumption)
+            (uext_leqv (Forall2_cons _ _ E (Forall2_cons _ _ E' (Forall2_nil _))))
+            HΔL HΔ HkL HkR Q HTL HTR (ctxconv_eqty HΔ (i := lD) eq_refl Hr1) HcL0 HcRL HcR0 Ec
+            (GS_elimEmpty EP EM Hσ HΔL HΔ HM HM'R HMM EM1 Ht Ht'R Htt Et)
+            (GS_elimEmpty EP EM (GSubRel_refl_r EP EM Hσ) HΔR (eqc_refl _ _ _ HΔR)
+               HM'R1 HM'R1 (eqty_refl _ _ _ _ _ (lift_ty (j := lD) HM'R1 Hl1c)) (ty_leq_refl _)
+               Ht'R1 Ht'R1 (eqtm_refl _ _ _ _ _ _ (lift_tm (j := lD) Ht'R1 Hl1c)) (tm_leq_refl _))
+            _ _ _ _ _ _ _).
+  - sr_ctx; [exact X1 | exact X2].
+  - sr_ctx; [exact X1r | exact X2r].
+  - res_eq.
+  - res_eq.
+  - res_eq.
+  - apply redt_elimEmpty_inst; inst_side 33.
+  - apply redt_elimEmpty_inst; inst_side 33.
+Qed.
+
+Lemma rec_T_sum {ΔL ΔR kL kR k k' k1 k1' A B A' B'} : [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
+  lequiv L' (lmax k k') kL -> lequiv L' (lmax k k') kR ->
+  lwf L' k -> lwf L' k' -> lwf L' k1 -> lwf L' k1' -> leqv k k1 -> leqv k' k1' ->
+  [ G' ; ΔL ⊢[ lC ] A @ k ] -> [ G' ; ΔL ⊢[ lC ] B @ k' ] ->
+  [ G' ; ΔL ⊢[ lC ] A' @ k ] -> [ G' ; ΔL ⊢[ lC ] B' @ k' ] -> ty_leq A A' -> ty_leq B B' ->
+  LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) k ΔL (boxT A)) (motT (wrapMT MTR) k1 ΔR (boxT A'))
+    (recTL k ΔL A) (recTR k1 ΔR A') ->
+  LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) k' ΔL (boxT B)) (motT (wrapMT MTR) k1' ΔR (boxT B'))
+    (recTL k' ΔL B) (recTR k1' ΔR B') ->
+  LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) kL ΔL (boxT (tySum k k' A B)))
+    (motT (wrapMT MTR) kR ΔR (boxT (tySum k1 k1' A' B')))
+    (recTL kL ΔL (tySum k k' A B)) (recTR kR ΔR (tySum k1 k1' A' B')).
+Proof using EL ELM ELP EMl HMT HMT' Hbs Hbs' He Hl1 HrbL HrbR Hσ Hφ VBr VBr' VMT VMTl VMTr VΓ.
+  intros HΔL HΔ HkL HkR Hw Hw' Hw1 Hw1' E E' HA HB HA' HB' EA EB IHA IHB.
+  pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR.
+  assert (Hn : lC <> lV) by discriminate. assert (Hl1c : lle lC lD) by (unfold lle; cbn; lia).
+  assert (Q : lequiv L' k k1) by exact (leqv_lequiv _ _ _ Hw Hw1 E).
+  assert (Q' : lequiv L' k' k1') by exact (leqv_lequiv _ _ _ Hw' Hw1' E').
+  assert (Qm : lequiv L' (lmax k k') (lmax k1 k1')) by (apply lequiv_max; assumption).
+  assert (Hl1g' : lequiv (gL G') (lvsubst l1' φ) (lvsubst l1 φ)) by (rewrite EL; exact (lequiv_sym _ _ _ Hl1)).
+  (* the summands and their calls *)
+  destruct (Tcall HΔL HΔ Hw Q HA HA' EA IHA) as (HAA & HA'R & HA'R1 & _ & _ & X1).
+  destruct (Tcall HΔL HΔ Hw' Q' HB HB' EB IHB) as (HBB & HB'R & HB'R1 & _ & _ & X2).
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHA) IHA) Hl1g') as X1r.
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHB) IHB) Hl1g') as X2r.
+  (* the codes *)
+  assert (HcL0 : [ G' ; ΔL ⊢[ lC ] tySum k k' A B @ lmax k k' ])
+    by (apply wft_sum; [exact Hn | rewrite EL; exact Hw | rewrite EL; exact Hw' | exact HA | exact HB]).
+  assert (HcR0 : [ G' ; ΔR ⊢[ lC ] tySum k1 k1' A' B' @ lmax k1 k1' ])
+    by (apply wft_sum; [exact Hn | rewrite EL; exact Hw1 | rewrite EL; exact Hw1' | exact HA'R1 | exact HB'R1]).
+  assert (HcRL : [ G' ; ΔL ⊢[ lC ] tySum k1 k1' A' B' @ lmax k k' ])
+    by (eapply wft_lconv; [exact (ctxconv_ty (eqctx_sym_D HΔ) (i := lC) eq_refl HcR0) | rewrite EL; exact Qm]).
+  assert (Ec : ty_leq (tySum k k' A B) (tySum k1 k1' A' B')) by (cbn; repeat split; assumption).
+  refine (rec_T_br 34 (k :: k' :: nil) (k1 :: k1' :: nil) (GCtx ΔL :: GTy A :: GTy B :: nil)
+            (GCtx ΔR :: GTy A' :: GTy B' :: nil)
+            (recTL k ΔL A :: recTL k' ΔL B :: nil) (recTR k1 ΔR A' :: recTR k1' ΔR B' :: nil)
+            ltac:(cbv; lia) eq_refl eq_refl eq_refl ltac:(repeat constructor; assumption)
+            ltac:(repeat constructor; assumption)
+            (uext_leqv (Forall2_cons _ _ E (Forall2_cons _ _ E' (Forall2_nil _))))
+            HΔL HΔ HkL HkR Qm HcL0 HcRL HcR0 Ec
+            (GS_sum EP EM Hσ HΔL HΔ HA HA'R HAA EA HB HB'R HBB EB)
+            (GS_sum EP EM (GSubRel_refl_r EP EM Hσ) HΔR (eqc_refl _ _ _ HΔR) HA'R1 HA'R1
+               (eqty_refl _ _ _ _ _ (lift_ty (j := lD) HA'R1 Hl1c)) (ty_leq_refl _) HB'R1 HB'R1
+               (eqty_refl _ _ _ _ _ (lift_ty (j := lD) HB'R1 Hl1c)) (ty_leq_refl _))
+            _ _ _ _ _ _ _).
+  - sr_ctx; [exact X1 | exact X2].
+  - sr_ctx; [exact X1r | exact X2r].
+  - res_eq.
+  - res_eq.
+  - res_eq.
+  - apply redT_sum_inst; inst_side 34.
+  - apply redT_sum_inst; inst_side 34.
+Qed.
+
+Lemma rec_t_codesum {ΔL ΔR kL kR TL TR k k' k1 k1' s0 t0 s1 t1} : [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
+  lequiv L' (lsuc (lmax k k')) kL -> lequiv L' (lsuc (lmax k k')) kR ->
+  lwf L' k -> lwf L' k' -> lwf L' k1 -> lwf L' k1' -> leqv k k1 -> leqv k' k1' ->
+  [ G' ; ΔL ⊢[ lD ] tyU (lmax k k') ≅ TL @ lsuc (lmax k k') ] ->
+  [ G' ; ΔL ⊢[ lD ] tyU (lmax k k') ≅ TR @ lsuc (lmax k k') ] ->
+  [ G' ; ΔL ⊢[ lC ] s0 : tyU k @ lsuc k ] -> [ G' ; ΔL ⊢[ lC ] s1 : tyU k @ lsuc k ] -> tm_leq s0 s1 ->
+  [ G' ; ΔL ⊢[ lC ] t0 : tyU k' @ lsuc k' ] -> [ G' ; ΔL ⊢[ lC ] t1 : tyU k' @ lsuc k' ] -> tm_leq t0 t1 ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) (lsuc k) ΔL (tyU k) (boxt s0))
+    (mott (wrapMt MtR) (lsuc k1) ΔR (tyU k1) (boxt s1))
+    (rectL (lsuc k) ΔL (tyU k) s0) (rectR (lsuc k1) ΔR (tyU k1) s1) ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) (lsuc k') ΔL (tyU k') (boxt t0))
+    (mott (wrapMt MtR) (lsuc k1') ΔR (tyU k1') (boxt t1))
+    (rectL (lsuc k') ΔL (tyU k') t0) (rectR (lsuc k1') ΔR (tyU k1') t1) ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) kL ΔL TL (boxt (tmSum k k' s0 t0)))
+    (mott (wrapMt MtR) kR ΔR TR (boxt (tmSum k1 k1' s1 t1)))
+    (rectL kL ΔL TL (tmSum k k' s0 t0)) (rectR kR ΔR TR (tmSum k1 k1' s1 t1)).
+Proof using EL ELM ELP EMl HMt HMt' Hbs Hbs' He Hl2 HrbL HrbR Hσ Hφ VBr VBr' VMt VMtl VMtr VΓ.
+  intros HΔL HΔ HkL HkR Hw Hw' Hw1 Hw1' E E' HTL HTR Hs Hs' Es Ht Ht' Et IHs IHt.
+  pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR.
+  assert (Hl1c : lle lC lD) by (unfold lle; cbn; lia).
+  assert (Q : lequiv L' k k1) by exact (leqv_lequiv _ _ _ Hw Hw1 E).
+  assert (Q' : lequiv L' k' k1') by exact (leqv_lequiv _ _ _ Hw' Hw1' E').
+  assert (Qm : lequiv L' (lmax k k') (lmax k1 k1')) by (apply lequiv_max; assumption).
+  assert (Hl2g' : lequiv (gL G') (lvsubst l2' φ) (lvsubst l2 φ)) by (rewrite EL; exact (lequiv_sym _ _ _ Hl2)).
+  assert (HUU : forall Δ j j', [ G' ; Δ ⊢[ lD ] ] -> lequiv L' j j' -> [ G' ; Δ ⊢[ lD ] tyU j ≅ tyU j' @ lsuc j ])
+    by (intros; apply eqty_U; [discriminate | assumption | rewrite EL; assumption]).
+  (* the summands' codes and their calls *)
+  destruct (tcall (k := lsuc k) HΔL HΔ Hw (lequiv_suc _ _ _ Q) (HUU _ _ _ HΔL Q) Hs Hs' Es IHs) as (Hss & _ & Hs'R1 & _ & X1).
+  destruct (tcall (k := lsuc k') HΔL HΔ Hw' (lequiv_suc _ _ _ Q') (HUU _ _ _ HΔL Q') Ht Ht' Et IHt) as (Htt & _ & Ht'R1 & _ & X2).
+  pose proof (ctxconv_tm HΔ (i := lC) eq_refl Hs') as Hs'R.
+  pose proof (ctxconv_tm HΔ (i := lC) eq_refl Ht') as Ht'R.
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHs) IHs) Hl2g') as X1r.
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHt) IHt) Hl2g') as X2r.
+  (* the codes *)
+  assert (HcL0 : [ G' ; ΔL ⊢[ lC ] tmSum k k' s0 t0 : tyU (lmax k k') @ lsuc (lmax k k') ])
+    by (apply wf_code_sum; [discriminate | rewrite EL; exact Hw | rewrite EL; exact Hw' | exact Hs | exact Ht]).
+  assert (HcR0 : [ G' ; ΔR ⊢[ lC ] tmSum k1 k1' s1 t1 : tyU (lmax k1 k1') @ lsuc (lmax k1 k1') ])
+    by (apply wf_code_sum; [discriminate | rewrite EL; exact Hw1 | rewrite EL; exact Hw1' | exact Hs'R1 | exact Ht'R1]).
+  assert (HcRL : [ G' ; ΔL ⊢[ lC ] tmSum k1 k1' s1 t1 : tyU (lmax k k') @ lsuc (lmax k k') ])
+    by (eapply wf_conv; [eapply wf_lconv; [exact (ctxconv_tm (eqctx_sym_D HΔ) (i := lC) eq_refl HcR0)
+                                          | rewrite EL; apply lequiv_suc, Qm] | exact (HUU _ _ _ HΔL Qm)]).
+  refine (rec_t_br 35 (k :: k' :: nil) (k1 :: k1' :: nil) (GCtx ΔL :: GTm s0 :: GTm t0 :: nil)
+            (GCtx ΔR :: GTm s1 :: GTm t1 :: nil)
+            (rectL (lsuc k) ΔL (tyU k) s0 :: rectL (lsuc k') ΔL (tyU k') t0 :: nil)
+            (rectR (lsuc k1) ΔR (tyU k1) s1 :: rectR (lsuc k1') ΔR (tyU k1') t1 :: nil)
+            ltac:(cbv; lia) eq_refl eq_refl eq_refl
+            ltac:(repeat constructor; assumption) ltac:(repeat constructor; assumption)
+            (uext_leqv (Forall2_cons _ _ E (Forall2_cons _ _ E' (Forall2_nil _))))
+            HΔL HΔ HkL HkR (lequiv_suc _ _ _ Qm) HTL HTR (HUU _ _ _ HΔR Qm) HcL0 HcRL HcR0
+            ltac:(cbn; repeat split; assumption)
+            (GS_codesum EP EM Hσ HΔL HΔ Hs Hs'R Hss Es Ht Ht'R Htt Et)
+            (GS_codesum EP EM (GSubRel_refl_r EP EM Hσ) HΔR (eqc_refl _ _ _ HΔR) Hs'R1 Hs'R1
+               (eqtm_refl _ _ _ _ _ _ (lift_tm (j := lD) Hs'R1 Hl1c)) (tm_leq_refl _) Ht'R1 Ht'R1
+               (eqtm_refl _ _ _ _ _ _ (lift_tm (j := lD) Ht'R1 Hl1c)) (tm_leq_refl _)) _ _ _ _ _ _ _).
+  - sr_ctx; [exact X1 | exact X2].
+  - sr_ctx; [exact X1r | exact X2r].
+  - res_eq.
+  - res_eq.
+  - res_eq.
+  - apply redt_codesum_inst; inst_side 35.
+  - apply redt_codesum_inst; inst_side 35.
+Qed.
+
+(** The injections: both summands' calls and the payload's. *)
+Ltac rec_t_inj kb inj wf_inj inst U ΔL ΔR k k' k1 k1' A B A' B' a a' :=
+  intros HΔL HΔ HkL HkR Hw Hw' Hw1 Hw1' E E' HTL HTR HA HA' EA HB HB' EB Ha Ha' Ea IHA IHB IHa;
+  pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR;
+  assert (Hn : lC <> lV) by discriminate; assert (Hl1c : lle lC lD) by (unfold lle; cbn; lia);
+  assert (Q : lequiv L' k k1) by exact (leqv_lequiv _ _ _ Hw Hw1 E);
+  assert (Q' : lequiv L' k' k1') by exact (leqv_lequiv _ _ _ Hw' Hw1' E');
+  assert (Qg : lequiv (gL G') k k1) by (rewrite EL; exact Q); assert (Qg' : lequiv (gL G') k' k1') by (rewrite EL; exact Q');
+  assert (Qm : lequiv L' (lmax k k') (lmax k1 k1')) by (apply lequiv_max; assumption);
+  assert (Qmg : lequiv (gL G') (lmax k k') (lmax k1 k1')) by (rewrite EL; exact Qm);
+  assert (Hl1g' : lequiv (gL G') (lvsubst l1' φ) (lvsubst l1 φ)) by (rewrite EL; exact (lequiv_sym _ _ _ Hl1));
+  assert (Hl2g' : lequiv (gL G') (lvsubst l2' φ) (lvsubst l2 φ)) by (rewrite EL; exact (lequiv_sym _ _ _ Hl2));
+  (* the summands and their calls *)
+  destruct (Tcall HΔL HΔ Hw Q HA HA' EA IHA) as (HAA & HA'R & HA'R1 & _ & _ & X1);
+  destruct (Tcall HΔL HΔ Hw' Q' HB HB' EB IHB) as (HBB & HB'R & HB'R1 & _ & _ & X2);
+  pose proof (lift_ty (j := lD) HA'R1 Hl1c) as HA'R1D; pose proof (lift_ty (j := lD) HB'R1 Hl1c) as HB'R1D;
+  assert (HSS : [ G' ; ΔL ⊢[ lD ] tySum k k' A B ≅ tySum k1 k1' A' B' @ lmax k k' ])
+    by (apply eqty_sum; [discriminate | exact Qg | exact Qg' | exact HAA | exact HBB]);
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHA) IHA) Hl1g') as X1r;
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHB) IHB) Hl1g') as X2r;
+  (* the payload and its call *)
+  let TC := lazymatch U with
+             | 1 => constr:(tcall HΔL HΔ Hw Q HAA Ha Ha' Ea IHa)
+             | _ => constr:(tcall HΔL HΔ Hw' Q' HBB Ha Ha' Ea IHa)
+             end in
+  destruct TC as (Haa & Ha'R & Ha'R1 & _ & X3);
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHa) IHa) Hl2g') as X3r;
+  (* the codes *)
+  assert (HcL0 : [ G' ; ΔL ⊢[ lC ] inj k k' A B a : tySum k k' A B @ lmax k k' ])
+    by (apply wf_inj; [exact Hn | rewrite EL; exact Hw | rewrite EL; exact Hw' | exact HA | exact HB | exact Ha]);
+  assert (HcR0 : [ G' ; ΔR ⊢[ lC ] inj k1 k1' A' B' a' : tySum k1 k1' A' B' @ lmax k1 k1' ])
+    by (apply wf_inj; [exact Hn | rewrite EL; exact Hw1 | rewrite EL; exact Hw1' | exact HA'R1 | exact HB'R1
+                      | exact Ha'R1]);
+  assert (HcRL : [ G' ; ΔL ⊢[ lC ] inj k1 k1' A' B' a' : tySum k k' A B @ lmax k k' ])
+    by (eapply wf_conv; [eapply wf_lconv; [exact (ctxconv_tm (eqctx_sym_D HΔ) (i := lC) eq_refl HcR0) | exact Qmg]
+                        | exact HSS]);
+  assert (Ec : tm_leq (inj k k' A B a) (inj k1 k1' A' B' a')) by (cbn; repeat split; assumption);
+  let xL := lazymatch U with 1 => constr:(rectL k ΔL A a) | _ => constr:(rectL k' ΔL B a) end in
+  let xR := lazymatch U with 1 => constr:(rectR k1 ΔR A' a') | _ => constr:(rectR k1' ΔR B' a') end in
+  let Hkb := lazymatch U with
+             | 1 => uconstr:(or_introl (conj eq_refl (conj eq_refl (conj eq_refl eq_refl))))
+             | _ => uconstr:(or_intror (conj eq_refl (conj eq_refl (conj eq_refl eq_refl))))
+             end in
+  refine (rec_t_br kb (k :: k' :: nil) (k1 :: k1' :: nil) (GCtx ΔL :: GTy A :: GTy B :: GTm a :: nil)
+            (GCtx ΔR :: GTy A' :: GTy B' :: GTm a' :: nil)
+            (recTL k ΔL A :: recTL k' ΔL B :: xL :: nil) (recTR k1 ΔR A' :: recTR k1' ΔR B' :: xR :: nil)
+            ltac:(cbv; lia) eq_refl eq_refl eq_refl
+            ltac:(repeat constructor; assumption) ltac:(repeat constructor; assumption)
+            (uext_leqv (Forall2_cons _ _ E (Forall2_cons _ _ E' (Forall2_nil _))))
+            HΔL HΔ HkL HkR Qm HTL HTR (ctxconv_eqty HΔ (i := lD) eq_refl HSS) HcL0 HcRL HcR0 Ec
+            (GS_inj EP EM kb U Hkb Hσ HΔL HΔ HA HA'R HAA EA HB HB'R HBB EB
+               Ha Ha'R Haa Ea)
+            (GS_inj EP EM kb U Hkb (GSubRel_refl_r EP EM Hσ) HΔR (eqc_refl _ _ _ HΔR)
+               HA'R1 HA'R1 (eqty_refl _ _ _ _ _ HA'R1D) (ty_leq_refl _)
+               HB'R1 HB'R1 (eqty_refl _ _ _ _ _ HB'R1D) (ty_leq_refl _)
+               Ha'R1 Ha'R1 (eqtm_refl _ _ _ _ _ _ (lift_tm (j := lD) Ha'R1 Hl1c)) (tm_leq_refl _))
+            _ _ _ _ _ _ _);
+  [ sr_ctx; [exact X1 | exact X2 | exact X3] | sr_ctx; [exact X1r | exact X2r | exact X3r] | res_eq | res_eq | res_eq
+  | apply inst; inst_side kb | apply inst; inst_side kb ].
+
+Lemma rec_t_inl {ΔL ΔR kL kR TL TR k k' k1 k1' A B A' B' a a'} :
+  [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
+  lequiv L' (lmax k k') kL -> lequiv L' (lmax k k') kR -> lwf L' k -> lwf L' k' -> lwf L' k1 -> lwf L' k1' ->
+  leqv k k1 -> leqv k' k1' ->
+  [ G' ; ΔL ⊢[ lD ] tySum k k' A B ≅ TL @ lmax k k' ] -> [ G' ; ΔL ⊢[ lD ] tySum k k' A B ≅ TR @ lmax k k' ] ->
+  [ G' ; ΔL ⊢[ lC ] A @ k ] -> [ G' ; ΔL ⊢[ lC ] A' @ k ] -> ty_leq A A' ->
+  [ G' ; ΔL ⊢[ lC ] B @ k' ] -> [ G' ; ΔL ⊢[ lC ] B' @ k' ] -> ty_leq B B' ->
+  [ G' ; ΔL ⊢[ lC ] a : A @ k ] -> [ G' ; ΔL ⊢[ lC ] a' : A @ k ] -> tm_leq a a' ->
+  LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) k ΔL (boxT A)) (motT (wrapMT MTR) k1 ΔR (boxT A'))
+    (recTL k ΔL A) (recTR k1 ΔR A') ->
+  LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) k' ΔL (boxT B)) (motT (wrapMT MTR) k1' ΔR (boxT B'))
+    (recTL k' ΔL B) (recTR k1' ΔR B') ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) k ΔL A (boxt a)) (mott (wrapMt MtR) k1 ΔR A' (boxt a'))
+    (rectL k ΔL A a) (rectR k1 ΔR A' a') ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) kL ΔL TL (boxt (tmInl k k' A B a)))
+    (mott (wrapMt MtR) kR ΔR TR (boxt (tmInl k1 k1' A' B' a')))
+    (rectL kL ΔL TL (tmInl k k' A B a)) (rectR kR ΔR TR (tmInl k1 k1' A' B' a')).
+Proof using EL ELM ELP EMl HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR Hσ Hφ VBr VBr' VMT VMTl VMTr VMt VMtl VMtr VΓ.
+  rec_t_inj 36 tmInl wf_inl redt_inl_inst (1) ΔL ΔR k k' k1 k1' A B A' B' a a'.
+Qed.
+
+Lemma rec_t_inr {ΔL ΔR kL kR TL TR k k' k1 k1' A B A' B' a a'} :
+  [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
+  lequiv L' (lmax k k') kL -> lequiv L' (lmax k k') kR -> lwf L' k -> lwf L' k' -> lwf L' k1 -> lwf L' k1' ->
+  leqv k k1 -> leqv k' k1' ->
+  [ G' ; ΔL ⊢[ lD ] tySum k k' A B ≅ TL @ lmax k k' ] -> [ G' ; ΔL ⊢[ lD ] tySum k k' A B ≅ TR @ lmax k k' ] ->
+  [ G' ; ΔL ⊢[ lC ] A @ k ] -> [ G' ; ΔL ⊢[ lC ] A' @ k ] -> ty_leq A A' ->
+  [ G' ; ΔL ⊢[ lC ] B @ k' ] -> [ G' ; ΔL ⊢[ lC ] B' @ k' ] -> ty_leq B B' ->
+  [ G' ; ΔL ⊢[ lC ] a : B @ k' ] -> [ G' ; ΔL ⊢[ lC ] a' : B @ k' ] -> tm_leq a a' ->
+  LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) k ΔL (boxT A)) (motT (wrapMT MTR) k1 ΔR (boxT A'))
+    (recTL k ΔL A) (recTR k1 ΔR A') ->
+  LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) k' ΔL (boxT B)) (motT (wrapMT MTR) k1' ΔR (boxT B'))
+    (recTL k' ΔL B) (recTR k1' ΔR B') ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) k' ΔL B (boxt a)) (mott (wrapMt MtR) k1' ΔR B' (boxt a'))
+    (rectL k' ΔL B a) (rectR k1' ΔR B' a') ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) kL ΔL TL (boxt (tmInr k k' A B a)))
+    (mott (wrapMt MtR) kR ΔR TR (boxt (tmInr k1 k1' A' B' a')))
+    (rectL kL ΔL TL (tmInr k k' A B a)) (rectR kR ΔR TR (tmInr k1 k1' A' B' a')).
+Proof using EL ELM ELP EMl HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR Hσ Hφ VBr VBr' VMT VMTl VMTr VMt VMtl VMtr VΓ.
+  rec_t_inj 37 tmInr wf_inr redt_inr_inst (0) ΔL ΔR k k' k1 k1' A B A' B' a a'.
+Qed.
+
+(** [case]: the summands', the motive's (over the sum), the branches' (over
+    their summands, at the motive's instances) and the scrutinee's calls.
+    The branch scopes declare the branch types in their substituted form
+    ([liftshift_cons_ty']); the calls carry the typing rule's. *)
+Lemma rec_t_case {ΔL ΔR kL kR TL TR k k' k'' k1 k1' k1'' A A' B B' M M' c1 c1' c2 c2' t t'} :
+  [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] ->
+  lequiv L' k'' kL -> lequiv L' k'' kR -> lwf L' k -> lwf L' k' -> lwf L' k'' -> lwf L' k1 -> lwf L' k1' -> lwf L' k1'' ->
+  leqv k k1 -> leqv k' k1' -> leqv k'' k1'' ->
+  [ G' ; ΔL ⊢[ lD ] M[lsingle t] ≅ TL @ k'' ] -> [ G' ; ΔL ⊢[ lD ] M[lsingle t] ≅ TR @ k'' ] ->
+  [ G' ; ΔL ⊢[ lC ] A @ k ] -> [ G' ; ΔL ⊢[ lC ] A' @ k ] -> ty_leq A A' ->
+  [ G' ; ΔL ⊢[ lC ] B @ k' ] -> [ G' ; ΔL ⊢[ lC ] B' @ k' ] -> ty_leq B B' ->
+  [ G' ; ΔL ,, tySum k k' A B @ lmax k k' ⊢[ lC ] M @ k'' ] ->
+  [ G' ; ΔL ,, tySum k k' A B @ lmax k k' ⊢[ lC ] M' @ k'' ] -> ty_leq M M' ->
+  [ G' ; ΔL ,, A @ k ⊢[ lC ] c1 : M⟨rlift ↑⟩[lsingle (tmInl k k' A⟨↑⟩ B⟨↑⟩ (var 0))] @ k'' ] ->
+  [ G' ; ΔL ,, A @ k ⊢[ lC ] c1' : M⟨rlift ↑⟩[lsingle (tmInl k k' A⟨↑⟩ B⟨↑⟩ (var 0))] @ k'' ] -> tm_leq c1 c1' ->
+  [ G' ; ΔL ,, B @ k' ⊢[ lC ] c2 : M⟨rlift ↑⟩[lsingle (tmInr k k' A⟨↑⟩ B⟨↑⟩ (var 0))] @ k'' ] ->
+  [ G' ; ΔL ,, B @ k' ⊢[ lC ] c2' : M⟨rlift ↑⟩[lsingle (tmInr k k' A⟨↑⟩ B⟨↑⟩ (var 0))] @ k'' ] -> tm_leq c2 c2' ->
+  [ G' ; ΔL ⊢[ lC ] t : tySum k k' A B @ lmax k k' ] -> [ G' ; ΔL ⊢[ lC ] t' : tySum k k' A B @ lmax k k' ] ->
+  tm_leq t t' ->
+  LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) k ΔL (boxT A)) (motT (wrapMT MTR) k1 ΔR (boxT A'))
+    (recTL k ΔL A) (recTR k1 ΔR A') ->
+  LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) k' ΔL (boxT B)) (motT (wrapMT MTR) k1' ΔR (boxT B'))
+    (recTL k' ΔL B) (recTR k1' ΔR B') ->
+  LRtmM (lvsubst l1 φ) G' Θ (motT (wrapMT MTL) k'' (ΔL ,, tySum k k' A B @ lmax k k') (boxT M))
+    (motT (wrapMT MTR) k1'' (ΔR ,, tySum k1 k1' A' B' @ lmax k1 k1') (boxT M'))
+    (recTL k'' (ΔL ,, tySum k k' A B @ lmax k k') M) (recTR k1'' (ΔR ,, tySum k1 k1' A' B' @ lmax k1 k1') M') ->
+  LRtmM (lvsubst l2 φ) G' Θ
+    (mott (wrapMt MtL) k'' (ΔL ,, A @ k) (M⟨rlift ↑⟩[lsingle (tmInl k k' A⟨↑⟩ B⟨↑⟩ (var 0))]) (boxt c1))
+    (mott (wrapMt MtR) k1'' (ΔR ,, A' @ k1) (M'⟨rlift ↑⟩[lsingle (tmInl k1 k1' A'⟨↑⟩ B'⟨↑⟩ (var 0))]) (boxt c1'))
+    (rectL k'' (ΔL ,, A @ k) (M⟨rlift ↑⟩[lsingle (tmInl k k' A⟨↑⟩ B⟨↑⟩ (var 0))]) c1)
+    (rectR k1'' (ΔR ,, A' @ k1) (M'⟨rlift ↑⟩[lsingle (tmInl k1 k1' A'⟨↑⟩ B'⟨↑⟩ (var 0))]) c1') ->
+  LRtmM (lvsubst l2 φ) G' Θ
+    (mott (wrapMt MtL) k'' (ΔL ,, B @ k') (M⟨rlift ↑⟩[lsingle (tmInr k k' A⟨↑⟩ B⟨↑⟩ (var 0))]) (boxt c2))
+    (mott (wrapMt MtR) k1'' (ΔR ,, B' @ k1') (M'⟨rlift ↑⟩[lsingle (tmInr k1 k1' A'⟨↑⟩ B'⟨↑⟩ (var 0))]) (boxt c2'))
+    (rectL k'' (ΔL ,, B @ k') (M⟨rlift ↑⟩[lsingle (tmInr k k' A⟨↑⟩ B⟨↑⟩ (var 0))]) c2)
+    (rectR k1'' (ΔR ,, B' @ k1') (M'⟨rlift ↑⟩[lsingle (tmInr k1 k1' A'⟨↑⟩ B'⟨↑⟩ (var 0))]) c2') ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) (lmax k k') ΔL (tySum k k' A B) (boxt t))
+    (mott (wrapMt MtR) (lmax k1 k1') ΔR (tySum k1 k1' A' B') (boxt t'))
+    (rectL (lmax k k') ΔL (tySum k k' A B) t) (rectR (lmax k1 k1') ΔR (tySum k1 k1' A' B') t') ->
+  LRtmM (lvsubst l2 φ) G' Θ (mott (wrapMt MtL) kL ΔL TL (boxt (tmCase k k' k'' A B M c1 c2 t)))
+    (mott (wrapMt MtR) kR ΔR TR (boxt (tmCase k1 k1' k1'' A' B' M' c1' c2' t')))
+    (rectL kL ΔL TL (tmCase k k' k'' A B M c1 c2 t)) (rectR kR ΔR TR (tmCase k1 k1' k1'' A' B' M' c1' c2' t')).
+Proof using EL ELM ELP EMl HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR Hσ Hφ VBr VBr' VMT VMTl VMTr VMt VMtl VMtr VΓ.
+  intros HΔL HΔ HkL HkR Hw Hw' Hw'' Hw1 Hw1' Hw1'' E E' E'' HTL HTR HA HA' EA HB HB' EB HM HM' EM1
+    Hc1 Hc1' Ec1 Hc2 Hc2' Ec2 Ht Ht' Et IHA IHB IHM IHc1 IHc2 IHt.
+  pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR.
+  assert (Hn : lC <> lV) by discriminate. assert (Hl1c : lle lC lD) by (unfold lle; cbn; lia).
+  assert (Q : lequiv L' k k1) by exact (leqv_lequiv _ _ _ Hw Hw1 E).
+  assert (Q' : lequiv L' k' k1') by exact (leqv_lequiv _ _ _ Hw' Hw1' E').
+  assert (Q'' : lequiv L' k'' k1'') by exact (leqv_lequiv _ _ _ Hw'' Hw1'' E'').
+  assert (Qg : lequiv (gL G') k k1) by (rewrite EL; exact Q).
+  assert (Qg' : lequiv (gL G') k' k1') by (rewrite EL; exact Q').
+  assert (Qg'' : lequiv (gL G') k'' k1'') by (rewrite EL; exact Q'').
+  assert (Qk : lequiv (gL G') k k) by (rewrite EL; exact (lequiv_refl _ _ Hw)).
+  assert (Qk' : lequiv (gL G') k' k') by (rewrite EL; exact (lequiv_refl _ _ Hw')).
+  assert (Qm : lequiv L' (lmax k k') (lmax k1 k1')) by (apply lequiv_max; assumption).
+  assert (Qmg : lequiv (gL G') (lmax k k') (lmax k1 k1')) by (rewrite EL; exact Qm).
+  assert (Hwm : lwf L' (lmax k k')) by (cbn; auto).
+  assert (Hl1g' : lequiv (gL G') (lvsubst l1' φ) (lvsubst l1 φ)) by (rewrite EL; exact (lequiv_sym _ _ _ Hl1)).
+  assert (Hl2g' : lequiv (gL G') (lvsubst l2' φ) (lvsubst l2 φ)) by (rewrite EL; exact (lequiv_sym _ _ _ Hl2)).
+  (* the summands and their calls *)
+  destruct (Tcall HΔL HΔ Hw Q HA HA' EA IHA) as (HAA & HA'R & HA'R1 & CA & CA1 & X1).
+  destruct (Tcall HΔL HΔ Hw' Q' HB HB' EB IHB) as (HBB & HB'R & HB'R1 & CB & CB1 & X2).
+  pose proof (lift_ty (j := lD) HA Hl1c) as HAD. pose proof (lift_ty (j := lD) HA' Hl1c) as HA'D.
+  pose proof (lift_ty (j := lD) HB Hl1c) as HBD. pose proof (lift_ty (j := lD) HB' Hl1c) as HB'D.
+  (* the sum, and the motive over it *)
+  assert (HSD : [ G' ; ΔL ⊢[ lD ] tySum k k' A B @ lmax k k' ])
+    by (apply wft_sum; [discriminate | rewrite EL; exact Hw | rewrite EL; exact Hw' | exact HAD | exact HBD]).
+  assert (HSS : [ G' ; ΔL ⊢[ lD ] tySum k k' A B ≅ tySum k1 k1' A' B' @ lmax k k' ])
+    by (apply eqty_sum; [discriminate | exact Qg | exact Qg' | exact HAA | exact HBB]).
+  assert (HSS0 : [ G' ; ΔL ⊢[ lD ] tySum k k' A B ≅ tySum k k' A' B' @ lmax k k' ])
+    by (apply eqty_sum; [discriminate | exact Qk | exact Qk' | exact HAA | exact HBB]).
+  assert (CS : [ G' ⊢[ lD ] ΔL ,, tySum k k' A B @ lmax k k' ≅ ΔR ,, tySum k k' A' B' @ lmax k k' ])
+    by (apply eqc_ext; [exact HΔ | exact HSD | exact HSS0 | rewrite EL; exact (lequiv_refl _ _ Hwm)]).
+  assert (CS1 : [ G' ⊢[ lD ] ΔL ,, tySum k k' A B @ lmax k k' ≅ ΔR ,, tySum k1 k1' A' B' @ lmax k1 k1' ])
+    by (apply eqc_ext; [exact HΔ | exact HSD | exact HSS | exact Qmg]).
+  pose proof (eqctx_wf_l (i := lD) eq_refl CS) as HΔS.
+  destruct (Tcall HΔS CS1 Hw'' Q'' HM HM' EM1 IHM) as (HMM & _ & HM'R1 & _ & _ & X3).
+  pose proof (ctxconv_ty CS (i := lC) eq_refl HM') as HM'R.
+  pose proof (lift_ty (j := lD) HM Hl1c) as HMD. pose proof (lift_ty (j := lD) HM' Hl1c) as HM'D.
+  (* the branches' types *)
+  destruct (case_facts_D Qg Qg' HAD HAA HA'D HBD HBB HB'D HMD HMM HM'D) as (_ & CAf & CBf & EC1 & EC2).
+  destruct (case_facts_D Qk Qk' HAD HAA HA'D HBD HBB HB'D HMD HMM HM'D) as (_ & CAf0 & CBf0 & EC10 & EC20).
+  pose proof (ctxconv_eqty (eqctx_sym_D CAf) (i := lD) eq_refl (eqty_sym _ _ _ _ _ _ EC1)) as HC1.
+  pose proof (ctxconv_eqty (eqctx_sym_D CBf) (i := lD) eq_refl (eqty_sym _ _ _ _ _ _ EC2)) as HC2.
+  pose proof (eqctx_wf_l (i := lD) eq_refl CA) as HΔA. pose proof (eqctx_wf_l (i := lD) eq_refl CB) as HΔB.
+  destruct (tcall HΔA CA1 Hw'' Q'' HC1 Hc1 Hc1' Ec1 IHc1) as (Hcc1 & _ & Hc1'R1 & _ & X4).
+  destruct (tcall HΔB CB1 Hw'' Q'' HC2 Hc2 Hc2' Ec2 IHc2) as (Hcc2 & _ & Hc2'R1 & _ & X5).
+  (* the scrutinee and its call *)
+  destruct (tcall HΔL HΔ Hwm Qm HSS Ht Ht' Et IHt) as (Htt & _ & Ht'R1 & _ & X6).
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHA) IHA) Hl1g') as X1r.
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHB) IHB) Hl1g') as X2r.
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHM) IHM) Hl1g') as X3r.
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHc1) IHc1) Hl2g') as X4r.
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHc2) IHc2) Hl2g') as X5r.
+  pose proof (LRtm_lconv (LRtm_trans (LRtm_sym IHt) IHt) Hl2g') as X6r.
+  (* the right pieces at the left levels *)
+  assert (Hc1'R : [ G' ; ΔR ,, A' @ k ⊢[ lC ] c1' : M'⟨rlift ↑⟩[lsingle (tmInl k k' A'⟨↑⟩ B'⟨↑⟩ (var 0))] @ k'' ]).
+  { eapply wf_conv; [exact (ctxconv_tm CA (i := lC) eq_refl Hc1') |].
+    exact (ctxconv_eqty CA (i := lD) eq_refl (ctxconv_eqty (eqctx_sym_D CAf0) (i := lD) eq_refl EC10)). }
+  assert (Hc2'R : [ G' ; ΔR ,, B' @ k' ⊢[ lC ] c2' : M'⟨rlift ↑⟩[lsingle (tmInr k k' A'⟨↑⟩ B'⟨↑⟩ (var 0))] @ k'' ]).
+  { eapply wf_conv; [exact (ctxconv_tm CB (i := lC) eq_refl Hc2') |].
+    exact (ctxconv_eqty CB (i := lD) eq_refl (ctxconv_eqty (eqctx_sym_D CBf0) (i := lD) eq_refl EC20)). }
+  assert (Ht'R : [ G' ; ΔR ⊢[ lC ] t' : tySum k k' A' B' @ lmax k k' ]).
+  { eapply wf_conv; [exact (ctxconv_tm HΔ (i := lC) eq_refl Ht') |].
+    exact (ctxconv_eqty HΔ (i := lD) eq_refl (eqty_sym _ _ _ _ _ _ HSS0)). }
+  (* the result types *)
+  assert (Hr1 : [ G' ; ΔL ⊢[ lD ] M[lsingle t] ≅ M'[lsingle t'] @ k'' ])
+    by exact (eqty_subst_single_D HMM HM'D Htt (lift_tm (j := lD) Ht Hl1c) (lift_tm (j := lD) Ht' Hl1c)).
+  (* the codes *)
+  assert (HcL0 : [ G' ; ΔL ⊢[ lC ] tmCase k k' k'' A B M c1 c2 t : M[lsingle t] @ k'' ])
+    by (apply wf_case; [exact Hn | rewrite EL; exact Hw | rewrite EL; exact Hw' | rewrite EL; exact Hw''
+                       | exact HA | exact HB | exact HM | exact Hc1 | exact Hc2 | exact Ht]).
+  assert (HcR0 : [ G' ; ΔR ⊢[ lC ] tmCase k1 k1' k1'' A' B' M' c1' c2' t' : M'[lsingle t'] @ k1'' ])
+    by (apply wf_case; [exact Hn | rewrite EL; exact Hw1 | rewrite EL; exact Hw1' | rewrite EL; exact Hw1''
+                       | exact HA'R1 | exact HB'R1 | exact HM'R1 | exact Hc1'R1 | exact Hc2'R1 | exact Ht'R1]).
+  assert (HcRL : [ G' ; ΔL ⊢[ lC ] tmCase k1 k1' k1'' A' B' M' c1' c2' t' : M[lsingle t] @ k'' ]).
+  { eapply wf_conv; [eapply wf_lconv; [exact (ctxconv_tm (eqctx_sym_D HΔ) (i := lC) eq_refl HcR0) | exact Qg'']
+                    | exact Hr1]. }
+  assert (Ecc : tm_leq (tmCase k k' k'' A B M c1 c2 t) (tmCase k1 k1' k1'' A' B' M' c1' c2' t'))
+    by (cbn; repeat split; assumption).
+  pose proof (lift_ty (j := lD) HA'R1 Hl1c) as HA'R1D. pose proof (lift_ty (j := lD) HB'R1 Hl1c) as HB'R1D.
+  pose proof (lift_ty (j := lD) HM'R1 Hl1c) as HM'R1D.
+  refine (rec_t_br 38 (k :: k' :: k'' :: nil) (k1 :: k1' :: k1'' :: nil)
+            (GCtx ΔL :: GTy A :: GTy B :: GTy M :: GTm c1 :: GTm c2 :: GTm t :: nil)
+            (GCtx ΔR :: GTy A' :: GTy B' :: GTy M' :: GTm c1' :: GTm c2' :: GTm t' :: nil)
+            (recTL k ΔL A :: recTL k' ΔL B :: recTL k'' (ΔL ,, tySum k k' A B @ lmax k k') M
+             :: rectL k'' (ΔL ,, A @ k) (M⟨rlift ↑⟩[lsingle (tmInl k k' A⟨↑⟩ B⟨↑⟩ (var 0))]) c1
+             :: rectL k'' (ΔL ,, B @ k') (M⟨rlift ↑⟩[lsingle (tmInr k k' A⟨↑⟩ B⟨↑⟩ (var 0))]) c2
+             :: rectL (lmax k k') ΔL (tySum k k' A B) t :: nil)
+            (recTR k1 ΔR A' :: recTR k1' ΔR B' :: recTR k1'' (ΔR ,, tySum k1 k1' A' B' @ lmax k1 k1') M'
+             :: rectR k1'' (ΔR ,, A' @ k1) (M'⟨rlift ↑⟩[lsingle (tmInl k1 k1' A'⟨↑⟩ B'⟨↑⟩ (var 0))]) c1'
+             :: rectR k1'' (ΔR ,, B' @ k1') (M'⟨rlift ↑⟩[lsingle (tmInr k1 k1' A'⟨↑⟩ B'⟨↑⟩ (var 0))]) c2'
+             :: rectR (lmax k1 k1') ΔR (tySum k1 k1' A' B') t' :: nil)
+            ltac:(cbv; lia) eq_refl eq_refl eq_refl ltac:(repeat constructor; assumption)
+            ltac:(repeat constructor; assumption)
+            (uext_leqv (Forall2_cons _ _ E (Forall2_cons _ _ E' (Forall2_cons _ _ E'' (Forall2_nil _)))))
+            HΔL HΔ HkL HkR Q'' HTL HTR (ctxconv_eqty HΔ (i := lD) eq_refl Hr1) HcL0 HcRL HcR0 Ecc
+            (GS_case EP EM Hσ HΔL HΔ HA HA'R HAA EA HB HB'R HBB EB HM HM'R HMM EM1
+               Hc1 Hc1'R Hcc1 Ec1 Hc2 Hc2'R Hcc2 Ec2 Ht Ht'R Htt Et)
+            (GS_case EP EM (GSubRel_refl_r EP EM Hσ) HΔR (eqc_refl _ _ _ HΔR)
+               HA'R1 HA'R1 (eqty_refl _ _ _ _ _ HA'R1D) (ty_leq_refl _)
+               HB'R1 HB'R1 (eqty_refl _ _ _ _ _ HB'R1D) (ty_leq_refl _)
+               HM'R1 HM'R1 (eqty_refl _ _ _ _ _ HM'R1D) (ty_leq_refl _)
+               Hc1'R1 Hc1'R1 (eqtm_refl _ _ _ _ _ _ (lift_tm (j := lD) Hc1'R1 Hl1c)) (tm_leq_refl _)
+               Hc2'R1 Hc2'R1 (eqtm_refl _ _ _ _ _ _ (lift_tm (j := lD) Hc2'R1 Hl1c)) (tm_leq_refl _)
+               Ht'R1 Ht'R1 (eqtm_refl _ _ _ _ _ _ (lift_tm (j := lD) Ht'R1 Hl1c)) (tm_leq_refl _))
+            _ _ _ _ _ _ _).
+  - sr_ctx; J_cbn; rewrite ?liftshift_cons_ty'; [exact X1 | exact X2 | exact X3 | exact X4 | exact X5 | exact X6].
+  - sr_ctx; J_cbn; rewrite ?liftshift_cons_ty'; [exact X1r | exact X2r | exact X3r | exact X4r | exact X5r | exact X6r].
+  - J_res.
+  - J_res.
+  - J_res.
+  - apply redt_case_inst; inst_side 38.
+  - apply redt_case_inst; inst_side 38.
+Qed.
+
 Lemma rec_t_var {ΔL ΔR kL kR TL TR k T0 n} :
   [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL ≅ ΔR ] -> lequiv L' k kL -> lequiv L' k kR ->
   [ G' ; ΔL ⊢[ lD ] T0 ≅ TL @ k ] -> [ G' ; ΔL ⊢[ lD ] T0 ≅ TR @ k ] ->
@@ -4270,6 +4989,164 @@ Proof using EL ELM ELP EMl HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR Hσ H
   - exact (IHe He0 _ _ _ _ _ _ HΔ (lequiv_refl _ _ Hw) Q (eq_self_l HSE) HSE ltac:(eassumption) ltac:(eassumption)).
 Qed.
 
+(** The empty type and binary sums (M12c). *)
+Lemma RT_empty {Δ k} : RT Δ (tyEmpty k) k.
+Proof using EL ELM ELP EMl HMT HMT' Hbs Hbs' He Hl1 HrbL HrbR Hσ Hφ VBr VBr' VMT VMTl VMTr VΓ.
+  intros Hc ΔR kL kR c' HΔ HkL HkR E W. pose proof (sc_ctx HCD Hc) as HΔL.
+  pose proof (lequiv_wf_l _ _ _ HkL) as Hw. leq_inv.
+  exact (rec_T_empty HΔL HΔ HkL HkR Hw W E).
+Qed.
+
+Lemma Rt_codeempty {Δ j} : Rt Δ (tmEmpty j) (tyU j) (lsuc j).
+Proof using EL ELM ELP EMl HMt HMt' Hbs Hbs' He Hl2 HrbL HrbR Hσ Hφ VBr VBr' VMt VMtl VMtr VΓ.
+  intros Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. pose proof (sc_ctx_tm HCD Hc) as HΔL.
+  pose proof (lequiv_wf_l _ _ _ HkL) as Hw; cbn in Hw. leq_inv.
+  exact (rec_t_codeempty HΔL HΔ HkL HkR Hw W E HTL HTR).
+Qed.
+
+Lemma Rt_elimEmpty {Δ k k' M t} : lwf (gL G') k -> lwf (gL G') k' ->
+  [ G' ; Δ ,, tyEmpty k' @ k' ⊢[ lC ] M @ k ] -> [ G' ; Δ ⊢[ lC ] t : tyEmpty k' @ k' ] ->
+  RT (Δ ,, tyEmpty k' @ k') M k -> Rt Δ t (tyEmpty k') k' -> Rt Δ (elimEmpty k k' M t) (M[lsingle t]) k.
+Proof using EL ELM ELP EMl HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR Hσ Hφ VBr VBr' VMT VMTl VMTr VMt VMtl VMtr VΓ.
+  intros Hw Hw' HM Ht IHM IHt Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. rewrite EL in Hw, Hw'.
+  pose proof (sc_ctx_tm HCD Hc) as HΔL. leq_inv.
+  match goal with H : leqv k ?x |- _ => rename x into k1 end.
+  match goal with H : leqv k' ?x |- _ => rename x into k1' end.
+  destruct (scr_ty HM ltac:(eassumption) ltac:(eassumption)) as [HM' _].
+  destruct (scr_tm Ht ltac:(eassumption) ltac:(eassumption)) as [Ht' _].
+  assert (Q : lequiv L' k k1) by (apply lq; assumption). assert (Q' : lequiv L' k' k1') by (apply lq; assumption).
+  assert (HED : [ G' ; Δ ⊢[ lD ] tyEmpty k' @ k' ])
+    by (apply wft_empty; [discriminate | exact HΔL | rewrite EL; exact Hw']).
+  assert (HEE : [ G' ; Δ ⊢[ lD ] tyEmpty k' ≅ tyEmpty k1' @ k' ])
+    by (apply eqty_empty; [discriminate | exact HΔL | rewrite EL; exact Q']).
+  refine (rec_t_elimEmpty HΔL HΔ HkL HkR Hw Hw' _ _ _ _ HTL HTR HM HM' _ Ht Ht' _ _ _); try eassumption.
+  - exact (IHM HM _ _ _ _ (ceq_ext HΔ HED HEE Q') (lequiv_refl _ _ Hw) Q ltac:(eassumption) ltac:(eassumption)).
+  - exact (IHt Ht _ _ _ _ _ _ HΔ (lequiv_refl _ _ Hw') Q' (eq_self_l HEE) HEE ltac:(eassumption) ltac:(eassumption)).
+Qed.
+
+Lemma RT_sum {Δ k k' A B} : lwf (gL G') k -> lwf (gL G') k' ->
+  [ G' ; Δ ⊢[ lC ] A @ k ] -> [ G' ; Δ ⊢[ lC ] B @ k' ] ->
+  RT Δ A k -> RT Δ B k' -> RT Δ (tySum k k' A B) (lmax k k').
+Proof using EL ELM ELP EMl HMT HMT' Hbs Hbs' He Hl1 HrbL HrbR Hσ Hφ VBr VBr' VMT VMTl VMTr VΓ.
+  intros Hw Hw' HA HB IHA IHB Hc ΔR kL kR c' HΔ HkL HkR E W. rewrite EL in Hw, Hw'.
+  pose proof (sc_ctx HCD Hc) as HΔL. leq_inv.
+  destruct (scr_ty HA ltac:(eassumption) ltac:(eassumption)) as [HA' _].
+  destruct (scr_ty HB ltac:(eassumption) ltac:(eassumption)) as [HB' _].
+  refine (rec_T_sum HΔL HΔ HkL HkR Hw Hw' _ _ _ _ HA HB HA' HB' _ _ _ _); try eassumption.
+  - refine (IHA HA _ _ _ _ HΔ (lequiv_refl _ _ Hw) (lq Hw _ _) _ _); eassumption.
+  - refine (IHB HB _ _ _ _ HΔ (lequiv_refl _ _ Hw') (lq Hw' _ _) _ _); eassumption.
+Qed.
+
+Lemma Rt_codesum {Δ k k' s t} : lwf (gL G') k -> lwf (gL G') k' ->
+  [ G' ; Δ ⊢[ lC ] s : tyU k @ lsuc k ] -> [ G' ; Δ ⊢[ lC ] t : tyU k' @ lsuc k' ] ->
+  Rt Δ s (tyU k) (lsuc k) -> Rt Δ t (tyU k') (lsuc k') ->
+  Rt Δ (tmSum k k' s t) (tyU (lmax k k')) (lsuc (lmax k k')).
+Proof using EL ELM ELP EMl HMt HMt' Hbs Hbs' He Hl2 HrbL HrbR Hσ Hφ VBr VBr' VMt VMtl VMtr VΓ.
+  intros Hw Hw' Hs Ht IHs IHt Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. rewrite EL in Hw, Hw'.
+  pose proof (sc_ctx_tm HCD Hc) as HΔL. leq_inv.
+  match goal with H : leqv k ?x |- _ => rename x into k1 end.
+  match goal with H : leqv k' ?x |- _ => rename x into k1' end.
+  destruct (scr_tm Hs ltac:(eassumption) ltac:(eassumption)) as [Hs' _].
+  destruct (scr_tm Ht ltac:(eassumption) ltac:(eassumption)) as [Ht' _].
+  assert (Q : lequiv L' k k1) by (apply lq; assumption). assert (Q' : lequiv L' k' k1') by (apply lq; assumption).
+  refine (rec_t_codesum HΔL HΔ HkL HkR Hw Hw' _ _ _ _ HTL HTR Hs Hs' _ Ht Ht' _ _ _); try eassumption.
+  - refine (IHs Hs _ _ _ _ _ _ HΔ (lequiv_refl L' (lsuc k) Hw) (lequiv_lsuc' _ _ _ Q) _ _ _ _); try eassumption.
+    + apply eqty_refl, wft_U; [discriminate | exact HΔL | rewrite EL; exact Hw].
+    + apply eqty_U; [discriminate | exact HΔL | rewrite EL; exact Q].
+  - refine (IHt Ht _ _ _ _ _ _ HΔ (lequiv_refl L' (lsuc k') Hw') (lequiv_lsuc' _ _ _ Q') _ _ _ _); try eassumption.
+    + apply eqty_refl, wft_U; [discriminate | exact HΔL | rewrite EL; exact Hw'].
+    + apply eqty_U; [discriminate | exact HΔL | rewrite EL; exact Q'].
+Qed.
+
+Lemma Rt_inl {Δ k k' A B a} : lwf (gL G') k -> lwf (gL G') k' ->
+  [ G' ; Δ ⊢[ lC ] A @ k ] -> [ G' ; Δ ⊢[ lC ] B @ k' ] -> [ G' ; Δ ⊢[ lC ] a : A @ k ] ->
+  RT Δ A k -> RT Δ B k' -> Rt Δ a A k -> Rt Δ (tmInl k k' A B a) (tySum k k' A B) (lmax k k').
+Proof using EL ELM ELP EMl HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR Hσ Hφ VBr VBr' VMT VMTl VMTr VMt VMtl VMtr VΓ.
+  intros Hw Hw' HA HB Ha IHA IHB IHa Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. rewrite EL in Hw, Hw'.
+  pose proof (sc_ctx_tm HCD Hc) as HΔL. leq_inv.
+  match goal with H : leqv k ?x |- _ => rename x into k1 end.
+  match goal with H : leqv k' ?x |- _ => rename x into k1' end.
+  destruct (scr_ty HA ltac:(eassumption) ltac:(eassumption)) as [HA' HAA].
+  destruct (scr_ty HB ltac:(eassumption) ltac:(eassumption)) as [HB' _].
+  destruct (scr_tm Ha ltac:(eassumption) ltac:(eassumption)) as [Ha' _].
+  assert (Q : lequiv L' k k1) by (apply lq; assumption). assert (Q' : lequiv L' k' k1') by (apply lq; assumption).
+  refine (rec_t_inl HΔL HΔ HkL HkR Hw Hw' _ _ _ _ HTL HTR HA HA' _ HB HB' _ Ha Ha' _ _ _ _); try eassumption.
+  - exact (IHA HA _ _ _ _ HΔ (lequiv_refl _ _ Hw) Q ltac:(eassumption) ltac:(eassumption)).
+  - exact (IHB HB _ _ _ _ HΔ (lequiv_refl _ _ Hw') Q' ltac:(eassumption) ltac:(eassumption)).
+  - exact (IHa Ha _ _ _ _ _ _ HΔ (lequiv_refl _ _ Hw) Q (eq_self_l HAA) HAA ltac:(eassumption) ltac:(eassumption)).
+Qed.
+
+Lemma Rt_inr {Δ k k' A B b} : lwf (gL G') k -> lwf (gL G') k' ->
+  [ G' ; Δ ⊢[ lC ] A @ k ] -> [ G' ; Δ ⊢[ lC ] B @ k' ] -> [ G' ; Δ ⊢[ lC ] b : B @ k' ] ->
+  RT Δ A k -> RT Δ B k' -> Rt Δ b B k' -> Rt Δ (tmInr k k' A B b) (tySum k k' A B) (lmax k k').
+Proof using EL ELM ELP EMl HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR Hσ Hφ VBr VBr' VMT VMTl VMTr VMt VMtl VMtr VΓ.
+  intros Hw Hw' HA HB Hb IHA IHB IHb Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. rewrite EL in Hw, Hw'.
+  pose proof (sc_ctx_tm HCD Hc) as HΔL. leq_inv.
+  match goal with H : leqv k ?x |- _ => rename x into k1 end.
+  match goal with H : leqv k' ?x |- _ => rename x into k1' end.
+  destruct (scr_ty HA ltac:(eassumption) ltac:(eassumption)) as [HA' _].
+  destruct (scr_ty HB ltac:(eassumption) ltac:(eassumption)) as [HB' HBB].
+  destruct (scr_tm Hb ltac:(eassumption) ltac:(eassumption)) as [Hb' _].
+  assert (Q : lequiv L' k k1) by (apply lq; assumption). assert (Q' : lequiv L' k' k1') by (apply lq; assumption).
+  refine (rec_t_inr HΔL HΔ HkL HkR Hw Hw' _ _ _ _ HTL HTR HA HA' _ HB HB' _ Hb Hb' _ _ _ _); try eassumption.
+  - exact (IHA HA _ _ _ _ HΔ (lequiv_refl _ _ Hw) Q ltac:(eassumption) ltac:(eassumption)).
+  - exact (IHB HB _ _ _ _ HΔ (lequiv_refl _ _ Hw') Q' ltac:(eassumption) ltac:(eassumption)).
+  - exact (IHb Hb _ _ _ _ _ _ HΔ (lequiv_refl _ _ Hw') Q' (eq_self_l HBB) HBB ltac:(eassumption) ltac:(eassumption)).
+Qed.
+
+Lemma Rt_case {Δ k k' k'' A B M c1 c2 t} : lwf (gL G') k -> lwf (gL G') k' -> lwf (gL G') k'' ->
+  [ G' ; Δ ⊢[ lC ] A @ k ] -> [ G' ; Δ ⊢[ lC ] B @ k' ] ->
+  [ G' ; Δ ,, tySum k k' A B @ lmax k k' ⊢[ lC ] M @ k'' ] ->
+  [ G' ; Δ ,, A @ k ⊢[ lC ] c1 : M⟨rlift ↑⟩[lsingle (tmInl k k' A⟨↑⟩ B⟨↑⟩ (var 0))] @ k'' ] ->
+  [ G' ; Δ ,, B @ k' ⊢[ lC ] c2 : M⟨rlift ↑⟩[lsingle (tmInr k k' A⟨↑⟩ B⟨↑⟩ (var 0))] @ k'' ] ->
+  [ G' ; Δ ⊢[ lC ] t : tySum k k' A B @ lmax k k' ] ->
+  RT Δ A k -> RT Δ B k' -> RT (Δ ,, tySum k k' A B @ lmax k k') M k'' ->
+  Rt (Δ ,, A @ k) c1 (M⟨rlift ↑⟩[lsingle (tmInl k k' A⟨↑⟩ B⟨↑⟩ (var 0))]) k'' ->
+  Rt (Δ ,, B @ k') c2 (M⟨rlift ↑⟩[lsingle (tmInr k k' A⟨↑⟩ B⟨↑⟩ (var 0))]) k'' ->
+  Rt Δ t (tySum k k' A B) (lmax k k') ->
+  Rt Δ (tmCase k k' k'' A B M c1 c2 t) (M[lsingle t]) k''.
+Proof using EL ELM ELP EMl HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR Hσ Hφ VBr VBr' VMT VMTl VMTr VMt VMtl VMtr VΓ.
+  intros Hw Hw' Hw'' HA HB HM Hc1 Hc2 Ht IHA IHB IHM IHc1 IHc2 IHt Hc0 ΔR kL kR TL TR c0' HΔ HkL HkR HTL HTR E W.
+  rewrite EL in Hw, Hw', Hw''.
+  pose proof (sc_ctx_tm HCD Hc0) as HΔL. leq_inv.
+  match goal with H : leqv k ?x |- _ => rename x into k1 end.
+  match goal with H : leqv k' ?x |- _ => rename x into k1' end.
+  match goal with H : leqv k'' ?x |- _ => rename x into k1'' end.
+  match goal with H : ty_leq A ?x |- _ => rename x into A' end.
+  match goal with H : ty_leq B ?x |- _ => rename x into B' end.
+  destruct (scr_ty HA ltac:(eassumption) ltac:(eassumption)) as [HA' HAA].
+  destruct (scr_ty HB ltac:(eassumption) ltac:(eassumption)) as [HB' HBB].
+  destruct (scr_ty HM ltac:(eassumption) ltac:(eassumption)) as [HM' HMM].
+  destruct (scr_tm Hc1 ltac:(eassumption) ltac:(eassumption)) as [Hc1' _].
+  destruct (scr_tm Hc2 ltac:(eassumption) ltac:(eassumption)) as [Hc2' _].
+  destruct (scr_tm Ht ltac:(eassumption) ltac:(eassumption)) as [Ht' _].
+  assert (Q : lequiv L' k k1) by (apply lq; assumption). assert (Q' : lequiv L' k' k1') by (apply lq; assumption).
+  assert (Q'' : lequiv L' k'' k1'') by (apply lq; assumption).
+  assert (Qg : lequiv (gL G') k k1) by (rewrite EL; exact Q). assert (Qg' : lequiv (gL G') k' k1') by (rewrite EL; exact Q').
+  assert (Qm : lequiv L' (lmax k k') (lmax k1 k1')) by (apply lequiv_max; assumption).
+  assert (Hwm : lwf L' (lmax k k')) by (cbn; auto).
+  pose proof (lift_ty HA HCD) as HAD. pose proof (lift_ty HB HCD) as HBD.
+  assert (HSD : [ G' ; Δ ⊢[ lD ] tySum k k' A B @ lmax k k' ])
+    by (apply wft_sum; [discriminate | rewrite EL; exact Hw | rewrite EL; exact Hw' | exact HAD | exact HBD]).
+  assert (HSS : [ G' ; Δ ⊢[ lD ] tySum k k' A B ≅ tySum k1 k1' A' B' @ lmax k k' ])
+    by (apply eqty_sum; [discriminate | exact Qg | exact Qg' | exact HAA | exact HBB]).
+  destruct (case_facts_D Qg Qg' HAD HAA (lift_ty HA' HCD) HBD HBB (lift_ty HB' HCD) (lift_ty HM HCD) HMM (lift_ty HM' HCD))
+    as (_ & CAf & CBf & EC1 & EC2).
+  pose proof (ctxconv_eqty (eqctx_sym_D CAf) (i := lD) eq_refl (eqty_sym _ _ _ _ _ _ EC1)) as HC1.
+  pose proof (ctxconv_eqty (eqctx_sym_D CBf) (i := lD) eq_refl (eqty_sym _ _ _ _ _ _ EC2)) as HC2.
+  refine (rec_t_case HΔL HΔ HkL HkR Hw Hw' Hw'' _ _ _ _ _ _ HTL HTR HA HA' _ HB HB' _ HM HM' _ Hc1 Hc1' _
+            Hc2 Hc2' _ Ht Ht' _ _ _ _ _ _ _); try eassumption.
+  - exact (IHA HA _ _ _ _ HΔ (lequiv_refl _ _ Hw) Q ltac:(eassumption) ltac:(eassumption)).
+  - exact (IHB HB _ _ _ _ HΔ (lequiv_refl _ _ Hw') Q' ltac:(eassumption) ltac:(eassumption)).
+  - exact (IHM HM _ _ _ _ (ceq_ext HΔ HSD HSS Qm) (lequiv_refl _ _ Hw'') Q'' ltac:(eassumption) ltac:(eassumption)).
+  - exact (IHc1 Hc1 _ _ _ _ _ _ (ceq_ext HΔ HAD HAA Q) (lequiv_refl _ _ Hw'') Q'' (eq_self_l HC1) HC1
+             ltac:(eassumption) ltac:(eassumption)).
+  - exact (IHc2 Hc2 _ _ _ _ _ _ (ceq_ext HΔ HBD HBB Q') (lequiv_refl _ _ Hw'') Q'' (eq_self_l HC2) HC2
+             ltac:(eassumption) ltac:(eassumption)).
+  - exact (IHt Ht _ _ _ _ _ _ HΔ (lequiv_refl _ _ Hwm) Qm (eq_self_l HSS) HSS
+             ltac:(eassumption) ltac:(eassumption)).
+Qed.
+
 Theorem rec_code :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
@@ -4301,7 +5178,12 @@ Proof using EL ELM ELP EMl HG0 HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR H
     (* strict equality (M10c) *)
     | solve [eapply RT_seq; eassumption] | solve [eapply Rt_codeseq; eassumption]
     | solve [eapply Rt_srefl; eassumption] | solve [apply RT_sempty | apply Rt_codesempty]
-    | solve [eapply Rt_elimSEmpty; eassumption] ].
+    | solve [eapply Rt_elimSEmpty; eassumption]
+    (* the empty type and binary sums (M12c) *)
+    | solve [apply RT_empty | apply Rt_codeempty] | solve [eapply Rt_elimEmpty; eassumption]
+    | solve [eapply RT_sum; eassumption] | solve [eapply Rt_codesum; eassumption]
+    | solve [eapply Rt_inl; eassumption] | solve [eapply Rt_inr; eassumption]
+    | solve [eapply Rt_case; eassumption] ].
 Qed.
 
 (** The recursion lemmas, for a code typed at C in the left context. *)

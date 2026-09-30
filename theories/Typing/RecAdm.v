@@ -204,6 +204,23 @@ Lemma wf_J' G i Γ l l' A a M c u e T : T = M[lsingle2 u e] -> i <> lV -> lwf (g
   [ G ; Γ ⊢[ i ] tmJ l l' A a M c u e : T @ l' ].
 Proof. intros ->; apply wf_J. Qed.
 
+(* Empty and + (M12c): [case]'s branch types in the substituted form of the
+   branch scopes' declarations *)
+Lemma wf_elimEmpty' G i Γ l l' M t T : T = M[lsingle t] -> i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ,, tyEmpty l' @ l' ⊢[ i ] M @ l ] -> [ G ; Γ ⊢[ i ] t : tyEmpty l' @ l' ] ->
+  [ G ; Γ ⊢[ i ] elimEmpty l l' M t : T @ l ].
+Proof. intros ->; apply wf_elimEmpty. Qed.
+Lemma wf_case' G i Γ l l' l'' A B M c1 c2 t T C1 C2 : T = M[lsingle t] ->
+  C1 = M[lcons (lshift 1) (tmInl l l' A⟨↑⟩ B⟨↑⟩ (var 0))] ->
+  C2 = M[lcons (lshift 1) (tmInr l l' A⟨↑⟩ B⟨↑⟩ (var 0))] ->
+  i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ,, tySum l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] c1 : C1 @ l'' ] -> [ G ; Γ ,, B @ l' ⊢[ i ] c2 : C2 @ l'' ] ->
+  [ G ; Γ ⊢[ i ] t : tySum l l' A B @ lmax l l' ] ->
+  [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 t : T @ l'' ].
+Proof. intros -> -> ->; intros; apply wf_case; rewrite ?liftshift_single_ty; assumption. Qed.
+
 Ltac code_side :=
   repeat match goal with
   | |- [ _ ; _ ⊢[ _ ] tyGvar _ lsucc @ _ ] => apply wf_UM_succ'; [ | glookup ]
@@ -235,6 +252,17 @@ Ltac code_side :=
   | |- [ _ ; _ ⊢[ _ ] tmSEmpty _ : _ @ _ ] => apply wf_code_sempty; [ discriminate | | lvl_ok ]
   | |- [ _ ; _ ⊢[ _ ] elimSEmpty _ _ _ _ : _ @ _ ] => apply wf_elimSEmpty; [ discriminate | lvl_ok | lvl_ok | | ]
   | |- [ _ ; _ ⊢[ _ ] tmJ _ _ _ _ _ _ _ _ : _ @ _ ] => eapply wf_J'; [ reflexivity | discriminate | lvl_ok | lvl_ok | .. ]
+  (* Empty and + (M12c) *)
+  | |- [ _ ; cvar _ ,, _ @ _ ⊢[ _ ] tyGvar _ (lcons (lshift 1) _) @ _ ] =>
+      eapply wf_gv_up_inst; [ discriminate | | glookup | unfold lle; cbn; lia | cbn; tauto
+                            | cbn [ren Ren_ty Ren_tm ren_ty ren_tm lren r2l rdrop rshift1] ]
+  | |- [ _ ; _ ⊢[ _ ] tmEmpty _ : _ @ _ ] => apply wf_code_empty; [ discriminate | | lvl_ok ]
+  | |- [ _ ; _ ⊢[ _ ] tmSum _ _ _ _ : _ @ _ ] => apply wf_code_sum; [ discriminate | lvl_ok | lvl_ok | | ]
+  | |- [ _ ; _ ⊢[ _ ] elimEmpty _ _ _ _ : _ @ _ ] => eapply wf_elimEmpty'; [ reflexivity | discriminate | lvl_ok | lvl_ok | .. ]
+  | |- [ _ ; _ ⊢[ _ ] tmInl _ _ _ _ _ : _ @ _ ] => apply wf_inl; [ discriminate | lvl_ok | lvl_ok | .. ]
+  | |- [ _ ; _ ⊢[ _ ] tmInr _ _ _ _ _ : _ @ _ ] => apply wf_inr; [ discriminate | lvl_ok | lvl_ok | .. ]
+  | |- [ _ ; _ ⊢[ _ ] tmCase _ _ _ _ _ _ _ _ _ : _ @ _ ] =>
+      eapply wf_case'; [ reflexivity | reflexivity | reflexivity | discriminate | lvl_ok | lvl_ok | lvl_ok | .. ]
   | |- [ _ ; _ ⊢[ _ ] ] => progress wfd
   | |- [ _ ; _ ⊢[ _ ] _ @ _ ] => progress wfd
   | |- [ _ ; _ ⊢[ _ ] _ : _ @ _ ] => progress wfd

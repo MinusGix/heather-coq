@@ -159,6 +159,31 @@ Definition brDecls (k : nat) : list gdecl :=
   (* ℓ ℓ'; g, U_M : (g ⊢C @ℓ), u_t : (g ⊢C sEmpty^ℓ' @ℓ'): the motive is not
      dependent, as [elimSEmpty]'s (M10a) *)
   | 30 => [gdTm (cvar 1) lC (tySEmpty (lvar 0)) (lvar 0); gdTy (cvar 0) lC (lvar 1); gdCtx]
+  (* the empty type and binary sums (M12c), Heather's order *)
+  (* ℓ; g *)
+  | 31 | 32 => [gdCtx]
+  (* ℓ ℓ'; g, U_M : (g, x : Empty^ℓ' ⊢C @ℓ), u_t : (g ⊢C Empty^ℓ' @ℓ') *)
+  | 33 => [gdTm (cvar 1) lC (tyEmpty (lvar 0)) (lvar 0);
+           gdTy (cvar 0 ,, tyEmpty (lvar 0) @ lvar 0) lC (lvar 1); gdCtx]
+  (* ℓ ℓ'; g, U_A : (g ⊢C @ℓ), U_B : (g ⊢C @ℓ') *)
+  | 34 => [gdTy (cvar 1) lC (lvar 0); gdTy (cvar 0) lC (lvar 1); gdCtx]
+  (* ℓ ℓ'; g, u_a : (g ⊢C Ty ℓ @1+ℓ), u_b : (g ⊢C Ty ℓ' @1+ℓ') *)
+  | 35 => [gdTm (cvar 1) lC (tyU (lvar 0)) (lsuc (lvar 0));
+           gdTm (cvar 0) lC (tyU (lvar 1)) (lsuc (lvar 1)); gdCtx]
+  (* ℓ ℓ'; g, U_A, U_B, u_a : (g ⊢C U_A^id @ℓ) *)
+  | 36 => [gdTm (cvar 2) lC (gv 1) (lvar 1); gdTy (cvar 1) lC (lvar 0); gdTy (cvar 0) lC (lvar 1); gdCtx]
+  (* ℓ ℓ'; g, U_A, U_B, u_b : (g ⊢C U_B^id @ℓ') *)
+  | 37 => [gdTm (cvar 2) lC (gv 0) (lvar 0); gdTy (cvar 1) lC (lvar 0); gdTy (cvar 0) lC (lvar 1); gdCtx]
+  (* ℓ ℓ' ℓ''; g, U_A, U_B, U_M : (g, z : U_A^id + U_B^id ⊢C @ℓ''),
+     u_l : (g, x : U_A^id ⊢C U_M^{↑, inl x/z} @ℓ''), u_r : (g, y : U_B^id ⊢C U_M^{↑, inr y/z} @ℓ''),
+     u_t : (g ⊢C U_A^id + U_B^id @ℓ⊔ℓ') *)
+  | 38 => [gdTm (cvar 5) lC (tySum (lvar 2) (lvar 1) (gv 4) (gv 3)) (lmax (lvar 2) (lvar 1));
+           gdTm (cvar 4 ,, gv 2 @ lvar 1) lC
+             (tyGvar 1 (lcons (lshift 1) (tmInr (lvar 2) (lvar 1) (gv 3)⟨↑⟩ (gv 2)⟨↑⟩ (var 0)))) (lvar 0);
+           gdTm (cvar 3 ,, gv 2 @ lvar 2) lC
+             (tyGvar 0 (lcons (lshift 1) (tmInl (lvar 2) (lvar 1) (gv 2)⟨↑⟩ (gv 1)⟨↑⟩ (var 0)))) (lvar 0);
+           gdTy (cvar 2 ,, tySum (lvar 2) (lvar 1) (gv 1) (gv 0) @ lmax (lvar 2) (lvar 1)) lC (lvar 0);
+           gdTy (cvar 1) lC (lvar 1); gdTy (cvar 0) lC (lvar 2); gdCtx]
   | _ => []
   end.
 
@@ -246,6 +271,22 @@ Definition br_calls (k : nat) : list rcall :=
             rct (lvar 0) (cvar 2) (gv 1) (boxt (gu 0)) ]
   | 30 => [ rcT (lvar 1) (cvar 2) (boxT (gv 1));
             rct (lvar 0) (cvar 2) (tySEmpty (lvar 0)) (boxt (gu 0)) ]
+  | 33 => [ rcT (lvar 1) (cvar 2 ,, tyEmpty (lvar 0) @ lvar 0) (boxT (gv 1));
+            rct (lvar 0) (cvar 2) (tyEmpty (lvar 0)) (boxt (gu 0)) ]
+  | 34 => [ rcT (lvar 1) (cvar 2) (boxT (gv 1)); rcT (lvar 0) (cvar 2) (boxT (gv 0)) ]
+  | 35 => [ rct (lsuc (lvar 1)) (cvar 2) (tyU (lvar 1)) (boxt (gu 1));
+            rct (lsuc (lvar 0)) (cvar 2) (tyU (lvar 0)) (boxt (gu 0)) ]
+  | 36 => [ rcT (lvar 1) (cvar 3) (boxT (gv 2)); rcT (lvar 0) (cvar 3) (boxT (gv 1));
+            rct (lvar 1) (cvar 3) (gv 2) (boxt (gu 0)) ]
+  | 37 => [ rcT (lvar 1) (cvar 3) (boxT (gv 2)); rcT (lvar 0) (cvar 3) (boxT (gv 1));
+            rct (lvar 0) (cvar 3) (gv 1) (boxt (gu 0)) ]
+  | 38 => [ rcT (lvar 2) (cvar 6) (boxT (gv 5)); rcT (lvar 1) (cvar 6) (boxT (gv 4));
+            rcT (lvar 0) (cvar 6 ,, tySum (lvar 2) (lvar 1) (gv 5) (gv 4) @ lmax (lvar 2) (lvar 1)) (boxT (gv 3));
+            rct (lvar 0) (cvar 6 ,, gv 5 @ lvar 2)
+              (tyGvar 3 (lcons (lshift 1) (tmInl (lvar 2) (lvar 1) (gv 5)⟨↑⟩ (gv 4)⟨↑⟩ (var 0)))) (boxt (gu 2));
+            rct (lvar 0) (cvar 6 ,, gv 4 @ lvar 1)
+              (tyGvar 3 (lcons (lshift 1) (tmInr (lvar 2) (lvar 1) (gv 5)⟨↑⟩ (gv 4)⟨↑⟩ (var 0)))) (boxt (gu 1));
+            rct (lmax (lvar 2) (lvar 1)) (cvar 6) (tySum (lvar 2) (lvar 1) (gv 5) (gv 4)) (boxt (gu 0)) ]
   | _ => []
   end.
 
@@ -291,6 +332,18 @@ Definition br_head (k : nat) : rcall :=
   | 28 => rct (lsuc (lvar 0)) (cvar 0) (tyU (lvar 0)) (boxt (tmSEmpty (lvar 0)))
   | 29 => rct (lvar 0) (cvar 2) (tySEq (lvar 0) (gv 1) (gu 0) (gu 0)) (boxt (srefl (lvar 0) (gv 1) (gu 0)))
   | 30 => rct (lvar 1) (cvar 2) (gv 1) (boxt (elimSEmpty (lvar 0) (lvar 1) (gv 1) (gu 0)))
+  | 31 => rcT (lvar 0) (cvar 0) (boxT (tyEmpty (lvar 0)))
+  | 32 => rct (lsuc (lvar 0)) (cvar 0) (tyU (lvar 0)) (boxt (tmEmpty (lvar 0)))
+  | 33 => rct (lvar 1) (cvar 2) (tyGvar 1 (lsingle (gu 0))) (boxt (elimEmpty (lvar 1) (lvar 0) (gv 1) (gu 0)))
+  | 34 => rcT (lmax (lvar 1) (lvar 0)) (cvar 2) (boxT (tySum (lvar 1) (lvar 0) (gv 1) (gv 0)))
+  | 35 => rct (lsuc (lmax (lvar 1) (lvar 0))) (cvar 2) (tyU (lmax (lvar 1) (lvar 0)))
+            (boxt (tmSum (lvar 1) (lvar 0) (gu 1) (gu 0)))
+  | 36 => rct (lmax (lvar 1) (lvar 0)) (cvar 3) (tySum (lvar 1) (lvar 0) (gv 2) (gv 1))
+            (boxt (tmInl (lvar 1) (lvar 0) (gv 2) (gv 1) (gu 0)))
+  | 37 => rct (lmax (lvar 1) (lvar 0)) (cvar 3) (tySum (lvar 1) (lvar 0) (gv 2) (gv 1))
+            (boxt (tmInr (lvar 1) (lvar 0) (gv 2) (gv 1) (gu 0)))
+  | 38 => rct (lvar 0) (cvar 6) (tyGvar 3 (lsingle (gu 0)))
+            (boxt (tmCase (lvar 2) (lvar 1) (lvar 0) (gv 5) (gv 4) (gv 3) (gu 2) (gu 1) (gu 0)))
   | _ => rcT lzero cnil (boxT tyErr)
   end.
 

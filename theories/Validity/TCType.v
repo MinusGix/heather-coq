@@ -235,22 +235,22 @@ Proof.
   - right; intros H; exact (Q (proj2 (inv_ty_sempty H))).
 Qed.
 
-(** The empty type (M12a): the computing layers only. *)
+(** The empty type (M12a; at every layer but V since M12c). *)
 Lemma dec_tyEmpty l : TYD (tyEmpty l).
 Proof.
   intros G i Γ k HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros H; destruct (inv_ty_empty H) as ((X & _) & _); contradiction].
+  destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_empty H) as ((_ & _ & X) & _); contradiction].
   destruct (lvl_eq_dec (gL G) k l) as [Q | Q].
   - left; exact (wft_lvl Q (wft_empty _ _ _ _ Hc HΓ Hl)).
   - right; intros H; exact (Q (proj2 (inv_ty_empty H))).
 Qed.
 
-(** Binary sums (M12b): the computing layers only. *)
+(** Binary sums (M12b; at every layer but V since M12c). *)
 Lemma dec_tySum l l' A B : sz_ty (tySum l l' A B) <= n -> TYD (tySum l l' A B).
 Proof.
   intros Hsz G i Γ k HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros H; destruct (inv_ty_sum H) as ((X & _) & _); contradiction].
+  destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_sum H) as ((_ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | N];
     [| right; intros H; destruct (inv_ty_sum H) as ((_ & _ & X & _) & _); contradiction].

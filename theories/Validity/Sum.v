@@ -64,7 +64,7 @@ Lemma case_cong {G Δ l1 l2 l3 A B M c1 c2 e e'} :
   [ G ; Δ ⊢g tmCase l1 l2 l3 A B M c1 c2 e ≅ tmCase l1 l2 l3 A B M c1 c2 e' : M[lsingle e] @ l3 ].
 Proof.
   intros Hw1 Hw2 Hw3 HA HB HM Hc1 Hc2 Hee.
-  apply eqtm_case; first [exact ge_compt | now apply lequiv_refl | assumption | now apply eqty_refl
+  apply eqtm_case; first [exact ge_notV | now apply lequiv_refl | assumption | now apply eqty_refl
                          | now apply eqtm_refl].
 Qed.
 
@@ -83,7 +83,7 @@ Lemma case_inl_eq {G Δ l1 l2 l3 A B M c1 c2 e k1 k2 C D a} :
 Proof.
   intros Hw1 Hw2 Hw3 HA HB HM Hc1 Hc2 Hee Hk1 Hk2 HAC HBD Ha.
   assert (Hinl : [ G ; Δ ⊢g tmInl l1 l2 A B a ≅ tmInl k1 k2 C D a : tySum l1 l2 A B @ lmax l1 l2 ])
-    by (apply eqtm_inl; [exact ge_compt | now apply lequiv_sym | now apply lequiv_sym | exact HAC | exact HBD
+    by (apply eqtm_inl; [exact ge_notV | now apply lequiv_sym | now apply lequiv_sym | exact HAC | exact HBD
                         | now apply eqtm_refl]).
   assert (Her : [ G ; Δ ⊢g e ≅ tmInl l1 l2 A B a : tySum l1 l2 A B @ lmax l1 l2 ])
     by (eapply eqtm_trans; [exact Hee | now apply eqtm_sym]).
@@ -105,7 +105,7 @@ Lemma case_inr_eq {G Δ l1 l2 l3 A B M c1 c2 e k1 k2 C D b} :
 Proof.
   intros Hw1 Hw2 Hw3 HA HB HM Hc1 Hc2 Hee Hk1 Hk2 HAC HBD Hb0.
   assert (Hinr : [ G ; Δ ⊢g tmInr l1 l2 A B b ≅ tmInr k1 k2 C D b : tySum l1 l2 A B @ lmax l1 l2 ])
-    by (apply eqtm_inr; [exact ge_compt | now apply lequiv_sym | now apply lequiv_sym | exact HAC | exact HBD
+    by (apply eqtm_inr; [exact ge_notV | now apply lequiv_sym | now apply lequiv_sym | exact HAC | exact HBD
                         | now apply eqtm_refl]).
   assert (Her : [ G ; Δ ⊢g e ≅ tmInr l1 l2 A B b : tySum l1 l2 A B @ lmax l1 l2 ])
     by (eapply eqtm_trans; [exact Hee | now apply eqtm_sym]).
@@ -217,7 +217,7 @@ Proof.
   pose proof (conv_U' Hs (lequiv_sym _ _ _ Hk1)) as Hsk. pose proof (conv_U' Ht (lequiv_sym _ _ _ Hk2)) as Htk.
   assert (Hm : lequiv (gL G) (lmax k1 k2) (lmax l1 l2)) by now apply lequiv_max.
   assert (Hc0 : [ G ; Δ ⊢g tmSum k1 k2 s t : tyU (lmax k1 k2) @ lsuc (lmax k1 k2) ])
-    by (apply wf_code_sum; [exact ge_compt | exact Wk1 | exact Wk2 | exact Hsk | exact Htk]).
+    by (apply wf_code_sum; [exact ge_notV | exact Wk1 | exact Wk2 | exact Hsk | exact Htk]).
   pose proof (conv_U' Hc0 Hm) as Hc.
   destruct (El_annot Hc Hla) as [HEl HEq].
   apply tyred_step; [exact HEl | constructor |].
@@ -339,7 +339,7 @@ Proof.
   assert (HCC : [ G ; Δ ⊢g tmCase l1 l2 l3 A[d] B[d] M[llift d] c1[llift d] c2[llift d] t[d]
                    ≅ tmCase l4 l5 l6 A'[d'] B'[d'] M'[llift d'] c1'[llift d'] c2'[llift d'] t'[d']
                    : M[llift d][lsingle t[d]] @ l3 ])
-    by (apply eqtm_case; first [exact ge_compt | assumption]).
+    by (apply eqtm_case; first [exact ge_notV | assumption]).
   (* the motive at an injection related to the scrutinee *)
   assert (Mat : forall x, LRtm (lmax l1 l2) G Δ (tySum l1 l2 A[d] B[d]) (tySum l1 l2 A[d] B[d]) t[d] x ->
             LRty l3 G Δ M[llift d][lsingle t[d]] M[llift d][lsingle x]).
@@ -364,7 +364,7 @@ Proof.
     rewrite <- !lift_single_tm in Xc by assumption. rewrite <- !lift_single_ty in Xc by assumption.
     assert (XT2 : LRty l3 G Δ M[llift d][lsingle t[d]] M[llift d][lsingle (tmInl l1 l2 A[d] B[d] a)]).
     { apply Mat, (LRtm_of HSdd). eexists _, (tmInl l1 l2 A[d] B[d] a).
-      pose proof (wf_inl _ _ _ _ _ _ _ _ ge_compt Hw1 Hw2 HA HB Ha) as Hinl.
+      pose proof (wf_inl _ _ _ _ _ _ _ _ ge_notV Hw1 Hw2 HA HB Ha) as Hinl.
       refine (conj Hrw (conj (tmred_refl _ _ _ Hinl) (conj _ _))).
       - apply geq_tm_sym, geq_tm_inl; [now apply lequiv_sym | now apply lequiv_sym | exact HC | exact HD | exact Eaa].
       - apply sumnf_inl; [exact Hk1 | exact Hk2 | now apply lequiv_refl | now apply lequiv_refl
@@ -399,7 +399,7 @@ Proof.
     rewrite <- !lift_single_tm in Xc by assumption. rewrite <- !lift_single_ty in Xc by assumption.
     assert (XT2 : LRty l3 G Δ M[llift d][lsingle t[d]] M[llift d][lsingle (tmInr l1 l2 A[d] B[d] a)]).
     { apply Mat, (LRtm_of HSdd). eexists _, (tmInr l1 l2 A[d] B[d] a).
-      pose proof (wf_inr _ _ _ _ _ _ _ _ ge_compt Hw1 Hw2 HA HB Ha) as Hinr.
+      pose proof (wf_inr _ _ _ _ _ _ _ _ ge_notV Hw1 Hw2 HA HB Ha) as Hinr.
       refine (conj Hrw (conj (tmred_refl _ _ _ Hinr) (conj _ _))).
       - apply geq_tm_sym, geq_tm_inr; [now apply lequiv_sym | now apply lequiv_sym | exact HC | exact HD | exact Eaa].
       - apply sumnf_inr; [exact Hk1 | exact Hk2 | now apply lequiv_refl | now apply lequiv_refl
@@ -427,7 +427,7 @@ Proof.
                       ≅ tmCase l4 l5 l6 A'[d'] B'[d'] M'[llift d'] c1'[llift d'] c2'[llift d'] ν'
                       : M[llift d][lsingle t[d]] @ l3 ]).
     { eapply convg; [|exact HMν].
-      apply eqtm_case; first [exact ge_compt | assumption | exact (geq_tm_sound (gne_tm_geq Hν))]. }
+      apply eqtm_case; first [exact ge_notV | assumption | exact (geq_tm_sound (gne_tm_geq Hν))]. }
     assert (Lred : [ G ; Δ ⊢g tmCase l1 l2 l3 A[d] B[d] M[llift d] c1[llift d] c2[llift d] t[d]
                      ⤳* tmCase l1 l2 l3 A[d] B[d] M[llift d] c1[llift d] c2[llift d] ν
                      : M[llift d][lsingle t[d]] @ l3 ]).

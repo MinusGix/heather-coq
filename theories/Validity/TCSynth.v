@@ -563,11 +563,11 @@ Proof.
   left; eexists; eexists; exact (wf_elimSEmpty _ _ _ _ _ _ _ Hc Hl Hl' HM He).
 Qed.
 
-(** The empty type's eliminator (M12a): the computing layers only. *)
+(** The empty type's eliminator (M12a; every layer but V since M12c). *)
 Lemma sy_elimEmpty l l' M t : sz_tm (elimEmpty l l' M t) <= n -> SYD (elimEmpty l l' M t).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_elimEmpty H) as ((X & _) & _); contradiction].
+  notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_elimEmpty H) as ((_ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros T k H; destruct (inva_elimEmpty H) as ((_ & _ & X & _) & _); contradiction].
   pose proof (wft_empty _ _ _ _ Hc HΓ Hl') as HE.
@@ -629,11 +629,11 @@ Proof.
   left; eexists; eexists; exact (wf_J _ _ _ _ _ _ _ _ _ _ _ Hc Hl Hl' HA Ha HI HM Hc' Hu He).
 Qed.
 
-(** Binary sums (M12b): the computing layers only. *)
+(** Binary sums (M12b; every layer but V since M12c). *)
 Lemma sy_inl l l' A B a : sz_tm (tmInl l l' A B a) <= n -> SYD (tmInl l l' A B a).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_inl H) as ((X & _) & _); contradiction].
+  notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_inl H) as ((_ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | N];
     [| right; intros T k H; destruct (inva_inl H) as ((_ & _ & X & _) & _); contradiction].
@@ -649,7 +649,7 @@ Qed.
 Lemma sy_inr l l' A B b : sz_tm (tmInr l l' A B b) <= n -> SYD (tmInr l l' A B b).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_inr H) as ((X & _) & _); contradiction].
+  notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_inr H) as ((_ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | N];
     [| right; intros T k H; destruct (inva_inr H) as ((_ & _ & X & _) & _); contradiction].
@@ -667,7 +667,7 @@ Lemma sy_case l l' l'' A B M c1 c2 t : sz_tm (tmCase l l' l'' A B M c1 c2 t) <= 
   SYD (tmCase l l' l'' A B M c1 c2 t).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_case H) as ((X & _) & _); contradiction].
+  notV. rename Hv into Hc.
   pose proof (typeof_idem i) as Hty.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_case H) as ((_ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | N];
@@ -708,11 +708,11 @@ Proof.
   left; eexists; eexists; exact (wf_case _ _ _ _ _ _ _ _ _ _ _ _ Hc Hl Hl' Hl'' HA HB HM Hc1 Hc2 Ht).
 Qed.
 
-(** The codes of [Empty] and [+] (M12c): the computing layers only. *)
+(** The codes of [Empty] and [+] (M12c; every layer but V). *)
 Lemma sy_code_empty l : SYD (tmEmpty l).
 Proof.
   intros G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_code_empty H) as ((X & _) & _); contradiction].
+  notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N];
     [| right; intros T k H; destruct (inva_code_empty H) as ((_ & _ & X) & _); contradiction].
   left; eexists; eexists; exact (wf_code_empty _ _ _ _ Hc HΓ Hl).
@@ -721,7 +721,7 @@ Qed.
 Lemma sy_code_sum l l' s t : sz_tm (tmSum l l' s t) <= n -> SYD (tmSum l l' s t).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_code_sum H) as ((X & _) & _); contradiction].
+  notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N];
     [| right; intros T k H; destruct (inva_code_sum H) as ((_ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | N];

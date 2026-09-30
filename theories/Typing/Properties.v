@@ -208,31 +208,31 @@ Qed.
 Lemma compt_notV i : compt i -> i <> lV.
 Proof. now intros [-> | ->]. Qed.
 #[export] Hint Resolve compt_notV : wk.
-(** [Empty]'s motive context (M12a), as [natrec]'s. *)
-Lemma wf_ctx_empty G i Δ l : compt i -> lwf (gL G) l -> [ G ; Δ ⊢[ typeof i ] ] ->
-  [ G ; Δ ,, tyEmpty l @ l ⊢[ typeof i ] ].
-Proof.
-  intros Hc Hl HΔ. destruct Hc as [-> | ->]; cbn in *;
-    (apply wfc_ext; [exact HΔ | apply wft_empty; [first [exact compt_D | exact compt_M] | exact HΔ | exact Hl] | exact Hl]).
-Qed.
-Lemma wft_empty_typeof G i Δ l : compt i -> lwf (gL G) l -> [ G ; Δ ⊢[ typeof i ] ] ->
+(** [Empty]'s motive context (M12a), as [natrec]'s; every layer but V
+    since M12c. *)
+Lemma wft_empty_typeof G i Δ l : i <> lV -> lwf (gL G) l -> [ G ; Δ ⊢[ typeof i ] ] ->
   [ G ; Δ ⊢[ typeof i ] tyEmpty l @ l ].
 Proof.
-  intros Hc Hl HΔ. destruct Hc as [-> | ->]; cbn in *;
-    (apply wft_empty; [first [exact compt_D | exact compt_M] | exact HΔ | exact Hl]).
+  intros Hv Hl HΔ. apply wft_empty; [destruct i; cbn; congruence | now rewrite typeof_idem | exact Hl].
 Qed.
+Lemma wf_ctx_empty G i Δ l : i <> lV -> lwf (gL G) l -> [ G ; Δ ⊢[ typeof i ] ] ->
+  [ G ; Δ ,, tyEmpty l @ l ⊢[ typeof i ] ].
+Proof. intros Hv Hl HΔ. apply wfc_ext; [exact HΔ | now apply wft_empty_typeof | exact Hl]. Qed.
 #[export] Hint Resolve wf_ctx_empty wft_empty_typeof : wk.
 (** [case]'s motive context (M12b). *)
-Lemma wf_ctx_sum G i Δ l l' A B : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+Lemma wft_sum_typeof G i Δ l l' A B : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ⊢[ i ] B @ l' ] -> [ G ; Δ ⊢[ typeof i ] tySum l l' A B @ lmax l l' ].
+Proof.
+  intros Hv Hl Hl' HA HB. apply wft_sum; [destruct i; cbn; congruence | exact Hl | exact Hl'
+                                       | eapply lift_ty; [exact HA | apply lle_self_typeof]
+                                       | eapply lift_ty; [exact HB | apply lle_self_typeof]].
+Qed.
+Lemma wf_ctx_sum G i Δ l l' A B : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
   [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ⊢[ i ] B @ l' ] -> [ G ; Δ ⊢[ typeof i ] ] ->
   [ G ; Δ ,, tySum l l' A B @ lmax l l' ⊢[ typeof i ] ].
 Proof.
-  intros Hc Hl Hl' HA HB HΔ. pose proof (compt_typeof_self _ Hc) as Hi. rewrite Hi in *.
-  apply wfc_ext; [exact HΔ | apply wft_sum; assumption | exact (conj Hl Hl')].
+  intros Hv Hl Hl' HA HB HΔ. apply wfc_ext; [exact HΔ | now apply wft_sum_typeof | exact (conj Hl Hl')].
 Qed.
-Lemma wft_sum_typeof G i Δ l l' A B : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
-  [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ⊢[ i ] B @ l' ] -> [ G ; Δ ⊢[ typeof i ] tySum l l' A B @ lmax l l' ].
-Proof. intros Hc Hl Hl' HA HB. rewrite (compt_typeof_self _ Hc). apply wft_sum; assumption. Qed.
 #[export] Hint Resolve wf_ctx_sum wft_sum_typeof : wk.
 #[export] Hint Extern 3 (lwf _ (lmax _ _)) => (cbn; split; eauto using lequiv_wf_l, lequiv_wf_r) : wk.
 (** A computing layer sees layer-C definitions (M9). *)

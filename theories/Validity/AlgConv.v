@@ -1397,9 +1397,9 @@ Proof.
   destruct (inv_elimEmpty Hi Hx') as ((_ & W3 & W4 & HM' & Hν') & _ & _).
   pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
   pose proof (ctx_of_wf_tm Hi Hν) as HΓ.
-  assert (HE2 : [ G ; Γ ⊢[ i ] tyEmpty l2 @ l2 ]) by (apply wft_empty; [exact Hc | rewrite Hi; exact HΓ | exact W2]).
+  assert (HE2 : [ G ; Γ ⊢[ i ] tyEmpty l2 @ l2 ]) by (apply wft_empty; [exact (compt_notV _ Hc) | rewrite Hi; exact HΓ | exact W2]).
   assert (HEE : [ G ; Γ ⊢[ i ] tyEmpty l4 ≅ tyEmpty l2 @ l4 ])
-    by (apply eqty_empty; [exact Hc | rewrite Hi; exact HΓ | exact (lequiv_sym _ _ _ E24)]).
+    by (apply eqty_empty; [exact (compt_notV _ Hc) | rewrite Hi; exact HΓ | exact (lequiv_sym _ _ _ E24)]).
   assert (HΓE : [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HE2 | exact W2]).
   pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi HEE (lequiv_sym _ _ _ E24) HΓE HM') E13) as HM'1.
   assert (HctxE : [ G2 ⊢[ i ] Γ ,, tyEmpty l2 @ l2 ≅ Γ2 ,, tyEmpty l2 @ l2 ])
@@ -1470,7 +1470,7 @@ Proof.
     as [HM'3 Hbr].
   pose proof (ac_ty_sound Hc DM HM HM'3) as EM.
   destruct (Hbr HM EM Hc1' Hc2' Hν') as (_ & _ & Hc1'2 & Hc2'2 & _).
-  assert (HS : [ G ; Γ ⊢[ i ] tySum l1 l2 A B @ lmax l1 l2 ]) by (apply wft_sum; assumption).
+  assert (HS : [ G ; Γ ⊢[ i ] tySum l1 l2 A B @ lmax l1 l2 ]) by (apply wft_sum; [exact (compt_notV _ Hc) | ..]; assumption).
   assert (HctxS : [ G2 ⊢[ i ] Γ ,, tySum l1 l2 A B @ lmax l1 l2 ≅ Γ2 ,, tySum l1 l2 A B @ lmax l1 l2 ])
     by exact (eqctx_ext_refl Hctx (gconv_ty HE HS) (GEq_lwf HE (l := lmax l1 l2) (conj W1 W2))).
   assert (HctxA : [ G2 ⊢[ i ] Γ ,, A @ l1 ≅ Γ2 ,, A @ l1 ])

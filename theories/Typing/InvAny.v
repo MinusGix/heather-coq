@@ -191,26 +191,26 @@ Proof. inv_tm_any. Qed.
 
 (** The empty type's eliminator (M12a). *)
 Lemma inva_elimEmpty {G i Γ l l' M t T k} : [ G ; Γ ⊢[ i ] elimEmpty l l' M t : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ,, tyEmpty l' @ l' ⊢[ i ] M @ l ] /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ,, tyEmpty l' @ l' ⊢[ i ] M @ l ] /\
     [ G ; Γ ⊢[ i ] t : tyEmpty l' @ l' ]) /\
     lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ typeof i ] T ≅ M[lsingle t] @ k ].
 Proof. inv_tm_any. Qed.
 
 (** Binary sums (M12b). *)
 Lemma inva_inl {G i Γ l l' A B a T k} : [ G ; Γ ⊢[ i ] tmInl l l' A B a : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] B @ l' ] /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] B @ l' ] /\
     [ G ; Γ ⊢[ i ] a : A @ l ]) /\
     lvl_eq (gL G) k (lmax l l') /\ [ G ; Γ ⊢[ typeof i ] T ≅ tySum l l' A B @ k ].
 Proof. inv_tm_any. Qed.
 
 Lemma inva_inr {G i Γ l l' A B b T k} : [ G ; Γ ⊢[ i ] tmInr l l' A B b : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] B @ l' ] /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] B @ l' ] /\
     [ G ; Γ ⊢[ i ] b : B @ l' ]) /\
     lvl_eq (gL G) k (lmax l l') /\ [ G ; Γ ⊢[ typeof i ] T ≅ tySum l l' A B @ k ].
 Proof. inv_tm_any. Qed.
 
 Lemma inva_case {G i Γ l l' l'' A B M c1 c2 t T k} : [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 t : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ lwf (gL G) l'' /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ lwf (gL G) l'' /\
     [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] B @ l' ] /\
     [ G ; Γ ,, tySum l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] /\
     [ G ; Γ ,, A @ l ⊢[ i ] c1 : M⟨rlift ↑⟩[lsingle (tmInl l l' A⟨↑⟩ B⟨↑⟩ (var 0))] @ l'' ] /\
@@ -233,12 +233,12 @@ Proof. inv_tm_any. Qed.
 
 (** The codes of [Empty] and [+] (M12c). *)
 Lemma inva_code_empty {G i Γ l T k} : [ G ; Γ ⊢[ i ] tmEmpty l : T @ k ] ->
-  (compt i /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\
+  (i <> lV /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU l @ k ].
 Proof. inv_tm_any. Qed.
 
 Lemma inva_code_sum {G i Γ l l' s t T k} : [ G ; Γ ⊢[ i ] tmSum l l' s t : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
     [ G ; Γ ⊢[ i ] t : tyU l' @ lsuc l' ]) /\
     lvl_eq (gL G) k (lsuc (lmax l l')) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU (lmax l l') @ k ].
 Proof. inv_tm_any. Qed.
