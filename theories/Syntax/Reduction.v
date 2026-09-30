@@ -54,6 +54,7 @@ Inductive red : tm -> tm -> Prop :=
 | red_delta u b d : red (gdef u b d) (b[d])
 (* the irrelevant empty type (M10a): no β, only its scrutinee reduces *)
 | red_elimSEmpty l l' M e e' : red e e' -> red (elimSEmpty l l' M e) (elimSEmpty l l' M e')
+| red_elimEmpty l l' M e e' : red e e' -> red (elimEmpty l l' M e) (elimEmpty l l' M e')
 (* the identity type (M11a): J computes on refl, ignoring the annotations and
    the right endpoint as the other β rules do; otherwise its proof reduces *)
 | red_J_refl l l' A a M c u k B b : red (tmJ l l' A a M c u (tmRefl k B b)) c
@@ -191,6 +192,8 @@ Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with 
 Lemma reds_snd l l' A B p p' : reds p p' -> reds (tmSnd l l' A B p) (tmSnd l l' A B p').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_elimSEmpty l l' M e e' : reds e e' -> reds (elimSEmpty l l' M e) (elimSEmpty l l' M e').
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_elimEmpty l l' M e e' : reds e e' -> reds (elimEmpty l l' M e) (elimEmpty l l' M e').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_J l l' A a M c u e e' : reds e e' -> reds (tmJ l l' A a M c u e) (tmJ l l' A a M c u e').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.

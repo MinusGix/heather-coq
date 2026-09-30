@@ -311,7 +311,8 @@ Proof.
                  | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                  | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
                  | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
-                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA IHRA Hra Hrb Hps Hpt HR].
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA IHRA Hra Hrb Hps Hpt HR
+                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR].
   - eapply LRnat; eauto.
     intros t t'; unfold flipR; rewrite (HR t' t); apply NatRel_flip.
   - assert (Hm : lmeasure l2 = lmeasure l1) by (eapply lequiv_measure; eauto).
@@ -447,6 +448,15 @@ Proof.
     + intros t t'; unfold flipR at 1; rewrite (HR t' t); split; intros X.
       * exact (IdRel_flip Hl2 HIAA Hiaa Hibb HIA Hra Hrb Hps Hpt X).
       * exact (IdRel_flip (RA := flipR RA) Hl2' HAA' Haa' Hbb' (lconv_ty HIA' Hl2') Hra Hrb Hs' Ht' X).
+  - (* Empty *)
+    eapply (LRempty n (LRbelow n) G Γ T' T l s2 s1).
+    + exact (lequiv_trans _ _ _ _ Hl (lequiv_sym _ _ _ Hl2)).
+    + exact (lequiv_sym _ _ _ Hl2).
+    + exact (lequiv_wf_l _ _ _ Hl2).
+    + exact HT'.
+    + exact HT.
+    + intros t t'; unfold flipR; rewrite (HR t' t), (EmptyRel_lconv (lequiv_sym _ _ _ Hl2) t' t).
+      split; apply EmptyRel_sym.
 Qed.
 
 Theorem LR_sym n : Psym n.

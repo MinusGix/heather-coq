@@ -157,6 +157,7 @@ Proof.
       | destruct (inva_zero H1) as (_ & Hk & E); destruct (inva_zero H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_succ H1) as (_ & Hk & E); destruct (inva_succ H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_natrec H1) as (_ & Hk & E); destruct (inva_natrec H2) as (_ & Hk' & E'); uq_same
+      | destruct (inva_elimEmpty H1) as (_ & Hk & E); destruct (inva_elimEmpty H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_app H1) as (_ & Hk & E); destruct (inva_app H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_code_sig H1) as (_ & Hk & E); destruct (inva_code_sig H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_pair H1) as (_ & Hk & E); destruct (inva_pair H2) as (_ & Hk' & E'); uq_same

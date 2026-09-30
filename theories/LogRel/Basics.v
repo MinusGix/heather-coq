@@ -43,6 +43,7 @@ Proof.
   - eapply LRseq; eauto.
   - eapply LRsempty; eauto.
   - eapply LRid; eauto.
+  - eapply LRempty; eauto.
 Qed.
 
 Theorem cumul_down n m G Γ T T' l R :
@@ -77,6 +78,7 @@ Proof.
   - eapply LRsempty; eauto.
   - match goal with Hs : lequiv _ l l1 |- _ => rewrite (lequiv_measure_eq _ _ _ Hs) in Hle end.
     eapply LRid; eauto.
+  - eapply LRempty; eauto.
 Qed.
 
 (** A type at level [l] is related identically at every stage above
@@ -145,6 +147,7 @@ Proof.
   - eapply LRseq; eauto using releq_trans, releq_sym.
   - eapply LRsempty; eauto using releq_trans, releq_sym.
   - eapply LRid; eauto using releq_trans, releq_sym.
+  - eapply LRempty; eauto using releq_trans, releq_sym.
 Qed.
 
 Theorem LR_lconv n rec G Γ T T' l l' R :
@@ -164,7 +167,8 @@ Proof.
                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l l1 l2 A A' a a' b b' R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
-                | G Γ T T' l l1 l2 A A' a a' b b' RA R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HRA Hra Hrb Hps Hpt HR];
+                | G Γ T T' l l1 l2 A A' a a' b b' RA R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HRA Hra Hrb Hps Hpt HR
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
     intros Hl'.
   - eapply LRnat; eauto using lequiv_trans, tyred_lconv.
   - eapply (LRU n rec G Γ T T' l' l1 l2); eauto using lequiv_trans, tyred_lconv.
@@ -181,6 +185,7 @@ Proof.
   - eapply (LRseq n rec G Γ T T' l' l1 l2); eauto using lequiv_trans, tyred_lconv.
   - eapply (LRsempty n rec G Γ T T' l' l1 l2); eauto using lequiv_trans, tyred_lconv.
   - eapply (LRid n rec G Γ T T' l' l1 l2); eauto using lequiv_trans, tyred_lconv.
+  - eapply (LRempty n rec G Γ T T' l' l1 l2); eauto using lequiv_trans, tyred_lconv.
 Qed.
 
 End Basics.

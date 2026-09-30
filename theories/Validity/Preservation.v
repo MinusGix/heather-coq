@@ -461,6 +461,16 @@ Proof.
   apply eqtm_elimSEmpty; auto using lequiv_refl, eqty_refl.
 Qed.
 
+(** [Empty]'s eliminator (M12a): the congruence at the scrutinee. *)
+Lemma RS_elimEmpty l l' M e e' : RS_tm e e' -> RS_tm (elimEmpty l l' M e) (elimEmpty l l' M e').
+Proof.
+  intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_elimEmpty Hi Hx) as ((_ & W1 & W2 & HM & He) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  exact (eqtm_elimEmpty _ _ _ _ _ _ _ _ _ _ _ Hc (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HM
+           (eqty_refl _ _ _ _ _ HM) (IH _ _ _ _ _ Hc He)).
+Qed.
+
 (** [J] (M11a): the congruence at the scrutinee, and β at any [refl] of
     the [Id] type (its point equals both endpoints, by injectivity). *)
 Lemma RS_J l l' A a M c u e e' : RS_tm e e' -> RS_tm (tmJ l l' A a M c u e) (tmJ l l' A a M c u e').
@@ -523,7 +533,8 @@ Proof.
     | solve [apply RS_fst; assumption] | solve [apply RS_snd; assumption] | solve [apply RS_El_sig]
     | solve [apply RS_El_unit] | solve [apply RS_delta] | solve [apply RS_elimSEmpty; assumption]
     | solve [apply RS_J_beta] | solve [apply RS_J; assumption] | solve [apply RS_El_id]
-    | solve [apply RS_El_seq] | solve [apply RS_El_sempty] ].
+    | solve [apply RS_El_seq] | solve [apply RS_El_sempty]
+    | solve [apply RS_elimEmpty; assumption] ].
 Qed.
 
 Section Consequences.

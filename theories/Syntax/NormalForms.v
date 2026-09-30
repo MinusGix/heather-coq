@@ -27,6 +27,7 @@ Inductive whne : tm -> Prop :=
 | whne_snd l l' A B p : whne p -> whne (tmSnd l l' A B p)
 (* the irrelevant empty type's eliminator: no β, neutral on a neutral (M10a) *)
 | whne_elimSEmpty l l' M e : whne e -> whne (elimSEmpty l l' M e)
+| whne_elimEmpty l l' M e : whne e -> whne (elimEmpty l l' M e)
 (* J on a neutral proof (M11a) *)
 | whne_J l l' A a M c u e : whne e -> whne (tmJ l l' A a M c u e).
 
@@ -71,6 +72,7 @@ Inductive whnf_ty : ty -> Prop :=
 | whnf_tyUnit l : whnf_ty (tyUnit l)
 | whnf_tySEq l A a b : whnf_ty (tySEq l A a b)
 | whnf_tySEmpty l : whnf_ty (tySEmpty l)
+| whnf_tyEmpty l : whnf_ty (tyEmpty l)
 | whnf_tyId l A a b : whnf_ty (tyId l A a b).
 
 #[export] Hint Constructors whne whnf whne_ty whnf_ty : whnf.
@@ -178,6 +180,8 @@ Proof. inversion 1. Qed.
 Lemma whne_ty_not_SEq l A a b : ~ whne_ty (tySEq l A a b).
 Proof. inversion 1. Qed.
 Lemma whne_ty_not_SEmpty l : ~ whne_ty (tySEmpty l).
+Proof. inversion 1. Qed.
+Lemma whne_ty_not_Empty l : ~ whne_ty (tyEmpty l).
 Proof. inversion 1. Qed.
 Lemma whne_not_srefl l A a : ~ whne (srefl l A a).
 Proof. inversion 1. Qed.

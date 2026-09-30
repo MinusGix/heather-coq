@@ -784,6 +784,24 @@ Proof.
         assert (wf_tm G i Δ s[d] (tyU l) ll) by exact (wf_tm_subst_g ws Hw)
     end.
     eapply eqtm_code_seq; eauto 7 with fung.
+  (* [Empty]'s eliminator (M12a), as natrec: the lifted substitutions first *)
+  - match goal with
+    | Hd : lsub_eq _ _ ?Δ ?d ?d' ?Γ, Hw : lsub_wf ?G ?i ?Δ ?d ?Γ,
+      wM : wf_ty ?G _ (?Γ ,, tyEmpty ?l' @ ?l') ?M ?l
+      |- eq_tm _ _ _ (elimEmpty _ _ _ _) _ _ _ =>
+        assert (He : wf_ty G (typeof i) Δ (tyEmpty l') l')
+          by (apply wft_empty_typeof; [assumption | assumption | exact (lsub_wf_ctx Hw)]);
+        assert (Hn : lsub_eq G i (Δ ,, tyEmpty l' @ l') (llift d) (llift d') (Γ ,, tyEmpty l' @ l'))
+          by (eapply lsub_eq_lift_g; [exact Hd | exact He | assumption | | reflexivity];
+              now apply eqty_refl);
+        pose proof (wf_ty_subst_g wM (lsub_eq_l Hn));
+        assert (eq_ty G i (Δ ,, tyEmpty l' @ l') M[llift d] M[llift d'] l)
+          by (match goal with IH : forall Δ d d', _ -> eq_ty _ _ _ (subst ?x _) _ _ |- _ =>
+                constr_eq x M; eapply IH; exact Hn end)
+    end.
+    eapply eqtm_elimEmpty; try solve [eauto 6 with fung].
+    all: eapply eq_tm_retype;
+      [match goal with IH : _ |- _ => eapply IH; solve [eauto 6 with fung] end | sub_rw; reflexivity].
 Qed.
 
 Theorem functionality :

@@ -287,6 +287,16 @@ Definition IdRel (G : gctx) (Γ : ctx) (l : lvl) (A : ty) (a b : tm) (RA : tm ->
     [ G ; Γ ⊢g t ⤳* w : tyId l A a b @ l ] /\ [ G ; Γ ⊢g t' ⤳* w' : tyId l A a b @ l ] /\
     [ G ; Γ ⊢ w ≈ w' : tyId l A a b @ l ] /\ IdNf G Γ l A a b RA w w'.
 
+(** ** The empty type (M12_DESIGN.md, M12a)
+
+    As logrel-coq's [EmptyRedTm]: terms reduce to neutrals, related
+    generically. Unlike [sEmpty]'s, the relation compares the two
+    neutrals: [Empty] has no η. *)
+Definition EmptyRel (G : gctx) (Γ : ctx) (l : lvl) : tm -> tm -> Prop :=
+  fun t t' => exists ν ν',
+    [ G ; Γ ⊢g t ⤳* ν : tyEmpty l @ l ] /\ [ G ; Γ ⊢g t' ⤳* ν' : tyEmpty l @ l ] /\
+    [ G ; Γ ⊢ ν ~ ν' : tyEmpty l @ l ].
+
 (** ** The type-level data of a binder former
 
     [Π] and [Σ] (and later formers of the same shape) share it: both sides
@@ -494,6 +504,11 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
        and transitivity at [Id] need it before they are proven *)
     (forall x y, RA x y -> RA y x) -> (forall x y z, RA x y -> RA y z -> RA x z) ->
     releq R (IdRel G Γ l1 A a b RA) ->
+    LR n rec G Γ T T' l R
+| LRempty G Γ T T' l l1 l2 R :
+    lequiv (gL G) l l1 -> lequiv (gL G) l2 l1 -> lwf (gL G) l1 ->
+    [ G ; Γ ⊢g T ⤳* tyEmpty l1 @ l ] -> [ G ; Γ ⊢g T' ⤳* tyEmpty l2 @ l ] ->
+    releq R (EmptyRel G Γ l1) ->
     LR n rec G Γ T T' l R.
 
 (** ** Stages *)

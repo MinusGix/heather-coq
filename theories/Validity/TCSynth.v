@@ -563,6 +563,23 @@ Proof.
   left; eexists; eexists; exact (wf_elimSEmpty _ _ _ _ _ _ _ Hc Hl Hl' HM He).
 Qed.
 
+(** The empty type's eliminator (M12a): the computing layers only. *)
+Lemma sy_elimEmpty l l' M t : sz_tm (elimEmpty l l' M t) <= n -> SYD (elimEmpty l l' M t).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_elimEmpty H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_elimEmpty H) as ((_ & X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros T k H; destruct (inva_elimEmpty H) as ((_ & _ & X & _) & _); contradiction].
+  pose proof (wft_empty _ _ _ _ Hc HΓ Hl') as HE.
+  assert (HΓE : [ G ; Γ ,, tyEmpty l' @ l' ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HE) | exact Hl']).
+  destruct (ihT M ltac:(szl) G i _ l HΓE) as [HM | N];
+    [| right; intros T k H; destruct (inva_elimEmpty H) as ((_ & _ & _ & X & _) & _); contradiction].
+  destruct (ihC t ltac:(szl) G i Γ _ _ (lift_to_typeof_ty HE)) as [Ht | N];
+    [| right; intros T k H; destruct (inva_elimEmpty H) as ((_ & _ & _ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_elimEmpty _ _ _ _ _ _ _ Hc Hl Hl' HM Ht).
+Qed.
+
 (** The identity type (M11a; every layer but V since M11b). *)
 Lemma sy_refl l A a : sz_tm (tmRefl l A a) <= n -> SYD (tmRefl l A a).
 Proof.
@@ -625,7 +642,7 @@ Proof.
           | apply sy_uapp | apply sy_capp | apply sy_tapp
           | apply sy_codesig | apply sy_pair
           | apply (sy_proj true) | apply (sy_proj false) | apply sy_code_unit | apply sy_triv
-          | apply sy_srefl | apply sy_elimSEmpty | apply sy_refl | apply sy_J | apply sy_code_id
+          | apply sy_srefl | apply sy_elimSEmpty | apply sy_refl | apply sy_J | apply sy_code_id | apply sy_elimEmpty
           | apply sy_code_seq | apply sy_code_sempty ]; assumption.
 Qed.
 

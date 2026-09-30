@@ -468,6 +468,41 @@ Proof.
   apply wf_code_id; [exact Hv | eauto using lequiv_wf_r | exact (conv_U Hs' Hl) | apply F, Ht | apply F, Hu].
 Qed.
 
+(** The empty type (M12a), gated like [sEmpty]. *)
+Lemma pre_empty_r {Γ l l'} :
+  [ G ; Γ ⊢[ i ] ] -> lequiv (gL G) l l' -> [ G ; Γ ⊢[ i ] tyEmpty l' @ l ].
+Proof.
+  intros HΓ Hl. eapply wft_lconv with (l' := l'); [|exact Hl].
+  apply wft_empty; rewrite ?Hi; eauto using lequiv_wf_r, compt_self.
+Qed.
+
+Lemma pre_elimEmpty_r {Γ l1 l2 l3 l4 M M' t t'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] M @ l1 ] ->
+  [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] M ≅ M' @ l1 ] -> [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] M' @ l1 ] ->
+  [ G ; Γ ⊢[ i ] t ≅ t' : tyEmpty l2 @ l2 ] ->
+  [ G ; Γ ⊢[ i ] t : tyEmpty l2 @ l2 ] -> [ G ; Γ ⊢[ i ] t' : tyEmpty l2 @ l2 ] ->
+  [ G ; Γ ⊢[ i ] elimEmpty l3 l4 M' t' : M[lsingle t] @ l1 ].
+Proof.
+  intros H13 H24 HM HMM HM' Htt Ht Ht'.
+  pose proof (ctx_of_wf_tm Hi Ht) as HΓ.
+  assert (HE : [ G ; Γ ⊢[ i ] tyEmpty l2 ≅ tyEmpty l4 @ l2 ])
+    by (apply eqty_empty; [exact compt_self | rewrite Hi; exact HΓ | exact H24]).
+  assert (HE4 : [ G ; Γ ⊢[ i ] tyEmpty l4 @ l4 ]) by (apply wft_empty; rewrite ?Hi; eauto using lequiv_wf_r, compt_self).
+  assert (HΓ4 : [ G ; Γ ,, tyEmpty l4 @ l4 ⊢[ i ] ]) by (apply ext_wf; eauto using lequiv_wf_r).
+  assert (HM'4 : [ G ; Γ ,, tyEmpty l4 @ l4 ⊢[ i ] M' @ l3 ])
+    by (eapply wft_lconv; [exact (stab_ty Hi HE H24 HΓ4 HM') | now apply lequiv_sym]).
+  assert (Ht'4 : [ G ; Γ ⊢[ i ] t' : tyEmpty l4 @ l4 ])
+    by (eapply wf_lconv; [eapply conv_tm'; [exact Ht' | apply eqty_sym, HE] | now apply lequiv_sym]).
+  eapply wf_lconv with (l' := l3); [|exact H13].
+  eapply (conv_tm' (T' := M'[lsingle t'])).
+  - apply wf_elimEmpty; eauto using lequiv_wf_r, compt_self.
+  - eapply eqty_lconv; [|apply lequiv_sym, H13].
+    eapply eqty_trans.
+    + apply (wf_ty_func HM (d' := lsingle t')). now apply lsub_eq_single.
+    + exact (eqty_single Hi HMM Ht').
+Qed.
+
 (** Strict equality's codes (M10c). *)
 Lemma pre_codeseq_r {Γ l l' s s' t' u'} :
   lequiv (gL G) l l' -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
@@ -986,7 +1021,7 @@ Proof. intros H1 H2 H3 H4 H5; exact (proj2 (ctx_conv_ext Hi H1 H2 H3 H4 H5)). Qe
 
 #[export] Hint Resolve wft_nat wft_pi wft_U wft_El wf_code_nat wf_code_U wf_code_pi wf_zero
   wf_succ wf_natrec wf_lam wf_app wfc_ext in_ctx_wf wf_ty_single wf_tm_single
-  wft_sig wf_code_sig wf_pair wf_fst wf_snd wft_seq wf_srefl wf_elimSEmpty wft_id wf_idrefl wf_J wf_code_id wf_code_seq
+  wft_sig wf_code_sig wf_pair wf_fst wf_snd wft_seq wf_srefl wf_elimSEmpty wft_id wf_idrefl wf_J wf_code_id wf_code_seq wf_elimEmpty
   ctx_of_wf_ty ctx_of_wf_tm ctx_of_eqty ctx_of_eqtm lequiv_wf_l lequiv_wf_r compt_notV : presup.
 #[export] Hint Extern 1 (lwf _ _) =>
   solve [cbn; intuition eauto using lequiv_wf_l, lequiv_wf_r] : presup.
@@ -1126,7 +1161,11 @@ Proof.
              | solve [eapply wft_El; eauto with presup; eapply wf_code_seq; eassumption]
              | solve [eapply wft_seq; eauto with presup; apply wft_El; eauto with presup]
              | solve [eapply pre_El_sempty; eassumption]
-             | solve [eapply pre_codesempty_r; eauto using lequiv_refl, lequiv_wf_l] ].
+             | solve [eapply pre_codesempty_r; eauto using lequiv_refl, lequiv_wf_l]
+             (* the empty type (M12a) *)
+             | solve [eapply pre_empty_r; eauto using lequiv_refl, lequiv_wf_l]
+             | solve [eapply pre_elimEmpty_r; eassumption]
+             | solve [eapply wf_elimEmpty; eauto 3 with presup] ].
 Qed.
 
 Section Named.

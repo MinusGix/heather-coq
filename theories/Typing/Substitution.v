@@ -183,6 +183,7 @@ Ltac sub_rw :=
 
 #[export] Hint Resolve lsub_wf_ctx : sub.
 #[export] Hint Resolve wfc_ext wft_nat wft_El lequiv_wf_l lequiv_wf_r wf_ctx_nat compt_notV : sub.
+#[export] Hint Resolve wf_ctx_empty wft_empty_typeof : sub.
 #[export] Hint Extern 1 (ty_leq _ _) =>
   apply (proj1 leq_subst_all); [apply lsub_leq_refl | assumption] : sub.
 #[export] Hint Extern 1 (tm_leq _ _) =>

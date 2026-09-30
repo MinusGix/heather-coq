@@ -890,8 +890,11 @@ Lemma gwa_tmSEmpty l : (tmSEmpty l)⟦γ⟧ = tmSEmpty l. Proof. now destruct γ
 Lemma gwa_triv l : (tmTriv l)⟦γ⟧ = tmTriv l. Proof. now destruct γ. Qed.
 Lemma gwa_tySEq l A a b : (tySEq l A a b)⟦γ⟧ = tySEq l A⟦γ⟧ a⟦γ⟧ b⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_tySEmpty l : (tySEmpty l)⟦γ⟧ = tySEmpty l. Proof. now destruct γ. Qed.
+Lemma gwa_tyEmpty l : (tyEmpty l)⟦γ⟧ = tyEmpty l. Proof. now destruct γ. Qed.
 Lemma gwa_srefl l A a : (srefl l A a)⟦γ⟧ = srefl l A⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_elimSEmpty l l' M e : (elimSEmpty l l' M e)⟦γ⟧ = elimSEmpty l l' M⟦γ⟧ e⟦γ⟧.
+Proof. now destruct γ. Qed.
+Lemma gwa_elimEmpty l l' M e : (elimEmpty l l' M e)⟦γ⟧ = elimEmpty l l' M⟦γ⟧ e⟦γ⟧.
 Proof. now destruct γ. Qed.
 Lemma gwa_tyId l A a b : (tyId l A a b)⟦γ⟧ = tyId l A⟦γ⟧ a⟦γ⟧ b⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_refl l A a : (tmRefl l A a)⟦γ⟧ = tmRefl l A⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
@@ -931,8 +934,10 @@ Ltac push_gwa_at h k := lazymatch h with
   | @tmTriv => k gwa_triv
   | @tySEq => k gwa_tySEq
   | @tySEmpty => k gwa_tySEmpty
+  | @tyEmpty => k gwa_tyEmpty
   | @srefl => k gwa_srefl
   | @elimSEmpty => k gwa_elimSEmpty
+  | @elimEmpty => k gwa_elimEmpty
   | @tyId => k gwa_tyId
   | @tmRefl => k gwa_refl
   | @tmId => k gwa_tmId

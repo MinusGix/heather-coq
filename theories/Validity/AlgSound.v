@@ -442,6 +442,44 @@ Proof.
   - eapply eqtm_conv; [exact (lvl_eq_eqtm Hk Econg) | rewrite Hi; exact HX].
 Qed.
 
+(** The empty type (M12a). *)
+Lemma S_actnf_empty {G Γ l l'} : leqv l l' -> S_ty G Γ (tyEmpty l) (tyEmpty l').
+Proof.
+  intros Hl i k Hc HT HT'.
+  destruct (inv_ty_empty HT) as ((_ & HΓ & W) & Hk). destruct (inv_ty_empty HT') as ((_ & _ & W') & _).
+  apply (lvl_eq_eqty Hk). apply eqty_empty; [exact Hc | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
+Qed.
+
+Lemma S_actmne_elimEmpty {G Γ l1 l2 l3 l4 M M' ν ν' W} : leqv l1 l3 -> leqv l2 l4 ->
+  S_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> S_ne G Γ ν ν' W ->
+  S_ne G Γ (elimEmpty l1 l2 M ν) (elimEmpty l3 l4 M' ν') M[lsingle ν].
+Proof.
+  intros H13 H24 IHM IHν i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_elimEmpty Hi Hx) as ((_ & W1 & W2 & HM & Hν) & Hk & HX).
+  destruct (inv_elimEmpty Hi Hx') as ((_ & W3 & W4 & HM' & Hν') & Hk' & HX').
+  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
+  pose proof (ctx_of_wf_tm Hi Hν) as HΓ.
+  (* the right pieces at the left's types *)
+  assert (HE : [ G ; Γ ⊢[ i ] tyEmpty l4 ≅ tyEmpty l2 @ l4 ])
+    by (apply eqty_empty; [exact Hc | rewrite Hi; exact HΓ | exact (lequiv_sym _ _ _ E24)]).
+  assert (HΓE : [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] ])
+    by (apply wfc_ext; [exact HΓ | apply wft_empty; [exact Hc | rewrite Hi; exact HΓ | exact W2] | exact W2]).
+  pose proof (stab_ty Hi HE (lequiv_sym _ _ _ E24) HΓE HM') as HM'1.
+  pose proof (IHM i l1 Hc HM (wft_lconv _ _ _ _ _ _ HM'1 E13)) as EM.
+  assert (Hν'1 : [ G ; Γ ⊢[ i ] ν' : tyEmpty l2 @ l2 ])
+    by (eapply wf_conv; [eapply wf_lconv; [exact Hν' | exact E24] | rewrite Hi; apply eqty_sym;
+          eapply eqty_lconv; [exact HE | exact E24]]).
+  destruct (IHν i l2 l2 (tyEmpty l2) (tyEmpty l2) Hc Hν Hν'1) as (_ & _ & Eν).
+  pose proof (eqtm_elimEmpty _ _ _ _ _ _ _ _ _ _ _ Hc E13 E24 HM EM Eν) as Econg.
+  assert (EMν : [ G ; Γ ⊢[ i ] M[lsingle ν] ≅ M'[lsingle ν'] @ l1 ]).
+  { eapply eqty_trans; [exact (eqty_single Hi EM Hν) |].
+    exact (wf_ty_func Hi (wft_lconv _ _ _ _ _ _ HM'1 E13) (lsub_eq_single Hi Hν Hν'1 Eν)). }
+  split; [exact HX | split].
+  - eapply eqty_trans; [exact HX' |]. apply eqty_sym, (lvl_eq_eqty Hk').
+    eapply eqty_lconv; [exact EMν | exact (lequiv_sym _ _ _ E13)].
+  - eapply eqtm_conv; [exact (lvl_eq_eqtm Hk Econg) | rewrite Hi; exact HX].
+Qed.
+
 (** [Π] injectivity at a computing layer. *)
 Lemma pi_inj_c {G i Γ l l1 l2 l3 l4 A A' B B'} : compt i ->
   [ G ; Γ ⊢[ i ] tyPi l1 l2 A B ≅ tyPi l3 l4 A' B' @ l ] ->
@@ -1355,7 +1393,8 @@ Proof.
     | solve [eapply S_actmne_elimSEmpty; eassumption]
     | solve [eapply S_actnf_id; eassumption] | solve [eapply S_actmnf_refl]
     | solve [eapply S_actmne_J; eassumption] | solve [eapply S_actmnf_code_id; eassumption]
-    | solve [eapply S_actmnf_code_seq; eassumption] | solve [eapply S_actmnf_code_sempty; eassumption] ].
+    | solve [eapply S_actmnf_code_seq; eassumption] | solve [eapply S_actmnf_code_sempty; eassumption]
+    | solve [eapply S_actnf_empty; eassumption] | solve [eapply S_actmne_elimEmpty; eassumption] ].
 Qed.
 
 (** Algorithmically convertible types (terms) of the computing layers,

@@ -38,6 +38,8 @@ Inductive ty : Type :=
 | tySEmpty (l : lvl)                      (* sEmpty^l @ l *)
 (* the identity type (M11a), at the carrier's level *)
 | tyId (l : lvl) (A : ty) (a b : tm)      (* Id^l(A; a; b) @ l *)
+(* the empty type (M12a), level-indexed *)
+| tyEmpty (l : lvl)                       (* Empty^l @ l *)
 with tm : Type :=
 | var (n : nat)
 | tmErr
@@ -93,6 +95,9 @@ with tm : Type :=
 | tmId (l : lvl) (s t u : tm)            (* code of Id^l(El s; t; u) : Ty l (M11b) *)
 | tmSEq (l : lvl) (s t u : tm)           (* code of sEq^l(El s; t; u) : Ty l (M10c) *)
 | tmSEmpty (l : lvl)                     (* code of sEmpty^l : Ty l (M10c) *)
+(* the empty type's eliminator (M12a): the motive's level first *)
+| elimEmpty (l l' : lvl) (M : ty) (t : tm)
+    (* elim_Empty^{l,l'}(x. M; t) : M[t/x] @ l, t : Empty^{l'}      M: +1 *)
 | tmJ (l l' : lvl) (A : ty) (a : tm) (M : ty) (c u e : tm)
     (* J^{l,l'}(A; a; y p. M; c; u; e) : M[u/y, e/p]      M: +2 (y, then p) *)
 (* a defined global u^δ carrying its body t (M9_DESIGN.md, fork (b)); t lives in
@@ -183,6 +188,7 @@ Fixpoint ren_ty (T : ty) (r : rsub) {struct T} : ty :=
   | tySEq l A a b => tySEq l (ren_ty A r) (ren_tm a r) (ren_tm b r)
   | tySEmpty l => tySEmpty l
   | tyId l A a b => tyId l (ren_ty A r) (ren_tm a r) (ren_tm b r)
+  | tyEmpty l => tyEmpty l
   end
 with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   match t with
@@ -224,6 +230,7 @@ with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   | tmId l s t u => tmId l (ren_tm s r) (ren_tm t r) (ren_tm u r)
   | tmSEq l s t u => tmSEq l (ren_tm s r) (ren_tm t r) (ren_tm u r)
   | tmSEmpty l => tmSEmpty l
+  | elimEmpty l l' M t => elimEmpty l l' (ren_ty M (rlift r)) (ren_tm t r)
   | tmJ l l' A a M c u e =>
       tmJ l l' (ren_ty A r) (ren_tm a r) (ren_ty M (rlift (rlift r))) (ren_tm c r) (ren_tm u r) (ren_tm e r)
   | gdef u b d => gdef u b (lren d r)
@@ -263,6 +270,7 @@ Fixpoint gren_ty (T : ty) (ξ : nat -> nat) {struct T} : ty :=
   | tySEq l A a b => tySEq l (gren_ty A ξ) (gren_tm a ξ) (gren_tm b ξ)
   | tySEmpty l => tySEmpty l
   | tyId l A a b => tyId l (gren_ty A ξ) (gren_tm a ξ) (gren_tm b ξ)
+  | tyEmpty l => tyEmpty l
   end
 with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   match t with
@@ -305,6 +313,7 @@ with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   | tmId l s t u => tmId l (gren_tm s ξ) (gren_tm t ξ) (gren_tm u ξ)
   | tmSEq l s t u => tmSEq l (gren_tm s ξ) (gren_tm t ξ) (gren_tm u ξ)
   | tmSEmpty l => tmSEmpty l
+  | elimEmpty l l' M t => elimEmpty l l' (gren_ty M ξ) (gren_tm t ξ)
   | tmJ l l' A a M c u e =>
       tmJ l l' (gren_ty A ξ) (gren_tm a ξ) (gren_ty M ξ) (gren_tm c ξ) (gren_tm u ξ) (gren_tm e ξ)
   | gdef u b d => gdef (ξ u) (gren_tm b ξ) (glren d ξ)
@@ -341,6 +350,7 @@ Fixpoint uren_ty (T : ty) (ρ : nat -> nat) {struct T} : ty :=
   | tySEq l A a b => tySEq (lvren l ρ) (uren_ty A ρ) (uren_tm a ρ) (uren_tm b ρ)
   | tySEmpty l => tySEmpty (lvren l ρ)
   | tyId l A a b => tyId (lvren l ρ) (uren_ty A ρ) (uren_tm a ρ) (uren_tm b ρ)
+  | tyEmpty l => tyEmpty (lvren l ρ)
   end
 with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   match t with
@@ -391,6 +401,7 @@ with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   | tmId l s t u => tmId (lvren l ρ) (uren_tm s ρ) (uren_tm t ρ) (uren_tm u ρ)
   | tmSEq l s t u => tmSEq (lvren l ρ) (uren_tm s ρ) (uren_tm t ρ) (uren_tm u ρ)
   | tmSEmpty l => tmSEmpty (lvren l ρ)
+  | elimEmpty l l' M t => elimEmpty (lvren l ρ) (lvren l' ρ) (uren_ty M ρ) (uren_tm t ρ)
   | tmJ l l' A a M c u e =>
       tmJ (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_tm a ρ) (uren_ty M ρ) (uren_tm c ρ) (uren_tm u ρ) (uren_tm e ρ)
   | gdef u b d => gdef u (uren_tm b ρ) (ulren d ρ)
@@ -426,6 +437,7 @@ Fixpoint subst_ty (T : ty) (d : lsub) {struct T} : ty :=
   | tySEq l A a b => tySEq l (subst_ty A d) (subst_tm a d) (subst_tm b d)
   | tySEmpty l => tySEmpty l
   | tyId l A a b => tyId l (subst_ty A d) (subst_tm a d) (subst_tm b d)
+  | tyEmpty l => tyEmpty l
   end
 with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   match t with
@@ -471,6 +483,7 @@ with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   | tmId l s t u => tmId l (subst_tm s d) (subst_tm t d) (subst_tm u d)
   | tmSEq l s t u => tmSEq l (subst_tm s d) (subst_tm t d) (subst_tm u d)
   | tmSEmpty l => tmSEmpty l
+  | elimEmpty l l' M t => elimEmpty l l' (subst_ty M (llift d)) (subst_tm t d)
   | tmJ l l' A a M c u e =>
       tmJ l l' (subst_ty A d) (subst_tm a d) (subst_ty M (llift (llift d))) (subst_tm c d) (subst_tm u d) (subst_tm e d)
   | gdef u b d' => gdef u b (lcomp d' d)
@@ -566,6 +579,7 @@ Fixpoint gsubst_ty (T : ty) (σ : gsub) {struct T} : ty :=
   | tySEq l A a b => tySEq l (gsubst_ty A σ) (gsubst_tm a σ) (gsubst_tm b σ)
   | tySEmpty l => tySEmpty l
   | tyId l A a b => tyId l (gsubst_ty A σ) (gsubst_tm a σ) (gsubst_tm b σ)
+  | tyEmpty l => tyEmpty l
   end
 with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   match t with
@@ -610,6 +624,7 @@ with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   | tmId l s t u => tmId l (gsubst_tm s σ) (gsubst_tm t σ) (gsubst_tm u σ)
   | tmSEq l s t u => tmSEq l (gsubst_tm s σ) (gsubst_tm t σ) (gsubst_tm u σ)
   | tmSEmpty l => tmSEmpty l
+  | elimEmpty l l' M t => elimEmpty l l' (gsubst_ty M σ) (gsubst_tm t σ)
   | tmJ l l' A a M c u e =>
       tmJ l l' (gsubst_ty A σ) (gsubst_tm a σ) (gsubst_ty M σ) (gsubst_tm c σ) (gsubst_tm u σ) (gsubst_tm e σ)
   | gdef u b d => pdef (σ u) (gsubst_tm b σ) (glsubst d σ)
@@ -646,6 +661,7 @@ Fixpoint usubst_ty (T : ty) (φ : nat -> lvl) {struct T} : ty :=
   | tySEq l A a b => tySEq (lvsubst l φ) (usubst_ty A φ) (usubst_tm a φ) (usubst_tm b φ)
   | tySEmpty l => tySEmpty (lvsubst l φ)
   | tyId l A a b => tyId (lvsubst l φ) (usubst_ty A φ) (usubst_tm a φ) (usubst_tm b φ)
+  | tyEmpty l => tyEmpty (lvsubst l φ)
   end
 with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   match t with
@@ -701,6 +717,7 @@ with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   | tmId l s t u => tmId (lvsubst l φ) (usubst_tm s φ) (usubst_tm t φ) (usubst_tm u φ)
   | tmSEq l s t u => tmSEq (lvsubst l φ) (usubst_tm s φ) (usubst_tm t φ) (usubst_tm u φ)
   | tmSEmpty l => tmSEmpty (lvsubst l φ)
+  | elimEmpty l l' M t => elimEmpty (lvsubst l φ) (lvsubst l' φ) (usubst_ty M φ) (usubst_tm t φ)
   | tmJ l l' A a M c u e =>
       tmJ (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_tm a φ) (usubst_ty M φ) (usubst_tm c φ) (usubst_tm u φ) (usubst_tm e φ)
   | gdef u b d => gdef u (usubst_tm b φ) (ulsubst d φ)

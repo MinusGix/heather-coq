@@ -157,11 +157,15 @@ Lemma subst_triv l : (tmTriv l)[d] = tmTriv l. Proof. reflexivity. Qed.
 (** Strict equality (M10a). *)
 Lemma ren_tySEq l A a b : (tySEq l A a b)⟨r⟩ = tySEq l A⟨r⟩ a⟨r⟩ b⟨r⟩. Proof. reflexivity. Qed.
 Lemma ren_tySEmpty l : (tySEmpty l)⟨r⟩ = tySEmpty l. Proof. reflexivity. Qed.
+Lemma ren_tyEmpty l : (tyEmpty l)⟨r⟩ = tyEmpty l. Proof. reflexivity. Qed.
+Lemma ren_elimEmpty l l' M t : (elimEmpty l l' M t)⟨r⟩ = elimEmpty l l' M⟨rlift r⟩ t⟨r⟩. Proof. reflexivity. Qed.
 Lemma ren_srefl l A a : (srefl l A a)⟨r⟩ = srefl l A⟨r⟩ a⟨r⟩. Proof. reflexivity. Qed.
 Lemma ren_elimSEmpty l l' M e : (elimSEmpty l l' M e)⟨r⟩ = elimSEmpty l l' M⟨r⟩ e⟨r⟩.
 Proof. reflexivity. Qed.
 Lemma subst_tySEq l A a b : (tySEq l A a b)[d] = tySEq l A[d] a[d] b[d]. Proof. reflexivity. Qed.
 Lemma subst_tySEmpty l : (tySEmpty l)[d] = tySEmpty l. Proof. reflexivity. Qed.
+Lemma subst_tyEmpty l : (tyEmpty l)[d] = tyEmpty l. Proof. reflexivity. Qed.
+Lemma subst_elimEmpty l l' M t : (elimEmpty l l' M t)[d] = elimEmpty l l' M[llift d] t[d]. Proof. reflexivity. Qed.
 Lemma subst_srefl l A a : (srefl l A a)[d] = srefl l A[d] a[d]. Proof. reflexivity. Qed.
 Lemma subst_elimSEmpty l l' M e : (elimSEmpty l l' M e)[d] = elimSEmpty l l' M[d] e[d].
 Proof. reflexivity. Qed.
@@ -238,6 +242,8 @@ Ltac push_ren_at h k := lazymatch h with
   | @gdef => k ren_gdef
   | @tySEq => k ren_tySEq
   | @tySEmpty => k ren_tySEmpty
+  | @tyEmpty => k ren_tyEmpty
+  | @elimEmpty => k ren_elimEmpty
   | @srefl => k ren_srefl
   | @elimSEmpty => k ren_elimSEmpty
   | @tyId => k ren_tyId
@@ -295,6 +301,8 @@ Ltac push_subst_at h k := lazymatch h with
   | @gdef => k subst_gdef
   | @tySEq => k subst_tySEq
   | @tySEmpty => k subst_tySEmpty
+  | @tyEmpty => k subst_tyEmpty
+  | @elimEmpty => k subst_elimEmpty
   | @srefl => k subst_srefl
   | @elimSEmpty => k subst_elimSEmpty
   | @tyId => k subst_tyId

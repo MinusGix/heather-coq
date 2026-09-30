@@ -193,7 +193,8 @@ Proof.
                  | G Γ T1 T2 l l1 l2 A1 A2 a1 a2 b1 b2 R Hl Hl2 Hn HT1 HT2 HA1 HA12 Ha12 Hb12 HR
                  | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR
                  | G Γ T1 T2 l l1 l2 A1 A2 a1 a2 b1 b2 RA R Hl Hl2 Hn HT1 HT2 HA1 HA12 Ha12 Hb12
-                     HRA IHRA Hra Hrb Hps Hpt HR];
+                     HRA IHRA Hra Hrb Hps Hpt HR
+                 | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR];
     intros T3 R23 H2.
   - (* Nat *)
     destruct (LR_inv_nat H2 HT2) as (_ & HT3 & HR2).
@@ -563,6 +564,11 @@ Proof.
       * eapply geq_tm_trans; [exact Hb12 | eapply geq_tm_conv; [eapply geq_tm_lconv; [exact Hb23 | exact Hl2'] | exact E12]].
     + intros t1 t2 t3 H12 H23. apply HR. apply HR in H12. apply HR2 in H23.
       exact (IdRel_trans Hl2 HA12 Ha12 Hb12 HA1 Hra Hrb Hps Hpt Hfl H12 H23).
+  - (* Empty *)
+    destruct (LR_inv_empty H2 HT2) as (l3 & _ & Hl3 & _ & HT3 & HR2).
+    split; [eapply (LRempty n (LRbelow n) G Γ T1 T3 l l1 l3); eauto using lequiv_trans|].
+    intros t1 t2 t3 H12 H23. apply HR. apply HR in H12. apply HR2 in H23.
+    apply (EmptyRel_lconv Hl2) in H23. exact (EmptyRel_trans H12 H23).
 Qed.
 
 Theorem LR_trans n : Ptrans n.

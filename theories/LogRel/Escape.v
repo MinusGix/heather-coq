@@ -151,6 +151,46 @@ Proof.
     refine (conj _ (conj _ (conj _ _))); eauto using lequiv_sym.
 Qed.
 
+(** ** The empty type (M12a): related neutrals *)
+
+Lemma EmptyRel_wf {G Γ l t t'} : EmptyRel G Γ l t t' ->
+  [ G ; Γ ⊢g t : tyEmpty l @ l ] /\ [ G ; Γ ⊢g t' : tyEmpty l @ l ].
+Proof. intros (w & w' & Hw & Hw' & _). exact (conj (tmred_wf _ _ _ _ _ _ _ Hw) (tmred_wf _ _ _ _ _ _ _ Hw')). Qed.
+Lemma EmptyRel_sym {G Γ l t t'} : EmptyRel G Γ l t t' -> EmptyRel G Γ l t' t.
+Proof. intros (w & w' & Hw & Hw' & Hn). exists w', w. auto using gne_tm_sym. Qed.
+Lemma EmptyRel_trans {G Γ l t1 t2 t3} : EmptyRel G Γ l t1 t2 -> EmptyRel G Γ l t2 t3 -> EmptyRel G Γ l t1 t3.
+Proof.
+  intros (w1 & w2 & Hw1 & Hw2 & Hn12) (w2' & w3 & Hw2' & Hw3 & Hn23).
+  pose proof (tmred_whnf_det _ _ _ _ _ _ _ _ _ _ Hw2 Hw2' (whnf_ne _ (gne_tm_whne_r Hn12)) (whnf_ne _ (gne_tm_whne_l Hn23))) as <-.
+  exists w1, w3. eauto using gne_tm_trans.
+Qed.
+
+Lemma empty_eqty {G Γ l l'} : [ G ; Γ ⊢g ] -> lequiv (gL G) l l' -> [ G ; Γ ⊢g tyEmpty l ≅ tyEmpty l' @ l ].
+Proof. intros HΓ Hl. apply eqty_empty; [exact ge_compt | rewrite ge_typeof; exact HΓ | exact Hl]. Qed.
+
+Lemma empty_tmred_conv {G Γ t w l l'} : lequiv (gL G) l l' ->
+  [ G ; Γ ⊢g t ⤳* w : tyEmpty l @ l ] -> [ G ; Γ ⊢g t ⤳* w : tyEmpty l' @ l' ].
+Proof.
+  intros Hl H. eapply tmred_lconv; [| exact (lequiv_sym _ _ _ Hl)].
+  eapply tmred_conv; [apply ge_typeof | exact H |].
+  apply empty_eqty; [exact (ctx_of_tm (tmred_wf _ _ _ _ _ _ _ H)) | exact Hl].
+Qed.
+
+Lemma empty_ne_conv {G Γ ν ν' l l'} : lequiv (gL G) l l' ->
+  [ G ; Γ ⊢ ν ~ ν' : tyEmpty l @ l ] -> [ G ; Γ ⊢ ν ~ ν' : tyEmpty l' @ l' ].
+Proof.
+  intros H12 H. eapply gne_tm_lconv; [| exact (lequiv_sym _ _ _ H12)].
+  eapply gne_tm_conv; [exact H |]. apply empty_eqty; [| exact H12].
+  exact (ctx_of_tm (eqtm_wf_l ge_typeof (geq_tm_sound (gne_tm_geq H)))).
+Qed.
+
+Lemma EmptyRel_lconv {G Γ l l'} : lequiv (gL G) l l' -> releq (EmptyRel G Γ l) (EmptyRel G Γ l').
+Proof.
+  intros Hl t t'.
+  split; intros (w & w' & Hw & Hw' & Hn); exists w, w';
+    refine (conj _ (conj _ _)); eauto using empty_tmred_conv, empty_ne_conv, lequiv_sym.
+Qed.
+
 (** ** Escape for contextual types *)
 
 Lemma ModRel_escape_ty {G Γ T T' l R} : ModRel G Γ T T' l R ->
@@ -207,7 +247,8 @@ Proof.
                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l l1 l2 A A' a a' b b' R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
-                | G Γ T T' l l1 l2 A A' a a' b b' RA R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HRA Hra Hrb Hps Hpt HR].
+                | G Γ T T' l l1 l2 A A' a a' b b' RA R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HRA Hra Hrb Hps Hpt HR
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR].
   all: try solve [exact (ModRel_escape_ty HM)].
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
@@ -223,6 +264,7 @@ Proof.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_seq; auto using lequiv_sym.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sempty; [eapply tyred_ctx, HT | now apply lequiv_sym].
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_id; auto using lequiv_sym.
+  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_empty; [eapply tyred_ctx, HT | now apply lequiv_sym].
 Qed.
 
 (** ** Escape for terms *)
@@ -245,7 +287,8 @@ Proof.
                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l l1 l2 A A' a a' b b' R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
-                | G Γ T T' l l1 l2 A A' a a' b b' RA R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HRA Hra Hrb Hps Hpt HR];
+                | G Γ T T' l l1 l2 A A' a a' b b' RA R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HRA Hra Hrb Hps Hpt HR
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
     intros t t' Htt; first [exact (ModRel_escape_tm HM _ _ Htt) | apply HR in Htt].
   - (* Nat *)
     destruct Htt as [t t' w w' Hw Hw' Heq _].
@@ -345,6 +388,13 @@ Proof.
     + eapply conv_tm; [apply Hw' | exact HTI | exact Hl].
     + eapply conv_tm; [apply Hw'' | exact HTI | exact Hl].
     + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTI | exact Hl].
+  - (* Empty: related neutrals *)
+    destruct Htt as (w & w' & Hw' & Hw'' & Hne). pose proof (gne_tm_geq Hne) as Heq.
+    assert (HTE : [ G ; Γ ⊢g T ≅ tyEmpty l1 @ l ]) by apply HT.
+    repeat split.
+    + eapply conv_tm; [apply Hw' | exact HTE | exact Hl].
+    + eapply conv_tm; [apply Hw'' | exact HTE | exact Hl].
+    + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTE | exact Hl].
 Qed.
 
 (** ** Local weakening at the instance's layer *)
@@ -588,6 +638,9 @@ Lemma kty_tyUnit l : kty ρ (tyUnit l) = tyUnit l. Proof. unfold kty; now rewrit
 Lemma kty_tySEq l A a b : kty ρ (tySEq l A a b) = tySEq l (kty ρ A) (ktm ρ a) (ktm ρ b).
 Proof. unfold kty, ktm; now rewrite gwa_tySEq. Qed.
 Lemma kty_tySEmpty l : kty ρ (tySEmpty l) = tySEmpty l. Proof. unfold kty; now rewrite gwa_tySEmpty. Qed.
+Lemma kty_tyEmpty l : kty ρ (tyEmpty l) = tyEmpty l. Proof. unfold kty; now rewrite gwa_tyEmpty. Qed.
+Lemma ktm_elimEmpty l l' M t : ktm ρ (elimEmpty l l' M t) = elimEmpty l l' (ktyl ρ M) (ktm ρ t).
+Proof. unfold ktm, ktyl; now rewrite gwa_elimEmpty. Qed.
 Lemma ktm_srefl l A a : ktm ρ (srefl l A a) = srefl l (kty ρ A) (ktm ρ a).
 Proof. unfold ktm, kty; now rewrite gwa_srefl. Qed.
 Lemma ktm_elimSEmpty l l' M e : ktm ρ (elimSEmpty l l' M e) = elimSEmpty l l' (kty ρ M) (ktm ρ e).

@@ -444,7 +444,8 @@ Proof.
                  | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                  | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
                  | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
-                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA IHRA Hra Hrb Hps Hpt HR];
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA IHRA Hra Hrb Hps Hpt HR
+                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
     intros π πi Hp;
     pose proof (uperm_inv _ _ _ Hp) as Hpi;
     pose proof (proj1 Hp) as Hinv; pose proof (proj1 (proj2 Hp)) as Hinv';
@@ -948,6 +949,20 @@ Proof.
       rewrite (Gp_rt Hp HG), (rt_ctx Hinv _ HΓ), (rt_lvl Hinv), (rt_ty Hinv _ NA), !(rt_tm Hinv) in X
         by assumption.
       exact X.
+  - (* Empty *)
+    exists (EmptyRel (Gp π G) Γ[pφ π]ᵤ (lvsubst s1 (pφ π))). split.
+    + eapply LRempty; [exact (pg_lequiv Hp Hl) | exact (pg_lequiv Hp Hl2) | exact (pg_lwf Hp Hw)
+                      | exact (pg_tyred Hp HT) | exact (pg_tyred Hp HT') | apply releq_refl].
+    + intros t t' Nt Nt'. rewrite (HR t t'). split.
+      * intros (w & w' & Hr & Hr' & Hf). exists w[pφ π]ᵤ, w'[pφ π]ᵤ.
+        exact (conj (pg_tmred Hp Hr) (conj (pg_tmred Hp Hr') (pg_gne_tm Hp Hf))).
+      * intros (w & w' & Hr & Hr' & Hf). apply (pg_tmred (G := Gp π G) Hpi) in Hr, Hr'.
+        apply (pg_gne_tm (G := Gp π G) Hpi) in Hf.
+        change ((tyEmpty ?x)[?φ]ᵤ) with (tyEmpty (lvsubst x φ)) in Hr, Hr', Hf.
+        rewrite (Gp_rt Hp HG), (rt_ctx Hinv _ HΓ), (rt_lvl Hinv) in Hr, Hr', Hf.
+        rewrite !(rt_tm Hinv) in Hr, Hr' by assumption.
+        exists w[pφ πi]ᵤ, w'[pφ πi]ᵤ.
+        exact (conj Hr (conj Hr' Hf)).
 Qed.
 
 Theorem LR_perm n : Pperm n.

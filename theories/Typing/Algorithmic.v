@@ -28,7 +28,9 @@ Inductive posty : ty -> Prop :=
 | posty_ne V : whne_ty V -> posty V
 | posty_CTyp Δ l : posty (tyCTyp Δ l)
 | posty_CTrm Δ T l : posty (tyCTrm Δ T l)
-| posty_id l A a b : posty (tyId l A a b).
+| posty_id l A a b : posty (tyId l A a b)
+(* the empty type (M12a): no η, so its neutrals are compared as neutrals *)
+| posty_empty l : posty (tyEmpty l).
 
 Inductive ac_ty : gctx -> ctx -> ty -> ty -> Prop :=
 | act_red G Γ T T' W W' : reds_ty T W -> reds_ty T' W' -> whnf_ty W -> whnf_ty W' ->
@@ -63,6 +65,8 @@ with ac_tynf : gctx -> ctx -> ty -> ty -> Prop :=
     ac_tm G Γ a a' A -> ac_tm G Γ b b' A ->
     ac_tynf G Γ (tySEq l A a b) (tySEq l' A' a' b')
 | actnf_sempty G Γ l l' : leqv l l' -> ac_tynf G Γ (tySEmpty l) (tySEmpty l')
+(* the empty type (M12a) *)
+| actnf_empty G Γ l l' : leqv l l' -> ac_tynf G Γ (tyEmpty l) (tyEmpty l')
 (* the identity type (M11a): endpoints compared at the left carrier *)
 | actnf_id G Γ l l' A A' a a' b b' : leqv l l' -> ac_ty G Γ A A' ->
     ac_tm G Γ a a' A -> ac_tm G Γ b b' A ->
@@ -232,6 +236,11 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tm G Γ c c' M[lsingle2 a (tmRefl l1 A a)] -> ac_tm G Γ u u' A ->
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (tmJ l1 l2 A a M c u ν) (tmJ l3 l4 A' a' M' c' u' ν') M[lsingle2 u ν]
+(* [Empty]'s eliminator (M12a): the motives at the left scrutinee's type,
+   the scrutinees as neutrals *)
+| actmne_elimEmpty G Γ l1 l2 l3 l4 M M' ν ν' W : leqv l1 l3 -> leqv l2 l4 ->
+    ac_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> ac_tmnee G Γ ν ν' W ->
+    ac_tmne G Γ (elimEmpty l1 l2 M ν) (elimEmpty l3 l4 M' ν') M[lsingle ν]
 
 with ac_tmnee : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmnee_red G Γ ν ν' T W : ac_tmne G Γ ν ν' T -> reds_ty T W -> whnf_ty W ->

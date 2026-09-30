@@ -146,8 +146,10 @@ Ltac s_push_at h k := lazymatch h with
   | @tmTriv => k gs_triv
   | @tySEq => k gs_tySEq
   | @tySEmpty => k gs_tySEmpty
+  | @tyEmpty => k gs_tyEmpty
   | @srefl => k gs_srefl
   | @elimSEmpty => k gs_elimSEmpty
+  | @elimEmpty => k gs_elimEmpty
   | @tyId => k gs_tyId
   | @tmRefl => k gs_refl
   | @tmId => k gs_tmId
@@ -187,7 +189,9 @@ Ltac fts_case :=
   | solve [simple eapply V_code_id; s_side] | solve [simple eapply V_El_id; s_side]
   (* strict equality's codes (M10c) *)
   | solve [simple eapply V_code_seq; s_side] | solve [simple eapply V_El_seq; s_side]
-  | solve [simple eapply V_code_sempty; s_side] | solve [simple eapply V_El_sempty; s_side] ].
+  | solve [simple eapply V_code_sempty; s_side] | solve [simple eapply V_El_sempty; s_side]
+  (* the empty type (M12a) *)
+  | solve [simple eapply V_empty; s_side] | solve [simple eapply V_elimEmpty; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=
@@ -506,6 +510,16 @@ Proof using EL VL. intros; s_lift. Qed.
 Lemma VS_El_sempty {G Γ l} : lwf (gL G) l -> VTyS G Γ (tySEmpty l) (tyEl l (tmSEmpty l)) l.
 Proof using . intros; s_lift. Qed.
 
+(** The empty type (M12a). *)
+Lemma VS_empty {G Γ l l'} : lwf (gL G) l -> lequiv (gL G) l l' -> VTyS G Γ (tyEmpty l) (tyEmpty l') l.
+Proof using . intros; s_lift. Qed.
+Lemma VS_elimEmpty {ly G Γ l1 l2 l3 l4 M M' t t'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ ly ] M @ l1 ] -> lle ly ge_layer -> typeof ly = ly ->
+  VTyS G (Γ ,, tyEmpty l2 @ l2) M M' l1 -> VTmS G Γ t t' (tyEmpty l2) l2 ->
+  VTmS G Γ (elimEmpty l1 l2 M t) (elimEmpty l3 l4 M' t') M[lsingle t] l1.
+Proof using EL VL VN. intros; s_lift. Qed.
+
 End Rules.
 
 End RulesS.
@@ -546,4 +560,6 @@ Ltac vs_rules side :=
   | solve [simple eapply VS_code_id; side] | solve [simple eapply VS_El_id; side]
   (* strict equality's codes (M10c) *)
   | solve [simple eapply VS_code_seq; side] | solve [simple eapply VS_El_seq; side]
-  | solve [simple eapply VS_code_sempty; side] | solve [simple eapply VS_El_sempty; side] ].
+  | solve [simple eapply VS_code_sempty; side] | solve [simple eapply VS_El_sempty; side]
+  (* the empty type (M12a) *)
+  | solve [simple eapply VS_empty; side] | solve [simple eapply VS_elimEmpty; side] ].

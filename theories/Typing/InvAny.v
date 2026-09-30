@@ -189,6 +189,13 @@ Lemma inva_code_id {G i Γ l s t u T k} : [ G ; Γ ⊢[ i ] tmId l s t u : T @ k
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU l @ k ].
 Proof. inv_tm_any. Qed.
 
+(** The empty type's eliminator (M12a). *)
+Lemma inva_elimEmpty {G i Γ l l' M t T k} : [ G ; Γ ⊢[ i ] elimEmpty l l' M t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ,, tyEmpty l' @ l' ⊢[ i ] M @ l ] /\
+    [ G ; Γ ⊢[ i ] t : tyEmpty l' @ l' ]) /\
+    lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ typeof i ] T ≅ M[lsingle t] @ k ].
+Proof. inv_tm_any. Qed.
+
 (** Strict equality's codes (M10c). *)
 Lemma inva_code_seq {G i Γ l s t u T k} : [ G ; Γ ⊢[ i ] tmSEq l s t u : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\

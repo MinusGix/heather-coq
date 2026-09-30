@@ -114,7 +114,7 @@ Definition tm_con (t : tm) : nat :=
   | tmSig _ _ _ _ => 28 | tmPair _ _ _ _ _ _ => 29 | tmFst _ _ _ _ _ => 30 | tmSnd _ _ _ _ _ => 31
   | tmUnit _ => 32 | tmTriv _ => 33 | gdef _ _ _ => 34 | srefl _ _ _ => 35 | elimSEmpty _ _ _ _ => 36
   | tmRefl _ _ _ => 37 | tmJ _ _ _ _ _ _ _ _ => 38 | tmId _ _ _ _ => 39
-  | tmSEq _ _ _ _ => 40 | tmSEmpty _ => 41
+  | tmSEq _ _ _ _ => 40 | tmSEmpty _ => 41 | elimEmpty _ _ _ _ => 42
   end.
 
 Lemma ac_tmne_con {G Γ ν ν' T} : ac_tmne G Γ ν ν' T -> tm_con ν = tm_con ν'.
@@ -136,7 +136,7 @@ Qed.
 Ltac refute_con := right; let D := fresh "D" in intros D;
   let E := fresh "E" in
   first [ pose proof (ac_tmne_con D) as E
-        | pose proof (ac_tmnf_con D ltac:(first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id]) ltac:(let Hn := fresh in intros Hn; inversion Hn)) as E
+        | pose proof (ac_tmnf_con D ltac:(first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_empty]) ltac:(let Hn := fresh in intros Hn; inversion Hn)) as E
         | pose proof (ac_tynf_head D) as E ];
   cbn in E; discriminate E.
 
@@ -1128,6 +1128,40 @@ Proof.
     destruct (leqv_dec l l') as [Hl | N]; [left; exact (actnf_sempty _ _ _ _ Hl) | refute] end.
 Qed.
 
+(** The empty type (M12a). *)
+Lemma Dc_actnf_empty {G Γ l l0} : Dc_tynf G Γ (tyEmpty l) (tyEmpty l0).
+Proof.
+  intros X *; destruct X; try solve [refute_con | refute]. intros.
+  match goal with |- Dec (ac_tynf _ _ _ (tyEmpty ?l')) =>
+    destruct (leqv_dec l l') as [Hl | N]; [left; exact (actnf_empty _ _ _ _ Hl) | refute] end.
+Qed.
+
+Lemma Dc_actmne_elimEmpty {G Γ l1 l2 l3 l4 M M0 ν ν0 W} :
+  Dc_ty G (Γ ,, tyEmpty l2 @ l2) M M0 -> ac_tmnee G Γ ν ν0 W -> Dc_nee G Γ ν ν0 W ->
+  Dc_ne G Γ (elimEmpty l1 l2 M ν) (elimEmpty l3 l4 M0 ν0) M[lsingle ν].
+Proof.
+  intros IHM Dν0 IHν x i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmne _ _ _ (elimEmpty ?p1 ?p2 ?p3 ?p4) _) =>
+    rename p1 into l5, p2 into l6, p3 into M', p4 into ν' end.
+  destruct (inv_elimEmpty Hi Hx) as ((_ & W1 & W2 & HM & Hν) & _ & _).
+  destruct (inv_elimEmpty Hi Hx') as ((_ & W5 & W6 & HM' & Hν') & _ & _).
+  destruct (IHν ν' i _ _ _ _ Hc Hν Hν') as [Dν | N];
+    [| right; intros D; destruct (ainv_elimEmpty D) as (l7 & l8 & M2 & ν2 & W3 & E & _ & _ & _ & Dν2);
+       injection E as <- <- <- <-; rewrite <- (ac_nee_uniq Dν0 Dν2) in Dν2; exact (N Dν2)].
+  destruct (leqv_dec l1 l5) as [H15 | N]; [| refute].
+  destruct (leqv_dec l2 l6) as [H26 | N]; [| refute].
+  pose proof (leqv_lequiv _ _ _ W1 W5 H15) as E15. pose proof (leqv_lequiv _ _ _ W2 W6 H26) as E26.
+  pose proof (ctx_of_wf_tm Hi Hν) as HΓ.
+  (* the other motive, in this context *)
+  assert (HE : [ G ; Γ ⊢[ i ] tyEmpty l6 ≅ tyEmpty l2 @ l6 ])
+    by (apply eqty_empty; [exact Hc | rewrite Hi; exact HΓ | exact (lequiv_sym _ _ _ E26)]).
+  assert (HΓE : [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] ])
+    by (apply wfc_ext; [exact HΓ | apply wft_empty; [exact Hc | rewrite Hi; exact HΓ | exact W2] | exact W2]).
+  pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi HE (lequiv_sym _ _ _ E26) HΓE HM') E15) as HM'1.
+  destruct (IHM M' i _ _ Hc HM HM'1) as [DM | N]; [left; eapply actmne_elimEmpty; eassumption | refute].
+Qed.
+
 Lemma Dc_actmnf_seq_irr {G Γ l A a b w w0} : Dc_tmnf G Γ w w0 (tySEq l A a b).
 Proof. intros x i k Hc Hw Hx. left; apply actmnf_seq_irr. Qed.
 Lemma Dc_actmnf_sempty_irr {G Γ l w w0} : Dc_tmnf G Γ w w0 (tySEmpty l).
@@ -1138,7 +1172,7 @@ Fixpoint is_whne (t : tm) : bool :=
   match t with
   | var _ | gvar _ _ => true
   | natrec _ _ _ _ t | app t _ _ _ _ _ | letboxT _ _ _ _ _ t | letboxt _ _ _ _ _ _ t
-  | uapp t _ | capp t _ | tapp t _ | tmFst _ _ _ _ t | tmSnd _ _ _ _ t | elimSEmpty _ _ _ t
+  | uapp t _ | capp t _ | tapp t _ | tmFst _ _ _ _ t | tmSnd _ _ _ _ t | elimSEmpty _ _ _ t | elimEmpty _ _ _ t
   | tmJ _ _ _ _ _ _ _ t => is_whne t
   | elimT _ _ _ _ _ t => match t with boxT (tyGvar _ _) => true | _ => is_whne t end
   | elimt _ _ _ _ _ _ t => match t with boxt (gvar _ _) | boxt (gdef _ _ _) => true | _ => is_whne t end
@@ -1364,7 +1398,8 @@ Proof.
     | solve [eapply Dc_actmne_elimSEmpty; eassumption]
     | solve [eapply Dc_actnf_id; eassumption] | solve [eapply Dc_actmnf_refl]
     | solve [eapply Dc_actmne_J; eassumption] | solve [eapply Dc_actmnf_code_id; eassumption]
-    | solve [eapply Dc_actmnf_code_seq; eassumption] | solve [eapply Dc_actmnf_code_sempty; eassumption] ].
+    | solve [eapply Dc_actmnf_code_seq; eassumption] | solve [eapply Dc_actmnf_code_sempty; eassumption]
+    | solve [eapply Dc_actnf_empty; eassumption] | solve [eapply Dc_actmne_elimEmpty; eassumption] ].
 Qed.
 
 (** Algorithmic conversion of well-formed types (typed terms) of the

@@ -894,6 +894,37 @@ Qed.
 
 End SC.
 
+(** The empty type (M12a): gated to the computing layers, so below M only
+    at D, where the presupposition lemmas give the right-hand sides. *)
+Section SCD.
+Context {G : gctx}.
+Let HD : typeof lD = lD := eq_refl.
+Let HDv : lD <> lV := ltac:(discriminate).
+
+Lemma sc_empty {Γ l l'} : [ G ; Γ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ lD ] tyEmpty l' @ l ] /\ [ G ; Γ ⊢[ lD ] tyEmpty l ≅ tyEmpty l' @ l ].
+Proof.
+  intros HΓ Hl Hl' E. pose proof (lq Hl Hl' E) as Q. split.
+  - exact (pre_empty_r HD HDv HΓ Q).
+  - apply eqty_empty; auto using compt_D.
+Qed.
+
+Lemma sc_elimEmpty {Γ l1 l2 l1' l2' M M' t t'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
+  lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
+  [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ lD ] M @ l1 ] ->
+  [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ lD ] M' @ l1 ] /\ [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ lD ] M ≅ M' @ l1 ] ->
+  [ G ; Γ ⊢[ lD ] t : tyEmpty l2 @ l2 ] ->
+  [ G ; Γ ⊢[ lD ] t' : tyEmpty l2 @ l2 ] /\ [ G ; Γ ⊢[ lD ] t ≅ t' : tyEmpty l2 @ l2 ] ->
+  [ G ; Γ ⊢[ lD ] elimEmpty l1' l2' M' t' : M[lsingle t] @ l1 ] /\
+  [ G ; Γ ⊢[ lD ] elimEmpty l1 l2 M t ≅ elimEmpty l1' l2' M' t' : M[lsingle t] @ l1 ].
+Proof.
+  intros H1 H2 H1' H2' E1 E2 HM [HM' HMM] Ht [Ht' Htt].
+  pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2. split.
+  - exact (pre_elimEmpty_r HD HDv Q1 Q2 HM HMM HM' Htt Ht Ht').
+  - apply eqtm_elimEmpty; auto using compt_D.
+Qed.
+End SCD.
+
 
 (** ** The lemma *)
 
@@ -987,6 +1018,12 @@ Proof.
     | solve [eapply sc_seq; eauto] | solve [eapply sc_sempty; eauto] | solve [eapply sc_srefl; eauto]
     | solve [eapply sc_elimSEmpty; eauto]
     | solve [eapply sc_code_seq; eauto] | solve [eapply sc_code_sempty; eauto]
+    (* the empty type (M12a): at D only *)
+    | match goal with
+      | c : compt ?j, H : lle ?j lD |- _ =>
+          destruct c; subst j; [| exfalso; exact (lle_D_notM' H eq_refl)]; cbn [typeof] in *;
+          solve [ eapply sc_empty; eauto | eapply sc_elimEmpty; eauto ]
+      end
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x
         |- _ /\ eq_tm _ _ _ (succ _) _ _ _ =>

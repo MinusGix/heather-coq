@@ -888,6 +888,33 @@ Proof.
   - exact (cv_tm HG Hc (IHu i l1 Hc Hu Hu'1) (eqc_refl _ _ _ HΓ) Hu'1 Hu EA').
 Qed.
 
+(** The empty type (M12a). *)
+Lemma Y_actnf_empty {G Γ l l'} : leqv l l' -> Y_tynf G Γ (tyEmpty l) (tyEmpty l').
+Proof. intros Hl; red; intros; apply actnf_empty, leqv_sym, Hl. Qed.
+
+Lemma Y_actmne_elimEmpty {G Γ l1 l2 l3 l4 M M' ν ν' W} : leqv l1 l3 -> leqv l2 l4 ->
+  ac_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> Y_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> Y_nee G Γ ν ν' W ->
+  Y_ne G Γ (elimEmpty l1 l2 M ν) (elimEmpty l3 l4 M' ν') M[lsingle ν].
+Proof.
+  intros H13 H24 DM IHM IHν i k k' X X' Hc Hx Hx'.
+  pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_elimEmpty Hi Hx) as ((_ & W1 & W2 & HM & Hν) & _ & _).
+  destruct (inv_elimEmpty Hi Hx') as ((_ & W3 & W4 & HM' & Hν') & _ & _).
+  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
+  pose proof (ctx_of_wf_tm Hi Hν) as HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
+  assert (HE2 : [ G ; Γ ⊢[ i ] tyEmpty l2 @ l2 ]) by (apply wft_empty; [exact Hc | rewrite Hi; exact HΓ | exact W2]).
+  assert (HE : [ G ; Γ ⊢[ i ] tyEmpty l4 ≅ tyEmpty l2 @ l4 ])
+    by (apply eqty_empty; [exact Hc | rewrite Hi; exact HΓ | exact (lequiv_sym _ _ _ E24)]).
+  assert (HΓE : [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HE2 | exact W2]).
+  pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi HE (lequiv_sym _ _ _ E24) HΓE HM') E13) as HM'2.
+  assert (Hctx : [ G ⊢[ i ] Γ ,, tyEmpty l2 @ l2 ≅ Γ ,, tyEmpty l4 @ l4 ])
+    by (apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | exact HE2
+                       | apply eqty_empty; [exact Hc | rewrite Hi; exact HΓ | exact E24] | exact E24]).
+  destruct (IHν i _ _ _ _ Hc Hν Hν') as (W' & Xν).
+  exists M'[lsingle ν']. eapply actmne_elimEmpty; [exact (leqv_sym _ _ H13) | exact (leqv_sym _ _ H24) | | exact Xν].
+  exact (cv_ty HG Hc (IHM i l1 l1 Hc HM HM'2) Hctx HM'2 HM).
+Qed.
+
 Lemma Y_actmnf_code_id {G Γ l k k' s s' t t' u u'} : leqv k k' ->
   ac_tm G Γ s s' (tyU k) -> Y_tm G Γ s s' (tyU k) ->
   ac_tm G Γ t t' (tyEl k s) -> Y_tm G Γ t t' (tyEl k s) ->
@@ -999,7 +1026,8 @@ Proof.
     | solve [eapply Y_actmne_elimSEmpty; eassumption]
     | solve [eapply Y_actnf_id; eassumption] | solve [eapply Y_actmnf_refl]
     | solve [eapply Y_actmne_J; eassumption] | solve [eapply Y_actmnf_code_id; eassumption]
-    | solve [eapply Y_actmnf_code_seq; eassumption] | solve [eapply Y_actmnf_code_sempty; eassumption] ].
+    | solve [eapply Y_actmnf_code_seq; eassumption] | solve [eapply Y_actmnf_code_sempty; eassumption]
+    | solve [eapply Y_actnf_empty; eassumption] | solve [eapply Y_actmne_elimEmpty; eassumption] ].
 Qed.
 
 (** ** Inversion of the algorithm on the left side's head *)
@@ -1052,6 +1080,12 @@ Lemma ainv_code_seq {G Γ l k s t u X} : ac_tmnf G Γ (tmSEq k s t u) X (tyU l) 
     ac_tm G Γ t t' (tyEl k s) /\ ac_tm G Γ u u' (tyEl k s).
 Proof. intros H; ainv H. Qed.
 Lemma ainv_sempty {G Γ l X} : ac_tynf G Γ (tySEmpty l) X -> exists l', X = tySEmpty l' /\ leqv l l'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_empty {G Γ l X} : ac_tynf G Γ (tyEmpty l) X -> exists l', X = tyEmpty l' /\ leqv l l'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_elimEmpty {G Γ l1 l2 M ν X T} : ac_tmne G Γ (elimEmpty l1 l2 M ν) X T ->
+  exists l3 l4 M' ν' W, X = elimEmpty l3 l4 M' ν' /\ leqv l1 l3 /\ leqv l2 l4 /\
+    ac_ty G (Γ ,, tyEmpty l2 @ l2) M M' /\ ac_tmnee G Γ ν ν' W.
 Proof. intros H; ainv H. Qed.
 Lemma ainv_elimSEmpty {G Γ l1 l2 M ν X T} : ac_tmne G Γ (elimSEmpty l1 l2 M ν) X T ->
   exists l3 l4 M' ν', X = elimSEmpty l3 l4 M' ν' /\ leqv l1 l3 /\ leqv l2 l4 /\ ac_ty G Γ M M' /\ whne ν'.
@@ -2602,6 +2636,45 @@ Proof.
   intros Hl; red; intros * _ _ _ _ D2. destruct (ainv_sempty D2) as (l'' & -> & Hl2).
   apply actnf_sempty, (leqv_trans _ _ _ Hl Hl2).
 Qed.
+(** The empty type (M12a). *)
+Lemma T_actnf_empty {G Γ l l'} : leqv l l' -> T_tynf G Γ (tyEmpty l) (tyEmpty l').
+Proof.
+  intros Hl; red; intros * _ _ _ _ D2. destruct (ainv_empty D2) as (l'' & -> & Hl2).
+  apply actnf_empty, (leqv_trans _ _ _ Hl Hl2).
+Qed.
+
+Lemma T_actmne_elimEmpty {G Γ l1 l2 l3 l4 M M' ν ν' W} : leqv l1 l3 -> leqv l2 l4 ->
+  ac_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> T_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> T_nee G Γ ν ν' W ->
+  T_ne G Γ (elimEmpty l1 l2 M ν) (elimEmpty l3 l4 M' ν') M[lsingle ν].
+Proof.
+  intros H13 H24 DM IHM IHν x'' T' i k k' k'' X X' X'' Hc Hx Hx' Hx'' D2.
+  pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (ainv_elimEmpty D2) as (l5 & l6 & M'' & ν'' & Wν & -> & H35 & H46 & DM2 & Dν2).
+  destruct (inv_elimEmpty Hi Hx) as ((_ & W1 & W2 & HM & Hν) & _ & _).
+  destruct (inv_elimEmpty Hi Hx') as ((_ & W3 & W4 & HM' & Hν') & _ & _).
+  destruct (inv_elimEmpty Hi Hx'') as ((_ & W5 & W6 & HM'' & Hν'') & _ & _).
+  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
+  pose proof (leqv_lequiv _ _ _ W3 W5 H35) as E35. pose proof (leqv_lequiv _ _ _ W4 W6 H46) as E46.
+  pose proof (ctx_of_wf_tm Hi Hν) as HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
+  (* moving the motives between the three contexts *)
+  assert (St : forall a b T k0, lwf (gL G) b -> lequiv (gL G) a b ->
+            [ G ; Γ ,, tyEmpty a @ a ⊢[ i ] T @ k0 ] -> [ G ; Γ ,, tyEmpty b @ b ⊢[ i ] T @ k0 ]).
+  { intros a b T k0 Wb Eab HT. refine (stab_ty Hi _ Eab _ HT).
+    - apply eqty_empty; [exact Hc | rewrite Hi; exact HΓ | exact Eab].
+    - apply wfc_ext; [exact HΓ | apply wft_empty; [exact Hc | rewrite Hi; exact HΓ | exact Wb] | exact Wb]. }
+  assert (Cx : forall a b, lwf (gL G) a -> lequiv (gL G) a b ->
+            [ G ⊢[ i ] Γ ,, tyEmpty a @ a ≅ Γ ,, tyEmpty b @ b ]).
+  { intros a b Wa Eab. apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | apply wft_empty; [exact Hc | rewrite Hi; exact HΓ | exact Wa]
+                                      | apply eqty_empty; [exact Hc | rewrite Hi; exact HΓ | exact Eab] | exact Eab]. }
+  pose proof (St _ _ _ _ W2 (lequiv_sym _ _ _ E24) HM') as HM'1.
+  pose proof (St _ _ _ _ W2 (lequiv_sym _ _ _ (lequiv_trans _ _ _ _ E24 E46)) HM'') as HM''1.
+  pose proof (St _ _ _ _ W4 (lequiv_sym _ _ _ E46) HM'') as HM''4.
+  pose proof (cv_ty HG Hc DM2 (Cx _ _ W4 (lequiv_sym _ _ _ E24)) HM' HM''4) as DM2'.
+  eapply actmne_elimEmpty; [exact (leqv_trans _ _ _ H13 H35) | exact (leqv_trans _ _ _ H24 H46) | |].
+  - exact (IHM M'' i _ _ _ Hc HM HM'1 HM''1 DM2').
+  - exact (IHν ν'' Wν i _ _ _ _ _ _ Hc Hν Hν' Hν'' Dν2).
+Qed.
+
 Lemma T_actmnf_seq_irr {G Γ l A a b w w'} : T_tmnf G Γ w w' (tySEq l A a b).
 Proof. red; intros; apply actmnf_seq_irr. Qed.
 Lemma T_actmnf_sempty_irr {G Γ l w w'} : T_tmnf G Γ w w' (tySEmpty l).
@@ -2665,5 +2738,6 @@ Proof.
     | solve [eapply T_actmne_elimSEmpty; eassumption]
     | solve [eapply T_actnf_id; eassumption] | solve [eapply T_actmnf_refl]
     | solve [eapply T_actmne_J; eassumption] | solve [eapply T_actmnf_code_id; eassumption]
-    | solve [eapply T_actmnf_code_seq; eassumption] | solve [eapply T_actmnf_code_sempty; eassumption] ].
+    | solve [eapply T_actmnf_code_seq; eassumption] | solve [eapply T_actmnf_code_sempty; eassumption]
+    | solve [eapply T_actnf_empty; eassumption] | solve [eapply T_actmne_elimEmpty; eassumption] ].
 Qed.

@@ -187,6 +187,13 @@ Lemma inv_code_id {G i Γ l s t u T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmId 
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ i ] T ≅ tyU l @ k ].
 Proof. inv_tm. Qed.
 
+(** The empty type's eliminator (M12a). *)
+Lemma inv_elimEmpty {G i Γ l l' M t T k} : typeof i = i -> [ G ; Γ ⊢[ i ] elimEmpty l l' M t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ,, tyEmpty l' @ l' ⊢[ i ] M @ l ] /\
+    [ G ; Γ ⊢[ i ] t : tyEmpty l' @ l' ]) /\
+    lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ i ] T ≅ M[lsingle t] @ k ].
+Proof. inv_tm. Qed.
+
 (** Strict equality's codes (M10c). *)
 Lemma inv_code_seq {G i Γ l s t u T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSEq l s t u : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
@@ -400,6 +407,11 @@ Lemma inv_ty_sempty {G i Γ l k} : [ G ; Γ ⊢[ i ] tySEmpty l @ k ] ->
   (i <> lV /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\ lvl_eq (gL G) k l.
 Proof. inv_ty. Qed.
 
+(** The empty type (M12a). *)
+Lemma inv_ty_empty {G i Γ l k} : [ G ; Γ ⊢[ i ] tyEmpty l @ k ] ->
+  (compt i /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\ lvl_eq (gL G) k l.
+Proof. inv_ty. Qed.
+
 (** ** Lookups are deterministic *)
 
 Lemma in_ctx_det {Γ n T l T' l'} : in_ctx Γ n T l -> in_ctx Γ n T' l' -> T = T' /\ l = l'.
@@ -450,4 +462,5 @@ Proof.
   - exact (lvl_eq_uniq (proj2 (inv_ty_seq H)) (proj2 (inv_ty_seq H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_sempty H)) (proj2 (inv_ty_sempty H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_id H)) (proj2 (inv_ty_id H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_empty H)) (proj2 (inv_ty_empty H'))).
 Qed.

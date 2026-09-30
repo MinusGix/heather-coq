@@ -473,6 +473,17 @@ Proof.
   - intros * HΓ Hl. refine (conj (@geq_tm_code_sempty DE DEL _ _ _ _ HΓ Hl) _).
     eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmSEmpty | apply whnf_tmSEmpty |].
     apply actmnf_code_sempty, (lequiv_leqv _ _ _ Hl).
+  (* the empty type (M12a) *)
+  - intros * HΓ Hl. refine (conj (@geq_ty_empty DE DEL _ _ _ _ HΓ Hl) _).
+    eapply act_red; [constructor | constructor | apply whnf_tyEmpty | apply whnf_tyEmpty |].
+    apply actnf_empty, (lequiv_leqv _ _ _ Hl).
+  - intros * H13 H24 HM (EM & DM) ((Hn & Hn' & Eν) & T0 & Dν & ETν).
+    pose proof (@gne_tm_elimEmpty DE DEL _ _ _ _ _ _ _ _ _ _ H13 H24 HM EM (conj Hn (conj Hn' Eν))) as X.
+    refine (conj X _). destruct X as (_ & _ & EX).
+    destruct (ne_nee Dν ETν) as (W0 & Xν & _).
+    exists M[lsingle ν]. split.
+    + exact (actmne_elimEmpty _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24) DM Xν).
+    + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
 Qed.
 
 End Alg.

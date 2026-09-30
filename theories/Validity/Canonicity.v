@@ -117,6 +117,15 @@ Proof.
   exact C.
 Qed.
 
+(** No closed term of [Empty] (M12a): its canonical head admits no value
+    either. This is consistency at [Empty], at D and M. *)
+Corollary closed_empty_empty {G i t l k} : compt i -> closed_ok i G ->
+  ~ [ G ; cnil ⊢[ i ] t : tyEmpty l @ k ].
+Proof.
+  intros Hc HG Ht. destruct (closed_canonicity_whnf Hc HG (whnf_tyEmpty _) Ht) as (w & _ & _ & _ & C).
+  exact C.
+Qed.
+
 (** A closed proof of [sEq^l(A; a; b)] computes to [srefl], and its
     endpoints are then equal (MX §18: [sEq] imports no equation). *)
 Corollary closed_seq_canonicity {G i t l A a b k} : compt i -> closed_ok i G ->

@@ -89,6 +89,9 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
 | wft_id G i Γ l A a b : i <> lV -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] b : A @ l ] ->
     [ G ; Γ ⊢[ i ] tyId l A a b @ l ]
+(* the empty type (layers D and M; M12a), level-indexed *)
+| wft_empty G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] tyEmpty l @ l ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -260,6 +263,11 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] tmSEq l s t u : tyU l @ lsuc l ]
 | wf_code_sempty G i Γ l : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tmSEmpty l : tyU l @ lsuc l ]
+(* the empty type's eliminator (layers D and M; M12a): the motive binds the
+   scrutinee, and its level [l] is independent of the scrutinee's [l']; no β *)
+| wf_elimEmpty G i Γ l l' M t : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ,, tyEmpty l' @ l' ⊢[ i ] M @ l ] -> [ G ; Γ ⊢[ i ] t : tyEmpty l' @ l' ] ->
+    [ G ; Γ ⊢[ i ] elimEmpty l l' M t : M[lsingle t] @ l ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -351,6 +359,9 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] tySEq l (tyEl l s) t u ≅ tyEl l (tmSEq l s t u) @ l ]
 | eqty_El_sempty G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tySEmpty l ≅ tyEl l (tmSEmpty l) @ l ]
+(* the empty type (layers D and M; M12a) *)
+| eqty_empty G i Γ l l' : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] tyEmpty l ≅ tyEmpty l' @ l ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -688,6 +699,12 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] tmSEq l s t u ≅ tmSEq l' s' t' u' : tyU l @ lsuc l ]
 | eqtm_code_sempty G i Γ l l' : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] tmSEmpty l ≅ tmSEmpty l' : tyU l @ lsuc l ]
+(* the empty type's eliminator (layers D and M; M12a) *)
+| eqtm_elimEmpty G i Γ l1 l2 l3 l4 M M' t t' : compt i ->
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] M @ l1 ] -> [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] M ≅ M' @ l1 ] ->
+    [ G ; Γ ⊢[ i ] t ≅ t' : tyEmpty l2 @ l2 ] ->
+    [ G ; Γ ⊢[ i ] elimEmpty l1 l2 M t ≅ elimEmpty l3 l4 M' t' : M[lsingle t] @ l1 ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)

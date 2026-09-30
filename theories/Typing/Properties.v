@@ -208,6 +208,20 @@ Qed.
 Lemma compt_notV i : compt i -> i <> lV.
 Proof. now intros [-> | ->]. Qed.
 #[export] Hint Resolve compt_notV : wk.
+(** [Empty]'s motive context (M12a), as [natrec]'s. *)
+Lemma wf_ctx_empty G i Δ l : compt i -> lwf (gL G) l -> [ G ; Δ ⊢[ typeof i ] ] ->
+  [ G ; Δ ,, tyEmpty l @ l ⊢[ typeof i ] ].
+Proof.
+  intros Hc Hl HΔ. destruct Hc as [-> | ->]; cbn in *;
+    (apply wfc_ext; [exact HΔ | apply wft_empty; [first [exact compt_D | exact compt_M] | exact HΔ | exact Hl] | exact Hl]).
+Qed.
+Lemma wft_empty_typeof G i Δ l : compt i -> lwf (gL G) l -> [ G ; Δ ⊢[ typeof i ] ] ->
+  [ G ; Δ ⊢[ typeof i ] tyEmpty l @ l ].
+Proof.
+  intros Hc Hl HΔ. destruct Hc as [-> | ->]; cbn in *;
+    (apply wft_empty; [first [exact compt_D | exact compt_M] | exact HΔ | exact Hl]).
+Qed.
+#[export] Hint Resolve wf_ctx_empty wft_empty_typeof : wk.
 (** A computing layer sees layer-C definitions (M9). *)
 Lemma compt_lle_C i : compt i -> lle lC i.
 Proof. intros [-> | ->]; unfold lle; cbn; lia. Qed.
