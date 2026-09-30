@@ -274,14 +274,17 @@ formers, so it gets worse with every extension:
   the generic rules (refl, sym, trans, conv, lconv, leq) come last in
   `Declarative.v`; keep new generic rules there.
 - **Push tactics are generated.** `push_ren`, `push_subst`, `push_gren`,
-  `push_gsubst`, `push_gwa`, `s_push`, `gl_push` find an `OP (C …)` subterm
+  `push_gsubst`, `push_gwa`, `s_push`, `gl_push`, `us_rw_all` (in
+  `us_rewrite_all`) find an `OP (C …)` subterm
   syntactically and rewrite with `C`'s lemma (a head table). The old
   `repeat progress (rewrite ?l1, …, ?ln)` cost one traversal of the goal
   per lemma per pass, 3–5 s per metatheory proof. A new former's push
   lemma goes into the table: regenerate it with `tools/gen_push.py` (usage
   in its header), or add the arm by hand; a missing arm leaves the push
   undone, which shows as a failing case. Table heads are written `@h`
-  (a bare class method in a pattern gets its implicit arguments).
+  (a bare class method in a pattern gets its implicit arguments). A lemma
+  stated on a sort's fixpoint (`subst_ty`) is also filed under the class
+  method goals use (`@subst`): the generator's `ALIAS` table.
 - **`eauto` depth.** Failing searches dominate: `eauto 3` then a final
   `eauto 4` on the leftovers cost a third of `eauto 4` up front
   (`Presupposition`).
