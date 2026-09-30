@@ -245,3 +245,32 @@ the modal core (see `M2_DESIGN.md` once written).
 - Per-case constructor search (`wk_step` in `Typing/Properties.v`, trying
   each constructor under `solve`) is robust and fast. Use it instead of
   `econstructor`, which commits to the first unifying constructor.
+
+### Build-time gotchas (2026-09-29 perf pass, 513 s → see CLAUDE.md)
+
+Each of these cost tens of seconds, and each grows with the number of
+formers, so it gets worse with every extension:
+
+- **Quadratic case splits.** `destruct c; try destruct T` (or
+  `destruct t, t'`) makes one goal per pair of formers. Destruct the second
+  only where it is read: `redt_case T` (`Syntax/Recursor.v`) for `redt`'s
+  index, and `leq_cases` for `≡ₗ`, which closes mismatched formers with
+  `exact (False_ind _ H)` before running `cbn` on the one that survives.
+- **A failing `apply`/`eapply` of a specific lemma tried on every case**
+  (`try solve [apply elimT_lwf; …]` in a `typing_mut` proof) unfolds the
+  lemma's conclusion against every former: 80 s in `StaticCode`. Guard it
+  with a syntactic `lazymatch goal with |- tm_lwf _ (elimT …) => …`. Match
+  the head of the *conclusion*, with the right arity (`EP EM` count);
+  `|- context [x]` also sees the judgment's context.
+- **Dispatcher order.** A `first [...]` whose early alternatives apply to any
+  goal (sym, trans, conv, `eauto` with an evar middle) pays their failure on
+  every goal. Put the former-specific rules first (`f_ty`, `m_ty`), the
+  manual cases before `any_rule` (`GWeakening`, `GSubstitution`), and
+  `cbn`-based side solvers last (`br_tac`).
+- **`eauto` depth.** Failing searches dominate: `eauto 3` then a final
+  `eauto 4` on the leftovers cost a third of `eauto 4` up front
+  (`Presupposition`).
+- Measure before guessing: `make TIMING=1` writes `.v.timing` per file;
+  `Set Ltac Profiling.` … `Show Ltac Profile CutOff 2.` inside a scratch
+  copy splits a tactic's time; `time "tag" tac` per goal separates the
+  cost of successes from failures.

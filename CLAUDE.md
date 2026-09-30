@@ -23,8 +23,13 @@ list of proof-engineering gotchas. Follow it.
 
 ## Build
 
-- `nix develop path:. --command make -j4` (Coq 8.20, Equations, smpl from
-  the flake). A full build takes seconds; keep it that way.
+- `nix develop path:. --command make -j2` (Coq 8.20, Equations, smpl from
+  the flake). A clean build takes about 4 minutes (230 s wall, 2026-09-29,
+  down from 8.5 minutes). The critical path (Syntax → Typing metatheory →
+  Validity → the algorithm) is nearly the whole build, so more jobs don't
+  help; only faster files on that path do. `make TIMING=1` writes per-file
+  `.v.timing`; the build-time gotchas in `M1_DESIGN.md` list the patterns
+  that made it slow.
 - Probe goals by truncating a proof into a scratch file and compiling with
   `coqc -Q theories DeLaM <file>` inside the dev shell.
 

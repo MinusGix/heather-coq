@@ -987,6 +987,7 @@ Ltac m_rules := vs_rules m_side.
 Ltac m_ty :=
   first
   [ eassumption
+  | m_rules
   | solve [simple eapply VTyS_sym; m_side] | solve [simple eapply VTyS_trans; m_side]
   | solve [simple eapply VTyS_lconv; m_side]
   | solve [simple eapply VTyS_trans; [eassumption | simple eapply VTyS_sym; m_side]]
@@ -994,7 +995,6 @@ Ltac m_ty :=
   | solve [simple eapply VTyS_lookup; m_side]
   | solve [simple eapply VTyS_leq; m_side]
   | solve [simple eapply VTyS_single; m_side]
-  | m_rules
   | solve [simple eapply VTyS_single; [eassumption | m_rules]]
   | solve [simple eapply VTyS_single; [m_side | m_rules]]
   | solve [simple eapply VTyS_single;
@@ -1004,10 +1004,10 @@ Ltac m_ty :=
 Ltac m_tm :=
   first
   [ eassumption
+  | m_rules
   | solve [simple eapply VTmS_sym; m_side] | solve [simple eapply VTmS_trans; m_side]
   | solve [simple eapply VTmS_conv; m_side] | solve [simple eapply VTmS_lconv; m_side]
-  | solve [simple eapply VTmS_leq; m_side]
-  | m_rules ].
+  | solve [simple eapply VTmS_leq; m_side] ].
 
 Ltac m_rec_side :=
   first [ eassumption | apply lequiv_refl; eassumption | apply eqc_refl; eassumption
@@ -1260,7 +1260,12 @@ Proof.
     w_spec; try solve [exfalso; w_absurd]; try intros ?L' ?φ ?Hφ;
     rec_judg; upi_judg; us_keep; us_spec; us_entries_sem; us_move; us_rewrite_all;
     rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix.
-  all: try solve [w_dispatch].
+  (* the ω-layer goals and [uapp]'s; elsewhere only [w_dispatch]'s assumption
+     case applies, and its lemmas fail slowly *)
+  all: try solve [lazymatch goal with
+                  | |- SemTyMω _ _ _ _ _ _ => w_dispatch | |- SemTmMω _ _ _ _ _ _ _ => w_dispatch
+                  | |- context [uapp] => w_dispatch
+                  | _ => try unfold keep in *; eassumption end].
   all: try solve [ first [simple eapply (FM_tygvar_us EP EM) | simple eapply (FM_gvar_us EP EM)]; eassumption ].
   all: try solve [ first [ simple eapply (FM_gdef_us EP EM) | simple eapply (FM_gdef_eq_us EP EM)
                          | simple eapply (FM_delta_us EP EM) ]; eassumption ].
