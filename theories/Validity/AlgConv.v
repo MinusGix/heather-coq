@@ -1323,6 +1323,11 @@ Proof.
   intros Hl; red; intros i G2 Γ2 W2 kk Hc HE Hctx Ht Ht' EW Hw2 x x' Hsx Hsx'. spa_triv. new_head Hc EW Hw2 W2.
   apply actmnf_code_unit; exact Hl.
 Qed.
+Lemma C_actmnf_code_sempty {G Γ l k k'} : leqv k k' -> C_tmnf G Γ (tmSEmpty k) (tmSEmpty k') (tyU l).
+Proof.
+  intros Hl; red; intros i G2 Γ2 W2 kk Hc HE Hctx Ht Ht' EW Hw2 x x' Hsx Hsx'. spa_triv. new_head Hc EW Hw2 W2.
+  apply actmnf_code_sempty; exact Hl.
+Qed.
 
 (** η: any targets, once the new type is [Unit] too. *)
 Lemma C_actmnf_unit_eta {G Γ l w w'} : C_tmnf G Γ w w' (tyUnit l).
@@ -1477,6 +1482,24 @@ Proof.
   - exact (IHt i G2 Γ2 _ k Hc HE Hctx Ht (F _ Ht') HEr _ _ spa_refl spa_refl).
   - exact (IHu i G2 Γ2 _ k Hc HE Hctx Hu (F _ Hu') HEr _ _ spa_refl spa_refl).
 Qed.
+Lemma C_actmnf_code_seq {G Γ l k k' s s' t t' u u'} : leqv k k' ->
+  ac_tm G Γ s s' (tyU k) -> C_tm G Γ s s' (tyU k) -> C_tm G Γ t t' (tyEl k s) -> C_tm G Γ u u' (tyEl k s) ->
+  C_tmnf G Γ (tmSEq k s t u) (tmSEq k' s' t' u') (tyU l).
+Proof.
+  intros Hk0 Ds IHs IHt IHu i G2 Γ2 W2 m Hc HE Hctx Hx Hx' EW Hw2 x x' Hsx Hsx'. spa_triv.
+  pose proof (compt_typeof_self _ Hc) as Hi. new_head Hc EW Hw2 W2.
+  destruct (code_seq_prem Hc Hx) as (W & Hs & Ht & Hu). destruct (code_seq_prem Hc Hx') as (W' & Hs' & Ht' & Hu').
+  pose proof (leqv_lequiv _ _ _ W W' Hk0) as E.
+  pose proof (code_U_conv Hc E Hs') as Hs1.
+  pose proof (ac_tm_sound Hc Ds Hs Hs1) as Es.
+  destruct (code_El_conv Hc E Es) as (F & _).
+  pose proof (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Ht))) as HEr.
+  apply actmnf_code_seq; [exact Hk0 | | |].
+  - exact (IHs i G2 Γ2 (tyU k) (lsuc k) Hc HE Hctx Hs Hs1 (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hs)))
+             _ _ spa_refl spa_refl).
+  - exact (IHt i G2 Γ2 _ k Hc HE Hctx Ht (F _ Ht') HEr _ _ spa_refl spa_refl).
+  - exact (IHu i G2 Γ2 _ k Hc HE Hctx Hu (F _ Hu') HEr _ _ spa_refl spa_refl).
+Qed.
 
 (** ** The conversion lemma *)
 
@@ -1524,7 +1547,8 @@ Proof.
     | solve [eapply C_actmnf_seq_irr] | solve [eapply C_actmnf_sempty_irr]
     | solve [eapply C_actmne_elimSEmpty; eassumption]
     | solve [eapply C_actnf_id; eassumption] | solve [eapply C_actmnf_refl]
-    | solve [eapply C_actmne_J; eassumption] | solve [eapply C_actmnf_code_id; eassumption] ].
+    | solve [eapply C_actmne_J; eassumption] | solve [eapply C_actmnf_code_id; eassumption]
+    | solve [eapply C_actmnf_code_seq; eassumption] | solve [eapply C_actmnf_code_sempty; eassumption] ].
 Qed.
 
 (** The statement without annotation changes. *)

@@ -465,6 +465,14 @@ Proof.
     refine (conj (@geq_tm_code_id DE DEL _ _ _ _ _ _ _ _ _ _ Hl Hs Es Et Eu) _).
     eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmId | apply whnf_tmId |].
     exact (actmnf_code_id _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) Ds Dt Du).
+  (* strict equality's codes (M10c) *)
+  - intros * Hl Hs (Es & Ds) (Et & Dt) (Eu & Du).
+    refine (conj (@geq_tm_code_seq DE DEL _ _ _ _ _ _ _ _ _ _ Hl Hs Es Et Eu) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmSEq | apply whnf_tmSEq |].
+    exact (actmnf_code_seq _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) Ds Dt Du).
+  - intros * HΓ Hl. refine (conj (@geq_tm_code_sempty DE DEL _ _ _ _ HΓ Hl) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmSEmpty | apply whnf_tmSEmpty |].
+    apply actmnf_code_sempty, (lequiv_leqv _ _ _ Hl).
 Qed.
 
 End Alg.

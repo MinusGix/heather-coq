@@ -114,6 +114,7 @@ Definition tm_con (t : tm) : nat :=
   | tmSig _ _ _ _ => 28 | tmPair _ _ _ _ _ _ => 29 | tmFst _ _ _ _ _ => 30 | tmSnd _ _ _ _ _ => 31
   | tmUnit _ => 32 | tmTriv _ => 33 | gdef _ _ _ => 34 | srefl _ _ _ => 35 | elimSEmpty _ _ _ _ => 36
   | tmRefl _ _ _ => 37 | tmJ _ _ _ _ _ _ _ _ => 38 | tmId _ _ _ _ => 39
+  | tmSEq _ _ _ _ => 40 | tmSEmpty _ => 41
   end.
 
 Lemma ac_tmne_con {G Γ ν ν' T} : ac_tmne G Γ ν ν' T -> tm_con ν = tm_con ν'.
@@ -1090,6 +1091,12 @@ Proof.
   match goal with |- Dec (ac_tmnf _ _ _ (tmUnit ?a) _) =>
     destruct (leqv_dec k a) as [Hl | N]; [left; exact (actmnf_code_unit _ _ _ _ _ Hl) | refute] end.
 Qed.
+Lemma Dc_actmnf_code_sempty {G Γ l k k0} : Dc_tmnf G Γ (tmSEmpty k) (tmSEmpty k0) (tyU l).
+Proof.
+  intros x i k1 Hc Hx Hx'; destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmnf _ _ _ (tmSEmpty ?a) _) =>
+    destruct (leqv_dec k a) as [Hl | N]; [left; exact (actmnf_code_sempty _ _ _ _ _ Hl) | refute] end.
+Qed.
 
 Lemma Dc_actmnf_unit_eta {G Γ l w w0} : Dc_tmnf G Γ w w0 (tyUnit l).
 Proof. intros x i k Hc Hw Hx. left; apply actmnf_unit_eta. Qed.
@@ -1198,6 +1205,23 @@ Proof.
   destruct (code_El_conv Hc E (ac_tm_sound Hc Ds Hs Hs1)) as (F & _).
   destruct (IHt t' i _ Hc Ht (F _ Ht')) as [Dt | N]; [| refute].
   destruct (IHu u' i _ Hc Hu (F _ Hu')) as [Du | N]; [left; apply actmnf_code_id; assumption | refute].
+Qed.
+Lemma Dc_actmnf_code_seq {G Γ l k k0 s s0 t t0 u u0} :
+  Dc_tm G Γ s s0 (tyU k) -> Dc_tm G Γ t t0 (tyEl k s) -> Dc_tm G Γ u u0 (tyEl k s) ->
+  Dc_tmnf G Γ (tmSEq k s t u) (tmSEq k0 s0 t0 u0) (tyU l).
+Proof.
+  intros IHs IHt IHu x i m Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmnf _ _ _ (tmSEq ?a ?b ?c ?d) _) =>
+    rename a into k', b into s', c into t', d into u' end.
+  destruct (code_seq_prem Hc Hx) as (W & Hs & Ht & Hu). destruct (code_seq_prem Hc Hx') as (W' & Hs' & Ht' & Hu').
+  destruct (leqv_dec k k') as [Hk0 | N]; [| refute].
+  pose proof (leqv_lequiv _ _ _ W W' Hk0) as E.
+  pose proof (code_U_conv Hc E Hs') as Hs1.
+  destruct (IHs s' i _ Hc Hs Hs1) as [Ds | N]; [| refute].
+  destruct (code_El_conv Hc E (ac_tm_sound Hc Ds Hs Hs1)) as (F & _).
+  destruct (IHt t' i _ Hc Ht (F _ Ht')) as [Dt | N]; [| refute].
+  destruct (IHu u' i _ Hc Hu (F _ Hu')) as [Du | N]; [left; apply actmnf_code_seq; assumption | refute].
 Qed.
 
 Lemma Dc_actmnf_refl {G Γ l A a b k k0 C C0 c c0} :
@@ -1339,7 +1363,8 @@ Proof.
     | solve [eapply Dc_actmnf_seq_irr] | solve [eapply Dc_actmnf_sempty_irr]
     | solve [eapply Dc_actmne_elimSEmpty; eassumption]
     | solve [eapply Dc_actnf_id; eassumption] | solve [eapply Dc_actmnf_refl]
-    | solve [eapply Dc_actmne_J; eassumption] | solve [eapply Dc_actmnf_code_id; eassumption] ].
+    | solve [eapply Dc_actmne_J; eassumption] | solve [eapply Dc_actmnf_code_id; eassumption]
+    | solve [eapply Dc_actmnf_code_seq; eassumption] | solve [eapply Dc_actmnf_code_sempty; eassumption] ].
 Qed.
 
 (** Algorithmic conversion of well-formed types (typed terms) of the

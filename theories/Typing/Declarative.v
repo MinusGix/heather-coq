@@ -253,6 +253,13 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
     [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u : tyEl l s @ l ] ->
     [ G ; Γ ⊢[ i ] tmId l s t u : tyU l @ lsuc l ]
+(* strict equality's codes (M10c) *)
+| wf_code_seq G i Γ l s t u : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+    [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u : tyEl l s @ l ] ->
+    [ G ; Γ ⊢[ i ] tmSEq l s t u : tyU l @ lsuc l ]
+| wf_code_sempty G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] tmSEmpty l : tyU l @ lsuc l ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -337,6 +344,13 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
     [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u : tyEl l s @ l ] ->
     [ G ; Γ ⊢[ i ] tyId l (tyEl l s) t u ≅ tyEl l (tmId l s t u) @ l ]
+(* strict equality's codes (M10c) *)
+| eqty_El_seq G i Γ l s t u : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+    [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u : tyEl l s @ l ] ->
+    [ G ; Γ ⊢[ i ] tySEq l (tyEl l s) t u ≅ tyEl l (tmSEq l s t u) @ l ]
+| eqty_El_sempty G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] tySEmpty l ≅ tyEl l (tmSEmpty l) @ l ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -667,6 +681,13 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
     [ G ; Γ ⊢[ i ] t ≅ t' : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u ≅ u' : tyEl l s @ l ] ->
     [ G ; Γ ⊢[ i ] tmId l s t u ≅ tmId l' s' t' u' : tyU l @ lsuc l ]
+(* strict equality's codes (M10c) *)
+| eqtm_code_seq G i Γ l l' s s' t t' u u' : compt i -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+    [ G ; Γ ⊢[ i ] t ≅ t' : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u ≅ u' : tyEl l s @ l ] ->
+    [ G ; Γ ⊢[ i ] tmSEq l s t u ≅ tmSEq l' s' t' u' : tyU l @ lsuc l ]
+| eqtm_code_sempty G i Γ l l' : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] tmSEmpty l ≅ tmSEmpty l' : tyU l @ lsuc l ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)

@@ -142,6 +142,7 @@ Ltac s_push_at h k := lazymatch h with
   | @tmSnd => k gs_snd
   | @tyUnit => k gs_tyUnit
   | @tmUnit => k gs_tmUnit
+  | @tmSEmpty => k gs_tmSEmpty
   | @tmTriv => k gs_triv
   | @tySEq => k gs_tySEq
   | @tySEmpty => k gs_tySEmpty
@@ -150,6 +151,7 @@ Ltac s_push_at h k := lazymatch h with
   | @tyId => k gs_tyId
   | @tmRefl => k gs_refl
   | @tmId => k gs_tmId
+  | @tmSEq => k gs_tmSEq
   | @tmJ => k gs_J
   end.
 Ltac s_push := repeat match goal with
@@ -182,7 +184,10 @@ Ltac fts_case :=
   (* the identity type (M11a) *)
   | solve [simple eapply V_id; s_side] | solve [simple eapply V_idrefl; s_side]
   | solve [simple eapply V_J; s_side]
-  | solve [simple eapply V_code_id; s_side] | solve [simple eapply V_El_id; s_side] ].
+  | solve [simple eapply V_code_id; s_side] | solve [simple eapply V_El_id; s_side]
+  (* strict equality's codes (M10c) *)
+  | solve [simple eapply V_code_seq; s_side] | solve [simple eapply V_El_seq; s_side]
+  | solve [simple eapply V_code_sempty; s_side] | solve [simple eapply V_El_sempty; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=
@@ -482,6 +487,25 @@ Proof using EL VL VN.
   apply VS_code_id; [exact Hw | apply lequiv_refl, Hw | exact Vs | exact Vt | exact Vu].
 Qed.
 
+(** Strict equality's codes (M10c). *)
+Lemma VS_code_seq {G Γ l l' s s' t t' u u'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTmS G Γ s s' (tyU l) (lsuc l) -> VTmS G Γ t t' (tyEl l s) l -> VTmS G Γ u u' (tyEl l s) l ->
+  VTmS G Γ (tmSEq l s t u) (tmSEq l' s' t' u') (tyU l) (lsuc l).
+Proof using EL VL. intros; s_lift. Qed.
+Lemma VS_El_seq {G Γ l s t u} : lwf (gL G) l ->
+  VTmS G Γ s s (tyU l) (lsuc l) -> VTmS G Γ t t (tyEl l s) l -> VTmS G Γ u u (tyEl l s) l ->
+  VTyS G Γ (tySEq l (tyEl l s) t u) (tyEl l (tmSEq l s t u)) l.
+Proof using EL VL VN.
+  intros Hw Vs Vt Vu. eapply (VTyS_trans_diag EP EM (T2 := tyEl l (tmSEq l s t u))); [s_diag V_El_seq|].
+  apply VS_El; [exact Hw | apply lequiv_refl, Hw |].
+  apply VS_code_seq; [exact Hw | apply lequiv_refl, Hw | exact Vs | exact Vt | exact Vu].
+Qed.
+Lemma VS_code_sempty {G Γ l l'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTmS G Γ (tmSEmpty l) (tmSEmpty l') (tyU l) (lsuc l).
+Proof using EL VL. intros; s_lift. Qed.
+Lemma VS_El_sempty {G Γ l} : lwf (gL G) l -> VTyS G Γ (tySEmpty l) (tyEl l (tmSEmpty l)) l.
+Proof using . intros; s_lift. Qed.
+
 End Rules.
 
 End RulesS.
@@ -519,4 +543,7 @@ Ltac vs_rules side :=
   (* the identity type (M11a) *)
   | solve [simple eapply VS_id; side] | solve [simple eapply VS_idrefl; side]
   | solve [simple eapply VS_J; side] | solve [simple eapply VS_J_beta; side]
-  | solve [simple eapply VS_code_id; side] | solve [simple eapply VS_El_id; side] ].
+  | solve [simple eapply VS_code_id; side] | solve [simple eapply VS_El_id; side]
+  (* strict equality's codes (M10c) *)
+  | solve [simple eapply VS_code_seq; side] | solve [simple eapply VS_El_seq; side]
+  | solve [simple eapply VS_code_sempty; side] | solve [simple eapply VS_El_sempty; side] ].

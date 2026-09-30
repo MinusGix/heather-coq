@@ -250,7 +250,7 @@ Fixpoint dnfty (T : ty) : Prop :=
   end
 with dnftm (t : tm) : Prop :=
   match t with
-  | var _ | tmErr | tmNat | tmU _ | zero | tmUnit _ | tmTriv _ => True
+  | var _ | tmErr | tmNat | tmU _ | zero | tmUnit _ | tmTriv _ | tmSEmpty _ => True
   | tmPi _ _ s t | tmSig _ _ s t => dnftm s /\ dnftm t
   | succ t => dnftm t
   | natrec _ M s z t => dnfty M /\ dnftm s /\ dnftm z /\ dnftm t
@@ -277,6 +277,7 @@ with dnftm (t : tm) : Prop :=
   | srefl _ A a | elimSEmpty _ _ A a => dnfty A /\ dnftm a
   | tmRefl _ A a => dnfty A /\ dnftm a
   | tmId _ s t u => dnftm s /\ dnftm t /\ dnftm u
+  | tmSEq _ s t u => dnftm s /\ dnftm t /\ dnftm u
   | tmJ _ _ A a M c u e => dnfty A /\ dnftm a /\ dnfty M /\ dnftm c /\ dnftm u /\ dnftm e
   end
 with dnfctx (Γ : ctx) : Prop :=

@@ -732,6 +732,38 @@ Proof.
   apply eqtm_code_id; try assumption. exact (compt_notV _ Hc).
 Qed.
 
+(** Strict equality's codes (M10c), as [Id]'s and [Unit]'s. *)
+Lemma code_seq_prem {G i Γ k s t u T m} : compt i -> [ G ; Γ ⊢[ i ] tmSEq k s t u : T @ m ] ->
+  lwf (gL G) k /\ [ G ; Γ ⊢[ i ] s : tyU k @ lsuc k ] /\
+  [ G ; Γ ⊢[ i ] t : tyEl k s @ k ] /\ [ G ; Γ ⊢[ i ] u : tyEl k s @ k ].
+Proof.
+  intros Hc H. destruct (proj1 (inv_code_seq (compt_typeof_self _ Hc) H)) as (_ & W & Hs & Ht & Hu). auto.
+Qed.
+
+Lemma S_actmnf_code_seq {G Γ l k k' s s' t t' u u'} : leqv k k' ->
+  S_tm G Γ s s' (tyU k) -> S_tm G Γ t t' (tyEl k s) -> S_tm G Γ u u' (tyEl k s) ->
+  S_tm G Γ (tmSEq k s t u) (tmSEq k' s' t' u') (tyU l).
+Proof.
+  intros Hk0 IHs IHt IHu i m Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_code_seq Hi Hx) as (_ & Hk & HT).
+  destruct (code_seq_prem Hc Hx) as (W & Hs & Ht & Hu). destruct (code_seq_prem Hc Hx') as (W' & Hs' & Ht' & Hu').
+  pose proof (leqv_lequiv _ _ _ W W' Hk0) as E.
+  pose proof (code_U_conv Hc E Hs') as Hs1.
+  pose proof (IHs i (lsuc k) Hc Hs Hs1) as Es.
+  destruct (code_El_conv Hc E Es) as (F & _).
+  pose proof (IHt i k Hc Ht (F _ Ht')) as Et. pose proof (IHu i k Hc Hu (F _ Hu')) as Eu.
+  eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
+  apply eqtm_code_seq; assumption.
+Qed.
+
+Lemma S_actmnf_code_sempty {G Γ l k k'} : leqv k k' -> S_tm G Γ (tmSEmpty k) (tmSEmpty k') (tyU l).
+Proof.
+  intros Hl i kk Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_code_sempty Hi Ht) as ((_ & HΓ & W) & Hk & HT). destruct (inv_code_sempty Hi Ht') as ((_ & _ & W') & _).
+  eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
+  apply eqtm_code_sempty; [exact Hc | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
+Qed.
+
 (** [J]'s motive context at the other side's carrier and point. *)
 Lemma J_ctx_conv {G i Γ l1 l3 A A' a a'} : typeof i = i -> compt i -> lequiv (gL G) l1 l3 ->
   [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l3 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
@@ -1322,7 +1354,8 @@ Proof.
     | solve [eapply S_actmnf_seq_irr] | solve [eapply S_actmnf_sempty_irr]
     | solve [eapply S_actmne_elimSEmpty; eassumption]
     | solve [eapply S_actnf_id; eassumption] | solve [eapply S_actmnf_refl]
-    | solve [eapply S_actmne_J; eassumption] | solve [eapply S_actmnf_code_id; eassumption] ].
+    | solve [eapply S_actmne_J; eassumption] | solve [eapply S_actmnf_code_id; eassumption]
+    | solve [eapply S_actmnf_code_seq; eassumption] | solve [eapply S_actmnf_code_sempty; eassumption] ].
 Qed.
 
 (** Algorithmically convertible types (terms) of the computing layers,

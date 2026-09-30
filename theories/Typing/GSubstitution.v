@@ -399,6 +399,7 @@ Lemma gs_fst l l' A B p : (tmFst l l' A B p)⦃σ⦄ = tmFst l l' A⦃σ⦄ B⦃
 Lemma gs_snd l l' A B p : (tmSnd l l' A B p)⦃σ⦄ = tmSnd l l' A⦃σ⦄ B⦃σ⦄ p⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_tyUnit l : (tyUnit l)⦃σ⦄ = tyUnit l. Proof. reflexivity. Qed.
 Lemma gs_tmUnit l : (tmUnit l)⦃σ⦄ = tmUnit l. Proof. reflexivity. Qed.
+Lemma gs_tmSEmpty l : (tmSEmpty l)⦃σ⦄ = tmSEmpty l. Proof. reflexivity. Qed.
 Lemma gs_triv l : (tmTriv l)⦃σ⦄ = tmTriv l. Proof. reflexivity. Qed.
 Lemma gs_tySEq l A a b : (tySEq l A a b)⦃σ⦄ = tySEq l A⦃σ⦄ a⦃σ⦄ b⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_tySEmpty l : (tySEmpty l)⦃σ⦄ = tySEmpty l. Proof. reflexivity. Qed.
@@ -407,6 +408,7 @@ Lemma gs_elimSEmpty l l' M e : (elimSEmpty l l' M e)⦃σ⦄ = elimSEmpty l l' M
 Lemma gs_tyId l A a b : (tyId l A a b)⦃σ⦄ = tyId l A⦃σ⦄ a⦃σ⦄ b⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_refl l A a : (tmRefl l A a)⦃σ⦄ = tmRefl l A⦃σ⦄ a⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_tmId l s t u : (tmId l s t u)⦃σ⦄ = tmId l s⦃σ⦄ t⦃σ⦄ u⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tmSEq l s t u : (tmSEq l s t u)⦃σ⦄ = tmSEq l s⦃σ⦄ t⦃σ⦄ u⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_J l l' A a M c u e :
   (tmJ l l' A a M c u e)⦃σ⦄ = tmJ l l' A⦃σ⦄ a⦃σ⦄ M⦃σ⦄ c⦃σ⦄ u⦃σ⦄ e⦃σ⦄.
 Proof. reflexivity. Qed.
@@ -458,6 +460,7 @@ Ltac push_gsubst_at h k := lazymatch h with
   | @tmSnd => k gs_snd
   | @tyUnit => k gs_tyUnit
   | @tmUnit => k gs_tmUnit
+  | @tmSEmpty => k gs_tmSEmpty
   | @tmTriv => k gs_triv
   | @gdef => k gs_gdef
   | @tySEq => k gs_tySEq
@@ -467,6 +470,7 @@ Ltac push_gsubst_at h k := lazymatch h with
   | @tyId => k gs_tyId
   | @tmRefl => k gs_refl
   | @tmId => k gs_tmId
+  | @tmSEq => k gs_tmSEq
   | @tmJ => k gs_J
   end.
 Ltac push_gsubst := repeat match goal with

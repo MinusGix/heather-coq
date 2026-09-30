@@ -171,6 +171,9 @@ Proof.
   - intros * Hl1 Hl2 HA HAA Haa HId HM HMM Hcc Huu (Hn & Hn' & Hν).
     refine (conj _ (conj _ _)); [constructor; auto .. |]. apply eqtm_J; auto.
   - intros; apply eqtm_code_id; auto.
+  (* strict equality's codes *)
+  - intros; apply eqtm_code_seq; auto.
+  - intros; apply eqtm_code_sempty; [exact Hi | now rewrite Hty | assumption].
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].

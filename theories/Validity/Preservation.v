@@ -222,6 +222,30 @@ Proof.
              (lequiv_sym _ _ _ E0)).
 Qed.
 
+(** Strict equality's codes (M10c). *)
+Lemma RS_El_seq l l0 s t u : RS_ty (tyEl l (tmSEq l0 s t u)) (tySEq l0 (tyEl l0 s) t u).
+Proof.
+  intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_El HT) as ((Hv & Wl & Ht) & Hk).
+  destruct (inv_code_seq Hi Ht) as ((_ & Wl0 & Hs & Ht0 & Hu) & _ & EU).
+  pose proof (U_inj_c Hc EU) as E0.
+  apply (retype_eqty Hk). eapply eqty_trans.
+  - exact (eqty_El _ _ _ _ _ _ _ Hv (lequiv_sym _ _ _ E0) (eqtm_refl _ _ _ _ _ _ Ht)).
+  - exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (eqty_El_seq _ _ _ _ _ _ _ Hc Wl0 Hs Ht0 Hu))
+             (lequiv_sym _ _ _ E0)).
+Qed.
+
+Lemma RS_El_sempty l l0 : RS_ty (tyEl l (tmSEmpty l0)) (tySEmpty l0).
+Proof.
+  intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_El HT) as ((Hv & Wl & Ht) & Hk).
+  destruct (inv_code_sempty Hi Ht) as ((_ & HΓ & Wl0) & _ & EU).
+  pose proof (U_inj_c Hc EU) as E0.
+  apply (retype_eqty Hk). eapply eqty_trans.
+  - exact (eqty_El _ _ _ _ _ _ _ Hv (lequiv_sym _ _ _ E0) (eqtm_refl _ _ _ _ _ _ Ht)).
+  - exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (eqty_El_sempty _ _ _ _ Hc HΓ Wl0)) (lequiv_sym _ _ _ E0)).
+Qed.
+
 Lemma RS_El l t t' : RS_tm t t' -> RS_ty (tyEl l t) (tyEl l t').
 Proof.
   intros IH G i Γ k Hc HT. destruct (inv_ty_El HT) as ((Hv & Wl & Ht) & Hk).
@@ -498,7 +522,8 @@ Proof.
     | solve [apply RS_fst_beta] | solve [apply RS_snd_beta]
     | solve [apply RS_fst; assumption] | solve [apply RS_snd; assumption] | solve [apply RS_El_sig]
     | solve [apply RS_El_unit] | solve [apply RS_delta] | solve [apply RS_elimSEmpty; assumption]
-    | solve [apply RS_J_beta] | solve [apply RS_J; assumption] | solve [apply RS_El_id] ].
+    | solve [apply RS_J_beta] | solve [apply RS_J; assumption] | solve [apply RS_El_id]
+    | solve [apply RS_El_seq] | solve [apply RS_El_sempty] ].
 Qed.
 
 Section Consequences.

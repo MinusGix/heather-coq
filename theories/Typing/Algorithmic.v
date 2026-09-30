@@ -135,6 +135,11 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmnf_code_id G Γ l k k' s s' t t' u u' : leqv k k' ->
     ac_tm G Γ s s' (tyU k) -> ac_tm G Γ t t' (tyEl k s) -> ac_tm G Γ u u' (tyEl k s) ->
     ac_tmnf G Γ (tmId k s t u) (tmId k' s' t' u') (tyU l)
+(* strict equality's codes (M10c) *)
+| actmnf_code_seq G Γ l k k' s s' t t' u u' : leqv k k' ->
+    ac_tm G Γ s s' (tyU k) -> ac_tm G Γ t t' (tyEl k s) -> ac_tm G Γ u u' (tyEl k s) ->
+    ac_tmnf G Γ (tmSEq k s t u) (tmSEq k' s' t' u') (tyU l)
+| actmnf_code_sempty G Γ l k k' : leqv k k' -> ac_tmnf G Γ (tmSEmpty k) (tmSEmpty k') (tyU l)
 
 with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_var G Γ n T l : in_ctx Γ n T l -> ac_tmne G Γ (var n) (var n) T

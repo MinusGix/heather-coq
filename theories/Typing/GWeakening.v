@@ -315,6 +315,7 @@ Lemma gren_gdef u b d : (gdef u b d)⟪ξ⟫ = gdef (ξ u) b⟪ξ⟫ d⟪ξ⟫. 
 Lemma gren_tyId l A a b : (tyId l A a b)⟪ξ⟫ = tyId l A⟪ξ⟫ a⟪ξ⟫ b⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_refl l A a : (tmRefl l A a)⟪ξ⟫ = tmRefl l A⟪ξ⟫ a⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_tmId l s t u : (tmId l s t u)⟪ξ⟫ = tmId l s⟪ξ⟫ t⟪ξ⟫ u⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tmSEq l s t u : (tmSEq l s t u)⟪ξ⟫ = tmSEq l s⟪ξ⟫ t⟪ξ⟫ u⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_J l l' A a M c u e :
   (tmJ l l' A a M c u e)⟪ξ⟫ = tmJ l l' A⟪ξ⟫ a⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ u⟪ξ⟫ e⟪ξ⟫.
 Proof. reflexivity. Qed.
@@ -352,6 +353,7 @@ Lemma gren_fst l l' A B p : (tmFst l l' A B p)⟪ξ⟫ = tmFst l l' A⟪ξ⟫ B�
 Lemma gren_snd l l' A B p : (tmSnd l l' A B p)⟪ξ⟫ = tmSnd l l' A⟪ξ⟫ B⟪ξ⟫ p⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_tyUnit l : (tyUnit l)⟪ξ⟫ = tyUnit l. Proof. reflexivity. Qed.
 Lemma gren_tmUnit l : (tmUnit l)⟪ξ⟫ = tmUnit l. Proof. reflexivity. Qed.
+Lemma gren_tmSEmpty l : (tmSEmpty l)⟪ξ⟫ = tmSEmpty l. Proof. reflexivity. Qed.
 Lemma gren_triv l : (tmTriv l)⟪ξ⟫ = tmTriv l. Proof. reflexivity. Qed.
 (** [UΠ]'s scope and instances. *)
 Lemma gren_uren_ctx (Γ : ctx) ρ : Γ⟨ρ⟩ᵤ⟪ξ⟫ = Γ⟪ξ⟫⟨ρ⟩ᵤ.
@@ -412,11 +414,13 @@ Ltac push_gren_at h k := lazymatch h with
   | @tmSnd => k gren_snd
   | @tyUnit => k gren_tyUnit
   | @tmUnit => k gren_tmUnit
+  | @tmSEmpty => k gren_tmSEmpty
   | @tmTriv => k gren_triv
   | @gdef => k gren_gdef
   | @tyId => k gren_tyId
   | @tmRefl => k gren_refl
   | @tmId => k gren_tmId
+  | @tmSEq => k gren_tmSEq
   | @tmJ => k gren_J
   end.
 Ltac push_gren := repeat match goal with
@@ -882,6 +886,7 @@ Lemma gwa_fst l l' A B p : (tmFst l l' A B p)⟦γ⟧ = tmFst l l' A⟦γ⟧ B�
 Lemma gwa_snd l l' A B p : (tmSnd l l' A B p)⟦γ⟧ = tmSnd l l' A⟦γ⟧ B⟦γ⟧ p⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_tyUnit l : (tyUnit l)⟦γ⟧ = tyUnit l. Proof. now destruct γ. Qed.
 Lemma gwa_tmUnit l : (tmUnit l)⟦γ⟧ = tmUnit l. Proof. now destruct γ. Qed.
+Lemma gwa_tmSEmpty l : (tmSEmpty l)⟦γ⟧ = tmSEmpty l. Proof. now destruct γ. Qed.
 Lemma gwa_triv l : (tmTriv l)⟦γ⟧ = tmTriv l. Proof. now destruct γ. Qed.
 Lemma gwa_tySEq l A a b : (tySEq l A a b)⟦γ⟧ = tySEq l A⟦γ⟧ a⟦γ⟧ b⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_tySEmpty l : (tySEmpty l)⟦γ⟧ = tySEmpty l. Proof. now destruct γ. Qed.
@@ -891,6 +896,7 @@ Proof. now destruct γ. Qed.
 Lemma gwa_tyId l A a b : (tyId l A a b)⟦γ⟧ = tyId l A⟦γ⟧ a⟦γ⟧ b⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_refl l A a : (tmRefl l A a)⟦γ⟧ = tmRefl l A⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_tmId l s t u : (tmId l s t u)⟦γ⟧ = tmId l s⟦γ⟧ t⟦γ⟧ u⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tmSEq l s t u : (tmSEq l s t u)⟦γ⟧ = tmSEq l s⟦γ⟧ t⟦γ⟧ u⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_J l l' A a M c u e :
   (tmJ l l' A a M c u e)⟦γ⟧ = tmJ l l' A⟦γ⟧ a⟦γ⟧ M⟦γ⟧ c⟦γ⟧ u⟦γ⟧ e⟦γ⟧.
 Proof. now destruct γ. Qed.
@@ -921,6 +927,7 @@ Ltac push_gwa_at h k := lazymatch h with
   | @tmSnd => k gwa_snd
   | @tyUnit => k gwa_tyUnit
   | @tmUnit => k gwa_tmUnit
+  | @tmSEmpty => k gwa_tmSEmpty
   | @tmTriv => k gwa_triv
   | @tySEq => k gwa_tySEq
   | @tySEmpty => k gwa_tySEmpty
@@ -929,6 +936,7 @@ Ltac push_gwa_at h k := lazymatch h with
   | @tyId => k gwa_tyId
   | @tmRefl => k gwa_refl
   | @tmId => k gwa_tmId
+  | @tmSEq => k gwa_tmSEq
   | @tmJ => k gwa_J
   end.
 Ltac push_gwa := repeat match goal with

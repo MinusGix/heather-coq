@@ -816,6 +816,28 @@ Proof.
   - exact (pre_elimSEmpty_r HD HDv Q1 Q2 HMM HM' He').
   - apply eqtm_elimSEmpty; auto using compt_D.
 Qed.
+
+(** Strict equality's codes (M10c). *)
+Lemma sc_code_seq {Γ l l' s s' t t' u u'} : lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ lD ] s : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ lD ] s' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ lD ] s ≅ s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ lD ] t' : tyEl l s @ l ] /\ [ G ; Γ ⊢[ lD ] t ≅ t' : tyEl l s @ l ] ->
+  [ G ; Γ ⊢[ lD ] u' : tyEl l s @ l ] /\ [ G ; Γ ⊢[ lD ] u ≅ u' : tyEl l s @ l ] ->
+  [ G ; Γ ⊢[ lD ] tmSEq l' s' t' u' : tyU l @ lsuc l ] /\
+  [ G ; Γ ⊢[ lD ] tmSEq l s t u ≅ tmSEq l' s' t' u' : tyU l @ lsuc l ].
+Proof.
+  intros Hl Hl' E Hs [Hs' Hss] [Ht' Htt] [Hu' Huu]. pose proof (lq Hl Hl' E) as Q. split.
+  - exact (pre_codeseq_r HD HDv Q Hss Hs' Ht' Hu').
+  - apply eqtm_code_seq; auto using compt_D.
+Qed.
+
+Lemma sc_code_sempty {Γ l l'} : [ G ; Γ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ lD ] tmSEmpty l' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ lD ] tmSEmpty l ≅ tmSEmpty l' : tyU l @ lsuc l ].
+Proof.
+  intros HΓ Hl Hl' E. pose proof (lq Hl Hl' E) as Q. split.
+  - exact (pre_codesempty_r HD HDv HΓ Q).
+  - apply eqtm_code_sempty; auto using compt_D.
+Qed.
 End SCD.
 
 (** ** The lemma *)
@@ -911,7 +933,8 @@ Proof.
       | c : compt ?j, H : lle ?j lD |- _ =>
           destruct c; subst j; [| exfalso; exact (lle_D_notM' H eq_refl)]; cbn [typeof] in *;
           solve [ eapply sc_seq; eauto | eapply sc_sempty; eauto | eapply sc_srefl; eauto
-                | eapply sc_elimSEmpty; eauto ]
+                | eapply sc_elimSEmpty; eauto
+                | eapply sc_code_seq; eauto | eapply sc_code_sempty; eauto ]
       end
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x

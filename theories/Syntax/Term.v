@@ -91,6 +91,8 @@ with tm : Type :=
 (* the identity type (M11a): refl, and based path induction *)
 | tmRefl (l : lvl) (A : ty) (a : tm)      (* refl^l(A; a) : Id^l(A; a; a) *)
 | tmId (l : lvl) (s t u : tm)            (* code of Id^l(El s; t; u) : Ty l (M11b) *)
+| tmSEq (l : lvl) (s t u : tm)           (* code of sEq^l(El s; t; u) : Ty l (M10c) *)
+| tmSEmpty (l : lvl)                     (* code of sEmpty^l : Ty l (M10c) *)
 | tmJ (l l' : lvl) (A : ty) (a : tm) (M : ty) (c u e : tm)
     (* J^{l,l'}(A; a; y p. M; c; u; e) : M[u/y, e/p]      M: +2 (y, then p) *)
 (* a defined global u^δ carrying its body t (M9_DESIGN.md, fork (b)); t lives in
@@ -220,6 +222,8 @@ with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   | elimSEmpty l l' M e => elimSEmpty l l' (ren_ty M r) (ren_tm e r)
   | tmRefl l A a => tmRefl l (ren_ty A r) (ren_tm a r)
   | tmId l s t u => tmId l (ren_tm s r) (ren_tm t r) (ren_tm u r)
+  | tmSEq l s t u => tmSEq l (ren_tm s r) (ren_tm t r) (ren_tm u r)
+  | tmSEmpty l => tmSEmpty l
   | tmJ l l' A a M c u e =>
       tmJ l l' (ren_ty A r) (ren_tm a r) (ren_ty M (rlift (rlift r))) (ren_tm c r) (ren_tm u r) (ren_tm e r)
   | gdef u b d => gdef u b (lren d r)
@@ -299,6 +303,8 @@ with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   | elimSEmpty l l' M e => elimSEmpty l l' (gren_ty M ξ) (gren_tm e ξ)
   | tmRefl l A a => tmRefl l (gren_ty A ξ) (gren_tm a ξ)
   | tmId l s t u => tmId l (gren_tm s ξ) (gren_tm t ξ) (gren_tm u ξ)
+  | tmSEq l s t u => tmSEq l (gren_tm s ξ) (gren_tm t ξ) (gren_tm u ξ)
+  | tmSEmpty l => tmSEmpty l
   | tmJ l l' A a M c u e =>
       tmJ l l' (gren_ty A ξ) (gren_tm a ξ) (gren_ty M ξ) (gren_tm c ξ) (gren_tm u ξ) (gren_tm e ξ)
   | gdef u b d => gdef (ξ u) (gren_tm b ξ) (glren d ξ)
@@ -383,6 +389,8 @@ with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   | elimSEmpty l l' M e => elimSEmpty (lvren l ρ) (lvren l' ρ) (uren_ty M ρ) (uren_tm e ρ)
   | tmRefl l A a => tmRefl (lvren l ρ) (uren_ty A ρ) (uren_tm a ρ)
   | tmId l s t u => tmId (lvren l ρ) (uren_tm s ρ) (uren_tm t ρ) (uren_tm u ρ)
+  | tmSEq l s t u => tmSEq (lvren l ρ) (uren_tm s ρ) (uren_tm t ρ) (uren_tm u ρ)
+  | tmSEmpty l => tmSEmpty (lvren l ρ)
   | tmJ l l' A a M c u e =>
       tmJ (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_tm a ρ) (uren_ty M ρ) (uren_tm c ρ) (uren_tm u ρ) (uren_tm e ρ)
   | gdef u b d => gdef u (uren_tm b ρ) (ulren d ρ)
@@ -461,6 +469,8 @@ with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   | elimSEmpty l l' M e => elimSEmpty l l' (subst_ty M d) (subst_tm e d)
   | tmRefl l A a => tmRefl l (subst_ty A d) (subst_tm a d)
   | tmId l s t u => tmId l (subst_tm s d) (subst_tm t d) (subst_tm u d)
+  | tmSEq l s t u => tmSEq l (subst_tm s d) (subst_tm t d) (subst_tm u d)
+  | tmSEmpty l => tmSEmpty l
   | tmJ l l' A a M c u e =>
       tmJ l l' (subst_ty A d) (subst_tm a d) (subst_ty M (llift (llift d))) (subst_tm c d) (subst_tm u d) (subst_tm e d)
   | gdef u b d' => gdef u b (lcomp d' d)
@@ -598,6 +608,8 @@ with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   | elimSEmpty l l' M e => elimSEmpty l l' (gsubst_ty M σ) (gsubst_tm e σ)
   | tmRefl l A a => tmRefl l (gsubst_ty A σ) (gsubst_tm a σ)
   | tmId l s t u => tmId l (gsubst_tm s σ) (gsubst_tm t σ) (gsubst_tm u σ)
+  | tmSEq l s t u => tmSEq l (gsubst_tm s σ) (gsubst_tm t σ) (gsubst_tm u σ)
+  | tmSEmpty l => tmSEmpty l
   | tmJ l l' A a M c u e =>
       tmJ l l' (gsubst_ty A σ) (gsubst_tm a σ) (gsubst_ty M σ) (gsubst_tm c σ) (gsubst_tm u σ) (gsubst_tm e σ)
   | gdef u b d => pdef (σ u) (gsubst_tm b σ) (glsubst d σ)
@@ -687,6 +699,8 @@ with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   | elimSEmpty l l' M e => elimSEmpty (lvsubst l φ) (lvsubst l' φ) (usubst_ty M φ) (usubst_tm e φ)
   | tmRefl l A a => tmRefl (lvsubst l φ) (usubst_ty A φ) (usubst_tm a φ)
   | tmId l s t u => tmId (lvsubst l φ) (usubst_tm s φ) (usubst_tm t φ) (usubst_tm u φ)
+  | tmSEq l s t u => tmSEq (lvsubst l φ) (usubst_tm s φ) (usubst_tm t φ) (usubst_tm u φ)
+  | tmSEmpty l => tmSEmpty (lvsubst l φ)
   | tmJ l l' A a M c u e =>
       tmJ (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_tm a φ) (usubst_ty M φ) (usubst_tm c φ) (usubst_tm u φ) (usubst_tm e φ)
   | gdef u b d => gdef u (usubst_tm b φ) (ulsubst d φ)

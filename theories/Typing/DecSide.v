@@ -255,7 +255,7 @@ Fixpoint sz_ty (T : ty) : nat :=
   end
 with sz_tm (t : tm) : nat :=
   match t with
-  | var _ | tmErr | tmNat | tmU _ | zero | tmUnit _ | tmTriv _ => 1
+  | var _ | tmErr | tmNat | tmU _ | zero | tmUnit _ | tmTriv _ | tmSEmpty _ => 1
   | tmPi _ _ s t | tmSig _ _ s t => S (sz_tm s + sz_tm t)
   | succ t => S (sz_tm t)
   | natrec _ M s z t => S (sz_ty M + sz_tm s + sz_tm z + sz_tm t)
@@ -282,6 +282,7 @@ with sz_tm (t : tm) : nat :=
   | srefl _ A a | elimSEmpty _ _ A a | tmRefl _ A a => S (sz_ty A + sz_tm a)
   | tmJ _ _ A a M c u e => S (sz_ty A + sz_tm a + sz_ty M + sz_tm c + sz_tm u + sz_tm e)
   | tmId _ s t u => S (sz_tm s + sz_tm t + sz_tm u)
+  | tmSEq _ s t u => S (sz_tm s + sz_tm t + sz_tm u)
   end
 with sz_ctx (Γ : ctx) : nat :=
   match Γ with cnil | cvar _ => 1 | cext Γ A _ => S (sz_ctx Γ + sz_ty A) end

@@ -312,7 +312,14 @@ Class GenericEqLaws `{GenericEq} := {
   geq_tm_code_id {G Γ l l' s s' t t' u u'} : lequiv (gL G) l l' ->
     [ G ; Γ ⊢g s : tyU l @ lsuc l ] -> [ G ; Γ ⊢ s ≈ s' : tyU l @ lsuc l ] ->
     [ G ; Γ ⊢ t ≈ t' : tyEl l s @ l ] -> [ G ; Γ ⊢ u ≈ u' : tyEl l s @ l ] ->
-    [ G ; Γ ⊢ tmId l s t u ≈ tmId l' s' t' u' : tyU l @ lsuc l ]
+    [ G ; Γ ⊢ tmId l s t u ≈ tmId l' s' t' u' : tyU l @ lsuc l ] ;
+  (** strict equality's codes (M10c) *)
+  geq_tm_code_seq {G Γ l l' s s' t t' u u'} : lequiv (gL G) l l' ->
+    [ G ; Γ ⊢g s : tyU l @ lsuc l ] -> [ G ; Γ ⊢ s ≈ s' : tyU l @ lsuc l ] ->
+    [ G ; Γ ⊢ t ≈ t' : tyEl l s @ l ] -> [ G ; Γ ⊢ u ≈ u' : tyEl l s @ l ] ->
+    [ G ; Γ ⊢ tmSEq l s t u ≈ tmSEq l' s' t' u' : tyU l @ lsuc l ] ;
+  geq_tm_code_sempty {G Γ l l'} : [ G ; Γ ⊢g ] -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢ tmSEmpty l ≈ tmSEmpty l' : tyU l @ lsuc l ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

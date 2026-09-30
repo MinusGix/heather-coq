@@ -500,7 +500,7 @@ Fixpoint nfty (T : ty) : Prop :=
   end
 with nftm (t : tm) : Prop :=
   match t with
-  | var _ | tmErr | tmNat | tmU _ | zero | tmUnit _ | tmTriv _ => True
+  | var _ | tmErr | tmNat | tmU _ | zero | tmUnit _ | tmTriv _ | tmSEmpty _ => True
   | tmPi _ _ s t | tmSig _ _ s t => nftm s /\ nftm t
   | succ t => nftm t
   | natrec _ M s z t => nfty M /\ nftm s /\ nftm z /\ nftm t
@@ -521,6 +521,7 @@ with nftm (t : tm) : Prop :=
   | srefl _ A a | elimSEmpty _ _ A a => nfty A /\ nftm a
   | tmRefl _ A a => nfty A /\ nftm a
   | tmId _ s t u => nftm s /\ nftm t /\ nftm u
+  | tmSEq _ s t u => nftm s /\ nftm t /\ nftm u
   | tmJ _ _ A a M c u e => nfty A /\ nftm a /\ nfty M /\ nftm c /\ nftm u /\ nftm e
   end
 with nfl (d : lsub) : Prop :=

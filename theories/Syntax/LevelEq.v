@@ -68,10 +68,11 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
       leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq p p'
   | tmSnd l1 l2 A B p, tmSnd l1' l2' A' B' p' =>
       leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq p p'
-  | tmUnit l, tmUnit l' | tmTriv l, tmTriv l' => leqv l l'
+  | tmUnit l, tmUnit l' | tmTriv l, tmTriv l' | tmSEmpty l, tmSEmpty l' => leqv l l'
   | srefl l A a, srefl l' A' a' => leqv l l' /\ ty_leq A A' /\ tm_leq a a'
   | tmRefl l A a, tmRefl l' A' a' => leqv l l' /\ ty_leq A A' /\ tm_leq a a'
   | tmId l s t u, tmId l' s' t' u' => leqv l l' /\ tm_leq s s' /\ tm_leq t t' /\ tm_leq u u'
+  | tmSEq l s t u, tmSEq l' s' t' u' => leqv l l' /\ tm_leq s s' /\ tm_leq t t' /\ tm_leq u u'
   | tmJ l1 l2 A a M c u e, tmJ l1' l2' A' a' M' c' u' e' =>
       leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ tm_leq a a' /\ ty_leq M M' /\
       tm_leq c c' /\ tm_leq u u' /\ tm_leq e e'
@@ -371,10 +372,11 @@ with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   match t with
   | var _ | tmErr | tmNat | zero => True
   | tmPi l1 l2 s t | tmSig l1 l2 s t => lwf L l1 /\ lwf L l2 /\ tm_lwf L s /\ tm_lwf L t
-  | tmU l | tmUnit l | tmTriv l => lwf L l
+  | tmU l | tmUnit l | tmTriv l | tmSEmpty l => lwf L l
   | srefl l A a => lwf L l /\ ty_lwf L A /\ tm_lwf L a
   | tmRefl l A a => lwf L l /\ ty_lwf L A /\ tm_lwf L a
   | tmId l s t u => lwf L l /\ tm_lwf L s /\ tm_lwf L t /\ tm_lwf L u
+  | tmSEq l s t u => lwf L l /\ tm_lwf L s /\ tm_lwf L t /\ tm_lwf L u
   | tmJ l1 l2 A a M c u e =>
       lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ tm_lwf L a /\ ty_lwf L M /\
       tm_lwf L c /\ tm_lwf L u /\ tm_lwf L e
