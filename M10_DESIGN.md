@@ -408,6 +408,14 @@ For this formalization:
   has no eliminator.
 - There is no M10b.
 - M10c, the codes, keeps its six branches without `transp`.
+
+No-UIP for the revised rule set has a paper argument in Heather,
+`H/docs/no-uip-model.md`. It uses the groupoid model, with `Ty 0` as sets
+and bijections. The strict propositions are unions of connected
+components, which gives definitional irrelevance strictly. `□` and the
+globals are interpreted in stages over sets of syntactic instantiations.
+The same model validates `transp` at strict motives and refutes a
+relevant one.
 - `IWf` becomes its own milestone after `W`/`Wf`, which we do not have
   yet.
 - Werner's rule (S5) and strict equality at `M` (S7) stay open research
