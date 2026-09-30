@@ -299,6 +299,32 @@ circularity. I found no way through.
 
 This is Heather's call: `issues/sprop-strip-normalization-open.md` in H.
 
+### S6. Any computing `transp` into relevant types gives UIP for `Id` (2026-09-30)
+
+This does not depend on the strip. From `sEq`'s definitional
+irrelevance, `transp` into an arbitrary motive, and β at `srefl` (even
+as a propositional equation), UIP follows for the relevant `Id`:
+
+- `toS : Id(u; v) → sEq(u; v)` by J;
+- `fromS e := transp(z. Id(u; z); u; v; e; refl)`;
+- `fromS (toS p) = p` by J, where the `refl` case is β;
+- given `p q : Id(u; v)`, `toS p ≡ toS q` by irrelevance, so
+  `p = fromS (toS p) ≡ fromS (toS q) = q`.
+
+Checked in Coq 8.20 against an abstract interface (`sEq` in `SProp`,
+`transp` and propositional β as parameters). `Print Assumptions` lists
+only those four parameters. This is Gilbert–Cockx–Sozeau–Tabareau's
+point in *Definitional Proof-Irrelevance without K*: a strict equality
+that eliminates into relevant types has K. The consequences:
+
+- Heather's frozen rule set (M10b as specified) makes UIP a theorem
+  about `Id`.
+- So does every CCobs-style variant, since cast along reflexivity has
+  the same β.
+- Avoiding UIP means `sEq` eliminates only into strict propositions. It
+  also means a replacement for route 2b's form-B arm, which transports
+  the user's motive along the index equation.
+
 ## Staging
 
 **M10a: `sEq`, `srefl`, `sEmpty`, `elim_sEmpty`, irrelevance. No
