@@ -270,13 +270,21 @@ Proof. change (subst_ty M (lsingle a)) with M[lsingle a]. rewrite gsubst_subst_t
 Lemma gs_lsucc_ty' (M : ty) σ : (subst_ty M lsucc)⦃σ⦄ = subst_ty M⦃σ⦄ lsucc.
 Proof. change (subst_ty M lsucc) with M[lsucc]. rewrite gsubst_subst_ty; reflexivity. Qed.
 
+Lemma gs_single2_ty' (M : ty) t q σ :
+  (subst_ty M (lsingle2 t q))⦃σ⦄ = subst_ty M⦃σ⦄ (lsingle2 t⦃σ⦄ q⦃σ⦄).
+Proof. change (subst_ty M (lsingle2 t q)) with M[lsingle2 t q]. rewrite gsubst_subst_ty; reflexivity. Qed.
+Lemma gs_shift_ty' (A : ty) σ : (A⟨↑⟩)⦃σ⦄ = (A⦃σ⦄)⟨↑⟩.
+Proof. apply gsubst_ren_ty. Qed.
+Lemma gs_shift' (t : tm) σ : (t⟨↑⟩)⦃σ⦄ = (t⦃σ⦄)⟨↑⟩.
+Proof. apply gsubst_ren. Qed.
+
 Ltac gpeel_push Hσ :=
   repeat first [ rewrite <- peelL_gsubst by hd_tac
                | rewrite <- peelG_gsubst by first [hd_tac | exact Hσ]
                | rewrite <- peelU_gsubst by first [hd_tac | exact Hσ] ];
   unfold rb_br; rewrite tup_nth_gsubst by hd_tac;
   cbn [gosubst gsubst GSubst_tm GSubst_ty GSubst_ctx gsubst_tm gsubst_ty gcsubst recT rect];
-  rewrite ?gs_single_ty', ?gs_lsucc_ty'; reflexivity.
+  rewrite ?gs_single_ty', ?gs_lsucc_ty', ?gs_single2_ty', ?gs_shift_ty', ?gs_shift'; reflexivity.
 
 Lemma redT_gsubst l1 l2 MT Mt bs l Δ c v σ : gdnf σ ->
   redT l1 l2 (mkrb MT Mt bs) l Δ c = Some v ->

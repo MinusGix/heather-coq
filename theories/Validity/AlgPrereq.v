@@ -283,6 +283,17 @@ Proof.
     exact (wf_var _ i _ 1 _ _ HΓ (in_there _ _ _ _ _ _ (in_here _ _ _))).
 Qed.
 
+(** [J]'s rule with its result type as an equation, to meet a branch head's
+    instance (M11b). *)
+Lemma wf_J_eq G i Γ l l' A a M c u e T : T = M[lsingle2 u e] -> i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ] ->
+  [ G ; Γ ,, A @ l ,, tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ⊢[ i ] c : M[lsingle2 a (tmRefl l A a)] @ l' ] ->
+  [ G ; Γ ⊢[ i ] u : A @ l ] -> [ G ; Γ ⊢[ i ] e : tyId l A a u @ l ] ->
+  [ G ; Γ ⊢[ i ] tmJ l l' A a M c u e : T @ l' ].
+Proof. intros ->; apply wf_J. Qed.
+
 (** Side conditions in a concrete branch scope: levels, lookups, weakenings,
     and the typing of the objects (contexts at D, codes at C, boxes at M). *)
 Ltac br_lvl := cbn; repeat split; try lia.
@@ -299,6 +310,12 @@ Ltac br_tac :=
     | eapply wft_sig | apply wft_unit | eapply wf_code_sig | apply wf_code_unit | apply wf_triv
     | eapply wf_pair | eapply wf_fst | eapply wf_snd
     | eapply wf_gv | eapply wf_gu | eapply wf_gv_single | eapply wf_gv_succ
+    (* the identity type (M11b): [J]'s motive context shifts its carrier and point *)
+    | apply wft_id | apply wf_idrefl | eapply wf_code_id
+    | eapply wf_J_eq; [reflexivity | ..]
+    | match goal with |- context [ren (gv _) _] => unfold gv, gu;
+        cbn [ren Ren_ty Ren_tm ren_ty ren_tm lren r2l rdrop rshift1] end
+    | apply wf_var0_gv | eapply wf_gv_up | eapply wf_gu_up | eapply wf_gv_single2
     (* last: their [cbn] is the bulk of the cost when tried on every goal *)
     | solve [unfold lle; cbn; lia] | solve [br_lvl] ].
 

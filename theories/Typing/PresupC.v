@@ -375,6 +375,60 @@ Proof.
            (conj Hdd (conj Hdd' (fun n A k H => lift_eqtm (Hee _ _ _ H) HiD)))).
 Qed.
 
+
+(** The identity type (every layer but V since M11b): the right-hand
+    sides by Static Code's constructions, at level-equivalent annotations. *)
+Lemma pc_id {Γ l l' A A' a a' b b'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] b : A @ l ] -> [ G ; Γ ⊢[ i ] b' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] tyId l A a b @ l ] /\ [ G ; Γ ⊢[ i ] tyId l' A' a' b' @ l ].
+Proof.
+  intros Hv Hl HA HAA HA' Ha Ha' Hb Hb'.
+  split; [apply wft_id; eauto using lequiv_wf_l | exact (sc_id_q HiD Hv Hl HA' HAA Ha' Hb')].
+Qed.
+
+Lemma pc_idrefl {Γ l l' A A' a a'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] tmRefl l A a : tyId l A a a @ l ] /\ [ G ; Γ ⊢[ i ] tmRefl l' A' a' : tyId l A a a @ l ].
+Proof.
+  intros Hv Hl HA HAA HA' Haa Ha Ha'.
+  split; [apply wf_idrefl; eauto using lequiv_wf_l | exact (sc_idrefl_q HiD Hv Hl HA HA' HAA Ha' Haa)].
+Qed.
+
+Lemma pc_code_id {Γ l l' s s' t t' u u'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] t' : tyEl l s @ l ] ->
+  [ G ; Γ ⊢[ i ] u : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u' : tyEl l s @ l ] ->
+  [ G ; Γ ⊢[ i ] tmId l s t u : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmId l' s' t' u' : tyU l @ lsuc l ].
+Proof.
+  intros Hv Hl Hs Hss Hs' Ht Ht' Hu Hu'.
+  split; [apply wf_code_id; eauto using lequiv_wf_l | exact (sc_code_id_q HiD Hv Hl Hs' Hss Ht' Hu')].
+Qed.
+
+Lemma pc_J {Γ l1 l2 l3 l4 A A' a a' M M' c c' u u' e e'} : i <> lV ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ] ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] -> [ G ; Γ ⊢[ i ] a : A @ l1 ] -> [ G ; Γ ⊢[ i ] a' : A @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ i ] M ≅ M' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ i ] M @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ i ] M' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] c : M[lsingle2 a (tmRefl l1 A a)] @ l2 ] ->
+  [ G ; Γ ⊢[ i ] c' : M[lsingle2 a (tmRefl l1 A a)] @ l2 ] ->
+  [ G ; Γ ⊢[ i ] u ≅ u' : A @ l1 ] -> [ G ; Γ ⊢[ i ] u : A @ l1 ] -> [ G ; Γ ⊢[ i ] u' : A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] e ≅ e' : tyId l1 A a u @ l1 ] ->
+  [ G ; Γ ⊢[ i ] e : tyId l1 A a u @ l1 ] -> [ G ; Γ ⊢[ i ] e' : tyId l1 A a u @ l1 ] ->
+  [ G ; Γ ⊢[ i ] tmJ l1 l2 A a M c u e : M[lsingle2 u e] @ l2 ] /\
+  [ G ; Γ ⊢[ i ] tmJ l3 l4 A' a' M' c' u' e' : M[lsingle2 u e] @ l2 ].
+Proof.
+  intros Hv H13 H24 HId HA HAA HA' Haa Ha Ha' HMM HM HM' Hc Hc' Huu Hu Hu' Hee He He'.
+  split; [apply wf_J; eauto using lequiv_wf_l |].
+  exact (sc_J_q HiD Hv H13 H24 HA HA' HAA Ha Ha' Haa HM' HMM Hc' Hu Hu' Huu He He' Hee).
+Qed.
+
 End Cases.
 
 Theorem presupposition_C :
@@ -410,7 +464,9 @@ Proof.
              | solve [eapply pc_sig; eassumption] | solve [eapply pc_codesig; eassumption]
              | solve [eapply pc_pair; eassumption] | solve [eapply pc_fst; eassumption]
              | solve [eapply pc_snd; eassumption] | solve [eapply pc_unit; eassumption]
-             | solve [eapply pc_codeunit; eassumption] | solve [eapply pc_triv; eassumption] ].
+             | solve [eapply pc_codeunit; eassumption] | solve [eapply pc_triv; eassumption]
+             | solve [eapply pc_id; eassumption] | solve [eapply pc_idrefl; eassumption]
+             | solve [eapply pc_code_id; eassumption] | solve [eapply pc_J; eassumption] ].
 Qed.
 
 Lemma eqty_wf_C {G i Γ T T' l} : lle i lC -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->

@@ -85,8 +85,8 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] tySEq l A a b @ l ]
 | wft_sempty G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tySEmpty l @ l ]
-(* the identity type (layers D and M; M11_DESIGN.md) *)
-| wft_id G i Γ l A a b : compt i -> lwf (gL G) l ->
+(* the identity type (M11_DESIGN.md): every layer but V since M11b *)
+| wft_id G i Γ l A a b : i <> lV -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] b : A @ l ] ->
     [ G ; Γ ⊢[ i ] tyId l A a b @ l ]
 
@@ -234,14 +234,14 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 | wf_elimSEmpty G i Γ l l' M e : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] M @ l' ] -> [ G ; Γ ⊢[ i ] e : tySEmpty l @ l ] ->
     [ G ; Γ ⊢[ i ] elimSEmpty l l' M e : M @ l' ]
-(* the identity type (layers D and M): [refl], and based path induction; the
+(* the identity type (every layer but V since M11b): [refl], and based path induction; the
    motive binds [y : A] and [p : Id(A; a; y)]. The [Id] type of the motive's
    context is a premise (a presupposition, as for the recursors, M3 E10): its
    induction hypothesis supplies the extended context under every operation *)
-| wf_idrefl G i Γ l A a : compt i -> lwf (gL G) l ->
+| wf_idrefl G i Γ l A a : i <> lV -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] ->
     [ G ; Γ ⊢[ i ] tmRefl l A a : tyId l A a a @ l ]
-| wf_J G i Γ l l' A a M c u e : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+| wf_J G i Γ l l' A a M c u e : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] ->
     [ G ; Γ ,, A @ l ⊢[ i ] tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ] ->
     [ G ; Γ ,, A @ l ,, tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ i ] M @ l' ] ->
@@ -249,7 +249,7 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] u : A @ l ] -> [ G ; Γ ⊢[ i ] e : tyId l A a u @ l ] ->
     [ G ; Γ ⊢[ i ] tmJ l l' A a M c u e : M[lsingle2 u e] @ l' ]
 (* the identity type's code (M11b) *)
-| wf_code_id G i Γ l s t u : compt i -> lwf (gL G) l ->
+| wf_code_id G i Γ l s t u : i <> lV -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
     [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u : tyEl l s @ l ] ->
     [ G ; Γ ⊢[ i ] tmId l s t u : tyU l @ lsuc l ]
@@ -328,8 +328,8 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] tySEq l A a b ≅ tySEq l' A' a' b' @ l ]
 | eqty_sempty G i Γ l l' : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] tySEmpty l ≅ tySEmpty l' @ l ]
-(* the identity type (layers D and M) *)
-| eqty_id G i Γ l l' A A' a a' b b' : compt i -> lequiv (gL G) l l' ->
+(* the identity type (every layer but V; El decoding at the computing layers) *)
+| eqty_id G i Γ l l' A A' a a' b b' : i <> lV -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
     [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] -> [ G ; Γ ⊢[ i ] b ≅ b' : A @ l ] ->
     [ G ; Γ ⊢[ i ] tyId l A a b ≅ tyId l' A' a' b' @ l ]
@@ -643,12 +643,12 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
 | eqtm_sempty_irr G i Γ l p q : compt i -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] p : tySEmpty l @ l ] -> [ G ; Γ ⊢[ i ] q : tySEmpty l @ l ] ->
     [ G ; Γ ⊢[ i ] p ≅ q : tySEmpty l @ l ]
-(* the identity type (layers D and M): the congruences ([refl]'s compares the
+(* the identity type (every layer but V; β at the computing layers): the congruences ([refl]'s compares the
    carrier and the point) and β; no η, which is the absence of K *)
-| eqtm_idrefl G i Γ l l' A A' a a' : compt i -> lequiv (gL G) l l' ->
+| eqtm_idrefl G i Γ l l' A A' a a' : i <> lV -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
     [ G ; Γ ⊢[ i ] tmRefl l A a ≅ tmRefl l' A' a' : tyId l A a a @ l ]
-| eqtm_J G i Γ l1 l2 l3 l4 A A' a a' M M' c c' u u' e e' : compt i ->
+| eqtm_J G i Γ l1 l2 l3 l4 A A' a a' M M' c c' u u' e e' : i <> lV ->
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] ->
     [ G ; Γ ,, A @ l1 ⊢[ i ] tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ] ->
@@ -663,7 +663,7 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ,, A @ l ,, tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ i ] M @ l' ] ->
     [ G ; Γ ⊢[ i ] c : M[lsingle2 a (tmRefl l A a)] @ l' ] ->
     [ G ; Γ ⊢[ i ] tmJ l l' A a M c a (tmRefl l A a) ≅ c : M[lsingle2 a (tmRefl l A a)] @ l' ]
-| eqtm_code_id G i Γ l l' s s' t t' u u' : compt i -> lequiv (gL G) l l' ->
+| eqtm_code_id G i Γ l l' s s' t t' u u' : i <> lV -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
     [ G ; Γ ⊢[ i ] t ≅ t' : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u ≅ u' : tyEl l s @ l ] ->
     [ G ; Γ ⊢[ i ] tmId l s t u ≅ tmId l' s' t' u' : tyU l @ lsuc l ]

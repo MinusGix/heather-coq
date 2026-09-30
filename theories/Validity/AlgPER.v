@@ -881,7 +881,7 @@ Proof.
   exists M'[lsingle2 u' ν']. eapply actmne_J; [exact (leqv_sym _ _ H13) | exact (leqv_sym _ _ H24) | | | | | | exact Xν].
   - exact (IHA i l1 l3 Hc HA HA').
   - exact (cv_tm HG Hc (IHa i l1 Hc Ha Ha'1) (eqc_refl _ _ _ HΓ) Ha'1 Ha EA').
-  - exact (cv_ty HG Hc (IHM i l2 l2 Hc HM HM'2) (J_ctx_eq Hi Hc E13 HA EA Ea) HM'2 HM).
+  - exact (cv_ty HG Hc (IHM i l2 l2 Hc HM HM'2) (J_ctx_eq Hi Hv E13 HA EA Ea) HM'2 HM).
   - exact (cv_tm HG Hc (IHc i l2 Hc Hcc Hc'1) (eqc_refl _ _ _ HΓ) Hc'1 Hcc (eqty_sym _ _ _ _ _ _ HMs)).
   - exact (cv_tm HG Hc (IHu i l1 Hc Hu Hu'1) (eqc_refl _ _ _ HΓ) Hu'1 Hu EA').
 Qed.
@@ -2450,7 +2450,7 @@ Proof.
   apply (fun H => wft_lconv _ _ _ _ _ _ H E46) in HM''m.
   assert (Hctx : [ G ⊢[ i ] Γ ,, A' @ l3 ,, tyId l3 A'⟨↑⟩ a'⟨↑⟩ (var 0) @ l3
                             ≅ Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ]).
-  { apply (J_ctx_eq Hi Hc (lequiv_sym _ _ _ E13) HA' (eqty_sym _ _ _ _ _ _ EA1)).
+  { apply (J_ctx_eq Hi Hv (lequiv_sym _ _ _ E13) HA' (eqty_sym _ _ _ _ _ _ EA1)).
     eapply eqtm_lconv; [|exact (lequiv_sym _ _ _ E13)].
     eapply eqtm_conv; [apply eqtm_sym, Ea | rewrite Hi; apply eqty_sym, EA]. }
   pose proof (cv_ty HG Hc DM2 Hctx HM' HM''m) as DM2'.

@@ -170,12 +170,12 @@ Proof. inv_tm_any. Qed.
 
 (** The identity type (M11a). *)
 Lemma inva_idrefl {G i Γ l A a T k} : [ G ; Γ ⊢[ i ] tmRefl l A a : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\
     lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyId l A a a @ k ].
 Proof. inv_tm_any. Qed.
 
 Lemma inva_J {G i Γ l l' A a M c u e T k} : [ G ; Γ ⊢[ i ] tmJ l l' A a M c u e : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ] /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ] /\
     [ G ; Γ ,, A @ l ⊢[ i ] tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ] /\
     [ G ; Γ ,, A @ l ,, tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ i ] M @ l' ] /\
     [ G ; Γ ⊢[ i ] c : M[lsingle2 a (tmRefl l A a)] @ l' ] /\
@@ -184,7 +184,7 @@ Lemma inva_J {G i Γ l l' A a M c u e T k} : [ G ; Γ ⊢[ i ] tmJ l l' A a M c 
 Proof. inv_tm_any. Qed.
 
 Lemma inva_code_id {G i Γ l s t u T k} : [ G ; Γ ⊢[ i ] tmId l s t u : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
     [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] /\ [ G ; Γ ⊢[ i ] u : tyEl l s @ l ]) /\
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU l @ k ].
 Proof. inv_tm_any. Qed.

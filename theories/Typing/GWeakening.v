@@ -113,7 +113,7 @@ Ltac gpeel_push :=
   repeat first [ rewrite <- peelL_gren | rewrite <- peelG_gren | rewrite <- peelU_gren ];
   unfold rb_br; rewrite tup_nth_gren;
   cbn [goren gren GRen_tm GRen_ty GRen_ctx gren_tm recT rect]; rewrite ?gren_ty_subst_raw;
-  reflexivity.
+  rewrite ?gren_ren_ty', ?gren_ren; reflexivity.
 
 Lemma redT_gren l1 l2 rb l Δ c v ξ : redT l1 l2 rb l Δ c = Some v ->
   redT l1 l2 rb⟪ξ⟫ l Δ⟪ξ⟫ c⟪ξ⟫ = Some v⟪ξ⟫.

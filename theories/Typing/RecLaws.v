@@ -223,10 +223,17 @@ Lemma usubst_lsingle2_ty M t q φ :
   usubst_ty (subst_ty M (lsingle2 t q)) φ = subst_ty (usubst_ty M φ) (lsingle2 (usubst_tm t φ) (usubst_tm q φ)).
 Proof. apply (proj1 usubst_subst_all). intros [|[|n]]; reflexivity. Qed.
 
+(** [J]'s motive context shifts its carrier and point (M11b). *)
+Lemma usubst_shift_ty (T : ty) φ : usubst_ty T⟨↑⟩ φ = (usubst_ty T φ)⟨↑⟩.
+Proof. exact (proj1 usubst_ren_all T _ φ). Qed.
+Lemma usubst_shift (t : tm) φ : usubst_tm t⟨↑⟩ φ = (usubst_tm t φ)⟨↑⟩.
+Proof. exact (proj1 (proj2 usubst_ren_all) t _ φ). Qed.
+
 Ltac upeel_push :=
   repeat first [ rewrite <- peelL_usubst | rewrite <- peelG_usubst | rewrite <- peelU_usubst ];
   rewrite rb_br_usubst; cbn [gousubst usubst_tm ucsubst usubst_ty lvsubst recT rect];
-  rewrite ?usubst_lsingle_ty, ?usubst_lsucc_ty; reflexivity.
+  rewrite ?usubst_lsingle_ty, ?usubst_lsucc_ty, ?usubst_lsingle2_ty, ?usubst_shift_ty, ?usubst_shift;
+  reflexivity.
 
 Lemma redT_usubst l1 l2 rb l Δ c v φ : redT l1 l2 rb l Δ c = Some v ->
   redT (lvsubst l1 φ) (lvsubst l2 φ) (usubst_tm rb φ) (lvsubst l φ) (ucsubst Δ φ) (usubst_ty c φ)
@@ -310,13 +317,18 @@ Lemma wkb_ren2 nu ng w r : (wkb nu ng 2 w)⟨rlift (rlift r)⟩ = wkb nu ng 2 w�
 Proof. exact (wkb_ren nu ng 2 w r). Qed.
 Lemma wkb_ren3 nu ng w r : (wkb nu ng 3 w)⟨rlift (rlift (rlift r))⟩ = wkb nu ng 3 w⟨r⟩.
 Proof. exact (wkb_ren nu ng 3 w r). Qed.
+Lemma wkb_ren4 nu ng w r : (wkb nu ng 4 w)⟨rlift (rlift (rlift (rlift r)))⟩ = wkb nu ng 4 w⟨r⟩.
+Proof. exact (wkb_ren nu ng 4 w r). Qed.
+Lemma wkb_ren5 nu ng w r : (wkb nu ng 5 w)⟨rlift (rlift (rlift (rlift (rlift r))))⟩ = wkb nu ng 5 w⟨r⟩.
+Proof. exact (wkb_ren nu ng 5 w r). Qed.
 
 Lemma brLocs_ren k wT wt a1 a2 r : k < nbr ->
   cexts_ren (brLocs k wT wt a1 a2) r = brLocs k wT⟨r⟩ wt⟨r⟩ a1 a2.
 Proof.
   intros Hk.
   br_all ltac:(destruct k; [cbn [brLocs cexts_ren mkLocs call_ty call_lv br_calls br_nu br_ng br_ar];
-    rewrite ?motT_ren, ?mott_ren, ?wkb_ren0, ?wkb_ren1, ?wkb_ren2, ?wkb_ren3; reflexivity|]).
+    rewrite ?motT_ren, ?mott_ren, ?wkb_ren0, ?wkb_ren1, ?wkb_ren2, ?wkb_ren3, ?wkb_ren4, ?wkb_ren5;
+    reflexivity|]).
   lia.
 Qed.
 

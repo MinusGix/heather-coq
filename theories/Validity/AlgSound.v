@@ -671,7 +671,7 @@ Proof.
   assert (F : forall x, [ G ; Γ ⊢[ i ] x : A' @ l' ] -> [ G ; Γ ⊢[ i ] x : A @ l ]).
   { intros x Hx. eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ Hx E) | rewrite Hi; exact EA]. }
   pose proof (IHa i l Hc Ha (F _ Ha')) as Ea. pose proof (IHb i l Hc Hb (F _ Hb')) as Eb.
-  apply (lvl_eq_eqty Hk). apply eqty_id; assumption.
+  apply (lvl_eq_eqty Hk). apply eqty_id; try assumption. exact (compt_notV _ Hc).
 Qed.
 
 (** Two [refl]s at an [Id] type: their points are its left endpoint. *)
@@ -682,7 +682,7 @@ Proof.
   destruct (inv_idrefl Hi Ht) as ((_ & Wk & HC & Hcc) & Hk & ET).
   destruct (inv_idrefl Hi Ht') as ((_ & _ & _ & _) & _ & ET').
   destruct (id_inj_c Hc (eqty_trans _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ ET) ET')) as (Ekk & ECC & Ecc & _).
-  pose proof (eqtm_idrefl _ _ _ _ _ _ _ _ _ Hc (lequiv_sym _ _ _ Ekk) HC ECC Ecc) as Econg.
+  pose proof (eqtm_idrefl _ _ _ _ _ _ _ _ _ (compt_notV _ Hc) (lequiv_sym _ _ _ Ekk) HC ECC Ecc) as Econg.
   eapply eqtm_conv; [exact (lvl_eq_eqtm Hk Econg) | rewrite Hi; exact ET].
 Qed.
 
@@ -729,7 +729,7 @@ Proof.
   destruct (code_El_conv Hc E Es) as (F & _).
   pose proof (IHt i k Hc Ht (F _ Ht')) as Et. pose proof (IHu i k Hc Hu (F _ Hu')) as Eu.
   eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
-  apply eqtm_code_id; assumption.
+  apply eqtm_code_id; try assumption. exact (compt_notV _ Hc).
 Qed.
 
 (** [J]'s motive context at the other side's carrier and point. *)
@@ -739,7 +739,7 @@ Lemma J_ctx_conv {G i Γ l1 l3 A A' a a'} : typeof i = i -> compt i -> lequiv (g
   [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ i ] lshift 0
       : Γ ,, A' @ l3 ,, tyId l3 A'⟨↑⟩ a'⟨↑⟩ (var 0) @ l3 ].
 Proof.
-  intros Hi Hc H13 HA HA' HAA Haa.
+  intros Hi Hc H13 HA HA' HAA Haa. pose proof (compt_notV _ Hc) as Hv.
   pose proof (ctx_of_wf_ty Hi HA) as HΓ.
   assert (H31 : lequiv (gL G) l3 l1) by now apply lequiv_sym.
   assert (HA3 : [ G ; Γ ⊢[ i ] A @ l3 ]) by (eapply wft_lconv; [exact HA | exact H31]).
@@ -759,24 +759,6 @@ Proof.
   exact Hid2.
 Qed.
 
-(** The two motive contexts are equal. *)
-Lemma J_ctx_eq {G i Γ l1 l3 A A' a a'} : typeof i = i -> compt i -> lequiv (gL G) l1 l3 ->
-  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] ->
-  [ G ⊢[ i ] Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1
-           ≅ Γ ,, A' @ l3 ,, tyId l3 A'⟨↑⟩ a'⟨↑⟩ (var 0) @ l3 ].
-Proof.
-  intros Hi Hc H13 HA HAA Haa.
-  pose proof (ctx_of_wf_ty Hi HA) as HΓ.
-  assert (HΓA : [ G ; Γ ,, A @ l1 ⊢[ i ] ]) by (apply wfc_ext; eauto using lequiv_wf_l).
-  assert (EId : [ G ; Γ ,, A @ l1 ⊢[ i ] tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) ≅ tyId l3 A'⟨↑⟩ a'⟨↑⟩ (var 0) @ l1 ]).
-  { apply eqty_id; auto.
-    - apply wk1_ty; auto.
-    - apply wk1_eqty; auto.
-    - apply wk1_eqtm with (T := A); auto.
-    - apply eqtm_refl, var0_wf; auto. }
-  apply eqc_ext; [| exact (eqty_wf_l Hi EId) | exact EId | exact H13].
-  apply eqc_ext; [apply eqc_refl, HΓ | exact HA | exact HAA | exact H13].
-Qed.
 
 Lemma S_actmne_J {G Γ l1 l2 l3 l4 A A' a a' M M' c c' u u' ν ν' W} : leqv l1 l3 -> leqv l2 l4 ->
   S_ty G Γ A A' -> S_tm G Γ a a' A ->
@@ -813,7 +795,7 @@ Proof.
   { eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ Hc' E24) | rewrite Hi; exact HMs]. }
   pose proof (IHc i l2 Hc Hcc Hc'1) as Ec.
   destruct (IHν i l1 l3 _ _ Hc He He') as (_ & _ & Eν).
-  pose proof (eqtm_J _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hc E13 E24 HA EA Ea HI HM EM Ec Eu Eν) as Econg.
+  pose proof (eqtm_J _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hv E13 E24 HA EA Ea HI HM EM Ec Eu Eν) as Econg.
   (* the result types *)
   pose proof (eqtm_wf_r Hi Eu) as Hu'1. pose proof (eqtm_wf_r Hi Eν) as He'1.
   pose proof (lsub_eq_J Hi Hv W1 HA Ha Hu Hu'1 Eu He He'1 Eν) as Hs2.

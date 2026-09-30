@@ -85,7 +85,10 @@ Proof.
   destruct c; cbn [redt] in E; redt_case T; inversion E; subst; cbn in Hc, HT;
     repeat first [ apply dnf_peelL | apply dnf_peelG | apply dnf_peelU | apply dnf_tup_nth ];
     cbn [dnfo dnftm dnfty dnfctx recT rect]; intuition auto.
-  all: apply subst_dnf_ty; [intuition auto | first [apply lk_dnf_lsucc | apply lk_dnf_lsingle; first [exact I | intuition auto]]].
+  all: first
+    [ apply ren_dnf_ty; intuition auto | apply ren_dnf; intuition auto
+    | apply subst_dnf_ty; [intuition auto | first [apply lk_dnf_lsucc | apply lk_dnf_lsingle; first [exact I | intuition auto]
+                                                  | apply lk_dnf_lsingle2; cbn [dnftm]; intuition auto]] ].
 Qed.
 
 Theorem typed_dnf :

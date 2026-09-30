@@ -504,13 +504,20 @@ Proof. exact (wkb_subst nu ng 2 w d). Qed.
 Lemma wkb_subst3 nu ng w d : LK dnftm d ->
   (wkb nu ng 3 w)[llift (llift (llift (gwkn ng (uwkn nu d))))] = wkb nu ng 3 w[d].
 Proof. exact (wkb_subst nu ng 3 w d). Qed.
+Lemma wkb_subst4 nu ng w d : LK dnftm d ->
+  (wkb nu ng 4 w)[llift (llift (llift (llift (gwkn ng (uwkn nu d)))))] = wkb nu ng 4 w[d].
+Proof. exact (wkb_subst nu ng 4 w d). Qed.
+Lemma wkb_subst5 nu ng w d : LK dnftm d ->
+  (wkb nu ng 5 w)[llift (llift (llift (llift (llift (gwkn ng (uwkn nu d))))))] = wkb nu ng 5 w[d].
+Proof. exact (wkb_subst nu ng 5 w d). Qed.
 
 Fixpoint cexts_sub (As : list (ty * lvl)) (d : lsub) : list (ty * lvl) :=
   match As with nil => nil | cons (A, l) As => cons (A[d], l) (cexts_sub As (llift d)) end.
 
 Ltac rec_subst_rw :=
   rewrite ?motT_subst, ?mott_subst by first [hd_tac | auto 8 with nf];
-  rewrite ?wkb_subst0, ?wkb_subst1, ?wkb_subst2, ?wkb_subst3, ?wkb_subst by auto with nf.
+  rewrite ?wkb_subst0, ?wkb_subst1, ?wkb_subst2, ?wkb_subst3, ?wkb_subst4, ?wkb_subst5, ?wkb_subst
+    by auto with nf.
 
 Lemma brLocs_subst k MT Mt a1 a2 d : k < nbr -> LK dnftm d ->
   cexts_sub (brLocs k (wrapMT MT) (wrapMt Mt) a1 a2) (bsub k d) =

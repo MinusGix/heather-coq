@@ -65,16 +65,16 @@ Proof.
   intros Hee Hk HAC Haw Huw.
   assert (Hau : [ G ; Δ ⊢g a ≅ u : A @ l1 ]) by (eapply eqtm_trans; [exact Haw | now apply eqtm_sym]).
   assert (HId : [ G ; Δ ⊢g tyId l1 A a a ≅ tyId l1 A a u @ l1 ]).
-  { apply eqty_id; [exact ge_compt | now apply lequiv_refl | exact HA | now apply eqty_refl
+  { apply eqty_id; [exact ge_notV | now apply lequiv_refl | exact HA | now apply eqty_refl
                    | now apply eqtm_refl | exact Hau]. }
   assert (Hrr : [ G ; Δ ⊢g tmRefl l1 A a ≅ tmRefl k C w : tyId l1 A a a @ l1 ])
-    by (apply eqtm_idrefl; [exact ge_compt | now apply lequiv_sym | exact HA | exact HAC | exact Haw]).
+    by (apply eqtm_idrefl; [exact ge_notV | now apply lequiv_sym | exact HA | exact HAC | exact Haw]).
   assert (Her : [ G ; Δ ⊢g e ≅ tmRefl l1 A a : tyId l1 A a u @ l1 ]).
   { eapply eqtm_trans; [exact Hee|]. apply eqtm_sym. eapply convg; [exact Hrr | now apply eqty_sym]. }
   pose proof (J_motive_conv Her) as HMe.
   assert (Hcong : [ G ; Δ ⊢g tmJ l1 l2 A a M c u e ≅ tmJ l1 l2 A a M c a (tmRefl l1 A a)
                      : M[lsingle2 u e] @ l2 ]).
-  { apply eqtm_J; first [exact ge_compt | now apply lequiv_refl | assumption | now apply eqty_refl
+  { apply eqtm_J; first [exact ge_notV | now apply lequiv_refl | assumption | now apply eqty_refl
                          | now apply eqtm_refl | now apply eqtm_sym]. }
   pose proof (eqtm_J_beta _ _ _ _ _ _ _ _ _ ge_compt Hw1 Hw2 HA Ha HI HM Hc) as Hb.
   (* the motive at [(a, refl)] is the one at [(u, e)] *)
@@ -82,9 +82,9 @@ Proof.
   { apply eqty_sym. eapply eqty_trans; [exact HMe|].
     apply (wf_ty_func ge_typeof HM).
     apply (lsub_eq_J ge_typeof ge_notV Hw1 HA Ha Hu Ha (eqtm_sym _ _ _ _ _ _ _ Hau)); [| |].
-    - eapply conv_tm'; [exact ge_typeof | exact (wf_idrefl _ _ _ _ _ _ ge_compt Hw1 HA Ha) | now apply eqty_sym].
-    - eapply conv_tm'; [exact ge_typeof | exact (wf_idrefl _ _ _ _ _ _ ge_compt Hw1 HA Ha) | now apply eqty_sym].
-    - apply eqtm_refl. eapply conv_tm'; [exact ge_typeof | exact (wf_idrefl _ _ _ _ _ _ ge_compt Hw1 HA Ha)
+    - eapply conv_tm'; [exact ge_typeof | exact (wf_idrefl _ _ _ _ _ _ ge_notV Hw1 HA Ha) | now apply eqty_sym].
+    - eapply conv_tm'; [exact ge_typeof | exact (wf_idrefl _ _ _ _ _ _ ge_notV Hw1 HA Ha) | now apply eqty_sym].
+    - apply eqtm_refl. eapply conv_tm'; [exact ge_typeof | exact (wf_idrefl _ _ _ _ _ _ ge_notV Hw1 HA Ha)
                                          | now apply eqty_sym]. }
   split; [|exact HMs].
   eapply eqtm_trans; [exact Hcong|]. eapply convg; [exact Hb | now apply eqty_sym].
@@ -149,7 +149,7 @@ Proof.
   eapply LRtm_of; [exact (LR_id_here Hw (lequiv_refl _ _ Hw) HA EAA Eaa Eaa HRA Raa Raa)|].
   exists (tmRefl l A[d] a[d]), (tmRefl l' A'[d'] a'[d']).
   refine (conj (tmred_refl _ _ _ _) (conj (tmred_refl _ _ _ _) (conj _ _))).
-  - apply wf_idrefl; [exact ge_compt | exact Hw | exact HA | exact (eqtm_wf_l ge_typeof Da)].
+  - apply wf_idrefl; [exact ge_notV | exact Hw | exact HA | exact (eqtm_wf_l ge_typeof Da)].
   - exact (pre_idrefl_r ge_typeof ge_notV Hl HA DA (eqty_wf_r ge_typeof DA) Da (eqtm_wf_r ge_typeof Da)).
   - exact (geq_tm_idrefl Hl HA EA Ea).
   - apply idnf_refl; auto using lequiv_refl, lequiv_sym.
@@ -173,7 +173,7 @@ Proof.
   assert (F : forall x, [ G ; Δ ⊢g x : tyEl l s @ l ] -> [ G ; Δ ⊢g x : tyEl k s @ k ]).
   { intros x Hx. eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ Hx Hk) | rewrite ge_typeof; exact EEl]. }
   assert (Hc : [ G ; Δ ⊢g tmId k s t u : tyU k @ lsuc k ])
-    by (apply wf_code_id; [exact ge_compt | exact Hwk | exact Hsk | apply F, Ht | apply F, Hu]).
+    by (apply wf_code_id; [exact ge_notV | exact Hwk | exact Hsk | apply F, Ht | apply F, Hu]).
   pose proof (conv_U' Hc Hk) as Hcl.
   destruct (El_annot Hcl Hla) as [HEl HEq].
   apply tyred_step; [exact HEl | constructor |].
@@ -303,7 +303,7 @@ Proof.
   assert (HJJ : [ G ; Δ ⊢g tmJ l1 l2 A[d] a[d] M[llift (llift d)] c[d] u[d] e[d]
                    ≅ tmJ l3 l4 A'[d'] a'[d'] M'[llift (llift d')] c'[d'] u'[d'] e'[d']
                    : M[llift (llift d)][lsingle2 u[d] e[d]] @ l2 ])
-    by exact (eqtm_J _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ge_compt H13 H24 HA DA Da HI HM DM Dc Du De).
+    by exact (eqtm_J _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ge_notV H13 H24 HA DA Da HI HM DM Dc Du De).
   destruct Re as (w & w' & Hrw & Hrw' & Eww & Nww).
   destruct Nww as [k k' C C' w0 w0' Hk Hk' HC HC' Raw Raw' Ruw Ruw' | ν ν' Hν].
   - (* [refl]: both sides step to the base case *)
@@ -327,14 +327,14 @@ Proof.
     assert (Rua : RA u[d] a[d]) by exact (Tr _ _ _ Ruw (Sy _ _ Raw)).
     pose proof (proj2 (proj2 (escape_tm _ _ _ _ _ _ _ _ HRA _ _ Rua))) as Eua.
     assert (DId : [ G ; Δ ⊢g tyId l1 A[d] a[d] a[d] ≅ tyId l1 A[d] a[d] u[d] @ l1 ]).
-    { apply eqty_id; [exact ge_compt | now apply lequiv_refl | exact HA | now apply eqty_refl
+    { apply eqty_id; [exact ge_notV | now apply lequiv_refl | exact HA | now apply eqty_refl
                      | now apply eqtm_refl | exact (geq_tm_sound (geq_tm_sym Eua))]. }
     pose proof (LR_id_here Hw1 (lequiv_refl _ _ Hw1) HA EAd Eaa Eua HRA Raa Rua) as HIdua.
     assert (Xr : LRtm l1 G Δ (tyId l1 A[d] a[d] u[d]) (tyId l1 A[d] a[d] a[d]) e[d] (tmRefl l1 A[d] a[d])).
     { eapply LRtm_of; [exact HIdua|].
       exists (tmRefl k C w0), (tmRefl l1 A[d] a[d]).
       refine (conj Hrw (conj (tmred_refl _ _ _ _) (conj _ _))).
-      - eapply conv_tm'; [exact ge_typeof | exact (wf_idrefl _ _ _ _ _ _ ge_compt Hw1 HA Ha)
+      - eapply conv_tm'; [exact ge_typeof | exact (wf_idrefl _ _ _ _ _ _ ge_notV Hw1 HA Ha)
                          | now apply eqty_sym].
       - eapply geq_tm_conv; [apply geq_tm_sym, (geq_tm_idrefl (lequiv_sym _ _ _ Hk) HA HC Eaw) | exact DId].
       - apply idnf_refl; auto using lequiv_refl. }
@@ -351,14 +351,14 @@ Proof.
     assert (HJν : [ G ; Δ ⊢g tmJ l1 l2 A[d] a[d] M[llift (llift d)] c[d] u[d] e[d]
                      ≅ tmJ l1 l2 A[d] a[d] M[llift (llift d)] c[d] u[d] ν
                      : M[llift (llift d)][lsingle2 u[d] e[d]] @ l2 ]).
-    { apply eqtm_J; first [exact ge_compt | now apply lequiv_refl | assumption | now apply eqty_refl
+    { apply eqtm_J; first [exact ge_notV | now apply lequiv_refl | assumption | now apply eqty_refl
                            | now apply eqtm_refl]. }
     pose proof (J_motive_conv Hw1 HA Ha HM Hu Deν) as HMν.
     assert (HJνν : [ G ; Δ ⊢g tmJ l1 l2 A[d] a[d] M[llift (llift d)] c[d] u[d] ν
                       ≅ tmJ l3 l4 A'[d'] a'[d'] M'[llift (llift d')] c'[d'] u'[d'] ν'
                       : M[llift (llift d)][lsingle2 u[d] e[d]] @ l2 ]).
     { eapply convg; [|exact HMν].
-      apply eqtm_J; first [exact ge_compt | assumption | exact (geq_tm_sound Eww)]. }
+      apply eqtm_J; first [exact ge_notV | assumption | exact (geq_tm_sound Eww)]. }
     assert (Lred : [ G ; Δ ⊢g tmJ l1 l2 A[d] a[d] M[llift (llift d)] c[d] u[d] e[d]
                      ⤳* tmJ l1 l2 A[d] a[d] M[llift (llift d)] c[d] u[d] ν
                      : M[llift (llift d)][lsingle2 u[d] e[d]] @ l2 ]).

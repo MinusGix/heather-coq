@@ -444,7 +444,7 @@ Proof.
   intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_J Hi Hx) as ((_ & W1 & W2 & HA & Ha & HI & HM & Hcc & Hu & He) & Hk & ET).
   refine (retype_eqtm Hi _ Hk ET).
-  apply eqtm_J; [exact Hc | apply lequiv_refl, W1 | apply lequiv_refl, W2 | exact HA | apply eqty_refl, HA
+  apply eqtm_J; [exact (compt_notV _ Hc) | apply lequiv_refl, W1 | apply lequiv_refl, W2 | exact HA | apply eqty_refl, HA
                 | apply eqtm_refl, Ha | exact HI | exact HM | apply eqty_refl, HM | apply eqtm_refl, Hcc
                 | apply eqtm_refl, Hu | exact (IH _ _ _ _ _ Hc He)].
 Qed.
@@ -459,15 +459,15 @@ Proof.
   destruct (id_inj_c Hc EId) as (Ekl & EAB & Eab & Eub).
   assert (Hau : [ G ; Γ ⊢[ i ] a ≅ u : A @ l ]) by (eapply eqtm_trans; [exact Eab | apply eqtm_sym, Eub]).
   assert (HIdu : [ G ; Γ ⊢[ i ] tyId l A a a ≅ tyId l A a u @ l ]).
-  { apply eqty_id; [exact Hc | apply lequiv_refl, W1 | exact HA | apply eqty_refl, HA | apply eqtm_refl, Ha
+  { apply eqty_id; [exact Hv | apply lequiv_refl, W1 | exact HA | apply eqty_refl, HA | apply eqtm_refl, Ha
                    | exact Hau]. }
   assert (Hrr : [ G ; Γ ⊢[ i ] tmRefl l A a ≅ tmRefl k B b : tyId l A a a @ l ])
-    by (apply eqtm_idrefl; [exact Hc | apply lequiv_sym, Ekl | exact HA | exact EAB | exact Eab]).
+    by (apply eqtm_idrefl; [exact Hv | apply lequiv_sym, Ekl | exact HA | exact EAB | exact Eab]).
   assert (Her : [ G ; Γ ⊢[ i ] tmRefl k B b ≅ tmRefl l A a : tyId l A a u @ l ]).
   { apply eqtm_sym. eapply eqtm_conv; [exact Hrr | rewrite Hi; apply eqty_sym, HIdu]. }
   assert (Hcong : [ G ; Γ ⊢[ i ] tmJ l l' A a M c u (tmRefl k B b) ≅ tmJ l l' A a M c a (tmRefl l A a)
                      : M[lsingle2 u (tmRefl k B b)] @ l' ]).
-  { apply eqtm_J; [exact Hc | apply lequiv_refl, W1 | apply lequiv_refl, W2 | exact HA | apply eqty_refl, HA
+  { apply eqtm_J; [exact (compt_notV _ Hc) | apply lequiv_refl, W1 | apply lequiv_refl, W2 | exact HA | apply eqty_refl, HA
                   | apply eqtm_refl, Ha | exact HI | exact HM | apply eqty_refl, HM | apply eqtm_refl, Hcc
                   | apply eqtm_sym, Hau | exact Her]. }
   pose proof (eqtm_J_beta _ _ _ _ _ _ _ _ _ Hc W1 W2 HA Ha HI HM Hcc) as Hb.

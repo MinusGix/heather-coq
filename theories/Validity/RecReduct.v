@@ -773,6 +773,184 @@ Proof.
   rr_t_proj 18 l Δ k k' A B p.
 Qed.
 
+(** ** The identity type (M11b) *)
+
+Lemma sl1 (A : ty) : subst_ty A (lshift 1) = A⟨↑⟩.
+Proof. exact (subst_lshift1_ty A). Qed.
+Lemma sl1t (t : tm) : subst_tm t (lshift 1) = t⟨↑⟩.
+Proof. exact (subst_lshift1 t). Qed.
+
+Lemma rr_T_id {l Δ k A a b r} : [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lC ] tyId k A a b @ l ] ->
+  redT l1 l2 (mkrb MT Mt bs) l Δ (tyId k A a b) = Some r ->
+  [ G ; Γ ⊢[ lM ] r : motT (wrapMT MT) k Δ (boxT (tyId k A a b)) @ l1 ].
+Proof.
+  intros HΔ Hc Hred.
+  destruct (inv_ty_id Hc) as ((_ & Wk & HA & Ha & Hb') & _).
+  pose proof (wf_ctx_dnf HΔ) as HΔd. pose proof (wf_ty_dnf HA) as HAd.
+  pose proof (wf_tm_dnf Ha) as Had. pose proof (wf_tm_dnf Hb') as Hbd'.
+  set (x1 := elimT l1 l2 (mkrb MT Mt bs) k Δ (boxT A)).
+  set (x2 := elimt l1 l2 (mkrb MT Mt bs) k Δ A (boxt a)).
+  set (x3 := elimt l1 l2 (mkrb MT Mt bs) k Δ A (boxt b)).
+  assert (Er : r = peelLs (peelGs (peelUs (wrap 1 4 3 (bs 21)) (k :: nil)) (GCtx Δ :: GTy A :: GTm a :: GTm b :: nil))
+                     (x1 :: x2 :: x3 :: nil))
+    by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
+  subst r. pose proof HG_rr as HG. pose proof (Hbd 21 ltac:(lia)) as Hb.
+  pose proof (recT_wf Wk HΔ HA) as Hx1.
+  pose proof (rect_wf Wk HΔ (ctm_ty Ha) Ha) as Hx2. pose proof (rect_wf Wk HΔ (ctm_ty Hb') Hb') as Hx3.
+  assert (Ho : Forall dnfo (GCtx Δ :: GTy A :: GTm a :: GTm b :: nil))
+    by (repeat apply Forall_cons; [exact HΔd | exact HAd | exact Had | exact Hbd' | apply Forall_nil]).
+  assert (Hxs : Forall dnftm (x1 :: x2 :: x3 :: nil))
+    by (repeat apply Forall_cons; [exact (wf_tm_dnf Hx1) | exact (wf_tm_dnf Hx2) | exact (wf_tm_dnf Hx3) | apply Forall_nil]).
+  assert (Hσ : [ G ⊢ gext_s (GCtx Δ :: GTy A :: GTm a :: GTm b :: nil) gid :
+                 mkG (gL G) (map (fun D => gdecl_usubst D (uext (k :: nil) lvar)) (brDecls 21) ++ gΨ G) ]).
+  { change (GCtx Δ :: GTy A :: GTm a :: GTm b :: nil)
+      with ((((nil ++ GCtx Δ :: nil) ++ GTy A :: nil) ++ GTm a :: nil) ++ GTm b :: nil).
+    destruct G as [L Ψ].
+    refine (gsub_wf_snoc (D := gdTm (cvar 2) lC (gv 1) k) (o := GTm b)
+             (gsub_wf_snoc (D := gdTm (cvar 1) lC (gv 0) k) (o := GTm a)
+               (gsub_wf_snoc (D := gdTy (cvar 0) lC k) (o := GTy A)
+                 (gsub_wf_snoc (D := gdCtx) (o := GCtx Δ) (gsub_wf_nil HG) HΔd HΔ) HAd _) Had _) Hbd' _).
+    - cbn. exact HA.
+    - cbn. sl0_rw HAd. exact Ha.
+    - cbn. sl0_rw HAd. exact Hb'. }
+  refine (rr_br 21 (k :: nil) (GCtx Δ :: GTy A :: GTm a :: GTm b :: nil) (x1 :: x2 :: x3 :: nil)
+            ltac:(cbv; lia) eq_refl eq_refl eq_refl (Forall_cons _ Wk (Forall_nil _)) Ho Hxs Hσ _ _ _).
+  - rr_ctx; eassumption.
+  - rr_res.
+  - exact (brLv_T_id 21 (k :: nil) eq_refl eq_refl).
+Qed.
+
+Lemma rr_t_codeid {l Δ T k s t u r} : [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) k ->
+  [ G ; Δ ⊢[ lC ] s : tyU k @ lsuc k ] -> [ G ; Δ ⊢[ lC ] t : tyEl k s @ k ] -> [ G ; Δ ⊢[ lC ] u : tyEl k s @ k ] ->
+  redt l1 l2 (mkrb MT Mt bs) l Δ T (tmId k s t u) = Some r ->
+  [ G ; Γ ⊢[ lM ] r : mott (wrapMt Mt) (lsuc k) Δ (tyU k) (boxt (tmId k s t u)) @ l2 ].
+Proof.
+  intros HΔ Wk Hs Ht Hu Hred.
+  pose proof (wf_ctx_dnf HΔ) as HΔd. pose proof (wf_tm_dnf Hs) as Hsd.
+  pose proof (wf_tm_dnf Ht) as Htd. pose proof (wf_tm_dnf Hu) as Hud.
+  set (x1 := elimt l1 l2 (mkrb MT Mt bs) (lsuc k) Δ (tyU k) (boxt s)).
+  set (x2 := elimt l1 l2 (mkrb MT Mt bs) k Δ (tyEl k s) (boxt t)).
+  set (x3 := elimt l1 l2 (mkrb MT Mt bs) k Δ (tyEl k s) (boxt u)).
+  assert (Er : r = peelLs (peelGs (peelUs (wrap 1 4 3 (bs 22)) (k :: nil)) (GCtx Δ :: GTm s :: GTm t :: GTm u :: nil))
+                     (x1 :: x2 :: x3 :: nil))
+    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+  subst r. pose proof HG_rr as HG. pose proof (Hbd 22 ltac:(lia)) as Hb.
+  assert (HU : [ G ; Δ ⊢[ lD ] tyU k @ lsuc k ]) by (apply wft_U; [discriminate | exact HΔ | exact Wk]).
+  pose proof (rect_wf (lwf_suc Wk) HΔ HU Hs) as Hx1.
+  pose proof (rect_wf Wk HΔ (ctm_ty Ht) Ht) as Hx2. pose proof (rect_wf Wk HΔ (ctm_ty Hu) Hu) as Hx3.
+  assert (Ho : Forall dnfo (GCtx Δ :: GTm s :: GTm t :: GTm u :: nil))
+    by (repeat apply Forall_cons; [exact HΔd | exact Hsd | exact Htd | exact Hud | apply Forall_nil]).
+  assert (Hxs : Forall dnftm (x1 :: x2 :: x3 :: nil))
+    by (repeat apply Forall_cons; [exact (wf_tm_dnf Hx1) | exact (wf_tm_dnf Hx2) | exact (wf_tm_dnf Hx3) | apply Forall_nil]).
+  assert (Hσ : [ G ⊢ gext_s (GCtx Δ :: GTm s :: GTm t :: GTm u :: nil) gid :
+                 mkG (gL G) (map (fun D => gdecl_usubst D (uext (k :: nil) lvar)) (brDecls 22) ++ gΨ G) ]).
+  { change (GCtx Δ :: GTm s :: GTm t :: GTm u :: nil)
+      with ((((nil ++ GCtx Δ :: nil) ++ GTm s :: nil) ++ GTm t :: nil) ++ GTm u :: nil).
+    destruct G as [L Ψ].
+    refine (gsub_wf_snoc (D := gdTm (cvar 2) lC (tyEl k (gu 1)) k) (o := GTm u)
+             (gsub_wf_snoc (D := gdTm (cvar 1) lC (tyEl k (gu 0)) k) (o := GTm t)
+               (gsub_wf_snoc (D := gdTm (cvar 0) lC (tyU k) (lsuc k)) (o := GTm s)
+                 (gsub_wf_snoc (D := gdCtx) (o := GCtx Δ) (gsub_wf_nil HG) HΔd HΔ) Hsd _) Htd _) Hud _).
+    - cbn. exact Hs.
+    - cbn. sl0t_rw Hsd. exact Ht.
+    - cbn. sl0t_rw Hsd. exact Hu. }
+  refine (rr_br 22 (k :: nil) (GCtx Δ :: GTm s :: GTm t :: GTm u :: nil) (x1 :: x2 :: x3 :: nil)
+            ltac:(cbv; lia) eq_refl eq_refl eq_refl (Forall_cons _ Wk (Forall_nil _)) Ho Hxs Hσ _ _ _).
+  - rr_ctx; eassumption.
+  - rr_res.
+  - exact (brLv_t_id 22 (k :: nil) eq_refl eq_refl).
+Qed.
+
+Lemma rr_t_refl {l Δ T k A a r} : [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) k ->
+  [ G ; Δ ⊢[ lC ] A @ k ] -> [ G ; Δ ⊢[ lC ] a : A @ k ] ->
+  redt l1 l2 (mkrb MT Mt bs) l Δ T (tmRefl k A a) = Some r ->
+  [ G ; Γ ⊢[ lM ] r : mott (wrapMt Mt) k Δ (tyId k A a a) (boxt (tmRefl k A a)) @ l2 ].
+Proof.
+  intros HΔ Wk HA Ha Hred.
+  pose proof (wf_ctx_dnf HΔ) as HΔd. pose proof (wf_ty_dnf HA) as HAd. pose proof (wf_tm_dnf Ha) as Had.
+  set (x1 := elimT l1 l2 (mkrb MT Mt bs) k Δ (boxT A)).
+  set (x2 := elimt l1 l2 (mkrb MT Mt bs) k Δ A (boxt a)).
+  assert (Er : r = peelLs (peelGs (peelUs (wrap 1 3 2 (bs 23)) (k :: nil)) (GCtx Δ :: GTy A :: GTm a :: nil))
+                     (x1 :: x2 :: nil))
+    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+  subst r. pose proof HG_rr as HG. pose proof (Hbd 23 ltac:(lia)) as Hb.
+  pose proof (recT_wf Wk HΔ HA) as Hx1. pose proof (rect_wf Wk HΔ (ctm_ty Ha) Ha) as Hx2.
+  assert (Ho : Forall dnfo (GCtx Δ :: GTy A :: GTm a :: nil))
+    by (repeat apply Forall_cons; [exact HΔd | exact HAd | exact Had | apply Forall_nil]).
+  assert (Hxs : Forall dnftm (x1 :: x2 :: nil))
+    by (repeat apply Forall_cons; [exact (wf_tm_dnf Hx1) | exact (wf_tm_dnf Hx2) | apply Forall_nil]).
+  assert (Hσ : [ G ⊢ gext_s (GCtx Δ :: GTy A :: GTm a :: nil) gid :
+                 mkG (gL G) (map (fun D => gdecl_usubst D (uext (k :: nil) lvar)) (brDecls 23) ++ gΨ G) ]).
+  { change (GCtx Δ :: GTy A :: GTm a :: nil) with (((nil ++ GCtx Δ :: nil) ++ GTy A :: nil) ++ GTm a :: nil).
+    destruct G as [L Ψ].
+    refine (gsub_wf_snoc (D := gdTm (cvar 1) lC (gv 0) k) (o := GTm a)
+             (gsub_wf_snoc (D := gdTy (cvar 0) lC k) (o := GTy A)
+               (gsub_wf_snoc (D := gdCtx) (o := GCtx Δ) (gsub_wf_nil HG) HΔd HΔ) HAd _) Had _).
+    - cbn. exact HA.
+    - cbn. sl0_rw HAd. exact Ha. }
+  refine (rr_br 23 (k :: nil) (GCtx Δ :: GTy A :: GTm a :: nil) (x1 :: x2 :: nil)
+            ltac:(cbv; lia) eq_refl eq_refl eq_refl (Forall_cons _ Wk (Forall_nil _)) Ho Hxs Hσ _ _ _).
+  - rr_ctx; eassumption.
+  - rr_res.
+  - exact (brLv_t_id 23 (k :: nil) eq_refl eq_refl).
+Qed.
+
+Lemma rr_t_J {l Δ T k k' A a M c u e0 r} : [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) k -> lwf (gL G) k' ->
+  [ G ; Δ ⊢[ lC ] A @ k ] -> [ G ; Δ ⊢[ lC ] a : A @ k ] ->
+  [ G ; Δ ,, A @ k ⊢[ lC ] tyId k A⟨↑⟩ a⟨↑⟩ (var 0) @ k ] ->
+  [ G ; Δ ,, A @ k ,, tyId k A⟨↑⟩ a⟨↑⟩ (var 0) @ k ⊢[ lC ] M @ k' ] ->
+  [ G ; Δ ⊢[ lC ] c : M[lsingle2 a (tmRefl k A a)] @ k' ] ->
+  [ G ; Δ ⊢[ lC ] u : A @ k ] -> [ G ; Δ ⊢[ lC ] e0 : tyId k A a u @ k ] ->
+  redt l1 l2 (mkrb MT Mt bs) l Δ T (tmJ k k' A a M c u e0) = Some r ->
+  [ G ; Γ ⊢[ lM ] r : mott (wrapMt Mt) k' Δ (M[lsingle2 u e0]) (boxt (tmJ k k' A a M c u e0)) @ l2 ].
+Proof.
+  intros HΔ Wk Wk' HA Ha HI HM Hc Hu He0 Hred.
+  pose proof (wf_ctx_dnf HΔ) as HΔd. pose proof (wf_ty_dnf HA) as HAd. pose proof (wf_tm_dnf Ha) as Had.
+  pose proof (wf_ty_dnf HM) as HMd. pose proof (wf_tm_dnf Hc) as Hcd.
+  pose proof (wf_tm_dnf Hu) as Hud. pose proof (wf_tm_dnf He0) as Hed.
+  set (x1 := elimT l1 l2 (mkrb MT Mt bs) k Δ (boxT A)).
+  set (x2 := elimt l1 l2 (mkrb MT Mt bs) k Δ A (boxt a)).
+  set (x3 := elimT l1 l2 (mkrb MT Mt bs) k' (Δ ,, A @ k ,, tyId k A⟨↑⟩ a⟨↑⟩ (var 0) @ k) (boxT M)).
+  set (x4 := elimt l1 l2 (mkrb MT Mt bs) k' Δ (M[lsingle2 a (tmRefl k A a)]) (boxt c)).
+  set (x5 := elimt l1 l2 (mkrb MT Mt bs) k Δ A (boxt u)).
+  set (x6 := elimt l1 l2 (mkrb MT Mt bs) k Δ (tyId k A a u) (boxt e0)).
+  set (os := GCtx Δ :: GTy A :: GTm a :: GTy M :: GTm c :: GTm u :: GTm e0 :: nil).
+  assert (Er : r = peelLs (peelGs (peelUs (wrap 2 7 6 (bs 24)) (k :: k' :: nil)) os) (x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: nil))
+    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+  subst r. pose proof HG_rr as HG. pose proof (Hbd 24 ltac:(lia)) as Hb.
+  assert (HΔA : [ G ; Δ ,, A @ k ⊢[ lD ] ]) by (apply wfc_ext; [exact HΔ | exact (lift_ty HA HCD') | exact Wk]).
+  assert (HΔM : [ G ; Δ ,, A @ k ,, tyId k A⟨↑⟩ a⟨↑⟩ (var 0) @ k ⊢[ lD ] ])
+    by (apply wfc_ext; [exact HΔA | exact (lift_ty HI HCD') | exact Wk]).
+  pose proof (recT_wf Wk HΔ HA) as Hx1. pose proof (rect_wf Wk HΔ (ctm_ty Ha) Ha) as Hx2.
+  pose proof (recT_wf Wk' HΔM HM) as Hx3. pose proof (rect_wf Wk' HΔ (ctm_ty Hc) Hc) as Hx4.
+  pose proof (rect_wf Wk HΔ (ctm_ty Hu) Hu) as Hx5. pose proof (rect_wf Wk HΔ (ctm_ty He0) He0) as Hx6.
+  assert (Ho : Forall dnfo os)
+    by (repeat apply Forall_cons; [exact HΔd | exact HAd | exact Had | exact HMd | exact Hcd | exact Hud | exact Hed
+                                  | apply Forall_nil]).
+  assert (Hxs : Forall dnftm (x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: nil))
+    by (repeat apply Forall_cons; [exact (wf_tm_dnf Hx1) | exact (wf_tm_dnf Hx2) | exact (wf_tm_dnf Hx3)
+                                  | exact (wf_tm_dnf Hx4) | exact (wf_tm_dnf Hx5) | exact (wf_tm_dnf Hx6) | apply Forall_nil]).
+  assert (Hσ : [ G ⊢ gext_s os gid :
+                 mkG (gL G) (map (fun D => gdecl_usubst D (uext (k :: k' :: nil) lvar)) (brDecls 24) ++ gΨ G) ]).
+  { change os with (((((((nil ++ GCtx Δ :: nil) ++ GTy A :: nil) ++ GTm a :: nil) ++ GTy M :: nil) ++ GTm c :: nil)
+                      ++ GTm u :: nil) ++ GTm e0 :: nil).
+    destruct G as [L Ψ].
+    refine (gsub_wf_snoc (D := gdTm (cvar 5) lC (tyId k (gv 4) (gu 3) (gu 0)) k) (o := GTm e0)
+             (gsub_wf_snoc (D := gdTm (cvar 4) lC (gv 3) k) (o := GTm u)
+               (gsub_wf_snoc (D := gdTm (cvar 3) lC (tyGvar 0 (lsingle2 (gu 1) (tmRefl k (gv 2) (gu 1)))) k') (o := GTm c)
+                 (gsub_wf_snoc (D := gdTy (cvar 2 ,, gv 1 @ k ,, tyId k (gv 1)⟨↑⟩ (gu 0)⟨↑⟩ (var 0) @ k) lC k') (o := GTy M)
+                   (gsub_wf_snoc (D := gdTm (cvar 1) lC (gv 0) k) (o := GTm a)
+                     (gsub_wf_snoc (D := gdTy (cvar 0) lC k) (o := GTy A)
+                       (gsub_wf_snoc (D := gdCtx) (o := GCtx Δ) (gsub_wf_nil HG) HΔd HΔ) HAd _) Had _) HMd _) Hcd _)
+                 Hud _) Hed _).
+    all: cbn; sl0_rw HAd; sl0t_rw Had; sl0t_rw Hud; rewrite ?sl1, ?sl1t; assumption. }
+  refine (rr_br 24 (k :: k' :: nil) os (x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: nil)
+            ltac:(cbv; lia) eq_refl eq_refl eq_refl (Forall_cons _ Wk (Forall_cons _ Wk' (Forall_nil _))) Ho Hxs Hσ _ _ _).
+  - rr_ctx; rewrite ?sl1, ?sl1t; eassumption.
+  - rr_res.
+  - exact (brLv_t_id 24 (k :: k' :: nil) eq_refl eq_refl).
+Qed.
+
 (** ** From the natural instances to the redex's *)
 
 Lemma HMT_rr : [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush 1) ].
@@ -829,7 +1007,10 @@ Proof.
             exact (motT_move (rr_T_sig HΔ Hc Hred) E HΔ (wft_lconv _ _ _ _ _ _ Hc E)) ]
   | solve [ destruct (inv_ty_unit Hc) as ((_ & _ & Wk) & Hk);
             pose proof (lvl_eq_lequiv' Hk Wk) as E;
-            exact (motT_move (rr_T_unit HΔ Hc Hred) E HΔ (wft_lconv _ _ _ _ _ _ Hc E)) ] ].
+            exact (motT_move (rr_T_unit HΔ Hc Hred) E HΔ (wft_lconv _ _ _ _ _ _ Hc E)) ]
+  | solve [ destruct (inv_ty_id Hc) as ((_ & Wk & _ & _ & _) & Hk);
+            pose proof (lvl_eq_lequiv' Hk Wk) as E;
+            exact (motT_move (rr_T_id HΔ Hc Hred) E HΔ (wft_lconv _ _ _ _ _ _ Hc E)) ] ].
 Qed.
 
 End RR.
@@ -911,6 +1092,25 @@ Lemma C_snd {G Δ k k' A B p} : lwf (gL G) k -> lwf (gL G) k' -> [ G ; Δ ⊢[ l
   RTC G Δ (tmSnd k k' A B p) B[lsingle (tmFst k k' A B p)] k'.
 Proof. intros Wk Wk' HA HB Hp. apply RTC_nat_inst. intros. exact (rr_t_snd H H0 H1 Wk Wk' HA HB Hp H2). Qed.
 
+Lemma C_codeid {G Δ k s t u} : lwf (gL G) k -> [ G ; Δ ⊢[ lC ] s : tyU k @ lsuc k ] ->
+  [ G ; Δ ⊢[ lC ] t : tyEl k s @ k ] -> [ G ; Δ ⊢[ lC ] u : tyEl k s @ k ] ->
+  RTC G Δ (tmId k s t u) (tyU k) (lsuc k).
+Proof. intros Wk Hs Ht Hu. apply RTC_nat_inst. intros. exact (rr_t_codeid H H0 H1 Wk Hs Ht Hu H2). Qed.
+Lemma C_refl {G Δ k A a} : lwf (gL G) k -> [ G ; Δ ⊢[ lC ] A @ k ] -> [ G ; Δ ⊢[ lC ] a : A @ k ] ->
+  RTC G Δ (tmRefl k A a) (tyId k A a a) k.
+Proof. intros Wk HA Ha. apply RTC_nat_inst. intros. exact (rr_t_refl H H0 H1 Wk HA Ha H2). Qed.
+Lemma C_J {G Δ k k' A a M c u e0} : lwf (gL G) k -> lwf (gL G) k' ->
+  [ G ; Δ ⊢[ lC ] A @ k ] -> [ G ; Δ ⊢[ lC ] a : A @ k ] ->
+  [ G ; Δ ,, A @ k ⊢[ lC ] tyId k A⟨↑⟩ a⟨↑⟩ (var 0) @ k ] ->
+  [ G ; Δ ,, A @ k ,, tyId k A⟨↑⟩ a⟨↑⟩ (var 0) @ k ⊢[ lC ] M @ k' ] ->
+  [ G ; Δ ⊢[ lC ] c : M[lsingle2 a (tmRefl k A a)] @ k' ] ->
+  [ G ; Δ ⊢[ lC ] u : A @ k ] -> [ G ; Δ ⊢[ lC ] e0 : tyId k A a u @ k ] ->
+  RTC G Δ (tmJ k k' A a M c u e0) (M[lsingle2 u e0]) k'.
+Proof.
+  intros Wk Wk' HA Ha HI HM Hc Hu He0. apply RTC_nat_inst. intros.
+  exact (rr_t_J H H0 H1 Wk Wk' HA Ha HI HM Hc Hu He0 H2).
+Qed.
+
 Lemma C_lam {G Δ k k' A B b} : lwf (gL G) k -> lwf (gL G) k' -> [ G ; Δ ⊢[ lC ] A @ k ] ->
   [ G ; Δ ,, A @ k ⊢[ lC ] b : B @ k' ] -> RTC G Δ (lam k k' A b) (tyPi k k' A B) (lmax k k').
 Proof.
@@ -964,6 +1164,8 @@ Proof.
     | solve [eapply C_codesig; eassumption] | solve [eapply C_codeunit; eassumption]
     | solve [eapply C_triv; eassumption] | solve [eapply C_pair; eassumption]
     | solve [eapply C_fst; eassumption] | solve [eapply C_snd; eassumption]
+    | solve [eapply C_codeid; eassumption] | solve [eapply C_refl; eassumption]
+    | solve [eapply C_J; eassumption]
     | solve [intros _ ? ? ? ? ? ? _ _ _ ? ? ? _ _ Hred; cbn in Hred; discriminate Hred] ].
 Qed.
 

@@ -4,6 +4,7 @@
     ([recGT], [recGt]) and of the branches ([brG k]): their declarations
     (04:1150–1300) are well formed in the universe-weakened [G]. *)
 From DeLaM.Typing Require Export USubstitution.
+From DeLaM.Syntax Require Import SubstCommute.
 
 Lemma in_gctx_nth Ψ n D : nth_error Ψ n = Some D -> in_gctx Ψ n (gdecl_ren D (Nat.add (S n))).
 Proof.
@@ -53,6 +54,34 @@ Proof.
   eapply wf_gvar; eauto using lsub_tail_id, id_entries. cbn; exact I.
 Qed.
 
+(** One local more (M11b, [J]'s motive context): the identity instances
+    shifted, as [⟨↑⟩] computes on them. *)
+Lemma subst_lshift1_ty (T : ty) : T[lshift 1] = T⟨↑⟩.
+Proof. symmetry; apply ren_as_subst_ty; intros n; cbn; f_equal; lia. Qed.
+Lemma subst_lshift1 (t : tm) : t[lshift 1] = t⟨↑⟩.
+Proof. symmetry; apply ren_as_subst; intros n; cbn; f_equal; lia. Qed.
+
+Lemma lsub_tail_shift1_var g A la : lsub_tail (lshift 1) (cvar g) (cvar g ,, A @ la).
+Proof. split; [reflexivity | intros n; cbn; f_equal; lia]. Qed.
+Lemma wf_gv_up G i g A la U i' l : i <> lV -> [ G ; cvar g ,, A @ la ⊢[ typeof i ] ] ->
+  in_gctx (gΨ G) U (gdTy (cvar g) i' l) -> lle i' i ->
+  [ G ; cvar g ,, A @ la ⊢[ i ] tyGvar U (lshift 1) @ l ].
+Proof.
+  intros Hv HΓ Hin Hle. eapply wft_gvar; eauto using lsub_tail_shift1_var.
+  all: try (intros ? ? ? HB; exfalso; exact (no_in_ctx_var _ _ _ _ HB)); cbn; exact I.
+Qed.
+Lemma wf_gu_up G i g A la u U i' l : [ G ; cvar g ,, A @ la ⊢[ typeof i ] ] ->
+  in_gctx (gΨ G) u (gdTm (cvar g) i' (tyGvar U (lshift 0)) l) -> lle i' i ->
+  [ G ; cvar g ,, A @ la ⊢[ i ] gvar u (lshift 1) : tyGvar U (lshift 1) @ l ].
+Proof.
+  intros HΓ Hin Hle. change (tyGvar U (lshift 1)) with ((tyGvar U (lshift 0))[lshift 1]).
+  eapply wf_gvar; eauto using lsub_tail_shift1_var.
+  all: try (intros ? ? ? HB; exfalso; exact (no_in_ctx_var _ _ _ _ HB)); cbn; exact I.
+Qed.
+Lemma wf_var0_gv G i Γ U la : [ G ; Γ ,, tyGvar U (lshift 0) @ la ⊢[ typeof i ] ] ->
+  [ G ; Γ ,, tyGvar U (lshift 0) @ la ⊢[ i ] var 0 : tyGvar U (lshift 1) @ la ].
+Proof. intros HΓ. exact (wf_var _ _ _ _ _ _ HΓ (in_here _ _ _)). Qed.
+
 (** A global lookup at a concrete position of a concrete prefix. *)
 Ltac glookup :=
   match goal with
@@ -75,6 +104,13 @@ Ltac wfd :=
   | |- [ _ ; _ ⊢[ _ ] tyPi _ _ _ _ @ _ ] => apply wft_pi; [ discriminate | lvl_ok | lvl_ok | | ]
   | |- [ _ ; _ ⊢[ _ ] tySig _ _ _ _ @ _ ] => apply wft_sig; [ discriminate | lvl_ok | lvl_ok | | ]
   | |- [ _ ; _ ⊢[ _ ] tyUnit _ @ _ ] => apply wft_unit; [ discriminate | | lvl_ok ]
+  | |- [ _ ; _ ⊢[ _ ] tyId _ _ _ _ @ _ ] => apply wft_id; [ discriminate | lvl_ok | | | ]
+  | |- [ _ ; _ ⊢[ _ ] tmRefl _ _ _ : tyId _ _ _ _ @ _ ] => apply wf_idrefl; [ discriminate | lvl_ok | | ]
+  | |- [ _ ; _ ,, tyGvar _ (lshift 0) @ _ ⊢[ _ ] var 0 : tyGvar _ (lshift 1) @ _ ] => apply wf_var0_gv
+  | |- [ _ ; cvar _ ,, _ @ _ ⊢[ _ ] tyGvar _ (lshift 1) @ _ ] =>
+      eapply wf_gv_up; [ discriminate | | glookup | unfold lle; cbn; lia ]
+  | |- [ _ ; cvar _ ,, _ @ _ ⊢[ _ ] gvar _ (lshift 1) : tyGvar _ (lshift 1) @ _ ] =>
+      eapply wf_gu_up; [ | glookup | unfold lle; cbn; lia ]
   | |- [ _ ; _ ⊢[ _ ] tyEl _ _ @ _ ] => apply wft_El; [ discriminate | lvl_ok | ]
   | |- [ _ ; _ ⊢[ _ ] tyGvar _ (lshift 0) @ _ ] =>
       eapply wf_gv; [ discriminate | | glookup | unfold lle; cbn; lia | reflexivity ]
@@ -121,6 +157,22 @@ Proof.
     cbn [llk lsingle]. rewrite shift_single_ty by exact HA. exact Ha.
 Qed.
 
+(** A type variable over two more locals, at a double instance (M11b:
+    [U_M^{id, u_a^id/y, refl(U_S^id; u_a^id)/p}] in [J]'s branch). *)
+Lemma wf_gv_single2 G i g U A B la lb l a p : i <> lV -> [ G ; cvar g ⊢[ typeof i ] ] ->
+  in_gctx (gΨ G) U (gdTy (cvar g ,, A @ la ,, B @ lb) lC l) -> lle lC i -> nfty A -> dnfl (lsingle2 a p) ->
+  [ G ; cvar g ⊢[ i ] a : A @ la ] -> [ G ; cvar g ⊢[ i ] p : B[lsingle a] @ lb ] ->
+  [ G ; cvar g ⊢[ i ] tyGvar U (lsingle2 a p) @ l ].
+Proof.
+  intros Hv HΓ Hin Hle HA Hd Ha Hp. eapply wft_gvar; eauto.
+  - split; [reflexivity | intros; cbn; f_equal; lia].
+  - intros n A' k HA'. inversion HA' as [? ? ? | ? ? ? ? ? ? HA'']; subst.
+    + cbn [llk lsingle2]. rewrite (ren_subst_ty _ _ _ (lsingle a)); [exact Hp|].
+      intros m; rewrite rlk_shift1; reflexivity.
+    + inversion HA'' as [? ? ? | ? ? ? ? ? ? HA''']; subst; [|inversion HA'''].
+      cbn [llk lsingle2]. rewrite shift2_single2_ty by exact HA. exact Ha.
+Qed.
+
 Ltac wfd_all :=
   wfd;
   repeat match goal with
@@ -128,6 +180,8 @@ Ltac wfd_all :=
   | |- [ _ ; _ ⊢[ _ ] tyGvar 0 (lsingle zero) @ _ ] => apply wf_UM_zero; [ | glookup ]; wfd
   | |- [ _ ; cvar _ ⊢[ _ ] tyGvar _ (lsingle _) @ _ ] =>
       eapply wf_gv_single_var; [ discriminate | | glookup | unfold lle; cbn; lia | cbn; tauto | cbn; tauto | ]; wfd
+  | |- [ _ ; cvar _ ⊢[ _ ] tyGvar _ (lsingle2 _ _) @ _ ] =>
+      eapply wf_gv_single2; [ discriminate | | glookup | unfold lle; cbn; lia | cbn; tauto | cbn; tauto | | cbn ]; wfd
   end;
   try assumption.
 
@@ -147,7 +201,8 @@ Lemma wf_brG k : k < nbr -> [ ⊢ brG k G ].
 Proof.
   intros Hk. pose proof (uwk_glob (br_nu k) G HG) as Hu.
   unfold brG, gctx_uwk in *; cbn [gL gΨ] in *.
-  br_all ltac:(destruct k; [cbn [brDecls List.app br_nu br_ar] in *; unfold gv, gu; wfd_all|]). lia.
+  br_all ltac:(destruct k; [cbn [brDecls List.app br_nu br_ar] in *; unfold gv, gu;
+    cbn [ren Ren_ty Ren_tm ren_ty ren_tm lren r2l rdrop rshift1]; wfd_all|]). lia.
 Qed.
 
 End Scopes.

@@ -99,6 +99,7 @@ Ltac leq_go := repeat first
   [ assumption | exact I | reflexivity | apply leqv_refl
   | apply leq_peelL | apply leq_peelG | apply leq_peelU | apply leq_rb_br
   | apply leqv_lsuc | apply leqv_lmax
+  | apply (proj1 leq_ren_all) | apply (proj1 (proj2 leq_ren_all))
   | progress unfold recT, rect
   | progress cbn [ctx_leq ty_leq tm_leq gobj_leq lsub_leq]
   | split

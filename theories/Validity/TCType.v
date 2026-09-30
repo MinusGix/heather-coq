@@ -208,11 +208,11 @@ Proof.
   - right; intros H; exact (Q (proj2 (inv_ty_seq H))).
 Qed.
 
-(** The identity type (M11a): the computing layers only. *)
+(** The identity type (M11a; at every layer but V since M11b). *)
 Lemma dec_tyId l A a b : sz_ty (tyId l A a b) <= n -> TYD (tyId l A a b).
 Proof.
   intros Hsz G i Γ k HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros H; destruct (inv_ty_id H) as ((X & _) & _); contradiction].
+  destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_id H) as ((_ & X & _) & _); contradiction].
   destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
     [| right; intros H; destruct (inv_ty_id H) as ((_ & _ & X & _) & _); contradiction].

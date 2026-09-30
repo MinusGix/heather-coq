@@ -121,6 +121,66 @@ Proof.
     now apply (lsub_eq_single (i := lD) eq_refl).
 Qed.
 
+(** [J]'s motive contexts at equal carriers and points, over equal
+    contexts, are equal (M11b). *)
+Lemma J_ctx_eq' {G i Γ Γ' l1 l3 A A' a a'} : typeof i = i -> i <> lV -> lequiv (gL G) l1 l3 ->
+  [ G ⊢[ i ] Γ ≅ Γ' ] ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] ->
+  [ G ⊢[ i ] Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1
+           ≅ Γ' ,, A' @ l3 ,, tyId l3 A'⟨↑⟩ a'⟨↑⟩ (var 0) @ l3 ].
+Proof.
+  intros Hi Hv H13 HΓΓ HA HAA Haa.
+  pose proof (ctx_of_wf_ty Hi HA) as HΓ.
+  assert (HΓA : [ G ; Γ ,, A @ l1 ⊢[ i ] ]) by (apply wfc_ext; eauto using lequiv_wf_l).
+  assert (EId : [ G ; Γ ,, A @ l1 ⊢[ i ] tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) ≅ tyId l3 A'⟨↑⟩ a'⟨↑⟩ (var 0) @ l1 ]).
+  { apply eqty_id; auto.
+    - apply wk1_ty; auto.
+    - apply wk1_eqty; auto.
+    - apply wk1_eqtm with (T := A); auto.
+    - apply eqtm_refl, var0_wf; auto. }
+  apply eqc_ext; [| exact (eqty_wf_l Hi EId) | exact EId | exact H13].
+  apply eqc_ext; [exact HΓΓ | exact HA | exact HAA | exact H13].
+Qed.
+
+Lemma J_ctx_eq {G i Γ l1 l3 A A' a a'} : typeof i = i -> i <> lV -> lequiv (gL G) l1 l3 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] ->
+  [ G ⊢[ i ] Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1
+           ≅ Γ ,, A' @ l3 ,, tyId l3 A'⟨↑⟩ a'⟨↑⟩ (var 0) @ l3 ].
+Proof.
+  intros Hi Hv H13 HA HAA Haa.
+  exact (J_ctx_eq' Hi Hv H13 (eqc_refl _ _ _ (ctx_of_wf_ty Hi HA)) HA HAA Haa).
+Qed.
+
+(** The equations a right-hand [J] needs, at P. *)
+Lemma J_facts_D {G Γ l1 l2 l3 A A' a a' M M' u u' e e'} : lequiv (gL G) l1 l3 ->
+  [ G ; Γ ⊢[ lD ] A @ l1 ] -> [ G ; Γ ⊢[ lD ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ lD ] A' @ l1 ] ->
+  [ G ; Γ ⊢[ lD ] a : A @ l1 ] -> [ G ; Γ ⊢[ lD ] a ≅ a' : A @ l1 ] -> [ G ; Γ ⊢[ lD ] a' : A @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ lD ] M ≅ M' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ lD ] M' @ l2 ] ->
+  [ G ; Γ ⊢[ lD ] u : A @ l1 ] -> [ G ; Γ ⊢[ lD ] u ≅ u' : A @ l1 ] -> [ G ; Γ ⊢[ lD ] u' : A @ l1 ] ->
+  [ G ; Γ ⊢[ lD ] e : tyId l1 A a u @ l1 ] -> [ G ; Γ ⊢[ lD ] e ≅ e' : tyId l1 A a u @ l1 ] ->
+  [ G ; Γ ⊢[ lD ] e' : tyId l1 A a u @ l1 ] ->
+  [ G ⊢[ lD ] Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1
+            ≅ Γ ,, A' @ l3 ,, tyId l3 A'⟨↑⟩ a'⟨↑⟩ (var 0) @ l3 ] /\
+  [ G ; Γ ⊢[ lD ] M[lsingle2 a (tmRefl l1 A a)] ≅ M'[lsingle2 a' (tmRefl l3 A' a')] @ l2 ] /\
+  [ G ; Γ ⊢[ lD ] M[lsingle2 u e] ≅ M'[lsingle2 u' e'] @ l2 ] /\
+  [ G ; Γ ⊢[ lD ] tyId l1 A a u ≅ tyId l3 A' a' u' @ l1 ].
+Proof.
+  intros H13 HA HAA HA' Ha Haa Ha' HMM HM' Hu Huu Hu' He Hee He'.
+  assert (Hi : typeof lD = lD) by reflexivity. assert (Hv : lD <> lV) by discriminate.
+  pose proof (lequiv_wf_l _ _ _ H13) as Hl1.
+  assert (Hr : [ G ; Γ ⊢[ lD ] tmRefl l1 A a : tyId l1 A a a @ l1 ]) by (apply wf_idrefl; auto).
+  pose proof (pre_idrefl_r Hi Hv H13 HA HAA HA' Haa Ha') as Hr'.
+  assert (Hrr : [ G ; Γ ⊢[ lD ] tmRefl l1 A a ≅ tmRefl l3 A' a' : tyId l1 A a a @ l1 ])
+    by (apply eqtm_idrefl; auto).
+  pose proof (lsub_eq_J Hi Hv Hl1 HA Ha Ha Ha' Haa Hr Hr' Hrr) as Hs.
+  pose proof (lsub_eq_J Hi Hv Hl1 HA Ha Hu Hu' Huu He He' Hee) as Hs2.
+  refine (conj (J_ctx_eq Hi Hv H13 HA HAA Haa) (conj _ (conj _ _))).
+  - eapply eqty_trans; [exact (eqty_subst Hi HMM (lsub_eq_l Hs)) | exact (wf_ty_func Hi HM' Hs)].
+  - eapply eqty_trans; [exact (eqty_subst Hi HMM (lsub_eq_l Hs2)) | exact (wf_ty_func Hi HM' Hs2)].
+  - apply eqty_id; auto.
+Qed.
+
 Section SC.
 Context {G : gctx} {i : layer} (Hi : lle i lD).
 Let Hty : typeof i = lD := lle_D_typeof i Hi.
@@ -563,6 +623,148 @@ Proof.
   - apply eqtm_snd; auto.
 Qed.
 
+(** The identity type (M11a; every layer but V since M11b). The [_q]
+    forms give the right-hand typing from level-equivalent annotations
+    (presupposition at C uses them too). *)
+Lemma sc_id_q {Γ l l' A A' a' b'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A' @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a' : A @ l ] -> [ G ; Γ ⊢[ i ] b' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] tyId l' A' a' b' @ l ].
+Proof.
+  intros Hv Q HA' HAA Ha' Hb'.
+  assert (F : forall x, [ G ; Γ ⊢[ i ] x : A @ l ] -> [ G ; Γ ⊢[ i ] x : A' @ l' ]).
+  { intros x Hx. apply (sc_conv (T' := A)); [eapply wf_lconv; [exact Hx | apply lequiv_sym, Q]|].
+    eapply eqty_lconv; [apply eqty_sym, sc_eqty, HAA | apply lequiv_sym, Q]. }
+  eapply wft_lconv; [apply wft_id; [exact Hv | eauto using lequiv_wf_r | | apply F, Ha' | apply F, Hb'] | exact Q].
+  eapply wft_lconv; [exact HA' | apply lequiv_sym, Q].
+Qed.
+
+Lemma sc_id {Γ l l' A A' a a' b b'} : i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a' : A @ l ] /\ [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] b' : A @ l ] /\ [ G ; Γ ⊢[ i ] b ≅ b' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] tyId l' A' a' b' @ l ] /\ [ G ; Γ ⊢[ i ] tyId l A a b ≅ tyId l' A' a' b' @ l ].
+Proof.
+  intros Hv Hl Hl' E HA [HA' HAA] [Ha' Haa] [Hb' Hbb]. pose proof (lq Hl Hl' E) as Q.
+  split; [exact (sc_id_q Hv Q HA' HAA Ha' Hb') | apply eqty_id; auto].
+Qed.
+
+Lemma sc_idrefl_q {Γ l l' A A' a a'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a' : A @ l ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] tmRefl l' A' a' : tyId l A a a @ l ].
+Proof.
+  intros Hv Q HA HA' HAA Ha' Haa.
+  assert (F : forall x, [ G ; Γ ⊢[ i ] x : A @ l ] -> [ G ; Γ ⊢[ i ] x : A' @ l' ]).
+  { intros x Hx. apply (sc_conv (T' := A)); [eapply wf_lconv; [exact Hx | apply lequiv_sym, Q]|].
+    eapply eqty_lconv; [apply eqty_sym, sc_eqty, HAA | apply lequiv_sym, Q]. }
+  apply (sc_conv (T' := tyId l' A' a' a')).
+  - eapply wf_lconv; [apply wf_idrefl; [exact Hv | eauto using lequiv_wf_r | | apply F, Ha'] | exact Q].
+    eapply wft_lconv; [exact HA' | apply lequiv_sym, Q].
+  - apply eqty_id; [discriminate | exact Q | exact (sc_ty HA) | exact (sc_eqty HAA)
+                   | exact (sc_eqtm Haa) | exact (sc_eqtm Haa)].
+Qed.
+
+Lemma sc_idrefl {Γ l l' A A' a a'} : i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] /\ [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] tmRefl l' A' a' : tyId l A a a @ l ] /\
+  [ G ; Γ ⊢[ i ] tmRefl l A a ≅ tmRefl l' A' a' : tyId l A a a @ l ].
+Proof.
+  intros Hv Hl Hl' E HA [HA' HAA] Ha [Ha' Haa]. pose proof (lq Hl Hl' E) as Q.
+  split; [exact (sc_idrefl_q Hv Q HA HA' HAA Ha' Haa) | apply eqtm_idrefl; auto].
+Qed.
+
+Lemma sc_code_id_q {Γ l l' s s' t' u'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] t' : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u' : tyEl l s @ l ] ->
+  [ G ; Γ ⊢[ i ] tmId l' s' t' u' : tyU l @ lsuc l ].
+Proof.
+  intros Hv Q Hs' Hss Ht' Hu'.
+  pose proof (sc_ctx_tm Hs') as HΓ.
+  assert (HEl : [ G ; Γ ⊢[ lD ] tyEl l s ≅ tyEl l' s' @ l ])
+    by (apply eqty_El; [discriminate | exact Q | exact (sc_eqtm Hss)]).
+  assert (F : forall x, [ G ; Γ ⊢[ i ] x : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] x : tyEl l' s' @ l' ]).
+  { intros x Hx. apply (sc_conv (T' := tyEl l s)); [eapply wf_lconv; [exact Hx | apply lequiv_sym, Q]|].
+    eapply eqty_lconv; [apply eqty_sym, HEl | apply lequiv_sym, Q]. }
+  apply (sc_conv (T' := tyU l')).
+  - eapply wf_lconv; [apply wf_code_id; [exact Hv | eauto using lequiv_wf_r | | apply F, Ht' | apply F, Hu']
+                     | apply lequiv_lsuc', Q].
+    apply (sc_conv (T' := tyU l)); [eapply wf_lconv; [exact Hs' | apply lequiv_lsuc', lequiv_sym, Q]|].
+    apply eqty_U; [discriminate | exact HΓ | apply lequiv_sym, Q].
+  - apply eqty_U; [discriminate | exact HΓ | exact Q].
+Qed.
+
+Lemma sc_code_id {Γ l l' s s' t t' u u'} : i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] t' : tyEl l s @ l ] /\ [ G ; Γ ⊢[ i ] t ≅ t' : tyEl l s @ l ] ->
+  [ G ; Γ ⊢[ i ] u' : tyEl l s @ l ] /\ [ G ; Γ ⊢[ i ] u ≅ u' : tyEl l s @ l ] ->
+  [ G ; Γ ⊢[ i ] tmId l' s' t' u' : tyU l @ lsuc l ] /\
+  [ G ; Γ ⊢[ i ] tmId l s t u ≅ tmId l' s' t' u' : tyU l @ lsuc l ].
+Proof.
+  intros Hv Hl Hl' E Hs [Hs' Hss] [Ht' Htt] [Hu' Huu]. pose proof (lq Hl Hl' E) as Q.
+  split; [exact (sc_code_id_q Hv Q Hs' Hss Ht' Hu') | apply eqtm_code_id; auto].
+Qed.
+
+Lemma sc_J_q {Γ l1 l2 l1' l2' A A' a a' M M' c' u u' e e'} : i <> lV ->
+  lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l1 ] -> [ G ; Γ ⊢[ i ] a' : A @ l1 ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ i ] M' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ i ] M ≅ M' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] c' : M[lsingle2 a (tmRefl l1 A a)] @ l2 ] ->
+  [ G ; Γ ⊢[ i ] u : A @ l1 ] -> [ G ; Γ ⊢[ i ] u' : A @ l1 ] -> [ G ; Γ ⊢[ i ] u ≅ u' : A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] e : tyId l1 A a u @ l1 ] -> [ G ; Γ ⊢[ i ] e' : tyId l1 A a u @ l1 ] ->
+  [ G ; Γ ⊢[ i ] e ≅ e' : tyId l1 A a u @ l1 ] ->
+  [ G ; Γ ⊢[ i ] tmJ l1' l2' A' a' M' c' u' e' : M[lsingle2 u e] @ l2 ].
+Proof.
+  intros Hv Q1 Q2 HA HA' HAA Ha Ha' Haa HM' HMM Hc' Hu Hu' Huu He He' Hee.
+  destruct (J_facts_D (l3 := l1') Q1 (sc_ty HA) (sc_eqty HAA) (sc_ty HA') (sc_tm Ha) (sc_eqtm Haa) (sc_tm Ha')
+              (sc_eqty HMM) (sc_ty HM') (sc_tm Hu) (sc_eqtm Huu) (sc_tm Hu') (sc_tm He) (sc_eqtm Hee) (sc_tm He'))
+    as (Hctx & HMs & HMs2 & HIdu).
+  pose proof (sc_ctx_tm Ha) as HΓ.
+  pose proof (lequiv_wf_r _ _ _ Q1) as H1'. pose proof (lequiv_wf_r _ _ _ Q2) as H2'.
+  assert (F : forall x, [ G ; Γ ⊢[ i ] x : A @ l1 ] -> [ G ; Γ ⊢[ i ] x : A' @ l1' ]).
+  { intros x Hx. apply (sc_conv (T' := A)); [eapply wf_lconv; [exact Hx | apply lequiv_sym, Q1]|].
+    eapply eqty_lconv; [apply eqty_sym, sc_eqty, HAA | apply lequiv_sym, Q1]. }
+  assert (HA'1 : [ G ; Γ ⊢[ i ] A' @ l1' ]) by (eapply wft_lconv; [exact HA' | apply lequiv_sym, Q1]).
+  assert (HΓA' : [ G ; Γ ,, A' @ l1' ⊢[ typeof i ] ])
+    by (rewrite Hty; apply wfc_ext; [exact HΓ | exact (sc_ty HA'1) | exact H1']).
+  apply (sc_conv (T' := M'[lsingle2 u' e'])); [|exact HMs2].
+  eapply wf_lconv with (l' := l2'); [|exact Q2].
+  apply wf_J; [exact Hv | exact H1' | exact H2' | exact HA'1 | apply F, Ha' | | | | apply F, Hu' |].
+  - apply wft_id; [exact Hv | exact H1' | apply wk1_ty_g; [exact HΓA' | exact HA'1]
+                  | apply (wk1_tm_g _ _ _ _ _ _ A'); [exact HΓA' | apply F, Ha']
+                  | apply var0_wf_g, HΓA'].
+  - eapply wft_lconv; [exact (sc_cty Hctx HM') | apply lequiv_sym, Q2].
+  - apply (sc_conv (T' := M[lsingle2 a (tmRefl l1 A a)])); [eapply wf_lconv; [exact Hc' | apply lequiv_sym, Q2]|].
+    eapply eqty_lconv; [apply eqty_sym, HMs | apply lequiv_sym, Q2].
+  - apply (sc_conv (T' := tyId l1 A a u)); [eapply wf_lconv; [exact He' | apply lequiv_sym, Q1]|].
+    eapply eqty_lconv; [apply eqty_sym, HIdu | apply lequiv_sym, Q1].
+Qed.
+
+Lemma sc_J {Γ l1 l2 l1' l2' A A' a a' M M' c c' u u' e e'} : i <> lV ->
+  lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ] ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l1 ] -> [ G ; Γ ⊢[ i ] a' : A @ l1 ] /\ [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ i ] M @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ i ] M' @ l2 ] /\
+  [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ i ] M ≅ M' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] c' : M[lsingle2 a (tmRefl l1 A a)] @ l2 ] /\
+  [ G ; Γ ⊢[ i ] c ≅ c' : M[lsingle2 a (tmRefl l1 A a)] @ l2 ] ->
+  [ G ; Γ ⊢[ i ] u : A @ l1 ] -> [ G ; Γ ⊢[ i ] u' : A @ l1 ] /\ [ G ; Γ ⊢[ i ] u ≅ u' : A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] e : tyId l1 A a u @ l1 ] ->
+  [ G ; Γ ⊢[ i ] e' : tyId l1 A a u @ l1 ] /\ [ G ; Γ ⊢[ i ] e ≅ e' : tyId l1 A a u @ l1 ] ->
+  [ G ; Γ ⊢[ i ] tmJ l1' l2' A' a' M' c' u' e' : M[lsingle2 u e] @ l2 ] /\
+  [ G ; Γ ⊢[ i ] tmJ l1 l2 A a M c u e ≅ tmJ l1' l2' A' a' M' c' u' e' : M[lsingle2 u e] @ l2 ].
+Proof.
+  intros Hv H1 H2 H1' H2' E1 E2 HId HA [HA' HAA] Ha [Ha' Haa] HM [HM' HMM] [Hc' Hcc] Hu [Hu' Huu] He [He' Hee].
+  pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2.
+  split; [exact (sc_J_q Hv Q1 Q2 HA HA' HAA Ha Ha' Haa HM' HMM Hc' Hu Hu' Huu He He' Hee) | apply eqtm_J; auto].
+Qed.
+
 End SC.
 
 (** Strict equality (M10a): gated to the computing layers, so below M only
@@ -613,64 +815,6 @@ Proof.
   pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2. split.
   - exact (pre_elimSEmpty_r HD HDv Q1 Q2 HMM HM' He').
   - apply eqtm_elimSEmpty; auto using compt_D.
-Qed.
-(** The identity type (M11a), like strict equality: at D only. *)
-Lemma sc_id {Γ l l' A A' a a' b b'} : lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
-  [ G ; Γ ⊢[ lD ] A @ l ] -> [ G ; Γ ⊢[ lD ] A' @ l ] /\ [ G ; Γ ⊢[ lD ] A ≅ A' @ l ] ->
-  [ G ; Γ ⊢[ lD ] a' : A @ l ] /\ [ G ; Γ ⊢[ lD ] a ≅ a' : A @ l ] ->
-  [ G ; Γ ⊢[ lD ] b' : A @ l ] /\ [ G ; Γ ⊢[ lD ] b ≅ b' : A @ l ] ->
-  [ G ; Γ ⊢[ lD ] tyId l' A' a' b' @ l ] /\ [ G ; Γ ⊢[ lD ] tyId l A a b ≅ tyId l' A' a' b' @ l ].
-Proof.
-  intros Hl Hl' E HA [HA' HAA] [Ha' Haa] [Hb' Hbb]. pose proof (lq Hl Hl' E) as Q. split.
-  - exact (pre_id_r HD HDv Q HAA HA' Ha' Hb').
-  - apply eqty_id; auto using compt_D.
-Qed.
-
-Lemma sc_idrefl {Γ l l' A A' a a'} : lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
-  [ G ; Γ ⊢[ lD ] A @ l ] -> [ G ; Γ ⊢[ lD ] A' @ l ] /\ [ G ; Γ ⊢[ lD ] A ≅ A' @ l ] ->
-  [ G ; Γ ⊢[ lD ] a' : A @ l ] /\ [ G ; Γ ⊢[ lD ] a ≅ a' : A @ l ] ->
-  [ G ; Γ ⊢[ lD ] tmRefl l' A' a' : tyId l A a a @ l ] /\
-  [ G ; Γ ⊢[ lD ] tmRefl l A a ≅ tmRefl l' A' a' : tyId l A a a @ l ].
-Proof.
-  intros Hl Hl' E HA [HA' HAA] [Ha' Haa]. pose proof (lq Hl Hl' E) as Q. split.
-  - exact (pre_idrefl_r HD HDv Q HA HAA HA' Haa Ha').
-  - apply eqtm_idrefl; auto using compt_D.
-Qed.
-
-Lemma sc_J {Γ l1 l2 l1' l2' A A' a a' M M' c c' u u' e e'} :
-  lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
-  [ G ; Γ ,, A @ l1 ⊢[ lD ] tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ] ->
-  [ G ; Γ ⊢[ lD ] A @ l1 ] -> [ G ; Γ ⊢[ lD ] A' @ l1 ] /\ [ G ; Γ ⊢[ lD ] A ≅ A' @ l1 ] ->
-  [ G ; Γ ⊢[ lD ] a : A @ l1 ] -> [ G ; Γ ⊢[ lD ] a' : A @ l1 ] /\ [ G ; Γ ⊢[ lD ] a ≅ a' : A @ l1 ] ->
-  [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ lD ] M @ l2 ] ->
-  [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ lD ] M' @ l2 ] /\
-  [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ lD ] M ≅ M' @ l2 ] ->
-  [ G ; Γ ⊢[ lD ] c' : M[lsingle2 a (tmRefl l1 A a)] @ l2 ] /\
-  [ G ; Γ ⊢[ lD ] c ≅ c' : M[lsingle2 a (tmRefl l1 A a)] @ l2 ] ->
-  [ G ; Γ ⊢[ lD ] u : A @ l1 ] -> [ G ; Γ ⊢[ lD ] u' : A @ l1 ] /\ [ G ; Γ ⊢[ lD ] u ≅ u' : A @ l1 ] ->
-  [ G ; Γ ⊢[ lD ] e : tyId l1 A a u @ l1 ] ->
-  [ G ; Γ ⊢[ lD ] e' : tyId l1 A a u @ l1 ] /\ [ G ; Γ ⊢[ lD ] e ≅ e' : tyId l1 A a u @ l1 ] ->
-  [ G ; Γ ⊢[ lD ] tmJ l1' l2' A' a' M' c' u' e' : M[lsingle2 u e] @ l2 ] /\
-  [ G ; Γ ⊢[ lD ] tmJ l1 l2 A a M c u e ≅ tmJ l1' l2' A' a' M' c' u' e' : M[lsingle2 u e] @ l2 ].
-Proof.
-  intros H1 H2 H1' H2' E1 E2 HId HA [HA' HAA] Ha [Ha' Haa] HM [HM' HMM] [Hc' Hcc] Hu [Hu' Huu] He [He' Hee].
-  pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2. split.
-  - exact (pre_J_r HD HDv Q1 Q2 HId HA HAA HA' Ha Haa Ha' HMM HM' Hc' Hu Huu Hu' He Hee He').
-  - apply eqtm_J; auto using compt_D.
-Qed.
-
-(** The identity type's code (M11b), at D only. *)
-Lemma sc_code_id {Γ l l' s s' t t' u u'} : lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
-  [ G ; Γ ⊢[ lD ] s : tyU l @ lsuc l ] ->
-  [ G ; Γ ⊢[ lD ] s' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ lD ] s ≅ s' : tyU l @ lsuc l ] ->
-  [ G ; Γ ⊢[ lD ] t' : tyEl l s @ l ] /\ [ G ; Γ ⊢[ lD ] t ≅ t' : tyEl l s @ l ] ->
-  [ G ; Γ ⊢[ lD ] u' : tyEl l s @ l ] /\ [ G ; Γ ⊢[ lD ] u ≅ u' : tyEl l s @ l ] ->
-  [ G ; Γ ⊢[ lD ] tmId l' s' t' u' : tyU l @ lsuc l ] /\
-  [ G ; Γ ⊢[ lD ] tmId l s t u ≅ tmId l' s' t' u' : tyU l @ lsuc l ].
-Proof.
-  intros Hl Hl' E Hs [Hs' Hss] [Ht' Htt] [Hu' Huu]. pose proof (lq Hl Hl' E) as Q. split.
-  - exact (pre_codeid_r HD HDv Q Hss Hs' Ht' Hu').
-  - apply eqtm_code_id; auto using compt_D.
 Qed.
 End SCD.
 
@@ -759,15 +903,15 @@ Proof.
     | solve [eapply sc_sig; eauto] | solve [eapply sc_code_sig; eauto]
     | solve [eapply sc_unit; eauto] | solve [eapply sc_code_unit; eauto] | solve [eapply sc_triv; eauto]
     | solve [eapply sc_pair; eauto] | solve [eapply sc_fst; eauto] | solve [eapply sc_snd; eauto]
+    (* the identity type (every layer but V since M11b) *)
+    | solve [eapply sc_id; eauto] | solve [eapply sc_idrefl; eauto] | solve [eapply sc_J; eauto]
+    | solve [eapply sc_code_id; eauto]
     (* strict equality (M10a): at D only *)
     | match goal with
       | c : compt ?j, H : lle ?j lD |- _ =>
           destruct c; subst j; [| exfalso; exact (lle_D_notM' H eq_refl)]; cbn [typeof] in *;
           solve [ eapply sc_seq; eauto | eapply sc_sempty; eauto | eapply sc_srefl; eauto
-                | eapply sc_elimSEmpty; eauto
-                (* the identity type (M11a) *)
-                | eapply sc_id; eauto | eapply sc_idrefl; eauto | eapply sc_J; eauto
-                | eapply sc_code_id; eauto ]
+                | eapply sc_elimSEmpty; eauto ]
       end
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x

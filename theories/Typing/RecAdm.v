@@ -195,6 +195,15 @@ Lemma wf_snd' G i Γ l l' A B p T : T = B[lsingle (tmFst l l' A B p)] -> i <> lV
   [ G ; Γ ⊢[ i ] p : tySig l l' A B @ lmax l l' ] -> [ G ; Γ ⊢[ i ] tmSnd l l' A B p : T @ l' ].
 Proof. intros ->; apply wf_snd. Qed.
 
+Lemma wf_J' G i Γ l l' A a M c u e T : T = M[lsingle2 u e] -> i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ] ->
+  [ G ; Γ ,, A @ l ,, tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ⊢[ i ] c : M[lsingle2 a (tmRefl l A a)] @ l' ] ->
+  [ G ; Γ ⊢[ i ] u : A @ l ] -> [ G ; Γ ⊢[ i ] e : tyId l A a u @ l ] ->
+  [ G ; Γ ⊢[ i ] tmJ l l' A a M c u e : T @ l' ].
+Proof. intros ->; apply wf_J. Qed.
+
 Ltac code_side :=
   repeat match goal with
   | |- [ _ ; _ ⊢[ _ ] tyGvar _ lsucc @ _ ] => apply wf_UM_succ'; [ | glookup ]
@@ -215,6 +224,13 @@ Ltac code_side :=
   | |- [ _ ; _ ⊢[ _ ] tmSnd _ _ _ _ _ : _ @ _ ] => eapply wf_snd'; [ reflexivity | discriminate | lvl_ok | lvl_ok | .. ]
   | |- [ _ ; _ ⊢[ _ ] tmUnit _ : _ @ _ ] => apply wf_code_unit; [ discriminate | | lvl_ok ]
   | |- [ _ ; _ ⊢[ _ ] tmTriv _ : _ @ _ ] => apply wf_triv; [ discriminate | | lvl_ok ]
+  (* the identity type (M11b); its shifted variables computed first *)
+  | |- context [@ren ty Ren_ty (tyGvar _ _) _] => progress cbn [ren Ren_ty Ren_tm ren_ty ren_tm lren r2l rdrop rshift1]
+  | |- context [@ren tm Ren_tm (gvar _ _) _] => progress cbn [ren Ren_ty Ren_tm ren_ty ren_tm lren r2l rdrop rshift1]
+  | |- [ _ ; cvar _ ⊢[ _ ] tyGvar _ (lsingle2 _ _) @ _ ] =>
+      eapply wf_gv_single2; [ discriminate | | glookup | unfold lle; cbn; lia | cbn; tauto | cbn; tauto | | cbn ]
+  | |- [ _ ; _ ⊢[ _ ] tmId _ _ _ _ : _ @ _ ] => apply wf_code_id; [ discriminate | lvl_ok | | | ]
+  | |- [ _ ; _ ⊢[ _ ] tmJ _ _ _ _ _ _ _ _ : _ @ _ ] => eapply wf_J'; [ reflexivity | discriminate | lvl_ok | lvl_ok | .. ]
   | |- [ _ ; _ ⊢[ _ ] ] => progress wfd
   | |- [ _ ; _ ⊢[ _ ] _ @ _ ] => progress wfd
   | |- [ _ ; _ ⊢[ _ ] _ : _ @ _ ] => progress wfd
