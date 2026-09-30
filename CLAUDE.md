@@ -24,7 +24,7 @@ list of proof-engineering gotchas. Follow it.
 ## Build
 
 - `nix develop path:. --command make -j2` (Coq 8.20, Equations, smpl from
-  the flake). A clean build takes about 4 minutes (230 s wall, 2026-09-29,
+  the flake). A clean build takes under 3 minutes (168 s wall, 2026-09-29,
   down from 8.5 minutes). The critical path (Syntax → Typing metatheory →
   Validity → the algorithm) is nearly the whole build, so more jobs don't
   help; only faster files on that path do. `make TIMING=1` writes per-file

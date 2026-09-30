@@ -249,7 +249,7 @@ the modal core (see `M2_DESIGN.md` once written).
   each constructor under `solve`) is robust and fast. Use it instead of
   `econstructor`, which commits to the first unifying constructor.
 
-### Build-time gotchas (2026-09-29 perf pass, 513 s → see CLAUDE.md)
+### Build-time gotchas (2026-09-29 perf pass, clean build 513 s → 168 s)
 
 Each of these cost tens of seconds, and each grows with the number of
 formers, so it gets worse with every extension:
@@ -273,6 +273,15 @@ formers, so it gets worse with every extension:
   constructor order of the typing judgments, which `econstructor` follows:
   the generic rules (refl, sym, trans, conv, lconv, leq) come last in
   `Declarative.v`; keep new generic rules there.
+- **Push tactics are generated.** `push_ren`, `push_subst`, `push_gren`,
+  `push_gsubst`, `push_gwa`, `s_push`, `gl_push` find an `OP (C …)` subterm
+  syntactically and rewrite with `C`'s lemma (a head table). The old
+  `repeat progress (rewrite ?l1, …, ?ln)` cost one traversal of the goal
+  per lemma per pass, 3–5 s per metatheory proof. A new former's push
+  lemma goes into the table: regenerate it with `tools/gen_push.py` (usage
+  in its header), or add the arm by hand; a missing arm leaves the push
+  undone, which shows as a failing case. Table heads are written `@h`
+  (a bare class method in a pattern gets its implicit arguments).
 - **`eauto` depth.** Failing searches dominate: `eauto 3` then a final
   `eauto 4` on the leftovers cost a third of `eauto 4` up front
   (`Presupposition`).
