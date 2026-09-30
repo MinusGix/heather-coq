@@ -1,10 +1,12 @@
 # M10: strict equality (`sEq`, `srefl`, `transp`, `sEmpty`), design
 
-Status: **M10a done, 2026-09-29** (outcome at the end). M10b as
-specified is withdrawn (S8). The strip is Werner's rule, whose
-normalization in a predicative theory is open (S5). A computing `transp`
-gives UIP for `Id` (S6). Heather's direction: indexed families as a former
-(`IWf`), with `transp` removed or restricted to strict motives.
+Status: **closed at M10a, 2026-09-30.** M10a (`sEq`, `srefl`, `sEmpty`,
+irrelevance) is the whole of Heather's strict equality now: `transp` and
+the strip are removed from Heather's rule set (S8). The strip is Werner's
+rule, whose normalization in a predicative theory is open (S5). A computing
+`transp` gives UIP for `Id` (S6). Indexed families become a former, `IWf`,
+which is its own milestone after `W`/`Wf`. M10c (codes) keeps its six
+non-`transp` branches.
 
 Heather's rules: `H/docs/sprop-design.md` (frozen rule set, §2–§6). Its
 paper pass: `H/docs/metatheory-ch07-extensions.md` Part III, §18–22 (MX
@@ -390,11 +392,22 @@ stall disappear. Without a relevant `transp` there is no UIP. Spec:
 which checks `dnth`, β at a computed index, and the F2/F3 lowerings
 and inversion.
 
+Decided 2026-09-30:
+- **`transp` is removed**, not restricted. Nothing needs `sEq`'s symmetry,
+  transitivity or congruence. The nominal tag uses `sEq` only as a type.
+  Re-adding `transp` at strict motives later is additive, UIP-free and
+  needs no strip.
+- **The family level is `l ⊔ li`.** Codes force it, since `TmIWf` carries
+  the index type's code.
+- **`match` ships two tiers:** motive inversion at constructor-headed
+  indices, and index abstraction with no equations. Unification without
+  K, deleting only at decidable index types, waits for an example.
+
 For this formalization:
-- M10a stands as is: strict propositions, eliminating only into strict
-  propositions.
-- M10b shrinks to at most `transp` at strict motives, which needs no
-  strip.
+- M10 closes at M10a, which already matches the revised rule set: `sEq`
+  has no eliminator.
+- There is no M10b.
+- M10c, the codes, keeps its six branches without `transp`.
 - `IWf` becomes its own milestone after `W`/`Wf`, which we do not have
   yet.
 - Werner's rule (S5) and strict equality at `M` (S7) stay open research

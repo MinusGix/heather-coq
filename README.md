@@ -73,9 +73,11 @@ From M8 on, the milestones check the extensions of Heather's kernel
   lists); see `M8_DESIGN.md`.
 - Milestone 9: bodied globals (definitions, δ at the computing layers);
   see `M9_DESIGN.md`, which also lists its open items.
-- Milestone 10 (in progress): strict equality. M10a (`sEq`, `srefl`,
-  `sEmpty`, its eliminator, proof irrelevance) is done; `transp` and the
-  strip rule wait on a design question; see `M10_DESIGN.md`.
+- Milestone 10: strict equality. `sEq`, `srefl`, `sEmpty`, its
+  eliminator and proof irrelevance are done. Heather removed `transp` and
+  the strip rule after this formalization found that a computing
+  `transp` gives UIP and that the strip's normalization is open. The
+  codes (M10c) remain. See `M10_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
 `M10_DESIGN.md`) for decisions, deviations from the paper and gotchas.

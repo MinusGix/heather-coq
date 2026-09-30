@@ -164,12 +164,10 @@ each one touched and why, then choose among 1–3 using that data.
    metatheory dispatch (M8_DESIGN.md L5).
 3. ~~Bodied globals with layer-indexed δ: the one piece with no paper pass.~~
    Done (M9).
-4. `sEq`/`transp` and the strip rule: M10_DESIGN.md. M10a (`sEq`, `srefl`,
-   `sEmpty`, irrelevance) is done. M10b as specified is withdrawn. The strip
-   is Werner's rule, whose normalization is open (S5), and a computing
-   `transp` gives UIP for `Id` (S6). The replacement is an indexed-family
-   former, `IWf` (S8, H `docs/iwf-former-design.md`), and its own milestone
-   after `W`/`Wf`.
+4. ~~`sEq`/`transp` and the strip rule~~ Closed at M10a (M10_DESIGN.md):
+   Heather removed `transp` and the strip (S8). What remains of M10 is M10c,
+   the codes (six branches, no `transp`). Indexed families become the `IWf`
+   former (H `docs/iwf-former-design.md`), a milestone after `W`/`Wf`.
 5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash).
 
 Side task, any time: the ITree depth-indexed bisimilarity question.
