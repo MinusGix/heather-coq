@@ -53,8 +53,8 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | `W`, `sup`, `elim_W` | positive, infinitary | ext §9 | MX §5 | β builds an ih λ; the heaviest LR case | — |
 | `Vec`, `Fin` | computing wrappers (reduce to Σ/Unit, +/Empty) | DESIGN.md | MX §10 | first type formers whose whnf is chosen by a term | — |
 | `Wf`, `sup_f`, `elim_Wf` | finitary W over a `Vec` of children | wf-former-design | MX §11–17 | index lemma (MX §13) | — |
-| `sEq`, `srefl`, `transp`, strip rule | strict equality, irrelevance | sprop-design | MX §18–22 | strip changes the evaluation notion; MX §19.4 substitution lemma is the named weak spot; completeness gap reaches type relations (MX §22.4); **MX §19.2 is a strengthening lemma (M10 S1)** | `sEq`, `srefl`, irrelevance **done** (M10a, D and M, no codes); `transp` open (M10 S3/S4) |
-| `sEmpty`, `elim_sEmpty` | irrelevant empty type | sprop-design | MX §18, §21.4 | — | **done** (M10a, D and M, no codes) |
+| `sEq`, `srefl`, `transp`, strip rule | strict equality, irrelevance | sprop-design | MX §18–22 | strip changes the evaluation notion; MX §19.4 substitution lemma is the named weak spot; completeness gap reaches type relations (MX §22.4); **MX §19.2 is a strengthening lemma (M10 S1)** | `sEq`, `srefl`, irrelevance **done** (M10a; every layer but V with codes and branches 25, 26, 29, M10c); `transp` removed (S8) |
+| `sEmpty`, `elim_sEmpty` | irrelevant empty type | sprop-design | MX §18, §21.4 | — | **done** (M10a; at code with branches 27, 28, 30, M10c) |
 | `Squash`, `ind_∥∥` | normalizing-total irrelevance | MX §27 | sketch only | full pass open (`issues/metatheory-ch07-squash.md`) | — |
 | Bodied globals `u := t`, δ at p/m only | not a former | DESIGN.md, MX §23–25 | **none** | ch. 07 bill (`issues/metatheory-ch07-definitions.md`) | **done** (M9): occurrences carry their body (`gdef`); δ as reduction; §26 items 1–4; canonicity at D |
 | `NatLit`, evaluator accelerations | representation | DESIGN.md | n/a | claimed to have no semantic content; nothing to prove here | out of scope |
@@ -165,8 +165,8 @@ each one touched and why, then choose among 1–3 using that data.
 3. ~~Bodied globals with layer-indexed δ: the one piece with no paper pass.~~
    Done (M9).
 4. ~~`sEq`/`transp` and the strip rule~~ Closed at M10a (M10_DESIGN.md):
-   Heather removed `transp` and the strip (S8). What remains of M10 is M10c,
-   the codes (six branches, no `transp`). Indexed families become the `IWf`
+   Heather removed `transp` and the strip (S8). M10c, the codes (six
+   branches, no `transp`), is done. Indexed families become the `IWf`
    former (H `docs/iwf-former-design.md`), a milestone after `W`/`Wf`.
 5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash). `Id` is done (M11a and
    M11b, M11_DESIGN.md).

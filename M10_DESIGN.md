@@ -1,12 +1,12 @@
 # M10: strict equality (`sEq`, `srefl`, `transp`, `sEmpty`), design
 
-Status: **closed at M10a, 2026-09-30.** M10a (`sEq`, `srefl`, `sEmpty`,
+Status: **M10a and M10c done, 2026-09-30.** M10a (`sEq`, `srefl`, `sEmpty`,
 irrelevance) is the whole of Heather's strict equality now: `transp` and
 the strip are removed from Heather's rule set (S8). The strip is Werner's
 rule, whose normalization in a predicative theory is open (S5). A computing
 `transp` gives UIP for `Id` (S6). Indexed families become a former, `IWf`,
-which is its own milestone after `W`/`Wf`. M10c (codes) keeps its six
-non-`transp` branches.
+which is its own milestone after `W`/`Wf`. M10c (codes) kept its six
+non-`transp` branches and is done (outcome at the end).
 
 Heather's rules: `H/docs/sprop-design.md` (frozen rule set, §2–§6). Its
 paper pass: `H/docs/metatheory-ch07-extensions.md` Part III, §18–22 (MX
@@ -517,3 +517,59 @@ rest of LogRel: about 400), Static Code and presupposition (about 110).
 The L5 rule lists kept weakening, substitution and functionality at zero
 edits; the positional LR patterns (one pair of branches per induction,
 scripted) were the mechanical part.
+
+## M10c outcome (2026-09-30)
+
+Done in two commits, as M11b: the codes at layers D and M (step 1), then
+the lift to code and the six recursor branches (step 2). Every headline
+theorem stays closed under the global context, and so does
+`rec_red_typed`.
+
+- **Codes.** `tmSEq l s t u : Ty l` (Heather's `TmSEq`, decoded to
+  `sEq^l(El s; t; u)`) and `tmSEmpty l : Ty l` (decoded to `sEmpty^l`),
+  modelled on `Id`'s code and `Unit`'s. Formation, congruence and `El`
+  decoding (`eqty_El_seq`, `eqty_El_sempty`); generic laws
+  `geq_tm_code_seq`, `geq_tm_code_sempty`; `V_code_seq`/`V_El_seq`,
+  `V_code_sempty`/`V_El_sempty` in `Validity/SEq.v`; algorithmic rules
+  `actmnf_code_seq`, `actmnf_code_sempty`; canonicity's head 2 lists them.
+- **Gating, as M8d and M11b.** `wft_seq`, `wft_sempty`, `wf_srefl`,
+  `wf_elimSEmpty`, the two codes and their congruences take `i <> lV`, so
+  they hold at C. Proof irrelevance (`eqtm_seq_irr`, `eqtm_sempty_irr`) and
+  the `El` decodings keep `compt i`: C's conversion is syntactic.
+- **Static Code.** The D-only section (`SCD`) is gone: `sc_seq`,
+  `sc_sempty`, `sc_srefl`, `sc_elimSEmpty`, `sc_code_seq`,
+  `sc_code_sempty` hold at every layer below D, with `_q` forms that
+  PresupC's `pc_*` cases reuse.
+- **Recursor** (`nbr = 31`). Heather's order without `t_transp`:
+  - `t_sEq`, branch 25, a type branch, `(1, 4, 3)`;
+  - `t'_sEq`, 26, `(1, 4, 3)`;
+  - `t_sEmpty`, 27, a type branch, `(1, 1, 0)`;
+  - `t'_sEmpty`, 28, `(1, 1, 0)`;
+  - `t_srefl`, 29, `(1, 3, 2)`;
+  - `t_elim_sE`, 30, `(2, 3, 2)`.
+
+  25, 26 and 29 share `Id`'s scopes (21, 22, 23): `GS_id`, `GS_codeid` and
+  `GS_refl` are now generic in the branch, as `GS_fst` was. 27 and 28 are
+  `Unit`'s shape. Branch 30 binds the motive's level first (`ℓ`, the
+  scrutinee's is `ℓ'`), as Heather's `tm_elim_sempty` does. Its scope is
+  `g, U_M : (g ⊢C @ℓ), u_t : (g ⊢C sEmpty^ℓ' @ℓ')`.
+- **Deviation, recorded.** Heather's kernel types `elim_sEmpty` with a
+  *dependent* motive (`x : sEmpty^ℓ' ⊢ M`, result `M[e/x]`;
+  `crates/kernel/src/typing.rs`, `rec.rs` `tm_elim_sempty`), while
+  `docs/sprop-design.md` and M10a have `elim_sEmpty^{l,l'}(M; e) : M`. We
+  keep the non-dependent motive, and branch 30's `U_M` lives over `g`.
+  Under irrelevance the two are interchangeable: a dependent `M` is used
+  at `M[e/x]`, which is a non-dependent motive, and every instance
+  `M[e'/x]` is convertible to it at D and M. This needs no change to the
+  metatheory.
+- **Downstream.** `dec_tySEq`, `dec_tySEmpty`, `sy_srefl`,
+  `sy_elimSEmpty` and the code deciders split on `layer_eq_dec i lV`.
+  `sy_elimSEmpty` no longer assumes `typeof i = i`.
+
+**Cost.** Both steps together: 41 files, about 1520 lines added and 130
+changed, against about 1690 for M11b. RecS accounts for 520 of them,
+RecReduct for 210 and Static Code for 160. Most of the recursor work was
+textual: five of the six branches are `Id`'s or `Unit`'s with the head
+renamed, and RecS compiled on the first attempt.
+
+Clean build: 249 s wall at `-j2` (234 s after M11b).

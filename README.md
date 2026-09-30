@@ -76,8 +76,10 @@ From M8 on, the milestones check the extensions of Heather's kernel
 - Milestone 10: strict equality. `sEq`, `srefl`, `sEmpty`, its
   eliminator and proof irrelevance are done. Heather removed `transp` and
   the strip rule after this formalization found that a computing
-  `transp` gives UIP and that the strip's normalization is open. The
-  codes (M10c) remain. See `M10_DESIGN.md`.
+  `transp` gives UIP and that the strip's normalization is open. Since
+  M10c the rules hold at every layer but V (irrelevance at D and M), with
+  codes for `sEq` and `sEmpty` and six recursor branches. See
+  `M10_DESIGN.md`.
 - Milestone 11: the identity type. `Id`, `refl` and `J` hold at every
   layer but V, with β and no η at D and M, and closed canonicity at
   `Id`. `Id` has a code, and the code recursor has its four branches
