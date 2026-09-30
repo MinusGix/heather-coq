@@ -165,12 +165,11 @@ each one touched and why, then choose among 1–3 using that data.
 3. ~~Bodied globals with layer-indexed δ: the one piece with no paper pass.~~
    Done (M9).
 4. `sEq`/`transp` and the strip rule: M10_DESIGN.md. M10a (`sEq`, `srefl`,
-   `sEmpty`, irrelevance) is done; `transp` waits on S3, since MX §19.2's
-   proposition turns out to be a strengthening lemma (S1). The strip is
-   Werner's rule, whose normalization in a predicative theory is open
-   (Abel–Coquand 2020, question 3; S5). S4's candidate (D) fails.
-   Heather decides between a research attempt, canonicity only, and a
-   CCobs-style eliminator (H `issues/sprop-strip-normalization-open.md`).
+   `sEmpty`, irrelevance) is done. M10b as specified is withdrawn. The strip
+   is Werner's rule, whose normalization is open (S5), and a computing
+   `transp` gives UIP for `Id` (S6). The replacement is an indexed-family
+   former, `IWf` (S8, H `docs/iwf-former-design.md`), and its own milestone
+   after `W`/`Wf`.
 5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash).
 
 Side task, any time: the ITree depth-indexed bisimilarity question.

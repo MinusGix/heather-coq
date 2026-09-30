@@ -1,8 +1,10 @@
 # M10: strict equality (`sEq`, `srefl`, `transp`, `sEmpty`), design
 
-Status: **M10a done, 2026-09-29** (outcome at the end). M10b is
-blocked: the strip is Werner's rule, whose normalization in a predicative
-theory is an open problem (S5). The candidate of S4, (D), fails.
+Status: **M10a done, 2026-09-29** (outcome at the end). M10b as
+specified is withdrawn (S8). The strip is Werner's rule, whose
+normalization in a predicative theory is open (S5). A computing `transp`
+gives UIP for `Id` (S6). Heather's direction: indexed families as a former
+(`IWf`), with `transp` removed or restricted to strict motives.
 
 Heather's rules: `H/docs/sprop-design.md` (frozen rule set, §2–§6). Its
 paper pass: `H/docs/metatheory-ch07-extensions.md` Part III, §18–22 (MX
@@ -370,6 +372,33 @@ right home for strict equality as a meta-level tool. It does not serve
 the one customer that exists. Route 2b needs something at `D`: option 3
 (a computed strict `eq_I` at data carriers, UIP only where Hedberg has
 it) or option 2 (`sEq` restricted to set-like carriers).
+
+### S8. Direction: families without a stored equation (2026-09-30)
+
+The only customer of a computing `transp` is route 2b, which fords
+indexed families over `sEq`. Its bar has four parts: computed result
+indices, value equality on visible data, cross-spelling by conversion,
+and definitional `match` β. A former that is Dybjer's finitary inductive
+families meets all four with no equation stored:
+- `IWf(I; x:S. n; x. o; x i. c)(m)`, whose constructor is at the output
+  index `o[a]`;
+- children in a dependent tuple `DVec(k; i. F)`.
+
+β fires on every constructor on open data, so route 2b's form B and its
+stall disappear. Without a relevant `transp` there is no UIP. Spec:
+`H/docs/iwf-former-design.md`. Evidence: `probes/IwfProbe.v`, closed,
+which checks `dnth`, β at a computed index, and the F2/F3 lowerings
+and inversion.
+
+For this formalization:
+- M10a stands as is: strict propositions, eliminating only into strict
+  propositions.
+- M10b shrinks to at most `transp` at strict motives, which needs no
+  strip.
+- `IWf` becomes its own milestone after `W`/`Wf`, which we do not have
+  yet.
+- Werner's rule (S5) and strict equality at `M` (S7) stay open research
+  tracks, not dependencies.
 
 ## Staging
 
