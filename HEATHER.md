@@ -48,8 +48,8 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | `Id`, `refl`, `J` | positive, propositional | ext §5 | MX §6 | Id at `□` types observes code conversion; funext must stay propositional (MX §6 audit) | **M11 done**: every layer but V, β and no η at D/M, canonicity, code, four recursor branches |
 | `Σ`, `pair`, `fst`/`snd` | negative, **η** | ext §6, §11.1 | MX §3 | surjective pairing is a genuinely new equation, not a congruence | **done** (M8a, M8d): every layer but V, β/η at D and M, recursor branches 13, 15–18 |
 | `Unit^l` | **η = proof irrelevance** | ext §7, §11.2 | MX §4 | level-indexed (see findings) | **done** (M8c, M8d): as Σ; η as proof irrelevance; branches 14, 19, 20 |
-| `Empty^l`, `elim_Empty` | positive, no β | ext §7 | MX §2 | Empty-η still open (`issues/empty-eta-conversion.md`) | — |
-| `+`, `inl`/`inr`, `case` | positive | ext §8 | MX §2 | — | — |
+| `Empty^l`, `elim_Empty` | positive, no β | ext §7 | MX §2 | Empty-η still open (`issues/empty-eta-conversion.md`) | **M12a done** at D and M: no closed term (`closed_empty_empty`); code and branches pending (M12c) |
+| `+`, `inl`/`inr`, `case` | positive | ext §8 | MX §2 | — | **M12b done** at D and M: β, no η, disjunction property (`closed_sum_canonicity`); code and branches pending (M12c) |
 | `W`, `sup`, `elim_W` | positive, infinitary | ext §9 | MX §5 | β builds an ih λ; the heaviest LR case | — |
 | `Vec`, `Fin` | computing wrappers (reduce to Σ/Unit, +/Empty) | DESIGN.md | MX §10 | first type formers whose whnf is chosen by a term | — |
 | `Wf`, `sup_f`, `elim_Wf` | finitary W over a `Vec` of children | wf-former-design | MX §11–17 | index lemma (MX §13) | — |
@@ -169,6 +169,7 @@ each one touched and why, then choose among 1–3 using that data.
    branches, no `transp`), is done. Indexed families become the `IWf`
    former (H `docs/iwf-former-design.md`), a milestone after `W`/`Wf`.
 5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash). `Id` is done (M11a and
-   M11b, M11_DESIGN.md).
+   M11b, M11_DESIGN.md). `Empty` and `+` are done at D and M (M12a, M12b,
+   M12_DESIGN.md); their codes and recursor branches are M12c.
 
 Side task, any time: the ITree depth-indexed bisimilarity question.
