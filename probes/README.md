@@ -11,3 +11,11 @@ of the build (`_CoqProject` lists `theories/` only). Compile one with
   It checks the derived `dnth` with a first-order family, β on open data
   at a computed index, fording's F2/F3 lowerings, and index inversion
   (`M10_DESIGN.md` S8).
+- `NoUipComponents.v`: the components lemma of Heather's
+  `docs/no-uip-model.md` §3, over reflexive-graph contexts with groupoid
+  fibres. It checks that the strict propositions (`sEq`, `Squash`,
+  `sEmpty`) are families, are strictly stable under substitution and are
+  definitionally irrelevant. It also checks `srefl`, `elim_sEmpty` and
+  `ElimSquash`, that `transp` at a strict motive exists, and, in the
+  groupoid of types and bijections, that a relevant `transp` does not
+  exist and UIP at `Ty 0` fails.
