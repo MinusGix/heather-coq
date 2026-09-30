@@ -49,8 +49,6 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] tyU l @ lsuc l ]
 | wft_El G i Γ l t : i <> lV -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] t : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] tyEl l t @ l ]
-| wft_lconv G i Γ T l l' : [ G ; Γ ⊢[ i ] T @ l' ] -> lequiv (gL G) l l' ->
-    [ G ; Γ ⊢[ i ] T @ l ]
 (* global type variables, with their local substitution typed by lookups *)
 | wft_gvar G i Γ U Δ i' l d : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] ->
     in_gctx (gΨ G) U (gdTy Δ i' l) -> lle i' i -> lsub_tail d Δ Γ -> dnfl d ->
@@ -88,6 +86,10 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
 | wft_sempty G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tySEmpty l @ l ]
 
+(* the generic rules last: [econstructor]-based dispatchers ([any_rule])
+   try the rules in order, and these unify with every goal *)
+| wft_lconv G i Γ T l l' : [ G ; Γ ⊢[ i ] T @ l' ] -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] T @ l ]
 with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 | wf_var G i Γ n T l : [ G ; Γ ⊢[ typeof i ] ] -> in_ctx Γ n T l ->
     [ G ; Γ ⊢[ i ] var n : T @ l ]
@@ -115,10 +117,6 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
     [ G ; Γ ⊢[ i ] t : tyPi l l' A B @ lmax l l' ] -> [ G ; Γ ⊢[ i ] s : A @ l ] ->
     [ G ; Γ ⊢[ i ] app t l l' A B s : B[lsingle s] @ l' ]
-| wf_conv G i Γ t T T' l : [ G ; Γ ⊢[ i ] t : T' @ l ] -> [ G ; Γ ⊢[ typeof i ] T ≅ T' @ l ] ->
-    [ G ; Γ ⊢[ i ] t : T @ l ]
-| wf_lconv G i Γ t T l l' : [ G ; Γ ⊢[ i ] t : T @ l' ] -> lequiv (gL G) l l' ->
-    [ G ; Γ ⊢[ i ] t : T @ l ]
 (* global term variables: every layer from the binding's upward, incl. V *)
 | wf_gvar G i Γ u Δ i' T l d : [ G ; Γ ⊢[ typeof i ] ] ->
     in_gctx (gΨ G) u (gdTm Δ i' T l) -> lle i' i -> lsub_tail d Δ Γ -> dnfl d ->
@@ -233,11 +231,13 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] M @ l' ] -> [ G ; Γ ⊢[ i ] e : tySEmpty l @ l ] ->
     [ G ; Γ ⊢[ i ] elimSEmpty l l' M e : M @ l' ]
 
+(* the generic rules last: [econstructor]-based dispatchers ([any_rule])
+   try the rules in order, and these unify with every goal *)
+| wf_conv G i Γ t T T' l : [ G ; Γ ⊢[ i ] t : T' @ l ] -> [ G ; Γ ⊢[ typeof i ] T ≅ T' @ l ] ->
+    [ G ; Γ ⊢[ i ] t : T @ l ]
+| wf_lconv G i Γ t T l l' : [ G ; Γ ⊢[ i ] t : T @ l' ] -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] t : T @ l ]
 with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
-| eqty_refl G i Γ T l : [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T @ l ]
-| eqty_sym G i Γ T T' l : [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> [ G ; Γ ⊢[ i ] T' ≅ T @ l ]
-| eqty_trans G i Γ T T' T'' l : [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> [ G ; Γ ⊢[ i ] T' ≅ T'' @ l ] ->
-    [ G ; Γ ⊢[ i ] T ≅ T'' @ l ]
 | eqty_pi G i Γ l1 l2 l3 l4 A A' B B' : i <> lV ->
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
@@ -255,8 +255,6 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ] ->
     [ G ; Γ ⊢[ i ] tyPi l l' (tyEl l s) (tyEl l' t) ≅ tyEl (lmax l l') (tmPi l l' s t) @ lmax l l' ]
-| eqty_lconv G i Γ T T' l l' : [ G ; Γ ⊢[ i ] T ≅ T' @ l' ] -> lequiv (gL G) l l' ->
-    [ G ; Γ ⊢[ i ] T ≅ T' @ l ]
 | eqty_gvar G i Γ U Δ i' l d d' : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] ->
     in_gctx (gΨ G) U (gdTy Δ i' l) -> lle i' i ->
     lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
@@ -264,10 +262,6 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d' n : A[d'] @ k ]) ->
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n ≅ llk d' n : A[d] @ k ]) ->
     [ G ; Γ ⊢[ i ] tyGvar U d ≅ tyGvar U d' @ l ]
-(* level equivalence at layer M: admissible below M (StaticCode), a rule
-   here, validated by the relation's level invariance (M3_DESIGN.md E12) *)
-| eqty_leq G Γ T T' l : [ G ; Γ ⊢[ lM ] T @ l ] -> [ G ; Γ ⊢[ lM ] T' @ l ] -> ty_leq T T' ->
-    [ G ; Γ ⊢[ lM ] T ≅ T' @ l ]
 | eqty_CTyp G Γ Δ Δ' l l' : [ G ; Γ ⊢[ lM ] ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ lM ] tyCTyp Δ l ≅ tyCTyp Δ' l' @ lzero ]
 | eqty_CTrm G Γ Δ Δ' T T' l l' : [ G ; Γ ⊢[ lM ] ] -> [ G ; Δ ⊢[ lD ] ] -> [ G ⊢[ lD ] Δ ≅ Δ' ] ->
@@ -312,12 +306,19 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
 | eqty_sempty G i Γ l l' : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] tySEmpty l ≅ tySEmpty l' @ l ]
 
+(* the generic rules last: [econstructor]-based dispatchers ([any_rule])
+   try the rules in order, and these unify with every goal *)
+| eqty_refl G i Γ T l : [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T @ l ]
+| eqty_sym G i Γ T T' l : [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> [ G ; Γ ⊢[ i ] T' ≅ T @ l ]
+| eqty_trans G i Γ T T' T'' l : [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> [ G ; Γ ⊢[ i ] T' ≅ T'' @ l ] ->
+    [ G ; Γ ⊢[ i ] T ≅ T'' @ l ]
+| eqty_lconv G i Γ T T' l l' : [ G ; Γ ⊢[ i ] T ≅ T' @ l' ] -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] T ≅ T' @ l ]
+(* level equivalence at layer M: admissible below M (StaticCode), a rule
+   here, validated by the relation's level invariance (M3_DESIGN.md E12) *)
+| eqty_leq G Γ T T' l : [ G ; Γ ⊢[ lM ] T @ l ] -> [ G ; Γ ⊢[ lM ] T' @ l ] -> ty_leq T T' ->
+    [ G ; Γ ⊢[ lM ] T ≅ T' @ l ]
 with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
-| eqtm_refl G i Γ t T l : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ i ] t ≅ t : T @ l ]
-| eqtm_sym G i Γ t t' T l : [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> [ G ; Γ ⊢[ i ] t' ≅ t : T @ l ]
-| eqtm_trans G i Γ t t' t'' T l :
-    [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> [ G ; Γ ⊢[ i ] t' ≅ t'' : T @ l ] ->
-    [ G ; Γ ⊢[ i ] t ≅ t'' : T @ l ]
 | eqtm_code_U G i Γ l l' : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] tmU l ≅ tmU l' : tyU (lsuc l) @ lsuc (lsuc l) ]
 | eqtm_code_pi G i Γ l1 l2 l3 l4 s s' t t' : i <> lV ->
@@ -347,10 +348,6 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] t ≅ t' : tyPi l1 l2 A B @ lmax l1 l2 ] ->
     [ G ; Γ ⊢[ i ] s ≅ s' : A @ l1 ] ->
     [ G ; Γ ⊢[ i ] app t l1 l2 A B s ≅ app t' l3 l4 A' B' s' : B[lsingle s] @ l2 ]
-| eqtm_conv G i Γ t t' T T' l : [ G ; Γ ⊢[ i ] t ≅ t' : T' @ l ] ->
-    [ G ; Γ ⊢[ typeof i ] T ≅ T' @ l ] -> [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ]
-| eqtm_lconv G i Γ t t' T l l' : [ G ; Γ ⊢[ i ] t ≅ t' : T @ l' ] -> lequiv (gL G) l l' ->
-    [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ]
 | eqtm_gvar G i Γ u Δ i' T l d d' : [ G ; Γ ⊢[ typeof i ] ] ->
     in_gctx (gΨ G) u (gdTm Δ i' T l) -> lle i' i ->
     lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
@@ -372,8 +369,6 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n : A[d] @ k ]) ->
     [ G ; Δ ⊢[ i ] t : T @ l ] ->
     [ G ; Γ ⊢[ i ] gdef u t d ≅ t[d] : T[d] @ l ]
-| eqtm_leq G Γ t t' T l : [ G ; Γ ⊢[ lM ] t : T @ l ] -> [ G ; Γ ⊢[ lM ] t' : T @ l ] -> tm_leq t t' ->
-    [ G ; Γ ⊢[ lM ] t ≅ t' : T @ l ]
 (* [box] congruence: the code's C-equation, as in the paper (06:534). The
    code is then [≡ₗ]-related (the Static Code Lemma, M7_DESIGN.md A3) *)
 | eqtm_boxT G Γ Δ T T' l : [ G ; Γ ⊢[ lM ] ] -> lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] ->
@@ -617,6 +612,19 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] p : tySEmpty l @ l ] -> [ G ; Γ ⊢[ i ] q : tySEmpty l @ l ] ->
     [ G ; Γ ⊢[ i ] p ≅ q : tySEmpty l @ l ]
 
+(* the generic rules last: [econstructor]-based dispatchers ([any_rule])
+   try the rules in order, and these unify with every goal *)
+| eqtm_refl G i Γ t T l : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ i ] t ≅ t : T @ l ]
+| eqtm_sym G i Γ t t' T l : [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> [ G ; Γ ⊢[ i ] t' ≅ t : T @ l ]
+| eqtm_trans G i Γ t t' t'' T l :
+    [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> [ G ; Γ ⊢[ i ] t' ≅ t'' : T @ l ] ->
+    [ G ; Γ ⊢[ i ] t ≅ t'' : T @ l ]
+| eqtm_conv G i Γ t t' T T' l : [ G ; Γ ⊢[ i ] t ≅ t' : T' @ l ] ->
+    [ G ; Γ ⊢[ typeof i ] T ≅ T' @ l ] -> [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ]
+| eqtm_lconv G i Γ t t' T l l' : [ G ; Γ ⊢[ i ] t ≅ t' : T @ l' ] -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ]
+| eqtm_leq G Γ t t' T l : [ G ; Γ ⊢[ lM ] t : T @ l ] -> [ G ; Γ ⊢[ lM ] t' : T @ l ] -> tm_leq t t' ->
+    [ G ; Γ ⊢[ lM ] t ≅ t' : T @ l ]
 (** Context equivalence ([Ψ ⊢ᵢ Γ ≈ Δ], used by the congruences of [□]). *)
 with eq_ctx : gctx -> layer -> ctx -> ctx -> Prop :=
 | eqc_nil G i : [ ⊢ G ] -> [ G ⊢[ i ] cnil ≅ cnil ]

@@ -203,8 +203,11 @@ the modal core (see `M2_DESIGN.md` once written).
 
 ## Proof-engineering gotchas (learned the hard way)
 
-- `constructor` on a declarative equality goal happily applies `eqty_sym`
-  / `eqtm_sym` (always unifiable). Apply the intended rule by name. Since
+- `constructor` on a declarative equality goal happily applies a generic
+  rule (`eqty_sym`, `eqtm_conv`, …: always unifiable; since the 2026-09-29
+  perf pass they are the judgments' last constructors, so a plain
+  `constructor` commits to a wrong congruence first). Apply the intended
+  rule by name. Since
   saturation, the same holds for `LR`: every constructor's conclusion is
   `LR … R` with `R` a variable, so `econstructor` always picks `LRnat`.
 - Section-local lemmas with explicit section hypotheses (`Hi`, `Hv`) keep
@@ -266,7 +269,10 @@ formers, so it gets worse with every extension:
   goal (sym, trans, conv, `eauto` with an evar middle) pays their failure on
   every goal. Put the former-specific rules first (`f_ty`, `m_ty`), the
   manual cases before `any_rule` (`GWeakening`, `GSubstitution`), and
-  `cbn`-based side solvers last (`br_tac`).
+  `cbn`-based side solvers last (`br_tac`). The same holds for the
+  constructor order of the typing judgments, which `econstructor` follows:
+  the generic rules (refl, sym, trans, conv, lconv, leq) come last in
+  `Declarative.v`; keep new generic rules there.
 - **`eauto` depth.** Failing searches dominate: `eauto 3` then a final
   `eauto 4` on the leftovers cost a third of `eauto 4` up front
   (`Presupposition`).
