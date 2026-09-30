@@ -464,7 +464,7 @@ Proof.
   left; eexists; eexists; exact (wf_code_id _ _ _ _ _ _ _ Hc Hl Hs Ht Hu).
 Qed.
 
-(** Strict equality's codes (M10c): the computing layers only. *)
+(** Strict equality's codes (M10c; every layer but V). *)
 Lemma sy_code_seq l s t u : sz_tm (tmSEq l s t u) <= n -> SYD (tmSEq l s t u).
 Proof.
   intros Hsz G i Γ HΓ.
@@ -535,7 +535,7 @@ Proof.
                                         exact (wf_snd _ _ _ _ _ _ _ _ Hc Hl Hl' HA HB Hp)].
 Qed.
 
-(** Strict equality (M10a): the computing layers only. *)
+(** Strict equality (M10a; every layer but V since M10c). *)
 Lemma sy_srefl l A a : sz_tm (srefl l A a) <= n -> SYD (srefl l A a).
 Proof.
   intros Hsz G i Γ HΓ.
