@@ -254,6 +254,28 @@ Proof.
   - apply idnf_ne. exact (pg_gne_tm Hp Hν).
 Qed.
 
+(** Binary sums (M12b): along permutations of both summands' relations. *)
+Lemma SumRel_perm {l1 l2 A B RA RB RA' RB'} :
+  (forall x y, RA x y -> RA' x[pφ π]ᵤ y[pφ π]ᵤ) -> (forall x y, RB x y -> RB' x[pφ π]ᵤ y[pφ π]ᵤ) ->
+  forall t t', SumRel G Γ l1 l2 A B RA RB t t' ->
+  SumRel (Gp π G) Γ[pφ π]ᵤ (lvsubst l1 (pφ π)) (lvsubst l2 (pφ π)) A[pφ π]ᵤ B[pφ π]ᵤ RA' RB'
+    t[pφ π]ᵤ t'[pφ π]ᵤ.
+Proof.
+  intros EpA EpB t t' (w & w' & H1 & H2 & H3 & Hn). exists w[pφ π]ᵤ, w'[pφ π]ᵤ.
+  refine (conj (pg_tmred Hp H1) (conj (pg_tmred Hp H2) (conj (pg_geq_tm Hp H3) _))).
+  destruct Hn as [k1 k2 k1' k2' C D C' D' a a' Hk1 Hk2 Hk1' Hk2' HC HC' HD HD' Ha
+                 | k1 k2 k1' k2' C D C' D' a a' Hk1 Hk2 Hk1' Hk2' HC HC' HD HD' Ha | ν ν' Hν]; cbn.
+  - apply sumnf_inl;
+      [ exact (pg_lequiv Hp Hk1) | exact (pg_lequiv Hp Hk2) | exact (pg_lequiv Hp Hk1') | exact (pg_lequiv Hp Hk2')
+      | exact (pg_geq_ty Hp HC) | exact (pg_geq_ty Hp HC') | exact (pg_geq_ty Hp HD) | exact (pg_geq_ty Hp HD')
+      | exact (EpA _ _ Ha) ].
+  - apply sumnf_inr;
+      [ exact (pg_lequiv Hp Hk1) | exact (pg_lequiv Hp Hk2) | exact (pg_lequiv Hp Hk1') | exact (pg_lequiv Hp Hk2')
+      | exact (pg_geq_ty Hp HC) | exact (pg_geq_ty Hp HC') | exact (pg_geq_ty Hp HD) | exact (pg_geq_ty Hp HD')
+      | exact (EpB _ _ Ha) ].
+  - apply sumnf_ne. exact (pg_gne_tm Hp Hν).
+Qed.
+
 Lemma CTypNf_perm {Δ k w w'} : CTypNf G Γ Δ k w w' ->
   CTypNf (Gp π G) Γ[pφ π]ᵤ Δ[pφ π]ᵤ (lvsubst k (pφ π)) w[pφ π]ᵤ w'[pφ π]ᵤ.
 Proof.
@@ -445,7 +467,9 @@ Proof.
                  | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
                  | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA IHRA Hra Hrb Hps Hpt HR
-                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                 | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
+                     HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR];
     intros π πi Hp;
     pose proof (uperm_inv _ _ _ Hp) as Hpi;
     pose proof (proj1 Hp) as Hinv; pose proof (proj1 (proj2 Hp)) as Hinv';
@@ -963,6 +987,35 @@ Proof.
         rewrite !(rt_tm Hinv) in Hr, Hr' by assumption.
         exists w[pφ πi]ᵤ, w'[pφ πi]ᵤ.
         exact (conj Hr (conj Hr' Hf)).
+  - (* +: along both summands' permuted relations *)
+    cbn in NW. destruct NW as (NA & NB).
+    destruct (IHRA π πi Hp) as (RA' & HRA' & ERA).
+    destruct (IHRB π πi Hp) as (RB' & HRB' & ERB).
+    destruct (LR_tm_per _ _ _ _ _ _ _ HRA') as [HsA' HtA'].
+    destruct (LR_tm_per _ _ _ _ _ _ _ HRB') as [HsB' HtB'].
+    assert (FA : forall x y, RA x y -> RA' x[pφ π]ᵤ y[pφ π]ᵤ).
+    { intros x y H0. destruct (LR_rel_dnf HRA _ _ H0) as [Nx Ny]. exact (proj1 (ERA x y Nx Ny) H0). }
+    assert (FB : forall x y, RB x y -> RB' x[pφ π]ᵤ y[pφ π]ᵤ).
+    { intros x y H0. destruct (LR_rel_dnf HRB _ _ H0) as [Nx Ny]. exact (proj1 (ERB x y Nx Ny) H0). }
+    assert (BA : forall x y, RA' x y -> RA x[pφ πi]ᵤ y[pφ πi]ᵤ).
+    { intros x y H0. destruct (LR_rel_dnf HRA' _ _ H0) as [Nx Ny].
+      apply (ERA _ _ (dnf_us_tm _ _) (dnf_us_tm _ _)). rewrite !(rt_tm Hinv') by assumption. exact H0. }
+    assert (BB : forall x y, RB' x y -> RB x[pφ πi]ᵤ y[pφ πi]ᵤ).
+    { intros x y H0. destruct (LR_rel_dnf HRB' _ _ H0) as [Nx Ny].
+      apply (ERB _ _ (dnf_us_tm _ _) (dnf_us_tm _ _)). rewrite !(rt_tm Hinv') by assumption. exact H0. }
+    exists (SumRel (Gp π G) Γ[pφ π]ᵤ (lvsubst u1 (pφ π)) (lvsubst u2 (pφ π)) UA[pφ π]ᵤ UB[pφ π]ᵤ RA' RB').
+    split.
+    + eapply LRsum; [exact (pg_lequiv Hp Hl) | exact (pg_lequiv Hp Hl3) | exact (pg_lequiv Hp Hl4)
+                    | exact (pg_lwf Hp Hw1) | exact (pg_lwf Hp Hw2)
+                    | exact (pg_tyred Hp HT) | exact (pg_tyred Hp HT') | exact (pg_ty Hp HUA)
+                    | exact (pg_geq_ty Hp HUAA) | exact (pg_ty Hp HUB) | exact (pg_geq_ty Hp HUBB)
+                    | exact HRA' | exact HRB' | exact HsA' | exact HtA' | exact HsB' | exact HtB'
+                    | apply releq_refl].
+    + intros t t' Nt Nt'. rewrite (HR t t'). split; [apply (SumRel_perm Hp FA FB) |].
+      intros X. apply (SumRel_perm (G := Gp π G) Hpi BA BB) in X.
+      rewrite (Gp_rt Hp HG), (rt_ctx Hinv _ HΓ), !(rt_lvl Hinv), (rt_ty Hinv _ NA), (rt_ty Hinv _ NB),
+        !(rt_tm Hinv) in X by assumption.
+      exact X.
 Qed.
 
 Theorem LR_perm n : Pperm n.

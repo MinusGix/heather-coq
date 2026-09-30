@@ -9,7 +9,8 @@
       at [Nat], a code at a universe, [λ] at [Π], [box] at [□], [Λ] at
       [UΠ], a context or type abstraction at [CΠ]/[TΠ], a pair at [Σ], [⟨⟩]
       at [Unit], [srefl] at [sEq], and nothing at [sEmpty] (M10a), [refl] at
-      [Id] (M11a).
+      [Id] (M11a), nothing at [Empty] (M12a) and an injection at [+]
+      (M12b).
 
     Closed whnfs are not neutral ([no_closed_neutral]). A value's typing
     inversion equates its type with its canonical type former, and head
@@ -35,6 +36,7 @@ Definition canon_head (h : nat) (w : tm) : Prop :=
   | 11 => exists l, w = tmTriv l
   | 12 => exists l A a, w = srefl l A a
   | 14 => exists l A a, w = tmRefl l A a
+  | 16 => (exists l l' A B a, w = tmInl l l' A B a) \/ exists l l' A B b, w = tmInr l l' A B b
   | _ => False
   end.
 
@@ -54,7 +56,8 @@ Proof.
           | pose proof (inv_code_unit Hi Hx) as X | pose proof (inv_triv Hi Hx) as X
           | pose proof (inv_srefl Hi Hx) as X | pose proof (inv_idrefl Hi Hx) as X
           | pose proof (inv_code_id Hi Hx) as X
-          | pose proof (inv_code_seq Hi Hx) as X | pose proof (inv_code_sempty Hi Hx) as X ];
+          | pose proof (inv_code_seq Hi Hx) as X | pose proof (inv_code_sempty Hi Hx) as X
+          | pose proof (inv_inl Hi Hx) as X | pose proof (inv_inr Hi Hx) as X ];
     repeat match goal with H : exists _, _ |- _ => destruct H | H : _ /\ _ |- _ => destruct H end;
     match goal with E : [ _ ; _ ⊢[ _ ] W ≅ _ @ _ ] |- _ =>
       rewrite (decl_head_c Hc E HW); [| auto with whnf] end;
@@ -154,6 +157,22 @@ Proof.
   destruct (inv_idrefl Hi (eqtm_wf_r Hi E)) as (_ & _ & ET).
   destruct (id_inj_c Hc ET) as (_ & _ & Ea & Eb).
   exact (eqtm_trans _ _ _ _ _ _ _ _ Ea (eqtm_sym _ _ _ _ _ _ _ Eb)).
+Qed.
+
+(** ** Binary sums (M12b) *)
+
+(** A closed term of [A + B] computes to an injection, whose payload is a
+    closed term of its summand: the disjunction property at [+]. *)
+Corollary closed_sum_canonicity {G i t l l' A B k} : compt i -> closed_ok i G ->
+  [ G ; cnil ⊢[ i ] t : tySum l l' A B @ k ] ->
+  (exists l1 l2 C D a, reds t (tmInl l1 l2 C D a) /\ [ G ; cnil ⊢[ i ] a : A @ l ]) \/
+  (exists l1 l2 C D b, reds t (tmInr l1 l2 C D b) /\ [ G ; cnil ⊢[ i ] b : B @ l' ]).
+Proof.
+  intros Hc HG Ht. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (closed_canonicity_whnf Hc HG (whnf_tySum _ _ _ _) Ht)
+    as (w & Hr & _ & E & [(l1 & l2 & C & D & a & ->) | (l1 & l2 & C & D & b & ->)]).
+  - left. exists l1, l2, C, D, a. exact (conj Hr (inl_payload Hc (eqtm_wf_r Hi E))).
+  - right. exists l1, l2, C, D, b. exact (conj Hr (inr_payload Hc (eqtm_wf_r Hi E))).
 Qed.
 
 (** For example, closed functions compute to [λ]s. *)

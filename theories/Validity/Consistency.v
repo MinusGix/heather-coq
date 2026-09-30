@@ -47,7 +47,7 @@ Proof.
                   | l1 l2 Δ T M t1 t Hn IH | l1 l2 rb l Δ t Hn IH | l1 l2 rb l Δ U d
                   | l1 l2 rb l Δ T t Hn IH | l1 l2 rb l Δ T u d | l1 l2 rb l Δ T u b d | t ls Hn IH | t Δ Hn IH | t T Hn IH
                   | l1 l2 A0 B p Hn IH | l1 l2 A0 B p Hn IH | l1 l2 M e Hn IH | l1 l2 M e Hn IH
-                  | l1 l2 A0 a0 M c u e Hn IH];
+                  | l1 l2 l3 A0 B M c1 c2 e Hn IH | l1 l2 A0 a0 M c u e Hn IH];
     intros X k Hx.
   - destruct (inv_var Hi Hx) as (T0 & l0 & (_ & Hin) & _ & E).
     destruct (HΓ _ _ _ Hin) as (l & ->). exists l; exact E.
@@ -76,6 +76,7 @@ Proof.
   - destruct (inv_snd Hi Hx) as ((_ & _ & _ & _ & _ & Hp) & _). scrutinee_clash IH.
   - destruct (inv_elimSEmpty Hi Hx) as ((_ & _ & _ & _ & He) & _). scrutinee_clash IH.
   - destruct (inv_elimEmpty Hi Hx) as ((_ & _ & _ & _ & He) & _). scrutinee_clash IH.
+  - destruct (inv_case Hi Hx) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & He) & _). scrutinee_clash IH.
   - destruct (inv_J Hi Hx) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & He) & _). scrutinee_clash IH.
 Qed.
 

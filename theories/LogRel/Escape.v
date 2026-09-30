@@ -191,6 +191,31 @@ Proof.
     refine (conj _ (conj _ _)); eauto using empty_tmred_conv, empty_ne_conv, lequiv_sym.
 Qed.
 
+(** ** Binary sums (M12b) *)
+
+Lemma SumNf_releq {G Γ l l' A B RA RA' RB RB'} : releq RA RA' -> releq RB RB' ->
+  forall w w', SumNf G Γ l l' A B RA RB w w' -> SumNf G Γ l l' A B RA' RB' w w'.
+Proof.
+  intros HA HB w w' [k1 k2 k1' k2' C D C' D' a a' ? ? ? ? ? ? ? ? Ha
+                    | k1 k2 k1' k2' C D C' D' b b' ? ? ? ? ? ? ? ? Hb | ν ν' Hν].
+  - apply sumnf_inl; auto. apply HA, Ha.
+  - apply sumnf_inr; auto. apply HB, Hb.
+  - now apply sumnf_ne.
+Qed.
+
+Lemma SumRel_releq {G Γ l l' A B RA RA' RB RB'} : releq RA RA' -> releq RB RB' ->
+  releq (SumRel G Γ l l' A B RA RB) (SumRel G Γ l l' A B RA' RB').
+Proof.
+  intros HA HB t t'; split; intros (w & w' & Hw & Hw' & Heq & Hn); exists w, w';
+    refine (conj Hw (conj Hw' (conj Heq _))).
+  - exact (SumNf_releq HA HB _ _ Hn).
+  - exact (SumNf_releq (fun x y => iff_sym (HA x y)) (fun x y => iff_sym (HB x y)) _ _ Hn).
+Qed.
+
+Lemma SumRel_wf {G Γ l l' A B RA RB t t'} : SumRel G Γ l l' A B RA RB t t' ->
+  [ G ; Γ ⊢g t : tySum l l' A B @ lmax l l' ] /\ [ G ; Γ ⊢g t' : tySum l l' A B @ lmax l l' ].
+Proof. intros (w & w' & Hw & Hw' & _ & _). exact (conj (tmred_wf _ _ _ _ _ _ _ Hw) (tmred_wf _ _ _ _ _ _ _ Hw')). Qed.
+
 (** ** Escape for contextual types *)
 
 Lemma ModRel_escape_ty {G Γ T T' l R} : ModRel G Γ T T' l R ->
@@ -248,7 +273,9 @@ Proof.
                 | G Γ T T' l l1 l2 A A' a a' b b' R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l l1 l2 A A' a a' b b' RA R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HRA Hra Hrb Hps Hpt HR
-                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR].
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
+                    HRA HRB Hpa Hta Hpb Htb HR].
   all: try solve [exact (ModRel_escape_ty HM)].
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
@@ -265,6 +292,7 @@ Proof.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sempty; [eapply tyred_ctx, HT | now apply lequiv_sym].
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_id; auto using lequiv_sym.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_empty; [eapply tyred_ctx, HT | now apply lequiv_sym].
+  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sum; auto using lequiv_sym.
 Qed.
 
 (** ** Escape for terms *)
@@ -288,7 +316,9 @@ Proof.
                 | G Γ T T' l l1 l2 A A' a a' b b' R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l l1 l2 A A' a a' b b' RA R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HRA Hra Hrb Hps Hpt HR
-                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
+                    HRA HRB Hpa Hta Hpb Htb HR];
     intros t t' Htt; first [exact (ModRel_escape_tm HM _ _ Htt) | apply HR in Htt].
   - (* Nat *)
     destruct Htt as [t t' w w' Hw Hw' Heq _].
@@ -395,6 +425,13 @@ Proof.
     + eapply conv_tm; [apply Hw' | exact HTE | exact Hl].
     + eapply conv_tm; [apply Hw'' | exact HTE | exact Hl].
     + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTE | exact Hl].
+  - (* +: related weak-head normal forms *)
+    destruct Htt as (w & w' & Hw' & Hw'' & Heq & _).
+    assert (HTS : [ G ; Γ ⊢g T ≅ tySum u1 u2 UA UB @ l ]) by apply HT.
+    repeat split.
+    + eapply conv_tm; [apply Hw' | exact HTS | exact Hl].
+    + eapply conv_tm; [apply Hw'' | exact HTS | exact Hl].
+    + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTS | exact Hl].
 Qed.
 
 (** ** Local weakening at the instance's layer *)
@@ -639,6 +676,12 @@ Lemma kty_tySEq l A a b : kty ρ (tySEq l A a b) = tySEq l (kty ρ A) (ktm ρ a)
 Proof. unfold kty, ktm; now rewrite gwa_tySEq. Qed.
 Lemma kty_tySEmpty l : kty ρ (tySEmpty l) = tySEmpty l. Proof. unfold kty; now rewrite gwa_tySEmpty. Qed.
 Lemma kty_tyEmpty l : kty ρ (tyEmpty l) = tyEmpty l. Proof. unfold kty; now rewrite gwa_tyEmpty. Qed.
+Lemma kty_tySum l l' A B : kty ρ (tySum l l' A B) = tySum l l' (kty ρ A) (kty ρ B).
+Proof. unfold kty; now rewrite gwa_tySum. Qed.
+Lemma ktm_inl l l' A B a : ktm ρ (tmInl l l' A B a) = tmInl l l' (kty ρ A) (kty ρ B) (ktm ρ a).
+Proof. unfold ktm, kty; now rewrite gwa_inl. Qed.
+Lemma ktm_inr l l' A B a : ktm ρ (tmInr l l' A B a) = tmInr l l' (kty ρ A) (kty ρ B) (ktm ρ a).
+Proof. unfold ktm, kty; now rewrite gwa_inr. Qed.
 Lemma ktm_elimEmpty l l' M t : ktm ρ (elimEmpty l l' M t) = elimEmpty l l' (ktyl ρ M) (ktm ρ t).
 Proof. unfold ktm, ktyl; now rewrite gwa_elimEmpty. Qed.
 Lemma ktm_srefl l A a : ktm ρ (srefl l A a) = srefl l (kty ρ A) (ktm ρ a).

@@ -55,6 +55,13 @@ Inductive red : tm -> tm -> Prop :=
 (* the irrelevant empty type (M10a): no β, only its scrutinee reduces *)
 | red_elimSEmpty l l' M e e' : red e e' -> red (elimSEmpty l l' M e) (elimSEmpty l l' M e')
 | red_elimEmpty l l' M e e' : red e e' -> red (elimEmpty l l' M e) (elimEmpty l l' M e')
+(* [case] (M12b): β at either injection, whatever its annotations; the
+   scrutinee reduces *)
+| red_case_inl l l' l'' A B M c1 c2 k k' C D a :
+    red (tmCase l l' l'' A B M c1 c2 (tmInl k k' C D a)) (c1[lsingle a])
+| red_case_inr l l' l'' A B M c1 c2 k k' C D b :
+    red (tmCase l l' l'' A B M c1 c2 (tmInr k k' C D b)) (c2[lsingle b])
+| red_case l l' l'' A B M c1 c2 t t' : red t t' -> red (tmCase l l' l'' A B M c1 c2 t) (tmCase l l' l'' A B M c1 c2 t')
 (* the identity type (M11a): J computes on refl, ignoring the annotations and
    the right endpoint as the other β rules do; otherwise its proof reduces *)
 | red_J_refl l l' A a M c u k B b : red (tmJ l l' A a M c u (tmRefl k B b)) c
@@ -132,6 +139,8 @@ Proof.
         | Hr : red (tmId _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSEq _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSEmpty _) _ |- _ => inversion Hr
+        | Hr : red (tmInl _ _ _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmInr _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red_ty (tyPi _ _ _ _) _ |- _ => inversion Hr
         end;
     try congruence; try (f_equal; eauto).
@@ -194,6 +203,8 @@ Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with 
 Lemma reds_elimSEmpty l l' M e e' : reds e e' -> reds (elimSEmpty l l' M e) (elimSEmpty l l' M e').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_elimEmpty l l' M e e' : reds e e' -> reds (elimEmpty l l' M e) (elimEmpty l l' M e').
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_case l l' l'' A B M c1 c2 t t' : reds t t' -> reds (tmCase l l' l'' A B M c1 c2 t) (tmCase l l' l'' A B M c1 c2 t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_J l l' A a M c u e e' : reds e e' -> reds (tmJ l l' A a M c u e) (tmJ l l' A a M c u e').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.

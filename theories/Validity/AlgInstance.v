@@ -484,6 +484,29 @@ Proof.
     exists M[lsingle ν]. split.
     + exact (actmne_elimEmpty _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24) DM Xν).
     + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
+  (* binary sums (M12b) *)
+  - intros * H13 H24 (EA & DA) (EB & DB).
+    refine (conj (@geq_ty_sum DE DEL _ _ _ _ _ _ _ _ _ _ H13 H24 EA EB) _).
+    eapply act_red; [constructor | constructor | apply whnf_tySum | apply whnf_tySum |].
+    exact (actnf_sum _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24) DA DB).
+  - intros * H13 H24 (EA & DA) (EB & DB) (Ea & Da).
+    refine (conj (@geq_tm_inl DE DEL _ _ _ _ _ _ _ _ _ _ _ _ H13 H24 EA EB Ea) _).
+    eapply actm_red; [constructor | apply whnf_tySum | constructor | constructor | apply whnf_inl | apply whnf_inl |].
+    exact (actmnf_inl _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Da).
+  - intros * H13 H24 (EA & DA) (EB & DB) (Eb & Db).
+    refine (conj (@geq_tm_inr DE DEL _ _ _ _ _ _ _ _ _ _ _ _ H13 H24 EA EB Eb) _).
+    eapply actm_red; [constructor | apply whnf_tySum | constructor | constructor | apply whnf_inr | apply whnf_inr |].
+    exact (actmnf_inr _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Db).
+  - intros * H14 H25 H36 HA (EA & DA) HB (EB & DB) HM (EM & DM) (Ec1 & Dc1) (Ec2 & Dc2)
+      ((Hn & Hn' & Eν) & T0 & Dν & ETν).
+    pose proof (@gne_tm_case DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H14 H25 H36 HA EA HB EB HM EM Ec1 Ec2
+                  (conj Hn (conj Hn' Eν))) as X.
+    refine (conj X _). destruct X as (_ & _ & EX).
+    destruct (ne_nee Dν ETν) as (W0 & Xν & _).
+    exists M[lsingle ν]. split.
+    + exact (actmne_case _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H14) (lequiv_leqv _ _ _ H25)
+               (lequiv_leqv _ _ _ H36) DA DB DM Dc1 Dc2 Xν).
+    + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
 Qed.
 
 End Alg.

@@ -294,6 +294,34 @@ Proof.
     + apply idnf_ne. eapply gne_tm_lconv; [eapply gne_tm_conv; [apply gne_tm_sym, Hν | exact HV] | exact Hl2].
 Qed.
 
+(** ** Binary sums, flipped (M12b): each injection's payload flips *)
+
+Lemma SumRel_flip {G Γ l1 l2 l3 l4 A A' B B' RA RB t t'} :
+  lequiv (gL G) l3 l1 -> lequiv (gL G) l4 l2 ->
+  [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ⊢ B ≈ B' @ l2 ] ->
+  SumRel G Γ l1 l2 A B RA RB t' t -> SumRel G Γ l3 l4 A' B' (flipR RA) (flipR RB) t t'.
+Proof.
+  intros Hl3 Hl4 HAA HBB (w' & w & Hw' & Hw & Heq & Hn).
+  assert (Hm : lequiv (gL G) (lmax l3 l4) (lmax l1 l2)) by now apply lequiv_max.
+  assert (HV : [ G ; Γ ⊢g tySum l1 l2 A B ≅ tySum l3 l4 A' B' @ lmax l1 l2 ])
+    by (apply geq_ty_sound, geq_ty_sum; auto using lequiv_sym).
+  assert (F : forall u v, [ G ; Γ ⊢g u ⤳* v : tySum l1 l2 A B @ lmax l1 l2 ] ->
+                [ G ; Γ ⊢g u ⤳* v : tySum l3 l4 A' B' @ lmax l3 l4 ]).
+  { intros u v H. eapply tmred_lconv; [| exact Hm].
+    eapply tmred_conv; [apply ge_typeof | exact H | exact HV]. }
+  exists w, w'. refine (conj (F _ _ Hw) (conj (F _ _ Hw') (conj _ _))).
+  - eapply geq_tm_lconv; [eapply geq_tm_conv; [apply geq_tm_sym, Heq | exact HV] | exact Hm].
+  - assert (CA : forall C, [ G ; Γ ⊢ A ≈ C @ l1 ] -> [ G ; Γ ⊢ A' ≈ C @ l3 ]).
+    { intros C HC. eapply geq_ty_lconv; [eapply geq_ty_trans; [apply geq_ty_sym, HAA | exact HC] | exact Hl3]. }
+    assert (CB : forall D, [ G ; Γ ⊢ B ≈ D @ l2 ] -> [ G ; Γ ⊢ B' ≈ D @ l4 ]).
+    { intros D HD. eapply geq_ty_lconv; [eapply geq_ty_trans; [apply geq_ty_sym, HBB | exact HD] | exact Hl4]. }
+    destruct Hn as [k1 k2 k1' k2' C D C' D' a a' Hk1 Hk2 Hk1' Hk2' HC HC' HD HD' Ha
+                   | k1 k2 k1' k2' C D C' D' b b' Hk1 Hk2 Hk1' Hk2' HC HC' HD HD' Hb | ν' ν Hν].
+    + apply sumnf_inl; [..| exact Ha]; eauto using lequiv_trans, lequiv_sym.
+    + apply sumnf_inr; [..| exact Hb]; eauto using lequiv_trans, lequiv_sym.
+    + apply sumnf_ne. eapply gne_tm_lconv; [eapply gne_tm_conv; [apply gne_tm_sym, Hν | exact HV] | exact Hm].
+Qed.
+
 (** ** Symmetry *)
 
 Lemma LR_sym_step n : (forall m, m < n -> Psym m) -> Psym n.
@@ -312,7 +340,9 @@ Proof.
                  | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
                  | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA IHRA Hra Hrb Hps Hpt HR
-                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR].
+                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                 | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
+                     HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR].
   - eapply LRnat; eauto.
     intros t t'; unfold flipR; rewrite (HR t' t); apply NatRel_flip.
   - assert (Hm : lmeasure l2 = lmeasure l1) by (eapply lequiv_measure; eauto).
@@ -457,6 +487,31 @@ Proof.
     + exact HT.
     + intros t t'; unfold flipR; rewrite (HR t' t), (EmptyRel_lconv (lequiv_sym _ _ _ Hl2) t' t).
       split; apply EmptyRel_sym.
+  - (* + *)
+    pose proof (lequiv_sym _ _ _ Hl3) as Hl3'. pose proof (lequiv_sym _ _ _ Hl4) as Hl4'.
+    pose proof (geq_ty_lconv (geq_ty_sym HUAA) Hl3) as HAA'.
+    pose proof (geq_ty_lconv (geq_ty_sym HUBB) Hl4) as HBB'.
+    eapply (LRsum n (LRbelow n) G Γ T' T l u3 u4 u1 u2 UA' UA UB' UB (flipR RA) (flipR RB)).
+    + exact (lequiv_trans _ _ _ _ Hl (lequiv_sym _ _ _ (lequiv_max _ _ _ _ _ Hl3 Hl4))).
+    + exact Hl3'.
+    + exact Hl4'.
+    + exact (lequiv_wf_l _ _ _ Hl3).
+    + exact (lequiv_wf_l _ _ _ Hl4).
+    + exact HT'.
+    + exact HT.
+    + exact (lconv_ty (eqty_wf_r ge_typeof (geq_ty_sound HUAA)) Hl3').
+    + exact HAA'.
+    + exact (lconv_ty (eqty_wf_r ge_typeof (geq_ty_sound HUBB)) Hl4').
+    + exact HBB'.
+    + exact (LR_lconv _ _ _ _ _ _ _ _ _ IHRA Hl3).
+    + exact (LR_lconv _ _ _ _ _ _ _ _ _ IHRB Hl4).
+    + unfold flipR; intros x y H; exact (Hpa _ _ H).
+    + unfold flipR; intros x y z H1 H2; exact (Hta _ _ _ H2 H1).
+    + unfold flipR; intros x y H; exact (Hpb _ _ H).
+    + unfold flipR; intros x y z H1 H2; exact (Htb _ _ _ H2 H1).
+    + intros t t'; unfold flipR at 1; rewrite (HR t' t); split; intros X.
+      * exact (SumRel_flip Hl3 Hl4 HUAA HUBB X).
+      * exact (SumRel_flip (RA := flipR RA) (RB := flipR RB) Hl3' Hl4' HAA' HBB' X).
 Qed.
 
 Theorem LR_sym n : Psym n.

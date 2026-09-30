@@ -175,15 +175,20 @@ Proof. now intros ? ->. Qed.
 Lemma llk_llift0 d : llk (llift d) 0 = var 0.
 Proof. now rewrite llk_llift. Qed.
 
-Ltac sub_rw :=
+Ltac sub_rw1 :=
   push_subst;
   rewrite ?llk_llift0, ?single_subst_ty, ?single_subst, ?single2_subst, ?single2_subst_ty, ?lsucc_subst_ty,
           ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty by eauto with nf;
   push_subst.
+(* twice: [case]'s branch types (M12b) shift summands inside an injection,
+   which the first pass exposes *)
+Ltac sub_rw := sub_rw1; sub_rw1.
 
 #[export] Hint Resolve lsub_wf_ctx : sub.
 #[export] Hint Resolve wfc_ext wft_nat wft_El lequiv_wf_l lequiv_wf_r wf_ctx_nat compt_notV : sub.
-#[export] Hint Resolve wf_ctx_empty wft_empty_typeof : sub.
+#[export] Hint Resolve wf_ctx_empty wft_empty_typeof wf_ctx_sum wft_sum_typeof : sub.
+(* a [lmax] of levels known only through [lequiv] (M12b, [case]'s motive) *)
+#[export] Hint Extern 3 (lwf _ (lmax _ _)) => (cbn; split; eauto using lequiv_wf_l, lequiv_wf_r) : sub.
 #[export] Hint Extern 1 (ty_leq _ _) =>
   apply (proj1 leq_subst_all); [apply lsub_leq_refl | assumption] : sub.
 #[export] Hint Extern 1 (tm_leq _ _) =>
@@ -818,6 +823,11 @@ Ltac sub_Jmot :=
 
 Ltac sub_manual2 :=
   match goal with
+  (* [case] (M12b): its branches' types, through the induction hypotheses *)
+  | |- wf_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ _) _ _ => eapply wf_case; sub_premise
+  | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ (tmInl _ _ _ _ _)) _ _ _ => eapply eqtm_case_inl; sub_premise
+  | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ (tmInr _ _ _ _ _)) _ _ _ => eapply eqtm_case_inr; sub_premise
+  | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_case; sub_premise
   (* the identity type (M11a) *)
   | |- wf_tm _ _ _ (tmJ _ _ _ _ _ _ _ _) _ _ => eapply wf_J; first [solve [sub_Jmot] | sub_premise]
   | |- eq_tm _ _ _ (tmJ _ _ _ _ _ _ _ (tmRefl _ _ _)) _ _ _ =>

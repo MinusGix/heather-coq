@@ -309,6 +309,9 @@ Ltac us_Δ tac :=
 
 Ltac us_manual :=
   match goal with
+  (* [case] (M12b): its branches' types shift the summands inside the
+     injection, which the first pass exposes only after [cbn] *)
+  | |- context [tmCase _ _ _ _ _ _ _ _ _] => us_rewrite_all; us_step
   | |- wf_ty _ _ _ (tyGvar _ _) _ =>
       us_Δ ltac:(fun D => eapply wft_gvar with (Δ := D)); [ .. | us_entries]; eauto with us
   | |- eq_ty _ _ _ (tyGvar _ _) _ _ =>

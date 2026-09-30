@@ -57,7 +57,9 @@ Proof.
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
+                    HRA HRB Hpa Hta Hpb Htb HR];
     intros T1 T1' H1 H1'.
   - eapply LRnat; eauto using tyred_trans.
   - eapply LRU with (l1 := l1) (l2 := l2); eauto using tyred_trans.
@@ -72,6 +74,7 @@ Proof.
   - eapply (LRsempty n rec G Γ T1 T1' l s1 s2); eauto using tyred_trans.
   - eapply (LRid n rec G Γ T1 T1' l s1 s2); eauto using tyred_trans.
   - eapply (LRempty n rec G Γ T1 T1' l s1 s2); eauto using tyred_trans.
+  - eapply (LRsum n rec G Γ T1 T1' l u1 u2 u3 u4 UA UA' UB UB' RA RB); eauto using tyred_trans.
 Qed.
 
 Theorem LR_red_tm n rec G Γ T T' l R :
@@ -93,7 +96,9 @@ Proof.
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
+                    HRA HRB Hpa Hta Hpb Htb HR];
     intros t t' t1 t1' Htt H1 H1';
     first [exact (ModRel_red_tm HM _ _ _ _ Htt H1 H1') | apply HR; apply HR in Htt].
   - inversion Htt as [? ? w w' Hw Hw' Heq Hnf]; subst.
@@ -165,6 +170,14 @@ Proof.
     + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
     + eapply tmred_trans; [|exact Hr']. apply (empty_tmred_conv Hl2).
       eapply tmred_along; [exact H1' | exact HT' | eapply lequiv_trans; [exact Hl2 | now apply lequiv_sym]].
+  - (* +: the right side at the left's type, as for Id *)
+    destruct Htt as (w & w' & Hr & Hr' & Heq & Hn). exists w, w'.
+    refine (conj _ (conj _ (conj Heq Hn))).
+    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|now apply lequiv_sym].
+      eapply tmred_conv; [apply ge_typeof | exact H1' |].
+      eapply eqty_trans; [apply HT'|]. eapply eqty_lconv; [|exact Hl].
+      apply eqty_sym, geq_ty_sound, geq_ty_sum; auto using lequiv_sym.
 Qed.
 
 End Reduction.

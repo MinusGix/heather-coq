@@ -158,6 +158,12 @@ Lemma subst_triv l : (tmTriv l)[d] = tmTriv l. Proof. reflexivity. Qed.
 Lemma ren_tySEq l A a b : (tySEq l A a b)⟨r⟩ = tySEq l A⟨r⟩ a⟨r⟩ b⟨r⟩. Proof. reflexivity. Qed.
 Lemma ren_tySEmpty l : (tySEmpty l)⟨r⟩ = tySEmpty l. Proof. reflexivity. Qed.
 Lemma ren_tyEmpty l : (tyEmpty l)⟨r⟩ = tyEmpty l. Proof. reflexivity. Qed.
+Lemma ren_tySum l l' A B : (tySum l l' A B)⟨r⟩ = tySum l l' A⟨r⟩ B⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_inl l l' A B a : (tmInl l l' A B a)⟨r⟩ = tmInl l l' A⟨r⟩ B⟨r⟩ a⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_inr l l' A B a : (tmInr l l' A B a)⟨r⟩ = tmInr l l' A⟨r⟩ B⟨r⟩ a⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_case l l' l'' A B M c1 c2 t :
+  (tmCase l l' l'' A B M c1 c2 t)⟨r⟩ = tmCase l l' l'' A⟨r⟩ B⟨r⟩ M⟨rlift r⟩ c1⟨rlift r⟩ c2⟨rlift r⟩ t⟨r⟩.
+Proof. reflexivity. Qed.
 Lemma ren_elimEmpty l l' M t : (elimEmpty l l' M t)⟨r⟩ = elimEmpty l l' M⟨rlift r⟩ t⟨r⟩. Proof. reflexivity. Qed.
 Lemma ren_srefl l A a : (srefl l A a)⟨r⟩ = srefl l A⟨r⟩ a⟨r⟩. Proof. reflexivity. Qed.
 Lemma ren_elimSEmpty l l' M e : (elimSEmpty l l' M e)⟨r⟩ = elimSEmpty l l' M⟨r⟩ e⟨r⟩.
@@ -165,6 +171,12 @@ Proof. reflexivity. Qed.
 Lemma subst_tySEq l A a b : (tySEq l A a b)[d] = tySEq l A[d] a[d] b[d]. Proof. reflexivity. Qed.
 Lemma subst_tySEmpty l : (tySEmpty l)[d] = tySEmpty l. Proof. reflexivity. Qed.
 Lemma subst_tyEmpty l : (tyEmpty l)[d] = tyEmpty l. Proof. reflexivity. Qed.
+Lemma subst_tySum l l' A B : (tySum l l' A B)[d] = tySum l l' A[d] B[d]. Proof. reflexivity. Qed.
+Lemma subst_inl l l' A B a : (tmInl l l' A B a)[d] = tmInl l l' A[d] B[d] a[d]. Proof. reflexivity. Qed.
+Lemma subst_inr l l' A B a : (tmInr l l' A B a)[d] = tmInr l l' A[d] B[d] a[d]. Proof. reflexivity. Qed.
+Lemma subst_case l l' l'' A B M c1 c2 t :
+  (tmCase l l' l'' A B M c1 c2 t)[d] = tmCase l l' l'' A[d] B[d] M[llift d] c1[llift d] c2[llift d] t[d].
+Proof. reflexivity. Qed.
 Lemma subst_elimEmpty l l' M t : (elimEmpty l l' M t)[d] = elimEmpty l l' M[llift d] t[d]. Proof. reflexivity. Qed.
 Lemma subst_srefl l A a : (srefl l A a)[d] = srefl l A[d] a[d]. Proof. reflexivity. Qed.
 Lemma subst_elimSEmpty l l' M e : (elimSEmpty l l' M e)[d] = elimSEmpty l l' M[d] e[d].
@@ -243,6 +255,10 @@ Ltac push_ren_at h k := lazymatch h with
   | @tySEq => k ren_tySEq
   | @tySEmpty => k ren_tySEmpty
   | @tyEmpty => k ren_tyEmpty
+  | @tySum => k ren_tySum
+  | @tmInl => k ren_inl
+  | @tmInr => k ren_inr
+  | @tmCase => k ren_case
   | @elimEmpty => k ren_elimEmpty
   | @srefl => k ren_srefl
   | @elimSEmpty => k ren_elimSEmpty
@@ -302,6 +318,10 @@ Ltac push_subst_at h k := lazymatch h with
   | @tySEq => k subst_tySEq
   | @tySEmpty => k subst_tySEmpty
   | @tyEmpty => k subst_tyEmpty
+  | @tySum => k subst_tySum
+  | @tmInl => k subst_inl
+  | @tmInr => k subst_inr
+  | @tmCase => k subst_case
   | @elimEmpty => k subst_elimEmpty
   | @srefl => k subst_srefl
   | @elimSEmpty => k subst_elimSEmpty

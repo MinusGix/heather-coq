@@ -194,6 +194,29 @@ Lemma inv_elimEmpty {G i Γ l l' M t T k} : typeof i = i -> [ G ; Γ ⊢[ i ] el
     lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ i ] T ≅ M[lsingle t] @ k ].
 Proof. inv_tm. Qed.
 
+(** Binary sums (M12b). *)
+Lemma inv_inl {G i Γ l l' A B a T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmInl l l' A B a : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] B @ l' ] /\
+    [ G ; Γ ⊢[ i ] a : A @ l ]) /\
+    lvl_eq (gL G) k (lmax l l') /\ [ G ; Γ ⊢[ i ] T ≅ tySum l l' A B @ k ].
+Proof. inv_tm. Qed.
+
+Lemma inv_inr {G i Γ l l' A B b T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmInr l l' A B b : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] B @ l' ] /\
+    [ G ; Γ ⊢[ i ] b : B @ l' ]) /\
+    lvl_eq (gL G) k (lmax l l') /\ [ G ; Γ ⊢[ i ] T ≅ tySum l l' A B @ k ].
+Proof. inv_tm. Qed.
+
+Lemma inv_case {G i Γ l l' l'' A B M c1 c2 t T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ lwf (gL G) l'' /\
+    [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] B @ l' ] /\
+    [ G ; Γ ,, tySum l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] c1 : M⟨rlift ↑⟩[lsingle (tmInl l l' A⟨↑⟩ B⟨↑⟩ (var 0))] @ l'' ] /\
+    [ G ; Γ ,, B @ l' ⊢[ i ] c2 : M⟨rlift ↑⟩[lsingle (tmInr l l' A⟨↑⟩ B⟨↑⟩ (var 0))] @ l'' ] /\
+    [ G ; Γ ⊢[ i ] t : tySum l l' A B @ lmax l l' ]) /\
+    lvl_eq (gL G) k l'' /\ [ G ; Γ ⊢[ i ] T ≅ M[lsingle t] @ k ].
+Proof. inv_tm. Qed.
+
 (** Strict equality's codes (M10c). *)
 Lemma inv_code_seq {G i Γ l s t u T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSEq l s t u : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
@@ -407,6 +430,12 @@ Lemma inv_ty_sempty {G i Γ l k} : [ G ; Γ ⊢[ i ] tySEmpty l @ k ] ->
   (i <> lV /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\ lvl_eq (gL G) k l.
 Proof. inv_ty. Qed.
 
+(** Binary sums (M12b). *)
+Lemma inv_ty_sum {G i Γ l l' A B k} : [ G ; Γ ⊢[ i ] tySum l l' A B @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] B @ l' ]) /\
+    lvl_eq (gL G) k (lmax l l').
+Proof. inv_ty. Qed.
+
 (** The empty type (M12a). *)
 Lemma inv_ty_empty {G i Γ l k} : [ G ; Γ ⊢[ i ] tyEmpty l @ k ] ->
   (compt i /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\ lvl_eq (gL G) k l.
@@ -463,4 +492,5 @@ Proof.
   - exact (lvl_eq_uniq (proj2 (inv_ty_sempty H)) (proj2 (inv_ty_sempty H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_id H)) (proj2 (inv_ty_id H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_empty H)) (proj2 (inv_ty_empty H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_sum H)) (proj2 (inv_ty_sum H'))).
 Qed.

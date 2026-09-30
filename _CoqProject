@@ -86,6 +86,7 @@ theories/Validity/Unit.v
 theories/Validity/SEq.v
 theories/Validity/Id.v
 theories/Validity/Empty.v
+theories/Validity/Sum.v
 theories/Validity/Fundamental.v
 theories/Validity/Consequences.v
 theories/Validity/Payload.v

@@ -136,6 +136,10 @@ Ltac s_push_at h k := lazymatch h with
   | @cnil => k gs_cnil
   | @cext => k gs_cext
   | @tySig => k gs_tySig
+  | @tySum => k gs_tySum
+  | @tmInl => k gs_inl
+  | @tmInr => k gs_inr
+  | @tmCase => k gs_case
   | @tmSig => k gs_tmSig
   | @tmPair => k gs_pair
   | @tmFst => k gs_fst
@@ -191,7 +195,10 @@ Ltac fts_case :=
   | solve [simple eapply V_code_seq; s_side] | solve [simple eapply V_El_seq; s_side]
   | solve [simple eapply V_code_sempty; s_side] | solve [simple eapply V_El_sempty; s_side]
   (* the empty type (M12a) *)
-  | solve [simple eapply V_empty; s_side] | solve [simple eapply V_elimEmpty; s_side] ].
+  | solve [simple eapply V_empty; s_side] | solve [simple eapply V_elimEmpty; s_side]
+  (* binary sums (M12b) *)
+  | solve [simple eapply V_sum; s_side] | solve [simple eapply V_inl; s_side]
+  | solve [simple eapply V_inr; s_side] | solve [simple eapply V_case; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=
@@ -520,6 +527,55 @@ Lemma VS_elimEmpty {ly G Γ l1 l2 l3 l4 M M' t t'} : lwf (gL G) l1 -> lwf (gL G)
   VTmS G Γ (elimEmpty l1 l2 M t) (elimEmpty l3 l4 M' t') M[lsingle t] l1.
 Proof using EL VL VN. intros; s_lift. Qed.
 
+(** Binary sums (M12b). *)
+Lemma VS_sum {G Γ l1 l2 l3 l4 A A' B B'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  VTyS G Γ A A' l1 -> VTyS G Γ B B' l2 -> VTyS G Γ (tySum l1 l2 A B) (tySum l3 l4 A' B') (lmax l1 l2).
+Proof using EL VL. intros; s_lift. Qed.
+Lemma VS_inl {G Γ l1 l2 l3 l4 A A' B B' a a'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  VTyS G Γ A A' l1 -> VTyS G Γ B B' l2 -> VTmS G Γ a a' A l1 ->
+  VTmS G Γ (tmInl l1 l2 A B a) (tmInl l3 l4 A' B' a') (tySum l1 l2 A B) (lmax l1 l2).
+Proof using EL VL. intros; s_lift. Qed.
+Lemma VS_inr {G Γ l1 l2 l3 l4 A A' B B' b b'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  VTyS G Γ A A' l1 -> VTyS G Γ B B' l2 -> VTmS G Γ b b' B l2 ->
+  VTmS G Γ (tmInr l1 l2 A B b) (tmInr l3 l4 A' B' b') (tySum l1 l2 A B) (lmax l1 l2).
+Proof using EL VL. intros; s_lift. Qed.
+Lemma VS_case {G Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c1 c1' c2 c2' t t'} :
+  lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l3 ->
+  lequiv (gL G) l1 l4 -> lequiv (gL G) l2 l5 -> lequiv (gL G) l3 l6 ->
+  VTyS G Γ A A' l1 -> VTyS G Γ B B' l2 -> VTyS G (Γ ,, tySum l1 l2 A B @ lmax l1 l2) M M' l3 ->
+  VTmS G (Γ ,, A @ l1) c1 c1' M⟨rlift ↑⟩[lsingle (tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] l3 ->
+  VTmS G (Γ ,, B @ l2) c2 c2' M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] l3 ->
+  VTmS G Γ t t' (tySum l1 l2 A B) (lmax l1 l2) ->
+  VTmS G Γ (tmCase l1 l2 l3 A B M c1 c2 t) (tmCase l4 l5 l6 A' B' M' c1' c2' t') M[lsingle t] l3.
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_case_inl {ly G Γ l l' l'' A B M c1 c2 a} : lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
+  [ G ; Γ ⊢[ ly ] A @ l ] -> [ G ; Γ ⊢[ ly ] B @ l' ] -> lle ly ge_layer -> typeof ly = ly ->
+  VTyS G Γ A A l -> VTyS G Γ B B l' -> VTyS G (Γ ,, tySum l l' A B @ lmax l l') M M l'' ->
+  VTmS G (Γ ,, A @ l) c1 c1 M⟨rlift ↑⟩[lsingle (tmInl l l' A⟨↑⟩ B⟨↑⟩ (var 0))] l'' ->
+  VTmS G (Γ ,, B @ l') c2 c2 M⟨rlift ↑⟩[lsingle (tmInr l l' A⟨↑⟩ B⟨↑⟩ (var 0))] l'' ->
+  VTmS G Γ a a A l ->
+  VTmS G Γ (tmCase l l' l'' A B M c1 c2 (tmInl l l' A B a)) c1[lsingle a] M[lsingle (tmInl l l' A B a)] l''.
+Proof using EL VL VN.
+  intros. eapply (VTmS_trans_diag EP EM (t2 := c1[lsingle a])); [s_diag V_case_inl|].
+  rewrite <- (case_inl_single M l l' A B a) by (eapply wf_ty_nf; eassumption).
+  eapply VTmS_single; eassumption.
+Qed.
+Lemma VS_case_inr {ly G Γ l l' l'' A B M c1 c2 b} : lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
+  [ G ; Γ ⊢[ ly ] A @ l ] -> [ G ; Γ ⊢[ ly ] B @ l' ] -> lle ly ge_layer -> typeof ly = ly ->
+  VTyS G Γ A A l -> VTyS G Γ B B l' -> VTyS G (Γ ,, tySum l l' A B @ lmax l l') M M l'' ->
+  VTmS G (Γ ,, A @ l) c1 c1 M⟨rlift ↑⟩[lsingle (tmInl l l' A⟨↑⟩ B⟨↑⟩ (var 0))] l'' ->
+  VTmS G (Γ ,, B @ l') c2 c2 M⟨rlift ↑⟩[lsingle (tmInr l l' A⟨↑⟩ B⟨↑⟩ (var 0))] l'' ->
+  VTmS G Γ b b B l' ->
+  VTmS G Γ (tmCase l l' l'' A B M c1 c2 (tmInr l l' A B b)) c2[lsingle b] M[lsingle (tmInr l l' A B b)] l''.
+Proof using EL VL VN.
+  intros. eapply (VTmS_trans_diag EP EM (t2 := c2[lsingle b])); [s_diag V_case_inr|].
+  rewrite <- (case_inr_single M l l' A B b) by (eapply wf_ty_nf; eassumption).
+  eapply VTmS_single; eassumption.
+Qed.
+
 End Rules.
 
 End RulesS.
@@ -562,4 +618,8 @@ Ltac vs_rules side :=
   | solve [simple eapply VS_code_seq; side] | solve [simple eapply VS_El_seq; side]
   | solve [simple eapply VS_code_sempty; side] | solve [simple eapply VS_El_sempty; side]
   (* the empty type (M12a) *)
-  | solve [simple eapply VS_empty; side] | solve [simple eapply VS_elimEmpty; side] ].
+  | solve [simple eapply VS_empty; side] | solve [simple eapply VS_elimEmpty; side]
+  (* binary sums (M12b) *)
+  | solve [simple eapply VS_sum; side] | solve [simple eapply VS_inl; side]
+  | solve [simple eapply VS_inr; side] | solve [simple eapply VS_case; side]
+  | solve [simple eapply VS_case_inl; side] | solve [simple eapply VS_case_inr; side] ].

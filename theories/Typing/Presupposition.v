@@ -52,6 +52,35 @@ Proof.
     apply wf_var; [now rewrite Hi | do 2 constructor; exact Hm].
 Qed.
 
+(** One local more, the last entry given by [f] (M12b: [case]'s branches
+    see the motive at the injection of their variable). *)
+Lemma lsub_wf_up1 {Γ A B f l l'} : [ G ; Γ ,, A @ l ⊢[ i ] ] -> dnftm f ->
+  [ G ; Γ ,, A @ l ⊢[ i ] f : B⟨↑⟩ @ l' ] -> [ G ; Γ ,, A @ l ⊢[ i ] lcons (lshift 1) f : Γ ,, B @ l' ].
+Proof.
+  intros HΓ Hf Hft. constructor; [rewrite Hi; exact HΓ | intros [|n]; cbn; [exact Hf | exact I]
+                                 | split; auto; intros n; cbn; f_equal; lia |].
+  intros n T l0 Hin.
+  inversion Hin as [Γ0 A0 l1|Γ0 A0 l1 T0 l2 m Hm]; subst; cbn.
+  - rewrite shift_cons1_ty, <- shift1_as_ty. exact Hft.
+  - rewrite shift_cons1_ty, <- shift1_as_ty. replace (m + 1) with (S m) by lia.
+    apply wf_var; [now rewrite Hi | constructor; exact Hm].
+Qed.
+
+Lemma lsub_eq_up1 {Γ A B f f' l l'} : [ G ; Γ ,, A @ l ⊢[ i ] ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] f : B⟨↑⟩ @ l' ] -> [ G ; Γ ,, A @ l ⊢[ i ] f' : B⟨↑⟩ @ l' ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] f ≅ f' : B⟨↑⟩ @ l' ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] lcons (lshift 1) f ≅ lcons (lshift 1) f' : Γ ,, B @ l' ].
+Proof.
+  intros HΓ Hf Hf' Hff.
+  refine (conj (lsub_wf_up1 HΓ (wf_tm_dnf Hf) Hf) (conj (lsub_wf_up1 HΓ (wf_tm_dnf Hf') Hf') _)).
+  intros n T l0 Hin.
+  inversion Hin as [Γ0 A0 l1|Γ0 A0 l1 T0 l2 m Hm]; subst; cbn.
+  - rewrite shift_cons1_ty, <- shift1_as_ty. exact Hff.
+  - rewrite shift_cons1_ty, <- shift1_as_ty. replace (m + 1) with (S m) by lia.
+    apply eqtm_refl, wf_var; [now rewrite Hi | constructor; exact Hm].
+Qed.
+
+
 Lemma lsub_eq_single {Γ A t t' l} :
   [ G ; Γ ⊢[ i ] t : A @ l ] -> [ G ; Γ ⊢[ i ] t' : A @ l ] ->
   [ G ; Γ ⊢[ i ] t ≅ t' : A @ l ] ->
@@ -146,6 +175,19 @@ Qed.
 Lemma wf_ty_func {Γ T l Δ d d'} :
   [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Δ ⊢[ i ] d ≅ d' : Γ ] -> [ G ; Δ ⊢[ i ] T[d] ≅ T[d'] @ l ].
 Proof. intros; eapply functionality; eauto. Qed.
+
+(** The branch types of two [case]s, along equal motives and injections. *)
+Lemma case_branch_eq {Γ X B M M' f f' lx lb k} : [ G ; Γ ,, X @ lx ⊢[ i ] ] ->
+  [ G ; Γ ,, B @ lb ⊢[ i ] M @ k ] -> [ G ; Γ ,, B @ lb ⊢[ i ] M ≅ M' @ k ] ->
+  [ G ; Γ ,, B @ lb ⊢[ i ] M' @ k ] ->
+  [ G ; Γ ,, X @ lx ⊢[ i ] f : B⟨↑⟩ @ lb ] -> [ G ; Γ ,, X @ lx ⊢[ i ] f' : B⟨↑⟩ @ lb ] ->
+  [ G ; Γ ,, X @ lx ⊢[ i ] f ≅ f' : B⟨↑⟩ @ lb ] ->
+  [ G ; Γ ,, X @ lx ⊢[ i ] M⟨rlift ↑⟩[lsingle f] ≅ M'⟨rlift ↑⟩[lsingle f'] @ k ].
+Proof.
+  intros HΓ HM HMM HM' Hf Hf' Hff. rewrite !liftshift_single_ty.
+  pose proof (lsub_eq_up1 HΓ Hf Hf' Hff) as E.
+  eapply eqty_trans; [exact (eqty_subst Hi HMM (lsub_eq_l E)) | exact (wf_ty_func HM' E)].
+Qed.
 
 Lemma pre_natrec_r {Γ l l' M M' s' z' t t'} :
   lequiv (gL G) l l' ->
@@ -502,6 +544,164 @@ Proof.
     + apply (wf_ty_func HM (d' := lsingle t')). now apply lsub_eq_single.
     + exact (eqty_single Hi HMM Ht').
 Qed.
+
+(** Binary sums (M12b), gated like [Empty]. *)
+Lemma pre_sum_r {Γ l1 l2 l3 l4 A A' B B'} : lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ⊢[ i ] B ≅ B' @ l2 ] -> [ G ; Γ ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] tySum l3 l4 A' B' @ lmax l1 l2 ].
+Proof.
+  intros H13 H24 HAA HA' HBB HB'. eapply wft_lconv with (l' := lmax l3 l4); [| apply lequiv_max; assumption].
+  apply wft_sum; eauto using compt_self, lequiv_wf_r.
+  - eapply wft_lconv; [exact HA' | now apply lequiv_sym].
+  - eapply wft_lconv; [exact HB' | now apply lequiv_sym].
+Qed.
+
+(** The injections' right-hand sides: at the primed annotations, then
+    converted to the left's sum type. *)
+Lemma pre_inj_conv {Γ l1 l2 l3 l4 A A' B B' x} : lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] B ≅ B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] x : tySum l3 l4 A' B' @ lmax l3 l4 ] -> [ G ; Γ ⊢[ i ] x : tySum l1 l2 A B @ lmax l1 l2 ].
+Proof.
+  intros H13 H24 HAA HBB Hx. eapply wf_lconv with (l' := lmax l3 l4); [| apply lequiv_max; assumption].
+  eapply conv_tm'; [exact Hx|]. eapply eqty_lconv; [apply eqty_sum; auto using compt_self |].
+  apply lequiv_sym, lequiv_max; assumption.
+Qed.
+
+Lemma pre_inl_r {Γ l1 l2 l3 l4 A A' B B' a'} : lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ⊢[ i ] B ≅ B' @ l2 ] -> [ G ; Γ ⊢[ i ] B' @ l2 ] -> [ G ; Γ ⊢[ i ] a' : A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] tmInl l3 l4 A' B' a' : tySum l1 l2 A B @ lmax l1 l2 ].
+Proof.
+  intros H13 H24 HAA HA' HBB HB' Ha. apply (pre_inj_conv H13 H24 HAA HBB).
+  apply wf_inl; eauto using compt_self, lequiv_wf_r.
+  - eapply wft_lconv; [exact HA' | now apply lequiv_sym].
+  - eapply wft_lconv; [exact HB' | now apply lequiv_sym].
+  - eapply wf_lconv; [eapply conv_tm'; [exact Ha | apply eqty_sym, HAA] | now apply lequiv_sym].
+Qed.
+
+Lemma pre_inr_r {Γ l1 l2 l3 l4 A A' B B' b'} : lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ⊢[ i ] B ≅ B' @ l2 ] -> [ G ; Γ ⊢[ i ] B' @ l2 ] -> [ G ; Γ ⊢[ i ] b' : B @ l2 ] ->
+  [ G ; Γ ⊢[ i ] tmInr l3 l4 A' B' b' : tySum l1 l2 A B @ lmax l1 l2 ].
+Proof.
+  intros H13 H24 HAA HA' HBB HB' Hb. apply (pre_inj_conv H13 H24 HAA HBB).
+  apply wf_inr; eauto using compt_self, lequiv_wf_r.
+  - eapply wft_lconv; [exact HA' | now apply lequiv_sym].
+  - eapply wft_lconv; [exact HB' | now apply lequiv_sym].
+  - eapply wf_lconv; [eapply conv_tm'; [exact Hb | apply eqty_sym, HBB] | now apply lequiv_sym].
+Qed.
+
+(** A [case] branch, moved to the primed carrier's context and the primed
+    motive at the primed injection. [inj] is either injection. *)
+(** β's right-hand side, at the motive's instance at the injection. *)
+Lemma case_inl_single (M : ty) l l' A B a : nfty A -> nfty B ->
+  M⟨rlift ↑⟩[lsingle (tmInl l l' A⟨↑⟩ B⟨↑⟩ (var 0))][lsingle a] = M[lsingle (tmInl l l' A B a)].
+Proof. intros NA NB. rewrite liftshift_single_ty, up1_single_ty, subst_inl, !shift_single_ty by assumption. reflexivity. Qed.
+Lemma case_inr_single (M : ty) l l' A B b : nfty A -> nfty B ->
+  M⟨rlift ↑⟩[lsingle (tmInr l l' A⟨↑⟩ B⟨↑⟩ (var 0))][lsingle b] = M[lsingle (tmInr l l' A B b)].
+Proof. intros NA NB. rewrite liftshift_single_ty, up1_single_ty, subst_inr, !shift_single_ty by assumption. reflexivity. Qed.
+
+Lemma pre_case_inl_rhs {Γ l l' l'' A B M c1 a} : [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] c1 : M⟨rlift ↑⟩[lsingle (tmInl l l' A⟨↑⟩ B⟨↑⟩ (var 0))] @ l'' ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] c1[lsingle a] : M[lsingle (tmInl l l' A B a)] @ l'' ].
+Proof.
+  intros HA HB Hc Ha. rewrite <- (case_inl_single M l l' A B a (wf_ty_nf HA) (wf_ty_nf HB)).
+  exact (wf_tm_single Hi Hc Ha).
+Qed.
+Lemma pre_case_inr_rhs {Γ l l' l'' A B M c2 b} : [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ,, B @ l' ⊢[ i ] c2 : M⟨rlift ↑⟩[lsingle (tmInr l l' A⟨↑⟩ B⟨↑⟩ (var 0))] @ l'' ] ->
+  [ G ; Γ ⊢[ i ] b : B @ l' ] -> [ G ; Γ ⊢[ i ] c2[lsingle b] : M[lsingle (tmInr l l' A B b)] @ l'' ].
+Proof.
+  intros HA HB Hc Hb. rewrite <- (case_inr_single M l l' A B b (wf_ty_nf HA) (wf_ty_nf HB)).
+  exact (wf_tm_single Hi Hc Hb).
+Qed.
+
+Lemma case_branch_r {Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' X X' lx lx' c}
+  (inj : lvl -> lvl -> ty -> ty -> tm -> tm) :
+  lequiv (gL G) l1 l4 -> lequiv (gL G) l2 l5 -> lequiv (gL G) l3 l6 -> lequiv (gL G) lx lx' ->
+  [ G ; Γ ⊢[ i ] X @ lx ] -> [ G ; Γ ⊢[ i ] X ≅ X' @ lx ] -> [ G ; Γ ⊢[ i ] X' @ lx ] ->
+  [ G ; Γ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢[ i ] M @ l3 ] ->
+  [ G ; Γ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢[ i ] M ≅ M' @ l3 ] ->
+  [ G ; Γ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢[ i ] M' @ l3 ] ->
+  (forall Y ly, [ G ; Γ ,, Y @ ly ⊢[ i ] ] -> [ G ; Γ ,, Y @ ly ⊢[ i ] var 0 : X⟨↑⟩ @ lx ] ->
+     [ G ; Γ ,, Y @ ly ⊢[ i ] inj l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0) : (tySum l1 l2 A B)⟨↑⟩ @ lmax l1 l2 ] /\
+     [ G ; Γ ,, Y @ ly ⊢[ i ] inj l4 l5 A'⟨↑⟩ B'⟨↑⟩ (var 0) : (tySum l1 l2 A B)⟨↑⟩ @ lmax l1 l2 ] /\
+     [ G ; Γ ,, Y @ ly ⊢[ i ] inj l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0) ≅ inj l4 l5 A'⟨↑⟩ B'⟨↑⟩ (var 0)
+         : (tySum l1 l2 A B)⟨↑⟩ @ lmax l1 l2 ]) ->
+  [ G ; Γ ,, X @ lx ⊢[ i ] c : M⟨rlift ↑⟩[lsingle (inj l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] ->
+  [ G ; Γ ,, X' @ lx' ⊢[ i ] c : M'⟨rlift ↑⟩[lsingle (inj l4 l5 A'⟨↑⟩ B'⟨↑⟩ (var 0))] @ l6 ].
+Proof.
+  intros H14 H25 H36 Hlx HX HXX HX' HM HMM HM' F Hc.
+  assert (HX'l : [ G ; Γ ⊢[ i ] X' @ lx' ]) by (eapply wft_lconv; [exact HX' | now apply lequiv_sym]).
+  assert (HΓX' : [ G ; Γ ,, X' @ lx' ⊢[ i ] ]) by (apply ext_wf; [exact HX'l | exact (lequiv_wf_r _ _ _ Hlx)]).
+  pose proof (stab_tm Hi HXX Hlx HΓX' Hc) as Hc'.
+  assert (Hv0 : [ G ; Γ ,, X' @ lx' ⊢[ i ] var 0 : X⟨↑⟩ @ lx ]).
+  { eapply wf_lconv; [eapply conv_tm'; [apply var0_wf; [exact Hi | exact HΓX'] |] | exact Hlx].
+    eapply eqty_lconv; [apply wk1_eqty; [exact Hi | exact HΓX' | exact HXX] | now apply lequiv_sym]. }
+  destruct (F _ _ HΓX' Hv0) as (Hf & Hf' & Hff).
+  pose proof (case_branch_eq HΓX' HM HMM HM' Hf Hf' Hff) as EB.
+  eapply wf_lconv; [eapply conv_tm'; [exact Hc' | apply eqty_sym, EB] | exact (lequiv_sym _ _ _ H36)].
+Qed.
+
+Lemma pre_case_r {Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c1' c2' t t'} :
+  lequiv (gL G) l1 l4 -> lequiv (gL G) l2 l5 -> lequiv (gL G) l3 l6 ->
+  [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ⊢[ i ] B ≅ B' @ l2 ] -> [ G ; Γ ⊢[ i ] B @ l2 ] -> [ G ; Γ ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢[ i ] M @ l3 ] ->
+  [ G ; Γ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢[ i ] M ≅ M' @ l3 ] ->
+  [ G ; Γ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢[ i ] M' @ l3 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] c1' : M⟨rlift ↑⟩[lsingle (tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] ->
+  [ G ; Γ ,, B @ l2 ⊢[ i ] c2' : M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] ->
+  [ G ; Γ ⊢[ i ] t ≅ t' : tySum l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ i ] t : tySum l1 l2 A B @ lmax l1 l2 ] -> [ G ; Γ ⊢[ i ] t' : tySum l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ i ] tmCase l4 l5 l6 A' B' M' c1' c2' t' : M[lsingle t] @ l3 ].
+Proof.
+  intros H14 H25 H36 HAA HA HA' HBB HB HB' HM HMM HM' Hc1 Hc2 Htt Ht Ht'.
+  pose proof (ctx_of_wf_tm Hi Ht) as HΓ.
+  pose proof (lequiv_wf_l _ _ _ H14) as W1. pose proof (lequiv_wf_l _ _ _ H25) as W2.
+  pose proof (lequiv_wf_r _ _ _ H14) as W4. pose proof (lequiv_wf_r _ _ _ H25) as W5.
+  assert (H45 : lequiv (gL G) (lmax l1 l2) (lmax l4 l5)) by (apply lequiv_max; assumption).
+  assert (HA'4 : [ G ; Γ ⊢[ i ] A' @ l4 ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
+  assert (HB'5 : [ G ; Γ ⊢[ i ] B' @ l5 ]) by (eapply wft_lconv; [exact HB' | now apply lequiv_sym]).
+  assert (ESS : [ G ; Γ ⊢[ i ] tySum l1 l2 A B ≅ tySum l4 l5 A' B' @ lmax l1 l2 ])
+    by (apply eqty_sum; auto using compt_self).
+  assert (HΓS' : [ G ; Γ ,, tySum l4 l5 A' B' @ lmax l4 l5 ⊢[ i ] ])
+    by (apply ext_wf; [apply wft_sum; auto using compt_self | exact (conj W4 W5)]).
+  assert (HM'6 : [ G ; Γ ,, tySum l4 l5 A' B' @ lmax l4 l5 ⊢[ i ] M' @ l6 ])
+    by (eapply wft_lconv; [exact (stab_ty Hi ESS H45 HΓS' HM') | now apply lequiv_sym]).
+  (* the branches' injections, left and primed, at the left sum type *)
+  assert (Finl : forall Y ly, [ G ; Γ ,, Y @ ly ⊢[ i ] ] -> [ G ; Γ ,, Y @ ly ⊢[ i ] var 0 : A⟨↑⟩ @ l1 ] ->
+     [ G ; Γ ,, Y @ ly ⊢[ i ] tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0) : (tySum l1 l2 A B)⟨↑⟩ @ lmax l1 l2 ] /\
+     [ G ; Γ ,, Y @ ly ⊢[ i ] tmInl l4 l5 A'⟨↑⟩ B'⟨↑⟩ (var 0) : (tySum l1 l2 A B)⟨↑⟩ @ lmax l1 l2 ] /\
+     [ G ; Γ ,, Y @ ly ⊢[ i ] tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0) ≅ tmInl l4 l5 A'⟨↑⟩ B'⟨↑⟩ (var 0)
+         : (tySum l1 l2 A B)⟨↑⟩ @ lmax l1 l2 ]).
+  { intros Y ly HΓY Hv0. refine (conj _ (conj _ _)).
+    - apply wf_inl; auto using compt_self; apply wk1_ty; assumption.
+    - apply pre_inl_r; auto; first [apply wk1_eqty | apply wk1_ty]; assumption.
+    - apply eqtm_inl; auto using compt_self; [apply wk1_eqty; assumption .. | apply eqtm_refl, Hv0]. }
+  assert (Finr : forall Y ly, [ G ; Γ ,, Y @ ly ⊢[ i ] ] -> [ G ; Γ ,, Y @ ly ⊢[ i ] var 0 : B⟨↑⟩ @ l2 ] ->
+     [ G ; Γ ,, Y @ ly ⊢[ i ] tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0) : (tySum l1 l2 A B)⟨↑⟩ @ lmax l1 l2 ] /\
+     [ G ; Γ ,, Y @ ly ⊢[ i ] tmInr l4 l5 A'⟨↑⟩ B'⟨↑⟩ (var 0) : (tySum l1 l2 A B)⟨↑⟩ @ lmax l1 l2 ] /\
+     [ G ; Γ ,, Y @ ly ⊢[ i ] tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0) ≅ tmInr l4 l5 A'⟨↑⟩ B'⟨↑⟩ (var 0)
+         : (tySum l1 l2 A B)⟨↑⟩ @ lmax l1 l2 ]).
+  { intros Y ly HΓY Hv0. refine (conj _ (conj _ _)).
+    - apply wf_inr; auto using compt_self; apply wk1_ty; assumption.
+    - apply pre_inr_r; auto; first [apply wk1_eqty | apply wk1_ty]; assumption.
+    - apply eqtm_inr; auto using compt_self; [apply wk1_eqty; assumption .. | apply eqtm_refl, Hv0]. }
+  eapply wf_lconv with (l' := l6); [| exact H36].
+  eapply (conv_tm' (T' := M'[lsingle t'])).
+  - apply wf_case; auto using compt_self.
+    + exact (lequiv_wf_r _ _ _ H36).
+    + exact (case_branch_r tmInl H14 H25 H36 H14 HA HAA HA' HM HMM HM' Finl Hc1).
+    + exact (case_branch_r tmInr H14 H25 H36 H25 HB HBB HB' HM HMM HM' Finr Hc2).
+    + eapply wf_lconv; [eapply conv_tm'; [exact Ht' | apply eqty_sym, ESS] | now apply lequiv_sym].
+  - eapply eqty_lconv; [|apply lequiv_sym, H36].
+    eapply eqty_trans.
+    + apply (wf_ty_func HM (d' := lsingle t')). now apply lsub_eq_single.
+    + exact (eqty_single Hi HMM Ht').
+Qed.
+
 
 (** Strict equality's codes (M10c). *)
 Lemma pre_codeseq_r {Γ l l' s s' t' u'} :
@@ -1021,7 +1221,7 @@ Proof. intros H1 H2 H3 H4 H5; exact (proj2 (ctx_conv_ext Hi H1 H2 H3 H4 H5)). Qe
 
 #[export] Hint Resolve wft_nat wft_pi wft_U wft_El wf_code_nat wf_code_U wf_code_pi wf_zero
   wf_succ wf_natrec wf_lam wf_app wfc_ext in_ctx_wf wf_ty_single wf_tm_single
-  wft_sig wf_code_sig wf_pair wf_fst wf_snd wft_seq wf_srefl wf_elimSEmpty wft_id wf_idrefl wf_J wf_code_id wf_code_seq wf_elimEmpty
+  wft_sig wf_code_sig wf_pair wf_fst wf_snd wft_seq wf_srefl wf_elimSEmpty wft_id wf_idrefl wf_J wf_code_id wf_code_seq wf_elimEmpty wft_sum wf_inl wf_inr
   ctx_of_wf_ty ctx_of_wf_tm ctx_of_eqty ctx_of_eqtm lequiv_wf_l lequiv_wf_r compt_notV : presup.
 #[export] Hint Extern 1 (lwf _ _) =>
   solve [cbn; intuition eauto using lequiv_wf_l, lequiv_wf_r] : presup.
@@ -1165,7 +1365,14 @@ Proof.
              (* the empty type (M12a) *)
              | solve [eapply pre_empty_r; eauto using lequiv_refl, lequiv_wf_l]
              | solve [eapply pre_elimEmpty_r; eassumption]
-             | solve [eapply wf_elimEmpty; eauto 3 with presup] ].
+             | solve [eapply wf_elimEmpty; eauto 3 with presup]
+             (* binary sums (M12b) *)
+             | solve [eapply pre_sum_r; eassumption]
+             | solve [eapply pre_inl_r; eassumption] | solve [eapply pre_inr_r; eassumption]
+             | solve [eapply pre_case_r; eassumption]
+             | solve [eapply pre_case_inl_rhs; eassumption] | solve [eapply pre_case_inr_rhs; eassumption]
+             | solve [eapply wf_case; eauto 3 with presup]
+             | solve [eapply wf_ty_single; [eassumption|]; first [eapply wf_inl | eapply wf_inr]; eauto using compt_self] ].
 Qed.
 
 Section Named.

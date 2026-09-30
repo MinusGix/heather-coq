@@ -16,7 +16,7 @@ Ltac push_ren_in H := revert H; push_ren; intros H.
 
 Lemma posty_ren W r : posty W -> posty W⟨r⟩.
 Proof.
-  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_empty | idtac].
+  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_empty | apply posty_sum | idtac].
   apply posty_ne, whne_ty_ren; assumption.
 Qed.
 
@@ -80,7 +80,10 @@ Ltac mk_wkr Hr Γ Γ' :=
   | recΓt Γ => constr:(wkr_recΓt _ _ _ Hr)
   end.
 
-Ltac W_norm := push_ren; wk_rewrite; rewrite <- ?gren_ren_ty'; push_ren.
+Ltac W_norm1 := push_ren; wk_rewrite; rewrite <- ?gren_ren_ty'; push_ren.
+(* twice: [case]'s branch types (M12b) shift summands inside an injection,
+   which the first pass exposes *)
+Ltac W_norm := W_norm1; W_norm1.
 Ltac W_norm_in X := revert X; W_norm; intros X.
 
 (** Each induction hypothesis, at the weakening that reaches its context,
@@ -137,7 +140,7 @@ Ltac push_gren_in H := revert H; push_gren; intros H.
 
 Lemma posty_gren W ξ : posty W -> posty W⟪ξ⟫.
 Proof.
-  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_empty | idtac].
+  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_empty | apply posty_sum | idtac].
   apply posty_ne, whne_ty_gren; assumption.
 Qed.
 
@@ -194,13 +197,15 @@ Ltac mk_gwk Hγ G G' :=
   | recGt G => constr:(gwk_ok_recGt Hγ)
   end.
 
-Ltac G_norm :=
+Ltac G_norm1 :=
   push_gren; cbn [gwk_fn gdecl_ren goren];
   rewrite ?gren_letbox_ty by reflexivity;
   rewrite ?gren_single_ty, ?gren_single2_ty, ?gren_lsucc_ty, ?gren_ren, ?gren_ren_ty', ?gren_uren_ctx, ?gcren_shift_up,
           ?gren_shift_up_tm, ?mkrb_gren, ?motT_gren, ?mott_gren, ?wrapMT_gren, ?wrapMt_gren,
           ?recΓT_gren, ?recΓt_gren, ?gren_gsingle_ty;
   cbn [gwk_fn gdecl_ren goren]; push_gren.
+(* twice, as [W_norm] *)
+Ltac G_norm := G_norm1; G_norm1.
 Ltac G_norm_in X := revert X; G_norm; intros X.
 
 Ltac G_inst Hγ :=
@@ -312,13 +317,15 @@ Proof.
 Qed.
 
 (** Every other rule is closed by one tactic, as for local weakening. *)
-Ltac U_norm :=
+Ltac U_norm1 :=
   upush;
   rewrite ?usubst_lsingle_ty, ?usubst_lsingle2_ty, ?usubst_lsucc_ty, ?usubst_gren_ctx', ?usubst_gren_ty', ?usubst_gren_tm',
           ?usubst_ren', ?usubst_ren_ty', ?gctx_uwk_usubst, ?ucren_ush_usubst, ?uren_ush_usubst_tm,
           ?ubvars_uupn, ?mkrb_usubst, ?motT_usubst, ?mott_usubst, ?wrapMT_usubst, ?wrapMt_usubst,
           ?recGT_usubst, ?recΓT_usubst, ?recGt_usubst, ?recΓt_usubst, ?usubst_gsingle_ty;
   cbn [gousubst]; upush.
+(* twice, as [W_norm] *)
+Ltac U_norm := U_norm1; U_norm1.
 Ltac U_norm_in X := revert X; U_norm; intros X.
 
 (** Each induction hypothesis at the substitution that reaches its scope

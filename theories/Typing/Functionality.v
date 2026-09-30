@@ -802,6 +802,37 @@ Proof.
     eapply eqtm_elimEmpty; try solve [eauto 6 with fung].
     all: eapply eq_tm_retype;
       [match goal with IH : _ |- _ => eapply IH; solve [eauto 6 with fung] end | sub_rw; reflexivity].
+  (* [case] (M12b), as natrec: the three lifted substitutions first *)
+  - match goal with
+    | Hd : lsub_eq _ _ ?Δ ?d ?d' ?Γ, Hw : lsub_wf ?G ?i ?Δ ?d ?Γ,
+      wA : wf_ty ?G _ ?Γ ?A ?l, wB : wf_ty ?G _ ?Γ ?B ?l',
+      wM : wf_ty ?G _ (?Γ ,, tySum ?l ?l' ?A ?B @ lmax ?l ?l') ?M ?l''
+      |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ _) _ _ _ =>
+        pose proof (wf_ty_subst_g wA Hw) as HAd; pose proof (wf_ty_subst_g wB Hw) as HBd;
+        assert (EA : eq_ty G i Δ A[d] A[d'] l)
+          by (match goal with IH : forall Δ d d', _ -> eq_ty _ _ _ (subst ?x _) _ _ |- _ =>
+                constr_eq x A; eapply IH; exact Hd end);
+        assert (EB : eq_ty G i Δ B[d] B[d'] l')
+          by (match goal with IH : forall Δ d d', _ -> eq_ty _ _ _ (subst ?x _) _ _ |- _ =>
+                constr_eq x B; eapply IH; exact Hd end);
+        assert (HnS : lsub_eq G i (Δ ,, tySum l l' A[d] B[d] @ lmax l l') (llift d) (llift d')
+                        (Γ ,, tySum l l' A B @ lmax l l'))
+          by (eapply lsub_eq_lift_g; [exact Hd | apply wft_sum_typeof; assumption | cbn; split; assumption
+                                     | | reflexivity];
+              match goal with c : compt _ |- _ => rewrite (compt_typeof_self _ c) end;
+              push_subst; apply eqty_sum; auto using lequiv_refl);
+        assert (HnA : lsub_eq G i (Δ ,, A[d] @ l) (llift d) (llift d') (Γ ,, A @ l))
+          by (eapply lsub_eq_lift_g; [exact Hd | eauto 6 with fung | assumption | eauto 6 with fung | reflexivity]);
+        assert (HnB : lsub_eq G i (Δ ,, B[d] @ l') (llift d) (llift d') (Γ ,, B @ l'))
+          by (eapply lsub_eq_lift_g; [exact Hd | eauto 6 with fung | assumption | eauto 6 with fung | reflexivity]);
+        pose proof (wf_ty_subst_g wM (lsub_eq_l HnS));
+        assert (eq_ty G i (Δ ,, tySum l l' A[d] B[d] @ lmax l l') M[llift d] M[llift d'] l'')
+          by (match goal with IH : forall Δ d d', _ -> eq_ty _ _ _ (subst ?x _) _ _ |- _ =>
+                constr_eq x M; eapply IH; exact HnS end)
+    end.
+    eapply eqtm_case; try solve [eauto 6 with fung].
+    all: eapply eq_tm_retype;
+      [match goal with IH : _ |- _ => eapply IH; solve [eauto 6 with fung] end | sub_rw; reflexivity].
 Qed.
 
 Theorem functionality :

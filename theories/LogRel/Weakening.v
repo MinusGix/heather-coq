@@ -144,7 +144,9 @@ Proof.
                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb
                     HRA IHRA Hra Hrb Hps Hpt HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR]; intros ρ.
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
+                    HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR]; intros ρ.
   - exists (NatRel (kw_G ρ) (kw_Δ ρ)). split.
     + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
       rewrite kty_tyNat in X, X'.
@@ -343,6 +345,33 @@ Proof.
       pose proof (kw_gne_tm ρ Hn) as Z.
       rewrite kty_tyEmpty in Y, Y', Z. exists (ktm ρ w), (ktm ρ w').
       exact (conj Y (conj Y' Z)).
+  - (* +: weaken both summands' derivations *)
+    destruct (IHRA ρ) as (RA' & HRA' & HmapA).
+    destruct (IHRB ρ) as (RB' & HRB' & HmapB).
+    destruct (LR_tm_per _ _ _ _ _ _ _ HRA') as [HsA' HtA'].
+    destruct (LR_tm_per _ _ _ _ _ _ _ HRB') as [HsB' HtB'].
+    exists (SumRel (kw_G ρ) (kw_Δ ρ) u1 u2 (kty ρ UA) (kty ρ UB) RA' RB'). split.
+    + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
+      rewrite kty_tySum in X, X'.
+      eapply LRsum; [exact (kw_lequiv ρ Hl) | exact (kw_lequiv ρ Hl3) | exact (kw_lequiv ρ Hl4)
+                    | exact (kw_lwf ρ Hw1) | exact (kw_lwf ρ Hw2) | exact X | exact X'
+                    | exact (kw_ty ρ HUA) | exact (kw_geq_ty ρ HUAA) | exact (kw_ty ρ HUB)
+                    | exact (kw_geq_ty ρ HUBB) | exact HRA' | exact HRB'
+                    | exact HsA' | exact HtA' | exact HsB' | exact HtB' | apply releq_refl].
+    + intros t t' Ht. apply HR in Ht. destruct Ht as (w & w' & Hr & Hr' & Heq & Hn).
+      pose proof (kw_tmred ρ Hr) as Y. pose proof (kw_tmred ρ Hr') as Y'.
+      pose proof (kw_geq_tm ρ Heq) as Z.
+      rewrite kty_tySum in Y, Y', Z. exists (ktm ρ w), (ktm ρ w').
+      refine (conj Y (conj Y' (conj Z _))).
+      destruct Hn as [k1 k2 k1' k2' C D C' D' a a' Hk1 Hk2 Hk1' Hk2' HC HC' HD HD' Ha
+                     | k1 k2 k1' k2' C D C' D' b b' Hk1 Hk2 Hk1' Hk2' HC HC' HD HD' Hb | ν ν' Hν].
+      * rewrite !ktm_inl.
+        apply sumnf_inl; [apply (kw_lequiv ρ); assumption .. | exact (kw_geq_ty ρ HC) | exact (kw_geq_ty ρ HC')
+                         | exact (kw_geq_ty ρ HD) | exact (kw_geq_ty ρ HD') | exact (HmapA _ _ Ha)].
+      * rewrite !ktm_inr.
+        apply sumnf_inr; [apply (kw_lequiv ρ); assumption .. | exact (kw_geq_ty ρ HC) | exact (kw_geq_ty ρ HC')
+                         | exact (kw_geq_ty ρ HD) | exact (kw_geq_ty ρ HD') | exact (HmapB _ _ Hb)].
+      * apply sumnf_ne. pose proof (kw_gne_tm ρ Hν) as W. rewrite kty_tySum in W. exact W.
 Qed.
 
 Theorem LR_kwk n : Pwk n.

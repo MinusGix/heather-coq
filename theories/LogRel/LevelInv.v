@@ -62,7 +62,9 @@ Proof.
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR].
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
+                    HRA HRB Hpa Hta Hpb Htb HR].
   all: first
     [ solve [eexists; split; [exact HT | first [exact (whnf_ty_ne _ (gne_ty_whne_l HV)) | solve [eauto with whnf]]]]
     | match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
@@ -300,6 +302,15 @@ Lemma ty_leq_sempty_inv {l2 W} : ty_leq (tySEmpty l2) W -> exists l3, W = tySEmp
 Proof. destruct W; cbn; try contradiction; eauto. Qed.
 Lemma ty_leq_empty_inv {l2 W} : ty_leq (tyEmpty l2) W -> exists l3, W = tyEmpty l3 /\ leqv l2 l3.
 Proof. destruct W; cbn; try contradiction; eauto. Qed.
+Lemma ty_leq_sum_inv {l3 l4 A2 B2 W} : ty_leq (tySum l3 l4 A2 B2) W ->
+  exists k3 k4 A3 B3, W = tySum k3 k4 A3 B3 /\ leqv l3 k3 /\ leqv l4 k4 /\ ty_leq A2 A3 /\ ty_leq B2 B3.
+Proof. destruct W; cbn; try contradiction; intros; do 4 eexists; intuition eauto. Qed.
+Lemma tm_leq_inl_inv {l l' C D c w} : tm_leq (tmInl l l' C D c) w ->
+  exists k k' C' D' c', w = tmInl k k' C' D' c' /\ leqv l k /\ leqv l' k' /\ ty_leq C C' /\ ty_leq D D' /\ tm_leq c c'.
+Proof. destruct w; cbn; try contradiction; intros; do 5 eexists; intuition eauto. Qed.
+Lemma tm_leq_inr_inv {l l' C D c w} : tm_leq (tmInr l l' C D c) w ->
+  exists k k' C' D' c', w = tmInr k k' C' D' c' /\ leqv l k /\ leqv l' k' /\ ty_leq C C' /\ ty_leq D D' /\ tm_leq c c'.
+Proof. destruct w; cbn; try contradiction; intros; do 5 eexists; intuition eauto. Qed.
 Lemma ty_leq_nat_inv {W} : ty_leq tyNat W -> W = tyNat.
 Proof. destruct W; cbn; try contradiction; auto. Qed.
 Lemma ty_leq_cpi_inv {l2 U2 W} : ty_leq (tyCPi l2 U2) W ->
@@ -375,6 +386,69 @@ Proof.
       eapply gne_tm_lconv; [eapply gne_tm_conv; [exact Hν3 | exact HV] | exact Hl13].
 Qed.
 
+(** ** Binary sums (M12b) *)
+
+Lemma SumRel_leq {G Γ u1 u2 u5 u6 A1 B1 A3 B3 RA RB RA3 RB3 t1 t2 t3} :
+  lequiv (gL G) u5 u1 -> lequiv (gL G) u6 u2 ->
+  [ G ; Γ ⊢g tySum u5 u6 A3 B3 ≅ tySum u1 u2 A1 B1 @ lmax u5 u6 ] ->
+  (forall x y z, RA x y -> RA3 z z -> tm_leq y z -> RA x z) ->
+  (forall x y z, RB x y -> RB3 z z -> tm_leq y z -> RB x z) ->
+  (forall x y, RA3 x y -> RA3 y x) -> (forall x y z, RA3 x y -> RA3 y z -> RA3 x z) ->
+  (forall x y, RB3 x y -> RB3 y x) -> (forall x y z, RB3 x y -> RB3 y z -> RB3 x z) ->
+  SumRel G Γ u1 u2 A1 B1 RA RB t1 t2 -> SumRel G Γ u5 u6 A3 B3 RA3 RB3 t3 t3 -> tm_leq t2 t3 ->
+  SumRel G Γ u1 u2 A1 B1 RA RB t1 t3.
+Proof.
+  intros Hl5 Hl6 HV HcA HcB HsA3 HtA3 HsB3 HtB3 (w1 & w2 & Hr1 & Hr2 & Heq12 & Hn12)
+    (w3 & w3' & Hr3 & Hr3' & Heq33 & Hn33) Et.
+  assert (w3' = w3) as ->
+    by (eapply tmred_whnf_det; [exact Hr3' | exact Hr3 | exact (SumNf_whnf_r Hn33) | exact (SumNf_whnf_l Hn33)]).
+  assert (Ew : tm_leq w2 w3) by exact (tmred_leq Et Hr2 Hr3 (SumNf_whnf_r Hn12) (SumNf_whnf_l Hn33)).
+  pose proof (lequiv_sym _ _ _ Hl5) as Hl15. pose proof (lequiv_sym _ _ _ Hl6) as Hl26.
+  assert (Hm : lequiv (gL G) (lmax u1 u2) (lmax u5 u6)) by now apply lequiv_max.
+  assert (Hr3c : [ G ; Γ ⊢g t3 ⤳* w3 : tySum u1 u2 A1 B1 @ lmax u1 u2 ]).
+  { eapply tmred_lconv; [| exact Hm]. eapply tmred_conv; [apply ge_typeof | exact Hr3 | exact HV]. }
+  assert (Heq33c : [ G ; Γ ⊢ w3 ≈ w3 : tySum u1 u2 A1 B1 @ lmax u1 u2 ]).
+  { eapply geq_tm_lconv; [eapply geq_tm_conv; [exact Heq33 | exact HV] | exact Hm]. }
+  exists w1, w3. refine (conj Hr1 (conj Hr3c (conj (geq_tm_leq_r Heq12 Heq33c Ew) _))).
+  assert (RA3r : forall x y, RA3 x y -> RA3 y y) by (intros x y H; exact (HtA3 _ _ _ (HsA3 _ _ H) H)).
+  assert (RB3r : forall x y, RB3 x y -> RB3 y y) by (intros x y H; exact (HtB3 _ _ _ (HsB3 _ _ H) H)).
+  destruct Hn12 as [k1 k2 k1' k2' C D C' D' a a' Hk1 Hk2 Hk1' Hk2' HC HC' HD HD' Ha
+                   | k1 k2 k1' k2' C D C' D' a a' Hk1 Hk2 Hk1' Hk2' HC HC' HD HD' Ha | ν1 ν2 Hν12].
+  - destruct (tm_leq_inl_inv Ew) as (j1 & j2 & P & Q & c & -> & Ej1 & Ej2 & EP & EQ & Ec).
+    inversion Hn33 as [i1 i2 i1' i2' P1 Q1 P2 Q2 c1 c2 Hi1 Hi2 Hi1' Hi2' HP1 HP2 HQ1 HQ2 Hc | | ν3 ν3' Hν3];
+      subst.
+    + apply sumnf_inl;
+        [ exact Hk1 | exact Hk2
+        | eapply lequiv_trans; [eassumption | exact Hl5] | eapply lequiv_trans; [eassumption | exact Hl6]
+        | exact HC
+        | eapply geq_ty_leq_r; [exact HC' | eapply geq_ty_lconv; [eapply geq_ty_refl_r; eassumption | exact Hl15]
+                               | exact EP]
+        | exact HD
+        | eapply geq_ty_leq_r; [exact HD' | eapply geq_ty_lconv; [eapply geq_ty_refl_r; eassumption | exact Hl26]
+                               | exact EQ]
+        | eapply HcA; [exact Ha | eapply RA3r; eassumption | exact Ec] ].
+    + exfalso. pose proof (gne_tm_whne_l Hν3) as Hw. inversion Hw.
+  - destruct (tm_leq_inr_inv Ew) as (j1 & j2 & P & Q & c & -> & Ej1 & Ej2 & EP & EQ & Ec).
+    inversion Hn33 as [| i1 i2 i1' i2' P1 Q1 P2 Q2 c1 c2 Hi1 Hi2 Hi1' Hi2' HP1 HP2 HQ1 HQ2 Hc | ν3 ν3' Hν3];
+      subst.
+    + apply sumnf_inr;
+        [ exact Hk1 | exact Hk2
+        | eapply lequiv_trans; [eassumption | exact Hl5] | eapply lequiv_trans; [eassumption | exact Hl6]
+        | exact HC
+        | eapply geq_ty_leq_r; [exact HC' | eapply geq_ty_lconv; [eapply geq_ty_refl_r; eassumption | exact Hl15]
+                               | exact EP]
+        | exact HD
+        | eapply geq_ty_leq_r; [exact HD' | eapply geq_ty_lconv; [eapply geq_ty_refl_r; eassumption | exact Hl26]
+                               | exact EQ]
+        | eapply HcB; [exact Ha | eapply RB3r; eassumption | exact Ec] ].
+    + exfalso. pose proof (gne_tm_whne_l Hν3) as Hw. inversion Hw.
+  - inversion Hn33 as [| | ν3 ν3' Hν3]; subst.
+    1-2: exfalso; pose proof (gne_tm_whne_r Hν12) as Hw;
+      destruct ν2; cbn in Ew; try contradiction; inversion Hw.
+    apply sumnf_ne. eapply gne_tm_leq_r; [exact Hν12 | | exact Ew].
+    eapply gne_tm_lconv; [eapply gne_tm_conv; [exact Hν3 | exact HV] | exact Hm].
+Qed.
+
 (** ** Level invariance *)
 
 Lemma LR_leq_step n : (forall m, m < n -> Pleq m) -> Pleq n.
@@ -396,7 +470,9 @@ Proof.
                  | G Γ T1 T2 l s1 s2 R Hl Hl2 Hn HT1 HT2 HR
                  | G Γ T1 T2 l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hn HT1 HT2 HIA HIAA Hiaa Hibb
                      HRA IHRA Hra Hrb Hps Hpt HR
-                 | G Γ T1 T2 l s1 s2 R Hl Hl2 Hn HT1 HT2 HR];
+                 | G Γ T1 T2 l s1 s2 R Hl Hl2 Hn HT1 HT2 HR
+                 | G Γ T1 T2 l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HUA HUAA HUB HUBB
+                     HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR];
     intros T3 R3 H3 ET; destruct (LR_whnf_l H3) as (W3 & HT3 & Hnw3).
   - (* Nat *)
     pose proof (ty_leq_nat_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3)) as ->.
@@ -878,6 +954,30 @@ Proof.
     assert (Eν : tm_leq ν2 ν3)
       by exact (tmred_leq Et Hν2 Hν3 (whnf_ne _ (gne_tm_whne_r H12)) (whnf_ne _ (gne_tm_whne_l H33))).
     exists ν1, ν3. exact (conj Hν1 (conj Hν3 (gne_tm_leq_r H12 H33 Eν))).
+  - (* +: the summands by their induction hypotheses *)
+    destruct (ty_leq_sum_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3))
+      as (u5 & u6 & A3 & B3 & -> & E5 & E6 & EA & EB).
+    destruct (LR_inv_sum H3 HT3) as (u7 & u8 & A4 & B4 & RA3 & RB3 & _ & _ & _ & Hw5 & Hw6 & _
+                                    & _ & HA34 & _ & HB34 & HRA3 & HRB3 & HsA3 & HtA3 & HsB3 & HtB3 & HR3).
+    assert (Q5 : lequiv (gL G) u3 u5) by exact (leqv_lequiv _ _ _ (lequiv_wf_l _ _ _ Hl3) Hw5 E5).
+    assert (Q6 : lequiv (gL G) u4 u6) by exact (leqv_lequiv _ _ _ (lequiv_wf_l _ _ _ Hl4) Hw6 E6).
+    assert (Hl51 : lequiv (gL G) u5 u1) by (eapply lequiv_trans; [apply lequiv_sym, Q5 | exact Hl3]).
+    assert (Hl62 : lequiv (gL G) u6 u2) by (eapply lequiv_trans; [apply lequiv_sym, Q6 | exact Hl4]).
+    pose proof (lequiv_sym _ _ _ Hl51) as Hl15. pose proof (lequiv_sym _ _ _ Hl62) as Hl26.
+    assert (EA13 : [ G ; Γ ⊢ UA ≈ A3 @ u1 ]).
+    { eapply geq_ty_leq_r; [exact HUAA | eapply geq_ty_lconv; [exact (geq_ty_refl_l HA34) | exact Hl15]
+                           | exact EA]. }
+    assert (EB13 : [ G ; Γ ⊢ UB ≈ B3 @ u2 ]).
+    { eapply geq_ty_leq_r; [exact HUBB | eapply geq_ty_lconv; [exact (geq_ty_refl_l HB34) | exact Hl26]
+                           | exact EB]. }
+    destruct (IHRA _ _ (LR_lconv _ _ _ _ _ _ _ _ _ (LR_refl_l _ _ _ _ _ _ _ HRA3) Hl15) EA) as [HRA13 HcA].
+    destruct (IHRB _ _ (LR_lconv _ _ _ _ _ _ _ _ _ (LR_refl_l _ _ _ _ _ _ _ HRB3) Hl26) EB) as [HRB13 HcB].
+    split.
+    + eapply (LRsum n (LRbelow n) G Γ T1 T3 l u1 u2 u5 u6 UA A3 UB B3 RA RB); eauto.
+    + intros t1 t2 t3 H12 H33 Et. apply HR. apply HR in H12. apply HR3 in H33.
+      assert (HV : [ G ; Γ ⊢g tySum u5 u6 A3 B3 ≅ tySum u1 u2 UA UB @ lmax u5 u6 ]).
+      { eapply eqty_lconv; [apply eqty_sym, geq_ty_sound, geq_ty_sum; eauto | now apply lequiv_max]. }
+      exact (SumRel_leq Hl51 Hl62 HV HcA HcB HsA3 HtA3 HsB3 HtB3 H12 H33 Et).
 Qed.
 
 Theorem LR_leq n : Pleq n.

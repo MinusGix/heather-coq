@@ -297,6 +297,32 @@ Definition EmptyRel (G : gctx) (Γ : ctx) (l : lvl) : tm -> tm -> Prop :=
     [ G ; Γ ⊢g t ⤳* ν : tyEmpty l @ l ] /\ [ G ; Γ ⊢g t' ⤳* ν' : tyEmpty l @ l ] /\
     [ G ; Γ ⊢ ν ~ ν' : tyEmpty l @ l ].
 
+(** ** Binary sums (M12_DESIGN.md, M12b)
+
+    As [Id]'s: the summands' relations [RA], [RB] are kept at [Γ] (not in
+    every weakening). Terms reduce to related weak-head normal forms: two
+    [inl]s with related payloads, two [inr]s, or two related neutrals.
+    Nothing else is related: [+] has no η. The injections' annotations are
+    recorded against the sum type's, as [refl]'s are against [Id]'s, since
+    [case]'s β reads them before injectivity of [+] is available. *)
+Inductive SumNf (G : gctx) (Γ : ctx) (l l' : lvl) (A B : ty) (RA RB : tm -> tm -> Prop)
+  : tm -> tm -> Prop :=
+| sumnf_inl k1 k2 k1' k2' C D C' D' a a' :
+    lequiv (gL G) k1 l -> lequiv (gL G) k2 l' -> lequiv (gL G) k1' l -> lequiv (gL G) k2' l' ->
+    [ G ; Γ ⊢ A ≈ C @ l ] -> [ G ; Γ ⊢ A ≈ C' @ l ] -> [ G ; Γ ⊢ B ≈ D @ l' ] -> [ G ; Γ ⊢ B ≈ D' @ l' ] ->
+    RA a a' -> SumNf G Γ l l' A B RA RB (tmInl k1 k2 C D a) (tmInl k1' k2' C' D' a')
+| sumnf_inr k1 k2 k1' k2' C D C' D' b b' :
+    lequiv (gL G) k1 l -> lequiv (gL G) k2 l' -> lequiv (gL G) k1' l -> lequiv (gL G) k2' l' ->
+    [ G ; Γ ⊢ A ≈ C @ l ] -> [ G ; Γ ⊢ A ≈ C' @ l ] -> [ G ; Γ ⊢ B ≈ D @ l' ] -> [ G ; Γ ⊢ B ≈ D' @ l' ] ->
+    RB b b' -> SumNf G Γ l l' A B RA RB (tmInr k1 k2 C D b) (tmInr k1' k2' C' D' b')
+| sumnf_ne ν ν' : [ G ; Γ ⊢ ν ~ ν' : tySum l l' A B @ lmax l l' ] -> SumNf G Γ l l' A B RA RB ν ν'.
+
+Definition SumRel (G : gctx) (Γ : ctx) (l l' : lvl) (A B : ty) (RA RB : tm -> tm -> Prop)
+  : tm -> tm -> Prop :=
+  fun t t' => exists w w',
+    [ G ; Γ ⊢g t ⤳* w : tySum l l' A B @ lmax l l' ] /\ [ G ; Γ ⊢g t' ⤳* w' : tySum l l' A B @ lmax l l' ] /\
+    [ G ; Γ ⊢ w ≈ w' : tySum l l' A B @ lmax l l' ] /\ SumNf G Γ l l' A B RA RB w w'.
+
 (** ** The type-level data of a binder former
 
     [Π] and [Σ] (and later formers of the same shape) share it: both sides
@@ -509,6 +535,17 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
     lequiv (gL G) l l1 -> lequiv (gL G) l2 l1 -> lwf (gL G) l1 ->
     [ G ; Γ ⊢g T ⤳* tyEmpty l1 @ l ] -> [ G ; Γ ⊢g T' ⤳* tyEmpty l2 @ l ] ->
     releq R (EmptyRel G Γ l1) ->
+    LR n rec G Γ T T' l R
+| LRsum G Γ T T' l l1 l2 l3 l4 A A' B B' RA RB R :
+    lequiv (gL G) l (lmax l1 l2) -> lequiv (gL G) l3 l1 -> lequiv (gL G) l4 l2 ->
+    lwf (gL G) l1 -> lwf (gL G) l2 ->
+    [ G ; Γ ⊢g T ⤳* tySum l1 l2 A B @ l ] -> [ G ; Γ ⊢g T' ⤳* tySum l3 l4 A' B' @ l ] ->
+    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ⊢g B @ l2 ] -> [ G ; Γ ⊢ B ≈ B' @ l2 ] ->
+    LR n rec G Γ A A' l1 RA -> LR n rec G Γ B B' l2 RB ->
+    (* the summands' term relations are PERs, as [LRid]'s carrier's *)
+    (forall x y, RA x y -> RA y x) -> (forall x y z, RA x y -> RA y z -> RA x z) ->
+    (forall x y, RB x y -> RB y x) -> (forall x y z, RB x y -> RB y z -> RB x z) ->
+    releq R (SumRel G Γ l1 l2 A B RA RB) ->
     LR n rec G Γ T T' l R.
 
 (** ** Stages *)

@@ -222,12 +222,26 @@ Proof.
     (apply wft_empty; [first [exact compt_D | exact compt_M] | exact HΔ | exact Hl]).
 Qed.
 #[export] Hint Resolve wf_ctx_empty wft_empty_typeof : wk.
+(** [case]'s motive context (M12b). *)
+Lemma wf_ctx_sum G i Δ l l' A B : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ⊢[ i ] B @ l' ] -> [ G ; Δ ⊢[ typeof i ] ] ->
+  [ G ; Δ ,, tySum l l' A B @ lmax l l' ⊢[ typeof i ] ].
+Proof.
+  intros Hc Hl Hl' HA HB HΔ. pose proof (compt_typeof_self _ Hc) as Hi. rewrite Hi in *.
+  apply wfc_ext; [exact HΔ | apply wft_sum; assumption | exact (conj Hl Hl')].
+Qed.
+Lemma wft_sum_typeof G i Δ l l' A B : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ⊢[ i ] B @ l' ] -> [ G ; Δ ⊢[ typeof i ] tySum l l' A B @ lmax l l' ].
+Proof. intros Hc Hl Hl' HA HB. rewrite (compt_typeof_self _ Hc). apply wft_sum; assumption. Qed.
+#[export] Hint Resolve wf_ctx_sum wft_sum_typeof : wk.
+#[export] Hint Extern 3 (lwf _ (lmax _ _)) => (cbn; split; eauto using lequiv_wf_l, lequiv_wf_r) : wk.
 (** A computing layer sees layer-C definitions (M9). *)
 Lemma compt_lle_C i : compt i -> lle lC i.
 Proof. intros [-> | ->]; unfold lle; cbn; lia. Qed.
 #[export] Hint Resolve compt_lle_C : wk.
 
-Ltac wk_eq := push_ren; wk_rewrite; push_ren; reflexivity.
+(* twice: [case]'s branch types (M12b) shift summands inside an injection *)
+Ltac wk_eq := push_ren; wk_rewrite; push_ren; wk_rewrite; push_ren; reflexivity.
 
 (** One premise: directly, or through an induction hypothesis up to a type equation. *)
 Ltac wk_premise :=
@@ -401,6 +415,11 @@ Ltac wk_Jmot :=
 
 Ltac wk_manual :=
   match goal with
+  (* [case] (M12b): its branches' types, through the induction hypotheses *)
+  | |- wf_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ _) _ _ => eapply wf_case; wk_premise
+  | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ (tmInl _ _ _ _ _)) _ _ _ => eapply eqtm_case_inl; wk_premise
+  | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ (tmInr _ _ _ _ _)) _ _ _ => eapply eqtm_case_inr; wk_premise
+  | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_case; wk_premise
   (* the identity type (M11a) *)
   | |- wf_tm _ _ _ (tmJ _ _ _ _ _ _ _ _) _ _ => eapply wf_J; first [solve [wk_Jmot] | wk_premise]
   | |- eq_tm _ _ _ (tmJ _ _ _ _ _ _ _ (tmRefl _ _ _)) _ _ _ =>

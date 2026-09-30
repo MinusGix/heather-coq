@@ -328,7 +328,27 @@ Class GenericEqLaws `{GenericEq} := {
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ,, tyEmpty l2 @ l2 ⊢g M @ l1 ] -> [ G ; Γ ,, tyEmpty l2 @ l2 ⊢ M ≈ M' @ l1 ] ->
     [ G ; Γ ⊢ ν ~ ν' : tyEmpty l2 @ l2 ] ->
-    [ G ; Γ ⊢ elimEmpty l1 l2 M ν ~ elimEmpty l3 l4 M' ν' : M[lsingle ν] @ l1 ]
+    [ G ; Γ ⊢ elimEmpty l1 l2 M ν ~ elimEmpty l3 l4 M' ν' : M[lsingle ν] @ l1 ] ;
+  (** binary sums (M12b): the congruences of [+] and the injections, and
+      [case] is neutral on a neutral scrutinee *)
+  geq_ty_sum {G Γ l1 l2 l3 l4 A A' B B'} : lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ⊢ B ≈ B' @ l2 ] ->
+    [ G ; Γ ⊢ tySum l1 l2 A B ≈ tySum l3 l4 A' B' @ lmax l1 l2 ] ;
+  geq_tm_inl {G Γ l1 l2 l3 l4 A A' B B' a a'} : lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ⊢ B ≈ B' @ l2 ] -> [ G ; Γ ⊢ a ≈ a' : A @ l1 ] ->
+    [ G ; Γ ⊢ tmInl l1 l2 A B a ≈ tmInl l3 l4 A' B' a' : tySum l1 l2 A B @ lmax l1 l2 ] ;
+  geq_tm_inr {G Γ l1 l2 l3 l4 A A' B B' b b'} : lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ⊢ B ≈ B' @ l2 ] -> [ G ; Γ ⊢ b ≈ b' : B @ l2 ] ->
+    [ G ; Γ ⊢ tmInr l1 l2 A B b ≈ tmInr l3 l4 A' B' b' : tySum l1 l2 A B @ lmax l1 l2 ] ;
+  gne_tm_case {G Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c1 c1' c2 c2' ν ν'} :
+    lequiv (gL G) l1 l4 -> lequiv (gL G) l2 l5 -> lequiv (gL G) l3 l6 ->
+    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ⊢g B @ l2 ] -> [ G ; Γ ⊢ B ≈ B' @ l2 ] ->
+    [ G ; Γ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢g M @ l3 ] ->
+    [ G ; Γ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢ M ≈ M' @ l3 ] ->
+    [ G ; Γ ,, A @ l1 ⊢ c1 ≈ c1' : M⟨rlift ↑⟩[lsingle (tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] ->
+    [ G ; Γ ,, B @ l2 ⊢ c2 ≈ c2' : M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] ->
+    [ G ; Γ ⊢ ν ~ ν' : tySum l1 l2 A B @ lmax l1 l2 ] ->
+    [ G ; Γ ⊢ tmCase l1 l2 l3 A B M c1 c2 ν ~ tmCase l4 l5 l6 A' B' M' c1' c2' ν' : M[lsingle ν] @ l3 ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

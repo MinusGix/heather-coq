@@ -246,13 +246,30 @@ Proof.
   - right; intros H; exact (Q (proj2 (inv_ty_empty H))).
 Qed.
 
+(** Binary sums (M12b): the computing layers only. *)
+Lemma dec_tySum l l' A B : sz_ty (tySum l l' A B) <= n -> TYD (tySum l l' A B).
+Proof.
+  intros Hsz G i Γ k HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros H; destruct (inv_ty_sum H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_sum H) as ((_ & X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l') as [Hl' | N];
+    [| right; intros H; destruct (inv_ty_sum H) as ((_ & _ & X & _) & _); contradiction].
+  destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
+    [| right; intros H; destruct (inv_ty_sum H) as ((_ & _ & _ & X & _) & _); contradiction].
+  destruct (ihT B ltac:(szl) G i Γ l' HΓ) as [HB | N];
+    [| right; intros H; destruct (inv_ty_sum H) as ((_ & _ & _ & _ & X) & _); contradiction].
+  destruct (lvl_eq_dec (gL G) k (lmax l l')) as [Q | Q].
+  - left; exact (wft_lvl Q (wft_sum _ _ _ _ _ _ _ Hc Hl Hl' HA HB)).
+  - right; intros H; exact (Q (proj2 (inv_ty_sum H))).
+Qed.
+
 Lemma ty_step T : sz_ty T <= n -> TYD T.
 Proof.
   intros Hsz. destruct T;
     first [ apply dec_tyErr | apply dec_tyNat | apply dec_tyU
           | apply dec_tyPi | apply dec_tyEl | apply dec_tyGvar | apply dec_tyCTyp | apply dec_tyCTrm
           | apply dec_tyUPi | apply dec_tyCPi | apply dec_tyTPi | apply dec_tySig | apply dec_tyUnit
-          | apply dec_tySEq | apply dec_tySEmpty | apply dec_tyId | apply dec_tyEmpty ];
+          | apply dec_tySEq | apply dec_tySEmpty | apply dec_tyId | apply dec_tyEmpty | apply dec_tySum ];
     assumption.
 Qed.
 

@@ -510,6 +510,65 @@ Proof.
   eapply eqtm_conv; [exact Hb | rewrite Hi; exact (wf_ty_func Hi HM Hs)].
 Qed.
 
+(** [case] (M12b): the congruence at the scrutinee, and β at an injection
+    of any annotations (they equal the [case]'s, by injectivity). *)
+Lemma RS_case l l' l'' A B M c1 c2 t t' : RS_tm t t' ->
+  RS_tm (tmCase l l' l'' A B M c1 c2 t) (tmCase l l' l'' A B M c1 c2 t').
+Proof.
+  intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_case Hi Hx) as ((_ & W1 & W2 & W3 & HA & HB & HM & Hc1 & Hc2 & Ht) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  apply eqtm_case; [exact Hc | apply lequiv_refl, W1 | apply lequiv_refl, W2 | apply lequiv_refl, W3 | exact HA
+                   | apply eqty_refl, HA | exact HB | apply eqty_refl, HB | exact HM | apply eqty_refl, HM
+                   | apply eqtm_refl, Hc1 | apply eqtm_refl, Hc2 | exact (IH _ _ _ _ _ Hc Ht)].
+Qed.
+
+Lemma RS_case_inl l l' l'' A B M c1 c2 k k' C D a :
+  RS_tm (tmCase l l' l'' A B M c1 c2 (tmInl k k' C D a)) c1[lsingle a].
+Proof.
+  intros G i Γ T m Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_case Hi Hx) as ((_ & W1 & W2 & W3 & HA & HB & HM & Hc1 & Hc2 & Ht) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  destruct (inv_inl Hi Ht) as (_ & _ & EInl).
+  destruct (sum_inj_c Hc EInl) as (Ekl & Ek'l' & EAC & EBD).
+  pose proof (inl_payload Hc Ht) as Ha.
+  assert (Hinl : [ G ; Γ ⊢[ i ] tmInl l l' A B a ≅ tmInl k k' C D a : tySum l l' A B @ lmax l l' ])
+    by (apply eqtm_inl; [exact Hc | apply lequiv_sym, Ekl | apply lequiv_sym, Ek'l' | exact EAC | exact EBD
+                        | apply eqtm_refl, Ha]).
+  assert (Hcong : [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 (tmInl k k' C D a)
+                     ≅ tmCase l l' l'' A B M c1 c2 (tmInl l l' A B a) : M[lsingle (tmInl k k' C D a)] @ l'' ]).
+  { apply eqtm_case; [exact Hc | apply lequiv_refl, W1 | apply lequiv_refl, W2 | apply lequiv_refl, W3 | exact HA
+                     | apply eqty_refl, HA | exact HB | apply eqty_refl, HB | exact HM | apply eqty_refl, HM
+                     | apply eqtm_refl, Hc1 | apply eqtm_refl, Hc2 | apply eqtm_sym, Hinl]. }
+  pose proof (eqtm_case_inl _ _ _ _ _ _ _ _ _ _ _ _ Hc W1 W2 W3 HA HB HM Hc1 Hc2 Ha) as Hb.
+  eapply eqtm_trans; [exact Hcong |].
+  eapply eqtm_conv; [exact Hb | rewrite Hi].
+  exact (wf_ty_func Hi HM (lsub_eq_single Hi Ht (eqtm_wf_l Hi Hinl) (eqtm_sym _ _ _ _ _ _ _ Hinl))).
+Qed.
+
+Lemma RS_case_inr l l' l'' A B M c1 c2 k k' C D b :
+  RS_tm (tmCase l l' l'' A B M c1 c2 (tmInr k k' C D b)) c2[lsingle b].
+Proof.
+  intros G i Γ T m Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_case Hi Hx) as ((_ & W1 & W2 & W3 & HA & HB & HM & Hc1 & Hc2 & Ht) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  destruct (inv_inr Hi Ht) as (_ & _ & EInr).
+  destruct (sum_inj_c Hc EInr) as (Ekl & Ek'l' & EAC & EBD).
+  pose proof (inr_payload Hc Ht) as Hb0.
+  assert (Hinr : [ G ; Γ ⊢[ i ] tmInr l l' A B b ≅ tmInr k k' C D b : tySum l l' A B @ lmax l l' ])
+    by (apply eqtm_inr; [exact Hc | apply lequiv_sym, Ekl | apply lequiv_sym, Ek'l' | exact EAC | exact EBD
+                        | apply eqtm_refl, Hb0]).
+  assert (Hcong : [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 (tmInr k k' C D b)
+                     ≅ tmCase l l' l'' A B M c1 c2 (tmInr l l' A B b) : M[lsingle (tmInr k k' C D b)] @ l'' ]).
+  { apply eqtm_case; [exact Hc | apply lequiv_refl, W1 | apply lequiv_refl, W2 | apply lequiv_refl, W3 | exact HA
+                     | apply eqty_refl, HA | exact HB | apply eqty_refl, HB | exact HM | apply eqty_refl, HM
+                     | apply eqtm_refl, Hc1 | apply eqtm_refl, Hc2 | apply eqtm_sym, Hinr]. }
+  pose proof (eqtm_case_inr _ _ _ _ _ _ _ _ _ _ _ _ Hc W1 W2 W3 HA HB HM Hc1 Hc2 Hb0) as Hb.
+  eapply eqtm_trans; [exact Hcong |].
+  eapply eqtm_conv; [exact Hb | rewrite Hi].
+  exact (wf_ty_func Hi HM (lsub_eq_single Hi Ht (eqtm_wf_l Hi Hinr) (eqtm_sym _ _ _ _ _ _ _ Hinr))).
+Qed.
+
 (** ** Soundness of reduction *)
 
 Theorem red_sound_all (HR : RecRedTyped) :
@@ -534,7 +593,8 @@ Proof.
     | solve [apply RS_El_unit] | solve [apply RS_delta] | solve [apply RS_elimSEmpty; assumption]
     | solve [apply RS_J_beta] | solve [apply RS_J; assumption] | solve [apply RS_El_id]
     | solve [apply RS_El_seq] | solve [apply RS_El_sempty]
-    | solve [apply RS_elimEmpty; assumption] ].
+    | solve [apply RS_elimEmpty; assumption]
+    | solve [apply RS_case_inl] | solve [apply RS_case_inr] | solve [apply RS_case; assumption] ].
 Qed.
 
 Section Consequences.

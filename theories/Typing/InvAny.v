@@ -196,6 +196,29 @@ Lemma inva_elimEmpty {G i Γ l l' M t T k} : [ G ; Γ ⊢[ i ] elimEmpty l l' M 
     lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ typeof i ] T ≅ M[lsingle t] @ k ].
 Proof. inv_tm_any. Qed.
 
+(** Binary sums (M12b). *)
+Lemma inva_inl {G i Γ l l' A B a T k} : [ G ; Γ ⊢[ i ] tmInl l l' A B a : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] B @ l' ] /\
+    [ G ; Γ ⊢[ i ] a : A @ l ]) /\
+    lvl_eq (gL G) k (lmax l l') /\ [ G ; Γ ⊢[ typeof i ] T ≅ tySum l l' A B @ k ].
+Proof. inv_tm_any. Qed.
+
+Lemma inva_inr {G i Γ l l' A B b T k} : [ G ; Γ ⊢[ i ] tmInr l l' A B b : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] B @ l' ] /\
+    [ G ; Γ ⊢[ i ] b : B @ l' ]) /\
+    lvl_eq (gL G) k (lmax l l') /\ [ G ; Γ ⊢[ typeof i ] T ≅ tySum l l' A B @ k ].
+Proof. inv_tm_any. Qed.
+
+Lemma inva_case {G i Γ l l' l'' A B M c1 c2 t T k} : [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ lwf (gL G) l'' /\
+    [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] B @ l' ] /\
+    [ G ; Γ ,, tySum l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] c1 : M⟨rlift ↑⟩[lsingle (tmInl l l' A⟨↑⟩ B⟨↑⟩ (var 0))] @ l'' ] /\
+    [ G ; Γ ,, B @ l' ⊢[ i ] c2 : M⟨rlift ↑⟩[lsingle (tmInr l l' A⟨↑⟩ B⟨↑⟩ (var 0))] @ l'' ] /\
+    [ G ; Γ ⊢[ i ] t : tySum l l' A B @ lmax l l' ]) /\
+    lvl_eq (gL G) k l'' /\ [ G ; Γ ⊢[ typeof i ] T ≅ M[lsingle t] @ k ].
+Proof. inv_tm_any. Qed.
+
 (** Strict equality's codes (M10c). *)
 Lemma inva_code_seq {G i Γ l s t u T k} : [ G ; Γ ⊢[ i ] tmSEq l s t u : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\

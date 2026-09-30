@@ -175,3 +175,14 @@ Proof.
   - apply subst_id_ty; auto. intros; cbn; f_equal; lia.
   - intros [|n]; rlk_simpl; cbn; f_equal; lia.
 Qed.
+
+(** [case]'s branch types (M12b): the motive under the branch's variable,
+    at the injection of that variable. *)
+Lemma liftshift_single_ty (M : ty) f : M⟨rlift ↑⟩[lsingle f] = M[lcons (lshift 1) f].
+Proof. apply ren_subst_ty; intros [|n]; rlk_simpl; cbn; [reflexivity | f_equal; lia]. Qed.
+Lemma shift_cons1_ty (T : ty) x : T⟨↑⟩[lcons (lshift 1) x] = T[lshift 1].
+Proof. apply ren_subst_ty; intros; rlk_simpl; cbn; f_equal; lia. Qed.
+Lemma shift1_as_ty (T : ty) : T⟨↑⟩ = T[lshift 1].
+Proof. apply ren_as_subst_ty; intros; rlk_simpl; cbn; f_equal; lia. Qed.
+Lemma up1_single_ty (M : ty) f a : M[lcons (lshift 1) f][lsingle a] = M[lsingle f[lsingle a]].
+Proof. apply subst_subst_ty; intros [|n]; cbn; [reflexivity|]. now rewrite Nat.add_1_r. Qed.

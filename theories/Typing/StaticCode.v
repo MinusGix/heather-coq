@@ -923,6 +923,75 @@ Proof.
   - exact (pre_elimEmpty_r HD HDv Q1 Q2 HM HMM HM' Htt Ht Ht').
   - apply eqtm_elimEmpty; auto using compt_D.
 Qed.
+
+(** Binary sums (M12b). *)
+Lemma sc_sum {Γ l1 l2 l1' l2' A A' B B'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
+  lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
+  [ G ; Γ ⊢[ lD ] A @ l1 ] -> [ G ; Γ ⊢[ lD ] A' @ l1 ] /\ [ G ; Γ ⊢[ lD ] A ≅ A' @ l1 ] ->
+  [ G ; Γ ⊢[ lD ] B @ l2 ] -> [ G ; Γ ⊢[ lD ] B' @ l2 ] /\ [ G ; Γ ⊢[ lD ] B ≅ B' @ l2 ] ->
+  [ G ; Γ ⊢[ lD ] tySum l1' l2' A' B' @ lmax l1 l2 ] /\
+  [ G ; Γ ⊢[ lD ] tySum l1 l2 A B ≅ tySum l1' l2' A' B' @ lmax l1 l2 ].
+Proof.
+  intros H1 H2 H1' H2' E1 E2 HA [HA' HAA] HB [HB' HBB].
+  pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2. split.
+  - exact (pre_sum_r HD HDv Q1 Q2 HAA HA' HBB HB').
+  - apply eqty_sum; auto using compt_D.
+Qed.
+
+Lemma sc_inl {Γ l1 l2 l1' l2' A A' B B' a a'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
+  lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
+  [ G ; Γ ⊢[ lD ] A @ l1 ] -> [ G ; Γ ⊢[ lD ] A' @ l1 ] /\ [ G ; Γ ⊢[ lD ] A ≅ A' @ l1 ] ->
+  [ G ; Γ ⊢[ lD ] B @ l2 ] -> [ G ; Γ ⊢[ lD ] B' @ l2 ] /\ [ G ; Γ ⊢[ lD ] B ≅ B' @ l2 ] ->
+  [ G ; Γ ⊢[ lD ] a : A @ l1 ] -> [ G ; Γ ⊢[ lD ] a' : A @ l1 ] /\ [ G ; Γ ⊢[ lD ] a ≅ a' : A @ l1 ] ->
+  [ G ; Γ ⊢[ lD ] tmInl l1' l2' A' B' a' : tySum l1 l2 A B @ lmax l1 l2 ] /\
+  [ G ; Γ ⊢[ lD ] tmInl l1 l2 A B a ≅ tmInl l1' l2' A' B' a' : tySum l1 l2 A B @ lmax l1 l2 ].
+Proof.
+  intros H1 H2 H1' H2' E1 E2 HA [HA' HAA] HB [HB' HBB] Ha [Ha' Haa].
+  pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2. split.
+  - exact (pre_inl_r HD HDv Q1 Q2 HAA HA' HBB HB' Ha').
+  - apply eqtm_inl; auto using compt_D.
+Qed.
+
+Lemma sc_inr {Γ l1 l2 l1' l2' A A' B B' b b'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
+  lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
+  [ G ; Γ ⊢[ lD ] A @ l1 ] -> [ G ; Γ ⊢[ lD ] A' @ l1 ] /\ [ G ; Γ ⊢[ lD ] A ≅ A' @ l1 ] ->
+  [ G ; Γ ⊢[ lD ] B @ l2 ] -> [ G ; Γ ⊢[ lD ] B' @ l2 ] /\ [ G ; Γ ⊢[ lD ] B ≅ B' @ l2 ] ->
+  [ G ; Γ ⊢[ lD ] b : B @ l2 ] -> [ G ; Γ ⊢[ lD ] b' : B @ l2 ] /\ [ G ; Γ ⊢[ lD ] b ≅ b' : B @ l2 ] ->
+  [ G ; Γ ⊢[ lD ] tmInr l1' l2' A' B' b' : tySum l1 l2 A B @ lmax l1 l2 ] /\
+  [ G ; Γ ⊢[ lD ] tmInr l1 l2 A B b ≅ tmInr l1' l2' A' B' b' : tySum l1 l2 A B @ lmax l1 l2 ].
+Proof.
+  intros H1 H2 H1' H2' E1 E2 HA [HA' HAA] HB [HB' HBB] Hb [Hb' Hbb].
+  pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2. split.
+  - exact (pre_inr_r HD HDv Q1 Q2 HAA HA' HBB HB' Hb').
+  - apply eqtm_inr; auto using compt_D.
+Qed.
+
+Lemma sc_case {Γ l1 l2 l3 l1' l2' l3' A A' B B' M M' c1 c1' c2 c2' t t'} :
+  lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l3 -> lwf (gL G) l1' -> lwf (gL G) l2' -> lwf (gL G) l3' ->
+  leqv l1 l1' -> leqv l2 l2' -> leqv l3 l3' ->
+  [ G ; Γ ⊢[ lD ] A @ l1 ] -> [ G ; Γ ⊢[ lD ] A' @ l1 ] /\ [ G ; Γ ⊢[ lD ] A ≅ A' @ l1 ] ->
+  [ G ; Γ ⊢[ lD ] B @ l2 ] -> [ G ; Γ ⊢[ lD ] B' @ l2 ] /\ [ G ; Γ ⊢[ lD ] B ≅ B' @ l2 ] ->
+  [ G ; Γ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢[ lD ] M @ l3 ] ->
+  [ G ; Γ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢[ lD ] M' @ l3 ] /\
+  [ G ; Γ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢[ lD ] M ≅ M' @ l3 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ lD ] c1 : M⟨rlift ↑⟩[lsingle (tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ lD ] c1' : M⟨rlift ↑⟩[lsingle (tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] /\
+  [ G ; Γ ,, A @ l1 ⊢[ lD ] c1 ≅ c1' : M⟨rlift ↑⟩[lsingle (tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] ->
+  [ G ; Γ ,, B @ l2 ⊢[ lD ] c2 : M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] ->
+  [ G ; Γ ,, B @ l2 ⊢[ lD ] c2' : M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] /\
+  [ G ; Γ ,, B @ l2 ⊢[ lD ] c2 ≅ c2' : M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] ->
+  [ G ; Γ ⊢[ lD ] t : tySum l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ lD ] t' : tySum l1 l2 A B @ lmax l1 l2 ] /\
+  [ G ; Γ ⊢[ lD ] t ≅ t' : tySum l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ lD ] tmCase l1' l2' l3' A' B' M' c1' c2' t' : M[lsingle t] @ l3 ] /\
+  [ G ; Γ ⊢[ lD ] tmCase l1 l2 l3 A B M c1 c2 t ≅ tmCase l1' l2' l3' A' B' M' c1' c2' t' : M[lsingle t] @ l3 ].
+Proof.
+  intros H1 H2 H3 H1' H2' H3' E1 E2 E3 HA [HA' HAA] HB [HB' HBB] HM [HM' HMM] Hc1 [Hc1' Hcc1]
+    Hc2 [Hc2' Hcc2] Ht [Ht' Htt].
+  pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2. pose proof (lq H3 H3' E3) as Q3. split.
+  - exact (pre_case_r HD HDv Q1 Q2 Q3 HAA HA HA' HBB HB HB' HM HMM HM' Hc1' Hc2' Htt Ht Ht').
+  - apply eqtm_case; auto using compt_D.
+Qed.
 End SCD.
 
 
@@ -1022,7 +1091,9 @@ Proof.
     | match goal with
       | c : compt ?j, H : lle ?j lD |- _ =>
           destruct c; subst j; [| exfalso; exact (lle_D_notM' H eq_refl)]; cbn [typeof] in *;
-          solve [ eapply sc_empty; eauto | eapply sc_elimEmpty; eauto ]
+          solve [ eapply sc_empty; eauto | eapply sc_elimEmpty; eauto
+                (* binary sums (M12b) *)
+                | eapply sc_sum; eauto | eapply sc_inl; eauto | eapply sc_inr; eauto | eapply sc_case; eauto ]
       end
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x

@@ -30,7 +30,9 @@ Inductive posty : ty -> Prop :=
 | posty_CTrm Δ T l : posty (tyCTrm Δ T l)
 | posty_id l A a b : posty (tyId l A a b)
 (* the empty type (M12a): no η, so its neutrals are compared as neutrals *)
-| posty_empty l : posty (tyEmpty l).
+| posty_empty l : posty (tyEmpty l)
+(* binary sums (M12b): no η *)
+| posty_sum l l' A B : posty (tySum l l' A B).
 
 Inductive ac_ty : gctx -> ctx -> ty -> ty -> Prop :=
 | act_red G Γ T T' W W' : reds_ty T W -> reds_ty T' W' -> whnf_ty W -> whnf_ty W' ->
@@ -67,6 +69,9 @@ with ac_tynf : gctx -> ctx -> ty -> ty -> Prop :=
 | actnf_sempty G Γ l l' : leqv l l' -> ac_tynf G Γ (tySEmpty l) (tySEmpty l')
 (* the empty type (M12a) *)
 | actnf_empty G Γ l l' : leqv l l' -> ac_tynf G Γ (tyEmpty l) (tyEmpty l')
+(* binary sums (M12b) *)
+| actnf_sum G Γ l1 l2 l3 l4 A A' B B' : leqv l1 l3 -> leqv l2 l4 -> ac_ty G Γ A A' -> ac_ty G Γ B B' ->
+    ac_tynf G Γ (tySum l1 l2 A B) (tySum l3 l4 A' B')
 (* the identity type (M11a): endpoints compared at the left carrier *)
 | actnf_id G Γ l l' A A' a a' b b' : leqv l l' -> ac_ty G Γ A A' ->
     ac_tm G Γ a a' A -> ac_tm G Γ b b' A ->
@@ -144,6 +149,12 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tm G Γ s s' (tyU k) -> ac_tm G Γ t t' (tyEl k s) -> ac_tm G Γ u u' (tyEl k s) ->
     ac_tmnf G Γ (tmSEq k s t u) (tmSEq k' s' t' u') (tyU l)
 | actmnf_code_sempty G Γ l k k' : leqv k k' -> ac_tmnf G Γ (tmSEmpty k) (tmSEmpty k') (tyU l)
+(* the injections (M12b): the payloads at the summand; the annotations are
+   the sum type's up to equality, as [refl]'s are the [Id] type's *)
+| actmnf_inl G Γ l l' A B k1 k2 k3 k4 C D C' D' a a' : ac_tm G Γ a a' A ->
+    ac_tmnf G Γ (tmInl k1 k2 C D a) (tmInl k3 k4 C' D' a') (tySum l l' A B)
+| actmnf_inr G Γ l l' A B k1 k2 k3 k4 C D C' D' b b' : ac_tm G Γ b b' B ->
+    ac_tmnf G Γ (tmInr k1 k2 C D b) (tmInr k3 k4 C' D' b') (tySum l l' A B)
 
 with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_var G Γ n T l : in_ctx Γ n T l -> ac_tmne G Γ (var n) (var n) T
@@ -241,6 +252,14 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_elimEmpty G Γ l1 l2 l3 l4 M M' ν ν' W : leqv l1 l3 -> leqv l2 l4 ->
     ac_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (elimEmpty l1 l2 M ν) (elimEmpty l3 l4 M' ν') M[lsingle ν]
+(* [case] (M12b): every component compared, the scrutinees as neutrals *)
+| actmne_case G Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c1 c1' c2 c2' ν ν' W :
+    leqv l1 l4 -> leqv l2 l5 -> leqv l3 l6 -> ac_ty G Γ A A' -> ac_ty G Γ B B' ->
+    ac_ty G (Γ ,, tySum l1 l2 A B @ lmax l1 l2) M M' ->
+    ac_tm G (Γ ,, A @ l1) c1 c1' M⟨rlift ↑⟩[lsingle (tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] ->
+    ac_tm G (Γ ,, B @ l2) c2 c2' M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] ->
+    ac_tmnee G Γ ν ν' W ->
+    ac_tmne G Γ (tmCase l1 l2 l3 A B M c1 c2 ν) (tmCase l4 l5 l6 A' B' M' c1' c2' ν') M[lsingle ν]
 
 with ac_tmnee : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmnee_red G Γ ν ν' T W : ac_tmne G Γ ν ν' T -> reds_ty T W -> whnf_ty W ->

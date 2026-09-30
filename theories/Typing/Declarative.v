@@ -92,6 +92,10 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
 (* the empty type (layers D and M; M12a), level-indexed *)
 | wft_empty G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tyEmpty l @ l ]
+(* binary sums (layers D and M; M12b), non-dependent *)
+| wft_sum G i Γ l l' A B : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ⊢[ i ] tySum l l' A B @ lmax l l' ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -268,6 +272,22 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 | wf_elimEmpty G i Γ l l' M t : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ,, tyEmpty l' @ l' ⊢[ i ] M @ l ] -> [ G ; Γ ⊢[ i ] t : tyEmpty l' @ l' ] ->
     [ G ; Γ ⊢[ i ] elimEmpty l l' M t : M[lsingle t] @ l ]
+(* binary sums (layers D and M; M12b): the injections carry both summands;
+   [case]'s motive binds the scrutinee, and each branch's type is the motive
+   at the injection of the branch's variable *)
+| wf_inl G i Γ l l' A B a : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] B @ l' ] -> [ G ; Γ ⊢[ i ] a : A @ l ] ->
+    [ G ; Γ ⊢[ i ] tmInl l l' A B a : tySum l l' A B @ lmax l l' ]
+| wf_inr G i Γ l l' A B b : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] B @ l' ] -> [ G ; Γ ⊢[ i ] b : B @ l' ] ->
+    [ G ; Γ ⊢[ i ] tmInr l l' A B b : tySum l l' A B @ lmax l l' ]
+| wf_case G i Γ l l' l'' A B M c1 c2 t : compt i -> lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ,, tySum l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] ->
+    [ G ; Γ ,, A @ l ⊢[ i ] c1 : M⟨rlift ↑⟩[lsingle (tmInl l l' A⟨↑⟩ B⟨↑⟩ (var 0))] @ l'' ] ->
+    [ G ; Γ ,, B @ l' ⊢[ i ] c2 : M⟨rlift ↑⟩[lsingle (tmInr l l' A⟨↑⟩ B⟨↑⟩ (var 0))] @ l'' ] ->
+    [ G ; Γ ⊢[ i ] t : tySum l l' A B @ lmax l l' ] ->
+    [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 t : M[lsingle t] @ l'' ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -362,6 +382,10 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
 (* the empty type (layers D and M; M12a) *)
 | eqty_empty G i Γ l l' : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] tyEmpty l ≅ tyEmpty l' @ l ]
+(* binary sums (layers D and M; M12b) *)
+| eqty_sum G i Γ l1 l2 l3 l4 A A' B B' : compt i -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] B ≅ B' @ l2 ] ->
+    [ G ; Γ ⊢[ i ] tySum l1 l2 A B ≅ tySum l3 l4 A' B' @ lmax l1 l2 ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -705,6 +729,40 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] M @ l1 ] -> [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] M ≅ M' @ l1 ] ->
     [ G ; Γ ⊢[ i ] t ≅ t' : tyEmpty l2 @ l2 ] ->
     [ G ; Γ ⊢[ i ] elimEmpty l1 l2 M t ≅ elimEmpty l3 l4 M' t' : M[lsingle t] @ l1 ]
+(* binary sums (layers D and M; M12b): the congruences, and β at either
+   injection; no η *)
+| eqtm_inl G i Γ l1 l2 l3 l4 A A' B B' a a' : compt i -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] B ≅ B' @ l2 ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] ->
+    [ G ; Γ ⊢[ i ] tmInl l1 l2 A B a ≅ tmInl l3 l4 A' B' a' : tySum l1 l2 A B @ lmax l1 l2 ]
+| eqtm_inr G i Γ l1 l2 l3 l4 A A' B B' b b' : compt i -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] B ≅ B' @ l2 ] -> [ G ; Γ ⊢[ i ] b ≅ b' : B @ l2 ] ->
+    [ G ; Γ ⊢[ i ] tmInr l1 l2 A B b ≅ tmInr l3 l4 A' B' b' : tySum l1 l2 A B @ lmax l1 l2 ]
+| eqtm_case G i Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c1 c1' c2 c2' t t' : compt i ->
+    lequiv (gL G) l1 l4 -> lequiv (gL G) l2 l5 -> lequiv (gL G) l3 l6 ->
+    [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+    [ G ; Γ ⊢[ i ] B @ l2 ] -> [ G ; Γ ⊢[ i ] B ≅ B' @ l2 ] ->
+    [ G ; Γ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢[ i ] M @ l3 ] ->
+    [ G ; Γ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢[ i ] M ≅ M' @ l3 ] ->
+    [ G ; Γ ,, A @ l1 ⊢[ i ] c1 ≅ c1' : M⟨rlift ↑⟩[lsingle (tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] ->
+    [ G ; Γ ,, B @ l2 ⊢[ i ] c2 ≅ c2' : M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] ->
+    [ G ; Γ ⊢[ i ] t ≅ t' : tySum l1 l2 A B @ lmax l1 l2 ] ->
+    [ G ; Γ ⊢[ i ] tmCase l1 l2 l3 A B M c1 c2 t ≅ tmCase l4 l5 l6 A' B' M' c1' c2' t' : M[lsingle t] @ l3 ]
+| eqtm_case_inl G i Γ l l' l'' A B M c1 c2 a : compt i -> lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ,, tySum l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] ->
+    [ G ; Γ ,, A @ l ⊢[ i ] c1 : M⟨rlift ↑⟩[lsingle (tmInl l l' A⟨↑⟩ B⟨↑⟩ (var 0))] @ l'' ] ->
+    [ G ; Γ ,, B @ l' ⊢[ i ] c2 : M⟨rlift ↑⟩[lsingle (tmInr l l' A⟨↑⟩ B⟨↑⟩ (var 0))] @ l'' ] ->
+    [ G ; Γ ⊢[ i ] a : A @ l ] ->
+    [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 (tmInl l l' A B a) ≅ c1[lsingle a]
+        : M[lsingle (tmInl l l' A B a)] @ l'' ]
+| eqtm_case_inr G i Γ l l' l'' A B M c1 c2 b : compt i -> lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ,, tySum l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] ->
+    [ G ; Γ ,, A @ l ⊢[ i ] c1 : M⟨rlift ↑⟩[lsingle (tmInl l l' A⟨↑⟩ B⟨↑⟩ (var 0))] @ l'' ] ->
+    [ G ; Γ ,, B @ l' ⊢[ i ] c2 : M⟨rlift ↑⟩[lsingle (tmInr l l' A⟨↑⟩ B⟨↑⟩ (var 0))] @ l'' ] ->
+    [ G ; Γ ⊢[ i ] b : B @ l' ] ->
+    [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 (tmInr l l' A B b) ≅ c2[lsingle b]
+        : M[lsingle (tmInr l l' A B b)] @ l'' ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)

@@ -175,6 +175,56 @@ Proof.
       eapply gne_tm_lconv; [eapply gne_tm_conv; [exact Hν23 | exact HV] | exact (lequiv_sym _ _ _ Hl2)].
 Qed.
 
+(** ** Binary sums, composed (M12b) *)
+
+Lemma SumNf_whnf_l {G Γ l l' A B RA RB w w'} : SumNf G Γ l l' A B RA RB w w' -> whnf w.
+Proof. intros [| | ν ν' Hν]; [apply whnf_inl | apply whnf_inr | apply whnf_ne; exact (gne_tm_whne_l Hν)]. Qed.
+Lemma SumNf_whnf_r {G Γ l l' A B RA RB w w'} : SumNf G Γ l l' A B RA RB w w' -> whnf w'.
+Proof. intros [| | ν ν' Hν]; [apply whnf_inl | apply whnf_inr | apply whnf_ne; exact (gne_tm_whne_r Hν)]. Qed.
+
+(** The payloads compose by the summands' own transitivity, given as the
+    composites [RA ∘ RA2 ⊆ RA] and [RB ∘ RB2 ⊆ RB]. *)
+Lemma SumRel_trans {G Γ l1 l2 l3 l4 A1 A2 B1 B2 RA RB RA2 RB2 t1 t2 t3} :
+  lequiv (gL G) l3 l1 -> lequiv (gL G) l4 l2 ->
+  [ G ; Γ ⊢ A1 ≈ A2 @ l1 ] -> [ G ; Γ ⊢ B1 ≈ B2 @ l2 ] ->
+  (forall x y z, RA x y -> RA2 y z -> RA x z) -> (forall x y z, RB x y -> RB2 y z -> RB x z) ->
+  SumRel G Γ l1 l2 A1 B1 RA RB t1 t2 -> SumRel G Γ l3 l4 A2 B2 RA2 RB2 t2 t3 ->
+  SumRel G Γ l1 l2 A1 B1 RA RB t1 t3.
+Proof.
+  intros Hl3 Hl4 HA12 HB12 CRA CRB (w1 & w2 & Hw1 & Hw2 & Heq12 & Hn12)
+    (u2 & w3 & Hu2 & Hw3 & Heq23 & Hn23).
+  assert (Hm : lequiv (gL G) (lmax l3 l4) (lmax l1 l2)) by now apply lequiv_max.
+  assert (HV : [ G ; Γ ⊢g tySum l3 l4 A2 B2 ≅ tySum l1 l2 A1 B1 @ lmax l3 l4 ]).
+  { eapply eqty_lconv; [apply eqty_sym, geq_ty_sound, geq_ty_sum; auto using lequiv_sym | exact Hm]. }
+  assert (F : forall u v, [ G ; Γ ⊢g u ⤳* v : tySum l3 l4 A2 B2 @ lmax l3 l4 ] ->
+                [ G ; Γ ⊢g u ⤳* v : tySum l1 l2 A1 B1 @ lmax l1 l2 ]).
+  { intros u v H. eapply tmred_lconv; [| exact (lequiv_sym _ _ _ Hm)].
+    eapply tmred_conv; [apply ge_typeof | exact H | exact HV]. }
+  assert (Ew2 : w2 = u2)
+    by (eapply tmred_whnf_det; [exact Hw2 | exact Hu2 | exact (SumNf_whnf_r Hn12) | exact (SumNf_whnf_l Hn23)]).
+  subst u2.
+  assert (Heq23' : [ G ; Γ ⊢ w2 ≈ w3 : tySum l1 l2 A1 B1 @ lmax l1 l2 ]).
+  { eapply geq_tm_lconv; [eapply geq_tm_conv; [exact Heq23 | exact HV] | exact (lequiv_sym _ _ _ Hm)]. }
+  exists w1, w3. refine (conj Hw1 (conj (F _ _ Hw3) (conj (geq_tm_trans Heq12 Heq23') _))).
+  assert (CA : forall C, [ G ; Γ ⊢ A2 ≈ C @ l3 ] -> [ G ; Γ ⊢ A1 ≈ C @ l1 ]).
+  { intros C HC. eapply geq_ty_trans; [exact HA12 | eapply geq_ty_lconv; [exact HC | exact (lequiv_sym _ _ _ Hl3)]]. }
+  assert (CB : forall D, [ G ; Γ ⊢ B2 ≈ D @ l4 ] -> [ G ; Γ ⊢ B1 ≈ D @ l2 ]).
+  { intros D HD. eapply geq_ty_trans; [exact HB12 | eapply geq_ty_lconv; [exact HD | exact (lequiv_sym _ _ _ Hl4)]]. }
+  destruct Hn12 as [k1 k2 k1' k2' C D C' D' a a' Hk1 Hk2 Hk1' Hk2' HC HC' HD HD' Ha
+                   | k1 k2 k1' k2' C D C' D' b b' Hk1 Hk2 Hk1' Hk2' HC HC' HD HD' Hb | ν1 ν2 Hν12];
+    inversion Hn23 as [j1 j2 j1' j2' P Q P' Q' c c' Hj1 Hj2 Hj1' Hj2' HE HE' HF HF' Hc
+                      | j1 j2 j1' j2' P Q P' Q' c c' Hj1 Hj2 Hj1' Hj2' HE HE' HF HF' Hc | ν2' ν3 Hν23];
+    subst.
+  all: first
+    [ exfalso; match goal with H : [ _ ; _ ⊢ _ ~ _ : _ @ _ ] |- _ =>
+        solve [pose proof (gne_tm_whne_l H) as Hwh; inversion Hwh
+              | pose proof (gne_tm_whne_r H) as Hwh; inversion Hwh] end
+    | solve [apply sumnf_inl; eauto using lequiv_trans]
+    | solve [apply sumnf_inr; eauto using lequiv_trans]
+    | apply sumnf_ne; eapply gne_tm_trans; [exact Hν12 |];
+      eapply gne_tm_lconv; [eapply gne_tm_conv; [exact Hν23 | exact HV] | exact (lequiv_sym _ _ _ Hm)] ].
+Qed.
+
 (** ** Transitivity *)
 
 Lemma LR_trans_step n : (forall m, m < n -> Ptrans m) -> Ptrans n.
@@ -194,7 +244,9 @@ Proof.
                  | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR
                  | G Γ T1 T2 l l1 l2 A1 A2 a1 a2 b1 b2 RA R Hl Hl2 Hn HT1 HT2 HA1 HA12 Ha12 Hb12
                      HRA IHRA Hra Hrb Hps Hpt HR
-                 | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR];
+                 | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR
+                 | G Γ T1 T2 l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HUA HUAA HUB HUBB
+                     HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR];
     intros T3 R23 H2.
   - (* Nat *)
     destruct (LR_inv_nat H2 HT2) as (_ & HT3 & HR2).
@@ -569,6 +621,18 @@ Proof.
     split; [eapply (LRempty n (LRbelow n) G Γ T1 T3 l l1 l3); eauto using lequiv_trans|].
     intros t1 t2 t3 H12 H23. apply HR. apply HR in H12. apply HR2 in H23.
     apply (EmptyRel_lconv Hl2) in H23. exact (EmptyRel_trans H12 H23).
+  - (* +: the summands compose by their induction hypotheses *)
+    destruct (LR_inv_sum H2 HT2) as (u5 & u6 & UA3 & UB3 & RA2 & RB2 & _ & Hu5 & Hu6 & _ & _ & HT3
+                                    & _ & HUA23 & _ & HUB23 & HRA2 & HRB2 & _ & _ & _ & _ & HR2).
+    pose proof (lequiv_sym _ _ _ Hl3) as Hl3'. pose proof (lequiv_sym _ _ _ Hl4) as Hl4'.
+    destruct (IHRA _ _ (LR_lconv _ _ _ _ _ _ _ _ _ HRA2 Hl3')) as [HRA13 CRA].
+    destruct (IHRB _ _ (LR_lconv _ _ _ _ _ _ _ _ _ HRB2 Hl4')) as [HRB13 CRB].
+    split.
+    + eapply (LRsum n (LRbelow n) G Γ T1 T3 l u1 u2 u5 u6 UA UA3 UB UB3 RA RB); eauto using lequiv_trans.
+      * eapply geq_ty_trans; [exact HUAA | eapply geq_ty_lconv; [exact HUA23 | exact Hl3']].
+      * eapply geq_ty_trans; [exact HUBB | eapply geq_ty_lconv; [exact HUB23 | exact Hl4']].
+    + intros t1 t2 t3 H12 H23. apply HR. apply HR in H12. apply HR2 in H23.
+      exact (SumRel_trans Hl3 Hl4 HUAA HUBB CRA CRB H12 H23).
 Qed.
 
 Theorem LR_trans n : Ptrans n.

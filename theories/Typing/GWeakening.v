@@ -346,6 +346,12 @@ Lemma gren_capp t Δ : (capp t Δ)⟪ξ⟫ = capp t⟪ξ⟫ Δ⟪ξ⟫. Proof. r
 Lemma gren_tlam Δ l l' T t : (tlam Δ l l' T t)⟪ξ⟫ = tlam Δ⟪ξ⟫ l l' T⟪gupr ξ⟫ t⟪gupr ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_tapp t T : (tapp t T)⟪ξ⟫ = tapp t⟪ξ⟫ T⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_tySig l l' A B : (tySig l l' A B)⟪ξ⟫ = tySig l l' A⟪ξ⟫ B⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tySum l l' A B : (tySum l l' A B)⟪ξ⟫ = tySum l l' A⟪ξ⟫ B⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_inl l l' A B a : (tmInl l l' A B a)⟪ξ⟫ = tmInl l l' A⟪ξ⟫ B⟪ξ⟫ a⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_inr l l' A B a : (tmInr l l' A B a)⟪ξ⟫ = tmInr l l' A⟪ξ⟫ B⟪ξ⟫ a⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_case l l' l'' A B M c1 c2 t :
+  (tmCase l l' l'' A B M c1 c2 t)⟪ξ⟫ = tmCase l l' l'' A⟪ξ⟫ B⟪ξ⟫ M⟪ξ⟫ c1⟪ξ⟫ c2⟪ξ⟫ t⟪ξ⟫.
+Proof. reflexivity. Qed.
 Lemma gren_tmSig l l' s t : (tmSig l l' s t)⟪ξ⟫ = tmSig l l' s⟪ξ⟫ t⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_pair l l' A B a b : (tmPair l l' A B a b)⟪ξ⟫ = tmPair l l' A⟪ξ⟫ B⟪ξ⟫ a⟪ξ⟫ b⟪ξ⟫.
 Proof. reflexivity. Qed.
@@ -408,6 +414,10 @@ Ltac push_gren_at h k := lazymatch h with
   | @tlam => k gren_tlam
   | @tapp => k gren_tapp
   | @tySig => k gren_tySig
+  | @tySum => k gren_tySum
+  | @tmInl => k gren_inl
+  | @tmInr => k gren_inr
+  | @tmCase => k gren_case
   | @tmSig => k gren_tmSig
   | @tmPair => k gren_pair
   | @tmFst => k gren_fst
@@ -454,7 +464,9 @@ Lemma eq_ty_regty G i Δ A B A' B' l :
   [ G ; Δ ⊢[ i ] A ≅ B @ l ] -> A = A' -> B = B' -> [ G ; Δ ⊢[ i ] A' ≅ B' @ l ].
 Proof. now intros ? -> ->. Qed.
 
-Ltac gw_eq := push_gren; gren_rewrite; push_gren; first [reflexivity | f_equal; reflexivity].
+(* twice: [case]'s branch types (M12b) shift summands inside an injection,
+   which the first pass exposes *)
+Ltac gw_eq := push_gren; gren_rewrite; push_gren; gren_rewrite; push_gren; first [reflexivity | f_equal; reflexivity].
 
 #[export] Hint Resolve in_ctx_gren in_gctx_gwk gctx_var_gwk lsub_tail_gren nfl_gren : gwk.
 #[export] Hint Constructors gwk_wf : gwk.
@@ -578,6 +590,11 @@ Ltac gw_Δ tac :=
 
 Ltac gw_manual :=
   match goal with
+  (* [case] (M12b): its branches' types, through the induction hypotheses *)
+  | |- wf_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ _) _ _ => eapply wf_case; gw_premise
+  | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ (tmInl _ _ _ _ _)) _ _ _ => eapply eqtm_case_inl; gw_premise
+  | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ (tmInr _ _ _ _ _)) _ _ _ => eapply eqtm_case_inr; gw_premise
+  | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_case; gw_premise
   | |- wf_ty _ _ _ (tyGvar _ _) _ =>
       gw_Δ ltac:(fun D => eapply wft_gvar with (Δ := D)); [ .. | gw_entries]; eauto with gwk
   | |- eq_ty _ _ _ (tyGvar _ _) _ _ =>
@@ -879,6 +896,12 @@ Lemma gwa_cext Γ A l : (Γ ,, A @ l)⟦γ⟧ = Γ⟦γ⟧ ,, A⟦γ⟧ @ l. Pro
 Lemma gwa_cnil : cnil⟦γ⟧ = cnil. Proof. now destruct γ. Qed.
 Lemma gwa_cvar g : (cvar g)⟦γ⟧ = cvar (γ g). Proof. now destruct γ. Qed.
 Lemma gwa_tySig l l' A B : (tySig l l' A B)⟦γ⟧ = tySig l l' A⟦γ⟧ B⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tySum l l' A B : (tySum l l' A B)⟦γ⟧ = tySum l l' A⟦γ⟧ B⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_inl l l' A B a : (tmInl l l' A B a)⟦γ⟧ = tmInl l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_inr l l' A B a : (tmInr l l' A B a)⟦γ⟧ = tmInr l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_case l l' l'' A B M c1 c2 t :
+  (tmCase l l' l'' A B M c1 c2 t)⟦γ⟧ = tmCase l l' l'' A⟦γ⟧ B⟦γ⟧ M⟦γ⟧ c1⟦γ⟧ c2⟦γ⟧ t⟦γ⟧.
+Proof. now destruct γ. Qed.
 Lemma gwa_tmSig l l' s t : (tmSig l l' s t)⟦γ⟧ = tmSig l l' s⟦γ⟧ t⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_pair l l' A B a b : (tmPair l l' A B a b)⟦γ⟧ = tmPair l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧ b⟦γ⟧.
 Proof. now destruct γ. Qed.
@@ -924,6 +947,10 @@ Ltac push_gwa_at h k := lazymatch h with
   | @natrec => k gwa_natrec
   | @cext => k gwa_cext
   | @tySig => k gwa_tySig
+  | @tySum => k gwa_tySum
+  | @tmInl => k gwa_inl
+  | @tmInr => k gwa_inr
+  | @tmCase => k gwa_case
   | @tmSig => k gwa_tmSig
   | @tmPair => k gwa_pair
   | @tmFst => k gwa_fst

@@ -629,6 +629,85 @@ Proof.
   left; eexists; eexists; exact (wf_J _ _ _ _ _ _ _ _ _ _ _ Hc Hl Hl' HA Ha HI HM Hc' Hu He).
 Qed.
 
+(** Binary sums (M12b): the computing layers only. *)
+Lemma sy_inl l l' A B a : sz_tm (tmInl l l' A B a) <= n -> SYD (tmInl l l' A B a).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_inl H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_inl H) as ((_ & X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l') as [Hl' | N];
+    [| right; intros T k H; destruct (inva_inl H) as ((_ & _ & X & _) & _); contradiction].
+  destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
+    [| right; intros T k H; destruct (inva_inl H) as ((_ & _ & _ & X & _) & _); contradiction].
+  destruct (ihT B ltac:(szl) G i Γ l' HΓ) as [HB | N];
+    [| right; intros T k H; destruct (inva_inl H) as ((_ & _ & _ & _ & X & _) & _); contradiction].
+  destruct (ihC a ltac:(szl) G i Γ A l (lift_to_typeof_ty HA)) as [Ha | N];
+    [| right; intros T k H; destruct (inva_inl H) as ((_ & _ & _ & _ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_inl _ _ _ _ _ _ _ _ Hc Hl Hl' HA HB Ha).
+Qed.
+
+Lemma sy_inr l l' A B b : sz_tm (tmInr l l' A B b) <= n -> SYD (tmInr l l' A B b).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_inr H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_inr H) as ((_ & X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l') as [Hl' | N];
+    [| right; intros T k H; destruct (inva_inr H) as ((_ & _ & X & _) & _); contradiction].
+  destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
+    [| right; intros T k H; destruct (inva_inr H) as ((_ & _ & _ & X & _) & _); contradiction].
+  destruct (ihT B ltac:(szl) G i Γ l' HΓ) as [HB | N];
+    [| right; intros T k H; destruct (inva_inr H) as ((_ & _ & _ & _ & X & _) & _); contradiction].
+  destruct (ihC b ltac:(szl) G i Γ B l' (lift_to_typeof_ty HB)) as [Hb | N];
+    [| right; intros T k H; destruct (inva_inr H) as ((_ & _ & _ & _ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_inr _ _ _ _ _ _ _ _ Hc Hl Hl' HA HB Hb).
+Qed.
+
+(** [case]: its branch types are built from the decided motive. *)
+Lemma sy_case l l' l'' A B M c1 c2 t : sz_tm (tmCase l l' l'' A B M c1 c2 t) <= n ->
+  SYD (tmCase l l' l'' A B M c1 c2 t).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_case H) as ((X & _) & _); contradiction].
+  pose proof (typeof_idem i) as Hty.
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_case H) as ((_ & X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l') as [Hl' | N];
+    [| right; intros T k H; destruct (inva_case H) as ((_ & _ & X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l'') as [Hl'' | N];
+    [| right; intros T k H; destruct (inva_case H) as ((_ & _ & _ & X & _) & _); contradiction].
+  destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
+    [| right; intros T k H; destruct (inva_case H) as ((_ & _ & _ & _ & X & _) & _); contradiction].
+  destruct (ihT B ltac:(szl) G i Γ l' HΓ) as [HB | N];
+    [| right; intros T k H; destruct (inva_case H) as ((_ & _ & _ & _ & _ & X & _) & _); contradiction].
+  pose proof (wft_sum _ _ _ _ _ _ _ Hc Hl Hl' HA HB) as HS.
+  assert (HΓS : [ G ; Γ ,, tySum l l' A B @ lmax l l' ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HS) | exact (conj Hl Hl')]).
+  destruct (ihT M ltac:(szl) G i _ l'' HΓS) as [HM | N];
+    [| right; intros T k H; destruct (inva_case H) as ((_ & _ & _ & _ & _ & _ & X & _) & _); contradiction].
+  pose proof (lift_to_typeof_ty HM) as HM0.
+  assert (HΓA : [ G ; Γ ,, A @ l ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HA) | exact Hl]).
+  assert (HΓB : [ G ; Γ ,, B @ l' ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HB) | exact Hl']).
+  assert (Hf1 : [ G ; Γ ,, A @ l ⊢[ i ] tmInl l l' A⟨↑⟩ B⟨↑⟩ (var 0) : (tySum l l' A B)⟨↑⟩ @ lmax l l' ])
+    by (apply wf_inl; [exact Hc | exact Hl | exact Hl' | apply wk1_ty_g; assumption | apply wk1_ty_g; assumption
+                      | apply var0_wf_g; assumption]).
+  assert (Hf2 : [ G ; Γ ,, B @ l' ⊢[ i ] tmInr l l' A⟨↑⟩ B⟨↑⟩ (var 0) : (tySum l l' A B)⟨↑⟩ @ lmax l l' ])
+    by (apply wf_inr; [exact Hc | exact Hl | exact Hl' | apply wk1_ty_g; assumption | apply wk1_ty_g; assumption
+                      | apply var0_wf_g; assumption]).
+  pose proof (lift_to_typeof_tm Hf1) as Hf1'. pose proof (lift_to_typeof_tm Hf2) as Hf2'.
+  pose proof (eqty_wf_l Hty (case_branch_eq Hty HΓA HM0 (eqty_refl _ _ _ _ _ HM0) HM0 Hf1' Hf1'
+                                (eqtm_refl _ _ _ _ _ _ Hf1'))) as Hbr1.
+  pose proof (eqty_wf_l Hty (case_branch_eq Hty HΓB HM0 (eqty_refl _ _ _ _ _ HM0) HM0 Hf2' Hf2'
+                                (eqtm_refl _ _ _ _ _ _ Hf2'))) as Hbr2.
+  destruct (ihC c1 ltac:(szl) G i _ _ _ Hbr1) as [Hc1 | N];
+    [| right; intros T k H; destruct (inva_case H) as ((_ & _ & _ & _ & _ & _ & _ & X & _) & _); contradiction].
+  destruct (ihC c2 ltac:(szl) G i _ _ _ Hbr2) as [Hc2 | N];
+    [| right; intros T k H; destruct (inva_case H) as ((_ & _ & _ & _ & _ & _ & _ & _ & X & _) & _); contradiction].
+  destruct (ihC t ltac:(szl) G i Γ _ _ (lift_to_typeof_ty HS)) as [Ht | N];
+    [| right; intros T k H; destruct (inva_case H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_case _ _ _ _ _ _ _ _ _ _ _ _ Hc Hl Hl' Hl'' HA HB HM Hc1 Hc2 Ht).
+Qed.
+
 (** ** The step *)
 
 Lemma sy_step t : sz_tm t <= n -> synth t -> SYD t.
@@ -643,7 +722,7 @@ Proof.
           | apply sy_codesig | apply sy_pair
           | apply (sy_proj true) | apply (sy_proj false) | apply sy_code_unit | apply sy_triv
           | apply sy_srefl | apply sy_elimSEmpty | apply sy_refl | apply sy_J | apply sy_code_id | apply sy_elimEmpty
-          | apply sy_code_seq | apply sy_code_sempty ]; assumption.
+          | apply sy_code_seq | apply sy_code_sempty | apply sy_inl | apply sy_inr | apply sy_case ]; assumption.
 Qed.
 
 End Step.

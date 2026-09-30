@@ -392,6 +392,12 @@ Lemma gs_capp t Δ : (capp t Δ)⦃σ⦄ = capp t⦃σ⦄ Δ⦃σ⦄. Proof. ref
 Lemma gs_tlam Δ l l' T t : (tlam Δ l l' T t)⦃σ⦄ = tlam Δ⦃σ⦄ l l' T⦃gup σ⦄ t⦃gup σ⦄. Proof. reflexivity. Qed.
 Lemma gs_tapp t T : (tapp t T)⦃σ⦄ = tapp t⦃σ⦄ T⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_tySig l l' A B : (tySig l l' A B)⦃σ⦄ = tySig l l' A⦃σ⦄ B⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tySum l l' A B : (tySum l l' A B)⦃σ⦄ = tySum l l' A⦃σ⦄ B⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_inl l l' A B a : (tmInl l l' A B a)⦃σ⦄ = tmInl l l' A⦃σ⦄ B⦃σ⦄ a⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_inr l l' A B a : (tmInr l l' A B a)⦃σ⦄ = tmInr l l' A⦃σ⦄ B⦃σ⦄ a⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_case l l' l'' A B M c1 c2 t :
+  (tmCase l l' l'' A B M c1 c2 t)⦃σ⦄ = tmCase l l' l'' A⦃σ⦄ B⦃σ⦄ M⦃σ⦄ c1⦃σ⦄ c2⦃σ⦄ t⦃σ⦄.
+Proof. reflexivity. Qed.
 Lemma gs_tmSig l l' s t : (tmSig l l' s t)⦃σ⦄ = tmSig l l' s⦃σ⦄ t⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_pair l l' A B a b : (tmPair l l' A B a b)⦃σ⦄ = tmPair l l' A⦃σ⦄ B⦃σ⦄ a⦃σ⦄ b⦃σ⦄.
 Proof. reflexivity. Qed.
@@ -456,6 +462,10 @@ Ltac push_gsubst_at h k := lazymatch h with
   | @tlam => k gs_tlam
   | @tapp => k gs_tapp
   | @tySig => k gs_tySig
+  | @tySum => k gs_tySum
+  | @tmInl => k gs_inl
+  | @tmInr => k gs_inr
+  | @tmCase => k gs_case
   | @tmSig => k gs_tmSig
   | @tmPair => k gs_pair
   | @tmFst => k gs_fst
@@ -509,7 +519,8 @@ Lemma gs_eqtm_regty G i Δ x y T T' l :
   [ G ; Δ ⊢[ i ] x ≅ y : T' @ l ] -> T' = T -> [ G ; Δ ⊢[ i ] x ≅ y : T @ l ].
 Proof. now intros ? ->. Qed.
 
-Ltac gs_eq := push_gsubst; gs_rewrite; push_gsubst; first [reflexivity | f_equal; reflexivity].
+(* twice: [case]'s branch types (M12b) shift summands inside an injection *)
+Ltac gs_eq := push_gsubst; gs_rewrite; push_gsubst; gs_rewrite; push_gsubst; first [reflexivity | f_equal; reflexivity].
 
 #[export] Hint Resolve in_ctx_gsubst gsw_glob : gsub.
 #[export] Hint Resolve wfc_nil wfc_var wfc_ext wfg_ty wfg_tm lequiv_wf_l lequiv_wf_r : gsub.
@@ -743,6 +754,11 @@ Ltac gs_J :=
 
 Ltac gs_manual2 :=
   match goal with
+  (* [case] (M12b): its branches' types, through the induction hypotheses *)
+  | |- wf_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ _) _ _ => eapply wf_case; gs_premise
+  | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ (tmInl _ _ _ _ _)) _ _ _ => eapply eqtm_case_inl; gs_premise
+  | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ (tmInr _ _ _ _ _)) _ _ _ => eapply eqtm_case_inr; gs_premise
+  | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_case; gs_premise
   | |- wf_ty _ _ _ (tyCPi _ _) _ => eapply wft_cpi; try gs_body; gs_premise
   | |- wf_ty _ _ _ (tyTPi _ _ _ _) _ => eapply wft_tpi; try gs_body; gs_premise
   | |- eq_ty _ _ _ (tyCPi _ _) _ _ => eapply eqty_cpi; try gs_body; gs_premise
