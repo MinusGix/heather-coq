@@ -100,6 +100,29 @@ Proof. intros (w & w' & Hw & Hw' & Hn & Hn'). exists w', w. auto. Qed.
 Lemma SEmptyRel_trans {G Γ l t1 t2 t3} : SEmptyRel G Γ l t1 t2 -> SEmptyRel G Γ l t2 t3 -> SEmptyRel G Γ l t1 t3.
 Proof. intros (w1 & _ & Hw1 & _ & Hn1 & _) (_ & w3 & _ & Hw3 & _ & Hn3). exists w1, w3. auto. Qed.
 
+(** ** The identity type (M11a) *)
+
+Lemma IdNf_releq {G Γ l A a b RA RA'} : releq RA RA' ->
+  forall w w', IdNf G Γ l A a b RA w w' -> IdNf G Γ l A a b RA' w w'.
+Proof.
+  intros HR w w' [k k' C C' c c' Hk Hk' HC HC' H1 H2 H3 H4 | ν ν' Hν].
+  - apply idnf_refl; auto; apply HR; assumption.
+  - now apply idnf_ne.
+Qed.
+
+Lemma IdRel_releq {G Γ l A a b RA RA'} : releq RA RA' ->
+  releq (IdRel G Γ l A a b RA) (IdRel G Γ l A a b RA').
+Proof.
+  intros HR t t'; split; intros (w & w' & Hw & Hw' & Heq & Hn); exists w, w';
+    refine (conj Hw (conj Hw' (conj Heq _))).
+  - exact (IdNf_releq HR _ _ Hn).
+  - exact (IdNf_releq (fun x y => iff_sym (HR x y)) _ _ Hn).
+Qed.
+
+Lemma IdRel_wf {G Γ l A a b RA t t'} : IdRel G Γ l A a b RA t t' ->
+  [ G ; Γ ⊢g t : tyId l A a b @ l ] /\ [ G ; Γ ⊢g t' : tyId l A a b @ l ].
+Proof. intros (w & w' & Hw & Hw' & _ & _). exact (conj (tmred_wf _ _ _ _ _ _ _ Hw) (tmred_wf _ _ _ _ _ _ _ Hw')). Qed.
+
 Lemma sempty_eqty {G Γ l l'} : [ G ; Γ ⊢g ] -> lequiv (gL G) l l' -> [ G ; Γ ⊢g tySEmpty l ≅ tySEmpty l' @ l ].
 Proof. intros HΓ Hl. apply eqty_sempty; [exact ge_compt | rewrite ge_typeof; exact HΓ | exact Hl]. Qed.
 
@@ -183,7 +206,8 @@ Proof.
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l l1 l2 A A' a a' b b' R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HR
-                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR].
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l l1 l2 A A' a a' b b' RA R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HRA Hra Hrb Hps Hpt HR].
   all: try solve [exact (ModRel_escape_ty HM)].
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
@@ -198,6 +222,7 @@ Proof.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_unit; [eapply tyred_ctx, HT | now apply lequiv_sym].
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_seq; auto using lequiv_sym.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sempty; [eapply tyred_ctx, HT | now apply lequiv_sym].
+  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_id; auto using lequiv_sym.
 Qed.
 
 (** ** Escape for terms *)
@@ -219,7 +244,8 @@ Proof.
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l l1 l2 A A' a a' b b' R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HR
-                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l l1 l2 A A' a a' b b' RA R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HRA Hra Hrb Hps Hpt HR];
     intros t t' Htt; first [exact (ModRel_escape_tm HM _ _ Htt) | apply HR in Htt].
   - (* Nat *)
     destruct Htt as [t t' w w' Hw Hw' Heq _].
@@ -312,6 +338,13 @@ Proof.
     + eapply conv_tm; [exact Ht | exact HTU | exact Hl].
     + eapply conv_tm; [exact Ht' | exact HTU | exact Hl].
     + eapply conv_geq_tm; [exact (geq_tm_sempty_irr Hw Ht Ht') | apply eqty_sym, HTU | exact Hl].
+  - (* Id: related weak-head normal forms *)
+    destruct Htt as (w & w' & Hw' & Hw'' & Heq & _).
+    assert (HTI : [ G ; Γ ⊢g T ≅ tyId l1 A a b @ l ]) by apply HT.
+    repeat split.
+    + eapply conv_tm; [apply Hw' | exact HTI | exact Hl].
+    + eapply conv_tm; [apply Hw'' | exact HTI | exact Hl].
+    + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTI | exact Hl].
 Qed.
 
 (** ** Local weakening at the instance's layer *)
@@ -559,6 +592,10 @@ Lemma ktm_srefl l A a : ktm ρ (srefl l A a) = srefl l (kty ρ A) (ktm ρ a).
 Proof. unfold ktm, kty; now rewrite gwa_srefl. Qed.
 Lemma ktm_elimSEmpty l l' M e : ktm ρ (elimSEmpty l l' M e) = elimSEmpty l l' (kty ρ M) (ktm ρ e).
 Proof. unfold ktm, kty; now rewrite gwa_elimSEmpty. Qed.
+Lemma kty_tyId l A a b : kty ρ (tyId l A a b) = tyId l (kty ρ A) (ktm ρ a) (ktm ρ b).
+Proof. unfold kty, ktm; now rewrite gwa_tyId. Qed.
+Lemma ktm_refl l A a : ktm ρ (tmRefl l A a) = tmRefl l (kty ρ A) (ktm ρ a).
+Proof. unfold ktm, kty; now rewrite gwa_refl. Qed.
 Lemma kty_tyPi l l' A B : kty ρ (tyPi l l' A B) = tyPi l l' (kty ρ A) (ktyl ρ B).
 Proof. unfold kty, ktyl; now rewrite gwa_tyPi. Qed.
 Lemma kty_tySig l l' A B : kty ρ (tySig l l' A B) = tySig l l' (kty ρ A) (ktyl ρ B).

@@ -165,6 +165,11 @@ Proof.
     refine (conj _ (conj _ _)); [constructor; auto .. |].
     apply eqtm_elimSEmpty; auto.
     apply eqtm_sempty_irr; eauto using lequiv_wf_l, eqtm_wf_l.
+  (* the identity type *)
+  - intros; apply eqty_id; auto.
+  - intros; apply eqtm_idrefl; auto.
+  - intros * Hl1 Hl2 HA HAA Haa HId HM HMM Hcc Huu (Hn & Hn' & Hν).
+    refine (conj _ (conj _ _)); [constructor; auto .. |]. apply eqtm_J; auto.
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].

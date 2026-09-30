@@ -42,6 +42,35 @@ Proof.
   rewrite !gwa_subst_ty, !gwa_lsingle. exact (VTy_single X (Ha _ _ Hγ)).
 Qed.
 
+(** The motive of [J] at an endpoint and a proof (M11a). *)
+Lemma VTy_Jmot {G Γ l1 l2 A a M M' u u' e e'} :
+  VTy G (Γ ,, A @ l1) (tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0)) (tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0)) l1 ->
+  VTy G (Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1) M M' l2 ->
+  VTm G Γ u u' A l1 -> VTm G Γ e e' (tyId l1 A a u) l1 ->
+  VTy G Γ M[lsingle2 u e] M'[lsingle2 u' e'] l2.
+Proof.
+  intros VI VM Vu Ve Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
+  rewrite !single2_subst_ty, !lift2_single2_ty by assumption.
+  pose proof (SubRel_cons Hd (Vu _ _ _ Hd)) as Hu.
+  apply VM, SubRel_cons; [exact Hu|].
+  pose proof (Ve _ _ _ Hd) as X. rewrite !subst_tyId in X.
+  pose proof (VI _ _ _ Hu) as XI. rewrite !Jmot_cons in XI |- *.
+  exact (LRtm_irrel_r X XI).
+Qed.
+
+Lemma VTyG_Jmot {G Γ l1 l2 A a M M' u u' e e'} :
+  VTyG G (Γ ,, A @ l1) (tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0)) (tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0)) l1 ->
+  VTyG G (Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1) M M' l2 ->
+  VTmG G Γ u u' A l1 -> VTmG G Γ e e' (tyId l1 A a u) l1 ->
+  VTyG G Γ M[lsingle2 u e] M'[lsingle2 u' e'] l2.
+Proof.
+  intros VI VM Vu Ve G' γ Hγ.
+  pose proof (VI _ _ Hγ) as XI. pose proof (VM _ _ Hγ) as XM. pose proof (Ve _ _ Hγ) as XE.
+  rewrite ?gwa_cext, ?gwa_tyId, ?gwa_ren_ty, ?gwa_ren, ?gwa_var in XI.
+  rewrite ?gwa_cext, ?gwa_cext, ?gwa_tyId, ?gwa_ren_ty, ?gwa_ren, ?gwa_var in XM. rewrite ?gwa_tyId in XE.
+  rewrite !gwa_subst_ty, !gwa_lsingle2. exact (VTy_Jmot XI XM (Vu _ _ Hγ) XE).
+Qed.
+
 Lemma VTm_single {G Γ A B b b' a a' l l'} :
   VTm G (Γ ,, A @ l) b b' B l' -> VTm G Γ a a' A l ->
   VTm G Γ b[lsingle a] b'[lsingle a'] B[lsingle a] l'.
@@ -213,6 +242,20 @@ Lemma VTyS_single {G Γ A B B' a a' l l'} :
 Proof.
   intros HB Ha G' σ σ' Hσ. pose proof (HB _ _ _ Hσ) as X. rewrite gs_cext in X.
   rewrite !gs_single_ty. exact (VTyG_single X (Ha _ _ _ Hσ)).
+Qed.
+
+Lemma VTyS_Jmot {G Γ l1 l2 A a M M' u u' e e'} :
+  VTyS G (Γ ,, A @ l1) (tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0)) (tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0)) l1 ->
+  VTyS G (Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1) M M' l2 ->
+  VTmS G Γ u u' A l1 -> VTmS G Γ e e' (tyId l1 A a u) l1 ->
+  VTyS G Γ M[lsingle2 u e] M'[lsingle2 u' e'] l2.
+Proof.
+  intros VI VM Vu Ve G' σ σ' Hσ.
+  pose proof (VI _ _ _ (GSubRel_refl_l _ _ Hσ)) as XI. pose proof (VM _ _ _ Hσ) as XM.
+  pose proof (Ve _ _ _ Hσ) as XE.
+  rewrite ?gs_cext, ?gs_tyId, ?gsubst_ren_ty', ?gs_ren, ?gs_var in XI.
+  rewrite ?gs_cext, ?gs_cext, ?gs_tyId, ?gsubst_ren_ty', ?gs_ren, ?gs_var in XM. rewrite ?gs_tyId in XE.
+  rewrite !gs_single2_ty. exact (VTyG_Jmot XI XM (Vu _ _ _ Hσ) XE).
 Qed.
 
 Lemma VTmS_single {G Γ A B b b' a a' l l'} :

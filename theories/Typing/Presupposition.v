@@ -428,6 +428,180 @@ Proof.
     apply eqty_sym, eqty_sempty; [exact compt_self | rewrite Hi; exact (ctx_of_wf_tm Hi He) | exact H13].
 Qed.
 
+(** The identity type (M11a), gated like Σ. *)
+Lemma pre_id_r {Γ l l' A A' a' b'} :
+  lequiv (gL G) l l' -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a' : A @ l ] -> [ G ; Γ ⊢[ i ] b' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] tyId l' A' a' b' @ l ].
+Proof.
+  intros Hl HAA HA' Ha Hb. eapply wft_lconv with (l' := l'); [|exact Hl].
+  apply wft_id; eauto using compt_self, lequiv_wf_r.
+  - eapply wft_lconv; [exact HA' | now apply lequiv_sym].
+  - eapply wf_lconv; [eapply conv_tm'; [exact Ha | apply eqty_sym, HAA] | now apply lequiv_sym].
+  - eapply wf_lconv; [eapply conv_tm'; [exact Hb | apply eqty_sym, HAA] | now apply lequiv_sym].
+Qed.
+
+Lemma pre_idrefl_r {Γ l l' A A' a a'} :
+  lequiv (gL G) l l' -> [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ i ] A' @ l ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] tmRefl l' A' a' : tyId l A a a @ l ].
+Proof.
+  intros Hl HA HAA HA' Haa Ha'. eapply conv_tm'.
+  - eapply wf_lconv; [|exact Hl]. apply wf_idrefl; eauto using compt_self, lequiv_wf_r.
+    + eapply wft_lconv; [exact HA' | now apply lequiv_sym].
+    + eapply wf_lconv; [eapply conv_tm'; [exact Ha' | apply eqty_sym, HAA] | now apply lequiv_sym].
+  - apply eqty_id; auto using compt_self.
+Qed.
+
+(** Two single substitutions at once, for [J]'s motive. *)
+Lemma lsub_wf_single2' {Γ A B t q l l'} :
+  [ G ; Γ ⊢[ i ] ] -> [ G ; Γ ⊢[ i ] t : A @ l ] -> [ G ; Γ ⊢[ i ] q : B[lsingle t] @ l' ] ->
+  [ G ; Γ ⊢[ i ] lsingle2 t q : Γ ,, A @ l ,, B @ l' ].
+Proof.
+  intros HΓ Ht Hq.
+  constructor; [rewrite Hi; exact HΓ | apply lk_dnf_lsingle2; eauto using wf_tm_dnf
+               | split; auto; intros n; cbn; f_equal; lia |].
+  intros n T l0 Hin.
+  inversion Hin as [Γ0 A0 l1|Γ0 A0 l1 T0 l2 m Hm]; subst; cbn.
+  - rewrite (ren_subst_ty _ _ _ (lsingle t)); [exact Hq|].
+    intros k; rewrite rlk_shift1; reflexivity.
+  - inversion Hm as [Γ1 A1 l3|Γ1 A1 l3 T1 l4 m' Hm']; subst; cbn.
+    + rewrite shift2_single2_ty by exact (wf_tm_nf_ty Ht). exact Ht.
+    + rewrite shift2_single2_ty by eauto using in_ctx_nf. rewrite Nat.add_0_r.
+      apply wf_var; [now rewrite Hi | exact Hm'].
+Qed.
+
+Lemma lsub_eq_single2 {Γ A B t t' q q' l l'} :
+  [ G ; Γ ⊢[ i ] t : A @ l ] -> [ G ; Γ ⊢[ i ] t' : A @ l ] -> [ G ; Γ ⊢[ i ] t ≅ t' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] q : B[lsingle t] @ l' ] -> [ G ; Γ ⊢[ i ] q' : B[lsingle t'] @ l' ] ->
+  [ G ; Γ ⊢[ i ] q ≅ q' : B[lsingle t] @ l' ] ->
+  [ G ; Γ ⊢[ i ] lsingle2 t q ≅ lsingle2 t' q' : Γ ,, A @ l ,, B @ l' ].
+Proof.
+  intros Ht Ht' Htt Hq Hq' Hqq. pose proof (ctx_of_wf_tm Hi Ht) as HΓ.
+  refine (conj (lsub_wf_single2' HΓ Ht Hq) (conj (lsub_wf_single2' HΓ Ht' Hq') _)).
+  intros n T l0 Hin.
+  inversion Hin as [Γ0 A0 l1|Γ0 A0 l1 T0 l2 m Hm]; subst; cbn.
+  - rewrite (ren_subst_ty _ _ _ (lsingle t)); [exact Hqq|].
+    intros k; rewrite rlk_shift1; reflexivity.
+  - inversion Hm as [Γ1 A1 l3|Γ1 A1 l3 T1 l4 m' Hm']; subst; cbn.
+    + rewrite shift2_single2_ty by exact (wf_tm_nf_ty Ht). exact Htt.
+    + rewrite shift2_single2_ty by eauto using in_ctx_nf. rewrite Nat.add_0_r.
+      apply eqtm_refl, wf_var; [now rewrite Hi | exact Hm'].
+Qed.
+
+(** [J]'s motive context entry, instantiated at the right endpoint. *)
+Lemma Jty_single l A a u : nfty A -> nftm a ->
+  (tyId l A⟨↑⟩ a⟨↑⟩ (var 0))[lsingle u] = tyId l A a u.
+Proof. intros HA Ha. rewrite subst_tyId, shift_single_ty, shift_single; auto. Qed.
+
+Lemma lsub_wf_J {Γ l A a u e} :
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] u : A @ l ] -> [ G ; Γ ⊢[ i ] e : tyId l A a u @ l ] ->
+  [ G ; Γ ⊢[ i ] lsingle2 u e : Γ ,, A @ l ,, tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ].
+Proof.
+  intros Ha Hu He. apply lsub_wf_single2'; [exact (ctx_of_wf_tm Hi Hu) | exact Hu |].
+  rewrite Jty_single by first [exact (wf_tm_nf_ty Ha) | exact (wf_tm_nf Ha)]. exact He.
+Qed.
+
+Lemma pre_J_ty {Γ l l' A a M u e} :
+  [ G ; Γ ,, A @ l ,, tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] u : A @ l ] -> [ G ; Γ ⊢[ i ] e : tyId l A a u @ l ] ->
+  [ G ; Γ ⊢[ i ] M[lsingle2 u e] @ l' ].
+Proof. intros HM Ha Hu He. eapply wf_ty_subst; [exact Hi | exact HM | exact (lsub_wf_J Ha Hu He)]. Qed.
+
+Lemma lsub_eq_J {Γ l A a u u' e e'} : lwf (gL G) l ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] ->
+  [ G ; Γ ⊢[ i ] u : A @ l ] -> [ G ; Γ ⊢[ i ] u' : A @ l ] -> [ G ; Γ ⊢[ i ] u ≅ u' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] e : tyId l A a u @ l ] -> [ G ; Γ ⊢[ i ] e' : tyId l A a u @ l ] ->
+  [ G ; Γ ⊢[ i ] e ≅ e' : tyId l A a u @ l ] ->
+  [ G ; Γ ⊢[ i ] lsingle2 u e ≅ lsingle2 u' e' : Γ ,, A @ l ,, tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ].
+Proof.
+  intros Hl HA Ha Hu Hu' Huu He He' Hee.
+  assert (Hn : nfty A /\ nftm a) by (split; [exact (wf_tm_nf_ty Ha) | exact (wf_tm_nf Ha)]).
+  apply lsub_eq_single2; auto; rewrite !Jty_single by tauto; auto.
+  eapply conv_tm'; [exact He'|].
+  apply eqty_id; [exact compt_self | now apply lequiv_refl | exact HA | now apply eqty_refl
+                 | now apply eqtm_refl | now apply eqtm_sym].
+Qed.
+
+Lemma pre_J_r {Γ l1 l2 l3 l4 A A' a a' M M' c' u u' e e'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  (* first: it fixes [A] and [a] for [eassumption] *)
+  [ G ; Γ ,, A @ l1 ⊢[ i ] tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ] ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l1 ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] -> [ G ; Γ ⊢[ i ] a' : A @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ i ] M ≅ M' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ i ] M' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] c' : M[lsingle2 a (tmRefl l1 A a)] @ l2 ] ->
+  [ G ; Γ ⊢[ i ] u : A @ l1 ] -> [ G ; Γ ⊢[ i ] u ≅ u' : A @ l1 ] -> [ G ; Γ ⊢[ i ] u' : A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] e : tyId l1 A a u @ l1 ] -> [ G ; Γ ⊢[ i ] e ≅ e' : tyId l1 A a u @ l1 ] ->
+  [ G ; Γ ⊢[ i ] e' : tyId l1 A a u @ l1 ] ->
+  [ G ; Γ ⊢[ i ] tmJ l3 l4 A' a' M' c' u' e' : M[lsingle2 u e] @ l2 ].
+Proof.
+  intros H13 H24 HId HA HAA HA' Ha Haa Ha' HMM HM' Hc' Hu Huu Hu' He Hee He'.
+  pose proof (ctx_of_wf_ty Hi HA) as HΓ.
+  assert (Hl1 : lwf (gL G) l1) by eauto using lequiv_wf_l.
+  assert (Hl3 : lwf (gL G) l3) by eauto using lequiv_wf_r.
+  assert (H31 : lequiv (gL G) l3 l1) by now apply lequiv_sym.
+  assert (HΓA : [ G ; Γ ,, A @ l1 ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (Ha'A' : [ G ; Γ ⊢[ i ] a' : A' @ l1 ]) by (eapply conv_tm'; [exact Ha' | apply eqty_sym, HAA]).
+  destruct (ctx_conv_ext (lsub_wf_id G i Hi Γ HΓ) HA HAA HA' H13) as [HΓA' Hid1].
+  (* [Id'] in the old context, and [Id ≅ Id'] there *)
+  assert (HAw : [ G ; Γ ,, A @ l1 ⊢[ i ] A⟨↑⟩ @ l1 ]) by (apply wk1_ty; auto).
+  assert (HAAw : [ G ; Γ ,, A @ l1 ⊢[ i ] A⟨↑⟩ ≅ A'⟨↑⟩ @ l1 ]) by (apply wk1_eqty; auto).
+  assert (Hv0 : [ G ; Γ ,, A @ l1 ⊢[ i ] var 0 : A⟨↑⟩ @ l1 ]) by (apply var0_wf; auto).
+  assert (HId' : [ G ; Γ ,, A @ l1 ⊢[ i ] tyId l3 A'⟨↑⟩ a'⟨↑⟩ (var 0) @ l1 ]).
+  { eapply wft_lconv with (l' := l3); [|exact H13].
+    apply wft_id; auto using compt_self.
+    - eapply wft_lconv; [apply wk1_ty; eauto | exact H31].
+    - eapply wf_lconv; [apply wk1_tm with (T := A'); eauto | exact H31].
+    - eapply wf_lconv; [eapply conv_tm'; [exact Hv0 | apply eqty_sym, HAAw] | exact H31]. }
+  assert (HIdId' : [ G ; Γ ,, A @ l1 ⊢[ i ] tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) ≅ tyId l3 A'⟨↑⟩ a'⟨↑⟩ (var 0) @ l1 ]).
+  { apply eqty_id; auto using compt_self.
+    - apply wk1_eqtm with (T := A); auto.
+    - apply eqtm_refl; exact Hv0. }
+  destruct (ctx_conv_ext Hid1 HId HIdId' HId' H13) as [HΓ2 Hid2].
+  (* the motive, in the new context *)
+  assert (HM'2 : [ G ; Γ ,, A' @ l3 ,, tyId l3 A'⟨↑⟩ a'⟨↑⟩ (var 0) @ l3 ⊢[ i ] M' @ l4 ]).
+  { pose proof (wf_ty_subst Hi HM' Hid2) as X. rewrite nf_id_ty in X by exact (wf_ty_nf HM').
+    eapply wft_lconv; [exact X | now apply lequiv_sym]. }
+  (* the [Id] premise, in the new context *)
+  assert (HId'' : [ G ; Γ ,, A' @ l3 ⊢[ i ] tyId l3 A'⟨↑⟩ a'⟨↑⟩ (var 0) @ l3 ]).
+  { assert (HA'3 : [ G ; Γ ⊢[ i ] A' @ l3 ]) by (eapply wft_lconv; [exact HA' | exact H31]).
+    apply wft_id; auto using compt_self.
+    - apply wk1_ty; auto.
+    - apply wk1_tm with (T := A'); auto. eapply wf_lconv; [exact Ha'A' | exact H31].
+    - apply var0_wf; auto. }
+  (* the two instances of the motive *)
+  assert (Hr : [ G ; Γ ⊢[ i ] tmRefl l1 A a : tyId l1 A a a @ l1 ])
+    by (apply wf_idrefl; auto using compt_self).
+  assert (Hr' : [ G ; Γ ⊢[ i ] tmRefl l3 A' a' : tyId l1 A a a @ l1 ])
+    by exact (pre_idrefl_r H13 HA HAA HA' Haa Ha').
+  assert (Hrr : [ G ; Γ ⊢[ i ] tmRefl l1 A a ≅ tmRefl l3 A' a' : tyId l1 A a a @ l1 ])
+    by (apply eqtm_idrefl; auto using compt_self).
+  assert (Hs : [ G ; Γ ⊢[ i ] lsingle2 a (tmRefl l1 A a) ≅ lsingle2 a' (tmRefl l3 A' a')
+                 : Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ]).
+  { apply lsub_eq_J; auto. }
+  assert (Hs2 : [ G ; Γ ⊢[ i ] lsingle2 u e ≅ lsingle2 u' e'
+                 : Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ]).
+  { apply lsub_eq_J; auto. }
+  assert (HMs : [ G ; Γ ⊢[ i ] M[lsingle2 a (tmRefl l1 A a)] ≅ M'[lsingle2 a' (tmRefl l3 A' a')] @ l2 ]).
+  { eapply eqty_trans; [exact (eqty_subst Hi HMM (lsub_eq_l Hs)) | exact (wf_ty_func HM' Hs)]. }
+  assert (HMs2 : [ G ; Γ ⊢[ i ] M[lsingle2 u e] ≅ M'[lsingle2 u' e'] @ l2 ]).
+  { eapply eqty_trans; [exact (eqty_subst Hi HMM (lsub_eq_l Hs2)) | exact (wf_ty_func HM' Hs2)]. }
+  (* [J] at the primed instance *)
+  eapply wf_lconv with (l' := l4); [|exact H24].
+  eapply conv_tm'; [|eapply eqty_lconv; [exact HMs2 | now apply lequiv_sym]].
+  apply wf_J; eauto using compt_self, lequiv_wf_r.
+  - eapply wft_lconv; [exact HA' | exact H31].
+  - eapply wf_lconv; [exact Ha'A' | exact H31].
+  - eapply wf_lconv with (l' := l2); [|now apply lequiv_sym].
+    eapply conv_tm'; [exact Hc' | apply eqty_sym, HMs].
+  - eapply wf_lconv; [eapply conv_tm'; [exact Hu' | apply eqty_sym, HAA] | exact H31].
+  - eapply wf_lconv; [|exact H31]. eapply conv_tm'; [exact He'|].
+    apply eqty_sym, eqty_id; auto using compt_self.
+Qed.
+
+
 Lemma pre_sig_r {Γ l1 l2 l3 l4 A A' B'} :
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
@@ -771,7 +945,7 @@ Proof. intros H1 H2 H3 H4 H5; exact (proj2 (ctx_conv_ext Hi H1 H2 H3 H4 H5)). Qe
 
 #[export] Hint Resolve wft_nat wft_pi wft_U wft_El wf_code_nat wf_code_U wf_code_pi wf_zero
   wf_succ wf_natrec wf_lam wf_app wfc_ext in_ctx_wf wf_ty_single wf_tm_single
-  wft_sig wf_code_sig wf_pair wf_fst wf_snd wft_seq wf_srefl wf_elimSEmpty
+  wft_sig wf_code_sig wf_pair wf_fst wf_snd wft_seq wf_srefl wf_elimSEmpty wft_id wf_idrefl wf_J
   ctx_of_wf_ty ctx_of_wf_tm ctx_of_eqty ctx_of_eqtm lequiv_wf_l lequiv_wf_r compt_notV : presup.
 #[export] Hint Extern 1 (lwf _ _) =>
   solve [cbn; intuition eauto using lequiv_wf_l, lequiv_wf_r] : presup.
@@ -895,7 +1069,13 @@ Proof.
              | solve [eapply pre_seq_r; eassumption]
              | solve [eapply pre_sempty_r; eauto using lequiv_refl, lequiv_wf_l]
              | solve [eapply pre_srefl_r; eassumption]
-             | solve [eapply pre_elimSEmpty_r; eassumption] ].
+             | solve [eapply pre_elimSEmpty_r; eassumption]
+             (* the identity type (M11a) *)
+             | solve [eapply pre_id_r; eassumption]
+             | solve [eapply pre_idrefl_r; eassumption]
+             | solve [eapply pre_J_ty; eassumption]
+             | solve [eapply pre_J_r; eassumption]
+             | solve [eapply wf_J; eauto 3 with presup] ].
 Qed.
 
 Section Named.

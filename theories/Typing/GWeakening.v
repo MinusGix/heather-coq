@@ -62,6 +62,8 @@ Lemma gren_single (b a : tm) ξ : b[lsingle a]⟪ξ⟫ = b⟪ξ⟫[lsingle a⟪�
 Proof. rewrite gren_subst; reflexivity. Qed.
 Lemma gren_single2 (z t q : tm) ξ : z[lsingle2 t q]⟪ξ⟫ = z⟪ξ⟫[lsingle2 t⟪ξ⟫ q⟪ξ⟫].
 Proof. rewrite gren_subst; reflexivity. Qed.
+Lemma gren_single2_ty (M : ty) t q ξ : M[lsingle2 t q]⟪ξ⟫ = M⟪ξ⟫[lsingle2 t⟪ξ⟫ q⟪ξ⟫].
+Proof. rewrite gren_subst_ty; reflexivity. Qed.
 Lemma gren_lsucc_ty (M : ty) ξ : M[lsucc]⟪ξ⟫ = M⟪ξ⟫[lsucc].
 Proof. rewrite gren_subst_ty; reflexivity. Qed.
 
@@ -310,6 +312,11 @@ Lemma gren_app t l l' A B s : (app t l l' A B s)⟪ξ⟫ = app t⟪ξ⟫ l l' A�
 Proof. reflexivity. Qed.
 Lemma gren_gvar u d : (gvar u d)⟪ξ⟫ = gvar (ξ u) d⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_gdef u b d : (gdef u b d)⟪ξ⟫ = gdef (ξ u) b⟪ξ⟫ d⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tyId l A a b : (tyId l A a b)⟪ξ⟫ = tyId l A⟪ξ⟫ a⟪ξ⟫ b⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_refl l A a : (tmRefl l A a)⟪ξ⟫ = tmRefl l A⟪ξ⟫ a⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_J l l' A a M c u e :
+  (tmJ l l' A a M c u e)⟪ξ⟫ = tmJ l l' A⟪ξ⟫ a⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ u⟪ξ⟫ e⟪ξ⟫.
+Proof. reflexivity. Qed.
 Lemma gren_boxT T : (boxT T)⟪ξ⟫ = boxT T⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_boxt t : (boxt t)⟪ξ⟫ = boxt t⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_letboxT l' l Δ M t' t :
@@ -406,13 +413,16 @@ Ltac push_gren_at h k := lazymatch h with
   | @tmUnit => k gren_tmUnit
   | @tmTriv => k gren_triv
   | @gdef => k gren_gdef
+  | @tyId => k gren_tyId
+  | @tmRefl => k gren_refl
+  | @tmJ => k gren_J
   end.
 Ltac push_gren := repeat match goal with
   | |- context [@gren _ _ ?t _] => let h := head_of t in push_gren_at h ltac:(fun L => rewrite L)
   end.
 
 Ltac gren_rewrite :=
-  rewrite ?gren_single_ty, ?gren_single, ?gren_single2, ?gren_lsucc_ty, ?gren_ren_ty', ?gren_ren,
+  rewrite ?gren_single_ty, ?gren_single, ?gren_single2, ?gren_single2_ty, ?gren_lsucc_ty, ?gren_ren_ty', ?gren_ren,
           ?gren_letbox_ty, ?gcren_shift_up, ?gren_gsingle, ?gren_gsingle_ty, ?gren_shift_up_tm, ?mkrb_gren, ?motT_gren, ?mott_gren,
           ?wrapMT_gren, ?wrapMt_gren.
 
@@ -428,6 +438,9 @@ Lemma eq_tm_regty G i Δ x y T T' l :
   [ G ; Δ ⊢[ i ] x ≅ y : T' @ l ] -> T' = T -> [ G ; Δ ⊢[ i ] x ≅ y : T @ l ].
 Proof. now intros ? ->. Qed.
 Lemma wf_ty_regctx G i Δ Δ' T l : [ G ; Δ' ⊢[ i ] T @ l ] -> Δ' = Δ -> [ G ; Δ ⊢[ i ] T @ l ].
+Proof. now intros ? ->. Qed.
+Lemma eq_ty_regctx G i Δ Δ' T T' l :
+  [ G ; Δ' ⊢[ i ] T ≅ T' @ l ] -> Δ' = Δ -> [ G ; Δ ⊢[ i ] T ≅ T' @ l ].
 Proof. now intros ? ->. Qed.
 Lemma wf_ty_regty G i Δ A A' l : [ G ; Δ ⊢[ i ] A @ l ] -> A = A' -> [ G ; Δ ⊢[ i ] A' @ l ].
 Proof. now intros ? ->. Qed.
@@ -475,7 +488,13 @@ Ltac gw_premise :=
         | solve [eapply wf_ty_regty;
                  [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq]]
         | solve [eapply eq_ty_regty;
-                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq | gw_eq]] ].
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq | gw_eq]]
+        (* [J]'s motive (M11a): its context holds shifted types, which commute
+           with the weakening only by an equation *)
+        | solve [eapply wf_ty_regctx;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq]]
+        | solve [eapply eq_ty_regctx;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq]] ].
 
 (** The lookup-typed local substitution of [u^δ]/[U^δ]. *)
 Ltac gw_entries :=
@@ -607,6 +626,10 @@ Ltac gw_manual :=
            | gw_branches | gw_branches | gw_branches | gw_branches | ];
       gw_premise
   (* meta-functions (M5): bodies under the global binder, as letbox's *)
+  (* the identity type (M11a): [J]'s motive context commutes by an equation *)
+  | |- wf_tm _ _ _ (tmJ _ _ _ _ _ _ _ _) _ _ => eapply wf_J; gw_premise
+  | |- eq_tm _ _ _ (tmJ _ _ _ _ _ _ _ (tmRefl _ _ _)) _ _ _ => eapply eqtm_J_beta; gw_premise
+  | |- eq_tm _ _ _ (tmJ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_J; gw_premise
   | |- wf_ty _ _ _ (tyCPi _ _) _ => eapply wft_cpi; try gw_body; gw_premise
   | |- wf_ty _ _ _ (tyTPi _ _ _ _) _ => eapply wft_tpi; try gw_body; gw_premise
   | |- eq_ty _ _ _ (tyCPi _ _) _ _ => eapply eqty_cpi; try gw_body; gw_premise
@@ -863,6 +886,11 @@ Lemma gwa_tySEmpty l : (tySEmpty l)⟦γ⟧ = tySEmpty l. Proof. now destruct γ
 Lemma gwa_srefl l A a : (srefl l A a)⟦γ⟧ = srefl l A⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_elimSEmpty l l' M e : (elimSEmpty l l' M e)⟦γ⟧ = elimSEmpty l l' M⟦γ⟧ e⟦γ⟧.
 Proof. now destruct γ. Qed.
+Lemma gwa_tyId l A a b : (tyId l A a b)⟦γ⟧ = tyId l A⟦γ⟧ a⟦γ⟧ b⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_refl l A a : (tmRefl l A a)⟦γ⟧ = tmRefl l A⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_J l l' A a M c u e :
+  (tmJ l l' A a M c u e)⟦γ⟧ = tmJ l l' A⟦γ⟧ a⟦γ⟧ M⟦γ⟧ c⟦γ⟧ u⟦γ⟧ e⟦γ⟧.
+Proof. now destruct γ. Qed.
 End PushGwa.
 
 (** [push_gwa]: generated by [tools/gen_push.py] from its lemma list. *)
@@ -895,6 +923,9 @@ Ltac push_gwa_at h k := lazymatch h with
   | @tySEmpty => k gwa_tySEmpty
   | @srefl => k gwa_srefl
   | @elimSEmpty => k gwa_elimSEmpty
+  | @tyId => k gwa_tyId
+  | @tmRefl => k gwa_refl
+  | @tmJ => k gwa_J
   end.
 Ltac push_gwa := repeat match goal with
   | |- context [@gwa _ _ _ ?t] => let h := head_of t in push_gwa_at h ltac:(fun L => rewrite L)

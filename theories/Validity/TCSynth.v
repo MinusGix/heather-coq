@@ -524,6 +524,52 @@ Proof.
   left; eexists; eexists; exact (wf_elimSEmpty _ _ _ _ _ _ _ Hc Hl Hl' HM He).
 Qed.
 
+(** The identity type (M11a): the computing layers only. *)
+Lemma sy_refl l A a : sz_tm (tmRefl l A a) <= n -> SYD (tmRefl l A a).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_idrefl H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_idrefl H) as ((_ & X & _) & _); contradiction].
+  destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
+    [| right; intros T k H; destruct (inva_idrefl H) as ((_ & _ & X & _) & _); contradiction].
+  destruct (ihC a ltac:(szl) G i Γ A l (lift_to_typeof_ty HA)) as [Ha | N];
+    [| right; intros T k H; destruct (inva_idrefl H) as ((_ & _ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_idrefl _ _ _ _ _ _ Hc Hl HA Ha).
+Qed.
+
+(** [J]: its motive context's [Id] entry is built, not decided. *)
+Lemma sy_J l l' A a M c u e : sz_tm (tmJ l l' A a M c u e) <= n -> SYD (tmJ l l' A a M c u e).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_J H) as ((X & _) & _); contradiction].
+  pose proof (compt_typeof_self _ Hc) as Hty.
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_J H) as ((_ & X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros T k H; destruct (inva_J H) as ((_ & _ & X & _) & _); contradiction].
+  destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
+    [| right; intros T k H; destruct (inva_J H) as ((_ & _ & _ & X & _) & _); contradiction].
+  destruct (ihC a ltac:(szl) G i Γ A l (lift_to_typeof_ty HA)) as [Ha | N];
+    [| right; intros T k H; destruct (inva_J H) as ((_ & _ & _ & _ & X & _) & _); contradiction].
+  assert (HΓi : [ G ; Γ ⊢[ i ] ]) by (rewrite <- Hty; exact HΓ).
+  assert (HΓA : [ G ; Γ ,, A @ l ⊢[ i ] ]) by (apply wfc_ext; assumption).
+  assert (HI : [ G ; Γ ,, A @ l ⊢[ i ] tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ]).
+  { apply wft_id; [exact Hc | exact Hl | apply wk1_ty; auto | apply wk1_tm; auto | apply var0_wf; auto]. }
+  assert (HΓAI : [ G ; Γ ,, A @ l ,, tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ typeof i ] ])
+    by (rewrite Hty; apply wfc_ext; assumption).
+  destruct (ihT M ltac:(szl) G i _ l' HΓAI) as [HM | N];
+    [| right; intros T k H; destruct (inva_J H) as ((_ & _ & _ & _ & _ & _ & X & _) & _); contradiction].
+  assert (Hr : [ G ; Γ ⊢[ i ] tmRefl l A a : tyId l A a a @ l ]) by exact (wf_idrefl _ _ _ _ _ _ Hc Hl HA Ha).
+  assert (HMr : [ G ; Γ ⊢[ typeof i ] M[lsingle2 a (tmRefl l A a)] @ l' ])
+    by (rewrite Hty; exact (wf_ty_subst Hty HM (lsub_wf_J Hty Ha Ha Hr))).
+  destruct (ihC c ltac:(szl) G i Γ _ _ HMr) as [Hc' | N];
+    [| right; intros T k H; destruct (inva_J H) as ((_ & _ & _ & _ & _ & _ & _ & X & _) & _); contradiction].
+  destruct (ihC u ltac:(szl) G i Γ A l (lift_to_typeof_ty HA)) as [Hu | N];
+    [| right; intros T k H; destruct (inva_J H) as ((_ & _ & _ & _ & _ & _ & _ & _ & X & _) & _); contradiction].
+  assert (HId : [ G ; Γ ⊢[ typeof i ] tyId l A a u @ l ]) by (rewrite Hty; apply wft_id; assumption).
+  destruct (ihC e ltac:(szl) G i Γ _ _ HId) as [He | N];
+    [| right; intros T k H; destruct (inva_J H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_J _ _ _ _ _ _ _ _ _ _ _ Hc Hl Hl' HA Ha HI HM Hc' Hu He).
+Qed.
+
 (** ** The step *)
 
 Lemma sy_step t : sz_tm t <= n -> synth t -> SYD t.
@@ -537,7 +583,7 @@ Proof.
           | apply sy_uapp | apply sy_capp | apply sy_tapp
           | apply sy_codesig | apply sy_pair
           | apply (sy_proj true) | apply (sy_proj false) | apply sy_code_unit | apply sy_triv
-          | apply sy_srefl | apply sy_elimSEmpty ]; assumption.
+          | apply sy_srefl | apply sy_elimSEmpty | apply sy_refl | apply sy_J ]; assumption.
 Qed.
 
 End Step.

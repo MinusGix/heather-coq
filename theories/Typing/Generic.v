@@ -287,7 +287,27 @@ Class GenericEqLaws `{GenericEq} := {
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢g M @ l2 ] -> [ G ; Γ ⊢ M ≈ M' @ l2 ] ->
     [ G ; Γ ⊢ ν ~ ν : tySEmpty l1 @ l1 ] -> [ G ; Γ ⊢ ν' ~ ν' : tySEmpty l1 @ l1 ] ->
-    [ G ; Γ ⊢ elimSEmpty l1 l2 M ν ~ elimSEmpty l3 l4 M' ν' : M @ l2 ]
+    [ G ; Γ ⊢ elimSEmpty l1 l2 M ν ~ elimSEmpty l3 l4 M' ν' : M @ l2 ] ;
+
+  (** The identity type (M11_DESIGN.md, M11a): congruences of [Id] and
+      [refl] ([refl]'s compares the carrier and the point), and the neutral
+      [J], whose motive lives under the [Id] premise's type *)
+  geq_ty_id {G Γ l l' A A' a a' b b'} : lequiv (gL G) l l' ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
+    [ G ; Γ ⊢ a ≈ a' : A @ l ] -> [ G ; Γ ⊢ b ≈ b' : A @ l ] ->
+    [ G ; Γ ⊢ tyId l A a b ≈ tyId l' A' a' b' @ l ] ;
+  geq_tm_idrefl {G Γ l l' A A' a a'} : lequiv (gL G) l l' ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] -> [ G ; Γ ⊢ a ≈ a' : A @ l ] ->
+    [ G ; Γ ⊢ tmRefl l A a ≈ tmRefl l' A' a' : tyId l A a a @ l ] ;
+  gne_tm_J {G Γ l1 l2 l3 l4 A A' a a' M M' c c' u u' ν ν'} :
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ⊢ a ≈ a' : A @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢g tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢g M @ l2 ] ->
+    [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢ M ≈ M' @ l2 ] ->
+    [ G ; Γ ⊢ c ≈ c' : M[lsingle2 a (tmRefl l1 A a)] @ l2 ] ->
+    [ G ; Γ ⊢ u ≈ u' : A @ l1 ] -> [ G ; Γ ⊢ ν ~ ν' : tyId l1 A a u @ l1 ] ->
+    [ G ; Γ ⊢ tmJ l1 l2 A a M c u ν ~ tmJ l3 l4 A' a' M' c' u' ν' : M[lsingle2 u ν] @ l2 ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

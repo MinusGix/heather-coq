@@ -262,6 +262,31 @@ Definition SEmptyRel (G : gctx) (Γ : ctx) (l : lvl) : tm -> tm -> Prop :=
     [ G ; Γ ⊢g t ⤳* ν : tySEmpty l @ l ] /\ [ G ; Γ ⊢g t' ⤳* ν' : tySEmpty l @ l ] /\
     [ G ; Γ ⊢ ν ~ ν : tySEmpty l @ l ] /\ [ G ; Γ ⊢ ν' ~ ν' : tySEmpty l @ l ].
 
+(** ** The identity type (M11_DESIGN.md, M11a)
+
+    As logrel-coq's [IdRedTy]: the type relation keeps the carrier's
+    relation [RA] at [Γ] (not in every weakening: the weakening lemma
+    recurses into it), and the endpoints are related by it. Terms reduce to
+    related weak-head normal forms: two [refl]s whose carriers are the
+    [Id] type's and whose points are related to both endpoints, or two
+    related neutrals. No [refl] is related to a neutral: that would be K.
+    The annotation levels of the [refl]s are recorded, since [J]'s β reads
+    them before injectivity of [Id] is available. *)
+Inductive IdNf (G : gctx) (Γ : ctx) (l : lvl) (A : ty) (a b : tm) (RA : tm -> tm -> Prop)
+  : tm -> tm -> Prop :=
+| idnf_refl k k' C C' c c' :
+    lequiv (gL G) k l -> lequiv (gL G) k' l ->
+    [ G ; Γ ⊢ A ≈ C @ l ] -> [ G ; Γ ⊢ A ≈ C' @ l ] ->
+    RA a c -> RA a c' -> RA b c -> RA b c' ->
+    IdNf G Γ l A a b RA (tmRefl k C c) (tmRefl k' C' c')
+| idnf_ne ν ν' : [ G ; Γ ⊢ ν ~ ν' : tyId l A a b @ l ] -> IdNf G Γ l A a b RA ν ν'.
+
+Definition IdRel (G : gctx) (Γ : ctx) (l : lvl) (A : ty) (a b : tm) (RA : tm -> tm -> Prop)
+  : tm -> tm -> Prop :=
+  fun t t' => exists w w',
+    [ G ; Γ ⊢g t ⤳* w : tyId l A a b @ l ] /\ [ G ; Γ ⊢g t' ⤳* w' : tyId l A a b @ l ] /\
+    [ G ; Γ ⊢ w ≈ w' : tyId l A a b @ l ] /\ IdNf G Γ l A a b RA w w'.
+
 (** ** The type-level data of a binder former
 
     [Π] and [Σ] (and later formers of the same shape) share it: both sides
@@ -458,6 +483,17 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
     lequiv (gL G) l l1 -> lequiv (gL G) l2 l1 -> lwf (gL G) l1 ->
     [ G ; Γ ⊢g T ⤳* tySEmpty l1 @ l ] -> [ G ; Γ ⊢g T' ⤳* tySEmpty l2 @ l ] ->
     releq R (SEmptyRel G Γ l1) ->
+    LR n rec G Γ T T' l R
+| LRid G Γ T T' l l1 l2 A A' a a' b b' RA R :
+    lequiv (gL G) l l1 -> lequiv (gL G) l2 l1 -> lwf (gL G) l1 ->
+    [ G ; Γ ⊢g T ⤳* tyId l1 A a b @ l ] -> [ G ; Γ ⊢g T' ⤳* tyId l2 A' a' b' @ l ] ->
+    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] ->
+    [ G ; Γ ⊢ a ≈ a' : A @ l1 ] -> [ G ; Γ ⊢ b ≈ b' : A @ l1 ] ->
+    LR n rec G Γ A A' l1 RA -> RA a a' -> RA b b' ->
+    (* the carrier's term relation is a PER (logrel-coq's [tyPER]): symmetry
+       and transitivity at [Id] need it before they are proven *)
+    (forall x y, RA x y -> RA y x) -> (forall x y z, RA x y -> RA y z -> RA x z) ->
+    releq R (IdRel G Γ l1 A a b RA) ->
     LR n rec G Γ T T' l R.
 
 (** ** Stages *)

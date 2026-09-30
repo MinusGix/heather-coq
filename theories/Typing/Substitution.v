@@ -177,7 +177,7 @@ Proof. now rewrite llk_llift. Qed.
 
 Ltac sub_rw :=
   push_subst;
-  rewrite ?llk_llift0, ?single_subst_ty, ?single_subst, ?single2_subst, ?lsucc_subst_ty,
+  rewrite ?llk_llift0, ?single_subst_ty, ?single_subst, ?single2_subst, ?single2_subst_ty, ?lsucc_subst_ty,
           ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty by eauto with nf;
   push_subst.
 
@@ -188,7 +188,7 @@ Ltac sub_rw :=
 #[export] Hint Extern 1 (tm_leq _ _) =>
   apply (proj1 (proj2 leq_subst_all)); [apply lsub_leq_refl | assumption] : sub.
 #[export] Hint Extern 2 (lsub_wf _ _ _ (llift _) _) =>
-  eapply lsub_wf_lift'; [ .. | sub_rw; reflexivity ] : sub.
+  eapply lsub_wf_lift'; [ .. | first [reflexivity | sub_rw; reflexivity] ] : sub.
 #[export] Hint Extern 20 (wf_tm _ _ _ _ _ _) => eapply wf_tm_retype : sub.
 #[export] Hint Extern 20 (eq_tm _ _ _ _ _ _ _) => eapply eq_tm_retype : sub.
 #[export] Hint Extern 1 (lwf _ _) =>
@@ -285,7 +285,7 @@ Proof. apply lsub_wf_lle, lle_self_typeof. Qed.
 
 #[export] Hint Resolve lsub_wf_typeof : sub.
 #[export] Hint Extern 2 (lsub_wf _ _ _ (llift _) _) =>
-  eapply lsub_wf_lift_g'; [ .. | sub_rw; reflexivity ] : sub.
+  eapply lsub_wf_lift_g'; [ .. | first [reflexivity | sub_rw; reflexivity] ] : sub.
 #[export] Hint Extern 3 (wf_ty _ (typeof _) _ _ _) => eapply lift_ty; [ | apply lle_self_typeof ] : sub.
 #[export] Hint Extern 3 (wf_tm _ (typeof _) _ _ _ _) => eapply lift_tm; [ | apply lle_self_typeof ] : sub.
 #[export] Hint Extern 1 (wf_ctx _ (typeof (typeof _)) _) => rewrite typeof_idem : sub.
@@ -790,8 +790,31 @@ Ltac sub_rec_rw ::=
   (* and the meta-functions' instance equations (M5) *)
   try sub_mf_rw.
 
+(** [J]'s motive (M11a): under the induction hypothesis its context holds the
+    substituted [Id] premise's type, the rule's only up to an equation. *)
+Ltac sub_Jmot :=
+  first
+  [ first [eapply wf_ty_regctx | eapply eq_ty_regctx];
+    [ match goal with
+      | IH : forall Δ d, lsub_wf _ _ _ d (_ ,, _ @ _ ,, _ @ _) -> _ |- _ =>
+          eapply IH; solve [eauto 16 with sub]
+      end
+    | sub_rw; reflexivity ]
+  (* its [Id] premise: the substituted type, up to the same equation *)
+  | eapply wf_ty_regty;
+    [ match goal with
+      | Hd : lsub_wf _ _ _ ?d _, IH : forall Δ d, lsub_wf _ _ _ d (_ ,, _ @ _) -> _ |- _ =>
+          eapply (IH _ (llift d)); solve [eauto 16 with sub]
+      end
+    | sub_rw; reflexivity ] ].
+
 Ltac sub_manual2 :=
   match goal with
+  (* the identity type (M11a) *)
+  | |- wf_tm _ _ _ (tmJ _ _ _ _ _ _ _ _) _ _ => eapply wf_J; first [solve [sub_Jmot] | sub_premise]
+  | |- eq_tm _ _ _ (tmJ _ _ _ _ _ _ _ (tmRefl _ _ _)) _ _ _ =>
+      eapply eqtm_J_beta; first [solve [sub_Jmot] | sub_premise]
+  | |- eq_tm _ _ _ (tmJ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_J; first [solve [sub_Jmot] | sub_premise]
   | |- wf_ty _ _ _ (tyGvar _ _) _ =>
       eapply wft_gvar; [ .. | sub_entries]; sub_gvar_side
   | |- eq_ty _ _ _ (tyGvar _ _) _ _ =>

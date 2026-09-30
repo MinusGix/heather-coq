@@ -424,6 +424,45 @@ Proof.
   apply eqtm_elimSEmpty; auto using lequiv_refl, eqty_refl.
 Qed.
 
+(** [J] (M11a): the congruence at the scrutinee, and β at any [refl] of
+    the [Id] type (its point equals both endpoints, by injectivity). *)
+Lemma RS_J l l' A a M c u e e' : RS_tm e e' -> RS_tm (tmJ l l' A a M c u e) (tmJ l l' A a M c u e').
+Proof.
+  intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_J Hi Hx) as ((_ & W1 & W2 & HA & Ha & HI & HM & Hcc & Hu & He) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  apply eqtm_J; [exact Hc | apply lequiv_refl, W1 | apply lequiv_refl, W2 | exact HA | apply eqty_refl, HA
+                | apply eqtm_refl, Ha | exact HI | exact HM | apply eqty_refl, HM | apply eqtm_refl, Hcc
+                | apply eqtm_refl, Hu | exact (IH _ _ _ _ _ Hc He)].
+Qed.
+
+Lemma RS_J_beta l l' A a M c u k B b : RS_tm (tmJ l l' A a M c u (tmRefl k B b)) c.
+Proof.
+  intros G i Γ T m Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  assert (Hv : i <> lV) by (destruct Hc as [-> | ->]; discriminate).
+  destruct (inv_J Hi Hx) as ((_ & W1 & W2 & HA & Ha & HI & HM & Hcc & Hu & He) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  destruct (inv_idrefl Hi He) as (_ & _ & EId).
+  destruct (id_inj_c Hc EId) as (Ekl & EAB & Eab & Eub).
+  assert (Hau : [ G ; Γ ⊢[ i ] a ≅ u : A @ l ]) by (eapply eqtm_trans; [exact Eab | apply eqtm_sym, Eub]).
+  assert (HIdu : [ G ; Γ ⊢[ i ] tyId l A a a ≅ tyId l A a u @ l ]).
+  { apply eqty_id; [exact Hc | apply lequiv_refl, W1 | exact HA | apply eqty_refl, HA | apply eqtm_refl, Ha
+                   | exact Hau]. }
+  assert (Hrr : [ G ; Γ ⊢[ i ] tmRefl l A a ≅ tmRefl k B b : tyId l A a a @ l ])
+    by (apply eqtm_idrefl; [exact Hc | apply lequiv_sym, Ekl | exact HA | exact EAB | exact Eab]).
+  assert (Her : [ G ; Γ ⊢[ i ] tmRefl k B b ≅ tmRefl l A a : tyId l A a u @ l ]).
+  { apply eqtm_sym. eapply eqtm_conv; [exact Hrr | rewrite Hi; apply eqty_sym, HIdu]. }
+  assert (Hcong : [ G ; Γ ⊢[ i ] tmJ l l' A a M c u (tmRefl k B b) ≅ tmJ l l' A a M c a (tmRefl l A a)
+                     : M[lsingle2 u (tmRefl k B b)] @ l' ]).
+  { apply eqtm_J; [exact Hc | apply lequiv_refl, W1 | apply lequiv_refl, W2 | exact HA | apply eqty_refl, HA
+                  | apply eqtm_refl, Ha | exact HI | exact HM | apply eqty_refl, HM | apply eqtm_refl, Hcc
+                  | apply eqtm_sym, Hau | exact Her]. }
+  pose proof (eqtm_J_beta _ _ _ _ _ _ _ _ _ Hc W1 W2 HA Ha HI HM Hcc) as Hb.
+  pose proof (lsub_eq_J Hi Hv W1 HA Ha Hu Ha (eqtm_sym _ _ _ _ _ _ _ Hau) He (eqtm_wf_r Hi Her) Her) as Hs.
+  eapply eqtm_trans; [exact Hcong |].
+  eapply eqtm_conv; [exact Hb | rewrite Hi; exact (wf_ty_func Hi HM Hs)].
+Qed.
+
 (** ** Soundness of reduction *)
 
 Theorem red_sound_all (HR : RecRedTyped) :
@@ -445,7 +484,8 @@ Proof.
     | solve [apply RS_El; assumption]
     | solve [apply RS_fst_beta] | solve [apply RS_snd_beta]
     | solve [apply RS_fst; assumption] | solve [apply RS_snd; assumption] | solve [apply RS_El_sig]
-    | solve [apply RS_El_unit] | solve [apply RS_delta] | solve [apply RS_elimSEmpty; assumption] ].
+    | solve [apply RS_El_unit] | solve [apply RS_delta] | solve [apply RS_elimSEmpty; assumption]
+    | solve [apply RS_J_beta] | solve [apply RS_J; assumption] ].
 Qed.
 
 Section Consequences.

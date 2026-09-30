@@ -86,7 +86,8 @@ Proof.
                      [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
                  | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                  | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA IHRA Hra Hrb Hps Hpt HR];
     intros ν ν' Hν Hν'; first [exact (ModRel_neutral HM _ _ Hν Hν') | apply HR].
   - (* Nat *)
     pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HN.
@@ -282,6 +283,11 @@ Proof.
     exists ν, ν'. refine (conj H1 (conj H2 (conj _ _))).
     + exact (gne_tm_trans HP (gne_tm_sym HP)).
     + exact (gne_tm_trans (gne_tm_sym HP) HP).
+  - (* Id: typed neutrals are related, as neutrals *)
+    pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HP.
+    destruct (gne_tmred_refl HP) as [H1 H2].
+    exists ν, ν'. refine (conj H1 (conj H2 (conj (gne_tm_geq HP) _))).
+    now apply idnf_ne.
 Qed.
 
 End Neutral.

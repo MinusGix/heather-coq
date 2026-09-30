@@ -490,6 +490,7 @@ Fixpoint nfty (T : ty) : Prop :=
   match T with
   | tyErr | tyNat | tyU _ | tyUnit _ | tySEmpty _ => True
   | tySEq _ A a b => nfty A /\ nftm a /\ nftm b
+  | tyId _ A a b => nfty A /\ nftm a /\ nftm b
   | tyPi _ _ A B | tySig _ _ A B => nfty A /\ nfty B
   | tyEl _ t => nftm t
   | tyGvar _ d => nfl d
@@ -518,6 +519,8 @@ with nftm (t : tm) : Prop :=
   | tmPair _ _ A B a b => nfty A /\ nfty B /\ nftm a /\ nftm b
   | tmFst _ _ A B p | tmSnd _ _ A B p => nfty A /\ nfty B /\ nftm p
   | srefl _ A a | elimSEmpty _ _ A a => nfty A /\ nftm a
+  | tmRefl _ A a => nfty A /\ nftm a
+  | tmJ _ _ A a M c u e => nfty A /\ nftm a /\ nfty M /\ nftm c /\ nftm u /\ nftm e
   end
 with nfl (d : lsub) : Prop :=
   match d with lshift _ => True | lcons d t => nfl d /\ nftm t /\ ~ labsorb d t end.

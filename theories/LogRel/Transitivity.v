@@ -130,6 +130,51 @@ Proof.
   - eapply geq_ty_trans; eassumption.
 Qed.
 
+(** ** The identity type, composed (M11a) *)
+
+Lemma IdNf_whnf_l {G Γ l A a b RA w w'} : IdNf G Γ l A a b RA w w' -> whnf w.
+Proof. intros [| ν ν' Hν]; [apply whnf_refl | apply whnf_ne; exact (gne_tm_whne_l Hν)]. Qed.
+Lemma IdNf_whnf_r {G Γ l A a b RA w w'} : IdNf G Γ l A a b RA w w' -> whnf w'.
+Proof. intros [| ν ν' Hν]; [apply whnf_refl | apply whnf_ne; exact (gne_tm_whne_r Hν)]. Qed.
+
+(** The second step's carrier relation is the first one flipped (both have
+    the middle carrier on the left), so its facts come back by the PER. *)
+Lemma IdRel_trans {G Γ l1 l2 A1 A2 a1 a2 b1 b2 RA RA2 t1 t2 t3} :
+  lequiv (gL G) l2 l1 ->
+  [ G ; Γ ⊢ A1 ≈ A2 @ l1 ] -> [ G ; Γ ⊢ a1 ≈ a2 : A1 @ l1 ] -> [ G ; Γ ⊢ b1 ≈ b2 : A1 @ l1 ] ->
+  [ G ; Γ ⊢g A1 @ l1 ] -> RA a1 a2 -> RA b1 b2 ->
+  (forall x y, RA x y -> RA y x) -> (forall x y z, RA x y -> RA y z -> RA x z) ->
+  releq (flipR RA) RA2 ->
+  IdRel G Γ l1 A1 a1 b1 RA t1 t2 -> IdRel G Γ l2 A2 a2 b2 RA2 t2 t3 -> IdRel G Γ l1 A1 a1 b1 RA t1 t3.
+Proof.
+  intros Hl2 HA12 Ha12 Hb12 HA1 Hra Hrb Hs Ht Hfl (w1 & w2 & Hw1 & Hw2 & Heq12 & Hn12)
+    (u2 & w3 & Hu2 & Hw3 & Heq23 & Hn23).
+  assert (HV : [ G ; Γ ⊢g tyId l2 A2 a2 b2 ≅ tyId l1 A1 a1 b1 @ l2 ]).
+  { eapply eqty_lconv; [apply eqty_sym, geq_ty_sound, geq_ty_id; auto using lequiv_sym | exact Hl2]. }
+  assert (F : forall u v, [ G ; Γ ⊢g u ⤳* v : tyId l2 A2 a2 b2 @ l2 ] ->
+                [ G ; Γ ⊢g u ⤳* v : tyId l1 A1 a1 b1 @ l1 ]).
+  { intros u v H. eapply tmred_lconv; [| exact (lequiv_sym _ _ _ Hl2)].
+    eapply tmred_conv; [apply ge_typeof | exact H | exact HV]. }
+  assert (Ew2 : w2 = u2)
+    by (eapply tmred_whnf_det; [exact Hw2 | exact Hu2 | exact (IdNf_whnf_r Hn12) | exact (IdNf_whnf_l Hn23)]).
+  subst u2.
+  assert (Heq23' : [ G ; Γ ⊢ w2 ≈ w3 : tyId l1 A1 a1 b1 @ l1 ]).
+  { eapply geq_tm_lconv; [eapply geq_tm_conv; [exact Heq23 | exact HV] | exact (lequiv_sym _ _ _ Hl2)]. }
+  exists w1, w3. refine (conj Hw1 (conj (F _ _ Hw3) (conj (geq_tm_trans Heq12 Heq23') _))).
+  assert (C : forall C, [ G ; Γ ⊢ A2 ≈ C @ l2 ] -> [ G ; Γ ⊢ A1 ≈ C @ l1 ]).
+  { intros C HC. eapply geq_ty_trans; [exact HA12 | eapply geq_ty_lconv; [exact HC | exact (lequiv_sym _ _ _ Hl2)]]. }
+  assert (B : forall e1 e2 x, RA e1 e2 -> RA2 e2 x -> RA e1 x).
+  { intros e1 e2 x H1 H2. apply Hfl in H2. unfold flipR in H2. exact (Ht _ _ _ H1 (Hs _ _ H2)). }
+  destruct Hn12 as [k1 k2 C1 C2 c1 c2 Hk1 Hk2 HC1 HC2 H1 H2 H3 H4 | ν1 ν2 Hν12].
+  - inversion Hn23 as [k2' k3 C2' C3 c2' c3 Hk2' Hk3 HC2' HC3 G1 G2 G3 G4 | ν2' ν3 Hν23]; subst.
+    + apply idnf_refl; eauto using lequiv_trans.
+    + exfalso. pose proof (gne_tm_whne_l Hν23) as Hwh. inversion Hwh.
+  - inversion Hn23 as [k2' k3 C2' C3 c2' c3 Hk2' Hk3 HC2' HC3 G1 G2 G3 G4 | ν2' ν3 Hν23]; subst.
+    + exfalso. pose proof (gne_tm_whne_r Hν12) as Hwh. inversion Hwh.
+    + apply idnf_ne. eapply gne_tm_trans; [exact Hν12 |].
+      eapply gne_tm_lconv; [eapply gne_tm_conv; [exact Hν23 | exact HV] | exact (lequiv_sym _ _ _ Hl2)].
+Qed.
+
 (** ** Transitivity *)
 
 Lemma LR_trans_step n : (forall m, m < n -> Ptrans m) -> Ptrans n.
@@ -146,7 +191,9 @@ Proof.
                  | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R P1 domAd1 IHdom codAd1 IHcod HR
                  | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR
                  | G Γ T1 T2 l l1 l2 A1 A2 a1 a2 b1 b2 R Hl Hl2 Hn HT1 HT2 HA1 HA12 Ha12 Hb12 HR
-                 | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR];
+                 | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR
+                 | G Γ T1 T2 l l1 l2 A1 A2 a1 a2 b1 b2 RA R Hl Hl2 Hn HT1 HT2 HA1 HA12 Ha12 Hb12
+                     HRA IHRA Hra Hrb Hps Hpt HR];
     intros T3 R23 H2.
   - (* Nat *)
     destruct (LR_inv_nat H2 HT2) as (_ & HT3 & HR2).
@@ -500,6 +547,22 @@ Proof.
     split; [eapply (LRsempty n (LRbelow n) G Γ T1 T3 l l1 l3); eauto using lequiv_trans|].
     intros t1 t2 t3 H12 H23. apply HR. apply HR in H12. apply HR2 in H23.
     apply (SEmptyRel_lconv Hl2) in H23. exact (SEmptyRel_trans H12 H23).
+  - (* Id *)
+    destruct (LR_inv_id H2 HT2) as (l3 & A3 & a3 & b3 & RA2 & _ & Hl3 & _ & HT3 & HA2 & HA23 & Ha23 & Hb23
+                                    & HRA2 & Hra2 & Hrb2 & Hps2 & Hpt2 & HR2).
+    pose proof (lequiv_sym _ _ _ Hl2) as Hl2'.
+    pose proof (LR_lconv _ _ _ _ _ _ _ _ _ HRA2 Hl2') as HRA2'.
+    destruct (IHRA _ _ HRA2') as [HRA13 Hc].
+    assert (Hfl : releq (flipR RA) RA2)
+      by exact (LR_irrel _ _ _ _ _ _ _ _ _ _ (LR_sym _ _ _ _ _ _ _ HRA) HRA2').
+    assert (E12 : [ G ; Γ ⊢g A2 ≅ A1 @ l1 ]) by (apply eqty_sym, geq_ty_sound, HA12).
+    split.
+    + eapply (LRid n (LRbelow n) G Γ T1 T3 l l1 l3 A1 A3 a1 a3 b1 b3 RA); eauto using lequiv_trans.
+      * eapply geq_ty_trans; [exact HA12 | eapply geq_ty_lconv; [exact HA23 | exact Hl2']].
+      * eapply geq_tm_trans; [exact Ha12 | eapply geq_tm_conv; [eapply geq_tm_lconv; [exact Ha23 | exact Hl2'] | exact E12]].
+      * eapply geq_tm_trans; [exact Hb12 | eapply geq_tm_conv; [eapply geq_tm_lconv; [exact Hb23 | exact Hl2'] | exact E12]].
+    + intros t1 t2 t3 H12 H23. apply HR. apply HR in H12. apply HR2 in H23.
+      exact (IdRel_trans Hl2 HA12 Ha12 Hb12 HA1 Hra Hrb Hps Hpt Hfl H12 H23).
 Qed.
 
 Theorem LR_trans n : Ptrans n.
@@ -523,6 +586,22 @@ Corollary LR_tm_refl_l n G Γ T T' l R t t' :
   LR n (LRbelow n) G Γ T T' l R -> R t t' -> R t t.
 Proof.
   intros H Ht. exact (proj2 (LR_trans n _ _ _ _ _ _ H _ _ (LR_sym _ _ _ _ _ _ _ H)) t t' t Ht Ht).
+Qed.
+
+(** The term relation is a PER (M11a: the carriers of [Id] need it). *)
+Corollary LR_tm_per n G Γ T T' l R :
+  LR n (LRbelow n) G Γ T T' l R ->
+  (forall x y, R x y -> R y x) /\ (forall x y z, R x y -> R y z -> R x z).
+Proof.
+  intros H.
+  pose proof (LR_sym _ _ _ _ _ _ _ H) as Hs.
+  pose proof (proj2 (LR_trans n _ _ _ _ _ _ H _ _ Hs)) as C.
+  assert (Sy : forall x y, R x y -> R y x).
+  { intros x y Hxy.
+    assert (Hyy : R y y).
+    { exact (LR_tm_refl_l _ _ _ _ _ _ _ y x Hs Hxy). }
+    exact (C y y x Hyy Hxy). }
+  split; [exact Sy|]. intros x y z Hxy Hyz. exact (C x y z Hxy (Sy _ _ Hyz)).
 Qed.
 
 End Transitivity.

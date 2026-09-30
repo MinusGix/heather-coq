@@ -217,6 +217,7 @@ Ltac f_ty :=
   | solve [simple eapply VTyS_trans; [simple eapply VTyS_sym; f_side | eassumption]]
   | solve [simple eapply VTyS_lookup; f_side]
   | solve [simple eapply VTyS_single; f_side]
+  | solve [simple eapply VTyS_Jmot; f_side]
   | solve [simple eapply VTyS_single; [eassumption | f_rules]]
   | solve [simple eapply VTyS_single; [f_side | f_rules]]
   | solve [simple eapply VTyS_single;

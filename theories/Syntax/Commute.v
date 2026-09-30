@@ -165,6 +165,17 @@ Lemma subst_tySEmpty l : (tySEmpty l)[d] = tySEmpty l. Proof. reflexivity. Qed.
 Lemma subst_srefl l A a : (srefl l A a)[d] = srefl l A[d] a[d]. Proof. reflexivity. Qed.
 Lemma subst_elimSEmpty l l' M e : (elimSEmpty l l' M e)[d] = elimSEmpty l l' M[d] e[d].
 Proof. reflexivity. Qed.
+(** The identity type (M11a). *)
+Lemma ren_tyId l A a b : (tyId l A a b)⟨r⟩ = tyId l A⟨r⟩ a⟨r⟩ b⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_refl l A a : (tmRefl l A a)⟨r⟩ = tmRefl l A⟨r⟩ a⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_J l l' A a M c u e :
+  (tmJ l l' A a M c u e)⟨r⟩ = tmJ l l' A⟨r⟩ a⟨r⟩ M⟨rlift (rlift r)⟩ c⟨r⟩ u⟨r⟩ e⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma subst_tyId l A a b : (tyId l A a b)[d] = tyId l A[d] a[d] b[d]. Proof. reflexivity. Qed.
+Lemma subst_refl l A a : (tmRefl l A a)[d] = tmRefl l A[d] a[d]. Proof. reflexivity. Qed.
+Lemma subst_J l l' A a M c u e :
+  (tmJ l l' A a M c u e)[d] = tmJ l l' A[d] a[d] M[llift (llift d)] c[d] u[d] e[d].
+Proof. reflexivity. Qed.
 (** Defined globals (M9): the body stays in its own local scope. *)
 Lemma ren_gdef u b e : (gdef u b e)⟨r⟩ = gdef u b (lren e r). Proof. reflexivity. Qed.
 Lemma subst_gdef u b e : (gdef u b e)[d] = gdef u b (lcomp e d). Proof. reflexivity. Qed.
@@ -223,6 +234,9 @@ Ltac push_ren_at h k := lazymatch h with
   | @tySEmpty => k ren_tySEmpty
   | @srefl => k ren_srefl
   | @elimSEmpty => k ren_elimSEmpty
+  | @tyId => k ren_tyId
+  | @tmRefl => k ren_refl
+  | @tmJ => k ren_J
   end.
 Ltac push_ren := repeat match goal with
   | |- context [@ren _ _ ?t _] => let h := head_of t in push_ren_at h ltac:(fun L => rewrite L)
@@ -274,6 +288,9 @@ Ltac push_subst_at h k := lazymatch h with
   | @tySEmpty => k subst_tySEmpty
   | @srefl => k subst_srefl
   | @elimSEmpty => k subst_elimSEmpty
+  | @tyId => k subst_tyId
+  | @tmRefl => k subst_refl
+  | @tmJ => k subst_J
   end.
 Ltac push_subst := repeat match goal with
   | |- context [@subst _ _ ?t _] => let h := head_of t in push_subst_at h ltac:(fun L => rewrite L)

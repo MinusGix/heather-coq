@@ -298,7 +298,8 @@ Proof.
                      [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
                  | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                  | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA IHRA Hra Hrb Hps Hpt HR];
     try (cbn in Hj; discriminate).
   - exact (lift_posty compt_D HT whnf_tyNat posty_nat).
   - exact (lift_posty compt_D HT (whnf_tyU _) (posty_U _)).
@@ -330,6 +331,7 @@ Proof.
   - exact (lift_unit HT).
   - exact (lift_seq HT).
   - exact (lift_sempty HT).
+  - exact (lift_posty compt_D HT (whnf_tyId _ _ _ _) (posty_id _ _ _ _)).
 Qed.
 
 (** The identity substitution is related to itself. *)
@@ -363,7 +365,8 @@ Proof.
                      [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
                  | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                  | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR].
+                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA IHRA Hra Hrb Hps Hpt HR].
   - exact (lift_posty compt_M HT whnf_tyNat posty_nat).
   - exact (lift_posty compt_M HT (whnf_tyU _) (posty_U _)).
   - destruct HV as (HnV & _ & _). exact (lift_posty compt_M HT (whnf_ty_ne _ HnV) (posty_ne _ HnV)).
@@ -420,6 +423,7 @@ Proof.
   - exact (lift_unit HT).
   - exact (lift_seq HT).
   - exact (lift_sempty HT).
+  - exact (lift_posty compt_M HT (whnf_tyId _ _ _ _) (posty_id _ _ _ _)).
 Qed.
 
 (** At M: at a well-formed level by reducibility, at ω through [UΠ]. *)

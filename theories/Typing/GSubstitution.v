@@ -404,6 +404,11 @@ Lemma gs_tySEq l A a b : (tySEq l A a b)⦃σ⦄ = tySEq l A⦃σ⦄ a⦃σ⦄ b
 Lemma gs_tySEmpty l : (tySEmpty l)⦃σ⦄ = tySEmpty l. Proof. reflexivity. Qed.
 Lemma gs_srefl l A a : (srefl l A a)⦃σ⦄ = srefl l A⦃σ⦄ a⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_elimSEmpty l l' M e : (elimSEmpty l l' M e)⦃σ⦄ = elimSEmpty l l' M⦃σ⦄ e⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tyId l A a b : (tyId l A a b)⦃σ⦄ = tyId l A⦃σ⦄ a⦃σ⦄ b⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_refl l A a : (tmRefl l A a)⦃σ⦄ = tmRefl l A⦃σ⦄ a⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_J l l' A a M c u e :
+  (tmJ l l' A a M c u e)⦃σ⦄ = tmJ l l' A⦃σ⦄ a⦃σ⦄ M⦃σ⦄ c⦃σ⦄ u⦃σ⦄ e⦃σ⦄.
+Proof. reflexivity. Qed.
 Lemma gs_gdef u b d : (gdef u b d)⦃σ⦄ = pdef (σ u) b⦃σ⦄ d⦃σ⦄. Proof. reflexivity. Qed.
 End PushGS.
 
@@ -458,6 +463,9 @@ Ltac push_gsubst_at h k := lazymatch h with
   | @tySEmpty => k gs_tySEmpty
   | @srefl => k gs_srefl
   | @elimSEmpty => k gs_elimSEmpty
+  | @tyId => k gs_tyId
+  | @tmRefl => k gs_refl
+  | @tmJ => k gs_J
   end.
 Ltac push_gsubst := repeat match goal with
   | |- context [@gsubst _ _ ?t _] => let h := head_of t in push_gsubst_at h ltac:(fun L => rewrite L)
@@ -469,6 +477,8 @@ Lemma gs_single (b a : tm) σ : b[lsingle a]⦃σ⦄ = b⦃σ⦄[lsingle a⦃σ�
 Proof. rewrite gsubst_subst; reflexivity. Qed.
 Lemma gs_single2 (z t q : tm) σ : z[lsingle2 t q]⦃σ⦄ = z⦃σ⦄[lsingle2 t⦃σ⦄ q⦃σ⦄].
 Proof. rewrite gsubst_subst; reflexivity. Qed.
+Lemma gs_single2_ty (M : ty) t q σ : M[lsingle2 t q]⦃σ⦄ = M⦃σ⦄[lsingle2 t⦃σ⦄ q⦃σ⦄].
+Proof. rewrite gsubst_subst_ty; reflexivity. Qed.
 Lemma gs_lsucc_ty (M : ty) σ : M[lsucc]⦃σ⦄ = M⦃σ⦄[lsucc].
 Proof. rewrite gsubst_subst_ty; reflexivity. Qed.
 Lemma gs_ren (t : tm) r σ : t⟨r⟩⦃σ⦄ = t⦃σ⦄⟨r⟩.
@@ -480,7 +490,7 @@ Lemma gs_letbox_ty (M : ty) b σ : b⦃gup σ⦄ = b ->
 Proof. intros Hb. rewrite gs_single_ty, Hb, gshift_up_ty; reflexivity. Qed.
 
 Ltac gs_rewrite :=
-  rewrite ?gs_single_ty, ?gs_single, ?gs_single2, ?gs_lsucc_ty, ?gsubst_ren_ty', ?gs_ren.
+  rewrite ?gs_single_ty, ?gs_single, ?gs_single2, ?gs_single2_ty, ?gs_lsucc_ty, ?gsubst_ren_ty', ?gs_ren.
 
 Lemma gs_tm_regty G i Δ x T T' l :
   [ G ; Δ ⊢[ i ] x : T' @ l ] -> T' = T -> [ G ; Δ ⊢[ i ] x : T @ l ].
@@ -704,6 +714,23 @@ Ltac gs_mf_rw :=
       ?gshift_up_tm; cbn [gosubst]
   end.
 
+(** [J] (M11a): the motive context's [Id] type commutes with [σ] by an
+    equation. *)
+Ltac gs_Jprem :=
+  first [ solve [eapply wf_ty_regctx;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gsub] end | gs_eq]]
+        | solve [eapply eq_ty_regctx;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gsub] end | gs_eq]]
+        | solve [eapply wf_ty_regty;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gsub] end | gs_eq]]
+        | gs_premise ].
+Ltac gs_J :=
+  match goal with
+  | |- wf_tm _ _ _ (tmJ _ _ _ _ _ _ _ _) _ _ => eapply wf_J; gs_Jprem
+  | |- eq_tm _ _ _ (tmJ _ _ _ _ _ _ _ (tmRefl _ _ _)) _ _ _ => eapply eqtm_J_beta; gs_Jprem
+  | |- eq_tm _ _ _ (tmJ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_J; gs_Jprem
+  end.
+
 Ltac gs_manual2 :=
   match goal with
   | |- wf_ty _ _ _ (tyCPi _ _) _ => eapply wft_cpi; try gs_body; gs_premise
@@ -828,7 +855,7 @@ Proof.
   apply typing_mut; intros; try exact I; unfold gwk_to in *; push_gsubst; gs_rewrite; push_gsubst.
   (* manual cases first, when they close the goal: a failing [gs_step]
      backtracks through every rule *)
-  all: try (notrec; first [solve [gs_manual] | solve [gs_manual2] | solve [gs_upi]]).
+  all: try (notrec; first [solve [gs_J] | solve [gs_manual] | solve [gs_manual2] | solve [gs_upi]]).
   all: try (notrec; gs_step).
   all: try (notrec; gs_manual).
   all: try (notrec; gs_manual2).

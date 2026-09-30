@@ -13,6 +13,7 @@ Definition ty_head (T : ty) : nat :=
   | tyGvar _ _ | tyEl _ _ => 0 | tyNat => 1 | tyU _ => 2 | tyPi _ _ _ _ => 3
   | tyCTyp _ _ => 4 | tyCTrm _ _ _ => 5 | tyUPi _ _ _ => 6 | tyCPi _ _ => 7 | tyTPi _ _ _ _ => 8
   | tyErr => 9 | tySig _ _ _ _ => 10 | tyUnit _ => 11 | tySEq _ _ _ _ => 12 | tySEmpty _ => 13
+  | tyId _ _ _ _ => 14
   end.
 
 Lemma whne_ty_head V : whne_ty V -> ty_head V = 0.
@@ -92,6 +93,20 @@ Proof.
   injection Heq as <- <- <- <-. auto.
 Qed.
 
+(** The identity type (M11a): the components, and the level. *)
+Lemma id_inj {G Γ l l1 l2 A A' a a' b b'} :
+  [ G ; Γ ⊢g tyId l1 A a b ≅ tyId l2 A' a' b' @ l ] -> lwf (gL G) l ->
+  lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢ A ≈ A' @ l1 ] /\ [ G ; Γ ⊢ a ≈ a' : A @ l1 ] /\ [ G ; Γ ⊢ b ≈ b' : A @ l1 ].
+Proof.
+  intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
+  pose proof (eqty_wf_l ge_typeof H) as HP.
+  destruct (LR_inv_id HR (tyred_refl _ _ HP))
+    as (m2 & C' & c' & d' & RA & _ & H2 & _ & HT' & _ & HAA & Haa & Hbb & _).
+  pose proof (tyred_refl _ _ (eqty_wf_r ge_typeof H)) as HT'0.
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' HT'0 (whnf_tyId _ _ _ _) (whnf_tyId _ _ _ _)) as Heq.
+  injection Heq as <- <- <- <-. auto.
+Qed.
+
 Lemma sempty_inj {G Γ l l1 l2} :
   [ G ; Γ ⊢g tySEmpty l1 ≅ tySEmpty l2 @ l ] -> lwf (gL G) l -> lequiv (gL G) l2 l1.
 Proof.
@@ -148,7 +163,8 @@ Proof.
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR];
     try match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
     eexists; split; eauto using whnf_ty, gne_ty_whne_l.
 Qed.
@@ -181,7 +197,8 @@ Proof.
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR];
     intros t t' Ht; first [exact (ModRel_whnf_tm HM _ _ Ht) | apply HR in Ht].
   - destruct Ht as [t t' w w' Hw _ _ Hnf]. exists w; split; [exact (tmred_back Hw HT Hl)|].
     destruct Hnf; eauto using whnf, gne_tm_whne_l.
@@ -197,6 +214,8 @@ Proof.
   - destruct Ht as (w & w' & Hr & _ & Hwh & _). exists w; split; [exact (tmred_back Hr HT Hl) | exact Hwh].
   - destruct Ht as (ν & ν' & Hν & _ & Hne & _). exists ν; split; [exact (tmred_back Hν HT Hl) |].
     eauto using whnf, gne_tm_whne_l.
+  - destruct Ht as (w & w' & Hr & _ & _ & Hnf). exists w; split; [exact (tmred_back Hr HT Hl) |].
+    exact (IdNf_whnf_l Hnf).
 Qed.
 
 Theorem whnf_normalization_ty {G Γ T l} : [ G ; Γ ⊢g T @ l ] -> lwf (gL G) l ->

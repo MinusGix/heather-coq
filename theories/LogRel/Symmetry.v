@@ -267,6 +267,33 @@ Proof.
     apply ext_wf_g; [exact HA'3 | eauto using lequiv_wf_l].
 Qed.
 
+(** ** The identity type, flipped (M11a): the carrier's relation is a PER *)
+
+Lemma IdRel_flip {G Γ l1 l2 A A' a a' b b' RA t t'} :
+  lequiv (gL G) l2 l1 ->
+  [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ⊢ a ≈ a' : A @ l1 ] -> [ G ; Γ ⊢ b ≈ b' : A @ l1 ] ->
+  [ G ; Γ ⊢g A @ l1 ] -> RA a a' -> RA b b' ->
+  (forall x y, RA x y -> RA y x) -> (forall x y z, RA x y -> RA y z -> RA x z) ->
+  IdRel G Γ l1 A a b RA t' t -> IdRel G Γ l2 A' a' b' (flipR RA) t t'.
+Proof.
+  intros Hl2 HAA Haa Hbb HA Hra Hrb Hs Ht (w' & w & Hw' & Hw & Heq & Hn).
+  assert (HV : [ G ; Γ ⊢g tyId l1 A a b ≅ tyId l2 A' a' b' @ l1 ])
+    by (apply geq_ty_sound, geq_ty_id; auto using lequiv_sym).
+  assert (F : forall u v, [ G ; Γ ⊢g u ⤳* v : tyId l1 A a b @ l1 ] ->
+                [ G ; Γ ⊢g u ⤳* v : tyId l2 A' a' b' @ l2 ]).
+  { intros u v H. eapply tmred_lconv; [| exact Hl2].
+    eapply tmred_conv; [apply ge_typeof | exact H | exact HV]. }
+  exists w, w'. refine (conj (F _ _ Hw) (conj (F _ _ Hw') (conj _ _))).
+  - eapply geq_tm_lconv; [eapply geq_tm_conv; [apply geq_tm_sym, Heq | exact HV] | exact Hl2].
+  - assert (CA : forall C, [ G ; Γ ⊢ A ≈ C @ l1 ] -> [ G ; Γ ⊢ A' ≈ C @ l2 ]).
+    { intros C HC. eapply geq_ty_lconv; [eapply geq_ty_trans; [apply geq_ty_sym, HAA | exact HC] | exact Hl2]. }
+    assert (CR : forall e e' x, RA e e' -> RA e x -> flipR RA e' x).
+    { intros e e' x He Hx. unfold flipR. eapply Ht; [apply Hs, Hx | exact He]. }
+    destruct Hn as [k1 k2 C1 C2 c1 c2 Hk1 Hk2 HC1 HC2 H1 H2 H3 H4 | ν' ν Hν].
+    + apply idnf_refl; eauto using lequiv_trans, lequiv_sym.
+    + apply idnf_ne. eapply gne_tm_lconv; [eapply gne_tm_conv; [apply gne_tm_sym, Hν | exact HV] | exact Hl2].
+Qed.
+
 (** ** Symmetry *)
 
 Lemma LR_sym_step n : (forall m, m < n -> Psym m) -> Psym n.
@@ -283,7 +310,8 @@ Proof.
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd IHdom codAd IHcod HR
                  | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                  | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR].
+                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA IHRA Hra Hrb Hps Hpt HR].
   - eapply LRnat; eauto.
     intros t t'; unfold flipR; rewrite (HR t' t); apply NatRel_flip.
   - assert (Hm : lmeasure l2 = lmeasure l1) by (eapply lequiv_measure; eauto).
@@ -389,6 +417,36 @@ Proof.
     + exact HT.
     + intros t t'; unfold flipR; rewrite (HR t' t), (SEmptyRel_lconv (lequiv_sym _ _ _ Hl2) t' t).
       split; apply SEmptyRel_sym.
+  - (* Id *)
+    pose proof (lequiv_sym _ _ _ Hl2) as Hl2'.
+    pose proof (geq_ty_sound HIAA) as EA.
+    assert (HIA' : [ G ; Γ ⊢g IA' @ s1 ]) by exact (eqty_wf_r ge_typeof EA).
+    assert (HAA' : [ G ; Γ ⊢ IA' ≈ IA @ s2 ]) by (eapply geq_ty_lconv; [apply geq_ty_sym, HIAA | exact Hl2]).
+    assert (Haa' : [ G ; Γ ⊢ ia' ≈ ia : IA' @ s2 ])
+      by (eapply geq_tm_lconv; [eapply geq_tm_conv; [apply geq_tm_sym, Hiaa | exact EA] | exact Hl2]).
+    assert (Hbb' : [ G ; Γ ⊢ ib' ≈ ib : IA' @ s2 ])
+      by (eapply geq_tm_lconv; [eapply geq_tm_conv; [apply geq_tm_sym, Hibb | exact EA] | exact Hl2]).
+    assert (Hs' : forall x y, flipR RA x y -> flipR RA y x) by (unfold flipR; intros x y H; exact (Hps _ _ H)).
+    assert (Ht' : forall x y z, flipR RA x y -> flipR RA y z -> flipR RA x z)
+      by (unfold flipR; intros x y z H1 H2; exact (Hpt _ _ _ H2 H1)).
+    eapply (LRid n (LRbelow n) G Γ T' T l s2 s1 IA' IA ia' ia ib' ib (flipR RA)).
+    + exact (lequiv_trans _ _ _ _ Hl Hl2').
+    + exact Hl2'.
+    + exact (lequiv_wf_l _ _ _ Hl2).
+    + exact HT'.
+    + exact HT.
+    + exact (lconv_ty HIA' Hl2').
+    + exact HAA'.
+    + exact Haa'.
+    + exact Hbb'.
+    + exact (LR_lconv _ _ _ _ _ _ _ _ _ IHRA Hl2).
+    + exact Hra.
+    + exact Hrb.
+    + exact Hs'.
+    + exact Ht'.
+    + intros t t'; unfold flipR at 1; rewrite (HR t' t); split; intros X.
+      * exact (IdRel_flip Hl2 HIAA Hiaa Hibb HIA Hra Hrb Hps Hpt X).
+      * exact (IdRel_flip (RA := flipR RA) Hl2' HAA' Haa' Hbb' (lconv_ty HIA' Hl2') Hra Hrb Hs' Ht' X).
 Qed.
 
 Theorem LR_sym n : Psym n.

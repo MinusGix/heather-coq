@@ -443,6 +443,24 @@ Proof.
                    (conj Hn (conj Hn2 Eν)) (conj Hn' (conj Hn2' Eν'))) _).
     exists M. split; [| exact (eqty_refl _ _ _ _ _ HM)].
     exact (actmne_elimSEmpty _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24) DM Hn Hn').
+  (* the identity type (M11a) *)
+  - intros * Hl HA (EA & DA) (Ea & Da) (Eb & Db).
+    refine (conj (@geq_ty_id DE DEL _ _ _ _ _ _ _ _ _ _ Hl HA EA Ea Eb) _).
+    eapply act_red; [constructor | constructor | apply whnf_tyId | apply whnf_tyId |].
+    exact (actnf_id _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) DA Da Db).
+  - intros * Hl HA (EA & DA) (Ea & Da).
+    refine (conj (@geq_tm_idrefl DE DEL _ _ _ _ _ _ _ _ Hl HA EA Ea) _).
+    eapply actm_red; [constructor | apply whnf_tyId | constructor | constructor | apply whnf_refl | apply whnf_refl |].
+    apply actmnf_refl.
+  - intros * H13 H24 HA (EA & DA) (Ea & Da) HI HM (EM & DM) (Ec & Dc) (Eu & Du) ((Hn & Hn' & Eν) & T0 & Dν & ETν).
+    pose proof (@gne_tm_J DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H13 H24 HA EA Ea HI HM EM Ec Eu
+                  (conj Hn (conj Hn' Eν))) as X.
+    refine (conj X _). destruct X as (_ & _ & EX).
+    destruct (ne_nee Dν ETν) as (W0 & Xν & _).
+    exists M[lsingle2 u ν]. split.
+    + exact (actmne_J _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24)
+               DA Da DM Dc Du Xν).
+    + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
 Qed.
 
 End Alg.

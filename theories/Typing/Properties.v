@@ -150,7 +150,7 @@ Lemma gsingle_ren_ty (T : ty) o r : T⦃gsingle o⦄⟨r⟩ = T⟨r⟩⦃gsingle
 Proof. symmetry; apply (proj1 gsubst_ren_all). Qed.
 
 Ltac wk_rewrite :=
-  rewrite ?single_ren_ty, ?single_ren, ?lsucc_ren_ty, ?single2_ren, ?gsingle_ren_ty, <- ?gren_ren,
+  rewrite ?single_ren_ty, ?single_ren, ?lsucc_ren_ty, ?single2_ren, ?lsingle2_ren_ty, ?gsingle_ren_ty, <- ?gren_ren,
           ?shift_lift, ?shift_lift_ty, ?liftshift_lift_ty,
           ?mkrb_ren, ?motT_ren, ?mott_ren, ?wrapMT_ren, ?wrapMt_ren.
 
@@ -170,7 +170,7 @@ Lemma eq_tm_retype G i Δ x y T T' l :
 Proof. now intros ? ->. Qed.
 
 #[export] Hint Extern 2 (wkr (rlift _) _ _) =>
-  eapply wkr_up'; [ | push_ren; reflexivity ] : wk.
+  eapply wkr_up'; [ | first [reflexivity | push_ren; wk_rewrite; push_ren; reflexivity] ] : wk.
 #[export] Hint Extern 20 (wf_tm _ _ _ _ _ _) => eapply wf_tm_retype : wk.
 #[export] Hint Extern 20 (eq_tm _ _ _ _ _ _ _) => eapply eq_tm_retype : wk.
 #[export] Hint Extern 1 (lwf _ _) =>
@@ -197,6 +197,7 @@ Proof. induction 1; auto. Qed.
 Ltac wk_premises := fix_layer; eauto 6 with wk.
 
 Ltac wk_step := any_rule wk_premises.
+
 
 Lemma wf_ctx_nat G i Δ : i <> lV -> [ G ; Δ ⊢[ typeof i ] ] ->
   [ G ; Δ ,, tyNat @ lzero ⊢[ typeof i ] ].
@@ -226,7 +227,12 @@ Ltac wk_premise :=
         | solve [eapply wf_ty_regty;
                  [match goal with IH : _ |- _ => eapply IH; solve [eauto 12 with wk] end | wk_eq]]
         | solve [eapply eq_ty_regty;
-                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 12 with wk] end | wk_eq | wk_eq]] ].
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 12 with wk] end | wk_eq | wk_eq]]
+        (* [J]'s motive (M11a): its context's [Id] type commutes by an equation *)
+        | solve [eapply wf_ty_regctx;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 12 with wk] end | wk_eq]]
+        | solve [eapply eq_ty_regctx;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 12 with wk] end | wk_eq]] ].
 
 (** The lookup-typed local substitution of [u^δ]/[U^δ]: its entries are
     renamed, and its target context [Δ] is untouched. *)
@@ -369,8 +375,23 @@ Ltac wk_upi_body :=
       apply IH; [apply wkr_uren, Hr | apply uwk_ctx, HΔ]
   end.
 
+(** [J]'s motive (M11a): under the induction hypothesis its context holds the
+    weakened [Id] premise's type, which is the rule's only up to an equation. *)
+Ltac wk_Jmot :=
+  first [eapply wf_ty_regctx | eapply eq_ty_regctx];
+  [ match goal with
+    | IH : forall Δ r, wkr r Δ (_ ,, _ @ _ ,, _ @ _) -> _ -> _ |- _ =>
+        eapply IH; [ solve [eauto 12 with wk] | apply wfc_ext; solve [eauto 12 with wk] ]
+    end
+  | wk_eq ].
+
 Ltac wk_manual :=
   match goal with
+  (* the identity type (M11a) *)
+  | |- wf_tm _ _ _ (tmJ _ _ _ _ _ _ _ _) _ _ => eapply wf_J; first [solve [wk_Jmot] | wk_premise]
+  | |- eq_tm _ _ _ (tmJ _ _ _ _ _ _ _ (tmRefl _ _ _)) _ _ _ =>
+      eapply eqtm_J_beta; first [solve [wk_Jmot] | wk_premise]
+  | |- eq_tm _ _ _ (tmJ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_J; first [solve [wk_Jmot] | wk_premise]
   (* meta-functions (M5) *)
   | |- wf_ty _ _ _ (tyCPi _ _) _ => eapply wft_cpi; try wk_gbody; wk_premise
   | |- wf_ty _ _ _ (tyTPi _ _ _ _) _ => eapply wft_tpi; try wk_gbody; wk_premise

@@ -995,6 +995,7 @@ Ltac m_ty :=
   | solve [simple eapply VTyS_lookup; m_side]
   | solve [simple eapply VTyS_leq; m_side]
   | solve [simple eapply VTyS_single; m_side]
+  | solve [simple eapply VTyS_Jmot; m_side]
   | solve [simple eapply VTyS_single; [eassumption | m_rules]]
   | solve [simple eapply VTyS_single; [m_side | m_rules]]
   | solve [simple eapply VTyS_single;
@@ -1259,7 +1260,9 @@ Proof using ELM ELP EMl.
     lazymatch goal with |- (lwf _ _ -> _) /\ (_ = lomega -> _) => split; intros Hlev | _ => idtac end;
     w_spec; try solve [exfalso; w_absurd]; try intros ?L' ?φ ?Hφ;
     rec_judg; upi_judg; us_keep; us_spec; us_entries_sem; us_move; us_rewrite_all;
-    rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix.
+    rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix;
+    (* renamings exposed by [us_push] ([J]'s motive context, M11a) *)
+    repeat match goal with H : _ |- _ => progress rewrite ?usubst_ren_ty_mix, ?usubst_ren_mix in H end.
   (* the ω-layer goals and [uapp]'s; elsewhere only [w_dispatch]'s assumption
      case applies, and its lemmas fail slowly *)
   all: try solve [lazymatch goal with

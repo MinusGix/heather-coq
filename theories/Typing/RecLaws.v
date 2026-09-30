@@ -219,6 +219,9 @@ Lemma usubst_lsingle_ty M a φ : usubst_ty (subst_ty M (lsingle a)) φ = subst_t
 Proof. apply (proj1 usubst_subst_all). intros [|n]; reflexivity. Qed.
 Lemma usubst_lsucc_ty M φ : usubst_ty (subst_ty M lsucc) φ = subst_ty (usubst_ty M φ) lsucc.
 Proof. apply (proj1 usubst_subst_all). intros [|[|n]]; reflexivity. Qed.
+Lemma usubst_lsingle2_ty M t q φ :
+  usubst_ty (subst_ty M (lsingle2 t q)) φ = subst_ty (usubst_ty M φ) (lsingle2 (usubst_tm t φ) (usubst_tm q φ)).
+Proof. apply (proj1 usubst_subst_all). intros [|[|n]]; reflexivity. Qed.
 
 Ltac upeel_push :=
   repeat first [ rewrite <- peelL_usubst | rewrite <- peelG_usubst | rewrite <- peelU_usubst ];

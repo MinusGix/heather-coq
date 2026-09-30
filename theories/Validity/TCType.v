@@ -208,6 +208,23 @@ Proof.
   - right; intros H; exact (Q (proj2 (inv_ty_seq H))).
 Qed.
 
+(** The identity type (M11a): the computing layers only. *)
+Lemma dec_tyId l A a b : sz_ty (tyId l A a b) <= n -> TYD (tyId l A a b).
+Proof.
+  intros Hsz G i Γ k HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros H; destruct (inv_ty_id H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_id H) as ((_ & X & _) & _); contradiction].
+  destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
+    [| right; intros H; destruct (inv_ty_id H) as ((_ & _ & X & _) & _); contradiction].
+  destruct (ihC a ltac:(szl) G i Γ A l (lift_to_typeof_ty HA)) as [Ha | N];
+    [| right; intros H; destruct (inv_ty_id H) as ((_ & _ & _ & X & _) & _); contradiction].
+  destruct (ihC b ltac:(szl) G i Γ A l (lift_to_typeof_ty HA)) as [Hb | N];
+    [| right; intros H; destruct (inv_ty_id H) as ((_ & _ & _ & _ & X) & _); contradiction].
+  destruct (lvl_eq_dec (gL G) k l) as [Q | Q].
+  - left; exact (wft_lvl Q (wft_id _ _ _ _ _ _ _ Hc Hl HA Ha Hb)).
+  - right; intros H; exact (Q (proj2 (inv_ty_id H))).
+Qed.
+
 Lemma dec_tySEmpty l : TYD (tySEmpty l).
 Proof.
   intros G i Γ k HΓ.
@@ -224,7 +241,7 @@ Proof.
     first [ apply dec_tyErr | apply dec_tyNat | apply dec_tyU
           | apply dec_tyPi | apply dec_tyEl | apply dec_tyGvar | apply dec_tyCTyp | apply dec_tyCTrm
           | apply dec_tyUPi | apply dec_tyCPi | apply dec_tyTPi | apply dec_tySig | apply dec_tyUnit
-          | apply dec_tySEq | apply dec_tySEmpty ];
+          | apply dec_tySEq | apply dec_tySEmpty | apply dec_tyId ];
     assumption.
 Qed.
 

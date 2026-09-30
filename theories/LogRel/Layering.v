@@ -16,6 +16,8 @@ From DeLaM.LogRel Require Export Def.
 Fixpoint mltt_ty (T : ty) : Prop :=
   match T with
   | tyPi _ _ A B | tySig _ _ A B => mltt_ty A /\ mltt_ty B
+  (* the identity type's relation recurses into its carrier (M11a) *)
+  | tyId _ A _ _ => mltt_ty A
   | tyCTyp _ _ | tyCTrm _ _ _ | tyCPi _ _ | tyTPi _ _ _ _ => False
   | _ => True
   end.
@@ -29,13 +31,13 @@ Fixpoint mltt_ctx (Γ : ctx) : Prop :=
 Lemma mltt_ren (T : ty) r0 : mltt_ty T -> mltt_ty T⟨r0⟩.
 Proof.
   revert r0; induction T; intros r0 H; cbn in *; try tauto.
-  all: destruct H; split; [apply IHT1 | apply IHT2]; assumption.
+  all: first [destruct H; split; [apply IHT1 | apply IHT2]; assumption | apply IHT; assumption].
 Qed.
 
 Lemma mltt_subst (T : ty) e : mltt_ty T -> mltt_ty T[e].
 Proof.
   revert e; induction T; intros e H; cbn in *; try tauto.
-  all: destruct H; split; [apply IHT1 | apply IHT2]; assumption.
+  all: first [destruct H; split; [apply IHT1 | apply IHT2]; assumption | apply IHT; assumption].
 Qed.
 
 Lemma mltt_gren (T : ty) ξ : mltt_ty T -> mltt_ty T⟪ξ⟫.
@@ -112,7 +114,9 @@ Proof.
                      [Hl H3 H4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] Hdom IHdom Hcod IHcod HR
                  | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                  | G Γ T T' l l1 l2 A A' a a' b b' R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HR
-                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR ]; intros Hm Hm'.
+                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
+                 | G Γ T T' l l1 l2 A A' a a' b b' RA R Hl Hl2 Hw HT HT' HA HAA Haa Hbb
+                     HRA IHRA Hra Hrb Hps Hpt HR ]; intros Hm Hm'.
   - eapply LRnat; eassumption.
   - eapply LRU; try eassumption.
     intros t t'; rewrite (HR t t'); split; apply (URel_layer (n := n) Hn);
@@ -135,6 +139,9 @@ Proof.
   - eapply LRunit; eassumption.
   - eapply LRseq; eassumption.
   - eapply LRsempty; eassumption.
+  - pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT) Hm) as HmA.
+    pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT') Hm') as HmA'.
+    eapply LRid; try eassumption. apply IHRA; assumption.
 Qed.
 
 End Layering.

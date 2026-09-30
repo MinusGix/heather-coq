@@ -27,7 +27,8 @@ Inductive posty : ty -> Prop :=
 | posty_U l : posty (tyU l)
 | posty_ne V : whne_ty V -> posty V
 | posty_CTyp Δ l : posty (tyCTyp Δ l)
-| posty_CTrm Δ T l : posty (tyCTrm Δ T l).
+| posty_CTrm Δ T l : posty (tyCTrm Δ T l)
+| posty_id l A a b : posty (tyId l A a b).
 
 Inductive ac_ty : gctx -> ctx -> ty -> ty -> Prop :=
 | act_red G Γ T T' W W' : reds_ty T W -> reds_ty T' W' -> whnf_ty W -> whnf_ty W' ->
@@ -62,6 +63,10 @@ with ac_tynf : gctx -> ctx -> ty -> ty -> Prop :=
     ac_tm G Γ a a' A -> ac_tm G Γ b b' A ->
     ac_tynf G Γ (tySEq l A a b) (tySEq l' A' a' b')
 | actnf_sempty G Γ l l' : leqv l l' -> ac_tynf G Γ (tySEmpty l) (tySEmpty l')
+(* the identity type (M11a): endpoints compared at the left carrier *)
+| actnf_id G Γ l l' A A' a a' b b' : leqv l l' -> ac_ty G Γ A A' ->
+    ac_tm G Γ a a' A -> ac_tm G Γ b b' A ->
+    ac_tynf G Γ (tyId l A a b) (tyId l' A' a' b')
 
 with ac_tyne : gctx -> ctx -> ty -> ty -> Prop :=
 | actne_gvar G Γ U Δ i' l d d' : in_gctx (gΨ G) U (gdTy Δ i' l) -> ac_sub G Γ d d' Δ ->
@@ -121,6 +126,11 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
    [Unit] (neither is [posty]) *)
 | actmnf_seq_irr G Γ l A a b w w' : ac_tmnf G Γ w w' (tySEq l A a b)
 | actmnf_sempty_irr G Γ l w w' : ac_tmnf G Γ w w' (tySEmpty l)
+(* the identity type (M11a): two [refl]s at an [Id] type are equal (both
+   points are its endpoints, by the typings the instances bundle); a [refl]
+   and a neutral are not ([Id] is [posty]) *)
+| actmnf_refl G Γ l A a b k k' C C' c c' :
+    ac_tmnf G Γ (tmRefl k C c) (tmRefl k' C' c') (tyId l A a b)
 
 with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_var G Γ n T l : in_ctx Γ n T l -> ac_tmne G Γ (var n) (var n) T
@@ -206,6 +216,13 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_elimSEmpty G Γ l1 l2 l3 l4 M M' ν ν' : leqv l1 l3 -> leqv l2 l4 ->
     ac_ty G Γ M M' -> whne ν -> whne ν' ->
     ac_tmne G Γ (elimSEmpty l1 l2 M ν) (elimSEmpty l3 l4 M' ν') M
+(* [J] (M11a): every component compared, the scrutinees as neutrals *)
+| actmne_J G Γ l1 l2 l3 l4 A A' a a' M M' c c' u u' ν ν' W : leqv l1 l3 -> leqv l2 l4 ->
+    ac_ty G Γ A A' -> ac_tm G Γ a a' A ->
+    ac_ty G (Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1) M M' ->
+    ac_tm G Γ c c' M[lsingle2 a (tmRefl l1 A a)] -> ac_tm G Γ u u' A ->
+    ac_tmnee G Γ ν ν' W ->
+    ac_tmne G Γ (tmJ l1 l2 A a M c u ν) (tmJ l3 l4 A' a' M' c' u' ν') M[lsingle2 u ν]
 
 with ac_tmnee : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmnee_red G Γ ν ν' T W : ac_tmne G Γ ν ν' T -> reds_ty T W -> whnf_ty W ->

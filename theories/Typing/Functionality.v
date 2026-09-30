@@ -657,6 +657,50 @@ Ltac fun_rec :=
       eapply eqtm_elimt; first [fun_rec_prem | fung_premise]
   end.
 
+(** [J] (M11a): its motive lives two binders deep, under the [Id] premise's
+    type; the lifted substitutions are built first, as [natrec]'s one. *)
+Ltac fun_J :=
+  match goal with
+  | Hd : lsub_eq ?G ?i ?Δ ?d ?d' ?Γ, Hw : lsub_wf ?G ?i ?Δ ?d ?Γ, Hl : lwf _ ?l,
+    wA : wf_ty ?G ?i ?Γ ?A ?l,
+    wId : wf_ty ?G ?i (?Γ ,, ?A @ ?l) (tyId ?l ?A0 ?a0 (var 0)) ?l,
+    wM : wf_ty ?G ?i (?Γ ,, ?A @ ?l ,, tyId ?l ?A0 ?a0 (var 0) @ ?l) ?M ?k
+    |- eq_tm _ _ _ (tmJ _ _ _ _ _ _ _ _) _ _ _ =>
+      let HA := fresh "HA" in let HAA := fresh "HAA" in let H1 := fresh "H1" in
+      let HT := fresh "HT" in let HTT := fresh "HTT" in let H2 := fresh "H2" in
+      assert (HA : wf_ty G (typeof i) Δ A[d] l)
+        by (eapply lift_ty; [exact (wf_ty_subst_g wA Hw) | apply lle_self_typeof]);
+      assert (HAA : eq_ty G (typeof i) Δ A[d] A[d'] l)
+        by (eapply lift_eqty;
+            [ match goal with IH : forall Δ d d', _ -> eq_ty _ _ _ (subst ?x _) _ _ |- _ =>
+                constr_eq x A; eapply IH; exact Hd end
+            | apply lle_self_typeof ]);
+      assert (H1 : lsub_eq G i (Δ ,, A[d] @ l) (llift d) (llift d') (Γ ,, A @ l))
+        by (eapply lsub_eq_lift_g; [exact Hd | exact HA | exact Hl | exact HAA | reflexivity]);
+      assert (HT : wf_ty G (typeof i) (Δ ,, A[d] @ l) (tyId l A0 a0 (var 0))[llift d] l)
+        by (eapply lift_ty; [exact (wf_ty_subst_g wId (lsub_eq_l H1)) | apply lle_self_typeof]);
+      assert (HTT : eq_ty G (typeof i) (Δ ,, A[d] @ l)
+                      (tyId l A0 a0 (var 0))[llift d] (tyId l A0 a0 (var 0))[llift d'] l)
+        by (eapply lift_eqty;
+            [ match goal with IH : forall Δ d d', _ -> eq_ty _ _ _ (subst ?x _) _ _ |- _ =>
+                constr_eq x (tyId l A0 a0 (var 0)); eapply IH; exact H1 end
+            | apply lle_self_typeof ]);
+      assert (H2 : lsub_eq G i (Δ ,, A[d] @ l ,, (tyId l A0 a0 (var 0))[llift d] @ l)
+                     (llift (llift d)) (llift (llift d')) (Γ ,, A @ l ,, tyId l A0 a0 (var 0) @ l))
+        by (eapply lsub_eq_lift_g; [exact H1 | exact HT | exact Hl | exact HTT | reflexivity]);
+      pose proof (wf_ty_subst_g wM (lsub_eq_l H2));
+      assert (eq_ty G i (Δ ,, A[d] @ l ,, (tyId l A0 a0 (var 0))[llift d] @ l)
+                M[llift (llift d)] M[llift (llift d')] k)
+        by (match goal with IH : forall Δ d d', _ -> eq_ty _ _ _ (subst ?x _) _ _ |- _ =>
+              constr_eq x M; eapply IH; exact H2 end);
+      pose proof (wf_ty_subst_g wId (lsub_eq_l H1))
+  end;
+  eapply eqtm_J;
+  first [ solve [eapply wf_ty_regctx; [eassumption | sub_rw; reflexivity]]
+        | solve [eapply eq_ty_regctx; [eassumption | sub_rw; reflexivity]]
+        | solve [eapply wf_ty_regty; [eassumption | sub_rw; reflexivity]]
+        | fung_premise ].
+
 Theorem functionality_all :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Θ, [ G ; Θ ⊢[ i ] ] -> forall Γ As, Θ = cexts Γ As ->
@@ -679,6 +723,7 @@ Proof.
   all: try fung_upi.
   all: try fung_mf.
   all: try fung_manual.
+  all: try fun_J.
   all: try (timeout 3 any_rule fung_premise).
   all: try (timeout 3 fung_step).
   (* code of Π and natrec: the binder premises need the substituted

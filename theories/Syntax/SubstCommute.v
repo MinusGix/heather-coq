@@ -143,6 +143,12 @@ Proof.
   apply subst2_eq; intros [|[|n]]; rewrite ?llk_llift; cbn; auto.
   change (ren_tm ?x ?r) with x⟨r⟩. rewrite shift2_single2 by apply Hd. now rewrite Nat.add_0_r.
 Qed.
+Lemma single2_subst_ty (M : ty) t q :
+  M[lsingle2 t q][d] = M[llift (llift d)][lsingle2 t[d] q[d]].
+Proof.
+  apply subst2_eq_ty; intros [|[|n]]; rewrite ?llk_llift; cbn; auto.
+  change (ren_tm ?x ?r) with x⟨r⟩. rewrite shift2_single2 by apply Hd. now rewrite Nat.add_0_r.
+Qed.
 
 End Nf.
 

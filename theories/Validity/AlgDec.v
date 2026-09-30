@@ -113,6 +113,7 @@ Definition tm_con (t : tm) : nat :=
   | ulam _ _ _ _ => 22 | uapp _ _ => 23 | clam _ _ _ => 24 | capp _ _ => 25 | tlam _ _ _ _ _ => 26 | tapp _ _ => 27
   | tmSig _ _ _ _ => 28 | tmPair _ _ _ _ _ _ => 29 | tmFst _ _ _ _ _ => 30 | tmSnd _ _ _ _ _ => 31
   | tmUnit _ => 32 | tmTriv _ => 33 | gdef _ _ _ => 34 | srefl _ _ _ => 35 | elimSEmpty _ _ _ _ => 36
+  | tmRefl _ _ _ => 37 | tmJ _ _ _ _ _ _ _ _ => 38
   end.
 
 Lemma ac_tmne_con {G Γ ν ν' T} : ac_tmne G Γ ν ν' T -> tm_con ν = tm_con ν'.
@@ -134,7 +135,7 @@ Qed.
 Ltac refute_con := right; let D := fresh "D" in intros D;
   let E := fresh "E" in
   first [ pose proof (ac_tmne_con D) as E
-        | pose proof (ac_tmnf_con D ltac:(first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm]) ltac:(let Hn := fresh in intros Hn; inversion Hn)) as E
+        | pose proof (ac_tmnf_con D ltac:(first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id]) ltac:(let Hn := fresh in intros Hn; inversion Hn)) as E
         | pose proof (ac_tynf_head D) as E ];
   cbn in E; discriminate E.
 
@@ -1130,7 +1131,8 @@ Fixpoint is_whne (t : tm) : bool :=
   match t with
   | var _ | gvar _ _ => true
   | natrec _ _ _ _ t | app t _ _ _ _ _ | letboxT _ _ _ _ _ t | letboxt _ _ _ _ _ _ t
-  | uapp t _ | capp t _ | tapp t _ | tmFst _ _ _ _ t | tmSnd _ _ _ _ t | elimSEmpty _ _ _ t => is_whne t
+  | uapp t _ | capp t _ | tapp t _ | tmFst _ _ _ _ t | tmSnd _ _ _ _ t | elimSEmpty _ _ _ t
+  | tmJ _ _ _ _ _ _ _ t => is_whne t
   | elimT _ _ _ _ _ t => match t with boxT (tyGvar _ _) => true | _ => is_whne t end
   | elimt _ _ _ _ _ _ t => match t with boxt (gvar _ _) | boxt (gdef _ _ _) => true | _ => is_whne t end
   | _ => false
@@ -1160,6 +1162,30 @@ Proof.
   right; intros H; rewrite (is_whne_complete _ H) in E; discriminate.
 Qed.
 
+(** The identity type (M11a). *)
+Lemma Dc_actnf_id {G Γ l l0 A A0 a a0 b b0} :
+  Dc_ty G Γ A A0 -> Dc_tm G Γ a a0 A -> Dc_tm G Γ b b0 A -> Dc_tynf G Γ (tyId l A a b) (tyId l0 A0 a0 b0).
+Proof.
+  intros IHA IHa IHb X i k k' Hc HX HX'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct X; try solve [refute_con | refute].
+  match goal with |- Dec (ac_tynf _ _ _ (tyId ?a ?b ?c ?d)) =>
+    rename a into l5, b into A', c into a', d into b' end.
+  destruct (inv_ty_id HX) as ((_ & W & HA & Ha & Hb) & _).
+  destruct (inv_ty_id HX') as ((_ & W5 & HA' & Ha' & Hb') & _).
+  destruct (leqv_dec l l5) as [H15 | N]; [| refute].
+  destruct (IHA A' i _ _ Hc HA HA') as [DA | N]; [| refute].
+  pose proof (leqv_lequiv _ _ _ W W5 H15) as E15.
+  pose proof (ac_ty_sound Hc DA HA (wft_lconv _ _ _ _ _ _ HA' E15)) as EA.
+  assert (F : forall x, [ G ; Γ ⊢[ i ] x : A' @ l5 ] -> [ G ; Γ ⊢[ i ] x : A @ l ]).
+  { intros x Hx. eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ Hx E15) | rewrite Hi; exact EA]. }
+  destruct (IHa a' i l Hc Ha (F _ Ha')) as [Da | N]; [| refute].
+  destruct (IHb b' i l Hc Hb (F _ Hb')) as [Db | N]; [left; apply actnf_id; assumption | refute].
+Qed.
+
+Lemma Dc_actmnf_refl {G Γ l A a b k k0 C C0 c c0} :
+  Dc_tmnf G Γ (tmRefl k C c) (tmRefl k0 C0 c0) (tyId l A a b).
+Proof. intros x i m Hc Hw Hx. destruct x; first [left; apply actmnf_refl | refute]. Qed.
+
 Lemma Dc_actmne_elimSEmpty {G Γ l1 l2 l3 l4 M M0 ν ν0} :
   Dc_ty G Γ M M0 -> whne ν -> Dc_ne G Γ (elimSEmpty l1 l2 M ν) (elimSEmpty l3 l4 M0 ν0) M.
 Proof.
@@ -1172,6 +1198,54 @@ Proof.
   destruct (leqv_dec l1 l5) as [H15 | N]; [| refute]. destruct (leqv_dec l2 l6) as [H26 | N]; [| refute].
   destruct (IHM M' i _ _ Hc HM HM') as [DM | N]; [| refute].
   destruct (whne_dec ν') as [Hn' | N]; [left; apply actmne_elimSEmpty; assumption | refute].
+Qed.
+
+Lemma Dc_actmne_J {G Γ l1 l2 l3 l4 A A0 a a0 M M0 c c0 u u0 ν ν0 W} :
+  Dc_ty G Γ A A0 -> Dc_tm G Γ a a0 A ->
+  Dc_ty G (Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1) M M0 ->
+  Dc_tm G Γ c c0 M[lsingle2 a (tmRefl l1 A a)] -> Dc_tm G Γ u u0 A ->
+  ac_tmnee G Γ ν ν0 W -> Dc_nee G Γ ν ν0 W ->
+  Dc_ne G Γ (tmJ l1 l2 A a M c u ν) (tmJ l3 l4 A0 a0 M0 c0 u0 ν0) M[lsingle2 u ν].
+Proof.
+  intros IHA IHa IHM IHc IHu Dν0 IHν x i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  assert (Hv : i <> lV) by (destruct Hc as [-> | ->]; discriminate).
+  destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmne _ _ _ (tmJ ?p1 ?p2 ?p3 ?p4 ?p5 ?p6 ?p7 ?p8) _) =>
+    rename p1 into l5, p2 into l6, p3 into A', p4 into a', p5 into M', p6 into c', p7 into u', p8 into ν' end.
+  destruct (inv_J Hi Hx) as ((_ & W1 & W2 & HA & Ha & HI & HM & Hcc & Hu & He) & _ & _).
+  destruct (inv_J Hi Hx') as ((_ & W5 & W6 & HA' & Ha' & HI' & HM' & Hc' & Hu' & He') & _ & _).
+  destruct (IHν ν' i _ _ _ _ Hc He He') as [Dν | N];
+    [| right; intros D; destruct (ainv_J D) as (l7 & l8 & A2 & a2 & M2 & c2 & u2 & ν2 & W3 & E & _ & _ & _ & _ & _
+                                                & _ & _ & Dν2);
+       injection E as <- <- <- <- <- <- <- <-; rewrite <- (ac_nee_uniq Dν0 Dν2) in Dν2; exact (N Dν2)].
+  destruct (leqv_dec l1 l5) as [H15 | N]; [| refute].
+  destruct (leqv_dec l2 l6) as [H26 | N]; [| refute].
+  pose proof (leqv_lequiv _ _ _ W1 W5 H15) as E15. pose proof (leqv_lequiv _ _ _ W2 W6 H26) as E26.
+  destruct (IHA A' i _ _ Hc HA HA') as [DA | N]; [| refute].
+  pose proof (ac_ty_sound Hc DA HA (wft_lconv _ _ _ _ _ _ HA' E15)) as EA.
+  assert (F : forall y, [ G ; Γ ⊢[ i ] y : A' @ l5 ] -> [ G ; Γ ⊢[ i ] y : A @ l1 ]).
+  { intros y Hy. eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ Hy E15) | rewrite Hi; exact EA]. }
+  pose proof (F _ Ha') as Ha'1.
+  destruct (IHa a' i l1 Hc Ha Ha'1) as [Da | N]; [| refute].
+  pose proof (ac_tm_sound Hc Da Ha Ha'1) as Ea.
+  (* the other motive, in this context *)
+  pose proof (J_ctx_conv Hi Hc E15 HA HA' EA Ea) as Hid.
+  pose proof (wf_ty_subst Hi HM' Hid) as HM'1. rewrite nf_id_ty in HM'1 by exact (wf_ty_nf HM').
+  apply (fun H => wft_lconv _ _ _ _ _ _ H E26) in HM'1.
+  destruct (IHM M' i _ _ Hc HM HM'1) as [DM | N]; [| refute].
+  pose proof (ac_ty_sound Hc DM HM HM'1) as EM.
+  (* the other base case, at this instance *)
+  assert (Hr : [ G ; Γ ⊢[ i ] tmRefl l1 A a : tyId l1 A a a @ l1 ]) by (apply wf_idrefl; auto).
+  pose proof (pre_idrefl_r Hi Hv E15 HA EA (eqty_wf_r Hi EA) Ea Ha'1) as Hr'.
+  assert (Hrr : [ G ; Γ ⊢[ i ] tmRefl l1 A a ≅ tmRefl l5 A' a' : tyId l1 A a a @ l1 ])
+    by (apply eqtm_idrefl; auto).
+  pose proof (lsub_eq_J Hi Hv W1 HA Ha Ha Ha'1 Ea Hr Hr' Hrr) as Hs.
+  assert (HMs : [ G ; Γ ⊢[ i ] M[lsingle2 a (tmRefl l1 A a)] ≅ M'[lsingle2 a' (tmRefl l5 A' a')] @ l2 ]).
+  { eapply eqty_trans; [exact (eqty_subst Hi EM (lsub_eq_l Hs)) | exact (wf_ty_func Hi HM'1 Hs)]. }
+  assert (Hc'1 : [ G ; Γ ⊢[ i ] c' : M[lsingle2 a (tmRefl l1 A a)] @ l2 ]).
+  { eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ Hc' E26) | rewrite Hi; exact HMs]. }
+  destruct (IHc c' i l2 Hc Hcc Hc'1) as [Dc | N]; [| refute].
+  destruct (IHu u' i l1 Hc Hu (F _ Hu')) as [Du | N]; [left; eapply actmne_J; eassumption | refute].
 Qed.
 
 Lemma Dc_actmne_fst {G Γ l1 l2 l3 l4 A A0 B Bb ν ν0 m m' A0' B0} :
@@ -1245,7 +1319,9 @@ Proof.
     | solve [eapply Dc_actnf_unit] | solve [eapply Dc_actmnf_code_unit] | solve [eapply Dc_actmnf_unit_eta]
     | solve [eapply Dc_actnf_seq; eassumption] | solve [eapply Dc_actnf_sempty]
     | solve [eapply Dc_actmnf_seq_irr] | solve [eapply Dc_actmnf_sempty_irr]
-    | solve [eapply Dc_actmne_elimSEmpty; eassumption] ].
+    | solve [eapply Dc_actmne_elimSEmpty; eassumption]
+    | solve [eapply Dc_actnf_id; eassumption] | solve [eapply Dc_actmnf_refl]
+    | solve [eapply Dc_actmne_J; eassumption] ].
 Qed.
 
 (** Algorithmic conversion of well-formed types (typed terms) of the

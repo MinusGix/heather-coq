@@ -45,7 +45,7 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 
 | Piece | Kind | Heather rules | Paper pass | Known concerns | Ours |
 |---|---|---|---|---|---|
-| `Id`, `refl`, `J` | positive, propositional | ext §5 | MX §6 | Id at `□` types observes code conversion; funext must stay propositional (MX §6 audit) | — |
+| `Id`, `refl`, `J` | positive, propositional | ext §5 | MX §6 | Id at `□` types observes code conversion; funext must stay propositional (MX §6 audit) | **M11a done**: D and M, β, no η, canonicity; codes and branches (M11b) remain |
 | `Σ`, `pair`, `fst`/`snd` | negative, **η** | ext §6, §11.1 | MX §3 | surjective pairing is a genuinely new equation, not a congruence | **done** (M8a, M8d): every layer but V, β/η at D and M, recursor branches 13, 15–18 |
 | `Unit^l` | **η = proof irrelevance** | ext §7, §11.2 | MX §4 | level-indexed (see findings) | **done** (M8c, M8d): as Σ; η as proof irrelevance; branches 14, 19, 20 |
 | `Empty^l`, `elim_Empty` | positive, no β | ext §7 | MX §2 | Empty-η still open (`issues/empty-eta-conversion.md`) | — |
@@ -168,6 +168,7 @@ each one touched and why, then choose among 1–3 using that data.
    Heather removed `transp` and the strip (S8). What remains of M10 is M10c,
    the codes (six branches, no `transp`). Indexed families become the `IWf`
    former (H `docs/iwf-former-design.md`), a milestone after `W`/`Wf`.
-5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash).
+5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash). `Id` started: M11a done
+   (M11_DESIGN.md), M11b (codes, four branches) next.
 
 Side task, any time: the ITree depth-indexed bisimilarity question.

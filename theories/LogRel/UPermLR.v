@@ -238,6 +238,22 @@ Proof.
   exact (conj (pg_tmred Hp H1) (conj (pg_tmred Hp H2) (conj (pg_gne_tm Hp H3) (pg_gne_tm Hp H4)))).
 Qed.
 
+(** The identity type (M11a): along a permutation of its carrier's relation. *)
+Lemma IdRel_perm {l1 A a b RA RA'} :
+  (forall x y, RA x y -> RA' x[pφ π]ᵤ y[pφ π]ᵤ) -> forall t t', IdRel G Γ l1 A a b RA t t' ->
+  IdRel (Gp π G) Γ[pφ π]ᵤ (lvsubst l1 (pφ π)) A[pφ π]ᵤ a[pφ π]ᵤ b[pφ π]ᵤ RA' t[pφ π]ᵤ t'[pφ π]ᵤ.
+Proof.
+  intros Ep t t' (w & w' & H1 & H2 & H3 & Hn). exists w[pφ π]ᵤ, w'[pφ π]ᵤ.
+  refine (conj (pg_tmred Hp H1) (conj (pg_tmred Hp H2) (conj (pg_geq_tm Hp H3) _))).
+  destruct Hn as [k k' C C' c c' Hk Hk' HC HC' R1 R2 R3 R4 | ν ν' Hν]; cbn.
+  - apply idnf_refl; auto.
+    + exact (pg_lequiv Hp Hk).
+    + exact (pg_lequiv Hp Hk').
+    + exact (pg_geq_ty Hp HC).
+    + exact (pg_geq_ty Hp HC').
+  - apply idnf_ne. exact (pg_gne_tm Hp Hν).
+Qed.
+
 Lemma CTypNf_perm {Δ k w w'} : CTypNf G Γ Δ k w w' ->
   CTypNf (Gp π G) Γ[pφ π]ᵤ Δ[pφ π]ᵤ (lvsubst k (pφ π)) w[pφ π]ᵤ w'[pφ π]ᵤ.
 Proof.
@@ -427,7 +443,8 @@ Proof.
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd IHdom codAd IHcod HR
                  | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                  | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA IHRA Hra Hrb Hps Hpt HR];
     intros π πi Hp;
     pose proof (uperm_inv _ _ _ Hp) as Hpi;
     pose proof (proj1 Hp) as Hinv; pose proof (proj1 (proj2 Hp)) as Hinv';
@@ -911,6 +928,26 @@ Proof.
         rewrite !(rt_tm Hinv) in Hr, Hr' by assumption.
         exists w[pφ πi]ᵤ, w'[pφ πi]ᵤ.
         exact (conj Hr (conj Hr' (conj Hf Hf'))).
+  - (* Id: along the carrier's permuted relation *)
+    cbn in NW. destruct NW as (NA & Na & Nb).
+    destruct (IHRA π πi Hp) as (RA' & HRA' & ERA).
+    destruct (LR_tm_per _ _ _ _ _ _ _ HRA') as [Hs' Ht'].
+    assert (F : forall x y, RA x y -> RA' x[pφ π]ᵤ y[pφ π]ᵤ).
+    { intros x y H0. destruct (LR_rel_dnf HRA _ _ H0) as [Nx Ny]. exact (proj1 (ERA x y Nx Ny) H0). }
+    assert (B : forall x y, RA' x y -> RA x[pφ πi]ᵤ y[pφ πi]ᵤ).
+    { intros x y H0. destruct (LR_rel_dnf HRA' _ _ H0) as [Nx Ny].
+      apply (ERA _ _ (dnf_us_tm _ _) (dnf_us_tm _ _)). rewrite !(rt_tm Hinv') by assumption. exact H0. }
+    exists (IdRel (Gp π G) Γ[pφ π]ᵤ (lvsubst s1 (pφ π)) IA[pφ π]ᵤ ia[pφ π]ᵤ ib[pφ π]ᵤ RA'). split.
+    + eapply LRid; [exact (pg_lequiv Hp Hl) | exact (pg_lequiv Hp Hl2) | exact (pg_lwf Hp Hw)
+                   | exact (pg_tyred Hp HT) | exact (pg_tyred Hp HT') | exact (pg_ty Hp HIA)
+                   | exact (pg_geq_ty Hp HIAA) | exact (pg_geq_tm Hp Hiaa) | exact (pg_geq_tm Hp Hibb)
+                   | exact HRA' | exact (F _ _ Hra) | exact (F _ _ Hrb) | exact Hs' | exact Ht'
+                   | apply releq_refl].
+    + intros t t' Nt Nt'. rewrite (HR t t'). split; [apply (IdRel_perm Hp F) |].
+      intros X. apply (IdRel_perm (G := Gp π G) Hpi B) in X.
+      rewrite (Gp_rt Hp HG), (rt_ctx Hinv _ HΓ), (rt_lvl Hinv), (rt_ty Hinv _ NA), !(rt_tm Hinv) in X
+        by assumption.
+      exact X.
 Qed.
 
 Theorem LR_perm n : Pperm n.

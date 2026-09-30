@@ -232,7 +232,8 @@ Proof.
                       [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
                   | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                   | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                  | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                  | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA IHRA Hra Hrb Hps Hpt HR];
     intros T'' R' H2;
     inversion H2 as [? ? ? ? ? ? Hk HTk HTk' HkR
                     | ? ? ? ? ? k1 k2 ? Hk Hk2 Hkn HTk HTk' HkR
@@ -247,7 +248,9 @@ Proof.
                         [Hk Hk3 Hk4 Hkw1 Hkw2 HTk HTk' HC HC' HD HD' HCC HDD] domAd' codAd' HkR
                     | ? ? ? ? ? k1 k2 ? Hk Hk2 Hkn HTk HTk' HkR
                     | ? ? ? ? ? t1 t2 C C' c c' d d' ? Hk Hk2 Hkn HTk HTk' HC HCC Hcc Hdd HkR
-                    | ? ? ? ? ? t1 t2 ? Hk Hk2 Hkn HTk HTk' HkR];
+                    | ? ? ? ? ? t1 t2 ? Hk Hk2 Hkn HTk HTk' HkR
+                    | ? ? ? ? ? t1 t2 C C' c c' d d' RA' ? Hk Hk2 Hkn HTk HTk' HC HCC Hcc Hdd
+                        HRA' Hra' Hrb' Hps' Hpt' HkR];
     subst; try (agree; try ne_absurd).
   (* contextual types, and mismatches with them *)
   all: try solve [eapply ModRel_irrel; eassumption].
@@ -286,6 +289,8 @@ Proof.
   - apply releq_refl.
   - apply releq_refl.
   - apply releq_refl.
+  - (* Id: the carriers' relations agree *)
+    apply IdRel_releq. eapply IHRA; eassumption.
 Qed.
 
 (** ** Inversion by the left type's normal form *)
@@ -311,7 +316,8 @@ Proof.
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR];
     intros HN; try open_mod; agree; try ne_absurd; auto.
 Qed.
 
@@ -333,7 +339,8 @@ Proof.
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -355,7 +362,8 @@ Proof.
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -379,8 +387,36 @@ Proof.
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 15.
+Qed.
+
+Lemma LR_inv_id {l1 X x y l'} : [ G ; Γ ⊢g T ⤳* tyId l1 X x y @ l' ] ->
+  exists l2 X' x' y' RA, lequiv (gL G) l l1 /\ lequiv (gL G) l2 l1 /\ lwf (gL G) l1 /\
+    [ G ; Γ ⊢g T' ⤳* tyId l2 X' x' y' @ l ] /\ [ G ; Γ ⊢g X @ l1 ] /\ [ G ; Γ ⊢ X ≈ X' @ l1 ] /\
+    [ G ; Γ ⊢ x ≈ x' : X @ l1 ] /\ [ G ; Γ ⊢ y ≈ y' : X @ l1 ] /\
+    LR n rec G Γ X X' l1 RA /\ RA x x' /\ RA y y' /\
+    (forall u v, RA u v -> RA v u) /\ (forall u v w, RA u v -> RA v w -> RA u w) /\
+    releq R (IdRel G Γ l1 X x y RA).
+Proof.
+  intros HN; revert HN.
+  destruct H as [G Γ T T' l R Hl HT HT' HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
+                | G Γ T T' l V V' R HT HT' HV HR
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR
+                | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR];
+    intros HN; try open_mod; agree; try ne_absurd; eauto 20.
 Qed.
 
 Lemma LR_inv_sempty {l1 l'} : [ G ; Γ ⊢g T ⤳* tySEmpty l1 @ l' ] ->
@@ -401,7 +437,8 @@ Proof.
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -423,7 +460,8 @@ Proof.
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR];
     intros HN; try open_mod; agree; try solve [inversion HV0]; eauto.
 Qed.
 
@@ -450,7 +488,8 @@ Proof.
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
@@ -478,7 +517,8 @@ Proof.
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
@@ -499,7 +539,8 @@ Proof.
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR];
     intros HN; first [exact (conj Hj HM) | agree; try ne_absurd].
 Qed.
 
@@ -519,7 +560,8 @@ Proof.
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR];
     intros HN; first [exact (conj Hj HM) | agree; try ne_absurd].
 Qed.
 
@@ -548,7 +590,8 @@ Proof.
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 3 eexists; eauto 20.
 Qed.
@@ -579,7 +622,8 @@ Proof.
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR];
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 5 eexists; eauto 20.
 Qed.

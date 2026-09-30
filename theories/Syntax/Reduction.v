@@ -54,6 +54,10 @@ Inductive red : tm -> tm -> Prop :=
 | red_delta u b d : red (gdef u b d) (b[d])
 (* the irrelevant empty type (M10a): no β, only its scrutinee reduces *)
 | red_elimSEmpty l l' M e e' : red e e' -> red (elimSEmpty l l' M e) (elimSEmpty l l' M e')
+(* the identity type (M11a): J computes on refl, ignoring the annotations and
+   the right endpoint as the other β rules do; otherwise its proof reduces *)
+| red_J_refl l l' A a M c u k B b : red (tmJ l l' A a M c u (tmRefl k B b)) c
+| red_J l l' A a M c u e e' : red e e' -> red (tmJ l l' A a M c u e) (tmJ l l' A a M c u e')
 
 with red_ty : ty -> ty -> Prop :=
 | red_El_nat l : red_ty (tyEl l tmNat) tyNat
@@ -120,6 +124,7 @@ Proof.
         | Hr : red (tmSig _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmPair _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmUnit _) _ |- _ => inversion Hr
+        | Hr : red (tmRefl _ _ _) _ |- _ => inversion Hr
         | Hr : red_ty (tyPi _ _ _ _) _ |- _ => inversion Hr
         end;
     try congruence; try (f_equal; eauto).
@@ -181,6 +186,8 @@ Lemma reds_snd l l' A B p p' : reds p p' -> reds (tmSnd l l' A B p) (tmSnd l l' 
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_elimSEmpty l l' M e e' : reds e e' -> reds (elimSEmpty l l' M e) (elimSEmpty l l' M e').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_J l l' A a M c u e e' : reds e e' -> reds (tmJ l l' A a M c u e) (tmJ l l' A a M c u e').
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_El l t t' : reds t t' -> reds_ty (tyEl l t) (tyEl l t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 
@@ -197,6 +204,15 @@ Lemma lsingle2_ren (z t q : tm) r :
 Proof.
   rewrite (subst_ren _ _ (lcons (lcons (r2l r) t⟨r⟩) q⟨r⟩)),
           (ren_subst _ _ _ (lcons (lcons (r2l r) t⟨r⟩) q⟨r⟩)); auto.
+  all: intros [|[|n]]; cbn; rewrite ?llk_r2l, ?rlk_rup; cbn; rewrite ?rlk_rup; cbn;
+    auto; f_equal; lia.
+Qed.
+
+Lemma lsingle2_ren_ty (M : ty) t q r :
+  M[lsingle2 t q]⟨r⟩ = M⟨rlift (rlift r)⟩[lsingle2 t⟨r⟩ q⟨r⟩].
+Proof.
+  rewrite (subst_ren_ty _ _ (lcons (lcons (r2l r) t⟨r⟩) q⟨r⟩)),
+          (ren_subst_ty _ _ _ (lcons (lcons (r2l r) t⟨r⟩) q⟨r⟩)); auto.
   all: intros [|[|n]]; cbn; rewrite ?llk_r2l, ?rlk_rup; cbn; rewrite ?rlk_rup; cbn;
     auto; f_equal; lia.
 Qed.

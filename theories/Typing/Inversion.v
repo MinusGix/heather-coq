@@ -165,6 +165,22 @@ Lemma inv_triv {G i Γ l T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmTriv l : T @
     lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ i ] T ≅ tyUnit l @ k ].
 Proof. inv_tm. Qed.
 
+(** The identity type (M11a). *)
+Lemma inv_idrefl {G i Γ l A a T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmRefl l A a : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\
+    lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ i ] T ≅ tyId l A a a @ k ].
+Proof. inv_tm. Qed.
+
+Lemma inv_J {G i Γ l l' A a M c u e T k} : typeof i = i ->
+  [ G ; Γ ⊢[ i ] tmJ l l' A a M c u e : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ] /\
+    [ G ; Γ ,, A @ l ,, tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ i ] M @ l' ] /\
+    [ G ; Γ ⊢[ i ] c : M[lsingle2 a (tmRefl l A a)] @ l' ] /\
+    [ G ; Γ ⊢[ i ] u : A @ l ] /\ [ G ; Γ ⊢[ i ] e : tyId l A a u @ l ]) /\
+    lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ i ] T ≅ M[lsingle2 u e] @ k ].
+Proof. inv_tm. Qed.
+
 (** Strict equality (M10a). *)
 Lemma inv_srefl {G i Γ l A a T k} : typeof i = i -> [ G ; Γ ⊢[ i ] srefl l A a : T @ k ] ->
   (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\
@@ -357,6 +373,11 @@ Lemma inv_ty_seq {G i Γ l A a b k} : [ G ; Γ ⊢[ i ] tySEq l A a b @ k ] ->
     [ G ; Γ ⊢[ i ] b : A @ l ]) /\ lvl_eq (gL G) k l.
 Proof. inv_ty. Qed.
 
+Lemma inv_ty_id {G i Γ l A a b k} : [ G ; Γ ⊢[ i ] tyId l A a b @ k ] ->
+  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ] /\
+    [ G ; Γ ⊢[ i ] b : A @ l ]) /\ lvl_eq (gL G) k l.
+Proof. inv_ty. Qed.
+
 Lemma inv_ty_sempty {G i Γ l k} : [ G ; Γ ⊢[ i ] tySEmpty l @ k ] ->
   (compt i /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\ lvl_eq (gL G) k l.
 Proof. inv_ty. Qed.
@@ -410,4 +431,5 @@ Proof.
   - exact (lvl_eq_uniq (proj2 (inv_ty_unit H)) (proj2 (inv_ty_unit H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_seq H)) (proj2 (inv_ty_seq H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_sempty H)) (proj2 (inv_ty_sempty H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_id H)) (proj2 (inv_ty_id H'))).
 Qed.

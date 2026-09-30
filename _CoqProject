@@ -84,6 +84,7 @@ theories/Validity/CodePi.v
 theories/Validity/Sigma.v
 theories/Validity/Unit.v
 theories/Validity/SEq.v
+theories/Validity/Id.v
 theories/Validity/Fundamental.v
 theories/Validity/Consequences.v
 theories/Validity/Payload.v

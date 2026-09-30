@@ -128,19 +128,22 @@ Qed.
 
 Lemma LR_kwk_step n : (forall m, m < n -> Pwk m) -> Pwk n.
 Proof.
-  intros IHn G Γ T T' l R H ρ.
-  destruct H as [G Γ T T' l R Hl HT HT' HR
+  (* by induction: the identity type's carrier relation is at [Γ] only (M11a) *)
+  intros IHn G Γ T T' l R H.
+  induction H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd codAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd _ codAd _ HR
                 | G Γ T T' l R Hj HM
-                | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l l1 l2 T1 T1' instR R Hj Hl Hl2 Hw1 HT HT' HT1 HT1' Hgeq instAd _ HR
                 | G Γ T T' l Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR R Hj Hl Hl3 Hl4 Hw1 Hw2 HT HT' HΔ HT1 HT1'
-                    Hgeq instAd HR
-                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd codAd HR
+                    Hgeq instAd _ HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd _ codAd _ HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
-                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR].
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb
+                    HRA IHRA Hra Hrb Hps Hpt HR]; intros ρ.
   - exists (NatRel (kw_G ρ) (kw_Δ ρ)). split.
     + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
       rewrite kty_tyNat in X, X'.
@@ -308,6 +311,26 @@ Proof.
       pose proof (kw_gne_tm ρ Hn) as Z. pose proof (kw_gne_tm ρ Hn') as Z'.
       rewrite kty_tySEmpty in Y, Y', Z, Z'. exists (ktm ρ w), (ktm ρ w').
       exact (conj Y (conj Y' (conj Z Z'))).
+  - (* Id: weaken the carrier's derivation *)
+    destruct (IHRA ρ) as (RA' & HRA' & Hmap).
+    destruct (LR_tm_per _ _ _ _ _ _ _ HRA') as [Hs' Ht'].
+    exists (IdRel (kw_G ρ) (kw_Δ ρ) s1 (kty ρ IA) (ktm ρ ia) (ktm ρ ib) RA'). split.
+    + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
+      rewrite kty_tyId in X, X'.
+      eapply LRid; [exact (kw_lequiv ρ Hl) | exact (kw_lequiv ρ Hl2) | exact (kw_lwf ρ Hw) | exact X | exact X'
+                   | exact (kw_ty ρ HIA) | exact (kw_geq_ty ρ HIAA) | exact (kw_geq_tm ρ Hiaa)
+                   | exact (kw_geq_tm ρ Hibb) | exact HRA' | exact (Hmap _ _ Hra) | exact (Hmap _ _ Hrb)
+                   | exact Hs' | exact Ht' | apply releq_refl].
+    + intros t t' Ht. apply HR in Ht. destruct Ht as (w & w' & Hr & Hr' & Heq & Hn).
+      pose proof (kw_tmred ρ Hr) as Y. pose proof (kw_tmred ρ Hr') as Y'.
+      pose proof (kw_geq_tm ρ Heq) as Z.
+      rewrite kty_tyId in Y, Y', Z. exists (ktm ρ w), (ktm ρ w').
+      refine (conj Y (conj Y' (conj Z _))).
+      destruct Hn as [k k' C C' c c' Hk Hk' HC HC' H1 H2 H3 H4 | ν ν' Hν].
+      * rewrite !ktm_refl. apply idnf_refl; auto using kw_lequiv.
+        -- exact (kw_geq_ty ρ HC).
+        -- exact (kw_geq_ty ρ HC').
+      * apply idnf_ne. pose proof (kw_gne_tm ρ Hν) as W. rewrite kty_tyId in W. exact W.
 Qed.
 
 Theorem LR_kwk n : Pwk n.

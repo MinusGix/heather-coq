@@ -85,6 +85,10 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] tySEq l A a b @ l ]
 | wft_sempty G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tySEmpty l @ l ]
+(* the identity type (layers D and M; M11_DESIGN.md) *)
+| wft_id G i Γ l A a b : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] b : A @ l ] ->
+    [ G ; Γ ⊢[ i ] tyId l A a b @ l ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -230,6 +234,20 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 | wf_elimSEmpty G i Γ l l' M e : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] M @ l' ] -> [ G ; Γ ⊢[ i ] e : tySEmpty l @ l ] ->
     [ G ; Γ ⊢[ i ] elimSEmpty l l' M e : M @ l' ]
+(* the identity type (layers D and M): [refl], and based path induction; the
+   motive binds [y : A] and [p : Id(A; a; y)]. The [Id] type of the motive's
+   context is a premise (a presupposition, as for the recursors, M3 E10): its
+   induction hypothesis supplies the extended context under every operation *)
+| wf_idrefl G i Γ l A a : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] ->
+    [ G ; Γ ⊢[ i ] tmRefl l A a : tyId l A a a @ l ]
+| wf_J G i Γ l l' A a M c u e : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] ->
+    [ G ; Γ ,, A @ l ⊢[ i ] tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ] ->
+    [ G ; Γ ,, A @ l ,, tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ i ] M @ l' ] ->
+    [ G ; Γ ⊢[ i ] c : M[lsingle2 a (tmRefl l A a)] @ l' ] ->
+    [ G ; Γ ⊢[ i ] u : A @ l ] -> [ G ; Γ ⊢[ i ] e : tyId l A a u @ l ] ->
+    [ G ; Γ ⊢[ i ] tmJ l l' A a M c u e : M[lsingle2 u e] @ l' ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -305,6 +323,11 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] tySEq l A a b ≅ tySEq l' A' a' b' @ l ]
 | eqty_sempty G i Γ l l' : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] tySEmpty l ≅ tySEmpty l' @ l ]
+(* the identity type (layers D and M) *)
+| eqty_id G i Γ l l' A A' a a' b b' : compt i -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+    [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] -> [ G ; Γ ⊢[ i ] b ≅ b' : A @ l ] ->
+    [ G ; Γ ⊢[ i ] tyId l A a b ≅ tyId l' A' a' b' @ l ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -611,6 +634,26 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
 | eqtm_sempty_irr G i Γ l p q : compt i -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] p : tySEmpty l @ l ] -> [ G ; Γ ⊢[ i ] q : tySEmpty l @ l ] ->
     [ G ; Γ ⊢[ i ] p ≅ q : tySEmpty l @ l ]
+(* the identity type (layers D and M): the congruences ([refl]'s compares the
+   carrier and the point) and β; no η, which is the absence of K *)
+| eqtm_idrefl G i Γ l l' A A' a a' : compt i -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+    [ G ; Γ ⊢[ i ] tmRefl l A a ≅ tmRefl l' A' a' : tyId l A a a @ l ]
+| eqtm_J G i Γ l1 l2 l3 l4 A A' a a' M M' c c' u u' e e' : compt i ->
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢[ i ] tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ i ] M @ l2 ] ->
+    [ G ; Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1 ⊢[ i ] M ≅ M' @ l2 ] ->
+    [ G ; Γ ⊢[ i ] c ≅ c' : M[lsingle2 a (tmRefl l1 A a)] @ l2 ] ->
+    [ G ; Γ ⊢[ i ] u ≅ u' : A @ l1 ] -> [ G ; Γ ⊢[ i ] e ≅ e' : tyId l1 A a u @ l1 ] ->
+    [ G ; Γ ⊢[ i ] tmJ l1 l2 A a M c u e ≅ tmJ l3 l4 A' a' M' c' u' e' : M[lsingle2 u e] @ l2 ]
+| eqtm_J_beta G i Γ l l' A a M c : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] ->
+    [ G ; Γ ,, A @ l ⊢[ i ] tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ] ->
+    [ G ; Γ ,, A @ l ,, tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ i ] M @ l' ] ->
+    [ G ; Γ ⊢[ i ] c : M[lsingle2 a (tmRefl l A a)] @ l' ] ->
+    [ G ; Γ ⊢[ i ] tmJ l l' A a M c a (tmRefl l A a) ≅ c : M[lsingle2 a (tmRefl l A a)] @ l' ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
