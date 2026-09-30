@@ -303,8 +303,9 @@ Ltac gpeel_push Hσ :=
                | rewrite <- peelU_gsubst by first [hd_tac | exact Hσ] ];
   unfold rb_br; rewrite tup_nth_gsubst by hd_tac;
   cbn [gosubst gsubst GSubst_tm GSubst_ty GSubst_ctx gsubst_tm gsubst_ty gcsubst recT rect];
-  rewrite ?gs_case_inl_ty', ?gs_case_inr_ty',
-    ?gs_single_ty', ?gs_lsucc_ty', ?gs_single2_ty', ?gs_shift_ty', ?gs_shift'; reflexivity.
+  (* [case]'s branch types (M12c), before the generic single substitution *)
+  try match goal with |- context [tmInl _ _ _ _ (var 0)] => rewrite ?gs_case_inl_ty', ?gs_case_inr_ty' end;
+  rewrite ?gs_single_ty', ?gs_lsucc_ty', ?gs_single2_ty', ?gs_shift_ty', ?gs_shift'; reflexivity.
 
 Lemma redT_gsubst l1 l2 MT Mt bs l Δ c v σ : gdnf σ ->
   redT l1 l2 (mkrb MT Mt bs) l Δ c = Some v ->

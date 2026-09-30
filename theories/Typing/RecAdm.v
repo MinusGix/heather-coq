@@ -121,6 +121,13 @@ Proof. intros Hc. rewrite mott_ren, wkb_S, Hc. reflexivity. Qed.
 
 Lemma lM_notV' : lM <> lV. Proof. discriminate. Qed.
 
+(** A context judgment already at hand, or one of its prefixes: the scope
+    contexts are proved once per prefix, not once per weakening (M12c). *)
+Lemma wfc_ext_pre {G i Γ A l} : [ G ; Γ ,, A @ l ⊢[ i ] ] -> [ G ; Γ ⊢[ i ] ].
+Proof. intros H; inversion H; subst; assumption. Qed.
+Ltac ctx_pre H := first [ exact H | let H' := fresh "HC" in pose proof (wfc_ext_pre H) as H'; ctx_pre H' ].
+Ltac ctx_known := match goal with H : [ ?G ; _ ⊢[ lM ] ] |- [ ?G ; _ ⊢[ lM ] ] => ctx_pre H end.
+
 (** A branch-scope context entry or result: weaken to the scope's base, then
     instantiate. *)
 Ltac br_inst k HΓ HMT HMt :=
@@ -135,10 +142,14 @@ Ltac br_inst k HΓ HMT HMt :=
   | |- [ _ ; _ ⊢[ lM ] mott (wkb _ _ 0 _) _ _ _ _ @ _ ] => eapply (mott_br0 HΓ k ltac:(lia)); [ exact HMt | .. ]
   end
 with br_ctx k HΓ HMT HMt :=
-  lazymatch goal with
-  | |- [ _ ; _ ,, _ @ _ ⊢[ lM ] ] => apply wfc_ext; [br_ctx k HΓ HMT HMt | br_inst k HΓ HMT HMt | ]
-  | |- [ _ ; wkc _ _ _ ⊢[ lM ] ] => apply (wf_wkc_br _ _ k ltac:(lia) HΓ)
-  end.
+  first
+  [ ctx_known
+  | lazymatch goal with
+    | |- [ ?G ; ?Γ ,, _ @ _ ⊢[ lM ] ] =>
+        let H0 := fresh "HC" in assert (H0 : [ G ; Γ ⊢[ lM ] ]);
+        [ br_ctx k HΓ HMT HMt | apply wfc_ext; [exact H0 | br_inst k HΓ HMT HMt | ] ]
+    | |- [ _ ; wkc _ _ _ ⊢[ lM ] ] => apply (wf_wkc_br _ _ k ltac:(lia) HΓ)
+    end ].
 
 Lemma lwf_ush {L l} n : lwf L l -> lwf (n + L) (lvren l (ush n)).
 Proof. apply lwf_lvren. intros m Hm; unfold ush; lia. Qed.

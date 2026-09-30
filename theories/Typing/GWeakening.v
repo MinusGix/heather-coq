@@ -115,16 +115,18 @@ Ltac gpeel_push :=
   cbn [goren gren GRen_tm GRen_ty GRen_ctx gren_tm recT rect]; rewrite ?gren_ty_subst_raw;
   rewrite ?gren_ren_ty', ?gren_ren;
   (* [case]'s branch types (M12c): the injection under the single substitution *)
-  cbn [glren lsingle gren_tm gren_ty]; rewrite ?gren_ren_ty', ?gren_ren; reflexivity.
+  try match goal with |- context [tmInl _ _ _ _ (var 0)] =>
+    cbn [glren lsingle gren_tm gren_ty]; rewrite ?gren_ren_ty', ?gren_ren end;
+  reflexivity.
 
 Lemma redT_gren l1 l2 rb l Δ c v ξ : redT l1 l2 rb l Δ c = Some v ->
   redT l1 l2 rb⟪ξ⟫ l Δ⟪ξ⟫ c⟪ξ⟫ = Some v⟪ξ⟫.
-Proof. destruct c; cbn [redT gren GRen_ty gren_ty]; intros E; inversion E; subst; f_equal; gpeel_push. Qed.
+Proof. destruct c; cbn [redT gren GRen_ty gren_ty]; intros E; first [discriminate E | injection E as <-]; f_equal; gpeel_push. Qed.
 Lemma redt_gren l1 l2 rb l Δ T c v ξ : redt l1 l2 rb l Δ T c = Some v ->
   redt l1 l2 rb⟪ξ⟫ l Δ⟪ξ⟫ T⟪ξ⟫ c⟪ξ⟫ = Some v⟪ξ⟫.
 Proof.
   destruct c; cbn [redt gren GRen_tm gren_tm]; redt_case T; cbn [gren_ty];
-    intros E; inversion E; subst; f_equal; gpeel_push.
+    intros E; first [discriminate E | injection E as <-]; f_equal; gpeel_push.
 Qed.
 
 

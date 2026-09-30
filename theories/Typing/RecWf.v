@@ -94,9 +94,17 @@ Ltac lvl_ok := cbn; repeat split; try lia.
 (** Well-formedness of the concrete scope declarations. *)
 Ltac wfd :=
   repeat match goal with
+  (* each prefix of the global context is proved once, then reused by its
+     entries' lookups (M12c: [case]'s seven entries made the rederivations
+     the bulk of the cost) *)
+  | H : [ ⊢ ?g ] |- [ ⊢ ?g ] => exact H
   | |- [ ⊢ mkG _ (gdCtx :: _) ] => apply wfg_ctx
-  | |- [ ⊢ mkG _ (gdTy _ _ _ :: _) ] => apply wfg_ty; [ | | first [left; reflexivity | right; reflexivity] | lvl_ok ]
-  | |- [ ⊢ mkG _ (gdTm _ _ _ _ :: _) ] => apply wfg_tm; [ | | first [left; reflexivity | right; reflexivity] | lvl_ok ]
+  | |- [ ⊢ mkG ?L (gdTy _ _ _ :: ?Ψ) ] =>
+      let HΨ := fresh "HΨ" in assert (HΨ : [ ⊢ mkG L Ψ ]);
+      [ | apply wfg_ty; [ exact HΨ | | first [left; reflexivity | right; reflexivity] | lvl_ok ] ]
+  | |- [ ⊢ mkG ?L (gdTm _ _ _ _ :: ?Ψ) ] =>
+      let HΨ := fresh "HΨ" in assert (HΨ : [ ⊢ mkG L Ψ ]);
+      [ | apply wfg_tm; [ exact HΨ | | first [left; reflexivity | right; reflexivity] | lvl_ok ] ]
   | |- [ _ ; cvar _ ⊢[ _ ] ] => apply wfc_var; [ | reflexivity ]
   | |- [ _ ; _ ,, _ @ _ ⊢[ _ ] ] => apply wfc_ext; [ | | lvl_ok ]
   | |- [ _ ; _ ⊢[ _ ] tyNat @ _ ] => apply wft_nat; [ discriminate | ]
