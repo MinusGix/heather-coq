@@ -225,3 +225,28 @@ RecReduct for 200.
 
 Clean build: 234 s wall at `-j2` (217 s after M11a). `RecAdm`'s
 `brΓ_wf`/`brRes_wf` over the 25 branches take about 19 s.
+
+## UIP stated; the no-UIP model checked (2026-09-30)
+
+`Validity/Uip.v` states UIP and checks the no-UIP model's predictions
+(Heather `docs/no-uip-model.md` §4.5, §5.1) where the syntax can decide
+them. Everything is closed under the global context.
+
+- **`uip_pt l A a b`**, which is `Π(p q : Id(A; a; b)). Id(Id(A; a; b); p; q)`,
+  and **`UIP0`**, the model's `UIP₀` at `⌜Nat⌝`. The model uses `⌜Bool⌝`,
+  but the development has no sums; any code with a non-identity
+  bijection works. `uip_pt_wf` and `UIP0_wf` prove them well-formed
+  types at every layer but V, the latter closed in any global context.
+- **`uip_unit_wf`**: UIP at `Unit` in the syntax. The model predicts this,
+  because `Unit`'s fibre is discrete. The proof is `K` by `J` (motive
+  `Id(refl; p')`), then UIP by a second `J` with `K(q)` as the base case.
+  `Unit` enters only through η, at the motive's variable endpoint.
+- **`closed_id_uip`**: closed proofs of an `Id` type are convertible, by
+  `closed_canonicity_whnf` and `refl_refl_eq`, which is inversion and
+  `id_inj_c`. It is UIP as a metatheorem for closed terms. The model
+  agrees, since closed proofs denote identities. So its counterexample
+  (`swap`) is not denoted by any closed term.
+
+The probe gains `no_uip0_nat`, the refutation of `UIP0`'s interpretation.
+The model doc's §4.5 checks each `Id` rule of `Declarative.v` against the
+groupoid model, and finds no conflict.
