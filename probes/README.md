@@ -21,3 +21,11 @@ of the build (`_CoqProject` lists `theories/` only). Compile one with
   exist and UIP at `Ty 0` fails, at `Bool` (`no_uip0`) and at `Nat`,
   the carrier of the development's `UIP0` (`no_uip0_nat`,
   `theories/Validity/Uip.v`).
+- `NoUipJ.v`: `Id` and Paulin-Mohring's `J` in the groupoid model of
+  `docs/no-uip-model.md` (§2, §4.5), for `J` as `wf_J` states it. It uses
+  lawful groupoids whose objects and morphisms form sets, split families,
+  and sections with their functor laws. It builds `Id(a↑; var 0)` over
+  `Γ.A` as a split family, `refl`, and `J` as a section of `M[u/y, e/p]`
+  with both functor laws, and proves β on the nose. `J_example` shows
+  that the hypotheses are satisfiable. Stability under substitution is
+  not mechanized.

@@ -250,3 +250,9 @@ them. Everything is closed under the global context.
 The probe gains `no_uip0_nat`, the refutation of `UIP0`'s interpretation.
 The model doc's §4.5 checks each `Id` rule of `Declarative.v` against the
 groupoid model, and finds no conflict.
+
+`probes/NoUipJ.v` mechanizes the model's `J` in the form of `wf_J`: the
+`Id` family over `Γ.A`, `refl`, and `J` as a section of `M[u/y, e/p]`
+with its functor laws. β holds on the nose. It is closed under the global
+context; its groupoids have sets of objects and morphisms, as in the
+set-theoretic model. Stability under substitution is not mechanized.
