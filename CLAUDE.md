@@ -30,6 +30,13 @@ list of proof-engineering gotchas. Follow it.
   help; only faster files on that path do. `make TIMING=1` writes per-file
   `.v.timing`; the build-time gotchas in `M1_DESIGN.md` list the patterns
   that made it slow.
+- Fast iteration: `make -j2 vos` (about 1 minute from clean) compiles every
+  file's statements without its proofs; then check the file you are working
+  on in full with `coqc -Q theories DeLaM -vok <file>` (or `make vok`, which
+  checks every file's proofs, in parallel). Neither replaces the final
+  `make`. A section lemma's proof is skipped by `vos` only with a
+  `Proof using` clause: the six heaviest sectioned files have them
+  (`tools/add_proof_using.py`).
 - Probe goals by truncating a proof into a scratch file and compiling with
   `coqc -Q theories DeLaM <file>` inside the dev shell.
 

@@ -24,7 +24,7 @@ Context {G' G : gctx} {σ σ' : gsub} (Hσ : GSubRel G' G σ σ').
 
 (** The source is first grown to the target's levels. *)
 Lemma gsub_wf_src {H0 τ H1 G1} : gΨ G1 = gΨ H1 -> [ H0 ⊢ τ : H1 ] -> [ H0 ⊢ τ : G1 ].
-Proof. intros E [Hg Hn Hv]; constructor; [exact Hg | exact Hn |]. rewrite E; exact Hv. Qed.
+Proof using . intros E [Hg Hn Hv]; constructor; [exact Hg | exact Hn |]. rewrite E; exact Hv. Qed.
 
 Local Ltac glob_of H :=
   first [ exact (ctx_glob _ _ _ H)
@@ -46,21 +46,21 @@ Local Ltac along k :=
         | exact (k _ _ _ _ _ H _ _ Hw) | exact (k _ _ _ _ H _ _ Hw) | exact (k _ _ _ H _ _ Hw) ].
 
 Lemma gs_ctx {i Γ} : [ G ; Γ ⊢[ i ] ] -> compt i -> [ G' ; Γ⦃σ⦄ ⊢[ i ] ].
-Proof.
+Proof using Hσ.
   intros H Hc; pose proof (gsr_wf_l _ _ _ _ _ _ Hσ) as Hw; pose proof (gsr_L _ _ _ _ _ _ Hσ) as HL.
   assert (Hg : [ ⊢ mkG (gL G') (gΨ G) ]) by (destruct G; apply (wfg_grow _ _ _ HL); glob_of H).
   apply (gwa_ctx (γ := gwk_id) (G' := mkG (gL G') (gΨ G)) (G := G) (conj HL (gwkwf_id _)) Hg) in H; cbn [gwa] in H; apply (gsub_wf_src (H1 := G) (G1 := mkG (gL G') (gΨ G)) eq_refl) in Hw; destruct G' as [L' Ψ'].
   exact (proj1 (proj2 gsubstitution) _ _ _ H _ _ Hw Hc).
 Qed.
 Lemma gs_ty {i Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] -> [ G' ; Γ⦃σ⦄ ⊢[ i ] T⦃σ⦄ @ l ].
-Proof. along (proj1 (proj2 (proj2 gsubstitution))). Qed.
+Proof using Hσ. along (proj1 (proj2 (proj2 gsubstitution))). Qed.
 Lemma gs_tm {i Γ t T l} : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G' ; Γ⦃σ⦄ ⊢[ i ] t⦃σ⦄ : T⦃σ⦄ @ l ].
-Proof. along (proj1 (proj2 (proj2 (proj2 gsubstitution)))). Qed.
+Proof using Hσ. along (proj1 (proj2 (proj2 (proj2 gsubstitution)))). Qed.
 Lemma gs_eqty {i Γ T T' l} : [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> [ G' ; Γ⦃σ⦄ ⊢[ i ] T⦃σ⦄ ≅ T'⦃σ⦄ @ l ].
-Proof. along (proj1 (proj2 (proj2 (proj2 (proj2 gsubstitution))))). Qed.
+Proof using Hσ. along (proj1 (proj2 (proj2 (proj2 (proj2 gsubstitution))))). Qed.
 Lemma gs_eqtm {i Γ t t' T l} : [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] ->
   [ G' ; Γ⦃σ⦄ ⊢[ i ] t⦃σ⦄ ≅ t'⦃σ⦄ : T⦃σ⦄ @ l ].
-Proof. along (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 gsubstitution)))))). Qed.
+Proof using Hσ. along (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 gsubstitution)))))). Qed.
 
 End Along.
 
@@ -180,34 +180,34 @@ Local Notation VTyS := (@VTyS EP EM E LP).
 Local Notation VTmS := (@VTmS EP EM E LP).
 
 Lemma VS_var {G Γ n T l} : in_ctx Γ n T l -> VTmS G Γ (var n) (var n) T l.
-Proof. intros; s_lift. Qed.
+Proof using . intros; s_lift. Qed.
 Lemma VS_nat {G Γ} : VTyS G Γ tyNat tyNat lzero.
-Proof. s_lift. Qed.
+Proof using . s_lift. Qed.
 Lemma VS_zero {G Γ} : VTmS G Γ zero zero tyNat lzero.
-Proof. s_lift. Qed.
+Proof using EL VL. s_lift. Qed.
 Lemma VS_succ {G Γ t t'} : VTmS G Γ t t' tyNat lzero -> VTmS G Γ (succ t) (succ t') tyNat lzero.
-Proof. intros; s_lift. Qed.
+Proof using EL VL. intros; s_lift. Qed.
 Lemma VS_U {G Γ l l'} : lwf (gL G) l -> lequiv (gL G) l l' -> VTyS G Γ (tyU l) (tyU l') (lsuc l).
-Proof. intros; s_lift. Qed.
+Proof using . intros; s_lift. Qed.
 Lemma VS_El {G Γ l l' t t'} : lwf (gL G) l -> lequiv (gL G) l l' ->
   VTmS G Γ t t' (tyU l) (lsuc l) -> VTyS G Γ (tyEl l t) (tyEl l' t') l.
-Proof. intros; s_lift. Qed.
+Proof using EL VL. intros; s_lift. Qed.
 Lemma VS_code_nat {G Γ} : VTmS G Γ tmNat tmNat (tyU lzero) (lsuc lzero).
-Proof. s_lift. Qed.
+Proof using EL VL. s_lift. Qed.
 Lemma VS_code_U {G Γ l l'} : lwf (gL G) l -> lequiv (gL G) l l' ->
   VTmS G Γ (tmU l) (tmU l') (tyU (lsuc l)) (lsuc (lsuc l)).
-Proof. intros; s_lift. Qed.
+Proof using EL VL. intros; s_lift. Qed.
 Lemma VS_El_nat {G Γ} : VTyS G Γ tyNat (tyEl lzero tmNat) lzero.
-Proof. s_lift. Qed.
+Proof using . s_lift. Qed.
 Lemma VS_El_U {G Γ l} : lwf (gL G) l -> VTyS G Γ (tyU l) (tyEl (lsuc l) (tmU l)) (lsuc l).
-Proof. intros; s_lift. Qed.
+Proof using . intros; s_lift. Qed.
 
 Lemma VS_pi {ly G Γ l l' l3 l4 A A' B B'} : lwf (gL G) l -> lwf (gL G) l' ->
   lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢[ ly ] B @ l' ] ->
   lle ly ge_layer -> typeof ly = ly ->
   VTyS G Γ A A' l -> VTyS G (Γ ,, A @ l) B B' l' ->
   VTyS G Γ (tyPi l l' A B) (tyPi l3 l4 A' B') (lmax l l').
-Proof. intros; s_lift. Qed.
+Proof using EL VL VN. intros; s_lift. Qed.
 
 Lemma VS_app {ly G Γ l l' l3 l4 A A' B B' t t' s s'} : lwf (gL G) l -> lwf (gL G) l' ->
   lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢[ ly ] B @ l' ] ->
@@ -215,7 +215,7 @@ Lemma VS_app {ly G Γ l l' l3 l4 A A' B B' t t' s s'} : lwf (gL G) l -> lwf (gL 
   VTyS G Γ A A' l -> VTyS G (Γ ,, A @ l) B B' l' ->
   VTmS G Γ t t' (tyPi l l' A B) (lmax l l') -> VTmS G Γ s s' A l ->
   VTmS G Γ (app t l l' A B s) (app t' l3 l4 A' B' s') B[lsingle s] l'.
-Proof. intros; s_lift. Qed.
+Proof using EL VL VN. intros; s_lift. Qed.
 
 Lemma VS_lam {ly G Γ l l' l3 l4 A A' B t t'} : lwf (gL G) l -> lwf (gL G) l' ->
   lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢[ ly ] B @ l' ] ->
@@ -223,7 +223,7 @@ Lemma VS_lam {ly G Γ l l' l3 l4 A A' B t t'} : lwf (gL G) l -> lwf (gL G) l' ->
   lle ly ge_layer -> typeof ly = ly ->
   VTyS G Γ A A' l -> VTyS G (Γ ,, A @ l) B B l' -> VTmS G (Γ ,, A @ l) t t' B l' ->
   VTmS G Γ (lam l l' A t) (lam l3 l4 A' t') (tyPi l l' A B) (lmax l l').
-Proof. intros; s_lift. Qed.
+Proof using EL VL VN. intros; s_lift. Qed.
 
 Lemma VS_natrec {ly G Γ l l' M M' s s' z z' t t'} : lwf (gL G) l -> lequiv (gL G) l l' ->
   [ G ; Γ ,, tyNat @ lzero ⊢[ ly ] M @ l ] -> [ G ; Γ ⊢[ ly ] s : M[lsingle zero] @ l ] ->
@@ -232,7 +232,7 @@ Lemma VS_natrec {ly G Γ l l' M M' s s' z z' t t'} : lwf (gL G) l -> lequiv (gL 
   VTyS G (Γ ,, tyNat @ lzero) M M' l -> VTmS G Γ s s' M[lsingle zero] l ->
   VTmS G (Γ ,, tyNat @ lzero ,, M @ l) z z' M[lsucc] l -> VTmS G Γ t t' tyNat lzero ->
   VTmS G Γ (natrec l M s z t) (natrec l' M' s' z' t') M[lsingle t] l.
-Proof. intros; s_lift. Qed.
+Proof using EL VL VN. intros; s_lift. Qed.
 
 Lemma VS_code_pi {ly G Γ l1 l2 l3 l4 s s' t t'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
@@ -240,7 +240,7 @@ Lemma VS_code_pi {ly G Γ l1 l2 l3 l4 s s' t t'} : lwf (gL G) l1 -> lwf (gL G) l
   lle ly ge_layer -> typeof ly = ly ->
   VTmS G Γ s s' (tyU l1) (lsuc l1) -> VTmS G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) (lsuc l2) ->
   VTmS G Γ (tmPi l1 l2 s t) (tmPi l3 l4 s' t') (tyU (lmax l1 l2)) (lsuc (lmax l1 l2)).
-Proof. intros; s_lift. Qed.
+Proof using EL VL VN. intros; s_lift. Qed.
 
 (** ** Computation rules *)
 
@@ -249,7 +249,7 @@ Lemma VS_beta {ly G Γ l l' A B t s} : lwf (gL G) l -> lwf (gL G) l' ->
   lle ly ge_layer -> typeof ly = ly ->
   VTyS G Γ A A l -> VTmS G (Γ ,, A @ l) t t B l' -> VTmS G Γ s s A l ->
   VTmS G Γ (app (lam l l' A t) l l' A B s) t[lsingle s] B[lsingle s] l'.
-Proof.
+Proof using EL VL.
   intros. eapply (VTmS_trans_diag EP EM (t2 := t[lsingle s])); [s_diag V_beta | eapply VTmS_single; eassumption].
 Qed.
 
@@ -259,7 +259,7 @@ Lemma VS_eta {ly G Γ l l' A B t} : lwf (gL G) l -> lwf (gL G) l' ->
   lle ly ge_layer -> typeof ly = ly ->
   VTyS G Γ A A l -> VTyS G (Γ ,, A @ l) B B l' -> VTmS G Γ t t (tyPi l l' A B) (lmax l l') ->
   VTmS G Γ (lam l l' A (app t⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0))) t (tyPi l l' A B) (lmax l l').
-Proof. intros. eapply (VTmS_trans_diag EP EM (t2 := t)); [s_diag V_eta | eassumption]. Qed.
+Proof using EL VL VN. intros. eapply (VTmS_trans_diag EP EM (t2 := t)); [s_diag V_eta | eassumption]. Qed.
 
 Lemma VS_natrec_zero {ly G Γ l M s z} : lwf (gL G) l ->
   [ G ; Γ ,, tyNat @ lzero ⊢[ ly ] M @ l ] -> [ G ; Γ ⊢[ ly ] s : M[lsingle zero] @ l ] ->
@@ -268,7 +268,7 @@ Lemma VS_natrec_zero {ly G Γ l M s z} : lwf (gL G) l ->
   VTyS G (Γ ,, tyNat @ lzero) M M l -> VTmS G Γ s s M[lsingle zero] l ->
   VTmS G (Γ ,, tyNat @ lzero ,, M @ l) z z M[lsucc] l ->
   VTmS G Γ (natrec l M s z zero) s M[lsingle zero] l.
-Proof. intros. eapply (VTmS_trans_diag EP EM (t2 := s)); [s_diag V_natrec_zero | eassumption]. Qed.
+Proof using EL VL. intros. eapply (VTmS_trans_diag EP EM (t2 := s)); [s_diag V_natrec_zero | eassumption]. Qed.
 
 Lemma VS_natrec_succ {ly G Γ l M s z t} : lwf (gL G) l ->
   [ G ; Γ ,, tyNat @ lzero ⊢[ ly ] M @ l ] -> [ G ; Γ ⊢[ ly ] s : M[lsingle zero] @ l ] ->
@@ -277,7 +277,7 @@ Lemma VS_natrec_succ {ly G Γ l M s z t} : lwf (gL G) l ->
   VTyS G (Γ ,, tyNat @ lzero) M M l -> VTmS G Γ s s M[lsingle zero] l ->
   VTmS G (Γ ,, tyNat @ lzero ,, M @ l) z z M[lsucc] l -> VTmS G Γ t t tyNat lzero ->
   VTmS G Γ (natrec l M s z (succ t)) z[lsingle2 t (natrec l M s z t)] M[lsingle (succ t)] l.
-Proof.
+Proof using EL VL VN.
   intros. eapply (VTmS_trans_diag EP EM (t2 := z[lsingle2 t (natrec l M s z t)])); [s_diag V_natrec_succ|].
   eapply VTmS_single2; try eassumption.
   eapply VS_natrec; try eassumption. apply lequiv_refl; assumption.
@@ -288,7 +288,7 @@ Lemma VS_El_pi {ly G Γ l l' s t} : lwf (gL G) l -> lwf (gL G) l' ->
   lle ly ge_layer -> typeof ly = ly ->
   VTmS G Γ s s (tyU l) (lsuc l) -> VTmS G (Γ ,, tyEl l s @ l) t t (tyU l') (lsuc l') ->
   VTyS G Γ (tyPi l l' (tyEl l s) (tyEl l' t)) (tyEl (lmax l l') (tmPi l l' s t)) (lmax l l').
-Proof.
+Proof using EL VL VN.
   intros Hw Hw' Hs Ht Hly Hty Vs Vt. eapply (VTyS_trans_diag EP EM (T2 := tyEl (lmax l l') (tmPi l l' s t))); [s_diag V_El_pi|].
   apply VS_El; [exact (lwf_max Hw Hw') | apply lequiv_refl, lwf_max; assumption |].
   eapply VS_code_pi; try eassumption; apply lequiv_refl; assumption.
@@ -301,7 +301,7 @@ Lemma VS_sig {ly G Γ l l' l3 l4 A A' B B'} : lwf (gL G) l -> lwf (gL G) l' ->
   lle ly ge_layer -> typeof ly = ly ->
   VTyS G Γ A A' l -> VTyS G (Γ ,, A @ l) B B' l' ->
   VTyS G Γ (tySig l l' A B) (tySig l3 l4 A' B') (lmax l l').
-Proof. intros; s_lift. Qed.
+Proof using EL VL VN. intros; s_lift. Qed.
 
 Lemma VS_code_sig {ly G Γ l1 l2 l3 l4 s s' t t'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
@@ -309,7 +309,7 @@ Lemma VS_code_sig {ly G Γ l1 l2 l3 l4 s s' t t'} : lwf (gL G) l1 -> lwf (gL G) 
   lle ly ge_layer -> typeof ly = ly ->
   VTmS G Γ s s' (tyU l1) (lsuc l1) -> VTmS G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) (lsuc l2) ->
   VTmS G Γ (tmSig l1 l2 s t) (tmSig l3 l4 s' t') (tyU (lmax l1 l2)) (lsuc (lmax l1 l2)).
-Proof. intros; s_lift. Qed.
+Proof using EL VL VN. intros; s_lift. Qed.
 
 Lemma VS_pair {ly G Γ l l' l3 l4 A A' B B' a a' b b'} : lwf (gL G) l -> lwf (gL G) l' ->
   lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢[ ly ] B @ l' ] ->
@@ -317,7 +317,7 @@ Lemma VS_pair {ly G Γ l l' l3 l4 A A' B B' a a' b b'} : lwf (gL G) l -> lwf (gL
   VTyS G Γ A A' l -> VTyS G (Γ ,, A @ l) B B' l' ->
   VTmS G Γ a a' A l -> VTmS G Γ b b' B[lsingle a] l' ->
   VTmS G Γ (tmPair l l' A B a b) (tmPair l3 l4 A' B' a' b') (tySig l l' A B) (lmax l l').
-Proof. intros; s_lift. Qed.
+Proof using EL VL VN. intros; s_lift. Qed.
 
 Lemma VS_fst {ly G Γ l l' l3 l4 A A' B B' p p'} : lwf (gL G) l -> lwf (gL G) l' ->
   lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢[ ly ] B @ l' ] ->
@@ -325,7 +325,7 @@ Lemma VS_fst {ly G Γ l l' l3 l4 A A' B B' p p'} : lwf (gL G) l -> lwf (gL G) l'
   VTyS G Γ A A' l -> VTyS G (Γ ,, A @ l) B B' l' ->
   VTmS G Γ p p' (tySig l l' A B) (lmax l l') ->
   VTmS G Γ (tmFst l l' A B p) (tmFst l3 l4 A' B' p') A l.
-Proof. intros; s_lift. Qed.
+Proof using EL VL VN. intros; s_lift. Qed.
 
 Lemma VS_snd {ly G Γ l l' l3 l4 A A' B B' p p'} : lwf (gL G) l -> lwf (gL G) l' ->
   lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢[ ly ] B @ l' ] ->
@@ -333,7 +333,7 @@ Lemma VS_snd {ly G Γ l l' l3 l4 A A' B B' p p'} : lwf (gL G) l -> lwf (gL G) l'
   VTyS G Γ A A' l -> VTyS G (Γ ,, A @ l) B B' l' ->
   VTmS G Γ p p' (tySig l l' A B) (lmax l l') ->
   VTmS G Γ (tmSnd l l' A B p) (tmSnd l3 l4 A' B' p') B[lsingle (tmFst l l' A B p)] l'.
-Proof. intros; s_lift. Qed.
+Proof using EL VL VN. intros; s_lift. Qed.
 
 Lemma VS_fst_beta {ly G Γ l l' A B a b} : lwf (gL G) l -> lwf (gL G) l' ->
   [ G ; Γ ,, A @ l ⊢[ ly ] B @ l' ] -> [ G ; Γ ⊢[ ly ] a : A @ l ] ->
@@ -341,7 +341,7 @@ Lemma VS_fst_beta {ly G Γ l l' A B a b} : lwf (gL G) l -> lwf (gL G) l' ->
   lle ly ge_layer -> typeof ly = ly ->
   VTyS G Γ A A l -> VTyS G (Γ ,, A @ l) B B l' -> VTmS G Γ a a A l -> VTmS G Γ b b B[lsingle a] l' ->
   VTmS G Γ (tmFst l l' A B (tmPair l l' A B a b)) a A l.
-Proof. intros. eapply (VTmS_trans_diag EP EM (t2 := a)); [s_diag V_fst_beta | eassumption]. Qed.
+Proof using EL VL. intros. eapply (VTmS_trans_diag EP EM (t2 := a)); [s_diag V_fst_beta | eassumption]. Qed.
 
 Lemma VS_snd_beta {ly G Γ l l' A B a b} : lwf (gL G) l -> lwf (gL G) l' ->
   [ G ; Γ ,, A @ l ⊢[ ly ] B @ l' ] -> [ G ; Γ ⊢[ ly ] a : A @ l ] ->
@@ -349,7 +349,7 @@ Lemma VS_snd_beta {ly G Γ l l' A B a b} : lwf (gL G) l -> lwf (gL G) l' ->
   lle ly ge_layer -> typeof ly = ly ->
   VTyS G Γ A A l -> VTyS G (Γ ,, A @ l) B B l' -> VTmS G Γ a a A l -> VTmS G Γ b b B[lsingle a] l' ->
   VTmS G Γ (tmSnd l l' A B (tmPair l l' A B a b)) b B[lsingle a] l'.
-Proof. intros. eapply (VTmS_trans_diag EP EM (t2 := b)); [s_diag V_snd_beta | eassumption]. Qed.
+Proof using EL VL. intros. eapply (VTmS_trans_diag EP EM (t2 := b)); [s_diag V_snd_beta | eassumption]. Qed.
 
 Lemma VS_sig_eta {ly G Γ l l' A B p} : lwf (gL G) l -> lwf (gL G) l' ->
   [ G ; Γ ⊢[ ly ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ ly ] B @ l' ] ->
@@ -357,14 +357,14 @@ Lemma VS_sig_eta {ly G Γ l l' A B p} : lwf (gL G) l -> lwf (gL G) l' ->
   lle ly ge_layer -> typeof ly = ly ->
   VTyS G Γ A A l -> VTyS G (Γ ,, A @ l) B B l' -> VTmS G Γ p p (tySig l l' A B) (lmax l l') ->
   VTmS G Γ (tmPair l l' A B (tmFst l l' A B p) (tmSnd l l' A B p)) p (tySig l l' A B) (lmax l l').
-Proof. intros. eapply (VTmS_trans_diag EP EM (t2 := p)); [s_diag V_sig_eta | eassumption]. Qed.
+Proof using EL VL VN. intros. eapply (VTmS_trans_diag EP EM (t2 := p)); [s_diag V_sig_eta | eassumption]. Qed.
 
 Lemma VS_El_sig {ly G Γ l l' s t} : lwf (gL G) l -> lwf (gL G) l' ->
   [ G ; Γ ⊢[ ly ] s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢[ ly ] t : tyU l' @ lsuc l' ] ->
   lle ly ge_layer -> typeof ly = ly ->
   VTmS G Γ s s (tyU l) (lsuc l) -> VTmS G (Γ ,, tyEl l s @ l) t t (tyU l') (lsuc l') ->
   VTyS G Γ (tySig l l' (tyEl l s) (tyEl l' t)) (tyEl (lmax l l') (tmSig l l' s t)) (lmax l l').
-Proof.
+Proof using EL VL VN.
   intros Hw Hw' Hs Ht Hly Hty Vs Vt. eapply (VTyS_trans_diag EP EM (T2 := tyEl (lmax l l') (tmSig l l' s t))); [s_diag V_El_sig|].
   apply VS_El; [exact (lwf_max Hw Hw') | apply lequiv_refl, lwf_max; assumption |].
   eapply VS_code_sig; try eassumption; apply lequiv_refl; assumption.
@@ -372,39 +372,39 @@ Qed.
 
 (** The unit type (M8c). *)
 Lemma VS_unit {G Γ l l'} : lwf (gL G) l -> lequiv (gL G) l l' -> VTyS G Γ (tyUnit l) (tyUnit l') l.
-Proof. intros; s_lift. Qed.
+Proof using . intros; s_lift. Qed.
 Lemma VS_code_unit {G Γ l l'} : lwf (gL G) l -> lequiv (gL G) l l' ->
   VTmS G Γ (tmUnit l) (tmUnit l') (tyU l) (lsuc l).
-Proof. intros; s_lift. Qed.
+Proof using EL VL. intros; s_lift. Qed.
 Lemma VS_triv {G Γ l l'} : lwf (gL G) l -> lequiv (gL G) l l' -> VTmS G Γ (tmTriv l) (tmTriv l') (tyUnit l) l.
-Proof. intros; s_lift. Qed.
+Proof using EL VL. intros; s_lift. Qed.
 Lemma VS_El_unit {G Γ l} : lwf (gL G) l -> VTyS G Γ (tyUnit l) (tyEl l (tmUnit l)) l.
-Proof. intros; s_lift. Qed.
+Proof using . intros; s_lift. Qed.
 Lemma VS_unit_eta {G Γ l t t'} : lwf (gL G) l ->
   VTmS G Γ t t (tyUnit l) l -> VTmS G Γ t' t' (tyUnit l) l -> VTmS G Γ t t' (tyUnit l) l.
-Proof. intros; s_lift. Qed.
+Proof using EL VL. intros; s_lift. Qed.
 
 (** Strict equality (M10a). *)
 Lemma VS_seq {G Γ l l' A A' a a' b b'} : lwf (gL G) l -> lequiv (gL G) l l' ->
   VTyS G Γ A A' l -> VTmS G Γ a a' A l -> VTmS G Γ b b' A l ->
   VTyS G Γ (tySEq l A a b) (tySEq l' A' a' b') l.
-Proof. intros; s_lift. Qed.
+Proof using EL. intros; s_lift. Qed.
 Lemma VS_sempty {G Γ l l'} : lwf (gL G) l -> lequiv (gL G) l l' -> VTyS G Γ (tySEmpty l) (tySEmpty l') l.
-Proof. intros; s_lift. Qed.
+Proof using . intros; s_lift. Qed.
 Lemma VS_srefl {G Γ l l' A A' a a'} : lwf (gL G) l -> lequiv (gL G) l l' ->
   VTyS G Γ A A' l -> VTmS G Γ a a' A l -> VTmS G Γ (srefl l A a) (srefl l' A' a') (tySEq l A a a) l.
-Proof. intros; s_lift. Qed.
+Proof using EL VL. intros; s_lift. Qed.
 Lemma VS_elimSEmpty {G Γ l1 l2 l3 l4 M M' e e'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
   lequiv (gL G) l3 l1 -> lequiv (gL G) l4 l2 ->
   VTyS G Γ M M' l2 -> VTmS G Γ e e' (tySEmpty l1) l1 ->
   VTmS G Γ (elimSEmpty l1 l2 M e) (elimSEmpty l3 l4 M' e') M l2.
-Proof. intros; s_lift. Qed.
+Proof using EL VL VN. intros; s_lift. Qed.
 Lemma VS_seq_irr {G Γ l A a b t t'} :
   VTmS G Γ t t (tySEq l A a b) l -> VTmS G Γ t' t' (tySEq l A a b) l -> VTmS G Γ t t' (tySEq l A a b) l.
-Proof. intros; s_lift. Qed.
+Proof using EL VL. intros; s_lift. Qed.
 Lemma VS_sempty_irr {G Γ l t t'} : lwf (gL G) l ->
   VTmS G Γ t t (tySEmpty l) l -> VTmS G Γ t' t' (tySEmpty l) l -> VTmS G Γ t t' (tySEmpty l) l.
-Proof. intros; s_lift. Qed.
+Proof using EL VL. intros; s_lift. Qed.
 
 End Rules.
 

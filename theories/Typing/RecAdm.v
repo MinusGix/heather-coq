@@ -87,7 +87,7 @@ Lemma motT_br0 MT l1 lv g c : [ recGT G ; recΓT Γ ⊢[ lM ] MT @ lvren l1 (ush
   lwf (gL (brG k G)) lv -> [ brG k G ; g ⊢[ lD ] ] ->
   [ brG k G ; wkc nu ng Γ ⊢[ lM ] c : tyCTyp g lv @ lzero ] ->
   [ brG k G ; wkc nu ng Γ ⊢[ lM ] motT (wkb nu ng 0 (wrapMT MT)) lv g c @ lvren l1 (ush nu) ].
-Proof.
+Proof using Hk HΓ.
   intros HM Hl Hg Hc. pose proof (MT_gwk k _ _ Hk (ctx_glob _ _ _ HΓ) (MT_uwk nu MT l1 HM)) as Y.
   pose proof (motT_wf _ _ _ _ _ _ _ Y Hl Hg Hc) as X.
   unfold wkb, wrapMT; cbn [uren_tm gren_tm ren_tm]. unfold wrapMT in X.
@@ -98,7 +98,7 @@ Lemma mott_br0 Mt l2 lv g U c : [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (u
   lwf (gL (brG k G)) lv -> [ brG k G ; g ⊢[ lD ] ] -> [ brG k G ; g ⊢[ lD ] U @ lv ] ->
   [ brG k G ; wkc nu ng Γ ⊢[ lM ] c : tyCTrm g U lv @ lzero ] ->
   [ brG k G ; wkc nu ng Γ ⊢[ lM ] mott (wkb nu ng 0 (wrapMt Mt)) lv g U c @ lvren l2 (ush nu) ].
-Proof.
+Proof using Hk HΓ.
   intros HM Hl Hg HU Hc. pose proof (Mt_gwk k _ _ Hk (ctx_glob _ _ _ HΓ) (Mt_uwk nu Mt l2 HM)) as Y.
   pose proof (mott_wf _ _ _ _ _ _ _ _ Y Hl Hg HU Hc) as X.
   unfold wkb, wrapMt; cbn [uren_tm gren_tm ren_tm]. unfold wrapMt in X.
@@ -236,7 +236,7 @@ Context {G : gctx} {Γ : ctx} (HΓ : [ G ; Γ ⊢[ lM ] ]) {l1 l2 : lvl} (Hl1 : 
   (HMt : [ recGt G ; recΓt Γ ⊢[ lM ] Mt @ lvren l2 (ush 1) ]).
 
 Lemma brΓ_wf k : k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ].
-Proof.
+Proof using HMT HMt Hl1 Hl2 HΓ.
   intros Hk. pose proof (wf_brG (ctx_glob _ _ _ HΓ) k Hk) as HG'.
   br_all ltac:(try (destruct k as [|k])). all: try (exfalso; lia).
   all: unfold brΓ; cbn [brLocs cexts mkLocs call_ty call_lv br_calls br_nu br_ng br_ar].
@@ -245,7 +245,7 @@ Qed.
 
 Lemma brRes_wf k : k < nbr ->
   [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ].
-Proof.
+Proof using HMT HMt Hl1 Hl2 HΓ.
   intros Hk. pose proof (wf_brG (ctx_glob _ _ _ HΓ) k Hk) as HG'.
   br_all ltac:(try (destruct k as [|k])). all: try (exfalso; lia).
   all: unfold brΓ, brLv; cbn [brLocs cexts brRes br_isT mkLocs call_ty call_lv br_calls br_nu br_ng br_ar br_head br_nl].

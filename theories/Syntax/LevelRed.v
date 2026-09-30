@@ -90,9 +90,9 @@ Section Reducts.
 Context {l1 l2 l1' l2' rb rb'} (E1 : leqv l1 l1') (E2 : leqv l2 l2') (Erb : tm_leq rb rb').
 
 Lemma leqv_lsuc a b : leqv a b -> leqv (lsuc a) (lsuc b).
-Proof. intros H v; cbn; now rewrite H. Qed.
+Proof using . intros H v; cbn; now rewrite H. Qed.
 Lemma leqv_lmax a b a' b' : leqv a a' -> leqv b b' -> leqv (lmax a b) (lmax a' b').
-Proof. intros H H' v; cbn; now rewrite H, H'. Qed.
+Proof using . intros H H' v; cbn; now rewrite H, H'. Qed.
 
 (** Goal-directed: peel the reducts' structure down to the hypotheses. *)
 Ltac leq_go := repeat first
@@ -106,7 +106,7 @@ Ltac leq_go := repeat first
 
 Lemma redT_leq l l' Δ Δ' c c' r : leqv l l' -> ctx_leq Δ Δ' -> ty_leq c c' ->
   redT l1 l2 rb l Δ c = Some r -> exists r', redT l1' l2' rb' l' Δ' c' = Some r' /\ tm_leq r r'.
-Proof.
+Proof using E1 E2 Erb.
   intros El EΔ Ec H; destruct c; leq_split; cbn [redT redt] in H; try discriminate;
     injection H as <-; refine (ex_intro _ _ (conj eq_refl _));
     subst; leq_go.
@@ -114,7 +114,7 @@ Qed.
 
 Lemma redt_leq l l' Δ Δ' T T' c c' r : leqv l l' -> ctx_leq Δ Δ' -> ty_leq T T' -> tm_leq c c' ->
   redt l1 l2 rb l Δ T c = Some r -> exists r', redt l1' l2' rb' l' Δ' T' c' = Some r' /\ tm_leq r r'.
-Proof.
+Proof using E1 E2 Erb.
   intros El EΔ ET Ec H; destruct c; leq_split; cbn [redT redt] in H; try discriminate.
   all: try (injection H as <-; refine (ex_intro _ _ (conj eq_refl _));
             subst; solve [leq_go]).

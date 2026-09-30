@@ -37,7 +37,7 @@ Lemma FS_tygvar {G Γ U Δ i' l d d'} : SemCtx G Γ -> in_gctx (gΨ G) U (gdTy �
   [ G ; Γ ⊢[ lD ] ] -> lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
   (forall n B k, in_ctx Δ n B k -> SemTm G Γ (llk d n) (llk d' n) B[d] k) ->
   SemTy G Γ (tyGvar U d) (tyGvar U d') l.
-Proof.
+Proof using ELM ELP.
   intros HS Hin Hi HΓ Ht Nd Ht' Nd' Hv. pose proof HS as (HG & _ & _).
   pose proof (in_gctx_DWf (ctx_glob _ _ _ HΓ) Hin) as HΔ; cbn in HΔ.
   destruct (HG _ _ Hin) as [VP VM].
@@ -53,7 +53,7 @@ Lemma FS_gvar {G Γ u Δ i' A l d d'} : SemCtx G Γ -> in_gctx (gΨ G) u (gdTm �
   (forall n B k, in_ctx Δ n B k -> SemTm G Γ (llk d n) (llk d' n) B[d] k) ->
   (forall n B k, in_ctx Δ n B k -> SemTm G Γ (llk d n) (llk d n) B[d] k) ->
   SemTm G Γ (gvar u d) (gvar u d') A[d] l.
-Proof.
+Proof using ELM ELP.
   intros HS Hin Hi HΓ Ht Nd Ht' Nd' Hv Hvv. pose proof HS as (HG & _ & _).
   pose proof (in_gctx_DWf (ctx_glob _ _ _ HΓ) Hin) as HT; cbn in HT.
   pose proof (ctx_of_wf_ty (i := lD) eq_refl HT) as HΔ.
@@ -79,7 +79,7 @@ Lemma FS_delta {G Γ u Δ T l t0 t d} : SemCtx G Γ -> in_gctx (gΨ G) u (gdDef 
   (forall n B k, in_ctx Δ n B k -> SemTm G Γ (llk d n) (llk d n) B[d] k) ->
   [ G ; Δ ⊢[ lD ] t : T @ l ] -> SemTm G Δ t t T l ->
   SemTm G Γ (gdef u t d) t[d] T[d] l.
-Proof.
+Proof using ELM ELP.
   intros HS Hin Hl HΓ Ht Nd He Hvv Hb Sb. pose proof HS as (HG & _ & _).
   pose proof (in_gctx_DWf (ctx_glob _ _ _ HΓ) Hin) as HT; cbn in HT.
   pose proof (ctx_of_wf_ty (i := lD) eq_refl HT) as HΔ.
@@ -108,7 +108,7 @@ Lemma FS_gdef {G Γ u Δ T l t0 t d} : SemCtx G Γ -> in_gctx (gΨ G) u (gdDef �
   (forall n B k, in_ctx Δ n B k -> SemTm G Γ (llk d n) (llk d n) B[d] k) ->
   [ G ; Δ ⊢[ lD ] t : T @ l ] -> SemTm G Δ t t T l ->
   SemTm G Γ (gdef u t d) (gdef u t d) T[d] l.
-Proof.
+Proof using ELM ELP.
   intros HS Hin Hl HΓ Ht Nd He Hvv Hb Sb. pose proof HS as (HG & VCP & VCM).
   destruct (FS_delta HS Hin Hl HΓ Ht Nd He Hvv Hb Sb) as (_ & VTP & VTM & XP & XM).
   split; [exact HS | split; [exact VTP | split; [exact VTM | split]]].
@@ -126,7 +126,7 @@ Lemma FS_gdef_eq {G Γ u Δ T l t0 t t' d d'} : SemCtx G Γ -> in_gctx (gΨ G) u
   (forall n B k, in_ctx Δ n B k -> SemTm G Γ (llk d n) (llk d' n) B[d] k) ->
   [ G ; Δ ⊢[ lD ] t ≅ t' : T @ l ] -> SemTm G Δ t t' T l ->
   SemTm G Γ (gdef u t d) (gdef u t' d') T[d] l.
-Proof.
+Proof using ELM ELP.
   intros HS Hin Hl Hl' HΓ Ht Nd Ht' Nd' He He' Hvv Hvv' Hv Hbb Sb. pose proof HS as (HG & VCP & VCM).
   pose proof (in_gctx_DWf (ctx_glob _ _ _ HΓ) Hin) as HT; cbn in HT.
   pose proof (ctx_of_wf_ty (i := lD) eq_refl HT) as HΔ.
@@ -256,7 +256,7 @@ Theorem fundamentalS :
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> i = lD ->
      SemTm G Γ t t' T l) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> i = lD -> SemCtxEq G Γ Γ').
-Proof.
+Proof using ELM ELP.
   apply typing_mut; intros; try exact I;
     try match goal with H : lM = lD |- _ => discriminate H end;
     ft_prep;
@@ -281,7 +281,7 @@ Corollary fundamentalS_le :
   (forall G i Γ t T l, [ G ; Γ ⊢[ i ] t : T @ l ] -> lle i lD -> SemTm G Γ t t T l) /\
   (forall G i Γ T T' l, [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> lle i lD -> SemTy G Γ T T' l) /\
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> lle i lD -> SemTm G Γ t t' T l).
-Proof.
+Proof using ELM ELP.
   destruct fundamentalS as (_ & Hc & Hty & Htm & Heqty & Heqtm & _).
   split; [| split; [| split; [| split]]].
   - intros G i Γ Hd Hi. exact (Hc _ _ _ (lift_ctx Hd Hi) eq_refl).
