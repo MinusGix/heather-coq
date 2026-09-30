@@ -325,6 +325,52 @@ that eliminates into relevant types has K. The consequences:
   also means a replacement for route 2b's form-B arm, which transports
   the user's motive along the index equation.
 
+### S7. Strict equality on its own layer, two-level style (2026-09-30, paper)
+
+Two-level type theory (Annenkov, Capriotti, Kraus, Sattler) keeps UIP
+off the inner level with one restriction: the inner `J` eliminates only
+into inner (fibrant) motives. The outer equality is strict and has UIP,
+but no inner identity proof can be mapped into it, so S6's `toS` does
+not exist.
+
+**DeLaM has the right shape.** `D ⊂ M` by lifting (`Typing/Lifting.v`),
+as inner ⊂ outer. Rules already take premises at fixed layers. So:
+- `sEq`, `srefl`, `transp` are formed at `M` only;
+- `J`'s motive premise is at `D`, even when `J` is used at `M`;
+- the rest is unchanged.
+
+Then `toS` is not typeable, including through a relevant wrapper such as
+`Σ(_ : Unit). sEq`, since every `sEq`-mentioning type is `M`-only. `D`'s
+`Id` keeps no UIP, and `sEq` is `M`'s own equality. At `M`, UIP is
+harmless: `M` is the meta layer, and `□`'s code is compared
+syntactically anyway. To check: 2LTT also forbids eliminating inner
+inductives into outer motives unless they are cofibrant (the exo-nat
+axiom). DeLaM's `M` recursors over lifted `D` data do exactly that. For
+first-order data this is the standard, consistent cofibrancy assumption.
+No model of DeLaM with a univalent `D` has been checked.
+
+**It is at the wrong layer for route 2b.** Heather elaborates ordinary
+code, forded families included, at `Prog` (= `D`). `meta fn` is at
+`Meta`. With `sEq` at `M` only, forded families would be `M` types that
+programs cannot use. The alternative is a fibrancy split inside `D`
+(2LTT proper), and it is heavy:
+- forded families would be non-fibrant, so they get no `Id` of their own;
+- the §11 value equality would need a fibrancy axiom for
+  `Σ(s). sEq(I; μ s; m)` at set carriers, which is option 2 restated.
+
+**It does not settle normalization.** Irrelevance plus β derives the
+strip wherever `transp` exists (S1). At `M`, Werner's rule is still the
+question. What changes is that at `M` the CICobs design costs no
+structure, since UIP is acceptable there. Whether CICobs' cast can be
+pushed through `D`'s relevant `Id` at motive instances without fording
+`Id` is unchecked. CICobs fords it.
+
+**Reading.** The layer restriction is cheap and principled. It is the
+right home for strict equality as a meta-level tool. It does not serve
+the one customer that exists. Route 2b needs something at `D`: option 3
+(a computed strict `eq_I` at data carriers, UIP only where Hedberg has
+it) or option 2 (`sEq` restricted to set-like carriers).
+
 ## Staging
 
 **M10a: `sEq`, `srefl`, `sEmpty`, `elim_sEmpty`, irrelevance. No
