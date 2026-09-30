@@ -79,11 +79,11 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
 (* the unit type (every layer but V since M8d; M8_DESIGN.md K2, L1) *)
 | wft_unit G i Γ l : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tyUnit l @ l ]
-(* strict equality and the irrelevant empty type (layers D and M; M10_DESIGN.md) *)
-| wft_seq G i Γ l A a b : compt i -> lwf (gL G) l ->
+(* strict equality and the irrelevant empty type (M10_DESIGN.md): every layer but V since M10c *)
+| wft_seq G i Γ l A a b : i <> lV -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] b : A @ l ] ->
     [ G ; Γ ⊢[ i ] tySEq l A a b @ l ]
-| wft_sempty G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
+| wft_sempty G i Γ l : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tySEmpty l @ l ]
 (* the identity type (M11_DESIGN.md): every layer but V since M11b *)
 | wft_id G i Γ l A a b : i <> lV -> lwf (gL G) l ->
@@ -227,11 +227,11 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] tmUnit l : tyU l @ lsuc l ]
 | wf_triv G i Γ l : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tmTriv l : tyUnit l @ l ]
-(* strict equality (layers D and M): [srefl], and [sEmpty]'s eliminator (no β) *)
-| wf_srefl G i Γ l A a : compt i -> lwf (gL G) l ->
+(* strict equality (every layer but V since M10c): [srefl], and [sEmpty]'s eliminator (no β) *)
+| wf_srefl G i Γ l A a : i <> lV -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] ->
     [ G ; Γ ⊢[ i ] srefl l A a : tySEq l A a a @ l ]
-| wf_elimSEmpty G i Γ l l' M e : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+| wf_elimSEmpty G i Γ l l' M e : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] M @ l' ] -> [ G ; Γ ⊢[ i ] e : tySEmpty l @ l ] ->
     [ G ; Γ ⊢[ i ] elimSEmpty l l' M e : M @ l' ]
 (* the identity type (every layer but V since M11b): [refl], and based path induction; the
@@ -254,11 +254,11 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u : tyEl l s @ l ] ->
     [ G ; Γ ⊢[ i ] tmId l s t u : tyU l @ lsuc l ]
 (* strict equality's codes (M10c) *)
-| wf_code_seq G i Γ l s t u : compt i -> lwf (gL G) l ->
+| wf_code_seq G i Γ l s t u : i <> lV -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
     [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u : tyEl l s @ l ] ->
     [ G ; Γ ⊢[ i ] tmSEq l s t u : tyU l @ lsuc l ]
-| wf_code_sempty G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
+| wf_code_sempty G i Γ l : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tmSEmpty l : tyU l @ lsuc l ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
@@ -329,11 +329,11 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
 | eqty_El_unit G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] tyUnit l ≅ tyEl l (tmUnit l) @ l ]
 (* strict equality (layers D and M) *)
-| eqty_seq G i Γ l l' A A' a a' b b' : compt i -> lequiv (gL G) l l' ->
+| eqty_seq G i Γ l l' A A' a a' b b' : i <> lV -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
     [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] -> [ G ; Γ ⊢[ i ] b ≅ b' : A @ l ] ->
     [ G ; Γ ⊢[ i ] tySEq l A a b ≅ tySEq l' A' a' b' @ l ]
-| eqty_sempty G i Γ l l' : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+| eqty_sempty G i Γ l l' : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] tySEmpty l ≅ tySEmpty l' @ l ]
 (* the identity type (every layer but V; El decoding at the computing layers) *)
 | eqty_id G i Γ l l' A A' a a' b b' : i <> lV -> lequiv (gL G) l l' ->
@@ -639,14 +639,14 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
 | eqtm_unit_eta G i Γ l t t' : compt i -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] t : tyUnit l @ l ] -> [ G ; Γ ⊢[ i ] t' : tyUnit l @ l ] ->
     [ G ; Γ ⊢[ i ] t ≅ t' : tyUnit l @ l ]
-(* strict equality (layers D and M): the congruences, and proof irrelevance
-   at [sEq] and [sEmpty]. Irrelevance subsumes [srefl]'s congruence; it is a
+(* strict equality: the congruences (every layer but V since M10c), and proof
+   irrelevance at [sEq] and [sEmpty] (the computing layers). Irrelevance subsumes [srefl]'s congruence; it is a
    rule anyway, as [⟨⟩]'s is, so that the substitution lemmas need no
    conversion of [srefl]'s type *)
-| eqtm_srefl G i Γ l l' A A' a a' : compt i -> lequiv (gL G) l l' ->
+| eqtm_srefl G i Γ l l' A A' a a' : i <> lV -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
     [ G ; Γ ⊢[ i ] srefl l A a ≅ srefl l' A' a' : tySEq l A a a @ l ]
-| eqtm_elimSEmpty G i Γ l1 l2 l3 l4 M M' e e' : compt i ->
+| eqtm_elimSEmpty G i Γ l1 l2 l3 l4 M M' e e' : i <> lV ->
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢[ i ] M @ l2 ] -> [ G ; Γ ⊢[ i ] M ≅ M' @ l2 ] ->
     [ G ; Γ ⊢[ i ] e ≅ e' : tySEmpty l1 @ l1 ] ->
@@ -682,11 +682,11 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] t ≅ t' : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u ≅ u' : tyEl l s @ l ] ->
     [ G ; Γ ⊢[ i ] tmId l s t u ≅ tmId l' s' t' u' : tyU l @ lsuc l ]
 (* strict equality's codes (M10c) *)
-| eqtm_code_seq G i Γ l l' s s' t t' u u' : compt i -> lequiv (gL G) l l' ->
+| eqtm_code_seq G i Γ l l' s s' t t' u u' : i <> lV -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
     [ G ; Γ ⊢[ i ] t ≅ t' : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u ≅ u' : tyEl l s @ l ] ->
     [ G ; Γ ⊢[ i ] tmSEq l s t u ≅ tmSEq l' s' t' u' : tyU l @ lsuc l ]
-| eqtm_code_sempty G i Γ l l' : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+| eqtm_code_sempty G i Γ l l' : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] tmSEmpty l ≅ tmSEmpty l' : tyU l @ lsuc l ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])

@@ -189,24 +189,24 @@ Proof. inv_tm. Qed.
 
 (** Strict equality's codes (M10c). *)
 Lemma inv_code_seq {G i Γ l s t u T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSEq l s t u : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
     [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] /\ [ G ; Γ ⊢[ i ] u : tyEl l s @ l ]) /\
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ i ] T ≅ tyU l @ k ].
 Proof. inv_tm. Qed.
 
 Lemma inv_code_sempty {G i Γ l T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSEmpty l : T @ k ] ->
-  (compt i /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\
+  (i <> lV /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ i ] T ≅ tyU l @ k ].
 Proof. inv_tm. Qed.
 
 (** Strict equality (M10a). *)
 Lemma inv_srefl {G i Γ l A a T k} : typeof i = i -> [ G ; Γ ⊢[ i ] srefl l A a : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\
     lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ i ] T ≅ tySEq l A a a @ k ].
 Proof. inv_tm. Qed.
 
 Lemma inv_elimSEmpty {G i Γ l l' M e T k} : typeof i = i -> [ G ; Γ ⊢[ i ] elimSEmpty l l' M e : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] M @ l' ] /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] M @ l' ] /\
     [ G ; Γ ⊢[ i ] e : tySEmpty l @ l ]) /\ lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ i ] T ≅ M @ k ].
 Proof. inv_tm. Qed.
 
@@ -387,7 +387,7 @@ Lemma inv_ty_unit {G i Γ l k} : [ G ; Γ ⊢[ i ] tyUnit l @ k ] ->
 Proof. inv_ty. Qed.
 
 Lemma inv_ty_seq {G i Γ l A a b k} : [ G ; Γ ⊢[ i ] tySEq l A a b @ k ] ->
-  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ] /\
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ] /\
     [ G ; Γ ⊢[ i ] b : A @ l ]) /\ lvl_eq (gL G) k l.
 Proof. inv_ty. Qed.
 
@@ -397,7 +397,7 @@ Lemma inv_ty_id {G i Γ l A a b k} : [ G ; Γ ⊢[ i ] tyId l A a b @ k ] ->
 Proof. inv_ty. Qed.
 
 Lemma inv_ty_sempty {G i Γ l k} : [ G ; Γ ⊢[ i ] tySEmpty l @ k ] ->
-  (compt i /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\ lvl_eq (gL G) k l.
+  (i <> lV /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\ lvl_eq (gL G) k l.
 Proof. inv_ty. Qed.
 
 (** ** Lookups are deterministic *)

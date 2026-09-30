@@ -425,7 +425,7 @@ Proof.
   eapply wf_lconv; [|exact H24]. apply wf_elimSEmpty; eauto using compt_self, lequiv_wf_r.
   - eapply wft_lconv; [exact HM' | now apply lequiv_sym].
   - eapply wf_lconv; [eapply conv_tm'; [exact He|] | now apply lequiv_sym].
-    apply eqty_sym, eqty_sempty; [exact compt_self | rewrite Hi; exact (ctx_of_wf_tm Hi He) | exact H13].
+    apply eqty_sym, eqty_sempty; [exact Hv | rewrite Hi; exact (ctx_of_wf_tm Hi He) | exact H13].
 Qed.
 
 (** The identity type (M11a), gated like Σ. *)
@@ -480,7 +480,7 @@ Proof.
   { intros x Hx. eapply wf_lconv with (l' := l); [|now apply lequiv_sym].
     eapply conv_tm'; [exact Hx | apply eqty_sym, HEl]. }
   apply (conv_U (l := l')); [|now apply lequiv_sym].
-  apply wf_code_seq; [exact compt_self | eauto using lequiv_wf_r | exact (conv_U Hs' Hl) | apply F, Ht | apply F, Hu].
+  apply wf_code_seq; [exact Hv | eauto using lequiv_wf_r | exact (conv_U Hs' Hl) | apply F, Ht | apply F, Hu].
 Qed.
 
 Lemma pre_El_sempty {Γ l} :

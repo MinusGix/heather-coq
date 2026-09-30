@@ -63,7 +63,7 @@ Qed.
 Lemma sy_code_sempty l : SYD (tmSEmpty l).
 Proof.
   intros G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_code_sempty H) as ((X & _) & _); contradiction].
+  notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_sempty H) as ((_ & _ & X) & _); contradiction].
   left; eexists; eexists; exact (wf_code_sempty _ _ _ _ Hc HΓ Hl).
 Qed.
@@ -468,7 +468,7 @@ Qed.
 Lemma sy_code_seq l s t u : sz_tm (tmSEq l s t u) <= n -> SYD (tmSEq l s t u).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_code_seq H) as ((X & _) & _); contradiction].
+  notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_seq H) as ((_ & X & _) & _); contradiction].
   destruct (ihC s ltac:(szl) G i Γ _ _ (HUniv HΓ Hl)) as [Hs | N];
     [| right; intros T k H; destruct (inva_code_seq H) as ((_ & _ & X & _) & _); contradiction].
@@ -539,7 +539,7 @@ Qed.
 Lemma sy_srefl l A a : sz_tm (srefl l A a) <= n -> SYD (srefl l A a).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_srefl H) as ((X & _) & _); contradiction].
+  notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_srefl H) as ((_ & X & _) & _); contradiction].
   destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
     [| right; intros T k H; destruct (inva_srefl H) as ((_ & _ & X & _) & _); contradiction].
@@ -551,14 +551,13 @@ Qed.
 Lemma sy_elimSEmpty l l' M e : sz_tm (elimSEmpty l l' M e) <= n -> SYD (elimSEmpty l l' M e).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_elimSEmpty H) as ((X & _) & _); contradiction].
-  pose proof (compt_typeof_self _ Hc) as Hty.
+  notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_elimSEmpty H) as ((_ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros T k H; destruct (inva_elimSEmpty H) as ((_ & _ & X & _) & _); contradiction].
   destruct (ihT M ltac:(szl) G i Γ l' HΓ) as [HM | N];
     [| right; intros T k H; destruct (inva_elimSEmpty H) as ((_ & _ & _ & X & _) & _); contradiction].
   assert (HSE : [ G ; Γ ⊢[ typeof i ] tySEmpty l @ l ])
-    by (rewrite Hty; apply wft_sempty; [exact Hc | exact HΓ | exact Hl]).
+    by exact (wft_sempty _ _ _ _ (typeof_notV i) (ctx_idem HΓ) Hl).
   destruct (ihC e ltac:(szl) G i Γ _ _ HSE) as [He | N];
     [| right; intros T k H; destruct (inva_elimSEmpty H) as ((_ & _ & _ & _ & X) & _); contradiction].
   left; eexists; eexists; exact (wf_elimSEmpty _ _ _ _ _ _ _ Hc Hl Hl' HM He).

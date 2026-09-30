@@ -106,6 +106,9 @@ Ltac wfd :=
   | |- [ _ ; _ ⊢[ _ ] tyUnit _ @ _ ] => apply wft_unit; [ discriminate | | lvl_ok ]
   | |- [ _ ; _ ⊢[ _ ] tyId _ _ _ _ @ _ ] => apply wft_id; [ discriminate | lvl_ok | | | ]
   | |- [ _ ; _ ⊢[ _ ] tmRefl _ _ _ : tyId _ _ _ _ @ _ ] => apply wf_idrefl; [ discriminate | lvl_ok | | ]
+  | |- [ _ ; _ ⊢[ _ ] tySEq _ _ _ _ @ _ ] => apply wft_seq; [ discriminate | lvl_ok | | | ]
+  | |- [ _ ; _ ⊢[ _ ] tySEmpty _ @ _ ] => apply wft_sempty; [ discriminate | | lvl_ok ]
+  | |- [ _ ; _ ⊢[ _ ] srefl _ _ _ : tySEq _ _ _ _ @ _ ] => apply wf_srefl; [ discriminate | lvl_ok | | ]
   | |- [ _ ; _ ,, tyGvar _ (lshift 0) @ _ ⊢[ _ ] var 0 : tyGvar _ (lshift 1) @ _ ] => apply wf_var0_gv
   | |- [ _ ; cvar _ ,, _ @ _ ⊢[ _ ] tyGvar _ (lshift 1) @ _ ] =>
       eapply wf_gv_up; [ discriminate | | glookup | unfold lle; cbn; lia ]

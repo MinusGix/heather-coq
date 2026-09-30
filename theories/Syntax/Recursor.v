@@ -29,7 +29,7 @@ Definition wrap (nu ng nl : nat) (b : tm) : tm := wrapU nu (wrapG ng (wrapL nl b
 
 (** The number of branches, and the branch-indexed case split: [br_all t]
     runs [t] [nbr] times, as [do nbr t] would (M8_DESIGN.md J2, S0). *)
-Notation nbr := 25 (only parsing).
+Notation nbr := 31 (only parsing).
 Ltac br_do n tac := lazymatch n with O => idtac | S ?m => tac; br_do m tac end.
 Ltac br_all tac := br_do constr:(nbr) tac.
 
@@ -44,6 +44,10 @@ Definition bSig := 13.  Definition bUnit := 14.  Definition bSig' := 15.  Defini
 Definition bFst := 17.  Definition bSnd := 18.  Definition bUnit' := 19. Definition bTriv := 20.
 (** The identity type's (M11b): Heather's [t_Id], [t'_Id], [t_refl], [t_J]. *)
 Definition bId := 21.   Definition bId' := 22.   Definition bRefl := 23.  Definition bJ := 24.
+(** Strict equality's (M10c): Heather's [t_sEq], [t'_sEq], [t_sEmpty], [t'_sEmpty],
+    [t_srefl], [t_elim_sE] ([t_transp] is removed with [transp]). *)
+Definition bSEq := 25.  Definition bSEq' := 26.  Definition bSEmpty := 27. Definition bSEmpty' := 28.
+Definition bSrefl := 29. Definition bElimSEmpty := 30.
 
 (** The arity [(levels, globals, locals)] of branch [k]. *)
 Definition br_ar (k : nat) : nat * nat * nat :=
@@ -73,13 +77,19 @@ Definition br_ar (k : nat) : nat * nat * nat :=
   | 22 => (1, 4, 3)       (* ℓ; g u_S u_t u_u; x_S x_t x_u. t'_Id *)
   | 23 => (1, 3, 2)       (* ℓ; g U_S u_t; x_S x_t. t_refl *)
   | 24 => (2, 7, 6)       (* ℓ ℓ'; g U_S u_a U_M u_c u_r u_e; x_S x_a x_M x_c x_r x_e. t_J *)
+  | 25 => (1, 4, 3)       (* ℓ; g U_S u_t u_u; x_S x_t x_u. t_sEq *)
+  | 26 => (1, 4, 3)       (* ℓ; g u_S u_t u_u; x_S x_t x_u. t'_sEq *)
+  | 27 => (1, 1, 0)       (* ℓ; g. t_sEmpty *)
+  | 28 => (1, 1, 0)       (* ℓ; g. t'_sEmpty *)
+  | 29 => (1, 3, 2)       (* ℓ; g U_S u_t; x_S x_t. t_srefl *)
+  | 30 => (2, 3, 2)       (* ℓ ℓ'; g U_M u_t; x_M x_t. t_elim_sE *)
   | _ => (0, 0, 0)
   end.
 
 (** Whether branch [k] is a type branch (typed at [l₁], recursing on
     [elim_Typ]) or a term branch. *)
 Definition br_isT (k : nat) : bool :=
-  match k with 0 | 1 | 2 | 3 | 13 | 14 | 21 => true | _ => false end.
+  match k with 0 | 1 | 2 | 3 | 13 | 14 | 21 | 25 | 27 => true | _ => false end.
 
 Definition wrapMT (MT : ty) : tm := bindU (bindG (bindL (tmTy MT))).
 Definition wrapMt (Mt : ty) : tm := bindU (bindG (bindG (bindL (tmTy Mt)))).
@@ -133,6 +143,11 @@ Definition redT (l : lvl) (Δ : ctx) (c : ty) : option tm :=
       Some (peelL (peelL (peelL (peelG (peelG (peelG (peelG (peelU (rb_br rb bId) k)
               (GCtx Δ)) (GTy A)) (GTm a)) (GTm b))
               (recT k Δ A)) (rect k Δ A a)) (rect k Δ A b))
+  | tySEq k A a b =>
+      Some (peelL (peelL (peelL (peelG (peelG (peelG (peelG (peelU (rb_br rb bSEq) k)
+              (GCtx Δ)) (GTy A)) (GTm a)) (GTm b))
+              (recT k Δ A)) (rect k Δ A a)) (rect k Δ A b))
+  | tySEmpty k => Some (peelG (peelU (rb_br rb bSEmpty) k) (GCtx Δ))
   | _ => None
   end.
 
@@ -221,6 +236,20 @@ Definition redt (l : lvl) (Δ : ctx) (T : ty) (c : tm) : option tm :=
               (rect k' Δ (subst_ty M (lsingle2 a (tmRefl k A a))) c))
               (rect k Δ A u))
               (rect k Δ (tyId k A a u) e))
+  | tmSEq k s t u =>
+      Some (peelL (peelL (peelL (peelG (peelG (peelG (peelG (peelU (rb_br rb bSEq') k)
+              (GCtx Δ)) (GTm s)) (GTm t)) (GTm u))
+              (rect (lsuc k) Δ (tyU k) s)) (rect k Δ (tyEl k s) t)) (rect k Δ (tyEl k s) u))
+  | tmSEmpty k => Some (peelG (peelU (rb_br rb bSEmpty') k) (GCtx Δ))
+  | srefl k A a =>
+      Some (peelL (peelL (peelG (peelG (peelG (peelU (rb_br rb bSrefl) k)
+              (GCtx Δ)) (GTy A)) (GTm a))
+              (recT k Δ A)) (rect k Δ A a))
+  (* the motive's level is the branch's first, as in Heather's [t_elim_sE] *)
+  | elimSEmpty k k' M e =>
+      Some (peelL (peelL (peelG (peelG (peelG (peelU (peelU (rb_br rb bElimSEmpty) k') k)
+              (GCtx Δ)) (GTy M)) (GTm e))
+              (recT k' Δ M)) (rect k Δ (tySEmpty k) e))
   | _ => None
   end.
 

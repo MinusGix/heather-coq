@@ -615,14 +615,14 @@ Proof.
   assert (F : forall x, [ G ; Γ ⊢[ i ] x : A' @ l' ] -> [ G ; Γ ⊢[ i ] x : A @ l ]).
   { intros x Hx. eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ Hx E) | rewrite Hi; exact EA]. }
   pose proof (IHa i l Hc Ha (F _ Ha')) as Ea. pose proof (IHb i l Hc Hb (F _ Hb')) as Eb.
-  apply (lvl_eq_eqty Hk). apply eqty_seq; assumption.
+  apply (lvl_eq_eqty Hk). apply eqty_seq; try assumption. exact (compt_notV _ Hc).
 Qed.
 
 Lemma S_actnf_sempty {G Γ l l'} : leqv l l' -> S_ty G Γ (tySEmpty l) (tySEmpty l').
 Proof.
   intros Hl i k Hc HT HT'.
   destruct (inv_ty_sempty HT) as ((_ & HΓ & W) & Hk). destruct (inv_ty_sempty HT') as ((_ & _ & W') & _).
-  apply (lvl_eq_eqty Hk). apply eqty_sempty; [exact Hc | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
+  apply (lvl_eq_eqty Hk). apply eqty_sempty; [exact (compt_notV _ Hc) | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
 Qed.
 
 Lemma S_actmnf_seq_irr {G Γ l A a b w w'} : S_tm G Γ w w' (tySEq l A a b).
@@ -649,9 +649,9 @@ Proof.
   pose proof (IHM i l2 Hc HM (wft_lconv _ _ _ _ _ _ HM' E24)) as EM.
   assert (He1 : [ G ; Γ ⊢[ i ] ν' : tySEmpty l1 @ l1 ]).
   { eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ He' E13) | rewrite Hi].
-    apply eqty_sempty; [exact Hc | rewrite Hi; exact (ctx_of_wf_tm Hi He) | exact E13]. }
+    apply eqty_sempty; [exact (compt_notV _ Hc) | rewrite Hi; exact (ctx_of_wf_tm Hi He) | exact E13]. }
   pose proof (eqtm_sempty_irr _ _ _ _ _ _ Hc W1 He He1) as Ee.
-  pose proof (eqtm_elimSEmpty _ _ _ _ _ _ _ _ _ _ _ Hc E13 E24 HM EM Ee) as Econg.
+  pose proof (eqtm_elimSEmpty _ _ _ _ _ _ _ _ _ _ _ (compt_notV _ Hc) E13 E24 HM EM Ee) as Econg.
   split; [| split].
   - exact HX.
   - eapply eqty_trans; [exact HX' |]. apply (lvl_eq_eqty Hk'), eqty_sym.
@@ -753,7 +753,7 @@ Proof.
   destruct (code_El_conv Hc E Es) as (F & _).
   pose proof (IHt i k Hc Ht (F _ Ht')) as Et. pose proof (IHu i k Hc Hu (F _ Hu')) as Eu.
   eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
-  apply eqtm_code_seq; assumption.
+  apply eqtm_code_seq; try assumption. exact (compt_notV _ Hc).
 Qed.
 
 Lemma S_actmnf_code_sempty {G Γ l k k'} : leqv k k' -> S_tm G Γ (tmSEmpty k) (tmSEmpty k') (tyU l).
@@ -761,7 +761,7 @@ Proof.
   intros Hl i kk Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_code_sempty Hi Ht) as ((_ & HΓ & W) & Hk & HT). destruct (inv_code_sempty Hi Ht') as ((_ & _ & W') & _).
   eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
-  apply eqtm_code_sempty; [exact Hc | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
+  apply eqtm_code_sempty; [exact (compt_notV _ Hc) | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
 Qed.
 
 (** [J]'s motive context at the other side's carrier and point. *)

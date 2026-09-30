@@ -316,6 +316,9 @@ Ltac br_tac :=
     | match goal with |- context [ren (gv _) _] => unfold gv, gu;
         cbn [ren Ren_ty Ren_tm ren_ty ren_tm lren r2l rdrop rshift1] end
     | apply wf_var0_gv | eapply wf_gv_up | eapply wf_gu_up | eapply wf_gv_single2
+    (* strict equality (M10c) *)
+    | apply wft_seq | apply wft_sempty | apply wf_srefl | eapply wf_code_seq | apply wf_code_sempty
+    | eapply wf_elimSEmpty
     (* last: their [cbn] is the bulk of the cost when tried on every goal *)
     | solve [unfold lle; cbn; lia] | solve [br_lvl] ].
 

@@ -158,7 +158,7 @@ Proof.
   - intros; apply eqtm_unit_eta; auto.
   (* strict equality *)
   - intros; apply eqty_seq; auto.
-  - intros; apply eqty_sempty; [exact Hi | now rewrite Hty | assumption].
+  - intros; apply eqty_sempty; [exact Hv | now rewrite Hty | assumption].
   - intros; apply eqtm_seq_irr; auto.
   - intros; apply eqtm_sempty_irr; auto.
   - intros * Hl1 Hl2 HM HMM (Hn & _ & Hν) (Hn' & _ & Hν').
@@ -173,7 +173,7 @@ Proof.
   - intros; apply eqtm_code_id; auto.
   (* strict equality's codes *)
   - intros; apply eqtm_code_seq; auto.
-  - intros; apply eqtm_code_sempty; [exact Hi | now rewrite Hty | assumption].
+  - intros; apply eqtm_code_sempty; [exact Hv | now rewrite Hty | assumption].
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].

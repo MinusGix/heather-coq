@@ -765,80 +765,135 @@ Proof.
   split; [exact (sc_J_q Hv Q1 Q2 HA HA' HAA Ha Ha' Haa HM' HMM Hc' Hu Hu' Huu He He' Hee) | apply eqtm_J; auto].
 Qed.
 
-End SC.
-
-(** Strict equality (M10a): gated to the computing layers, so below M only
-    at D, where the presupposition lemmas give the right-hand sides. *)
-Section SCD.
-Context {G : gctx}.
-Let HD : typeof lD = lD := eq_refl.
-Let HDv : lD <> lV := ltac:(discriminate).
-
-Lemma sc_seq {Γ l l' A A' a a' b b'} : lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
-  [ G ; Γ ⊢[ lD ] A @ l ] -> [ G ; Γ ⊢[ lD ] A' @ l ] /\ [ G ; Γ ⊢[ lD ] A ≅ A' @ l ] ->
-  [ G ; Γ ⊢[ lD ] a' : A @ l ] /\ [ G ; Γ ⊢[ lD ] a ≅ a' : A @ l ] ->
-  [ G ; Γ ⊢[ lD ] b' : A @ l ] /\ [ G ; Γ ⊢[ lD ] b ≅ b' : A @ l ] ->
-  [ G ; Γ ⊢[ lD ] tySEq l' A' a' b' @ l ] /\ [ G ; Γ ⊢[ lD ] tySEq l A a b ≅ tySEq l' A' a' b' @ l ].
+(** Strict equality (M10a; every layer but V since M10c), as the identity
+    type. *)
+Lemma sc_seq_q {Γ l l' A A' a' b'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A' @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a' : A @ l ] -> [ G ; Γ ⊢[ i ] b' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] tySEq l' A' a' b' @ l ].
 Proof.
-  intros Hl Hl' E HA [HA' HAA] [Ha' Haa] [Hb' Hbb]. pose proof (lq Hl Hl' E) as Q. split.
-  - exact (pre_seq_r HD HDv Q HAA HA' Ha' Hb').
-  - apply eqty_seq; auto using compt_D.
+  intros Hv Q HA' HAA Ha' Hb'.
+  assert (F : forall x, [ G ; Γ ⊢[ i ] x : A @ l ] -> [ G ; Γ ⊢[ i ] x : A' @ l' ]).
+  { intros x Hx. apply (sc_conv (T' := A)); [eapply wf_lconv; [exact Hx | apply lequiv_sym, Q]|].
+    eapply eqty_lconv; [apply eqty_sym, sc_eqty, HAA | apply lequiv_sym, Q]. }
+  eapply wft_lconv; [apply wft_seq; [exact Hv | eauto using lequiv_wf_r | | apply F, Ha' | apply F, Hb'] | exact Q].
+  eapply wft_lconv; [exact HA' | apply lequiv_sym, Q].
 Qed.
 
-Lemma sc_sempty {Γ l l'} : [ G ; Γ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
-  [ G ; Γ ⊢[ lD ] tySEmpty l' @ l ] /\ [ G ; Γ ⊢[ lD ] tySEmpty l ≅ tySEmpty l' @ l ].
+Lemma sc_seq {Γ l l' A A' a a' b b'} : i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a' : A @ l ] /\ [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] b' : A @ l ] /\ [ G ; Γ ⊢[ i ] b ≅ b' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] tySEq l' A' a' b' @ l ] /\ [ G ; Γ ⊢[ i ] tySEq l A a b ≅ tySEq l' A' a' b' @ l ].
 Proof.
-  intros HΓ Hl Hl' E. pose proof (lq Hl Hl' E) as Q. split.
-  - exact (pre_sempty_r HD HDv HΓ Q).
-  - apply eqty_sempty; auto using compt_D.
+  intros Hv Hl Hl' E HA [HA' HAA] [Ha' Haa] [Hb' Hbb]. pose proof (lq Hl Hl' E) as Q.
+  split; [exact (sc_seq_q Hv Q HA' HAA Ha' Hb') | apply eqty_seq; auto].
 Qed.
 
-Lemma sc_srefl {Γ l l' A A' a a'} : lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
-  [ G ; Γ ⊢[ lD ] A @ l ] -> [ G ; Γ ⊢[ lD ] A' @ l ] /\ [ G ; Γ ⊢[ lD ] A ≅ A' @ l ] ->
-  [ G ; Γ ⊢[ lD ] a' : A @ l ] /\ [ G ; Γ ⊢[ lD ] a ≅ a' : A @ l ] ->
-  [ G ; Γ ⊢[ lD ] srefl l' A' a' : tySEq l A a a @ l ] /\
-  [ G ; Γ ⊢[ lD ] srefl l A a ≅ srefl l' A' a' : tySEq l A a a @ l ].
+Lemma sc_sempty {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] tySEmpty l' @ l ] /\ [ G ; Γ ⊢[ i ] tySEmpty l ≅ tySEmpty l' @ l ].
 Proof.
-  intros Hl Hl' E HA [HA' HAA] [Ha' Haa]. pose proof (lq Hl Hl' E) as Q. split.
-  - exact (pre_srefl_r HD HDv Q HA HAA HA' Haa Ha').
-  - apply eqtm_srefl; auto using compt_D.
+  intros Hv HΓ Hl Hl' E. pose proof (lq Hl Hl' E) as Q. split.
+  - eapply wft_lconv; [apply wft_sempty; auto | exact Q].
+  - apply eqty_sempty; auto.
 Qed.
 
-Lemma sc_elimSEmpty {Γ l1 l2 l1' l2' M M' e e'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
+Lemma sc_srefl_q {Γ l l' A A' a a'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a' : A @ l ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] srefl l' A' a' : tySEq l A a a @ l ].
+Proof.
+  intros Hv Q HA HA' HAA Ha' Haa.
+  assert (F : forall x, [ G ; Γ ⊢[ i ] x : A @ l ] -> [ G ; Γ ⊢[ i ] x : A' @ l' ]).
+  { intros x Hx. apply (sc_conv (T' := A)); [eapply wf_lconv; [exact Hx | apply lequiv_sym, Q]|].
+    eapply eqty_lconv; [apply eqty_sym, sc_eqty, HAA | apply lequiv_sym, Q]. }
+  apply (sc_conv (T' := tySEq l' A' a' a')).
+  - eapply wf_lconv; [apply wf_srefl; [exact Hv | eauto using lequiv_wf_r | | apply F, Ha'] | exact Q].
+    eapply wft_lconv; [exact HA' | apply lequiv_sym, Q].
+  - apply eqty_seq; [discriminate | exact Q | exact (sc_ty HA) | exact (sc_eqty HAA)
+                    | exact (sc_eqtm Haa) | exact (sc_eqtm Haa)].
+Qed.
+
+Lemma sc_srefl {Γ l l' A A' a a'} : i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a' : A @ l ] /\ [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] srefl l' A' a' : tySEq l A a a @ l ] /\
+  [ G ; Γ ⊢[ i ] srefl l A a ≅ srefl l' A' a' : tySEq l A a a @ l ].
+Proof.
+  intros Hv Hl Hl' E HA [HA' HAA] [Ha' Haa]. pose proof (lq Hl Hl' E) as Q.
+  split; [exact (sc_srefl_q Hv Q HA HA' HAA Ha' Haa) | apply eqtm_srefl; auto].
+Qed.
+
+Lemma sc_elimSEmpty_q {Γ l1 l2 l1' l2' M M' e'} : i <> lV -> lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' ->
+  [ G ; Γ ⊢[ i ] M' @ l2 ] -> [ G ; Γ ⊢[ i ] M ≅ M' @ l2 ] -> [ G ; Γ ⊢[ i ] e' : tySEmpty l1 @ l1 ] ->
+  [ G ; Γ ⊢[ i ] elimSEmpty l1' l2' M' e' : M @ l2 ].
+Proof.
+  intros Hv Q1 Q2 HM' HMM He'.
+  pose proof (sc_ctx_tm He') as HΓ.
+  apply (sc_conv (T' := M')); [| exact (sc_eqty HMM)].
+  eapply wf_lconv; [apply wf_elimSEmpty; [exact Hv | eauto using lequiv_wf_r | eauto using lequiv_wf_r | |] | exact Q2].
+  - eapply wft_lconv; [exact HM' | apply lequiv_sym, Q2].
+  - apply (sc_conv (T' := tySEmpty l1)); [eapply wf_lconv; [exact He' | apply lequiv_sym, Q1]|].
+    apply eqty_sempty; [discriminate | exact HΓ | apply lequiv_sym, Q1].
+Qed.
+
+Lemma sc_elimSEmpty {Γ l1 l2 l1' l2' M M' e e'} : i <> lV -> lwf (gL G) l1 -> lwf (gL G) l2 ->
   lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
-  [ G ; Γ ⊢[ lD ] M @ l2 ] -> [ G ; Γ ⊢[ lD ] M' @ l2 ] /\ [ G ; Γ ⊢[ lD ] M ≅ M' @ l2 ] ->
-  [ G ; Γ ⊢[ lD ] e' : tySEmpty l1 @ l1 ] /\ [ G ; Γ ⊢[ lD ] e ≅ e' : tySEmpty l1 @ l1 ] ->
-  [ G ; Γ ⊢[ lD ] elimSEmpty l1' l2' M' e' : M @ l2 ] /\
-  [ G ; Γ ⊢[ lD ] elimSEmpty l1 l2 M e ≅ elimSEmpty l1' l2' M' e' : M @ l2 ].
+  [ G ; Γ ⊢[ i ] M @ l2 ] -> [ G ; Γ ⊢[ i ] M' @ l2 ] /\ [ G ; Γ ⊢[ i ] M ≅ M' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] e' : tySEmpty l1 @ l1 ] /\ [ G ; Γ ⊢[ i ] e ≅ e' : tySEmpty l1 @ l1 ] ->
+  [ G ; Γ ⊢[ i ] elimSEmpty l1' l2' M' e' : M @ l2 ] /\
+  [ G ; Γ ⊢[ i ] elimSEmpty l1 l2 M e ≅ elimSEmpty l1' l2' M' e' : M @ l2 ].
 Proof.
-  intros H1 H2 H1' H2' E1 E2 HM [HM' HMM] [He' Hee].
-  pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2. split.
-  - exact (pre_elimSEmpty_r HD HDv Q1 Q2 HMM HM' He').
-  - apply eqtm_elimSEmpty; auto using compt_D.
+  intros Hv H1 H2 H1' H2' E1 E2 HM [HM' HMM] [He' Hee].
+  pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2.
+  split; [exact (sc_elimSEmpty_q Hv Q1 Q2 HM' HMM He') | apply eqtm_elimSEmpty; auto].
 Qed.
 
 (** Strict equality's codes (M10c). *)
-Lemma sc_code_seq {Γ l l' s s' t t' u u'} : lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
-  [ G ; Γ ⊢[ lD ] s : tyU l @ lsuc l ] ->
-  [ G ; Γ ⊢[ lD ] s' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ lD ] s ≅ s' : tyU l @ lsuc l ] ->
-  [ G ; Γ ⊢[ lD ] t' : tyEl l s @ l ] /\ [ G ; Γ ⊢[ lD ] t ≅ t' : tyEl l s @ l ] ->
-  [ G ; Γ ⊢[ lD ] u' : tyEl l s @ l ] /\ [ G ; Γ ⊢[ lD ] u ≅ u' : tyEl l s @ l ] ->
-  [ G ; Γ ⊢[ lD ] tmSEq l' s' t' u' : tyU l @ lsuc l ] /\
-  [ G ; Γ ⊢[ lD ] tmSEq l s t u ≅ tmSEq l' s' t' u' : tyU l @ lsuc l ].
+Lemma sc_code_seq_q {Γ l l' s s' t' u'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] t' : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u' : tyEl l s @ l ] ->
+  [ G ; Γ ⊢[ i ] tmSEq l' s' t' u' : tyU l @ lsuc l ].
 Proof.
-  intros Hl Hl' E Hs [Hs' Hss] [Ht' Htt] [Hu' Huu]. pose proof (lq Hl Hl' E) as Q. split.
-  - exact (pre_codeseq_r HD HDv Q Hss Hs' Ht' Hu').
-  - apply eqtm_code_seq; auto using compt_D.
+  intros Hv Q Hs' Hss Ht' Hu'.
+  pose proof (sc_ctx_tm Hs') as HΓ.
+  assert (HEl : [ G ; Γ ⊢[ lD ] tyEl l s ≅ tyEl l' s' @ l ])
+    by (apply eqty_El; [discriminate | exact Q | exact (sc_eqtm Hss)]).
+  assert (F : forall x, [ G ; Γ ⊢[ i ] x : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] x : tyEl l' s' @ l' ]).
+  { intros x Hx. apply (sc_conv (T' := tyEl l s)); [eapply wf_lconv; [exact Hx | apply lequiv_sym, Q]|].
+    eapply eqty_lconv; [apply eqty_sym, HEl | apply lequiv_sym, Q]. }
+  apply (sc_conv (T' := tyU l')).
+  - eapply wf_lconv; [apply wf_code_seq; [exact Hv | eauto using lequiv_wf_r | | apply F, Ht' | apply F, Hu']
+                     | apply lequiv_lsuc', Q].
+    apply (sc_conv (T' := tyU l)); [eapply wf_lconv; [exact Hs' | apply lequiv_lsuc', lequiv_sym, Q]|].
+    apply eqty_U; [discriminate | exact HΓ | apply lequiv_sym, Q].
+  - apply eqty_U; [discriminate | exact HΓ | exact Q].
 Qed.
 
-Lemma sc_code_sempty {Γ l l'} : [ G ; Γ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
-  [ G ; Γ ⊢[ lD ] tmSEmpty l' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ lD ] tmSEmpty l ≅ tmSEmpty l' : tyU l @ lsuc l ].
+Lemma sc_code_seq {Γ l l' s s' t t' u u'} : i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] t' : tyEl l s @ l ] /\ [ G ; Γ ⊢[ i ] t ≅ t' : tyEl l s @ l ] ->
+  [ G ; Γ ⊢[ i ] u' : tyEl l s @ l ] /\ [ G ; Γ ⊢[ i ] u ≅ u' : tyEl l s @ l ] ->
+  [ G ; Γ ⊢[ i ] tmSEq l' s' t' u' : tyU l @ lsuc l ] /\
+  [ G ; Γ ⊢[ i ] tmSEq l s t u ≅ tmSEq l' s' t' u' : tyU l @ lsuc l ].
 Proof.
-  intros HΓ Hl Hl' E. pose proof (lq Hl Hl' E) as Q. split.
-  - exact (pre_codesempty_r HD HDv HΓ Q).
-  - apply eqtm_code_sempty; auto using compt_D.
+  intros Hv Hl Hl' E Hs [Hs' Hss] [Ht' Htt] [Hu' Huu]. pose proof (lq Hl Hl' E) as Q.
+  split; [exact (sc_code_seq_q Hv Q Hs' Hss Ht' Hu') | apply eqtm_code_seq; auto].
 Qed.
-End SCD.
+
+Lemma sc_code_sempty {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] tmSEmpty l' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmSEmpty l ≅ tmSEmpty l' : tyU l @ lsuc l ].
+Proof.
+  intros Hc HΓ Hl Hl' E. pose proof (lq Hl Hl' E) as Q. split.
+  - apply (sc_conv (T' := tyU l')).
+    + eapply wf_lconv; [apply wf_code_sempty; auto | apply lequiv_lsuc', Q].
+    + rewrite Hty in HΓ. apply eqty_U; [discriminate | exact HΓ | exact Q].
+  - apply eqtm_code_sempty; auto.
+Qed.
+
+End SC.
+
 
 (** ** The lemma *)
 
@@ -928,14 +983,10 @@ Proof.
     (* the identity type (every layer but V since M11b) *)
     | solve [eapply sc_id; eauto] | solve [eapply sc_idrefl; eauto] | solve [eapply sc_J; eauto]
     | solve [eapply sc_code_id; eauto]
-    (* strict equality (M10a): at D only *)
-    | match goal with
-      | c : compt ?j, H : lle ?j lD |- _ =>
-          destruct c; subst j; [| exfalso; exact (lle_D_notM' H eq_refl)]; cbn [typeof] in *;
-          solve [ eapply sc_seq; eauto | eapply sc_sempty; eauto | eapply sc_srefl; eauto
-                | eapply sc_elimSEmpty; eauto
-                | eapply sc_code_seq; eauto | eapply sc_code_sempty; eauto ]
-      end
+    (* strict equality (every layer but V since M10c) *)
+    | solve [eapply sc_seq; eauto] | solve [eapply sc_sempty; eauto] | solve [eapply sc_srefl; eauto]
+    | solve [eapply sc_elimSEmpty; eauto]
+    | solve [eapply sc_code_seq; eauto] | solve [eapply sc_code_sempty; eauto]
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x
         |- _ /\ eq_tm _ _ _ (succ _) _ _ _ =>

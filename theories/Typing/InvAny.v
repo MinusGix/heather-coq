@@ -159,12 +159,12 @@ Proof. inv_tm_any. Qed.
 
 (** Strict equality (M10a). *)
 Lemma inva_srefl {G i Γ l A a T k} : [ G ; Γ ⊢[ i ] srefl l A a : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\
     lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ typeof i ] T ≅ tySEq l A a a @ k ].
 Proof. inv_tm_any. Qed.
 
 Lemma inva_elimSEmpty {G i Γ l l' M e T k} : [ G ; Γ ⊢[ i ] elimSEmpty l l' M e : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] M @ l' ] /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] M @ l' ] /\
     [ G ; Γ ⊢[ i ] e : tySEmpty l @ l ]) /\ lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ typeof i ] T ≅ M @ k ].
 Proof. inv_tm_any. Qed.
 
@@ -191,13 +191,13 @@ Proof. inv_tm_any. Qed.
 
 (** Strict equality's codes (M10c). *)
 Lemma inva_code_seq {G i Γ l s t u T k} : [ G ; Γ ⊢[ i ] tmSEq l s t u : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
     [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] /\ [ G ; Γ ⊢[ i ] u : tyEl l s @ l ]) /\
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU l @ k ].
 Proof. inv_tm_any. Qed.
 
 Lemma inva_code_sempty {G i Γ l T k} : [ G ; Γ ⊢[ i ] tmSEmpty l : T @ k ] ->
-  (compt i /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\
+  (i <> lV /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU l @ k ].
 Proof. inv_tm_any. Qed.
 

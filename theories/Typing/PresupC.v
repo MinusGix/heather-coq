@@ -429,6 +429,60 @@ Proof.
   exact (sc_J_q HiD Hv H13 H24 HA HA' HAA Ha Ha' Haa HM' HMM Hc' Hu Hu' Huu He He' Hee).
 Qed.
 
+(** Strict equality (every layer but V since M10c), as the identity type. *)
+Lemma pc_seq {Γ l l' A A' a a' b b'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] b : A @ l ] -> [ G ; Γ ⊢[ i ] b' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] tySEq l A a b @ l ] /\ [ G ; Γ ⊢[ i ] tySEq l' A' a' b' @ l ].
+Proof.
+  intros Hv Hl HA HAA HA' Ha Ha' Hb Hb'.
+  split; [apply wft_seq; eauto using lequiv_wf_l | exact (sc_seq_q HiD Hv Hl HA' HAA Ha' Hb')].
+Qed.
+
+Lemma pc_sempty {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] tySEmpty l @ l ] /\ [ G ; Γ ⊢[ i ] tySEmpty l' @ l ].
+Proof.
+  intros Hv HΓ Hl. split; [apply wft_sempty; eauto using lequiv_wf_l|].
+  eapply wft_lconv; [|exact Hl]. apply wft_sempty; eauto using lequiv_wf_r.
+Qed.
+
+Lemma pc_srefl {Γ l l' A A' a a'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] srefl l A a : tySEq l A a a @ l ] /\ [ G ; Γ ⊢[ i ] srefl l' A' a' : tySEq l A a a @ l ].
+Proof.
+  intros Hv Hl HA HAA HA' Haa Ha Ha'.
+  split; [apply wf_srefl; eauto using lequiv_wf_l | exact (sc_srefl_q HiD Hv Hl HA HA' HAA Ha' Haa)].
+Qed.
+
+Lemma pc_elimSEmpty {Γ l1 l2 l3 l4 M M' e e'} : i <> lV -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] M @ l2 ] -> [ G ; Γ ⊢[ i ] M ≅ M' @ l2 ] -> [ G ; Γ ⊢[ i ] M' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] e : tySEmpty l1 @ l1 ] -> [ G ; Γ ⊢[ i ] e' : tySEmpty l1 @ l1 ] ->
+  [ G ; Γ ⊢[ i ] elimSEmpty l1 l2 M e : M @ l2 ] /\ [ G ; Γ ⊢[ i ] elimSEmpty l3 l4 M' e' : M @ l2 ].
+Proof.
+  intros Hv H13 H24 HM HMM HM' He He'.
+  split; [apply wf_elimSEmpty; eauto using lequiv_wf_l | exact (sc_elimSEmpty_q HiD Hv H13 H24 HM' HMM He')].
+Qed.
+
+Lemma pc_code_seq {Γ l l' s s' t t' u u'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] t' : tyEl l s @ l ] ->
+  [ G ; Γ ⊢[ i ] u : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u' : tyEl l s @ l ] ->
+  [ G ; Γ ⊢[ i ] tmSEq l s t u : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmSEq l' s' t' u' : tyU l @ lsuc l ].
+Proof.
+  intros Hv Hl Hs Hss Hs' Ht Ht' Hu Hu'.
+  split; [apply wf_code_seq; eauto using lequiv_wf_l | exact (sc_code_seq_q HiD Hv Hl Hs' Hss Ht' Hu')].
+Qed.
+
+Lemma pc_code_sempty {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] tmSEmpty l : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmSEmpty l' : tyU l @ lsuc l ].
+Proof.
+  intros Hv HΓ Hl. split; [apply wf_code_sempty; eauto using lequiv_wf_l|].
+  apply (convU_at (l := l')); [apply wf_code_sempty; eauto using lequiv_wf_r | now apply lequiv_sym].
+Qed.
+
 End Cases.
 
 Theorem presupposition_C :
@@ -466,7 +520,10 @@ Proof.
              | solve [eapply pc_snd; eassumption] | solve [eapply pc_unit; eassumption]
              | solve [eapply pc_codeunit; eassumption] | solve [eapply pc_triv; eassumption]
              | solve [eapply pc_id; eassumption] | solve [eapply pc_idrefl; eassumption]
-             | solve [eapply pc_code_id; eassumption] | solve [eapply pc_J; eassumption] ].
+             | solve [eapply pc_code_id; eassumption] | solve [eapply pc_J; eassumption]
+             | solve [eapply pc_seq; eassumption] | solve [eapply pc_sempty; eassumption]
+             | solve [eapply pc_srefl; eassumption] | solve [eapply pc_elimSEmpty; eassumption]
+             | solve [eapply pc_code_seq; eassumption] | solve [eapply pc_code_sempty; eassumption] ].
 Qed.
 
 Lemma eqty_wf_C {G i Γ T T' l} : lle i lC -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->

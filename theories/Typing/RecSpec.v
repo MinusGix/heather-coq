@@ -149,6 +149,16 @@ Definition brDecls (k : nat) : list gdecl :=
            gdTy (cvar 2 ,, gv 1 @ lvar 1 ,, tyId (lvar 1) (gv 1)⟨↑⟩ (gu 0)⟨↑⟩ (var 0) @ lvar 1) lC (lvar 0);
            gdTm (cvar 1) lC (gv 0) (lvar 1);
            gdTy (cvar 0) lC (lvar 1); gdCtx]
+  (* strict equality (M10c), as the identity type *)
+  | 25 => [gdTm (cvar 2) lC (gv 1) (lvar 0); gdTm (cvar 1) lC (gv 0) (lvar 0);
+           gdTy (cvar 0) lC (lvar 0); gdCtx]
+  | 26 => [gdTm (cvar 2) lC (tyEl (lvar 0) (gu 1)) (lvar 0); gdTm (cvar 1) lC (tyEl (lvar 0) (gu 0)) (lvar 0);
+           gdTm (cvar 0) lC (tyU (lvar 0)) (lsuc (lvar 0)); gdCtx]
+  | 27 | 28 => [gdCtx]
+  | 29 => [gdTm (cvar 1) lC (gv 0) (lvar 0); gdTy (cvar 0) lC (lvar 0); gdCtx]
+  (* ℓ ℓ'; g, U_M : (g ⊢C @ℓ), u_t : (g ⊢C sEmpty^ℓ' @ℓ'): the motive is not
+     dependent, as [elimSEmpty]'s (M10a) *)
+  | 30 => [gdTm (cvar 1) lC (tySEmpty (lvar 0)) (lvar 0); gdTy (cvar 0) lC (lvar 1); gdCtx]
   | _ => []
   end.
 
@@ -226,6 +236,16 @@ Definition br_calls (k : nat) : list rcall :=
             rct (lvar 0) (cvar 6) (tyGvar 3 (lsingle2 (gu 4) (tmRefl (lvar 1) (gv 5) (gu 4)))) (boxt (gu 2));
             rct (lvar 1) (cvar 6) (gv 5) (boxt (gu 1));
             rct (lvar 1) (cvar 6) (tyId (lvar 1) (gv 5) (gu 4) (gu 1)) (boxt (gu 0)) ]
+  | 25 => [ rcT (lvar 0) (cvar 3) (boxT (gv 2));
+            rct (lvar 0) (cvar 3) (gv 2) (boxt (gu 1));
+            rct (lvar 0) (cvar 3) (gv 2) (boxt (gu 0)) ]
+  | 26 => [ rct (lsuc (lvar 0)) (cvar 3) (tyU (lvar 0)) (boxt (gu 2));
+            rct (lvar 0) (cvar 3) (tyEl (lvar 0) (gu 2)) (boxt (gu 1));
+            rct (lvar 0) (cvar 3) (tyEl (lvar 0) (gu 2)) (boxt (gu 0)) ]
+  | 29 => [ rcT (lvar 0) (cvar 2) (boxT (gv 1));
+            rct (lvar 0) (cvar 2) (gv 1) (boxt (gu 0)) ]
+  | 30 => [ rcT (lvar 1) (cvar 2) (boxT (gv 1));
+            rct (lvar 0) (cvar 2) (tySEmpty (lvar 0)) (boxt (gu 0)) ]
   | _ => []
   end.
 
@@ -265,6 +285,12 @@ Definition br_head (k : nat) : rcall :=
   | 23 => rct (lvar 0) (cvar 2) (tyId (lvar 0) (gv 1) (gu 0) (gu 0)) (boxt (tmRefl (lvar 0) (gv 1) (gu 0)))
   | 24 => rct (lvar 0) (cvar 6) (tyGvar 3 (lsingle2 (gu 1) (gu 0)))
             (boxt (tmJ (lvar 1) (lvar 0) (gv 5) (gu 4) (gv 3) (gu 2) (gu 1) (gu 0)))
+  | 25 => rcT (lvar 0) (cvar 3) (boxT (tySEq (lvar 0) (gv 2) (gu 1) (gu 0)))
+  | 26 => rct (lsuc (lvar 0)) (cvar 3) (tyU (lvar 0)) (boxt (tmSEq (lvar 0) (gu 2) (gu 1) (gu 0)))
+  | 27 => rcT (lvar 0) (cvar 0) (boxT (tySEmpty (lvar 0)))
+  | 28 => rct (lsuc (lvar 0)) (cvar 0) (tyU (lvar 0)) (boxt (tmSEmpty (lvar 0)))
+  | 29 => rct (lvar 0) (cvar 2) (tySEq (lvar 0) (gv 1) (gu 0) (gu 0)) (boxt (srefl (lvar 0) (gv 1) (gu 0)))
+  | 30 => rct (lvar 1) (cvar 2) (gv 1) (boxt (elimSEmpty (lvar 0) (lvar 1) (gv 1) (gu 0)))
   | _ => rcT lzero cnil (boxT tyErr)
   end.
 

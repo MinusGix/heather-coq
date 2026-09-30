@@ -15,7 +15,7 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 Lemma wft_sempty_g {G Δ l k} : [ G ; Δ ⊢g ] -> lequiv (gL G) l k -> [ G ; Δ ⊢g tySEmpty k @ l ].
 Proof.
   intros HΔ Hk. eapply wft_lconv; [|exact Hk].
-  apply wft_sempty; [exact ge_compt | now rewrite ge_typeof | eauto using lequiv_wf_r].
+  apply wft_sempty; [exact ge_notV | now rewrite ge_typeof | eauto using lequiv_wf_r].
 Qed.
 
 Lemma LR_sempty_here {G Δ l l'} : [ G ; Δ ⊢g ] -> lwf (gL G) l -> lequiv (gL G) l l' ->
@@ -61,9 +61,9 @@ Lemma tmred_elimSEmpty_cong {G Δ l1 l2 M e ν} : lwf (gL G) l1 -> lwf (gL G) l2
   [ G ; Δ ⊢g elimSEmpty l1 l2 M e ⤳* elimSEmpty l1 l2 M ν : M @ l2 ].
 Proof.
   intros H1 H2 HM [He Hr Heq]. split.
-  - apply wf_elimSEmpty; auto using ge_compt.
+  - apply wf_elimSEmpty; auto using ge_notV.
   - now apply reds_elimSEmpty.
-  - apply eqtm_elimSEmpty; auto using ge_compt, lequiv_refl, eqty_refl.
+  - apply eqtm_elimSEmpty; auto using ge_notV, lequiv_refl, eqty_refl.
 Qed.
 
 Lemma V_elimSEmpty {G Γ l1 l2 l3 l4 M M' e e'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
@@ -146,7 +146,7 @@ Proof.
   eapply LRtm_of; [exact (LR_seq_here Hw (lequiv_refl _ _ Hw) HA EAA Eaa Eaa)|].
   exists (srefl l A[d] a[d]), (srefl l' A'[d'] a'[d']).
   refine (conj (tmred_refl _ _ _ _) (conj (tmred_refl _ _ _ _) (conj (whnf_srefl _ _ _) (whnf_srefl _ _ _)))).
-  - apply wf_srefl; [exact ge_compt | exact Hw | exact HA | exact (eqtm_wf_l ge_typeof Da)].
+  - apply wf_srefl; [exact ge_notV | exact Hw | exact HA | exact (eqtm_wf_l ge_typeof Da)].
   - exact (pre_srefl_r ge_typeof ge_notV Hl HA DA (eqty_wf_r ge_typeof DA) Da (eqtm_wf_r ge_typeof Da)).
 Qed.
 
@@ -184,7 +184,7 @@ Proof.
   assert (F : forall x, [ G ; Δ ⊢g x : tyEl l s @ l ] -> [ G ; Δ ⊢g x : tyEl k s @ k ]).
   { intros x Hx. eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ Hx Hk) | rewrite ge_typeof; exact EEl]. }
   assert (Hc : [ G ; Δ ⊢g tmSEq k s t u : tyU k @ lsuc k ])
-    by (apply wf_code_seq; [exact ge_compt | exact Hwk | exact Hsk | apply F, Ht | apply F, Hu]).
+    by (apply wf_code_seq; [exact ge_notV | exact Hwk | exact Hsk | apply F, Ht | apply F, Hu]).
   pose proof (conv_U' Hc Hk) as Hcl.
   destruct (El_annot Hcl Hla) as [HEl HEq].
   apply tyred_step; [exact HEl | constructor |].
@@ -246,7 +246,7 @@ Proof.
   intros HΔ Hla Hk.
   pose proof (lequiv_wf_l _ _ _ Hk) as Hwk.
   assert (Hc0 : [ G ; Δ ⊢g tmSEmpty k : tyU k @ lsuc k ])
-    by (apply wf_code_sempty; [exact ge_compt | now rewrite ge_typeof | exact Hwk]).
+    by (apply wf_code_sempty; [exact ge_notV | now rewrite ge_typeof | exact Hwk]).
   pose proof (conv_U' Hc0 Hk) as Hc.
   destruct (El_annot Hc Hla) as [HEl HEq].
   apply tyred_step; [exact HEl | constructor |].
@@ -276,7 +276,7 @@ Proof.
   apply (LRtm_U (l := l) Hw).
   assert (Hc : forall k, lequiv (gL G) l k -> [ G ; Δ ⊢g tmSEmpty k : tyU l @ lsuc l ]).
   { intros k Hk. apply (conv_U' (l := k)); [|now apply lequiv_sym].
-    apply wf_code_sempty; [exact ge_compt | now rewrite ge_typeof | eauto using lequiv_wf_r]. }
+    apply wf_code_sempty; [exact ge_notV | now rewrite ge_typeof | eauto using lequiv_wf_r]. }
   exists (tmSEmpty l), (tmSEmpty l').
   refine (conj (tmred_refl _ _ _ (Hc _ (lequiv_refl _ _ Hw)))
             (conj (tmred_refl _ _ _ (Hc _ Hl)) (conj (whnf_tmSEmpty _) (conj (whnf_tmSEmpty _)

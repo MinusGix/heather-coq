@@ -124,7 +124,7 @@ Lemma IdRel_wf {G Γ l A a b RA t t'} : IdRel G Γ l A a b RA t t' ->
 Proof. intros (w & w' & Hw & Hw' & _ & _). exact (conj (tmred_wf _ _ _ _ _ _ _ Hw) (tmred_wf _ _ _ _ _ _ _ Hw')). Qed.
 
 Lemma sempty_eqty {G Γ l l'} : [ G ; Γ ⊢g ] -> lequiv (gL G) l l' -> [ G ; Γ ⊢g tySEmpty l ≅ tySEmpty l' @ l ].
-Proof. intros HΓ Hl. apply eqty_sempty; [exact ge_compt | rewrite ge_typeof; exact HΓ | exact Hl]. Qed.
+Proof. intros HΓ Hl. apply eqty_sempty; [exact ge_notV | rewrite ge_typeof; exact HΓ | exact Hl]. Qed.
 
 Lemma sempty_tmred_conv {G Γ t w l l'} : lequiv (gL G) l l' ->
   [ G ; Γ ⊢g t ⤳* w : tySEmpty l @ l ] -> [ G ; Γ ⊢g t ⤳* w : tySEmpty l' @ l' ].

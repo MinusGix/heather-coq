@@ -191,11 +191,11 @@ Proof.
   - right; intros H; exact (Q (proj2 (inv_ty_unit H))).
 Qed.
 
-(** Strict equality (M10a): the computing layers only. *)
+(** Strict equality (M10a; at every layer but V since M10c). *)
 Lemma dec_tySEq l A a b : sz_ty (tySEq l A a b) <= n -> TYD (tySEq l A a b).
 Proof.
   intros Hsz G i Γ k HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros H; destruct (inv_ty_seq H) as ((X & _) & _); contradiction].
+  destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_seq H) as ((_ & X & _) & _); contradiction].
   destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
     [| right; intros H; destruct (inv_ty_seq H) as ((_ & _ & X & _) & _); contradiction].
@@ -228,7 +228,7 @@ Qed.
 Lemma dec_tySEmpty l : TYD (tySEmpty l).
 Proof.
   intros G i Γ k HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros H; destruct (inv_ty_sempty H) as ((X & _) & _); contradiction].
+  destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_sempty H) as ((_ & _ & X) & _); contradiction].
   destruct (lvl_eq_dec (gL G) k l) as [Q | Q].
   - left; exact (wft_lvl Q (wft_sempty _ _ _ _ Hc HΓ Hl)).

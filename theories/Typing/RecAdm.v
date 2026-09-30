@@ -230,6 +230,10 @@ Ltac code_side :=
   | |- [ _ ; cvar _ ⊢[ _ ] tyGvar _ (lsingle2 _ _) @ _ ] =>
       eapply wf_gv_single2; [ discriminate | | glookup | unfold lle; cbn; lia | cbn; tauto | cbn; tauto | | cbn ]
   | |- [ _ ; _ ⊢[ _ ] tmId _ _ _ _ : _ @ _ ] => apply wf_code_id; [ discriminate | lvl_ok | | | ]
+  (* strict equality (M10c) *)
+  | |- [ _ ; _ ⊢[ _ ] tmSEq _ _ _ _ : _ @ _ ] => apply wf_code_seq; [ discriminate | lvl_ok | | | ]
+  | |- [ _ ; _ ⊢[ _ ] tmSEmpty _ : _ @ _ ] => apply wf_code_sempty; [ discriminate | | lvl_ok ]
+  | |- [ _ ; _ ⊢[ _ ] elimSEmpty _ _ _ _ : _ @ _ ] => apply wf_elimSEmpty; [ discriminate | lvl_ok | lvl_ok | | ]
   | |- [ _ ; _ ⊢[ _ ] tmJ _ _ _ _ _ _ _ _ : _ @ _ ] => eapply wf_J'; [ reflexivity | discriminate | lvl_ok | lvl_ok | .. ]
   | |- [ _ ; _ ⊢[ _ ] ] => progress wfd
   | |- [ _ ; _ ⊢[ _ ] _ @ _ ] => progress wfd
