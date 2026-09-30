@@ -78,7 +78,7 @@ From M8 on, the milestones check the extensions of Heather's kernel
   strip rule wait on a design question; see `M10_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
-`M9_DESIGN.md`) for decisions, deviations from the paper and gotchas.
+`M10_DESIGN.md`) for decisions, deviations from the paper and gotchas.
 
 Documents:
 

@@ -165,8 +165,9 @@ each one touched and why, then choose among 1–3 using that data.
 3. ~~Bodied globals with layer-indexed δ: the one piece with no paper pass.~~
    Done (M9).
 4. `sEq`/`transp` and the strip rule: M10_DESIGN.md. M10a (`sEq`, `srefl`,
-   `sEmpty`, irrelevance) has no fork; `transp` waits on S3, since MX §19.2's
-   proposition turns out to be a strengthening lemma (S1).
+   `sEmpty`, irrelevance) is done; `transp` waits on S3, since MX §19.2's
+   proposition turns out to be a strengthening lemma (S1). S4's candidate
+   (D), a staged strip premise, needs stabilization argued first.
 5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash).
 
 Side task, any time: the ITree depth-indexed bisimilarity question.
