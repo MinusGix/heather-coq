@@ -203,6 +203,69 @@ Proof.
     | exact (LRtm_inv HRB Xb) ].
 Qed.
 
+(** ** The code (M12c) and its decoding *)
+
+(** Decoding a code whose annotations [k1], [k2] are equivalent to the
+    levels at which its pieces are typed. *)
+Lemma tyred_El_sum {G Δ la l1 l2 k1 k2 s t} : lequiv (gL G) la (lmax l1 l2) ->
+  lequiv (gL G) k1 l1 -> lequiv (gL G) k2 l2 ->
+  [ G ; Δ ⊢g s : tyU l1 @ lsuc l1 ] -> [ G ; Δ ⊢g t : tyU l2 @ lsuc l2 ] ->
+  [ G ; Δ ⊢g tyEl la (tmSum k1 k2 s t) ⤳* tySum k1 k2 (tyEl k1 s) (tyEl k2 t) @ lmax l1 l2 ].
+Proof.
+  intros Hla Hk1 Hk2 Hs Ht.
+  pose proof (lequiv_wf_l _ _ _ Hk1) as Wk1. pose proof (lequiv_wf_l _ _ _ Hk2) as Wk2.
+  pose proof (conv_U' Hs (lequiv_sym _ _ _ Hk1)) as Hsk. pose proof (conv_U' Ht (lequiv_sym _ _ _ Hk2)) as Htk.
+  assert (Hm : lequiv (gL G) (lmax k1 k2) (lmax l1 l2)) by now apply lequiv_max.
+  assert (Hc0 : [ G ; Δ ⊢g tmSum k1 k2 s t : tyU (lmax k1 k2) @ lsuc (lmax k1 k2) ])
+    by (apply wf_code_sum; [exact ge_compt | exact Wk1 | exact Wk2 | exact Hsk | exact Htk]).
+  pose proof (conv_U' Hc0 Hm) as Hc.
+  destruct (El_annot Hc Hla) as [HEl HEq].
+  apply tyred_step; [exact HEl | constructor |].
+  eapply eqty_trans; [exact HEq|].
+  eapply (eqty_trans _ _ _ _ (tyEl (lmax k1 k2) (tmSum k1 k2 s t))).
+  - apply eqty_El; [exact ge_notV | now apply lequiv_sym | apply eqtm_refl, Hc].
+  - apply (eqty_lconv _ _ _ _ _ (lmax l1 l2) (lmax k1 k2)); [|now apply lequiv_sym].
+    apply eqty_sym, eqty_El_sum; [exact ge_compt | exact Wk1 | exact Wk2 | exact Hsk | exact Htk].
+Qed.
+
+Lemma V_El_sum {G Γ l l' s t} : lwf (gL G) l -> lwf (gL G) l' ->
+  VTm G Γ s s (tyU l) (lsuc l) -> VTm G Γ t t (tyU l') (lsuc l') ->
+  VTy G Γ (tySum l l' (tyEl l s) (tyEl l' t)) (tyEl (lmax l l') (tmSum l l' s t)) (lmax l l').
+Proof.
+  intros Hw Hw' Vs Vt Δ d d' Hd.
+  pose proof (V_El Hw (lequiv_refl _ _ Hw) Vs) as VA. pose proof (V_El Hw' (lequiv_refl _ _ Hw') Vt) as VB.
+  destruct (V_sum Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') VA VB _ _ _ Hd) as [R HR].
+  destruct (escape_ty _ _ _ _ _ _ _ _ HR) as (HP & _ & _).
+  pose proof (Vs _ _ _ (SubRel_refl_r Hd)) as Xs. pose proof (Vt _ _ _ (SubRel_refl_r Hd)) as Xt.
+  rewrite !subst_tyU in Xs, Xt.
+  exists R. eapply LR_red_ty; [exact HR | apply tyred_refl, HP |]. push_subst.
+  apply tyred_El_sum; [apply lequiv_refl, lwf_max; assumption | now apply lequiv_refl | now apply lequiv_refl
+                      | exact (proj1 (LRtm_escape Xs)) | exact (proj1 (LRtm_escape Xt))].
+Qed.
+
+Lemma V_code_sum {G Γ l1 l2 l3 l4 s s' t t'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  VTm G Γ s s' (tyU l1) (lsuc l1) -> VTm G Γ t t' (tyU l2) (lsuc l2) ->
+  VTm G Γ (tmSum l1 l2 s t) (tmSum l3 l4 s' t') (tyU (lmax l1 l2)) (lsuc (lmax l1 l2)).
+Proof.
+  intros Hw1 Hw2 H13 H24 Vs Vt Δ d d' Hd.
+  pose proof (V_El Hw1 H13 Vs) as VA. pose proof (V_El Hw2 H24 Vt) as VB.
+  destruct (V_sum Hw1 Hw2 H13 H24 VA VB _ _ _ Hd) as [R HR].
+  pose proof (Vs _ _ _ Hd) as Xs. pose proof (Vt _ _ _ Hd) as Xt. rewrite !subst_tyU in Xs, Xt.
+  destruct (LRtm_escape Xs) as [Hsd Hs'd']. destruct (LRtm_escape Xt) as [Htd Ht'd'].
+  pose proof (geq_tm_code_sum H13 H24 (LRtm_geq Xs) (LRtm_geq Xt)) as Hgeq.
+  pose proof (geq_tm_sound Hgeq) as Hgeq'.
+  push_subst. apply (LRtm_U (lwf_max Hw1 Hw2)).
+  exists (tmSum l1 l2 s[d] t[d]), (tmSum l3 l4 s'[d'] t'[d']).
+  refine (conj (tmred_refl _ _ _ (eqtm_wf_l ge_typeof Hgeq'))
+           (conj (tmred_refl _ _ _ (eqtm_wf_r ge_typeof Hgeq'))
+           (conj (whnf_tmSum _ _ _ _) (conj (whnf_tmSum _ _ _ _) (conj Hgeq _))))).
+  intros la lb Hla Hlb. rewrite LRbelow_spec by (rewrite ?lmeasure_suc; lia).
+  exists R. eapply LR_red_ty; [exact HR | |]; push_subst.
+  - apply tyred_El_sum; [exact Hla | now apply lequiv_refl | now apply lequiv_refl | exact Hsd | exact Htd].
+  - apply tyred_El_sum; [exact Hlb | now apply lequiv_sym | now apply lequiv_sym | exact Hs'd' | exact Ht'd'].
+Qed.
+
 (** ** [case] *)
 
 Section CaseAt.

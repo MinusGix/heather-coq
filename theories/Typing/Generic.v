@@ -348,7 +348,13 @@ Class GenericEqLaws `{GenericEq} := {
     [ G ; Γ ,, A @ l1 ⊢ c1 ≈ c1' : M⟨rlift ↑⟩[lsingle (tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] ->
     [ G ; Γ ,, B @ l2 ⊢ c2 ≈ c2' : M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] ->
     [ G ; Γ ⊢ ν ~ ν' : tySum l1 l2 A B @ lmax l1 l2 ] ->
-    [ G ; Γ ⊢ tmCase l1 l2 l3 A B M c1 c2 ν ~ tmCase l4 l5 l6 A' B' M' c1' c2' ν' : M[lsingle ν] @ l3 ]
+    [ G ; Γ ⊢ tmCase l1 l2 l3 A B M c1 c2 ν ~ tmCase l4 l5 l6 A' B' M' c1' c2' ν' : M[lsingle ν] @ l3 ] ;
+  (** the codes of [Empty] and [+] (M12c) *)
+  geq_tm_code_empty {G Γ l l'} : [ G ; Γ ⊢g ] -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢ tmEmpty l ≈ tmEmpty l' : tyU l @ lsuc l ] ;
+  geq_tm_code_sum {G Γ l1 l2 l3 l4 s s' t t'} : lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢ s ≈ s' : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢ t ≈ t' : tyU l2 @ lsuc l2 ] ->
+    [ G ; Γ ⊢ tmSum l1 l2 s t ≈ tmSum l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

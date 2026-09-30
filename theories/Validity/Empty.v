@@ -126,4 +126,57 @@ Proof.
     eapply eqty_lconv; [apply geq_ty_sound, E2 | exact (lequiv_sym _ _ _ H13)].
 Qed.
 
+(** ** The code (M12c) and its decoding *)
+
+Lemma tyred_El_empty {G Δ la k l} : [ G ; Δ ⊢g ] -> lequiv (gL G) la l -> lequiv (gL G) k l ->
+  [ G ; Δ ⊢g tyEl la (tmEmpty k) ⤳* tyEmpty k @ l ].
+Proof.
+  intros HΔ Hla Hk.
+  pose proof (lequiv_wf_l _ _ _ Hk) as Hwk.
+  assert (Hc0 : [ G ; Δ ⊢g tmEmpty k : tyU k @ lsuc k ])
+    by (apply wf_code_empty; [exact ge_compt | now rewrite ge_typeof | exact Hwk]).
+  pose proof (conv_U' Hc0 Hk) as Hc.
+  destruct (El_annot Hc Hla) as [HEl HEq].
+  apply tyred_step; [exact HEl | constructor |].
+  eapply eqty_trans; [exact HEq|].
+  eapply (eqty_trans _ _ _ _ (tyEl k (tmEmpty k)));
+    [apply eqty_El; [exact ge_notV | now apply lequiv_sym | now apply eqtm_refl]|].
+  apply (eqty_lconv _ _ _ _ _ l k); [|now apply lequiv_sym].
+  apply eqty_sym, eqty_El_empty; [exact ge_compt | now rewrite ge_typeof | exact Hwk].
+Qed.
+
+Lemma V_El_empty {G Γ l} : lwf (gL G) l -> VTy G Γ (tyEmpty l) (tyEl l (tmEmpty l)) l.
+Proof.
+  intros Hw Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ. push_subst.
+  exists (EmptyRel G Δ l). eapply LRempty with (l1 := l) (l2 := l).
+  - now apply lequiv_refl.
+  - now apply lequiv_refl.
+  - exact Hw.
+  - apply tyred_refl, wft_empty_g; [exact HΔ | now apply lequiv_refl].
+  - apply tyred_El_empty; [exact HΔ | now apply lequiv_refl | now apply lequiv_refl].
+  - apply releq_refl.
+Qed.
+
+Lemma V_code_empty {G Γ l l'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTm G Γ (tmEmpty l) (tmEmpty l') (tyU l) (lsuc l).
+Proof.
+  intros Hw Hl Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ. push_subst.
+  apply (LRtm_U (l := l) Hw).
+  assert (Hc : forall k, lequiv (gL G) l k -> [ G ; Δ ⊢g tmEmpty k : tyU l @ lsuc l ]).
+  { intros k Hk. apply (conv_U' (l := k)); [|now apply lequiv_sym].
+    apply wf_code_empty; [exact ge_compt | now rewrite ge_typeof | eauto using lequiv_wf_r]. }
+  exists (tmEmpty l), (tmEmpty l').
+  refine (conj (tmred_refl _ _ _ (Hc _ (lequiv_refl _ _ Hw)))
+            (conj (tmred_refl _ _ _ (Hc _ Hl)) (conj (whnf_tmEmpty _) (conj (whnf_tmEmpty _)
+            (conj (geq_tm_code_empty HΔ Hl) _))))).
+  intros la lb Hla Hlb. rewrite LRbelow_spec by (rewrite ?lmeasure_suc; lia).
+  exists (EmptyRel G Δ l). eapply LRempty with (l1 := l) (l2 := l').
+  - now apply lequiv_refl.
+  - now apply lequiv_sym.
+  - exact Hw.
+  - apply tyred_El_empty; [exact HΔ | exact Hla | now apply lequiv_refl].
+  - apply tyred_El_empty; [exact HΔ | exact Hlb | now apply lequiv_sym].
+  - apply releq_refl.
+Qed.
+
 End Empty.

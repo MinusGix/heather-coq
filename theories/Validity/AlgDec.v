@@ -116,6 +116,7 @@ Definition tm_con (t : tm) : nat :=
   | tmRefl _ _ _ => 37 | tmJ _ _ _ _ _ _ _ _ => 38 | tmId _ _ _ _ => 39
   | tmSEq _ _ _ _ => 40 | tmSEmpty _ => 41 | elimEmpty _ _ _ _ => 42
   | tmInl _ _ _ _ _ => 43 | tmInr _ _ _ _ _ => 44 | tmCase _ _ _ _ _ _ _ _ _ => 45
+  | tmEmpty _ => 46 | tmSum _ _ _ _ => 47
   end.
 
 Lemma ac_tmne_con {G Γ ν ν' T} : ac_tmne G Γ ν ν' T -> tm_con ν = tm_con ν'.
@@ -1092,6 +1093,27 @@ Proof.
   match goal with |- Dec (ac_tmnf _ _ _ (tmUnit ?a) _) =>
     destruct (leqv_dec k a) as [Hl | N]; [left; exact (actmnf_code_unit _ _ _ _ _ Hl) | refute] end.
 Qed.
+(** The codes of [Empty] and [+] (M12c). *)
+Lemma Dc_actmnf_code_empty {G Γ l k k0} : Dc_tmnf G Γ (tmEmpty k) (tmEmpty k0) (tyU l).
+Proof.
+  intros x i k1 Hc Hx Hx'; destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmnf _ _ _ (tmEmpty ?a) _) =>
+    destruct (leqv_dec k a) as [Hl | N]; [left; exact (actmnf_code_empty _ _ _ _ _ Hl) | refute] end.
+Qed.
+Lemma Dc_actmnf_code_sum {G Γ l l1 l2 l3 l4 s s0 t t0} :
+  Dc_tm G Γ s s0 (tyU l1) -> Dc_tm G Γ t t0 (tyU l2) -> Dc_tmnf G Γ (tmSum l1 l2 s t) (tmSum l3 l4 s0 t0) (tyU l).
+Proof.
+  intros IHs IHt x i m Hc Hx Hx'.
+  destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmnf _ _ _ (tmSum ?a ?b ?c ?d) _) =>
+    rename a into l5, b into l6, c into s', d into t' end.
+  destruct (code_sum_prem Hc Hx) as (W1 & W2 & Hs & Ht). destruct (code_sum_prem Hc Hx') as (W5 & W6 & Hs' & Ht').
+  destruct (leqv_dec l1 l5) as [H15 | N]; [| refute]. destruct (leqv_dec l2 l6) as [H26 | N]; [| refute].
+  pose proof (leqv_lequiv _ _ _ W1 W5 H15) as E15. pose proof (leqv_lequiv _ _ _ W2 W6 H26) as E26.
+  destruct (IHs s' i _ Hc Hs (code_U_conv Hc E15 Hs')) as [Ds | N]; [| refute].
+  destruct (IHt t' i _ Hc Ht (code_U_conv Hc E26 Ht')) as [Dt | N]; [left; apply actmnf_code_sum; assumption | refute].
+Qed.
+
 Lemma Dc_actmnf_code_sempty {G Γ l k k0} : Dc_tmnf G Γ (tmSEmpty k) (tmSEmpty k0) (tyU l).
 Proof.
   intros x i k1 Hc Hx Hx'; destruct x; try solve [refute_con].
@@ -1471,7 +1493,8 @@ Proof.
     | solve [eapply Dc_actmnf_code_seq; eassumption] | solve [eapply Dc_actmnf_code_sempty; eassumption]
     | solve [eapply Dc_actnf_empty; eassumption] | solve [eapply Dc_actmne_elimEmpty; eassumption]
     | solve [eapply Dc_actnf_sum; eassumption] | solve [eapply Dc_actmnf_inl; eassumption]
-    | solve [eapply Dc_actmnf_inr; eassumption] | solve [eapply Dc_actmne_case; eassumption] ].
+    | solve [eapply Dc_actmnf_inr; eassumption] | solve [eapply Dc_actmne_case; eassumption]
+    | solve [eapply Dc_actmnf_code_empty; eassumption] | solve [eapply Dc_actmnf_code_sum; eassumption] ].
 Qed.
 
 (** Algorithmic conversion of well-formed types (typed terms) of the

@@ -1325,6 +1325,27 @@ Proof.
   intros Hl; red; intros i G2 Γ2 W2 kk Hc HE Hctx Ht Ht' EW Hw2 x x' Hsx Hsx'. spa_triv. new_head Hc EW Hw2 W2.
   apply actmnf_code_unit; exact Hl.
 Qed.
+(** The codes of [Empty] and [+] (M12c). *)
+Lemma C_actmnf_code_empty {G Γ l k k'} : leqv k k' -> C_tmnf G Γ (tmEmpty k) (tmEmpty k') (tyU l).
+Proof.
+  intros Hl; red; intros i G2 Γ2 W2 kk Hc HE Hctx Ht Ht' EW Hw2 x x' Hsx Hsx'. spa_triv. new_head Hc EW Hw2 W2.
+  apply actmnf_code_empty; exact Hl.
+Qed.
+
+Lemma C_actmnf_code_sum {G Γ l l1 l2 l3 l4 s s' t t'} : leqv l1 l3 -> leqv l2 l4 ->
+  C_tm G Γ s s' (tyU l1) -> C_tm G Γ t t' (tyU l2) -> C_tmnf G Γ (tmSum l1 l2 s t) (tmSum l3 l4 s' t') (tyU l).
+Proof.
+  intros H13 H24 IHs IHt i G2 Γ2 W2 m Hc HE Hctx Hx Hx' EW Hw2 x x' Hsx Hsx'. spa_triv.
+  pose proof (compt_typeof_self _ Hc) as Hi. new_head Hc EW Hw2 W2.
+  destruct (code_sum_prem Hc Hx) as (W1 & W2 & Hs & Ht). destruct (code_sum_prem Hc Hx') as (W3 & W4 & Hs' & Ht').
+  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
+  apply actmnf_code_sum; [exact H13 | exact H24 | |].
+  - exact (IHs i G2 Γ2 (tyU l1) (lsuc l1) Hc HE Hctx Hs (code_U_conv Hc E13 Hs')
+             (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hs))) _ _ spa_refl spa_refl).
+  - exact (IHt i G2 Γ2 (tyU l2) (lsuc l2) Hc HE Hctx Ht (code_U_conv Hc E24 Ht')
+             (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Ht))) _ _ spa_refl spa_refl).
+Qed.
+
 Lemma C_actmnf_code_sempty {G Γ l k k'} : leqv k k' -> C_tmnf G Γ (tmSEmpty k) (tmSEmpty k') (tyU l).
 Proof.
   intros Hl; red; intros i G2 Γ2 W2 kk Hc HE Hctx Ht Ht' EW Hw2 x x' Hsx Hsx'. spa_triv. new_head Hc EW Hw2 W2.
@@ -1662,7 +1683,8 @@ Proof.
     | solve [eapply C_actmnf_code_seq; eassumption] | solve [eapply C_actmnf_code_sempty; eassumption]
     | solve [eapply C_actnf_empty; eassumption] | solve [eapply C_actmne_elimEmpty; eassumption]
     | solve [eapply C_actnf_sum; eassumption] | solve [eapply C_actmnf_inl; eassumption]
-    | solve [eapply C_actmnf_inr; eassumption] | solve [eapply C_actmne_case; eassumption] ].
+    | solve [eapply C_actmnf_inr; eassumption] | solve [eapply C_actmne_case; eassumption]
+    | solve [eapply C_actmnf_code_empty; eassumption] | solve [eapply C_actmnf_code_sum; eassumption] ].
 Qed.
 
 (** The statement without annotation changes. *)

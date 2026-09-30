@@ -229,6 +229,18 @@ Lemma inv_code_sempty {G i Γ l T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSEmpt
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ i ] T ≅ tyU l @ k ].
 Proof. inv_tm. Qed.
 
+(** The codes of [Empty] and [+] (M12c). *)
+Lemma inv_code_empty {G i Γ l T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmEmpty l : T @ k ] ->
+  (compt i /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\
+    lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ i ] T ≅ tyU l @ k ].
+Proof. inv_tm. Qed.
+
+Lemma inv_code_sum {G i Γ l l' s t T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSum l l' s t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+    [ G ; Γ ⊢[ i ] t : tyU l' @ lsuc l' ]) /\
+    lvl_eq (gL G) k (lsuc (lmax l l')) /\ [ G ; Γ ⊢[ i ] T ≅ tyU (lmax l l') @ k ].
+Proof. inv_tm. Qed.
+
 (** Strict equality (M10a). *)
 Lemma inv_srefl {G i Γ l A a T k} : typeof i = i -> [ G ; Γ ⊢[ i ] srefl l A a : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\

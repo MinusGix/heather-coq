@@ -184,6 +184,9 @@ Proof.
   - intros; apply eqtm_inr; auto.
   - intros * H14 H25 H36 HA HAA HB HBB HM HMM Hc1 Hc2 (Hn & Hn' & Hν).
     refine (conj _ (conj _ _)); [constructor; auto .. |]. apply eqtm_case; auto.
+  (* the codes of Empty and + *)
+  - intros; apply eqtm_code_empty; [exact Hi | now rewrite Hty | assumption].
+  - intros; apply eqtm_code_sum; auto.
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].

@@ -507,6 +507,14 @@ Proof.
     + exact (actmne_case _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H14) (lequiv_leqv _ _ _ H25)
                (lequiv_leqv _ _ _ H36) DA DB DM Dc1 Dc2 Xν).
     + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
+  (* the codes of Empty and + (M12c) *)
+  - intros * HΓ Hl. refine (conj (@geq_tm_code_empty DE DEL _ _ _ _ HΓ Hl) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmEmpty | apply whnf_tmEmpty |].
+    apply actmnf_code_empty, (lequiv_leqv _ _ _ Hl).
+  - intros * H13 H24 (Es & Ds) (Et & Dt).
+    refine (conj (@geq_tm_code_sum DE DEL _ _ _ _ _ _ _ _ _ _ H13 H24 Es Et) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmSum | apply whnf_tmSum |].
+    exact (actmnf_code_sum _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24) Ds Dt).
 Qed.
 
 End Alg.

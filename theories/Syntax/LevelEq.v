@@ -62,14 +62,15 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
   | capp t Δ, capp t' Δ' => tm_leq t t' /\ ctx_leq Δ Δ'
   | tlam Δ l1 l2 T t, tlam Δ' l1' l2' T' t' => ctx_leq Δ Δ' /\ leqv l1 l1' /\ leqv l2 l2' /\ ty_leq T T' /\ tm_leq t t'
   | tapp t A, tapp t' A' => tm_leq t t' /\ ty_leq A A'
-  | tmSig l1 l2 s t, tmSig l1' l2' s' t' => leqv l1 l1' /\ leqv l2 l2' /\ tm_leq s s' /\ tm_leq t t'
+  | tmSig l1 l2 s t, tmSig l1' l2' s' t' | tmSum l1 l2 s t, tmSum l1' l2' s' t' =>
+      leqv l1 l1' /\ leqv l2 l2' /\ tm_leq s s' /\ tm_leq t t'
   | tmPair l1 l2 A B a b, tmPair l1' l2' A' B' a' b' =>
       leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq a a' /\ tm_leq b b'
   | tmFst l1 l2 A B p, tmFst l1' l2' A' B' p' =>
       leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq p p'
   | tmSnd l1 l2 A B p, tmSnd l1' l2' A' B' p' =>
       leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq p p'
-  | tmUnit l, tmUnit l' | tmTriv l, tmTriv l' | tmSEmpty l, tmSEmpty l' => leqv l l'
+  | tmUnit l, tmUnit l' | tmTriv l, tmTriv l' | tmSEmpty l, tmSEmpty l' | tmEmpty l, tmEmpty l' => leqv l l'
   | srefl l A a, srefl l' A' a' => leqv l l' /\ ty_leq A A' /\ tm_leq a a'
   | tmRefl l A a, tmRefl l' A' a' => leqv l l' /\ ty_leq A A' /\ tm_leq a a'
   | tmId l s t u, tmId l' s' t' u' => leqv l l' /\ tm_leq s s' /\ tm_leq t t' /\ tm_leq u u'
@@ -379,8 +380,8 @@ Fixpoint ty_lwf (L : nat) (T : ty) {struct T} : Prop :=
 with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   match t with
   | var _ | tmErr | tmNat | zero => True
-  | tmPi l1 l2 s t | tmSig l1 l2 s t => lwf L l1 /\ lwf L l2 /\ tm_lwf L s /\ tm_lwf L t
-  | tmU l | tmUnit l | tmTriv l | tmSEmpty l => lwf L l
+  | tmPi l1 l2 s t | tmSig l1 l2 s t | tmSum l1 l2 s t => lwf L l1 /\ lwf L l2 /\ tm_lwf L s /\ tm_lwf L t
+  | tmU l | tmUnit l | tmTriv l | tmSEmpty l | tmEmpty l => lwf L l
   | srefl l A a => lwf L l /\ ty_lwf L A /\ tm_lwf L a
   | tmRefl l A a => lwf L l /\ ty_lwf L A /\ tm_lwf L a
   | tmId l s t u => lwf L l /\ tm_lwf L s /\ tm_lwf L t /\ tm_lwf L u

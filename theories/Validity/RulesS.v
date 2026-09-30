@@ -147,6 +147,8 @@ Ltac s_push_at h k := lazymatch h with
   | @tyUnit => k gs_tyUnit
   | @tmUnit => k gs_tmUnit
   | @tmSEmpty => k gs_tmSEmpty
+  | @tmEmpty => k gs_tmEmpty
+  | @tmSum => k gs_tmSum
   | @tmTriv => k gs_triv
   | @tySEq => k gs_tySEq
   | @tySEmpty => k gs_tySEmpty
@@ -198,7 +200,10 @@ Ltac fts_case :=
   | solve [simple eapply V_empty; s_side] | solve [simple eapply V_elimEmpty; s_side]
   (* binary sums (M12b) *)
   | solve [simple eapply V_sum; s_side] | solve [simple eapply V_inl; s_side]
-  | solve [simple eapply V_inr; s_side] | solve [simple eapply V_case; s_side] ].
+  | solve [simple eapply V_inr; s_side] | solve [simple eapply V_case; s_side]
+  (* the codes of Empty and + (M12c) *)
+  | solve [simple eapply V_code_empty; s_side] | solve [simple eapply V_El_empty; s_side]
+  | solve [simple eapply V_code_sum; s_side] | solve [simple eapply V_El_sum; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=
@@ -576,6 +581,26 @@ Proof using EL VL VN.
   eapply VTmS_single; eassumption.
 Qed.
 
+(** The codes of Empty and + (M12c). *)
+Lemma VS_code_empty {G Γ l l'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTmS G Γ (tmEmpty l) (tmEmpty l') (tyU l) (lsuc l).
+Proof using EL VL. intros; s_lift. Qed.
+Lemma VS_El_empty {G Γ l} : lwf (gL G) l -> VTyS G Γ (tyEmpty l) (tyEl l (tmEmpty l)) l.
+Proof using . intros; s_lift. Qed.
+Lemma VS_code_sum {G Γ l1 l2 l3 l4 s s' t t'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  VTmS G Γ s s' (tyU l1) (lsuc l1) -> VTmS G Γ t t' (tyU l2) (lsuc l2) ->
+  VTmS G Γ (tmSum l1 l2 s t) (tmSum l3 l4 s' t') (tyU (lmax l1 l2)) (lsuc (lmax l1 l2)).
+Proof using EL VL. intros; s_lift. Qed.
+Lemma VS_El_sum {G Γ l l' s t} : lwf (gL G) l -> lwf (gL G) l' ->
+  VTmS G Γ s s (tyU l) (lsuc l) -> VTmS G Γ t t (tyU l') (lsuc l') ->
+  VTyS G Γ (tySum l l' (tyEl l s) (tyEl l' t)) (tyEl (lmax l l') (tmSum l l' s t)) (lmax l l').
+Proof using EL VL VN.
+  intros Hw Hw' Vs Vt. eapply (VTyS_trans_diag EP EM (T2 := tyEl (lmax l l') (tmSum l l' s t))); [s_diag V_El_sum|].
+  apply VS_El; [exact (lwf_max Hw Hw') | apply lequiv_refl, lwf_max; assumption |].
+  apply VS_code_sum; [exact Hw | exact Hw' | apply lequiv_refl, Hw | apply lequiv_refl, Hw' | exact Vs | exact Vt].
+Qed.
+
 End Rules.
 
 End RulesS.
@@ -622,4 +647,7 @@ Ltac vs_rules side :=
   (* binary sums (M12b) *)
   | solve [simple eapply VS_sum; side] | solve [simple eapply VS_inl; side]
   | solve [simple eapply VS_inr; side] | solve [simple eapply VS_case; side]
-  | solve [simple eapply VS_case_inl; side] | solve [simple eapply VS_case_inr; side] ].
+  | solve [simple eapply VS_case_inl; side] | solve [simple eapply VS_case_inr; side]
+  (* the codes of Empty and + (M12c) *)
+  | solve [simple eapply VS_code_empty; side] | solve [simple eapply VS_El_empty; side]
+  | solve [simple eapply VS_code_sum; side] | solve [simple eapply VS_El_sum; side] ].

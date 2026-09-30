@@ -25,7 +25,7 @@ Definition canon_head (h : nat) (w : tm) : Prop :=
   | 2 => w = tmNat \/ (exists l, w = tmU l) \/ (exists l l' s t, w = tmPi l l' s t) \/
          (exists l l' s t, w = tmSig l l' s t) \/ (exists l, w = tmUnit l) \/
          (exists l s t u, w = tmId l s t u) \/ (exists l s t u, w = tmSEq l s t u) \/
-         exists l, w = tmSEmpty l
+         (exists l, w = tmSEmpty l) \/ (exists l, w = tmEmpty l) \/ exists l l' s t, w = tmSum l l' s t
   | 3 => exists l l' A t, w = lam l l' A t
   | 4 => exists T, w = boxT T
   | 5 => exists t, w = boxt t
@@ -57,11 +57,12 @@ Proof.
           | pose proof (inv_srefl Hi Hx) as X | pose proof (inv_idrefl Hi Hx) as X
           | pose proof (inv_code_id Hi Hx) as X
           | pose proof (inv_code_seq Hi Hx) as X | pose proof (inv_code_sempty Hi Hx) as X
-          | pose proof (inv_inl Hi Hx) as X | pose proof (inv_inr Hi Hx) as X ];
+          | pose proof (inv_inl Hi Hx) as X | pose proof (inv_inr Hi Hx) as X
+          | pose proof (inv_code_empty Hi Hx) as X | pose proof (inv_code_sum Hi Hx) as X ];
     repeat match goal with H : exists _, _ |- _ => destruct H | H : _ /\ _ |- _ => destruct H end;
     match goal with E : [ _ ; _ ⊢[ _ ] W ≅ _ @ _ ] |- _ =>
       rewrite (decl_head_c Hc E HW); [| auto with whnf] end;
-    cbn; eauto 12.
+    cbn; eauto 16.
 Qed.
 
 (** ** Types *)

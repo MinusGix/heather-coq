@@ -54,6 +54,8 @@ Inductive whnf : tm -> Prop :=
 | whnf_tmId l s t u : whnf (tmId l s t u)
 | whnf_tmSEq l s t u : whnf (tmSEq l s t u)
 | whnf_tmSEmpty l : whnf (tmSEmpty l)
+| whnf_tmEmpty l : whnf (tmEmpty l)
+| whnf_tmSum l l' s t : whnf (tmSum l l' s t)
 | whnf_inl l l' A B a : whnf (tmInl l l' A B a)
 | whnf_inr l l' A B a : whnf (tmInr l l' A B a).
 
@@ -204,4 +206,8 @@ Proof. inversion 1. Qed.
 Lemma whne_not_code_seq l s t u : ~ whne (tmSEq l s t u).
 Proof. inversion 1. Qed.
 Lemma whne_not_code_sempty l : ~ whne (tmSEmpty l).
+Proof. inversion 1. Qed.
+Lemma whne_not_code_empty l : ~ whne (tmEmpty l).
+Proof. inversion 1. Qed.
+Lemma whne_not_code_sum l l' s t : ~ whne (tmSum l l' s t).
 Proof. inversion 1. Qed.

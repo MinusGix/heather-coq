@@ -617,6 +617,32 @@ Proof.
   exact (wf_tm_single Hi Hc Hb).
 Qed.
 
+(** The codes of [Empty] and [+] (M12c). *)
+Lemma pre_El_empty {Γ l} :
+  [ G ; Γ ⊢[ i ] ] -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] tyEl l (tmEmpty l) @ l ].
+Proof. intros HΓ Hl. apply wft_El; auto. apply wf_code_empty; rewrite ?Hi; auto using compt_self. Qed.
+
+Lemma pre_codeempty_r {Γ l l'} :
+  [ G ; Γ ⊢[ i ] ] -> lequiv (gL G) l l' -> [ G ; Γ ⊢[ i ] tmEmpty l' : tyU l @ lsuc l ].
+Proof.
+  intros HΓ Hl. apply (conv_U (l := l')); [|now apply lequiv_sym].
+  apply wf_code_empty; rewrite ?Hi; eauto using lequiv_wf_r, compt_self.
+Qed.
+
+Lemma pre_codesum_r {Γ l1 l2 l3 l4 s' t'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] s' : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢[ i ] t' : tyU l2 @ lsuc l2 ] ->
+  [ G ; Γ ⊢[ i ] tmSum l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ].
+Proof.
+  intros H13 H24 Hs' Ht'. pose proof (ctx_of_wf_tm Hi Hs') as HΓ.
+  eapply wf_lconv with (l' := lsuc (lmax l3 l4)); [|apply lequiv_suc, lequiv_max; eassumption].
+  eapply conv_tm'.
+  - apply wf_code_sum; [exact compt_self | eauto using lequiv_wf_r | eauto using lequiv_wf_r
+                       | exact (conv_U Hs' H13) | exact (conv_U Ht' H24)].
+  - eapply eqty_lconv; [|apply lequiv_suc, lequiv_max; apply lequiv_sym; eassumption].
+    apply eqty_U; [exact Hv | now rewrite Hi | apply lequiv_max; eassumption].
+Qed.
+
 Lemma case_branch_r {Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' X X' lx lx' c}
   (inj : lvl -> lvl -> ty -> ty -> tm -> tm) :
   lequiv (gL G) l1 l4 -> lequiv (gL G) l2 l5 -> lequiv (gL G) l3 l6 -> lequiv (gL G) lx lx' ->
@@ -1372,7 +1398,14 @@ Proof.
              | solve [eapply pre_case_r; eassumption]
              | solve [eapply pre_case_inl_rhs; eassumption] | solve [eapply pre_case_inr_rhs; eassumption]
              | solve [eapply wf_case; eauto 3 with presup]
-             | solve [eapply wf_ty_single; [eassumption|]; first [eapply wf_inl | eapply wf_inr]; eauto using compt_self] ].
+             | solve [eapply wf_ty_single; [eassumption|]; first [eapply wf_inl | eapply wf_inr]; eauto using compt_self]
+             (* the codes of Empty and + (M12c) *)
+             | solve [eapply pre_El_empty; eassumption]
+             | solve [eapply pre_codeempty_r; eauto using lequiv_refl, lequiv_wf_l]
+             | solve [eapply pre_codesum_r; eassumption]
+             | solve [eapply wf_code_sum; eauto 3 with presup]
+             | solve [eapply wft_El; eauto with presup; eapply wf_code_sum; eassumption]
+             | solve [eapply wft_sum; eauto with presup; apply wft_El; eauto with presup] ].
 Qed.
 
 Section Named.

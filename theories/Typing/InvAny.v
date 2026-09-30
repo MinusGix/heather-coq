@@ -231,6 +231,18 @@ Lemma inva_code_sempty {G i Γ l T k} : [ G ; Γ ⊢[ i ] tmSEmpty l : T @ k ] -
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU l @ k ].
 Proof. inv_tm_any. Qed.
 
+(** The codes of [Empty] and [+] (M12c). *)
+Lemma inva_code_empty {G i Γ l T k} : [ G ; Γ ⊢[ i ] tmEmpty l : T @ k ] ->
+  (compt i /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\
+    lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU l @ k ].
+Proof. inv_tm_any. Qed.
+
+Lemma inva_code_sum {G i Γ l l' s t T k} : [ G ; Γ ⊢[ i ] tmSum l l' s t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+    [ G ; Γ ⊢[ i ] t : tyU l' @ lsuc l' ]) /\
+    lvl_eq (gL G) k (lsuc (lmax l l')) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU (lmax l l') @ k ].
+Proof. inv_tm_any. Qed.
+
 (** ** The M-only heads *)
 
 (** Terms whose rules are at M only. *)

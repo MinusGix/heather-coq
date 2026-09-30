@@ -708,6 +708,31 @@ Proof.
   left; eexists; eexists; exact (wf_case _ _ _ _ _ _ _ _ _ _ _ _ Hc Hl Hl' Hl'' HA HB HM Hc1 Hc2 Ht).
 Qed.
 
+(** The codes of [Empty] and [+] (M12c): the computing layers only. *)
+Lemma sy_code_empty l : SYD (tmEmpty l).
+Proof.
+  intros G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_code_empty H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N];
+    [| right; intros T k H; destruct (inva_code_empty H) as ((_ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_code_empty _ _ _ _ Hc HΓ Hl).
+Qed.
+
+Lemma sy_code_sum l l' s t : sz_tm (tmSum l l' s t) <= n -> SYD (tmSum l l' s t).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_code_sum H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N];
+    [| right; intros T k H; destruct (inva_code_sum H) as ((_ & X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l') as [Hl' | N];
+    [| right; intros T k H; destruct (inva_code_sum H) as ((_ & _ & X & _) & _); contradiction].
+  destruct (ihC s ltac:(szl) G i Γ _ _ (HUniv HΓ Hl)) as [Hs | N];
+    [| right; intros T k H; destruct (inva_code_sum H) as ((_ & _ & _ & X & _) & _); contradiction].
+  destruct (ihC t ltac:(szl) G i Γ _ _ (HUniv HΓ Hl')) as [Ht | N];
+    [| right; intros T k H; destruct (inva_code_sum H) as ((_ & _ & _ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_code_sum _ _ _ _ _ _ _ Hc Hl Hl' Hs Ht).
+Qed.
+
 (** ** The step *)
 
 Lemma sy_step t : sz_tm t <= n -> synth t -> SYD t.
@@ -722,7 +747,8 @@ Proof.
           | apply sy_codesig | apply sy_pair
           | apply (sy_proj true) | apply (sy_proj false) | apply sy_code_unit | apply sy_triv
           | apply sy_srefl | apply sy_elimSEmpty | apply sy_refl | apply sy_J | apply sy_code_id | apply sy_elimEmpty
-          | apply sy_code_seq | apply sy_code_sempty | apply sy_inl | apply sy_inr | apply sy_case ]; assumption.
+          | apply sy_code_seq | apply sy_code_sempty | apply sy_inl | apply sy_inr | apply sy_case
+          | apply sy_code_empty | apply sy_code_sum ]; assumption.
 Qed.
 
 End Step.

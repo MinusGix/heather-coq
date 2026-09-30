@@ -802,6 +802,30 @@ Lemma Y_actnf_unit {G Γ l l'} : leqv l l' -> Y_tynf G Γ (tyUnit l) (tyUnit l')
 Proof. intros Hl; red; intros; apply actnf_unit, leqv_sym, Hl. Qed.
 Lemma Y_actmnf_code_unit {G Γ l k k'} : leqv k k' -> Y_tmnf G Γ (tmUnit k) (tmUnit k') (tyU l).
 Proof. intros Hl; red; intros; apply actmnf_code_unit, leqv_sym, Hl. Qed.
+(** The codes of [Empty] and [+] (M12c). *)
+Lemma Y_actmnf_code_empty {G Γ l k k'} : leqv k k' -> Y_tmnf G Γ (tmEmpty k) (tmEmpty k') (tyU l).
+Proof. intros Hl; red; intros; apply actmnf_code_empty, leqv_sym, Hl. Qed.
+Lemma Y_actmnf_code_sum {G Γ l l1 l2 l3 l4 s s' t t'} : leqv l1 l3 -> leqv l2 l4 ->
+  ac_tm G Γ s s' (tyU l1) -> Y_tm G Γ s s' (tyU l1) -> ac_tm G Γ t t' (tyU l2) -> Y_tm G Γ t t' (tyU l2) ->
+  Y_tmnf G Γ (tmSum l1 l2 s t) (tmSum l3 l4 s' t') (tyU l).
+Proof.
+  intros H13 H24 Ds IHs Dt IHt i m Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  assert (Hv : i <> lV) by (destruct Hc as [-> | ->]; discriminate).
+  destruct (code_sum_prem Hc Hx) as (W1 & W2 & Hs & Ht). destruct (code_sum_prem Hc Hx') as (W3 & W4 & Hs' & Ht').
+  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
+  pose proof (ctx_of_wf_tm Hi Hs) as HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
+  pose proof (code_U_conv Hc E13 Hs') as Hs1. pose proof (code_U_conv Hc E24 Ht') as Ht1.
+  assert (EU1 : [ G ; Γ ⊢[ i ] tyU l3 ≅ tyU l1 @ lsuc l1 ]).
+  { eapply eqty_lconv; [apply eqty_U; [exact Hv | rewrite Hi; exact HΓ | apply lequiv_sym, E13]
+                       | exact (lequiv_suc _ _ _ E13)]. }
+  assert (EU2 : [ G ; Γ ⊢[ i ] tyU l4 ≅ tyU l2 @ lsuc l2 ]).
+  { eapply eqty_lconv; [apply eqty_U; [exact Hv | rewrite Hi; exact HΓ | apply lequiv_sym, E24]
+                       | exact (lequiv_suc _ _ _ E24)]. }
+  apply actmnf_code_sum; [exact (leqv_sym _ _ H13) | exact (leqv_sym _ _ H24) | |].
+  - exact (cv_tm HG Hc (IHs i _ Hc Hs Hs1) (eqc_refl _ _ _ HΓ) Hs1 Hs EU1).
+  - exact (cv_tm HG Hc (IHt i _ Hc Ht Ht1) (eqc_refl _ _ _ HΓ) Ht1 Ht EU2).
+Qed.
+
 Lemma Y_actmnf_code_sempty {G Γ l k k'} : leqv k k' -> Y_tmnf G Γ (tmSEmpty k) (tmSEmpty k') (tyU l).
 Proof. intros Hl; red; intros; apply actmnf_code_sempty, leqv_sym, Hl. Qed.
 Lemma Y_actmnf_unit_eta {G Γ l w w'} : Y_tmnf G Γ w w' (tyUnit l).
@@ -1084,7 +1108,8 @@ Proof.
     | solve [eapply Y_actmnf_code_seq; eassumption] | solve [eapply Y_actmnf_code_sempty; eassumption]
     | solve [eapply Y_actnf_empty; eassumption] | solve [eapply Y_actmne_elimEmpty; eassumption]
     | solve [eapply Y_actnf_sum; eassumption] | solve [eapply Y_actmnf_inl; eassumption]
-    | solve [eapply Y_actmnf_inr; eassumption] | solve [eapply Y_actmne_case; eassumption] ].
+    | solve [eapply Y_actmnf_inr; eassumption] | solve [eapply Y_actmne_case; eassumption]
+    | solve [eapply Y_actmnf_code_empty; eassumption] | solve [eapply Y_actmnf_code_sum; eassumption] ].
 Qed.
 
 (** ** Inversion of the algorithm on the left side's head *)
@@ -1206,6 +1231,12 @@ Proof. intros H; ainv H. Qed.
 Lemma ainv_code_nat {G Γ l X} : ac_tmnf G Γ tmNat X (tyU l) -> X = tmNat.
 Proof. intros H; ainv H. Qed.
 Lemma ainv_code_unit {G Γ l k X} : ac_tmnf G Γ (tmUnit k) X (tyU l) -> exists k', X = tmUnit k' /\ leqv k k'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_code_empty {G Γ l k X} : ac_tmnf G Γ (tmEmpty k) X (tyU l) -> exists k', X = tmEmpty k' /\ leqv k k'.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_code_sum {G Γ l l1 l2 s t X} : ac_tmnf G Γ (tmSum l1 l2 s t) X (tyU l) ->
+  exists l3 l4 s' t', X = tmSum l3 l4 s' t' /\ leqv l1 l3 /\ leqv l2 l4 /\ ac_tm G Γ s s' (tyU l1) /\
+    ac_tm G Γ t t' (tyU l2).
 Proof. intros H; ainv H. Qed.
 Lemma ainv_code_sempty {G Γ l k X} : ac_tmnf G Γ (tmSEmpty k) X (tyU l) -> exists k', X = tmSEmpty k' /\ leqv k k'.
 Proof. intros H; ainv H. Qed.
@@ -2478,6 +2509,39 @@ Proof.
   intros Hl; red; intros * _ _ _ _ D2. destruct (ainv_code_unit D2) as (k'' & -> & Hl2).
   apply actmnf_code_unit, (leqv_trans _ _ _ Hl Hl2).
 Qed.
+(** The codes of [Empty] and [+] (M12c). *)
+Lemma T_actmnf_code_empty {G Γ l k k'} : leqv k k' -> T_tmnf G Γ (tmEmpty k) (tmEmpty k') (tyU l).
+Proof.
+  intros Hl; red; intros * _ _ _ _ D2. destruct (ainv_code_empty D2) as (k'' & -> & Hl2).
+  apply actmnf_code_empty, (leqv_trans _ _ _ Hl Hl2).
+Qed.
+Lemma T_actmnf_code_sum {G Γ l l1 l2 l3 l4 s s' t t'} : leqv l1 l3 -> leqv l2 l4 ->
+  ac_tm G Γ s s' (tyU l1) -> T_tm G Γ s s' (tyU l1) -> ac_tm G Γ t t' (tyU l2) -> T_tm G Γ t t' (tyU l2) ->
+  T_tmnf G Γ (tmSum l1 l2 s t) (tmSum l3 l4 s' t') (tyU l).
+Proof.
+  intros H13 H24 Ds IHs Dt IHt x'' i m Hc Hx Hx' Hx'' D2. pose proof (compt_typeof_self _ Hc) as Hi.
+  assert (Hv : i <> lV) by (destruct Hc as [-> | ->]; discriminate).
+  destruct (ainv_code_sum D2) as (l5 & l6 & s'' & t'' & -> & H35 & H46 & Ds2 & Dt2).
+  destruct (code_sum_prem Hc Hx) as (W1 & W2 & Hs & Ht).
+  destruct (code_sum_prem Hc Hx') as (W3 & W4 & Hs' & Ht').
+  destruct (code_sum_prem Hc Hx'') as (W5 & W6 & Hs'' & Ht'').
+  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
+  pose proof (leqv_lequiv _ _ _ W3 W5 H35) as E35. pose proof (leqv_lequiv _ _ _ W4 W6 H46) as E46.
+  pose proof (lequiv_trans _ _ _ _ E13 E35) as E15. pose proof (lequiv_trans _ _ _ _ E24 E46) as E26.
+  pose proof (ctx_of_wf_tm Hi Hs) as HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
+  assert (EU1 : [ G ; Γ ⊢[ i ] tyU l1 ≅ tyU l3 @ lsuc l3 ]).
+  { eapply eqty_lconv; [apply eqty_U; [exact Hv | rewrite Hi; exact HΓ | exact E13]
+                       | exact (lequiv_suc _ _ _ (lequiv_sym _ _ _ E13))]. }
+  assert (EU2 : [ G ; Γ ⊢[ i ] tyU l2 ≅ tyU l4 @ lsuc l4 ]).
+  { eapply eqty_lconv; [apply eqty_U; [exact Hv | rewrite Hi; exact HΓ | exact E24]
+                       | exact (lequiv_suc _ _ _ (lequiv_sym _ _ _ E24))]. }
+  apply actmnf_code_sum; [exact (leqv_trans _ _ _ H13 H35) | exact (leqv_trans _ _ _ H24 H46) | |].
+  - exact (IHs s'' i _ Hc Hs (code_U_conv Hc E13 Hs') (code_U_conv Hc E15 Hs'')
+             (cv_tm HG Hc Ds2 (eqc_refl _ _ _ HΓ) Hs' (code_U_conv Hc E35 Hs'') EU1)).
+  - exact (IHt t'' i _ Hc Ht (code_U_conv Hc E24 Ht') (code_U_conv Hc E26 Ht'')
+             (cv_tm HG Hc Dt2 (eqc_refl _ _ _ HΓ) Ht' (code_U_conv Hc E46 Ht'') EU2)).
+Qed.
+
 Lemma T_actmnf_code_sempty {G Γ l k k'} : leqv k k' -> T_tmnf G Γ (tmSEmpty k) (tmSEmpty k') (tyU l).
 Proof.
   intros Hl; red; intros * _ _ _ _ D2. destruct (ainv_code_sempty D2) as (k'' & -> & Hl2).
@@ -2920,5 +2984,6 @@ Proof.
     | solve [eapply T_actmnf_code_seq; eassumption] | solve [eapply T_actmnf_code_sempty; eassumption]
     | solve [eapply T_actnf_empty; eassumption] | solve [eapply T_actmne_elimEmpty; eassumption]
     | solve [eapply T_actnf_sum; eassumption] | solve [eapply T_actmnf_inl; eassumption]
-    | solve [eapply T_actmnf_inr; eassumption] | solve [eapply T_actmne_case; eassumption] ].
+    | solve [eapply T_actmnf_inr; eassumption] | solve [eapply T_actmne_case; eassumption]
+    | solve [eapply T_actmnf_code_empty; eassumption] | solve [eapply T_actmnf_code_sum; eassumption] ].
 Qed.

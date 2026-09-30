@@ -187,6 +187,8 @@ Lemma ren_refl l A a : (tmRefl l A a)⟨r⟩ = tmRefl l A⟨r⟩ a⟨r⟩. Proof
 Lemma ren_tmId l s t u : (tmId l s t u)⟨r⟩ = tmId l s⟨r⟩ t⟨r⟩ u⟨r⟩. Proof. reflexivity. Qed.
 Lemma ren_tmSEq l s t u : (tmSEq l s t u)⟨r⟩ = tmSEq l s⟨r⟩ t⟨r⟩ u⟨r⟩. Proof. reflexivity. Qed.
 Lemma ren_tmSEmpty l : (tmSEmpty l)⟨r⟩ = tmSEmpty l. Proof. reflexivity. Qed.
+Lemma ren_tmEmpty l : (tmEmpty l)⟨r⟩ = tmEmpty l. Proof. reflexivity. Qed.
+Lemma ren_tmSum l l' s t : (tmSum l l' s t)⟨r⟩ = tmSum l l' s⟨r⟩ t⟨r⟩. Proof. reflexivity. Qed.
 Lemma ren_J l l' A a M c u e :
   (tmJ l l' A a M c u e)⟨r⟩ = tmJ l l' A⟨r⟩ a⟨r⟩ M⟨rlift (rlift r)⟩ c⟨r⟩ u⟨r⟩ e⟨r⟩.
 Proof. reflexivity. Qed.
@@ -195,6 +197,8 @@ Lemma subst_refl l A a : (tmRefl l A a)[d] = tmRefl l A[d] a[d]. Proof. reflexiv
 Lemma subst_tmId l s t u : (tmId l s t u)[d] = tmId l s[d] t[d] u[d]. Proof. reflexivity. Qed.
 Lemma subst_tmSEq l s t u : (tmSEq l s t u)[d] = tmSEq l s[d] t[d] u[d]. Proof. reflexivity. Qed.
 Lemma subst_tmSEmpty l : (tmSEmpty l)[d] = tmSEmpty l. Proof. reflexivity. Qed.
+Lemma subst_tmEmpty l : (tmEmpty l)[d] = tmEmpty l. Proof. reflexivity. Qed.
+Lemma subst_tmSum l l' s t : (tmSum l l' s t)[d] = tmSum l l' s[d] t[d]. Proof. reflexivity. Qed.
 Lemma subst_J l l' A a M c u e :
   (tmJ l l' A a M c u e)[d] = tmJ l l' A[d] a[d] M[llift (llift d)] c[d] u[d] e[d].
 Proof. reflexivity. Qed.
@@ -267,6 +271,8 @@ Ltac push_ren_at h k := lazymatch h with
   | @tmId => k ren_tmId
   | @tmSEq => k ren_tmSEq
   | @tmSEmpty => k ren_tmSEmpty
+  | @tmEmpty => k ren_tmEmpty
+  | @tmSum => k ren_tmSum
   | @tmJ => k ren_J
   end.
 Ltac push_ren := repeat match goal with
@@ -330,6 +336,8 @@ Ltac push_subst_at h k := lazymatch h with
   | @tmId => k subst_tmId
   | @tmSEq => k subst_tmSEq
   | @tmSEmpty => k subst_tmSEmpty
+  | @tmEmpty => k subst_tmEmpty
+  | @tmSum => k subst_tmSum
   | @tmJ => k subst_J
   end.
 Ltac push_subst := repeat match goal with

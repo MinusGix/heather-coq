@@ -288,6 +288,12 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ,, B @ l' ⊢[ i ] c2 : M⟨rlift ↑⟩[lsingle (tmInr l l' A⟨↑⟩ B⟨↑⟩ (var 0))] @ l'' ] ->
     [ G ; Γ ⊢[ i ] t : tySum l l' A B @ lmax l l' ] ->
     [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 t : M[lsingle t] @ l'' ]
+(* the codes of [Empty] and [+] (layers D and M; M12c) *)
+| wf_code_empty G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] tmEmpty l : tyU l @ lsuc l ]
+| wf_code_sum G i Γ l l' s t : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] t : tyU l' @ lsuc l' ] ->
+    [ G ; Γ ⊢[ i ] tmSum l l' s t : tyU (lmax l l') @ lsuc (lmax l l') ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -386,6 +392,12 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
 | eqty_sum G i Γ l1 l2 l3 l4 A A' B B' : compt i -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] B ≅ B' @ l2 ] ->
     [ G ; Γ ⊢[ i ] tySum l1 l2 A B ≅ tySum l3 l4 A' B' @ lmax l1 l2 ]
+(* the codes of [Empty] and [+] decode (M12c) *)
+| eqty_El_empty G i Γ l : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] tyEmpty l ≅ tyEl l (tmEmpty l) @ l ]
+| eqty_El_sum G i Γ l l' s t : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] t : tyU l' @ lsuc l' ] ->
+    [ G ; Γ ⊢[ i ] tySum l l' (tyEl l s) (tyEl l' t) ≅ tyEl (lmax l l') (tmSum l l' s t) @ lmax l l' ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -763,6 +775,12 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] b : B @ l' ] ->
     [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 (tmInr l l' A B b) ≅ c2[lsingle b]
         : M[lsingle (tmInr l l' A B b)] @ l'' ]
+(* the codes of [Empty] and [+] (M12c) *)
+| eqtm_code_empty G i Γ l l' : compt i -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] tmEmpty l ≅ tmEmpty l' : tyU l @ lsuc l ]
+| eqtm_code_sum G i Γ l1 l2 l3 l4 s s' t t' : compt i -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢[ i ] s ≅ s' : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢[ i ] t ≅ t' : tyU l2 @ lsuc l2 ] ->
+    [ G ; Γ ⊢[ i ] tmSum l1 l2 s t ≅ tmSum l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)

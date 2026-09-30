@@ -155,6 +155,11 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tmnf G Γ (tmInl k1 k2 C D a) (tmInl k3 k4 C' D' a') (tySum l l' A B)
 | actmnf_inr G Γ l l' A B k1 k2 k3 k4 C D C' D' b b' : ac_tm G Γ b b' B ->
     ac_tmnf G Γ (tmInr k1 k2 C D b) (tmInr k3 k4 C' D' b') (tySum l l' A B)
+(* the codes of Empty and + (M12c) *)
+| actmnf_code_empty G Γ l k k' : leqv k k' -> ac_tmnf G Γ (tmEmpty k) (tmEmpty k') (tyU l)
+| actmnf_code_sum G Γ l l1 l2 l3 l4 s s' t t' : leqv l1 l3 -> leqv l2 l4 ->
+    ac_tm G Γ s s' (tyU l1) -> ac_tm G Γ t t' (tyU l2) ->
+    ac_tmnf G Γ (tmSum l1 l2 s t) (tmSum l3 l4 s' t') (tyU l)
 
 with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_var G Γ n T l : in_ctx Γ n T l -> ac_tmne G Γ (var n) (var n) T

@@ -246,6 +246,29 @@ Proof.
   - exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (eqty_El_sempty _ _ _ _ Hc HΓ Wl0)) (lequiv_sym _ _ _ E0)).
 Qed.
 
+(** The codes of [Empty] and [+] (M12c). *)
+Lemma RS_El_empty l l0 : RS_ty (tyEl l (tmEmpty l0)) (tyEmpty l0).
+Proof.
+  intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_El HT) as ((Hv & Wl & Ht) & Hk).
+  destruct (inv_code_empty Hi Ht) as ((_ & HΓ & Wl0) & _ & EU).
+  pose proof (U_inj_c Hc EU) as E0.
+  apply (retype_eqty Hk). eapply eqty_trans.
+  - exact (eqty_El _ _ _ _ _ _ _ Hv (lequiv_sym _ _ _ E0) (eqtm_refl _ _ _ _ _ _ Ht)).
+  - exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (eqty_El_empty _ _ _ _ Hc HΓ Wl0)) (lequiv_sym _ _ _ E0)).
+Qed.
+Lemma RS_El_sum l l1 l2 s t : RS_ty (tyEl l (tmSum l1 l2 s t)) (tySum l1 l2 (tyEl l1 s) (tyEl l2 t)).
+Proof.
+  intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_El HT) as ((Hv & Wl & Ht) & Hk).
+  destruct (inv_code_sum Hi Ht) as ((_ & W1 & W2 & Hs & Hb) & _ & EU).
+  pose proof (U_inj_c Hc EU) as E0.
+  apply (retype_eqty Hk). eapply eqty_trans.
+  - exact (eqty_El _ _ _ _ _ _ _ Hv (lequiv_sym _ _ _ E0) (eqtm_refl _ _ _ _ _ _ Ht)).
+  - exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (eqty_El_sum _ _ _ _ _ _ _ Hc W1 W2 Hs Hb))
+             (lequiv_sym _ _ _ E0)).
+Qed.
+
 Lemma RS_El l t t' : RS_tm t t' -> RS_ty (tyEl l t) (tyEl l t').
 Proof.
   intros IH G i Γ k Hc HT. destruct (inv_ty_El HT) as ((Hv & Wl & Ht) & Hk).
@@ -594,7 +617,8 @@ Proof.
     | solve [apply RS_J_beta] | solve [apply RS_J; assumption] | solve [apply RS_El_id]
     | solve [apply RS_El_seq] | solve [apply RS_El_sempty]
     | solve [apply RS_elimEmpty; assumption]
-    | solve [apply RS_case_inl] | solve [apply RS_case_inr] | solve [apply RS_case; assumption] ].
+    | solve [apply RS_case_inl] | solve [apply RS_case_inr] | solve [apply RS_case; assumption]
+    | solve [apply RS_El_empty] | solve [apply RS_El_sum] ].
 Qed.
 
 Section Consequences.

@@ -78,7 +78,10 @@ with red_ty : ty -> ty -> Prop :=
 | red_El_unit l l0 : red_ty (tyEl l (tmUnit l0)) (tyUnit l0)
 | red_El_id l l0 s t u : red_ty (tyEl l (tmId l0 s t u)) (tyId l0 (tyEl l0 s) t u)
 | red_El_seq l l0 s t u : red_ty (tyEl l (tmSEq l0 s t u)) (tySEq l0 (tyEl l0 s) t u)
-| red_El_sempty l l0 : red_ty (tyEl l (tmSEmpty l0)) (tySEmpty l0).
+| red_El_sempty l l0 : red_ty (tyEl l (tmSEmpty l0)) (tySEmpty l0)
+(* the codes of Empty and + (M12c) *)
+| red_El_empty l l0 : red_ty (tyEl l (tmEmpty l0)) (tyEmpty l0)
+| red_El_sum l l1 l2 s t : red_ty (tyEl l (tmSum l1 l2 s t)) (tySum l1 l2 (tyEl l1 s) (tyEl l2 t)).
 
 Scheme red_mut := Induction for red Sort Prop
   with red_ty_mut := Induction for red_ty Sort Prop.
@@ -139,6 +142,8 @@ Proof.
         | Hr : red (tmId _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSEq _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSEmpty _) _ |- _ => inversion Hr
+        | Hr : red (tmEmpty _) _ |- _ => inversion Hr
+        | Hr : red (tmSum _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmInl _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmInr _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red_ty (tyPi _ _ _ _) _ |- _ => inversion Hr

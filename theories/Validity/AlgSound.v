@@ -978,6 +978,34 @@ Proof.
   apply eqtm_code_seq; try assumption. exact (compt_notV _ Hc).
 Qed.
 
+(** The codes of [Empty] and [+] (M12c). *)
+Lemma code_sum_prem {G i Γ l l1 l2 s t k} : compt i -> [ G ; Γ ⊢[ i ] tmSum l1 l2 s t : tyU l @ k ] ->
+  lwf (gL G) l1 /\ lwf (gL G) l2 /\ [ G ; Γ ⊢[ i ] s : tyU l1 @ lsuc l1 ] /\ [ G ; Γ ⊢[ i ] t : tyU l2 @ lsuc l2 ].
+Proof.
+  intros Hc H. destruct (proj1 (inv_code_sum (compt_typeof_self _ Hc) H)) as (_ & W1 & W2 & Hs & Ht). auto.
+Qed.
+
+Lemma S_actmnf_code_empty {G Γ l k k'} : leqv k k' -> S_tm G Γ (tmEmpty k) (tmEmpty k') (tyU l).
+Proof.
+  intros Hl i kk Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_code_empty Hi Ht) as ((_ & HΓ & W) & Hk & HT). destruct (inv_code_empty Hi Ht') as ((_ & _ & W') & _).
+  eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
+  apply eqtm_code_empty; [exact Hc | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
+Qed.
+
+Lemma S_actmnf_code_sum {G Γ l l1 l2 l3 l4 s s' t t'} : leqv l1 l3 -> leqv l2 l4 ->
+  S_tm G Γ s s' (tyU l1) -> S_tm G Γ t t' (tyU l2) -> S_tm G Γ (tmSum l1 l2 s t) (tmSum l3 l4 s' t') (tyU l).
+Proof.
+  intros H13 H24 IHs IHt i k Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_code_sum Hi Hx) as ((_ & W1 & W2 & Hs & Ht) & Hk & HT).
+  destruct (inv_code_sum Hi Hx') as ((_ & W3 & W4 & Hs' & Ht') & _).
+  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
+  pose proof (IHs i (lsuc l1) Hc Hs (code_U_conv Hc E13 Hs')) as Es.
+  pose proof (IHt i (lsuc l2) Hc Ht (code_U_conv Hc E24 Ht')) as Et.
+  eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
+  apply eqtm_code_sum; assumption.
+Qed.
+
 Lemma S_actmnf_code_sempty {G Γ l k k'} : leqv k k' -> S_tm G Γ (tmSEmpty k) (tmSEmpty k') (tyU l).
 Proof.
   intros Hl i kk Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi.
@@ -1580,7 +1608,8 @@ Proof.
     | solve [eapply S_actmnf_code_seq; eassumption] | solve [eapply S_actmnf_code_sempty; eassumption]
     | solve [eapply S_actnf_empty; eassumption] | solve [eapply S_actmne_elimEmpty; eassumption]
     | solve [eapply S_actnf_sum; eassumption] | solve [eapply S_actmnf_inl; eassumption]
-    | solve [eapply S_actmnf_inr; eassumption] | solve [eapply S_actmne_case; eassumption] ].
+    | solve [eapply S_actmnf_inr; eassumption] | solve [eapply S_actmne_case; eassumption]
+    | solve [eapply S_actmnf_code_empty; eassumption] | solve [eapply S_actmnf_code_sum; eassumption] ].
 Qed.
 
 (** Algorithmically convertible types (terms) of the computing layers,

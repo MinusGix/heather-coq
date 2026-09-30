@@ -992,6 +992,30 @@ Proof.
   - exact (pre_case_r HD HDv Q1 Q2 Q3 HAA HA HA' HBB HB HB' HM HMM HM' Hc1' Hc2' Htt Ht Ht').
   - apply eqtm_case; auto using compt_D.
 Qed.
+(** The codes of [Empty] and [+] (M12c), at D as their types. *)
+Lemma sc_code_empty {Γ l l'} : [ G ; Γ ⊢[ lD ] ] -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ lD ] tmEmpty l' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ lD ] tmEmpty l ≅ tmEmpty l' : tyU l @ lsuc l ].
+Proof.
+  intros HΓ Hl Hl' E. pose proof (lq Hl Hl' E) as Q. split.
+  - exact (pre_codeempty_r HD HDv HΓ Q).
+  - apply eqtm_code_empty; auto using compt_D.
+Qed.
+
+Lemma sc_code_sum {Γ l1 l2 l1' l2' s s' t t'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
+  lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
+  [ G ; Γ ⊢[ lD ] s : tyU l1 @ lsuc l1 ] ->
+  [ G ; Γ ⊢[ lD ] s' : tyU l1 @ lsuc l1 ] /\ [ G ; Γ ⊢[ lD ] s ≅ s' : tyU l1 @ lsuc l1 ] ->
+  [ G ; Γ ⊢[ lD ] t : tyU l2 @ lsuc l2 ] ->
+  [ G ; Γ ⊢[ lD ] t' : tyU l2 @ lsuc l2 ] /\ [ G ; Γ ⊢[ lD ] t ≅ t' : tyU l2 @ lsuc l2 ] ->
+  [ G ; Γ ⊢[ lD ] tmSum l1' l2' s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ] /\
+  [ G ; Γ ⊢[ lD ] tmSum l1 l2 s t ≅ tmSum l1' l2' s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ].
+Proof.
+  intros H1 H2 H1' H2' E1 E2 Hs [Hs' Hss] Ht [Ht' Htt].
+  pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2. split.
+  - exact (pre_codesum_r HD HDv Q1 Q2 Hs' Ht').
+  - apply eqtm_code_sum; auto using compt_D.
+Qed.
+
 End SCD.
 
 
@@ -1093,7 +1117,9 @@ Proof.
           destruct c; subst j; [| exfalso; exact (lle_D_notM' H eq_refl)]; cbn [typeof] in *;
           solve [ eapply sc_empty; eauto | eapply sc_elimEmpty; eauto
                 (* binary sums (M12b) *)
-                | eapply sc_sum; eauto | eapply sc_inl; eauto | eapply sc_inr; eauto | eapply sc_case; eauto ]
+                | eapply sc_sum; eauto | eapply sc_inl; eauto | eapply sc_inr; eauto | eapply sc_case; eauto
+                (* their codes (M12c) *)
+                | eapply sc_code_empty; eauto | eapply sc_code_sum; eauto ]
       end
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x
