@@ -78,9 +78,10 @@ From M8 on, the milestones check the extensions of Heather's kernel
   the strip rule after this formalization found that a computing
   `transp` gives UIP and that the strip's normalization is open. The
   codes (M10c) remain. See `M10_DESIGN.md`.
-- Milestone 11: the identity type. M11a (`Id`, `refl`, `J` at D and M,
-  with β and no η, closed canonicity at `Id`) is done; the codes and
-  recursor branches (M11b) remain. See `M11_DESIGN.md`.
+- Milestone 11: the identity type. `Id`, `refl` and `J` hold at every
+  layer but V, with β and no η at D and M, and closed canonicity at
+  `Id`. `Id` has a code, and the code recursor has its four branches
+  (`t_Id`, `t'_Id`, `t_refl`, `t_J`). See `M11_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
 `M11_DESIGN.md`) for decisions, deviations from the paper and gotchas.

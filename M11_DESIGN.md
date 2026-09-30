@@ -1,6 +1,6 @@
 # M11: the identity type (`Id`, `refl`, `J`), design
 
-Status: **M11a done, 2026-09-30** (outcome below); M11b next. Why now: the no-UIP model
+Status: **M11a and M11b done, 2026-09-30** (outcomes below). Why now: the no-UIP model
 argument (Heather `docs/no-uip-model.md`) cannot be checked against this
 development until it can state UIP, and that needs `Id`. It is also
 `HEATHER.md` item 5's first former.
@@ -156,3 +156,72 @@ the typing metatheory needed the regctx lemmas for the shifted `Id`
 entry.
 
 Clean build: 217 s wall at `-j2` (168 s before M11a).
+
+## M11b outcome (2026-09-30)
+
+Done in two commits: the code `tmId l s t u : Ty l` at layers D and M
+(step 1), then the lift to code and the four recursor branches (step 2).
+Every headline theorem stays closed under the global context.
+
+- **Gating, as M8d did for Σ.** `wft_id`, `wf_idrefl`, `wf_J`, `wf_code_id`
+  and their congruences (`eqty_id`, `eqtm_idrefl`, `eqtm_J`,
+  `eqtm_code_id`) take `i <> lV`, so they hold at C. The computation
+  rules `eqtm_J_beta` and `eqty_El_id` keep `compt i`. The inversions
+  return `i <> lV`. Downstream, the decision procedures split on
+  `layer_eq_dec i lV` instead of `compt_dec i` (`dec_tyId`,
+  `sy_code_id`, `sy_refl`, `sy_J`).
+- **Static Code** (`StaticCode.v`): `sc_id`, `sc_idrefl`, `sc_code_id`,
+  `sc_J` and their `_q` forms. `J`'s cases need layer-generic facts built
+  from D-level equations: `J_facts_D` (the motive context's equality and
+  the motive's two instances) and `J_ctx_eq'`, the motive contexts'
+  equality over *equal* base contexts. `J_ctx_eq` moved here from
+  `AlgSound.v`. PresupC gets `pc_id`, `pc_idrefl`, `pc_code_id`, `pc_J`.
+- **Recursor** (`Recursor.v`, `RecSpec.v`): `nbr = 25`.
+  - `t_Id` is branch 21, a type branch at `l₁`, with `(nu, ng, nl) = (1, 4, 3)`.
+  - `t'_Id` is branch 22, `(1, 4, 3)`.
+  - `t_refl` is branch 23, `(1, 3, 2)`.
+  - `t_J` is branch 24, `(2, 7, 6)`.
+
+  `J`'s scope declares the motive over
+  `cvar 2 ,, gv 1 @ ℓ ,, tyId ℓ (gv 1)⟨↑⟩ (gu 0)⟨↑⟩ (var 0) @ ℓ`. The case's
+  type is `tyGvar 0 (lsingle2 (gu 1) (tmRefl ℓ (gv 2) (gu 1)))`, and the
+  head's type is `tyGvar 3 (lsingle2 (gu 1) (gu 0))`. So the scope has
+  global variables at `lshift 1`, and instances at `lsingle2`.
+  `subst_lshift1_ty`, `T[lshift 1] = T⟨↑⟩` (`RecWf.v`), turns their images
+  back into the rules' `⟨↑⟩` forms. The scope's typing lemmas are
+  `wf_gv_up`, `wf_gu_up`, `wf_var0_gv` and `wf_gv_single2`. The
+  push-through rewrites were added to `upeel_push` (`usubst_shift*`),
+  `gpeel_push` (`gs_shift*`, `gs_single2_ty'`) and `rec_subst_rw`
+  (`wkb_subst4/5`).
+- **Validity** (`RecS.v`, `RecReduct.v`). `GS_id`, `GS_codeid`, `GS_refl`
+  and `GS_J` follow `GS_pair`. `rec_T_id`, `rec_t_codeid`, `rec_t_refl`
+  and `rec_t_J` go through `rec_T_br`/`rec_t_br` and the `RT`/`Rt`
+  wrappers. `J`'s case relates the motive call over the two motive
+  contexts (`J_ctx_eq'` at the right levels for `Tcall`, and at the left
+  levels to type the right pieces for the scope substitution).
+  `J_facts_D` supplies the case's and the result's type equations.
+  RecReduct gains `rr_T_id`, `rr_t_codeid`, `rr_t_refl`, `rr_t_J` and
+  the `C_*` cases. The branch-scope tactic `br_tac` (`AlgPrereq.v`) gained
+  the `Id` rules.
+
+**Gotchas.**
+- The instance of a global declared under a shifted variable is stuck:
+  `gsubst` cannot see through `ren (gv n) ↑`. Compute the renaming
+  first (`cbn [ren Ren_ty Ren_tm ren_ty ren_tm lren r2l rdrop rshift1]`),
+  then rewrite `subst_lshift1_ty`. The same applies to `lsingle2`, a
+  definition: `ulsubst`/`glsubst` reduce on it only once it is unfolded.
+  `J_cbn` (RecS) does both.
+- At layer C, `typeof i ≠ i`. Code built at a generic `i` must use the
+  `_g` weakening lemmas (`wk1_ty_g`, `wk1_tm_g`, `var0_wf_g`), not the M1
+  forms that take `typeof i = i`. That is how `sy_J` and `wf_Jid_g` are
+  written.
+- In `rec_t_J`, `all: try solve [J_res]` over the refine's remaining
+  goals left the result equations unsolved. One bullet per goal with the
+  same tactic worked. The cause was not investigated.
+
+**Cost.** Steps 1 and 2 together: 45 files, about 1690 lines added and
+160 changed. RecS accounts for 590 of them, StaticCode for 210 and
+RecReduct for 200.
+
+Clean build: 234 s wall at `-j2` (217 s after M11a). `RecAdm`'s
+`brΓ_wf`/`brRes_wf` over the 25 branches take about 19 s.
