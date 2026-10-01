@@ -18,9 +18,9 @@ of the build (`_CoqProject` lists `theories/` only). Compile one with
   definitionally irrelevant. It also checks `srefl`, `elim_sEmpty` and
   `ElimSquash`, that `transp` at a strict motive exists, and, in the
   groupoid of types and bijections, that a relevant `transp` does not
-  exist and UIP at `Ty 0` fails, at `Bool` (`no_uip0`) and at `Nat`,
-  the carrier of the development's `UIP0` (`no_uip0_nat`,
-  `theories/Validity/Uip.v`).
+  exist and UIP at `Ty 0` fails, at `Bool`, the carrier of the
+  development's `UIP0` (`no_uip0`), and at `Nat`, the carrier of its
+  `UIP0_nat` (`no_uip0_nat`; both in `theories/Validity/Uip.v`).
 - `NoUipJ.v`: `Id` and Paulin-Mohring's `J` in the groupoid model of
   `docs/no-uip-model.md` (§2, §4.5), for `J` as `wf_J` states it. It uses
   lawful groupoids whose objects and morphisms form sets, split families,

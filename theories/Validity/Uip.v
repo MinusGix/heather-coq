@@ -5,10 +5,11 @@
     predictions where the syntax can decide them:
 
     - [uip_pt] is UIP at a type and two endpoints, and [UIP0] the model's
-      counterexample. The model uses [⌜Bool⌝]; the development has no sums,
-      and [⌜Nat⌝] serves as well, since [ℕ] has a non-identity bijection.
-      Both are well-formed types at every layer but V ([uip_pt_wf],
-      [UIP0_wf]).
+      counterexample, at [⌜Bool⌝ = ⌜Unit⌝ + ⌜Unit⌝] (M12). [UIP0_nat] is
+      the M11 statement, at [⌜Nat⌝], from before the development had sums;
+      it serves as well, since [ℕ] has a non-identity bijection. All are
+      well-formed types at every layer but V ([uip_pt_wf], [UIP0_wf],
+      [UIP0_nat_wf]).
     - Where the model's fibres are discrete, UIP holds in the model, and
       the syntax proves it: [uip_unit] is a closed inhabitant of UIP at
       [Unit], by two [J]s and [Unit]-η. [Unit] enters the proof only
@@ -21,7 +22,10 @@
       ([closed_id_uip], from canonicity). So the model's counterexample
       cannot be a closed term: it is the semantic [swap], which no closed
       proof denotes. This is UIP as a metatheorem, which the model does
-      not contradict. *)
+      not contradict.
+
+    Hedberg's theorem, the model's other positive prediction, is
+    [Hedberg.v]. *)
 From DeLaM.Validity Require Import Canonicity.
 
 (** ** The statement *)
@@ -31,8 +35,12 @@ Definition uip_pt (l : lvl) (A : ty) (a b : tm) : ty :=
   tyPi l (lmax l l) (tyId l A a b)
     (tyPi l l (tyId l A a b)⟨↑⟩ (tyId l (tyId l A a b)⟨↑⟩⟨↑⟩ (var 1) (var 0))).
 
-(** The model's [UIP₀], at [⌜Nat⌝] in [Ty 0]. *)
-Definition UIP0 : ty := uip_pt (lsuc lzero) (tyU lzero) tmNat tmNat.
+(** [⌜Bool⌝ := ⌜Unit⌝ + ⌜Unit⌝]. *)
+Definition code_bool : tm := tmSum lzero lzero (tmUnit lzero) (tmUnit lzero).
+(** The model's [UIP₀], at [⌜Bool⌝] in [Ty 0]. *)
+Definition UIP0 : ty := uip_pt (lsuc lzero) (tyU lzero) code_bool code_bool.
+(** The same at [⌜Nat⌝] (M11's statement). *)
+Definition UIP0_nat : ty := uip_pt (lsuc lzero) (tyU lzero) tmNat tmNat.
 
 Lemma uip_pt_wf {G i Γ l A a b} : i <> lV -> lwf (gL G) l ->
   [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] b : A @ l ] ->
@@ -53,11 +61,28 @@ Proof.
   - apply wf_var; [exact HΓ2 | apply in_here].
 Qed.
 
+(** [⌜Bool⌝ : Ty 0]: the code's level [0 ⊔ 0] is [0]. *)
+Lemma code_bool_wf {G i} : [ ⊢ G ] -> i <> lV -> [ G ; cnil ⊢[ i ] code_bool : tyU lzero @ lsuc lzero ].
+Proof.
+  intros HG Hv. pose proof (lequiv_sym _ _ _ (lmax_idem (gL G) lzero I)) as E.
+  assert (Hu : [ G ; cnil ⊢[ i ] tmUnit lzero : tyU lzero @ lsuc lzero ])
+    by (apply wf_code_unit; [exact Hv | apply wfc_nil, HG | exact I]).
+  eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ (wf_code_sum G i cnil lzero lzero _ _ Hv I I Hu Hu) (lequiv_suc _ _ _ E)) |].
+  apply eqty_U; [destruct i; discriminate | apply wfc_nil, HG | exact E].
+Qed.
+
 (** [UIP₀] is a closed type, at every layer but V, in any global context. *)
 Theorem UIP0_wf {G i} : [ ⊢ G ] -> i <> lV ->
   [ G ; cnil ⊢[ i ] UIP0 @ lmax (lsuc lzero) (lmax (lsuc lzero) (lsuc lzero)) ].
 Proof.
-  intros HG Hv. unfold UIP0. apply uip_pt_wf; [exact Hv | exact I | apply wft_U | apply wf_code_nat | apply wf_code_nat].
+  intros HG Hv. unfold UIP0. apply uip_pt_wf; [exact Hv | exact I | apply wft_U | exact (code_bool_wf HG Hv) | exact (code_bool_wf HG Hv)].
+  all: first [exact Hv | exact I | apply wfc_nil, HG].
+Qed.
+
+Theorem UIP0_nat_wf {G i} : [ ⊢ G ] -> i <> lV ->
+  [ G ; cnil ⊢[ i ] UIP0_nat @ lmax (lsuc lzero) (lmax (lsuc lzero) (lsuc lzero)) ].
+Proof.
+  intros HG Hv. unfold UIP0_nat. apply uip_pt_wf; [exact Hv | exact I | apply wft_U | apply wf_code_nat | apply wf_code_nat].
   all: first [exact Hv | exact I | apply wfc_nil, HG].
 Qed.
 
@@ -187,11 +212,11 @@ Proof.
   exact (eqtm_trans _ _ _ _ _ _ _ _ Ep (eqtm_trans _ _ _ _ _ _ _ _ Er (eqtm_sym _ _ _ _ _ _ _ Eq))).
 Qed.
 
-(** So at [UIP₀]'s carrier: closed proofs of [Id^1(Ty 0; ⌜Nat⌝; ⌜Nat⌝)]
+(** So at [UIP₀]'s carrier: closed proofs of [Id^1(Ty 0; ⌜Bool⌝; ⌜Bool⌝)]
     are all convertible (to [refl]), although [UIP₀] itself has no closed
     proof in the model. *)
 Corollary closed_uip0_carrier {G p q k} : closed_ok lD G ->
-  [ G ; cnil ⊢[ lD ] p : tyId (lsuc lzero) (tyU lzero) tmNat tmNat @ k ] ->
-  [ G ; cnil ⊢[ lD ] q : tyId (lsuc lzero) (tyU lzero) tmNat tmNat @ k ] ->
-  [ G ; cnil ⊢[ lD ] p ≅ q : tyId (lsuc lzero) (tyU lzero) tmNat tmNat @ k ].
+  [ G ; cnil ⊢[ lD ] p : tyId (lsuc lzero) (tyU lzero) code_bool code_bool @ k ] ->
+  [ G ; cnil ⊢[ lD ] q : tyId (lsuc lzero) (tyU lzero) code_bool code_bool @ k ] ->
+  [ G ; cnil ⊢[ lD ] p ≅ q : tyId (lsuc lzero) (tyU lzero) code_bool code_bool @ k ].
 Proof. exact (closed_id_uip compt_D). Qed.

@@ -229,9 +229,10 @@ Proof.
   discriminate E.
 Qed.
 
-(** The development's own statement ([UIP0], [theories/Validity/Uip.v])
-    takes [⌜Nat⌝] for [⌜Bool⌝], since the development has no sums. At the
-    empty context its interpretation is [∀ p q : hom Ty0 nat nat, p = q],
+(** The development's M11 statement ([UIP0_nat], [theories/Validity/Uip.v])
+    took [⌜Nat⌝] for [⌜Bool⌝], from before the development had sums; since
+    M12 its [UIP0] is at [⌜Bool⌝], which [no_uip0] refutes. At the empty
+    context [UIP0_nat]'s interpretation is [∀ p q : hom Ty0 nat nat, p = q],
     and the transposition of [0] and [1] refutes it. *)
 Definition swap01 (n : nat) : nat := match n with 0 => 1 | 1 => 0 | n => n end.
 Lemma swap01_inv n : swap01 (swap01 n) = n.
