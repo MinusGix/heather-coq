@@ -219,6 +219,26 @@ Lemma inva_case {G i Γ l l' l'' A B M c1 c2 t T k} : [ G ; Γ ⊢[ i ] tmCase l
     lvl_eq (gL G) k l'' /\ [ G ; Γ ⊢[ typeof i ] T ≅ M[lsingle t] @ k ].
 Proof. inv_tm_any. Qed.
 
+(** Well-founded trees (M13a). *)
+Lemma inva_sup {G i Γ l l' A B a f T k} : [ G ; Γ ⊢[ i ] tmSup l l' A B a f : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\
+    [ G ; Γ ⊢[ i ] a : A @ l ] /\
+    [ G ; Γ ⊢[ i ] f : tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩ @ lmax l' (lmax l l') ]) /\
+    lvl_eq (gL G) k (lmax l l') /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyW l l' A B @ k ].
+Proof. inv_tm_any. Qed.
+
+Lemma inva_elimW {G i Γ l l' l'' A B M c t T k} : [ G ; Γ ⊢[ i ] tmElimW l l' l'' A B M c t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ lwf (gL G) l'' /\
+    [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\
+    [ G ; Γ ,, tyW l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] wfty l l' A B @ lmax l' (lmax l l') ] /\
+    [ G ; Γ ,, A @ l ,, wfty l l' A B @ lmax l' (lmax l l') ⊢[ i ] wihty l l' l'' A B M @ lmax l' l'' ] /\
+    [ G ; Γ ,, A @ l ,, wfty l l' A B @ lmax l' (lmax l l') ,, wihty l l' l'' A B M @ lmax l' l''
+        ⊢[ i ] c : wstepty l l' A B M @ l'' ] /\
+    [ G ; Γ ⊢[ i ] t : tyW l l' A B @ lmax l l' ]) /\
+    lvl_eq (gL G) k l'' /\ [ G ; Γ ⊢[ typeof i ] T ≅ M[lsingle t] @ k ].
+Proof. inv_tm_any. Qed.
+
 (** Strict equality's codes (M10c). *)
 Lemma inva_code_seq {G i Γ l s t u T k} : [ G ; Γ ⊢[ i ] tmSEq l s t u : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\

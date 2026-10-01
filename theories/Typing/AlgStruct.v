@@ -16,7 +16,7 @@ Ltac push_ren_in H := revert H; push_ren; intros H.
 
 Lemma posty_ren W r : posty W -> posty W⟨r⟩.
 Proof.
-  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_empty | apply posty_sum | idtac].
+  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_empty | apply posty_sum | apply posty_W | idtac].
   apply posty_ne, whne_ty_ren; assumption.
 Qed.
 
@@ -128,7 +128,14 @@ Theorem ac_wk_all :
   (forall G Γ ν ν' T, ac_tmne G Γ ν ν' T -> AW_tmne G Γ ν ν' T) /\
   (forall G Γ ν ν' W, ac_tmnee G Γ ν ν' W -> AW_tmnee G Γ ν ν' W) /\
   (forall G Γ d d' Δ, ac_sub G Γ d d' Δ -> AW_sub G Γ d d' Δ).
-Proof. apply ac_mut; intros; try exact I; W_case. Qed.
+Proof.
+  apply ac_mut; intros; try exact I;
+    first [ W_case
+          | (* [elim_W]'s step (M13a): its telescope's instance, up to conversion *)
+            unfold AW_tmne, AW_tmnee, AW_ty, AW_tm in *;
+            let Δ := fresh "Δ" in let r := fresh "r" in let Hr := fresh "Hr" in
+            intros Δ r Hr; W_norm; W_inst Hr; eapply actmne_elimW; try eassumption; W_norm; eassumption ].
+Qed.
 
 (** ** Global weakening
 
@@ -140,7 +147,7 @@ Ltac push_gren_in H := revert H; push_gren; intros H.
 
 Lemma posty_gren W ξ : posty W -> posty W⟪ξ⟫.
 Proof.
-  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_empty | apply posty_sum | idtac].
+  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_empty | apply posty_sum | apply posty_W | idtac].
   apply posty_ne, whne_ty_gren; assumption.
 Qed.
 

@@ -75,6 +75,12 @@ Theorem decl_sum_inj {G Γ l l1 l2 l3 l4 A A' B B'} :
   lequiv (gL G) l3 l1 /\ lequiv (gL G) l4 l2 /\ [ G ; Γ ⊢[ lD ] A ≅ A' @ l1 ] /\ [ G ; Γ ⊢[ lD ] B ≅ B' @ l2 ].
 Proof. intros H; exact (sum_inj (E := DEP) (LP := LR_P) redP_ty H (lwfD_eqty H)). Qed.
 
+Theorem decl_W_inj {G Γ l l1 l2 l3 l4 A A' B B'} :
+  [ G ; Γ ⊢[ lD ] tyW l1 l2 A B ≅ tyW l3 l4 A' B' @ l ] ->
+  lequiv (gL G) l3 l1 /\ lequiv (gL G) l4 l2 /\
+  [ G ; Γ ⊢[ lD ] A ≅ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢[ lD ] B ≅ B' @ l2 ].
+Proof. intros H; exact (W_inj (E := DEP) (LP := LR_P) redP_ty H (lwfD_eqty H)). Qed.
+
 Theorem decl_seq_inj {G Γ l l1 l2 A A' a a' b b'} :
   [ G ; Γ ⊢[ lD ] tySEq l1 A a b ≅ tySEq l2 A' a' b' @ l ] ->
   lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢[ lD ] A ≅ A' @ l1 ] /\

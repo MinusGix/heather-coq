@@ -32,7 +32,9 @@ Inductive posty : ty -> Prop :=
 (* the empty type (M12a): no η, so its neutrals are compared as neutrals *)
 | posty_empty l : posty (tyEmpty l)
 (* binary sums (M12b): no η *)
-| posty_sum l l' A B : posty (tySum l l' A B).
+| posty_sum l l' A B : posty (tySum l l' A B)
+(* well-founded trees (M13a): no η *)
+| posty_W l l' A B : posty (tyW l l' A B).
 
 Inductive ac_ty : gctx -> ctx -> ty -> ty -> Prop :=
 | act_red G Γ T T' W W' : reds_ty T W -> reds_ty T' W' -> whnf_ty W -> whnf_ty W' ->
@@ -72,6 +74,9 @@ with ac_tynf : gctx -> ctx -> ty -> ty -> Prop :=
 (* binary sums (M12b) *)
 | actnf_sum G Γ l1 l2 l3 l4 A A' B B' : leqv l1 l3 -> leqv l2 l4 -> ac_ty G Γ A A' -> ac_ty G Γ B B' ->
     ac_tynf G Γ (tySum l1 l2 A B) (tySum l3 l4 A' B')
+(* well-founded trees (M13a): the positions under the shape, as Π's codomain *)
+| actnf_W G Γ l1 l2 l3 l4 A A' B B' : leqv l1 l3 -> leqv l2 l4 -> ac_ty G Γ A A' -> ac_ty G (Γ ,, A @ l1) B B' ->
+    ac_tynf G Γ (tyW l1 l2 A B) (tyW l3 l4 A' B')
 (* the identity type (M11a): endpoints compared at the left carrier *)
 | actnf_id G Γ l l' A A' a a' b b' : leqv l l' -> ac_ty G Γ A A' ->
     ac_tm G Γ a a' A -> ac_tm G Γ b b' A ->
@@ -155,6 +160,11 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tmnf G Γ (tmInl k1 k2 C D a) (tmInl k3 k4 C' D' a') (tySum l l' A B)
 | actmnf_inr G Γ l l' A B k1 k2 k3 k4 C D C' D' b b' : ac_tm G Γ b b' B ->
     ac_tmnf G Γ (tmInr k1 k2 C D b) (tmInr k3 k4 C' D' b') (tySum l l' A B)
+(* [sup] (M13a): the shapes at the shape type and the child functions at
+   their type; the annotations are the [W] type's up to equality *)
+| actmnf_sup G Γ l l' A B k1 k2 k3 k4 C D C' D' a a' f f' : ac_tm G Γ a a' A ->
+    ac_tm G Γ f f' (tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩) ->
+    ac_tmnf G Γ (tmSup k1 k2 C D a f) (tmSup k3 k4 C' D' a' f') (tyW l l' A B)
 (* the codes of Empty and + (M12c) *)
 | actmnf_code_empty G Γ l k k' : leqv k k' -> ac_tmnf G Γ (tmEmpty k) (tmEmpty k') (tyU l)
 | actmnf_code_sum G Γ l l1 l2 l3 l4 s s' t t' : leqv l1 l3 -> leqv l2 l4 ->
@@ -265,6 +275,15 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tm G (Γ ,, B @ l2) c2 c2' M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] ->
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (tmCase l1 l2 l3 A B M c1 c2 ν) (tmCase l4 l5 l6 A' B' M' c1' c2' ν') M[lsingle ν]
+(* [elim_W] (M13a): every component compared, the step under its telescope,
+   the scrutinees as neutrals *)
+| actmne_elimW G Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c c' ν ν' W :
+    leqv l1 l4 -> leqv l2 l5 -> leqv l3 l6 -> ac_ty G Γ A A' -> ac_ty G (Γ ,, A @ l1) B B' ->
+    ac_ty G (Γ ,, tyW l1 l2 A B @ lmax l1 l2) M M' ->
+    ac_tm G (Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ,, wihty l1 l2 l3 A B M @ lmax l2 l3)
+      c c' (wstepty l1 l2 A B M) ->
+    ac_tmnee G Γ ν ν' W ->
+    ac_tmne G Γ (tmElimW l1 l2 l3 A B M c ν) (tmElimW l4 l5 l6 A' B' M' c' ν') M[lsingle ν]
 
 with ac_tmnee : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmnee_red G Γ ν ν' T W : ac_tmne G Γ ν ν' T -> reds_ty T W -> whnf_ty W ->

@@ -83,6 +83,8 @@ Lemma gwa_wstepty γ l l' (A B M : ty) : (wstepty l l' A B M)⟦γ⟧ = wstepty 
 Proof.
   repeat rewrite ?gwa_subst_ty, ?gwa_lsingle, ?gwa_sup, ?gwa_var, ?gwa_ren_ty, ?gwa_ren. reflexivity.
 Qed.
+Lemma gwa_lsingle3 (a f h : tm) γ : (lsingle3 a f h)⟦γ⟧ = lsingle3 a⟦γ⟧ f⟦γ⟧ h⟦γ⟧.
+Proof. now destruct γ. Qed.
 Lemma gwa_wIH γ l l' l'' (A B M : ty) (c a f : tm) :
   (wIH l l' l'' A B M c a f)⟦γ⟧ = wIH l l' l'' A⟦γ⟧ B⟦γ⟧ M⟦γ⟧ c⟦γ⟧ a⟦γ⟧ f⟦γ⟧.
 Proof. destruct γ; cbn [gwa]; [reflexivity | apply gren_wIH ..]. Qed.

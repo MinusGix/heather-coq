@@ -1262,7 +1262,12 @@ Proof using ELM ELP EMl.
     rec_judg; upi_judg; us_keep; us_spec; us_entries_sem; us_move; us_rewrite_all;
     rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix;
     (* renamings exposed by [us_push] ([J]'s motive context, M11a) *)
-    repeat match goal with H : _ |- _ => progress rewrite ?usubst_ren_ty_mix, ?usubst_ren_mix in H end.
+    repeat match goal with H : _ |- _ => progress rewrite ?usubst_ren_ty_mix, ?usubst_ren_mix in H end;
+    (* [W]'s telescope nests substitutions and weakenings under formers, which
+       the first pass exposes (M13a) *)
+    try (match goal with H : context [tyW] |- _ => idtac | |- context [tyW] => idtac end;
+         do 2 (us_rewrite_all; rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix;
+               repeat match goal with H : _ |- _ => progress rewrite ?usubst_ren_ty_mix, ?usubst_ren_mix in H end)).
   (* the ω-layer goals and [uapp]'s; elsewhere only [w_dispatch]'s assumption
      case applies, and its lemmas fail slowly *)
   all: try solve [lazymatch goal with
