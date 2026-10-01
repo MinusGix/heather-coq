@@ -1174,6 +1174,73 @@ Qed.
 
 End SC.
 
+(** ** Well-founded trees (M13a): at layer D only, where their rules hold
+    below M, through the congruences and the presupposition lemmas. *)
+Lemma compt_lle_D {i} : compt i -> lle i lD -> i = lD.
+Proof. intros [-> | ->] H; [reflexivity | unfold lle in H; cbn in H; lia]. Qed.
+
+Lemma sc_W {G i Γ l1 l2 l1' l2' A A' B B'} : compt i -> lle i lD ->
+  lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] /\ [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] tyW l1' l2' A' B' @ lmax l1 l2 ] /\
+  [ G ; Γ ⊢[ i ] tyW l1 l2 A B ≅ tyW l1' l2' A' B' @ lmax l1 l2 ].
+Proof.
+  intros Hc Hle H1 H2 H1' H2' E1 E2 HA [HA' HAA] HB [HB' HBB].
+  pose proof (compt_lle_D Hc Hle); subst i.
+  pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2.
+  split; [exact (@pre_W_r G lD eq_refl ltac:(discriminate) _ _ _ _ _ _ _ _ Q1 Q2 HAA HA' HB')
+         | apply eqty_W; auto].
+Qed.
+
+Lemma sc_sup {G i Γ l1 l2 l1' l2' A A' B B' a a' f f'} : compt i -> lle i lD ->
+  lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] /\ [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l1 ] -> [ G ; Γ ⊢[ i ] a' : A @ l1 ] /\ [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] f : tyPi l2 (lmax l1 l2) B[lsingle a] (tyW l1 l2 A B)⟨↑⟩ @ lmax l2 (lmax l1 l2) ] ->
+  [ G ; Γ ⊢[ i ] f' : tyPi l2 (lmax l1 l2) B[lsingle a] (tyW l1 l2 A B)⟨↑⟩ @ lmax l2 (lmax l1 l2) ] /\
+  [ G ; Γ ⊢[ i ] f ≅ f' : tyPi l2 (lmax l1 l2) B[lsingle a] (tyW l1 l2 A B)⟨↑⟩ @ lmax l2 (lmax l1 l2) ] ->
+  [ G ; Γ ⊢[ i ] tmSup l1' l2' A' B' a' f' : tyW l1 l2 A B @ lmax l1 l2 ] /\
+  [ G ; Γ ⊢[ i ] tmSup l1 l2 A B a f ≅ tmSup l1' l2' A' B' a' f' : tyW l1 l2 A B @ lmax l1 l2 ].
+Proof.
+  intros Hc Hle H1 H2 H1' H2' E1 E2 HA [HA' HAA] HB [HB' HBB] Ha [Ha' Haa] Hf [Hf' Hff].
+  pose proof (compt_lle_D Hc Hle); subst i.
+  pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2.
+  split; [exact (@pre_sup_r G lD eq_refl ltac:(discriminate) _ _ _ _ _ _ _ _ _ _ _ _ Q1 Q2 HA HAA HA' HB HBB HB' Haa Ha Ha' Hf')
+         | apply eqtm_sup; auto].
+Qed.
+
+Lemma sc_elimW {G i Γ l1 l2 l3 l1' l2' l3' A A' B B' M M' c c' t t'} : compt i -> lle i lD ->
+  lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l3 -> lwf (gL G) l1' -> lwf (gL G) l2' -> lwf (gL G) l3' ->
+  leqv l1 l1' -> leqv l2 l2' -> leqv l3 l3' ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] /\ [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+  [ G ; Γ ,, tyW l1 l2 A B @ lmax l1 l2 ⊢[ i ] M @ l3 ] ->
+  [ G ; Γ ,, tyW l1 l2 A B @ lmax l1 l2 ⊢[ i ] M' @ l3 ] /\
+  [ G ; Γ ,, tyW l1 l2 A B @ lmax l1 l2 ⊢[ i ] M ≅ M' @ l3 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ] ->
+  [ G ; Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ⊢[ i ] wihty l1 l2 l3 A B M @ lmax l2 l3 ] ->
+  [ G ; Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ,, wihty l1 l2 l3 A B M @ lmax l2 l3
+      ⊢[ i ] c : wstepty l1 l2 A B M @ l3 ] ->
+  [ G ; Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ,, wihty l1 l2 l3 A B M @ lmax l2 l3
+      ⊢[ i ] c' : wstepty l1 l2 A B M @ l3 ] /\
+  [ G ; Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ,, wihty l1 l2 l3 A B M @ lmax l2 l3
+      ⊢[ i ] c ≅ c' : wstepty l1 l2 A B M @ l3 ] ->
+  [ G ; Γ ⊢[ i ] t : tyW l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ i ] t' : tyW l1 l2 A B @ lmax l1 l2 ] /\ [ G ; Γ ⊢[ i ] t ≅ t' : tyW l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ i ] tmElimW l1' l2' l3' A' B' M' c' t' : M[lsingle t] @ l3 ] /\
+  [ G ; Γ ⊢[ i ] tmElimW l1 l2 l3 A B M c t ≅ tmElimW l1' l2' l3' A' B' M' c' t' : M[lsingle t] @ l3 ].
+Proof.
+  intros Hc Hle H1 H2 H3 H1' H2' H3' E1 E2 E3 HA [HA' HAA] HB [HB' HBB] HM [HM' HMM] HF HI Hc0 [Hc' Hcc]
+    Ht [Ht' Htt].
+  pose proof (compt_lle_D Hc Hle); subst i.
+  pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2. pose proof (lq H3 H3' E3) as Q3.
+  split; [exact (@pre_elimW_r G lD eq_refl ltac:(discriminate) _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+                   Q1 Q2 Q3 HAA HA HA' HBB HB HB' HMM HM HM' HF HI Hc' Htt Ht Ht')
+         | apply eqtm_elimW; auto].
+Qed.
+
 
 
 (** ** The lemma *)
@@ -1273,6 +1340,8 @@ Proof.
     | solve [eapply sc_sum; eauto] | solve [eapply sc_inl; eauto] | solve [eapply sc_inr; eauto]
     | solve [eapply sc_case; eauto]
     | solve [eapply sc_code_empty; eauto] | solve [eapply sc_code_sum; eauto]
+    (* well-founded trees (M13a) *)
+    | solve [eapply sc_W; eauto] | solve [eapply sc_sup; eauto] | solve [eapply sc_elimW; eauto]
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x
         |- _ /\ eq_tm _ _ _ (succ _) _ _ _ =>

@@ -15,7 +15,7 @@ From DeLaM.LogRel Require Export Def.
 
 Fixpoint mltt_ty (T : ty) : Prop :=
   match T with
-  | tyPi _ _ A B | tySig _ _ A B | tySum _ _ A B => mltt_ty A /\ mltt_ty B
+  | tyPi _ _ A B | tySig _ _ A B | tySum _ _ A B | tyW _ _ A B => mltt_ty A /\ mltt_ty B
   (* the identity type's relation recurses into its carrier (M11a) *)
   | tyId _ A _ _ => mltt_ty A
   | tyCTyp _ _ | tyCTrm _ _ _ | tyCPi _ _ | tyTPi _ _ _ _ => False
@@ -119,7 +119,9 @@ Proof.
                      HRA IHRA Hra Hrb Hps Hpt HR
                  | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                  | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
-                     HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR]; intros Hm Hm'.
+                     HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                     [Hl H3 H4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] Hdom IHdom Hcod IHcod HR]; intros Hm Hm'.
   - eapply LRnat; eassumption.
   - eapply LRU; try eassumption.
     intros t t'; rewrite (HR t t'); split; apply (URel_layer (n := n) Hn);
@@ -150,6 +152,11 @@ Proof.
     pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT') Hm') as [HmA' HmB'].
     eapply (LRsum _ _ _ _ _ _ _ u1 u2 u3 u4 UA UA' UB UB' RA RB); try eassumption;
       [apply IHRA | apply IHRB]; assumption.
+  - pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT) Hm) as [HmA HmB].
+    pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT') Hm') as [HmA' HmB'].
+    eapply LRw; [split|..]; try eassumption.
+    + intros ρ; apply IHdom; apply mltt_ren, mltt_gwa; assumption.
+    + intros ρ a a' ha; apply IHcod; apply mltt_subst, mltt_ren, mltt_gwa; assumption.
 Qed.
 
 End Layering.

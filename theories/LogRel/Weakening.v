@@ -68,6 +68,55 @@ Qed.
 
 End KwRel.
 
+(** ** Well-founded trees (M13a): weakening re-associates the data
+
+    A weakened child sits at [(ρ ∘ ρ2) ∘ ρ3] where the weakened relation
+    reads [ρ ∘ (ρ2 ∘ ρ3)]; the two give equivalent relations, by
+    irrelevance at the type-level derivations ([HdA], [HcA]). *)
+Lemma WNf_kw {G Γ l1 l2 A B} {domR : DomRel G Γ} {codR : CodRel G Γ domR} {w w'} :
+  WNf G Γ l1 l2 A B domR codR w w' -> forall ρ : kwk G Γ,
+  (forall ρ2 ρ3, releq (domR (kw_comp (kw_comp ρ ρ2) ρ3)) (domR (kw_comp ρ (kw_comp ρ2 ρ3)))) ->
+  (forall ρ2 ρ3 x y h h', releq (codR (kw_comp (kw_comp ρ ρ2) ρ3) x y h)
+                                (codR (kw_comp ρ (kw_comp ρ2 ρ3)) x y h')) ->
+  WNf (kw_G ρ) (kw_Δ ρ) l1 l2 (kty ρ A) (ktyl ρ B)
+    (fun ρ' => domR (kw_comp ρ ρ')) (fun ρ' x x' h => codR (kw_comp ρ ρ') x x' h) (ktm ρ w) (ktm ρ w').
+Proof.
+  destruct 1 as [G Γ l1 l2 A B domR codR k1 k2 k1' k2' C D C' D' a a' f f' Hk1 Hk2 Hk1' Hk2' HC HC' HD HD' Ha Hwf Hf
+                | G Γ l1 l2 A B domR codR ν ν' Hν];
+    intros ρ HdA HcA.
+  - pose proof (lequiv_wf_r _ _ _ Hk1) as W1. pose proof (lequiv_wf_r _ _ _ Hk2) as W2.
+    pose proof (eqty_wf_l ge_typeof (geq_ty_sound HC)) as HA.
+    rewrite !ktm_sup. apply wnf_sup; [apply (kw_lequiv ρ); assumption .. | | | | | | |].
+    + exact (kw_geq_ty ρ HC).
+    + exact (kw_geq_ty ρ HC').
+    + exact (kw_geq_ty_l ρ HA W1 HD).
+    + exact (kw_geq_ty_l ρ HA W1 HD').
+    + intros ρ2. cbn beta. rewrite <- !ktm_comp. exact (Ha (kw_comp ρ ρ2)).
+    + intros ρ2. rewrite <- !ktm_comp, <- !ktyl_comp, <- !kty_comp. exact (Hwf (kw_comp ρ ρ2)).
+    + intros ρ2. cbn beta. rewrite <- !ktm_comp, <- !ktyl_comp, <- !kty_comp.
+      intros ha b b' Hbb la lb A1 B1 la' lb' A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1'.
+      assert (WL : lwf (gL G) (lmax l1 l2)) by (cbn; split; assumption).
+      pose proof (Hf (kw_comp ρ ρ2) ha b b' Hbb la lb A1 B1 la' lb' A1' B1'
+                    (kw_lequiv_shrink ρ H1 W2) (kw_lequiv_shrink ρ H2 WL)
+                    (kw_lequiv_shrink ρ H3 W2) (kw_lequiv_shrink ρ H4 WL) HA1 HB1 HA1' HB1') as X.
+      eapply WRel_dir; [exact X | intros ρ3; apply HdA | intros ρ3 x y h h'; apply HcA].
+  - apply wnf_ne. pose proof (kw_gne_tm ρ Hν) as W. rewrite kty_tyW in W. exact W.
+Qed.
+
+Lemma WRel_kw {G Γ l1 l2 A B} {domR : DomRel G Γ} {codR : CodRel G Γ domR} (ρ : kwk G Γ) :
+  (forall ρ2 ρ3, releq (domR (kw_comp (kw_comp ρ ρ2) ρ3)) (domR (kw_comp ρ (kw_comp ρ2 ρ3)))) ->
+  (forall ρ2 ρ3 x y h h', releq (codR (kw_comp (kw_comp ρ ρ2) ρ3) x y h)
+                                (codR (kw_comp ρ (kw_comp ρ2 ρ3)) x y h')) ->
+  forall t t', WRel G Γ l1 l2 A B domR codR t t' ->
+  WRel (kw_G ρ) (kw_Δ ρ) l1 l2 (kty ρ A) (ktyl ρ B)
+    (fun ρ' => domR (kw_comp ρ ρ')) (fun ρ' x x' h => codR (kw_comp ρ ρ') x x' h) (ktm ρ t) (ktm ρ t').
+Proof.
+  intros HdA HcA t t' H. destruct (WRel_inv H) as (w & w' & Hw & Hw' & Heq & Hn).
+  pose proof (kw_tmred ρ Hw) as Y. pose proof (kw_tmred ρ Hw') as Y'. pose proof (kw_geq_tm ρ Heq) as Z.
+  rewrite kty_tyW in Y, Y', Z.
+  econstructor; [exact Y | exact Y' | exact Z | exact (WNf_kw Hn ρ HdA HcA)].
+Qed.
+
 (** ** Meta-functions: the domain of [TΠ] at composite worlds *)
 
 Lemma vp_ty_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) {Δ A A' l} :
@@ -146,7 +195,8 @@ Proof.
                     HRA IHRA Hra Hrb Hps Hpt HR
                 | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
-                    HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR]; intros ρ.
+                    HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd _ codAd _ HR]; intros ρ.
   - exists (NatRel (kw_G ρ) (kw_Δ ρ)). split.
     + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
       rewrite kty_tyNat in X, X'.
@@ -372,6 +422,32 @@ Proof.
         apply sumnf_inr; [apply (kw_lequiv ρ); assumption .. | exact (kw_geq_ty ρ HC) | exact (kw_geq_ty ρ HC')
                          | exact (kw_geq_ty ρ HD) | exact (kw_geq_ty ρ HD') | exact (HmapB _ _ Hb)].
       * apply sumnf_ne. pose proof (kw_gne_tm ρ Hν) as W. rewrite kty_tySum in W. exact W.
+  - (* W: the data at composite worlds, as Π's *)
+    set (domR' := fun ρ' : kwk (kw_G ρ) (kw_Δ ρ) => domR (kw_comp ρ ρ')).
+    set (codR' := fun (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) a a' (ha : domR' ρ' a a') =>
+                    codR (kw_comp ρ ρ') a a' ha).
+    pose proof (poly_kw ρ (kty_tyW ρ) P) as P'.
+    exists (WRel (kw_G ρ) (kw_Δ ρ) l1 l2 (kty ρ A) (ktyl ρ B) domR' codR'). split.
+    + eapply (LRw n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ T) (kty ρ T') l l1 l2 l3 l4
+                (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B') domR' codR').
+      * exact P'.
+      * intros ρ'. subst domR'; cbn beta.
+        rewrite <- !kty_comp. exact (domAd (kw_comp ρ ρ')).
+      * intros ρ' a a' ha. subst codR'; cbn beta.
+        rewrite <- !ktyl_comp. exact (codAd (kw_comp ρ ρ') a a' ha).
+      * apply releq_refl.
+    + intros t t' Ht. apply HR in Ht. subst domR' codR'.
+      apply (WRel_kw ρ); [| | exact Ht].
+      * intros ρ2 ρ3.
+        pose proof (domAd (kw_comp (kw_comp ρ ρ2) ρ3)) as D1.
+        pose proof (domAd (kw_comp ρ (kw_comp ρ2 ρ3))) as D2.
+        repeat rewrite kty_comp in D1. repeat rewrite kty_comp in D2.
+        exact (LR_irrel _ _ _ _ _ _ _ _ _ _ D1 D2).
+      * intros ρ2 ρ3 x y h h'.
+        pose proof (codAd (kw_comp (kw_comp ρ ρ2) ρ3) x y h) as D1.
+        pose proof (codAd (kw_comp ρ (kw_comp ρ2 ρ3)) x y h') as D2.
+        repeat rewrite ktyl_comp in D1. repeat rewrite ktyl_comp in D2.
+        exact (LR_irrel _ _ _ _ _ _ _ _ _ _ D1 D2).
 Qed.
 
 Theorem LR_kwk n : Pwk n.

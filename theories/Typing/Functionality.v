@@ -835,6 +835,74 @@ Proof.
     eapply eqtm_case; try solve [eauto 6 with fung].
     all: eapply eq_tm_retype;
       [match goal with IH : _ |- _ => eapply IH; solve [eauto 6 with fung] end | sub_rw; reflexivity].
+  (* [sup] (M13a): the positions under the lifted substitutions *)
+  - match goal with
+    | Hd : lsub_eq _ _ ?Δ ?d ?d' ?Γ, Hw : lsub_wf ?G ?i ?Δ ?d ?Γ,
+      wA : wf_ty ?G _ ?Γ ?A ?l, wB : wf_ty ?G _ (?Γ ,, ?A @ ?l) ?B ?l'
+      |- eq_tm _ _ _ (tmSup _ _ _ _ _ _) _ _ _ =>
+        pose proof (wf_ty_subst_g wA Hw) as HAd;
+        assert (EA : eq_ty G i Δ A[d] A[d'] l)
+          by (match goal with IH : forall Δ d d', _ -> eq_ty _ _ _ (subst ?x _) _ _ |- _ =>
+                constr_eq x A; eapply IH; exact Hd end);
+        assert (HnA : lsub_eq G i (Δ ,, A[d] @ l) (llift d) (llift d') (Γ ,, A @ l))
+          by (eapply lsub_eq_lift_g; [exact Hd | eauto 6 with fung | assumption | eauto 6 with fung | reflexivity]);
+        pose proof (wf_ty_subst_g wB (lsub_eq_l HnA));
+        assert (eq_ty G i (Δ ,, A[d] @ l) B[llift d] B[llift d'] l')
+          by (match goal with IH : forall Δ d d', _ -> eq_ty _ _ _ (subst ?x _) _ _ |- _ =>
+                constr_eq x B; eapply IH; exact HnA end)
+    end.
+    eapply eqtm_sup; try solve [eauto 6 with fung].
+    all: eapply eq_tm_retype;
+      [match goal with IH : _ |- _ => eapply IH; solve [eauto 6 with fung] end | sub_rw; reflexivity].
+  (* [elim_W] (M13a): the motive under [W], and the step under its three
+     binders, the lifted substitutions built along the telescope *)
+  - match goal with
+    | Hd : lsub_eq _ _ ?Δ ?d ?d' ?Γ, Hw : lsub_wf ?G ?i ?Δ ?d ?Γ,
+      wA : wf_ty ?G _ ?Γ ?A ?l, wB : wf_ty ?G _ (?Γ ,, ?A @ ?l) ?B ?l',
+      wM : wf_ty ?G _ (?Γ ,, tyW ?l ?l' ?A ?B @ lmax ?l ?l') ?M ?l'',
+      wF : wf_ty ?G _ (?Γ ,, ?A @ ?l) ?F ?lf,
+      wI : wf_ty ?G _ (?Γ ,, ?A @ ?l ,, ?F @ ?lf) ?I ?li
+      |- eq_tm _ _ _ (tmElimW _ _ _ _ _ _ _ _) _ _ _ =>
+        pose proof (wf_ty_subst_g wA Hw) as HAd;
+        assert (EA : eq_ty G i Δ A[d] A[d'] l)
+          by (match goal with IH : forall Δ d d', _ -> eq_ty _ _ _ (subst ?x _) _ _ |- _ =>
+                constr_eq x A; eapply IH; exact Hd end);
+        assert (HnA : lsub_eq G i (Δ ,, A[d] @ l) (llift d) (llift d') (Γ ,, A @ l))
+          by (eapply lsub_eq_lift_g; [exact Hd | eauto 6 with fung | assumption | eauto 6 with fung | reflexivity]);
+        pose proof (wf_ty_subst_g wB (lsub_eq_l HnA)) as HBd;
+        assert (EB : eq_ty G i (Δ ,, A[d] @ l) B[llift d] B[llift d'] l')
+          by (match goal with IH : forall Δ d d', _ -> eq_ty _ _ _ (subst ?x _) _ _ |- _ =>
+                constr_eq x B; eapply IH; exact HnA end);
+        assert (HnW : lsub_eq G i (Δ ,, tyW l l' A[d] B[llift d] @ lmax l l') (llift d) (llift d')
+                        (Γ ,, tyW l l' A B @ lmax l l'))
+          by (eapply lsub_eq_lift_g; [exact Hd | apply wft_W_typeof; assumption | cbn; split; assumption
+                                     | | reflexivity];
+              push_subst; apply eqty_W_typeof; assumption);
+        pose proof (wf_ty_subst_g wM (lsub_eq_l HnW));
+        assert (eq_ty G i (Δ ,, tyW l l' A[d] B[llift d] @ lmax l l') M[llift d] M[llift d'] l'')
+          by (match goal with IH : forall Δ d d', _ -> eq_ty _ _ _ (subst ?x _) _ _ |- _ =>
+                constr_eq x M; eapply IH; exact HnW end);
+        pose proof (wf_ty_subst_g wF (lsub_eq_l HnA)) as HFd;
+        assert (HnF : lsub_eq G i (Δ ,, A[d] @ l ,, F[llift d] @ lf) (llift (llift d)) (llift (llift d'))
+                        (Γ ,, A @ l ,, F @ lf))
+          by (eapply lsub_eq_lift_g; [exact HnA | eauto 6 with fung | cbn; repeat split; assumption | | reflexivity];
+              eapply lift_eqty; [ match goal with IH : forall Δ d d', _ -> eq_ty _ _ _ (subst ?x _) _ _ |- _ =>
+                                    constr_eq x F; eapply IH; exact HnA end | apply lle_self_typeof ]);
+        pose proof (wf_ty_subst_g wI (lsub_eq_l HnF)) as HId;
+        assert (HnI : lsub_eq G i (Δ ,, A[d] @ l ,, F[llift d] @ lf ,, I[llift (llift d)] @ li)
+                        (llift (llift (llift d))) (llift (llift (llift d'))) (Γ ,, A @ l ,, F @ lf ,, I @ li))
+          by (eapply lsub_eq_lift_g; [exact HnF | eauto 6 with fung | cbn; repeat split; assumption | | reflexivity];
+              eapply lift_eqty; [ match goal with IH : forall Δ d d', _ -> eq_ty _ _ _ (subst ?x _) _ _ |- _ =>
+                                    constr_eq x I; eapply IH; exact HnF end | apply lle_self_typeof ])
+    end.
+    eapply eqtm_elimW; try solve [eauto 6 with fung].
+    all: first
+      [ solve [eapply wf_ty_regty; [eassumption | sub_eqW]]
+      | solve [eapply wf_ty_regboth; [eassumption | sub_eqW | sub_eqW]]
+      | solve [eapply eq_tm_regctx;
+               [match goal with IH : _ |- _ => eapply IH; solve [eauto 6 with fung] end | sub_eqW | sub_eqW]]
+      | eapply eq_tm_retype;
+        [match goal with IH : _ |- _ => eapply IH; solve [eauto 6 with fung] end | sub_rw; reflexivity] ].
 Qed.
 
 Theorem functionality :

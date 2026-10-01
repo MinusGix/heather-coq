@@ -96,6 +96,10 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
 | wft_sum G i Γ l l' A B : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] B @ l' ] ->
     [ G ; Γ ⊢[ i ] tySum l l' A B @ lmax l l' ]
+(* well-founded trees (M13a; layers D and M): positions under the shape *)
+| wft_W G i Γ l l' A B : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ⊢[ i ] tyW l l' A B @ lmax l l' ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -294,6 +298,24 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 | wf_code_sum G i Γ l l' s t : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] t : tyU l' @ lsuc l' ] ->
     [ G ; Γ ⊢[ i ] tmSum l l' s t : tyU (lmax l l') @ lsuc (lmax l l') ]
+(* well-founded trees (M13a; layers D and M, M13_DESIGN.md): [sup]'s children are a
+   function from the positions at its shape; [elim_W]'s motive binds the
+   scrutinee, and its step binds the shape [a], the children [f] and the
+   induction hypothesis [ih]. The types of [f] and [ih] are premises, as [J]'s
+   motive context is *)
+| wf_sup G i Γ l l' A B a f : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] -> [ G ; Γ ⊢[ i ] a : A @ l ] ->
+    [ G ; Γ ⊢[ i ] f : tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩ @ lmax l' (lmax l l') ] ->
+    [ G ; Γ ⊢[ i ] tmSup l l' A B a f : tyW l l' A B @ lmax l l' ]
+| wf_elimW G i Γ l l' l'' A B M c t : compt i -> lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ,, tyW l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] ->
+    [ G ; Γ ,, A @ l ⊢[ i ] wfty l l' A B @ lmax l' (lmax l l') ] ->
+    [ G ; Γ ,, A @ l ,, wfty l l' A B @ lmax l' (lmax l l') ⊢[ i ] wihty l l' l'' A B M @ lmax l' l'' ] ->
+    [ G ; Γ ,, A @ l ,, wfty l l' A B @ lmax l' (lmax l l') ,, wihty l l' l'' A B M @ lmax l' l''
+        ⊢[ i ] c : wstepty l l' A B M @ l'' ] ->
+    [ G ; Γ ⊢[ i ] t : tyW l l' A B @ lmax l l' ] ->
+    [ G ; Γ ⊢[ i ] tmElimW l l' l'' A B M c t : M[lsingle t] @ l'' ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -398,6 +420,12 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
 | eqty_El_sum G i Γ l l' s t : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] t : tyU l' @ lsuc l' ] ->
     [ G ; Γ ⊢[ i ] tySum l l' (tyEl l s) (tyEl l' t) ≅ tyEl (lmax l l') (tmSum l l' s t) @ lmax l l' ]
+(* well-founded trees (M13a; layers D and M) *)
+| eqty_W G i Γ l1 l2 l3 l4 A A' B B' : compt i ->
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+    [ G ; Γ ⊢[ i ] tyW l1 l2 A B ≅ tyW l3 l4 A' B' @ lmax l1 l2 ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -781,6 +809,39 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
 | eqtm_code_sum G i Γ l1 l2 l3 l4 s s' t t' : i <> lV -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢[ i ] s ≅ s' : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢[ i ] t ≅ t' : tyU l2 @ lsuc l2 ] ->
     [ G ; Γ ⊢[ i ] tmSum l1 l2 s t ≅ tmSum l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ]
+(* well-founded trees (M13a; layers D and M): the congruences, and β, which
+   instantiates the step at the shape, the children and the synthesized
+   induction hypothesis [wIH]; no η *)
+| eqtm_sup G i Γ l1 l2 l3 l4 A A' B B' a a' f f' : compt i ->
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+    [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] ->
+    [ G ; Γ ⊢[ i ] f ≅ f' : tyPi l2 (lmax l1 l2) B[lsingle a] (tyW l1 l2 A B)⟨↑⟩ @ lmax l2 (lmax l1 l2) ] ->
+    [ G ; Γ ⊢[ i ] tmSup l1 l2 A B a f ≅ tmSup l3 l4 A' B' a' f' : tyW l1 l2 A B @ lmax l1 l2 ]
+| eqtm_elimW G i Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c c' t t' : compt i ->
+    lequiv (gL G) l1 l4 -> lequiv (gL G) l2 l5 -> lequiv (gL G) l3 l6 ->
+    [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+    [ G ; Γ ,, tyW l1 l2 A B @ lmax l1 l2 ⊢[ i ] M @ l3 ] ->
+    [ G ; Γ ,, tyW l1 l2 A B @ lmax l1 l2 ⊢[ i ] M ≅ M' @ l3 ] ->
+    [ G ; Γ ,, A @ l1 ⊢[ i ] wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ] ->
+    [ G ; Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ⊢[ i ] wihty l1 l2 l3 A B M @ lmax l2 l3 ] ->
+    [ G ; Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ,, wihty l1 l2 l3 A B M @ lmax l2 l3
+        ⊢[ i ] c ≅ c' : wstepty l1 l2 A B M @ l3 ] ->
+    [ G ; Γ ⊢[ i ] t ≅ t' : tyW l1 l2 A B @ lmax l1 l2 ] ->
+    [ G ; Γ ⊢[ i ] tmElimW l1 l2 l3 A B M c t ≅ tmElimW l4 l5 l6 A' B' M' c' t' : M[lsingle t] @ l3 ]
+| eqtm_elimW_sup G i Γ l l' l'' A B M c a f : compt i -> lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ,, tyW l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] ->
+    [ G ; Γ ,, A @ l ⊢[ i ] wfty l l' A B @ lmax l' (lmax l l') ] ->
+    [ G ; Γ ,, A @ l ,, wfty l l' A B @ lmax l' (lmax l l') ⊢[ i ] wihty l l' l'' A B M @ lmax l' l'' ] ->
+    [ G ; Γ ,, A @ l ,, wfty l l' A B @ lmax l' (lmax l l') ,, wihty l l' l'' A B M @ lmax l' l''
+        ⊢[ i ] c : wstepty l l' A B M @ l'' ] ->
+    [ G ; Γ ⊢[ i ] a : A @ l ] ->
+    [ G ; Γ ⊢[ i ] f : tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩ @ lmax l' (lmax l l') ] ->
+    [ G ; Γ ⊢[ i ] tmElimW l l' l'' A B M c (tmSup l l' A B a f) ≅ c[lsingle3 a f (wIH l l' l'' A B M c a f)]
+        : M[lsingle (tmSup l l' A B a f)] @ l'' ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)

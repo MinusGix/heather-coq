@@ -151,7 +151,7 @@ Proof. symmetry; apply (proj1 gsubst_ren_all). Qed.
 
 Ltac wk_rewrite :=
   rewrite ?single_ren_ty, ?single_ren, ?lsucc_ren_ty, ?single2_ren, ?lsingle2_ren_ty, ?gsingle_ren_ty, <- ?gren_ren,
-          ?shift_lift, ?shift_lift_ty, ?liftshift_lift_ty,
+          ?shift_lift, ?shift_lift_ty, ?liftshift_lift_ty, ?lsingle3_ren,
           ?mkrb_ren, ?motT_ren, ?mott_ren, ?wrapMT_ren, ?wrapMt_ren.
 
 #[export] Hint Resolve wfc_ext : wk.
@@ -234,6 +234,25 @@ Proof.
   intros Hv Hl Hl' HA HB HΔ. apply wfc_ext; [exact HΔ | now apply wft_sum_typeof | exact (conj Hl Hl')].
 Qed.
 #[export] Hint Resolve wf_ctx_sum wft_sum_typeof : wk.
+(** [elim_W]'s motive context (M13a). *)
+Lemma wft_W_typeof G i Δ l l' A B : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ,, A @ l ⊢[ i ] B @ l' ] -> [ G ; Δ ⊢[ typeof i ] tyW l l' A B @ lmax l l' ].
+Proof. intros [-> | ->] Hl Hl' HA HB; apply wft_W; auto; [left | right]; reflexivity. Qed.
+Lemma wf_ctx_W G i Δ l l' A B : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ,, A @ l ⊢[ i ] B @ l' ] -> [ G ; Δ ⊢[ typeof i ] ] ->
+  [ G ; Δ ,, tyW l l' A B @ lmax l l' ⊢[ typeof i ] ].
+Proof.
+  intros Hc Hl Hl' HA HB HΔ. apply wfc_ext; [exact HΔ | now apply wft_W_typeof | exact (conj Hl Hl')].
+Qed.
+Lemma eqty_W_typeof G i Δ l l' A A' B B' : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Δ ,, A @ l ⊢[ i ] B ≅ B' @ l' ] ->
+  [ G ; Δ ⊢[ typeof i ] tyW l l' A B ≅ tyW l l' A' B' @ lmax l l' ].
+Proof.
+  intros Hc Hl Hl' HA HAA HBB.
+  destruct Hc as [-> | ->]; (apply eqty_W; [ | apply lequiv_refl; assumption | apply lequiv_refl; assumption
+                                             | assumption .. ]); [left | right]; reflexivity.
+Qed.
+#[export] Hint Resolve wf_ctx_W wft_W_typeof : wk.
 #[export] Hint Extern 3 (lwf _ (lmax _ _)) => (cbn; split; eauto using lequiv_wf_l, lequiv_wf_r) : wk.
 (** A computing layer sees layer-C definitions (M9). *)
 Lemma compt_lle_C i : compt i -> lle lC i.
@@ -413,8 +432,42 @@ Ltac wk_Jmot :=
     end
   | wk_eq ].
 
+(** [elim_W]'s step (M13a): its context holds the children's and the
+    induction hypothesis's types, which commute with the renaming only by an
+    equation; so does the step's type. *)
+Ltac wk_eqW := do 4 (push_ren; wk_rewrite); push_ren; rlk_simpl; reflexivity.
+Ltac wk_Wctx :=
+  repeat apply wfc_ext; fix_layer;
+  first [ solve [eauto 12 with wk]
+        | eapply lift_ty; [ match goal with
+                            | IH : forall Δ r, wkr r Δ _ -> _ -> _ |- _ =>
+                                eapply IH; [ repeat (eapply wkr_up'; [ | reflexivity]); eassumption | wk_Wctx ]
+                            end
+                          | apply lle_self_typeof ] ].
+Ltac wk_Wstep :=
+  first [eapply wf_tm_regctx | eapply eq_tm_regctx | eapply wf_ty_regboth];
+  [ match goal with
+    | IH : forall Δ r, wkr r Δ (_ ,, _ @ _ ,, _ @ _) -> _ -> _ |- _ =>
+        eapply IH; [ repeat (eapply wkr_up'; [ | reflexivity]); eassumption | wk_Wctx ]
+    end
+  | wk_eqW | wk_eqW ].
+(** Its motive, over [W]. *)
+Ltac wk_Wmot :=
+  match goal with
+  | IH : forall Δ r, wkr r Δ (_ ,, tyW _ _ _ _ @ _) -> _ -> _ |- _ =>
+      eapply IH; [ eapply wkr_up'; [eassumption | reflexivity]
+                 | apply wf_ctx_W; fix_layer; solve [eauto 12 with wk] ]
+  end.
+
 Ltac wk_manual :=
   match goal with
+  (* [W] (M13a) *)
+  | |- wf_tm _ _ _ (tmSup _ _ _ _ _ _) _ _ => eapply wf_sup; wk_premise
+  | |- eq_tm _ _ _ (tmSup _ _ _ _ _ _) _ _ _ => eapply eqtm_sup; wk_premise
+  | |- wf_tm _ _ _ (tmElimW _ _ _ _ _ _ _ _) _ _ => eapply wf_elimW; first [solve [wk_Wmot] | solve [wk_Wstep] | wk_premise]
+  | |- eq_tm _ _ _ (tmElimW _ _ _ _ _ _ _ (tmSup _ _ _ _ _ _)) _ _ _ =>
+      eapply eqtm_elimW_sup; first [solve [wk_Wmot] | solve [wk_Wstep] | wk_premise]
+  | |- eq_tm _ _ _ (tmElimW _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimW; first [solve [wk_Wmot] | solve [wk_Wstep] | wk_premise]
   (* [case] (M12b): its branches' types, through the induction hypotheses *)
   | |- wf_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ _) _ _ => eapply wf_case; wk_premise
   | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ (tmInl _ _ _ _ _)) _ _ _ => eapply eqtm_case_inl; wk_premise

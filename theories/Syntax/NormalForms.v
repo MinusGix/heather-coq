@@ -29,6 +29,7 @@ Inductive whne : tm -> Prop :=
 | whne_elimSEmpty l l' M e : whne e -> whne (elimSEmpty l l' M e)
 | whne_elimEmpty l l' M e : whne e -> whne (elimEmpty l l' M e)
 | whne_case l l' l'' A B M c1 c2 t : whne t -> whne (tmCase l l' l'' A B M c1 c2 t)
+| whne_elimW l l' l'' A B M c t : whne t -> whne (tmElimW l l' l'' A B M c t)
 (* J on a neutral proof (M11a) *)
 | whne_J l l' A a M c u e : whne e -> whne (tmJ l l' A a M c u e).
 
@@ -57,7 +58,8 @@ Inductive whnf : tm -> Prop :=
 | whnf_tmEmpty l : whnf (tmEmpty l)
 | whnf_tmSum l l' s t : whnf (tmSum l l' s t)
 | whnf_inl l l' A B a : whnf (tmInl l l' A B a)
-| whnf_inr l l' A B a : whnf (tmInr l l' A B a).
+| whnf_inr l l' A B a : whnf (tmInr l l' A B a)
+| whnf_sup l l' A B a f : whnf (tmSup l l' A B a f).
 
 Inductive whne_ty : ty -> Prop :=
 | whne_tyGvar U d : whne_ty (tyGvar U d)
@@ -78,6 +80,7 @@ Inductive whnf_ty : ty -> Prop :=
 | whnf_tySEq l A a b : whnf_ty (tySEq l A a b)
 | whnf_tySEmpty l : whnf_ty (tySEmpty l)
 | whnf_tySum l l' A B : whnf_ty (tySum l l' A B)
+| whnf_tyW l l' A B : whnf_ty (tyW l l' A B)
 | whnf_tyEmpty l : whnf_ty (tyEmpty l)
 | whnf_tyId l A a b : whnf_ty (tyId l A a b).
 
@@ -194,6 +197,10 @@ Proof. inversion 1. Qed.
 Lemma whne_not_inl l l' A B a : ~ whne (tmInl l l' A B a).
 Proof. inversion 1. Qed.
 Lemma whne_not_inr l l' A B a : ~ whne (tmInr l l' A B a).
+Proof. inversion 1. Qed.
+Lemma whne_ty_not_W l l' A B : ~ whne_ty (tyW l l' A B).
+Proof. inversion 1. Qed.
+Lemma whne_not_sup l l' A B a f : ~ whne (tmSup l l' A B a f).
 Proof. inversion 1. Qed.
 Lemma whne_not_srefl l A a : ~ whne (srefl l A a).
 Proof. inversion 1. Qed.

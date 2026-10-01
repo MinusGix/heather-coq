@@ -5,31 +5,6 @@
     pointwise. *)
 From DeLaM.Syntax Require Export Reduction.
 
-(** ** Syntactic composition of renamings *)
-
-Fixpoint rcomp (r1 r2 : rsub) : rsub :=         (* first r1, then r2 *)
-  match r1 with
-  | rshift k => rdrop k r2
-  | rcons r m => rcons (rcomp r r2) (rlk r2 m)
-  end.
-
-Lemma rlk_rcomp r1 r2 n : rlk (rcomp r1 r2) n = rlk r2 (rlk r1 n).
-Proof.
-  revert n; induction r1 as [k|r IH m]; intros n; cbn.
-  - rewrite rlk_rdrop; f_equal; lia.
-  - destruct n; auto.
-Qed.
-
-Lemma ren_ren_comp_ty (T : ty) r1 r2 : T⟨r1⟩⟨r2⟩ = T⟨rcomp r1 r2⟩.
-Proof. apply ren_ren_ty; intros; now rewrite rlk_rcomp. Qed.
-Lemma ren_ren_comp (t : tm) r1 r2 : t⟨r1⟩⟨r2⟩ = t⟨rcomp r1 r2⟩.
-Proof. apply ren_ren; intros; now rewrite rlk_rcomp. Qed.
-
-Ltac rlk_simpl :=
-  repeat first [ rewrite rlk_rcomp | rewrite rlk_rlift | rewrite rlk_rup | rewrite rlk_shift1
-               | progress cbn [rlk rshift1] ].
-
-
 (** ** Constructor equations, in notation form (pushing operations inward)
 
     [cbn] on these mutual fixpoints exposes raw [fix] bodies; rewriting with
@@ -202,6 +177,24 @@ Lemma subst_tmSum l l' s t : (tmSum l l' s t)[d] = tmSum l l' s[d] t[d]. Proof. 
 Lemma subst_J l l' A a M c u e :
   (tmJ l l' A a M c u e)[d] = tmJ l l' A[d] a[d] M[llift (llift d)] c[d] u[d] e[d].
 Proof. reflexivity. Qed.
+(** Well-founded trees (M13a): [B] binds the shape, [M] the scrutinee, the
+    step its three variables. *)
+Lemma ren_tyW l l' A B : (tyW l l' A B)⟨r⟩ = tyW l l' A⟨r⟩ B⟨rlift r⟩. Proof. reflexivity. Qed.
+Lemma ren_sup l l' A B a f : (tmSup l l' A B a f)⟨r⟩ = tmSup l l' A⟨r⟩ B⟨rlift r⟩ a⟨r⟩ f⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma ren_elimW l l' l'' A B M c t :
+  (tmElimW l l' l'' A B M c t)⟨r⟩ = tmElimW l l' l'' A⟨r⟩ B⟨rlift r⟩ M⟨rlift r⟩ c⟨rlift (rlift (rlift r))⟩ t⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma ren_wIH l l' l'' A B M c a f :
+  (wIH l l' l'' A B M c a f)⟨r⟩ =
+  wIH l l' l'' A⟨r⟩ B⟨rlift r⟩ M⟨rlift r⟩ c⟨rlift (rlift (rlift r))⟩ a⟨r⟩ f⟨r⟩.
+Proof. apply wIH_ren. Qed.
+Lemma subst_tyW l l' A B : (tyW l l' A B)[d] = tyW l l' A[d] B[llift d]. Proof. reflexivity. Qed.
+Lemma subst_sup l l' A B a f : (tmSup l l' A B a f)[d] = tmSup l l' A[d] B[llift d] a[d] f[d].
+Proof. reflexivity. Qed.
+Lemma subst_elimW l l' l'' A B M c t :
+  (tmElimW l l' l'' A B M c t)[d] = tmElimW l l' l'' A[d] B[llift d] M[llift d] c[llift (llift (llift d))] t[d].
+Proof. reflexivity. Qed.
 (** Defined globals (M9): the body stays in its own local scope. *)
 Lemma ren_gdef u b e : (gdef u b e)⟨r⟩ = gdef u b (lren e r). Proof. reflexivity. Qed.
 Lemma subst_gdef u b e : (gdef u b e)[d] = gdef u b (lcomp e d). Proof. reflexivity. Qed.
@@ -274,6 +267,10 @@ Ltac push_ren_at h k := lazymatch h with
   | @tmEmpty => k ren_tmEmpty
   | @tmSum => k ren_tmSum
   | @tmJ => k ren_J
+  | @tyW => k ren_tyW
+  | @tmSup => k ren_sup
+  | @tmElimW => k ren_elimW
+  | @wIH => k ren_wIH
   end.
 Ltac push_ren := repeat match goal with
   | |- context [@ren _ _ ?t _] => let h := head_of t in push_ren_at h ltac:(fun L => rewrite L)
@@ -339,6 +336,9 @@ Ltac push_subst_at h k := lazymatch h with
   | @tmEmpty => k subst_tmEmpty
   | @tmSum => k subst_tmSum
   | @tmJ => k subst_J
+  | @tyW => k subst_tyW
+  | @tmSup => k subst_sup
+  | @tmElimW => k subst_elimW
   end.
 Ltac push_subst := repeat match goal with
   | |- context [@subst _ _ ?t _] => let h := head_of t in push_subst_at h ltac:(fun L => rewrite L)

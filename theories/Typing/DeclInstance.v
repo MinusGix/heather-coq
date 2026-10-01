@@ -187,6 +187,19 @@ Proof.
   (* the codes of Empty and + *)
   - intros; apply eqtm_code_empty; [exact Hv | now rewrite Hty | assumption].
   - intros; apply eqtm_code_sum; auto.
+  (* well-founded trees: the step telescope is well formed by presupposition *)
+  - intros; apply eqty_W; auto.
+  - intros; apply eqtm_sup; auto.
+  - intros * H14 H25 H36 HA HAA HB HBB HM HMM Hc (Hn & Hn' & Hν).
+    pose proof (lequiv_wf_l _ _ _ H14) as W1. pose proof (lequiv_wf_l _ _ _ H25) as W2.
+    pose proof (lequiv_wf_l _ _ _ H36) as W3.
+    assert (HW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ]) by (apply wft_W; auto).
+    pose proof (W_fty_wf Hty Hv W1 W2 HW HB) as HF.
+    assert (HΓAF : [ G ; Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ⊢[ i ] ])
+      by (apply (ext_wf Hty); [exact HF | cbn; repeat split; assumption]).
+    pose proof (W_ih_wf Hty Hv W1 W2 W3 HW HB HM HΓAF (eqty_refl' HF)
+                  (lequiv_refl _ _ (lwf_max W2 (lwf_max W1 W2)))) as HI.
+    refine (conj _ (conj _ _)); [constructor; auto .. |]. apply eqtm_elimW; auto.
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].

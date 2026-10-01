@@ -66,6 +66,8 @@ Lemma gren_single2_ty (M : ty) t q ξ : M[lsingle2 t q]⟪ξ⟫ = M⟪ξ⟫[lsin
 Proof. rewrite gren_subst_ty; reflexivity. Qed.
 Lemma gren_lsucc_ty (M : ty) ξ : M[lsucc]⟪ξ⟫ = M⟪ξ⟫[lsucc].
 Proof. rewrite gren_subst_ty; reflexivity. Qed.
+Lemma gren_single3 (c a f h : tm) ξ : c[lsingle3 a f h]⟪ξ⟫ = c⟪ξ⟫[lsingle3 a⟪ξ⟫ f⟪ξ⟫ h⟪ξ⟫].
+Proof. rewrite gren_subst; reflexivity. Qed.
 
 (** The letbox body's type [M⟪↑⟫[box U^id/x]] under [⇑ξ]. *)
 Lemma gren_letbox_ty (M : ty) b ξ : b⟪gupr ξ⟫ = b ->
@@ -367,6 +369,19 @@ Lemma gren_tmSEmpty l : (tmSEmpty l)⟪ξ⟫ = tmSEmpty l. Proof. reflexivity. Q
 Lemma gren_tmEmpty l : (tmEmpty l)⟪ξ⟫ = tmEmpty l. Proof. reflexivity. Qed.
 Lemma gren_tmSum l l' s t : (tmSum l l' s t)⟪ξ⟫ = tmSum l l' s⟪ξ⟫ t⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_triv l : (tmTriv l)⟪ξ⟫ = tmTriv l. Proof. reflexivity. Qed.
+Lemma gren_tyW l l' A B : (tyW l l' A B)⟪ξ⟫ = tyW l l' A⟪ξ⟫ B⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_sup l l' A B a f : (tmSup l l' A B a f)⟪ξ⟫ = tmSup l l' A⟪ξ⟫ B⟪ξ⟫ a⟪ξ⟫ f⟪ξ⟫.
+Proof. reflexivity. Qed.
+Lemma gren_elimW l l' l'' A B M c t :
+  (tmElimW l l' l'' A B M c t)⟪ξ⟫ = tmElimW l l' l'' A⟪ξ⟫ B⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ t⟪ξ⟫.
+Proof. reflexivity. Qed.
+(** [elim_W]'s induction hypothesis (M13a). *)
+Lemma gren_wIH l l' l'' A B M c a f :
+  (wIH l l' l'' A B M c a f)⟪ξ⟫ = wIH l l' l'' A⟪ξ⟫ B⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ a⟪ξ⟫ f⟪ξ⟫.
+Proof.
+  unfold wIH. rewrite gren_lam, gren_elimW, gren_app, gren_var.
+  repeat rewrite ?gren_ren_ty', ?gren_ren, ?gren_single_ty, ?gren_tyW. reflexivity.
+Qed.
 (** [UΠ]'s scope and instances. *)
 Lemma gren_uren_ctx (Γ : ctx) ρ : Γ⟨ρ⟩ᵤ⟪ξ⟫ = Γ⟪ξ⟫⟨ρ⟩ᵤ.
 Proof. symmetry; apply (proj1 (proj2 (proj2 uren_gren_all))). Qed.
@@ -440,13 +455,17 @@ Ltac push_gren_at h k := lazymatch h with
   | @tmId => k gren_tmId
   | @tmSEq => k gren_tmSEq
   | @tmJ => k gren_J
+  | @tyW => k gren_tyW
+  | @tmSup => k gren_sup
+  | @tmElimW => k gren_elimW
+  | @wIH => k gren_wIH
   end.
 Ltac push_gren := repeat match goal with
   | |- context [@gren _ _ ?t _] => let h := head_of t in push_gren_at h ltac:(fun L => rewrite L)
   end.
 
 Ltac gren_rewrite :=
-  rewrite ?gren_single_ty, ?gren_single, ?gren_single2, ?gren_single2_ty, ?gren_lsucc_ty, ?gren_ren_ty', ?gren_ren,
+  rewrite ?gren_single_ty, ?gren_single, ?gren_single2, ?gren_single3, ?gren_single2_ty, ?gren_lsucc_ty, ?gren_ren_ty', ?gren_ren,
           ?gren_letbox_ty, ?gcren_shift_up, ?gren_gsingle, ?gren_gsingle_ty, ?gren_shift_up_tm, ?mkrb_gren, ?motT_gren, ?mott_gren,
           ?wrapMT_gren, ?wrapMt_gren.
 
@@ -466,6 +485,16 @@ Proof. now intros ? ->. Qed.
 Lemma eq_ty_regctx G i Δ Δ' T T' l :
   [ G ; Δ' ⊢[ i ] T ≅ T' @ l ] -> Δ' = Δ -> [ G ; Δ ⊢[ i ] T ≅ T' @ l ].
 Proof. now intros ? ->. Qed.
+(** [elim_W]'s step (M13a): its context and type both hold shifted types. *)
+Lemma wf_tm_regctx G i Δ Δ' x T T' l :
+  [ G ; Δ' ⊢[ i ] x : T' @ l ] -> Δ' = Δ -> T' = T -> [ G ; Δ ⊢[ i ] x : T @ l ].
+Proof. now intros ? -> ->. Qed.
+Lemma eq_tm_regctx G i Δ Δ' x y T T' l :
+  [ G ; Δ' ⊢[ i ] x ≅ y : T' @ l ] -> Δ' = Δ -> T' = T -> [ G ; Δ ⊢[ i ] x ≅ y : T @ l ].
+Proof. now intros ? -> ->. Qed.
+Lemma wf_ty_regboth G i Δ Δ' T T' l :
+  [ G ; Δ' ⊢[ i ] T' @ l ] -> Δ' = Δ -> T' = T -> [ G ; Δ ⊢[ i ] T @ l ].
+Proof. now intros ? -> ->. Qed.
 Lemma wf_ty_regty G i Δ A A' l : [ G ; Δ ⊢[ i ] A @ l ] -> A = A' -> [ G ; Δ ⊢[ i ] A' @ l ].
 Proof. now intros ? ->. Qed.
 Lemma eq_ty_regty G i Δ A B A' B' l :
@@ -520,7 +549,13 @@ Ltac gw_premise :=
         | solve [eapply wf_ty_regctx;
                  [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq]]
         | solve [eapply eq_ty_regctx;
-                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq]] ].
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq]]
+        | solve [eapply wf_tm_regctx;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq | gw_eq]]
+        | solve [eapply wf_ty_regboth;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq | gw_eq]]
+        | solve [eapply eq_tm_regctx;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq | gw_eq]] ].
 
 (** The lookup-typed local substitution of [u^δ]/[U^δ]. *)
 Ltac gw_entries :=
@@ -603,6 +638,12 @@ Ltac gw_manual :=
   | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ (tmInl _ _ _ _ _)) _ _ _ => eapply eqtm_case_inl; gw_premise
   | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ (tmInr _ _ _ _ _)) _ _ _ => eapply eqtm_case_inr; gw_premise
   | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_case; gw_premise
+  (* [W] (M13a): the step telescope, through the induction hypotheses *)
+  | |- wf_tm _ _ _ (tmSup _ _ _ _ _ _) _ _ => eapply wf_sup; gw_premise
+  | |- wf_tm _ _ _ (tmElimW _ _ _ _ _ _ _ _) _ _ => eapply wf_elimW; gw_premise
+  | |- eq_tm _ _ _ (tmElimW _ _ _ _ _ _ _ (tmSup _ _ _ _ _ _)) _ _ _ => eapply eqtm_elimW_sup; gw_premise
+  | |- eq_tm _ _ _ (tmElimW _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimW; gw_premise
+  | |- eq_tm _ _ _ (tmSup _ _ _ _ _ _) _ _ _ => eapply eqtm_sup; gw_premise
   | |- wf_ty _ _ _ (tyGvar _ _) _ =>
       gw_Δ ltac:(fun D => eapply wft_gvar with (Δ := D)); [ .. | gw_entries]; eauto with gwk
   | |- eq_ty _ _ _ (tyGvar _ _) _ _ =>
@@ -761,7 +802,7 @@ Proof.
   apply red_both; intros; cbn [gren GRen_tm gren_tm GRen_ty gren_ty];
     change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫;
     change (gcren ?x ?ξ) with x⟪ξ⟫.
-  all: rewrite ?gren_single2, ?gren_single, ?gren_gsingle; try now constructor.
+  all: rewrite ?gren_single2, ?gren_single, ?gren_single3, ?gren_wIH, ?gren_gsingle; try now constructor.
   all: try (constructor; auto; fail).
   all: first [ constructor; now apply redT_gren | constructor; now apply redt_gren
              | rewrite <- usubst_gren; now constructor
@@ -905,6 +946,12 @@ Lemma gwa_cnil : cnil⟦γ⟧ = cnil. Proof. now destruct γ. Qed.
 Lemma gwa_cvar g : (cvar g)⟦γ⟧ = cvar (γ g). Proof. now destruct γ. Qed.
 Lemma gwa_tySig l l' A B : (tySig l l' A B)⟦γ⟧ = tySig l l' A⟦γ⟧ B⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_tySum l l' A B : (tySum l l' A B)⟦γ⟧ = tySum l l' A⟦γ⟧ B⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tyW l l' A B : (tyW l l' A B)⟦γ⟧ = tyW l l' A⟦γ⟧ B⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_sup l l' A B a f : (tmSup l l' A B a f)⟦γ⟧ = tmSup l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧ f⟦γ⟧.
+Proof. now destruct γ. Qed.
+Lemma gwa_elimW l l' l'' A B M c t :
+  (tmElimW l l' l'' A B M c t)⟦γ⟧ = tmElimW l l' l'' A⟦γ⟧ B⟦γ⟧ M⟦γ⟧ c⟦γ⟧ t⟦γ⟧.
+Proof. now destruct γ. Qed.
 Lemma gwa_inl l l' A B a : (tmInl l l' A B a)⟦γ⟧ = tmInl l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_inr l l' A B a : (tmInr l l' A B a)⟦γ⟧ = tmInr l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_case l l' l'' A B M c1 c2 t :
@@ -958,6 +1005,9 @@ Ltac push_gwa_at h k := lazymatch h with
   | @cext => k gwa_cext
   | @tySig => k gwa_tySig
   | @tySum => k gwa_tySum
+  | @tyW => k gwa_tyW
+  | @tmSup => k gwa_sup
+  | @tmElimW => k gwa_elimW
   | @tmInl => k gwa_inl
   | @tmInr => k gwa_inr
   | @tmCase => k gwa_case

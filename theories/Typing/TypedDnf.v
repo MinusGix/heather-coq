@@ -25,6 +25,16 @@ Lemma lk_dnf_lshift k : LK dnftm (lshift k).
 Proof. intros n; exact I. Qed.
 #[export] Hint Resolve lk_dnf_lsingle lk_dnf_lsingle2 lk_dnf_lsucc lk_dnf_lshift : nf.
 
+(** [elim_W]'s β (M13a): the step's instance and the induction hypothesis. *)
+Lemma lk_dnf_lsingle3 a f h : dnftm a -> dnftm f -> dnftm h -> LK dnftm (lsingle3 a f h).
+Proof. intros H1 H2 H3 [|[|[|n]]]; cbn; auto. Qed.
+Lemma dnf_wIH l l' l'' A B M c a f : dnfty A -> dnfty B -> dnfty M -> dnftm c -> dnftm a -> dnftm f ->
+  dnftm (wIH l l' l'' A B M c a f).
+Proof.
+  intros; unfold wIH; cbn [dnftm dnfty]; repeat split;
+    auto using ren_dnf_ty, ren_dnf, subst_dnf_ty, lk_dnf_lsingle.
+Qed.
+
 Lemma in_ctx_dnf Γ n T l : dnfctx Γ -> in_ctx Γ n T l -> dnfty T.
 Proof. intros H Hin; induction Hin; cbn in *; apply ren_dnf_ty; tauto. Qed.
 
@@ -120,6 +130,7 @@ Proof.
                    cbn; intuition auto ].
   all: try solve [ eapply dnf_redT; [ .. | eassumption ]; cbn; intuition auto
                  | eapply dnf_redt; [ .. | eassumption ]; cbn; intuition auto ].
+  all: try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle3; auto using dnf_wIH]].
   (* η of the meta-functions (M5): the weakened function *)
   all: apply gren_dnf_all.
 Qed.

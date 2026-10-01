@@ -216,6 +216,79 @@ Lemma SumRel_wf {G Γ l l' A B RA RB t t'} : SumRel G Γ l l' A B RA RB t t' ->
   [ G ; Γ ⊢g t : tySum l l' A B @ lmax l l' ] /\ [ G ; Γ ⊢g t' : tySum l l' A B @ lmax l l' ].
 Proof. intros (w & w' & Hw & Hw' & _ & _). exact (conj (tmred_wf _ _ _ _ _ _ _ Hw) (tmred_wf _ _ _ _ _ _ _ Hw')). Qed.
 
+(** ** Well-founded trees (M13a) *)
+
+Lemma releq_sym' {R R' : tm -> tm -> Prop} : releq R R' -> releq R' R.
+Proof. intros H ??; symmetry; apply H. Qed.
+
+Lemma WRel_inv {G Γ l1 l2 A B domR codR t t'} : WRel G Γ l1 l2 A B domR codR t t' ->
+  exists w w', [ G ; Γ ⊢g t ⤳* w : tyW l1 l2 A B @ lmax l1 l2 ] /\
+    [ G ; Γ ⊢g t' ⤳* w' : tyW l1 l2 A B @ lmax l1 l2 ] /\
+    [ G ; Γ ⊢ w ≈ w' : tyW l1 l2 A B @ lmax l1 l2 ] /\ WNf G Γ l1 l2 A B domR codR w w'.
+Proof. destruct 1; eauto 7. Qed.
+
+Lemma WRel_wf {G Γ l1 l2 A B domR codR t t'} : WRel G Γ l1 l2 A B domR codR t t' ->
+  [ G ; Γ ⊢g t : tyW l1 l2 A B @ lmax l1 l2 ] /\ [ G ; Γ ⊢g t' : tyW l1 l2 A B @ lmax l1 l2 ].
+Proof.
+  intros (w & w' & Hw & Hw' & _ & _)%WRel_inv.
+  exact (conj (tmred_wf _ _ _ _ _ _ _ Hw) (tmred_wf _ _ _ _ _ _ _ Hw')).
+Qed.
+
+(** [WhRel] is symmetric and moves along type equalities. *)
+Lemma WhRel_sym {G Γ T l t t'} : WhRel G Γ T l t t' -> WhRel G Γ T l t' t.
+Proof.
+  intros (w & w' & H & H' & N & N' & Ew). exists w', w.
+  exact (conj H' (conj H (conj N' (conj N (geq_tm_sym Ew))))).
+Qed.
+
+Lemma WhRel_conv {G Γ T T' l l' t t'} : WhRel G Γ T l t t' -> [ G ; Γ ⊢g T ≅ T' @ l ] ->
+  lequiv (gL G) l' l -> WhRel G Γ T' l' t t'.
+Proof.
+  intros (w & w' & H & H' & N & N' & Ew) HT Hl. exists w, w'.
+  refine (conj _ (conj _ (conj N (conj N' _)))).
+  - eapply tmred_lconv; [eapply tmred_conv; [apply ge_typeof | exact H | exact HT] | exact Hl].
+  - eapply tmred_lconv; [eapply tmred_conv; [apply ge_typeof | exact H' | exact HT] | exact Hl].
+  - eapply geq_tm_lconv; [eapply geq_tm_conv; [exact Ew | exact HT] | exact Hl].
+Qed.
+
+(** [WRel] along pointwise equivalent shape and position relations. *)
+Lemma WRel_dir :
+  forall G Γ l1 l2 A B domR codR t t', WRel G Γ l1 l2 A B domR codR t t' ->
+  forall (domR' : DomRel G Γ) (codR' : CodRel G Γ domR'),
+    (forall ρ, releq (domR ρ) (domR' ρ)) ->
+    (forall ρ x y h h', releq (codR ρ x y h) (codR' ρ x y h')) ->
+    WRel G Γ l1 l2 A B domR' codR' t t'.
+Proof.
+  apply (WRel_mut
+    (fun G Γ l1 l2 A B domR codR t t' _ => forall (domR' : DomRel G Γ) (codR' : CodRel G Γ domR'),
+       (forall ρ, releq (domR ρ) (domR' ρ)) -> (forall ρ x y h h', releq (codR ρ x y h) (codR' ρ x y h')) ->
+       WRel G Γ l1 l2 A B domR' codR' t t')
+    (fun G Γ l1 l2 A B domR codR t t' _ => forall (domR' : DomRel G Γ) (codR' : CodRel G Γ domR'),
+       (forall ρ, releq (domR ρ) (domR' ρ)) -> (forall ρ x y h h', releq (codR ρ x y h) (codR' ρ x y h')) ->
+       WNf G Γ l1 l2 A B domR' codR' t t')).
+  - intros * Hw Hw' Heq _ IH domR' codR' Hd Hc. econstructor; [exact Hw | exact Hw' | exact Heq | now apply IH].
+  - intros * Hk1 Hk2 Hk1' Hk2' HC HC' HD HD' Ha Hwf Hf IH domR' codR' Hd Hc.
+    apply wnf_sup; auto.
+    + intros ρ; apply Hd, Ha.
+    + intros ρ ha' b b' Hbb * H1 H2 H3 H4 HA1 HB1 HA1' HB1'.
+      apply (IH ρ (Ha ρ) b b' (proj2 (Hc ρ _ _ (Ha ρ) ha' b b') Hbb) la lb A1 B1 la' lb' A1' B1'
+               H1 H2 H3 H4 HA1 HB1 HA1' HB1'); cbn.
+      * intros ρ'; apply Hd.
+      * intros ρ' x y h h'; apply Hc.
+  - intros * Hν domR' codR' _ _. now apply wnf_ne.
+Qed.
+
+Lemma WRel_releq {G Γ l1 l2 A B} {domR domR' : DomRel G Γ} {codR : CodRel G Γ domR} {codR' : CodRel G Γ domR'} :
+  (forall ρ, releq (domR ρ) (domR' ρ)) -> (forall ρ x y h h', releq (codR ρ x y h) (codR' ρ x y h')) ->
+  releq (WRel G Γ l1 l2 A B domR codR) (WRel G Γ l1 l2 A B domR' codR').
+Proof.
+  intros Hd Hc t t'; split; intros H; eapply WRel_dir; try exact H.
+  - exact Hd.
+  - exact Hc.
+  - intros ρ; apply releq_sym', Hd.
+  - intros ρ x y h h'; apply releq_sym', Hc.
+Qed.
+
 (** ** Escape for contextual types *)
 
 Lemma ModRel_escape_ty {G Γ T T' l R} : ModRel G Γ T T' l R ->
@@ -275,7 +348,9 @@ Proof.
                 | G Γ T T' l l1 l2 A A' a a' b b' RA R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HRA Hra Hrb Hps Hpt HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
-                    HRA HRB Hpa Hta Hpb Htb HR].
+                    HRA HRB Hpa Hta Hpb Htb HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR].
   all: try solve [exact (ModRel_escape_ty HM)].
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
@@ -293,6 +368,7 @@ Proof.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_id; auto using lequiv_sym.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_empty; [eapply tyred_ctx, HT | now apply lequiv_sym].
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sum; auto using lequiv_sym.
+  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_W; auto using lequiv_sym.
 Qed.
 
 (** ** Escape for terms *)
@@ -318,7 +394,9 @@ Proof.
                 | G Γ T T' l l1 l2 A A' a a' b b' RA R Hl Hl2 Hw HT HT' HA HAA Haa Hbb HRA Hra Hrb Hps Hpt HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hw HT HT' HR
                 | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
-                    HRA HRB Hpa Hta Hpb Htb HR];
+                    HRA HRB Hpa Hta Hpb Htb HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
     intros t t' Htt; first [exact (ModRel_escape_tm HM _ _ Htt) | apply HR in Htt].
   - (* Nat *)
     destruct Htt as [t t' w w' Hw Hw' Heq _].
@@ -432,6 +510,13 @@ Proof.
     + eapply conv_tm; [apply Hw' | exact HTS | exact Hl].
     + eapply conv_tm; [apply Hw'' | exact HTS | exact Hl].
     + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTS | exact Hl].
+  - (* W: related weak-head normal forms *)
+    destruct (WRel_inv Htt) as (w & w' & Hw' & Hw'' & Heq & _).
+    assert (HTW : [ G ; Γ ⊢g T ≅ tyW l1 l2 A B @ l ]) by apply HT.
+    repeat split.
+    + eapply conv_tm; [apply Hw' | exact HTW | exact Hl].
+    + eapply conv_tm; [apply Hw'' | exact HTW | exact Hl].
+    + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTW | exact Hl].
 Qed.
 
 (** ** Local weakening at the instance's layer *)
@@ -482,6 +567,21 @@ Proof. intros Hρ; constructor; now apply wk_wf_wkr. Qed.
 
 Lemma ext_wf_g {G Γ A l} : [ G ; Γ ⊢g A @ l ] -> lwf (gL G) l -> [ G ; Γ ,, A @ l ⊢g ].
 Proof. intros; apply wfc_ext; eauto using ctx_of_ty. Qed.
+
+(** The type of a [sup]'s children, along equalities of its pieces. *)
+Lemma W_fty_eq {G Γ l1 l2 l3 l4 A A' B B' a a'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
+  [ G ; Γ ⊢ B[lsingle a] ≈ B'[lsingle a'] @ l2 ] ->
+  [ G ; Γ ⊢ tyPi l2 (lmax l1 l2) B[lsingle a] (tyW l1 l2 A B)⟨↑⟩
+          ≈ tyPi l4 (lmax l3 l4) B'[lsingle a'] (tyW l3 l4 A' B')⟨↑⟩ @ lmax l2 (lmax l1 l2) ].
+Proof.
+  intros H13 H24 HA HAA HBB HBa.
+  pose proof (eqty_wf_l ge_typeof (geq_ty_sound HBa)) as HBa'.
+  assert (HΔ : [ G ; Γ ,, B[lsingle a] @ l2 ⊢g ]) by (apply ext_wf_g; [exact HBa' | exact (lequiv_wf_l _ _ _ H24)]).
+  apply geq_ty_pi; [exact H24 | now apply lequiv_max | exact HBa' | exact HBa |].
+  exact (geq_ty_wk (wkr_shift1 _ _ _) HΔ (geq_ty_W H13 H24 HA HAA HBB)).
+Qed.
 
 (** ** Global weakening of the generic relations, as [⟦γ⟧] *)
 
@@ -696,6 +796,12 @@ Lemma kty_tyPi l l' A B : kty ρ (tyPi l l' A B) = tyPi l l' (kty ρ A) (ktyl ρ
 Proof. unfold kty, ktyl; now rewrite gwa_tyPi. Qed.
 Lemma kty_tySig l l' A B : kty ρ (tySig l l' A B) = tySig l l' (kty ρ A) (ktyl ρ B).
 Proof. unfold kty, ktyl; now rewrite gwa_tySig. Qed.
+Lemma kty_tyW l l' A B : kty ρ (tyW l l' A B) = tyW l l' (kty ρ A) (ktyl ρ B).
+Proof. unfold kty, ktyl; now rewrite gwa_tyW. Qed.
+Lemma ktm_sup l l' A B a f : ktm ρ (tmSup l l' A B a f) = tmSup l l' (kty ρ A) (ktyl ρ B) (ktm ρ a) (ktm ρ f).
+Proof. unfold ktm, kty, ktyl; now rewrite gwa_sup. Qed.
+Lemma ktm_app t l l' A B s : ktm ρ (app t l l' A B s) = app (ktm ρ t) l l' (kty ρ A) (ktyl ρ B) (ktm ρ s).
+Proof. unfold ktm, kty, ktyl; now rewrite gwa_app. Qed.
 Lemma ktm_fst l l' A B p : ktm ρ (tmFst l l' A B p) = tmFst l l' (kty ρ A) (ktyl ρ B) (ktm ρ p).
 Proof. unfold ktm, kty, ktyl; now rewrite gwa_fst. Qed.
 Lemma ktm_snd l l' A B p : ktm ρ (tmSnd l l' A B p) = tmSnd l l' (kty ρ A) (ktyl ρ B) (ktm ρ p).

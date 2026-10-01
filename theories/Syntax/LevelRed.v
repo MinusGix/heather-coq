@@ -126,6 +126,20 @@ Qed.
 
 End Reducts.
 
+(** [elim_W]'s synthesized induction hypothesis (M13a). *)
+Lemma leq_wIH k1 k2 k3 A B M c a f k1' k2' k3' A' B' M' c' a' f' :
+  leqv k1 k1' -> leqv k2 k2' -> leqv k3 k3' -> ty_leq A A' -> ty_leq B B' -> ty_leq M M' ->
+  tm_leq c c' -> tm_leq a a' -> tm_leq f f' ->
+  tm_leq (wIH k1 k2 k3 A B M c a f) (wIH k1' k2' k3' A' B' M' c' a' f').
+Proof.
+  intros E1 E2 E3 EA EB EM Ec Ea Ef. unfold wIH.
+  pose proof (proj1 leq_ren_all) as Rty. pose proof (proj1 (proj2 leq_ren_all)) as Rtm.
+  pose proof (proj1 leq_subst_all) as Sty. cbn beta in Rty, Rtm, Sty.
+  cbn [tm_leq ty_leq]; repeat split; auto using leqv_refl.
+  all: repeat first [ apply leqv_lmax | apply Rty | apply Rtm | apply Sty | assumption
+                    | apply leq_lsingle | progress cbn [ty_leq tm_leq]; repeat split ].
+Qed.
+
 (** ** One step *)
 
 Lemma red_leq_both :
@@ -150,7 +164,8 @@ Proof.
   all: eexists; split; [solve [eauto with red] |].
   all: try solve [cbn; repeat split; auto].
   all: first
-    [ apply (proj1 (proj2 leq_subst_all)); cbn; repeat split; auto
+    [ apply (proj1 (proj2 leq_subst_all)); [unfold lsingle3; split; [cbn; repeat split; auto | apply leq_wIH; auto] | auto]
+    | apply (proj1 (proj2 leq_subst_all)); cbn; repeat split; auto
     | apply (proj1 (proj2 leq_gsubst_all)); [apply leq_gsingle; cbn; auto | auto]
     | apply (proj1 (proj2 leq_usubst_all)); [apply leqv_uext; assumption | assumption] ].
 Qed.

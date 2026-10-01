@@ -90,7 +90,9 @@ Proof.
                 | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA IHRA Hra Hrb Hps Hpt HR
                  | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
                  | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
-                     HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR];
+                     HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR];
     intros ν ν' Hν Hν'; first [exact (ModRel_neutral HM _ _ Hν Hν') | apply HR].
   - (* Nat *)
     pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HN.
@@ -300,6 +302,10 @@ Proof.
     destruct (gne_tmred_refl HP) as [H1 H2].
     exists ν, ν'. refine (conj H1 (conj H2 (conj (gne_tm_geq HP) _))).
     now apply sumnf_ne.
+  - (* W: typed neutrals are related, as neutrals *)
+    pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HP.
+    destruct (gne_tmred_refl HP) as [H1 H2].
+    econstructor; [exact H1 | exact H2 | exact (gne_tm_geq HP) | now apply wnf_ne].
 Qed.
 
 End Neutral.

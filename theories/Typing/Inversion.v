@@ -217,6 +217,27 @@ Lemma inv_case {G i Γ l l' l'' A B M c1 c2 t T k} : typeof i = i -> [ G ; Γ �
     lvl_eq (gL G) k l'' /\ [ G ; Γ ⊢[ i ] T ≅ M[lsingle t] @ k ].
 Proof. inv_tm. Qed.
 
+(** Well-founded trees (M13a). *)
+Lemma inv_sup {G i Γ l l' A B a f T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSup l l' A B a f : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\
+    [ G ; Γ ⊢[ i ] a : A @ l ] /\
+    [ G ; Γ ⊢[ i ] f : tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩ @ lmax l' (lmax l l') ]) /\
+    lvl_eq (gL G) k (lmax l l') /\ [ G ; Γ ⊢[ i ] T ≅ tyW l l' A B @ k ].
+Proof. inv_tm. Qed.
+
+Lemma inv_elimW {G i Γ l l' l'' A B M c t T k} : typeof i = i ->
+  [ G ; Γ ⊢[ i ] tmElimW l l' l'' A B M c t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ lwf (gL G) l'' /\
+    [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\
+    [ G ; Γ ,, tyW l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] wfty l l' A B @ lmax l' (lmax l l') ] /\
+    [ G ; Γ ,, A @ l ,, wfty l l' A B @ lmax l' (lmax l l') ⊢[ i ] wihty l l' l'' A B M @ lmax l' l'' ] /\
+    [ G ; Γ ,, A @ l ,, wfty l l' A B @ lmax l' (lmax l l') ,, wihty l l' l'' A B M @ lmax l' l''
+        ⊢[ i ] c : wstepty l l' A B M @ l'' ] /\
+    [ G ; Γ ⊢[ i ] t : tyW l l' A B @ lmax l l' ]) /\
+    lvl_eq (gL G) k l'' /\ [ G ; Γ ⊢[ i ] T ≅ M[lsingle t] @ k ].
+Proof. inv_tm. Qed.
+
 (** Strict equality's codes (M10c). *)
 Lemma inv_code_seq {G i Γ l s t u T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSEq l s t u : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
@@ -453,6 +474,12 @@ Lemma inv_ty_empty {G i Γ l k} : [ G ; Γ ⊢[ i ] tyEmpty l @ k ] ->
   (i <> lV /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\ lvl_eq (gL G) k l.
 Proof. inv_ty. Qed.
 
+(** Well-founded trees (M13a). *)
+Lemma inv_ty_W {G i Γ l l' A B k} : [ G ; Γ ⊢[ i ] tyW l l' A B @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ]) /\
+    lvl_eq (gL G) k (lmax l l').
+Proof. inv_ty. Qed.
+
 (** ** Lookups are deterministic *)
 
 Lemma in_ctx_det {Γ n T l T' l'} : in_ctx Γ n T l -> in_ctx Γ n T' l' -> T = T' /\ l = l'.
@@ -505,4 +532,5 @@ Proof.
   - exact (lvl_eq_uniq (proj2 (inv_ty_id H)) (proj2 (inv_ty_id H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_empty H)) (proj2 (inv_ty_empty H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_sum H)) (proj2 (inv_ty_sum H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_W H)) (proj2 (inv_ty_W H'))).
 Qed.

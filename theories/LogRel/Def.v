@@ -323,6 +323,65 @@ Definition SumRel (G : gctx) (Γ : ctx) (l l' : lvl) (A B : ty) (RA RB : tm -> t
     [ G ; Γ ⊢g t ⤳* w : tySum l l' A B @ lmax l l' ] /\ [ G ; Γ ⊢g t' ⤳* w' : tySum l l' A B @ lmax l l' ] /\
     [ G ; Γ ⊢ w ≈ w' : tySum l l' A B @ lmax l l' ] /\ SumNf G Γ l l' A B RA RB w w'.
 
+(** Two terms reducing to whnfs related generically: the first clauses of
+    [PiRel], without the Kripke one. *)
+Definition WhRel (G : gctx) (Γ : ctx) (T : ty) (l : lvl) (t t' : tm) : Prop :=
+  exists w w', [ G ; Γ ⊢g t ⤳* w : T @ l ] /\ [ G ; Γ ⊢g t' ⤳* w' : T @ l ] /\
+    whnf w /\ whnf w' /\ [ G ; Γ ⊢ w ≈ w' : T @ l ].
+
+(** ** Well-founded trees (M13_DESIGN.md, M13a)
+
+    MX §5's [NfEqW]: an inductive family whose recursive premise sits under
+    the Kripke quantifier, so the context, the shape and position types and
+    the shape and position relations are all indices. A [sup] pair is
+    related when its shapes are related in every weakening and, in every
+    weakening and at related positions, the children's applications (for
+    every choice of equivalent annotations, as [PiRel]'s) are related at
+    [W] there, with the data composed with the weakening. The shapes'
+    relation is Kripke as [SigRel]'s first projections, so no identity
+    weakening is needed; the children's premise takes any proof of the
+    shapes' relation, so the definition needs no weakening of [domR].
+    The children's functions reduce, in every weakening, to whnfs related
+    generically (the first clauses of [PiRel]), so that they are related
+    as functions where [elimW]'s step takes them.
+    Neutrals are related generically. The [sup]s' annotations are recorded
+    against the type's, as the injections' are. *)
+Inductive WRel : forall (G : gctx) (Γ : ctx) (l1 l2 : lvl) (A B : ty)
+    (domR : DomRel G Γ) (codR : CodRel G Γ domR), tm -> tm -> Prop :=
+| wrel G Γ l1 l2 A B domR codR t t' w w' :
+    [ G ; Γ ⊢g t ⤳* w : tyW l1 l2 A B @ lmax l1 l2 ] -> [ G ; Γ ⊢g t' ⤳* w' : tyW l1 l2 A B @ lmax l1 l2 ] ->
+    [ G ; Γ ⊢ w ≈ w' : tyW l1 l2 A B @ lmax l1 l2 ] ->
+    WNf G Γ l1 l2 A B domR codR w w' -> WRel G Γ l1 l2 A B domR codR t t'
+with WNf : forall (G : gctx) (Γ : ctx) (l1 l2 : lvl) (A B : ty)
+    (domR : DomRel G Γ) (codR : CodRel G Γ domR), tm -> tm -> Prop :=
+| wnf_sup G Γ l1 l2 A B domR codR k1 k2 k1' k2' C D C' D' a a' f f' :
+    lequiv (gL G) k1 l1 -> lequiv (gL G) k2 l2 -> lequiv (gL G) k1' l1 -> lequiv (gL G) k2' l2 ->
+    [ G ; Γ ⊢ A ≈ C @ l1 ] -> [ G ; Γ ⊢ A ≈ C' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢ B ≈ D @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢ B ≈ D' @ l2 ] ->
+    (forall ρ : kwk G Γ, domR ρ (ktm ρ a) (ktm ρ a')) ->
+    (forall ρ : kwk G Γ, WhRel (kw_G ρ) (kw_Δ ρ)
+       (tyPi l2 (lmax l1 l2) (ktyl ρ B)[lsingle (ktm ρ a)] (tyW l1 l2 (kty ρ A) (ktyl ρ B))⟨↑⟩)
+       (lmax l2 (lmax l1 l2)) (ktm ρ f) (ktm ρ f')) ->
+    (forall (ρ : kwk G Γ) (ha : domR ρ (ktm ρ a) (ktm ρ a')) b b', codR ρ (ktm ρ a) (ktm ρ a') ha b b' ->
+       forall la lb A1 B1 la' lb' A1' B1',
+       lequiv (gL G) la l2 -> lequiv (gL G) lb (lmax l1 l2) ->
+       lequiv (gL G) la' l2 -> lequiv (gL G) lb' (lmax l1 l2) ->
+       [ kw_G ρ ; kw_Δ ρ ⊢ (ktyl ρ B)[lsingle (ktm ρ a)] ≈ A1 @ l2 ] ->
+       [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ B)[lsingle (ktm ρ a)] @ l2
+           ⊢ (tyW l1 l2 (kty ρ A) (ktyl ρ B))⟨↑⟩ ≈ B1 @ lmax l1 l2 ] ->
+       [ kw_G ρ ; kw_Δ ρ ⊢ (ktyl ρ B)[lsingle (ktm ρ a)] ≈ A1' @ l2 ] ->
+       [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ B)[lsingle (ktm ρ a)] @ l2
+           ⊢ (tyW l1 l2 (kty ρ A) (ktyl ρ B))⟨↑⟩ ≈ B1' @ lmax l1 l2 ] ->
+       WRel (kw_G ρ) (kw_Δ ρ) l1 l2 (kty ρ A) (ktyl ρ B)
+         (fun ρ' => domR (kw_comp ρ ρ')) (fun ρ' x x' h => codR (kw_comp ρ ρ') x x' h)
+         (app (ktm ρ f) la lb A1 B1 b) (app (ktm ρ f') la' lb' A1' B1' b')) ->
+    WNf G Γ l1 l2 A B domR codR (tmSup k1 k2 C D a f) (tmSup k1' k2' C' D' a' f')
+| wnf_ne G Γ l1 l2 A B domR codR ν ν' :
+    [ G ; Γ ⊢ ν ~ ν' : tyW l1 l2 A B @ lmax l1 l2 ] -> WNf G Γ l1 l2 A B domR codR ν ν'.
+
+Scheme WRel_mut := Induction for WRel Sort Prop
+  with WNf_mut := Induction for WNf Sort Prop.
+
 (** ** The type-level data of a binder former
 
     [Π] and [Σ] (and later formers of the same shape) share it: both sides
@@ -546,6 +605,15 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
     (forall x y, RA x y -> RA y x) -> (forall x y z, RA x y -> RA y z -> RA x z) ->
     (forall x y, RB x y -> RB y x) -> (forall x y z, RB x y -> RB y z -> RB x z) ->
     releq R (SumRel G Γ l1 l2 A B RA RB) ->
+    LR n rec G Γ T T' l R
+| LRw G Γ T T' l l1 l2 l3 l4 A B A' B'
+    (domR : DomRel G Γ) (codR : CodRel G Γ domR) R :
+    PolyFacts G Γ tyW T T' l l1 l2 l3 l4 A B A' B' ->
+    (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ A) (kty ρ A') l1 (domR ρ)) ->
+    (forall (ρ : kwk G Γ) a a' (ha : domR ρ a a'),
+        LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ B)[lsingle a] (ktyl ρ B')[lsingle a'] l2
+           (codR ρ a a' ha)) ->
+    releq R (WRel G Γ l1 l2 A B domR codR) ->
     LR n rec G Γ T T' l R.
 
 (** ** Stages *)

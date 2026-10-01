@@ -123,6 +123,18 @@ Proof.
     now rewrite shift2_as, shift_cons2.
 Qed.
 
+(** [elim_W]'s step under three binders, and its induction hypothesis (M13a). *)
+Lemma lift3shift_llift (t : tm) d :
+  t⟨rlift (rlift (rlift ↑))⟩[llift (llift (llift (llift d)))] = t[llift (llift (llift d))]⟨rlift (rlift (rlift ↑))⟩.
+Proof.
+  rewrite (ren_subst _ _ _ (lren (llift (llift (llift d))) (rlift (rlift (rlift ↑))))),
+          (subst_ren _ _ (lren (llift (llift (llift d))) (rlift (rlift (rlift ↑))))); auto.
+  - intros n; now rewrite llk_lren.
+  - intros [|[|[|n]]]; rewrite llk_lren; rlk_simpl; rewrite ?llk_llift; cbn; try reflexivity.
+    rewrite ?llk_llift. cbn. change (ren_tm ?x ?r) with x⟨r⟩.
+    rewrite !ren_ren_comp. apply ren_ext_tm; intros m; rlk_simpl; lia.
+Qed.
+
 Section Nf.
 Variables (d : lsub) (Hd : LK nftm d).
 
@@ -150,6 +162,24 @@ Proof.
   change (ren_tm ?x ?r) with x⟨r⟩. rewrite shift2_single2 by apply Hd. now rewrite Nat.add_0_r.
 Qed.
 
+Lemma single3_subst (c a f h : tm) :
+  c[lsingle3 a f h][d] = c[llift (llift (llift d))][lsingle3 a[d] f[d] h[d]].
+Proof.
+  apply subst2_eq; intros [|[|[|n]]]; rewrite ?llk_llift; cbn; auto.
+  change (ren_tm ?x ?r) with x⟨r⟩. rewrite ?llk_llift. cbn. change (ren_tm ?x ?r) with x⟨r⟩.
+  rewrite !ren_ren_comp, (ren_subst _ _ _ (lshift 0)).
+  - rewrite Nat.add_0_r. symmetry; apply subst_id; [apply Hd | intros; cbn; f_equal; lia].
+  - intros m; rlk_simpl; cbn; f_equal; lia.
+Qed.
+Lemma subst_wIH l l' l'' A B M c a f :
+  (wIH l l' l'' A B M c a f)[d] =
+  wIH l l' l'' A[d] B[llift d] M[llift d] c[llift (llift (llift d))] a[d] f[d].
+Proof.
+  unfold wIH. rewrite subst_lam, subst_elimW, subst_app, subst_var, (llk_llift d 0), single_subst_ty.
+  cbn beta iota.
+  repeat progress rewrite ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty, ?lift3shift_llift, ?single_subst_ty.
+  reflexivity.
+Qed.
 End Nf.
 
 Lemma lsucc_subst_ty (M : ty) d : M[lsucc][llift (llift d)] = M[llift d][lsucc].

@@ -354,7 +354,31 @@ Class GenericEqLaws `{GenericEq} := {
     [ G ; Γ ⊢ tmEmpty l ≈ tmEmpty l' : tyU l @ lsuc l ] ;
   geq_tm_code_sum {G Γ l1 l2 l3 l4 s s' t t'} : lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢ s ≈ s' : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢ t ≈ t' : tyU l2 @ lsuc l2 ] ->
-    [ G ; Γ ⊢ tmSum l1 l2 s t ≈ tmSum l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ]
+    [ G ; Γ ⊢ tmSum l1 l2 s t ≈ tmSum l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ] ;
+  (** well-founded trees (M13a): the congruences of [W] and [sup], and
+      [elim_W] is neutral on a neutral scrutinee *)
+  geq_ty_W {G Γ l1 l2 l3 l4 A A' B B'} :
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
+    [ G ; Γ ⊢ tyW l1 l2 A B ≈ tyW l3 l4 A' B' @ lmax l1 l2 ] ;
+  geq_tm_sup {G Γ l1 l2 l3 l4 A A' B B' a a' f f'} :
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢g B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
+    [ G ; Γ ⊢ a ≈ a' : A @ l1 ] ->
+    [ G ; Γ ⊢ f ≈ f' : tyPi l2 (lmax l1 l2) B[lsingle a] (tyW l1 l2 A B)⟨↑⟩ @ lmax l2 (lmax l1 l2) ] ->
+    [ G ; Γ ⊢ tmSup l1 l2 A B a f ≈ tmSup l3 l4 A' B' a' f' : tyW l1 l2 A B @ lmax l1 l2 ] ;
+  gne_tm_elimW {G Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c c' ν ν'} :
+    lequiv (gL G) l1 l4 -> lequiv (gL G) l2 l5 -> lequiv (gL G) l3 l6 ->
+    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢g B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
+    [ G ; Γ ,, tyW l1 l2 A B @ lmax l1 l2 ⊢g M @ l3 ] ->
+    [ G ; Γ ,, tyW l1 l2 A B @ lmax l1 l2 ⊢ M ≈ M' @ l3 ] ->
+    [ G ; Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ,, wihty l1 l2 l3 A B M @ lmax l2 l3
+        ⊢ c ≈ c' : wstepty l1 l2 A B M @ l3 ] ->
+    [ G ; Γ ⊢ ν ~ ν' : tyW l1 l2 A B @ lmax l1 l2 ] ->
+    [ G ; Γ ⊢ tmElimW l1 l2 l3 A B M c ν ~ tmElimW l4 l5 l6 A' B' M' c' ν' : M[lsingle ν] @ l3 ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

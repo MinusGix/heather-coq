@@ -491,7 +491,7 @@ Fixpoint nfty (T : ty) : Prop :=
   | tyErr | tyNat | tyU _ | tyUnit _ | tySEmpty _ | tyEmpty _ => True
   | tySEq _ A a b => nfty A /\ nftm a /\ nftm b
   | tyId _ A a b => nfty A /\ nftm a /\ nftm b
-  | tyPi _ _ A B | tySig _ _ A B | tySum _ _ A B => nfty A /\ nfty B
+  | tyPi _ _ A B | tySig _ _ A B | tySum _ _ A B | tyW _ _ A B => nfty A /\ nfty B
   | tyEl _ t => nftm t
   | tyGvar _ d => nfl d
   | tyCTyp _ _ | tyCTrm _ _ _ => True
@@ -521,6 +521,8 @@ with nftm (t : tm) : Prop :=
   | srefl _ A a | elimSEmpty _ _ A a | elimEmpty _ _ A a => nfty A /\ nftm a
   | tmInl _ _ A B a | tmInr _ _ A B a => nfty A /\ nfty B /\ nftm a
   | tmCase _ _ _ A B M c1 c2 t => nfty A /\ nfty B /\ nfty M /\ nftm c1 /\ nftm c2 /\ nftm t
+  | tmSup _ _ A B a f => nfty A /\ nfty B /\ nftm a /\ nftm f
+  | tmElimW _ _ _ A B M c t => nfty A /\ nfty B /\ nfty M /\ nftm c /\ nftm t
   | tmRefl _ A a => nfty A /\ nftm a
   | tmId _ s t u => nftm s /\ nftm t /\ nftm u
   | tmSEq _ s t u => nftm s /\ nftm t /\ nftm u
@@ -597,3 +599,27 @@ Proof. intros; apply (proj1 (proj2 subst_id_all)); auto. Qed.
 End Laws.
 
 Print Assumptions subst_subst.
+
+(** ** Syntactic composition of renamings *)
+
+Fixpoint rcomp (r1 r2 : rsub) : rsub :=         (* first r1, then r2 *)
+  match r1 with
+  | rshift k => rdrop k r2
+  | rcons r m => rcons (rcomp r r2) (rlk r2 m)
+  end.
+
+Lemma rlk_rcomp r1 r2 n : rlk (rcomp r1 r2) n = rlk r2 (rlk r1 n).
+Proof.
+  revert n; induction r1 as [k|r IH m]; intros n; cbn.
+  - rewrite rlk_rdrop; f_equal; lia.
+  - destruct n; auto.
+Qed.
+
+Lemma ren_ren_comp_ty (T : ty) r1 r2 : T⟨r1⟩⟨r2⟩ = T⟨rcomp r1 r2⟩.
+Proof. apply ren_ren_ty; intros; now rewrite rlk_rcomp. Qed.
+Lemma ren_ren_comp (t : tm) r1 r2 : t⟨r1⟩⟨r2⟩ = t⟨rcomp r1 r2⟩.
+Proof. apply ren_ren; intros; now rewrite rlk_rcomp. Qed.
+
+Ltac rlk_simpl :=
+  repeat first [ rewrite rlk_rcomp | rewrite rlk_rlift | rewrite rlk_rup | rewrite rlk_shift1
+               | progress cbn [rlk rshift1] ].

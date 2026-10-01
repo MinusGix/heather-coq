@@ -174,10 +174,13 @@ Proof. now intros ? ->. Qed.
 
 Lemma llk_llift0 d : llk (llift d) 0 = var 0.
 Proof. now rewrite llk_llift. Qed.
+Lemma llk_llift_S d n : llk (llift d) (S n) = (llk d n)⟨↑⟩.
+Proof. now rewrite llk_llift. Qed.
 
 Ltac sub_rw1 :=
   push_subst;
   rewrite ?llk_llift0, ?single_subst_ty, ?single_subst, ?single2_subst, ?single2_subst_ty, ?lsucc_subst_ty,
+          ?single3_subst, ?subst_wIH,
           ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty by eauto with nf;
   push_subst.
 (* twice: [case]'s branch types (M12b) shift summands inside an injection,
@@ -821,8 +824,34 @@ Ltac sub_Jmot :=
       end
     | sub_rw; reflexivity ] ].
 
+(** [elim_W]'s step (M13a): the induction hypotheses at the lifted
+    substitutions, built along the step telescope; the context and the type
+    then agree by an equation. *)
+Ltac sub_Wsub :=
+  first [ eassumption
+        | eapply lsub_wf_lift_g; [ sub_Wsub | eapply lift_ty; [ sub_Wty | apply lle_self_typeof ]
+                                 | eauto with sub ]
+        | eapply lsub_wf_lift_g'; [ sub_Wsub | eapply lift_ty; [ sub_Wty | apply lle_self_typeof ]
+                                  | eauto with sub | first [reflexivity | do 3 sub_rw1; reflexivity] ] ]
+with sub_Wty :=
+  first [ match goal with IH : forall Δ d, lsub_wf _ _ Δ d _ -> _ |- _ => eapply IH; solve [sub_Wsub] end
+        | push_subst; eapply wft_W; [ eassumption | eauto with sub | eauto with sub | sub_Wty | sub_Wty ] ].
+Ltac sub_eqW := do 3 sub_rw1; rewrite ?llk_llift_S, ?llk_llift0; push_ren; rlk_simpl; reflexivity.
+Ltac sub_Wstep :=
+  first [ solve [sub_Wty]
+        | first [eapply wf_tm_regctx | eapply eq_tm_regctx | eapply wf_ty_regboth];
+          [ match goal with IH : forall Δ d, lsub_wf _ _ Δ d _ -> _ |- _ => eapply IH; solve [sub_Wsub] end
+          | sub_eqW | sub_eqW ] ].
+
 Ltac sub_manual2 :=
   match goal with
+  (* [W] (M13a) *)
+  | |- wf_tm _ _ _ (tmSup _ _ _ _ _ _) _ _ => eapply wf_sup; sub_premise
+  | |- eq_tm _ _ _ (tmSup _ _ _ _ _ _) _ _ _ => eapply eqtm_sup; sub_premise
+  | |- wf_tm _ _ _ (tmElimW _ _ _ _ _ _ _ _) _ _ => eapply wf_elimW; first [solve [sub_Wstep] | sub_premise]
+  | |- eq_tm _ _ _ (tmElimW _ _ _ _ _ _ _ (tmSup _ _ _ _ _ _)) _ _ _ =>
+      eapply eqtm_elimW_sup; first [solve [sub_Wstep] | sub_premise]
+  | |- eq_tm _ _ _ (tmElimW _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimW; first [solve [sub_Wstep] | sub_premise]
   (* [case] (M12b): its branches' types, through the induction hypotheses *)
   | |- wf_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ _) _ _ => eapply wf_case; sub_premise
   | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ (tmInl _ _ _ _ _)) _ _ _ => eapply eqtm_case_inl; sub_premise
