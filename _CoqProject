@@ -135,3 +135,4 @@ theories/Validity/TCCheck.v
 theories/Validity/TypeCheck.v
 theories/Validity/PaperSound.v
 theories/Validity/Uip.v
+theories/Validity/Hedberg.v
