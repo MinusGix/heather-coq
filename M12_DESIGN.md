@@ -1,6 +1,7 @@
 # M12: the empty type and binary sums (`Empty`, `+`), design
 
-Status: **M12 done, 2026-09-30** (M12a, M12b and M12c; outcomes below). Why now: `HEATHER.md`
+Status: **M12 done, 2026-09-30** (M12a, M12b and M12c; outcomes below). Its motivation is
+paid on 2026-10-01: `UIP₀` at `⌜Bool⌝` and Hedberg's theorem (last section). Why now: `HEATHER.md`
 item 5 lists the positive formers after `Id`. `Empty` and `+` are the
 smallest: with them the development has `⌜Bool⌝ = Unit + Unit`, so the
 no-UIP model's `UIP₀` can be stated as Heather's `docs/no-uip-model.md`
@@ -211,4 +212,64 @@ lines added and 260 changed, of which `RecS` is 880, `StaticCode` 370
 and `RecReduct` 300.
 
 **Next** (the motivation above): `⌜Bool⌝ = Unit + Unit` is now a code,
-so `UIP₀` at it and Hedberg's theorem can be stated.
+so `UIP₀` at it and Hedberg's theorem can be stated. Done, below.
+
+## `UIP₀` at `⌜Bool⌝`, and Hedberg's theorem (2026-10-01)
+
+Heather's `docs/no-uip-model.md` makes two predictions the syntax can
+check. M11 checked them where it could (M11_DESIGN.md, "UIP stated").
+With `Empty` and `+` both can now be stated as the model writes them.
+Everything below is closed under the global context.
+
+- **`UIP0` is at `⌜Bool⌝`** (`Validity/Uip.v`). `code_bool` is
+  `⌜Unit⌝ + ⌜Unit⌝`. Its code level `0 ⊔ 0` is converted to `0`
+  (`code_bool_wf`), so the carrier is `Id^1(Ty 0; ⌜Bool⌝; ⌜Bool⌝)`,
+  exactly the model's. M11's statement at `⌜Nat⌝` stays as `UIP0_nat`. The
+  probe already refuted both interpretations (`no_uip0`, `no_uip0_nat`).
+  `closed_uip0_carrier` is now at `⌜Bool⌝`.
+- **Hedberg's theorem** (`Validity/Hedberg.v`), as terms at layer D:
+  - `hedberg_wf` is a schema over a carrier `T` with a decider
+    `dec : DecEq T := Π(x y : T). Id(x; y) + ¬Id(x; y)`. It gives
+    `hedberg l T dec : Π(x y : T). uip_pt l T x y`.
+  - `hedbergU_wf` is the internal statement. One closed term has type
+    `Π(a : Ty l). DecEq(El a) → Π(x y : El a). uip_pt (El a) x y`.
+  - `uip_bool_wf` is the instance at `Bool = Unit + Unit`, through the
+    decider `decBool` (`decBool_wf`). This is the model's positive
+    prediction at a discrete type (§5.2), next to M11's `uip_unit_wf`.
+- **The proof** is the textbook one. The collapse
+  `f(r) := case dec x y of inl e ⇒ e | inr n ⇒ elim_Empty(n r)` is constant
+  (`const`, a `case` whose `inl` branch is `refl` up to `case`-β). Every
+  path has `r = f(refl)⁻¹ · f(r)` (`key`, a `J` whose base case is
+  `s⁻¹ · s = refl`, itself a `J` whose base is `J`-β twice). So
+  `p = … = q`, by `pcat`, `pinv` and an `ap` (`apg`).
+- **The decider at `Bool`** needs what the model calls discreteness.
+  - On the diagonal it uses `Unit`-η: `inl e ≅ inl e'`.
+  - Off the diagonal it uses a large elimination. `J` transports
+    `tt : El(case a of ⌜Unit⌝ | ⌜Empty⌝)` along the path to `w`. The
+    target type decodes to `Empty` by `case`-β and the codes' `El` rules.
+- **Choices, not forks.**
+  - Layer D only, as for `uip_unit`. `J`-β and `case`-β also hold at M,
+    so M would be the same proof with `compt i`.
+  - Levels are general. The carrier lives at `l`, and `l ⊔ l` is converted
+    to `l` throughout.
+  - The schema form comes first. The internal statement is two `λ`s over
+    it.
+- **Proof engineering.** The terms are Coq-level macros over their
+  leaves (`pinv`, `pcat`, `fcase`, `Fv`, `gpath`, …).
+  - The typing rules compute types like `M[lsingle2 u e]`. `sy` closes
+    the equations between those and the spellings the lemmas state.
+  - The first `sy` unfolded every macro, then pushed substitutions through
+    the raw tree. That cost is quadratic in term size: the file took
+    51 s, 34 s of it in `apg`'s three motive equations.
+  - Each macro now has a substitution and a renaming lemma (`*_subst`,
+    `*_ren`, proved once on generic terms), and `sy` pushes through
+    macros without unfolding them. The file takes about 5 s.
+  - Gotcha: `eapply wf_tm_retype; [| sy]` solves the equation goal first,
+    fixing the evar type before the typing goal. Always type the term
+    first: `[exact … | sy]`.
+  - Gotcha: a code argument (`c1 : tmUnit or tmEmpty`) must be concrete
+    (destruct the disjunction) before a substitution through it reduces.
+
+**Not done:** UIP at `Nat` by Hedberg. The model predicts it (§5.2). It
+needs a decider for `Nat`: a double `natrec`, with `succ`-injectivity and
+`0 ≠ succ` by the same large elimination as `Bool`'s.
