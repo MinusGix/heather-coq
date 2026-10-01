@@ -14,6 +14,12 @@
       [decBool]. On the diagonal it is [refl], by [Unit]-η. Off it, [J]
       transports [tt] along the path into [El(case w of ⌜Unit⌝ | ⌜Empty⌝)],
       which decodes to [Unit] at one injection and to [Empty] at the other.
+    - [uip_nat_wf]: UIP at [Nat], from the decider [decNat]: [natrec] on
+      [x], then on [y]. [refl] at [(0, 0)]. At [(succ n, succ m)], [case] on
+      the hypothesis at [m]: [ap succ] of an equation, or a refutation
+      composed with [ap pred] ([pred(succ b) ≡ b] by [natrec]-β). Off the
+      diagonal [0 ≠ succ m], again [J] into a code: [El(natrec(⌜Unit⌝,
+      ⌜Empty⌝, w))].
 
     The proof is the textbook one. The collapse
     [f(r) := case dec x y of inl e ⇒ e | inr n ⇒ elim_Empty(n r)] is
@@ -159,6 +165,48 @@ Definition decBool (l : lvl) : tm :=
 (** UIP at [Bool], by Hedberg. *)
 Definition uip_bool (l : lvl) : tm := hedberg l (tyBool l) (decBool l).
 
+(** *** [Nat] *)
+
+(** [pred t], by [natrec]: [pred(succ t) ≡ t]. *)
+Definition pred (t : tm) : tm := natrec lzero tyNat zero (var 1) t.
+(** [El(natrec(c1, c2, s))], for closed codes [c1 c2]: [c1] at [zero], [c2] at a successor. *)
+Definition DiscN (c1 c2 s : tm) : ty := tyEl lzero (natrec (lsuc lzero) (tyU lzero) c1 c2 s).
+Definition disjN (c1 c2 a w n : tm) : tm := tmJ lzero lzero tyNat a (DiscN c1 c2 (var 1)) (tmTriv lzero) w n.
+Definition sameN (s : tm) : tm :=
+  tmInl lzero lzero (tyId lzero tyNat s s) (tyNeg lzero (tyId lzero tyNat s s)) (tmRefl lzero tyNat s).
+Definition diffN (a w c1 c2 : tm) : tm :=
+  tmInr lzero lzero (tyId lzero tyNat a w) (tyNeg lzero (tyId lzero tyNat a w))
+    (lam lzero lzero (tyId lzero tyNat a w) (disjN c1 c2 a⟨↑⟩ w⟨↑⟩ (var 0))).
+(** [ap succ e : Id(succ a; succ b)] and [ap pred p : Id(a; b)]. *)
+Definition apsucc (a b e : tm) : tm :=
+  tmJ lzero lzero tyNat a (tyId lzero tyNat (succ a⟨↑⟩⟨↑⟩) (succ (var 1))) (tmRefl lzero tyNat (succ a)) b e.
+Definition predap (a b p : tm) : tm :=
+  tmJ lzero lzero tyNat (succ a) (tyId lzero tyNat a⟨↑⟩⟨↑⟩ (pred (var 1))) (tmRefl lzero tyNat a) (succ b) p.
+(** At [(succ n, succ m)], from [h : Π(y : Nat). n = y + n ≠ y]: [case h m]. *)
+Definition stepSS (n m h : tm) : tm :=
+  tmCase lzero lzero lzero (tyId lzero tyNat n m) (tyNeg lzero (tyId lzero tyNat n m))
+    (SumI lzero tyNat (succ n) (succ m))⟨↑⟩
+    (tmInl lzero lzero (tyId lzero tyNat (succ n⟨↑⟩) (succ m⟨↑⟩)) (tyNeg lzero (tyId lzero tyNat (succ n⟨↑⟩) (succ m⟨↑⟩)))
+       (apsucc n⟨↑⟩ m⟨↑⟩ (var 0)))
+    (tmInr lzero lzero (tyId lzero tyNat (succ n⟨↑⟩) (succ m⟨↑⟩)) (tyNeg lzero (tyId lzero tyNat (succ n⟨↑⟩) (succ m⟨↑⟩)))
+       (lam lzero lzero (tyId lzero tyNat (succ n⟨↑⟩) (succ m⟨↑⟩))
+          (app (var 1) lzero lzero (tyId lzero tyNat n⟨↑⟩⟨↑⟩ m⟨↑⟩⟨↑⟩) (tyEmpty lzero) (predap n⟨↑⟩⟨↑⟩ m⟨↑⟩⟨↑⟩ (var 0)))))
+    (app h lzero lzero tyNat (SumI lzero tyNat n⟨↑⟩ (var 0)) m).
+(** The decider, by [natrec] on [x], then on [y]. *)
+Definition decNat : tm :=
+  lam lzero lzero tyNat
+    (natrec lzero (tyPi lzero lzero tyNat (SumI lzero tyNat (var 1) (var 0)))
+       (lam lzero lzero tyNat
+          (natrec lzero (SumI lzero tyNat zero (var 0)) (sameN zero)
+             (diffN zero (succ (var 1)) (tmUnit lzero) (tmEmpty lzero)) (var 0)))
+       (lam lzero lzero tyNat
+          (natrec lzero (SumI lzero tyNat (succ (var 3)) (var 0))
+             (diffN (succ (var 2)) zero (tmEmpty lzero) (tmUnit lzero))
+             (stepSS (var 4) (var 1) (var 3)) (var 0)))
+       (var 0)).
+(** UIP at [Nat], by Hedberg. *)
+Definition uip_nat : tm := hedberg lzero tyNat decNat.
+
 (** ** Syntactic equations: unfold, push the operations to the leaves *)
 
 Lemma llk_llift_S d n : llk (llift d) (S n) = (llk d n)⟨↑⟩.
@@ -176,7 +224,7 @@ Ltac sy_step := first
   | rewrite shift_single_ty by nf_tac | rewrite shift_single by nf_tac
   | rewrite llk_llift_S | rewrite llk_llift_0
   | progress rlk_simpl
-  | progress cbn [rlk rshift1 llk lsingle2 lsingle Nat.add] ].
+  | progress cbn [rlk rshift1 llk lsingle2 lsingle lsucc Nat.add] ].
 Ltac sy0 := repeat sy_step; try reflexivity.
 
 (** Each macro commutes with substitution and renaming, so the equations
@@ -797,5 +845,218 @@ Theorem uip_bool_wf {Γ} : [ G ; Γ ⊢[ lD ] ] -> [ G ; Γ ⊢[ lD ] uip_bool l
 Proof. intros HΓ. exact (hedberg_wf Hl (b_wf HΓ) (decBool_wf HΓ)). Qed.
 
 End Bool.
+
+(** *** [Nat] *)
+
+Section NatDec.
+Let I0 : lwf (gL G) lzero := I.
+
+Lemma n_wf {Δ} : [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] tyNat @ lzero ].
+Proof. intros H. exact (wft_nat _ _ _ Hv H). Qed.
+
+Lemma pred_prem {Δ} : [ G ; Δ ⊢[ lD ] ] ->
+  [ G ; Δ ,, tyNat @ lzero ⊢[ lD ] tyNat @ lzero ] /\ [ G ; Δ ⊢[ lD ] zero : tyNat[lsingle zero] @ lzero ] /\
+  [ G ; Δ ,, tyNat @ lzero ,, tyNat @ lzero ⊢[ lD ] var 1 : tyNat[lsucc] @ lzero ].
+Proof.
+  intros H. pose proof (ext I0 (n_wf H)) as H1. pose proof (ext I0 (n_wf H1)) as H2.
+  split; [exact (n_wf H1) | split; [exact (wf_zero _ _ _ Hv H) | exact (var1 H2)]].
+Qed.
+Lemma pred_wf {Δ t} : [ G ; Δ ⊢[ lD ] t : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] pred t : tyNat @ lzero ].
+Proof.
+  intros Ht. destruct (pred_prem (ctx_of_wf_tm eq_refl Ht)) as (HM & Hs & Hz).
+  exact (wf_natrec _ _ _ _ _ _ _ _ Hv I0 HM Hs Hz Ht).
+Qed.
+Lemma pred_succ {Δ t} : [ G ; Δ ⊢[ lD ] t : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] pred (succ t) ≅ t : tyNat @ lzero ].
+Proof.
+  intros Ht. destruct (pred_prem (ctx_of_wf_tm eq_refl Ht)) as (HM & Hs & Hz).
+  exact (eqtm_natrec_succ _ _ _ _ _ _ _ _ compt_D I0 HM Hs Hz Ht).
+Qed.
+
+Lemma apsucc_wf {Δ a b e} : [ G ; Δ ⊢[ lD ] a : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] b : tyNat @ lzero ] ->
+  [ G ; Δ ⊢[ lD ] e : tyId lzero tyNat a b @ lzero ] ->
+  [ G ; Δ ⊢[ lD ] apsucc a b e : tyId lzero tyNat (succ a) (succ b) @ lzero ].
+Proof.
+  intros Ha Hb He. pose proof (ctx_of_wf_tm eq_refl Ha) as H. pose proof (n_wf H) as HN.
+  destruct (jctx I0 HN Ha) as [HI HM].
+  eapply wf_tm_retype; [refine (wf_J _ _ _ _ _ _ _ _ _ _ _ Hv I0 I0 HN Ha HI _ _ Hb He) | sy].
+  - apply wft_id; [exact Hv | exact I0 | exact (n_wf HM) | exact (wf_succ _ _ _ _ Hv (wk2tm HM Ha)) | exact (wf_succ _ _ _ _ Hv (var1 HM))].
+  - eapply wf_tm_retype; [exact (wf_idrefl _ _ _ _ _ _ Hv I0 HN (wf_succ _ _ _ _ Hv Ha)) | sy].
+Qed.
+
+Lemma predap_wf {Δ a b p} : [ G ; Δ ⊢[ lD ] a : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] b : tyNat @ lzero ] ->
+  [ G ; Δ ⊢[ lD ] p : tyId lzero tyNat (succ a) (succ b) @ lzero ] ->
+  [ G ; Δ ⊢[ lD ] predap a b p : tyId lzero tyNat a b @ lzero ].
+Proof.
+  intros Ha Hb Hp. pose proof (ctx_of_wf_tm eq_refl Ha) as H. pose proof (n_wf H) as HN.
+  pose proof (wf_succ _ _ _ _ Hv Ha) as Hsa. pose proof (wf_succ _ _ _ _ Hv Hb) as Hsb.
+  destruct (jctx I0 HN Hsa) as [HI HM].
+  (* [Id(a; pred(succ c)) ≅ Id(a; c)] *)
+  assert (E : forall c, [ G ; Δ ⊢[ lD ] c : tyNat @ lzero ] ->
+            [ G ; Δ ⊢[ lD ] tyId lzero tyNat a c ≅ tyId lzero tyNat a (pred (succ c)) @ lzero ]).
+  { intros c Hc. apply eqty_id; [exact Hv | exact (lequiv_refl _ _ I0) | exact HN | exact (eqty_refl _ _ _ _ _ HN)
+                               | exact (eqtm_refl _ _ _ _ _ _ Ha) | exact (eqtm_sym _ _ _ _ _ _ _ (pred_succ Hc))]. }
+  eapply wf_conv; [eapply wf_tm_retype; [refine (wf_J _ _ _ _ _ _ _ _ _ _ _ Hv I0 I0 HN Hsa HI _ _ Hsb Hp) | sy] | exact (E _ Hb)].
+  - apply wft_id; [exact Hv | exact I0 | exact (n_wf HM) | exact (wk2tm HM Ha) | exact (pred_wf (var1 HM))].
+  - eapply wf_tm_retype; [eapply wf_conv; [exact (wf_idrefl _ _ _ _ _ _ Hv I0 HN Ha) | exact (eqty_sym _ _ _ _ _ _ (E _ Ha))] | sy].
+Qed.
+
+(** The discriminator decodes at [zero] and at a successor. *)
+Lemma discN_prem {Δ c1 c2} : [ G ; Δ ⊢[ lD ] ] -> (c1 = tmUnit lzero \/ c1 = tmEmpty lzero) -> (c2 = tmUnit lzero \/ c2 = tmEmpty lzero) ->
+  [ G ; Δ ,, tyNat @ lzero ⊢[ lD ] tyU lzero @ lsuc lzero ] /\
+  [ G ; Δ ⊢[ lD ] c1 : (tyU lzero)[lsingle zero] @ lsuc lzero ] /\
+  [ G ; Δ ,, tyNat @ lzero ,, tyU lzero @ lsuc lzero ⊢[ lD ] c2 : (tyU lzero)[lsucc] @ lsuc lzero ].
+Proof.
+  intros H E1 E2. pose proof (ext I0 (n_wf H)) as H1. pose proof (ext (l := lsuc lzero) I0 (wft_U _ _ _ _ Hv H1 I0)) as H2.
+  split; [exact (wft_U _ _ _ _ Hv H1 I0) | split].
+  - destruct E1 as [-> | ->]; [exact (wf_code_unit _ _ _ _ Hv H I0) | exact (wf_code_empty _ _ _ _ Hv H I0)].
+  - destruct E2 as [-> | ->]; [exact (wf_code_unit _ _ _ _ Hv H2 I0) | exact (wf_code_empty _ _ _ _ Hv H2 I0)].
+Qed.
+Lemma discN_wf {Δ c1 c2 s} : (c1 = tmUnit lzero \/ c1 = tmEmpty lzero) -> (c2 = tmUnit lzero \/ c2 = tmEmpty lzero) ->
+  [ G ; Δ ⊢[ lD ] s : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] DiscN c1 c2 s @ lzero ].
+Proof.
+  intros E1 E2 Hs. destruct (discN_prem (ctx_of_wf_tm eq_refl Hs) E1 E2) as (HM & H1 & H2).
+  apply wft_El; [exact Hv | exact I0 | exact (wf_natrec _ _ _ (lsuc lzero) _ _ _ _ Hv I0 HM H1 H2 Hs)].
+Qed.
+Lemma discN_zero {Δ c1 c2} : [ G ; Δ ⊢[ lD ] ] -> (c1 = tmUnit lzero \/ c1 = tmEmpty lzero) -> (c2 = tmUnit lzero \/ c2 = tmEmpty lzero) ->
+  [ G ; Δ ⊢[ lD ] DiscN c1 c2 zero ≅ tyEl lzero c1 @ lzero ].
+Proof.
+  intros H E1 E2. destruct (discN_prem H E1 E2) as (HM & H1 & H2).
+  apply eqty_El; [exact Hv | exact (lequiv_refl _ _ I0) | exact (eqtm_natrec_zero _ _ _ (lsuc lzero) _ _ _ compt_D I0 HM H1 H2)].
+Qed.
+Lemma discN_succ {Δ c1 c2 t} : (c1 = tmUnit lzero \/ c1 = tmEmpty lzero) -> (c2 = tmUnit lzero \/ c2 = tmEmpty lzero) ->
+  [ G ; Δ ⊢[ lD ] t : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] DiscN c1 c2 (succ t) ≅ tyEl lzero c2 @ lzero ].
+Proof.
+  intros E1 E2 Ht. destruct (discN_prem (ctx_of_wf_tm eq_refl Ht) E1 E2) as (HM & H1 & H2).
+  destruct E2 as [-> | ->].
+  all: apply eqty_El; [exact Hv | exact (lequiv_refl _ _ I0) | exact (eqtm_natrec_succ _ _ _ (lsuc lzero) _ _ _ _ compt_D I0 HM H1 H2 Ht)].
+Qed.
+
+(** [El(⌜Unit⌝) ≅ Unit] and [El(⌜Empty⌝) ≅ Empty], composed with the above. *)
+Lemma el_unit {Δ D} : [ G ; Δ ⊢[ lD ] D ≅ tyEl lzero (tmUnit lzero) @ lzero ] -> [ G ; Δ ⊢[ lD ] tyUnit lzero ≅ D @ lzero ].
+Proof.
+  intros E. exact (eqty_trans _ _ _ _ _ _ _ (eqty_El_unit _ _ _ _ compt_D (ctx_of_eqty eq_refl E) I0) (eqty_sym _ _ _ _ _ _ E)).
+Qed.
+Lemma el_empty {Δ D} : [ G ; Δ ⊢[ lD ] D ≅ tyEl lzero (tmEmpty lzero) @ lzero ] -> [ G ; Δ ⊢[ lD ] tyEmpty lzero ≅ D @ lzero ].
+Proof.
+  intros E. exact (eqty_trans _ _ _ _ _ _ _ (eqty_El_empty _ _ _ _ compt_D (ctx_of_eqty eq_refl E) I0) (eqty_sym _ _ _ _ _ _ E)).
+Qed.
+
+Lemma disjN_wf {Δ c1 c2 a w n} : (c1 = tmUnit lzero \/ c1 = tmEmpty lzero) -> (c2 = tmUnit lzero \/ c2 = tmEmpty lzero) ->
+  [ G ; Δ ⊢[ lD ] a : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] w : tyNat @ lzero ] ->
+  [ G ; Δ ⊢[ lD ] tyUnit lzero ≅ DiscN c1 c2 a @ lzero ] -> [ G ; Δ ⊢[ lD ] tyEmpty lzero ≅ DiscN c1 c2 w @ lzero ] ->
+  [ G ; Δ ⊢[ lD ] n : tyId lzero tyNat a w @ lzero ] ->
+  [ G ; Δ ⊢[ lD ] disjN c1 c2 a w n : tyEmpty lzero @ lzero ].
+Proof.
+  intros E1 E2 Ha Hw Ea Ew Hn. pose proof (ctx_of_wf_tm eq_refl Ha) as H. pose proof (n_wf H) as HN.
+  destruct (jctx I0 HN Ha) as [HI HM]. pose proof (discN_wf E1 E2 (var1 HM)) as HD.
+  destruct E1 as [-> | ->], E2 as [-> | ->].
+  all: eapply wf_conv; [refine (wf_J _ _ _ _ _ _ _ _ _ _ _ Hv I0 I0 HN Ha HI HD _ Hw Hn) | exact Ew].
+  all: eapply wf_conv; [exact (wf_triv _ _ _ _ Hv H I0) | exact (eqty_sym _ _ _ _ _ _ Ea)].
+Qed.
+
+Lemma diffN_wf {Δ a w c1 c2} : (c1 = tmUnit lzero \/ c1 = tmEmpty lzero) -> (c2 = tmUnit lzero \/ c2 = tmEmpty lzero) ->
+  [ G ; Δ ⊢[ lD ] a : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] w : tyNat @ lzero ] ->
+  [ G ; Δ ,, tyId lzero tyNat a w @ lzero ⊢[ lD ] tyUnit lzero ≅ DiscN c1 c2 a⟨↑⟩ @ lzero ] ->
+  [ G ; Δ ,, tyId lzero tyNat a w @ lzero ⊢[ lD ] tyEmpty lzero ≅ DiscN c1 c2 w⟨↑⟩ @ lzero ] ->
+  [ G ; Δ ⊢[ lD ] diffN a w c1 c2 : SumI lzero tyNat a w @ lmax lzero lzero ].
+Proof.
+  intros E1 E2 Ha Hw Ea Ew. pose proof (ctx_of_wf_tm eq_refl Ha) as H. pose proof (n_wf H) as HN.
+  pose proof (id_wf I0 HN Ha Hw) as HI. pose proof (ext I0 HI) as H1.
+  apply wf_inr; [exact Hv | exact I0 | exact I0 | exact HI | exact (neg_wf I0 HI) |].
+  apply (lc_tm I0), wf_lam; [exact Hv | exact I0 | exact I0 | exact HI |].
+  apply (disjN_wf E1 E2 (wktm H1 Ha) (wktm H1 Hw) Ea Ew).
+  eapply wf_tm_retype; [exact (var0 H1) | sy].
+Qed.
+
+Lemma sameN_wf {Δ s} : [ G ; Δ ⊢[ lD ] s : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] sameN s : SumI lzero tyNat s s @ lmax lzero lzero ].
+Proof.
+  intros Hs. pose proof (n_wf (ctx_of_wf_tm eq_refl Hs)) as HN. pose proof (id_wf I0 HN Hs Hs) as HI.
+  apply wf_inl; [exact Hv | exact I0 | exact I0 | exact HI | exact (neg_wf I0 HI) | exact (wf_idrefl _ _ _ _ _ _ Hv I0 HN Hs)].
+Qed.
+
+Lemma stepSS_wf {Δ n m h} : [ G ; Δ ⊢[ lD ] n : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] m : tyNat @ lzero ] ->
+  [ G ; Δ ⊢[ lD ] h : tyPi lzero lzero tyNat (SumI lzero tyNat n⟨↑⟩ (var 0)) @ lzero ] ->
+  [ G ; Δ ⊢[ lD ] stepSS n m h : SumI lzero tyNat (succ n) (succ m) @ lzero ].
+Proof.
+  intros Hn Hm Hh. pose proof (ctx_of_wf_tm eq_refl Hn) as H. pose proof (n_wf H) as HN.
+  pose proof (id_wf I0 HN Hn Hm) as HI. pose proof (neg_wf I0 HI) as HNI.
+  pose proof (wf_succ _ _ _ _ Hv Hn) as Hsn. pose proof (wf_succ _ _ _ _ Hv Hm) as Hsm.
+  pose proof (ext (l := lmax lzero lzero) (conj I0 I0) (sumI_wf I0 HN Hn Hm)) as HS.
+  pose proof (ext I0 HI) as HΓI. pose proof (ext I0 HNI) as HΓN.
+  assert (Lv : forall A k, [ G ; Δ ,, A @ k ⊢[ lD ] ] ->
+     [ G ; Δ ,, A @ k ⊢[ lD ] n⟨↑⟩ : tyNat @ lzero ] /\ [ G ; Δ ,, A @ k ⊢[ lD ] m⟨↑⟩ : tyNat @ lzero ])
+    by (intros A k H'; split; [exact (wktm H' Hn) | exact (wktm H' Hm)]).
+  eapply wf_tm_retype; [refine (wf_case _ _ _ _ _ _ _ _ _ _ _ _ Hv I0 I0 I0 HI HNI _ _ _ _) | sy].
+  - exact (wkty HS (lc_ty I0 (sumI_wf I0 HN Hsn Hsm))).
+  - destruct (Lv _ _ HΓI) as [Hn1 Hm1]. pose proof (n_wf HΓI) as HN1.
+    pose proof (id_wf I0 HN1 (wf_succ _ _ _ _ Hv Hn1) (wf_succ _ _ _ _ Hv Hm1)) as HJ.
+    eapply wf_tm_retype; [apply (lc_tm I0), wf_inl; [exact Hv | exact I0 | exact I0 | exact HJ | exact (neg_wf I0 HJ) |] | sy].
+    apply (apsucc_wf Hn1 Hm1). eapply wf_tm_retype; [exact (var0 HΓI) | sy].
+  - destruct (Lv _ _ HΓN) as [Hn1 Hm1]. pose proof (n_wf HΓN) as HN1.
+    pose proof (id_wf I0 HN1 (wf_succ _ _ _ _ Hv Hn1) (wf_succ _ _ _ _ Hv Hm1)) as HJ.
+    pose proof (ext I0 HJ) as H2.
+    pose proof (wktm H2 Hn1) as Hn2. pose proof (wktm H2 Hm1) as Hm2. pose proof (n_wf H2) as HN2.
+    pose proof (id_wf I0 HN2 Hn2 Hm2) as HI2.
+    eapply wf_tm_retype; [apply (lc_tm I0), wf_inr; [exact Hv | exact I0 | exact I0 | exact HJ | exact (neg_wf I0 HJ) |] | sy].
+    apply (lc_tm I0), wf_lam; [exact Hv | exact I0 | exact I0 | exact HJ |].
+    eapply wf_tm_retype; [refine (wf_app _ _ _ _ _ _ _ _ _ Hv I0 I0 HI2 (wft_empty _ _ _ _ Hv (ext I0 HI2) I0) _ _) | reflexivity].
+    + apply (cl_tm I0). eapply wf_tm_retype; [exact (var1 H2) | sy].
+    + apply (predap_wf Hn2 Hm2). eapply wf_tm_retype; [exact (var0 H2) | sy].
+  - apply (cl_tm I0). eapply wf_tm_retype;
+      [exact (wf_app _ _ _ _ _ _ _ _ _ Hv I0 I0 HN (lc_ty I0 (sumI_wf I0 (n_wf (ext I0 HN)) (wktm (ext I0 HN) Hn) (var0 (ext I0 HN)))) (cl_tm I0 Hh) Hm) | sy].
+Qed.
+
+Theorem decNat_wf {Γ} : [ G ; Γ ⊢[ lD ] ] -> [ G ; Γ ⊢[ lD ] decNat : DecEq lzero tyNat @ lzero ].
+Proof.
+  intros HΓ. pose proof (n_wf HΓ) as HN.
+  (* contexts: [x], then the outer [natrec]'s motive, zero case and successor case *)
+  pose proof (ext I0 HN) as Hx. pose proof (ext I0 (n_wf Hx)) as Hxw.
+  set (Mx := tyPi lzero lzero tyNat (SumI lzero tyNat (var 1) (var 0))).
+  assert (HMx : [ G ; Γ ,, tyNat @ lzero ,, tyNat @ lzero ⊢[ lD ] Mx @ lzero ]).
+  { pose proof (ext I0 (n_wf Hxw)) as H. apply (lc_ty I0), wft_pi; [exact Hv | exact I0 | exact I0 | exact (n_wf Hxw) |].
+    exact (lc_ty I0 (sumI_wf I0 (n_wf H) (var1 H) (var0 H))). }
+  unfold decNat. fold Mx.
+  apply (lc_tm I0), wf_lam; [exact Hv | exact I0 | exact I0 | exact HN |].
+  eapply wf_tm_retype; [refine (wf_natrec _ _ _ _ _ _ _ _ Hv I0 HMx _ _ (var0 Hx)) | unfold Mx, DecB; sy].
+  - (* [x = zero]: [natrec] on [y] *)
+    eapply (wf_tm_retype _ _ _ _ _ (tyPi lzero lzero tyNat (SumI lzero tyNat zero (var 0)))); [| unfold Mx; sy].
+    apply (lc_tm I0), wf_lam; [exact Hv | exact I0 | exact I0 | exact (n_wf Hx) |].
+    pose proof (ext I0 (n_wf Hx)) as Hy. pose proof (ext I0 (n_wf Hy)) as Hyw.
+    assert (HM : [ G ; _ ⊢[ lD ] SumI lzero tyNat zero (var 0) @ lzero ])
+      by exact (lc_ty I0 (sumI_wf I0 (n_wf Hyw) (wf_zero _ _ _ Hv Hyw) (var0 Hyw))).
+    eapply wf_tm_retype; [refine (wf_natrec _ _ _ _ _ _ _ _ Hv I0 HM _ _ (var0 Hy)) | sy].
+    + eapply wf_tm_retype; [exact (lc_tm I0 (sameN_wf (wf_zero _ _ _ Hv Hy))) | sy].
+    + pose proof (ext I0 HM) as Hz. pose proof (wf_succ _ _ _ _ Hv (var1 Hz)) as Hsm.
+      eapply wf_tm_retype; [apply (lc_tm I0), diffN_wf; [left; reflexivity | right; reflexivity | exact (wf_zero _ _ _ Hv Hz) | exact Hsm | |] | sy].
+      * pose proof (id_wf I0 (n_wf Hz) (wf_zero _ _ _ Hv Hz) Hsm) as HI. pose proof (ext I0 HI) as H'.
+        exact (el_unit (discN_zero H' (or_introl eq_refl) (or_intror eq_refl))).
+      * pose proof (id_wf I0 (n_wf Hz) (wf_zero _ _ _ Hv Hz) Hsm) as HI. pose proof (ext I0 HI) as H'.
+        exact (el_empty (discN_succ (or_introl eq_refl) (or_intror eq_refl) (wktm H' (var1 Hz)))).
+  - (* [x = succ n], with [ih : Π y. n = y + n ≠ y] *)
+    pose proof (ext I0 HMx) as Hn.
+    eapply (wf_tm_retype _ _ _ _ _ (tyPi lzero lzero tyNat (SumI lzero tyNat (succ (var 2)) (var 0)))); [| unfold Mx; sy].
+    apply (lc_tm I0), wf_lam; [exact Hv | exact I0 | exact I0 | exact (n_wf Hn) |].
+    pose proof (ext I0 (n_wf Hn)) as Hy. pose proof (ext I0 (n_wf Hy)) as Hyw.
+    assert (HM : [ G ; _ ⊢[ lD ] SumI lzero tyNat (succ (var 3)) (var 0) @ lzero ])
+      by exact (lc_ty I0 (sumI_wf I0 (n_wf Hyw) (wf_succ _ _ _ _ Hv (wf_var _ lD _ _ _ _ Hyw (in_there _ _ _ _ _ _ (in_there _ _ _ _ _ _ (in_there _ _ _ _ _ _ (in_here _ _ _)))))) (var0 Hyw))).
+    eapply wf_tm_retype; [refine (wf_natrec _ _ _ _ _ _ _ _ Hv I0 HM _ _ (var0 Hy)) | sy].
+    + pose proof (wf_succ _ _ _ _ Hv (wf_var _ lD _ _ _ _ Hy (in_there _ _ _ _ _ _ (in_there _ _ _ _ _ _ (in_here _ _ _))))) as Hsn.
+      eapply wf_tm_retype; [apply (lc_tm I0), diffN_wf; [right; reflexivity | left; reflexivity | exact Hsn | exact (wf_zero _ _ _ Hv Hy) | |] | sy].
+      * pose proof (id_wf I0 (n_wf Hy) Hsn (wf_zero _ _ _ Hv Hy)) as HI. pose proof (ext I0 HI) as H'.
+        exact (el_unit (discN_succ (or_intror eq_refl) (or_introl eq_refl) (wktm H' (wf_var _ lD _ _ _ _ Hy (in_there _ _ _ _ _ _ (in_there _ _ _ _ _ _ (in_here _ _ _))))))).
+      * pose proof (id_wf I0 (n_wf Hy) Hsn (wf_zero _ _ _ Hv Hy)) as HI. pose proof (ext I0 HI) as H'.
+        exact (el_empty (discN_zero H' (or_intror eq_refl) (or_introl eq_refl))).
+    + pose proof (ext I0 HM) as Hz.
+      eapply wf_tm_retype; [apply stepSS_wf | sy].
+      * exact (wf_var _ lD _ _ _ _ Hz (in_there _ _ _ _ _ _ (in_there _ _ _ _ _ _ (in_there _ _ _ _ _ _ (in_there _ _ _ _ _ _ (in_here _ _ _)))))).
+      * exact (var1 Hz).
+      * eapply wf_tm_retype; [exact (wf_var _ lD _ _ _ _ Hz (in_there _ _ _ _ _ _ (in_there _ _ _ _ _ _ (in_there _ _ _ _ _ _ (in_here _ _ _))))) | unfold Mx; sy].
+Qed.
+
+(** UIP at [Nat], as Hedberg's theorem predicts. *)
+Theorem uip_nat_wf {Γ} : [ G ; Γ ⊢[ lD ] ] -> [ G ; Γ ⊢[ lD ] uip_nat : uipT lzero tyNat @ uipL lzero ].
+Proof. intros HΓ. exact (hedberg_wf (l := lzero) I (n_wf HΓ) (decNat_wf HΓ)). Qed.
+
+End NatDec.
 
 End Hedberg.

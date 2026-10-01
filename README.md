@@ -92,7 +92,7 @@ From M8 on, the milestones check the extensions of Heather's kernel
   `t_elimE`, `t_+`, `t'_+`, `t_inl`, `t_inr`, `t_case`). With them the
   no-UIP model's `UIP₀` is stated at `⌜Bool⌝` as the model writes it, and
   Hedberg's theorem is proved in the syntax: a schema, a closed internal
-  statement, and UIP at `Bool` (`Validity/Hedberg.v`). See
+  statement, and UIP at `Bool` and at `Nat` (`Validity/Hedberg.v`). See
   `M12_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to

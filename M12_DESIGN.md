@@ -270,6 +270,17 @@ Everything below is closed under the global context.
   - Gotcha: a code argument (`c1 : tmUnit or tmEmpty`) must be concrete
     (destruct the disjunction) before a substitution through it reduces.
 
-**Not done:** UIP at `Nat` by Hedberg. The model predicts it (§5.2). It
-needs a decider for `Nat`: a double `natrec`, with `succ`-injectivity and
-`0 ≠ succ` by the same large elimination as `Bool`'s.
+**UIP at `Nat`** (`uip_nat_wf`, the same day). The model predicts it
+(§5.2). The decider `decNat` (`decNat_wf`) is a `natrec` on `x`, then one
+on `y`:
+- `(0, 0)` is `refl`.
+- `(0, succ m)` and `(succ n, 0)` are refuted by `J` into
+  `El(natrec(⌜Unit⌝, ⌜Empty⌝, w))`, or its mirror. The `natrec`-β rules
+  decode it to `Unit` and `Empty`.
+- `(succ n, succ m)` is a `case` on the outer hypothesis at `m`. An
+  equation gives `ap succ` of it (`apsucc`). A refutation is composed with
+  `ap pred` (`predap`, a `J` whose types meet by `pred(succ b) ≡ b`,
+  which is `natrec`-β).
+
+Only `Nat`'s own rules are used; `Nat` is level 0, so it is the schema at
+`l = 0`.
