@@ -78,6 +78,15 @@ Proof.
     rewrite <- Eu. reflexivity.
 Qed.
 
+(** The synthesized induction hypothesis's body and codomain, in
+    [Γ, y : B[a/x]]: [wIH] is [λ^{l', l''}(B[a/x]). wbody], at
+    [Π^{l', l''}(B[a/x]). wcod] ([W_E4]). *)
+Notation wbody l l' l'' A B M c a f :=
+  (tmElimW l l' l'' A⟨↑⟩ B⟨rlift ↑⟩ M⟨rlift ↑⟩ c⟨rlift (rlift (rlift ↑))⟩
+     (app f⟨↑⟩ l' (lmax l l') B[lsingle a]⟨↑⟩ (tyW l l' A B)⟨↑⟩⟨rlift ↑⟩ (var 0))).
+Notation wcod l l' A B M a f :=
+  (M⟨rlift ↑⟩[lsingle (app f⟨↑⟩ l' (lmax l l') B[lsingle a]⟨↑⟩ (tyW l l' A B)⟨↑⟩⟨rlift ↑⟩ (var 0))]).
+
 Lemma W_shift3_single3_ty (A : ty) a f h : nfty A -> (A⟨↑⟩⟨↑⟩⟨↑⟩)[lsingle3 a f h] = A.
 Proof.
   intros NA. rewrite !ren_ren_comp_ty, (ren_subst_ty _ _ _ (lshift 0)).
@@ -1589,16 +1598,16 @@ Proof. wk_eqW. Qed.
 
 (** The synthesized induction hypothesis is typed at the [ih] entry's
     instance. *)
-Lemma W_IH_wf {Γ l l' l'' A B M c a f} : lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
+Lemma W_IH_body_wf {Γ l l' l'' A B M c a f} : lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
   [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
   [ G ; Γ ,, tyW l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] ->
   [ G ; Γ ,, A @ l ,, wfty l l' A B @ lmax l' (lmax l l') ,, wihty l l' l'' A B M @ lmax l' l''
       ⊢[ i ] c : wstepty l l' A B M @ l'' ] ->
   [ G ; Γ ⊢[ i ] a : A @ l ] ->
   [ G ; Γ ⊢[ i ] f : tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩ @ lmax l' (lmax l l') ] ->
-  [ G ; Γ ⊢[ i ] wIH l l' l'' A B M c a f : (wihty l l' l'' A B M)[lsingle2 a f] @ lmax l' l'' ].
+  [ G ; Γ ,, B[lsingle a] @ l' ⊢[ i ] wbody l l' l'' A B M c a f : wcod l l' A B M a f @ l'' ].
 Proof.
-  intros Hl Hl' Hl'' HA HB HM Hc Ha Hf. rewrite W_E4. unfold wIH.
+  intros Hl Hl' Hl'' HA HB HM Hc Ha Hf. 
   assert (WL : lwf (gL G) (lmax l l')) by auto using lwf_max.
   assert (HW : [ G ; Γ ⊢[ i ] tyW l l' A B @ lmax l l' ]) by (apply wft_W; auto using compt_self).
   assert (HBa : [ G ; Γ ⊢[ i ] B[lsingle a] @ l' ]) by exact (wf_ty_single Hi HB Ha).
@@ -1613,7 +1622,6 @@ Proof.
   assert (HΓ1AF : [ G ; Γ ,, B[lsingle a] @ l' ,, A⟨↑⟩ @ l ,, wfty l l' A⟨↑⟩ B⟨rlift ↑⟩ @ lmax l' (lmax l l') ⊢[ i ] ])
     by (apply ext_wf; auto using lwf_max).
   pose proof (W_ih_wf Hl Hl' Hl'' HW1 HB1 HM1 HΓ1AF (eqty_refl' HF1) (lequiv_refl _ _ (lwf_max Hl' WL))) as HI1.
-  apply wf_lam; auto.
   apply wf_elimW; auto using compt_self.
   - (* the step, weakened under the telescope *)
     rewrite <- W_step_ren. eapply weakening_r; eauto.
@@ -1626,6 +1634,97 @@ Proof.
     + apply wk_under_ty; [apply ext_wf; [eapply wk1_ty; eauto | exact Hl'] | exact HW1].
     + exact (wk1_tm G i Hi _ _ _ _ _ _ HΓ1 Hf).
     + apply wf_var; [now rewrite Hi | constructor].
+Qed.
+
+Lemma W_IH_wf {Γ l l' l'' A B M c a f} : lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ,, tyW l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] ->
+  [ G ; Γ ,, A @ l ,, wfty l l' A B @ lmax l' (lmax l l') ,, wihty l l' l'' A B M @ lmax l' l''
+      ⊢[ i ] c : wstepty l l' A B M @ l'' ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] ->
+  [ G ; Γ ⊢[ i ] f : tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩ @ lmax l' (lmax l l') ] ->
+  [ G ; Γ ⊢[ i ] wIH l l' l'' A B M c a f : (wihty l l' l'' A B M)[lsingle2 a f] @ lmax l' l'' ].
+Proof.
+  intros Hl Hl' Hl'' HA HB HM Hc Ha Hf. rewrite W_E4. unfold wIH.
+  apply wf_lam; auto; [exact (wf_ty_single Hi HB Ha) |].
+  exact (W_IH_body_wf Hl Hl' Hl'' HA HB HM Hc Ha Hf).
+Qed.
+
+(** ... and respects equal pieces (the validity of [elim_W]'s β, M13a). *)
+Lemma W_IH_body_eq {Γ l l' l'' l4 l5 l6 A A' B B' M M' c c' a a' f f'} :
+  lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
+  lequiv (gL G) l l4 -> lequiv (gL G) l' l5 -> lequiv (gL G) l'' l6 ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] -> [ G ; Γ ,, A @ l ⊢[ i ] B ≅ B' @ l' ] ->
+  [ G ; Γ ,, tyW l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] ->
+  [ G ; Γ ,, tyW l l' A B @ lmax l l' ⊢[ i ] M ≅ M' @ l'' ] ->
+  [ G ; Γ ,, A @ l ,, wfty l l' A B @ lmax l' (lmax l l') ,, wihty l l' l'' A B M @ lmax l' l''
+      ⊢[ i ] c ≅ c' : wstepty l l' A B M @ l'' ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] f ≅ f' : tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩ @ lmax l' (lmax l l') ] ->
+  [ G ; Γ ,, B[lsingle a] @ l' ⊢[ i ] wbody l l' l'' A B M c a f ≅ wbody l4 l5 l6 A' B' M' c' a' f'
+      : wcod l l' A B M a f @ l'' ].
+Proof.
+  intros Hl Hl' Hl'' H14 H25 H36 HA HAA HB HBB HM HMM Hcc Ha Ha' Haa Hff.
+  assert (WL : lwf (gL G) (lmax l l')) by auto using lwf_max.
+  assert (HW : [ G ; Γ ⊢[ i ] tyW l l' A B @ lmax l l' ]) by (apply wft_W; auto using compt_self).
+  assert (EW : [ G ; Γ ⊢[ i ] tyW l l' A B ≅ tyW l4 l5 A' B' @ lmax l l' ])
+    by (apply eqty_W; auto using compt_self).
+  assert (HBa : [ G ; Γ ⊢[ i ] B[lsingle a] @ l' ]) by exact (wf_ty_single Hi HB Ha).
+  assert (EBa : [ G ; Γ ⊢[ i ] B[lsingle a] ≅ B'[lsingle a'] @ l' ]).
+  { eapply eqty_trans; [apply (wf_ty_func HB (d' := lsingle a')); now apply lsub_eq_single|].
+    exact (eqty_single Hi HBB Ha'). }
+  assert (HΓ1 : [ G ; Γ ,, B[lsingle a] @ l' ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HW1 : [ G ; Γ ,, B[lsingle a] @ l' ⊢[ i ] (tyW l l' A B)⟨↑⟩ @ lmax l l' ]) by (eapply wk1_ty; eauto).
+  assert (HA1 : [ G ; Γ ,, B[lsingle a] @ l' ⊢[ i ] A⟨↑⟩ @ l ]) by (eapply wk1_ty; eauto).
+  assert (HΓ1A : [ G ; Γ ,, B[lsingle a] @ l' ,, A⟨↑⟩ @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HB1 : [ G ; Γ ,, B[lsingle a] @ l' ,, A⟨↑⟩ @ l ⊢[ i ] B⟨rlift ↑⟩ @ l' ]) by exact (wk_under_ty HΓ1A HB).
+  assert (HΓ1W : [ G ; Γ ,, B[lsingle a] @ l' ,, (tyW l l' A B)⟨↑⟩ @ lmax l l' ⊢[ i ] ]) by exact (ext_wf HW1 WL).
+  assert (HM1 : [ G ; Γ ,, B[lsingle a] @ l' ,, (tyW l l' A B)⟨↑⟩ @ lmax l l' ⊢[ i ] M⟨rlift ↑⟩ @ l'' ])
+    by exact (wk_under_ty HΓ1W HM).
+  pose proof (W_fty_wf Hl Hl' HW1 HB1) as HF1.
+  assert (HΓ1AF : [ G ; Γ ,, B[lsingle a] @ l' ,, A⟨↑⟩ @ l ,, wfty l l' A⟨↑⟩ B⟨rlift ↑⟩ @ lmax l' (lmax l l') ⊢[ i ] ])
+    by (apply ext_wf; auto using lwf_max).
+  pose proof (W_ih_wf Hl Hl' Hl'' HW1 HB1 HM1 HΓ1AF (eqty_refl' HF1) (lequiv_refl _ _ (lwf_max Hl' WL))) as HI1.
+  apply eqtm_elimW; auto using compt_self.
+  - eapply wk1_eqty; eauto.
+  - exact (wk_under_eqty HΓ1A HBB).
+  - exact (wk_under_eqty HΓ1W HMM).
+  - (* the steps, weakened under the telescope *)
+    rewrite <- W_step_ren. eapply weakening_r; eauto.
+    + repeat (eapply wkr_up'; [ | first [reflexivity | symmetry; first [apply W_fty_ren | apply W_ihty_ren]]]).
+      apply wkr_shift1.
+    + apply ext_wf; auto using lwf_max.
+  - (* the scrutinees: the children at the position *)
+    eapply eq_tm_retype; [apply eqtm_app; auto | exact (W_E8 (tyW l l' A B))].
+    + now apply lequiv_max.
+    + eapply wk1_ty; eauto.
+    + eapply wk1_eqty; eauto.
+    + apply wk_under_eqty; [apply ext_wf; [eapply wk1_ty; eauto | exact Hl'] | eapply wk1_eqty; eauto].
+    + exact (wk1_eqtm G i Hi _ _ _ _ _ _ _ HΓ1 Hff).
+    + apply eqtm_refl, wf_var; [now rewrite Hi | constructor].
+Qed.
+
+Lemma W_IH_eq {Γ l l' l'' l4 l5 l6 A A' B B' M M' c c' a a' f f'} :
+  lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
+  lequiv (gL G) l l4 -> lequiv (gL G) l' l5 -> lequiv (gL G) l'' l6 ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] -> [ G ; Γ ,, A @ l ⊢[ i ] B ≅ B' @ l' ] ->
+  [ G ; Γ ,, tyW l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] ->
+  [ G ; Γ ,, tyW l l' A B @ lmax l l' ⊢[ i ] M ≅ M' @ l'' ] ->
+  [ G ; Γ ,, A @ l ,, wfty l l' A B @ lmax l' (lmax l l') ,, wihty l l' l'' A B M @ lmax l' l''
+      ⊢[ i ] c ≅ c' : wstepty l l' A B M @ l'' ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] f ≅ f' : tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩ @ lmax l' (lmax l l') ] ->
+  [ G ; Γ ⊢[ i ] wIH l l' l'' A B M c a f ≅ wIH l4 l5 l6 A' B' M' c' a' f'
+      : (wihty l l' l'' A B M)[lsingle2 a f] @ lmax l' l'' ].
+Proof.
+  intros Hl Hl' Hl'' H14 H25 H36 HA HAA HB HBB HM HMM Hcc Ha Ha' Haa Hff.
+  rewrite W_E4. unfold wIH.
+  apply eqtm_lam; auto; [exact (wf_ty_single Hi HB Ha) | |].
+  - eapply eqty_trans; [apply (wf_ty_func HB (d' := lsingle a')); now apply lsub_eq_single|].
+    exact (eqty_single Hi HBB Ha').
+  - exact (W_IH_body_eq Hl Hl' Hl'' H14 H25 H36 HA HAA HB HBB HM HMM Hcc Ha Ha' Haa Hff).
 Qed.
 
 Lemma pre_elimW_beta {Γ l l' l'' A B M c a f} : lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
