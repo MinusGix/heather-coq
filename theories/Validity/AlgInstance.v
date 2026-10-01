@@ -515,6 +515,25 @@ Proof.
     refine (conj (@geq_tm_code_sum DE DEL _ _ _ _ _ _ _ _ _ _ H13 H24 Es Et) _).
     eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmSum | apply whnf_tmSum |].
     exact (actmnf_code_sum _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24) Ds Dt).
+  (* well-founded trees (M13a) *)
+  - intros * H13 H24 HA (EA & DA) (EB & DB).
+    refine (conj (@geq_ty_W DE DEL _ _ _ _ _ _ _ _ _ _ H13 H24 HA EA EB) _).
+    eapply act_red; [constructor | constructor | apply whnf_tyW | apply whnf_tyW |].
+    exact (actnf_W _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24) DA DB).
+  - intros * H13 H24 HA (EA & DA) HB (EB & DB) (Ea & Da) (Ef & Df).
+    refine (conj (@geq_tm_sup DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ H13 H24 HA EA HB EB Ea Ef) _).
+    eapply actm_red; [constructor | apply whnf_tyW | constructor | constructor | apply whnf_sup | apply whnf_sup |].
+    exact (actmnf_sup _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Da Df).
+  - intros * H14 H25 H36 HA (EA & DA) HB (EB & DB) HM (EM & DM) (Ec & Dc)
+      ((Hn & Hn' & Eν) & T0 & Dν & ETν).
+    pose proof (@gne_tm_elimW DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H14 H25 H36 HA EA HB EB HM EM Ec
+                  (conj Hn (conj Hn' Eν))) as X.
+    refine (conj X _). destruct X as (_ & _ & EX).
+    destruct (ne_nee Dν ETν) as (W0 & Xν & _).
+    exists M[lsingle ν]. split.
+    + exact (actmne_elimW _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H14) (lequiv_leqv _ _ _ H25)
+               (lequiv_leqv _ _ _ H36) DA DB DM Dc Xν).
+    + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
 Qed.
 
 End Alg.

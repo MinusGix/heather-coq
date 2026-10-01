@@ -161,6 +161,8 @@ Proof.
       | destruct (inva_inl H1) as (_ & Hk & E); destruct (inva_inl H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_inr H1) as (_ & Hk & E); destruct (inva_inr H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_case H1) as (_ & Hk & E); destruct (inva_case H2) as (_ & Hk' & E'); uq_same
+      | destruct (inva_sup H1) as (_ & Hk & E); destruct (inva_sup H2) as (_ & Hk' & E'); uq_same
+      | destruct (inva_elimW H1) as (_ & Hk & E); destruct (inva_elimW H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_code_empty H1) as (_ & Hk & E); destruct (inva_code_empty H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_code_sum H1) as (_ & Hk & E); destruct (inva_code_sum H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_app H1) as (_ & Hk & E); destruct (inva_app H2) as (_ & Hk' & E'); uq_same

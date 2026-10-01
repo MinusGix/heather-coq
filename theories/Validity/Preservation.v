@@ -592,6 +592,39 @@ Proof.
   exact (wf_ty_func Hi HM (lsub_eq_single Hi Ht (eqtm_wf_l Hi Hinr) (eqtm_sym _ _ _ _ _ _ _ Hinr))).
 Qed.
 
+(** [elim_W] (M13a): the congruence at the scrutinee, and β at a [sup] of
+    any annotations (they equal the [elim_W]'s, by injectivity). *)
+Lemma RS_elimW l l' l'' A B M c t t' : RS_tm t t' ->
+  RS_tm (tmElimW l l' l'' A B M c t) (tmElimW l l' l'' A B M c t').
+Proof.
+  intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_elimW Hi Hx) as ((_ & W1 & W2 & W3 & HA & HB & HM & HF & HI & Hc0 & Ht) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  apply eqtm_elimW; first [exact Hc | apply lequiv_refl; assumption | exact (IH _ _ _ _ _ Hc Ht) | assumption
+                          | apply eqty_refl; assumption | apply eqtm_refl; assumption].
+Qed.
+
+Lemma RS_elimW_sup l l' l'' A B M c k k' C D a f :
+  RS_tm (tmElimW l l' l'' A B M c (tmSup k k' C D a f)) c[lsingle3 a f (wIH l l' l'' A B M c a f)].
+Proof.
+  intros G i Γ T m Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_elimW Hi Hx) as ((_ & W1 & W2 & W3 & HA & HB & HM & HF & HI & Hc0 & Ht) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  destruct (sup_parts Hc Ht) as (_ & _ & _ & _ & Ha & Hf).
+  destruct (inv_sup Hi Ht) as (_ & _ & ESup).
+  destruct (W_inj_c Hc ESup) as (Ekl & Ek'l' & EAC & EBD).
+  assert (Hsup : [ G ; Γ ⊢[ i ] tmSup l l' A B a f ≅ tmSup k k' C D a f : tyW l l' A B @ lmax l l' ])
+    by (apply eqtm_sup; first [exact Hc | assumption | now apply lequiv_sym | apply eqtm_refl; assumption]).
+  assert (Hcong : [ G ; Γ ⊢[ i ] tmElimW l l' l'' A B M c (tmSup k k' C D a f)
+                     ≅ tmElimW l l' l'' A B M c (tmSup l l' A B a f) : M[lsingle (tmSup k k' C D a f)] @ l'' ]).
+  { apply eqtm_elimW; first [exact Hc | apply lequiv_refl; assumption | apply eqtm_sym, Hsup | assumption
+                            | apply eqty_refl; assumption | apply eqtm_refl; assumption]. }
+  pose proof (eqtm_elimW_sup _ _ _ _ _ _ _ _ _ _ _ _ Hc W1 W2 W3 HA HB HM HF HI Hc0 Ha Hf) as Hb.
+  eapply eqtm_trans; [exact Hcong |].
+  eapply eqtm_conv; [exact Hb | rewrite Hi].
+  exact (wf_ty_func Hi HM (lsub_eq_single Hi Ht (eqtm_wf_l Hi Hsup) (eqtm_sym _ _ _ _ _ _ _ Hsup))).
+Qed.
+
 (** ** Soundness of reduction *)
 
 Theorem red_sound_all (HR : RecRedTyped) :
@@ -618,6 +651,7 @@ Proof.
     | solve [apply RS_El_seq] | solve [apply RS_El_sempty]
     | solve [apply RS_elimEmpty; assumption]
     | solve [apply RS_case_inl] | solve [apply RS_case_inr] | solve [apply RS_case; assumption]
+    | solve [apply RS_elimW_sup] | solve [apply RS_elimW; assumption]
     | solve [apply RS_El_empty] | solve [apply RS_El_sum] ].
 Qed.
 

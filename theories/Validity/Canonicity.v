@@ -9,8 +9,8 @@
       at [Nat], a code at a universe, [λ] at [Π], [box] at [□], [Λ] at
       [UΠ], a context or type abstraction at [CΠ]/[TΠ], a pair at [Σ], [⟨⟩]
       at [Unit], [srefl] at [sEq], and nothing at [sEmpty] (M10a), [refl] at
-      [Id] (M11a), nothing at [Empty] (M12a) and an injection at [+]
-      (M12b).
+      [Id] (M11a), nothing at [Empty] (M12a), an injection at [+]
+      (M12b) and [sup] at [W] (M13a).
 
     Closed whnfs are not neutral ([no_closed_neutral]). A value's typing
     inversion equates its type with its canonical type former, and head
@@ -37,6 +37,7 @@ Definition canon_head (h : nat) (w : tm) : Prop :=
   | 12 => exists l A a, w = srefl l A a
   | 14 => exists l A a, w = tmRefl l A a
   | 16 => (exists l l' A B a, w = tmInl l l' A B a) \/ exists l l' A B b, w = tmInr l l' A B b
+  | 17 => exists l l' A B a f, w = tmSup l l' A B a f
   | _ => False
   end.
 
@@ -58,6 +59,7 @@ Proof.
           | pose proof (inv_code_id Hi Hx) as X
           | pose proof (inv_code_seq Hi Hx) as X | pose proof (inv_code_sempty Hi Hx) as X
           | pose proof (inv_inl Hi Hx) as X | pose proof (inv_inr Hi Hx) as X
+          | pose proof (inv_sup Hi Hx) as X
           | pose proof (inv_code_empty Hi Hx) as X | pose proof (inv_code_sum Hi Hx) as X ];
     repeat match goal with H : exists _, _ |- _ => destruct H | H : _ /\ _ |- _ => destruct H end;
     match goal with E : [ _ ; _ ⊢[ _ ] W ≅ _ @ _ ] |- _ =>
@@ -175,6 +177,22 @@ Proof.
   - left. exists l1, l2, C, D, a. exact (conj Hr (inl_payload Hc (eqtm_wf_r Hi E))).
   - right. exists l1, l2, C, D, b. exact (conj Hr (inr_payload Hc (eqtm_wf_r Hi E))).
 Qed.
+(** ** Well-founded trees (M13a) *)
+
+(** A closed term of [W] computes to a [sup], whose shape and child
+    function are closed terms of the shape type and of the child function
+    type at that shape. *)
+Corollary closed_W_canonicity {G i t l l' A B k} : compt i -> closed_ok i G ->
+  [ G ; cnil ⊢[ i ] t : tyW l l' A B @ k ] ->
+  exists l1 l2 C D a f, reds t (tmSup l1 l2 C D a f) /\ [ G ; cnil ⊢[ i ] a : A @ l ] /\
+    [ G ; cnil ⊢[ i ] f : tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩ @ lmax l' (lmax l l') ].
+Proof.
+  intros Hc HG Ht. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (closed_canonicity_whnf Hc HG (whnf_tyW _ _ _ _) Ht) as (w & Hr & _ & E & (l1 & l2 & C & D & a & f & ->)).
+  destruct (sup_parts Hc (eqtm_wf_r Hi E)) as (_ & _ & _ & _ & Ha & Hf).
+  exists l1, l2, C, D, a, f. exact (conj Hr (conj Ha Hf)).
+Qed.
+
 
 (** For example, closed functions compute to [λ]s. *)
 Corollary closed_pi_canonicity {G i t l l' A B k} : compt i -> closed_ok i G ->
