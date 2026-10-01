@@ -1,7 +1,7 @@
 # DeLaM formalization: notes for agents
 
 Start by reading `README.md`, then `HEATHER.md` (Heather's extensions: the
-forward agenda), `M12_DESIGN.md` (current milestone), `M11_DESIGN.md`, `M10_DESIGN.md`, `M9_DESIGN.md`,
+forward agenda), `M13_DESIGN.md` (current milestone), `M12_DESIGN.md`, `M11_DESIGN.md`, `M10_DESIGN.md`, `M9_DESIGN.md`,
 `M8_DESIGN.md`, `M7_DESIGN.md`, `M6_DESIGN.md`, `M5_DESIGN.md`,
 `M4_DESIGN.md`, `M3_DESIGN.md`, `M2_DESIGN.md` and `M1_DESIGN.md`. The latter holds the M1
 current status, the ordered next steps, deviations from the paper, and a
@@ -24,8 +24,8 @@ list of proof-engineering gotchas. Follow it.
 ## Build
 
 - `nix develop path:. --command make -j2` (Coq 8.20, Equations, smpl from
-  the flake). A clean build takes about 7 minutes (426 s wall, 2026-09-30,
-  after M12c; M12b took 382 s the same day, 326 s when recorded; 249 s after M10c, 234 s after M11b, 168 s before M11a, down
+  the flake). A clean build takes about 7.5 minutes (443 s wall, 2026-10-01,
+  after M13a; 426 s after M12c; M12b took 382 s the same day, 326 s when recorded; 249 s after M10c, 234 s after M11b, 168 s before M11a, down
   from 8.5 minutes). The critical path (Syntax → Typing metatheory →
   Validity → the algorithm) is nearly the whole build, so more jobs don't
   help; only faster files on that path do. `make TIMING=1` writes per-file

@@ -1,6 +1,6 @@
 # M13: well-founded trees (`W`), design
 
-Status: **in progress** (M13a started 2026-10-01). Why now: `HEATHER.md`
+Status: **M13a done, 2026-10-01** (outcome below); M13b next. Why now: `HEATHER.md`
 item 5 lists `W` after `Empty` and `+`, and Heather's paper pass calls it
 "the heaviest case" (MX §5). It is the first former whose term relation is
 an inductive definition with a Kripke-quantified recursive premise, and the
@@ -94,3 +94,62 @@ shape and family data change in the recursive premise.
   `WRel_kw` (Weakening), `WRel_leq` (LevelInv) and `WRel_perm` (UPermLR,
   over worlds that correspond along the permutation, `kcorr`; the backward
   direction is the forward one along `πi`).
+
+## M13a outcome (2026-10-01)
+
+Done at layers D and M. Every headline theorem stays closed under the
+global context (`Print Assumptions` of `wf_tm_dec`, `V_elimW_sup`,
+`closed_W_canonicity` and `T_actmne_elimW` lists nothing), and
+`closed_W_canonicity` is new.
+
+- **Syntax and rules** as above, gated by `compt i`: `wft_W`, `wf_sup`,
+  `wf_elimW`, their congruences, and β at a `sup` that carries the
+  `elim_W`'s own annotations (`eqtm_elimW_sup`). `wf_elimW` takes the
+  telescope's types (`wfty`, `wihty`) as premises, so inversion returns
+  them. β at other annotations follows from injectivity of `W`
+  (`RS_elimW_sup`). Presupposition gains the telescope lemmas
+  (`W_fty_wf`, `W_ih_wf`, `W_ih_eq`, `W_step_eq`) and the synthesized
+  induction hypothesis's (`W_IH_wf`, `W_IH_eq`): β's right-hand side is
+  well formed and congruent.
+- **Relation**: `LRw` with `WRel`/`WNf`, as designed above, plus the
+  `WhRel` premise on child functions.
+- **Validity** (`Validity/W.v`, `Validity/WElim.v`): `V_W`, `V_sup`,
+  `V_elimW` and `V_elimW_sup`. `elim_W` is related by induction on
+  `WRel` (`elimW_core`) at every global weakening and related
+  substitution, with motive `elimW_mrel`. At a `sup` both sides step to
+  the step at the shape, the child function and `wIH`, a λ whose
+  applications step to `elim_W` at the children, related by the
+  induction hypothesis (`elimW_step`). The global-substitution layer
+  (`RulesS`) and `FundamentalM` extend; the latter runs its universe
+  substitution pass twice when `W` is in the goal, since `B[a]` and
+  `W⟨↑⟩` inside `fty` expose a push only after the first pass.
+- **Algorithm**:
+  - `W` is `posty`. `sup`s are compared by shape and by child function,
+    both at the left side's types (`actmnf_sup`); `elim_W` is a neutral
+    whose step is compared in the left side's telescope at the left side's
+    step type (`actmne_elimW`).
+  - `AlgSound.v`: `W_inj_c`, `sup_parts` (a typed `sup`'s parts at its
+    type's annotations), `fty_conv` (child function types at equal shapes
+    are equal), `W_ctx_conv` and `elimW_step_left` (the right step moved
+    into the left telescope along the identity).
+  - `AlgPER.v`: `W_tele_eq` (two telescopes with equal parts are equal
+    contexts both ways, with equal step types). Symmetry moves the swapped
+    step into the right telescope; transitivity moves the second
+    comparison's step from the middle telescope to the left.
+  - Conversion, lifting, decidability and the `AlgEq` laws (`geq_ty_W`,
+    `geq_tm_sup`, `gne_tm_elimW`) extend.
+- **Consequences**:
+  - `closed_W_canonicity`: a closed term of `W` computes to a `sup` whose
+    shape and child function are closed terms of the shape type and of the
+    child function type at that shape.
+  - Canonicity's head table lists `sup` at `W` (head 17).
+  - Preservation (`RS_elimW`, `RS_elimW_sup`), type uniqueness,
+    consistency (`neutral_univ`) and type checking (`dec_tyW`, `sy_sup`,
+    `sy_elimW`; `elim_W`'s step type is built from the decided shape,
+    positions and motive) extend.
+
+**Cost.** 58 files, about 5000 lines added: `Validity/W.v` and
+`Validity/WElim.v` are 1220 lines, the relation's files about 1260, the
+typing presupposition about 700 and the algorithmic families about 870.
+The clean build takes 443 s (from 426 s after M12c; Hedberg's files,
+added in between, are part of the difference).

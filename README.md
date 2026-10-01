@@ -94,9 +94,15 @@ From M8 on, the milestones check the extensions of Heather's kernel
   Hedberg's theorem is proved in the syntax: a schema, a closed internal
   statement, and UIP at `Bool` and at `Nat` (`Validity/Hedberg.v`). See
   `M12_DESIGN.md`.
+- Milestone 13a: well-founded trees. `W`, `sup` and the dependent
+  eliminator `elim_W` hold at layers D and M, with β (whose right-hand
+  side synthesizes the induction hypothesis as a λ) and no η. The term
+  relation is an inductive family whose children's premise is Kripke
+  quantified, and `elim_W` is valid by induction on it. Closed canonicity
+  gives a `sup` at `W` (`closed_W_canonicity`). See `M13_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
-`M12_DESIGN.md`) for decisions, deviations from the paper and gotchas.
+`M13_DESIGN.md`) for decisions, deviations from the paper and gotchas.
 
 Documents:
 
