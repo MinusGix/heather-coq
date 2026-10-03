@@ -1449,9 +1449,9 @@ Proof.
   pose proof (ac_ty_sound Hc DB HB HB'A) as EB.
   assert (WL : lwf (gL G) (lmax l1 l2)) by (cbn; split; assumption).
   assert (HL : lequiv (gL G) (lmax l7 l8) (lmax l1 l2)) by (apply lequiv_max; now apply lequiv_sym).
-  assert (HW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ]) by (apply wft_W; assumption).
+  assert (HW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ]) by (apply wft_W; first [assumption | (apply compt_notV; eassumption)]).
   assert (EW' : [ G ; Γ ⊢[ i ] tyW l7 l8 A' B' ≅ tyW l1 l2 A B @ lmax l7 l8 ]).
-  { eapply eqty_lconv; [apply eqty_sym, eqty_W; assumption | exact HL]. }
+  { eapply eqty_lconv; [apply eqty_sym, eqty_W; first [assumption | (apply compt_notV; eassumption)] | exact HL]. }
   pose proof (ext_wf Hi HW WL) as HΓW.
   pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi EW' HL HΓW HM') E39) as HM'3.
   destruct (IHM M' i _ _ Hc HM HM'3) as [DM | N]; [| refute].

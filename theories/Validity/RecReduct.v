@@ -186,6 +186,25 @@ Ltac rr_ctx :=
   rewrite ?lvren_ush_uext' by reflexivity;
   rewrite ?(lvsubst_id l1 lvar (fun _ => eq_refl)), ?(lvsubst_id l2 lvar (fun _ => eq_refl)); rr_sl0.
 
+(** [elimW]'s scope (M13b): its step telescope's [wfty]/[wihty]/[wstepty]
+    are pushed through the substitutions whole, so the full [cbn] of
+    [rr_ctx] (which would unfold their weakenings) is replaced by one that
+    leaves renamings alone. *)
+Ltac rr_ctx_W os :=
+  cbn [brΓ brLocs cexts br_nu br_ng br_nl br_ar ucsubst mkLocs call_ty call_lv br_calls lext fold_left];
+  rewrite ?gs_cext; rewrite wkc_inst' by reflexivity; rewrite Γ_id;
+  repeat apply lsub_wf_lcons; [exact (lsub_wf_id G lM eq_refl Γ HΓ) | ..];
+  repeat rr_wkb_rw;
+  cbn [gsubst GSubst_ctx GSubst_ty GSubst_tm]; rewrite ?uc_ext, ?gc_ext;
+  rewrite ?us_wfty, ?us_wihty, ?us_wstepty, ?gs_wfty, ?gs_wihty, ?gs_wstepty;
+  rewrite ?lvren_ush_uext' by reflexivity;
+  rewrite ?(lvsubst_id l1 lvar (fun _ => eq_refl)), ?(lvsubst_id l2 lvar (fun _ => eq_refl));
+  unfold os; unfold uext, gext_s, gv, gu; try unfold lsingle; try unfold lsucc;
+  cbn [length Nat.ltb Nat.leb Nat.sub nth lvsubst ucsubst usubst_tm usubst_ty ulsubst gcsubst gsubst_tm
+       gsubst_ty glsubst pctx pty ptm subst_tm subst_ty lcomp gsubst GSubst_tm GSubst_ty GSubst_ctx subst
+       Subst_tm Subst_ty lext fold_left llk lcons'];
+  rr_sl0.
+
 Lemma rr_T_nat {l Δ r} : [ G ; Δ ⊢[ lD ] ] -> redT l1 l2 (mkrb MT Mt bs) l Δ tyNat = Some r ->
   [ G ; Γ ⊢[ lM ] r : motT (wrapMT MT) lzero Δ (boxT tyNat) @ l1 ].
 Proof.
@@ -1534,7 +1553,7 @@ Proof.
   refine (rr_br 42 (k :: k' :: k'' :: nil) os (x1 :: x2 :: x3 :: x4 :: x5 :: nil)
             ltac:(cbv; lia) eq_refl eq_refl eq_refl
             (Forall_cons _ Wk (Forall_cons _ Wk' (Forall_cons _ Wk'' (Forall_nil _)))) Ho Hxs Hσ _ _ _).
-  - rr_ctx; eassumption.
+  - rr_ctx_W os; eassumption.
   - rr_res.
   - exact (brLv_t_id 42 (k :: k' :: k'' :: nil) eq_refl eq_refl).
 Qed.

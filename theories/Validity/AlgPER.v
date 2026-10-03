@@ -65,11 +65,11 @@ Proof.
   assert (HBA' : [ G ; Γ ,, A' @ l4 ⊢[ i ] B @ l2 ]) by exact (stab_ty Hi EA H14 HΓA' HB).
   assert (EB' : [ G ; Γ ,, A' @ l4 ⊢[ i ] B' ≅ B @ l5 ]).
   { eapply eqty_lconv; [|exact H52]. exact (stab_eqty Hi EA H14 HΓA' (eqty_sym _ _ _ _ _ _ EB)). }
-  assert (HW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ]) by (apply wft_W; assumption).
-  assert (HW' : [ G ; Γ ⊢[ i ] tyW l4 l5 A' B' @ lmax l4 l5 ]) by (apply wft_W; assumption).
-  assert (EW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B ≅ tyW l4 l5 A' B' @ lmax l1 l2 ]) by (apply eqty_W; assumption).
+  assert (HW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ]) by (apply wft_W; first [assumption | (apply compt_notV; eassumption)]).
+  assert (HW' : [ G ; Γ ⊢[ i ] tyW l4 l5 A' B' @ lmax l4 l5 ]) by (apply wft_W; first [assumption | (apply compt_notV; eassumption)]).
+  assert (EW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B ≅ tyW l4 l5 A' B' @ lmax l1 l2 ]) by (apply eqty_W; first [assumption | (apply compt_notV; eassumption)]).
   assert (EW' : [ G ; Γ ⊢[ i ] tyW l4 l5 A' B' ≅ tyW l1 l2 A B @ lmax l4 l5 ])
-    by (apply eqty_W; first [exact Hc | assumption]).
+    by (apply eqty_W; first [(apply compt_notV; exact Hc) | exact Hc | assumption]).
   (* the child functions *)
   pose proof (W_fty_wf Hi Hv (X := A) (lx := l1) W1 W2 HW HB) as HF.
   pose proof (W_fty_wf Hi Hv (X := A') (lx := l4) W4 W5 HW' HB') as HF'.
@@ -1166,8 +1166,8 @@ Proof.
   pose proof (ac_ty_sound Hc DB HB HB'A) as EB.
   assert (WL : lwf (gL G) (lmax l1 l2)) by (cbn; split; assumption).
   assert (HL : lequiv (gL G) (lmax l4 l5) (lmax l1 l2)) by (apply lequiv_max; now apply lequiv_sym).
-  assert (HW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ]) by (apply wft_W; assumption).
-  assert (EW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B ≅ tyW l4 l5 A' B' @ lmax l1 l2 ]) by (apply eqty_W; assumption).
+  assert (HW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ]) by (apply wft_W; first [assumption | (apply compt_notV; eassumption)]).
+  assert (EW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B ≅ tyW l4 l5 A' B' @ lmax l1 l2 ]) by (apply eqty_W; first [assumption | (apply compt_notV; eassumption)]).
   assert (EW' : [ G ; Γ ⊢[ i ] tyW l4 l5 A' B' ≅ tyW l1 l2 A B @ lmax l4 l5 ]).
   { eapply eqty_lconv; [apply eqty_sym, EW | exact HL]. }
   pose proof (ext_wf Hi HW WL) as HΓW.
@@ -3317,12 +3317,12 @@ Proof.
   (* the motives, at the left [W] *)
   assert (WL : lwf (gL G) (lmax l1 l2)) by (cbn; split; assumption).
   assert (WL' : lwf (gL G) (lmax l4 l5)) by (cbn; split; assumption).
-  assert (HW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ]) by (apply wft_W; assumption).
-  assert (HW' : [ G ; Γ ⊢[ i ] tyW l4 l5 A' B' @ lmax l4 l5 ]) by (apply wft_W; assumption).
+  assert (HW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ]) by (apply wft_W; first [assumption | (apply compt_notV; eassumption)]).
+  assert (HW' : [ G ; Γ ⊢[ i ] tyW l4 l5 A' B' @ lmax l4 l5 ]) by (apply wft_W; first [assumption | (apply compt_notV; eassumption)]).
   pose proof (ext_wf Hi HW WL) as HΓW. pose proof (ext_wf Hi HW' WL') as HΓW'.
-  assert (EW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B ≅ tyW l4 l5 A' B' @ lmax l1 l2 ]) by (apply eqty_W; assumption).
-  assert (EW2 : [ G ; Γ ⊢[ i ] tyW l4 l5 A' B' ≅ tyW l7 l8 A'' B'' @ lmax l4 l5 ]) by (apply eqty_W; assumption).
-  assert (EW13 : [ G ; Γ ⊢[ i ] tyW l1 l2 A B ≅ tyW l7 l8 A'' B'' @ lmax l1 l2 ]) by (apply eqty_W; assumption).
+  assert (EW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B ≅ tyW l4 l5 A' B' @ lmax l1 l2 ]) by (apply eqty_W; first [assumption | (apply compt_notV; eassumption)]).
+  assert (EW2 : [ G ; Γ ⊢[ i ] tyW l4 l5 A' B' ≅ tyW l7 l8 A'' B'' @ lmax l4 l5 ]) by (apply eqty_W; first [assumption | (apply compt_notV; eassumption)]).
+  assert (EW13 : [ G ; Γ ⊢[ i ] tyW l1 l2 A B ≅ tyW l7 l8 A'' B'' @ lmax l1 l2 ]) by (apply eqty_W; first [assumption | (apply compt_notV; eassumption)]).
   assert (EW' : [ G ; Γ ⊢[ i ] tyW l4 l5 A' B' ≅ tyW l1 l2 A B @ lmax l4 l5 ])
     by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EW) | apply lequiv_max; now apply lequiv_sym]).
   assert (EW2' : [ G ; Γ ⊢[ i ] tyW l7 l8 A'' B'' ≅ tyW l4 l5 A' B' @ lmax l7 l8 ])

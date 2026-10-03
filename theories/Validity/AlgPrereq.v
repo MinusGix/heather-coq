@@ -319,7 +319,10 @@ Ltac br_tac :=
     [ assumption | exact I | reflexivity | discriminate | apply lle_refl
     (* well-founded trees (M13b): the step telescope's scopes, by [RecWf]'s
        memoised scope automation *)
-    | match goal with |- context [tyW _ _ _ _] => solve [unfold gv, gu; wnorm; wtop] end
+    | match goal with
+      | |- context [tyW _ _ _ _] => idtac | |- context [tmW _ _ _ _] => idtac
+      | |- context [tmElimW _ _ _ _ _ _ _ _] => idtac end;
+      solve [unfold gv, gu; wnorm; wtop]
     | glookup
     | apply wkr_id | apply wkr_shift_S
     | apply wfc_var | apply wfc_ext

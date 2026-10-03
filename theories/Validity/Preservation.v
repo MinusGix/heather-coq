@@ -611,7 +611,7 @@ Proof.
   intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_elimW Hi Hx) as ((_ & W1 & W2 & W3 & HA & HB & HM & HF & HI & Hc0 & Ht) & Hk & ET).
   refine (retype_eqtm Hi _ Hk ET).
-  apply eqtm_elimW; first [exact Hc | apply lequiv_refl; assumption | exact (IH _ _ _ _ _ Hc Ht) | assumption
+  apply eqtm_elimW; first [exact Hc | now apply compt_notV | apply lequiv_refl; assumption | exact (IH _ _ _ _ _ Hc Ht) | assumption
                           | apply eqty_refl; assumption | apply eqtm_refl; assumption].
 Qed.
 
@@ -625,10 +625,10 @@ Proof.
   destruct (inv_sup Hi Ht) as (_ & _ & ESup).
   destruct (W_inj_c Hc ESup) as (Ekl & Ek'l' & EAC & EBD).
   assert (Hsup : [ G ; Γ ⊢[ i ] tmSup l l' A B a f ≅ tmSup k k' C D a f : tyW l l' A B @ lmax l l' ])
-    by (apply eqtm_sup; first [exact Hc | assumption | now apply lequiv_sym | apply eqtm_refl; assumption]).
+    by (apply eqtm_sup; first [exact Hc | now apply compt_notV | assumption | now apply lequiv_sym | apply eqtm_refl; assumption]).
   assert (Hcong : [ G ; Γ ⊢[ i ] tmElimW l l' l'' A B M c (tmSup k k' C D a f)
                      ≅ tmElimW l l' l'' A B M c (tmSup l l' A B a f) : M[lsingle (tmSup k k' C D a f)] @ l'' ]).
-  { apply eqtm_elimW; first [exact Hc | apply lequiv_refl; assumption | apply eqtm_sym, Hsup | assumption
+  { apply eqtm_elimW; first [exact Hc | now apply compt_notV | apply lequiv_refl; assumption | apply eqtm_sym, Hsup | assumption
                             | apply eqty_refl; assumption | apply eqtm_refl; assumption]. }
   pose proof (eqtm_elimW_sup _ _ _ _ _ _ _ _ _ _ _ _ Hc W1 W2 W3 HA HB HM HF HI Hc0 Ha Hf) as Hb.
   eapply eqtm_trans; [exact Hcong |].

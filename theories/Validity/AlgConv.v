@@ -1564,7 +1564,7 @@ Proof.
   pose proof (gconv_ty HE HA) as HA2. pose proof (gconv_tm HE Hi Ha) as Ha2.
   pose proof (gconv_ty HE HB) as HB2.
   assert (EW2 : [ G2 ; Γ ⊢[ i ] tyW l l' A B ≅ tyW m1 m2 A2 B2 @ lmax l l' ])
-    by (apply eqty_W; first [exact Hc | now apply lequiv_sym | assumption]).
+    by (apply eqty_W; first [(apply compt_notV; exact Hc) | exact Hc | now apply lequiv_sym | assumption]).
   assert (HBa : [ G2 ; Γ ⊢[ i ] B[lsingle a] @ l' ]) by exact (wf_ty_single Hi HB2 Ha2).
   pose proof (ext_wf Hi HBa Wl') as HΓB.
   assert (EF : [ G2 ; Γ ⊢[ i ] tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩
@@ -1603,9 +1603,9 @@ Proof.
   pose proof (ac_ty_sound Hc DB HB HB'A) as EB.
   assert (WL : lwf (gL G) (lmax l1 l2)) by (cbn; split; assumption).
   assert (HL : lequiv (gL G) (lmax l4 l5) (lmax l1 l2)) by (apply lequiv_max; now apply lequiv_sym).
-  assert (HW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ]) by (apply wft_W; assumption).
+  assert (HW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ]) by (apply wft_W; first [assumption | (apply compt_notV; eassumption)]).
   assert (EW' : [ G ; Γ ⊢[ i ] tyW l4 l5 A' B' ≅ tyW l1 l2 A B @ lmax l4 l5 ]).
-  { eapply eqty_lconv; [apply eqty_sym, eqty_W; assumption | exact HL]. }
+  { eapply eqty_lconv; [apply eqty_sym, eqty_W; first [assumption | (apply compt_notV; eassumption)] | exact HL]. }
   pose proof (ext_wf Hi HW WL) as HΓW.
   pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi EW' HL HΓW HM') E36) as HM'3.
   pose proof (ac_ty_sound Hc DM HM HM'3) as EM.
