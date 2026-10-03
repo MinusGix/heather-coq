@@ -213,6 +213,16 @@ closed under the global context (`Print Assumptions` of `wf_tm_dec`,
   `rec_t_case`'s, with `W_facts` at both sides' levels); `RecReduct` has
   `rr_T_W`, `rr_t_codeW`, `rr_t_sup`, `rr_t_elimW` and the `C_*` entries.
 
+**Build time.** On one machine the same day, the clean build went from
+698 s (M13a) to 808 s, about 160 s more CPU over all files. The new
+branches account for most of it: `RecAdm` +20 s, `RecS` +15 s,
+`AlgPrereq` +12 s, and the push lemmas' new cases in `GWeakening` and
+`RecGSubst` +15 s each. `elim_W`'s scope first made `RecAdm` 68 s and
+`AlgPrereq` 40 s, half of it in `glookup`, which normalises the renamed
+declaration at every lookup. `glookups` (`RecWf`) now computes a W scope's
+lookups once as hypotheses that `glookup` reuses (`w_lookups`), which took
+`elim_W`'s scope proof from 27 s to 9 s.
+
 **Cost.** Step 1: 31 files, about 510 lines. Step 2: 27 files, about
 1530 lines added and 140 changed, of which `RecS` is 620, `StaticCode`
 230, `RecReduct` 190 and `RecWf` 130.

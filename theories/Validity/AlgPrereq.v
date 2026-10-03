@@ -389,6 +389,7 @@ Proof.
   pose proof (wf_wkc_br G Γ k Hk HΓ) as HB.
   br_all ltac:(try (destruct k as [|k])).
   all: try (exfalso; lia).
+  all: match goal with |- context [brG ?kk ?G0] => w_lookups kk (gΨ (brG kk G0)) end.
   all: br_solve HMT HMt HG0 HB.
 Qed.
 

@@ -85,9 +85,31 @@ Proof. intros HΓ. exact (wf_var _ _ _ _ _ _ HΓ (in_here _ _ _)). Qed.
 (** A global lookup at a concrete position of a concrete prefix. *)
 Ltac glookup :=
   match goal with
+  | H : in_gctx ?Ψ ?n _ |- in_gctx ?Ψ ?n _ => exact H
   | |- in_gctx ?Ψ ?n _ =>
       let H := fresh in pose proof (in_gctx_nth Ψ n _ eq_refl) as H; cbn in H; exact H
   end.
+
+(** The lookups of a scope's own declarations, computed once and kept as
+    hypotheses that [glookup] reuses (M13b: [elim_W]'s scope looks its six
+    entries up about a hundred times, and each lookup normalises the
+    renamed declaration). It stops at the first position it cannot
+    compute, the scope's end. *)
+Ltac glookups_from Ψ n :=
+  let e := eval cbn in (nth_error Ψ n) in
+  lazymatch e with
+  | Some ?D =>
+      let D' := eval cbn in (gdecl_ren D (Nat.add (S n))) in
+      let H := fresh "Hlk" in assert (H : in_gctx Ψ n D') by exact (in_gctx_nth Ψ n D eq_refl);
+      glookups_from Ψ (S n)
+  | _ => idtac
+  end.
+Ltac glookups Ψ := glookups_from Ψ 0.
+(* in a branch scope: W's (39-42) only, the scopes that use [RecWf]'s
+   memoised automation *)
+Ltac w_lookups k Ψ :=
+  let b := eval cbv in (Nat.leb 39 k) in
+  lazymatch b with true => glookups Ψ | false => idtac end.
 
 Ltac lvl_ok := cbn; repeat split; try lia.
 
