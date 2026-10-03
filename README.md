@@ -100,6 +100,10 @@ From M8 on, the milestones check the extensions of Heather's kernel
   relation is an inductive family whose children's premise is Kripke
   quantified, and `elim_W` is valid by induction on it. Closed canonicity
   gives a `sup` at `W` (`closed_W_canonicity`). See `M13_DESIGN.md`.
+- Milestone 13b: `W` has a code, its formers lift to the code layer, and
+  the code recursor has its four branches (`t_W`, `t'_W`, `t_sup`,
+  `t_elimW`, the last over the step telescope `a, f, ih`). See
+  `M13_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
 `M13_DESIGN.md`) for decisions, deviations from the paper and gotchas.
