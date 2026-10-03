@@ -200,6 +200,8 @@ Proof.
     pose proof (W_ih_wf Hty Hv W1 W2 W3 HW HB HM HΓAF (eqty_refl' HF)
                   (lequiv_refl _ _ (lwf_max W2 (lwf_max W1 W2)))) as HI.
     refine (conj _ (conj _ _)); [constructor; auto .. |]. apply eqtm_elimW; auto.
+  (* the code of W *)
+  - intros; apply eqtm_code_W; auto.
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].

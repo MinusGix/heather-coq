@@ -316,6 +316,11 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
         ⊢[ i ] c : wstepty l l' A B M @ l'' ] ->
     [ G ; Γ ⊢[ i ] t : tyW l l' A B @ lmax l l' ] ->
     [ G ; Γ ⊢[ i ] tmElimW l l' l'' A B M c t : M[lsingle t] @ l'' ]
+(* the code of [W] (M13b), as [Σ]'s: the positions under the shape's binder *)
+| wf_code_W G i Γ l l' s t : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ] ->
+    [ G ; Γ ⊢[ i ] tmW l l' s t : tyU (lmax l l') @ lsuc (lmax l l') ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -426,6 +431,11 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
     [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
     [ G ; Γ ⊢[ i ] tyW l1 l2 A B ≅ tyW l3 l4 A' B' @ lmax l1 l2 ]
+(* the code of [W] decodes (M13b; layers D and M) *)
+| eqty_El_W G i Γ l l' s t : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ] ->
+    [ G ; Γ ⊢[ i ] tyW l l' (tyEl l s) (tyEl l' t) ≅ tyEl (lmax l l') (tmW l l' s t) @ lmax l l' ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -842,6 +852,13 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] f : tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩ @ lmax l' (lmax l l') ] ->
     [ G ; Γ ⊢[ i ] tmElimW l l' l'' A B M c (tmSup l l' A B a f) ≅ c[lsingle3 a f (wIH l l' l'' A B M c a f)]
         : M[lsingle (tmSup l l' A B a f)] @ l'' ]
+(* the code of [W] (M13b) *)
+| eqtm_code_W G i Γ l1 l2 l3 l4 s s' t t' : compt i ->
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢[ i ] s : tyU l1 @ lsuc l1 ] ->
+    [ G ; Γ ⊢[ i ] s ≅ s' : tyU l1 @ lsuc l1 ] ->
+    [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t ≅ t' : tyU l2 @ lsuc l2 ] ->
+    [ G ; Γ ⊢[ i ] tmW l1 l2 s t ≅ tmW l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)

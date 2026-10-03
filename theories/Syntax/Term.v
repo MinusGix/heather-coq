@@ -101,6 +101,7 @@ with tm : Type :=
 | tmSEmpty (l : lvl)                     (* code of sEmpty^l : Ty l (M10c) *)
 | tmEmpty (l : lvl)                      (* code of Empty^l : Ty l (M12c) *)
 | tmSum (l l' : lvl) (s t : tm)          (* code of s + t : Ty (l ⊔ l') (M12c) *)
+| tmW (l l' : lvl) (s t : tm)            (* code of W(x : El s). El t : Ty (l ⊔ l') (M13b)   t: +1 *)
 (* the empty type's eliminator (M12a): the motive's level first *)
 | elimEmpty (l l' : lvl) (M : ty) (t : tm)
     (* elim_Empty^{l,l'}(x. M; t) : M[t/x] @ l, t : Empty^{l'}      M: +1 *)
@@ -252,6 +253,7 @@ with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   | tmSEmpty l => tmSEmpty l
   | tmEmpty l => tmEmpty l
   | tmSum l l' s t => tmSum l l' (ren_tm s r) (ren_tm t r)
+  | tmW l l' s t => tmW l l' (ren_tm s r) (ren_tm t (rlift r))
   | elimEmpty l l' M t => elimEmpty l l' (ren_ty M (rlift r)) (ren_tm t r)
   | tmInl l l' A B a => tmInl l l' (ren_ty A r) (ren_ty B r) (ren_tm a r)
   | tmInr l l' A B a => tmInr l l' (ren_ty A r) (ren_ty B r) (ren_tm a r)
@@ -346,6 +348,7 @@ with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   | tmSEmpty l => tmSEmpty l
   | tmEmpty l => tmEmpty l
   | tmSum l l' s t => tmSum l l' (gren_tm s ξ) (gren_tm t ξ)
+  | tmW l l' s t => tmW l l' (gren_tm s ξ) (gren_tm t ξ)
   | elimEmpty l l' M t => elimEmpty l l' (gren_ty M ξ) (gren_tm t ξ)
   | tmInl l l' A B a => tmInl l l' (gren_ty A ξ) (gren_ty B ξ) (gren_tm a ξ)
   | tmInr l l' A B a => tmInr l l' (gren_ty A ξ) (gren_ty B ξ) (gren_tm a ξ)
@@ -445,6 +448,7 @@ with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   | tmSEmpty l => tmSEmpty (lvren l ρ)
   | tmEmpty l => tmEmpty (lvren l ρ)
   | tmSum l l' s t => tmSum (lvren l ρ) (lvren l' ρ) (uren_tm s ρ) (uren_tm t ρ)
+  | tmW l l' s t => tmW (lvren l ρ) (lvren l' ρ) (uren_tm s ρ) (uren_tm t ρ)
   | elimEmpty l l' M t => elimEmpty (lvren l ρ) (lvren l' ρ) (uren_ty M ρ) (uren_tm t ρ)
   | tmInl l l' A B a => tmInl (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_ty B ρ) (uren_tm a ρ)
   | tmInr l l' A B a => tmInr (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_ty B ρ) (uren_tm a ρ)
@@ -538,6 +542,7 @@ with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   | tmSEmpty l => tmSEmpty l
   | tmEmpty l => tmEmpty l
   | tmSum l l' s t => tmSum l l' (subst_tm s d) (subst_tm t d)
+  | tmW l l' s t => tmW l l' (subst_tm s d) (subst_tm t (llift d))
   | elimEmpty l l' M t => elimEmpty l l' (subst_ty M (llift d)) (subst_tm t d)
   | tmInl l l' A B a => tmInl l l' (subst_ty A d) (subst_ty B d) (subst_tm a d)
   | tmInr l l' A B a => tmInr l l' (subst_ty A d) (subst_ty B d) (subst_tm a d)
@@ -712,6 +717,7 @@ with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   | tmSEmpty l => tmSEmpty l
   | tmEmpty l => tmEmpty l
   | tmSum l l' s t => tmSum l l' (gsubst_tm s σ) (gsubst_tm t σ)
+  | tmW l l' s t => tmW l l' (gsubst_tm s σ) (gsubst_tm t σ)
   | elimEmpty l l' M t => elimEmpty l l' (gsubst_ty M σ) (gsubst_tm t σ)
   | tmInl l l' A B a => tmInl l l' (gsubst_ty A σ) (gsubst_ty B σ) (gsubst_tm a σ)
   | tmInr l l' A B a => tmInr l l' (gsubst_ty A σ) (gsubst_ty B σ) (gsubst_tm a σ)
@@ -816,6 +822,7 @@ with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   | tmSEmpty l => tmSEmpty (lvsubst l φ)
   | tmEmpty l => tmEmpty (lvsubst l φ)
   | tmSum l l' s t => tmSum (lvsubst l φ) (lvsubst l' φ) (usubst_tm s φ) (usubst_tm t φ)
+  | tmW l l' s t => tmW (lvsubst l φ) (lvsubst l' φ) (usubst_tm s φ) (usubst_tm t φ)
   | elimEmpty l l' M t => elimEmpty (lvsubst l φ) (lvsubst l' φ) (usubst_ty M φ) (usubst_tm t φ)
   | tmInl l l' A B a => tmInl (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_ty B φ) (usubst_tm a φ)
   | tmInr l l' A B a => tmInr (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_ty B φ) (usubst_tm a φ)

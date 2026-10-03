@@ -87,7 +87,9 @@ with red_ty : ty -> ty -> Prop :=
 | red_El_sempty l l0 : red_ty (tyEl l (tmSEmpty l0)) (tySEmpty l0)
 (* the codes of Empty and + (M12c) *)
 | red_El_empty l l0 : red_ty (tyEl l (tmEmpty l0)) (tyEmpty l0)
-| red_El_sum l l1 l2 s t : red_ty (tyEl l (tmSum l1 l2 s t)) (tySum l1 l2 (tyEl l1 s) (tyEl l2 t)).
+| red_El_sum l l1 l2 s t : red_ty (tyEl l (tmSum l1 l2 s t)) (tySum l1 l2 (tyEl l1 s) (tyEl l2 t))
+(* the code of W (M13b) *)
+| red_El_W l l1 l2 s t : red_ty (tyEl l (tmW l1 l2 s t)) (tyW l1 l2 (tyEl l1 s) (tyEl l2 t)).
 
 Scheme red_mut := Induction for red Sort Prop
   with red_ty_mut := Induction for red_ty Sort Prop.
@@ -150,6 +152,7 @@ Proof.
         | Hr : red (tmSEmpty _) _ |- _ => inversion Hr
         | Hr : red (tmEmpty _) _ |- _ => inversion Hr
         | Hr : red (tmSum _ _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmW _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmInl _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmInr _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSup _ _ _ _ _ _) _ |- _ => inversion Hr

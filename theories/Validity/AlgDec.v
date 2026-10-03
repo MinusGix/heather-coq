@@ -117,7 +117,7 @@ Definition tm_con (t : tm) : nat :=
   | tmSEq _ _ _ _ => 40 | tmSEmpty _ => 41 | elimEmpty _ _ _ _ => 42
   | tmInl _ _ _ _ _ => 43 | tmInr _ _ _ _ _ => 44 | tmCase _ _ _ _ _ _ _ _ _ => 45
   | tmEmpty _ => 46 | tmSum _ _ _ _ => 47
-  | tmSup _ _ _ _ _ _ => 48 | tmElimW _ _ _ _ _ _ _ _ => 49
+  | tmSup _ _ _ _ _ _ => 48 | tmElimW _ _ _ _ _ _ _ _ => 49 | tmW _ _ _ _ => 50
   end.
 
 Lemma ac_tmne_con {G Γ ν ν' T} : ac_tmne G Γ ν ν' T -> tm_con ν = tm_con ν'.
@@ -1058,6 +1058,36 @@ Proof.
     rewrite Hi. apply eqty_U; [exact Hv | rewrite Hi; exact HΓ1 | exact E26]. }
   destruct (IHt t' i _ Hc Ht Ht1) as [Dt | N]; [left; apply actmnf_code_sig; assumption | refute].
 Qed.
+Lemma Dc_actmnf_code_W {G Γ l l1 l2 l3 l4 s s0 t t0} :
+  Dc_tm G Γ s s0 (tyU l1) -> Dc_tm G (Γ ,, tyEl l1 s @ l1) t t0 (tyU l2) ->
+  Dc_tmnf G Γ (tmW l1 l2 s t) (tmW l3 l4 s0 t0) (tyU l).
+Proof.
+  intros IHs IHt x i k Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmnf _ _ _ (tmW ?a ?b ?c ?d) _) =>
+    rename a into l5, b into l6, c into s', d into t' end.
+  destruct (code_W_prem Hc Hx) as (Hv & W1 & W2 & Hs & Ht).
+  destruct (code_W_prem Hc Hx') as (_ & W5 & W6 & Hs' & Ht').
+  destruct (leqv_dec l1 l5) as [H15 | N]; [| refute]. destruct (leqv_dec l2 l6) as [H26 | N]; [| refute].
+  pose proof (leqv_lequiv _ _ _ W1 W5 H15) as E15. pose proof (leqv_lequiv _ _ _ W2 W6 H26) as E26.
+  pose proof (ctx_of_wf_tm Hi Hs) as HΓ.
+  assert (HΓt : [ G ; Γ ⊢[ typeof i ] ]) by (rewrite Hi; exact HΓ).
+  assert (EU15 : [ G ; Γ ⊢[ i ] tyU l1 ≅ tyU l5 @ lsuc l1 ]) by (apply eqty_U; assumption).
+  assert (Hs1 : [ G ; Γ ⊢[ i ] s' : tyU l1 @ lsuc l1 ]).
+  { eapply wf_conv; [eapply wf_lconv; [exact Hs' | exact (lequiv_suc _ _ _ E15)] | rewrite Hi; exact EU15]. }
+  destruct (IHs s' i _ Hc Hs Hs1) as [Ds | N]; [| refute].
+  pose proof (ac_tm_sound Hc Ds Hs Hs1) as Es.
+  assert (HEl : [ G ; Γ ⊢[ i ] tyEl l1 s @ l1 ]) by (apply wft_El; assumption).
+  assert (EEl : [ G ; Γ ⊢[ i ] tyEl l1 s ≅ tyEl l5 s' @ l1 ]) by (apply eqty_El; [exact Hv | exact E15 | exact Es]).
+  assert (EEl' : [ G ; Γ ⊢[ i ] tyEl l5 s' ≅ tyEl l1 s @ l5 ])
+    by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EEl) | exact (lequiv_sym _ _ _ E15)]).
+  assert (HΓ1 : [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HEl | exact W1]).
+  assert (Ht1 : [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t' : tyU l2 @ lsuc l2 ]).
+  { eapply wf_conv; [eapply wf_lconv; [exact (stab_tm Hi EEl' (lequiv_sym _ _ _ E15) HΓ1 Ht') |
+                                       exact (lequiv_suc _ _ _ E26)] |].
+    rewrite Hi. apply eqty_U; [exact Hv | rewrite Hi; exact HΓ1 | exact E26]. }
+  destruct (IHt t' i _ Hc Ht Ht1) as [Dt | N]; [left; apply actmnf_code_W; assumption | refute].
+Qed.
 
 Lemma Dc_actmnf_sig_eta {G Γ l l' A B w w0} :
   Dc_tm G Γ (tmFst l l' A B w) (tmFst l l' A B w0) A ->
@@ -1579,7 +1609,8 @@ Proof.
     | solve [eapply Dc_actmnf_inr; eassumption] | solve [eapply Dc_actmne_case; eassumption]
     | solve [eapply Dc_actnf_W; eassumption] | solve [eapply Dc_actmnf_sup; eassumption]
     | solve [eapply Dc_actmne_elimW; eassumption]
-    | solve [eapply Dc_actmnf_code_empty; eassumption] | solve [eapply Dc_actmnf_code_sum; eassumption] ].
+    | solve [eapply Dc_actmnf_code_empty; eassumption] | solve [eapply Dc_actmnf_code_sum; eassumption]
+    | solve [eapply Dc_actmnf_code_W; eassumption] ].
 Qed.
 
 (** Algorithmic conversion of well-formed types (typed terms) of the

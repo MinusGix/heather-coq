@@ -1226,6 +1226,40 @@ Proof.
     + exact (eqctx_ext_refl Hctx (gconv_ty HE HEl) (GEq_lwf HE W1)).
     + exact (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Ht))).
 Qed.
+Lemma C_actmnf_code_W {G Γ l l1 l2 l3 l4 s s' t t'} : leqv l1 l3 -> leqv l2 l4 ->
+  ac_tm G Γ s s' (tyU l1) -> C_tm G Γ s s' (tyU l1) -> C_tm G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) ->
+  C_tmnf G Γ (tmW l1 l2 s t) (tmW l3 l4 s' t') (tyU l).
+Proof.
+  intros H13 H24 Ds IHs IHt i G2 Γ2 W2 k Hc HE Hctx Hx Hx' EW Hw2 x x' Hsx Hsx'. spa_triv. pose proof (compt_typeof_self _ Hc) as Hi.
+  new_head Hc EW Hw2 W2.
+  destruct (inv_code_W Hi Hx) as ((_ & W1 & W2 & Hs & Ht) & _).
+  destruct (inv_code_W Hi Hx') as ((_ & W3 & W4 & Hs' & Ht') & _).
+  assert (Hv : i <> lV) by (destruct Hc as [-> | ->]; discriminate).
+  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
+  pose proof (ctx_of_wf_tm Hi Hs) as HΓ.
+  assert (HΓt : [ G ; Γ ⊢[ typeof i ] ]) by (rewrite Hi; exact HΓ).
+  assert (EU1 : [ G ; Γ ⊢[ i ] tyU l1 ≅ tyU l3 @ lsuc l1 ]) by (apply eqty_U; assumption).
+  assert (Hs1 : [ G ; Γ ⊢[ i ] s' : tyU l1 @ lsuc l1 ]).
+  { eapply wf_conv; [eapply wf_lconv; [exact Hs' | exact (lequiv_suc _ _ _ E13)] | rewrite Hi; exact EU1]. }
+  pose proof (ac_tm_sound Hc Ds Hs Hs1) as Es.
+  assert (Es' : [ G ; Γ ⊢[ i ] s' ≅ s : tyU l3 @ lsuc l3 ]).
+  { eapply eqtm_lconv; [| exact (lequiv_suc _ _ _ (lequiv_sym _ _ _ E13))].
+    eapply eqtm_conv; [exact (eqtm_sym _ _ _ _ _ _ _ Es) | rewrite Hi; exact (eqty_sym _ _ _ _ _ _ EU1)]. }
+  assert (EEl : [ G ; Γ ⊢[ i ] tyEl l3 s' ≅ tyEl l1 s @ l3 ])
+    by (apply eqty_El; [exact Hv | exact (lequiv_sym _ _ _ E13) | exact Es']).
+  assert (HEl : [ G ; Γ ⊢[ i ] tyEl l1 s @ l1 ]) by (apply wft_El; assumption).
+  assert (HΓ1 : [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HEl | exact W1]).
+  pose proof (stab_tm Hi EEl (lequiv_sym _ _ _ E13) HΓ1 Ht') as Ht1.
+  assert (EU2 : [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] tyU l2 ≅ tyU l4 @ lsuc l2 ])
+    by (apply eqty_U; [exact Hv | rewrite Hi; exact HΓ1 | exact E24]).
+  assert (Ht2 : [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t' : tyU l2 @ lsuc l2 ]).
+  { eapply wf_conv; [eapply wf_lconv; [exact Ht1 | exact (lequiv_suc _ _ _ E24)] | rewrite Hi; exact EU2]. }
+  apply actmnf_code_W; [exact H13 | exact H24 | |].
+  - exact (IHs i G2 Γ2 (tyU l1) (lsuc l1) Hc HE Hctx Hs Hs1 (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hs))) _ _ spa_refl spa_refl).
+  - apply (IHt i G2 (Γ2 ,, tyEl l1 s @ l1) (tyU l2) (lsuc l2) Hc HE); [| exact Ht | exact Ht2 | | exact spa_refl | exact spa_refl].
+    + exact (eqctx_ext_refl Hctx (gconv_ty HE HEl) (GEq_lwf HE W1)).
+    + exact (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Ht))).
+Qed.
 
 Lemma C_actmnf_sig_eta {G Γ l l' A B w w'} :
   ac_tm G Γ (tmFst l l' A B w) (tmFst l l' A B w') A ->
@@ -1790,7 +1824,8 @@ Proof.
     | solve [eapply C_actmnf_inr; eassumption] | solve [eapply C_actmne_case; eassumption]
     | solve [eapply C_actmnf_code_empty; eassumption] | solve [eapply C_actmnf_code_sum; eassumption]
     | solve [eapply C_actnf_W; eassumption] | solve [eapply C_actmnf_sup; eassumption]
-    | solve [eapply C_actmne_elimW; eassumption] ].
+    | solve [eapply C_actmne_elimW; eassumption]
+    | solve [eapply C_actmnf_code_W; eassumption] ].
 Qed.
 
 (** The statement without annotation changes. *)

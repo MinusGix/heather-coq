@@ -263,6 +263,13 @@ Lemma inva_code_sum {G i Γ l l' s t T k} : [ G ; Γ ⊢[ i ] tmSum l l' s t : T
     lvl_eq (gL G) k (lsuc (lmax l l')) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU (lmax l l') @ k ].
 Proof. inv_tm_any. Qed.
 
+(** The code of [W] (M13b). *)
+Lemma inva_code_W {G i Γ l l' s t T k} : [ G ; Γ ⊢[ i ] tmW l l' s t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ]) /\
+    lvl_eq (gL G) k (lsuc (lmax l l')) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU (lmax l l') @ k ].
+Proof. inv_tm_any. Qed.
+
 (** ** The M-only heads *)
 
 (** Terms whose rules are at M only. *)

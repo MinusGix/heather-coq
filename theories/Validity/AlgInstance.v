@@ -534,6 +534,11 @@ Proof.
     + exact (actmne_elimW _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H14) (lequiv_leqv _ _ _ H25)
                (lequiv_leqv _ _ _ H36) DA DB DM Dc Xν).
     + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
+  (* the code of W (M13b), as Σ's *)
+  - intros * H13 H24 Hs (Es & Ds) (Et & Dt).
+    refine (conj (@geq_tm_code_W DE DEL _ _ _ _ _ _ _ _ _ _ H13 H24 Hs Es Et) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmW | apply whnf_tmW |].
+    exact (actmnf_code_W _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24) Ds Dt).
 Qed.
 
 End Alg.

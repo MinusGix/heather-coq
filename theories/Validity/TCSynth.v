@@ -447,6 +447,20 @@ Proof.
     [| right; intros T k H; destruct (inva_code_sig H) as ((_ & _ & _ & _ & X) & _); contradiction].
   left; eexists; eexists; exact (wf_code_sig _ _ _ _ _ _ _ Hc Hl Hl' Hs Ht).
 Qed.
+Lemma sy_codeW l l' s t : sz_tm (tmW l l' s t) <= n -> SYD (tmW l l' s t).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_code_W H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_W H) as ((_ & X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros T k H; destruct (inva_code_W H) as ((_ & _ & X & _) & _); contradiction].
+  destruct (ihC s ltac:(szl) G i Γ _ _ (HUniv HΓ Hl)) as [Hs | N];
+    [| right; intros T k H; destruct (inva_code_W H) as ((_ & _ & _ & X & _) & _); contradiction].
+  assert (HΓs : [ G ; Γ ,, tyEl l s @ l ⊢[ typeof i ] ]).
+  { apply wfc_ext; [exact HΓ | | exact Hl]. exact (wft_El _ _ _ _ _ (typeof_notV i) Hl (lift_to_typeof_tm Hs)). }
+  destruct (ihC t ltac:(szl) G i _ _ _ (HUniv HΓs Hl')) as [Ht | N];
+    [| right; intros T k H; destruct (inva_code_W H) as ((_ & _ & _ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_code_W _ _ _ _ _ _ _ Hc Hl Hl' Hs Ht).
+Qed.
 
 (** The identity type's code (M11b): every layer but V. *)
 Lemma sy_code_id l s t u : sz_tm (tmId l s t u) <= n -> SYD (tmId l s t u).
@@ -817,7 +831,7 @@ Proof.
           | apply (sy_proj true) | apply (sy_proj false) | apply sy_code_unit | apply sy_triv
           | apply sy_srefl | apply sy_elimSEmpty | apply sy_refl | apply sy_J | apply sy_code_id | apply sy_elimEmpty
           | apply sy_code_seq | apply sy_code_sempty | apply sy_inl | apply sy_inr | apply sy_case
-          | apply sy_code_empty | apply sy_code_sum | apply sy_sup | apply sy_elimW ]; assumption.
+          | apply sy_code_empty | apply sy_code_sum | apply sy_sup | apply sy_elimW | apply sy_codeW ]; assumption.
 Qed.
 
 End Step.

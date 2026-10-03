@@ -262,6 +262,13 @@ Lemma inv_code_sum {G i Γ l l' s t T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmS
     lvl_eq (gL G) k (lsuc (lmax l l')) /\ [ G ; Γ ⊢[ i ] T ≅ tyU (lmax l l') @ k ].
 Proof. inv_tm. Qed.
 
+(** The code of [W] (M13b). *)
+Lemma inv_code_W {G i Γ l l' s t T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmW l l' s t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ]) /\
+    lvl_eq (gL G) k (lsuc (lmax l l')) /\ [ G ; Γ ⊢[ i ] T ≅ tyU (lmax l l') @ k ].
+Proof. inv_tm. Qed.
+
 (** Strict equality (M10a). *)
 Lemma inv_srefl {G i Γ l A a T k} : typeof i = i -> [ G ; Γ ⊢[ i ] srefl l A a : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\

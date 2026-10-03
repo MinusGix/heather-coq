@@ -1345,6 +1345,26 @@ Proof.
   eapply (stab_ty Hi HA H13); [apply ext_wf; eauto using lequiv_wf_r | exact HB].
 Qed.
 
+(** The code of [W] (M13b), as [Σ]'s. *)
+Lemma pre_codeW_r {Γ l1 l2 l3 l4 s s' t'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] s ≅ s' : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢[ i ] s' : tyU l1 @ lsuc l1 ] ->
+  [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t' : tyU l2 @ lsuc l2 ] ->
+  [ G ; Γ ⊢[ i ] tmW l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ].
+Proof.
+  intros H13 H24 Hs Hs' Ht. pose proof (ctx_of_wf_tm Hi Hs') as HΓ.
+  assert (HEl : [ G ; Γ ⊢[ i ] tyEl l1 s ≅ tyEl l3 s' @ l1 ]) by (apply eqty_El; auto).
+  assert (Hs3 : [ G ; Γ ⊢[ i ] s' : tyU l3 @ lsuc l3 ]) by exact (conv_U Hs' H13).
+  eapply wf_lconv with (l' := lsuc (lmax l3 l4)); [|apply lequiv_suc, lequiv_max; eassumption].
+  eapply conv_tm'.
+  - apply wf_code_W; try solve [eauto using lequiv_wf_r, compt_self].
+    apply (conv_U (l := l2)); [|exact H24].
+    eapply (stab_tm Hi HEl H13); [|exact Ht].
+    apply ext_wf; [apply wft_El; eauto using lequiv_wf_r | eauto using lequiv_wf_r].
+  - eapply eqty_lconv; [|apply lequiv_suc, lequiv_max; apply lequiv_sym; eassumption].
+    apply eqty_U; [exact Hv | now rewrite Hi | apply lequiv_max; eassumption].
+Qed.
+
 Lemma pre_sup_r {Γ l1 l2 l3 l4 A A' B B' a a' f'} :
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
@@ -2101,7 +2121,12 @@ Proof.
              | solve [eapply wf_sup; eauto 3 using compt_self with presup]
              | solve [eapply wf_elimW; eauto 3 using compt_self with presup]
              | solve [eapply wf_elimW; try eassumption; eapply wf_sup; eauto using compt_self]
-             | solve [eapply wf_ty_single; try eassumption; eapply wf_sup; eauto using compt_self] ].
+             | solve [eapply wf_ty_single; try eassumption; eapply wf_sup; eauto using compt_self]
+             (* the code of W (M13b) *)
+             | solve [eapply pre_codeW_r; eassumption]
+             | solve [eapply wf_code_W; eauto 3 with presup]
+             | solve [eapply wft_El; eauto with presup; eapply wf_code_W; eassumption]
+             | solve [apply wft_W; eauto 3 using compt_self with presup; apply wft_El; eauto with presup] ].
 Qed.
 
 Section Named.

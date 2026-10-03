@@ -170,6 +170,10 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmnf_code_sum G Γ l l1 l2 l3 l4 s s' t t' : leqv l1 l3 -> leqv l2 l4 ->
     ac_tm G Γ s s' (tyU l1) -> ac_tm G Γ t t' (tyU l2) ->
     ac_tmnf G Γ (tmSum l1 l2 s t) (tmSum l3 l4 s' t') (tyU l)
+(* the code of W (M13b), as Σ's *)
+| actmnf_code_W G Γ l l1 l2 l3 l4 s s' t t' : leqv l1 l3 -> leqv l2 l4 ->
+    ac_tm G Γ s s' (tyU l1) -> ac_tm G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) ->
+    ac_tmnf G Γ (tmW l1 l2 s t) (tmW l3 l4 s' t') (tyU l)
 
 with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_var G Γ n T l : in_ctx Γ n T l -> ac_tmne G Γ (var n) (var n) T

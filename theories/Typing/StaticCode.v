@@ -1241,6 +1241,23 @@ Proof.
          | apply eqtm_elimW; auto].
 Qed.
 
+(** The code of [W] (M13b), at D as [W] itself. *)
+Lemma sc_code_W {G i Γ l1 l2 l1' l2' s s' t t'} : compt i -> lle i lD ->
+  lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
+  [ G ; Γ ⊢[ i ] s : tyU l1 @ lsuc l1 ] ->
+  [ G ; Γ ⊢[ i ] s' : tyU l1 @ lsuc l1 ] /\ [ G ; Γ ⊢[ i ] s ≅ s' : tyU l1 @ lsuc l1 ] ->
+  [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t' : tyU l2 @ lsuc l2 ] /\
+  [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t ≅ t' : tyU l2 @ lsuc l2 ] ->
+  [ G ; Γ ⊢[ i ] tmW l1' l2' s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ] /\
+  [ G ; Γ ⊢[ i ] tmW l1 l2 s t ≅ tmW l1' l2' s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ].
+Proof.
+  intros Hc Hle H1 H2 H1' H2' E1 E2 Hs [Hs' Hss] [Ht' Htt].
+  pose proof (compt_lle_D Hc Hle); subst i.
+  pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2.
+  split; [exact (@pre_codeW_r G lD eq_refl ltac:(discriminate) _ _ _ _ _ _ _ _ Q1 Q2 Hss Hs' Ht')
+         | apply eqtm_code_W; auto].
+Qed.
+
 
 
 (** ** The lemma *)
@@ -1342,6 +1359,7 @@ Proof.
     | solve [eapply sc_code_empty; eauto] | solve [eapply sc_code_sum; eauto]
     (* well-founded trees (M13a) *)
     | solve [eapply sc_W; eauto] | solve [eapply sc_sup; eauto] | solve [eapply sc_elimW; eauto]
+    | solve [eapply sc_code_W; eauto]
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x
         |- _ /\ eq_tm _ _ _ (succ _) _ _ _ =>
