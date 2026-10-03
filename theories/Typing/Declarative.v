@@ -96,8 +96,8 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
 | wft_sum G i Γ l l' A B : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] B @ l' ] ->
     [ G ; Γ ⊢[ i ] tySum l l' A B @ lmax l l' ]
-(* well-founded trees (M13a; layers D and M): positions under the shape *)
-| wft_W G i Γ l l' A B : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+(* well-founded trees (M13a; every layer but V since M13b): positions under the shape *)
+| wft_W G i Γ l l' A B : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
     [ G ; Γ ⊢[ i ] tyW l l' A B @ lmax l l' ]
 
@@ -298,16 +298,16 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 | wf_code_sum G i Γ l l' s t : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] t : tyU l' @ lsuc l' ] ->
     [ G ; Γ ⊢[ i ] tmSum l l' s t : tyU (lmax l l') @ lsuc (lmax l l') ]
-(* well-founded trees (M13a; layers D and M, M13_DESIGN.md): [sup]'s children are a
+(* well-founded trees (M13a; every layer but V since M13b, M13_DESIGN.md): [sup]'s children are a
    function from the positions at its shape; [elim_W]'s motive binds the
    scrutinee, and its step binds the shape [a], the children [f] and the
    induction hypothesis [ih]. The types of [f] and [ih] are premises, as [J]'s
    motive context is *)
-| wf_sup G i Γ l l' A B a f : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+| wf_sup G i Γ l l' A B a f : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] -> [ G ; Γ ⊢[ i ] a : A @ l ] ->
     [ G ; Γ ⊢[ i ] f : tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩ @ lmax l' (lmax l l') ] ->
     [ G ; Γ ⊢[ i ] tmSup l l' A B a f : tyW l l' A B @ lmax l l' ]
-| wf_elimW G i Γ l l' l'' A B M c t : compt i -> lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
+| wf_elimW G i Γ l l' l'' A B M c t : i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
     [ G ; Γ ,, tyW l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] ->
     [ G ; Γ ,, A @ l ⊢[ i ] wfty l l' A B @ lmax l' (lmax l l') ] ->
@@ -317,7 +317,7 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] t : tyW l l' A B @ lmax l l' ] ->
     [ G ; Γ ⊢[ i ] tmElimW l l' l'' A B M c t : M[lsingle t] @ l'' ]
 (* the code of [W] (M13b), as [Σ]'s: the positions under the shape's binder *)
-| wf_code_W G i Γ l l' s t : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+| wf_code_W G i Γ l l' s t : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ] ->
     [ G ; Γ ⊢[ i ] tmW l l' s t : tyU (lmax l l') @ lsuc (lmax l l') ]
@@ -425,8 +425,8 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
 | eqty_El_sum G i Γ l l' s t : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] t : tyU l' @ lsuc l' ] ->
     [ G ; Γ ⊢[ i ] tySum l l' (tyEl l s) (tyEl l' t) ≅ tyEl (lmax l l') (tmSum l l' s t) @ lmax l l' ]
-(* well-founded trees (M13a; layers D and M) *)
-| eqty_W G i Γ l1 l2 l3 l4 A A' B B' : compt i ->
+(* well-founded trees (M13a; every layer but V since M13b) *)
+| eqty_W G i Γ l1 l2 l3 l4 A A' B B' : i <> lV ->
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
     [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
@@ -819,17 +819,17 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
 | eqtm_code_sum G i Γ l1 l2 l3 l4 s s' t t' : i <> lV -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢[ i ] s ≅ s' : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢[ i ] t ≅ t' : tyU l2 @ lsuc l2 ] ->
     [ G ; Γ ⊢[ i ] tmSum l1 l2 s t ≅ tmSum l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ]
-(* well-founded trees (M13a; layers D and M): the congruences, and β, which
+(* well-founded trees (M13a): the congruences (every layer but V since M13b), and β (D and M), which
    instantiates the step at the shape, the children and the synthesized
    induction hypothesis [wIH]; no η *)
-| eqtm_sup G i Γ l1 l2 l3 l4 A A' B B' a a' f f' : compt i ->
+| eqtm_sup G i Γ l1 l2 l3 l4 A A' B B' a a' f f' : i <> lV ->
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
     [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
     [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] ->
     [ G ; Γ ⊢[ i ] f ≅ f' : tyPi l2 (lmax l1 l2) B[lsingle a] (tyW l1 l2 A B)⟨↑⟩ @ lmax l2 (lmax l1 l2) ] ->
     [ G ; Γ ⊢[ i ] tmSup l1 l2 A B a f ≅ tmSup l3 l4 A' B' a' f' : tyW l1 l2 A B @ lmax l1 l2 ]
-| eqtm_elimW G i Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c c' t t' : compt i ->
+| eqtm_elimW G i Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c c' t t' : i <> lV ->
     lequiv (gL G) l1 l4 -> lequiv (gL G) l2 l5 -> lequiv (gL G) l3 l6 ->
     [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
     [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
@@ -853,7 +853,7 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] tmElimW l l' l'' A B M c (tmSup l l' A B a f) ≅ c[lsingle3 a f (wIH l l' l'' A B M c a f)]
         : M[lsingle (tmSup l l' A B a f)] @ l'' ]
 (* the code of [W] (M13b) *)
-| eqtm_code_W G i Γ l1 l2 l3 l4 s s' t t' : compt i ->
+| eqtm_code_W G i Γ l1 l2 l3 l4 s s' t t' : i <> lV ->
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢[ i ] s : tyU l1 @ lsuc l1 ] ->
     [ G ; Γ ⊢[ i ] s ≅ s' : tyU l1 @ lsuc l1 ] ->

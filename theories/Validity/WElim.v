@@ -104,7 +104,7 @@ Lemma elimW_cong {t t'} :
              : M⟦γ⟧[llift e][lsingle t] @ l'' ].
 Proof.
   intros Ht. destruct (elimW_at Hγ He) as (HA0 & EA & HB0 & EB & HM0 & EM & HF0 & HI0 & Ec).
-  apply eqtm_elimW; first [exact ge_compt | apply (lequiv_weaken _ _ _ _ (proj1 Hγ)); assumption
+  apply eqtm_elimW; first [exact ge_notV | exact ge_compt | apply (lequiv_weaken _ _ _ _ (proj1 Hγ)); assumption
                           | apply geq_ty_sound; assumption | apply geq_tm_sound; assumption | assumption].
 Qed.
 
@@ -116,7 +116,7 @@ Lemma elimW_cong_l {t t'} :
 Proof.
   intros Ht. destruct (elimW_at Hγ He) as (HA0 & EA & HB0 & EB & HM0 & EM & HF0 & HI0 & Ec).
   pose proof (eqtm_wf_l ge_typeof (geq_tm_sound Ec)) as Hc0.
-  apply eqtm_elimW; first [exact ge_compt | apply lequiv_refl, (lwf_weaken _ _ _ (proj1 Hγ)); assumption
+  apply eqtm_elimW; first [exact ge_notV | exact ge_compt | apply lequiv_refl, (lwf_weaken _ _ _ (proj1 Hγ)); assumption
                           | apply eqty_refl; assumption | apply eqtm_refl; assumption | assumption].
 Qed.
 
@@ -167,7 +167,7 @@ Proof.
                 (VTyG_refl_l VAγ) (VTyG_refl_l VBγ) _ _ _ He) as HW.
   destruct (poly_here (F := tyW) (A := A⟦γ⟧) (A' := A⟦γ⟧) (B := B⟦γ⟧) (B' := B⟦γ⟧) Hwl0 Hwl'0
               (lequiv_refl _ _ Hwl0) (lequiv_refl _ _ Hwl'0) HBγ (VTyG_refl_l VAγ) (VTyG_refl_l VBγ) Δ0 e e'
-              ltac:(intros; apply wft_W; auto using ge_compt) ltac:(reflexivity) He) as (_ & Hdom & Hcod).
+              ltac:(intros; apply wft_W; auto using ge_compt, ge_notV) ltac:(reflexivity) He) as (_ & Hdom & Hcod).
   rewrite !subst_tyW in HW. exact (conj HW (conj Hdom Hcod)).
 Qed.
 

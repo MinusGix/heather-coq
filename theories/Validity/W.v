@@ -176,7 +176,7 @@ Lemma LR_W_here Δ d d' : SubRel G Γ Δ d d' ->
 Proof.
   intros Hd.
   destruct (poly_here (F := tyW) (A := A) (A' := A') (B := B) (B' := B') Hwl Hwl' H3 H4 HB VA VB Δ d d'
-              ltac:(intros; apply wft_W; auto using ge_compt) ltac:(reflexivity) Hd) as (P & Hdom & Hcod).
+              ltac:(intros; apply wft_W; auto using ge_compt, ge_notV) ltac:(reflexivity) Hd) as (P & Hdom & Hcod).
   exact (LRw _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ P Hdom Hcod (releq_refl _)).
 Qed.
 
@@ -352,7 +352,7 @@ Proof.
                 (VTyG_refl_l VA) (VTyG_refl_l VB) _ _ _ Hd) as HW.
   destruct (poly_here (F := tyW) (A := A) (A' := A) (B := B) (B' := B) Hwl Hwl'
               (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') HB (VTyG_refl_l VA) (VTyG_refl_l VB) Δ d d'
-              ltac:(intros; apply wft_W; auto using ge_compt) ltac:(reflexivity) Hd) as (_ & Hdom & Hcod).
+              ltac:(intros; apply wft_W; auto using ge_compt, ge_notV) ltac:(reflexivity) Hd) as (_ & Hdom & Hcod).
   eapply LRtm_of; [exact HW|]. push_subst.
   (* escapes *)
   destruct (VAl _ _ _ Hd) as [RA HRA]. destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HAd & _ & EA).
@@ -477,13 +477,13 @@ Proof.
   pose proof (stab_tm ge_typeof (eqty_refl _ _ _ _ _ HA) (lequiv_sym _ _ _ H1) HΓ Ht) as Ht1.
   pose proof (conv_U' Ht1 (lequiv_sym _ _ _ H2)) as Ht2.
   assert (Hc : [ G ; Δ ⊢g tmW k1 k2 s t : tyU (lmax k1 k2) @ lsuc (lmax k1 k2) ])
-    by (apply wf_code_W; eauto using ge_compt, ge_notV, lequiv_wf_l).
+    by (apply wf_code_W; eauto using ge_compt, ge_notV, ge_notV, lequiv_wf_l).
   assert (Hm : lequiv (gL G) (lmax l1 l2) (lmax k1 k2)) by (apply lequiv_max; now apply lequiv_sym).
   destruct (El_annot Hc (lequiv_trans _ _ _ _ Hla Hm)) as [HEl HEq].
   eapply tyred_lconv; [|exact Hm].
   apply tyred_step; [exact HEl | constructor |].
   eapply eqty_trans; [exact HEq|].
-  apply eqty_sym, eqty_El_W; eauto using ge_compt, ge_notV, lequiv_wf_l.
+  apply eqty_sym, eqty_El_W; eauto using ge_compt, ge_notV, ge_notV, lequiv_wf_l.
 Qed.
 
 Section CodeWV.

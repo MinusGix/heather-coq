@@ -221,14 +221,14 @@ Proof. inv_tm_any. Qed.
 
 (** Well-founded trees (M13a). *)
 Lemma inva_sup {G i Γ l l' A B a f T k} : [ G ; Γ ⊢[ i ] tmSup l l' A B a f : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\
     [ G ; Γ ⊢[ i ] a : A @ l ] /\
     [ G ; Γ ⊢[ i ] f : tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩ @ lmax l' (lmax l l') ]) /\
     lvl_eq (gL G) k (lmax l l') /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyW l l' A B @ k ].
 Proof. inv_tm_any. Qed.
 
 Lemma inva_elimW {G i Γ l l' l'' A B M c t T k} : [ G ; Γ ⊢[ i ] tmElimW l l' l'' A B M c t : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ lwf (gL G) l'' /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ lwf (gL G) l'' /\
     [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\
     [ G ; Γ ,, tyW l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] /\
     [ G ; Γ ,, A @ l ⊢[ i ] wfty l l' A B @ lmax l' (lmax l l') ] /\
@@ -265,7 +265,7 @@ Proof. inv_tm_any. Qed.
 
 (** The code of [W] (M13b). *)
 Lemma inva_code_W {G i Γ l l' s t T k} : [ G ; Γ ⊢[ i ] tmW l l' s t : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ]) /\
     lvl_eq (gL G) k (lsuc (lmax l l')) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU (lmax l l') @ k ].
 Proof. inv_tm_any. Qed.

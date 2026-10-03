@@ -216,6 +216,120 @@ Ltac wfd_all :=
   end;
   try assumption.
 
+(** W-types' scopes (M13b): the step telescope's instances, normalised by
+    computation ([wfd_W]), are typed through these, which match the
+    computed type up to a computed equation. *)
+Lemma wf_var_eq G i Γ n T T' l : [ G ; Γ ⊢[ typeof i ] ] -> in_ctx Γ n T' l -> T' = T ->
+  [ G ; Γ ⊢[ i ] var n : T @ l ].
+Proof. intros HΓ Hin <-. exact (wf_var _ _ _ _ _ _ HΓ Hin). Qed.
+Lemma wf_app_eq G i Γ l l' A B t s T : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ⊢[ i ] t : tyPi l l' A B @ lmax l l' ] -> [ G ; Γ ⊢[ i ] s : A @ l ] -> B[lsingle s] = T ->
+  [ G ; Γ ⊢[ i ] app t l l' A B s : T @ l' ].
+Proof. intros; subst; eapply wf_app; eauto. Qed.
+Lemma wf_sup_eq G i Γ l l' A B a f T : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] -> [ G ; Γ ⊢[ i ] a : A @ l ] ->
+  [ G ; Γ ⊢[ i ] f : tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩ @ lmax l' (lmax l l') ] ->
+  tyW l l' A B = T -> [ G ; Γ ⊢[ i ] tmSup l l' A B a f : T @ lmax l l' ].
+Proof. intros; subst; eapply wf_sup; eauto. Qed.
+
+Lemma wf_elimW' G i Γ l l' l'' A B M c t T : T = M[lsingle t] -> i <> lV ->
+  lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) l'' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ,, tyW l l' A B @ lmax l l' ⊢[ i ] M @ l'' ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] wfty l l' A B @ lmax l' (lmax l l') ] ->
+  [ G ; Γ ,, A @ l ,, wfty l l' A B @ lmax l' (lmax l l') ⊢[ i ] wihty l l' l'' A B M @ lmax l' l'' ] ->
+  [ G ; Γ ,, A @ l ,, wfty l l' A B @ lmax l' (lmax l l') ,, wihty l l' l'' A B M @ lmax l' l''
+      ⊢[ i ] c : wstepty l l' A B M @ l'' ] ->
+  [ G ; Γ ⊢[ i ] t : tyW l l' A B @ lmax l l' ] ->
+  [ G ; Γ ⊢[ i ] tmElimW l l' l'' A B M c t : T @ l'' ].
+Proof. intros ->; apply wf_elimW. Qed.
+
+Ltac inv_in_ctx :=
+  repeat match goal with
+  | H : in_ctx (cvar _) _ _ _ |- _ => inversion H
+  | H : in_ctx (_ ,, _ @ _) _ _ _ |- _ => inversion H; subst; clear H
+  end.
+
+Ltac wnorm :=
+  cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
+       rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle Nat.eqb Nat.add].
+
+(** The context's well-formedness is proved once per context and kept as
+    a hypothesis: every variable and global instance below needs it, and
+    rederiving it at each leaf is exponential in the telescope's depth. *)
+Ltac wctx :=
+  lazymatch goal with
+  | |- [ _ ; _ ⊢[ _ ] ] =>
+      first
+      [ assumption
+      | lazymatch goal with
+        | |- [ _ ; cvar _ ⊢[ _ ] ] => apply wfc_var; [ assumption | reflexivity ]
+        | |- [ ?G ; ?Γ ,, ?A @ ?l ⊢[ ?i ] ] =>
+            let HΓ := fresh "HΓ" in assert (HΓ : [ G ; Γ ⊢[ i ] ]) by wctx;
+            apply wfc_ext; [ exact HΓ | wty | lvl_ok ]
+        end ]
+  end
+with wbind G Γ i A l k :=
+  (* [A] at [Γ], then the extended context, then the continuation under it *)
+  let HA := fresh "HA" in assert (HA : [ G ; Γ ⊢[ i ] A @ l ]) by wty;
+  let HΓA := fresh "HΓA" in
+  (* the context is at [typeof i]: [A] again there when [i] is [C] *)
+  assert (HΓA : [ G ; Γ ,, A @ l ⊢[ typeof i ] ]) by (apply wfc_ext; [ wctx | first [exact HA | wty] | lvl_ok ]);
+  k HA
+with wty :=
+  wnorm;
+  lazymatch goal with
+  | |- [ ?G ; ?Γ ⊢[ ?i ] tyPi ?l ?l' ?A ?B @ _ ] =>
+      wbind G Γ i A l ltac:(fun HA => apply wft_pi; [ discriminate | lvl_ok | lvl_ok | exact HA | wty ])
+  | |- [ ?G ; ?Γ ⊢[ ?i ] tyW ?l ?l' ?A ?B @ _ ] =>
+      wbind G Γ i A l ltac:(fun HA => apply wft_W; [ discriminate | lvl_ok | lvl_ok | exact HA | wty ])
+  | |- [ _ ; _ ⊢[ _ ] tyGvar _ _ @ _ ] =>
+      eapply wft_gvar; [ discriminate | wctx | glookup | unfold lle; cbn; lia
+                       | split; [reflexivity | intros; cbn; f_equal; lia] | cbn; intuition congruence
+                       | let H := fresh "Hin" in intros ? ? ? H; inv_in_ctx; wty ]
+  | |- [ _ ; _ ⊢[ _ ] var _ : _ @ _ ] =>
+      eapply wf_var_eq; [ wctx | solve [repeat constructor] | reflexivity ]
+  | |- [ _ ; _ ⊢[ _ ] gvar _ (lshift 0) : _ @ _ ] =>
+      eapply wf_gu; [ wctx | glookup | unfold lle; cbn; lia | cbn; intuition congruence ]
+  | |- [ ?G ; ?Γ ⊢[ ?i ] app _ ?l _ ?A _ _ : _ @ _ ] =>
+      wbind G Γ i A l ltac:(fun HA =>
+        eapply wf_app_eq; [ discriminate | lvl_ok | lvl_ok | exact HA | wty | wty | wty | reflexivity ])
+  | |- [ ?G ; ?Γ ⊢[ ?i ] tmSup ?l _ ?A _ _ _ : _ @ _ ] =>
+      wbind G Γ i A l ltac:(fun HA =>
+        eapply wf_sup_eq; [ discriminate | lvl_ok | lvl_ok | exact HA | wty | wty | wty | reflexivity ])
+  | |- [ _ ; _ ⊢[ _ ] tyU _ @ _ ] => apply wft_U; [ discriminate | wctx | lvl_ok ]
+  | |- [ _ ; _ ⊢[ _ ] tyEl _ _ @ _ ] => apply wft_El; [ discriminate | lvl_ok | wty ]
+  (* the code of W and [elimW], in the branches' heads and calls *)
+  | |- [ ?G ; ?Γ ⊢[ ?i ] tmW ?l _ ?s _ : _ @ _ ] =>
+      wbind G Γ i (tyEl l s) l ltac:(fun HA =>
+        apply wf_code_W; [ discriminate | lvl_ok | lvl_ok | wty | wty ])
+  | |- [ _ ; _ ⊢[ _ ] tmElimW _ _ _ _ _ _ _ _ : _ @ _ ] =>
+      eapply wf_elimW'; [ reflexivity | discriminate | lvl_ok | lvl_ok | lvl_ok | wtop .. ]
+  end
+(** A judgement in a context: the context first, then the judgement. *)
+with wtop :=
+  lazymatch goal with
+  | |- [ _ ; _ ⊢[ _ ] ] => wctx
+  | |- [ ?G ; ?Γ ⊢[ ?i ] _ @ _ ] =>
+      let HΓ := fresh "HΓ" in assert (HΓ : [ G ; Γ ⊢[ typeof i ] ]) by (wnorm; wctx); wty
+  | |- [ ?G ; ?Γ ⊢[ ?i ] _ : _ @ _ ] =>
+      let HΓ := fresh "HΓ" in assert (HΓ : [ G ; Γ ⊢[ typeof i ] ]) by (wnorm; wctx); wty
+  end.
+
+(** The scopes' declarations, one by one, each prefix proved once. *)
+Ltac wglob :=
+  lazymatch goal with
+  | |- [ ⊢ mkG _ (gdCtx :: _) ] => apply wfg_ctx; wglob
+  | |- [ ⊢ mkG ?L (gdTy _ _ _ :: ?Ψ) ] =>
+      let HΨ := fresh "HΨ" in assert (HΨ : [ ⊢ mkG L Ψ ]) by wglob;
+      apply wfg_ty; [ exact HΨ | wtop | first [left; reflexivity | right; reflexivity] | lvl_ok ]
+  | |- [ ⊢ mkG ?L (gdTm _ _ _ _ :: ?Ψ) ] =>
+      let HΨ := fresh "HΨ" in assert (HΨ : [ ⊢ mkG L Ψ ]) by wglob;
+      apply wfg_tm; [ exact HΨ | wtop | first [left; reflexivity | right; reflexivity] | lvl_ok ]
+  | |- [ ⊢ _ ] => assumption
+  end.
+
 Section Scopes.
 Context {G : gctx} (HG : [ ⊢ G ]).
 
@@ -228,12 +342,21 @@ Proof.
   wfd_all.
 Qed.
 
-Lemma wf_brG k : k < nbr -> [ ⊢ brG k G ].
+Lemma wf_brG_W k : 39 <= k < 43 -> [ ⊢ brG k G ].
 Proof.
   intros Hk. pose proof (uwk_glob (br_nu k) G HG) as Hu.
   unfold brG, gctx_uwk in *; cbn [gL gΨ] in *.
-  br_all ltac:(destruct k; [cbn [brDecls List.app br_nu br_ar] in *; unfold gv, gu;
-    cbn [ren Ren_ty Ren_tm ren_ty ren_tm lren r2l rdrop rshift1]; wfd_all|]). lia.
+  assert (k = 39 \/ k = 40 \/ k = 41 \/ k = 42) as [E|[E|[E|E]]] by lia; subst k;
+    cbn [brDecls List.app br_nu br_ar] in *; unfold gv, gu; wnorm; wglob.
+Qed.
+
+Lemma wf_brG k : k < nbr -> [ ⊢ brG k G ].
+Proof.
+  intros Hk. destruct (Nat.le_gt_cases 39 k) as [HW|HW]; [apply wf_brG_W; lia|].
+  pose proof (uwk_glob (br_nu k) G HG) as Hu.
+  unfold brG, gctx_uwk in *; cbn [gL gΨ] in *.
+  br_all ltac:(destruct k; [first [exfalso; lia | cbn [brDecls List.app br_nu br_ar] in *; unfold gv, gu;
+    cbn [ren Ren_ty Ren_tm ren_ty ren_tm lren r2l rdrop rshift1]; wfd_all]|]). lia.
 Qed.
 
 End Scopes.

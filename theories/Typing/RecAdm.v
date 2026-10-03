@@ -279,15 +279,22 @@ Ltac code_side :=
   | |- [ _ ; _ ⊢[ _ ] _ : _ @ _ ] => progress wfd
   end; try assumption.
 
+(* W-types (M13b): the memoised scope automation of [RecWf], after the
+   instances are normalised by computation *)
+Ltac code_side_W := wnorm; wtop.
+
 (** The side conditions: levels, the scrutinees' contexts and typings. *)
+Ltac code_side_k k :=
+  let b := eval cbv in (Nat.leb 39 k) in
+  lazymatch b with true => code_side_W | false => code_side end.
 Ltac br_side k HΓ :=
   first
   [ solve [cbn; lia]
   | solve [apply lwf_ush; assumption]
   | apply (wf_wkc_br _ _ k ltac:(lia) HΓ)
-  | eapply wf_boxT; [ br_side k HΓ | br_side k HΓ | br_side k HΓ | unfold gv, gu; code_side ]
-  | eapply wf_boxt; [ br_side k HΓ | br_side k HΓ | br_side k HΓ | unfold gv, gu; code_side | unfold gv, gu; code_side ]
-  | unfold gv, gu; code_side ].
+  | eapply wf_boxT; [ br_side k HΓ | br_side k HΓ | br_side k HΓ | unfold gv, gu; code_side_k k ]
+  | eapply wf_boxt; [ br_side k HΓ | br_side k HΓ | br_side k HΓ | unfold gv, gu; code_side_k k | unfold gv, gu; code_side_k k ]
+  | unfold gv, gu; code_side_k k ].
 
 Section Adm.
 Context {G : gctx} {Γ : ctx} (HΓ : [ G ; Γ ⊢[ lM ] ]) {l1 l2 : lvl} (Hl1 : lwf (gL G) l1) (Hl2 : lwf (gL G) l2)

@@ -297,6 +297,13 @@ Proof.
   now rewrite !gs_shift_ty'.
 Qed.
 
+(** [elimW]'s step telescope (M13b): the raw forms [cbn] leaves under the
+    payload binders. *)
+Lemma gs_ren_ty_raw (A : ty) r σ : gsubst_ty (ren_ty A r) σ = ren_ty (gsubst_ty A σ) r.
+Proof. apply gsubst_ren_ty. Qed.
+Lemma gs_ren_tm_raw (t : tm) r σ : gsubst_tm (ren_tm t r) σ = ren_tm (gsubst_tm t σ) r.
+Proof. apply gsubst_ren. Qed.
+
 Ltac gpeel_push Hσ :=
   repeat first [ rewrite <- peelL_gsubst by hd_tac
                | rewrite <- peelG_gsubst by first [hd_tac | exact Hσ]
@@ -305,7 +312,11 @@ Ltac gpeel_push Hσ :=
   cbn [gosubst gsubst GSubst_tm GSubst_ty GSubst_ctx gsubst_tm gsubst_ty gcsubst recT rect];
   (* [case]'s branch types (M12c), before the generic single substitution *)
   try match goal with |- context [tmInl _ _ _ _ (var 0)] => rewrite ?gs_case_inl_ty', ?gs_case_inr_ty' end;
-  rewrite ?gs_single_ty', ?gs_lsucc_ty', ?gs_single2_ty', ?gs_shift_ty', ?gs_shift'; reflexivity.
+  rewrite ?gs_single_ty', ?gs_lsucc_ty', ?gs_single2_ty', ?gs_shift_ty', ?gs_shift';
+  try match goal with |- context [tmSup _ _ _ _ (var 2) (var 1)] =>
+    repeat progress (cbn [gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty];
+      rewrite ?gsubst_ren_ty, ?gsubst_ren, ?gs_ren_ty_raw, ?gs_ren_tm_raw) end;
+  reflexivity.
 
 Lemma redT_gsubst l1 l2 MT Mt bs l Δ c v σ : gdnf σ ->
   redT l1 l2 (mkrb MT Mt bs) l Δ c = Some v ->

@@ -110,6 +110,10 @@ Proof. destruct b; cbn; auto. symmetry; apply gren_single. Qed.
 
 Lemma gren_ty_subst_raw M d ξ : gren_ty (subst_ty M d) ξ = subst_ty (gren_ty M ξ) (glren d ξ).
 Proof. exact (gren_subst_ty M d ξ). Qed.
+Lemma gren_ren_ty_raw (A : ty) r ξ : gren_ty (ren_ty A r) ξ = ren_ty (gren_ty A ξ) r.
+Proof. apply gren_ren_ty. Qed.
+Lemma gren_ren_tm_raw (t : tm) r ξ : gren_tm (ren_tm t r) ξ = ren_tm (gren_tm t ξ) r.
+Proof. apply (proj1 (proj2 gren_ren_all)). Qed.
 
 Ltac gpeel_push :=
   repeat first [ rewrite <- peelL_gren | rewrite <- peelG_gren | rewrite <- peelU_gren ];
@@ -119,6 +123,11 @@ Ltac gpeel_push :=
   (* [case]'s branch types (M12c): the injection under the single substitution *)
   try match goal with |- context [tmInl _ _ _ _ (var 0)] =>
     cbn [glren lsingle gren_tm gren_ty]; rewrite ?gren_ren_ty', ?gren_ren end;
+  (* [elimW]'s step telescope (M13b): renamings and substitutions nested
+     under the payload binders *)
+  try match goal with |- context [tmSup _ _ _ _ (var 2) (var 1)] =>
+    repeat progress (cbn [glren lsingle gren_tm gren_ty];
+      rewrite ?gren_ty_subst_raw, ?gren_ren_ty_raw, ?gren_ren_tm_raw, ?gren_ren_ty', ?gren_ren) end;
   reflexivity.
 
 Lemma redT_gren l1 l2 rb l Δ c v ξ : redT l1 l2 rb l Δ c = Some v ->

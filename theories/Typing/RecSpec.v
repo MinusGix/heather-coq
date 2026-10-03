@@ -184,6 +184,29 @@ Definition brDecls (k : nat) : list gdecl :=
              (tyGvar 0 (lcons (lshift 1) (tmInl (lvar 2) (lvar 1) (gv 2)⟨↑⟩ (gv 1)⟨↑⟩ (var 0)))) (lvar 0);
            gdTy (cvar 2 ,, tySum (lvar 2) (lvar 1) (gv 1) (gv 0) @ lmax (lvar 2) (lvar 1)) lC (lvar 0);
            gdTy (cvar 1) lC (lvar 1); gdTy (cvar 0) lC (lvar 2); gdCtx]
+  (* W-types (M13b). ℓ ℓ'; g, U_S, U_T: as t_Σ *)
+  | 39 => [gdTy (cvar 1 ,, gv 0 @ lvar 1) lC (lvar 0); gdTy (cvar 0) lC (lvar 1); gdCtx]
+  (* ℓ ℓ'; g, u_s, u_t: as t'_Σ *)
+  | 40 => [gdTm (cvar 1 ,, tyEl (lvar 1) (gu 0) @ lvar 1) lC (tyU (lvar 0)) (lsuc (lvar 0));
+           gdTm (cvar 0) lC (tyU (lvar 1)) (lsuc (lvar 1)); gdCtx]
+  (* ℓ ℓ'; g, U_S, U_T, u_a : (g ⊢C U_S^id @ℓ),
+     u_f : (g ⊢C Π(y : U_T^{id,u_a^id/x}). (W U_S^id U_T^id)^↑ @ℓ'⊔ℓ⊔ℓ') *)
+  | 41 => [gdTm (cvar 3) lC (tyPi (lvar 0) (lmax (lvar 1) (lvar 0)) (tyGvar 1 (lsingle (gu 0)))
+                                (tyW (lvar 1) (lvar 0) (gv 2) (gv 1))⟨↑⟩)
+             (lmax (lvar 0) (lmax (lvar 1) (lvar 0)));
+           gdTm (cvar 2) lC (gv 1) (lvar 1);
+           gdTy (cvar 1 ,, gv 0 @ lvar 1) lC (lvar 0);
+           gdTy (cvar 0) lC (lvar 1); gdCtx]
+  (* ℓ ℓ' ℓ''; g, U_S, U_T, U_M : (g, w : W U_S^id U_T^id ⊢C @ℓ''),
+     u_s : (g, x : U_S^id, f : wfty, h : wihty ⊢C wstepty @ℓ''),
+     u_t : (g ⊢C W U_S^id U_T^id @ℓ⊔ℓ') *)
+  | 42 => [gdTm (cvar 4) lC (tyW (lvar 2) (lvar 1) (gv 3) (gv 2)) (lmax (lvar 2) (lvar 1));
+           gdTm (cvar 3 ,, gv 2 @ lvar 2
+                        ,, wfty (lvar 2) (lvar 1) (gv 2) (gv 1) @ lmax (lvar 1) (lmax (lvar 2) (lvar 1))
+                        ,, wihty (lvar 2) (lvar 1) (lvar 0) (gv 2) (gv 1) (gv 0) @ lmax (lvar 1) (lvar 0)) lC
+             (wstepty (lvar 2) (lvar 1) (gv 2) (gv 1) (gv 0)) (lvar 0);
+           gdTy (cvar 2 ,, tyW (lvar 2) (lvar 1) (gv 1) (gv 0) @ lmax (lvar 2) (lvar 1)) lC (lvar 0);
+           gdTy (cvar 1 ,, gv 0 @ lvar 2) lC (lvar 1); gdTy (cvar 0) lC (lvar 2); gdCtx]
   | _ => []
   end.
 
@@ -287,6 +310,24 @@ Definition br_calls (k : nat) : list rcall :=
             rct (lvar 0) (cvar 6 ,, gv 4 @ lvar 1)
               (tyGvar 3 (lcons (lshift 1) (tmInr (lvar 2) (lvar 1) (gv 5)⟨↑⟩ (gv 4)⟨↑⟩ (var 0)))) (boxt (gu 1));
             rct (lmax (lvar 2) (lvar 1)) (cvar 6) (tySum (lvar 2) (lvar 1) (gv 5) (gv 4)) (boxt (gu 0)) ]
+  | 39 => [ rcT (lvar 1) (cvar 2) (boxT (gv 1));
+            rcT (lvar 0) (cvar 2 ,, gv 1 @ lvar 1) (boxT (gv 0)) ]
+  | 40 => [ rct (lsuc (lvar 1)) (cvar 2) (tyU (lvar 1)) (boxt (gu 1));
+            rct (lsuc (lvar 0)) (cvar 2 ,, tyEl (lvar 1) (gu 1) @ lvar 1) (tyU (lvar 0)) (boxt (gu 0)) ]
+  | 41 => [ rcT (lvar 1) (cvar 4) (boxT (gv 3));
+            rcT (lvar 0) (cvar 4 ,, gv 3 @ lvar 1) (boxT (gv 2));
+            rct (lvar 1) (cvar 4) (gv 3) (boxt (gu 1));
+            rct (lmax (lvar 0) (lmax (lvar 1) (lvar 0))) (cvar 4)
+              (tyPi (lvar 0) (lmax (lvar 1) (lvar 0)) (tyGvar 2 (lsingle (gu 1)))
+                 (tyW (lvar 1) (lvar 0) (gv 3) (gv 2))⟨↑⟩) (boxt (gu 0)) ]
+  | 42 => [ rcT (lvar 2) (cvar 5) (boxT (gv 4));
+            rcT (lvar 1) (cvar 5 ,, gv 4 @ lvar 2) (boxT (gv 3));
+            rcT (lvar 0) (cvar 5 ,, tyW (lvar 2) (lvar 1) (gv 4) (gv 3) @ lmax (lvar 2) (lvar 1)) (boxT (gv 2));
+            rct (lvar 0) (cvar 5 ,, gv 4 @ lvar 2
+                                ,, wfty (lvar 2) (lvar 1) (gv 4) (gv 3) @ lmax (lvar 1) (lmax (lvar 2) (lvar 1))
+                                ,, wihty (lvar 2) (lvar 1) (lvar 0) (gv 4) (gv 3) (gv 2) @ lmax (lvar 1) (lvar 0))
+              (wstepty (lvar 2) (lvar 1) (gv 4) (gv 3) (gv 2)) (boxt (gu 1));
+            rct (lmax (lvar 2) (lvar 1)) (cvar 5) (tyW (lvar 2) (lvar 1) (gv 4) (gv 3)) (boxt (gu 0)) ]
   | _ => []
   end.
 
@@ -344,6 +385,13 @@ Definition br_head (k : nat) : rcall :=
             (boxt (tmInr (lvar 1) (lvar 0) (gv 2) (gv 1) (gu 0)))
   | 38 => rct (lvar 0) (cvar 6) (tyGvar 3 (lsingle (gu 0)))
             (boxt (tmCase (lvar 2) (lvar 1) (lvar 0) (gv 5) (gv 4) (gv 3) (gu 2) (gu 1) (gu 0)))
+  | 39 => rcT (lmax (lvar 1) (lvar 0)) (cvar 2) (boxT (tyW (lvar 1) (lvar 0) (gv 1) (gv 0)))
+  | 40 => rct (lsuc (lmax (lvar 1) (lvar 0))) (cvar 2) (tyU (lmax (lvar 1) (lvar 0)))
+            (boxt (tmW (lvar 1) (lvar 0) (gu 1) (gu 0)))
+  | 41 => rct (lmax (lvar 1) (lvar 0)) (cvar 4) (tyW (lvar 1) (lvar 0) (gv 3) (gv 2))
+            (boxt (tmSup (lvar 1) (lvar 0) (gv 3) (gv 2) (gu 1) (gu 0)))
+  | 42 => rct (lvar 0) (cvar 5) (tyGvar 2 (lsingle (gu 0)))
+            (boxt (tmElimW (lvar 2) (lvar 1) (lvar 0) (gv 4) (gv 3) (gv 2) (gu 1) (gu 0)))
   | _ => rcT lzero cnil (boxT tyErr)
   end.
 

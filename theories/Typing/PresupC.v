@@ -570,6 +570,70 @@ Proof.
   split; [apply wf_code_sum; eauto using lequiv_wf_l | exact (sc_code_sum_q HiD Hv H13 H24 Hs' Ht')].
 Qed.
 
+(** Well-founded trees and their code (every layer but V since M13b). *)
+Lemma pc_W {Γ l1 l2 l3 l4 A A' B B'} : i <> lV -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ] /\ [ G ; Γ ⊢[ i ] tyW l3 l4 A' B' @ lmax l1 l2 ].
+Proof.
+  intros Hv H13 H24 HA HAA HA' HB HB'.
+  split; [apply wft_W; eauto using lequiv_wf_l | exact (sc_W_q HiD Hv H13 H24 HA HA' HAA HB')].
+Qed.
+
+Lemma pc_sup {Γ l1 l2 l3 l4 A A' B B' a a' f f'} : i <> lV -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] -> [ G ; Γ ⊢[ i ] a : A @ l1 ] -> [ G ; Γ ⊢[ i ] a' : A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] f : tyPi l2 (lmax l1 l2) B[lsingle a] (tyW l1 l2 A B)⟨↑⟩ @ lmax l2 (lmax l1 l2) ] ->
+  [ G ; Γ ⊢[ i ] f' : tyPi l2 (lmax l1 l2) B[lsingle a] (tyW l1 l2 A B)⟨↑⟩ @ lmax l2 (lmax l1 l2) ] ->
+  [ G ; Γ ⊢[ i ] tmSup l1 l2 A B a f : tyW l1 l2 A B @ lmax l1 l2 ] /\
+  [ G ; Γ ⊢[ i ] tmSup l3 l4 A' B' a' f' : tyW l1 l2 A B @ lmax l1 l2 ].
+Proof.
+  intros Hv H13 H24 HA HAA HA' HB HBB HB' Haa Ha Ha' Hf Hf'.
+  split; [apply wf_sup; eauto using lequiv_wf_l |].
+  exact (sc_sup_q HiD Hv H13 H24 HA HA' HAA HB HB' HBB Ha Ha' Haa Hf').
+Qed.
+
+Lemma pc_elimW {Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c c' t t'} : i <> lV ->
+  lequiv (gL G) l1 l4 -> lequiv (gL G) l2 l5 -> lequiv (gL G) l3 l6 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ,, tyW l1 l2 A B @ lmax l1 l2 ⊢[ i ] M @ l3 ] ->
+  [ G ; Γ ,, tyW l1 l2 A B @ lmax l1 l2 ⊢[ i ] M ≅ M' @ l3 ] ->
+  [ G ; Γ ,, tyW l1 l2 A B @ lmax l1 l2 ⊢[ i ] M' @ l3 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ] ->
+  [ G ; Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ⊢[ i ] wihty l1 l2 l3 A B M @ lmax l2 l3 ] ->
+  [ G ; Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ,, wihty l1 l2 l3 A B M @ lmax l2 l3
+      ⊢[ i ] c : wstepty l1 l2 A B M @ l3 ] ->
+  [ G ; Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ,, wihty l1 l2 l3 A B M @ lmax l2 l3
+      ⊢[ i ] c' : wstepty l1 l2 A B M @ l3 ] ->
+  [ G ; Γ ⊢[ i ] t ≅ t' : tyW l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ i ] t : tyW l1 l2 A B @ lmax l1 l2 ] -> [ G ; Γ ⊢[ i ] t' : tyW l1 l2 A B @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢[ i ] tmElimW l1 l2 l3 A B M c t : M[lsingle t] @ l3 ] /\
+  [ G ; Γ ⊢[ i ] tmElimW l4 l5 l6 A' B' M' c' t' : M[lsingle t] @ l3 ].
+Proof.
+  intros Hv H14 H25 H36 HA HAA HA' HB HBB HB' HM HMM HM' HF HI Hc Hc' Htt Ht Ht'.
+  split; [apply wf_elimW; eauto using lequiv_wf_l |].
+  exact (sc_elimW_q HiD Hv H14 H25 H36 HA HA' HAA HB HB' HBB HM HM' HMM HF HI Hc' Ht Ht' Htt).
+Qed.
+
+Lemma pc_codeW {Γ l1 l2 l3 l4 s s' t t'} : i <> lV -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] s : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l1 @ lsuc l1 ] ->
+  [ G ; Γ ⊢[ i ] s' : tyU l1 @ lsuc l1 ] ->
+  [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t : tyU l2 @ lsuc l2 ] ->
+  [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t' : tyU l2 @ lsuc l2 ] ->
+  [ G ; Γ ⊢[ i ] tmW l1 l2 s t : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ] /\
+  [ G ; Γ ⊢[ i ] tmW l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ].
+Proof.
+  intros Hv H13 H24 Hs Hss Hs' Ht Ht'. split; [apply wf_code_W; eauto using lequiv_wf_l|].
+  assert (HEl : [ G ; Γ ⊢[ i ] tyEl l1 s @ l1 ]) by (apply wft_El; eauto using lequiv_wf_l).
+  assert (HEE : [ G ; Γ ⊢[ i ] tyEl l1 s ≅ tyEl l3 s' @ l1 ]) by (apply eqty_El; auto).
+  apply (convU_at (l := lmax l3 l4)); [|apply lequiv_sym, lequiv_max; assumption].
+  apply wf_code_W; eauto using lequiv_wf_r.
+  - exact (convU_at Hs' H13).
+  - exact (convU_at (ctxconv_tm (extc HEl HEE H13) Hd Ht') H24).
+Qed.
+
 End Cases.
 
 Theorem presupposition_C :
@@ -615,7 +679,10 @@ Proof.
              | solve [eapply pc_empty; eassumption] | solve [eapply pc_elimEmpty; eassumption]
              | solve [eapply pc_sum; eassumption] | solve [eapply pc_inl; eassumption]
              | solve [eapply pc_inr; eassumption] | solve [eapply pc_case; eassumption]
-             | solve [eapply pc_code_empty; eassumption] | solve [eapply pc_code_sum; eassumption] ].
+             | solve [eapply pc_code_empty; eassumption] | solve [eapply pc_code_sum; eassumption]
+             (* well-founded trees and their code (M13b) *)
+             | solve [eapply pc_W; eassumption] | solve [eapply pc_sup; eassumption]
+             | solve [eapply pc_elimW; eassumption] | solve [eapply pc_codeW; eassumption] ].
 Qed.
 
 Lemma eqty_wf_C {G i Γ T T' l} : lle i lC -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->

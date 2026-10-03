@@ -317,6 +317,9 @@ Ltac br_lvl := cbn; repeat split; try lia.
 Ltac br_tac :=
   repeat first
     [ assumption | exact I | reflexivity | discriminate | apply lle_refl
+    (* well-founded trees (M13b): the step telescope's scopes, by [RecWf]'s
+       memoised scope automation *)
+    | match goal with |- context [tyW _ _ _ _] => solve [unfold gv, gu; wnorm; wtop] end
     | glookup
     | apply wkr_id | apply wkr_shift_S
     | apply wfc_var | apply wfc_ext
