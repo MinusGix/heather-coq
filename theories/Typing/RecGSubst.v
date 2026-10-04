@@ -309,12 +309,12 @@ Ltac gpeel_push Hσ :=
                | rewrite <- peelG_gsubst by first [hd_tac | exact Hσ]
                | rewrite <- peelU_gsubst by first [hd_tac | exact Hσ] ];
   unfold rb_br; rewrite tup_nth_gsubst by hd_tac;
-  cbn [gosubst gsubst GSubst_tm GSubst_ty GSubst_ctx gsubst_tm gsubst_ty gcsubst recT rect];
+  cbn [gosubst gsubst GSubst_tm GSubst_ty GSubst_ctx gsubst_tm gsubst_ty gcsubst recT rect]; fold gsubst_ty gsubst_tm gcsubst glsubst;
   (* [case]'s branch types (M12c), before the generic single substitution *)
   try match goal with |- context [tmInl _ _ _ _ (var 0)] => rewrite ?gs_case_inl_ty', ?gs_case_inr_ty' end;
   rewrite ?gs_single_ty', ?gs_lsucc_ty', ?gs_single2_ty', ?gs_shift_ty', ?gs_shift';
   try match goal with |- context [tmSup _ _ _ _ (var 2) (var 1)] =>
-    repeat progress (cbn [gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty];
+    repeat progress (cbn [gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty]; fold gsubst_ty gsubst_tm gcsubst glsubst;
       rewrite ?gsubst_ren_ty, ?gsubst_ren, ?gs_ren_ty_raw, ?gs_ren_tm_raw) end;
   reflexivity.
 
@@ -325,7 +325,7 @@ Proof.
   intros Hσ E. pose proof E as E0. apply (f_equal (option_map (fun x => x⦃σ⦄))) in E.
   cbn [option_map] in E. rewrite <- E. clear E.
   destruct c; cbn [redT] in E0; try discriminate E0;
-    cbn [redT option_map gsubst GSubst_ty gsubst_ty]; f_equal; gpeel_push Hσ.
+    cbn [redT option_map gsubst GSubst_ty gsubst_ty]; fold gsubst_ty gsubst_tm gcsubst glsubst; f_equal; gpeel_push Hσ.
 Qed.
 Lemma redt_gsubst l1 l2 MT Mt bs l Δ T c v σ : gdnf σ ->
   redt l1 l2 (mkrb MT Mt bs) l Δ T c = Some v ->
@@ -334,5 +334,5 @@ Proof.
   intros Hσ E. pose proof E as E0. apply (f_equal (option_map (fun x => x⦃σ⦄))) in E.
   cbn [option_map] in E. rewrite <- E. clear E.
   destruct c; cbn [redt] in E0; redt_case T; try discriminate E0;
-    cbn [redt option_map gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty]; f_equal; gpeel_push Hσ.
+    cbn [redt option_map gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty]; fold gsubst_ty gsubst_tm gcsubst glsubst; f_equal; gpeel_push Hσ.
 Qed.
