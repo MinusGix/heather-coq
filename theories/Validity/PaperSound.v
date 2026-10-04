@@ -17,7 +17,7 @@
     So consistency, canonicity, normalization and decidability of
     conversion hold for the paper's system on its typable syntax. *)
 From DeLaM.Typing Require Import Paper PresupC RecAdm.
-From DeLaM.Validity Require Import AlgSound RecReduct Consistency Canonicity.
+From DeLaM.Validity Require Import AlgSound RecReduct Consistency ConsistencyDef Canonicity.
 
 (** ** Auxiliaries *)
 
@@ -518,9 +518,11 @@ Qed.
 
 (** ** Consequences for the paper's system *)
 
-Corollary paper_consistency {G i t l1 l2 l l' k} : compt i -> closed_ok i G ->
+(** Consistency holds with definitions at both computing layers
+    ([ConsistencyDef.v]), canonicity at M only without them. *)
+Corollary paper_consistency {G i t l1 l2 l l' k} : compt i -> no_opaque G ->
   ~ [ G ; cnil ⊢ₚ[ i ] t : tyPi l1 l2 (tyU l) (tyEl l' (var 0)) @ k ].
-Proof. intros Hc HG H. exact (consistency_closed Hc HG (proj1 (proj2 (proj2 (proj2 paper_sound))) _ _ _ _ _ _ H)). Qed.
+Proof. intros Hc HG H. exact (consistency_def_closed Hc HG (proj1 (proj2 (proj2 (proj2 paper_sound))) _ _ _ _ _ _ H)). Qed.
 
 (** A closed P-typed term reduces to a canonical value (its equation with
     the value is an O equation; the P one needs O ⊆ P). *)

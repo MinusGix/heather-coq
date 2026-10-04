@@ -361,17 +361,18 @@ Proof.
   intros [HG | (Ei & HG)] Ht; [exact (no_closed_neutral Ht eq_refl HG) | exact (no_closed_neutral_D Ht eq_refl Ei HG)].
 Qed.
 
-Lemma closed_ok_tyGvar {G i U Δ i' l} : closed_ok i G -> ~ in_gctx (gΨ G) U (gdTy Δ i' l).
-Proof.
-  intros [HG | (_ & HG)] Hin; [discriminate (HG _ _ Hin) |].
-  destruct (HG _ _ Hin) as [Q | (? & ? & ? & ? & Q)]; discriminate Q.
-Qed.
+Lemma closed_ok_no_opaque {i G} : closed_ok i G -> no_opaque G.
+Proof. intros [HG | (_ & HG)] n D Hin; [left; exact (HG _ _ Hin) | exact (HG _ _ Hin)]. Qed.
 
+Lemma no_opaque_tyGvar {G U Δ i' l} : no_opaque G -> ~ in_gctx (gΨ G) U (gdTy Δ i' l).
+Proof. intros HG Hin. destruct (HG _ _ Hin) as [Q | (? & ? & ? & ? & Q)]; discriminate Q. Qed.
+Lemma no_opaque_gvar {G u Δ i' T l} : no_opaque G -> ~ in_gctx (gΨ G) u (gdTm Δ i' T l).
+Proof. intros HG Hin. destruct (HG _ _ Hin) as [Q | (? & ? & ? & ? & Q)]; discriminate Q. Qed.
+
+Lemma closed_ok_tyGvar {G i U Δ i' l} : closed_ok i G -> ~ in_gctx (gΨ G) U (gdTy Δ i' l).
+Proof. intros HG; exact (no_opaque_tyGvar (closed_ok_no_opaque HG)). Qed.
 Lemma closed_ok_gvar {G i u Δ i' T l} : closed_ok i G -> ~ in_gctx (gΨ G) u (gdTm Δ i' T l).
-Proof.
-  intros [HG | (_ & HG)] Hin; [discriminate (HG _ _ Hin) |].
-  destruct (HG _ _ Hin) as [Q | (? & ? & ? & ? & Q)]; discriminate Q.
-Qed.
+Proof. intros HG; exact (no_opaque_gvar (closed_ok_no_opaque HG)). Qed.
 
 (** At M, [closed_ok] is [ctx_only] (DefStuck.v: with a definition, M has
     closed neutrals). *)
