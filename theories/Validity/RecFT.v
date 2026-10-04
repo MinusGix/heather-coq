@@ -11,10 +11,7 @@ From DeLaM.Validity Require Export RecS.
 (** ** Syntax: the bundle's components from a recursor's typing *)
 
 Lemma mkrb_inj_bs {MT Mt bs MT' Mt' bs'} : mkrb MT Mt bs = mkrb MT' Mt' bs' -> forall k, k < nbr -> bs k = bs' k.
-Proof.
-  unfold mkrb; cbn. intros H k Hk. injection H; intros.
-  br_all ltac:(destruct k as [|k]; [assumption|]). lia.
-Qed.
+Proof. intros H; exact (proj2 (proj2 (mkrb_inj H))). Qed.
 
 Lemma RBwf_ext {G Γ l1 l2 MT Mt bs bs'} : (forall k, k < nbr -> bs k = bs' k) ->
   RBwf G Γ l1 l2 MT Mt bs -> RBwf G Γ l1 l2 MT Mt bs'.

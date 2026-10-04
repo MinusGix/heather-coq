@@ -466,7 +466,7 @@ Qed.
 
 (** [mkrb] is injective in its motives. *)
 Lemma mkrb_inj_MT {MT Mt bs MT' Mt' bs'} : mkrb MT Mt bs = mkrb MT' Mt' bs' -> MT = MT' /\ Mt = Mt'.
-Proof. unfold mkrb, wrapMT, wrapMt. intros H; injection H; intros; subst; auto. Qed.
+Proof. intros H; destruct (mkrb_inj H) as (E1 & E2 & _); exact (conj E1 E2). Qed.
 
 (** Variants with explicit arities, for rewriting. *)
 Lemma lvren_ush_uext' l n ls φ : length ls = n -> lvsubst (lvren l (ush n)) (uext ls φ) = lvsubst l φ.

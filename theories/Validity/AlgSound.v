@@ -1583,10 +1583,7 @@ Qed.
 (** [mkrb] is injective in its branches (the thirteen that exist). *)
 Lemma mkrb_inj_br {MT Mt bs MT' Mt' bs'} : mkrb MT Mt bs = mkrb MT' Mt' bs' ->
   forall k, k < nbr -> bs k = bs' k.
-Proof.
-  intros H k Hk. unfold mkrb in H. injection H; intros.
-  br_all ltac:(destruct k as [|k]; [assumption|]). lia.
-Qed.
+Proof. intros H; exact (proj2 (proj2 (mkrb_inj H))). Qed.
 
 Lemma elimT_core {G Γ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' l l' Δ Δ' t t' i k k' X X'} :
   leqv l1 l1' -> leqv l2 l2' -> leqv l l' -> S_ctx G Δ Δ' ->

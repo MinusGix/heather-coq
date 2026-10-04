@@ -120,6 +120,38 @@ Definition mkrb (MT Mt : ty) (bs : nat -> tm) : tm :=
   tmTup (wrapMT MT) (tmTup (wrapMt Mt)
     (tup_from (fun k => let '(nu, ng, nl) := br_ar k in wrap nu ng nl (bs k)) 0 nbr)).
 
+(** [mkrb] is injective. Proved through [tup_nth] and the wrappers'
+    injectivity: [injection] on two [mkrb]s unfolds the whole block, which
+    cost seconds per use (and as much again at [Qed]). *)
+Lemma tup_nth_from f i n j : j < n -> tup_nth (tup_from f i n) j = f (i + j).
+Proof.
+  revert i j; induction n as [|n IH]; intros i [|j] Hj; cbn [tup_from tup_nth].
+  1, 2: exfalso; inversion Hj.
+  - now rewrite Nat.add_0_r.
+  - rewrite IH by (apply PeanoNat.lt_S_n, Hj). now rewrite Nat.add_succ_r.
+Qed.
+Lemma wrapU_inj n b b' : wrapU n b = wrapU n b' -> b = b'.
+Proof. induction n; cbn [wrapU]; intros H; [exact H | injection H; auto]. Qed.
+Lemma wrapG_inj n b b' : wrapG n b = wrapG n b' -> b = b'.
+Proof. induction n; cbn [wrapG]; intros H; [exact H | injection H; auto]. Qed.
+Lemma wrapL_inj n b b' : wrapL n b = wrapL n b' -> b = b'.
+Proof. induction n; cbn [wrapL]; intros H; [exact H | injection H; auto]. Qed.
+Lemma wrap_inj nu ng nl b b' : wrap nu ng nl b = wrap nu ng nl b' -> b = b'.
+Proof. unfold wrap; intros H; apply wrapU_inj, wrapG_inj, wrapL_inj in H; exact H. Qed.
+
+Lemma mkrb_inj {MT Mt bs MT' Mt' bs'} : mkrb MT Mt bs = mkrb MT' Mt' bs' ->
+  MT = MT' /\ Mt = Mt' /\ forall k, k < nbr -> bs k = bs' k.
+Proof.
+  intros H; split; [|split].
+  - pose proof (f_equal (fun t => tup_nth t 0) H) as E; cbn [tup_nth mkrb wrapMT] in E.
+    injection E as E; exact E.
+  - pose proof (f_equal (fun t => tup_nth t 1) H) as E; cbn [tup_nth mkrb wrapMt] in E.
+    injection E as E; exact E.
+  - intros k Hk. pose proof (f_equal (fun t => tup_nth t (S (S k))) H) as E.
+    cbn [tup_nth mkrb] in E. rewrite !tup_nth_from in E by exact Hk. cbv beta in E.
+    destruct (br_ar (0 + k)) as [[nu ng] nl]. exact (wrap_inj _ _ _ _ _ E).
+Qed.
+
 Definition rb_br (rb : tm) (k : nat) : tm := tup_nth rb (2 + k).
 
 (** ** Peeling one binder *)
