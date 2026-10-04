@@ -72,7 +72,9 @@ From M8 on, the milestones check the extensions of Heather's kernel
   cheap (shared generic laws, recursor branches through one lemma, rule
   lists); see `M8_DESIGN.md`.
 - Milestone 9: bodied globals (definitions, δ at the computing layers);
-  see `M9_DESIGN.md`, which also lists its open items.
+  see `M9_DESIGN.md`, which also lists its open items. Its follow-up
+  checks that closed canonicity fails at M with definitions and proves
+  consistency with them at D and M.
 - Milestone 10: strict equality. `sEq`, `srefl`, `sEmpty`, its
   eliminator and proof irrelevance are done. Heather removed `transp` and
   the strip rule after this formalization found that a computing
