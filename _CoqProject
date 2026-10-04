@@ -47,6 +47,7 @@ theories/Typing/AlgStruct.v
 theories/Typing/CtxConv.v
 theories/Typing/InvAny.v
 theories/Typing/PresupC.v
+theories/Typing/Unfold.v
 theories/Typing/RecAdm.v
 theories/Typing/DecSide.v
 theories/Typing/GConv.v
