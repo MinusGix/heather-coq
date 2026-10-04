@@ -422,7 +422,10 @@ Qed.
 Lemma getTy_subst t d : hd_ok t -> (getTy t)[d] = getTy t[d].
 Proof. destruct t; cbn; try contradiction; reflexivity. Qed.
 
-Ltac hd_tac := cbn; exact I.
+(** [exact I] first: conversion reduces only what it must, where a [cbn]
+    normalises the whole bundle (85% of [brLocs_subst], tried on every
+    side condition of a [rewrite ?motT_subst]). *)
+Ltac hd_tac := first [exact I | cbn; exact I].
 
 Lemma motT_subst w lv g c d : hd_ok w -> hd_ok (peelU w lv) -> hd_ok (peelG (peelU w lv) (GCtx g)) ->
   hd_ok (peelL (peelG (peelU w lv) (GCtx g)) c) ->
