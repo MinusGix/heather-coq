@@ -1345,6 +1345,26 @@ Proof.
   eapply (stab_ty Hi HA H13); [apply ext_wf; eauto using lequiv_wf_r | exact HB].
 Qed.
 
+(** The code of [W] (M13b), as [Σ]'s. *)
+Lemma pre_codeW_r {Γ l1 l2 l3 l4 s s' t'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] s ≅ s' : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢[ i ] s' : tyU l1 @ lsuc l1 ] ->
+  [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t' : tyU l2 @ lsuc l2 ] ->
+  [ G ; Γ ⊢[ i ] tmW l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ].
+Proof.
+  intros H13 H24 Hs Hs' Ht. pose proof (ctx_of_wf_tm Hi Hs') as HΓ.
+  assert (HEl : [ G ; Γ ⊢[ i ] tyEl l1 s ≅ tyEl l3 s' @ l1 ]) by (apply eqty_El; auto).
+  assert (Hs3 : [ G ; Γ ⊢[ i ] s' : tyU l3 @ lsuc l3 ]) by exact (conv_U Hs' H13).
+  eapply wf_lconv with (l' := lsuc (lmax l3 l4)); [|apply lequiv_suc, lequiv_max; eassumption].
+  eapply conv_tm'.
+  - apply wf_code_W; try solve [eauto using lequiv_wf_r, compt_self].
+    apply (conv_U (l := l2)); [|exact H24].
+    eapply (stab_tm Hi HEl H13); [|exact Ht].
+    apply ext_wf; [apply wft_El; eauto using lequiv_wf_r | eauto using lequiv_wf_r].
+  - eapply eqty_lconv; [|apply lequiv_suc, lequiv_max; apply lequiv_sym; eassumption].
+    apply eqty_U; [exact Hv | now rewrite Hi | apply lequiv_max; eassumption].
+Qed.
+
 Lemma pre_sup_r {Γ l1 l2 l3 l4 A A' B B' a a' f'} :
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
@@ -1572,6 +1592,87 @@ Proof.
     eapply eqty_trans.
     + apply (wf_ty_func HM (d' := lsingle t')). now apply lsub_eq_single.
     + exact (eqty_single Hi HMM Ht').
+Qed.
+
+(** The children's types of [sup], along equal components (M13b). *)
+Lemma W_sup_feq {Γ l1 l2 l3 l4 A A' B B' a a'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
+  [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] -> [ G ; Γ ⊢[ i ] a : A @ l1 ] -> [ G ; Γ ⊢[ i ] a' : A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] tyPi l2 (lmax l1 l2) B[lsingle a] (tyW l1 l2 A B)⟨↑⟩
+      ≅ tyPi l4 (lmax l3 l4) B'[lsingle a'] (tyW l3 l4 A' B')⟨↑⟩ @ lmax l2 (lmax l1 l2) ].
+Proof.
+  intros H13 H24 HA HAA HB HBB Haa Ha Ha'.
+  pose proof (lequiv_wf_l _ _ _ H13) as W1. pose proof (lequiv_wf_l _ _ _ H24) as W2.
+  assert (HL : lequiv (gL G) (lmax l1 l2) (lmax l3 l4)) by (apply lequiv_max; assumption).
+  assert (HW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ]) by (apply wft_W; auto using compt_self).
+  assert (EW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B ≅ tyW l3 l4 A' B' @ lmax l1 l2 ])
+    by (apply eqty_W; auto using compt_self).
+  assert (HBa : [ G ; Γ ⊢[ i ] B[lsingle a] @ l2 ]) by exact (wf_ty_single Hi HB Ha).
+  assert (EBa : [ G ; Γ ⊢[ i ] B[lsingle a] ≅ B'[lsingle a'] @ l2 ]).
+  { eapply eqty_trans; [apply (wf_ty_func HB (d' := lsingle a')); now apply lsub_eq_single |].
+    exact (eqty_single Hi HBB Ha'). }
+  apply eqty_pi; auto using lequiv_max.
+  eapply wk1_eqty; eauto. apply ext_wf; auto.
+Qed.
+
+(** [elim_W]'s facts for a congruence (M13b): the scrutinee's types, the
+    motive's contexts, the step's contexts and the step's types. *)
+Lemma W_facts {Γ l1 l2 l3 l4 l5 l6 A A' B B' M M'} :
+  lequiv (gL G) l1 l4 -> lequiv (gL G) l2 l5 -> lequiv (gL G) l3 l6 ->
+  [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
+  [ G ; Γ ,, tyW l1 l2 A B @ lmax l1 l2 ⊢[ i ] M ≅ M' @ l3 ] ->
+  [ G ; Γ ,, tyW l1 l2 A B @ lmax l1 l2 ⊢[ i ] M @ l3 ] ->
+  [ G ; Γ ,, tyW l1 l2 A B @ lmax l1 l2 ⊢[ i ] M' @ l3 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ] ->
+  [ G ; Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ⊢[ i ] wihty l1 l2 l3 A B M @ lmax l2 l3 ] ->
+  [ G ; Γ ⊢[ i ] tyW l1 l2 A B ≅ tyW l4 l5 A' B' @ lmax l1 l2 ] /\
+  [ G ⊢[ i ] Γ ,, tyW l1 l2 A B @ lmax l1 l2 ≅ Γ ,, tyW l4 l5 A' B' @ lmax l4 l5 ] /\
+  [ G ⊢[ i ] Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ,, wihty l1 l2 l3 A B M @ lmax l2 l3
+      ≅ Γ ,, A' @ l4 ,, wfty l4 l5 A' B' @ lmax l5 (lmax l4 l5) ,, wihty l4 l5 l6 A' B' M' @ lmax l5 l6 ] /\
+  [ G ; Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ,, wihty l1 l2 l3 A B M @ lmax l2 l3 ⊢[ i ]
+      wstepty l1 l2 A B M ≅ wstepty l4 l5 A' B' M' @ l3 ].
+Proof.
+  intros H14 H25 H36 HAA HA HA' HBB HB HB' HMM HM HM' HF HI.
+  pose proof (ctx_of_wf_ty Hi HA) as HΓ.
+  pose proof (lequiv_wf_l _ _ _ H14) as W1. pose proof (lequiv_wf_l _ _ _ H25) as W2.
+  pose proof (lequiv_wf_l _ _ _ H36) as W3.
+  pose proof (lequiv_wf_r _ _ _ H14) as W4. pose proof (lequiv_wf_r _ _ _ H25) as W5.
+  pose proof (lequiv_wf_r _ _ _ H36) as W6.
+  assert (HL : lequiv (gL G) (lmax l1 l2) (lmax l4 l5)) by (apply lequiv_max; assumption).
+  assert (WL : lwf (gL G) (lmax l1 l2)) by auto using lwf_max.
+  assert (WL' : lwf (gL G) (lmax l4 l5)) by auto using lwf_max.
+  assert (HLF : lequiv (gL G) (lmax l2 (lmax l1 l2)) (lmax l5 (lmax l4 l5))) by (apply lequiv_max; assumption).
+  assert (HLI : lequiv (gL G) (lmax l2 l3) (lmax l5 l6)) by (apply lequiv_max; assumption).
+  assert (HW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ]) by (apply wft_W; auto using compt_self).
+  assert (EW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B ≅ tyW l4 l5 A' B' @ lmax l1 l2 ])
+    by (apply eqty_W; auto using compt_self).
+  assert (HW' : [ G ; Γ ⊢[ i ] tyW l4 l5 A' B' @ lmax l4 l5 ])
+    by (eapply wft_lconv; [exact (pre_W_r H14 H25 HAA HA' HB') | exact (lequiv_sym _ _ _ HL)]).
+  assert (HA'4 : [ G ; Γ ⊢[ i ] A' @ l4 ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
+  assert (HΓA' : [ G ; Γ ,, A' @ l4 ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HB'5 : [ G ; Γ ,, A' @ l4 ⊢[ i ] B' @ l5 ])
+    by (eapply wft_lconv; [exact (stab_ty Hi HAA H14 HΓA' HB') | now apply lequiv_sym]).
+  assert (HB'5A : [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l5 ]) by (eapply wft_lconv; [exact HB' | now apply lequiv_sym]).
+  assert (HΓW' : [ G ; Γ ,, tyW l4 l5 A' B' @ lmax l4 l5 ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HM'6 : [ G ; Γ ,, tyW l4 l5 A' B' @ lmax l4 l5 ⊢[ i ] M' @ l6 ])
+    by (eapply wft_lconv; [exact (stab_ty Hi EW HL HΓW' HM') | now apply lequiv_sym]).
+  assert (EW2 : [ G ; Γ ,, A @ l1 ,, B @ l2 ⊢[ i ] (tyW l1 l2 A B)⟨↑⟩⟨↑⟩ ≅ (tyW l4 l5 A' B')⟨↑⟩⟨↑⟩ @ lmax l1 l2 ])
+    by (eapply wk1_eqty; [ | | eapply wk1_eqty]; eauto; apply ext_wf; auto).
+  assert (EF : [ G ; Γ ,, A @ l1 ⊢[ i ] wfty l1 l2 A B ≅ wfty l4 l5 A' B' @ lmax l2 (lmax l1 l2) ])
+    by (apply eqty_pi; auto).
+  pose proof (W_ih_eq H14 H25 H36 HA HB HBB HB' HM HMM HW' EW HF EF) as EI.
+  assert (HΘ : [ G ; Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ,, wihty l1 l2 l3 A B M @ lmax l2 l3 ⊢[ i ] ])
+    by (apply ext_wf; [exact HI | apply lwf_max; assumption]).
+  pose proof (W_step_eq H14 H25 H36 HA HAA HA'4 HB HBB HB'5 HM HMM EW HF EF HΘ) as ES.
+  refine (conj EW (conj _ (conj _ ES))).
+  - apply eqc_ext; [apply eqc_refl; exact HΓ | exact HW | exact EW | exact HL].
+  - apply eqc_ext; [apply eqc_ext; [apply eqc_ext; [apply eqc_refl; exact HΓ | exact HA | exact HAA | exact H14]
+                                  | exact HF | exact EF | exact HLF]
+                  | exact HI | exact EI | exact HLI].
 Qed.
 
 (** A substitution extended by one more entry. *)
@@ -2101,7 +2202,12 @@ Proof.
              | solve [eapply wf_sup; eauto 3 using compt_self with presup]
              | solve [eapply wf_elimW; eauto 3 using compt_self with presup]
              | solve [eapply wf_elimW; try eassumption; eapply wf_sup; eauto using compt_self]
-             | solve [eapply wf_ty_single; try eassumption; eapply wf_sup; eauto using compt_self] ].
+             | solve [eapply wf_ty_single; try eassumption; eapply wf_sup; eauto using compt_self]
+             (* the code of W (M13b) *)
+             | solve [eapply pre_codeW_r; eassumption]
+             | solve [eapply wf_code_W; eauto 3 with presup]
+             | solve [eapply wft_El; eauto with presup; eapply wf_code_W; eassumption]
+             | solve [apply wft_W; eauto 3 using compt_self with presup; apply wft_El; eauto with presup] ].
 Qed.
 
 Section Named.

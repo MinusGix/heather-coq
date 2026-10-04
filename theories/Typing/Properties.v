@@ -234,23 +234,29 @@ Proof.
   intros Hv Hl Hl' HA HB HΔ. apply wfc_ext; [exact HΔ | now apply wft_sum_typeof | exact (conj Hl Hl')].
 Qed.
 #[export] Hint Resolve wf_ctx_sum wft_sum_typeof : wk.
-(** [elim_W]'s motive context (M13a). *)
-Lemma wft_W_typeof G i Δ l l' A B : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+(** [elim_W]'s motive context (M13a; every layer but V since M13b). *)
+Lemma wft_W_typeof G i Δ l l' A B : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
   [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ,, A @ l ⊢[ i ] B @ l' ] -> [ G ; Δ ⊢[ typeof i ] tyW l l' A B @ lmax l l' ].
-Proof. intros [-> | ->] Hl Hl' HA HB; apply wft_W; auto; [left | right]; reflexivity. Qed.
-Lemma wf_ctx_W G i Δ l l' A B : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+Proof.
+  intros Hv Hl Hl' HA HB. apply wft_W; [destruct i; cbn; congruence | exact Hl | exact Hl'
+                                     | eapply lift_ty; [exact HA | apply lle_self_typeof]
+                                     | eapply lift_ty; [exact HB | apply lle_self_typeof]].
+Qed.
+Lemma wf_ctx_W G i Δ l l' A B : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
   [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ,, A @ l ⊢[ i ] B @ l' ] -> [ G ; Δ ⊢[ typeof i ] ] ->
   [ G ; Δ ,, tyW l l' A B @ lmax l l' ⊢[ typeof i ] ].
 Proof.
-  intros Hc Hl Hl' HA HB HΔ. apply wfc_ext; [exact HΔ | now apply wft_W_typeof | exact (conj Hl Hl')].
+  intros Hv Hl Hl' HA HB HΔ. apply wfc_ext; [exact HΔ | now apply wft_W_typeof | exact (conj Hl Hl')].
 Qed.
-Lemma eqty_W_typeof G i Δ l l' A A' B B' : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+Lemma eqty_W_typeof G i Δ l l' A A' B B' : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
   [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Δ ,, A @ l ⊢[ i ] B ≅ B' @ l' ] ->
   [ G ; Δ ⊢[ typeof i ] tyW l l' A B ≅ tyW l l' A' B' @ lmax l l' ].
 Proof.
-  intros Hc Hl Hl' HA HAA HBB.
-  destruct Hc as [-> | ->]; (apply eqty_W; [ | apply lequiv_refl; assumption | apply lequiv_refl; assumption
-                                             | assumption .. ]); [left | right]; reflexivity.
+  intros Hv Hl Hl' HA HAA HBB.
+  apply eqty_W; [destruct i; cbn; congruence | apply lequiv_refl; assumption | apply lequiv_refl; assumption
+                | eapply lift_ty; [exact HA | apply lle_self_typeof]
+                | eapply lift_eqty; [exact HAA | apply lle_self_typeof]
+                | eapply lift_eqty; [exact HBB | apply lle_self_typeof]].
 Qed.
 #[export] Hint Resolve wf_ctx_W wft_W_typeof : wk.
 #[export] Hint Extern 3 (lwf _ (lmax _ _)) => (cbn; split; eauto using lequiv_wf_l, lequiv_wf_r) : wk.

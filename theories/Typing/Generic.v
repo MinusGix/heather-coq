@@ -378,7 +378,13 @@ Class GenericEqLaws `{GenericEq} := {
     [ G ; Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ,, wihty l1 l2 l3 A B M @ lmax l2 l3
         ⊢ c ≈ c' : wstepty l1 l2 A B M @ l3 ] ->
     [ G ; Γ ⊢ ν ~ ν' : tyW l1 l2 A B @ lmax l1 l2 ] ->
-    [ G ; Γ ⊢ tmElimW l1 l2 l3 A B M c ν ~ tmElimW l4 l5 l6 A' B' M' c' ν' : M[lsingle ν] @ l3 ]
+    [ G ; Γ ⊢ tmElimW l1 l2 l3 A B M c ν ~ tmElimW l4 l5 l6 A' B' M' c' ν' : M[lsingle ν] @ l3 ] ;
+  (** the code of [W] (M13b) *)
+  geq_tm_code_W {G Γ l1 l2 l3 l4 s s' t t'} :
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢g s : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢ s ≈ s' : tyU l1 @ lsuc l1 ] ->
+    [ G ; Γ ,, tyEl l1 s @ l1 ⊢ t ≈ t' : tyU l2 @ lsuc l2 ] ->
+    [ G ; Γ ⊢ tmW l1 l2 s t ≈ tmW l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

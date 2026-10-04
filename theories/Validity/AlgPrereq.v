@@ -317,6 +317,12 @@ Ltac br_lvl := cbn; repeat split; try lia.
 Ltac br_tac :=
   repeat first
     [ assumption | exact I | reflexivity | discriminate | apply lle_refl
+    (* well-founded trees (M13b): the step telescope's scopes, by [RecWf]'s
+       memoised scope automation *)
+    | match goal with
+      | |- context [tyW _ _ _ _] => idtac | |- context [tmW _ _ _ _] => idtac
+      | |- context [tmElimW _ _ _ _ _ _ _ _] => idtac end;
+      solve [unfold gv, gu; wnorm; wtop]
     | glookup
     | apply wkr_id | apply wkr_shift_S
     | apply wfc_var | apply wfc_ext
@@ -383,6 +389,7 @@ Proof.
   pose proof (wf_wkc_br G Γ k Hk HΓ) as HB.
   br_all ltac:(try (destruct k as [|k])).
   all: try (exfalso; lia).
+  all: match goal with |- context [brG ?kk ?G0] => w_lookups kk (gΨ (brG kk G0)) end.
   all: br_solve HMT HMt HG0 HB.
 Qed.
 

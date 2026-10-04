@@ -50,7 +50,7 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | `Unit^l` | **η = proof irrelevance** | ext §7, §11.2 | MX §4 | level-indexed (see findings) | **done** (M8c, M8d): as Σ; η as proof irrelevance; branches 14, 19, 20 |
 | `Empty^l`, `elim_Empty` | positive, no β | ext §7 | MX §2 | Empty-η still open (`issues/empty-eta-conversion.md`) | **done** (M12a; every layer but V with code and branches 31–33, M12c): no closed term (`closed_empty_empty`) |
 | `+`, `inl`/`inr`, `case` | positive | ext §8 | MX §2 | — | **done** (M12b; every layer but V with code and branches 34–38, M12c): β at D and M, no η, disjunction property (`closed_sum_canonicity`) |
-| `W`, `sup`, `elim_W` | positive, infinitary | ext §9 | MX §5 | β builds an ih λ; the heaviest LR case | **M13a done** (D and M): β, no η, `closed_W_canonicity`; code and branches next (M13b) |
+| `W`, `sup`, `elim_W` | positive, infinitary | ext §9 | MX §5 | β builds an ih λ; the heaviest LR case | **M13 done**: β, no η, `closed_W_canonicity` (M13a, D and M); code, lift to C and the four branches (M13b) |
 | `Vec`, `Fin` | computing wrappers (reduce to Σ/Unit, +/Empty) | DESIGN.md | MX §10 | first type formers whose whnf is chosen by a term | — |
 | `Wf`, `sup_f`, `elim_Wf` | finitary W over a `Vec` of children | wf-former-design | MX §11–17 | index lemma (MX §13) | — |
 | `sEq`, `srefl`, `transp`, strip rule | strict equality, irrelevance | sprop-design | MX §18–22 | strip changes the evaluation notion; MX §19.4 substitution lemma is the named weak spot; completeness gap reaches type relations (MX §22.4); **MX §19.2 is a strengthening lemma (M10 S1)** | `sEq`, `srefl`, irrelevance **done** (M10a; every layer but V with codes and branches 25, 26, 29, M10c); `transp` removed (S8) |
@@ -171,7 +171,7 @@ each one touched and why, then choose among 1–3 using that data.
    former (H `docs/iwf-former-design.md`), a milestone after `W`/`Wf`.
 5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash). `Id` is done (M11a and
    M11b, M11_DESIGN.md). `Empty` and `+` are done, with codes and
-   recursor branches (M12a–c, M12_DESIGN.md). `W` holds at D and M
-   (M13a, M13_DESIGN.md); its code and four branches are M13b.
+   recursor branches (M12a–c, M12_DESIGN.md). `W` is done, with its
+   code and four recursor branches (M13a–b, M13_DESIGN.md).
 
 Side task, any time: the ITree depth-indexed bisimilarity question.

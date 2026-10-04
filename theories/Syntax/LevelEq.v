@@ -63,7 +63,8 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
   | capp t Δ, capp t' Δ' => tm_leq t t' /\ ctx_leq Δ Δ'
   | tlam Δ l1 l2 T t, tlam Δ' l1' l2' T' t' => ctx_leq Δ Δ' /\ leqv l1 l1' /\ leqv l2 l2' /\ ty_leq T T' /\ tm_leq t t'
   | tapp t A, tapp t' A' => tm_leq t t' /\ ty_leq A A'
-  | tmSig l1 l2 s t, tmSig l1' l2' s' t' | tmSum l1 l2 s t, tmSum l1' l2' s' t' =>
+  | tmSig l1 l2 s t, tmSig l1' l2' s' t' | tmSum l1 l2 s t, tmSum l1' l2' s' t'
+  | tmW l1 l2 s t, tmW l1' l2' s' t' =>
       leqv l1 l1' /\ leqv l2 l2' /\ tm_leq s s' /\ tm_leq t t'
   | tmPair l1 l2 A B a b, tmPair l1' l2' A' B' a' b' =>
       leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq a a' /\ tm_leq b b'
@@ -387,7 +388,7 @@ Fixpoint ty_lwf (L : nat) (T : ty) {struct T} : Prop :=
 with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   match t with
   | var _ | tmErr | tmNat | zero => True
-  | tmPi l1 l2 s t | tmSig l1 l2 s t | tmSum l1 l2 s t => lwf L l1 /\ lwf L l2 /\ tm_lwf L s /\ tm_lwf L t
+  | tmPi l1 l2 s t | tmSig l1 l2 s t | tmSum l1 l2 s t | tmW l1 l2 s t => lwf L l1 /\ lwf L l2 /\ tm_lwf L s /\ tm_lwf L t
   | tmU l | tmUnit l | tmTriv l | tmSEmpty l | tmEmpty l => lwf L l
   | srefl l A a => lwf L l /\ ty_lwf L A /\ tm_lwf L a
   | tmRefl l A a => lwf L l /\ ty_lwf L A /\ tm_lwf L a

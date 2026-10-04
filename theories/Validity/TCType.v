@@ -267,7 +267,7 @@ Qed.
 Lemma dec_tyW l l' A B : sz_ty (tyW l l' A B) <= n -> TYD (tyW l l' A B).
 Proof.
   intros Hsz G i Γ k HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros H; destruct (inv_ty_W H) as ((X & _) & _); contradiction].
+  destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_W H) as ((_ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | N];
     [| right; intros H; destruct (inv_ty_W H) as ((_ & _ & X & _) & _); contradiction].

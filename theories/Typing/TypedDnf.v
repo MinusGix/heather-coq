@@ -103,6 +103,9 @@ Proof.
                                    apply ren_dnf_ty; intuition auto]]
     | apply subst_dnf_ty; [intuition auto | first [apply lk_dnf_lsucc | apply lk_dnf_lsingle; first [exact I | intuition auto]
                                                   | apply lk_dnf_lsingle2; cbn [dnftm]; intuition auto]] ].
+  (* [elimW]'s step telescope (M13b): renamings nested under the payload binders *)
+  all: repeat first [ progress cbn [dnftm dnfty] | apply ren_dnf_ty | apply ren_dnf | apply subst_dnf_ty
+                    | apply lk_dnf_lsingle | split | exact I ]; intuition auto.
 Qed.
 
 Theorem typed_dnf :

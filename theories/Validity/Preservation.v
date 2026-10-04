@@ -197,6 +197,17 @@ Proof.
   - exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (eqty_El_sig _ _ _ _ _ _ _ Hc W1 W2 Hs Hb))
              (lequiv_sym _ _ _ E0)).
 Qed.
+Lemma RS_El_W l l1 l2 s t : RS_ty (tyEl l (tmW l1 l2 s t)) (tyW l1 l2 (tyEl l1 s) (tyEl l2 t)).
+Proof.
+  intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_El HT) as ((Hv & Wl & Ht) & Hk).
+  destruct (inv_code_W Hi Ht) as ((_ & W1 & W2 & Hs & Hb) & _ & EU).
+  pose proof (U_inj_c Hc EU) as E0.
+  apply (retype_eqty Hk). eapply eqty_trans.
+  - exact (eqty_El _ _ _ _ _ _ _ Hv (lequiv_sym _ _ _ E0) (eqtm_refl _ _ _ _ _ _ Ht)).
+  - exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (eqty_El_W _ _ _ _ _ _ _ Hc W1 W2 Hs Hb))
+             (lequiv_sym _ _ _ E0)).
+Qed.
 
 Lemma RS_El_unit l l0 : RS_ty (tyEl l (tmUnit l0)) (tyUnit l0).
 Proof.
@@ -600,7 +611,7 @@ Proof.
   intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_elimW Hi Hx) as ((_ & W1 & W2 & W3 & HA & HB & HM & HF & HI & Hc0 & Ht) & Hk & ET).
   refine (retype_eqtm Hi _ Hk ET).
-  apply eqtm_elimW; first [exact Hc | apply lequiv_refl; assumption | exact (IH _ _ _ _ _ Hc Ht) | assumption
+  apply eqtm_elimW; first [exact Hc | now apply compt_notV | apply lequiv_refl; assumption | exact (IH _ _ _ _ _ Hc Ht) | assumption
                           | apply eqty_refl; assumption | apply eqtm_refl; assumption].
 Qed.
 
@@ -614,10 +625,10 @@ Proof.
   destruct (inv_sup Hi Ht) as (_ & _ & ESup).
   destruct (W_inj_c Hc ESup) as (Ekl & Ek'l' & EAC & EBD).
   assert (Hsup : [ G ; Γ ⊢[ i ] tmSup l l' A B a f ≅ tmSup k k' C D a f : tyW l l' A B @ lmax l l' ])
-    by (apply eqtm_sup; first [exact Hc | assumption | now apply lequiv_sym | apply eqtm_refl; assumption]).
+    by (apply eqtm_sup; first [exact Hc | now apply compt_notV | assumption | now apply lequiv_sym | apply eqtm_refl; assumption]).
   assert (Hcong : [ G ; Γ ⊢[ i ] tmElimW l l' l'' A B M c (tmSup k k' C D a f)
                      ≅ tmElimW l l' l'' A B M c (tmSup l l' A B a f) : M[lsingle (tmSup k k' C D a f)] @ l'' ]).
-  { apply eqtm_elimW; first [exact Hc | apply lequiv_refl; assumption | apply eqtm_sym, Hsup | assumption
+  { apply eqtm_elimW; first [exact Hc | now apply compt_notV | apply lequiv_refl; assumption | apply eqtm_sym, Hsup | assumption
                             | apply eqty_refl; assumption | apply eqtm_refl; assumption]. }
   pose proof (eqtm_elimW_sup _ _ _ _ _ _ _ _ _ _ _ _ Hc W1 W2 W3 HA HB HM HF HI Hc0 Ha Hf) as Hb.
   eapply eqtm_trans; [exact Hcong |].
@@ -652,7 +663,7 @@ Proof.
     | solve [apply RS_elimEmpty; assumption]
     | solve [apply RS_case_inl] | solve [apply RS_case_inr] | solve [apply RS_case; assumption]
     | solve [apply RS_elimW_sup] | solve [apply RS_elimW; assumption]
-    | solve [apply RS_El_empty] | solve [apply RS_El_sum] ].
+    | solve [apply RS_El_empty] | solve [apply RS_El_sum] | solve [apply RS_El_W] ].
 Qed.
 
 Section Consequences.

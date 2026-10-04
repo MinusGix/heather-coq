@@ -232,12 +232,18 @@ Proof. exact (proj1 (proj2 usubst_ren_all) t _ φ). Qed.
 Lemma usubst_liftshift_ty (T : ty) φ : usubst_ty T⟨rlift ↑⟩ φ = (usubst_ty T φ)⟨rlift ↑⟩.
 Proof. exact (proj1 usubst_ren_all T _ φ). Qed.
 
+(** [elimW]'s step telescope (M13b) renames under two and three binders. *)
+Lemma usubst_ren_ty (T : ty) r φ : usubst_ty (ren_ty T r) φ = ren_ty (usubst_ty T φ) r.
+Proof. exact (proj1 usubst_ren_all T _ φ). Qed.
+Lemma usubst_ren_tm (t : tm) r φ : usubst_tm (ren_tm t r) φ = ren_tm (usubst_tm t φ) r.
+Proof. exact (proj1 (proj2 usubst_ren_all) t _ φ). Qed.
+
 Ltac upeel_push :=
   repeat first [ rewrite <- peelL_usubst | rewrite <- peelG_usubst | rewrite <- peelU_usubst ];
   rewrite rb_br_usubst; cbn [gousubst usubst_tm ucsubst usubst_ty lvsubst recT rect];
   rewrite ?usubst_lsingle_ty, ?usubst_lsucc_ty, ?usubst_lsingle2_ty, ?usubst_shift_ty, ?usubst_shift,
     ?usubst_liftshift_ty;
-  cbn [usubst_tm usubst_ty lvsubst]; rewrite ?usubst_shift_ty;
+  cbn [usubst_tm usubst_ty lvsubst]; rewrite ?usubst_shift_ty, ?usubst_ren_ty, ?usubst_ren_tm;
   reflexivity.
 
 Lemma redT_usubst l1 l2 rb l Δ c v φ : redT l1 l2 rb l Δ c = Some v ->

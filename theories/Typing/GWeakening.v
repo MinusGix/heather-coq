@@ -110,6 +110,10 @@ Proof. destruct b; cbn; auto. symmetry; apply gren_single. Qed.
 
 Lemma gren_ty_subst_raw M d ξ : gren_ty (subst_ty M d) ξ = subst_ty (gren_ty M ξ) (glren d ξ).
 Proof. exact (gren_subst_ty M d ξ). Qed.
+Lemma gren_ren_ty_raw (A : ty) r ξ : gren_ty (ren_ty A r) ξ = ren_ty (gren_ty A ξ) r.
+Proof. apply gren_ren_ty. Qed.
+Lemma gren_ren_tm_raw (t : tm) r ξ : gren_tm (ren_tm t r) ξ = ren_tm (gren_tm t ξ) r.
+Proof. apply (proj1 (proj2 gren_ren_all)). Qed.
 
 Ltac gpeel_push :=
   repeat first [ rewrite <- peelL_gren | rewrite <- peelG_gren | rewrite <- peelU_gren ];
@@ -119,6 +123,11 @@ Ltac gpeel_push :=
   (* [case]'s branch types (M12c): the injection under the single substitution *)
   try match goal with |- context [tmInl _ _ _ _ (var 0)] =>
     cbn [glren lsingle gren_tm gren_ty]; rewrite ?gren_ren_ty', ?gren_ren end;
+  (* [elimW]'s step telescope (M13b): renamings and substitutions nested
+     under the payload binders *)
+  try match goal with |- context [tmSup _ _ _ _ (var 2) (var 1)] =>
+    repeat progress (cbn [glren lsingle gren_tm gren_ty];
+      rewrite ?gren_ty_subst_raw, ?gren_ren_ty_raw, ?gren_ren_tm_raw, ?gren_ren_ty', ?gren_ren) end;
   reflexivity.
 
 Lemma redT_gren l1 l2 rb l Δ c v ξ : redT l1 l2 rb l Δ c = Some v ->
@@ -368,6 +377,7 @@ Lemma gren_tmUnit l : (tmUnit l)⟪ξ⟫ = tmUnit l. Proof. reflexivity. Qed.
 Lemma gren_tmSEmpty l : (tmSEmpty l)⟪ξ⟫ = tmSEmpty l. Proof. reflexivity. Qed.
 Lemma gren_tmEmpty l : (tmEmpty l)⟪ξ⟫ = tmEmpty l. Proof. reflexivity. Qed.
 Lemma gren_tmSum l l' s t : (tmSum l l' s t)⟪ξ⟫ = tmSum l l' s⟪ξ⟫ t⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tmW l l' s t : (tmW l l' s t)⟪ξ⟫ = tmW l l' s⟪ξ⟫ t⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_triv l : (tmTriv l)⟪ξ⟫ = tmTriv l. Proof. reflexivity. Qed.
 Lemma gren_tyW l l' A B : (tyW l l' A B)⟪ξ⟫ = tyW l l' A⟪ξ⟫ B⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_sup l l' A B a f : (tmSup l l' A B a f)⟪ξ⟫ = tmSup l l' A⟪ξ⟫ B⟪ξ⟫ a⟪ξ⟫ f⟪ξ⟫.
@@ -448,6 +458,7 @@ Ltac push_gren_at h k := lazymatch h with
   | @tmSEmpty => k gren_tmSEmpty
   | @tmEmpty => k gren_tmEmpty
   | @tmSum => k gren_tmSum
+  | @tmW => k gren_tmW
   | @tmTriv => k gren_triv
   | @gdef => k gren_gdef
   | @tyId => k gren_tyId
@@ -967,6 +978,7 @@ Lemma gwa_tmUnit l : (tmUnit l)⟦γ⟧ = tmUnit l. Proof. now destruct γ. Qed.
 Lemma gwa_tmSEmpty l : (tmSEmpty l)⟦γ⟧ = tmSEmpty l. Proof. now destruct γ. Qed.
 Lemma gwa_tmEmpty l : (tmEmpty l)⟦γ⟧ = tmEmpty l. Proof. now destruct γ. Qed.
 Lemma gwa_tmSum l l' s t : (tmSum l l' s t)⟦γ⟧ = tmSum l l' s⟦γ⟧ t⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tmW l l' s t : (tmW l l' s t)⟦γ⟧ = tmW l l' s⟦γ⟧ t⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_triv l : (tmTriv l)⟦γ⟧ = tmTriv l. Proof. now destruct γ. Qed.
 Lemma gwa_tySEq l A a b : (tySEq l A a b)⟦γ⟧ = tySEq l A⟦γ⟧ a⟦γ⟧ b⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_tySEmpty l : (tySEmpty l)⟦γ⟧ = tySEmpty l. Proof. now destruct γ. Qed.
@@ -1020,6 +1032,7 @@ Ltac push_gwa_at h k := lazymatch h with
   | @tmSEmpty => k gwa_tmSEmpty
   | @tmEmpty => k gwa_tmEmpty
   | @tmSum => k gwa_tmSum
+  | @tmW => k gwa_tmW
   | @tmTriv => k gwa_triv
   | @tySEq => k gwa_tySEq
   | @tySEmpty => k gwa_tySEmpty

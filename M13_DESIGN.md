@@ -1,6 +1,6 @@
 # M13: well-founded trees (`W`), design
 
-Status: **M13a done, 2026-10-01** (outcome below); M13b next. Why now: `HEATHER.md`
+Status: **M13 done, 2026-10-03** (M13a and M13b; outcomes below). Why now: `HEATHER.md`
 item 5 lists `W` after `Empty` and `+`, and Heather's paper pass calls it
 "the heaviest case" (MX §5). It is the first former whose term relation is
 an inductive definition with a Kripke-quantified recursive premise, and the
@@ -153,3 +153,76 @@ global context (`Print Assumptions` of `wf_tm_dec`, `V_elimW_sup`,
 typing presupposition about 700 and the algorithmic families about 870.
 The clean build takes 443 s (from 426 s after M12c; Hedberg's files,
 added in between, are part of the difference).
+
+## M13b outcome (2026-10-03)
+
+Done in two commits, on M12c's pattern. Every headline theorem stays
+closed under the global context (`Print Assumptions` of `wf_tm_dec`,
+`paper_sound`, `rec_red_typed`, `subject_reduction_tm`, `consistency`,
+`V_elimW_sup`, `closed_W_canonicity` and `T_actmne_elimW` lists nothing).
+
+- **Step 1, the code at D and M**: `tmW l l' s t : U (l ⊔ l')`, with `t`
+  under the shape's binder at `El s`, as `Σ`'s code. It decodes to `W`
+  (`eqty_El_W`). Validity, the algorithm, preservation, canonicity and the
+  type checker extend as for the other codes.
+- **Step 2, the lift to C**: `W`'s formation and congruence, `sup`,
+  `elim_W` and the code take `i <> lV`; β and `El` stay at `compt i`, as
+  M11b and M12c did. The algorithm and preservation reach the lifted rules
+  through `compt_notV`. The type checker decides `W`, `sup` and `elim_W`
+  at every layer but V: `sy_sup` and `sy_elimW` build the types they check
+  against at `typeof i` (the shape's instance of the positions, the step
+  type), and `elim_W`'s telescope at `i` with `StaticCode`'s generic
+  `WGen` lemmas (`W_fty_wf_i`, `W_ih_wf_i`), which need only `i <> lV`.
+- **The four branches** are 39–42 (`nbr = 43`): `t_W`, `t'_W`, `t_sup`,
+  `t_elimW`, with (levels, globals, locals) `(2,3,2)`, `(2,3,2)`,
+  `(2,5,4)`, `(3,6,5)`. `t_W` and `t'_W` are `Σ`'s. `t_sup`'s child
+  function is declared at `Π(y : U_T^{u_a/x}). (W U_S U_T)↑`, its call at
+  that type. `t_elimW`'s step is declared over `g, x : U_S, f : wfty,
+  h : wihty` at `wstepty`, the telescope M13a derived from the semantics
+  (it agrees with Heather's `rec.rs`).
+- **Static code and presupposition**: `sc_W`, `sc_sup`, `sc_elimW`,
+  `sc_code_W` (with `_q` forms at given right-hand annotations).
+  `W_sup_feq` (the children's types along equal components) and `W_facts`
+  (an `elim_W` congruence's scrutinee types, motive contexts, step
+  contexts and step types, in one lemma) carry the side conditions both
+  validity and the reducts need.
+- **Scope automation** (`RecWf`). The W scopes' entries mention the step
+  telescope, whose instances only match a typing rule after computation,
+  and the eager `br_ctx`/`wfd` style rederived each prefix at every leaf.
+  So the W scopes get memoised tactics: `wctx` proves a context once and
+  keeps it as a hypothesis, `wbind` types a binder's domain and its
+  extended context once for the body, `wty`/`wtop` dispatch by head, and
+  the `_eq` rules (`wf_var_eq`, `wf_app_eq`, `wf_sup_eq`, `wf_elimW'`) take
+  the computed type up to an equation. `AlgPrereq`'s `br_tac` hands any
+  goal mentioning `tyW`, `tmW` or `tmElimW` to `wnorm; wtop`, after
+  unfolding `gv`/`gu` (otherwise a weakened `gv` stays stuck under
+  `ren`).
+- **Keeping the telescope folded.** `wfty`, `wihty` and `wstepty` are
+  notations, so a plain `cbn` of a substitution through them unfolds their
+  weakenings into `subst_ty` forms that no longer match the typing
+  rule's, and mutual-fixpoint `cbn` leaves `fix gsubst_ty` residues. The
+  fix is to push global and universe substitutions through them whole by
+  rewriting (`gs_wfty`, `gs_wihty`, `gs_wstepty`, `us_*`, and `uc_ext`/
+  `gc_ext` for context extensions), then `cbn` with renamings left alone.
+  `RecS`'s `sr_ctx_W` and `RecReduct`'s `rr_ctx_W` are `sr_ctx`/`rr_ctx`
+  with that order. `eqc_ext_inv` inverts a context-extension equality
+  without `repeat split` (which split `lequiv` too).
+- `RecS` has `rec_T_W`, `rec_t_codeW` (the `Σ` lemmas, copied),
+  `rec_t_sup` (on `rec_t_pair`'s pattern, the right child function put
+  at the left levels through `W_sup_feq`) and `rec_t_elimW` (on
+  `rec_t_case`'s, with `W_facts` at both sides' levels); `RecReduct` has
+  `rr_T_W`, `rr_t_codeW`, `rr_t_sup`, `rr_t_elimW` and the `C_*` entries.
+
+**Build time.** On one machine the same day, the clean build went from
+698 s (M13a) to 808 s, about 160 s more CPU over all files. The new
+branches account for most of it: `RecAdm` +20 s, `RecS` +15 s,
+`AlgPrereq` +12 s, and the push lemmas' new cases in `GWeakening` and
+`RecGSubst` +15 s each. `elim_W`'s scope first made `RecAdm` 68 s and
+`AlgPrereq` 40 s, half of it in `glookup`, which normalises the renamed
+declaration at every lookup. `glookups` (`RecWf`) now computes a W scope's
+lookups once as hypotheses that `glookup` reuses (`w_lookups`), which took
+`elim_W`'s scope proof from 27 s to 9 s.
+
+**Cost.** Step 1: 31 files, about 510 lines. Step 2: 27 files, about
+1530 lines added and 140 changed, of which `RecS` is 620, `StaticCode`
+230, `RecReduct` 190 and `RecWf` 130.

@@ -279,15 +279,22 @@ Ltac code_side :=
   | |- [ _ ; _ ⊢[ _ ] _ : _ @ _ ] => progress wfd
   end; try assumption.
 
+(* W-types (M13b): the memoised scope automation of [RecWf], after the
+   instances are normalised by computation *)
+Ltac code_side_W := wnorm; wtop.
+
 (** The side conditions: levels, the scrutinees' contexts and typings. *)
+Ltac code_side_k k :=
+  let b := eval cbv in (Nat.leb 39 k) in
+  lazymatch b with true => code_side_W | false => code_side end.
 Ltac br_side k HΓ :=
   first
   [ solve [cbn; lia]
   | solve [apply lwf_ush; assumption]
   | apply (wf_wkc_br _ _ k ltac:(lia) HΓ)
-  | eapply wf_boxT; [ br_side k HΓ | br_side k HΓ | br_side k HΓ | unfold gv, gu; code_side ]
-  | eapply wf_boxt; [ br_side k HΓ | br_side k HΓ | br_side k HΓ | unfold gv, gu; code_side | unfold gv, gu; code_side ]
-  | unfold gv, gu; code_side ].
+  | eapply wf_boxT; [ br_side k HΓ | br_side k HΓ | br_side k HΓ | unfold gv, gu; code_side_k k ]
+  | eapply wf_boxt; [ br_side k HΓ | br_side k HΓ | br_side k HΓ | unfold gv, gu; code_side_k k | unfold gv, gu; code_side_k k ]
+  | unfold gv, gu; code_side_k k ].
 
 Section Adm.
 Context {G : gctx} {Γ : ctx} (HΓ : [ G ; Γ ⊢[ lM ] ]) {l1 l2 : lvl} (Hl1 : lwf (gL G) l1) (Hl2 : lwf (gL G) l2)
@@ -299,7 +306,7 @@ Proof using HMT HMt Hl1 Hl2 HΓ.
   intros Hk. pose proof (wf_brG (ctx_glob _ _ _ HΓ) k Hk) as HG'.
   br_all ltac:(try (destruct k as [|k])). all: try (exfalso; lia).
   all: unfold brΓ; cbn [brLocs cexts mkLocs call_ty call_lv br_calls br_nu br_ng br_ar].
-  all: match goal with |- [ brG ?kk _ ; _ ⊢[ _ ] ] => br_ctx kk HΓ HMT HMt; br_side kk HΓ end.
+  all: match goal with |- [ brG ?kk ?G0 ; _ ⊢[ _ ] ] => w_lookups kk (gΨ (brG kk G0)); br_ctx kk HΓ HMT HMt; br_side kk HΓ end.
 Qed.
 
 Lemma brRes_wf k : k < nbr ->
@@ -308,7 +315,7 @@ Proof using HMT HMt Hl1 Hl2 HΓ.
   intros Hk. pose proof (wf_brG (ctx_glob _ _ _ HΓ) k Hk) as HG'.
   br_all ltac:(try (destruct k as [|k])). all: try (exfalso; lia).
   all: unfold brΓ, brLv; cbn [brLocs cexts brRes br_isT mkLocs call_ty call_lv br_calls br_nu br_ng br_ar br_head br_nl].
-  all: match goal with |- [ brG ?kk _ ; _ ⊢[ _ ] _ @ _ ] => br_inst kk HΓ HMT HMt; br_side kk HΓ end.
+  all: match goal with |- [ brG ?kk ?G0 ; _ ⊢[ _ ] _ @ _ ] => w_lookups kk (gΨ (brG kk G0)); br_inst kk HΓ HMT HMt; br_side kk HΓ end.
 Qed.
 
 End Adm.

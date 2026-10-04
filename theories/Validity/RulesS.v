@@ -153,6 +153,7 @@ Ltac s_push_at h k := lazymatch h with
   | @tmSEmpty => k gs_tmSEmpty
   | @tmEmpty => k gs_tmEmpty
   | @tmSum => k gs_tmSum
+  | @tmW => k gs_tmW
   | @tmTriv => k gs_triv
   | @tySEq => k gs_tySEq
   | @tySEmpty => k gs_tySEmpty
@@ -210,7 +211,9 @@ Ltac fts_case :=
   | solve [simple eapply V_code_sum; s_side] | solve [simple eapply V_El_sum; s_side]
   (* well-founded trees (M13a) *)
   | solve [simple eapply V_W; s_side] | solve [simple eapply V_sup; s_side]
-  | solve [simple eapply V_elimW; s_side] | solve [simple eapply V_elimW_sup; s_side] ].
+  | solve [simple eapply V_elimW; s_side] | solve [simple eapply V_elimW_sup; s_side]
+  (* the code of W (M13b) *)
+  | solve [simple eapply V_code_W; s_side] | solve [simple eapply V_El_W; eassumption] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=
@@ -650,6 +653,25 @@ Lemma VS_elimW_sup {ly G Γ l l' l'' A B M c a f} :
     M[lsingle (tmSup l l' A B a f)] l''.
 Proof using EL VL VN. intros; s_lift. Qed.
 
+(** The code of W (M13b), as Σ's. *)
+Lemma VS_code_W {ly G Γ l1 l2 l3 l4 s s' t t'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ ly ] s : tyU l1 @ lsuc l1 ] -> [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ ly ] t : tyU l2 @ lsuc l2 ] ->
+  lle ly ge_layer -> typeof ly = ly ->
+  VTmS G Γ s s' (tyU l1) (lsuc l1) -> VTmS G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) (lsuc l2) ->
+  VTmS G Γ (tmW l1 l2 s t) (tmW l3 l4 s' t') (tyU (lmax l1 l2)) (lsuc (lmax l1 l2)).
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_El_W {ly G Γ l l' s t} : lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ ly ] s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢[ ly ] t : tyU l' @ lsuc l' ] ->
+  lle ly ge_layer -> typeof ly = ly ->
+  VTmS G Γ s s (tyU l) (lsuc l) -> VTmS G (Γ ,, tyEl l s @ l) t t (tyU l') (lsuc l') ->
+  VTyS G Γ (tyW l l' (tyEl l s) (tyEl l' t)) (tyEl (lmax l l') (tmW l l' s t)) (lmax l l').
+Proof using EL VL VN.
+  intros Hw Hw' Hs Ht Hly Hty Vs Vt. eapply (VTyS_trans_diag EP EM (T2 := tyEl (lmax l l') (tmW l l' s t))); [s_diag V_El_W|].
+  apply VS_El; [exact (lwf_max Hw Hw') | apply lequiv_refl, lwf_max; assumption |].
+  eapply VS_code_W; try eassumption; apply lequiv_refl; assumption.
+Qed.
+
 End Rules.
 
 End RulesS.
@@ -702,4 +724,6 @@ Ltac vs_rules side :=
   | solve [simple eapply VS_code_sum; side] | solve [simple eapply VS_El_sum; side]
   (* well-founded trees (M13a) *)
   | solve [simple eapply VS_W; side] | solve [simple eapply VS_sup; side]
-  | solve [simple eapply VS_elimW; side] | solve [simple eapply VS_elimW_sup; side] ].
+  | solve [simple eapply VS_elimW; side] | solve [simple eapply VS_elimW_sup; side]
+  (* the code of W (M13b) *)
+  | solve [simple eapply VS_code_W; side] | solve [simple eapply VS_El_W; side] ].
