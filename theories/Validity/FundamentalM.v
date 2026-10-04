@@ -1222,6 +1222,10 @@ Proof using . exact (proj1 (proj2 usubst_ren_all) t r φ). Qed.
 Lemma usubst_ren_ty_mix (T : ty) r φ : usubst_ty T⟨r⟩ φ = (usubst_ty T φ)⟨r⟩.
 Proof using . exact (proj1 usubst_ren_all T r φ). Qed.
 
+(** As in [fundamentalS]: the validity judgments stay folded while the
+    cases unify against the hypotheses. *)
+Local Opaque VTyS VTmS VCtxS VCtxEqS.
+
 Theorem fundamentalM_us :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> i = lM -> forall L' φ, usub_ok φ L' (gL G) ->
