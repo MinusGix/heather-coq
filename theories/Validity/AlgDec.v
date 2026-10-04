@@ -734,7 +734,10 @@ Proof.
   pose proof (f_equal elim_rb Ex) as Erb. cbn [elim_rb] in Erb.
   pose proof (mkrb_inj_br Erba) as Eba. pose proof (mkrb_inj_br Erb) as Ebb.
   destruct (mkrb_inj_MT Erba) as [E1 E2]; destruct (mkrb_inj_MT Erb) as [E3 E4]; subst.
-  injection Ex; intros; subst.
+  lazymatch type of Ex with
+  | elimT _ _ _ _ _ _ = _ => apply elimT_inj in Ex
+  | elimt _ _ _ _ _ _ _ = _ => apply elimt_inj in Ex end;
+  decompose [and] Ex; clear Ex; inj_small; subst.
   refine (conj H1 (conj H2 (conj Hl (conj Dc (conj (conj DMT (conj DMt _)) (ex_intro _ Wa Dν)))))).
   intros j Hj. rewrite (Eba j Hj), (Ebb j Hj). exact (Db j Hj).
 Qed.
@@ -753,7 +756,10 @@ Proof.
   pose proof (f_equal elim_rb Ex) as Erb. cbn [elim_rb] in Erb.
   pose proof (mkrb_inj_br Erba) as Eba. pose proof (mkrb_inj_br Erb) as Ebb.
   destruct (mkrb_inj_MT Erba) as [E1 E2]; destruct (mkrb_inj_MT Erb) as [E3 E4]; subst.
-  injection Ex; intros; subst.
+  lazymatch type of Ex with
+  | elimT _ _ _ _ _ _ = _ => apply elimT_inj in Ex
+  | elimt _ _ _ _ _ _ _ = _ => apply elimt_inj in Ex end;
+  decompose [and] Ex; clear Ex; inj_small; subst.
   refine (conj H1 (conj H2 (conj Hl (conj Dc (conj (conj DMT (conj DMt _)) (ex_intro _ da (conj eq_refl Hd))))))).
   intros j Hj. rewrite (Eba j Hj), (Ebb j Hj). exact (Db j Hj).
 Qed.
@@ -772,7 +778,10 @@ Proof.
   pose proof (f_equal elim_rb Ex) as Erb. cbn [elim_rb] in Erb.
   pose proof (mkrb_inj_br Erba) as Eba. pose proof (mkrb_inj_br Erb) as Ebb.
   destruct (mkrb_inj_MT Erba) as [E1 E2]; destruct (mkrb_inj_MT Erb) as [E3 E4]; subst.
-  injection Ex; intros; subst.
+  lazymatch type of Ex with
+  | elimT _ _ _ _ _ _ = _ => apply elimT_inj in Ex
+  | elimt _ _ _ _ _ _ _ = _ => apply elimt_inj in Ex end;
+  decompose [and] Ex; clear Ex; inj_small; subst.
   refine (conj H1 (conj H2 (conj Hl (conj Dc (conj DA (conj (conj DMT (conj DMt _)) (ex_intro _ Wa Dν))))))).
   intros j Hj. rewrite (Eba j Hj), (Ebb j Hj). exact (Db j Hj).
 Qed.
@@ -791,7 +800,10 @@ Proof.
   pose proof (f_equal elim_rb Ex) as Erb. cbn [elim_rb] in Erb.
   pose proof (mkrb_inj_br Erba) as Eba. pose proof (mkrb_inj_br Erb) as Ebb.
   destruct (mkrb_inj_MT Erba) as [E1 E2]; destruct (mkrb_inj_MT Erb) as [E3 E4]; subst.
-  injection Ex; intros; subst.
+  lazymatch type of Ex with
+  | elimT _ _ _ _ _ _ = _ => apply elimT_inj in Ex
+  | elimt _ _ _ _ _ _ _ = _ => apply elimt_inj in Ex end;
+  decompose [and] Ex; clear Ex; inj_small; subst.
   refine (conj H1 (conj H2 (conj Hl (conj Dc (conj DA (conj (conj DMT (conj DMt _))
             (ex_intro _ da (conj eq_refl Hd)))))))).
   intros j Hj. rewrite (Eba j Hj), (Ebb j Hj). exact (Db j Hj).
