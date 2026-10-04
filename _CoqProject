@@ -16,6 +16,7 @@ theories/Syntax/LevelRed.v
 theories/Syntax/Weakening.v
 theories/Syntax/Commute.v
 theories/Syntax/SubstCommute.v
+theories/Syntax/Unfold.v
 theories/Typing/Context.v
 theories/Typing/RecSpec.v
 theories/Typing/Algorithmic.v

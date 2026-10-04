@@ -15,13 +15,13 @@ Proof. destruct o; cbn; auto. apply (proj1 subst_ren_all). intros; apply llk_lre
 Lemma ptm_ren o e r : ren_tm (ptm o e) r = ptm o (lren e r).
 Proof. destruct o; cbn; auto. apply (proj1 (proj2 subst_ren_all)). intros; apply llk_lren. Qed.
 Lemma pdef_ren o b e r : ren_tm (pdef o b e) r = pdef o b (lren e r).
-Proof. destruct o; try reflexivity; apply ptm_ren. Qed.
+Proof. destruct o; cbn; auto; apply (proj1 (proj2 subst_ren_all)); intros; apply llk_lren. Qed.
 Lemma pty_subst o e d : subst_ty (pty o e) d = pty o (lcomp e d).
 Proof. destruct o; cbn; auto. apply (proj1 subst_subst_all). intros; apply llk_lcomp. Qed.
 Lemma ptm_subst o e d : subst_tm (ptm o e) d = ptm o (lcomp e d).
 Proof. destruct o; cbn; auto. apply (proj1 (proj2 subst_subst_all)). intros; apply llk_lcomp. Qed.
 Lemma pdef_subst o b e d : subst_tm (pdef o b e) d = pdef o b (lcomp e d).
-Proof. destruct o; try reflexivity; apply ptm_subst. Qed.
+Proof. destruct o; cbn; auto; apply (proj1 (proj2 subst_subst_all)); intros; apply llk_lcomp. Qed.
 
 (** ** Global substitution commutes with local renaming and substitution *)
 
@@ -51,7 +51,7 @@ Proof. destruct o; cbn; auto. apply (proj1 gren_subst_all). intros; apply llk_gl
 Lemma ptm_gren o e ξ : gren_tm (ptm o e) ξ = ptm (goren o ξ) (glren e ξ).
 Proof. destruct o; cbn; auto. apply (proj1 (proj2 gren_subst_all)). intros; apply llk_glren. Qed.
 Lemma pdef_gren o b e ξ : gren_tm (pdef o b e) ξ = pdef (goren o ξ) (gren_tm b ξ) (glren e ξ).
-Proof. destruct o; try reflexivity; apply ptm_gren. Qed.
+Proof. destruct o; cbn; auto; apply (proj1 (proj2 gren_subst_all)); intros; apply llk_glren. Qed.
 Lemma pctx_gren o ξ : gcren (pctx o) ξ = pctx (goren o ξ).
 Proof. destruct o; reflexivity. Qed.
 
@@ -113,7 +113,7 @@ Proof. destruct o; cbn; auto. apply (proj1 uren_subst_all). intros; apply llk_ul
 Lemma ptm_uren o e ρ : uren_tm (ptm o e) ρ = ptm (gouren o ρ) (ulren e ρ).
 Proof. destruct o; cbn; auto. apply (proj1 (proj2 uren_subst_all)). intros; apply llk_ulren. Qed.
 Lemma pdef_uren o b e ρ : uren_tm (pdef o b e) ρ = pdef (gouren o ρ) (uren_tm b ρ) (ulren e ρ).
-Proof. destruct o; try reflexivity; apply ptm_uren. Qed.
+Proof. destruct o; cbn; auto; apply (proj1 (proj2 uren_subst_all)); intros; apply llk_ulren. Qed.
 Lemma pctx_uren o ρ : ucren (pctx o) ρ = pctx (gouren o ρ).
 Proof. destruct o; reflexivity. Qed.
 
@@ -190,7 +190,7 @@ Proof. destruct o; cbn; auto. apply (proj1 gsubst_subst_all). intros; apply llk_
 Lemma ptm_gsubst o e τ : gsubst_tm (ptm o e) τ = ptm (gosubst o τ) (glsubst e τ).
 Proof. destruct o; cbn; auto. apply (proj1 (proj2 gsubst_subst_all)). intros; apply llk_glsubst. Qed.
 Lemma pdef_gsubst o b e τ : gsubst_tm (pdef o b e) τ = pdef (gosubst o τ) (gsubst_tm b τ) (glsubst e τ).
-Proof. destruct o; try reflexivity; apply ptm_gsubst. Qed.
+Proof. destruct o; cbn; auto; apply (proj1 (proj2 gsubst_subst_all)); intros; apply llk_glsubst. Qed.
 Lemma pctx_gsubst o τ : gcsubst (pctx o) τ = pctx (gosubst o τ).
 Proof. destruct o; reflexivity. Qed.
 

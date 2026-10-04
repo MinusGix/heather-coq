@@ -141,7 +141,7 @@ Proof. destruct o; cbn; auto. apply (proj1 usubst_subst_all). intros; apply llk_
 Lemma ptm_usubst o e φ : usubst_tm (ptm o e) φ = ptm (gousubst o φ) (ulsubst e φ).
 Proof. destruct o; cbn; auto. apply (proj1 (proj2 usubst_subst_all)). intros; apply llk_ulsubst. Qed.
 Lemma pdef_usubst o b e φ : usubst_tm (pdef o b e) φ = pdef (gousubst o φ) (usubst_tm b φ) (ulsubst e φ).
-Proof. destruct o; try reflexivity; apply ptm_usubst. Qed.
+Proof. destruct o; cbn; auto; apply (proj1 (proj2 usubst_subst_all)); intros; apply llk_ulsubst. Qed.
 Lemma pctx_usubst o φ : ucsubst (pctx o) φ = pctx (gousubst o φ).
 Proof. destruct o; reflexivity. Qed.
 
