@@ -248,6 +248,11 @@ Ltac f_goal :=
 
 (** ** The theorem *)
 
+(** The validity judgments stay folded while the cases unify against the
+    hypotheses: a failed [eassumption] otherwise retries with both sides
+    unfolded (19 s → 6 s over the 775 goals). *)
+Local Opaque VTyS VTmS VCtxS VCtxEqS.
+
 Theorem fundamentalS :
   (forall G, [ ⊢ G ] -> GValid G) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> i = lD -> SemCtx G Γ) /\

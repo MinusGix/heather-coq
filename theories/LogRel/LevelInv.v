@@ -535,7 +535,10 @@ Proof.
     pose proof (lequiv_wf_l _ _ _ Hl3) as W3. pose proof (lequiv_wf_l _ _ _ Hl4) as W4.
     pose proof (lequiv_wf_r _ _ _ Hl3) as W1. pose proof (lequiv_wf_r _ _ _ Hl4) as W2.
     assert (Hm : lequiv (gL G) (lmax l3 l4) (lmax l1 l2)) by now apply lequiv_max.
-    apply wnf_sup; eauto using lequiv_trans.
+    (* not the [forall ρ] premises: a failing [eauto] under the last one's
+       binders cost 16 s *)
+    apply wnf_sup; lazymatch goal with
+      | |- forall _ : kwk _ _, _ => idtac | _ => eauto using lequiv_trans end.
     + eapply geq_ty_trans; [exact HA13 | eapply geq_ty_lconv; [exact HE | apply lequiv_sym, Hl3]].
     + (* [B3 ≈ F] under [A3], moved under [A1] *)
       eapply geq_ty_trans; [exact HB13|].
