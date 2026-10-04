@@ -288,6 +288,31 @@ formers, so it gets worse with every extension:
 - **`eauto` depth.** Failing searches dominate: `eauto 3` then a final
   `eauto 4` on the leftovers cost a third of `eauto 4` up front
   (`Presupposition`).
+- **Raw fixpoints left by `cbn`** (2026-10-04 pass). `cbn [gren_tm]` on a
+  recursor's scrutinee can leave its arguments as the raw mutual block,
+  `(fix gren_ty … for gren_ty) A ξ`, instead of `gren_ty A ξ`. Every later
+  `rewrite` motive then carries the block, and `Qed` re-checks it: 20 s in
+  `redt_gren`. `fold gren_ty gren_tm` after the `cbn` (`gpeel_push`,
+  both copies). A `Qed` much slower than its tactics is the symptom.
+- **`injection` on a big constructor term.** `injection` on two `mkrb`
+  blocks unfolds the whole bundle (6 s, and 4 s more at `Qed`). Prove the
+  injectivity once by projections (`mkrb_inj` through `tup_nth`) or on
+  variables (`elimT_inj`), and use the lemma.
+- **Refuting a head by `inversion`.** `inversion Hn` for `Hn : whne v`
+  with `v` a value cost a third of `AlgDec`; `discriminate (whne_ne_head
+  Hn)` decides it by computing `ne_head` (`AlgPER`).
+- **Normalising side conditions.** `cbn; exact I` normalised the whole
+  bundle for every `hd_ok` side condition of a `rewrite ?motT_subst`;
+  `exact I` alone converts lazily (`hd_tac` tries it first).
+- **Definitions unfolded by failing unification.** In a fundamental
+  theorem's dispatcher, a failed `eassumption` against `VTyS …` hypotheses
+  retries with both sides unfolded. `Local Opaque VTyS VTmS VCtxS VCtxEqS`
+  around the theorem took `FundamentalS`'s cases from 19 s to 6 s.
+- **A failing search under binders.** `apply wnf_sup; eauto` spent 16 s in
+  the one premise it could not solve (a `forall ρ` with ten binders); guard
+  `eauto` by the goal's shape. A dispatcher's applies are the same story
+  as above: `leq_go` (`LevelRed`) picks its peeling lemma by the goal's
+  head (136 s → 28 s).
 - Measure before guessing: `make TIMING=1` writes `.v.timing` per file;
   `Set Ltac Profiling.` … `Show Ltac Profile CutOff 2.` inside a scratch
   copy splits a tactic's time; `time "tag" tac` per goal separates the

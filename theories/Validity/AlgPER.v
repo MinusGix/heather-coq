@@ -1311,13 +1311,27 @@ Qed.
 
 (** ** Inversion of the algorithm on the left side's head *)
 
+(** The heads a neutral can have. A head outside them refutes [whne] by
+    computation ([kill_ne], and [refute_con] in [AlgDec], where [inversion]
+    cost a third of that file). *)
+Definition ne_head (t : tm) : bool :=
+  match t with
+  | var _ | gvar _ _ | natrec _ _ _ _ _ | app _ _ _ _ _ _ | letboxT _ _ _ _ _ _ | letboxt _ _ _ _ _ _ _
+  | elimT _ _ _ _ _ _ | elimt _ _ _ _ _ _ _ | uapp _ _ | capp _ _ | tapp _ _
+  | tmFst _ _ _ _ _ | tmSnd _ _ _ _ _ | elimSEmpty _ _ _ _ | tmJ _ _ _ _ _ _ _ _
+  | elimEmpty _ _ _ _ | tmCase _ _ _ _ _ _ _ _ _ | tmElimW _ _ _ _ _ _ _ _ => true
+  | _ => false
+  end.
+Lemma whne_ne_head {t} : whne t -> ne_head t = true.
+Proof. destruct 1; reflexivity. Qed.
+
 (** A value is not neutral. *)
 Ltac kill_ne :=
   match goal with
   | H : ac_tmnee _ _ ?x _ _ |- _ =>
-      let Hw := fresh in destruct (ac_tmnee_whne H) as [Hw _]; solve [inversion Hw]
+      let Hw := fresh in destruct (ac_tmnee_whne H) as [Hw _]; solve [discriminate (whne_ne_head Hw)]
   | H : ac_tmne _ _ ?x _ _ |- _ =>
-      let Hw := fresh in destruct (ac_tmne_whne H) as [Hw _]; solve [inversion Hw]
+      let Hw := fresh in destruct (ac_tmne_whne H) as [Hw _]; solve [discriminate (whne_ne_head Hw)]
   | H : ac_tyne _ _ ?x _ |- _ => solve [inversion H]
   | H : posty _ |- _ => solve [inversion H; match goal with Hn : whne_ty _ |- _ => inversion Hn end]
   end.

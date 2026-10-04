@@ -139,7 +139,7 @@ Qed.
 Ltac refute_con := right; let D := fresh "D" in intros D;
   let E := fresh "E" in
   first [ pose proof (ac_tmne_con D) as E
-        | pose proof (ac_tmnf_con D ltac:(first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_empty | apply posty_sum | apply posty_W]) ltac:(let Hn := fresh in intros Hn; inversion Hn)) as E
+        | pose proof (ac_tmnf_con D ltac:(first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_empty | apply posty_sum | apply posty_W]) ltac:(let Hn := fresh in intros Hn; discriminate (whne_ne_head Hn))) as E
         | pose proof (ac_tynf_head D) as E ];
   cbn in E; discriminate E.
 
