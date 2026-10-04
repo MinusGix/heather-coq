@@ -156,7 +156,7 @@ Built as planned for (b), with N1 and N2. Full build green, no admits;
   for analysis). Not machine-checked: a concrete typed instance.
 - **Not proved here.** N1's premise is derivable from `⊢ Ψ` (body at C in
   its prefix, lifted and weakened); argued, not proved. Consistency still
-  assumes `ctx_only`.
+  assumes `ctx_only` (since settled: Follow-up, item 3).
 
 **Cost.** 64 files, about 990 lines added and 240 changed, against about
 4000 in 56 files for Σ (M8a). By area: syntax and substitution laws
@@ -168,12 +168,78 @@ entries to one line; the new cases cluster in the files with manual
 dispatch (GSubstitution, GWeakening, Presupposition, the two fundamental
 theorems).
 
+## Follow-up: open items 1, 3 and 4 (2026-10-04)
+
+Full build green, no admits; `closed_canonicity_fails_M`,
+`stuck_rec_not_numeral`, `unfolding` and `consistency_def` are closed
+under the global context.
+
+- **Item 1, the witness** (`Validity/DefStuck.v`). `Ψ = (u : Trm(· ⊢ Nat)
+  := zero)` and `elim_Trm(x. Nat; 0, …, 0; box(u^id))` at `Nat`, every
+  branch `zero`. It is typed (`stuck_rec_wf`, through `wf_elimt_adm`),
+  neutral, has no value (`stuck_rec_no_value`) and is not even
+  judgmentally equal to a numeral (`stuck_rec_not_numeral`: the relation
+  at `Nat` pairs a neutral only with a neutral). `Ψ` has no opaque
+  binding, so `closed_canonicity_fails_M`: `closed_ok` cannot extend to M.
+- **Item 4, the D statements.** `closed_nat_canonicity`,
+  `decl_closed_nat_canonicity`, `closed_nat_canonicity_c`,
+  `paper_canonicity`, `neutral_univ`, `no_type_var_inhabitant`,
+  `consistency(_closed)` take `closed_ok i G` (at M it is `ctx_only`,
+  `closed_ok_M_ctx_only`). The `declM_*` statements stay at `ctx_only`.
+- **Item 3, consistency with definitions: holds at D and M**
+  (`Validity/ConsistencyDef.v`, `consistency_def`): no term of
+  `Π (x : Ty ℓ). El x` in a global context of context variables and
+  definitions (`no_opaque`) and a local context of universes, at either
+  computing layer; `paper_consistency` now takes `no_opaque`. So the stuck
+  recursor of item 1 is a computational defect, not a logical one. The
+  proof is a translation, not a new relation:
+  - `unf` (`Syntax/Unfold.v`) inlines every occurrence `gdef u t δ` as
+    `t[δ]`, everywhere, code included. It commutes with every syntactic
+    operation (one mutual induction per law, as in `Subst.v`), its outputs
+    mention no definition (`unf_gfree`), and reduction keeps terms
+    definition-free (`gfree_red`).
+  - `unfolding` (`Typing/Unfold.v`): every judgment under `G` holds,
+    unfolded, under `unf_G G` (bindings unfolded, still `no_opaque`). The
+    occurrence rule becomes the substitution lemma applied to the carried
+    body (N1 is what makes this local: the occurrence's own premise types
+    the body at the use layer), its congruence becomes substitution plus
+    functionality, and δ becomes reflexivity. The recursor β cases need
+    the bundle to be `mkrb` (`inv_elimT`): peeling commutes with `unf`
+    only at binder heads (`hd_ok`), as for local substitution.
+  - `consistency_gen` (`Consistency.v`): `neutral_univ` and its two
+    consequences now take `no_opaque G` and, per term, `closed_ok i G \/
+    gfree_tm t`. A definition-free neutral cannot hide a stuck
+    `elim(box(u^δ))`, and the whnf of a definition-free term is
+    definition-free.
+- **One change to the syntax.** `pdef`, the instance of `gdef u t δ` under
+  a global substitution sending `u` to a non-variable object, used to be
+  `gdef`'s junk; it now inlines the carried body (`t[δ]`). Typed
+  substitutions never send a definition there (`gobj_wf`), so no
+  judgment changed, but `unf` then commutes with global substitution
+  unconditionally.
+
+**Heather findings.** (1) With definitions, M has closed stuck programs:
+a recursor run on a boxed definition does not compute and is not equal to
+any value, now with a checked instance (`opaque-globals-analysis`).
+(2) Consistency is unaffected, at D and M. (3) The unfolding argument is
+exactly "unfold definitions for analysis" applied to a whole derivation:
+inlining every definition, inside code too, is a typing-preserving map to
+the definition-free system. That supports unfolding as the answer to the
+stuck recursor, as a whole-program translation. An in-place rule
+`elim(box(u^δ)) ⇝ elim(box(t[δ]))` is a different claim, not checked
+here: at C, code equality relates `u^δ` only to `u^δ'`.
+
+**Cost.** `Syntax/Unfold.v` ~640 lines (most of it the laws, mechanical
+after `Subst.v`), `Typing/Unfold.v` ~410 (the theorem's proof is the
+generic rule dispatch plus 13 manual cases), `ConsistencyDef.v` 50,
+`DefStuck.v` 120.
+
 ## Open items (for later rounds)
 
 What M9 argued rather than proved, or left at the old scope. None blocks
 M10; each is a standalone round. Ordered by value to Heather first.
 
-1. **The M-canonicity witness.** Build a concrete typed instance: a global
+1. **The M-canonicity witness.** Done (Follow-up). Build a concrete typed instance: a global
    context with one definition `u := t` (say a closed `Nat` code), and the
    closed M-term `elim_Trm(box(gdef u t ·))` with some motive and branches.
    Show it is typed, `whne` (`whne_elimt_gdef`), and not canonical, so
@@ -188,7 +254,8 @@ M10; each is a standalone round. Ordered by value to Heather first.
    `u`, `gvar u δ` otherwise) is total and preserves typing, the claim (b)
    rests on. Needs a lifting lemma C → j for terms and global weakening of
    the prefix; check what `StaticCode.v` and `GWeakening.v` already give.
-3. **Consistency with definitions.** `consistency` and
+3. **Consistency with definitions.** Done (Follow-up): it holds at D
+   and M. `consistency` and
    `no_type_var_inhabitant` (`Validity/Consistency.v`) still assume
    `ctx_only`. At D, `no_closed_neutral_D` suggests the same proof goes
    through with `no_opaque` (`neutral_univ` is the lemma to generalize).
@@ -198,7 +265,8 @@ M10; each is a standalone round. Ordered by value to Heather first.
    the stuck one would also have to inhabit the motive, and the motive
    at the stuck code is a stuck type, not `El x`. Settle it or find the
    counterexample; either is a Heather finding.
-4. **Canonicity statements at the old scope.** `closed_canonicity` takes
+4. **Canonicity statements at the old scope.** Done (Follow-up).
+   `closed_canonicity` takes
    `closed_ok`, but these still take `ctx_only`:
    `closed_nat_canonicity` (`Consequences.v`), `decl_closed_nat_canonicity`
    (`DeclConsequencesP.v`), the three `declM_closed_*_canonicity`

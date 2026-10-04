@@ -56,7 +56,7 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | `sEq`, `srefl`, `transp`, strip rule | strict equality, irrelevance | sprop-design | MX §18–22 | strip changes the evaluation notion; MX §19.4 substitution lemma is the named weak spot; completeness gap reaches type relations (MX §22.4); **MX §19.2 is a strengthening lemma (M10 S1)** | `sEq`, `srefl`, irrelevance **done** (M10a; every layer but V with codes and branches 25, 26, 29, M10c); `transp` removed (S8) |
 | `sEmpty`, `elim_sEmpty` | irrelevant empty type | sprop-design | MX §18, §21.4 | — | **done** (M10a; at code with branches 27, 28, 30, M10c) |
 | `Squash`, `ind_∥∥` | normalizing-total irrelevance | MX §27 | sketch only | full pass open (`issues/metatheory-ch07-squash.md`) | — |
-| Bodied globals `u := t`, δ at p/m only | not a former | DESIGN.md, MX §23–25 | **none** | ch. 07 bill (`issues/metatheory-ch07-definitions.md`) | **done** (M9): occurrences carry their body (`gdef`); δ as reduction; §26 items 1–4; canonicity at D |
+| Bodied globals `u := t`, δ at p/m only | not a former | DESIGN.md, MX §23–25 | **none** | ch. 07 bill (`issues/metatheory-ch07-definitions.md`) | **done** (M9): occurrences carry their body (`gdef`); δ as reduction; §26 items 1–4; canonicity at D; consistency at D and M |
 | `NatLit`, evaluator accelerations | representation | DESIGN.md | n/a | claimed to have no semantic content; nothing to prove here | out of scope |
 
 Code recursor: the paper has 13 branches (indexed 0–12), Heather has 52.
@@ -102,10 +102,12 @@ Cross-checks between the two sides, newest last.
   addition: the carried body is the declared one up to level equivalence
   (N2), forced by our Static Code lemma. One consequence for Heather's
   design: since `elim(box(u^δ))` stays stuck, closed canonicity at M fails
-  for global contexts with definitions; at D it holds. This bears on
-  `issues/opaque-globals-analysis.md`. Loose ends (a checked witness of
-  the M failure, N1's admissibility, consistency with definitions) are
-  listed under M9_DESIGN.md, Open items.
+  for global contexts with definitions (checked instance:
+  `Validity/DefStuck.v`); at D it holds. Consistency holds at both D and M
+  (`Validity/ConsistencyDef.v`), by unfolding every definition, code
+  included, which preserves every judgment. This bears on
+  `issues/opaque-globals-analysis.md`. Loose ends (N1's admissibility, a
+  Heather-faithful rule set) are listed under M9_DESIGN.md, Open items.
 
 ## Beyond type formers
 

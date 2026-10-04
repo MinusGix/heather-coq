@@ -16,6 +16,7 @@ theories/Syntax/LevelRed.v
 theories/Syntax/Weakening.v
 theories/Syntax/Commute.v
 theories/Syntax/SubstCommute.v
+theories/Syntax/Unfold.v
 theories/Typing/Context.v
 theories/Typing/RecSpec.v
 theories/Typing/Algorithmic.v
@@ -46,6 +47,7 @@ theories/Typing/AlgStruct.v
 theories/Typing/CtxConv.v
 theories/Typing/InvAny.v
 theories/Typing/PresupC.v
+theories/Typing/Unfold.v
 theories/Typing/RecAdm.v
 theories/Typing/DecSide.v
 theories/Typing/GConv.v
@@ -124,7 +126,9 @@ theories/Validity/AlgInstance.v
 theories/Validity/AlgComplete.v
 theories/Validity/AlgDec.v
 theories/Validity/Consistency.v
+theories/Validity/ConsistencyDef.v
 theories/Validity/Canonicity.v
+theories/Validity/DefStuck.v
 theories/Validity/Preservation.v
 theories/Validity/RecReduct.v
 theories/Validity/Uniform.v

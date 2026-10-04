@@ -23,9 +23,11 @@ Qed.
 
 (** ** Closed canonicity at [Nat] *)
 
-Theorem closed_nat_canonicity_c {G i t} : compt i -> ctx_only G -> [ G ; cnil ⊢[ i ] t : tyNat @ lzero ] ->
+Theorem closed_nat_canonicity_c {G i t} : compt i -> closed_ok i G -> [ G ; cnil ⊢[ i ] t : tyNat @ lzero ] ->
   exists n, [ G ; cnil ⊢[ i ] t ≅ numeral n : tyNat @ lzero ].
-Proof. intros [-> | ->]; [apply decl_closed_nat_canonicity | apply declM_closed_nat_canonicity]. Qed.
+Proof.
+  intros [-> | ->] HG; [exact (decl_closed_nat_canonicity HG) | exact (declM_closed_nat_canonicity (closed_ok_M_ctx_only HG))].
+Qed.
 
 (** ** Declarative equality is the algorithm's *)
 

@@ -645,9 +645,11 @@ Definition ptm (o : gobj) (d : lsub) : tm :=
   match o with GId j => gvar j d | GTm t => subst_tm t d | _ => tmErr end.
 (** A defined global's instance: renamed with its (substituted) body. A
     well-formed substitution sends a defined global to a defined one
-    (M9_DESIGN.md); the other case only makes the function total. *)
+    (M9_DESIGN.md); any other object inlines the carried body, so that
+    unfolding commutes with every global substitution (M9 follow-up,
+    [Unfold.v]). *)
 Definition pdef (o : gobj) (b : tm) (d : lsub) : tm :=
-  match o with GId j => gdef j b d | _ => ptm o d end.
+  match o with GId j => gdef j b d | _ => subst_tm b d end.
 Definition pctx (o : gobj) : ctx :=
   match o with GId j => cvar j | GCtx Γ => Γ | _ => cnil end.
 

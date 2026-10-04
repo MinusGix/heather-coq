@@ -5,7 +5,8 @@
     comes from the fundamental theorems with global substitutions
     ([Reducible]).  Closed canonicity needs a global context without type
     or term bindings ([ctx_only]), whose global variables would be closed
-    neutrals. *)
+    neutrals. At M a definition is excluded too: the recursor on a boxed
+    definition is a closed neutral ([DefStuck]). *)
 From DeLaM.Typing Require Export DeclInstance RecEq.
 From DeLaM.Validity Require Export Reducible DeclConsequencesP.
 From Coq Require Import Lia.
@@ -203,7 +204,7 @@ Qed.
 
 Theorem declM_closed_nat_canonicity {G t} : ctx_only G -> [ G ; cnil ⊢[ lM ] t : tyNat @ lzero ] ->
   exists n, [ G ; cnil ⊢[ lM ] t ≅ numeral n : tyNat @ lzero ].
-Proof. exact (closed_nat_canonicity (E := DEM) (LP := LRM) redM_eqtm). Qed.
+Proof. intros HG; exact (closed_nat_canonicity (E := DEM) (LP := LRM) redM_eqtm (or_introl HG)). Qed.
 
 Theorem declM_nat_not_pi {G Γ k l l' A B} : ~ [ G ; Γ ⊢[ lM ] tyNat ≅ tyPi l l' A B @ k ].
 Proof. intros H. exact (nat_not_pi (E := DEM) (LP := LRM) redM_eqty (lwfM_whnf_l H whnf_tyNat ltac:(not_upi)) H). Qed.
