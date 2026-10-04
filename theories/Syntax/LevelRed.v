@@ -94,9 +94,13 @@ Proof using . intros H v; cbn; now rewrite H. Qed.
 Lemma leqv_lmax a b a' b' : leqv a a' -> leqv b b' -> leqv (lmax a b) (lmax a' b').
 Proof using . intros H H' v; cbn; now rewrite H, H'. Qed.
 
-(** Goal-directed: peel the reducts' structure down to the hypotheses. *)
-Ltac leq_go := repeat first
-  [ assumption | exact I | reflexivity | apply leqv_refl
+(** Goal-directed: peel the reducts' structure down to the hypotheses.
+    A failing [apply] of a peeling lemma unfolds its conclusion against the
+    goal, so the lemmas are chosen by the goal's head (90 s → 3 s in
+    [redt_leq]); other goals get the original alternatives. *)
+Ltac leq_head t := lazymatch t with ?f _ => leq_head f | _ => t end.
+Ltac leq_any := first
+  [ exact I | reflexivity | apply leqv_refl
   | apply leq_peelL | apply leq_peelG | apply leq_peelU | apply leq_rb_br
   | apply leqv_lsuc | apply leqv_lmax
   | apply (proj1 leq_ren_all) | apply (proj1 (proj2 leq_ren_all))
@@ -104,6 +108,32 @@ Ltac leq_go := repeat first
   | progress cbn [ctx_leq ty_leq tm_leq gobj_leq lsub_leq]
   | split
   | apply (proj1 leq_subst_all) ].
+Ltac leq_step :=
+  first
+  [ assumption
+  | lazymatch goal with
+    | |- True => exact I
+    | |- _ /\ _ => split
+    | |- tm_leq (peelL _ _) (peelL _ _) => apply leq_peelL
+    | |- tm_leq (peelG _ _) (peelG _ _) => apply leq_peelG
+    | |- tm_leq (peelU _ _) (peelU _ _) => apply leq_peelU
+    | |- tm_leq (rb_br _ _) (rb_br _ _) => apply leq_rb_br
+    | |- tm_leq (rect _ _ _ _ _ _ _) _ => progress unfold recT, rect
+    | |- tm_leq (recT _ _ _ _ _ _) _ => progress unfold recT, rect
+    | |- leqv (lsuc _) (lsuc _) => apply leqv_lsuc
+    | |- leqv (lmax _ _) (lmax _ _) => apply leqv_lmax
+    | |- leqv _ _ => first [reflexivity | apply leqv_refl]
+    | |- tm_leq (ren_tm _ _) (ren_tm _ _) => apply (proj1 (proj2 leq_ren_all))
+    | |- ty_leq (ren_ty _ _) (ren_ty _ _) => apply (proj1 leq_ren_all)
+    | |- ty_leq (subst_ty _ _) (subst_ty _ _) => apply (proj1 leq_subst_all)
+    | |- ?R ?a _ =>
+        let h := leq_head a in
+        tryif is_constructor h
+        then first [progress cbn [ctx_leq ty_leq tm_leq gobj_leq lsub_leq] | leq_any]
+        else leq_any
+    | |- _ => leq_any
+    end ].
+Ltac leq_go := repeat leq_step.
 
 Lemma redT_leq l l' Δ Δ' c c' r : leqv l l' -> ctx_leq Δ Δ' -> ty_leq c c' ->
   redT l1 l2 rb l Δ c = Some r -> exists r', redT l1' l2' rb' l' Δ' c' = Some r' /\ tm_leq r r'.
