@@ -125,6 +125,7 @@ theories/Validity/AlgComplete.v
 theories/Validity/AlgDec.v
 theories/Validity/Consistency.v
 theories/Validity/Canonicity.v
+theories/Validity/DefStuck.v
 theories/Validity/Preservation.v
 theories/Validity/RecReduct.v
 theories/Validity/Uniform.v

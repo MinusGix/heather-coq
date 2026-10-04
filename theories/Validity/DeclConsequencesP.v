@@ -4,8 +4,8 @@
     [LR_M]), for arbitrary well-formed global contexts: reducibility
     comes from the fundamental theorems with global substitutions
     ([Reducible]).  Closed canonicity needs a global context without type
-    or term bindings ([ctx_only]), whose global variables would be closed
-    neutrals. *)
+    or term bindings: context variables, and at P definitions too
+    ([closed_ok]); an opaque global variable would be a closed neutral. *)
 From DeLaM.Typing Require Export DeclInstance.
 From DeLaM.Validity Require Export ReducibleP.
 
@@ -123,7 +123,7 @@ Theorem decl_whnf_tmred {G Γ t T l} : [ G ; Γ ⊢[ lD ] t : T @ l ] ->
   exists w, [ G ; Γ ⊢[ lD ] t ⤳* w : T @ l ] /\ whnf w.
 Proof. intros H. exact (whnf_normalization_tm (E := DEP) (LP := LR_P) redP_tm H (lwfD_tm H)). Qed.
 
-Theorem decl_closed_nat_canonicity {G t} : ctx_only G -> [ G ; cnil ⊢[ lD ] t : tyNat @ lzero ] ->
+Theorem decl_closed_nat_canonicity {G t} : closed_ok lD G -> [ G ; cnil ⊢[ lD ] t : tyNat @ lzero ] ->
   exists n, [ G ; cnil ⊢[ lD ] t ≅ numeral n : tyNat @ lzero ].
 Proof. exact (closed_nat_canonicity (E := DEP) (LP := LR_P) redP_tm). Qed.
 

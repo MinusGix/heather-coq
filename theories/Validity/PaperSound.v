@@ -518,18 +518,18 @@ Qed.
 
 (** ** Consequences for the paper's system *)
 
-Corollary paper_consistency {G i t l1 l2 l l' k} : compt i -> ctx_only G ->
+Corollary paper_consistency {G i t l1 l2 l l' k} : compt i -> closed_ok i G ->
   ~ [ G ; cnil ⊢ₚ[ i ] t : tyPi l1 l2 (tyU l) (tyEl l' (var 0)) @ k ].
 Proof. intros Hc HG H. exact (consistency_closed Hc HG (proj1 (proj2 (proj2 (proj2 paper_sound))) _ _ _ _ _ _ H)). Qed.
 
 (** A closed P-typed term reduces to a canonical value (its equation with
     the value is an O equation; the P one needs O ⊆ P). *)
-Corollary paper_canonicity {G i t T k} : compt i -> ctx_only G -> [ G ; cnil ⊢ₚ[ i ] t : T @ k ] ->
+Corollary paper_canonicity {G i t T k} : compt i -> closed_ok i G -> [ G ; cnil ⊢ₚ[ i ] t : T @ k ] ->
   exists W w, reds_ty T W /\ whnf_ty W /\ ~ whne_ty W /\
     reds t w /\ whnf w /\ ~ whne w /\ canon_head (ty_head W) w.
 Proof.
   intros Hc HG H.
-  destruct (closed_canonicity Hc (or_introl HG) (proj1 (proj2 (proj2 (proj2 paper_sound))) _ _ _ _ _ _ H))
+  destruct (closed_canonicity Hc HG (proj1 (proj2 (proj2 (proj2 paper_sound))) _ _ _ _ _ _ H))
     as (W & w & ? & ? & ? & ? & ? & ? & _ & ?).
   exists W, w; repeat split; assumption.
 Qed.

@@ -1,8 +1,9 @@
 (** * Consistency (08:48; M7_DESIGN.md A1)
 
     The paper: no closed term of [Π (x : Ty ℓ). x]. Here, more generally,
-    at D and M, for a global context of context variables only and a local
-    context of universe variables only:
+    at D and M, for a global context of context variables only (at D also
+    with definitions: [closed_ok], M9) and a local context of universe
+    variables only:
     - no type variable [El l (var n)] is inhabited ([no_type_var_inhabitant]);
     - no term has type [Π^{l1,l2} (x : Ty l). El l' x] ([consistency]).
 
@@ -37,9 +38,10 @@ Ltac scrutinee_clash IH :=
     destruct (IH _ _ H) as (l0 & E); exfalso;
     refine (not_univ (W := W) _ _ _ E); [eassumption | auto with whnf | cbn; discriminate] end.
 
-(** In a universe context, with context variables only globally, a typed
-    neutral has a universe type. *)
-Lemma neutral_univ {G i Γ} : compt i -> ctx_only G -> univ_ctx Γ ->
+(** In a universe context, with context variables only globally (or, at
+    D, context variables and definitions), a typed neutral has a universe
+    type. *)
+Lemma neutral_univ {G i Γ} : compt i -> closed_ok i G -> univ_ctx Γ ->
   forall ν, whne ν -> forall A k, [ G ; Γ ⊢[ i ] ν : A @ k ] -> exists l, [ G ; Γ ⊢[ i ] A ≅ tyU l @ k ].
 Proof.
   intros Hc HG HΓ. pose proof (compt_typeof_self _ Hc) as Hi.
@@ -52,7 +54,7 @@ Proof.
     intros X k Hx.
   - destruct (inv_var Hi Hx) as (T0 & l0 & (_ & Hin) & _ & E).
     destruct (HΓ _ _ _ Hin) as (l & ->). exists l; exact E.
-  - destruct (inv_gvar Hi Hx) as (Δ & i' & T0 & l0 & (_ & Hin & _) & _). discriminate (HG _ _ Hin).
+  - destruct (inv_gvar Hi Hx) as (Δ & i' & T0 & l0 & (_ & Hin & _) & _). destruct (closed_ok_gvar HG Hin).
   - destruct (inv_natrec Hi Hx) as ((_ & _ & _ & _ & _ & Ht) & _). scrutinee_clash IH.
   - destruct (inv_app Hi Hx) as ((_ & _ & _ & _ & _ & Ht & _) & _). scrutinee_clash IH.
   - destruct (inv_letboxT Hi Hx) as ((-> & _ & _ & _ & _ & _ & Ht) & _). scrutinee_clash IH.
@@ -61,15 +63,15 @@ Proof.
     scrutinee_clash IH.
   - destruct (inv_elimT Hi Hx) as (MT & Mt & bs & (_ & -> & _ & _ & _ & _ & _ & _ & _ & _ & _ & Ht) & _).
     destruct (boxT_inv Ht) as (? & ? & HT). destruct (tyGvar_decl HT) as (? & ? & ? & Hin).
-    discriminate (HG _ _ Hin).
+    destruct (closed_ok_tyGvar HG Hin).
   - destruct (inv_elimt Hi Hx) as (MT & Mt & bs & (_ & -> & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Ht) & _).
     scrutinee_clash IH.
   - destruct (inv_elimt Hi Hx) as (MT & Mt & bs & (_ & -> & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Ht) & _).
     destruct (boxt_inv Ht) as (? & ? & ? & Ht'). destruct (gvar_decl Ht') as (? & ? & ? & ? & Hin).
-    discriminate (HG _ _ Hin).
+    destruct (closed_ok_gvar HG Hin).
   - destruct (inv_elimt Hi Hx) as (MT & Mt & bs & (_ & -> & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Ht) & _).
     destruct (boxt_inv Ht) as (? & ? & ? & Ht'). destruct (gdef_decl Ht') as (? & ? & ? & ? & Hin).
-    discriminate (HG _ _ Hin).
+    discriminate (closed_ok_M_ctx_only HG _ _ Hin).
   - destruct (inv_uapp Hi Hx) as (n & l & T0 & (-> & _ & _ & _ & _ & Ht) & _). scrutinee_clash IH.
   - destruct (inv_capp Hi Hx) as (l & T0 & (-> & _ & _ & _ & Ht & _) & _). scrutinee_clash IH.
   - destruct (inv_tapp Hi Hx) as (Δ0 & l & l' & T0 & (-> & Ht & _) & _). scrutinee_clash IH.
@@ -84,7 +86,7 @@ Qed.
 
 (** ** No inhabitant of a type variable *)
 
-Theorem no_type_var_inhabitant {G i Γ t l n k} : compt i -> ctx_only G -> univ_ctx Γ ->
+Theorem no_type_var_inhabitant {G i Γ t l n k} : compt i -> closed_ok i G -> univ_ctx Γ ->
   ~ [ G ; Γ ⊢[ i ] t : tyEl l (var n) @ k ].
 Proof.
   intros Hc HG HΓ Ht. pose proof (compt_typeof_self _ Hc) as Hi.
@@ -100,7 +102,7 @@ Qed.
 
 (** ** Consistency *)
 
-Theorem consistency {G i Γ t l1 l2 l l' k} : compt i -> ctx_only G -> univ_ctx Γ ->
+Theorem consistency {G i Γ t l1 l2 l l' k} : compt i -> closed_ok i G -> univ_ctx Γ ->
   ~ [ G ; Γ ⊢[ i ] t : tyPi l1 l2 (tyU l) (tyEl l' (var 0)) @ k ].
 Proof.
   intros Hc HG HΓ Ht. pose proof (compt_typeof_self _ Hc) as Hi.
@@ -110,6 +112,6 @@ Proof.
 Qed.
 
 (** The paper's statement: the empty local context. *)
-Corollary consistency_closed {G i t l1 l2 l l' k} : compt i -> ctx_only G ->
+Corollary consistency_closed {G i t l1 l2 l l' k} : compt i -> closed_ok i G ->
   ~ [ G ; cnil ⊢[ i ] t : tyPi l1 l2 (tyU l) (tyEl l' (var 0)) @ k ].
 Proof. intros Hc HG. exact (consistency Hc HG univ_ctx_nil). Qed.

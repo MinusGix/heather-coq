@@ -367,9 +367,20 @@ Proof.
   destruct (HG _ _ Hin) as [Q | (? & ? & ? & ? & Q)]; discriminate Q.
 Qed.
 
+Lemma closed_ok_gvar {G i u Δ i' T l} : closed_ok i G -> ~ in_gctx (gΨ G) u (gdTm Δ i' T l).
+Proof.
+  intros [HG | (_ & HG)] Hin; [discriminate (HG _ _ Hin) |].
+  destruct (HG _ _ Hin) as [Q | (? & ? & ? & ? & Q)]; discriminate Q.
+Qed.
+
+(** At M, [closed_ok] is [ctx_only] (DefStuck.v: with a definition, M has
+    closed neutrals). *)
+Lemma closed_ok_M_ctx_only {G} : closed_ok lM G -> ctx_only G.
+Proof. intros [H | (Ei & _)]; [exact H | discriminate Ei]. Qed.
+
 Fixpoint numeral (n : nat) : tm := match n with 0 => zero | S n => succ (numeral n) end.
 
-Theorem closed_nat_canonicity {G t} : ctx_only G -> [ G ; cnil ⊢g t : tyNat @ lzero ] ->
+Theorem closed_nat_canonicity {G t} : closed_ok ge_layer G -> [ G ; cnil ⊢g t : tyNat @ lzero ] ->
   exists n, [ G ; cnil ⊢g t ≅ numeral n : tyNat @ lzero ].
 Proof.
   intros HG H. pose proof (nat_canonicity H) as Hn.
@@ -380,7 +391,7 @@ Proof.
   - exists 0. apply eqtm_refl, wf_zero; [exact ge_notV | rewrite ge_typeof; eapply ctx_of_tm, H].
   - intros t0 t0' _ (n & Hn'). exists (S n). cbn. apply eqtm_succ; [exact ge_notV | exact Hn'].
   - intros ν ν' Hνν. exfalso.
-    exact (no_closed_neutral (gne_tm_typed_l Hνν) eq_refl HG (gne_tm_whne_l Hνν)).
+    exact (no_closed_neutral_ok HG (gne_tm_typed_l Hνν) (gne_tm_whne_l Hνν)).
 Qed.
 
 (** ** Discrimination of type formers *)
