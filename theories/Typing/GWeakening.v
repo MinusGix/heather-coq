@@ -118,15 +118,16 @@ Proof. apply (proj1 (proj2 gren_ren_all)). Qed.
 Ltac gpeel_push :=
   repeat first [ rewrite <- peelL_gren | rewrite <- peelG_gren | rewrite <- peelU_gren ];
   unfold rb_br; rewrite tup_nth_gren;
-  cbn [goren gren GRen_tm GRen_ty GRen_ctx gren_tm recT rect]; rewrite ?gren_ty_subst_raw;
+  cbn [goren gren GRen_tm GRen_ty GRen_ctx gren_tm recT rect]; fold gren_ty gren_tm;
+  rewrite ?gren_ty_subst_raw;
   rewrite ?gren_ren_ty', ?gren_ren;
   (* [case]'s branch types (M12c): the injection under the single substitution *)
   try match goal with |- context [tmInl _ _ _ _ (var 0)] =>
-    cbn [glren lsingle gren_tm gren_ty]; rewrite ?gren_ren_ty', ?gren_ren end;
+    cbn [glren lsingle gren_tm gren_ty]; fold gren_ty gren_tm; rewrite ?gren_ren_ty', ?gren_ren end;
   (* [elimW]'s step telescope (M13b): renamings and substitutions nested
      under the payload binders *)
   try match goal with |- context [tmSup _ _ _ _ (var 2) (var 1)] =>
-    repeat progress (cbn [glren lsingle gren_tm gren_ty];
+    repeat progress (cbn [glren lsingle gren_tm gren_ty]; fold gren_ty gren_tm;
       rewrite ?gren_ty_subst_raw, ?gren_ren_ty_raw, ?gren_ren_tm_raw, ?gren_ren_ty', ?gren_ren) end;
   reflexivity.
 
@@ -136,7 +137,7 @@ Proof. destruct c; cbn [redT gren GRen_ty gren_ty]; intros E; first [discriminat
 Lemma redt_gren l1 l2 rb l Δ T c v ξ : redt l1 l2 rb l Δ T c = Some v ->
   redt l1 l2 rb⟪ξ⟫ l Δ⟪ξ⟫ T⟪ξ⟫ c⟪ξ⟫ = Some v⟪ξ⟫.
 Proof.
-  destruct c; cbn [redt gren GRen_tm gren_tm]; redt_case T; cbn [gren_ty];
+  destruct c; cbn [redt gren GRen_tm gren_tm]; redt_case T; cbn [gren_ty]; fold gren_ty gren_tm;
     intros E; first [discriminate E | injection E as <-]; f_equal; gpeel_push.
 Qed.
 

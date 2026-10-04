@@ -4909,9 +4909,13 @@ Proof using EL. intros; apply eqc_ext; [assumption | assumption | assumption | r
 Lemma eq_self_l {Δ T T' k} : [ G' ; Δ ⊢[ lD ] T ≅ T' @ k ] -> [ G' ; Δ ⊢[ lD ] T ≅ T @ k ].
 Proof using . intros H; exact (eqty_trans _ _ _ _ _ _ _ H (eqty_sym _ _ _ _ _ _ H)). Qed.
 
+(** The mismatched formers are closed by conversion before [cbn], which
+    then runs on the one that survives (as [leq_cases], [LevelEq.v]). *)
 Ltac leq_inv := match goal with
-  | E : ty_leq _ ?c, W : ty_lwf _ ?c |- _ => is_var c; destruct c; cbn in E, W; try contradiction
-  | E : tm_leq _ ?c, W : tm_lwf _ ?c |- _ => is_var c; destruct c; cbn in E, W; try contradiction
+  | E : ty_leq _ ?c, W : ty_lwf _ ?c |- _ =>
+      is_var c; destruct c; try exact (False_ind _ E); cbn in E, W; try contradiction
+  | E : tm_leq _ ?c, W : tm_lwf _ ?c |- _ =>
+      is_var c; destruct c; try exact (False_ind _ E); cbn in E, W; try contradiction
   end; repeat match goal with H : _ /\ _ |- _ => destruct H end.
 
 Lemma RT_nat {Δ} : RT Δ tyNat lzero.

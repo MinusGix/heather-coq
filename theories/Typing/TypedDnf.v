@@ -126,7 +126,7 @@ Proof.
   all: try solve [apply gsubst_dnf_all; auto; apply dnfo_gsingle; cbn; auto].
   (* the recursors: branches, motive instances, reducts *)
   all: try match goal with
-       | IH : forall k, k < nbr -> dnftm (?bs k) /\ _ |- dnftm (?bs ?n) => apply (IH n); lia
+       | IH : forall k, k < nbr -> dnftm (?bs k) /\ _ |- dnftm (?bs ?n) => exact (proj1 (IH n ltac:(lia)))
        end.
   all: try solve [ repeat first [ apply subst_dnf_ty | apply gsubst_dnf_all | apply usubst_dnf_all
                                 | apply uren_dnf_all | apply dnfo_gup | apply dnfo_gsingle | apply lk_dnf_lsingle ];
