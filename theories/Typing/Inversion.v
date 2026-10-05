@@ -487,6 +487,15 @@ Lemma inv_ty_W {G i Γ l l' A B k} : [ G ; Γ ⊢[ i ] tyW l l' A B @ k ] ->
     lvl_eq (gL G) k (lmax l l').
 Proof. inv_ty. Qed.
 
+(** Length-indexed tuples and finite indices (M14a). *)
+Lemma inv_ty_vec {G i Γ l A n k} : [ G ; Γ ⊢[ i ] tyVec l A n @ k ] ->
+  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) /\
+    lvl_eq (gL G) k l.
+Proof. inv_ty. Qed.
+Lemma inv_ty_fin {G i Γ n k} : [ G ; Γ ⊢[ i ] tyFin n @ k ] ->
+  (compt i /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) /\ lvl_eq (gL G) k lzero.
+Proof. inv_ty. Qed.
+
 (** ** Lookups are deterministic *)
 
 Lemma in_ctx_det {Γ n T l T' l'} : in_ctx Γ n T l -> in_ctx Γ n T' l' -> T = T' /\ l = l'.
@@ -540,4 +549,6 @@ Proof.
   - exact (lvl_eq_uniq (proj2 (inv_ty_empty H)) (proj2 (inv_ty_empty H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_sum H)) (proj2 (inv_ty_sum H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_W H)) (proj2 (inv_ty_W H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_vec H)) (proj2 (inv_ty_vec H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_fin H)) (proj2 (inv_ty_fin H'))).
 Qed.

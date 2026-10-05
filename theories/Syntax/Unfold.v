@@ -37,6 +37,8 @@ Fixpoint unf_ty (T : ty) {struct T} : ty :=
   | tyEmpty l => tyEmpty l
   | tySum l l' A B => tySum l l' (unf_ty A) (unf_ty B)
   | tyW l l' A B => tyW l l' (unf_ty A) (unf_ty B)
+  | tyVec l A n => tyVec l (unf_ty A) (unf_tm n)
+  | tyFin n => tyFin (unf_tm n)
   end
 with unf_tm (t : tm) {struct t} : tm :=
   match t with
@@ -371,6 +373,8 @@ Fixpoint gfree_ty (T : ty) {struct T} : Prop :=
   | tyEmpty l => True
   | tySum l l' A B => gfree_ty A /\ gfree_ty B
   | tyW l l' A B => gfree_ty A /\ gfree_ty B
+  | tyVec l A n => gfree_ty A /\ gfree_tm n
+  | tyFin n => gfree_tm n
   end
 with gfree_tm (t : tm) {struct t} : Prop :=
   match t with

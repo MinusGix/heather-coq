@@ -245,6 +245,24 @@ Proof.
   eapply actne_El; [exact (leqv_sym _ _ Hl) | exact X].
 Qed.
 
+(** [Vec] and [Fin] at a neutral length (M14a). *)
+Lemma Y_actne_vec {G Γ l l' A A' ν ν' W} : leqv l l' -> Y_ty G Γ A A' -> Y_nee G Γ ν ν' W ->
+  Y_tyne G Γ (tyVec l A ν) (tyVec l' A' ν').
+Proof.
+  intros Hl IHA IH i k k' Hc HX HX'.
+  destruct (inv_ty_vec HX) as ((_ & _ & HA & Hν) & _). destruct (inv_ty_vec HX') as ((_ & _ & HA' & Hν') & _).
+  destruct (IH i _ _ _ _ Hc Hν Hν') as (W' & X).
+  eapply actne_vec; [exact (leqv_sym _ _ Hl) | exact (IHA i _ _ Hc HA HA') | exact X].
+Qed.
+
+Lemma Y_actne_fin {G Γ ν ν' W} : Y_nee G Γ ν ν' W -> Y_tyne G Γ (tyFin ν) (tyFin ν').
+Proof.
+  intros IH i k k' Hc HX HX'.
+  destruct (inv_ty_fin HX) as ((_ & Hν) & _). destruct (inv_ty_fin HX') as ((_ & Hν') & _).
+  destruct (IH i _ _ _ _ Hc Hν Hν') as (W' & X).
+  eapply actne_fin; exact X.
+Qed.
+
 (** ** Local contexts *)
 
 Lemma Y_acc_nil {G} : Y_ctx G cnil cnil.
@@ -1273,6 +1291,7 @@ Proof.
     | solve [eapply Y_actnf_upi; eassumption] | solve [eapply Y_actnf_cpi; eassumption]
     | solve [eapply Y_actnf_tpi; eassumption]
     | solve [eapply Y_actne_gvar; eassumption] | solve [eapply Y_actne_El; eassumption]
+    | solve [eapply Y_actne_vec; eassumption] | solve [eapply Y_actne_fin; eassumption]
     | solve [eapply Y_acc_nil] | solve [eapply Y_acc_var] | solve [eapply Y_acc_ext; eassumption]
     | solve [eapply Y_actm_red; eassumption]
     | solve [eapply Y_actmnf_code_nat] | solve [eapply Y_actmnf_code_U; eassumption]
@@ -1441,6 +1460,12 @@ Lemma ainv_tygvar {G Γ U d X} : ac_tyne G Γ (tyGvar U d) X ->
 Proof. intros H; ainv H. Qed.
 Lemma ainv_El {G Γ l ν X} : ac_tyne G Γ (tyEl l ν) X ->
   exists l' ν' W, X = tyEl l' ν' /\ leqv l l' /\ ac_tmnee G Γ ν ν' W.
+Proof. intros H; ainv H. Qed.
+
+Lemma ainv_vec {G Γ l A ν X} : ac_tyne G Γ (tyVec l A ν) X ->
+  exists l' A' ν' W, X = tyVec l' A' ν' /\ leqv l l' /\ ac_ty G Γ A A' /\ ac_tmnee G Γ ν ν' W.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_fin {G Γ ν X} : ac_tyne G Γ (tyFin ν) X -> exists ν' W, X = tyFin ν' /\ ac_tmnee G Γ ν ν' W.
 Proof. intros H; ainv H. Qed.
 
 Lemma ainv_cnil {G X} : ac_ctx G cnil X -> X = cnil.
@@ -1807,6 +1832,26 @@ Proof.
   destruct (inv_ty_El HX) as ((_ & _ & Hν) & _). destruct (inv_ty_El HX') as ((_ & _ & Hν') & _).
   destruct (inv_ty_El HX'') as ((_ & _ & Hν'') & _).
   eapply actne_El; [exact (leqv_trans _ _ _ Hl Hl2) | exact (IH ν'' W2 i _ _ _ _ _ _ Hc Hν Hν' Hν'' Dν2)].
+Qed.
+
+Lemma T_actne_vec {G Γ l l' A A' ν ν' W} : leqv l l' -> T_ty G Γ A A' -> T_nee G Γ ν ν' W ->
+  T_tyne G Γ (tyVec l A ν) (tyVec l' A' ν').
+Proof.
+  intros Hl IHA IH X'' i k k' k'' Hc HX HX' HX'' D2.
+  destruct (ainv_vec D2) as (l'' & A'' & ν'' & W2 & -> & Hl2 & DA2 & Dν2).
+  destruct (inv_ty_vec HX) as ((_ & _ & HA & Hν) & _). destruct (inv_ty_vec HX') as ((_ & _ & HA' & Hν') & _).
+  destruct (inv_ty_vec HX'') as ((_ & _ & HA'' & Hν'') & _).
+  eapply actne_vec; [exact (leqv_trans _ _ _ Hl Hl2) | exact (IHA A'' i _ _ _ Hc HA HA' HA'' DA2)
+                    | exact (IH ν'' W2 i _ _ _ _ _ _ Hc Hν Hν' Hν'' Dν2)].
+Qed.
+
+Lemma T_actne_fin {G Γ ν ν' W} : T_nee G Γ ν ν' W -> T_tyne G Γ (tyFin ν) (tyFin ν').
+Proof.
+  intros IH X'' i k k' k'' Hc HX HX' HX'' D2.
+  destruct (ainv_fin D2) as (ν'' & W2 & -> & Dν2).
+  destruct (inv_ty_fin HX) as ((_ & Hν) & _). destruct (inv_ty_fin HX') as ((_ & Hν') & _).
+  destruct (inv_ty_fin HX'') as ((_ & Hν'') & _).
+  eapply actne_fin; exact (IH ν'' W2 i _ _ _ _ _ _ Hc Hν Hν' Hν'' Dν2).
 Qed.
 
 (** ** Local contexts *)
@@ -3412,6 +3457,7 @@ Proof.
     | solve [eapply T_actnf_upi; eassumption] | solve [eapply T_actnf_cpi; eassumption]
     | solve [eapply T_actnf_tpi; eassumption]
     | solve [eapply T_actne_gvar; eassumption] | solve [eapply T_actne_El; eassumption]
+    | solve [eapply T_actne_vec; eassumption] | solve [eapply T_actne_fin; eassumption]
     | solve [eapply T_acc_nil] | solve [eapply T_acc_var] | solve [eapply T_acc_ext; eassumption]
     | solve [eapply T_actm_red; eassumption]
     | solve [eapply T_actmnf_code_nat] | solve [eapply T_actmnf_code_U; eassumption]

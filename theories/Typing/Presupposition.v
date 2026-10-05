@@ -631,6 +631,54 @@ Proof.
   apply wft_empty; rewrite ?Hi; eauto using lequiv_wf_r, Hv.
 Qed.
 
+(** Length-indexed tuples and finite indices (M14a). *)
+Lemma pre_vec_r {Γ l l' A' n'} : compt i -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A' @ l ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] tyVec l' A' n' @ l ].
+Proof.
+  intros Hc Hl HA Hn. eapply wft_lconv with (l' := l'); [|exact Hl].
+  apply wft_vec; eauto using lequiv_wf_r. eapply wft_lconv; [exact HA | now apply lequiv_sym].
+Qed.
+
+Lemma pre_vec_zero {Γ l A} : compt i -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] A @ l ] ->
+  [ G ; Γ ⊢[ i ] tyVec l A zero @ l ] /\ [ G ; Γ ⊢[ i ] tyUnit l @ l ].
+Proof.
+  intros Hc Hl HA. pose proof (ctx_of_wf_ty Hi HA) as HΓ. split.
+  - apply wft_vec; auto. apply wf_zero; [exact Hv | now rewrite Hi].
+  - apply wft_unit; [exact Hv | now rewrite Hi | exact Hl].
+Qed.
+
+Lemma pre_vec_succ {Γ l A n} : compt i -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] A @ l ] ->
+  [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tyVec l A (succ n) @ l ] /\ [ G ; Γ ⊢[ i ] tySig l l A (tyVec l A⟨↑⟩ n⟨↑⟩) @ l ].
+Proof.
+  intros Hc Hl HA Hn. pose proof (ext_wf HA Hl) as HΓA. split.
+  - apply wft_vec; auto. apply wf_succ; [exact Hv | exact Hn].
+  - eapply wft_lconv; [|apply lequiv_sym, lmax_idem, Hl].
+    apply wft_sig; auto. apply wft_vec; auto.
+    + apply wk1_ty; auto.
+    + exact (wk1_tm G i Hi _ _ _ _ _ _ HΓA Hn).
+Qed.
+
+Lemma pre_fin_zero {Γ} : compt i -> [ G ; Γ ⊢[ i ] ] ->
+  [ G ; Γ ⊢[ i ] tyFin zero @ lzero ] /\ [ G ; Γ ⊢[ i ] tyEmpty lzero @ lzero ].
+Proof.
+  intros Hc HΓ. split.
+  - apply wft_fin; auto. apply wf_zero; [exact Hv | now rewrite Hi].
+  - apply wft_empty; [exact Hv | now rewrite Hi | exact I].
+Qed.
+
+Lemma pre_fin_succ {Γ n} : compt i -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tyFin (succ n) @ lzero ] /\
+  [ G ; Γ ⊢[ i ] tySum lzero lzero (tyUnit lzero) (tyFin n) @ lzero ].
+Proof.
+  intros Hc Hn. pose proof (ctx_of_wf_tm Hi Hn) as HΓ. split.
+  - apply wft_fin; auto. apply wf_succ; [exact Hv | exact Hn].
+  - eapply wft_lconv; [|apply lequiv_sym, lmax_idem; exact I].
+    apply wft_sum; auto; try exact I.
+    + apply wft_unit; [exact Hv | now rewrite Hi | exact I].
+    + apply wft_fin; auto.
+Qed.
+
 Lemma pre_elimEmpty_r {Γ l1 l2 l3 l4 M M' t t'} :
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] M @ l1 ] ->
@@ -2207,7 +2255,17 @@ Proof.
              | solve [eapply pre_codeW_r; eassumption]
              | solve [eapply wf_code_W; eauto 3 with presup]
              | solve [eapply wft_El; eauto with presup; eapply wf_code_W; eassumption]
-             | solve [apply wft_W; eauto 3 using compt_self with presup; apply wft_El; eauto with presup] ].
+             | solve [apply wft_W; eauto 3 using compt_self with presup; apply wft_El; eauto with presup]
+             (* length-indexed tuples and finite indices (M14a) *)
+             | solve [eapply pre_vec_r; eassumption]
+             | solve [apply wft_fin; assumption]
+             | solve [apply wft_vec; eauto using lequiv_wf_l]
+             | solve [eapply proj1;
+                      first [eapply pre_vec_zero | eapply pre_vec_succ | eapply pre_fin_zero | eapply pre_fin_succ];
+                      eassumption]
+             | solve [eapply proj2;
+                      first [eapply pre_vec_zero | eapply pre_vec_succ | eapply pre_fin_zero | eapply pre_fin_succ];
+                      eassumption] ].
 Qed.
 
 Section Named.

@@ -381,6 +381,8 @@ Lemma gren_tmSum l l' s t : (tmSum l l' s t)⟪ξ⟫ = tmSum l l' s⟪ξ⟫ t⟪
 Lemma gren_tmW l l' s t : (tmW l l' s t)⟪ξ⟫ = tmW l l' s⟪ξ⟫ t⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_triv l : (tmTriv l)⟪ξ⟫ = tmTriv l. Proof. reflexivity. Qed.
 Lemma gren_tyW l l' A B : (tyW l l' A B)⟪ξ⟫ = tyW l l' A⟪ξ⟫ B⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tyVec l A n : (tyVec l A n)⟪ξ⟫ = tyVec l A⟪ξ⟫ n⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tyFin n : (tyFin n)⟪ξ⟫ = tyFin n⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_sup l l' A B a f : (tmSup l l' A B a f)⟪ξ⟫ = tmSup l l' A⟪ξ⟫ B⟪ξ⟫ a⟪ξ⟫ f⟪ξ⟫.
 Proof. reflexivity. Qed.
 Lemma gren_elimW l l' l'' A B M c t :
@@ -468,6 +470,8 @@ Ltac push_gren_at h k := lazymatch h with
   | @tmSEq => k gren_tmSEq
   | @tmJ => k gren_J
   | @tyW => k gren_tyW
+  | @tyVec => k gren_tyVec
+  | @tyFin => k gren_tyFin
   | @tmSup => k gren_sup
   | @tmElimW => k gren_elimW
   | @wIH => k gren_wIH
@@ -819,7 +823,9 @@ Proof.
   all: first [ constructor; now apply redT_gren | constructor; now apply redt_gren
              | rewrite <- usubst_gren; now constructor
              (* δ: the body's instance *)
-             | rewrite gren_subst; now constructor ].
+             | rewrite gren_subst; now constructor
+             (* [Vec]'s successor step: the tail's shifts *)
+             | rewrite gren_ren_ty', gren_ren; now constructor ].
 Qed.
 
 Lemma red_gren t u ξ : red t u -> red t⟪ξ⟫ u⟪ξ⟫.
@@ -959,6 +965,8 @@ Lemma gwa_cvar g : (cvar g)⟦γ⟧ = cvar (γ g). Proof. now destruct γ. Qed.
 Lemma gwa_tySig l l' A B : (tySig l l' A B)⟦γ⟧ = tySig l l' A⟦γ⟧ B⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_tySum l l' A B : (tySum l l' A B)⟦γ⟧ = tySum l l' A⟦γ⟧ B⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_tyW l l' A B : (tyW l l' A B)⟦γ⟧ = tyW l l' A⟦γ⟧ B⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tyVec l A n : (tyVec l A n)⟦γ⟧ = tyVec l A⟦γ⟧ n⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tyFin n : (tyFin n)⟦γ⟧ = tyFin n⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_sup l l' A B a f : (tmSup l l' A B a f)⟦γ⟧ = tmSup l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧ f⟦γ⟧.
 Proof. now destruct γ. Qed.
 Lemma gwa_elimW l l' l'' A B M c t :
@@ -1019,6 +1027,8 @@ Ltac push_gwa_at h k := lazymatch h with
   | @tySig => k gwa_tySig
   | @tySum => k gwa_tySum
   | @tyW => k gwa_tyW
+  | @tyVec => k gwa_tyVec
+  | @tyFin => k gwa_tyFin
   | @tmSup => k gwa_sup
   | @tmElimW => k gwa_elimW
   | @tmInl => k gwa_inl

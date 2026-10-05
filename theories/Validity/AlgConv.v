@@ -437,6 +437,24 @@ Proof.
   eapply actne_El; [exact Hl | exact X].
 Qed.
 
+(** [Vec] and [Fin] at a neutral length (M14a). *)
+Lemma C_actne_vec {G Γ l l' A A' ν ν' W} : leqv l l' -> C_ty G Γ A A' -> C_nee G Γ ν ν' W ->
+  C_tyne G Γ (tyVec l A ν) (tyVec l' A' ν').
+Proof.
+  intros Hl IHA IH i G2 Γ2 k k' Hc HE Hctx HX HX'.
+  destruct (inv_ty_vec HX) as ((_ & _ & HA & Hν) & _). destruct (inv_ty_vec HX') as ((_ & _ & HA' & Hν') & _).
+  destruct (IH i G2 Γ2 _ _ _ _ Hc HE Hctx Hν Hν' _ _ spa_refl spa_refl) as (W2 & X & _).
+  eapply actne_vec; [exact Hl | exact (IHA i G2 Γ2 _ _ Hc HE Hctx HA HA') | exact X].
+Qed.
+
+Lemma C_actne_fin {G Γ ν ν' W} : C_nee G Γ ν ν' W -> C_tyne G Γ (tyFin ν) (tyFin ν').
+Proof.
+  intros IH i G2 Γ2 k k' Hc HE Hctx HX HX'.
+  destruct (inv_ty_fin HX) as ((_ & Hν) & _). destruct (inv_ty_fin HX') as ((_ & Hν') & _).
+  destruct (IH i G2 Γ2 _ _ _ _ Hc HE Hctx Hν Hν' _ _ spa_refl spa_refl) as (W2 & X & _).
+  eapply actne_fin; exact X.
+Qed.
+
 (** ** Local contexts (at D) *)
 
 Lemma C_acc_nil {G} : C_ctx G cnil cnil.
@@ -1825,7 +1843,8 @@ Proof.
     | solve [eapply C_actmnf_code_empty; eassumption] | solve [eapply C_actmnf_code_sum; eassumption]
     | solve [eapply C_actnf_W; eassumption] | solve [eapply C_actmnf_sup; eassumption]
     | solve [eapply C_actmne_elimW; eassumption]
-    | solve [eapply C_actmnf_code_W; eassumption] ].
+    | solve [eapply C_actmnf_code_W; eassumption]
+    | solve [eapply C_actne_vec; eassumption] | solve [eapply C_actne_fin; eassumption] ].
 Qed.
 
 (** The statement without annotation changes. *)

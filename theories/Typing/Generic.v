@@ -384,7 +384,14 @@ Class GenericEqLaws `{GenericEq} := {
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢g s : tyU l1 @ lsuc l1 ] -> [ G ; Γ ⊢ s ≈ s' : tyU l1 @ lsuc l1 ] ->
     [ G ; Γ ,, tyEl l1 s @ l1 ⊢ t ≈ t' : tyU l2 @ lsuc l2 ] ->
-    [ G ; Γ ⊢ tmW l1 l2 s t ≈ tmW l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ]
+    [ G ; Γ ⊢ tmW l1 l2 s t ≈ tmW l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ] ;
+  (** length-indexed tuples and finite indices at neutral lengths (M14a, MX
+      §10.2): the first neutral-type law with a type premise *)
+  gne_ty_vec {G Γ l l' A A' ν ν'} : lequiv (gL G) l l' ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
+    [ G ; Γ ⊢ ν ~ ν' : tyNat @ lzero ] -> [ G ; Γ ⊢ tyVec l A ν ~ tyVec l' A' ν' @ l ] ;
+  gne_ty_fin {G Γ ν ν'} :
+    [ G ; Γ ⊢ ν ~ ν' : tyNat @ lzero ] -> [ G ; Γ ⊢ tyFin ν ~ tyFin ν' @ lzero ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

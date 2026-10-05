@@ -539,6 +539,13 @@ Proof.
     refine (conj (@geq_tm_code_W DE DEL _ _ _ _ _ _ _ _ _ _ H13 H24 Hs Es Et) _).
     eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmW | apply whnf_tmW |].
     exact (actmnf_code_W _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24) Ds Dt).
+  (* Vec and Fin at a neutral length (M14a) *)
+  - intros * Hl HA (EA & DA) ((Hn & Hn' & E) & T0 & D & ET).
+    refine (conj (@gne_ty_vec DE DEL _ _ _ _ _ _ _ _ Hl HA EA (conj Hn (conj Hn' E))) _).
+    destruct (ne_nee D ET) as (W0 & X & _). exact (actne_vec _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) DA X).
+  - intros * ((Hn & Hn' & E) & T0 & D & ET).
+    refine (conj (@gne_ty_fin DE DEL _ _ _ _ (conj Hn (conj Hn' E))) _).
+    destruct (ne_nee D ET) as (W0 & X & _). exact (actne_fin _ _ _ _ _ X).
 Qed.
 
 End Alg.

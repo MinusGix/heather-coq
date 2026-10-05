@@ -425,6 +425,8 @@ Lemma gs_J l l' A a M c u e :
 Proof. reflexivity. Qed.
 Lemma gs_gdef u b d : (gdef u b d)⦃σ⦄ = pdef (σ u) b⦃σ⦄ d⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_tyW l l' A B : (tyW l l' A B)⦃σ⦄ = tyW l l' A⦃σ⦄ B⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tyVec l A n : (tyVec l A n)⦃σ⦄ = tyVec l A⦃σ⦄ n⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tyFin n : (tyFin n)⦃σ⦄ = tyFin n⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_sup l l' A B a f : (tmSup l l' A B a f)⦃σ⦄ = tmSup l l' A⦃σ⦄ B⦃σ⦄ a⦃σ⦄ f⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_elimW l l' l'' A B M c t :
   (tmElimW l l' l'' A B M c t)⦃σ⦄ = tmElimW l l' l'' A⦃σ⦄ B⦃σ⦄ M⦃σ⦄ c⦃σ⦄ t⦃σ⦄.
@@ -482,6 +484,8 @@ Ltac push_gsubst_at h k := lazymatch h with
   | @tmInr => k gs_inr
   | @tmCase => k gs_case
   | @tyW => k gs_tyW
+  | @tyVec => k gs_tyVec
+  | @tyFin => k gs_tyFin
   | @tmSup => k gs_sup
   | @tmElimW => k gs_elimW
   | @wIH => k gs_wIH

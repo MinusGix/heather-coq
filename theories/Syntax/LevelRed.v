@@ -193,6 +193,9 @@ Proof.
   all: try match goal with H : Forall2 leqv ?ls ?ls' |- _ => pose proof (eq_sym (Forall2_length H)) end.
   all: eexists; split; [solve [eauto with red] |].
   all: try solve [cbn; repeat split; auto].
+  (* [Vec]'s successor step: the tail's shifts *)
+  all: try solve [cbn [ty_leq tm_leq]; repeat split; auto;
+                  first [apply (proj1 leq_ren_all) | apply (proj1 (proj2 leq_ren_all))]; auto].
   all: first
     [ apply (proj1 (proj2 leq_subst_all)); [unfold lsingle3; split; [cbn; repeat split; auto | apply leq_wIH; auto] | auto]
     | apply (proj1 (proj2 leq_subst_all)); cbn; repeat split; auto

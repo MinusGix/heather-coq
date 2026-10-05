@@ -197,6 +197,11 @@ Proof. reflexivity. Qed.
 Lemma subst_elimW l l' l'' A B M c t :
   (tmElimW l l' l'' A B M c t)[d] = tmElimW l l' l'' A[d] B[llift d] M[llift d] c[llift (llift (llift d))] t[d].
 Proof. reflexivity. Qed.
+(** Length-indexed tuples and finite indices (M14a): no binder. *)
+Lemma ren_tyVec l A n : (tyVec l A n)⟨r⟩ = tyVec l A⟨r⟩ n⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_tyFin n : (tyFin n)⟨r⟩ = tyFin n⟨r⟩. Proof. reflexivity. Qed.
+Lemma subst_tyVec l A n : (tyVec l A n)[d] = tyVec l A[d] n[d]. Proof. reflexivity. Qed.
+Lemma subst_tyFin n : (tyFin n)[d] = tyFin n[d]. Proof. reflexivity. Qed.
 (** Defined globals (M9): the body stays in its own local scope. *)
 Lemma ren_gdef u b e : (gdef u b e)⟨r⟩ = gdef u b (lren e r). Proof. reflexivity. Qed.
 Lemma subst_gdef u b e : (gdef u b e)[d] = gdef u b (lcomp e d). Proof. reflexivity. Qed.
@@ -274,6 +279,8 @@ Ltac push_ren_at h k := lazymatch h with
   | @tmSup => k ren_sup
   | @tmElimW => k ren_elimW
   | @wIH => k ren_wIH
+  | @tyVec => k ren_tyVec
+  | @tyFin => k ren_tyFin
   end.
 Ltac push_ren := repeat match goal with
   | |- context [@ren _ _ ?t _] => let h := head_of t in push_ren_at h ltac:(fun L => rewrite L)
@@ -343,6 +350,8 @@ Ltac push_subst_at h k := lazymatch h with
   | @tyW => k subst_tyW
   | @tmSup => k subst_sup
   | @tmElimW => k subst_elimW
+  | @tyVec => k subst_tyVec
+  | @tyFin => k subst_tyFin
   end.
 Ltac push_subst := repeat match goal with
   | |- context [@subst _ _ ?t _] => let h := head_of t in push_subst_at h ltac:(fun L => rewrite L)

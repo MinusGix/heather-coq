@@ -89,7 +89,14 @@ with red_ty : ty -> ty -> Prop :=
 | red_El_empty l l0 : red_ty (tyEl l (tmEmpty l0)) (tyEmpty l0)
 | red_El_sum l l1 l2 s t : red_ty (tyEl l (tmSum l1 l2 s t)) (tySum l1 l2 (tyEl l1 s) (tyEl l2 t))
 (* the code of W (M13b) *)
-| red_El_W l l1 l2 s t : red_ty (tyEl l (tmW l1 l2 s t)) (tyW l1 l2 (tyEl l1 s) (tyEl l2 t)).
+| red_El_W l l1 l2 s t : red_ty (tyEl l (tmW l1 l2 s t)) (tyW l1 l2 (tyEl l1 s) (tyEl l2 t))
+(* length-indexed tuples and finite indices (M14a): compute on the length *)
+| red_vec_zero l A : red_ty (tyVec l A zero) (tyUnit l)
+| red_vec_succ l A n : red_ty (tyVec l A (succ n)) (tySig l l A (tyVec l A⟨↑⟩ n⟨↑⟩))
+| red_vec l A n n' : red n n' -> red_ty (tyVec l A n) (tyVec l A n')
+| red_fin_zero : red_ty (tyFin zero) (tyEmpty lzero)
+| red_fin_succ n : red_ty (tyFin (succ n)) (tySum lzero lzero (tyUnit lzero) (tyFin n))
+| red_fin n n' : red n n' -> red_ty (tyFin n) (tyFin n').
 
 Scheme red_mut := Induction for red Sort Prop
   with red_ty_mut := Induction for red_ty Sort Prop.
@@ -120,7 +127,7 @@ Proof.
   intros HW Hr; inversion Hr; subst; inversion HW; subst;
     match goal with HT : whne_ty _ |- _ => inversion HT; subst end;
     try solve [match goal with Hw : whne _ |- _ => inversion Hw end].
-  eapply whne_no_red; eauto.
+  all: eapply whne_no_red; eauto.
 Qed.
 
 (** ** Determinacy *)
@@ -227,6 +234,10 @@ Lemma reds_J l l' A a M c u e e' : reds e e' -> reds (tmJ l l' A a M c u e) (tmJ
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_El l t t' : reds t t' -> reds_ty (tyEl l t) (tyEl l t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_vec l A n n' : reds n n' -> reds_ty (tyVec l A n) (tyVec l A n').
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_fin n n' : reds n n' -> reds_ty (tyFin n) (tyFin n').
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 
 (** ** Stability under renaming *)
 
@@ -320,12 +331,22 @@ Proof.
   - rewrite !ren_ren_comp_ty. apply ren_ext_ty; intros [|[|n]]; rlk_simpl; reflexivity.
 Qed.
 
+(** [Vec]'s successor step (M14a): the tail's shifts commute with renaming. *)
+Lemma red_vec_succ_ren l A n r :
+  red_ty (tyVec l A (succ n))⟨r⟩ (tySig l l A (tyVec l A⟨↑⟩ n⟨↑⟩))⟨r⟩.
+Proof.
+  change (red_ty (tyVec l A⟨r⟩ (succ n⟨r⟩)) (tySig l l A⟨r⟩ (tyVec l A⟨↑⟩⟨rlift r⟩ n⟨↑⟩⟨rlift r⟩))).
+  rewrite (ren_swap_ty A ↑ (rlift r) r ↑), (ren_swap n ↑ (rlift r) r ↑) by (intros; rlk_simpl; lia).
+  constructor.
+Qed.
+
 Lemma red_ren_both :
   (forall t u, red t u -> forall r, red t⟨r⟩ u⟨r⟩) /\
   (forall T U, red_ty T U -> forall r, red_ty T⟨r⟩ U⟨r⟩).
 Proof.
   apply red_both; intros; cbn;
     first [ now constructor
+          | now apply red_vec_succ_ren
           | now apply red_ubeta_ren
           | constructor; first [now apply redT_ren | now apply redt_ren]
           | cbn [ren_tm]; rewrite <- gsubst_ren; constructor

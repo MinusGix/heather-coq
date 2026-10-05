@@ -51,7 +51,7 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | `Empty^l`, `elim_Empty` | positive, no β | ext §7 | MX §2 | Empty-η still open (`issues/empty-eta-conversion.md`) | **done** (M12a; every layer but V with code and branches 31–33, M12c): no closed term (`closed_empty_empty`) |
 | `+`, `inl`/`inr`, `case` | positive | ext §8 | MX §2 | — | **done** (M12b; every layer but V with code and branches 34–38, M12c): β at D and M, no η, disjunction property (`closed_sum_canonicity`) |
 | `W`, `sup`, `elim_W` | positive, infinitary | ext §9 | MX §5 | β builds an ih λ; the heaviest LR case | **M13 done**: β, no η, `closed_W_canonicity` (M13a, D and M); code, lift to C and the four branches (M13b) |
-| `Vec`, `Fin` | computing wrappers (reduce to Σ/Unit, +/Empty) | DESIGN.md | MX §10 | first type formers whose whnf is chosen by a term | — |
+| `Vec`, `Fin` | computing wrappers (reduce to Σ/Unit, +/Empty) | DESIGN.md | MX §10 | first type formers whose whnf is chosen by a term | **M14a done** (D and M): no LR case, validity by induction on the length; preservation at `Vec^l(A;0) ⇝ Unit^l`. Codes and branches are M14b |
 | `Wf`, `sup_f`, `elim_Wf` | finitary W over a `Vec` of children | wf-former-design | MX §11–17 | index lemma (MX §13) | — |
 | `sEq`, `srefl`, `transp`, strip rule | strict equality, irrelevance | sprop-design | MX §18–22 | strip changes the evaluation notion; MX §19.4 substitution lemma is the named weak spot; completeness gap reaches type relations (MX §22.4); **MX §19.2 is a strengthening lemma (M10 S1)** | `sEq`, `srefl`, irrelevance **done** (M10a; every layer but V with codes and branches 25, 26, 29, M10c); `transp` removed (S8) |
 | `sEmpty`, `elim_sEmpty` | irrelevant empty type | sprop-design | MX §18, §21.4 | — | **done** (M10a; at code with branches 27, 28, 30, M10c) |
@@ -82,8 +82,9 @@ Cross-checks between the two sides, newest last.
   Heather fixed it by level-indexing `Unit^l`/`Empty^l`
   (`issues/unit-level-and-vec-preservation.md`, closed). Making them
   level-polymorphic instead was tried and reverted: it gives `box Unit`
-  many types and breaks the recursor. Our Preservation lemma is the check
-  when `Vec` lands.
+  many types and breaks the recursor. Checked at M14a: `RS_vec_zero`
+  preserves `Vec^l(A;0)`'s type at the same level `l`
+  (M14_DESIGN.md).
 - **Σ and Unit (M8).** Heather's rules went through as written: the
   formers at every layer but V, the computation rules (β, η, the codes'
   decodings) at D and M only. Two additions of ours, neither a change to
@@ -174,6 +175,8 @@ each one touched and why, then choose among 1–3 using that data.
 5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash). `Id` is done (M11a and
    M11b, M11_DESIGN.md). `Empty` and `+` are done, with codes and
    recursor branches (M12a–c, M12_DESIGN.md). `W` is done, with its
-   code and four recursor branches (M13a–b, M13_DESIGN.md).
+   code and four recursor branches (M13a–b, M13_DESIGN.md). `Vec` and
+   `Fin` are done at D and M (M14a, M14_DESIGN.md); their codes are
+   M14b.
 
 Side task, any time: the ITree depth-indexed bisimilarity question.

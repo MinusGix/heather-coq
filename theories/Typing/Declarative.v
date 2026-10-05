@@ -100,6 +100,13 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
 | wft_W G i Γ l l' A B : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
     [ G ; Γ ⊢[ i ] tyW l l' A B @ lmax l l' ]
+(* length-indexed tuples and finite indices (M14a; layers D and M): the
+   length is a term in [Γ], with no binder *)
+| wft_vec G i Γ l A n : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tyVec l A n @ l ]
+| wft_fin G i Γ n : compt i -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tyFin n @ lzero ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -436,6 +443,23 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ] ->
     [ G ; Γ ⊢[ i ] tyW l l' (tyEl l s) (tyEl l' t) ≅ tyEl (lmax l l') (tmW l l' s t) @ lmax l l' ]
+(* length-indexed tuples and finite indices (M14a; layers D and M): the
+   congruences, and the computation at a canonical length *)
+| eqty_vec G i Γ l l' A A' n n' : compt i -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+    [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tyVec l A n ≅ tyVec l' A' n' @ l ]
+| eqty_fin G i Γ n n' : compt i -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tyFin n ≅ tyFin n' @ lzero ]
+| eqty_vec_zero G i Γ l A : compt i -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] A @ l ] ->
+    [ G ; Γ ⊢[ i ] tyVec l A zero ≅ tyUnit l @ l ]
+| eqty_vec_succ G i Γ l A n : compt i -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] A @ l ] ->
+    [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tyVec l A (succ n) ≅ tySig l l A (tyVec l A⟨↑⟩ n⟨↑⟩) @ l ]
+| eqty_fin_zero G i Γ : compt i -> [ G ; Γ ⊢[ typeof i ] ] ->
+    [ G ; Γ ⊢[ i ] tyFin zero ≅ tyEmpty lzero @ lzero ]
+| eqty_fin_succ G i Γ n : compt i -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tyFin (succ n) ≅ tySum lzero lzero (tyUnit lzero) (tyFin n) @ lzero ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
