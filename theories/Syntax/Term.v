@@ -44,6 +44,9 @@ Inductive ty : Type :=
 | tySum (l l' : lvl) (A B : ty)           (* A +^{l,l'} B @ l ⊔ l' *)
 (* well-founded trees (M13a): shapes [A], positions [B] at each shape *)
 | tyW (l l' : lvl) (A B : ty)             (* W^{l,l'}(x : A). B @ l ⊔ l'      B: +1 *)
+(* length-indexed tuples and finite indices (M14a): reduce on the length *)
+| tyVec (l : lvl) (A : ty) (n : tm)       (* Vec^l(A; n) @ l *)
+| tyFin (n : tm)                          (* Fin(n) @ 0 *)
 with tm : Type :=
 | var (n : nat)
 | tmErr
@@ -210,6 +213,8 @@ Fixpoint ren_ty (T : ty) (r : rsub) {struct T} : ty :=
   | tyEmpty l => tyEmpty l
   | tySum l l' A B => tySum l l' (ren_ty A r) (ren_ty B r)
   | tyW l l' A B => tyW l l' (ren_ty A r) (ren_ty B (rlift r))
+  | tyVec l A n => tyVec l (ren_ty A r) (ren_tm n r)
+  | tyFin n => tyFin (ren_tm n r)
   end
 with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   match t with
@@ -304,6 +309,8 @@ Fixpoint gren_ty (T : ty) (ξ : nat -> nat) {struct T} : ty :=
   | tyEmpty l => tyEmpty l
   | tySum l l' A B => tySum l l' (gren_ty A ξ) (gren_ty B ξ)
   | tyW l l' A B => tyW l l' (gren_ty A ξ) (gren_ty B ξ)
+  | tyVec l A n => tyVec l (gren_ty A ξ) (gren_tm n ξ)
+  | tyFin n => tyFin (gren_tm n ξ)
   end
 with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   match t with
@@ -396,6 +403,8 @@ Fixpoint uren_ty (T : ty) (ρ : nat -> nat) {struct T} : ty :=
   | tyEmpty l => tyEmpty (lvren l ρ)
   | tySum l l' A B => tySum (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_ty B ρ)
   | tyW l l' A B => tyW (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_ty B ρ)
+  | tyVec l A n => tyVec (lvren l ρ) (uren_ty A ρ) (uren_tm n ρ)
+  | tyFin n => tyFin (uren_tm n ρ)
   end
 with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   match t with
@@ -495,6 +504,8 @@ Fixpoint subst_ty (T : ty) (d : lsub) {struct T} : ty :=
   | tyEmpty l => tyEmpty l
   | tySum l l' A B => tySum l l' (subst_ty A d) (subst_ty B d)
   | tyW l l' A B => tyW l l' (subst_ty A d) (subst_ty B (llift d))
+  | tyVec l A n => tyVec l (subst_ty A d) (subst_tm n d)
+  | tyFin n => tyFin (subst_tm n d)
   end
 with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   match t with
@@ -673,6 +684,8 @@ Fixpoint gsubst_ty (T : ty) (σ : gsub) {struct T} : ty :=
   | tyEmpty l => tyEmpty l
   | tySum l l' A B => tySum l l' (gsubst_ty A σ) (gsubst_ty B σ)
   | tyW l l' A B => tyW l l' (gsubst_ty A σ) (gsubst_ty B σ)
+  | tyVec l A n => tyVec l (gsubst_ty A σ) (gsubst_tm n σ)
+  | tyFin n => tyFin (gsubst_tm n σ)
   end
 with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   match t with
@@ -767,6 +780,8 @@ Fixpoint usubst_ty (T : ty) (φ : nat -> lvl) {struct T} : ty :=
   | tyEmpty l => tyEmpty (lvsubst l φ)
   | tySum l l' A B => tySum (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_ty B φ)
   | tyW l l' A B => tyW (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_ty B φ)
+  | tyVec l A n => tyVec (lvsubst l φ) (usubst_ty A φ) (usubst_tm n φ)
+  | tyFin n => tyFin (usubst_tm n φ)
   end
 with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   match t with

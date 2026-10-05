@@ -636,6 +636,52 @@ Proof.
   exact (wf_ty_func Hi HM (lsub_eq_single Hi Ht (eqtm_wf_l Hi Hsup) (eqtm_sym _ _ _ _ _ _ _ Hsup))).
 Qed.
 
+(** [Vec] and [Fin] (M14a): the computation rules at a canonical length,
+    and the congruence at the length. [Vec^l(A; 0) ⇝ Unit^l] keeps the
+    level [l], which is what Heather's level-indexed [Unit] repaired. *)
+Lemma RS_vec_zero l A : RS_ty (tyVec l A zero) (tyUnit l).
+Proof.
+  intros G i Γ k Hc HT. destruct (inv_ty_vec HT) as ((_ & Wl & HA & _) & Hk).
+  apply (retype_eqty Hk). exact (eqty_vec_zero _ _ _ _ _ Hc Wl HA).
+Qed.
+
+Lemma RS_vec_succ l A n : RS_ty (tyVec l A (succ n)) (tySig l l A (tyVec l A⟨↑⟩ n⟨↑⟩)).
+Proof.
+  intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_vec HT) as ((_ & Wl & HA & Hs) & Hk).
+  destruct (inv_succ Hi Hs) as ((_ & Hn) & _).
+  apply (retype_eqty Hk). exact (eqty_vec_succ _ _ _ _ _ _ Hc Wl HA Hn).
+Qed.
+
+Lemma RS_vec l A n n' : RS_tm n n' -> RS_ty (tyVec l A n) (tyVec l A n').
+Proof.
+  intros IH G i Γ k Hc HT. destruct (inv_ty_vec HT) as ((_ & Wl & HA & Hn) & Hk).
+  apply (retype_eqty Hk).
+  exact (eqty_vec _ _ _ _ _ _ _ _ _ Hc (lequiv_refl _ _ Wl) HA (eqty_refl _ _ _ _ _ HA) (IH _ _ _ _ _ Hc Hn)).
+Qed.
+
+Lemma RS_fin_zero : RS_ty (tyFin zero) (tyEmpty lzero).
+Proof.
+  intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_fin HT) as ((_ & Hz) & Hk).
+  destruct (inv_zero Hi Hz) as ((_ & HΓ) & _).
+  apply (retype_eqty Hk). exact (eqty_fin_zero _ _ _ Hc HΓ).
+Qed.
+
+Lemma RS_fin_succ n : RS_ty (tyFin (succ n)) (tySum lzero lzero (tyUnit lzero) (tyFin n)).
+Proof.
+  intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_fin HT) as ((_ & Hs) & Hk).
+  destruct (inv_succ Hi Hs) as ((_ & Hn) & _).
+  apply (retype_eqty Hk). exact (eqty_fin_succ _ _ _ _ Hc Hn).
+Qed.
+
+Lemma RS_fin n n' : RS_tm n n' -> RS_ty (tyFin n) (tyFin n').
+Proof.
+  intros IH G i Γ k Hc HT. destruct (inv_ty_fin HT) as ((_ & Hn) & Hk).
+  apply (retype_eqty Hk). exact (eqty_fin _ _ _ _ _ Hc (IH _ _ _ _ _ Hc Hn)).
+Qed.
+
 (** ** Soundness of reduction *)
 
 Theorem red_sound_all (HR : RecRedTyped) :
@@ -663,7 +709,9 @@ Proof.
     | solve [apply RS_elimEmpty; assumption]
     | solve [apply RS_case_inl] | solve [apply RS_case_inr] | solve [apply RS_case; assumption]
     | solve [apply RS_elimW_sup] | solve [apply RS_elimW; assumption]
-    | solve [apply RS_El_empty] | solve [apply RS_El_sum] | solve [apply RS_El_W] ].
+    | solve [apply RS_El_empty] | solve [apply RS_El_sum] | solve [apply RS_El_W]
+    | solve [apply RS_vec_zero] | solve [apply RS_vec_succ] | solve [apply RS_vec; assumption]
+    | solve [apply RS_fin_zero] | solve [apply RS_fin_succ] | solve [apply RS_fin; assumption] ].
 Qed.
 
 Section Consequences.

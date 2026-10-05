@@ -87,6 +87,11 @@ with ac_tyne : gctx -> ctx -> ty -> ty -> Prop :=
     ac_tyne G Γ (tyGvar U d) (tyGvar U d')
 | actne_El G Γ l l' ν ν' W : leqv l l' -> ac_tmnee G Γ ν ν' W ->
     ac_tyne G Γ (tyEl l ν) (tyEl l' ν')
+(* length-indexed tuples and finite indices at neutral lengths (M14a): the
+   element types as types, the lengths as neutrals *)
+| actne_vec G Γ l l' A A' ν ν' W : leqv l l' -> ac_ty G Γ A A' -> ac_tmnee G Γ ν ν' W ->
+    ac_tyne G Γ (tyVec l A ν) (tyVec l' A' ν')
+| actne_fin G Γ ν ν' W : ac_tmnee G Γ ν ν' W -> ac_tyne G Γ (tyFin ν) (tyFin ν')
 
 with ac_ctx : gctx -> ctx -> ctx -> Prop :=
 | acc_nil G : ac_ctx G cnil cnil

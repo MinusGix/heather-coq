@@ -194,6 +194,26 @@ Proof.
   apply (lvl_eq_eqty Hk). apply eqty_El; assumption.
 Qed.
 
+(** [Vec] and [Fin] at a neutral length (M14a). *)
+Lemma S_actne_vec {G Γ l l' A A' ν ν' W} : leqv l l' -> S_ty G Γ A A' -> S_ne G Γ ν ν' W ->
+  S_ty G Γ (tyVec l A ν) (tyVec l' A' ν').
+Proof.
+  intros Hl IHA IHν i k Hc HX HX'.
+  destruct (inv_ty_vec HX) as ((_ & W1 & HA & Hν) & Hk). destruct (inv_ty_vec HX') as ((_ & W2 & HA' & Hν') & _).
+  pose proof (leqv_lequiv _ _ _ W1 W2 Hl) as E.
+  pose proof (IHA i l Hc HA (wft_lconv _ _ _ _ _ _ HA' E)) as EA.
+  destruct (IHν i lzero lzero tyNat tyNat Hc Hν Hν') as (_ & _ & Eν).
+  apply (lvl_eq_eqty Hk). apply eqty_vec; assumption.
+Qed.
+
+Lemma S_actne_fin {G Γ ν ν' W} : S_ne G Γ ν ν' W -> S_ty G Γ (tyFin ν) (tyFin ν').
+Proof.
+  intros IHν i k Hc HX HX'.
+  destruct (inv_ty_fin HX) as ((_ & Hν) & Hk). destruct (inv_ty_fin HX') as ((_ & Hν') & _).
+  destruct (IHν i lzero lzero tyNat tyNat Hc Hν Hν') as (_ & _ & Eν).
+  apply (lvl_eq_eqty Hk). apply eqty_fin; assumption.
+Qed.
+
 (** ** Local contexts (at D) *)
 
 Lemma S_acc_nil {G} : S_ctx G cnil cnil.
@@ -1926,7 +1946,8 @@ Proof.
     | solve [eapply S_actmnf_code_empty; eassumption] | solve [eapply S_actmnf_code_sum; eassumption]
     | solve [eapply S_actnf_W; eassumption] | solve [eapply S_actmnf_sup; eassumption]
     | solve [eapply S_actmne_elimW; eassumption]
-    | solve [eapply S_actmnf_code_W; eassumption] ].
+    | solve [eapply S_actmnf_code_W; eassumption]
+    | solve [eapply S_actne_vec; eassumption] | solve [eapply S_actne_fin; eassumption] ].
 Qed.
 
 (** Algorithmically convertible types (terms) of the computing layers,

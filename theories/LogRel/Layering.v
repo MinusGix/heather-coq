@@ -18,6 +18,8 @@ Fixpoint mltt_ty (T : ty) : Prop :=
   | tyPi _ _ A B | tySig _ _ A B | tySum _ _ A B | tyW _ _ A B => mltt_ty A /\ mltt_ty B
   (* the identity type's relation recurses into its carrier (M11a) *)
   | tyId _ A _ _ => mltt_ty A
+  (* [Vec]'s element type is its reduct's first component (M14a) *)
+  | tyVec _ A _ => mltt_ty A
   | tyCTyp _ _ | tyCTrm _ _ _ | tyCPi _ _ | tyTPi _ _ _ _ => False
   | _ => True
   end.
@@ -55,7 +57,8 @@ Proof. destruct γ; cbn; [exact id | apply mltt_ctx_ren ..]. Qed.
 Lemma mltt_red {T W} : reds_ty T W -> mltt_ty T -> mltt_ty W.
 Proof.
   induction 1 as [| T U W Hs _ IH]; [exact id |].
-  intros H; apply IH; destruct Hs; cbn in *; tauto.
+  intros H; apply IH; destruct Hs; cbn in *; try tauto.
+  split; [exact H | apply mltt_ren, H].
 Qed.
 
 Lemma mltt_ctx_lookup {Γ n A l} : in_ctx Γ n A l -> mltt_ctx Γ -> mltt_ty A.

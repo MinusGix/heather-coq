@@ -1430,6 +1430,23 @@ Proof.
   - apply eqtm_code_W; auto.
 Qed.
 
+(** Length-indexed tuples and finite indices (M14a), at D. *)
+Lemma sc_vec {Γ l l' A A' n n'} : compt i -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] /\ [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tyVec l' A' n' @ l ] /\ [ G ; Γ ⊢[ i ] tyVec l A n ≅ tyVec l' A' n' @ l ].
+Proof.
+  intros Hc Hl Hl' E HA [HA' HAA] [Hn' Hnn]. pose proof (lq Hl Hl' E) as Q. split.
+  - eapply wft_lconv; [apply wft_vec; auto | exact Q].
+    eapply wft_lconv; [exact HA' | apply lequiv_sym, Q].
+  - apply eqty_vec; auto.
+Qed.
+
+Lemma sc_fin {Γ n n'} : compt i ->
+  [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] /\ [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tyFin n' @ lzero ] /\ [ G ; Γ ⊢[ i ] tyFin n ≅ tyFin n' @ lzero ].
+Proof. intros Hc [Hn' Hnn]. split; [apply wft_fin | apply eqty_fin]; auto. Qed.
+
 End SC.
 
 (** ** The lemma *)
@@ -1532,6 +1549,8 @@ Proof.
     (* well-founded trees (M13a) *)
     | solve [eapply sc_W; eauto] | solve [eapply sc_sup; eauto] | solve [eapply sc_elimW; eauto]
     | solve [eapply sc_code_W; eauto]
+    (* length-indexed tuples and finite indices (M14a) *)
+    | solve [eapply sc_vec; eauto] | solve [eapply sc_fin; eauto]
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x
         |- _ /\ eq_tm _ _ _ (succ _) _ _ _ =>

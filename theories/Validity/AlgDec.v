@@ -284,6 +284,32 @@ Proof.
   rewrite <- (ac_nee_uniq D0 Dν) in Dν. exact (N Dν).
 Qed.
 
+(** [Vec] and [Fin] at a neutral length (M14a). *)
+Lemma Dc_actne_vec {G Γ l l0 A A0 ν ν0 W} : ac_tmnee G Γ ν ν0 W -> Dc_ty G Γ A A0 -> Dc_nee G Γ ν ν0 W ->
+  Dc_tyne G Γ (tyVec l A ν) (tyVec l0 A0 ν0).
+Proof.
+  intros D0 IHA IH X i k k' Hc HX HX'. destruct X; try solve [refute_con | refute].
+  match goal with |- Dec (ac_tyne _ _ _ (tyVec ?a ?b ?c)) => rename a into l', b into A', c into ν' end.
+  destruct (inv_ty_vec HX) as ((_ & _ & HA & Hν) & _). destruct (inv_ty_vec HX') as ((_ & _ & HA' & Hν') & _).
+  destruct (leqv_dec l l') as [Hl | N]; [| refute].
+  destruct (IHA A' i _ _ Hc HA HA') as [DA | N].
+  2: { right; intros D. destruct (ainv_vec D) as (l2 & A2 & ν2 & W2 & E & _ & DA & _).
+       injection E as <- <- <-. exact (N DA). }
+  destruct (IH ν' i _ _ _ _ Hc Hν Hν') as [Dν | N]; [left; eapply actne_vec; eassumption |].
+  right; intros D. destruct (ainv_vec D) as (l2 & A2 & ν2 & W2 & E & _ & _ & Dν). injection E as <- <- <-.
+  rewrite <- (ac_nee_uniq D0 Dν) in Dν. exact (N Dν).
+Qed.
+
+Lemma Dc_actne_fin {G Γ ν ν0 W} : ac_tmnee G Γ ν ν0 W -> Dc_nee G Γ ν ν0 W -> Dc_tyne G Γ (tyFin ν) (tyFin ν0).
+Proof.
+  intros D0 IH X i k k' Hc HX HX'. destruct X; try solve [refute_con | refute].
+  match goal with |- Dec (ac_tyne _ _ _ (tyFin ?a)) => rename a into ν' end.
+  destruct (inv_ty_fin HX) as ((_ & Hν) & _). destruct (inv_ty_fin HX') as ((_ & Hν') & _).
+  destruct (IH ν' i _ _ _ _ Hc Hν Hν') as [Dν | N]; [left; eapply actne_fin; eassumption |].
+  right; intros D. destruct (ainv_fin D) as (ν2 & W2 & E & Dν). injection E as <-.
+  rewrite <- (ac_nee_uniq D0 Dν) in Dν. exact (N Dν).
+Qed.
+
 (** ** Local contexts *)
 
 Lemma Dc_acc_nil {G} : Dc_ctx G cnil cnil.
@@ -1590,6 +1616,7 @@ Proof.
     | solve [eapply Dc_actnf_upi; eassumption] | solve [eapply Dc_actnf_cpi; eassumption]
     | solve [eapply Dc_actnf_tpi; eassumption]
     | solve [eapply Dc_actne_gvar; eassumption] | solve [eapply Dc_actne_El; eassumption]
+    | solve [eapply Dc_actne_vec; eassumption] | solve [eapply Dc_actne_fin; eassumption]
     | solve [eapply Dc_acc_nil] | solve [eapply Dc_acc_var] | solve [eapply Dc_acc_ext; eassumption]
     | solve [eapply Dc_actm_red; eassumption]
     | solve [eapply Dc_actmnf_code_nat] | solve [eapply Dc_actmnf_code_U]

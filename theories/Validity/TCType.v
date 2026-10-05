@@ -281,6 +281,34 @@ Proof.
   - right; intros H; exact (Q (proj2 (inv_ty_W H))).
 Qed.
 
+(** [Vec] and [Fin] (M14a): the computing layers D and M. *)
+Lemma dec_tyVec l A t : sz_ty (tyVec l A t) <= n -> TYD (tyVec l A t).
+Proof.
+  intros Hsz G i Γ k HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros H; destruct (inv_ty_vec H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_vec H) as ((_ & X & _) & _); contradiction].
+  destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
+    [| right; intros H; destruct (inv_ty_vec H) as ((_ & _ & X & _) & _); contradiction].
+  assert (HN : [ G ; Γ ⊢[ typeof i ] tyNat @ lzero ]) by (apply wft_nat; [exact (typeof_notV i) | rewrite typeof_idem; exact HΓ]).
+  destruct (ihC t ltac:(szl) G i Γ _ _ HN) as [Ht | N];
+    [| right; intros H; destruct (inv_ty_vec H) as ((_ & _ & _ & X) & _); contradiction].
+  destruct (lvl_eq_dec (gL G) k l) as [Q | Q].
+  - left; exact (wft_lvl Q (wft_vec _ _ _ _ _ _ Hc Hl HA Ht)).
+  - right; intros H; exact (Q (proj2 (inv_ty_vec H))).
+Qed.
+
+Lemma dec_tyFin t : sz_ty (tyFin t) <= n -> TYD (tyFin t).
+Proof.
+  intros Hsz G i Γ k HΓ.
+  destruct (compt_dec i) as [Hc | N]; [| right; intros H; destruct (inv_ty_fin H) as ((X & _) & _); contradiction].
+  assert (HN : [ G ; Γ ⊢[ typeof i ] tyNat @ lzero ]) by (apply wft_nat; [exact (typeof_notV i) | rewrite typeof_idem; exact HΓ]).
+  destruct (ihC t ltac:(szl) G i Γ _ _ HN) as [Ht | N];
+    [| right; intros H; destruct (inv_ty_fin H) as ((_ & X) & _); contradiction].
+  destruct (lvl_eq_dec (gL G) k lzero) as [Q | Q].
+  - left; exact (wft_lvl Q (wft_fin _ _ _ _ Hc Ht)).
+  - right; intros H; exact (Q (proj2 (inv_ty_fin H))).
+Qed.
+
 Lemma ty_step T : sz_ty T <= n -> TYD T.
 Proof.
   intros Hsz. destruct T;
@@ -288,7 +316,7 @@ Proof.
           | apply dec_tyPi | apply dec_tyEl | apply dec_tyGvar | apply dec_tyCTyp | apply dec_tyCTrm
           | apply dec_tyUPi | apply dec_tyCPi | apply dec_tyTPi | apply dec_tySig | apply dec_tyUnit
           | apply dec_tySEq | apply dec_tySEmpty | apply dec_tyId | apply dec_tyEmpty | apply dec_tySum
-          | apply dec_tyW ];
+          | apply dec_tyW | apply dec_tyVec | apply dec_tyFin ];
     assumption.
 Qed.
 

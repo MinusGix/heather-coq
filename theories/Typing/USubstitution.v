@@ -498,6 +498,10 @@ Proof.
   all: try (constructor; auto; fail).
   (* δ: the body's instance *)
   all: try solve [change (usubst_tm (subst_tm ?b ?d) ?φ) with (b[d][φ]ᵤ); rewrite usubst_subst; constructor].
+  (* [Vec]'s successor step: the tail's shifts *)
+  all: try solve [change (usubst_ty (ren_ty ?A ?r) ?φ) with (A⟨r⟩[φ]ᵤ);
+                  change (usubst_tm (ren_tm ?n ?r) ?φ) with (n⟨r⟩[φ]ᵤ);
+                  rewrite usubst_ren_ty, usubst_ren; constructor].
   - constructor. now apply redT_usubst.
   - constructor. now apply redt_usubst.
   - match goal with Hn : length ?ls = ?n |- _ => rewrite (usubst_ubeta n ls φ _ Hn) end.

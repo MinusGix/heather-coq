@@ -5,7 +5,7 @@
     from the rule's own, and the tactics lift a case to global weakenings.
     The theorem itself quantifies over related global substitutions:
     [FundamentalS] (layers C and P) and [FundamentalM] (layer M). *)
-From DeLaM.Validity Require Export WElim.
+From DeLaM.Validity Require Export Vec.
 
 Section Fundamental.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
@@ -342,6 +342,8 @@ Ltac gl_push_at h k := lazymatch h with
   | @tySig => k gwa_tySig
   | @tySum => k gwa_tySum
   | @tyW => k gwa_tyW
+  | @tyVec => k gwa_tyVec
+  | @tyFin => k gwa_tyFin
   | @tmSup => k gwa_sup
   | @tmElimW => k gwa_elimW
   | @wIH => k gwa_wIH
