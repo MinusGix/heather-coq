@@ -1447,6 +1447,25 @@ Lemma sc_fin {Γ n n'} : compt i ->
   [ G ; Γ ⊢[ i ] tyFin n' @ lzero ] /\ [ G ; Γ ⊢[ i ] tyFin n ≅ tyFin n' @ lzero ].
 Proof. intros Hc [Hn' Hnn]. split; [apply wft_fin | apply eqty_fin]; auto. Qed.
 
+(** The codes of [Vec] and [Fin] (M14b), at D as their types. *)
+Lemma sc_code_vec {Γ l l' s s' n n'} : compt i -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] /\ [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tmVec l' s' n' : tyU l @ lsuc l ] /\
+  [ G ; Γ ⊢[ i ] tmVec l s n ≅ tmVec l' s' n' : tyU l @ lsuc l ].
+Proof.
+  intros Hc Hl Hl' E _ [Hs' Hss] [Hn' Hnn]. pose proof (lq Hl Hl' E) as Q. split.
+  - exact (pre_codevec_r (compt_typeof_self _ Hc) (compt_notV _ Hc) Hc Q Hs' Hn').
+  - apply eqtm_code_vec; auto.
+Qed.
+
+Lemma sc_code_fin {Γ n n'} : compt i ->
+  [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] /\ [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tmFin n' : tyU lzero @ lsuc lzero ] /\
+  [ G ; Γ ⊢[ i ] tmFin n ≅ tmFin n' : tyU lzero @ lsuc lzero ].
+Proof. intros Hc [Hn' Hnn]. split; [apply wf_code_fin | apply eqtm_code_fin]; auto. Qed.
+
 End SC.
 
 (** ** The lemma *)
@@ -1551,6 +1570,8 @@ Proof.
     | solve [eapply sc_code_W; eauto]
     (* length-indexed tuples and finite indices (M14a) *)
     | solve [eapply sc_vec; eauto] | solve [eapply sc_fin; eauto]
+    (* their codes (M14b) *)
+    | solve [eapply sc_code_vec; eauto] | solve [eapply sc_code_fin; eauto]
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x
         |- _ /\ eq_tm _ _ _ (succ _) _ _ _ =>

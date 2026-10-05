@@ -328,6 +328,12 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ] ->
     [ G ; Γ ⊢[ i ] tmW l l' s t : tyU (lmax l l') @ lsuc (lmax l l') ]
+(* the codes of [Vec] and [Fin] (M14b): the length is a term of [Nat], not a code *)
+| wf_code_vec G i Γ l s n : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tmVec l s n : tyU l @ lsuc l ]
+| wf_code_fin G i Γ n : compt i -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tmFin n : tyU lzero @ lsuc lzero ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -460,6 +466,12 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] tyFin zero ≅ tyEmpty lzero @ lzero ]
 | eqty_fin_succ G i Γ n : compt i -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tyFin (succ n) ≅ tySum lzero lzero (tyUnit lzero) (tyFin n) @ lzero ]
+(* the codes of [Vec] and [Fin] decode (M14b; layers D and M): the length rides across *)
+| eqty_El_vec G i Γ l s n : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tyVec l (tyEl l s) n ≅ tyEl l (tmVec l s n) @ l ]
+| eqty_El_fin G i Γ n : compt i -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tyFin n ≅ tyEl lzero (tmFin n) @ lzero ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
@@ -883,6 +895,12 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] s ≅ s' : tyU l1 @ lsuc l1 ] ->
     [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t ≅ t' : tyU l2 @ lsuc l2 ] ->
     [ G ; Γ ⊢[ i ] tmW l1 l2 s t ≅ tmW l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ]
+(* the codes of [Vec] and [Fin] (M14b) *)
+| eqtm_code_vec G i Γ l l' s s' n n' : compt i -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tmVec l s n ≅ tmVec l' s' n' : tyU l @ lsuc l ]
+| eqtm_code_fin G i Γ n n' : compt i -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tmFin n ≅ tmFin n' : tyU lzero @ lsuc lzero ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)

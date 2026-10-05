@@ -778,6 +778,15 @@ Proof.
   exact (wf_tm_single Hi Hc Hb).
 Qed.
 
+(** The codes of [Vec] and [Fin] (M14b). *)
+Lemma pre_codevec_r {Γ l l' s' n'} : compt i -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tmVec l' s' n' : tyU l @ lsuc l ].
+Proof.
+  intros Hc Hl Hs Hn. apply (conv_U (l := l')); [|now apply lequiv_sym].
+  apply wf_code_vec; eauto using lequiv_wf_r. exact (conv_U Hs Hl).
+Qed.
+
 (** The codes of [Empty] and [+] (M12c). *)
 Lemma pre_El_empty {Γ l} :
   [ G ; Γ ⊢[ i ] ] -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] tyEl l (tmEmpty l) @ l ].
@@ -2265,7 +2274,13 @@ Proof.
                       eassumption]
              | solve [eapply proj2;
                       first [eapply pre_vec_zero | eapply pre_vec_succ | eapply pre_fin_zero | eapply pre_fin_succ];
-                      eassumption] ].
+                      eassumption]
+             (* the codes of Vec and Fin (M14b) *)
+             | solve [eapply pre_codevec_r; eassumption]
+             | solve [eapply wf_code_vec; eauto 3 with presup]
+             | solve [eapply wf_code_fin; eauto 3 with presup]
+             | solve [eapply wft_El; eauto with presup; first [eapply wf_code_vec | eapply wf_code_fin]; eassumption]
+             | solve [apply wft_vec; eauto 3 with presup; apply wft_El; eauto with presup] ].
 Qed.
 
 Section Named.

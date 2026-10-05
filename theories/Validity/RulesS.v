@@ -156,6 +156,8 @@ Ltac s_push_at h k := lazymatch h with
   | @tmEmpty => k gs_tmEmpty
   | @tmSum => k gs_tmSum
   | @tmW => k gs_tmW
+  | @tmVec => k gs_tmVec
+  | @tmFin => k gs_tmFin
   | @tmTriv => k gs_triv
   | @tySEq => k gs_tySEq
   | @tySEmpty => k gs_tySEmpty
@@ -219,7 +221,10 @@ Ltac fts_case :=
   (* Vec and Fin (M14a) *)
   | solve [simple eapply V_vec; s_side] | solve [simple eapply V_fin; s_side]
   | solve [simple eapply V_vec_zero; s_side] | solve [simple eapply V_vec_succ; s_side]
-  | solve [simple eapply V_fin_zero; s_side] | solve [simple eapply V_fin_succ; s_side] ].
+  | solve [simple eapply V_fin_zero; s_side] | solve [simple eapply V_fin_succ; s_side]
+  (* their codes (M14b) *)
+  | solve [simple eapply V_code_vec; s_side] | solve [simple eapply V_El_vec; s_side]
+  | solve [simple eapply V_code_fin; s_side] | solve [simple eapply V_El_fin; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=
@@ -697,6 +702,29 @@ Lemma VS_fin_succ {G Γ n n'} : VTmS G Γ n n' tyNat lzero ->
   VTyS G Γ (tyFin (succ n)) (tySum lzero lzero (tyUnit lzero) (tyFin n')) lzero.
 Proof using EL VL VN. intros; s_lift. Qed.
 
+(** The codes of Vec and Fin (M14b). *)
+Lemma VS_code_vec {G Γ l l' s s' n n'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTmS G Γ s s' (tyU l) (lsuc l) -> VTmS G Γ n n' tyNat lzero ->
+  VTmS G Γ (tmVec l s n) (tmVec l' s' n') (tyU l) (lsuc l).
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_El_vec {G Γ l s n} : lwf (gL G) l ->
+  VTmS G Γ s s (tyU l) (lsuc l) -> VTmS G Γ n n tyNat lzero ->
+  VTyS G Γ (tyVec l (tyEl l s) n) (tyEl l (tmVec l s n)) l.
+Proof using EL VL VN.
+  intros Hw Vs Vn. eapply (VTyS_trans_diag EP EM (T2 := tyEl l (tmVec l s n))); [s_diag V_El_vec|].
+  apply VS_El; [exact Hw | apply lequiv_refl, Hw |].
+  apply VS_code_vec; [exact Hw | apply lequiv_refl, Hw | exact Vs | exact Vn].
+Qed.
+Lemma VS_code_fin {G Γ n n'} : VTmS G Γ n n' tyNat lzero ->
+  VTmS G Γ (tmFin n) (tmFin n') (tyU lzero) (lsuc lzero).
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_El_fin {G Γ n} : VTmS G Γ n n tyNat lzero -> VTyS G Γ (tyFin n) (tyEl lzero (tmFin n)) lzero.
+Proof using EL VL VN.
+  intros Vn. eapply (VTyS_trans_diag EP EM (T2 := tyEl lzero (tmFin n))); [s_diag V_El_fin|].
+  apply VS_El; [exact I | exact (lequiv_refl _ lzero I) |].
+  apply VS_code_fin; exact Vn.
+Qed.
+
 End Rules.
 
 End RulesS.
@@ -755,4 +783,7 @@ Ltac vs_rules side :=
   (* Vec and Fin (M14a) *)
   | solve [simple eapply VS_vec; side] | solve [simple eapply VS_fin; side]
   | solve [simple eapply VS_vec_zero; side] | solve [simple eapply VS_vec_succ; side]
-  | solve [simple eapply VS_fin_zero; side] | solve [simple eapply VS_fin_succ; side] ].
+  | solve [simple eapply VS_fin_zero; side] | solve [simple eapply VS_fin_succ; side]
+  (* their codes (M14b) *)
+  | solve [simple eapply VS_code_vec; side] | solve [simple eapply VS_El_vec; side]
+  | solve [simple eapply VS_code_fin; side] | solve [simple eapply VS_El_fin; side] ].

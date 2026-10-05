@@ -207,6 +207,9 @@ Proof.
     refine (conj _ (conj _ _)); [constructor; auto .. |]. apply eqty_vec; auto.
   - intros * (Hn & Hn' & Hν).
     refine (conj _ (conj _ _)); [constructor; auto .. |]. apply eqty_fin; auto.
+  (* the codes of Vec and Fin *)
+  - intros; apply eqtm_code_vec; auto.
+  - intros; apply eqtm_code_fin; auto.
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].

@@ -118,6 +118,7 @@ Definition tm_con (t : tm) : nat :=
   | tmInl _ _ _ _ _ => 43 | tmInr _ _ _ _ _ => 44 | tmCase _ _ _ _ _ _ _ _ _ => 45
   | tmEmpty _ => 46 | tmSum _ _ _ _ => 47
   | tmSup _ _ _ _ _ _ => 48 | tmElimW _ _ _ _ _ _ _ _ => 49 | tmW _ _ _ _ => 50
+  | tmVec _ _ _ => 51 | tmFin _ => 52
   end.
 
 Lemma ac_tmne_con {G Γ ν ν' T} : ac_tmne G Γ ν ν' T -> tm_con ν = tm_con ν'.
@@ -1183,6 +1184,28 @@ Proof.
   destruct (IHt t' i _ Hc Ht (code_U_conv Hc E26 Ht')) as [Dt | N]; [left; apply actmnf_code_sum; assumption | refute].
 Qed.
 
+(** The codes of [Vec] and [Fin] (M14b). *)
+Lemma Dc_actmnf_code_vec {G Γ l k k0 s s0 n n0} :
+  Dc_tm G Γ s s0 (tyU k) -> Dc_tm G Γ n n0 tyNat -> Dc_tmnf G Γ (tmVec k s n) (tmVec k0 s0 n0) (tyU l).
+Proof.
+  intros IHs IHn x i m Hc Hx Hx'.
+  destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmnf _ _ _ (tmVec ?a ?b ?c) _) => rename a into k', b into s', c into n' end.
+  destruct (code_vec_prem Hc Hx) as (W1 & Hs & Hn). destruct (code_vec_prem Hc Hx') as (W5 & Hs' & Hn').
+  destruct (leqv_dec k k') as [H15 | N]; [| refute].
+  pose proof (leqv_lequiv _ _ _ W1 W5 H15) as E15.
+  destruct (IHs s' i _ Hc Hs (code_U_conv Hc E15 Hs')) as [Ds | N]; [| refute].
+  destruct (IHn n' i _ Hc Hn Hn') as [Dn | N]; [left; apply actmnf_code_vec; assumption | refute].
+Qed.
+Lemma Dc_actmnf_code_fin {G Γ l n n0} : Dc_tm G Γ n n0 tyNat -> Dc_tmnf G Γ (tmFin n) (tmFin n0) (tyU l).
+Proof.
+  intros IHn x i m Hc Hx Hx'.
+  destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmnf _ _ _ (tmFin ?a) _) => rename a into n' end.
+  destruct (IHn n' i _ Hc (code_fin_prem Hc Hx) (code_fin_prem Hc Hx')) as [Dn | N];
+    [left; apply actmnf_code_fin; exact Dn | refute].
+Qed.
+
 Lemma Dc_actmnf_code_sempty {G Γ l k k0} : Dc_tmnf G Γ (tmSEmpty k) (tmSEmpty k0) (tyU l).
 Proof.
   intros x i k1 Hc Hx Hx'; destruct x; try solve [refute_con].
@@ -1649,6 +1672,7 @@ Proof.
     | solve [eapply Dc_actnf_W; eassumption] | solve [eapply Dc_actmnf_sup; eassumption]
     | solve [eapply Dc_actmne_elimW; eassumption]
     | solve [eapply Dc_actmnf_code_empty; eassumption] | solve [eapply Dc_actmnf_code_sum; eassumption]
+    | solve [eapply Dc_actmnf_code_vec; eassumption] | solve [eapply Dc_actmnf_code_fin; eassumption]
     | solve [eapply Dc_actmnf_code_W; eassumption] ].
 Qed.
 
