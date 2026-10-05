@@ -106,9 +106,16 @@ From M8 on, the milestones check the extensions of Heather's kernel
   the code recursor has its four branches (`t_W`, `t'_W`, `t_sup`,
   `t_elimW`, the last over the step telescope `a, f, ih`). See
   `M13_DESIGN.md`.
+- Milestone 14a: length-indexed tuples and finite indices. `Vec^l(A; n)`
+  and `Fin(n)` hold at layers D and M, the first types whose weak-head
+  normal form a term chooses: `Vec` reduces to `Unit` at `0` and to `Σ`
+  at a successor, `Fin` to `Empty` and to `Unit + Fin`, and both are
+  neutral at a neutral length. The relation gains no case: validity
+  builds it by induction on the length. Type-level preservation holds at
+  `Vec^l(A; 0) ⇝ Unit^l`, at the same level. See `M14_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
-`M13_DESIGN.md`) for decisions, deviations from the paper and gotchas.
+`M14_DESIGN.md`) for decisions, deviations from the paper and gotchas.
 
 Documents:
 
