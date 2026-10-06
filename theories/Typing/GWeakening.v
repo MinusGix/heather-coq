@@ -1001,6 +1001,12 @@ Lemma gwa_tySum l l' A B : (tySum l l' A B)⟦γ⟧ = tySum l l' A⟦γ⟧ B⟦�
 Lemma gwa_tyW l l' A B : (tyW l l' A B)⟦γ⟧ = tyW l l' A⟦γ⟧ B⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_tyVec l A n : (tyVec l A n)⟦γ⟧ = tyVec l A⟦γ⟧ n⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_tyFin n : (tyFin n)⟦γ⟧ = tyFin n⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tyWf l A N : (tyWf l A N)⟦γ⟧ = tyWf l A⟦γ⟧ N⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_supf l A N a cs : (tmSupf l A N a cs)⟦γ⟧ = tmSupf l A⟦γ⟧ N⟦γ⟧ a⟦γ⟧ cs⟦γ⟧.
+Proof. now destruct γ. Qed.
+Lemma gwa_elimWf l l' A N M c t :
+  (tmElimWf l l' A N M c t)⟦γ⟧ = tmElimWf l l' A⟦γ⟧ N⟦γ⟧ M⟦γ⟧ c⟦γ⟧ t⟦γ⟧.
+Proof. now destruct γ. Qed.
 Lemma gwa_sup l l' A B a f : (tmSup l l' A B a f)⟦γ⟧ = tmSup l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧ f⟦γ⟧.
 Proof. now destruct γ. Qed.
 Lemma gwa_elimW l l' l'' A B M c t :
@@ -1065,6 +1071,9 @@ Ltac push_gwa_at h k := lazymatch h with
   | @tyW => k gwa_tyW
   | @tyVec => k gwa_tyVec
   | @tyFin => k gwa_tyFin
+  | @tyWf => k gwa_tyWf
+  | @tmSupf => k gwa_supf
+  | @tmElimWf => k gwa_elimWf
   | @tmSup => k gwa_sup
   | @tmElimW => k gwa_elimW
   | @tmInl => k gwa_inl

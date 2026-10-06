@@ -397,7 +397,29 @@ Class GenericEqLaws `{GenericEq} := {
     [ G ; Γ ⊢ s ≈ s' : tyU l @ lsuc l ] -> [ G ; Γ ⊢ n ≈ n' : tyNat @ lzero ] ->
     [ G ; Γ ⊢ tmVec l s n ≈ tmVec l' s' n' : tyU l @ lsuc l ] ;
   geq_tm_code_fin {G Γ n n'} :
-    [ G ; Γ ⊢ n ≈ n' : tyNat @ lzero ] -> [ G ; Γ ⊢ tmFin n ≈ tmFin n' : tyU lzero @ lsuc lzero ]
+    [ G ; Γ ⊢ n ≈ n' : tyNat @ lzero ] -> [ G ; Γ ⊢ tmFin n ≈ tmFin n' : tyU lzero @ lsuc lzero ] ;
+  (** finitary well-founded trees (M15a): the congruences of [Wf] and
+      [sup_f], and [elim_Wf] is neutral on a neutral scrutinee *)
+  geq_ty_wf {G Γ l l' A A' N N'} : lequiv (gL G) l l' ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
+    [ G ; Γ ,, A @ l ⊢ N ≈ N' : tyNat @ lzero ] ->
+    [ G ; Γ ⊢ tyWf l A N ≈ tyWf l' A' N' @ l ] ;
+  geq_tm_supf {G Γ l l' A A' N N' a a' cs cs'} : lequiv (gL G) l l' ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
+    [ G ; Γ ,, A @ l ⊢g N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢ N ≈ N' : tyNat @ lzero ] ->
+    [ G ; Γ ⊢ a ≈ a' : A @ l ] ->
+    [ G ; Γ ⊢ cs ≈ cs' : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
+    [ G ; Γ ⊢ tmSupf l A N a cs ≈ tmSupf l' A' N' a' cs' : tyWf l A N @ l ] ;
+  gne_tm_elimWf {G Γ l1 l2 l3 l4 A A' N N' M M' c c' ν ν'} :
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢g N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l1 ⊢ N ≈ N' : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyWf l1 A N @ l1 ⊢g M @ l2 ] ->
+    [ G ; Γ ,, tyWf l1 A N @ l1 ⊢ M ≈ M' @ l2 ] ->
+    [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ,, wfihty l1 l2 A N M @ lmax lzero l2
+        ⊢ c ≈ c' : wfstepty l1 A N M @ l2 ] ->
+    [ G ; Γ ⊢ ν ~ ν' : tyWf l1 A N @ l1 ] ->
+    [ G ; Γ ⊢ tmElimWf l1 l2 A N M c ν ~ tmElimWf l3 l4 A' N' M' c' ν' : M[lsingle ν] @ l2 ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].
