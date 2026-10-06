@@ -27,6 +27,28 @@ Context {G : gctx} {Γ : ctx} {l l' : lvl} {A A' : ty} {N N' : tm}
 Definition wfDom Δ d d' : DomRel G Δ :=
   fun ρ => LRrel (lmeasure l) (kw_G ρ) (kw_Δ ρ) (kty ρ A[d]) (kty ρ A'[d']) l.
 
+(** The arity at related shapes, in every world. *)
+Lemma wf_arity {Δ d d'} (ρ : kwk G Δ) a a' : SubRel G Γ Δ d d' ->
+  LRtm l (kw_G ρ) (kw_Δ ρ) (kty ρ A[d]) (kty ρ A'[d']) a a' ->
+  NatRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N[llift d])[lsingle a] (ktml ρ N'[llift d'])[lsingle a'].
+Proof.
+  intros Hd ha. pose proof (SubRel_kw _ _ _ ρ _ _ Hd) as Hdρ.
+  assert (Ha : LRtm l (kw_G ρ) (kw_Δ ρ) A⟦kw_γ ρ⟧[kwsub ρ d] A⟦kw_γ ρ⟧[kwsub ρ d'] a a').
+  { rewrite !kty_subst in ha. eapply LRtm_irrel_r; [exact ha|].
+    exact (VTy_refl_l (VA _ _ (kw_gok ρ)) _ _ _ Hdρ). }
+  pose proof (VNt _ _ (kw_gok ρ)) as VNρ. rewrite gwa_cext in VNρ.
+  pose proof (VNρ _ _ _ (SubRel_cons Hdρ Ha)) as X.
+  rewrite <- !ktml_subst_single, gwa_tyNat, subst_tyNat in X.
+  exact (proj1 LRtm_nat X).
+Qed.
+
+Lemma wfDom_canon {Δ d d'} : SubRel G Γ Δ d d' ->
+  forall ρ : kwk G Δ, LogRel l (kw_G ρ) (kw_Δ ρ) (kty ρ A[d]) (kty ρ A'[d']) l (wfDom Δ d d' ρ).
+Proof.
+  intros Hd ρ. unfold wfDom. destruct (VTyG_kw ρ VA Hd) as [R HR].
+  exact (LR_canon _ _ _ _ _ _ _ HR).
+Qed.
+
 Lemma LR_Wf_here Δ d d' : SubRel G Γ Δ d d' ->
   LogRel l G Δ (tyWf l A N)[d] (tyWf l' A' N')[d'] l (WfRel G Δ l A[d] N[llift d] (wfDom Δ d d')).
 Proof.
@@ -56,18 +78,8 @@ Proof.
   - exact HN'd.
   - exact HAA.
   - exact (LRtm_geq XN).
-  - intros ρ. unfold wfDom.
-    destruct (VTyG_kw ρ VA Hd) as [R HR].
-    exact (LR_canon _ _ _ _ _ _ _ HR).
-  - intros ρ a a' ha. pose proof (SubRel_kw _ _ _ ρ _ _ Hd) as Hdρ.
-    assert (Ha : LRtm l (kw_G ρ) (kw_Δ ρ) A⟦kw_γ ρ⟧[kwsub ρ d] A⟦kw_γ ρ⟧[kwsub ρ d'] a a').
-    { unfold wfDom in ha. rewrite !kty_subst in ha.
-      eapply LRtm_irrel_r; [exact ha|].
-      exact (VTy_refl_l (VA _ _ (kw_gok ρ)) _ _ _ Hdρ). }
-    pose proof (VNt _ _ (kw_gok ρ)) as VNρ. rewrite gwa_cext in VNρ.
-    pose proof (VNρ _ _ _ (SubRel_cons Hdρ Ha)) as X.
-    rewrite <- !ktml_subst_single, gwa_tyNat, subst_tyNat in X.
-    exact (proj1 LRtm_nat X).
+  - exact (wfDom_canon Hd).
+  - intros ρ a a' ha. exact (wf_arity ρ a a' Hd ha).
   - apply releq_refl.
 Qed.
 
@@ -389,5 +401,63 @@ Proof.
 Qed.
 
 End SpineK.
+
+(** ** [sup_f] *)
+
+Lemma VTmG_refl_l {G Γ t t' T l} : VTmG G Γ t t' T l -> VTmG G Γ t t T l.
+Proof. intros H. exact (VTmG_trans H (VTmG_sym H)). Qed.
+
+Section SupfV.
+Context {G : gctx} {Γ : ctx} {l l' : lvl} {A A' : ty} {N N' a a' cs cs' : tm}
+  (Hwl : lwf (gL G) l) (Hl' : lequiv (gL G) l' l)
+  (HN : [ G ; Γ ,, A @ l ⊢g N : tyNat @ lzero ])
+  (VA : VTyG G Γ A A' l) (VNt : VTmG G (Γ ,, A @ l) N N' tyNat lzero)
+  (Va : VTm G Γ a a' A l) (Vcs : VTm G Γ cs cs' (tyVec l (tyWf l A N) N[lsingle a]) l).
+
+Lemma V_supf : VTm G Γ (tmSupf l A N a cs) (tmSupf l' A' N' a' cs') (tyWf l A N) l.
+Proof.
+  intros Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
+  pose proof (VTyG_refl_l VA) as VAA. pose proof (VTmG_refl_l VNt) as VNN.
+  pose proof (LR_Wf_here Hwl (lequiv_refl _ _ Hwl) VAA VNN _ _ _ Hd) as HW.
+  eapply LRtm_of; [exact HW|]. rewrite !subst_supf.
+  (* escapes *)
+  destruct (VTyG_loc VA _ _ _ Hd) as [RA HRA]. destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HAd & _ & EA).
+  assert (EAA : [ G ; Δ ⊢ A[d] ≈ A[d] @ l ]) by exact (geq_ty_trans EA (geq_ty_sym EA)).
+  assert (Hlift : SubRel G (Γ ,, A @ l) (Δ ,, A[d] @ l) (llift d) (llift d'))
+    by exact (SubRel_lift Hd (VTy_refl_l (VTyG_loc VA)) HAd Hwl).
+  pose proof (VTmG_loc VNt _ _ _ Hlift) as XN. rewrite !subst_tyNat in XN.
+  destruct (LRtm_escape XN) as [HNd _]. pose proof (LRtm_geq XN) as EN.
+  pose proof (geq_tm_refl_l EN) as ENN.
+  pose proof (Va _ _ _ Hd) as Xa. pose proof (LRtm_geq Xa) as Ea.
+  pose proof (Vcs _ _ _ Hd) as Xcs. rewrite !subst_tyVec, !subst_tyWf, !single_subst in Xcs by assumption.
+  pose proof (LRtm_geq Xcs) as Ecs.
+  pose proof (geq_tm_supf (lequiv_sym _ _ _ Hl') HAd EA HNd EN Ea Ecs) as Dsup.
+  pose proof (geq_tm_sound Dsup) as Dsup'.
+  assert (HWd : [ G ; Δ ⊢g tyWf l A[d] N[llift d] @ l ]) by (apply wft_wf; auto using ge_compt).
+  apply (wfrel _ _ _ _ _ _ _ _ (tmSupf l A[d] N[llift d] a[d] cs[d]) (tmSupf l' A'[d'] N'[llift d'] a'[d'] cs'[d'])).
+  - exact (tmred_refl _ _ _ (eqtm_wf_l ge_typeof Dsup')).
+  - exact (tmred_refl _ _ _ (eqtm_wf_r ge_typeof Dsup')).
+  - exact Dsup.
+  - apply wfnf_sup.
+    + now apply lequiv_refl.
+    + exact Hl'.
+    + exact EAA.
+    + exact EA.
+    + exact ENN.
+    + exact EN.
+    + intros ρ. exact (LRtm_kw ρ Xa).
+    + intros ρ. pose proof (kw_lwf ρ Hwl) as Hwlρ.
+      pose proof (kw_ty ρ HWd) as HWρ. rewrite kty_tyWf in HWρ.
+      pose proof (WfDom_comp ρ (WfDom_of (wfDom_canon VAA Hd))) as HDρ.
+      assert (Xaa : LRtm l G Δ A[d] A[d'] a[d] a[d]).
+      { eapply LRtm_irrel_r; [exact (LRtm_trans Xa (LRtm_sym Xa))|].
+        exact (VTyG_loc VAA _ _ _ Hd). }
+      pose proof (wf_arity VAA VNN ρ _ _ Hd (LRtm_kw ρ Xaa)) as Hk.
+      destruct (LRtm_kw ρ Xcs) as (R & HR & Hc).
+      rewrite kty_tyVec, kty_tyWf, ktm_single in HR.
+      exact (VecSp_of_LR Hwlρ HWρ HDρ _ _ Hk _ _ HR _ _ Hc).
+Qed.
+
+End SupfV.
 
 End Wf.
