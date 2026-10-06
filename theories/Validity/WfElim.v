@@ -963,6 +963,113 @@ Proof.
     exact (geq_tm_sound (LRtm_geq X2)).
 Qed.
 
+
+Lemma elimWf_c_sup {G0 Δ0 k1 A0 N0} {dR : DomRel G0 Δ0} {k k' C C' P P' a a' cs cs'} :
+  lequiv (gL G0) k k1 -> lequiv (gL G0) k' k1 ->
+  [ G0 ; Δ0 ⊢ A0 ≈ C @ k1 ] -> [ G0 ; Δ0 ⊢ A0 ≈ C' @ k1 ] ->
+  [ G0 ; Δ0 ,, A0 @ k1 ⊢ N0 ≈ P : tyNat @ lzero ] -> [ G0 ; Δ0 ,, A0 @ k1 ⊢ N0 ≈ P' : tyNat @ lzero ] ->
+  (forall ρ : kwk G0 Δ0, dR ρ (ktm ρ a) (ktm ρ a')) ->
+  (forall ρ : kwk G0 Δ0,
+     VecSp (kw_G ρ) (kw_Δ ρ) k1 (kty ρ A0) (ktml ρ N0) (fun ρ' => dR (kw_comp ρ ρ'))
+       (ktml ρ N0)[lsingle (ktm ρ a)] (ktm ρ cs) (ktm ρ cs')) ->
+  (forall ρ : kwk G0 Δ0,
+     elimWf_mspine (kw_G ρ) (kw_Δ ρ) k1 (kty ρ A0) (ktml ρ N0) (fun ρ' => dR (kw_comp ρ ρ'))
+       (ktml ρ N0)[lsingle (ktm ρ a)] (ktm ρ cs) (ktm ρ cs')) ->
+  elimWf_mrel G0 Δ0 k1 A0 N0 dR (tmSupf k C P a cs) (tmSupf k' C' P' a' cs').
+Proof.
+  intros Hk Hk' HC HC' HP HP' Ha Hsp IH γ e e' (Hγ & He & E1 & E2 & E3 & HD) s s' Hss Hs Hs'. subst k1 A0 N0.
+  destruct (WfRel_inv Hss) as (w & w' & Hw & Hw' & _ & Nn).
+  assert (w = tmSupf k C P a cs) as ->.
+  { eapply reds_whnf_det; [exact (tmred_red _ _ _ _ _ _ _ Hw) | exact Hs | exact (WfNf_whnf_l Nn) | apply whnf_supf]. }
+  assert (w' = tmSupf k' C' P' a' cs') as ->.
+  { eapply reds_whnf_det; [exact (tmred_red _ _ _ _ _ _ _ Hw') | exact Hs' | exact (WfNf_whnf_r Nn)
+                          | apply whnf_supf]. }
+  pose proof (wf_tm_nf (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ Hw))) as Nw.
+  pose proof (wf_tm_nf (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ Hw'))) as Nw'.
+  destruct (elimWf_step Hγ He HD Hk Hk' HC HC' HP HP' Ha Hsp IH Nw Nw') as (X2 & Lred & Rred).
+  eapply elimWf_back; [exact Hγ | exact He | exact HD | exact Hss | exact Hw | exact Hw' | apply whnf_supf
+                      | apply whnf_supf |].
+  exact (LRtm_red X2 Lred Rred).
+Qed.
+
+(** The motives, by mutual induction on the relation, its normal forms and
+    the spine. *)
+Lemma elimWf_core_all :
+  (forall G0 Δ0 k1 A0 N0 (dR : DomRel G0 Δ0) t t', WfRel G0 Δ0 k1 A0 N0 dR t t' ->
+     elimWf_mrel G0 Δ0 k1 A0 N0 dR t t') /\
+  (forall G0 Δ0 k1 A0 N0 (dR : DomRel G0 Δ0) t t', WfNf G0 Δ0 k1 A0 N0 dR t t' ->
+     elimWf_mrel G0 Δ0 k1 A0 N0 dR t t') /\
+  (forall G0 Δ0 k1 A0 N0 (dR : DomRel G0 Δ0) k cs cs', VecSp G0 Δ0 k1 A0 N0 dR k cs cs' ->
+     elimWf_mspine G0 Δ0 k1 A0 N0 dR k cs cs').
+Proof.
+  apply (WfRel_comb
+    (fun G0 Δ0 k1 A0 N0 dR t t' _ => elimWf_mrel G0 Δ0 k1 A0 N0 dR t t')
+    (fun G0 Δ0 k1 A0 N0 dR t t' _ => elimWf_mrel G0 Δ0 k1 A0 N0 dR t t')
+    (fun G0 Δ0 k1 A0 N0 dR k cs cs' _ => elimWf_mspine G0 Δ0 k1 A0 N0 dR k cs cs')).
+  - intros. eapply elimWf_c_rel; eassumption.
+  - intros. eapply elimWf_c_sup; eassumption.
+  - intros. eapply elimWf_c_ne; eassumption.
+  - intros. eapply elimWf_c_zero; eassumption.
+  - intros. eapply elimWf_c_succ; eassumption.
+  - intros. eapply elimWf_c_vne; eassumption.
+Qed.
+
+(** ** [elim_Wf] and its β rule *)
+
+Lemma V_elimWf {t t'} : VTm G Γ t t' (tyWf l A N) l ->
+  VTm G Γ (tmElimWf l l' A N M c t) (tmElimWf l3 l4 A' N' M' c' t') M[lsingle t] l'.
+Proof.
+  intros Vt Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
+  rewrite !single_subst_ty by assumption. push_subst.
+  destruct (elimWf_WLR (gwk_ok_id G) Hd) as (HW & HD). cbn [gwa] in HW, HD.
+  pose proof (Vt _ _ _ Hd) as Xt0. pose proof Xt0 as Xt. rewrite !subst_tyWf in Xt.
+  pose proof (LRtm_inv HW Xt) as Rt.
+  pose proof (proj1 elimWf_core_all _ _ _ _ _ _ _ _ Rt gwk_id d d'
+                (conj (gwk_ok_id G) (conj Hd (conj eq_refl (conj eq_refl (conj eq_refl HD)))))
+                _ _ Rt (reds_refl _) (reds_refl _)) as X.
+  unfold elimWf_goal in X. cbn [gwa] in X.
+  eapply LRtm_irrel_r; [exact X|].
+  pose proof (VTm_trans Vt (VTm_sym Vt) _ _ _ Hd) as Xtt.
+  pose proof (VTy_refl_l (VTyG_loc VM) _ _ _ (SubRel_cons Hd Xtt)) as Y.
+  now rewrite <- !lift_single_ty in Y by assumption.
+Qed.
+
+(** β, the right-hand side built from the right pieces. *)
+Lemma V_elimWf_supf {a a' cs cs'} : VTm G Γ a a' A l ->
+  VTm G Γ cs cs' (tyVec l (tyWf l A N) N[lsingle a]) l ->
+  VTm G Γ (tmElimWf l l' A N M c (tmSupf l A N a cs)) c'[lsingle3 a' cs' (wfIH l3 l4 A' N' M' c' a' cs')]
+    M[lsingle (tmSupf l A N a cs)] l'.
+Proof.
+  intros Va Vks Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
+  pose proof (V_supf Hwl (lequiv_refl _ _ Hwl) (VTyG_refl_l VA) (VTmG_refl_l VNt) Va Vks) as Vs.
+  pose proof (Vs _ _ _ Hd) as Xs0. pose proof Xs0 as Xs. rewrite !subst_tyWf, !subst_supf in Xs.
+  rewrite !single_subst_ty, single3_subst, subst_wfIH by assumption. push_subst.
+  destruct (elimWf_WLR (gwk_ok_id G) Hd) as (HW & HD). cbn [gwa] in HW, HD.
+  pose proof (LRtm_inv HW Xs) as Rs.
+  destruct (WfRel_inv Rs) as (w & w' & Hw & Hw' & _ & Hn).
+  assert (w = tmSupf l A[d] N[llift d] a[d] cs[d]) as ->.
+  { eapply tmred_whnf_det; [exact Hw | apply tmred_refl, (tmred_wf _ _ _ _ _ _ _ Hw) | exact (WfNf_whnf_l Hn)
+                           | apply whnf_supf]. }
+  assert (w' = tmSupf l A[d'] N[llift d'] a'[d'] cs'[d']) as ->.
+  { eapply tmred_whnf_det; [exact Hw' | apply tmred_refl, (tmred_wf _ _ _ _ _ _ _ Hw') | exact (WfNf_whnf_r Hn)
+                           | apply whnf_supf]. }
+  destruct (WfNf_sup_inv Hn) as (k' & C' & P' & a0 & cs0 & Heq & Hk & Hk' & HC & HC' & HP & HP' & Ha & Hsp).
+  injection Heq as <- <- <- <- <-.
+  pose proof (fun ρ => proj2 (proj2 elimWf_core_all) _ _ _ _ _ _ _ _ _ (Hsp ρ)) as IH.
+  assert (Nw : nftm (tmSupf l A[d] N[llift d] a[d] cs[d]))
+    by exact (wf_tm_nf (tmred_wf _ _ _ _ _ _ _ Hw)).
+  assert (Nw' : nftm (tmSupf l A[d'] N[llift d'] a'[d'] cs'[d']))
+    by exact (wf_tm_nf (tmred_wf _ _ _ _ _ _ _ Hw')).
+  destruct (elimWf_step (γ := gwk_id) (gwk_ok_id G) Hd HD Hk Hk' HC HC' HP HP' Ha Hsp IH Nw Nw')
+    as (X2 & Lred & Rred).
+  cbn [gwa] in X2, Lred, Rred.
+  pose proof (LRtm_red X2 Lred (tmred_refl _ _ _ (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ Rred)))) as X.
+  eapply LRtm_irrel_r; [exact X|].
+  pose proof (VTm_trans Vs (VTm_sym Vs) _ _ _ Hd) as Xss.
+  pose proof (VTy_refl_l (VTyG_loc VM) _ _ _ (SubRel_cons Hd Xss)) as Y.
+  rewrite <- !lift_single_ty in Y by assumption. now rewrite !subst_supf in Y.
+Qed.
+
 End ElimAt.
 
 End WfElim.
