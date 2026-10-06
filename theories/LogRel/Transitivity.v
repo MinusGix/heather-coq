@@ -33,11 +33,6 @@ Proof. intros; eapply geq_tm_conv; [eapply geq_tm_lconv|]; eauto. Qed.
 
 (** ** Natural numbers and neutrals *)
 
-Lemma NatNf_whnf_l {G Γ w w'} : NatNf G Γ w w' -> whnf w.
-Proof. destruct 1; eauto using gne_tm_whne_l with whnf. Qed.
-Lemma NatNf_whnf_r {G Γ w w'} : NatNf G Γ w w' -> whnf w'.
-Proof. destruct 1; eauto using gne_tm_whne_r with whnf. Qed.
-
 Lemma NatRel_trans G Γ :
   (forall t1 t2, NatRel G Γ t1 t2 -> forall t3, NatRel G Γ t2 t3 -> NatRel G Γ t1 t3).
 Proof.

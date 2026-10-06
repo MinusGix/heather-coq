@@ -22,10 +22,6 @@ Proof.
     apply eqty_El; [exact ge_notV | exact Hl | now apply eqtm_refl].
 Qed.
 
-Lemma tyred_step {G Γ T W l} :
-  [ G ; Γ ⊢g T @ l ] -> red_ty T W -> [ G ; Γ ⊢g T ≅ W @ l ] -> [ G ; Γ ⊢g T ⤳* W @ l ].
-Proof. intros HT Hr HE; split; auto. econstructor; [exact Hr | constructor]. Qed.
-
 Lemma tyred_El {G Γ t w la l} :
   [ G ; Γ ⊢g t ⤳* w : tyU l @ lsuc l ] -> lequiv (gL G) la l ->
   [ G ; Γ ⊢g tyEl la t ⤳* tyEl la w @ l ].

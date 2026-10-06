@@ -289,6 +289,45 @@ Proof.
   - intros ρ x y h h'; apply releq_sym', Hc.
 Qed.
 
+(** ** Finitary well-founded trees (M15a) *)
+
+Lemma WfRel_inv {G Γ l A N domR t t'} : WfRel G Γ l A N domR t t' ->
+  exists w w', [ G ; Γ ⊢g t ⤳* w : tyWf l A N @ l ] /\ [ G ; Γ ⊢g t' ⤳* w' : tyWf l A N @ l ] /\
+    [ G ; Γ ⊢ w ≈ w' : tyWf l A N @ l ] /\ WfNf G Γ l A N domR w w'.
+Proof. destruct 1; eauto 7. Qed.
+
+Lemma WfRel_wf {G Γ l A N domR t t'} : WfRel G Γ l A N domR t t' ->
+  [ G ; Γ ⊢g t : tyWf l A N @ l ] /\ [ G ; Γ ⊢g t' : tyWf l A N @ l ].
+Proof.
+  intros (w & w' & Hw & Hw' & _ & _)%WfRel_inv.
+  exact (conj (tmred_wf _ _ _ _ _ _ _ Hw) (tmred_wf _ _ _ _ _ _ _ Hw')).
+Qed.
+
+(** The three families along a pointwise equivalent shape relation. *)
+Lemma WfRel_dir_all :
+  (forall G Γ l A N domR t t', WfRel G Γ l A N domR t t' ->
+     forall domR' : DomRel G Γ, (forall ρ, releq (domR ρ) (domR' ρ)) -> WfRel G Γ l A N domR' t t') /\
+  (forall G Γ l A N domR t t', WfNf G Γ l A N domR t t' ->
+     forall domR' : DomRel G Γ, (forall ρ, releq (domR ρ) (domR' ρ)) -> WfNf G Γ l A N domR' t t') /\
+  (forall G Γ l A N domR k t t', VecSp G Γ l A N domR k t t' ->
+     forall domR' : DomRel G Γ, (forall ρ, releq (domR ρ) (domR' ρ)) -> VecSp G Γ l A N domR' k t t').
+Proof.
+  apply WfRel_comb; intros.
+  all: try solve [econstructor; eauto].
+  all: try solve [eapply vsp_succ; eauto].
+  all: apply wfnf_sup; auto.
+  all: intros ρ; apply H0, d.
+Qed.
+
+Lemma WfRel_releq {G Γ l A N} {domR domR' : DomRel G Γ} :
+  (forall ρ, releq (domR ρ) (domR' ρ)) ->
+  releq (WfRel G Γ l A N domR) (WfRel G Γ l A N domR').
+Proof.
+  intros Hd t t'; split; intros H; eapply (proj1 WfRel_dir_all); try exact H.
+  - exact Hd.
+  - intros ρ; apply releq_sym', Hd.
+Qed.
+
 (** ** Escape for contextual types *)
 
 Lemma ModRel_escape_ty {G Γ T T' l R} : ModRel G Γ T T' l R ->
@@ -350,7 +389,8 @@ Proof.
                 | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
                     HRA HRB Hpa Hta Hpb Htb HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
-                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR].
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR].
   all: try solve [exact (ModRel_escape_ty HM)].
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
@@ -369,6 +409,7 @@ Proof.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_empty; [eapply tyred_ctx, HT | now apply lequiv_sym].
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sum; auto using lequiv_sym.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_W; auto using lequiv_sym.
+  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_wf; auto using lequiv_sym.
 Qed.
 
 (** ** Escape for terms *)
@@ -396,7 +437,8 @@ Proof.
                 | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
                     HRA HRB Hpa Hta Hpb Htb HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
-                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR];
     intros t t' Htt; first [exact (ModRel_escape_tm HM _ _ Htt) | apply HR in Htt].
   - (* Nat *)
     destruct Htt as [t t' w w' Hw Hw' Heq _].
@@ -513,6 +555,13 @@ Proof.
   - (* W: related weak-head normal forms *)
     destruct (WRel_inv Htt) as (w & w' & Hw' & Hw'' & Heq & _).
     assert (HTW : [ G ; Γ ⊢g T ≅ tyW l1 l2 A B @ l ]) by apply HT.
+    repeat split.
+    + eapply conv_tm; [apply Hw' | exact HTW | exact Hl].
+    + eapply conv_tm; [apply Hw'' | exact HTW | exact Hl].
+    + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTW | exact Hl].
+  - (* Wf: related weak-head normal forms *)
+    destruct (WfRel_inv Htt) as (w & w' & Hw' & Hw'' & Heq & _).
+    assert (HTW : [ G ; Γ ⊢g T ≅ tyWf l1 A N @ l ]) by apply HT.
     repeat split.
     + eapply conv_tm; [apply Hw' | exact HTW | exact Hl].
     + eapply conv_tm; [apply Hw'' | exact HTW | exact Hl].
@@ -685,6 +734,13 @@ Lemma kw_geq_ty_l {A l B B' l'} : [ G ; Γ ⊢g A @ l ] -> lwf (gL G) l ->
 Proof.
   intros HA Hl H. exact (geq_ty_wk kw_wkr_l (kw_ext HA Hl) (geq_ty_gwa Hγ HG' H)).
 Qed.
+Lemma kw_geq_nat_l {A l t t'} : [ G ; Γ ⊢g A @ l ] -> lwf (gL G) l ->
+  [ G ; Γ ,, A @ l ⊢ t ≈ t' : tyNat @ lzero ] ->
+  [ kw_G ρ ; kw_Δ ρ ,, kty ρ A @ l ⊢ ktml ρ t ≈ ktml ρ t' : tyNat @ lzero ].
+Proof.
+  intros HA Hl H. pose proof (geq_tm_wk kw_wkr_l (kw_ext HA Hl) (geq_tm_gwa Hγ HG' H)) as X.
+  rewrite gwa_tyNat in X. exact X.
+Qed.
 
 (** Under one global binder (the meta-functions, M5): [⇑γ], then the
     local renaming. *)
@@ -828,6 +884,168 @@ Lemma ktm_capp t Δ : ktm ρ (capp t Δ) = capp (ktm ρ t) Δ⟦kw_γ ρ⟧.
 Proof. unfold ktm; now destruct (kw_γ ρ). Qed.
 Lemma ktm_tapp t A : ktm ρ (tapp t A) = tapp (ktm ρ t) A⟦kw_γ ρ⟧.
 Proof. unfold ktm; now destruct (kw_γ ρ). Qed.
+(** Vectors, finite indices and finitary trees (M14a, M15a). *)
+Lemma kty_tyVec l A n : kty ρ (tyVec l A n) = tyVec l (kty ρ A) (ktm ρ n).
+Proof. unfold kty, ktm; now rewrite gwa_tyVec. Qed.
+Lemma kty_tyFin n : kty ρ (tyFin n) = tyFin (ktm ρ n).
+Proof. unfold kty, ktm; now rewrite gwa_tyFin. Qed.
+Lemma kty_tyWf l A N : kty ρ (tyWf l A N) = tyWf l (kty ρ A) (ktml ρ N).
+Proof. unfold kty, ktml; now rewrite gwa_tyWf. Qed.
+Lemma ktm_supf l A N a cs : ktm ρ (tmSupf l A N a cs) = tmSupf l (kty ρ A) (ktml ρ N) (ktm ρ a) (ktm ρ cs).
+Proof. unfold ktm, kty, ktml; now rewrite gwa_supf. Qed.
+Lemma ktml_shift (t : tm) : ktml ρ t⟨↑⟩ = (ktm ρ t)⟨↑⟩.
+Proof. unfold ktm, ktml. now rewrite gwa_ren, shift_lift. Qed.
+Lemma ktm_single (t : tm) a : ktm ρ t[lsingle a] = (ktml ρ t)[lsingle (ktm ρ a)].
+Proof. unfold ktm, ktml. now rewrite gwa_subst, gwa_lsingle, lsingle_ren. Qed.
 End KwPush.
+
+Lemma ren_wk_comp_lift (t : tm) (ρ ρ' : wk) :
+  t⟨rlift ρ⟩⟨rlift ρ'⟩ = t⟨rlift (wk_comp ρ' ρ)⟩.
+Proof.
+  apply ren_ren; intros [|n]; rewrite !rlk_rlift; auto. now rewrite rlk_wk_comp.
+Qed.
+Lemma ktml_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) t :
+  ktml (kw_comp ρ ρ') t = ktml ρ' (ktml ρ t).
+Proof. unfold ktml; cbn. now rewrite gwa_ren, gwa_comp_tm, ren_wk_comp_lift. Qed.
+
+(** ** Natural numbers: the normal forms' shapes (M15a) *)
+
+Lemma NatNf_whnf_l {G Γ w w'} : NatNf G Γ w w' -> whnf w.
+Proof. destruct 1; eauto using gne_tm_whne_l with whnf. Qed.
+Lemma NatNf_whnf_r {G Γ w w'} : NatNf G Γ w w' -> whnf w'.
+Proof. destruct 1; eauto using gne_tm_whne_r with whnf. Qed.
+
+Lemma NatRel_geq {G Γ t t'} : NatRel G Γ t t' -> [ G ; Γ ⊢ t ≈ t' : tyNat @ lzero ].
+Proof. destruct 1 as [t t' w w' Hw Hw' Heq _]. exact (geq_tm_exp Hw Hw' Heq). Qed.
+
+(** How the right side of a [NatRel] reduces, given how the left one does. *)
+Lemma NatRel_inv_zero {G Γ k k'} : NatRel G Γ k k' -> [ G ; Γ ⊢g k ⤳* zero : tyNat @ lzero ] ->
+  [ G ; Γ ⊢g k' ⤳* zero : tyNat @ lzero ].
+Proof.
+  destruct 1 as [k k' w w' Hw Hw' _ Hn]; intros Hz.
+  assert (Ew : w = zero)
+    by (eapply tmred_whnf_det; [exact Hw | exact Hz | exact (NatNf_whnf_l Hn) | constructor]).
+  subst w. inversion Hn; subst; [exact Hw'|].
+  match goal with H : [ _ ; _ ⊢ zero ~ _ : _ @ _ ] |- _ =>
+    pose proof (gne_tm_whne_l H) as X; inversion X end.
+Qed.
+
+Lemma NatRel_inv_succ {G Γ k k' m} : NatRel G Γ k k' -> [ G ; Γ ⊢g k ⤳* succ m : tyNat @ lzero ] ->
+  exists m', [ G ; Γ ⊢g k' ⤳* succ m' : tyNat @ lzero ] /\ NatRel G Γ m m'.
+Proof.
+  destruct 1 as [k k' w w' Hw Hw' _ Hn]; intros Hs.
+  assert (Ew : w = succ m)
+    by (eapply tmred_whnf_det; [exact Hw | exact Hs | exact (NatNf_whnf_l Hn) | constructor]).
+  subst w. inversion Hn; subst; [eexists; split; [exact Hw' | assumption]|].
+  match goal with H : [ _ ; _ ⊢ succ _ ~ _ : _ @ _ ] |- _ =>
+    pose proof (gne_tm_whne_l H) as X; inversion X end.
+Qed.
+
+Lemma NatRel_inv_ne {G Γ k k' ν} : NatRel G Γ k k' -> [ G ; Γ ⊢g k ⤳* ν : tyNat @ lzero ] -> whne ν ->
+  exists ν', [ G ; Γ ⊢g k' ⤳* ν' : tyNat @ lzero ] /\ [ G ; Γ ⊢ ν ~ ν' : tyNat @ lzero ].
+Proof.
+  destruct 1 as [k k' w w' Hw Hw' _ Hn]; intros Hν Nν.
+  assert (Ew : w = ν)
+    by (eapply tmred_whnf_det; [exact Hw | exact Hν | exact (NatNf_whnf_l Hn) | now constructor]).
+  subst w. inversion Hn; subst; try solve [inversion Nν].
+  eexists; split; [exact Hw' | assumption].
+Qed.
+
+(** Neutrals along convertible types on both sides. *)
+Lemma NeRel_conv2 {G Γ V V' W W' l t t'} : [ G ; Γ ⊢g V ≅ W @ l ] -> [ G ; Γ ⊢g V' ≅ W' @ l ] ->
+  NeRel G Γ V V' l t t' -> NeRel G Γ W W' l t t'.
+Proof.
+  intros HV HV' (ν & ν' & H1 & H2 & H3 & H4). exists ν, ν'.
+  refine (conj _ (conj _ (conj _ _))).
+  - eapply tmred_conv; [apply ge_typeof | exact H1 | exact HV].
+  - eapply tmred_conv; [apply ge_typeof | exact H2 | exact HV'].
+  - eapply gne_tm_conv; [exact H3 | exact HV].
+  - eapply gne_tm_conv; [exact H4 | exact HV'].
+Qed.
+
+(** ** Vectors at related lengths (M14a, M15a) *)
+
+Lemma tyred_step {G Γ T W l} :
+  [ G ; Γ ⊢g T @ l ] -> red_ty T W -> [ G ; Γ ⊢g T ≅ W @ l ] -> [ G ; Γ ⊢g T ⤳* W @ l ].
+Proof. intros HT Hr HE; split; auto. econstructor; [exact Hr | constructor]. Qed.
+
+Lemma wf_zero_g {G Δ} : [ G ; Δ ⊢g ] -> [ G ; Δ ⊢g zero : tyNat @ lzero ].
+Proof. intros HΔ. apply wf_zero; [exact ge_notV | now rewrite ge_typeof]. Qed.
+
+Lemma tyred_vec {G Δ l A m w} : lwf (gL G) l -> [ G ; Δ ⊢g A @ l ] ->
+  [ G ; Δ ⊢g m ⤳* w : tyNat @ lzero ] -> [ G ; Δ ⊢g tyVec l A m ⤳* tyVec l A w @ l ].
+Proof.
+  intros Hw HA [Hm Hr He]. split.
+  - apply wft_vec; [exact ge_notV | exact Hw | exact HA | exact Hm].
+  - now apply reds_vec.
+  - apply eqty_vec; [exact ge_notV | now apply lequiv_refl | exact HA | now apply eqty_refl | exact He].
+Qed.
+
+Lemma tyred_vec_zero {G Δ l A} : lwf (gL G) l -> [ G ; Δ ⊢g A @ l ] ->
+  [ G ; Δ ⊢g tyVec l A zero ⤳* tyUnit l @ l ].
+Proof.
+  intros Hw HA. pose proof (wf_zero_g (ctx_of_ty HA)) as Hz.
+  apply tyred_step; [apply wft_vec; [exact ge_notV | exact Hw | exact HA | exact Hz] | constructor |].
+  apply eqty_vec_zero; [exact ge_compt | exact Hw | exact HA].
+Qed.
+
+Lemma tyred_vec_succ {G Δ l A k} : lwf (gL G) l -> [ G ; Δ ⊢g A @ l ] ->
+  [ G ; Δ ⊢g k : tyNat @ lzero ] ->
+  [ G ; Δ ⊢g tyVec l A (succ k) ⤳* tySig l l A (tyVec l A⟨↑⟩ k⟨↑⟩) @ l ].
+Proof.
+  intros Hw HA Hk. assert (Hs : [ G ; Δ ⊢g succ k : tyNat @ lzero ]) by (apply wf_succ; [exact ge_notV | exact Hk]).
+  apply tyred_step; [apply wft_vec; [exact ge_notV | exact Hw | exact HA | exact Hs] | constructor |].
+  apply eqty_vec_succ; [exact ge_compt | exact Hw | exact HA | exact Hk].
+Qed.
+
+(** [Vec] types at [NatRel]-related lengths are generically equal. *)
+Lemma geq_vec_nat {G Γ} : forall k k', NatRel G Γ k k' ->
+  forall l l' T T', lequiv (gL G) l l' -> [ G ; Γ ⊢g T @ l ] -> [ G ; Γ ⊢ T ≈ T' @ l ] ->
+  [ G ; Γ ⊢ tyVec l T k ≈ tyVec l' T' k' @ l ].
+Proof.
+  apply (NatRel_mut G Γ
+    (fun k k' _ => forall l l' T T', lequiv (gL G) l l' -> [ G ; Γ ⊢g T @ l ] -> [ G ; Γ ⊢ T ≈ T' @ l ] ->
+       [ G ; Γ ⊢ tyVec l T k ≈ tyVec l' T' k' @ l ])
+    (fun k k' _ => forall l l' T T', lequiv (gL G) l l' -> [ G ; Γ ⊢g T @ l ] -> [ G ; Γ ⊢ T ≈ T' @ l ] ->
+       [ G ; Γ ⊢ tyVec l T k ≈ tyVec l' T' k' @ l ])).
+  - intros t t' w w' Ht Ht' _ _ IH l l' T T' Hl HT HTT.
+    pose proof (lequiv_wf_l _ _ _ Hl) as Hw. pose proof (lequiv_wf_r _ _ _ Hl) as Hw'.
+    pose proof (eqty_wf_r ge_typeof (geq_ty_sound HTT)) as HT'.
+    assert (HT'l : [ G ; Γ ⊢g T' @ l' ]) by (eapply wft_lconv; [exact HT' | now apply lequiv_sym]).
+    eapply geq_ty_exp; [exact (tyred_vec Hw HT Ht) | | exact (IH l l' T T' Hl HT HTT)].
+    exact (tyred_lconv _ _ _ _ (tyred_vec Hw' HT'l Ht') Hl).
+  - intros l l' T T' Hl HT HTT.
+    pose proof (lequiv_wf_l _ _ _ Hl) as Hw. pose proof (lequiv_wf_r _ _ _ Hl) as Hw'.
+    pose proof (eqty_wf_r ge_typeof (geq_ty_sound HTT)) as HT'.
+    assert (HT'l : [ G ; Γ ⊢g T' @ l' ]) by (eapply wft_lconv; [exact HT' | now apply lequiv_sym]).
+    eapply geq_ty_exp; [exact (tyred_vec_zero Hw HT) | exact (tyred_lconv _ _ _ _ (tyred_vec_zero Hw' HT'l) Hl) |].
+    exact (geq_ty_unit (ctx_of_ty HT) Hl).
+  - intros t t' Htt IH l l' T T' Hl HT HTT.
+    pose proof (lequiv_wf_l _ _ _ Hl) as Hw. pose proof (lequiv_wf_r _ _ _ Hl) as Hw'.
+    pose proof (eqty_wf_r ge_typeof (geq_ty_sound HTT)) as HT'.
+    assert (HT'l : [ G ; Γ ⊢g T' @ l' ]) by (eapply wft_lconv; [exact HT' | now apply lequiv_sym]).
+    destruct Htt as [t t' u u' Hu Hu' Huu Hn].
+    pose proof (tmred_wf _ _ _ _ _ _ _ Hu) as Hk. pose proof (tmred_wf _ _ _ _ _ _ _ Hu') as Hk'.
+    assert (HΓT : [ G ; Γ ,, T @ l ⊢g ]) by now apply ext_wf_g.
+    eapply geq_ty_exp; [exact (tyred_vec_succ Hw HT Hk) | exact (tyred_lconv _ _ _ _ (tyred_vec_succ Hw' HT'l Hk') Hl) |].
+    eapply geq_ty_lconv; [apply geq_ty_sig; [exact Hl | exact Hl | exact HT | exact HTT |] | apply lequiv_sym, lmax_idem, Hw].
+    exact (geq_ty_wk (wkr_shift1 _ _ _) HΓT (IH l l' T T' Hl HT HTT)).
+  - intros ν ν' Hνν l l' T T' Hl HT HTT.
+    exact (gne_ty_geq (gne_ty_vec Hl HT HTT Hνν)).
+Qed.
+
+(** The type of a nonempty vector's projections, along equal data. *)
+Lemma sigvec_eq {G Γ l l' T T' m m'} : lequiv (gL G) l l' -> lwf (gL G) l ->
+  [ G ; Γ ⊢g T @ l ] -> [ G ; Γ ⊢g T ≅ T' @ l ] -> [ G ; Γ ⊢g m ≅ m' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢g tySig l l T (tyVec l T⟨↑⟩ m⟨↑⟩) ≅ tySig l' l' T' (tyVec l' T'⟨↑⟩ m'⟨↑⟩) @ lmax l l ].
+Proof.
+  intros Hl Hw HT HTT Hm.
+  assert (HΓT : [ G ; Γ ,, T @ l ⊢[ typeof ge_layer ] ]) by (rewrite ge_typeof; now apply ext_wf_g).
+  apply eqty_sig; [exact ge_notV | exact Hl | exact Hl | exact HT | exact HTT |].
+  apply eqty_vec; [exact ge_notV | exact Hl | | |].
+  - exact (wk1_ty_g _ _ _ _ _ _ _ HΓT HT).
+  - exact (wk1_eqty_g _ _ _ _ _ _ _ _ HΓT HTT).
+  - exact (wk1_eqtm_g _ _ _ _ _ _ _ _ _ HΓT Hm).
+Qed.
 
 End Escape.

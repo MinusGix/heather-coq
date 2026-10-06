@@ -382,6 +382,81 @@ with WNf : forall (G : gctx) (Γ : ctx) (l1 l2 : lvl) (A B : ty)
 Scheme WRel_mut := Induction for WRel Sort Prop
   with WNf_mut := Induction for WNf Sort Prop.
 
+(** ** Finitary well-founded trees (M15_DESIGN.md, M15a)
+
+    MX §12's [NfEqWf], with [W]'s shape relation and a finite spine of
+    children in place of [W]'s child function. Three mutual families,
+    indexed (as [WRel]) by the context, the level, the left side's shape
+    type [A] and arity [N] (under the shape binder), and the shapes'
+    relation:
+    - [WfRel]: both sides reduce, at the left [Wf], to whnfs related
+      generically and by [WfNf];
+    - [WfNf]: two [sup_f]s whose annotations agree with the type's, whose
+      shapes are related in every weakening and whose children are related
+      in every weakening by the spine at the left arity [N[a/x]]; or two
+      neutrals;
+    - [VecSp k]: the term relation at [Vec(Wf; k)] spelled out, by cases
+      on how the length reduces: [Unit]'s at [0]; at a successor [Σ]'s,
+      its first projections by [WfRel] and its second by the spine at the
+      predecessor (at the spine's own world, for every choice of
+      equivalent annotations); at a neutral length [NeRel] at the neutral
+      [Vec] type. Both sides are typed at the left [Vec], as both sides
+      of [WRel] are at the left [W]. *)
+Inductive WfRel : forall (G : gctx) (Γ : ctx) (l : lvl) (A : ty) (N : tm)
+    (domR : DomRel G Γ), tm -> tm -> Prop :=
+| wfrel G Γ l A N domR t t' w w' :
+    [ G ; Γ ⊢g t ⤳* w : tyWf l A N @ l ] -> [ G ; Γ ⊢g t' ⤳* w' : tyWf l A N @ l ] ->
+    [ G ; Γ ⊢ w ≈ w' : tyWf l A N @ l ] ->
+    WfNf G Γ l A N domR w w' -> WfRel G Γ l A N domR t t'
+with WfNf : forall (G : gctx) (Γ : ctx) (l : lvl) (A : ty) (N : tm)
+    (domR : DomRel G Γ), tm -> tm -> Prop :=
+| wfnf_sup G Γ l A N domR k k' C C' M M' a a' cs cs' :
+    lequiv (gL G) k l -> lequiv (gL G) k' l ->
+    [ G ; Γ ⊢ A ≈ C @ l ] -> [ G ; Γ ⊢ A ≈ C' @ l ] ->
+    [ G ; Γ ,, A @ l ⊢ N ≈ M : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢ N ≈ M' : tyNat @ lzero ] ->
+    (forall ρ : kwk G Γ, domR ρ (ktm ρ a) (ktm ρ a')) ->
+    (forall ρ : kwk G Γ,
+       VecSp (kw_G ρ) (kw_Δ ρ) l (kty ρ A) (ktml ρ N) (fun ρ' => domR (kw_comp ρ ρ'))
+         (ktml ρ N)[lsingle (ktm ρ a)] (ktm ρ cs) (ktm ρ cs')) ->
+    WfNf G Γ l A N domR (tmSupf k C M a cs) (tmSupf k' C' M' a' cs')
+| wfnf_ne G Γ l A N domR ν ν' :
+    [ G ; Γ ⊢ ν ~ ν' : tyWf l A N @ l ] -> WfNf G Γ l A N domR ν ν'
+with VecSp : forall (G : gctx) (Γ : ctx) (l : lvl) (A : ty) (N : tm)
+    (domR : DomRel G Γ), tm -> tm -> tm -> Prop :=
+| vsp_zero G Γ l A N domR k cs cs' :
+    [ G ; Γ ⊢g k ⤳* zero : tyNat @ lzero ] ->
+    UnitRel G Γ l cs cs' -> VecSp G Γ l A N domR k cs cs'
+| vsp_succ G Γ l A N domR k m cs cs' w w' :
+    [ G ; Γ ⊢g k ⤳* succ m : tyNat @ lzero ] ->
+    [ G ; Γ ⊢g cs ⤳* w : tySig l l (tyWf l A N) (tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩) @ lmax l l ] ->
+    [ G ; Γ ⊢g cs' ⤳* w' : tySig l l (tyWf l A N) (tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩) @ lmax l l ] ->
+    whnf w -> whnf w' ->
+    [ G ; Γ ⊢ w ≈ w' : tySig l l (tyWf l A N) (tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩) @ lmax l l ] ->
+    (forall la lb A1 B1 la' lb' A1' B1',
+       lequiv (gL G) la l -> lequiv (gL G) lb l -> lequiv (gL G) la' l -> lequiv (gL G) lb' l ->
+       [ G ; Γ ⊢ tyWf l A N ≈ A1 @ l ] ->
+       [ G ; Γ ,, tyWf l A N @ l ⊢ tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩ ≈ B1 @ l ] ->
+       [ G ; Γ ⊢ tyWf l A N ≈ A1' @ l ] ->
+       [ G ; Γ ,, tyWf l A N @ l ⊢ tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩ ≈ B1' @ l ] ->
+       WfRel G Γ l A N domR (tmFst la lb A1 B1 w) (tmFst la' lb' A1' B1' w')) ->
+    (forall la lb A1 B1 la' lb' A1' B1',
+       lequiv (gL G) la l -> lequiv (gL G) lb l -> lequiv (gL G) la' l -> lequiv (gL G) lb' l ->
+       [ G ; Γ ⊢ tyWf l A N ≈ A1 @ l ] ->
+       [ G ; Γ ,, tyWf l A N @ l ⊢ tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩ ≈ B1 @ l ] ->
+       [ G ; Γ ⊢ tyWf l A N ≈ A1' @ l ] ->
+       [ G ; Γ ,, tyWf l A N @ l ⊢ tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩ ≈ B1' @ l ] ->
+       VecSp G Γ l A N domR m (tmSnd la lb A1 B1 w) (tmSnd la' lb' A1' B1' w')) ->
+    VecSp G Γ l A N domR k cs cs'
+| vsp_ne G Γ l A N domR k ν cs cs' :
+    [ G ; Γ ⊢g k ⤳* ν : tyNat @ lzero ] -> [ G ; Γ ⊢ ν ~ ν : tyNat @ lzero ] ->
+    NeRel G Γ (tyVec l (tyWf l A N) ν) (tyVec l (tyWf l A N) ν) l cs cs' ->
+    VecSp G Γ l A N domR k cs cs'.
+
+Scheme WfRel_mut := Induction for WfRel Sort Prop
+  with WfNf_mut := Induction for WfNf Sort Prop
+  with VecSp_mut := Induction for VecSp Sort Prop.
+Combined Scheme WfRel_comb from WfRel_mut, WfNf_mut, VecSp_mut.
+
 (** ** The type-level data of a binder former
 
     [Π] and [Σ] (and later formers of the same shape) share it: both sides
@@ -614,6 +689,17 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
         LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ B)[lsingle a] (ktyl ρ B')[lsingle a'] l2
            (codR ρ a a' ha)) ->
     releq R (WRel G Γ l1 l2 A B domR codR) ->
+    LR n rec G Γ T T' l R
+| LRwf G Γ T T' l l1 l2 A A' N N' (domR : DomRel G Γ) R :
+    lequiv (gL G) l l1 -> lequiv (gL G) l2 l1 -> lwf (gL G) l1 ->
+    [ G ; Γ ⊢g T ⤳* tyWf l1 A N @ l ] -> [ G ; Γ ⊢g T' ⤳* tyWf l2 A' N' @ l ] ->
+    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢g A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢g N : tyNat @ lzero ] -> [ G ; Γ ,, A' @ l1 ⊢g N' : tyNat @ lzero ] ->
+    [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ,, A @ l1 ⊢ N ≈ N' : tyNat @ lzero ] ->
+    (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ A) (kty ρ A') l1 (domR ρ)) ->
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' ->
+        NatRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N)[lsingle a] (ktml ρ N')[lsingle a']) ->
+    releq R (WfRel G Γ l1 A N domR) ->
     LR n rec G Γ T T' l R.
 
 (** ** Stages *)
