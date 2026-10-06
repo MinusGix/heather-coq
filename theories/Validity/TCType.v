@@ -309,6 +309,24 @@ Proof.
   - right; intros H; exact (Q (proj2 (inv_ty_fin H))).
 Qed.
 
+(** Finitary well-founded trees (M15a): layers D and M. *)
+Lemma dec_tyWf l A N : sz_ty (tyWf l A N) <= n -> TYD (tyWf l A N).
+Proof.
+  intros Hsz G i Γ k HΓ.
+  destruct (compt_dec i) as [Hc | Nc]; [| right; intros H; destruct (inv_ty_wf H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N0]; [| right; intros H; destruct (inv_ty_wf H) as ((_ & X & _) & _); contradiction].
+  destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N0];
+    [| right; intros H; destruct (inv_ty_wf H) as ((_ & _ & X & _) & _); contradiction].
+  assert (HΓA : [ G ; Γ ,, A @ l ⊢[ typeof i ] ]) by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HA) | exact Hl]).
+  assert (HNat : [ G ; Γ ,, A @ l ⊢[ typeof i ] tyNat @ lzero ])
+    by (apply wft_nat; [exact (typeof_notV i) | rewrite typeof_idem; exact HΓA]).
+  destruct (ihC N ltac:(szl) G i _ _ _ HNat) as [HN | N0];
+    [| right; intros H; destruct (inv_ty_wf H) as ((_ & _ & _ & X) & _); contradiction].
+  destruct (lvl_eq_dec (gL G) k l) as [Q | Q].
+  - left; exact (wft_lvl Q (wft_wf _ _ _ _ _ _ Hc Hl HA HN)).
+  - right; intros H; exact (Q (proj2 (inv_ty_wf H))).
+Qed.
+
 Lemma ty_step T : sz_ty T <= n -> TYD T.
 Proof.
   intros Hsz. destruct T;
@@ -316,7 +334,7 @@ Proof.
           | apply dec_tyPi | apply dec_tyEl | apply dec_tyGvar | apply dec_tyCTyp | apply dec_tyCTrm
           | apply dec_tyUPi | apply dec_tyCPi | apply dec_tyTPi | apply dec_tySig | apply dec_tyUnit
           | apply dec_tySEq | apply dec_tySEmpty | apply dec_tyId | apply dec_tyEmpty | apply dec_tySum
-          | apply dec_tyW | apply dec_tyVec | apply dec_tyFin ];
+          | apply dec_tyW | apply dec_tyVec | apply dec_tyFin | apply dec_tyWf ];
     assumption.
 Qed.
 

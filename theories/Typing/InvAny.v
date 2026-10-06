@@ -239,6 +239,25 @@ Lemma inva_elimW {G i Γ l l' l'' A B M c t T k} : [ G ; Γ ⊢[ i ] tmElimW l l
     lvl_eq (gL G) k l'' /\ [ G ; Γ ⊢[ typeof i ] T ≅ M[lsingle t] @ k ].
 Proof. inv_tm_any. Qed.
 
+(** Finitary well-founded trees (M15a). *)
+Lemma inva_supf {G i Γ l A N a cs T k} : [ G ; Γ ⊢[ i ] tmSupf l A N a cs : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\
+    [ G ; Γ ⊢[ i ] a : A @ l ] /\ [ G ; Γ ⊢[ i ] cs : tyVec l (tyWf l A N) N[lsingle a] @ l ]) /\
+    lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyWf l A N @ k ].
+Proof. inv_tm_any. Qed.
+
+Lemma inva_elimWf {G i Γ l l' A N M c t T k} : [ G ; Γ ⊢[ i ] tmElimWf l l' A N M c t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\
+    [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\
+    [ G ; Γ ,, tyWf l A N @ l ⊢[ i ] M @ l' ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] wfcsty l A N @ l ] /\
+    [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ⊢[ i ] wfihty l l' A N M @ lmax lzero l' ] /\
+    [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ,, wfihty l l' A N M @ lmax lzero l'
+        ⊢[ i ] c : wfstepty l A N M @ l' ] /\
+    [ G ; Γ ⊢[ i ] t : tyWf l A N @ l ]) /\
+    lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ typeof i ] T ≅ M[lsingle t] @ k ].
+Proof. inv_tm_any. Qed.
+
 (** Strict equality's codes (M10c). *)
 Lemma inva_code_seq {G i Γ l s t u T k} : [ G ; Γ ⊢[ i ] tmSEq l s t u : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
