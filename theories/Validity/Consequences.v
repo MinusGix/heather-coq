@@ -136,6 +136,20 @@ Proof.
   injection Heq as <- <- <- <-. auto.
 Qed.
 
+(** Finitary well-founded trees (M15a): the shapes and the arities. *)
+Lemma Wf_inj {G Γ l l1 l2 A A' N N'} :
+  [ G ; Γ ⊢g tyWf l1 A N ≅ tyWf l2 A' N' @ l ] -> lwf (gL G) l ->
+  lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢ A ≈ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢ N ≈ N' : tyNat @ lzero ].
+Proof.
+  intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
+  pose proof (eqty_wf_l ge_typeof H) as HP.
+  destruct (LR_inv_wf HR (tyred_refl _ _ HP))
+    as (m2 & C' & M' & domR & _ & H2 & _ & _ & HT' & _ & _ & _ & _ & HAA & HNN & _).
+  pose proof (tyred_refl _ _ (eqty_wf_r ge_typeof H)) as HT'0.
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' HT'0 (whnf_tyWf _ _ _) (whnf_tyWf _ _ _)) as Heq.
+  injection Heq as <- <- <-. auto.
+Qed.
+
 Lemma sempty_inj {G Γ l l1 l2} :
   [ G ; Γ ⊢g tySEmpty l1 ≅ tySEmpty l2 @ l ] -> lwf (gL G) l -> lequiv (gL G) l2 l1.
 Proof.
