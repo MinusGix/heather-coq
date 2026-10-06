@@ -113,6 +113,11 @@ From M8 on, the milestones check the extensions of Heather's kernel
   neutral at a neutral length. The relation gains no case: validity
   builds it by induction on the length. Type-level preservation holds at
   `Vec^l(A; 0) ⇝ Unit^l`, at the same level. See `M14_DESIGN.md`.
+- Milestone 14b: `Vec` and `Fin` have codes (`El` carries the length
+  across unchanged), their formers and codes lift to the code layer, and
+  the code recursor has their four branches (`t_Vec`, `t'_Vec`, `t_Fin`,
+  `t'_Fin`), whose length call is a term call at `Nat`. The scopes agree
+  with Heather's `rec.rs`. See `M14_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
 `M14_DESIGN.md`) for decisions, deviations from the paper and gotchas.

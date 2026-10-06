@@ -51,7 +51,7 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | `Empty^l`, `elim_Empty` | positive, no β | ext §7 | MX §2 | Empty-η still open (`issues/empty-eta-conversion.md`) | **done** (M12a; every layer but V with code and branches 31–33, M12c): no closed term (`closed_empty_empty`) |
 | `+`, `inl`/`inr`, `case` | positive | ext §8 | MX §2 | — | **done** (M12b; every layer but V with code and branches 34–38, M12c): β at D and M, no η, disjunction property (`closed_sum_canonicity`) |
 | `W`, `sup`, `elim_W` | positive, infinitary | ext §9 | MX §5 | β builds an ih λ; the heaviest LR case | **M13 done**: β, no η, `closed_W_canonicity` (M13a, D and M); code, lift to C and the four branches (M13b) |
-| `Vec`, `Fin` | computing wrappers (reduce to Σ/Unit, +/Empty) | DESIGN.md | MX §10 | first type formers whose whnf is chosen by a term | **M14a done** (D and M): no LR case, validity by induction on the length; preservation at `Vec^l(A;0) ⇝ Unit^l`. Codes and branches are M14b |
+| `Vec`, `Fin` | computing wrappers (reduce to Σ/Unit, +/Empty) | DESIGN.md | MX §10 | first type formers whose whnf is chosen by a term | **M14 done**: no LR case, validity by induction on the length; preservation at `Vec^l(A;0) ⇝ Unit^l` (M14a, D and M); codes, every layer but V, branches 43–46 (M14b) |
 | `Wf`, `sup_f`, `elim_Wf` | finitary W over a `Vec` of children | wf-former-design | MX §11–17 | index lemma (MX §13) | — |
 | `sEq`, `srefl`, `transp`, strip rule | strict equality, irrelevance | sprop-design | MX §18–22 | strip changes the evaluation notion; MX §19.4 substitution lemma is the named weak spot; completeness gap reaches type relations (MX §22.4); **MX §19.2 is a strengthening lemma (M10 S1)** | `sEq`, `srefl`, irrelevance **done** (M10a; every layer but V with codes and branches 25, 26, 29, M10c); `transp` removed (S8) |
 | `sEmpty`, `elim_sEmpty` | irrelevant empty type | sprop-design | MX §18, §21.4 | — | **done** (M10a; at code with branches 27, 28, 30, M10c) |
@@ -60,13 +60,16 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | `NatLit`, evaluator accelerations | representation | DESIGN.md | n/a | claimed to have no semantic content; nothing to prove here | out of scope |
 
 Code recursor: the paper has 13 branches (indexed 0–12), Heather has 52.
-Ours has 39 (`Typing/RecSpec.v`): Heather's Σ and Unit branches are 13–20
+Ours has 47 (`Typing/RecSpec.v`): Heather's Σ and Unit branches are 13–20
 (M8d), `Id` 21–24 (M11b), `sEq`/`sEmpty` 25–30 (M10c), `Empty` and `+`
-31–38 (M12c), each group in Heather's order, appended as they came. The declarative telescopes for ten of the new
+31–38 (M12c), `W` 39–42 (M13b), `Vec` and `Fin` 43–46 (M14b), each group
+in Heather's order, appended as they came. The declarative telescopes for ten of the new
 recursive-call slots (`Vec`/`Wf`/`sEq`/`sEmpty` branches) are written
 nowhere outside the kernel (`issues/uncovered-formers-recursor-rules.md`).
 Transcribing those is where an error would go unnoticed on both sides, so
-derive them from the semantics here rather than copying `rec.rs`.
+derive them from the semantics here rather than copying `rec.rs`. `Vec`'s
+slot (`ty_vec`'s length call, at the term motive) is now derived and
+validated here and agrees with `rec.rs` (M14_DESIGN.md).
 
 ## Findings
 
@@ -176,7 +179,7 @@ each one touched and why, then choose among 1–3 using that data.
    M11b, M11_DESIGN.md). `Empty` and `+` are done, with codes and
    recursor branches (M12a–c, M12_DESIGN.md). `W` is done, with its
    code and four recursor branches (M13a–b, M13_DESIGN.md). `Vec` and
-   `Fin` are done at D and M (M14a, M14_DESIGN.md); their codes are
-   M14b.
+   `Fin` are done, with codes and four recursor branches (M14a–b,
+   M14_DESIGN.md).
 
 Side task, any time: the ITree depth-indexed bisimilarity question.
