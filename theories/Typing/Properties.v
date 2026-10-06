@@ -151,7 +151,7 @@ Proof. symmetry; apply (proj1 gsubst_ren_all). Qed.
 
 Ltac wk_rewrite :=
   rewrite ?single_ren_ty, ?single_ren, ?lsucc_ren_ty, ?single2_ren, ?lsingle2_ren_ty, ?gsingle_ren_ty, <- ?gren_ren,
-          ?shift_lift, ?shift_lift_ty, ?liftshift_lift_ty, ?lsingle3_ren,
+          ?shift_lift, ?shift_lift_ty, ?liftshift_lift_ty, ?liftshift_lift, ?lsingle3_ren,
           ?mkrb_ren, ?motT_ren, ?mott_ren, ?wrapMT_ren, ?wrapMt_ren.
 
 #[export] Hint Resolve wfc_ext : wk.
@@ -259,6 +259,32 @@ Proof.
                 | eapply lift_eqty; [exact HBB | apply lle_self_typeof]].
 Qed.
 #[export] Hint Resolve wf_ctx_W wft_W_typeof : wk.
+(** [elim_Wf]'s motive context (M15a). *)
+Lemma wft_wf_typeof G i Δ l A N : lwf (gL G) l ->
+  [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Δ ⊢[ typeof i ] tyWf l A N @ l ].
+Proof.
+  intros Hl HA HN. apply wft_wf; [apply compt_typeof | exact Hl
+                                 | eapply lift_ty; [exact HA | apply lle_self_typeof]
+                                 | eapply lift_tm; [exact HN | apply lle_self_typeof]].
+Qed.
+Lemma wf_ctx_Wf G i Δ l A N : lwf (gL G) l ->
+  [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Δ ⊢[ typeof i ] ] ->
+  [ G ; Δ ,, tyWf l A N @ l ⊢[ typeof i ] ].
+Proof.
+  intros Hl HA HN HΔ. apply wfc_ext; [exact HΔ | now apply wft_wf_typeof | exact Hl].
+Qed.
+Lemma eqty_wf_typeof G i Δ l A A' N N' : lwf (gL G) l ->
+  [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Δ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Δ ⊢[ typeof i ] tyWf l A N ≅ tyWf l A' N' @ l ].
+Proof.
+  intros Hl HA HAA HNN.
+  apply eqty_wf; [apply compt_typeof | apply lequiv_refl; assumption
+                 | eapply lift_ty; [exact HA | apply lle_self_typeof]
+                 | eapply lift_eqty; [exact HAA | apply lle_self_typeof]
+                 | eapply lift_eqtm; [exact HNN | apply lle_self_typeof]].
+Qed.
+#[export] Hint Resolve wf_ctx_Wf wft_wf_typeof : wk.
 #[export] Hint Extern 3 (lwf _ (lmax _ _)) => (cbn; split; eauto using lequiv_wf_l, lequiv_wf_r) : wk.
 (** A computing layer sees layer-C definitions (M9). *)
 Lemma compt_lle_C i : compt i -> lle lC i.
@@ -457,6 +483,13 @@ Ltac wk_Wstep :=
         eapply IH; [ repeat (eapply wkr_up'; [ | reflexivity]); eassumption | wk_Wctx ]
     end
   | wk_eqW | wk_eqW ].
+(** [elim_Wf]'s motive, over [Wf] (M15a). *)
+Ltac wk_Wfmot :=
+  match goal with
+  | IH : forall Δ r, wkr r Δ (_ ,, tyWf _ _ _ @ _) -> _ -> _ |- _ =>
+      eapply IH; [ eapply wkr_up'; [eassumption | reflexivity]
+                 | apply wf_ctx_Wf; fix_layer; solve [eauto 12 with wk] ]
+  end.
 (** Its motive, over [W]. *)
 Ltac wk_Wmot :=
   match goal with
@@ -474,6 +507,13 @@ Ltac wk_manual :=
   | |- eq_tm _ _ _ (tmElimW _ _ _ _ _ _ _ (tmSup _ _ _ _ _ _)) _ _ _ =>
       eapply eqtm_elimW_sup; first [solve [wk_Wmot] | solve [wk_Wstep] | wk_premise]
   | |- eq_tm _ _ _ (tmElimW _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimW; first [solve [wk_Wmot] | solve [wk_Wstep] | wk_premise]
+  (* [Wf] (M15a) *)
+  | |- wf_tm _ _ _ (tmSupf _ _ _ _ _) _ _ => eapply wf_supf; wk_premise
+  | |- eq_tm _ _ _ (tmSupf _ _ _ _ _) _ _ _ => eapply eqtm_supf; wk_premise
+  | |- wf_tm _ _ _ (tmElimWf _ _ _ _ _ _ _) _ _ => eapply wf_elimWf; first [solve [wk_Wfmot] | solve [wk_Wstep] | wk_premise]
+  | |- eq_tm _ _ _ (tmElimWf _ _ _ _ _ _ (tmSupf _ _ _ _ _)) _ _ _ =>
+      eapply eqtm_elimWf_supf; first [solve [wk_Wfmot] | solve [wk_Wstep] | wk_premise]
+  | |- eq_tm _ _ _ (tmElimWf _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimWf; first [solve [wk_Wfmot] | solve [wk_Wstep] | wk_premise]
   (* [case] (M12b): its branches' types, through the induction hypotheses *)
   | |- wf_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ _) _ _ => eapply wf_case; wk_premise
   | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ (tmInl _ _ _ _ _)) _ _ _ => eapply eqtm_case_inl; wk_premise

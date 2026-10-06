@@ -397,6 +397,25 @@ Proof.
   unfold wIH. rewrite gren_lam, gren_elimW, gren_app, gren_var.
   repeat rewrite ?gren_ren_ty', ?gren_ren, ?gren_single_ty, ?gren_tyW. reflexivity.
 Qed.
+(** Wf trees (M15a), [nth] and [elim_Wf]'s induction hypothesis. *)
+Lemma gren_tyWf l A N : (tyWf l A N)⟪ξ⟫ = tyWf l A⟪ξ⟫ N⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_supf l A N a cs : (tmSupf l A N a cs)⟪ξ⟫ = tmSupf l A⟪ξ⟫ N⟪ξ⟫ a⟪ξ⟫ cs⟪ξ⟫.
+Proof. reflexivity. Qed.
+Lemma gren_elimWf l l' A N M c t :
+  (tmElimWf l l' A N M c t)⟪ξ⟫ = tmElimWf l l' A⟪ξ⟫ N⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ t⟪ξ⟫.
+Proof. reflexivity. Qed.
+Lemma gren_tmNth l T k cs i : (tmNth l T k cs i)⟪ξ⟫ = tmNth l T⟪ξ⟫ k⟪ξ⟫ cs⟪ξ⟫ i⟪ξ⟫.
+Proof.
+  unfold tmNth, nthMot, nthBase, nthStep. cbn [gren GRen_tm gren_tm GRen_ty gren_ty].
+  change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫.
+  repeat rewrite ?gren_ren_ty', ?gren_ren. reflexivity.
+Qed.
+Lemma gren_wfIH l l' A N M c a cs :
+  (wfIH l l' A N M c a cs)⟪ξ⟫ = wfIH l l' A⟪ξ⟫ N⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ a⟪ξ⟫ cs⟪ξ⟫.
+Proof.
+  unfold wfIH. rewrite gren_lam, gren_elimWf, gren_tmNth, gren_var, gren_tyFin.
+  repeat rewrite ?gren_ren_ty', ?gren_ren, ?gren_single, ?gren_tyWf. reflexivity.
+Qed.
 (** [UΠ]'s scope and instances. *)
 Lemma gren_uren_ctx (Γ : ctx) ρ : Γ⟨ρ⟩ᵤ⟪ξ⟫ = Γ⟪ξ⟫⟨ρ⟩ᵤ.
 Proof. symmetry; apply (proj1 (proj2 (proj2 uren_gren_all))). Qed.
@@ -479,6 +498,11 @@ Ltac push_gren_at h k := lazymatch h with
   | @tmSup => k gren_sup
   | @tmElimW => k gren_elimW
   | @wIH => k gren_wIH
+  | @tyWf => k gren_tyWf
+  | @tmSupf => k gren_supf
+  | @tmElimWf => k gren_elimWf
+  | @tmNth => k gren_tmNth
+  | @wfIH => k gren_wfIH
   end.
 Ltac push_gren := repeat match goal with
   | |- context [@gren _ _ ?t _] => let h := head_of t in push_gren_at h ltac:(fun L => rewrite L)
@@ -719,6 +743,12 @@ Ltac gw_manual :=
       gw_premise
   (* meta-functions (M5): bodies under the global binder, as letbox's *)
   (* the identity type (M11a): [J]'s motive context commutes by an equation *)
+  (* finitary well-founded trees (M15a): the arity's instance commutes by an equation *)
+  | |- wf_tm _ _ _ (tmSupf _ _ _ _ _) _ _ => eapply wf_supf; gw_premise
+  | |- eq_tm _ _ _ (tmSupf _ _ _ _ _) _ _ _ => eapply eqtm_supf; gw_premise
+  | |- wf_tm _ _ _ (tmElimWf _ _ _ _ _ _ _) _ _ => eapply wf_elimWf; gw_premise
+  | |- eq_tm _ _ _ (tmElimWf _ _ _ _ _ _ (tmSupf _ _ _ _ _)) _ _ _ => eapply eqtm_elimWf_supf; gw_premise
+  | |- eq_tm _ _ _ (tmElimWf _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimWf; gw_premise
   | |- wf_tm _ _ _ (tmJ _ _ _ _ _ _ _ _) _ _ => eapply wf_J; gw_premise
   | |- eq_tm _ _ _ (tmJ _ _ _ _ _ _ _ (tmRefl _ _ _)) _ _ _ => eapply eqtm_J_beta; gw_premise
   | |- eq_tm _ _ _ (tmJ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_J; gw_premise
@@ -822,7 +852,7 @@ Proof.
   apply red_both; intros; cbn [gren GRen_tm gren_tm GRen_ty gren_ty];
     change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫;
     change (gcren ?x ?ξ) with x⟪ξ⟫.
-  all: rewrite ?gren_single2, ?gren_single, ?gren_single3, ?gren_wIH, ?gren_gsingle; try now constructor.
+  all: rewrite ?gren_single2, ?gren_single, ?gren_single3, ?gren_wIH, ?gren_wfIH, ?gren_gsingle; try now constructor.
   all: try (constructor; auto; fail).
   all: first [ constructor; now apply redT_gren | constructor; now apply redt_gren
              | rewrite <- usubst_gren; now constructor

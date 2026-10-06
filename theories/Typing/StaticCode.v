@@ -1472,6 +1472,65 @@ Lemma sc_code_fin {Γ n n'} : i <> lV ->
   [ G ; Γ ⊢[ i ] tmFin n ≅ tmFin n' : tyU lzero @ lsuc lzero ].
 Proof. intros Hv [Hn' Hnn]. split; [apply wf_code_fin | apply eqtm_code_fin]; auto. Qed.
 
+(** Finitary well-founded trees (M15a; layers D and M): below D, only D,
+    where presupposition's lemmas apply. *)
+Lemma sc_self : compt i -> typeof i = i.
+Proof. intros [E|E]; pose proof Hty as H; rewrite E in *; [reflexivity | discriminate]. Qed.
+
+Lemma sc_wf {Γ l l' A A' N N'} : compt i -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] /\ [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tyWf l' A' N' @ l ] /\ [ G ; Γ ⊢[ i ] tyWf l A N ≅ tyWf l' A' N' @ l ].
+Proof.
+  intros Hc Hl Hl' E HA [HA' HAA] HN [HN' HNN]. pose proof (lq Hl Hl' E) as Q.
+  pose proof (sc_self Hc) as Hs. pose proof (compt_notV _ Hc) as Hv.
+  split; [exact (pre_wf_r Hs Hv Q HAA HA' HN') | apply eqty_wf; auto].
+Qed.
+
+Lemma sc_supf {Γ l l' A A' N N' a a' cs cs'} : compt i -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] /\ [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] /\ [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] cs : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
+  [ G ; Γ ⊢[ i ] cs' : tyVec l (tyWf l A N) N[lsingle a] @ l ] /\
+  [ G ; Γ ⊢[ i ] cs ≅ cs' : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
+  [ G ; Γ ⊢[ i ] tmSupf l' A' N' a' cs' : tyWf l A N @ l ] /\
+  [ G ; Γ ⊢[ i ] tmSupf l A N a cs ≅ tmSupf l' A' N' a' cs' : tyWf l A N @ l ].
+Proof.
+  intros Hc Hl Hl' E HA [HA' HAA] HN [HN' HNN] Ha [Ha' Haa] Hcs [Hcs' Hcscs]. pose proof (lq Hl Hl' E) as Q.
+  pose proof (sc_self Hc) as Hs. pose proof (compt_notV _ Hc) as Hv.
+  split; [exact (pre_supf_r Hs Hv Q HA HAA HA' HN HNN HN' Haa Ha Ha' Hcs') | apply eqtm_supf; auto].
+Qed.
+
+Lemma sc_elimWf {Γ l1 l2 l1' l2' A A' N N' M M' c c' t t'} : compt i ->
+  lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] N' : tyNat @ lzero ] /\ [ G ; Γ ,, A @ l1 ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyWf l1 A N @ l1 ⊢[ i ] M @ l2 ] ->
+  [ G ; Γ ,, tyWf l1 A N @ l1 ⊢[ i ] M' @ l2 ] /\ [ G ; Γ ,, tyWf l1 A N @ l1 ⊢[ i ] M ≅ M' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] wfcsty l1 A N @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ⊢[ i ] wfihty l1 l2 A N M @ lmax lzero l2 ] ->
+  [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ,, wfihty l1 l2 A N M @ lmax lzero l2
+      ⊢[ i ] c : wfstepty l1 A N M @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ,, wfihty l1 l2 A N M @ lmax lzero l2
+      ⊢[ i ] c' : wfstepty l1 A N M @ l2 ] /\
+  [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ,, wfihty l1 l2 A N M @ lmax lzero l2
+      ⊢[ i ] c ≅ c' : wfstepty l1 A N M @ l2 ] ->
+  [ G ; Γ ⊢[ i ] t : tyWf l1 A N @ l1 ] ->
+  [ G ; Γ ⊢[ i ] t' : tyWf l1 A N @ l1 ] /\ [ G ; Γ ⊢[ i ] t ≅ t' : tyWf l1 A N @ l1 ] ->
+  [ G ; Γ ⊢[ i ] tmElimWf l1' l2' A' N' M' c' t' : M[lsingle t] @ l2 ] /\
+  [ G ; Γ ⊢[ i ] tmElimWf l1 l2 A N M c t ≅ tmElimWf l1' l2' A' N' M' c' t' : M[lsingle t] @ l2 ].
+Proof.
+  intros Hc H1 H2 H1' H2' E1 E2 HA [HA' HAA] HN [HN' HNN] HM [HM' HMM] HC HI Hc0 [Hc' Hcc] Ht [Ht' Htt].
+  pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2.
+  pose proof (sc_self Hc) as Hs. pose proof (compt_notV _ Hc) as Hv.
+  split; [exact (pre_elimWf_r Hs Hv Q1 Q2 HAA HA HA' HNN HN HN' HMM HM HM' HC HI Hc' Htt Ht Ht')
+         | apply eqtm_elimWf; auto].
+Qed.
+
 End SC.
 
 (** ** The lemma *)
@@ -1578,6 +1637,8 @@ Proof.
     | solve [eapply sc_vec; eauto] | solve [eapply sc_fin; eauto]
     (* their codes (M14b) *)
     | solve [eapply sc_code_vec; eauto] | solve [eapply sc_code_fin; eauto]
+    (* finitary well-founded trees (M15a) *)
+    | solve [eapply sc_wf; eauto] | solve [eapply sc_supf; eauto] | solve [eapply sc_elimWf; eauto]
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x
         |- _ /\ eq_tm _ _ _ (succ _) _ _ _ =>

@@ -13,7 +13,7 @@ Definition ty_head (T : ty) : nat :=
   | tyGvar _ _ | tyEl _ _ | tyVec _ _ _ | tyFin _ => 0 | tyNat => 1 | tyU _ => 2 | tyPi _ _ _ _ => 3
   | tyCTyp _ _ => 4 | tyCTrm _ _ _ => 5 | tyUPi _ _ _ => 6 | tyCPi _ _ => 7 | tyTPi _ _ _ _ => 8
   | tyErr => 9 | tySig _ _ _ _ => 10 | tyUnit _ => 11 | tySEq _ _ _ _ => 12 | tySEmpty _ => 13
-  | tyId _ _ _ _ => 14 | tyEmpty _ => 15 | tySum _ _ _ _ => 16 | tyW _ _ _ _ => 17
+  | tyId _ _ _ _ => 14 | tyEmpty _ => 15 | tySum _ _ _ _ => 16 | tyW _ _ _ _ => 17 | tyWf _ _ _ => 18
   end.
 
 Lemma whne_ty_head V : whne_ty V -> ty_head V = 0.

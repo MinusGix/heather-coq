@@ -230,6 +230,21 @@ Proof.
   rewrite ?unf_ren_ty, ?unf_ren, ?unf_lsingle_ty. cbn [unf_ty]. reflexivity.
 Qed.
 
+Lemma unf_tmNth l T k cs j :
+  unf_tm (tmNth l T k cs j) = tmNth l (unf_ty T) (unf_tm k) (unf_tm cs) (unf_tm j).
+Proof.
+  unfold tmNth, nthMot, nthBase, nthStep; cbn [unf_tm unf_ty].
+  rewrite ?unf_ren_ty, ?unf_ren. reflexivity.
+Qed.
+Lemma unf_wfIH l l' A N M c a cs :
+  unf_tm (wfIH l l' A N M c a cs) =
+  wfIH l l' (unf_ty A) (unf_tm N) (unf_ty M) (unf_tm c) (unf_tm a) (unf_tm cs).
+Proof.
+  unfold wfIH; cbn [unf_tm unf_ty].
+  rewrite ?unf_ren_ty, ?unf_ren, ?unf_lsingle, ?unf_subst, unf_tmNth. cbn [unf_ty].
+  rewrite ?unf_ren_ty, ?unf_ren, ?unf_lsingle, ?unf_subst. reflexivity.
+Qed.
+
 Ltac unf_peel_push :=
   repeat first [ rewrite <- peelL_unf by hd_tac
                | rewrite <- peelG_unf by hd_tac
@@ -281,7 +296,7 @@ Ltac unf_rw_all :=
     ?unf_ren_ty, ?unf_ren, ?unf_gren_ty, ?unf_gren, ?unf_gren_ctx,
     ?unf_uren_ty, ?unf_uren, ?unf_uren_ctx, ?unf_usubst_ty, ?unf_usubst, ?unf_usubst_ctx,
     ?unf_gsingle_ty, ?unf_gsingle, ?motT_wrap_unf, ?mott_wrap_unf, ?mkrb_unf, ?wrapMT_unf, ?wrapMt_unf,
-    ?unf_wIH, ?recGT_unf, ?recGt_unf, ?recΓT_unf, ?recΓt_unf, ?unf_G_uwk in *.
+    ?unf_wIH, ?unf_wfIH, ?unf_tmNth, ?recGT_unf, ?recGt_unf, ?recΓT_unf, ?recΓt_unf, ?unf_G_uwk in *.
 
 Ltac unf_norm := unf_push; do 2 (unf_rw_all; unf_push).
 

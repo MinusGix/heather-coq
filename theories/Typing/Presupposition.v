@@ -1905,6 +1905,862 @@ Proof.
   - change (lcons (lcons (lshift 0) a) f) with (lsingle2 a f). exact (W_IH_wf Hl Hl' Hl'' HA HB HM Hc Ha Hf).
 Qed.
 
+Ltac teq_core := repeat first [ rewrite ren_as_r2l_ty | rewrite ren_as_r2l ];
+  repeat first [ rewrite subst_comp_ty | rewrite subst_comp ];
+  first [ apply subst_ext_ty | apply subst_ext
+        | apply subst_id_ty; [assumption|] | apply subst_id; [assumption|]
+        | symmetry; apply subst_id_ty; [assumption|] | symmetry; apply subst_id; [assumption|] ];
+  intros [|[|[|[|[|[|[|[|?n]]]]]]]]; unfold lsucc; pw;
+  try solve [apply ren_as_r2l | symmetry; apply ren_as_r2l].
+
+(** ** The [nth] schema (M15a) *)
+
+Lemma nth_E0 l (T : ty) : nfty T ->
+  (nthMot l T)[lsingle zero] = tyPi l l (tyVec l T zero) (tyPi lzero l (tyFin zero) T⟨↑⟩⟨↑⟩).
+Proof. intros NT. unfold nthMot. push_subst. f_equal; [f_equal|f_equal]; teq_core. Qed.
+Lemma nth_ES l (T : ty) :
+  (nthMot l T)[lsucc] = tyPi l l (tyVec l T⟨↑⟩⟨↑⟩ (succ (var 1))) (tyPi lzero l (tyFin (succ (var 2))) T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩).
+Proof. unfold nthMot. push_subst. f_equal; [f_equal|f_equal]; teq_core. Qed.
+Lemma nth_Ek l (T : ty) k : nfty T -> nftm k ->
+  (nthMot l T)[lsingle k] = tyPi l l (tyVec l T k) (tyPi lzero l (tyFin k⟨↑⟩) T⟨↑⟩⟨↑⟩).
+Proof. intros NT Nk. unfold nthMot. push_subst. f_equal; [f_equal|f_equal]; try teq_core; pw. Qed.
+Lemma nth_Ecs l (T : ty) k cs : nfty T -> nftm k ->
+  (tyPi lzero l (tyFin k⟨↑⟩) T⟨↑⟩⟨↑⟩)[lsingle cs] = tyPi lzero l (tyFin k) T⟨↑⟩.
+Proof. intros NT Nk. push_subst. f_equal; [f_equal|]; teq_core. Qed.
+
+Lemma lq_0l {l} : lwf (gL G) l -> lequiv (gL G) (lmax lzero l) l.
+Proof. intros Hl. eapply lequiv_trans; [apply lmax_comm; cbn; auto | apply lmax_zero; auto]. Qed.
+Lemma lq_mot {l} : lwf (gL G) l -> lequiv (gL G) (lmax l (lmax lzero l)) l.
+Proof.
+  intros Hl. eapply lequiv_trans; [apply lequiv_max; [apply lequiv_refl, Hl | apply lq_0l, Hl] | apply lmax_idem, Hl].
+Qed.
+Lemma lq_ll {l} : lwf (gL G) l -> lequiv (gL G) (lmax l l) l.
+Proof. apply lmax_idem. Qed.
+
+(** Weakening by several locals at once. *)
+Ltac wkn H := first [ exact H | eapply (wk1_ty G i Hi); [eassumption | wkn H] | eapply (wk1_tm G i Hi); [eassumption | wkn H] ].
+Ltac wvar := eapply wf_tm_retype; [eapply wf_var; [rewrite Hi; eassumption | repeat constructor] | cbn; try reflexivity].
+Ltac wvar_raw := eapply wf_var; [rewrite Hi; eassumption | repeat constructor].
+
+Lemma nth_mot_wf {Γ l T} : lwf (gL G) l -> [ G ; Γ ⊢[ i ] T @ l ] ->
+  [ G ; Γ ,, tyNat @ lzero ⊢[ i ] nthMot l T @ l ].
+Proof.
+  intros Hl HT. pose proof (ctx_of_wf_ty Hi HT) as H0.
+  assert (H1 : [ G ; Γ ,, tyNat @ lzero ⊢[ i ] ]) by (apply ext_wf; [apply wft_nat; auto; now rewrite Hi | cbn; auto]).
+  assert (HV : [ G ; Γ ,, tyNat @ lzero ⊢[ i ] tyVec l T⟨↑⟩ (var 0) @ l ]) by (apply wft_vec; auto; [wkn HT | wvar]).
+  assert (H2 : [ G ; Γ ,, tyNat @ lzero ,, tyVec l T⟨↑⟩ (var 0) @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HF : [ G ; Γ ,, tyNat @ lzero ,, tyVec l T⟨↑⟩ (var 0) @ l ⊢[ i ] tyFin (var 1) @ lzero ])
+    by (apply wft_fin; auto; wvar).
+  assert (H3 : [ G ; Γ ,, tyNat @ lzero ,, tyVec l T⟨↑⟩ (var 0) @ l ,, tyFin (var 1) @ lzero ⊢[ i ] ])
+    by (apply ext_wf; cbn; auto).
+  unfold nthMot. eapply wft_lconv; [| apply lequiv_sym, lq_ll, Hl].
+  apply wft_pi; auto. eapply wft_lconv; [| apply lequiv_sym, lq_0l, Hl].
+  apply wft_pi; cbn; auto. wkn HT.
+Qed.
+
+Lemma nth_base_wf {Γ l T} : lwf (gL G) l -> [ G ; Γ ⊢[ i ] T @ l ] ->
+  [ G ; Γ ⊢[ i ] nthBase l T : (nthMot l T)[lsingle zero] @ l ].
+Proof.
+  intros Hl HT. pose proof (ctx_of_wf_ty Hi HT) as H0.
+  rewrite nth_E0 by exact (wf_ty_nf HT). unfold nthBase.
+  assert (Hz : [ G ; Γ ⊢[ i ] zero : tyNat @ lzero ]) by (apply wf_zero; auto; now rewrite Hi).
+  assert (HV : [ G ; Γ ⊢[ i ] tyVec l T zero @ l ]) by (apply wft_vec; auto).
+  assert (H1 : [ G ; Γ ,, tyVec l T zero @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HF : [ G ; Γ ,, tyVec l T zero @ l ⊢[ i ] tyFin zero @ lzero ])
+    by (apply wft_fin; auto; apply wf_zero; auto; now rewrite Hi).
+  assert (H2 : [ G ; Γ ,, tyVec l T zero @ l ,, tyFin zero @ lzero ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+  assert (HE : [ G ; Γ ,, tyVec l T zero @ l ,, tyFin zero @ lzero ⊢[ i ] tyEmpty lzero @ lzero ])
+    by (apply wft_empty; cbn; auto; now rewrite Hi).
+  assert (H3 : [ G ; Γ ,, tyVec l T zero @ l ,, tyFin zero @ lzero ,, tyEmpty lzero @ lzero ⊢[ i ] ])
+    by (apply ext_wf; cbn; auto).
+  eapply wf_lconv; [| apply lequiv_sym, lq_ll, Hl].
+  apply wf_lam; auto. eapply wf_lconv; [| apply lequiv_sym, lq_0l, Hl].
+  apply wf_lam; cbn; auto.
+  eapply wf_tm_retype; [apply wf_elimEmpty; cbn; auto; [wkn HT|] | teq_core].
+  eapply conv_tm'; [wvar|]. apply eqty_sym, eqty_fin_zero; [apply compt_self | now rewrite Hi].
+Qed.
+
+Lemma nth_step_wf {Γ l T} : lwf (gL G) l -> [ G ; Γ ⊢[ i ] T @ l ] ->
+  [ G ; Γ ,, tyNat @ lzero ,, nthMot l T @ l ⊢[ i ] nthStep l T : (nthMot l T)[lsucc] @ l ].
+Proof.
+  intros Hl HT. pose proof (ctx_of_wf_ty Hi HT) as H0.
+  pose proof (nth_mot_wf Hl HT) as HM. pose proof (ctx_of_wf_ty Hi HM) as H1.
+  assert (H2 : [ G ; Γ ,, tyNat @ lzero ,, nthMot l T @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+  rewrite nth_ES. unfold nthStep.
+  set (Δ0 := Γ ,, tyNat @ lzero ,, nthMot l T @ l) in *.
+  assert (HV : [ G ; Δ0 ⊢[ i ] tyVec l T⟨↑⟩⟨↑⟩ (succ (var 1)) @ l ])
+    by (apply wft_vec; auto; [wkn HT | apply wf_succ; auto; wvar]).
+  assert (H3 : [ G ; Δ0 ,, tyVec l T⟨↑⟩⟨↑⟩ (succ (var 1)) @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HF : [ G ; Δ0 ,, tyVec l T⟨↑⟩⟨↑⟩ (succ (var 1)) @ l ⊢[ i ] tyFin (succ (var 2)) @ lzero ])
+    by (apply wft_fin; auto; apply wf_succ; auto; wvar).
+  set (Δ1 := Δ0 ,, tyVec l T⟨↑⟩⟨↑⟩ (succ (var 1)) @ l ,, tyFin (succ (var 2)) @ lzero).
+  assert (H4 : [ G ; Δ1 ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+  assert (Hk : [ G ; Δ1 ⊢[ i ] var 3 : tyNat @ lzero ]) by wvar.
+  assert (HU : [ G ; Δ1 ⊢[ i ] tyUnit lzero @ lzero ]) by (apply wft_unit; cbn; auto; now rewrite Hi).
+  assert (HFk : [ G ; Δ1 ⊢[ i ] tyFin (var 3) @ lzero ]) by (apply wft_fin; auto).
+  assert (HS : [ G ; Δ1 ⊢[ i ] tySum lzero lzero (tyUnit lzero) (tyFin (var 3)) @ lmax lzero lzero ])
+    by (apply wft_sum; cbn; auto).
+  assert (H5 : [ G ; Δ1 ,, tySum lzero lzero (tyUnit lzero) (tyFin (var 3)) @ lmax lzero lzero ⊢[ i ] ])
+    by (apply ext_wf; cbn; auto).
+  assert (H5u : [ G ; Δ1 ,, tyUnit lzero @ lzero ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+  assert (H5f : [ G ; Δ1 ,, tyFin (var 3) @ lzero ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+  (* the tuple, as a pair, in either branch *)
+  assert (Hcs : forall X, [ G ; Δ1 ,, X @ lzero ⊢[ i ] ] ->
+            [ G ; Δ1 ,, X @ lzero ⊢[ i ] var 2 : tySig l l T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ (tyVec l T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ (var 5)) @ lmax l l ]
+            /\ [ G ; Δ1 ,, X @ lzero ⊢[ i ] T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ @ l ]
+            /\ [ G ; Δ1 ,, X @ lzero ,, T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ @ l ⊢[ i ] tyVec l T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ (var 5) @ l ]).
+  { intros X HX. assert (HT5 : [ G ; Δ1 ,, X @ lzero ⊢[ i ] T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ @ l ]) by wkn HT.
+    assert (HX5 : [ G ; Δ1 ,, X @ lzero ,, T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+    assert (Hk4 : [ G ; Δ1 ,, X @ lzero ⊢[ i ] var 4 : tyNat @ lzero ]) by wvar.
+    split; [|split; [exact HT5|]].
+    - eapply wf_lconv; [| apply lq_ll, Hl]. eapply conv_tm'; [wvar|].
+      apply eqty_sym, eqty_vec_succ; auto using compt_self.
+    - apply wft_vec; auto; [wkn HT | wvar]. }
+  eapply wf_lconv; [| apply lequiv_sym, lq_ll, Hl].
+  apply wf_lam; auto. eapply wf_lconv; [| apply lequiv_sym, lq_0l, Hl].
+  apply wf_lam; cbn; auto.
+  eapply wf_tm_retype; [apply wf_case; cbn; auto | teq_core].
+  - wkn HT.
+  - (* the head *)
+    destruct (Hcs _ H5u) as (Hp & HT5 & HV5).
+    eapply wf_tm_retype; [apply wf_fst; eauto | teq_core].
+  - (* the tail, recursively *)
+    destruct (Hcs _ H5f) as (Hp & HT5 & HV5).
+    set (Δ2 := Δ1 ,, tyFin (var 3) @ lzero) in *.
+    assert (Hk4 : [ G ; Δ2 ⊢[ i ] var 4 : tyNat @ lzero ]) by wvar.
+    assert (HF4 : [ G ; Δ2 ⊢[ i ] tyFin (var 4) @ lzero ]) by (apply wft_fin; auto).
+    assert (H6 : [ G ; Δ2 ,, tyFin (var 4) @ lzero ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+    assert (HV4 : [ G ; Δ2 ⊢[ i ] tyVec l T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ (var 4) @ l ]) by (apply wft_vec; auto).
+    assert (H7 : [ G ; Δ2 ,, tyVec l T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ (var 4) @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+    assert (HF5 : [ G ; Δ2 ,, tyVec l T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ (var 4) @ l ⊢[ i ] tyFin (var 5) @ lzero ])
+      by (apply wft_fin; auto; wvar).
+    assert (H8 : [ G ; Δ2 ,, tyVec l T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ (var 4) @ l ,, tyFin (var 5) @ lzero ⊢[ i ] ])
+      by (apply ext_wf; cbn; auto).
+    eapply wf_tm_retype; [apply wf_app; cbn; auto | teq_core].
+    + wkn HT.
+    + eapply wf_lconv; [| apply lq_0l, Hl].
+      eapply wf_tm_retype; [apply wf_app; auto | push_subst; f_equal; try teq_core; pw].
+      * eapply wft_lconv; [| apply lequiv_sym, lq_0l, Hl]. apply wft_pi; cbn; auto. wkn HT.
+      * eapply wf_lconv; [| apply lq_ll, Hl].
+        wvar. unfold nthMot. push_ren. f_equal; f_equal; teq_core.
+      * eapply wf_tm_retype; [apply wf_snd; eauto | push_subst; f_equal; try teq_core; pw].
+    + wvar.
+  - eapply wf_lconv; [| apply lq_ll; cbn; auto]. eapply conv_tm'; [wvar|].
+    apply eqty_sym, eqty_fin_succ; auto using compt_self.
+Qed.
+
+Lemma nth_wf {Γ l T k cs j} : lwf (gL G) l -> [ G ; Γ ⊢[ i ] T @ l ] ->
+  [ G ; Γ ⊢[ i ] k : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] cs : tyVec l T k @ l ] ->
+  [ G ; Γ ⊢[ i ] j : tyFin k @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tmNth l T k cs j : T @ l ].
+Proof.
+  intros Hl HT Hk Hcs Hj. pose proof (ctx_of_wf_ty Hi HT) as H0.
+  pose proof (wf_ty_nf HT) as NT. pose proof (wf_tm_nf Hk) as Nk.
+  assert (HV : [ G ; Γ ⊢[ i ] tyVec l T k @ l ]) by (apply wft_vec; auto).
+  assert (H1 : [ G ; Γ ,, tyVec l T k @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HF : [ G ; Γ ⊢[ i ] tyFin k @ lzero ]) by (apply wft_fin; auto).
+  assert (H2 : [ G ; Γ ,, tyFin k @ lzero ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+  assert (Hk1 : [ G ; Γ ,, tyVec l T k @ l ⊢[ i ] k⟨↑⟩ : tyNat @ lzero ]) by (eapply wf_tm_retype; [wkn Hk | reflexivity]).
+  assert (HF1 : [ G ; Γ ,, tyVec l T k @ l ⊢[ i ] tyFin k⟨↑⟩ @ lzero ]) by (apply wft_fin; auto).
+  assert (H3 : [ G ; Γ ,, tyVec l T k @ l ,, tyFin k⟨↑⟩ @ lzero ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+  unfold tmNth.
+  eapply wf_tm_retype; [apply wf_app; cbn; auto | teq_core].
+  - wkn HT.
+  - eapply wf_lconv; [| apply lq_0l, Hl].
+    eapply wf_tm_retype; [apply wf_app; auto | apply nth_Ecs; assumption].
+    + eapply wft_lconv; [| apply lequiv_sym, lq_0l, Hl]. apply wft_pi; cbn; auto. wkn HT.
+    + eapply wf_lconv; [| apply lq_ll, Hl].
+      rewrite <- nth_Ek by assumption.
+      apply wf_natrec; auto using nth_mot_wf, nth_base_wf, nth_step_wf.
+Qed.
+
+Ltac wkne H := first [ exact H | eapply (wk1_eqty G i Hi); [eassumption | wkne H]
+                     | eapply (wk1_eqtm G i Hi); [eassumption | wkne H] ].
+Ltac wvar_eq := apply eqtm_refl; wvar.
+Ltac sides := try solve [ cbn; auto | apply lequiv_refl; cbn; auto ].
+
+Lemma nth_mot_eq {Γ l l' T T'} : lequiv (gL G) l l' -> [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->
+  [ G ; Γ ,, tyNat @ lzero ⊢[ i ] nthMot l T ≅ nthMot l' T' @ l ].
+Proof.
+  intros H HT HTT. pose proof (lequiv_wf_l _ _ _ H) as Hl. pose proof (ctx_of_wf_ty Hi HT) as H0.
+  assert (H1 : [ G ; Γ ,, tyNat @ lzero ⊢[ i ] ]) by (apply ext_wf; [apply wft_nat; auto; now rewrite Hi | cbn; auto]).
+  assert (HV : [ G ; Γ ,, tyNat @ lzero ⊢[ i ] tyVec l T⟨↑⟩ (var 0) @ l ]) by (apply wft_vec; auto; [wkn HT | wvar]).
+  assert (H2 : [ G ; Γ ,, tyNat @ lzero ,, tyVec l T⟨↑⟩ (var 0) @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HF : [ G ; Γ ,, tyNat @ lzero ,, tyVec l T⟨↑⟩ (var 0) @ l ⊢[ i ] tyFin (var 1) @ lzero ])
+    by (apply wft_fin; auto; wvar).
+  assert (H3 : [ G ; Γ ,, tyNat @ lzero ,, tyVec l T⟨↑⟩ (var 0) @ l ,, tyFin (var 1) @ lzero ⊢[ i ] ])
+    by (apply ext_wf; cbn; auto).
+  unfold nthMot. eapply eqty_lconv; [| apply lequiv_sym, lq_ll, Hl].
+  apply eqty_pi; auto.
+  - apply eqty_vec; auto; [wkn HT | wkne HTT | wvar_eq].
+  - eapply eqty_lconv; [| apply lequiv_sym, lq_0l, Hl].
+    apply eqty_pi; sides; [apply eqty_refl; exact HF | wkne HTT].
+Qed.
+
+Lemma nth_base_eq {Γ l l' T T'} : lequiv (gL G) l l' -> [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->
+  [ G ; Γ ⊢[ i ] nthBase l T ≅ nthBase l' T' : (nthMot l T)[lsingle zero] @ l ].
+Proof.
+  intros H HT HTT. pose proof (lequiv_wf_l _ _ _ H) as Hl. pose proof (ctx_of_wf_ty Hi HT) as H0.
+  rewrite nth_E0 by exact (wf_ty_nf HT). unfold nthBase.
+  assert (Hz : [ G ; Γ ⊢[ i ] zero : tyNat @ lzero ]) by (apply wf_zero; auto; now rewrite Hi).
+  assert (HV : [ G ; Γ ⊢[ i ] tyVec l T zero @ l ]) by (apply wft_vec; auto).
+  assert (H1 : [ G ; Γ ,, tyVec l T zero @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HF : [ G ; Γ ,, tyVec l T zero @ l ⊢[ i ] tyFin zero @ lzero ])
+    by (apply wft_fin; auto; apply wf_zero; auto; now rewrite Hi).
+  assert (H2 : [ G ; Γ ,, tyVec l T zero @ l ,, tyFin zero @ lzero ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+  assert (HE : [ G ; Γ ,, tyVec l T zero @ l ,, tyFin zero @ lzero ⊢[ i ] tyEmpty lzero @ lzero ])
+    by (apply wft_empty; cbn; auto; now rewrite Hi).
+  assert (H3 : [ G ; Γ ,, tyVec l T zero @ l ,, tyFin zero @ lzero ,, tyEmpty lzero @ lzero ⊢[ i ] ])
+    by (apply ext_wf; cbn; auto).
+  eapply eqtm_lconv; [| apply lequiv_sym, lq_ll, Hl].
+  apply eqtm_lam; auto; [apply eqty_vec; auto; apply eqtm_refl, Hz |].
+  eapply eqtm_lconv; [| apply lequiv_sym, lq_0l, Hl].
+  apply eqtm_lam; sides; [apply eqty_refl, HF |].
+  eapply eq_tm_retype; [apply eqtm_elimEmpty; sides; [wkn HT | wkne HTT |] | teq_core].
+  apply eqtm_refl. eapply conv_tm'; [wvar|]. apply eqty_sym, eqty_fin_zero; [apply compt_self | now rewrite Hi].
+Qed.
+
+Lemma nth_step_eq {Γ l l' T T'} : lequiv (gL G) l l' -> [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->
+  [ G ; Γ ,, tyNat @ lzero ,, nthMot l T @ l ⊢[ i ] nthStep l T ≅ nthStep l' T' : (nthMot l T)[lsucc] @ l ].
+Proof.
+  intros H HT HTT. pose proof (lequiv_wf_l _ _ _ H) as Hl. pose proof (ctx_of_wf_ty Hi HT) as H0.
+  pose proof (nth_mot_wf Hl HT) as HM. pose proof (ctx_of_wf_ty Hi HM) as H1.
+  assert (H2 : [ G ; Γ ,, tyNat @ lzero ,, nthMot l T @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+  rewrite nth_ES. unfold nthStep.
+  set (Δ0 := Γ ,, tyNat @ lzero ,, nthMot l T @ l) in *.
+  assert (HV : [ G ; Δ0 ⊢[ i ] tyVec l T⟨↑⟩⟨↑⟩ (succ (var 1)) @ l ])
+    by (apply wft_vec; auto; [wkn HT | apply wf_succ; auto; wvar]).
+  assert (H3 : [ G ; Δ0 ,, tyVec l T⟨↑⟩⟨↑⟩ (succ (var 1)) @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HF : [ G ; Δ0 ,, tyVec l T⟨↑⟩⟨↑⟩ (succ (var 1)) @ l ⊢[ i ] tyFin (succ (var 2)) @ lzero ])
+    by (apply wft_fin; auto; apply wf_succ; auto; wvar).
+  set (Δ1 := Δ0 ,, tyVec l T⟨↑⟩⟨↑⟩ (succ (var 1)) @ l ,, tyFin (succ (var 2)) @ lzero).
+  assert (H4 : [ G ; Δ1 ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+  assert (Hk : [ G ; Δ1 ⊢[ i ] var 3 : tyNat @ lzero ]) by wvar.
+  assert (HU : [ G ; Δ1 ⊢[ i ] tyUnit lzero @ lzero ]) by (apply wft_unit; cbn; auto; now rewrite Hi).
+  assert (HFk : [ G ; Δ1 ⊢[ i ] tyFin (var 3) @ lzero ]) by (apply wft_fin; auto).
+  assert (HS : [ G ; Δ1 ⊢[ i ] tySum lzero lzero (tyUnit lzero) (tyFin (var 3)) @ lmax lzero lzero ])
+    by (apply wft_sum; cbn; auto).
+  assert (H5 : [ G ; Δ1 ,, tySum lzero lzero (tyUnit lzero) (tyFin (var 3)) @ lmax lzero lzero ⊢[ i ] ])
+    by (apply ext_wf; cbn; auto).
+  assert (H5u : [ G ; Δ1 ,, tyUnit lzero @ lzero ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+  assert (H5f : [ G ; Δ1 ,, tyFin (var 3) @ lzero ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+  assert (Hcs : forall X, [ G ; Δ1 ,, X @ lzero ⊢[ i ] ] ->
+            [ G ; Δ1 ,, X @ lzero ⊢[ i ] var 2 : tySig l l T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ (tyVec l T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ (var 5)) @ lmax l l ]
+            /\ [ G ; Δ1 ,, X @ lzero ⊢[ i ] T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ @ l ]
+            /\ [ G ; Δ1 ,, X @ lzero ⊢[ i ] T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ ≅ T'⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ @ l ]
+            /\ [ G ; Δ1 ,, X @ lzero ,, T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ @ l ⊢[ i ]
+                 tyVec l T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ (var 5) ≅ tyVec l' T'⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ (var 5) @ l ]).
+  { intros X HX. assert (HT5 : [ G ; Δ1 ,, X @ lzero ⊢[ i ] T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ @ l ]) by wkn HT.
+    assert (HX5 : [ G ; Δ1 ,, X @ lzero ,, T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+    assert (Hk4 : [ G ; Δ1 ,, X @ lzero ⊢[ i ] var 4 : tyNat @ lzero ]) by wvar.
+    split; [|split; [exact HT5|split; [wkne HTT|]]].
+    - eapply wf_lconv; [| apply lq_ll, Hl]. eapply conv_tm'; [wvar|].
+      apply eqty_sym, eqty_vec_succ; auto using compt_self.
+    - apply eqty_vec; auto; [wkn HT | wkne HTT | wvar_eq]. }
+  eapply eqtm_lconv; [| apply lequiv_sym, lq_ll, Hl].
+  apply eqtm_lam; auto; [apply eqty_vec; auto; [wkn HT | wkne HTT | apply eqtm_refl, wf_succ; auto; wvar] |].
+  eapply eqtm_lconv; [| apply lequiv_sym, lq_0l, Hl].
+  apply eqtm_lam; sides; [apply eqty_refl, HF |].
+  eapply eq_tm_retype; [apply eqtm_case; sides | teq_core].
+  all: try solve [ apply eqty_refl; assumption | assumption | wkn HT | wkne HTT ].
+  - (* the head *)
+    destruct (Hcs _ H5u) as (Hp & HT5 & HTT5 & HVV5).
+    eapply eq_tm_retype; [apply eqtm_fst; sides; apply eqtm_refl, Hp | teq_core].
+  - (* the tail, recursively *)
+    destruct (Hcs _ H5f) as (Hp & HT5 & HTT5 & HVV5).
+    set (Δ2 := Δ1 ,, tyFin (var 3) @ lzero) in *.
+    assert (Hk4 : [ G ; Δ2 ⊢[ i ] var 4 : tyNat @ lzero ]) by wvar.
+    assert (HF4 : [ G ; Δ2 ⊢[ i ] tyFin (var 4) @ lzero ]) by (apply wft_fin; auto).
+    assert (H6 : [ G ; Δ2 ,, tyFin (var 4) @ lzero ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+    assert (HV4 : [ G ; Δ2 ⊢[ i ] tyVec l T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ (var 4) @ l ]) by (apply wft_vec; auto).
+    assert (H7 : [ G ; Δ2 ,, tyVec l T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ (var 4) @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+    assert (HF5 : [ G ; Δ2 ,, tyVec l T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ (var 4) @ l ⊢[ i ] tyFin (var 5) @ lzero ])
+      by (apply wft_fin; auto; wvar).
+    assert (H8 : [ G ; Δ2 ,, tyVec l T⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ (var 4) @ l ,, tyFin (var 5) @ lzero ⊢[ i ] ])
+      by (apply ext_wf; cbn; auto).
+    eapply eq_tm_retype; [apply eqtm_app; sides | teq_core].
+    + apply eqty_refl, HF4.
+    + wkne HTT.
+    + eapply eqtm_lconv; [| apply lq_0l, Hl].
+      eapply eq_tm_retype; [apply eqtm_app; sides | push_subst; f_equal; try teq_core; pw].
+      * apply eqty_vec; auto; first [wkne HTT | wvar_eq].
+      * eapply eqty_lconv; [| apply lequiv_sym, lq_0l, Hl]. apply eqty_pi; sides; [apply eqty_refl, HF5 | wkne HTT].
+      * eapply eqtm_lconv; [| apply lq_ll, Hl].
+        apply eqtm_refl. wvar. unfold nthMot. push_ren. f_equal; f_equal; teq_core.
+      * eapply eq_tm_retype; [apply eqtm_snd; sides; apply eqtm_refl, Hp | push_subst; f_equal; try teq_core; pw].
+    + wvar_eq.
+  - apply eqtm_refl. eapply wf_lconv; [| apply lq_ll; cbn; auto]. eapply conv_tm'; [wvar|].
+    apply eqty_sym, eqty_fin_succ; auto using compt_self.
+Qed.
+
+Lemma nth_eq {Γ l l' T T' k k' cs cs' j j'} : lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->
+  [ G ; Γ ⊢[ i ] k : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] k ≅ k' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] cs ≅ cs' : tyVec l T k @ l ] ->
+  [ G ; Γ ⊢[ i ] j ≅ j' : tyFin k @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tmNth l T k cs j ≅ tmNth l' T' k' cs' j' : T @ l ].
+Proof.
+  intros H HT HTT Hk Hkk Hcs Hj. pose proof (lequiv_wf_l _ _ _ H) as Hl. pose proof (ctx_of_wf_ty Hi HT) as H0.
+  pose proof (wf_ty_nf HT) as NT. pose proof (wf_tm_nf Hk) as Nk.
+  assert (HV : [ G ; Γ ⊢[ i ] tyVec l T k @ l ]) by (apply wft_vec; auto).
+  assert (H1 : [ G ; Γ ,, tyVec l T k @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HF : [ G ; Γ ⊢[ i ] tyFin k @ lzero ]) by (apply wft_fin; auto).
+  assert (H2 : [ G ; Γ ,, tyFin k @ lzero ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+  assert (Hk1 : [ G ; Γ ,, tyVec l T k @ l ⊢[ i ] k⟨↑⟩ : tyNat @ lzero ]) by (eapply wf_tm_retype; [wkn Hk | reflexivity]).
+  assert (Hkk1 : [ G ; Γ ,, tyVec l T k @ l ⊢[ i ] k⟨↑⟩ ≅ k'⟨↑⟩ : tyNat @ lzero ])
+    by (eapply eq_tm_retype; [wkne Hkk | reflexivity]).
+  assert (HF1 : [ G ; Γ ,, tyVec l T k @ l ⊢[ i ] tyFin k⟨↑⟩ @ lzero ]) by (apply wft_fin; auto).
+  assert (H3 : [ G ; Γ ,, tyVec l T k @ l ,, tyFin k⟨↑⟩ @ lzero ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+  unfold tmNth.
+  eapply eq_tm_retype; [apply eqtm_app; sides | teq_core].
+  - apply eqty_fin; auto.
+  - wkne HTT.
+  - eapply eqtm_lconv; [| apply lq_0l, Hl].
+    eapply eq_tm_retype; [apply eqtm_app; sides | apply nth_Ecs; assumption].
+    + apply eqty_vec; auto.
+    + eapply eqty_lconv; [| apply lequiv_sym, lq_0l, Hl]. apply eqty_pi; sides; [apply eqty_fin; auto | wkne HTT].
+    + eapply eqtm_lconv; [| apply lq_ll, Hl].
+      rewrite <- nth_Ek by assumption.
+      apply eqtm_natrec; auto using nth_mot_wf, nth_mot_eq, nth_base_eq, nth_step_eq.
+Qed.
+
+(** ** Finitary well-founded trees (M15a) *)
+
+Lemma wk_under_tm {Γ X Y t T lx ly k} : [ G ; Γ ,, Y @ ly ,, X⟨↑⟩ @ lx ⊢[ i ] ] ->
+  [ G ; Γ ,, X @ lx ⊢[ i ] t : T @ k ] -> [ G ; Γ ,, Y @ ly ,, X⟨↑⟩ @ lx ⊢[ i ] t⟨rlift ↑⟩ : T⟨rlift ↑⟩ @ k ].
+Proof. intros HΔ HT. eapply weakening_r; eauto. apply wkr_up, wkr_shift1. Qed.
+Lemma wk_under_eqtm {Γ X Y t t' T lx ly k} : [ G ; Γ ,, Y @ ly ,, X⟨↑⟩ @ lx ⊢[ i ] ] ->
+  [ G ; Γ ,, X @ lx ⊢[ i ] t ≅ t' : T @ k ] ->
+  [ G ; Γ ,, Y @ ly ,, X⟨↑⟩ @ lx ⊢[ i ] t⟨rlift ↑⟩ ≅ t'⟨rlift ↑⟩ : T⟨rlift ↑⟩ @ k ].
+Proof. intros HΔ HT. eapply weakening_r; eauto. apply wkr_up, wkr_shift1. Qed.
+Lemma wk_under3_tm {Γ X Y Z X0 lx ly lz l0 t T k} : [ G ; Γ ,, X @ lx ,, Y @ ly ,, Z @ lz ⊢[ i ] ] ->
+  [ G ; Γ ⊢[ i ] X0 @ l0 ] -> lwf (gL G) l0 -> [ G ; Γ ,, X0 @ l0 ⊢[ i ] t : T @ k ] ->
+  [ G ; Γ ,, X @ lx ,, Y @ ly ,, Z @ lz ,, X0⟨↑⟩⟨↑⟩⟨↑⟩ @ l0 ⊢[ i ]
+      t⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ : T⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ @ k ].
+Proof.
+  intros H HX Hl HT. pose proof (ctx_pre H) as H2. pose proof (ctx_pre H2) as H1.
+  apply wk_under_tm; [apply ext_wf; [exact (wk3_ty H HX) | exact Hl]|].
+  apply wk_under_tm; [apply ext_wf; [eapply wk1_ty; eauto; eapply wk1_ty; eauto | exact Hl]|].
+  apply wk_under_tm; [apply ext_wf; [eapply wk1_ty; eauto | exact Hl]|]. exact HT.
+Qed.
+Lemma wk_under3_eqtm {Γ X Y Z X0 lx ly lz l0 t t' T k} : [ G ; Γ ,, X @ lx ,, Y @ ly ,, Z @ lz ⊢[ i ] ] ->
+  [ G ; Γ ⊢[ i ] X0 @ l0 ] -> lwf (gL G) l0 -> [ G ; Γ ,, X0 @ l0 ⊢[ i ] t ≅ t' : T @ k ] ->
+  [ G ; Γ ,, X @ lx ,, Y @ ly ,, Z @ lz ,, X0⟨↑⟩⟨↑⟩⟨↑⟩ @ l0 ⊢[ i ]
+      t⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ ≅ t'⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ : T⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ @ k ].
+Proof.
+  intros H HX Hl HT. pose proof (ctx_pre H) as H2. pose proof (ctx_pre H2) as H1.
+  apply wk_under_eqtm; [apply ext_wf; [exact (wk3_ty H HX) | exact Hl]|].
+  apply wk_under_eqtm; [apply ext_wf; [eapply wk1_ty; eauto; eapply wk1_ty; eauto | exact Hl]|].
+  apply wk_under_eqtm; [apply ext_wf; [eapply wk1_ty; eauto | exact Hl]|]. exact HT.
+Qed.
+
+Lemma wf_tm_func {Γ t T l Δ d d'} :
+  [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Δ ⊢[ i ] d ≅ d' : Γ ] -> [ G ; Δ ⊢[ i ] t[d] ≅ t[d'] : T[d] @ l ].
+Proof. intros; eapply functionality; eauto. Qed.
+
+(** The arity at equal shapes. *)
+Lemma Wf_Na_eq {Γ A N N' a a' l} :
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] N[lsingle a] ≅ N'[lsingle a'] : tyNat @ lzero ].
+Proof.
+  intros HN HNN Ha Ha' Haa. eapply eqtm_trans.
+  - exact (wf_tm_func HN (lsub_eq_single Ha Ha' Haa)).
+  - exact (eqtm_subst Hi HNN (lsub_wf_single G i Hi _ _ _ _ (ctx_of_wf_tm Hi Ha') Ha')).
+Qed.
+
+Lemma Wf_E2 (N : tm) : (N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩)[lsingle (var 2)] = N⟨↑⟩⟨↑⟩.
+Proof. teq_core. Qed.
+
+(** The children's tuple type, over any shape context [Γ, X]. *)
+Lemma Wf_cs_wf {Γ X lx l A N} : lwf (gL G) l ->
+  [ G ; Γ ⊢[ i ] tyWf l A N @ l ] -> [ G ; Γ ,, X @ lx ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, X @ lx ⊢[ i ] wfcsty l A N @ l ].
+Proof. intros Hl HW HN. pose proof (ctx_of_wf_tm Hi HN). apply wft_vec; auto. wkn HW. Qed.
+
+(** The children, two locals further. *)
+Lemma Wf_var1 {Γ X lx F lf Y ly l A N} :
+  [ G ; Γ ,, X @ lx ,, F @ lf ,, Y @ ly ⊢[ i ] ] -> [ G ; Γ ,, X @ lx ⊢[ i ] F ≅ wfcsty l A N @ lf ] ->
+  lequiv (gL G) lf l ->
+  [ G ; Γ ,, X @ lx ,, F @ lf ,, Y @ ly ⊢[ i ] var 1 : tyVec l (tyWf l A N)⟨↑⟩⟨↑⟩⟨↑⟩ N⟨↑⟩⟨↑⟩ @ l ].
+Proof.
+  intros HΔ HF Hlf. pose proof (ctx_pre HΔ) as H2.
+  eapply wf_conv; [eapply wf_lconv; [apply wf_var; [now rewrite Hi | do 2 constructor] | apply lequiv_sym, Hlf]|].
+  rewrite Hi. eapply eqty_lconv; [|apply lequiv_sym, Hlf].
+  apply eqty_sym. match goal with |- eq_ty _ _ _ _ ?T _ => change T with ((wfcsty l A N)⟨↑⟩⟨↑⟩) end.
+  eapply wk1_eqty; eauto. eapply wk1_eqty; eauto.
+Qed.
+
+(** The child at an index, in the [ih] entry's scope. *)
+Lemma Wf_nth_wf {Γ X lx F lf l A N} : lwf (gL G) l ->
+  [ G ; Γ ⊢[ i ] tyWf l A N @ l ] -> [ G ; Γ ,, X @ lx ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, X @ lx ,, F @ lf ⊢[ i ] ] -> [ G ; Γ ,, X @ lx ⊢[ i ] F ≅ wfcsty l A N @ lf ] -> lequiv (gL G) lf l ->
+  [ G ; Γ ,, X @ lx ,, F @ lf ,, tyFin N⟨↑⟩ @ lzero ⊢[ i ]
+      tmNth l (tyWf l A N)⟨↑⟩⟨↑⟩⟨↑⟩ N⟨↑⟩⟨↑⟩ (var 1) (var 0) : (tyWf l A N)⟨↑⟩⟨↑⟩⟨↑⟩ @ l ].
+Proof.
+  intros Hl HW HN H2 HF Hlf. pose proof (ctx_pre H2) as H1. pose proof (ctx_pre H1) as H0.
+  assert (HN1 : [ G ; Γ ,, X @ lx ,, F @ lf ⊢[ i ] N⟨↑⟩ : tyNat @ lzero ]) by (eapply wf_tm_retype; [wkn HN | reflexivity]).
+  assert (H3 : [ G ; Γ ,, X @ lx ,, F @ lf ,, tyFin N⟨↑⟩ @ lzero ⊢[ i ] ]) by (apply ext_wf; [apply wft_fin; auto | cbn; auto]).
+  apply nth_wf; auto.
+  - wkn HW.
+  - eapply wf_tm_retype; [wkn HN1 | reflexivity].
+  - exact (Wf_var1 H3 HF Hlf).
+  - wvar.
+Qed.
+
+(** The induction hypothesis's type. *)
+Lemma Wf_ih_wf {Γ X lx F lf l l' A N M} : lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] tyWf l A N @ l ] -> [ G ; Γ ,, X @ lx ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyWf l A N @ l ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ,, X @ lx ,, F @ lf ⊢[ i ] ] -> [ G ; Γ ,, X @ lx ⊢[ i ] F ≅ wfcsty l A N @ lf ] -> lequiv (gL G) lf l ->
+  [ G ; Γ ,, X @ lx ,, F @ lf ⊢[ i ] wfihty l l' A N M @ lmax lzero l' ].
+Proof.
+  intros Hl Hl' HW HN HM H2 HF Hlf. pose proof (ctx_pre H2) as H1. pose proof (ctx_pre H1) as H0.
+  assert (HN1 : [ G ; Γ ,, X @ lx ,, F @ lf ⊢[ i ] N⟨↑⟩ : tyNat @ lzero ]) by (eapply wf_tm_retype; [wkn HN | reflexivity]).
+  assert (HF1 : [ G ; Γ ,, X @ lx ,, F @ lf ⊢[ i ] tyFin N⟨↑⟩ @ lzero ]) by (apply wft_fin; auto).
+  assert (H3 : [ G ; Γ ,, X @ lx ,, F @ lf ,, tyFin N⟨↑⟩ @ lzero ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+  apply wft_pi; cbn; auto.
+  exact (wf_ty_single Hi (wk_under3_ty H3 HW Hl HM) (Wf_nth_wf Hl HW HN H2 HF Hlf)).
+Qed.
+
+(** [sup_f] of the step's shape and children. *)
+Lemma Wf_supf_step_wf {Γ X lx F lf Y ly l A N} : lwf (gL G) l ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, X @ lx ,, F @ lf ,, Y @ ly ⊢[ i ] ] ->
+  [ G ; Γ ⊢[ i ] X ≅ A @ l ] -> lequiv (gL G) lx l ->
+  [ G ; Γ ,, X @ lx ⊢[ i ] F ≅ wfcsty l A N @ lf ] -> lequiv (gL G) lf l ->
+  [ G ; Γ ,, X @ lx ,, F @ lf ,, Y @ ly ⊢[ i ]
+      tmSupf l A⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ (var 2) (var 1) : (tyWf l A N)⟨↑⟩⟨↑⟩⟨↑⟩ @ l ].
+Proof.
+  intros Hl HA HN HΔ HXA Hlx HF Hlf.
+  apply wf_supf; auto using compt_self.
+  - exact (wk3_ty HΔ HA).
+  - eapply wf_tm_retype; [exact (wk_under3_tm HΔ HA Hl HN) | reflexivity].
+  - eapply wf_lconv; [eapply wf_conv; [apply wf_var; [now rewrite Hi | do 3 constructor] |] | apply lequiv_sym, Hlx].
+    rewrite Hi. eapply eqty_lconv; [apply (wk3_eqty HΔ); apply eqty_sym, HXA | exact Hlx].
+  - rewrite Wf_E2. exact (Wf_var1 HΔ HF Hlf).
+Qed.
+
+Lemma Wf_step_wf {Γ X lx F lf Y ly l l' A N M} : lwf (gL G) l ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyWf l A N @ l ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ,, X @ lx ,, F @ lf ,, Y @ ly ⊢[ i ] ] ->
+  [ G ; Γ ⊢[ i ] X ≅ A @ l ] -> lequiv (gL G) lx l ->
+  [ G ; Γ ,, X @ lx ⊢[ i ] F ≅ wfcsty l A N @ lf ] -> lequiv (gL G) lf l ->
+  [ G ; Γ ,, X @ lx ,, F @ lf ,, Y @ ly ⊢[ i ] wfstepty l A N M @ l' ].
+Proof.
+  intros Hl HA HN HM HΔ HXA Hlx HF Hlf.
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l A N @ l ]) by (apply wft_wf; auto using compt_self).
+  exact (wf_ty_single Hi (wk_under3_ty HΔ HW Hl HM) (Wf_supf_step_wf Hl HA HN HΔ HXA Hlx HF Hlf)).
+Qed.
+
+Lemma pre_wf_r {Γ l l' A A' N'} : lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tyWf l' A' N' @ l ].
+Proof.
+  intros H HAA HA' HN.
+  assert (HA3 : [ G ; Γ ⊢[ i ] A' @ l' ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
+  eapply wft_lconv; [| exact H].
+  apply wft_wf; eauto using lequiv_wf_r, compt_self.
+  eapply (stab_tm Hi HAA H); [apply ext_wf; eauto using lequiv_wf_r | exact HN].
+Qed.
+
+Lemma pre_supf_r {Γ l l' A A' N N' a a' cs'} : lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] cs' : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
+  [ G ; Γ ⊢[ i ] tmSupf l' A' N' a' cs' : tyWf l A N @ l ].
+Proof.
+  intros H HA HAA HA' HN HNN HN' Haa Ha Ha' Hcs'.
+  pose proof (lequiv_wf_l _ _ _ H) as Hl. pose proof (lequiv_wf_r _ _ _ H) as Hl'.
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l A N @ l ]) by (apply wft_wf; auto using compt_self).
+  assert (EW : [ G ; Γ ⊢[ i ] tyWf l A N ≅ tyWf l' A' N' @ l ]) by (apply eqty_wf; auto using compt_self).
+  assert (HA3 : [ G ; Γ ⊢[ i ] A' @ l' ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
+  assert (HΓA' : [ G ; Γ ,, A' @ l' ⊢[ i ] ]) by (apply ext_wf; auto).
+  eapply wf_lconv with (l' := l'); [| exact H].
+  eapply (conv_tm' (T' := tyWf l' A' N')); [| eapply eqty_lconv; [exact EW | now apply lequiv_sym]].
+  apply wf_supf; auto using compt_self.
+  - exact (stab_tm Hi HAA H HΓA' HN').
+  - eapply wf_lconv; [eapply conv_tm'; [exact Ha' | apply eqty_sym, HAA] | now apply lequiv_sym].
+  - eapply wf_lconv; [eapply conv_tm'; [exact Hcs'|] | now apply lequiv_sym].
+    apply eqty_sym, eqty_vec; auto.
+    exact (Wf_Na_eq HN HNN Ha Ha' Haa).
+Qed.
+
+(** The induction hypothesis's type, along equal components. *)
+Lemma Wf_ih_eq {Γ l1 l2 l3 l4 A A' N N' M M'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l3 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyWf l1 A N @ l1 ⊢[ i ] M @ l2 ] -> [ G ; Γ ,, tyWf l1 A N @ l1 ⊢[ i ] M ≅ M' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ⊢[ i ]
+      wfihty l1 l2 A N M ≅ wfihty l3 l4 A' N' M' @ lmax lzero l2 ].
+Proof.
+  intros H13 H24 HA HAA HA' HN HNN HN' HM HMM.
+  pose proof (lequiv_wf_l _ _ _ H13) as Hl1. pose proof (lequiv_wf_l _ _ _ H24) as Hl2.
+  pose proof (lequiv_wf_r _ _ _ H13) as Hl3.
+  pose proof (ctx_of_wf_ty Hi HA) as H0.
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l1 A N @ l1 ]) by (apply wft_wf; auto using compt_self).
+  assert (EW : [ G ; Γ ⊢[ i ] tyWf l1 A N ≅ tyWf l3 A' N' @ l1 ]) by (apply eqty_wf; auto using compt_self).
+  assert (HΓA : [ G ; Γ ,, A @ l1 ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HW' : [ G ; Γ ⊢[ i ] tyWf l3 A' N' @ l3 ])
+    by (eapply wft_lconv; [exact (pre_wf_r H13 HAA (wft_lconv _ _ _ _ _ _ HA' H13) HN') | now apply lequiv_sym]).
+  pose proof (Wf_cs_wf Hl1 HW HN) as HC.
+  assert (EC : [ G ; Γ ,, A @ l1 ⊢[ i ] wfcsty l1 A N ≅ wfcsty l3 A' N' @ l1 ])
+    by (apply eqty_vec; auto; [wkn HW | wkne EW]).
+  set (Δ := Γ ,, A @ l1 ,, wfcsty l1 A N @ l1) in *.
+  assert (HΔ : [ G ; Δ ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HN1 : [ G ; Δ ⊢[ i ] N⟨↑⟩ : tyNat @ lzero ]) by (eapply wf_tm_retype; [wkn HN | reflexivity]).
+  assert (HNN1 : [ G ; Δ ⊢[ i ] N⟨↑⟩ ≅ N'⟨↑⟩ : tyNat @ lzero ]) by (eapply eq_tm_retype; [wkne HNN | reflexivity]).
+  assert (HF1 : [ G ; Δ ⊢[ i ] tyFin N⟨↑⟩ @ lzero ]) by (apply wft_fin; auto).
+  assert (HΘ : [ G ; Δ ,, tyFin N⟨↑⟩ @ lzero ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+  assert (HN2 : [ G ; Δ ,, tyFin N⟨↑⟩ @ lzero ⊢[ i ] N⟨↑⟩⟨↑⟩ : tyNat @ lzero ]) by (eapply wf_tm_retype; [wkn HN1 | reflexivity]).
+  assert (HNN2 : [ G ; Δ ,, tyFin N⟨↑⟩ @ lzero ⊢[ i ] N⟨↑⟩⟨↑⟩ ≅ N'⟨↑⟩⟨↑⟩ : tyNat @ lzero ])
+    by (eapply eq_tm_retype; [wkne HNN1 | reflexivity]).
+  assert (EF2 : [ G ; Δ ,, tyFin N⟨↑⟩ @ lzero ⊢[ i ] tyFin N⟨↑⟩⟨↑⟩ ≅ tyFin N'⟨↑⟩⟨↑⟩ @ lzero ]) by (apply eqty_fin; auto).
+  pose proof (Wf_nth_wf Hl1 HW HN HΔ (eqty_refl' HC) (lequiv_refl _ _ Hl1)) as Hn.
+  assert (Hn' : [ G ; Δ ,, tyFin N⟨↑⟩ @ lzero ⊢[ i ]
+                  tmNth l3 (tyWf l3 A' N')⟨↑⟩⟨↑⟩⟨↑⟩ N'⟨↑⟩⟨↑⟩ (var 1) (var 0) : (tyWf l1 A N)⟨↑⟩⟨↑⟩⟨↑⟩ @ l1 ]).
+  { eapply conv_tm'; [eapply wf_lconv; [| exact H13] | exact (wk3_eqty HΘ EW)].
+    apply nth_wf; auto.
+    - wkn HW'.
+    - eapply wf_tm_retype; [wkn HN' | reflexivity].
+    - eapply wf_lconv; [exact (Wf_var1 HΘ EC H13) | now apply lequiv_sym].
+    - eapply conv_tm'; [wvar | apply eqty_sym, EF2]. }
+  assert (Hnn : [ G ; Δ ,, tyFin N⟨↑⟩ @ lzero ⊢[ i ]
+                  tmNth l1 (tyWf l1 A N)⟨↑⟩⟨↑⟩⟨↑⟩ N⟨↑⟩⟨↑⟩ (var 1) (var 0)
+                  ≅ tmNth l3 (tyWf l3 A' N')⟨↑⟩⟨↑⟩⟨↑⟩ N'⟨↑⟩⟨↑⟩ (var 1) (var 0) : (tyWf l1 A N)⟨↑⟩⟨↑⟩⟨↑⟩ @ l1 ]).
+  { apply nth_eq; auto.
+    - wkn HW.
+    - exact (wk3_eqty HΘ EW).
+    - apply eqtm_refl, (Wf_var1 HΘ (eqty_refl' HC) (lequiv_refl _ _ Hl1)).
+    - wvar_eq. }
+  pose proof (wk_under3_ty HΘ HW Hl1 HM) as HM3.
+  pose proof (wk_under3_eqty HΘ HW Hl1 HMM) as HMM3.
+  apply eqty_pi; sides; [apply eqty_fin; auto|].
+  eapply eqty_trans; [eapply (wf_ty_func HM3); eapply lsub_eq_single; [exact Hn | exact Hn' | exact Hnn] |].
+  exact (eqty_single Hi HMM3 Hn').
+Qed.
+
+(** The step's type, along equal components, in the left telescope. *)
+Lemma Wf_step_eq {Γ l1 l2 l3 l4 A A' N N' M M' I li} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l3 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A' @ l3 ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyWf l1 A N @ l1 ⊢[ i ] M @ l2 ] -> [ G ; Γ ,, tyWf l1 A N @ l1 ⊢[ i ] M ≅ M' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ,, I @ li ⊢[ i ] ] ->
+  [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ,, I @ li ⊢[ i ]
+      wfstepty l1 A N M ≅ wfstepty l3 A' N' M' @ l2 ].
+Proof.
+  intros H13 H24 HA HAA HA' HN HNN HN' HM HMM HΘ.
+  pose proof (lequiv_wf_l _ _ _ H13) as Hl1. pose proof (lequiv_wf_r _ _ _ H13) as Hl3.
+  pose proof (ctx_of_wf_ty Hi HA) as H0.
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l1 A N @ l1 ]) by (apply wft_wf; auto using compt_self).
+  assert (EW : [ G ; Γ ⊢[ i ] tyWf l1 A N ≅ tyWf l3 A' N' @ l1 ]) by (apply eqty_wf; auto using compt_self).
+  assert (HΓA : [ G ; Γ ,, A @ l1 ⊢[ i ] ]) by (apply ext_wf; auto).
+  pose proof (Wf_cs_wf Hl1 HW HN) as HC.
+  assert (EC : [ G ; Γ ,, A @ l1 ⊢[ i ] wfcsty l1 A N ≅ wfcsty l3 A' N' @ l1 ])
+    by (apply eqty_vec; auto; [wkn HW | wkne EW]).
+  assert (HAA3 : [ G ; Γ ⊢[ i ] A ≅ A' @ l3 ]) by (eapply eqty_lconv; [exact HAA | now apply lequiv_sym]).
+  pose proof (Wf_supf_step_wf Hl1 HA HN HΘ (eqty_refl' HA) (lequiv_refl _ _ Hl1) (eqty_refl' HC) (lequiv_refl _ _ Hl1)) as Hs.
+  pose proof (Wf_supf_step_wf Hl3 HA' HN' HΘ HAA3 H13 EC H13) as Hs'0.
+  assert (Hs' : [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ,, I @ li ⊢[ i ]
+                  tmSupf l3 A'⟨↑⟩⟨↑⟩⟨↑⟩ N'⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ (var 2) (var 1) : (tyWf l1 A N)⟨↑⟩⟨↑⟩⟨↑⟩ @ l1 ])
+    by (eapply conv_tm'; [eapply wf_lconv; [exact Hs'0 | exact H13] | exact (wk3_eqty HΘ EW)]).
+  assert (Hss : [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ,, I @ li ⊢[ i ]
+                  tmSupf l1 A⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ (var 2) (var 1)
+                  ≅ tmSupf l3 A'⟨↑⟩⟨↑⟩⟨↑⟩ N'⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ (var 2) (var 1) : (tyWf l1 A N)⟨↑⟩⟨↑⟩⟨↑⟩ @ l1 ]).
+  { apply eqtm_supf; auto using compt_self.
+    - exact (wk3_ty HΘ HA).
+    - exact (wk3_eqty HΘ HAA).
+    - eapply wf_tm_retype; [exact (wk_under3_tm HΘ HA Hl1 HN) | reflexivity].
+    - eapply eq_tm_retype; [exact (wk_under3_eqtm HΘ HA Hl1 HNN) | reflexivity].
+    - apply eqtm_refl, wf_var; [now rewrite Hi | do 3 constructor].
+    - rewrite Wf_E2. apply eqtm_refl, (Wf_var1 HΘ (eqty_refl' HC) (lequiv_refl _ _ Hl1)). }
+  pose proof (wk_under3_ty HΘ HW Hl1 HM) as HM3.
+  pose proof (wk_under3_eqty HΘ HW Hl1 HMM) as HMM3.
+  eapply eqty_trans; [eapply (wf_ty_func HM3); eapply lsub_eq_single; [exact Hs | exact Hs' | exact Hss] |].
+  exact (eqty_single Hi HMM3 Hs').
+Qed.
+
+(** [elim_Wf]'s congruence, right-hand side: the primed telescope is formed,
+    the step moved into it along the identity, and the type converted. *)
+Lemma pre_elimWf_r {Γ l1 l2 l3 l4 A A' N N' M M' c' t t'} :
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] N ≅ N' : tyNat @ lzero ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyWf l1 A N @ l1 ⊢[ i ] M ≅ M' @ l2 ] -> [ G ; Γ ,, tyWf l1 A N @ l1 ⊢[ i ] M @ l2 ] ->
+  [ G ; Γ ,, tyWf l1 A N @ l1 ⊢[ i ] M' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] wfcsty l1 A N @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ⊢[ i ] wfihty l1 l2 A N M @ lmax lzero l2 ] ->
+  [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ,, wfihty l1 l2 A N M @ lmax lzero l2
+      ⊢[ i ] c' : wfstepty l1 A N M @ l2 ] ->
+  [ G ; Γ ⊢[ i ] t ≅ t' : tyWf l1 A N @ l1 ] ->
+  [ G ; Γ ⊢[ i ] t : tyWf l1 A N @ l1 ] -> [ G ; Γ ⊢[ i ] t' : tyWf l1 A N @ l1 ] ->
+  [ G ; Γ ⊢[ i ] tmElimWf l3 l4 A' N' M' c' t' : M[lsingle t] @ l2 ].
+Proof.
+  intros H13 H24 HAA HA HA' HNN HN HN' HMM HM HM' HC HI Hc Htt Ht Ht'.
+  pose proof (ctx_of_wf_tm Hi Ht) as HΓ.
+  pose proof (lequiv_wf_l _ _ _ H13) as Hl1. pose proof (lequiv_wf_l _ _ _ H24) as Hl2.
+  pose proof (lequiv_wf_r _ _ _ H13) as Hl3. pose proof (lequiv_wf_r _ _ _ H24) as Hl4.
+  assert (HLI : lequiv (gL G) (lmax lzero l2) (lmax lzero l4)) by (apply lequiv_max; [apply lequiv_refl; cbn; auto | exact H24]).
+  assert (EW : [ G ; Γ ⊢[ i ] tyWf l1 A N ≅ tyWf l3 A' N' @ l1 ]) by (apply eqty_wf; auto using compt_self).
+  assert (HA'3 : [ G ; Γ ⊢[ i ] A' @ l3 ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
+  assert (HΓA' : [ G ; Γ ,, A' @ l3 ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HN'3 : [ G ; Γ ,, A' @ l3 ⊢[ i ] N' : tyNat @ lzero ]) by exact (stab_tm Hi HAA H13 HΓA' HN').
+  assert (HW' : [ G ; Γ ⊢[ i ] tyWf l3 A' N' @ l3 ]) by (apply wft_wf; auto using compt_self).
+  assert (HΓW' : [ G ; Γ ,, tyWf l3 A' N' @ l3 ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HM'4 : [ G ; Γ ,, tyWf l3 A' N' @ l3 ⊢[ i ] M' @ l4 ])
+    by (eapply wft_lconv; [exact (stab_ty Hi EW H13 HΓW' HM') | now apply lequiv_sym]).
+  (* the primed telescope *)
+  pose proof (Wf_cs_wf (X := A') (lx := l3) Hl3 HW' HN'3) as HC'.
+  assert (HΓA'C' : [ G ; Γ ,, A' @ l3 ,, wfcsty l3 A' N' @ l3 ⊢[ i ] ]) by (apply ext_wf; auto).
+  pose proof (Wf_ih_wf Hl3 Hl4 HW' HN'3 HM'4 HΓA'C' (eqty_refl' HC') (lequiv_refl _ _ Hl3)) as HI'.
+  (* the left telescope's equations with the primed one *)
+  assert (EC : [ G ; Γ ,, A @ l1 ⊢[ i ] wfcsty l1 A N ≅ wfcsty l3 A' N' @ l1 ])
+    by (assert (HW : [ G ; Γ ⊢[ i ] tyWf l1 A N @ l1 ]) by (apply wft_wf; auto using compt_self);
+        assert (HΓA : [ G ; Γ ,, A @ l1 ⊢[ i ] ]) by (apply ext_wf; auto);
+        apply eqty_vec; auto; [wkn HW | wkne EW]).
+  assert (HC'A : [ G ; Γ ,, A @ l1 ⊢[ i ] wfcsty l3 A' N' @ l1 ])
+    by (eapply wft_lconv; [exact (Wf_cs_wf Hl3 HW' HN') | exact H13]).
+  assert (HΓAC : [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HI'A : [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ⊢[ i ] wfihty l3 l4 A' N' M' @ lmax lzero l2 ])
+    by (eapply wft_lconv; [exact (Wf_ih_wf Hl3 Hl4 HW' HN' HM'4 HΓAC EC H13) | exact HLI]).
+  pose proof (Wf_ih_eq H13 H24 HA HAA HA'3 HN HNN HN' HM HMM) as EI.
+  (* the identity from the primed telescope to the left one *)
+  assert (Hid0 : [ G ; Γ ⊢[ i ] lshift 0 : Γ ]) by (eapply lsub_wf_id; eauto).
+  pose proof (proj2 (ctx_conv_ext Hid0 HA HAA HA' H13)) as Hid1.
+  pose proof (proj2 (ctx_conv_ext Hid1 HC EC HC'A H13)) as Hid2.
+  pose proof (proj2 (ctx_conv_ext Hid2 HI EI HI'A HLI)) as Hid3.
+  assert (HΘ : [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ,, wfihty l1 l2 A N M @ lmax lzero l2 ⊢[ i ] ])
+    by (apply ext_wf; [exact HI | cbn; auto]).
+  pose proof (Wf_step_eq H13 H24 HA HAA HA'3 HN HNN HN'3 HM HMM HΘ) as ES.
+  assert (Hc' : [ G ; Γ ,, A' @ l3 ,, wfcsty l3 A' N' @ l3 ,, wfihty l3 l4 A' N' M' @ lmax lzero l4
+                  ⊢[ i ] c' : wfstepty l3 A' N' M' @ l4 ]).
+  { pose proof (wf_tm_subst Hi Hc Hid3) as X.
+    pose proof (eqty_subst Hi ES Hid3) as Y.
+    pose proof (proj1 (proj2 (proj2 (proj2 (proj2 typed_nf)))) _ _ _ _ _ _ ES) as [N1 N2].
+    rewrite nf_id in X by exact (wf_tm_nf Hc).
+    rewrite (nf_id_ty (wfstepty l1 A N M)) in X, Y by exact N1.
+    rewrite (nf_id_ty (wfstepty l3 A' N' M')) in Y by exact N2.
+    eapply wf_lconv; [eapply conv_tm'; [exact X | exact (eqty_sym' Y)] | exact (lequiv_sym _ _ _ H24)]. }
+  assert (Ht'W : [ G ; Γ ⊢[ i ] t' : tyWf l3 A' N' @ l3 ])
+    by (eapply wf_lconv; [eapply conv_tm'; [exact Ht' | exact (eqty_sym' EW)] | exact (lequiv_sym _ _ _ H13)]).
+  eapply wf_lconv with (l' := l4); [| exact H24].
+  eapply (conv_tm' (T' := M'[lsingle t'])).
+  - apply wf_elimWf; auto using compt_self.
+  - eapply eqty_lconv; [|apply lequiv_sym, H24].
+    eapply eqty_trans.
+    + apply (wf_ty_func HM (d' := lsingle t')). now apply lsub_eq_single.
+    + exact (eqty_single Hi HMM Ht').
+Qed.
+
+(** The telescope weakened past one local, under its binders. *)
+Lemma Wf_cs_ren l (A : ty) (N : tm) : (wfcsty l A N)⟨rlift ↑⟩ = wfcsty l A⟨↑⟩ N⟨rlift ↑⟩.
+Proof. wk_eqW. Qed.
+Lemma Wf_ih_ren l l' (A : ty) (N : tm) (M : ty) :
+  (wfihty l l' A N M)⟨rlift (rlift ↑)⟩ = wfihty l l' A⟨↑⟩ N⟨rlift ↑⟩ M⟨rlift ↑⟩.
+Proof. wk_eqW. Qed.
+Lemma Wf_step_ren l (A : ty) (N : tm) (M : ty) :
+  (wfstepty l A N M)⟨rlift (rlift (rlift ↑))⟩ = wfstepty l A⟨↑⟩ N⟨rlift ↑⟩ M⟨rlift ↑⟩.
+Proof. wk_eqW. Qed.
+
+(** The children's tuple type at a shape [a]. *)
+Lemma Wf_E5 l (A : ty) (N : tm) a : nfty (tyWf l A N) ->
+  (wfcsty l A N)[lsingle a] = tyVec l (tyWf l A N) N[lsingle a].
+Proof. intros NW. push_subst. f_equal. teq_core. Qed.
+
+(** The synthesized induction hypothesis's body and codomain, in
+    [Γ, j : Fin N[a/x]]: [wfIH] is [λ^{0, l'}(Fin N[a/x]). wfbody], at
+    [Π^{0, l'}(Fin N[a/x]). wfcod]. *)
+Notation wfnth l A N a cs := (tmNth l (tyWf l A N)⟨↑⟩ N[lsingle a]⟨↑⟩ cs⟨↑⟩ (var 0)).
+Notation wfbody l l' A N M c a cs :=
+  (tmElimWf l l' A⟨↑⟩ N⟨rlift ↑⟩ M⟨rlift ↑⟩ c⟨rlift (rlift (rlift ↑))⟩ (wfnth l A N a cs)).
+Notation wfcod l A N M a cs := (M⟨rlift ↑⟩[lsingle (wfnth l A N a cs)]).
+
+Lemma Wf_E4 l l' (A : ty) (N : tm) (M : ty) a cs : nfty (tyWf l A N) ->
+  (wfihty l l' A N M)[lsingle2 a cs] = tyPi lzero l' (tyFin N[lsingle a]) (wfcod l A N M a cs).
+Proof.
+  intros NW. rewrite subst_tyPi. f_equal.
+  - push_subst. f_equal. teq_core.
+  - set (u0 := wfnth l A N a cs).
+    set (u := tmNth l (tyWf l A N)⟨↑⟩⟨↑⟩⟨↑⟩ N⟨↑⟩⟨↑⟩ (var 1) (var 0)).
+    assert (Eu : u[llift (lsingle2 a cs)] = u0).
+    { subst u u0. rewrite subst_tmNth. f_equal; try teq_core; pw. }
+    rewrite subst_comp_ty, !ren_ren_comp_ty.
+    rewrite (ren_subst_ty M _ _ (lcons (lshift 1) u0)), (ren_subst_ty M (rlift ↑) _ (lcons (lshift 1) u0)); auto.
+    all: intros [|n]; pw.
+    rewrite <- Eu. reflexivity.
+Qed.
+
+(** The step's type at [β]: the motive at the [sup_f]. *)
+Lemma Wf_E6 l (A : ty) (N : tm) (M : ty) a cs h : nfty (tyWf l A N) ->
+  (wfstepty l A N M)[lsingle3 a cs h] = M[lsingle (tmSupf l A N a cs)].
+Proof.
+  intros NW. assert (NA : nfty A /\ nftm N) by (inversion NW; auto). destruct NA as [NA NN].
+  set (s := tmSupf l A⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ (var 2) (var 1)).
+  assert (Es : s[lsingle3 a cs h] = tmSupf l A N a cs).
+  { subst s. push_subst. f_equal; try teq_core; pw. }
+  rewrite subst_comp_ty, !ren_ren_comp_ty, (ren_subst_ty M _ _ (lsingle (tmSupf l A N a cs))); auto.
+  intros [|n]; pw. first [exact Es | exact (eq_sym Es)].
+Qed.
+
+(** The synthesized induction hypothesis is typed at the [ih] entry's
+    instance. *)
+Lemma Wf_IH_body_wf {Γ l l' A N M c a cs} : lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyWf l A N @ l ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ,, wfihty l l' A N M @ lmax lzero l'
+      ⊢[ i ] c : wfstepty l A N M @ l' ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] cs : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
+  [ G ; Γ ,, tyFin N[lsingle a] @ lzero ⊢[ i ] wfbody l l' A N M c a cs : wfcod l A N M a cs @ l' ].
+Proof.
+  intros Hl Hl' HA HN HM Hc Ha Hcs. pose proof (ctx_of_wf_ty Hi HA) as H0.
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l A N @ l ]) by (apply wft_wf; auto using compt_self).
+  assert (HNa : [ G ; Γ ⊢[ i ] N[lsingle a] : tyNat @ lzero ]) by exact (wf_tm_single Hi HN Ha).
+  assert (HF : [ G ; Γ ⊢[ i ] tyFin N[lsingle a] @ lzero ]) by (apply wft_fin; auto).
+  assert (HΓ1 : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+  assert (HW1 : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ⊢[ i ] (tyWf l A N)⟨↑⟩ @ l ]) by wkn HW.
+  assert (HA1 : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ⊢[ i ] A⟨↑⟩ @ l ]) by wkn HA.
+  assert (HΓ1A : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ,, A⟨↑⟩ @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HN1 : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ,, A⟨↑⟩ @ l ⊢[ i ] N⟨rlift ↑⟩ : tyNat @ lzero ])
+    by exact (wk_under_tm HΓ1A HN).
+  assert (HM1 : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ,, (tyWf l A N)⟨↑⟩ @ l ⊢[ i ] M⟨rlift ↑⟩ @ l' ])
+    by exact (wk_under_ty (ext_wf HW1 Hl) HM).
+  pose proof (Wf_cs_wf Hl HW1 HN1) as HC1.
+  assert (HΓ1AC : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ,, A⟨↑⟩ @ l ,, wfcsty l A⟨↑⟩ N⟨rlift ↑⟩ @ l ⊢[ i ] ])
+    by (apply ext_wf; auto).
+  pose proof (Wf_ih_wf Hl Hl' HW1 HN1 HM1 HΓ1AC (eqty_refl' HC1) (lequiv_refl _ _ Hl)) as HI1.
+  apply wf_elimWf; auto using compt_self.
+  - (* the step, weakened under the telescope *)
+    rewrite <- Wf_step_ren. eapply weakening_r; eauto.
+    + repeat (eapply wkr_up'; [ | first [reflexivity | symmetry; first [apply Wf_cs_ren | apply Wf_ih_ren]]]).
+      apply wkr_shift1.
+    + apply ext_wf; [exact HI1 | cbn; auto].
+  - (* the scrutinee: the child at the index *)
+    apply nth_wf; auto.
+    + eapply wf_tm_retype; [wkn HNa | reflexivity].
+    + eapply wf_tm_retype; [wkn Hcs | reflexivity].
+    + wvar.
+Qed.
+
+Lemma Wf_IH_wf {Γ l l' A N M c a cs} : lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyWf l A N @ l ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ,, wfihty l l' A N M @ lmax lzero l'
+      ⊢[ i ] c : wfstepty l A N M @ l' ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] cs : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
+  [ G ; Γ ⊢[ i ] wfIH l l' A N M c a cs : (wfihty l l' A N M)[lsingle2 a cs] @ lmax lzero l' ].
+Proof.
+  intros Hl Hl' HA HN HM Hc Ha Hcs.
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l A N @ l ]) by (apply wft_wf; auto using compt_self).
+  rewrite Wf_E4 by exact (wf_ty_nf HW). unfold wfIH.
+  apply wf_lam; cbn; auto; [apply wft_fin; [exact Hv | exact (wf_tm_single Hi HN Ha)] |].
+  exact (Wf_IH_body_wf Hl Hl' HA HN HM Hc Ha Hcs).
+Qed.
+
+Lemma pre_elimWf_beta {Γ l l' A N M c a cs} : lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyWf l A N @ l ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ,, wfihty l l' A N M @ lmax lzero l'
+      ⊢[ i ] c : wfstepty l A N M @ l' ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] cs : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
+  [ G ; Γ ⊢[ i ] c[lsingle3 a cs (wfIH l l' A N M c a cs)] : M[lsingle (tmSupf l A N a cs)] @ l' ].
+Proof.
+  intros Hl Hl' HA HN HM Hc Ha Hcs.
+  pose proof (ctx_of_wf_tm Hi Ha) as HΓ.
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l A N @ l ]) by (apply wft_wf; auto using compt_self).
+  rewrite <- (Wf_E6 l A N M a cs (wfIH l l' A N M c a cs) (wf_ty_nf HW)).
+  eapply (wf_tm_subst Hi Hc). unfold lsingle3, lsingle2.
+  apply lsub_wf_cons; [apply lsub_wf_cons; [apply lsub_wf_cons |] |].
+  - eapply lsub_wf_id; eauto.
+  - rewrite nf_id_ty by exact (wf_ty_nf HA). exact Ha.
+  - change (lcons (lshift 0) a) with (lsingle a). rewrite Wf_E5 by exact (wf_ty_nf HW). exact Hcs.
+  - change (lcons (lcons (lshift 0) a) cs) with (lsingle2 a cs). exact (Wf_IH_wf Hl Hl' HA HN HM Hc Ha Hcs).
+Qed.
+
+(** ... and respects equal pieces (the validity of [elim_Wf]'s β). *)
+Lemma Wf_IH_body_eq {Γ l l' l4 l5 A A' N N' M M' c c' a a' cs cs'} :
+  lequiv (gL G) l l4 -> lequiv (gL G) l' l5 ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyWf l A N @ l ⊢[ i ] M @ l' ] -> [ G ; Γ ,, tyWf l A N @ l ⊢[ i ] M ≅ M' @ l' ] ->
+  [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ,, wfihty l l' A N M @ lmax lzero l'
+      ⊢[ i ] c ≅ c' : wfstepty l A N M @ l' ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] cs : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
+  [ G ; Γ ⊢[ i ] cs ≅ cs' : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
+  [ G ; Γ ,, tyFin N[lsingle a] @ lzero ⊢[ i ] wfbody l l' A N M c a cs ≅ wfbody l4 l5 A' N' M' c' a' cs'
+      : wfcod l A N M a cs @ l' ].
+Proof.
+  intros H14 H25 HA HAA HN HNN HM HMM Hcc Ha Ha' Haa Hcs Hcscs.
+  pose proof (lequiv_wf_l _ _ _ H14) as Hl. pose proof (lequiv_wf_l _ _ _ H25) as Hl'.
+  pose proof (ctx_of_wf_ty Hi HA) as H0.
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l A N @ l ]) by (apply wft_wf; auto using compt_self).
+  assert (EW : [ G ; Γ ⊢[ i ] tyWf l A N ≅ tyWf l4 A' N' @ l ]) by (apply eqty_wf; auto using compt_self).
+  assert (HNa : [ G ; Γ ⊢[ i ] N[lsingle a] : tyNat @ lzero ]) by exact (wf_tm_single Hi HN Ha).
+  pose proof (Wf_Na_eq HN HNN Ha Ha' Haa) as ENa.
+  assert (HF : [ G ; Γ ⊢[ i ] tyFin N[lsingle a] @ lzero ]) by (apply wft_fin; auto).
+  assert (HΓ1 : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ⊢[ i ] ]) by (apply ext_wf; cbn; auto).
+  assert (HW1 : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ⊢[ i ] (tyWf l A N)⟨↑⟩ @ l ]) by wkn HW.
+  assert (HA1 : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ⊢[ i ] A⟨↑⟩ @ l ]) by wkn HA.
+  assert (HΓ1A : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ,, A⟨↑⟩ @ l ⊢[ i ] ]) by (apply ext_wf; auto).
+  assert (HN1 : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ,, A⟨↑⟩ @ l ⊢[ i ] N⟨rlift ↑⟩ : tyNat @ lzero ])
+    by exact (wk_under_tm HΓ1A HN).
+  assert (HΓ1W : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ,, (tyWf l A N)⟨↑⟩ @ l ⊢[ i ] ]) by exact (ext_wf HW1 Hl).
+  assert (HM1 : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ,, (tyWf l A N)⟨↑⟩ @ l ⊢[ i ] M⟨rlift ↑⟩ @ l' ])
+    by exact (wk_under_ty HΓ1W HM).
+  pose proof (Wf_cs_wf Hl HW1 HN1) as HC1.
+  assert (HΓ1AC : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ,, A⟨↑⟩ @ l ,, wfcsty l A⟨↑⟩ N⟨rlift ↑⟩ @ l ⊢[ i ] ])
+    by (apply ext_wf; auto).
+  pose proof (Wf_ih_wf Hl Hl' HW1 HN1 HM1 HΓ1AC (eqty_refl' HC1) (lequiv_refl _ _ Hl)) as HI1.
+  apply eqtm_elimWf; auto using compt_self.
+  - wkne HAA.
+  - exact (wk_under_eqtm HΓ1A HNN).
+  - exact (wk_under_eqty HΓ1W HMM).
+  - (* the steps, weakened under the telescope *)
+    rewrite <- Wf_step_ren. eapply weakening_r; eauto.
+    + repeat (eapply wkr_up'; [ | first [reflexivity | symmetry; first [apply Wf_cs_ren | apply Wf_ih_ren]]]).
+      apply wkr_shift1.
+    + apply ext_wf; [exact HI1 | cbn; auto].
+  - (* the scrutinees: the children at the index *)
+    apply nth_eq; auto.
+    + wkne EW.
+    + eapply wf_tm_retype; [wkn HNa | reflexivity].
+    + eapply eq_tm_retype; [wkne ENa | reflexivity].
+    + eapply eq_tm_retype; [wkne Hcscs | reflexivity].
+    + wvar_eq.
+Qed.
+
+Lemma Wf_IH_eq {Γ l l' l4 l5 A A' N N' M M' c c' a a' cs cs'} :
+  lequiv (gL G) l l4 -> lequiv (gL G) l' l5 ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyWf l A N @ l ⊢[ i ] M @ l' ] -> [ G ; Γ ,, tyWf l A N @ l ⊢[ i ] M ≅ M' @ l' ] ->
+  [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ,, wfihty l l' A N M @ lmax lzero l'
+      ⊢[ i ] c ≅ c' : wfstepty l A N M @ l' ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] cs : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
+  [ G ; Γ ⊢[ i ] cs ≅ cs' : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
+  [ G ; Γ ⊢[ i ] wfIH l l' A N M c a cs ≅ wfIH l4 l5 A' N' M' c' a' cs'
+      : (wfihty l l' A N M)[lsingle2 a cs] @ lmax lzero l' ].
+Proof.
+  intros H14 H25 HA HAA HN HNN HM HMM Hcc Ha Ha' Haa Hcs Hcscs.
+  pose proof (lequiv_wf_l _ _ _ H14) as Hl.
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l A N @ l ]) by (apply wft_wf; auto using compt_self).
+  rewrite Wf_E4 by exact (wf_ty_nf HW). unfold wfIH.
+  apply eqtm_lam; sides.
+  - apply wft_fin; [exact Hv | exact (wf_tm_single Hi HN Ha)].
+  - apply eqty_fin; [exact Hv | exact (Wf_Na_eq HN HNN Ha Ha' Haa)].
+  - exact (Wf_IH_body_eq H14 H25 HA HAA HN HNN HM HMM Hcc Ha Ha' Haa Hcs Hcscs).
+Qed.
+
 End Aux.
 
 (** ** Contextual types and letbox (layer M) *)
@@ -2280,7 +3136,17 @@ Proof.
              | solve [eapply wf_code_vec; eauto 3 with presup]
              | solve [eapply wf_code_fin; eauto 3 with presup]
              | solve [eapply wft_El; eauto with presup; first [eapply wf_code_vec | eapply wf_code_fin]; eassumption]
-             | solve [apply wft_vec; eauto 3 with presup; apply wft_El; eauto with presup] ].
+             | solve [apply wft_vec; eauto 3 with presup; apply wft_El; eauto with presup]
+             (* finitary well-founded trees (M15a) *)
+             | solve [eapply pre_wf_r; eassumption]
+             | solve [eapply pre_supf_r; eassumption]
+             | solve [eapply pre_elimWf_r; eassumption]
+             | solve [eapply pre_elimWf_beta; eassumption]
+             | solve [apply wft_wf; eauto 3 using compt_self with presup]
+             | solve [eapply wf_supf; eauto 3 using compt_self with presup]
+             | solve [eapply wf_elimWf; eauto 3 using compt_self with presup]
+             | solve [eapply wf_elimWf; try eassumption; eapply wf_supf; eauto using compt_self]
+             | solve [eapply wf_ty_single; try eassumption; eapply wf_supf; eauto using compt_self] ].
 Qed.
 
 Section Named.

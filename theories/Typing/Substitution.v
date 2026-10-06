@@ -180,8 +180,8 @@ Proof. now rewrite llk_llift. Qed.
 Ltac sub_rw1 :=
   push_subst;
   rewrite ?llk_llift0, ?single_subst_ty, ?single_subst, ?single2_subst, ?single2_subst_ty, ?lsucc_subst_ty,
-          ?single3_subst, ?subst_wIH,
-          ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty by eauto with nf;
+          ?single3_subst, ?subst_wIH, ?subst_wfIH, ?subst_tmNth,
+          ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty, ?liftshift_llift by eauto with nf;
   push_subst.
 (* twice: [case]'s branch types (M12b) shift summands inside an injection,
    which the first pass exposes *)
@@ -838,7 +838,8 @@ Ltac sub_Wsub :=
                                   | eauto with sub | first [reflexivity | do 3 sub_rw1; reflexivity] ] ]
 with sub_Wty :=
   first [ match goal with IH : forall Δ d, lsub_wf _ _ Δ d _ -> _ |- _ => eapply IH; solve [sub_Wsub] end
-        | push_subst; eapply wft_W; [ eassumption | eauto with sub | eauto with sub | sub_Wty | sub_Wty ] ].
+        | push_subst; eapply wft_W; [ eassumption | eauto with sub | eauto with sub | sub_Wty | sub_Wty ]
+        | push_subst; eapply wft_wf; [ eassumption | eauto with sub | sub_Wty | sub_Wty ] ].
 Ltac sub_eqW := do 3 sub_rw1; rewrite ?llk_llift_S, ?llk_llift0; push_ren; rlk_simpl; reflexivity.
 Ltac sub_Wstep :=
   first [ solve [sub_Wty]
@@ -848,6 +849,13 @@ Ltac sub_Wstep :=
 
 Ltac sub_manual2 :=
   match goal with
+  (* [Wf] (M15a) *)
+  | |- wf_tm _ _ _ (tmSupf _ _ _ _ _) _ _ => eapply wf_supf; sub_premise
+  | |- eq_tm _ _ _ (tmSupf _ _ _ _ _) _ _ _ => eapply eqtm_supf; sub_premise
+  | |- wf_tm _ _ _ (tmElimWf _ _ _ _ _ _ _) _ _ => eapply wf_elimWf; first [solve [sub_Wstep] | sub_premise]
+  | |- eq_tm _ _ _ (tmElimWf _ _ _ _ _ _ (tmSupf _ _ _ _ _)) _ _ _ =>
+      eapply eqtm_elimWf_supf; first [solve [sub_Wstep] | sub_premise]
+  | |- eq_tm _ _ _ (tmElimWf _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimWf; first [solve [sub_Wstep] | sub_premise]
   (* [W] (M13a) *)
   | |- wf_tm _ _ _ (tmSup _ _ _ _ _ _) _ _ => eapply wf_sup; sub_premise
   | |- eq_tm _ _ _ (tmSup _ _ _ _ _ _) _ _ _ => eapply eqtm_sup; sub_premise
