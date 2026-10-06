@@ -92,7 +92,9 @@ theories/Validity/Sum.v
 theories/Validity/W.v
 theories/Validity/WElim.v
 theories/Validity/Vec.v
+theories/Validity/GLift.v
 theories/Validity/Wf.v
+theories/Validity/WfNth.v
 theories/Validity/Fundamental.v
 theories/Validity/Consequences.v
 theories/Validity/Payload.v
