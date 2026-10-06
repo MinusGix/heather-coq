@@ -304,7 +304,8 @@ Proof.
                  | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
                      HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
-                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR];
+                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
+                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd IHdom arAd HR];
     try (cbn in Hj; discriminate).
   - exact (lift_posty compt_D HT whnf_tyNat posty_nat).
   - exact (lift_posty compt_D HT (whnf_tyU _) (posty_U _)).
@@ -340,6 +341,7 @@ Proof.
   - exact (lift_posty compt_D HT (whnf_tyEmpty _) (posty_empty _)).
   - exact (lift_posty compt_D HT (whnf_tySum _ _ _ _) (posty_sum _ _ _ _)).
   - exact (lift_posty compt_D HT (whnf_tyW _ _ _ _) (posty_W _ _ _ _)).
+  - exact (lift_posty compt_D HT (whnf_tyWf _ _ _) (posty_wf _ _ _)).
 Qed.
 
 (** The identity substitution is related to itself. *)
@@ -379,7 +381,8 @@ Proof.
                  | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
                      HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
-                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR].
+                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
+                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd IHdom arAd HR].
   - exact (lift_posty compt_M HT whnf_tyNat posty_nat).
   - exact (lift_posty compt_M HT (whnf_tyU _) (posty_U _)).
   - destruct HV as (HnV & _ & _). exact (lift_posty compt_M HT (whnf_ty_ne _ HnV) (posty_ne _ HnV)).
@@ -440,6 +443,7 @@ Proof.
   - exact (lift_posty compt_M HT (whnf_tyEmpty _) (posty_empty _)).
   - exact (lift_posty compt_M HT (whnf_tySum _ _ _ _) (posty_sum _ _ _ _)).
   - exact (lift_posty compt_M HT (whnf_tyW _ _ _ _) (posty_W _ _ _ _)).
+  - exact (lift_posty compt_M HT (whnf_tyWf _ _ _) (posty_wf _ _ _)).
 Qed.
 
 (** At M: at a well-formed level by reducibility, at ω through [UΠ]. *)
