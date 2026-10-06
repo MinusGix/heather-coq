@@ -210,6 +210,18 @@ Proof.
   (* the codes of Vec and Fin *)
   - intros; apply eqtm_code_vec; auto.
   - intros; apply eqtm_code_fin; auto.
+  (* finitary well-founded trees: the step telescope is well formed by
+     presupposition *)
+  - intros; apply eqty_wf; auto.
+  - intros; apply eqtm_supf; auto.
+  - intros * H13 H24 HA HAA HN HNN HM HMM Hc (Hn & Hn' & Hν).
+    pose proof (lequiv_wf_l _ _ _ H13) as W1. pose proof (lequiv_wf_l _ _ _ H24) as W2.
+    assert (HW : [ G ; Γ ⊢[ i ] tyWf l1 A N @ l1 ]) by (apply wft_wf; auto).
+    pose proof (Wf_cs_wf Hty Hv W1 HW HN) as HF.
+    assert (HΓAF : [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ⊢[ i ] ])
+      by (apply (ext_wf Hty); [exact HF | exact W1]).
+    pose proof (Wf_ih_wf Hty Hv W1 W2 HW HN HM HΓAF (eqty_refl' HF) (lequiv_refl _ _ W1)) as HI.
+    refine (conj _ (conj _ _)); [constructor; auto .. |]. apply eqtm_elimWf; auto.
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].

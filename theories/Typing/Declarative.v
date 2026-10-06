@@ -108,6 +108,11 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
 | wft_fin G i Γ n : i <> lV -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tyFin n @ lzero ]
 
+(* finitary well-founded trees (M15a; layers D and M, M15_DESIGN.md): the
+   arity is a term of [Nat] under the shape's binder *)
+| wft_wf G i Γ l A N : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tyWf l A N @ l ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | wft_lconv G i Γ T l l' : [ G ; Γ ⊢[ i ] T @ l' ] -> lequiv (gL G) l l' ->
@@ -335,6 +340,23 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 | wf_code_fin G i Γ n : i <> lV -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tmFin n : tyU lzero @ lsuc lzero ]
 
+(* finitary well-founded trees (M15a; layers D and M): [sup_f]'s children are
+   a tuple at the arity of its shape; [elim_Wf]'s step binds the shape [a],
+   the children [cs] and the induction hypothesis [ih], a function from the
+   children's indices, whose types are premises as [elim_W]'s *)
+| wf_supf G i Γ l A N a cs : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] cs : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
+    [ G ; Γ ⊢[ i ] tmSupf l A N a cs : tyWf l A N @ l ]
+| wf_elimWf G i Γ l l' A N M c t : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyWf l A N @ l ⊢[ i ] M @ l' ] ->
+    [ G ; Γ ,, A @ l ⊢[ i ] wfcsty l A N @ l ] ->
+    [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ⊢[ i ] wfihty l l' A N M @ lmax lzero l' ] ->
+    [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ,, wfihty l l' A N M @ lmax lzero l'
+        ⊢[ i ] c : wfstepty l A N M @ l' ] ->
+    [ G ; Γ ⊢[ i ] t : tyWf l A N @ l ] ->
+    [ G ; Γ ⊢[ i ] tmElimWf l l' A N M c t : M[lsingle t] @ l' ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | wf_conv G i Γ t T T' l : [ G ; Γ ⊢[ i ] t : T' @ l ] -> [ G ; Γ ⊢[ typeof i ] T ≅ T' @ l ] ->
@@ -474,6 +496,11 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
 | eqty_El_fin G i Γ n : compt i -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tyFin n ≅ tyEl lzero (tmFin n) @ lzero ]
 
+(* finitary well-founded trees (M15a; layers D and M) *)
+| eqty_wf G i Γ l l' A A' N N' : compt i -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+    [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tyWf l A N ≅ tyWf l' A' N' @ l ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | eqty_refl G i Γ T l : [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T @ l ]
@@ -903,6 +930,37 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
 | eqtm_code_fin G i Γ n n' : i <> lV -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tmFin n ≅ tmFin n' : tyU lzero @ lsuc lzero ]
 
+(* finitary well-founded trees (M15a; layers D and M): the congruences, and β,
+   which instantiates the step at the shape, the children and the
+   synthesized induction hypothesis [wfIH]; no η *)
+| eqtm_supf G i Γ l l' A A' N N' a a' cs cs' : compt i -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+    [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+    [ G ; Γ ⊢[ i ] cs ≅ cs' : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
+    [ G ; Γ ⊢[ i ] tmSupf l A N a cs ≅ tmSupf l' A' N' a' cs' : tyWf l A N @ l ]
+| eqtm_elimWf G i Γ l1 l2 l3 l4 A A' N N' M M' c c' t t' : compt i ->
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyWf l1 A N @ l1 ⊢[ i ] M @ l2 ] ->
+    [ G ; Γ ,, tyWf l1 A N @ l1 ⊢[ i ] M ≅ M' @ l2 ] ->
+    [ G ; Γ ,, A @ l1 ⊢[ i ] wfcsty l1 A N @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ⊢[ i ] wfihty l1 l2 A N M @ lmax lzero l2 ] ->
+    [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ,, wfihty l1 l2 A N M @ lmax lzero l2
+        ⊢[ i ] c ≅ c' : wfstepty l1 A N M @ l2 ] ->
+    [ G ; Γ ⊢[ i ] t ≅ t' : tyWf l1 A N @ l1 ] ->
+    [ G ; Γ ⊢[ i ] tmElimWf l1 l2 A N M c t ≅ tmElimWf l3 l4 A' N' M' c' t' : M[lsingle t] @ l2 ]
+| eqtm_elimWf_supf G i Γ l l' A N M c a cs : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyWf l A N @ l ⊢[ i ] M @ l' ] ->
+    [ G ; Γ ,, A @ l ⊢[ i ] wfcsty l A N @ l ] ->
+    [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ⊢[ i ] wfihty l l' A N M @ lmax lzero l' ] ->
+    [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ,, wfihty l l' A N M @ lmax lzero l'
+        ⊢[ i ] c : wfstepty l A N M @ l' ] ->
+    [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] cs : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
+    [ G ; Γ ⊢[ i ] tmElimWf l l' A N M c (tmSupf l A N a cs) ≅ c[lsingle3 a cs (wfIH l l' A N M c a cs)]
+        : M[lsingle (tmSupf l A N a cs)] @ l' ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | eqtm_refl G i Γ t T l : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ i ] t ≅ t : T @ l ]

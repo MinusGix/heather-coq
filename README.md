@@ -118,9 +118,16 @@ From M8 on, the milestones check the extensions of Heather's kernel
   the code recursor has their four branches (`t_Vec`, `t'_Vec`, `t_Fin`,
   `t'_Fin`), whose length call is a term call at `Nat`. The scopes agree
   with Heather's `rec.rs`. See `M14_DESIGN.md`.
+- Milestone 15a: finitary well-founded trees. `Wf^l(A; N)`, `sup_f` and
+  `elim_Wf` hold at layers D and M; a node's children are a `Vec` of
+  length `N[a]`, and the eliminator's step gets one induction hypothesis
+  per child as `nth` over that `Vec`. The branch telescopes are derived
+  from the semantics, β holds, and validity builds the relation by
+  induction on the tree (the index lemma relates `nth` at related `Fin`
+  indices). See `M15_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
-`M14_DESIGN.md`) for decisions, deviations from the paper and gotchas.
+`M15_DESIGN.md`) for decisions, deviations from the paper and gotchas.
 
 Documents:
 

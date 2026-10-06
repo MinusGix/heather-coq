@@ -18,14 +18,6 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 Section KwSyntax.
 Context {G : gctx} {Γ : ctx} (ρ : kwk G Γ).
 
-Lemma kty_tyVec l A n : kty ρ (tyVec l A n) = tyVec l (kty ρ A) (ktm ρ n).
-Proof. unfold kty, ktm; now rewrite gwa_tyVec. Qed.
-Lemma kty_tyFin n : kty ρ (tyFin n) = tyFin (ktm ρ n).
-Proof. unfold kty, ktm; now rewrite gwa_tyFin. Qed.
-
-Lemma ktml_shift (t : tm) : ktml ρ t⟨↑⟩ = (ktm ρ t)⟨↑⟩.
-Proof. unfold ktm, ktml. now rewrite gwa_ren, shift_lift. Qed.
-
 (** [Σ]'s codomain at the successor does not depend on the first
     component. *)
 Lemma vec_cod_single l A k a :
@@ -41,15 +33,6 @@ End KwSyntax.
 
 (** ** Typed reductions *)
 
-Lemma tyred_vec {G Δ l A m w} : lwf (gL G) l -> [ G ; Δ ⊢g A @ l ] ->
-  [ G ; Δ ⊢g m ⤳* w : tyNat @ lzero ] -> [ G ; Δ ⊢g tyVec l A m ⤳* tyVec l A w @ l ].
-Proof.
-  intros Hw HA [Hm Hr He]. split.
-  - apply wft_vec; [exact ge_notV | exact Hw | exact HA | exact Hm].
-  - now apply reds_vec.
-  - apply eqty_vec; [exact ge_notV | now apply lequiv_refl | exact HA | now apply eqty_refl | exact He].
-Qed.
-
 Lemma tyred_fin {G Δ m w} :
   [ G ; Δ ⊢g m ⤳* w : tyNat @ lzero ] -> [ G ; Δ ⊢g tyFin m ⤳* tyFin w @ lzero ].
 Proof.
@@ -59,27 +42,7 @@ Proof.
   - apply eqty_fin; [exact ge_notV | exact He].
 Qed.
 
-Lemma wf_zero_g {G Δ} : [ G ; Δ ⊢g ] -> [ G ; Δ ⊢g zero : tyNat @ lzero ].
-Proof. intros HΔ. apply wf_zero; [exact ge_notV | now rewrite ge_typeof]. Qed.
-
 (** The reducts of the computation rules, as typed reductions. *)
-Lemma tyred_vec_zero {G Δ l A} : lwf (gL G) l -> [ G ; Δ ⊢g A @ l ] ->
-  [ G ; Δ ⊢g tyVec l A zero ⤳* tyUnit l @ l ].
-Proof.
-  intros Hw HA. pose proof (wf_zero_g (ctx_of_ty HA)) as Hz.
-  apply tyred_step; [apply wft_vec; [exact ge_notV | exact Hw | exact HA | exact Hz] | constructor |].
-  apply eqty_vec_zero; [exact ge_compt | exact Hw | exact HA].
-Qed.
-
-Lemma tyred_vec_succ {G Δ l A k} : lwf (gL G) l -> [ G ; Δ ⊢g A @ l ] ->
-  [ G ; Δ ⊢g k : tyNat @ lzero ] ->
-  [ G ; Δ ⊢g tyVec l A (succ k) ⤳* tySig l l A (tyVec l A⟨↑⟩ k⟨↑⟩) @ l ].
-Proof.
-  intros Hw HA Hk. assert (Hs : [ G ; Δ ⊢g succ k : tyNat @ lzero ]) by (apply wf_succ; [exact ge_notV | exact Hk]).
-  apply tyred_step; [apply wft_vec; [exact ge_notV | exact Hw | exact HA | exact Hs] | constructor |].
-  apply eqty_vec_succ; [exact ge_compt | exact Hw | exact HA | exact Hk].
-Qed.
-
 Lemma tyred_fin_zero {G Δ} : [ G ; Δ ⊢g ] -> [ G ; Δ ⊢g tyFin zero ⤳* tyEmpty lzero @ lzero ].
 Proof.
   intros HΔ. apply tyred_step; [apply wft_fin; [exact ge_notV | exact (wf_zero_g HΔ)] | constructor |].

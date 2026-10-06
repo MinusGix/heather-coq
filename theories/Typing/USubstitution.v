@@ -109,11 +109,29 @@ Proof.
   rewrite ?usubst_ren_ty', ?usubst_ren', ?usubst_lsingle_ty. cbn [usubst_ty]. reflexivity.
 Qed.
 
+(** [nth] and [elim_Wf]'s induction hypothesis (M15a). *)
+Lemma usubst_tmNth l T k cs i φ :
+  usubst_tm (tmNth l T k cs i) φ =
+  tmNth (lvsubst l φ) (usubst_ty T φ) (usubst_tm k φ) (usubst_tm cs φ) (usubst_tm i φ).
+Proof.
+  unfold tmNth, nthMot, nthBase, nthStep; cbn [usubst_tm usubst_ty lvsubst].
+  rewrite ?usubst_ren_ty', ?usubst_ren'. reflexivity.
+Qed.
+Lemma usubst_wfIH l l' A N M c a cs φ :
+  usubst_tm (wfIH l l' A N M c a cs) φ =
+  wfIH (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_tm N φ) (usubst_ty M φ)
+    (usubst_tm c φ) (usubst_tm a φ) (usubst_tm cs φ).
+Proof.
+  unfold wfIH; cbn [usubst_tm usubst_ty lvsubst]. rewrite usubst_tmNth.
+  cbn [usubst_tm usubst_ty lvsubst].
+  rewrite ?usubst_ren_ty', ?usubst_ren', ?usubst_lsingle. reflexivity.
+Qed.
+
 Ltac us_rewrite :=
   rewrite ?usubst_lsingle_ty, ?usubst_lsingle2_ty, ?usubst_lsucc_ty, ?usubst_lsingle, ?usubst_lsingle2,
     ?usubst_ren_ty', ?usubst_ren', ?usubst_gren_ty', ?usubst_gren_ctx', ?usubst_gsingle,
     ?usubst_gsingle_ty, ?usubst_gren_tm',
-    ?usubst_subst_ty', ?usubst_lsingle3, ?usubst_wIH, ?motT_usubst, ?mott_usubst, ?mkrb_usubst, ?wrapMT_usubst, ?wrapMt_usubst.
+    ?usubst_subst_ty', ?usubst_lsingle3, ?usubst_wIH, ?usubst_wfIH, ?usubst_tmNth, ?motT_usubst, ?mott_usubst, ?mkrb_usubst, ?wrapMT_usubst, ?wrapMt_usubst.
 
 Ltac us_push :=
   cbn [usubst_ty usubst_tm ucsubst ulsubst lvsubst gousubst gctx_usubst gdecl_usubst map gL gΨ gext typeof uup] in *.
@@ -278,6 +296,8 @@ Ltac us_rw_all_at h k := lazymatch h with
                     | k usubst_lsingle3 | k usubst_subst_ty']
   | @subst_tm => first [k usubst_lsingle | k usubst_lsingle2 | k usubst_lsingle3]
   | @wIH => k usubst_wIH
+  | @wfIH => k usubst_wfIH
+  | @tmNth => k usubst_tmNth
   | @ren_ty => k usubst_ren_ty'
   | @ren => first [k usubst_ren_ty' | k usubst_ren']
   | @ren_tm => k usubst_ren'
@@ -330,6 +350,8 @@ Ltac us_manual :=
   | |- context [tmCase _ _ _ _ _ _ _ _ _] => us_rewrite_all; us_step
   (* [elim_W] (M13a): its step telescope nests the shifts deeper *)
   | |- context [tmElimW _ _ _ _ _ _ _ _] => us_rewrite_all; us_rewrite_all; us_step
+  (* [elim_Wf] (M15a): likewise *)
+  | |- context [tmElimWf _ _ _ _ _ _ _] => us_rewrite_all; us_rewrite_all; us_step
   | |- wf_ty _ _ _ (tyGvar _ _) _ =>
       us_Δ ltac:(fun D => eapply wft_gvar with (Δ := D)); [ .. | us_entries]; eauto with us
   | |- eq_ty _ _ _ (tyGvar _ _) _ _ =>
@@ -494,7 +516,7 @@ Lemma red_usubst_both :
   (forall T U, red_ty T U -> forall φ, red_ty (usubst_ty T φ) (usubst_ty U φ)).
 Proof.
   apply red_both; intros; cbn [usubst_tm usubst_ty ucsubst gousubst];
-    rewrite ?usubst_lsingle, ?usubst_lsingle2, ?usubst_lsingle3, ?usubst_wIH, ?usubst_gsingle; try now constructor.
+    rewrite ?usubst_lsingle, ?usubst_lsingle2, ?usubst_lsingle3, ?usubst_wIH, ?usubst_wfIH, ?usubst_gsingle; try now constructor.
   all: try (constructor; auto; fail).
   (* δ: the body's instance *)
   all: try solve [change (usubst_tm (subst_tm ?b ?d) ?φ) with (b[d][φ]ᵤ); rewrite usubst_subst; constructor].

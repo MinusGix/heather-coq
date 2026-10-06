@@ -46,6 +46,7 @@ Proof.
   - eapply LRempty; eauto.
   - eapply (LRsum _ _ _ _ _ _ _ l1 l2 l3 l4 A A' B B' RA RB); eauto.
   - eapply LRw; [split|..]; eauto.
+  - eapply LRwf; eauto.
 Qed.
 
 Theorem cumul_down n m G Γ T T' l R :
@@ -89,6 +90,9 @@ Proof.
   - match goal with Hs : lequiv _ l (lmax l1 l2) |- _ =>
       rewrite (lequiv_measure_eq _ _ _ Hs), lmeasure_max in Hle end.
     eapply LRw; [split|..]; eauto.
+    all: intros; match goal with IH : _ |- LR _ _ _ _ _ _ _ _ => eapply IH; lia end.
+  - match goal with Hs : lequiv _ l l1 |- _ => rewrite (lequiv_measure_eq _ _ _ Hs) in Hle end.
+    eapply LRwf; eauto.
     all: intros; match goal with IH : _ |- LR _ _ _ _ _ _ _ _ => eapply IH; lia end.
 Qed.
 
@@ -161,6 +165,7 @@ Proof.
   - eapply LRempty; eauto using releq_trans, releq_sym.
   - eapply (LRsum _ _ _ _ _ _ _ l1 l2 l3 l4 A A' B B' RA RB); eauto using releq_trans, releq_sym.
   - eapply LRw; eauto using releq_trans, releq_sym.
+  - eapply LRwf; eauto using releq_trans, releq_sym.
 Qed.
 
 Theorem LR_lconv n rec G Γ T T' l l' R :
@@ -185,7 +190,8 @@ Proof.
                 | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
                     HRA HRB Hpa Hta Hpb Htb HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
-                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR];
     intros Hl'.
   - eapply LRnat; eauto using lequiv_trans, tyred_lconv.
   - eapply (LRU n rec G Γ T T' l' l1 l2); eauto using lequiv_trans, tyred_lconv.
@@ -206,6 +212,7 @@ Proof.
   - eapply (LRsum n rec G Γ T T' l' u1 u2 u3 u4); eauto using lequiv_trans, tyred_lconv.
   - eapply (LRw n rec G Γ T T' l' l1 l2 l3 l4 A B A' B' domR codR); [split|..];
       eauto using lequiv_trans, tyred_lconv.
+  - eapply (LRwf n rec G Γ T T' l' l1 l2 A A' N N' domR); eauto using lequiv_trans, tyred_lconv.
 Qed.
 
 End Basics.

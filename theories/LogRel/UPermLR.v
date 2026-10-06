@@ -118,6 +118,8 @@ Lemma ktyl_us {G0 Γ0} (ρ : kwk G0 Γ0) T φ : (ktyl ρ T)[φ]ᵤ = T[φ]ᵤ⟦
 Proof. unfold ktyl. now rewrite usubst_ren_ty, usubst_gwa_ty. Qed.
 Lemma ktm_us {G0 Γ0} (ρ : kwk G0 Γ0) t φ : (ktm ρ t)[φ]ᵤ = t[φ]ᵤ⟦kw_γ ρ⟧⟨kw_r ρ⟩.
 Proof. unfold ktm. now rewrite usubst_ren, usubst_gwa_tm. Qed.
+Lemma ktml_us {G0 Γ0} (ρ : kwk G0 Γ0) t φ : (ktml ρ t)[φ]ᵤ = t[φ]ᵤ⟦kw_γ ρ⟧⟨rlift (kw_r ρ)⟩.
+Proof. unfold ktml. now rewrite usubst_ren, usubst_gwa_tm. Qed.
 
 (** ** Kripke worlds *)
 
@@ -193,6 +195,8 @@ Lemma ktyl_pull T : (ktyl kw_pull T)[pφ π]ᵤ = ktyl ρ' T[pφ π]ᵤ.
 Proof. unfold ktyl; cbn. now rewrite usubst_ren_ty, usubst_gwa_ty. Qed.
 Lemma ktm_pull t : (ktm kw_pull t)[pφ π]ᵤ = ktm ρ' t[pφ π]ᵤ.
 Proof. unfold ktm; cbn. now rewrite usubst_ren, usubst_gwa_tm. Qed.
+Lemma ktml_pull t : (ktml kw_pull t)[pφ π]ᵤ = ktml ρ' t[pφ π]ᵤ.
+Proof. unfold ktml; cbn. now rewrite usubst_ren, usubst_gwa_tm. Qed.
 Lemma kbody_pull T : (kbody kw_pull T)[pφ π]ᵤ = kbody ρ' T[pφ π]ᵤ.
 Proof. unfold kbody; cbn. now rewrite usubst_ren_ty, usubst_gwa_ty. Qed.
 Lemma pull_gL : gL (kw_G kw_pull) = gL (kw_G ρ').
@@ -473,6 +477,8 @@ Lemma kcorr_ktyl T : (ktyl ρ T)[pφ π]ᵤ = ktyl ρ' T[pφ π]ᵤ.
 Proof. destruct Hk as (_ & _ & Eg & Er). rewrite ktyl_us. unfold ktyl. now rewrite Eg, Er. Qed.
 Lemma kcorr_ktm t : (ktm ρ t)[pφ π]ᵤ = ktm ρ' t[pφ π]ᵤ.
 Proof. destruct Hk as (_ & _ & Eg & Er). rewrite ktm_us. unfold ktm. now rewrite Eg, Er. Qed.
+Lemma kcorr_ktml t : (ktml ρ t)[pφ π]ᵤ = ktml ρ' t[pφ π]ᵤ.
+Proof. destruct Hk as (_ & _ & Eg & Er). rewrite ktml_us. unfold ktml. now rewrite Eg, Er. Qed.
 
 Lemma kcorr_comp (ρ0 : kwk (kw_G ρ) (kw_Δ ρ)) (ρ0' : kwk (kw_G ρ') (kw_Δ ρ')) :
   kcorr π ρ0 ρ0' -> kcorr π (kw_comp ρ ρ0) (kw_comp ρ' ρ0').
@@ -501,6 +507,8 @@ Lemma dnf_kty {G0 Γ0} (ρ : kwk G0 Γ0) T : dnfty T -> dnfty (kty ρ T).
 Proof. intros H; unfold kty; apply ren_dnf_ty; destruct (kw_γ ρ); cbn [gwa]; auto; intros; apply gren_dnf_all. Qed.
 Lemma dnf_ktyl {G0 Γ0} (ρ : kwk G0 Γ0) T : dnfty T -> dnfty (ktyl ρ T).
 Proof. intros H; unfold ktyl; apply ren_dnf_ty; destruct (kw_γ ρ); cbn [gwa]; auto; intros; apply gren_dnf_all. Qed.
+Lemma dnf_ktml {G0 Γ0} (ρ : kwk G0 Γ0) t : dnftm t -> dnftm (ktml ρ t).
+Proof. intros H; unfold ktml; apply ren_dnf, dnf_gwa, H. Qed.
 
 Lemma usubst_sup' l l' (A B : ty) a f φ :
   (tmSup l l' A B a f)[φ]ᵤ = tmSup (lvsubst l φ) (lvsubst l' φ) A[φ]ᵤ B[φ]ᵤ a[φ]ᵤ f[φ]ᵤ.
@@ -633,6 +641,134 @@ Proof.
     subst G' Γ'. apply wnf_ne. exact (pg_gne_tm Hp Hν).
 Qed.
 
+(** ** Finitary trees along a permutation (M15a)
+
+    As [WRel_perm], with the data abstract: a [sup]'s spine premise is at
+    the worlds of the permuted context, pulled back; the spine itself is
+    at the context, its children's annotations pulled back along [πi]. *)
+Lemma usubst_tyWf_ren l (A : ty) (N : tm) φ :
+  (tyWf l A N)⟨↑⟩[φ]ᵤ = (tyWf l A N)[φ]ᵤ⟨↑⟩.
+Proof. apply usubst_ren_ty. Qed.
+
+Lemma usubst_vecwf l (A : ty) (N m : tm) φ :
+  (tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩)[φ]ᵤ = tyVec (lvsubst l φ) (tyWf l A N)[φ]ᵤ⟨↑⟩ m[φ]ᵤ⟨↑⟩.
+Proof. rewrite <- usubst_ren_ty, <- usubst_ren. reflexivity. Qed.
+
+Lemma usubst_sigvec l (A : ty) (N m : tm) φ :
+  (tySig l l (tyWf l A N) (tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩))[φ]ᵤ =
+  tySig (lvsubst l φ) (lvsubst l φ) (tyWf l A N)[φ]ᵤ (tyVec (lvsubst l φ) (tyWf l A N)[φ]ᵤ⟨↑⟩ m[φ]ᵤ⟨↑⟩).
+Proof. rewrite <- usubst_vecwf. reflexivity. Qed.
+
+Lemma WfRel_perm π πi :
+  (forall G Γ l A N (d : DomRel G Γ) t t', WfRel G Γ l A N d t t' ->
+     forall (Hp : uperm π πi (gL G)) (HG : [ ⊢ G ]) (HΓ : dnfctx Γ) G' Γ' (d' : DomRel G' Γ'),
+     Gp π G = G' -> Γ[pφ π]ᵤ = Γ' -> dnfty A -> dnftm N ->
+     (forall (ρ : kwk G Γ) (ρ' : kwk G' Γ'), kcorr π ρ ρ' ->
+        forall x y, dnftm x -> dnftm y -> d ρ x y -> d' ρ' x[pφ π]ᵤ y[pφ π]ᵤ) ->
+     WfRel G' Γ' (lvsubst l (pφ π)) A[pφ π]ᵤ N[pφ π]ᵤ d' t[pφ π]ᵤ t'[pφ π]ᵤ) /\
+  (forall G Γ l A N (d : DomRel G Γ) w w', WfNf G Γ l A N d w w' ->
+     forall (Hp : uperm π πi (gL G)) (HG : [ ⊢ G ]) (HΓ : dnfctx Γ) G' Γ' (d' : DomRel G' Γ'),
+     Gp π G = G' -> Γ[pφ π]ᵤ = Γ' -> dnfty A -> dnftm N -> dnftm w -> dnftm w' ->
+     (forall (ρ : kwk G Γ) (ρ' : kwk G' Γ'), kcorr π ρ ρ' ->
+        forall x y, dnftm x -> dnftm y -> d ρ x y -> d' ρ' x[pφ π]ᵤ y[pφ π]ᵤ) ->
+     WfNf G' Γ' (lvsubst l (pφ π)) A[pφ π]ᵤ N[pφ π]ᵤ d' w[pφ π]ᵤ w'[pφ π]ᵤ) /\
+  (forall G Γ l A N (d : DomRel G Γ) k cs cs', VecSp G Γ l A N d k cs cs' ->
+     forall (Hp : uperm π πi (gL G)) (HG : [ ⊢ G ]) (HΓ : dnfctx Γ) G' Γ' (d' : DomRel G' Γ'),
+     Gp π G = G' -> Γ[pφ π]ᵤ = Γ' -> dnfty A -> dnftm N ->
+     (forall (ρ : kwk G Γ) (ρ' : kwk G' Γ'), kcorr π ρ ρ' ->
+        forall x y, dnftm x -> dnftm y -> d ρ x y -> d' ρ' x[pφ π]ᵤ y[pφ π]ᵤ) ->
+     VecSp G' Γ' (lvsubst l (pφ π)) A[pφ π]ᵤ N[pφ π]ᵤ d' k[pφ π]ᵤ cs[pφ π]ᵤ cs'[pφ π]ᵤ).
+Proof.
+  apply WfRel_comb.
+  - intros G Γ l A N d t t' w w' Hw Hw' Heq Hn IH Hp HG HΓ G' Γ' d' EG EΓ NA NN Hd.
+    destruct (geq_tm_dnf Heq) as [Nw Nw']. subst G' Γ'.
+    apply (wfrel _ _ _ _ _ _ _ _ w[pφ π]ᵤ w'[pφ π]ᵤ).
+    + exact (pg_tmred Hp Hw).
+    + exact (pg_tmred Hp Hw').
+    + exact (pg_geq_tm Hp Heq).
+    + exact (IH Hp HG HΓ _ _ d' eq_refl eq_refl NA NN Nw Nw' Hd).
+  - intros G Γ l A N d k k' C C' M M' a a' cs cs' Hk Hk' HC HC' HM HM' Ha Hcs IH
+      Hp HG HΓ G' Γ' d' EG EΓ NA NN Nw Nw' Hd.
+    subst G' Γ'.
+    destruct Nw as (_ & _ & Na & Ncs). destruct Nw' as (_ & _ & Na' & Ncs').
+    apply wfnf_sup.
+    1-2: apply (pg_lequiv Hp); assumption.
+    + exact (pg_geq_ty Hp HC).
+    + exact (pg_geq_ty Hp HC').
+    + exact (pg_geq_tm Hp HM).
+    + exact (pg_geq_tm Hp HM').
+    + intros ρ'. pose proof (kcorr_pull Hp HG HΓ ρ') as Hk0.
+      pose proof (Hd _ _ Hk0 _ _ (dnf_ktm _ _ Na) (dnf_ktm _ _ Na') (Ha (kw_pull Hp HG HΓ ρ'))) as X.
+      rewrite !(kcorr_ktm Hk0) in X. exact X.
+    + intros ρ'. pose proof (kcorr_pull Hp HG HΓ ρ') as Hk0.
+      set (ρ := kw_pull Hp HG HΓ ρ') in Hk0.
+      pose proof (IH ρ (uperm_grow _ _ _ _ (kw_gL ρ) Hp) (kw_glob ρ) (wf_ctx_dnf (kw_ctx ρ))
+                    (kw_G ρ') (kw_Δ ρ') (fun ρ0' => d' (kw_comp ρ' ρ0'))
+                    (proj1 Hk0) (proj1 (proj2 Hk0)) (dnf_kty _ _ NA) (dnf_ktml _ _ NN)) as X.
+      rewrite (kcorr_kty Hk0), (kcorr_ktml Hk0), usubst_lsingle, (kcorr_ktml Hk0), !(kcorr_ktm Hk0) in X.
+      apply X.
+      intros ρ0 ρ0' Hk1 x y Nx Ny h. exact (Hd _ _ (kcorr_comp Hk0 _ _ Hk1) x y Nx Ny h).
+  - intros G Γ l A N d ν ν' Hν Hp HG HΓ G' Γ' d' EG EΓ NA NN Nw Nw' Hd.
+    subst G' Γ'. apply wfnf_ne. exact (pg_gne_tm Hp Hν).
+  - intros G Γ l A N d k cs cs' Hk Hu Hp HG HΓ G' Γ' d' EG EΓ NA NN Hd.
+    subst G' Γ'. apply vsp_zero; [exact (pg_tmred Hp Hk)|].
+    destruct Hu as (w & w' & Hr & Hr' & Hf & Hf').
+    exists w[pφ π]ᵤ, w'[pφ π]ᵤ.
+    exact (conj (pg_tmred Hp Hr) (conj (pg_tmred Hp Hr') (conj (whnf_usubst _ _ Hf) (whnf_usubst _ _ Hf')))).
+  - intros G Γ l A N d k m cs cs' w w' Hk Hcs Hcs' Hwh Hwh' Heq Hfst IHfst Hsnd IHsnd
+      Hp HG HΓ G' Γ' d' EG EΓ NA NN Hd.
+    subst G' Γ'.
+    pose proof (proj1 Hp) as Hinv. pose proof (proj1 (proj2 Hp)) as Hinv'.
+    pose proof (uperm_inv _ _ _ Hp) as Hpi.
+    assert (NW : dnfty (tyWf l A N)) by (cbn; auto).
+    assert (NΓW : dnfctx (Γ ,, tyWf l A N @ l)) by (cbn; auto).
+    assert (NV : dnfty (tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩)) by (split; [apply ren_dnf_ty; exact NW | apply ren_dnf];
+          exact (wf_tm_dnf (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ Hk)))).
+    assert (PullL : forall lx lk, lequiv (gL (Gp π G)) lx (lvsubst lk (pφ π)) ->
+                      lequiv (gL G) (lvsubst lx (pφ πi)) lk).
+    { intros lx lk Hx. pose proof (pg_lequiv (G := Gp π G) Hpi Hx) as X. rewrite (rt_lvl Hinv) in X. exact X. }
+    assert (PA : forall X, [ Gp π G ; Γ[pφ π]ᵤ ⊢ (tyWf l A N)[pφ π]ᵤ ≈ X @ lvsubst l (pφ π) ] ->
+                   [ G ; Γ ⊢ tyWf l A N ≈ X[pφ πi]ᵤ @ l ]).
+    { intros X HX. pose proof (pg_geq_ty (G := Gp π G) Hpi HX) as Z.
+      rewrite (Gp_rt Hp HG), (rt_ctx Hinv _ HΓ), (rt_ty Hinv _ NW), (rt_lvl Hinv) in Z. exact Z. }
+    assert (PB : forall X, [ Gp π G ; Γ[pφ π]ᵤ ,, (tyWf l A N)[pφ π]ᵤ @ lvsubst l (pφ π)
+                             ⊢ tyVec (lvsubst l (pφ π)) (tyWf l A N)[pφ π]ᵤ⟨↑⟩ m[pφ π]ᵤ⟨↑⟩ ≈ X @ lvsubst l (pφ π) ] ->
+                   [ G ; Γ ,, tyWf l A N @ l ⊢ tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩ ≈ X[pφ πi]ᵤ @ l ]).
+    { intros X HX. rewrite <- usubst_vecwf in HX.
+      pose proof (pg_geq_ty (G := Gp π G) (Γ := (Γ ,, tyWf l A N @ l)[pφ π]ᵤ) Hpi HX) as Z.
+      rewrite (Gp_rt Hp HG), (rt_ctx Hinv _ NΓW), (rt_ty Hinv _ NV), (rt_lvl Hinv) in Z. exact Z. }
+    pose proof (pg_tmred Hp Hcs) as Rcs. pose proof (pg_tmred Hp Hcs') as Rcs'. pose proof (pg_geq_tm Hp Heq) as Eq.
+    rewrite usubst_sigvec in Rcs, Rcs', Eq.
+    apply (vsp_succ (Gp π G) Γ[pφ π]ᵤ (lvsubst l (pφ π)) A[pφ π]ᵤ N[pφ π]ᵤ d' k[pφ π]ᵤ m[pφ π]ᵤ
+             cs[pφ π]ᵤ cs'[pφ π]ᵤ w[pφ π]ᵤ w'[pφ π]ᵤ).
+    + exact (pg_tmred Hp Hk).
+    + exact Rcs.
+    + exact Rcs'.
+    + exact (whnf_usubst _ _ Hwh).
+    + exact (whnf_usubst _ _ Hwh').
+    + exact Eq.
+    + intros la lb A1 B1 la' lb' A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1'.
+      destruct (geq_ty_dnf HA1) as [_ NA1]. destruct (geq_ty_dnf HB1) as [_ NB1].
+      destruct (geq_ty_dnf HA1') as [_ NA1']. destruct (geq_ty_dnf HB1') as [_ NB1'].
+      pose proof (IHfst _ _ _ _ _ _ _ _ (PullL _ _ H1) (PullL _ _ H2) (PullL _ _ H3) (PullL _ _ H4)
+                    (PA _ HA1) (PB _ HB1) (PA _ HA1') (PB _ HB1') Hp HG HΓ _ _ d' eq_refl eq_refl NA NN Hd) as X.
+      rewrite !usubst_fst', !(rt_lvl Hinv'), (rt_ty Hinv' _ NA1), (rt_ty Hinv' _ NB1),
+        (rt_ty Hinv' _ NA1'), (rt_ty Hinv' _ NB1') in X.
+      exact X.
+    + intros la lb A1 B1 la' lb' A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1'.
+      destruct (geq_ty_dnf HA1) as [_ NA1]. destruct (geq_ty_dnf HB1) as [_ NB1].
+      destruct (geq_ty_dnf HA1') as [_ NA1']. destruct (geq_ty_dnf HB1') as [_ NB1'].
+      pose proof (IHsnd _ _ _ _ _ _ _ _ (PullL _ _ H1) (PullL _ _ H2) (PullL _ _ H3) (PullL _ _ H4)
+                    (PA _ HA1) (PB _ HB1) (PA _ HA1') (PB _ HB1') Hp HG HΓ _ _ d' eq_refl eq_refl NA NN Hd) as X.
+      rewrite !usubst_snd', !(rt_lvl Hinv'), (rt_ty Hinv' _ NA1), (rt_ty Hinv' _ NB1),
+        (rt_ty Hinv' _ NA1'), (rt_ty Hinv' _ NB1') in X.
+      exact X.
+  - intros G Γ l A N d k ν cs cs' Hk Hν Hne Hp HG HΓ G' Γ' d' EG EΓ NA NN Hd.
+    subst G' Γ'.
+    apply (vsp_ne _ _ _ _ _ _ _ ν[pφ π]ᵤ); [exact (pg_tmred Hp Hk) | exact (pg_gne_tm Hp Hν) |].
+    exact (NeRel_perm Hp _ _ _ _ _ Hne).
+Qed.
+
 Lemma LR_perm_step n : (forall m, m < n -> Pperm m) -> Pperm n.
 Proof.
   intros IHn G Γ T T' l R H.
@@ -652,7 +788,9 @@ Proof.
                  | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
                  | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
                      HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR
-                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd IHdom codAd IHcod HR];
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd IHdom codAd IHcod HR
+                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN
+                     domAd IHdom arAd HR];
     intros π πi Hp;
     pose proof (uperm_inv _ _ _ Hp) as Hpi;
     pose proof (proj1 Hp) as Hinv; pose proof (proj1 (proj2 Hp)) as Hinv';
@@ -1294,6 +1432,76 @@ Proof.
            destruct (LR_rel_dnf (codAd ρ _ _ h') _ _ Huv) as [Nu Nv].
            exists Rc. exact (conj HRc (proj1 (ERc u v Nu Nv) Huv)).
         -- intros ρ x y h u v Huv. exact (LR_rel_dnf (codAd ρ x y h) _ _ Huv).
+  - (* Wf: the domain as W's; the arity through the pull-back; the terms by
+       [WfRel_perm], backwards along [πi] *)
+    set (Aπ := A[pφ π]ᵤ). set (A'π := A'[pφ π]ᵤ). set (Nπ := N[pφ π]ᵤ). set (N'π := N'[pφ π]ᵤ).
+    set (k1 := lvsubst l1 (pφ π)).
+    pose proof (wf_ty_dnf HA) as NA. pose proof (wf_ty_dnf HA') as NA'.
+    pose proof (wf_tm_dnf HNt) as NN. pose proof (wf_tm_dnf HNt') as NN'.
+    set (domR' := fun (ρ' : kwk (Gp π G) Γ[pφ π]ᵤ) a a' =>
+           exists Rd, LR n (LRbelow n) (kw_G ρ') (kw_Δ ρ') (kty ρ' Aπ) (kty ρ' A'π) k1 Rd /\ Rd a a').
+    assert (Dom : forall ρ', exists Rd,
+               LR n (LRbelow n) (kw_G ρ') (kw_Δ ρ') (kty ρ' Aπ) (kty ρ' A'π) k1 Rd /\
+               forall x y, dnftm x -> dnftm y -> (domR (kw_pull Hp HG HΓ ρ') x y <-> Rd x[pφ π]ᵤ y[pφ π]ᵤ)).
+    { intros ρ'.
+      assert (Hpρ : uperm π πi (gL (kw_G (kw_pull Hp HG HΓ ρ')))) by exact (uperm_grow _ _ _ _ (kw_gL ρ') Hp).
+      destruct (IHdom (kw_pull Hp HG HΓ ρ') π πi Hpρ) as (Rd & HRd & ERd).
+      rewrite (pull_G Hp HG HΓ ρ'), (pull_Δ Hp HG HΓ ρ'), !(kty_pull Hp HG HΓ ρ') in HRd.
+      exists Rd. exact (conj HRd ERd). }
+    assert (Back : forall ρ' a a', domR' ρ' a a' ->
+               dnftm a /\ dnftm a' /\ domR (kw_pull Hp HG HΓ ρ') a[pφ πi]ᵤ a'[pφ πi]ᵤ).
+    { intros ρ' a a' (Rd2 & H2 & h2). destruct (Dom ρ') as (Rd & HRd & ERd).
+      destruct (LR_rel_dnf H2 _ _ h2) as [Na Na'].
+      pose proof (proj2 (LR_irrel _ _ _ _ _ _ _ _ _ _ HRd H2 a a') h2) as h.
+      refine (conj Na (conj Na' _)). apply (ERd _ _ (dnf_us_tm _ _) (dnf_us_tm _ _)).
+      rewrite !(rt_tm Hinv') by assumption. exact h. }
+    assert (Hdom' : forall ρ', LR n (LRbelow n) (kw_G ρ') (kw_Δ ρ') (kty ρ' Aπ) (kty ρ' A'π) k1 (domR' ρ')).
+    { intros ρ'. destruct (Dom ρ') as (Rd & HRd & _). refine (LR_releq _ _ _ _ _ _ _ _ _ HRd _).
+      intros a a'; split; [intros h; exists Rd; exact (conj HRd h) |].
+      intros (Rd2 & H2 & h2). exact (proj2 (LR_irrel _ _ _ _ _ _ _ _ _ _ HRd H2 a a') h2). }
+    assert (Har : forall ρ' a a', domR' ρ' a a' ->
+               NatRel (kw_G ρ') (kw_Δ ρ') (ktml ρ' Nπ)[lsingle a] (ktml ρ' N'π)[lsingle a']).
+    { intros ρ' a a' ha. destruct (Back ρ' a a' ha) as (Na & Na' & hx).
+      pose proof (NatRel_perm (G := kw_G (kw_pull Hp HG HΓ ρ')) (uperm_grow _ _ _ _ (kw_gL ρ') Hp) _ _ (arAd _ _ _ hx)) as X.
+      rewrite (pull_G Hp HG HΓ ρ'), (pull_Δ Hp HG HΓ ρ'), !usubst_lsingle, !(ktml_pull Hp HG HΓ ρ'),
+        !(rt_tm Hinv') in X by assumption.
+      exact X. }
+    exists (WfRel (Gp π G) Γ[pφ π]ᵤ k1 Aπ Nπ domR'). split.
+    + apply (LRwf n (LRbelow n) (Gp π G) Γ[pφ π]ᵤ T[pφ π]ᵤ T'[pφ π]ᵤ (lvsubst l (pφ π)) k1 (lvsubst l2 (pφ π))
+               Aπ A'π Nπ N'π domR').
+      * exact (pg_lequiv Hp Hl).
+      * exact (pg_lequiv Hp Hl2).
+      * exact (pg_lwf Hp Hw).
+      * exact (pg_tyred Hp HT).
+      * exact (pg_tyred Hp HT').
+      * exact (pg_ty Hp HA).
+      * exact (pg_ty Hp HA').
+      * exact (pg_tm Hp HNt).
+      * exact (pg_tm Hp HNt').
+      * exact (pg_geq_ty Hp HAA).
+      * exact (pg_geq_tm Hp HNN).
+      * exact Hdom'.
+      * exact Har.
+      * apply releq_refl.
+    + subst domR' Aπ A'π Nπ N'π k1.
+      intros t t' Nt Nt'. rewrite (HR t t'). split.
+      * intros H. refine (proj1 (WfRel_perm π πi) _ _ _ _ _ _ _ _ H Hp HG HΓ _ _ _ eq_refl eq_refl NA NN _).
+        intros ρ ρ' Hk x y Nx Ny h.
+        destruct (IHdom ρ π πi (uperm_grow _ _ _ _ (kw_gL ρ) Hp)) as (Rd & HRd & ERd).
+        rewrite (proj1 Hk), (proj1 (proj2 Hk)), !(kcorr_kty Hk) in HRd.
+        exists Rd. exact (conj HRd (proj1 (ERd x y Nx Ny) h)).
+      * intros H.
+        assert (Hk' : forall (ρ0 : kwk (Gp π G) Γ[pφ π]ᵤ) (ρ : kwk G Γ), kcorr πi ρ0 ρ -> kcorr π ρ ρ0)
+          by (intros ρ0 ρ Hk0; exact (kcorr_flip ρ0 ρ (uperm_grow _ _ _ _ (kw_gL ρ0) Hp) Hk0)).
+        pose proof (proj1 (WfRel_perm πi π) _ _ _ _ _ _ _ _ H Hpi HG' (dnf_us_ctx _ _) G Γ domR
+                      (Gp_rt Hp HG) (rt_ctx Hinv _ HΓ) (dnf_us_ty _ _) (dnf_us_tm _ _)) as X.
+        rewrite !(rt_lvl Hinv), (rt_ty Hinv _ NA), (rt_tm Hinv _ NN), (rt_tm Hinv _ Nt), (rt_tm Hinv _ Nt') in X.
+        apply X.
+        intros ρ0 ρ Hk0 x y Nx Ny (Rd2 & H2 & h2). pose proof (Hk' _ _ Hk0) as Hk.
+        destruct (IHdom ρ π πi (uperm_grow _ _ _ _ (kw_gL ρ) Hp)) as (Rd & HRd & ERd).
+        rewrite (proj1 Hk), (proj1 (proj2 Hk)), !(kcorr_kty Hk) in HRd.
+        pose proof (proj2 (LR_irrel _ _ _ _ _ _ _ _ _ _ HRd H2 x y) h2) as h.
+        apply (ERd _ _ (dnf_us_tm _ _) (dnf_us_tm _ _)). rewrite !(rt_tm Hinv') by assumption. exact h.
 Qed.
 
 Theorem LR_perm n : Pperm n.

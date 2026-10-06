@@ -10,7 +10,7 @@
       [UΠ], a context or type abstraction at [CΠ]/[TΠ], a pair at [Σ], [⟨⟩]
       at [Unit], [srefl] at [sEq], and nothing at [sEmpty] (M10a), [refl] at
       [Id] (M11a), nothing at [Empty] (M12a), an injection at [+]
-      (M12b) and [sup] at [W] (M13a).
+      (M12b), [sup] at [W] (M13a) and [sup_f] at [Wf] (M15a).
 
     Closed whnfs are not neutral ([no_closed_neutral]). A value's typing
     inversion equates its type with its canonical type former, and head
@@ -39,6 +39,7 @@ Definition canon_head (h : nat) (w : tm) : Prop :=
   | 14 => exists l A a, w = tmRefl l A a
   | 16 => (exists l l' A B a, w = tmInl l l' A B a) \/ exists l l' A B b, w = tmInr l l' A B b
   | 17 => exists l l' A B a f, w = tmSup l l' A B a f
+  | 18 => exists l A N a cs, w = tmSupf l A N a cs
   | _ => False
   end.
 
@@ -60,7 +61,7 @@ Proof.
           | pose proof (inv_code_id Hi Hx) as X
           | pose proof (inv_code_seq Hi Hx) as X | pose proof (inv_code_sempty Hi Hx) as X
           | pose proof (inv_inl Hi Hx) as X | pose proof (inv_inr Hi Hx) as X
-          | pose proof (inv_sup Hi Hx) as X
+          | pose proof (inv_sup Hi Hx) as X | pose proof (inv_supf Hi Hx) as X
           | pose proof (inv_code_empty Hi Hx) as X | pose proof (inv_code_sum Hi Hx) as X
           | pose proof (inv_code_W Hi Hx) as X
           | pose proof (inv_code_vec Hi Hx) as X | pose proof (inv_code_fin Hi Hx) as X ];

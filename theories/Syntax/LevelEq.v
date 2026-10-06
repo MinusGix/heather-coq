@@ -25,6 +25,7 @@ Fixpoint ty_leq (T T' : ty) {struct T} : Prop :=
   | tyW l1 l2 A B, tyW l1' l2' A' B' => leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B'
   | tyVec l A n, tyVec l' A' n' => leqv l l' /\ ty_leq A A' /\ tm_leq n n'
   | tyFin n, tyFin n' => tm_leq n n'
+  | tyWf l A N, tyWf l' A' N' => leqv l l' /\ ty_leq A A' /\ tm_leq N N'
   | tyUnit l, tyUnit l' | tySEmpty l, tySEmpty l' | tyEmpty l, tyEmpty l' => leqv l l'
   | tySEq l A a b, tySEq l' A' a' b' => leqv l l' /\ ty_leq A A' /\ tm_leq a a' /\ tm_leq b b'
   | tyId l A a b, tyId l' A' a' b' => leqv l l' /\ ty_leq A A' /\ tm_leq a a' /\ tm_leq b b'
@@ -97,6 +98,11 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
       leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq a a' /\ tm_leq f f'
   | tmElimW l1 l2 l3 A B M c t, tmElimW l1' l2' l3' A' B' M' c' t' =>
       leqv l1 l1' /\ leqv l2 l2' /\ leqv l3 l3' /\ ty_leq A A' /\ ty_leq B B' /\ ty_leq M M' /\
+      tm_leq c c' /\ tm_leq t t'
+  | tmSupf l A N a cs, tmSupf l' A' N' a' cs' =>
+      leqv l l' /\ ty_leq A A' /\ tm_leq N N' /\ tm_leq a a' /\ tm_leq cs cs'
+  | tmElimWf l1 l2 A N M c t, tmElimWf l1' l2' A' N' M' c' t' =>
+      leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ tm_leq N N' /\ ty_leq M M' /\
       tm_leq c c' /\ tm_leq t t'
   | _, _ => False
   end
@@ -381,6 +387,7 @@ Fixpoint ty_lwf (L : nat) (T : ty) {struct T} : Prop :=
   | tyU l | tyUnit l | tySEmpty l | tyEmpty l => lwf L l
   | tyVec l A n => lwf L l /\ ty_lwf L A /\ tm_lwf L n
   | tyFin n => tm_lwf L n
+  | tyWf l A N => lwf L l /\ ty_lwf L A /\ tm_lwf L N
   | tySEq l A a b => lwf L l /\ ty_lwf L A /\ tm_lwf L a /\ tm_lwf L b
   | tyId l A a b => lwf L l /\ ty_lwf L A /\ tm_lwf L a /\ tm_lwf L b
   | tyEl l t => lwf L l /\ tm_lwf L t
@@ -410,6 +417,9 @@ with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   | tmInl l1 l2 A B a | tmInr l1 l2 A B a => lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ ty_lwf L B /\ tm_lwf L a
   | tmSup l1 l2 A B a f => lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ ty_lwf L B /\ tm_lwf L a /\ tm_lwf L f
   | tmElimW l1 l2 l3 A B M c t => lwf L l1 /\ lwf L l2 /\ lwf L l3 /\ ty_lwf L A /\ ty_lwf L B /\
+      ty_lwf L M /\ tm_lwf L c /\ tm_lwf L t
+  | tmSupf l A N a cs => lwf L l /\ ty_lwf L A /\ tm_lwf L N /\ tm_lwf L a /\ tm_lwf L cs
+  | tmElimWf l1 l2 A N M c t => lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ tm_lwf L N /\
       ty_lwf L M /\ tm_lwf L c /\ tm_lwf L t
   | tmCase l1 l2 l3 A B M c1 c2 t => lwf L l1 /\ lwf L l2 /\ lwf L l3 /\ ty_lwf L A /\ ty_lwf L B /\
       ty_lwf L M /\ tm_lwf L c1 /\ tm_lwf L c2 /\ tm_lwf L t

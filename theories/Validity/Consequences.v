@@ -13,7 +13,7 @@ Definition ty_head (T : ty) : nat :=
   | tyGvar _ _ | tyEl _ _ | tyVec _ _ _ | tyFin _ => 0 | tyNat => 1 | tyU _ => 2 | tyPi _ _ _ _ => 3
   | tyCTyp _ _ => 4 | tyCTrm _ _ _ => 5 | tyUPi _ _ _ => 6 | tyCPi _ _ => 7 | tyTPi _ _ _ _ => 8
   | tyErr => 9 | tySig _ _ _ _ => 10 | tyUnit _ => 11 | tySEq _ _ _ _ => 12 | tySEmpty _ => 13
-  | tyId _ _ _ _ => 14 | tyEmpty _ => 15 | tySum _ _ _ _ => 16 | tyW _ _ _ _ => 17
+  | tyId _ _ _ _ => 14 | tyEmpty _ => 15 | tySum _ _ _ _ => 16 | tyW _ _ _ _ => 17 | tyWf _ _ _ => 18
   end.
 
 Lemma whne_ty_head V : whne_ty V -> ty_head V = 0.
@@ -136,6 +136,20 @@ Proof.
   injection Heq as <- <- <- <-. auto.
 Qed.
 
+(** Finitary well-founded trees (M15a): the shapes and the arities. *)
+Lemma Wf_inj {G Γ l l1 l2 A A' N N'} :
+  [ G ; Γ ⊢g tyWf l1 A N ≅ tyWf l2 A' N' @ l ] -> lwf (gL G) l ->
+  lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢ A ≈ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢ N ≈ N' : tyNat @ lzero ].
+Proof.
+  intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
+  pose proof (eqty_wf_l ge_typeof H) as HP.
+  destruct (LR_inv_wf HR (tyred_refl _ _ HP))
+    as (m2 & C' & M' & domR & _ & H2 & _ & _ & HT' & _ & _ & _ & _ & HAA & HNN & _).
+  pose proof (tyred_refl _ _ (eqty_wf_r ge_typeof H)) as HT'0.
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' HT'0 (whnf_tyWf _ _ _) (whnf_tyWf _ _ _)) as Heq.
+  injection Heq as <- <- <-. auto.
+Qed.
+
 Lemma sempty_inj {G Γ l l1 l2} :
   [ G ; Γ ⊢g tySEmpty l1 ≅ tySEmpty l2 @ l ] -> lwf (gL G) l -> lequiv (gL G) l2 l1.
 Proof.
@@ -198,7 +212,8 @@ Proof.
                 | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
                     HRA HRB Hpa Hta Hpb Htb HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
-                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR];
     try match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
     eexists; split; eauto using whnf_ty, gne_ty_whne_l.
 Qed.
@@ -237,7 +252,8 @@ Proof.
                 | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
                     HRA HRB Hpa Hta Hpb Htb HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
-                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR];
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR];
     intros t t' Ht; first [exact (ModRel_whnf_tm HM _ _ Ht) | apply HR in Ht].
   - destruct Ht as [t t' w w' Hw _ _ Hnf]. exists w; split; [exact (tmred_back Hw HT Hl)|].
     destruct Hnf; eauto using whnf, gne_tm_whne_l.
@@ -261,6 +277,8 @@ Proof.
     exact (SumNf_whnf_l Hnf).
   - destruct (WRel_inv Ht) as (w & w' & Hr & _ & _ & Hnf). exists w; split; [exact (tmred_back Hr HT Hl) |].
     exact (WNf_whnf_l Hnf).
+  - destruct (WfRel_inv Ht) as (w & w' & Hr & _ & _ & Hnf). exists w; split; [exact (tmred_back Hr HT Hl) |].
+    exact (WfNf_whnf_l Hnf).
 Qed.
 
 Theorem whnf_normalization_ty {G Γ T l} : [ G ; Γ ⊢g T @ l ] -> lwf (gL G) l ->

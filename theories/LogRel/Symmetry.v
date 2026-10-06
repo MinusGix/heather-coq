@@ -25,6 +25,14 @@ Proof.
   apply ext_wf_g; [now apply (lconv_ty HA) | eauto using lequiv_wf_r].
 Qed.
 
+Lemma ctx_lvl_tm {G Γ A la la' t T l} :
+  [ G ; Γ ⊢g A @ la ] -> lequiv (gL G) la la' ->
+  [ G ; Γ ,, A @ la ⊢g t : T @ l ] -> [ G ; Γ ,, A @ la' ⊢g t : T @ l ].
+Proof.
+  intros HA Hl Ht. eapply (stab_tm ge_typeof (eqty_refl _ _ _ _ _ HA) Hl); [|exact Ht].
+  apply ext_wf_g; [now apply (lconv_ty HA) | eauto using lequiv_wf_r].
+Qed.
+
 Lemma ctx_lvl_geq {G Γ A la la' T T' l} :
   [ G ; Γ ⊢g A @ la ] -> lequiv (gL G) la la' ->
   [ G ; Γ ,, A @ la ⊢ T ≈ T' @ l ] -> [ G ; Γ ,, A @ la' ⊢ T ≈ T' @ l ].
@@ -419,6 +427,135 @@ Proof.
     apply wnf_ne. eapply gne_tm_lconv; [eapply gne_tm_conv; [apply gne_tm_sym, Hν | exact HV] | exact Hm].
 Qed.
 
+(** ** Finitary trees, flipped (M15a)
+
+    By induction on the relation, the child spine flipped together with
+    the trees: a spine is flipped along a right length [NatRel]-related to
+    its own, which is how the right arity relates to the left one ([HC]).
+    The flipped spine is at the right length, so its reductions and
+    annotations move along [Vec] at related lengths ([geq_vec_nat]). *)
+Section WfFlip.
+
+Definition WfFlipHyps G Γ l A N (d : DomRel G Γ) l' A' N' :=
+  lequiv (gL G) l' l /\ [ G ; Γ ⊢g A @ l ] /\ [ G ; Γ ⊢ A ≈ A' @ l ] /\
+  [ G ; Γ ,, A @ l ⊢ N ≈ N' : tyNat @ lzero ] /\
+  (forall (ρ : kwk G Γ) x y, d ρ x y ->
+     NatRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N)[lsingle x] (ktml ρ N')[lsingle y]).
+
+Lemma WfFlipHyps_kw {G Γ l A N d l' A' N'} (ρ : kwk G Γ) :
+  WfFlipHyps G Γ l A N d l' A' N' ->
+  WfFlipHyps (kw_G ρ) (kw_Δ ρ) l (kty ρ A) (ktml ρ N) (fun ρ' => d (kw_comp ρ ρ')) l' (kty ρ A') (ktml ρ N').
+Proof.
+  intros (Hl & HA & HAA & HNN & HC). pose proof (lequiv_wf_r _ _ _ Hl) as W.
+  refine (conj (kw_lequiv ρ Hl) (conj (kw_ty ρ HA) (conj (kw_geq_ty ρ HAA) (conj (kw_geq_nat_l ρ HA W HNN) _)))).
+  intros ρ' x y h. rewrite <- !ktml_comp. exact (HC (kw_comp ρ ρ') x y h).
+Qed.
+
+(** The data the cases share. *)
+Lemma WfFlip_data {G Γ l A N d l' A' N'} : WfFlipHyps G Γ l A N d l' A' N' ->
+  lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢g tyWf l A N @ l ] /\ [ G ; Γ ⊢g tyWf l' A' N' @ l' ] /\
+  [ G ; Γ ⊢ tyWf l A N ≈ tyWf l' A' N' @ l ] /\ [ G ; Γ ⊢g tyWf l A N ≅ tyWf l' A' N' @ l ].
+Proof.
+  intros (Hl & HA & HAA & HNN & _).
+  pose proof (geq_ty_wf (lequiv_sym _ _ _ Hl) HA HAA HNN) as EWg.
+  pose proof (geq_ty_sound EWg) as EW.
+  refine (conj (lequiv_wf_r _ _ _ Hl) (conj (lequiv_wf_l _ _ _ Hl) (conj (eqty_wf_l ge_typeof EW) (conj _ (conj EWg EW))))).
+  exact (lconv_ty (eqty_wf_r ge_typeof EW) (lequiv_sym _ _ _ Hl)).
+Qed.
+
+Lemma WfRel_flip_all :
+  (forall G Γ l A N d t t', WfRel G Γ l A N d t t' ->
+     forall l' A' N', WfFlipHyps G Γ l A N d l' A' N' -> WfRel G Γ l' A' N' (flipD d) t' t) /\
+  (forall G Γ l A N d t t', WfNf G Γ l A N d t t' ->
+     forall l' A' N', WfFlipHyps G Γ l A N d l' A' N' -> WfNf G Γ l' A' N' (flipD d) t' t) /\
+  (forall G Γ l A N d k cs cs', VecSp G Γ l A N d k cs cs' ->
+     forall l' A' N', WfFlipHyps G Γ l A N d l' A' N' ->
+     forall k', NatRel G Γ k k' -> VecSp G Γ l' A' N' (flipD d) k' cs' cs).
+Proof.
+  apply WfRel_comb.
+  - intros G Γ l A N d t t' w w' Hw Hw' Heq _ IH l' A' N' Hy.
+    destruct (WfFlip_data Hy) as (W & W' & HWf & HWf' & EWg & EW).
+    pose proof (proj1 Hy) as Hl.
+    econstructor.
+    + eapply tmred_lconv; [eapply tmred_conv; [apply ge_typeof | exact Hw' | exact EW] | exact Hl].
+    + eapply tmred_lconv; [eapply tmred_conv; [apply ge_typeof | exact Hw | exact EW] | exact Hl].
+    + eapply geq_tm_lconv; [eapply geq_tm_conv; [apply geq_tm_sym, Heq | exact EW] | exact Hl].
+    + exact (IH l' A' N' Hy).
+  - intros G Γ l A N d k k' C C' M M' a a' cs cs' Hk Hk' HAC HAC' HNM HNM' Ha Hcs IH l' A' N' Hy.
+    destruct (WfFlip_data Hy) as (W & W' & HWf & HWf' & EWg & EW).
+    pose proof Hy as (Hl & HA & HAA & HNN & HC).
+    pose proof (eqty_wf_r ge_typeof (geq_ty_sound HAA)) as HA'.
+    assert (CA : forall X, [ G ; Γ ⊢ A ≈ X @ l ] -> [ G ; Γ ⊢ A' ≈ X @ l' ]).
+    { intros X HX. eapply geq_ty_lconv; [eapply geq_ty_trans; [apply geq_ty_sym, HAA | exact HX] | exact Hl]. }
+    assert (CN : forall X, [ G ; Γ ,, A @ l ⊢ N ≈ X : tyNat @ lzero ] -> [ G ; Γ ,, A' @ l' ⊢ N' ≈ X : tyNat @ lzero ]).
+    { intros X HX.
+      eapply geq_tm_ctxconv; [apply geq_ty_sound, HAA | now apply lequiv_sym
+                             | apply ext_wf_g; [exact (lconv_ty HA' (lequiv_sym _ _ _ Hl)) | exact W'] |].
+      eapply geq_tm_trans; [apply geq_tm_sym, HNN | exact HX]. }
+    apply wfnf_sup.
+    + exact (lequiv_trans _ _ _ _ Hk' (lequiv_sym _ _ _ Hl)).
+    + exact (lequiv_trans _ _ _ _ Hk (lequiv_sym _ _ _ Hl)).
+    + exact (CA _ HAC').
+    + exact (CA _ HAC).
+    + exact (CN _ HNM').
+    + exact (CN _ HNM).
+    + intros ρ. exact (Ha ρ).
+    + intros ρ. exact (IH ρ l' (kty ρ A') (ktml ρ N') (WfFlipHyps_kw ρ Hy) _ (HC ρ _ _ (Ha ρ))).
+  - intros G Γ l A N d ν ν' Hν l' A' N' Hy.
+    destruct (WfFlip_data Hy) as (W & W' & HWf & HWf' & EWg & EW).
+    apply wfnf_ne. eapply gne_tm_lconv; [eapply gne_tm_conv; [apply gne_tm_sym, Hν | exact EW] | exact (proj1 Hy)].
+  - intros G Γ l A N d k cs cs' Hk Hu l' A' N' Hy k' Hkk.
+    apply vsp_zero; [exact (NatRel_inv_zero Hkk Hk) |].
+    apply (UnitRel_lconv (proj1 Hy)), UnitRel_sym, Hu.
+  - intros G Γ l A N d k m cs cs' w w' Hk Hcs Hcs' Hwh Hwh' Heq Hfst IHfst Hsnd IHsnd l' A' N' Hy k' Hkk.
+    destruct (WfFlip_data Hy) as (W & W' & HWf & HWf' & EWg & EW).
+    pose proof (proj1 Hy) as Hl.
+    destruct (NatRel_inv_succ Hkk Hk) as (m' & Hk' & Hmm).
+    pose proof (geq_tm_sound (NatRel_geq Hmm)) as Em.
+    pose proof (sigvec_eq (lequiv_sym _ _ _ Hl) W HWf EW Em) as ES.
+    assert (Hml : lequiv (gL G) (lmax l' l') (lmax l l)) by now apply lequiv_max.
+    assert (MA : forall X, [ G ; Γ ⊢ tyWf l' A' N' ≈ X @ l' ] -> [ G ; Γ ⊢ tyWf l A N ≈ X @ l ]).
+    { intros X HX. eapply geq_ty_trans; [exact EWg | eapply geq_ty_lconv; [exact HX | now apply lequiv_sym]]. }
+    assert (MB : forall X, [ G ; Γ ,, tyWf l' A' N' @ l' ⊢ tyVec l' (tyWf l' A' N')⟨↑⟩ m'⟨↑⟩ ≈ X @ l' ] ->
+                   [ G ; Γ ,, tyWf l A N @ l ⊢ tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩ ≈ X @ l ]).
+    { intros X HX.
+      assert (HΓ' : [ G ; Γ ,, tyWf l' A' N' @ l' ⊢g ]) by now apply ext_wf_g.
+      assert (Y : [ G ; Γ ,, tyWf l' A' N' @ l' ⊢ tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩ ≈ X @ l ]).
+      { eapply geq_ty_trans;
+          [exact (geq_ty_wk (wkr_shift1 _ _ _) HΓ' (geq_vec_nat m m' Hmm l l' _ _ (lequiv_sym _ _ _ Hl) HWf EWg))
+          | eapply geq_ty_lconv; [exact HX | now apply lequiv_sym]]. }
+      eapply geq_ty_ctxconv; [| exact Hl | apply ext_wf_g; [exact HWf | exact W] | exact Y].
+      eapply eqty_lconv; [apply eqty_sym, EW | exact Hl]. }
+    apply (vsp_succ G Γ l' A' N' (flipD d) k' m' cs' cs w' w).
+    + exact Hk'.
+    + eapply tmred_lconv; [eapply tmred_conv; [apply ge_typeof | exact Hcs' | exact ES] | exact Hml].
+    + eapply tmred_lconv; [eapply tmred_conv; [apply ge_typeof | exact Hcs | exact ES] | exact Hml].
+    + exact Hwh'.
+    + exact Hwh.
+    + eapply geq_tm_lconv; [eapply geq_tm_conv; [apply geq_tm_sym, Heq | exact ES] | exact Hml].
+    + intros la' lb' A1' B1' la lb A1 B1 H1' H2' H1 H2 HA1' HB1' HA1 HB1.
+      exact (IHfst la lb A1 B1 la' lb' A1' B1'
+               (lequiv_trans _ _ _ _ H1 Hl) (lequiv_trans _ _ _ _ H2 Hl)
+               (lequiv_trans _ _ _ _ H1' Hl) (lequiv_trans _ _ _ _ H2' Hl)
+               (MA _ HA1) (MB _ HB1) (MA _ HA1') (MB _ HB1') l' A' N' Hy).
+    + intros la' lb' A1' B1' la lb A1 B1 H1' H2' H1 H2 HA1' HB1' HA1 HB1.
+      exact (IHsnd la lb A1 B1 la' lb' A1' B1'
+               (lequiv_trans _ _ _ _ H1 Hl) (lequiv_trans _ _ _ _ H2 Hl)
+               (lequiv_trans _ _ _ _ H1' Hl) (lequiv_trans _ _ _ _ H2' Hl)
+               (MA _ HA1) (MB _ HB1) (MA _ HA1') (MB _ HB1') l' A' N' Hy m' Hmm).
+  - intros G Γ l A N d k ν cs cs' Hk Hν Hne l' A' N' Hy k' Hkk.
+    destruct (WfFlip_data Hy) as (W & W' & HWf & HWf' & EWg & EW).
+    pose proof (proj1 Hy) as Hl.
+    destruct (NatRel_inv_ne Hkk Hk (gne_tm_whne_l Hν)) as (ν' & Hk' & Hνν).
+    apply (vsp_ne G Γ l' A' N' (flipD d) k' ν' cs' cs); [exact Hk' | eapply gne_tm_trans; [apply gne_tm_sym|]; exact Hνν |].
+    pose proof (geq_ty_sound (gne_ty_geq (gne_ty_vec (lequiv_sym _ _ _ Hl) HWf EWg Hνν))) as EV.
+    apply (NeRel_lconv _ _ _ _ _ _ Hl).
+    eapply NeRel_conv2; [exact EV | exact EV |].
+    apply NeRel_flip; exact Hne.
+Qed.
+
+End WfFlip.
+
 (** ** Symmetry *)
 
 Lemma LR_sym_step n : (forall m, m < n -> Psym m) -> Psym n.
@@ -440,7 +577,9 @@ Proof.
                  | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
                  | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
                      HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR
-                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd IHdom codAd IHcod HR].
+                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd IHdom codAd IHcod HR
+                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN
+                     domAd IHdom arAd HR].
   - eapply LRnat; eauto.
     intros t t'; unfold flipR; rewrite (HR t' t); apply NatRel_flip.
   - assert (Hm : lmeasure l2 = lmeasure l1) by (eapply lequiv_measure; eauto).
@@ -625,6 +764,34 @@ Proof.
       * destruct P' as [_ Hl3' Hl4' _ _ _ _ HA'3 HA3 _ _ HAA' HBB'].
         exact (WRel_flip _ _ _ _ _ _ _ _ _ _ X l1 l2 A B Hl3' Hl4' HA'3 HA3 HAA' HBB'
                  (fun ρ x y h => geq_ty_lconv (geq_ty_sym (HC ρ y x h)) (kw_lequiv ρ Hl4))).
+  - (* Wf *)
+    pose proof (lequiv_sym _ _ _ Hl2) as Hl2'. pose proof (lequiv_wf_l _ _ _ Hl2) as W2.
+    assert (HA'2 : [ G ; Γ ⊢g A' @ l2 ]) by exact (lconv_ty HA' Hl2').
+    assert (HAA' : [ G ; Γ ⊢ A' ≈ A @ l2 ]) by exact (geq_ty_lconv (geq_ty_sym HAA) Hl2).
+    assert (HNN' : [ G ; Γ ,, A' @ l2 ⊢ N' ≈ N : tyNat @ lzero ]).
+    { eapply geq_tm_ctxconv; [apply geq_ty_sound, HAA | exact Hl2' | apply ext_wf_g; [exact HA'2 | exact W2] |].
+      now apply geq_tm_sym. }
+    assert (Hy : WfFlipHyps G Γ l1 A N domR l2 A' N') by exact (conj Hl2 (conj HA (conj HAA (conj HNN arAd)))).
+    assert (Hy' : WfFlipHyps G Γ l2 A' N' (flipD domR) l1 A N).
+    { refine (conj Hl2' (conj HA'2 (conj HAA' (conj HNN' _)))).
+      intros ρ x y h. apply NatRel_sym, arAd, h. }
+    eapply (LRwf n (LRbelow n) G Γ T' T l l2 l1 A' A N' N (flipD domR)).
+    + exact (lequiv_trans _ _ _ _ Hl Hl2').
+    + exact Hl2'.
+    + exact W2.
+    + exact HT'.
+    + exact HT.
+    + exact HA'2.
+    + exact (lconv_ty HA Hl2').
+    + exact (ctx_lvl_tm HA' Hl2' HNt').
+    + exact (ctx_lvl_tm HA Hl2' HNt).
+    + exact HAA'.
+    + exact HNN'.
+    + intros ρ. eapply LR_lconv; [exact (IHdom ρ) | exact (kw_lequiv ρ Hl2)].
+    + intros ρ a a' h. apply NatRel_sym, arAd, h.
+    + intros t t'; unfold flipR at 1; rewrite (HR t' t); split; intros X.
+      * exact (proj1 WfRel_flip_all _ _ _ _ _ _ _ _ X l2 A' N' Hy).
+      * exact (proj1 WfRel_flip_all _ _ _ _ _ _ _ _ X l1 A N Hy').
 Qed.
 
 Theorem LR_sym n : Psym n.

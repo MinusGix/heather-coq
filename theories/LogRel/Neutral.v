@@ -92,7 +92,8 @@ Proof.
                  | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
                      HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
-                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR];
+                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
+                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd IHdom arAd HR];
     intros ν ν' Hν Hν'; first [exact (ModRel_neutral HM _ _ Hν Hν') | apply HR].
   - (* Nat *)
     pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HN.
@@ -306,6 +307,10 @@ Proof.
     pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HP.
     destruct (gne_tmred_refl HP) as [H1 H2].
     econstructor; [exact H1 | exact H2 | exact (gne_tm_geq HP) | now apply wnf_ne].
+  - (* Wf: typed neutrals are related, as neutrals *)
+    pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HP.
+    destruct (gne_tmred_refl HP) as [H1 H2].
+    econstructor; [exact H1 | exact H2 | exact (gne_tm_geq HP) | now apply wfnf_ne].
 Qed.
 
 End Neutral.

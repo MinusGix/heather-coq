@@ -34,7 +34,9 @@ Inductive posty : ty -> Prop :=
 (* binary sums (M12b): no η *)
 | posty_sum l l' A B : posty (tySum l l' A B)
 (* well-founded trees (M13a): no η *)
-| posty_W l l' A B : posty (tyW l l' A B).
+| posty_W l l' A B : posty (tyW l l' A B)
+(* finitary well-founded trees (M15a): no η *)
+| posty_wf l A N : posty (tyWf l A N).
 
 Inductive ac_ty : gctx -> ctx -> ty -> ty -> Prop :=
 | act_red G Γ T T' W W' : reds_ty T W -> reds_ty T' W' -> whnf_ty W -> whnf_ty W' ->
@@ -77,6 +79,9 @@ with ac_tynf : gctx -> ctx -> ty -> ty -> Prop :=
 (* well-founded trees (M13a): the positions under the shape, as Π's codomain *)
 | actnf_W G Γ l1 l2 l3 l4 A A' B B' : leqv l1 l3 -> leqv l2 l4 -> ac_ty G Γ A A' -> ac_ty G (Γ ,, A @ l1) B B' ->
     ac_tynf G Γ (tyW l1 l2 A B) (tyW l3 l4 A' B')
+(* finitary well-founded trees (M15a): the arities at Nat under the shape *)
+| actnf_wf G Γ l l' A A' N N' : leqv l l' -> ac_ty G Γ A A' -> ac_tm G (Γ ,, A @ l) N N' tyNat ->
+    ac_tynf G Γ (tyWf l A N) (tyWf l' A' N')
 (* the identity type (M11a): endpoints compared at the left carrier *)
 | actnf_id G Γ l l' A A' a a' b b' : leqv l l' -> ac_ty G Γ A A' ->
     ac_tm G Γ a a' A -> ac_tm G Γ b b' A ->
@@ -170,6 +175,11 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmnf_sup G Γ l l' A B k1 k2 k3 k4 C D C' D' a a' f f' : ac_tm G Γ a a' A ->
     ac_tm G Γ f f' (tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩) ->
     ac_tmnf G Γ (tmSup k1 k2 C D a f) (tmSup k3 k4 C' D' a' f') (tyW l l' A B)
+(* [sup_f] (M15a): the shapes at the shape type and the children at their
+   tuple type, which reduces to Σ's and Unit; no Wf-specific η *)
+| actmnf_supf G Γ l A N k k' C D C' D' a a' cs cs' : ac_tm G Γ a a' A ->
+    ac_tm G Γ cs cs' (tyVec l (tyWf l A N) N[lsingle a]) ->
+    ac_tmnf G Γ (tmSupf k C D a cs) (tmSupf k' C' D' a' cs') (tyWf l A N)
 (* the codes of Empty and + (M12c) *)
 | actmnf_code_empty G Γ l k k' : leqv k k' -> ac_tmnf G Γ (tmEmpty k) (tmEmpty k') (tyU l)
 | actmnf_code_sum G Γ l l1 l2 l3 l4 s s' t t' : leqv l1 l3 -> leqv l2 l4 ->
@@ -298,6 +308,14 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
       c c' (wstepty l1 l2 A B M) ->
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (tmElimW l1 l2 l3 A B M c ν) (tmElimW l4 l5 l6 A' B' M' c' ν') M[lsingle ν]
+(* [elim_Wf] (M15a): as [elim_W] *)
+| actmne_elimWf G Γ l1 l2 l3 l4 A A' N N' M M' c c' ν ν' W :
+    leqv l1 l3 -> leqv l2 l4 -> ac_ty G Γ A A' -> ac_tm G (Γ ,, A @ l1) N N' tyNat ->
+    ac_ty G (Γ ,, tyWf l1 A N @ l1) M M' ->
+    ac_tm G (Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ,, wfihty l1 l2 A N M @ lmax lzero l2)
+      c c' (wfstepty l1 A N M) ->
+    ac_tmnee G Γ ν ν' W ->
+    ac_tmne G Γ (tmElimWf l1 l2 A N M c ν) (tmElimWf l3 l4 A' N' M' c' ν') M[lsingle ν]
 
 with ac_tmnee : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmnee_red G Γ ν ν' T W : ac_tmne G Γ ν ν' T -> reds_ty T W -> whnf_ty W ->

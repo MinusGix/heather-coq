@@ -1,7 +1,7 @@
 # DeLaM formalization: notes for agents
 
 Start by reading `README.md`, then `HEATHER.md` (Heather's extensions: the
-forward agenda), `M14_DESIGN.md` (current milestone), `M13_DESIGN.md`, `M12_DESIGN.md`, `M11_DESIGN.md`, `M10_DESIGN.md`, `M9_DESIGN.md`,
+forward agenda), `M15_DESIGN.md` (current milestone), `M14_DESIGN.md`, `M13_DESIGN.md`, `M12_DESIGN.md`, `M11_DESIGN.md`, `M10_DESIGN.md`, `M9_DESIGN.md`,
 `M8_DESIGN.md`, `M7_DESIGN.md`, `M6_DESIGN.md`, `M5_DESIGN.md`,
 `M4_DESIGN.md`, `M3_DESIGN.md`, `M2_DESIGN.md` and `M1_DESIGN.md`. The latter holds the M1
 current status, the ordered next steps, deviations from the paper, and a
@@ -24,7 +24,8 @@ list of proof-engineering gotchas. Follow it.
 ## Build
 
 - `nix develop path:. --command make -j2` (Coq 8.20, Equations, smpl from
-  the flake). A clean build takes about 10 minutes: 584 s wall after M14b
+  the flake). A clean build takes 10 to 15 minutes: 875 s wall after M15a on the
+  2026-10-06 cloud machine (critical path 740 s, total CPU 1106 s). 584 s wall after M14b
   on the 2026-10-06 machine (critical path 471 s, total CPU 743 s; M14a
   measured 654 s on the 2026-10-05 machine). On the 2026-10-04 cloud
   machine: 608 s wall after the 2026-10-04 build-time pass, where the M13b

@@ -238,6 +238,26 @@ Lemma inv_elimW {G i Γ l l' l'' A B M c t T k} : typeof i = i ->
     lvl_eq (gL G) k l'' /\ [ G ; Γ ⊢[ i ] T ≅ M[lsingle t] @ k ].
 Proof. inv_tm. Qed.
 
+(** Finitary well-founded trees (M15a). *)
+Lemma inv_supf {G i Γ l A N a cs T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSupf l A N a cs : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\
+    [ G ; Γ ⊢[ i ] a : A @ l ] /\ [ G ; Γ ⊢[ i ] cs : tyVec l (tyWf l A N) N[lsingle a] @ l ]) /\
+    lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ i ] T ≅ tyWf l A N @ k ].
+Proof. inv_tm. Qed.
+
+Lemma inv_elimWf {G i Γ l l' A N M c t T k} : typeof i = i ->
+  [ G ; Γ ⊢[ i ] tmElimWf l l' A N M c t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\
+    [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\
+    [ G ; Γ ,, tyWf l A N @ l ⊢[ i ] M @ l' ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] wfcsty l A N @ l ] /\
+    [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ⊢[ i ] wfihty l l' A N M @ lmax lzero l' ] /\
+    [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ,, wfihty l l' A N M @ lmax lzero l'
+        ⊢[ i ] c : wfstepty l A N M @ l' ] /\
+    [ G ; Γ ⊢[ i ] t : tyWf l A N @ l ]) /\
+    lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ i ] T ≅ M[lsingle t] @ k ].
+Proof. inv_tm. Qed.
+
 (** Strict equality's codes (M10c). *)
 Lemma inv_code_seq {G i Γ l s t u T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSEq l s t u : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
@@ -507,6 +527,12 @@ Lemma inv_ty_fin {G i Γ n k} : [ G ; Γ ⊢[ i ] tyFin n @ k ] ->
   (i <> lV /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) /\ lvl_eq (gL G) k lzero.
 Proof. inv_ty. Qed.
 
+(** Finitary well-founded trees (M15a). *)
+Lemma inv_ty_wf {G i Γ l A N k} : [ G ; Γ ⊢[ i ] tyWf l A N @ k ] ->
+  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ]) /\
+    lvl_eq (gL G) k l.
+Proof. inv_ty. Qed.
+
 (** ** Lookups are deterministic *)
 
 Lemma in_ctx_det {Γ n T l T' l'} : in_ctx Γ n T l -> in_ctx Γ n T' l' -> T = T' /\ l = l'.
@@ -562,4 +588,5 @@ Proof.
   - exact (lvl_eq_uniq (proj2 (inv_ty_W H)) (proj2 (inv_ty_W H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_vec H)) (proj2 (inv_ty_vec H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_fin H)) (proj2 (inv_ty_fin H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_wf H)) (proj2 (inv_ty_wf H'))).
 Qed.

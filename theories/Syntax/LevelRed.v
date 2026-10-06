@@ -170,6 +170,36 @@ Proof.
                     | apply leq_lsingle | progress cbn [ty_leq tm_leq]; repeat split ].
 Qed.
 
+(** [nth] and [elim_Wf]'s induction hypothesis (M15a). *)
+Lemma leq_tmNth k T k0 cs i k' T' k0' cs' i' :
+  leqv k k' -> ty_leq T T' -> tm_leq k0 k0' -> tm_leq cs cs' -> tm_leq i i' ->
+  tm_leq (tmNth k T k0 cs i) (tmNth k' T' k0' cs' i').
+Proof.
+  intros E1 ET Ek Ec Ei. unfold tmNth, nthMot, nthBase, nthStep.
+  pose proof (proj1 leq_ren_all) as Rty. pose proof (proj1 (proj2 leq_ren_all)) as Rtm.
+  cbn beta in Rty, Rtm.
+  cbn [tm_leq ty_leq]; repeat split.
+  all: repeat first [ assumption | apply leqv_refl | apply Rty | apply Rtm ].
+Qed.
+Lemma leq_wfIH k1 k2 A N M c a cs k1' k2' A' N' M' c' a' cs' :
+  leqv k1 k1' -> leqv k2 k2' -> ty_leq A A' -> tm_leq N N' -> ty_leq M M' ->
+  tm_leq c c' -> tm_leq a a' -> tm_leq cs cs' ->
+  tm_leq (wfIH k1 k2 A N M c a cs) (wfIH k1' k2' A' N' M' c' a' cs').
+Proof.
+  intros E1 E2 EA EN EM Ec Ea Ecs. unfold wfIH.
+  pose proof (proj1 leq_ren_all) as Rty. pose proof (proj1 (proj2 leq_ren_all)) as Rtm.
+  pose proof (proj1 (proj2 leq_subst_all)) as Stm. cbn beta in Rty, Rtm, Stm.
+  (* [nth] kept folded: unfolded, the [apply]s below unify slowly *)
+  assert (H : tm_leq (tmNth k1 (tyWf k1 A N)⟨↑⟩ N[lsingle a]⟨↑⟩ cs⟨↑⟩ (var 0))
+                      (tmNth k1' (tyWf k1' A' N')⟨↑⟩ N'[lsingle a']⟨↑⟩ cs'⟨↑⟩ (var 0))).
+  { apply leq_tmNth; [assumption | apply Rty; cbn; repeat split; assumption
+                     | apply Rtm, Stm; [apply leq_lsingle|]; assumption | apply Rtm; assumption | reflexivity]. }
+  revert H; generalize (tmNth k1 (tyWf k1 A N)⟨↑⟩ N[lsingle a]⟨↑⟩ cs⟨↑⟩ (var 0))
+                       (tmNth k1' (tyWf k1' A' N')⟨↑⟩ N'[lsingle a']⟨↑⟩ cs'⟨↑⟩ (var 0)); intros x x' H.
+  cbn [tm_leq ty_leq]; repeat split.
+  all: repeat first [ assumption | apply Rty | apply Rtm | apply Stm | apply leq_lsingle ].
+Qed.
+
 (** ** One step *)
 
 Lemma red_leq_both :
@@ -197,7 +227,10 @@ Proof.
   all: try solve [cbn [ty_leq tm_leq]; repeat split; auto;
                   first [apply (proj1 leq_ren_all) | apply (proj1 (proj2 leq_ren_all))]; auto].
   all: first
-    [ apply (proj1 (proj2 leq_subst_all)); [unfold lsingle3; split; [cbn; repeat split; auto | apply leq_wIH; auto] | auto]
+    [ lazymatch goal with |- tm_leq _[lsingle3 _ _ (wIH _ _ _ _ _ _ _ _ _)] _ => idtac end;
+      apply (proj1 (proj2 leq_subst_all)); [unfold lsingle3; split; [cbn; repeat split; auto | apply leq_wIH; auto] | auto]
+    | lazymatch goal with |- tm_leq _[lsingle3 _ _ (wfIH _ _ _ _ _ _ _ _)] _ => idtac end;
+      apply (proj1 (proj2 leq_subst_all)); [unfold lsingle3; split; [cbn; repeat split; auto | apply leq_wfIH; auto] | auto]
     | apply (proj1 (proj2 leq_subst_all)); cbn; repeat split; auto
     | apply (proj1 (proj2 leq_gsubst_all)); [apply leq_gsingle; cbn; auto | auto]
     | apply (proj1 (proj2 leq_usubst_all)); [apply leqv_uext; assumption | assumption] ].

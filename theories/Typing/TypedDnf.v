@@ -35,6 +35,22 @@ Proof.
     auto using ren_dnf_ty, ren_dnf, subst_dnf_ty, lk_dnf_lsingle.
 Qed.
 
+(** [nth] and [elim_Wf]'s induction hypothesis (M15a). *)
+Lemma dnf_tmNth l T k cs i : dnfty T -> dnftm k -> dnftm cs -> dnftm i -> dnftm (tmNth l T k cs i).
+Proof.
+  intros; unfold tmNth, nthMot, nthBase, nthStep; cbn [dnftm dnfty]; repeat split;
+    repeat apply ren_dnf_ty; repeat apply ren_dnf; auto.
+Qed.
+Lemma dnf_wfIH l l' A N M c a cs : dnfty A -> dnftm N -> dnfty M -> dnftm c -> dnftm a -> dnftm cs ->
+  dnftm (wfIH l l' A N M c a cs).
+Proof.
+  intros; unfold wfIH.
+  assert (Hn : dnftm (tmNth l (tyWf l A N)⟨↑⟩ N[lsingle a]⟨↑⟩ cs⟨↑⟩ (var 0))).
+  { apply dnf_tmNth; cbn [dnftm dnfty]; repeat split; auto using ren_dnf_ty, ren_dnf, subst_dnf, lk_dnf_lsingle. }
+  revert Hn; generalize (tmNth l (tyWf l A N)⟨↑⟩ N[lsingle a]⟨↑⟩ cs⟨↑⟩ (var 0)); intros x Hn.
+  cbn [dnftm dnfty]; repeat split; auto using ren_dnf_ty, ren_dnf, subst_dnf, lk_dnf_lsingle.
+Qed.
+
 Lemma in_ctx_dnf Γ n T l : dnfctx Γ -> in_ctx Γ n T l -> dnfty T.
 Proof. intros H Hin; induction Hin; cbn in *; apply ren_dnf_ty; tauto. Qed.
 
@@ -133,7 +149,7 @@ Proof.
                    cbn; intuition auto ].
   all: try solve [ eapply dnf_redT; [ .. | eassumption ]; cbn; intuition auto
                  | eapply dnf_redt; [ .. | eassumption ]; cbn; intuition auto ].
-  all: try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle3; auto using dnf_wIH]].
+  all: try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle3; auto using dnf_wIH, dnf_wfIH]].
   (* η of the meta-functions (M5): the weakened function *)
   all: apply gren_dnf_all.
 Qed.
