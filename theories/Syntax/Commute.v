@@ -206,6 +206,26 @@ Lemma ren_tyVec l A n : (tyVec l A n)⟨r⟩ = tyVec l A⟨r⟩ n⟨r⟩. Proof.
 Lemma ren_tyFin n : (tyFin n)⟨r⟩ = tyFin n⟨r⟩. Proof. reflexivity. Qed.
 Lemma subst_tyVec l A n : (tyVec l A n)[d] = tyVec l A[d] n[d]. Proof. reflexivity. Qed.
 Lemma subst_tyFin n : (tyFin n)[d] = tyFin n[d]. Proof. reflexivity. Qed.
+(** Wf trees (M15a): [N] binds the arity, [M] the scrutinee, the step its
+    three variables; [tmNth] and [wfIH] are definitions. *)
+Lemma ren_tyWf l A N : (tyWf l A N)⟨r⟩ = tyWf l A⟨r⟩ N⟨rlift r⟩. Proof. reflexivity. Qed.
+Lemma ren_supf l A N a cs : (tmSupf l A N a cs)⟨r⟩ = tmSupf l A⟨r⟩ N⟨rlift r⟩ a⟨r⟩ cs⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma ren_elimWf l l' A N M c t :
+  (tmElimWf l l' A N M c t)⟨r⟩ = tmElimWf l l' A⟨r⟩ N⟨rlift r⟩ M⟨rlift r⟩ c⟨rlift (rlift (rlift r))⟩ t⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma ren_tmNth l T k cs i : (tmNth l T k cs i)⟨r⟩ = tmNth l T⟨r⟩ k⟨r⟩ cs⟨r⟩ i⟨r⟩.
+Proof. apply tmNth_ren. Qed.
+Lemma ren_wfIH l l' A N M c a cs :
+  (wfIH l l' A N M c a cs)⟨r⟩ =
+  wfIH l l' A⟨r⟩ N⟨rlift r⟩ M⟨rlift r⟩ c⟨rlift (rlift (rlift r))⟩ a⟨r⟩ cs⟨r⟩.
+Proof. apply wfIH_ren. Qed.
+Lemma subst_tyWf l A N : (tyWf l A N)[d] = tyWf l A[d] N[llift d]. Proof. reflexivity. Qed.
+Lemma subst_supf l A N a cs : (tmSupf l A N a cs)[d] = tmSupf l A[d] N[llift d] a[d] cs[d].
+Proof. reflexivity. Qed.
+Lemma subst_elimWf l l' A N M c t :
+  (tmElimWf l l' A N M c t)[d] = tmElimWf l l' A[d] N[llift d] M[llift d] c[llift (llift (llift d))] t[d].
+Proof. reflexivity. Qed.
 (** Defined globals (M9): the body stays in its own local scope. *)
 Lemma ren_gdef u b e : (gdef u b e)⟨r⟩ = gdef u b (lren e r). Proof. reflexivity. Qed.
 Lemma subst_gdef u b e : (gdef u b e)[d] = gdef u b (lcomp e d). Proof. reflexivity. Qed.
@@ -287,6 +307,11 @@ Ltac push_ren_at h k := lazymatch h with
   | @wIH => k ren_wIH
   | @tyVec => k ren_tyVec
   | @tyFin => k ren_tyFin
+  | @tyWf => k ren_tyWf
+  | @tmSupf => k ren_supf
+  | @tmElimWf => k ren_elimWf
+  | @tmNth => k ren_tmNth
+  | @wfIH => k ren_wfIH
   end.
 Ltac push_ren := repeat match goal with
   | |- context [@ren _ _ ?t _] => let h := head_of t in push_ren_at h ltac:(fun L => rewrite L)
@@ -360,6 +385,9 @@ Ltac push_subst_at h k := lazymatch h with
   | @tmElimW => k subst_elimW
   | @tyVec => k subst_tyVec
   | @tyFin => k subst_tyFin
+  | @tyWf => k subst_tyWf
+  | @tmSupf => k subst_supf
+  | @tmElimWf => k subst_elimWf
   end.
 Ltac push_subst := repeat match goal with
   | |- context [@subst _ _ ?t _] => let h := head_of t in push_subst_at h ltac:(fun L => rewrite L)
@@ -375,6 +403,11 @@ Proof. rewrite !ren_ren_comp. apply ren_ext_tm; intros n; rlk_simpl; lia. Qed.
 Lemma liftshift_lift_ty (B : ty) r : B⟨rlift ↑⟩⟨rlift (rlift r)⟩ = B⟨rlift r⟩⟨rlift ↑⟩.
 Proof.
   rewrite !ren_ren_comp_ty. apply ren_ext_ty; intros [|n]; rlk_simpl; auto;
+    destruct n; rlk_simpl; auto; lia.
+Qed.
+Lemma liftshift_lift (N : tm) r : N⟨rlift ↑⟩⟨rlift (rlift r)⟩ = N⟨rlift r⟩⟨rlift ↑⟩.
+Proof.
+  rewrite !ren_ren_comp. apply ren_ext_tm; intros [|n]; rlk_simpl; auto;
     destruct n; rlk_simpl; auto; lia.
 Qed.
 

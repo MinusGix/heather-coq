@@ -123,6 +123,15 @@ Proof.
     now rewrite shift2_as, shift_cons2.
 Qed.
 
+Lemma liftshift_llift (N : tm) d : N⟨rlift ↑⟩[llift (llift d)] = N[llift d]⟨rlift ↑⟩.
+Proof.
+  rewrite ren_as_r2l, (ren_as_r2l N[llift d]).
+  apply subst2_eq; intros [|n]; rewrite ?llk_r2l, ?llk_llift; rlk_simpl; cbn.
+  - rewrite !llk_llift; reflexivity.
+  - rewrite !llk_llift. change (ren_tm ?x ?r) with x⟨r⟩.
+    now rewrite shift2_as, shift_cons2.
+Qed.
+
 (** [elim_W]'s step under three binders, and its induction hypothesis (M13a). *)
 Lemma lift3shift_llift (t : tm) d :
   t⟨rlift (rlift (rlift ↑))⟩[llift (llift (llift (llift d)))] = t[llift (llift (llift d))]⟨rlift (rlift (rlift ↑))⟩.
@@ -133,6 +142,15 @@ Proof.
   - intros [|[|[|n]]]; rewrite llk_lren; rlk_simpl; rewrite ?llk_llift; cbn; try reflexivity.
     rewrite ?llk_llift. cbn. change (ren_tm ?x ?r) with x⟨r⟩.
     rewrite !ren_ren_comp. apply ren_ext_tm; intros m; rlk_simpl; lia.
+Qed.
+
+(** [nth] (M15a): no side condition. *)
+Lemma subst_tmNth l T k cs i d : (tmNth l T k cs i)[d] = tmNth l T[d] k[d] cs[d] i[d].
+Proof.
+  unfold tmNth, nthMot, nthBase, nthStep. push_subst.
+  rewrite ?llk_llift. cbn.
+  repeat progress rewrite ?shift_llift_ty, ?shift_llift, ?llk_llift.
+  reflexivity.
 Qed.
 
 Section Nf.
@@ -178,6 +196,17 @@ Proof.
   unfold wIH. rewrite subst_lam, subst_elimW, subst_app, subst_var, (llk_llift d 0), single_subst_ty.
   cbn beta iota.
   repeat progress rewrite ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty, ?lift3shift_llift, ?single_subst_ty.
+  reflexivity.
+Qed.
+(** [elim_Wf]'s induction hypothesis (M15a). *)
+Lemma subst_wfIH l l' A N M c a cs :
+  (wfIH l l' A N M c a cs)[d] =
+  wfIH l l' A[d] N[llift d] M[llift d] c[llift (llift (llift d))] a[d] cs[d].
+Proof.
+  unfold wfIH. rewrite subst_lam, subst_tyFin, subst_elimWf, subst_tmNth, subst_var, (llk_llift d 0).
+  rewrite ?subst_tyWf.
+  repeat progress rewrite ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty, ?liftshift_llift,
+    ?lift3shift_llift, ?single_subst.
   reflexivity.
 Qed.
 End Nf.

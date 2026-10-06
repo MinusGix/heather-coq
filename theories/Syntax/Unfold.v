@@ -38,6 +38,7 @@ Fixpoint unf_ty (T : ty) {struct T} : ty :=
   | tySum l l' A B => tySum l l' (unf_ty A) (unf_ty B)
   | tyW l l' A B => tyW l l' (unf_ty A) (unf_ty B)
   | tyVec l A n => tyVec l (unf_ty A) (unf_tm n)
+  | tyWf l A N => tyWf l (unf_ty A) (unf_tm N)
   | tyFin n => tyFin (unf_tm n)
   end
 with unf_tm (t : tm) {struct t} : tm :=
@@ -96,6 +97,9 @@ with unf_tm (t : tm) {struct t} : tm :=
   | tmSup l l' A B a f => tmSup l l' (unf_ty A) (unf_ty B) (unf_tm a) (unf_tm f)
   | tmElimW l l' l'' A B M c t =>
       tmElimW l l' l'' (unf_ty A) (unf_ty B) (unf_ty M) (unf_tm c) (unf_tm t)
+  | tmSupf l A N a cs => tmSupf l (unf_ty A) (unf_tm N) (unf_tm a) (unf_tm cs)
+  | tmElimWf l l' A N M c t =>
+      tmElimWf l l' (unf_ty A) (unf_tm N) (unf_ty M) (unf_tm c) (unf_tm t)
   | tmJ l l' A a M c u e =>
       tmJ l l' (unf_ty A) (unf_tm a) (unf_ty M) (unf_tm c) (unf_tm u) (unf_tm e)
   | gdef u b d => subst_tm (unf_tm b) (unf_l d)
@@ -376,6 +380,7 @@ Fixpoint gfree_ty (T : ty) {struct T} : Prop :=
   | tySum l l' A B => gfree_ty A /\ gfree_ty B
   | tyW l l' A B => gfree_ty A /\ gfree_ty B
   | tyVec l A n => gfree_ty A /\ gfree_tm n
+  | tyWf l A N => gfree_ty A /\ gfree_tm N
   | tyFin n => gfree_tm n
   end
 with gfree_tm (t : tm) {struct t} : Prop :=
@@ -428,6 +433,8 @@ with gfree_tm (t : tm) {struct t} : Prop :=
   | tmCase l l' l'' A B M c1 c2 t => gfree_ty A /\ gfree_ty B /\ gfree_ty M /\ gfree_tm c1 /\ gfree_tm c2 /\ gfree_tm t
   | tmSup l l' A B a f => gfree_ty A /\ gfree_ty B /\ gfree_tm a /\ gfree_tm f
   | tmElimW l l' l'' A B M c t => gfree_ty A /\ gfree_ty B /\ gfree_ty M /\ gfree_tm c /\ gfree_tm t
+  | tmSupf l A N a cs => gfree_ty A /\ gfree_tm N /\ gfree_tm a /\ gfree_tm cs
+  | tmElimWf l l' A N M c t => gfree_ty A /\ gfree_tm N /\ gfree_ty M /\ gfree_tm c /\ gfree_tm t
   | tmJ l l' A a M c u e => gfree_ty A /\ gfree_tm a /\ gfree_ty M /\ gfree_tm c /\ gfree_tm u /\ gfree_tm e
   | gdef u b d => False
   end
@@ -634,7 +641,7 @@ Lemma gfree_red_both :
 Proof.
   apply red_both; intros; cbn in *; repeat match goal with H : _ /\ _ |- _ => destruct H end;
     try solve [eapply gfree_redT; eauto | eapply gfree_redt; eauto]; try tauto.
-  all: try unfold wIH; gf_peel; auto with unf.
+  all: try unfold wIH, wfIH, tmNth, nthMot, nthBase, nthStep; gf_peel; auto with unf.
 Qed.
 Lemma gfree_red t t' : red t t' -> gfree_tm t -> gfree_tm t'. Proof. apply gfree_red_both. Qed.
 Lemma gfree_red_ty T T' : red_ty T T' -> gfree_ty T -> gfree_ty T'. Proof. apply gfree_red_both. Qed.

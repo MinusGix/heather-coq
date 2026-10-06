@@ -68,6 +68,12 @@ Inductive red : tm -> tm -> Prop :=
 | red_elimW_sup l l' l'' A B M c k k' C D a f :
     red (tmElimW l l' l'' A B M c (tmSup k k' C D a f)) (c[lsingle3 a f (wIH l l' l'' A B M c a f)])
 | red_elimW l l' l'' A B M c t t' : red t t' -> red (tmElimW l l' l'' A B M c t) (tmElimW l l' l'' A B M c t')
+(* finitary well-founded trees (M15a): β at a [sup_f] of any annotations
+   instantiates the step at the shape, the children and the synthesized
+   induction hypothesis; the scrutinee reduces *)
+| red_elimWf_supf l l' A N M c k C D a cs :
+    red (tmElimWf l l' A N M c (tmSupf k C D a cs)) (c[lsingle3 a cs (wfIH l l' A N M c a cs)])
+| red_elimWf l l' A N M c t t' : red t t' -> red (tmElimWf l l' A N M c t) (tmElimWf l l' A N M c t')
 (* the identity type (M11a): J computes on refl, ignoring the annotations and
    the right endpoint as the other β rules do; otherwise its proof reduces *)
 | red_J_refl l l' A a M c u k B b : red (tmJ l l' A a M c u (tmRefl k B b)) c
@@ -168,6 +174,7 @@ Proof.
         | Hr : red (tmInl _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmInr _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSup _ _ _ _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmSupf _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red_ty (tyPi _ _ _ _) _ |- _ => inversion Hr
         end;
     try congruence; try (f_equal; eauto).
@@ -236,6 +243,8 @@ Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with 
 Lemma reds_elimW l l' l'' A B M c t t' : reds t t' -> reds (tmElimW l l' l'' A B M c t) (tmElimW l l' l'' A B M c t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_J l l' A a M c u e e' : reds e e' -> reds (tmJ l l' A a M c u e) (tmJ l l' A a M c u e').
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_elimWf l l' A N M c t t' : reds t t' -> reds (tmElimWf l l' A N M c t) (tmElimWf l l' A N M c t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_El l t t' : reds t t' -> reds_ty (tyEl l t) (tyEl l t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
@@ -336,6 +345,32 @@ Proof.
   - rewrite !ren_ren_comp_ty. apply ren_ext_ty; intros [|[|n]]; rlk_simpl; reflexivity.
 Qed.
 
+(** [nth] and [elim_Wf]'s induction hypothesis (M15a) commute with
+    renaming: the shifts inside commute with the lifted renaming. *)
+Ltac ren_comm := first [ reflexivity
+  | rewrite ?ren_ren_comp_ty, ?ren_ren_comp; first [apply ren_ext_ty | apply ren_ext_tm];
+    intros [|[|[|[|[|[|[|?n]]]]]]]; rlk_simpl; first [reflexivity | lia] ].
+Lemma tmNth_ren l T k cs i r :
+  (tmNth l T k cs i)⟨r⟩ = tmNth l T⟨r⟩ k⟨r⟩ cs⟨r⟩ i⟨r⟩.
+Proof.
+  unfold tmNth, nthMot, nthBase, nthStep; cbn [ren Ren_tm Ren_ty ren_tm ren_ty rlk].
+  repeat f_equal; rewrite ?rlk_rlift, ?rlk_rup; cbn; try ren_comm.
+Qed.
+Lemma wfIH_ren l l' A N M c a cs r :
+  (wfIH l l' A N M c a cs)⟨r⟩ =
+  wfIH l l' A⟨r⟩ N⟨rlift r⟩ M⟨rlift r⟩ c⟨rlift (rlift (rlift r))⟩ a⟨r⟩ cs⟨r⟩.
+Proof.
+  unfold wfIH. change (ren (lam ?l1 ?l2 ?X ?Y) ?r0) with (lam l1 l2 X⟨r0⟩ Y⟨rlift r0⟩).
+  change (ren (tyFin ?n) ?r0) with (tyFin n⟨r0⟩).
+  rewrite lsingle_ren. f_equal.
+  change (ren (tmElimWf ?k1 ?k2 ?X ?Y ?Z ?u ?v) ?r0)
+    with (tmElimWf k1 k2 X⟨r0⟩ Y⟨rlift r0⟩ Z⟨rlift r0⟩ u⟨rlift (rlift (rlift r0))⟩ v⟨r0⟩).
+  rewrite tmNth_ren. f_equal; try ren_comm.
+  change (tyWf ?k1 ?X⟨?r0⟩ ?Y⟨rlift ?r0⟩) with (tyWf k1 X Y)⟨r0⟩.
+  f_equal; try ren_comm.
+  rewrite <- lsingle_ren. ren_comm.
+Qed.
+
 (** [Vec]'s successor step (M14a): the tail's shifts commute with renaming. *)
 Lemma red_vec_succ_ren l A n r :
   red_ty (tyVec l A (succ n))⟨r⟩ (tySig l l A (tyVec l A⟨↑⟩ n⟨↑⟩))⟨r⟩.
@@ -358,6 +393,7 @@ Proof.
           | change (ren_tm ?x ?r) with x⟨r⟩;
             first [rewrite lsingle2_ren | rewrite lsingle_ren]; constructor
           | change (ren_tm ?x ?r) with x⟨r⟩; rewrite lsingle3_ren, wIH_ren; constructor
+          | change (ren_tm ?x ?r) with x⟨r⟩; rewrite lsingle3_ren, wfIH_ren; constructor
           (* δ: the body's instance *)
           | erewrite subst_ren by (intros; apply llk_lren); constructor ].
 Qed.
