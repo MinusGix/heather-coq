@@ -659,6 +659,38 @@ Proof.
   exact (wf_ty_func Hi HM (lsub_eq_single Hi Ht (eqtm_wf_l Hi Hsup) (eqtm_sym _ _ _ _ _ _ _ Hsup))).
 Qed.
 
+(** [elim_Wf] (M15a), as [elim_W]. *)
+Lemma RS_elimWf l l' A N M c t t' : RS_tm t t' ->
+  RS_tm (tmElimWf l l' A N M c t) (tmElimWf l l' A N M c t').
+Proof.
+  intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_elimWf Hi Hx) as ((_ & W1 & W2 & HA & HN & HM & HC & HI & Hc0 & Ht) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  apply eqtm_elimWf; first [exact Hc | apply lequiv_refl; assumption | exact (IH _ _ _ _ _ Hc Ht) | assumption
+                           | apply eqty_refl; assumption | apply eqtm_refl; assumption].
+Qed.
+
+Lemma RS_elimWf_supf l l' A N M c k C D a cs :
+  RS_tm (tmElimWf l l' A N M c (tmSupf k C D a cs)) c[lsingle3 a cs (wfIH l l' A N M c a cs)].
+Proof.
+  intros G i Γ T m Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_elimWf Hi Hx) as ((_ & W1 & W2 & HA & HN & HM & HC & HI & Hc0 & Ht) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  destruct (supf_parts Hc Ht) as (_ & _ & _ & Ha & Hcs).
+  destruct (inv_supf Hi Ht) as (_ & _ & ESup).
+  destruct (Wf_inj_c Hc ESup) as (Ekl & EAC & END).
+  assert (Hsup : [ G ; Γ ⊢[ i ] tmSupf l A N a cs ≅ tmSupf k C D a cs : tyWf l A N @ l ])
+    by (apply eqtm_supf; first [exact Hc | assumption | now apply lequiv_sym | apply eqtm_refl; assumption]).
+  assert (Hcong : [ G ; Γ ⊢[ i ] tmElimWf l l' A N M c (tmSupf k C D a cs)
+                     ≅ tmElimWf l l' A N M c (tmSupf l A N a cs) : M[lsingle (tmSupf k C D a cs)] @ l' ]).
+  { apply eqtm_elimWf; first [exact Hc | apply lequiv_refl; assumption | apply eqtm_sym, Hsup | assumption
+                             | apply eqty_refl; assumption | apply eqtm_refl; assumption]. }
+  pose proof (eqtm_elimWf_supf _ _ _ _ _ _ _ _ _ _ _ Hc W1 W2 HA HN HM HC HI Hc0 Ha Hcs) as Hb.
+  eapply eqtm_trans; [exact Hcong |].
+  eapply eqtm_conv; [exact Hb | rewrite Hi].
+  exact (wf_ty_func Hi HM (lsub_eq_single Hi Ht (eqtm_wf_l Hi Hsup) (eqtm_sym _ _ _ _ _ _ _ Hsup))).
+Qed.
+
 (** [Vec] and [Fin] (M14a): the computation rules at a canonical length,
     and the congruence at the length. [Vec^l(A; 0) ⇝ Unit^l] keeps the
     level [l], which is what Heather's level-indexed [Unit] repaired. *)
@@ -732,6 +764,7 @@ Proof.
     | solve [apply RS_elimEmpty; assumption]
     | solve [apply RS_case_inl] | solve [apply RS_case_inr] | solve [apply RS_case; assumption]
     | solve [apply RS_elimW_sup] | solve [apply RS_elimW; assumption]
+    | solve [apply RS_elimWf_supf] | solve [apply RS_elimWf; assumption]
     | solve [apply RS_El_empty] | solve [apply RS_El_sum] | solve [apply RS_El_W]
     | solve [apply RS_vec_zero] | solve [apply RS_vec_succ] | solve [apply RS_vec; assumption]
     | solve [apply RS_fin_zero] | solve [apply RS_fin_succ] | solve [apply RS_fin; assumption]
