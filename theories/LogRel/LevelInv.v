@@ -29,6 +29,10 @@ Lemma ktyl_leq {G Γ} (ρ : kwk G Γ) T T' : ty_leq T T' -> ty_leq (ktyl ρ T) (
 Proof. intros H; unfold ktyl; apply (proj1 leq_ren_all), ty_leq_gwa, H. Qed.
 Lemma subst_leq_ty (T T' : ty) d : ty_leq T T' -> ty_leq T[d] T'[d].
 Proof. intros H; apply (proj1 leq_subst_all); [apply lsub_leq_refl | exact H]. Qed.
+Lemma ktml_leq {G Γ} (ρ : kwk G Γ) t t' : tm_leq t t' -> tm_leq (ktml ρ t) (ktml ρ t').
+Proof. intros H; unfold ktml; apply (proj1 (proj2 leq_ren_all)), tm_leq_gwa, H. Qed.
+Lemma subst_leq_tm (t t' : tm) d : tm_leq t t' -> tm_leq t[d] t'[d].
+Proof. intros H; apply (proj1 (proj2 leq_subst_all)); [apply lsub_leq_refl | exact H]. Qed.
 Lemma kbody_leq {G Γ} (ρ : kwk G Γ) T T' : ty_leq T T' -> ty_leq (kbody ρ T) (kbody ρ T').
 Proof. intros H; unfold kbody; apply (proj1 leq_ren_all), ty_leq_gwa, H. Qed.
 Lemma gsingle_leq_ty (T T' : ty) o : ty_leq T T' -> ty_leq T⦃gsingle o⦄ T'⦃gsingle o⦄.
@@ -66,7 +70,8 @@ Proof.
                 | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
                     HRA HRB Hpa Hta Hpb Htb HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
-                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR].
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR].
   all: first
     [ solve [eexists; split; [exact HT | first [exact (whnf_ty_ne _ (gne_ty_whne_l HV)) | solve [eauto with whnf]]]]
     | match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
@@ -329,6 +334,14 @@ Lemma tm_leq_sup_inv {l l' C D a f w} : tm_leq (tmSup l l' C D a f) w ->
   exists k k' C' D' a' f', w = tmSup k k' C' D' a' f' /\ leqv l k /\ leqv l' k' /\ ty_leq C C' /\
     ty_leq D D' /\ tm_leq a a' /\ tm_leq f f'.
 Proof. destruct w; cbn; try contradiction; intros; do 6 eexists; intuition eauto. Qed.
+
+Lemma ty_leq_wf_inv {l A N W} : ty_leq (tyWf l A N) W ->
+  exists l' A' N', W = tyWf l' A' N' /\ leqv l l' /\ ty_leq A A' /\ tm_leq N N'.
+Proof. destruct W; cbn; try contradiction; intros; do 3 eexists; intuition eauto. Qed.
+Lemma tm_leq_supf_inv {l A N a cs w} : tm_leq (tmSupf l A N a cs) w ->
+  exists l' A' N' a' cs', w = tmSupf l' A' N' a' cs' /\ leqv l l' /\ ty_leq A A' /\ tm_leq N N' /\
+    tm_leq a a' /\ tm_leq cs cs'.
+Proof. destruct w; cbn; try contradiction; intros; do 5 eexists; intuition eauto. Qed.
 
 (** ** The universe *)
 
@@ -609,6 +622,150 @@ Proof.
     eapply gne_tm_lconv; [eapply gne_tm_conv; [exact Hν3 | exact HV] | apply lequiv_sym, Hm].
 Qed.
 
+(** ** Finitary trees (M15a)
+
+    As [WfRel_trans_all], the third tree related to itself: the shapes by
+    [Dl]; a spine along a third length [NatRel]-related to the left one,
+    its children taken at the third annotations on both sides. *)
+Section WfLeq.
+
+Definition WfLeqHyps G Γ l1 A1 N1 (d1 : DomRel G Γ) l3 A3 N3 (d3 : DomRel G Γ) :=
+  WfFlipHyps G Γ l1 A1 N1 d1 l3 A3 N3 /\
+  (forall ρ x y z, d1 ρ x y -> d3 ρ z z -> tm_leq y z -> d1 ρ x z).
+
+Lemma WfLeqHyps_kw {G Γ l1 A1 N1 d1 l3 A3 N3 d3} (ρ : kwk G Γ) :
+  WfLeqHyps G Γ l1 A1 N1 d1 l3 A3 N3 d3 ->
+  WfLeqHyps (kw_G ρ) (kw_Δ ρ) l1 (kty ρ A1) (ktml ρ N1) (fun ρ' => d1 (kw_comp ρ ρ'))
+    l3 (kty ρ A3) (ktml ρ N3) (fun ρ' => d3 (kw_comp ρ ρ')).
+Proof.
+  intros [Hy Dl]. split; [exact (WfFlipHyps_kw ρ Hy)|].
+  intros ρ' x y z. exact (Dl (kw_comp ρ ρ') x y z).
+Qed.
+
+Lemma WfRel_leq_all :
+  (forall G Γ l1 A1 N1 d1 t1 t2, WfRel G Γ l1 A1 N1 d1 t1 t2 ->
+     forall l3 A3 N3 d3 t3, WfLeqHyps G Γ l1 A1 N1 d1 l3 A3 N3 d3 ->
+     WfRel G Γ l3 A3 N3 d3 t3 t3 -> tm_leq t2 t3 -> WfRel G Γ l1 A1 N1 d1 t1 t3) /\
+  (forall G Γ l1 A1 N1 d1 t1 t2, WfNf G Γ l1 A1 N1 d1 t1 t2 ->
+     forall l3 A3 N3 d3 t3, WfLeqHyps G Γ l1 A1 N1 d1 l3 A3 N3 d3 ->
+     WfNf G Γ l3 A3 N3 d3 t3 t3 -> tm_leq t2 t3 -> WfNf G Γ l1 A1 N1 d1 t1 t3) /\
+  (forall G Γ l1 A1 N1 d1 k1 cs1 cs2, VecSp G Γ l1 A1 N1 d1 k1 cs1 cs2 ->
+     forall l3 A3 N3 d3 k3 cs3, WfLeqHyps G Γ l1 A1 N1 d1 l3 A3 N3 d3 ->
+     NatRel G Γ k1 k3 -> VecSp G Γ l3 A3 N3 d3 k3 cs3 cs3 -> tm_leq cs2 cs3 ->
+     VecSp G Γ l1 A1 N1 d1 k1 cs1 cs3).
+Proof.
+  apply WfRel_comb.
+  - intros G Γ l1 A1 N1 d1 t1 t2 w1 w2 Hw1 Hw2 Heq Hn IH l3 A3 N3 d3 t3 Hy H3 Et.
+    destruct (WfFlip_data (proj1 Hy)) as (W1 & W3 & HWf1 & HWf3 & EWg & EW).
+    pose proof (proj1 (proj1 Hy)) as Hl.
+    destruct (WfRel_inv H3) as (w3 & w3' & Hw3 & Hw3' & Heq3 & Hn3).
+    assert (w3' = w3) as ->
+      by (eapply tmred_whnf_det; [exact Hw3' | exact Hw3 | exact (WfNf_whnf_r Hn3) | exact (WfNf_whnf_l Hn3)]).
+    assert (Ew : tm_leq w2 w3) by exact (tmred_leq Et Hw2 Hw3 (WfNf_whnf_r Hn) (WfNf_whnf_l Hn3)).
+    assert (HV : [ G ; Γ ⊢g tyWf l3 A3 N3 ≅ tyWf l1 A1 N1 @ l3 ]) by (eapply eqty_lconv; [apply eqty_sym, EW | exact Hl]).
+    econstructor; [exact Hw1 | | |].
+    + eapply tmred_lconv; [eapply tmred_conv; [apply ge_typeof | exact Hw3 | exact HV] | apply lequiv_sym, Hl].
+    + eapply geq_tm_leq_r; [exact Heq | | exact Ew].
+      eapply geq_tm_lconv; [eapply geq_tm_conv; [exact Heq3 | exact HV] | apply lequiv_sym, Hl].
+    + exact (IH l3 A3 N3 d3 w3 Hy Hn3 Ew).
+  - intros G Γ l1 A1 N1 d1 k k' C C' M M' a a' cs cs' Hk Hk' HAC HAC' HNM HNM' Ha Hcs IH l3 A3 N3 d3 t3 Hy H3 Ew.
+    destruct (tm_leq_supf_inv Ew) as (j3 & C3 & M3 & a3 & cs3 & -> & _ & _ & _ & Ea & Ecs).
+    destruct (WfNf_sup_inv H3) as (j3' & C3' & M3' & a3' & cs3' & Heq3 & Hj3 & _ & HE & _ & HF & _ & Ha3 & Hcs3).
+    injection Heq3 as <- <- <- <- <-.
+    destruct Hy as [Hy0 Dl]. pose proof Hy0 as (Hl & HA1 & HA13 & HN13 & HC).
+    pose proof (lequiv_wf_r _ _ _ Hl) as W1.
+    apply wfnf_sup.
+    + exact Hk.
+    + exact (lequiv_trans _ _ _ _ Hj3 Hl).
+    + exact HAC.
+    + eapply geq_ty_trans; [exact HA13 | eapply geq_ty_lconv; [exact HE | apply lequiv_sym, Hl]].
+    + exact HNM.
+    + eapply geq_tm_trans; [exact HN13|].
+      eapply geq_tm_ctxconv; [| exact Hl | apply ext_wf_g; [exact HA1 | exact W1] | exact HF].
+      eapply eqty_lconv; [apply eqty_sym, geq_ty_sound, HA13 | exact Hl].
+    + intros ρ. exact (Dl ρ _ _ _ (Ha ρ) (Ha3 ρ) (ktm_leq ρ _ _ Ea)).
+    + intros ρ.
+      exact (IH ρ l3 (kty ρ A3) (ktml ρ N3) _ _ _ (WfLeqHyps_kw ρ (conj Hy0 Dl))
+               (HC ρ _ _ (Dl ρ _ _ _ (Ha ρ) (Ha3 ρ) (ktm_leq ρ _ _ Ea))) (Hcs3 ρ) (ktm_leq ρ _ _ Ecs)).
+  - intros G Γ l1 A1 N1 d1 ν ν' Hν l3 A3 N3 d3 t3 Hy H3 Ew.
+    destruct (WfFlip_data (proj1 Hy)) as (W1 & W3 & HWf1 & HWf3 & EWg & EW).
+    pose proof (proj1 (proj1 Hy)) as Hl.
+    pose proof (WfNf_ne_inv (whne_leq _ _ Ew (gne_tm_whne_r Hν)) H3) as Hν3.
+    assert (HV : [ G ; Γ ⊢g tyWf l3 A3 N3 ≅ tyWf l1 A1 N1 @ l3 ]) by (eapply eqty_lconv; [apply eqty_sym, EW | exact Hl]).
+    apply wfnf_ne. eapply gne_tm_leq_r; [exact Hν | | exact Ew].
+    eapply gne_tm_lconv; [eapply gne_tm_conv; [exact Hν3 | exact HV] | apply lequiv_sym, Hl].
+  - intros G Γ l1 A1 N1 d1 k1 cs1 cs2 Hk Hu l3 A3 N3 d3 k3 cs3 Hy Hkk H3 Ecs.
+    pose proof (VecSp_zero_inv H3 (NatRel_inv_zero Hkk Hk)) as Hu3.
+    pose proof (proj1 (proj1 Hy)) as Hl.
+    apply vsp_zero; [exact Hk|].
+    destruct Hu as (w1 & _ & Hr1 & _ & Hf1 & _). destruct Hu3 as (w3 & _ & Hr3 & _ & Hf3 & _).
+    exists w1, w3. exact (conj Hr1 (conj (unit_tmred_conv Hl Hr3) (conj Hf1 Hf3))).
+  - intros G Γ l1 A1 N1 d1 k1 m1 cs1 cs2 w1 w2 Hk Hcs1 Hcs2 Hwh1 Hwh2 Heq Hfst IHfst Hsnd IHsnd
+      l3 A3 N3 d3 k3 cs3 Hy Hkk H3 Ecs.
+    destruct (WfFlip_data (proj1 Hy)) as (W1 & W3 & HWf1 & HWf3 & EWg & EW).
+    pose proof (proj1 (proj1 Hy)) as Hl.
+    destruct (NatRel_inv_succ Hkk Hk) as (m3 & Hk3 & Hmm).
+    destruct (VecSp_succ_inv H3 Hk3) as (w3 & w3' & Hcs3 & Hcs3' & Hwh3 & Hwh3' & Heq3 & Hfst3 & Hsnd3).
+    assert (w3' = w3) as -> by (eapply tmred_whnf_det; [exact Hcs3' | exact Hcs3 | exact Hwh3' | exact Hwh3]).
+    assert (Ew : tm_leq w2 w3) by exact (tmred_leq Ecs Hcs2 Hcs3 Hwh2 Hwh3).
+    pose proof (geq_tm_sound (NatRel_geq Hmm)) as Em.
+    pose proof (sigvec_eq (lequiv_sym _ _ _ Hl) W1 HWf1 EW Em) as ES.
+    assert (Hml : lequiv (gL G) (lmax l3 l3) (lmax l1 l1)) by now apply lequiv_max.
+    assert (HV : [ G ; Γ ⊢g tySig l3 l3 (tyWf l3 A3 N3) (tyVec l3 (tyWf l3 A3 N3)⟨↑⟩ m3⟨↑⟩)
+                   ≅ tySig l1 l1 (tyWf l1 A1 N1) (tyVec l1 (tyWf l1 A1 N1)⟨↑⟩ m1⟨↑⟩) @ lmax l3 l3 ])
+      by (eapply eqty_lconv; [apply eqty_sym, ES | exact Hml]).
+    assert (HΓ1 : [ G ; Γ ,, tyWf l1 A1 N1 @ l1 ⊢g ]) by now apply ext_wf_g.
+    assert (HΓ3 : [ G ; Γ ,, tyWf l3 A3 N3 @ l3 ⊢g ]) by now apply ext_wf_g.
+    assert (VV : [ G ; Γ ,, tyWf l1 A1 N1 @ l1 ⊢ tyVec l1 (tyWf l1 A1 N1)⟨↑⟩ m1⟨↑⟩
+                                              ≈ tyVec l3 (tyWf l3 A3 N3)⟨↑⟩ m3⟨↑⟩ @ l1 ])
+      by exact (geq_ty_wk (wkr_shift1 _ _ _) HΓ1 (geq_vec_nat m1 m3 Hmm l1 l3 _ _ (lequiv_sym _ _ _ Hl) HWf1 EWg)).
+    assert (MA : forall X, [ G ; Γ ⊢ tyWf l1 A1 N1 ≈ X @ l1 ] -> [ G ; Γ ⊢ tyWf l3 A3 N3 ≈ X @ l3 ]).
+    { intros X HX. eapply geq_ty_lconv; [eapply geq_ty_trans; [apply geq_ty_sym, EWg | exact HX] | exact Hl]. }
+    assert (MB : forall X, [ G ; Γ ,, tyWf l1 A1 N1 @ l1 ⊢ tyVec l1 (tyWf l1 A1 N1)⟨↑⟩ m1⟨↑⟩ ≈ X @ l1 ] ->
+                   [ G ; Γ ,, tyWf l3 A3 N3 @ l3 ⊢ tyVec l3 (tyWf l3 A3 N3)⟨↑⟩ m3⟨↑⟩ ≈ X @ l3 ]).
+    { intros X HX. eapply geq_ty_lconv; [|exact Hl].
+      eapply geq_ty_ctxconv; [exact EW | apply lequiv_sym, Hl | exact HΓ3 |].
+      eapply geq_ty_trans; [apply geq_ty_sym, VV | exact HX]. }
+    pose proof (lequiv_sym _ _ _ Hl) as Hl'.
+    apply (vsp_succ G Γ l1 A1 N1 d1 k1 m1 cs1 cs3 w1 w3).
+    + exact Hk.
+    + exact Hcs1.
+    + eapply tmred_lconv; [eapply tmred_conv; [apply ge_typeof | exact Hcs3 | exact HV] | apply lequiv_sym, Hml].
+    + exact Hwh1.
+    + exact Hwh3.
+    + eapply geq_tm_leq_r; [exact Heq | | exact Ew].
+      eapply geq_tm_lconv; [eapply geq_tm_conv; [exact Heq3 | exact HV] | apply lequiv_sym, Hml].
+    + intros la lb A1x B1x la3 lb3 A1x3 B1x3 H1 H2 H3' H4 HA1x HB1x HA1x3 HB1x3.
+      assert (P3 : lequiv (gL G) la3 l3) by exact (lequiv_trans _ _ _ _ H3' Hl').
+      assert (P4 : lequiv (gL G) lb3 l3) by exact (lequiv_trans _ _ _ _ H4 Hl').
+      pose proof (Hfst3 la3 lb3 A1x3 B1x3 la3 lb3 A1x3 B1x3 P3 P4 P3 P4
+                    (MA _ HA1x3) (MB _ HB1x3) (MA _ HA1x3) (MB _ HB1x3)) as X3.
+      refine (IHfst la lb A1x B1x la3 lb3 A1x3 B1x3 H1 H2 H3' H4 HA1x HB1x HA1x3 HB1x3 l3 A3 N3 d3 _ Hy X3 _).
+      cbn; repeat split; auto using leqv_refl, ty_leq_refl, tm_leq_refl.
+    + intros la lb A1x B1x la3 lb3 A1x3 B1x3 H1 H2 H3' H4 HA1x HB1x HA1x3 HB1x3.
+      assert (P3 : lequiv (gL G) la3 l3) by exact (lequiv_trans _ _ _ _ H3' Hl').
+      assert (P4 : lequiv (gL G) lb3 l3) by exact (lequiv_trans _ _ _ _ H4 Hl').
+      pose proof (Hsnd3 la3 lb3 A1x3 B1x3 la3 lb3 A1x3 B1x3 P3 P4 P3 P4
+                    (MA _ HA1x3) (MB _ HB1x3) (MA _ HA1x3) (MB _ HB1x3)) as X3.
+      refine (IHsnd la lb A1x B1x la3 lb3 A1x3 B1x3 H1 H2 H3' H4 HA1x HB1x HA1x3 HB1x3 l3 A3 N3 d3 _ _ Hy Hmm X3 _).
+      cbn; repeat split; auto using leqv_refl, ty_leq_refl, tm_leq_refl.
+  - intros G Γ l1 A1 N1 d1 k1 ν1 cs1 cs2 Hk Hν1 Hne l3 A3 N3 d3 k3 cs3 Hy Hkk H3 Ecs.
+    destruct (WfFlip_data (proj1 Hy)) as (W1 & W3 & HWf1 & HWf3 & EWg & EW).
+    pose proof (proj1 (proj1 Hy)) as Hl.
+    destruct (NatRel_inv_ne Hkk Hk (gne_tm_whne_l Hν1)) as (ν3 & Hk3 & Hνν).
+    pose proof (VecSp_ne_inv H3 Hk3 (gne_tm_whne_r Hνν)) as Hne3.
+    apply (vsp_ne G Γ l1 A1 N1 d1 k1 ν1 cs1 cs3); [exact Hk | exact Hν1 |].
+    pose proof (geq_ty_sound (gne_ty_geq (gne_ty_vec (lequiv_sym _ _ _ Hl) HWf1 EWg Hνν))) as EV.
+    assert (EV' : [ G ; Γ ⊢g tyVec l3 (tyWf l3 A3 N3) ν3 ≅ tyVec l1 (tyWf l1 A1 N1) ν1 @ l3 ])
+      by (eapply eqty_lconv; [apply eqty_sym, EV | exact Hl]).
+    pose proof (NeRel_conv2 EV' EV' Hne3) as Hne3'.
+    apply (NeRel_lconv _ _ _ _ _ _ (lequiv_sym _ _ _ Hl)) in Hne3'.
+    pose proof (eqty_wf_l ge_typeof EV) as HV1.
+    eapply NeRel_leq; [apply eqty_refl, HV1 | apply eqty_refl, HV1 | apply eqty_refl, HV1 | exact Hne | exact Hne3' | exact Ecs].
+Qed.
+
+End WfLeq.
+
 (** ** Level invariance *)
 
 Lemma LR_leq_step n : (forall m, m < n -> Pleq m) -> Pleq n.
@@ -634,7 +791,9 @@ Proof.
                  | G Γ T1 T2 l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HUA HUAA HUB HUBB
                      HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR
                  | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R
-                     [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12] domAd1 IHdom codAd1 IHcod HR];
+                     [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12] domAd1 IHdom codAd1 IHcod HR
+                 | G Γ T1 T2 l l1 l2 A1 A2 N1 N2 domR1 R Hl Hl2 Hw HT1 HT2 HA1 HA2 HN1t HN2t HA12 HN12
+                     domAd1 IHdom arAd1 HR];
     intros T3 R3 H3 ET; destruct (LR_whnf_l H3) as (W3 & HT3 & Hnw3).
   - (* Nat *)
     pose proof (ty_leq_nat_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3)) as ->.
@@ -1221,6 +1380,62 @@ Proof.
         pose proof (proj1 (IHcod ρ x y h _ _ C3 (Ecod ρ y))) as C13.
         pose proof (proj1 (LR_irrel_left _ _ _ _ _ _ _ _ _ C13 C3 u v) Huv) as X.
         destruct (LR_tm_per _ _ _ _ _ _ _ C3) as [Hs Ht]. exact (Ht _ _ _ (Hs _ _ X) X).
+  - (* Wf: the type-level data as W's domain; the terms by [WfRel_leq_all] *)
+    destruct (ty_leq_wf_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3)) as (k3 & A3 & N3 & -> & E3 & EA & EN).
+    destruct (LR_inv_wf H3 HT3) as (k3' & A3' & N3' & domR3 & _ & _ & Hwk3 & _ & HT3' & HA3 & _ & HN3t & _
+                                    & HA33 & HN33 & domAd3 & arAd3 & HR3).
+    assert (Heq : tyWf k3' A3' N3' = tyWf k3 A3 N3)
+      by (eapply tyred_whnf_det; [exact HT3' | exact HT3 | eauto with whnf | eauto with whnf]).
+    injection Heq as -> -> ->. clear HT3'.
+    assert (Q : lequiv (gL G) l2 k3) by exact (leqv_lequiv _ _ _ (lequiv_wf_l _ _ _ Hl2) Hwk3 E3).
+    assert (Q13 : lequiv (gL G) l1 k3) by (eapply lequiv_trans; [apply lequiv_sym, Hl2 | exact Q]).
+    assert (Hdom3' : forall ρ, LR n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ A3) (kty ρ A3) l1 (domR3 ρ))
+      by (intros ρ; exact (LR_lconv _ _ _ _ _ _ _ _ _ (domAd3 ρ) (kw_lequiv ρ Q13))).
+    assert (Hdom3 : forall ρ, LR n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ A1) (kty ρ A3) l1 (domR1 ρ))
+      by (intros ρ; exact (proj1 (IHdom ρ _ _ (Hdom3' ρ) (kty_leq ρ _ _ EA)))).
+    assert (Hrefl : forall ρ a a', domR1 ρ a a' -> domR1 ρ a' a').
+    { intros ρ a a' ha. exact (LR_tm_refl_l _ _ _ _ _ _ _ a' a (LR_sym _ _ _ _ _ _ _ (domAd1 ρ)) ha). }
+    assert (H13 : forall ρ a a', domR1 ρ a a' -> domR3 ρ a' a').
+    { intros ρ a a' ha.
+      pose proof (LR_irrel _ _ _ _ _ _ _ _ _ _ (LR_sym _ _ _ _ _ _ _ (Hdom3 ρ)) (Hdom3' ρ) a' a') as X.
+      exact (proj1 X (Hrefl ρ a a' ha)). }
+    assert (Dl : forall ρ x y z, domR1 ρ x y -> domR3 ρ z z -> tm_leq y z -> domR1 ρ x z)
+      by (intros ρ; exact (proj2 (IHdom ρ _ _ (Hdom3' ρ) (kty_leq ρ _ _ EA)))).
+    assert (Har : forall (ρ : kwk G Γ) a a', domR1 ρ a a' ->
+               NatRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N1)[lsingle a] (ktml ρ N3)[lsingle a']).
+    { intros ρ a a' ha.
+      exact (NatRel_leq _ _ _ _ (arAd1 ρ a a' ha) _ (arAd3 ρ a' a' (H13 ρ a a' ha))
+               (subst_leq_tm _ _ _ (ktml_leq ρ _ _ EN))). }
+    (* generic and declarative facts *)
+    assert (HA3' : [ G ; Γ ⊢g A3 @ l1 ]) by exact (lconv_ty HA3 (lequiv_sym _ _ _ Q13)).
+    assert (HA23 : [ G ; Γ ⊢ A2 ≈ A3 @ l1 ])
+      by exact (geq_ty_leq (geq_ty_refl_r HA12) (geq_ty_lconv HA33 Q13) EA).
+    assert (HA13 : [ G ; Γ ⊢ A1 ≈ A3 @ l1 ]) by exact (geq_ty_trans HA12 HA23).
+    assert (HN33' : [ G ; Γ ,, A1 @ l1 ⊢ N3 ≈ N3 : tyNat @ lzero ]).
+    { eapply geq_tm_ctxconv; [| apply lequiv_sym, Q13 | apply ext_wf_g; [exact HA1 | exact Hw] | exact HN33].
+      eapply eqty_lconv; [apply eqty_sym, geq_ty_sound, HA13 | apply lequiv_sym, Q13]. }
+    assert (HN23 : [ G ; Γ ,, A1 @ l1 ⊢ N2 ≈ N3 : tyNat @ lzero ])
+      by exact (geq_tm_leq (geq_tm_refl_r HN12) HN33' EN).
+    assert (HN13 : [ G ; Γ ,, A1 @ l1 ⊢ N1 ≈ N3 : tyNat @ lzero ]) by exact (geq_tm_trans HN12 HN23).
+    split.
+    + apply (LRwf n (LRbelow n) G Γ T1 T3 l l1 k3 A1 A3 N1 N3 domR1 R).
+      * exact Hl.
+      * apply lequiv_sym, Q13.
+      * exact Hw.
+      * exact HT1.
+      * exact HT3.
+      * exact HA1.
+      * exact HA3'.
+      * exact HN1t.
+      * exact (ctx_lvl_tm HA3 (lequiv_sym _ _ _ Q13) HN3t).
+      * exact HA13.
+      * exact HN13.
+      * exact Hdom3.
+      * exact Har.
+      * exact HR.
+    + intros t1 t2 t3 H12' H33' Et. apply HR. apply HR in H12'. apply HR3 in H33'.
+      exact (proj1 WfRel_leq_all _ _ _ _ _ _ _ _ H12' k3 A3 N3 domR3 t3
+               (conj (conj (lequiv_sym _ _ _ Q13) (conj HA1 (conj HA13 (conj HN13 Har)))) Dl) H33' Et).
 Qed.
 
 Theorem LR_leq n : Pleq n.
