@@ -20,6 +20,8 @@ Fixpoint mltt_ty (T : ty) : Prop :=
   | tyId _ A _ _ => mltt_ty A
   (* [Vec]'s element type is its reduct's first component (M14a) *)
   | tyVec _ A _ => mltt_ty A
+  (* [Wf]'s shape relation is a relation at its index type (M15a) *)
+  | tyWf _ A _ => mltt_ty A
   | tyCTyp _ _ | tyCTrm _ _ _ | tyCPi _ _ | tyTPi _ _ _ _ => False
   | _ => True
   end.
@@ -124,7 +126,9 @@ Proof.
                  | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
                      HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
-                     [Hl H3 H4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] Hdom IHdom Hcod IHcod HR]; intros Hm Hm'.
+                     [Hl H3 H4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] Hdom IHdom Hcod IHcod HR
+                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN
+                     Hdom IHdom arAd HR]; intros Hm Hm'.
   - eapply LRnat; eassumption.
   - eapply LRU; try eassumption.
     intros t t'; rewrite (HR t t'); split; apply (URel_layer (n := n) Hn);
@@ -160,6 +164,10 @@ Proof.
     eapply LRw; [split|..]; try eassumption.
     + intros ρ; apply IHdom; apply mltt_ren, mltt_gwa; assumption.
     + intros ρ a a' ha; apply IHcod; apply mltt_subst, mltt_ren, mltt_gwa; assumption.
+  - pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT) Hm) as HmA.
+    pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT') Hm') as HmA'.
+    eapply LRwf; try eassumption.
+    intros ρ; apply IHdom; apply mltt_ren, mltt_gwa; assumption.
 Qed.
 
 End Layering.
