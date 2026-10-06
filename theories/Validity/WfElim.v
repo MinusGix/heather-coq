@@ -123,6 +123,116 @@ Proof.
     + now rewrite shift_lift.
 Qed.
 
+(** ** Helpers *)
+
+Ltac gwkn H := first [ exact H | eapply (wk1_ty _ _ ge_typeof); [eassumption | gwkn H]
+                     | eapply (wk1_tm _ _ ge_typeof); [eassumption | gwkn H] ].
+Ltac vvar := eapply VG_var; [repeat constructor | cbn; try reflexivity].
+
+Lemma ktml_kid {G Δ} (HΔ : [ G ; Δ ⊢g ]) (t : tm) : nftm t -> ktml (kid HΔ) t = t.
+Proof.
+  intros Nt. unfold ktml, kid, kw_loc; cbn [kw_γ kw_r gwa wk_ren].
+  rewrite <- (ren_id_tm t Nt) at 2. apply ren_ext_tm. intros n. rewrite rlk_rlift. destruct n; cbn; lia.
+Qed.
+
+Lemma ktml_subst_lift {G Δ} (ρ : kwk G Δ) (t : tm) e :
+  ktml ρ t[llift e] = t⟦kw_γ ρ⟧[llift (kwsub ρ e)].
+Proof.
+  unfold ktml, kwsub. rewrite gwa_subst, subst_ren_lren.
+  apply subst_ext. intros n. rewrite llk_lren, llk_llift_gwa.
+  destruct n; rewrite !llk_llift; [reflexivity|].
+  rewrite llk_lren. change (ren_tm ?x ?r') with x⟨r'⟩. now rewrite shift_lift.
+Qed.
+Lemma kγ_tml {G Δ} (ρ : kwk G Δ) (t : tm) γ e :
+  ktml ρ t⟦γ⟧[llift e] = t⟦gwk_comp (kw_γ ρ) γ⟧[llift (kwsub ρ e)].
+Proof. now rewrite ktml_subst_lift, gwa_comp_tm. Qed.
+
+(** An index into [Fin] at a zero length is neutral. *)
+Lemma fin_idx_zero {G Δ k k' i i'} : LRtm lzero G Δ (tyFin k) (tyFin k') i i' ->
+  [ G ; Δ ⊢g k ⤳* zero : tyNat @ lzero ] -> exists ν, reds i ν /\ whne ν.
+Proof.
+  intros (R & HR & Hii) Hk. pose proof (ctx_of_tm (tmred_wf _ _ _ _ _ _ _ Hk)) as HΔ.
+  destruct (LR_inv_empty HR (tyred_trans _ _ _ _ (tyred_fin Hk) (tyred_fin_zero HΔ))) as (l2 & _ & _ & _ & _ & HR').
+  apply HR' in Hii. destruct Hii as (w & w' & Hw & _ & Hne).
+  exists w. split; [exact (tmred_red _ _ _ _ _ _ _ Hw) | exact (gne_tm_whne_l Hne)].
+Qed.
+
+(** An index into [Fin] at a successor length is an [inl], an [inr] of an
+    index at the predecessor, or neutral. *)
+Lemma fin_idx_succ {G Δ k k' m m' i i'} : LRtm lzero G Δ (tyFin k) (tyFin k') i i' ->
+  [ G ; Δ ⊢g k ⤳* succ m : tyNat @ lzero ] -> NatRel G Δ m m' ->
+  (exists k1 k2 C D u k1' k2' C' D' u', reds i (tmInl k1 k2 C D u) /\ reds i' (tmInl k1' k2' C' D' u')) \/
+  (exists k1 k2 C D j k1' k2' C' D' j', reds i (tmInr k1 k2 C D j) /\ reds i' (tmInr k1' k2' C' D' j') /\
+     LRtm lzero G Δ (tyFin m) (tyFin m') j j') \/
+  (exists ν, reds i ν /\ whne ν).
+Proof.
+  intros (R & HR & Hii) Hk Hmm. pose proof (ctx_of_tm (tmred_wf _ _ _ _ _ _ _ Hk)) as HΔ.
+  destruct (NatRel_escape Hmm) as (Hm & _ & _).
+  destruct (LR_inv_sum HR (tyred_trans _ _ _ _ (tyred_fin Hk) (tyred_fin_succ Hm)))
+    as (l3 & l4 & X' & Y' & RA & RB & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & HRB & _ & _ & _ & _ & HR').
+  apply HR' in Hii. destruct Hii as (w & w' & Hw & Hw' & _ & Nn).
+  apply tmred_red in Hw, Hw'.
+  destruct Nn as [k1 k2 k1' k2' C D C' D' u u' _ _ _ _ _ _ _ _ _
+                 |k1 k2 k1' k2' C D C' D' j j' _ _ _ _ _ _ _ _ Hj
+                 |ν ν' Hν].
+  - left. do 10 eexists. split; eassumption.
+  - right; left. do 10 eexists. split; [eassumption | split; [eassumption|]].
+    eapply LRtm_irrel_r; [exact (ex_intro _ RB (conj HRB Hj)) | exact (LR_fin_nat HΔ Hmm)].
+  - right; right. exists ν. split; [exact Hw | exact (gne_tm_whne_l Hν)].
+Qed.
+
+(** Spine to relation at the spine's own world, from the spine in every
+    world. *)
+Lemma LR_of_VecSp_own {G Δ l A N} {domR : DomRel G Δ} {k k' cs cs'} :
+  lwf (gL G) l -> [ G ; Δ ⊢g tyWf l A N @ l ] -> WfDom G Δ l A domR -> NatRel G Δ k k' ->
+  nftm cs -> nftm cs' ->
+  (forall ρ : kwk G Δ, VecSp (kw_G ρ) (kw_Δ ρ) l (kty ρ A) (ktml ρ N) (fun ρ' => domR (kw_comp ρ ρ'))
+                       (ktm ρ k) (ktm ρ cs) (ktm ρ cs')) ->
+  forall T' R, LogRel l G Δ (tyVec l (tyWf l A N) k) T' l R -> R cs cs'.
+Proof.
+  intros Hwl HWf HD Hkk Ncs Ncs' Hsp T' R H.
+  pose proof (ctx_of_ty HWf) as HΔ. pose proof (wf_ty_nf HWf) as NW. inversion NW as [NA NN].
+  destruct (NatRel_escape Hkk) as (Hk & _ & _). pose proof (wf_tm_nf Hk) as Nk.
+  pose proof (LR_of_VecSp_all Hwl HWf HD k k' Hkk (kid HΔ)) as X. unfold VecQ in X.
+  rewrite (kty_kid HΔ _ NA), (ktml_kid HΔ _ NN), (ktm_kid HΔ _ Nk) in X.
+  apply (X T' R H cs cs'). split.
+  - pose proof (Hsp (kid HΔ)) as Y.
+    rewrite (kty_kid HΔ _ NA), (ktml_kid HΔ _ NN), (ktm_kid HΔ _ Nk), (ktm_kid HΔ _ Ncs), (ktm_kid HΔ _ Ncs')
+      in Y.
+    exact Y.
+  - intros ρ. pose proof (Hsp (kw_comp (kid HΔ) ρ)) as Y.
+    rewrite kty_comp, ktml_comp, !ktm_comp, (kty_kid HΔ _ NA), (ktml_kid HΔ _ NN), (ktm_kid HΔ _ Nk),
+      (ktm_kid HΔ _ Ncs), (ktm_kid HΔ _ Ncs') in Y.
+    eapply (proj2 (proj2 WfRel_dir_all)); [exact Y|].
+    intros ρ0. exact (WfDom_assoc HD (kid HΔ) ρ ρ0).
+Qed.
+
+Lemma lift_single_tm (t : tm) d a : LK nftm d -> t[llift d][lsingle a] = t[lcons d a].
+Proof.
+  intros Hd. apply subst_subst. intros [|n]; rewrite llk_llift; cbn; [reflexivity|].
+  change (ren_tm ?x ?r) with x⟨r⟩. symmetry; apply shift_single, Hd.
+Qed.
+
+(** The [nth] in the induction hypothesis's type, and its domain, at a
+    substitution. *)
+Lemma nthv_subst l (A : ty) (N : tm) d a cs y : LK nftm d ->
+  (tmNth l (tyWf l A N)⟨↑⟩⟨↑⟩⟨↑⟩ N⟨↑⟩⟨↑⟩ (var 1) (var 0))[lcons (lcons (lcons d a) cs) y] =
+  tmNth l (tyWf l A[d] N[llift d]) N[llift d][lsingle a] cs y.
+Proof.
+  intros Hd. rewrite subst_tmNth, !shift_subst_ty, !shift_subst_tm. cbn [ldrop].
+  now rewrite lift_single_tm by exact Hd.
+Qed.
+Lemma finv_subst (N : tm) d a cs : LK nftm d ->
+  (tyFin N⟨↑⟩)[lcons (lcons d a) cs] = tyFin N[llift d][lsingle a].
+Proof.
+  intros Hd. rewrite subst_tyFin, shift_subst_tm. cbn [ldrop].
+  now rewrite lift_single_tm by exact Hd.
+Qed.
+
+Lemma VG_wf {G Γ l l' A A' N N'} : lwf (gL G) l -> lequiv (gL G) l' l ->
+  VTyG G Γ A A' l -> VTmG G (Γ ,, A @ l) N N' tyNat lzero -> VTyG G Γ (tyWf l A N) (tyWf l' A' N') l.
+Proof. intros. gl_lift. eapply V_wf; eassumption. Qed.
+
 (** ** The eliminator at related premises *)
 
 Section ElimAt.
@@ -344,6 +454,33 @@ Proof.
   eapply elimWf_back; [exact Hγ | exact He | exact HD | exact Hss | exact Hw | exact Hw'
                       | now apply whnf_ne | exact (WfNf_whnf_r Nn) |].
   exact (LRtm_of HRL (LR_neutral _ _ _ _ _ _ _ HRL _ _ HE HE)).
+Qed.
+
+(** MX §13's index lemma at the [ih] entry's [nth]. *)
+Lemma elimWf_Vnth :
+  VTmG G (Γ ,, A @ l ,, wfcsty l A N @ l ,, tyFin N⟨↑⟩ @ lzero)
+    (tmNth l (tyWf l A N)⟨↑⟩⟨↑⟩⟨↑⟩ N⟨↑⟩⟨↑⟩ (var 1) (var 0))
+    (tmNth l3 (tyWf l3 A' N')⟨↑⟩⟨↑⟩⟨↑⟩ N'⟨↑⟩⟨↑⟩ (var 1) (var 0)) (tyWf l A N)⟨↑⟩⟨↑⟩⟨↑⟩ l.
+Proof.
+  pose proof (ctx_of_tm HN) as HΓA.
+  assert (HA : [ G ; Γ ⊢g A @ l ]) by (inversion HΓA; assumption).
+  pose proof (ctx_of_ty HA) as HΓ.
+  assert (HW : [ G ; Γ ⊢g tyWf l A N @ l ]) by (apply wft_wf; auto using ge_compt).
+  pose proof (Wf_cs_wf ge_typeof ge_notV Hwl HW HN) as HC.
+  assert (H2 : [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ⊢g ]) by exact (ext_wf_g HC Hwl).
+  assert (HN1 : [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ⊢g N⟨↑⟩ : tyNat @ lzero ])
+    by (eapply wf_tm_retype; [gwkn HN | reflexivity]).
+  assert (HF : [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ⊢g tyFin N⟨↑⟩ @ lzero ]) by (apply wft_fin; auto using ge_notV).
+  assert (H3 : [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ,, tyFin N⟨↑⟩ @ lzero ⊢g ]) by (apply ext_wf_g; cbn; auto).
+  assert (HN2 : [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ,, tyFin N⟨↑⟩ @ lzero ⊢g N⟨↑⟩⟨↑⟩ : tyNat @ lzero ])
+    by (eapply wf_tm_retype; [gwkn HN1 | reflexivity]).
+  assert (HW3 : [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ,, tyFin N⟨↑⟩ @ lzero ⊢g (tyWf l A N)⟨↑⟩⟨↑⟩⟨↑⟩ @ l ])
+    by (gwkn HW).
+  pose proof (VG_wf Hwl (lequiv_sym _ _ _ H13) VA VNt) as VW.
+  apply (V_nth Hwl H13 HW3 (VG_shift (VG_shift (VG_shift VW))) HN2).
+  - eapply VTmG_retype; [exact (VG_shift_tm (VG_shift_tm VNt)) | reflexivity].
+  - vvar.
+  - vvar.
 Qed.
 
 End ElimAt.
