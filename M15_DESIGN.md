@@ -330,5 +330,8 @@ design's "no funext" holds.
 
 **Cost.** 66 files, about 6350 lines added, about 2100 of them in the
 three new validity files (`Wf.v`, `WfNth.v`, `WfElim.v`) and 870 in
-presupposition. CLEAN_BUILD_PLACEHOLDER
+presupposition. A clean `make -j2` took 875 s wall on
+the 2026-10-06 cloud machine of this round (critical path 740 s, total
+CPU 1106 s); M14b measured 584 s on another machine, so the two do not
+compare directly.
 
