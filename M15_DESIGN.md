@@ -1,6 +1,7 @@
 # M15: finitary well-founded trees (`Wf`), design
 
-Status: **M15a in progress** (2026-10-06). Why now: `HEATHER.md` item 5
+Status: **M15a done** (2026-10-06; outcome at the end). M15b (the code,
+the lift to C and the four recursor branches) is next. Why now: `HEATHER.md` item 5
 lists `Wf` after `Vec` and `Fin`, which M14 provided, and Heather's
 branching inductives lower to it (`H/docs/wf-former-design.md`,
 `H/docs/branching-inductives-choice.md`), so an unsoundness here would reach
@@ -259,3 +260,75 @@ difference is spelling only: `rec.rs` (and `typing.rs`) declare `ih` at
 `ℓ'` where ours writes `0 ⊔ ℓ'`; Heather's levels are normalized, so the
 two are the same level. M15b's `rec_code` will validate these bindings
 as M14b's did `ty_vec`'s.
+
+## M15a outcome (2026-10-06)
+
+Done at layers D and M. Every headline theorem stays closed under the
+global context: `Print Assumptions` of `wf_tm_dec`, `closed_canonicity`,
+`ac_tm_sound`, `V_elimWf` and `V_elimWf_supf` lists nothing, so the
+design's "no funext" holds.
+
+- **Syntax, typing, reduction** as designed: `tyWf`, `tmSupf`,
+  `tmElimWf`, `tmNth` and `wfIH` (definitions, so every syntax operation
+  pushes through them by lemma: `gren_tmNth`, `gwa_tmNth`, …), the step
+  telescope as the notations `wfcsty`, `wfihty`, `wfstepty`.
+  Presupposition gains the telescope's typing (`Wf_cs_wf`, `Wf_nth_wf`,
+  `Wf_ih_wf`, `Wf_step_wf`) and its congruences (`Wf_ih_eq`,
+  `Wf_step_eq`), and `nth_wf`/`nth_eq` type `nth` from its schema.
+- **The relation** is the three mutual families designed (`WfRel`,
+  `WfNf`, `VecSp`; `Validity/Wf.v` and `LogRel/Def.v`), with escape,
+  symmetry, transitivity, weakening, level invariance and universe
+  permutation each gaining the spine as a third mutual family. Injectivity
+  of `Wf` (`Wf_inj`, and its D/M instances `decl_Wf_inj`,
+  `declM_Wf_inj`) comes from `LR_inv_wf`, as `W_inj`.
+- **The index lemma departs from the design in method, not statement.**
+  The design proves `LR_nth` by induction on `NatRel k k'`. Instead,
+  `nth` is a fixed `natrec` schema, so `V_nth` (`Validity/WfNth.v`) is
+  the composition of the validity lemmas of the formers it is built
+  from (`natrec`, `λ`, application, `case`, `elim_Empty`, the
+  projections, `Vec`'s and `Fin`'s computation rules) along `nth_wf`.
+  Composition needs the lemmas closed under global weakenings, so
+  `WfNth` lifts the ones it uses to `VTyG`/`VTmG` form (`VG_*`). The
+  four reduction cases of MX §13 then reappear only as untyped
+  computations (`nth_reds_inl`, `nth_reds_inr`, `nth_reds_case_ne`,
+  `nth_reds_zero`, `nth_reds_ne`), which the eliminator's motive needs.
+- **The spine motive is stated by reduction, not syntax.** At a length
+  `k`, a tuple `cs` and related indices, the motive covers *any* two
+  terms related at `Wf` that reduce to `nth(cs; i)` and `nth(cs'; i')`
+  (`reds`). Stating it at `nth` itself fails at `inr`: the predecessor's
+  `nth` is `nth`'s reduct only up to substitution lemmas, and the
+  motive must survive that. `elimWf_core_all` is one induction
+  (`WfRel_comb`) over the three families with motives `elimWf_mrel`
+  (twice) and `elimWf_mspine`.
+- **At a `sup_f`** (`elimWf_step`): the children are related at
+  `Vec(Wf; N[a])` in the step's world by `LR_of_VecSp_own` (the
+  spine-to-relation bridge at the identity world), and `wfIH`'s
+  applications at related indices by `elimWf_nth_kw`, the `nth` at a
+  Kripke world related at `Wf` (from `V_nth`), fed to the spine motive.
+- **Validity and the fundamental theorem**: `V_wf`, `V_supf`,
+  `V_elimWf`, `V_elimWf_supf`, with `VS_*` forms in `RulesS`. Two
+  mechanical changes: `gwa_tmNth` and `gwa_wfIH` moved from `WfElim` to
+  `GLift`'s push table (`VS_elimWf`'s `s_lift` must push `⟦γ⟧` through
+  `nth`), and `FundamentalM`'s second `us_rewrite` pass also triggers on
+  `tyWf` (an unpushed `usubst_tm N[lsingle a] φ` otherwise remains).
+- **Algorithm** as designed: `actnf_wf`, `actmnf_supf`, `actmne_elimWf`
+  through soundness (`Wf_ctx_conv` moves the right step into the left
+  telescope, `elimWf_step_left`), conversion, symmetry and transitivity
+  (`Wf_tele_eq`, `wf_cs_conv`; `ainv_wf`, `ainv_supf`, `ainv_elimWf`),
+  lifting, the `AlgEq` laws (`geq_ty_wf`, `geq_tm_supf`,
+  `gne_tm_elimWf`) and decidability. `elim_Wf` joins the neutral-head
+  tables (`ne_head`, `is_whne`, `tm_con`).
+- **Consequences**: closed canonicity gives a `sup_f` at `Wf` (head 18),
+  preservation (`RS_elimWf`, `RS_elimWf_supf`, β at any annotations by
+  `Wf_inj`), `neutral_univ` (consistency), type uniqueness
+  (`inva_supf`, `inva_elimWf`) and type checking (`dec_tyWf`, `sy_supf`,
+  `sy_elimWf`, deciding `compt i` first).
+- **Gotchas**: in `TCSynth`, `compt_notV` names a different lemma than
+  in the algorithm files, so `i <> lV` is derived by cases on
+  `compt i`. `Wf_Na_eq` takes `Hi` but not `Hv`, unlike its neighbours;
+  check `About` before applying a section lemma by position.
+
+**Cost.** 66 files, about 6350 lines added, about 2100 of them in the
+three new validity files (`Wf.v`, `WfNth.v`, `WfElim.v`) and 870 in
+presupposition. CLEAN_BUILD_PLACEHOLDER
+

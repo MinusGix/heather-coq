@@ -52,7 +52,7 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | `+`, `inl`/`inr`, `case` | positive | ext §8 | MX §2 | — | **done** (M12b; every layer but V with code and branches 34–38, M12c): β at D and M, no η, disjunction property (`closed_sum_canonicity`) |
 | `W`, `sup`, `elim_W` | positive, infinitary | ext §9 | MX §5 | β builds an ih λ; the heaviest LR case | **M13 done**: β, no η, `closed_W_canonicity` (M13a, D and M); code, lift to C and the four branches (M13b) |
 | `Vec`, `Fin` | computing wrappers (reduce to Σ/Unit, +/Empty) | DESIGN.md | MX §10 | first type formers whose whnf is chosen by a term | **M14 done**: no LR case, validity by induction on the length; preservation at `Vec^l(A;0) ⇝ Unit^l` (M14a, D and M); codes, every layer but V, branches 43–46 (M14b) |
-| `Wf`, `sup_f`, `elim_Wf` | finitary W over a `Vec` of children | wf-former-design | MX §11–17 | index lemma (MX §13) | — |
+| `Wf`, `sup_f`, `elim_Wf` | finitary W over a `Vec` of children | wf-former-design | MX §11–17 | index lemma (MX §13) | **M15a done**: branch telescopes derived from the semantics, β, no η, the index lemma via `nth` at related `Fin` indices (D and M); code and branches next (M15b) |
 | `sEq`, `srefl`, `transp`, strip rule | strict equality, irrelevance | sprop-design | MX §18–22 | strip changes the evaluation notion; MX §19.4 substitution lemma is the named weak spot; completeness gap reaches type relations (MX §22.4); **MX §19.2 is a strengthening lemma (M10 S1)** | `sEq`, `srefl`, irrelevance **done** (M10a; every layer but V with codes and branches 25, 26, 29, M10c); `transp` removed (S8) |
 | `sEmpty`, `elim_sEmpty` | irrelevant empty type | sprop-design | MX §18, §21.4 | — | **done** (M10a; at code with branches 27, 28, 30, M10c) |
 | `Squash`, `ind_∥∥` | normalizing-total irrelevance | MX §27 | sketch only | full pass open (`issues/metatheory-ch07-squash.md`) | — |
@@ -180,6 +180,7 @@ each one touched and why, then choose among 1–3 using that data.
    recursor branches (M12a–c, M12_DESIGN.md). `W` is done, with its
    code and four recursor branches (M13a–b, M13_DESIGN.md). `Vec` and
    `Fin` are done, with codes and four recursor branches (M14a–b,
-   M14_DESIGN.md).
+   M14_DESIGN.md). `Wf` is done at D and M (M15a, M15_DESIGN.md); its
+   code and recursor branches are M15b.
 
 Side task, any time: the ITree depth-indexed bisimilarity question.
