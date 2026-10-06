@@ -90,6 +90,9 @@ with red_ty : ty -> ty -> Prop :=
 | red_El_sum l l1 l2 s t : red_ty (tyEl l (tmSum l1 l2 s t)) (tySum l1 l2 (tyEl l1 s) (tyEl l2 t))
 (* the code of W (M13b) *)
 | red_El_W l l1 l2 s t : red_ty (tyEl l (tmW l1 l2 s t)) (tyW l1 l2 (tyEl l1 s) (tyEl l2 t))
+(* the codes of Vec and Fin (M14b): the length rides across *)
+| red_El_vec l l0 s n : red_ty (tyEl l (tmVec l0 s n)) (tyVec l0 (tyEl l0 s) n)
+| red_El_fin l n : red_ty (tyEl l (tmFin n)) (tyFin n)
 (* length-indexed tuples and finite indices (M14a): compute on the length *)
 | red_vec_zero l A : red_ty (tyVec l A zero) (tyUnit l)
 | red_vec_succ l A n : red_ty (tyVec l A (succ n)) (tySig l l A (tyVec l A⟨↑⟩ n⟨↑⟩))
@@ -160,6 +163,8 @@ Proof.
         | Hr : red (tmEmpty _) _ |- _ => inversion Hr
         | Hr : red (tmSum _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmW _ _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmVec _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmFin _) _ |- _ => inversion Hr
         | Hr : red (tmInl _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmInr _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSup _ _ _ _ _ _) _ |- _ => inversion Hr

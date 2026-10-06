@@ -29,7 +29,7 @@ Definition wrap (nu ng nl : nat) (b : tm) : tm := wrapU nu (wrapG ng (wrapL nl b
 
 (** The number of branches, and the branch-indexed case split: [br_all t]
     runs [t] [nbr] times, as [do nbr t] would (M8_DESIGN.md J2, S0). *)
-Notation nbr := 43 (only parsing).
+Notation nbr := 47 (only parsing).
 Ltac br_do n tac := lazymatch n with O => idtac | S ?m => tac; br_do m tac end.
 Ltac br_all tac := br_do constr:(nbr) tac.
 
@@ -55,6 +55,9 @@ Definition bSum := 34.   Definition bSum' := 35.   Definition bInl := 36.   Defi
 Definition bCase := 38.
 (** W-types' (M13b): Heather's [t_W], [t'_W], [t_sup], [t_elimW]. *)
 Definition bW := 39.     Definition bW' := 40.     Definition bSup := 41.   Definition bElimW := 42.
+(** Length-indexed tuples' and finite indices' (M14b): Heather's [t_Vec],
+    [t'_Vec], [t_Fin], [t'_Fin]. *)
+Definition bVec := 43.   Definition bVec' := 44.   Definition bFin := 45.   Definition bFin' := 46.
 
 (** The arity [(levels, globals, locals)] of branch [k]. *)
 Definition br_ar (k : nat) : nat * nat * nat :=
@@ -102,13 +105,17 @@ Definition br_ar (k : nat) : nat * nat * nat :=
   | 40 => (2, 3, 2)       (* ℓ ℓ'; g u_s u_t; x_s x_t. t'_W *)
   | 41 => (2, 5, 4)       (* ℓ ℓ'; g U_S U_T u_a u_f; x_S x_T x_a x_f. t_sup *)
   | 42 => (3, 6, 5)       (* ℓ ℓ' ℓ''; g U_S U_T U_M u_s u_t; x_S x_T x_M x_s x_t. t_elimW *)
+  | 43 => (1, 3, 2)       (* ℓ; g U_T u_k; x_T x_k. t_Vec *)
+  | 44 => (1, 3, 2)       (* ℓ; g u_t u_k; x_t x_k. t'_Vec *)
+  | 45 => (0, 2, 1)       (* g u_k; x_k. t_Fin *)
+  | 46 => (0, 2, 1)       (* g u_k; x_k. t'_Fin *)
   | _ => (0, 0, 0)
   end.
 
 (** Whether branch [k] is a type branch (typed at [l₁], recursing on
     [elim_Typ]) or a term branch. *)
 Definition br_isT (k : nat) : bool :=
-  match k with 0 | 1 | 2 | 3 | 13 | 14 | 21 | 25 | 27 | 31 | 34 | 39 => true | _ => false end.
+  match k with 0 | 1 | 2 | 3 | 13 | 14 | 21 | 25 | 27 | 31 | 34 | 39 | 43 | 45 => true | _ => false end.
 
 Definition wrapMT (MT : ty) : tm := bindU (bindG (bindL (tmTy MT))).
 Definition wrapMt (Mt : ty) : tm := bindU (bindG (bindG (bindL (tmTy Mt)))).
@@ -209,6 +216,14 @@ Definition redT (l : lvl) (Δ : ctx) (c : ty) : option tm :=
       Some (peelL (peelL (peelG (peelG (peelG (peelU (peelU (rb_br rb bW) k) k')
               (GCtx Δ)) (GTy A)) (GTy B))
               (recT k Δ A)) (recT k' (cext Δ A k) B))
+  (* length-indexed tuples and finite indices (M14b): the length's call
+     is a term call at [Nat] *)
+  | tyVec k A n =>
+      Some (peelL (peelL (peelG (peelG (peelG (peelU (rb_br rb bVec) k)
+              (GCtx Δ)) (GTy A)) (GTm n))
+              (recT k Δ A)) (rect lzero Δ tyNat n))
+  | tyFin n =>
+      Some (peelL (peelG (peelG (rb_br rb bFin) (GCtx Δ)) (GTm n)) (rect lzero Δ tyNat n))
   | _ => None
   end.
 
@@ -365,6 +380,13 @@ Definition redt (l : lvl) (Δ : ctx) (T : ty) (c : tm) : option tm :=
               (rect k'' (cext (cext (cext Δ A k) (wfty k k' A B) (lmax k' (lmax k k')))
                  (wihty k k' k'' A B M) (lmax k' k'')) (wstepty k k' A B M) c))
               (rect (lmax k k') Δ (tyW k k' A B) t))
+  (* the codes of [Vec] and [Fin] (M14b) *)
+  | tmVec k s n =>
+      Some (peelL (peelL (peelG (peelG (peelG (peelU (rb_br rb bVec') k)
+              (GCtx Δ)) (GTm s)) (GTm n))
+              (rect (lsuc k) Δ (tyU k) s)) (rect lzero Δ tyNat n))
+  | tmFin n =>
+      Some (peelL (peelG (peelG (rb_br rb bFin') (GCtx Δ)) (GTm n)) (rect lzero Δ tyNat n))
   | _ => None
   end.
 

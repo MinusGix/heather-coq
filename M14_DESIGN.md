@@ -1,7 +1,7 @@
 # M14: length-indexed tuples and finite indices (`Vec`, `Fin`), design
 
-Status: **M14a done, 2026-10-05** (outcome below); M14b, the codes, is
-next. Why now: `HEATHER.md` item 5
+Status: **M14 done, 2026-10-06** (M14a and M14b; outcomes below). Why
+now: `HEATHER.md` item 5
 lists `Vec` and `Fin` after `W`, and they are the substrate of Heather's
 finitary `Wf` former (`H/docs/wf-former-design.md`). They are the first
 type formers whose weak-head normal form is chosen by a term: a `Nat`
@@ -181,3 +181,68 @@ theorem stays closed under the global context (`Print Assumptions` of
 them. A clean `make -j2` took 654 s on the 2026-10-05 cloud machine
 (608 s after the build-time pass, on a different machine, so the two do
 not compare directly).
+
+## M14b outcome (2026-10-06)
+
+Done in two commits, on M12c's and M13b's pattern. Every headline theorem
+stays closed under the global context (`Print Assumptions` of
+`wf_tm_dec`, `wf_ty_dec`, `consistency`, `closed_canonicity`,
+`paper_sound`, `rec_red_typed`, `subject_reduction_tm`,
+`subject_reduction_ty`, `V_vec_succ`, `V_code_vec` and `RecS.rec_code`
+lists nothing).
+
+- **Step 1, the codes at D and M**: `tmVec l s n : U l` for `s : U l` and
+  `n : Nat @ 0`, and `tmFin n : U 0`. As Heather's, the length rides
+  across the decoding unchanged: `El (Vec^l(s; n)) ⇝ Vec^l(El s; n)` and
+  `El (Fin n) ⇝ Fin n` (`red_El_vec`, `red_El_fin`, and the equations
+  `eqty_El_vec`, `eqty_El_fin`). Codes are weak-head normal and compare
+  structurally (`actmnf_code_vec` compares the element codes by `ac_tm`
+  at `U`, the lengths by `ac_tm` at `Nat`). At C the code is not equal to
+  its `Vec^l(·; 0) ⇝ Unit` reduct: computation stays at the computing
+  layers, as for every other former. Validity (`V_code_vec`,
+  `V_El_vec`, `V_code_fin`, `V_El_fin` in `Validity/Vec.v`) goes through
+  `V_vec`/`V_fin` and the typed reduction `tyred_El_vec`; preservation,
+  canonicity's head table, type uniqueness and the type checker extend
+  as for the other codes.
+- **Step 2, the lift to C**: `wft_vec`, `wft_fin`, `wf_code_vec`,
+  `wf_code_fin` and their congruences take `i <> lV`; the four
+  computation rules and the `El` decodings stay at `compt i`. Static code
+  (`sc_vec`, `sc_fin`, `sc_code_vec`, `sc_code_fin`) and PresupC
+  (`pc_vec`, `pc_fin`, `pc_code_vec`, `pc_code_fin`) gain their cases at
+  every layer but V; `sc_code_vec` converts the code's type itself (as
+  `sc_code_sum_q`), since `Presupposition`'s `pre_codevec_r` needs
+  `typeof i = i`. The algorithm and preservation reach the lifted rules
+  through `compt_notV`, and `TCType`/`TCSynth` decide `Vec`, `Fin` and
+  their codes at every layer but V.
+- **The four branches** are 43–46 (`nbr = 47`), in Heather's order:
+  `t_Vec`, `t'_Vec`, `t_Fin`, `t'_Fin`, with (levels, globals, locals)
+  `(1,3,2)`, `(1,3,2)`, `(0,2,1)`, `(0,2,1)`. Each scope declares the
+  context, the element (type `U_T @ ℓ` or code `u_t : Ty ℓ @ 1+ℓ`, both at
+  C) and the length `u_k : Nat @ 0` at C. The length is a term in `g`
+  with no binder, so its recursive call is a *term* call at `Nat`, level
+  0, as `succ`'s; `t_Vec`'s element call is a type call at `ℓ`. The heads
+  are `M_Typ` at `ℓ` (`t_Vec`) and `0` (`t_Fin`, no universe binder) and
+  `M_Trm` at `1+ℓ`/`Ty ℓ` and `1`/`Ty 0`. These are the scopes our typing
+  rules give, and they agree with Heather's `rec.rs` (`ty_vec`, `tm_vec`,
+  `ty_fin`, `tm_fin`) slot for slot: globals, locals' motives and levels
+  (`x_T` at `l₁`, `x_k` and `x_t` at `l₂`), and result levels. This also
+  attests `ty_vec`'s type-motive slot, one of the ten
+  `H/issues/uncovered-formers-recursor-rules.md` lists as checked by
+  nothing outside the kernel: `rec_code` validates the branch at the
+  binding written here.
+- **Proofs**: the branch scopes are typed by the generic `wfd`/`code_side`
+  automation (with `wft_vec`, `wft_fin`, `wf_code_vec`, `wf_code_fin`
+  entries) and `AlgPrereq`'s `br_tac`. `RecS` has the reduct instances,
+  `GS_vec`, `GS_codevec` and `GS_fin` (`Fin`'s two scopes are `succ`'s,
+  so one lemma over `brDecls kb = brDecls 9`), `rec_T_vec`,
+  `rec_t_codevec`, `rec_T_fin`, `rec_t_codefin` (combining `rec_T_sum`'s
+  type calls with `rec_t_succ`'s `Nat` call through `Tcall` and `tcall`)
+  and the `RT_`/`Rt_` dispatch; `RecReduct` has `rr_T_vec`,
+  `rr_t_codevec`, `rr_T_fin`, `rr_t_codefin` and the `C_*` entries.
+- **Gotcha**: M13b's memoised W automation was selected by `39 <= k`
+  (`RecWf.w_lookups` and `wf_brG`, `RecAdm.code_side_k`), which would
+  have routed every later branch to it. The tests are now `39 <= k < 43`;
+  a future group of branches after W needs nothing there.
+
+**Cost.** Step 1: 31 files, about 500 lines; step 2: 18 files, about 620
+lines, `RecS` 330 and `RecReduct` 145 of them. A clean `make -j2` took 584 s wall on the 2026-10-06 machine (total CPU 743 s, critical path 471 s); M14a measured 654 s on the 2026-10-05 machine.

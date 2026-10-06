@@ -634,6 +634,38 @@ Proof.
   - exact (convU_at (ctxconv_tm (extc HEl HEE H13) Hd Ht') H24).
 Qed.
 
+(** Length-indexed tuples and finite indices, with their codes (every
+    layer but V since M14b). *)
+Lemma pc_vec {Γ l l' A A' n n'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tyVec l A n @ l ] /\ [ G ; Γ ⊢[ i ] tyVec l' A' n' @ l ].
+Proof.
+  intros Hv Hl HA HA' Hn Hn'. split; [apply wft_vec; eauto using lequiv_wf_l|].
+  eapply wft_lconv with (l' := l'); [|exact Hl].
+  apply wft_vec; eauto using lequiv_wf_r. eapply wft_lconv; [exact HA' | now apply lequiv_sym].
+Qed.
+
+Lemma pc_fin {Γ n n'} : i <> lV ->
+  [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tyFin n @ lzero ] /\ [ G ; Γ ⊢[ i ] tyFin n' @ lzero ].
+Proof. intros Hv Hn Hn'. split; apply wft_fin; assumption. Qed.
+
+Lemma pc_code_vec {Γ l l' s s' n n'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tmVec l s n : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmVec l' s' n' : tyU l @ lsuc l ].
+Proof.
+  intros Hv Hl Hs Hs' Hn Hn'. split; [apply wf_code_vec; eauto using lequiv_wf_l|].
+  apply (convU_at (l := l')); [|now apply lequiv_sym].
+  apply wf_code_vec; eauto using lequiv_wf_r. exact (convU_at Hs' Hl).
+Qed.
+
+Lemma pc_code_fin {Γ n n'} : i <> lV ->
+  [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tmFin n : tyU lzero @ lsuc lzero ] /\ [ G ; Γ ⊢[ i ] tmFin n' : tyU lzero @ lsuc lzero ].
+Proof. intros Hv Hn Hn'. split; apply wf_code_fin; assumption. Qed.
+
 End Cases.
 
 Theorem presupposition_C :
@@ -682,7 +714,10 @@ Proof.
              | solve [eapply pc_code_empty; eassumption] | solve [eapply pc_code_sum; eassumption]
              (* well-founded trees and their code (M13b) *)
              | solve [eapply pc_W; eassumption] | solve [eapply pc_sup; eassumption]
-             | solve [eapply pc_elimW; eassumption] | solve [eapply pc_codeW; eassumption] ].
+             | solve [eapply pc_elimW; eassumption] | solve [eapply pc_codeW; eassumption]
+             (* length-indexed tuples and finite indices, with their codes (M14b) *)
+             | solve [eapply pc_vec; eassumption] | solve [eapply pc_fin; eassumption]
+             | solve [eapply pc_code_vec; eassumption] | solve [eapply pc_code_fin; eassumption] ].
 Qed.
 
 Lemma eqty_wf_C {G i Γ T T' l} : lle i lC -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->

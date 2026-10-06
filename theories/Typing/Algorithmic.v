@@ -179,6 +179,11 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmnf_code_W G Γ l l1 l2 l3 l4 s s' t t' : leqv l1 l3 -> leqv l2 l4 ->
     ac_tm G Γ s s' (tyU l1) -> ac_tm G (Γ ,, tyEl l1 s @ l1) t t' (tyU l2) ->
     ac_tmnf G Γ (tmW l1 l2 s t) (tmW l3 l4 s' t') (tyU l)
+(* the codes of Vec and Fin (M14b): lengths at Nat *)
+| actmnf_code_vec G Γ l k k' s s' n n' : leqv k k' ->
+    ac_tm G Γ s s' (tyU k) -> ac_tm G Γ n n' tyNat ->
+    ac_tmnf G Γ (tmVec k s n) (tmVec k' s' n') (tyU l)
+| actmnf_code_fin G Γ l n n' : ac_tm G Γ n n' tyNat -> ac_tmnf G Γ (tmFin n) (tmFin n') (tyU l)
 
 with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_var G Γ n T l : in_ctx Γ n T l -> ac_tmne G Γ (var n) (var n) T

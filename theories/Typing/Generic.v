@@ -391,7 +391,13 @@ Class GenericEqLaws `{GenericEq} := {
     [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
     [ G ; Γ ⊢ ν ~ ν' : tyNat @ lzero ] -> [ G ; Γ ⊢ tyVec l A ν ~ tyVec l' A' ν' @ l ] ;
   gne_ty_fin {G Γ ν ν'} :
-    [ G ; Γ ⊢ ν ~ ν' : tyNat @ lzero ] -> [ G ; Γ ⊢ tyFin ν ~ tyFin ν' @ lzero ]
+    [ G ; Γ ⊢ ν ~ ν' : tyNat @ lzero ] -> [ G ; Γ ⊢ tyFin ν ~ tyFin ν' @ lzero ] ;
+  (** the codes of [Vec] and [Fin] (M14b) *)
+  geq_tm_code_vec {G Γ l l' s s' n n'} : lequiv (gL G) l l' ->
+    [ G ; Γ ⊢ s ≈ s' : tyU l @ lsuc l ] -> [ G ; Γ ⊢ n ≈ n' : tyNat @ lzero ] ->
+    [ G ; Γ ⊢ tmVec l s n ≈ tmVec l' s' n' : tyU l @ lsuc l ] ;
+  geq_tm_code_fin {G Γ n n'} :
+    [ G ; Γ ⊢ n ≈ n' : tyNat @ lzero ] -> [ G ; Γ ⊢ tmFin n ≈ tmFin n' : tyU lzero @ lsuc lzero ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

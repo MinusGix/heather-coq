@@ -632,10 +632,10 @@ Proof.
 Qed.
 
 (** Length-indexed tuples and finite indices (M14a). *)
-Lemma pre_vec_r {Γ l l' A' n'} : compt i -> lequiv (gL G) l l' ->
+Lemma pre_vec_r {Γ l l' A' n'} : lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] A' @ l ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] tyVec l' A' n' @ l ].
 Proof.
-  intros Hc Hl HA Hn. eapply wft_lconv with (l' := l'); [|exact Hl].
+  intros Hl HA Hn. eapply wft_lconv with (l' := l'); [|exact Hl].
   apply wft_vec; eauto using lequiv_wf_r. eapply wft_lconv; [exact HA | now apply lequiv_sym].
 Qed.
 
@@ -776,6 +776,15 @@ Lemma pre_case_inr_rhs {Γ l l' l'' A B M c2 b} : [ G ; Γ ⊢[ i ] A @ l ] -> [
 Proof.
   intros HA HB Hc Hb. rewrite <- (case_inr_single M l l' A B b (wf_ty_nf HA) (wf_ty_nf HB)).
   exact (wf_tm_single Hi Hc Hb).
+Qed.
+
+(** The codes of [Vec] and [Fin] (M14b). *)
+Lemma pre_codevec_r {Γ l l' s' n'} : lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tmVec l' s' n' : tyU l @ lsuc l ].
+Proof.
+  intros Hl Hs Hn. apply (conv_U (l := l')); [|now apply lequiv_sym].
+  apply wf_code_vec; eauto using lequiv_wf_r. exact (conv_U Hs Hl).
 Qed.
 
 (** The codes of [Empty] and [+] (M12c). *)
@@ -2265,7 +2274,13 @@ Proof.
                       eassumption]
              | solve [eapply proj2;
                       first [eapply pre_vec_zero | eapply pre_vec_succ | eapply pre_fin_zero | eapply pre_fin_succ];
-                      eassumption] ].
+                      eassumption]
+             (* the codes of Vec and Fin (M14b) *)
+             | solve [eapply pre_codevec_r; eassumption]
+             | solve [eapply wf_code_vec; eauto 3 with presup]
+             | solve [eapply wf_code_fin; eauto 3 with presup]
+             | solve [eapply wft_El; eauto with presup; first [eapply wf_code_vec | eapply wf_code_fin]; eassumption]
+             | solve [apply wft_vec; eauto 3 with presup; apply wft_El; eauto with presup] ].
 Qed.
 
 Section Named.

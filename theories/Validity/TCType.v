@@ -281,11 +281,11 @@ Proof.
   - right; intros H; exact (Q (proj2 (inv_ty_W H))).
 Qed.
 
-(** [Vec] and [Fin] (M14a): the computing layers D and M. *)
+(** [Vec] and [Fin] (M14a): every layer but V since M14b. *)
 Lemma dec_tyVec l A t : sz_ty (tyVec l A t) <= n -> TYD (tyVec l A t).
 Proof.
   intros Hsz G i Γ k HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros H; destruct (inv_ty_vec H) as ((X & _) & _); contradiction].
+  destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_vec H) as ((_ & X & _) & _); contradiction].
   destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
     [| right; intros H; destruct (inv_ty_vec H) as ((_ & _ & X & _) & _); contradiction].
@@ -300,7 +300,7 @@ Qed.
 Lemma dec_tyFin t : sz_ty (tyFin t) <= n -> TYD (tyFin t).
 Proof.
   intros Hsz G i Γ k HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros H; destruct (inv_ty_fin H) as ((X & _) & _); contradiction].
+  destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   assert (HN : [ G ; Γ ⊢[ typeof i ] tyNat @ lzero ]) by (apply wft_nat; [exact (typeof_notV i) | rewrite typeof_idem; exact HΓ]).
   destruct (ihC t ltac:(szl) G i Γ _ _ HN) as [Ht | N];
     [| right; intros H; destruct (inv_ty_fin H) as ((_ & X) & _); contradiction].

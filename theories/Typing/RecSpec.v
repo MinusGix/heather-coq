@@ -207,6 +207,13 @@ Definition brDecls (k : nat) : list gdecl :=
              (wstepty (lvar 2) (lvar 1) (gv 2) (gv 1) (gv 0)) (lvar 0);
            gdTy (cvar 2 ,, tyW (lvar 2) (lvar 1) (gv 1) (gv 0) @ lmax (lvar 2) (lvar 1)) lC (lvar 0);
            gdTy (cvar 1 ,, gv 0 @ lvar 2) lC (lvar 1); gdTy (cvar 0) lC (lvar 2); gdCtx]
+  (* length-indexed tuples and finite indices (M14b), Heather's telescopes *)
+  (* ℓ; g, U_T : (g ⊢C @ℓ), u_k : (g ⊢C Nat @0) *)
+  | 43 => [gdTm (cvar 1) lC tyNat lzero; gdTy (cvar 0) lC (lvar 0); gdCtx]
+  (* ℓ; g, u_t : (g ⊢C Ty ℓ @1+ℓ), u_k : (g ⊢C Nat @0) *)
+  | 44 => [gdTm (cvar 1) lC tyNat lzero; gdTm (cvar 0) lC (tyU (lvar 0)) (lsuc (lvar 0)); gdCtx]
+  (* g, u_k : (g ⊢C Nat @0): no level binder, [Fin] lives at 0 *)
+  | 45 | 46 => [gdTm (cvar 0) lC tyNat lzero; gdCtx]
   | _ => []
   end.
 
@@ -328,6 +335,9 @@ Definition br_calls (k : nat) : list rcall :=
                                 ,, wihty (lvar 2) (lvar 1) (lvar 0) (gv 4) (gv 3) (gv 2) @ lmax (lvar 1) (lvar 0))
               (wstepty (lvar 2) (lvar 1) (gv 4) (gv 3) (gv 2)) (boxt (gu 1));
             rct (lmax (lvar 2) (lvar 1)) (cvar 5) (tyW (lvar 2) (lvar 1) (gv 4) (gv 3)) (boxt (gu 0)) ]
+  | 43 => [ rcT (lvar 0) (cvar 2) (boxT (gv 1)); rct lzero (cvar 2) tyNat (boxt (gu 0)) ]
+  | 44 => [ rct (lsuc (lvar 0)) (cvar 2) (tyU (lvar 0)) (boxt (gu 1)); rct lzero (cvar 2) tyNat (boxt (gu 0)) ]
+  | 45 | 46 => [ rct lzero (cvar 1) tyNat (boxt (gu 0)) ]
   | _ => []
   end.
 
@@ -392,6 +402,10 @@ Definition br_head (k : nat) : rcall :=
             (boxt (tmSup (lvar 1) (lvar 0) (gv 3) (gv 2) (gu 1) (gu 0)))
   | 42 => rct (lvar 0) (cvar 5) (tyGvar 2 (lsingle (gu 0)))
             (boxt (tmElimW (lvar 2) (lvar 1) (lvar 0) (gv 4) (gv 3) (gv 2) (gu 1) (gu 0)))
+  | 43 => rcT (lvar 0) (cvar 2) (boxT (tyVec (lvar 0) (gv 1) (gu 0)))
+  | 44 => rct (lsuc (lvar 0)) (cvar 2) (tyU (lvar 0)) (boxt (tmVec (lvar 0) (gu 1) (gu 0)))
+  | 45 => rcT lzero (cvar 1) (boxT (tyFin (gu 0)))
+  | 46 => rct (lsuc lzero) (cvar 1) (tyU lzero) (boxt (tmFin (gu 0)))
   | _ => rcT lzero cnil (boxT tyErr)
   end.
 

@@ -546,6 +546,15 @@ Proof.
   - intros * ((Hn & Hn' & E) & T0 & D & ET).
     refine (conj (@gne_ty_fin DE DEL _ _ _ _ (conj Hn (conj Hn' E))) _).
     destruct (ne_nee D ET) as (W0 & X & _). exact (actne_fin _ _ _ _ _ X).
+  (* the codes of Vec and Fin (M14b) *)
+  - intros * Hl (Es & Ds) (En & Dn).
+    refine (conj (@geq_tm_code_vec DE DEL _ _ _ _ _ _ _ _ Hl Es En) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmVec | apply whnf_tmVec |].
+    exact (actmnf_code_vec _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) Ds Dn).
+  - intros * (En & Dn).
+    refine (conj (@geq_tm_code_fin DE DEL _ _ _ _ En) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmFin | apply whnf_tmFin |].
+    exact (actmnf_code_fin _ _ _ _ _ Dn).
 Qed.
 
 End Alg.

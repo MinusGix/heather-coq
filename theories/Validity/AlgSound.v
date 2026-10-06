@@ -203,7 +203,7 @@ Proof.
   pose proof (leqv_lequiv _ _ _ W1 W2 Hl) as E.
   pose proof (IHA i l Hc HA (wft_lconv _ _ _ _ _ _ HA' E)) as EA.
   destruct (IHν i lzero lzero tyNat tyNat Hc Hν Hν') as (_ & _ & Eν).
-  apply (lvl_eq_eqty Hk). apply eqty_vec; assumption.
+  apply (lvl_eq_eqty Hk). apply eqty_vec; auto using compt_notV.
 Qed.
 
 Lemma S_actne_fin {G Γ ν ν' W} : S_ne G Γ ν ν' W -> S_ty G Γ (tyFin ν) (tyFin ν').
@@ -211,7 +211,7 @@ Proof.
   intros IHν i k Hc HX HX'.
   destruct (inv_ty_fin HX) as ((_ & Hν) & Hk). destruct (inv_ty_fin HX') as ((_ & Hν') & _).
   destruct (IHν i lzero lzero tyNat tyNat Hc Hν Hν') as (_ & _ & Eν).
-  apply (lvl_eq_eqty Hk). apply eqty_fin; assumption.
+  apply (lvl_eq_eqty Hk). apply eqty_fin; auto using compt_notV.
 Qed.
 
 (** ** Local contexts (at D) *)
@@ -1343,6 +1343,38 @@ Proof.
   apply eqtm_code_sum; [exact (compt_notV _ Hc) | ..]; assumption.
 Qed.
 
+(** The codes of [Vec] and [Fin] (M14b). *)
+Lemma code_vec_prem {G i Γ l k s n m} : compt i -> [ G ; Γ ⊢[ i ] tmVec k s n : tyU l @ m ] ->
+  lwf (gL G) k /\ [ G ; Γ ⊢[ i ] s : tyU k @ lsuc k ] /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ].
+Proof.
+  intros Hc H. destruct (proj1 (inv_code_vec (compt_typeof_self _ Hc) H)) as (_ & W & Hs & Hn). auto.
+Qed.
+Lemma code_fin_prem {G i Γ l n m} : compt i -> [ G ; Γ ⊢[ i ] tmFin n : tyU l @ m ] ->
+  [ G ; Γ ⊢[ i ] n : tyNat @ lzero ].
+Proof. intros Hc H. exact (proj2 (proj1 (inv_code_fin (compt_typeof_self _ Hc) H))). Qed.
+
+Lemma S_actmnf_code_vec {G Γ l k k' s s' n n'} : leqv k k' ->
+  S_tm G Γ s s' (tyU k) -> S_tm G Γ n n' tyNat -> S_tm G Γ (tmVec k s n) (tmVec k' s' n') (tyU l).
+Proof.
+  intros Hk0 IHs IHn i m Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_code_vec Hi Hx) as (_ & Hk & HT).
+  destruct (code_vec_prem Hc Hx) as (W & Hs & Hn). destruct (code_vec_prem Hc Hx') as (W' & Hs' & Hn').
+  pose proof (leqv_lequiv _ _ _ W W' Hk0) as E.
+  pose proof (IHs i (lsuc k) Hc Hs (code_U_conv Hc E Hs')) as Es.
+  pose proof (IHn i lzero Hc Hn Hn') as En.
+  eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
+  apply eqtm_code_vec; auto using compt_notV.
+Qed.
+
+Lemma S_actmnf_code_fin {G Γ l n n'} : S_tm G Γ n n' tyNat -> S_tm G Γ (tmFin n) (tmFin n') (tyU l).
+Proof.
+  intros IHn i m Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_code_fin Hi Hx) as (_ & Hk & HT).
+  pose proof (IHn i lzero Hc (code_fin_prem Hc Hx) (code_fin_prem Hc Hx')) as En.
+  eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
+  apply eqtm_code_fin; auto using compt_notV.
+Qed.
+
 Lemma S_actmnf_code_sempty {G Γ l k k'} : leqv k k' -> S_tm G Γ (tmSEmpty k) (tmSEmpty k') (tyU l).
 Proof.
   intros Hl i kk Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi.
@@ -1944,6 +1976,7 @@ Proof.
     | solve [eapply S_actnf_sum; eassumption] | solve [eapply S_actmnf_inl; eassumption]
     | solve [eapply S_actmnf_inr; eassumption] | solve [eapply S_actmne_case; eassumption]
     | solve [eapply S_actmnf_code_empty; eassumption] | solve [eapply S_actmnf_code_sum; eassumption]
+    | solve [eapply S_actmnf_code_vec; eassumption] | solve [eapply S_actmnf_code_fin; eassumption]
     | solve [eapply S_actnf_W; eassumption] | solve [eapply S_actmnf_sup; eassumption]
     | solve [eapply S_actmne_elimW; eassumption]
     | solve [eapply S_actmnf_code_W; eassumption]

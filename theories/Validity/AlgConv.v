@@ -1400,6 +1400,31 @@ Proof.
              (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Ht))) _ _ spa_refl spa_refl).
 Qed.
 
+(** The codes of [Vec] and [Fin] (M14b). *)
+Lemma C_actmnf_code_vec {G Γ l k k' s s' n n'} : leqv k k' ->
+  C_tm G Γ s s' (tyU k) -> C_tm G Γ n n' tyNat -> C_tmnf G Γ (tmVec k s n) (tmVec k' s' n') (tyU l).
+Proof.
+  intros Hk0 IHs IHn i G2 Γ2 W2 m Hc HE Hctx Hx Hx' EW Hw2 x x' Hsx Hsx'. spa_triv.
+  pose proof (compt_typeof_self _ Hc) as Hi. new_head Hc EW Hw2 W2.
+  destruct (code_vec_prem Hc Hx) as (Wk & Hs & Hn). destruct (code_vec_prem Hc Hx') as (Wk' & Hs' & Hn').
+  pose proof (leqv_lequiv _ _ _ Wk Wk' Hk0) as E.
+  apply actmnf_code_vec; [exact Hk0 | |].
+  - exact (IHs i G2 Γ2 (tyU k) (lsuc k) Hc HE Hctx Hs (code_U_conv Hc E Hs')
+             (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hs))) _ _ spa_refl spa_refl).
+  - exact (IHn i G2 Γ2 tyNat lzero Hc HE Hctx Hn Hn'
+             (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hn))) _ _ spa_refl spa_refl).
+Qed.
+
+Lemma C_actmnf_code_fin {G Γ l n n'} : C_tm G Γ n n' tyNat -> C_tmnf G Γ (tmFin n) (tmFin n') (tyU l).
+Proof.
+  intros IHn i G2 Γ2 W2 m Hc HE Hctx Hx Hx' EW Hw2 x x' Hsx Hsx'. spa_triv.
+  pose proof (compt_typeof_self _ Hc) as Hi. new_head Hc EW Hw2 W2.
+  pose proof (code_fin_prem Hc Hx) as Hn. pose proof (code_fin_prem Hc Hx') as Hn'.
+  apply actmnf_code_fin.
+  exact (IHn i G2 Γ2 tyNat lzero Hc HE Hctx Hn Hn'
+           (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hn))) _ _ spa_refl spa_refl).
+Qed.
+
 Lemma C_actmnf_code_sempty {G Γ l k k'} : leqv k k' -> C_tmnf G Γ (tmSEmpty k) (tmSEmpty k') (tyU l).
 Proof.
   intros Hl; red; intros i G2 Γ2 W2 kk Hc HE Hctx Ht Ht' EW Hw2 x x' Hsx Hsx'. spa_triv. new_head Hc EW Hw2 W2.
@@ -1841,6 +1866,7 @@ Proof.
     | solve [eapply C_actnf_sum; eassumption] | solve [eapply C_actmnf_inl; eassumption]
     | solve [eapply C_actmnf_inr; eassumption] | solve [eapply C_actmne_case; eassumption]
     | solve [eapply C_actmnf_code_empty; eassumption] | solve [eapply C_actmnf_code_sum; eassumption]
+    | solve [eapply C_actmnf_code_vec; eassumption] | solve [eapply C_actmnf_code_fin; eassumption]
     | solve [eapply C_actnf_W; eassumption] | solve [eapply C_actmnf_sup; eassumption]
     | solve [eapply C_actmne_elimW; eassumption]
     | solve [eapply C_actmnf_code_W; eassumption]
