@@ -274,6 +274,9 @@ Ltac code_side :=
   | |- [ _ ; _ ⊢[ _ ] tmInr _ _ _ _ _ : _ @ _ ] => apply wf_inr; [ discriminate | lvl_ok | lvl_ok | .. ]
   | |- [ _ ; _ ⊢[ _ ] tmCase _ _ _ _ _ _ _ _ _ : _ @ _ ] =>
       eapply wf_case'; [ reflexivity | reflexivity | reflexivity | discriminate | lvl_ok | lvl_ok | lvl_ok | .. ]
+  (* the codes of Vec and Fin (M14b) *)
+  | |- [ _ ; _ ⊢[ _ ] tmVec _ _ _ : _ @ _ ] => apply wf_code_vec; [ discriminate | lvl_ok | | ]
+  | |- [ _ ; _ ⊢[ _ ] tmFin _ : _ @ _ ] => apply wf_code_fin; [ discriminate | ]
   | |- [ _ ; _ ⊢[ _ ] ] => progress wfd
   | |- [ _ ; _ ⊢[ _ ] _ @ _ ] => progress wfd
   | |- [ _ ; _ ⊢[ _ ] _ : _ @ _ ] => progress wfd
@@ -285,7 +288,7 @@ Ltac code_side_W := wnorm; wtop.
 
 (** The side conditions: levels, the scrutinees' contexts and typings. *)
 Ltac code_side_k k :=
-  let b := eval cbv in (Nat.leb 39 k) in
+  let b := eval cbv in (andb (Nat.leb 39 k) (Nat.ltb k 43)) in
   lazymatch b with true => code_side_W | false => code_side end.
 Ltac br_side k HΓ :=
   first

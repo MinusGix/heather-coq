@@ -272,12 +272,12 @@ Proof. inv_tm_any. Qed.
 
 (** The codes of [Vec] and [Fin] (M14b). *)
 Lemma inva_code_vec {G i Γ l s n T k} : [ G ; Γ ⊢[ i ] tmVec l s n : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) /\
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) /\
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU l @ k ].
 Proof. inv_tm_any. Qed.
 
 Lemma inva_code_fin {G i Γ n T k} : [ G ; Γ ⊢[ i ] tmFin n : T @ k ] ->
-  (compt i /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) /\
+  (i <> lV /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) /\
     lvl_eq (gL G) k (lsuc lzero) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU lzero @ k ].
 Proof. inv_tm_any. Qed.
 

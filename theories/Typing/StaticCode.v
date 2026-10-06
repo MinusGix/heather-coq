@@ -1430,41 +1430,47 @@ Proof.
   - apply eqtm_code_W; auto.
 Qed.
 
-(** Length-indexed tuples and finite indices (M14a), at D. *)
-Lemma sc_vec {Γ l l' A A' n n'} : compt i -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+(** Length-indexed tuples and finite indices (M14a; every layer but V
+    since M14b). *)
+Lemma sc_vec {Γ l l' A A' n n'} : i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
   [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
   [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] /\ [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] tyVec l' A' n' @ l ] /\ [ G ; Γ ⊢[ i ] tyVec l A n ≅ tyVec l' A' n' @ l ].
 Proof.
-  intros Hc Hl Hl' E HA [HA' HAA] [Hn' Hnn]. pose proof (lq Hl Hl' E) as Q. split.
+  intros Hv Hl Hl' E HA [HA' HAA] [Hn' Hnn]. pose proof (lq Hl Hl' E) as Q. split.
   - eapply wft_lconv; [apply wft_vec; auto | exact Q].
     eapply wft_lconv; [exact HA' | apply lequiv_sym, Q].
   - apply eqty_vec; auto.
 Qed.
 
-Lemma sc_fin {Γ n n'} : compt i ->
+Lemma sc_fin {Γ n n'} : i <> lV ->
   [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] /\ [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] tyFin n' @ lzero ] /\ [ G ; Γ ⊢[ i ] tyFin n ≅ tyFin n' @ lzero ].
-Proof. intros Hc [Hn' Hnn]. split; [apply wft_fin | apply eqty_fin]; auto. Qed.
+Proof. intros Hv [Hn' Hnn]. split; [apply wft_fin | apply eqty_fin]; auto. Qed.
 
-(** The codes of [Vec] and [Fin] (M14b), at D as their types. *)
-Lemma sc_code_vec {Γ l l' s s' n n'} : compt i -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+(** The codes of [Vec] and [Fin] (M14b; every layer but V), as [+]'s. *)
+Lemma sc_code_vec {Γ l l' s s' n n'} : i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
   [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
   [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
   [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] /\ [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] tmVec l' s' n' : tyU l @ lsuc l ] /\
   [ G ; Γ ⊢[ i ] tmVec l s n ≅ tmVec l' s' n' : tyU l @ lsuc l ].
 Proof.
-  intros Hc Hl Hl' E _ [Hs' Hss] [Hn' Hnn]. pose proof (lq Hl Hl' E) as Q. split.
-  - exact (pre_codevec_r (compt_typeof_self _ Hc) (compt_notV _ Hc) Hc Q Hs' Hn').
+  intros Hv Hl Hl' E _ [Hs' Hss] [Hn' Hnn]. pose proof (lq Hl Hl' E) as Q.
+  pose proof (sc_ctx_tm Hs') as HΓ. split.
+  - apply (sc_conv (T' := tyU l')).
+    + eapply wf_lconv; [apply wf_code_vec; [exact Hv | exact Hl' | | exact Hn'] | apply lequiv_lsuc', Q].
+      apply (sc_conv (T' := tyU l)); [eapply wf_lconv; [exact Hs' | apply lequiv_lsuc', lequiv_sym, Q]|].
+      apply eqty_U; [discriminate | exact HΓ | apply lequiv_sym, Q].
+    + apply eqty_U; [discriminate | exact HΓ | exact Q].
   - apply eqtm_code_vec; auto.
 Qed.
 
-Lemma sc_code_fin {Γ n n'} : compt i ->
+Lemma sc_code_fin {Γ n n'} : i <> lV ->
   [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] /\ [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] tmFin n' : tyU lzero @ lsuc lzero ] /\
   [ G ; Γ ⊢[ i ] tmFin n ≅ tmFin n' : tyU lzero @ lsuc lzero ].
-Proof. intros Hc [Hn' Hnn]. split; [apply wf_code_fin | apply eqtm_code_fin]; auto. Qed.
+Proof. intros Hv [Hn' Hnn]. split; [apply wf_code_fin | apply eqtm_code_fin]; auto. Qed.
 
 End SC.
 

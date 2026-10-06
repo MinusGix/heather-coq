@@ -108,7 +108,7 @@ Ltac glookups Ψ := glookups_from Ψ 0.
 (* in a branch scope: W's (39-42) only, the scopes that use [RecWf]'s
    memoised automation *)
 Ltac w_lookups k Ψ :=
-  let b := eval cbv in (Nat.leb 39 k) in
+  let b := eval cbv in (andb (Nat.leb 39 k) (Nat.ltb k 43)) in
   lazymatch b with true => glookups Ψ | false => idtac end.
 
 Ltac lvl_ok := cbn; repeat split; try lia.
@@ -144,6 +144,9 @@ Ltac wfd :=
   | |- [ _ ; _ ⊢[ _ ] tySum _ _ _ _ @ _ ] => apply wft_sum; [ discriminate | lvl_ok | lvl_ok | | ]
   | |- [ _ ; _ ⊢[ _ ] tmInl _ _ _ _ _ : tySum _ _ _ _ @ _ ] => apply wf_inl; [ discriminate | lvl_ok | lvl_ok | | | ]
   | |- [ _ ; _ ⊢[ _ ] tmInr _ _ _ _ _ : tySum _ _ _ _ @ _ ] => apply wf_inr; [ discriminate | lvl_ok | lvl_ok | | | ]
+  (* length-indexed tuples and finite indices (M14b) *)
+  | |- [ _ ; _ ⊢[ _ ] tyVec _ _ _ @ _ ] => apply wft_vec; [ discriminate | lvl_ok | | ]
+  | |- [ _ ; _ ⊢[ _ ] tyFin _ @ _ ] => apply wft_fin; [ discriminate | ]
   | |- [ _ ; _ ,, tyGvar _ (lshift 0) @ _ ⊢[ _ ] var 0 : tyGvar _ (lshift 1) @ _ ] => apply wf_var0_gv
   | |- [ _ ; cvar _ ,, _ @ _ ⊢[ _ ] tyGvar _ (lshift 1) @ _ ] =>
       eapply wf_gv_up; [ discriminate | | glookup | unfold lle; cbn; lia ]
@@ -374,7 +377,8 @@ Qed.
 
 Lemma wf_brG k : k < nbr -> [ ⊢ brG k G ].
 Proof.
-  intros Hk. destruct (Nat.le_gt_cases 39 k) as [HW|HW]; [apply wf_brG_W; lia|].
+  intros Hk. assert (HW : 39 <= k < 43 \/ ~ 39 <= k < 43) by lia.
+  destruct HW as [HW|HW]; [now apply wf_brG_W|].
   pose proof (uwk_glob (br_nu k) G HG) as Hu.
   unfold brG, gctx_uwk in *; cbn [gL gΨ] in *.
   br_all ltac:(destruct k; [first [exfalso; lia | cbn [brDecls List.app br_nu br_ar] in *; unfold gv, gu;

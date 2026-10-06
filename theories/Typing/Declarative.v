@@ -100,12 +100,12 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
 | wft_W G i Γ l l' A B : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] ->
     [ G ; Γ ⊢[ i ] tyW l l' A B @ lmax l l' ]
-(* length-indexed tuples and finite indices (M14a; layers D and M): the
-   length is a term in [Γ], with no binder *)
-| wft_vec G i Γ l A n : compt i -> lwf (gL G) l ->
+(* length-indexed tuples and finite indices (M14a; every layer but V since
+   M14b): the length is a term in [Γ], with no binder *)
+| wft_vec G i Γ l A n : i <> lV -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tyVec l A n @ l ]
-| wft_fin G i Γ n : compt i -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+| wft_fin G i Γ n : i <> lV -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tyFin n @ lzero ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
@@ -328,11 +328,11 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ] ->
     [ G ; Γ ⊢[ i ] tmW l l' s t : tyU (lmax l l') @ lsuc (lmax l l') ]
-(* the codes of [Vec] and [Fin] (M14b): the length is a term of [Nat], not a code *)
-| wf_code_vec G i Γ l s n : compt i -> lwf (gL G) l ->
+(* the codes of [Vec] and [Fin] (M14b; every layer but V): the length is a term of [Nat], not a code *)
+| wf_code_vec G i Γ l s n : i <> lV -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tmVec l s n : tyU l @ lsuc l ]
-| wf_code_fin G i Γ n : compt i -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+| wf_code_fin G i Γ n : i <> lV -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tmFin n : tyU lzero @ lsuc lzero ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
@@ -449,13 +449,14 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] t : tyU l' @ lsuc l' ] ->
     [ G ; Γ ⊢[ i ] tyW l l' (tyEl l s) (tyEl l' t) ≅ tyEl (lmax l l') (tmW l l' s t) @ lmax l l' ]
-(* length-indexed tuples and finite indices (M14a; layers D and M): the
-   congruences, and the computation at a canonical length *)
-| eqty_vec G i Γ l l' A A' n n' : compt i -> lequiv (gL G) l l' ->
+(* length-indexed tuples and finite indices (M14a): the congruences (every
+   layer but V since M14b), and the computation at a canonical length
+   (layers D and M) *)
+| eqty_vec G i Γ l l' A A' n n' : i <> lV -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
     [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tyVec l A n ≅ tyVec l' A' n' @ l ]
-| eqty_fin G i Γ n n' : compt i -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+| eqty_fin G i Γ n n' : i <> lV -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tyFin n ≅ tyFin n' @ lzero ]
 | eqty_vec_zero G i Γ l A : compt i -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] A @ l ] ->
     [ G ; Γ ⊢[ i ] tyVec l A zero ≅ tyUnit l @ l ]
@@ -895,11 +896,11 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] s ≅ s' : tyU l1 @ lsuc l1 ] ->
     [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t ≅ t' : tyU l2 @ lsuc l2 ] ->
     [ G ; Γ ⊢[ i ] tmW l1 l2 s t ≅ tmW l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ]
-(* the codes of [Vec] and [Fin] (M14b) *)
-| eqtm_code_vec G i Γ l l' s s' n n' : compt i -> lequiv (gL G) l l' ->
+(* the codes of [Vec] and [Fin] (M14b; every layer but V) *)
+| eqtm_code_vec G i Γ l l' s s' n n' : i <> lV -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tmVec l s n ≅ tmVec l' s' n' : tyU l @ lsuc l ]
-| eqtm_code_fin G i Γ n n' : compt i -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+| eqtm_code_fin G i Γ n n' : i <> lV -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tmFin n ≅ tmFin n' : tyU lzero @ lsuc lzero ]
 
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])

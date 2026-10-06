@@ -271,12 +271,12 @@ Proof. inv_tm. Qed.
 
 (** The codes of [Vec] and [Fin] (M14b). *)
 Lemma inv_code_vec {G i Γ l s n T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmVec l s n : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) /\
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) /\
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ i ] T ≅ tyU l @ k ].
 Proof. inv_tm. Qed.
 
 Lemma inv_code_fin {G i Γ n T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmFin n : T @ k ] ->
-  (compt i /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) /\
+  (i <> lV /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) /\
     lvl_eq (gL G) k (lsuc lzero) /\ [ G ; Γ ⊢[ i ] T ≅ tyU lzero @ k ].
 Proof. inv_tm. Qed.
 
@@ -500,11 +500,11 @@ Proof. inv_ty. Qed.
 
 (** Length-indexed tuples and finite indices (M14a). *)
 Lemma inv_ty_vec {G i Γ l A n k} : [ G ; Γ ⊢[ i ] tyVec l A n @ k ] ->
-  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) /\
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) /\
     lvl_eq (gL G) k l.
 Proof. inv_ty. Qed.
 Lemma inv_ty_fin {G i Γ n k} : [ G ; Γ ⊢[ i ] tyFin n @ k ] ->
-  (compt i /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) /\ lvl_eq (gL G) k lzero.
+  (i <> lV /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) /\ lvl_eq (gL G) k lzero.
 Proof. inv_ty. Qed.
 
 (** ** Lookups are deterministic *)

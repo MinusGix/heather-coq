@@ -462,11 +462,11 @@ Proof.
   left; eexists; eexists; exact (wf_code_W _ _ _ _ _ _ _ Hc Hl Hl' Hs Ht).
 Qed.
 
-(** The codes of [Vec] and [Fin] (M14b). *)
+(** The codes of [Vec] and [Fin] (M14b): every layer but V. *)
 Lemma sy_code_vec l s m : sz_tm (tmVec l s m) <= n -> SYD (tmVec l s m).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_code_vec H) as ((X & _) & _); contradiction].
+  notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_vec H) as ((_ & X & _) & _); contradiction].
   destruct (ihC s ltac:(szl) G i Γ _ _ (HUniv HΓ Hl)) as [Hs | N];
     [| right; intros T k H; destruct (inva_code_vec H) as ((_ & _ & X & _) & _); contradiction].
@@ -477,7 +477,7 @@ Qed.
 Lemma sy_code_fin m : sz_tm (tmFin m) <= n -> SYD (tmFin m).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | N]; [| right; intros T k H; destruct (inva_code_fin H) as ((X & _) & _); contradiction].
+  notV. rename Hv into Hc.
   destruct (ihC m ltac:(szl) G i Γ _ _ (HNat HΓ)) as [Hm | N];
     [| right; intros T k H; destruct (inva_code_fin H) as ((_ & X) & _); contradiction].
   left; eexists; eexists; exact (wf_code_fin _ _ _ _ Hc Hm).

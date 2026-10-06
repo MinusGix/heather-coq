@@ -348,6 +348,8 @@ Ltac br_tac :=
     | eapply wf_elimEmpty_eq; [reflexivity | ..]
     | eapply wf_case_eq; [reflexivity | reflexivity | reflexivity | ..]
     | eapply wf_gv_up_inst
+    (* length-indexed tuples and finite indices (M14b) *)
+    | eapply wft_vec | apply wft_fin | eapply wf_code_vec | apply wf_code_fin
     (* last: their [cbn] is the bulk of the cost when tried on every goal *)
     | solve [unfold lle; cbn; lia] | solve [br_lvl] ].
 

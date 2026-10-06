@@ -632,10 +632,10 @@ Proof.
 Qed.
 
 (** Length-indexed tuples and finite indices (M14a). *)
-Lemma pre_vec_r {Γ l l' A' n'} : compt i -> lequiv (gL G) l l' ->
+Lemma pre_vec_r {Γ l l' A' n'} : lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] A' @ l ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] tyVec l' A' n' @ l ].
 Proof.
-  intros Hc Hl HA Hn. eapply wft_lconv with (l' := l'); [|exact Hl].
+  intros Hl HA Hn. eapply wft_lconv with (l' := l'); [|exact Hl].
   apply wft_vec; eauto using lequiv_wf_r. eapply wft_lconv; [exact HA | now apply lequiv_sym].
 Qed.
 
@@ -779,11 +779,11 @@ Proof.
 Qed.
 
 (** The codes of [Vec] and [Fin] (M14b). *)
-Lemma pre_codevec_r {Γ l l' s' n'} : compt i -> lequiv (gL G) l l' ->
+Lemma pre_codevec_r {Γ l l' s' n'} : lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] tmVec l' s' n' : tyU l @ lsuc l ].
 Proof.
-  intros Hc Hl Hs Hn. apply (conv_U (l := l')); [|now apply lequiv_sym].
+  intros Hl Hs Hn. apply (conv_U (l := l')); [|now apply lequiv_sym].
   apply wf_code_vec; eauto using lequiv_wf_r. exact (conv_U Hs Hl).
 Qed.
 

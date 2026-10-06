@@ -680,7 +680,7 @@ Lemma RS_vec l A n n' : RS_tm n n' -> RS_ty (tyVec l A n) (tyVec l A n').
 Proof.
   intros IH G i Γ k Hc HT. destruct (inv_ty_vec HT) as ((_ & Wl & HA & Hn) & Hk).
   apply (retype_eqty Hk).
-  exact (eqty_vec _ _ _ _ _ _ _ _ _ Hc (lequiv_refl _ _ Wl) HA (eqty_refl _ _ _ _ _ HA) (IH _ _ _ _ _ Hc Hn)).
+  exact (eqty_vec _ _ _ _ _ _ _ _ _ (compt_notV _ Hc) (lequiv_refl _ _ Wl) HA (eqty_refl _ _ _ _ _ HA) (IH _ _ _ _ _ Hc Hn)).
 Qed.
 
 Lemma RS_fin_zero : RS_ty (tyFin zero) (tyEmpty lzero).
@@ -702,7 +702,7 @@ Qed.
 Lemma RS_fin n n' : RS_tm n n' -> RS_ty (tyFin n) (tyFin n').
 Proof.
   intros IH G i Γ k Hc HT. destruct (inv_ty_fin HT) as ((_ & Hn) & Hk).
-  apply (retype_eqty Hk). exact (eqty_fin _ _ _ _ _ Hc (IH _ _ _ _ _ Hc Hn)).
+  apply (retype_eqty Hk). exact (eqty_fin _ _ _ _ _ (compt_notV _ Hc) (IH _ _ _ _ _ Hc Hn)).
 Qed.
 
 (** ** Soundness of reduction *)
