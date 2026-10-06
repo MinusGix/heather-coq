@@ -21,12 +21,6 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 
 (** ** Syntax *)
 
-Lemma gwa_tmNth γ l T k cs i : (tmNth l T k cs i)⟦γ⟧ = tmNth l T⟦γ⟧ k⟦γ⟧ cs⟦γ⟧ i⟦γ⟧.
-Proof. destruct γ; cbn [gwa]; [reflexivity | apply gren_tmNth ..]. Qed.
-Lemma gwa_wfIH γ l l' A N M c a cs :
-  (wfIH l l' A N M c a cs)⟦γ⟧ = wfIH l l' A⟦γ⟧ N⟦γ⟧ M⟦γ⟧ c⟦γ⟧ a⟦γ⟧ cs⟦γ⟧.
-Proof. destruct γ; cbn [gwa]; [reflexivity | apply gren_wfIH ..]. Qed.
-
 Lemma gwa_wfcsty γ l (A : ty) (N : tm) : (wfcsty l A N)⟦γ⟧ = wfcsty l A⟦γ⟧ N⟦γ⟧.
 Proof. now rewrite gwa_tyVec, gwa_ren_ty, gwa_tyWf. Qed.
 Lemma gwa_wfihty γ l l' (A : ty) (N : tm) (M : ty) : (wfihty l l' A N M)⟦γ⟧ = wfihty l l' A⟦γ⟧ N⟦γ⟧ M⟦γ⟧.

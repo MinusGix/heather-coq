@@ -143,6 +143,11 @@ Ltac s_push_at h k := lazymatch h with
   | @tmSup => k gs_sup
   | @tmElimW => k gs_elimW
   | @wIH => k gs_wIH
+  | @tyWf => k gs_tyWf
+  | @tmSupf => k gs_supf
+  | @tmElimWf => k gs_elimWf
+  | @tmNth => k gs_tmNth
+  | @wfIH => k gs_wfIH
   | @tmInl => k gs_inl
   | @tmInr => k gs_inr
   | @tmCase => k gs_case
@@ -224,7 +229,10 @@ Ltac fts_case :=
   | solve [simple eapply V_fin_zero; s_side] | solve [simple eapply V_fin_succ; s_side]
   (* their codes (M14b) *)
   | solve [simple eapply V_code_vec; s_side] | solve [simple eapply V_El_vec; s_side]
-  | solve [simple eapply V_code_fin; s_side] | solve [simple eapply V_El_fin; s_side] ].
+  | solve [simple eapply V_code_fin; s_side] | solve [simple eapply V_El_fin; s_side]
+  (* finitary well-founded trees (M15a) *)
+  | solve [simple eapply V_wf; s_side] | solve [simple eapply V_supf; s_side]
+  | solve [simple eapply V_elimWf; s_side] | solve [simple eapply V_elimWf_supf; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=
@@ -725,6 +733,36 @@ Proof using EL VL VN.
   apply VS_code_fin; exact Vn.
 Qed.
 
+(** Finitary well-founded trees (M15a). *)
+Lemma VS_wf {G Γ l l' A A' N N'} : lwf (gL G) l -> lequiv (gL G) l' l ->
+  VTyS G Γ A A' l -> VTmS G (Γ ,, A @ l) N N' tyNat lzero -> VTyS G Γ (tyWf l A N) (tyWf l' A' N') l.
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_supf {G Γ l l' A A' N N' a a' cs cs'} : lwf (gL G) l -> lequiv (gL G) l' l ->
+  VTyS G Γ A A' l -> VTmS G (Γ ,, A @ l) N N' tyNat lzero -> VTmS G Γ a a' A l ->
+  VTmS G Γ cs cs' (tyVec l (tyWf l A N) N[lsingle a]) l ->
+  VTmS G Γ (tmSupf l A N a cs) (tmSupf l' A' N' a' cs') (tyWf l A N) l.
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_elimWf {ly G Γ l l' l3 l4 A A' N N' M M' c c' t t'} :
+  lwf (gL G) l -> lwf (gL G) l' -> lequiv (gL G) l l3 -> lequiv (gL G) l' l4 ->
+  [ G ; Γ ,, A @ l ⊢[ ly ] N : tyNat @ lzero ] -> lle ly ge_layer -> typeof ly = ly ->
+  VTyS G Γ A A' l -> VTmS G (Γ ,, A @ l) N N' tyNat lzero -> VTyS G (Γ ,, tyWf l A N @ l) M M' l' ->
+  VTyS G (Γ ,, A @ l) (wfcsty l A N) (wfcsty l A N) l ->
+  VTyS G (Γ ,, A @ l ,, wfcsty l A N @ l) (wfihty l l' A N M) (wfihty l l' A N M) (lmax lzero l') ->
+  VTmS G (Γ ,, A @ l ,, wfcsty l A N @ l ,, wfihty l l' A N M @ lmax lzero l') c c' (wfstepty l A N M) l' ->
+  VTmS G Γ t t' (tyWf l A N) l ->
+  VTmS G Γ (tmElimWf l l' A N M c t) (tmElimWf l3 l4 A' N' M' c' t') M[lsingle t] l'.
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_elimWf_supf {ly G Γ l l' A N M c a cs} : lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ,, A @ l ⊢[ ly ] N : tyNat @ lzero ] -> lle ly ge_layer -> typeof ly = ly ->
+  VTyS G Γ A A l -> VTmS G (Γ ,, A @ l) N N tyNat lzero -> VTyS G (Γ ,, tyWf l A N @ l) M M l' ->
+  VTyS G (Γ ,, A @ l) (wfcsty l A N) (wfcsty l A N) l ->
+  VTyS G (Γ ,, A @ l ,, wfcsty l A N @ l) (wfihty l l' A N M) (wfihty l l' A N M) (lmax lzero l') ->
+  VTmS G (Γ ,, A @ l ,, wfcsty l A N @ l ,, wfihty l l' A N M @ lmax lzero l') c c (wfstepty l A N M) l' ->
+  VTmS G Γ a a A l -> VTmS G Γ cs cs (tyVec l (tyWf l A N) N[lsingle a]) l ->
+  VTmS G Γ (tmElimWf l l' A N M c (tmSupf l A N a cs)) c[lsingle3 a cs (wfIH l l' A N M c a cs)]
+    M[lsingle (tmSupf l A N a cs)] l'.
+Proof using EL VL VN. intros; s_lift. Qed.
+
 End Rules.
 
 End RulesS.
@@ -786,4 +824,7 @@ Ltac vs_rules side :=
   | solve [simple eapply VS_fin_zero; side] | solve [simple eapply VS_fin_succ; side]
   (* their codes (M14b) *)
   | solve [simple eapply VS_code_vec; side] | solve [simple eapply VS_El_vec; side]
-  | solve [simple eapply VS_code_fin; side] | solve [simple eapply VS_El_fin; side] ].
+  | solve [simple eapply VS_code_fin; side] | solve [simple eapply VS_El_fin; side]
+  (* finitary well-founded trees (M15a) *)
+  | solve [simple eapply VS_wf; side] | solve [simple eapply VS_supf; side]
+  | solve [simple eapply VS_elimWf; side] | solve [simple eapply VS_elimWf_supf; side] ].
