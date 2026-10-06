@@ -483,6 +483,139 @@ Proof.
   - vvar.
 Qed.
 
+(** ** The core: related eliminations at related trees *)
+
+(** The eliminations at two terms, after a global weakening and at a
+    related substitution, related at the motive. *)
+Definition elimWf_goal G0 Δ0 γ e e' s s' : Prop :=
+  LRtm l' G0 Δ0 M⟦γ⟧[llift e][lsingle s] M⟦γ⟧[llift e][lsingle s]
+    (tmElimWf l l' A⟦γ⟧[e] N⟦γ⟧[llift e] M⟦γ⟧[llift e] c⟦γ⟧[llift (llift (llift e))] s)
+    (tmElimWf l3 l4 A'⟦γ⟧[e'] N'⟦γ⟧[llift e'] M'⟦γ⟧[llift e'] c'⟦γ⟧[llift (llift (llift e'))] s').
+
+(** The relation's indices are the premises' at a global weakening and a
+    related substitution, and its shape relation is canonical. *)
+Definition elimWf_hyp G0 Δ0 k1 A0 N0 (dR : DomRel G0 Δ0) γ e e' : Prop :=
+  gwk_ok γ G0 G /\ SubRel G0 Γ⟦γ⟧ Δ0 e e' /\ k1 = l /\ A0 = A⟦γ⟧[e] /\ N0 = N⟦γ⟧[llift e] /\
+  WfDom G0 Δ0 l A0 dR.
+
+(** The motive at a tree: any two terms related at [Wf] reducing to it
+    have related eliminations. *)
+Definition elimWf_mrel G0 Δ0 k1 A0 N0 (dR : DomRel G0 Δ0) (t t' : tm) : Prop :=
+  forall γ e e', elimWf_hyp G0 Δ0 k1 A0 N0 dR γ e e' ->
+  forall s s', WfRel G0 Δ0 l A0 N0 dR s s' -> reds s t -> reds s' t' -> elimWf_goal G0 Δ0 γ e e' s s'.
+
+(** The motive at a spine: at any tuples reducing to it and related
+    indices, any two terms related at [Wf] reducing to the [nth]s have
+    related eliminations. *)
+Definition elimWf_mspine G0 Δ0 k1 A0 N0 (dR : DomRel G0 Δ0) (k cs cs' : tm) : Prop :=
+  forall γ e e', elimWf_hyp G0 Δ0 k1 A0 N0 dR γ e e' ->
+  forall c0 c0', nftm c0 -> nftm c0' -> reds c0 cs -> reds c0' cs' ->
+  forall k' i i', NatRel G0 Δ0 k k' -> LRtm lzero G0 Δ0 (tyFin k) (tyFin k') i i' ->
+  forall s s', WfRel G0 Δ0 l A0 N0 dR s s' ->
+  reds s (tmNth l (tyWf l A0 N0) k c0 i) ->
+  reds s' (tmNth l3 (tyWf l3 A'⟦γ⟧[e'] N'⟦γ⟧[llift e']) k' c0' i') ->
+  elimWf_goal G0 Δ0 γ e e' s s'.
+
+Lemma elimWf_c_rel {G0 Δ0 k1 A0 N0} {dR : DomRel G0 Δ0} {t t' w w'} :
+  [ G0 ; Δ0 ⊢g t ⤳* w : tyWf k1 A0 N0 @ k1 ] -> [ G0 ; Δ0 ⊢g t' ⤳* w' : tyWf k1 A0 N0 @ k1 ] ->
+  elimWf_mrel G0 Δ0 k1 A0 N0 dR w w' -> elimWf_mrel G0 Δ0 k1 A0 N0 dR t t'.
+Proof.
+  intros Hw Hw' IH γ e e' Hh s s' Hss Hs Hs'. apply (IH γ e e' Hh s s' Hss).
+  - exact (reds_trans _ _ _ Hs (tmred_red _ _ _ _ _ _ _ Hw)).
+  - exact (reds_trans _ _ _ Hs' (tmred_red _ _ _ _ _ _ _ Hw')).
+Qed.
+
+Lemma elimWf_c_ne {G0 Δ0 k1 A0 N0} {dR : DomRel G0 Δ0} {ν ν'} :
+  [ G0 ; Δ0 ⊢ ν ~ ν' : tyWf k1 A0 N0 @ k1 ] -> elimWf_mrel G0 Δ0 k1 A0 N0 dR ν ν'.
+Proof.
+  intros Hν γ e e' (Hγ & He & E1 & E2 & E3 & HD) s s' Hss Hs _. subst k1 A0 N0.
+  exact (elimWf_ne Hγ He HD Hss Hs (gne_tm_whne_l Hν)).
+Qed.
+
+Lemma elimWf_c_zero {G0 Δ0 k1 A0 N0} {dR : DomRel G0 Δ0} {k cs cs'} :
+  [ G0 ; Δ0 ⊢g k ⤳* zero : tyNat @ lzero ] -> elimWf_mspine G0 Δ0 k1 A0 N0 dR k cs cs'.
+Proof.
+  intros Hk γ e e' (Hγ & He & E1 & E2 & E3 & HD) c0 c0' _ _ _ _ k' i i' _ Hi s s' Hss Hs _. subst k1 A0 N0.
+  destruct (fin_idx_zero Hi Hk) as (ν & Hiν & Nν).
+  destruct (nth_reds_zero l (tyWf l A⟦γ⟧[e] N⟦γ⟧[llift e]) (c0 := c0) (tmred_red _ _ _ _ _ _ _ Hk) Hiν Nν)
+    as (X & HX & NX).
+  exact (elimWf_ne Hγ He HD Hss (reds_trans _ _ _ Hs HX) NX).
+Qed.
+
+Lemma elimWf_c_vne {G0 Δ0 k1 A0 N0} {dR : DomRel G0 Δ0} {k ν cs cs'} :
+  [ G0 ; Δ0 ⊢g k ⤳* ν : tyNat @ lzero ] -> [ G0 ; Δ0 ⊢ ν ~ ν : tyNat @ lzero ] ->
+  elimWf_mspine G0 Δ0 k1 A0 N0 dR k cs cs'.
+Proof.
+  intros Hk Hν γ e e' (Hγ & He & E1 & E2 & E3 & HD) c0 c0' _ _ _ _ k' i i' _ Hi s s' Hss Hs _. subst k1 A0 N0.
+  destruct (nth_reds_ne l (tyWf l A⟦γ⟧[e] N⟦γ⟧[llift e]) (c0 := c0) (i := i) (tmred_red _ _ _ _ _ _ _ Hk)
+              (gne_tm_whne_l Hν)) as (X & HX & NX).
+  exact (elimWf_ne Hγ He HD Hss (reds_trans _ _ _ Hs HX) NX).
+Qed.
+
+Lemma elimWf_c_succ {G0 Δ0 k1 A0 N0} {dR : DomRel G0 Δ0} {k m cs cs' w w'} :
+  [ G0 ; Δ0 ⊢g k ⤳* succ m : tyNat @ lzero ] ->
+  [ G0 ; Δ0 ⊢g cs ⤳* w : tySig k1 k1 (tyWf k1 A0 N0) (tyVec k1 (tyWf k1 A0 N0)⟨↑⟩ m⟨↑⟩) @ lmax k1 k1 ] ->
+  [ G0 ; Δ0 ⊢g cs' ⤳* w' : tySig k1 k1 (tyWf k1 A0 N0) (tyVec k1 (tyWf k1 A0 N0)⟨↑⟩ m⟨↑⟩) @ lmax k1 k1 ] ->
+  (forall la lb A1 B1 la' lb' A1' B1',
+     lequiv (gL G0) la k1 -> lequiv (gL G0) lb k1 -> lequiv (gL G0) la' k1 -> lequiv (gL G0) lb' k1 ->
+     [ G0 ; Δ0 ⊢ tyWf k1 A0 N0 ≈ A1 @ k1 ] ->
+     [ G0 ; Δ0 ,, tyWf k1 A0 N0 @ k1 ⊢ tyVec k1 (tyWf k1 A0 N0)⟨↑⟩ m⟨↑⟩ ≈ B1 @ k1 ] ->
+     [ G0 ; Δ0 ⊢ tyWf k1 A0 N0 ≈ A1' @ k1 ] ->
+     [ G0 ; Δ0 ,, tyWf k1 A0 N0 @ k1 ⊢ tyVec k1 (tyWf k1 A0 N0)⟨↑⟩ m⟨↑⟩ ≈ B1' @ k1 ] ->
+     elimWf_mrel G0 Δ0 k1 A0 N0 dR (tmFst la lb A1 B1 w) (tmFst la' lb' A1' B1' w')) ->
+  (forall la lb A1 B1 la' lb' A1' B1',
+     lequiv (gL G0) la k1 -> lequiv (gL G0) lb k1 -> lequiv (gL G0) la' k1 -> lequiv (gL G0) lb' k1 ->
+     [ G0 ; Δ0 ⊢ tyWf k1 A0 N0 ≈ A1 @ k1 ] ->
+     [ G0 ; Δ0 ,, tyWf k1 A0 N0 @ k1 ⊢ tyVec k1 (tyWf k1 A0 N0)⟨↑⟩ m⟨↑⟩ ≈ B1 @ k1 ] ->
+     [ G0 ; Δ0 ⊢ tyWf k1 A0 N0 ≈ A1' @ k1 ] ->
+     [ G0 ; Δ0 ,, tyWf k1 A0 N0 @ k1 ⊢ tyVec k1 (tyWf k1 A0 N0)⟨↑⟩ m⟨↑⟩ ≈ B1' @ k1 ] ->
+     elimWf_mspine G0 Δ0 k1 A0 N0 dR m (tmSnd la lb A1 B1 w) (tmSnd la' lb' A1' B1' w')) ->
+  elimWf_mspine G0 Δ0 k1 A0 N0 dR k cs cs'.
+Proof.
+  intros Hk Hcs Hcs' IHf IHs γ e e' Hh c0 c0' Nc0 Nc0' Hc0 Hc0' k' i i' Hkk Hi s s' Hss Hs Hs'.
+  pose proof Hh as (Hγ & He & E1 & E2 & E3 & HD). subst k1 A0 N0.
+  pose proof (ctx_glob _ _ _ (SubRel_ctx He)) as HG0.
+  destruct (elimWf_loc Hγ HG0) as (_ & VAγ & VNγ & _).
+  destruct (elimWf_at Hγ He) as (HA0 & EA & HN0 & EN & _).
+  pose proof (lwf_weaken _ _ _ (proj1 Hγ) Hwl) as Hwl0.
+  pose proof (lequiv_weaken _ _ _ _ (proj1 Hγ) H13) as H13'.
+  destruct (NatRel_inv_succ Hkk Hk) as (m' & Hk' & Hmm).
+  destruct (NatRel_escape Hmm) as (Hm & Hm' & _).
+  pose proof (wf_tm_nf Hm) as Nm. pose proof (wf_tm_nf Hm') as Nm'.
+  (* the annotations of the two sides' [nth]s *)
+  destruct (V_wf Hwl0 (lequiv_sym _ _ _ H13') VAγ VNγ _ _ _ He) as [RW HRW].
+  rewrite !subst_tyWf in HRW.
+  destruct (escape_ty _ _ _ _ _ _ _ _ HRW) as (HW0 & HW0' & ET).
+  pose proof (wf_ty_nf HW0) as NT. pose proof (wf_ty_nf HW0') as NT'.
+  destruct (LR_vec_nat Hwl0 H13' (ex_intro _ _ HRW) Hmm) as [RV HRV].
+  destruct (escape_ty _ _ _ _ _ _ _ _ HRV) as (_ & _ & EV0).
+  pose proof (geq_ty_wk (wkr_shift1 _ _ _) (ext_wf_g HW0 Hwl0) EV0) as EV.
+  pose proof (geq_ty_trans ET (geq_ty_sym ET)) as ETl. pose proof (geq_ty_trans EV (geq_ty_sym EV)) as EVl.
+  pose proof (lequiv_refl _ _ Hwl0) as Hll. pose proof (lequiv_sym _ _ _ H13') as H31.
+  pose proof (reds_trans _ _ _ Hc0 (tmred_red _ _ _ _ _ _ _ Hcs)) as Hc0w.
+  pose proof (reds_trans _ _ _ Hc0' (tmred_red _ _ _ _ _ _ _ Hcs')) as Hc0w'.
+  destruct (fin_idx_succ Hi Hk Hmm)
+    as [(k2 & k3 & C & D & u & k2' & k3' & C' & D' & u' & Hi1 & Hi1')
+       |[(k2 & k3 & C & D & j & k2' & k3' & C' & D' & j' & Hi1 & Hi1' & Hjj) | (ν & Hiν & Nν)]].
+  - (* [inl]: the heads *)
+    eapply (IHf l l _ _ l3 l3 _ _ Hll Hll H31 H31 ETl EVl ET EV γ e e' Hh s s' Hss).
+    + eapply reds_trans; [exact Hs|]. eapply reds_trans; [exact (nth_reds_inl l _ NT Nm Nc0 (tmred_red _ _ _ _ _ _ _ Hk) Hi1)|].
+      apply reds_fst, Hc0w.
+    + eapply reds_trans; [exact Hs'|].
+      eapply reds_trans; [exact (nth_reds_inl l3 _ NT' Nm' Nc0' (tmred_red _ _ _ _ _ _ _ Hk') Hi1')|].
+      apply reds_fst, Hc0w'.
+  - (* [inr]: [nth] at the tails *)
+    eapply (IHs l l _ _ l3 l3 _ _ Hll Hll H31 H31 ETl EVl ET EV γ e e' Hh _ _ _ _
+              (reds_snd _ _ _ _ _ _ Hc0w) (reds_snd _ _ _ _ _ _ Hc0w') m' j j' Hmm Hjj s s' Hss).
+    + eapply reds_trans; [exact Hs|]. exact (nth_reds_inr l _ NT Nm Nc0 (tmred_red _ _ _ _ _ _ _ Hk) Hi1).
+    + eapply reds_trans; [exact Hs'|]. exact (nth_reds_inr l3 _ NT' Nm' Nc0' (tmred_red _ _ _ _ _ _ _ Hk') Hi1').
+  - (* a neutral index *)
+    destruct (nth_reds_case_ne l (tyWf l A⟦γ⟧[e] N⟦γ⟧[llift e]) Nm Nc0 (tmred_red _ _ _ _ _ _ _ Hk) Hiν Nν) as (X & HX & NX).
+    exact (elimWf_ne Hγ He HD Hss (reds_trans _ _ _ Hs HX) NX).
+  Unshelve. all: cbn; repeat split; auto using ren_nf_ty, ren_nf.
+  all: first [exact (proj1 NT) | exact (proj2 NT) | exact (proj1 NT') | exact (proj2 NT')].
+Qed.
+
 End ElimAt.
 
 End WfElim.
