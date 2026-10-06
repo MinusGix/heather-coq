@@ -1267,9 +1267,11 @@ Proof using ELM ELP EMl.
     rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix;
     (* renamings exposed by [us_push] ([J]'s motive context, M11a) *)
     repeat match goal with H : _ |- _ => progress rewrite ?usubst_ren_ty_mix, ?usubst_ren_mix in H end;
-    (* [W]'s telescope nests substitutions and weakenings under formers, which
-       the first pass exposes (M13a) *)
-    try (match goal with H : context [tyW] |- _ => idtac | |- context [tyW] => idtac end;
+    (* [W]'s and [Wf]'s telescopes nest substitutions and weakenings under
+       formers, which the first pass exposes (M13a, M15a) *)
+    try (match goal with
+         | H : context [tyW] |- _ => idtac | |- context [tyW] => idtac
+         | H : context [tyWf] |- _ => idtac | |- context [tyWf] => idtac end;
          do 2 (us_rewrite_all; rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix;
                repeat match goal with H : _ |- _ => progress rewrite ?usubst_ren_ty_mix, ?usubst_ren_mix in H end)).
   (* the ω-layer goals and [uapp]'s; elsewhere only [w_dispatch]'s assumption
