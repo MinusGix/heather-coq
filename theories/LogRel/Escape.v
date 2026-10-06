@@ -741,6 +741,11 @@ Proof.
   intros HA Hl H. pose proof (geq_tm_wk kw_wkr_l (kw_ext HA Hl) (geq_tm_gwa Hγ HG' H)) as X.
   rewrite gwa_tyNat in X. exact X.
 Qed.
+Lemma kw_tm_nat_l {A l t} : [ G ; Γ ⊢g A @ l ] -> lwf (gL G) l ->
+  [ G ; Γ ,, A @ l ⊢g t : tyNat @ lzero ] -> [ kw_G ρ ; kw_Δ ρ ,, kty ρ A @ l ⊢g ktml ρ t : tyNat @ lzero ].
+Proof.
+  intros HA Hl H. pose proof (kw_tm_l HA Hl H) as X. unfold ktyl in X. rewrite gwa_tyNat in X. exact X.
+Qed.
 
 (** Under one global binder (the meta-functions, M5): [⇑γ], then the
     local renaming. *)
