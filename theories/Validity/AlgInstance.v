@@ -555,6 +555,25 @@ Proof.
     refine (conj (@geq_tm_code_fin DE DEL _ _ _ _ En) _).
     eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmFin | apply whnf_tmFin |].
     exact (actmnf_code_fin _ _ _ _ _ Dn).
+  (* finitary well-founded trees (M15a) *)
+  - intros * Hl HA (EA & DA) (EN & DN).
+    refine (conj (@geq_ty_wf DE DEL _ _ _ _ _ _ _ _ Hl HA EA EN) _).
+    eapply act_red; [constructor | constructor | apply whnf_tyWf | apply whnf_tyWf |].
+    exact (actnf_wf _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) DA DN).
+  - intros * Hl HA (EA & DA) HN (EN & DN) (Ea & Da) (Ecs & Dcs).
+    refine (conj (@geq_tm_supf DE DEL _ _ _ _ _ _ _ _ _ _ _ _ Hl HA EA HN EN Ea Ecs) _).
+    eapply actm_red; [constructor | apply whnf_tyWf | constructor | constructor | apply whnf_supf | apply whnf_supf |].
+    exact (actmnf_supf _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Da Dcs).
+  - intros * H13 H24 HA (EA & DA) HN (EN & DN) HM (EM & DM) (Ec & Dc)
+      ((Hn & Hn' & Eν) & T0 & Dν & ETν).
+    pose proof (@gne_tm_elimWf DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H13 H24 HA EA HN EN HM EM Ec
+                  (conj Hn (conj Hn' Eν))) as X.
+    refine (conj X _). destruct X as (_ & _ & EX).
+    destruct (ne_nee Dν ETν) as (W0 & Xν & _).
+    exists M[lsingle ν]. split.
+    + exact (actmne_elimWf _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24)
+               DA DN DM Dc Xν).
+    + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
 Qed.
 
 End Alg.
