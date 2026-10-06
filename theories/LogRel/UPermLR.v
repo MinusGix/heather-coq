@@ -1299,15 +1299,15 @@ Proof.
     + eapply LRempty; [exact (pg_lequiv Hp Hl) | exact (pg_lequiv Hp Hl2) | exact (pg_lwf Hp Hw)
                       | exact (pg_tyred Hp HT) | exact (pg_tyred Hp HT') | apply releq_refl].
     + intros t t' Nt Nt'. rewrite (HR t t'). split.
-      * intros (w & w' & Hr & Hr' & Hf). exists w[pφ π]ᵤ, w'[pφ π]ᵤ.
-        exact (conj (pg_tmred Hp Hr) (conj (pg_tmred Hp Hr') (pg_gne_tm Hp Hf))).
-      * intros (w & w' & Hr & Hr' & Hf). apply (pg_tmred (G := Gp π G) Hpi) in Hr, Hr'.
-        apply (pg_gne_tm (G := Gp π G) Hpi) in Hf.
-        change ((tyEmpty ?x)[?φ]ᵤ) with (tyEmpty (lvsubst x φ)) in Hr, Hr', Hf.
-        rewrite (Gp_rt Hp HG), (rt_ctx Hinv _ HΓ), (rt_lvl Hinv) in Hr, Hr', Hf.
+      * intros (w & w' & Hr & Hr' & Hf & Hf'). exists w[pφ π]ᵤ, w'[pφ π]ᵤ.
+        exact (conj (pg_tmred Hp Hr) (conj (pg_tmred Hp Hr') (conj (pg_gne_tm Hp Hf) (pg_gne_tm Hp Hf')))).
+      * intros (w & w' & Hr & Hr' & Hf & Hf'). apply (pg_tmred (G := Gp π G) Hpi) in Hr, Hr'.
+        apply (pg_gne_tm (G := Gp π G) Hpi) in Hf, Hf'.
+        change ((tyEmpty ?x)[?φ]ᵤ) with (tyEmpty (lvsubst x φ)) in Hr, Hr', Hf, Hf'.
+        rewrite (Gp_rt Hp HG), (rt_ctx Hinv _ HΓ), (rt_lvl Hinv) in Hr, Hr', Hf, Hf'.
         rewrite !(rt_tm Hinv) in Hr, Hr' by assumption.
         exists w[pφ πi]ᵤ, w'[pφ πi]ᵤ.
-        exact (conj Hr (conj Hr' Hf)).
+        exact (conj Hr (conj Hr' (conj Hf Hf'))).
   - (* +: along both summands' permuted relations *)
     cbn in NW. destruct NW as (NA & NB).
     destruct (IHRA π πi Hp) as (RA' & HRA' & ERA).

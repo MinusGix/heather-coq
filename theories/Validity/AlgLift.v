@@ -146,6 +146,14 @@ Proof.
                    | exact (whnf_ne _ Hn) | exact (whnf_ne _ Hn') | apply actmnf_sempty_irr].
 Qed.
 
+(** The empty type: irrelevance, whatever the neutrals. *)
+Lemma lift_empty {G i Γ T l l1} : [ G ; Γ ⊢[ i ] T ⤳* tyEmpty l1 @ l ] -> Lift i G Γ T l.
+Proof.
+  intros HT t t' T0 Ht Ht' D ET. destruct (ac_tmne_whne D) as [Hn Hn'].
+  eapply actm_red; [exact (tyred_red _ _ _ _ _ _ HT) | exact (whnf_tyEmpty _) | constructor | constructor
+                   | exact (whnf_ne _ Hn) | exact (whnf_ne _ Hn') | apply actmnf_empty_irr].
+Qed.
+
 (** ** The weakenings of the inferred function types *)
 
 Lemma gwk1_tmnee {G D Γ ν ν' W} : ac_tmnee G Γ ν ν' W -> ac_tmnee (gext G D) Γ⟪S⟫ ν⟪S⟫ ν'⟪S⟫ W⟪S⟫.
@@ -338,7 +346,7 @@ Proof.
   - exact (lift_seq HT).
   - exact (lift_sempty HT).
   - exact (lift_posty compt_D HT (whnf_tyId _ _ _ _) (posty_id _ _ _ _)).
-  - exact (lift_posty compt_D HT (whnf_tyEmpty _) (posty_empty _)).
+  - exact (lift_empty HT).
   - exact (lift_posty compt_D HT (whnf_tySum _ _ _ _) (posty_sum _ _ _ _)).
   - exact (lift_posty compt_D HT (whnf_tyW _ _ _ _) (posty_W _ _ _ _)).
   - exact (lift_posty compt_D HT (whnf_tyWf _ _ _) (posty_wf _ _ _)).
@@ -440,7 +448,7 @@ Proof.
   - exact (lift_seq HT).
   - exact (lift_sempty HT).
   - exact (lift_posty compt_M HT (whnf_tyId _ _ _ _) (posty_id _ _ _ _)).
-  - exact (lift_posty compt_M HT (whnf_tyEmpty _) (posty_empty _)).
+  - exact (lift_empty HT).
   - exact (lift_posty compt_M HT (whnf_tySum _ _ _ _) (posty_sum _ _ _ _)).
   - exact (lift_posty compt_M HT (whnf_tyW _ _ _ _) (posty_W _ _ _ _)).
   - exact (lift_posty compt_M HT (whnf_tyWf _ _ _) (posty_wf _ _ _)).

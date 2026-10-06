@@ -426,11 +426,11 @@ Proof.
       rewrite kty_tyEmpty in X, X'.
       eapply LRempty; [exact (kw_lequiv ρ Hl) | exact (kw_lequiv ρ Hl2) | exact (kw_lwf ρ Hw) | exact X | exact X'
                       | apply releq_refl].
-    + intros t t' Ht. apply HR in Ht. destruct Ht as (w & w' & Hr & Hr' & Hn).
+    + intros t t' Ht. apply HR in Ht. destruct Ht as (w & w' & Hr & Hr' & Hn & Hn').
       pose proof (kw_tmred ρ Hr) as Y. pose proof (kw_tmred ρ Hr') as Y'.
-      pose proof (kw_gne_tm ρ Hn) as Z.
-      rewrite kty_tyEmpty in Y, Y', Z. exists (ktm ρ w), (ktm ρ w').
-      exact (conj Y (conj Y' Z)).
+      pose proof (kw_gne_tm ρ Hn) as Z. pose proof (kw_gne_tm ρ Hn') as Z'.
+      rewrite kty_tyEmpty in Y, Y', Z, Z'. exists (ktm ρ w), (ktm ρ w').
+      exact (conj Y (conj Y' (conj Z Z'))).
   - (* +: weaken both summands' derivations *)
     destruct (IHRA ρ) as (RA' & HRA' & HmapA).
     destruct (IHRB ρ) as (RB' & HRB' & HmapB).

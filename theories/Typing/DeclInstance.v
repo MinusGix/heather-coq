@@ -176,8 +176,11 @@ Proof.
   - intros; apply eqtm_code_sempty; [exact Hv | now rewrite Hty | assumption].
   (* the empty type *)
   - intros; apply eqty_empty; [exact Hv | now rewrite Hty | assumption].
-  - intros * Hl1 Hl2 HM HMM (Hn & Hn' & Hν).
-    refine (conj _ (conj _ _)); [constructor; auto .. |]. apply eqtm_elimEmpty; auto.
+  - intros; apply eqtm_empty_irr; auto.
+  - intros * Hl1 Hl2 HM HMM (Hn & _ & Hν) (Hn' & _ & Hν').
+    refine (conj _ (conj _ _)); [constructor; auto .. |].
+    apply eqtm_elimEmpty; auto.
+    apply eqtm_empty_irr; eauto using lequiv_wf_l, eqtm_wf_l.
   (* binary sums *)
   - intros; apply eqty_sum; auto.
   - intros; apply eqtm_inl; auto.

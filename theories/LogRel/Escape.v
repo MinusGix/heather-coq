@@ -151,19 +151,15 @@ Proof.
     refine (conj _ (conj _ (conj _ _))); eauto using lequiv_sym.
 Qed.
 
-(** ** The empty type (M12a): related neutrals *)
+(** ** The empty type (M12a): self-related neutrals, as at [sEmpty] *)
 
 Lemma EmptyRel_wf {G Γ l t t'} : EmptyRel G Γ l t t' ->
   [ G ; Γ ⊢g t : tyEmpty l @ l ] /\ [ G ; Γ ⊢g t' : tyEmpty l @ l ].
-Proof. intros (w & w' & Hw & Hw' & _). exact (conj (tmred_wf _ _ _ _ _ _ _ Hw) (tmred_wf _ _ _ _ _ _ _ Hw')). Qed.
+Proof. intros (w & w' & Hw & Hw' & _ & _). exact (conj (tmred_wf _ _ _ _ _ _ _ Hw) (tmred_wf _ _ _ _ _ _ _ Hw')). Qed.
 Lemma EmptyRel_sym {G Γ l t t'} : EmptyRel G Γ l t t' -> EmptyRel G Γ l t' t.
-Proof. intros (w & w' & Hw & Hw' & Hn). exists w', w. auto using gne_tm_sym. Qed.
+Proof. intros (w & w' & Hw & Hw' & Hn & Hn'). exists w', w. auto. Qed.
 Lemma EmptyRel_trans {G Γ l t1 t2 t3} : EmptyRel G Γ l t1 t2 -> EmptyRel G Γ l t2 t3 -> EmptyRel G Γ l t1 t3.
-Proof.
-  intros (w1 & w2 & Hw1 & Hw2 & Hn12) (w2' & w3 & Hw2' & Hw3 & Hn23).
-  pose proof (tmred_whnf_det _ _ _ _ _ _ _ _ _ _ Hw2 Hw2' (whnf_ne _ (gne_tm_whne_r Hn12)) (whnf_ne _ (gne_tm_whne_l Hn23))) as <-.
-  exists w1, w3. eauto using gne_tm_trans.
-Qed.
+Proof. intros (w1 & _ & Hw1 & _ & Hn1 & _) (_ & w3 & _ & Hw3 & _ & Hn3). exists w1, w3. auto. Qed.
 
 Lemma empty_eqty {G Γ l l'} : [ G ; Γ ⊢g ] -> lequiv (gL G) l l' -> [ G ; Γ ⊢g tyEmpty l ≅ tyEmpty l' @ l ].
 Proof. intros HΓ Hl. apply eqty_empty; [exact ge_notV | rewrite ge_typeof; exact HΓ | exact Hl]. Qed.
@@ -187,8 +183,8 @@ Qed.
 Lemma EmptyRel_lconv {G Γ l l'} : lequiv (gL G) l l' -> releq (EmptyRel G Γ l) (EmptyRel G Γ l').
 Proof.
   intros Hl t t'.
-  split; intros (w & w' & Hw & Hw' & Hn); exists w, w';
-    refine (conj _ (conj _ _)); eauto using empty_tmred_conv, empty_ne_conv, lequiv_sym.
+  split; intros (w & w' & Hw & Hw' & Hn & Hn'); exists w, w';
+    refine (conj _ (conj _ (conj _ _))); eauto using empty_tmred_conv, empty_ne_conv, lequiv_sym.
 Qed.
 
 (** ** Binary sums (M12b) *)
@@ -538,13 +534,13 @@ Proof.
     + eapply conv_tm; [apply Hw' | exact HTI | exact Hl].
     + eapply conv_tm; [apply Hw'' | exact HTI | exact Hl].
     + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTI | exact Hl].
-  - (* Empty: related neutrals *)
-    destruct Htt as (w & w' & Hw' & Hw'' & Hne). pose proof (gne_tm_geq Hne) as Heq.
+  - (* Empty: irrelevant *)
+    destruct (EmptyRel_wf Htt) as [Ht Ht'].
     assert (HTE : [ G ; Γ ⊢g T ≅ tyEmpty l1 @ l ]) by apply HT.
     repeat split.
-    + eapply conv_tm; [apply Hw' | exact HTE | exact Hl].
-    + eapply conv_tm; [apply Hw'' | exact HTE | exact Hl].
-    + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTE | exact Hl].
+    + eapply conv_tm; [exact Ht | exact HTE | exact Hl].
+    + eapply conv_tm; [exact Ht' | exact HTE | exact Hl].
+    + eapply conv_geq_tm; [exact (geq_tm_empty_irr Hw Ht Ht') | apply eqty_sym, HTE | exact Hl].
   - (* +: related weak-head normal forms *)
     destruct Htt as (w & w' & Hw' & Hw'' & Heq & _).
     assert (HTS : [ G ; Γ ⊢g T ≅ tySum u1 u2 UA UB @ l ]) by apply HT.

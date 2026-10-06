@@ -271,7 +271,7 @@ Proof.
     eauto using whnf, gne_tm_whne_l.
   - destruct Ht as (w & w' & Hr & _ & _ & Hnf). exists w; split; [exact (tmred_back Hr HT Hl) |].
     exact (IdNf_whnf_l Hnf).
-  - destruct Ht as (ν & ν' & Hν & _ & Hne). exists ν; split; [exact (tmred_back Hν HT Hl) |].
+  - destruct Ht as (ν & ν' & Hν & _ & Hne & _). exists ν; split; [exact (tmred_back Hν HT Hl) |].
     eauto using whnf, gne_tm_whne_l.
   - destruct Ht as (w & w' & Hr & _ & _ & Hnf). exists w; split; [exact (tmred_back Hr HT Hl) |].
     exact (SumNf_whnf_l Hnf).

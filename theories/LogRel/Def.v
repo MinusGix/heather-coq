@@ -289,13 +289,17 @@ Definition IdRel (G : gctx) (Γ : ctx) (l : lvl) (A : ty) (a b : tm) (RA : tm ->
 
 (** ** The empty type (M12_DESIGN.md, M12a)
 
-    As logrel-coq's [EmptyRedTm]: terms reduce to neutrals, related
-    generically. Unlike [sEmpty]'s, the relation compares the two
-    neutrals: [Empty] has no η. *)
+    Proof irrelevant, as [sEmpty]: terms reduce to neutrals, each related
+    to itself and never to each other (logrel-coq's [EmptyRedTm] keeps the
+    neutrals; the comparison is dropped). Escape comes from
+    [geq_tm_empty_irr]. The neutrals are kept, rather than any normal
+    forms as at [Unit], because the eliminator is neutral only on a
+    neutral scrutinee: its neutral law needs them and compares nothing
+    else. *)
 Definition EmptyRel (G : gctx) (Γ : ctx) (l : lvl) : tm -> tm -> Prop :=
   fun t t' => exists ν ν',
     [ G ; Γ ⊢g t ⤳* ν : tyEmpty l @ l ] /\ [ G ; Γ ⊢g t' ⤳* ν' : tyEmpty l @ l ] /\
-    [ G ; Γ ⊢ ν ~ ν' : tyEmpty l @ l ].
+    [ G ; Γ ⊢ ν ~ ν : tyEmpty l @ l ] /\ [ G ; Γ ⊢ ν' ~ ν' : tyEmpty l @ l ].
 
 (** ** Binary sums (M12_DESIGN.md, M12b)
 

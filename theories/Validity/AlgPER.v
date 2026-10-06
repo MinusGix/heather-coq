@@ -1143,11 +1143,14 @@ Qed.
 Lemma Y_actnf_empty {G Γ l l'} : leqv l l' -> Y_tynf G Γ (tyEmpty l) (tyEmpty l').
 Proof. intros Hl; red; intros; apply actnf_empty, leqv_sym, Hl. Qed.
 
-Lemma Y_actmne_elimEmpty {G Γ l1 l2 l3 l4 M M' ν ν' W} : leqv l1 l3 -> leqv l2 l4 ->
-  ac_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> Y_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> Y_nee G Γ ν ν' W ->
+Lemma Y_actmnf_empty_irr {G Γ l w w'} : Y_tmnf G Γ w w' (tyEmpty l).
+Proof. red; intros; apply actmnf_empty_irr. Qed.
+
+Lemma Y_actmne_elimEmpty {G Γ l1 l2 l3 l4 M M' ν ν'} : leqv l1 l3 -> leqv l2 l4 ->
+  ac_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> Y_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> whne ν -> whne ν' ->
   Y_ne G Γ (elimEmpty l1 l2 M ν) (elimEmpty l3 l4 M' ν') M[lsingle ν].
 Proof.
-  intros H13 H24 DM IHM IHν i k k' X X' Hc Hx Hx'.
+  intros H13 H24 DM IHM Hn Hn' i k k' X X' Hc Hx Hx'.
   pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_elimEmpty Hi Hx) as ((_ & W1 & W2 & HM & Hν) & _ & _).
   destruct (inv_elimEmpty Hi Hx') as ((_ & W3 & W4 & HM' & Hν') & _ & _).
@@ -1161,8 +1164,7 @@ Proof.
   assert (Hctx : [ G ⊢[ i ] Γ ,, tyEmpty l2 @ l2 ≅ Γ ,, tyEmpty l4 @ l4 ])
     by (apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | exact HE2
                        | apply eqty_empty; [now apply compt_notV | rewrite Hi; exact HΓ | exact E24] | exact E24]).
-  destruct (IHν i _ _ _ _ Hc Hν Hν') as (W' & Xν).
-  exists M'[lsingle ν']. eapply actmne_elimEmpty; [exact (leqv_sym _ _ H13) | exact (leqv_sym _ _ H24) | | exact Xν].
+  exists M'[lsingle ν']. apply actmne_elimEmpty; [exact (leqv_sym _ _ H13) | exact (leqv_sym _ _ H24) | | exact Hn' | exact Hn].
   exact (cv_ty HG Hc (IHM i l1 l1 Hc HM HM'2) Hctx HM'2 HM).
 Qed.
 
@@ -1496,7 +1498,7 @@ Proof.
     | solve [eapply Y_actnf_unit; eassumption] | solve [eapply Y_actmnf_code_unit; eassumption]
     | solve [eapply Y_actmnf_unit_eta]
     | solve [eapply Y_actnf_seq; eassumption] | solve [eapply Y_actnf_sempty; eassumption]
-    | solve [eapply Y_actmnf_seq_irr] | solve [eapply Y_actmnf_sempty_irr]
+    | solve [eapply Y_actmnf_seq_irr] | solve [eapply Y_actmnf_sempty_irr] | solve [eapply Y_actmnf_empty_irr]
     | solve [eapply Y_actmne_elimSEmpty; eassumption]
     | solve [eapply Y_actnf_id; eassumption] | solve [eapply Y_actmnf_refl]
     | solve [eapply Y_actmne_J; eassumption] | solve [eapply Y_actmnf_code_id; eassumption]
@@ -1582,9 +1584,9 @@ Proof. intros H; ainv H. Qed.
 Lemma ainv_empty {G Γ l X} : ac_tynf G Γ (tyEmpty l) X -> exists l', X = tyEmpty l' /\ leqv l l'.
 Proof. intros H; ainv H. Qed.
 Lemma ainv_elimEmpty {G Γ l1 l2 M ν X T} : ac_tmne G Γ (elimEmpty l1 l2 M ν) X T ->
-  exists l3 l4 M' ν' W, X = elimEmpty l3 l4 M' ν' /\ leqv l1 l3 /\ leqv l2 l4 /\
-    ac_ty G (Γ ,, tyEmpty l2 @ l2) M M' /\ ac_tmnee G Γ ν ν' W.
-Proof. intros H; ainv H. Qed.
+  exists l3 l4 M' ν', X = elimEmpty l3 l4 M' ν' /\ leqv l1 l3 /\ leqv l2 l4 /\
+    ac_ty G (Γ ,, tyEmpty l2 @ l2) M M' /\ whne ν'.
+Proof. intros H; inversion H; subst; do 4 eexists; eauto. Qed.
 Lemma ainv_sum {G Γ l1 l2 A B X} : ac_tynf G Γ (tySum l1 l2 A B) X ->
   exists l3 l4 A' B', X = tySum l3 l4 A' B' /\ leqv l1 l3 /\ leqv l2 l4 /\ ac_ty G Γ A A' /\ ac_ty G Γ B B'.
 Proof. intros H; ainv H. Qed.
@@ -3369,13 +3371,16 @@ Proof.
   apply actnf_empty, (leqv_trans _ _ _ Hl Hl2).
 Qed.
 
-Lemma T_actmne_elimEmpty {G Γ l1 l2 l3 l4 M M' ν ν' W} : leqv l1 l3 -> leqv l2 l4 ->
-  ac_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> T_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> T_nee G Γ ν ν' W ->
+Lemma T_actmnf_empty_irr {G Γ l w w'} : T_tmnf G Γ w w' (tyEmpty l).
+Proof. red; intros; apply actmnf_empty_irr. Qed.
+
+Lemma T_actmne_elimEmpty {G Γ l1 l2 l3 l4 M M' ν ν'} : leqv l1 l3 -> leqv l2 l4 ->
+  ac_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> T_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> whne ν -> whne ν' ->
   T_ne G Γ (elimEmpty l1 l2 M ν) (elimEmpty l3 l4 M' ν') M[lsingle ν].
 Proof.
-  intros H13 H24 DM IHM IHν x'' T' i k k' k'' X X' X'' Hc Hx Hx' Hx'' D2.
+  intros H13 H24 DM IHM Hn Hn' x'' T' i k k' k'' X X' X'' Hc Hx Hx' Hx'' D2.
   pose proof (compt_typeof_self _ Hc) as Hi.
-  destruct (ainv_elimEmpty D2) as (l5 & l6 & M'' & ν'' & Wν & -> & H35 & H46 & DM2 & Dν2).
+  destruct (ainv_elimEmpty D2) as (l5 & l6 & M'' & ν'' & -> & H35 & H46 & DM2 & Hn'').
   destruct (inv_elimEmpty Hi Hx) as ((_ & W1 & W2 & HM & Hν) & _ & _).
   destruct (inv_elimEmpty Hi Hx') as ((_ & W3 & W4 & HM' & Hν') & _ & _).
   destruct (inv_elimEmpty Hi Hx'') as ((_ & W5 & W6 & HM'' & Hν'') & _ & _).
@@ -3396,9 +3401,8 @@ Proof.
   pose proof (St _ _ _ _ W2 (lequiv_sym _ _ _ (lequiv_trans _ _ _ _ E24 E46)) HM'') as HM''1.
   pose proof (St _ _ _ _ W4 (lequiv_sym _ _ _ E46) HM'') as HM''4.
   pose proof (cv_ty HG Hc DM2 (Cx _ _ W4 (lequiv_sym _ _ _ E24)) HM' HM''4) as DM2'.
-  eapply actmne_elimEmpty; [exact (leqv_trans _ _ _ H13 H35) | exact (leqv_trans _ _ _ H24 H46) | |].
-  - exact (IHM M'' i _ _ _ Hc HM HM'1 HM''1 DM2').
-  - exact (IHν ν'' Wν i _ _ _ _ _ _ Hc Hν Hν' Hν'' Dν2).
+  apply actmne_elimEmpty; [exact (leqv_trans _ _ _ H13 H35) | exact (leqv_trans _ _ _ H24 H46) | | exact Hn | exact Hn''].
+  exact (IHM M'' i _ _ _ Hc HM HM'1 HM''1 DM2').
 Qed.
 
 (** Binary sums (M12b). The second comparison is at the middle side's
@@ -3858,7 +3862,7 @@ Proof.
     | solve [eapply T_actnf_unit; eassumption] | solve [eapply T_actmnf_code_unit; eassumption]
     | solve [eapply T_actmnf_unit_eta]
     | solve [eapply T_actnf_seq; eassumption] | solve [eapply T_actnf_sempty; eassumption]
-    | solve [eapply T_actmnf_seq_irr] | solve [eapply T_actmnf_sempty_irr]
+    | solve [eapply T_actmnf_seq_irr] | solve [eapply T_actmnf_sempty_irr] | solve [eapply T_actmnf_empty_irr]
     | solve [eapply T_actmne_elimSEmpty; eassumption]
     | solve [eapply T_actnf_id; eassumption] | solve [eapply T_actmnf_refl]
     | solve [eapply T_actmne_J; eassumption] | solve [eapply T_actmnf_code_id; eassumption]
