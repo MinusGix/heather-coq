@@ -203,6 +203,7 @@ Ltac fts_case :=
   | solve [simple eapply V_seq; s_side] | solve [simple eapply V_sempty; s_side]
   | solve [simple eapply V_srefl; s_side] | solve [simple eapply V_elimSEmpty; s_side]
   | solve [simple eapply V_seq_irr; s_side] | solve [simple eapply V_sempty_irr; s_side]
+  | solve [simple eapply V_empty_irr; s_side]
   (* the identity type (M11a) *)
   | solve [simple eapply V_id; s_side] | solve [simple eapply V_idrefl; s_side]
   | solve [simple eapply V_J; s_side]
@@ -560,6 +561,9 @@ Lemma VS_elimEmpty {ly G Γ l1 l2 l3 l4 M M' t t'} : lwf (gL G) l1 -> lwf (gL G)
   VTyS G (Γ ,, tyEmpty l2 @ l2) M M' l1 -> VTmS G Γ t t' (tyEmpty l2) l2 ->
   VTmS G Γ (elimEmpty l1 l2 M t) (elimEmpty l3 l4 M' t') M[lsingle t] l1.
 Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_empty_irr {G Γ l t t'} : lwf (gL G) l ->
+  VTmS G Γ t t (tyEmpty l) l -> VTmS G Γ t' t' (tyEmpty l) l -> VTmS G Γ t t' (tyEmpty l) l.
+Proof using EL VL. intros; s_lift. Qed.
 
 (** Binary sums (M12b). *)
 Lemma VS_sum {G Γ l1 l2 l3 l4 A A' B B'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
@@ -797,6 +801,7 @@ Ltac vs_rules side :=
   | solve [simple eapply VS_seq; side] | solve [simple eapply VS_sempty; side]
   | solve [simple eapply VS_srefl; side] | solve [simple eapply VS_elimSEmpty; side]
   | solve [simple eapply VS_seq_irr; side] | solve [simple eapply VS_sempty_irr; side]
+  | solve [simple eapply VS_empty_irr; side]
   (* the identity type (M11a) *)
   | solve [simple eapply VS_id; side] | solve [simple eapply VS_idrefl; side]
   | solve [simple eapply VS_J; side] | solve [simple eapply VS_J_beta; side]

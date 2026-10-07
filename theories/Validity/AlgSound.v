@@ -470,11 +470,19 @@ Proof.
   apply (lvl_eq_eqty Hk). apply eqty_empty; [exact (compt_notV _ Hc) | exact HΓ | exact (leqv_lequiv _ _ _ W W' Hl)].
 Qed.
 
-Lemma S_actmne_elimEmpty {G Γ l1 l2 l3 l4 M M' ν ν' W} : leqv l1 l3 -> leqv l2 l4 ->
-  S_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> S_ne G Γ ν ν' W ->
+Lemma S_actmnf_empty_irr {G Γ l w w'} : S_tm G Γ w w' (tyEmpty l).
+Proof.
+  intros i k Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_empty (wf_tm_ty Hi Ht)) as ((_ & _ & W) & Hk).
+  apply (lvl_eq_eqtm Hk). apply eqtm_empty_irr; [exact Hc | exact W | exact (lvl_eq_tm' Hk Ht) | exact (lvl_eq_tm' Hk Ht')].
+Qed.
+
+(** The scrutinees are not compared: irrelevance relates them. *)
+Lemma S_actmne_elimEmpty {G Γ l1 l2 l3 l4 M M' ν ν'} : leqv l1 l3 -> leqv l2 l4 ->
+  S_ty G (Γ ,, tyEmpty l2 @ l2) M M' ->
   S_ne G Γ (elimEmpty l1 l2 M ν) (elimEmpty l3 l4 M' ν') M[lsingle ν].
 Proof.
-  intros H13 H24 IHM IHν i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  intros H13 H24 IHM i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_elimEmpty Hi Hx) as ((_ & W1 & W2 & HM & Hν) & Hk & HX).
   destruct (inv_elimEmpty Hi Hx') as ((_ & W3 & W4 & HM' & Hν') & Hk' & HX').
   pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
@@ -489,7 +497,7 @@ Proof.
   assert (Hν'1 : [ G ; Γ ⊢[ i ] ν' : tyEmpty l2 @ l2 ])
     by (eapply wf_conv; [eapply wf_lconv; [exact Hν' | exact E24] | rewrite Hi; apply eqty_sym;
           eapply eqty_lconv; [exact HE | exact E24]]).
-  destruct (IHν i l2 l2 (tyEmpty l2) (tyEmpty l2) Hc Hν Hν'1) as (_ & _ & Eν).
+  pose proof (eqtm_empty_irr _ _ _ _ _ _ Hc W2 Hν Hν'1) as Eν.
   pose proof (eqtm_elimEmpty _ _ _ _ _ _ _ _ _ _ _ (compt_notV _ Hc) E13 E24 HM EM Eν) as Econg.
   assert (EMν : [ G ; Γ ⊢[ i ] M[lsingle ν] ≅ M'[lsingle ν'] @ l1 ]).
   { eapply eqty_trans; [exact (eqty_single Hi EM Hν) |].
@@ -2154,7 +2162,7 @@ Proof.
     | solve [eapply S_actnf_unit; eassumption] | solve [eapply S_actmnf_code_unit; eassumption]
     | solve [eapply S_actmnf_unit_eta]
     | solve [eapply S_actnf_seq; eassumption] | solve [eapply S_actnf_sempty; eassumption]
-    | solve [eapply S_actmnf_seq_irr] | solve [eapply S_actmnf_sempty_irr]
+    | solve [eapply S_actmnf_seq_irr] | solve [eapply S_actmnf_sempty_irr] | solve [eapply S_actmnf_empty_irr]
     | solve [eapply S_actmne_elimSEmpty; eassumption]
     | solve [eapply S_actnf_id; eassumption] | solve [eapply S_actmnf_refl]
     | solve [eapply S_actmne_J; eassumption] | solve [eapply S_actmnf_code_id; eassumption]

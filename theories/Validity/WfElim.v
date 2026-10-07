@@ -150,7 +150,7 @@ Lemma fin_idx_zero {G Δ k k' i i'} : LRtm lzero G Δ (tyFin k) (tyFin k') i i' 
 Proof.
   intros (R & HR & Hii) Hk. pose proof (ctx_of_tm (tmred_wf _ _ _ _ _ _ _ Hk)) as HΔ.
   destruct (LR_inv_empty HR (tyred_trans _ _ _ _ (tyred_fin Hk) (tyred_fin_zero HΔ))) as (l2 & _ & _ & _ & _ & HR').
-  apply HR' in Hii. destruct Hii as (w & w' & Hw & _ & Hne).
+  apply HR' in Hii. destruct Hii as (w & w' & Hw & _ & Hne & _).
   exists w. split; [exact (tmred_red _ _ _ _ _ _ _ Hw) | exact (gne_tm_whne_l Hne)].
 Qed.
 

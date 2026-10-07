@@ -843,6 +843,12 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] M @ l1 ] -> [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] M ≅ M' @ l1 ] ->
     [ G ; Γ ⊢[ i ] t ≅ t' : tyEmpty l2 @ l2 ] ->
     [ G ; Γ ⊢[ i ] elimEmpty l1 l2 M t ≅ elimEmpty l3 l4 M' t' : M[lsingle t] @ l1 ]
+(* proof irrelevance at [Empty] (the computing layers), as at [Unit] and
+   [sEmpty]: any two terms of an [Empty] type are equal. It is vacuous for
+   closed terms and decides only open ones, under a false hypothesis *)
+| eqtm_empty_irr G i Γ l t t' : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] t : tyEmpty l @ l ] -> [ G ; Γ ⊢[ i ] t' : tyEmpty l @ l ] ->
+    [ G ; Γ ⊢[ i ] t ≅ t' : tyEmpty l @ l ]
 (* binary sums (M12b): the congruences (every layer but V since M12c), and β at either
    injection; no η *)
 | eqtm_inl G i Γ l1 l2 l3 l4 A A' B B' a a' : i <> lV -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->

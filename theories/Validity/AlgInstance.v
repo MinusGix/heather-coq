@@ -477,12 +477,16 @@ Proof.
   - intros * HΓ Hl. refine (conj (@geq_ty_empty DE DEL _ _ _ _ HΓ Hl) _).
     eapply act_red; [constructor | constructor | apply whnf_tyEmpty | apply whnf_tyEmpty |].
     apply actnf_empty, (lequiv_leqv _ _ _ Hl).
-  - intros * H13 H24 HM (EM & DM) ((Hn & Hn' & Eν) & T0 & Dν & ETν).
-    pose proof (@gne_tm_elimEmpty DE DEL _ _ _ _ _ _ _ _ _ _ H13 H24 HM EM (conj Hn (conj Hn' Eν))) as X.
+  - intros * Hl Ht Ht'. refine (conj (@geq_tm_empty_irr DE DEL _ _ _ _ _ Hl Ht Ht') _).
+    destruct (tgt_whnf_tm Ht) as (w & Hr & Hw). destruct (tgt_whnf_tm Ht') as (w' & Hr' & Hw').
+    eapply actm_red; [constructor | apply whnf_tyEmpty | exact Hr | exact Hr' | exact Hw | exact Hw' |].
+    apply actmnf_empty_irr.
+  - intros * H13 H24 HM (EM & DM) ((Hn & Hn2 & Eν) & _) ((Hn' & Hn2' & Eν') & _).
+    pose proof (@gne_tm_elimEmpty DE DEL _ _ _ _ _ _ _ _ _ _ H13 H24 HM EM
+                  (conj Hn (conj Hn2 Eν)) (conj Hn' (conj Hn2' Eν'))) as X.
     refine (conj X _). destruct X as (_ & _ & EX).
-    destruct (ne_nee Dν ETν) as (W0 & Xν & _).
     exists M[lsingle ν]. split.
-    + exact (actmne_elimEmpty _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24) DM Xν).
+    + exact (actmne_elimEmpty _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24) DM Hn Hn').
     + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
   (* binary sums (M12b) *)
   - intros * H13 H24 (EA & DA) (EB & DB).

@@ -10,9 +10,10 @@ writes it. Hedberg's theorem needs `¬` (`Empty`) and decidable equality
 as well.
 
 Heather's rules: `H/docs/delam-extensions.md` §7 (`Empty`) and §8 (`+`).
-- `Empty^l @ l`, level-indexed. It has no introduction, no β and no η.
-  `Empty`-η (proof irrelevance at `Empty`) is an open Heather issue
-  (`issues/empty-eta-conversion.md`), not a rule, and it has no customer.
+- `Empty^l @ l`, level-indexed. It has no introduction and no β. Its η,
+  proof irrelevance at `Empty`, was an open Heather issue
+  (`issues/empty-eta-conversion.md`) at M12, so M12 left it out. It was
+  added on 2026-10-06 (last section).
 - `elim_Empty^{l,l'}(x. M; t) : M[t/x] @ l`, for `t : Empty^{l'}`. The
   motive binds the scrutinee, and its level `l` is independent of the
   scrutinee's `l'`.
@@ -56,7 +57,8 @@ global context.
 - **Relation** (`LRempty`, `EmptyRel`), as logrel-coq's `Empty`: terms
   reduce to neutrals, and the two neutrals are related generically.
   Unlike `sEmpty`'s relation, which relates each neutral to itself, this
-  one compares them, since `Empty` has no η. Adding the constructor
+  one compares them, since `Empty` had no η (until 2026-10-06: see the
+  last section, where it takes `sEmpty`'s shape). Adding the constructor
   meant one new clause in each of the 31 positional case analyses of the
   relation. Those were inserted by script, next to `LRsempty`'s clause,
   which has the same shape.
@@ -284,3 +286,67 @@ on `y`:
 
 Only `Nat`'s own rules are used; `Nat` is level 0, so it is the schema at
 `l = 0`.
+
+## `Empty`-η: proof irrelevance at `Empty` (2026-10-06)
+
+This settles Heather's `issues/empty-eta-conversion.md`. The rule is
+sound and decidable here, and it is now a rule. It mirrors `sEmpty`'s
+irrelevance (M10a) line for line, so there was no design fork.
+
+**The rule.** `eqtm_empty_irr` (gated by `compt i`): any two terms of
+type `Empty^l` are equal. This is proof irrelevance, as `Unit`'s η is.
+It is not the universal-property η of an initial object, under which any
+term in a context with `x : Empty` equals `elim_Empty(x)`. That rule would
+make conversion depend on whether the context is inconsistent, and
+deciding that means searching for an inhabitant of `Empty`. Irrelevance
+only relates terms whose type is `Empty`. It is vacuous for closed terms
+and relates neutrals only under a false hypothesis.
+
+**What changed**, each as `sEmpty`'s:
+- **Relation.** `EmptyRel` now relates two terms that reduce to
+  neutrals, each related to itself (`SEmptyRel`'s shape), and no longer
+  compares the two neutrals. Reducible terms at `Empty` still reduce to
+  neutrals, not to any normal form as at `Unit`, because the eliminator is
+  neutral only on a neutral scrutinee. `closed_empty_empty` and the
+  consistency results needed no change. Escape comes from the new
+  generic law `geq_tm_empty_irr`.
+- **The eliminator's neutral law.** `gne_tm_elimEmpty` now takes
+  `ν ~ ν` and `ν' ~ ν'` in place of `ν ~ ν'`. This is forced: congruence
+  and irrelevance make `elim_Empty(M; ν) ≅ elim_Empty(M'; ν')` for *any*
+  two neutral scrutinees. A law that compared them could not be met by
+  the relation in `V_elimEmpty`, and an algorithm that compared them
+  would be incomplete.
+- **Algorithm.**
+  - `Empty` is no longer `posty`.
+  - `actmnf_empty_irr` relates any two weak-head normal forms at `Empty`.
+  - `actmne_elimEmpty` asks only that both scrutinees be neutral.
+  - Each algorithmic family gained one mirrored lemma: soundness,
+    conversion, symmetry, transitivity, decidability.
+  - `lift_empty` replaces `lift_posty` at `Empty` in the lift to layer C.
+- **Validity.** `V_empty_irr` and `VS_empty_irr` are added, and
+  `V_elimEmpty` uses the self-related neutrals.
+
+**`Empty` reached by reduction** (`Fin 0`, `El ⌜Empty⌝`).
+- The algorithm compares terms at the weak-head normal form of their type
+  (`actm_red`). So `Fin 0 ⇝ Empty^0` and `El(⌜Empty⌝) ⇝ Empty` take the
+  irrelevance arm. `ac_fin_zero_irr` and `ac_elimEmpty_irr` at the end of
+  `Typing/Algorithmic.v` check this.
+- The relation reaches `LRempty` by `T ⤳* Empty`, so `Fin 0` lands
+  there. `fin_idx_zero` (`Validity/WfElim.v`) reads that case, and its
+  destruct pattern was the only change outside the mirrored lemmas.
+- A type that is stuck, such as `Fin ν` with `ν` neutral or `El` of a
+  neutral code, stays `posty_ne`, and its neutrals are compared
+  structurally. That is sound, and stable under substitution: substituting
+  `0` for `ν` can only make more pairs convertible.
+
+**For Heather's kernel** (`crates/kernel/src/conv.rs`) the issue lists one
+arm in `tm_nf`. The formalization says two changes are needed:
+1. In `tm_nf`, `TyView::Empty` returns `Ok(())` in place of the structural
+   `tm_nee`. It must sit where `Unit`'s and `sEmpty`'s arms do, after the
+   type is in weak-head normal form and ahead of any structural fallback.
+2. In the `elim_Empty` neutral congruence in `tm_ne`, the scrutinees are
+   skipped, as the `elim_sEmpty` arm beside it already does. Without this
+   the kernel is incomplete against its own rule: `elim_Empty(M; x)` and
+   `elim_Empty(M; y)` are equal by congruence and irrelevance, but the
+   structural `tm_nee_c` on `x` and `y` fails.
+

@@ -1,10 +1,11 @@
 (** * Validity of the empty type (M12_DESIGN.md, M12a)
 
-    Formation of [Empty] and its eliminator. The term relation at [Empty]
-    is a pair of related neutrals ([EmptyRel]), as logrel-coq's: there is no
-    canonical form, so the eliminator is neutral on the neutral its
-    scrutinee reduces to, and its motive is instantiated at that neutral
-    through the motive's validity. *)
+    Formation of [Empty], its eliminator, and proof irrelevance. The term
+    relation at [Empty] asks for self-related neutrals ([EmptyRel]), as at
+    [sEmpty], so irrelevance is immediate. There is no canonical form, so
+    the eliminator is neutral on the neutral its scrutinee reduces to, and
+    its motive is instantiated at that neutral through the motive's
+    validity. *)
 From DeLaM.Validity Require Export Id.
 
 Section Empty.
@@ -45,6 +46,16 @@ Qed.
 Lemma V_empty {G Γ l l'} : lwf (gL G) l -> lequiv (gL G) l l' -> VTy G Γ (tyEmpty l) (tyEmpty l') l.
 Proof. intros Hw Hl Δ d d' Hd. eexists; apply LR_empty_here; auto. exact (SubRel_ctx Hd). Qed.
 
+(** Irrelevance: the left sides of the two validities, related. *)
+Lemma V_empty_irr {G Γ l t t1 t' t1'} : lwf (gL G) l ->
+  VTm G Γ t t1 (tyEmpty l) l -> VTm G Γ t' t1' (tyEmpty l) l -> VTm G Γ t t1' (tyEmpty l) l.
+Proof.
+  intros Hw Vt Vt' Δ d d' Hd. specialize (Vt _ _ _ Hd). specialize (Vt' _ _ _ Hd).
+  rewrite !subst_tyEmpty in Vt, Vt' |- *. apply (LRtm_empty Hw) in Vt, Vt'. apply (LRtm_empty Hw).
+  destruct Vt as (w1 & _ & H1 & _ & N1 & _). destruct Vt' as (_ & w4 & _ & H4 & _ & N4).
+  exists w1, w4. auto.
+Qed.
+
 (** ** The eliminator *)
 
 (** The motive at related neutrals, through its validity. *)
@@ -61,7 +72,7 @@ Qed.
 Lemma EmptyRel_to_ne {G Δ l t ν} : [ G ; Δ ⊢g t ⤳* ν : tyEmpty l @ l ] ->
   [ G ; Δ ⊢ ν ~ ν : tyEmpty l @ l ] -> EmptyRel G Δ l ν t.
 Proof.
-  intros Hr Hn. exists ν, ν. refine (conj _ (conj Hr Hn)).
+  intros Hr Hn. exists ν, ν. refine (conj _ (conj Hr (conj Hn Hn))).
   apply tmred_refl. exact (gne_tm_typed_l Hn).
 Qed.
 
@@ -85,9 +96,9 @@ Proof.
   pose proof (SubRel_ctx Hd) as HΔ.
   push_subst. rewrite !single_subst_ty by assumption.
   pose proof (VTm_trans Vt (VTm_sym Vt)) as Vtt.
-  (* the scrutinees reduce to related neutrals *)
+  (* the scrutinees reduce to neutrals, each related to itself *)
   pose proof (Vt _ _ _ Hd) as X. rewrite !subst_tyEmpty in X. apply (LRtm_empty H2) in X.
-  destruct X as (ν & ν' & Hν & Hν' & Hne).
+  destruct X as (ν & ν' & Hν & Hν' & Hνν & Hν'ν').
   pose proof (Vtt _ _ _ Hd) as Xtt. rewrite !subst_tyEmpty in Xtt. apply (LRtm_empty H2) in Xtt.
   (* the motive under the lifted substitutions *)
   assert (HE : [ G ; Δ ⊢g tyEmpty l2 @ l2 ]) by (apply wft_empty_g; [exact HΔ | now apply lequiv_refl]).
@@ -98,8 +109,7 @@ Proof.
   destruct (VTy_empty_at H2 (VTy_refl_l VM) Hd Xtt) as [R HR].
   exists R; split; [exact HR|].
   (* the neutral, at the neutral's motive instance, then at the scrutinee's *)
-  pose proof (gne_tm_elimEmpty H13 H24 HMd EqM Hne) as Hne'.
-  assert (Hνν : [ G ; Δ ⊢ ν ~ ν : tyEmpty l2 @ l2 ]) by exact (gne_tm_trans Hne (gne_tm_sym Hne)).
+  pose proof (gne_tm_elimEmpty H13 H24 HMd EqM Hνν Hν'ν') as Hne'.
   destruct (VTy_empty_at H2 (VTy_refl_l VM) (SubRel_refl_l Hd) (EmptyRel_to_ne Hν Hνν)) as [R1 HR1].
   destruct (escape_ty _ _ _ _ _ _ _ _ HR1) as (_ & _ & Eν).
   pose proof (gne_tm_conv Hne' (geq_ty_sound Eν)) as Hne''.

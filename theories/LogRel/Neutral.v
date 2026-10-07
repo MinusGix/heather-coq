@@ -294,10 +294,12 @@ Proof.
     destruct (gne_tmred_refl HP) as [H1 H2].
     exists ν, ν'. refine (conj H1 (conj H2 (conj (gne_tm_geq HP) _))).
     now apply idnf_ne.
-  - (* Empty: typed neutrals are related, as neutrals *)
+  - (* Empty: each side a neutral related to itself, as at sEmpty *)
     pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HP.
     destruct (gne_tmred_refl HP) as [H1 H2].
-    exists ν, ν'. exact (conj H1 (conj H2 HP)).
+    exists ν, ν'. refine (conj H1 (conj H2 (conj _ _))).
+    + exact (gne_tm_trans HP (gne_tm_sym HP)).
+    + exact (gne_tm_trans (gne_tm_sym HP) HP).
   - (* +: typed neutrals are related, as neutrals *)
     pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HP.
     destruct (gne_tmred_refl HP) as [H1 H2].

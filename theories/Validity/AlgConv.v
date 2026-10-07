@@ -493,7 +493,7 @@ Proof.
   intros Hp Hw2 E. destruct Hp;
     try match goal with Hn : whne_ty ?V |- _ => rewrite (whne_ty_head V Hn) in E end;
     destruct W2; cbn in E; try discriminate;
-    first [ apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_empty | apply posty_sum
+    first [ apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum
           | apply posty_W | apply posty_wf | apply posty_ne; inversion Hw2; subst; first [assumption | constructor] ].
 Qed.
 
@@ -1467,12 +1467,18 @@ Proof. intros Hl; red; intros; now apply actnf_sempty. Qed.
 Lemma C_actnf_empty {G Γ l l'} : leqv l l' -> C_tynf G Γ (tyEmpty l) (tyEmpty l').
 Proof. intros Hl; red; intros; now apply actnf_empty. Qed.
 
-Lemma C_actmne_elimEmpty {G Γ l1 l2 l3 l4 M M' ν ν' W} : leqv l1 l3 -> leqv l2 l4 ->
+Lemma C_actmnf_empty_irr {G Γ l w w'} : C_tmnf G Γ w w' (tyEmpty l).
+Proof.
+  red; intros i G2 Γ2 W2 k Hc HE Hctx Ht Ht' EW Hw2 x x' Hsx Hsx'. new_head Hc EW Hw2 W2.
+  apply actmnf_empty_irr.
+Qed.
+
+Lemma C_actmne_elimEmpty {G Γ l1 l2 l3 l4 M M' ν ν'} : leqv l1 l3 -> leqv l2 l4 ->
   ac_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> C_ty G (Γ ,, tyEmpty l2 @ l2) M M' ->
-  ac_tmnee G Γ ν ν' W -> C_nee G Γ ν ν' W ->
+  whne ν -> whne ν' ->
   C_ne G Γ (elimEmpty l1 l2 M ν) (elimEmpty l3 l4 M' ν') M[lsingle ν].
 Proof.
-  intros H13 H24 DM IHM Dν IHν i G2 Γ2 k k' X X' Hc HE Hctx Hx Hx' x x' Hsx Hsx'. spa_triv.
+  intros H13 H24 DM IHM Hn Hn' i G2 Γ2 k k' X X' Hc HE Hctx Hx Hx' x x' Hsx Hsx'. spa_triv.
   pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_elimEmpty Hi Hx) as ((_ & W1 & W2 & HM & Hν) & _ & _).
   destruct (inv_elimEmpty Hi Hx') as ((_ & W3 & W4 & HM' & Hν') & _ & _).
@@ -1485,12 +1491,10 @@ Proof.
   pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi HEE (lequiv_sym _ _ _ E24) HΓE HM') E13) as HM'1.
   assert (HctxE : [ G2 ⊢[ i ] Γ ,, tyEmpty l2 @ l2 ≅ Γ2 ,, tyEmpty l2 @ l2 ])
     by exact (eqctx_ext_refl Hctx (gconv_ty HE HE2) (GEq_lwf HE W2)).
-  destruct (IHν i G2 Γ2 _ _ _ _ Hc HE Hctx Hν Hν' _ _ spa_refl spa_refl) as (Wν & Xν & _).
   exists M[lsingle ν]. split.
-  - apply (actmne_elimEmpty _ _ _ _ _ _ _ _ _ _ Wν H13 H24).
-    + exact (IHM i G2 _ l1 l1 Hc HE HctxE HM HM'1).
-    + exact Xν.
-  - exact (ne_refl (actmne_elimEmpty _ _ _ _ _ _ _ _ _ _ _ H13 H24 DM Dν) Hc HE Hx Hx').
+  - apply actmne_elimEmpty; [exact H13 | exact H24 | exact (IHM i G2 _ l1 l1 Hc HE HctxE HM HM'1)
+                            | exact Hn | exact Hn'].
+  - exact (ne_refl (actmne_elimEmpty _ _ _ _ _ _ _ _ _ _ H13 H24 DM Hn Hn') Hc HE Hx Hx').
 Qed.
 
 (** Binary sums (M12b). *)
@@ -1982,7 +1986,7 @@ Proof.
     | solve [eapply C_actnf_unit; eassumption] | solve [eapply C_actmnf_code_unit; eassumption]
     | solve [eapply C_actmnf_unit_eta]
     | solve [eapply C_actnf_seq; eassumption] | solve [eapply C_actnf_sempty; eassumption]
-    | solve [eapply C_actmnf_seq_irr] | solve [eapply C_actmnf_sempty_irr]
+    | solve [eapply C_actmnf_seq_irr] | solve [eapply C_actmnf_sempty_irr] | solve [eapply C_actmnf_empty_irr]
     | solve [eapply C_actmne_elimSEmpty; eassumption]
     | solve [eapply C_actnf_id; eassumption] | solve [eapply C_actmnf_refl]
     | solve [eapply C_actmne_J; eassumption] | solve [eapply C_actmnf_code_id; eassumption]

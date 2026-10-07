@@ -1260,7 +1260,7 @@ Proof.
       assert (HV : [ G ; Γ ⊢g tyId s3 A3 a3 b3 ≅ tyId s1 IA ia ib @ s3 ]).
       { eapply eqty_lconv; [apply eqty_sym, geq_ty_sound, geq_ty_id; eauto | exact Hl31]. }
       exact (IdRel_leq Hl31 HV EA13 Hc Hps3 Hpt3 H12 H33 Et).
-  - (* Empty: related neutrals, as NeRel *)
+  - (* Empty: self-related neutrals, as at sEmpty *)
     destruct (ty_leq_empty_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3)) as (s3 & -> & E3).
     destruct (LR_inv_empty H3 HT3) as (s4 & _ & Hl4 & Hw3 & _ & HR3).
     assert (Q : lequiv (gL G) s2 s3) by exact (leqv_lequiv _ _ _ (lequiv_wf_l _ _ _ Hl2) Hw3 E3).
@@ -1268,13 +1268,8 @@ Proof.
     split; [eapply (LRempty n (LRbelow n) G Γ T1 T3 l s1 s3); eauto|].
     intros t1 t2 t3 H12 H33 Et. apply HR. apply HR in H12. apply HR3 in H33.
     apply (EmptyRel_lconv Hl31) in H33.
-    destruct H12 as (ν1 & ν2 & Hν1 & Hν2 & H12). destruct H33 as (ν3 & ν3' & Hν3 & Hν3' & H33).
-    assert (ν3' = ν3) as ->
-      by (eapply tmred_whnf_det; [exact Hν3' | exact Hν3 | exact (whnf_ne _ (gne_tm_whne_r H33))
-                                 | exact (whnf_ne _ (gne_tm_whne_l H33))]).
-    assert (Eν : tm_leq ν2 ν3)
-      by exact (tmred_leq Et Hν2 Hν3 (whnf_ne _ (gne_tm_whne_r H12)) (whnf_ne _ (gne_tm_whne_l H33))).
-    exists ν1, ν3. exact (conj Hν1 (conj Hν3 (gne_tm_leq_r H12 H33 Eν))).
+    destruct H12 as (w1 & _ & Hr1 & _ & Hf1 & _). destruct H33 as (w3 & _ & Hr3 & _ & Hf3 & _).
+    exists w1, w3. auto.
   - (* +: the summands by their induction hypotheses *)
     destruct (ty_leq_sum_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3))
       as (u5 & u6 & A3 & B3 & -> & E5 & E6 & EA & EB).

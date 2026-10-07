@@ -29,8 +29,6 @@ Inductive posty : ty -> Prop :=
 | posty_CTyp Δ l : posty (tyCTyp Δ l)
 | posty_CTrm Δ T l : posty (tyCTrm Δ T l)
 | posty_id l A a b : posty (tyId l A a b)
-(* the empty type (M12a): no η, so its neutrals are compared as neutrals *)
-| posty_empty l : posty (tyEmpty l)
 (* binary sums (M12b): no η *)
 | posty_sum l l' A B : posty (tySum l l' A B)
 (* well-founded trees (M13a): no η *)
@@ -150,6 +148,9 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
    [Unit] (neither is [posty]) *)
 | actmnf_seq_irr G Γ l A a b w w' : ac_tmnf G Γ w w' (tySEq l A a b)
 | actmnf_sempty_irr G Γ l w w' : ac_tmnf G Γ w w' (tySEmpty l)
+(* the empty type: proof irrelevance, as at [sEmpty] ([Empty] is not
+   [posty], so its neutrals are not compared either) *)
+| actmnf_empty_irr G Γ l w w' : ac_tmnf G Γ w w' (tyEmpty l)
 (* the identity type (M11a): two [refl]s at an [Id] type are equal (both
    points are its endpoints, by the typings the instances bundle); a [refl]
    and a neutral are not ([Id] is [posty]) *)
@@ -286,10 +287,11 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tm G Γ c c' M[lsingle2 a (tmRefl l1 A a)] -> ac_tm G Γ u u' A ->
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (tmJ l1 l2 A a M c u ν) (tmJ l3 l4 A' a' M' c' u' ν') M[lsingle2 u ν]
-(* [Empty]'s eliminator (M12a): the motives at the left scrutinee's type,
-   the scrutinees as neutrals *)
-| actmne_elimEmpty G Γ l1 l2 l3 l4 M M' ν ν' W : leqv l1 l3 -> leqv l2 l4 ->
-    ac_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> ac_tmnee G Γ ν ν' W ->
+(* [Empty]'s eliminator (M12a): the motives at the left scrutinee's type;
+   the scrutinees are neutral and, as [elimSEmpty]'s, never compared
+   (irrelevance at [Empty]) *)
+| actmne_elimEmpty G Γ l1 l2 l3 l4 M M' ν ν' : leqv l1 l3 -> leqv l2 l4 ->
+    ac_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> whne ν -> whne ν' ->
     ac_tmne G Γ (elimEmpty l1 l2 M ν) (elimEmpty l3 l4 M' ν') M[lsingle ν]
 (* [case] (M12b): every component compared, the scrutinees as neutrals *)
 | actmne_case G Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c1 c1' c2 c2' ν ν' W :
@@ -364,3 +366,22 @@ Lemma ac_tmne_whne {G Γ ν ν' T} : ac_tmne G Γ ν ν' T -> whne ν /\ whne ν
 Proof. apply ac_tynf_whnf_l_all. Qed.
 Lemma ac_tmnee_whne {G Γ ν ν' W} : ac_tmnee G Γ ν ν' W -> whne ν /\ whne ν'.
 Proof. apply ac_tynf_whnf_l_all. Qed.
+
+(** ** Irrelevance at [Empty], after type reduction
+
+    The algorithm reduces the type before it compares terms, so [Empty]-η
+    reaches types that only become [Empty] by reduction: two distinct
+    variables at [Fin 0], and two [elim_Empty]s whose scrutinees differ. *)
+Example ac_fin_zero_irr G Γ : ac_tm G Γ (var 1) (var 0) (tyFin zero).
+Proof.
+  eapply actm_red; [econstructor; [apply red_fin_zero | constructor] | apply whnf_tyEmpty
+                   | constructor | constructor | apply whnf_ne, whne_var | apply whnf_ne, whne_var
+                   | apply actmnf_empty_irr].
+Qed.
+
+Example ac_elimEmpty_irr G Γ l :
+  ac_tmne G Γ (elimEmpty lzero l tyNat (var 1)) (elimEmpty lzero l tyNat (var 0)) tyNat[lsingle (var 1)].
+Proof.
+  apply actmne_elimEmpty; [apply leqv_refl | apply leqv_refl | | apply whne_var | apply whne_var].
+  eapply act_red; [constructor | constructor | apply whnf_tyNat | apply whnf_tyNat | apply actnf_nat].
+Qed.

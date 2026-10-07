@@ -320,14 +320,18 @@ Class GenericEqLaws `{GenericEq} := {
     [ G ; Γ ⊢ tmSEq l s t u ≈ tmSEq l' s' t' u' : tyU l @ lsuc l ] ;
   geq_tm_code_sempty {G Γ l l'} : [ G ; Γ ⊢g ] -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢ tmSEmpty l ≈ tmSEmpty l' : tyU l @ lsuc l ] ;
-  (** the empty type (M12a): its congruence, and its eliminator is neutral
-      on a neutral scrutinee *)
+  (** the empty type (M12a): its congruence, proof irrelevance (as at
+      [sEmpty]), and its eliminator is neutral on neutral scrutinees, which,
+      as [sEmpty]'s, are never compared *)
   geq_ty_empty {G Γ l l'} : [ G ; Γ ⊢g ] -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢ tyEmpty l ≈ tyEmpty l' @ l ] ;
+  geq_tm_empty_irr {G Γ l t t'} : lwf (gL G) l ->
+    [ G ; Γ ⊢g t : tyEmpty l @ l ] -> [ G ; Γ ⊢g t' : tyEmpty l @ l ] ->
+    [ G ; Γ ⊢ t ≈ t' : tyEmpty l @ l ] ;
   gne_tm_elimEmpty {G Γ l1 l2 l3 l4 M M' ν ν'} :
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ,, tyEmpty l2 @ l2 ⊢g M @ l1 ] -> [ G ; Γ ,, tyEmpty l2 @ l2 ⊢ M ≈ M' @ l1 ] ->
-    [ G ; Γ ⊢ ν ~ ν' : tyEmpty l2 @ l2 ] ->
+    [ G ; Γ ⊢ ν ~ ν : tyEmpty l2 @ l2 ] -> [ G ; Γ ⊢ ν' ~ ν' : tyEmpty l2 @ l2 ] ->
     [ G ; Γ ⊢ elimEmpty l1 l2 M ν ~ elimEmpty l3 l4 M' ν' : M[lsingle ν] @ l1 ] ;
   (** binary sums (M12b): the congruences of [+] and the injections, and
       [case] is neutral on a neutral scrutinee *)

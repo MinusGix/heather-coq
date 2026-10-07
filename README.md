@@ -88,8 +88,9 @@ From M8 on, the milestones check the extensions of Heather's kernel
   (`t_Id`, `t'_Id`, `t_refl`, `t_J`). See `M11_DESIGN.md`.
 - Milestone 12: the empty type and binary sums. `Empty` with its
   eliminator, and `+` with `inl`, `inr` and `case`, hold at every layer
-  but V, with β and no η at D and M. Closed canonicity gives no closed
-  term of `Empty` and the disjunction property at `+`. Both have codes,
+  but V, with β and no η at D and M, except that `Empty` has η as proof
+  irrelevance at D and M (added 2026-10-06). Closed canonicity gives no
+  closed term of `Empty` and the disjunction property at `+`. Both have codes,
   and the code recursor has their eight branches (`t_Empty`, `t'_Empty`,
   `t_elimE`, `t_+`, `t'_+`, `t_inl`, `t_inr`, `t_case`). With them the
   no-UIP model's `UIP₀` is stated at `⌜Bool⌝` as the model writes it, and
