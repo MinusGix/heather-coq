@@ -30,3 +30,9 @@ of the build (`_CoqProject` lists `theories/` only). Compile one with
   stability under substitution: `J(M; c; u; e)[σ] = J(M[σ⁺⁺]; c[σ]; u[σ];
   e[σ])` (`J_stab_ob`, `J_stab_hom`). `Id` and `refl` are stable by
   conversion. `J_example` shows that the hypotheses are satisfiable.
+- `SquashProbe.v`: Heather's `Squash` term relation (MX §27), refined so
+  that a `squash`'s payload is related to itself, stated over the
+  development's logical relation with the former abstract. It checks the
+  PER laws, escape, symmetry, irrelevance and weak-head expansion
+  (`HEATHER.md`, Findings). It needs the theories compiled: `coqc -Q
+  theories DeLaM probes/SquashProbe.v` (or `-vok` after `make vos`).
