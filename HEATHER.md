@@ -55,7 +55,7 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | `Wf`, `sup_f`, `elim_Wf` | finitary W over a `Vec` of children | wf-former-design | MX §11–17 | index lemma (MX §13) | **M15a done**: branch telescopes derived from the semantics, β, no η, the index lemma via `nth` at related `Fin` indices (D and M); code and branches next (M15b) |
 | `sEq`, `srefl`, `transp`, strip rule | strict equality, irrelevance | sprop-design | MX §18–22 | strip changes the evaluation notion; MX §19.4 substitution lemma is the named weak spot; completeness gap reaches type relations (MX §22.4); **MX §19.2 is a strengthening lemma (M10 S1)** | `sEq`, `srefl`, irrelevance **done** (M10a; every layer but V with codes and branches 25, 26, 29, M10c); `transp` removed (S8) |
 | `sEmpty`, `elim_sEmpty` | irrelevant empty type | sprop-design | MX §18, §21.4 | — | **done** (M10a; at code with branches 27, 28, 30, M10c) |
-| `Squash`, `ind_∥∥` | normalizing-total irrelevance | MX §27 | sketch only | full pass open (`issues/metatheory-ch07-squash.md`) | — |
+| `Squash`, `ind_∥∥` | normalizing-total irrelevance | MX §27 | sketch only | full pass open (`issues/metatheory-ch07-squash.md`); the payload must be self-related (see findings) | **probe done** (`probes/SquashProbe.v`): the relation, its PER laws, escape, symmetry, irrelevance, expansion; no abort |
 | Bodied globals `u := t`, δ at p/m only | not a former | DESIGN.md, MX §23–25 | **none** | ch. 07 bill (`issues/metatheory-ch07-definitions.md`) | **done** (M9): occurrences carry their body (`gdef`); δ as reduction; §26 items 1–4; canonicity at D; consistency at D and M |
 | `NatLit`, evaluator accelerations | representation | DESIGN.md | n/a | claimed to have no semantic content; nothing to prove here | out of scope |
 
@@ -112,6 +112,36 @@ Cross-checks between the two sides, newest last.
   included, which preserves every judgment. This bears on
   `issues/opaque-globals-analysis.md`. Loose ends (N1's admissibility, a
   Heather-faithful rule set) are listed under M9_DESIGN.md, Open items.
+- **Squash's relation (probe, 2026-10-08).** MX §27's "normalizing-total"
+  clause needs one refinement, and is otherwise not new here.
+  `probes/SquashProbe.v` states the clause over the development's LR, with
+  `∥·∥` and `squash` as section variables and two generic laws (congruence,
+  proof irrelevance) as hypotheses, satisfiable by `Unit`
+  (`Squash_hyps_unit`). Findings:
+  - *The payload must be related to itself.* A whnf at `∥A∥` is good when
+    it is `squash a` with `RA a a`, or a neutral `ν ~ ν`; `t ~ t'` is "both
+    good", a product of two unary predicates. §27 asks for no relation on
+    payloads at all, but `ind(squash a; z.B; x.b) ⤳ b[a/x]` instantiates
+    `b`'s validity at `a`, which needs `a` in `A`'s relation; typing alone
+    does not give it. Nothing is compared across the two sides, so the
+    algorithm (both sides to whnf, then accept) is unaffected, and so is
+    Heather's `conv.rs`.
+  - *Normalization is already required at Unit and sEq here.* `UnitRel`
+    and `SEqRel` keep both sides' whnfs (M8_DESIGN.md K5), so the property
+    §27 calls new is the existing shape. The clause is `Empty`'s
+    self-related shape with `+`'s kept carrier relation.
+  - *Abort criterion not met.* PER laws, escape for types and terms,
+    symmetry and reflexivity of the type clause from the carrier's, change
+    of carrier (reading only the diagonal of `RA`), irrelevance of the
+    derivation, and weak-head expansion all go through without relevance
+    marks or a new sort. The shared syntactic lemmas see `squash` as an
+    ordinary constructor.
+  - *Size of a full round.* At D and M, between M12a and M12b (about 55
+    files, 1500 to 2000 lines): one carrier as `+`, one constructor, a
+    dependent eliminator whose step has type `∥B(squash x)∥`, and the
+    irrelevance arm as at `sEq`. Codes and Heather's four recursor
+    branches (`ty_squash`, `tm_squash`, `tm_squash_in`, `tm_elim_squash`)
+    as half of M12c (about 30 files, 1000 to 1300 lines).
 
 ## Beyond type formers
 
