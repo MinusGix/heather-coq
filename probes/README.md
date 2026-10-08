@@ -36,3 +36,16 @@ of the build (`_CoqProject` lists `theories/` only). Compile one with
   PER laws, escape, symmetry, irrelevance and weak-head expansion
   (`HEATHER.md`, Findings). It needs the theories compiled: `coqc -Q
   theories DeLaM probes/SquashProbe.v` (or `-vok` after `make vos`).
+- `ItreeDepthBisim.v`: question 1 of Heather's
+  `issues/interaction-trees-container-model.md` (`docs/interaction-trees-fit.md`
+  §3.7). For interaction trees over container events, the depth-indexed
+  weak bisimilarity `Π n. euttₙ` (inductive Tau peeling, index consumed by
+  the Tau-Tau and Vis-Vis clauses, everything related at index 0) coincides
+  with the greatest fixed point (`eutt_gfp_omega`), given proof-irrelevant
+  equality on commands (`UIP_Cmd`, which any decidable `Cmd` has). The
+  approximants as one inductive family over `nat` agree with the `Fixpoint`
+  form (`euttI_iff`). Without the gfp, the intersection is reflexive,
+  symmetric, transitive, absorbs Taus and is a `bind` congruence. An index-free
+  Tau-Tau rule fails at `spin` (`spin_not_euttT`), and Milner's image-infinite
+  LTS shows the coincidence fails once branching is nondeterministic
+  (`Milner.milner`). Standalone: `coqc probes/ItreeDepthBisim.v`.
