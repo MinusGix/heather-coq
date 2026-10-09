@@ -190,6 +190,22 @@ Candidate directions. Each is a design fork to discuss when we reach it:
 Plan: add Σ (with η) and Unit (with η) by hand first, record which files
 each one touched and why, then choose among 1–3 using that data.
 
+**Direction 1, decided 2026-10-09: the narrow version, as M15b's step 0.**
+Measured on M11b–M14b, branch-specific code is ~525–1360 lines per
+code-and-branches round, about 15–20% of a former; the D/M rounds' logical
+relation dominates. Checked in Coq: for all 47 branches, `br_calls` and
+`br_nl` follow exactly from `brDecls` (one call per layer-C global,
+weakened past its position), so the call table is redundant; heads and
+reducts need the constructor and stay hand-written. Step 0 derives
+`br_calls` from `brDecls`, adds a generic `GS_br` fold over `brDecls`, a
+per-call lemma (what `Tcall`/`tcall` and the `X1r` lines do), and a tactic
+for `RT_`/`Rt_`, all used first on Wf's branches. The existing branches are
+not migrated. Abort, and hand-write as M13b did, if Wf's RecS plus
+RecReduct is not under about 60% of W's (794 lines) or the build slows.
+Not done: deriving `redT`/`redt` from one descriptor (M8 J2's reasons
+still hold: it redefines `redT`, used in 17 files, to save ~10–20 lines
+per branch).
+
 ## Proposed order
 
 1. ~~Σ with η, Unit with η: the two new equations; measure the per-former cost.~~
