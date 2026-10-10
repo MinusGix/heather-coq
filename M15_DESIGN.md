@@ -42,6 +42,9 @@ code.
 - **M15b**: the code, the lift to C and the four recursor branches 47–50
   (`nbr = 51`). Their scopes are derived below already, because that is
   the part `uncovered-formers-recursor-rules` asks for.
+  Step 0 is the narrow genericity pass decided in `HEATHER.md`
+  (direction 1): calls derived from `brDecls`, a generic `GS_br`, a
+  per-call lemma and an `RT_`/`Rt_` tactic, with its abort criterion.
 
 ## Syntax (de Bruijn)
 
