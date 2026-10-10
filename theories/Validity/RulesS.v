@@ -163,6 +163,7 @@ Ltac s_push_at h k := lazymatch h with
   | @tmW => k gs_tmW
   | @tmVec => k gs_tmVec
   | @tmFin => k gs_tmFin
+  | @tmWf => k gs_tmWf
   | @tmTriv => k gs_triv
   | @tySEq => k gs_tySEq
   | @tySEmpty => k gs_tySEmpty
@@ -233,7 +234,9 @@ Ltac fts_case :=
   | solve [simple eapply V_code_fin; s_side] | solve [simple eapply V_El_fin; s_side]
   (* finitary well-founded trees (M15a) *)
   | solve [simple eapply V_wf; s_side] | solve [simple eapply V_supf; s_side]
-  | solve [simple eapply V_elimWf; s_side] | solve [simple eapply V_elimWf_supf; s_side] ].
+  | solve [simple eapply V_elimWf; s_side] | solve [simple eapply V_elimWf_supf; s_side]
+  (* the code of Wf (M15b) *)
+  | solve [simple eapply V_code_wf; s_side] | solve [simple eapply V_El_wf; eassumption] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=
@@ -767,6 +770,24 @@ Lemma VS_elimWf_supf {ly G Γ l l' A N M c a cs} : lwf (gL G) l -> lwf (gL G) l'
     M[lsingle (tmSupf l A N a cs)] l'.
 Proof using EL VL VN. intros; s_lift. Qed.
 
+(** The code of Wf (M15b). *)
+Lemma VS_code_wf {ly G Γ l l' s s' n n'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ ly ] s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢[ ly ] n : tyNat @ lzero ] ->
+  lle ly ge_layer -> typeof ly = ly ->
+  VTmS G Γ s s' (tyU l) (lsuc l) -> VTmS G (Γ ,, tyEl l s @ l) n n' tyNat lzero ->
+  VTmS G Γ (tmWf l s n) (tmWf l' s' n') (tyU l) (lsuc l).
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_El_wf {ly G Γ l s n} : lwf (gL G) l ->
+  [ G ; Γ ⊢[ ly ] s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢[ ly ] n : tyNat @ lzero ] ->
+  lle ly ge_layer -> typeof ly = ly ->
+  VTmS G Γ s s (tyU l) (lsuc l) -> VTmS G (Γ ,, tyEl l s @ l) n n tyNat lzero ->
+  VTyS G Γ (tyWf l (tyEl l s) n) (tyEl l (tmWf l s n)) l.
+Proof using EL VL VN.
+  intros Hw Hs Hn Hly Hty Vs Vn. eapply (VTyS_trans_diag EP EM (T2 := tyEl l (tmWf l s n))); [s_diag V_El_wf|].
+  apply VS_El; [exact Hw | apply lequiv_refl, Hw |].
+  eapply VS_code_wf; try eassumption; apply lequiv_refl; assumption.
+Qed.
+
 End Rules.
 
 End RulesS.
@@ -832,4 +853,6 @@ Ltac vs_rules side :=
   | solve [simple eapply VS_code_fin; side] | solve [simple eapply VS_El_fin; side]
   (* finitary well-founded trees (M15a) *)
   | solve [simple eapply VS_wf; side] | solve [simple eapply VS_supf; side]
-  | solve [simple eapply VS_elimWf; side] | solve [simple eapply VS_elimWf_supf; side] ].
+  | solve [simple eapply VS_elimWf; side] | solve [simple eapply VS_elimWf_supf; side]
+  (* the code of Wf (M15b) *)
+  | solve [simple eapply VS_code_wf; side] | solve [simple eapply VS_El_wf; side] ].

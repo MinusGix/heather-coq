@@ -221,6 +221,18 @@ Proof.
   - exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (eqty_El_vec _ _ _ _ _ _ Hc Wl0 Hs Hn))
              (lequiv_sym _ _ _ E0)).
 Qed.
+(** The code of [Wf] (M15b). *)
+Lemma RS_El_wf l l0 s n : RS_ty (tyEl l (tmWf l0 s n)) (tyWf l0 (tyEl l0 s) n).
+Proof.
+  intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_El HT) as ((Hv & Wl & Ht) & Hk).
+  destruct (inv_code_wf Hi Ht) as ((_ & Wl0 & Hs & Hn) & _ & EU).
+  pose proof (U_inj_c Hc EU) as E0.
+  apply (retype_eqty Hk). eapply eqty_trans.
+  - exact (eqty_El _ _ _ _ _ _ _ Hv (lequiv_sym _ _ _ E0) (eqtm_refl _ _ _ _ _ _ Ht)).
+  - exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (eqty_El_wf _ _ _ _ _ _ Hc Wl0 Hs Hn))
+             (lequiv_sym _ _ _ E0)).
+Qed.
 Lemma RS_El_fin l n : RS_ty (tyEl l (tmFin n)) (tyFin n).
 Proof.
   intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
@@ -768,7 +780,7 @@ Proof.
     | solve [apply RS_El_empty] | solve [apply RS_El_sum] | solve [apply RS_El_W]
     | solve [apply RS_vec_zero] | solve [apply RS_vec_succ] | solve [apply RS_vec; assumption]
     | solve [apply RS_fin_zero] | solve [apply RS_fin_succ] | solve [apply RS_fin; assumption]
-    | solve [apply RS_El_vec] | solve [apply RS_El_fin] ].
+    | solve [apply RS_El_vec] | solve [apply RS_El_fin] | solve [apply RS_El_wf] ].
 Qed.
 
 Section Consequences.

@@ -1427,6 +1427,36 @@ Proof.
            (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hn))) _ _ spa_refl spa_refl).
 Qed.
 
+(** The code of [Wf] (M15b), as [W]'s: the arity in the left shape's context. *)
+Lemma C_actmnf_code_wf {G Γ l k k' s s' n n'} : leqv k k' ->
+  ac_tm G Γ s s' (tyU k) -> C_tm G Γ s s' (tyU k) -> C_tm G (Γ ,, tyEl k s @ k) n n' tyNat ->
+  C_tmnf G Γ (tmWf k s n) (tmWf k' s' n') (tyU l).
+Proof.
+  intros Hk0 Ds IHs IHn i G2 Γ2 W2 m Hc HE Hctx Hx Hx' EW Hw2 x x' Hsx Hsx'. spa_triv.
+  pose proof (compt_typeof_self _ Hc) as Hi. new_head Hc EW Hw2 W2.
+  destruct (code_wf_prem Hc Hx) as (Wk & Hs & Hn). destruct (code_wf_prem Hc Hx') as (Wk' & Hs' & Hn').
+  pose proof (compt_notV _ Hc) as Hv.
+  pose proof (leqv_lequiv _ _ _ Wk Wk' Hk0) as E.
+  pose proof (ctx_of_wf_tm Hi Hs) as HΓ.
+  assert (EU : [ G ; Γ ⊢[ i ] tyU k ≅ tyU k' @ lsuc k ]) by (apply eqty_U; [exact Hv | rewrite Hi; exact HΓ | exact E]).
+  pose proof (code_U_conv Hc E Hs') as Hs1.
+  pose proof (ac_tm_sound Hc Ds Hs Hs1) as Es.
+  assert (Es' : [ G ; Γ ⊢[ i ] s' ≅ s : tyU k' @ lsuc k' ]).
+  { eapply eqtm_lconv; [| exact (lequiv_suc _ _ _ (lequiv_sym _ _ _ E))].
+    eapply eqtm_conv; [exact (eqtm_sym _ _ _ _ _ _ _ Es) | rewrite Hi; exact (eqty_sym _ _ _ _ _ _ EU)]. }
+  assert (EEl : [ G ; Γ ⊢[ i ] tyEl k' s' ≅ tyEl k s @ k' ])
+    by (apply eqty_El; [exact Hv | exact (lequiv_sym _ _ _ E) | exact Es']).
+  assert (HEl : [ G ; Γ ⊢[ i ] tyEl k s @ k ]) by (apply wft_El; assumption).
+  assert (HΓ1 : [ G ; Γ ,, tyEl k s @ k ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HEl | exact Wk]).
+  pose proof (stab_tm Hi EEl (lequiv_sym _ _ _ E) HΓ1 Hn') as Hn1.
+  apply actmnf_code_wf; [exact Hk0 | |].
+  - exact (IHs i G2 Γ2 (tyU k) (lsuc k) Hc HE Hctx Hs Hs1
+             (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hs))) _ _ spa_refl spa_refl).
+  - apply (IHn i G2 (Γ2 ,, tyEl k s @ k) tyNat lzero Hc HE); [| exact Hn | exact Hn1 | | exact spa_refl | exact spa_refl].
+    + exact (eqctx_ext_refl Hctx (gconv_ty HE HEl) (GEq_lwf HE Wk)).
+    + exact (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hn))).
+Qed.
+
 Lemma C_actmnf_code_sempty {G Γ l k k'} : leqv k k' -> C_tmnf G Γ (tmSEmpty k) (tmSEmpty k') (tyU l).
 Proof.
   intros Hl; red; intros i G2 Γ2 W2 kk Hc HE Hctx Ht Ht' EW Hw2 x x' Hsx Hsx'. spa_triv. new_head Hc EW Hw2 W2.
@@ -2001,6 +2031,7 @@ Proof.
     | solve [eapply C_actmnf_code_W; eassumption]
     | solve [eapply C_actnf_wf; eassumption] | solve [eapply C_actmnf_supf; eassumption]
     | solve [eapply C_actmne_elimWf; eassumption]
+    | solve [eapply C_actmnf_code_wf; eassumption]
     | solve [eapply C_actne_vec; eassumption] | solve [eapply C_actne_fin; eassumption] ].
 Qed.
 

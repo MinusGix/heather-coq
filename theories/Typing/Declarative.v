@@ -357,6 +357,11 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
         ⊢[ i ] c : wfstepty l A N M @ l' ] ->
     [ G ; Γ ⊢[ i ] t : tyWf l A N @ l ] ->
     [ G ; Γ ⊢[ i ] tmElimWf l l' A N M c t : M[lsingle t] @ l' ]
+(* the code of [Wf] (M15b): the arity is a term of [Nat] under the shape's
+   binder, not a code, so [Wf]'s code lives at the shape's level *)
+| wf_code_wf G i Γ l s n : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tmWf l s n : tyU l @ lsuc l ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | wf_conv G i Γ t T T' l : [ G ; Γ ⊢[ i ] t : T' @ l ] -> [ G ; Γ ⊢[ typeof i ] T ≅ T' @ l ] ->
@@ -501,6 +506,10 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
     [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tyWf l A N ≅ tyWf l' A' N' @ l ]
+(* the code of [Wf] decodes (M15b; layers D and M): the arity rides across *)
+| eqty_El_wf G i Γ l s n : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tyWf l (tyEl l s) n ≅ tyEl l (tmWf l s n) @ l ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | eqty_refl G i Γ T l : [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T @ l ]
@@ -967,6 +976,11 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] cs : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
     [ G ; Γ ⊢[ i ] tmElimWf l l' A N M c (tmSupf l A N a cs) ≅ c[lsingle3 a cs (wfIH l l' A N M c a cs)]
         : M[lsingle (tmSupf l A N a cs)] @ l' ]
+(* the code of [Wf] (M15b) *)
+| eqtm_code_wf G i Γ l l' s s' n n' : compt i -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+    [ G ; Γ ⊢[ i ] tmWf l s n ≅ tmWf l' s' n' : tyU l @ lsuc l ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | eqtm_refl G i Γ t T l : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ i ] t ≅ t : T @ l ]

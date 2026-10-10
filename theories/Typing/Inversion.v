@@ -300,6 +300,13 @@ Lemma inv_code_fin {G i Γ n T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmFin n : 
     lvl_eq (gL G) k (lsuc lzero) /\ [ G ; Γ ⊢[ i ] T ≅ tyU lzero @ k ].
 Proof. inv_tm. Qed.
 
+(** The code of [Wf] (M15b). *)
+Lemma inv_code_wf {G i Γ l s n T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmWf l s n : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ]) /\
+    lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ i ] T ≅ tyU l @ k ].
+Proof. inv_tm. Qed.
+
 (** Strict equality (M10a). *)
 Lemma inv_srefl {G i Γ l A a T k} : typeof i = i -> [ G ; Γ ⊢[ i ] srefl l A a : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\

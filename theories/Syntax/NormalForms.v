@@ -61,6 +61,7 @@ Inductive whnf : tm -> Prop :=
 | whnf_tmW l l' s t : whnf (tmW l l' s t)
 | whnf_tmVec l s n : whnf (tmVec l s n)
 | whnf_tmFin n : whnf (tmFin n)
+| whnf_tmWf l s n : whnf (tmWf l s n)
 | whnf_inl l l' A B a : whnf (tmInl l l' A B a)
 | whnf_inr l l' A B a : whnf (tmInr l l' A B a)
 | whnf_sup l l' A B a f : whnf (tmSup l l' A B a f)
@@ -236,4 +237,6 @@ Proof. inversion 1. Qed.
 Lemma whne_not_code_vec l s n : ~ whne (tmVec l s n).
 Proof. inversion 1. Qed.
 Lemma whne_not_code_fin n : ~ whne (tmFin n).
+Proof. inversion 1. Qed.
+Lemma whne_not_code_wf l s n : ~ whne (tmWf l s n).
 Proof. inversion 1. Qed.

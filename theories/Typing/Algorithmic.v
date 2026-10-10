@@ -195,6 +195,10 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tm G Γ s s' (tyU k) -> ac_tm G Γ n n' tyNat ->
     ac_tmnf G Γ (tmVec k s n) (tmVec k' s' n') (tyU l)
 | actmnf_code_fin G Γ l n n' : ac_tm G Γ n n' tyNat -> ac_tmnf G Γ (tmFin n) (tmFin n') (tyU l)
+(* the code of Wf (M15b): the arity at Nat under the shape's binder *)
+| actmnf_code_wf G Γ l k k' s s' n n' : leqv k k' ->
+    ac_tm G Γ s s' (tyU k) -> ac_tm G (Γ ,, tyEl k s @ k) n n' tyNat ->
+    ac_tmnf G Γ (tmWf k s n) (tmWf k' s' n') (tyU l)
 
 with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_var G Γ n T l : in_ctx Γ n T l -> ac_tmne G Γ (var n) (var n) T

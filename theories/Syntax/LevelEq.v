@@ -71,6 +71,7 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
       leqv l1 l1' /\ leqv l2 l2' /\ tm_leq s s' /\ tm_leq t t'
   | tmVec l s n, tmVec l' s' n' => leqv l l' /\ tm_leq s s' /\ tm_leq n n'
   | tmFin n, tmFin n' => tm_leq n n'
+  | tmWf l s n, tmWf l' s' n' => leqv l l' /\ tm_leq s s' /\ tm_leq n n'
   | tmPair l1 l2 A B a b, tmPair l1' l2' A' B' a' b' =>
       leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq a a' /\ tm_leq b b'
   | tmFst l1 l2 A B p, tmFst l1' l2' A' B' p' =>
@@ -404,6 +405,7 @@ with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   | tmPi l1 l2 s t | tmSig l1 l2 s t | tmSum l1 l2 s t | tmW l1 l2 s t => lwf L l1 /\ lwf L l2 /\ tm_lwf L s /\ tm_lwf L t
   | tmVec l s n => lwf L l /\ tm_lwf L s /\ tm_lwf L n
   | tmFin n => tm_lwf L n
+  | tmWf l s n => lwf L l /\ tm_lwf L s /\ tm_lwf L n
   | tmU l | tmUnit l | tmTriv l | tmSEmpty l | tmEmpty l => lwf L l
   | srefl l A a => lwf L l /\ ty_lwf L A /\ tm_lwf L a
   | tmRefl l A a => lwf L l /\ ty_lwf L A /\ tm_lwf L a

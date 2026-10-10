@@ -300,6 +300,13 @@ Lemma inva_code_fin {G i Γ n T k} : [ G ; Γ ⊢[ i ] tmFin n : T @ k ] ->
     lvl_eq (gL G) k (lsuc lzero) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU lzero @ k ].
 Proof. inv_tm_any. Qed.
 
+(** The code of [Wf] (M15b). *)
+Lemma inva_code_wf {G i Γ l s n T k} : [ G ; Γ ⊢[ i ] tmWf l s n : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ]) /\
+    lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU l @ k ].
+Proof. inv_tm_any. Qed.
+
 (** ** The M-only heads *)
 
 (** Terms whose rules are at M only. *)

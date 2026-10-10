@@ -1570,6 +1570,36 @@ Proof.
   apply eqtm_code_fin; auto using compt_notV.
 Qed.
 
+(** The code of [Wf] (M15b): the arity in the left shape's context. *)
+Lemma code_wf_prem {G i Γ l k s n m} : compt i -> [ G ; Γ ⊢[ i ] tmWf k s n : tyU l @ m ] ->
+  lwf (gL G) k /\ [ G ; Γ ⊢[ i ] s : tyU k @ lsuc k ] /\ [ G ; Γ ,, tyEl k s @ k ⊢[ i ] n : tyNat @ lzero ].
+Proof.
+  intros Hc H. destruct (proj1 (inv_code_wf (compt_typeof_self _ Hc) H)) as (_ & W & Hs & Hn). auto.
+Qed.
+
+Lemma S_actmnf_code_wf {G Γ l k k' s s' n n'} : leqv k k' ->
+  S_tm G Γ s s' (tyU k) -> S_tm G (Γ ,, tyEl k s @ k) n n' tyNat ->
+  S_tm G Γ (tmWf k s n) (tmWf k' s' n') (tyU l).
+Proof.
+  intros Hk0 IHs IHn i m Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_code_wf Hi Hx) as (_ & Hk & HT).
+  destruct (code_wf_prem Hc Hx) as (W & Hs & Hn). destruct (code_wf_prem Hc Hx') as (W' & Hs' & Hn').
+  pose proof (compt_notV _ Hc) as Hv.
+  pose proof (leqv_lequiv _ _ _ W W' Hk0) as E.
+  pose proof (IHs i (lsuc k) Hc Hs (code_U_conv Hc E Hs')) as Es.
+  pose proof (ctx_of_wf_tm Hi Hs) as HΓ.
+  assert (EU : [ G ; Γ ⊢[ i ] tyU k ≅ tyU k' @ lsuc k ]) by (apply eqty_U; [exact Hv | rewrite Hi; exact HΓ | exact E]).
+  assert (Es' : [ G ; Γ ⊢[ i ] s' ≅ s : tyU k' @ lsuc k' ]).
+  { eapply eqtm_lconv; [| exact (lequiv_suc _ _ _ (lequiv_sym _ _ _ E))].
+    eapply eqtm_conv; [exact (eqtm_sym _ _ _ _ _ _ _ Es) | rewrite Hi; exact (eqty_sym _ _ _ _ _ _ EU)]. }
+  assert (EEl : [ G ; Γ ⊢[ i ] tyEl k' s' ≅ tyEl k s @ k' ])
+    by (apply eqty_El; [exact Hv | exact (lequiv_sym _ _ _ E) | exact Es']).
+  assert (HΓ1 : [ G ; Γ ,, tyEl k s @ k ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | apply wft_El; assumption | exact W]).
+  pose proof (IHn i lzero Hc Hn (stab_tm Hi EEl (lequiv_sym _ _ _ E) HΓ1 Hn')) as En.
+  eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
+  apply eqtm_code_wf; assumption.
+Qed.
+
 Lemma S_actmnf_code_sempty {G Γ l k k'} : leqv k k' -> S_tm G Γ (tmSEmpty k) (tmSEmpty k') (tyU l).
 Proof.
   intros Hl i kk Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi.
@@ -2177,6 +2207,7 @@ Proof.
     | solve [eapply S_actmnf_code_W; eassumption]
     | solve [eapply S_actnf_wf; eassumption] | solve [eapply S_actmnf_supf; eassumption]
     | solve [eapply S_actmne_elimWf; eassumption]
+    | solve [eapply S_actmnf_code_wf; eassumption]
     | solve [eapply S_actne_vec; eassumption] | solve [eapply S_actne_fin; eassumption] ].
 Qed.
 

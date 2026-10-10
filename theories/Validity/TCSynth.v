@@ -869,6 +869,23 @@ Proof.
   left; eexists; eexists; exact (wf_supf _ _ _ _ _ _ _ _ Hc Hl HA HN Ha Hcs).
 Qed.
 
+(** The code of [Wf] (M15b). *)
+Lemma sy_code_wf l s m : sz_tm (tmWf l s m) <= n -> SYD (tmWf l s m).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | Nc];
+    [| right; intros T k H; destruct (inva_code_wf H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N0];
+    [| right; intros T k H; destruct (inva_code_wf H) as ((_ & X & _) & _); contradiction].
+  destruct (ihC s ltac:(szl) G i Γ _ _ (HUniv HΓ Hl)) as [Hs | N0];
+    [| right; intros T k H; destruct (inva_code_wf H) as ((_ & _ & X & _) & _); contradiction].
+  assert (HΓs : [ G ; Γ ,, tyEl l s @ l ⊢[ typeof i ] ]).
+  { apply wfc_ext; [exact HΓ | | exact Hl]. exact (wft_El _ _ _ _ _ (typeof_notV i) Hl (lift_to_typeof_tm Hs)). }
+  destruct (ihC m ltac:(szl) G i _ _ _ (HNat HΓs)) as [Hm | N0];
+    [| right; intros T k H; destruct (inva_code_wf H) as ((_ & _ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_code_wf _ _ _ _ _ _ Hc Hl Hs Hm).
+Qed.
+
 Lemma sy_elimWf l l' A N M c t : sz_tm (tmElimWf l l' A N M c t) <= n -> SYD (tmElimWf l l' A N M c t).
 Proof.
   intros Hsz G i Γ HΓ.
@@ -922,7 +939,7 @@ Proof.
           | apply sy_srefl | apply sy_elimSEmpty | apply sy_refl | apply sy_J | apply sy_code_id | apply sy_elimEmpty
           | apply sy_code_seq | apply sy_code_sempty | apply sy_inl | apply sy_inr | apply sy_case
           | apply sy_code_empty | apply sy_code_sum | apply sy_sup | apply sy_elimW | apply sy_codeW
-          | apply sy_code_vec | apply sy_code_fin | apply sy_supf | apply sy_elimWf ]; assumption.
+          | apply sy_code_vec | apply sy_code_fin | apply sy_supf | apply sy_elimWf | apply sy_code_wf ]; assumption.
 Qed.
 
 End Step.

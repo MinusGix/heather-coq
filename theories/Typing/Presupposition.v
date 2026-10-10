@@ -787,6 +787,21 @@ Proof.
   apply wf_code_vec; eauto using lequiv_wf_r. exact (conv_U Hs Hl).
 Qed.
 
+(** The code of [Wf] (M15b), as [W]'s: the arity under the shape's binder. *)
+Lemma pre_codewf_r {Γ l l' s s' n'} : lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tmWf l' s' n' : tyU l @ lsuc l ].
+Proof.
+  intros Hl Hs Hs' Hn. pose proof (ctx_of_wf_tm Hi Hs') as HΓ.
+  assert (HEl : [ G ; Γ ⊢[ i ] tyEl l s ≅ tyEl l' s' @ l ]) by (apply eqty_El; auto).
+  pose proof (conv_U Hs' Hl) as Hs3.
+  apply (conv_U (l := l')); [|now apply lequiv_sym].
+  apply wf_code_wf; [apply compt_self | eauto using lequiv_wf_r | exact Hs3 |].
+  eapply (stab_tm Hi HEl Hl); [|exact Hn].
+  apply ext_wf; [apply wft_El; eauto using lequiv_wf_r | eauto using lequiv_wf_r].
+Qed.
+
 (** The codes of [Empty] and [+] (M12c). *)
 Lemma pre_El_empty {Γ l} :
   [ G ; Γ ⊢[ i ] ] -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] tyEl l (tmEmpty l) @ l ].
@@ -3143,6 +3158,11 @@ Proof.
              | solve [eapply pre_elimWf_r; eassumption]
              | solve [eapply pre_elimWf_beta; eassumption]
              | solve [apply wft_wf; eauto 3 using compt_self with presup]
+             (* the code of Wf (M15b) *)
+             | solve [eapply pre_codewf_r; eassumption]
+             | solve [eapply wf_code_wf; eauto 3 with presup]
+             | solve [eapply wft_El; eauto with presup; eapply wf_code_wf; eassumption]
+             | solve [apply wft_wf; eauto 3 using compt_self with presup; apply wft_El; eauto with presup]
              | solve [eapply wf_supf; eauto 3 using compt_self with presup]
              | solve [eapply wf_elimWf; eauto 3 using compt_self with presup]
              | solve [eapply wf_elimWf; try eassumption; eapply wf_supf; eauto using compt_self]

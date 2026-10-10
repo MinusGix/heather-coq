@@ -1531,6 +1531,19 @@ Proof.
          | apply eqtm_elimWf; auto].
 Qed.
 
+(** The code of [Wf] (M15b). *)
+Lemma sc_code_wf {Γ l l' s s' n n'} : compt i -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n' : tyNat @ lzero ] /\ [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tmWf l' s' n' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmWf l s n ≅ tmWf l' s' n' : tyU l @ lsuc l ].
+Proof.
+  intros Hc Hl Hl' E Hs0 [Hs' Hss] _ [Hn' Hnn]. pose proof (lq Hl Hl' E) as Q.
+  pose proof (sc_self Hc) as Hs. pose proof (compt_notV _ Hc) as Hv.
+  split; [exact (pre_codewf_r Hs Hv Q Hss Hs' Hn') | apply eqtm_code_wf; auto].
+Qed.
+
 End SC.
 
 (** ** The lemma *)
@@ -1639,6 +1652,7 @@ Proof.
     | solve [eapply sc_code_vec; eauto] | solve [eapply sc_code_fin; eauto]
     (* finitary well-founded trees (M15a) *)
     | solve [eapply sc_wf; eauto] | solve [eapply sc_supf; eauto] | solve [eapply sc_elimWf; eauto]
+    | solve [eapply sc_code_wf; eauto]
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x
         |- _ /\ eq_tm _ _ _ (succ _) _ _ _ =>

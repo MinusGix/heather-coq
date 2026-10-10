@@ -578,6 +578,11 @@ Proof.
     + exact (actmne_elimWf _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24)
                DA DN DM Dc Xν).
     + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
+  (* the code of Wf (M15b) *)
+  - intros * Hl Hs (Es & Ds) (En & Dn).
+    refine (conj (@geq_tm_code_wf DE DEL _ _ _ _ _ _ _ _ Hl Hs Es En) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmWf | apply whnf_tmWf |].
+    exact (actmnf_code_wf _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) Ds Dn).
 Qed.
 
 End Alg.
