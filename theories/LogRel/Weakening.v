@@ -232,7 +232,8 @@ Proof.
                     HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd _ codAd _ HR
                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN
-                    domAd _ arAd HR]; intros ρ.
+                    domAd _ arAd HR
+                | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ IHRQ Hqs Hqt HR]; intros ρ.
   - exists (NatRel (kw_G ρ) (kw_Δ ρ)). split.
     + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
       rewrite kty_tyNat in X, X'.
@@ -514,6 +515,23 @@ Proof.
       pose proof (domAd (kw_comp ρ (kw_comp ρ2 ρ3))) as D2.
       repeat rewrite kty_comp in D1. repeat rewrite kty_comp in D2.
       exact (LR_irrel _ _ _ _ _ _ _ _ _ _ D1 D2).
+  - (* ∥·∥: weaken the carrier's derivation, as at + *)
+    destruct (IHRQ ρ) as (RQ' & HRQ' & Hmap).
+    destruct (LR_tm_per _ _ _ _ _ _ _ HRQ') as [Hs' Ht'].
+    exists (SqRel (kw_G ρ) (kw_Δ ρ) l1 (kty ρ A) RQ'). split.
+    + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
+      rewrite kty_tySq in X, X'.
+      eapply LRsq; [exact (kw_lequiv ρ Hl) | exact (kw_lequiv ρ Hl2) | exact (kw_lwf ρ Hw) | exact X | exact X'
+                   | exact (kw_ty ρ HA) | exact (kw_geq_ty ρ HAA) | exact HRQ' | exact Hs' | exact Ht'
+                   | apply releq_refl].
+    + intros t t' Ht. apply HR in Ht.
+      assert (F : forall u, SqU G Γ l1 A RQ u -> SqU (kw_G ρ) (kw_Δ ρ) l1 (kty ρ A) RQ' (ktm ρ u)).
+      { intros u (w & Hr & Hn). pose proof (kw_tmred ρ Hr) as Y. rewrite kty_tySq in Y.
+        exists (ktm ρ w). split; [exact Y|].
+        destruct Hn as [k C a Hk HC Ha | ν Hν].
+        - rewrite ktm_sq. apply sqnf_sq; [exact (kw_lequiv ρ Hk) | exact (kw_geq_ty ρ HC) | exact (Hmap _ _ Ha)].
+        - apply sqnf_ne. pose proof (kw_gne_tm ρ Hν) as W. rewrite kty_tySq in W. exact W. }
+      exact (conj (F _ (proj1 Ht)) (F _ (proj2 Ht))).
 Qed.
 
 Theorem LR_kwk n : Pwk n.

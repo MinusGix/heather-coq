@@ -1909,6 +1909,51 @@ Proof.
   - apply eqtm_code_wf; auto.
 Qed.
 
+(** Propositional truncation (M16a), gated by [compt]: at [i] itself, by
+    the presupposition lemmas' right-hand sides ([compt i] and [lle i lD]
+    make [i] layer D). *)
+Lemma sc_tySq {Γ l l' A A'} : compt i -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ i ] tySq l' A' @ l ] /\ [ G ; Γ ⊢[ i ] tySq l A ≅ tySq l' A' @ l ].
+Proof.
+  intros cp Hl Hl' E HA [HA' HAA]. pose proof (lq Hl Hl' E) as Q.
+  split; [| apply eqty_sq; auto].
+  eapply wft_lconv; [| exact Q].
+  apply wft_sq; [exact cp | exact Hl' |]. eapply wft_lconv; [exact HA' | apply lequiv_sym, Q].
+Qed.
+
+Lemma sc_sq {Γ l l' A A' a a'} : compt i -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] /\ [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] tmSq l' A' a' : tySq l A @ l ] /\
+  [ G ; Γ ⊢[ i ] tmSq l A a ≅ tmSq l' A' a' : tySq l A @ l ].
+Proof.
+  intros cp Hl Hl' E HA [HA' HAA] Ha [Ha' Haa]. pose proof (lq Hl Hl' E) as Q.
+  pose proof (compt_typeof_self i cp) as Hi'. pose proof (compt_notV i cp) as Hv'.
+  split; [| apply eqtm_sq; auto].
+  eapply pre_sq_r; eassumption.
+Qed.
+
+Lemma sc_elimSq {Γ l1 l2 l1' l2' A A' M M' c c' t t'} : compt i ->
+  lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+  [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M @ l2 ] ->
+  [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M' @ l2 ] /\ [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M ≅ M' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] c : tySq l2 M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))] @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] c' : tySq l2 M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))] @ l2 ] /\
+  [ G ; Γ ,, A @ l1 ⊢[ i ] c ≅ c' : tySq l2 M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))] @ l2 ] ->
+  [ G ; Γ ⊢[ i ] t : tySq l1 A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] t' : tySq l1 A @ l1 ] /\ [ G ; Γ ⊢[ i ] t ≅ t' : tySq l1 A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] tmElimSq l1' l2' A' M' c' t' : tySq l2 M[lsingle t] @ l2 ] /\
+  [ G ; Γ ⊢[ i ] tmElimSq l1 l2 A M c t ≅ tmElimSq l1' l2' A' M' c' t' : tySq l2 M[lsingle t] @ l2 ].
+Proof.
+  intros cp H1 H2 H1' H2' E1 E2 HA [HA' HAA] HM [HM' HMM] Hc [Hc' Hcc] Ht [Ht' Htt].
+  pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2.
+  pose proof (compt_typeof_self i cp) as Hi'. pose proof (compt_notV i cp) as Hv'.
+  split; [| apply eqtm_elimSq; auto].
+  eapply pre_elimSq_r; eassumption.
+Qed.
+
 End SC.
 
 (** ** The lemma *)
@@ -2018,6 +2063,8 @@ Proof.
     (* finitary well-founded trees (M15a) *)
     | solve [eapply sc_wf; eauto] | solve [eapply sc_supf; eauto] | solve [eapply sc_elimWf; eauto]
     | solve [eapply sc_code_wf; eauto]
+    (* propositional truncation (M16a) *)
+    | solve [eapply sc_tySq; eauto] | solve [eapply sc_sq; eauto] | solve [eapply sc_elimSq; eauto]
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x
         |- _ /\ eq_tm _ _ _ (succ _) _ _ _ =>

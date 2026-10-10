@@ -428,7 +428,24 @@ Class GenericEqLaws `{GenericEq} := {
   geq_tm_code_wf {G Γ l l' s s' n n'} : lequiv (gL G) l l' ->
     [ G ; Γ ⊢g s : tyU l @ lsuc l ] -> [ G ; Γ ⊢ s ≈ s' : tyU l @ lsuc l ] ->
     [ G ; Γ ,, tyEl l s @ l ⊢ n ≈ n' : tyNat @ lzero ] ->
-    [ G ; Γ ⊢ tmWf l s n ≈ tmWf l' s' n' : tyU l @ lsuc l ]
+    [ G ; Γ ⊢ tmWf l s n ≈ tmWf l' s' n' : tyU l @ lsuc l ] ;
+  (** propositional truncation (M16a): the congruence of [∥·∥], proof
+      irrelevance (where escape comes from, as at [Empty]), and [ind_∥∥] is
+      neutral on neutral scrutinees, which, as [Empty]'s, are each related
+      to themselves and never to each other *)
+  geq_ty_sq {G Γ l l' A A'} : lequiv (gL G) l l' ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
+    [ G ; Γ ⊢ tySq l A ≈ tySq l' A' @ l ] ;
+  geq_tm_sq_irr {G Γ l A t t'} : lwf (gL G) l ->
+    [ G ; Γ ⊢g t : tySq l A @ l ] -> [ G ; Γ ⊢g t' : tySq l A @ l ] ->
+    [ G ; Γ ⊢ t ≈ t' : tySq l A @ l ] ;
+  gne_tm_elimSq {G Γ l1 l2 l3 l4 A A' M M' c c' ν ν'} :
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] ->
+    [ G ; Γ ,, tySq l1 A @ l1 ⊢g M @ l2 ] -> [ G ; Γ ,, tySq l1 A @ l1 ⊢ M ≈ M' @ l2 ] ->
+    [ G ; Γ ,, A @ l1 ⊢ c ≈ c' : tySq l2 M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))] @ l2 ] ->
+    [ G ; Γ ⊢ ν ~ ν : tySq l1 A @ l1 ] -> [ G ; Γ ⊢ ν' ~ ν' : tySq l1 A @ l1 ] ->
+    [ G ; Γ ⊢ tmElimSq l1 l2 A M c ν ~ tmElimSq l3 l4 A' M' c' ν' : tySq l2 M[lsingle ν] @ l2 ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

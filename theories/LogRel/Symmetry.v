@@ -579,7 +579,8 @@ Proof.
                      HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd IHdom codAd IHcod HR
                  | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN
-                     domAd IHdom arAd HR].
+                     domAd IHdom arAd HR
+                 | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ IHRQ Hqs Hqt HR].
   - eapply LRnat; eauto.
     intros t t'; unfold flipR; rewrite (HR t' t); apply NatRel_flip.
   - assert (Hm : lmeasure l2 = lmeasure l1) by (eapply lequiv_measure; eauto).
@@ -792,6 +793,24 @@ Proof.
     + intros t t'; unfold flipR at 1; rewrite (HR t' t); split; intros X.
       * exact (proj1 WfRel_flip_all _ _ _ _ _ _ _ _ X l2 A' N' Hy).
       * exact (proj1 WfRel_flip_all _ _ _ _ _ _ _ _ X l1 A N Hy').
+  - (* ∥·∥: the carrier flipped, the relation read on its diagonal *)
+    pose proof (lequiv_sym _ _ _ Hl2) as Hl2'.
+    assert (HA' : [ G ; Γ ⊢g A' @ l2 ]) by exact (lconv_ty (eqty_wf_r ge_typeof (geq_ty_sound HAA)) Hl2').
+    assert (HAA' : [ G ; Γ ⊢ A' ≈ A @ l2 ]) by exact (geq_ty_lconv (geq_ty_sym HAA) Hl2).
+    eapply (LRsq n (LRbelow n) G Γ T' T l l2 l1 A' A (flipR RQ)).
+    + exact (lequiv_trans _ _ _ _ Hl Hl2').
+    + exact Hl2'.
+    + exact (lequiv_wf_l _ _ _ Hl2).
+    + exact HT'.
+    + exact HT.
+    + exact HA'.
+    + exact HAA'.
+    + exact (LR_lconv _ _ _ _ _ _ _ _ _ IHRQ Hl2).
+    + unfold flipR; intros x y H; exact (Hqs _ _ H).
+    + unfold flipR; intros x y z H1 H2; exact (Hqt _ _ _ H2 H1).
+    + intros t t'; unfold flipR at 1; rewrite (HR t' t).
+      rewrite (SqRel_conv (RA := RQ) (RA' := flipR RQ) Hl2' HA HAA (fun a => iff_refl _) t' t).
+      split; apply SqRel_sym.
 Qed.
 
 Theorem LR_sym n : Psym n.

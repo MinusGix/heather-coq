@@ -212,6 +212,74 @@ Lemma SumRel_wf {G Γ l l' A B RA RB t t'} : SumRel G Γ l l' A B RA RB t t' ->
   [ G ; Γ ⊢g t : tySum l l' A B @ lmax l l' ] /\ [ G ; Γ ⊢g t' : tySum l l' A B @ lmax l l' ].
 Proof. intros (w & w' & Hw & Hw' & _ & _). exact (conj (tmred_wf _ _ _ _ _ _ _ Hw) (tmred_wf _ _ _ _ _ _ _ Hw')). Qed.
 
+(** ** Propositional truncation (M16a): a product of two unary predicates
+
+    Reflexivity, symmetry and transitivity are free, since nothing is
+    compared; the carrier changes along equal types, reading only the
+    diagonal of its relation ([probes/SquashProbe.v]). *)
+
+Lemma SqRel_sym {G Γ l A RA t t'} : SqRel G Γ l A RA t t' -> SqRel G Γ l A RA t' t.
+Proof. intros [H H']; exact (conj H' H). Qed.
+
+Lemma SqRel_trans {G Γ l A RA t1 t2 t3} :
+  SqRel G Γ l A RA t1 t2 -> SqRel G Γ l A RA t2 t3 -> SqRel G Γ l A RA t1 t3.
+Proof. intros [H1 _] [_ H3]; exact (conj H1 H3). Qed.
+
+Lemma SqRel_refl_l {G Γ l A RA t t'} : SqRel G Γ l A RA t t' -> SqRel G Γ l A RA t t.
+Proof. intros [H _]; exact (conj H H). Qed.
+
+Lemma SqRel_refl_r {G Γ l A RA t t'} : SqRel G Γ l A RA t t' -> SqRel G Γ l A RA t' t'.
+Proof. intros [_ H]; exact (conj H H). Qed.
+
+Lemma SqU_wf {G Γ l A RA t} : SqU G Γ l A RA t -> [ G ; Γ ⊢g t : tySq l A @ l ].
+Proof. intros (w & Hw & _). exact (tmred_wf _ _ _ _ _ _ _ Hw). Qed.
+
+Lemma SqRel_wf {G Γ l A RA t t'} : SqRel G Γ l A RA t t' ->
+  [ G ; Γ ⊢g t : tySq l A @ l ] /\ [ G ; Γ ⊢g t' : tySq l A @ l ].
+Proof. intros [H H']. exact (conj (SqU_wf H) (SqU_wf H')). Qed.
+
+Lemma SqU_conv {G Γ l l' A A' RA RA' t} :
+  lequiv (gL G) l l' -> [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
+  (forall a, RA a a -> RA' a a) ->
+  SqU G Γ l A RA t -> SqU G Γ l' A' RA' t.
+Proof.
+  intros Hl HA HAA HR (w & Hw & Hn).
+  pose proof (lequiv_sym _ _ _ Hl) as Hl'.
+  assert (HV : [ G ; Γ ⊢g tySq l A ≅ tySq l' A' @ l ]) by exact (geq_ty_sound (geq_ty_sq Hl HA HAA)).
+  exists w. split.
+  - eapply tmred_lconv; [eapply tmred_conv; [apply ge_typeof | exact Hw | exact HV] | exact Hl'].
+  - destruct Hn as [k C a Hk HC Ha | ν Hν].
+    + apply sqnf_sq; [exact (lequiv_trans _ _ _ _ Hk Hl) | | exact (HR _ Ha)].
+      eapply geq_ty_lconv; [eapply geq_ty_trans; [apply geq_ty_sym, HAA | exact HC] | exact Hl'].
+    + apply sqnf_ne. eapply gne_tm_lconv; [eapply gne_tm_conv; [exact Hν | exact HV] | exact Hl'].
+Qed.
+
+Lemma SqRel_conv {G Γ l l' A A' RA RA'} :
+  lequiv (gL G) l l' -> [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
+  (forall a, RA a a <-> RA' a a) ->
+  releq (SqRel G Γ l A RA) (SqRel G Γ l' A' RA').
+Proof.
+  intros Hl HA HAA HR.
+  pose proof (lequiv_sym _ _ _ Hl) as Hl'.
+  assert (HA' : [ G ; Γ ⊢g A' @ l' ])
+    by (eapply wft_lconv; [exact (eqty_wf_r ge_typeof (geq_ty_sound HAA)) | exact Hl']).
+  assert (HA'A : [ G ; Γ ⊢ A' ≈ A @ l' ]) by exact (geq_ty_lconv (geq_ty_sym HAA) Hl').
+  intros t t'; split; intros [H H']; split.
+  all: first [ eapply (SqU_conv Hl HA HAA); [intros a; apply HR | assumption]
+             | eapply (SqU_conv Hl' HA' HA'A); [intros a; apply HR | assumption] ].
+Qed.
+
+(** The carrier's relation matters only on its diagonal, up to [releq]. *)
+Lemma SqRel_releq {G Γ l A RA RA'} : releq RA RA' ->
+  releq (SqRel G Γ l A RA) (SqRel G Γ l A RA').
+Proof.
+  intros HR t t'; split; intros [H H']; split.
+  all: match goal with H : SqU _ _ _ _ _ ?u |- SqU _ _ _ _ _ ?u =>
+         destruct H as (w & Hw & Hn); exists w; split; [exact Hw|];
+         destruct Hn as [k C a Hk HC Ha | ν Hν];
+         [apply sqnf_sq; [exact Hk | exact HC | apply HR, Ha] | now apply sqnf_ne] end.
+Qed.
+
 (** ** Well-founded trees (M13a) *)
 
 Lemma releq_sym' {R R' : tm -> tm -> Prop} : releq R R' -> releq R' R.
@@ -386,7 +454,8 @@ Proof.
                     HRA HRB Hpa Hta Hpb Htb HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR].
+                | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
+                | G Γ T T' l l1 l2 A A' RA R Hl Hl2 Hw HT HT' HA HAA HRA Hps Hpt HR].
   all: try solve [exact (ModRel_escape_ty HM)].
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
@@ -406,6 +475,7 @@ Proof.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sum; auto using lequiv_sym.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_W; auto using lequiv_sym.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_wf; auto using lequiv_sym.
+  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sq; auto using lequiv_sym.
 Qed.
 
 (** ** Escape for terms *)
@@ -434,7 +504,8 @@ Proof.
                     HRA HRB Hpa Hta Hpb Htb HR
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
-                | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR];
+                | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
+                | G Γ T T' l l1 l2 A A' RA R Hl Hl2 Hw HT HT' HA HAA HRA Hps Hpt HR];
     intros t t' Htt; first [exact (ModRel_escape_tm HM _ _ Htt) | apply HR in Htt].
   - (* Nat *)
     destruct Htt as [t t' w w' Hw Hw' Heq _].
@@ -562,6 +633,13 @@ Proof.
     + eapply conv_tm; [apply Hw' | exact HTW | exact Hl].
     + eapply conv_tm; [apply Hw'' | exact HTW | exact Hl].
     + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTW | exact Hl].
+  - (* ∥·∥: irrelevant *)
+    destruct (SqRel_wf Htt) as [Ht Ht'].
+    assert (HTS : [ G ; Γ ⊢g T ≅ tySq l1 A @ l ]) by apply HT.
+    repeat split.
+    + eapply conv_tm; [exact Ht | exact HTS | exact Hl].
+    + eapply conv_tm; [exact Ht' | exact HTS | exact Hl].
+    + eapply conv_geq_tm; [exact (geq_tm_sq_irr Hw Ht Ht') | apply eqty_sym, HTS | exact Hl].
 Qed.
 
 (** ** Local weakening at the instance's layer *)
@@ -894,6 +972,11 @@ Lemma kty_tyWf l A N : kty ρ (tyWf l A N) = tyWf l (kty ρ A) (ktml ρ N).
 Proof. unfold kty, ktml; now rewrite gwa_tyWf. Qed.
 Lemma ktm_supf l A N a cs : ktm ρ (tmSupf l A N a cs) = tmSupf l (kty ρ A) (ktml ρ N) (ktm ρ a) (ktm ρ cs).
 Proof. unfold ktm, kty, ktml; now rewrite gwa_supf. Qed.
+(** Propositional truncation (M16a). *)
+Lemma kty_tySq l A : kty ρ (tySq l A) = tySq l (kty ρ A).
+Proof. unfold kty; now rewrite gwa_tySq. Qed.
+Lemma ktm_sq l A a : ktm ρ (tmSq l A a) = tmSq l (kty ρ A) (ktm ρ a).
+Proof. unfold ktm, kty; now rewrite gwa_sq. Qed.
 Lemma ktml_shift (t : tm) : ktml ρ t⟨↑⟩ = (ktm ρ t)⟨↑⟩.
 Proof. unfold ktm, ktml. now rewrite gwa_ren, shift_lift. Qed.
 Lemma ktm_single (t : tm) a : ktm ρ t[lsingle a] = (ktml ρ t)[lsingle (ktm ρ a)].

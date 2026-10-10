@@ -327,6 +327,19 @@ Proof.
   - right; intros H; exact (Q (proj2 (inv_ty_wf H))).
 Qed.
 
+(** Propositional truncation (M16a): the computing layers only. *)
+Lemma dec_tySq l A : sz_ty (tySq l A) <= n -> TYD (tySq l A).
+Proof.
+  intros Hsz G i Γ k HΓ.
+  destruct (compt_dec i) as [Hc | Nc]; [| right; intros H; destruct (inv_ty_sq H) as ((X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_sq H) as ((_ & X & _) & _); contradiction].
+  destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
+    [| right; intros H; destruct (inv_ty_sq H) as ((_ & _ & X) & _); contradiction].
+  destruct (lvl_eq_dec (gL G) k l) as [Q | Q].
+  - left; exact (wft_lvl Q (wft_sq _ _ _ _ _ Hc Hl HA)).
+  - right; intros H; exact (Q (proj2 (inv_ty_sq H))).
+Qed.
+
 Lemma ty_step T : sz_ty T <= n -> TYD T.
 Proof.
   intros Hsz. destruct T;
@@ -334,7 +347,7 @@ Proof.
           | apply dec_tyPi | apply dec_tyEl | apply dec_tyGvar | apply dec_tyCTyp | apply dec_tyCTrm
           | apply dec_tyUPi | apply dec_tyCPi | apply dec_tyTPi | apply dec_tySig | apply dec_tyUnit
           | apply dec_tySEq | apply dec_tySEmpty | apply dec_tyId | apply dec_tyEmpty | apply dec_tySum
-          | apply dec_tyW | apply dec_tyVec | apply dec_tyFin | apply dec_tyWf ];
+          | apply dec_tyW | apply dec_tyVec | apply dec_tyFin | apply dec_tyWf | apply dec_tySq ];
     assumption.
 Qed.
 

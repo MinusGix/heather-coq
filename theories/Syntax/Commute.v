@@ -228,6 +228,18 @@ Proof. reflexivity. Qed.
 Lemma subst_elimWf l l' A N M c t :
   (tmElimWf l l' A N M c t)[d] = tmElimWf l l' A[d] N[llift d] M[llift d] c[llift (llift (llift d))] t[d].
 Proof. reflexivity. Qed.
+(** Propositional truncation (M16a): [M] binds the scrutinee, the step the
+    payload. *)
+Lemma ren_tySq l A : (tySq l A)⟨r⟩ = tySq l A⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_sq l A a : (tmSq l A a)⟨r⟩ = tmSq l A⟨r⟩ a⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_elimSq l l' A M c t :
+  (tmElimSq l l' A M c t)⟨r⟩ = tmElimSq l l' A⟨r⟩ M⟨rlift r⟩ c⟨rlift r⟩ t⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma subst_tySq l A : (tySq l A)[d] = tySq l A[d]. Proof. reflexivity. Qed.
+Lemma subst_sq l A a : (tmSq l A a)[d] = tmSq l A[d] a[d]. Proof. reflexivity. Qed.
+Lemma subst_elimSq l l' A M c t :
+  (tmElimSq l l' A M c t)[d] = tmElimSq l l' A[d] M[llift d] c[llift d] t[d].
+Proof. reflexivity. Qed.
 (** Defined globals (M9): the body stays in its own local scope. *)
 Lemma ren_gdef u b e : (gdef u b e)⟨r⟩ = gdef u b (lren e r). Proof. reflexivity. Qed.
 Lemma subst_gdef u b e : (gdef u b e)[d] = gdef u b (lcomp e d). Proof. reflexivity. Qed.
@@ -315,6 +327,9 @@ Ltac push_ren_at h k := lazymatch h with
   | @tmElimWf => k ren_elimWf
   | @tmNth => k ren_tmNth
   | @wfIH => k ren_wfIH
+  | @tySq => k ren_tySq
+  | @tmSq => k ren_sq
+  | @tmElimSq => k ren_elimSq
   end.
 Ltac push_ren := repeat match goal with
   | |- context [@ren _ _ ?t _] => let h := head_of t in push_ren_at h ltac:(fun L => rewrite L)
@@ -392,6 +407,9 @@ Ltac push_subst_at h k := lazymatch h with
   | @tyWf => k subst_tyWf
   | @tmSupf => k subst_supf
   | @tmElimWf => k subst_elimWf
+  | @tySq => k subst_tySq
+  | @tmSq => k subst_sq
+  | @tmElimSq => k subst_elimSq
   end.
 Ltac push_subst := repeat match goal with
   | |- context [@subst _ _ ?t _] => let h := head_of t in push_subst_at h ltac:(fun L => rewrite L)

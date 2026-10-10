@@ -583,6 +583,23 @@ Proof.
     refine (conj (@geq_tm_code_wf DE DEL _ _ _ _ _ _ _ _ Hl Hs Es En) _).
     eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmWf | apply whnf_tmWf |].
     exact (actmnf_code_wf _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) Ds Dn).
+  (* propositional truncation (M16a) *)
+  - intros * Hl HA (EA & DA).
+    refine (conj (@geq_ty_sq DE DEL _ _ _ _ _ _ Hl HA EA) _).
+    eapply act_red; [constructor | constructor | apply whnf_tySq | apply whnf_tySq |].
+    exact (actnf_sq _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) DA).
+  - intros * Hl Ht Ht'. refine (conj (@geq_tm_sq_irr DE DEL _ _ _ _ _ _ Hl Ht Ht') _).
+    destruct (tgt_whnf_tm Ht) as (w & Hr & Hw). destruct (tgt_whnf_tm Ht') as (w' & Hr' & Hw').
+    eapply actm_red; [constructor | apply whnf_tySq | exact Hr | exact Hr' | exact Hw | exact Hw' |].
+    apply actmnf_sq_irr.
+  - intros * H13 H24 HA (EA & DA) HM (EM & DM) (Ec & Dc) ((Hn & Hn2 & Eν) & _) ((Hn' & Hn2' & Eν') & _).
+    pose proof (@gne_tm_elimSq DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ H13 H24 HA EA HM EM Ec
+                  (conj Hn (conj Hn2 Eν)) (conj Hn' (conj Hn2' Eν'))) as X.
+    refine (conj X _). destruct X as (_ & _ & EX).
+    exists (tySq l2 M[lsingle ν]). split.
+    + exact (actmne_elimSq _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24)
+               DA DM Hn Hn').
+    + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
 Qed.
 
 End Alg.

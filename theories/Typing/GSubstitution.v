@@ -446,6 +446,11 @@ Lemma gs_supf l A N a cs : (tmSupf l A N a cs)⦃σ⦄ = tmSupf l A⦃σ⦄ N⦃
 Lemma gs_elimWf l l' A N M c t :
   (tmElimWf l l' A N M c t)⦃σ⦄ = tmElimWf l l' A⦃σ⦄ N⦃σ⦄ M⦃σ⦄ c⦃σ⦄ t⦃σ⦄.
 Proof. reflexivity. Qed.
+(** Propositional truncation (M16a). *)
+Lemma gs_tySq l A : (tySq l A)⦃σ⦄ = tySq l A⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_sq l A a : (tmSq l A a)⦃σ⦄ = tmSq l A⦃σ⦄ a⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_elimSq l l' A M c t : (tmElimSq l l' A M c t)⦃σ⦄ = tmElimSq l l' A⦃σ⦄ M⦃σ⦄ c⦃σ⦄ t⦃σ⦄.
+Proof. reflexivity. Qed.
 (** [nth] and [elim_Wf]'s induction hypothesis (M15a). *)
 Lemma gs_tmNth l T k cs i : (tmNth l T k cs i)⦃σ⦄ = tmNth l T⦃σ⦄ k⦃σ⦄ cs⦃σ⦄ i⦃σ⦄.
 Proof.
@@ -515,6 +520,9 @@ Ltac push_gsubst_at h k := lazymatch h with
   | @tmElimWf => k gs_elimWf
   | @tmNth => k gs_tmNth
   | @wfIH => k gs_wfIH
+  | @tySq => k gs_tySq
+  | @tmSq => k gs_sq
+  | @tmElimSq => k gs_elimSq
   | @tmSig => k gs_tmSig
   | @tmPair => k gs_pair
   | @tmFst => k gs_fst
@@ -837,6 +845,10 @@ Ltac gs_manual2 :=
   | |- wf_tm _ _ _ (tmElimW _ _ _ _ _ _ _ _) _ _ => eapply wf_elimW; gs_Wprem
   | |- eq_tm _ _ _ (tmElimW _ _ _ _ _ _ _ (tmSup _ _ _ _ _ _)) _ _ _ => eapply eqtm_elimW_sup; gs_Wprem
   | |- eq_tm _ _ _ (tmElimW _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimW; gs_Wprem
+  (* [ind_∥∥] (M16a): its step's type, through the induction hypotheses *)
+  | |- wf_tm _ _ _ (tmElimSq _ _ _ _ _ _) _ _ => eapply wf_elimSq; gs_premise
+  | |- eq_tm _ _ _ (tmElimSq _ _ _ _ _ (tmSq _ _ _)) _ _ _ => eapply eqtm_elimSq_sq; gs_premise
+  | |- eq_tm _ _ _ (tmElimSq _ _ _ _ _ _) _ _ _ => eapply eqtm_elimSq; gs_premise
   (* [case] (M12b): its branches' types, through the induction hypotheses *)
   | |- wf_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ _) _ _ => eapply wf_case; gs_premise
   | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ (tmInl _ _ _ _ _)) _ _ _ => eapply eqtm_case_inl; gs_premise

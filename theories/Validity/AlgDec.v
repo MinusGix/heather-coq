@@ -119,7 +119,7 @@ Definition tm_con (t : tm) : nat :=
   | tmEmpty _ => 46 | tmSum _ _ _ _ => 47
   | tmSup _ _ _ _ _ _ => 48 | tmElimW _ _ _ _ _ _ _ _ => 49 | tmW _ _ _ _ => 50
   | tmVec _ _ _ => 51 | tmFin _ => 52 | tmSupf _ _ _ _ _ => 53 | tmElimWf _ _ _ _ _ _ _ => 54
-  | tmWf _ _ _ => 55
+  | tmWf _ _ _ => 55 | tmSq _ _ _ => 56 | tmElimSq _ _ _ _ _ _ => 57
   end.
 
 Lemma ac_tmne_con {G Γ ν ν' T} : ac_tmne G Γ ν ν' T -> tm_con ν = tm_con ν'.
@@ -1292,7 +1292,7 @@ Fixpoint is_whne (t : tm) : bool :=
   | natrec _ _ _ _ t | app t _ _ _ _ _ | letboxT _ _ _ _ _ t | letboxt _ _ _ _ _ _ t
   | uapp t _ | capp t _ | tapp t _ | tmFst _ _ _ _ t | tmSnd _ _ _ _ t | elimSEmpty _ _ _ t | elimEmpty _ _ _ t
   | tmJ _ _ _ _ _ _ _ t | tmCase _ _ _ _ _ _ _ _ t
-  | tmElimW _ _ _ _ _ _ _ t | tmElimWf _ _ _ _ _ _ t => is_whne t
+  | tmElimW _ _ _ _ _ _ _ t | tmElimWf _ _ _ _ _ _ t | tmElimSq _ _ _ _ _ t => is_whne t
   | elimT _ _ _ _ _ t => match t with boxT (tyGvar _ _) => true | _ => is_whne t end
   | elimt _ _ _ _ _ _ t => match t with boxt (gvar _ _) | boxt (gdef _ _ _) => true | _ => is_whne t end
   | _ => false
@@ -1418,6 +1418,48 @@ Proof.
   pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi HE (lequiv_sym _ _ _ E26) HΓE HM') E15) as HM'1.
   destruct (IHM M' i _ _ Hc HM HM'1) as [DM | N]; [| refute].
   destruct (whne_dec ν') as [Hn' | N]; [left; apply actmne_elimEmpty; assumption | refute].
+Qed.
+
+(** Propositional truncation (M16a): as at [Empty], the scrutinees are not
+    compared, and neither are the steps. *)
+Lemma Dc_actnf_sq {G Γ l l0 A A0} : Dc_ty G Γ A A0 -> Dc_tynf G Γ (tySq l A) (tySq l0 A0).
+Proof.
+  intros IHA X i k k' Hc HX HX'.
+  destruct X; try solve [refute_con | refute].
+  match goal with |- Dec (ac_tynf _ _ _ (tySq ?a ?b)) => rename a into l', b into A' end.
+  destruct (inv_ty_sq HX) as ((_ & _ & HA) & _). destruct (inv_ty_sq HX') as ((_ & _ & HA') & _).
+  destruct (leqv_dec l l') as [Hl | N]; [| refute].
+  destruct (IHA A' i _ _ Hc HA HA') as [DA | N]; [left; apply actnf_sq; assumption | refute].
+Qed.
+
+Lemma Dc_actmnf_sq_irr {G Γ l A w w0} : Dc_tmnf G Γ w w0 (tySq l A).
+Proof. intros x i k Hc Hw Hx. left; apply actmnf_sq_irr. Qed.
+
+Lemma Dc_actmne_elimSq {G Γ l1 l2 l3 l4 A A0 M M0 c c0 ν ν0} :
+  Dc_ty G Γ A A0 -> Dc_ty G (Γ ,, tySq l1 A @ l1) M M0 -> whne ν ->
+  Dc_ne G Γ (tmElimSq l1 l2 A M c ν) (tmElimSq l3 l4 A0 M0 c0 ν0) (tySq l2 M[lsingle ν]).
+Proof.
+  intros IHA IHM Hn x i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmne _ _ _ (tmElimSq ?p1 ?p2 ?p3 ?p4 ?p5 ?p6) _) =>
+    rename p1 into l5, p2 into l6, p3 into A', p4 into M', p5 into c', p6 into ν' end.
+  destruct (inv_elimSq Hi Hx) as ((_ & W1 & W2 & HA & HM & _ & Hν) & _ & _).
+  destruct (inv_elimSq Hi Hx') as ((_ & W5 & W6 & HA' & HM' & _ & _) & _ & _).
+  destruct (leqv_dec l1 l5) as [H15 | N]; [| refute].
+  destruct (leqv_dec l2 l6) as [H26 | N]; [| refute].
+  pose proof (leqv_lequiv _ _ _ W1 W5 H15) as E15. pose proof (leqv_lequiv _ _ _ W2 W6 H26) as E26.
+  destruct (IHA A' i _ _ Hc HA HA') as [DA | N]; [| refute].
+  pose proof (ac_ty_sound Hc DA HA (wft_lconv _ _ _ _ _ _ HA' E15)) as EA.
+  pose proof (ctx_of_wf_tm Hi Hν) as HΓ.
+  (* the other motive, in this context *)
+  assert (HS : [ G ; Γ ⊢[ i ] tySq l5 A' ≅ tySq l1 A @ l5 ]).
+  { eapply eqty_lconv; [| exact (lequiv_sym _ _ _ E15)].
+    apply eqty_sym, eqty_sq; [exact Hc | exact E15 | exact HA | exact EA]. }
+  assert (HΓS : [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] ])
+    by (apply wfc_ext; [exact HΓ | apply wft_sq; [exact Hc | exact W1 | exact HA] | exact W1]).
+  pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi HS (lequiv_sym _ _ _ E15) HΓS HM') E26) as HM'1.
+  destruct (IHM M' i _ _ Hc HM HM'1) as [DM | N]; [| refute].
+  destruct (whne_dec ν') as [Hn' | N]; [left; apply actmne_elimSq; assumption | refute].
 Qed.
 
 Lemma Dc_actmne_J {G Γ l1 l2 l3 l4 A A0 a a0 M M0 c c0 u u0 ν ν0 W} :
@@ -1770,6 +1812,8 @@ Proof.
     | solve [eapply Dc_actmne_J; eassumption] | solve [eapply Dc_actmnf_code_id; eassumption]
     | solve [eapply Dc_actmnf_code_seq; eassumption] | solve [eapply Dc_actmnf_code_sempty; eassumption]
     | solve [eapply Dc_actnf_empty; eassumption] | solve [eapply Dc_actmne_elimEmpty; eassumption]
+    | solve [eapply Dc_actnf_sq; eassumption] | solve [eapply Dc_actmnf_sq_irr]
+    | solve [eapply Dc_actmne_elimSq; eassumption]
     | solve [eapply Dc_actnf_sum; eassumption] | solve [eapply Dc_actmnf_inl; eassumption]
     | solve [eapply Dc_actmnf_inr; eassumption] | solve [eapply Dc_actmne_case; eassumption]
     | solve [eapply Dc_actnf_W; eassumption] | solve [eapply Dc_actmnf_sup; eassumption]

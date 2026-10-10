@@ -285,6 +285,17 @@ Proof.
                  | eapply lift_eqtm; [exact HNN | apply lle_self_typeof]].
 Qed.
 #[export] Hint Resolve wf_ctx_Wf wft_wf_typeof : wk.
+(** [ind_∥∥]'s motive context (M16a). *)
+Lemma wft_sq_typeof G i Δ l A : lwf (gL G) l -> [ G ; Δ ⊢[ i ] A @ l ] ->
+  [ G ; Δ ⊢[ typeof i ] tySq l A @ l ].
+Proof.
+  intros Hl HA. apply wft_sq; [apply compt_typeof | exact Hl
+                              | eapply lift_ty; [exact HA | apply lle_self_typeof]].
+Qed.
+Lemma wf_ctx_sq G i Δ l A : lwf (gL G) l -> [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ⊢[ typeof i ] ] ->
+  [ G ; Δ ,, tySq l A @ l ⊢[ typeof i ] ].
+Proof. intros Hl HA HΔ. apply wfc_ext; [exact HΔ | now apply wft_sq_typeof | exact Hl]. Qed.
+#[export] Hint Resolve wf_ctx_sq wft_sq_typeof : wk.
 #[export] Hint Extern 3 (lwf _ (lmax _ _)) => (cbn; split; eauto using lequiv_wf_l, lequiv_wf_r) : wk.
 (** A computing layer sees layer-C definitions (M9). *)
 Lemma compt_lle_C i : compt i -> lle lC i.
@@ -514,6 +525,10 @@ Ltac wk_manual :=
   | |- eq_tm _ _ _ (tmElimWf _ _ _ _ _ _ (tmSupf _ _ _ _ _)) _ _ _ =>
       eapply eqtm_elimWf_supf; first [solve [wk_Wfmot] | solve [wk_Wstep] | wk_premise]
   | |- eq_tm _ _ _ (tmElimWf _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimWf; first [solve [wk_Wfmot] | solve [wk_Wstep] | wk_premise]
+  (* [ind_∥∥] (M16a): its step's type, through the induction hypotheses *)
+  | |- wf_tm _ _ _ (tmElimSq _ _ _ _ _ _) _ _ => eapply wf_elimSq; wk_premise
+  | |- eq_tm _ _ _ (tmElimSq _ _ _ _ _ (tmSq _ _ _)) _ _ _ => eapply eqtm_elimSq_sq; wk_premise
+  | |- eq_tm _ _ _ (tmElimSq _ _ _ _ _ _) _ _ _ => eapply eqtm_elimSq; wk_premise
   (* [case] (M12b): its branches' types, through the induction hypotheses *)
   | |- wf_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ _) _ _ => eapply wf_case; wk_premise
   | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ (tmInl _ _ _ _ _)) _ _ _ => eapply eqtm_case_inl; wk_premise

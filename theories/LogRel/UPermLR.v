@@ -280,6 +280,22 @@ Proof.
   - apply sumnf_ne. exact (pg_gne_tm Hp Hν).
 Qed.
 
+(** Propositional truncation (M16a): along a permutation of its carrier's
+    relation, each side alone. *)
+Lemma SqRel_perm {l1 A RA RA'} :
+  (forall x y, RA x y -> RA' x[pφ π]ᵤ y[pφ π]ᵤ) -> forall t t', SqRel G Γ l1 A RA t t' ->
+  SqRel (Gp π G) Γ[pφ π]ᵤ (lvsubst l1 (pφ π)) A[pφ π]ᵤ RA' t[pφ π]ᵤ t'[pφ π]ᵤ.
+Proof.
+  intros Ep.
+  assert (U : forall t, SqU G Γ l1 A RA t ->
+                SqU (Gp π G) Γ[pφ π]ᵤ (lvsubst l1 (pφ π)) A[pφ π]ᵤ RA' t[pφ π]ᵤ).
+  { intros t (w & H1 & Hn). exists w[pφ π]ᵤ. split; [exact (pg_tmred Hp H1) |].
+    destruct Hn as [k C a Hk HC Ha | ν Hν]; cbn.
+    - apply sqnf_sq; [exact (pg_lequiv Hp Hk) | exact (pg_geq_ty Hp HC) | exact (Ep _ _ Ha)].
+    - apply sqnf_ne. exact (pg_gne_tm Hp Hν). }
+  intros t t' [H H']. exact (conj (U _ H) (U _ H')).
+Qed.
+
 Lemma CTypNf_perm {Δ k w w'} : CTypNf G Γ Δ k w w' ->
   CTypNf (Gp π G) Γ[pφ π]ᵤ Δ[pφ π]ᵤ (lvsubst k (pφ π)) w[pφ π]ᵤ w'[pφ π]ᵤ.
 Proof.
@@ -790,7 +806,8 @@ Proof.
                      HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd IHdom codAd IHcod HR
                  | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN
-                     domAd IHdom arAd HR];
+                     domAd IHdom arAd HR
+                 | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ IHRQ Hqs Hqt HR];
     intros π πi Hp;
     pose proof (uperm_inv _ _ _ Hp) as Hpi;
     pose proof (proj1 Hp) as Hinv; pose proof (proj1 (proj2 Hp)) as Hinv';
@@ -1502,6 +1519,24 @@ Proof.
         rewrite (proj1 Hk), (proj1 (proj2 Hk)), !(kcorr_kty Hk) in HRd.
         pose proof (proj2 (LR_irrel _ _ _ _ _ _ _ _ _ _ HRd H2 x y) h2) as h.
         apply (ERd _ _ (dnf_us_tm _ _) (dnf_us_tm _ _)). rewrite !(rt_tm Hinv') by assumption. exact h.
+  - (* ∥·∥: along the carrier's permuted relation *)
+    cbn in NW. rename NW into NA.
+    destruct (IHRQ π πi Hp) as (RA' & HRA' & ERA).
+    destruct (LR_tm_per _ _ _ _ _ _ _ HRA') as [Hs' Ht'].
+    assert (F : forall x y, RQ x y -> RA' x[pφ π]ᵤ y[pφ π]ᵤ).
+    { intros x y H0. destruct (LR_rel_dnf HRQ _ _ H0) as [Nx Ny]. exact (proj1 (ERA x y Nx Ny) H0). }
+    assert (B : forall x y, RA' x y -> RQ x[pφ πi]ᵤ y[pφ πi]ᵤ).
+    { intros x y H0. destruct (LR_rel_dnf HRA' _ _ H0) as [Nx Ny].
+      apply (ERA _ _ (dnf_us_tm _ _) (dnf_us_tm _ _)). rewrite !(rt_tm Hinv') by assumption. exact H0. }
+    exists (SqRel (Gp π G) Γ[pφ π]ᵤ (lvsubst l1 (pφ π)) A[pφ π]ᵤ RA'). split.
+    + eapply LRsq; [exact (pg_lequiv Hp Hl) | exact (pg_lequiv Hp Hl2) | exact (pg_lwf Hp Hw)
+                   | exact (pg_tyred Hp HT) | exact (pg_tyred Hp HT') | exact (pg_ty Hp HA)
+                   | exact (pg_geq_ty Hp HAA) | exact HRA' | exact Hs' | exact Ht' | apply releq_refl].
+    + intros t t' Nt Nt'. rewrite (HR t t'). split; [apply (SqRel_perm Hp F) |].
+      intros X. apply (SqRel_perm (G := Gp π G) Hpi B) in X.
+      rewrite (Gp_rt Hp HG), (rt_ctx Hinv _ HΓ), (rt_lvl Hinv), (rt_ty Hinv _ NA), !(rt_tm Hinv) in X
+        by assumption.
+      exact X.
 Qed.
 
 Theorem LR_perm n : Pperm n.

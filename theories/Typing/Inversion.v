@@ -217,6 +217,20 @@ Lemma inv_case {G i Γ l l' l'' A B M c1 c2 t T k} : typeof i = i -> [ G ; Γ �
     lvl_eq (gL G) k l'' /\ [ G ; Γ ⊢[ i ] T ≅ M[lsingle t] @ k ].
 Proof. inv_tm. Qed.
 
+(** Propositional truncation (M16a). *)
+Lemma inv_sq {G i Γ l A a T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSq l A a : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\
+    lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ i ] T ≅ tySq l A @ k ].
+Proof. inv_tm. Qed.
+
+Lemma inv_elimSq {G i Γ l l' A M c t T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmElimSq l l' A M c t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, tySq l A @ l ⊢[ i ] M @ l' ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] c : tySq l' M⟨rlift ↑⟩[lsingle (tmSq l A⟨↑⟩ (var 0))] @ l' ] /\
+    [ G ; Γ ⊢[ i ] t : tySq l A @ l ]) /\
+    lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ i ] T ≅ tySq l' M[lsingle t] @ k ].
+Proof. inv_tm. Qed.
+
 (** Well-founded trees (M13a). *)
 Lemma inv_sup {G i Γ l l' A B a f T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSup l l' A B a f : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\
@@ -514,6 +528,11 @@ Lemma inv_ty_sum {G i Γ l l' A B k} : [ G ; Γ ⊢[ i ] tySum l l' A B @ k ] ->
     lvl_eq (gL G) k (lmax l l').
 Proof. inv_ty. Qed.
 
+(** Propositional truncation (M16a). *)
+Lemma inv_ty_sq {G i Γ l A k} : [ G ; Γ ⊢[ i ] tySq l A @ k ] ->
+  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ]) /\ lvl_eq (gL G) k l.
+Proof. inv_ty. Qed.
+
 (** The empty type (M12a). *)
 Lemma inv_ty_empty {G i Γ l k} : [ G ; Γ ⊢[ i ] tyEmpty l @ k ] ->
   (i <> lV /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\ lvl_eq (gL G) k l.
@@ -596,4 +615,5 @@ Proof.
   - exact (lvl_eq_uniq (proj2 (inv_ty_vec H)) (proj2 (inv_ty_vec H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_fin H)) (proj2 (inv_ty_fin H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_wf H)) (proj2 (inv_ty_wf H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_sq H)) (proj2 (inv_ty_sq H'))).
 Qed.

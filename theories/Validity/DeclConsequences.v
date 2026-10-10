@@ -125,6 +125,12 @@ Proof.
   intros H. exact (W_inj (E := DEM) (LP := LRM) redM_eqty H (lwfM_whnf_l H (whnf_tyW _ _ _ _) ltac:(not_upi))).
 Qed.
 
+Theorem declM_sq_inj {G Γ l l1 l2 A A'} :
+  [ G ; Γ ⊢[ lM ] tySq l1 A ≅ tySq l2 A' @ l ] -> lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢[ lM ] A ≅ A' @ l1 ].
+Proof.
+  intros H. exact (sq_inj (E := DEM) (LP := LRM) redM_eqty H (lwfM_whnf_l H (whnf_tySq _ _) ltac:(not_upi))).
+Qed.
+
 Theorem declM_Wf_inj {G Γ l l1 l2 A A' N N'} :
   [ G ; Γ ⊢[ lM ] tyWf l1 A N ≅ tyWf l2 A' N' @ l ] ->
   lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢[ lM ] A ≅ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢[ lM ] N ≅ N' : tyNat @ lzero ].

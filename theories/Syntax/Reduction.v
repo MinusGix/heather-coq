@@ -74,6 +74,10 @@ Inductive red : tm -> tm -> Prop :=
 | red_elimWf_supf l l' A N M c k C D a cs :
     red (tmElimWf l l' A N M c (tmSupf k C D a cs)) (c[lsingle3 a cs (wfIH l l' A N M c a cs)])
 | red_elimWf l l' A N M c t t' : red t t' -> red (tmElimWf l l' A N M c t) (tmElimWf l l' A N M c t')
+(* propositional truncation (M16a): β at a [squash] of any annotations; the
+   scrutinee reduces *)
+| red_elimSq_sq l l' A M c k C a : red (tmElimSq l l' A M c (tmSq k C a)) (c[lsingle a])
+| red_elimSq l l' A M c t t' : red t t' -> red (tmElimSq l l' A M c t) (tmElimSq l l' A M c t')
 (* the identity type (M11a): J computes on refl, ignoring the annotations and
    the right endpoint as the other β rules do; otherwise its proof reduces *)
 | red_J_refl l l' A a M c u k B b : red (tmJ l l' A a M c u (tmRefl k B b)) c
@@ -178,6 +182,7 @@ Proof.
         | Hr : red (tmInr _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSup _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSupf _ _ _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmSq _ _ _) _ |- _ => inversion Hr
         | Hr : red_ty (tyPi _ _ _ _) _ |- _ => inversion Hr
         end;
     try congruence; try (f_equal; eauto).
@@ -248,6 +253,8 @@ Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with 
 Lemma reds_J l l' A a M c u e e' : reds e e' -> reds (tmJ l l' A a M c u e) (tmJ l l' A a M c u e').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_elimWf l l' A N M c t t' : reds t t' -> reds (tmElimWf l l' A N M c t) (tmElimWf l l' A N M c t').
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_elimSq l l' A M c t t' : reds t t' -> reds (tmElimSq l l' A M c t) (tmElimSq l l' A M c t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_El l t t' : reds t t' -> reds_ty (tyEl l t) (tyEl l t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
