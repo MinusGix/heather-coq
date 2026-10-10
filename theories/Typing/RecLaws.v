@@ -217,6 +217,8 @@ Proof. apply tup_nth_usubst. Qed.
 
 Lemma usubst_lsingle_ty M a φ : usubst_ty (subst_ty M (lsingle a)) φ = subst_ty (usubst_ty M φ) (lsingle (usubst_tm a φ)).
 Proof. apply (proj1 usubst_subst_all). intros [|n]; reflexivity. Qed.
+Lemma usubst_lsingle_tm (b a : tm) φ : usubst_tm (subst_tm b (lsingle a)) φ = subst_tm (usubst_tm b φ) (lsingle (usubst_tm a φ)).
+Proof. apply (proj1 (proj2 usubst_subst_all)). intros [|n]; reflexivity. Qed.
 Lemma usubst_lsucc_ty M φ : usubst_ty (subst_ty M lsucc) φ = subst_ty (usubst_ty M φ) lsucc.
 Proof. apply (proj1 usubst_subst_all). intros [|[|n]]; reflexivity. Qed.
 Lemma usubst_lsingle2_ty M t q φ :
@@ -238,12 +240,24 @@ Proof. exact (proj1 usubst_ren_all T _ φ). Qed.
 Lemma usubst_ren_tm (t : tm) r φ : usubst_tm (ren_tm t r) φ = ren_tm (usubst_tm t φ) r.
 Proof. exact (proj1 (proj2 usubst_ren_all) t _ φ). Qed.
 
+(** [elim_Wf]'s step telescope (M15b) holds an [nth]. *)
+Lemma usubst_tmNth_r l T k cs i φ :
+  usubst_tm (tmNth l T k cs i) φ =
+  tmNth (lvsubst l φ) (usubst_ty T φ) (usubst_tm k φ) (usubst_tm cs φ) (usubst_tm i φ).
+Proof.
+  unfold tmNth, nthMot, nthBase, nthStep; cbn [usubst_tm usubst_ty lvsubst].
+  rewrite ?usubst_ren_ty, ?usubst_ren_tm. reflexivity.
+Qed.
+
 Ltac upeel_push :=
   repeat first [ rewrite <- peelL_usubst | rewrite <- peelG_usubst | rewrite <- peelU_usubst ];
   rewrite rb_br_usubst; cbn [gousubst usubst_tm ucsubst usubst_ty lvsubst recT rect];
   rewrite ?usubst_lsingle_ty, ?usubst_lsucc_ty, ?usubst_lsingle2_ty, ?usubst_shift_ty, ?usubst_shift,
     ?usubst_liftshift_ty;
   cbn [usubst_tm usubst_ty lvsubst]; rewrite ?usubst_shift_ty, ?usubst_ren_ty, ?usubst_ren_tm;
+  (* [sup_f]'s children's length and [elim_Wf]'s step telescope (M15b) *)
+  rewrite ?usubst_lsingle_tm, ?usubst_lsingle_ty, ?usubst_tmNth_r; cbn [usubst_tm usubst_ty lvsubst];
+  rewrite ?usubst_ren_ty, ?usubst_ren_tm;
   reflexivity.
 
 Lemma redT_usubst l1 l2 rb l Δ c v φ : redT l1 l2 rb l Δ c = Some v ->

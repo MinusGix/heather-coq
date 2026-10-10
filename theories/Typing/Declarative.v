@@ -108,9 +108,9 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
 | wft_fin G i Γ n : i <> lV -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tyFin n @ lzero ]
 
-(* finitary well-founded trees (M15a; layers D and M, M15_DESIGN.md): the
-   arity is a term of [Nat] under the shape's binder *)
-| wft_wf G i Γ l A N : compt i -> lwf (gL G) l ->
+(* finitary well-founded trees (M15a, M15_DESIGN.md; every layer but V since
+   M15b): the arity is a term of [Nat] under the shape's binder *)
+| wft_wf G i Γ l A N : i <> lV -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tyWf l A N @ l ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
@@ -340,15 +340,15 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 | wf_code_fin G i Γ n : i <> lV -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tmFin n : tyU lzero @ lsuc lzero ]
 
-(* finitary well-founded trees (M15a; layers D and M): [sup_f]'s children are
+(* finitary well-founded trees (M15a; every layer but V since M15b): [sup_f]'s children are
    a tuple at the arity of its shape; [elim_Wf]'s step binds the shape [a],
    the children [cs] and the induction hypothesis [ih], a function from the
    children's indices, whose types are premises as [elim_W]'s *)
-| wf_supf G i Γ l A N a cs : compt i -> lwf (gL G) l ->
+| wf_supf G i Γ l A N a cs : i <> lV -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] cs : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
     [ G ; Γ ⊢[ i ] tmSupf l A N a cs : tyWf l A N @ l ]
-| wf_elimWf G i Γ l l' A N M c t : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+| wf_elimWf G i Γ l l' A N M c t : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
     [ G ; Γ ,, tyWf l A N @ l ⊢[ i ] M @ l' ] ->
     [ G ; Γ ,, A @ l ⊢[ i ] wfcsty l A N @ l ] ->
@@ -357,9 +357,9 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
         ⊢[ i ] c : wfstepty l A N M @ l' ] ->
     [ G ; Γ ⊢[ i ] t : tyWf l A N @ l ] ->
     [ G ; Γ ⊢[ i ] tmElimWf l l' A N M c t : M[lsingle t] @ l' ]
-(* the code of [Wf] (M15b): the arity is a term of [Nat] under the shape's
+(* the code of [Wf] (M15b; every layer but V): the arity is a term of [Nat] under the shape's
    binder, not a code, so [Wf]'s code lives at the shape's level *)
-| wf_code_wf G i Γ l s n : compt i -> lwf (gL G) l ->
+| wf_code_wf G i Γ l s n : i <> lV -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tmWf l s n : tyU l @ lsuc l ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
@@ -501,8 +501,8 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
 | eqty_El_fin G i Γ n : compt i -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tyFin n ≅ tyEl lzero (tmFin n) @ lzero ]
 
-(* finitary well-founded trees (M15a; layers D and M) *)
-| eqty_wf G i Γ l l' A A' N N' : compt i -> lequiv (gL G) l l' ->
+(* finitary well-founded trees (M15a; every layer but V since M15b) *)
+| eqty_wf G i Γ l l' A A' N N' : i <> lV -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
     [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tyWf l A N ≅ tyWf l' A' N' @ l ]
@@ -945,16 +945,17 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
 | eqtm_code_fin G i Γ n n' : i <> lV -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tmFin n ≅ tmFin n' : tyU lzero @ lsuc lzero ]
 
-(* finitary well-founded trees (M15a; layers D and M): the congruences, and β,
+(* finitary well-founded trees (M15a): the congruences (every layer but V
+   since M15b), and β (layers D and M),
    which instantiates the step at the shape, the children and the
    synthesized induction hypothesis [wfIH]; no η *)
-| eqtm_supf G i Γ l l' A A' N N' a a' cs cs' : compt i -> lequiv (gL G) l l' ->
+| eqtm_supf G i Γ l l' A A' N N' a a' cs cs' : i <> lV -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
     [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
     [ G ; Γ ⊢[ i ] cs ≅ cs' : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
     [ G ; Γ ⊢[ i ] tmSupf l A N a cs ≅ tmSupf l' A' N' a' cs' : tyWf l A N @ l ]
-| eqtm_elimWf G i Γ l1 l2 l3 l4 A A' N N' M M' c c' t t' : compt i ->
+| eqtm_elimWf G i Γ l1 l2 l3 l4 A A' N N' M M' c c' t t' : i <> lV ->
     lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
     [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
     [ G ; Γ ,, A @ l1 ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
@@ -976,8 +977,8 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] cs : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
     [ G ; Γ ⊢[ i ] tmElimWf l l' A N M c (tmSupf l A N a cs) ≅ c[lsingle3 a cs (wfIH l l' A N M c a cs)]
         : M[lsingle (tmSupf l A N a cs)] @ l' ]
-(* the code of [Wf] (M15b) *)
-| eqtm_code_wf G i Γ l l' s s' n n' : compt i -> lequiv (gL G) l l' ->
+(* the code of [Wf] (M15b; every layer but V) *)
+| eqtm_code_wf G i Γ l l' s s' n n' : i <> lV -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tmWf l s n ≅ tmWf l' s' n' : tyU l @ lsuc l ]

@@ -29,7 +29,7 @@ Definition wrap (nu ng nl : nat) (b : tm) : tm := wrapU nu (wrapG ng (wrapL nl b
 
 (** The number of branches, and the branch-indexed case split: [br_all t]
     runs [t] [nbr] times, as [do nbr t] would (M8_DESIGN.md J2, S0). *)
-Notation nbr := 47 (only parsing).
+Notation nbr := 51 (only parsing).
 Ltac br_do n tac := lazymatch n with O => idtac | S ?m => tac; br_do m tac end.
 Ltac br_all tac := br_do constr:(nbr) tac.
 
@@ -58,6 +58,9 @@ Definition bW := 39.     Definition bW' := 40.     Definition bSup := 41.   Defi
 (** Length-indexed tuples' and finite indices' (M14b): Heather's [t_Vec],
     [t'_Vec], [t_Fin], [t'_Fin]. *)
 Definition bVec := 43.   Definition bVec' := 44.   Definition bFin := 45.   Definition bFin' := 46.
+(** Finitary well-founded trees' (M15b): Heather's [t_Wf], [t'_Wf],
+    [t_supf], [t_elimWf]. *)
+Definition bWf := 47.    Definition bWf' := 48.    Definition bSupf := 49.  Definition bElimWf := 50.
 
 (** The arity [(levels, globals, locals)] of branch [k]. *)
 Definition br_ar (k : nat) : nat * nat * nat :=
@@ -109,13 +112,17 @@ Definition br_ar (k : nat) : nat * nat * nat :=
   | 44 => (1, 3, 2)       (* ℓ; g u_t u_k; x_t x_k. t'_Vec *)
   | 45 => (0, 2, 1)       (* g u_k; x_k. t_Fin *)
   | 46 => (0, 2, 1)       (* g u_k; x_k. t'_Fin *)
+  | 47 => (1, 3, 2)       (* ℓ; g U_S u_n; x_S x_n. t_Wf *)
+  | 48 => (1, 3, 2)       (* ℓ; g u_s u_n; x_s x_n. t'_Wf *)
+  | 49 => (1, 5, 4)       (* ℓ; g U_S u_n u_a u_cs; x_S x_n x_a x_cs. t_supf *)
+  | 50 => (2, 6, 5)       (* ℓ ℓ'; g U_S u_n U_M u_s u_t; x_S x_n x_M x_s x_t. t_elimWf *)
   | _ => (0, 0, 0)
   end.
 
 (** Whether branch [k] is a type branch (typed at [l₁], recursing on
     [elim_Typ]) or a term branch. *)
 Definition br_isT (k : nat) : bool :=
-  match k with 0 | 1 | 2 | 3 | 13 | 14 | 21 | 25 | 27 | 31 | 34 | 39 | 43 | 45 => true | _ => false end.
+  match k with 0 | 1 | 2 | 3 | 13 | 14 | 21 | 25 | 27 | 31 | 34 | 39 | 43 | 45 | 47 => true | _ => false end.
 
 Definition wrapMT (MT : ty) : tm := bindU (bindG (bindL (tmTy MT))).
 Definition wrapMt (Mt : ty) : tm := bindU (bindG (bindG (bindL (tmTy Mt)))).
@@ -224,6 +231,12 @@ Definition redT (l : lvl) (Δ : ctx) (c : ty) : option tm :=
               (recT k Δ A)) (rect lzero Δ tyNat n))
   | tyFin n =>
       Some (peelL (peelG (peelG (rb_br rb bFin) (GCtx Δ)) (GTm n)) (rect lzero Δ tyNat n))
+  (* finitary well-founded trees (M15b): the arity's call is a term call at
+     [Nat] under the shape *)
+  | tyWf k A N =>
+      Some (peelL (peelL (peelG (peelG (peelG (peelU (rb_br rb bWf) k)
+              (GCtx Δ)) (GTy A)) (GTm N))
+              (recT k Δ A)) (rect lzero (cext Δ A k) tyNat N))
   | _ => None
   end.
 
@@ -387,6 +400,30 @@ Definition redt (l : lvl) (Δ : ctx) (T : ty) (c : tm) : option tm :=
               (rect (lsuc k) Δ (tyU k) s)) (rect lzero Δ tyNat n))
   | tmFin n =>
       Some (peelL (peelG (peelG (rb_br rb bFin') (GCtx Δ)) (GTm n)) (rect lzero Δ tyNat n))
+  (* finitary well-founded trees (M15b) *)
+  | tmWf k s n =>
+      Some (peelL (peelL (peelG (peelG (peelG (peelU (rb_br rb bWf') k)
+              (GCtx Δ)) (GTm s)) (GTm n))
+              (rect (lsuc k) Δ (tyU k) s)) (rect lzero (cext Δ (tyEl k s) k) tyNat n))
+  | tmSupf k A N a cs =>
+      Some (peelL (peelL (peelL (peelL
+              (peelG (peelG (peelG (peelG (peelG (peelU (rb_br rb bSupf) k)
+                 (GCtx Δ)) (GTy A)) (GTm N)) (GTm a)) (GTm cs))
+              (recT k Δ A))
+              (rect lzero (cext Δ A k) tyNat N))
+              (rect k Δ A a))
+              (rect k Δ (tyVec k (tyWf k A N) (subst_tm N (lsingle a))) cs))
+  | tmElimWf k k' A N M c t =>
+      Some (peelL (peelL (peelL (peelL (peelL
+              (peelG (peelG (peelG (peelG (peelG (peelG
+                 (peelU (peelU (rb_br rb bElimWf) k) k')
+                 (GCtx Δ)) (GTy A)) (GTm N)) (GTy M)) (GTm c)) (GTm t))
+              (recT k Δ A))
+              (rect lzero (cext Δ A k) tyNat N))
+              (recT k' (cext Δ (tyWf k A N) k) M))
+              (rect k' (cext (cext (cext Δ A k) (wfcsty k A N) k) (wfihty k k' A N M) (lmax lzero k'))
+                 (wfstepty k A N M) c))
+              (rect k Δ (tyWf k A N) t))
   | _ => None
   end.
 

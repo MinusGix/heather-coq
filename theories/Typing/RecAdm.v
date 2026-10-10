@@ -282,13 +282,14 @@ Ltac code_side :=
   | |- [ _ ; _ ⊢[ _ ] _ : _ @ _ ] => progress wfd
   end; try assumption.
 
-(* W-types (M13b): the memoised scope automation of [RecWf], after the
-   instances are normalised by computation *)
+(* W-types (M13b) and finitary well-founded trees (M15b): the memoised
+   scope automation of [RecWf], after the instances are normalised by
+   computation *)
 Ltac code_side_W := wnorm; wtop.
 
 (** The side conditions: levels, the scrutinees' contexts and typings. *)
 Ltac code_side_k k :=
-  let b := eval cbv in (andb (Nat.leb 39 k) (Nat.ltb k 43)) in
+  let b := eval cbv in (orb (andb (Nat.leb 39 k) (Nat.ltb k 43)) (andb (Nat.leb 47 k) (Nat.ltb k 51))) in
   lazymatch b with true => code_side_W | false => code_side end.
 Ltac br_side k HΓ :=
   first
@@ -298,6 +299,20 @@ Ltac br_side k HΓ :=
   | eapply wf_boxT; [ br_side k HΓ | br_side k HΓ | br_side k HΓ | unfold gv, gu; code_side_k k ]
   | eapply wf_boxt; [ br_side k HΓ | br_side k HΓ | br_side k HΓ | unfold gv, gu; code_side_k k | unfold gv, gu; code_side_k k ]
   | unfold gv, gu; code_side_k k ].
+
+(** [elim_Wf]'s branch (M15b): its step scope (Γ, a, cs, ih) is typed once,
+    folded and in [wty]'s normal form, rather than at each goal that
+    needs it; each typing retypes the [ih] entry, [nth] included. *)
+Ltac wf50_pre G0 :=
+  let H := fresh "H50c" in let Hn := fresh "H50n" in
+  assert (H : [ brG 50 G0 ; cvar 5 ,, gv 4 @ lvar 1 ,, wfcsty (lvar 1) (gv 4) (gu 3) @ lvar 1
+                ,, wfihty (lvar 1) (lvar 0) (gv 4) (gu 3) (gv 2) @ lmax lzero (lvar 0) ⊢[ lD ] ])
+    by (unfold gv, gu; wnorm; wtop);
+  pose proof H as Hn; unfold gv, gu in Hn;
+  cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
+       rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle Nat.eqb Nat.add
+       tmNth nthMot nthBase nthStep] in Hn.
+Ltac br_pre kk G0 := tryif constr_eq kk 50 then wf50_pre G0 else idtac.
 
 Section Adm.
 Context {G : gctx} {Γ : ctx} (HΓ : [ G ; Γ ⊢[ lM ] ]) {l1 l2 : lvl} (Hl1 : lwf (gL G) l1) (Hl2 : lwf (gL G) l2)
@@ -309,7 +324,7 @@ Proof using HMT HMt Hl1 Hl2 HΓ.
   intros Hk. pose proof (wf_brG (ctx_glob _ _ _ HΓ) k Hk) as HG'.
   br_all ltac:(try (destruct k as [|k])). all: try (exfalso; lia).
   all: unfold brΓ; cbn [brLocs cexts mkLocs call_ty call_lv br_calls br_nu br_ng br_ar].
-  all: match goal with |- [ brG ?kk ?G0 ; _ ⊢[ _ ] ] => w_lookups kk (gΨ (brG kk G0)); br_ctx kk HΓ HMT HMt; br_side kk HΓ end.
+  all: match goal with |- [ brG ?kk ?G0 ; _ ⊢[ _ ] ] => w_lookups kk (gΨ (brG kk G0)); br_pre kk G0; br_ctx kk HΓ HMT HMt; br_side kk HΓ end.
 Qed.
 
 Lemma brRes_wf k : k < nbr ->
@@ -318,7 +333,7 @@ Proof using HMT HMt Hl1 Hl2 HΓ.
   intros Hk. pose proof (wf_brG (ctx_glob _ _ _ HΓ) k Hk) as HG'.
   br_all ltac:(try (destruct k as [|k])). all: try (exfalso; lia).
   all: unfold brΓ, brLv; cbn [brLocs cexts brRes br_isT mkLocs call_ty call_lv br_calls br_nu br_ng br_ar br_head br_nl].
-  all: match goal with |- [ brG ?kk ?G0 ; _ ⊢[ _ ] _ @ _ ] => w_lookups kk (gΨ (brG kk G0)); br_inst kk HΓ HMT HMt; br_side kk HΓ end.
+  all: match goal with |- [ brG ?kk ?G0 ; _ ⊢[ _ ] _ @ _ ] => w_lookups kk (gΨ (brG kk G0)); br_pre kk G0; br_inst kk HΓ HMT HMt; br_side kk HΓ end.
 Qed.
 
 End Adm.

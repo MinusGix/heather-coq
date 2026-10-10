@@ -318,7 +318,7 @@ Lemma elimWf_cong {t t'} :
              : M⟦γ⟧[llift e][lsingle t] @ l' ].
 Proof.
   intros Ht. destruct (elimWf_at Hγ He) as (HA0 & EA & HN0 & EN & HM0 & EM & HC0 & HI0 & Ec).
-  apply eqtm_elimWf; first [exact ge_compt | apply (lequiv_weaken _ _ _ _ (proj1 Hγ)); assumption
+  apply eqtm_elimWf; first [exact ge_compt | exact ge_notV | apply (lequiv_weaken _ _ _ _ (proj1 Hγ)); assumption
                            | apply geq_ty_sound; assumption | apply geq_tm_sound; assumption | assumption].
 Qed.
 
@@ -330,7 +330,7 @@ Lemma elimWf_cong_l {t t'} :
 Proof.
   intros Ht. destruct (elimWf_at Hγ He) as (HA0 & EA & HN0 & EN & HM0 & EM & HC0 & HI0 & Ec).
   pose proof (eqtm_wf_l ge_typeof (geq_tm_sound Ec)) as Hc0.
-  apply eqtm_elimWf; first [exact ge_compt | apply lequiv_refl, (lwf_weaken _ _ _ (proj1 Hγ)); assumption
+  apply eqtm_elimWf; first [exact ge_compt | exact ge_notV | apply lequiv_refl, (lwf_weaken _ _ _ (proj1 Hγ)); assumption
                            | apply eqty_refl; assumption | apply eqtm_refl; assumption | assumption].
 Qed.
 
@@ -462,7 +462,7 @@ Proof.
   pose proof (ctx_of_tm HN) as HΓA.
   assert (HA : [ G ; Γ ⊢g A @ l ]) by (inversion HΓA; assumption).
   pose proof (ctx_of_ty HA) as HΓ.
-  assert (HW : [ G ; Γ ⊢g tyWf l A N @ l ]) by (apply wft_wf; auto using ge_compt).
+  assert (HW : [ G ; Γ ⊢g tyWf l A N @ l ]) by (apply wft_wf; auto using ge_compt, ge_notV).
   pose proof (Wf_cs_wf ge_typeof ge_notV Hwl HW HN) as HC.
   assert (H2 : [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ⊢g ]) by exact (ext_wf_g HC Hwl).
   assert (HN1 : [ G ; Γ ,, A @ l ,, wfcsty l A N @ l ⊢g N⟨↑⟩ : tyNat @ lzero ])

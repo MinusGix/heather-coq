@@ -842,14 +842,14 @@ Proof.
   left; eexists; eexists; exact (wf_elimW _ _ _ _ _ _ _ _ _ _ _ Hv Hl Hl' Hl'' HA HB HM HF HI Hc0 Ht).
 Qed.
 
-(** Finitary well-founded trees (M15a): layers D and M, where the types
-    the checker takes ([typeof i]) are at [i] itself. *)
+(** Finitary well-founded trees (M15a; every layer but V since M15b). The
+    children's tuple type and [elim_Wf]'s step telescope are built at [i]
+    ([StaticCode]'s layer-generic [Wf_*_wf_g]), then lifted to [typeof i],
+    where the checker takes them. *)
 Lemma sy_supf l A N a cs : sz_tm (tmSupf l A N a cs) <= n -> SYD (tmSupf l A N a cs).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | Nc];
-    [| right; intros T k H; destruct (inva_supf H) as ((X & _) & _); contradiction].
-  pose proof (compt_typeof_self _ Hc) as Hi. assert (Hv : i <> lV) by (destruct Hc as [-> | ->]; discriminate).
+  notV.
   destruct (lwf_Dec (gL G) l) as [Hl | N0];
     [| right; intros T k H; destruct (inva_supf H) as ((_ & X & _) & _); contradiction].
   destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N0];
@@ -860,21 +860,20 @@ Proof.
     [| right; intros T k H; destruct (inva_supf H) as ((_ & _ & _ & X & _) & _); contradiction].
   destruct (ihC a ltac:(szl) G i Γ A l (lift_to_typeof_ty HA)) as [Ha | N0];
     [| right; intros T k H; destruct (inva_supf H) as ((_ & _ & _ & _ & X & _) & _); contradiction].
-  pose proof (wft_wf _ _ _ _ _ _ Hc Hl HA HN) as HW.
+  pose proof (wft_wf _ _ _ _ _ _ Hv Hl HA HN) as HW.
   assert (HNa : [ G ; Γ ⊢[ i ] N[lsingle a] : tyNat @ lzero ])
-    by (eapply wf_tm_retype; [exact (wf_tm_single Hi HN Ha) | reflexivity]).
+    by (eapply wf_tm_retype; [exact (wf_tm_subst_g HN (lsub_wf_single_g _ _ _ _ _ _ HΓ Ha)) | reflexivity]).
   pose proof (wft_vec _ _ _ _ _ _ Hv Hl HW HNa) as HV.
   destruct (ihC cs ltac:(szl) G i Γ _ _ (lift_to_typeof_ty HV)) as [Hcs | N0];
     [| right; intros T k H; destruct (inva_supf H) as ((_ & _ & _ & _ & _ & X) & _); contradiction].
-  left; eexists; eexists; exact (wf_supf _ _ _ _ _ _ _ _ Hc Hl HA HN Ha Hcs).
+  left; eexists; eexists; exact (wf_supf _ _ _ _ _ _ _ _ Hv Hl HA HN Ha Hcs).
 Qed.
 
 (** The code of [Wf] (M15b). *)
 Lemma sy_code_wf l s m : sz_tm (tmWf l s m) <= n -> SYD (tmWf l s m).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | Nc];
-    [| right; intros T k H; destruct (inva_code_wf H) as ((X & _) & _); contradiction].
+  notV.
   destruct (lwf_Dec (gL G) l) as [Hl | N0];
     [| right; intros T k H; destruct (inva_code_wf H) as ((_ & X & _) & _); contradiction].
   destruct (ihC s ltac:(szl) G i Γ _ _ (HUniv HΓ Hl)) as [Hs | N0];
@@ -883,15 +882,13 @@ Proof.
   { apply wfc_ext; [exact HΓ | | exact Hl]. exact (wft_El _ _ _ _ _ (typeof_notV i) Hl (lift_to_typeof_tm Hs)). }
   destruct (ihC m ltac:(szl) G i _ _ _ (HNat HΓs)) as [Hm | N0];
     [| right; intros T k H; destruct (inva_code_wf H) as ((_ & _ & _ & X) & _); contradiction].
-  left; eexists; eexists; exact (wf_code_wf _ _ _ _ _ _ Hc Hl Hs Hm).
+  left; eexists; eexists; exact (wf_code_wf _ _ _ _ _ _ Hv Hl Hs Hm).
 Qed.
 
 Lemma sy_elimWf l l' A N M c t : sz_tm (tmElimWf l l' A N M c t) <= n -> SYD (tmElimWf l l' A N M c t).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | Nc];
-    [| right; intros T k H; destruct (inva_elimWf H) as ((X & _) & _); contradiction].
-  pose proof (compt_typeof_self _ Hc) as Hi. assert (Hv : i <> lV) by (destruct Hc as [-> | ->]; discriminate).
+  notV.
   destruct (lwf_Dec (gL G) l) as [Hl | N0];
     [| right; intros T k H; destruct (inva_elimWf H) as ((_ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | N0];
@@ -902,25 +899,26 @@ Proof.
     by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HA) | exact Hl]).
   destruct (ihC N ltac:(szl) G i _ _ _ (HNat HΓA)) as [HN | N0];
     [| right; intros T k H; destruct (inva_elimWf H) as ((_ & _ & _ & _ & X & _) & _); contradiction].
-  pose proof (wft_wf _ _ _ _ _ _ Hc Hl HA HN) as HW.
+  pose proof (wft_wf _ _ _ _ _ _ Hv Hl HA HN) as HW.
   assert (HΓW : [ G ; Γ ,, tyWf l A N @ l ⊢[ typeof i ] ])
     by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HW) | exact Hl]).
   destruct (ihT M ltac:(szl) G i _ l' HΓW) as [HM | N0];
     [| right; intros T k H; destruct (inva_elimWf H) as ((_ & _ & _ & _ & _ & X & _) & _); contradiction].
-  pose proof (Wf_cs_wf Hi Hv Hl HW HN) as HC.
-  pose proof (ext_wf Hi HC Hl) as HΓAC.
-  pose proof (Wf_ih_wf Hi Hv Hl Hl' HW HN HM HΓAC (eqty_refl _ _ _ _ _ HC) (lequiv_refl _ _ Hl)) as HI.
+  pose proof (Wf_cs_wf_g Hv Hl HW HN) as HC.
+  pose proof (ext_g HΓA HC Hl) as HΓAC.
+  pose proof (eqty_refl _ _ _ _ _ (lift_to_typeof_ty HC)) as EC.
+  pose proof (Wf_ih_wf_g Hv Hl Hl' HW HN HM HΓAC EC (lequiv_refl _ _ Hl)) as HI.
   assert (WZ : lwf (gL G) lzero) by (cbn; auto).
-  pose proof (ext_wf Hi HI (lwf_max WZ Hl')) as HΓT.
-  pose proof (Wf_step_wf Hi Hv Hl HA HN HM HΓT (eqty_refl _ _ _ _ _ HA) (lequiv_refl _ _ Hl)
-                (eqty_refl _ _ _ _ _ HC) (lequiv_refl _ _ Hl)) as HS.
+  pose proof (ext_g HΓAC HI (lwf_max WZ Hl')) as HΓT.
+  pose proof (Wf_step_wf_g Hv Hl HA HN HM HΓT (eqty_refl _ _ _ _ _ (lift_to_typeof_ty HA)) (lequiv_refl _ _ Hl)
+                EC (lequiv_refl _ _ Hl)) as HS.
   destruct (ihC c ltac:(szl) G i _ _ _ (lift_to_typeof_ty HS)) as [Hc0 | N0];
     [| right; intros T k H; destruct (inva_elimWf H) as ((_ & _ & _ & _ & _ & _ & _ & _ & X & _) & _);
        contradiction].
   destruct (ihC t ltac:(szl) G i Γ _ _ (lift_to_typeof_ty HW)) as [Ht | N0];
     [| right; intros T k H; destruct (inva_elimWf H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & X) & _);
        contradiction].
-  left; eexists; eexists; exact (wf_elimWf _ _ _ _ _ _ _ _ _ _ Hc Hl Hl' HA HN HM HC HI Hc0 Ht).
+  left; eexists; eexists; exact (wf_elimWf _ _ _ _ _ _ _ _ _ _ Hv Hl Hl' HA HN HM HC HI Hc0 Ht).
 Qed.
 
 (** ** The step *)

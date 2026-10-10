@@ -126,6 +126,9 @@ Ltac leq_step :=
     | |- tm_leq (ren_tm _ _) (ren_tm _ _) => apply (proj1 (proj2 leq_ren_all))
     | |- ty_leq (ren_ty _ _) (ren_ty _ _) => apply (proj1 leq_ren_all)
     | |- ty_leq (subst_ty _ _) (subst_ty _ _) => apply (proj1 leq_subst_all)
+    (* [sup_f]'s children's length (M15b) *)
+    | |- tm_leq (subst_tm _ _) (subst_tm _ _) => apply (proj1 (proj2 leq_subst_all))
+    | |- lsub_leq (lsingle _) (lsingle _) => unfold lsingle
     | |- ?R ?a _ =>
         let h := leq_head a in
         tryif is_constructor h

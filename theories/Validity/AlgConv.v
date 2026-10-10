@@ -1514,9 +1514,9 @@ Proof.
   destruct (inv_elimEmpty Hi Hx') as ((_ & W3 & W4 & HM' & Hν') & _ & _).
   pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
   pose proof (ctx_of_wf_tm Hi Hν) as HΓ.
-  assert (HE2 : [ G ; Γ ⊢[ i ] tyEmpty l2 @ l2 ]) by (apply wft_empty; [exact (compt_notV _ Hc) | rewrite Hi; exact HΓ | exact W2]).
+  assert (HE2 : [ G ; Γ ⊢[ i ] tyEmpty l2 @ l2 ]) by (apply wft_empty; [(apply compt_notV; exact Hc) | rewrite Hi; exact HΓ | exact W2]).
   assert (HEE : [ G ; Γ ⊢[ i ] tyEmpty l4 ≅ tyEmpty l2 @ l4 ])
-    by (apply eqty_empty; [exact (compt_notV _ Hc) | rewrite Hi; exact HΓ | exact (lequiv_sym _ _ _ E24)]).
+    by (apply eqty_empty; [(apply compt_notV; exact Hc) | rewrite Hi; exact HΓ | exact (lequiv_sym _ _ _ E24)]).
   assert (HΓE : [ G ; Γ ,, tyEmpty l2 @ l2 ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HE2 | exact W2]).
   pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi HEE (lequiv_sym _ _ _ E24) HΓE HM') E13) as HM'1.
   assert (HctxE : [ G2 ⊢[ i ] Γ ,, tyEmpty l2 @ l2 ≅ Γ2 ,, tyEmpty l2 @ l2 ])
@@ -1585,7 +1585,7 @@ Proof.
     as [HM'3 Hbr].
   pose proof (ac_ty_sound Hc DM HM HM'3) as EM.
   destruct (Hbr HM EM Hc1' Hc2' Hν') as (_ & _ & Hc1'2 & Hc2'2 & _).
-  assert (HS : [ G ; Γ ⊢[ i ] tySum l1 l2 A B @ lmax l1 l2 ]) by (apply wft_sum; [exact (compt_notV _ Hc) | ..]; assumption).
+  assert (HS : [ G ; Γ ⊢[ i ] tySum l1 l2 A B @ lmax l1 l2 ]) by (apply wft_sum; [(apply compt_notV; exact Hc) | ..]; assumption).
   assert (HctxS : [ G2 ⊢[ i ] Γ ,, tySum l1 l2 A B @ lmax l1 l2 ≅ Γ2 ,, tySum l1 l2 A B @ lmax l1 l2 ])
     by exact (eqctx_ext_refl Hctx (gconv_ty HE HS) (GEq_lwf HE (l := lmax l1 l2) (conj W1 W2))).
   assert (HctxA : [ G2 ⊢[ i ] Γ ,, A @ l1 ≅ Γ2 ,, A @ l1 ])
@@ -1742,9 +1742,9 @@ Proof.
   pose proof (eqty_wf_l Hi EAC) as HA. pose proof (eqtm_wf_l Hi END) as HN.
   assert (Ha1 : [ G ; Γ ⊢[ i ] a : A @ l ]).
   { eapply wf_conv; [eapply wf_lconv; [exact Ha | now apply lequiv_sym] | rewrite Hi; exact EAC]. }
-  assert (HW : [ G ; Γ ⊢[ i ] tyWf l A N @ l ]) by (apply wft_wf; assumption).
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l A N @ l ]) by (apply wft_wf; first [(apply compt_notV; exact Hc) | assumption]).
   assert (EW : [ G ; Γ ⊢[ i ] tyWf l A N ≅ tyWf k C D @ l ])
-    by (apply eqty_wf; first [assumption | now apply lequiv_sym]).
+    by (apply eqty_wf; first [(apply compt_notV; exact Hc) | assumption | now apply lequiv_sym]).
   assert (ECs : [ G ; Γ ⊢[ i ] tyVec l (tyWf l A N) N[lsingle a] ≅ tyVec k (tyWf k C D) D[lsingle a] @ l ]).
   { apply eqty_vec; first [exact Hv | now apply lequiv_sym | exact HW | exact EW | idtac].
     exact (Wf_Na_eq Hi HN END Ha1 Ha1 (eqtm_refl _ _ _ _ _ _ Ha1)). }
@@ -1763,7 +1763,7 @@ Proof.
   destruct (supf_parts Hc Ht) as (Wl & HA & HN & Ha & Hcs).
   destruct (supf_parts Hc Ht') as (_ & _ & _ & Ha' & Hcs'0).
   pose proof (ac_tm_sound Hc Da Ha Ha') as Ea.
-  assert (HW : [ G ; Γ ⊢[ i ] tyWf l A N @ l ]) by (apply wft_wf; assumption).
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l A N @ l ]) by (apply wft_wf; first [(apply compt_notV; exact Hc) | assumption]).
   assert (Hcs' : [ G ; Γ ⊢[ i ] cs' : tyVec l (tyWf l A N) N[lsingle a] @ l ]).
   { eapply wf_conv; [exact Hcs'0 | rewrite Hi].
     apply eqty_vec; first [exact Hv | apply lequiv_refl, Wl | exact HW | apply eqty_refl, HW | idtac].
@@ -1771,7 +1771,7 @@ Proof.
   pose proof (gconv_ty HE HA) as HA2. pose proof (gconv_tm HE Hi Ha) as Ha2.
   pose proof (gconv_tm HE Hi HN) as HN2.
   assert (EW2 : [ G2 ; Γ ⊢[ i ] tyWf l A N ≅ tyWf m1 A2 N2 @ l ])
-    by (apply eqty_wf; first [exact Hc | now apply lequiv_sym | assumption]).
+    by (apply eqty_wf; first [(apply compt_notV; exact Hc) | exact Hc | now apply lequiv_sym | assumption]).
   assert (ECs : [ G2 ; Γ ⊢[ i ] tyVec l (tyWf l A N) N[lsingle a] ≅ tyVec m1 (tyWf m1 A2 N2) N2[lsingle a] @ l ]).
   { apply eqty_vec; first [exact Hv | now apply lequiv_sym | exact (eqty_wf_l Hi EW2) | exact EW2 | idtac].
     exact (Wf_Na_eq Hi HN2 EN Ha2 Ha2 (eqtm_refl _ _ _ _ _ _ Ha2)). }
@@ -1802,8 +1802,8 @@ Proof.
     by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | exact (lequiv_sym _ _ _ E13)]).
   pose proof (stab_tm Hi EA3 (lequiv_sym _ _ _ E13) HΓA HN') as HN'A.
   pose proof (ac_tm_sound Hc DN HN HN'A) as EN.
-  assert (HW : [ G ; Γ ⊢[ i ] tyWf l1 A N @ l1 ]) by (apply wft_wf; assumption).
-  assert (EW : [ G ; Γ ⊢[ i ] tyWf l1 A N ≅ tyWf l3 A' N' @ l1 ]) by (apply eqty_wf; assumption).
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l1 A N @ l1 ]) by (apply wft_wf; first [(apply compt_notV; exact Hc) | assumption]).
+  assert (EW : [ G ; Γ ⊢[ i ] tyWf l1 A N ≅ tyWf l3 A' N' @ l1 ]) by (apply eqty_wf; first [(apply compt_notV; exact Hc) | assumption]).
   assert (EW' : [ G ; Γ ⊢[ i ] tyWf l3 A' N' ≅ tyWf l1 A N @ l3 ])
     by (eapply eqty_lconv; [apply eqty_sym, EW | exact (lequiv_sym _ _ _ E13)]).
   pose proof (ext_wf Hi HW W1) as HΓW.

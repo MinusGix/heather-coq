@@ -68,8 +68,8 @@ Proof.
   - now apply lequiv_refl.
   - exact Hl'.
   - exact Hwl.
-  - apply tyred_refl, wft_wf; auto using ge_compt.
-  - eapply tyred_lconv; [apply tyred_refl, wft_wf; auto using ge_compt | exact (lequiv_sym _ _ _ Hl')].
+  - apply tyred_refl, wft_wf; auto using ge_compt, ge_notV.
+  - eapply tyred_lconv; [apply tyred_refl, wft_wf; auto using ge_compt, ge_notV | exact (lequiv_sym _ _ _ Hl')].
     + exact (lconv_ty HA'd (lequiv_sym _ _ _ Hl')).
     + exact (ctx_lvl_tm HA'd (lequiv_sym _ _ _ Hl') HN'd).
   - exact HAd.
@@ -433,7 +433,7 @@ Proof.
   pose proof (LRtm_geq Xcs) as Ecs.
   pose proof (geq_tm_supf (lequiv_sym _ _ _ Hl') HAd EA HNd EN Ea Ecs) as Dsup.
   pose proof (geq_tm_sound Dsup) as Dsup'.
-  assert (HWd : [ G ; Δ ⊢g tyWf l A[d] N[llift d] @ l ]) by (apply wft_wf; auto using ge_compt).
+  assert (HWd : [ G ; Δ ⊢g tyWf l A[d] N[llift d] @ l ]) by (apply wft_wf; auto using ge_compt, ge_notV).
   apply (wfrel _ _ _ _ _ _ _ _ (tmSupf l A[d] N[llift d] a[d] cs[d]) (tmSupf l' A'[d'] N'[llift d'] a'[d'] cs'[d'])).
   - exact (tmred_refl _ _ _ (eqtm_wf_l ge_typeof Dsup')).
   - exact (tmred_refl _ _ _ (eqtm_wf_r ge_typeof Dsup')).
@@ -474,7 +474,7 @@ Proof.
   destruct (El_annot Hs Hk) as [HElk _].
   pose proof (ctx_lvl_tm HElk (lequiv_sym _ _ _ Hk) Hn) as Hnk.
   assert (Hc0 : [ G ; Δ ⊢g tmWf k s n : tyU k @ lsuc k ])
-    by (apply wf_code_wf; [exact ge_compt | exact Wk | exact Hsk | exact Hnk]).
+    by (apply wf_code_wf; [exact ge_notV | exact Wk | exact Hsk | exact Hnk]).
   pose proof (conv_U' Hc0 Hk) as Hc.
   destruct (El_annot Hc Hla) as [HEl HEq].
   apply tyred_step; [exact HEl | constructor |].

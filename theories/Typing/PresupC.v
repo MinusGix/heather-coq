@@ -666,6 +666,70 @@ Lemma pc_code_fin {Γ n n'} : i <> lV ->
   [ G ; Γ ⊢[ i ] tmFin n : tyU lzero @ lsuc lzero ] /\ [ G ; Γ ⊢[ i ] tmFin n' : tyU lzero @ lsuc lzero ].
 Proof. intros Hv Hn Hn'. split; apply wf_code_fin; assumption. Qed.
 
+(** Finitary well-founded trees and their code (every layer but V since
+    M15b): the right telescope of [elim_Wf] from [static_code]'s, at the
+    [≡ₗ]-related syntax [static_code_eq] gives. *)
+Lemma pc_wf {Γ l l' A A' N N'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tyWf l A N @ l ] /\ [ G ; Γ ⊢[ i ] tyWf l' A' N' @ l ].
+Proof.
+  intros Hv Hl HA HAA HA' HN HN'.
+  split; [apply wft_wf; eauto using lequiv_wf_l | exact (sc_wf_q HiD Hv Hl HA HA' HAA HN')].
+Qed.
+
+Lemma pc_supf {Γ l l' A A' N N' a a' cs cs'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] cs : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
+  [ G ; Γ ⊢[ i ] cs' : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
+  [ G ; Γ ⊢[ i ] tmSupf l A N a cs : tyWf l A N @ l ] /\ [ G ; Γ ⊢[ i ] tmSupf l' A' N' a' cs' : tyWf l A N @ l ].
+Proof.
+  intros Hv Hl HA HAA HA' HN HNN HN' Haa Ha Ha' Hcs Hcs'.
+  split; [apply wf_supf; eauto using lequiv_wf_l |].
+  exact (sc_supf_q HiD Hv Hl HA HA' HAA HN HN' HNN Ha Ha' Haa Hcs').
+Qed.
+
+Lemma pc_elimWf {Γ l1 l2 l3 l4 A A' N N' M M' c c' t t'} : i <> lV ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyWf l1 A N @ l1 ⊢[ i ] M @ l2 ] -> [ G ; Γ ,, tyWf l1 A N @ l1 ⊢[ i ] M ≅ M' @ l2 ] ->
+  [ G ; Γ ,, tyWf l1 A N @ l1 ⊢[ i ] M' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] wfcsty l1 A N @ l1 ] ->
+  [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ⊢[ i ] wfihty l1 l2 A N M @ lmax lzero l2 ] ->
+  [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ,, wfihty l1 l2 A N M @ lmax lzero l2
+      ⊢[ i ] c : wfstepty l1 A N M @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ,, wfihty l1 l2 A N M @ lmax lzero l2
+      ⊢[ i ] c' : wfstepty l1 A N M @ l2 ] ->
+  [ G ; Γ ⊢[ i ] t ≅ t' : tyWf l1 A N @ l1 ] ->
+  [ G ; Γ ⊢[ i ] t : tyWf l1 A N @ l1 ] -> [ G ; Γ ⊢[ i ] t' : tyWf l1 A N @ l1 ] ->
+  [ G ; Γ ⊢[ i ] tmElimWf l1 l2 A N M c t : M[lsingle t] @ l2 ] /\
+  [ G ; Γ ⊢[ i ] tmElimWf l3 l4 A' N' M' c' t' : M[lsingle t] @ l2 ].
+Proof.
+  intros Hv H13 H24 HA HAA HA' HN HNN HN' HM HMM HM' HC HI Hc Hc' Htt Ht Ht'.
+  split; [apply wf_elimWf; eauto using lequiv_wf_l |].
+  exact (sc_elimWf_q HiD Hv H13 H24 HA HA' HAA HN HN' HNN HM HM' HMM HI Hc' Ht Ht' Htt).
+Qed.
+
+Lemma pc_codewf {Γ l l' s s' n n'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tmWf l s n : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmWf l' s' n' : tyU l @ lsuc l ].
+Proof.
+  intros Hv Hl Hs Hss Hs' Hn Hn'. split; [apply wf_code_wf; eauto using lequiv_wf_l|].
+  assert (HEl : [ G ; Γ ⊢[ i ] tyEl l s @ l ]) by (apply wft_El; eauto using lequiv_wf_l).
+  assert (HEE : [ G ; Γ ⊢[ i ] tyEl l s ≅ tyEl l' s' @ l ]) by (apply eqty_El; auto).
+  apply (convU_at (l := l')); [|now apply lequiv_sym].
+  apply wf_code_wf; eauto using lequiv_wf_r.
+  - exact (convU_at Hs' Hl).
+  - exact (ctxconv_tm (extc HEl HEE Hl) Hd Hn').
+Qed.
+
 End Cases.
 
 Theorem presupposition_C :
@@ -717,7 +781,10 @@ Proof.
              | solve [eapply pc_elimW; eassumption] | solve [eapply pc_codeW; eassumption]
              (* length-indexed tuples and finite indices, with their codes (M14b) *)
              | solve [eapply pc_vec; eassumption] | solve [eapply pc_fin; eassumption]
-             | solve [eapply pc_code_vec; eassumption] | solve [eapply pc_code_fin; eassumption] ].
+             | solve [eapply pc_code_vec; eassumption] | solve [eapply pc_code_fin; eassumption]
+             (* finitary well-founded trees and their code (M15b) *)
+             | solve [eapply pc_wf; eassumption] | solve [eapply pc_supf; eassumption]
+             | solve [eapply pc_elimWf; eassumption] | solve [eapply pc_codewf; eassumption] ].
 Qed.
 
 Lemma eqty_wf_C {G i Γ T T' l} : lle i lC -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->

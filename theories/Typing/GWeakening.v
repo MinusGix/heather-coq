@@ -115,6 +115,17 @@ Proof. apply gren_ren_ty. Qed.
 Lemma gren_ren_tm_raw (t : tm) r ξ : gren_tm (ren_tm t r) ξ = ren_tm (gren_tm t ξ) r.
 Proof. apply (proj1 (proj2 gren_ren_all)). Qed.
 
+(** [sup_f]'s children's length and [elim_Wf]'s step telescope (M15b). *)
+Lemma gren_tm_subst_raw (t : tm) d ξ : gren_tm (subst_tm t d) ξ = subst_tm (gren_tm t ξ) (glren d ξ).
+Proof. exact (gren_subst t d ξ). Qed.
+Lemma gren_tmNth_raw l T k cs i ξ :
+  gren_tm (tmNth l T k cs i) ξ = tmNth l (gren_ty T ξ) (gren_tm k ξ) (gren_tm cs ξ) (gren_tm i ξ).
+Proof.
+  unfold tmNth, nthMot, nthBase, nthStep. cbn [gren GRen_tm gren_tm GRen_ty gren_ty].
+  change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫.
+  repeat rewrite ?gren_ren_ty', ?gren_ren. reflexivity.
+Qed.
+
 Ltac gpeel_push :=
   repeat first [ rewrite <- peelL_gren | rewrite <- peelG_gren | rewrite <- peelU_gren ];
   unfold rb_br; rewrite tup_nth_gren;
@@ -129,6 +140,11 @@ Ltac gpeel_push :=
   try match goal with |- context [tmSup _ _ _ _ (var 2) (var 1)] =>
     repeat progress (cbn [glren lsingle gren_tm gren_ty]; fold gren_ty gren_tm;
       rewrite ?gren_ty_subst_raw, ?gren_ren_ty_raw, ?gren_ren_tm_raw, ?gren_ren_ty', ?gren_ren) end;
+  try match goal with |- context [tmSupf _ _ _ (var 2) (var 1)] =>
+    repeat progress (cbn [glren lsingle gren_tm gren_ty]; fold gren_ty gren_tm;
+      rewrite ?gren_ty_subst_raw, ?gren_tm_subst_raw, ?gren_tmNth_raw, ?gren_ren_ty_raw, ?gren_ren_tm_raw,
+        ?gren_ren_ty', ?gren_ren) end;
+  rewrite ?gren_tm_subst_raw; cbn [glren lsingle];
   reflexivity.
 
 Lemma redT_gren l1 l2 rb l Δ c v ξ : redT l1 l2 rb l Δ c = Some v ->

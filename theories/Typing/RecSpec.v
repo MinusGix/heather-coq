@@ -214,6 +214,25 @@ Definition brDecls (k : nat) : list gdecl :=
   | 44 => [gdTm (cvar 1) lC tyNat lzero; gdTm (cvar 0) lC (tyU (lvar 0)) (lsuc (lvar 0)); gdCtx]
   (* g, u_k : (g ⊢C Nat @0): no level binder, [Fin] lives at 0 *)
   | 45 | 46 => [gdTm (cvar 0) lC tyNat lzero; gdCtx]
+  (* finitary well-founded trees (M15b), M15_DESIGN.md's derivation *)
+  (* ℓ; g, U_S : (g ⊢C @ℓ), u_n : (g, x : U_S^id @ℓ ⊢C Nat @0) *)
+  | 47 => [gdTm (cvar 1 ,, gv 0 @ lvar 0) lC tyNat lzero; gdTy (cvar 0) lC (lvar 0); gdCtx]
+  (* ℓ; g, u_s : (g ⊢C Ty ℓ @1+ℓ), u_n : (g, x : El ℓ u_s^id @ℓ ⊢C Nat @0) *)
+  | 48 => [gdTm (cvar 1 ,, tyEl (lvar 0) (gu 0) @ lvar 0) lC tyNat lzero;
+           gdTm (cvar 0) lC (tyU (lvar 0)) (lsuc (lvar 0)); gdCtx]
+  (* ℓ; g, U_S, u_n, u_a : (g ⊢C U_S^id @ℓ),
+     u_cs : (g ⊢C Vec^ℓ(Wf^ℓ(x : U_S^id). u_n^id; u_n^{id,u_a/x}) @ℓ) *)
+  | 49 => [gdTm (cvar 3) lC (tyVec (lvar 0) (tyWf (lvar 0) (gv 2) (gu 1)) (gvar 1 (lsingle (gu 0)))) (lvar 0);
+           gdTm (cvar 2) lC (gv 1) (lvar 0);
+           gdTm (cvar 1 ,, gv 0 @ lvar 0) lC tyNat lzero; gdTy (cvar 0) lC (lvar 0); gdCtx]
+  (* ℓ ℓ'; g, U_S, u_n, U_M : (g, z : Wf @ℓ ⊢C @ℓ'),
+     u_s : (g, a : U_S^id, cs : wfcsty, ih : wfihty ⊢C wfstepty @ℓ'), u_t : (g ⊢C Wf @ℓ) *)
+  | 50 => [gdTm (cvar 4) lC (tyWf (lvar 1) (gv 3) (gu 2)) (lvar 1);
+           gdTm (cvar 3 ,, gv 2 @ lvar 1 ,, wfcsty (lvar 1) (gv 2) (gu 1) @ lvar 1
+                        ,, wfihty (lvar 1) (lvar 0) (gv 2) (gu 1) (gv 0) @ lmax lzero (lvar 0)) lC
+             (wfstepty (lvar 1) (gv 2) (gu 1) (gv 0)) (lvar 0);
+           gdTy (cvar 2 ,, tyWf (lvar 1) (gv 1) (gu 0) @ lvar 1) lC (lvar 0);
+           gdTm (cvar 1 ,, gv 0 @ lvar 1) lC tyNat lzero; gdTy (cvar 0) lC (lvar 1); gdCtx]
   | _ => []
   end.
 
@@ -246,6 +265,26 @@ Fixpoint mkLocs (nu ng j : nat) (wT wt : tm) (a1 a2 : lvl) (xs : list rcall) : l
   | [] => []
   | x :: xs => (call_ty nu ng j wT wt x, call_lv a1 a2 x) :: mkLocs nu ng (S j) wT wt a1 a2 xs
   end.
+
+(** The recursive calls, derived from the scope (M15b step 0; HEATHER.md,
+    direction 1): one call per layer-C global, oldest first. The global at
+    position [p] of [brDecls] (0 is the most recent) is read in the branch
+    scope weakened past itself and the [p] later ones ([ush (S p)]); a type
+    global gives a call at [M_Typ], a term global one at [M_Trm]. A layer-D
+    or V global (the [λ] branch's codomain, [var]'s payload) gives none.
+    [br_calls] below stays a written table, in the notation forms the
+    branch proofs rewrite with (a computed table would normalize [elim_Wf]'s
+    step telescope past its notations); [br_calls_derived] checks every
+    entry against this function, and [br_nl] against its length. *)
+Definition call_of (p : nat) (D : gdecl) : list rcall :=
+  match D with
+  | gdTy Δ lC l => [rcT l (gcren Δ (ush (S p))) (boxT (gv p))]
+  | gdTm Δ lC T l => [rct l (gcren Δ (ush (S p))) (gren_ty T (ush (S p))) (boxt (gu p))]
+  | _ => []
+  end.
+Fixpoint calls_from (p : nat) (ds : list gdecl) : list rcall :=
+  match ds with [] => [] | D :: ds => calls_from (S p) ds ++ call_of p D end.
+Definition derived_calls (k : nat) : list rcall := calls_from 0 (brDecls k).
 
 (** The recursive calls, in binding order. *)
 Definition br_calls (k : nat) : list rcall :=
@@ -338,6 +377,19 @@ Definition br_calls (k : nat) : list rcall :=
   | 43 => [ rcT (lvar 0) (cvar 2) (boxT (gv 1)); rct lzero (cvar 2) tyNat (boxt (gu 0)) ]
   | 44 => [ rct (lsuc (lvar 0)) (cvar 2) (tyU (lvar 0)) (boxt (gu 1)); rct lzero (cvar 2) tyNat (boxt (gu 0)) ]
   | 45 | 46 => [ rct lzero (cvar 1) tyNat (boxt (gu 0)) ]
+  (* finitary well-founded trees (M15b); [br_calls_derived] checks them *)
+  | 47 => [ rcT (lvar 0) (cvar 2) (boxT (gv 1)); rct lzero (cvar 2 ,, gv 1 @ lvar 0) tyNat (boxt (gu 0)) ]
+  | 48 => [ rct (lsuc (lvar 0)) (cvar 2) (tyU (lvar 0)) (boxt (gu 1));
+            rct lzero (cvar 2 ,, tyEl (lvar 0) (gu 1) @ lvar 0) tyNat (boxt (gu 0)) ]
+  | 49 => [ rcT (lvar 0) (cvar 4) (boxT (gv 3)); rct lzero (cvar 4 ,, gv 3 @ lvar 0) tyNat (boxt (gu 2));
+            rct (lvar 0) (cvar 4) (gv 3) (boxt (gu 1));
+            rct (lvar 0) (cvar 4) (tyVec (lvar 0) (tyWf (lvar 0) (gv 3) (gu 2)) (gvar 2 (lsingle (gu 1)))) (boxt (gu 0)) ]
+  | 50 => [ rcT (lvar 1) (cvar 5) (boxT (gv 4)); rct lzero (cvar 5 ,, gv 4 @ lvar 1) tyNat (boxt (gu 3));
+            rcT (lvar 0) (cvar 5 ,, tyWf (lvar 1) (gv 4) (gu 3) @ lvar 1) (boxT (gv 2));
+            rct (lvar 0) (cvar 5 ,, gv 4 @ lvar 1 ,, wfcsty (lvar 1) (gv 4) (gu 3) @ lvar 1
+                         ,, wfihty (lvar 1) (lvar 0) (gv 4) (gu 3) (gv 2) @ lmax lzero (lvar 0))
+              (wfstepty (lvar 1) (gv 4) (gu 3) (gv 2)) (boxt (gu 1));
+            rct (lvar 1) (cvar 5) (tyWf (lvar 1) (gv 4) (gu 3)) (boxt (gu 0)) ]
   | _ => []
   end.
 
@@ -406,6 +458,11 @@ Definition br_head (k : nat) : rcall :=
   | 44 => rct (lsuc (lvar 0)) (cvar 2) (tyU (lvar 0)) (boxt (tmVec (lvar 0) (gu 1) (gu 0)))
   | 45 => rcT lzero (cvar 1) (boxT (tyFin (gu 0)))
   | 46 => rct (lsuc lzero) (cvar 1) (tyU lzero) (boxt (tmFin (gu 0)))
+  | 47 => rcT (lvar 0) (cvar 2) (boxT (tyWf (lvar 0) (gv 1) (gu 0)))
+  | 48 => rct (lsuc (lvar 0)) (cvar 2) (tyU (lvar 0)) (boxt (tmWf (lvar 0) (gu 1) (gu 0)))
+  | 49 => rct (lvar 0) (cvar 4) (tyWf (lvar 0) (gv 3) (gu 2)) (boxt (tmSupf (lvar 0) (gv 3) (gu 2) (gu 1) (gu 0)))
+  | 50 => rct (lvar 0) (cvar 5) (tyGvar 2 (lsingle (gu 0)))
+            (boxt (tmElimWf (lvar 1) (lvar 0) (gv 4) (gu 3) (gv 2) (gu 1) (gu 0)))
   | _ => rcT lzero cnil (boxT tyErr)
   end.
 
@@ -436,3 +493,8 @@ Lemma brDecls_len k : k < nbr -> length (brDecls k) = br_ng k.
 Proof. intros H; br_all ltac:(destruct k; [reflexivity|]); lia. Qed.
 Lemma brLocs_len k wT wt a1 a2 : k < nbr -> length (brLocs k wT wt a1 a2) = br_nl k.
 Proof. intros H; br_all ltac:(destruct k; [reflexivity|]); lia. Qed.
+
+(** The call table is the derived one, and the arity's local count is its
+    length, for every branch (M15b step 0). *)
+Lemma br_calls_derived k : k < nbr -> br_calls k = derived_calls k /\ br_nl k = length (derived_calls k).
+Proof. intros H; br_all ltac:(destruct k; [split; vm_compute; reflexivity|]); lia. Qed.

@@ -1613,9 +1613,9 @@ Proof.
   pose proof (stab_tm Hi EA5 (lequiv_sym _ _ _ E15) HΓA HN') as HN'A.
   destruct (IHN N' i lzero Hc HN HN'A) as [DN | Hneg]; [| refute].
   pose proof (ac_tm_sound Hc DN HN HN'A) as EN.
-  assert (HW : [ G ; Γ ⊢[ i ] tyWf l1 A N @ l1 ]) by (apply wft_wf; assumption).
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l1 A N @ l1 ]) by (apply wft_wf; first [(apply compt_notV; exact Hc) | assumption]).
   assert (EW' : [ G ; Γ ⊢[ i ] tyWf l5 A' N' ≅ tyWf l1 A N @ l5 ]).
-  { eapply eqty_lconv; [apply eqty_sym, eqty_wf; assumption | exact (lequiv_sym _ _ _ E15)]. }
+  { eapply eqty_lconv; [apply eqty_sym, eqty_wf; first [(apply compt_notV; exact Hc) | assumption] | exact (lequiv_sym _ _ _ E15)]. }
   pose proof (ext_wf Hi HW W1) as HΓW.
   pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi EW' (lequiv_sym _ _ _ E15) HΓW HM') E26) as HM'3.
   destruct (IHM M' i _ _ Hc HM HM'3) as [DM | Hneg]; [| refute].

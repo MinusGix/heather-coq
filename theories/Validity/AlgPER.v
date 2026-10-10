@@ -130,9 +130,9 @@ Proof.
   pose proof (stab_tm Hi EA H13 HΓA' HN) as HNA'. pose proof (stab_tm Hi EA3 H31 HΓA HN') as HN'A.
   assert (EN' : [ G ; Γ ,, A' @ l3 ⊢[ i ] N' ≅ N : tyNat @ lzero ])
     by (apply eqtm_sym, (stab_eqtm Hi EA H13 HΓA' EN)).
-  assert (HW : [ G ; Γ ⊢[ i ] tyWf l1 A N @ l1 ]) by (apply wft_wf; assumption).
-  assert (HW' : [ G ; Γ ⊢[ i ] tyWf l3 A' N' @ l3 ]) by (apply wft_wf; assumption).
-  assert (EW : [ G ; Γ ⊢[ i ] tyWf l1 A N ≅ tyWf l3 A' N' @ l1 ]) by (apply eqty_wf; assumption).
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l1 A N @ l1 ]) by (apply wft_wf; first [(apply compt_notV; exact Hc) | assumption]).
+  assert (HW' : [ G ; Γ ⊢[ i ] tyWf l3 A' N' @ l3 ]) by (apply wft_wf; first [(apply compt_notV; exact Hc) | assumption]).
+  assert (EW : [ G ; Γ ⊢[ i ] tyWf l1 A N ≅ tyWf l3 A' N' @ l1 ]) by (apply eqty_wf; first [(apply compt_notV; exact Hc) | assumption]).
   assert (EW' : [ G ; Γ ⊢[ i ] tyWf l3 A' N' ≅ tyWf l1 A N @ l3 ])
     by (eapply eqty_lconv; [apply eqty_sym, EW | exact H31]).
   (* the children *)
@@ -173,7 +173,7 @@ Lemma wf_cs_conv {G i Γ l A N a a'} : compt i -> lwf (gL G) l ->
 Proof.
   intros Hc Wl HA HN Ha Ha' Ea.
   pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
-  assert (HW : [ G ; Γ ⊢[ i ] tyWf l A N @ l ]) by (apply wft_wf; assumption).
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l A N @ l ]) by (apply wft_wf; first [(apply compt_notV; exact Hc) | assumption]).
   apply eqty_vec; first [exact Hv | apply lequiv_refl, Wl | exact HW | apply eqty_refl, HW | idtac].
   exact (Wf_Na_eq Hi HN (eqtm_refl _ _ _ _ _ _ HN) Ha Ha' Ea).
 Qed.
@@ -1396,8 +1396,8 @@ Proof.
     by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | exact (lequiv_sym _ _ _ E13)]).
   pose proof (stab_tm Hi EA3 (lequiv_sym _ _ _ E13) HΓA HN') as HN'A.
   pose proof (ac_tm_sound Hc DN HN HN'A) as EN.
-  assert (HW : [ G ; Γ ⊢[ i ] tyWf l1 A N @ l1 ]) by (apply wft_wf; assumption).
-  assert (EW : [ G ; Γ ⊢[ i ] tyWf l1 A N ≅ tyWf l3 A' N' @ l1 ]) by (apply eqty_wf; assumption).
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l1 A N @ l1 ]) by (apply wft_wf; first [(apply compt_notV; exact Hc) | assumption]).
+  assert (EW : [ G ; Γ ⊢[ i ] tyWf l1 A N ≅ tyWf l3 A' N' @ l1 ]) by (apply eqty_wf; first [(apply compt_notV; exact Hc) | assumption]).
   assert (EW' : [ G ; Γ ⊢[ i ] tyWf l3 A' N' ≅ tyWf l1 A N @ l3 ])
     by (eapply eqty_lconv; [apply eqty_sym, EW | exact (lequiv_sym _ _ _ E13)]).
   pose proof (ext_wf Hi HW W1) as HΓW.
@@ -3844,12 +3844,12 @@ Proof.
                 (cv_tm HG Hc DN2 HctxA HN' HN''A' (eqty_refl _ _ _ _ _ (wf_tm_ty Hi HN')))) as XN.
   pose proof (ac_tm_sound Hc XN HN HN''A) as EN13.
   (* the motives, at the left [Wf] *)
-  assert (HW : [ G ; Γ ⊢[ i ] tyWf l1 A N @ l1 ]) by (apply wft_wf; assumption).
-  assert (HW' : [ G ; Γ ⊢[ i ] tyWf l3 A' N' @ l3 ]) by (apply wft_wf; assumption).
+  assert (HW : [ G ; Γ ⊢[ i ] tyWf l1 A N @ l1 ]) by (apply wft_wf; first [(apply compt_notV; exact Hc) | assumption]).
+  assert (HW' : [ G ; Γ ⊢[ i ] tyWf l3 A' N' @ l3 ]) by (apply wft_wf; first [(apply compt_notV; exact Hc) | assumption]).
   pose proof (ext_wf Hi HW W1) as HΓW. pose proof (ext_wf Hi HW' W3) as HΓW'.
-  assert (EW : [ G ; Γ ⊢[ i ] tyWf l1 A N ≅ tyWf l3 A' N' @ l1 ]) by (apply eqty_wf; assumption).
-  assert (EW2 : [ G ; Γ ⊢[ i ] tyWf l3 A' N' ≅ tyWf l5 A'' N'' @ l3 ]) by (apply eqty_wf; assumption).
-  assert (EW13 : [ G ; Γ ⊢[ i ] tyWf l1 A N ≅ tyWf l5 A'' N'' @ l1 ]) by (apply eqty_wf; assumption).
+  assert (EW : [ G ; Γ ⊢[ i ] tyWf l1 A N ≅ tyWf l3 A' N' @ l1 ]) by (apply eqty_wf; first [(apply compt_notV; exact Hc) | assumption]).
+  assert (EW2 : [ G ; Γ ⊢[ i ] tyWf l3 A' N' ≅ tyWf l5 A'' N'' @ l3 ]) by (apply eqty_wf; first [(apply compt_notV; exact Hc) | assumption]).
+  assert (EW13 : [ G ; Γ ⊢[ i ] tyWf l1 A N ≅ tyWf l5 A'' N'' @ l1 ]) by (apply eqty_wf; first [(apply compt_notV; exact Hc) | assumption]).
   assert (EW' : [ G ; Γ ⊢[ i ] tyWf l3 A' N' ≅ tyWf l1 A N @ l3 ])
     by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EW) | now apply lequiv_sym]).
   assert (EW2' : [ G ; Γ ⊢[ i ] tyWf l5 A'' N'' ≅ tyWf l3 A' N' @ l5 ])
