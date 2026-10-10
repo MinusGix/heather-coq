@@ -264,7 +264,7 @@ Lemma wft_wf_typeof G i Δ l A N : lwf (gL G) l ->
   [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
   [ G ; Δ ⊢[ typeof i ] tyWf l A N @ l ].
 Proof.
-  intros Hl HA HN. apply wft_wf; [apply compt_typeof | exact Hl
+  intros Hl HA HN. apply wft_wf; [apply compt_notV, compt_typeof | exact Hl
                                  | eapply lift_ty; [exact HA | apply lle_self_typeof]
                                  | eapply lift_tm; [exact HN | apply lle_self_typeof]].
 Qed.
@@ -279,7 +279,7 @@ Lemma eqty_wf_typeof G i Δ l A A' N N' : lwf (gL G) l ->
   [ G ; Δ ⊢[ typeof i ] tyWf l A N ≅ tyWf l A' N' @ l ].
 Proof.
   intros Hl HA HAA HNN.
-  apply eqty_wf; [apply compt_typeof | apply lequiv_refl; assumption
+  apply eqty_wf; [apply compt_notV, compt_typeof | apply lequiv_refl; assumption
                  | eapply lift_ty; [exact HA | apply lle_self_typeof]
                  | eapply lift_eqty; [exact HAA | apply lle_self_typeof]
                  | eapply lift_eqtm; [exact HNN | apply lle_self_typeof]].

@@ -303,6 +303,18 @@ Lemma gs_ren_ty_raw (A : ty) r σ : gsubst_ty (ren_ty A r) σ = ren_ty (gsubst_t
 Proof. apply gsubst_ren_ty. Qed.
 Lemma gs_ren_tm_raw (t : tm) r σ : gsubst_tm (ren_tm t r) σ = ren_tm (gsubst_tm t σ) r.
 Proof. apply gsubst_ren. Qed.
+(** [sup_f]'s children's length and [elim_Wf]'s step telescope (M15b). *)
+Lemma gs_tm_subst_raw (t : tm) d σ : gsubst_tm (subst_tm t d) σ = subst_tm (gsubst_tm t σ) (glsubst d σ).
+Proof. exact (gsubst_subst t d σ). Qed.
+Lemma gs_ty_subst_raw (T : ty) d σ : gsubst_ty (subst_ty T d) σ = subst_ty (gsubst_ty T σ) (glsubst d σ).
+Proof. exact (gsubst_subst_ty T d σ). Qed.
+Lemma gs_tmNth_raw l T k cs i σ :
+  gsubst_tm (tmNth l T k cs i) σ = tmNth l (gsubst_ty T σ) (gsubst_tm k σ) (gsubst_tm cs σ) (gsubst_tm i σ).
+Proof.
+  unfold tmNth, nthMot, nthBase, nthStep. cbn [gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty].
+  change (gsubst_tm ?x ?σ) with x⦃σ⦄; change (gsubst_ty ?x ?σ) with x⦃σ⦄.
+  repeat rewrite ?gsubst_ren_ty, ?gsubst_ren. reflexivity.
+Qed.
 
 Ltac gpeel_push Hσ :=
   repeat first [ rewrite <- peelL_gsubst by hd_tac
@@ -316,6 +328,10 @@ Ltac gpeel_push Hσ :=
   try match goal with |- context [tmSup _ _ _ _ (var 2) (var 1)] =>
     repeat progress (cbn [gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty]; fold gsubst_ty gsubst_tm gcsubst glsubst;
       rewrite ?gsubst_ren_ty, ?gsubst_ren, ?gs_ren_ty_raw, ?gs_ren_tm_raw) end;
+  try match goal with |- context [tmSupf _ _ _ (var 2) (var 1)] =>
+    repeat progress (cbn [glsubst lsingle gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty]; fold gsubst_ty gsubst_tm gcsubst glsubst;
+      rewrite ?gs_ty_subst_raw, ?gs_tm_subst_raw, ?gs_tmNth_raw, ?gsubst_ren_ty, ?gsubst_ren, ?gs_ren_ty_raw, ?gs_ren_tm_raw) end;
+  rewrite ?gs_tm_subst_raw; cbn [glsubst lsingle];
   reflexivity.
 
 Lemma redT_gsubst l1 l2 MT Mt bs l Δ c v σ : gdnf σ ->

@@ -26,7 +26,8 @@ Definition canon_head (h : nat) (w : tm) : Prop :=
          (exists l l' s t, w = tmSig l l' s t) \/ (exists l, w = tmUnit l) \/
          (exists l s t u, w = tmId l s t u) \/ (exists l s t u, w = tmSEq l s t u) \/
          (exists l, w = tmSEmpty l) \/ (exists l, w = tmEmpty l) \/ (exists l l' s t, w = tmSum l l' s t) \/
-         (exists l l' s t, w = tmW l l' s t) \/ (exists l s n, w = tmVec l s n) \/ exists n, w = tmFin n
+         (exists l l' s t, w = tmW l l' s t) \/ (exists l s n, w = tmVec l s n) \/ (exists n, w = tmFin n) \/
+         exists l s n, w = tmWf l s n
   | 3 => exists l l' A t, w = lam l l' A t
   | 4 => exists T, w = boxT T
   | 5 => exists t, w = boxt t
@@ -64,11 +65,12 @@ Proof.
           | pose proof (inv_sup Hi Hx) as X | pose proof (inv_supf Hi Hx) as X
           | pose proof (inv_code_empty Hi Hx) as X | pose proof (inv_code_sum Hi Hx) as X
           | pose proof (inv_code_W Hi Hx) as X
-          | pose proof (inv_code_vec Hi Hx) as X | pose proof (inv_code_fin Hi Hx) as X ];
+          | pose proof (inv_code_vec Hi Hx) as X | pose proof (inv_code_fin Hi Hx) as X
+          | pose proof (inv_code_wf Hi Hx) as X ];
     repeat match goal with H : exists _, _ |- _ => destruct H | H : _ /\ _ |- _ => destruct H end;
     match goal with E : [ _ ; _ ⊢[ _ ] W ≅ _ @ _ ] |- _ =>
       rewrite (decl_head_c Hc E HW); [| auto with whnf] end;
-    cbn; eauto 16.
+    cbn; eauto 20.
 Qed.
 
 (** ** Types *)

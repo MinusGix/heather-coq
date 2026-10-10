@@ -309,11 +309,11 @@ Proof.
   - right; intros H; exact (Q (proj2 (inv_ty_fin H))).
 Qed.
 
-(** Finitary well-founded trees (M15a): layers D and M. *)
+(** Finitary well-founded trees (M15a; every layer but V since M15b). *)
 Lemma dec_tyWf l A N : sz_ty (tyWf l A N) <= n -> TYD (tyWf l A N).
 Proof.
   intros Hsz G i Γ k HΓ.
-  destruct (compt_dec i) as [Hc | Nc]; [| right; intros H; destruct (inv_ty_wf H) as ((X & _) & _); contradiction].
+  destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N0]; [| right; intros H; destruct (inv_ty_wf H) as ((_ & X & _) & _); contradiction].
   destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N0];
     [| right; intros H; destruct (inv_ty_wf H) as ((_ & _ & X & _) & _); contradiction].

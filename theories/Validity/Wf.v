@@ -68,8 +68,8 @@ Proof.
   - now apply lequiv_refl.
   - exact Hl'.
   - exact Hwl.
-  - apply tyred_refl, wft_wf; auto using ge_compt.
-  - eapply tyred_lconv; [apply tyred_refl, wft_wf; auto using ge_compt | exact (lequiv_sym _ _ _ Hl')].
+  - apply tyred_refl, wft_wf; auto using ge_compt, ge_notV.
+  - eapply tyred_lconv; [apply tyred_refl, wft_wf; auto using ge_compt, ge_notV | exact (lequiv_sym _ _ _ Hl')].
     + exact (lconv_ty HA'd (lequiv_sym _ _ _ Hl')).
     + exact (ctx_lvl_tm HA'd (lequiv_sym _ _ _ Hl') HN'd).
   - exact HAd.
@@ -433,7 +433,7 @@ Proof.
   pose proof (LRtm_geq Xcs) as Ecs.
   pose proof (geq_tm_supf (lequiv_sym _ _ _ Hl') HAd EA HNd EN Ea Ecs) as Dsup.
   pose proof (geq_tm_sound Dsup) as Dsup'.
-  assert (HWd : [ G ; Δ ⊢g tyWf l A[d] N[llift d] @ l ]) by (apply wft_wf; auto using ge_compt).
+  assert (HWd : [ G ; Δ ⊢g tyWf l A[d] N[llift d] @ l ]) by (apply wft_wf; auto using ge_compt, ge_notV).
   apply (wfrel _ _ _ _ _ _ _ _ (tmSupf l A[d] N[llift d] a[d] cs[d]) (tmSupf l' A'[d'] N'[llift d'] a'[d'] cs'[d'])).
   - exact (tmred_refl _ _ _ (eqtm_wf_l ge_typeof Dsup')).
   - exact (tmred_refl _ _ _ (eqtm_wf_r ge_typeof Dsup')).
@@ -459,5 +459,93 @@ Proof.
 Qed.
 
 End SupfV.
+
+(** ** The code of [Wf] (M15b) and its decoding *)
+
+(** Decoding a [Wf] code whose annotation [k] is equivalent to the level
+    at which its shape code is typed; the arity rides across. *)
+Lemma tyred_El_wf {G Δ la l k s n} : lequiv (gL G) la l -> lequiv (gL G) k l ->
+  [ G ; Δ ⊢g s : tyU l @ lsuc l ] -> [ G ; Δ ,, tyEl k s @ l ⊢g n : tyNat @ lzero ] ->
+  [ G ; Δ ⊢g tyEl la (tmWf k s n) ⤳* tyWf k (tyEl k s) n @ l ].
+Proof.
+  intros Hla Hk Hs Hn.
+  pose proof (lequiv_wf_l _ _ _ Hk) as Wk.
+  pose proof (conv_U' Hs (lequiv_sym _ _ _ Hk)) as Hsk.
+  destruct (El_annot Hs Hk) as [HElk _].
+  pose proof (ctx_lvl_tm HElk (lequiv_sym _ _ _ Hk) Hn) as Hnk.
+  assert (Hc0 : [ G ; Δ ⊢g tmWf k s n : tyU k @ lsuc k ])
+    by (apply wf_code_wf; [exact ge_notV | exact Wk | exact Hsk | exact Hnk]).
+  pose proof (conv_U' Hc0 Hk) as Hc.
+  destruct (El_annot Hc Hla) as [HEl HEq].
+  apply tyred_step; [exact HEl | constructor |].
+  eapply eqty_trans; [exact HEq|].
+  eapply (eqty_trans _ _ _ _ (tyEl k (tmWf k s n))).
+  - apply eqty_El; [exact ge_notV | now apply lequiv_sym | apply eqtm_refl, Hc].
+  - apply (eqty_lconv _ _ _ _ _ l k); [|now apply lequiv_sym].
+    apply eqty_sym, eqty_El_wf; [exact ge_compt | exact Wk | exact Hsk | exact Hnk].
+Qed.
+
+Section CodeWfV.
+Context {G : gctx} {Γ : ctx} {l l' : lvl} {s s' n n' : tm}
+  (Hw : lwf (gL G) l) (Hl : lequiv (gL G) l l')
+  (Hs : [ G ; Γ ⊢g s : tyU l @ lsuc l ])
+  (Hn : [ G ; Γ ,, tyEl l s @ l ⊢g n : tyNat @ lzero ])
+  (Vs : VTmG G Γ s s' (tyU l) (lsuc l))
+  (Vn : VTmG G (Γ ,, tyEl l s @ l) n n' tyNat lzero).
+
+Lemma V_code_wf : VTm G Γ (tmWf l s n) (tmWf l' s' n') (tyU l) (lsuc l).
+Proof.
+  destruct (El_annot Hs (lequiv_refl _ _ Hw)) as [HA _].
+  pose proof (V_ElG Hw Hl Vs) as VA.
+  intros Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ.
+  pose proof (SubRel_wf_l _ _ _ _ _ Hd) as Hwd.
+  pose proof (wf_ty_subst ge_typeof HA Hwd) as HAd.
+  pose proof (wf_tm_subst ge_typeof Hs Hwd) as Hsd.
+  pose proof (wf_tm_subst ge_typeof Hn (lsub_wf_lift _ _ ge_typeof _ _ _ _ _ Hwd HAd Hw)) as Hnd.
+  rewrite !subst_tyU, !subst_tyEl, !subst_tyNat in *.
+  assert (Hlift : SubRel G (Γ ,, tyEl l s @ l) (Δ ,, tyEl l s[d] @ l) (llift d) (llift d'))
+    by exact (SubRel_lift Hd (VTy_refl_l (VTyG_loc VA)) HAd Hw).
+  pose proof (VTmG_loc Vn _ _ _ Hlift) as Xn. pose proof (VTmG_loc Vs _ _ _ Hd) as Xs.
+  rewrite !subst_tyU in Xs. rewrite !subst_tyNat in Xn.
+  pose proof (proj2 (LRtm_escape Xs)) as Hs'd'.
+  destruct (El_annot Hs'd' (lequiv_sym _ _ _ Hl)) as [HA'd' _].
+  assert (HAA'd : [ G ; Δ ⊢g tyEl l s[d] ≅ tyEl l' s'[d'] @ l ])
+    by exact (eqty_El _ _ _ _ _ _ _ ge_notV Hl (geq_tm_sound (LRtm_geq Xs))).
+  assert (HΔA' : [ G ; Δ ,, tyEl l' s'[d'] @ l ⊢g ]) by now apply ext_wf_g.
+  pose proof (stab_tm ge_typeof HAA'd (lequiv_refl _ _ Hw) HΔA' (proj2 (LRtm_escape Xn))) as Hn'd'.
+  assert (Hgeq : [ G ; Δ ⊢ tmWf l s[d] n[llift d] ≈ tmWf l' s'[d'] n'[llift d'] : tyU l @ lsuc l ])
+    by exact (geq_tm_code_wf Hl Hsd (LRtm_geq Xs) (LRtm_geq Xn)).
+  pose proof (geq_tm_sound Hgeq) as Hgeq'.
+  push_subst. apply (LRtm_U Hw).
+  exists (tmWf l s[d] n[llift d]), (tmWf l' s'[d'] n'[llift d']).
+  refine (conj (tmred_refl _ _ _ (eqtm_wf_l ge_typeof Hgeq'))
+           (conj (tmred_refl _ _ _ (eqtm_wf_r ge_typeof Hgeq'))
+           (conj (whnf_tmWf _ _ _) (conj (whnf_tmWf _ _ _) (conj Hgeq _))))).
+  intros la lb Hla Hlb. rewrite LRbelow_spec by (rewrite ?lmeasure_suc; lia).
+  eexists. eapply LR_red_ty; [exact (LR_Wf_here Hw (lequiv_sym _ _ _ Hl) VA Vn _ _ _ Hd) | |]; push_subst.
+  - apply tyred_El_wf; [exact Hla | now apply lequiv_refl | exact Hsd | exact Hnd].
+  - apply tyred_El_wf; [exact Hlb | now apply lequiv_sym | exact Hs'd' | exact Hn'd'].
+Qed.
+
+End CodeWfV.
+
+Lemma V_El_wf {G Γ l s n} : lwf (gL G) l ->
+  [ G ; Γ ⊢g s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢g n : tyNat @ lzero ] ->
+  VTmG G Γ s s (tyU l) (lsuc l) -> VTmG G (Γ ,, tyEl l s @ l) n n tyNat lzero ->
+  VTy G Γ (tyWf l (tyEl l s) n) (tyEl l (tmWf l s n)) l.
+Proof.
+  intros Hw Hs Hn Vs Vn Δ d d' Hd.
+  pose proof (V_ElG Hw (lequiv_refl _ _ Hw) Vs) as VA.
+  pose proof (LR_Wf_here Hw (lequiv_refl _ _ Hw) VA Vn _ _ _ Hd) as HP.
+  destruct (escape_ty _ _ _ _ _ _ _ _ HP) as (HPd & _ & _).
+  destruct (El_annot Hs (lequiv_refl _ _ Hw)) as [HA _].
+  pose proof (SubRel_wf_r Hd) as Hwd'.
+  pose proof (wf_ty_subst ge_typeof HA Hwd') as HAd'.
+  pose proof (wf_tm_subst ge_typeof Hs Hwd') as Hsd'.
+  pose proof (wf_tm_subst ge_typeof Hn (lsub_wf_lift _ _ ge_typeof _ _ _ _ _ Hwd' HAd' Hw)) as Hnd'.
+  rewrite !subst_tyU, !subst_tyEl, !subst_tyNat in *.
+  eexists. eapply LR_red_ty; [exact HP | apply tyred_refl, HPd |]. push_subst.
+  apply tyred_El_wf; auto using lequiv_refl.
+Qed.
 
 End Wf.

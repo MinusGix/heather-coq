@@ -240,14 +240,14 @@ Proof. inv_tm. Qed.
 
 (** Finitary well-founded trees (M15a). *)
 Lemma inv_supf {G i Γ l A N a cs T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSupf l A N a cs : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\
     [ G ; Γ ⊢[ i ] a : A @ l ] /\ [ G ; Γ ⊢[ i ] cs : tyVec l (tyWf l A N) N[lsingle a] @ l ]) /\
     lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ i ] T ≅ tyWf l A N @ k ].
 Proof. inv_tm. Qed.
 
 Lemma inv_elimWf {G i Γ l l' A N M c t T k} : typeof i = i ->
   [ G ; Γ ⊢[ i ] tmElimWf l l' A N M c t : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\
     [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\
     [ G ; Γ ,, tyWf l A N @ l ⊢[ i ] M @ l' ] /\
     [ G ; Γ ,, A @ l ⊢[ i ] wfcsty l A N @ l ] /\
@@ -298,6 +298,13 @@ Proof. inv_tm. Qed.
 Lemma inv_code_fin {G i Γ n T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmFin n : T @ k ] ->
   (i <> lV /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) /\
     lvl_eq (gL G) k (lsuc lzero) /\ [ G ; Γ ⊢[ i ] T ≅ tyU lzero @ k ].
+Proof. inv_tm. Qed.
+
+(** The code of [Wf] (M15b). *)
+Lemma inv_code_wf {G i Γ l s n T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmWf l s n : T @ k ] ->
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ]) /\
+    lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ i ] T ≅ tyU l @ k ].
 Proof. inv_tm. Qed.
 
 (** Strict equality (M10a). *)
@@ -529,7 +536,7 @@ Proof. inv_ty. Qed.
 
 (** Finitary well-founded trees (M15a). *)
 Lemma inv_ty_wf {G i Γ l A N k} : [ G ; Γ ⊢[ i ] tyWf l A N @ k ] ->
-  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ]) /\
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ]) /\
     lvl_eq (gL G) k l.
 Proof. inv_ty. Qed.
 

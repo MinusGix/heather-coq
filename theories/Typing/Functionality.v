@@ -987,6 +987,19 @@ Proof.
           by (push_subst; apply eqty_El; auto using lequiv_refl)
     end.
     eapply eqtm_code_W; eauto 7 with fung.
+  (* code of Wf (M15b), as W's: the arity under the shape's binder *)
+  - match goal with
+    | Hd : lsub_eq _ _ ?Δ ?d ?d' ?Γ, Hw : lsub_wf ?G ?i ?Δ ?d ?Γ,
+      ws : wf_tm ?G _ ?Γ ?s (tyU ?l) ?ll
+      |- eq_tm _ _ _ (tmWf _ (@subst tm _ _ _) _) _ _ _ =>
+        assert (wf_tm G i Δ s[d] (tyU l) ll) by exact (wf_tm_subst_g ws Hw);
+        assert (eq_tm G i Δ s[d] s[d'] (tyU l) ll)
+          by (match goal with IH : forall Δ d d', _ -> eq_tm _ _ _ (subst ?x _) _ _ _ |- _ =>
+                constr_eq x s; eapply IH; exact Hd end);
+        assert (eq_ty G i Δ (tyEl l s)[d] (tyEl l s)[d'] l)
+          by (push_subst; apply eqty_El; auto using lequiv_refl)
+    end.
+    eapply eqtm_code_wf; eauto 7 with fung.
 Qed.
 
 Theorem functionality :

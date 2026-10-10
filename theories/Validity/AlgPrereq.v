@@ -321,7 +321,10 @@ Ltac br_tac :=
        memoised scope automation *)
     | match goal with
       | |- context [tyW _ _ _ _] => idtac | |- context [tmW _ _ _ _] => idtac
-      | |- context [tmElimW _ _ _ _ _ _ _ _] => idtac end;
+      | |- context [tmElimW _ _ _ _ _ _ _ _] => idtac
+      (* and finitary ones (M15b) *)
+      | |- context [tyWf _ _ _] => idtac | |- context [tmWf _ _ _] => idtac
+      | |- context [tmSupf _ _ _ _ _] => idtac | |- context [tmElimWf _ _ _ _ _ _ _] => idtac end;
       solve [unfold gv, gu; wnorm; wtop]
     | glookup
     | apply wkr_id | apply wkr_shift_S
@@ -367,15 +370,39 @@ Ltac br_eq HMT HMt HG0 :=
     | _ => eapply (mott_wkb_eq (Ds := brDecls K) (nu := br_nu K)) end;
     [ first [exact HMT | exact HMt] | exact HG0 | .. ]; br_tac
   end.
-Ltac br_solve HMT HMt HG0 HB :=
+Ltac br_prep :=
   unfold brΓ, brLocs, brRes, brLv in *; cbn [cexts br_nu br_ng br_nl br_ar br_isT Nat.ltb Nat.leb mkLocs call_ty call_lv br_calls br_head] in *;
   repeat match goal with H : wf_ctx _ _ (_ ,, _ @ _) |- _ =>
     let H1 := fresh "HC" in let H2 := fresh "HA" in let H3 := fresh "Hl" in
-    destruct (wfc_ext_inv H) as (H1 & H2 & H3); clear H end;
+    destruct (wfc_ext_inv H) as (H1 & H2 & H3); clear H end.
+(** after [br_prep]: the context entries pairwise, then the result types *)
+Ltac br_fin HMT HMt HG0 HB :=
   split;
   [ repeat (eapply eqc_ext; [ | eassumption | br_eq HMT HMt HG0 | apply lequiv_ush; assumption ]);
     apply eqc_refl; exact HB
   | br_eq HMT HMt HG0 ].
+
+(** [elim_Wf]'s branch (M15b): its step scope is typed once, as
+    hypotheses in the form [br_tac]'s goals take (the scope's global
+    context unfolded), rather than at each of the six goals that need it:
+    each typing retypes the [ih] entry, [nth] included. *)
+Ltac br50_pre G0 :=
+  let H1 := fresh "H50c" in let H2 := fresh "H50s" in let H3 := fresh "H50u" in let H4 := fresh "H50e" in
+  assert (H1 : [ brG 50 G0 ; cvar 5 ,, gv 4 @ lvar 1 ,, wfcsty (lvar 1) (gv 4) (gu 3) @ lvar 1
+                 ,, wfihty (lvar 1) (lvar 0) (gv 4) (gu 3) (gv 2) @ lmax lzero (lvar 0) ⊢[ lD ] ])
+    by (unfold gv, gu; wnorm; wtop);
+  assert (H2 : [ brG 50 G0 ; cvar 5 ,, gv 4 @ lvar 1 ,, wfcsty (lvar 1) (gv 4) (gu 3) @ lvar 1
+                 ,, wfihty (lvar 1) (lvar 0) (gv 4) (gu 3) (gv 2) @ lmax lzero (lvar 0)
+                 ⊢[ lD ] wfstepty (lvar 1) (gv 4) (gu 3) (gv 2) @ lvar 0 ])
+    by (unfold gv, gu; wnorm; wtop);
+  assert (H3 : [ brG 50 G0 ; cvar 5 ,, gv 4 @ lvar 1 ,, wfcsty (lvar 1) (gv 4) (gu 3) @ lvar 1
+                 ,, wfihty (lvar 1) (lvar 0) (gv 4) (gu 3) (gv 2) @ lmax lzero (lvar 0)
+                 ⊢[ lC ] gu 1 : wfstepty (lvar 1) (gv 4) (gu 3) (gv 2) @ lvar 0 ])
+    by (unfold gv, gu; wnorm; wtop);
+  assert (H4 : [ brG 50 G0 ; cvar 5 ⊢[ lC ] tmElimWf (lvar 1) (lvar 0) (gv 4) (gu 3) (gv 2) (gu 1) (gu 0)
+                 : tyGvar 2 (lsingle (gu 0)) @ lvar 0 ])
+    by (unfold gv, gu; wnorm; wtop);
+  unfold brG, gctx_uwk in H1, H2, H3, H4; cbn [gL gΨ] in H1, H2, H3, H4.
 
 Lemma brΓ_conv {G Γ MT MT' Mt Mt' l1 l2 l1' l2'} k : k < nbr ->
   [ recGT G ; recΓT Γ ⊢[ lM ] MT ≅ MT' @ lvren l1 (ush 1) ] ->
@@ -392,7 +419,9 @@ Proof.
   br_all ltac:(try (destruct k as [|k])).
   all: try (exfalso; lia).
   all: match goal with |- context [brG ?kk ?G0] => w_lookups kk (gΨ (brG kk G0)) end.
-  all: br_solve HMT HMt HG0 HB.
+  all: br_prep.
+  all: try (match goal with |- context [brG 50 ?G0] => br50_pre G0 end).
+  all: br_fin HMT HMt HG0 HB.
 Qed.
 
 (** A branch typed in the right recursor's scope is typed in the left's. *)

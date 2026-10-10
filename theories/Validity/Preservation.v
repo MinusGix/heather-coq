@@ -221,6 +221,18 @@ Proof.
   - exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (eqty_El_vec _ _ _ _ _ _ Hc Wl0 Hs Hn))
              (lequiv_sym _ _ _ E0)).
 Qed.
+(** The code of [Wf] (M15b). *)
+Lemma RS_El_wf l l0 s n : RS_ty (tyEl l (tmWf l0 s n)) (tyWf l0 (tyEl l0 s) n).
+Proof.
+  intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_El HT) as ((Hv & Wl & Ht) & Hk).
+  destruct (inv_code_wf Hi Ht) as ((_ & Wl0 & Hs & Hn) & _ & EU).
+  pose proof (U_inj_c Hc EU) as E0.
+  apply (retype_eqty Hk). eapply eqty_trans.
+  - exact (eqty_El _ _ _ _ _ _ _ Hv (lequiv_sym _ _ _ E0) (eqtm_refl _ _ _ _ _ _ Ht)).
+  - exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (eqty_El_wf _ _ _ _ _ _ Hc Wl0 Hs Hn))
+             (lequiv_sym _ _ _ E0)).
+Qed.
 Lemma RS_El_fin l n : RS_ty (tyEl l (tmFin n)) (tyFin n).
 Proof.
   intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
@@ -535,7 +547,7 @@ Proof.
   intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_J Hi Hx) as ((_ & W1 & W2 & HA & Ha & HI & HM & Hcc & Hu & He) & Hk & ET).
   refine (retype_eqtm Hi _ Hk ET).
-  apply eqtm_J; [exact (compt_notV _ Hc) | apply lequiv_refl, W1 | apply lequiv_refl, W2 | exact HA | apply eqty_refl, HA
+  apply eqtm_J; [(apply compt_notV; exact Hc) | apply lequiv_refl, W1 | apply lequiv_refl, W2 | exact HA | apply eqty_refl, HA
                 | apply eqtm_refl, Ha | exact HI | exact HM | apply eqty_refl, HM | apply eqtm_refl, Hcc
                 | apply eqtm_refl, Hu | exact (IH _ _ _ _ _ Hc He)].
 Qed.
@@ -558,7 +570,7 @@ Proof.
   { apply eqtm_sym. eapply eqtm_conv; [exact Hrr | rewrite Hi; apply eqty_sym, HIdu]. }
   assert (Hcong : [ G ; Γ ⊢[ i ] tmJ l l' A a M c u (tmRefl k B b) ≅ tmJ l l' A a M c a (tmRefl l A a)
                      : M[lsingle2 u (tmRefl k B b)] @ l' ]).
-  { apply eqtm_J; [exact (compt_notV _ Hc) | apply lequiv_refl, W1 | apply lequiv_refl, W2 | exact HA | apply eqty_refl, HA
+  { apply eqtm_J; [(apply compt_notV; exact Hc) | apply lequiv_refl, W1 | apply lequiv_refl, W2 | exact HA | apply eqty_refl, HA
                   | apply eqtm_refl, Ha | exact HI | exact HM | apply eqty_refl, HM | apply eqtm_refl, Hcc
                   | apply eqtm_sym, Hau | exact Her]. }
   pose proof (eqtm_J_beta _ _ _ _ _ _ _ _ _ Hc W1 W2 HA Ha HI HM Hcc) as Hb.
@@ -666,7 +678,7 @@ Proof.
   intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_elimWf Hi Hx) as ((_ & W1 & W2 & HA & HN & HM & HC & HI & Hc0 & Ht) & Hk & ET).
   refine (retype_eqtm Hi _ Hk ET).
-  apply eqtm_elimWf; first [exact Hc | apply lequiv_refl; assumption | exact (IH _ _ _ _ _ Hc Ht) | assumption
+  apply eqtm_elimWf; first [(apply compt_notV; exact Hc) | exact Hc | apply lequiv_refl; assumption | exact (IH _ _ _ _ _ Hc Ht) | assumption
                            | apply eqty_refl; assumption | apply eqtm_refl; assumption].
 Qed.
 
@@ -680,10 +692,10 @@ Proof.
   destruct (inv_supf Hi Ht) as (_ & _ & ESup).
   destruct (Wf_inj_c Hc ESup) as (Ekl & EAC & END).
   assert (Hsup : [ G ; Γ ⊢[ i ] tmSupf l A N a cs ≅ tmSupf k C D a cs : tyWf l A N @ l ])
-    by (apply eqtm_supf; first [exact Hc | assumption | now apply lequiv_sym | apply eqtm_refl; assumption]).
+    by (apply eqtm_supf; first [(apply compt_notV; exact Hc) | exact Hc | assumption | now apply lequiv_sym | apply eqtm_refl; assumption]).
   assert (Hcong : [ G ; Γ ⊢[ i ] tmElimWf l l' A N M c (tmSupf k C D a cs)
                      ≅ tmElimWf l l' A N M c (tmSupf l A N a cs) : M[lsingle (tmSupf k C D a cs)] @ l' ]).
-  { apply eqtm_elimWf; first [exact Hc | apply lequiv_refl; assumption | apply eqtm_sym, Hsup | assumption
+  { apply eqtm_elimWf; first [(apply compt_notV; exact Hc) | exact Hc | apply lequiv_refl; assumption | apply eqtm_sym, Hsup | assumption
                              | apply eqty_refl; assumption | apply eqtm_refl; assumption]. }
   pose proof (eqtm_elimWf_supf _ _ _ _ _ _ _ _ _ _ _ Hc W1 W2 HA HN HM HC HI Hc0 Ha Hcs) as Hb.
   eapply eqtm_trans; [exact Hcong |].
@@ -768,7 +780,7 @@ Proof.
     | solve [apply RS_El_empty] | solve [apply RS_El_sum] | solve [apply RS_El_W]
     | solve [apply RS_vec_zero] | solve [apply RS_vec_succ] | solve [apply RS_vec; assumption]
     | solve [apply RS_fin_zero] | solve [apply RS_fin_succ] | solve [apply RS_fin; assumption]
-    | solve [apply RS_El_vec] | solve [apply RS_El_fin] ].
+    | solve [apply RS_El_vec] | solve [apply RS_El_fin] | solve [apply RS_El_wf] ].
 Qed.
 
 Section Consequences.

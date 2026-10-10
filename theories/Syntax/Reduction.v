@@ -99,6 +99,8 @@ with red_ty : ty -> ty -> Prop :=
 (* the codes of Vec and Fin (M14b): the length rides across *)
 | red_El_vec l l0 s n : red_ty (tyEl l (tmVec l0 s n)) (tyVec l0 (tyEl l0 s) n)
 | red_El_fin l n : red_ty (tyEl l (tmFin n)) (tyFin n)
+(* the code of Wf (M15b): the arity rides across under the shape's binder *)
+| red_El_wf l l0 s n : red_ty (tyEl l (tmWf l0 s n)) (tyWf l0 (tyEl l0 s) n)
 (* length-indexed tuples and finite indices (M14a): compute on the length *)
 | red_vec_zero l A : red_ty (tyVec l A zero) (tyUnit l)
 | red_vec_succ l A n : red_ty (tyVec l A (succ n)) (tySig l l A (tyVec l A⟨↑⟩ n⟨↑⟩))
@@ -171,6 +173,7 @@ Proof.
         | Hr : red (tmW _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmVec _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmFin _) _ |- _ => inversion Hr
+        | Hr : red (tmWf _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmInl _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmInr _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSup _ _ _ _ _ _) _ |- _ => inversion Hr

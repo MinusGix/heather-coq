@@ -115,6 +115,17 @@ Proof. apply gren_ren_ty. Qed.
 Lemma gren_ren_tm_raw (t : tm) r ξ : gren_tm (ren_tm t r) ξ = ren_tm (gren_tm t ξ) r.
 Proof. apply (proj1 (proj2 gren_ren_all)). Qed.
 
+(** [sup_f]'s children's length and [elim_Wf]'s step telescope (M15b). *)
+Lemma gren_tm_subst_raw (t : tm) d ξ : gren_tm (subst_tm t d) ξ = subst_tm (gren_tm t ξ) (glren d ξ).
+Proof. exact (gren_subst t d ξ). Qed.
+Lemma gren_tmNth_raw l T k cs i ξ :
+  gren_tm (tmNth l T k cs i) ξ = tmNth l (gren_ty T ξ) (gren_tm k ξ) (gren_tm cs ξ) (gren_tm i ξ).
+Proof.
+  unfold tmNth, nthMot, nthBase, nthStep. cbn [gren GRen_tm gren_tm GRen_ty gren_ty].
+  change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫.
+  repeat rewrite ?gren_ren_ty', ?gren_ren. reflexivity.
+Qed.
+
 Ltac gpeel_push :=
   repeat first [ rewrite <- peelL_gren | rewrite <- peelG_gren | rewrite <- peelU_gren ];
   unfold rb_br; rewrite tup_nth_gren;
@@ -129,6 +140,11 @@ Ltac gpeel_push :=
   try match goal with |- context [tmSup _ _ _ _ (var 2) (var 1)] =>
     repeat progress (cbn [glren lsingle gren_tm gren_ty]; fold gren_ty gren_tm;
       rewrite ?gren_ty_subst_raw, ?gren_ren_ty_raw, ?gren_ren_tm_raw, ?gren_ren_ty', ?gren_ren) end;
+  try match goal with |- context [tmSupf _ _ _ (var 2) (var 1)] =>
+    repeat progress (cbn [glren lsingle gren_tm gren_ty]; fold gren_ty gren_tm;
+      rewrite ?gren_ty_subst_raw, ?gren_tm_subst_raw, ?gren_tmNth_raw, ?gren_ren_ty_raw, ?gren_ren_tm_raw,
+        ?gren_ren_ty', ?gren_ren) end;
+  rewrite ?gren_tm_subst_raw; cbn [glren lsingle];
   reflexivity.
 
 Lemma redT_gren l1 l2 rb l Δ c v ξ : redT l1 l2 rb l Δ c = Some v ->
@@ -380,6 +396,7 @@ Lemma gren_tmEmpty l : (tmEmpty l)⟪ξ⟫ = tmEmpty l. Proof. reflexivity. Qed.
 Lemma gren_tmSum l l' s t : (tmSum l l' s t)⟪ξ⟫ = tmSum l l' s⟪ξ⟫ t⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_tmW l l' s t : (tmW l l' s t)⟪ξ⟫ = tmW l l' s⟪ξ⟫ t⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_tmVec l s n : (tmVec l s n)⟪ξ⟫ = tmVec l s⟪ξ⟫ n⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tmWf l s n : (tmWf l s n)⟪ξ⟫ = tmWf l s⟪ξ⟫ n⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_tmFin n : (tmFin n)⟪ξ⟫ = tmFin n⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_triv l : (tmTriv l)⟪ξ⟫ = tmTriv l. Proof. reflexivity. Qed.
 Lemma gren_tyW l l' A B : (tyW l l' A B)⟪ξ⟫ = tyW l l' A⟪ξ⟫ B⟪ξ⟫. Proof. reflexivity. Qed.
@@ -484,6 +501,7 @@ Ltac push_gren_at h k := lazymatch h with
   | @tmSum => k gren_tmSum
   | @tmW => k gren_tmW
   | @tmVec => k gren_tmVec
+  | @tmWf => k gren_tmWf
   | @tmFin => k gren_tmFin
   | @tmTriv => k gren_triv
   | @gdef => k gren_gdef
@@ -1029,6 +1047,7 @@ Lemma gwa_tmEmpty l : (tmEmpty l)⟦γ⟧ = tmEmpty l. Proof. now destruct γ. Q
 Lemma gwa_tmSum l l' s t : (tmSum l l' s t)⟦γ⟧ = tmSum l l' s⟦γ⟧ t⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_tmW l l' s t : (tmW l l' s t)⟦γ⟧ = tmW l l' s⟦γ⟧ t⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_tmVec l s n : (tmVec l s n)⟦γ⟧ = tmVec l s⟦γ⟧ n⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tmWf l s n : (tmWf l s n)⟦γ⟧ = tmWf l s⟦γ⟧ n⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_tmFin n : (tmFin n)⟦γ⟧ = tmFin n⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_triv l : (tmTriv l)⟦γ⟧ = tmTriv l. Proof. now destruct γ. Qed.
 Lemma gwa_tySEq l A a b : (tySEq l A a b)⟦γ⟧ = tySEq l A⟦γ⟧ a⟦γ⟧ b⟦γ⟧. Proof. now destruct γ. Qed.
@@ -1090,6 +1109,7 @@ Ltac push_gwa_at h k := lazymatch h with
   | @tmSum => k gwa_tmSum
   | @tmW => k gwa_tmW
   | @tmVec => k gwa_tmVec
+  | @tmWf => k gwa_tmWf
   | @tmFin => k gwa_tmFin
   | @tmTriv => k gwa_triv
   | @tySEq => k gwa_tySEq

@@ -167,6 +167,7 @@ Lemma ren_tmSum l l' s t : (tmSum l l' s t)⟨r⟩ = tmSum l l' s⟨r⟩ t⟨r�
 Lemma ren_tmW l l' s t : (tmW l l' s t)⟨r⟩ = tmW l l' s⟨r⟩ t⟨rlift r⟩. Proof. reflexivity. Qed.
 Lemma ren_tmVec l s n : (tmVec l s n)⟨r⟩ = tmVec l s⟨r⟩ n⟨r⟩. Proof. reflexivity. Qed.
 Lemma ren_tmFin n : (tmFin n)⟨r⟩ = tmFin n⟨r⟩. Proof. reflexivity. Qed.
+Lemma ren_tmWf l s n : (tmWf l s n)⟨r⟩ = tmWf l s⟨r⟩ n⟨rlift r⟩. Proof. reflexivity. Qed.
 Lemma ren_J l l' A a M c u e :
   (tmJ l l' A a M c u e)⟨r⟩ = tmJ l l' A⟨r⟩ a⟨r⟩ M⟨rlift (rlift r)⟩ c⟨r⟩ u⟨r⟩ e⟨r⟩.
 Proof. reflexivity. Qed.
@@ -180,6 +181,7 @@ Lemma subst_tmSum l l' s t : (tmSum l l' s t)[d] = tmSum l l' s[d] t[d]. Proof. 
 Lemma subst_tmW l l' s t : (tmW l l' s t)[d] = tmW l l' s[d] t[llift d]. Proof. reflexivity. Qed.
 Lemma subst_tmVec l s n : (tmVec l s n)[d] = tmVec l s[d] n[d]. Proof. reflexivity. Qed.
 Lemma subst_tmFin n : (tmFin n)[d] = tmFin n[d]. Proof. reflexivity. Qed.
+Lemma subst_tmWf l s n : (tmWf l s n)[d] = tmWf l s[d] n[llift d]. Proof. reflexivity. Qed.
 Lemma subst_J l l' A a M c u e :
   (tmJ l l' A a M c u e)[d] = tmJ l l' A[d] a[d] M[llift (llift d)] c[d] u[d] e[d].
 Proof. reflexivity. Qed.
@@ -300,6 +302,7 @@ Ltac push_ren_at h k := lazymatch h with
   | @tmW => k ren_tmW
   | @tmVec => k ren_tmVec
   | @tmFin => k ren_tmFin
+  | @tmWf => k ren_tmWf
   | @tmJ => k ren_J
   | @tyW => k ren_tyW
   | @tmSup => k ren_sup
@@ -379,6 +382,7 @@ Ltac push_subst_at h k := lazymatch h with
   | @tmW => k subst_tmW
   | @tmVec => k subst_tmVec
   | @tmFin => k subst_tmFin
+  | @tmWf => k subst_tmWf
   | @tmJ => k subst_J
   | @tyW => k subst_tyW
   | @tmSup => k subst_sup
