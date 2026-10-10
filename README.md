@@ -126,6 +126,12 @@ From M8 on, the milestones check the extensions of Heather's kernel
   from the semantics, β holds, and validity builds the relation by
   induction on the tree (the index lemma relates `nth` at related `Fin`
   indices). See `M15_DESIGN.md`.
+- Milestone 15b: `Wf`'s code `Wf^l(x : s). n : Ty l`, the lift of `Wf`,
+  `sup_f`, `elim_Wf` and the code to the code layer (`nth` and the step
+  telescope typed at every layer but V), and the code recursor's four
+  branches 47–50, whose scopes are derived from the typing rules and agree
+  with Heather's `rec.rs`. The recursive calls are derived from the scopes
+  and checked against the written table. See `M15_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
 `M15_DESIGN.md`) for decisions, deviations from the paper and gotchas.

@@ -1,7 +1,7 @@
 # M15: finitary well-founded trees (`Wf`), design
 
-Status: **M15a done** (2026-10-06; outcome at the end). M15b (the code,
-the lift to C and the four recursor branches) is next. Why now: `HEATHER.md` item 5
+Status: **M15 done**: M15a (2026-10-06) and M15b (2026-10-10, the code,
+the lift to C and the four recursor branches); outcomes at the end. Why now: `HEATHER.md` item 5
 lists `Wf` after `Vec` and `Fin`, which M14 provided, and Heather's
 branching inductives lower to it (`H/docs/wf-former-design.md`,
 `H/docs/branching-inductives-choice.md`), so an unsoundness here would reach
@@ -337,4 +337,83 @@ presupposition. A clean `make -j2` took 875 s wall on
 the 2026-10-06 cloud machine of this round (critical path 740 s, total
 CPU 1106 s); M14b measured 584 s on another machine, so the two do not
 compare directly.
+
+## M15b outcome (2026-10-10)
+
+Done in two commits, on M13b's and M14b's pattern, after step 0. Every
+headline theorem stays closed under the global context (`Print
+Assumptions` of `wf_tm_dec`, `wf_ty_dec`, `consistency`,
+`closed_canonicity`, `paper_sound`, `rec_red_typed`,
+`subject_reduction_tm`, `subject_reduction_ty`, `RecS.rec_code` and
+`V_elimWf` lists nothing).
+
+- **Step 0, the genericity pass** (HEATHER.md, direction 1; its outcome is
+  recorded there). `derived_calls` computes a branch's recursive calls
+  from `brDecls` (one per layer-C global, weakened past its position) and
+  `br_calls_derived` checks the written `br_calls` and `br_nl` against it
+  for all 51 branches. `GSall`/`GS_br` fold `GSubRel` over `brDecls`
+  (`GWall`/`GW_br` fold `gsub_wf` in `RecReduct`), and `RTcall`/`Rtcall`
+  give a call's typings, conversion and relation from its induction
+  hypothesis. The existing branches are not migrated.
+- **Step 1, the code at D and M**: `tmWf l s n : Ty l` (the arity is a
+  `Nat` term under the shape's `El` binder, so the code lives at the
+  shape's level), `El (Wf^l(x : s). n) ⇝ Wf^l(x : El s). n`, structural
+  code equality, and every lemma family as for the other codes.
+- **Step 2, the lift to C**: `wft_wf`, `wf_supf`, `wf_elimWf`,
+  `wf_code_wf` and their congruences take `i <> lV`; β and the decoding
+  stay at `compt i`. `nth` has no layer-generic typing in
+  `Presupposition` (its `case` on `Fin (S k)` and its pair at `Vec(S k)`
+  are typed through `Fin`'s and `Vec`'s computation rules), so
+  `StaticCode` ports `nth_wf` and the step telescope's typing to every
+  layer but V (`nth_wf_g`, `Wf_cs_wf_g`, `Wf_ih_wf_g`, `Wf_step_wf_g`),
+  with contexts at `typeof i` and those conversions through `wf_conv`
+  at `typeof i`, as the design's syntax section anticipated. The type
+  checker's `elim_Wf` at C builds its premises from them. Static code
+  (`sc_wf`, `sc_supf`, `sc_elimWf`, `sc_code_wf`, with `_q` forms for
+  the callers that already hold both sides' typings; `sc_elimWf_q`
+  types the right telescope from its own components through `WfGen`,
+  which replaced a first version that converted the left telescope's
+  typing along `ty_leq` and cost `StaticCode` about 10 s)
+  and PresupC (`pc_wf`, `pc_supf`, `pc_elimWf`, `pc_codewf`) gain their
+  cases; the algorithm and preservation reach the lifted rules through
+  `compt_notV`.
+- **The four branches** are 47–50 (`nbr = 51`), at the scopes derived
+  above (`brDecls`), which `rec_code` now validates: `t_Wf`, `t'_Wf`,
+  `t_supf`, `t_elimWf`. Their scopes are typed by `RecWf`'s memoised
+  automation (as W's; the selector is now `39 <= k < 43 || 47 <= k < 51`),
+  which gains `nth`'s formers and the three conversions its unfolding
+  crosses (`wconv`). `RecS` has the reduct instances, the push lemmas for
+  the telescope notations (`us_/gs_wfcsty`, `wfihty`, `wfstepty`) and one
+  lemma per branch (`RT_wf`, `Rt_codewf`, `Rt_supf`, `Rt_elimWf`);
+  `RecReduct` has `rr_T_wf`, `rr_t_codewf`, `rr_t_supf`, `rr_t_elimWf`
+  and the `C_*` entries.
+- **Gotchas.** (1) `-vos` checks a section proof only when it lacks
+  `Proof using`, and never a proof outside a section: a push lemma that
+  passed `-vos` failed the full build. (2) `AlgPrereq`'s `br_tac` typed
+  `elim_Wf`'s step scope (Γ, a, cs, ih) afresh at each of six goals, about
+  6 s each since the `ih` entry carries `nth`; `br50_pre` types it once
+  as hypotheses in the form those goals take, after `br_prep` (whose
+  `destruct ... in *` would otherwise take them apart). `RecAdm`'s
+  `brΓ_wf`/`brRes_wf` had the same cost (36 s → 145 s) and get the same
+  fix (`wf50_pre`, 67 s): context well-formedness is memoised only
+  through `assumption`, so one pre-asserted step context serves every
+  goal that mentions it. (3) `AlgPER`
+  redefines `compt_notV` with `i` implicit, so a proof script shared
+  with the files before it writes `apply compt_notV; exact Hc`.
+
+**Cost.** Step 1: 32 files, about 450 lines (commit "M15b step 1").
+Step 2 with step 0: 29 files, about 1530 lines added; `StaticCode` 410
+(the layer-generic `nth`), `RecS` 500 and `RecReduct` 190, of which about
+200 are the generic infrastructure (HEATHER.md has the abort criterion's
+count). **Build time.** A clean `make -j2` took 887 s wall on the 2026-10-10
+cloud machine (critical path 732 s, total CPU 1125 s), where the M15a
+tree measured 689 s wall the same day (critical path 655 s, CPU 971 s):
+critical path +77 s (+12%), CPU +154 s. The new branches carry most of
+it: `RecAdm` +36 s (branch 50's step scope, already halved by
+`wf50_pre`), `AlgPrereq` +23 s (`br50_pre` itself 13 s, then 23 s for
+the branch goals), `RecS` +12 s and `RecReduct` +6 s (the four reduct
+lemmas), `RecWf` +6 s (`nth` in the memoised automation), `StaticCode`
++6 s (`WfGen`). `LevelRed` +12 s is its constructor-injection loop
+growing with the three new term formers. Step 0's generic lemmas take about
+2 s of `RecS`; `br_calls_derived` is under 0.1 s.
 

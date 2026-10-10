@@ -52,7 +52,7 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | `+`, `inl`/`inr`, `case` | positive | ext §8 | MX §2 | — | **done** (M12b; every layer but V with code and branches 34–38, M12c): β at D and M, no η, disjunction property (`closed_sum_canonicity`) |
 | `W`, `sup`, `elim_W` | positive, infinitary | ext §9 | MX §5 | β builds an ih λ; the heaviest LR case | **M13 done**: β, no η, `closed_W_canonicity` (M13a, D and M); code, lift to C and the four branches (M13b) |
 | `Vec`, `Fin` | computing wrappers (reduce to Σ/Unit, +/Empty) | DESIGN.md | MX §10 | first type formers whose whnf is chosen by a term | **M14 done**: no LR case, validity by induction on the length; preservation at `Vec^l(A;0) ⇝ Unit^l` (M14a, D and M); codes, every layer but V, branches 43–46 (M14b) |
-| `Wf`, `sup_f`, `elim_Wf` | finitary W over a `Vec` of children | wf-former-design | MX §11–17 | index lemma (MX §13) | **M15a done**: branch telescopes derived from the semantics, β, no η, the index lemma via `nth` at related `Fin` indices (D and M); code and branches next (M15b) |
+| `Wf`, `sup_f`, `elim_Wf` | finitary W over a `Vec` of children | wf-former-design | MX §11–17 | index lemma (MX §13) | **M15 done**: branch telescopes derived from the semantics, β, no η, the index lemma via `nth` at related `Fin` indices (M15a, D and M); code, every layer but V, branches 47–50 (M15b) |
 | `sEq`, `srefl`, `transp`, strip rule | strict equality, irrelevance | sprop-design | MX §18–22 | strip changes the evaluation notion; MX §19.4 substitution lemma is the named weak spot; completeness gap reaches type relations (MX §22.4); **MX §19.2 is a strengthening lemma (M10 S1)** | `sEq`, `srefl`, irrelevance **done** (M10a; every layer but V with codes and branches 25, 26, 29, M10c); `transp` removed (S8) |
 | `sEmpty`, `elim_sEmpty` | irrelevant empty type | sprop-design | MX §18, §21.4 | — | **done** (M10a; at code with branches 27, 28, 30, M10c) |
 | `Squash`, `ind_∥∥` | normalizing-total irrelevance | MX §27 | sketch only | full pass open (`issues/metatheory-ch07-squash.md`); the payload must be self-related (see findings) | **probe done** (`probes/SquashProbe.v`): the relation, its PER laws, escape, symmetry, irrelevance, expansion; no abort |
@@ -206,6 +206,32 @@ Not done: deriving `redT`/`redt` from one descriptor (M8 J2's reasons
 still hold: it redefines `redT`, used in 17 files, to save ~10–20 lines
 per branch).
 
+**Outcome (M15b, 2026-10-10): kept, at the threshold.** Wf's
+branch-specific `RecS` plus `RecReduct` code is about 500 lines (`RecS`
+about 350, `RecReduct` about 150), about 63% of W's 794: on the abort line
+rather than under it. The generic part it bought is about 200 more lines
+and serves any later group of branches: `GSall`/`GS_br` (and
+`GWall`/`GW_br` in `RecReduct`), `RTcall`/`Rtcall`, the `gs_solve` and
+`gw_solve` tactics. Kept rather than redone by hand, since hand-writing
+would have been W's size again. What changed from the plan:
+- `br_calls` stays a written table, checked against the derived one
+  (`br_calls_derived`, all 51 branches by `vm_compute`): a computed table
+  normalizes `elim_Wf`'s step telescope past its notations, which the
+  branch proofs rewrite with.
+- The `RT_`/`Rt_` tactic is subsumed: with `RTcall`/`Rtcall` doing each
+  call's work, a branch is one lemma (`RT_wf`, `Rt_codewf`, `Rt_supf`,
+  `Rt_elimWf`) that applies `rec_T_br`/`rec_t_br` to two `GS_br` folds
+  and discharges the bullets by small tactics, so no tactic over the
+  bullets was worth writing.
+- Perf trap: a `gs_solve` that rewrote each scope declaration with
+  `replace` cost 26 s per call; normalizing the images (`gs_norm`) and
+  closing by `assumption` is under a second.
+On the other criterion, the build did slow (critical path +12% on one
+machine), but the generic layer is about 2 s of it; the rest is the four
+branches themselves (branch 50's `nth`-carrying step scope above all),
+which hand-written branches would pay too. Details in M15_DESIGN.md's
+M15b outcome.
+
 ## Proposed order
 
 1. ~~Σ with η, Unit with η: the two new equations; measure the per-former cost.~~
@@ -226,7 +252,7 @@ per branch).
    recursor branches (M12a–c, M12_DESIGN.md). `W` is done, with its
    code and four recursor branches (M13a–b, M13_DESIGN.md). `Vec` and
    `Fin` are done, with codes and four recursor branches (M14a–b,
-   M14_DESIGN.md). `Wf` is done at D and M (M15a, M15_DESIGN.md); its
-   code and recursor branches are M15b.
+   M14_DESIGN.md). `Wf` is done, with its code and four recursor branches
+   (M15a–b, M15_DESIGN.md).
 
 Side task, any time: the ITree depth-indexed bisimilarity question.
