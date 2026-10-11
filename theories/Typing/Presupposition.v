@@ -2551,7 +2551,7 @@ Proof.
     apply nth_wf; auto.
     - wkn HW'.
     - eapply wf_tm_retype; [wkn HN' | reflexivity].
-    - eapply wf_lconv; [exact (Wf_var1 HΘ EC H13) | now apply lequiv_sym].
+    - exact (Wf_var1 HΘ EC H13).
     - eapply conv_tm'; [wvar | apply eqty_sym, EF2]. }
   assert (Hnn : [ G ; Δ ,, tyFin N⟨↑⟩ @ lzero ⊢[ i ]
                   tmNth l1 (tyWf l1 A N)⟨↑⟩⟨↑⟩⟨↑⟩ N⟨↑⟩⟨↑⟩ (var 1) (var 0)
@@ -3126,7 +3126,7 @@ Proof. intros H1 H2 H3 H4 H5; exact (proj2 (ctx_conv_ext Hi H1 H2 H3 H4 H5)). Qe
   wft_sig wf_code_sig wf_pair wf_fst wf_snd wft_seq wf_srefl wf_elimSEmpty wft_id wf_idrefl wf_J wf_code_id wf_code_seq wf_elimEmpty wft_sum wf_inl wf_inr
   wft_sq wf_sq wf_elimSq ctx_of_wf_ty ctx_of_wf_tm ctx_of_eqty ctx_of_eqtm lequiv_wf_l lequiv_wf_r compt_notV : presup.
 #[export] Hint Extern 1 (lwf _ _) =>
-  solve [cbn; intuition eauto using lequiv_wf_l, lequiv_wf_r] : presup.
+  solve [cbn; repeat split; eauto using lequiv_wf_l, lequiv_wf_r] : presup.
 #[export] Hint Extern 1 =>
   match goal with Hi : typeof ?i = ?i |- context [typeof ?i] => rewrite Hi end : presup.
 
@@ -3222,6 +3222,60 @@ Proof.
          | solve [eapply inst_c_ty; eauto] | solve [eapply inst_c_tm; eauto]
          | solve [eapply inst_t_ty; eauto] | solve [eapply inst_t_tm; eauto] ]].
   (* right-hand sides of congruences *)
+  (* the rules' right-hand-side lemmas first: a failing [eauto 4] costs
+     more than all of them *)
+  all: try solve [first [ eapply pre_pi_r; eassumption
+                        | eapply pre_El_r; eassumption
+                        | eapply pre_codepi_r; eassumption
+                        | eapply pre_natrec_r; eassumption
+                        | eapply pre_lam_r; eassumption
+                        | eapply pre_app_r; eassumption
+                        | eapply pre_natrec_succ; eassumption
+                        | eapply pre_eta_l; eassumption
+                        | eapply pre_sig_r; eassumption
+                        | eapply pre_codesig_r; eassumption
+                        | eapply pre_pair_r; eassumption
+                        | eapply pre_fst_r; eassumption
+                        | eapply pre_snd_r; eassumption
+                        | eapply pre_snd_beta_l; eassumption
+                        | eapply pre_sig_eta_l; eassumption
+                        | eapply pre_snd_ty; eassumption
+                        | eapply pre_El_unit; eassumption
+                        | eapply pre_seq_r; eassumption
+                        | eapply pre_srefl_r; eassumption
+                        | eapply pre_elimSEmpty_r; eassumption
+                        | eapply pre_id_r; eassumption
+                        | eapply pre_idrefl_r; eassumption
+                        | eapply pre_J_ty; eassumption
+                        | eapply pre_J_r; eassumption
+                        | eapply pre_codeid_r; eassumption
+                        | eapply pre_codeseq_r; eassumption
+                        | eapply pre_El_sempty; eassumption
+                        | eapply pre_elimEmpty_r; eassumption
+                        | eapply pre_sum_r; eassumption
+                        | eapply pre_inl_r; eassumption
+                        | eapply pre_inr_r; eassumption
+                        | eapply pre_case_r; eassumption
+                        | eapply pre_case_inl_rhs; eassumption
+                        | eapply pre_case_inr_rhs; eassumption
+                        | eapply pre_El_empty; eassumption
+                        | eapply pre_codesum_r; eassumption
+                        | eapply pre_W_r; eassumption
+                        | eapply pre_sup_r; eassumption
+                        | eapply pre_elimW_r; eassumption
+                        | eapply pre_elimW_beta; eassumption
+                        | eapply pre_codeW_r; eassumption
+                        | eapply pre_vec_r; eassumption
+                        | eapply pre_codevec_r; eassumption
+                        | eapply pre_wf_r; eassumption
+                        | eapply pre_supf_r; eassumption
+                        | eapply pre_elimWf_r; eassumption
+                        | eapply pre_elimWf_beta; eassumption
+                        | eapply pre_codewf_r; eassumption
+                        | eapply pre_tySq_r; eassumption
+                        | eapply pre_sq_r; eassumption
+                        | eapply pre_elimSq_r; eassumption
+                        | eapply pre_elimSq_sq_rhs; eassumption ]].
   all: try solve [eauto 4 with presup].
   all: first [ solve [eapply pre_pi_r; eassumption] | solve [eapply pre_U_r; eauto with presup]
              | solve [eapply pre_El_r; eassumption] | solve [eapply pre_codeU_r; eauto with presup]

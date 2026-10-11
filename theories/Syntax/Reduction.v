@@ -364,6 +364,8 @@ Lemma tmNth_ren l T k cs i r :
   (tmNth l T k cs i)⟨r⟩ = tmNth l T⟨r⟩ k⟨r⟩ cs⟨r⟩ i⟨r⟩.
 Proof.
   unfold tmNth, nthMot, nthBase, nthStep; cbn [ren Ren_tm Ren_ty ren_tm ren_ty rlk].
+  (* the raw [fix ren_ty] blocks [cbn] leaves made [f_equal] take 12 s *)
+  fold ren_ty ren_tm.
   repeat f_equal; rewrite ?rlk_rlift, ?rlk_rup; cbn; try ren_comm.
 Qed.
 Lemma wfIH_ren l l' A N M c a cs r :

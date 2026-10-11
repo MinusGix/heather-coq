@@ -474,9 +474,10 @@ End NthV.
 Lemma reds_eq a b : a = b -> reds a b.
 Proof. intros ->; constructor. Qed.
 
-Ltac nth_eq := unfold tmNth, nthMot, nthBase, nthStep; push_ren; push_subst; pw;
+Ltac nth_eq := unfold tmNth, nthMot, nthBase, nthStep; push_ren; push_subst;
+  shift_cancel; pw; shift_cancel;
   repeat change (ren_ty ?x ?r) with x⟨r⟩; repeat change (ren_tm ?x ?r) with x⟨r⟩; pw;
-  repeat f_equal; try teq.
+  repeat f_equal; shift_cancel; try reflexivity; try teq.
 
 Section NthReds.
 Context (l : lvl) (T : ty) (NT : nfty T).

@@ -248,3 +248,21 @@ Lemma shift1_as_ty (T : ty) : T⟨↑⟩ = T[lshift 1].
 Proof. apply ren_as_subst_ty; intros; rlk_simpl; cbn; f_equal; lia. Qed.
 Lemma up1_single_ty (M : ty) f a : M[lcons (lshift 1) f][lsingle a] = M[lsingle f[lsingle a]].
 Proof. apply subst_subst_ty; intros [|n]; cbn; [reflexivity|]. now rewrite Nat.add_1_r. Qed.
+
+(** ** Cancelling shifts against substitutions
+
+    Rewrites the leaves a pushed substitution leaves behind, of the form
+    [X⟨↑⟩…[llift … (lsingle a)]], to the shifted [X] directly: a shift
+    commutes with a lifted renaming or substitution and is cancelled by
+    a single substitution. Proving the same leaves pointwise (through
+    [subst_comp] and [subst_ext], one case per variable) cost 75 s in
+    [nth_reds_succ] (WfNth.v). *)
+Ltac nf_side := first [assumption | apply ren_nf_ty | apply ren_nf].
+Ltac shift_cancel := repeat match goal with
+  | |- context [ (?A⟨↑⟩)⟨rlift ?r⟩ ] => first [rewrite (shift_lift_ty A r) | rewrite (shift_lift A r)]
+  | |- context [ (?A⟨↑⟩)[llift ?d] ] => first [rewrite (shift_llift_ty A d) | rewrite (shift_llift A d)]
+  | |- context [ (?A⟨↑⟩⟨↑⟩)[lsingle2 ?a ?b] ] =>
+      first [rewrite (shift2_single2_ty A a b) by nf_side | rewrite (shift2_single2 A a b) by nf_side]
+  | |- context [ (?A⟨↑⟩)[lsingle ?a] ] =>
+      first [rewrite (shift_single_ty A a) by nf_side | rewrite (shift_single A a) by nf_side]
+  end.

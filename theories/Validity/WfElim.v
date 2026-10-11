@@ -607,7 +607,7 @@ Proof.
     + eapply reds_trans; [exact Hs|]. exact (nth_reds_inr l _ NT Nm Nc0 (tmred_red _ _ _ _ _ _ _ Hk) Hi1).
     + eapply reds_trans; [exact Hs'|]. exact (nth_reds_inr l3 _ NT' Nm' Nc0' (tmred_red _ _ _ _ _ _ _ Hk') Hi1').
   - (* a neutral index *)
-    destruct (nth_reds_case_ne l (tyWf l A⟦γ⟧[e] N⟦γ⟧[llift e]) Nm Nc0 (tmred_red _ _ _ _ _ _ _ Hk) Hiν Nν) as (X & HX & NX).
+    destruct (nth_reds_case_ne l (tyWf l A⟦γ⟧[e] N⟦γ⟧[llift e]) NT Nm Nc0 (tmred_red _ _ _ _ _ _ _ Hk) Hiν Nν) as (X & HX & NX).
     exact (elimWf_ne Hγ He HD Hss (reds_trans _ _ _ Hs HX) NX).
   Unshelve. all: cbn; repeat split; auto using ren_nf_ty, ren_nf.
   all: first [exact (proj1 NT) | exact (proj2 NT) | exact (proj1 NT') | exact (proj2 NT')].
