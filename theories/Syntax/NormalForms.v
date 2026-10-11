@@ -4,7 +4,7 @@
     [w ::= ν | Nat | Π | Ty l | 0 | succ t | λ | box | Λ | Λg | ΛU]
     [ν ::= x | u^δ | elimN … ν | app ν … | letbox … ν | ν $ l⃗ | ν Δ | ν T
          | elim_Typ … ν | elim_Typ … (box U^δ) | elim_Trm … ν | elim_Trm … (box u^δ)] *)
-From DeLaM.Syntax Require Export LevelEq.
+From DeLaM.Syntax Require Export LevelEqDef.
 
 Inductive whne : tm -> Prop :=
 | whne_var n : whne (var n)

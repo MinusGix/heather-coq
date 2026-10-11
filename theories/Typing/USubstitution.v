@@ -6,6 +6,9 @@
     and branches are typed under fresh levels: there [φ] is lifted
     ([uup]), and the scopes commute with it ([RecLaws]). Universe
     weakening is the special case of a renaming. *)
+(* the laws of [≡ₗ] first: re-exporting them after this file's other
+   imports would shadow later names (Context's [gwk_id] by Subst's) *)
+From DeLaM.Syntax Require Export LevelEq.
 From DeLaM.Typing Require Export RecLaws.
 
 (** ** Lookups *)

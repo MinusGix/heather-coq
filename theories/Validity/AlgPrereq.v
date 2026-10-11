@@ -4,7 +4,7 @@
     inversion and the consequences: moving a judgment across an equal
     global binding (the right-hand bodies of [letbox] and [TΠ] are typed
     under their own binding). *)
-From DeLaM.Typing Require Export Inversion.
+From DeLaM.Typing Require Export Inversion WfScope.
 From DeLaM.Validity Require Export DeclConsequences.
 
 (** ** Converting a global binding
@@ -382,26 +382,14 @@ Ltac br_fin HMT HMt HG0 HB :=
     apply eqc_refl; exact HB
   | br_eq HMT HMt HG0 ].
 
-(** [elim_Wf]'s branch (M15b): its step scope is typed once, as
-    hypotheses in the form [br_tac]'s goals take (the scope's global
-    context unfolded), rather than at each of the six goals that need it:
-    each typing retypes the [ih] entry, [nth] included. *)
-Ltac br50_pre G0 :=
+(** [elim_Wf]'s branch (M15b): its step scope is typed once
+    ([br50_scope], WfScope), as hypotheses in the form [br_tac]'s goals
+    take (the scope's global context unfolded), rather than at each of
+    the six goals that need it: each typing retypes the [ih] entry, [nth]
+    included. *)
+Ltac br50_pre G0 HG0 :=
   let H1 := fresh "H50c" in let H2 := fresh "H50s" in let H3 := fresh "H50u" in let H4 := fresh "H50e" in
-  assert (H1 : [ brG 50 G0 ; cvar 5 ,, gv 4 @ lvar 1 ,, wfcsty (lvar 1) (gv 4) (gu 3) @ lvar 1
-                 ,, wfihty (lvar 1) (lvar 0) (gv 4) (gu 3) (gv 2) @ lmax lzero (lvar 0) ⊢[ lD ] ])
-    by (unfold gv, gu; wnorm; wtop);
-  assert (H2 : [ brG 50 G0 ; cvar 5 ,, gv 4 @ lvar 1 ,, wfcsty (lvar 1) (gv 4) (gu 3) @ lvar 1
-                 ,, wfihty (lvar 1) (lvar 0) (gv 4) (gu 3) (gv 2) @ lmax lzero (lvar 0)
-                 ⊢[ lD ] wfstepty (lvar 1) (gv 4) (gu 3) (gv 2) @ lvar 0 ])
-    by (unfold gv, gu; wnorm; wtop);
-  assert (H3 : [ brG 50 G0 ; cvar 5 ,, gv 4 @ lvar 1 ,, wfcsty (lvar 1) (gv 4) (gu 3) @ lvar 1
-                 ,, wfihty (lvar 1) (lvar 0) (gv 4) (gu 3) (gv 2) @ lmax lzero (lvar 0)
-                 ⊢[ lC ] gu 1 : wfstepty (lvar 1) (gv 4) (gu 3) (gv 2) @ lvar 0 ])
-    by (unfold gv, gu; wnorm; wtop);
-  assert (H4 : [ brG 50 G0 ; cvar 5 ⊢[ lC ] tmElimWf (lvar 1) (lvar 0) (gv 4) (gu 3) (gv 2) (gu 1) (gu 0)
-                 : tyGvar 2 (lsingle (gu 0)) @ lvar 0 ])
-    by (unfold gv, gu; wnorm; wtop);
+  destruct (br50_scope G0 HG0) as (H1 & H2 & H3 & H4);
   unfold brG, gctx_uwk in H1, H2, H3, H4; cbn [gL gΨ] in H1, H2, H3, H4.
 
 Lemma brΓ_conv {G Γ MT MT' Mt Mt' l1 l2 l1' l2'} k : k < nbr ->
@@ -420,7 +408,7 @@ Proof.
   all: try (exfalso; lia).
   all: match goal with |- context [brG ?kk ?G0] => w_lookups kk (gΨ (brG kk G0)) end.
   all: br_prep.
-  all: try (match goal with |- context [brG 50 ?G0] => br50_pre G0 end).
+  all: try (match goal with |- context [brG 50 ?G0] => br50_pre G0 HG0 end).
   all: br_fin HMT HMt HG0 HB.
 Qed.
 
