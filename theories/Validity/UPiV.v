@@ -113,28 +113,28 @@ Section KwU.
 Context `{E : GenericEq}.
 
 Lemma kty_usubst {G Γ} (ρ : kwk G Γ) (T : ty) ψ : kty ρ T[ψ]ᵤ = (kty ρ T)[ψ]ᵤ.
-Proof. unfold kty. rewrite <- usubst_gwa_ty, <- usubst_ren_ty. reflexivity. Qed.
+Proof using . unfold kty. rewrite <- usubst_gwa_ty, <- usubst_ren_ty. reflexivity. Qed.
 Lemma ktm_usubst {G Γ} (ρ : kwk G Γ) (t : tm) ψ : ktm ρ t[ψ]ᵤ = (ktm ρ t)[ψ]ᵤ.
-Proof. unfold ktm. rewrite <- usubst_gwa_tm, <- usubst_ren. reflexivity. Qed.
+Proof using . unfold ktm. rewrite <- usubst_gwa_tm, <- usubst_ren. reflexivity. Qed.
 
 (** The instance at [ls] of a body substituted under the binder. *)
 Lemma upi_inst_ty n ls φ (T : ty) σ d {G Γ} (ρ : kwk G Γ) : length ls = n -> gdnf σ -> LK dnftm d ->
   (kty ρ T[uupn n φ]ᵤ⦃guwkn n σ⦄[uwkn n d])[uext ls lvar]ᵤ = T[uext ls φ]ᵤ⦃gsub_wk σ (kw_γ ρ)⦄[kwsub ρ d].
-Proof.
+Proof using .
   intros Hn Hσ Hd. rewrite <- kty_usubst, <- (subst_uinst_ty n ls _ d Hn Hd),
     <- (gsubst_uinst_ty n ls _ σ Hn Hσ), (uupn_uext_ty n ls φ T Hn), kty_subst, gwa_gsubst_ty.
   reflexivity.
 Qed.
 Lemma upi_inst_tm n ls φ (t : tm) σ d {G Γ} (ρ : kwk G Γ) : length ls = n -> gdnf σ -> LK dnftm d ->
   (ktm ρ t[uupn n φ]ᵤ⦃guwkn n σ⦄[uwkn n d])[uext ls lvar]ᵤ = t[uext ls φ]ᵤ⦃gsub_wk σ (kw_γ ρ)⦄[kwsub ρ d].
-Proof.
+Proof using .
   intros Hn Hσ Hd. rewrite <- ktm_usubst, <- (subst_uinst_tm n ls _ d Hn Hd),
     <- (gsubst_uinst_tm n ls _ σ Hn Hσ), (uupn_uext_tm n ls φ t Hn).
   unfold ktm, kwsub. rewrite gwa_subst, subst_ren_lren, gwa_gsubst_tm. reflexivity.
 Qed.
 
 Lemma ktm_uren {G Γ} (ρ : kwk G Γ) (t : tm) ρu : ktm ρ t⟨ρu⟩ᵤ = (ktm ρ t)⟨ρu⟩ᵤ.
-Proof.
+Proof using .
   unfold ktm.
   assert (Hg : forall γ, (t⟨ρu⟩ᵤ)⟦γ⟧ = (t⟦γ⟧)⟨ρu⟩ᵤ)
     by (intros []; cbn [gwa]; [reflexivity | symmetry; apply (proj1 (proj2 uren_gren_all)) ..]).
@@ -142,26 +142,26 @@ Proof.
 Qed.
 
 Lemma ktm_ulam {G Γ} (ρ : kwk G Γ) n l B b : ktm ρ (ulam n l B b) = ulam n l (kty ρ B) (ktm ρ b).
-Proof. unfold ktm, kty; destruct (kw_γ ρ); reflexivity. Qed.
+Proof using . unfold ktm, kty; destruct (kw_γ ρ); reflexivity. Qed.
 
 (** A world under [n] fresh levels: the same weakenings. *)
 Lemma kw_uwk_gok n {G Γ} (ρ : kwk G Γ) : gwk_ok (kw_γ ρ) (gctx_uwk n (kw_G ρ)) (gctx_uwk n G).
-Proof. destruct (kw_gok ρ) as [HL Hw]. split; [cbn; lia | apply gwk_wf_uren, Hw]. Qed.
+Proof using . destruct (kw_gok ρ) as [HL Hw]. split; [cbn; lia | apply gwk_wf_uren, Hw]. Qed.
 Lemma kw_uwk_wf n {G Γ} (ρ : kwk G Γ) : kw_r ρ : (kw_Δ ρ)⟨ush n⟩ᵤ ≤ (Γ⟨ush n⟩ᵤ)⟦kw_γ ρ⟧.
-Proof.
+Proof using .
   pose proof (wk_wf_usubst _ _ _ (fun j => lvar (ush n j)) (kw_wf ρ)) as X.
   rewrite usubst_gwa_ctx in X. cbn [usubst USubst_ctx] in X. rewrite <- !uren_ush_ctx in X. exact X.
 Qed.
 Lemma kw_uwk_ctx n {G Γ} (ρ : kwk G Γ) : [ gctx_uwk n (kw_G ρ) ; (kw_Δ ρ)⟨ush n⟩ᵤ ⊢g ].
-Proof. exact (uwk_ctx n (kw_ctx ρ)). Qed.
+Proof using . exact (uwk_ctx n (kw_ctx ρ)). Qed.
 Definition kw_uwk n {G Γ} (ρ : kwk G Γ) : kwk (gctx_uwk n G) Γ⟨ush n⟩ᵤ :=
   mkKwk (gctx_uwk n (kw_G ρ)) (kw_Δ ρ)⟨ush n⟩ᵤ (kw_γ ρ) (kw_r ρ) (kw_uwk_gok n ρ) (kw_uwk_wf n ρ)
     (kw_uwk_ctx n ρ).
 
 Lemma ktm_kw_uwk n {G Γ} (ρ : kwk G Γ) t : ktm (kw_uwk n ρ) t = ktm ρ t.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma kty_kw_uwk n {G Γ} (ρ : kwk G Γ) T : kty (kw_uwk n ρ) T = kty ρ T.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 
 End KwU.
 
@@ -219,19 +219,19 @@ Section At.
 Variables (G' : gctx) (σ σ' : gsub) (Δ : ctx) (d d' : lsub).
 Hypothesis (Hσ : GSubRel G' Gφ σ σ') (Hd : SubRelM G' Γφ⦃σ⦄ Δ d d').
 
-Lemma u_L : L' <= gL G'. Proof. exact (gsr_L _ _ _ _ _ _ Hσ). Qed.
-Lemma u_G : [ ⊢ G' ]. Proof. exact (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)). Qed.
+Lemma u_L : L' <= gL G'. Proof using Hσ. exact (gsr_L _ _ _ _ _ _ Hσ). Qed.
+Lemma u_G : [ ⊢ G' ]. Proof using Hσ. exact (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)). Qed.
 Lemma u_φn : usub_ok (uupn n φ) (n + gL G') (n + gL G0).
-Proof. apply usub_ok_uupn, (usub_ok_grow Hφ u_L). Qed.
-Lemma u_Γσ : [ G' ; Γφ⦃σ⦄ ⊢[ lM ] ]. Proof. exact (gs_ctx EP EM Hσ HΓ0 compt_M). Qed.
+Proof using Hσ Hφ. apply usub_ok_uupn, (usub_ok_grow Hφ u_L). Qed.
+Lemma u_Γσ : [ G' ; Γφ⦃σ⦄ ⊢[ lM ] ]. Proof using HΓ0 Hσ. exact (gs_ctx EP EM Hσ HΓ0 compt_M). Qed.
 Lemma u_Δ : [ G' ; Δ ⊢[ lM ] ].
-Proof. pose proof (SubRel_ctx Hd) as X. rewrite (@gm_layer_M EP EM EMl) in X. exact X. Qed.
+Proof using EMl Hd. pose proof (SubRel_ctx Hd) as X. rewrite (@gm_layer_M EP EM EMl) in X. exact X. Qed.
 
 (** The related substitutions under the binder. *)
 Lemma u_σn : GSubRel (gctx_uwk n G') (gctx_uwk n Gφ) (guwkn n σ) (guwkn n σ').
-Proof. exact (GSubRel_uwkn EP EM HG0 Hσ). Qed.
+Proof using ELM ELP HG0 Hσ. exact (GSubRel_uwkn EP EM HG0 Hσ). Qed.
 Lemma u_dn : SubRelM (gctx_uwk n G') (Γφ⟨ush n⟩ᵤ)⦃guwkn n σ⦄ Δ⟨ush n⟩ᵤ (uwkn n d) (uwkn n d').
-Proof.
+Proof using ELM ELP Hd HΓ0 Hσ.
   rewrite (uren_ush_gsubst_ctx n _ _ (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ))).
   exact (SubRel_uwkn u_G (wf_ctx_lwf u_Γσ) Hd).
 Qed.
@@ -239,14 +239,14 @@ Qed.
 (** The world's substitutions, with the source re-levelled to the world. *)
 Lemma u_σρ (ρ : kwk G' Δ) :
   GSubRel (kw_G ρ) (G_us G0 (gL (kw_G ρ)) φ) (gsub_wk σ (kw_γ ρ)) (gsub_wk σ' (kw_γ ρ)).
-Proof.
+Proof using Hσ.
   exact (GSubRel_relevel EP EM (gL (kw_G ρ)) (GSubRel_wk EP EM Hσ (kw_gok ρ) (kw_glob ρ)) (le_n _)).
 Qed.
 Lemma u_dρ (ρ : kwk G' Δ) : SubRelM (kw_G ρ) Γφ⦃gsub_wk σ (kw_γ ρ)⦄ (kw_Δ ρ) (kwsub ρ d) (kwsub ρ d').
-Proof. rewrite <- gwa_gsubst_ctx. exact (SubRel_kw _ _ _ ρ _ _ Hd). Qed.
+Proof using ELM ELP Hd. rewrite <- gwa_gsubst_ctx. exact (SubRel_kw _ _ _ ρ _ _ Hd). Qed.
 Lemma u_ψ (ρ : kwk G' Δ) ls : length ls = n -> Forall (lwf (gL (kw_G ρ))) ls ->
   usub_ok (uext ls φ) (gL (kw_G ρ)) (n + gL G0).
-Proof.
+Proof using Hn Hσ Hφ.
   intros <- Hls. apply usub_ok_uext; [exact Hls |].
   apply (usub_ok_grow Hφ). pose proof u_L. pose proof (kw_gL ρ). lia.
 Qed.
@@ -276,7 +276,7 @@ Hypothesis (Hσ : GSubRel G' Gφ σ σ') (Hd : SubRelM G' Γφ⦃σ⦄ Δ d d').
 
 (** The bodies at the extended scope. *)
 Lemma upi_esc : LRtyM (lvsubst l (uupn n φ)) (gctx_uwk n G') Δ⟨ush n⟩ᵤ (Aσ T σ d) (Aσ T' σ' d').
-Proof.
+Proof using ELM ELP HG0 Hd HΓ0 Hσ Hφ VT.
   pose proof (VT (n + L') (uupn n φ) (usub_ok_uupn _ _ _ _ Hφ)) as X.
   unfold G_us in X. rewrite gctx_uwk_usubst, ucren_ush_usubst in X.
   exact (VTyG_loc (X _ _ _ (u_σn _ _ _ Hσ)) _ _ _ (u_dn _ _ _ _ _ _ Hσ Hd)).
@@ -288,7 +288,7 @@ Lemma upi_inst (ρ : @kwk EM G' Δ) ls ls' : length ls = n -> Forall2 (lequiv (g
     (kty ρ (Aσ T σ d))[uext ls lvar]ᵤ (kty ρ (Aσ T' σ' d'))[uext ls' lvar]ᵤ
     (lvsubst (lvsubst l (uupn n φ)) (uext ls lvar))
     (canonI G' Δ (Aσ T σ d) (Aσ T' σ' d') (lvsubst l (uupn n φ)) ρ ls ls').
-Proof.
+Proof using ELM ELP Hd Hl Hn Hσ Hφ VT.
   intros Hlen Hls.
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
   pose proof (gsw_dnf _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ)) as Nσ'.
@@ -319,7 +319,7 @@ Lemma upi_LR :
   LRωM G' Δ (tyUPi n (lvsubst l (uupn n φ)) (Aσ T σ d)) (tyUPi n (lvsubst l' (uupn n φ)) (Aσ T' σ' d'))
     (@UPiRel EM G' Δ n (lvsubst l (uupn n φ)) (lvsubst l' (uupn n φ)) (Aσ T σ d) (Aσ T' σ' d')
        (canonI G' Δ (Aσ T σ d) (Aσ T' σ' d') (lvsubst l (uupn n φ)))).
-Proof.
+Proof using ELM ELP EMl HG0 Hd Hl Hn HΓ0 Hσ Hφ VT.
   destruct upi_esc as [R0 H0]. destruct (escape_ty _ _ _ _ _ _ _ _ H0) as (HA & HA' & HAA).
   rewrite (@gm_layer_M EP EM EMl) in HA, HA'.
   pose proof (u_φn _ _ _ Hσ) as Hφn.
@@ -344,7 +344,7 @@ End At2.
 
 Lemma VS_upi : VTySωM Gφ Γφ (tyUPi n (lvsubst l (uupn n φ)) T[uupn n φ]ᵤ)
                             (tyUPi n (lvsubst l' (uupn n φ)) T'[uupn n φ]ᵤ).
-Proof.
+Proof using ELM ELP EMl HG0 Hl Hn HΓ0 Hφ VT.
   apply VTySω_intro_loc. intros G' σ σ' Hσ Δ d d' Hd.
   eexists. exact (upi_LR _ _ _ _ _ _ Hσ Hd).
 Qed.
@@ -365,7 +365,7 @@ Hypothesis (Hl : lequiv (n + gL G0) l l')
 
 Lemma VS_ulam : VTmSωM Gφ Γφ (ulam n (lvsubst l (uupn n φ)) T[uupn n φ]ᵤ t[uupn n φ]ᵤ)
   (ulam n (lvsubst l' (uupn n φ)) T'[uupn n φ]ᵤ t'[uupn n φ]ᵤ) (tyUPi n (lvsubst l (uupn n φ)) T[uupn n φ]ᵤ).
-Proof.
+Proof using ELM ELP EMl HG0 Hl Hn HΓ0 Hφ VT VTT Vt.
   pose proof (lequiv_refl _ _ (lequiv_wf_l _ _ _ Hl)) as Hll0.
   apply VTmSω_intro_loc. intros G' σ σ' Hσ Δ d d' Hd.
   pose proof (GSubRel_refl_l _ _ Hσ) as Hσσ.
@@ -489,7 +489,7 @@ End Lam.
 
 Lemma tyred_upi_inv {G Γ i m l0 A m2 l2 A2 k} :
   [ G ; Γ ⊢[ i ] tyUPi m l0 A ⤳* tyUPi m2 l2 A2 @ k ] -> m2 = m /\ l2 = l0 /\ A2 = A.
-Proof.
+Proof using .
   intros H. pose proof (tyred_red _ _ _ _ _ _ H) as Hr.
   inversion Hr as [| y z Hy Hz]; subst.
   - auto.
@@ -505,7 +505,7 @@ Hypothesis (VT : forall L'' ψ, usub_ok ψ L'' (n + gL G0) ->
 
 Lemma VS_uapp : VTmSM Gφ Γφ (uapp u ks) (uapp u' ks') T[uupn n φ]ᵤ[uext ks lvar]ᵤ
   (lvsubst (lvsubst l (uupn n φ)) (uext ks lvar)).
-Proof.
+Proof using ELM ELP EMl HG0 Hkk Hks HΓ0 Hφ VT Vu.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Δ d d' Hd.
   pose proof (GSubRel_refl_l _ _ Hσ) as Hσσ.
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
@@ -570,7 +570,7 @@ Hypothesis (VT : forall L'' ψ, usub_ok ψ L'' (n + gL G0) ->
 
 Lemma VS_ueta : VTmSωM Gφ Γφ (ulam n (lvsubst l (uupn n φ)) T[uupn n φ]ᵤ (uapp u⟨ush n⟩ᵤ (ubvars n))) u
   (tyUPi n (lvsubst l (uupn n φ)) T[uupn n φ]ᵤ).
-Proof.
+Proof using ELM ELP EMl HG0 Hn HΓ0 Hφ VT Vu Vuw.
   apply VTmSω_intro_loc. intros G' σ σ' Hσ Δ d d' Hd.
   pose proof (GSubRel_refl_l _ _ Hσ) as Hσσ.
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
@@ -690,7 +690,7 @@ End Eta.
 
 Lemma red_ubeta_inst n0 l0 B b ks σ e : length ks = n0 -> gdnf σ -> LK dnftm e ->
   red (uapp (ulam n0 l0 B b) ks)⦃σ⦄[e] b[uext ks lvar]ᵤ⦃σ⦄[e].
-Proof.
+Proof using .
   intros Hn0 Hσ He. rewrite (gsubst_uinst_tm n0 ks b σ Hn0 Hσ), (subst_uinst_tm n0 ks _ e Hn0 He).
   exact (red_ubeta _ _ _ _ _ Hn0).
 Qed.
@@ -698,7 +698,7 @@ Qed.
 Lemma VS_red {G Γ lhs rhs T k} : [ G ; Γ ⊢[ lM ] lhs : T @ k ] -> [ G ; Γ ⊢[ lM ] lhs ≅ rhs : T @ k ] ->
   (forall σ e, gdnf σ -> LK dnftm e -> red lhs⦃σ⦄[e] rhs⦃σ⦄[e]) -> VTmSM G Γ rhs rhs T k ->
   VTmSM G Γ lhs rhs T k.
-Proof.
+Proof using ELM EMl.
   intros Hw Heq Hred Vr.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.

@@ -16,88 +16,88 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 (** ** The composed lemmas, closed under global weakenings *)
 
 Lemma VTy_shift1 {G Γ A A' B k l} : VTy G Γ A A' l -> VTy G (Γ ,, B @ k) A⟨↑⟩ A'⟨↑⟩ l.
-Proof. intros H Δ d d' [Hd _]. rewrite !shift_subst_ty. exact (H _ _ _ Hd). Qed.
+Proof using . intros H Δ d d' [Hd _]. rewrite !shift_subst_ty. exact (H _ _ _ Hd). Qed.
 
 Lemma shift_subst_tm (t : tm) d : t⟨↑⟩[d] = t[ldrop 1 d].
-Proof. apply ren_subst; intros n; rewrite llk_ldrop, rlk_shift1; reflexivity. Qed.
+Proof using . apply ren_subst; intros n; rewrite llk_ldrop, rlk_shift1; reflexivity. Qed.
 
 Lemma VTm_shift1 {G Γ t t' A B k l} : VTm G Γ t t' A l -> VTm G (Γ ,, B @ k) t⟨↑⟩ t'⟨↑⟩ A⟨↑⟩ l.
-Proof. intros H Δ d d' [Hd _]. rewrite !shift_subst_ty, !shift_subst_tm. exact (H _ _ _ Hd). Qed.
+Proof using . intros H Δ d d' [Hd _]. rewrite !shift_subst_ty, !shift_subst_tm. exact (H _ _ _ Hd). Qed.
 
 Lemma VG_shift_tm {G Γ t t' A B k l} : VTmG G Γ t t' A l -> VTmG G (Γ ,, B @ k) t⟨↑⟩ t'⟨↑⟩ A⟨↑⟩ l.
-Proof. intros. gl_lift. now apply VTm_shift1. Qed.
+Proof using . intros. gl_lift. now apply VTm_shift1. Qed.
 
 Lemma VG_shift {G Γ A A' B k l} : VTyG G Γ A A' l -> VTyG G (Γ ,, B @ k) A⟨↑⟩ A'⟨↑⟩ l.
-Proof. intros. gl_lift. now apply VTy_shift1. Qed.
+Proof using . intros. gl_lift. now apply VTy_shift1. Qed.
 
 Lemma VG_var {G Γ n T T0 l} : in_ctx Γ n T0 l -> T0 = T -> VTmG G Γ (var n) (var n) T l.
-Proof. intros H <-. gl_lift. now apply V_var. Qed.
+Proof using . intros H <-. gl_lift. now apply V_var. Qed.
 
 Lemma VTmG_retype {G Γ t t' T0 T l} : VTmG G Γ t t' T0 l -> T0 = T -> VTmG G Γ t t' T l.
-Proof. now intros H <-. Qed.
+Proof using . now intros H <-. Qed.
 
 Lemma VG_nat {G Γ} : VTyG G Γ tyNat tyNat lzero.
-Proof. gl_lift. exact V_nat. Qed.
+Proof using . gl_lift. exact V_nat. Qed.
 Lemma VG_zero {G Γ} : VTmG G Γ zero zero tyNat lzero.
-Proof. gl_lift. exact V_zero. Qed.
+Proof using EL VL. gl_lift. exact V_zero. Qed.
 Lemma VG_succ {G Γ t t'} : VTmG G Γ t t' tyNat lzero -> VTmG G Γ (succ t) (succ t') tyNat lzero.
-Proof. intros. gl_lift. now apply V_succ. Qed.
+Proof using EL VL. intros. gl_lift. now apply V_succ. Qed.
 
 Lemma VG_unit {G Γ l l'} : lwf (gL G) l -> lequiv (gL G) l l' -> VTyG G Γ (tyUnit l) (tyUnit l') l.
-Proof. intros. gl_lift. eapply V_unit; eassumption. Qed.
+Proof using . intros. gl_lift. eapply V_unit; eassumption. Qed.
 
 Lemma VG_vec {G Γ l l' A A' n n'} : lwf (gL G) l -> lequiv (gL G) l l' ->
   VTyG G Γ A A' l -> VTmG G Γ n n' tyNat lzero -> VTyG G Γ (tyVec l A n) (tyVec l' A' n') l.
-Proof. intros. gl_lift. eapply V_vec; eassumption. Qed.
+Proof using EL VL. intros. gl_lift. eapply V_vec; eassumption. Qed.
 Lemma VG_fin {G Γ n n'} : VTmG G Γ n n' tyNat lzero -> VTyG G Γ (tyFin n) (tyFin n') lzero.
-Proof. intros. gl_lift. eapply V_fin; eassumption. Qed.
+Proof using EL VL. intros. gl_lift. eapply V_fin; eassumption. Qed.
 Lemma VG_vec_zero {G Γ l l' A A'} : lwf (gL G) l -> lequiv (gL G) l l' ->
   VTyG G Γ A A' l -> VTyG G Γ (tyVec l A zero) (tyUnit l') l.
-Proof. intros. gl_lift. eapply V_vec_zero; eassumption. Qed.
+Proof using EL. intros. gl_lift. eapply V_vec_zero; eassumption. Qed.
 Lemma VG_vec_succ {G Γ l l' A A' n n'} : lwf (gL G) l -> lequiv (gL G) l l' ->
   VTyG G Γ A A' l -> VTmG G Γ n n' tyNat lzero ->
   VTyG G Γ (tyVec l A (succ n)) (tySig l' l' A' (tyVec l' A'⟨↑⟩ n'⟨↑⟩)) l.
-Proof. intros. gl_lift. eapply V_vec_succ; eassumption. Qed.
+Proof using EL VL. intros. gl_lift. eapply V_vec_succ; eassumption. Qed.
 Lemma VG_fin_zero {G Γ} : VTyG G Γ (tyFin zero) (tyEmpty lzero) lzero.
-Proof. gl_lift. exact V_fin_zero. Qed.
+Proof using . gl_lift. exact V_fin_zero. Qed.
 Lemma VG_fin_succ {G Γ n n'} : VTmG G Γ n n' tyNat lzero ->
   VTyG G Γ (tyFin (succ n)) (tySum lzero lzero (tyUnit lzero) (tyFin n')) lzero.
-Proof. intros. gl_lift. eapply V_fin_succ; eassumption. Qed.
+Proof using EL VL. intros. gl_lift. eapply V_fin_succ; eassumption. Qed.
 
 Lemma VG_pi {G Γ l l' l3 l4 A A' B B'} : lwf (gL G) l -> lwf (gL G) l' ->
   lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢g B @ l' ] ->
   VTyG G Γ A A' l -> VTyG G (Γ ,, A @ l) B B' l' ->
   VTyG G Γ (tyPi l l' A B) (tyPi l3 l4 A' B') (lmax l l').
-Proof. intros. gl_lift. eapply V_pi; eassumption. Qed.
+Proof using EL VL VN. intros. gl_lift. eapply V_pi; eassumption. Qed.
 Lemma VG_lam {G Γ l l' l3 l4 A A' B t t'} : lwf (gL G) l -> lwf (gL G) l' ->
   lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢g B @ l' ] ->
   [ G ; Γ ,, A @ l ⊢g t : B @ l' ] -> VTyG G Γ A A' l -> VTyG G (Γ ,, A @ l) B B l' ->
   VTmG G (Γ ,, A @ l) t t' B l' ->
   VTmG G Γ (lam l l' A t) (lam l3 l4 A' t') (tyPi l l' A B) (lmax l l').
-Proof. intros. gl_lift. eapply V_lam; eassumption. Qed.
+Proof using EL VL VN. intros. gl_lift. eapply V_lam; eassumption. Qed.
 Lemma VG_app {G Γ l l' l3 l4 A A' B B' t t' s s'} : lwf (gL G) l -> lwf (gL G) l' ->
   lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢g B @ l' ] ->
   VTyG G Γ A A' l -> VTyG G (Γ ,, A @ l) B B' l' ->
   VTmG G Γ t t' (tyPi l l' A B) (lmax l l') -> VTmG G Γ s s' A l ->
   VTmG G Γ (app t l l' A B s) (app t' l3 l4 A' B' s') B[lsingle s] l'.
-Proof. intros. gl_lift. eapply V_app; eassumption. Qed.
+Proof using EL VL VN. intros. gl_lift. eapply V_app; eassumption. Qed.
 Lemma VG_fst {G Γ l l' l3 l4 A A' B B' p p'} : lwf (gL G) l -> lwf (gL G) l' ->
   lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢g B @ l' ] ->
   VTyG G Γ A A' l -> VTyG G (Γ ,, A @ l) B B' l' ->
   VTmG G Γ p p' (tySig l l' A B) (lmax l l') ->
   VTmG G Γ (tmFst l l' A B p) (tmFst l3 l4 A' B' p') A l.
-Proof. intros. gl_lift. eapply V_fst; eassumption. Qed.
+Proof using EL VL VN. intros. gl_lift. eapply V_fst; eassumption. Qed.
 Lemma VG_snd {G Γ l l' l3 l4 A A' B B' p p'} : lwf (gL G) l -> lwf (gL G) l' ->
   lequiv (gL G) l3 l -> lequiv (gL G) l4 l' -> [ G ; Γ ,, A @ l ⊢g B @ l' ] ->
   VTyG G Γ A A' l -> VTyG G (Γ ,, A @ l) B B' l' ->
   VTmG G Γ p p' (tySig l l' A B) (lmax l l') ->
   VTmG G Γ (tmSnd l l' A B p) (tmSnd l3 l4 A' B' p') B[lsingle (tmFst l l' A B p)] l'.
-Proof. intros. gl_lift. eapply V_snd; eassumption. Qed.
+Proof using EL VL VN. intros. gl_lift. eapply V_snd; eassumption. Qed.
 Lemma VG_elimEmpty {G Γ l1 l2 l3 l4 M M' t t'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 -> [ G ; Γ ,, tyEmpty l2 @ l2 ⊢g M @ l1 ] ->
   VTyG G (Γ ,, tyEmpty l2 @ l2) M M' l1 -> VTmG G Γ t t' (tyEmpty l2) l2 ->
   VTmG G Γ (elimEmpty l1 l2 M t) (elimEmpty l3 l4 M' t') M[lsingle t] l1.
-Proof. intros. gl_lift. eapply V_elimEmpty; eassumption. Qed.
+Proof using EL VL VN. intros. gl_lift. eapply V_elimEmpty; eassumption. Qed.
 Lemma VG_case {G Γ l1 l2 l3 A A' B B' M M' c1 c1' c2 c2' l4 l5 l6 t t'} :
   lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l3 ->
   VTyG G Γ A A' l1 -> VTyG G Γ B B' l2 -> VTyG G (Γ ,, tySum l1 l2 A B @ lmax l1 l2) M M' l3 ->
@@ -106,14 +106,14 @@ Lemma VG_case {G Γ l1 l2 l3 A A' B B' M M' c1 c1' c2 c2' l4 l5 l6 t t'} :
   lequiv (gL G) l1 l4 -> lequiv (gL G) l2 l5 -> lequiv (gL G) l3 l6 ->
   VTmG G Γ t t' (tySum l1 l2 A B) (lmax l1 l2) ->
   VTmG G Γ (tmCase l1 l2 l3 A B M c1 c2 t) (tmCase l4 l5 l6 A' B' M' c1' c2' t') M[lsingle t] l3.
-Proof. intros. gl_lift. eapply V_case; eassumption. Qed.
+Proof using EL VL VN. intros. gl_lift. eapply V_case; eassumption. Qed.
 Lemma VG_natrec {G Γ l l' M M' s s' z z' t t'} : lwf (gL G) l -> lequiv (gL G) l l' ->
   [ G ; Γ ,, tyNat @ lzero ⊢g M @ l ] -> [ G ; Γ ⊢g s : M[lsingle zero] @ l ] ->
   [ G ; Γ ,, tyNat @ lzero ,, M @ l ⊢g z : M[lsucc] @ l ] ->
   VTyG G (Γ ,, tyNat @ lzero) M M' l -> VTmG G Γ s s' M[lsingle zero] l ->
   VTmG G (Γ ,, tyNat @ lzero ,, M @ l) z z' M[lsucc] l -> VTmG G Γ t t' tyNat lzero ->
   VTmG G Γ (natrec l M s z t) (natrec l' M' s' z' t') M[lsingle t] l.
-Proof. intros. gl_lift. eapply V_natrec; eassumption. Qed.
+Proof using EL VL VN. intros. gl_lift. eapply V_natrec; eassumption. Qed.
 
 (** ** The schema's pieces *)
 
@@ -131,7 +131,7 @@ Ltac teq := repeat first [ rewrite ren_as_r2l_ty | rewrite ren_as_r2l ];
   try solve [apply ren_as_r2l | symmetry; apply ren_as_r2l].
 
 Lemma lq_0l' {G l} : lwf (gL G) l -> lequiv (gL G) (lmax lzero l) l.
-Proof. intros Hl. eapply lequiv_trans; [apply lmax_comm; cbn; auto | apply lmax_zero; auto]. Qed.
+Proof using . intros Hl. eapply lequiv_trans; [apply lmax_comm; cbn; auto | apply lmax_zero; auto]. Qed.
 
 Section NthV.
 Context {G : gctx} {Γ : ctx} {l l' : lvl} {T T' : ty}
@@ -139,7 +139,7 @@ Context {G : gctx} {Γ : ctx} {l l' : lvl} {T T' : ty}
   (HT : [ G ; Γ ⊢g T @ l ]) (VT : VTyG G Γ T T' l).
 
 Lemma nth_mot_V : VTyG G (Γ ,, tyNat @ lzero) (nthMot l T) (nthMot l' T') l.
-Proof.
+Proof using EL HT Hll Hwl VL VN VT.
   pose proof (ctx_of_wf_ty ge_typeof HT) as H0. pose proof ge_notV as Hv.
   assert (H1 : [ G ; Γ ,, tyNat @ lzero ⊢g ])
     by (apply ext_wf_g; [apply wft_nat; auto; now rewrite ge_typeof | cbn; auto]).
@@ -166,7 +166,7 @@ Proof.
 Qed.
 
 Lemma nth_base_V : VTmG G Γ (nthBase l T) (nthBase l' T') (nthMot l T)[lsingle zero] l.
-Proof.
+Proof using EL HT Hll Hwl VL VN VT.
   pose proof (ctx_of_wf_ty ge_typeof HT) as H0. pose proof ge_notV as Hv. pose proof (wf_ty_nf HT) as NT.
   assert (Hw0 : lwf (gL G) lzero) by (cbn; auto).
   rewrite nth_E0 by exact NT. unfold nthBase.
@@ -216,7 +216,7 @@ Qed.
 
 Lemma nth_step_V :
   VTmG G (Γ ,, tyNat @ lzero ,, nthMot l T @ l) (nthStep l T) (nthStep l' T') (nthMot l T)[lsucc] l.
-Proof.
+Proof using EL HT Hll Hwl VL VN VT.
   pose proof (ctx_of_wf_ty ge_typeof HT) as H0. pose proof ge_notV as Hv. pose proof ge_compt as Hc.
   assert (Hw0 : lwf (gL G) lzero) by (cbn; auto).
   pose proof (nth_mot_wf ge_typeof ge_notV Hwl HT) as HM. pose proof (ctx_of_wf_ty ge_typeof HM) as H1.
@@ -426,7 +426,7 @@ Qed.
 Lemma V_nth {k k' cs cs' i i'} : [ G ; Γ ⊢g k : tyNat @ lzero ] ->
   VTmG G Γ k k' tyNat lzero -> VTmG G Γ cs cs' (tyVec l T k) l -> VTmG G Γ i i' (tyFin k) lzero ->
   VTmG G Γ (tmNth l T k cs i) (tmNth l' T' k' cs' i') T l.
-Proof.
+Proof using EL HT Hll Hwl VL VN VT.
   intros Hk Vk Vcs Vi. pose proof (ctx_of_wf_ty ge_typeof HT) as H0. pose proof ge_notV as Hv.
   pose proof (wf_ty_nf HT) as NT. pose proof (wf_tm_nf Hk) as Nk.
   assert (Hw0 : lwf (gL G) lzero) by (cbn; auto).
@@ -472,7 +472,7 @@ End NthV.
     index, to a neutral. *)
 
 Lemma reds_eq a b : a = b -> reds a b.
-Proof. intros ->; constructor. Qed.
+Proof using . intros ->; constructor. Qed.
 
 Ltac nth_eq := unfold tmNth, nthMot, nthBase, nthStep; push_ren; push_subst;
   shift_cancel; pw; shift_cancel;
@@ -490,11 +490,11 @@ Definition nthCase (m c0 : tm) : tm -> tm :=
 Lemma nth_reds_cong {k k' c0 i} : reds k k' -> reds (tmNth l T k c0 i)
   (app (app (natrec l (nthMot l T) (nthBase l T) (nthStep l T) k') l l (tyVec l T k)
           (tyPi lzero l (tyFin k⟨↑⟩) T⟨↑⟩⟨↑⟩) c0) lzero l (tyFin k) T⟨↑⟩ i).
-Proof. intros H. unfold tmNth. now apply reds_app, reds_app, reds_natrec. Qed.
+Proof using . intros H. unfold tmNth. now apply reds_app, reds_app, reds_natrec. Qed.
 
 Lemma nth_reds_succ {k m c0 i} : nftm m -> nftm c0 -> reds k (succ m) ->
   reds (tmNth l T k c0 i) (nthCase m c0 i).
-Proof.
+Proof using NT.
   intros Nm Nc Hk. eapply reds_trans; [exact (nth_reds_cong Hk)|].
   eapply Relation_Operators.rt1n_trans; [apply red_app, red_app, red_natrec_succ|].
   unfold nthStep at 1. rewrite !subst_lam.
@@ -506,7 +506,7 @@ Qed.
 
 Lemma nth_reds_inl {k m c0 i k1 k2 C D u} : nftm m -> nftm c0 -> reds k (succ m) ->
   reds i (tmInl k1 k2 C D u) -> reds (tmNth l T k c0 i) (tmFst l l T (tyVec l T⟨↑⟩ m⟨↑⟩) c0).
-Proof.
+Proof using NT.
   intros Nm Nc Hk Hi. eapply reds_trans; [exact (nth_reds_succ Nm Nc Hk)|].
   unfold nthCase. eapply reds_trans; [apply reds_case, Hi|].
   eapply Relation_Operators.rt1n_trans; [apply red_case_inl|].
@@ -516,7 +516,7 @@ Qed.
 Lemma nth_reds_inr {k m c0 i k1 k2 C D j} : nftm m -> nftm c0 -> reds k (succ m) ->
   reds i (tmInr k1 k2 C D j) ->
   reds (tmNth l T k c0 i) (tmNth l T m (tmSnd l l T (tyVec l T⟨↑⟩ m⟨↑⟩) c0) j).
-Proof.
+Proof using NT.
   intros Nm Nc Hk Hi. eapply reds_trans; [exact (nth_reds_succ Nm Nc Hk)|].
   unfold nthCase. eapply reds_trans; [apply reds_case, Hi|].
   eapply Relation_Operators.rt1n_trans; [apply red_case_inr|].
@@ -525,14 +525,14 @@ Qed.
 
 Lemma nth_reds_case_ne {k m c0 i ν} : nftm m -> nftm c0 -> reds k (succ m) -> reds i ν -> whne ν ->
   exists X, reds (tmNth l T k c0 i) X /\ whne X.
-Proof.
+Proof using NT.
   intros Nm Nc Hk Hi Hν. eexists. split; [eapply reds_trans; [exact (nth_reds_succ Nm Nc Hk) | apply reds_case, Hi]|].
   now apply whne_case.
 Qed.
 
 Lemma nth_reds_zero {k c0 i ν} : reds k zero -> reds i ν -> whne ν ->
   exists X, reds (tmNth l T k c0 i) X /\ whne X.
-Proof.
+Proof using .
   intros Hk Hi Hν. eexists. split.
   - eapply reds_trans; [exact (nth_reds_cong Hk)|].
     eapply Relation_Operators.rt1n_trans; [apply red_app, red_app, red_natrec_zero|].
@@ -545,7 +545,7 @@ Proof.
 Qed.
 
 Lemma nth_reds_ne {k c0 i ν} : reds k ν -> whne ν -> exists X, reds (tmNth l T k c0 i) X /\ whne X.
-Proof.
+Proof using .
   intros Hk Hν. eexists. split; [exact (nth_reds_cong Hk)|]. now apply whne_app, whne_app, whne_natrec.
 Qed.
 

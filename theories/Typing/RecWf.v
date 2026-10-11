@@ -481,16 +481,16 @@ Section Scopes.
 Context {G : gctx} (HG : [ ⊢ G ]).
 
 Lemma wf_recGT : [ ⊢ recGT G ].
-Proof. unfold recGT; cbn. apply wfg_ctx. exact (uwk_glob 1 G HG). Qed.
+Proof using HG. unfold recGT; cbn. apply wfg_ctx. exact (uwk_glob 1 G HG). Qed.
 
 Lemma wf_recGt : [ ⊢ recGt G ].
-Proof.
+Proof using HG.
   pose proof (uwk_glob 1 G HG) as H1. unfold recGt, gctx_uwk in *; cbn [gL gΨ] in *.
   wfd_all.
 Qed.
 
 Lemma wf_brG_W k : 39 <= k < 43 -> [ ⊢ brG k G ].
-Proof.
+Proof using HG.
   intros Hk. pose proof (uwk_glob (br_nu k) G HG) as Hu.
   unfold brG, gctx_uwk in *; cbn [gL gΨ] in *.
   assert (k = 39 \/ k = 40 \/ k = 41 \/ k = 42) as [E|[E|[E|E]]] by lia; subst k;
@@ -498,7 +498,7 @@ Proof.
 Qed.
 
 Lemma wf_brG_Wf k : 47 <= k < 51 -> [ ⊢ brG k G ].
-Proof.
+Proof using HG.
   intros Hk. pose proof (uwk_glob (br_nu k) G HG) as Hu.
   unfold brG, gctx_uwk in *; cbn [gL gΨ] in *.
   assert (k = 47 \/ k = 48 \/ k = 49 \/ k = 50) as [E|[E|[E|E]]] by lia; subst k;
@@ -506,7 +506,7 @@ Proof.
 Qed.
 
 Lemma wf_brG k : k < nbr -> [ ⊢ brG k G ].
-Proof.
+Proof using HG.
   intros Hk. assert (HW : 39 <= k < 43 \/ ~ 39 <= k < 43) by lia.
   destruct HW as [HW|HW]; [now apply wf_brG_W|].
   assert (HF : 47 <= k < 51 \/ ~ 47 <= k < 51) by lia.

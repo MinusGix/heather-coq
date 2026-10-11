@@ -12,12 +12,12 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 (** ** Declarative helpers at the instance's layer *)
 
 Lemma tyred_eq' {G Γ T W l} : [ G ; Γ ⊢g T ⤳* W @ l ] -> [ G ; Γ ⊢g T ≅ W @ l ].
-Proof. now intros []. Qed.
+Proof using . now intros []. Qed.
 
 (** Right-hand types related to the same left type are convertible. *)
 Lemma right_conv {n rec G Γ T T' T'' l R R'} :
   LR n rec G Γ T T' l R -> LR n rec G Γ T T'' l R' -> [ G ; Γ ⊢g T' ≅ T'' @ l ].
-Proof.
+Proof using EL.
   intros H1 H2. apply escape_ty in H1 as (_ & _ & H1), H2 as (_ & _ & H2).
   apply geq_ty_sound in H1, H2. eapply eqty_trans; [apply eqty_sym, H1 | exact H2].
 Qed.
@@ -26,7 +26,7 @@ Qed.
 
 Lemma red_whnf_agree {G Γ T W W' l l'} :
   [ G ; Γ ⊢g T ⤳* W @ l ] -> [ G ; Γ ⊢g T ⤳* W' @ l' ] -> whnf_ty W -> whnf_ty W' -> W = W'.
-Proof. apply tyred_whnf_det. Qed.
+Proof using . apply tyred_whnf_det. Qed.
 
 Ltac whnf_of V :=
   match goal with
@@ -62,7 +62,7 @@ Ltac ne_absurd :=
 
 Lemma NeRel_conv {G Γ V V' V'' l t t'} :
   [ G ; Γ ⊢g V' ≅ V'' @ l ] -> NeRel G Γ V V' l t t' -> NeRel G Γ V V'' l t t'.
-Proof.
+Proof using EL.
   intros HV (ν & ν' & H1 & H2 & H3 & H4). exists ν, ν'.
   refine (conj H1 (conj _ (conj H3 _))).
   - eapply tmred_conv; eauto using ge_typeof.
@@ -86,7 +86,7 @@ Context {G Γ l1 l2 l3 l4 m3 m4 A B A' B' A'' B''}
 Lemma PiRel_dir t t' :
   PiRel G Γ l1 l2 l3 l4 A B A' B' domR codR t t' ->
   PiRel G Γ l1 l2 m3 m4 A B A'' B'' domR' codR' t t'.
-Proof.
+Proof using EL HA HA' HA'' HAA' HAA'' HBB' HBB'' HP Hcod Hdom Hl1.
   intros (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK).
   exists w, w'. refine (conj Hw (conj _ (conj Hnf (conj Hnf' (conj Heq (conj _ _)))))).
   - eapply tmred_conv; eauto using ge_typeof.
@@ -133,7 +133,7 @@ Context {G Γ l1 l2 l3 l4 m3 m4 A B A' B' A'' B''}
 Lemma SigRel_dir t t' :
   SigRel G Γ l1 l2 l3 l4 A B A' B' domR codR t t' ->
   SigRel G Γ l1 l2 m3 m4 A B A'' B'' domR' codR' t t'.
-Proof.
+Proof using EL HA HA' HA'' HAA' HAA'' HBB' HBB'' HP Hcod Hdom Hl1.
   intros (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK).
   exists w, w'. refine (conj Hw (conj _ (conj Hnf (conj Hnf' (conj Heq (conj _ _)))))).
   - eapply tmred_conv; eauto using ge_typeof.
@@ -192,7 +192,7 @@ Lemma CPiRel_dir {G Γ l1 l2 m2 T1 T1' T1''} {instR instR' : CInstRel G Γ} :
   [ G ; Γ ⊢g tyCPi l2 T1' ≅ tyCPi m2 T1'' @ l1 ] ->
   (forall ρ Δ Δ' h, releq (instR ρ Δ Δ' h) (instR' ρ Δ Δ' h)) ->
   forall t t', CPiRel G Γ l1 l2 T1 T1' instR t t' -> CPiRel G Γ l1 m2 T1 T1'' instR' t t'.
-Proof.
+Proof using EL.
   intros HP Hinst t t' (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK).
   exists w, w'. refine (conj Hw (conj _ (conj Hnf (conj Hnf' (conj Heq (conj _ _)))))).
   - eapply tmred_conv; eauto using ge_typeof.
@@ -205,7 +205,7 @@ Lemma TPiRel_dir {G Γ Δ1 Δ1' Δ1'' l1 l2 l3 l4 m3 m4 T1 T1' T1''} {instR inst
   (forall ρ A A' h, releq (instR ρ A A' h) (instR' ρ A A' h)) ->
   forall t t', TPiRel G Γ Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR t t' ->
     TPiRel G Γ Δ1 Δ1'' l1 l2 m3 m4 T1 T1'' instR' t t'.
-Proof.
+Proof using EL.
   intros HP Hinst t t' (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK).
   exists w, w'. refine (conj Hw (conj _ (conj Hnf (conj Hnf' (conj Heq (conj _ _)))))).
   - eapply tmred_conv; eauto using ge_typeof.
@@ -217,7 +217,7 @@ Qed.
 
 Theorem LR_irrel n rec G Γ T T' T'' l R R' :
   LR n rec G Γ T T' l R -> LR n rec G Γ T T'' l R' -> releq R R'.
-Proof.
+Proof using EL VL.
   intros H1; revert T'' R'.
   induction H1 as [G Γ T T' l R Hl HT HT' HR
                   | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
@@ -330,7 +330,7 @@ Context {n : nat} {rec : lvl -> RedRel} {G : gctx} {Γ : ctx} {T T' : ty} {l : l
 
 Lemma LR_inv_nat {l'} : [ G ; Γ ⊢g T ⤳* tyNat @ l' ] ->
   lequiv (gL G) l lzero /\ [ G ; Γ ⊢g T' ⤳* tyNat @ l ] /\ releq R (NatRel G Γ).
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
@@ -360,7 +360,7 @@ Qed.
 Lemma LR_inv_U {l1 l'} : [ G ; Γ ⊢g T ⤳* tyU l1 @ l' ] ->
   exists l2, lequiv (gL G) l (lsuc l1) /\ lequiv (gL G) l2 l1 /\ lmeasure l1 < n /\
     [ G ; Γ ⊢g T' ⤳* tyU l2 @ l ] /\ releq R (URel rec G Γ l1).
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
@@ -390,7 +390,7 @@ Qed.
 Lemma LR_inv_unit {l1 l'} : [ G ; Γ ⊢g T ⤳* tyUnit l1 @ l' ] ->
   exists l2, lequiv (gL G) l l1 /\ lequiv (gL G) l2 l1 /\ lwf (gL G) l1 /\
     [ G ; Γ ⊢g T' ⤳* tyUnit l2 @ l ] /\ releq R (UnitRel G Γ l1).
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
@@ -422,7 +422,7 @@ Lemma LR_inv_seq {l1 X x y l'} : [ G ; Γ ⊢g T ⤳* tySEq l1 X x y @ l' ] ->
     [ G ; Γ ⊢g T' ⤳* tySEq l2 X' x' y' @ l ] /\ [ G ; Γ ⊢g X @ l1 ] /\ [ G ; Γ ⊢ X ≈ X' @ l1 ] /\
     [ G ; Γ ⊢ x ≈ x' : X @ l1 ] /\ [ G ; Γ ⊢ y ≈ y' : X @ l1 ] /\
     releq R (SEqRel G Γ (tySEq l1 X x y) l1).
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
@@ -456,7 +456,7 @@ Lemma LR_inv_id {l1 X x y l'} : [ G ; Γ ⊢g T ⤳* tyId l1 X x y @ l' ] ->
     LR n rec G Γ X X' l1 RA /\ RA x x' /\ RA y y' /\
     (forall u v, RA u v -> RA v u) /\ (forall u v w, RA u v -> RA v w -> RA u w) /\
     releq R (IdRel G Γ l1 X x y RA).
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
@@ -493,7 +493,7 @@ Lemma LR_inv_sum {l1 l2 X Y l'} : [ G ; Γ ⊢g T ⤳* tySum l1 l2 X Y @ l' ] ->
     (forall u v, RA u v -> RA v u) /\ (forall u v w, RA u v -> RA v w -> RA u w) /\
     (forall u v, RB u v -> RB v u) /\ (forall u v w, RB u v -> RB v w -> RB u w) /\
     releq R (SumRel G Γ l1 l2 X Y RA RB).
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
@@ -523,7 +523,7 @@ Qed.
 Lemma LR_inv_sempty {l1 l'} : [ G ; Γ ⊢g T ⤳* tySEmpty l1 @ l' ] ->
   exists l2, lequiv (gL G) l l1 /\ lequiv (gL G) l2 l1 /\ lwf (gL G) l1 /\
     [ G ; Γ ⊢g T' ⤳* tySEmpty l2 @ l ] /\ releq R (SEmptyRel G Γ l1).
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
@@ -554,7 +554,7 @@ Qed.
 Lemma LR_inv_empty {l1 l'} : [ G ; Γ ⊢g T ⤳* tyEmpty l1 @ l' ] ->
   exists l2, lequiv (gL G) l l1 /\ lequiv (gL G) l2 l1 /\ lwf (gL G) l1 /\
     [ G ; Γ ⊢g T' ⤳* tyEmpty l2 @ l ] /\ releq R (EmptyRel G Γ l1).
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
@@ -584,7 +584,7 @@ Qed.
 
 Lemma LR_inv_ne {V l'} : [ G ; Γ ⊢g T ⤳* V @ l' ] -> whne_ty V ->
   exists V', [ G ; Γ ⊢g T' ⤳* V' @ l ] /\ [ G ; Γ ⊢ V ~ V' @ l ] /\ releq R (NeRel G Γ V V' l).
-Proof.
+Proof using EL H.
   intros HN HV0; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
@@ -619,7 +619,7 @@ Lemma LR_inv_pi {m1 m2 C D l'} : [ G ; Γ ⊢g T ⤳* tyPi m1 m2 C D @ l' ] ->
         LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ D)[lsingle a] (ktyl ρ D')[lsingle a'] m2
            (codR ρ a a' ha)) /\
     releq R (PiRel G Γ m1 m2 m3 m4 C D C' D' domR codR).
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
@@ -655,7 +655,7 @@ Lemma LR_inv_sig {m1 m2 C D l'} : [ G ; Γ ⊢g T ⤳* tySig m1 m2 C D @ l' ] ->
         LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ D)[lsingle a] (ktyl ρ D')[lsingle a'] m2
            (codR ρ a a' ha)) /\
     releq R (SigRel G Γ m1 m2 m3 m4 C D C' D' domR codR).
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
@@ -691,7 +691,7 @@ Lemma LR_inv_W {m1 m2 C D l'} : [ G ; Γ ⊢g T ⤳* tyW m1 m2 C D @ l' ] ->
         LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ D)[lsingle a] (ktyl ρ D')[lsingle a'] m2
            (codR ρ a a' ha)) /\
     releq R (WRel G Γ m1 m2 C D domR codR).
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
@@ -730,7 +730,7 @@ Lemma LR_inv_wf {m1 C M l'} : [ G ; Γ ⊢g T ⤳* tyWf m1 C M @ l' ] ->
     (forall (ρ : kwk G Γ) a a', domR ρ a a' ->
         NatRel (kw_G ρ) (kw_Δ ρ) (ktml ρ M)[lsingle a] (ktml ρ M')[lsingle a']) /\
     releq R (WfRel G Γ m1 C M domR).
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
@@ -765,7 +765,7 @@ Lemma LR_inv_sq {m1 C l'} : [ G ; Γ ⊢g T ⤳* tySq m1 C @ l' ] ->
     [ G ; Γ ⊢g C @ m1 ] /\ [ G ; Γ ⊢ C ≈ C' @ m1 ] /\ LR n rec G Γ C C' m1 RC /\
     (forall u v, RC u v -> RC v u) /\ (forall u v w, RC u v -> RC v w -> RC u w) /\
     releq R (SqRel G Γ m1 C RC).
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
@@ -794,7 +794,7 @@ Proof.
 Qed.
 
 Lemma LR_inv_CTyp {Δ k l'} : [ G ; Γ ⊢g T ⤳* tyCTyp Δ k @ l' ] -> lr_j = jM /\ ModRel G Γ T T' l R.
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
@@ -822,7 +822,7 @@ Proof.
 Qed.
 
 Lemma LR_inv_CTrm {Δ A k l'} : [ G ; Γ ⊢g T ⤳* tyCTrm Δ A k @ l' ] -> lr_j = jM /\ ModRel G Γ T T' l R.
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
@@ -859,7 +859,7 @@ Lemma LR_inv_cpi {m1 U1 l'} : [ G ; Γ ⊢g T ⤳* tyCPi m1 U1 @ l' ] ->
         LR n rec (kw_G ρ) (kw_Δ ρ) (kbody ρ U1)⦃gsingle (GCtx Δ)⦄ (kbody ρ U1')⦃gsingle (GCtx Δ')⦄
            m1 (instR ρ Δ Δ' h)) /\
     releq R (CPiRel G Γ m1 m2 U1 U1' instR).
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
@@ -898,7 +898,7 @@ Lemma LR_inv_tpi {Θ m1 m2 U1 l'} : [ G ; Γ ⊢g T ⤳* tyTPi Θ m1 m2 U1 @ l' 
         LR n rec (kw_G ρ) (kw_Δ ρ) (kbody ρ U1)⦃gsingle (GTy A)⦄ (kbody ρ U1')⦃gsingle (GTy A')⦄
            m2 (instR ρ A A' h)) /\
     releq R (TPiRel G Γ Θ Θ' m1 m2 m3 m4 U1 U1' instR).
-Proof.
+Proof using EL H.
   intros HN; revert HN.
   destruct H as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR

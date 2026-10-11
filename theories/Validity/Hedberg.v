@@ -301,32 +301,32 @@ Let Hv : lD <> lV. Proof. discriminate. Qed.
 (** *** Contexts and weakening at layer D *)
 
 Lemma ext {Γ A l} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ lD ] ].
-Proof. intros Hl HA. apply wfc_ext; [exact (ctx_of_wf_ty eq_refl HA) | exact HA | exact Hl]. Qed.
+Proof using . intros Hl HA. apply wfc_ext; [exact (ctx_of_wf_ty eq_refl HA) | exact HA | exact Hl]. Qed.
 
 Lemma wkty {Γ A l T l'} : [ G ; Γ ,, A @ l ⊢[ lD ] ] -> [ G ; Γ ⊢[ lD ] T @ l' ] ->
   [ G ; Γ ,, A @ l ⊢[ lD ] T⟨↑⟩ @ l' ].
-Proof. intros. apply wk1_ty_g; assumption. Qed.
+Proof using . intros. apply wk1_ty_g; assumption. Qed.
 Lemma wktm {Γ A l t T l'} : [ G ; Γ ,, A @ l ⊢[ lD ] ] -> [ G ; Γ ⊢[ lD ] t : T @ l' ] ->
   [ G ; Γ ,, A @ l ⊢[ lD ] t⟨↑⟩ : T⟨↑⟩ @ l' ].
-Proof. intros. apply wk1_tm_g; assumption. Qed.
+Proof using . intros. apply wk1_tm_g; assumption. Qed.
 Lemma wk2ty {Γ A B l1 l2 T l} : [ G ; Γ ,, A @ l1 ,, B @ l2 ⊢[ lD ] ] -> [ G ; Γ ⊢[ lD ] T @ l ] ->
   [ G ; Γ ,, A @ l1 ,, B @ l2 ⊢[ lD ] T⟨↑⟩⟨↑⟩ @ l ].
-Proof. intros H HT. apply (wkty H), (wkty (ctx_of_ext H)), HT. Qed.
+Proof using . intros H HT. apply (wkty H), (wkty (ctx_of_ext H)), HT. Qed.
 Lemma wk2tm {Γ A B l1 l2 t T l} : [ G ; Γ ,, A @ l1 ,, B @ l2 ⊢[ lD ] ] -> [ G ; Γ ⊢[ lD ] t : T @ l ] ->
   [ G ; Γ ,, A @ l1 ,, B @ l2 ⊢[ lD ] t⟨↑⟩⟨↑⟩ : T⟨↑⟩⟨↑⟩ @ l ].
-Proof. intros H Ht. apply (wktm H), (wktm (ctx_of_ext H)), Ht. Qed.
+Proof using . intros H Ht. apply (wktm H), (wktm (ctx_of_ext H)), Ht. Qed.
 
 Lemma var0 {Γ A l} : [ G ; Γ ,, A @ l ⊢[ lD ] ] -> [ G ; Γ ,, A @ l ⊢[ lD ] var 0 : A⟨↑⟩ @ l ].
-Proof. intros H. exact (wf_var _ lD _ _ _ _ H (in_here _ _ _)). Qed.
+Proof using . intros H. exact (wf_var _ lD _ _ _ _ H (in_here _ _ _)). Qed.
 Lemma var1 {Γ A B l l'} : [ G ; Γ ,, A @ l ,, B @ l' ⊢[ lD ] ] ->
   [ G ; Γ ,, A @ l ,, B @ l' ⊢[ lD ] var 1 : A⟨↑⟩⟨↑⟩ @ l ].
-Proof. intros H. exact (wf_var _ lD _ _ _ _ H (in_there _ _ _ _ _ _ (in_here _ _ _))). Qed.
+Proof using . intros H. exact (wf_var _ lD _ _ _ _ H (in_there _ _ _ _ _ _ (in_here _ _ _))). Qed.
 
 (** [J]'s motive context over [a]. *)
 Lemma jctx {Γ l T a} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] -> [ G ; Γ ⊢[ lD ] a : T @ l ] ->
   [ G ; Γ ,, T @ l ⊢[ lD ] tyId l T⟨↑⟩ a⟨↑⟩ (var 0) @ l ] /\
   [ G ; Γ ,, T @ l ,, tyId l T⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ lD ] ].
-Proof.
+Proof using .
   intros Hl HT Ha. pose proof (ext Hl HT) as H1.
   assert (HI : [ G ; Γ ,, T @ l ⊢[ lD ] tyId l T⟨↑⟩ a⟨↑⟩ (var 0) @ l ])
     by (apply wft_id; [exact Hv | exact Hl | exact (wkty H1 HT) | exact (wktm H1 Ha) | exact (var0 H1)]).
@@ -336,14 +336,14 @@ Qed.
 (** In [J]'s motive context: [var 1 : T] and [var 0 : Id(T; a; var 1)]. *)
 Lemma jvar0 {Γ l T a} : [ G ; Γ ,, T @ l ,, tyId l T⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ lD ] ] ->
   [ G ; Γ ,, T @ l ,, tyId l T⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ lD ] var 0 : tyId l T⟨↑⟩⟨↑⟩ a⟨↑⟩⟨↑⟩ (var 1) @ l ].
-Proof. intros H. eapply wf_tm_retype; [exact (var0 H) | sy]. Qed.
+Proof using . intros H. eapply wf_tm_retype; [exact (var0 H) | sy]. Qed.
 
 (** *** Inverse and composition *)
 
 Lemma pinv_wf {Γ l T u v r} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] ->
   [ G ; Γ ⊢[ lD ] u : T @ l ] -> [ G ; Γ ⊢[ lD ] v : T @ l ] -> [ G ; Γ ⊢[ lD ] r : tyId l T u v @ l ] ->
   [ G ; Γ ⊢[ lD ] pinv l T u v r : tyId l T v u @ l ].
-Proof.
+Proof using .
   intros Hl HT Hu Hv' Hr. destruct (jctx Hl HT Hu) as [HI HM].
   eapply wf_tm_retype; [refine (wf_J _ _ _ _ _ _ _ _ _ _ _ Hv Hl Hl HT Hu HI _ _ Hv' Hr) | sy].
   - apply wft_id; [exact Hv | exact Hl | exact (wk2ty HM HT) | exact (var1 HM) | exact (wk2tm HM Hu)].
@@ -354,7 +354,7 @@ Lemma pcat_wf {Γ l T u v w r s} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] ->
   [ G ; Γ ⊢[ lD ] u : T @ l ] -> [ G ; Γ ⊢[ lD ] v : T @ l ] -> [ G ; Γ ⊢[ lD ] w : T @ l ] ->
   [ G ; Γ ⊢[ lD ] r : tyId l T u v @ l ] -> [ G ; Γ ⊢[ lD ] s : tyId l T v w @ l ] ->
   [ G ; Γ ⊢[ lD ] pcat l T u v w r s : tyId l T u w @ l ].
-Proof.
+Proof using .
   intros Hl HT Hu Hv' Hw Hr Hs. destruct (jctx Hl HT Hv') as [HI HM].
   eapply wf_tm_retype; [refine (wf_J _ _ _ _ _ _ _ _ _ _ _ Hv Hl Hl HT Hv' HI _ _ Hw Hs) | sy].
   - apply wft_id; [exact Hv | exact Hl | exact (wk2ty HM HT) | exact (wk2tm HM Hu) | exact (var1 HM)].
@@ -364,7 +364,7 @@ Qed.
 (** [refl⁻¹ ≡ refl] and [r · refl ≡ r], by [J]-β. *)
 Lemma pinv_refl {Γ l T u} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] -> [ G ; Γ ⊢[ lD ] u : T @ l ] ->
   [ G ; Γ ⊢[ lD ] pinv l T u u (tmRefl l T u) ≅ tmRefl l T u : tyId l T u u @ l ].
-Proof.
+Proof using .
   intros Hl HT Hu. destruct (jctx Hl HT Hu) as [HI HM].
   eapply eq_tm_retype; [refine (eqtm_J_beta _ _ _ _ _ _ _ _ _ compt_D Hl Hl HT Hu HI _ _) | sy].
   - apply wft_id; [exact Hv | exact Hl | exact (wk2ty HM HT) | exact (var1 HM) | exact (wk2tm HM Hu)].
@@ -374,7 +374,7 @@ Qed.
 Lemma pcat_refl {Γ l T u v r} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] ->
   [ G ; Γ ⊢[ lD ] u : T @ l ] -> [ G ; Γ ⊢[ lD ] v : T @ l ] -> [ G ; Γ ⊢[ lD ] r : tyId l T u v @ l ] ->
   [ G ; Γ ⊢[ lD ] pcat l T u v v r (tmRefl l T v) ≅ r : tyId l T u v @ l ].
-Proof.
+Proof using .
   intros Hl HT Hu Hv' Hr. destruct (jctx Hl HT Hv') as [HI HM].
   eapply eq_tm_retype; [refine (eqtm_J_beta _ _ _ _ _ _ _ _ _ compt_D Hl Hl HT Hv' HI _ _) | sy].
   - apply wft_id; [exact Hv | exact Hl | exact (wk2ty HM HT) | exact (wk2tm HM Hu) | exact (var1 HM)].
@@ -386,7 +386,7 @@ Qed.
 Lemma linv_wf {Γ l T x w s} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] ->
   [ G ; Γ ⊢[ lD ] x : T @ l ] -> [ G ; Γ ⊢[ lD ] w : T @ l ] -> [ G ; Γ ⊢[ lD ] s : tyId l T x w @ l ] ->
   [ G ; Γ ⊢[ lD ] linv l T x w s : tyId l (tyId l T w w) (pcat l T w x w (pinv l T x w s) s) (tmRefl l T w) @ l ].
-Proof.
+Proof using .
   intros Hl HT Hx Hw Hs. destruct (jctx Hl HT Hx) as [HI HM].
   pose proof (wk2ty HM HT) as HT2. pose proof (var1 HM) as Hy. pose proof (wk2tm HM Hx) as Hx2.
   pose proof (jvar0 HM) as Hp.
@@ -405,40 +405,40 @@ Qed.
 (** *** Levels: [l ⊔ l ≈ l] *)
 
 Lemma lc_ty {Γ T l} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ lmax l l ] -> [ G ; Γ ⊢[ lD ] T @ l ].
-Proof. intros Hl H. exact (wft_lconv _ _ _ _ _ _ H (lequiv_sym _ _ _ (lmax_idem _ _ Hl))). Qed.
+Proof using . intros Hl H. exact (wft_lconv _ _ _ _ _ _ H (lequiv_sym _ _ _ (lmax_idem _ _ Hl))). Qed.
 Lemma lc_tm {Γ t T l} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] t : T @ lmax l l ] -> [ G ; Γ ⊢[ lD ] t : T @ l ].
-Proof. intros Hl H. exact (wf_lconv _ _ _ _ _ _ _ H (lequiv_sym _ _ _ (lmax_idem _ _ Hl))). Qed.
+Proof using . intros Hl H. exact (wf_lconv _ _ _ _ _ _ _ H (lequiv_sym _ _ _ (lmax_idem _ _ Hl))). Qed.
 Lemma cl_tm {Γ t T l} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] t : T @ l ] -> [ G ; Γ ⊢[ lD ] t : T @ lmax l l ].
-Proof. intros Hl H. exact (wf_lconv _ _ _ _ _ _ _ H (lmax_idem _ _ Hl)). Qed.
+Proof using . intros Hl H. exact (wf_lconv _ _ _ _ _ _ _ H (lmax_idem _ _ Hl)). Qed.
 
 (** *** Decidable equality *)
 
 Lemma id_wf {Γ l T u v} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] ->
   [ G ; Γ ⊢[ lD ] u : T @ l ] -> [ G ; Γ ⊢[ lD ] v : T @ l ] -> [ G ; Γ ⊢[ lD ] tyId l T u v @ l ].
-Proof. intros. apply wft_id; assumption. Qed.
+Proof using . intros. apply wft_id; assumption. Qed.
 
 Lemma neg_wf {Γ l A} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] A @ l ] -> [ G ; Γ ⊢[ lD ] tyNeg l A @ l ].
-Proof. intros Hl HA. apply (lc_ty Hl), wft_pi; [exact Hv | exact Hl | exact Hl | exact HA | apply wft_empty; [exact Hv | exact (ext Hl HA) | exact Hl]]. Qed.
+Proof using . intros Hl HA. apply (lc_ty Hl), wft_pi; [exact Hv | exact Hl | exact Hl | exact HA | apply wft_empty; [exact Hv | exact (ext Hl HA) | exact Hl]]. Qed.
 
 Lemma sumI_wf {Γ l T u v} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] ->
   [ G ; Γ ⊢[ lD ] u : T @ l ] -> [ G ; Γ ⊢[ lD ] v : T @ l ] -> [ G ; Γ ⊢[ lD ] SumI l T u v @ lmax l l ].
-Proof. intros Hl HT Hu Hv'. pose proof (id_wf Hl HT Hu Hv') as HI. apply wft_sum; [exact Hv | exact Hl | exact Hl | exact HI | exact (neg_wf Hl HI)]. Qed.
+Proof using . intros Hl HT Hu Hv'. pose proof (id_wf Hl HT Hu Hv') as HI. apply wft_sum; [exact Hv | exact Hl | exact Hl | exact HI | exact (neg_wf Hl HI)]. Qed.
 
 Lemma decpi_wf {Γ l T} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] ->
   [ G ; Γ ,, T @ l ⊢[ lD ] tyPi l l T⟨↑⟩ (DecB l T) @ l ].
-Proof.
+Proof using .
   intros Hl HT. pose proof (ext Hl HT) as H1. pose proof (wkty H1 HT) as HT1. pose proof (ext Hl HT1) as H2.
   apply (lc_ty Hl), wft_pi; [exact Hv | exact Hl | exact Hl | exact HT1 |].
   apply (lc_ty Hl). exact (sumI_wf Hl (wk2ty H2 HT) (var1 H2) (var0 H2)).
 Qed.
 
 Lemma deceq_wf {Γ l T} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] -> [ G ; Γ ⊢[ lD ] DecEq l T @ l ].
-Proof. intros Hl HT. apply (lc_ty Hl), wft_pi; [exact Hv | exact Hl | exact Hl | exact HT | exact (decpi_wf Hl HT)]. Qed.
+Proof using . intros Hl HT. apply (lc_ty Hl), wft_pi; [exact Hv | exact Hl | exact Hl | exact HT | exact (decpi_wf Hl HT)]. Qed.
 
 Lemma decapp_wf {Γ l T dec u v} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] ->
   [ G ; Γ ⊢[ lD ] dec : DecEq l T @ l ] -> [ G ; Γ ⊢[ lD ] u : T @ l ] -> [ G ; Γ ⊢[ lD ] v : T @ l ] ->
   [ G ; Γ ⊢[ lD ] decapp l T dec u v : SumI l T u v @ lmax l l ].
-Proof.
+Proof using .
   intros Hl HT Hdec Hu Hv'. pose proof (ext Hl HT) as H1.
   apply (cl_tm Hl). eapply wf_tm_retype; [refine (wf_app _ _ _ _ _ _ _ _ _ Hv Hl Hl HT _ _ Hv') | unfold DecB1, SumI; sy].
   - apply (lc_ty Hl). exact (sumI_wf Hl (wkty H1 HT) (wktm H1 Hu) (var0 H1)).
@@ -455,7 +455,7 @@ Lemma fcase_prem {Γ l T u v r} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] ->
   [ G ; Γ ,, I @ l ⊢[ lD ] var 0 : I⟨↑⟩⟨rlift ↑⟩[lsingle (tmInl l l I⟨↑⟩ N⟨↑⟩ (var 0))] @ l ] /\
   [ G ; Γ ,, N @ l ⊢[ lD ] elimEmpty l l I⟨↑⟩⟨↑⟩ (app (var 0) l l I⟨↑⟩ (tyEmpty l) r⟨↑⟩)
       : I⟨↑⟩⟨rlift ↑⟩[lsingle (tmInr l l I⟨↑⟩ N⟨↑⟩ (var 0))] @ l ].
-Proof.
+Proof using .
   intros Hl HT Hu Hv' Hr I N. pose proof (id_wf Hl HT Hu Hv') as HI. pose proof (neg_wf Hl HI) as HN.
   pose proof (ext (l := lmax l l) (conj Hl Hl) (sumI_wf Hl HT Hu Hv')) as HS.
   pose proof (ext Hl HI) as HΓI. pose proof (ext Hl HN) as HΓN.
@@ -472,7 +472,7 @@ Lemma fcase_wf {Γ l T u v r s} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] ->
   [ G ; Γ ⊢[ lD ] u : T @ l ] -> [ G ; Γ ⊢[ lD ] v : T @ l ] -> [ G ; Γ ⊢[ lD ] r : tyId l T u v @ l ] ->
   [ G ; Γ ⊢[ lD ] s : SumI l T u v @ lmax l l ] ->
   [ G ; Γ ⊢[ lD ] fcase l T u v r s : tyId l T u v @ l ].
-Proof.
+Proof using .
   intros Hl HT Hu Hv' Hr Hs. pose proof (id_wf Hl HT Hu Hv') as HI.
   destruct (fcase_prem Hl HT Hu Hv' Hr) as (HM & H1 & H2).
   eapply wf_tm_retype; [exact (wf_case _ _ _ _ _ _ _ _ _ _ _ _ Hv Hl Hl Hl HI (neg_wf Hl HI) HM H1 H2 Hs) | sy].
@@ -483,7 +483,7 @@ Lemma fcase_inl {Γ l T u v r e} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] ->
   [ G ; Γ ⊢[ lD ] u : T @ l ] -> [ G ; Γ ⊢[ lD ] v : T @ l ] -> [ G ; Γ ⊢[ lD ] r : tyId l T u v @ l ] ->
   [ G ; Γ ⊢[ lD ] e : tyId l T u v @ l ] ->
   [ G ; Γ ⊢[ lD ] fcase l T u v r (tmInl l l (tyId l T u v) (tyNeg l (tyId l T u v)) e) ≅ e : tyId l T u v @ l ].
-Proof.
+Proof using .
   intros Hl HT Hu Hv' Hr He. pose proof (id_wf Hl HT Hu Hv') as HI.
   destruct (fcase_prem Hl HT Hu Hv' Hr) as (HM & H1 & H2).
   eapply eq_tm_retype; [exact (eqtm_case_inl _ _ _ _ _ _ _ _ _ _ _ _ compt_D Hl Hl Hl HI (neg_wf Hl HI) HM H1 H2 He) | sy].
@@ -492,12 +492,12 @@ Qed.
 Lemma Fv_wf {Γ l T dec u v r} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] -> [ G ; Γ ⊢[ lD ] dec : DecEq l T @ l ] ->
   [ G ; Γ ⊢[ lD ] u : T @ l ] -> [ G ; Γ ⊢[ lD ] v : T @ l ] -> [ G ; Γ ⊢[ lD ] r : tyId l T u v @ l ] ->
   [ G ; Γ ⊢[ lD ] Fv l T dec u v r : tyId l T u v @ l ].
-Proof. intros Hl HT Hdec Hu Hv' Hr. exact (fcase_wf Hl HT Hu Hv' Hr (decapp_wf Hl HT Hdec Hu Hv')). Qed.
+Proof using . intros Hl HT Hdec Hu Hv' Hr. exact (fcase_wf Hl HT Hu Hv' Hr (decapp_wf Hl HT Hdec Hu Hv')). Qed.
 
 Lemma gpath_wf {Γ l T dec x v t} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] -> [ G ; Γ ⊢[ lD ] dec : DecEq l T @ l ] ->
   [ G ; Γ ⊢[ lD ] x : T @ l ] -> [ G ; Γ ⊢[ lD ] v : T @ l ] -> [ G ; Γ ⊢[ lD ] t : tyId l T x v @ l ] ->
   [ G ; Γ ⊢[ lD ] gpath l T dec x v t : tyId l T x v @ l ].
-Proof.
+Proof using .
   intros Hl HT Hdec Hx Hv' Ht. pose proof (wf_idrefl _ _ _ _ _ _ Hv Hl HT Hx) as Hr.
   exact (pcat_wf Hl HT Hx Hx Hv' (pinv_wf Hl HT Hx Hx (Fv_wf Hl HT Hdec Hx Hx Hr)) Ht).
 Qed.
@@ -509,12 +509,12 @@ Lemma jleaves {Γ l T dec a A} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] -> [
   [ G ; Γ ,, A @ l ,, tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ lD ] ] ->
   [ G ; Γ ,, A @ l ,, tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ lD ] T⟨↑⟩⟨↑⟩ @ l ] /\
   [ G ; Γ ,, A @ l ,, tyId l A⟨↑⟩ a⟨↑⟩ (var 0) @ l ⊢[ lD ] dec⟨↑⟩⟨↑⟩ : DecEq l T⟨↑⟩⟨↑⟩ @ l ].
-Proof. intros Hl HT Hdec HM. split; [exact (wk2ty HM HT) | eapply wf_tm_retype; [exact (wk2tm HM Hdec) | sy]]. Qed.
+Proof using . intros Hl HT Hdec HM. split; [exact (wk2ty HM HT) | eapply wf_tm_retype; [exact (wk2tm HM Hdec) | sy]]. Qed.
 
 Lemma key_wf {Γ l T dec x v r} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] -> [ G ; Γ ⊢[ lD ] dec : DecEq l T @ l ] ->
   [ G ; Γ ⊢[ lD ] x : T @ l ] -> [ G ; Γ ⊢[ lD ] v : T @ l ] -> [ G ; Γ ⊢[ lD ] r : tyId l T x v @ l ] ->
   [ G ; Γ ⊢[ lD ] key l T dec x v r : tyId l (tyId l T x v) r (gpath l T dec x v (Fv l T dec x v r)) @ l ].
-Proof.
+Proof using .
   intros Hl HT Hdec Hx Hv' Hr. destruct (jctx Hl HT Hx) as [HI HM].
   destruct (jleaves (a := x) Hl HT Hdec HM) as [HT2 Hdec2].
   pose proof (wk2tm HM Hx) as Hx2. pose proof (var1 HM) as Hy. pose proof (jvar0 HM) as Hp.
@@ -533,7 +533,7 @@ Lemma const_wf {Γ l T dec x y p q} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ]
   [ G ; Γ ⊢[ lD ] x : T @ l ] -> [ G ; Γ ⊢[ lD ] y : T @ l ] ->
   [ G ; Γ ⊢[ lD ] p : tyId l T x y @ l ] -> [ G ; Γ ⊢[ lD ] q : tyId l T x y @ l ] ->
   [ G ; Γ ⊢[ lD ] const l T dec x y p q : tyId l (tyId l T x y) (Fv l T dec x y p) (Fv l T dec x y q) @ l ].
-Proof.
+Proof using .
   intros Hl HT Hdec Hx Hy Hp Hq. pose proof (id_wf Hl HT Hx Hy) as HI. pose proof (neg_wf Hl HI) as HN.
   (* the leaves under one binder [B], at the pushed spelling *)
   assert (Lv : forall B k, [ G ; Γ ,, B @ k ⊢[ lD ] ] ->
@@ -581,7 +581,7 @@ Lemma apg_wf {Γ l T dec x y p q e} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ]
   [ G ; Γ ⊢[ lD ] e : tyId l (tyId l T x y) (Fv l T dec x y p) (Fv l T dec x y q) @ l ] ->
   [ G ; Γ ⊢[ lD ] apg l T dec x y p q e
       : tyId l (tyId l T x y) (gpath l T dec x y (Fv l T dec x y p)) (gpath l T dec x y (Fv l T dec x y q)) @ l ].
-Proof.
+Proof using .
   intros Hl HT Hdec Hx Hy Hp Hq He. pose proof (id_wf Hl HT Hx Hy) as HI.
   pose proof (Fv_wf Hl HT Hdec Hx Hy Hp) as HFp. pose proof (Fv_wf Hl HT Hdec Hx Hy Hq) as HFq.
   destruct (jctx Hl HI HFp) as [HJ HM].
@@ -604,7 +604,7 @@ Lemma body_wf {Γ l T dec x y p q} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] 
   [ G ; Γ ⊢[ lD ] x : T @ l ] -> [ G ; Γ ⊢[ lD ] y : T @ l ] ->
   [ G ; Γ ⊢[ lD ] p : tyId l T x y @ l ] -> [ G ; Γ ⊢[ lD ] q : tyId l T x y @ l ] ->
   [ G ; Γ ⊢[ lD ] body l T dec x y p q : tyId l (tyId l T x y) p q @ l ].
-Proof.
+Proof using .
   intros Hl HT Hdec Hx Hy Hp Hq. pose proof (id_wf Hl HT Hx Hy) as HI.
   pose proof (gpath_wf Hl HT Hdec Hx Hy (Fv_wf Hl HT Hdec Hx Hy Hp)) as Hgp.
   pose proof (gpath_wf Hl HT Hdec Hx Hy (Fv_wf Hl HT Hdec Hx Hy Hq)) as Hgq.
@@ -617,7 +617,7 @@ Qed.
 
 Theorem hedberg_wf {Γ l T dec} : lwf (gL G) l -> [ G ; Γ ⊢[ lD ] T @ l ] -> [ G ; Γ ⊢[ lD ] dec : DecEq l T @ l ] ->
   [ G ; Γ ⊢[ lD ] hedberg l T dec : uipT l T @ uipL l ].
-Proof.
+Proof using .
   intros Hl HT Hdec.
   pose proof (ext Hl HT) as H1. pose proof (wkty H1 HT) as HT1. pose proof (ext Hl HT1) as H2.
   pose proof (wkty H2 HT1) as HT2.
@@ -646,7 +646,7 @@ Qed.
 
 Theorem hedbergU_wf {Γ l} : [ G ; Γ ⊢[ lD ] ] -> lwf (gL G) l ->
   [ G ; Γ ⊢[ lD ] hedbergU l : HedbergT l @ lmax (lsuc l) (lmax l (uipL l)) ].
-Proof.
+Proof using .
   intros HΓ Hl. pose proof (wft_U _ _ _ _ Hv HΓ Hl) as HU. pose proof (ext (l := lsuc l) Hl HU) as H1.
   assert (HEl : [ G ; Γ ,, tyU l @ lsuc l ⊢[ lD ] tyEl l (var 0) @ l ]) by exact (wft_El _ _ _ _ _ Hv Hl (var0 H1)).
   pose proof (deceq_wf Hl HEl) as HD. pose proof (ext Hl HD) as H2.
@@ -665,16 +665,16 @@ Section Bool.
 Context {l : lvl} (Hl : lwf (gL G) l).
 
 Lemma u_wf {Δ} : [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] tyUnit l @ l ].
-Proof. intros H. exact (wft_unit _ _ _ _ Hv H Hl). Qed.
+Proof using Hl. intros H. exact (wft_unit _ _ _ _ Hv H Hl). Qed.
 Lemma b_wf {Δ} : [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] tyBool l @ l ].
-Proof. intros H. apply (lc_ty Hl), wft_sum; [exact Hv | exact Hl | exact Hl | exact (u_wf H) | exact (u_wf H)]. Qed.
+Proof using Hl. intros H. apply (lc_ty Hl), wft_sum; [exact Hv | exact Hl | exact Hl | exact (u_wf H) | exact (u_wf H)]. Qed.
 Lemma binl_wf {Δ e} : [ G ; Δ ⊢[ lD ] e : tyUnit l @ l ] -> [ G ; Δ ⊢[ lD ] binl l e : tyBool l @ l ].
-Proof.
+Proof using Hl.
   intros He. pose proof (ctx_of_wf_tm eq_refl He) as H.
   apply (lc_tm Hl), wf_inl; [exact Hv | exact Hl | exact Hl | exact (u_wf H) | exact (u_wf H) | exact He].
 Qed.
 Lemma binr_wf {Δ e} : [ G ; Δ ⊢[ lD ] e : tyUnit l @ l ] -> [ G ; Δ ⊢[ lD ] binr l e : tyBool l @ l ].
-Proof.
+Proof using Hl.
   intros He. pose proof (ctx_of_wf_tm eq_refl He) as H.
   apply (lc_tm Hl), wf_inr; [exact Hv | exact Hl | exact Hl | exact (u_wf H) | exact (u_wf H) | exact He].
 Qed.
@@ -684,7 +684,7 @@ Lemma disc_prem {Δ c1 c2} : [ G ; Δ ⊢[ lD ] ] -> (c1 = tmUnit l \/ c1 = tmEm
   [ G ; Δ ,, tySum l l (tyUnit l) (tyUnit l) @ lmax l l ⊢[ lD ] tyU l @ lsuc l ] /\
   [ G ; Δ ,, tyUnit l @ l ⊢[ lD ] c1 : (tyU l)⟨rlift ↑⟩[lsingle (tmInl l l (tyUnit l)⟨↑⟩ (tyUnit l)⟨↑⟩ (var 0))] @ lsuc l ] /\
   [ G ; Δ ,, tyUnit l @ l ⊢[ lD ] c2 : (tyU l)⟨rlift ↑⟩[lsingle (tmInr l l (tyUnit l)⟨↑⟩ (tyUnit l)⟨↑⟩ (var 0))] @ lsuc l ].
-Proof.
+Proof using Hl.
   intros H E1 E2. pose proof (ext (l := lmax l l) (conj Hl Hl) (wft_sum _ _ _ _ _ _ _ Hv Hl Hl (u_wf H) (u_wf H))) as HS.
   pose proof (ext Hl (u_wf H)) as HU.
   split; [exact (wft_U _ _ _ _ Hv HS Hl) | split].
@@ -694,7 +694,7 @@ Qed.
 
 Lemma disc_wf {Δ c1 c2 s} : (c1 = tmUnit l \/ c1 = tmEmpty l) -> (c2 = tmUnit l \/ c2 = tmEmpty l) ->
   [ G ; Δ ⊢[ lD ] s : tyBool l @ l ] -> [ G ; Δ ⊢[ lD ] Disc l c1 c2 s @ l ].
-Proof.
+Proof using Hl.
   intros E1 E2 Hs. pose proof (ctx_of_wf_tm eq_refl Hs) as H. destruct (disc_prem H E1 E2) as (HM & H1 & H2).
   apply wft_El; [exact Hv | exact Hl |].
   exact (wf_case _ _ _ _ _ (lsuc l) _ _ _ _ _ _ Hv Hl Hl Hl (u_wf H) (u_wf H) HM H1 H2 (cl_tm Hl Hs)).
@@ -702,7 +702,7 @@ Qed.
 
 Lemma disc_inl {Δ c1 c2 e} : (c1 = tmUnit l \/ c1 = tmEmpty l) -> (c2 = tmUnit l \/ c2 = tmEmpty l) ->
   [ G ; Δ ⊢[ lD ] e : tyUnit l @ l ] -> [ G ; Δ ⊢[ lD ] Disc l c1 c2 (binl l e) ≅ tyEl l c1 @ l ].
-Proof.
+Proof using Hl.
   intros E1 E2 He. pose proof (ctx_of_wf_tm eq_refl He) as H.
   destruct (disc_prem H E1 E2) as (HM & H1 & H2). destruct E1 as [-> | ->], E2 as [-> | ->].
   all: apply eqty_El; [exact Hv | exact (lequiv_refl _ _ Hl) |].
@@ -710,7 +710,7 @@ Proof.
 Qed.
 Lemma disc_inr {Δ c1 c2 e} : (c1 = tmUnit l \/ c1 = tmEmpty l) -> (c2 = tmUnit l \/ c2 = tmEmpty l) ->
   [ G ; Δ ⊢[ lD ] e : tyUnit l @ l ] -> [ G ; Δ ⊢[ lD ] Disc l c1 c2 (binr l e) ≅ tyEl l c2 @ l ].
-Proof.
+Proof using Hl.
   intros E1 E2 He. pose proof (ctx_of_wf_tm eq_refl He) as H.
   destruct (disc_prem H E1 E2) as (HM & H1 & H2). destruct E1 as [-> | ->], E2 as [-> | ->].
   all: apply eqty_El; [exact Hv | exact (lequiv_refl _ _ Hl) |].
@@ -723,7 +723,7 @@ Lemma disj_wf {Δ c1 c2 a w n} : (c1 = tmUnit l \/ c1 = tmEmpty l) -> (c2 = tmUn
   [ G ; Δ ⊢[ lD ] tyUnit l ≅ Disc l c1 c2 a @ l ] -> [ G ; Δ ⊢[ lD ] tyEmpty l ≅ Disc l c1 c2 w @ l ] ->
   [ G ; Δ ⊢[ lD ] n : tyId l (tyBool l) a w @ l ] ->
   [ G ; Δ ⊢[ lD ] disj l c1 c2 a w n : tyEmpty l @ l ].
-Proof.
+Proof using Hl.
   intros E1 E2 Ha Hw Ea Ew Hn. pose proof (ctx_of_wf_tm eq_refl Ha) as H. pose proof (b_wf H) as HB.
   destruct (jctx Hl HB Ha) as [HI HM]. pose proof (disc_wf E1 E2 (var1 HM)) as HD.
   destruct E1 as [-> | ->], E2 as [-> | ->].
@@ -736,7 +736,7 @@ Lemma dec_diff_wf {Δ a w c1 c2} : (c1 = tmUnit l \/ c1 = tmEmpty l) -> (c2 = tm
   [ G ; Δ ,, tyId l (tyBool l) a w @ l ⊢[ lD ] tyUnit l ≅ Disc l c1 c2 a⟨↑⟩ @ l ] ->
   [ G ; Δ ,, tyId l (tyBool l) a w @ l ⊢[ lD ] tyEmpty l ≅ Disc l c1 c2 w⟨↑⟩ @ l ] ->
   [ G ; Δ ⊢[ lD ] dec_diff l a w c1 c2 : SumI l (tyBool l) a w @ lmax l l ].
-Proof.
+Proof using Hl.
   intros E1 E2 Ha Hw Ea Ew. pose proof (ctx_of_wf_tm eq_refl Ha) as H. pose proof (b_wf H) as HB.
   pose proof (id_wf Hl HB Ha Hw) as HI. pose proof (ext Hl HI) as H1.
   apply wf_inr; [exact Hv | exact Hl | exact Hl | exact HI | exact (neg_wf Hl HI) |].
@@ -748,7 +748,7 @@ Qed.
 Lemma dec_same_wf {Δ s s'} : [ G ; Δ ⊢[ lD ] s : tyBool l @ l ] -> [ G ; Δ ⊢[ lD ] s ≅ s' : tyBool l @ l ] ->
   [ G ; Δ ⊢[ lD ] tmInl l l (tyId l (tyBool l) s s') (tyNeg l (tyId l (tyBool l) s s')) (tmRefl l (tyBool l) s)
       : SumI l (tyBool l) s s' @ lmax l l ].
-Proof.
+Proof using Hl.
   intros Hs Es. pose proof (ctx_of_wf_tm eq_refl Hs) as H. pose proof (b_wf H) as HB.
   pose proof (id_wf Hl HB Hs (eqtm_wf_r eq_refl Es)) as HI.
   apply wf_inl; [exact Hv | exact Hl | exact Hl | exact HI | exact (neg_wf Hl HI) |].
@@ -758,7 +758,7 @@ Qed.
 
 Lemma unit_inl_eq {Δ e e'} : [ G ; Δ ⊢[ lD ] e : tyUnit l @ l ] -> [ G ; Δ ⊢[ lD ] e' : tyUnit l @ l ] ->
   [ G ; Δ ⊢[ lD ] binl l e ≅ binl l e' : tyBool l @ l ].
-Proof.
+Proof using Hl.
   intros He He'. pose proof (ctx_of_wf_tm eq_refl He) as H. pose proof (eqty_refl _ _ _ _ _ (u_wf H)) as EU.
   apply (eqtm_lconv _ _ _ _ _ _ _ _ (eqtm_inl _ _ _ _ _ _ _ _ _ _ _ _ _ Hv (lequiv_refl _ _ Hl) (lequiv_refl _ _ Hl) EU EU
            (eqtm_unit_eta _ _ _ _ _ _ compt_D Hl He He'))).
@@ -766,7 +766,7 @@ Proof.
 Qed.
 Lemma unit_inr_eq {Δ e e'} : [ G ; Δ ⊢[ lD ] e : tyUnit l @ l ] -> [ G ; Δ ⊢[ lD ] e' : tyUnit l @ l ] ->
   [ G ; Δ ⊢[ lD ] binr l e ≅ binr l e' : tyBool l @ l ].
-Proof.
+Proof using Hl.
   intros He He'. pose proof (ctx_of_wf_tm eq_refl He) as H. pose proof (eqty_refl _ _ _ _ _ (u_wf H)) as EU.
   apply (eqtm_lconv _ _ _ _ _ _ _ _ (eqtm_inr _ _ _ _ _ _ _ _ _ _ _ _ _ Hv (lequiv_refl _ _ Hl) (lequiv_refl _ _ Hl) EU EU
            (eqtm_unit_eta _ _ _ _ _ _ compt_D Hl He He'))).
@@ -776,31 +776,31 @@ Qed.
 (** [Disc] at an injection of a unit, decoded. *)
 Lemma disc_unit_l {Δ e c2} : (c2 = tmUnit l \/ c2 = tmEmpty l) -> [ G ; Δ ⊢[ lD ] e : tyUnit l @ l ] ->
   [ G ; Δ ⊢[ lD ] tyUnit l ≅ Disc l (tmUnit l) c2 (binl l e) @ l ].
-Proof.
+Proof using Hl.
   intros E2 He. pose proof (ctx_of_wf_tm eq_refl He) as H.
   exact (eqty_trans _ _ _ _ _ _ _ (eqty_El_unit _ _ _ _ compt_D H Hl) (eqty_sym _ _ _ _ _ _ (disc_inl (or_introl eq_refl) E2 He))).
 Qed.
 Lemma disc_unit_r {Δ e c1} : (c1 = tmUnit l \/ c1 = tmEmpty l) -> [ G ; Δ ⊢[ lD ] e : tyUnit l @ l ] ->
   [ G ; Δ ⊢[ lD ] tyUnit l ≅ Disc l c1 (tmUnit l) (binr l e) @ l ].
-Proof.
+Proof using Hl.
   intros E1 He. pose proof (ctx_of_wf_tm eq_refl He) as H.
   exact (eqty_trans _ _ _ _ _ _ _ (eqty_El_unit _ _ _ _ compt_D H Hl) (eqty_sym _ _ _ _ _ _ (disc_inr E1 (or_introl eq_refl) He))).
 Qed.
 Lemma disc_empty_l {Δ e c2} : (c2 = tmUnit l \/ c2 = tmEmpty l) -> [ G ; Δ ⊢[ lD ] e : tyUnit l @ l ] ->
   [ G ; Δ ⊢[ lD ] tyEmpty l ≅ Disc l (tmEmpty l) c2 (binl l e) @ l ].
-Proof.
+Proof using Hl.
   intros E2 He. pose proof (ctx_of_wf_tm eq_refl He) as H.
   exact (eqty_trans _ _ _ _ _ _ _ (eqty_El_empty _ _ _ _ compt_D H Hl) (eqty_sym _ _ _ _ _ _ (disc_inl (or_intror eq_refl) E2 He))).
 Qed.
 Lemma disc_empty_r {Δ e c1} : (c1 = tmUnit l \/ c1 = tmEmpty l) -> [ G ; Δ ⊢[ lD ] e : tyUnit l @ l ] ->
   [ G ; Δ ⊢[ lD ] tyEmpty l ≅ Disc l c1 (tmEmpty l) (binr l e) @ l ].
-Proof.
+Proof using Hl.
   intros E1 He. pose proof (ctx_of_wf_tm eq_refl He) as H.
   exact (eqty_trans _ _ _ _ _ _ _ (eqty_El_empty _ _ _ _ compt_D H Hl) (eqty_sym _ _ _ _ _ _ (disc_inr E1 (or_intror eq_refl) He))).
 Qed.
 
 Theorem decBool_wf {Γ} : [ G ; Γ ⊢[ lD ] ] -> [ G ; Γ ⊢[ lD ] decBool l : DecEq l (tyBool l) @ l ].
-Proof.
+Proof using Hl.
   intros HΓ. pose proof (b_wf HΓ) as HB. pose proof (ext Hl HB) as H1. pose proof (ext Hl (b_wf H1)) as H2.
   pose proof (ext Hl (u_wf H2)) as H3. pose proof (ext Hl (u_wf H3)) as H4.
   assert (HS : forall Δ, [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ,, tySum l l (tyUnit l) (tyUnit l) @ lmax l l ⊢[ lD ] ])
@@ -842,7 +842,7 @@ Qed.
 
 (** UIP at [Bool], as Hedberg's theorem predicts. *)
 Theorem uip_bool_wf {Γ} : [ G ; Γ ⊢[ lD ] ] -> [ G ; Γ ⊢[ lD ] uip_bool l : uipT l (tyBool l) @ uipL l ].
-Proof. intros HΓ. exact (hedberg_wf Hl (b_wf HΓ) (decBool_wf HΓ)). Qed.
+Proof using Hl. intros HΓ. exact (hedberg_wf Hl (b_wf HΓ) (decBool_wf HΓ)). Qed.
 
 End Bool.
 
@@ -852,22 +852,22 @@ Section NatDec.
 Let I0 : lwf (gL G) lzero := I.
 
 Lemma n_wf {Δ} : [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢[ lD ] tyNat @ lzero ].
-Proof. intros H. exact (wft_nat _ _ _ Hv H). Qed.
+Proof using . intros H. exact (wft_nat _ _ _ Hv H). Qed.
 
 Lemma pred_prem {Δ} : [ G ; Δ ⊢[ lD ] ] ->
   [ G ; Δ ,, tyNat @ lzero ⊢[ lD ] tyNat @ lzero ] /\ [ G ; Δ ⊢[ lD ] zero : tyNat[lsingle zero] @ lzero ] /\
   [ G ; Δ ,, tyNat @ lzero ,, tyNat @ lzero ⊢[ lD ] var 1 : tyNat[lsucc] @ lzero ].
-Proof.
+Proof using .
   intros H. pose proof (ext I0 (n_wf H)) as H1. pose proof (ext I0 (n_wf H1)) as H2.
   split; [exact (n_wf H1) | split; [exact (wf_zero _ _ _ Hv H) | exact (var1 H2)]].
 Qed.
 Lemma pred_wf {Δ t} : [ G ; Δ ⊢[ lD ] t : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] pred t : tyNat @ lzero ].
-Proof.
+Proof using .
   intros Ht. destruct (pred_prem (ctx_of_wf_tm eq_refl Ht)) as (HM & Hs & Hz).
   exact (wf_natrec _ _ _ _ _ _ _ _ Hv I0 HM Hs Hz Ht).
 Qed.
 Lemma pred_succ {Δ t} : [ G ; Δ ⊢[ lD ] t : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] pred (succ t) ≅ t : tyNat @ lzero ].
-Proof.
+Proof using .
   intros Ht. destruct (pred_prem (ctx_of_wf_tm eq_refl Ht)) as (HM & Hs & Hz).
   exact (eqtm_natrec_succ _ _ _ _ _ _ _ _ compt_D I0 HM Hs Hz Ht).
 Qed.
@@ -875,7 +875,7 @@ Qed.
 Lemma apsucc_wf {Δ a b e} : [ G ; Δ ⊢[ lD ] a : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] b : tyNat @ lzero ] ->
   [ G ; Δ ⊢[ lD ] e : tyId lzero tyNat a b @ lzero ] ->
   [ G ; Δ ⊢[ lD ] apsucc a b e : tyId lzero tyNat (succ a) (succ b) @ lzero ].
-Proof.
+Proof using .
   intros Ha Hb He. pose proof (ctx_of_wf_tm eq_refl Ha) as H. pose proof (n_wf H) as HN.
   destruct (jctx I0 HN Ha) as [HI HM].
   eapply wf_tm_retype; [refine (wf_J _ _ _ _ _ _ _ _ _ _ _ Hv I0 I0 HN Ha HI _ _ Hb He) | sy].
@@ -886,7 +886,7 @@ Qed.
 Lemma predap_wf {Δ a b p} : [ G ; Δ ⊢[ lD ] a : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] b : tyNat @ lzero ] ->
   [ G ; Δ ⊢[ lD ] p : tyId lzero tyNat (succ a) (succ b) @ lzero ] ->
   [ G ; Δ ⊢[ lD ] predap a b p : tyId lzero tyNat a b @ lzero ].
-Proof.
+Proof using .
   intros Ha Hb Hp. pose proof (ctx_of_wf_tm eq_refl Ha) as H. pose proof (n_wf H) as HN.
   pose proof (wf_succ _ _ _ _ Hv Ha) as Hsa. pose proof (wf_succ _ _ _ _ Hv Hb) as Hsb.
   destruct (jctx I0 HN Hsa) as [HI HM].
@@ -905,7 +905,7 @@ Lemma discN_prem {Δ c1 c2} : [ G ; Δ ⊢[ lD ] ] -> (c1 = tmUnit lzero \/ c1 =
   [ G ; Δ ,, tyNat @ lzero ⊢[ lD ] tyU lzero @ lsuc lzero ] /\
   [ G ; Δ ⊢[ lD ] c1 : (tyU lzero)[lsingle zero] @ lsuc lzero ] /\
   [ G ; Δ ,, tyNat @ lzero ,, tyU lzero @ lsuc lzero ⊢[ lD ] c2 : (tyU lzero)[lsucc] @ lsuc lzero ].
-Proof.
+Proof using .
   intros H E1 E2. pose proof (ext I0 (n_wf H)) as H1. pose proof (ext (l := lsuc lzero) I0 (wft_U _ _ _ _ Hv H1 I0)) as H2.
   split; [exact (wft_U _ _ _ _ Hv H1 I0) | split].
   - destruct E1 as [-> | ->]; [exact (wf_code_unit _ _ _ _ Hv H I0) | exact (wf_code_empty _ _ _ _ Hv H I0)].
@@ -913,19 +913,19 @@ Proof.
 Qed.
 Lemma discN_wf {Δ c1 c2 s} : (c1 = tmUnit lzero \/ c1 = tmEmpty lzero) -> (c2 = tmUnit lzero \/ c2 = tmEmpty lzero) ->
   [ G ; Δ ⊢[ lD ] s : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] DiscN c1 c2 s @ lzero ].
-Proof.
+Proof using .
   intros E1 E2 Hs. destruct (discN_prem (ctx_of_wf_tm eq_refl Hs) E1 E2) as (HM & H1 & H2).
   apply wft_El; [exact Hv | exact I0 | exact (wf_natrec _ _ _ (lsuc lzero) _ _ _ _ Hv I0 HM H1 H2 Hs)].
 Qed.
 Lemma discN_zero {Δ c1 c2} : [ G ; Δ ⊢[ lD ] ] -> (c1 = tmUnit lzero \/ c1 = tmEmpty lzero) -> (c2 = tmUnit lzero \/ c2 = tmEmpty lzero) ->
   [ G ; Δ ⊢[ lD ] DiscN c1 c2 zero ≅ tyEl lzero c1 @ lzero ].
-Proof.
+Proof using .
   intros H E1 E2. destruct (discN_prem H E1 E2) as (HM & H1 & H2).
   apply eqty_El; [exact Hv | exact (lequiv_refl _ _ I0) | exact (eqtm_natrec_zero _ _ _ (lsuc lzero) _ _ _ compt_D I0 HM H1 H2)].
 Qed.
 Lemma discN_succ {Δ c1 c2 t} : (c1 = tmUnit lzero \/ c1 = tmEmpty lzero) -> (c2 = tmUnit lzero \/ c2 = tmEmpty lzero) ->
   [ G ; Δ ⊢[ lD ] t : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] DiscN c1 c2 (succ t) ≅ tyEl lzero c2 @ lzero ].
-Proof.
+Proof using .
   intros E1 E2 Ht. destruct (discN_prem (ctx_of_wf_tm eq_refl Ht) E1 E2) as (HM & H1 & H2).
   destruct E2 as [-> | ->].
   all: apply eqty_El; [exact Hv | exact (lequiv_refl _ _ I0) | exact (eqtm_natrec_succ _ _ _ (lsuc lzero) _ _ _ _ compt_D I0 HM H1 H2 Ht)].
@@ -933,11 +933,11 @@ Qed.
 
 (** [El(⌜Unit⌝) ≅ Unit] and [El(⌜Empty⌝) ≅ Empty], composed with the above. *)
 Lemma el_unit {Δ D} : [ G ; Δ ⊢[ lD ] D ≅ tyEl lzero (tmUnit lzero) @ lzero ] -> [ G ; Δ ⊢[ lD ] tyUnit lzero ≅ D @ lzero ].
-Proof.
+Proof using .
   intros E. exact (eqty_trans _ _ _ _ _ _ _ (eqty_El_unit _ _ _ _ compt_D (ctx_of_eqty eq_refl E) I0) (eqty_sym _ _ _ _ _ _ E)).
 Qed.
 Lemma el_empty {Δ D} : [ G ; Δ ⊢[ lD ] D ≅ tyEl lzero (tmEmpty lzero) @ lzero ] -> [ G ; Δ ⊢[ lD ] tyEmpty lzero ≅ D @ lzero ].
-Proof.
+Proof using .
   intros E. exact (eqty_trans _ _ _ _ _ _ _ (eqty_El_empty _ _ _ _ compt_D (ctx_of_eqty eq_refl E) I0) (eqty_sym _ _ _ _ _ _ E)).
 Qed.
 
@@ -946,7 +946,7 @@ Lemma disjN_wf {Δ c1 c2 a w n} : (c1 = tmUnit lzero \/ c1 = tmEmpty lzero) -> (
   [ G ; Δ ⊢[ lD ] tyUnit lzero ≅ DiscN c1 c2 a @ lzero ] -> [ G ; Δ ⊢[ lD ] tyEmpty lzero ≅ DiscN c1 c2 w @ lzero ] ->
   [ G ; Δ ⊢[ lD ] n : tyId lzero tyNat a w @ lzero ] ->
   [ G ; Δ ⊢[ lD ] disjN c1 c2 a w n : tyEmpty lzero @ lzero ].
-Proof.
+Proof using .
   intros E1 E2 Ha Hw Ea Ew Hn. pose proof (ctx_of_wf_tm eq_refl Ha) as H. pose proof (n_wf H) as HN.
   destruct (jctx I0 HN Ha) as [HI HM]. pose proof (discN_wf E1 E2 (var1 HM)) as HD.
   destruct E1 as [-> | ->], E2 as [-> | ->].
@@ -959,7 +959,7 @@ Lemma diffN_wf {Δ a w c1 c2} : (c1 = tmUnit lzero \/ c1 = tmEmpty lzero) -> (c2
   [ G ; Δ ,, tyId lzero tyNat a w @ lzero ⊢[ lD ] tyUnit lzero ≅ DiscN c1 c2 a⟨↑⟩ @ lzero ] ->
   [ G ; Δ ,, tyId lzero tyNat a w @ lzero ⊢[ lD ] tyEmpty lzero ≅ DiscN c1 c2 w⟨↑⟩ @ lzero ] ->
   [ G ; Δ ⊢[ lD ] diffN a w c1 c2 : SumI lzero tyNat a w @ lmax lzero lzero ].
-Proof.
+Proof using .
   intros E1 E2 Ha Hw Ea Ew. pose proof (ctx_of_wf_tm eq_refl Ha) as H. pose proof (n_wf H) as HN.
   pose proof (id_wf I0 HN Ha Hw) as HI. pose proof (ext I0 HI) as H1.
   apply wf_inr; [exact Hv | exact I0 | exact I0 | exact HI | exact (neg_wf I0 HI) |].
@@ -969,7 +969,7 @@ Proof.
 Qed.
 
 Lemma sameN_wf {Δ s} : [ G ; Δ ⊢[ lD ] s : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] sameN s : SumI lzero tyNat s s @ lmax lzero lzero ].
-Proof.
+Proof using .
   intros Hs. pose proof (n_wf (ctx_of_wf_tm eq_refl Hs)) as HN. pose proof (id_wf I0 HN Hs Hs) as HI.
   apply wf_inl; [exact Hv | exact I0 | exact I0 | exact HI | exact (neg_wf I0 HI) | exact (wf_idrefl _ _ _ _ _ _ Hv I0 HN Hs)].
 Qed.
@@ -977,7 +977,7 @@ Qed.
 Lemma stepSS_wf {Δ n m h} : [ G ; Δ ⊢[ lD ] n : tyNat @ lzero ] -> [ G ; Δ ⊢[ lD ] m : tyNat @ lzero ] ->
   [ G ; Δ ⊢[ lD ] h : tyPi lzero lzero tyNat (SumI lzero tyNat n⟨↑⟩ (var 0)) @ lzero ] ->
   [ G ; Δ ⊢[ lD ] stepSS n m h : SumI lzero tyNat (succ n) (succ m) @ lzero ].
-Proof.
+Proof using .
   intros Hn Hm Hh. pose proof (ctx_of_wf_tm eq_refl Hn) as H. pose proof (n_wf H) as HN.
   pose proof (id_wf I0 HN Hn Hm) as HI. pose proof (neg_wf I0 HI) as HNI.
   pose proof (wf_succ _ _ _ _ Hv Hn) as Hsn. pose proof (wf_succ _ _ _ _ Hv Hm) as Hsm.
@@ -1007,7 +1007,7 @@ Proof.
 Qed.
 
 Theorem decNat_wf {Γ} : [ G ; Γ ⊢[ lD ] ] -> [ G ; Γ ⊢[ lD ] decNat : DecEq lzero tyNat @ lzero ].
-Proof.
+Proof using .
   intros HΓ. pose proof (n_wf HΓ) as HN.
   (* contexts: [x], then the outer [natrec]'s motive, zero case and successor case *)
   pose proof (ext I0 HN) as Hx. pose proof (ext I0 (n_wf Hx)) as Hxw.
@@ -1055,7 +1055,7 @@ Qed.
 
 (** UIP at [Nat], as Hedberg's theorem predicts. *)
 Theorem uip_nat_wf {Γ} : [ G ; Γ ⊢[ lD ] ] -> [ G ; Γ ⊢[ lD ] uip_nat : uipT lzero tyNat @ uipL lzero ].
-Proof. intros HΓ. exact (hedberg_wf (l := lzero) I (n_wf HΓ) (decNat_wf HΓ)). Qed.
+Proof using . intros HΓ. exact (hedberg_wf (l := lzero) I (n_wf HΓ) (decNat_wf HΓ)). Qed.
 
 End NatDec.
 

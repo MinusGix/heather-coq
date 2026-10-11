@@ -37,7 +37,7 @@ Lemma elimW_loc {G0 γ} : gwk_ok γ G0 G -> [ ⊢ G0 ] ->
   VTm G0 (Γ⟦γ⟧ ,, A⟦γ⟧ @ l ,, wfty l l' A⟦γ⟧ B⟦γ⟧ @ lmax l' (lmax l l')
             ,, wihty l l' l'' A⟦γ⟧ B⟦γ⟧ M⟦γ⟧ @ lmax l' l'')
     c⟦γ⟧ c'⟦γ⟧ (wstepty l l' A⟦γ⟧ B⟦γ⟧ M⟦γ⟧) l''.
-Proof.
+Proof using HB VA VB VM Vc Vfty Vih.
   intros Hγ HG0. pose proof (gwa_ty Hγ HG0 HB) as HBγ. rewrite gwa_cext in HBγ.
   pose proof (VTyG_gwk VA Hγ) as VAγ. pose proof (VTyG_gwk VB Hγ) as VBγ. rewrite gwa_cext in VBγ.
   pose proof (VM _ _ Hγ) as VMγ. rewrite !gwa_cext, gwa_tyW in VMγ.
@@ -61,7 +61,7 @@ Lemma elimW_at {G0 γ Δ0 e e'} : gwk_ok γ G0 G -> SubRel G0 Γ⟦γ⟧ Δ0 e e
       ,, wihty l l' l'' A⟦γ⟧[e] B⟦γ⟧[llift e] M⟦γ⟧[llift e] @ lmax l' l''
       ⊢ c⟦γ⟧[llift (llift (llift e))] ≈ c'⟦γ⟧[llift (llift (llift e'))]
       : wstepty l l' A⟦γ⟧[e] B⟦γ⟧[llift e] M⟦γ⟧[llift e] @ l'' ].
-Proof.
+Proof using EL HB Hwl Hwl' Hwl'' VA VB VL VM VN Vc Vfty Vih.
   intros Hγ He. pose proof (ctx_glob _ _ _ (SubRel_ctx He)) as HG0.
   destruct (SubRel_nf _ _ _ _ _ He) as [Ne Ne'].
   destruct (elimW_loc Hγ HG0) as (HBγ & VAγ & VBγ & VMγ & Vftyγ & Vihγ & Vcγ).
@@ -102,7 +102,7 @@ Lemma elimW_cong {t t'} :
   [ G0 ; Δ0 ⊢g tmElimW l l' l'' A⟦γ⟧[e] B⟦γ⟧[llift e] M⟦γ⟧[llift e] c⟦γ⟧[llift (llift (llift e))] t
              ≅ tmElimW l4 l5 l6 A'⟦γ⟧[e'] B'⟦γ⟧[llift e'] M'⟦γ⟧[llift e'] c'⟦γ⟧[llift (llift (llift e'))] t'
              : M⟦γ⟧[llift e][lsingle t] @ l'' ].
-Proof.
+Proof using EL H14 H25 H36 HB He Hwl Hwl' Hwl'' Hγ VA VB VL VM VN Vc Vfty Vih.
   intros Ht. destruct (elimW_at Hγ He) as (HA0 & EA & HB0 & EB & HM0 & EM & HF0 & HI0 & Ec).
   apply eqtm_elimW; first [exact ge_notV | exact ge_compt | apply (lequiv_weaken _ _ _ _ (proj1 Hγ)); assumption
                           | apply geq_ty_sound; assumption | apply geq_tm_sound; assumption | assumption].
@@ -113,7 +113,7 @@ Lemma elimW_cong_l {t t'} :
   [ G0 ; Δ0 ⊢g tmElimW l l' l'' A⟦γ⟧[e] B⟦γ⟧[llift e] M⟦γ⟧[llift e] c⟦γ⟧[llift (llift (llift e))] t
              ≅ tmElimW l l' l'' A⟦γ⟧[e] B⟦γ⟧[llift e] M⟦γ⟧[llift e] c⟦γ⟧[llift (llift (llift e))] t'
              : M⟦γ⟧[llift e][lsingle t] @ l'' ].
-Proof.
+Proof using EL HB He Hwl Hwl' Hwl'' Hγ VA VB VL VM VN Vc Vfty Vih.
   intros Ht. destruct (elimW_at Hγ He) as (HA0 & EA & HB0 & EB & HM0 & EM & HF0 & HI0 & Ec).
   pose proof (eqtm_wf_l ge_typeof (geq_tm_sound Ec)) as Hc0.
   apply eqtm_elimW; first [exact ge_notV | exact ge_compt | apply lequiv_refl, (lwf_weaken _ _ _ (proj1 Hγ)); assumption
@@ -124,7 +124,7 @@ Lemma elimW_red_l {t w} : [ G0 ; Δ0 ⊢g t ⤳* w : tyW l l' A⟦γ⟧[e] B⟦�
   [ G0 ; Δ0 ⊢g tmElimW l l' l'' A⟦γ⟧[e] B⟦γ⟧[llift e] M⟦γ⟧[llift e] c⟦γ⟧[llift (llift (llift e))] t
              ⤳* tmElimW l l' l'' A⟦γ⟧[e] B⟦γ⟧[llift e] M⟦γ⟧[llift e] c⟦γ⟧[llift (llift (llift e))] w
              : M⟦γ⟧[llift e][lsingle t] @ l'' ].
-Proof.
+Proof using EL HB He Hwl Hwl' Hwl'' Hγ VA VB VL VM VN Vc Vfty Vih.
   intros Hr. pose proof (elimW_cong_l (tmred_eq _ _ _ _ _ _ _ Hr)) as X.
   split; [exact (eqtm_wf_l ge_typeof X) | apply reds_elimW, (tmred_red _ _ _ _ _ _ _ Hr) | exact X].
 Qed.
@@ -135,7 +135,7 @@ Lemma elimW_red_r {t t' w'} :
   [ G0 ; Δ0 ⊢g tmElimW l4 l5 l6 A'⟦γ⟧[e'] B'⟦γ⟧[llift e'] M'⟦γ⟧[llift e'] c'⟦γ⟧[llift (llift (llift e'))] t'
              ⤳* tmElimW l4 l5 l6 A'⟦γ⟧[e'] B'⟦γ⟧[llift e'] M'⟦γ⟧[llift e'] c'⟦γ⟧[llift (llift (llift e'))] w'
              : M⟦γ⟧[llift e][lsingle t] @ l'' ].
-Proof.
+Proof using EL H14 H25 H36 HB He Hwl Hwl' Hwl'' Hγ VA VB VL VM VN Vc Vfty Vih.
   intros Htt Hr. pose proof (elimW_cong Htt) as X1.
   pose proof (elimW_cong (eqtm_trans _ _ _ _ _ _ _ _ Htt (tmred_eq _ _ _ _ _ _ _ Hr))) as X2.
   split; [exact (eqtm_wf_r ge_typeof X1) | apply reds_elimW, (tmred_red _ _ _ _ _ _ _ Hr) |].
@@ -158,7 +158,7 @@ Lemma elimW_WLR {G0 γ Δ0 e e'} : gwk_ok γ G0 G -> SubRel G0 Γ⟦γ⟧ Δ0 e 
      LR (lmeasure (lmax l l')) (LRbelow (lmeasure (lmax l l'))) (kw_G ρ) (kw_Δ ρ)
        (ktyl ρ B⟦γ⟧[llift e])[lsingle x] (ktyl ρ B⟦γ⟧[llift e'])[lsingle y] l'
        (piCod (A := A⟦γ⟧) (A' := A⟦γ⟧) (B := B⟦γ⟧) (B' := B⟦γ⟧) (l := l) (l' := l') Δ0 e e' ρ x y h)).
-Proof.
+Proof using EL HB Hwl Hwl' VA VB VL VM VN Vc Vfty Vih.
   intros Hγ He. pose proof (ctx_glob _ _ _ (SubRel_ctx He)) as HG0.
   destruct (elimW_loc Hγ HG0) as (HBγ & VAγ & VBγ & _).
   pose proof (lwf_weaken _ _ _ (proj1 Hγ) Hwl) as Hwl0.
@@ -174,7 +174,7 @@ Qed.
 Lemma elimW_mot {G0 γ Δ0 e e' x x'} : gwk_ok γ G0 G -> SubRel G0 Γ⟦γ⟧ Δ0 e e' ->
   LRtm (lmax l l') G0 Δ0 (tyW l l' A⟦γ⟧[e] B⟦γ⟧[llift e]) (tyW l l' A⟦γ⟧[e'] B⟦γ⟧[llift e']) x x' ->
   LRty l'' G0 Δ0 M⟦γ⟧[llift e][lsingle x] M⟦γ⟧[llift e'][lsingle x'].
-Proof.
+Proof using EL HB VA VB VL VM Vc Vfty Vih.
   intros Hγ He Hx. pose proof (ctx_glob _ _ _ (SubRel_ctx He)) as HG0.
   destruct (SubRel_nf _ _ _ _ _ He) as [Ne Ne'].
   destruct (elimW_loc Hγ HG0) as (_ & _ & _ & VMγ & _).
@@ -257,7 +257,7 @@ Lemma elimW_step {G0 Δ0} {dR : DomRel G0 Δ0} {cR : CodRel G0 Δ0 dR} {m1 m2 m1
              ⤳* c'⟦γ⟧[llift (llift (llift e'))][lsingle3 a' f'
                   (wIH l4 l5 l6 A'⟦γ⟧[e'] B'⟦γ⟧[llift e'] M'⟦γ⟧[llift e'] c'⟦γ⟧[llift (llift (llift e'))] a' f')]
              : M⟦γ⟧[llift e][lsingle (tmSup m1 m2 C D a f)] @ l'' ].
-Proof.
+Proof using EL H14 H25 H36 HB Hwl Hwl' Hwl'' VA VB VL VM VN Vc Vfty Vih.
   intros Hk1 Hk2 Hk1' Hk2' HC0 HC0' HD0 HD0' Ha Hwf Hf IH Hγ He Nw Nw' HD HC.
   cbn in Nw, Nw'. destruct Nw as (_ & _ & Na & Nf). destruct Nw' as (_ & _ & Na' & Nf').
   pose proof (SubRel_ctx He) as HΔ0. pose proof (ctx_glob _ _ _ HΔ0) as HG0.
@@ -626,7 +626,7 @@ Lemma elimW_core :
   LRtm l'' G0 Δ0 M⟦γ⟧[llift e][lsingle t] M⟦γ⟧[llift e][lsingle t]
     (tmElimW l l' l'' A0 B0 M⟦γ⟧[llift e] c⟦γ⟧[llift (llift (llift e))] t)
     (tmElimW l4 l5 l6 A'⟦γ⟧[e'] B'⟦γ⟧[llift e'] M'⟦γ⟧[llift e'] c'⟦γ⟧[llift (llift (llift e'))] t').
-Proof.
+Proof using EL H14 H25 H36 HB Hwl Hwl' Hwl'' VA VB VL VM VN Vc Vfty Vih.
   apply (WRel_mut
     (fun G0 Δ0 k1 k2 A0 B0 dR cR t t' _ =>
       forall γ e e', gwk_ok γ G0 G -> SubRel G0 Γ⟦γ⟧ Δ0 e e' ->
@@ -695,7 +695,7 @@ Qed.
 
 Lemma V_elimW {t t'} : VTm G Γ t t' (tyW l l' A B) (lmax l l') ->
   VTm G Γ (tmElimW l l' l'' A B M c t) (tmElimW l4 l5 l6 A' B' M' c' t') M[lsingle t] l''.
-Proof.
+Proof using EL H14 H25 H36 HB Hwl Hwl' Hwl'' VA VB VL VM VN Vc Vfty Vih.
   intros Vt Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   rewrite !single_subst_ty by assumption. push_subst.
   destruct (elimW_WLR (gwk_ok_id G) Hd) as (HW & Hdom & Hcod). cbn [gwa] in HW, Hdom, Hcod.
@@ -715,7 +715,7 @@ Lemma V_elimW_sup {a a' f f'} : VTm G Γ a a' A l ->
   VTm G Γ f f' (tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩) (lmax l' (lmax l l')) ->
   VTm G Γ (tmElimW l l' l'' A B M c (tmSup l l' A B a f)) c'[lsingle3 a' f' (wIH l4 l5 l6 A' B' M' c' a' f')]
     M[lsingle (tmSup l l' A B a f)] l''.
-Proof.
+Proof using EL H14 H25 H36 HB Hwl Hwl' Hwl'' VA VB VL VM VN Vc Vfty Vih.
   intros Va Vf Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   pose proof (V_sup Hwl Hwl' (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') HB (VTyG_refl_l VA) (VTyG_refl_l VB) Va Vf)
     as Vs.
