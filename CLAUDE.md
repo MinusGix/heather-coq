@@ -23,36 +23,47 @@ list of proof-engineering gotchas. Follow it.
 
 ## Build
 
-- `nix develop path:. --command make -j2` (Coq 8.20, Equations, smpl from
-  the flake). A clean build takes 10 to 22 minutes, depending on the machine: 1297 s wall after M16a on the
-  2026-10-10 evening cloud machine (critical path 1071 s, total CPU 1678 s;
-  the M15b tree measured 1234 s wall, critical path 1023 s, total CPU
-  1585 s, on the same machine). Earlier: 887 s wall after M15b on the
-  2026-10-10 cloud machine (critical path 732 s, total CPU 1125 s; the M15a
-  tree measured 689 s wall, critical path 655 s, the same day). 875 s wall
-  after M15a on the 2026-10-06 cloud machine (critical path 740 s, total
-  CPU 1106 s). 584 s wall after M14b
-  on the 2026-10-06 machine (critical path 471 s, total CPU 743 s; M14a
-  measured 654 s on the 2026-10-05 machine). On the 2026-10-04 cloud
-  machine: 608 s wall after the 2026-10-04 build-time pass, where the M13b
-  tree measured 814 s on the same idle machine (critical path 754 s → 534 s
-  of proof time, total CPU 1099 s → 768 s; `tools/critpath.py`). Machines
-  differ, so compare builds on one machine. Earlier: 808 s after M13b on
-  the 2026-10-03 machine, where M13a measured 698 s the same day (before that:
-  443 s, 2026-10-01, after M13a; 426 s after M12c; M12b took 382 s the same day, 326 s when recorded; 249 s after M10c, 234 s after M11b, 168 s before M11a, down
-  from 8.5 minutes). The critical path (Syntax → Typing metatheory →
-  Validity → the algorithm) is nearly the whole build, so more jobs don't
-  help; only faster files on that path do. `make TIMING=1` writes per-file
-  `.v.timing`, and `tools/critpath.py` then prints the critical path and
-  the slowest files; the build-time gotchas in `M1_DESIGN.md` list the
-  patterns that made it slow.
-- Fast iteration: `make -j2 vos` (about 1 minute from clean) compiles every
-  file's statements without its proofs; then check the file you are working
-  on in full with `coqc -Q theories DeLaM -vok <file>` (or `make vok`, which
-  checks every file's proofs, in parallel). Neither replaces the final
-  `make`. A section lemma's proof is skipped by `vos` only with a
-  `Proof using` clause: the six heaviest sectioned files have them
-  (`tools/add_proof_using.py`).
+- `nix develop path:. --command make -j4` (Coq 8.20, Equations, smpl from
+  the flake). A clean build takes 10 to 22 minutes, depending on the
+  machine. Latest: 876 s wall at -j4 after the 2026-10-11 build-time pass,
+  where the M16a tree measured 1107 s back to back on the same 4-core
+  cloud machine (critical path 1053 s → 826 s, total CPU 1648 s →
+  1395 s). Machines differ by up to 2x, so compare builds on one machine
+  only; the history of earlier measurements is in git (`git log -p
+  CLAUDE.md`). The critical path (Syntax → Typing metatheory → Validity →
+  the algorithm) is nearly the whole build, so more than 4 jobs don't
+  help; only faster files on that path do.
+- Fast full check: `make -j4 vos && make -j4 vok` (129 s + 355 s = 484 s
+  on the machine above, against 876 s for `make`; `vos` alone took 393 s
+  before the `Proof using` pass).
+  `vos` compiles every file's statements without its proofs; `vok` then
+  checks every file's proofs against the `.vos` files, all files in
+  parallel, so it is not bound by the critical path. To work on one file:
+  `make -j4 vos`, then `coqc -Q theories DeLaM -vok <file>`. Neither
+  replaces the final `make`. A section lemma's proof is skipped by `vos`
+  only with a `Proof using` clause; `tools/proof-using FILE.v ...` adds
+  Coq's suggested clauses (run it on a sectioned file that `make TIMED=1
+  vos` shows taking nearly its full time).
+- Profiling (tools are in `tools/`, each documents itself in its header):
+  - `tools/build-profile [-j N] [--clean] [--profile] [--label L]`: a timed
+    build (`make TIMING=1`) and its report in `_profile/L/report.txt`:
+    wall time, total CPU, critical path, slowest files and proofs, plus a
+    per-declaration snapshot `decls.tsv`. `--profile` also writes Coq's
+    `-profile` traces (`*.v.prof.json.gz`, open in ui.perfetto.dev).
+  - `tools/critpath.py [-j N]`: critical path, slack and a simulated wall
+    time at -jN, from the `.v.timing` files; `--what-if FILE=SECONDS`
+    shows what speeding up a file would buy.
+  - `tools/proofs.py [FILE.v ...]`: slowest proofs, split into tactics and
+    `Qed`; `--sentences` for single sentences, `--diff A.tsv B.tsv` to
+    compare two `decls.tsv` snapshots.
+  - `tools/ltacprof.py FILE.v LINE|NAME`: one proof's sentence times and
+    Ltac profile, compiled from a cut copy against the built tree.
+  - `tools/imports.py --path`: files that wait for imports they don't
+    reference (a candidate to split, as `LevelEqDef` was).
+  - Inside a proof: `time "tag" tac`, or `Set Ltac Profiling.` …
+    `Show Ltac Profile CutOff 2.` in a scratch copy.
+  The build-time gotchas in `M1_DESIGN.md` list the patterns that made
+  proofs slow; check new proofs against them.
 - Probe goals by truncating a proof into a scratch file and compiling with
   `coqc -Q theories DeLaM <file>` inside the dev shell.
 
