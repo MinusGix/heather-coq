@@ -313,7 +313,42 @@ formers, so it gets worse with every extension:
   `eauto` by the goal's shape. A dispatcher's applies are the same story
   as above: `leq_go` (`LevelRed`) picks its peeling lemma by the goal's
   head (136 s → 28 s).
-- Measure before guessing: `make TIMING=1` writes `.v.timing` per file;
-  `Set Ltac Profiling.` … `Show Ltac Profile CutOff 2.` inside a scratch
-  copy splits a tactic's time; `time "tag" tac` per goal separates the
-  cost of successes from failures.
+- **The same quadratic split, hidden in a helper** (2026-10-11 pass).
+  `destruct x; cbn in E` (AlgStruct's `lstep`) or
+  `destruct x; cbn; dec_solve` (LevelDec's `leq_dec_all`) runs `cbn` on
+  every mismatched former too. Close those by conversion first:
+  `try exact (False_ind _ E)`, or `try exact dec_False` for a `Dec`
+  goal (62 s → 3 s, 51 s → 9 s). Each mismatched goal still costs
+  about a millisecond in a big context, so a lemma that splits two
+  arguments stays a few seconds; `try contradiction` costs 40 times
+  that and `exact (match E with end)` 100 times.
+- **A file waiting for laws it does not use.** `NormalForms` needed only
+  the definition of `≡ₗ`, yet waited for `LevelEq`'s 78 s of laws, and
+  everything after it waited too. The definitions are now `LevelEqDef`;
+  `tools/imports.py` lists files whose `.glob` references end well
+  before what they require. Split such a file rather than speed it up.
+- **Raw fixpoints before `f_equal`.** After `cbn [ren_ty ren_tm …]`,
+  `repeat f_equal` on goals holding `fix ren_ty …` blocks took 12 s
+  (`tmNth_ren`); `fold ren_ty ren_tm` first, 0.3 s.
+- **`injection`/`inversion` on `Some r = Some r'`** with a big unfolded
+  reduct copies the reduct into the projection's default value:
+  `apply Some_inj in E` (`Syntax/Recursor.v`) instead.
+- **Pointwise proofs of shifted leaves.** `(T⟨↑⟩⟨↑⟩)[llift (lsingle c)]
+  = T⟨↑⟩` by `subst_comp`/`subst_ext` and one case per variable cost
+  75 s in `nth_reds_succ`; `shift_cancel` (`SubstCommute`) rewrites
+  such leaves directly (shift past a lift, cancel against a single
+  substitution). Its side conditions need `nfty T` for an unshifted `T`.
+- **`now`/`easy` in a big context.** `now apply lequiv_sym` spent 6.6 s
+  on `lequiv l l` (`easy` walks every hypothesis); close it by the
+  lemma you mean. Likewise `intuition` inside a `Hint Extern` runs on
+  every search node: the `lwf` hint in `Presupposition` uses
+  `repeat split` instead.
+- **One typing, many proofs.** `elim_Wf`'s branch scope was typed by
+  `wtop` inside `brΓ_conv` (22 s, critical path) and again in `RecAdm`;
+  `br50_scope` (`Typing/WfScope.v`, off the path) types it once.
+- Measure before guessing (see `CLAUDE.md`, Build, for the tools):
+  `tools/build-profile` for a timed build and its report,
+  `tools/proofs.py` for the slowest proofs (tactics vs `Qed`),
+  `tools/ltacprof.py FILE LINE` for one proof's Ltac profile and
+  sentence times; `time "tag" tac` per goal separates the cost of
+  successes from failures.
