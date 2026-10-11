@@ -327,6 +327,25 @@ Definition SumRel (G : gctx) (Γ : ctx) (l l' : lvl) (A B : ty) (RA RB : tm -> t
     [ G ; Γ ⊢g t ⤳* w : tySum l l' A B @ lmax l l' ] /\ [ G ; Γ ⊢g t' ⤳* w' : tySum l l' A B @ lmax l l' ] /\
     [ G ; Γ ⊢ w ≈ w' : tySum l l' A B @ lmax l l' ] /\ SumNf G Γ l l' A B RA RB w w'.
 
+(** ** Propositional truncation (M16_DESIGN.md, M16a)
+
+    The probe's clause ([probes/SquashProbe.v]): a whnf at [∥A∥] is good
+    alone when it is a [squash] whose payload is related to itself by the
+    carrier's relation, or a neutral related to itself (as at [Empty]).
+    Two terms are related when each is good: [SqRel] is a product of two
+    unary predicates, and nothing about one side is compared with the
+    other. The payload's self-relation is what the eliminator's β needs. *)
+Inductive SqNf (G : gctx) (Γ : ctx) (l : lvl) (A : ty) (RA : tm -> tm -> Prop) : tm -> Prop :=
+| sqnf_sq k C a :
+    lequiv (gL G) k l -> [ G ; Γ ⊢ A ≈ C @ l ] -> RA a a -> SqNf G Γ l A RA (tmSq k C a)
+| sqnf_ne ν : [ G ; Γ ⊢ ν ~ ν : tySq l A @ l ] -> SqNf G Γ l A RA ν.
+
+Definition SqU (G : gctx) (Γ : ctx) (l : lvl) (A : ty) (RA : tm -> tm -> Prop) (t : tm) : Prop :=
+  exists w, [ G ; Γ ⊢g t ⤳* w : tySq l A @ l ] /\ SqNf G Γ l A RA w.
+
+Definition SqRel (G : gctx) (Γ : ctx) (l : lvl) (A : ty) (RA : tm -> tm -> Prop) : tm -> tm -> Prop :=
+  fun t t' => SqU G Γ l A RA t /\ SqU G Γ l A RA t'.
+
 (** Two terms reducing to whnfs related generically: the first clauses of
     [PiRel], without the Kripke one. *)
 Definition WhRel (G : gctx) (Γ : ctx) (T : ty) (l : lvl) (t t' : tm) : Prop :=
@@ -704,6 +723,15 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
     (forall (ρ : kwk G Γ) a a', domR ρ a a' ->
         NatRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N)[lsingle a] (ktml ρ N')[lsingle a']) ->
     releq R (WfRel G Γ l1 A N domR) ->
+    LR n rec G Γ T T' l R
+| LRsq G Γ T T' l l1 l2 A A' RA R :
+    lequiv (gL G) l l1 -> lequiv (gL G) l2 l1 -> lwf (gL G) l1 ->
+    [ G ; Γ ⊢g T ⤳* tySq l1 A @ l ] -> [ G ; Γ ⊢g T' ⤳* tySq l2 A' @ l ] ->
+    [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] ->
+    LR n rec G Γ A A' l1 RA ->
+    (* the carrier's relation is a PER, as [LRsum]'s summands' *)
+    (forall x y, RA x y -> RA y x) -> (forall x y z, RA x y -> RA y z -> RA x z) ->
+    releq R (SqRel G Γ l1 A RA) ->
     LR n rec G Γ T T' l R.
 
 (** ** Stages *)

@@ -656,7 +656,8 @@ Proof.
                      HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR
                  | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R P1 domAd1 IHdom codAd1 IHcod HR
                  | G Γ T1 T2 l l1 l2 A1 A2 N1 N2 domR1 R Hl Hl2 Hw HT1 HT2 HA1 HA2 HN1t HN2t HAA HNN
-                     domAd1 IHdom arAd1 HR];
+                     domAd1 IHdom arAd1 HR
+                 | G Γ T1 T2 l l1 l2 A1 A2 RQ R Hl Hl2 Hw HT1 HT2 HA1 HAA HRQ IHRQ Hqs Hqt HR];
     intros T3 R23 H2.
   - (* Nat *)
     destruct (LR_inv_nat H2 HT2) as (_ & HT3 & HR2).
@@ -1121,6 +1122,20 @@ Proof.
     + intros t1 t2 t3 H12' H23'. apply HR. apply HR in H12'. apply HR2 in H23'.
       exact (proj1 WfRel_trans_all _ _ _ _ _ _ _ _ H12' l2 A2 N2 domR2 t3
                (conj (conj Hl2 (conj HA1 (conj HAA (conj HNN arAd1)))) Td) H23').
+  - (* ∥·∥: the carriers compose; the terms are each good alone *)
+    destruct (LR_inv_sq H2 HT2) as (l3 & A3 & RQ2 & _ & Hl3 & _ & _ & HT3 & HA2 & HA23 & HRQ2 & _ & _ & HR2).
+    pose proof (lequiv_sym _ _ _ Hl2) as Hl2'.
+    pose proof (LR_lconv _ _ _ _ _ _ _ _ _ HRQ2 Hl2') as HRQ2'.
+    destruct (IHRQ _ _ HRQ2') as [HRQ13 _].
+    assert (Hfl : releq (flipR RQ) RQ2)
+      by exact (LR_irrel _ _ _ _ _ _ _ _ _ _ (LR_sym _ _ _ _ _ _ _ HRQ) HRQ2').
+    split.
+    + eapply (LRsq n (LRbelow n) G Γ T1 T3 l l1 l3 A1 A3 RQ); eauto using lequiv_trans.
+      eapply geq_ty_trans; [exact HAA | eapply geq_ty_lconv; [exact HA23 | exact Hl2']].
+    + intros t1 t2 t3 H12 H23. apply HR. apply HR in H12. apply HR2 in H23.
+      apply (SqRel_conv (RA' := RQ) Hl2 HA2 (geq_ty_lconv (geq_ty_sym HAA) Hl2)) in H23.
+      * exact (SqRel_trans H12 H23).
+      * intros a; split; intros X; [exact (proj2 (Hfl a a) X) | exact (proj1 (Hfl a a) X)].
 Qed.
 
 Theorem LR_trans n : Ptrans n.

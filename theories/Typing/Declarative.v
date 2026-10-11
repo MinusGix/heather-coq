@@ -113,6 +113,9 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
 | wft_wf G i Γ l A N : i <> lV -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tyWf l A N @ l ]
+(* propositional truncation (M16a, M16_DESIGN.md), level-indexed *)
+| wft_sq G i Γ l A : compt i -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] A @ l ] ->
+    [ G ; Γ ⊢[ i ] tySq l A @ l ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | wft_lconv G i Γ T l l' : [ G ; Γ ⊢[ i ] T @ l' ] -> lequiv (gL G) l l' ->
@@ -362,6 +365,18 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 | wf_code_wf G i Γ l s n : i <> lV -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tmWf l s n : tyU l @ lsuc l ]
+(* propositional truncation (M16a): [squash] carries the carrier; the
+   eliminator's motive binds the scrutinee, its step the payload, and the
+   step's type is the motive at the squash of that payload, under [∥·∥]: the
+   result is again a squash *)
+| wf_sq G i Γ l A a : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] ->
+    [ G ; Γ ⊢[ i ] tmSq l A a : tySq l A @ l ]
+| wf_elimSq G i Γ l l' A M c t : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, tySq l A @ l ⊢[ i ] M @ l' ] ->
+    [ G ; Γ ,, A @ l ⊢[ i ] c : tySq l' M⟨rlift ↑⟩[lsingle (tmSq l A⟨↑⟩ (var 0))] @ l' ] ->
+    [ G ; Γ ⊢[ i ] t : tySq l A @ l ] ->
+    [ G ; Γ ⊢[ i ] tmElimSq l l' A M c t : tySq l' M[lsingle t] @ l' ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | wf_conv G i Γ t T T' l : [ G ; Γ ⊢[ i ] t : T' @ l ] -> [ G ; Γ ⊢[ typeof i ] T ≅ T' @ l ] ->
@@ -510,6 +525,10 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
 | eqty_El_wf G i Γ l s n : compt i -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tyWf l (tyEl l s) n ≅ tyEl l (tmWf l s n) @ l ]
+(* propositional truncation (M16a) *)
+| eqty_sq G i Γ l l' A A' : compt i -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+    [ G ; Γ ⊢[ i ] tySq l A ≅ tySq l' A' @ l ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | eqty_refl G i Γ T l : [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T @ l ]
@@ -982,6 +1001,28 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
     [ G ; Γ ⊢[ i ] tmWf l s n ≅ tmWf l' s' n' : tyU l @ lsuc l ]
+(* propositional truncation (M16a): the congruences, β at a [squash]
+   carrying the eliminator's own annotations, and proof irrelevance. As
+   at [sEq], irrelevance subsumes the congruences; they are rules anyway, so
+   that the substitution lemmas need no conversion of the result type *)
+| eqtm_sq G i Γ l l' A A' a a' : compt i -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+    [ G ; Γ ⊢[ i ] tmSq l A a ≅ tmSq l' A' a' : tySq l A @ l ]
+| eqtm_elimSq G i Γ l1 l2 l3 l4 A A' M M' c c' t t' : compt i ->
+    lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+    [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+    [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M @ l2 ] -> [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M ≅ M' @ l2 ] ->
+    [ G ; Γ ,, A @ l1 ⊢[ i ] c ≅ c' : tySq l2 M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))] @ l2 ] ->
+    [ G ; Γ ⊢[ i ] t ≅ t' : tySq l1 A @ l1 ] ->
+    [ G ; Γ ⊢[ i ] tmElimSq l1 l2 A M c t ≅ tmElimSq l3 l4 A' M' c' t' : tySq l2 M[lsingle t] @ l2 ]
+| eqtm_elimSq_sq G i Γ l l' A M c a : compt i -> lwf (gL G) l -> lwf (gL G) l' ->
+    [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, tySq l A @ l ⊢[ i ] M @ l' ] ->
+    [ G ; Γ ,, A @ l ⊢[ i ] c : tySq l' M⟨rlift ↑⟩[lsingle (tmSq l A⟨↑⟩ (var 0))] @ l' ] ->
+    [ G ; Γ ⊢[ i ] a : A @ l ] ->
+    [ G ; Γ ⊢[ i ] tmElimSq l l' A M c (tmSq l A a) ≅ c[lsingle a] : tySq l' M[lsingle (tmSq l A a)] @ l' ]
+| eqtm_sq_irr G i Γ l A t t' : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] t : tySq l A @ l ] -> [ G ; Γ ⊢[ i ] t' : tySq l A @ l ] ->
+    [ G ; Γ ⊢[ i ] t ≅ t' : tySq l A @ l ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | eqtm_refl G i Γ t T l : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ i ] t ≅ t : T @ l ]

@@ -55,7 +55,7 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | `Wf`, `sup_f`, `elim_Wf` | finitary W over a `Vec` of children | wf-former-design | MX §11–17 | index lemma (MX §13) | **M15 done**: branch telescopes derived from the semantics, β, no η, the index lemma via `nth` at related `Fin` indices (M15a, D and M); code, every layer but V, branches 47–50 (M15b) |
 | `sEq`, `srefl`, `transp`, strip rule | strict equality, irrelevance | sprop-design | MX §18–22 | strip changes the evaluation notion; MX §19.4 substitution lemma is the named weak spot; completeness gap reaches type relations (MX §22.4); **MX §19.2 is a strengthening lemma (M10 S1)** | `sEq`, `srefl`, irrelevance **done** (M10a; every layer but V with codes and branches 25, 26, 29, M10c); `transp` removed (S8) |
 | `sEmpty`, `elim_sEmpty` | irrelevant empty type | sprop-design | MX §18, §21.4 | — | **done** (M10a; at code with branches 27, 28, 30, M10c) |
-| `Squash`, `ind_∥∥` | normalizing-total irrelevance | MX §27 | sketch only | full pass open (`issues/metatheory-ch07-squash.md`); the payload must be self-related (see findings) | **probe done** (`probes/SquashProbe.v`): the relation, its PER laws, escape, symmetry, irrelevance, expansion; no abort |
+| `Squash`, `ind_∥∥` | normalizing-total irrelevance | MX §27 | sketch only | full pass open (`issues/metatheory-ch07-squash.md`); the payload must be self-related (see findings) | **M16a done** (D and M): the probe's relation (`probes/SquashProbe.v`), proof irrelevance, β, no η, canonicity to a `squash`; code and branches next (M16b) |
 | Bodied globals `u := t`, δ at p/m only | not a former | DESIGN.md, MX §23–25 | **none** | ch. 07 bill (`issues/metatheory-ch07-definitions.md`) | **done** (M9): occurrences carry their body (`gdef`); δ as reduction; §26 items 1–4; canonicity at D; consistency at D and M |
 | `NatLit`, evaluator accelerations | representation | DESIGN.md | n/a | claimed to have no semantic content; nothing to prove here | out of scope |
 
@@ -253,6 +253,7 @@ M15b outcome.
    code and four recursor branches (M13a–b, M13_DESIGN.md). `Vec` and
    `Fin` are done, with codes and four recursor branches (M14a–b,
    M14_DESIGN.md). `Wf` is done, with its code and four recursor branches
-   (M15a–b, M15_DESIGN.md).
+   (M15a–b, M15_DESIGN.md). `Squash` is done at D and M (M16a,
+   M16_DESIGN.md); its code and four recursor branches are M16b.
 
 Side task, any time: the ITree depth-indexed bisimilarity question.

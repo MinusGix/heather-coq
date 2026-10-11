@@ -132,9 +132,17 @@ From M8 on, the milestones check the extensions of Heather's kernel
   branches 47–50, whose scopes are derived from the typing rules and agree
   with Heather's `rec.rs`. The recursive calls are derived from the scopes
   and checked against the written table. See `M15_DESIGN.md`.
+- Milestone 16a: propositional truncation. `∥A∥^l`, `squash^l(A; a)` and
+  `ind_∥∥` hold at layers D and M, with definitional proof irrelevance
+  and a squash-headed eliminator (its result is again a squash), β at a
+  `squash` of any annotations, and canonicity (a closed term at `∥A∥`
+  computes to a `squash`). The relation is the probe's: each side is good
+  alone, a `squash` whose payload is related to itself or a neutral
+  related to itself. The algorithm compares neither scrutinees nor steps.
+  See `M16_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
-`M15_DESIGN.md`) for decisions, deviations from the paper and gotchas.
+`M16_DESIGN.md`) for decisions, deviations from the paper and gotchas.
 
 Documents:
 

@@ -508,6 +508,69 @@ Proof.
   - eapply eqtm_conv; [exact (lvl_eq_eqtm Hk Econg) | rewrite Hi; exact HX].
 Qed.
 
+(** Propositional truncation (M16a). *)
+Lemma S_actnf_sq {G Γ l l' A A'} : leqv l l' -> S_ty G Γ A A' -> S_ty G Γ (tySq l A) (tySq l' A').
+Proof.
+  intros Hl IHA i k Hc HT HT'.
+  destruct (inv_ty_sq HT) as ((_ & W & HA) & Hk). destruct (inv_ty_sq HT') as ((_ & W' & HA') & _).
+  pose proof (leqv_lequiv _ _ _ W W' Hl) as E.
+  pose proof (IHA i l Hc HA (wft_lconv _ _ _ _ _ _ HA' E)) as EA.
+  apply (lvl_eq_eqty Hk). apply eqty_sq; [exact Hc | exact E | exact HA | exact EA].
+Qed.
+
+Lemma S_actmnf_sq_irr {G Γ l A w w'} : S_tm G Γ w w' (tySq l A).
+Proof.
+  intros i k Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_sq (wf_tm_ty Hi Ht)) as ((_ & W & _) & Hk).
+  apply (lvl_eq_eqtm Hk). apply eqtm_sq_irr; [exact Hc | exact W | exact (lvl_eq_tm' Hk Ht) | exact (lvl_eq_tm' Hk Ht')].
+Qed.
+
+(** Neither the scrutinees nor the steps are compared: irrelevance relates
+    them, at the squash each lives in. *)
+Lemma S_actmne_elimSq {G Γ l1 l2 l3 l4 A A' M M' c c' ν ν'} : leqv l1 l3 -> leqv l2 l4 ->
+  S_ty G Γ A A' -> S_ty G (Γ ,, tySq l1 A @ l1) M M' ->
+  S_ne G Γ (tmElimSq l1 l2 A M c ν) (tmElimSq l3 l4 A' M' c' ν') (tySq l2 M[lsingle ν]).
+Proof.
+  intros H13 H24 IHA IHM i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_elimSq Hi Hx) as ((_ & W1 & W2 & HA & HM & Hcc & Hν) & Hk & HX).
+  destruct (inv_elimSq Hi Hx') as ((_ & W3 & W4 & HA' & HM' & Hcc' & Hν') & Hk' & HX').
+  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
+  pose proof (lequiv_sym _ _ _ E13) as E31. pose proof (lequiv_sym _ _ _ E24) as E42.
+  pose proof (ctx_of_wf_tm Hi Hν) as HΓ.
+  pose proof (IHA i l1 Hc HA (wft_lconv _ _ _ _ _ _ HA' E13)) as EA.
+  assert (ES : [ G ; Γ ⊢[ i ] tySq l1 A ≅ tySq l3 A' @ l1 ])
+    by (apply eqty_sq; [exact Hc | exact E13 | exact HA | exact EA]).
+  assert (HS : [ G ; Γ ⊢[ i ] tySq l3 A' ≅ tySq l1 A @ l3 ])
+    by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ ES) | exact E31]).
+  assert (HΓS : [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] ])
+    by (apply wfc_ext; [exact HΓ | apply wft_sq; [exact Hc | exact W1 | exact HA] | exact W1]).
+  assert (HΓS' : [ G ; Γ ,, tySq l3 A' @ l3 ⊢[ i ] ])
+    by (apply wfc_ext; [exact HΓ | apply wft_sq; [exact Hc | exact W3 | exact HA'] | exact W3]).
+  (* the right motive in the left's context, and the left's in the right's *)
+  pose proof (stab_ty Hi HS E31 HΓS HM') as HM'1.
+  pose proof (IHM i l2 Hc HM (wft_lconv _ _ _ _ _ _ HM'1 E24)) as EM.
+  pose proof (stab_eqty Hi ES E13 HΓS' EM) as EM3.
+  pose proof (stab_ty Hi ES E13 HΓS' HM) as HM3.
+  (* the right scrutinee and step at the left's types *)
+  assert (Hν'1 : [ G ; Γ ⊢[ i ] ν' : tySq l1 A @ l1 ])
+    by (eapply wf_conv; [eapply wf_lconv; [exact Hν' | exact E13] | rewrite Hi; exact ES]).
+  pose proof (eqtm_sq_irr _ _ _ _ _ _ _ Hc W1 Hν Hν'1) as Eν.
+  assert (Hcc'1 : [ G ; Γ ,, A @ l1 ⊢[ i ] c' : tySq l2 M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))] @ l2 ]).
+  { refine (sq_branch_r Hi Hc E31 E42 HA' _ (wft_lconv _ _ _ _ _ _ HA E31) HM' _ (wft_lconv _ _ _ _ _ _ HM3 E42) Hcc').
+    - eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | exact E31].
+    - eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EM3) | exact E42]. }
+  pose proof (eqtm_sq_irr _ _ _ _ _ _ _ Hc W2 Hcc Hcc'1) as Ecc.
+  pose proof (eqtm_elimSq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hc E13 E24 HA EA HM EM Ecc Eν) as Econg.
+  assert (EMν : [ G ; Γ ⊢[ i ] tySq l2 M[lsingle ν] ≅ tySq l4 M'[lsingle ν'] @ l2 ]).
+  { apply eqty_sq; [exact Hc | exact E24 | exact (wf_ty_single Hi HM Hν) |].
+    eapply eqty_trans; [exact (eqty_single Hi EM Hν) |].
+    exact (wf_ty_func Hi (wft_lconv _ _ _ _ _ _ HM'1 E24) (lsub_eq_single Hi Hν Hν'1 Eν)). }
+  split; [exact HX | split].
+  - eapply eqty_trans; [exact HX' |]. apply eqty_sym, (lvl_eq_eqty Hk').
+    eapply eqty_lconv; [exact EMν | exact E42].
+  - eapply eqtm_conv; [exact (lvl_eq_eqtm Hk Econg) | rewrite Hi; exact HX].
+Qed.
+
 (** [Π] injectivity at a computing layer. *)
 Lemma pi_inj_c {G i Γ l l1 l2 l3 l4 A A' B B'} : compt i ->
   [ G ; Γ ⊢[ i ] tyPi l1 l2 A B ≅ tyPi l3 l4 A' B' @ l ] ->
@@ -721,6 +784,11 @@ Lemma W_inj_c {G i Γ l l1 l2 l3 l4 A A' B B'} : compt i ->
   lequiv (gL G) l3 l1 /\ lequiv (gL G) l4 l2 /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] /\
   [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ].
 Proof. intros Hc H. destruct Hc as [-> | ->]; [exact (decl_W_inj H) | exact (declM_W_inj H)]. Qed.
+
+(** Propositional truncation (M16a). *)
+Lemma sq_inj_c {G i Γ l l1 l2 A A'} : compt i ->
+  [ G ; Γ ⊢[ i ] tySq l1 A ≅ tySq l2 A' @ l ] -> lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ].
+Proof. intros Hc H. destruct Hc as [-> | ->]; [exact (decl_sq_inj H) | exact (declM_sq_inj H)]. Qed.
 
 Lemma S_actnf_W {G Γ l1 l2 l3 l4 A A' B B'} : leqv l1 l3 -> leqv l2 l4 ->
   S_ty G Γ A A' -> S_ty G (Γ ,, A @ l1) B B' -> S_ty G Γ (tyW l1 l2 A B) (tyW l3 l4 A' B').
@@ -2198,6 +2266,8 @@ Proof.
     | solve [eapply S_actmne_J; eassumption] | solve [eapply S_actmnf_code_id; eassumption]
     | solve [eapply S_actmnf_code_seq; eassumption] | solve [eapply S_actmnf_code_sempty; eassumption]
     | solve [eapply S_actnf_empty; eassumption] | solve [eapply S_actmne_elimEmpty; eassumption]
+    | solve [eapply S_actnf_sq; eassumption] | solve [eapply S_actmnf_sq_irr]
+    | solve [eapply S_actmne_elimSq; eassumption]
     | solve [eapply S_actnf_sum; eassumption] | solve [eapply S_actmnf_inl; eassumption]
     | solve [eapply S_actmnf_inr; eassumption] | solve [eapply S_actmne_case; eassumption]
     | solve [eapply S_actmnf_code_empty; eassumption] | solve [eapply S_actmnf_code_sum; eassumption]

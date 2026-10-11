@@ -1,7 +1,7 @@
 # DeLaM formalization: notes for agents
 
 Start by reading `README.md`, then `HEATHER.md` (Heather's extensions: the
-forward agenda), `M15_DESIGN.md` (current milestone), `M14_DESIGN.md`, `M13_DESIGN.md`, `M12_DESIGN.md`, `M11_DESIGN.md`, `M10_DESIGN.md`, `M9_DESIGN.md`,
+forward agenda), `M16_DESIGN.md` (current milestone), `M15_DESIGN.md`, `M14_DESIGN.md`, `M13_DESIGN.md`, `M12_DESIGN.md`, `M11_DESIGN.md`, `M10_DESIGN.md`, `M9_DESIGN.md`,
 `M8_DESIGN.md`, `M7_DESIGN.md`, `M6_DESIGN.md`, `M5_DESIGN.md`,
 `M4_DESIGN.md`, `M3_DESIGN.md`, `M2_DESIGN.md` and `M1_DESIGN.md`. The latter holds the M1
 current status, the ordered next steps, deviations from the paper, and a
@@ -24,7 +24,10 @@ list of proof-engineering gotchas. Follow it.
 ## Build
 
 - `nix develop path:. --command make -j2` (Coq 8.20, Equations, smpl from
-  the flake). A clean build takes 10 to 15 minutes: 887 s wall after M15b on the
+  the flake). A clean build takes 10 to 22 minutes, depending on the machine: 1297 s wall after M16a on the
+  2026-10-10 evening cloud machine (critical path 1071 s, total CPU 1678 s;
+  the M15b tree measured 1234 s wall, critical path 1023 s, total CPU
+  1585 s, on the same machine). Earlier: 887 s wall after M15b on the
   2026-10-10 cloud machine (critical path 732 s, total CPU 1125 s; the M15a
   tree measured 689 s wall, critical path 655 s, the same day). 875 s wall
   after M15a on the 2026-10-06 cloud machine (critical path 740 s, total

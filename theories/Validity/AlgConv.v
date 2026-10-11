@@ -1527,6 +1527,47 @@ Proof.
   - exact (ne_refl (actmne_elimEmpty _ _ _ _ _ _ _ _ _ _ H13 H24 DM Hn Hn') Hc HE Hx Hx').
 Qed.
 
+(** Propositional truncation (M16a). *)
+Lemma C_actnf_sq {G Γ l l' A A'} : leqv l l' -> C_ty G Γ A A' -> C_tynf G Γ (tySq l A) (tySq l' A').
+Proof.
+  intros Hl IHA i G2 Γ2 k k' Hc HE Hctx HT HT'.
+  destruct (inv_ty_sq HT) as ((_ & _ & HA) & _). destruct (inv_ty_sq HT') as ((_ & _ & HA') & _).
+  apply actnf_sq; [exact Hl | exact (IHA i G2 Γ2 l l' Hc HE Hctx HA HA')].
+Qed.
+
+Lemma C_actmnf_sq_irr {G Γ l A w w'} : C_tmnf G Γ w w' (tySq l A).
+Proof.
+  red; intros i G2 Γ2 W2 k Hc HE Hctx Ht Ht' EW Hw2 x x' Hsx Hsx'. new_head Hc EW Hw2 W2.
+  apply actmnf_sq_irr.
+Qed.
+
+Lemma C_actmne_elimSq {G Γ l1 l2 l3 l4 A A' M M' c c' ν ν'} : leqv l1 l3 -> leqv l2 l4 ->
+  ac_ty G Γ A A' -> C_ty G Γ A A' ->
+  ac_ty G (Γ ,, tySq l1 A @ l1) M M' -> C_ty G (Γ ,, tySq l1 A @ l1) M M' ->
+  whne ν -> whne ν' ->
+  C_ne G Γ (tmElimSq l1 l2 A M c ν) (tmElimSq l3 l4 A' M' c' ν') (tySq l2 M[lsingle ν]).
+Proof.
+  intros H13 H24 DA IHA DM IHM Hn Hn' i G2 Γ2 k k' X X' Hc HE Hctx Hx Hx' x x' Hsx Hsx'. spa_triv.
+  pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_elimSq Hi Hx) as ((_ & W1 & W2 & HA & HM & _ & Hν) & _ & _).
+  destruct (inv_elimSq Hi Hx') as ((_ & W3 & W4 & HA' & HM' & _ & _) & _ & _).
+  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
+  pose proof (ctx_of_wf_tm Hi Hν) as HΓ.
+  pose proof (ac_ty_sound Hc DA HA (wft_lconv _ _ _ _ _ _ HA' E13)) as EA.
+  assert (HS1 : [ G ; Γ ⊢[ i ] tySq l1 A @ l1 ]) by (apply wft_sq; [exact Hc | exact W1 | exact HA]).
+  assert (HS : [ G ; Γ ⊢[ i ] tySq l3 A' ≅ tySq l1 A @ l3 ]).
+  { eapply eqty_lconv; [| exact (lequiv_sym _ _ _ E13)].
+    apply eqty_sym, eqty_sq; [exact Hc | exact E13 | exact HA | exact EA]. }
+  assert (HΓS : [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HS1 | exact W1]).
+  pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi HS (lequiv_sym _ _ _ E13) HΓS HM') E24) as HM'1.
+  assert (HctxS : [ G2 ⊢[ i ] Γ ,, tySq l1 A @ l1 ≅ Γ2 ,, tySq l1 A @ l1 ])
+    by exact (eqctx_ext_refl Hctx (gconv_ty HE HS1) (GEq_lwf HE W1)).
+  exists (tySq l2 M[lsingle ν]). split.
+  - apply actmne_elimSq; [exact H13 | exact H24 | exact (IHA i G2 Γ2 l1 l3 Hc HE Hctx HA HA')
+                         | exact (IHM i G2 _ l2 l2 Hc HE HctxS HM HM'1) | exact Hn | exact Hn'].
+  - exact (ne_refl (actmne_elimSq _ _ _ _ _ _ _ _ _ _ _ _ _ _ H13 H24 DA DM Hn Hn') Hc HE Hx Hx').
+Qed.
+
 (** Binary sums (M12b). *)
 Lemma C_actnf_sum {G Γ l1 l2 l3 l4 A A' B B'} : leqv l1 l3 -> leqv l2 l4 ->
   C_ty G Γ A A' -> C_ty G Γ B B' -> C_tynf G Γ (tySum l1 l2 A B) (tySum l3 l4 A' B').
@@ -2022,6 +2063,8 @@ Proof.
     | solve [eapply C_actmne_J; eassumption] | solve [eapply C_actmnf_code_id; eassumption]
     | solve [eapply C_actmnf_code_seq; eassumption] | solve [eapply C_actmnf_code_sempty; eassumption]
     | solve [eapply C_actnf_empty; eassumption] | solve [eapply C_actmne_elimEmpty; eassumption]
+    | solve [eapply C_actnf_sq; eassumption] | solve [eapply C_actmnf_sq_irr]
+    | solve [eapply C_actmne_elimSq; eassumption]
     | solve [eapply C_actnf_sum; eassumption] | solve [eapply C_actmnf_inl; eassumption]
     | solve [eapply C_actmnf_inr; eassumption] | solve [eapply C_actmne_case; eassumption]
     | solve [eapply C_actmnf_code_empty; eassumption] | solve [eapply C_actmnf_code_sum; eassumption]

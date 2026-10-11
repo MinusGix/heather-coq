@@ -638,6 +638,40 @@ Proof.
   exact (wf_ty_func Hi HM (lsub_eq_single Hi Ht (eqtm_wf_l Hi Hinr) (eqtm_sym _ _ _ _ _ _ _ Hinr))).
 Qed.
 
+(** [ind_∥∥] (M16a): the congruence at the scrutinee, and β at a [squash]
+    of any annotations (they equal the eliminator's, by injectivity). *)
+Lemma RS_elimSq l l' A M c t t' : RS_tm t t' -> RS_tm (tmElimSq l l' A M c t) (tmElimSq l l' A M c t').
+Proof.
+  intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_elimSq Hi Hx) as ((_ & W1 & W2 & HA & HM & Hcc & Ht) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  exact (eqtm_elimSq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hc (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HA
+           (eqty_refl _ _ _ _ _ HA) HM (eqty_refl _ _ _ _ _ HM) (eqtm_refl _ _ _ _ _ _ Hcc) (IH _ _ _ _ _ Hc Ht)).
+Qed.
+
+Lemma RS_elimSq_sq l l' A M c k C a : RS_tm (tmElimSq l l' A M c (tmSq k C a)) c[lsingle a].
+Proof.
+  intros G i Γ T m Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_elimSq Hi Hx) as ((_ & W1 & W2 & HA & HM & Hcc & Ht) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  destruct (inv_sq Hi Ht) as ((_ & Wk & _ & Ha) & _ & ESq).
+  destruct (sq_inj_c Hc ESq) as (Ekl & EAC).
+  assert (Ha' : [ G ; Γ ⊢[ i ] a : A @ l ])
+    by (eapply wf_conv; [eapply wf_lconv; [exact Ha | exact (lequiv_sym _ _ _ Ekl)] | rewrite Hi; exact EAC]).
+  assert (Hsq : [ G ; Γ ⊢[ i ] tmSq l A a ≅ tmSq k C a : tySq l A @ l ])
+    by (apply eqtm_sq_irr; [exact Hc | exact W1 | apply wf_sq; assumption | exact Ht]).
+  assert (Hcong : [ G ; Γ ⊢[ i ] tmElimSq l l' A M c (tmSq k C a)
+                     ≅ tmElimSq l l' A M c (tmSq l A a) : tySq l' M[lsingle (tmSq k C a)] @ l' ])
+    by exact (eqtm_elimSq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hc (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HA
+                (eqty_refl _ _ _ _ _ HA) HM (eqty_refl _ _ _ _ _ HM) (eqtm_refl _ _ _ _ _ _ Hcc)
+                (eqtm_sym _ _ _ _ _ _ _ Hsq)).
+  pose proof (eqtm_elimSq_sq _ _ _ _ _ _ _ _ _ Hc W1 W2 HA HM Hcc Ha') as Hb.
+  eapply eqtm_trans; [exact Hcong |].
+  eapply eqtm_conv; [exact Hb | rewrite Hi].
+  apply eqty_sq; [exact Hc | exact (lequiv_refl _ _ W2) | exact (wf_ty_single Hi HM Ht) |].
+  exact (wf_ty_func Hi HM (lsub_eq_single Hi Ht (eqtm_wf_l Hi Hsq) (eqtm_sym _ _ _ _ _ _ _ Hsq))).
+Qed.
+
 (** [elim_W] (M13a): the congruence at the scrutinee, and β at a [sup] of
     any annotations (they equal the [elim_W]'s, by injectivity). *)
 Lemma RS_elimW l l' l'' A B M c t t' : RS_tm t t' ->
@@ -775,6 +809,7 @@ Proof.
     | solve [apply RS_El_seq] | solve [apply RS_El_sempty]
     | solve [apply RS_elimEmpty; assumption]
     | solve [apply RS_case_inl] | solve [apply RS_case_inr] | solve [apply RS_case; assumption]
+    | solve [apply RS_elimSq_sq] | solve [apply RS_elimSq; assumption]
     | solve [apply RS_elimW_sup] | solve [apply RS_elimW; assumption]
     | solve [apply RS_elimWf_supf] | solve [apply RS_elimWf; assumption]
     | solve [apply RS_El_empty] | solve [apply RS_El_sum] | solve [apply RS_El_W]

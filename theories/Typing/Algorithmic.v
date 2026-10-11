@@ -80,6 +80,8 @@ with ac_tynf : gctx -> ctx -> ty -> ty -> Prop :=
 (* finitary well-founded trees (M15a): the arities at Nat under the shape *)
 | actnf_wf G Γ l l' A A' N N' : leqv l l' -> ac_ty G Γ A A' -> ac_tm G (Γ ,, A @ l) N N' tyNat ->
     ac_tynf G Γ (tyWf l A N) (tyWf l' A' N')
+(* propositional truncation (M16a) *)
+| actnf_sq G Γ l l' A A' : leqv l l' -> ac_ty G Γ A A' -> ac_tynf G Γ (tySq l A) (tySq l' A')
 (* the identity type (M11a): endpoints compared at the left carrier *)
 | actnf_id G Γ l l' A A' a a' b b' : leqv l l' -> ac_ty G Γ A A' ->
     ac_tm G Γ a a' A -> ac_tm G Γ b b' A ->
@@ -199,6 +201,10 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmnf_code_wf G Γ l k k' s s' n n' : leqv k k' ->
     ac_tm G Γ s s' (tyU k) -> ac_tm G (Γ ,, tyEl k s @ k) n n' tyNat ->
     ac_tmnf G Γ (tmWf k s n) (tmWf k' s' n') (tyU l)
+(* propositional truncation (M16a): proof irrelevance, as at [Empty] (a
+   squash type is not [posty]); both sides are already weak-head normal,
+   which is Heather's normalizing-total conversion *)
+| actmnf_sq_irr G Γ l A w w' : ac_tmnf G Γ w w' (tySq l A)
 
 with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_var G Γ n T l : in_ctx Γ n T l -> ac_tmne G Γ (var n) (var n) T
@@ -322,6 +328,12 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
       c c' (wfstepty l1 A N M) ->
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (tmElimWf l1 l2 A N M c ν) (tmElimWf l3 l4 A' N' M' c' ν') M[lsingle ν]
+(* [ind_∥∥] (M16a): the carriers, and the motives at the left carrier's
+   squash; the scrutinees are neutral and, as [elim_Empty]'s, never compared,
+   and neither are the steps (irrelevance at the step's squash type) *)
+| actmne_elimSq G Γ l1 l2 l3 l4 A A' M M' c c' ν ν' : leqv l1 l3 -> leqv l2 l4 ->
+    ac_ty G Γ A A' -> ac_ty G (Γ ,, tySq l1 A @ l1) M M' -> whne ν -> whne ν' ->
+    ac_tmne G Γ (tmElimSq l1 l2 A M c ν) (tmElimSq l3 l4 A' M' c' ν') (tySq l2 M[lsingle ν])
 
 with ac_tmnee : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmnee_red G Γ ν ν' T W : ac_tmne G Γ ν ν' T -> reds_ty T W -> whnf_ty W ->

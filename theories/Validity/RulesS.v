@@ -176,6 +176,9 @@ Ltac s_push_at h k := lazymatch h with
   | @tmId => k gs_tmId
   | @tmSEq => k gs_tmSEq
   | @tmJ => k gs_J
+  | @tySq => k gs_tySq
+  | @tmSq => k gs_sq
+  | @tmElimSq => k gs_elimSq
   end.
 Ltac s_push := repeat match goal with
   | |- context [@gsubst _ _ ?t _] => let h := head_of t in s_push_at h ltac:(fun L => rewrite L)
@@ -236,7 +239,10 @@ Ltac fts_case :=
   | solve [simple eapply V_wf; s_side] | solve [simple eapply V_supf; s_side]
   | solve [simple eapply V_elimWf; s_side] | solve [simple eapply V_elimWf_supf; s_side]
   (* the code of Wf (M15b) *)
-  | solve [simple eapply V_code_wf; s_side] | solve [simple eapply V_El_wf; eassumption] ].
+  | solve [simple eapply V_code_wf; s_side] | solve [simple eapply V_El_wf; eassumption]
+  (* propositional truncation (M16a) *)
+  | solve [simple eapply V_sq; s_side] | solve [simple eapply V_sq_intro; s_side]
+  | solve [simple eapply V_sq_irr; s_side] | solve [simple eapply V_elimSq; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=
@@ -788,6 +794,50 @@ Proof using EL VL VN.
   eapply VS_code_wf; try eassumption; apply lequiv_refl; assumption.
 Qed.
 
+(** Propositional truncation (M16a). *)
+Lemma VS_sq {G Γ l l' A A'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTyS G Γ A A' l -> VTyS G Γ (tySq l A) (tySq l' A') l.
+Proof using EL VL. intros; s_lift. Qed.
+(** The eliminator's type, the motive at a valid scrutinee. *)
+Lemma VS_sq_single {G Γ l l' X M a} : lwf (gL G) l' ->
+  VTyS G (Γ ,, X @ l) M M l' -> VTmS G Γ a a X l ->
+  VTyS G Γ (tySq l' M[lsingle a]) (tySq l' M[lsingle a]) l'.
+Proof using EL VL. intros Hw VM Va. apply VS_sq; [exact Hw | apply lequiv_refl, Hw | exact (VTyS_single EP EM VM Va)]. Qed.
+Lemma VS_sq_intro {G Γ l l' A A' a a'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTyS G Γ A A' l -> VTmS G Γ a a' A l -> VTmS G Γ (tmSq l A a) (tmSq l' A' a') (tySq l A) l.
+Proof using EL VL. intros; s_lift. Qed.
+(** β's type, the motive at a [squash]. *)
+Lemma VS_sq_single_sq {G Γ l l' A M a} : lwf (gL G) l -> lwf (gL G) l' ->
+  VTyS G Γ A A l -> VTyS G (Γ ,, tySq l A @ l) M M l' -> VTmS G Γ a a A l ->
+  VTyS G Γ (tySq l' M[lsingle (tmSq l A a)]) (tySq l' M[lsingle (tmSq l A a)]) l'.
+Proof using EL VL.
+  intros Hw Hw' VA VM Va. eapply VS_sq_single; [exact Hw' | exact VM |].
+  apply VS_sq_intro; [exact Hw | apply lequiv_refl, Hw | exact VA | exact Va].
+Qed.
+Lemma VS_sq_irr {G Γ l A t t'} : lwf (gL G) l ->
+  VTmS G Γ t t (tySq l A) l -> VTmS G Γ t' t' (tySq l A) l -> VTmS G Γ t t' (tySq l A) l.
+Proof using EL VL. intros; s_lift. Qed.
+Lemma VS_elimSq {G Γ l1 l2 l3 l4 A A' M M' c c' t t'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  VTyS G Γ A A' l1 -> VTyS G (Γ ,, tySq l1 A @ l1) M M' l2 ->
+  VTmS G (Γ ,, A @ l1) c c' (tySq l2 M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))]) l2 ->
+  VTmS G Γ t t' (tySq l1 A) l1 ->
+  VTmS G Γ (tmElimSq l1 l2 A M c t) (tmElimSq l3 l4 A' M' c' t') (tySq l2 M[lsingle t]) l2.
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_elimSq_sq {ly G Γ l l' A M c a} : lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ ly ] A @ l ] -> lle ly ge_layer -> typeof ly = ly ->
+  VTyS G Γ A A l -> VTyS G (Γ ,, tySq l A @ l) M M l' ->
+  VTmS G (Γ ,, A @ l) c c (tySq l' M⟨rlift ↑⟩[lsingle (tmSq l A⟨↑⟩ (var 0))]) l' ->
+  VTmS G Γ a a A l ->
+  VTmS G Γ (tmElimSq l l' A M c (tmSq l A a)) c[lsingle a] (tySq l' M[lsingle (tmSq l A a)]) l'.
+Proof using EL VL VN.
+  intros. eapply (VTmS_trans_diag EP EM (t2 := c[lsingle a])); [s_diag V_elimSq_sq|].
+  rewrite <- (sq_single M l A a) by (eapply wf_ty_nf; eassumption).
+  change (tySq l' (M⟨rlift ↑⟩[lsingle (tmSq l A⟨↑⟩ (var 0))])[lsingle a])
+    with ((tySq l' M⟨rlift ↑⟩[lsingle (tmSq l A⟨↑⟩ (var 0))])[lsingle a]).
+  eapply VTmS_single; eassumption.
+Qed.
+
 End Rules.
 
 End RulesS.
@@ -855,4 +905,9 @@ Ltac vs_rules side :=
   | solve [simple eapply VS_wf; side] | solve [simple eapply VS_supf; side]
   | solve [simple eapply VS_elimWf; side] | solve [simple eapply VS_elimWf_supf; side]
   (* the code of Wf (M15b) *)
-  | solve [simple eapply VS_code_wf; side] | solve [simple eapply VS_El_wf; side] ].
+  | solve [simple eapply VS_code_wf; side] | solve [simple eapply VS_El_wf; side]
+  (* propositional truncation (M16a) *)
+  | solve [simple eapply VS_sq; side] | solve [simple eapply VS_sq_intro; side]
+  | solve [simple eapply VS_sq_irr; side] | solve [simple eapply VS_elimSq; side]
+  | solve [simple eapply VS_elimSq_sq; side]
+  | solve [simple eapply VS_sq_single; side] | solve [simple eapply VS_sq_single_sq; side] ].

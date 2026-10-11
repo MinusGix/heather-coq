@@ -41,6 +41,7 @@ Definition canon_head (h : nat) (w : tm) : Prop :=
   | 16 => (exists l l' A B a, w = tmInl l l' A B a) \/ exists l l' A B b, w = tmInr l l' A B b
   | 17 => exists l l' A B a f, w = tmSup l l' A B a f
   | 18 => exists l A N a cs, w = tmSupf l A N a cs
+  | 19 => exists l A a, w = tmSq l A a
   | _ => False
   end.
 
@@ -66,7 +67,7 @@ Proof.
           | pose proof (inv_code_empty Hi Hx) as X | pose proof (inv_code_sum Hi Hx) as X
           | pose proof (inv_code_W Hi Hx) as X
           | pose proof (inv_code_vec Hi Hx) as X | pose proof (inv_code_fin Hi Hx) as X
-          | pose proof (inv_code_wf Hi Hx) as X ];
+          | pose proof (inv_code_wf Hi Hx) as X | pose proof (inv_sq Hi Hx) as X ];
     repeat match goal with H : exists _, _ |- _ => destruct H | H : _ /\ _ |- _ => destruct H end;
     match goal with E : [ _ ; _ ⊢[ _ ] W ≅ _ @ _ ] |- _ =>
       rewrite (decl_head_c Hc E HW); [| auto with whnf] end;

@@ -421,6 +421,12 @@ Proof. reflexivity. Qed.
 Lemma gren_elimWf l l' A N M c t :
   (tmElimWf l l' A N M c t)⟪ξ⟫ = tmElimWf l l' A⟪ξ⟫ N⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ t⟪ξ⟫.
 Proof. reflexivity. Qed.
+(** Propositional truncation (M16a). *)
+Lemma gren_tySq l A : (tySq l A)⟪ξ⟫ = tySq l A⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_sq l A a : (tmSq l A a)⟪ξ⟫ = tmSq l A⟪ξ⟫ a⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_elimSq l l' A M c t :
+  (tmElimSq l l' A M c t)⟪ξ⟫ = tmElimSq l l' A⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ t⟪ξ⟫.
+Proof. reflexivity. Qed.
 Lemma gren_tmNth l T k cs i : (tmNth l T k cs i)⟪ξ⟫ = tmNth l T⟪ξ⟫ k⟪ξ⟫ cs⟪ξ⟫ i⟪ξ⟫.
 Proof.
   unfold tmNth, nthMot, nthBase, nthStep. cbn [gren GRen_tm gren_tm GRen_ty gren_ty].
@@ -521,6 +527,9 @@ Ltac push_gren_at h k := lazymatch h with
   | @tmElimWf => k gren_elimWf
   | @tmNth => k gren_tmNth
   | @wfIH => k gren_wfIH
+  | @tySq => k gren_tySq
+  | @tmSq => k gren_sq
+  | @tmElimSq => k gren_elimSq
   end.
 Ltac push_gren := repeat match goal with
   | |- context [@gren _ _ ?t _] => let h := head_of t in push_gren_at h ltac:(fun L => rewrite L)
@@ -695,6 +704,10 @@ Ltac gw_Δ tac :=
 
 Ltac gw_manual :=
   match goal with
+  (* [ind_∥∥] (M16a): its step's type, through the induction hypotheses *)
+  | |- wf_tm _ _ _ (tmElimSq _ _ _ _ _ _) _ _ => eapply wf_elimSq; gw_premise
+  | |- eq_tm _ _ _ (tmElimSq _ _ _ _ _ (tmSq _ _ _)) _ _ _ => eapply eqtm_elimSq_sq; gw_premise
+  | |- eq_tm _ _ _ (tmElimSq _ _ _ _ _ _) _ _ _ => eapply eqtm_elimSq; gw_premise
   (* [case] (M12b): its branches' types, through the induction hypotheses *)
   | |- wf_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ _) _ _ => eapply wf_case; gw_premise
   | |- eq_tm _ _ _ (tmCase _ _ _ _ _ _ _ _ (tmInl _ _ _ _ _)) _ _ _ => eapply eqtm_case_inl; gw_premise
@@ -1030,6 +1043,11 @@ Proof. now destruct γ. Qed.
 Lemma gwa_elimW l l' l'' A B M c t :
   (tmElimW l l' l'' A B M c t)⟦γ⟧ = tmElimW l l' l'' A⟦γ⟧ B⟦γ⟧ M⟦γ⟧ c⟦γ⟧ t⟦γ⟧.
 Proof. now destruct γ. Qed.
+Lemma gwa_tySq l A : (tySq l A)⟦γ⟧ = tySq l A⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_sq l A a : (tmSq l A a)⟦γ⟧ = tmSq l A⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_elimSq l l' A M c t :
+  (tmElimSq l l' A M c t)⟦γ⟧ = tmElimSq l l' A⟦γ⟧ M⟦γ⟧ c⟦γ⟧ t⟦γ⟧.
+Proof. now destruct γ. Qed.
 Lemma gwa_inl l l' A B a : (tmInl l l' A B a)⟦γ⟧ = tmInl l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_inr l l' A B a : (tmInr l l' A B a)⟦γ⟧ = tmInr l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_case l l' l'' A B M c1 c2 t :
@@ -1123,6 +1141,9 @@ Ltac push_gwa_at h k := lazymatch h with
   | @tmId => k gwa_tmId
   | @tmSEq => k gwa_tmSEq
   | @tmJ => k gwa_J
+  | @tySq => k gwa_tySq
+  | @tmSq => k gwa_sq
+  | @tmElimSq => k gwa_elimSq
   end.
 Ltac push_gwa := repeat match goal with
   | |- context [@gwa _ _ _ ?t] => let h := head_of t in push_gwa_at h ltac:(fun L => rewrite L)

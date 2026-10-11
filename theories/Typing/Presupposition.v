@@ -914,6 +914,113 @@ Proof.
 Qed.
 
 
+(** Propositional truncation (M16a), gated by [compt]. *)
+Lemma pre_tySq_r {Γ l l' A'} : compt i -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A' @ l ] -> [ G ; Γ ⊢[ i ] tySq l' A' @ l ].
+Proof.
+  intros cp Hl HA'. eapply wft_lconv with (l' := l'); [|exact Hl].
+  apply wft_sq; [exact cp | exact (lequiv_wf_r _ _ _ Hl) |].
+  eapply wft_lconv; [exact HA' | now apply lequiv_sym].
+Qed.
+
+Lemma pre_sq_r {Γ l l' A A' a'} : compt i -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a' : A @ l ] -> [ G ; Γ ⊢[ i ] tmSq l' A' a' : tySq l A @ l ].
+Proof.
+  intros cp Hl HAA HA HA' Ha.
+  assert (HA'l : [ G ; Γ ⊢[ i ] A' @ l' ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
+  assert (Ha' : [ G ; Γ ⊢[ i ] a' : A' @ l' ])
+    by (eapply wf_lconv; [eapply conv_tm'; [exact Ha | apply eqty_sym, HAA] | now apply lequiv_sym]).
+  assert (Hs : [ G ; Γ ⊢[ i ] tmSq l' A' a' : tySq l' A' @ l' ])
+    by (apply wf_sq; [exact cp | exact (lequiv_wf_r _ _ _ Hl) | exact HA'l | exact Ha']).
+  eapply wf_lconv with (l' := l'); [|exact Hl].
+  eapply conv_tm'; [exact Hs |].
+  eapply eqty_lconv; [apply eqty_sq; [exact cp | exact Hl | exact HA | exact HAA] | apply lequiv_sym, Hl].
+Qed.
+
+(** The step, moved to the primed carrier's context and the primed motive
+    at the primed [squash], as [case_branch_r]. *)
+Lemma sq_branch_r {Γ l1 l2 l3 l4 A A' M M' c} : compt i ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M @ l2 ] ->
+  [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M ≅ M' @ l2 ] ->
+  [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] c : tySq l2 M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))] @ l2 ] ->
+  [ G ; Γ ,, A' @ l3 ⊢[ i ] c : tySq l4 M'⟨rlift ↑⟩[lsingle (tmSq l3 A'⟨↑⟩ (var 0))] @ l4 ].
+Proof.
+  intros cp H13 H24 HA HAA HA' HM HMM HM' Hc.
+  assert (HA'l : [ G ; Γ ⊢[ i ] A' @ l3 ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
+  assert (HΓA' : [ G ; Γ ,, A' @ l3 ⊢[ i ] ]) by (apply ext_wf; [exact HA'l | exact (lequiv_wf_r _ _ _ H13)]).
+  pose proof (stab_tm Hi HAA H13 HΓA' Hc) as Hc'.
+  assert (Hv0 : [ G ; Γ ,, A' @ l3 ⊢[ i ] var 0 : A⟨↑⟩ @ l1 ]).
+  { eapply wf_lconv; [eapply conv_tm'; [apply var0_wf; [exact Hi | exact HΓA'] |] | exact H13].
+    eapply eqty_lconv; [apply wk1_eqty; [exact Hi | exact HΓA' | exact HAA] | now apply lequiv_sym]. }
+  assert (HwA : [ G ; Γ ,, A' @ l3 ⊢[ i ] A⟨↑⟩ @ l1 ]) by (apply wk1_ty; assumption).
+  assert (HwA' : [ G ; Γ ,, A' @ l3 ⊢[ i ] A'⟨↑⟩ @ l1 ]) by (apply wk1_ty; assumption).
+  assert (HwAA : [ G ; Γ ,, A' @ l3 ⊢[ i ] A⟨↑⟩ ≅ A'⟨↑⟩ @ l1 ]) by (apply wk1_eqty; assumption).
+  assert (Hf : [ G ; Γ ,, A' @ l3 ⊢[ i ] tmSq l1 A⟨↑⟩ (var 0) : (tySq l1 A)⟨↑⟩ @ l1 ])
+    by (apply wf_sq; [exact cp | exact (lequiv_wf_l _ _ _ H13) | exact HwA | exact Hv0]).
+  assert (Hf' : [ G ; Γ ,, A' @ l3 ⊢[ i ] tmSq l3 A'⟨↑⟩ (var 0) : (tySq l1 A)⟨↑⟩ @ l1 ])
+    by exact (pre_sq_r cp H13 HwAA HwA HwA' Hv0).
+  assert (Hff : [ G ; Γ ,, A' @ l3 ⊢[ i ] tmSq l1 A⟨↑⟩ (var 0) ≅ tmSq l3 A'⟨↑⟩ (var 0) : (tySq l1 A)⟨↑⟩ @ l1 ])
+    by (apply eqtm_sq; [exact cp | exact H13 | exact HwA | exact HwAA | apply eqtm_refl, Hv0]).
+  pose proof (case_branch_eq HΓA' HM HMM HM' Hf Hf' Hff) as EB.
+  assert (HX : [ G ; Γ ,, A' @ l3 ⊢[ i ] M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))] @ l2 ]).
+  { rewrite liftshift_single_ty. exact (wf_ty_subst Hi HM (lsub_wf_up1 HΓA' (wf_tm_dnf Hf) Hf)). }
+  eapply wf_lconv; [eapply conv_tm'; [exact Hc' |] | exact (lequiv_sym _ _ _ H24)].
+  apply eqty_sym, eqty_sq; [exact cp | exact H24 | exact HX | exact EB].
+Qed.
+
+Lemma pre_elimSq_r {Γ l1 l2 l3 l4 A A' M M' c' t t'} : compt i ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M @ l2 ] ->
+  [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M ≅ M' @ l2 ] ->
+  [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] c' : tySq l2 M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))] @ l2 ] ->
+  [ G ; Γ ⊢[ i ] t ≅ t' : tySq l1 A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] t : tySq l1 A @ l1 ] -> [ G ; Γ ⊢[ i ] t' : tySq l1 A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] tmElimSq l3 l4 A' M' c' t' : tySq l2 M[lsingle t] @ l2 ].
+Proof.
+  intros cp H13 H24 HAA HA HA' HM HMM HM' Hc Htt Ht Ht'.
+  pose proof (lequiv_wf_r _ _ _ H13) as W3. pose proof (lequiv_wf_r _ _ _ H24) as W4.
+  assert (HA'3 : [ G ; Γ ⊢[ i ] A' @ l3 ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
+  assert (ESS : [ G ; Γ ⊢[ i ] tySq l1 A ≅ tySq l3 A' @ l1 ])
+    by (apply eqty_sq; [exact cp | exact H13 | exact HA | exact HAA]).
+  assert (HΓS' : [ G ; Γ ,, tySq l3 A' @ l3 ⊢[ i ] ])
+    by (apply ext_wf; [apply wft_sq; [exact cp | exact W3 | exact HA'3] | exact W3]).
+  assert (HM'4 : [ G ; Γ ,, tySq l3 A' @ l3 ⊢[ i ] M' @ l4 ])
+    by (eapply wft_lconv; [exact (stab_ty Hi ESS H13 HΓS' HM') | now apply lequiv_sym]).
+  assert (HMt : [ G ; Γ ⊢[ i ] M[lsingle t] ≅ M'[lsingle t'] @ l2 ]).
+  { eapply eqty_trans.
+    - apply (wf_ty_func HM (d' := lsingle t')). now apply lsub_eq_single.
+    - exact (eqty_single Hi HMM Ht'). }
+  assert (HMs : [ G ; Γ ⊢[ i ] M[lsingle t] @ l2 ]) by exact (wf_ty_single Hi HM Ht).
+  assert (Ht'3 : [ G ; Γ ⊢[ i ] t' : tySq l3 A' @ l3 ])
+    by (eapply wf_lconv; [eapply conv_tm'; [exact Ht' | apply eqty_sym, ESS] | now apply lequiv_sym]).
+  eapply wf_lconv with (l' := l4); [| exact H24].
+  eapply (conv_tm' (T' := tySq l4 M'[lsingle t'])).
+  - apply wf_elimSq; [exact cp | exact W3 | exact W4 | exact HA'3 | exact HM'4
+                     | exact (sq_branch_r cp H13 H24 HA HAA HA' HM HMM HM' Hc) | exact Ht'3].
+  - eapply eqty_lconv; [|apply lequiv_sym, H24].
+    apply eqty_sq; [exact cp | exact H24 | exact HMs | exact HMt].
+Qed.
+
+(** β's right-hand side, at the motive's instance at the [squash]. *)
+Lemma sq_single (M : ty) l A a : nfty A ->
+  M⟨rlift ↑⟩[lsingle (tmSq l A⟨↑⟩ (var 0))][lsingle a] = M[lsingle (tmSq l A a)].
+Proof. intros NA. rewrite liftshift_single_ty, up1_single_ty, subst_sq, shift_single_ty by assumption. reflexivity. Qed.
+
+Lemma pre_elimSq_sq_rhs {Γ l l' A M c a} : [ G ; Γ ⊢[ i ] A @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] c : tySq l' M⟨rlift ↑⟩[lsingle (tmSq l A⟨↑⟩ (var 0))] @ l' ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] c[lsingle a] : tySq l' M[lsingle (tmSq l A a)] @ l' ].
+Proof.
+  intros HA Hc Ha. rewrite <- (sq_single M l A a (wf_ty_nf HA)).
+  exact (wf_tm_single Hi Hc Ha).
+Qed.
+
+
 (** Strict equality's codes (M10c). *)
 Lemma pre_codeseq_r {Γ l l' s s' t' u'} :
   lequiv (gL G) l l' -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
@@ -3017,7 +3124,7 @@ Proof. intros H1 H2 H3 H4 H5; exact (proj2 (ctx_conv_ext Hi H1 H2 H3 H4 H5)). Qe
 #[export] Hint Resolve wft_nat wft_pi wft_U wft_El wf_code_nat wf_code_U wf_code_pi wf_zero
   wf_succ wf_natrec wf_lam wf_app wfc_ext in_ctx_wf wf_ty_single wf_tm_single
   wft_sig wf_code_sig wf_pair wf_fst wf_snd wft_seq wf_srefl wf_elimSEmpty wft_id wf_idrefl wf_J wf_code_id wf_code_seq wf_elimEmpty wft_sum wf_inl wf_inr
-  ctx_of_wf_ty ctx_of_wf_tm ctx_of_eqty ctx_of_eqtm lequiv_wf_l lequiv_wf_r compt_notV : presup.
+  wft_sq wf_sq wf_elimSq ctx_of_wf_ty ctx_of_wf_tm ctx_of_eqty ctx_of_eqtm lequiv_wf_l lequiv_wf_r compt_notV : presup.
 #[export] Hint Extern 1 (lwf _ _) =>
   solve [cbn; intuition eauto using lequiv_wf_l, lequiv_wf_r] : presup.
 #[export] Hint Extern 1 =>
@@ -3220,7 +3327,17 @@ Proof.
              | solve [eapply wf_supf; eauto 3 using compt_self with presup]
              | solve [eapply wf_elimWf; eauto 3 using compt_self with presup]
              | solve [eapply wf_elimWf; try eassumption; eapply wf_supf; eauto using compt_self]
-             | solve [eapply wf_ty_single; try eassumption; eapply wf_supf; eauto using compt_self] ].
+             | solve [eapply wf_ty_single; try eassumption; eapply wf_supf; eauto using compt_self]
+             (* propositional truncation (M16a) *)
+             | solve [eapply pre_tySq_r; eassumption]
+             | solve [eapply pre_sq_r; eassumption]
+             | solve [eapply pre_elimSq_r; eassumption]
+             | solve [eapply pre_elimSq_sq_rhs; eassumption]
+             | solve [apply wft_sq; eauto 3 with presup]
+             | solve [eapply wf_elimSq; eauto 3 with presup]
+             | solve [apply wft_sq; try eassumption; try solve [eauto with presup];
+                      eapply wf_ty_single; try eassumption; eapply wf_sq; eassumption]
+             | solve [eapply wf_elimSq; try eassumption; eapply wf_sq; eassumption] ].
 Qed.
 
 Section Named.

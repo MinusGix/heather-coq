@@ -219,6 +219,20 @@ Lemma inva_case {G i Γ l l' l'' A B M c1 c2 t T k} : [ G ; Γ ⊢[ i ] tmCase l
     lvl_eq (gL G) k l'' /\ [ G ; Γ ⊢[ typeof i ] T ≅ M[lsingle t] @ k ].
 Proof. inv_tm_any. Qed.
 
+(** Propositional truncation (M16a). *)
+Lemma inva_sq {G i Γ l A a T k} : [ G ; Γ ⊢[ i ] tmSq l A a : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\
+    lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ typeof i ] T ≅ tySq l A @ k ].
+Proof. inv_tm_any. Qed.
+
+Lemma inva_elimSq {G i Γ l l' A M c t T k} : [ G ; Γ ⊢[ i ] tmElimSq l l' A M c t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, tySq l A @ l ⊢[ i ] M @ l' ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] c : tySq l' M⟨rlift ↑⟩[lsingle (tmSq l A⟨↑⟩ (var 0))] @ l' ] /\
+    [ G ; Γ ⊢[ i ] t : tySq l A @ l ]) /\
+    lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ typeof i ] T ≅ tySq l' M[lsingle t] @ k ].
+Proof. inv_tm_any. Qed.
+
 (** Well-founded trees (M13a). *)
 Lemma inva_sup {G i Γ l l' A B a f T k} : [ G ; Γ ⊢[ i ] tmSup l l' A B a f : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ] /\

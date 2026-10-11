@@ -49,6 +49,8 @@ Inductive ty : Type :=
 | tyFin (n : tm)                          (* Fin(n) @ 0 *)
 (* finitary well-founded trees (M15a): shapes [A], arity [N] at each shape *)
 | tyWf (l : lvl) (A : ty) (N : tm)        (* Wf^l(x : A). N @ l      N: +1 *)
+(* propositional truncation (M16a), level-indexed: proof irrelevant *)
+| tySq (l : lvl) (A : ty)                 (* ∥A∥^l @ l *)
 with tm : Type :=
 | var (n : nat)
 | tmErr
@@ -137,6 +139,12 @@ with tm : Type :=
     (* sup_f^l(x : A. N; a; cs)      N: +1 *)
 | tmElimWf (l l' : lvl) (A : ty) (N : tm) (M : ty) (c t : tm)
     (* elim_Wf^{l,l'}(x : A. N; z. M; a cs ih. c; t) : M[t/z] @ l'      N, M: +1, c: +3 *)
+(* propositional truncation (M16a): [squash] carries the carrier; the
+   eliminator's motive binds the scrutinee and its step the payload, and its
+   result is again a squash *)
+| tmSq (l : lvl) (A : ty) (a : tm)        (* squash^l(A; a) : ∥A∥^l *)
+| tmElimSq (l l' : lvl) (A : ty) (M : ty) (c t : tm)
+    (* ind_∥∥^{l,l'}(A; z. M; x. c; t) : ∥M[t/z]∥^{l'} @ l', t : ∥A∥^l      M, c: +1 *)
 with ctx : Type :=
 | cnil
 | cvar (g : nat)
@@ -228,6 +236,7 @@ Fixpoint ren_ty (T : ty) (r : rsub) {struct T} : ty :=
   | tyVec l A n => tyVec l (ren_ty A r) (ren_tm n r)
   | tyFin n => tyFin (ren_tm n r)
   | tyWf l A N => tyWf l (ren_ty A r) (ren_tm N (rlift r))
+  | tySq l A => tySq l (ren_ty A r)
   end
 with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   match t with
@@ -289,6 +298,8 @@ with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   | tmSupf l A N a cs => tmSupf l (ren_ty A r) (ren_tm N (rlift r)) (ren_tm a r) (ren_tm cs r)
   | tmElimWf l l' A N M c t =>
       tmElimWf l l' (ren_ty A r) (ren_tm N (rlift r)) (ren_ty M (rlift r)) (ren_tm c (rlift (rlift (rlift r)))) (ren_tm t r)
+  | tmSq l A a => tmSq l (ren_ty A r) (ren_tm a r)
+  | tmElimSq l l' A M c t => tmElimSq l l' (ren_ty A r) (ren_ty M (rlift r)) (ren_tm c (rlift r)) (ren_tm t r)
   end
 with lren (d : lsub) (r : rsub) {struct d} : lsub :=
   match d with
@@ -331,6 +342,7 @@ Fixpoint gren_ty (T : ty) (ξ : nat -> nat) {struct T} : ty :=
   | tyVec l A n => tyVec l (gren_ty A ξ) (gren_tm n ξ)
   | tyFin n => tyFin (gren_tm n ξ)
   | tyWf l A N => tyWf l (gren_ty A ξ) (gren_tm N ξ)
+  | tySq l A => tySq l (gren_ty A ξ)
   end
 with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   match t with
@@ -393,6 +405,8 @@ with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   | tmSupf l A N a cs => tmSupf l (gren_ty A ξ) (gren_tm N ξ) (gren_tm a ξ) (gren_tm cs ξ)
   | tmElimWf l l' A N M c t =>
       tmElimWf l l' (gren_ty A ξ) (gren_tm N ξ) (gren_ty M ξ) (gren_tm c ξ) (gren_tm t ξ)
+  | tmSq l A a => tmSq l (gren_ty A ξ) (gren_tm a ξ)
+  | tmElimSq l l' A M c t => tmElimSq l l' (gren_ty A ξ) (gren_ty M ξ) (gren_tm c ξ) (gren_tm t ξ)
   end
 with gcren (Γ : ctx) (ξ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -432,6 +446,7 @@ Fixpoint uren_ty (T : ty) (ρ : nat -> nat) {struct T} : ty :=
   | tyVec l A n => tyVec (lvren l ρ) (uren_ty A ρ) (uren_tm n ρ)
   | tyFin n => tyFin (uren_tm n ρ)
   | tyWf l A N => tyWf (lvren l ρ) (uren_ty A ρ) (uren_tm N ρ)
+  | tySq l A => tySq (lvren l ρ) (uren_ty A ρ)
   end
 with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   match t with
@@ -502,6 +517,8 @@ with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   | tmSupf l A N a cs => tmSupf (lvren l ρ) (uren_ty A ρ) (uren_tm N ρ) (uren_tm a ρ) (uren_tm cs ρ)
   | tmElimWf l l' A N M c t =>
       tmElimWf (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_tm N ρ) (uren_ty M ρ) (uren_tm c ρ) (uren_tm t ρ)
+  | tmSq l A a => tmSq (lvren l ρ) (uren_ty A ρ) (uren_tm a ρ)
+  | tmElimSq l l' A M c t => tmElimSq (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_ty M ρ) (uren_tm c ρ) (uren_tm t ρ)
   end
 with ucren (Γ : ctx) (ρ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -540,6 +557,7 @@ Fixpoint subst_ty (T : ty) (d : lsub) {struct T} : ty :=
   | tyVec l A n => tyVec l (subst_ty A d) (subst_tm n d)
   | tyFin n => tyFin (subst_tm n d)
   | tyWf l A N => tyWf l (subst_ty A d) (subst_tm N (llift d))
+  | tySq l A => tySq l (subst_ty A d)
   end
 with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   match t with
@@ -605,6 +623,8 @@ with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   | tmSupf l A N a cs => tmSupf l (subst_ty A d) (subst_tm N (llift d)) (subst_tm a d) (subst_tm cs d)
   | tmElimWf l l' A N M c t =>
       tmElimWf l l' (subst_ty A d) (subst_tm N (llift d)) (subst_ty M (llift d)) (subst_tm c (llift (llift (llift d)))) (subst_tm t d)
+  | tmSq l A a => tmSq l (subst_ty A d) (subst_tm a d)
+  | tmElimSq l l' A M c t => tmElimSq l l' (subst_ty A d) (subst_ty M (llift d)) (subst_tm c (llift d)) (subst_tm t d)
   end
 with lcomp (d' : lsub) (d : lsub) {struct d'} : lsub :=       (* d' ∘ d *)
   match d' with
@@ -770,6 +790,7 @@ Fixpoint gsubst_ty (T : ty) (σ : gsub) {struct T} : ty :=
   | tyVec l A n => tyVec l (gsubst_ty A σ) (gsubst_tm n σ)
   | tyFin n => tyFin (gsubst_tm n σ)
   | tyWf l A N => tyWf l (gsubst_ty A σ) (gsubst_tm N σ)
+  | tySq l A => tySq l (gsubst_ty A σ)
   end
 with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   match t with
@@ -834,6 +855,8 @@ with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   | tmSupf l A N a cs => tmSupf l (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_tm a σ) (gsubst_tm cs σ)
   | tmElimWf l l' A N M c t =>
       tmElimWf l l' (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_ty M σ) (gsubst_tm c σ) (gsubst_tm t σ)
+  | tmSq l A a => tmSq l (gsubst_ty A σ) (gsubst_tm a σ)
+  | tmElimSq l l' A M c t => tmElimSq l l' (gsubst_ty A σ) (gsubst_ty M σ) (gsubst_tm c σ) (gsubst_tm t σ)
   end
 with gcsubst (Γ : ctx) (σ : gsub) {struct Γ} : ctx :=
   match Γ with
@@ -873,6 +896,7 @@ Fixpoint usubst_ty (T : ty) (φ : nat -> lvl) {struct T} : ty :=
   | tyVec l A n => tyVec (lvsubst l φ) (usubst_ty A φ) (usubst_tm n φ)
   | tyFin n => tyFin (usubst_tm n φ)
   | tyWf l A N => tyWf (lvsubst l φ) (usubst_ty A φ) (usubst_tm N φ)
+  | tySq l A => tySq (lvsubst l φ) (usubst_ty A φ)
   end
 with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   match t with
@@ -948,6 +972,8 @@ with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   | tmSupf l A N a cs => tmSupf (lvsubst l φ) (usubst_ty A φ) (usubst_tm N φ) (usubst_tm a φ) (usubst_tm cs φ)
   | tmElimWf l l' A N M c t =>
       tmElimWf (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_tm N φ) (usubst_ty M φ) (usubst_tm c φ) (usubst_tm t φ)
+  | tmSq l A a => tmSq (lvsubst l φ) (usubst_ty A φ) (usubst_tm a φ)
+  | tmElimSq l l' A M c t => tmElimSq (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_ty M φ) (usubst_tm c φ) (usubst_tm t φ)
   end
 with ucsubst (Γ : ctx) (φ : nat -> lvl) {struct Γ} : ctx :=
   match Γ with

@@ -154,6 +154,14 @@ Proof.
                    | exact (whnf_ne _ Hn) | exact (whnf_ne _ Hn') | apply actmnf_empty_irr].
 Qed.
 
+(** The squash type (M16a): irrelevance, as at [Empty]. *)
+Lemma lift_sq {G i Γ T l l1 A} : [ G ; Γ ⊢[ i ] T ⤳* tySq l1 A @ l ] -> Lift i G Γ T l.
+Proof.
+  intros HT t t' T0 Ht Ht' D ET. destruct (ac_tmne_whne D) as [Hn Hn'].
+  eapply actm_red; [exact (tyred_red _ _ _ _ _ _ HT) | exact (whnf_tySq _ _) | constructor | constructor
+                   | exact (whnf_ne _ Hn) | exact (whnf_ne _ Hn') | apply actmnf_sq_irr].
+Qed.
+
 (** ** The weakenings of the inferred function types *)
 
 Lemma gwk1_tmnee {G D Γ ν ν' W} : ac_tmnee G Γ ν ν' W -> ac_tmnee (gext G D) Γ⟪S⟫ ν⟪S⟫ ν'⟪S⟫ W⟪S⟫.
@@ -313,7 +321,8 @@ Proof.
                      HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                      [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
-                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd IHdom arAd HR];
+                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd IHdom arAd HR
+                 | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ IHRQ Hqs Hqt HR];
     try (cbn in Hj; discriminate).
   - exact (lift_posty compt_D HT whnf_tyNat posty_nat).
   - exact (lift_posty compt_D HT (whnf_tyU _) (posty_U _)).
@@ -350,6 +359,7 @@ Proof.
   - exact (lift_posty compt_D HT (whnf_tySum _ _ _ _) (posty_sum _ _ _ _)).
   - exact (lift_posty compt_D HT (whnf_tyW _ _ _ _) (posty_W _ _ _ _)).
   - exact (lift_posty compt_D HT (whnf_tyWf _ _ _) (posty_wf _ _ _)).
+  - exact (lift_sq HT).
 Qed.
 
 (** The identity substitution is related to itself. *)
@@ -390,7 +400,8 @@ Proof.
                      HRA IHRA HRB IHRB Hpa Hta Hpb Htb HR
                  | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                      [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
-                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd IHdom arAd HR].
+                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd IHdom arAd HR
+                 | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ IHRQ Hqs Hqt HR].
   - exact (lift_posty compt_M HT whnf_tyNat posty_nat).
   - exact (lift_posty compt_M HT (whnf_tyU _) (posty_U _)).
   - destruct HV as (HnV & _ & _). exact (lift_posty compt_M HT (whnf_ty_ne _ HnV) (posty_ne _ HnV)).
@@ -452,6 +463,7 @@ Proof.
   - exact (lift_posty compt_M HT (whnf_tySum _ _ _ _) (posty_sum _ _ _ _)).
   - exact (lift_posty compt_M HT (whnf_tyW _ _ _ _) (posty_W _ _ _ _)).
   - exact (lift_posty compt_M HT (whnf_tyWf _ _ _) (posty_wf _ _ _)).
+  - exact (lift_sq HT).
 Qed.
 
 (** At M: at a well-formed level by reducibility, at ω through [UΠ]. *)

@@ -348,6 +348,8 @@ Ltac us_manual :=
   (* [case] (M12b): its branches' types shift the summands inside the
      injection, which the first pass exposes only after [cbn] *)
   | |- context [tmCase _ _ _ _ _ _ _ _ _] => us_rewrite_all; us_step
+  (* [ind_∥∥] (M16a): its step's type shifts the carrier inside the squash *)
+  | |- context [tmElimSq _ _ _ _ _ _] => us_rewrite_all; us_step
   (* [elim_W] (M13a): its step telescope nests the shifts deeper *)
   | |- context [tmElimW _ _ _ _ _ _ _ _] => us_rewrite_all; us_rewrite_all; us_step
   (* [elim_Wf] (M15a): likewise *)

@@ -1000,6 +1000,34 @@ Proof.
           by (push_subst; apply eqty_El; auto using lequiv_refl)
     end.
     eapply eqtm_code_wf; eauto 7 with fung.
+  (* [ind_∥∥] (M16a), as [case]: the motive under the squash, the step
+     under the carrier *)
+  - match goal with
+    | Hd : lsub_eq _ _ ?Δ ?d ?d' ?Γ, Hw : lsub_wf ?G ?i ?Δ ?d ?Γ,
+      wA : wf_ty ?G _ ?Γ ?A ?l,
+      wM : wf_ty ?G _ (?Γ ,, tySq ?l ?A @ ?l) ?M ?l'
+      |- eq_tm _ _ _ (tmElimSq _ _ _ _ _ _) _ _ _ =>
+        pose proof (wf_ty_subst_g wA Hw) as HAd;
+        assert (EA : eq_ty G i Δ A[d] A[d'] l)
+          by (match goal with IH : forall Δ d d', _ -> eq_ty _ _ _ (subst ?x _) _ _ |- _ =>
+                constr_eq x A; eapply IH; exact Hd end);
+        assert (HnS : lsub_eq G i (Δ ,, tySq l A[d] @ l) (llift d) (llift d') (Γ ,, tySq l A @ l))
+          by (eapply lsub_eq_lift_g; [exact Hd | apply wft_sq_typeof; assumption | assumption
+                                     | | reflexivity];
+              push_subst; apply eqty_sq;
+              [apply compt_typeof | now apply lequiv_refl
+              | eapply lift_ty; [exact HAd | apply lle_self_typeof]
+              | eapply lift_eqty; [exact EA | apply lle_self_typeof]]);
+        assert (HnA : lsub_eq G i (Δ ,, A[d] @ l) (llift d) (llift d') (Γ ,, A @ l))
+          by (eapply lsub_eq_lift_g; [exact Hd | eauto 6 with fung | assumption | eauto 6 with fung | reflexivity]);
+        pose proof (wf_ty_subst_g wM (lsub_eq_l HnS));
+        assert (eq_ty G i (Δ ,, tySq l A[d] @ l) M[llift d] M[llift d'] l')
+          by (match goal with IH : forall Δ d d', _ -> eq_ty _ _ _ (subst ?x _) _ _ |- _ =>
+                constr_eq x M; eapply IH; exact HnS end)
+    end.
+    eapply eqtm_elimSq; try solve [eauto 6 with fung].
+    all: eapply eq_tm_retype;
+      [match goal with IH : _ |- _ => eapply IH; solve [eauto 6 with fung] end | sub_rw; reflexivity].
 Qed.
 
 Theorem functionality :
