@@ -12,9 +12,11 @@ s=open(path,encoding='utf-8').read()
 lines=open(out,encoding='utf-8').read().replace('\nshould start',' should start').split('\n')
 sug=[]
 for i,l in enumerate(lines):
-    m=re.match(r"The proof of (\S+) should start with one of the following commands:",l)
+    m=re.match(r"The proof of (\S+) should start with one of the following commands:(.*)",l)
     if m:
-        u=lines[i+1].strip()
+        # a long name wraps the message, which can put the first
+        # suggestion on the same line
+        u=(m.group(2) or lines[i+1]).strip()
         assert u.startswith('Proof using') and u.endswith('.'),u
         sug.append((m.group(1),u))
 kw=r"(?:Lemma|Theorem|Corollary|Fact|Remark|Proposition|Definition|Instance|Fixpoint|Example)"

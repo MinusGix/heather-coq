@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Annotate section lemmas with `Proof using …`, so that `make vos` skips
+# their proofs (without the clause, vos must run a section proof to learn
+# which section variables it uses).
+#
+# Usage (repository root, inside `nix develop path:.`, dependencies built):
+#   tools/proof-using theories/X/A.v [theories/Y/B.v ...]
+#
+# Compiles a copy of each file with `Set Suggest Proof Using.` after its
+# last `Require` (in parallel, one coqc per file) and applies Coq's first
+# suggestion to each lemma with tools/add_proof_using.py. Then rebuild and
+# check the annotated files compile (`make`): a suggestion is what the
+# proof used, so it always does.
+#
+# To find the files worth annotating: `make TIMED=1 vos` prints each
+# file's vos time; a sectioned file whose vos time is close to its full
+# time is running its proofs.
+set -euo pipefail
+command -v coqc >/dev/null || { echo 'run inside `nix develop path:.`' >&2; exit 1; }
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+pids=()
+for f in "$@"; do
+  b=$(basename "$f" .v)
+  python3 - "$f" "$tmp/$b.v" <<'EOF'
+import re, sys
+src, dst = sys.argv[1], sys.argv[2]
+s = open(src, encoding='utf-8').read()
+reqs = list(re.finditer(r'(?m)^(?:From \S+ )?Require [^.]*\.\n', s))
+at = reqs[-1].end() if reqs else 0
+open(dst, 'w', encoding='utf-8').write(s[:at] + 'Set Suggest Proof Using.\n' + s[at:])
+EOF
+  ( cd "$tmp" && coqc -Q "$OLDPWD/theories" DeLaM -w -notation-overridden \
+      -o "$tmp/$b.vo" "$tmp/$b.v" > "$tmp/$b.out" 2>&1 \
+      || { echo "coqc failed on $f:" >&2; tail -20 "$tmp/$b.out" >&2; exit 1; } ) &
+  pids+=($!)
+done
+for p in "${pids[@]}"; do wait "$p"; done
+for f in "$@"; do
+  b=$(basename "$f" .v)
+  python3 tools/add_proof_using.py "$f" "$tmp/$b.out"
+done
