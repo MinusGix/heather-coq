@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# A timed build and its report: wall time, critical path, slowest files
+# and proofs, plus a per-declaration snapshot to compare against later.
+#
+# Usage (from the repository root, inside `nix develop path:.`):
+#   tools/build-profile [-j N] [--clean] [--profile] [--label NAME]
+#
+#   -j N        parallel jobs (default: the number of cores)
+#   --clean     `make clean` first, for a cold-build measurement
+#   --profile   also write Coq's own `-profile` traces
+#               (theories/**/*.v.prof.json.gz, Chrome trace format: open
+#               one in https://ui.perfetto.dev or chrome://tracing)
+#   --label L   name the snapshot (default: the short git revision)
+#
+# Writes _profile/<label>/{build.log,report.txt,decls.tsv,files.tsv}.
+# Compare two runs with
+#   tools/proofs.py --diff _profile/A/decls.tsv _profile/B/decls.tsv
+# (only runs on one machine, at one -j, compare).
+set -euo pipefail
+jobs=$(nproc)
+clean=0
+profile=
+label=
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -j) jobs=$2; shift 2 ;;
+    -j*) jobs=${1#-j}; shift ;;
+    --clean) clean=1; shift ;;
+    --profile) profile=1; shift ;;
+    --label) label=$2; shift 2 ;;
+    *) echo "unknown argument: $1" >&2; exit 2 ;;
+  esac
+done
+command -v coqc >/dev/null || { echo 'run inside `nix develop path:.`' >&2; exit 1; }
+[ -n "$label" ] || label=$(git rev-parse --short HEAD 2>/dev/null || date +%Y%m%d-%H%M%S)
+out=_profile/$label
+mkdir -p "$out"
+[ $clean = 1 ] && make clean >/dev/null
+# Stale timings from an earlier build would be counted as this one's.
+find theories -name '*.v.timing' -delete
+start=$(date +%s.%N)
+make -j"$jobs" TIMING=1 ${profile:+PROFILE=1} 2>&1 | tee "$out/build.log"
+status=${PIPESTATUS[0]}
+end=$(date +%s.%N)
+wall=$(python3 -c "print(f'{$end - $start:.0f}')")
+{
+  echo "label $label, rev $(git rev-parse --short HEAD 2>/dev/null || echo '?')$(git diff --quiet 2>/dev/null || echo ' (dirty)'), -j$jobs, $(nproc) cores, $(date -u +%FT%TZ)"
+  echo "wall ${wall} s (make exit $status)"
+  python3 tools/critpath.py -j "$jobs" 25
+  echo
+  python3 tools/proofs.py -n 30
+} | tee "$out/report.txt"
+python3 tools/proofs.py --save "$out/decls.tsv" >/dev/null
+python3 tools/critpath.py --tsv > "$out/files.tsv"
+echo "report: $out/report.txt"
+exit "$status"
