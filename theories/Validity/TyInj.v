@@ -5,7 +5,7 @@
     with the levels related left to right. ([Π] and [U] have [pi_inj_c]
     and [U_inj_c].) *)
 From DeLaM.Typing Require Export InvAny.
-From DeLaM.Validity Require Export Uniform.
+From DeLaM.Validity Require Export DeclConsequences.
 
 Lemma upi_inj {G Γ n n' l l' T T' k} : [ G ; Γ ⊢[ lM ] tyUPi n l T ≅ tyUPi n' l' T' @ k ] ->
   n' = n /\ lequiv (n + gL G) l l' /\ [ gctx_uwk n G ; Γ⟨ush n⟩ᵤ ⊢[ lM ] T ≅ T' @ l ].
