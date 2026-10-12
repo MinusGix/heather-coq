@@ -355,9 +355,27 @@ formers, so it gets worse with every extension:
   `tools/depgraph.py` finds both (the latest module each declaration
   needs; the longest chain of declarations using one another).
   Requiring what is used and splitting such files took the critical
-  path from 853 s to 687 s (903 s → 748 s wall at -j4). Sectioned files resist splitting: a
-  part in another file cannot reopen the section, so its lemmas would
-  need the section's arguments at every use.
+  path from 853 s to 687 s (903 s → 748 s wall at -j4).
+- **A section split across files** (`RecS*`, 2026-10-12). A section
+  cannot be reopened in another file, so `RecS`'s per-former lemmas,
+  each independent of the others, ran in one 100 s file. Its hypotheses are now
+  one class (`RecH.RecHyps`, over the data), and each file reopens a
+  section of the same name over the same implicit data, takes the
+  instance `{RH : RecHyps …}` and declares every hypothesis as a `Let`
+  of its field: statements, proofs and `Proof using` lines are
+  unchanged, and a lemma from another file, applied without its
+  section arguments, finds them by instance resolution of `RH`. What
+  this needs: every section variable implicit (`Context {EP EM …}`);
+  `Ltac`s defined in a section vanish at its `End`, so the shared ones
+  live outside it and name a hypothesis by its projection
+  (`RecH.He`); a definition that uses data but no hypothesis (`RT`,
+  `Rt`) cannot infer its data, so the files using it bind it to theirs
+  with a `Local Notation`; and an argument proved by `ltac:(…)` may be
+  elaborated before `RH` is found, so pass `(RH := RH)` there.
+  The split (a base, eight parts, the recursion) took the RecS chain
+  from 100 s to 47 s and the critical path from 693 s to 634 s (743 s
+  → 713 s wall at -j4, back to back; total CPU +25 s for the parts'
+  repeated loading).
 - Measure before guessing (see `CLAUDE.md`, Build, for the tools):
   `tools/build-profile` for a timed build and its report,
   `tools/proofs.py` for the slowest proofs (tactics vs `Qed`),
