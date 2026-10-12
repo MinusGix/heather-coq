@@ -346,6 +346,18 @@ formers, so it gets worse with every extension:
 - **One typing, many proofs.** `elim_Wf`'s branch scope was typed by
   `wtop` inside `brΓ_conv` (22 s, critical path) and again in `RecAdm`;
   `br50_scope` (`Typing/WfScope.v`, off the path) types it once.
+- **A chain of `Require`s is a chain of the build** (2026-10-12 pass).
+  Files that each required the previous one (the Validity per-former
+  files, `Generic` after `StaticCode`, `AlgPrereq` after the whole of
+  `FundamentalM`) ran one after another although most used only a
+  common base; and a file whose proofs are independent syntax
+  inductions (`LevelEq`'s laws, `AlgDec`'s cases) ran them in sequence.
+  `tools/depgraph.py` finds both (the latest module each declaration
+  needs; the longest chain of declarations using one another).
+  Requiring what is used and splitting such files took the critical
+  path from 853 s to 687 s (903 s → 748 s wall at -j4). Sectioned files resist splitting: a
+  part in another file cannot reopen the section, so its lemmas would
+  need the section's arguments at every use.
 - Measure before guessing (see `CLAUDE.md`, Build, for the tools):
   `tools/build-profile` for a timed build and its report,
   `tools/proofs.py` for the slowest proofs (tactics vs `Qed`),

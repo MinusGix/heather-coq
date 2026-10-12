@@ -25,16 +25,18 @@ list of proof-engineering gotchas. Follow it.
 
 - `nix develop path:. --command make -j4` (Coq 8.20, Equations, smpl from
   the flake). A clean build takes 10 to 22 minutes, depending on the
-  machine. Latest: 876 s wall at -j4 after the 2026-10-11 build-time pass,
-  where the M16a tree measured 1107 s back to back on the same 4-core
-  cloud machine (critical path 1053 s → 826 s, total CPU 1648 s →
-  1395 s). Machines differ by up to 2x, so compare builds on one machine
+  machine. Latest: 748 s wall at -j4 after the 2026-10-12 dependency
+  pass (Requires trimmed, wide files split), where the 2026-10-11 tree
+  measured 903 s back to back on the same 4-core cloud machine
+  (critical path 853 s → 687 s, total CPU 1440 s → 1466 s). Before that:
+  876 s after the 2026-10-11 build-time pass, against 1107 s for M16a
+  (critical path 1053 s → 826 s). Machines differ by up to 2x, so compare builds on one machine
   only; the history of earlier measurements is in git (`git log -p
   CLAUDE.md`). The critical path (Syntax → Typing metatheory → Validity →
   the algorithm) is nearly the whole build, so more than 4 jobs don't
   help; only faster files on that path do.
 - Fast full check: `make -j4 vos && make -j4 vok` (129 s + 355 s = 484 s
-  on the machine above, against 876 s for `make`; `vos` alone took 393 s
+  on the 2026-10-11 tree, against 876 s for its `make`; `vos` alone took 393 s
   before the `Proof using` pass).
   `vos` compiles every file's statements without its proofs; `vok` then
   checks every file's proofs against the `.vos` files, all files in
@@ -60,10 +62,26 @@ list of proof-engineering gotchas. Follow it.
     Ltac profile, compiled from a cut copy against the built tree.
   - `tools/imports.py --path`: files that wait for imports they don't
     reference (a candidate to split, as `LevelEqDef` was).
+  - `tools/depgraph.py FILE.v`: FILE's declarations grouped by the
+    latest module each needs, and its longest chain of declarations
+    using one another (what is left of it if its independent parts built
+    in parallel). `--try FILE=A,B` simulates a changed `Require` (and
+    what its users then have to require); `--ideal` the build with
+    every file requiring only what it references.
   - Inside a proof: `time "tag" tac`, or `Set Ltac Profiling.` …
     `Show Ltac Profile CutOff 2.` in a scratch copy.
   The build-time gotchas in `M1_DESIGN.md` list the patterns that made
   proofs slow; check new proofs against them.
+- **Require what a file uses, not the latest file of its chain.** The
+  dependency graph is the build's parallelism: a file requiring the
+  last file before it waits for everything in between. The Validity
+  per-former files (`Pi` … `WfElim`) each require only the formers they
+  use, and wide files are split into parts that build in parallel
+  (`LevelEq*`, `AlgDec*`, `GRenSyntax`, `RecReductCases`), with the old
+  name kept as the file that exports them. The `.glob` misses names used
+  only inside `Ltac`, hints and instances, so check a trimmed `Require`
+  by compiling (and qualify a lemma name two modules share, as
+  `SubstCommute.liftshift_single_ty` is in `AlgPrereq`).
 - Probe goals by truncating a proof into a scratch file and compiling with
   `coqc -Q theories DeLaM <file>` inside the dev shell.
 
