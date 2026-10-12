@@ -5,7 +5,7 @@
     payload is related at its summand, or to a neutral. [case] steps to a
     branch at an injection, whose motive instance is converted along the
     injection (related to the scrutinee); at a neutral, [case] is neutral. *)
-From DeLaM.Validity Require Export Empty.
+From DeLaM.Validity Require Export CodePi PiComp.
 
 (** ** Syntax: the branch types *)
 

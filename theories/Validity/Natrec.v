@@ -1,5 +1,5 @@
 (** * Validity of the natural-number eliminator *)
-From DeLaM.Validity Require Export PiComp.
+From DeLaM.Validity Require Export App.
 
 Section Natrec.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.

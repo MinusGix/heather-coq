@@ -1,5 +1,5 @@
 (** * Validity of λ-abstraction *)
-From DeLaM.Validity Require Export App.
+From DeLaM.Validity Require Export Pi Red.
 
 Section Lam.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.

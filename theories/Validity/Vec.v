@@ -8,7 +8,7 @@
     [NatRel] ([LR_vec_nat], [LR_fin_nat]). [Σ]'s codomain is [Vec] at the
     predecessor in every Kripke world, which the induction hypothesis gives
     through the relation's Kripke weakening; [+]'s summands are at [Γ]. *)
-From DeLaM.Validity Require Export WElim.
+From DeLaM.Validity Require Export Empty Sum Unit W.
 
 Section Vec.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.

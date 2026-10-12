@@ -6,7 +6,7 @@
     the eliminator is neutral on the neutral its scrutinee reduces to, and
     its motive is instantiated at that neutral through the motive's
     validity. *)
-From DeLaM.Validity Require Export Id.
+From DeLaM.Validity Require Export App.
 
 Section Empty.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.

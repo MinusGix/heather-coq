@@ -5,7 +5,7 @@
     normal forms ([SEqRel]) or self-related neutrals ([SEmptyRel]), so
     irrelevance is immediate, as η is at [Unit]. The eliminator is neutral
     on the neutral its scrutinee reduces to. *)
-From DeLaM.Validity Require Export Unit.
+From DeLaM.Validity Require Export Natrec.
 
 Section SEq.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.

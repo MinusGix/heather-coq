@@ -3,7 +3,7 @@
     Formation, code and decoding, [⟨⟩], and η. The relation at [Unit] only
     asks both sides to reach a weak-head normal form ([UnitRel]), so η is
     immediate: the left term's form and the right term's form witness it. *)
-From DeLaM.Validity Require Export Sigma.
+From DeLaM.Validity Require Export Basic.
 
 Section Unit.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.

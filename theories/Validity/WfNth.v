@@ -8,7 +8,7 @@
     [T]; [elim_Wf]'s motive instantiates it at the children of a [sup_f]
     ([V_nth_at]). Composing validity lemmas needs them closed under global
     weakenings ([VTyG], [VTmG]); the [VG_] lemmas lift the ones used. *)
-From DeLaM.Validity Require Export Wf.
+From DeLaM.Validity Require Export Lam Sigma GLift.
 
 Section WfNth.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.

@@ -10,7 +10,7 @@
     [elim_Wf]'s step argument). The second needs the spine in every
     weakening, as [sup_f]'s premise provides it: the relation at a
     successor is [Σ]'s, whose projections are Kripke. *)
-From DeLaM.Validity Require Export GLift.
+From DeLaM.Validity Require Export Lam Vec.
 
 Section Wf.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
