@@ -2,7 +2,7 @@
 
     [≡ₗ] ([LevelEqDef]) is an equivalence and every syntactic operation
     respects it, given related arguments. *)
-From DeLaM.Syntax Require Export LevelEqDef.
+From DeLaM.Syntax Require Export LevelEqDef GSubst.
 
 (** ** Levels *)
 

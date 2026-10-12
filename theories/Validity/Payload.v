@@ -8,6 +8,7 @@
     Lemma, 05:1055; M3_DESIGN.md E11).  The declarative equalities at P
     make the payload convertible along related contexts and types. *)
 From DeLaM.Typing Require Export CtxConv.
+From DeLaM.Typing Require Export StaticCode.
 From DeLaM.Validity Require Export Consequences.
 
 #[local] Existing Instance LR_P.

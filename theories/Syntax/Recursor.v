@@ -12,7 +12,7 @@
     A β reduct instantiates a branch by peeling its binders one at a time
     with the single substitutions [usingle], [gsingle], [lsingle]
     (M3_DESIGN.md E4). *)
-From DeLaM.Syntax Require Export Universe.
+From DeLaM.Syntax Require Export Term.
 
 (** ** The bundle *)
 

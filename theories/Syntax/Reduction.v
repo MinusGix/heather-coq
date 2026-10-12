@@ -6,7 +6,7 @@
     syntactically would leave well-typed redexes stuck.  Reduction here
     ignores annotations, as annotations never affect computation. *)
 From Coq Require Import Relations Lia.
-From DeLaM.Syntax Require Export NormalForms.
+From DeLaM.Syntax Require Export NormalForms Recursor Universe.
 
 Inductive red : tm -> tm -> Prop :=
 | red_natrec_zero l M s z : red (natrec l M s z zero) s

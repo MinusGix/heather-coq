@@ -10,7 +10,7 @@
     relation of these types", which irrelevance makes exact without
     choice. The backward directions are the forward ones along [πi],
     followed by the round trips. *)
-From DeLaM.Typing Require Export UPerm.
+From DeLaM.Typing Require Export UPerm StaticCode.
 From DeLaM.LogRel Require Export LevelInv.
 
 Definition Gp (π : nat -> nat) (G : gctx) : gctx := G_us G (gL G) (pφ π).

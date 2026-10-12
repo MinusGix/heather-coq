@@ -38,7 +38,9 @@ def refs(path):
         for line in open(path + '.glob', errors='replace'):
             if line.startswith('R'):
                 parts = line.split()
-                if len(parts) > 1 and parts[1].startswith('DeLaM.'):
+                # (`lib` is the `Require` itself, not a use)
+                if len(parts) > 4 and parts[1].startswith('DeLaM.') \
+                        and parts[4] != 'lib':
                     used.add(parts[1])
     except OSError:
         pass

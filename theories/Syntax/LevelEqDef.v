@@ -9,7 +9,7 @@
     mention the relation ([NormalForms], and through it [Reduction] and
     the typing rules) do not wait for its laws, which take over a minute
     to check: it keeps [LevelEq] off the build's critical path. *)
-From DeLaM.Syntax Require Export Recursor.
+From DeLaM.Syntax Require Export Term.
 
 Definition leqv (l l' : lvl) : Prop := forall v, leval v l = leval v l'.
 

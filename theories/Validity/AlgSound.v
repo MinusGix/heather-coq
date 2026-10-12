@@ -10,7 +10,7 @@
     congruences need (instance equations, right bodies, branches) come
     from [AlgPrereq]. *)
 From DeLaM.Typing Require Export Algorithmic.
-From DeLaM.Validity Require Export AlgPrereq.
+From DeLaM.Validity Require Export AlgPrereq DeclConsequences.
 
 (** ** Helpers *)
 

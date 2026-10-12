@@ -5,7 +5,8 @@
     global binding (the right-hand bodies of [letbox] and [TΠ] are typed
     under their own binding). *)
 From DeLaM.Typing Require Export Inversion WfScope.
-From DeLaM.Validity Require Export DeclConsequences.
+From DeLaM.Typing Require Export RecEq.
+From DeLaM.Validity Require Export ReducibleP GSubRelW GvarS GSubRelE.
 
 (** ** Converting a global binding
 
@@ -309,7 +310,7 @@ Lemma wf_case_eq G i Γ l l' l'' A B M c1 c2 t T C1 C2 : T = M[lsingle t] ->
   [ G ; Γ ,, A @ l ⊢[ i ] c1 : C1 @ l'' ] -> [ G ; Γ ,, B @ l' ⊢[ i ] c2 : C2 @ l'' ] ->
   [ G ; Γ ⊢[ i ] t : tySum l l' A B @ lmax l l' ] ->
   [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 t : T @ l'' ].
-Proof. intros -> -> ->; intros; apply wf_case; rewrite ?liftshift_single_ty; assumption. Qed.
+Proof. intros -> -> ->; intros; apply wf_case; rewrite ?SubstCommute.liftshift_single_ty; assumption. Qed.
 
 (** Side conditions in a concrete branch scope: levels, lookups, weakenings,
     and the typing of the objects (contexts at D, codes at C, boxes at M). *)

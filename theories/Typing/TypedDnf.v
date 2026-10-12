@@ -3,7 +3,7 @@
     Moved ahead of global weakening, whose level-growth case needs the
     identity laws of global renaming (M3_DESIGN.md E14). *)
 From DeLaM.Syntax Require Export SubstCommute.
-From DeLaM.Typing Require Export RecWf.
+From DeLaM.Typing Require Export Declarative.
 
 (** ** Typed terms are in (deep) normal form *)
 
