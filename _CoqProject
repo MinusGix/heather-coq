@@ -124,6 +124,15 @@ theories/Validity/ReducibleP.v
 theories/Validity/DeclConsequencesP.v
 theories/Validity/RecObj.v
 theories/Validity/RecExt.v
+theories/Validity/RecSBase.v
+theories/Validity/RecSNat.v
+theories/Validity/RecSSig.v
+theories/Validity/RecSId.v
+theories/Validity/RecSSEq.v
+theories/Validity/RecSSum.v
+theories/Validity/RecSW.v
+theories/Validity/RecSNe.v
+theories/Validity/RecSWf.v
 theories/Validity/RecS.v
 theories/Validity/RecFT.v
 theories/Validity/OmegaV.v
