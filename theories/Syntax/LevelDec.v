@@ -236,7 +236,7 @@ Lemma leq_dec_all :
   (forall Γ Γ', Dec (ctx_leq Γ Γ')) /\ (forall d d', Dec (lsub_leq d d')).
 Proof.
   apply syn_ind; intros;
-    match goal with |- Dec (_ _ ?x) => destruct x end; cbn; dec_solve.
+    match goal with |- Dec (_ _ ?x) => destruct x end; try exact dec_False; cbn; dec_solve.
 Qed.
 
 Lemma ty_leq_dec T T' : Dec (ty_leq T T'). Proof. apply leq_dec_all. Qed.

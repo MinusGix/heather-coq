@@ -100,7 +100,7 @@ Lemma dnf_redT l1 l2 rb l Δ c r : dnftm rb -> dnfctx Δ -> dnfty c ->
   redT l1 l2 rb l Δ c = Some r -> dnftm r.
 Proof.
   intros Hrb HΔ Hc E. unfold rb_br in E.
-  destruct c; cbn [redT] in E; inversion E; subst; cbn in Hc;
+  destruct c; cbn [redT] in E; first [discriminate E | apply Some_inj in E; subst r]; cbn in Hc;
     repeat first [ apply dnf_peelL | apply dnf_peelG | apply dnf_peelU | apply dnf_tup_nth ];
     cbn [dnfo dnftm dnfty dnfctx recT rect]; intuition auto.
 Qed.
@@ -108,7 +108,7 @@ Lemma dnf_redt l1 l2 rb l Δ T c r : dnftm rb -> dnfctx Δ -> dnfty T -> dnftm c
   redt l1 l2 rb l Δ T c = Some r -> dnftm r.
 Proof.
   intros Hrb HΔ HT Hc E. unfold rb_br in E.
-  destruct c; cbn [redt] in E; redt_case T; inversion E; subst; cbn in Hc, HT;
+  destruct c; cbn [redt] in E; redt_case T; first [discriminate E | apply Some_inj in E; subst r]; cbn in Hc, HT;
     repeat first [ apply dnf_peelL | apply dnf_peelG | apply dnf_peelU | apply dnf_tup_nth ];
     cbn [dnfo dnftm dnfty dnfctx recT rect]; intuition auto.
   all: first
@@ -137,7 +137,8 @@ Theorem typed_dnf :
 Proof.
   apply typing_mut; intros; cbn in *;
     try match goal with H : in_gctx _ _ _ |- _ => pose proof (in_gctx_dnf _ _ _ H); cbn in * end;
-    intuition eauto using subst_dnf_ty, subst_dnf, ren_dnf_ty, ren_dnf, in_ctx_dnf with nf.
+    repeat match goal with H : _ /\ _ |- _ => destruct H end;
+    repeat split; eauto using subst_dnf_ty, subst_dnf, ren_dnf_ty, ren_dnf, in_ctx_dnf with nf.
   all: try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle2; cbn; tauto]].
   all: try solve [apply subst_dnf_ty; auto; intros n; apply dnfl_llk; auto].
   all: try solve [apply subst_dnf; auto; intros n; apply dnfl_llk; auto].

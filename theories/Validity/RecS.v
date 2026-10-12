@@ -5368,7 +5368,7 @@ Lemma RTcall {ΔL ΔR k k1 A A'} : [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ] ΔL 
     (recTL k ΔL A) (recTR k1 ΔR A') /\
   LRtmM (lvsubst l1' φ) G' Θ (motT (wrapMT MTR) k1 ΔR (boxT A')) (motT (wrapMT MTR) k1 ΔR (boxT A'))
     (recTR k1 ΔR A') (recTR k1 ΔR A').
-Proof.
+Proof using EL ELM ELP EMl HMT HMT' He Hl1 Hσ Hφ VMT VMTr VΓ.
   intros HΔL HΔ Hw Hw1 E HA EA WA IHA.
   destruct (scr_ty HA EA WA) as [HA' _]. pose proof (lq Hw Hw1 E) as Q.
   pose proof (IHA HA _ _ _ _ HΔ (lequiv_refl _ _ Hw) Q EA WA) as X.
@@ -5387,7 +5387,7 @@ Lemma Rtcall {ΔL ΔR k k1 T T' t t'} : [ G' ; ΔL ⊢[ lD ] ] -> [ G' ⊢[ lD ]
     (rectL k ΔL T t) (rectR k1 ΔR T' t') /\
   LRtmM (lvsubst l2' φ) G' Θ (mott (wrapMt MtR) k1 ΔR T' (boxt t')) (mott (wrapMt MtR) k1 ΔR T' (boxt t'))
     (rectR k1 ΔR T' t') (rectR k1 ΔR T' t').
-Proof.
+Proof using EL ELM ELP EMl HMt HMt' He Hl2 Hσ Hφ VMt VMtr VΓ.
   intros HΔL HΔ Hw Hw1 E HTT Ht Et Wt IHt.
   destruct (scr_tm Ht Et Wt) as [Ht' _]. pose proof (lq Hw Hw1 E) as Q.
   pose proof (IHt Ht _ _ _ _ _ _ HΔ (lequiv_refl _ _ Hw) Q (eq_self_l HTT) HTT Et Wt) as X.
@@ -6310,7 +6310,7 @@ Qed.
 Lemma RT_wf {Δ k A N} : lwf (gL G') k ->
   [ G' ; Δ ⊢[ lC ] A @ k ] -> [ G' ; Δ ,, A @ k ⊢[ lC ] N : tyNat @ lzero ] ->
   RT Δ A k -> Rt (Δ ,, A @ k) N tyNat lzero -> RT Δ (tyWf k A N) k.
-Proof.
+Proof using EL ELM ELP EMl HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR Hσ Hφ VBr VBr' VMT VMTl VMTr VMt VMtr VΓ.
   intros Hw HA HN IHA IHN Hc ΔR kL kR c' HΔ HkL HkR E W. rewrite EL in Hw.
   pose proof (sc_ctx HCD Hc) as HΔL. pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR. leq_inv.
   match goal with H : leqv k ?x |- _ => rename x into k1, H into Ek end.
@@ -6350,7 +6350,7 @@ Qed.
 Lemma Rt_codewf {Δ k s n} : lwf (gL G') k ->
   [ G' ; Δ ⊢[ lC ] s : tyU k @ lsuc k ] -> [ G' ; Δ ,, tyEl k s @ k ⊢[ lC ] n : tyNat @ lzero ] ->
   Rt Δ s (tyU k) (lsuc k) -> Rt (Δ ,, tyEl k s @ k) n tyNat lzero -> Rt Δ (tmWf k s n) (tyU k) (lsuc k).
-Proof.
+Proof using EL ELM ELP EMl HMt HMt' Hbs Hbs' He Hl2 HrbL HrbR Hσ Hφ VBr VBr' VMt VMtl VMtr VΓ.
   intros Hw Hs Hn IHs IHn Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. rewrite EL in Hw.
   pose proof (sc_ctx_tm HCD Hc) as HΔL. pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR. leq_inv.
   match goal with H : leqv k ?x |- _ => rename x into k1, H into Ek end.
@@ -6402,7 +6402,7 @@ Lemma Rt_supf {Δ k A N a cs} : lwf (gL G') k ->
   [ G' ; Δ ⊢[ lC ] cs : tyVec k (tyWf k A N) N[lsingle a] @ k ] ->
   RT Δ A k -> Rt (Δ ,, A @ k) N tyNat lzero -> Rt Δ a A k -> Rt Δ cs (tyVec k (tyWf k A N) N[lsingle a]) k ->
   Rt Δ (tmSupf k A N a cs) (tyWf k A N) k.
-Proof.
+Proof using EL ELM ELP EMl HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR Hσ Hφ VBr VBr' VMT VMTr VMt VMtl VMtr VΓ.
   intros Hw HA HN Ha Hcs IHA IHN IHa IHcs Hc ΔR kL kR TL TR c' HΔ HkL HkR HTL HTR E W. rewrite EL in Hw.
   pose proof (sc_ctx_tm HCD Hc) as HΔL. pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR. leq_inv.
   match goal with H : leqv k ?x |- _ => rename x into k1, H into Ek end.
@@ -6475,7 +6475,7 @@ Lemma Rt_elimWf {Δ k k' A N M c t} : lwf (gL G') k -> lwf (gL G') k' ->
   Rt (Δ ,, A @ k ,, wfcsty k A N @ k ,, wfihty k k' A N M @ lmax lzero k') c (wfstepty k A N M) k' ->
   Rt Δ t (tyWf k A N) k ->
   Rt Δ (tmElimWf k k' A N M c t) (M[lsingle t]) k'.
-Proof.
+Proof using EL ELM ELP EMl HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR Hσ Hφ VBr VBr' VMT VMTr VMt VMtl VMtr VΓ.
   intros Hw Hw' HA HN HM HCs HI Hc Ht IHA IHN IHM IHc IHt Hc0 ΔR kL kR TL TR c0' HΔ HkL HkR HTL HTR E W.
   rewrite EL in Hw, Hw'.
   pose proof (sc_ctx_tm HCD Hc0) as HΔL. pose proof (eqctx_wf_r (i := lD) eq_refl HΔ) as HΔR. leq_inv.

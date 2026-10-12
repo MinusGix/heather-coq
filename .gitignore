@@ -12,3 +12,6 @@ Makefile.coq.conf
 result
 .Makefile.coq.d
 *.timing
+_profile/
+*.prof.json.gz
+tools/__pycache__/

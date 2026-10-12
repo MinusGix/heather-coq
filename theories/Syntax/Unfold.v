@@ -13,6 +13,9 @@
     (one mutual induction per law, as in [Subst.v]). With global
     substitution it commutes unconditionally because [pdef] inlines the
     carried body when a definition is sent to anything but a variable. *)
+(* the laws of [≡ₗ] first: re-exporting them after this file's other
+   imports would shadow later names (Context's [gwk_id] by Subst's) *)
+From DeLaM.Syntax Require Export LevelEq.
 From DeLaM.Syntax Require Export SubstCommute.
 
 (** ** The translation *)

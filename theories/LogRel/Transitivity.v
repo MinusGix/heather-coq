@@ -15,7 +15,7 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 
 Lemma LR_irrel_left n G Γ T T' T'' l R R' :
   LR n (LRbelow n) G Γ T' T l R -> LR n (LRbelow n) G Γ T'' T l R' -> releq R R'.
-Proof.
+Proof using EL VL.
   intros H1 H2. apply LR_sym in H1, H2.
   pose proof (LR_irrel _ _ _ _ _ _ _ _ _ _ H1 H2) as H.
   intros t t'; exact (H t' t).
@@ -24,18 +24,18 @@ Qed.
 (** ** Generic helpers *)
 
 Lemma geq_ty_refl_r {G Γ T T' l} : [ G ; Γ ⊢ T ≈ T' @ l ] -> [ G ; Γ ⊢ T' ≈ T' @ l ].
-Proof. intros H; eapply geq_ty_trans; [apply geq_ty_sym, H | exact H]. Qed.
+Proof using EL. intros H; eapply geq_ty_trans; [apply geq_ty_sym, H | exact H]. Qed.
 
 Lemma geq_tm_conv_l {G Γ t t' T T' l l'} :
   [ G ; Γ ⊢ t ≈ t' : T' @ l' ] -> [ G ; Γ ⊢g T' ≅ T @ l ] -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢ t ≈ t' : T @ l ].
-Proof. intros; eapply geq_tm_conv; [eapply geq_tm_lconv|]; eauto. Qed.
+Proof using EL. intros; eapply geq_tm_conv; [eapply geq_tm_lconv|]; eauto. Qed.
 
 (** ** Natural numbers and neutrals *)
 
 Lemma NatRel_trans G Γ :
   (forall t1 t2, NatRel G Γ t1 t2 -> forall t3, NatRel G Γ t2 t3 -> NatRel G Γ t1 t3).
-Proof.
+Proof using EL.
   apply (NatRel_mut G Γ (fun t1 t2 _ => forall t3, NatRel G Γ t2 t3 -> NatRel G Γ t1 t3)
                         (fun t1 t2 _ => forall t3, NatNf G Γ t2 t3 -> NatNf G Γ t1 t3)).
   - intros t1 t2 w1 w2 Hw1 Hw2 Heq Hnf IH t3 H3.
@@ -59,7 +59,7 @@ Qed.
 Lemma NeRel_trans {G Γ V1 V2 V3 l t1 t2 t3} :
   [ G ; Γ ⊢g V1 ≅ V2 @ l ] -> [ G ; Γ ⊢g V2 ≅ V3 @ l ] ->
   NeRel G Γ V1 V2 l t1 t2 -> NeRel G Γ V2 V3 l t2 t3 -> NeRel G Γ V1 V2 l t1 t3.
-Proof.
+Proof using EL.
   intros H12 H23 (ν1 & ν2 & Hν1 & Hν2 & Hn1 & Hn2) (μ2 & μ3 & Hμ2 & Hμ3 & Hm2 & Hm3).
   assert (μ2 = ν2) as ->.
   { eapply tmred_whnf_det; [exact Hμ2 | exact Hν2 | |]; constructor;
@@ -83,7 +83,7 @@ Definition Ptrans n := forall G Γ T1 T2 l R12,
 Lemma URel_trans n G Γ l1 l2 t1 t2 t3 :
   Ptrans (lmeasure l1) -> lmeasure l1 < n -> lequiv (gL G) l2 l1 ->
   URel (LRbelow n) G Γ l1 t1 t2 -> URel (LRbelow n) G Γ l2 t2 t3 -> URel (LRbelow n) G Γ l1 t1 t3.
-Proof.
+Proof using EL.
   intros Htr Hn Hl (w1 & w2 & Hw1 & Hw2 & Hnf1 & Hnf2 & Heq1 & HK1)
     (w2' & w3 & Hw2' & Hw3 & Hnf2' & Hnf3 & Heq2 & HK2).
   assert (w2' = w2) as -> by (eapply tmred_whnf_det; eauto).
@@ -106,7 +106,7 @@ Lemma poly_trans {F G Γ T1 T2 T3 l l1 l2 l3 l4 k3 k4 A1 B1 A2 B2 A3 B3} :
   PolyFacts G Γ F T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 ->
   PolyFacts G Γ F T2 T3 l l3 l4 k3 k4 A2 B2 A3 B3 ->
   PolyFacts G Γ F T1 T3 l l1 l2 k3 k4 A1 B1 A3 B3.
-Proof.
+Proof using EL.
   intros [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12]
          [_ Hk3 Hk4 _ _ _ HT3 _ HA3 _ HB3 HA23 HB23].
   assert (Hl13 : lequiv (gL G) l1 l3) by now apply lequiv_sym.
@@ -128,9 +128,9 @@ Qed.
 (** ** The identity type, composed (M11a) *)
 
 Lemma IdNf_whnf_l {G Γ l A a b RA w w'} : IdNf G Γ l A a b RA w w' -> whnf w.
-Proof. intros [| ν ν' Hν]; [apply whnf_refl | apply whnf_ne; exact (gne_tm_whne_l Hν)]. Qed.
+Proof using EL. intros [| ν ν' Hν]; [apply whnf_refl | apply whnf_ne; exact (gne_tm_whne_l Hν)]. Qed.
 Lemma IdNf_whnf_r {G Γ l A a b RA w w'} : IdNf G Γ l A a b RA w w' -> whnf w'.
-Proof. intros [| ν ν' Hν]; [apply whnf_refl | apply whnf_ne; exact (gne_tm_whne_r Hν)]. Qed.
+Proof using EL. intros [| ν ν' Hν]; [apply whnf_refl | apply whnf_ne; exact (gne_tm_whne_r Hν)]. Qed.
 
 (** The second step's carrier relation is the first one flipped (both have
     the middle carrier on the left), so its facts come back by the PER. *)
@@ -141,7 +141,7 @@ Lemma IdRel_trans {G Γ l1 l2 A1 A2 a1 a2 b1 b2 RA RA2 t1 t2 t3} :
   (forall x y, RA x y -> RA y x) -> (forall x y z, RA x y -> RA y z -> RA x z) ->
   releq (flipR RA) RA2 ->
   IdRel G Γ l1 A1 a1 b1 RA t1 t2 -> IdRel G Γ l2 A2 a2 b2 RA2 t2 t3 -> IdRel G Γ l1 A1 a1 b1 RA t1 t3.
-Proof.
+Proof using EL.
   intros Hl2 HA12 Ha12 Hb12 HA1 Hra Hrb Hs Ht Hfl (w1 & w2 & Hw1 & Hw2 & Heq12 & Hn12)
     (u2 & w3 & Hu2 & Hw3 & Heq23 & Hn23).
   assert (HV : [ G ; Γ ⊢g tyId l2 A2 a2 b2 ≅ tyId l1 A1 a1 b1 @ l2 ]).
@@ -173,9 +173,9 @@ Qed.
 (** ** Binary sums, composed (M12b) *)
 
 Lemma SumNf_whnf_l {G Γ l l' A B RA RB w w'} : SumNf G Γ l l' A B RA RB w w' -> whnf w.
-Proof. intros [| | ν ν' Hν]; [apply whnf_inl | apply whnf_inr | apply whnf_ne; exact (gne_tm_whne_l Hν)]. Qed.
+Proof using EL. intros [| | ν ν' Hν]; [apply whnf_inl | apply whnf_inr | apply whnf_ne; exact (gne_tm_whne_l Hν)]. Qed.
 Lemma SumNf_whnf_r {G Γ l l' A B RA RB w w'} : SumNf G Γ l l' A B RA RB w w' -> whnf w'.
-Proof. intros [| | ν ν' Hν]; [apply whnf_inl | apply whnf_inr | apply whnf_ne; exact (gne_tm_whne_r Hν)]. Qed.
+Proof using EL. intros [| | ν ν' Hν]; [apply whnf_inl | apply whnf_inr | apply whnf_ne; exact (gne_tm_whne_r Hν)]. Qed.
 
 (** The payloads compose by the summands' own transitivity, given as the
     composites [RA ∘ RA2 ⊆ RA] and [RB ∘ RB2 ⊆ RB]. *)
@@ -185,7 +185,7 @@ Lemma SumRel_trans {G Γ l1 l2 l3 l4 A1 A2 B1 B2 RA RB RA2 RB2 t1 t2 t3} :
   (forall x y z, RA x y -> RA2 y z -> RA x z) -> (forall x y z, RB x y -> RB2 y z -> RB x z) ->
   SumRel G Γ l1 l2 A1 B1 RA RB t1 t2 -> SumRel G Γ l3 l4 A2 B2 RA2 RB2 t2 t3 ->
   SumRel G Γ l1 l2 A1 B1 RA RB t1 t3.
-Proof.
+Proof using EL.
   intros Hl3 Hl4 HA12 HB12 CRA CRB (w1 & w2 & Hw1 & Hw2 & Heq12 & Hn12)
     (u2 & w3 & Hu2 & Hw3 & Heq23 & Hn23).
   assert (Hm : lequiv (gL G) (lmax l3 l4) (lmax l1 l2)) by now apply lequiv_max.
@@ -223,9 +223,9 @@ Qed.
 (** ** Well-founded trees, composed (M13a) *)
 
 Lemma WNf_whnf_l {G Γ l1 l2 A B d c w w'} : WNf G Γ l1 l2 A B d c w w' -> whnf w.
-Proof. destruct 1; [apply whnf_sup | apply whnf_ne; exact (gne_tm_whne_l H)]. Qed.
+Proof using EL. destruct 1; [apply whnf_sup | apply whnf_ne; exact (gne_tm_whne_l H)]. Qed.
 Lemma WNf_whnf_r {G Γ l1 l2 A B d c w w'} : WNf G Γ l1 l2 A B d c w w' -> whnf w'.
-Proof. destruct 1; [apply whnf_sup | apply whnf_ne; exact (gne_tm_whne_r H)]. Qed.
+Proof using EL. destruct 1; [apply whnf_sup | apply whnf_ne; exact (gne_tm_whne_r H)]. Qed.
 
 (** Inversion at a [sup] and at a neutral on the left. *)
 Lemma WNf_sup_inv {G Γ l1 l2 A B} {d : DomRel G Γ} {c : CodRel G Γ d} {k1 k2 C D a f w} :
@@ -251,7 +251,7 @@ Lemma WNf_sup_inv {G Γ l1 l2 A B} {d : DomRel G Γ} {c : CodRel G Γ d} {k1 k2 
        WRel (kw_G ρ) (kw_Δ ρ) l1 l2 (kty ρ A) (ktyl ρ B)
          (fun ρ' => d (kw_comp ρ ρ')) (fun ρ' x x' h => c (kw_comp ρ ρ') x x' h)
          (app (ktm ρ f) la lb A1 B1 b) (app (ktm ρ f') la' lb' A1' B1' b')).
-Proof.
+Proof using EL.
   intros H. remember (tmSup k1 k2 C D a f) as s eqn:Es. destruct H.
   - injection Es as -> -> -> -> -> ->. do 6 eexists; split; [reflexivity|]. eauto 20.
   - subst. exfalso. pose proof (gne_tm_whne_l H) as Hw. inversion Hw.
@@ -259,7 +259,7 @@ Qed.
 
 (** [WhRel] composes, the middle whnfs being equal. *)
 Lemma WhRel_trans {G Γ T l t1 t2 t3} : WhRel G Γ T l t1 t2 -> WhRel G Γ T l t2 t3 -> WhRel G Γ T l t1 t3.
-Proof.
+Proof using EL.
   intros (w1 & w2 & H1 & H2 & N1 & N2 & E12) (w2' & w3 & H2' & H3 & N2' & N3 & E23).
   assert (w2' = w2) as -> by (eapply tmred_whnf_det; [exact H2' | exact H2 | exact N2' | exact N2]).
   exists w1, w3. exact (conj H1 (conj H3 (conj N1 (conj N3 (geq_tm_trans E12 E23))))).
@@ -267,7 +267,7 @@ Qed.
 
 Lemma WNf_ne_inv {G Γ l1 l2 A B} {d : DomRel G Γ} {c : CodRel G Γ d} {ν w} :
   whne ν -> WNf G Γ l1 l2 A B d c ν w -> [ G ; Γ ⊢ ν ~ w : tyW l1 l2 A B @ lmax l1 l2 ].
-Proof. intros Hν H. destruct H; [inversion Hν | exact H]. Qed.
+Proof using . intros Hν H. destruct H; [inversion Hν | exact H]. Qed.
 
 (** Composition: the shapes compose by [Td]; at the children, the middle
     tree's children are taken at the left position, which is related to
@@ -286,7 +286,7 @@ Lemma WRel_trans :
   (forall ρ x y z (h12 : d1 ρ x y) (h13 : d1 ρ x z) (h23 : d2 ρ y z) u w,
       c1 ρ x z h13 u w -> c2 ρ y z h23 u w) ->
   WRel G Γ l1 l2 A1 B1 d1 c1 t1 t3.
-Proof.
+Proof using EL.
   apply (WRel_mut
     (fun G Γ l1 l2 A1 B1 d1 c1 t1 t2 _ =>
       forall l3 l4 A2 B2 (d2 : DomRel G Γ) (c2 : CodRel G Γ d2) t3,
@@ -427,15 +427,15 @@ Lemma WfTransHyps_kw {G Γ l1 A1 N1 d1 l2 A2 N2 d2} (ρ : kwk G Γ) :
   WfTransHyps G Γ l1 A1 N1 d1 l2 A2 N2 d2 ->
   WfTransHyps (kw_G ρ) (kw_Δ ρ) l1 (kty ρ A1) (ktml ρ N1) (fun ρ' => d1 (kw_comp ρ ρ'))
     l2 (kty ρ A2) (ktml ρ N2) (fun ρ' => d2 (kw_comp ρ ρ')).
-Proof.
+Proof using EL.
   intros [Hy Td]. split; [exact (WfFlipHyps_kw ρ Hy)|].
   intros ρ' x y z. exact (Td (kw_comp ρ ρ') x y z).
 Qed.
 
 Lemma WfNf_whnf_l {G Γ l A N d w w'} : WfNf G Γ l A N d w w' -> whnf w.
-Proof. destruct 1; [apply whnf_supf | apply whnf_ne; exact (gne_tm_whne_l H)]. Qed.
+Proof using EL. destruct 1; [apply whnf_supf | apply whnf_ne; exact (gne_tm_whne_l H)]. Qed.
 Lemma WfNf_whnf_r {G Γ l A N d w w'} : WfNf G Γ l A N d w w' -> whnf w'.
-Proof. destruct 1; [apply whnf_supf | apply whnf_ne; exact (gne_tm_whne_r H)]. Qed.
+Proof using EL. destruct 1; [apply whnf_supf | apply whnf_ne; exact (gne_tm_whne_r H)]. Qed.
 
 Lemma WfNf_sup_inv {G Γ l A N} {d : DomRel G Γ} {k C M a cs w} :
   WfNf G Γ l A N d (tmSupf k C M a cs) w ->
@@ -447,7 +447,7 @@ Lemma WfNf_sup_inv {G Γ l A N} {d : DomRel G Γ} {k C M a cs w} :
     (forall ρ : kwk G Γ,
        VecSp (kw_G ρ) (kw_Δ ρ) l (kty ρ A) (ktml ρ N) (fun ρ' => d (kw_comp ρ ρ'))
          (ktml ρ N)[lsingle (ktm ρ a)] (ktm ρ cs) (ktm ρ cs')).
-Proof.
+Proof using EL.
   intros H. remember (tmSupf k C M a cs) as s eqn:Es. destruct H.
   - injection Es as -> -> -> -> ->. do 5 eexists; split; [reflexivity|]. eauto 20.
   - subst. exfalso. pose proof (gne_tm_whne_l H) as Hw. inversion Hw.
@@ -455,12 +455,12 @@ Qed.
 
 Lemma WfNf_ne_inv {G Γ l A N} {d : DomRel G Γ} {ν w} :
   whne ν -> WfNf G Γ l A N d ν w -> [ G ; Γ ⊢ ν ~ w : tyWf l A N @ l ].
-Proof. intros Hν H. destruct H; [inversion Hν | exact H]. Qed.
+Proof using . intros Hν H. destruct H; [inversion Hν | exact H]. Qed.
 
 (** A spine at a length of a known shape. *)
 Lemma VecSp_zero_inv {G Γ l A N d k cs cs'} : VecSp G Γ l A N d k cs cs' ->
   [ G ; Γ ⊢g k ⤳* zero : tyNat @ lzero ] -> UnitRel G Γ l cs cs'.
-Proof.
+Proof using EL.
   destruct 1 as [|? ? ? ? ? ? ? m ? ? ? ? Hk|? ? ? ? ? ? ? ν ? ? Hk Hν]; intros Hz; [assumption| |].
   - assert (X : succ m = zero) by (eapply tmred_whnf_det; [exact Hk | exact Hz | constructor | constructor]).
     discriminate X.
@@ -490,7 +490,7 @@ Lemma VecSp_succ_inv {G Γ l A N d k m cs cs'} : VecSp G Γ l A N d k cs cs' ->
        [ G ; Γ ⊢ tyWf l A N ≈ A1' @ l ] ->
        [ G ; Γ ,, tyWf l A N @ l ⊢ tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩ ≈ B1' @ l ] ->
        VecSp G Γ l A N d m (tmSnd la lb A1 B1 w) (tmSnd la' lb' A1' B1' w')).
-Proof.
+Proof using EL.
   destruct 1 as [? ? ? ? ? ? ? ? ? Hk|? ? ? ? ? ? ? m0 ? ? w w' Hk Hcs Hcs' Hn Hn' Heq Hf Hs
                 |? ? ? ? ? ? ? ν ? ? Hk Hν]; intros Hsk.
   - assert (X : zero = succ m) by (eapply tmred_whnf_det; [exact Hk | exact Hsk | constructor | constructor]).
@@ -505,7 +505,7 @@ Qed.
 Lemma VecSp_ne_inv {G Γ l A N d k ν cs cs'} : VecSp G Γ l A N d k cs cs' ->
   [ G ; Γ ⊢g k ⤳* ν : tyNat @ lzero ] -> whne ν ->
   NeRel G Γ (tyVec l (tyWf l A N) ν) (tyVec l (tyWf l A N) ν) l cs cs'.
-Proof.
+Proof using EL.
   destruct 1 as [? ? ? ? ? ? ? ? ? Hk|? ? ? ? ? ? ? m0 ? ? ? ? Hk|? ? ? ? ? ? ? ν0 ? ? Hk Hν0 Hne];
     intros Hνk Hν.
   - assert (X : zero = ν) by (eapply tmred_whnf_det; [exact Hk | exact Hνk | constructor | now constructor]).
@@ -527,7 +527,7 @@ Lemma WfRel_trans_all :
   (forall G Γ l1 A1 N1 d1 k1 cs1 cs2, VecSp G Γ l1 A1 N1 d1 k1 cs1 cs2 ->
      forall l2 A2 N2 d2 k2 cs3, WfTransHyps G Γ l1 A1 N1 d1 l2 A2 N2 d2 ->
      NatRel G Γ k1 k2 -> VecSp G Γ l2 A2 N2 d2 k2 cs2 cs3 -> VecSp G Γ l1 A1 N1 d1 k1 cs1 cs3).
-Proof.
+Proof using EL.
   apply WfRel_comb.
   - intros G Γ l1 A1 N1 d1 t1 t2 w1 w2 Hw1 Hw2 Heq Hn IH l2 A2 N2 d2 t3 Hy H2.
     destruct (WfFlip_data (proj1 Hy)) as (W1 & W2 & HWf1 & HWf2 & EWg & EW).
@@ -635,7 +635,7 @@ End WfTrans.
 (** ** Transitivity *)
 
 Lemma LR_trans_step n : (forall m, m < n -> Ptrans m) -> Ptrans n.
-Proof.
+Proof using EL VL.
   intros IHn G Γ T1 T2 l R12 H.
   induction H as [G Γ T1 T2 l R Hl HT1 HT2 HR
                  | G Γ T1 T2 l l1 l2 R Hl Hl2 Hn HT1 HT2 HR
@@ -1139,7 +1139,7 @@ Proof.
 Qed.
 
 Theorem LR_trans n : Ptrans n.
-Proof.
+Proof using EL VL.
   induction n as [n IHn] using (well_founded_induction lt_wf).
   apply LR_trans_step, IHn.
 Qed.
@@ -1148,16 +1148,16 @@ Qed.
 
 Corollary LR_refl_l n G Γ T T' l R :
   LR n (LRbelow n) G Γ T T' l R -> LR n (LRbelow n) G Γ T T l R.
-Proof. intros H. exact (proj1 (LR_trans n _ _ _ _ _ _ H _ _ (LR_sym _ _ _ _ _ _ _ H))). Qed.
+Proof using EL VL. intros H. exact (proj1 (LR_trans n _ _ _ _ _ _ H _ _ (LR_sym _ _ _ _ _ _ _ H))). Qed.
 
 Corollary LR_refl_r n G Γ T T' l R :
   LR n (LRbelow n) G Γ T T' l R -> LR n (LRbelow n) G Γ T' T' l (flipR R).
-Proof. intros H. exact (LR_refl_l _ _ _ _ _ _ _ (LR_sym _ _ _ _ _ _ _ H)). Qed.
+Proof using EL VL. intros H. exact (LR_refl_l _ _ _ _ _ _ _ (LR_sym _ _ _ _ _ _ _ H)). Qed.
 
 (** Related terms are related to themselves. *)
 Corollary LR_tm_refl_l n G Γ T T' l R t t' :
   LR n (LRbelow n) G Γ T T' l R -> R t t' -> R t t.
-Proof.
+Proof using EL VL.
   intros H Ht. exact (proj2 (LR_trans n _ _ _ _ _ _ H _ _ (LR_sym _ _ _ _ _ _ _ H)) t t' t Ht Ht).
 Qed.
 
@@ -1165,7 +1165,7 @@ Qed.
 Corollary LR_tm_per n G Γ T T' l R :
   LR n (LRbelow n) G Γ T T' l R ->
   (forall x y, R x y -> R y x) /\ (forall x y z, R x y -> R y z -> R x z).
-Proof.
+Proof using EL VL.
   intros H.
   pose proof (LR_sym _ _ _ _ _ _ _ H) as Hs.
   pose proof (proj2 (LR_trans n _ _ _ _ _ _ H _ _ Hs)) as C.

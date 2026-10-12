@@ -29,16 +29,16 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
     come from the relation at ω instead ([DeclConsequences]). *)
 
 Lemma reducible_ty {G Γ T l} : [ G ; Γ ⊢g T @ l ] -> lwf (gL G) l -> LRty l G Γ T T.
-Proof. intros H Hl; apply red_eqty; [apply eqty_refl, H | exact Hl]. Qed.
+Proof using red_eqty. intros H Hl; apply red_eqty; [apply eqty_refl, H | exact Hl]. Qed.
 
 Lemma reducible_tm {G Γ t T l} : [ G ; Γ ⊢g t : T @ l ] -> lwf (gL G) l -> LRtm l G Γ T T t t.
-Proof. intros H Hl; apply red_eqtm; [apply eqtm_refl, H | exact Hl]. Qed.
+Proof using red_eqtm. intros H Hl; apply red_eqtm; [apply eqtm_refl, H | exact Hl]. Qed.
 
 (** ** Canonicity of natural numbers: every typed natural reduces to a
     related normal form ([zero], a successor, or a neutral). *)
 
 Lemma nat_canonicity {G Γ t} : [ G ; Γ ⊢g t : tyNat @ lzero ] -> NatRel G Γ t t.
-Proof. intros H; exact (proj1 LRtm_nat (reducible_tm H I)). Qed.
+Proof using EL VL red_eqtm. intros H; exact (proj1 LRtm_nat (reducible_tm H I)). Qed.
 
 (** ** Injectivity of type formers *)
 
@@ -46,7 +46,7 @@ Lemma pi_inj {G Γ l l1 l2 l3 l4 A A' B B'} :
   [ G ; Γ ⊢g tyPi l1 l2 A B ≅ tyPi l3 l4 A' B' @ l ] -> lwf (gL G) l ->
   lequiv (gL G) l3 l1 /\ lequiv (gL G) l4 l2 /\
   [ G ; Γ ⊢ A ≈ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ].
-Proof.
+Proof using EL red_eqty.
   intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
   pose proof (eqty_wf_l ge_typeof H) as HP.
   destruct (LR_inv_pi HR (tyred_refl _ _ HP))
@@ -60,7 +60,7 @@ Lemma sig_inj {G Γ l l1 l2 l3 l4 A A' B B'} :
   [ G ; Γ ⊢g tySig l1 l2 A B ≅ tySig l3 l4 A' B' @ l ] -> lwf (gL G) l ->
   lequiv (gL G) l3 l1 /\ lequiv (gL G) l4 l2 /\
   [ G ; Γ ⊢ A ≈ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ].
-Proof.
+Proof using EL red_eqty.
   intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
   pose proof (eqty_wf_l ge_typeof H) as HP.
   destruct (LR_inv_sig HR (tyred_refl _ _ HP))
@@ -72,7 +72,7 @@ Qed.
 
 Lemma unit_inj {G Γ l l1 l2} :
   [ G ; Γ ⊢g tyUnit l1 ≅ tyUnit l2 @ l ] -> lwf (gL G) l -> lequiv (gL G) l2 l1.
-Proof.
+Proof using EL red_eqty.
   intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
   pose proof (eqty_wf_l ge_typeof H) as HP.
   destruct (LR_inv_unit HR (tyred_refl _ _ HP)) as (m2 & _ & H2 & _ & HT' & _).
@@ -85,7 +85,7 @@ Qed.
 Lemma seq_inj {G Γ l l1 l2 A A' a a' b b'} :
   [ G ; Γ ⊢g tySEq l1 A a b ≅ tySEq l2 A' a' b' @ l ] -> lwf (gL G) l ->
   lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢ A ≈ A' @ l1 ] /\ [ G ; Γ ⊢ a ≈ a' : A @ l1 ] /\ [ G ; Γ ⊢ b ≈ b' : A @ l1 ].
-Proof.
+Proof using EL red_eqty.
   intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
   pose proof (eqty_wf_l ge_typeof H) as HP.
   destruct (LR_inv_seq HR (tyred_refl _ _ HP)) as (m2 & C' & c' & d' & _ & H2 & _ & HT' & _ & HAA & Haa & Hbb & _).
@@ -98,7 +98,7 @@ Qed.
 Lemma id_inj {G Γ l l1 l2 A A' a a' b b'} :
   [ G ; Γ ⊢g tyId l1 A a b ≅ tyId l2 A' a' b' @ l ] -> lwf (gL G) l ->
   lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢ A ≈ A' @ l1 ] /\ [ G ; Γ ⊢ a ≈ a' : A @ l1 ] /\ [ G ; Γ ⊢ b ≈ b' : A @ l1 ].
-Proof.
+Proof using EL red_eqty.
   intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
   pose proof (eqty_wf_l ge_typeof H) as HP.
   destruct (LR_inv_id HR (tyred_refl _ _ HP))
@@ -112,7 +112,7 @@ Qed.
 Lemma sum_inj {G Γ l l1 l2 l3 l4 A A' B B'} :
   [ G ; Γ ⊢g tySum l1 l2 A B ≅ tySum l3 l4 A' B' @ l ] -> lwf (gL G) l ->
   lequiv (gL G) l3 l1 /\ lequiv (gL G) l4 l2 /\ [ G ; Γ ⊢ A ≈ A' @ l1 ] /\ [ G ; Γ ⊢ B ≈ B' @ l2 ].
-Proof.
+Proof using EL red_eqty.
   intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
   pose proof (eqty_wf_l ge_typeof H) as HP.
   destruct (LR_inv_sum HR (tyred_refl _ _ HP))
@@ -127,7 +127,7 @@ Lemma W_inj {G Γ l l1 l2 l3 l4 A A' B B'} :
   [ G ; Γ ⊢g tyW l1 l2 A B ≅ tyW l3 l4 A' B' @ l ] -> lwf (gL G) l ->
   lequiv (gL G) l3 l1 /\ lequiv (gL G) l4 l2 /\
   [ G ; Γ ⊢ A ≈ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢ B ≈ B' @ l2 ].
-Proof.
+Proof using EL red_eqty.
   intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
   pose proof (eqty_wf_l ge_typeof H) as HP.
   destruct (LR_inv_W HR (tyred_refl _ _ HP))
@@ -141,7 +141,7 @@ Qed.
 Lemma Wf_inj {G Γ l l1 l2 A A' N N'} :
   [ G ; Γ ⊢g tyWf l1 A N ≅ tyWf l2 A' N' @ l ] -> lwf (gL G) l ->
   lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢ A ≈ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢ N ≈ N' : tyNat @ lzero ].
-Proof.
+Proof using EL red_eqty.
   intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
   pose proof (eqty_wf_l ge_typeof H) as HP.
   destruct (LR_inv_wf HR (tyred_refl _ _ HP))
@@ -155,7 +155,7 @@ Qed.
 Lemma sq_inj {G Γ l l1 l2 A A'} :
   [ G ; Γ ⊢g tySq l1 A ≅ tySq l2 A' @ l ] -> lwf (gL G) l ->
   lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢ A ≈ A' @ l1 ].
-Proof.
+Proof using EL red_eqty.
   intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
   pose proof (eqty_wf_l ge_typeof H) as HP.
   destruct (LR_inv_sq HR (tyred_refl _ _ HP)) as (m2 & C' & RC & _ & H2 & _ & _ & HT' & _ & HAA & _).
@@ -166,7 +166,7 @@ Qed.
 
 Lemma sempty_inj {G Γ l l1 l2} :
   [ G ; Γ ⊢g tySEmpty l1 ≅ tySEmpty l2 @ l ] -> lwf (gL G) l -> lequiv (gL G) l2 l1.
-Proof.
+Proof using EL red_eqty.
   intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
   pose proof (eqty_wf_l ge_typeof H) as HP.
   destruct (LR_inv_sempty HR (tyred_refl _ _ HP)) as (m2 & _ & H2 & _ & HT' & _).
@@ -178,7 +178,7 @@ Qed.
 (** A type convertible to a [Π] reduces to one. *)
 Lemma pi_red {G Γ l l1 l2 A B T} : [ G ; Γ ⊢g tyPi l1 l2 A B ≅ T @ l ] -> lwf (gL G) l ->
   exists l3 l4 C D, [ G ; Γ ⊢g T ⤳* tyPi l3 l4 C D @ l ].
-Proof.
+Proof using EL red_eqty.
   intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
   pose proof (eqty_wf_l ge_typeof H) as HP.
   destruct (LR_inv_pi HR (tyred_refl _ _ HP)) as (m3 & m4 & C' & D' & _ & _ & [_ _ _ _ _ _ HT' _ _ _ _ _ _] & _).
@@ -186,7 +186,7 @@ Proof.
 Qed.
 
 Lemma U_inj {G Γ l l' k} : [ G ; Γ ⊢g tyU l ≅ tyU l' @ k ] -> lwf (gL G) k -> lequiv (gL G) l' l.
-Proof.
+Proof using EL red_eqty.
   intros H Hk. destruct (red_eqty _ _ _ _ _ H Hk) as [R HR].
   destruct (LR_inv_U HR (tyred_refl _ _ (eqty_wf_l ge_typeof H))) as (l2 & _ & Hl2 & _ & HT' & _).
   pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' (tyred_refl _ _ (eqty_wf_r ge_typeof H))
@@ -199,14 +199,14 @@ Qed.
 Lemma tmred_back {G Γ t w T W l l'} :
   [ G ; Γ ⊢g t ⤳* w : W @ l' ] -> [ G ; Γ ⊢g T ⤳* W @ l ] -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢g t ⤳* w : T @ l ].
-Proof.
+Proof using .
   intros Ht HT Hl. eapply tmred_conv; [apply ge_typeof | eapply tmred_lconv; [exact Ht | exact Hl] |].
   apply eqty_sym, (tyred_eq _ _ _ _ _ _ HT).
 Qed.
 
 Lemma LR_whnf_ty n rec G Γ T T' l R :
   LR n rec G Γ T T' l R -> exists W, [ G ; Γ ⊢g T ⤳* W @ l ] /\ whnf_ty W.
-Proof.
+Proof using EL.
   destruct 1 as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
@@ -235,7 +235,7 @@ Qed.
 
 Lemma ModRel_whnf_tm {G Γ T T' l R} : ModRel G Γ T T' l R -> forall t t', R t t' ->
   exists w, [ G ; Γ ⊢g t ⤳* w : T @ l ] /\ whnf w.
-Proof.
+Proof using EL.
   destruct 1 as [T T' l Δ Δ' k k' R Hl Hk HT HT' HΔ Hgeq HR
                 | T T' l Δ Δ' A A' k k' R Hl Hk HT HT' HΔ HA HA' Hgeq HR];
     intros t t' Ht; apply HR in Ht; destruct Ht as (w & w' & Hw & _ & _ & _ & Hn & _);
@@ -247,7 +247,7 @@ Qed.
 Lemma LR_whnf_tm n rec G Γ T T' l R :
   LR n rec G Γ T T' l R -> forall t t', R t t' ->
   exists w, [ G ; Γ ⊢g t ⤳* w : T @ l ] /\ whnf w.
-Proof.
+Proof using EL.
   destruct 1 as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR
@@ -301,11 +301,11 @@ Qed.
 
 Theorem whnf_normalization_ty {G Γ T l} : [ G ; Γ ⊢g T @ l ] -> lwf (gL G) l ->
   exists W, [ G ; Γ ⊢g T ⤳* W @ l ] /\ whnf_ty W.
-Proof. intros H Hl. destruct (reducible_ty H Hl) as [R HR]. exact (LR_whnf_ty _ _ _ _ _ _ _ _ HR). Qed.
+Proof using EL red_eqty. intros H Hl. destruct (reducible_ty H Hl) as [R HR]. exact (LR_whnf_ty _ _ _ _ _ _ _ _ HR). Qed.
 
 Theorem whnf_normalization_tm {G Γ t T l} : [ G ; Γ ⊢g t : T @ l ] -> lwf (gL G) l ->
   exists w, [ G ; Γ ⊢g t ⤳* w : T @ l ] /\ whnf w.
-Proof.
+Proof using EL red_eqtm.
   intros H Hl. destruct (reducible_tm H Hl) as (R & HR & Ht).
   exact (LR_whnf_tm _ _ _ _ _ _ _ _ HR _ _ Ht).
 Qed.
@@ -321,36 +321,36 @@ Definition ctx_only (G : gctx) : Prop := forall n D, in_gctx (gΨ G) n D -> D = 
 (** Boxed global variables mention a type or term binding. *)
 Lemma tyGvar_decl {G i Γ U d l} : [ G ; Γ ⊢[ i ] tyGvar U d @ l ] ->
   exists Δ i' l', in_gctx (gΨ G) U (gdTy Δ i' l').
-Proof.
+Proof using .
   intros H; remember (tyGvar U d) as T eqn:Heq; revert Heq.
   induction H; intros Heq; try discriminate; eauto. injection Heq as -> ->; eauto.
 Qed.
 Lemma gvar_decl {G i Γ u d A l} : [ G ; Γ ⊢[ i ] gvar u d : A @ l ] ->
   exists Δ i' T l', in_gctx (gΨ G) u (gdTm Δ i' T l').
-Proof.
+Proof using .
   intros H; remember (gvar u d) as t eqn:Heq; revert Heq.
   induction H; intros Heq; try discriminate; eauto. injection Heq as -> ->; eauto.
 Qed.
 Lemma gdef_decl {G i Γ u b d A l} : [ G ; Γ ⊢[ i ] gdef u b d : A @ l ] ->
   exists Δ T l' t0, in_gctx (gΨ G) u (gdDef Δ T l' t0).
-Proof.
+Proof using .
   intros H; remember (gdef u b d) as t eqn:Heq; revert Heq.
   induction H; intros Heq; try discriminate; eauto. injection Heq as -> -> ->; eauto.
 Qed.
 Lemma boxT_inv {G i Γ T A l} : [ G ; Γ ⊢[ i ] boxT T : A @ l ] -> exists Δ l', [ G ; Δ ⊢[ lC ] T @ l' ].
-Proof.
+Proof using .
   intros H; remember (boxT T) as t eqn:Heq; revert Heq.
   induction H; intros Heq; try discriminate; eauto. injection Heq as ->; eauto.
 Qed.
 Lemma boxt_inv {G i Γ t A l} : [ G ; Γ ⊢[ i ] boxt t : A @ l ] -> exists Δ T l', [ G ; Δ ⊢[ lC ] t : T @ l' ].
-Proof.
+Proof using .
   intros H; remember (boxt t) as x eqn:Heq; revert Heq.
   induction H; intros Heq; try discriminate; eauto. injection Heq as ->; eauto.
 Qed.
 
 Lemma no_closed_neutral {G i Γ t T l} :
   [ G ; Γ ⊢[ i ] t : T @ l ] -> Γ = cnil -> ctx_only G -> ~ whne t.
-Proof.
+Proof using .
   induction 1; intros -> HG Hne; inversion Hne; subst;
     match goal with
     | H : in_ctx cnil _ _ _ |- _ => inversion H
@@ -379,7 +379,7 @@ Definition no_opaque (G : gctx) : Prop :=
 
 Lemma no_closed_neutral_D {G i Γ t T l} :
   [ G ; Γ ⊢[ i ] t : T @ l ] -> Γ = cnil -> i = lD -> no_opaque G -> ~ whne t.
-Proof.
+Proof using .
   induction 1; intros -> Ei HG Hne; try discriminate Ei; subst; inversion Hne; subst;
     match goal with
     | H : in_ctx cnil _ _ _ |- _ => inversion H
@@ -393,33 +393,33 @@ Qed.
 Definition closed_ok (i : layer) (G : gctx) : Prop := ctx_only G \/ (i = lD /\ no_opaque G).
 
 Lemma no_closed_neutral_ok {G i t T l} : closed_ok i G -> [ G ; cnil ⊢[ i ] t : T @ l ] -> ~ whne t.
-Proof.
+Proof using .
   intros [HG | (Ei & HG)] Ht; [exact (no_closed_neutral Ht eq_refl HG) | exact (no_closed_neutral_D Ht eq_refl Ei HG)].
 Qed.
 
 Lemma closed_ok_no_opaque {i G} : closed_ok i G -> no_opaque G.
-Proof. intros [HG | (_ & HG)] n D Hin; [left; exact (HG _ _ Hin) | exact (HG _ _ Hin)]. Qed.
+Proof using . intros [HG | (_ & HG)] n D Hin; [left; exact (HG _ _ Hin) | exact (HG _ _ Hin)]. Qed.
 
 Lemma no_opaque_tyGvar {G U Δ i' l} : no_opaque G -> ~ in_gctx (gΨ G) U (gdTy Δ i' l).
-Proof. intros HG Hin. destruct (HG _ _ Hin) as [Q | (? & ? & ? & ? & Q)]; discriminate Q. Qed.
+Proof using . intros HG Hin. destruct (HG _ _ Hin) as [Q | (? & ? & ? & ? & Q)]; discriminate Q. Qed.
 Lemma no_opaque_gvar {G u Δ i' T l} : no_opaque G -> ~ in_gctx (gΨ G) u (gdTm Δ i' T l).
-Proof. intros HG Hin. destruct (HG _ _ Hin) as [Q | (? & ? & ? & ? & Q)]; discriminate Q. Qed.
+Proof using . intros HG Hin. destruct (HG _ _ Hin) as [Q | (? & ? & ? & ? & Q)]; discriminate Q. Qed.
 
 Lemma closed_ok_tyGvar {G i U Δ i' l} : closed_ok i G -> ~ in_gctx (gΨ G) U (gdTy Δ i' l).
-Proof. intros HG; exact (no_opaque_tyGvar (closed_ok_no_opaque HG)). Qed.
+Proof using . intros HG; exact (no_opaque_tyGvar (closed_ok_no_opaque HG)). Qed.
 Lemma closed_ok_gvar {G i u Δ i' T l} : closed_ok i G -> ~ in_gctx (gΨ G) u (gdTm Δ i' T l).
-Proof. intros HG; exact (no_opaque_gvar (closed_ok_no_opaque HG)). Qed.
+Proof using . intros HG; exact (no_opaque_gvar (closed_ok_no_opaque HG)). Qed.
 
 (** At M, [closed_ok] is [ctx_only] (DefStuck.v: with a definition, M has
     closed neutrals). *)
 Lemma closed_ok_M_ctx_only {G} : closed_ok lM G -> ctx_only G.
-Proof. intros [H | (Ei & _)]; [exact H | discriminate Ei]. Qed.
+Proof using . intros [H | (Ei & _)]; [exact H | discriminate Ei]. Qed.
 
 Fixpoint numeral (n : nat) : tm := match n with 0 => zero | S n => succ (numeral n) end.
 
 Theorem closed_nat_canonicity {G t} : closed_ok ge_layer G -> [ G ; cnil ⊢g t : tyNat @ lzero ] ->
   exists n, [ G ; cnil ⊢g t ≅ numeral n : tyNat @ lzero ].
-Proof.
+Proof using EL VL red_eqtm.
   intros HG H. pose proof (nat_canonicity H) as Hn.
   refine (NatRel_mut G cnil (fun t _ _ => exists n, [ G ; cnil ⊢g t ≅ numeral n : tyNat @ lzero ])
             (fun w _ _ => exists n, [ G ; cnil ⊢g w ≅ numeral n : tyNat @ lzero ]) _ _ _ _ t t Hn).
@@ -434,7 +434,7 @@ Qed.
 (** ** Discrimination of type formers *)
 
 Lemma nat_not_pi {G Γ k l l' A B} : lwf (gL G) k -> ~ [ G ; Γ ⊢g tyNat ≅ tyPi l l' A B @ k ].
-Proof.
+Proof using EL red_eqty.
   intros Hk H. destruct (red_eqty _ _ _ _ _ H Hk) as [R HR].
   destruct (LR_inv_nat HR (tyred_refl _ _ (eqty_wf_l ge_typeof H))) as (_ & HT' & _).
   pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' (tyred_refl _ _ (eqty_wf_r ge_typeof H))
@@ -442,7 +442,7 @@ Proof.
 Qed.
 
 Lemma nat_not_U {G Γ k l} : lwf (gL G) k -> ~ [ G ; Γ ⊢g tyNat ≅ tyU l @ k ].
-Proof.
+Proof using EL red_eqty.
   intros Hk H. destruct (red_eqty _ _ _ _ _ H Hk) as [R HR].
   destruct (LR_inv_nat HR (tyred_refl _ _ (eqty_wf_l ge_typeof H))) as (_ & HT' & _).
   pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' (tyred_refl _ _ (eqty_wf_r ge_typeof H))
@@ -450,7 +450,7 @@ Proof.
 Qed.
 
 Lemma U_not_pi {G Γ k l l1 l2 A B} : lwf (gL G) k -> ~ [ G ; Γ ⊢g tyU l ≅ tyPi l1 l2 A B @ k ].
-Proof.
+Proof using EL red_eqty.
   intros Hk H. destruct (red_eqty _ _ _ _ _ H Hk) as [R HR].
   destruct (LR_inv_U HR (tyred_refl _ _ (eqty_wf_l ge_typeof H))) as (l2' & _ & _ & _ & HT' & _).
   pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' (tyred_refl _ _ (eqty_wf_r ge_typeof H))
@@ -462,7 +462,7 @@ Qed.
 Lemma LR_head n rec G Γ T T' l R : LR n rec G Γ T T' l R ->
   exists W W', ([ G ; Γ ⊢g T ⤳* W @ l ]) /\ ([ G ; Γ ⊢g T' ⤳* W' @ l ]) /\
     whnf_ty W /\ whnf_ty W' /\ ty_head W = ty_head W'.
-Proof.
+Proof using EL.
   destruct 1; open_poly; try match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
   match goal with |- exists _ _, [ _ ; _ ⊢g ?a ⤳* _ @ _ ] /\ [ _ ; _ ⊢g ?b ⤳* _ @ _ ] /\ _ =>
     match goal with HT : [ _ ; _ ⊢g a ⤳* ?X @ _ ], HT' : [ _ ; _ ⊢g b ⤳* ?X' @ _ ] |- _ =>
@@ -476,7 +476,7 @@ Qed.
 
 Lemma eqty_head {G Γ W W' l} : [ G ; Γ ⊢g W ≅ W' @ l ] -> lwf (gL G) l -> whnf_ty W -> whnf_ty W' ->
   ty_head W = ty_head W'.
-Proof.
+Proof using EL red_eqty.
   intros H Hl Hw Hw'. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
   destruct (LR_head _ _ _ _ _ _ _ _ HR) as (X & X' & HX & HX' & Hx & Hx' & Eh).
   rewrite <- (tyred_whnf_det _ _ _ _ _ _ _ _ HX (tyred_refl _ _ (eqty_wf_l ge_typeof H)) Hx Hw).

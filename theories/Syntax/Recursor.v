@@ -429,6 +429,12 @@ Definition redt (l : lvl) (Δ : ctx) (T : ty) (c : tm) : option tm :=
 
 End Reducts.
 
+(** Read a reduct off [redT … = Some r]. [injection] (and [inversion])
+    would build a projection whose default value is a copy of the whole
+    unfolded reduct, which then dominates the proof and its [Qed]. *)
+Lemma Some_inj {A} {a b : A} : Some a = Some b -> a = b.
+Proof. now intros [= ->]. Qed.
+
 (** Case on [redt]'s index where it is read (the λ case), after [cbn [redt]]:
     a blanket [destruct c; destruct T] is quadratic in the formers. *)
 Ltac redt_case T := try lazymatch goal with

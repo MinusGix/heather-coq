@@ -9,7 +9,7 @@
     are moved into the branch scope by universe and global weakening under
     their own binders ([MT_br], [Mt_br]), instantiated by [motT_wf] and
     [mott_wf], and weakened past the recursive calls' locals. *)
-From DeLaM.Typing Require Export InvAny AlgStruct.
+From DeLaM.Typing Require Export InvAny AlgStruct WfScope.
 
 (** ** The motives in the branch scope *)
 
@@ -300,14 +300,15 @@ Ltac br_side k HΓ :=
   | eapply wf_boxt; [ br_side k HΓ | br_side k HΓ | br_side k HΓ | unfold gv, gu; code_side_k k | unfold gv, gu; code_side_k k ]
   | unfold gv, gu; code_side_k k ].
 
-(** [elim_Wf]'s branch (M15b): its step scope (Γ, a, cs, ih) is typed once,
-    folded and in [wty]'s normal form, rather than at each goal that
-    needs it; each typing retypes the [ih] entry, [nth] included. *)
+(** [elim_Wf]'s branch (M15b): its step scope (Γ, a, cs, ih) is typed once
+    ([br50_scope], WfScope), folded and in [wty]'s normal form, rather
+    than at each goal that needs it; each typing retypes the [ih] entry,
+    [nth] included. *)
 Ltac wf50_pre G0 :=
   let H := fresh "H50c" in let Hn := fresh "H50n" in
   assert (H : [ brG 50 G0 ; cvar 5 ,, gv 4 @ lvar 1 ,, wfcsty (lvar 1) (gv 4) (gu 3) @ lvar 1
                 ,, wfihty (lvar 1) (lvar 0) (gv 4) (gu 3) (gv 2) @ lmax lzero (lvar 0) ⊢[ lD ] ])
-    by (unfold gv, gu; wnorm; wtop);
+    by exact (proj1 (br50_scope G0 ltac:(assumption)));
   pose proof H as Hn; unfold gv, gu in Hn;
   cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
        rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle Nat.eqb Nat.add

@@ -412,7 +412,7 @@ Ltac lstep E :=
   | ctx_leq _ ?x => is_var x; destruct x
   | lsub_leq _ ?x => is_var x; destruct x
   | context [match ?x with _ => _ end] => is_var x; destruct x
-  end; cbn [ty_leq tm_leq ctx_leq lsub_leq] in E; try contradiction.
+  end; try exact (False_ind _ E); cbn [ty_leq tm_leq ctx_leq lsub_leq] in E; try contradiction.
 
 Fixpoint unwrap (n : nat) (t : tm) : tm :=
   match n, t with

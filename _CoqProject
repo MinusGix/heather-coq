@@ -7,6 +7,7 @@ theories/Syntax/Subst.v
 theories/Syntax/GSubst.v
 theories/Syntax/Universe.v
 theories/Syntax/Recursor.v
+theories/Syntax/LevelEqDef.v
 theories/Syntax/LevelEq.v
 theories/Syntax/LevelDec.v
 theories/Syntax/LevelAx.v
@@ -42,6 +43,7 @@ theories/Typing/UInst.v
 theories/Typing/MInst.v
 theories/Typing/Presupposition.v
 theories/Typing/Inversion.v
+theories/Typing/WfScope.v
 theories/Typing/RecEq.v
 theories/Typing/AlgStruct.v
 theories/Typing/CtxConv.v
