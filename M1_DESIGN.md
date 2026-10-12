@@ -376,6 +376,25 @@ formers, so it gets worse with every extension:
   from 100 s to 47 s and the critical path from 693 s to 634 s (743 s
   → 713 s wall at -j4, back to back; total CPU +25 s for the parts'
   repeated loading).
+- **Syntax waiting for typing** (2026-10-12, Typing metatheory). Each
+  metatheory file on the critical path (`Reduction`, `GWeakening`,
+  `Substitution`, `Presupposition`, `WfNth`) began with lemmas that need
+  no typing, or only an earlier part of it: the recursors' data and
+  reducts under renaming or substitution, the `push_gren` table,
+  reduction under global renaming, `nth`'s untyped reductions,
+  `presupposition`'s per-former lemmas (which need `Functionality`, not
+  the global substitution chain after it). Moved verbatim into
+  `ReductionBase`, `GRenRec`, `SubstRec`, `WfNthReds` and `PresupAux`,
+  which the old files export, they build beside the chain: critical path
+  482 s → 412 s, wall 546 s → 473 s at -j4 (statements checked
+  identical with `Check` under `Set Printing All`). `depgraph.py`
+  counts every declaration after an `Ltac` or hint as using it, so it
+  marks such lemmas as needing the latest module; `--decls` shows them,
+  and compiling the moved part against a trimmed `Require` settles it.
+  A lemma left behind in a section that is now split (`pre_gvar_ty` and
+  its kin need `GSubstitution`) reopens a section over the same
+  variables and passes them to the moved lemmas explicitly
+  (`lle_D_i Hi Hv`).
 - Measure before guessing (see `CLAUDE.md`, Build, for the tools):
   `tools/build-profile` for a timed build and its report,
   `tools/proofs.py` for the slowest proofs (tactics vs `Qed`),
