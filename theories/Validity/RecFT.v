@@ -209,11 +209,12 @@ Proof.
   pose proof (at_φ _ _ _ Hσ) as Hφ2. pose proof (at_l1 _ _ _ Hσ) as Hl1'. pose proof (at_l2 _ _ _ Hσ) as Hl2'.
   pose proof (at_Γ _ _ _ Hσ) as VΓ2. pose proof (at_G _ _ _ Hσ) as HG2. pose proof (at_Γwf _ _ _ Hσ) as HΓ2.
   assert (Hwl1 : lwf (gL G'') (lvsubst l1 φ)) by exact (proj1 HrbL).
-  pose proof (@rec_T EP EM _ _ _ G0 Γ0 (gL G'') φ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' Hφ2 HMT HMT' Hl1' VMT VMTl VMTr
-                HMt HMt' Hl2' VMt VMtl VMtr Hbs Hbs' VBr VBr' VΓ2 G'' σ σ' Θ e e' Hσ2 He HrbL HrbR eq_refl
-                HG2 HΓ2 VΓT VΓt VΓbr) as RT.
-  pose proof (@rec_T_ne EP EM _ _ _ G0 Γ0 (gL G'') φ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' Hφ2 HMT HMT' Hl1' VMT VMTr
-                Hl2' VMt VBr VΓ2 G'' σ σ' Θ e e' Hσ2 He HrbL HrbR eq_refl HG2 HΓ2 VΓT VΓt VΓbr) as RTne.
+  pose proof (@RecH.Build_RecHyps EP EM G0 Γ0 (gL G'') φ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' G'' σ σ' Θ e e'
+                Hφ2 HMT HMT' Hl1' VMT VMTl VMTr
+                HMt HMt' Hl2' VMt VMtl VMtr Hbs Hbs' VBr VBr' VΓ2 Hσ2 He HrbL HrbR eq_refl
+                HG2 HΓ2 VΓT VΓt VΓbr) as RH.
+  pose proof (@rec_T EP EM _ _ _ G0 Γ0 (gL G'') φ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' G'' σ σ' Θ e e' RH) as RT.
+  pose proof (@rec_T_ne EP EM _ _ _ G0 Γ0 (gL G'') φ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' G'' σ σ' Θ e e' RH) as RTne.
   pose proof (@MotRel_T EP EM _ _ G0 Γ0 (gL G'') φ MT MT l1 l1 HMT HMT (lequiv_refl _ _ Hwl1) Hφ2 VMTl VMTl VΓ2
                 G'' σ σ Θ e e Hσl2 (SubRel_refl_l He) eq_refl) as MRl.
   pose proof (@MotRel_T EP EM _ _ G0 Γ0 (gL G'') φ MT MT' l1 l1' HMT HMT' Hl1' Hφ2 VMT VMTr VΓ2
@@ -336,11 +337,12 @@ Proof.
   pose proof (at_φ _ _ _ Hσ) as Hφ2. pose proof (at_l1 _ _ _ Hσ) as Hl1'. pose proof (at_l2 _ _ _ Hσ) as Hl2'.
   pose proof (at_Γ _ _ _ Hσ) as VΓ2. pose proof (at_G _ _ _ Hσ) as HG2. pose proof (at_Γwf _ _ _ Hσ) as HΓ2.
   assert (Hwl2 : lwf (gL G'') (lvsubst l2 φ)) by exact (proj1 (proj2 HrbL)).
-  pose proof (@rec_t EP EM _ _ _ G0 Γ0 (gL G'') φ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' Hφ2 HMT HMT' Hl1' VMT VMTl VMTr
-                HMt HMt' Hl2' VMt VMtl VMtr Hbs Hbs' VBr VBr' VΓ2 G'' σ σ' Θ e e' Hσ2 He HrbL HrbR eq_refl
-                HG2 HΓ2 VΓT VΓt VΓbr) as Rt.
-  pose proof (@rec_t_ne EP EM _ _ _ G0 Γ0 (gL G'') φ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' Hφ2 Hl1' VMT
-                HMt HMt' Hl2' VMt VMtr VBr VΓ2 G'' σ σ' Θ e e' Hσ2 He HrbL HrbR eq_refl HG2 HΓ2 VΓT VΓt VΓbr) as Rtne.
+  pose proof (@RecH.Build_RecHyps EP EM G0 Γ0 (gL G'') φ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' G'' σ σ' Θ e e'
+                Hφ2 HMT HMT' Hl1' VMT VMTl VMTr
+                HMt HMt' Hl2' VMt VMtl VMtr Hbs Hbs' VBr VBr' VΓ2 Hσ2 He HrbL HrbR eq_refl
+                HG2 HΓ2 VΓT VΓt VΓbr) as RH.
+  pose proof (@rec_t EP EM _ _ _ G0 Γ0 (gL G'') φ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' G'' σ σ' Θ e e' RH) as Rt.
+  pose proof (@rec_t_ne EP EM _ _ _ G0 Γ0 (gL G'') φ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' G'' σ σ' Θ e e' RH) as Rtne.
   pose proof (@MotRel_t EP EM _ _ G0 Γ0 (gL G'') φ Mt Mt l2 l2 HMt HMt (lequiv_refl _ _ Hwl2) Hφ2 VMtl VMtl VΓ2
                 G'' σ σ Θ e e Hσl2 (SubRel_refl_l He) eq_refl) as MRl.
   pose proof (@MotRel_t EP EM _ _ G0 Γ0 (gL G'') φ Mt Mt' l2 l2' HMt HMt' Hl2' Hφ2 VMt VMtr VΓ2

@@ -1746,11 +1746,25 @@ Ltac gs_norm :=
           ?us_wfty, ?us_wihty, ?us_wstepty, ?gs_wfty, ?gs_wihty, ?gs_wstepty;
   inst_cbn; cbn [gcons pctx pty ptm]; lsh0.
 
-Section Rec.
-Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM} {EMl : GenericEqM EP EM}.
+(** ** The recursion lemmas' hypotheses, bundled
+
+    The section below quantifies over the recursors' data and these
+    hypotheses. They are one class (an argument [R] of every lemma that
+    uses one), not section hypotheses, so that the section can be
+    reopened in other files (RecS*.v), which then build in parallel: each
+    reopening declares the same data, [Context {R : RecHyps ...}], and
+    the hypotheses as [Let]s of their fields, and a lemma from another
+    file finds its [R] by instance resolution. *)
+Definition LR_M_lawsRec2 (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM}
+  {EMl : GenericEqM EP EM} : VPLaws (@lr_vp (LR_M EP EM)) := vpM_laws EP EM.
+Definition LR_M_permRec (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM}
+  {EMl : GenericEqM EP EM} : VPPerm (@lr_vp (LR_M EP EM)) := vpM_perm EP EM.
+
+Module RecH.
+Section RecH.
+Context {EP EM : GenericEq} {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM} {EMl : GenericEqM EP EM}.
 
 Local Notation LRM := (LR_M EP EM).
-#[local] Instance LR_M_lawsRec2 : VPLaws (@lr_vp LRM) := vpM_laws EP EM.
 Local Notation GSubRel := (GSubRel EP EM).
 Local Notation VCtxSM := (@VCtxS EP EM EM LRM).
 Local Notation VTySM := (@VTyS EP EM EM LRM).
@@ -1758,50 +1772,11 @@ Local Notation VTmSM := (@VTmS EP EM EM LRM).
 Local Notation SubRelM := (@SubRel EM LRM).
 Local Notation LRtyM := (@LRty EM LRM).
 Local Notation LRtmM := (@LRtm EM LRM).
+#[local] Existing Instance LR_M_lawsRec2.
 
-Variables (G0 : gctx) (Γ0 : ctx) (L' : nat) (φ : nat -> lvl) (l1 l2 l1' l2' : lvl)
-  (MT MT' Mt Mt' : ty) (bs bs' : nat -> tm).
-Hypothesis (Hφ : usub_ok φ L' (gL G0))
-  (HMT : [ recGT G0 ; recΓT Γ0 ⊢[ lM ] MT @ lvren l1 (ush 1) ])
-  (HMT' : [ recGT G0 ; recΓT Γ0 ⊢[ lM ] MT' @ lvren l1' (ush 1) ])
-  (Hl1 : lequiv L' (lvsubst l1 φ) (lvsubst l1' φ))
-  (VMT : forall L'' ψ, usub_ok ψ L'' (gL (recGT G0)) ->
-     VTySM (G_us (recGT G0) L'' ψ) (ucsubst (recΓT Γ0) ψ) (usubst_ty MT ψ) (usubst_ty MT' ψ)
-       (lvsubst (lvren l1 (ush 1)) ψ))
-  (VMTl : forall L'' ψ, usub_ok ψ L'' (gL (recGT G0)) ->
-     VTySM (G_us (recGT G0) L'' ψ) (ucsubst (recΓT Γ0) ψ) (usubst_ty MT ψ) (usubst_ty MT ψ)
-       (lvsubst (lvren l1 (ush 1)) ψ))
-  (VMTr : forall L'' ψ, usub_ok ψ L'' (gL (recGT G0)) ->
-     VTySM (G_us (recGT G0) L'' ψ) (ucsubst (recΓT Γ0) ψ) (usubst_ty MT' ψ) (usubst_ty MT' ψ)
-       (lvsubst (lvren l1' (ush 1)) ψ))
-  (HMt : [ recGt G0 ; recΓt Γ0 ⊢[ lM ] Mt @ lvren l2 (ush 1) ])
-  (HMt' : [ recGt G0 ; recΓt Γ0 ⊢[ lM ] Mt' @ lvren l2' (ush 1) ])
-  (Hl2 : lequiv L' (lvsubst l2 φ) (lvsubst l2' φ))
-  (VMt : forall L'' ψ, usub_ok ψ L'' (gL (recGt G0)) ->
-     VTySM (G_us (recGt G0) L'' ψ) (ucsubst (recΓt Γ0) ψ) (usubst_ty Mt ψ) (usubst_ty Mt' ψ)
-       (lvsubst (lvren l2 (ush 1)) ψ))
-  (VMtl : forall L'' ψ, usub_ok ψ L'' (gL (recGt G0)) ->
-     VTySM (G_us (recGt G0) L'' ψ) (ucsubst (recΓt Γ0) ψ) (usubst_ty Mt ψ) (usubst_ty Mt ψ)
-       (lvsubst (lvren l2 (ush 1)) ψ))
-  (VMtr : forall L'' ψ, usub_ok ψ L'' (gL (recGt G0)) ->
-     VTySM (G_us (recGt G0) L'' ψ) (ucsubst (recΓt Γ0) ψ) (usubst_ty Mt' ψ) (usubst_ty Mt' ψ)
-       (lvsubst (lvren l2' (ush 1)) ψ))
-  (Hbs : forall k, k < nbr -> [ brG k G0 ; brΓ k Γ0 (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
-                               bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ])
-  (Hbs' : forall k, k < nbr -> [ brG k G0 ; brΓ k Γ0 (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
-                               bs' k : brRes k (wrapMT MT') (wrapMt Mt') @ brLv k l1' l2' ])
-  (VBr : forall k, k < nbr -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
-     VTmSM (G_us (brG k G0) L'' ψ) (ucsubst (brΓ k Γ0 (wrapMT MT) (wrapMt Mt) l1 l2) ψ)
-       (usubst_tm (bs k) ψ) (usubst_tm (bs' k) ψ)
-       (usubst_ty (brRes k (wrapMT MT) (wrapMt Mt)) ψ) (lvsubst (brLv k l1 l2) ψ))
-  (VBr' : forall k, k < nbr -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
-     VTmSM (G_us (brG k G0) L'' ψ) (ucsubst (brΓ k Γ0 (wrapMT MT') (wrapMt Mt') l1' l2') ψ)
-       (usubst_tm (bs' k) ψ) (usubst_tm (bs' k) ψ)
-       (usubst_ty (brRes k (wrapMT MT') (wrapMt Mt')) ψ) (lvsubst (brLv k l1' l2') ψ))
-  (VΓ : VCtxSM (G_us G0 L' φ) (ucsubst Γ0 φ)).
-Variables (G' : gctx) (σ σ' : gsub) (Θ : ctx) (e e' : lsub).
-Hypothesis (Hσ : GSubRel G' (G_us G0 L' φ) σ σ')
-  (He : SubRelM G' (gcsubst (ucsubst Γ0 φ) σ) Θ e e').
+Context {G0 : gctx} {Γ0 : ctx} {L' : nat} {φ : nat -> lvl} {l1 l2 l1' l2' : lvl}
+  {MT MT' Mt Mt' : ty} {bs bs' : nat -> tm}.
+Context {G' : gctx} {σ σ' : gsub} {Θ : ctx} {e e' : lsub}.
 
 Local Notation MTL := ((usubst_ty MT (uup φ))⦃gup (guwk σ)⦄[llift (gwk (uwk e))]).
 Local Notation MTR := ((usubst_ty MT' (uup φ))⦃gup (guwk σ')⦄[llift (gwk (uwk e'))]).
@@ -1810,11 +1785,115 @@ Local Notation MtR := ((usubst_ty Mt' (uup φ))⦃gup (gup (guwk σ'))⦄[llift 
 Local Notation bsL := (fun k => ((usubst_tm (bs k) (uupn (br_nu k) φ))⦃gbsub k σ⦄)[lliftn (br_nl k) (bsub k e)]).
 Local Notation bsR := (fun k => ((usubst_tm (bs' k) (uupn (br_nu k) φ))⦃gbsub k σ'⦄)[lliftn (br_nl k) (bsub k e')]).
 
-Hypothesis (HrbL : RBwf G' Θ (lvsubst l1 φ) (lvsubst l2 φ) MTL MtL bsL)
-  (HrbR : RBwf G' Θ (lvsubst l1' φ) (lvsubst l2' φ) MTR MtR bsR).
+Class RecHyps : Prop := {
+  Hφ : usub_ok φ L' (gL G0) ;
+  HMT : [ recGT G0 ; recΓT Γ0 ⊢[ lM ] MT @ lvren l1 (ush 1) ] ;
+  HMT' : [ recGT G0 ; recΓT Γ0 ⊢[ lM ] MT' @ lvren l1' (ush 1) ] ;
+  Hl1 : lequiv L' (lvsubst l1 φ) (lvsubst l1' φ) ;
+  VMT : forall L'' ψ, usub_ok ψ L'' (gL (recGT G0)) ->
+     VTySM (G_us (recGT G0) L'' ψ) (ucsubst (recΓT Γ0) ψ) (usubst_ty MT ψ) (usubst_ty MT' ψ)
+       (lvsubst (lvren l1 (ush 1)) ψ) ;
+  VMTl : forall L'' ψ, usub_ok ψ L'' (gL (recGT G0)) ->
+     VTySM (G_us (recGT G0) L'' ψ) (ucsubst (recΓT Γ0) ψ) (usubst_ty MT ψ) (usubst_ty MT ψ)
+       (lvsubst (lvren l1 (ush 1)) ψ) ;
+  VMTr : forall L'' ψ, usub_ok ψ L'' (gL (recGT G0)) ->
+     VTySM (G_us (recGT G0) L'' ψ) (ucsubst (recΓT Γ0) ψ) (usubst_ty MT' ψ) (usubst_ty MT' ψ)
+       (lvsubst (lvren l1' (ush 1)) ψ) ;
+  HMt : [ recGt G0 ; recΓt Γ0 ⊢[ lM ] Mt @ lvren l2 (ush 1) ] ;
+  HMt' : [ recGt G0 ; recΓt Γ0 ⊢[ lM ] Mt' @ lvren l2' (ush 1) ] ;
+  Hl2 : lequiv L' (lvsubst l2 φ) (lvsubst l2' φ) ;
+  VMt : forall L'' ψ, usub_ok ψ L'' (gL (recGt G0)) ->
+     VTySM (G_us (recGt G0) L'' ψ) (ucsubst (recΓt Γ0) ψ) (usubst_ty Mt ψ) (usubst_ty Mt' ψ)
+       (lvsubst (lvren l2 (ush 1)) ψ) ;
+  VMtl : forall L'' ψ, usub_ok ψ L'' (gL (recGt G0)) ->
+     VTySM (G_us (recGt G0) L'' ψ) (ucsubst (recΓt Γ0) ψ) (usubst_ty Mt ψ) (usubst_ty Mt ψ)
+       (lvsubst (lvren l2 (ush 1)) ψ) ;
+  VMtr : forall L'' ψ, usub_ok ψ L'' (gL (recGt G0)) ->
+     VTySM (G_us (recGt G0) L'' ψ) (ucsubst (recΓt Γ0) ψ) (usubst_ty Mt' ψ) (usubst_ty Mt' ψ)
+       (lvsubst (lvren l2' (ush 1)) ψ) ;
+  Hbs : forall k, k < nbr -> [ brG k G0 ; brΓ k Γ0 (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ]
+                               bs k : brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ] ;
+  Hbs' : forall k, k < nbr -> [ brG k G0 ; brΓ k Γ0 (wrapMT MT') (wrapMt Mt') l1' l2' ⊢[ lM ]
+                               bs' k : brRes k (wrapMT MT') (wrapMt Mt') @ brLv k l1' l2' ] ;
+  VBr : forall k, k < nbr -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
+     VTmSM (G_us (brG k G0) L'' ψ) (ucsubst (brΓ k Γ0 (wrapMT MT) (wrapMt Mt) l1 l2) ψ)
+       (usubst_tm (bs k) ψ) (usubst_tm (bs' k) ψ)
+       (usubst_ty (brRes k (wrapMT MT) (wrapMt Mt)) ψ) (lvsubst (brLv k l1 l2) ψ) ;
+  VBr' : forall k, k < nbr -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
+     VTmSM (G_us (brG k G0) L'' ψ) (ucsubst (brΓ k Γ0 (wrapMT MT') (wrapMt Mt') l1' l2') ψ)
+       (usubst_tm (bs' k) ψ) (usubst_tm (bs' k) ψ)
+       (usubst_ty (brRes k (wrapMT MT') (wrapMt Mt')) ψ) (lvsubst (brLv k l1' l2') ψ) ;
+  VΓ : VCtxSM (G_us G0 L' φ) (ucsubst Γ0 φ) ;
+  Hσ : GSubRel G' (G_us G0 L' φ) σ σ' ;
+  He : SubRelM G' (gcsubst (ucsubst Γ0 φ) σ) Θ e e' ;
+  HrbL : RBwf G' Θ (lvsubst l1 φ) (lvsubst l2 φ) MTL MtL bsL ;
+  HrbR : RBwf G' Θ (lvsubst l1' φ) (lvsubst l2' φ) MTR MtR bsR ;
+  EL : gL G' = L' ;
+  HG0 : [ ⊢ G_us G0 L' φ ] ;
+  HΓ0 : [ G_us G0 L' φ ; ucsubst Γ0 φ ⊢[ lM ] ] ;
+  VΓT : forall L'' ψ, usub_ok ψ L'' (gL (recGT G0)) -> VCtxSM (G_us (recGT G0) L'' ψ) (ucsubst (recΓT Γ0) ψ) ;
+  VΓt : forall L'' ψ, usub_ok ψ L'' (gL (recGt G0)) -> VCtxSM (G_us (recGt G0) L'' ψ) (ucsubst (recΓt Γ0) ψ) ;
+  VΓbr : forall k, k < nbr -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
+     VCtxSM (G_us (brG k G0) L'' ψ) (ucsubst (brΓ k Γ0 (wrapMT MT) (wrapMt Mt) l1 l2) ψ)
+}.
+End RecH.
+End RecH.
+
+Section Rec.
+Context {EP EM : GenericEq} {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM} {EMl : GenericEqM EP EM}.
+
+Local Notation LRM := (LR_M EP EM).
+Local Notation GSubRel := (GSubRel EP EM).
+Local Notation VCtxSM := (@VCtxS EP EM EM LRM).
+Local Notation VTySM := (@VTyS EP EM EM LRM).
+Local Notation VTmSM := (@VTmS EP EM EM LRM).
+Local Notation SubRelM := (@SubRel EM LRM).
+Local Notation LRtyM := (@LRty EM LRM).
+Local Notation LRtmM := (@LRtm EM LRM).
+#[local] Existing Instance LR_M_lawsRec2.
+
+Context {G0 : gctx} {Γ0 : ctx} {L' : nat} {φ : nat -> lvl} {l1 l2 l1' l2' : lvl}
+  {MT MT' Mt Mt' : ty} {bs bs' : nat -> tm}.
+Context {G' : gctx} {σ σ' : gsub} {Θ : ctx} {e e' : lsub}.
+Context {RH : @RecH.RecHyps EP EM G0 Γ0 L' φ l1 l2 l1' l2' MT MT' Mt Mt' bs bs' G' σ σ' Θ e e'}.
+
+Let Hφ := @RecH.Hφ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let HMT := @RecH.HMT _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let HMT' := @RecH.HMT' _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let Hl1 := @RecH.Hl1 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let VMT := @RecH.VMT _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let VMTl := @RecH.VMTl _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let VMTr := @RecH.VMTr _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let HMt := @RecH.HMt _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let HMt' := @RecH.HMt' _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let Hl2 := @RecH.Hl2 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let VMt := @RecH.VMt _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let VMtl := @RecH.VMtl _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let VMtr := @RecH.VMtr _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let Hbs := @RecH.Hbs _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let Hbs' := @RecH.Hbs' _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let VBr := @RecH.VBr _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let VBr' := @RecH.VBr' _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let VΓ := @RecH.VΓ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let Hσ := @RecH.Hσ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let He := @RecH.He _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let HrbL := @RecH.HrbL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let HrbR := @RecH.HrbR _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let EL := @RecH.EL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let HG0 := @RecH.HG0 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let HΓ0 := @RecH.HΓ0 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let VΓT := @RecH.VΓT _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let VΓt := @RecH.VΓt _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+Let VΓbr := @RecH.VΓbr _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ RH.
+
+Local Notation MTL := ((usubst_ty MT (uup φ))⦃gup (guwk σ)⦄[llift (gwk (uwk e))]).
+Local Notation MTR := ((usubst_ty MT' (uup φ))⦃gup (guwk σ')⦄[llift (gwk (uwk e'))]).
+Local Notation MtL := ((usubst_ty Mt (uup φ))⦃gup (gup (guwk σ))⦄[llift (gwk (gwk (uwk e)))]).
+Local Notation MtR := ((usubst_ty Mt' (uup φ))⦃gup (gup (guwk σ'))⦄[llift (gwk (gwk (uwk e')))]).
+Local Notation bsL := (fun k => ((usubst_tm (bs k) (uupn (br_nu k) φ))⦃gbsub k σ⦄)[lliftn (br_nl k) (bsub k e)]).
+Local Notation bsR := (fun k => ((usubst_tm (bs' k) (uupn (br_nu k) φ))⦃gbsub k σ'⦄)[lliftn (br_nl k) (bsub k e')]).
 
 (** Facts from the hypotheses. *)
-Hypothesis (EL : gL G' = L').
 Lemma Nσ : gdnf σ. Proof using Hσ. exact (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)). Qed.
 Lemma Nσ' : gdnf σ'. Proof using Hσ. exact (gsw_dnf _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ)). Qed.
 Lemma De : LK dnftm e. Proof using ELM He. exact (proj1 (SubRel_dnf _ _ _ _ _ He)). Qed.
@@ -5034,13 +5113,7 @@ Qed.
 (** ** Neutral scrutinees: the motives and branches under their binders
     (M3_DESIGN.md E13, E14) *)
 
-#[local] Instance LR_M_permRec : VPPerm (@lr_vp LRM) := vpM_perm EP EM.
-
-Hypothesis (HG0 : [ ⊢ G_us G0 L' φ ]) (HΓ0 : [ G_us G0 L' φ ; ucsubst Γ0 φ ⊢[ lM ] ])
-  (VΓT : forall L'' ψ, usub_ok ψ L'' (gL (recGT G0)) -> VCtxSM (G_us (recGT G0) L'' ψ) (ucsubst (recΓT Γ0) ψ))
-  (VΓt : forall L'' ψ, usub_ok ψ L'' (gL (recGt G0)) -> VCtxSM (G_us (recGt G0) L'' ψ) (ucsubst (recΓt Γ0) ψ))
-  (VΓbr : forall k, k < nbr -> forall L'' ψ, usub_ok ψ L'' (gL (brG k G0)) ->
-     VCtxSM (G_us (brG k G0) L'' ψ) (ucsubst (brΓ k Γ0 (wrapMT MT) (wrapMt Mt) l1 l2) ψ)).
+#[local] Existing Instance LR_M_permRec.
 
 Lemma EP_MT : @geq_ty EM (recGT G') (recΓT Θ) MTL MTR (lvren (lvsubst l1 φ) (ush 1)).
 Proof using ELM ELP EMl HG0 He HΓ0 Hσ Hφ VMT VΓT.
