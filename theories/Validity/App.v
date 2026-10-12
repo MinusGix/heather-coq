@@ -1,5 +1,5 @@
 (** * Validity of application *)
-From DeLaM.Validity Require Export Red.
+From DeLaM.Validity Require Export Pi Red.
 
 Section App.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.

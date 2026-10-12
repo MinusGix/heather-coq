@@ -14,7 +14,7 @@
     children and the synthesized induction hypothesis [wfIH], a λ whose
     applications step to [elim_Wf] at an [nth] into the children, related
     at [Wf] by MX §13's index lemma ([V_nth]) and by the spine's motive. *)
-From DeLaM.Validity Require Export WfNth.
+From DeLaM.Validity Require Export GLift Wf WfNth.
 
 Section WfElim.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.

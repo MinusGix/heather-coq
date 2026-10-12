@@ -1,5 +1,5 @@
 (** * Typed reductions used by the validity lemmas *)
-From DeLaM.Validity Require Export Pi.
+From DeLaM.Validity Require Export Basic.
 
 Section Red.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.

@@ -1,5 +1,5 @@
 (** * Validity of β and η *)
-From DeLaM.Validity Require Export Lam.
+From DeLaM.Validity Require Export App.
 
 Section PiComp.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.

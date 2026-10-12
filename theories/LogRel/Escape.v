@@ -1,4 +1,5 @@
 (** * Escape: related types and terms are well formed and generically equal *)
+From DeLaM.Typing Require Export Presupposition.
 From DeLaM.LogRel Require Export Def.
 
 Section Escape.

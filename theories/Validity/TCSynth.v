@@ -6,7 +6,7 @@
     meta-level functions: the function's type (unique, [type_uniq]) is
     normalized, and its head must be the matching former, whose
     components give the result. *)
-From DeLaM.Validity Require Export TCType.
+From DeLaM.Validity Require Export TCType Uniform.
 
 Section Step.
 Context (n : nat) (IH : IHsz n).

@@ -8,7 +8,7 @@
     synthesized induction hypothesis, a λ whose applications step to
     [elim_W] at the children, related by the induction hypothesis of the
     children's premise; at a neutral, [elim_W] is neutral. *)
-From DeLaM.Validity Require Export Sum.
+From DeLaM.Validity Require Export CodePi.
 
 Section W.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.

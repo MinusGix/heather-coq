@@ -5,7 +5,7 @@
     two relations are declarative equality.  Parameterised by a computing
     layer [i] (D or M); at such a layer [typeof i = i], so weakening and
     conversion stay inside the layer. *)
-From DeLaM.Typing Require Export Generic Presupposition.
+From DeLaM.Typing Require Export Generic Presupposition StaticCode.
 
 Section Decl.
 Context (i : layer) (Hi : compt i).
