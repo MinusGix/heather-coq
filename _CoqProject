@@ -18,6 +18,7 @@ theories/Syntax/LevelEq.v
 theories/Syntax/LevelDec.v
 theories/Syntax/LevelAx.v
 theories/Syntax/NormalForms.v
+theories/Syntax/ReductionBase.v
 theories/Syntax/Reduction.v
 theories/Syntax/LevelRed.v
 theories/Syntax/Weakening.v
@@ -34,11 +35,13 @@ theories/Typing/USubstitution.v
 theories/Typing/RecWf.v
 theories/Typing/TypedDnf.v
 theories/Typing/GRenSyntax.v
+theories/Typing/GRenRec.v
 theories/Typing/GWeakening.v
 theories/Typing/UPerm.v
 theories/Typing/Lifting.v
 theories/Typing/Properties.v
 
+theories/Typing/SubstRec.v
 theories/Typing/Substitution.v
 theories/Typing/Functionality.v
 theories/Typing/RecGSubst.v
@@ -48,6 +51,7 @@ theories/Typing/RecInst.v
 theories/Typing/RecPeel.v
 theories/Typing/UInst.v
 theories/Typing/MInst.v
+theories/Typing/PresupAux.v
 theories/Typing/Presupposition.v
 theories/Typing/Inversion.v
 theories/Typing/WfScope.v
@@ -103,6 +107,7 @@ theories/Validity/WElim.v
 theories/Validity/Vec.v
 theories/Validity/GLift.v
 theories/Validity/Wf.v
+theories/Validity/WfNthReds.v
 theories/Validity/WfNth.v
 theories/Validity/WfElim.v
 theories/Validity/Squash.v

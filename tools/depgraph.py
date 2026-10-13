@@ -15,12 +15,14 @@ answers two questions:
       splitting files, and the files whose place in the chain is only
       an artifact of the `Require` order (`moved` in the report).
 
-  tools/depgraph.py FILE.v [--ideal]
+  tools/depgraph.py FILE.v [--ideal] [--decls]
       FILE's declarations grouped by the latest module each needs
       (directly or through earlier declarations of FILE), with the time
       of each group: the parts of FILE that could move to a file of
       their own that starts earlier. `--ideal` measures "earlier"
-      against the reference graph instead of the actual one.
+      against the reference graph instead of the actual one; `--decls`
+      lists every declaration with its time, the longest chain ending in
+      it and the latest module it needs (what to move where).
 
 The `.glob` does not record tactics (`Ltac`), hints, instances found by
 resolution or `Ltac2` used across files, so a reference graph can be
@@ -116,7 +118,7 @@ def report_ideal(times, deps, order, jobs, n):
               f'(uses {", ".join(y.split("/")[-1] for y in ideal[x][-3:])})')
 
 
-def report_file(f, times, deps, ideal):
+def report_file(f, times, deps, ideal, listing=False):
     x = re.sub(r'\.v$', '', f)
     graph = ideal_deps(deps) if ideal else deps
     fin, _, _ = critical(times, graph)
@@ -213,6 +215,12 @@ def report_file(f, times, deps, ideal):
         for d in reversed(chain):
             if d['t'] >= 0.5:
                 print(f'{d["t"]:7.1f}  {d["name"]}')
+    if listing:
+        print('every declaration: time, chain ending in it, latest module '
+              'needed, line')
+        for d in decls:
+            need = d['need'].split('/')[-1] if d['need'] else '-'
+            print(f'{d["t"]:7.2f} {d["chain"]:7.2f}  {need:22s} {d["line"]}')
 
 
 def resolve(name, files):
@@ -283,6 +291,8 @@ def main():
     ap.add_argument('file', nargs='?')
     ap.add_argument('n', nargs='?', type=int, default=25)
     ap.add_argument('--ideal', action='store_true')
+    ap.add_argument('--decls', action='store_true',
+                    help='with FILE.v: also list every declaration')
     ap.add_argument('-j', type=int, default=4)
     ap.add_argument('--try', dest='edits', action='append', default=[],
                     metavar='FILE=A,B', help='replace FILE\'s Requires')
@@ -292,7 +302,7 @@ def main():
         n = int(args.file) if args.file else args.n
         report_try(args.edits, times, deps, order, args.j, n)
     elif args.file and args.file.endswith('.v'):
-        report_file(args.file, times, deps, args.ideal)
+        report_file(args.file, times, deps, args.ideal, args.decls)
     elif args.ideal:
         n = int(args.file) if args.file else args.n
         report_ideal(times, deps, order, args.j, n)

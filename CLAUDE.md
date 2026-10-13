@@ -25,9 +25,13 @@ list of proof-engineering gotchas. Follow it.
 
 - `nix develop path:. --command make -j4` (Coq 8.20, Equations, smpl from
   the flake). A clean build takes 10 to 22 minutes, depending on the
-  machine. Latest: 713 s wall at -j4 after `RecS` was split
-  (2026-10-12), against 743 s for the tree before it, back to back
-  (critical path 693 s → 634 s). The 2026-10-12 dependency pass
+  machine. Latest: 473 s wall at -j4 after the Typing metatheory's
+  syntax parts were split off (2026-10-12, `ReductionBase`, `GRenRec`,
+  `SubstRec`, `PresupAux`, `WfNthReds`), against 546 s for the tree
+  before it, back to back on a faster 4-core machine (critical path
+  482 s → 412 s). Before that: 713 s after `RecS` was split, against
+  743 s for the tree before it (critical path 693 s → 634 s). The
+  2026-10-12 dependency pass
   (Requires trimmed, wide files split) measured 748 s, where the
   2026-10-11 tree measured 903 s back to back on the same 4-core cloud
   machine (critical path 853 s → 687 s). Before that:
@@ -80,7 +84,12 @@ list of proof-engineering gotchas. Follow it.
   per-former files (`Pi` … `WfElim`) each require only the formers they
   use, and wide files are split into parts that build in parallel
   (`LevelEq*`, `AlgDec*`, `GRenSyntax`, `RecReductCases`, `RecS*`),
-  with the old name kept as the file that exports them. A sectioned
+  with the old name kept as the file that exports them. A metatheory
+  file's syntactic lemmas (commutations, the recursors' data under an
+  operation, untyped reductions) and its per-former lemmas go in a file
+  of their own that requires only what they use (`ReductionBase`,
+  `GRenRec`, `SubstRec`, `WfNthReds`, `PresupAux`); `tools/depgraph.py FILE.v --decls` lists each
+  declaration's latest needed module. A sectioned
   file splits by bundling its hypotheses into a class, as `RecS` does
   (`RecSBase.v`; the recipe is in `M1_DESIGN.md`'s build-time
   gotchas): a new former's recursion cases go in the `RecS*` part of
