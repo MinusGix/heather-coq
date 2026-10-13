@@ -44,6 +44,7 @@ Fixpoint unf_ty (T : ty) {struct T} : ty :=
   | tyWf l A N => tyWf l (unf_ty A) (unf_tm N)
   | tySq l A => tySq l (unf_ty A)
   | tyDVec l n F => tyDVec l (unf_tm n) (unf_ty F)
+  | tyIWf l li X A N Ot C m => tyIWf l li (unf_ty X) (unf_ty A) (unf_tm N) (unf_tm Ot) (unf_tm C) (unf_tm m)
   | tyFin n => tyFin (unf_tm n)
   end
 with unf_tm (t : tm) {struct t} : tm :=
@@ -109,6 +110,10 @@ with unf_tm (t : tm) {struct t} : tm :=
   | tmSq l A a => tmSq l (unf_ty A) (unf_tm a)
   | tmElimSq l l' A M c t => tmElimSq l l' (unf_ty A) (unf_ty M) (unf_tm c) (unf_tm t)
   | tmSqCode l s => tmSqCode l (unf_tm s)
+  | tmSupi l li X A N Ot C a cs =>
+      tmSupi l li (unf_ty X) (unf_ty A) (unf_tm N) (unf_tm Ot) (unf_tm C) (unf_tm a) (unf_tm cs)
+  | tmElimIWf l li l' X A N Ot C M c m t =>
+      tmElimIWf l li l' (unf_ty X) (unf_ty A) (unf_tm N) (unf_tm Ot) (unf_tm C) (unf_ty M) (unf_tm c) (unf_tm m) (unf_tm t)
   | tmJ l l' A a M c u e =>
       tmJ l l' (unf_ty A) (unf_tm a) (unf_ty M) (unf_tm c) (unf_tm u) (unf_tm e)
   | gdef u b d => subst_tm (unf_tm b) (unf_l d)
@@ -392,6 +397,7 @@ Fixpoint gfree_ty (T : ty) {struct T} : Prop :=
   | tyWf l A N => gfree_ty A /\ gfree_tm N
   | tySq l A => gfree_ty A
   | tyDVec l n F => gfree_tm n /\ gfree_ty F
+  | tyIWf l li X A N Ot C m => (gfree_ty X) /\ (gfree_ty A) /\ (gfree_tm N) /\ (gfree_tm Ot) /\ (gfree_tm C) /\ (gfree_tm m)
   | tyFin n => gfree_tm n
   end
 with gfree_tm (t : tm) {struct t} : Prop :=
@@ -450,6 +456,9 @@ with gfree_tm (t : tm) {struct t} : Prop :=
   | tmSq l A a => gfree_ty A /\ gfree_tm a
   | tmElimSq l l' A M c t => gfree_ty A /\ gfree_ty M /\ gfree_tm c /\ gfree_tm t
   | tmSqCode _ s => gfree_tm s
+  | tmSupi l li X A N Ot C a cs => (gfree_ty X) /\ (gfree_ty A) /\ (gfree_tm N) /\ (gfree_tm Ot) /\ (gfree_tm C) /\ (gfree_tm a) /\ (gfree_tm cs)
+  | tmElimIWf l li l' X A N Ot C M c m t =>
+      (gfree_ty X) /\ (gfree_ty A) /\ (gfree_tm N) /\ (gfree_tm Ot) /\ (gfree_tm C) /\ (gfree_ty M) /\ (gfree_tm c) /\ (gfree_tm m) /\ (gfree_tm t)
   | tmJ l l' A a M c u e => gfree_ty A /\ gfree_tm a /\ gfree_ty M /\ gfree_tm c /\ gfree_tm u /\ gfree_tm e
   | gdef u b d => False
   end
@@ -633,8 +642,10 @@ Ltac gf_peel := repeat first
   [ apply gfree_peelL | apply gfree_peelG | apply gfree_peelU | apply gfree_rb_br
   | progress cbn [gfree_o gfree_tm gfree_ty gfree_ctx recT rect] | split | assumption
   | apply gfree_ren_ty | apply gfree_ren
-  | apply gfree_subst_ty; [| first [apply gfree_lsingle | apply gfree_lsingle2 | apply gfree_lsingle3 | apply gfree_lsucc]]
-  | apply gfree_subst; [| first [apply gfree_lsingle | apply gfree_lsingle2 | apply gfree_lsingle3 | apply gfree_lsucc]]
+  | apply gfree_subst_ty; [| repeat apply gfree_llift;
+                              first [apply gfree_lsingle | apply gfree_lsingle2 | apply gfree_lsingle3 | apply gfree_lsucc]]
+  | apply gfree_subst; [| repeat apply gfree_llift;
+                           first [apply gfree_lsingle | apply gfree_lsingle2 | apply gfree_lsingle3 | apply gfree_lsucc]]
   | exact I ].
 
 Lemma gfree_redT l1 l2 rb l Δ c r : redT l1 l2 rb l Δ c = Some r ->
@@ -656,7 +667,9 @@ Lemma gfree_red_both :
 Proof.
   apply red_both; intros; cbn in *; repeat match goal with H : _ /\ _ |- _ => destruct H end;
     try solve [eapply gfree_redT; eauto | eapply gfree_redt; eauto]; try tauto.
-  all: try unfold wIH, wfIH, tmNth, nthMot, nthBase, nthStep; gf_peel; auto with unf.
+  all: try unfold wIH, wfIH, tmNth, nthMot, nthBase, nthStep,
+    iwfIH, iwfFam, tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS;
+    gf_peel; auto with unf.
 Qed.
 Lemma gfree_red t t' : red t t' -> gfree_tm t -> gfree_tm t'. Proof. apply gfree_red_both. Qed.
 Lemma gfree_red_ty T T' : red_ty T T' -> gfree_ty T -> gfree_ty T'. Proof. apply gfree_red_both. Qed.

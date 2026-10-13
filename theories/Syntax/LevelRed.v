@@ -219,6 +219,44 @@ Proof.
   all: cbn; repeat split; auto using leqv_refl.
 Qed.
 
+(** [dnth] and [elim_IWf]'s induction hypothesis (M17b). *)
+Lemma leq_tmDNth k n F cs i k' n' F' cs' i' :
+  leqv k k' -> tm_leq n n' -> ty_leq F F' -> tm_leq cs cs' -> tm_leq i i' ->
+  tm_leq (tmDNth k n F cs i) (tmDNth k' n' F' cs' i').
+Proof.
+  intros E1 En EF Ec Ei.
+  unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
+  pose proof (proj1 leq_ren_all) as Rty. pose proof (proj1 (proj2 leq_ren_all)) as Rtm.
+  pose proof (proj1 leq_subst_all) as Sty. cbn beta in Rty, Rtm, Sty.
+  cbn [tm_leq ty_leq]; repeat split.
+  all: repeat first [ assumption | apply leqv_refl | apply Sty | lazymatch goal with |- lsub_leq _ _ => apply leq_lsingle end | apply Rty | apply Rtm
+                    | progress cbn [ty_leq tm_leq lsub_leq]; repeat split | reflexivity ].
+Qed.
+Lemma leq_iwfIH k1 k2 k3 X A N Ot C M c a cs k1' k2' k3' X' A' N' Ot' C' M' c' a' cs' :
+  leqv k1 k1' -> leqv k2 k2' -> leqv k3 k3' -> ty_leq X X' -> ty_leq A A' -> tm_leq N N' ->
+  tm_leq Ot Ot' -> tm_leq C C' -> ty_leq M M' -> tm_leq c c' -> tm_leq a a' -> tm_leq cs cs' ->
+  tm_leq (iwfIH k1 k2 k3 X A N Ot C M c a cs) (iwfIH k1' k2' k3' X' A' N' Ot' C' M' c' a' cs').
+Proof.
+  intros E1 E2 E3 EX EA EN EO EC EM Ec Ea Ecs. unfold iwfIH.
+  pose proof (proj1 leq_ren_all) as Rty. pose proof (proj1 (proj2 leq_ren_all)) as Rtm.
+  pose proof (proj1 (proj2 leq_subst_all)) as Stm. cbn beta in Rty, Rtm, Stm.
+  assert (Ei : tm_leq C[llift (lsingle a)] C'[llift (lsingle a')])
+    by (apply Stm; [apply leq_llift, leq_lsingle|]; assumption).
+  (* [dnth] kept folded: unfolded, [cbn] splits it into a goal per node *)
+  assert (H : tm_leq (tmDNth (lmax k1 k2) N[lsingle a]⟨↑⟩ (iwfFam k1 k2 X A N Ot C a)⟨rlift ↑⟩ cs⟨↑⟩ (var 0))
+                     (tmDNth (lmax k1' k2') N'[lsingle a']⟨↑⟩ (iwfFam k1' k2' X' A' N' Ot' C' a')⟨rlift ↑⟩ cs'⟨↑⟩ (var 0))).
+  { apply leq_tmDNth; [apply leqv_lmax; assumption | apply Rtm, Stm; [apply leq_lsingle|]; assumption
+                     | | apply Rtm; assumption | reflexivity].
+    apply (proj1 leq_ren_all). unfold iwfFam. cbn [ty_leq]; repeat split; auto.
+    all: repeat first [ assumption | apply Rty | apply Rtm ]. }
+  revert H; generalize (tmDNth (lmax k1 k2) N[lsingle a]⟨↑⟩ (iwfFam k1 k2 X A N Ot C a)⟨rlift ↑⟩ cs⟨↑⟩ (var 0))
+                       (tmDNth (lmax k1' k2') N'[lsingle a']⟨↑⟩ (iwfFam k1' k2' X' A' N' Ot' C' a')⟨rlift ↑⟩ cs'⟨↑⟩ (var 0)).
+  intros x x' H.
+  cbn [tm_leq ty_leq]; repeat split; auto.
+  all: repeat first [ assumption | apply Rty | apply Rtm | apply Stm
+                    | lazymatch goal with |- lsub_leq _ _ => apply leq_lsingle end ].
+Qed.
+
 (** ** One step *)
 
 Lemma red_leq_both :
@@ -252,6 +290,8 @@ Proof.
       apply (proj1 (proj2 leq_subst_all)); [unfold lsingle3; split; [cbn; repeat split; auto | apply leq_wIH; auto] | auto]
     | lazymatch goal with |- tm_leq _[lsingle3 _ _ (wfIH _ _ _ _ _ _ _ _)] _ => idtac end;
       apply (proj1 (proj2 leq_subst_all)); [unfold lsingle3; split; [cbn; repeat split; auto | apply leq_wfIH; auto] | auto]
+    | lazymatch goal with |- tm_leq _[lsingle3 _ _ (iwfIH _ _ _ _ _ _ _ _ _ _ _ _)] _ => idtac end;
+      apply (proj1 (proj2 leq_subst_all)); [unfold lsingle3; split; [cbn; repeat split; auto | apply leq_iwfIH; auto] | auto]
     | apply (proj1 (proj2 leq_subst_all)); cbn; repeat split; auto
     | apply (proj1 (proj2 leq_gsubst_all)); [apply leq_gsingle; cbn; auto | auto]
     | apply (proj1 (proj2 leq_usubst_all)); [apply leqv_uext; assumption | assumption] ].

@@ -53,6 +53,10 @@ Inductive ty : Type :=
 | tySq (l : lvl) (A : ty)                 (* ∥A∥^l @ l *)
 (* dependent fixed-length tuples (M17a): reduce on the length          F: +1 (i : Fin n) *)
 | tyDVec (l : lvl) (n : tm) (F : ty)      (* DVec^l(n; i. F) @ l *)
+(* indexed finitary trees (M17b): index type [I], shapes [A], arity [N],
+   output index [O] and child index [C] at each shape, the index [m] *)
+| tyIWf (l li : lvl) (X A : ty) (N Ot C m : tm)
+    (* IWf^{l,li}(I; x : A. N; x. O; x i. C)(m) @ l ⊔ li      N, O: +1, C: +2 *)
 with tm : Type :=
 | var (n : nat)
 | tmErr
@@ -148,6 +152,15 @@ with tm : Type :=
 | tmElimSq (l l' : lvl) (A : ty) (M : ty) (c t : tm)
     (* ind_∥∥^{l,l'}(A; z. M; x. c; t) : ∥M[t/z]∥^{l'} @ l', t : ∥A∥^l      M, c: +1 *)
 | tmSqCode (l : lvl) (s : tm)            (* code of ∥El s∥^l : Ty l (M16b) *)
+(* indexed finitary trees (M17b): [sup_i] carries the signature, not the
+   index (its index is [O[a/x]]); the eliminator's motive binds the index
+   [j] and the scrutinee [z], its step the shape [a], the children [cs]
+   and the induction hypothesis [ih], innermost last *)
+| tmSupi (l li : lvl) (X A : ty) (N Ot C a cs : tm)
+    (* sup_i^{l,li}(I; x : A. N; x. O; x i. C; a; cs)      N, O: +1, C: +2 *)
+| tmElimIWf (l li l' : lvl) (X A : ty) (N Ot C : tm) (M : ty) (c m t : tm)
+    (* elim_IWf^{l,li,l'}(…; j z. M; a cs ih. c; m; t) : M[m/j, t/z] @ l'
+       N, O: +1, C, M: +2, c: +3 *)
 with ctx : Type :=
 | cnil
 | cvar (g : nat)
@@ -241,6 +254,7 @@ Fixpoint ren_ty (T : ty) (r : rsub) {struct T} : ty :=
   | tyWf l A N => tyWf l (ren_ty A r) (ren_tm N (rlift r))
   | tySq l A => tySq l (ren_ty A r)
   | tyDVec l n F => tyDVec l (ren_tm n r) (ren_ty F (rlift r))
+  | tyIWf l li X A N Ot C m => tyIWf l li (ren_ty X r) (ren_ty A r) (ren_tm N (rlift r)) (ren_tm Ot (rlift r)) (ren_tm C (rlift (rlift r))) (ren_tm m r)
   end
 with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   match t with
@@ -305,6 +319,10 @@ with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   | tmSq l A a => tmSq l (ren_ty A r) (ren_tm a r)
   | tmElimSq l l' A M c t => tmElimSq l l' (ren_ty A r) (ren_ty M (rlift r)) (ren_tm c (rlift r)) (ren_tm t r)
   | tmSqCode l s => tmSqCode l (ren_tm s r)
+  | tmSupi l li X A N Ot C a cs =>
+      tmSupi l li (ren_ty X r) (ren_ty A r) (ren_tm N (rlift r)) (ren_tm Ot (rlift r)) (ren_tm C (rlift (rlift r))) (ren_tm a r) (ren_tm cs r)
+  | tmElimIWf l li l' X A N Ot C M c m t =>
+      tmElimIWf l li l' (ren_ty X r) (ren_ty A r) (ren_tm N (rlift r)) (ren_tm Ot (rlift r)) (ren_tm C (rlift (rlift r))) (ren_ty M (rlift (rlift r))) (ren_tm c (rlift (rlift (rlift r)))) (ren_tm m r) (ren_tm t r)
   end
 with lren (d : lsub) (r : rsub) {struct d} : lsub :=
   match d with
@@ -349,6 +367,7 @@ Fixpoint gren_ty (T : ty) (ξ : nat -> nat) {struct T} : ty :=
   | tyWf l A N => tyWf l (gren_ty A ξ) (gren_tm N ξ)
   | tySq l A => tySq l (gren_ty A ξ)
   | tyDVec l n F => tyDVec l (gren_tm n ξ) (gren_ty F ξ)
+  | tyIWf l li X A N Ot C m => tyIWf l li (gren_ty X ξ) (gren_ty A ξ) (gren_tm N ξ) (gren_tm Ot ξ) (gren_tm C ξ) (gren_tm m ξ)
   end
 with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   match t with
@@ -414,6 +433,10 @@ with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   | tmSq l A a => tmSq l (gren_ty A ξ) (gren_tm a ξ)
   | tmElimSq l l' A M c t => tmElimSq l l' (gren_ty A ξ) (gren_ty M ξ) (gren_tm c ξ) (gren_tm t ξ)
   | tmSqCode l s => tmSqCode l (gren_tm s ξ)
+  | tmSupi l li X A N Ot C a cs =>
+      tmSupi l li (gren_ty X ξ) (gren_ty A ξ) (gren_tm N ξ) (gren_tm Ot ξ) (gren_tm C ξ) (gren_tm a ξ) (gren_tm cs ξ)
+  | tmElimIWf l li l' X A N Ot C M c m t =>
+      tmElimIWf l li l' (gren_ty X ξ) (gren_ty A ξ) (gren_tm N ξ) (gren_tm Ot ξ) (gren_tm C ξ) (gren_ty M ξ) (gren_tm c ξ) (gren_tm m ξ) (gren_tm t ξ)
   end
 with gcren (Γ : ctx) (ξ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -455,6 +478,7 @@ Fixpoint uren_ty (T : ty) (ρ : nat -> nat) {struct T} : ty :=
   | tyWf l A N => tyWf (lvren l ρ) (uren_ty A ρ) (uren_tm N ρ)
   | tySq l A => tySq (lvren l ρ) (uren_ty A ρ)
   | tyDVec l n F => tyDVec (lvren l ρ) (uren_tm n ρ) (uren_ty F ρ)
+  | tyIWf l li X A N Ot C m => tyIWf (lvren l ρ) (lvren li ρ) (uren_ty X ρ) (uren_ty A ρ) (uren_tm N ρ) (uren_tm Ot ρ) (uren_tm C ρ) (uren_tm m ρ)
   end
 with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   match t with
@@ -528,6 +552,10 @@ with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   | tmSq l A a => tmSq (lvren l ρ) (uren_ty A ρ) (uren_tm a ρ)
   | tmElimSq l l' A M c t => tmElimSq (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_ty M ρ) (uren_tm c ρ) (uren_tm t ρ)
   | tmSqCode l s => tmSqCode (lvren l ρ) (uren_tm s ρ)
+  | tmSupi l li X A N Ot C a cs =>
+      tmSupi (lvren l ρ) (lvren li ρ) (uren_ty X ρ) (uren_ty A ρ) (uren_tm N ρ) (uren_tm Ot ρ) (uren_tm C ρ) (uren_tm a ρ) (uren_tm cs ρ)
+  | tmElimIWf l li l' X A N Ot C M c m t =>
+      tmElimIWf (lvren l ρ) (lvren li ρ) (lvren l' ρ) (uren_ty X ρ) (uren_ty A ρ) (uren_tm N ρ) (uren_tm Ot ρ) (uren_tm C ρ) (uren_ty M ρ) (uren_tm c ρ) (uren_tm m ρ) (uren_tm t ρ)
   end
 with ucren (Γ : ctx) (ρ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -568,6 +596,7 @@ Fixpoint subst_ty (T : ty) (d : lsub) {struct T} : ty :=
   | tyWf l A N => tyWf l (subst_ty A d) (subst_tm N (llift d))
   | tySq l A => tySq l (subst_ty A d)
   | tyDVec l n F => tyDVec l (subst_tm n d) (subst_ty F (llift d))
+  | tyIWf l li X A N Ot C m => tyIWf l li (subst_ty X d) (subst_ty A d) (subst_tm N (llift d)) (subst_tm Ot (llift d)) (subst_tm C (llift (llift d))) (subst_tm m d)
   end
 with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   match t with
@@ -636,6 +665,10 @@ with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   | tmSq l A a => tmSq l (subst_ty A d) (subst_tm a d)
   | tmElimSq l l' A M c t => tmElimSq l l' (subst_ty A d) (subst_ty M (llift d)) (subst_tm c (llift d)) (subst_tm t d)
   | tmSqCode l s => tmSqCode l (subst_tm s d)
+  | tmSupi l li X A N Ot C a cs =>
+      tmSupi l li (subst_ty X d) (subst_ty A d) (subst_tm N (llift d)) (subst_tm Ot (llift d)) (subst_tm C (llift (llift d))) (subst_tm a d) (subst_tm cs d)
+  | tmElimIWf l li l' X A N Ot C M c m t =>
+      tmElimIWf l li l' (subst_ty X d) (subst_ty A d) (subst_tm N (llift d)) (subst_tm Ot (llift d)) (subst_tm C (llift (llift d))) (subst_ty M (llift (llift d))) (subst_tm c (llift (llift (llift d)))) (subst_tm m d) (subst_tm t d)
   end
 with lcomp (d' : lsub) (d : lsub) {struct d'} : lsub :=       (* d' ∘ d *)
   match d' with
@@ -795,6 +828,45 @@ Definition tmDNth (l : lvl) (n : tm) (F : ty) (cs i : tm) : tm :=
          l l (tyDVec l n F) (tyPi lzero l (tyFin n⟨↑⟩) F⟨rlift ↑⟩) cs)
       lzero l (tyFin n) F i.
 
+(** [IWf]'s children (M17_DESIGN.md, M17b): the family over [k : Fin N[a/x]]
+    whose [k]th member is [IWf] at the child index [C[a/x, k/i]], in [Γ, k]
+    for [a] in [Γ]. The children of [sup_i(a; cs)] are a
+    [DVec^{l ⊔ li}(N[a/x]; k. iwfFam a)]. *)
+Definition iwfFam (l li : lvl) (X A : ty) (N Ot C a : tm) : ty :=
+  tyIWf l li X⟨↑⟩ A⟨↑⟩ N⟨rlift ↑⟩ Ot⟨rlift ↑⟩ C⟨rlift (rlift ↑)⟩ C[llift (lsingle a)].
+
+(** [elim_IWf]'s synthesized induction hypothesis (Heather's
+    [iwf-former-design.md] §4): [λ^{0,l'}(i : Fin N[a/x]).
+    elim_IWf(…↑; C[a/x, i/i]; dnth^{l ⊔ li}(N[a/x]↑; k. iwfFam a↑; cs↑; i))].
+    As [wfIH], with the child index threaded through and [dnth] for [nth]. *)
+Definition iwfIH (l li l' : lvl) (X A : ty) (N Ot C : tm) (M : ty) (c a cs : tm) : tm :=
+  lam lzero l' (tyFin N[lsingle a])
+    (tmElimIWf l li l' X⟨↑⟩ A⟨↑⟩ N⟨rlift ↑⟩ Ot⟨rlift ↑⟩ C⟨rlift (rlift ↑)⟩ M⟨rlift (rlift ↑)⟩
+       c⟨rlift (rlift (rlift ↑))⟩ C[llift (lsingle a)]
+       (tmDNth (lmax l li) N[lsingle a]⟨↑⟩ (iwfFam l li X A N Ot C a)⟨rlift ↑⟩ cs⟨↑⟩ (var 0))).
+
+(** The step telescope of [elim_IWf], as [Wf]'s: the motive's scrutinee
+    type in [Γ, j : I]; the children's type in [Γ, a : A] (where [N], [Ot]
+    and [C] are at [a/x]); the induction hypothesis's in [Γ, a, cs]; the
+    step's in [Γ, a, cs, ih]. *)
+Notation iwfmotty l li X A N Ot C :=
+  (tyIWf l li X⟨↑⟩ A⟨↑⟩ N⟨rlift ↑⟩ Ot⟨rlift ↑⟩ C⟨rlift (rlift ↑)⟩ (var 0)).
+Notation iwfcsty l li X A N Ot C :=
+  (tyDVec (lmax l li) N
+     (tyIWf l li X⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩
+        C⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ C)).
+Notation iwfihty l li l' X A N Ot C M :=
+  (tyPi lzero l' (tyFin N⟨↑⟩) M⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩[lsingle2 C⟨rlift ↑⟩
+     (tmDNth (lmax l li) N⟨↑⟩⟨↑⟩
+        (tyIWf l li X⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩
+           Ot⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩
+           C⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ C⟨rlift ↑⟩⟨rlift ↑⟩)
+        (var 1) (var 0))]).
+Notation iwfstepty l li X A N Ot C M :=
+  (M⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩[lsingle2 Ot⟨↑⟩⟨↑⟩
+     (tmSupi l li X⟨↑⟩⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩
+        C⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ (var 2) (var 1))]).
+
 (** ** Global substitution
 
     A global substitution is a meta-level function to global objects.
@@ -864,6 +936,7 @@ Fixpoint gsubst_ty (T : ty) (σ : gsub) {struct T} : ty :=
   | tyWf l A N => tyWf l (gsubst_ty A σ) (gsubst_tm N σ)
   | tySq l A => tySq l (gsubst_ty A σ)
   | tyDVec l n F => tyDVec l (gsubst_tm n σ) (gsubst_ty F σ)
+  | tyIWf l li X A N Ot C m => tyIWf l li (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_tm Ot σ) (gsubst_tm C σ) (gsubst_tm m σ)
   end
 with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   match t with
@@ -931,6 +1004,10 @@ with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   | tmSq l A a => tmSq l (gsubst_ty A σ) (gsubst_tm a σ)
   | tmElimSq l l' A M c t => tmElimSq l l' (gsubst_ty A σ) (gsubst_ty M σ) (gsubst_tm c σ) (gsubst_tm t σ)
   | tmSqCode l s => tmSqCode l (gsubst_tm s σ)
+  | tmSupi l li X A N Ot C a cs =>
+      tmSupi l li (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_tm Ot σ) (gsubst_tm C σ) (gsubst_tm a σ) (gsubst_tm cs σ)
+  | tmElimIWf l li l' X A N Ot C M c m t =>
+      tmElimIWf l li l' (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_tm Ot σ) (gsubst_tm C σ) (gsubst_ty M σ) (gsubst_tm c σ) (gsubst_tm m σ) (gsubst_tm t σ)
   end
 with gcsubst (Γ : ctx) (σ : gsub) {struct Γ} : ctx :=
   match Γ with
@@ -972,6 +1049,7 @@ Fixpoint usubst_ty (T : ty) (φ : nat -> lvl) {struct T} : ty :=
   | tyWf l A N => tyWf (lvsubst l φ) (usubst_ty A φ) (usubst_tm N φ)
   | tySq l A => tySq (lvsubst l φ) (usubst_ty A φ)
   | tyDVec l n F => tyDVec (lvsubst l φ) (usubst_tm n φ) (usubst_ty F φ)
+  | tyIWf l li X A N Ot C m => tyIWf (lvsubst l φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ) (usubst_tm Ot φ) (usubst_tm C φ) (usubst_tm m φ)
   end
 with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   match t with
@@ -1050,6 +1128,10 @@ with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   | tmSq l A a => tmSq (lvsubst l φ) (usubst_ty A φ) (usubst_tm a φ)
   | tmElimSq l l' A M c t => tmElimSq (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_ty M φ) (usubst_tm c φ) (usubst_tm t φ)
   | tmSqCode l s => tmSqCode (lvsubst l φ) (usubst_tm s φ)
+  | tmSupi l li X A N Ot C a cs =>
+      tmSupi (lvsubst l φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ) (usubst_tm Ot φ) (usubst_tm C φ) (usubst_tm a φ) (usubst_tm cs φ)
+  | tmElimIWf l li l' X A N Ot C M c m t =>
+      tmElimIWf (lvsubst l φ) (lvsubst li φ) (lvsubst l' φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ) (usubst_tm Ot φ) (usubst_tm C φ) (usubst_ty M φ) (usubst_tm c φ) (usubst_tm m φ) (usubst_tm t φ)
   end
 with ucsubst (Γ : ctx) (φ : nat -> lvl) {struct Γ} : ctx :=
   match Γ with

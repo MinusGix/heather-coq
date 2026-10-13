@@ -76,6 +76,13 @@ Inductive red : tm -> tm -> Prop :=
    scrutinee reduces *)
 | red_elimSq_sq l l' A M c k C a : red (tmElimSq l l' A M c (tmSq k C a)) (c[lsingle a])
 | red_elimSq l l' A M c t t' : red t t' -> red (tmElimSq l l' A M c t) (tmElimSq l l' A M c t')
+(* indexed finitary trees (M17b): β at a [sup_i] of any annotations, at any
+   index; the scrutinee reduces *)
+| red_elimIWf_supi l li l' X A N Ot C M c m k ki X' A' N' Ot' C' a cs :
+    red (tmElimIWf l li l' X A N Ot C M c m (tmSupi k ki X' A' N' Ot' C' a cs))
+        (c[lsingle3 a cs (iwfIH l li l' X A N Ot C M c a cs)])
+| red_elimIWf l li l' X A N Ot C M c m t t' : red t t' ->
+    red (tmElimIWf l li l' X A N Ot C M c m t) (tmElimIWf l li l' X A N Ot C M c m t')
 (* the identity type (M11a): J computes on refl, ignoring the annotations and
    the right endpoint as the other β rules do; otherwise its proof reduces *)
 | red_J_refl l l' A a M c u k B b : red (tmJ l l' A a M c u (tmRefl k B b)) c
@@ -187,6 +194,7 @@ Proof.
         | Hr : red (tmSup _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSupf _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSq _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmSupi _ _ _ _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSqCode _ _) _ |- _ => inversion Hr
         | Hr : red_ty (tyPi _ _ _ _) _ |- _ => inversion Hr
         end;
@@ -258,6 +266,9 @@ Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with 
 Lemma reds_J l l' A a M c u e e' : reds e e' -> reds (tmJ l l' A a M c u e) (tmJ l l' A a M c u e').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_elimWf l l' A N M c t t' : reds t t' -> reds (tmElimWf l l' A N M c t) (tmElimWf l l' A N M c t').
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_elimIWf l li l' X A N Ot C M c m t t' : reds t t' ->
+  reds (tmElimIWf l li l' X A N Ot C M c m t) (tmElimIWf l li l' X A N Ot C M c m t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_elimSq l l' A M c t t' : reds t t' -> reds (tmElimSq l l' A M c t) (tmElimSq l l' A M c t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.

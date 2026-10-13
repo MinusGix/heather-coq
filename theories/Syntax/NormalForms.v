@@ -33,6 +33,8 @@ Inductive whne : tm -> Prop :=
 | whne_elimWf l l' A N M c t : whne t -> whne (tmElimWf l l' A N M c t)
 (* propositional truncation's eliminator on a neutral (M16a) *)
 | whne_elimSq l l' A M c t : whne t -> whne (tmElimSq l l' A M c t)
+(* indexed finitary trees' eliminator on a neutral (M17b) *)
+| whne_elimIWf l li l' X A N Ot C M c m t : whne t -> whne (tmElimIWf l li l' X A N Ot C M c m t)
 (* J on a neutral proof (M11a) *)
 | whne_J l l' A a M c u e : whne e -> whne (tmJ l l' A a M c u e).
 
@@ -69,6 +71,7 @@ Inductive whnf : tm -> Prop :=
 | whnf_sup l l' A B a f : whnf (tmSup l l' A B a f)
 | whnf_supf l A N a cs : whnf (tmSupf l A N a cs)
 | whnf_sq l A a : whnf (tmSq l A a)
+| whnf_supi l li X A N Ot C a cs : whnf (tmSupi l li X A N Ot C a cs)
 | whnf_tmSqCode l s : whnf (tmSqCode l s).
 
 Inductive whne_ty : ty -> Prop :=
@@ -98,7 +101,8 @@ Inductive whnf_ty : ty -> Prop :=
 | whnf_tyEmpty l : whnf_ty (tyEmpty l)
 | whnf_tyId l A a b : whnf_ty (tyId l A a b)
 | whnf_tyWf l A N : whnf_ty (tyWf l A N)
-| whnf_tySq l A : whnf_ty (tySq l A).
+| whnf_tySq l A : whnf_ty (tySq l A)
+| whnf_tyIWf l li X A N Ot C m : whnf_ty (tyIWf l li X A N Ot C m).
 
 #[export] Hint Constructors whne whnf whne_ty whnf_ty : whnf.
 
@@ -225,6 +229,10 @@ Proof. inversion 1. Qed.
 Lemma whne_ty_not_Sq l A : ~ whne_ty (tySq l A).
 Proof. inversion 1. Qed.
 Lemma whne_not_sq l A a : ~ whne (tmSq l A a).
+Proof. inversion 1. Qed.
+Lemma whne_ty_not_IWf l li X A N Ot C m : ~ whne_ty (tyIWf l li X A N Ot C m).
+Proof. inversion 1. Qed.
+Lemma whne_not_supi l li X A N Ot C a cs : ~ whne (tmSupi l li X A N Ot C a cs).
 Proof. inversion 1. Qed.
 Lemma whne_not_srefl l A a : ~ whne (srefl l A a).
 Proof. inversion 1. Qed.

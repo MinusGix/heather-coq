@@ -126,6 +126,42 @@ Proof.
                     | apply lk_dnf_lsingle | split | exact I ]; intuition auto.
 Qed.
 
+(** [dnth] and [elim_IWf]'s family and induction hypothesis (M17b). *)
+Lemma dnf_tmDNth l n F cs i : dnftm n -> dnfty F -> dnftm cs -> dnftm i -> dnftm (tmDNth l n F cs i).
+Proof.
+  intros; unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
+  (* [exact I] and [split] only on goals of their shape: tried on a
+     [dnftm] of a renaming, they unfold it *)
+  cbn [dnftm dnfty];
+    repeat first [ lazymatch goal with |- True => exact I | |- _ /\ _ => split end
+                 | assumption | apply ren_dnf_ty | apply ren_dnf
+                 | apply lk_dnf_lsingle | (apply subst_dnf_ty; [|apply lk_dnf_lsingle])
+                 | (apply subst_dnf; [|apply lk_dnf_lsingle]) | progress cbn [dnftm dnfty] ].
+Qed.
+Lemma dnf_iwfFam l li X A N Ot C a : dnfty X -> dnfty A -> dnftm N -> dnftm Ot -> dnftm C -> dnftm a ->
+  dnfty (iwfFam l li X A N Ot C a).
+Proof.
+  intros; unfold iwfFam; cbn [dnfty dnftm]; repeat split; auto using ren_dnf_ty, ren_dnf.
+  apply subst_dnf; auto. apply lk_dnf_llift, lk_dnf_lsingle; auto.
+Qed.
+Lemma dnf_iwfIH l li l' X A N Ot C M c a cs : dnfty X -> dnfty A -> dnftm N -> dnftm Ot -> dnftm C ->
+  dnfty M -> dnftm c -> dnftm a -> dnftm cs -> dnftm (iwfIH l li l' X A N Ot C M c a cs).
+Proof.
+  intros; unfold iwfIH.
+  assert (Hn : dnftm (tmDNth (lmax l li) N[lsingle a]⟨↑⟩ (iwfFam l li X A N Ot C a)⟨rlift ↑⟩ cs⟨↑⟩ (var 0))).
+  { apply dnf_tmDNth; auto using ren_dnf_ty, ren_dnf, dnf_iwfFam; [|exact I].
+    apply ren_dnf, subst_dnf; auto using lk_dnf_lsingle. }
+  pose proof (dnf_iwfFam l li X A N Ot C a ltac:(assumption) ltac:(assumption) ltac:(assumption)
+                ltac:(assumption) ltac:(assumption) ltac:(assumption)) as HF.
+  unfold iwfFam in HF; cbn [dnfty dnftm] in HF.
+  revert Hn; generalize (tmDNth (lmax l li) N[lsingle a]⟨↑⟩ (iwfFam l li X A N Ot C a)⟨rlift ↑⟩ cs⟨↑⟩ (var 0)); intros x Hn.
+  cbn [dnftm dnfty]; intuition auto using ren_dnf_ty, ren_dnf, subst_dnf, lk_dnf_lsingle.
+Qed.
+
+(* [IWf] (M17b): [dnth], the family and the induction hypothesis stay folded
+   in [typed_dnf], for their lemmas *)
+Local Arguments tmDNth : simpl never. Local Arguments iwfFam : simpl never.
+Local Arguments iwfIH : simpl never.
 Theorem typed_dnf :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> dnfctx Γ) /\
@@ -138,7 +174,7 @@ Proof.
   apply typing_mut; intros; cbn in *;
     try match goal with H : in_gctx _ _ _ |- _ => pose proof (in_gctx_dnf _ _ _ H); cbn in * end;
     repeat match goal with H : _ /\ _ |- _ => destruct H end;
-    repeat split; eauto using subst_dnf_ty, subst_dnf, ren_dnf_ty, ren_dnf, in_ctx_dnf with nf.
+    repeat split; eauto using subst_dnf_ty, subst_dnf, ren_dnf_ty, ren_dnf, in_ctx_dnf, dnf_tmDNth, dnf_iwfFam with nf.
   all: try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle2; cbn; tauto]].
   all: try solve [apply subst_dnf_ty; auto; intros n; apply dnfl_llk; auto].
   all: try solve [apply subst_dnf; auto; intros n; apply dnfl_llk; auto].
@@ -152,10 +188,13 @@ Proof.
                    cbn; intuition auto ].
   all: try solve [ eapply dnf_redT; [ .. | eassumption ]; cbn; intuition auto
                  | eapply dnf_redt; [ .. | eassumption ]; cbn; intuition auto ].
-  all: try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle3; auto using dnf_wIH, dnf_wfIH]].
+  all: try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle3; auto using dnf_wIH, dnf_wfIH, dnf_iwfIH]].
   (* [DVec]'s successor reduct (M17a): the head's and the tail's instances *)
   all: try solve [ repeat first [ progress cbn [dnftm dnfty] | apply subst_dnf_ty | apply ren_dnf_ty | apply ren_dnf
                                 | apply lk_dnf_lsingle | split | exact I ]; intuition auto ].
+  (* [elim_IWf]'s β (M17b): the motive at the [sup_i]'s index and itself *)
+  all: try solve [apply subst_dnf_ty; [assumption | apply lk_dnf_lsingle2; cbn [dnftm dnfty];
+                  intuition auto using subst_dnf, lk_dnf_lsingle]].
   (* η of the meta-functions (M5): the weakened function *)
   all: apply gren_dnf_all.
 Qed.

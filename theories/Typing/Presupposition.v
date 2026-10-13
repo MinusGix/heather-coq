@@ -3,7 +3,7 @@
     Every judgment's components are well formed: the type of a typed term,
     both sides of a type equality, both sides of a term equality (and its
     type).  For layers with [typeof i = i]. *)
-From DeLaM.Typing Require Export PresupAux MInst.
+From DeLaM.Typing Require Export PresupAux PresupIWf MInst.
 
 (** ** Global variables
 

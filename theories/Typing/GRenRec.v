@@ -290,6 +290,42 @@ Proof.
   unfold wfIH. rewrite gren_lam, gren_elimWf, gren_tmNth, gren_var, gren_tyFin.
   repeat rewrite ?gren_ren_ty', ?gren_ren, ?gren_single, ?gren_tyWf. reflexivity.
 Qed.
+(** Indexed trees (M17b), [dnth] and [elim_IWf]'s induction hypothesis. *)
+Lemma gren_tyIWf l li X A N Ot C m :
+  (tyIWf l li X A N Ot C m)⟪ξ⟫ = tyIWf l li X⟪ξ⟫ A⟪ξ⟫ N⟪ξ⟫ Ot⟪ξ⟫ C⟪ξ⟫ m⟪ξ⟫.
+Proof. reflexivity. Qed.
+Lemma gren_supi l li X A N Ot C a cs :
+  (tmSupi l li X A N Ot C a cs)⟪ξ⟫ = tmSupi l li X⟪ξ⟫ A⟪ξ⟫ N⟪ξ⟫ Ot⟪ξ⟫ C⟪ξ⟫ a⟪ξ⟫ cs⟪ξ⟫.
+Proof. reflexivity. Qed.
+Lemma gren_elimIWf l li l' X A N Ot C M c m t :
+  (tmElimIWf l li l' X A N Ot C M c m t)⟪ξ⟫ =
+  tmElimIWf l li l' X⟪ξ⟫ A⟪ξ⟫ N⟪ξ⟫ Ot⟪ξ⟫ C⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ m⟪ξ⟫ t⟪ξ⟫.
+Proof. reflexivity. Qed.
+Lemma gren_llift_single (b a : tm) : b[llift (lsingle a)]⟪ξ⟫ = b⟪ξ⟫[llift (lsingle a⟪ξ⟫)].
+Proof.
+  rewrite gren_subst. apply subst_ext; intros [|[|n]]; rewrite ?llk_glren, ?llk_llift; cbn; auto.
+  change (gren_tm ?x ?ξ0) with x⟪ξ0⟫. rewrite gren_ren. reflexivity.
+Qed.
+Lemma gren_tmDNth l n F cs i : (tmDNth l n F cs i)⟪ξ⟫ = tmDNth l n⟪ξ⟫ F⟪ξ⟫ cs⟪ξ⟫ i⟪ξ⟫.
+Proof.
+  unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
+  repeat progress (cbn [gren GRen_tm gren_tm GRen_ty gren_ty];
+    change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫;
+    rewrite ?gren_ren_ty', ?gren_ren, ?gren_single_ty, ?gren_single).
+  reflexivity.
+Qed.
+Lemma gren_iwfIH l li l' X A N Ot C M c a cs :
+  (iwfIH l li l' X A N Ot C M c a cs)⟪ξ⟫ = iwfIH l li l' X⟪ξ⟫ A⟪ξ⟫ N⟪ξ⟫ Ot⟪ξ⟫ C⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ a⟪ξ⟫ cs⟪ξ⟫.
+Proof.
+  unfold iwfIH, iwfFam. rewrite gren_lam, gren_elimIWf, gren_tmDNth, gren_var, gren_tyFin.
+  repeat rewrite ?gren_ren_ty', ?gren_ren, ?gren_single, ?gren_tyIWf, ?gren_llift_single. reflexivity.
+Qed.
+Lemma gren_iwfFam l li X A N Ot C a :
+  (iwfFam l li X A N Ot C a)⟪ξ⟫ = iwfFam l li X⟪ξ⟫ A⟪ξ⟫ N⟪ξ⟫ Ot⟪ξ⟫ C⟪ξ⟫ a⟪ξ⟫.
+Proof.
+  unfold iwfFam. rewrite gren_tyIWf.
+  repeat rewrite ?gren_ren_ty', ?gren_ren, ?gren_llift_single. reflexivity.
+Qed.
 (** [UΠ]'s scope and instances. *)
 Lemma gren_uren_ctx (Γ : ctx) ρ : Γ⟨ρ⟩ᵤ⟪ξ⟫ = Γ⟪ξ⟫⟨ρ⟩ᵤ.
 Proof. symmetry; apply (proj1 (proj2 (proj2 uren_gren_all))). Qed.
@@ -380,6 +416,12 @@ Ltac push_gren_at h k := lazymatch h with
   | @wfIH => k gren_wfIH
   | @tySq => k gren_tySq
   | @tyDVec => k gren_tyDVec
+  | @tyIWf => k gren_tyIWf
+  | @tmSupi => k gren_supi
+  | @tmElimIWf => k gren_elimIWf
+  | @tmDNth => k gren_tmDNth
+  | @iwfIH => k gren_iwfIH
+  | @iwfFam => k gren_iwfFam
   | @tmSq => k gren_sq
   | @tmElimSq => k gren_elimSq
   | @tmSqCode => k gren_tmSqCode
@@ -408,6 +450,7 @@ Proof.
     change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫;
     change (gcren ?x ?ξ) with x⟪ξ⟫.
   all: rewrite ?gren_single2, ?gren_single, ?gren_single3, ?gren_wIH, ?gren_wfIH, ?gren_gsingle; try now constructor.
+  all: rewrite ?gren_iwfIH; try now constructor.
   all: try (constructor; auto; fail).
   all: first [ constructor; now apply redT_gren | constructor; now apply redt_gren
              | rewrite <- usubst_gren; now constructor

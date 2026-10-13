@@ -1,6 +1,6 @@
 # M17: indexed finitary trees (`DVec`, `IWf`), design
 
-Status: **M17a done** (2026-10-13); M17b next. Why now: Heather froze `IWf`'s
+Status: **M17a done** (2026-10-13); M17b in progress. Why now: Heather froze `IWf`'s
 rule set (`H/docs/iwf-former-design.md` §1–§6, 2026-10-13), and `IWf` is
 how its kernel loses `transp` and the strip: route 2b's indexed families
 store an index equation that only `transp` can use, and `IWf` stores
@@ -189,6 +189,33 @@ Done, no admits or axioms. Files:
   inr (inl ⟨⟩))` reduces to `fst (snd cs)` for any `cs` in normal form,
   ten steps (two `natrec`s, the rest β and `case`). It is a leaf no
   file requires, so it costs the build CPU, not wall time.
+
+## M17b: syntax and rules
+
+De Bruijn layout, in `Γ`: `tyIWf l li X A N Ot C m` with the index type
+`X @ li`, the shapes `A @ l`, the arity `N : Nat` and the output index
+`Ot : X` under `x : A`, the child index `C : X` under `x : A, i : Fin N`,
+and the index `m : X`; the type lives at `lmax l li`.
+`tmSupi l li X A N Ot C a cs : IWf(…)(Ot[a])` with
+`cs : DVec^{lmax l li}(N[a]; i. iwfFam … a)`, `iwfFam` the tree type at
+the child index `C[a, i]`. `tmElimIWf l li l' X A N Ot C M c m t`: the
+motive `M` binds `j : X, z : IWf(…)(j)`, the step `c` binds the shape,
+the children and the induction hypothesis (`iwfcsty`, `iwfihty`,
+`iwfstepty` in `Term.v`, as `Wf`'s), and the result is `M[m, t]`. β fires
+at a `sup_i` of any annotations and any index (`red_elimIWf_supi`), to
+`c[a, cs, iwfIH …]`, where `iwfIH` is `λ(k : Fin N[a]). elim_IWf(…)(C[a,
+k])(dnth … cs k)`.
+
+**Two admissible premises are stated** (a deviation in form, not in the
+system). `dnth`'s typing (`Typing/DNth.v`) needs inversion, which comes
+after presupposition, so presupposition cannot derive `dnth`'s typing,
+and `Wf`'s route (`Wf_ih_eq`, `Wf_IH_wf` from `nth_wf`) is closed to
+`IWf`. So `eqtm_elimIWf` states the induction hypothesis's types equal
+(`iwfihty … ≅ iwfihty …'`), and `eqtm_elimIWf_supi` states `iwfIH`
+typed at `iwfihty[a, cs]`. Both follow from the other premises once
+`dnth_wf` is available, which is where every rule-building site (the
+algorithm's soundness, subject reduction) is. The rules are gated by
+`compt i`, as `DVec`'s.
 
 ## M17b: the relation for `IWf` (design, ahead)
 

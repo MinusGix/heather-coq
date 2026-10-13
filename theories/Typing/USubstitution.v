@@ -130,11 +130,46 @@ Proof.
   rewrite ?usubst_ren_ty', ?usubst_ren', ?usubst_lsingle. reflexivity.
 Qed.
 
+(** [dnth] and [elim_IWf]'s induction hypothesis (M17b). *)
+Lemma usubst_llift_single (b a : tm) φ :
+  usubst_tm (subst_tm b (llift (lsingle a))) φ = subst_tm (usubst_tm b φ) (llift (lsingle (usubst_tm a φ))).
+Proof.
+  rewrite usubst_subst'. apply subst_ext; intros [|[|n]]; rewrite ?llk_ulsubst, ?llk_llift; cbn; auto.
+  rewrite usubst_ren'. reflexivity.
+Qed.
+Lemma usubst_tmDNth l n F cs i φ :
+  usubst_tm (tmDNth l n F cs i) φ =
+  tmDNth (lvsubst l φ) (usubst_tm n φ) (usubst_ty F φ) (usubst_tm cs φ) (usubst_tm i φ).
+Proof.
+  unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS;
+    repeat progress (cbn [usubst_tm usubst_ty lvsubst];
+      rewrite ?usubst_lsingle_ty, ?usubst_ren_ty', ?usubst_ren').
+  reflexivity.
+Qed.
+Lemma usubst_iwfFam l li X A N Ot C a φ :
+  usubst_ty (iwfFam l li X A N Ot C a) φ =
+  iwfFam (lvsubst l φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ)
+    (usubst_tm Ot φ) (usubst_tm C φ) (usubst_tm a φ).
+Proof.
+  unfold iwfFam. cbn [usubst_tm usubst_ty lvsubst].
+  rewrite ?usubst_ren_ty', ?usubst_ren', ?usubst_llift_single. reflexivity.
+Qed.
+Lemma usubst_iwfIH l li l' X A N Ot C M c a cs φ :
+  usubst_tm (iwfIH l li l' X A N Ot C M c a cs) φ =
+  iwfIH (lvsubst l φ) (lvsubst li φ) (lvsubst l' φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ)
+    (usubst_tm Ot φ) (usubst_tm C φ) (usubst_ty M φ) (usubst_tm c φ) (usubst_tm a φ) (usubst_tm cs φ).
+Proof.
+  unfold iwfIH, iwfFam.
+  repeat progress (cbn [usubst_tm usubst_ty lvsubst];
+    rewrite ?usubst_tmDNth, ?usubst_ren_ty', ?usubst_ren', ?usubst_lsingle, ?usubst_llift_single).
+  reflexivity.
+Qed.
+
 Ltac us_rewrite :=
   rewrite ?usubst_lsingle_ty, ?usubst_lsingle2_ty, ?usubst_lsucc_ty, ?usubst_lsingle, ?usubst_lsingle2,
     ?usubst_ren_ty', ?usubst_ren', ?usubst_gren_ty', ?usubst_gren_ctx', ?usubst_gsingle,
     ?usubst_gsingle_ty, ?usubst_gren_tm',
-    ?usubst_subst_ty', ?usubst_lsingle3, ?usubst_wIH, ?usubst_wfIH, ?usubst_tmNth, ?motT_usubst, ?mott_usubst, ?mkrb_usubst, ?wrapMT_usubst, ?wrapMt_usubst.
+    ?usubst_subst_ty', ?usubst_lsingle3, ?usubst_wIH, ?usubst_wfIH, ?usubst_tmNth, ?usubst_iwfIH, ?usubst_iwfFam, ?usubst_tmDNth, ?motT_usubst, ?mott_usubst, ?mkrb_usubst, ?wrapMT_usubst, ?wrapMt_usubst.
 
 Ltac us_push :=
   cbn [usubst_ty usubst_tm ucsubst ulsubst lvsubst gousubst gctx_usubst gdecl_usubst map gL gΨ gext typeof uup] in *.
@@ -301,6 +336,9 @@ Ltac us_rw_all_at h k := lazymatch h with
   | @wIH => k usubst_wIH
   | @wfIH => k usubst_wfIH
   | @tmNth => k usubst_tmNth
+  | @iwfIH => k usubst_iwfIH
+  | @iwfFam => k usubst_iwfFam
+  | @tmDNth => k usubst_tmDNth
   | @ren_ty => k usubst_ren_ty'
   | @ren => first [k usubst_ren_ty' | k usubst_ren']
   | @ren_tm => k usubst_ren'
@@ -325,7 +363,13 @@ Ltac us_rw_all := repeat match goal with
   | |- context [@ucsubst ?t _] => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite L)
   | H : context [@ucsubst ?t _] |- _ => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite L in H)
   end.
-Ltac us_rewrite_all := us_rw_all; us_push.
+(* [IWf]'s telescope (M17b): pushing into [dnth]'s family and the step's
+   [sup_i] exposes further instances, so those goals get more rounds *)
+Ltac us_rewrite_all := us_rw_all; us_push;
+  try (match goal with
+       | |- context [tmSupi] => idtac | |- context [tmDNth] => idtac
+       | H : context [tmSupi] |- _ => idtac | H : context [tmDNth] |- _ => idtac end;
+       repeat (progress us_rw_all; us_push)).
 
 (** The branch premises: the induction hypotheses at [uupn nu φ]. *)
 Ltac us_branches :=
@@ -534,7 +578,7 @@ Lemma red_usubst_both :
   (forall T U, red_ty T U -> forall φ, red_ty (usubst_ty T φ) (usubst_ty U φ)).
 Proof.
   apply red_both; intros; cbn [usubst_tm usubst_ty ucsubst gousubst];
-    rewrite ?usubst_lsingle, ?usubst_lsingle2, ?usubst_lsingle3, ?usubst_wIH, ?usubst_wfIH, ?usubst_gsingle; try now constructor.
+    rewrite ?usubst_lsingle, ?usubst_lsingle2, ?usubst_lsingle3, ?usubst_wIH, ?usubst_wfIH, ?usubst_iwfIH, ?usubst_gsingle; try now constructor.
   all: try (constructor; auto; fail).
   (* δ: the body's instance *)
   all: try solve [change (usubst_tm (subst_tm ?b ?d) ?φ) with (b[d][φ]ᵤ); rewrite usubst_subst; constructor].

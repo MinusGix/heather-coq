@@ -536,6 +536,45 @@ Ltac wk_Wmot :=
                  | apply wf_ctx_W; fix_layer; solve [eauto 12 with wk] ]
   end.
 
+(** [IWf] (M17b): a premise under binders whose types, like its own,
+    commute with the renaming only by an equation, closed by congruence
+    down to the renamed leaves. *)
+Ltac wk_rext :=
+  let n := fresh "n" in intros n;
+  do 6 try (destruct n as [|n]; rlk_simpl; rewrite ?Nat.add_1_r; try solve [reflexivity | lia]);
+  rlk_simpl; rewrite ?Nat.add_1_r; first [reflexivity | lia].
+Ltac wk_leaf := first [ reflexivity
+  | rewrite ?ren_ren_comp_ty, ?ren_ren_comp; first [apply ren_ext_ty | apply ren_ext_tm]; wk_rext ].
+Ltac wk_cong := lazymatch goal with
+  | |- ?x = ?y => let h := rhead x in
+      lazymatch h with
+      | ren_ty => wk_leaf | ren_tm => wk_leaf | @ren => wk_leaf
+      | _ => first [reflexivity | f_equal]
+      end
+  end.
+Ltac wk_eqI := push_ren; wk_rewrite; push_ren; wk_rewrite; push_ren; fold_subst; repeat wk_cong.
+Ltac wk_Ictx :=
+  repeat apply wfc_ext; fix_layer;
+  first [ solve [eauto 12 with wk]
+        | solve [push_ren; eauto 12 with wk]
+        | eapply lift_ty; [ match goal with
+                            | IH : forall Δ r, wkr r Δ _ -> _ -> _ |- _ =>
+                                eapply IH; [ repeat (eapply wkr_up'; [ | reflexivity]); eassumption | wk_Ictx ]
+                            end
+                          | apply lle_self_typeof ] ].
+Ltac wk_Iprem lem :=
+  match goal with
+  | IH : forall Δ r, wkr r Δ _ -> _ -> _ |- _ =>
+      eapply lem; [ eapply IH; [ repeat (eapply wkr_up'; [ | reflexivity]); eassumption | ] | .. ];
+      [ idtac | wk_eqI .. ]; wk_Ictx
+  end.
+Ltac wk_I :=
+  fix_layer;
+  first [ solve [wk_premise]
+        | solve [wk_Iprem wf_tm_regctx] | solve [wk_Iprem eq_tm_regctx]
+        | solve [wk_Iprem wf_ty_regboth] | solve [wk_Iprem eq_ty_regall]
+        | solve [wk_Iprem wf_tm_regtm] ].
+
 Ltac wk_manual :=
   match goal with
   (* [W] (M13a) *)
@@ -552,6 +591,15 @@ Ltac wk_manual :=
   | |- eq_tm _ _ _ (tmElimWf _ _ _ _ _ _ (tmSupf _ _ _ _ _)) _ _ _ =>
       eapply eqtm_elimWf_supf; first [solve [wk_Wfmot] | solve [wk_Wstep] | wk_premise]
   | |- eq_tm _ _ _ (tmElimWf _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimWf; first [solve [wk_Wfmot] | solve [wk_Wstep] | wk_premise]
+  (* [IWf] (M17b) *)
+  | |- wf_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ => eapply wft_iwf; wk_I
+  | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ _ => eapply eqty_iwf; wk_I
+  | |- wf_tm _ _ _ (tmSupi _ _ _ _ _ _ _ _ _) _ _ => eapply wf_supi; wk_I
+  | |- eq_tm _ _ _ (tmSupi _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_supi; wk_I
+  | |- wf_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_elimIWf; wk_I
+  | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ (tmSupi _ _ _ _ _ _ _ _ _)) _ _ _ =>
+      wk_rewrite; push_ren; eapply eqtm_elimIWf_supi; wk_I
+  | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimIWf; wk_I
   (* [ind_∥∥] (M16a): its step's type, through the induction hypotheses *)
   | |- wf_tm _ _ _ (tmElimSq _ _ _ _ _ _) _ _ => eapply wf_elimSq; wk_premise
   | |- eq_tm _ _ _ (tmElimSq _ _ _ _ _ (tmSq _ _ _)) _ _ _ => eapply eqtm_elimSq_sq; wk_premise

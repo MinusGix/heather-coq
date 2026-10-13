@@ -34,6 +34,8 @@ Fixpoint ty_lwf (L : nat) (T : ty) {struct T} : Prop :=
   | tyWf l A N => lwf L l /\ ty_lwf L A /\ tm_lwf L N
   | tySq l A => lwf L l /\ ty_lwf L A
   | tyDVec l n F => lwf L l /\ tm_lwf L n /\ ty_lwf L F
+  | tyIWf l li X A N Ot C m => lwf L l /\ lwf L li /\ ty_lwf L X /\ ty_lwf L A /\ tm_lwf L N /\
+      tm_lwf L Ot /\ tm_lwf L C /\ tm_lwf L m
   | tySEq l A a b => lwf L l /\ ty_lwf L A /\ tm_lwf L a /\ tm_lwf L b
   | tyId l A a b => lwf L l /\ ty_lwf L A /\ tm_lwf L a /\ tm_lwf L b
   | tyEl l t => lwf L l /\ tm_lwf L t
@@ -71,6 +73,10 @@ with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   | tmSq l A a => lwf L l /\ ty_lwf L A /\ tm_lwf L a
   | tmElimSq l1 l2 A M c t => lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ ty_lwf L M /\ tm_lwf L c /\ tm_lwf L t
   | tmSqCode l s => lwf L l /\ tm_lwf L s
+  | tmSupi l li X A N Ot C a cs => lwf L l /\ lwf L li /\ ty_lwf L X /\ ty_lwf L A /\ tm_lwf L N /\
+      tm_lwf L Ot /\ tm_lwf L C /\ tm_lwf L a /\ tm_lwf L cs
+  | tmElimIWf l li l2 X A N Ot C M c m t => lwf L l /\ lwf L li /\ lwf L l2 /\ ty_lwf L X /\ ty_lwf L A /\
+      tm_lwf L N /\ tm_lwf L Ot /\ tm_lwf L C /\ ty_lwf L M /\ tm_lwf L c /\ tm_lwf L m /\ tm_lwf L t
   | tmCase l1 l2 l3 A B M c1 c2 t => lwf L l1 /\ lwf L l2 /\ lwf L l3 /\ ty_lwf L A /\ ty_lwf L B /\
       ty_lwf L M /\ tm_lwf L c1 /\ tm_lwf L c2 /\ tm_lwf L t
   | succ t => tm_lwf L t
