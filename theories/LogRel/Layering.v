@@ -24,6 +24,8 @@ Fixpoint mltt_ty (T : ty) : Prop :=
   | tyWf _ A _ => mltt_ty A
   (* [∥·∥]'s relation keeps its carrier's (M16a) *)
   | tySq _ A => mltt_ty A
+  (* [DVec]'s family is its reducts' components (M17a) *)
+  | tyDVec _ _ F => mltt_ty F
   | tyCTyp _ _ | tyCTrm _ _ _ | tyCPi _ _ | tyTPi _ _ _ _ => False
   | _ => True
   end.
@@ -62,7 +64,8 @@ Lemma mltt_red {T W} : reds_ty T W -> mltt_ty T -> mltt_ty W.
 Proof.
   induction 1 as [| T U W Hs _ IH]; [exact id |].
   intros H; apply IH; destruct Hs; cbn in *; try tauto.
-  split; [exact H | apply mltt_ren, H].
+  - split; [exact H | apply mltt_ren, H].
+  - split; [apply mltt_subst, H | apply mltt_subst, mltt_ren, mltt_ren, H].
 Qed.
 
 Lemma mltt_ctx_lookup {Γ n A l} : in_ctx Γ n A l -> mltt_ctx Γ -> mltt_ty A.

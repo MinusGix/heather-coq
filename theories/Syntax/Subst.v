@@ -496,6 +496,7 @@ Fixpoint nfty (T : ty) : Prop :=
   | tyFin n => nftm n
   | tyWf _ A N => nfty A /\ nftm N
   | tySq _ A => nfty A
+  | tyDVec _ n F => nftm n /\ nfty F
   | tyEl _ t => nftm t
   | tyGvar _ d => nfl d
   | tyCTyp _ _ | tyCTrm _ _ _ => True

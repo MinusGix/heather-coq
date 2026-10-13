@@ -251,7 +251,7 @@ Proof. intros H1 H2 H3 H4 H5; exact (proj2 (ctx_conv_ext Hi H1 H2 H3 H4 H5)). Qe
 #[export] Hint Resolve wft_nat wft_pi wft_U wft_El wf_code_nat wf_code_U wf_code_pi wf_zero
   wf_succ wf_natrec wf_lam wf_app wfc_ext in_ctx_wf wf_ty_single wf_tm_single
   wft_sig wf_code_sig wf_pair wf_fst wf_snd wft_seq wf_srefl wf_elimSEmpty wft_id wf_idrefl wf_J wf_code_id wf_code_seq wf_elimEmpty wft_sum wf_inl wf_inr
-  wft_sq wf_sq wf_elimSq ctx_of_wf_ty ctx_of_wf_tm ctx_of_eqty ctx_of_eqtm lequiv_wf_l lequiv_wf_r compt_notV : presup.
+  wft_sq wf_sq wf_elimSq wft_dvec ctx_of_wf_ty ctx_of_wf_tm ctx_of_eqty ctx_of_eqtm lequiv_wf_l lequiv_wf_r compt_notV : presup.
 #[export] Hint Extern 1 (lwf _ _) =>
   solve [cbn; repeat split; eauto using lequiv_wf_l, lequiv_wf_r] : presup.
 #[export] Hint Extern 1 =>
@@ -489,6 +489,11 @@ Proof.
              | solve [eapply proj2;
                       first [eapply pre_vec_zero | eapply pre_vec_succ | eapply pre_fin_zero | eapply pre_fin_succ];
                       eassumption]
+             (* dependent tuples (M17a) *)
+             | solve [eapply pre_dvec_r; eassumption]
+             | solve [apply wft_dvec; eauto using lequiv_wf_l]
+             | solve [eapply proj1; first [eapply pre_dvec_zero | eapply pre_dvec_succ]; eassumption]
+             | solve [eapply proj2; first [eapply pre_dvec_zero | eapply pre_dvec_succ]; eassumption]
              (* the codes of Vec and Fin (M14b) *)
              | solve [eapply pre_codevec_r; eassumption]
              | solve [eapply wf_code_vec; eauto 3 with presup]

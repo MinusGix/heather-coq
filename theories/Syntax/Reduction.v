@@ -109,6 +109,21 @@ Proof.
   constructor.
 Qed.
 
+(** [DVec]'s successor step (M17a): the head's and the tail's instances
+    commute with renaming. *)
+Lemma red_dvec_succ_ren l n F r :
+  red_ty (tyDVec l (succ n) F)⟨r⟩ (tySig l l (dvecHd n F) (dvecTl l n F))⟨r⟩.
+Proof.
+  assert (E : (tySig l l (dvecHd n F) (dvecTl l n F))⟨r⟩
+              = tySig l l (dvecHd n⟨r⟩ F⟨rlift r⟩) (dvecTl l n⟨r⟩ F⟨rlift r⟩)).
+  { change ((tySig l l ?A ?B)⟨r⟩) with (tySig l l A⟨r⟩ B⟨rlift r⟩).
+    rewrite !lsingle_ren_ty. f_equal.
+    change ((tyDVec l ?m ?G)⟨?r0⟩) with (tyDVec l m⟨r0⟩ G⟨rlift r0⟩).
+    rewrite lsingle_ren_ty. cbn [ren Ren_tm Ren_ty ren_tm ren_ty rlk]. fold ren_ty ren_tm.
+    repeat (f_equal; try ren_comm). all: rlk_simpl; reflexivity. }
+  rewrite E. constructor.
+Qed.
+
 Lemma red_ren_both :
   (forall t u, red t u -> forall r, red t⟨r⟩ u⟨r⟩) /\
   (forall T U, red_ty T U -> forall r, red_ty T⟨r⟩ U⟨r⟩).
@@ -116,6 +131,7 @@ Proof.
   apply red_both; intros; cbn;
     first [ now constructor
           | now apply red_vec_succ_ren
+          | now apply red_dvec_succ_ren
           | now apply red_ubeta_ren
           | constructor; first [now apply redT_ren | now apply redt_ren]
           | cbn [ren_tm]; rewrite <- gsubst_ren; constructor

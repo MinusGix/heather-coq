@@ -1767,6 +1767,22 @@ Lemma sc_fin {Γ n n'} : i <> lV ->
   [ G ; Γ ⊢[ i ] tyFin n' @ lzero ] /\ [ G ; Γ ⊢[ i ] tyFin n ≅ tyFin n' @ lzero ].
 Proof using . intros Hv [Hn' Hnn]. split; [apply wft_fin | apply eqty_fin]; auto. Qed.
 
+(** Dependent tuples (M17a; layer D here). *)
+Lemma sc_dvec {Γ l l' n n' F F'} : compt i -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] /\ [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F @ l ] ->
+  [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F' @ l ] /\ [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F ≅ F' @ l ] ->
+  [ G ; Γ ⊢[ i ] tyDVec l' n' F' @ l ] /\ [ G ; Γ ⊢[ i ] tyDVec l n F ≅ tyDVec l' n' F' @ l ].
+Proof using Hty.
+  intros Hc Hl Hl' E Hn [Hn' Hnn] HF [HF' HFF]. pose proof (lq Hl Hl' E) as Q.
+  pose proof (compt_notV _ Hc) as Hv. split; [| apply eqty_dvec; auto].
+  eapply wft_lconv; [| exact Q]. apply wft_dvec; [exact Hc | exact Hl' | exact Hn' |].
+  eapply wft_lconv; [| apply lequiv_sym, Q].
+  refine (sc_cty (sc_ext (l' := lzero) _ _ _) HF');
+    [apply wft_fin; auto | apply eqty_fin; auto | apply lequiv_refl; exact I].
+Qed.
+
 (** The codes of [Vec] and [Fin] (M14b; every layer but V), as [+]'s. *)
 Lemma sc_code_vec {Γ l l' s s' n n'} : i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
   [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
@@ -2157,6 +2173,8 @@ Proof.
     | solve [eapply sc_code_wf; eauto]
     (* propositional truncation (M16a) *)
     | solve [eapply sc_tySq; eauto] | solve [eapply sc_sq; eauto] | solve [eapply sc_elimSq; eauto]
+    (* dependent tuples (M17a) *)
+    | solve [eapply sc_dvec; eauto]
     | solve [eapply sc_code_sq; eauto]
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x

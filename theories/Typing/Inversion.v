@@ -539,6 +539,12 @@ Lemma inv_ty_sq {G i Γ l A k} : [ G ; Γ ⊢[ i ] tySq l A @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ]) /\ lvl_eq (gL G) k l.
 Proof. inv_ty. Qed.
 
+(** Dependent tuples (M17a). *)
+Lemma inv_ty_dvec {G i Γ l n F k} : [ G ; Γ ⊢[ i ] tyDVec l n F @ k ] ->
+  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] /\ [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F @ l ]) /\
+    lvl_eq (gL G) k l.
+Proof. inv_ty. Qed.
+
 (** The empty type (M12a). *)
 Lemma inv_ty_empty {G i Γ l k} : [ G ; Γ ⊢[ i ] tyEmpty l @ k ] ->
   (i <> lV /\ [ G ; Γ ⊢[ typeof i ] ] /\ lwf (gL G) l) /\ lvl_eq (gL G) k l.
@@ -622,4 +628,5 @@ Proof.
   - exact (lvl_eq_uniq (proj2 (inv_ty_fin H)) (proj2 (inv_ty_fin H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_wf H)) (proj2 (inv_ty_wf H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_sq H)) (proj2 (inv_ty_sq H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_dvec H)) (proj2 (inv_ty_dvec H'))).
 Qed.

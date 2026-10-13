@@ -33,6 +33,7 @@ Fixpoint ty_lwf (L : nat) (T : ty) {struct T} : Prop :=
   | tyFin n => tm_lwf L n
   | tyWf l A N => lwf L l /\ ty_lwf L A /\ tm_lwf L N
   | tySq l A => lwf L l /\ ty_lwf L A
+  | tyDVec l n F => lwf L l /\ tm_lwf L n /\ ty_lwf L F
   | tySEq l A a b => lwf L l /\ ty_lwf L A /\ tm_lwf L a /\ tm_lwf L b
   | tyId l A a b => lwf L l /\ ty_lwf L A /\ tm_lwf L a /\ tm_lwf L b
   | tyEl l t => lwf L l /\ tm_lwf L t

@@ -353,6 +353,9 @@ Ltac us_manual :=
   | |- context [tmCase _ _ _ _ _ _ _ _ _] => us_rewrite_all; us_step
   (* [ind_∥∥] (M16a): its step's type shifts the carrier inside the squash *)
   | |- context [tmElimSq _ _ _ _ _ _] => us_rewrite_all; us_step
+  (* [DVec]'s successor (M17a): the tail's index annotation shifts the length *)
+  | |- eq_ty _ _ _ (tyDVec _ (succ _) _) (tySig _ _ _ _) _ =>
+      rewrite ?usubst_ren'; eapply eqty_dvec_succ; eauto with us
   (* [elim_W] (M13a): its step telescope nests the shifts deeper *)
   | |- context [tmElimW _ _ _ _ _ _ _ _] => us_rewrite_all; us_rewrite_all; us_step
   (* [elim_Wf] (M15a): likewise *)
@@ -516,6 +519,16 @@ Proof. destruct 1; cbn; constructor; auto using whne_usubst. Qed.
 Lemma whnf_ty_usubst T φ : whnf_ty T -> whnf_ty (usubst_ty T φ).
 Proof. destruct 1; cbn; auto using whne_ty_usubst with whnf. Qed.
 
+(** [DVec]'s successor step (M17a): the head's and the tail's instances. *)
+Lemma red_dvec_succ_usubst l n F φ :
+  red_ty (usubst_ty (tyDVec l (succ n) F) φ) (usubst_ty (tySig l l (dvecHd n F) (dvecTl l n F)) φ).
+Proof.
+  assert (Hs : forall M a, usubst_ty (subst_ty M (lsingle a)) φ = subst_ty (usubst_ty M φ) (lsingle (usubst_tm a φ)))
+    by (intros; apply (proj1 usubst_subst_all); intros [|k]; reflexivity).
+  cbn [usubst_ty usubst_tm]. rewrite !Hs. cbn [usubst_ty usubst_tm].
+  rewrite !usubst_ren_ty', !usubst_ren. cbn [lvsubst]. constructor.
+Qed.
+
 Lemma red_usubst_both :
   (forall t u, red t u -> forall φ, red (usubst_tm t φ) (usubst_tm u φ)) /\
   (forall T U, red_ty T U -> forall φ, red_ty (usubst_ty T φ) (usubst_ty U φ)).
@@ -529,6 +542,7 @@ Proof.
   all: try solve [change (usubst_ty (ren_ty ?A ?r) ?φ) with (A⟨r⟩[φ]ᵤ);
                   change (usubst_tm (ren_tm ?n ?r) ?φ) with (n⟨r⟩[φ]ᵤ);
                   rewrite usubst_ren_ty, usubst_ren; constructor].
+  all: try solve [apply red_dvec_succ_usubst].
   - constructor. now apply redT_usubst.
   - constructor. now apply redt_usubst.
   - match goal with Hn : length ?ls = ?n |- _ => rewrite (usubst_ubeta n ls φ _ Hn) end.

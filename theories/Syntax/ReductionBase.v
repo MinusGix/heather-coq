@@ -111,7 +111,11 @@ with red_ty : ty -> ty -> Prop :=
 | red_vec l A n n' : red n n' -> red_ty (tyVec l A n) (tyVec l A n')
 | red_fin_zero : red_ty (tyFin zero) (tyEmpty lzero)
 | red_fin_succ n : red_ty (tyFin (succ n)) (tySum lzero lzero (tyUnit lzero) (tyFin n))
-| red_fin n n' : red n n' -> red_ty (tyFin n) (tyFin n').
+| red_fin n n' : red n n' -> red_ty (tyFin n) (tyFin n')
+(* dependent tuples (M17a): compute on the length *)
+| red_dvec_zero l F : red_ty (tyDVec l zero F) (tyUnit l)
+| red_dvec_succ l n F : red_ty (tyDVec l (succ n) F) (tySig l l (dvecHd n F) (dvecTl l n F))
+| red_dvec l n n' F : red n n' -> red_ty (tyDVec l n F) (tyDVec l n' F).
 
 Scheme red_mut := Induction for red Sort Prop
   with red_ty_mut := Induction for red_ty Sort Prop.
@@ -262,6 +266,8 @@ Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with 
 Lemma reds_vec l A n n' : reds n n' -> reds_ty (tyVec l A n) (tyVec l A n').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_fin n n' : reds n n' -> reds_ty (tyFin n) (tyFin n').
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_dvec l n n' F : reds n n' -> reds_ty (tyDVec l n F) (tyDVec l n' F).
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 
 (** ** Stability under renaming *)

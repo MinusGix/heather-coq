@@ -153,6 +153,9 @@ Proof.
   all: try solve [ eapply dnf_redT; [ .. | eassumption ]; cbn; intuition auto
                  | eapply dnf_redt; [ .. | eassumption ]; cbn; intuition auto ].
   all: try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle3; auto using dnf_wIH, dnf_wfIH]].
+  (* [DVec]'s successor reduct (M17a): the head's and the tail's instances *)
+  all: try solve [ repeat first [ progress cbn [dnftm dnfty] | apply subst_dnf_ty | apply ren_dnf_ty | apply ren_dnf
+                                | apply lk_dnf_lsingle | split | exact I ]; intuition auto ].
   (* η of the meta-functions (M5): the weakened function *)
   all: apply gren_dnf_all.
 Qed.

@@ -43,6 +43,7 @@ Fixpoint unf_ty (T : ty) {struct T} : ty :=
   | tyVec l A n => tyVec l (unf_ty A) (unf_tm n)
   | tyWf l A N => tyWf l (unf_ty A) (unf_tm N)
   | tySq l A => tySq l (unf_ty A)
+  | tyDVec l n F => tyDVec l (unf_tm n) (unf_ty F)
   | tyFin n => tyFin (unf_tm n)
   end
 with unf_tm (t : tm) {struct t} : tm :=
@@ -390,6 +391,7 @@ Fixpoint gfree_ty (T : ty) {struct T} : Prop :=
   | tyVec l A n => gfree_ty A /\ gfree_tm n
   | tyWf l A N => gfree_ty A /\ gfree_tm N
   | tySq l A => gfree_ty A
+  | tyDVec l n F => gfree_tm n /\ gfree_ty F
   | tyFin n => gfree_tm n
   end
 with gfree_tm (t : tm) {struct t} : Prop :=

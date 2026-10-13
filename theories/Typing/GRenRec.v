@@ -272,6 +272,7 @@ Lemma gren_elimWf l l' A N M c t :
 Proof. reflexivity. Qed.
 (** Propositional truncation (M16a). *)
 Lemma gren_tySq l A : (tySq l A)⟪ξ⟫ = tySq l A⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tyDVec l n F : (tyDVec l n F)⟪ξ⟫ = tyDVec l n⟪ξ⟫ F⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_sq l A a : (tmSq l A a)⟪ξ⟫ = tmSq l A⟪ξ⟫ a⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_elimSq l l' A M c t :
   (tmElimSq l l' A M c t)⟪ξ⟫ = tmElimSq l l' A⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ t⟪ξ⟫.
@@ -378,6 +379,7 @@ Ltac push_gren_at h k := lazymatch h with
   | @tmNth => k gren_tmNth
   | @wfIH => k gren_wfIH
   | @tySq => k gren_tySq
+  | @tyDVec => k gren_tyDVec
   | @tmSq => k gren_sq
   | @tmElimSq => k gren_elimSq
   | @tmSqCode => k gren_tmSqCode
@@ -393,6 +395,11 @@ Ltac gren_rewrite :=
 
 (** ** Reduction under global renaming *)
 
+(** [DVec]'s successor step (M17a): the head's and the tail's instances. *)
+Lemma red_dvec_succ_gren l n F ξ :
+  red_ty (tyDVec l (succ n) F)⟪ξ⟫ (tySig l l (dvecHd n F) (dvecTl l n F))⟪ξ⟫.
+Proof. push_gren. gren_rewrite. push_gren. rewrite !gren_ren. constructor. Qed.
+
 Lemma red_gren_both :
   (forall t u, red t u -> forall ξ, red t⟪ξ⟫ u⟪ξ⟫) /\
   (forall T U, red_ty T U -> forall ξ, red_ty T⟪ξ⟫ U⟪ξ⟫).
@@ -407,7 +414,8 @@ Proof.
              (* δ: the body's instance *)
              | rewrite gren_subst; now constructor
              (* [Vec]'s successor step: the tail's shifts *)
-             | rewrite gren_ren_ty', gren_ren; now constructor ].
+             | rewrite gren_ren_ty', gren_ren; now constructor
+             | now apply red_dvec_succ_gren ].
 Qed.
 
 Lemma red_gren t u ξ : red t u -> red t⟪ξ⟫ u⟪ξ⟫.

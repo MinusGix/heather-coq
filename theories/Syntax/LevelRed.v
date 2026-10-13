@@ -206,6 +206,19 @@ Proof.
   all: repeat first [ assumption | apply Rty | apply Rtm | apply Stm | apply leq_lsingle ].
 Qed.
 
+(** [DVec]'s successor reduct (M17a). *)
+Lemma leq_dvec_red l n F l' n' F' : leqv l l' -> tm_leq n n' -> ty_leq F F' ->
+  ty_leq (tySig l l (dvecHd n F) (dvecTl l n F)) (tySig l' l' (dvecHd n' F') (dvecTl l' n' F')).
+Proof.
+  intros El En EF.
+  pose proof (proj1 leq_ren_all) as Rty. pose proof (proj1 (proj2 leq_ren_all)) as Rtm.
+  pose proof (proj1 leq_subst_all) as Sty. cbn beta in Rty, Rtm, Sty.
+  cbn [ty_leq tm_leq]; repeat split; auto.
+  all: repeat first [ assumption | apply leqv_refl | apply Sty | apply leq_lsingle | apply Rty | apply Rtm
+                    | progress cbn [ty_leq tm_leq lsub_leq]; repeat split | progress cbn; repeat split | reflexivity ].
+  all: cbn; repeat split; auto using leqv_refl.
+Qed.
+
 (** ** One step *)
 
 Lemma red_leq_both :
@@ -232,6 +245,8 @@ Proof.
   (* [Vec]'s successor step: the tail's shifts *)
   all: try solve [cbn [ty_leq tm_leq]; repeat split; auto;
                   first [apply (proj1 leq_ren_all) | apply (proj1 (proj2 leq_ren_all))]; auto].
+  (* [DVec]'s successor step: the head's and the tail's instances *)
+  all: try solve [apply leq_dvec_red; auto].
   all: first
     [ lazymatch goal with |- tm_leq _[lsingle3 _ _ (wIH _ _ _ _ _ _ _ _ _)] _ => idtac end;
       apply (proj1 (proj2 leq_subst_all)); [unfold lsingle3; split; [cbn; repeat split; auto | apply leq_wIH; auto] | auto]

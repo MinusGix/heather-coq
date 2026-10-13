@@ -381,6 +381,7 @@ Qed.
   eapply lsub_eq_lift_g; [ .. | sub_rw; reflexivity ] : fung.
 #[export] Hint Resolve wfc_ext wft_nat wft_El wft_U wf_code_nat wf_code_U wf_zero
   lequiv_wf_l lequiv_wf_r lequiv_refl compt_notV wf_ctx_nat wft_CTyp wft_CTrm eqc_refl : fung.
+#[export] Hint Resolve wft_fin_typeof : fung.
 #[export] Hint Extern 1 (lwf _ _) => (cbn; first [exact I | assumption | split; assumption]) : fung.
 #[export] Hint Extern 3 (wf_ty _ (typeof _) _ _ _) => eapply lift_ty; [ | apply lle_self_typeof ] : fung.
 #[export] Hint Extern 3 (wf_tm _ (typeof _) _ _ _ _) => eapply lift_tm; [ | apply lle_self_typeof ] : fung.
@@ -476,6 +477,21 @@ Ltac fung_manual :=
       eapply eqtm_gdef; [ .. | fung_entries | fung_entries | fung_entries | apply eqtm_refl; eassumption ];
       fung_side
   | |- eq_tm _ _ _ (boxT _) _ _ _ => apply eqtm_refl; eapply wf_boxT; eauto; fung_side
+  (* [DVec] (M17a): its family's context needs the substituted length typed *)
+  | Hd : lsub_eq _ _ _ ?d _ _, wn : wf_tm _ _ _ ?n tyNat _, wF : wf_ty _ _ (_ ,, tyFin ?n @ _) ?F _
+    |- eq_ty _ ?i _ (tyDVec _ (subst ?n ?d) _) _ _ =>
+      let Hn := fresh "Hn" in
+      assert (Hn := wf_tm_subst_g wn (lsub_eq_l Hd)); cbn in Hn;
+      let HF := fresh "HF" in
+      assert (HF : lsub_eq _ _ (_ ,, tyFin n[d] @ lzero) (llift d) (llift _) (_ ,, tyFin n @ lzero))
+        by (eapply lsub_eq_lift_g; [exact Hd | eauto with fung | exact I | | reflexivity];
+            cbn; apply eqty_fin; [destruct i; cbn in *; congruence | ];
+            eapply lift_eqtm; [ match goal with IH : forall Δ0 e e', _ -> eq_tm _ _ _ (subst n _) _ _ _ |- _ =>
+                                  eapply IH; exact Hd end | apply lle_self_typeof ]);
+      eapply eqty_dvec; [ .. | exact (wf_ty_subst_g wF (lsub_eq_l HF))
+                        | match goal with IH : forall Δ0 e e', _ -> eq_ty _ _ _ (subst F _) _ _ |- _ =>
+                            eapply IH; exact HF end ];
+      eauto with fung
   | |- eq_tm _ _ _ (boxt _) _ _ _ => apply eqtm_refl; eapply wf_boxt; eauto; fung_side
   | |- eq_tm _ _ _ (letboxT _ _ _ _ _ _) _ _ _ =>
       eapply eqtm_letboxT; try fung_body; try fung_body_wf;

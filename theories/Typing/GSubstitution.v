@@ -448,6 +448,7 @@ Lemma gs_elimWf l l' A N M c t :
 Proof. reflexivity. Qed.
 (** Propositional truncation (M16a). *)
 Lemma gs_tySq l A : (tySq l A)⦃σ⦄ = tySq l A⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tyDVec l n F : (tyDVec l n F)⦃σ⦄ = tyDVec l n⦃σ⦄ F⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_sq l A a : (tmSq l A a)⦃σ⦄ = tmSq l A⦃σ⦄ a⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_elimSq l l' A M c t : (tmElimSq l l' A M c t)⦃σ⦄ = tmElimSq l l' A⦃σ⦄ M⦃σ⦄ c⦃σ⦄ t⦃σ⦄.
 Proof. reflexivity. Qed.
@@ -522,6 +523,7 @@ Ltac push_gsubst_at h k := lazymatch h with
   | @tmNth => k gs_tmNth
   | @wfIH => k gs_wfIH
   | @tySq => k gs_tySq
+  | @tyDVec => k gs_tyDVec
   | @tmSq => k gs_sq
   | @tmElimSq => k gs_elimSq
   | @tmSqCode => k gs_tmSqCode
@@ -659,6 +661,9 @@ Ltac gs_obj Hσ Hin := pose proof (gsw_var _ _ _ Hσ _ _ Hin) as Ho; cbn in Ho.
 
 Ltac gs_manual :=
   match goal with
+  (* [DVec]'s successor (M17a): the tail's index annotation is renamed *)
+  | |- eq_ty _ _ _ (tyDVec _ (succ _) _) (tySig _ _ _ _) _ =>
+      rewrite ?gs_ren; eapply eqty_dvec_succ; gs_premise
   | Hσ : gsub_wf _ ?σ _, Hc : gctx_var _ ?g |- wf_ctx _ _ (pctx (?σ ?g)) =>
       let Ho := fresh "Ho" in pose proof (gsw_var _ _ _ Hσ _ _ (gctx_var_in _ _ Hc)) as Ho; cbn in Ho;
       destruct (σ g); cbn [pctx]; try contradiction;

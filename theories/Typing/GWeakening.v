@@ -241,6 +241,8 @@ Ltac gw_manual :=
   (* meta-functions (M5): bodies under the global binder, as letbox's *)
   (* the identity type (M11a): [J]'s motive context commutes by an equation *)
   (* finitary well-founded trees (M15a): the arity's instance commutes by an equation *)
+  (* dependent tuples (M17a): the tail's index annotation shifts the length *)
+  | |- eq_ty _ _ _ (tyDVec _ (succ _) _) (tySig _ _ _ _) _ => gren_rewrite; eapply eqty_dvec_succ; gw_premise
   | |- wf_tm _ _ _ (tmSupf _ _ _ _ _) _ _ => eapply wf_supf; gw_premise
   | |- eq_tm _ _ _ (tmSupf _ _ _ _ _) _ _ _ => eapply eqtm_supf; gw_premise
   | |- wf_tm _ _ _ (tmElimWf _ _ _ _ _ _ _) _ _ => eapply wf_elimWf; gw_premise

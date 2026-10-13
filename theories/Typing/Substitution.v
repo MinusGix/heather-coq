@@ -191,6 +191,8 @@ Ltac sub_rw := sub_rw1; sub_rw1.
 #[export] Hint Resolve wfc_ext wft_nat wft_El lequiv_wf_l lequiv_wf_r wf_ctx_nat compt_notV : sub.
 #[export] Hint Resolve wf_ctx_empty wft_empty_typeof wf_ctx_sum wft_sum_typeof : sub.
 #[export] Hint Resolve wf_ctx_sq wft_sq_typeof : sub.
+#[export] Hint Resolve wft_fin_typeof wft_fin_zero_typeof wft_fin_succ_typeof
+  wf_ctx_fin wf_ctx_fin_zero wf_ctx_fin_succ : sub.
 (* a [lmax] of levels known only through [lequiv] (M12b, [case]'s motive) *)
 #[export] Hint Extern 3 (lwf _ (lmax _ _)) => (cbn; split; eauto using lequiv_wf_l, lequiv_wf_r) : sub.
 #[export] Hint Extern 1 (ty_leq _ _) =>

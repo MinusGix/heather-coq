@@ -296,6 +296,33 @@ Lemma wf_ctx_sq G i Δ l A : lwf (gL G) l -> [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; 
   [ G ; Δ ,, tySq l A @ l ⊢[ typeof i ] ].
 Proof. intros Hl HA HΔ. apply wfc_ext; [exact HΔ | now apply wft_sq_typeof | exact Hl]. Qed.
 #[export] Hint Resolve wf_ctx_sq wft_sq_typeof : wk.
+(** [DVec]'s family context (M17a). *)
+Lemma wft_fin_typeof G i Δ n : i <> lV -> [ G ; Δ ⊢[ i ] n : tyNat @ lzero ] ->
+  [ G ; Δ ⊢[ typeof i ] tyFin n @ lzero ].
+Proof.
+  intros Hv Hn. apply wft_fin; [destruct i; cbn; congruence | eapply lift_tm; [exact Hn | apply lle_self_typeof]].
+Qed.
+Lemma wf_ctx_fin G i Δ n : i <> lV -> [ G ; Δ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Δ ⊢[ typeof i ] ] ->
+  [ G ; Δ ,, tyFin n @ lzero ⊢[ typeof i ] ].
+Proof. intros Hv Hn HΔ. apply wfc_ext; [exact HΔ | now apply wft_fin_typeof | exact I]. Qed.
+Lemma wf_ctx_fin_zero G i Δ : compt i -> [ G ; Δ ⊢[ typeof i ] ] ->
+  [ G ; Δ ,, tyFin zero @ lzero ⊢[ typeof i ] ].
+Proof. intros Hc HΔ. apply wf_ctx_fin; [now apply compt_notV | apply wf_zero; [now apply compt_notV | exact HΔ] | exact HΔ]. Qed.
+Lemma wf_ctx_fin_succ G i Δ n : compt i -> [ G ; Δ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Δ ⊢[ typeof i ] ] ->
+  [ G ; Δ ,, tyFin (succ n) @ lzero ⊢[ typeof i ] ].
+Proof. intros Hc Hn HΔ. apply wf_ctx_fin; [now apply compt_notV | apply wf_succ; [now apply compt_notV | exact Hn] | exact HΔ]. Qed.
+Lemma wft_fin_zero_typeof G i Δ : compt i -> [ G ; Δ ⊢[ typeof i ] ] -> [ G ; Δ ⊢[ typeof i ] tyFin zero @ lzero ].
+Proof. intros Hc HΔ. apply wft_fin_typeof; [now apply compt_notV | apply wf_zero; [now apply compt_notV | exact HΔ]]. Qed.
+Lemma wft_fin_succ_typeof G i Δ n : compt i -> [ G ; Δ ⊢[ i ] n : tyNat @ lzero ] ->
+  [ G ; Δ ⊢[ typeof i ] tyFin (succ n) @ lzero ].
+Proof. intros Hc Hn. apply wft_fin_typeof; [now apply compt_notV | apply wf_succ; [now apply compt_notV | exact Hn]]. Qed.
+#[export] Hint Resolve wft_fin_typeof wft_fin_zero_typeof wft_fin_succ_typeof
+  wf_ctx_fin wf_ctx_fin_zero wf_ctx_fin_succ : wk.
+(** [DVec]'s successor, at a reduct spelled up to syntax (its renamed tail). *)
+Lemma eqty_dvec_succ' G i Γ l n F T : compt i -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyFin (succ n) @ lzero ⊢[ i ] F @ l ] -> tySig l l (dvecHd n F) (dvecTl l n F) = T ->
+  [ G ; Γ ⊢[ i ] tyDVec l (succ n) F ≅ T @ l ].
+Proof. intros ? ? ? ? <-. now apply eqty_dvec_succ. Qed.
 #[export] Hint Extern 3 (lwf _ (lmax _ _)) => (cbn; split; eauto using lequiv_wf_l, lequiv_wf_r) : wk.
 (** A computing layer sees layer-C definitions (M9). *)
 Lemma compt_lle_C i : compt i -> lle lC i.
@@ -566,6 +593,10 @@ Ltac wk_manual :=
   | |- wf_tm _ _ _ (uapp _ _) _ _ => eapply wf_uapp; try wk_upi_body; wk_premise
   | |- eq_tm _ _ _ (uapp (ulam _ _ _ _) _) _ _ _ => eapply eqtm_ubeta; try wk_upi_body; wk_premise
   | |- eq_tm _ _ _ (uapp _ _) _ _ _ => eapply eqtm_uapp; try wk_upi_body; wk_premise
+  (* dependent tuples (M17a): the tail's index annotation shifts the length *)
+  | |- eq_ty _ _ _ (tyDVec _ (succ _) _) (tySig _ _ _ _) _ =>
+      eapply eqty_dvec_succ'; [wk_premise .. |];
+      repeat (f_equal; try ren_comm); rlk_simpl; reflexivity
   (* dependent pairs (M8) *)
   | |- eq_tm _ _ _ (tmPair _ _ _ _ (tmFst _ _ _ _ _) (tmSnd _ _ _ _ _)) _ _ _ =>
       eapply eqtm_sig_eta; wk_premise

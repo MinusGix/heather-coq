@@ -32,6 +32,7 @@ Fixpoint ty_leq (T T' : ty) {struct T} : Prop :=
   | tyFin n, tyFin n' => tm_leq n n'
   | tyWf l A N, tyWf l' A' N' => leqv l l' /\ ty_leq A A' /\ tm_leq N N'
   | tySq l A, tySq l' A' => leqv l l' /\ ty_leq A A'
+  | tyDVec l n F, tyDVec l' n' F' => leqv l l' /\ tm_leq n n' /\ ty_leq F F'
   | tyUnit l, tyUnit l' | tySEmpty l, tySEmpty l' | tyEmpty l, tyEmpty l' => leqv l l'
   | tySEq l A a b, tySEq l' A' a' b' => leqv l l' /\ ty_leq A A' /\ tm_leq a a' /\ tm_leq b b'
   | tyId l A a b, tyId l' A' a' b' => leqv l l' /\ ty_leq A A' /\ tm_leq a a' /\ tm_leq b b'

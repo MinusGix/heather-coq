@@ -76,7 +76,8 @@ Inductive whne_ty : ty -> Prop :=
 | whne_tyEl l t : whne t -> whne_ty (tyEl l t)
 (* length-indexed tuples and finite indices at a neutral length (M14a) *)
 | whne_tyVec l A n : whne n -> whne_ty (tyVec l A n)
-| whne_tyFin n : whne n -> whne_ty (tyFin n).
+| whne_tyFin n : whne n -> whne_ty (tyFin n)
+| whne_tyDVec l n F : whne n -> whne_ty (tyDVec l n F).
 
 Inductive whnf_ty : ty -> Prop :=
 | whnf_ty_ne T : whne_ty T -> whnf_ty T

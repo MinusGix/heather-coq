@@ -117,6 +117,11 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
    M16b), level-indexed *)
 | wft_sq G i Γ l A : i <> lV -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] A @ l ] ->
     [ G ; Γ ⊢[ i ] tySq l A @ l ]
+(* dependent tuples (M17a, M17_DESIGN.md; layers D and M): the family is a
+   type under the position's binder [i : Fin n] *)
+| wft_dvec G i Γ l n F : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F @ l ] ->
+    [ G ; Γ ⊢[ i ] tyDVec l n F @ l ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | wft_lconv G i Γ T l l' : [ G ; Γ ⊢[ i ] T @ l' ] -> lequiv (gL G) l l' ->
@@ -537,6 +542,18 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
 (* the code of [∥·∥] decodes (M16b; layers D and M) *)
 | eqty_El_sq G i Γ l s : compt i -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
     [ G ; Γ ⊢[ i ] tySq l (tyEl l s) ≅ tyEl l (tmSqCode l s) @ l ]
+(* dependent tuples (M17a; layers D and M): the congruence, and the
+   computation at a canonical length *)
+| eqty_dvec G i Γ l l' n n' F F' : compt i -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F @ l ] -> [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F ≅ F' @ l ] ->
+    [ G ; Γ ⊢[ i ] tyDVec l n F ≅ tyDVec l' n' F' @ l ]
+| eqty_dvec_zero G i Γ l F : compt i -> lwf (gL G) l ->
+    [ G ; Γ ,, tyFin zero @ lzero ⊢[ i ] F @ l ] ->
+    [ G ; Γ ⊢[ i ] tyDVec l zero F ≅ tyUnit l @ l ]
+| eqty_dvec_succ G i Γ l n F : compt i -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyFin (succ n) @ lzero ⊢[ i ] F @ l ] ->
+    [ G ; Γ ⊢[ i ] tyDVec l (succ n) F ≅ tySig l l (dvecHd n F) (dvecTl l n F) @ l ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | eqty_refl G i Γ T l : [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T @ l ]

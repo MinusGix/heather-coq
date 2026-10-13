@@ -244,6 +244,7 @@ Fixpoint dnfty (T : ty) : Prop :=
   | tyFin n => dnftm n
   | tyWf _ A N => dnfty A /\ dnftm N
   | tySq _ A => dnfty A
+  | tyDVec _ n F => dnftm n /\ dnfty F
   | tyEl _ t => dnftm t
   | tyGvar _ d => dnfl d
   | tyCTyp Δ _ => dnfctx Δ

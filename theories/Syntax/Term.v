@@ -51,6 +51,8 @@ Inductive ty : Type :=
 | tyWf (l : lvl) (A : ty) (N : tm)        (* Wf^l(x : A). N @ l      N: +1 *)
 (* propositional truncation (M16a), level-indexed: proof irrelevant *)
 | tySq (l : lvl) (A : ty)                 (* ∥A∥^l @ l *)
+(* dependent fixed-length tuples (M17a): reduce on the length          F: +1 (i : Fin n) *)
+| tyDVec (l : lvl) (n : tm) (F : ty)      (* DVec^l(n; i. F) @ l *)
 with tm : Type :=
 | var (n : nat)
 | tmErr
@@ -238,6 +240,7 @@ Fixpoint ren_ty (T : ty) (r : rsub) {struct T} : ty :=
   | tyFin n => tyFin (ren_tm n r)
   | tyWf l A N => tyWf l (ren_ty A r) (ren_tm N (rlift r))
   | tySq l A => tySq l (ren_ty A r)
+  | tyDVec l n F => tyDVec l (ren_tm n r) (ren_ty F (rlift r))
   end
 with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   match t with
@@ -345,6 +348,7 @@ Fixpoint gren_ty (T : ty) (ξ : nat -> nat) {struct T} : ty :=
   | tyFin n => tyFin (gren_tm n ξ)
   | tyWf l A N => tyWf l (gren_ty A ξ) (gren_tm N ξ)
   | tySq l A => tySq l (gren_ty A ξ)
+  | tyDVec l n F => tyDVec l (gren_tm n ξ) (gren_ty F ξ)
   end
 with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   match t with
@@ -450,6 +454,7 @@ Fixpoint uren_ty (T : ty) (ρ : nat -> nat) {struct T} : ty :=
   | tyFin n => tyFin (uren_tm n ρ)
   | tyWf l A N => tyWf (lvren l ρ) (uren_ty A ρ) (uren_tm N ρ)
   | tySq l A => tySq (lvren l ρ) (uren_ty A ρ)
+  | tyDVec l n F => tyDVec (lvren l ρ) (uren_tm n ρ) (uren_ty F ρ)
   end
 with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   match t with
@@ -562,6 +567,7 @@ Fixpoint subst_ty (T : ty) (d : lsub) {struct T} : ty :=
   | tyFin n => tyFin (subst_tm n d)
   | tyWf l A N => tyWf l (subst_ty A d) (subst_tm N (llift d))
   | tySq l A => tySq l (subst_ty A d)
+  | tyDVec l n F => tyDVec l (subst_tm n d) (subst_ty F (llift d))
   end
 with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   match t with
@@ -728,6 +734,67 @@ Notation wfstepty l A N M :=
   (M⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle
      (tmSupf l A⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ (var 2) (var 1))]).
 
+(** [DVec]'s successor reduct (M17_DESIGN.md): the head is [F] at [inl ⟨⟩],
+    the tail [DVec] at the predecessor over [F] at [inr j], in [Γ, x]; the
+    injections carry [Fin (S n)]'s reduct's annotations. *)
+Notation dvecHd n F := (F[lsingle (tmInl lzero lzero (tyUnit lzero) (tyFin n) (tmTriv lzero))]).
+Notation dvecTl l n F :=
+  (tyDVec l n⟨↑⟩ F⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (tmInr lzero lzero (tyUnit lzero) (tyFin n⟨↑⟩⟨↑⟩) (var 0))]).
+
+(** [dnth^l(n; i. F; cs; i)] (M17_DESIGN.md, Heather's [iwf-former-design.md]
+    §3): the [i]th component of a [DVec^l(n; i. F)]. Not a former. A
+    [natrec] on the length whose motive quantifies over an embedding
+    [e : Fin k̂ → Fin n], so that the family stays [F] over the full length:
+    [Π(e : Fin k̂ → Fin n). Π(cs : DVec(k̂; j. F[e j/i])). Π(i' : Fin k̂). F[e i'/i]],
+    applied to the identity embedding, the tuple and the index. The base
+    eliminates the [Empty] index; the step cases on the index: [inl] gives
+    [fst cs], [inr j] the recursive call at the embedding [λy. e (inr y)],
+    [snd cs] and [j]. The applications are annotated with β-normal types
+    (the family at [e (inr y)], not at [(λy. e (inr y)) y]), so [dnth]'s type
+    is [F[i/i]] exactly; the β steps sit in the conversions of the
+    applications' function types. *)
+Definition dnthEmb (n : tm) : ty :=                              (* in Γ, k̂ *)
+  tyPi lzero lzero (tyFin (var 0)) (tyFin n⟨↑⟩⟨↑⟩).
+Definition dnthFam (n : tm) (F : ty) : ty :=                     (* in Γ, k̂, e, j *)
+  F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 1) lzero lzero (tyFin (var 2)) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))].
+Definition dnthRes (n : tm) (F : ty) : ty :=                     (* in Γ, k̂, e, cs, i' *)
+  F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 2) lzero lzero (tyFin (var 3)) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))].
+Definition dnthMot (l : lvl) (n : tm) (F : ty) : ty :=           (* in Γ, k̂ *)
+  tyPi lzero l (dnthEmb n) (tyPi l l (tyDVec l (var 1) (dnthFam n F)) (tyPi lzero l (tyFin (var 2)) (dnthRes n F))).
+Definition dnthBase (l : lvl) (n : tm) (F : ty) : tm :=          (* in Γ *)
+  lam lzero l (tyPi lzero lzero (tyFin zero) (tyFin n⟨↑⟩))
+    (lam l l (tyDVec l zero F⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 1) lzero lzero (tyFin zero) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))])
+       (lam lzero l (tyFin zero)
+          (elimEmpty l lzero F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 3) lzero lzero (tyFin zero) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))] (var 0)))).
+(** The tuple's family in the step, under one more binder than the
+    [λ]s ([Γ, k̂, r, e, cs, i', x], then [j]): the projections' annotations. *)
+Definition dnthFamS (n : tm) (F : ty) : ty :=
+  F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 4) lzero lzero (tyFin (succ (var 6))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))].
+Definition dnthStep (l : lvl) (n : tm) (F : ty) : tm :=          (* in Γ, k̂, r *)
+  lam lzero l (tyPi lzero lzero (tyFin (succ (var 1))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩))
+    (lam l l (tyDVec l (succ (var 2)) F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 1) lzero lzero (tyFin (succ (var 3))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))])
+       (lam lzero l (tyFin (succ (var 3)))
+          (tmCase lzero lzero l (tyUnit lzero) (tyFin (var 4))
+             F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 3) lzero lzero (tyFin (succ (var 5))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))]
+             (tmFst l l (dvecHd (var 5) (dnthFamS n F)) (dvecTl l (var 5) (dnthFamS n F)) (var 2))
+             (app (app (app (var 4) lzero l (dnthEmb n)⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩
+                         (tyPi l l (tyDVec l (var 1) (dnthFam n F)) (tyPi lzero l (tyFin (var 2)) (dnthRes n F)))⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩
+                         (lam lzero lzero (tyFin (var 5)) (app (var 4) lzero lzero (tyFin (succ (var 6))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 6)) (var 0)))))
+                    l l (tyDVec l (var 5) F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 4) lzero lzero (tyFin (succ (var 6))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 6)) (var 0)))])
+                    (tyPi lzero l (tyFin (var 6)) F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 5) lzero lzero (tyFin (succ (var 7))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 7)) (var 0)))])
+                    (tmSnd l l (dvecHd (var 5) (dnthFamS n F)) (dvecTl l (var 5) (dnthFamS n F)) (var 2)))
+                lzero l (tyFin (var 5)) F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 4) lzero lzero (tyFin (succ (var 6))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 6)) (var 0)))]
+                (var 0))
+             (var 0)))).
+Definition tmDNth (l : lvl) (n : tm) (F : ty) (cs i : tm) : tm :=
+  app (app (app (natrec l (dnthMot l n F) (dnthBase l n F) (dnthStep l n F) n)
+              lzero l (tyPi lzero lzero (tyFin n) (tyFin n⟨↑⟩))
+              (tyPi l l (tyDVec l n⟨↑⟩ F⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 1) lzero lzero (tyFin n⟨↑⟩⟨↑⟩) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))])
+                 (tyPi lzero l (tyFin n⟨↑⟩⟨↑⟩) F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 2) lzero lzero (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))]))
+              (lam lzero lzero (tyFin n) (var 0)))
+         l l (tyDVec l n F) (tyPi lzero l (tyFin n⟨↑⟩) F⟨rlift ↑⟩) cs)
+      lzero l (tyFin n) F i.
+
 (** ** Global substitution
 
     A global substitution is a meta-level function to global objects.
@@ -796,6 +863,7 @@ Fixpoint gsubst_ty (T : ty) (σ : gsub) {struct T} : ty :=
   | tyFin n => tyFin (gsubst_tm n σ)
   | tyWf l A N => tyWf l (gsubst_ty A σ) (gsubst_tm N σ)
   | tySq l A => tySq l (gsubst_ty A σ)
+  | tyDVec l n F => tyDVec l (gsubst_tm n σ) (gsubst_ty F σ)
   end
 with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   match t with
@@ -903,6 +971,7 @@ Fixpoint usubst_ty (T : ty) (φ : nat -> lvl) {struct T} : ty :=
   | tyFin n => tyFin (usubst_tm n φ)
   | tyWf l A N => tyWf (lvsubst l φ) (usubst_ty A φ) (usubst_tm N φ)
   | tySq l A => tySq (lvsubst l φ) (usubst_ty A φ)
+  | tyDVec l n F => tyDVec (lvsubst l φ) (usubst_tm n φ) (usubst_ty F φ)
   end
 with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   match t with
