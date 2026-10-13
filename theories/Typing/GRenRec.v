@@ -276,6 +276,7 @@ Lemma gren_sq l A a : (tmSq l A a)⟪ξ⟫ = tmSq l A⟪ξ⟫ a⟪ξ⟫. Proof. 
 Lemma gren_elimSq l l' A M c t :
   (tmElimSq l l' A M c t)⟪ξ⟫ = tmElimSq l l' A⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ t⟪ξ⟫.
 Proof. reflexivity. Qed.
+Lemma gren_tmSqCode l s : (tmSqCode l s)⟪ξ⟫ = tmSqCode l s⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_tmNth l T k cs i : (tmNth l T k cs i)⟪ξ⟫ = tmNth l T⟪ξ⟫ k⟪ξ⟫ cs⟪ξ⟫ i⟪ξ⟫.
 Proof.
   unfold tmNth, nthMot, nthBase, nthStep. cbn [gren GRen_tm gren_tm GRen_ty gren_ty].
@@ -379,6 +380,7 @@ Ltac push_gren_at h k := lazymatch h with
   | @tySq => k gren_tySq
   | @tmSq => k gren_sq
   | @tmElimSq => k gren_elimSq
+  | @tmSqCode => k gren_tmSqCode
   end.
 Ltac push_gren := repeat match goal with
   | |- context [@gren _ _ ?t _] => let h := head_of t in push_gren_at h ltac:(fun L => rewrite L)

@@ -221,12 +221,12 @@ Proof. inv_tm_any. Qed.
 
 (** Propositional truncation (M16a). *)
 Lemma inva_sq {G i Γ l A a T k} : [ G ; Γ ⊢[ i ] tmSq l A a : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\
     lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ typeof i ] T ≅ tySq l A @ k ].
 Proof. inv_tm_any. Qed.
 
 Lemma inva_elimSq {G i Γ l l' A M c t T k} : [ G ; Γ ⊢[ i ] tmElimSq l l' A M c t : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
     [ G ; Γ ,, tySq l A @ l ⊢[ i ] M @ l' ] /\
     [ G ; Γ ,, A @ l ⊢[ i ] c : tySq l' M⟨rlift ↑⟩[lsingle (tmSq l A⟨↑⟩ (var 0))] @ l' ] /\
     [ G ; Γ ⊢[ i ] t : tySq l A @ l ]) /\
@@ -318,6 +318,12 @@ Proof. inv_tm_any. Qed.
 Lemma inva_code_wf {G i Γ l s n T k} : [ G ; Γ ⊢[ i ] tmWf l s n : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ]) /\
+    lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU l @ k ].
+Proof. inv_tm_any. Qed.
+
+(** The code of [∥·∥] (M16b). *)
+Lemma inva_code_sq {G i Γ l s T k} : [ G ; Γ ⊢[ i ] tmSqCode l s : T @ k ] ->
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ]) /\
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU l @ k ].
 Proof. inv_tm_any. Qed.
 

@@ -205,6 +205,9 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
    squash type is not [posty]); both sides are already weak-head normal,
    which is Heather's normalizing-total conversion *)
 | actmnf_sq_irr G Γ l A w w' : ac_tmnf G Γ w w' (tySq l A)
+(* the code of ∥·∥ (M16b) *)
+| actmnf_code_sq G Γ l k k' s s' : leqv k k' -> ac_tm G Γ s s' (tyU k) ->
+    ac_tmnf G Γ (tmSqCode k s) (tmSqCode k' s') (tyU l)
 
 with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_var G Γ n T l : in_ctx Γ n T l -> ac_tmne G Γ (var n) (var n) T

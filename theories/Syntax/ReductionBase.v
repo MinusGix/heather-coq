@@ -103,6 +103,8 @@ with red_ty : ty -> ty -> Prop :=
 | red_El_fin l n : red_ty (tyEl l (tmFin n)) (tyFin n)
 (* the code of Wf (M15b): the arity rides across under the shape's binder *)
 | red_El_wf l l0 s n : red_ty (tyEl l (tmWf l0 s n)) (tyWf l0 (tyEl l0 s) n)
+(* the code of ∥·∥ (M16b) *)
+| red_El_sq l l0 s : red_ty (tyEl l (tmSqCode l0 s)) (tySq l0 (tyEl l0 s))
 (* length-indexed tuples and finite indices (M14a): compute on the length *)
 | red_vec_zero l A : red_ty (tyVec l A zero) (tyUnit l)
 | red_vec_succ l A n : red_ty (tyVec l A (succ n)) (tySig l l A (tyVec l A⟨↑⟩ n⟨↑⟩))
@@ -181,6 +183,7 @@ Proof.
         | Hr : red (tmSup _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSupf _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSq _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmSqCode _ _) _ |- _ => inversion Hr
         | Hr : red_ty (tyPi _ _ _ _) _ |- _ => inversion Hr
         end;
     try congruence; try (f_equal; eauto).

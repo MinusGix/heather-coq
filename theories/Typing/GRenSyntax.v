@@ -134,6 +134,10 @@ Ltac gpeel_push :=
   (* [case]'s branch types (M12c): the injection under the single substitution *)
   try match goal with |- context [tmInl _ _ _ _ (var 0)] =>
     cbn [glren lsingle gren_tm gren_ty]; fold gren_ty gren_tm; rewrite ?gren_ren_ty', ?gren_ren end;
+  (* [ind_∥∥]'s step type (M16b): the same, under the squash *)
+  try match goal with |- context [tmSq _ _ (var 0)] =>
+    cbn [glren lsingle gren_tm gren_ty]; fold gren_ty gren_tm;
+    rewrite ?gren_ty_subst_raw, ?gren_ren_ty', ?gren_ren end;
   (* [elimW]'s step telescope (M13b): renamings and substitutions nested
      under the payload binders *)
   try match goal with |- context [tmSup _ _ _ _ (var 2) (var 1)] =>

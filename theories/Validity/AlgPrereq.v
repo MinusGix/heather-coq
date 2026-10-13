@@ -311,6 +311,15 @@ Lemma wf_case_eq G i Γ l l' l'' A B M c1 c2 t T C1 C2 : T = M[lsingle t] ->
   [ G ; Γ ⊢[ i ] t : tySum l l' A B @ lmax l l' ] ->
   [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 t : T @ l'' ].
 Proof. intros -> -> ->; intros; apply wf_case; rewrite ?SubstCommute.liftshift_single_ty; assumption. Qed.
+(** [∥·∥]'s eliminator likewise (M16b): its result and step types are
+    squashes of the motive's instances. *)
+Lemma wf_elimSq_eq G i Γ l l' A M c t T C : T = tySq l' M[lsingle t] ->
+  C = tySq l' M[lcons (lshift 1) (tmSq l A⟨↑⟩ (var 0))] ->
+  i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, tySq l A @ l ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] c : C @ l' ] -> [ G ; Γ ⊢[ i ] t : tySq l A @ l ] ->
+  [ G ; Γ ⊢[ i ] tmElimSq l l' A M c t : T @ l' ].
+Proof. intros -> ->; intros; apply wf_elimSq; rewrite ?SubstCommute.liftshift_single_ty; assumption. Qed.
 
 (** Side conditions in a concrete branch scope: levels, lookups, weakenings,
     and the typing of the objects (contexts at D, codes at C, boxes at M). *)
@@ -354,6 +363,9 @@ Ltac br_tac :=
     | eapply wf_gv_up_inst
     (* length-indexed tuples and finite indices (M14b) *)
     | eapply wft_vec | apply wft_fin | eapply wf_code_vec | apply wf_code_fin
+    (* propositional truncation (M16b) *)
+    | eapply wft_sq | eapply wf_code_sq | eapply wf_sq
+    | eapply wf_elimSq_eq; [reflexivity | reflexivity | ..]
     (* last: their [cbn] is the bulk of the cost when tried on every goal *)
     | solve [unfold lle; cbn; lia] | solve [br_lvl] ].
 

@@ -114,6 +114,7 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
   | tmSq l A a, tmSq l' A' a' => leqv l l' /\ ty_leq A A' /\ tm_leq a a'
   | tmElimSq l1 l2 A M c t, tmElimSq l1' l2' A' M' c' t' =>
       leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq M M' /\ tm_leq c c' /\ tm_leq t t'
+  | tmSqCode l s, tmSqCode l' s' => leqv l l' /\ tm_leq s s'
   | _, _ => False
   end
 with ctx_leq (Γ Γ' : ctx) {struct Γ} : Prop :=

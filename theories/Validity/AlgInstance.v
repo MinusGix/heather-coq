@@ -600,6 +600,11 @@ Proof.
     + exact (actmne_elimSq _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24)
                DA DM Hn Hn').
     + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
+  (* the code of ∥·∥ (M16b) *)
+  - intros * Hl (Es & Ds).
+    refine (conj (@geq_tm_code_sq DE DEL _ _ _ _ _ _ Hl Es) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmSqCode | apply whnf_tmSqCode |].
+    exact (actmnf_code_sq _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) Ds).
 Qed.
 
 End Alg.

@@ -295,6 +295,7 @@ with sz_tm (t : tm) : nat :=
   | tmElimWf _ _ A N M c t => S (sz_ty A + sz_tm N + sz_ty M + sz_tm c + sz_tm t)
   | tmSq _ A a => S (sz_ty A + sz_tm a)
   | tmElimSq _ _ A M c t => S (sz_ty A + sz_ty M + sz_tm c + sz_tm t)
+  | tmSqCode _ s => S (sz_tm s)
   end
 with sz_ctx (Γ : ctx) : nat :=
   match Γ with cnil | cvar _ => 1 | cext Γ A _ => S (sz_ctx Γ + sz_ty A) end

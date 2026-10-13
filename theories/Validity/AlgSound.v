@@ -515,7 +515,7 @@ Proof.
   destruct (inv_ty_sq HT) as ((_ & W & HA) & Hk). destruct (inv_ty_sq HT') as ((_ & W' & HA') & _).
   pose proof (leqv_lequiv _ _ _ W W' Hl) as E.
   pose proof (IHA i l Hc HA (wft_lconv _ _ _ _ _ _ HA' E)) as EA.
-  apply (lvl_eq_eqty Hk). apply eqty_sq; [exact Hc | exact E | exact HA | exact EA].
+  apply (lvl_eq_eqty Hk). apply eqty_sq; [(apply compt_notV; exact Hc) | exact E | exact HA | exact EA].
 Qed.
 
 Lemma S_actmnf_sq_irr {G Γ l A w w'} : S_tm G Γ w w' (tySq l A).
@@ -539,13 +539,13 @@ Proof.
   pose proof (ctx_of_wf_tm Hi Hν) as HΓ.
   pose proof (IHA i l1 Hc HA (wft_lconv _ _ _ _ _ _ HA' E13)) as EA.
   assert (ES : [ G ; Γ ⊢[ i ] tySq l1 A ≅ tySq l3 A' @ l1 ])
-    by (apply eqty_sq; [exact Hc | exact E13 | exact HA | exact EA]).
+    by (apply eqty_sq; [(apply compt_notV; exact Hc) | exact E13 | exact HA | exact EA]).
   assert (HS : [ G ; Γ ⊢[ i ] tySq l3 A' ≅ tySq l1 A @ l3 ])
     by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ ES) | exact E31]).
   assert (HΓS : [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] ])
-    by (apply wfc_ext; [exact HΓ | apply wft_sq; [exact Hc | exact W1 | exact HA] | exact W1]).
+    by (apply wfc_ext; [exact HΓ | apply wft_sq; [(apply compt_notV; exact Hc) | exact W1 | exact HA] | exact W1]).
   assert (HΓS' : [ G ; Γ ,, tySq l3 A' @ l3 ⊢[ i ] ])
-    by (apply wfc_ext; [exact HΓ | apply wft_sq; [exact Hc | exact W3 | exact HA'] | exact W3]).
+    by (apply wfc_ext; [exact HΓ | apply wft_sq; [(apply compt_notV; exact Hc) | exact W3 | exact HA'] | exact W3]).
   (* the right motive in the left's context, and the left's in the right's *)
   pose proof (stab_ty Hi HS E31 HΓS HM') as HM'1.
   pose proof (IHM i l2 Hc HM (wft_lconv _ _ _ _ _ _ HM'1 E24)) as EM.
@@ -556,13 +556,13 @@ Proof.
     by (eapply wf_conv; [eapply wf_lconv; [exact Hν' | exact E13] | rewrite Hi; exact ES]).
   pose proof (eqtm_sq_irr _ _ _ _ _ _ _ Hc W1 Hν Hν'1) as Eν.
   assert (Hcc'1 : [ G ; Γ ,, A @ l1 ⊢[ i ] c' : tySq l2 M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))] @ l2 ]).
-  { refine (sq_branch_r Hi Hc E31 E42 HA' _ (wft_lconv _ _ _ _ _ _ HA E31) HM' _ (wft_lconv _ _ _ _ _ _ HM3 E42) Hcc').
+  { refine (sq_branch_r Hi ltac:(apply compt_notV; exact Hc) E31 E42 HA' _ (wft_lconv _ _ _ _ _ _ HA E31) HM' _ (wft_lconv _ _ _ _ _ _ HM3 E42) Hcc').
     - eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | exact E31].
     - eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EM3) | exact E42]. }
   pose proof (eqtm_sq_irr _ _ _ _ _ _ _ Hc W2 Hcc Hcc'1) as Ecc.
-  pose proof (eqtm_elimSq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hc E13 E24 HA EA HM EM Ecc Eν) as Econg.
+  pose proof (eqtm_elimSq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ltac:(apply compt_notV; exact Hc) E13 E24 HA EA HM EM Ecc Eν) as Econg.
   assert (EMν : [ G ; Γ ⊢[ i ] tySq l2 M[lsingle ν] ≅ tySq l4 M'[lsingle ν'] @ l2 ]).
-  { apply eqty_sq; [exact Hc | exact E24 | exact (wf_ty_single Hi HM Hν) |].
+  { apply eqty_sq; [(apply compt_notV; exact Hc) | exact E24 | exact (wf_ty_single Hi HM Hν) |].
     eapply eqty_trans; [exact (eqty_single Hi EM Hν) |].
     exact (wf_ty_func Hi (wft_lconv _ _ _ _ _ _ HM'1 E24) (lsub_eq_single Hi Hν Hν'1 Eν)). }
   split; [exact HX | split].
@@ -1629,6 +1629,25 @@ Proof.
   apply eqtm_code_vec; auto using compt_notV.
 Qed.
 
+(** The code of [∥·∥] (M16b), as [Vec]'s. *)
+Lemma code_sq_prem {G i Γ l k s m} : compt i -> [ G ; Γ ⊢[ i ] tmSqCode k s : tyU l @ m ] ->
+  lwf (gL G) k /\ [ G ; Γ ⊢[ i ] s : tyU k @ lsuc k ].
+Proof.
+  intros Hc H. destruct (proj1 (inv_code_sq (compt_typeof_self _ Hc) H)) as (_ & W & Hs). auto.
+Qed.
+
+Lemma S_actmnf_code_sq {G Γ l k k' s s'} : leqv k k' ->
+  S_tm G Γ s s' (tyU k) -> S_tm G Γ (tmSqCode k s) (tmSqCode k' s') (tyU l).
+Proof.
+  intros Hk0 IHs i m Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_code_sq Hi Hx) as (_ & Hk & HT).
+  destruct (code_sq_prem Hc Hx) as (W & Hs). destruct (code_sq_prem Hc Hx') as (W' & Hs').
+  pose proof (leqv_lequiv _ _ _ W W' Hk0) as E.
+  pose proof (IHs i (lsuc k) Hc Hs (code_U_conv Hc E Hs')) as Es.
+  eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
+  apply eqtm_code_sq; auto using compt_notV.
+Qed.
+
 Lemma S_actmnf_code_fin {G Γ l n n'} : S_tm G Γ n n' tyNat -> S_tm G Γ (tmFin n) (tmFin n') (tyU l).
 Proof.
   intros IHn i m Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
@@ -2272,6 +2291,7 @@ Proof.
     | solve [eapply S_actmnf_inr; eassumption] | solve [eapply S_actmne_case; eassumption]
     | solve [eapply S_actmnf_code_empty; eassumption] | solve [eapply S_actmnf_code_sum; eassumption]
     | solve [eapply S_actmnf_code_vec; eassumption] | solve [eapply S_actmnf_code_fin; eassumption]
+    | solve [eapply S_actmnf_code_sq; eassumption]
     | solve [eapply S_actnf_W; eassumption] | solve [eapply S_actmnf_sup; eassumption]
     | solve [eapply S_actmne_elimW; eassumption]
     | solve [eapply S_actmnf_code_W; eassumption]

@@ -233,6 +233,20 @@ Definition brDecls (k : nat) : list gdecl :=
              (wfstepty (lvar 1) (gv 2) (gu 1) (gv 0)) (lvar 0);
            gdTy (cvar 2 ,, tyWf (lvar 1) (gv 1) (gu 0) @ lvar 1) lC (lvar 0);
            gdTm (cvar 1 ,, gv 0 @ lvar 1) lC tyNat lzero; gdTy (cvar 0) lC (lvar 1); gdCtx]
+  (* propositional truncation (M16b), Heather's telescopes *)
+  (* ℓ; g, U_A : (g ⊢C @ℓ) *)
+  | 51 => [gdTy (cvar 0) lC (lvar 0); gdCtx]
+  (* ℓ; g, u_s : (g ⊢C Ty ℓ @1+ℓ) *)
+  | 52 => [gdTm (cvar 0) lC (tyU (lvar 0)) (lsuc (lvar 0)); gdCtx]
+  (* ℓ; g, U_A, u_a : (g ⊢C U_A^id @ℓ) *)
+  | 53 => [gdTm (cvar 1) lC (gv 0) (lvar 0); gdTy (cvar 0) lC (lvar 0); gdCtx]
+  (* ℓ ℓ'; g, U_A, U_M : (g, z : ∥U_A^id∥ @ℓ ⊢C @ℓ'),
+     u_c : (g, x : U_A^id ⊢C ∥U_M^{↑, squash x/z}∥ @ℓ'), u_t : (g ⊢C ∥U_A^id∥ @ℓ) *)
+  | 54 => [gdTm (cvar 3) lC (tySq (lvar 1) (gv 2)) (lvar 1);
+           gdTm (cvar 2 ,, gv 1 @ lvar 1) lC
+             (tySq (lvar 0) (tyGvar 0 (lcons (lshift 1) (tmSq (lvar 1) (gv 1)⟨↑⟩ (var 0))))) (lvar 0);
+           gdTy (cvar 1 ,, tySq (lvar 1) (gv 0) @ lvar 1) lC (lvar 0);
+           gdTy (cvar 0) lC (lvar 1); gdCtx]
   | _ => []
   end.
 
@@ -390,6 +404,15 @@ Definition br_calls (k : nat) : list rcall :=
                          ,, wfihty (lvar 1) (lvar 0) (gv 4) (gu 3) (gv 2) @ lmax lzero (lvar 0))
               (wfstepty (lvar 1) (gv 4) (gu 3) (gv 2)) (boxt (gu 1));
             rct (lvar 1) (cvar 5) (tyWf (lvar 1) (gv 4) (gu 3)) (boxt (gu 0)) ]
+  (* propositional truncation (M16b); [br_calls_derived] checks them *)
+  | 51 => [ rcT (lvar 0) (cvar 1) (boxT (gv 0)) ]
+  | 52 => [ rct (lsuc (lvar 0)) (cvar 1) (tyU (lvar 0)) (boxt (gu 0)) ]
+  | 53 => [ rcT (lvar 0) (cvar 2) (boxT (gv 1)); rct (lvar 0) (cvar 2) (gv 1) (boxt (gu 0)) ]
+  | 54 => [ rcT (lvar 1) (cvar 4) (boxT (gv 3));
+            rcT (lvar 0) (cvar 4 ,, tySq (lvar 1) (gv 3) @ lvar 1) (boxT (gv 2));
+            rct (lvar 0) (cvar 4 ,, gv 3 @ lvar 1)
+              (tySq (lvar 0) (tyGvar 2 (lcons (lshift 1) (tmSq (lvar 1) (gv 3)⟨↑⟩ (var 0))))) (boxt (gu 1));
+            rct (lvar 1) (cvar 4) (tySq (lvar 1) (gv 3)) (boxt (gu 0)) ]
   | _ => []
   end.
 
@@ -463,6 +486,11 @@ Definition br_head (k : nat) : rcall :=
   | 49 => rct (lvar 0) (cvar 4) (tyWf (lvar 0) (gv 3) (gu 2)) (boxt (tmSupf (lvar 0) (gv 3) (gu 2) (gu 1) (gu 0)))
   | 50 => rct (lvar 0) (cvar 5) (tyGvar 2 (lsingle (gu 0)))
             (boxt (tmElimWf (lvar 1) (lvar 0) (gv 4) (gu 3) (gv 2) (gu 1) (gu 0)))
+  | 51 => rcT (lvar 0) (cvar 1) (boxT (tySq (lvar 0) (gv 0)))
+  | 52 => rct (lsuc (lvar 0)) (cvar 1) (tyU (lvar 0)) (boxt (tmSqCode (lvar 0) (gu 0)))
+  | 53 => rct (lvar 0) (cvar 2) (tySq (lvar 0) (gv 1)) (boxt (tmSq (lvar 0) (gv 1) (gu 0)))
+  | 54 => rct (lvar 0) (cvar 4) (tySq (lvar 0) (tyGvar 2 (lsingle (gu 0))))
+            (boxt (tmElimSq (lvar 1) (lvar 0) (gv 3) (gv 2) (gu 1) (gu 0)))
   | _ => rcT lzero cnil (boxT tyErr)
   end.
 

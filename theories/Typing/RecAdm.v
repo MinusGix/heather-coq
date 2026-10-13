@@ -231,6 +231,14 @@ Lemma wf_case' G i Γ l l' l'' A B M c1 c2 t T C1 C2 : T = M[lsingle t] ->
   [ G ; Γ ⊢[ i ] t : tySum l l' A B @ lmax l l' ] ->
   [ G ; Γ ⊢[ i ] tmCase l l' l'' A B M c1 c2 t : T @ l'' ].
 Proof. intros -> -> ->; intros; apply wf_case; rewrite ?liftshift_single_ty; assumption. Qed.
+(* propositional truncation (M16b): the step's type as [case]'s branches' *)
+Lemma wf_elimSqA G i Γ l l' A M c t T C : T = tySq l' M[lsingle t] ->
+  C = tySq l' M[lcons (lshift 1) (tmSq l A⟨↑⟩ (var 0))] ->
+  i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, tySq l A @ l ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] c : C @ l' ] -> [ G ; Γ ⊢[ i ] t : tySq l A @ l ] ->
+  [ G ; Γ ⊢[ i ] tmElimSq l l' A M c t : T @ l' ].
+Proof. intros -> ->; intros; apply wf_elimSq; rewrite ?liftshift_single_ty; assumption. Qed.
 
 Ltac code_side :=
   repeat match goal with
@@ -277,6 +285,12 @@ Ltac code_side :=
   (* the codes of Vec and Fin (M14b) *)
   | |- [ _ ; _ ⊢[ _ ] tmVec _ _ _ : _ @ _ ] => apply wf_code_vec; [ discriminate | lvl_ok | | ]
   | |- [ _ ; _ ⊢[ _ ] tmFin _ : _ @ _ ] => apply wf_code_fin; [ discriminate | ]
+  (* propositional truncation (M16b) *)
+  | |- [ _ ; _ ⊢[ _ ] tySq _ _ @ _ ] => apply wft_sq; [ discriminate | lvl_ok | ]
+  | |- [ _ ; _ ⊢[ _ ] tmSqCode _ _ : _ @ _ ] => apply wf_code_sq; [ discriminate | lvl_ok | ]
+  | |- [ _ ; _ ⊢[ _ ] tmSq _ _ _ : _ @ _ ] => apply wf_sq; [ discriminate | lvl_ok | .. ]
+  | |- [ _ ; _ ⊢[ _ ] tmElimSq _ _ _ _ _ _ : _ @ _ ] =>
+      eapply wf_elimSqA; [ reflexivity | reflexivity | discriminate | lvl_ok | lvl_ok | .. ]
   | |- [ _ ; _ ⊢[ _ ] ] => progress wfd
   | |- [ _ ; _ ⊢[ _ ] _ @ _ ] => progress wfd
   | |- [ _ ; _ ⊢[ _ ] _ : _ @ _ ] => progress wfd

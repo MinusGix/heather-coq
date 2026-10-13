@@ -115,7 +115,7 @@ Definition tm_con (t : tm) : nat :=
   | tmEmpty _ => 46 | tmSum _ _ _ _ => 47
   | tmSup _ _ _ _ _ _ => 48 | tmElimW _ _ _ _ _ _ _ _ => 49 | tmW _ _ _ _ => 50
   | tmVec _ _ _ => 51 | tmFin _ => 52 | tmSupf _ _ _ _ _ => 53 | tmElimWf _ _ _ _ _ _ _ => 54
-  | tmWf _ _ _ => 55 | tmSq _ _ _ => 56 | tmElimSq _ _ _ _ _ _ => 57
+  | tmWf _ _ _ => 55 | tmSq _ _ _ => 56 | tmElimSq _ _ _ _ _ _ => 57 | tmSqCode _ _ => 58
   end.
 
 Lemma ac_tmne_con {G Γ ν ν' T} : ac_tmne G Γ ν ν' T -> tm_con ν = tm_con ν'.

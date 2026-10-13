@@ -1417,6 +1417,19 @@ Proof.
              (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hn))) _ _ spa_refl spa_refl).
 Qed.
 
+(** The code of [∥·∥] (M16b). *)
+Lemma C_actmnf_code_sq {G Γ l k k' s s'} : leqv k k' ->
+  C_tm G Γ s s' (tyU k) -> C_tmnf G Γ (tmSqCode k s) (tmSqCode k' s') (tyU l).
+Proof.
+  intros Hk0 IHs i G2 Γ2 W2 m Hc HE Hctx Hx Hx' EW Hw2 x x' Hsx Hsx'. spa_triv.
+  pose proof (compt_typeof_self _ Hc) as Hi. new_head Hc EW Hw2 W2.
+  destruct (code_sq_prem Hc Hx) as (Wk & Hs). destruct (code_sq_prem Hc Hx') as (Wk' & Hs').
+  pose proof (leqv_lequiv _ _ _ Wk Wk' Hk0) as E.
+  apply actmnf_code_sq; [exact Hk0 |].
+  exact (IHs i G2 Γ2 (tyU k) (lsuc k) Hc HE Hctx Hs (code_U_conv Hc E Hs')
+           (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hs))) _ _ spa_refl spa_refl).
+Qed.
+
 Lemma C_actmnf_code_fin {G Γ l n n'} : C_tm G Γ n n' tyNat -> C_tmnf G Γ (tmFin n) (tmFin n') (tyU l).
 Proof.
   intros IHn i G2 Γ2 W2 m Hc HE Hctx Hx Hx' EW Hw2 x x' Hsx Hsx'. spa_triv.
@@ -1554,10 +1567,10 @@ Proof.
   pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
   pose proof (ctx_of_wf_tm Hi Hν) as HΓ.
   pose proof (ac_ty_sound Hc DA HA (wft_lconv _ _ _ _ _ _ HA' E13)) as EA.
-  assert (HS1 : [ G ; Γ ⊢[ i ] tySq l1 A @ l1 ]) by (apply wft_sq; [exact Hc | exact W1 | exact HA]).
+  assert (HS1 : [ G ; Γ ⊢[ i ] tySq l1 A @ l1 ]) by (apply wft_sq; [(apply compt_notV; exact Hc) | exact W1 | exact HA]).
   assert (HS : [ G ; Γ ⊢[ i ] tySq l3 A' ≅ tySq l1 A @ l3 ]).
   { eapply eqty_lconv; [| exact (lequiv_sym _ _ _ E13)].
-    apply eqty_sym, eqty_sq; [exact Hc | exact E13 | exact HA | exact EA]. }
+    apply eqty_sym, eqty_sq; [(apply compt_notV; exact Hc) | exact E13 | exact HA | exact EA]. }
   assert (HΓS : [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HS1 | exact W1]).
   pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi HS (lequiv_sym _ _ _ E13) HΓS HM') E24) as HM'1.
   assert (HctxS : [ G2 ⊢[ i ] Γ ,, tySq l1 A @ l1 ≅ Γ2 ,, tySq l1 A @ l1 ])
@@ -2069,6 +2082,7 @@ Proof.
     | solve [eapply C_actmnf_inr; eassumption] | solve [eapply C_actmne_case; eassumption]
     | solve [eapply C_actmnf_code_empty; eassumption] | solve [eapply C_actmnf_code_sum; eassumption]
     | solve [eapply C_actmnf_code_vec; eassumption] | solve [eapply C_actmnf_code_fin; eassumption]
+    | solve [eapply C_actmnf_code_sq; eassumption]
     | solve [eapply C_actnf_W; eassumption] | solve [eapply C_actmnf_sup; eassumption]
     | solve [eapply C_actmne_elimW; eassumption]
     | solve [eapply C_actmnf_code_W; eassumption]

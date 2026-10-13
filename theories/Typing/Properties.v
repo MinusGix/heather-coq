@@ -289,7 +289,7 @@ Qed.
 Lemma wft_sq_typeof G i Δ l A : lwf (gL G) l -> [ G ; Δ ⊢[ i ] A @ l ] ->
   [ G ; Δ ⊢[ typeof i ] tySq l A @ l ].
 Proof.
-  intros Hl HA. apply wft_sq; [apply compt_typeof | exact Hl
+  intros Hl HA. apply wft_sq; [apply compt_notV, compt_typeof | exact Hl
                               | eapply lift_ty; [exact HA | apply lle_self_typeof]].
 Qed.
 Lemma wf_ctx_sq G i Δ l A : lwf (gL G) l -> [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; Δ ⊢[ typeof i ] ] ->

@@ -179,6 +179,7 @@ Ltac s_push_at h k := lazymatch h with
   | @tySq => k gs_tySq
   | @tmSq => k gs_sq
   | @tmElimSq => k gs_elimSq
+  | @tmSqCode => k gs_tmSqCode
   end.
 Ltac s_push := repeat match goal with
   | |- context [@gsubst _ _ ?t _] => let h := head_of t in s_push_at h ltac:(fun L => rewrite L)
@@ -242,7 +243,9 @@ Ltac fts_case :=
   | solve [simple eapply V_code_wf; s_side] | solve [simple eapply V_El_wf; eassumption]
   (* propositional truncation (M16a) *)
   | solve [simple eapply V_sq; s_side] | solve [simple eapply V_sq_intro; s_side]
-  | solve [simple eapply V_sq_irr; s_side] | solve [simple eapply V_elimSq; s_side] ].
+  | solve [simple eapply V_sq_irr; s_side] | solve [simple eapply V_elimSq; s_side]
+  (* the code of ∥·∥ (M16b) *)
+  | solve [simple eapply V_code_sq; s_side] | solve [simple eapply V_El_sq; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=
@@ -838,6 +841,18 @@ Proof using EL VL VN.
   eapply VTmS_single; eassumption.
 Qed.
 
+(** The code of ∥·∥ (M16b). *)
+Lemma VS_code_sq {G Γ l l' s s'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTmS G Γ s s' (tyU l) (lsuc l) -> VTmS G Γ (tmSqCode l s) (tmSqCode l' s') (tyU l) (lsuc l).
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_El_sq {G Γ l s} : lwf (gL G) l ->
+  VTmS G Γ s s (tyU l) (lsuc l) -> VTyS G Γ (tySq l (tyEl l s)) (tyEl l (tmSqCode l s)) l.
+Proof using EL VL VN.
+  intros Hw Vs. eapply (VTyS_trans_diag EP EM (T2 := tyEl l (tmSqCode l s))); [s_diag V_El_sq|].
+  apply VS_El; [exact Hw | apply lequiv_refl, Hw |].
+  apply VS_code_sq; [exact Hw | apply lequiv_refl, Hw | exact Vs].
+Qed.
+
 End Rules.
 
 End RulesS.
@@ -910,4 +925,6 @@ Ltac vs_rules side :=
   | solve [simple eapply VS_sq; side] | solve [simple eapply VS_sq_intro; side]
   | solve [simple eapply VS_sq_irr; side] | solve [simple eapply VS_elimSq; side]
   | solve [simple eapply VS_elimSq_sq; side]
-  | solve [simple eapply VS_sq_single; side] | solve [simple eapply VS_sq_single_sq; side] ].
+  | solve [simple eapply VS_sq_single; side] | solve [simple eapply VS_sq_single_sq; side]
+  (* the code of ∥·∥ (M16b) *)
+  | solve [simple eapply VS_code_sq; side] | solve [simple eapply VS_El_sq; side] ].

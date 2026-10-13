@@ -29,7 +29,7 @@ Definition wrap (nu ng nl : nat) (b : tm) : tm := wrapU nu (wrapG ng (wrapL nl b
 
 (** The number of branches, and the branch-indexed case split: [br_all t]
     runs [t] [nbr] times, as [do nbr t] would (M8_DESIGN.md J2, S0). *)
-Notation nbr := 51 (only parsing).
+Notation nbr := 55 (only parsing).
 Ltac br_do n tac := lazymatch n with O => idtac | S ?m => tac; br_do m tac end.
 Ltac br_all tac := br_do constr:(nbr) tac.
 
@@ -61,6 +61,9 @@ Definition bVec := 43.   Definition bVec' := 44.   Definition bFin := 45.   Defi
 (** Finitary well-founded trees' (M15b): Heather's [t_Wf], [t'_Wf],
     [t_supf], [t_elimWf]. *)
 Definition bWf := 47.    Definition bWf' := 48.    Definition bSupf := 49.  Definition bElimWf := 50.
+(** Propositional truncation's (M16b): Heather's [t_Squash], [t'_Squash],
+    [t_squash], [t_elim_squash]. *)
+Definition bSq := 51.    Definition bSq' := 52.    Definition bSqIn := 53.  Definition bElimSq := 54.
 
 (** The arity [(levels, globals, locals)] of branch [k]. *)
 Definition br_ar (k : nat) : nat * nat * nat :=
@@ -116,13 +119,17 @@ Definition br_ar (k : nat) : nat * nat * nat :=
   | 48 => (1, 3, 2)       (* ℓ; g u_s u_n; x_s x_n. t'_Wf *)
   | 49 => (1, 5, 4)       (* ℓ; g U_S u_n u_a u_cs; x_S x_n x_a x_cs. t_supf *)
   | 50 => (2, 6, 5)       (* ℓ ℓ'; g U_S u_n U_M u_s u_t; x_S x_n x_M x_s x_t. t_elimWf *)
+  | 51 => (1, 2, 1)       (* ℓ; g U_A; x_A. t_Squash *)
+  | 52 => (1, 2, 1)       (* ℓ; g u_s; x_s. t'_Squash *)
+  | 53 => (1, 3, 2)       (* ℓ; g U_A u_a; x_A x_a. t_squash *)
+  | 54 => (2, 5, 4)       (* ℓ ℓ'; g U_A U_M u_c u_t; x_A x_M x_c x_t. t_elim_squash *)
   | _ => (0, 0, 0)
   end.
 
 (** Whether branch [k] is a type branch (typed at [l₁], recursing on
     [elim_Typ]) or a term branch. *)
 Definition br_isT (k : nat) : bool :=
-  match k with 0 | 1 | 2 | 3 | 13 | 14 | 21 | 25 | 27 | 31 | 34 | 39 | 43 | 45 | 47 => true | _ => false end.
+  match k with 0 | 1 | 2 | 3 | 13 | 14 | 21 | 25 | 27 | 31 | 34 | 39 | 43 | 45 | 47 | 51 => true | _ => false end.
 
 Definition wrapMT (MT : ty) : tm := bindU (bindG (bindL (tmTy MT))).
 Definition wrapMt (Mt : ty) : tm := bindU (bindG (bindG (bindL (tmTy Mt)))).
@@ -237,6 +244,9 @@ Definition redT (l : lvl) (Δ : ctx) (c : ty) : option tm :=
       Some (peelL (peelL (peelG (peelG (peelG (peelU (rb_br rb bWf) k)
               (GCtx Δ)) (GTy A)) (GTm N))
               (recT k Δ A)) (rect lzero (cext Δ A k) tyNat N))
+  (* propositional truncation (M16b) *)
+  | tySq k A =>
+      Some (peelL (peelG (peelG (peelU (rb_br rb bSq) k) (GCtx Δ)) (GTy A)) (recT k Δ A))
   | _ => None
   end.
 
@@ -424,6 +434,22 @@ Definition redt (l : lvl) (Δ : ctx) (T : ty) (c : tm) : option tm :=
               (rect k' (cext (cext (cext Δ A k) (wfcsty k A N) k) (wfihty k k' A N M) (lmax lzero k'))
                  (wfstepty k A N M) c))
               (rect k Δ (tyWf k A N) t))
+  (* propositional truncation (M16b): the step's call is at the motive at
+     the squash of the payload, under [∥·∥], as [case]'s branches *)
+  | tmSqCode k s =>
+      Some (peelL (peelG (peelG (peelU (rb_br rb bSq') k) (GCtx Δ)) (GTm s)) (rect (lsuc k) Δ (tyU k) s))
+  | tmSq k A a =>
+      Some (peelL (peelL (peelG (peelG (peelG (peelU (rb_br rb bSqIn) k)
+              (GCtx Δ)) (GTy A)) (GTm a))
+              (recT k Δ A)) (rect k Δ A a))
+  | tmElimSq k k' A M c t =>
+      Some (peelL (peelL (peelL (peelL
+              (peelG (peelG (peelG (peelG (peelG (peelU (peelU (rb_br rb bElimSq) k) k')
+                 (GCtx Δ)) (GTy A)) (GTy M)) (GTm c)) (GTm t))
+              (recT k Δ A))
+              (recT k' (cext Δ (tySq k A) k) M))
+              (rect k' (cext Δ A k) (tySq k' (subst_ty M⟨rlift ↑⟩ (lsingle (tmSq k A⟨↑⟩ (var 0))))) c))
+              (rect k Δ (tySq k A) t))
   | _ => None
   end.
 

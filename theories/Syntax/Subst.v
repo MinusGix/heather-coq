@@ -532,6 +532,7 @@ with nftm (t : tm) : Prop :=
   | tmElimWf _ _ A N M c t => nfty A /\ nftm N /\ nfty M /\ nftm c /\ nftm t
   | tmSq _ A a => nfty A /\ nftm a
   | tmElimSq _ _ A M c t => nfty A /\ nfty M /\ nftm c /\ nftm t
+  | tmSqCode _ s => nftm s
   | tmRefl _ A a => nfty A /\ nftm a
   | tmId _ s t u => nftm s /\ nftm t /\ nftm u
   | tmSEq _ s t u => nftm s /\ nftm t /\ nftm u

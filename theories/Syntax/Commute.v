@@ -240,6 +240,8 @@ Lemma subst_sq l A a : (tmSq l A a)[d] = tmSq l A[d] a[d]. Proof. reflexivity. Q
 Lemma subst_elimSq l l' A M c t :
   (tmElimSq l l' A M c t)[d] = tmElimSq l l' A[d] M[llift d] c[llift d] t[d].
 Proof. reflexivity. Qed.
+Lemma ren_tmSqCode l s : (tmSqCode l s)⟨r⟩ = tmSqCode l s⟨r⟩. Proof. reflexivity. Qed.
+Lemma subst_tmSqCode l s : (tmSqCode l s)[d] = tmSqCode l s[d]. Proof. reflexivity. Qed.
 (** Defined globals (M9): the body stays in its own local scope. *)
 Lemma ren_gdef u b e : (gdef u b e)⟨r⟩ = gdef u b (lren e r). Proof. reflexivity. Qed.
 Lemma subst_gdef u b e : (gdef u b e)[d] = gdef u b (lcomp e d). Proof. reflexivity. Qed.
@@ -330,6 +332,7 @@ Ltac push_ren_at h k := lazymatch h with
   | @tySq => k ren_tySq
   | @tmSq => k ren_sq
   | @tmElimSq => k ren_elimSq
+  | @tmSqCode => k ren_tmSqCode
   end.
 Ltac push_ren := repeat match goal with
   | |- context [@ren _ _ ?t _] => let h := head_of t in push_ren_at h ltac:(fun L => rewrite L)
@@ -410,6 +413,7 @@ Ltac push_subst_at h k := lazymatch h with
   | @tySq => k subst_tySq
   | @tmSq => k subst_sq
   | @tmElimSq => k subst_elimSq
+  | @tmSqCode => k subst_tmSqCode
   end.
 Ltac push_subst := repeat match goal with
   | |- context [@subst _ _ ?t _] => let h := head_of t in push_subst_at h ltac:(fun L => rewrite L)

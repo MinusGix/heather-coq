@@ -107,6 +107,7 @@ with unf_tm (t : tm) {struct t} : tm :=
       tmElimWf l l' (unf_ty A) (unf_tm N) (unf_ty M) (unf_tm c) (unf_tm t)
   | tmSq l A a => tmSq l (unf_ty A) (unf_tm a)
   | tmElimSq l l' A M c t => tmElimSq l l' (unf_ty A) (unf_ty M) (unf_tm c) (unf_tm t)
+  | tmSqCode l s => tmSqCode l (unf_tm s)
   | tmJ l l' A a M c u e =>
       tmJ l l' (unf_ty A) (unf_tm a) (unf_ty M) (unf_tm c) (unf_tm u) (unf_tm e)
   | gdef u b d => subst_tm (unf_tm b) (unf_l d)
@@ -446,6 +447,7 @@ with gfree_tm (t : tm) {struct t} : Prop :=
   | tmElimWf l l' A N M c t => gfree_ty A /\ gfree_tm N /\ gfree_ty M /\ gfree_tm c /\ gfree_tm t
   | tmSq l A a => gfree_ty A /\ gfree_tm a
   | tmElimSq l l' A M c t => gfree_ty A /\ gfree_ty M /\ gfree_tm c /\ gfree_tm t
+  | tmSqCode _ s => gfree_tm s
   | tmJ l l' A a M c u e => gfree_ty A /\ gfree_tm a /\ gfree_ty M /\ gfree_tm c /\ gfree_tm u /\ gfree_tm e
   | gdef u b d => False
   end
