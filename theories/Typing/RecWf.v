@@ -147,6 +147,9 @@ Ltac wfd :=
   (* length-indexed tuples and finite indices (M14b) *)
   | |- [ _ ; _ ⊢[ _ ] tyVec _ _ _ @ _ ] => apply wft_vec; [ discriminate | lvl_ok | | ]
   | |- [ _ ; _ ⊢[ _ ] tyFin _ @ _ ] => apply wft_fin; [ discriminate | ]
+  (* propositional truncation (M16b) *)
+  | |- [ _ ; _ ⊢[ _ ] tySq _ _ @ _ ] => apply wft_sq; [ discriminate | lvl_ok | ]
+  | |- [ _ ; _ ⊢[ _ ] tmSq _ _ _ : tySq _ _ @ _ ] => apply wf_sq; [ discriminate | lvl_ok | | ]
   | |- [ _ ; _ ,, tyGvar _ (lshift 0) @ _ ⊢[ _ ] var 0 : tyGvar _ (lshift 1) @ _ ] => apply wf_var0_gv
   | |- [ _ ; cvar _ ,, _ @ _ ⊢[ _ ] tyGvar _ (lshift 1) @ _ ] =>
       eapply wf_gv_up; [ discriminate | | glookup | unfold lle; cbn; lia ]
@@ -442,6 +445,10 @@ with wty :=
         tm_lv l' ltac:(eapply wf_snd_eq; [ discriminate | lvl_ok | lvl_ok | exact HA | wty | wty | wnorm; reflexivity ]))
   | |- [ _ ; _ ⊢[ _ ] elimEmpty ?l _ _ _ : _ @ _ ] =>
       tm_lv l ltac:(eapply wf_elimEmpty_eq; [ discriminate | lvl_ok | lvl_ok | wtop | wty | wnorm; reflexivity ])
+  (* propositional truncation (M16b) *)
+  | |- [ _ ; _ ⊢[ _ ] tySq _ _ @ _ ] => apply wft_sq; [ discriminate | lvl_ok | wty ]
+  | |- [ _ ; _ ⊢[ _ ] tmSq _ _ _ : _ @ _ ] => apply wf_sq; [ discriminate | lvl_ok | wty | wty ]
+  | |- [ _ ; _ ⊢[ _ ] tmSqCode _ _ : _ @ _ ] => apply wf_code_sq; [ discriminate | lvl_ok | wty ]
   end
 (** The three conversions [nth]'s unfolding crosses (M15b): [Fin 0] is
     empty, [Fin (S n)] a sum and [Vec(A; S n)] a pair. *)

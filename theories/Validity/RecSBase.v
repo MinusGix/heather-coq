@@ -791,6 +791,41 @@ Lemma redt_elimWf_inst k0 Δ T k k' A N M c t : dnftm (bs 50) -> gdnf σ -> LK d
                  :: rect k Δ (tyWf k A N) t :: nil) e]).
 Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
 
+(** Propositional truncation (M16b): the step's call is at the motive at
+    the squash of the payload, under [∥·∥]. *)
+Lemma redT_sq_inst k0 Δ k A : dnftm (bs 51) -> gdnf σ -> LK dnftm e -> dnfctx Δ -> dnfty A ->
+  dnftm (recT k Δ A) ->
+  redT l1 l2 rb k0 Δ (tySq k A) =
+  Some (((usubst_tm (bs 51) (uext (k :: nil) φ))⦃gext_s (GCtx Δ :: GTy A :: nil) σ⦄)[lext (recT k Δ A :: nil) e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_codesq_inst k0 Δ T k s : dnftm (bs 52) -> gdnf σ -> LK dnftm e -> dnfctx Δ -> dnftm s ->
+  dnftm (rect (lsuc k) Δ (tyU k) s) ->
+  redt l1 l2 rb k0 Δ T (tmSqCode k s) =
+  Some (((usubst_tm (bs 52) (uext (k :: nil) φ))⦃gext_s (GCtx Δ :: GTm s :: nil) σ⦄)
+          [lext (rect (lsuc k) Δ (tyU k) s :: nil) e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_sq_inst k0 Δ T k A a : dnftm (bs 53) -> gdnf σ -> LK dnftm e -> dnfctx Δ -> dnfty A -> dnftm a ->
+  dnftm (recT k Δ A) -> dnftm (rect k Δ A a) ->
+  redt l1 l2 rb k0 Δ T (tmSq k A a) =
+  Some (((usubst_tm (bs 53) (uext (k :: nil) φ))⦃gext_s (GCtx Δ :: GTy A :: GTm a :: nil) σ⦄)
+          [lext (recT k Δ A :: rect k Δ A a :: nil) e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_elimSq_inst k0 Δ T k k' A M c t : dnftm (bs 54) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  dnfty A -> dnfty M -> dnftm c -> dnftm t ->
+  dnftm (recT k Δ A) -> dnftm (recT k' (cext Δ (tySq k A) k) M) ->
+  dnftm (rect k' (cext Δ A k) (tySq k' (subst_ty M⟨rlift ↑⟩ (lsingle (tmSq k A⟨↑⟩ (var 0))))) c) ->
+  dnftm (rect k Δ (tySq k A) t) ->
+  redt l1 l2 rb k0 Δ T (tmElimSq k k' A M c t) =
+  Some (((usubst_tm (bs 54) (uext (k :: k' :: nil) φ))
+           ⦃gext_s (GCtx Δ :: GTy A :: GTy M :: GTm c :: GTm t :: nil) σ⦄)
+          [lext (recT k Δ A :: recT k' (cext Δ (tySq k A) k) M
+                 :: rect k' (cext Δ A k) (tySq k' (subst_ty M⟨rlift ↑⟩ (lsingle (tmSq k A⟨↑⟩ (var 0))))) c
+                 :: rect k Δ (tySq k A) t :: nil) e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
 End Red.
 
 Lemma gdnf_gext_s os σ : Forall dnfo os -> gdnf σ -> gdnf (gext_s os σ).

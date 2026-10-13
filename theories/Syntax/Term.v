@@ -145,6 +145,7 @@ with tm : Type :=
 | tmSq (l : lvl) (A : ty) (a : tm)        (* squash^l(A; a) : ∥A∥^l *)
 | tmElimSq (l l' : lvl) (A : ty) (M : ty) (c t : tm)
     (* ind_∥∥^{l,l'}(A; z. M; x. c; t) : ∥M[t/z]∥^{l'} @ l', t : ∥A∥^l      M, c: +1 *)
+| tmSqCode (l : lvl) (s : tm)            (* code of ∥El s∥^l : Ty l (M16b) *)
 with ctx : Type :=
 | cnil
 | cvar (g : nat)
@@ -300,6 +301,7 @@ with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
       tmElimWf l l' (ren_ty A r) (ren_tm N (rlift r)) (ren_ty M (rlift r)) (ren_tm c (rlift (rlift (rlift r)))) (ren_tm t r)
   | tmSq l A a => tmSq l (ren_ty A r) (ren_tm a r)
   | tmElimSq l l' A M c t => tmElimSq l l' (ren_ty A r) (ren_ty M (rlift r)) (ren_tm c (rlift r)) (ren_tm t r)
+  | tmSqCode l s => tmSqCode l (ren_tm s r)
   end
 with lren (d : lsub) (r : rsub) {struct d} : lsub :=
   match d with
@@ -407,6 +409,7 @@ with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
       tmElimWf l l' (gren_ty A ξ) (gren_tm N ξ) (gren_ty M ξ) (gren_tm c ξ) (gren_tm t ξ)
   | tmSq l A a => tmSq l (gren_ty A ξ) (gren_tm a ξ)
   | tmElimSq l l' A M c t => tmElimSq l l' (gren_ty A ξ) (gren_ty M ξ) (gren_tm c ξ) (gren_tm t ξ)
+  | tmSqCode l s => tmSqCode l (gren_tm s ξ)
   end
 with gcren (Γ : ctx) (ξ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -519,6 +522,7 @@ with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
       tmElimWf (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_tm N ρ) (uren_ty M ρ) (uren_tm c ρ) (uren_tm t ρ)
   | tmSq l A a => tmSq (lvren l ρ) (uren_ty A ρ) (uren_tm a ρ)
   | tmElimSq l l' A M c t => tmElimSq (lvren l ρ) (lvren l' ρ) (uren_ty A ρ) (uren_ty M ρ) (uren_tm c ρ) (uren_tm t ρ)
+  | tmSqCode l s => tmSqCode (lvren l ρ) (uren_tm s ρ)
   end
 with ucren (Γ : ctx) (ρ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -625,6 +629,7 @@ with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
       tmElimWf l l' (subst_ty A d) (subst_tm N (llift d)) (subst_ty M (llift d)) (subst_tm c (llift (llift (llift d)))) (subst_tm t d)
   | tmSq l A a => tmSq l (subst_ty A d) (subst_tm a d)
   | tmElimSq l l' A M c t => tmElimSq l l' (subst_ty A d) (subst_ty M (llift d)) (subst_tm c (llift d)) (subst_tm t d)
+  | tmSqCode l s => tmSqCode l (subst_tm s d)
   end
 with lcomp (d' : lsub) (d : lsub) {struct d'} : lsub :=       (* d' ∘ d *)
   match d' with
@@ -857,6 +862,7 @@ with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
       tmElimWf l l' (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_ty M σ) (gsubst_tm c σ) (gsubst_tm t σ)
   | tmSq l A a => tmSq l (gsubst_ty A σ) (gsubst_tm a σ)
   | tmElimSq l l' A M c t => tmElimSq l l' (gsubst_ty A σ) (gsubst_ty M σ) (gsubst_tm c σ) (gsubst_tm t σ)
+  | tmSqCode l s => tmSqCode l (gsubst_tm s σ)
   end
 with gcsubst (Γ : ctx) (σ : gsub) {struct Γ} : ctx :=
   match Γ with
@@ -974,6 +980,7 @@ with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
       tmElimWf (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_tm N φ) (usubst_ty M φ) (usubst_tm c φ) (usubst_tm t φ)
   | tmSq l A a => tmSq (lvsubst l φ) (usubst_ty A φ) (usubst_tm a φ)
   | tmElimSq l l' A M c t => tmElimSq (lvsubst l φ) (lvsubst l' φ) (usubst_ty A φ) (usubst_ty M φ) (usubst_tm c φ) (usubst_tm t φ)
+  | tmSqCode l s => tmSqCode (lvsubst l φ) (usubst_tm s φ)
   end
 with ucsubst (Γ : ctx) (φ : nat -> lvl) {struct Γ} : ctx :=
   match Γ with

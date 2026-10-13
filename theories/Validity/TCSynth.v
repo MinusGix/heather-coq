@@ -885,6 +885,18 @@ Proof.
   left; eexists; eexists; exact (wf_code_wf _ _ _ _ _ _ Hv Hl Hs Hm).
 Qed.
 
+(** The code of [∥·∥] (M16b). *)
+Lemma sy_code_sq l s : sz_tm (tmSqCode l s) <= n -> SYD (tmSqCode l s).
+Proof.
+  intros Hsz G i Γ HΓ.
+  notV.
+  destruct (lwf_Dec (gL G) l) as [Hl | N0];
+    [| right; intros T k H; destruct (inva_code_sq H) as ((_ & X & _) & _); contradiction].
+  destruct (ihC s ltac:(szl) G i Γ _ _ (HUniv HΓ Hl)) as [Hs | N0];
+    [| right; intros T k H; destruct (inva_code_sq H) as ((_ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_code_sq _ _ _ _ _ Hv Hl Hs).
+Qed.
+
 Lemma sy_elimWf l l' A N M c t : sz_tm (tmElimWf l l' A N M c t) <= n -> SYD (tmElimWf l l' A N M c t).
 Proof.
   intros Hsz G i Γ HΓ.
@@ -921,25 +933,24 @@ Proof.
   left; eexists; eexists; exact (wf_elimWf _ _ _ _ _ _ _ _ _ _ Hv Hl Hl' HA HN HM HC HI Hc0 Ht).
 Qed.
 
-(** Propositional truncation (M16a): the computing layers only. *)
+(** Propositional truncation (M16a; every layer but V since M16b). *)
 Lemma sy_sq l A a : sz_tm (tmSq l A a) <= n -> SYD (tmSq l A a).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | Nc]; [| right; intros T k H; destruct (inva_sq H) as ((X & _) & _); contradiction].
+  notV.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_sq H) as ((_ & X & _) & _); contradiction].
   destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
     [| right; intros T k H; destruct (inva_sq H) as ((_ & _ & X & _) & _); contradiction].
   destruct (ihC a ltac:(szl) G i Γ A l (lift_to_typeof_ty HA)) as [Ha | N];
     [| right; intros T k H; destruct (inva_sq H) as ((_ & _ & _ & X) & _); contradiction].
-  left; eexists; eexists; exact (wf_sq _ _ _ _ _ _ Hc Hl HA Ha).
+  left; eexists; eexists; exact (wf_sq _ _ _ _ _ _ Hv Hl HA Ha).
 Qed.
 
 (** [ind_∥∥]: its step's type is built from the decided motive. *)
 Lemma sy_elimSq l l' A M c t : sz_tm (tmElimSq l l' A M c t) <= n -> SYD (tmElimSq l l' A M c t).
 Proof.
   intros Hsz G i Γ HΓ.
-  destruct (compt_dec i) as [Hc | Nc];
-    [| right; intros T k H; destruct (inva_elimSq H) as ((X & _) & _); contradiction].
+  notV.
   pose proof (typeof_idem i) as Hty.
   destruct (lwf_Dec (gL G) l) as [Hl | N];
     [| right; intros T k H; destruct (inva_elimSq H) as ((_ & X & _) & _); contradiction].
@@ -947,7 +958,7 @@ Proof.
     [| right; intros T k H; destruct (inva_elimSq H) as ((_ & _ & X & _) & _); contradiction].
   destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
     [| right; intros T k H; destruct (inva_elimSq H) as ((_ & _ & _ & X & _) & _); contradiction].
-  pose proof (wft_sq _ _ _ _ _ Hc Hl HA) as HS.
+  pose proof (wft_sq _ _ _ _ _ Hv Hl HA) as HS.
   assert (HΓS : [ G ; Γ ,, tySq l A @ l ⊢[ typeof i ] ])
     by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HS) | exact Hl]).
   destruct (ihT M ltac:(szl) G i _ l' HΓS) as [HM | N];
@@ -956,16 +967,16 @@ Proof.
   assert (HΓA : [ G ; Γ ,, A @ l ⊢[ typeof i ] ])
     by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HA) | exact Hl]).
   assert (Hf : [ G ; Γ ,, A @ l ⊢[ i ] tmSq l A⟨↑⟩ (var 0) : (tySq l A)⟨↑⟩ @ l ])
-    by (apply wf_sq; [exact Hc | exact Hl | apply wk1_ty_g; assumption | apply var0_wf_g; assumption]).
+    by (apply wf_sq; [exact Hv | exact Hl | apply wk1_ty_g; assumption | apply var0_wf_g; assumption]).
   pose proof (lift_to_typeof_tm Hf) as Hf'.
   pose proof (eqty_wf_l Hty (case_branch_eq Hty HΓA HM0 (eqty_refl _ _ _ _ _ HM0) HM0 Hf' Hf'
                                (eqtm_refl _ _ _ _ _ _ Hf'))) as Hbr.
-  pose proof (wft_sq _ _ _ _ _ (compt_typeof i) Hl' Hbr) as HB.
+  pose proof (wft_sq _ _ _ _ _ ltac:(apply compt_notV; apply compt_typeof) Hl' Hbr) as HB.
   destruct (ihC c ltac:(szl) G i _ _ _ HB) as [Hcc | N];
     [| right; intros T k H; destruct (inva_elimSq H) as ((_ & _ & _ & _ & _ & X & _) & _); contradiction].
   destruct (ihC t ltac:(szl) G i Γ _ _ (lift_to_typeof_ty HS)) as [Ht | N];
     [| right; intros T k H; destruct (inva_elimSq H) as ((_ & _ & _ & _ & _ & _ & X) & _); contradiction].
-  left; eexists; eexists; exact (wf_elimSq _ _ _ _ _ _ _ _ _ Hc Hl Hl' HA HM Hcc Ht).
+  left; eexists; eexists; exact (wf_elimSq _ _ _ _ _ _ _ _ _ Hv Hl Hl' HA HM Hcc Ht).
 Qed.
 
 (** ** The step *)
@@ -985,7 +996,7 @@ Proof.
           | apply sy_code_seq | apply sy_code_sempty | apply sy_inl | apply sy_inr | apply sy_case
           | apply sy_code_empty | apply sy_code_sum | apply sy_sup | apply sy_elimW | apply sy_codeW
           | apply sy_code_vec | apply sy_code_fin | apply sy_supf | apply sy_elimWf | apply sy_code_wf
-          | apply sy_sq | apply sy_elimSq ]; assumption.
+          | apply sy_sq | apply sy_elimSq | apply sy_code_sq ]; assumption.
 Qed.
 
 End Step.

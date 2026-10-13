@@ -233,6 +233,18 @@ Proof.
   - exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (eqty_El_wf _ _ _ _ _ _ Hc Wl0 Hs Hn))
              (lequiv_sym _ _ _ E0)).
 Qed.
+(** The code of [∥·∥] (M16b). *)
+Lemma RS_El_sq l l0 s : RS_ty (tyEl l (tmSqCode l0 s)) (tySq l0 (tyEl l0 s)).
+Proof.
+  intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_El HT) as ((Hv & Wl & Ht) & Hk).
+  destruct (inv_code_sq Hi Ht) as ((_ & Wl0 & Hs) & _ & EU).
+  pose proof (U_inj_c Hc EU) as E0.
+  apply (retype_eqty Hk). eapply eqty_trans.
+  - exact (eqty_El _ _ _ _ _ _ _ Hv (lequiv_sym _ _ _ E0) (eqtm_refl _ _ _ _ _ _ Ht)).
+  - exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (eqty_El_sq _ _ _ _ _ Hc Wl0 Hs))
+             (lequiv_sym _ _ _ E0)).
+Qed.
 Lemma RS_El_fin l n : RS_ty (tyEl l (tmFin n)) (tyFin n).
 Proof.
   intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
@@ -645,13 +657,13 @@ Proof.
   intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_elimSq Hi Hx) as ((_ & W1 & W2 & HA & HM & Hcc & Ht) & Hk & ET).
   refine (retype_eqtm Hi _ Hk ET).
-  exact (eqtm_elimSq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hc (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HA
+  exact (eqtm_elimSq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ltac:(apply compt_notV; exact Hc) (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HA
            (eqty_refl _ _ _ _ _ HA) HM (eqty_refl _ _ _ _ _ HM) (eqtm_refl _ _ _ _ _ _ Hcc) (IH _ _ _ _ _ Hc Ht)).
 Qed.
 
 Lemma RS_elimSq_sq l l' A M c k C a : RS_tm (tmElimSq l l' A M c (tmSq k C a)) c[lsingle a].
 Proof.
-  intros G i Γ T m Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  intros G i Γ T m Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (inv_elimSq Hi Hx) as ((_ & W1 & W2 & HA & HM & Hcc & Ht) & Hk & ET).
   refine (retype_eqtm Hi _ Hk ET).
   destruct (inv_sq Hi Ht) as ((_ & Wk & _ & Ha) & _ & ESq).
@@ -662,13 +674,13 @@ Proof.
     by (apply eqtm_sq_irr; [exact Hc | exact W1 | apply wf_sq; assumption | exact Ht]).
   assert (Hcong : [ G ; Γ ⊢[ i ] tmElimSq l l' A M c (tmSq k C a)
                      ≅ tmElimSq l l' A M c (tmSq l A a) : tySq l' M[lsingle (tmSq k C a)] @ l' ])
-    by exact (eqtm_elimSq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hc (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HA
+    by exact (eqtm_elimSq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ltac:(apply compt_notV; exact Hc) (lequiv_refl _ _ W1) (lequiv_refl _ _ W2) HA
                 (eqty_refl _ _ _ _ _ HA) HM (eqty_refl _ _ _ _ _ HM) (eqtm_refl _ _ _ _ _ _ Hcc)
                 (eqtm_sym _ _ _ _ _ _ _ Hsq)).
   pose proof (eqtm_elimSq_sq _ _ _ _ _ _ _ _ _ Hc W1 W2 HA HM Hcc Ha') as Hb.
   eapply eqtm_trans; [exact Hcong |].
   eapply eqtm_conv; [exact Hb | rewrite Hi].
-  apply eqty_sq; [exact Hc | exact (lequiv_refl _ _ W2) | exact (wf_ty_single Hi HM Ht) |].
+  apply eqty_sq; [exact Hv | exact (lequiv_refl _ _ W2) | exact (wf_ty_single Hi HM Ht) |].
   exact (wf_ty_func Hi HM (lsub_eq_single Hi Ht (eqtm_wf_l Hi Hsq) (eqtm_sym _ _ _ _ _ _ _ Hsq))).
 Qed.
 
@@ -815,7 +827,8 @@ Proof.
     | solve [apply RS_El_empty] | solve [apply RS_El_sum] | solve [apply RS_El_W]
     | solve [apply RS_vec_zero] | solve [apply RS_vec_succ] | solve [apply RS_vec; assumption]
     | solve [apply RS_fin_zero] | solve [apply RS_fin_succ] | solve [apply RS_fin; assumption]
-    | solve [apply RS_El_vec] | solve [apply RS_El_fin] | solve [apply RS_El_wf] ].
+    | solve [apply RS_El_vec] | solve [apply RS_El_fin] | solve [apply RS_El_wf]
+    | solve [apply RS_El_sq] ].
 Qed.
 
 Section Consequences.

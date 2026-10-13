@@ -661,6 +661,51 @@ Proof.
   apply wf_code_vec; eauto using lequiv_wf_r. exact (convU_at Hs' Hl).
 Qed.
 
+Lemma pc_code_sq {Γ l l' s s'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] tmSqCode l s : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmSqCode l' s' : tyU l @ lsuc l ].
+Proof.
+  intros Hv Hl Hs Hs'. split; [apply wf_code_sq; eauto using lequiv_wf_l|].
+  apply (convU_at (l := l')); [|now apply lequiv_sym].
+  apply wf_code_sq; eauto using lequiv_wf_r. exact (convU_at Hs' Hl).
+Qed.
+
+(** Propositional truncation (every layer but V since M16b). *)
+Lemma pc_tySq {Γ l l' A A'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ⊢[ i ] tySq l A @ l ] /\ [ G ; Γ ⊢[ i ] tySq l' A' @ l ].
+Proof.
+  intros Hv Q HA HA'. split; [apply wft_sq; eauto using lequiv_wf_l |].
+  eapply wft_lconv; [| exact Q].
+  apply wft_sq; [exact Hv | eauto using lequiv_wf_r | eapply wft_lconv; [exact HA' | exact (lequiv_sym _ _ _ Q)]].
+Qed.
+
+Lemma pc_sq {Γ l l' A A' a a'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] tmSq l A a : tySq l A @ l ] /\ [ G ; Γ ⊢[ i ] tmSq l' A' a' : tySq l A @ l ].
+Proof.
+  intros Hv Q HA HAA HA' Ha Ha'.
+  split; [apply wf_sq; eauto using lequiv_wf_l | exact (sc_sq_q HiD Hv Q HA' HAA Ha')].
+Qed.
+
+Lemma pc_elimSq {Γ l1 l2 l3 l4 A A' M M' c c' t t'} : i <> lV ->
+  lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
+  [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M @ l2 ] -> [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M ≅ M' @ l2 ] ->
+  [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] c : tySq l2 M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))] @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] c' : tySq l2 M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))] @ l2 ] ->
+  [ G ; Γ ⊢[ i ] t ≅ t' : tySq l1 A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] t : tySq l1 A @ l1 ] -> [ G ; Γ ⊢[ i ] t' : tySq l1 A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] tmElimSq l1 l2 A M c t : tySq l2 M[lsingle t] @ l2 ] /\
+  [ G ; Γ ⊢[ i ] tmElimSq l3 l4 A' M' c' t' : tySq l2 M[lsingle t] @ l2 ].
+Proof.
+  intros Hv H13 H24 HA HAA HA' HM HMM HM' Hc Hc' Htt Ht Ht'.
+  split; [apply wf_elimSq; eauto using lequiv_wf_l |].
+  exact (sc_elimSq_q HiD Hv H13 H24 HA HA' HAA HM HM' HMM Hc' Ht Ht' Htt).
+Qed.
+
 Lemma pc_code_fin {Γ n n'} : i <> lV ->
   [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] tmFin n : tyU lzero @ lsuc lzero ] /\ [ G ; Γ ⊢[ i ] tmFin n' : tyU lzero @ lsuc lzero ].
@@ -784,7 +829,12 @@ Proof.
              | solve [eapply pc_code_vec; eassumption] | solve [eapply pc_code_fin; eassumption]
              (* finitary well-founded trees and their code (M15b) *)
              | solve [eapply pc_wf; eassumption] | solve [eapply pc_supf; eassumption]
-             | solve [eapply pc_elimWf; eassumption] | solve [eapply pc_codewf; eassumption] ].
+             | solve [eapply pc_elimWf; eassumption] | solve [eapply pc_codewf; eassumption]
+             (* the code of ∥·∥ (M16b) *)
+             | solve [eapply pc_code_sq; eassumption]
+             (* propositional truncation at C (M16b) *)
+             | solve [eapply pc_tySq; eassumption] | solve [eapply pc_sq; eassumption]
+             | solve [eapply pc_elimSq; eassumption] ].
 Qed.
 
 Lemma eqty_wf_C {G i Γ T T' l} : lle i lC -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->

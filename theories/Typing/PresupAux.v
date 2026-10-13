@@ -739,6 +739,14 @@ Proof using Hi Hv.
   apply wf_code_vec; eauto using lequiv_wf_r. exact (conv_U Hs Hl).
 Qed.
 
+(** The code of [∥·∥] (M16b), as [Vec]'s. *)
+Lemma pre_codesq_r {Γ l l' s'} : lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] tmSqCode l' s' : tyU l @ lsuc l ].
+Proof using Hi Hv.
+  intros Hl Hs. apply (conv_U (l := l')); [|now apply lequiv_sym].
+  apply wf_code_sq; eauto using lequiv_wf_r. exact (conv_U Hs Hl).
+Qed.
+
 (** The code of [Wf] (M15b), as [W]'s: the arity under the shape's binder. *)
 Lemma pre_codewf_r {Γ l l' s s' n'} : lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
@@ -866,33 +874,33 @@ Proof using Hi Hv.
 Qed.
 
 
-(** Propositional truncation (M16a), gated by [compt]. *)
-Lemma pre_tySq_r {Γ l l' A'} : compt i -> lequiv (gL G) l l' ->
+(** Propositional truncation (M16a; every layer but V since M16b). *)
+Lemma pre_tySq_r {Γ l l' A'} : lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] A' @ l ] -> [ G ; Γ ⊢[ i ] tySq l' A' @ l ].
-Proof using .
-  intros cp Hl HA'. eapply wft_lconv with (l' := l'); [|exact Hl].
-  apply wft_sq; [exact cp | exact (lequiv_wf_r _ _ _ Hl) |].
+Proof using Hv.
+  intros Hl HA'. eapply wft_lconv with (l' := l'); [|exact Hl].
+  apply wft_sq; [exact Hv | exact (lequiv_wf_r _ _ _ Hl) |].
   eapply wft_lconv; [exact HA' | now apply lequiv_sym].
 Qed.
 
-Lemma pre_sq_r {Γ l l' A A' a'} : compt i -> lequiv (gL G) l l' ->
+Lemma pre_sq_r {Γ l l' A A' a'} : lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
   [ G ; Γ ⊢[ i ] a' : A @ l ] -> [ G ; Γ ⊢[ i ] tmSq l' A' a' : tySq l A @ l ].
-Proof using Hi.
-  intros cp Hl HAA HA HA' Ha.
+Proof using Hi Hv.
+  intros Hl HAA HA HA' Ha.
   assert (HA'l : [ G ; Γ ⊢[ i ] A' @ l' ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
   assert (Ha' : [ G ; Γ ⊢[ i ] a' : A' @ l' ])
     by (eapply wf_lconv; [eapply conv_tm'; [exact Ha | apply eqty_sym, HAA] | now apply lequiv_sym]).
   assert (Hs : [ G ; Γ ⊢[ i ] tmSq l' A' a' : tySq l' A' @ l' ])
-    by (apply wf_sq; [exact cp | exact (lequiv_wf_r _ _ _ Hl) | exact HA'l | exact Ha']).
+    by (apply wf_sq; [exact Hv | exact (lequiv_wf_r _ _ _ Hl) | exact HA'l | exact Ha']).
   eapply wf_lconv with (l' := l'); [|exact Hl].
   eapply conv_tm'; [exact Hs |].
-  eapply eqty_lconv; [apply eqty_sq; [exact cp | exact Hl | exact HA | exact HAA] | apply lequiv_sym, Hl].
+  eapply eqty_lconv; [apply eqty_sq; [exact Hv | exact Hl | exact HA | exact HAA] | apply lequiv_sym, Hl].
 Qed.
 
 (** The step, moved to the primed carrier's context and the primed motive
     at the primed [squash], as [case_branch_r]. *)
-Lemma sq_branch_r {Γ l1 l2 l3 l4 A A' M M' c} : compt i ->
+Lemma sq_branch_r {Γ l1 l2 l3 l4 A A' M M' c} :
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
   [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M @ l2 ] ->
@@ -900,8 +908,8 @@ Lemma sq_branch_r {Γ l1 l2 l3 l4 A A' M M' c} : compt i ->
   [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M' @ l2 ] ->
   [ G ; Γ ,, A @ l1 ⊢[ i ] c : tySq l2 M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))] @ l2 ] ->
   [ G ; Γ ,, A' @ l3 ⊢[ i ] c : tySq l4 M'⟨rlift ↑⟩[lsingle (tmSq l3 A'⟨↑⟩ (var 0))] @ l4 ].
-Proof using Hi.
-  intros cp H13 H24 HA HAA HA' HM HMM HM' Hc.
+Proof using Hi Hv.
+  intros H13 H24 HA HAA HA' HM HMM HM' Hc.
   assert (HA'l : [ G ; Γ ⊢[ i ] A' @ l3 ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
   assert (HΓA' : [ G ; Γ ,, A' @ l3 ⊢[ i ] ]) by (apply ext_wf; [exact HA'l | exact (lequiv_wf_r _ _ _ H13)]).
   pose proof (stab_tm Hi HAA H13 HΓA' Hc) as Hc'.
@@ -912,19 +920,19 @@ Proof using Hi.
   assert (HwA' : [ G ; Γ ,, A' @ l3 ⊢[ i ] A'⟨↑⟩ @ l1 ]) by (apply wk1_ty; assumption).
   assert (HwAA : [ G ; Γ ,, A' @ l3 ⊢[ i ] A⟨↑⟩ ≅ A'⟨↑⟩ @ l1 ]) by (apply wk1_eqty; assumption).
   assert (Hf : [ G ; Γ ,, A' @ l3 ⊢[ i ] tmSq l1 A⟨↑⟩ (var 0) : (tySq l1 A)⟨↑⟩ @ l1 ])
-    by (apply wf_sq; [exact cp | exact (lequiv_wf_l _ _ _ H13) | exact HwA | exact Hv0]).
+    by (apply wf_sq; [exact Hv | exact (lequiv_wf_l _ _ _ H13) | exact HwA | exact Hv0]).
   assert (Hf' : [ G ; Γ ,, A' @ l3 ⊢[ i ] tmSq l3 A'⟨↑⟩ (var 0) : (tySq l1 A)⟨↑⟩ @ l1 ])
-    by exact (pre_sq_r cp H13 HwAA HwA HwA' Hv0).
+    by exact (pre_sq_r H13 HwAA HwA HwA' Hv0).
   assert (Hff : [ G ; Γ ,, A' @ l3 ⊢[ i ] tmSq l1 A⟨↑⟩ (var 0) ≅ tmSq l3 A'⟨↑⟩ (var 0) : (tySq l1 A)⟨↑⟩ @ l1 ])
-    by (apply eqtm_sq; [exact cp | exact H13 | exact HwA | exact HwAA | apply eqtm_refl, Hv0]).
+    by (apply eqtm_sq; [exact Hv | exact H13 | exact HwA | exact HwAA | apply eqtm_refl, Hv0]).
   pose proof (case_branch_eq HΓA' HM HMM HM' Hf Hf' Hff) as EB.
   assert (HX : [ G ; Γ ,, A' @ l3 ⊢[ i ] M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))] @ l2 ]).
   { rewrite liftshift_single_ty. exact (wf_ty_subst Hi HM (lsub_wf_up1 HΓA' (wf_tm_dnf Hf) Hf)). }
   eapply wf_lconv; [eapply conv_tm'; [exact Hc' |] | exact (lequiv_sym _ _ _ H24)].
-  apply eqty_sym, eqty_sq; [exact cp | exact H24 | exact HX | exact EB].
+  apply eqty_sym, eqty_sq; [exact Hv | exact H24 | exact HX | exact EB].
 Qed.
 
-Lemma pre_elimSq_r {Γ l1 l2 l3 l4 A A' M M' c' t t'} : compt i ->
+Lemma pre_elimSq_r {Γ l1 l2 l3 l4 A A' M M' c' t t'} :
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
   [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M @ l2 ] ->
@@ -934,14 +942,14 @@ Lemma pre_elimSq_r {Γ l1 l2 l3 l4 A A' M M' c' t t'} : compt i ->
   [ G ; Γ ⊢[ i ] t ≅ t' : tySq l1 A @ l1 ] ->
   [ G ; Γ ⊢[ i ] t : tySq l1 A @ l1 ] -> [ G ; Γ ⊢[ i ] t' : tySq l1 A @ l1 ] ->
   [ G ; Γ ⊢[ i ] tmElimSq l3 l4 A' M' c' t' : tySq l2 M[lsingle t] @ l2 ].
-Proof using Hi.
-  intros cp H13 H24 HAA HA HA' HM HMM HM' Hc Htt Ht Ht'.
+Proof using Hi Hv.
+  intros H13 H24 HAA HA HA' HM HMM HM' Hc Htt Ht Ht'.
   pose proof (lequiv_wf_r _ _ _ H13) as W3. pose proof (lequiv_wf_r _ _ _ H24) as W4.
   assert (HA'3 : [ G ; Γ ⊢[ i ] A' @ l3 ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
   assert (ESS : [ G ; Γ ⊢[ i ] tySq l1 A ≅ tySq l3 A' @ l1 ])
-    by (apply eqty_sq; [exact cp | exact H13 | exact HA | exact HAA]).
+    by (apply eqty_sq; [exact Hv | exact H13 | exact HA | exact HAA]).
   assert (HΓS' : [ G ; Γ ,, tySq l3 A' @ l3 ⊢[ i ] ])
-    by (apply ext_wf; [apply wft_sq; [exact cp | exact W3 | exact HA'3] | exact W3]).
+    by (apply ext_wf; [apply wft_sq; [exact Hv | exact W3 | exact HA'3] | exact W3]).
   assert (HM'4 : [ G ; Γ ,, tySq l3 A' @ l3 ⊢[ i ] M' @ l4 ])
     by (eapply wft_lconv; [exact (stab_ty Hi ESS H13 HΓS' HM') | now apply lequiv_sym]).
   assert (HMt : [ G ; Γ ⊢[ i ] M[lsingle t] ≅ M'[lsingle t'] @ l2 ]).
@@ -953,10 +961,10 @@ Proof using Hi.
     by (eapply wf_lconv; [eapply conv_tm'; [exact Ht' | apply eqty_sym, ESS] | now apply lequiv_sym]).
   eapply wf_lconv with (l' := l4); [| exact H24].
   eapply (conv_tm' (T' := tySq l4 M'[lsingle t'])).
-  - apply wf_elimSq; [exact cp | exact W3 | exact W4 | exact HA'3 | exact HM'4
-                     | exact (sq_branch_r cp H13 H24 HA HAA HA' HM HMM HM' Hc) | exact Ht'3].
+  - apply wf_elimSq; [exact Hv | exact W3 | exact W4 | exact HA'3 | exact HM'4
+                     | exact (sq_branch_r H13 H24 HA HAA HA' HM HMM HM' Hc) | exact Ht'3].
   - eapply eqty_lconv; [|apply lequiv_sym, H24].
-    apply eqty_sq; [exact cp | exact H24 | exact HMs | exact HMt].
+    apply eqty_sq; [exact Hv | exact H24 | exact HMs | exact HMt].
 Qed.
 
 (** β's right-hand side, at the motive's instance at the [squash]. *)

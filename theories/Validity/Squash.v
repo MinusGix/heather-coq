@@ -128,7 +128,7 @@ Proof.
   destruct (VA _ _ _ Hd) as [RA' HRA']. destruct (escape_ty _ _ _ _ _ _ _ _ HRA') as (_ & _ & EA).
   pose proof (Va _ _ _ Hd) as Xa.
   assert (HS : [ G ; Δ ⊢g tmSq l A[d] a[d] ≅ tmSq l' A'[d'] a'[d'] : tySq l A[d] @ l ])
-    by (apply eqtm_sq; [exact ge_compt | exact Hl | exact HA | exact (geq_ty_sound EA)
+    by (apply eqtm_sq; [exact ge_notV | exact Hl | exact HA | exact (geq_ty_sound EA)
                        | exact (geq_tm_sound (LRtm_geq Xa))]).
   apply LRtm_sq_of; [eexists; exact (LR_sq_here Hw (lequiv_refl _ _ Hw) HA EAA HRA) | |].
   - exists (tmSq l A[d] a[d]). split; [exact (tmred_refl _ _ _ (eqtm_wf_l ge_typeof HS)) |].
@@ -151,6 +151,60 @@ Proof.
 Qed.
 
 (** ** [ind_∥∥] *)
+
+(** ** The code (M16b) and its decoding, as [Vec]'s *)
+
+Lemma tyred_El_sq {G Δ la l k s} : lequiv (gL G) la l -> lequiv (gL G) k l ->
+  [ G ; Δ ⊢g s : tyU l @ lsuc l ] ->
+  [ G ; Δ ⊢g tyEl la (tmSqCode k s) ⤳* tySq k (tyEl k s) @ l ].
+Proof.
+  intros Hla Hk Hs.
+  pose proof (lequiv_wf_l _ _ _ Hk) as Wk.
+  pose proof (conv_U' Hs (lequiv_sym _ _ _ Hk)) as Hsk.
+  assert (Hc0 : [ G ; Δ ⊢g tmSqCode k s : tyU k @ lsuc k ])
+    by (apply wf_code_sq; [exact ge_notV | exact Wk | exact Hsk]).
+  pose proof (conv_U' Hc0 Hk) as Hc.
+  destruct (El_annot Hc Hla) as [HEl HEq].
+  apply tyred_step; [exact HEl | constructor |].
+  eapply eqty_trans; [exact HEq|].
+  eapply (eqty_trans _ _ _ _ (tyEl k (tmSqCode k s))).
+  - apply eqty_El; [exact ge_notV | now apply lequiv_sym | apply eqtm_refl, Hc].
+  - apply (eqty_lconv _ _ _ _ _ l k); [|now apply lequiv_sym].
+    apply eqty_sym, eqty_El_sq; [exact ge_compt | exact Wk | exact Hsk].
+Qed.
+
+Lemma V_El_sq {G Γ l s} : lwf (gL G) l ->
+  VTm G Γ s s (tyU l) (lsuc l) -> VTy G Γ (tySq l (tyEl l s)) (tyEl l (tmSqCode l s)) l.
+Proof.
+  intros Hw Vs Δ d d' Hd.
+  pose proof (V_El Hw (lequiv_refl _ _ Hw) Vs) as VA.
+  destruct (V_sq Hw (lequiv_refl _ _ Hw) VA _ _ _ Hd) as [R HR].
+  destruct (escape_ty _ _ _ _ _ _ _ _ HR) as (HP & _ & _).
+  pose proof (Vs _ _ _ (SubRel_refl_r Hd)) as Xs. rewrite !subst_tyU in Xs.
+  exists R. eapply LR_red_ty; [exact HR | apply tyred_refl, HP |]. push_subst.
+  apply tyred_El_sq; [now apply lequiv_refl | now apply lequiv_refl | exact (proj1 (LRtm_escape Xs))].
+Qed.
+
+Lemma V_code_sq {G Γ l l' s s'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTm G Γ s s' (tyU l) (lsuc l) -> VTm G Γ (tmSqCode l s) (tmSqCode l' s') (tyU l) (lsuc l).
+Proof.
+  intros Hw Hl Vs Δ d d' Hd.
+  pose proof (V_El Hw Hl Vs) as VA.
+  destruct (V_sq Hw Hl VA _ _ _ Hd) as [R HR].
+  pose proof (Vs _ _ _ Hd) as Xs. rewrite !subst_tyU in Xs.
+  destruct (LRtm_escape Xs) as [Hsd Hs'd'].
+  pose proof (geq_tm_code_sq Hl (LRtm_geq Xs)) as Hgeq.
+  pose proof (geq_tm_sound Hgeq) as Hgeq'.
+  push_subst. apply (LRtm_U Hw).
+  exists (tmSqCode l s[d]), (tmSqCode l' s'[d']).
+  refine (conj (tmred_refl _ _ _ (eqtm_wf_l ge_typeof Hgeq'))
+           (conj (tmred_refl _ _ _ (eqtm_wf_r ge_typeof Hgeq'))
+           (conj (whnf_tmSqCode _ _) (conj (whnf_tmSqCode _ _) (conj Hgeq _))))).
+  intros la lb Hla Hlb. rewrite LRbelow_spec by (rewrite ?lmeasure_suc; lia).
+  exists R. eapply LR_red_ty; [exact HR | |]; push_subst.
+  - apply tyred_El_sq; [exact Hla | now apply lequiv_refl | exact Hsd].
+  - apply tyred_El_sq; [exact Hlb | now apply lequiv_sym | exact Hs'd'].
+Qed.
 
 Section ElimSqAt.
 Context {G : gctx} {Γ : ctx} {l1 l2 : lvl} {A A' M M' : ty} {c c' : tm}
@@ -206,7 +260,7 @@ Proof.
   assert (HCC : forall s, [ G ; Δ ⊢g s : tySq l1 A[d] @ l1 ] ->
             [ G ; Δ ⊢g tmElimSq l1 l2 A[d] M[llift d] c[llift d] s
                 ≅ tmElimSq l3 l4 A'[d'] M'[llift d'] c'[llift d'] s : tySq l2 M[llift d][lsingle s] @ l2 ]).
-  { intros s Hs. apply eqtm_elimSq; [exact ge_compt | exact H13 | exact H24 | exact HA
+  { intros s Hs. apply eqtm_elimSq; [exact ge_notV | exact H13 | exact H24 | exact HA
                                     | exact (geq_ty_sound EA) | exact HM | exact (geq_ty_sound EM)
                                     | exact (geq_tm_sound Ec) | now apply eqtm_refl]. }
   assert (Hne : forall ν, [ G ; Δ ⊢ ν ~ ν : tySq l1 A[d] @ l1 ] ->
@@ -232,7 +286,7 @@ Proof.
     - (* a [squash]: β, then the step at the payload *)
       pose proof (proj1 (LRtm_escape Ha)) as Ha0.
       assert (Gsq : SqG G Δ l1 A[d] (tmSq l1 A[d] a)).
-      { exists (tmSq l1 A[d] a). split; [apply tmred_refl, wf_sq; [exact ge_compt | exact Hw1 | exact HA | exact Ha0] |].
+      { exists (tmSq l1 A[d] a). split; [apply tmred_refl, wf_sq; [exact ge_notV | exact Hw1 | exact HA | exact Ha0] |].
         apply sqnf_sq; [now apply lequiv_refl | exact (geq_ty_refl_l EA) | exact Ha]. }
       pose proof (SqG_conv Hw2 (LRty_sym (Mat _ _ Gs Gsq)) (Hc a Ha)) as Gc.
       eapply SqG_red; [| exact Gc].

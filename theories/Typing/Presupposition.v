@@ -399,6 +399,7 @@ Proof.
                         | eapply pre_elimWf_r; eassumption
                         | eapply pre_elimWf_beta; eassumption
                         | eapply pre_codewf_r; eassumption
+                        | eapply pre_codesq_r; eassumption
                         | eapply pre_tySq_r; eassumption
                         | eapply pre_sq_r; eassumption
                         | eapply pre_elimSq_r; eassumption
@@ -518,7 +519,12 @@ Proof.
              | solve [eapply wf_elimSq; eauto 3 with presup]
              | solve [apply wft_sq; try eassumption; try solve [eauto with presup];
                       eapply wf_ty_single; try eassumption; eapply wf_sq; eassumption]
-             | solve [eapply wf_elimSq; try eassumption; eapply wf_sq; eassumption] ].
+             | solve [eapply wf_elimSq; try eassumption; eapply wf_sq; eassumption]
+             (* the code of ∥·∥ (M16b) *)
+             | solve [eapply pre_codesq_r; eassumption]
+             | solve [eapply wf_code_sq; eauto 3 with presup]
+             | solve [eapply wft_El; eauto with presup; eapply wf_code_sq; eassumption]
+             | solve [apply wft_sq; eauto 3 with presup; apply wft_El; eauto with presup] ].
 Qed.
 
 Section Named.

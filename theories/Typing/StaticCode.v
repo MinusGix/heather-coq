@@ -235,6 +235,45 @@ Proof.
                       | exact (wk1_eqty _ _ Hi _ _ _ _ _ _ HΓB' HBB) | exact (eqtm_refl _ _ _ _ _ _ HvB)].
 Qed.
 
+(** The equations a right-hand [ind_∥∥] needs, at P (M16b): the motive
+    contexts, the carriers' contexts, and the right step type against the
+    left one, in the right carrier's context (as [sq_branch_r]). *)
+Lemma sq_facts_D {G Γ l1 l2 l3 l4 A A' M M'} : lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
+  [ G ; Γ ⊢[ lD ] A @ l1 ] -> [ G ; Γ ⊢[ lD ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ lD ] A' @ l1 ] ->
+  [ G ; Γ ,, tySq l1 A @ l1 ⊢[ lD ] M @ l2 ] ->
+  [ G ; Γ ,, tySq l1 A @ l1 ⊢[ lD ] M ≅ M' @ l2 ] ->
+  [ G ; Γ ,, tySq l1 A @ l1 ⊢[ lD ] M' @ l2 ] ->
+  [ G ⊢[ lD ] Γ ,, tySq l1 A @ l1 ≅ Γ ,, tySq l3 A' @ l3 ] /\ [ G ⊢[ lD ] Γ ,, A @ l1 ≅ Γ ,, A' @ l3 ] /\
+  [ G ; Γ ,, A' @ l3 ⊢[ lD ] tySq l4 M'⟨rlift ↑⟩[lsingle (tmSq l3 A'⟨↑⟩ (var 0))]
+                          ≅ tySq l2 M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))] @ l2 ].
+Proof.
+  intros H13 H24 HA HAA HA' HM HMM HM'.
+  assert (Hi : typeof lD = lD) by reflexivity. assert (Hv : lD <> lV) by discriminate.
+  pose proof (lequiv_wf_l _ _ _ H13) as W1. pose proof (lequiv_wf_r _ _ _ H13) as W3.
+  pose proof (ctx_of_wf_ty Hi HA) as HΓ.
+  assert (HS : [ G ; Γ ⊢[ lD ] tySq l1 A @ l1 ]) by (apply wft_sq; assumption).
+  assert (ESS : [ G ; Γ ⊢[ lD ] tySq l1 A ≅ tySq l3 A' @ l1 ]) by (apply eqty_sq; assumption).
+  assert (HA'3 : [ G ; Γ ⊢[ lD ] A' @ l3 ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
+  pose proof (ext_wf Hi HA'3 W3) as HΓA'.
+  assert (HwA : [ G ; Γ ,, A' @ l3 ⊢[ lD ] A⟨↑⟩ @ l1 ]) by exact (wk1_ty _ _ Hi _ _ _ _ _ HΓA' HA).
+  assert (HwA' : [ G ; Γ ,, A' @ l3 ⊢[ lD ] A'⟨↑⟩ @ l1 ]) by exact (wk1_ty _ _ Hi _ _ _ _ _ HΓA' HA').
+  assert (HwAA : [ G ; Γ ,, A' @ l3 ⊢[ lD ] A⟨↑⟩ ≅ A'⟨↑⟩ @ l1 ]) by exact (wk1_eqty _ _ Hi _ _ _ _ _ _ HΓA' HAA).
+  assert (Hv0 : [ G ; Γ ,, A' @ l3 ⊢[ lD ] var 0 : A⟨↑⟩ @ l1 ]).
+  { eapply conv_tm'; [exact Hi | eapply wf_lconv; [exact (var0_wf _ _ Hi _ _ _ HΓA') | exact H13] |].
+    exact HwAA. }
+  assert (Hf : [ G ; Γ ,, A' @ l3 ⊢[ lD ] tmSq l1 A⟨↑⟩ (var 0) : (tySq l1 A)⟨↑⟩ @ l1 ])
+    by (apply wf_sq; [exact Hv | exact W1 | exact HwA | exact Hv0]).
+  pose proof (pre_sq_r Hi Hv H13 HwAA HwA HwA' Hv0) as Hf'.
+  assert (Hff : [ G ; Γ ,, A' @ l3 ⊢[ lD ] tmSq l1 A⟨↑⟩ (var 0) ≅ tmSq l3 A'⟨↑⟩ (var 0) : (tySq l1 A)⟨↑⟩ @ l1 ])
+    by (apply eqtm_sq; [exact Hv | exact H13 | exact HwA | exact HwAA | exact (eqtm_refl _ _ _ _ _ _ Hv0)]).
+  pose proof (case_branch_eq Hi HΓA' HM HMM HM' Hf Hf' Hff) as EB.
+  pose proof (eqty_wf_l Hi EB) as HX.
+  refine (conj _ (conj _ _)).
+  - apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | exact HS | exact ESS | exact H13].
+  - apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | exact HA | exact HAA | exact H13].
+  - apply eqty_sym, eqty_sq; [exact Hv | exact H24 | exact HX | exact EB].
+Qed.
+
 (** ** [elim_W]'s telescope at any layer but V (M13b)
 
     The children's and the induction hypothesis's types, formed at the
@@ -1746,6 +1785,23 @@ Proof using Hty.
   - apply eqtm_code_vec; auto.
 Qed.
 
+(** The code of [∥·∥] (M16b; every layer but V), as [Vec]'s. *)
+Lemma sc_code_sq {Γ l l' s s'} : i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] tmSqCode l' s' : tyU l @ lsuc l ] /\
+  [ G ; Γ ⊢[ i ] tmSqCode l s ≅ tmSqCode l' s' : tyU l @ lsuc l ].
+Proof using Hty.
+  intros Hv Hl Hl' E Hs [Hs' Hss]. pose proof (lq Hl Hl' E) as Q.
+  pose proof (sc_ctx_tm Hs') as HΓ. split.
+  - apply (sc_conv (T' := tyU l')).
+    + eapply wf_lconv; [apply wf_code_sq; [exact Hv | exact Hl' |] | apply lequiv_lsuc', Q].
+      apply (sc_conv (T' := tyU l)); [eapply wf_lconv; [exact Hs' | apply lequiv_lsuc', lequiv_sym, Q]|].
+      apply eqty_U; [discriminate | exact HΓ | apply lequiv_sym, Q].
+    + apply eqty_U; [discriminate | exact HΓ | exact Q].
+  - apply eqtm_code_sq; auto.
+Qed.
+
 Lemma sc_code_fin {Γ n n'} : i <> lV ->
   [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] /\ [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] tmFin n' : tyU lzero @ lsuc lzero ] /\
@@ -1909,32 +1965,70 @@ Proof using Hty.
   - apply eqtm_code_wf; auto.
 Qed.
 
-(** Propositional truncation (M16a), gated by [compt]: at [i] itself, by
-    the presupposition lemmas' right-hand sides ([compt i] and [lle i lD]
-    make [i] layer D). *)
-Lemma sc_tySq {Γ l l' A A'} : compt i -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+(** Propositional truncation (M16a; every layer but V since M16b). The
+    [_q] forms take the left and right components as [case]'s do; the
+    eliminator's right pieces move to the right contexts along
+    [sq_facts_D]. *)
+Lemma sc_tySq {Γ l l' A A'} : i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
   [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
   [ G ; Γ ⊢[ i ] tySq l' A' @ l ] /\ [ G ; Γ ⊢[ i ] tySq l A ≅ tySq l' A' @ l ].
 Proof using .
-  intros cp Hl Hl' E HA [HA' HAA]. pose proof (lq Hl Hl' E) as Q.
+  intros Hv Hl Hl' E HA [HA' HAA]. pose proof (lq Hl Hl' E) as Q.
   split; [| apply eqty_sq; auto].
   eapply wft_lconv; [| exact Q].
-  apply wft_sq; [exact cp | exact Hl' |]. eapply wft_lconv; [exact HA' | apply lequiv_sym, Q].
+  apply wft_sq; [exact Hv | exact Hl' |]. eapply wft_lconv; [exact HA' | apply lequiv_sym, Q].
 Qed.
 
-Lemma sc_sq {Γ l l' A A' a a'} : compt i -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+Lemma sc_sq_q {Γ l l' A A' a'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] A' @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] tmSq l' A' a' : tySq l A @ l ].
+Proof using Hi.
+  intros Hv Q HA' HAA Ha'.
+  pose proof (lequiv_wf_r _ _ _ Q) as Hl'.
+  apply (sc_conv (T' := tySq l' A')).
+  - eapply wf_lconv; [| exact Q].
+    apply wf_sq; [exact Hv | exact Hl' | eapply wft_lconv; [exact HA' | apply lequiv_sym, Q] |].
+    eapply wf_lconv; [apply (sc_conv Ha'), eqty_sym, (sc_eqty HAA) | apply lequiv_sym, Q].
+  - apply eqty_sq; [discriminate | exact Q | exact (eqty_wf_l (i := lD) eq_refl (sc_eqty HAA)) | exact (sc_eqty HAA)].
+Qed.
+Lemma sc_sq {Γ l l' A A' a a'} : i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
   [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
   [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] /\ [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
   [ G ; Γ ⊢[ i ] tmSq l' A' a' : tySq l A @ l ] /\
   [ G ; Γ ⊢[ i ] tmSq l A a ≅ tmSq l' A' a' : tySq l A @ l ].
-Proof using .
-  intros cp Hl Hl' E HA [HA' HAA] Ha [Ha' Haa]. pose proof (lq Hl Hl' E) as Q.
-  pose proof (compt_typeof_self i cp) as Hi'. pose proof (compt_notV i cp) as Hv'.
-  split; [| apply eqtm_sq; auto].
-  eapply pre_sq_r; eassumption.
+Proof using Hi.
+  intros Hv Hl Hl' E HA [HA' HAA] Ha [Ha' Haa]. pose proof (lq Hl Hl' E) as Q.
+  split; [exact (sc_sq_q Hv Q HA' HAA Ha') | apply eqtm_sq; auto].
 Qed.
 
-Lemma sc_elimSq {Γ l1 l2 l1' l2' A A' M M' c c' t t'} : compt i ->
+Lemma sc_elimSq_q {Γ l1 l2 l1' l2' A A' M M' c' t t'} : i <> lV ->
+  lequiv (gL G) l1 l1' -> lequiv (gL G) l2 l2' ->
+  [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
+  [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M @ l2 ] -> [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M' @ l2 ] ->
+  [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M ≅ M' @ l2 ] ->
+  [ G ; Γ ,, A @ l1 ⊢[ i ] c' : tySq l2 M⟨rlift ↑⟩[lsingle (tmSq l1 A⟨↑⟩ (var 0))] @ l2 ] ->
+  [ G ; Γ ⊢[ i ] t : tySq l1 A @ l1 ] -> [ G ; Γ ⊢[ i ] t' : tySq l1 A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] t ≅ t' : tySq l1 A @ l1 ] ->
+  [ G ; Γ ⊢[ i ] tmElimSq l1' l2' A' M' c' t' : tySq l2 M[lsingle t] @ l2 ].
+Proof using Hi.
+  intros Hv Q1 Q2 HA HA' HAA HM HM' HMM Hc' Ht Ht' Htt.
+  destruct (sq_facts_D (l3 := l1') (l4 := l2') Q1 Q2 (sc_ty HA) (sc_eqty HAA) (sc_ty HA') (sc_ty HM)
+              (sc_eqty HMM) (sc_ty HM')) as (CS & CA & EB).
+  pose proof (lequiv_wf_r _ _ _ Q1) as H1'. pose proof (lequiv_wf_r _ _ _ Q2) as H2'.
+  apply (sc_conv (T' := tySq l2' M'[lsingle t'])).
+  - eapply wf_lconv with (l' := l2'); [| exact Q2].
+    apply wf_elimSq; [exact Hv | exact H1' | exact H2' | | | |].
+    + eapply wft_lconv; [exact HA' | apply lequiv_sym, Q1].
+    + eapply wft_lconv; [exact (sc_cty CS HM') | apply lequiv_sym, Q2].
+    + eapply wf_lconv; [apply (sc_conv (sc_ctm CA Hc') EB) | apply lequiv_sym, Q2].
+    + apply (sc_conv (T' := tySq l1 A)).
+      * eapply wf_lconv; [exact Ht' | apply lequiv_sym, Q1].
+      * eapply eqty_lconv; [apply eqty_sym, eqty_sq; [discriminate | exact Q1 | exact (sc_ty HA) | exact (sc_eqty HAA)]
+                           | apply lequiv_sym, Q1].
+  - pose proof (eqty_subst_single_D (sc_eqty HMM) (sc_ty HM') (sc_eqtm Htt) (sc_tm Ht) (sc_tm Ht')) as EMt.
+    apply eqty_sq; [discriminate | exact Q2 | exact (eqty_wf_l (i := lD) eq_refl EMt) | exact EMt].
+Qed.
+Lemma sc_elimSq {Γ l1 l2 l1' l2' A A' M M' c c' t t'} : i <> lV ->
   lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) l1' -> lwf (gL G) l2' -> leqv l1 l1' -> leqv l2 l2' ->
   [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] ->
   [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] M @ l2 ] ->
@@ -1946,12 +2040,10 @@ Lemma sc_elimSq {Γ l1 l2 l1' l2' A A' M M' c c' t t'} : compt i ->
   [ G ; Γ ⊢[ i ] t' : tySq l1 A @ l1 ] /\ [ G ; Γ ⊢[ i ] t ≅ t' : tySq l1 A @ l1 ] ->
   [ G ; Γ ⊢[ i ] tmElimSq l1' l2' A' M' c' t' : tySq l2 M[lsingle t] @ l2 ] /\
   [ G ; Γ ⊢[ i ] tmElimSq l1 l2 A M c t ≅ tmElimSq l1' l2' A' M' c' t' : tySq l2 M[lsingle t] @ l2 ].
-Proof using .
-  intros cp H1 H2 H1' H2' E1 E2 HA [HA' HAA] HM [HM' HMM] Hc [Hc' Hcc] Ht [Ht' Htt].
+Proof using Hi.
+  intros Hv H1 H2 H1' H2' E1 E2 HA [HA' HAA] HM [HM' HMM] Hc [Hc' Hcc] Ht [Ht' Htt].
   pose proof (lq H1 H1' E1) as Q1. pose proof (lq H2 H2' E2) as Q2.
-  pose proof (compt_typeof_self i cp) as Hi'. pose proof (compt_notV i cp) as Hv'.
-  split; [| apply eqtm_elimSq; auto].
-  eapply pre_elimSq_r; eassumption.
+  split; [exact (sc_elimSq_q Hv Q1 Q2 HA HA' HAA HM HM' HMM Hc' Ht Ht' Htt) | apply eqtm_elimSq; auto].
 Qed.
 
 End SC.
@@ -2065,6 +2157,7 @@ Proof.
     | solve [eapply sc_code_wf; eauto]
     (* propositional truncation (M16a) *)
     | solve [eapply sc_tySq; eauto] | solve [eapply sc_sq; eauto] | solve [eapply sc_elimSq; eauto]
+    | solve [eapply sc_code_sq; eauto]
     | match goal with
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x
         |- _ /\ eq_tm _ _ _ (succ _) _ _ _ =>

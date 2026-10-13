@@ -288,6 +288,15 @@ Proof.
   change ((tmInl l l' A⟨↑⟩ B⟨↑⟩ (var 0))⦃σ⦄) with (tmInl l l' (A⟨↑⟩)⦃σ⦄ (B⟨↑⟩)⦃σ⦄ (var 0)).
   now rewrite !gs_shift_ty'.
 Qed.
+(** [ind_∥∥]'s step type (M16b), under the squash. *)
+Lemma gs_sq_step_ty' (M A : ty) l σ :
+  (subst_ty M⟨rlift ↑⟩ (lsingle (tmSq l A⟨↑⟩ (var 0))))⦃σ⦄
+  = subst_ty M⦃σ⦄⟨rlift ↑⟩ (lsingle (tmSq l A⦃σ⦄⟨↑⟩ (var 0))).
+Proof.
+  rewrite gs_single_ty', gs_liftshift_ty'. f_equal. f_equal.
+  change ((tmSq l A⟨↑⟩ (var 0))⦃σ⦄) with (tmSq l (A⟨↑⟩)⦃σ⦄ (var 0)).
+  now rewrite !gs_shift_ty'.
+Qed.
 Lemma gs_case_inr_ty' (M A B : ty) l l' σ :
   (subst_ty M⟨rlift ↑⟩ (lsingle (tmInr l l' A⟨↑⟩ B⟨↑⟩ (var 0))))⦃σ⦄
   = subst_ty M⦃σ⦄⟨rlift ↑⟩ (lsingle (tmInr l l' A⦃σ⦄⟨↑⟩ B⦃σ⦄⟨↑⟩ (var 0))).
@@ -324,6 +333,7 @@ Ltac gpeel_push Hσ :=
   cbn [gosubst gsubst GSubst_tm GSubst_ty GSubst_ctx gsubst_tm gsubst_ty gcsubst recT rect]; fold gsubst_ty gsubst_tm gcsubst glsubst;
   (* [case]'s branch types (M12c), before the generic single substitution *)
   try match goal with |- context [tmInl _ _ _ _ (var 0)] => rewrite ?gs_case_inl_ty', ?gs_case_inr_ty' end;
+  try match goal with |- context [tmSq _ _ (var 0)] => rewrite ?gs_sq_step_ty' end;
   rewrite ?gs_single_ty', ?gs_lsucc_ty', ?gs_single2_ty', ?gs_shift_ty', ?gs_shift';
   try match goal with |- context [tmSup _ _ _ _ (var 2) (var 1)] =>
     repeat progress (cbn [gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty]; fold gsubst_ty gsubst_tm gcsubst glsubst;

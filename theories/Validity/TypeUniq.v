@@ -173,6 +173,7 @@ Proof.
       | destruct (inva_code_vec H1) as (_ & Hk & E); destruct (inva_code_vec H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_code_fin H1) as (_ & Hk & E); destruct (inva_code_fin H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_code_wf H1) as (_ & Hk & E); destruct (inva_code_wf H2) as (_ & Hk' & E'); uq_same
+      | destruct (inva_code_sq H1) as (_ & Hk & E); destruct (inva_code_sq H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_app H1) as (_ & Hk & E); destruct (inva_app H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_code_sig H1) as (_ & Hk & E); destruct (inva_code_sig H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_pair H1) as (_ & Hk & E); destruct (inva_pair H2) as (_ & Hk' & E'); uq_same

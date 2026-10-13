@@ -69,6 +69,7 @@ Proof.
     | solve [eapply Dc_actmne_elimWf; eassumption]
     | solve [eapply Dc_actmnf_code_empty; eassumption] | solve [eapply Dc_actmnf_code_sum; eassumption]
     | solve [eapply Dc_actmnf_code_vec; eassumption] | solve [eapply Dc_actmnf_code_fin; eassumption]
+    | solve [eapply Dc_actmnf_code_sq; eassumption]
     | solve [eapply Dc_actmnf_code_W; eassumption]
     | solve [eapply Dc_actmnf_code_wf; eassumption] ].
 Qed.

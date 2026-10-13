@@ -182,6 +182,18 @@ Proof.
   destruct (IHs s' i _ Hc Hs (code_U_conv Hc E15 Hs')) as [Ds | N]; [| refute].
   destruct (IHn n' i _ Hc Hn Hn') as [Dn | N]; [left; apply actmnf_code_vec; assumption | refute].
 Qed.
+(** The code of [∥·∥] (M16b). *)
+Lemma Dc_actmnf_code_sq {G Γ l k k0 s s0} :
+  Dc_tm G Γ s s0 (tyU k) -> Dc_tmnf G Γ (tmSqCode k s) (tmSqCode k0 s0) (tyU l).
+Proof.
+  intros IHs x i m Hc Hx Hx'.
+  destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmnf _ _ _ (tmSqCode ?a ?b) _) => rename a into k', b into s' end.
+  destruct (code_sq_prem Hc Hx) as (W1 & Hs). destruct (code_sq_prem Hc Hx') as (W5 & Hs').
+  destruct (leqv_dec k k') as [H15 | N]; [| refute].
+  pose proof (leqv_lequiv _ _ _ W1 W5 H15) as E15.
+  destruct (IHs s' i _ Hc Hs (code_U_conv Hc E15 Hs')) as [Ds | N]; [left; apply actmnf_code_sq; assumption | refute].
+Qed.
 Lemma Dc_actmnf_code_fin {G Γ l n n0} : Dc_tm G Γ n n0 tyNat -> Dc_tmnf G Γ (tmFin n) (tmFin n0) (tyU l).
 Proof.
   intros IHn x i m Hc Hx Hx'.
@@ -316,9 +328,9 @@ Proof.
   (* the other motive, in this context *)
   assert (HS : [ G ; Γ ⊢[ i ] tySq l5 A' ≅ tySq l1 A @ l5 ]).
   { eapply eqty_lconv; [| exact (lequiv_sym _ _ _ E15)].
-    apply eqty_sym, eqty_sq; [exact Hc | exact E15 | exact HA | exact EA]. }
+    apply eqty_sym, eqty_sq; [(apply compt_notV; exact Hc) | exact E15 | exact HA | exact EA]. }
   assert (HΓS : [ G ; Γ ,, tySq l1 A @ l1 ⊢[ i ] ])
-    by (apply wfc_ext; [exact HΓ | apply wft_sq; [exact Hc | exact W1 | exact HA] | exact W1]).
+    by (apply wfc_ext; [exact HΓ | apply wft_sq; [(apply compt_notV; exact Hc) | exact W1 | exact HA] | exact W1]).
   pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi HS (lequiv_sym _ _ _ E15) HΓS HM') E26) as HM'1.
   destruct (IHM M' i _ _ Hc HM HM'1) as [DM | N]; [| refute].
   destruct (whne_dec ν') as [Hn' | N]; [left; apply actmne_elimSq; assumption | refute].

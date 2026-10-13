@@ -327,11 +327,11 @@ Proof.
   - right; intros H; exact (Q (proj2 (inv_ty_wf H))).
 Qed.
 
-(** Propositional truncation (M16a): the computing layers only. *)
+(** Propositional truncation (M16a; every layer but V since M16b). *)
 Lemma dec_tySq l A : sz_ty (tySq l A) <= n -> TYD (tySq l A).
 Proof.
   intros Hsz G i Γ k HΓ.
-  destruct (compt_dec i) as [Hc | Nc]; [| right; intros H; destruct (inv_ty_sq H) as ((X & _) & _); contradiction].
+  destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_sq H) as ((_ & X & _) & _); contradiction].
   destruct (ihT A ltac:(szl) G i Γ l HΓ) as [HA | N];
     [| right; intros H; destruct (inv_ty_sq H) as ((_ & _ & X) & _); contradiction].

@@ -1015,7 +1015,7 @@ Proof.
           by (eapply lsub_eq_lift_g; [exact Hd | apply wft_sq_typeof; assumption | assumption
                                      | | reflexivity];
               push_subst; apply eqty_sq;
-              [apply compt_typeof | now apply lequiv_refl
+              [apply compt_notV, compt_typeof | now apply lequiv_refl
               | eapply lift_ty; [exact HAd | apply lle_self_typeof]
               | eapply lift_eqty; [exact EA | apply lle_self_typeof]]);
         assert (HnA : lsub_eq G i (Δ ,, A[d] @ l) (llift d) (llift d') (Γ ,, A @ l))
