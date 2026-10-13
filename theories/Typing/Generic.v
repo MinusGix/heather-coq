@@ -449,7 +449,13 @@ Class GenericEqLaws `{GenericEq} := {
   (** the code of [∥·∥] (M16b) *)
   geq_tm_code_sq {G Γ l l' s s'} : lequiv (gL G) l l' ->
     [ G ; Γ ⊢ s ≈ s' : tyU l @ lsuc l ] ->
-    [ G ; Γ ⊢ tmSqCode l s ≈ tmSqCode l' s' : tyU l @ lsuc l ]
+    [ G ; Γ ⊢ tmSqCode l s ≈ tmSqCode l' s' : tyU l @ lsuc l ] ;
+  (** dependent tuples at a neutral length (M17a): [Vec]'s law, with the
+      family under the index *)
+  gne_ty_dvec {G Γ l l' ν ν' F F'} : lequiv (gL G) l l' ->
+    [ G ; Γ ⊢ ν ~ ν' : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyFin ν @ lzero ⊢g F @ l ] -> [ G ; Γ ,, tyFin ν @ lzero ⊢ F ≈ F' @ l ] ->
+    [ G ; Γ ⊢ tyDVec l ν F ~ tyDVec l' ν' F' @ l ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

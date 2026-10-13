@@ -97,6 +97,10 @@ with ac_tyne : gctx -> ctx -> ty -> ty -> Prop :=
 | actne_vec G Γ l l' A A' ν ν' W : leqv l l' -> ac_ty G Γ A A' -> ac_tmnee G Γ ν ν' W ->
     ac_tyne G Γ (tyVec l A ν) (tyVec l' A' ν')
 | actne_fin G Γ ν ν' W : ac_tmnee G Γ ν ν' W -> ac_tyne G Γ (tyFin ν) (tyFin ν')
+(* dependent tuples at a neutral length (M17a): the families under the
+   left length's index type *)
+| actne_dvec G Γ l l' ν ν' F F' W : leqv l l' -> ac_tmnee G Γ ν ν' W ->
+    ac_ty G (Γ ,, tyFin ν @ lzero) F F' -> ac_tyne G Γ (tyDVec l ν F) (tyDVec l' ν' F')
 
 with ac_ctx : gctx -> ctx -> ctx -> Prop :=
 | acc_nil G : ac_ctx G cnil cnil

@@ -82,11 +82,12 @@ Theorem closed_type_canonicity {G i T k} : compt i -> closed_ok i G -> [ G ; cni
 Proof.
   intros Hc HG HT. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (tgt_whnf Hc HT) as (W & Hr & Hw & E). exists W; split; [exact Hr | split; [exact Hw | split; [| exact E]]].
-  pose proof (eqty_wf_r Hi E) as HW. intros Hn. destruct Hn as [U d | l ν Hν | l A ν Hν | ν Hν].
+  pose proof (eqty_wf_r Hi E) as HW. intros Hn. destruct Hn as [U d | l ν Hν | l A ν Hν | ν Hν | l ν F Hν].
   - destruct (tyGvar_decl HW) as (Δ & i' & l' & Hin). exact (closed_ok_tyGvar HG Hin).
   - destruct (inv_ty_El HW) as ((_ & _ & Ht) & _). exact (no_closed_neutral_ok HG Ht Hν).
   - destruct (inv_ty_vec HW) as ((_ & _ & _ & Ht) & _). exact (no_closed_neutral_ok HG Ht Hν).
   - destruct (inv_ty_fin HW) as ((_ & Ht) & _). exact (no_closed_neutral_ok HG Ht Hν).
+  - destruct (inv_ty_dvec HW) as ((_ & _ & Ht & _) & _). exact (no_closed_neutral_ok HG Ht Hν).
 Qed.
 
 (** ** Terms *)

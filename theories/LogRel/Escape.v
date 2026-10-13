@@ -976,6 +976,9 @@ Proof. unfold ktm, kty, ktml; now rewrite gwa_supf. Qed.
 (** Propositional truncation (M16a). *)
 Lemma kty_tySq l A : kty ρ (tySq l A) = tySq l (kty ρ A).
 Proof. unfold kty; now rewrite gwa_tySq. Qed.
+(** Dependent tuples (M17a). *)
+Lemma kty_tyDVec l n F : kty ρ (tyDVec l n F) = tyDVec l (ktm ρ n) (ktyl ρ F).
+Proof. unfold kty, ktm, ktyl; now rewrite gwa_tyDVec. Qed.
 Lemma ktm_sq l A a : ktm ρ (tmSq l A a) = tmSq l (kty ρ A) (ktm ρ a).
 Proof. unfold ktm, kty; now rewrite gwa_sq. Qed.
 Lemma ktml_shift (t : tm) : ktml ρ t⟨↑⟩ = (ktm ρ t)⟨↑⟩.

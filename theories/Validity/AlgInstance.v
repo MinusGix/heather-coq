@@ -605,6 +605,10 @@ Proof.
     refine (conj (@geq_tm_code_sq DE DEL _ _ _ _ _ _ Hl Es) _).
     eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmSqCode | apply whnf_tmSqCode |].
     exact (actmnf_code_sq _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) Ds).
+  (* dependent tuples at a neutral length (M17a) *)
+  - intros * Hl ((Hn & Hn' & E) & T0 & D & ET) HF (EF & DF).
+    refine (conj (@gne_ty_dvec DE DEL _ _ _ _ _ _ _ _ Hl (conj Hn (conj Hn' E)) HF EF) _).
+    destruct (ne_nee D ET) as (W0 & X & _). exact (actne_dvec _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) X DF).
 Qed.
 
 End Alg.

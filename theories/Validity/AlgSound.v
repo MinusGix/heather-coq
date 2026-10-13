@@ -214,6 +214,26 @@ Proof.
   apply (lvl_eq_eqty Hk). apply eqty_fin; auto using compt_notV.
 Qed.
 
+(** [DVec] at a neutral length (M17a): the right family moves to the left
+    length's index type. *)
+Lemma S_actne_dvec {G Γ l l' ν ν' F F' W} : leqv l l' -> S_ne G Γ ν ν' W ->
+  S_ty G (Γ ,, tyFin ν @ lzero) F F' -> S_ty G Γ (tyDVec l ν F) (tyDVec l' ν' F').
+Proof.
+  intros Hl IHν IHF i k Hc HX HX'.
+  pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_dvec HX) as ((_ & W1 & Hν & HF) & Hk).
+  destruct (inv_ty_dvec HX') as ((_ & W2 & Hν' & HF') & _).
+  pose proof (leqv_lequiv _ _ _ W1 W2 Hl) as E.
+  destruct (IHν i lzero lzero tyNat tyNat Hc Hν Hν') as (_ & _ & Eν).
+  assert (EFin : [ G ; Γ ⊢[ i ] tyFin ν' ≅ tyFin ν @ lzero ])
+    by (apply eqty_fin; [exact (compt_notV _ Hc) | now apply eqtm_sym]).
+  assert (HΓF : [ G ; Γ ,, tyFin ν @ lzero ⊢[ i ] ])
+    by (apply wfc_ext; [exact (ctx_of_wf_tm Hi Hν) | apply wft_fin; [exact (compt_notV _ Hc) | exact Hν] | exact I]).
+  pose proof (stab_ty Hi EFin (lequiv_refl _ lzero I) HΓF HF') as HF1.
+  pose proof (IHF i l Hc HF (wft_lconv _ _ _ _ _ _ HF1 E)) as EF.
+  apply (lvl_eq_eqty Hk). apply eqty_dvec; auto.
+Qed.
+
 (** ** Local contexts (at D) *)
 
 Lemma S_acc_nil {G} : S_ctx G cnil cnil.
@@ -2298,7 +2318,8 @@ Proof.
     | solve [eapply S_actnf_wf; eassumption] | solve [eapply S_actmnf_supf; eassumption]
     | solve [eapply S_actmne_elimWf; eassumption]
     | solve [eapply S_actmnf_code_wf; eassumption]
-    | solve [eapply S_actne_vec; eassumption] | solve [eapply S_actne_fin; eassumption] ].
+    | solve [eapply S_actne_vec; eassumption] | solve [eapply S_actne_fin; eassumption]
+    | solve [eapply S_actne_dvec; eassumption] ].
 Qed.
 
 (** Algorithmically convertible types (terms) of the computing layers,

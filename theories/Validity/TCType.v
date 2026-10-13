@@ -340,6 +340,25 @@ Proof.
   - right; intros H; exact (Q (proj2 (inv_ty_sq H))).
 Qed.
 
+(** Dependent tuples (M17a; layers D and M). *)
+Lemma dec_tyDVec l t F : sz_ty (tyDVec l t F) <= n -> TYD (tyDVec l t F).
+Proof.
+  intros Hsz G i Γ k HΓ.
+  destruct (compt_dec i) as [Hc | Hc]; [| right; intros H; destruct (inv_ty_dvec H) as ((X & _) & _); contradiction].
+  pose proof (compt_notV _ Hc) as Hv.
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_dvec H) as ((_ & X & _) & _); contradiction].
+  assert (HN : [ G ; Γ ⊢[ typeof i ] tyNat @ lzero ]) by (apply wft_nat; [exact (typeof_notV i) | rewrite typeof_idem; exact HΓ]).
+  destruct (ihC t ltac:(szl) G i Γ _ _ HN) as [Ht | N];
+    [| right; intros H; destruct (inv_ty_dvec H) as ((_ & _ & X & _) & _); contradiction].
+  assert (HΓF : [ G ; Γ ,, tyFin t @ lzero ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty (wft_fin _ _ _ _ Hv Ht)) | exact I]).
+  destruct (ihT F ltac:(szl) G i _ l HΓF) as [HF | N];
+    [| right; intros H; destruct (inv_ty_dvec H) as ((_ & _ & _ & X) & _); contradiction].
+  destruct (lvl_eq_dec (gL G) k l) as [Q | Q].
+  - left; exact (wft_lvl Q (wft_dvec _ _ _ _ _ _ Hc Hl Ht HF)).
+  - right; intros H; exact (Q (proj2 (inv_ty_dvec H))).
+Qed.
+
 Lemma ty_step T : sz_ty T <= n -> TYD T.
 Proof.
   intros Hsz. destruct T;
@@ -347,7 +366,8 @@ Proof.
           | apply dec_tyPi | apply dec_tyEl | apply dec_tyGvar | apply dec_tyCTyp | apply dec_tyCTrm
           | apply dec_tyUPi | apply dec_tyCPi | apply dec_tyTPi | apply dec_tySig | apply dec_tyUnit
           | apply dec_tySEq | apply dec_tySEmpty | apply dec_tyId | apply dec_tyEmpty | apply dec_tySum
-          | apply dec_tyW | apply dec_tyVec | apply dec_tyFin | apply dec_tyWf | apply dec_tySq ];
+          | apply dec_tyW | apply dec_tyVec | apply dec_tyFin | apply dec_tyWf | apply dec_tySq
+          | apply dec_tyDVec ];
     assumption.
 Qed.
 

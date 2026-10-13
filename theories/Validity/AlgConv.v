@@ -831,6 +831,27 @@ Proof.
   intros D; exact (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 (proj2 (proj2 ac_sound_all))))))) _ _ _ _ _ D _ _ _ _ _).
 Qed.
 
+(** [DVec] at a neutral length (M17a). *)
+Lemma C_actne_dvec {G Γ l l' ν ν' F F' W} : leqv l l' -> ac_tmnee G Γ ν ν' W -> C_nee G Γ ν ν' W ->
+  C_ty G (Γ ,, tyFin ν @ lzero) F F' -> C_tyne G Γ (tyDVec l ν F) (tyDVec l' ν' F').
+Proof.
+  intros Hl DN IH IHF i G2 Γ2 k k' Hc HE Hctx HX HX'.
+  pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_dvec HX) as ((_ & W1 & Hν & HF) & _).
+  destruct (inv_ty_dvec HX') as ((_ & W2 & Hν' & HF') & _).
+  destruct (ac_nee_sound' DN Hc Hν Hν') as (_ & _ & Eν).
+  assert (HFin : [ G ; Γ ⊢[ i ] tyFin ν @ lzero ]) by (apply wft_fin; [exact (compt_notV _ Hc) | exact Hν]).
+  assert (EFin : [ G ; Γ ⊢[ i ] tyFin ν' ≅ tyFin ν @ lzero ])
+    by (apply eqty_fin; [exact (compt_notV _ Hc) | now apply eqtm_sym]).
+  assert (HΓF : [ G ; Γ ,, tyFin ν @ lzero ⊢[ i ] ])
+    by (apply wfc_ext; [exact (ctx_of_wf_tm Hi Hν) | exact HFin | exact I]).
+  pose proof (stab_ty Hi EFin (lequiv_refl _ lzero I) HΓF HF') as HF1.
+  destruct (IH i G2 Γ2 _ _ _ _ Hc HE Hctx Hν Hν' _ _ spa_refl spa_refl) as (W0 & X & _).
+  eapply actne_dvec; [exact Hl | exact X |].
+  apply (IHF i G2 (Γ2 ,, tyFin ν @ lzero) l l' Hc HE); [| exact HF | exact HF1].
+  exact (eqctx_ext_refl Hctx (gconv_ty HE HFin) (GEq_lwf (l := lzero) HE I)).
+Qed.
+
 Lemma C_actmne_app {G Γ l1 l2 l3 l4 A A' B B' ν ν' s s' m m' A0 B0} :
   ac_tmnee G Γ ν ν' (tyPi m m' A0 B0) -> C_nee G Γ ν ν' (tyPi m m' A0 B0) ->
   ac_tm G Γ s s' A0 -> C_tm G Γ s s' A0 ->
@@ -2089,7 +2110,8 @@ Proof.
     | solve [eapply C_actnf_wf; eassumption] | solve [eapply C_actmnf_supf; eassumption]
     | solve [eapply C_actmne_elimWf; eassumption]
     | solve [eapply C_actmnf_code_wf; eassumption]
-    | solve [eapply C_actne_vec; eassumption] | solve [eapply C_actne_fin; eassumption] ].
+    | solve [eapply C_actne_vec; eassumption] | solve [eapply C_actne_fin; eassumption]
+    | solve [eapply C_actne_dvec; eassumption] ].
 Qed.
 
 (** The statement without annotation changes. *)

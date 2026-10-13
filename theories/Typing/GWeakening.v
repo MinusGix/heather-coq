@@ -484,6 +484,7 @@ Lemma gwa_elimW l l' l'' A B M c t :
   (tmElimW l l' l'' A B M c t)⟦γ⟧ = tmElimW l l' l'' A⟦γ⟧ B⟦γ⟧ M⟦γ⟧ c⟦γ⟧ t⟦γ⟧.
 Proof. now destruct γ. Qed.
 Lemma gwa_tySq l A : (tySq l A)⟦γ⟧ = tySq l A⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tyDVec l n F : (tyDVec l n F)⟦γ⟧ = tyDVec l n⟦γ⟧ F⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_sq l A a : (tmSq l A a)⟦γ⟧ = tmSq l A⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_elimSq l l' A M c t :
   (tmElimSq l l' A M c t)⟦γ⟧ = tmElimSq l l' A⟦γ⟧ M⟦γ⟧ c⟦γ⟧ t⟦γ⟧.
@@ -583,6 +584,7 @@ Ltac push_gwa_at h k := lazymatch h with
   | @tmSEq => k gwa_tmSEq
   | @tmJ => k gwa_J
   | @tySq => k gwa_tySq
+  | @tyDVec => k gwa_tyDVec
   | @tmSq => k gwa_sq
   | @tmElimSq => k gwa_elimSq
   | @tmSqCode => k gwa_tmSqCode

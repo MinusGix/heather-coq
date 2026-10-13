@@ -338,6 +338,28 @@ Proof.
   eapply actne_fin; exact X.
 Qed.
 
+(** [DVec] at a neutral length (M17a): the family moves to the other
+    length's index type. *)
+Lemma Y_actne_dvec {G Γ l l' ν ν' F F' W} : leqv l l' -> ac_tmnee G Γ ν ν' W -> Y_nee G Γ ν ν' W ->
+  Y_ty G (Γ ,, tyFin ν @ lzero) F F' -> Y_tyne G Γ (tyDVec l ν F) (tyDVec l' ν' F').
+Proof.
+  intros Hl DN IH IHF i k k' Hc HX HX'. pose proof (compt_typeof_self _ Hc) as Hi.
+  pose proof (compt_notV _ Hc) as Hv.
+  destruct (inv_ty_dvec HX) as ((_ & W1 & Hν & HF) & _).
+  destruct (inv_ty_dvec HX') as ((_ & W2 & Hν' & HF') & _).
+  destruct (ac_nee_sound' DN Hc Hν Hν') as (_ & _ & Eν).
+  pose proof (ctx_of_wf_tm Hi Hν) as HΓ.
+  assert (HFin : [ G ; Γ ⊢[ i ] tyFin ν @ lzero ]) by (apply wft_fin; [exact Hv | exact Hν]).
+  assert (EFin : [ G ; Γ ⊢[ i ] tyFin ν ≅ tyFin ν' @ lzero ]) by (apply eqty_fin; [exact Hv | exact Eν]).
+  assert (HΓF : [ G ; Γ ,, tyFin ν @ lzero ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HFin | exact I]).
+  pose proof (stab_ty Hi (eqty_sym _ _ _ _ _ _ EFin) (lequiv_refl _ lzero I) HΓF HF') as HF1.
+  assert (Hctx : [ G ⊢[ i ] Γ ,, tyFin ν @ lzero ≅ Γ ,, tyFin ν' @ lzero ])
+    by (apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | exact HFin | exact EFin | exact (lequiv_refl _ lzero I)]).
+  destruct (IH i _ _ _ _ Hc Hν Hν') as (W' & X).
+  eapply actne_dvec; [exact (leqv_sym _ _ Hl) | exact X |].
+  exact (cv_ty (ctx_glob _ _ _ HΓ) Hc (IHF i l l' Hc HF HF1) Hctx HF1 HF).
+Qed.
+
 (** ** Local contexts *)
 
 Lemma Y_acc_nil {G} : Y_ctx G cnil cnil.
@@ -1559,6 +1581,7 @@ Proof.
     | solve [eapply Y_actnf_tpi; eassumption]
     | solve [eapply Y_actne_gvar; eassumption] | solve [eapply Y_actne_El; eassumption]
     | solve [eapply Y_actne_vec; eassumption] | solve [eapply Y_actne_fin; eassumption]
+    | solve [eapply Y_actne_dvec; eassumption]
     | solve [eapply Y_acc_nil] | solve [eapply Y_acc_var] | solve [eapply Y_acc_ext; eassumption]
     | solve [eapply Y_actm_red; eassumption]
     | solve [eapply Y_actmnf_code_nat] | solve [eapply Y_actmnf_code_U; eassumption]
@@ -1763,6 +1786,10 @@ Lemma ainv_vec {G Γ l A ν X} : ac_tyne G Γ (tyVec l A ν) X ->
   exists l' A' ν' W, X = tyVec l' A' ν' /\ leqv l l' /\ ac_ty G Γ A A' /\ ac_tmnee G Γ ν ν' W.
 Proof. intros H; ainv H. Qed.
 Lemma ainv_fin {G Γ ν X} : ac_tyne G Γ (tyFin ν) X -> exists ν' W, X = tyFin ν' /\ ac_tmnee G Γ ν ν' W.
+Proof. intros H; ainv H. Qed.
+Lemma ainv_dvec {G Γ l ν F X} : ac_tyne G Γ (tyDVec l ν F) X ->
+  exists l' ν' F' W, X = tyDVec l' ν' F' /\ leqv l l' /\ ac_tmnee G Γ ν ν' W /\
+    ac_ty G (Γ ,, tyFin ν @ lzero) F F'.
 Proof. intros H; ainv H. Qed.
 
 Lemma ainv_cnil {G X} : ac_ctx G cnil X -> X = cnil.
@@ -2162,6 +2189,37 @@ Proof.
   destruct (inv_ty_fin HX) as ((_ & Hν) & _). destruct (inv_ty_fin HX') as ((_ & Hν') & _).
   destruct (inv_ty_fin HX'') as ((_ & Hν'') & _).
   eapply actne_fin; exact (IH ν'' W2 i _ _ _ _ _ _ Hc Hν Hν' Hν'' Dν2).
+Qed.
+
+Lemma T_actne_dvec {G Γ l l' ν ν' F F' W} : leqv l l' -> ac_tmnee G Γ ν ν' W -> T_nee G Γ ν ν' W ->
+  T_ty G (Γ ,, tyFin ν @ lzero) F F' -> T_tyne G Γ (tyDVec l ν F) (tyDVec l' ν' F').
+Proof.
+  intros Hl DN IH IHF X'' i k k' k'' Hc HX HX' HX'' D2. pose proof (compt_typeof_self _ Hc) as Hi.
+  pose proof (compt_notV Hc) as Hv.
+  destruct (ainv_dvec D2) as (l'' & ν'' & F'' & W2 & -> & Hl2 & Dν2 & DF2).
+  destruct (inv_ty_dvec HX) as ((_ & _ & Hν & HF) & _).
+  destruct (inv_ty_dvec HX') as ((_ & _ & Hν' & HF') & _).
+  destruct (inv_ty_dvec HX'') as ((_ & _ & Hν'' & HF'') & _).
+  destruct (ac_nee_sound' DN Hc Hν Hν') as (_ & _ & Eν).
+  destruct (ac_nee_sound' Dν2 Hc Hν' Hν'') as (_ & _ & Eν2).
+  pose proof (ctx_of_wf_tm Hi Hν) as HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
+  assert (HFin : [ G ; Γ ⊢[ i ] tyFin ν @ lzero ]) by (apply wft_fin; [exact Hv | exact Hν]).
+  assert (HFin' : [ G ; Γ ⊢[ i ] tyFin ν' @ lzero ]) by (apply wft_fin; [exact Hv | exact Hν']).
+  assert (EF1 : [ G ; Γ ⊢[ i ] tyFin ν' ≅ tyFin ν @ lzero ])
+    by (apply eqty_fin; [exact Hv | now apply eqtm_sym]).
+  assert (EF2' : [ G ; Γ ⊢[ i ] tyFin ν'' ≅ tyFin ν' @ lzero ])
+    by (apply eqty_fin; [exact Hv | now apply eqtm_sym]).
+  pose proof (eqty_trans _ _ _ _ _ _ _ EF2' EF1) as EF2.
+  assert (HΓF : [ G ; Γ ,, tyFin ν @ lzero ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HFin | exact I]).
+  assert (HΓF' : [ G ; Γ ,, tyFin ν' @ lzero ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HFin' | exact I]).
+  pose proof (stab_ty Hi EF1 (lequiv_refl _ lzero I) HΓF HF') as HF1.
+  pose proof (stab_ty Hi EF2 (lequiv_refl _ lzero I) HΓF HF'') as HF2.
+  pose proof (stab_ty Hi EF2' (lequiv_refl _ lzero I) HΓF' HF'') as HF2'.
+  assert (Hctx : [ G ⊢[ i ] Γ ,, tyFin ν' @ lzero ≅ Γ ,, tyFin ν @ lzero ])
+    by (apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | exact HFin' | exact EF1 | exact (lequiv_refl _ lzero I)]).
+  pose proof (cv_ty HG Hc DF2 Hctx HF' HF2') as DF2'.
+  eapply actne_dvec; [exact (leqv_trans _ _ _ Hl Hl2) | exact (IH ν'' W2 i _ _ _ _ _ _ Hc Hν Hν' Hν'' Dν2)
+                     | exact (IHF F'' i _ _ _ Hc HF HF1 HF2 DF2')].
 Qed.
 
 (** ** Local contexts *)
@@ -4066,6 +4124,7 @@ Proof.
     | solve [eapply T_actnf_tpi; eassumption]
     | solve [eapply T_actne_gvar; eassumption] | solve [eapply T_actne_El; eassumption]
     | solve [eapply T_actne_vec; eassumption] | solve [eapply T_actne_fin; eassumption]
+    | solve [eapply T_actne_dvec; eassumption]
     | solve [eapply T_acc_nil] | solve [eapply T_acc_var] | solve [eapply T_acc_ext; eassumption]
     | solve [eapply T_actm_red; eassumption]
     | solve [eapply T_actmnf_code_nat] | solve [eapply T_actmnf_code_U; eassumption]

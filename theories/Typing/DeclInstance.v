@@ -236,6 +236,10 @@ Proof.
     apply eqtm_sq_irr; eauto using lequiv_wf_l, eqtm_wf_l.
   (* the code of ∥·∥ *)
   - intros; apply eqtm_code_sq; auto.
+  (* dependent tuples at a neutral length *)
+  - intros * Hl (Hn & Hn' & Hν) HF HFF.
+    refine (conj _ (conj _ _)); [constructor; auto .. |].
+    apply eqty_dvec; auto. exact (eqtm_wf_l Hty Hν).
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].

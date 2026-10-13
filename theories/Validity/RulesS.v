@@ -177,6 +177,7 @@ Ltac s_push_at h k := lazymatch h with
   | @tmSEq => k gs_tmSEq
   | @tmJ => k gs_J
   | @tySq => k gs_tySq
+  | @tyDVec => k gs_tyDVec
   | @tmSq => k gs_sq
   | @tmElimSq => k gs_elimSq
   | @tmSqCode => k gs_tmSqCode
@@ -245,7 +246,10 @@ Ltac fts_case :=
   | solve [simple eapply V_sq; s_side] | solve [simple eapply V_sq_intro; s_side]
   | solve [simple eapply V_sq_irr; s_side] | solve [simple eapply V_elimSq; s_side]
   (* the code of ∥·∥ (M16b) *)
-  | solve [simple eapply V_code_sq; s_side] | solve [simple eapply V_El_sq; s_side] ].
+  | solve [simple eapply V_code_sq; s_side] | solve [simple eapply V_El_sq; s_side]
+  (* dependent tuples (M17a) *)
+  | solve [simple eapply V_dvec; s_side] | solve [simple eapply V_dvec_zero; s_side]
+  | solve [simple eapply V_dvec_succ; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=
@@ -749,6 +753,19 @@ Proof using EL VL VN.
   apply VS_code_fin; exact Vn.
 Qed.
 
+(** Dependent tuples (M17a). *)
+Lemma VS_dvec {G Γ l l' n n' F F'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTmS G Γ n n' tyNat lzero -> VTyS G (Γ ,, tyFin n @ lzero) F F' l ->
+  VTyS G Γ (tyDVec l n F) (tyDVec l' n' F') l.
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_dvec_zero {G Γ l l' F F'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTyS G (Γ ,, tyFin zero @ lzero) F F' l -> VTyS G Γ (tyDVec l zero F) (tyUnit l') l.
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_dvec_succ {G Γ l l' n n' F F'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTmS G Γ n n' tyNat lzero -> VTyS G (Γ ,, tyFin (succ n) @ lzero) F F' l ->
+  VTyS G Γ (tyDVec l (succ n) F) (tySig l' l' (dvecHd n' F') (dvecTl l' n' F')) l.
+Proof using EL VL VN. intros; s_lift. Qed.
+
 (** Finitary well-founded trees (M15a). *)
 Lemma VS_wf {G Γ l l' A A' N N'} : lwf (gL G) l -> lequiv (gL G) l' l ->
   VTyS G Γ A A' l -> VTmS G (Γ ,, A @ l) N N' tyNat lzero -> VTyS G Γ (tyWf l A N) (tyWf l' A' N') l.
@@ -927,4 +944,7 @@ Ltac vs_rules side :=
   | solve [simple eapply VS_elimSq_sq; side]
   | solve [simple eapply VS_sq_single; side] | solve [simple eapply VS_sq_single_sq; side]
   (* the code of ∥·∥ (M16b) *)
-  | solve [simple eapply VS_code_sq; side] | solve [simple eapply VS_El_sq; side] ].
+  | solve [simple eapply VS_code_sq; side] | solve [simple eapply VS_El_sq; side]
+  (* dependent tuples (M17a) *)
+  | solve [simple eapply VS_dvec; side] | solve [simple eapply VS_dvec_zero; side]
+  | solve [simple eapply VS_dvec_succ; side] ].

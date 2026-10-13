@@ -101,6 +101,7 @@ Ltac gl_push_at h k := lazymatch h with
   | @tmSEq => k gwa_tmSEq
   | @tmJ => k gwa_J
   | @tySq => k gwa_tySq
+  | @tyDVec => k gwa_tyDVec
   | @tmSq => k gwa_sq
   | @tmElimSq => k gwa_elimSq
   | @tmSqCode => k gwa_tmSqCode

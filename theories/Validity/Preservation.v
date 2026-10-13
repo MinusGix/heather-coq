@@ -795,6 +795,27 @@ Proof.
   apply (retype_eqty Hk). exact (eqty_fin _ _ _ _ _ (compt_notV _ Hc) (IH _ _ _ _ _ Hc Hn)).
 Qed.
 
+Lemma RS_dvec_zero l F : RS_ty (tyDVec l zero F) (tyUnit l).
+Proof.
+  intros G i Γ k Hc HT. destruct (inv_ty_dvec HT) as ((_ & Wl & _ & HF) & Hk).
+  apply (retype_eqty Hk). exact (eqty_dvec_zero _ _ _ _ _ Hc Wl HF).
+Qed.
+
+Lemma RS_dvec_succ l n F : RS_ty (tyDVec l (succ n) F) (tySig l l (dvecHd n F) (dvecTl l n F)).
+Proof.
+  intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_dvec HT) as ((_ & Wl & Hs & HF) & Hk).
+  destruct (inv_succ Hi Hs) as ((_ & Hn) & _).
+  apply (retype_eqty Hk). exact (eqty_dvec_succ _ _ _ _ _ _ Hc Wl Hn HF).
+Qed.
+
+Lemma RS_dvec l n n' F : RS_tm n n' -> RS_ty (tyDVec l n F) (tyDVec l n' F).
+Proof.
+  intros IH G i Γ k Hc HT. destruct (inv_ty_dvec HT) as ((_ & Wl & Hn & HF) & Hk).
+  apply (retype_eqty Hk).
+  exact (eqty_dvec _ _ _ _ _ _ _ _ _ Hc (lequiv_refl _ _ Wl) Hn (IH _ _ _ _ _ Hc Hn) HF (eqty_refl _ _ _ _ _ HF)).
+Qed.
+
 (** ** Soundness of reduction *)
 
 Theorem red_sound_all (HR : RecRedTyped) :
@@ -828,7 +849,8 @@ Proof.
     | solve [apply RS_vec_zero] | solve [apply RS_vec_succ] | solve [apply RS_vec; assumption]
     | solve [apply RS_fin_zero] | solve [apply RS_fin_succ] | solve [apply RS_fin; assumption]
     | solve [apply RS_El_vec] | solve [apply RS_El_fin] | solve [apply RS_El_wf]
-    | solve [apply RS_El_sq] ].
+    | solve [apply RS_El_sq]
+    | solve [apply RS_dvec_zero] | solve [apply RS_dvec_succ] | solve [apply RS_dvec; assumption] ].
 Qed.
 
 Section Consequences.

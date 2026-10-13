@@ -169,6 +169,30 @@ Proof.
   rewrite <- (ac_nee_uniq D0 Dν) in Dν. exact (N Dν).
 Qed.
 
+(** [DVec] at a neutral length (M17a): the lengths first, so that the
+    other family moves to this length's index type. *)
+Lemma Dc_actne_dvec {G Γ l l0 ν ν0 F F0 W} : ac_tmnee G Γ ν ν0 W -> Dc_nee G Γ ν ν0 W ->
+  Dc_ty G (Γ ,, tyFin ν @ lzero) F F0 -> Dc_tyne G Γ (tyDVec l ν F) (tyDVec l0 ν0 F0).
+Proof.
+  intros D0 IH IHF X i k k' Hc HX HX'. destruct X; try solve [refute_con | refute].
+  match goal with |- Dec (ac_tyne _ _ _ (tyDVec ?a ?b ?c)) => rename a into l', b into ν', c into F' end.
+  pose proof (compt_typeof_self _ Hc) as Hi. assert (Hv : i <> lV) by (apply compt_notV; exact Hc).
+  destruct (inv_ty_dvec HX) as ((_ & _ & Hν & HF) & _). destruct (inv_ty_dvec HX') as ((_ & _ & Hν' & HF') & _).
+  destruct (leqv_dec l l') as [Hl | N]; [| refute].
+  destruct (IH ν' i _ _ _ _ Hc Hν Hν') as [Dν | N].
+  2: { right; intros D. destruct (ainv_dvec D) as (l2 & ν2 & F2 & W2 & E & _ & Dν & _).
+       injection E as <- <- <-. rewrite <- (ac_nee_uniq D0 Dν) in Dν. exact (N Dν). }
+  destruct (ac_nee_sound' Dν Hc Hν Hν') as (_ & _ & Eν).
+  assert (EFin : [ G ; Γ ⊢[ i ] tyFin ν' ≅ tyFin ν @ lzero ])
+    by (apply eqty_fin; [exact Hv | now apply eqtm_sym]).
+  assert (HΓF : [ G ; Γ ,, tyFin ν @ lzero ⊢[ i ] ])
+    by (apply wfc_ext; [exact (ctx_of_wf_tm Hi Hν) | apply wft_fin; [exact Hv | exact Hν] | exact I]).
+  pose proof (stab_ty Hi EFin (lequiv_refl _ lzero I) HΓF HF') as HF1.
+  destruct (IHF F' i _ _ Hc HF HF1) as [DF | N]; [left; eapply actne_dvec; eassumption |].
+  right; intros D. destruct (ainv_dvec D) as (l2 & ν2 & F2 & W2 & E & _ & _ & DF).
+  injection E as <- <- <-. exact (N DF).
+Qed.
+
 (** ** Local contexts *)
 
 Lemma Dc_acc_nil {G} : Dc_ctx G cnil cnil.

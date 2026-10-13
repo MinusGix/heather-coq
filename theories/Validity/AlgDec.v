@@ -32,6 +32,7 @@ Proof.
     | solve [eapply Dc_actnf_tpi; eassumption]
     | solve [eapply Dc_actne_gvar; eassumption] | solve [eapply Dc_actne_El; eassumption]
     | solve [eapply Dc_actne_vec; eassumption] | solve [eapply Dc_actne_fin; eassumption]
+    | solve [eapply Dc_actne_dvec; eassumption]
     | solve [eapply Dc_acc_nil] | solve [eapply Dc_acc_var] | solve [eapply Dc_acc_ext; eassumption]
     | solve [eapply Dc_actm_red; eassumption]
     | solve [eapply Dc_actmnf_code_nat] | solve [eapply Dc_actmnf_code_U]
