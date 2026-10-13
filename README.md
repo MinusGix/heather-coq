@@ -145,8 +145,16 @@ From M8 on, the milestones check the extensions of Heather's kernel
   irrelevance stay at D and M), and the code recursor's four branches
   51–54, whose scopes agree with Heather's `rec.rs`. See `M16_DESIGN.md`.
 
+- Milestone 17a: dependent vectors. `DVec^l(k; i. F)` (a `Vec` whose
+  element type depends on the position `i : Fin k`) holds at layers D
+  and M through the relation, validity and the algorithm, computing to
+  `Unit` at `0` and to a `Σ` at a successor. The derived projection
+  `dnth` (Heather's `IWf` design, its §3) is typed and valid (`V_dnth`),
+  including the Unit-η and β conversions its typing crosses, and a
+  neutral tuple projects by reduction. See `M17_DESIGN.md`.
+
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
-`M16_DESIGN.md`) for decisions, deviations from the paper and gotchas.
+`M17_DESIGN.md`) for decisions, deviations from the paper and gotchas.
 
 Documents:
 

@@ -1,6 +1,6 @@
 # M17: indexed finitary trees (`DVec`, `IWf`), design
 
-Status: **M17a in progress** (2026-10-13). Why now: Heather froze `IWf`'s
+Status: **M17a done** (2026-10-13); M17b next. Why now: Heather froze `IWf`'s
 rule set (`H/docs/iwf-former-design.md` §1–§6, 2026-10-13), and `IWf` is
 how its kernel loses `transp` and the strip: route 2b's indexed families
 store an index equation that only `transp` can use, and `IWf` stores
@@ -157,6 +157,38 @@ whether that composition goes through; the answer is M17a's.
 Heather's neutral-tuple property (doc §3: `dnth(3; F; cs; inr (inl ⟨⟩))`
 reduces to `fst (snd cs)` for a neutral `cs`) is checked as an untyped
 reduction, as `nth_reds_*` (M15a).
+
+## M17a outcome
+
+Done, no admits or axioms. Files:
+- `Validity/DVec.v`: `DVec` through the relation (`LR_dvec_nat` over
+  `DFam`, as designed), validity (`V_dvec`, the computation rules), the
+  generic law `gne_ty_dvec`, the algorithm (`actne_dvec`) and its
+  soundness, completeness and decidability. The relation needed no new
+  case, as planned.
+- `Typing/DNth.v`: `dnth_wf`, the typing derivation of the schema
+  above. Its Ltac (`gvar`'s context search) is at the top level, so
+  `Validity/DVecNth.v` reuses it.
+- `Validity/DVecNth.v`: `V_dnth`, `dnth`'s index lemma, composed along
+  `dnth_wf` as `V_nth` is. The three conversions went through as
+  designed:
+  - the embedding `e` is carried as a valid term of `Emb_K` in an
+    extended context, and its applications are related by one
+    generalised lemma (`VG_emb_app_g`) whose right-hand annotation is
+    free, so the identity embedding and the composed `λy. e (inr y)`
+    are both instances;
+  - β is `VG_fam_beta`: `F[(λy. b) s]` and `F[b[s]]` are related
+    types, from `VG_beta` and `F`'s validity at related indices
+    (`VG_fam_rel`);
+  - Unit-η is `VG_unit_eta` at the `inl` arm (`VG_fin_inl`/`_inr` give
+    the injections' validity at `Fin(S k)`'s reduct).
+  `VTy_single`/`VTyG_single` moved from `ValidS.v` to `App.v`, so the
+  file needs neither `ValidS` nor the substitution lemmas behind it.
+- The neutral-tuple property is checked on doc §3's own instance
+  (`Validity/DVecNthReds.v`, `dnth_reds_example`): `dnth(3; F; cs;
+  inr (inl ⟨⟩))` reduces to `fst (snd cs)` for any `cs` in normal form,
+  ten steps (two `natrec`s, the rest β and `case`). It is a leaf no
+  file requires, so it costs the build CPU, not wall time.
 
 ## M17b: the relation for `IWf` (design, ahead)
 
