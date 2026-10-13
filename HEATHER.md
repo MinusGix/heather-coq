@@ -247,6 +247,14 @@ M15b outcome.
    Heather removed `transp` and the strip (S8). M10c, the codes (six
    branches, no `transp`), is done. Indexed families become the `IWf`
    former (H `docs/iwf-former-design.md`), a milestone after `W`/`Wf`.
+   Its rule set (§1–§6) was frozen on 2026-10-13. `Vec`/`Wf` stay separate
+   formers in Heather for now, with abbreviations as the target (its §10),
+   so `DVec`/`IWf` land here as siblings of `Vec`/`Wf`. The two pairs are
+   translations, not conversions: at a neutral length they are distinct
+   neutral types, and `elim_IWf`'s ih goes through `dnth` where
+   `elim_Wf`'s goes through `nth`. The relation probe checks `dnth`'s
+   index lemma first: the ih's type is `F[i]` only up to β, one step more
+   than `V_nth` (M15a) needed.
 5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash). `Id` is done (M11a and
    M11b, M11_DESIGN.md). `Empty` and `+` are done, with codes and
    recursor branches (M12a–c, M12_DESIGN.md). `W` is done, with its
