@@ -22,6 +22,24 @@ Proof.
   change (ren_tm ?x ?r) with x⟨r⟩. symmetry; apply shift_single, Hd.
 Qed.
 
+(** ** Validity at a single substitution (here rather than in [ValidS]
+    since M17a: [dnth]'s validity instantiates its family with it) *)
+
+Lemma VTy_single {G Γ A B B' a a' l l'} :
+  VTy G (Γ ,, A @ l) B B' l' -> VTm G Γ a a' A l -> VTy G Γ B[lsingle a] B'[lsingle a'] l'.
+Proof.
+  intros HB Ha Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
+  rewrite !single_subst_ty, !lift_single_ty by assumption.
+  exact (HB _ _ _ (SubRel_cons Hd (Ha _ _ _ Hd))).
+Qed.
+
+Lemma VTyG_single {G Γ A B B' a a' l l'} :
+  VTyG G (Γ ,, A @ l) B B' l' -> VTmG G Γ a a' A l -> VTyG G Γ B[lsingle a] B'[lsingle a'] l'.
+Proof.
+  intros HB Ha G' γ Hγ. pose proof (HB _ _ Hγ) as X. rewrite gwa_cext in X.
+  rewrite !gwa_subst_ty, !gwa_lsingle. exact (VTy_single X (Ha _ _ Hγ)).
+Qed.
+
 (** ** The Π relation at the identity weakening *)
 
 Lemma PiRel_id {G Δ l1 l2 l3 l4 A B A' B' domR codR t t'} (HΔ : [ G ; Δ ⊢g ]) :

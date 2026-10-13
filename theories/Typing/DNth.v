@@ -46,6 +46,54 @@ Proof using . intros H. exact (wkr_step _ _ _ A l H). Qed.
 
 Ltac wkr_n := repeat first [ apply wkr_shiftS | apply wkr_id | apply wkr_shift1 ].
 
+(** ** Syntactic equations of the motive's instances *)
+
+(** [PresupAux]'s [teq_core] (local to its section): two substitution
+    instances agree pointwise. *)
+Ltac tcong := repeat match goal with
+  | |- tyPi _ _ _ _ = tyPi _ _ _ _ => f_equal
+  | |- tySig _ _ _ _ = tySig _ _ _ _ => f_equal
+  | |- tyDVec _ _ _ = tyDVec _ _ _ => f_equal
+  | |- tyFin _ = tyFin _ => f_equal
+  end.
+Ltac fin_sub := repeat match goal with
+  | |- context [subst_ty (tyFin ?a) ?d] => change (subst_ty (tyFin a) d) with (tyFin (a[d]))
+  | |- context [(tyFin ?a)[?d]] => change ((tyFin a)[d]) with (tyFin (a[d]))
+  end;
+  f_equal; repeat rewrite subst_comp; apply subst_ext; intros ?m; pw;
+  rewrite Nat.add_comm; cbn [Nat.add llk]; push_ren; rlk_simpl; cbn; f_equal; lia.
+Ltac teq_core := repeat first [ rewrite ren_as_r2l_ty | rewrite ren_as_r2l ];
+  repeat first [ rewrite subst_comp_ty | rewrite subst_comp ];
+  first [ apply subst_ext_ty | apply subst_ext
+        | apply subst_id_ty; [assumption|] | apply subst_id; [assumption|]
+        | symmetry; apply subst_id_ty; [assumption|] | symmetry; apply subst_id; [assumption|] ];
+  intros [|[|[|[|[|[|[|[|?n]]]]]]]]; unfold lsucc; pw;
+  try solve [apply ren_as_r2l | symmetry; apply ren_as_r2l].
+(** Raw [ren_ty] (and the like) left by [cbn], back to the classes'
+    notation, which [push_ren] and [push_subst] read. *)
+Ltac refold := try change ren_ty with (@ren ty Ren_ty); try change ren_tm with (@ren tm Ren_tm);
+  try change subst_ty with (@subst ty Subst_ty); try change subst_tm with (@subst tm Subst_tm).
+(** A pointwise term equation: congruence down to [n]'s instances, which
+    are compared as substitutions. *)
+Ltac n_eq := repeat first [ rewrite ren_as_r2l | rewrite ren_as_r2l_ty ];
+  repeat first [ rewrite subst_comp | rewrite subst_comp_ty ];
+  first [ apply subst_ext | apply subst_ext_ty ]; intros ?m; pw;
+  rewrite Nat.add_comm; cbn [Nat.add llk]; push_ren; rlk_simpl; cbn; f_equal; lia.
+Ltac tq := refold; push_ren; push_subst; pw;
+  repeat match goal with
+  | |- ?x = ?x => reflexivity
+  | |- app _ _ _ _ _ _ = app _ _ _ _ _ _ => f_equal
+  | |- lam _ _ _ _ = lam _ _ _ _ => f_equal
+  | |- tmInr _ _ _ _ _ = tmInr _ _ _ _ _ => f_equal
+  | |- tmInl _ _ _ _ _ = tmInl _ _ _ _ _ => f_equal
+  | |- succ _ = succ _ => f_equal
+  | |- tyFin _ = tyFin _ => f_equal
+  | |- var _ = var _ => f_equal; lia
+  | |- _ = _ => progress (refold; push_ren; push_subst; pw)
+  end; n_eq.
+(** The motive's equations: congruence, then pointwise. *)
+Ltac meq := push_subst; tcong; try solve [pw]; try teq_core; try solve [f_equal; try reflexivity; fin_sub]; try solve [tq].
+
 Section DNth.
 Context {G : gctx} {i : layer} (Hc : compt i).
 
@@ -93,58 +141,11 @@ Qed.
 
 Ltac wvar := eapply wf_tm_retype; [eapply wf_var; [rewrite Hi; eassumption | repeat constructor] |
   try (unfold dnthMot, dnthEmb, dnthFam, dnthRes, dnthFamS; push_ren; rlk_simpl; nshift; reflexivity)].
-Ltac wkn H := first [ exact H | eapply (wk1_ty G i Hi); [eassumption | wkn H] | eapply (wk1_tm G i Hi); [eassumption | wkn H] ].
 
 Lemma lq_00 : lequiv (gL G) lzero (lmax lzero lzero).
 Proof using . apply lequiv_sym, lmax_idem; exact I. Qed.
 
 (** ** The motive's instances *)
-
-(** [PresupAux]'s [teq_core] (local to its section): two substitution
-    instances agree pointwise. *)
-Ltac tcong := repeat match goal with
-  | |- tyPi _ _ _ _ = tyPi _ _ _ _ => f_equal
-  | |- tySig _ _ _ _ = tySig _ _ _ _ => f_equal
-  | |- tyDVec _ _ _ = tyDVec _ _ _ => f_equal
-  | |- tyFin _ = tyFin _ => f_equal
-  end.
-Ltac fin_sub := repeat match goal with
-  | |- context [subst_ty (tyFin ?a) ?d] => change (subst_ty (tyFin a) d) with (tyFin (a[d]))
-  | |- context [(tyFin ?a)[?d]] => change ((tyFin a)[d]) with (tyFin (a[d]))
-  end;
-  f_equal; repeat rewrite subst_comp; apply subst_ext; intros ?m; pw;
-  rewrite Nat.add_comm; cbn [Nat.add llk]; push_ren; rlk_simpl; cbn; f_equal; lia.
-Ltac teq_core := repeat first [ rewrite ren_as_r2l_ty | rewrite ren_as_r2l ];
-  repeat first [ rewrite subst_comp_ty | rewrite subst_comp ];
-  first [ apply subst_ext_ty | apply subst_ext
-        | apply subst_id_ty; [assumption|] | apply subst_id; [assumption|]
-        | symmetry; apply subst_id_ty; [assumption|] | symmetry; apply subst_id; [assumption|] ];
-  intros [|[|[|[|[|[|[|[|?n]]]]]]]]; unfold lsucc; pw;
-  try solve [apply ren_as_r2l | symmetry; apply ren_as_r2l].
-(** Raw [ren_ty] (and the like) left by [cbn], back to the classes'
-    notation, which [push_ren] and [push_subst] read. *)
-Ltac refold := try change ren_ty with (@ren ty Ren_ty); try change ren_tm with (@ren tm Ren_tm);
-  try change subst_ty with (@subst ty Subst_ty); try change subst_tm with (@subst tm Subst_tm).
-(** A pointwise term equation: congruence down to [n]'s instances, which
-    are compared as substitutions. *)
-Ltac n_eq := repeat first [ rewrite ren_as_r2l | rewrite ren_as_r2l_ty ];
-  repeat first [ rewrite subst_comp | rewrite subst_comp_ty ];
-  first [ apply subst_ext | apply subst_ext_ty ]; intros ?m; pw;
-  rewrite Nat.add_comm; cbn [Nat.add llk]; push_ren; rlk_simpl; cbn; f_equal; lia.
-Ltac tq := refold; push_ren; push_subst; pw;
-  repeat match goal with
-  | |- ?x = ?x => reflexivity
-  | |- app _ _ _ _ _ _ = app _ _ _ _ _ _ => f_equal
-  | |- lam _ _ _ _ = lam _ _ _ _ => f_equal
-  | |- tmInr _ _ _ _ _ = tmInr _ _ _ _ _ => f_equal
-  | |- tmInl _ _ _ _ _ = tmInl _ _ _ _ _ => f_equal
-  | |- succ _ = succ _ => f_equal
-  | |- tyFin _ = tyFin _ => f_equal
-  | |- var _ = var _ => f_equal; lia
-  | |- _ = _ => progress (refold; push_ren; push_subst; pw)
-  end; n_eq.
-(** The motive's equations: congruence, then pointwise. *)
-Ltac meq := push_subst; tcong; try solve [pw]; try teq_core; try solve [f_equal; try reflexivity; fin_sub]; try solve [tq].
 
 Lemma dnth_E0 l (n : tm) (F : ty) : nftm n -> nfty F ->
   (dnthMot l n F)[lsingle zero] =

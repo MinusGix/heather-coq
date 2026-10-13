@@ -111,6 +111,7 @@ theories/Validity/GLift.v
 theories/Validity/Wf.v
 theories/Validity/WfNthReds.v
 theories/Validity/WfNth.v
+theories/Validity/DVecNth.v
 theories/Validity/WfElim.v
 theories/Validity/Squash.v
 theories/Validity/Fundamental.v
