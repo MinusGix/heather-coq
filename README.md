@@ -140,6 +140,10 @@ From M8 on, the milestones check the extensions of Heather's kernel
   alone, a `squash` whose payload is related to itself or a neutral
   related to itself. The algorithm compares neither scrutinees nor steps.
   See `M16_DESIGN.md`.
+- Milestone 16b: `∥·∥`'s code `∥s∥ : Ty l`, the lift of `∥A∥`, `squash`
+  and `ind_∥∥` to every layer but V (the computing rules, β and proof
+  irrelevance stay at D and M), and the code recursor's four branches
+  51–54, whose scopes agree with Heather's `rec.rs`. See `M16_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
 `M16_DESIGN.md`) for decisions, deviations from the paper and gotchas.

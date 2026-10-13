@@ -1,7 +1,7 @@
 # M16: propositional truncation (`Squash`), design
 
-Status: **M16a done** (2026-10-10; outcome at the end), M16b (the code
-and the recursor branches) next. Why now: `HEATHER.md` item 5
+Status: **done**. M16a (2026-10-10) and M16b (2026-10-13), outcomes at
+the end. Why now: `HEATHER.md` item 5
 lists `Squash` as the last former of Heather's kernel without a check here,
 and its relation was settled by a probe (`probes/SquashProbe.v`,
 heather-coq#8). Heather's `issues/metatheory-ch07-squash.md` owns the full
@@ -198,3 +198,47 @@ the 2026-10-10 cloud machine of this round (critical path 1071 s, total CPU
 1678 s), where the M15b tree measured 1234 s (critical path 1023 s, total
 CPU 1585 s) the same day: about 5% more on each. This machine is slower
 than the one M15b was first measured on (887 s).
+
+## M16b outcome (2026-10-13)
+
+Done as staged: the code, the lift and the four branches. Every headline
+theorem stays closed under the global context: `Print Assumptions` of
+`consistency`, `closed_canonicity`, `decl_eqtm_dec_any`, `fundamentalS`,
+`fundamentalM`, `type_uniq`, `red_sound_tm` and `rec_code` lists nothing.
+
+- **The code** `tmSqCode l s : tyU l @ lsuc l` (`∥s∥`), at every layer
+  but V, decodes by `eqty_El_sq` (`El ∥s∥ ≡ ∥El s∥`, layers D and M).
+  Its congruence `eqtm_code_sq` has no typing premise, as `Vec`'s code
+  (the presupposition comes from the equation's). Its validity
+  (`V_code_sq`, `Validity/Squash.v`) and algorithm cases (`AlgDecDef`
+  constructor 58, `actnf` and the `AlgEq` laws) follow `Wf`'s code.
+- **The lift.** `wft_sq`, `wf_sq`, `wf_elimSq`, `eqty_sq`, `eqtm_sq` and
+  `eqtm_elimSq` hold at every layer but V (`i <> lV`, was `compt i`).
+  The computing rules stay at D and M: `eqty_El_sq`, `eqtm_elimSq_sq`
+  (β) and `eqtm_sq_irr` (proof irrelevance), as M12–M15 kept β there.
+  Inversion (`inv_sq`, `inv_elimSq`, `inv_ty_sq`, `inva_*`) and
+  presupposition (`PresupAux`'s `pre_*_r` and `sq_branch_r`, which no
+  longer take `compt i`) follow. At C, `PresupC` gains `pc_tySq`, `pc_sq`
+  and `pc_elimSq` over `StaticCode`'s `sc_tySq`, `sc_sq_q` and
+  `sc_elimSq_q`; the step's equation is `sq_facts_D`. Type checking
+  decides `i <> lV` (`notV`) instead of `compt i`.
+- **The branches** 51–54 (`bSq`, `bSq'`, `bSqIn`, `bElimSq`) with Heather's
+  scopes: `∥A∥` calls the carrier; `∥s∥` the code at `U`; `squash(A; a)`
+  the carrier and the payload; `ind_∥∥` the carrier, the motive (over
+  `z : ∥A∥`), the step (over `x : A`, at `∥M[squash x]∥`) and the
+  scrutinee. `br_calls_derived` checks the calls against the scopes.
+  The typing and reduct cases are in `Validity/RecSSq.v` (`RT_sq`,
+  `Rt_codesq`, `Rt_sq`, `Rt_elimSq`) and `RecReductCases`.
+- **Gotchas.** The step type's shifted carrier `A⟨↑⟩` under `tmSq` is a
+  renaming the global substitution does not push: `gs_solve`, `sr_ctx` and
+  `RecReductCases`' `gw_solve`/`rr_ctx` leave it stuck as a raw `fix`.
+  `RecSSq`'s `gs_solve_sq` and `sq_step` compute the renaming first
+  (`W_cbn`), then put the instance back in the rule's `⟨rlift ↑⟩` form
+  (`SubstCommute.liftshift_single_ty`); `GRenSyntax` and `RecGSubst`'s
+  `gpeel_push` gain the same step (`gs_sq_step_ty'`). The right-hand
+  `GS_br` wants the right step and scrutinee at the left's levels, so
+  `Rt_elimSq` states them first (`Hc'R`, `Ht'R`), as `Rt_elimWf` does.
+  `apply lequiv_sym, Q` fails on a goal `lequiv _ ?l l` (the evar is
+  unified before `lequiv_sym` applies): give the symmetric proof
+  directly.
+
