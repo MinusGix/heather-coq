@@ -787,6 +787,79 @@ Ltac fun_Wf :=
           [match goal with IH : _ |- _ => eapply IH; solve [eauto 6 with fung] end | sub_rw; reflexivity] ]
   end.
 
+(** [IWf] (M17b): the substitutions lifted along the premises' contexts
+    (as they come, the contexts and types then agree by [sub_eqI]); each
+    premise is the left substitution's instance of a typing, or an
+    induction hypothesis. *)
+Ltac fun_Ity :=
+  first [ eapply lift_ty; [ eapply wf_ty_subst_g; [ eassumption | eapply lsub_eq_l; eassumption ]
+                          | apply lle_self_typeof ]
+        | cbn [subst Subst_ty subst_ty]; apply wft_fin_typeof;
+          [ eauto with fung
+          | eapply wf_tm_retype; [ eapply wf_tm_subst_g; [ eassumption | eapply lsub_eq_l; eassumption ]
+                                 | reflexivity ] ] ].
+Ltac fun_Ieq :=
+  first [ eapply lift_eqty;
+          [ match goal with IH : forall Δ d d', lsub_eq _ _ _ _ _ _ -> eq_ty _ _ _ _ _ _ |- _ =>
+              eapply IH; eassumption end
+          | apply lle_self_typeof ]
+        | cbn [subst Subst_ty subst_ty]; eapply lift_eqty;
+          [ apply eqty_fin;
+            [ eauto with fung
+            | eapply eq_tm_retype;
+              [ match goal with IH : forall Δ d d', lsub_eq _ _ _ _ _ _ -> eq_tm _ _ _ _ _ _ _ |- _ =>
+                  eapply IH; eassumption end
+              | reflexivity ] ]
+          | apply lle_self_typeof ] ].
+Ltac fun_lwf := cbn; repeat split; try exact I; assumption.
+Ltac fun_Ilift Hc T l Hn :=
+  lazymatch type of Hc with
+  | lsub_eq ?G ?i ?Δc ?e ?e' ?Γc =>
+      assert (Hn : lsub_eq G i (Δc ,, T[e] @ l) (llift e) (llift e') (Γc ,, T @ l))
+        by (eapply lsub_eq_lift_g; [exact Hc | fun_Ity | fun_lwf | fun_Ieq | reflexivity])
+  end.
+Ltac fun_IWf_lifts X A N d :=
+  let HnX := fresh "HnX" in let HnA := fresh "HnA" in let HnF := fresh "HnF" in
+  let HnMo := fresh "HnMo" in let HnC := fresh "HnC" in let HnI := fresh "HnI" in
+  match goal with
+  | wX : wf_ty _ _ _ X ?li, wA : wf_ty _ _ _ A ?l, Hd : lsub_eq _ _ _ d _ _ |- _ =>
+      (* [d'] normal, for [sub_eqI]'s rewrites at the right-hand side *)
+      pose proof (lsub_eq_r Hd);
+      fun_Ilift Hd X li HnX; fun_Ilift Hd A l HnA; fun_Ilift HnA (tyFin N) lzero HnF;
+      try (match goal with wMo : wf_ty _ _ (_ ,, X @ _) ?Mo ?lm |- _ => fun_Ilift HnX Mo lm HnMo end);
+      try (match goal with
+           | wC : wf_ty _ _ (_ ,, A @ _) ?Cs ?lc |- _ =>
+               fun_Ilift HnA Cs lc HnC;
+               match goal with wI : wf_ty _ _ (_ ,, A @ _ ,, Cs @ _) ?Ih ?lh |- _ => fun_Ilift HnC Ih lh HnI end
+           end)
+  end.
+Ltac fun_Ityped :=
+  match goal with
+  | Hn : lsub_eq _ _ _ _ _ _, w : wf_ty _ _ _ _ _ |- wf_ty _ _ _ _ _ =>
+      eapply wf_ty_regboth; [exact (wf_ty_subst_g w (lsub_eq_l Hn)) | solve [sub_eqI] | solve [sub_eqI]]
+  | Hn : lsub_eq _ _ _ _ _ _, w : wf_tm _ _ _ _ _ _ |- wf_tm _ _ _ _ _ _ =>
+      eapply wf_tm_regctx; [exact (wf_tm_subst_g w (lsub_eq_l Hn)) | solve [sub_eqI] | solve [sub_eqI]]
+  end.
+Ltac fun_Ieqprem :=
+  match goal with
+  | Hn : lsub_eq _ _ _ _ _ _, IH : forall Δ d d', lsub_eq _ _ _ _ _ _ -> eq_ty _ _ _ _ _ _ |- eq_ty _ _ _ _ _ _ =>
+      eapply eq_ty_regall; [exact (IH _ _ _ Hn) | solve [sub_eqI] ..]
+  | Hn : lsub_eq _ _ _ _ _ _, IH : forall Δ d d', lsub_eq _ _ _ _ _ _ -> eq_tm _ _ _ _ _ _ _ |- eq_tm _ _ _ _ _ _ _ =>
+      eapply eq_tm_regctx; [exact (IH _ _ _ Hn) | solve [sub_eqI] ..]
+  end.
+Ltac fun_Ip :=
+  first [ assumption | solve [apply lequiv_refl; assumption]
+        | solve [fun_Ityped] | solve [fun_Ieqprem] | solve [eauto 6 with fung] ].
+Ltac fun_IWf :=
+  match goal with
+  | |- eq_ty _ _ _ (tyIWf _ _ (@subst _ _ ?X ?d) (@subst _ _ ?A _) (@subst _ _ ?N _) _ _ _) _ _ =>
+      fun_IWf_lifts X A N d; eapply eqty_iwf; fun_Ip
+  | |- eq_tm _ _ _ (tmSupi _ _ (@subst _ _ ?X ?d) (@subst _ _ ?A _) (@subst _ _ ?N _) _ _ _ _) _ _ _ =>
+      fun_IWf_lifts X A N d; eapply eqtm_supi; fun_Ip
+  | |- eq_tm _ _ _ (tmElimIWf _ _ _ (@subst _ _ ?X ?d) (@subst _ _ ?A _) (@subst _ _ ?N _) _ _ _ _ _ _) _ _ _ =>
+      fun_IWf_lifts X A N d; eapply eqtm_elimIWf; fun_Ip
+  end.
+
 Theorem functionality_all :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Θ, [ G ; Θ ⊢[ i ] ] -> forall Γ As, Θ = cexts Γ As ->
@@ -811,6 +884,7 @@ Proof.
   all: try fung_manual.
   all: try fun_J.
   all: try fun_Wf.
+  all: try fun_IWf.
   all: try (timeout 3 any_rule fung_premise).
   all: try (timeout 3 fung_step).
   (* code of Π and natrec: the binder premises need the substituted

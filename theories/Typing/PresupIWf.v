@@ -8,6 +8,15 @@
     nothing here types [dnth]. *)
 From DeLaM.Typing Require Export PresupAux.
 
+(** [PresupAux]' comparison of composite substitutions (local to its section). *)
+Ltac teq_core := repeat first [ rewrite ren_as_r2l_ty | rewrite ren_as_r2l ];
+  repeat first [ rewrite subst_comp_ty | rewrite subst_comp ];
+  first [ apply subst_ext_ty | apply subst_ext
+        | apply subst_id_ty; [assumption|] | apply subst_id; [assumption|]
+        | symmetry; apply subst_id_ty; [assumption|] | symmetry; apply subst_id; [assumption|] ];
+  intros [|[|[|[|[|[|[|[|?n]]]]]]]]; unfold lsucc; pw;
+  try solve [apply ren_as_r2l | symmetry; apply ren_as_r2l].
+
 (** ** Equations of the telescope *)
 
 Lemma IWf_E_ot (X : ty) a : nfty X -> X⟨↑⟩[lsingle a] = X.
@@ -85,6 +94,23 @@ Definition IWfEq Γ l li k ki X X' A A' N N' Ot Ot' C C' : Prop :=
   [ G ; Γ ⊢[ i ] X' @ li ] /\ [ G ; Γ ⊢[ i ] A' @ l ] /\
   [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] /\ [ G ; Γ ,, A @ l ⊢[ i ] Ot' : X⟨↑⟩ @ li ] /\
   [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C' : X⟨↑⟩⟨↑⟩ @ li ].
+
+(** [IWfEq] with its equations first, so that a proof search solving the
+    premises in order fixes the left components from them. *)
+Lemma IWfEq_intro {Γ l li k ki X X' A A' N N' Ot Ot' C C'} :
+  lequiv (gL G) l k -> lequiv (gL G) li ki ->
+  [ G ; Γ ⊢[ i ] X ≅ X' @ li ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] Ot ≅ Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩ @ li ] ->
+  lwf (gL G) l -> lwf (gL G) li ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] A @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C : X⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢[ i ] X' @ li ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C' : X⟨↑⟩⟨↑⟩ @ li ] ->
+  IWfEq Γ l li k ki X X' A A' N N' Ot Ot' C C'.
+Proof using. intros. unfold IWfEq, IWfSig. tauto. Qed.
 
 Lemma IWfSig_nf {Γ l li X A N Ot C} : IWfSig Γ l li X A N Ot C ->
   nfty X /\ nfty A /\ nftm N /\ nftm Ot /\ nftm C.
@@ -197,7 +223,7 @@ Lemma IWf_id2 {Γ l k A A' N N'} : [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i 
 Proof using Hi Hv.
   intros HA HAA HA' Hlk HN HNN HN'.
   pose proof (IWf_id1 HA HAA HA' Hlk) as Hid1.
-  refine (proj2 (ctx_conv_ext Hi Hid1 _ _ _ (lequiv_refl _ _ I))).
+  refine (proj2 (ctx_conv_ext Hi Hid1 _ _ _ (lequiv_refl (gL G) lzero I))).
   - apply wft_fin; assumption.
   - apply eqty_fin; assumption.
   - apply wft_fin; assumption.
@@ -245,7 +271,7 @@ Proof using Hi Hv.
   destruct HE as (Hlk & Hlik & _ & HXX & _).
   eapply wft_lconv; [| apply lequiv_max; [exact Hlk | exact Hlik]].
   apply (IWf_ty_wf HS').
-  eapply wf_lconv; [eapply conv_tm'; [exact Hm' | exact (eqty_sym _ _ _ _ _ _ HXX)] | apply lequiv_sym, Hlik].
+  eapply wf_lconv; [eapply (conv_tm' Hi); [exact Hm' | exact (eqty_sym _ _ _ _ _ _ HXX)] | apply lequiv_sym, Hlik].
 Qed.
 
 (** An instance at equal shapes, for the output index and the arity. *)
@@ -270,7 +296,7 @@ Proof using Hi Hv.
     by (apply (ext_wf Hi); [apply wft_fin; assumption | exact I]).
   unfold iwfFam. apply (IWf_ty_wf (IWfSig_wk1 HS HΓ1)).
   assert (Hd : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ⊢[ i ] llift (lsingle a) : Γ ,, A @ l ,, tyFin N @ lzero ])
-    by (apply (lsub_wf_lift' G i Hi Hv); [exact (lsub_wf_single G i Hi _ _ _ _ (ctx_of_wf_tm Hi Ha) Ha)
+    by (eapply (lsub_wf_lift' G i Hi); [exact (lsub_wf_single G i Hi _ _ _ _ (ctx_of_wf_tm Hi Ha) Ha)
                                         | apply wft_fin; assumption | exact I | reflexivity]).
   pose proof (wf_tm_subst Hi HC Hd) as X0. rewrite IWf_E_C in X0 by exact (wf_ty_nf HX). exact X0.
 Qed.
@@ -292,7 +318,7 @@ Proof using Hi Hv.
     by (cbn; apply eqty_fin; [exact Hv | exact (IWf_single_eq (B := tyNat) I HN (eqtm_refl _ _ _ _ _ _ HN) Ha Ha' Haa)]).
   assert (Edd : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ⊢[ i ] llift (lsingle a) ≅ llift (lsingle a')
                   : Γ ,, A @ l ,, tyFin N @ lzero ])
-    by (apply (lsub_eq_lift Hi); [exact (lsub_eq_single Hi Ha Ha' Haa) | exact HFa | exact I | exact EFa | reflexivity]).
+    by (eapply (lsub_eq_lift Hi); [exact (lsub_eq_single Hi Ha Ha' Haa) | exact HFa | exact I | exact EFa | reflexivity]).
   unfold iwfFam. apply (IWf_ty_eq (IWfEq_wk1 HE HΓ1)).
   eapply eqtm_trans.
   - pose proof (eqtm_subst Hi HCC (lsub_eq_l Edd)) as X0. rewrite IWf_E_C in X0 by exact (wf_ty_nf HX). exact X0.
@@ -341,15 +367,15 @@ Proof using Hi Hv.
   pose proof HS as (Hl & Hli & HX & HA & HN & HO & HC).
   assert (HLK : lequiv (gL G) (lmax l li) (lmax k ki)) by (apply lequiv_max; assumption).
   assert (Ha'k : [ G ; Γ ⊢[ i ] a' : A' @ k ])
-    by (eapply wf_lconv; [eapply conv_tm'; [exact Ha' | exact (eqty_sym _ _ _ _ _ _ HAA)] | apply lequiv_sym, Hlk]).
+    by (eapply wf_lconv; [eapply (conv_tm' Hi); [exact Ha' | exact (eqty_sym _ _ _ _ _ _ HAA)] | apply lequiv_sym, Hlk]).
   assert (Hcs'k : [ G ; Γ ⊢[ i ] cs' : tyDVec (lmax k ki) N'[lsingle a'] (iwfFam k ki X' A' N' Ot' C' a') @ lmax k ki ])
-    by (eapply wf_lconv; [eapply conv_tm'; [exact Hcs' | exact (eqty_sym _ _ _ _ _ _ (IWf_csa_eq HE Ha Ha' Haa))]
+    by (eapply wf_lconv; [eapply (conv_tm' Hi); [exact Hcs' | exact (eqty_sym _ _ _ _ _ _ (IWf_csa_eq HE Ha Ha' Haa))]
                          | apply lequiv_sym, HLK]).
   pose proof HS' as (Hk & Hki & HX'' & HA'' & HN'' & HO'' & HC'').
   eapply wf_lconv; [| exact HLK].
-  eapply conv_tm'; [apply wf_supi; auto using compt_self |].
+  eapply (conv_tm' Hi); [apply wf_supi; auto using compt_self |].
   eapply eqty_lconv; [| apply lequiv_sym, HLK].
-  eapply eqty_sym, (IWf_ty_eq HE).
+  eapply (IWf_ty_eq HE).
   eapply IWf_single_eq; [exact (wf_ty_nf HX) | exact HO | exact HOO | exact Ha | exact Ha' | exact Haa].
 Qed.
 
@@ -487,7 +513,7 @@ Proof using Hi Hv.
   pose proof (IWf_ot_wf HS3 Hv2) as Ho.
   pose proof (IWf_single_eq NX HO HOO Hv2 Hv2 (eqtm_refl _ _ _ _ _ _ Hv2)) as Hoo.
   pose proof (wf_tm_single Hi HO' Hv2) as Ho'. rewrite IWf_E_ot in Ho' by exact NX.
-  rewrite Wf_E2 in Hs, Hs', Hss, Ho, Hoo, Ho'.
+  rewrite ?Wf_E2 in Hs, Hs', Hss, Ho, Hoo, Ho'. rewrite (Wf_E2 Ot') in Hoo.
   pose proof (IWf_M_wk1 (IWfSig_wk1 (IWfSig_wk1 HS H1) H2) HΘ
                 (IWf_M_wk1 (IWfSig_wk1 HS H1) H2 (IWf_M_wk1 HS H1 HM))) as HM3.
   pose proof (IWf_M_wk1_eq (IWfSig_wk1 (IWfSig_wk1 HS H1) H2) HΘ
@@ -498,7 +524,7 @@ Proof using Hi Hv.
                         C⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ Ot'⟨↑⟩⟨↑⟩ @ lmax l li ])
     by exact (conv_tm' Hi Hs' (eqty_sym' (IWf_ty_eq_idx HS3 Hoo))).
   eapply eqty_trans.
-  - apply (wf_ty_func Hi HM3). apply (lsub_eq_single2 Hi Ho Ho' Hoo); rewrite IWf_E_mot by assumption; assumption.
+  - eapply (wf_ty_func Hi HM3). eapply (lsub_eq_single2 Hi Ho Ho' Hoo); rewrite IWf_E_mot by assumption; [exact Hs | exact Hs'o | exact Hss].
   - apply (eqty_subst Hi HMM3). apply (lsub_wf_single2' Hi HΘ Ho'). rewrite IWf_E_mot by assumption. exact Hs'o.
 Qed.
 
@@ -557,7 +583,7 @@ Proof using Hi Hv.
     by (eapply wft_lconv; [exact (mv_ty Hid2 HI') | exact (lequiv_sym _ _ _ HLI)]).
   pose proof (proj2 (ctx_conv_ext Hi Hid2 HI EI HI' HLI)) as Hid3.
   assert (HΘ : [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l' ⊢[ i ] ])
-    by (apply (ext_wf Hi); [exact HI | exact (lwf_max I Hl')]).
+    by (apply (ext_wf Hi); [exact HI | apply lwf_max; [exact I | exact Hl']]).
   pose proof (IWf_step_eq HE HM HMM HΘ) as ES.
   assert (Hc'p : [ G ; Γ ,, A' @ k ,, iwfcsty k ki X' A' N' Ot' C' @ lmax k ki ,, iwfihty k ki k' X' A' N' Ot' C' M' @ lmax lzero k'
                    ⊢[ i ] c' : iwfstepty k ki X' A' N' Ot' C' M' @ k' ]).
@@ -582,7 +608,7 @@ Proof using Hi Hv.
     + exact (IWf_cs_wf HS').
   - eapply eqty_lconv; [| apply lequiv_sym, H'].
     eapply eqty_trans.
-    + apply (wf_ty_func Hi HM). apply (lsub_eq_single2 Hi Hm Hm' Hmm); rewrite IWf_E_mot by assumption; assumption.
+    + eapply (wf_ty_func Hi HM). eapply (lsub_eq_single2 Hi Hm Hm' Hmm); rewrite IWf_E_mot by assumption; [exact Ht | exact Ht'm | exact Htt].
     + apply (eqty_subst Hi HMM). apply (lsub_wf_single2' Hi HΓ Hm'). rewrite IWf_E_mot by assumption. exact Ht'm.
 Qed.
 

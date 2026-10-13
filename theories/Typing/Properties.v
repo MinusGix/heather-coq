@@ -566,7 +566,7 @@ Ltac wk_Iprem lem :=
   match goal with
   | IH : forall Δ r, wkr r Δ _ -> _ -> _ |- _ =>
       eapply lem; [ eapply IH; [ repeat (eapply wkr_up'; [ | reflexivity]); eassumption | ] | .. ];
-      [ idtac | wk_eqI .. ]; wk_Ictx
+      [ idtac | solve [wk_eqI] .. ]; wk_Ictx
   end.
 Ltac wk_I :=
   fix_layer;

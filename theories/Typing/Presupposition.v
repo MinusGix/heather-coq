@@ -257,6 +257,11 @@ Proof. intros H1 H2 H3 H4 H5; exact (proj2 (ctx_conv_ext Hi H1 H2 H3 H4 H5)). Qe
 #[export] Hint Extern 1 =>
   match goal with Hi : typeof ?i = ?i |- context [typeof ?i] => rewrite Hi end : presup.
 
+(** [IWf]'s signature, from the rules' premises (M17b). *)
+Ltac iwf_leaf := first [eassumption | eapply lequiv_wf_l; eassumption | eapply lequiv_wf_r; eassumption].
+Ltac iwf_bundle := first [iwf_leaf | eapply IWfEq_intro; iwf_leaf
+  | unfold IWfSig; repeat match goal with |- _ /\ _ => split end; iwf_leaf].
+
 Theorem presupposition :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
@@ -404,6 +409,18 @@ Proof.
                         | eapply pre_sq_r; eassumption
                         | eapply pre_elimSq_r; eassumption
                         | eapply pre_elimSq_sq_rhs; eassumption ]].
+  (* indexed well-founded trees (M17b): the signature's premises bundled *)
+  all: try solve [first
+         [ eapply pre_iwf_r; iwf_bundle
+         | eapply pre_supi_ty; iwf_bundle
+         | eapply pre_supi_r; iwf_bundle
+         | eapply pre_elimIWf_beta_l; iwf_bundle
+         | eapply pre_elimIWf_beta_ty; iwf_bundle
+         | eapply pre_elimIWf_beta; iwf_bundle
+         | match goal with Ht : wf_tm _ _ _ ?t (tyIWf _ _ _ _ _ _ _ _) _ |- wf_ty _ _ _ (_[lsingle2 _ ?t]) _ =>
+             (eapply pre_elimIWf_ty; [.. | exact Ht]); iwf_bundle end
+         | eapply pre_elimIWf_r; iwf_bundle
+         | eapply wft_iwf; iwf_leaf | eapply wf_supi; iwf_leaf | eapply wf_elimIWf; iwf_leaf ]].
   all: try solve [eauto 4 with presup].
   all: first [ solve [eapply pre_pi_r; eassumption] | solve [eapply pre_U_r; eauto with presup]
              | solve [eapply pre_El_r; eassumption] | solve [eapply pre_codeU_r; eauto with presup]
