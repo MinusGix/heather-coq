@@ -138,6 +138,15 @@ Proof.
   intros H. exact (Wf_inj (E := DEM) (LP := LRM) redM_eqty H (lwfM_whnf_l H (whnf_tyWf _ _ _) ltac:(not_upi))).
 Qed.
 
+Theorem declM_IWf_inj {G Γ l l1 li1 l2 li2 X X' A A' N N' Ot Ot' C C' m m'} :
+  [ G ; Γ ⊢[ lM ] tyIWf l1 li1 X A N Ot C m ≅ tyIWf l2 li2 X' A' N' Ot' C' m' @ l ] ->
+  lequiv (gL G) l2 l1 /\ lequiv (gL G) li2 li1 /\ [ G ; Γ ⊢[ lM ] X ≅ X' @ li1 ] /\ [ G ; Γ ⊢[ lM ] A ≅ A' @ l1 ] /\
+  [ G ; Γ ,, A @ l1 ⊢[ lM ] N ≅ N' : tyNat @ lzero ] /\ [ G ; Γ ,, A @ l1 ⊢[ lM ] Ot ≅ Ot' : X⟨↑⟩ @ li1 ] /\
+  [ G ; Γ ,, A @ l1 ,, tyFin N @ lzero ⊢[ lM ] C ≅ C' : X⟨↑⟩⟨↑⟩ @ li1 ] /\ [ G ; Γ ⊢[ lM ] m ≅ m' : X @ li1 ].
+Proof.
+  intros H. exact (IWf_inj (E := DEM) (LP := LRM) redM_eqty H (lwfM_whnf_l H (whnf_tyIWf _ _ _ _ _ _ _ _) ltac:(not_upi))).
+Qed.
+
 Theorem declM_seq_inj {G Γ l l1 l2 A A' a a' b b'} :
   [ G ; Γ ⊢[ lM ] tySEq l1 A a b ≅ tySEq l2 A' a' b' @ l ] ->
   lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢[ lM ] A ≅ A' @ l1 ] /\

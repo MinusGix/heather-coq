@@ -408,6 +408,18 @@ Proof.
   rewrite !shift_cons_ty in Y. rewrite !single_subst, !lift_single_tm by assumption. exact Y.
 Qed.
 
+(** The constructor's index on both sides, and its type. *)
+Lemma V_supi_idx2 : VTm G Γ Ot[lsingle a] Ot'[lsingle a'] X li.
+Proof.
+  intros Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
+  pose proof (VTmG_loc VO _ _ _ (SubRel_cons Hd (Va _ _ _ Hd))) as Y.
+  rewrite !shift_cons_ty in Y. rewrite !single_subst, !lift_single_tm by assumption. exact Y.
+Qed.
+
+Lemma V_supi_ty : VTy G Γ (tyIWf l li X A N Ot C Ot[lsingle a]) (tyIWf l' li' X' A' N' Ot' C' Ot'[lsingle a'])
+  (lmax l li).
+Proof. exact (V_iwf Hwl Hwli Hl' Hli' VX VA VNt VO VC V_supi_idx2). Qed.
+
 Lemma V_supi : VTm G Γ (tmSupi l li X A N Ot C a cs) (tmSupi l' li' X' A' N' Ot' C' a' cs')
   (tyIWf l li X A N Ot C Ot[lsingle a]) (lmax l li).
 Proof.

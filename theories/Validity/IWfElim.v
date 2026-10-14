@@ -21,22 +21,9 @@
 From DeLaM.Validity Require Export IWf DVecNth WfElim DNthReds.
 From DeLaM.Typing Require Import IWfIH.
 From DeLaM.LogRel Require Import IWfAux.
-From DeLaM.Validity Require Import IWfSp.
+From DeLaM.Validity Require Import IWfSp Id.
 
 (** ** Syntax *)
-
-Lemma gwa_elimIWf γ l li l' X A N Ot C M c m t :
-  (tmElimIWf l li l' X A N Ot C M c m t)⟦γ⟧ =
-  tmElimIWf l li l' X⟦γ⟧ A⟦γ⟧ N⟦γ⟧ Ot⟦γ⟧ C⟦γ⟧ M⟦γ⟧ c⟦γ⟧ m⟦γ⟧ t⟦γ⟧.
-Proof. now destruct γ. Qed.
-Lemma gwa_tmDNth γ l n F cs i : (tmDNth l n F cs i)⟦γ⟧ = tmDNth l n⟦γ⟧ F⟦γ⟧ cs⟦γ⟧ i⟦γ⟧.
-Proof. destruct γ; cbn [gwa]; [reflexivity | apply gren_tmDNth ..]. Qed.
-Lemma gwa_iwfIH γ l li l' X A N Ot C M c a cs :
-  (iwfIH l li l' X A N Ot C M c a cs)⟦γ⟧ = iwfIH l li l' X⟦γ⟧ A⟦γ⟧ N⟦γ⟧ Ot⟦γ⟧ C⟦γ⟧ M⟦γ⟧ c⟦γ⟧ a⟦γ⟧ cs⟦γ⟧.
-Proof. destruct γ; cbn [gwa]; [reflexivity | apply gren_iwfIH ..]. Qed.
-Lemma gwa_iwfFam γ l li X A N Ot C a :
-  (iwfFam l li X A N Ot C a)⟦γ⟧ = iwfFam l li X⟦γ⟧ A⟦γ⟧ N⟦γ⟧ Ot⟦γ⟧ C⟦γ⟧ a⟦γ⟧.
-Proof. destruct γ; cbn [gwa]; [reflexivity | apply gren_iwfFam ..]. Qed.
 
 Local Ltac gwpush := repeat first [ rewrite gwa_tyPi | rewrite gwa_tyFin | rewrite gwa_subst_ty | rewrite gwa_subst
   | rewrite gwa_lsingle | rewrite gwa_lsingle2 | rewrite gwa_tmDNth | rewrite gwa_var | rewrite gwa_ren_ty
@@ -1503,6 +1490,33 @@ Proof using EL H13 H24 HS Hi3 Hwl Hwl' Hwli VA VC VL VM VN VNt VO VX Vc Vcs Vih 
   exact (elimIWf_mot (γ := gwk_id) (gwk_ok_id G) Hd Xmm Xtt).
 Qed.
 
+(** The eliminator's type, relating the two motives. *)
+Lemma V_elimIWf_ty {m m' t t'} : VTm G Γ m m' X li -> VTm G Γ t t' (tyIWf l li X A N Ot C m) (lmax l li) ->
+  VTy G Γ M[lsingle2 m t] M'[lsingle2 m' t'] l'.
+Proof using EL H13 H24 HS Hi3 Hwl Hwl' Hwli VA VC VL VM VN VNt VO VX Vc Vcs Vih Vmot.
+  intros Vm Vt Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
+  destruct (elimIWf_nf (gwk_ok_id G) Hd) as (NX & NA & NN & NO & NC & _).
+  destruct (elimIWf_nf (gwk_ok_id G) (SubRel_refl_r Hd)) as (NX' & NA' & NN' & NO' & NC' & _).
+  cbn [gwa] in NX, NA, NN, NO, NC, NX', NA', NN', NO', NC'.
+  rewrite !single2_subst_ty, !lift2_single2_ty by assumption.
+  pose proof (SubRel_cons Hd (Vm _ _ _ Hd)) as Hm.
+  apply (VTyG_loc VM), SubRel_cons; [exact Hm|].
+  pose proof (Vt _ _ _ Hd) as Xt. rewrite !subst_tyIWf in Xt.
+  pose proof (VTyG_loc Vmot _ _ _ Hm) as XI.
+  rewrite !iwfmotty_cons in XI |- * by assumption.
+  exact (LRtm_irrel_r Xt XI).
+Qed.
+
+Lemma V_elimIWf_supi_ty {a a' cs cs'} : VTm G Γ a a' A l ->
+  VTm G Γ cs cs' (tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a)) (lmax l li) ->
+  VTy G Γ M[lsingle2 Ot[lsingle a] (tmSupi l li X A N Ot C a cs)]
+    M'[lsingle2 Ot'[lsingle a'] (tmSupi l3 li3 X' A' N' Ot' C' a' cs')] l'.
+Proof using EL H13 H24 HS Hi3 Hwl Hwl' Hwli VA VC VL VM VN VNt VO VX Vc Vcs Vih Vmot.
+  intros Va Vks.
+  pose proof (lequiv_sym _ _ _ H13) as H31. pose proof (lequiv_sym _ _ _ Hi3) as Hi31.
+  exact (V_elimIWf_ty (V_supi_idx2 VO Va) (V_supi Hwl Hwli H31 Hi31 VX VA VNt VO VC Va Vks)).
+Qed.
+
 (** β, the right-hand side built from the right pieces. *)
 Lemma V_elimIWf_supi {a a' cs cs'} : VTm G Γ a a' A l ->
   VTm G Γ cs cs' (tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a)) (lmax l li) ->
@@ -1544,5 +1558,32 @@ Proof using EL H13 H24 HS Hi3 Hwl Hwl' Hwli VA VC VL VM VN VNt VO VX Vc Vcs Vih 
 Qed.
 
 End ElimAt.
+
+(** The eliminator's type with the scrutinee's premise first, so that a
+    proof search applying it fixes the signature from the scrutinee's type. *)
+Lemma V_elimIWf_ty_at {G Γ l li l' l3 li3 l4 X X' A A' N N' Ot Ot' C C' M M' c c' m m' t t'} :
+  VTm G Γ t t' (tyIWf l li X A N Ot C m) (lmax l li) ->
+  VTyG G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M' l' ->
+  VTm G Γ m m' X li ->
+  lwf (gL G) l -> lwf (gL G) li -> lwf (gL G) l' ->
+  lequiv (gL G) l l3 -> lequiv (gL G) li li3 -> lequiv (gL G) l' l4 ->
+  IWfSig (G := G) (i := ge_layer) Γ l li X A N Ot C ->
+  VTyG G Γ X X' li -> VTyG G Γ A A' l ->
+  VTmG G (Γ ,, A @ l) N N' tyNat lzero ->
+  VTmG G (Γ ,, A @ l) Ot Ot' X⟨↑⟩ li ->
+  VTmG G (Γ ,, A @ l ,, tyFin N @ lzero) C C' X⟨↑⟩⟨↑⟩ li ->
+  VTyG G (Γ ,, X @ li) (iwfmotty l li X A N Ot C) (iwfmotty l li X A N Ot C) (lmax l li) ->
+  VTyG G (Γ ,, A @ l) (iwfcsty l li X A N Ot C) (iwfcsty l li X A N Ot C) (lmax l li) ->
+  VTyG G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
+    (iwfihty l li l' X A N Ot C M) (iwfihty l3 li3 l4 X' A' N' Ot' C' M') (lmax lzero l') ->
+  VTmG G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
+    c c' (iwfstepty l li X A N Ot C M) l' ->
+  VTy G Γ M[lsingle2 m t] M'[lsingle2 m' t'] l'.
+Proof using EL VL VN.
+  intros Vt VM Vm. intros.
+  eapply (V_elimIWf_ty (l := l) (li := li) (l3 := l3) (li3 := li3) (l4 := l4) (X := X) (X' := X') (A := A)
+            (A' := A') (N := N) (N' := N') (Ot := Ot) (Ot' := Ot') (C := C) (C' := C') (c := c) (c' := c'));
+    eassumption.
+Qed.
 
 End IWfElim.

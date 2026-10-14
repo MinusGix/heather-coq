@@ -5,7 +5,9 @@
     from the rule's own, and the tactics lift a case to global weakenings.
     The theorem itself quantifies over related global substitutions:
     [FundamentalS] (layers C and P) and [FundamentalM] (layer M). *)
-From DeLaM.Validity Require Export Squash WElim Id PiComp Sigma Unit Lam DVec.
+(* [Lam] last: its chain leaves [LogRel.Def]'s [gdecl_gwa] in scope, which
+   [DVec]'s and [IWfElim]'s (through [Typing.GWeakening]) would shadow *)
+From DeLaM.Validity Require Export Squash WElim Id PiComp Sigma Unit DVec IWfElim Lam.
 
 Section Fundamental.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
