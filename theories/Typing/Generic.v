@@ -140,6 +140,10 @@ Class GenericEqLaws `{GenericEq} := {
   geq_tm_ctxconv {G Γ A A' la la' t t' T l} :
     [ G ; Γ ⊢g A ≅ A' @ la ] -> lequiv (gL G) la la' -> [ G ; Γ ,, A' @ la' ⊢g ] ->
     [ G ; Γ ,, A @ la ⊢ t ≈ t' : T @ l ] -> [ G ; Γ ,, A' @ la' ⊢ t ≈ t' : T @ l ] ;
+  (** and of the second-to-last entry, for [IWf]'s child family (M17b) *)
+  geq_tm_ctxconv2 {G Γ A A' la la' B lb t t' T l} :
+    [ G ; Γ ⊢g A ≅ A' @ la ] -> lequiv (gL G) la la' -> [ G ; Γ ,, A' @ la' ,, B @ lb ⊢g ] ->
+    [ G ; Γ ,, A @ la ,, B @ lb ⊢ t ≈ t' : T @ l ] -> [ G ; Γ ,, A' @ la' ,, B @ lb ⊢ t ≈ t' : T @ l ] ;
 
   (** Weak head closure *)
   geq_ty_exp {G Γ T T' W W' l} :

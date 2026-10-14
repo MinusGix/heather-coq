@@ -161,4 +161,34 @@ Qed.
 
 End KwIWf.
 
+(** Kripke worlds composed under a shape: the arity and the child index. *)
+Lemma ktm_comp_single {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) (N a : tm) :
+  ktm ρ' (ktml ρ N)[lsingle (ktm ρ a)] = (ktml (kw_comp ρ ρ') N)[lsingle (ktm (kw_comp ρ ρ') a)].
+Proof. now rewrite ktm_single, ktml_comp, ktm_comp. Qed.
+
+Lemma ktml_comp_child {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) (C a p : tm) :
+  (ktml ρ' (ktmll ρ C)[llift (lsingle (ktm ρ a))])[lsingle p] =
+  (ktmll (kw_comp ρ ρ') C)[lsingle2 (ktm (kw_comp ρ ρ') a) p].
+Proof.
+  rewrite <- ktmll_llift_single, <- ktmll_comp, <- ktm_comp.
+  apply llift_single_single. unfold ktm; apply ren_nf.
+Qed.
+
+Lemma kw_tmred_succ {G Γ k m} : [ G ; Γ ⊢g k ⤳* succ m : tyNat @ lzero ] ->
+  forall ρ : kwk G Γ, [ kw_G ρ ; kw_Δ ρ ⊢g ktm ρ k ⤳* succ (ktm ρ m) : tyNat @ lzero ].
+Proof. intros H ρ. pose proof (kw_tmred ρ H) as R. rewrite ktm_succ, kty_tyNat in R. exact R. Qed.
+
+(** The predecessors of two lengths related in every world are. *)
+Lemma NatRel_kw_pred {G Γ k k' m m'} :
+  (forall ρ : kwk G Γ, NatRel (kw_G ρ) (kw_Δ ρ) (ktm ρ k) (ktm ρ k')) ->
+  [ G ; Γ ⊢g k ⤳* succ m : tyNat @ lzero ] -> [ G ; Γ ⊢g k' ⤳* succ m' : tyNat @ lzero ] ->
+  forall ρ : kwk G Γ, NatRel (kw_G ρ) (kw_Δ ρ) (ktm ρ m) (ktm ρ m').
+Proof.
+  intros HW Hk Hk' ρ.
+  pose proof (kw_tmred_succ Hk ρ) as R. pose proof (kw_tmred_succ Hk' ρ) as R'.
+  destruct (NatRel_inv_succ (HW ρ) R) as (m2 & R2 & Hm).
+  assert (Es : succ m2 = succ (ktm ρ m')) by (eapply tmred_whnf_det; [exact R2 | exact R' | constructor ..]).
+  injection Es as ->. exact Hm.
+Qed.
+
 End IWfAux.

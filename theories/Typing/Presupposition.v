@@ -579,3 +579,29 @@ Lemma eqctx_id {Γ Γ'} : [ G ⊢[ i ] Γ ≅ Γ' ] -> [ G ; Γ' ⊢[ i ] lshift
 Proof using Hi. intros H; exact (proj2 (proj2 (P7 _ _ _ _ H Hi))). Qed.
 
 End Named.
+
+(** Context conversion of the second-to-last entry (M17b: [IWf]'s child
+    family lives in [Γ ,, A ,, Fin N]). *)
+Lemma stab2_B {G i} (Hi : typeof i = i) {Γ A A' la la' B lb} :
+  [ G ; Γ ⊢[ i ] A ≅ A' @ la ] -> lequiv (gL G) la la' -> [ G ; Γ ,, A' @ la' ,, B @ lb ⊢[ i ] ] ->
+  [ G ; Γ ,, A @ la ⊢[ i ] B @ lb ] /\ lwf (gL G) lb.
+Proof.
+  intros EA Hl HΓ'. inversion HΓ' as [| |? ? ? ? ? HΓA' HB Hlb]; subst.
+  pose proof (eqty_wf_l Hi EA) as HA.
+  assert (HΓA : [ G ; Γ ,, A @ la ⊢[ i ] ]) by exact (ext_wf Hi HA (lequiv_wf_l _ _ _ Hl)).
+  split; [| exact Hlb].
+  refine (stab_ty Hi (A := A') (l := la') _ _ HΓA HB).
+  - eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | now apply lequiv_sym].
+  - now apply lequiv_sym.
+Qed.
+
+Lemma stab2_lsub {G i} (Hi : typeof i = i) {Γ A A' la la' B lb} :
+  [ G ; Γ ⊢[ i ] A ≅ A' @ la ] -> lequiv (gL G) la la' -> [ G ; Γ ,, A' @ la' ,, B @ lb ⊢[ i ] ] ->
+  [ G ; Γ ,, A' @ la' ,, B @ lb ⊢[ i ] lshift 0 : Γ ,, A @ la ,, B @ lb ].
+Proof.
+  intros EA Hl HΓ'. destruct (stab2_B Hi EA Hl HΓ') as [HB0 Hlb].
+  pose proof (eqty_wf_l Hi EA) as HA. pose proof (eqty_wf_r Hi EA) as HA'.
+  assert (Hid0 : [ G ; Γ ⊢[ i ] lshift 0 : Γ ]) by (eapply lsub_wf_id; eauto using ctx_of_wf_ty).
+  pose proof (ctx_conv_ext2 Hi Hid0 HA EA HA' Hl) as Hid1.
+  exact (ctx_conv_ext2 Hi Hid1 HB0 (eqty_refl _ _ _ _ _ HB0) HB0 (lequiv_refl _ _ Hlb)).
+Qed.

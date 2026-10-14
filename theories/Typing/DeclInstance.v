@@ -96,6 +96,7 @@ Proof.
   1-4: intros; intuition eauto using whne_ty_ren, whne_ren, decl_wk_eqty, decl_wk_eqtm.
   (* context conversion *)
   1-4: intros; intuition eauto using stab_eqty, stab_eqtm.
+  - intros * EA Hl HΓ' H. exact (mv_eqtm Hty (stab2_lsub Hty EA Hl HΓ') H).
   (* weak head closure *)
   - intros * [_ _ HT] [_ _ HT'] HW.
     eauto using eqty_trans, eqty_sym.
