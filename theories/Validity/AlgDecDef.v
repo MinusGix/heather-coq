@@ -116,6 +116,7 @@ Definition tm_con (t : tm) : nat :=
   | tmSup _ _ _ _ _ _ => 48 | tmElimW _ _ _ _ _ _ _ _ => 49 | tmW _ _ _ _ => 50
   | tmVec _ _ _ => 51 | tmFin _ => 52 | tmSupf _ _ _ _ _ => 53 | tmElimWf _ _ _ _ _ _ _ => 54
   | tmWf _ _ _ => 55 | tmSq _ _ _ => 56 | tmElimSq _ _ _ _ _ _ => 57 | tmSqCode _ _ => 58
+  | tmSupi _ _ _ _ _ _ _ _ _ => 59 | tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _ => 60
   end.
 
 Lemma ac_tmne_con {G Γ ν ν' T} : ac_tmne G Γ ν ν' T -> tm_con ν = tm_con ν'.
@@ -137,7 +138,7 @@ Qed.
 Ltac refute_con := right; let D := fresh "D" in intros D;
   let E := fresh "E" in
   first [ pose proof (ac_tmne_con D) as E
-        | pose proof (ac_tmnf_con D ltac:(first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum | apply posty_W | apply posty_wf]) ltac:(let Hn := fresh in intros Hn; discriminate (whne_ne_head Hn))) as E
+        | pose proof (ac_tmnf_con D ltac:(first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum | apply posty_W | apply posty_wf | apply posty_iwf]) ltac:(let Hn := fresh in intros Hn; discriminate (whne_ne_head Hn))) as E
         | pose proof (ac_tynf_head D) as E ];
   cbn in E; discriminate E.
 
@@ -149,7 +150,8 @@ Fixpoint is_whne (t : tm) : bool :=
   | natrec _ _ _ _ t | app t _ _ _ _ _ | letboxT _ _ _ _ _ t | letboxt _ _ _ _ _ _ t
   | uapp t _ | capp t _ | tapp t _ | tmFst _ _ _ _ t | tmSnd _ _ _ _ t | elimSEmpty _ _ _ t | elimEmpty _ _ _ t
   | tmJ _ _ _ _ _ _ _ t | tmCase _ _ _ _ _ _ _ _ t
-  | tmElimW _ _ _ _ _ _ _ t | tmElimWf _ _ _ _ _ _ t | tmElimSq _ _ _ _ _ t => is_whne t
+  | tmElimW _ _ _ _ _ _ _ t | tmElimWf _ _ _ _ _ _ t | tmElimSq _ _ _ _ _ t
+  | tmElimIWf _ _ _ _ _ _ _ _ _ _ _ t => is_whne t
   | elimT _ _ _ _ _ t => match t with boxT (tyGvar _ _) => true | _ => is_whne t end
   | elimt _ _ _ _ _ _ t => match t with boxt (gvar _ _) | boxt (gdef _ _ _) => true | _ => is_whne t end
   | _ => false
