@@ -657,7 +657,10 @@ Proof using EL VL.
                  | G Γ T1 T2 l l1 l2 l3 l4 A1 B1 A2 B2 domR1 codR1 R P1 domAd1 IHdom codAd1 IHcod HR
                  | G Γ T1 T2 l l1 l2 A1 A2 N1 N2 domR1 R Hl Hl2 Hw HT1 HT2 HA1 HA2 HN1t HN2t HAA HNN
                      domAd1 IHdom arAd1 HR
-                 | G Γ T1 T2 l l1 l2 A1 A2 RQ R Hl Hl2 Hw HT1 HT2 HA1 HAA HRQ IHRQ Hqs Hqt HR];
+                 | G Γ T1 T2 l l1 l2 A1 A2 RQ R Hl Hl2 Hw HT1 HT2 HA1 HAA HRQ IHRQ Hqs Hqt HR
+                 | G Γ T1 T2 l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                     HT1 HT2 HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                     widxAd IHwidx Hwisym Hwistr wdomAd IHwdom warAd wotAd wchAd wixAd HR];
     intros T3 R23 H2.
   - (* Nat *)
     destruct (LR_inv_nat H2 HT2) as (_ & HT3 & HR2).

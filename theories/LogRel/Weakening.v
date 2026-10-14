@@ -233,7 +233,10 @@ Proof.
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R P domAd _ codAd _ HR
                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN
                     domAd _ arAd HR
-                | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ IHRQ Hqs Hqt HR]; intros ρ.
+                | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ IHRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd IHwidx Hwisym Hwistr wdomAd IHwdom warAd wotAd wchAd wixAd HR]; intros ρ.
   - exists (NatRel (kw_G ρ) (kw_Δ ρ)). split.
     + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
       rewrite kty_tyNat in X, X'.

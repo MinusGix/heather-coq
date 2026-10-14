@@ -72,7 +72,10 @@ Proof using EL.
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR].
+                | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR].
   all: first
     [ solve [eexists; split; [exact HT | first [exact (whnf_ty_ne _ (gne_ty_whne_l HV)) | solve [eauto with whnf]]]]
     | match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
@@ -798,7 +801,10 @@ Proof using EL VL.
                      [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12] domAd1 IHdom codAd1 IHcod HR
                  | G Γ T1 T2 l l1 l2 A1 A2 N1 N2 domR1 R Hl Hl2 Hw HT1 HT2 HA1 HA2 HN1t HN2t HA12 HN12
                      domAd1 IHdom arAd1 HR
-                 | G Γ T1 T2 l l1 l2 A A' RQ R Hl Hl2 Hw HT1 HT2 HA HAA HRQ IHRQ Hqs Hqt HR];
+                 | G Γ T1 T2 l l1 l2 A A' RQ R Hl Hl2 Hw HT1 HT2 HA HAA HRQ IHRQ Hqs Hqt HR
+                 | G Γ T1 T2 l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                     HT1 HT2 HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                     widxAd IHwidx Hwisym Hwistr wdomAd IHwdom warAd wotAd wchAd wixAd HR];
     intros T3 R3 H3 ET; destruct (LR_whnf_l H3) as (W3 & HT3 & Hnw3).
   - (* Nat *)
     pose proof (ty_leq_nat_inv (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3)) as ->.

@@ -661,4 +661,86 @@ Proof using Hi Hv.
   - change (lcons (lcons (lshift 0) a) cs) with (lsingle2 a cs). exact HIH.
 Qed.
 
+(** ** Signatures along equal signatures (M17b, the relation)
+
+    [IWfEq] is a partial equivalence: the relation's symmetry and
+    transitivity move a [sup_i]'s annotations from one side's signature
+    to the other's, which changes the contexts of [N], [Ot] and [C]. *)
+
+Lemma mv_eqtm {Δ Δ' t t' T k} : [ G ; Δ' ⊢[ i ] lshift 0 : Δ ] -> [ G ; Δ ⊢[ i ] t ≅ t' : T @ k ] ->
+  [ G ; Δ' ⊢[ i ] t ≅ t' : T @ k ].
+Proof using Hi.
+  intros Hid H. pose proof (eqtm_subst Hi H Hid) as X.
+  pose proof (proj2 (proj2 (proj2 (proj2 (proj2 typed_nf)))) _ _ _ _ _ _ _ H) as (N1 & N2 & N3).
+  rewrite !nf_id in X by assumption. rewrite nf_id_ty in X by assumption. exact X.
+Qed.
+
+Lemma conv_eqtm' {Γ t t' T T' l} :
+  [ G ; Γ ⊢[ i ] t ≅ t' : T' @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ].
+Proof using Hi. intros; eapply eqtm_conv; [eassumption | now rewrite Hi]. Qed.
+
+Lemma IWfEq_refl {Γ l li X A N Ot C} : IWfSig Γ l li X A N Ot C ->
+  IWfEq Γ l li l li X X A A N N Ot Ot C C.
+Proof using.
+  intros HS. pose proof HS as (Hl & Hli & HX & HA & HN & HO & HC).
+  apply IWfEq_intro; auto using lequiv_refl, eqty_refl, eqtm_refl.
+Qed.
+
+(** The annotations [D1] of a [sup_i] at the signature [D], moved to an
+    equal signature [D']. *)
+Lemma IWfEq_flip {Γ l li k ki k1 ki1 X X' X1 A A' A1 N N' N1 Ot Ot' O1 C C' C1} :
+  IWfEq Γ l li k ki X X' A A' N N' Ot Ot' C C' ->
+  IWfEq Γ l li k1 ki1 X X1 A A1 N N1 Ot O1 C C1 ->
+  IWfEq Γ k ki k1 ki1 X' X1 A' A1 N' N1 Ot' O1 C' C1.
+Proof using Hi Hv.
+  intros E E1. pose proof (IWfEq_sig_r E) as HS'.
+  destruct E as (Hlk & Hlik & (Hl & Hli & HX & HA & HN & HO & HC) & HXX & HAA & HNN & HOO & HCC
+                 & HX' & HA' & HN' & HO' & HC').
+  destruct E1 as (Hl1 & Hli1 & _ & HX1 & HA1 & HN1 & HO1 & HC1 & HX1' & HA1' & HN1' & HO1' & HC1').
+  pose proof (lequiv_sym _ _ _ Hlk) as Hkl. pose proof (lequiv_sym _ _ _ Hlik) as Hkli.
+  pose proof (IWf_id1 HA HAA HA' Hlk) as Hid1.
+  pose proof (IWf_id2 HA HAA HA' Hlk HN HNN HN') as Hid2.
+  assert (HΓA : [ G ; Γ ,, A @ l ⊢[ i ] ]) by exact (ext_wf Hi HA Hl).
+  assert (EX1 : [ G ; Γ ,, A @ l ⊢[ i ] X'⟨↑⟩ ≅ X⟨↑⟩ @ li ])
+    by exact (wk1_eqty G i Hi _ _ _ _ _ _ HΓA (eqty_sym _ _ _ _ _ _ HXX)).
+  assert (HΓAN : [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] ])
+    by (apply (ext_wf Hi); [apply wft_fin; assumption | exact I]).
+  assert (EX2 : [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] X'⟨↑⟩⟨↑⟩ ≅ X⟨↑⟩⟨↑⟩ @ li ])
+    by exact (wk1_eqty G i Hi _ _ _ _ _ _ HΓAN EX1).
+  apply IWfEq_intro.
+  - exact (lequiv_trans _ _ _ _ Hkl Hl1).
+  - exact (lequiv_trans _ _ _ _ Hkli Hli1).
+  - eapply eqty_lconv; [eapply eqty_trans; [apply eqty_sym, HXX | exact HX1] | exact Hkli].
+  - eapply eqty_lconv; [eapply eqty_trans; [apply eqty_sym, HAA | exact HA1] | exact Hkl].
+  - apply (mv_eqtm Hid1). eapply eqtm_trans; [apply eqtm_sym, HNN | exact HN1].
+  - eapply eqtm_lconv; [| exact Hkli]. apply (mv_eqtm Hid1), (conv_eqtm' (T' := X⟨↑⟩)); [| exact EX1].
+    eapply eqtm_trans; [apply eqtm_sym, HOO | exact HO1].
+  - eapply eqtm_lconv; [| exact Hkli]. apply (mv_eqtm Hid2), (conv_eqtm' (T' := X⟨↑⟩⟨↑⟩)); [| exact EX2].
+    eapply eqtm_trans; [apply eqtm_sym, HCC | exact HC1].
+  - exact (proj1 HS').
+  - exact (proj1 (proj2 HS')).
+  - exact (proj1 (proj2 (proj2 HS'))).
+  - exact (proj1 (proj2 (proj2 (proj2 HS')))).
+  - exact (proj1 (proj2 (proj2 (proj2 (proj2 HS'))))).
+  - exact (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 HS')))))).
+  - exact (proj2 (proj2 (proj2 (proj2 (proj2 (proj2 HS')))))).
+  - eapply wft_lconv; [exact HX1' | exact Hkli].
+  - eapply wft_lconv; [exact HA1' | exact Hkl].
+  - exact (mv_tm Hid1 HN1').
+  - eapply wf_lconv; [| exact Hkli]. exact (mv_tm Hid1 (conv_tm' Hi HO1' EX1)).
+  - eapply wf_lconv; [| exact Hkli]. exact (mv_tm Hid2 (conv_tm' Hi HC1' EX2)).
+Qed.
+
+Lemma IWfEq_sym {Γ l li k ki X X' A A' N N' Ot Ot' C C'} :
+  IWfEq Γ l li k ki X X' A A' N N' Ot Ot' C C' -> IWfEq Γ k ki l li X' X A' A N' N Ot' Ot C' C.
+Proof using Hi Hv.
+  intros E. pose proof E as (_ & _ & HS & _). exact (IWfEq_flip E (IWfEq_refl HS)).
+Qed.
+
+Lemma IWfEq_trans {Γ l li k ki k1 ki1 X X' X1 A A' A1 N N' N1 Ot Ot' O1 C C' C1} :
+  IWfEq Γ l li k ki X X' A A' N N' Ot Ot' C C' ->
+  IWfEq Γ k ki k1 ki1 X' X1 A' A1 N' N1 Ot' O1 C' C1 ->
+  IWfEq Γ l li k1 ki1 X X1 A A1 N N1 Ot O1 C C1.
+Proof using Hi Hv. intros E E1. exact (IWfEq_flip (IWfEq_sym E) E1). Qed.
+
 End IWfAux.

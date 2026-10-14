@@ -11,51 +11,7 @@
     indices related at [Fin] give related instances of the family. *)
 From DeLaM.Validity Require Export Vec.
 From DeLaM.Typing Require Import Inversion.
-
-(** ** Syntax *)
-
-(** The tail's family, at the predecessor's index [j : Fin n]. *)
-Definition dvecMv (n : tm) (F : ty) : ty :=
-  F⟨rlift ↑⟩[lsingle (tmInr lzero lzero (tyUnit lzero) (tyFin n⟨↑⟩) (var 0))].
-
-Lemma dvecTl_eq l n F : dvecTl l n F = (tyDVec l n (dvecMv n F))⟨↑⟩.
-Proof.
-  unfold dvecMv. change ((tyDVec l ?m ?G)⟨?r⟩) with (tyDVec l m⟨r⟩ G⟨rlift r⟩).
-  rewrite lsingle_ren_ty. cbn [ren Ren_tm Ren_ty ren_tm ren_ty rlk]. fold ren_ty ren_tm.
-  repeat (f_equal; try ren_comm). all: rlk_simpl; reflexivity.
-Qed.
-
-Lemma dvecMv_single m (K : ty) i : nftm m ->
-  (dvecMv m K)[lsingle i] = K[lsingle (tmInr lzero lzero (tyUnit lzero) (tyFin m) i)].
-Proof.
-  intros Hm. unfold dvecMv.
-  rewrite (subst_subst_ty _ _ _
-             (lcons (lsingle i) (tmInr lzero lzero (tyUnit lzero) (tyFin m) i))).
-  - apply ren_subst_ty. intros [|k]; rlk_simpl; cbn; reflexivity.
-  - intros [|k]; cbn; [| now rewrite Nat.add_0_r].
-    change (subst_tm ?x ?d) with x[d]. now rewrite shift_single.
-Qed.
-
-(** The head's and the tail's instances commute with substitution. *)
-Lemma dvecHd_subst m (F : ty) d : LK nftm d ->
-  (dvecHd m F)[d] = dvecHd m[d] F[llift d].
-Proof. intros Hd. now rewrite single_subst_ty by exact Hd. Qed.
-
-Lemma dvecMv_subst m (F : ty) d : LK nftm d -> (dvecMv m F)[llift d] = dvecMv m[d] F[llift d].
-Proof.
-  intros Hd. unfold dvecMv. rewrite single_subst_ty by now apply lk_llift.
-  rewrite liftshift_llift_ty. f_equal. f_equal.
-  change ((tmInr ?a ?b ?A ?B ?t)[?e]) with (tmInr a b A[e] B[e] t[e]).
-  rewrite subst_tyUnit, subst_tyFin, shift_llift. f_equal.
-  change ((var 0)[?e]) with (llk e 0). now rewrite llk_llift.
-Qed.
-
-Lemma dvecTl_subst l m (F : ty) d : LK nftm d ->
-  (dvecTl l m F)[llift d] = dvecTl l m[d] F[llift d].
-Proof.
-  intros Hd. rewrite !dvecTl_eq, shift_llift_ty, subst_tyDVec, dvecMv_subst by exact Hd.
-  reflexivity.
-Qed.
+From DeLaM.Typing Require Export DVecEq.
 
 Section DVec.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.

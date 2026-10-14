@@ -393,6 +393,53 @@ Proof.
   - intros ρ; apply releq_sym', Hd.
 Qed.
 
+(** ** Indexed W-types (M17b) *)
+
+Lemma IWfRel_inv {G Γ l li X A N Ot C idxR domR m t t'} : IWfRel G Γ l li X A N Ot C idxR domR m t t' ->
+  exists w w', [ G ; Γ ⊢g t ⤳* w : tyIWf l li X A N Ot C m @ lmax l li ] /\
+    [ G ; Γ ⊢g t' ⤳* w' : tyIWf l li X A N Ot C m @ lmax l li ] /\
+    [ G ; Γ ⊢ w ≈ w' : tyIWf l li X A N Ot C m @ lmax l li ] /\ IWfNf G Γ l li X A N Ot C idxR domR m w w'.
+Proof. destruct 1; eauto 7. Qed.
+
+Lemma IWfRel_wf {G Γ l li X A N Ot C idxR domR m t t'} : IWfRel G Γ l li X A N Ot C idxR domR m t t' ->
+  [ G ; Γ ⊢g t : tyIWf l li X A N Ot C m @ lmax l li ] /\ [ G ; Γ ⊢g t' : tyIWf l li X A N Ot C m @ lmax l li ].
+Proof.
+  intros (w & w' & Hw & Hw' & _ & _)%IWfRel_inv.
+  exact (conj (tmred_wf _ _ _ _ _ _ _ Hw) (tmred_wf _ _ _ _ _ _ _ Hw')).
+Qed.
+
+(** The three families along pointwise equivalent index and shape relations. *)
+Lemma IWfRel_dir_all :
+  (forall G Γ l li X A N Ot C idxR domR m t t', IWfRel G Γ l li X A N Ot C idxR domR m t t' ->
+     forall idxR' domR' : DomRel G Γ, (forall ρ, releq (idxR ρ) (idxR' ρ)) -> (forall ρ, releq (domR ρ) (domR' ρ)) ->
+     IWfRel G Γ l li X A N Ot C idxR' domR' m t t') /\
+  (forall G Γ l li X A N Ot C idxR domR m t t', IWfNf G Γ l li X A N Ot C idxR domR m t t' ->
+     forall idxR' domR' : DomRel G Γ, (forall ρ, releq (idxR ρ) (idxR' ρ)) -> (forall ρ, releq (domR ρ) (domR' ρ)) ->
+     IWfNf G Γ l li X A N Ot C idxR' domR' m t t') /\
+  (forall G Γ l li X A N Ot C idxR domR c k t t', DVecISp G Γ l li X A N Ot C idxR domR c k t t' ->
+     forall idxR' domR' : DomRel G Γ, (forall ρ, releq (idxR ρ) (idxR' ρ)) -> (forall ρ, releq (domR ρ) (domR' ρ)) ->
+     DVecISp G Γ l li X A N Ot C idxR' domR' c k t t').
+Proof.
+  apply IWfRel_comb; intros.
+  all: try solve [econstructor; eauto].
+  all: try solve [eapply visp_succ; eauto].
+  apply iwfnf_sup; auto.
+  all: intros ρ; match goal with
+                 | E : forall ρ, releq (?R ρ) (?R' ρ), H : forall ρ, ?R ρ _ _ |- ?R' _ _ _ => apply E, H
+                 end.
+Qed.
+
+Lemma IWfRel_releq {G Γ l li X A N Ot C} {idxR idxR' domR domR' : DomRel G Γ} {m} :
+  (forall ρ, releq (idxR ρ) (idxR' ρ)) -> (forall ρ, releq (domR ρ) (domR' ρ)) ->
+  releq (IWfRel G Γ l li X A N Ot C idxR domR m) (IWfRel G Γ l li X A N Ot C idxR' domR' m).
+Proof.
+  intros Hi Hd t t'; split; intros H; eapply (proj1 IWfRel_dir_all); try exact H.
+  - exact Hi.
+  - exact Hd.
+  - intros ρ; apply releq_sym', Hi.
+  - intros ρ; apply releq_sym', Hd.
+Qed.
+
 (** ** Escape for contextual types *)
 
 Lemma ModRel_escape_ty {G Γ T T' l R} : ModRel G Γ T T' l R ->
@@ -456,7 +503,10 @@ Proof.
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l l1 l2 A A' RA R Hl Hl2 Hw HT HT' HA HAA HRA Hps Hpt HR].
+                | G Γ T T' l l1 l2 A A' RA R Hl Hl2 Hw HT HT' HA HAA HRA Hps Hpt HR
+                | G Γ T T' l l1 li1 l2 li2 X X' A A' N N' Ot Ot' C C' m m' idxR domR R Hl Hl2 Hli2 Hw Hwi
+                    HT HT' HX HX' HA HA' HN HN' HO HO' HC HC' Hmt Hmt' HXX HAA HNN HOO HCC Hmm
+                    idxAd Hisym Histr domAd arAd otAd chAd ixAd HR].
   all: try solve [exact (ModRel_escape_ty HM)].
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
@@ -477,6 +527,7 @@ Proof.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_W; auto using lequiv_sym.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_wf; auto using lequiv_sym.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sq; auto using lequiv_sym.
+  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_iwf; auto using lequiv_sym.
 Qed.
 
 (** ** Escape for terms *)
@@ -506,7 +557,10 @@ Proof.
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l l1 l2 A A' RA R Hl Hl2 Hw HT HT' HA HAA HRA Hps Hpt HR];
+                | G Γ T T' l l1 l2 A A' RA R Hl Hl2 Hw HT HT' HA HAA HRA Hps Hpt HR
+                | G Γ T T' l l1 li1 l2 li2 X X' A A' N N' Ot Ot' C C' m m' idxR domR R Hl Hl2 Hli2 Hw Hwi
+                    HT HT' HX HX' HA HA' HN HN' HO HO' HC HC' Hmt Hmt' HXX HAA HNN HOO HCC Hmm
+                    idxAd Hisym Histr domAd arAd otAd chAd ixAd HR];
     intros t t' Htt; first [exact (ModRel_escape_tm HM _ _ Htt) | apply HR in Htt].
   - (* Nat *)
     destruct Htt as [t t' w w' Hw Hw' Heq _].
@@ -641,6 +695,13 @@ Proof.
     + eapply conv_tm; [exact Ht | exact HTS | exact Hl].
     + eapply conv_tm; [exact Ht' | exact HTS | exact Hl].
     + eapply conv_geq_tm; [exact (geq_tm_sq_irr Hw Ht Ht') | apply eqty_sym, HTS | exact Hl].
+  - (* IWf: related weak-head normal forms *)
+    destruct (IWfRel_inv Htt) as (w & w' & Hw' & Hw'' & Heq & _).
+    assert (HTW : [ G ; Γ ⊢g T ≅ tyIWf l1 li1 X A N Ot C m @ l ]) by apply HT.
+    repeat split.
+    + eapply conv_tm; [apply Hw' | exact HTW | exact Hl].
+    + eapply conv_tm; [apply Hw'' | exact HTW | exact Hl].
+    + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTW | exact Hl].
 Qed.
 
 (** ** Local weakening at the instance's layer *)

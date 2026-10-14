@@ -54,6 +54,7 @@ theories/Typing/UInst.v
 theories/Typing/MInst.v
 theories/Typing/PresupAux.v
 theories/Typing/PresupIWf.v
+theories/Typing/DVecEq.v
 theories/Typing/Presupposition.v
 theories/Typing/Inversion.v
 theories/Typing/DNth.v
@@ -75,6 +76,7 @@ theories/Typing/DeclInstance.v
 theories/LogRel/Def.v
 theories/LogRel/Layering.v
 theories/LogRel/Escape.v
+theories/LogRel/IWfAux.v
 theories/LogRel/Basics.v
 theories/LogRel/Modal.v
 theories/LogRel/Irrelevance.v
