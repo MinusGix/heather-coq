@@ -504,10 +504,12 @@ Combined Scheme WfRel_comb from WfRel_mut, WfNf_mut, VecSp_mut.
       successor its first projections are related by [IWfRel] at the
       head's index [c[inl ⟨⟩]] and its second by the spine at the moved
       family [c[inr j]] ([posMv]).
-    Unlike [Wf]'s, the agreement of the annotations ([IWfEq]) and the
-    projections' annotations are declarative equations: symmetry moves
-    them into the other side's contexts, two binders deep for [C], and
-    the generic laws convert only the last context entry. *)
+    Unlike [Wf]'s, the agreement of the annotations ([IWfEq]) is a
+    declarative equation: symmetry moves it into the other side's
+    contexts, two binders deep for [C], and the generic laws convert only
+    the last context entry. The projections' annotations are generic, as
+    [Wf]'s: the spine of a [sup_i] comes from [Σ]'s relation, which
+    relates the projections only at generic annotations. *)
 
 (** The type family of the children at a family of child indices [c]
     (under the position binder). *)
@@ -556,23 +558,23 @@ with DVecISp : forall (G : gctx) (Γ : ctx) (l li : lvl) (X A : ty) (N Ot C : tm
     (forall la lb A2 B2 la' lb' A2' B2',
        lequiv (gL G) la (lmax l li) -> lequiv (gL G) lb (lmax l li) ->
        lequiv (gL G) la' (lmax l li) -> lequiv (gL G) lb' (lmax l li) ->
-       [ G ; Γ ⊢g dvecHd m (iwfFamT l li X A N Ot C c) ≅ A2 @ lmax l li ] ->
+       [ G ; Γ ⊢ dvecHd m (iwfFamT l li X A N Ot C c) ≈ A2 @ lmax l li ] ->
        [ G ; Γ ,, dvecHd m (iwfFamT l li X A N Ot C c) @ lmax l li
-           ⊢g dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c) ≅ B2 @ lmax l li ] ->
-       [ G ; Γ ⊢g dvecHd m (iwfFamT l li X A N Ot C c) ≅ A2' @ lmax l li ] ->
+           ⊢ dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c) ≈ B2 @ lmax l li ] ->
+       [ G ; Γ ⊢ dvecHd m (iwfFamT l li X A N Ot C c) ≈ A2' @ lmax l li ] ->
        [ G ; Γ ,, dvecHd m (iwfFamT l li X A N Ot C c) @ lmax l li
-           ⊢g dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c) ≅ B2' @ lmax l li ] ->
+           ⊢ dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c) ≈ B2' @ lmax l li ] ->
        IWfRel G Γ l li X A N Ot C idxR domR c[lsingle (posHd m)]
          (tmFst la lb A2 B2 w) (tmFst la' lb' A2' B2' w')) ->
     (forall la lb A2 B2 la' lb' A2' B2',
        lequiv (gL G) la (lmax l li) -> lequiv (gL G) lb (lmax l li) ->
        lequiv (gL G) la' (lmax l li) -> lequiv (gL G) lb' (lmax l li) ->
-       [ G ; Γ ⊢g dvecHd m (iwfFamT l li X A N Ot C c) ≅ A2 @ lmax l li ] ->
+       [ G ; Γ ⊢ dvecHd m (iwfFamT l li X A N Ot C c) ≈ A2 @ lmax l li ] ->
        [ G ; Γ ,, dvecHd m (iwfFamT l li X A N Ot C c) @ lmax l li
-           ⊢g dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c) ≅ B2 @ lmax l li ] ->
-       [ G ; Γ ⊢g dvecHd m (iwfFamT l li X A N Ot C c) ≅ A2' @ lmax l li ] ->
+           ⊢ dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c) ≈ B2 @ lmax l li ] ->
+       [ G ; Γ ⊢ dvecHd m (iwfFamT l li X A N Ot C c) ≈ A2' @ lmax l li ] ->
        [ G ; Γ ,, dvecHd m (iwfFamT l li X A N Ot C c) @ lmax l li
-           ⊢g dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c) ≅ B2' @ lmax l li ] ->
+           ⊢ dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c) ≈ B2' @ lmax l li ] ->
        DVecISp G Γ l li X A N Ot C idxR domR (posMv m c) m
          (tmSnd la lb A2 B2 w) (tmSnd la' lb' A2' B2' w')) ->
     DVecISp G Γ l li X A N Ot C idxR domR c k cs cs'
@@ -588,17 +590,21 @@ Scheme IWfRel_mut := Induction for IWfRel Sort Prop
 Combined Scheme IWfRel_comb from IWfRel_mut, IWfNf_mut, DVecISp_mut.
 
 (** Related positions of [Fin k] and [Fin k']: the canonical ones, [posHd]
-    and [posTl] at the lengths' predecessors. They are what the children's
-    spine reaches, and what the child index premise of [LRiwf] quantifies
-    over (the relation at [Fin] cannot occur there: it is the relation
-    being defined). *)
+    and [posTl] at the lengths' predecessors, and neutrals. They are what
+    the children's spine reaches, and what the child index premise of
+    [LRiwf] quantifies over (the relation at [Fin] cannot occur there: it
+    is the relation being defined). The neutrals are what makes the child
+    indices generically equal under a position binder (at the variable),
+    which the spine's generic annotations need at a neutral length. *)
 Inductive PosRel (G : gctx) (Γ : ctx) : tm -> tm -> tm -> tm -> Prop :=
 | pos_hd k k' m m' :
     [ G ; Γ ⊢g k ⤳* succ m : tyNat @ lzero ] -> [ G ; Γ ⊢g k' ⤳* succ m' : tyNat @ lzero ] ->
     NatRel G Γ m m' -> PosRel G Γ k k' (posHd m) (posHd m')
 | pos_tl k k' m m' p p' :
     [ G ; Γ ⊢g k ⤳* succ m : tyNat @ lzero ] -> [ G ; Γ ⊢g k' ⤳* succ m' : tyNat @ lzero ] ->
-    PosRel G Γ m m' p p' -> PosRel G Γ k k' (posTl m p) (posTl m' p').
+    PosRel G Γ m m' p p' -> PosRel G Γ k k' (posTl m p) (posTl m' p')
+| pos_ne k k' p p' :
+    [ G ; Γ ⊢g k ≅ k' : tyNat @ lzero ] -> [ G ; Γ ⊢ p ~ p' : tyFin k @ lzero ] -> PosRel G Γ k k' p p'.
 
 (** ** The type-level data of a binder former
 

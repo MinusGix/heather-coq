@@ -812,15 +812,18 @@ Proof using . intros H ρ0 ρ0' Hk1 x y Nx Ny h. exact (H _ _ (kcorr_comp Hk _ _
 Lemma PosRel_perm {π πi G Γ} (Hp : uperm π πi (gL G)) {k k' p p'} : PosRel G Γ k k' p p' ->
   PosRel (Gp π G) Γ[pφ π]ᵤ k[pφ π]ᵤ k'[pφ π]ᵤ p[pφ π]ᵤ p'[pφ π]ᵤ.
 Proof using EL.
-  induction 1 as [k k' m m' Hk Hk' Hm | k k' m m' p p' Hk Hk' Hp' IH].
+  induction 1 as [k k' m m' Hk Hk' Hm | k k' m m' p p' Hk Hk' Hp' IH | k k' p p' Ek Hp'].
   - exact (pos_hd _ _ _ _ m[pφ π]ᵤ m'[pφ π]ᵤ (pg_tmred Hp Hk) (pg_tmred Hp Hk') (NatRel_perm Hp _ _ Hm)).
   - exact (pos_tl _ _ _ _ m[pφ π]ᵤ m'[pφ π]ᵤ _ _ (pg_tmred Hp Hk) (pg_tmred Hp Hk') IH).
+  - exact (pos_ne _ _ _ _ _ _ (p_eqtm Hp Ek) (pg_gne_tm Hp Hp')).
 Qed.
 
 Lemma PosRel_dnf {G Γ k k' p p'} : PosRel G Γ k k' p p' -> dnftm p /\ dnftm p'.
 Proof using EL.
-  induction 1 as [k k' m m' Hk Hk' Hm | k k' m m' p p' Hk Hk' Hp' [IH IH']];
-    pose proof (wf_tm_dnf (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ Hk))) as N1;
+  induction 1 as [k k' m m' Hk Hk' Hm | k k' m m' p p' Hk Hk' Hp' [IH IH'] | k k' p p' Ek Hp'].
+  3: { pose proof (geq_tm_sound (gne_tm_geq Hp')) as Ep.
+       exact (conj (wf_tm_dnf (eqtm_wf_l ge_typeof Ep)) (wf_tm_dnf (eqtm_wf_r ge_typeof Ep))). }
+  all: pose proof (wf_tm_dnf (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ Hk))) as N1;
     pose proof (wf_tm_dnf (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ Hk'))) as N2;
     cbn in N1, N2; unfold posHd, posTl; cbn; repeat split; auto.
 Qed.
@@ -939,30 +942,30 @@ Proof using EL.
                       lequiv (gL G) (lvsubst lx (pφ πi)) lk).
     { intros lx lk Hx. pose proof (pg_lequiv (G := Gp π G) Hpi Hx) as Z. rewrite (rt_lvl Hinv) in Z. exact Z. }
     assert (PA : forall Y,
-               [ Gp π G ; Γ[pφ π]ᵤ ⊢g dvecHd m[pφ π]ᵤ (iwfFamT (lvsubst l (pφ π)) (lvsubst li (pφ π))
-                    X[pφ π]ᵤ A[pφ π]ᵤ N[pφ π]ᵤ Ot[pφ π]ᵤ C[pφ π]ᵤ c[pφ π]ᵤ) ≅ Y @ lvsubst (lmax l li) (pφ π) ] ->
-               [ G ; Γ ⊢g dvecHd m (iwfFamT l li X A N Ot C c) ≅ Y[pφ πi]ᵤ @ lmax l li ]).
+               [ Gp π G ; Γ[pφ π]ᵤ ⊢ dvecHd m[pφ π]ᵤ (iwfFamT (lvsubst l (pφ π)) (lvsubst li (pφ π))
+                    X[pφ π]ᵤ A[pφ π]ᵤ N[pφ π]ᵤ Ot[pφ π]ᵤ C[pφ π]ᵤ c[pφ π]ᵤ) ≈ Y @ lvsubst (lmax l li) (pφ π) ] ->
+               [ G ; Γ ⊢ dvecHd m (iwfFamT l li X A N Ot C c) ≈ Y[pφ πi]ᵤ @ lmax l li ]).
     { intros Y HY.
-      assert (HY' : [ Gp π G ; Γ[pφ π]ᵤ ⊢g (dvecHd m (iwfFamT l li X A N Ot C c))[pφ π]ᵤ ≅ Y
+      assert (HY' : [ Gp π G ; Γ[pφ π]ᵤ ⊢ (dvecHd m (iwfFamT l li X A N Ot C c))[pφ π]ᵤ ≈ Y
                         @ lvsubst (lmax l li) (pφ π) ])
         by (rewrite usubst_dvecHd, usubst_iwfFamT; exact HY).
-      pose proof (pg_eqty (G := Gp π G) Hpi HY') as Z.
+      pose proof (pg_geq_ty (G := Gp π G) Hpi HY') as Z.
       rewrite (Gp_rt Hp HG), (rt_ctx Hinv _ HΓ), (rt_ty Hinv _ NH), (rt_lvl Hinv) in Z. exact Z. }
     assert (PB : forall Y,
                [ Gp π G ; Γ[pφ π]ᵤ ,, dvecHd m[pφ π]ᵤ (iwfFamT (lvsubst l (pφ π)) (lvsubst li (pφ π))
                     X[pφ π]ᵤ A[pφ π]ᵤ N[pφ π]ᵤ Ot[pφ π]ᵤ C[pφ π]ᵤ c[pφ π]ᵤ) @ lvsubst (lmax l li) (pφ π)
-                 ⊢g dvecTl (lvsubst (lmax l li) (pφ π)) m[pφ π]ᵤ (iwfFamT (lvsubst l (pφ π)) (lvsubst li (pφ π))
-                    X[pφ π]ᵤ A[pφ π]ᵤ N[pφ π]ᵤ Ot[pφ π]ᵤ C[pφ π]ᵤ c[pφ π]ᵤ) ≅ Y @ lvsubst (lmax l li) (pφ π) ] ->
+                 ⊢ dvecTl (lvsubst (lmax l li) (pφ π)) m[pφ π]ᵤ (iwfFamT (lvsubst l (pφ π)) (lvsubst li (pφ π))
+                    X[pφ π]ᵤ A[pφ π]ᵤ N[pφ π]ᵤ Ot[pφ π]ᵤ C[pφ π]ᵤ c[pφ π]ᵤ) ≈ Y @ lvsubst (lmax l li) (pφ π) ] ->
                [ G ; Γ ,, dvecHd m (iwfFamT l li X A N Ot C c) @ lmax l li
-                   ⊢g dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c) ≅ Y[pφ πi]ᵤ @ lmax l li ]).
+                   ⊢ dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c) ≈ Y[pφ πi]ᵤ @ lmax l li ]).
     { intros Y HY.
       assert (HY' : [ Gp π G ; (Γ ,, dvecHd m (iwfFamT l li X A N Ot C c) @ lmax l li)[pφ π]ᵤ
-                        ⊢g (dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c))[pφ π]ᵤ ≅ Y
+                        ⊢ (dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c))[pφ π]ᵤ ≈ Y
                         @ lvsubst (lmax l li) (pφ π) ]).
       { change ((Γ ,, dvecHd m (iwfFamT l li X A N Ot C c) @ lmax l li)[pφ π]ᵤ)
           with (Γ[pφ π]ᵤ ,, (dvecHd m (iwfFamT l li X A N Ot C c))[pφ π]ᵤ @ lvsubst (lmax l li) (pφ π)).
         rewrite usubst_dvecHd, usubst_dvecTl, usubst_iwfFamT. exact HY. }
-      pose proof (pg_eqty (G := Gp π G) Hpi HY') as Z.
+      pose proof (pg_geq_ty (G := Gp π G) Hpi HY') as Z.
       rewrite (Gp_rt Hp HG), (rt_ctx Hinv _ NΓH), (rt_ty Hinv _ NT), (rt_lvl Hinv) in Z. exact Z. }
     pose proof (pg_tmred Hp Hcs) as Rcs. pose proof (pg_tmred Hp Hcs') as Rcs'. pose proof (pg_geq_tm Hp Heq) as Eq.
     rewrite usubst_tySig', usubst_dvecHd, usubst_dvecTl, usubst_iwfFamT in Rcs, Rcs', Eq.
@@ -975,8 +978,8 @@ Proof using EL.
     + exact (whnf_usubst _ _ Hwh').
     + exact Eq.
     + intros la lb A1 B1 la' lb' A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1'.
-      pose proof (wf_ty_dnf (eqty_wf_r ge_typeof HA1)) as NA1. pose proof (wf_ty_dnf (eqty_wf_r ge_typeof HB1)) as NB1.
-      pose proof (wf_ty_dnf (eqty_wf_r ge_typeof HA1')) as NA1'. pose proof (wf_ty_dnf (eqty_wf_r ge_typeof HB1')) as NB1'.
+      destruct (geq_ty_dnf HA1) as [_ NA1]. destruct (geq_ty_dnf HB1) as [_ NB1].
+      destruct (geq_ty_dnf HA1') as [_ NA1']. destruct (geq_ty_dnf HB1') as [_ NB1'].
       pose proof (IHfst _ _ _ _ _ _ _ _ (PullL _ (lmax l li) H1) (PullL _ (lmax l li) H2)
                     (PullL _ (lmax l li) H3) (PullL _ (lmax l li) H4)
                     (PA _ HA1) (PB _ HB1) (PA _ HA1') (PB _ HB1') Hp HG HΓ _ _ ix' d' eq_refl eq_refl
@@ -985,8 +988,8 @@ Proof using EL.
         (rt_ty Hinv' _ NA1'), (rt_ty Hinv' _ NB1'), usubst_lsingle in Y.
       exact Y.
     + intros la lb A1 B1 la' lb' A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1'.
-      pose proof (wf_ty_dnf (eqty_wf_r ge_typeof HA1)) as NA1. pose proof (wf_ty_dnf (eqty_wf_r ge_typeof HB1)) as NB1.
-      pose proof (wf_ty_dnf (eqty_wf_r ge_typeof HA1')) as NA1'. pose proof (wf_ty_dnf (eqty_wf_r ge_typeof HB1')) as NB1'.
+      destruct (geq_ty_dnf HA1) as [_ NA1]. destruct (geq_ty_dnf HB1) as [_ NB1].
+      destruct (geq_ty_dnf HA1') as [_ NA1']. destruct (geq_ty_dnf HB1') as [_ NB1'].
       assert (Nmv : dnftm (posMv m c)).
       { unfold posMv. apply subst_dnf; [apply ren_dnf, Nc | apply lk_dnf_lsingle].
         unfold posTl; cbn; repeat split; auto using ren_dnf. }
