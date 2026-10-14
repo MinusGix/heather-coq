@@ -84,6 +84,75 @@ Proof using Hd. tsub. Qed.
 
 End Telescope.
 
+(** ** The children's [dnth] under the step's telescope
+
+    [iwfihty]'s [dnth], in [Γ, x : A, cs : csty, i : Fin N], at the family
+    [iwfFc] (its family binder at [Fin N]); at a substitution it is the
+    induction hypothesis's [dnth] at the shape and children. *)
+Notation iwfFc l li X A N Ot C :=
+  (tyIWf l li X⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩
+     Ot⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩
+     C⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ C⟨rlift ↑⟩⟨rlift ↑⟩).
+
+Lemma liftshift_llift_cons (t : tm) d u : t⟨rlift ↑⟩[llift (lcons d u)] = t[llift d].
+Proof. apply ren_subst. intros [|n]; rlk_simpl; rewrite ?llk_llift; reflexivity. Qed.
+Lemma lift2shift_llift2_cons (t : tm) d u : t⟨rlift (rlift ↑)⟩[llift (llift (lcons d u))] = t[llift (llift d)].
+Proof. apply ren_subst. intros [|[|n]]; rlk_simpl; rewrite ?llk_llift; reflexivity. Qed.
+Lemma n3_single (N : tm) : N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (var 2)] = N⟨↑⟩⟨↑⟩.
+Proof.
+  rewrite !ren_ren_comp, ren_as_r2l, (ren_as_r2l N), subst_comp. apply subst_ext.
+  intros [|n]; pw.
+Qed.
+Lemma c3_single (C : tm) :
+  C⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩[llift (lsingle (var 2))] = C⟨rlift ↑⟩⟨rlift ↑⟩.
+Proof.
+  rewrite !ren_ren_comp, ren_as_r2l, (ren_as_r2l C), subst_comp. apply subst_ext.
+  intros [|[|n]]; pw.
+Qed.
+Lemma iwfFc_fam l li (X A : ty) (N Ot C : tm) :
+  iwfFc l li X A N Ot C =
+  iwfFam l li X⟨↑⟩⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩
+    C⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ (var 2).
+Proof. unfold iwfFam. now rewrite c3_single. Qed.
+
+Lemma llift2_single_cons (C : tm) d a : LK nftm d -> C[llift (llift d)][llift (lsingle a)] = C[llift (lcons d a)].
+Proof.
+  intros Hd. apply subst_subst. intros [|[|n]]; rewrite ?llk_llift; cbn; rewrite ?llk_llift; cbn; try reflexivity.
+  change (ren_tm (ren_tm ?x ?r) ?r') with x⟨r⟩⟨r'⟩. change (ren_tm ?x ?r) with x⟨r⟩.
+  rewrite shift_llift, shift_single by apply Hd. reflexivity.
+Qed.
+
+Lemma iwfFc_subst l li (X A : ty) (N Ot C : tm) d a cs y : LK nftm d ->
+  (iwfFc l li X A N Ot C)[llift (lcons (lcons (lcons d a) cs) y)] =
+  iwfFam l li X[d] A[d] N[llift d] Ot[llift d] C[llift (llift d)] a.
+Proof.
+  intros Hd. unfold iwfFam. push_subst.
+  rewrite !shift_llift_ty, !liftshift_llift, !lift2shift_llift, !shift_subst_ty, !liftshift_llift_cons,
+    !lift2shift_llift2_cons. cbn [ldrop].
+  f_equal. symmetry. apply llift2_single_cons, Hd.
+Qed.
+
+Lemma iwf_dnthv_subst l li (X A : ty) (N Ot C : tm) d a cs y : LK nftm d -> nftm a -> nftm cs -> nftm y ->
+  (tmDNth (lmax l li) N⟨↑⟩⟨↑⟩ (iwfFc l li X A N Ot C) (var 1) (var 0))[lcons (lcons (lcons d a) cs) y] =
+  tmDNth (lmax l li) N[llift d][lsingle a] (iwfFam l li X[d] A[d] N[llift d] Ot[llift d] C[llift (llift d)] a) cs y.
+Proof.
+  intros Hd Na Ncs Ny.
+  assert (Hd3 : LK nftm (lcons (lcons (lcons d a) cs) y)) by (intros [|[|[|n]]]; cbn; auto).
+  rewrite subst_tmDNth, iwfFc_subst by first [exact Hd3 | exact Hd].
+  rewrite !shift_subst_tm. cbn [ldrop]. rewrite lift_single_tm by exact Hd. reflexivity.
+Qed.
+
+Lemma iwfFc_single_subst l li (X A : ty) (N Ot C : tm) d a cs y : LK nftm d -> nftm a -> nftm cs -> nftm y ->
+  nfty X[d] -> nfty A[d] -> nftm N[llift d] -> nftm Ot[llift d] -> nftm C[llift (llift d)] ->
+  (iwfFc l li X A N Ot C)[lsingle (var 0)][lcons (lcons (lcons d a) cs) y] =
+  tyIWf l li X[d] A[d] N[llift d] Ot[llift d] C[llift (llift d)] C[llift (llift d)][lsingle2 a y].
+Proof.
+  intros Hd Na Ncs Ny NX NA NN NO NC.
+  assert (Hd3 : LK nftm (lcons (lcons (lcons d a) cs) y)) by (intros [|[|[|n]]]; cbn; auto).
+  rewrite single_subst_ty, iwfFc_subst by first [exact Hd3 | exact Hd]. cbn [subst_tm llk].
+  rewrite iwfFam_T, iwfFamT_single, llift_single_single by assumption. reflexivity.
+Qed.
+
 Section IWfElim.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
@@ -588,6 +657,102 @@ Proof.
   - refine (conj (geq_ty_trans EX (geq_ty_sym EX)) (conj (geq_ty_trans EA (geq_ty_sym EA))
               (conj (geq_tm_trans EN (geq_tm_sym EN)) (conj (geq_tm_trans EO (geq_tm_sym EO))
                  (geq_tm_trans EC (geq_tm_sym EC)))))).
+Qed.
+
+Local Ltac gwkn H := first [ exact H | eapply (wk1_ty _ _ ge_typeof); [eassumption | gwkn H]
+                           | eapply (wk1_tm _ _ ge_typeof); [eassumption | gwkn H] ].
+Local Ltac gvar := eapply wf_tm_retype; [eapply wf_var; [rewrite ge_typeof; eassumption | repeat constructor]
+                                        | cbn; try reflexivity].
+Local Ltac vvar := eapply VG_var; [repeat constructor | cbn; try reflexivity].
+
+(** M17_DESIGN.md's index lemma at the [ih] entry's [dnth]. *)
+Lemma elimIWf_Vdnth :
+  VTmG G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, tyFin N⟨↑⟩ @ lzero)
+    (tmDNth (lmax l li) N⟨↑⟩⟨↑⟩ (iwfFc l li X A N Ot C) (var 1) (var 0))
+    (tmDNth (lmax l3 li3) N'⟨↑⟩⟨↑⟩ (iwfFc l3 li3 X' A' N' Ot' C') (var 1) (var 0))
+    (iwfFc l li X A N Ot C)[lsingle (var 0)] (lmax l li).
+Proof.
+  pose proof HS as (_ & _ & HX & HA & HN & HO & HC).
+  assert (HwL : lwf (gL G) (lmax l li)) by (split; assumption).
+  assert (HLL : lequiv (gL G) (lmax l li) (lmax l3 li3)) by (apply lequiv_max; assumption).
+  pose proof (IWf_cs_wf ge_typeof ge_notV HS) as HCs.
+  pose proof (ext_wf_g HA Hwl) as H1. pose proof (ext_wf_g HCs HwL) as H2.
+  assert (HN1 : [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ⊢g N⟨↑⟩ : tyNat @ lzero ])
+    by (eapply wf_tm_retype; [gwkn HN | reflexivity]).
+  assert (HF1 : [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ⊢g tyFin N⟨↑⟩ @ lzero ])
+    by (apply wft_fin; [exact ge_notV | exact HN1]).
+  assert (Hw0 : lwf (gL G) lzero) by exact I. pose proof (ext_wf_g HF1 Hw0) as H3.
+  assert (HN2 : [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, tyFin N⟨↑⟩ @ lzero
+                  ⊢g N⟨↑⟩⟨↑⟩ : tyNat @ lzero ])
+    by (eapply wf_tm_retype; [gwkn HN1 | reflexivity]).
+  pose proof (IWfSig_wk1 ge_typeof ge_notV (IWfSig_wk1 ge_typeof ge_notV (IWfSig_wk1 ge_typeof ge_notV HS H1) H2) H3)
+    as HS3.
+  assert (Hv2 : [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, tyFin N⟨↑⟩ @ lzero
+                  ⊢g var 2 : A⟨↑⟩⟨↑⟩⟨↑⟩ @ l ]) by gvar.
+  pose proof (IWf_fam_wf ge_typeof ge_notV HS3 Hv2) as HFam. rewrite n3_single, <- iwfFc_fam in HFam.
+  assert (VF : VTyG G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, tyFin N⟨↑⟩ @ lzero
+                       ,, tyFin N⟨↑⟩⟨↑⟩ @ lzero)
+                 (iwfFc l li X A N Ot C) (iwfFc l3 li3 X' A' N' Ot' C') (lmax l li)).
+  { apply VG_iwf; [exact Hwl | exact Hwli | exact (lequiv_sym _ _ _ H13) | exact (lequiv_sym _ _ _ Hi3)
+                  | exact (VG_shift (VG_shift (VG_shift (VG_shift VX))))
+                  | exact (VG_shift (VG_shift (VG_shift (VG_shift VA)))) | | | |].
+    - eapply VTmG_retype; [exact (VG_lift1_tm (VG_lift1_tm (VG_lift1_tm (VG_lift1_tm VNt)))) | reflexivity].
+    - eapply VTmG_retype; [exact (VG_lift1_tm (VG_lift1_tm (VG_lift1_tm (VG_lift1_tm VO)))) |].
+      now rewrite !IWf_E_ren.
+    - eapply VTmG_retype; [exact (VG_lift2_tm (VG_lift2_tm (VG_lift2_tm (VG_lift2_tm VC)))) |].
+      now rewrite !IWf_E_ren2.
+    - eapply VTmG_retype; [exact (VG_lift1_tm (VG_lift1_tm VC)) |]. now rewrite !IWf_E_ren. }
+  apply (V_dnth HwL HLL HN2 (VTmG_retype (VG_shift_tm (VG_shift_tm VNt)) eq_refl) HFam VF).
+  - vvar. push_ren. f_equal. f_equal; ren_comm.
+  - vvar.
+Qed.
+
+(** The [dnth] in the induction hypothesis's body at a Kripke weakening of
+    the shape and children's substitution, at related indices. *)
+Lemma elimIWf_dnth_kw {G0 γ Δ0 e e' a a' cs cs'} (ρ : kwk G0 Δ0) {y y'} :
+  gwk_ok γ G0 G ->
+  SubRel G0 (Γ⟦γ⟧ ,, A⟦γ⟧ @ l ,, iwfcsty l li X⟦γ⟧ A⟦γ⟧ N⟦γ⟧ Ot⟦γ⟧ C⟦γ⟧ @ lmax l li) Δ0
+    (lcons (lcons e a) cs) (lcons (lcons e' a') cs') ->
+  LRtm lzero (kw_G ρ) (kw_Δ ρ) (tyFin (ktml ρ (sN γ e))[lsingle (ktm ρ a)])
+    (tyFin (ktml ρ (sN γ e'))[lsingle (ktm ρ a')]) y y' ->
+  LRtm (lmax l li) (kw_G ρ) (kw_Δ ρ)
+    (tyIWf l li (kty ρ (sX γ e)) (kty ρ (sA γ e)) (ktml ρ (sN γ e)) (ktml ρ (sO γ e)) (ktmll ρ (sC γ e))
+       (ktmll ρ (sC γ e))[lsingle2 (ktm ρ a) y])
+    (tyIWf l li (kty ρ (sX γ e')) (kty ρ (sA γ e')) (ktml ρ (sN γ e')) (ktml ρ (sO γ e')) (ktmll ρ (sC γ e'))
+       (ktmll ρ (sC γ e'))[lsingle2 (ktm ρ a') y'])
+    (tmDNth (lmax l li) (ktml ρ (sN γ e))[lsingle (ktm ρ a)]
+       (iwfFam l li (kty ρ (sX γ e)) (kty ρ (sA γ e)) (ktml ρ (sN γ e)) (ktml ρ (sO γ e)) (ktmll ρ (sC γ e))
+          (ktm ρ a)) (ktm ρ cs) y)
+    (tmDNth (lmax l3 li3) (ktml ρ (sN' γ e'))[lsingle (ktm ρ a')]
+       (iwfFam l3 li3 (kty ρ (sX' γ e')) (kty ρ (sA' γ e')) (ktml ρ (sN' γ e')) (ktml ρ (sO' γ e'))
+          (ktmll ρ (sC' γ e')) (ktm ρ a')) (ktm ρ cs') y').
+Proof.
+  intros Hγ HSc Hy.
+  pose proof (SubRel_kw _ _ _ ρ _ _ HSc) as HSρ.
+  rewrite !gwa_cext, gwa_iwfcsty, gwa_comp_ctx, !gwa_comp_ty, !gwa_comp_tm in HSρ.
+  pose proof (elimIWf_Vdnth _ _ (gwk_ok_comp (kw_gok ρ) Hγ)) as Vn.
+  rewrite !gwa_cext, gwa_iwfcsty in Vn.
+  repeat first [rewrite gwa_tyFin in Vn | rewrite gwa_tmDNth in Vn | rewrite gwa_ren_ty in Vn | rewrite gwa_ren in Vn
+               | rewrite gwa_tyIWf in Vn | rewrite gwa_var in Vn | rewrite gwa_subst_ty in Vn
+               | rewrite gwa_lsingle in Vn].
+  assert (Ne : LK nftm (kwsub ρ e)) by (intros n; rewrite llk_kwsub; apply ren_nf).
+  assert (Ne' : LK nftm (kwsub ρ e')) by (intros n; rewrite llk_kwsub; apply ren_nf).
+  assert (Xy : LRtm lzero (kw_G ρ) (kw_Δ ρ) (tyFin N⟦gwk_comp (kw_γ ρ) γ⟧⟨↑⟩)[kwsub ρ (lcons (lcons e a) cs)]
+                 (tyFin N⟦gwk_comp (kw_γ ρ) γ⟧⟨↑⟩)[kwsub ρ (lcons (lcons e' a') cs')] y y').
+  { rewrite (subst_ext_ty _ _ _ (kwsub_cons2 ρ e a cs)), (subst_ext_ty _ _ _ (kwsub_cons2 ρ e' a' cs')).
+    rewrite !finv_subst, <- !kγ_tml by assumption. exact Hy. }
+  pose proof (Vn _ _ _ (SubRel_cons HSρ Xy)) as X0.
+  rewrite (subst_ext_ty _ _ _ (kwsub_cons3 ρ e a cs y)), (subst_ext_ty _ _ _ (kwsub_cons3 ρ e' a' cs' y')),
+    (subst_ext _ _ _ (kwsub_cons3 ρ e a cs y)), (subst_ext _ _ _ (kwsub_cons3 ρ e' a' cs' y')) in X0.
+  pose proof (wf_tm_nf (proj1 (LRtm_escape Hy))) as Ny. pose proof (wf_tm_nf (proj2 (LRtm_escape Hy))) as Ny'.
+  assert (Na : nftm (ktm ρ a)) by apply ren_nf. assert (Na' : nftm (ktm ρ a')) by apply ren_nf.
+  assert (Ncs : nftm (ktm ρ cs)) by apply ren_nf. assert (Ncs' : nftm (ktm ρ cs')) by apply ren_nf.
+  rewrite !iwf_dnthv_subst in X0 by assumption.
+  rewrite !iwfFc_single_subst in X0
+    by first [assumption | rewrite <- kγ_ty; apply ren_nf_ty | rewrite <- kγ_tml; apply ren_nf
+             | rewrite <- kγ_tmll; apply ren_nf].
+  rewrite <- !kγ_ty, <- !kγ_tml, <- !kγ_tmll in X0.
+  exact X0.
 Qed.
 
 (** ** The core: related eliminations at related trees *)
