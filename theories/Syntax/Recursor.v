@@ -29,7 +29,7 @@ Definition wrap (nu ng nl : nat) (b : tm) : tm := wrapU nu (wrapG ng (wrapL nl b
 
 (** The number of branches, and the branch-indexed case split: [br_all t]
     runs [t] [nbr] times, as [do nbr t] would (M8_DESIGN.md J2, S0). *)
-Notation nbr := 55 (only parsing).
+Notation nbr := 61 (only parsing).
 Ltac br_do n tac := lazymatch n with O => idtac | S ?m => tac; br_do m tac end.
 Ltac br_all tac := br_do constr:(nbr) tac.
 
@@ -64,6 +64,10 @@ Definition bWf := 47.    Definition bWf' := 48.    Definition bSupf := 49.  Defi
 (** Propositional truncation's (M16b): Heather's [t_Squash], [t'_Squash],
     [t_squash], [t_elim_squash]. *)
 Definition bSq := 51.    Definition bSq' := 52.    Definition bSqIn := 53.  Definition bElimSq := 54.
+(** Dependent tuples and indexed well-founded trees' (M17c): [t_DVec],
+    [t'_DVec], [t_IWf], [t'_IWf], [t_supi], [t_elimIWf]. *)
+Definition bDVec := 55.  Definition bDVec' := 56.  Definition bIWf := 57.  Definition bIWf' := 58.
+Definition bSupi := 59.  Definition bElimIWf := 60.
 
 (** The arity [(levels, globals, locals)] of branch [k]. *)
 Definition br_ar (k : nat) : nat * nat * nat :=
@@ -123,13 +127,19 @@ Definition br_ar (k : nat) : nat * nat * nat :=
   | 52 => (1, 2, 1)       (* ℓ; g u_s; x_s. t'_Squash *)
   | 53 => (1, 3, 2)       (* ℓ; g U_A u_a; x_A x_a. t_squash *)
   | 54 => (2, 5, 4)       (* ℓ ℓ'; g U_A U_M u_c u_t; x_A x_M x_c x_t. t_elim_squash *)
+  | 55 => (1, 3, 2)       (* ℓ; g u_n U_F; x_n x_F. t_DVec *)
+  | 56 => (1, 3, 2)       (* ℓ; g u_n u_f; x_n x_f. t'_DVec *)
+  | 57 => (2, 7, 6)       (* ℓ ℓi; g U_X U_A u_N u_O u_C u_m; x_X x_A x_N x_O x_C x_m. t_IWf *)
+  | 58 => (2, 7, 6)       (* ℓ ℓi; g u_x u_s u_n u_o u_c u_m; x_x x_s x_n x_o x_c x_m. t'_IWf *)
+  | 59 => (2, 8, 7)       (* ℓ ℓi; g U_X U_A u_N u_O u_C u_a u_cs; x_X … x_cs. t_supi *)
+  | 60 => (3, 10, 9)      (* ℓ ℓi ℓ'; g U_X U_A u_N u_O u_C U_M u_c u_m u_t; x_X … x_t. t_elimIWf *)
   | _ => (0, 0, 0)
   end.
 
 (** Whether branch [k] is a type branch (typed at [l₁], recursing on
     [elim_Typ]) or a term branch. *)
 Definition br_isT (k : nat) : bool :=
-  match k with 0 | 1 | 2 | 3 | 13 | 14 | 21 | 25 | 27 | 31 | 34 | 39 | 43 | 45 | 47 | 51 => true | _ => false end.
+  match k with 0 | 1 | 2 | 3 | 13 | 14 | 21 | 25 | 27 | 31 | 34 | 39 | 43 | 45 | 47 | 51 | 55 | 57 => true | _ => false end.
 
 Definition wrapMT (MT : ty) : tm := bindU (bindG (bindL (tmTy MT))).
 Definition wrapMt (Mt : ty) : tm := bindU (bindG (bindG (bindL (tmTy Mt)))).
@@ -247,6 +257,22 @@ Definition redT (l : lvl) (Δ : ctx) (c : ty) : option tm :=
   (* propositional truncation (M16b) *)
   | tySq k A =>
       Some (peelL (peelG (peelG (peelU (rb_br rb bSq) k) (GCtx Δ)) (GTy A)) (recT k Δ A))
+  (* dependent tuples and indexed trees (M17c): the family's call is under
+     the position, the indexed tree's under the shape and its positions *)
+  | tyDVec k n F =>
+      Some (peelL (peelL (peelG (peelG (peelG (peelU (rb_br rb bDVec) k)
+              (GCtx Δ)) (GTm n)) (GTy F))
+              (rect lzero Δ tyNat n)) (recT k (cext Δ (tyFin n) lzero) F))
+  | tyIWf k ki X A N Ot C m =>
+      Some (peelL (peelL (peelL (peelL (peelL (peelL
+              (peelG (peelG (peelG (peelG (peelG (peelG (peelG (peelU (peelU (rb_br rb bIWf) k) ki)
+                 (GCtx Δ)) (GTy X)) (GTy A)) (GTm N)) (GTm Ot)) (GTm C)) (GTm m))
+              (recT ki Δ X))
+              (recT k Δ A))
+              (rect lzero (cext Δ A k) tyNat N))
+              (rect ki (cext Δ A k) X⟨↑⟩ Ot))
+              (rect ki (cext (cext Δ A k) (tyFin N) lzero) X⟨↑⟩⟨↑⟩ C))
+              (rect ki Δ X m))
   | _ => None
   end.
 
@@ -450,6 +476,49 @@ Definition redt (l : lvl) (Δ : ctx) (T : ty) (c : tm) : option tm :=
               (recT k' (cext Δ (tySq k A) k) M))
               (rect k' (cext Δ A k) (tySq k' (subst_ty M⟨rlift ↑⟩ (lsingle (tmSq k A⟨↑⟩ (var 0))))) c))
               (rect k Δ (tySq k A) t))
+  (* dependent tuples and indexed trees (M17c): [elim_IWf]'s calls exclude
+     the step telescope's types, as [elim_Wf]'s *)
+  | tmDVec k n f =>
+      Some (peelL (peelL (peelG (peelG (peelG (peelU (rb_br rb bDVec') k)
+              (GCtx Δ)) (GTm n)) (GTm f))
+              (rect lzero Δ tyNat n)) (rect (lsuc k) (cext Δ (tyFin n) lzero) (tyU k) f))
+  | tmIWf k ki x s n o c m =>
+      Some (peelL (peelL (peelL (peelL (peelL (peelL
+              (peelG (peelG (peelG (peelG (peelG (peelG (peelG (peelU (peelU (rb_br rb bIWf') k) ki)
+                 (GCtx Δ)) (GTm x)) (GTm s)) (GTm n)) (GTm o)) (GTm c)) (GTm m))
+              (rect (lsuc ki) Δ (tyU ki) x))
+              (rect (lsuc k) Δ (tyU k) s))
+              (rect lzero (cext Δ (tyEl k s) k) tyNat n))
+              (rect ki (cext Δ (tyEl k s) k) (tyEl ki x⟨↑⟩) o))
+              (rect ki (cext (cext Δ (tyEl k s) k) (tyFin n) lzero) (tyEl ki x⟨↑⟩⟨↑⟩) c))
+              (rect ki Δ (tyEl ki x) m))
+  | tmSupi k ki X A N Ot C a cs =>
+      Some (peelL (peelL (peelL (peelL (peelL (peelL (peelL
+              (peelG (peelG (peelG (peelG (peelG (peelG (peelG (peelG (peelU (peelU (rb_br rb bSupi) k) ki)
+                 (GCtx Δ)) (GTy X)) (GTy A)) (GTm N)) (GTm Ot)) (GTm C)) (GTm a)) (GTm cs))
+              (recT ki Δ X))
+              (recT k Δ A))
+              (rect lzero (cext Δ A k) tyNat N))
+              (rect ki (cext Δ A k) X⟨↑⟩ Ot))
+              (rect ki (cext (cext Δ A k) (tyFin N) lzero) X⟨↑⟩⟨↑⟩ C))
+              (rect k Δ A a))
+              (rect (lmax k ki) Δ (tyDVec (lmax k ki) (subst_tm N (lsingle a)) (iwfFam k ki X A N Ot C a)) cs))
+  | tmElimIWf k ki k' X A N Ot C M c m t =>
+      Some (peelL (peelL (peelL (peelL (peelL (peelL (peelL (peelL (peelL
+              (peelG (peelG (peelG (peelG (peelG (peelG (peelG (peelG (peelG (peelG
+                 (peelU (peelU (peelU (rb_br rb bElimIWf) k) ki) k')
+                 (GCtx Δ)) (GTy X)) (GTy A)) (GTm N)) (GTm Ot)) (GTm C)) (GTy M)) (GTm c)) (GTm m)) (GTm t))
+              (recT ki Δ X))
+              (recT k Δ A))
+              (rect lzero (cext Δ A k) tyNat N))
+              (rect ki (cext Δ A k) X⟨↑⟩ Ot))
+              (rect ki (cext (cext Δ A k) (tyFin N) lzero) X⟨↑⟩⟨↑⟩ C))
+              (recT k' (cext (cext Δ X ki) (iwfmotty k ki X A N Ot C) (lmax k ki)) M))
+              (rect k' (cext (cext (cext Δ A k) (iwfcsty k ki X A N Ot C) (lmax k ki))
+                          (iwfihty k ki k' X A N Ot C M) (lmax lzero k'))
+                 (iwfstepty k ki X A N Ot C M) c))
+              (rect ki Δ X m))
+              (rect (lmax k ki) Δ (tyIWf k ki X A N Ot C m) t))
   | _ => None
   end.
 

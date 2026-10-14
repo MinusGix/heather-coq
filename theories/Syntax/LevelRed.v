@@ -87,6 +87,32 @@ Qed.
 
 #[export] Hint Resolve leq_peelU leq_peelG leq_peelL leq_rb_br leq_lsingle : leq.
 
+(** [dnth] and [IWf]'s children's family (M17b), in [elim_IWf]'s reducts. *)
+Lemma leq_tmDNth k n F cs i k' n' F' cs' i' :
+  leqv k k' -> tm_leq n n' -> ty_leq F F' -> tm_leq cs cs' -> tm_leq i i' ->
+  tm_leq (tmDNth k n F cs i) (tmDNth k' n' F' cs' i').
+Proof.
+  intros E1 En EF Ec Ei.
+  unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
+  pose proof (proj1 leq_ren_all) as Rty. pose proof (proj1 (proj2 leq_ren_all)) as Rtm.
+  pose proof (proj1 leq_subst_all) as Sty. cbn beta in Rty, Rtm, Sty.
+  cbn [tm_leq ty_leq]; repeat split.
+  all: repeat first [ assumption | apply leqv_refl | apply Sty | lazymatch goal with |- lsub_leq _ _ => apply leq_lsingle end | apply Rty | apply Rtm
+                    | progress cbn [ty_leq tm_leq lsub_leq]; repeat split | reflexivity ].
+Qed.
+Lemma leq_iwfFam k1 k2 X A N Ot C a k1' k2' X' A' N' Ot' C' a' :
+  leqv k1 k1' -> leqv k2 k2' -> ty_leq X X' -> ty_leq A A' -> tm_leq N N' ->
+  tm_leq Ot Ot' -> tm_leq C C' -> tm_leq a a' ->
+  ty_leq (iwfFam k1 k2 X A N Ot C a) (iwfFam k1' k2' X' A' N' Ot' C' a').
+Proof.
+  intros E1 E2 EX EA EN EO EC Ea. unfold iwfFam.
+  pose proof (proj1 leq_ren_all) as Rty. pose proof (proj1 (proj2 leq_ren_all)) as Rtm.
+  pose proof (proj1 (proj2 leq_subst_all)) as Stm. cbn beta in Rty, Rtm, Stm.
+  cbn [ty_leq]; repeat split; auto.
+  all: repeat first [ assumption | apply Rty | apply Rtm ].
+  apply Stm; [apply leq_llift, leq_lsingle|]; assumption.
+Qed.
+
 (** ** The β reducts *)
 
 Section Reducts.
@@ -132,6 +158,11 @@ Ltac leq_step :=
     (* [sup_f]'s children's length (M15b) *)
     | |- tm_leq (subst_tm _ _) (subst_tm _ _) => apply (proj1 (proj2 leq_subst_all))
     | |- lsub_leq (lsingle _) (lsingle _) => unfold lsingle
+    (* [sup_i]'s and [elim_IWf]'s (M17c) *)
+    | |- lsub_leq (lsingle2 _ _) (lsingle2 _ _) => apply leq_lsingle2
+    | |- lsub_leq (llift _) (llift _) => apply leq_llift
+    | |- tm_leq (tmDNth _ _ _ _ _) (tmDNth _ _ _ _ _) => apply leq_tmDNth
+    | |- ty_leq (iwfFam _ _ _ _ _ _ _ _) (iwfFam _ _ _ _ _ _ _ _) => apply leq_iwfFam
     | |- ?R ?a _ =>
         let h := leq_head a in
         tryif is_constructor h
@@ -219,19 +250,7 @@ Proof.
   all: cbn; repeat split; auto using leqv_refl.
 Qed.
 
-(** [dnth] and [elim_IWf]'s induction hypothesis (M17b). *)
-Lemma leq_tmDNth k n F cs i k' n' F' cs' i' :
-  leqv k k' -> tm_leq n n' -> ty_leq F F' -> tm_leq cs cs' -> tm_leq i i' ->
-  tm_leq (tmDNth k n F cs i) (tmDNth k' n' F' cs' i').
-Proof.
-  intros E1 En EF Ec Ei.
-  unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
-  pose proof (proj1 leq_ren_all) as Rty. pose proof (proj1 (proj2 leq_ren_all)) as Rtm.
-  pose proof (proj1 leq_subst_all) as Sty. cbn beta in Rty, Rtm, Sty.
-  cbn [tm_leq ty_leq]; repeat split.
-  all: repeat first [ assumption | apply leqv_refl | apply Sty | lazymatch goal with |- lsub_leq _ _ => apply leq_lsingle end | apply Rty | apply Rtm
-                    | progress cbn [ty_leq tm_leq lsub_leq]; repeat split | reflexivity ].
-Qed.
+(** [elim_IWf]'s induction hypothesis (M17b). *)
 Lemma leq_iwfIH k1 k2 k3 X A N Ot C M c a cs k1' k2' k3' X' A' N' Ot' C' M' c' a' cs' :
   leqv k1 k1' -> leqv k2 k2' -> leqv k3 k3' -> ty_leq X X' -> ty_leq A A' -> tm_leq N N' ->
   tm_leq Ot Ot' -> tm_leq C C' -> ty_leq M M' -> tm_leq c c' -> tm_leq a a' -> tm_leq cs cs' ->

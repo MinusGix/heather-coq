@@ -249,6 +249,29 @@ Proof.
   rewrite ?usubst_ren_ty, ?usubst_ren_tm. reflexivity.
 Qed.
 
+(** [sup_i]'s children and [elim_IWf]'s step telescope (M17c) hold an
+    [iwfFam] and a [dnth]. *)
+Lemma usubst_llift_single_r (b a : tm) φ :
+  usubst_tm (subst_tm b (llift (lsingle a))) φ = subst_tm (usubst_tm b φ) (llift (lsingle (usubst_tm a φ))).
+Proof. apply (proj1 (proj2 usubst_subst_all)). intros [|[|n]]; rewrite ?llk_llift; cbn; rewrite ?usubst_ren_tm; reflexivity. Qed.
+Lemma usubst_tmDNth_r l n F cs i φ :
+  usubst_tm (tmDNth l n F cs i) φ =
+  tmDNth (lvsubst l φ) (usubst_tm n φ) (usubst_ty F φ) (usubst_tm cs φ) (usubst_tm i φ).
+Proof.
+  unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS;
+    repeat progress (cbn [usubst_tm usubst_ty lvsubst];
+      rewrite ?usubst_lsingle_ty, ?usubst_ren_ty, ?usubst_ren_tm).
+  reflexivity.
+Qed.
+Lemma usubst_iwfFam_r l li X A N Ot C a φ :
+  usubst_ty (iwfFam l li X A N Ot C a) φ =
+  iwfFam (lvsubst l φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ)
+    (usubst_tm Ot φ) (usubst_tm C φ) (usubst_tm a φ).
+Proof.
+  unfold iwfFam. cbn [usubst_tm usubst_ty lvsubst].
+  rewrite ?usubst_ren_ty, ?usubst_ren_tm, ?usubst_llift_single_r. reflexivity.
+Qed.
+
 Ltac upeel_push :=
   repeat first [ rewrite <- peelL_usubst | rewrite <- peelG_usubst | rewrite <- peelU_usubst ];
   rewrite rb_br_usubst; cbn [gousubst usubst_tm ucsubst usubst_ty lvsubst recT rect];
@@ -258,6 +281,9 @@ Ltac upeel_push :=
   (* [sup_f]'s children's length and [elim_Wf]'s step telescope (M15b) *)
   rewrite ?usubst_lsingle_tm, ?usubst_lsingle_ty, ?usubst_tmNth_r; cbn [usubst_tm usubst_ty lvsubst];
   rewrite ?usubst_ren_ty, ?usubst_ren_tm;
+  (* [sup_i]'s children and [elim_IWf]'s step telescope (M17c) *)
+  rewrite ?usubst_iwfFam_r, ?usubst_tmDNth_r, ?usubst_lsingle2_ty; cbn [usubst_tm usubst_ty lvsubst];
+  rewrite ?usubst_ren_ty, ?usubst_ren_tm, ?usubst_lsingle_tm;
   reflexivity.
 
 Lemma redT_usubst l1 l2 rb l Δ c v φ : redT l1 l2 rb l Δ c = Some v ->
@@ -346,13 +372,22 @@ Lemma wkb_ren4 nu ng w r : (wkb nu ng 4 w)⟨rlift (rlift (rlift (rlift r)))⟩ 
 Proof. exact (wkb_ren nu ng 4 w r). Qed.
 Lemma wkb_ren5 nu ng w r : (wkb nu ng 5 w)⟨rlift (rlift (rlift (rlift (rlift r))))⟩ = wkb nu ng 5 w⟨r⟩.
 Proof. exact (wkb_ren nu ng 5 w r). Qed.
+(* [sup_i]'s and [elim_IWf]'s branches (M17c) have seven and nine locals *)
+Lemma wkb_ren6 nu ng w r : (wkb nu ng 6 w)⟨rlift (rlift (rlift (rlift (rlift (rlift r)))))⟩ = wkb nu ng 6 w⟨r⟩.
+Proof. exact (wkb_ren nu ng 6 w r). Qed.
+Lemma wkb_ren7 nu ng w r : (wkb nu ng 7 w)⟨rlift (rlift (rlift (rlift (rlift (rlift (rlift r))))))⟩ = wkb nu ng 7 w⟨r⟩.
+Proof. exact (wkb_ren nu ng 7 w r). Qed.
+Lemma wkb_ren8 nu ng w r :
+  (wkb nu ng 8 w)⟨rlift (rlift (rlift (rlift (rlift (rlift (rlift (rlift r)))))))⟩ = wkb nu ng 8 w⟨r⟩.
+Proof. exact (wkb_ren nu ng 8 w r). Qed.
 
 Lemma brLocs_ren k wT wt a1 a2 r : k < nbr ->
   cexts_ren (brLocs k wT wt a1 a2) r = brLocs k wT⟨r⟩ wt⟨r⟩ a1 a2.
 Proof.
   intros Hk.
   br_all ltac:(destruct k; [cbn [brLocs cexts_ren mkLocs call_ty call_lv br_calls br_nu br_ng br_ar];
-    rewrite ?motT_ren, ?mott_ren, ?wkb_ren0, ?wkb_ren1, ?wkb_ren2, ?wkb_ren3, ?wkb_ren4, ?wkb_ren5;
+    rewrite ?motT_ren, ?mott_ren, ?wkb_ren0, ?wkb_ren1, ?wkb_ren2, ?wkb_ren3, ?wkb_ren4, ?wkb_ren5,
+      ?wkb_ren6, ?wkb_ren7, ?wkb_ren8;
     reflexivity|]).
   lia.
 Qed.
