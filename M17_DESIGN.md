@@ -1,6 +1,6 @@
 # M17: indexed finitary trees (`DVec`, `IWf`), design
 
-Status: **M17a done** (2026-10-13), **M17b done** (2026-10-14); M17c next. Why now: Heather froze `IWf`'s
+Status: **M17a done** (2026-10-13), **M17b done** (2026-10-14), **M17c done** (2026-10-14). Why now: Heather froze `IWf`'s
 rule set (`H/docs/iwf-former-design.md` §1–§6, 2026-10-13), and `IWf` is
 how its kernel loses `transp` and the strip: route 2b's indexed families
 store an index equation that only `transp` can use, and `IWf` stores
@@ -314,11 +314,57 @@ Decisions and deviations, in the order the proof met them:
   canonical one at `m` (its output index is, by inversion) before the
   declarative β, which is stated at `Ot[a]`.
 
-## M17c: codes and branches (design, ahead)
+## M17c outcome
 
-`TmDVec { l, len, fam ⟨i⟩ }` decoding to `DVec^l(len; i. El fam)` and
-`TmIWf` decoding to `IWf(El idx; …)(at)` (doc §6), and the branches
-`t_DVec`, `t'_DVec`, `t_IWf`, `t'_IWf`, `t_supi`, `t_elimIWf` at
-55–60 (`nbr = 61`), their scopes derived from the layer-C typing rules
-as M15b derived `Wf`'s, with `br_calls` checked against
-`br_calls_derived`.
+Done, no admits or axioms (`Print Assumptions` of `wf_tm_dec`,
+`preservation_tm` and `closed_canonicity` is empty). The codes
+`TmDVec`, `TmIWf` decode to `DVec^l(len; i. El fam)` and
+`IWf(El x; …)(m)` (doc §6); `DVec`, `IWf`, `sup_i`, `elim_IWf` and the
+codes are typed at every layer but V (the computing rules and β stay at
+D and M), and the code recursor has the six branches `t_DVec`,
+`t'_DVec`, `t_IWf`, `t'_IWf`, `t_supi`, `t_elimIWf` at 55–60
+(`nbr = 61`). Staged in three commits, as M15b:
+- **The codes at D and M first** (`compt i`, as the types), through
+  decidability, canonicity, preservation and synthesis; then the lift to
+  layer C: `StaticCode`/`PresupC` for the formers, `Typing/DNthG.v`
+  (`dnth`'s typing at any layer, as M15b's `nth_wf_g`) and
+  `Typing/IWfIHG.v` (the motive, the children's tuple and the induction
+  hypothesis typed at any layer, from the signature alone), and the type
+  checker (`TCType`, `TCSynth`) deciding them generically.
+- **The branches through the early metatheory**: reducts
+  (`Syntax/Recursor.v`), scopes (`RecSpec`) and the laws of renaming,
+  substitution, global renaming and substitution, level equivalence and
+  deep normal forms (`RecLaws`, `RecGSubst`, `GRenSyntax`, `SubstRec`,
+  `LevelRed`, `TypedDnf`).
+- **The branches through the relation**: `Validity/RecSIWf.v` (one lemma
+  per branch, as `RecSWf`), wired into `RecS`'s `rec_code`; the typing of
+  the reducts (`RecReductCases`, `RecAdm`).
+
+Decisions and deviations, in the order the proof met them:
+- **The scopes are derived, not transcribed.** Heather has no `rec.rs`
+  branches for `IWf` yet, so the six scopes are stated from the layer-C
+  rules (`RecSpec`, levels `ℓ ℓi ℓ'` bound in that order) and checked by
+  `br_calls_derived`, as M15b's. They are the first precise statement of
+  the branches; Heather's are to be checked against them.
+  `t_elimIWf`'s calls exclude the step telescope's types, as
+  `t_elimWf`'s do.
+- **`elim_IWf`'s step scope is typed concretely** (`br60_scope`,
+  WfScope) by `RecWf`'s automation, with a conversion prover (`weq`) for
+  the β and Unit-η steps `dnth`'s unfolding crosses. The eliminator
+  itself at C (`br60_head`, `Typing/WfScopeIWf.v`) is typed from
+  `IWfIHG`'s generic lemmas, which the automation does not find on its
+  own; `RecAdm` and `AlgPrereq` share it, so `RecAdm` now waits on
+  `IWfIHG`.
+- **Right payloads at the left levels.** A branch's right payloads are
+  typed in the right context at the left levels and at the right
+  payloads' instance (`GSone`): each is converted along the earlier
+  calls' equations (`IWfEq_intro` packs them, at the right levels and at
+  the left ones), then moved along the context equation.
+- **Declared types under a binder.** The child index `X⟨↑⟩⟨↑⟩`, the
+  output index under the shape and `sup_i`'s children's tuple
+  `DVec(N[a]; i. iwfFam …)` carry weakenings and substitutions of
+  payloads; `gs_norm` (RecSBase) and the branch tactics (`sr_ctx_IWf`,
+  `res_eq_IWf`, `rr_ctx_I`, `rr_sh`) push the substitutions through
+  them as equations before `cbn` (the gotcha in `M1_DESIGN.md`, raw
+  fixpoints). `AlgPrereq`'s branch automation gained globals under two
+  binders (`wf_gv_up2`, `wf_gu_up2T`).

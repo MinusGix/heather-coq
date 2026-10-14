@@ -257,7 +257,10 @@ M15b outcome.
    holds: `V_dnth`, M17a, with `DVec` at D and M (M17_DESIGN.md). `IWf`
    itself holds at D and M through every consequence (M17b): the
    relation is `Wf`'s with the index an index of the families, and
-   Heather's rules needed no change. M17c (codes, branches 55–60) is next.
+   Heather's rules needed no change. Its codes and the six branches
+   55–60 hold too (M17c), their scopes derived from the layer-C rules:
+   Heather's `rec.rs` has none for `IWf` yet, so these are the statement
+   to check its branches against.
 5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash). `Id` is done (M11a and
    M11b, M11_DESIGN.md). `Empty` and `+` are done, with codes and
    recursor branches (M12a–c, M12_DESIGN.md). `W` is done, with its

@@ -24,11 +24,16 @@ list of proof-engineering gotchas. Follow it.
 ## Build
 
 - `nix develop path:. --command make -j4` (Coq 8.20, Equations, smpl from
-  the flake). A clean build takes 10 to 22 minutes, depending on the
-  machine. Latest: the M17b tree (2026-10-14, `IWf` through every
-  consequence) took 1304 s wall at -j4 on a slower 4-core cloud machine
-  (critical path 1109 s), with no same-machine run of the tree before it
-  to compare against. Before that: 473 s wall at -j4 after the Typing metatheory's
+  the flake). A clean build takes 10 to 26 minutes, depending on the
+  machine. Latest: the M17c tree (2026-10-14, the codes and branches
+  55–60) took 1544 s wall at -j4 (critical path 1386 s), against 1304 s
+  (critical path 1109 s) for the M17b tree, on the same kind of 4-core
+  cloud machine but not back to back. Files untouched by M17c timed
+  alike (`RulesS` 88 s → 74 s); the growth is in the recursor lemmas
+  that case on every branch (`gfree_redt` +315 s, `redt_usubst`,
+  `redt_leq`, `redt_ren` about +130 s each, `wf_brG_60` 95 s, by
+  `tools/proofs.py --diff` of the two builds' `decls.tsv`). Before
+  that, on faster machines: 473 s wall at -j4 after the Typing metatheory's
   syntax parts were split off (2026-10-12, `ReductionBase`, `GRenRec`,
   `SubstRec`, `PresupAux`, `WfNthReds`), against 546 s for the tree
   before it, back to back on a faster 4-core machine (critical path

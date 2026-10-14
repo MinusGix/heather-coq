@@ -294,6 +294,12 @@ formers, so it gets worse with every extension:
   `rewrite` motive then carries the block, and `Qed` re-checks it: 20 s in
   `redt_gren`. `fold gren_ty gren_tm` after the `cbn` (`gpeel_push`,
   both copies). A `Qed` much slower than its tactics is the symptom.
+  The same block appears under a former whose argument `cbn` cannot
+  reduce (M17c: `gsubst_ty (tyEl l (usubst_tm x⟨↑⟩ φ)) σ`, a weakened
+  payload in a declared type), and then no commutation lemma matches.
+  Push the substitutions through the former by its equation first
+  (`us_El_raw`, `gs_DVec_raw` in `gs_norm`, RecSBase), then commute them
+  past the weakening (`usubst_ren'`, `grs_tm_raw`), and `cbn` last.
 - **`injection` on a big constructor term.** `injection` on two `mkrb`
   blocks unfolds the whole bundle (6 s, and 4 s more at `Qed`). Prove the
   injectivity once by projections (`mkrb_inj` through `tup_nth`) or on

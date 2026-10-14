@@ -160,6 +160,11 @@ From M8 on, the milestones check the extensions of Heather's kernel
   induction hypothesis reaches each child through `dnth`, and β fires at
   a `sup_i` at any index. Canonicity: a closed term at `IWf` computes to
   a `sup_i`. See `M17_DESIGN.md`.
+- Milestone 17c: the codes of `DVec` and `IWf`, the lift of the two
+  formers, `sup_i` and `elim_IWf` to every layer but V (the computing
+  rules and β stay at D and M), and the code recursor's six branches
+  55–60, whose scopes are derived from the layer-C rules ahead of
+  Heather's `rec.rs`. See `M17_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
 `M17_DESIGN.md`) for decisions, deviations from the paper and gotchas.
