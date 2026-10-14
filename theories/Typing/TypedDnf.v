@@ -163,7 +163,10 @@ Proof.
                     | apply lk_dnf_lsingle | split | exact I ]; intuition auto.
   (* [sup_i]'s children and [elim_IWf]'s step telescope (M17c) *)
   all: repeat first [ lazymatch goal with |- True => exact I | |- _ /\ _ => split end | assumption
-                    | apply dnf_iwfFam | apply dnf_tmDNth | apply ren_dnf_ty | apply ren_dnf
+                    | lazymatch goal with |- dnfty (iwfFam _ _ _ _ _ _ _ _) => apply dnf_iwfFam end
+                    (* by shape: [apply dnf_tmDNth] on another [app] unfolds [tmDNth] *)
+                    | lazymatch goal with |- dnftm (tmDNth _ _ _ _ _) => apply dnf_tmDNth end
+                    | apply ren_dnf_ty | apply ren_dnf
                     | apply subst_dnf_ty | apply subst_dnf | apply lk_dnf_lsingle | apply lk_dnf_lsingle2
                     | apply lk_dnf_llift | progress cbn [dnftm dnfty] ].
 Qed.

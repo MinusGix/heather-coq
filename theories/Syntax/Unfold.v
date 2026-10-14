@@ -644,13 +644,18 @@ Proof. destruct b; cbn; auto using gfree_lsingle with unf. Qed.
 
 Ltac gf_peel := repeat first
   [ apply gfree_peelL | apply gfree_peelG | apply gfree_peelU | apply gfree_rb_br
-  | progress cbn [gfree_o gfree_tm gfree_ty gfree_ctx recT rect] | split | assumption
+  | progress cbn [gfree_o gfree_tm gfree_ty gfree_ctx recT rect]
+  | lazymatch goal with |- _ /\ _ => split end | assumption
   | apply gfree_ren_ty | apply gfree_ren
   | apply gfree_subst_ty; [| repeat apply gfree_llift;
                               first [apply gfree_lsingle | apply gfree_lsingle2 | apply gfree_lsingle3 | apply gfree_lsucc]]
   | apply gfree_subst; [| repeat apply gfree_llift;
                            first [apply gfree_lsingle | apply gfree_lsingle2 | apply gfree_lsingle3 | apply gfree_lsucc]]
-  | exact I ].
+  | exact I
+  (* a definition over the syntax (the telescopes' types, [dnth]): unfolded
+     only here, as a bare [split] on every goal would (M17c: 71% of
+     [gfree_redt]) *)
+  | progress hnf ].
 
 Lemma gfree_redT l1 l2 rb l Δ c r : redT l1 l2 rb l Δ c = Some r ->
   gfree_tm rb -> gfree_ctx Δ -> gfree_ty c -> gfree_tm r.
@@ -661,7 +666,7 @@ Qed.
 Lemma gfree_redt l1 l2 rb l Δ T c r : redt l1 l2 rb l Δ T c = Some r ->
   gfree_tm rb -> gfree_ctx Δ -> gfree_ty T -> gfree_tm c -> gfree_tm r.
 Proof.
-  intros E Hrb HΔ HT Hc. destruct c; cbn [redt] in E; redt_case T; inversion E; subst; cbn in Hc, HT;
+  intros E Hrb HΔ HT Hc. destruct c; cbn [redt] in E; redt_case T; first [discriminate E | apply Some_inj in E; subst r]; cbn in Hc, HT;
     repeat match goal with H : _ /\ _ |- _ => destruct H end; gf_peel.
 Qed.
 

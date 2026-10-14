@@ -295,7 +295,7 @@ Lemma redt_usubst l1 l2 rb l Δ T c v φ : redt l1 l2 rb l Δ T c = Some v ->
     (usubst_tm c φ) = Some (usubst_tm v φ).
 Proof.
   destruct c; cbn [redt usubst_tm]; redt_case T; cbn [usubst_ty];
-    intros E; inversion E; subst; f_equal; upeel_push.
+    intros E; first [discriminate E | apply Some_inj in E; subst v]; f_equal; upeel_push.
 Qed.
 
 End USubst.

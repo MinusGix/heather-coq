@@ -184,10 +184,10 @@ Lemma redt_leq l l' Δ Δ' T T' c c' r : leqv l l' -> ctx_leq Δ Δ' -> ty_leq T
   redt l1 l2 rb l Δ T c = Some r -> exists r', redt l1' l2' rb' l' Δ' T' c' = Some r' /\ tm_leq r r'.
 Proof using E1 E2 Erb.
   intros El EΔ ET Ec H; destruct c; leq_split; cbn [redT redt] in H; try discriminate.
-  all: try (injection H as <-; refine (ex_intro _ _ (conj eq_refl _));
+  all: try (apply Some_inj in H; subst r; refine (ex_intro _ _ (conj eq_refl _));
             subst; solve [leq_go]).
   (* λ reads the index *)
-  destruct T; try discriminate; leq_split; injection H as <-; refine (ex_intro _ _ (conj eq_refl _)).
+  destruct T; try discriminate; leq_split; apply Some_inj in H; subst r; refine (ex_intro _ _ (conj eq_refl _)).
   subst; leq_go.
 Qed.
 
