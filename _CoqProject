@@ -58,6 +58,7 @@ theories/Typing/DVecEq.v
 theories/Typing/Presupposition.v
 theories/Typing/Inversion.v
 theories/Typing/DNth.v
+theories/Typing/IWfIH.v
 theories/Typing/WfScope.v
 theories/Typing/RecEq.v
 theories/Typing/AlgStruct.v
