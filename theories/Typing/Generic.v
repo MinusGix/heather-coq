@@ -475,14 +475,17 @@ Class GenericEqLaws `{GenericEq} := {
     [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩ @ li ] ->
     [ G ; Γ ⊢ m ≈ m' : X @ li ] ->
     [ G ; Γ ⊢ tyIWf l li X A N Ot C m ≈ tyIWf k ki X' A' N' Ot' C' m' @ lmax l li ] ;
+  (* the annotations of [sup_i] agree declaratively, as the relation's
+     [IWfEq] states them: the algorithm compares only the shapes and the
+     children ([actmnf_supf]'s convention) *)
   geq_tm_supi {G Γ l li k ki X X' A A' N N' Ot Ot' C C' a a' cs cs'} :
     lequiv (gL G) l k -> lequiv (gL G) li ki ->
-    [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ⊢ X ≈ X' @ li ] ->
-    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
-    [ G ; Γ ,, A @ l ⊢g N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢ N ≈ N' : tyNat @ lzero ] ->
-    [ G ; Γ ,, A @ l ⊢g Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢ Ot ≈ Ot' : X⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ⊢g X ≅ X' @ li ] ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢g A ≅ A' @ l ] ->
+    [ G ; Γ ,, A @ l ⊢g N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢g N ≅ N' : tyNat @ lzero ] ->
+    [ G ; Γ ,, A @ l ⊢g Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢g Ot ≅ Ot' : X⟨↑⟩ @ li ] ->
     [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢g C : X⟨↑⟩⟨↑⟩ @ li ] ->
-    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢g C ≅ C' : X⟨↑⟩⟨↑⟩ @ li ] ->
     [ G ; Γ ⊢ a ≈ a' : A @ l ] ->
     [ G ; Γ ⊢ cs ≈ cs' : tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a) @ lmax l li ] ->
     [ G ; Γ ⊢ tmSupi l li X A N Ot C a cs ≈ tmSupi k ki X' A' N' Ot' C' a' cs'

@@ -437,8 +437,8 @@ Proof.
   pose proof (Vcs _ _ _ Hd) as Xcs.
   rewrite !subst_tyDVec, !single_subst, !subst_iwfFam in Xcs by assumption.
   pose proof (LRtm_geq Xcs) as Ecs.
-  pose proof (geq_tm_supi (lequiv_sym _ _ _ Hl') (lequiv_sym _ _ _ Hli') HXd EX HAd EA HNd EN HOd EO HCd EC
-                Ea Ecs) as Dsup.
+  pose proof (geq_tm_supi (lequiv_sym _ _ _ Hl') (lequiv_sym _ _ _ Hli') HXd (geq_ty_sound EX) HAd (geq_ty_sound EA)
+                HNd (geq_tm_sound EN) HOd (geq_tm_sound EO) HCd (geq_tm_sound EC) Ea Ecs) as Dsup.
   pose proof (geq_tm_sound Dsup) as Dsup'.
   rewrite single_subst by assumption.
   eapply iwfrel; [exact (tmred_refl _ _ _ (eqtm_wf_l ge_typeof Dsup'))
