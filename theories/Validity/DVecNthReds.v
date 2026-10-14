@@ -3,9 +3,9 @@
     Heather's design (its §3) says [dnth(3; F; cs; inr (inl ⟨⟩))]
     reduces to [fst (snd cs)] for a neutral [cs]: the projection never
     looks at the tuple. Checked here on that instance, for any [cs] in
-    normal form, by stepping the reduction. A leaf: nothing requires it,
-    and it needs only the syntax ([WfNthReds]' [teq]), so it builds
-    beside the metatheory. *)
+    normal form, by stepping the reduction. It needs only the syntax
+    ([WfNthReds]' [teq]), so it builds beside the metatheory; [DNthReds]
+    reuses its [rstep] and [tpush] for [dnth]'s states in general. *)
 From DeLaM.Validity Require Import WfNthReds.
 
 (** One reduction step, at the redex the congruences reach. *)
