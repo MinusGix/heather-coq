@@ -74,7 +74,8 @@ Proof.
     | solve [eapply Dc_actmnf_code_vec; eassumption] | solve [eapply Dc_actmnf_code_fin; eassumption]
     | solve [eapply Dc_actmnf_code_sq; eassumption]
     | solve [eapply Dc_actmnf_code_W; eassumption]
-    | solve [eapply Dc_actmnf_code_wf; eassumption] ].
+    | solve [eapply Dc_actmnf_code_wf; eassumption]
+    | solve [eapply Dc_actmnf_code_dvec; eassumption] | solve [eapply Dc_actmnf_code_iwf; eassumption] ].
 Qed.
 
 (** Algorithmic conversion of well-formed types (typed terms) of the

@@ -425,10 +425,10 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
 (* the codes of [DVec] and [IWf] (M17c; every layer but V): the length,
    the arity, the output and child indices and the index are terms under
    their types' binders; [IWf]'s code lives at [lmax l li], as its type *)
-| wf_code_dvec G i Γ l n f : i <> lV -> lwf (gL G) l ->
+| wf_code_dvec G i Γ l n f : compt i -> lwf (gL G) l ->
     [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] f : tyU l @ lsuc l ] ->
     [ G ; Γ ⊢[ i ] tmDVec l n f : tyU l @ lsuc l ]
-| wf_code_iwf G i Γ l li x s n o c m : i <> lV -> lwf (gL G) l -> lwf (gL G) li ->
+| wf_code_iwf G i Γ l li x s n o c m : compt i -> lwf (gL G) l -> lwf (gL G) li ->
     [ G ; Γ ⊢[ i ] x : tyU li @ lsuc li ] -> [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] ->
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o : tyEl li x⟨↑⟩ @ li ] ->
@@ -1177,11 +1177,11 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
         : M[lsingle2 Ot[lsingle a] (tmSupi l li X A N Ot C a cs)] @ l' ]
 (* the codes of [DVec] and [IWf] (M17c; every layer but V), with the left
    typings their binders' contexts need, as [Wf]'s code *)
-| eqtm_code_dvec G i Γ l l' n n' f f' : i <> lV -> lequiv (gL G) l l' ->
+| eqtm_code_dvec G i Γ l l' n n' f f' : compt i -> lequiv (gL G) l l' ->
     [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
     [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] f ≅ f' : tyU l @ lsuc l ] ->
     [ G ; Γ ⊢[ i ] tmDVec l n f ≅ tmDVec l' n' f' : tyU l @ lsuc l ]
-| eqtm_code_iwf G i Γ l li k ki x x' s s' n n' o o' c c' m m' : i <> lV ->
+| eqtm_code_iwf G i Γ l li k ki x x' s s' n n' o o' c c' m m' : compt i ->
     lequiv (gL G) l k -> lequiv (gL G) li ki ->
     [ G ; Γ ⊢[ i ] x : tyU li @ lsuc li ] -> [ G ; Γ ⊢[ i ] x ≅ x' : tyU li @ lsuc li ] ->
     [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->

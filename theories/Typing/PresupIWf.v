@@ -759,6 +759,7 @@ Proof using Hi Hv.
   { eapply (stab_tm Hi (eqty_fin _ _ _ _ _ Hv Hnn)); [apply lequiv_refl; exact I | | exact Hf'].
     apply (ext_wf Hi); [now apply wft_fin | exact I]. }
   apply (conv_U Hi Hv (l := l')); [|now apply lequiv_sym].
+  pose proof (compt_self Hi Hv) as Hcp.
   apply wf_code_dvec; eauto using lequiv_wf_r. exact (conv_U Hi Hv Hf2 Hl).
 Qed.
 
@@ -796,7 +797,7 @@ Proof using Hi Hv.
   assert (EX2 : [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] tyEl li x⟨↑⟩⟨↑⟩ ≅ tyEl ki x'⟨↑⟩⟨↑⟩ @ li ])
     by (apply eqty_El; auto).
   eapply (conv_U Hi Hv (l := lmax k ki)); [| apply lequiv_sym, lequiv_max; assumption].
-  apply wf_code_iwf; [exact Hv | exact Wk | exact Wki | exact (conv_U Hi Hv Hx' Hlik)
+  apply wf_code_iwf; [exact (compt_self Hi Hv) | exact Wk | exact Wki | exact (conv_U Hi Hv Hx' Hlik)
                      | exact (conv_U Hi Hv Hs' Hlk) | exact (mv_tm Hid1 Hn') | | |].
   - eapply wf_lconv; [| apply lequiv_sym, Hlik].
     exact (mv_tm Hid1 (conv_tm' Hi Ho' (eqty_sym _ _ _ _ _ _ EX1))).
@@ -812,7 +813,7 @@ Lemma pre_El_dvec {Γ l n f} : lwf (gL G) l ->
 Proof using Hi Hv.
   intros Hl Hn Hf. split.
   - apply wft_dvec; [exact (compt_self Hi Hv) | exact Hl | exact Hn | apply wft_El; auto].
-  - apply wft_El; auto. apply wf_code_dvec; auto.
+  - apply wft_El; auto. apply wf_code_dvec; auto. exact (compt_self Hi Hv).
 Qed.
 
 Lemma pre_El_iwf {Γ l li x s n o c m} : lwf (gL G) l -> lwf (gL G) li ->
@@ -826,7 +827,7 @@ Proof using Hi Hv.
   intros Hl Hli Hx Hs Hn Ho Hc Hm. split.
   - apply wft_iwf; [exact (compt_self Hi Hv) | exact Hl | exact Hli | apply wft_El; auto
                    | apply wft_El; auto | exact Hn | exact Ho | exact Hc | exact Hm].
-  - apply wft_El; [exact Hv | cbn; auto |]. apply wf_code_iwf; auto.
+  - apply wft_El; [exact Hv | cbn; auto |]. apply wf_code_iwf; auto. exact (compt_self Hi Hv).
 Qed.
 
 End IWfAux.

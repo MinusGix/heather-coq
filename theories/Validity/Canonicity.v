@@ -11,7 +11,8 @@
       at [Unit], [srefl] at [sEq], and nothing at [sEmpty] (M10a), [refl] at
       [Id] (M11a), nothing at [Empty] (M12a), an injection at [+]
       (M12b), [sup] at [W] (M13a), [sup_f] at [Wf] (M15a), [|a|] at [∥A∥]
-      (M16a) and [sup_i] at [IWf] (M17b).
+      (M16a) and [sup_i] at [IWf] (M17b); the universe's codes include
+      [DVec]'s and [IWf]'s (M17c).
 
     Closed whnfs are not neutral ([no_closed_neutral]). A value's typing
     inversion equates its type with its canonical type former, and head
@@ -28,7 +29,8 @@ Definition canon_head (h : nat) (w : tm) : Prop :=
          (exists l s t u, w = tmId l s t u) \/ (exists l s t u, w = tmSEq l s t u) \/
          (exists l, w = tmSEmpty l) \/ (exists l, w = tmEmpty l) \/ (exists l l' s t, w = tmSum l l' s t) \/
          (exists l l' s t, w = tmW l l' s t) \/ (exists l s n, w = tmVec l s n) \/ (exists n, w = tmFin n) \/
-         (exists l s n, w = tmWf l s n) \/ exists l s, w = tmSqCode l s
+         (exists l s n, w = tmWf l s n) \/ (exists l s, w = tmSqCode l s) \/
+         (exists l n f, w = tmDVec l n f) \/ exists l li x s n o c m, w = tmIWf l li x s n o c m
   | 3 => exists l l' A t, w = lam l l' A t
   | 4 => exists T, w = boxT T
   | 5 => exists t, w = boxt t
@@ -70,11 +72,12 @@ Proof.
           | pose proof (inv_code_W Hi Hx) as X
           | pose proof (inv_code_vec Hi Hx) as X | pose proof (inv_code_fin Hi Hx) as X
           | pose proof (inv_code_wf Hi Hx) as X | pose proof (inv_sq Hi Hx) as X
-          | pose proof (inv_code_sq Hi Hx) as X | pose proof (inv_supi Hi Hx) as Xs ];
+          | pose proof (inv_code_sq Hi Hx) as X | pose proof (inv_supi Hi Hx) as Xs
+          | pose proof (inv_code_dvec Hi Hx) as X | pose proof (inv_code_iwf Hi Hx) as X ];
     repeat match goal with H : exists _, _ |- _ => destruct H | H : _ /\ _ |- _ => destruct H end;
     match goal with E : [ _ ; _ ⊢[ _ ] W ≅ _ @ _ ] |- _ =>
       rewrite (decl_head_c Hc E HW); [| auto with whnf] end;
-    cbn; eauto 20.
+    cbn; first [solve [eauto 20] | repeat (first [left; solve [eauto 12] | right]); solve [eauto 12]].
 Qed.
 
 (** ** Types *)

@@ -641,6 +641,15 @@ Proof.
     exists M[lsingle2 m ν]. split.
     + eapply actmne_elimIWf; first [eapply lequiv_leqv; eassumption | eassumption].
     + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EY))).
+  (* the codes of DVec and IWf (M17c) *)
+  - intros * Hl Hn (En & Dn) (Ef & Df).
+    refine (conj (@geq_tm_code_dvec DE DEL _ _ _ _ _ _ _ _ Hl Hn En Ef) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmDVec | apply whnf_tmDVec |].
+    exact (actmnf_code_dvec _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) Dn Df).
+  - intros * Hl Hli Hx (Ex & Dx) Hs (Es & Ds) Hn (En & Dn) (Eo & Dov) (Ec & Dc) (Em & Dm).
+    refine (conj (@geq_tm_code_iwf DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hl Hli Hx Ex Hs Es Hn En Eo Ec Em) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmIWf | apply whnf_tmIWf |].
+    eapply actmnf_code_iwf; first [eapply lequiv_leqv; eassumption | eassumption].
 Qed.
 
 End Alg.

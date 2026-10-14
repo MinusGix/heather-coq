@@ -1003,6 +1003,60 @@ Proof.
   left; eexists; eexists; apply wf_supi; assumption.
 Qed.
 
+(** The codes of [DVec] and [IWf] (M17c; layers D and M). *)
+Lemma sy_code_dvec l t f : sz_tm (tmDVec l t f) <= n -> SYD (tmDVec l t f).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | Hc];
+    [| right; intros T k H; destruct (inva_code_dvec H) as ((H0 & _) & _); contradiction].
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
+  destruct (lwf_Dec (gL G) l) as [Hl | N0];
+    [| right; intros T k H; destruct (inva_code_dvec H) as ((_ & X & _) & _); contradiction].
+  destruct (ihC t ltac:(szl) G i Γ _ _ (HNat HΓ)) as [Ht | N0];
+    [| right; intros T k H; destruct (inva_code_dvec H) as ((_ & _ & X & _) & _); contradiction].
+  assert (HΓF : [ G ; Γ ,, tyFin t @ lzero ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty (wft_fin _ _ _ _ Hv Ht)) | exact I]).
+  destruct (ihC f ltac:(szl) G i _ _ _ (HUniv HΓF Hl)) as [Hf | N0];
+    [| right; intros T k H; destruct (inva_code_dvec H) as ((_ & _ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_code_dvec _ _ _ _ _ _ Hc Hl Ht Hf).
+Qed.
+
+Lemma sy_code_iwf l li x s N Ot C m : sz_tm (tmIWf l li x s N Ot C m) <= n -> SYD (tmIWf l li x s N Ot C m).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | Hc];
+    [| right; intros T k H; destruct (inva_code_iwf H) as ((H0 & _) & _); contradiction].
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
+  destruct (lwf_Dec (gL G) l) as [Hl | N0];
+    [| right; intros T k H; destruct (inva_code_iwf H) as ((_ & X & _) & _); contradiction].
+  destruct (lwf_Dec (gL G) li) as [Hli | N0];
+    [| right; intros T k H; destruct (inva_code_iwf H) as ((_ & _ & X & _) & _); contradiction].
+  destruct (ihC x ltac:(szl) G i Γ _ _ (HUniv HΓ Hli)) as [Hx | N0];
+    [| right; intros T k H; destruct (inva_code_iwf H) as ((_ & _ & _ & X & _) & _); contradiction].
+  destruct (ihC s ltac:(szl) G i Γ _ _ (HUniv HΓ Hl)) as [Hs | N0];
+    [| right; intros T k H; destruct (inva_code_iwf H) as ((_ & _ & _ & _ & X & _) & _); contradiction].
+  rewrite Hi in HΓ.
+  assert (HA : [ G ; Γ ⊢[ i ] tyEl l s @ l ]) by (apply wft_El; assumption).
+  assert (HX : [ G ; Γ ⊢[ i ] tyEl li x @ li ]) by (apply wft_El; assumption).
+  pose proof (ext_wf Hi HA Hl) as HΓA.
+  assert (HΓA' : [ G ; Γ ,, tyEl l s @ l ⊢[ typeof i ] ]) by (rewrite Hi; exact HΓA).
+  destruct (ihC N ltac:(szl) G i _ _ _ (HNat HΓA')) as [HN | N0];
+    [| right; intros T k H; destruct (inva_code_iwf H) as ((_ & _ & _ & _ & _ & X & _) & _); contradiction].
+  assert (HX1 : [ G ; Γ ,, tyEl l s @ l ⊢[ typeof i ] (tyEl li x)⟨↑⟩ @ li ])
+    by (rewrite Hi; eapply (wk1_ty G i Hi); [exact HΓA | exact HX]).
+  destruct (ihC Ot ltac:(szl) G i _ _ _ HX1) as [HO | N0];
+    [| right; intros T k H; destruct (inva_code_iwf H) as ((_ & _ & _ & _ & _ & _ & X & _) & _); contradiction].
+  assert (HF : [ G ; Γ ,, tyEl l s @ l ⊢[ i ] tyFin N @ lzero ]) by (apply wft_fin; [exact Hv | exact HN]).
+  assert (HΓAF : [ G ; Γ ,, tyEl l s @ l ,, tyFin N @ lzero ⊢[ i ] ]) by (apply (ext_wf Hi HF); exact I).
+  assert (HX2 : [ G ; Γ ,, tyEl l s @ l ,, tyFin N @ lzero ⊢[ typeof i ] (tyEl li x)⟨↑⟩⟨↑⟩ @ li ])
+    by (rewrite Hi; eapply (wk1_ty G i Hi); [exact HΓAF | eapply (wk1_ty G i Hi); [exact HΓA | exact HX]]).
+  destruct (ihC C ltac:(szl) G i _ _ _ HX2) as [HC | N0];
+    [| right; intros T k H; destruct (inva_code_iwf H) as ((_ & _ & _ & _ & _ & _ & _ & X & _) & _); contradiction].
+  destruct (ihC m ltac:(szl) G i Γ _ _ ltac:(rewrite Hi; exact HX)) as [Hm | N0];
+    [| right; intros T k H; destruct (inva_code_iwf H) as ((_ & _ & _ & _ & _ & _ & _ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_code_iwf _ _ _ _ _ _ _ _ _ _ _ Hc Hl Hli Hx Hs HN HO HC Hm).
+Qed.
+
 Lemma sy_elimIWf l li l' X A N Ot C M c m t : sz_tm (tmElimIWf l li l' X A N Ot C M c m t) <= n ->
   SYD (tmElimIWf l li l' X A N Ot C M c m t).
 Proof.
@@ -1059,7 +1113,8 @@ Proof.
           | apply sy_code_seq | apply sy_code_sempty | apply sy_inl | apply sy_inr | apply sy_case
           | apply sy_code_empty | apply sy_code_sum | apply sy_sup | apply sy_elimW | apply sy_codeW
           | apply sy_code_vec | apply sy_code_fin | apply sy_supf | apply sy_elimWf | apply sy_code_wf
-          | apply sy_sq | apply sy_elimSq | apply sy_code_sq | apply sy_supi | apply sy_elimIWf ]; assumption.
+          | apply sy_sq | apply sy_elimSq | apply sy_code_sq | apply sy_supi | apply sy_elimIWf
+          | apply sy_code_dvec | apply sy_code_iwf ]; assumption.
 Qed.
 
 End Step.

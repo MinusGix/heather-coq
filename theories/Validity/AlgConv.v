@@ -1491,6 +1491,80 @@ Proof.
     + exact (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hn))).
 Qed.
 
+(** The codes of [DVec] and [IWf] (M17c), as [Wf]'s and [IWf]'s: the
+    right components moved into the left binders' contexts. *)
+Lemma C_actmnf_code_dvec {G Γ l k k' n n' f f'} : leqv k k' ->
+  ac_tm G Γ n n' tyNat -> C_tm G Γ n n' tyNat -> C_tm G (Γ ,, tyFin n @ lzero) f f' (tyU k) ->
+  C_tmnf G Γ (tmDVec k n f) (tmDVec k' n' f') (tyU l).
+Proof.
+  intros Hk0 Dn IHn IHf i G2 Γ2 W2 m Hc HE Hctx Hx Hx' EW Hw2 y y' Hsy Hsy'. spa_triv.
+  pose proof (compt_typeof_self _ Hc) as Hi. new_head Hc EW Hw2 W2.
+  destruct (code_dvec_prem Hc Hx) as (Wk & Hn & Hf). destruct (code_dvec_prem Hc Hx') as (Wk' & Hn' & Hf').
+  pose proof (compt_notV _ Hc) as Hv.
+  pose proof (leqv_lequiv _ _ _ Wk Wk' Hk0) as E.
+  pose proof (ctx_of_wf_tm Hi Hn) as HΓ.
+  pose proof (ac_tm_sound Hc Dn Hn Hn') as En.
+  assert (EF : [ G ; Γ ⊢[ i ] tyFin n' ≅ tyFin n @ lzero ])
+    by (apply eqty_fin; [exact Hv | exact (eqtm_sym _ _ _ _ _ _ _ En)]).
+  assert (HF : [ G ; Γ ⊢[ i ] tyFin n @ lzero ]) by (apply wft_fin; assumption).
+  assert (HΓ1 : [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] ]) by (apply wfc_ext; [exact HΓ | exact HF | exact I]).
+  pose proof (stab_tm Hi EF (lequiv_refl _ lzero I) HΓ1 (code_U_conv Hc E Hf')) as Hf1.
+  apply actmnf_code_dvec; [exact Hk0 | |].
+  - exact (IHn i G2 Γ2 tyNat lzero Hc HE Hctx Hn Hn'
+             (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hn))) _ _ spa_refl spa_refl).
+  - apply (IHf i G2 (Γ2 ,, tyFin n @ lzero) (tyU k) (lsuc k) Hc HE);
+      [| exact Hf | exact Hf1 | | exact spa_refl | exact spa_refl].
+    + apply (eqctx_ext_refl Hctx (gconv_ty HE HF)); exact I.
+    + exact (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hf))).
+Qed.
+
+Lemma C_actmnf_code_iwf {G Γ l k k' ki ki' x x' s s' n n' o o' c c' m m'} : leqv k k' -> leqv ki ki' ->
+  ac_tm G Γ x x' (tyU ki) -> C_tm G Γ x x' (tyU ki) -> ac_tm G Γ s s' (tyU k) -> C_tm G Γ s s' (tyU k) ->
+  ac_tm G (Γ ,, tyEl k s @ k) n n' tyNat -> C_tm G (Γ ,, tyEl k s @ k) n n' tyNat ->
+  C_tm G (Γ ,, tyEl k s @ k) o o' (tyEl ki x⟨↑⟩) ->
+  C_tm G (Γ ,, tyEl k s @ k ,, tyFin n @ lzero) c c' (tyEl ki x⟨↑⟩⟨↑⟩) ->
+  C_tm G Γ m m' (tyEl ki x) ->
+  C_tmnf G Γ (tmIWf k ki x s n o c m) (tmIWf k' ki' x' s' n' o' c' m') (tyU l).
+Proof.
+  intros Hk0 Hki0 Dx IHx Ds IHs DN IHN IHO IHC IHm i G2 Γ2 W2 q Hc HE Hctx Ht Ht' EW Hw2 y y' Hsy Hsy'.
+  spa_triv. pose proof (compt_typeof_self _ Hc) as Hi. new_head Hc EW Hw2 W2.
+  pose proof (compt_notV _ Hc) as Hv.
+  destruct (code_iwf_prem Hc Ht) as (Wa & Wb & Hx & Hs & HN & HO & HC & Hm).
+  destruct (code_iwf_prem Hc Ht') as (Wc & Wd & Hx' & Hs' & HN' & HO' & HC' & Hm').
+  pose proof (leqv_lequiv _ _ _ Wa Wc Hk0) as E13. pose proof (leqv_lequiv _ _ _ Wb Wd Hki0) as E24.
+  pose proof (code_U_conv Hc E24 Hx') as Hx1. pose proof (code_U_conv Hc E13 Hs') as Hs1.
+  pose proof (ac_tm_sound Hc Dx Hx Hx1) as Ex. pose proof (ac_tm_sound Hc Ds Hs Hs1) as Es.
+  assert (HS : IWfSig (G := G) (i := i) Γ k ki (tyEl ki x) (tyEl k s) n o c)
+    by (unfold IWfSig; repeat split; first [assumption | apply wft_El; assumption]).
+  assert (HS' : IWfSig (G := G) (i := i) Γ k' ki' (tyEl ki' x') (tyEl k' s') n' o' c')
+    by (unfold IWfSig; repeat split; first [assumption | apply wft_El; assumption]).
+  assert (EX : [ G ; Γ ⊢[ i ] tyEl ki x ≅ tyEl ki' x' @ ki ]) by (apply eqty_El; assumption).
+  assert (EA : [ G ; Γ ⊢[ i ] tyEl k s ≅ tyEl k' s' @ k ]) by (apply eqty_El; assumption).
+  destruct (IWf_r_mv Hi Hv HS HS' E13 E24 EX EA) as (_ & _ & HN'l & HO'l & HC'l).
+  pose proof (ac_tm_sound Hc DN HN HN'l) as EN.
+  assert (Hm'l : [ G ; Γ ⊢[ i ] m' : tyEl ki x @ ki ])
+    by (eapply (conv_tm' Hi); [eapply wf_lconv; [exact Hm' | exact E24] | exact EX]).
+  assert (HA : [ G ; Γ ⊢[ i ] tyEl k s @ k ]) by (apply wft_El; assumption).
+  assert (HctxA : [ G2 ⊢[ i ] Γ ,, tyEl k s @ k ≅ Γ2 ,, tyEl k s @ k ])
+    by exact (eqctx_ext_refl Hctx (gconv_ty HE HA) (GEq_lwf HE Wa)).
+  assert (HF : [ G ; Γ ,, tyEl k s @ k ⊢[ i ] tyFin n @ lzero ]) by (apply wft_fin; [exact Hv | exact HN]).
+  assert (HctxAN : [ G2 ⊢[ i ] Γ ,, tyEl k s @ k ,, tyFin n @ lzero ≅ Γ2 ,, tyEl k s @ k ,, tyFin n @ lzero ])
+    by (apply (eqctx_ext_refl HctxA (gconv_ty HE HF)); exact I).
+  apply actmnf_code_iwf; [exact Hk0 | exact Hki0 | | | | | |].
+  - exact (IHx i G2 Γ2 (tyU ki) (lsuc ki) Hc HE Hctx Hx Hx1
+             (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hx))) _ _ spa_refl spa_refl).
+  - exact (IHs i G2 Γ2 (tyU k) (lsuc k) Hc HE Hctx Hs Hs1
+             (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hs))) _ _ spa_refl spa_refl).
+  - exact (IHN i G2 _ _ lzero Hc HE HctxA HN HN'l (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi HN)))
+             _ _ spa_refl spa_refl).
+  - exact (IHO i G2 _ _ ki Hc HE HctxA HO HO'l (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi HO)))
+             _ _ spa_refl spa_refl).
+  - exact (IHC i G2 _ _ ki Hc HE HctxAN HC (HC'l EN) (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi HC)))
+             _ _ spa_refl spa_refl).
+  - exact (IHm i G2 Γ2 _ ki Hc HE Hctx Hm Hm'l (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hm)))
+             _ _ spa_refl spa_refl).
+Qed.
+
 Lemma C_actmnf_code_sempty {G Γ l k k'} : leqv k k' -> C_tmnf G Γ (tmSEmpty k) (tmSEmpty k') (tyU l).
 Proof.
   intros Hl; red; intros i G2 Γ2 W2 kk Hc HE Hctx Ht Ht' EW Hw2 x x' Hsx Hsx'. spa_triv. new_head Hc EW Hw2 W2.
@@ -2269,6 +2343,7 @@ Proof.
     | solve [eapply C_actnf_wf; eassumption] | solve [eapply C_actmnf_supf; eassumption]
     | solve [eapply C_actmne_elimWf; eassumption]
     | solve [eapply C_actmnf_code_wf; eassumption]
+    | solve [eapply C_actmnf_code_dvec; eassumption] | solve [eapply C_actmnf_code_iwf; eassumption]
     | solve [eapply C_actnf_iwf; eassumption] | solve [eapply C_actmnf_supi; eassumption]
     | solve [eapply C_actmne_elimIWf; eassumption]
     | solve [eapply C_actne_vec; eassumption] | solve [eapply C_actne_fin; eassumption]

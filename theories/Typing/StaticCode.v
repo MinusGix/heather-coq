@@ -2167,7 +2167,7 @@ Proof using Hi.
   split; [exact (sc_elimSq_q Hv Q1 Q2 HA HA' HAA HM HM' HMM Hc' Ht Ht' Htt) | apply eqtm_elimSq; auto].
 Qed.
 
-(** The codes of [DVec] and [IWf] (M17c; every layer but V), as [Wf]'s.
+(** The codes of [DVec] and [IWf] (M17c; layers D and M), as [Wf]'s.
     The [_q] forms type the right code from its components in the left
     contexts, for [PresupC]; the binders' contexts move along [sc_ext],
     the indices' types by [El]'s congruence at P. *)
@@ -2178,13 +2178,13 @@ Proof using Hty.
   apply eqty_U; [discriminate | exact (sc_ctx_tm Ht) | apply lequiv_sym, Q].
 Qed.
 
-Lemma sc_code_dvec_q {Γ l l' n n' f'} : i <> lV -> lequiv (gL G) l l' ->
+Lemma sc_code_dvec_q {Γ l l' n n' f'} : compt i -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
   [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] f' : tyU l @ lsuc l ] ->
   [ G ; Γ ⊢[ i ] tmDVec l' n' f' : tyU l @ lsuc l ].
 Proof using Hty.
-  intros Hv Q Hn Hn' Hnn Hf'.
+  intros Hv Q Hn Hn' Hnn Hf'. pose proof (compt_notV _ Hv) as Hnv.
   assert (HF : [ G ; Γ ⊢[ i ] tyFin n @ lzero ]) by (apply wft_fin; assumption).
   assert (HFF : [ G ; Γ ⊢[ i ] tyFin n ≅ tyFin n' @ lzero ]) by (apply eqty_fin; assumption).
   pose proof (sc_ext HF HFF (lequiv_refl (gL G) lzero I)) as Hc.
@@ -2192,7 +2192,7 @@ Proof using Hty.
   apply wf_code_dvec; [exact Hv | exact (lequiv_wf_r _ _ _ Q) | exact Hn' |].
   exact (sc_ctm Hc (sc_convU Hf' Q)).
 Qed.
-Lemma sc_code_dvec {Γ l l' n n' f f'} : i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+Lemma sc_code_dvec {Γ l l' n n' f f'} : compt i -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
   [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] /\ [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
   [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] f : tyU l @ lsuc l ] ->
@@ -2205,7 +2205,7 @@ Proof using Hty.
   split; [exact (sc_code_dvec_q Hv Q Hn Hn' Hnn Hf') | apply eqtm_code_dvec; auto].
 Qed.
 
-Lemma sc_code_iwf_q {Γ l li k ki x x' s s' n n' o' c' m'} : i <> lV ->
+Lemma sc_code_iwf_q {Γ l li k ki x x' s s' n n' o' c' m'} : compt i ->
   lequiv (gL G) l k -> lequiv (gL G) li ki ->
   [ G ; Γ ⊢[ i ] x' : tyU li @ lsuc li ] -> [ G ; Γ ⊢[ i ] x ≅ x' : tyU li @ lsuc li ] ->
   [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
@@ -2217,7 +2217,7 @@ Lemma sc_code_iwf_q {Γ l li k ki x x' s s' n n' o' c' m'} : i <> lV ->
   [ G ; Γ ⊢[ i ] m' : tyEl li x @ li ] ->
   [ G ; Γ ⊢[ i ] tmIWf k ki x' s' n' o' c' m' : tyU (lmax l li) @ lsuc (lmax l li) ].
 Proof using Hty.
-  intros Hv Q1 Q2 Hx' Hxx Hs Hs' Hss Hn Hn' Hnn Ho' Hc' Hm'.
+  intros Hv Q1 Q2 Hx' Hxx Hs Hs' Hss Hn Hn' Hnn Ho' Hc' Hm'. pose proof (compt_notV _ Hv) as Hnv.
   pose proof (lequiv_wf_l _ _ _ Q1) as Wl. pose proof (lequiv_wf_r _ _ _ Q1) as Wk.
   pose proof (lequiv_wf_r _ _ _ Q2) as Wki.
   assert (HEl : [ G ; Γ ⊢[ i ] tyEl l s @ l ]) by (apply wft_El; auto).
@@ -2246,7 +2246,7 @@ Proof using Hty.
   - exact (sc_ctm Hc2 (wf_lconv _ _ _ _ _ _ _ (sc_conv Hc' EX2) (lequiv_sym _ _ _ Q2))).
   - exact (wf_lconv _ _ _ _ _ _ _ (sc_conv Hm' EX0) (lequiv_sym _ _ _ Q2)).
 Qed.
-Lemma sc_code_iwf {Γ l li k ki x x' s s' n n' o o' c c' m m'} : i <> lV ->
+Lemma sc_code_iwf {Γ l li k ki x x' s s' n n' o o' c c' m m'} : compt i ->
   lwf (gL G) l -> lwf (gL G) li -> lwf (gL G) k -> lwf (gL G) ki -> leqv l k -> leqv li ki ->
   [ G ; Γ ⊢[ i ] x : tyU li @ lsuc li ] ->
   [ G ; Γ ⊢[ i ] x' : tyU li @ lsuc li ] /\ [ G ; Γ ⊢[ i ] x ≅ x' : tyU li @ lsuc li ] ->

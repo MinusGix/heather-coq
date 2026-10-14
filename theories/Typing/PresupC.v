@@ -775,39 +775,6 @@ Proof.
   - exact (ctxconv_tm (extc HEl HEE Hl) Hd Hn').
 Qed.
 
-(** The codes of [DVec] and [IWf] (M17c), along [StaticCode]'s [_q] forms. *)
-Lemma pc_code_dvec {Γ l l' n n' f f'} : i <> lV -> lequiv (gL G) l l' ->
-  [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
-  [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
-  [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] f : tyU l @ lsuc l ] ->
-  [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] f' : tyU l @ lsuc l ] ->
-  [ G ; Γ ⊢[ i ] tmDVec l n f : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmDVec l' n' f' : tyU l @ lsuc l ].
-Proof.
-  intros Hv Hl Hn Hnn Hn' Hf Hf'. split; [apply wf_code_dvec; eauto using lequiv_wf_l |].
-  exact (sc_code_dvec_q HiD Hv Hl Hn Hn' Hnn Hf').
-Qed.
-
-Lemma pc_code_iwf {Γ l li k ki x x' s s' n n' o o' c c' m m'} : i <> lV ->
-  lequiv (gL G) l k -> lequiv (gL G) li ki ->
-  [ G ; Γ ⊢[ i ] x : tyU li @ lsuc li ] -> [ G ; Γ ⊢[ i ] x ≅ x' : tyU li @ lsuc li ] ->
-  [ G ; Γ ⊢[ i ] x' : tyU li @ lsuc li ] ->
-  [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
-  [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
-  [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
-  [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n' : tyNat @ lzero ] ->
-  [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o : tyEl li x⟨↑⟩ @ li ] ->
-  [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o' : tyEl li x⟨↑⟩ @ li ] ->
-  [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] c : tyEl li x⟨↑⟩⟨↑⟩ @ li ] ->
-  [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] c' : tyEl li x⟨↑⟩⟨↑⟩ @ li ] ->
-  [ G ; Γ ⊢[ i ] m : tyEl li x @ li ] -> [ G ; Γ ⊢[ i ] m' : tyEl li x @ li ] ->
-  [ G ; Γ ⊢[ i ] tmIWf l li x s n o c m : tyU (lmax l li) @ lsuc (lmax l li) ] /\
-  [ G ; Γ ⊢[ i ] tmIWf k ki x' s' n' o' c' m' : tyU (lmax l li) @ lsuc (lmax l li) ].
-Proof.
-  intros Hv Q1 Q2 Hx Hxx Hx' Hs Hss Hs' Hn Hnn Hn' Ho Ho' Hc Hc' Hm Hm'.
-  split; [apply wf_code_iwf; eauto using lequiv_wf_l |].
-  exact (sc_code_iwf_q HiD Hv Q1 Q2 Hx' Hxx Hs Hs' Hss Hn Hn' Hnn Ho' Hc' Hm').
-Qed.
-
 End Cases.
 
 Theorem presupposition_C :
@@ -867,9 +834,7 @@ Proof.
              | solve [eapply pc_code_sq; eassumption]
              (* propositional truncation at C (M16b) *)
              | solve [eapply pc_tySq; eassumption] | solve [eapply pc_sq; eassumption]
-             | solve [eapply pc_elimSq; eassumption]
-             (* the codes of DVec and IWf (M17c) *)
-             | solve [eapply pc_code_dvec; eassumption] | solve [eapply pc_code_iwf; eassumption] ].
+             | solve [eapply pc_elimSq; eassumption] ].
 Qed.
 
 Lemma eqty_wf_C {G i Γ T T' l} : lle i lC -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->

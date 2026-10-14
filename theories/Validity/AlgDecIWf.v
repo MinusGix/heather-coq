@@ -116,3 +116,64 @@ Proof.
     by (eapply (conv_tm' Hi); [eapply wf_lconv; [exact Hm' | exact E2] | exact EX]).
   destruct (IHm m' i li Hc Hm Hm'l) as [Dm | Hneg]; [left; eapply actmne_elimIWf; eassumption | refute].
 Qed.
+
+(** The codes of [DVec] and [IWf] (M17c), as the types'. *)
+Lemma Dc_actmnf_code_dvec {G Γ l k k0 n n0 f f0} :
+  Dc_tm G Γ n n0 tyNat -> Dc_tm G (Γ ,, tyFin n @ lzero) f f0 (tyU k) ->
+  Dc_tmnf G Γ (tmDVec k n f) (tmDVec k0 n0 f0) (tyU l).
+Proof.
+  intros IHn IHf x i m Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmnf _ _ _ (tmDVec ?a ?b ?c) _) => rename a into k', b into n', c into f' end.
+  destruct (code_dvec_prem Hc Hx) as (W1 & Hn & Hf).
+  destruct (code_dvec_prem Hc Hx') as (W5 & Hn' & Hf').
+  pose proof (compt_notV Hc) as Hv.
+  destruct (leqv_dec k k') as [H15 | N]; [| refute].
+  pose proof (leqv_lequiv _ _ _ W1 W5 H15) as E15.
+  destruct (IHn n' i _ Hc Hn Hn') as [Dn | N]; [| refute].
+  pose proof (ac_tm_sound Hc Dn Hn Hn') as En.
+  pose proof (ctx_of_wf_tm Hi Hn) as HΓ.
+  assert (EF : [ G ; Γ ⊢[ i ] tyFin n' ≅ tyFin n @ lzero ])
+    by (apply eqty_fin; [exact Hv | exact (eqtm_sym _ _ _ _ _ _ _ En)]).
+  assert (HΓ1 : [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] ])
+    by (apply wfc_ext; [exact HΓ | apply wft_fin; assumption | exact I]).
+  pose proof (stab_tm Hi EF (lequiv_refl _ lzero I) HΓ1 (code_U_conv Hc E15 Hf')) as Hf1.
+  destruct (IHf f' i _ Hc Hf Hf1) as [Df | N]; [left; apply actmnf_code_dvec; assumption | refute].
+Qed.
+
+Lemma Dc_actmnf_code_iwf {G Γ l k k0 ki ki0 x x0 s s0 n n0 o o0 c c0 m m0} :
+  Dc_tm G Γ x x0 (tyU ki) -> Dc_tm G Γ s s0 (tyU k) -> Dc_tm G (Γ ,, tyEl k s @ k) n n0 tyNat ->
+  Dc_tm G (Γ ,, tyEl k s @ k) o o0 (tyEl ki x⟨↑⟩) ->
+  Dc_tm G (Γ ,, tyEl k s @ k ,, tyFin n @ lzero) c c0 (tyEl ki x⟨↑⟩⟨↑⟩) ->
+  Dc_tm G Γ m m0 (tyEl ki x) ->
+  Dc_tmnf G Γ (tmIWf k ki x s n o c m) (tmIWf k0 ki0 x0 s0 n0 o0 c0 m0) (tyU l).
+Proof.
+  intros IHx IHs IHN IHO IHC IHm Y i q Hc Ht Ht'.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  destruct Y; try solve [refute_con].
+  match goal with |- Dec (ac_tmnf _ _ _ (tmIWf ?p1 ?p2 ?p3 ?p4 ?p5 ?p6 ?p7 ?p8) _) =>
+    rename p1 into k', p2 into ki', p3 into x', p4 into s', p5 into n', p6 into o', p7 into c', p8 into m' end.
+  destruct (code_iwf_prem Hc Ht) as (Wa & Wb & Hx & Hs & HN & HO & HC & Hm).
+  destruct (code_iwf_prem Hc Ht') as (Wc & Wd & Hx' & Hs' & HN' & HO' & HC' & Hm').
+  destruct (leqv_dec k k') as [H1 | Hneg]; [| refute].
+  destruct (leqv_dec ki ki') as [H2 | Hneg]; [| refute].
+  pose proof (leqv_lequiv _ _ _ Wa Wc H1) as E13. pose proof (leqv_lequiv _ _ _ Wb Wd H2) as E24.
+  pose proof (code_U_conv Hc E24 Hx') as Hx1. pose proof (code_U_conv Hc E13 Hs') as Hs1.
+  destruct (IHx x' i _ Hc Hx Hx1) as [Dx | Hneg]; [| refute].
+  destruct (IHs s' i _ Hc Hs Hs1) as [Ds | Hneg]; [| refute].
+  pose proof (ac_tm_sound Hc Dx Hx Hx1) as Ex. pose proof (ac_tm_sound Hc Ds Hs Hs1) as Es.
+  assert (HS : IWfSig (G := G) (i := i) Γ k ki (tyEl ki x) (tyEl k s) n o c)
+    by (unfold IWfSig; repeat split; first [assumption | apply wft_El; assumption]).
+  assert (HS' : IWfSig (G := G) (i := i) Γ k' ki' (tyEl ki' x') (tyEl k' s') n' o' c')
+    by (unfold IWfSig; repeat split; first [assumption | apply wft_El; assumption]).
+  assert (EX : [ G ; Γ ⊢[ i ] tyEl ki x ≅ tyEl ki' x' @ ki ]) by (apply eqty_El; assumption).
+  assert (EA : [ G ; Γ ⊢[ i ] tyEl k s ≅ tyEl k' s' @ k ]) by (apply eqty_El; assumption).
+  destruct (IWf_r_mv Hi Hv HS HS' E13 E24 EX EA) as (_ & _ & HN'l & HO'l & HC'l).
+  destruct (IHN n' i lzero Hc HN HN'l) as [DN | Hneg]; [| refute].
+  pose proof (ac_tm_sound Hc DN HN HN'l) as EN.
+  destruct (IHO o' i ki Hc HO HO'l) as [DO | Hneg]; [| refute].
+  destruct (IHC c' i ki Hc HC (HC'l EN)) as [DC | Hneg]; [| refute].
+  assert (Hm'l : [ G ; Γ ⊢[ i ] m' : tyEl ki x @ ki ])
+    by (eapply (conv_tm' Hi); [eapply wf_lconv; [exact Hm' | exact E24] | exact EX]).
+  destruct (IHm m' i ki Hc Hm Hm'l) as [Dm | Hneg]; [left; apply actmnf_code_iwf; assumption | refute].
+Qed.
