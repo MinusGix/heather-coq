@@ -228,6 +228,17 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 (* the code of ∥·∥ (M16b) *)
 | actmnf_code_sq G Γ l k k' s s' : leqv k k' -> ac_tm G Γ s s' (tyU k) ->
     ac_tmnf G Γ (tmSqCode k s) (tmSqCode k' s') (tyU l)
+(* the codes of [DVec] and [IWf] (M17c), structurally, the binders'
+   contexts at the left components as [IWf]'s *)
+| actmnf_code_dvec G Γ l k k' n n' f f' : leqv k k' ->
+    ac_tm G Γ n n' tyNat -> ac_tm G (Γ ,, tyFin n @ lzero) f f' (tyU k) ->
+    ac_tmnf G Γ (tmDVec k n f) (tmDVec k' n' f') (tyU l)
+| actmnf_code_iwf G Γ l k k' ki ki' x x' s s' n n' o o' c c' m m' : leqv k k' -> leqv ki ki' ->
+    ac_tm G Γ x x' (tyU ki) -> ac_tm G Γ s s' (tyU k) ->
+    ac_tm G (Γ ,, tyEl k s @ k) n n' tyNat -> ac_tm G (Γ ,, tyEl k s @ k) o o' (tyEl ki x⟨↑⟩) ->
+    ac_tm G (Γ ,, tyEl k s @ k ,, tyFin n @ lzero) c c' (tyEl ki x⟨↑⟩⟨↑⟩) ->
+    ac_tm G Γ m m' (tyEl ki x) ->
+    ac_tmnf G Γ (tmIWf k ki x s n o c m) (tmIWf k' ki' x' s' n' o' c' m') (tyU l)
 
 with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_var G Γ n T l : in_ctx Γ n T l -> ac_tmne G Γ (var n) (var n) T

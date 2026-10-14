@@ -356,6 +356,22 @@ Lemma inv_code_sq {G i Γ l s T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSqCode 
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ i ] T ≅ tyU l @ k ].
 Proof. inv_tm. Qed.
 
+(** The codes of [DVec] and [IWf] (M17c). *)
+Lemma inv_code_dvec {G i Γ l n f T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmDVec l n f : T @ k ] ->
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] /\
+    [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] f : tyU l @ lsuc l ]) /\
+    lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ i ] T ≅ tyU l @ k ].
+Proof. inv_tm. Qed.
+Lemma inv_code_iwf {G i Γ l li x s n o c m T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmIWf l li x s n o c m : T @ k ] ->
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) li /\
+    [ G ; Γ ⊢[ i ] x : tyU li @ lsuc li ] /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] /\
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o : tyEl li x⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] c : tyEl li x⟨↑⟩⟨↑⟩ @ li ] /\
+    [ G ; Γ ⊢[ i ] m : tyEl li x @ li ]) /\
+    lvl_eq (gL G) k (lsuc (lmax l li)) /\ [ G ; Γ ⊢[ i ] T ≅ tyU (lmax l li) @ k ].
+Proof. inv_tm. Qed.
+
 (** Strict equality (M10a). *)
 Lemma inv_srefl {G i Γ l A a T k} : typeof i = i -> [ G ; Γ ⊢[ i ] srefl l A a : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ⊢[ i ] a : A @ l ]) /\

@@ -110,6 +110,8 @@ with unf_tm (t : tm) {struct t} : tm :=
   | tmSq l A a => tmSq l (unf_ty A) (unf_tm a)
   | tmElimSq l l' A M c t => tmElimSq l l' (unf_ty A) (unf_ty M) (unf_tm c) (unf_tm t)
   | tmSqCode l s => tmSqCode l (unf_tm s)
+  | tmDVec l n f => tmDVec l (unf_tm n) (unf_tm f)
+  | tmIWf l li x s n o c m => tmIWf l li (unf_tm x) (unf_tm s) (unf_tm n) (unf_tm o) (unf_tm c) (unf_tm m)
   | tmSupi l li X A N Ot C a cs =>
       tmSupi l li (unf_ty X) (unf_ty A) (unf_tm N) (unf_tm Ot) (unf_tm C) (unf_tm a) (unf_tm cs)
   | tmElimIWf l li l' X A N Ot C M c m t =>
@@ -456,6 +458,8 @@ with gfree_tm (t : tm) {struct t} : Prop :=
   | tmSq l A a => gfree_ty A /\ gfree_tm a
   | tmElimSq l l' A M c t => gfree_ty A /\ gfree_ty M /\ gfree_tm c /\ gfree_tm t
   | tmSqCode _ s => gfree_tm s
+  | tmDVec _ n f => gfree_tm n /\ gfree_tm f
+  | tmIWf _ _ x s n o c m => gfree_tm x /\ gfree_tm s /\ gfree_tm n /\ gfree_tm o /\ gfree_tm c /\ gfree_tm m
   | tmSupi l li X A N Ot C a cs => (gfree_ty X) /\ (gfree_ty A) /\ (gfree_tm N) /\ (gfree_tm Ot) /\ (gfree_tm C) /\ (gfree_tm a) /\ (gfree_tm cs)
   | tmElimIWf l li l' X A N Ot C M c m t =>
       (gfree_ty X) /\ (gfree_ty A) /\ (gfree_tm N) /\ (gfree_tm Ot) /\ (gfree_tm C) /\ (gfree_ty M) /\ (gfree_tm c) /\ (gfree_tm m) /\ (gfree_tm t)

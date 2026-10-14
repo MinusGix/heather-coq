@@ -408,7 +408,9 @@ Proof.
                         | eapply pre_tySq_r; eassumption
                         | eapply pre_sq_r; eassumption
                         | eapply pre_elimSq_r; eassumption
-                        | eapply pre_elimSq_sq_rhs; eassumption ]].
+                        | eapply pre_elimSq_sq_rhs; eassumption
+                        | eapply pre_codedvec_r; eassumption
+                        | eapply pre_codeiwf_r; eassumption ]].
   (* indexed well-founded trees (M17b): the signature's premises bundled *)
   all: try solve [first
          [ eapply pre_iwf_r; iwf_bundle
@@ -546,7 +548,14 @@ Proof.
              | solve [eapply pre_codesq_r; eassumption]
              | solve [eapply wf_code_sq; eauto 3 with presup]
              | solve [eapply wft_El; eauto with presup; eapply wf_code_sq; eassumption]
-             | solve [apply wft_sq; eauto 3 with presup; apply wft_El; eauto with presup] ].
+             | solve [apply wft_sq; eauto 3 with presup; apply wft_El; eauto with presup]
+             (* the codes of DVec and IWf (M17c) *)
+             | solve [eapply pre_codedvec_r; eassumption]
+             | solve [eapply pre_codeiwf_r; eassumption]
+             | solve [eapply proj1; first [eapply pre_El_dvec | eapply pre_El_iwf]; iwf_leaf]
+             | solve [eapply proj2; first [eapply pre_El_dvec | eapply pre_El_iwf]; iwf_leaf]
+             | solve [eapply wf_code_dvec; eauto 3 with presup]
+             | solve [eapply wf_code_iwf; eauto 3 with presup] ].
 Qed.
 
 Section Named.

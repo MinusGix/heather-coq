@@ -294,6 +294,8 @@ with dnftm (t : tm) : Prop :=
   | tmElimIWf _ _ _ X A N Ot C M c m t =>
       dnfty X /\ dnfty A /\ dnftm N /\ dnftm Ot /\ dnftm C /\ dnfty M /\ dnftm c /\ dnftm m /\ dnftm t
   | tmSqCode _ s => dnftm s
+  | tmDVec _ n f => dnftm n /\ dnftm f
+  | tmIWf _ _ x s n o c m => dnftm x /\ dnftm s /\ dnftm n /\ dnftm o /\ dnftm c /\ dnftm m
   | tmRefl _ A a => dnfty A /\ dnftm a
   | tmId _ s t u => dnftm s /\ dnftm t /\ dnftm u
   | tmSEq _ s t u => dnftm s /\ dnftm t /\ dnftm u

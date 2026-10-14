@@ -608,11 +608,21 @@ Ltac sub_eqI :=
   push_ren; push_subst; fold_subst; repeat wk_cong.
 Ltac sub_Isub :=
   first [ eassumption
-        | eapply lsub_wf_lift_g; [ sub_Isub | eapply lift_ty; [ sub_Ity | apply lle_self_typeof ] | eauto with sub ] ]
+        | eapply lsub_wf_lift_g; [ sub_Isub | eapply lift_ty; [ sub_Ity | apply lle_self_typeof ] | eauto with sub ]
+        (* a context entry the premise's [push_subst] pushed (M17c: [El s]) *)
+        | eapply lsub_wf_lift_g';
+          [ sub_Isub | eapply lift_ty; [ sub_Ity | apply lle_self_typeof ] | eauto using lequiv_wf_l with sub
+          | push_subst; reflexivity ] ]
 with sub_Ity :=
   first [ match goal with IH : forall Δ d, lsub_wf _ _ Δ d _ -> wf_ty _ _ _ _ _ |- _ => eapply IH; solve [sub_Isub] end
         | push_subst; eapply wft_fin;
           [ eauto with sub
+          | eapply wf_tm_retype;
+            [ match goal with IH : forall Δ d, lsub_wf _ _ Δ d _ -> wf_tm _ _ _ _ _ _ |- _ =>
+                eapply IH; solve [sub_Isub] end
+            | sub_rw; reflexivity ] ]
+        | push_subst; eapply wft_El;
+          [ eauto with sub | eauto using lequiv_wf_l with sub
           | eapply wf_tm_retype;
             [ match goal with IH : forall Δ d, lsub_wf _ _ Δ d _ -> wf_tm _ _ _ _ _ _ |- _ =>
                 eapply IH; solve [sub_Isub] end
@@ -631,6 +641,13 @@ Ltac sub_I :=
 
 Ltac sub_manual2 :=
   match goal with
+  (* the codes of [DVec] and [IWf] (M17c) *)
+  | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) (tyEl _ _) _ => eapply eqty_El_iwf; sub_I
+  | |- eq_ty _ _ _ (tyDVec _ _ _) (tyEl _ _) _ => eapply eqty_El_dvec; sub_I
+  | |- wf_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ => eapply wf_code_iwf; sub_I
+  | |- eq_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwf; sub_I
+  | |- wf_tm _ _ _ (tmDVec _ _ _) _ _ => eapply wf_code_dvec; sub_I
+  | |- eq_tm _ _ _ (tmDVec _ _ _) _ _ _ => eapply eqtm_code_dvec; sub_I
   (* [IWf] (M17b) *)
   | |- wf_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ => eapply wft_iwf; sub_I
   | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ _ => eapply eqty_iwf; sub_I

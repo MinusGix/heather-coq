@@ -112,6 +112,11 @@ with red_ty : ty -> ty -> Prop :=
 | red_El_wf l l0 s n : red_ty (tyEl l (tmWf l0 s n)) (tyWf l0 (tyEl l0 s) n)
 (* the code of ∥·∥ (M16b) *)
 | red_El_sq l l0 s : red_ty (tyEl l (tmSqCode l0 s)) (tySq l0 (tyEl l0 s))
+(* the codes of DVec and IWf (M17c): the terms ride across, the index
+   type's and the shapes' codes decode *)
+| red_El_dvec l l0 n f : red_ty (tyEl l (tmDVec l0 n f)) (tyDVec l0 n (tyEl l0 f))
+| red_El_iwf l l0 li x s n o c m :
+    red_ty (tyEl l (tmIWf l0 li x s n o c m)) (tyIWf l0 li (tyEl li x) (tyEl l0 s) n o c m)
 (* length-indexed tuples and finite indices (M14a): compute on the length *)
 | red_vec_zero l A : red_ty (tyVec l A zero) (tyUnit l)
 | red_vec_succ l A n : red_ty (tyVec l A (succ n)) (tySig l l A (tyVec l A⟨↑⟩ n⟨↑⟩))
@@ -196,6 +201,8 @@ Proof.
         | Hr : red (tmSq _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSupi _ _ _ _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSqCode _ _) _ |- _ => inversion Hr
+        | Hr : red (tmDVec _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmIWf _ _ _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red_ty (tyPi _ _ _ _) _ |- _ => inversion Hr
         end;
     try congruence; try (f_equal; eauto).

@@ -422,6 +422,19 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l' ⊢[ i ] c : iwfstepty l li X A N Ot C M @ l' ] ->
     [ G ; Γ ⊢[ i ] m : X @ li ] -> [ G ; Γ ⊢[ i ] t : tyIWf l li X A N Ot C m @ lmax l li ] ->
     [ G ; Γ ⊢[ i ] tmElimIWf l li l' X A N Ot C M c m t : M[lsingle2 m t] @ l' ]
+(* the codes of [DVec] and [IWf] (M17c; every layer but V): the length,
+   the arity, the output and child indices and the index are terms under
+   their types' binders; [IWf]'s code lives at [lmax l li], as its type *)
+| wf_code_dvec G i Γ l n f : i <> lV -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] f : tyU l @ lsuc l ] ->
+    [ G ; Γ ⊢[ i ] tmDVec l n f : tyU l @ lsuc l ]
+| wf_code_iwf G i Γ l li x s n o c m : i <> lV -> lwf (gL G) l -> lwf (gL G) li ->
+    [ G ; Γ ⊢[ i ] x : tyU li @ lsuc li ] -> [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o : tyEl li x⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] c : tyEl li x⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢[ i ] m : tyEl li x @ li ] ->
+    [ G ; Γ ⊢[ i ] tmIWf l li x s n o c m : tyU (lmax l li) @ lsuc (lmax l li) ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | wf_conv G i Γ t T T' l : [ G ; Γ ⊢[ i ] t : T' @ l ] -> [ G ; Γ ⊢[ typeof i ] T ≅ T' @ l ] ->
@@ -600,6 +613,17 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩ @ li ] ->
     [ G ; Γ ⊢[ i ] m ≅ m' : X @ li ] ->
     [ G ; Γ ⊢[ i ] tyIWf l li X A N Ot C m ≅ tyIWf k ki X' A' N' Ot' C' m' @ lmax l li ]
+(* the codes of [DVec] and [IWf] decode (M17c; layers D and M) *)
+| eqty_El_dvec G i Γ l n f : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] f : tyU l @ lsuc l ] ->
+    [ G ; Γ ⊢[ i ] tyDVec l n (tyEl l f) ≅ tyEl l (tmDVec l n f) @ l ]
+| eqty_El_iwf G i Γ l li x s n o c m : compt i -> lwf (gL G) l -> lwf (gL G) li ->
+    [ G ; Γ ⊢[ i ] x : tyU li @ lsuc li ] -> [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o : tyEl li x⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] c : tyEl li x⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢[ i ] m : tyEl li x @ li ] ->
+    [ G ; Γ ⊢[ i ] tyIWf l li (tyEl li x) (tyEl l s) n o c m ≅ tyEl (lmax l li) (tmIWf l li x s n o c m) @ lmax l li ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | eqty_refl G i Γ T l : [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T @ l ]
@@ -1151,6 +1175,23 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] tmElimIWf l li l' X A N Ot C M c Ot[lsingle a] (tmSupi l li X A N Ot C a cs)
         ≅ c[lsingle3 a cs (iwfIH l li l' X A N Ot C M c a cs)]
         : M[lsingle2 Ot[lsingle a] (tmSupi l li X A N Ot C a cs)] @ l' ]
+(* the codes of [DVec] and [IWf] (M17c; every layer but V), with the left
+   typings their binders' contexts need, as [Wf]'s code *)
+| eqtm_code_dvec G i Γ l l' n n' f f' : i <> lV -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] f ≅ f' : tyU l @ lsuc l ] ->
+    [ G ; Γ ⊢[ i ] tmDVec l n f ≅ tmDVec l' n' f' : tyU l @ lsuc l ]
+| eqtm_code_iwf G i Γ l li k ki x x' s s' n n' o o' c c' m m' : i <> lV ->
+    lequiv (gL G) l k -> lequiv (gL G) li ki ->
+    [ G ; Γ ⊢[ i ] x : tyU li @ lsuc li ] -> [ G ; Γ ⊢[ i ] x ≅ x' : tyU li @ lsuc li ] ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o ≅ o' : tyEl li x⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] c ≅ c' : tyEl li x⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢[ i ] m ≅ m' : tyEl li x @ li ] ->
+    [ G ; Γ ⊢[ i ] tmIWf l li x s n o c m ≅ tmIWf k ki x' s' n' o' c' m'
+        : tyU (lmax l li) @ lsuc (lmax l li) ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | eqtm_refl G i Γ t T l : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ i ] t ≅ t : T @ l ]

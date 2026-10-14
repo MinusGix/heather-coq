@@ -254,6 +254,9 @@ Proof.
     + exact (IWf_mot_wf Hty Hv HS).
     + exact (IWf_cs_wf Hty Hv HS).
     + exact (eqty_wf_l Hty EI).
+  (* the codes of DVec and IWf (M17c) *)
+  - intros; apply eqtm_code_dvec; auto.
+  - intros; apply eqtm_code_iwf; auto.
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].

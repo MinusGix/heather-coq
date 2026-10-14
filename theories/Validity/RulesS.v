@@ -181,6 +181,8 @@ Ltac s_push_at h k := lazymatch h with
   | @tmSq => k gs_sq
   | @tmElimSq => k gs_elimSq
   | @tmSqCode => k gs_tmSqCode
+  | @tmDVec => k gs_tmDVec
+  | @tmIWf => k gs_tmIWf
   | @tyIWf => k gs_tyIWf
   | @tmSupi => k gs_supi
   | @tmElimIWf => k gs_elimIWf
@@ -262,7 +264,10 @@ Ltac fts_case :=
   | solve [simple eapply V_iwf; s_side] | solve [simple eapply V_supi; s_side]
   | solve [simple eapply V_elimIWf; s_side] | solve [simple eapply V_elimIWf_supi; s_side]
   | solve [simple eapply V_supi_ty; s_side] | solve [simple eapply V_elimIWf_ty_at; s_side]
-  | solve [simple eapply V_elimIWf_supi_ty; s_side] ].
+  | solve [simple eapply V_elimIWf_supi_ty; s_side]
+  (* the codes of DVec and IWf (M17c) *)
+  | solve [simple eapply V_code_dvec; s_side] | solve [simple eapply V_El_dvec; s_side]
+  | solve [simple eapply V_code_iwf; s_side] | solve [simple eapply V_El_iwf; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=
@@ -984,6 +989,44 @@ Proof using EL VL VN.
   apply VS_code_sq; [exact Hw | apply lequiv_refl, Hw | exact Vs].
 Qed.
 
+(** The codes of DVec and IWf (M17c). *)
+Lemma VS_code_dvec {G Γ l l' n n' f f'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTmS G Γ n n' tyNat lzero -> VTmS G (Γ ,, tyFin n @ lzero) f f' (tyU l) (lsuc l) ->
+  VTmS G Γ (tmDVec l n f) (tmDVec l' n' f') (tyU l) (lsuc l).
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_El_dvec {G Γ l n f} : lwf (gL G) l ->
+  VTmS G Γ n n tyNat lzero -> VTmS G (Γ ,, tyFin n @ lzero) f f (tyU l) (lsuc l) ->
+  VTyS G Γ (tyDVec l n (tyEl l f)) (tyEl l (tmDVec l n f)) l.
+Proof using EL VL VN.
+  intros Hw Vn Vf. eapply (VTyS_trans_diag EP EM (T2 := tyEl l (tmDVec l n f))); [s_diag V_El_dvec|].
+  apply VS_El; [exact Hw | apply lequiv_refl, Hw |].
+  apply VS_code_dvec; [exact Hw | apply lequiv_refl, Hw | exact Vn | exact Vf].
+Qed.
+Lemma VS_code_iwf {G Γ l li l' li' x x' s s' n n' o o' c c' m m'} :
+  lwf (gL G) l -> lwf (gL G) li -> lequiv (gL G) l l' -> lequiv (gL G) li li' ->
+  VTmS G Γ x x' (tyU li) (lsuc li) -> VTmS G Γ s s' (tyU l) (lsuc l) ->
+  VTmS G (Γ ,, tyEl l s @ l) n n' tyNat lzero ->
+  VTmS G (Γ ,, tyEl l s @ l) o o' (tyEl li x⟨↑⟩) li ->
+  VTmS G (Γ ,, tyEl l s @ l ,, tyFin n @ lzero) c c' (tyEl li x⟨↑⟩⟨↑⟩) li ->
+  VTmS G Γ m m' (tyEl li x) li ->
+  VTmS G Γ (tmIWf l li x s n o c m) (tmIWf l' li' x' s' n' o' c' m')
+    (tyU (lmax l li)) (lsuc (lmax l li)).
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_El_iwf {G Γ l li x s n o c m} : lwf (gL G) l -> lwf (gL G) li ->
+  VTmS G Γ x x (tyU li) (lsuc li) -> VTmS G Γ s s (tyU l) (lsuc l) ->
+  VTmS G (Γ ,, tyEl l s @ l) n n tyNat lzero ->
+  VTmS G (Γ ,, tyEl l s @ l) o o (tyEl li x⟨↑⟩) li ->
+  VTmS G (Γ ,, tyEl l s @ l ,, tyFin n @ lzero) c c (tyEl li x⟨↑⟩⟨↑⟩) li ->
+  VTmS G Γ m m (tyEl li x) li ->
+  VTyS G Γ (tyIWf l li (tyEl li x) (tyEl l s) n o c m) (tyEl (lmax l li) (tmIWf l li x s n o c m)) (lmax l li).
+Proof using EL VL VN.
+  intros Hw Hwi Vx Vs Vn Vo Vc Vm.
+  eapply (VTyS_trans_diag EP EM (T2 := tyEl (lmax l li) (tmIWf l li x s n o c m))); [s_diag V_El_iwf|].
+  assert (Hwm : lwf (gL G) (lmax l li)) by (cbn; split; assumption).
+  apply VS_El; [exact Hwm | apply lequiv_refl, Hwm |].
+  apply VS_code_iwf; try assumption; apply lequiv_refl; assumption.
+Qed.
+
 End Rules.
 
 End RulesS.
@@ -1066,4 +1109,7 @@ Ltac vs_rules side :=
   | solve [simple eapply VS_iwf; side] | solve [simple eapply VS_supi; side]
   | solve [simple eapply VS_elimIWf; side] | solve [simple eapply VS_elimIWf_supi; side]
   | solve [simple eapply VS_supi_ty; side] | solve [simple eapply VS_elimIWf_ty; side]
-  | solve [simple eapply VS_elimIWf_supi_ty; side] ].
+  | solve [simple eapply VS_elimIWf_supi_ty; side]
+  (* the codes of DVec and IWf (M17c) *)
+  | solve [simple eapply VS_code_dvec; side] | solve [simple eapply VS_El_dvec; side]
+  | solve [simple eapply VS_code_iwf; side] | solve [simple eapply VS_El_iwf; side] ].

@@ -297,6 +297,8 @@ with sz_tm (t : tm) : nat :=
   | tmSq _ A a => S (sz_ty A + sz_tm a)
   | tmElimSq _ _ A M c t => S (sz_ty A + sz_ty M + sz_tm c + sz_tm t)
   | tmSqCode _ s => S (sz_tm s)
+  | tmDVec _ n f => S (sz_tm n + sz_tm f)
+  | tmIWf _ _ x s n o c m => S (sz_tm x + sz_tm s + sz_tm n + sz_tm o + sz_tm c + sz_tm m)
   | tmSupi _ _ X A N Ot C a cs => S (sz_ty X + sz_ty A + sz_tm N + sz_tm Ot + sz_tm C + sz_tm a + sz_tm cs)
   | tmElimIWf _ _ _ X A N Ot C M c m t =>
       S (sz_ty X + sz_ty A + sz_tm N + sz_tm Ot + sz_tm C + sz_ty M + sz_tm c + sz_tm m + sz_tm t)

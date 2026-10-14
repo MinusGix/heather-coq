@@ -73,6 +73,9 @@ with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
   | tmSq l A a => lwf L l /\ ty_lwf L A /\ tm_lwf L a
   | tmElimSq l1 l2 A M c t => lwf L l1 /\ lwf L l2 /\ ty_lwf L A /\ ty_lwf L M /\ tm_lwf L c /\ tm_lwf L t
   | tmSqCode l s => lwf L l /\ tm_lwf L s
+  | tmDVec l n f => lwf L l /\ tm_lwf L n /\ tm_lwf L f
+  | tmIWf l li x s n o c m => lwf L l /\ lwf L li /\ tm_lwf L x /\ tm_lwf L s /\ tm_lwf L n /\
+      tm_lwf L o /\ tm_lwf L c /\ tm_lwf L m
   | tmSupi l li X A N Ot C a cs => lwf L l /\ lwf L li /\ ty_lwf L X /\ ty_lwf L A /\ tm_lwf L N /\
       tm_lwf L Ot /\ tm_lwf L C /\ tm_lwf L a /\ tm_lwf L cs
   | tmElimIWf l li l2 X A N Ot C M c m t => lwf L l /\ lwf L li /\ lwf L l2 /\ ty_lwf L X /\ ty_lwf L A /\

@@ -257,6 +257,14 @@ Ltac gw_manual :=
   (* finitary well-founded trees (M15a): the arity's instance commutes by an equation *)
   (* dependent tuples (M17a): the tail's index annotation shifts the length *)
   | |- eq_ty _ _ _ (tyDVec _ (succ _) _) (tySig _ _ _ _) _ => gren_rewrite; eapply eqty_dvec_succ; gw_premise
+  (* the codes of DVec and IWf (M17c): the shifted index code commutes by an
+     equation, and the decodings come before [IWf]'s and [DVec]'s congruences *)
+  | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) (tyEl _ _) _ => eapply eqty_El_iwf; gw_premise
+  | |- eq_ty _ _ _ (tyDVec _ _ _) (tyEl _ _) _ => eapply eqty_El_dvec; gw_premise
+  | |- wf_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ => eapply wf_code_iwf; gw_premise
+  | |- eq_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwf; gw_premise
+  | |- wf_tm _ _ _ (tmDVec _ _ _) _ _ => eapply wf_code_dvec; gw_premise
+  | |- eq_tm _ _ _ (tmDVec _ _ _) _ _ _ => eapply eqtm_code_dvec; gw_premise
   (* indexed finitary trees (M17b): the shifted index type commutes by an equation *)
   | |- wf_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ => eapply wft_iwf; gw_premise
   | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ _ => eapply eqty_iwf; gw_premise
@@ -513,6 +521,10 @@ Lemma gwa_elimSq l l' A M c t :
   (tmElimSq l l' A M c t)⟦γ⟧ = tmElimSq l l' A⟦γ⟧ M⟦γ⟧ c⟦γ⟧ t⟦γ⟧.
 Proof. now destruct γ. Qed.
 Lemma gwa_tmSqCode l s : (tmSqCode l s)⟦γ⟧ = tmSqCode l s⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tmDVec l n f : (tmDVec l n f)⟦γ⟧ = tmDVec l n⟦γ⟧ f⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tmIWf l li x s n o c m :
+  (tmIWf l li x s n o c m)⟦γ⟧ = tmIWf l li x⟦γ⟧ s⟦γ⟧ n⟦γ⟧ o⟦γ⟧ c⟦γ⟧ m⟦γ⟧.
+Proof. now destruct γ. Qed.
 Lemma gwa_inl l l' A B a : (tmInl l l' A B a)⟦γ⟧ = tmInl l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_inr l l' A B a : (tmInr l l' A B a)⟦γ⟧ = tmInr l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_case l l' l'' A B M c1 c2 t :
@@ -611,6 +623,8 @@ Ltac push_gwa_at h k := lazymatch h with
   | @tmSq => k gwa_sq
   | @tmElimSq => k gwa_elimSq
   | @tmSqCode => k gwa_tmSqCode
+  | @tmDVec => k gwa_tmDVec
+  | @tmIWf => k gwa_tmIWf
   end.
 Ltac push_gwa := repeat match goal with
   | |- context [@gwa _ _ _ ?t] => let h := head_of t in push_gwa_at h ltac:(fun L => rewrite L)

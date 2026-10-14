@@ -860,6 +860,41 @@ Ltac fun_IWf :=
       fun_IWf_lifts X A N d; eapply eqtm_elimIWf; fun_Ip
   end.
 
+(** The codes of [DVec] and [IWf] (M17c): as [IWf]'s, with the index
+    type [El s] lifted from the code's typing and congruence. *)
+Ltac fun_codeEl s d :=
+  match goal with
+  | Hd : lsub_eq _ _ ?Δ d ?d' ?Γ, Hw : lsub_wf ?G ?i ?Δ d ?Γ,
+    ws : wf_tm ?G _ ?Γ s (tyU ?l) ?ll |- _ =>
+      let Hs := fresh "Hs" in let Es := fresh "Es" in let HnA := fresh "HnA" in
+      assert (Hs : wf_tm G i Δ s[d] (tyU l) ll) by exact (wf_tm_subst_g ws Hw);
+      assert (Es : eq_tm G i Δ s[d] s[d'] (tyU l) ll)
+        by (match goal with IH : forall Δ d d', _ -> eq_tm _ _ _ (subst ?x _) _ _ _ |- _ =>
+              constr_eq x s; eapply IH; exact Hd end);
+      assert (HnA : lsub_eq G i (Δ ,, (tyEl l s)[d] @ l) (llift d) (llift d') (Γ ,, tyEl l s @ l))
+        by (eapply lsub_eq_lift_g;
+            [ exact Hd
+            | eapply lift_ty; [push_subst; apply wft_El; eauto with fung | apply lle_self_typeof]
+            | assumption
+            | eapply lift_eqty; [push_subst; apply eqty_El; eauto using lequiv_refl with fung
+                                | apply lle_self_typeof]
+            | reflexivity ])
+  end.
+Ltac fun_Code :=
+  match goal with
+  | |- eq_tm _ _ _ (tmDVec _ (@subst _ _ ?n ?d) _) _ _ _ =>
+      let Hc := fresh "Hc" in
+      match goal with Hd : lsub_eq _ _ _ d _ _ |- _ => pose proof (lsub_eq_r Hd); fun_Ilift Hd (tyFin n) lzero Hc end;
+      eapply eqtm_code_dvec; fun_Ip
+  | |- eq_tm _ _ _ (tmIWf _ _ _ (@subst _ _ ?s ?d) (@subst _ _ ?n _) _ _ _) _ _ _ =>
+      let Hc := fresh "Hc" in
+      match goal with Hd : lsub_eq _ _ _ d _ _ |- _ => pose proof (lsub_eq_r Hd) end;
+      fun_codeEl s d;
+      match goal with HnA : lsub_eq _ _ (_ ,, (tyEl _ s)[d] @ _) _ _ _ |- _ =>
+        fun_Ilift HnA (tyFin n) lzero Hc end;
+      eapply eqtm_code_iwf; fun_Ip
+  end.
+
 Theorem functionality_all :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Θ, [ G ; Θ ⊢[ i ] ] -> forall Γ As, Θ = cexts Γ As ->
@@ -885,6 +920,7 @@ Proof.
   all: try fun_J.
   all: try fun_Wf.
   all: try fun_IWf.
+  all: try fun_Code.
   all: try (timeout 3 any_rule fung_premise).
   all: try (timeout 3 fung_step).
   (* code of Π and natrec: the binder premises need the substituted

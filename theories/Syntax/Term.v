@@ -161,6 +161,12 @@ with tm : Type :=
 | tmElimIWf (l li l' : lvl) (X A : ty) (N Ot C : tm) (M : ty) (c m t : tm)
     (* elim_IWf^{l,li,l'}(…; j z. M; a cs ih. c; m; t) : M[m/j, t/z] @ l'
        N, O: +1, C, M: +2, c: +3 *)
+(* the codes of [DVec] and [IWf] (M17c): the length, arity, output and
+   child indices and the index are terms, the family and the index type
+   and shapes codes *)
+| tmDVec (l : lvl) (n f : tm)             (* code of DVec^l(n; i. El f) : Ty l      f: +1 *)
+| tmIWf (l li : lvl) (x s n o c m : tm)
+    (* code of IWf^{l,li}(El x; y : El s. n; y. o; y i. c)(m) : Ty (l ⊔ li)      n, o: +1, c: +2 *)
 with ctx : Type :=
 | cnil
 | cvar (g : nat)
@@ -323,6 +329,8 @@ with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
       tmSupi l li (ren_ty X r) (ren_ty A r) (ren_tm N (rlift r)) (ren_tm Ot (rlift r)) (ren_tm C (rlift (rlift r))) (ren_tm a r) (ren_tm cs r)
   | tmElimIWf l li l' X A N Ot C M c m t =>
       tmElimIWf l li l' (ren_ty X r) (ren_ty A r) (ren_tm N (rlift r)) (ren_tm Ot (rlift r)) (ren_tm C (rlift (rlift r))) (ren_ty M (rlift (rlift r))) (ren_tm c (rlift (rlift (rlift r)))) (ren_tm m r) (ren_tm t r)
+  | tmDVec l n f => tmDVec l (ren_tm n r) (ren_tm f (rlift r))
+  | tmIWf l li x s0 n o c m => tmIWf l li (ren_tm x r) (ren_tm s0 r) (ren_tm n (rlift r)) (ren_tm o (rlift r)) (ren_tm c (rlift (rlift r))) (ren_tm m r)
   end
 with lren (d : lsub) (r : rsub) {struct d} : lsub :=
   match d with
@@ -437,6 +445,8 @@ with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
       tmSupi l li (gren_ty X ξ) (gren_ty A ξ) (gren_tm N ξ) (gren_tm Ot ξ) (gren_tm C ξ) (gren_tm a ξ) (gren_tm cs ξ)
   | tmElimIWf l li l' X A N Ot C M c m t =>
       tmElimIWf l li l' (gren_ty X ξ) (gren_ty A ξ) (gren_tm N ξ) (gren_tm Ot ξ) (gren_tm C ξ) (gren_ty M ξ) (gren_tm c ξ) (gren_tm m ξ) (gren_tm t ξ)
+  | tmDVec l n f => tmDVec l (gren_tm n ξ) (gren_tm f ξ)
+  | tmIWf l li x s0 n o c m => tmIWf l li (gren_tm x ξ) (gren_tm s0 ξ) (gren_tm n ξ) (gren_tm o ξ) (gren_tm c ξ) (gren_tm m ξ)
   end
 with gcren (Γ : ctx) (ξ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -556,6 +566,8 @@ with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
       tmSupi (lvren l ρ) (lvren li ρ) (uren_ty X ρ) (uren_ty A ρ) (uren_tm N ρ) (uren_tm Ot ρ) (uren_tm C ρ) (uren_tm a ρ) (uren_tm cs ρ)
   | tmElimIWf l li l' X A N Ot C M c m t =>
       tmElimIWf (lvren l ρ) (lvren li ρ) (lvren l' ρ) (uren_ty X ρ) (uren_ty A ρ) (uren_tm N ρ) (uren_tm Ot ρ) (uren_tm C ρ) (uren_ty M ρ) (uren_tm c ρ) (uren_tm m ρ) (uren_tm t ρ)
+  | tmDVec l n f => tmDVec (lvren l ρ) (uren_tm n ρ) (uren_tm f ρ)
+  | tmIWf l li x s0 n o c m => tmIWf (lvren l ρ) (lvren li ρ) (uren_tm x ρ) (uren_tm s0 ρ) (uren_tm n ρ) (uren_tm o ρ) (uren_tm c ρ) (uren_tm m ρ)
   end
 with ucren (Γ : ctx) (ρ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -669,6 +681,8 @@ with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
       tmSupi l li (subst_ty X d) (subst_ty A d) (subst_tm N (llift d)) (subst_tm Ot (llift d)) (subst_tm C (llift (llift d))) (subst_tm a d) (subst_tm cs d)
   | tmElimIWf l li l' X A N Ot C M c m t =>
       tmElimIWf l li l' (subst_ty X d) (subst_ty A d) (subst_tm N (llift d)) (subst_tm Ot (llift d)) (subst_tm C (llift (llift d))) (subst_ty M (llift (llift d))) (subst_tm c (llift (llift (llift d)))) (subst_tm m d) (subst_tm t d)
+  | tmDVec l n f => tmDVec l (subst_tm n d) (subst_tm f (llift d))
+  | tmIWf l li x s0 n o c m => tmIWf l li (subst_tm x d) (subst_tm s0 d) (subst_tm n (llift d)) (subst_tm o (llift d)) (subst_tm c (llift (llift d))) (subst_tm m d)
   end
 with lcomp (d' : lsub) (d : lsub) {struct d'} : lsub :=       (* d' ∘ d *)
   match d' with
@@ -1008,6 +1022,8 @@ with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
       tmSupi l li (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_tm Ot σ) (gsubst_tm C σ) (gsubst_tm a σ) (gsubst_tm cs σ)
   | tmElimIWf l li l' X A N Ot C M c m t =>
       tmElimIWf l li l' (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_tm Ot σ) (gsubst_tm C σ) (gsubst_ty M σ) (gsubst_tm c σ) (gsubst_tm m σ) (gsubst_tm t σ)
+  | tmDVec l n f => tmDVec l (gsubst_tm n σ) (gsubst_tm f σ)
+  | tmIWf l li x s0 n o c m => tmIWf l li (gsubst_tm x σ) (gsubst_tm s0 σ) (gsubst_tm n σ) (gsubst_tm o σ) (gsubst_tm c σ) (gsubst_tm m σ)
   end
 with gcsubst (Γ : ctx) (σ : gsub) {struct Γ} : ctx :=
   match Γ with
@@ -1132,6 +1148,8 @@ with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
       tmSupi (lvsubst l φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ) (usubst_tm Ot φ) (usubst_tm C φ) (usubst_tm a φ) (usubst_tm cs φ)
   | tmElimIWf l li l' X A N Ot C M c m t =>
       tmElimIWf (lvsubst l φ) (lvsubst li φ) (lvsubst l' φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ) (usubst_tm Ot φ) (usubst_tm C φ) (usubst_ty M φ) (usubst_tm c φ) (usubst_tm m φ) (usubst_tm t φ)
+  | tmDVec l n f => tmDVec (lvsubst l φ) (usubst_tm n φ) (usubst_tm f φ)
+  | tmIWf l li x s0 n o c m => tmIWf (lvsubst l φ) (lvsubst li φ) (usubst_tm x φ) (usubst_tm s0 φ) (usubst_tm n φ) (usubst_tm o φ) (usubst_tm c φ) (usubst_tm m φ)
   end
 with ucsubst (Γ : ctx) (φ : nat -> lvl) {struct Γ} : ctx :=
   match Γ with

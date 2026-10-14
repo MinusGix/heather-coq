@@ -507,7 +507,21 @@ Class GenericEqLaws `{GenericEq} := {
     [ G ; Γ ⊢ m ≈ m' : X @ li ] ->
     [ G ; Γ ⊢ ν ~ ν' : tyIWf l li X A N Ot C m @ lmax l li ] ->
     [ G ; Γ ⊢ tmElimIWf l li l' X A N Ot C M c m ν ~ tmElimIWf k ki k' X' A' N' Ot' C' M' c' m' ν'
-        : M[lsingle2 m ν] @ l' ]
+        : M[lsingle2 m ν] @ l' ] ;
+  (** the codes of [DVec] and [IWf] (M17c), as [Wf]'s *)
+  geq_tm_code_dvec {G Γ l l' n n' f f'} : lequiv (gL G) l l' ->
+    [ G ; Γ ⊢g n : tyNat @ lzero ] -> [ G ; Γ ⊢ n ≈ n' : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyFin n @ lzero ⊢ f ≈ f' : tyU l @ lsuc l ] ->
+    [ G ; Γ ⊢ tmDVec l n f ≈ tmDVec l' n' f' : tyU l @ lsuc l ] ;
+  geq_tm_code_iwf {G Γ l li k ki x x' s s' n n' o o' c c' m m'} :
+    lequiv (gL G) l k -> lequiv (gL G) li ki ->
+    [ G ; Γ ⊢g x : tyU li @ lsuc li ] -> [ G ; Γ ⊢ x ≈ x' : tyU li @ lsuc li ] ->
+    [ G ; Γ ⊢g s : tyU l @ lsuc l ] -> [ G ; Γ ⊢ s ≈ s' : tyU l @ lsuc l ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢g n : tyNat @ lzero ] -> [ G ; Γ ,, tyEl l s @ l ⊢ n ≈ n' : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢ o ≈ o' : tyEl li x⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢ c ≈ c' : tyEl li x⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢ m ≈ m' : tyEl li x @ li ] ->
+    [ G ; Γ ⊢ tmIWf l li x s n o c m ≈ tmIWf k ki x' s' n' o' c' m' : tyU (lmax l li) @ lsuc (lmax l li) ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

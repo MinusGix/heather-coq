@@ -119,6 +119,10 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
   | tmElimSq l1 l2 A M c t, tmElimSq l1' l2' A' M' c' t' =>
       leqv l1 l1' /\ leqv l2 l2' /\ ty_leq A A' /\ ty_leq M M' /\ tm_leq c c' /\ tm_leq t t'
   | tmSqCode l s, tmSqCode l' s' => leqv l l' /\ tm_leq s s'
+  | tmDVec l n f, tmDVec l' n' f' => leqv l l' /\ tm_leq n n' /\ tm_leq f f'
+  | tmIWf l li x s n o c m, tmIWf l' li' x' s' n' o' c' m' =>
+      leqv l l' /\ leqv li li' /\ tm_leq x x' /\ tm_leq s s' /\ tm_leq n n' /\ tm_leq o o' /\
+      tm_leq c c' /\ tm_leq m m'
   | tmSupi l li X A N Ot C a cs, tmSupi l' li' X' A' N' Ot' C' a' cs' =>
       leqv l l' /\ leqv li li' /\ ty_leq X X' /\ ty_leq A A' /\ tm_leq N N' /\ tm_leq Ot Ot' /\
       tm_leq C C' /\ tm_leq a a' /\ tm_leq cs cs'

@@ -453,6 +453,10 @@ Lemma gs_sq l A a : (tmSq l A a)⦃σ⦄ = tmSq l A⦃σ⦄ a⦃σ⦄. Proof. re
 Lemma gs_elimSq l l' A M c t : (tmElimSq l l' A M c t)⦃σ⦄ = tmElimSq l l' A⦃σ⦄ M⦃σ⦄ c⦃σ⦄ t⦃σ⦄.
 Proof. reflexivity. Qed.
 Lemma gs_tmSqCode l s : (tmSqCode l s)⦃σ⦄ = tmSqCode l s⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tmDVec l n f : (tmDVec l n f)⦃σ⦄ = tmDVec l n⦃σ⦄ f⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tmIWf l li x s n o c m :
+  (tmIWf l li x s n o c m)⦃σ⦄ = tmIWf l li x⦃σ⦄ s⦃σ⦄ n⦃σ⦄ o⦃σ⦄ c⦃σ⦄ m⦃σ⦄.
+Proof. reflexivity. Qed.
 (** [nth] and [elim_Wf]'s induction hypothesis (M15a). *)
 Lemma gs_tmNth l T k cs i : (tmNth l T k cs i)⦃σ⦄ = tmNth l T⦃σ⦄ k⦃σ⦄ cs⦃σ⦄ i⦃σ⦄.
 Proof.
@@ -574,6 +578,8 @@ Ltac push_gsubst_at h k := lazymatch h with
   | @tmSq => k gs_sq
   | @tmElimSq => k gs_elimSq
   | @tmSqCode => k gs_tmSqCode
+  | @tmDVec => k gs_tmDVec
+  | @tmIWf => k gs_tmIWf
   | @tmSig => k gs_tmSig
   | @tmPair => k gs_pair
   | @tmFst => k gs_fst
@@ -896,6 +902,13 @@ Ltac gs_Iprem :=
 
 Ltac gs_manual2 :=
   match goal with
+  (* the codes of [DVec] and [IWf] (M17c) *)
+  | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) (tyEl _ _) _ => eapply eqty_El_iwf; gs_Iprem
+  | |- eq_ty _ _ _ (tyDVec _ _ _) (tyEl _ _) _ => eapply eqty_El_dvec; gs_Iprem
+  | |- wf_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ => eapply wf_code_iwf; gs_Iprem
+  | |- eq_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwf; gs_Iprem
+  | |- wf_tm _ _ _ (tmDVec _ _ _) _ _ => eapply wf_code_dvec; gs_Iprem
+  | |- eq_tm _ _ _ (tmDVec _ _ _) _ _ _ => eapply eqtm_code_dvec; gs_Iprem
   (* [IWf] (M17b) *)
   | |- wf_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ => eapply wft_iwf; gs_Iprem
   | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ _ => eapply eqty_iwf; gs_Iprem
