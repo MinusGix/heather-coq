@@ -164,11 +164,13 @@ Proof.
   exact (iwfIdx_of Hd ρ _ _ Y).
 Qed.
 
-Lemma LR_IWf_here Δ d d' : SubRel G Γ Δ d d' ->
-  LogRel (lmax l li) G Δ (tyIWf l li X A N Ot C m)[d] (tyIWf l' li' X' A' N' Ot' C' m')[d'] (lmax l li)
-    (IWfRel G Δ l li X[d] A[d] N[llift d] Ot[llift d] C[llift (llift d)] (iwfIdx Δ d d') (iwfDom Δ d d') m[d]).
+(** The formers at related indices, at a related substitution. *)
+Lemma LR_IWf_at Δ d d' mm mm' : SubRel G Γ Δ d d' -> LRtm li G Δ X[d] X[d'] mm mm' ->
+  LogRel (lmax l li) G Δ (tyIWf l li X[d] A[d] N[llift d] Ot[llift d] C[llift (llift d)] mm)
+    (tyIWf l' li' X'[d'] A'[d'] N'[llift d'] Ot'[llift d'] C'[llift (llift d')] mm') (lmax l li)
+    (IWfRel G Δ l li X[d] A[d] N[llift d] Ot[llift d] C[llift (llift d)] (iwfIdx Δ d d') (iwfDom Δ d d') mm).
 Proof.
-  intros Hd. pose proof (SubRel_ctx Hd) as HΔ.
+  intros Hd Xm. pose proof (SubRel_ctx Hd) as HΔ.
   destruct (VTyG_loc VX _ _ _ Hd) as [RX HRX]. destruct (escape_ty _ _ _ _ _ _ _ _ HRX) as (HXd & HX'd & EX).
   destruct (VTyG_loc VA _ _ _ Hd) as [RA HRA]. destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HAd & HA'd & EA).
   assert (Hlift : SubRel G (Γ ,, A @ l) (Δ ,, A[d] @ l) (llift d) (llift d'))
@@ -184,7 +186,7 @@ Proof.
     by exact (SubRel_lift Hlift (V_fin (VTmG_loc (VTmG_refl_l VNt))) HFd I).
   pose proof (VTmG_loc VC _ _ _ Hlift2) as XC. rewrite subst_tyFin, !shift_llift_ty in XC.
   destruct (LRtm_escape XC) as [HCd HC'd]. pose proof (LRtm_geq XC) as EC.
-  pose proof (Vm _ _ _ Hd) as Xm. destruct (LRtm_escape Xm) as [Hmd Hm'd]. pose proof (LRtm_geq Xm) as Em.
+  destruct (LRtm_escape Xm) as [Hmd Hm'd]. pose proof (LRtm_geq Xm) as Em.
   assert (HE : IWfEq (G := G) (i := ge_layer) Δ l li l' li' X[d] X'[d'] A[d] A'[d'] N[llift d] N'[llift d']
                  Ot[llift d] Ot'[llift d'] C[llift (llift d)] C'[llift (llift d')]).
   { apply IWfEq_intro; auto using geq_ty_sound, geq_tm_sound, lequiv_sym. }
@@ -193,7 +195,6 @@ Proof.
   { apply IWfEq_intro; auto using geq_ty_sound, geq_tm_sound, lequiv_refl. }
   destruct (IWfEq_sig_r ge_typeof ge_notV HE0) as (_ & _ & HX'r & HA'r & HN'r & HO'r & HC'r).
   pose proof (proj1 (proj2 (proj2 HE))) as HS.
-  rewrite !subst_tyIWf.
   eapply LRiwf with (l1 := l) (li1 := li) (idxR := iwfIdx Δ d d') (domR := iwfDom Δ d d').
   - apply lequiv_refl, lwf_max; assumption.
   - exact Hl'.
@@ -230,6 +231,11 @@ Proof.
   - intros ρ. exact (iwfIdx_of Hd ρ _ _ (LRtm_kw ρ Xm)).
   - apply releq_refl.
 Qed.
+
+Lemma LR_IWf_here Δ d d' : SubRel G Γ Δ d d' ->
+  LogRel (lmax l li) G Δ (tyIWf l li X A N Ot C m)[d] (tyIWf l' li' X' A' N' Ot' C' m')[d'] (lmax l li)
+    (IWfRel G Δ l li X[d] A[d] N[llift d] Ot[llift d] C[llift (llift d)] (iwfIdx Δ d d') (iwfDom Δ d d') m[d]).
+Proof. intros Hd. rewrite !subst_tyIWf. exact (LR_IWf_at Δ d d' _ _ Hd (Vm _ _ _ Hd)). Qed.
 
 Lemma V_iwf : VTy G Γ (tyIWf l li X A N Ot C m) (tyIWf l' li' X' A' N' Ot' C' m') (lmax l li).
 Proof. intros Δ d d' Hd. eexists. exact (LR_IWf_here _ _ _ Hd). Qed.

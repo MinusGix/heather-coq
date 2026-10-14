@@ -201,3 +201,122 @@ Proof using .
 Qed.
 
 End DNthReds.
+
+(** ** Joinability up to neutral projections
+
+    The children reached through [dnth]'s states carry the annotations
+    its [natrec] step writes, not the spine's: two terms are joinable when
+    they reduce to a common term or both to neutrals. A projection of a
+    tuple reducing to a pair or a neutral is joinable with that
+    projection at any annotations. *)
+
+Lemma reds_cmp t x w : reds t x -> reds t w -> reds x w \/ reds w x.
+Proof.
+  intros H; revert w; induction H as [t|t u x Htu Hux IH]; intros w Hw.
+  - left; exact Hw.
+  - destruct Hw as [|? ? Htv Hvw].
+    + right. econstructor; eassumption.
+    + rewrite (red_det _ _ _ Htu Htv) in IH. exact (IH _ Hvw).
+Qed.
+
+Lemma reds_toward_whnf t x w : reds t x -> reds t w -> whnf w -> reds x w.
+Proof.
+  intros Hx Hw Nw. destruct (reds_cmp t x w Hx Hw) as [H|H]; [exact H|].
+  destruct H as [|? ? Hr _]; [constructor | exfalso; exact (whnf_no_red _ _ Nw Hr)].
+Qed.
+
+Lemma reds_from_whnf w x : whnf w -> reds w x -> x = w.
+Proof. intros Nw H. destruct H as [|? ? Hr _]; [reflexivity | exfalso; exact (whnf_no_red _ _ Nw Hr)]. Qed.
+
+Definition Join (s t : tm) : Prop :=
+  (exists x, reds s x /\ reds t x) \/ (exists x y, reds s x /\ reds t y /\ whne x /\ whne y).
+
+Lemma join_refl t : Join t t.
+Proof. left. exists t. split; constructor. Qed.
+
+Lemma join_reds_l s s1 t : reds s s1 -> Join s1 t -> Join s t.
+Proof.
+  intros Hs [(x & H1 & H2)|(x & y & H1 & H2 & N1 & N2)].
+  - left. exists x. split; [exact (reds_trans _ _ _ Hs H1) | exact H2].
+  - right. exists x, y. split; [exact (reds_trans _ _ _ Hs H1) | auto].
+Qed.
+
+Lemma join_red s t w : Join s t -> reds t w -> whnf w -> Join s w.
+Proof.
+  intros [(x & H1 & H2)|(x & y & H1 & H2 & N1 & N2)] Hw Nw.
+  - left. exists w. split; [exact (reds_trans _ _ _ H1 (reds_toward_whnf _ _ _ H2 Hw Nw)) | constructor].
+  - right. exists x, w. assert (y = w) as <- by exact (reds_whnf_det _ _ _ H2 Hw (whnf_ne _ N2) Nw).
+    split; [exact H1 | split; [constructor | split; assumption]].
+Qed.
+
+Lemma join_ne s t : Join s t -> whne t -> exists X, reds s X /\ whne X.
+Proof.
+  intros [(x & H1 & H2)|(x & y & H1 & H2 & N1 & N2)] Nt.
+  - exists x. split; [exact H1|]. now rewrite (reds_from_whnf _ _ (whnf_ne _ Nt) H2).
+  - exists x. split; assumption.
+Qed.
+
+Lemma join_whnf s t : Join s t -> whnf t -> ~ whne t -> reds s t.
+Proof.
+  intros [(x & H1 & H2)|(x & y & H1 & H2 & N1 & N2)] Nt Ht.
+  - now rewrite (reds_from_whnf _ _ Nt H2) in H1.
+  - exfalso. apply Ht. now rewrite (reds_from_whnf _ _ Nt H2) in N2.
+Qed.
+
+(** A whnf whose first projection reaches a whnf is a pair or neutral. *)
+Lemma fst_cases la lb A B w v : whnf w -> reds (tmFst la lb A B w) v -> whnf v ->
+  (exists l l' A' B' a b, w = tmPair l l' A' B' a b) \/ whne w.
+Proof.
+  intros Nw H Nv. destruct H.
+  - right. inversion Nv; subst. match goal with Hn : whne (tmFst _ _ _ _ _) |- _ => now inversion Hn end.
+  - match goal with Hr : red (tmFst _ _ _ _ _) _ |- _ => inversion Hr; subst end.
+    + left. do 6 eexists. reflexivity.
+    + exfalso. match goal with Hr : red w _ |- _ => exact (whnf_no_red _ _ Nw Hr) end.
+Qed.
+
+Definition PairOrNe (w : tm) : Prop := (exists l l' A' B' a b, w = tmPair l l' A' B' a b) \/ whne w.
+
+(** Tuples joinable up to neutrals: [dnth]'s states hold a tuple reducing
+    with the spine's. *)
+Definition TC (c0 cs : tm) : Prop :=
+  (exists u, reds c0 u /\ reds cs u) \/ (exists ν ν', reds c0 ν /\ whne ν /\ reds cs ν' /\ whne ν').
+
+Lemma tc_refl c : TC c c.
+Proof. left. exists c. split; constructor. Qed.
+
+(** The tuple of a joinable pair reaches the spine's whnf, or both are
+    neutral. *)
+Lemma tc_whnf c0 cs w : TC c0 cs -> reds cs w -> whnf w -> reds c0 w \/ (exists ν, reds c0 ν /\ whne ν /\ whne w).
+Proof.
+  intros [(u & H1 & H2)|(ν & ν' & H1 & N1 & H2 & N2)] Hw Nw.
+  - left. exact (reds_trans _ _ _ H1 (reds_toward_whnf _ _ _ H2 Hw Nw)).
+  - right. exists ν. assert (ν' = w) as <- by exact (reds_whnf_det _ _ _ H2 Hw (whnf_ne _ N2) Nw). auto.
+Qed.
+
+Lemma join_fst c0 cs w L L' A B la lb A2 B2 : TC c0 cs -> reds cs w -> whnf w -> PairOrNe w ->
+  Join (tmFst L L' A B c0) (tmFst la lb A2 B2 w).
+Proof.
+  intros Htc Hw Nw Pw. destruct (tc_whnf _ _ _ Htc Hw Nw) as [Hc0|(ν & Hν & Nν & Nw')].
+  - destruct Pw as [(l & l' & A' & B' & a & b & ->)|Nw'].
+    + left. exists a. split.
+      * eapply reds_trans; [apply reds_fst, Hc0|]. econstructor; [apply red_fst_beta | constructor].
+      * econstructor; [apply red_fst_beta | constructor].
+    + right. exists (tmFst L L' A B w), (tmFst la lb A2 B2 w).
+      split; [apply reds_fst, Hc0 | split; [constructor | split; now constructor]].
+  - right. exists (tmFst L L' A B ν), (tmFst la lb A2 B2 w).
+    split; [apply reds_fst, Hν | split; [constructor | split; now constructor]].
+Qed.
+
+Lemma tc_snd c0 cs w L L' A B la lb A2 B2 : TC c0 cs -> reds cs w -> whnf w -> PairOrNe w ->
+  TC (tmSnd L L' A B c0) (tmSnd la lb A2 B2 w).
+Proof.
+  intros Htc Hw Nw Pw. destruct (tc_whnf _ _ _ Htc Hw Nw) as [Hc0|(ν & Hν & Nν & Nw')].
+  - destruct Pw as [(l & l' & A' & B' & a & b & ->)|Nw'].
+    + left. exists b. split.
+      * eapply reds_trans; [apply reds_snd, Hc0|]. econstructor; [apply red_snd_beta | constructor].
+      * econstructor; [apply red_snd_beta | constructor].
+    + right. exists (tmSnd L L' A B w), (tmSnd la lb A2 B2 w).
+      split; [apply reds_snd, Hc0 | split; [now constructor | split; [constructor | now constructor]]].
+  - right. exists (tmSnd L L' A B ν), (tmSnd la lb A2 B2 w).
+    split; [apply reds_snd, Hν | split; [now constructor | split; [constructor | now constructor]]].
+Qed.
