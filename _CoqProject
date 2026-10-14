@@ -113,6 +113,7 @@ theories/Validity/Vec.v
 theories/Validity/DVec.v
 theories/Validity/GLift.v
 theories/Validity/Wf.v
+theories/Validity/IWf.v
 theories/Validity/WfNthReds.v
 theories/Validity/WfNth.v
 theories/Validity/DVecNth.v
