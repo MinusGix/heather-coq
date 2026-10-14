@@ -303,6 +303,8 @@ Proof using EL.
     exact (WfNf_whnf_l Hnf).
   - destruct Ht as [(w & Hr & Hnf) _]. exists w; split; [exact (tmred_back Hr HT Hl) |].
     destruct Hnf; eauto using whnf, gne_tm_whne_l.
+  - destruct (IWfRel_inv Ht) as (w & w' & Hr & _ & _ & Hnf). exists w; split; [exact (tmred_back Hr HT Hl) |].
+    exact (IWfNf_whnf_l Hnf).
 Qed.
 
 Theorem whnf_normalization_ty {G Γ T l} : [ G ; Γ ⊢g T @ l ] -> lwf (gL G) l ->
