@@ -623,6 +623,24 @@ Proof.
   - intros * Hl ((Hn & Hn' & E) & T0 & D & ET) HF (EF & DF).
     refine (conj (@gne_ty_dvec DE DEL _ _ _ _ _ _ _ _ Hl (conj Hn (conj Hn' E)) HF EF) _).
     destruct (ne_nee D ET) as (W0 & X & _). exact (actne_dvec _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) X DF).
+  (* indexed W-types (M17b) *)
+  - intros * Hl Hli HX (EX & DX) HA (EA & DA) HN (EN & DN) HO (EO & DO) HC (EC & DC) (Em & Dm).
+    refine (conj (@geq_ty_iwf DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hl Hli HX EX HA EA HN EN HO EO HC EC Em) _).
+    eapply act_red; [constructor | constructor | apply whnf_tyIWf | apply whnf_tyIWf |].
+    eapply actnf_iwf; first [eapply lequiv_leqv; eassumption | eassumption].
+  - intros * Hl Hli HX EX HA EA HN EN HO EO HC EC (Ea & Da) (Ecs & Dcs).
+    refine (conj (@geq_tm_supi DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hl Hli HX EX HA EA HN EN HO EO HC EC Ea Ecs) _).
+    eapply actm_red; [constructor | apply whnf_tyIWf | constructor | constructor | apply whnf_supi | apply whnf_supi |].
+    eapply actmnf_supi; eassumption.
+  - intros * H1 H2 H3 HX (EX & DX) HA (EA & DA) HN (EN & DN) HO (EO & DO) HC (EC & DC) HM (EM & DM) (EI & DI)
+      (Ec & Dc) (Em & Dm) ((Hn & Hn' & Eν) & T0 & Dν & ETν).
+    pose proof (@gne_tm_elimIWf DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H1 H2 H3 HX EX HA EA HN EN HO EO HC EC HM EM EI Ec Em
+                  (conj Hn (conj Hn' Eν))) as Y.
+    refine (conj Y _). destruct Y as (_ & _ & EY).
+    destruct (ne_nee Dν ETν) as (W0 & Xν & _).
+    exists M[lsingle2 m ν]. split.
+    + eapply actmne_elimIWf; first [eapply lequiv_leqv; eassumption | eassumption].
+    + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EY))).
 Qed.
 
 End Alg.
