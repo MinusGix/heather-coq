@@ -85,6 +85,8 @@ Proof.
   - eapply (LRw n rec G Γ T1 T1' l l1 l2 l3 l4 A B A' B' domR codR); [split|..]; eauto using tyred_trans.
   - eapply (LRwf n rec G Γ T1 T1' l l1 l2 A A' N N' domR); eauto using tyred_trans.
   - eapply (LRsq n rec G Γ T1 T1' l l1 l2 A A' RQ); eauto using tyred_trans.
+  - eapply (LRiwf n rec G Γ T1 T1' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR);
+      eauto using tyred_trans.
 Qed.
 
 Theorem LR_red_tm n rec G Γ T T' l R :
@@ -220,6 +222,14 @@ Proof.
       eapply tmred_conv; [apply ge_typeof | exact H1' |].
       eapply eqty_trans; [apply HT'|]. eapply eqty_lconv; [|exact Hl].
       apply eqty_sym, geq_ty_sound, geq_ty_sq; auto using lequiv_sym.
+  - (* IWf: as W *)
+    destruct (IWfRel_inv Htt) as (w & w' & Hr & Hr' & Heq & Hn).
+    econstructor; [| | exact Heq | exact Hn].
+    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|now apply lequiv_sym].
+      eapply tmred_conv; [apply ge_typeof | exact H1' |].
+      eapply eqty_trans; [apply HT'|]. eapply eqty_lconv; [|exact Hl].
+      apply eqty_sym, geq_ty_sound, geq_ty_iwf; auto using lequiv_sym.
 Qed.
 
 End Reduction.

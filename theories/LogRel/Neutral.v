@@ -323,6 +323,10 @@ Proof.
     split; [exists ν | exists ν']; split; [exact H1 | | exact H2 |]; apply sqnf_ne.
     + exact (gne_tm_trans HP (gne_tm_sym HP)).
     + exact (gne_tm_trans (gne_tm_sym HP) HP).
+  - (* IWf: typed neutrals are related, as neutrals *)
+    pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HP.
+    destruct (gne_tmred_refl HP) as [H1 H2].
+    econstructor; [exact H1 | exact H2 | exact (gne_tm_geq HP) | now apply iwfnf_ne].
 Qed.
 
 End Neutral.
