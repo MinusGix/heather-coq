@@ -272,6 +272,35 @@ Lemma inv_elimWf {G i Γ l l' A N M c t T k} : typeof i = i ->
     lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ i ] T ≅ M[lsingle t] @ k ].
 Proof. inv_tm. Qed.
 
+(** Indexed finitary trees (M17b). *)
+Lemma inv_supi {G i Γ l li X A N Ot C a cs T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSupi l li X A N Ot C a cs : T @ k ] ->
+  (compt i /\
+    lwf (gL G) l /\ lwf (gL G) li /\
+    [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\ [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C : X⟨↑⟩⟨↑⟩ @ li ] /\
+    [ G ; Γ ⊢[ i ] a : A @ l ] /\
+    [ G ; Γ ⊢[ i ] cs : tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a) @ lmax l li ]) /\
+    lvl_eq (gL G) k (lmax l li) /\ [ G ; Γ ⊢[ i ] T ≅ tyIWf l li X A N Ot C Ot[lsingle a] @ k ].
+Proof. inv_tm. Qed.
+
+Lemma inv_elimIWf {G i Γ l li l' X A N Ot C M c m t T k} : typeof i = i -> 
+  [ G ; Γ ⊢[ i ] tmElimIWf l li l' X A N Ot C M c m t : T @ k ] ->
+  (compt i /\ lwf (gL G) l' /\
+    lwf (gL G) l /\ lwf (gL G) li /\
+    [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\ [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C : X⟨↑⟩⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, X @ li ⊢[ i ] iwfmotty l li X A N Ot C @ lmax l li ] /\
+    [ G ; Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li ⊢[ i ] M @ l' ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] iwfcsty l li X A N Ot C @ lmax l li ] /\
+    [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ⊢[ i ] iwfihty l li l' X A N Ot C M @ lmax lzero l' ] /\
+    [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l'
+        ⊢[ i ] c : iwfstepty l li X A N Ot C M @ l' ] /\
+    [ G ; Γ ⊢[ i ] m : X @ li ] /\ [ G ; Γ ⊢[ i ] t : tyIWf l li X A N Ot C m @ lmax l li ]) /\
+    lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ i ] T ≅ M[lsingle2 m t] @ k ].
+Proof. inv_tm. Qed.
+
 (** Strict equality's codes (M10c). *)
 Lemma inv_code_seq {G i Γ l s t u T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSEq l s t u : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
@@ -571,6 +600,15 @@ Lemma inv_ty_wf {G i Γ l A N k} : [ G ; Γ ⊢[ i ] tyWf l A N @ k ] ->
     lvl_eq (gL G) k l.
 Proof. inv_ty. Qed.
 
+(** Indexed finitary trees (M17b). *)
+Lemma inv_ty_iwf {G i Γ l li X A N Ot C m k} : [ G ; Γ ⊢[ i ] tyIWf l li X A N Ot C m @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) li /\
+    [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\ [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C : X⟨↑⟩⟨↑⟩ @ li ] /\ [ G ; Γ ⊢[ i ] m : X @ li ]) /\
+    lvl_eq (gL G) k (lmax l li).
+Proof. inv_ty. Qed.
+
 (** ** Lookups are deterministic *)
 
 Lemma in_ctx_det {Γ n T l T' l'} : in_ctx Γ n T l -> in_ctx Γ n T' l' -> T = T' /\ l = l'.
@@ -629,4 +667,5 @@ Proof.
   - exact (lvl_eq_uniq (proj2 (inv_ty_wf H)) (proj2 (inv_ty_wf H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_sq H)) (proj2 (inv_ty_sq H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_dvec H)) (proj2 (inv_ty_dvec H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_iwf H)) (proj2 (inv_ty_iwf H'))).
 Qed.
