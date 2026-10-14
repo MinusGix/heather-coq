@@ -245,6 +245,29 @@ Proof.
   rewrite ?unf_ren_ty, ?unf_ren, ?unf_lsingle, ?unf_subst. reflexivity.
 Qed.
 
+(** [dnth] and [elim_IWf]'s induction hypothesis (M17b). *)
+Lemma unf_tmDNth l n F cs j :
+  unf_tm (tmDNth l n F cs j) = tmDNth l (unf_tm n) (unf_ty F) (unf_tm cs) (unf_tm j).
+Proof.
+  unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS; cbn [unf_tm unf_ty].
+  repeat progress (rewrite ?unf_ren_ty, ?unf_ren, ?unf_subst_ty, ?unf_lsingle; cbn [unf_tm unf_ty]).
+  reflexivity.
+Qed.
+Lemma unf_iwfFam l li X A N Ot C a :
+  unf_ty (iwfFam l li X A N Ot C a) =
+  iwfFam l li (unf_ty X) (unf_ty A) (unf_tm N) (unf_tm Ot) (unf_tm C) (unf_tm a).
+Proof.
+  unfold iwfFam; cbn [unf_ty]. rewrite ?unf_ren_ty, ?unf_ren, ?unf_subst, ?unf_llift, ?unf_lsingle. reflexivity.
+Qed.
+Lemma unf_iwfIH l li l' X A N Ot C M c a cs :
+  unf_tm (iwfIH l li l' X A N Ot C M c a cs) =
+  iwfIH l li l' (unf_ty X) (unf_ty A) (unf_tm N) (unf_tm Ot) (unf_tm C) (unf_ty M) (unf_tm c) (unf_tm a) (unf_tm cs).
+Proof.
+  unfold iwfIH; cbn [unf_tm unf_ty].
+  rewrite ?unf_ren_ty, ?unf_ren, ?unf_lsingle, ?unf_subst, ?unf_llift, unf_tmDNth. cbn [unf_ty].
+  rewrite ?unf_ren_ty, ?unf_ren, ?unf_lsingle, ?unf_subst, unf_iwfFam. reflexivity.
+Qed.
+
 Ltac unf_peel_push :=
   repeat first [ rewrite <- peelL_unf by hd_tac
                | rewrite <- peelG_unf by hd_tac
@@ -299,7 +322,7 @@ Ltac unf_rw_all :=
     ?unf_ren_ty, ?unf_ren, ?unf_gren_ty, ?unf_gren, ?unf_gren_ctx,
     ?unf_uren_ty, ?unf_uren, ?unf_uren_ctx, ?unf_usubst_ty, ?unf_usubst, ?unf_usubst_ctx,
     ?unf_gsingle_ty, ?unf_gsingle, ?motT_wrap_unf, ?mott_wrap_unf, ?mkrb_unf, ?wrapMT_unf, ?wrapMt_unf,
-    ?unf_wIH, ?unf_wfIH, ?unf_tmNth, ?recGT_unf, ?recGt_unf, ?recΓT_unf, ?recΓt_unf, ?unf_G_uwk in *.
+    ?unf_wIH, ?unf_wfIH, ?unf_tmNth, ?unf_iwfIH, ?unf_tmDNth, ?unf_iwfFam, ?recGT_unf, ?recGt_unf, ?recΓT_unf, ?recΓt_unf, ?unf_G_uwk in *.
 
 Ltac unf_norm := unf_push; do 2 (unf_rw_all; unf_push).
 
@@ -365,6 +388,11 @@ Ltac unf_sub_eq := eapply unf_lsub_eq; eassumption.
 
 Ltac unf_manual :=
   match goal with
+  (* [elim_IWf]'s β (M17b): its induction hypothesis's typing has renamings
+     nested deeper than [unf_norm]'s rounds reach *)
+  | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ (tmSupi _ _ _ _ _ _ _ _ _)) _ _ _ =>
+      repeat progress (rewrite ?unf_ren_ty, ?unf_ren in * );
+      eapply eqtm_elimIWf_supi; eauto with unf
   | |- wf_ty _ _ _ (tyGvar _ _) _ =>
       unf_Δ ltac:(fun D => eapply wft_gvar with (Δ := D)); [ .. | unf_entries]; eauto with unf
   | |- eq_ty _ _ _ (tyGvar _ _) _ _ =>
