@@ -939,7 +939,7 @@ Proof using EL.
         exact (eqtm_wf_r ge_typeof Ek). }
     assert (EV : [ G ; Γ ⊢g tyDVec (lmax l1 li1) ν1 (iwfFamT l1 li1 X1 A1 N1 Ot1 C1 c1)
                     ≅ tyDVec (lmax l2 li2) ν2 (iwfFamT l2 li2 X2 A2 N2 Ot2 C2 c2) @ lmax l1 li1 ]).
-    { apply eqty_dvec; [exact ge_compt | exact Hml' | exact (eqtm_wf_l ge_typeof Eν) | exact Eν
+    { apply eqty_dvec; [exact (compt_notV _ ge_compt) | exact Hml' | exact (eqtm_wf_l ge_typeof Eν) | exact Eν
                        | exact (eqty_wf_l ge_typeof HFν) | exact HFν]. }
     assert (EV' : [ G ; Γ ⊢g tyDVec (lmax l2 li2) ν2 (iwfFamT l2 li2 X2 A2 N2 Ot2 C2 c2)
                      ≅ tyDVec (lmax l1 li1) ν1 (iwfFamT l1 li1 X1 A1 N1 Ot1 C1 c1) @ lmax l2 li2 ])

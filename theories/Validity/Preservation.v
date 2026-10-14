@@ -786,7 +786,7 @@ Proof.
   destruct (inv_elimIWf Hi Hx)
     as ((_ & W3 & W1 & W2 & HX & HA & HN & HO & HC & Hmot & HM & HCs & HI & Hc0 & Hm & Ht) & Hk & ET).
   refine (retype_eqtm Hi _ Hk ET).
-  apply eqtm_elimIWf; first [exact Hc | apply lequiv_refl; assumption | exact (IH _ _ _ _ _ Hc Ht) | assumption
+  apply eqtm_elimIWf; first [exact Hc | exact (compt_notV _ Hc) | apply lequiv_refl; assumption | exact (IH _ _ _ _ _ Hc Ht) | assumption
                             | apply eqty_refl; assumption | apply eqtm_refl; assumption].
 Qed.
 
@@ -803,7 +803,7 @@ Proof.
   pose proof (IWfSig_nf HS) as (NX & NA & NN & NO & NC).
   assert (Hsup0 : [ G ; Γ ⊢[ i ] tmSupi l li X A N Ot C a cs ≅ tmSupi k ki X' A' N' Ot' C' a cs
                     : tyIWf l li X A N Ot C Ot[lsingle a] @ lmax l li ])
-    by (apply eqtm_supi; first [exact Hc | assumption | apply eqtm_refl; assumption]).
+    by (apply eqtm_supi; first [exact Hc | exact (compt_notV _ Hc) | assumption | apply eqtm_refl; assumption]).
   assert (Hsup : [ G ; Γ ⊢[ i ] tmSupi l li X A N Ot C a cs ≅ tmSupi k ki X' A' N' Ot' C' a cs
                    : tyIWf l li X A N Ot C m @ lmax l li ]).
   { eapply eqtm_conv; [exact Hsup0 | rewrite Hi].
@@ -811,7 +811,7 @@ Proof.
   assert (Hcong : [ G ; Γ ⊢[ i ] tmElimIWf l li l' X A N Ot C M c m (tmSupi k ki X' A' N' Ot' C' a cs)
                      ≅ tmElimIWf l li l' X A N Ot C M c Ot[lsingle a] (tmSupi l li X A N Ot C a cs)
                      : M[lsingle2 m (tmSupi k ki X' A' N' Ot' C' a cs)] @ l' ]).
-  { apply eqtm_elimIWf; first [exact Hc | apply lequiv_refl; assumption | apply eqtm_sym, Hsup
+  { apply eqtm_elimIWf; first [exact Hc | exact (compt_notV _ Hc) | apply lequiv_refl; assumption | apply eqtm_sym, Hsup
                              | apply eqtm_sym, Eom | assumption
                              | apply eqty_refl; assumption | apply eqtm_refl; assumption]. }
   pose proof (IWf_IH_wf Hi Hv HS W3 HM HI Hc0 Ha Hcs) as Hλ.
@@ -888,7 +888,7 @@ Lemma RS_dvec l n n' F : RS_tm n n' -> RS_ty (tyDVec l n F) (tyDVec l n' F).
 Proof.
   intros IH G i Γ k Hc HT. destruct (inv_ty_dvec HT) as ((_ & Wl & Hn & HF) & Hk).
   apply (retype_eqty Hk).
-  exact (eqty_dvec _ _ _ _ _ _ _ _ _ Hc (lequiv_refl _ _ Wl) Hn (IH _ _ _ _ _ Hc Hn) HF (eqty_refl _ _ _ _ _ HF)).
+  exact (eqty_dvec _ _ _ _ _ _ _ _ _ (compt_notV _ Hc) (lequiv_refl _ _ Wl) Hn (IH _ _ _ _ _ Hc Hn) HF (eqty_refl _ _ _ _ _ HF)).
 Qed.
 
 (** ** Soundness of reduction *)

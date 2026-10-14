@@ -156,7 +156,7 @@ Proof using Hi Hv.
                   @ lmax lzero l' ]).
   { rewrite <- IWf_ih_ren. eapply weakening_r; [exact HI | exact Hi | | exact HΓ1AC].
     eapply wkr_up'; [eapply wkr_up'; [apply wkr_shift1 | reflexivity] | symmetry; apply IWf_cs_ren]. }
-  apply wf_elimIWf; first [exact (compt_self Hi Hv) | assumption | idtac].
+  apply wf_elimIWf; first [exact Hv | exact (compt_self Hi Hv) | assumption | idtac].
   - exact (IWf_mot_wf Hi Hv HS1).
   - exact (IWf_M_wk1 Hi Hv HS HΓ1 HM).
   - (* the step, weakened under the telescope *)

@@ -506,9 +506,9 @@ Proof using Hi Hv.
                     (iwfFam l li X⟨↑⟩⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩
                        C⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ (var 2)) @ lmax l li ])
     by (eapply wf_tm_retype; [apply wf_var; [rewrite Hi; exact HΘ | do 2 constructor] | apply IWf_E_var1]).
-  pose proof (wf_supi _ _ _ _ _ _ _ _ _ _ _ _ (compt_self Hi Hv) Hl Hli HX HA HN HO HC Hv2 Hv1) as Hs.
+  pose proof (wf_supi _ _ _ _ _ _ _ _ _ _ _ _ Hv Hl Hli HX HA HN HO HC Hv2 Hv1) as Hs.
   pose proof (pre_supi_r HE3 Hv2 Hv2 (eqtm_refl _ _ _ _ _ _ Hv2) Hv1) as Hs'.
-  pose proof (eqtm_supi _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (compt_self Hi Hv) Hlk Hlik HX HXX HA HAA HN HNN HO HOO HC HCC
+  pose proof (eqtm_supi _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hv Hlk Hlik HX HXX HA HAA HN HNN HO HOO HC HCC
                 (eqtm_refl _ _ _ _ _ _ Hv2) (eqtm_refl _ _ _ _ _ _ Hv1)) as Hss.
   pose proof (IWf_ot_wf HS3 Hv2) as Ho.
   pose proof (IWf_single_eq NX HO HOO Hv2 Hv2 (eqtm_refl _ _ _ _ _ _ Hv2)) as Hoo.
@@ -537,6 +537,26 @@ Proof using Hi Hv.
   intros HS HM Hm Ht. pose proof (IWfSig_nf HS) as (NX & NA & NN & NO & NC).
   eapply (wf_ty_subst Hi HM). apply (lsub_wf_single2' Hi (ctx_of_wf_tm Hi Hm) Hm).
   rewrite IWf_E_mot by assumption. exact Ht.
+Qed.
+
+(** [elim_IWf]'s type along equal motives, indices and scrutinees. *)
+Lemma IWf_mot_inst_eq {Γ l li X A N Ot C M M' l' m m' t t'} : IWfSig Γ l li X A N Ot C ->
+  [ G ; Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li ⊢[ i ] M ≅ M' @ l' ] ->
+  [ G ; Γ ⊢[ i ] m : X @ li ] -> [ G ; Γ ⊢[ i ] m' : X @ li ] -> [ G ; Γ ⊢[ i ] m ≅ m' : X @ li ] ->
+  [ G ; Γ ⊢[ i ] t : tyIWf l li X A N Ot C m @ lmax l li ] ->
+  [ G ; Γ ⊢[ i ] t' : tyIWf l li X A N Ot C m @ lmax l li ] ->
+  [ G ; Γ ⊢[ i ] t ≅ t' : tyIWf l li X A N Ot C m @ lmax l li ] ->
+  [ G ; Γ ⊢[ i ] M[lsingle2 m t] ≅ M'[lsingle2 m' t'] @ l' ].
+Proof using Hi Hv.
+  intros HS HM HMM Hm Hm' Hmm Ht Ht' Htt. pose proof (IWfSig_nf HS) as (NX & NA & NN & NO & NC).
+  assert (Ht'm : [ G ; Γ ⊢[ i ] t' : tyIWf l li X A N Ot C m' @ lmax l li ])
+    by exact (conv_tm' Hi Ht' (eqty_sym' (IWf_ty_eq_idx HS Hmm))).
+  eapply eqty_trans.
+  - eapply (wf_ty_func Hi HM). eapply (lsub_eq_single2 Hi Hm Hm' Hmm); rewrite IWf_E_mot by assumption;
+      [exact Ht | exact Ht'm | exact Htt].
+  - apply (eqty_subst Hi HMM). apply (lsub_wf_single2' Hi (ctx_of_wf_tm Hi Hm) Hm').
+    rewrite IWf_E_mot by assumption. exact Ht'm.
 Qed.
 
 (** [elim_IWf]'s congruence, right-hand side: the primed telescope is
@@ -759,7 +779,6 @@ Proof using Hi Hv.
   { eapply (stab_tm Hi (eqty_fin _ _ _ _ _ Hv Hnn)); [apply lequiv_refl; exact I | | exact Hf'].
     apply (ext_wf Hi); [now apply wft_fin | exact I]. }
   apply (conv_U Hi Hv (l := l')); [|now apply lequiv_sym].
-  pose proof (compt_self Hi Hv) as Hcp.
   apply wf_code_dvec; eauto using lequiv_wf_r. exact (conv_U Hi Hv Hf2 Hl).
 Qed.
 
@@ -797,7 +816,7 @@ Proof using Hi Hv.
   assert (EX2 : [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] tyEl li x⟨↑⟩⟨↑⟩ ≅ tyEl ki x'⟨↑⟩⟨↑⟩ @ li ])
     by (apply eqty_El; auto).
   eapply (conv_U Hi Hv (l := lmax k ki)); [| apply lequiv_sym, lequiv_max; assumption].
-  apply wf_code_iwf; [exact (compt_self Hi Hv) | exact Wk | exact Wki | exact (conv_U Hi Hv Hx' Hlik)
+  apply wf_code_iwf; [exact Hv | exact Wk | exact Wki | exact (conv_U Hi Hv Hx' Hlik)
                      | exact (conv_U Hi Hv Hs' Hlk) | exact (mv_tm Hid1 Hn') | | |].
   - eapply wf_lconv; [| apply lequiv_sym, Hlik].
     exact (mv_tm Hid1 (conv_tm' Hi Ho' (eqty_sym _ _ _ _ _ _ EX1))).
@@ -812,8 +831,8 @@ Lemma pre_El_dvec {Γ l n f} : lwf (gL G) l ->
   [ G ; Γ ⊢[ i ] tyDVec l n (tyEl l f) @ l ] /\ [ G ; Γ ⊢[ i ] tyEl l (tmDVec l n f) @ l ].
 Proof using Hi Hv.
   intros Hl Hn Hf. split.
-  - apply wft_dvec; [exact (compt_self Hi Hv) | exact Hl | exact Hn | apply wft_El; auto].
-  - apply wft_El; auto. apply wf_code_dvec; auto. exact (compt_self Hi Hv).
+  - apply wft_dvec; [exact Hv | exact Hl | exact Hn | apply wft_El; auto].
+  - apply wft_El; auto. apply wf_code_dvec; auto.
 Qed.
 
 Lemma pre_El_iwf {Γ l li x s n o c m} : lwf (gL G) l -> lwf (gL G) li ->
@@ -825,9 +844,9 @@ Lemma pre_El_iwf {Γ l li x s n o c m} : lwf (gL G) l -> lwf (gL G) li ->
   [ G ; Γ ⊢[ i ] tyIWf l li (tyEl li x) (tyEl l s) n o c m @ lmax l li ] /\ [ G ; Γ ⊢[ i ] tyEl (lmax l li) (tmIWf l li x s n o c m) @ lmax l li ].
 Proof using Hi Hv.
   intros Hl Hli Hx Hs Hn Ho Hc Hm. split.
-  - apply wft_iwf; [exact (compt_self Hi Hv) | exact Hl | exact Hli | apply wft_El; auto
+  - apply wft_iwf; [exact Hv | exact Hl | exact Hli | apply wft_El; auto
                    | apply wft_El; auto | exact Hn | exact Ho | exact Hc | exact Hm].
-  - apply wft_El; [exact Hv | cbn; auto |]. apply wf_code_iwf; auto. exact (compt_self Hi Hv).
+  - apply wft_El; [exact Hv | cbn; auto |]. apply wf_code_iwf; auto.
 Qed.
 
 End IWfAux.

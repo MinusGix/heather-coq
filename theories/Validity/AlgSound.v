@@ -231,7 +231,7 @@ Proof.
     by (apply wfc_ext; [exact (ctx_of_wf_tm Hi Hν) | apply wft_fin; [exact (compt_notV _ Hc) | exact Hν] | exact I]).
   pose proof (stab_ty Hi EFin (lequiv_refl _ lzero I) HΓF HF') as HF1.
   pose proof (IHF i l Hc HF (wft_lconv _ _ _ _ _ _ HF1 E)) as EF.
-  apply (lvl_eq_eqty Hk). apply eqty_dvec; auto.
+  apply (lvl_eq_eqty Hk). apply eqty_dvec; auto using compt_notV.
 Qed.
 
 (** ** Local contexts (at D) *)
@@ -1459,7 +1459,7 @@ Proof.
   assert (Hm'l : [ G ; Γ ⊢[ i ] m' : X @ li ])
     by (eapply (conv_tm' Hi); [eapply wf_lconv; [exact Hm' | exact E24] | exact EX]).
   pose proof (IHm i li Hc Hm Hm'l) as Em.
-  apply (lvl_eq_eqty Hq). apply eqty_iwf; first [exact Hc | assumption].
+  apply (lvl_eq_eqty Hq). apply eqty_iwf; first [exact Hc | exact (compt_notV _ Hc) | assumption].
 Qed.
 
 Lemma S_actmnf_supi {G Γ l li X A N Ot C m k ki X1 A1 N1 O1 C1 k' ki' X1' A1' N1' O1' C1' a a' cs cs'} :
@@ -1480,10 +1480,10 @@ Proof.
   (* the congruence at the [sup_i]s' annotations, then back to the type *)
   assert (Econg : [ G ; Γ ⊢[ i ] tmSupi l li X A N Ot C a cs ≅ tmSupi k' ki' X1' A1' N1' O1' C1' a' cs'
                      : tyIWf l li X A N Ot C Ot[lsingle a] @ lmax l li ])
-    by (apply eqtm_supi; first [exact Hc | assumption]).
+    by (apply eqtm_supi; first [exact Hc | exact (compt_notV _ Hc) | assumption]).
   assert (Ecan : [ G ; Γ ⊢[ i ] tmSupi l li X A N Ot C a cs ≅ tmSupi k ki X1 A1 N1 O1 C1 a cs
                      : tyIWf l li X A N Ot C Ot[lsingle a] @ lmax l li ])
-    by (apply eqtm_supi; first [exact Hc | assumption | apply eqtm_refl; assumption]).
+    by (apply eqtm_supi; first [exact Hc | exact (compt_notV _ Hc) | assumption | apply eqtm_refl; assumption]).
   pose proof (eqtm_trans _ _ _ _ _ _ _ _ (eqtm_sym _ _ _ _ _ _ _ Ecan) Econg) as E0.
   pose proof (IWf_ty_eq_idx Hi Hv HS Eo) as ETm.
   apply (lvl_eq_eqtm Hq). eapply eqtm_lconv; [| exact (lequiv_sym _ _ _ (lequiv_max _ _ _ _ _ E1 E2))].
@@ -1533,7 +1533,7 @@ Proof.
   destruct (IHν i (lmax l li) (lmax l li) _ _ Hc Hν Hν'l) as (_ & _ & Eν).
   assert (Econg : [ G ; Γ ⊢[ i ] tmElimIWf l li l' X A N Ot C M c m ν ≅ tmElimIWf k ki k' X' A' N' Ot' C' M' c' m' ν'
                      : M[lsingle2 m ν] @ l' ])
-    by (apply eqtm_elimIWf; first [exact Hc | assumption]).
+    by (apply eqtm_elimIWf; first [exact Hc | exact (compt_notV _ Hc) | assumption]).
   (* the motives at the indices and the scrutinees *)
   assert (EMν : [ G ; Γ ⊢[ i ] M[lsingle2 m ν] ≅ M'[lsingle2 m' ν'] @ l' ]).
   { pose proof (IWfSig_nf HS) as (NX & NA & NN & NO & NC).
@@ -2006,7 +2006,7 @@ Proof.
     by (apply wfc_ext; [exact HΓ | apply wft_fin; assumption | exact I]).
   pose proof (IHf i (lsuc k) Hc Hf (stab_tm Hi EF (lequiv_refl _ lzero I) HΓ1 (code_U_conv Hc E Hf'))) as Ef.
   eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hk).
-  apply eqtm_code_dvec; first [exact Hc | assumption].
+  apply eqtm_code_dvec; first [exact Hc | exact (compt_notV _ Hc) | assumption].
 Qed.
 
 Lemma code_iwf_prem {G i Γ l k ki x s n o c m q} : compt i ->
@@ -2050,7 +2050,7 @@ Proof.
     by (eapply (conv_tm' Hi); [eapply wf_lconv; [exact Hm' | exact E24] | exact EX]).
   pose proof (IHm i ki Hc Hm Hm'l) as Em.
   eapply eqtm_conv; [| rewrite Hi; exact HT]. apply (lvl_eq_eqtm Hq).
-  apply eqtm_code_iwf; first [exact Hc | assumption].
+  apply eqtm_code_iwf; first [exact Hc | exact (compt_notV _ Hc) | assumption].
 Qed.
 
 Lemma S_actmnf_code_sempty {G Γ l k k'} : leqv k k' -> S_tm G Γ (tmSEmpty k) (tmSEmpty k') (tyU l).

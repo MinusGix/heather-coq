@@ -607,7 +607,7 @@ Proof using EL VL VN Hwl Hll Hn Vn HF VF.
   pose proof (ctx_of_wf_ty ge_typeof HFn1') as C1. pose proof (ctx_of_wf_ty ge_typeof HFam2) as C2.
   pose proof (ctx_of_wf_ty ge_typeof HRes3) as C3.
   assert (HΓD : [ G ; Γ ,, tyDVec l n F @ l ⊢g ])
-    by (apply (ext_wf ge_typeof); [apply wft_dvec; [exact ge_compt | exact Hwl | exact Hn | exact HF] | exact Hwl]).
+    by (apply (ext_wf ge_typeof); [apply wft_dvec; [exact (compt_notV _ ge_compt) | exact Hwl | exact Hn | exact HF] | exact Hwl]).
   assert (HFn1 : [ G ; Γ ,, tyDVec l n F @ l ⊢g tyFin n⟨↑⟩ @ lzero ])
     by (apply wft_fin; [exact ge_notV | exact (n_wk ge_compt Hn (wkr_shift1 _ _ _) HΓD)]).
   assert (HΓD1 : [ G ; Γ ,, tyDVec l n F @ l ,, tyFin n⟨↑⟩ @ lzero ⊢g ]) by (apply (ext_wf ge_typeof); [exact HFn1 | exact I]).

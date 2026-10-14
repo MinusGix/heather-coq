@@ -770,7 +770,7 @@ Proof.
         exact (eqtm_wf_r ge_typeof Ek). }
     assert (EV : [ G ; Γ ⊢g tyDVec (lmax l li) ν (iwfFamT l li X A N Ot C c)
                     ≅ tyDVec (lmax l' li') ν' (iwfFamT l' li' X' A' N' Ot' C' c') @ lmax l li ]).
-    { apply eqty_dvec; [exact ge_compt | exact Hml' | exact (eqtm_wf_l ge_typeof Eν) | exact Eν
+    { apply eqty_dvec; [exact (compt_notV _ ge_compt) | exact Hml' | exact (eqtm_wf_l ge_typeof Eν) | exact Eν
                        | exact (eqty_wf_l ge_typeof HFν) | exact HFν]. }
     apply (NeRel_lconv _ _ _ _ _ _ Hml).
     eapply NeRel_conv2; [exact EV | exact EV |].

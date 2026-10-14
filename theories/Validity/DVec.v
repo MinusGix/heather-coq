@@ -320,9 +320,9 @@ Proof.
     destruct (DFam_typed HF (NatRel_ne Hνν)) as (HF1 & HF1' & HFF).
     exists (NeRel G Δ (tyDVec l ν F) (tyDVec l' ν' F') l).
     eapply LRne.
-    + apply tyred_refl, wft_dvec; [exact ge_compt | exact Hw | exact (eqtm_wf_l ge_typeof Hν) | exact HF1].
+    + apply tyred_refl, wft_dvec; [exact (compt_notV _ ge_compt) | exact Hw | exact (eqtm_wf_l ge_typeof Hν) | exact HF1].
     + eapply tyred_lconv; [|exact Hl].
-      apply tyred_refl, wft_dvec; [exact ge_compt | exact Hw' | exact (eqtm_wf_r ge_typeof Hν) | exact HF1'].
+      apply tyred_refl, wft_dvec; [exact (compt_notV _ ge_compt) | exact Hw' | exact (eqtm_wf_r ge_typeof Hν) | exact HF1'].
     + exact (gne_ty_dvec Hl Hνν HF1 HFF).
     + apply releq_refl.
 Qed.

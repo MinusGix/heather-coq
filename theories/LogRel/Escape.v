@@ -1152,9 +1152,9 @@ Lemma tyred_dvec {G Δ l F m w} : lwf (gL G) l -> [ G ; Δ ,, tyFin m @ lzero �
   [ G ; Δ ⊢g m ⤳* w : tyNat @ lzero ] -> [ G ; Δ ⊢g tyDVec l m F ⤳* tyDVec l w F @ l ].
 Proof.
   intros Hw HF [Hm Hr He]. split.
-  - apply wft_dvec; [exact ge_compt | exact Hw | exact Hm | exact HF].
+  - apply wft_dvec; [exact (compt_notV _ ge_compt) | exact Hw | exact Hm | exact HF].
   - now apply reds_dvec.
-  - apply eqty_dvec; [exact ge_compt | now apply lequiv_refl | exact Hm | exact He | exact HF | now apply eqty_refl].
+  - apply eqty_dvec; [exact (compt_notV _ ge_compt) | now apply lequiv_refl | exact Hm | exact He | exact HF | now apply eqty_refl].
 Qed.
 
 Lemma tyred_dvec_zero {G Δ l F} : lwf (gL G) l -> [ G ; Δ ,, tyFin zero @ lzero ⊢g F @ l ] ->
@@ -1162,7 +1162,7 @@ Lemma tyred_dvec_zero {G Δ l F} : lwf (gL G) l -> [ G ; Δ ,, tyFin zero @ lzer
 Proof.
   intros Hw HF. assert (HΔ : [ G ; Δ ⊢g ]) by (pose proof (ctx_of_ty HF) as X; inversion X; assumption).
   pose proof (wf_zero_g HΔ) as Hz.
-  apply tyred_step; [apply wft_dvec; [exact ge_compt | exact Hw | exact Hz | exact HF] | constructor |].
+  apply tyred_step; [apply wft_dvec; [exact (compt_notV _ ge_compt) | exact Hw | exact Hz | exact HF] | constructor |].
   apply eqty_dvec_zero; [exact ge_compt | exact Hw | exact HF].
 Qed.
 
@@ -1171,7 +1171,7 @@ Lemma tyred_dvec_succ {G Δ l F k} : lwf (gL G) l -> [ G ; Δ ,, tyFin (succ k) 
   [ G ; Δ ⊢g tyDVec l (succ k) F ⤳* tySig l l (dvecHd k F) (dvecTl l k F) @ l ].
 Proof.
   intros Hw HF Hk. assert (Hs : [ G ; Δ ⊢g succ k : tyNat @ lzero ]) by (apply wf_succ; [exact ge_notV | exact Hk]).
-  apply tyred_step; [apply wft_dvec; [exact ge_compt | exact Hw | exact Hs | exact HF] | constructor |].
+  apply tyred_step; [apply wft_dvec; [exact (compt_notV _ ge_compt) | exact Hw | exact Hs | exact HF] | constructor |].
   apply eqty_dvec_succ; [exact ge_compt | exact Hw | exact Hk | exact HF].
 Qed.
 

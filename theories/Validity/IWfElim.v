@@ -486,7 +486,7 @@ Proof using EL H13 H24 He Hi3 Hwl Hwl' Hwli Hγ VA VC VL VM VN VNt VO VX Vc Vcs 
   intros Hm Ht.
   destruct (elimIWf_at Hγ He)
     as (HX0 & EX & HA0 & EA & HN0 & EN & HO0 & EO & HC0 & EC & HMot0 & HM0 & EM & Hcs0 & HI0 & EI & Ec).
-  apply eqtm_elimIWf; first [exact ge_compt | apply (lequiv_weaken _ _ _ _ (proj1 Hγ)); assumption
+  apply eqtm_elimIWf; first [exact ge_compt | exact (compt_notV _ ge_compt) | apply (lequiv_weaken _ _ _ _ (proj1 Hγ)); assumption
                             | apply geq_ty_sound; assumption | apply geq_tm_sound; assumption | assumption].
 Qed.
 
@@ -498,7 +498,7 @@ Proof using EL He Hwl Hwl' Hwli Hγ VA VC VL VM VN VNt VO VX Vc Vcs Vih Vmot.
   destruct (elimIWf_at Hγ He)
     as (HX0 & EX & HA0 & EA & HN0 & EN & HO0 & EO & HC0 & EC & HMot0 & HM0 & EM & Hcs0 & HI0 & EI & Ec).
   pose proof (eqtm_wf_l ge_typeof (geq_tm_sound Ec)) as Hc0.
-  apply eqtm_elimIWf; first [exact ge_compt | apply lequiv_refl, (lwf_weaken _ _ _ (proj1 Hγ)); assumption
+  apply eqtm_elimIWf; first [exact ge_compt | exact (compt_notV _ ge_compt) | apply lequiv_refl, (lwf_weaken _ _ _ (proj1 Hγ)); assumption
                             | apply eqty_refl; assumption | apply eqtm_refl; assumption | assumption].
 Qed.
 

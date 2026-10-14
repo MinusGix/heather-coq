@@ -274,7 +274,7 @@ Proof. inv_tm. Qed.
 
 (** Indexed finitary trees (M17b). *)
 Lemma inv_supi {G i Γ l li X A N Ot C a cs T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSupi l li X A N Ot C a cs : T @ k ] ->
-  (compt i /\
+  (i <> lV /\
     lwf (gL G) l /\ lwf (gL G) li /\
     [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ⊢[ i ] A @ l ] /\
     [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\ [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] /\
@@ -286,7 +286,7 @@ Proof. inv_tm. Qed.
 
 Lemma inv_elimIWf {G i Γ l li l' X A N Ot C M c m t T k} : typeof i = i -> 
   [ G ; Γ ⊢[ i ] tmElimIWf l li l' X A N Ot C M c m t : T @ k ] ->
-  (compt i /\ lwf (gL G) l' /\
+  (i <> lV /\ lwf (gL G) l' /\
     lwf (gL G) l /\ lwf (gL G) li /\
     [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ⊢[ i ] A @ l ] /\
     [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\ [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] /\
@@ -358,12 +358,12 @@ Proof. inv_tm. Qed.
 
 (** The codes of [DVec] and [IWf] (M17c). *)
 Lemma inv_code_dvec {G i Γ l n f T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmDVec l n f : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] /\
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] /\
     [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] f : tyU l @ lsuc l ]) /\
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ i ] T ≅ tyU l @ k ].
 Proof. inv_tm. Qed.
 Lemma inv_code_iwf {G i Γ l li x s n o c m T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmIWf l li x s n o c m : T @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) li /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) li /\
     [ G ; Γ ⊢[ i ] x : tyU li @ lsuc li ] /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] /\
     [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o : tyEl li x⟨↑⟩ @ li ] /\
@@ -586,7 +586,7 @@ Proof. inv_ty. Qed.
 
 (** Dependent tuples (M17a). *)
 Lemma inv_ty_dvec {G i Γ l n F k} : [ G ; Γ ⊢[ i ] tyDVec l n F @ k ] ->
-  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] /\ [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F @ l ]) /\
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] /\ [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F @ l ]) /\
     lvl_eq (gL G) k l.
 Proof. inv_ty. Qed.
 
@@ -618,7 +618,7 @@ Proof. inv_ty. Qed.
 
 (** Indexed finitary trees (M17b). *)
 Lemma inv_ty_iwf {G i Γ l li X A N Ot C m k} : [ G ; Γ ⊢[ i ] tyIWf l li X A N Ot C m @ k ] ->
-  (compt i /\ lwf (gL G) l /\ lwf (gL G) li /\
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) li /\
     [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ⊢[ i ] A @ l ] /\
     [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\ [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] /\
     [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C : X⟨↑⟩⟨↑⟩ @ li ] /\ [ G ; Γ ⊢[ i ] m : X @ li ]) /\

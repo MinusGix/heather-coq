@@ -58,6 +58,7 @@ theories/Typing/DVecEq.v
 theories/Typing/Presupposition.v
 theories/Typing/Inversion.v
 theories/Typing/DNth.v
+theories/Typing/DNthG.v
 theories/Typing/IWfIH.v
 theories/Typing/WfScope.v
 theories/Typing/RecEq.v
@@ -71,6 +72,7 @@ theories/Typing/DecSide.v
 theories/Typing/GConv.v
 theories/Typing/StaticCode.v
 theories/Typing/StaticCodeEq.v
+theories/Typing/IWfIHG.v
 theories/Typing/TypedRed.v
 theories/Typing/Generic.v
 theories/Typing/DeclInstance.v

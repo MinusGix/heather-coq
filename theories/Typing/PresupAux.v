@@ -1347,11 +1347,11 @@ Proof using Hi Hv.
   apply wft_unit; [exact Hv | now rewrite Hi | exact I].
 Qed.
 
-Lemma pre_dvec_r {Γ l l' n n' F' } : compt i -> lequiv (gL G) l l' ->
+Lemma pre_dvec_r {Γ l l' n n' F' } : lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
   [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F' @ l ] -> [ G ; Γ ⊢[ i ] tyDVec l' n' F' @ l ].
 Proof using Hi Hv.
-  intros Hc Hl Hnn Hn' HF'.
+  intros Hl Hnn Hn' HF'.
   assert (HF2 : [ G ; Γ ,, tyFin n' @ lzero ⊢[ i ] F' @ l ]).
   { eapply (stab_ty Hi (eqty_fin _ _ _ _ _ Hv Hnn)); [apply lequiv_refl; exact I | |exact HF'].
     apply ext_wf; [now apply wft_fin | exact I]. }

@@ -364,7 +364,7 @@ Proof.
       destruct (Kι' la lb A1 B1 la' lb' A1' B1' H1 H2 H1' H2' HA1 HB1 HA1' HB1') as [h Hc].
       pose proof (dvecMv_wf ge_typeof ge_notV ge_compt Hm HF1) as HFmv.
       assert (HDV : [ G ; Δ ⊢g tyDVec L m (dvecMv m F) @ L ])
-        by (apply wft_dvec; [exact ge_compt | exact HwL | exact Hm | exact HFmv]).
+        by (apply wft_dvec; [exact (compt_notV _ ge_compt) | exact HwL | exact Hm | exact HFmv]).
       pose proof (codAd (kid HΔ) _ _ h) as COD.
       rewrite dvec_cod_single, (kty_kid HΔ) in COD by exact (wf_ty_nf HDV).
       rewrite (ktyl_kid HΔ D') in COD by exact (wf_ty_nf HD').
