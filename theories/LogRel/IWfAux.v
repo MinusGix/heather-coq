@@ -138,6 +138,21 @@ Proof.
                                          | exact kw_wkr_ll | exact (kw_ext2 HA Hl HN)].
 Qed.
 
+(** The generic equivalence under one and two binders. *)
+Lemma kw_geq_tm_l {A l t t' T l'} : [ G ; Γ ⊢g A @ l ] -> lwf (gL G) l ->
+  [ G ; Γ ,, A @ l ⊢ t ≈ t' : T @ l' ] ->
+  [ kw_G ρ ; kw_Δ ρ ,, kty ρ A @ l ⊢ ktml ρ t ≈ ktml ρ t' : ktyl ρ T @ l' ].
+Proof.
+  intros HA Hl H. exact (geq_tm_wk (kw_wkr_l ρ) (kw_ext ρ HA Hl) (geq_tm_gwa (kw_gok ρ) (kw_glob ρ) H)).
+Qed.
+Lemma kw_geq_tm_ll {A l N t t' T l'} : [ G ; Γ ⊢g A @ l ] -> lwf (gL G) l -> [ G ; Γ ,, A @ l ⊢g N : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢ t ≈ t' : T @ l' ] ->
+  [ kw_G ρ ; kw_Δ ρ ,, kty ρ A @ l ,, tyFin (ktml ρ N) @ lzero ⊢ ktmll ρ t ≈ ktmll ρ t'
+      : T⟦kw_γ ρ⟧⟨rlift (rlift (kw_r ρ))⟩ @ l' ].
+Proof.
+  intros HA Hl HN H. exact (geq_tm_wk kw_wkr_ll (kw_ext2 HA Hl HN) (geq_tm_gwa (kw_gok ρ) (kw_glob ρ) H)).
+Qed.
+
 Lemma ktyll_shift2 (T : ty) : T⟨↑⟩⟨↑⟩⟦kw_γ ρ⟧⟨rlift (rlift (kw_r ρ))⟩ = (kty ρ T)⟨↑⟩⟨↑⟩.
 Proof. unfold kty. now rewrite !gwa_ren_ty, !shift_lift_ty. Qed.
 
