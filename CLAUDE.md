@@ -25,7 +25,10 @@ list of proof-engineering gotchas. Follow it.
 
 - `nix develop path:. --command make -j4` (Coq 8.20, Equations, smpl from
   the flake). A clean build takes 10 to 22 minutes, depending on the
-  machine. Latest: 473 s wall at -j4 after the Typing metatheory's
+  machine. Latest: the M17b tree (2026-10-14, `IWf` through every
+  consequence) took 1304 s wall at -j4 on a slower 4-core cloud machine
+  (critical path 1109 s), with no same-machine run of the tree before it
+  to compare against. Before that: 473 s wall at -j4 after the Typing metatheory's
   syntax parts were split off (2026-10-12, `ReductionBase`, `GRenRec`,
   `SubstRec`, `PresupAux`, `WfNthReds`), against 546 s for the tree
   before it, back to back on a faster 4-core machine (critical path
