@@ -1,6 +1,6 @@
 # M17: indexed finitary trees (`DVec`, `IWf`), design
 
-Status: **M17a done** (2026-10-13); M17b in progress. Why now: Heather froze `IWf`'s
+Status: **M17a done** (2026-10-13), **M17b done** (2026-10-14); M17c next. Why now: Heather froze `IWf`'s
 rule set (`H/docs/iwf-former-design.md` §1–§6, 2026-10-13), and `IWf` is
 how its kernel loses `transp` and the strip: route 2b's indexed families
 store an index equation that only `transp` can use, and `IWf` stores
@@ -217,7 +217,7 @@ typed at `iwfihty[a, cs]`. Both follow from the other premises once
 algorithm's soundness, subject reduction) is. The rules are gated by
 `compt i`, as `DVec`'s.
 
-## M17b: the relation for `IWf` (design, ahead)
+## M17b: the relation for `IWf` (design)
 
 MX §11's `Wf` relation with an index (doc §9). `LRiwf` keeps `Wf`'s
 domain family `domR` and arity premise and adds the index type's
@@ -245,6 +245,74 @@ child sits at its own index:
 at index `j := m`: at a `sup_i` the step's type is at `o[a]`, related to
 `m` by the `IWfNf` premise, and `M`'s validity at related indices turns
 one into the other. The spine motive is `Wf`'s, through `dnth`.
+
+## M17b outcome
+
+Done, no admits or axioms (`Print Assumptions` of `wf_tm_dec`,
+`preservation_tm` and `closed_canonicity` is empty). `IWf`, `sup_i`,
+`elim_IWf` and β hold at layers D and M through the relation, validity,
+the fundamental theorem, the algorithm, decidability, the type checker
+and the consequences, as M15a's `Wf`. Files:
+- `LogRel/Def.v`: `LRiwf` over `IWfRel`/`IWfNf`/`DVecISp`, as designed,
+  and `PosRel` (below); `LogRel/IWfAux.v` the Kripke-world syntax, the
+  rest of `LogRel` (escape, irrelevance, symmetry, transitivity,
+  weakening, level invariance, permutations, neutrals) one case each.
+- `Typing/PresupIWf.v` (presupposition's lemmas: the signature `IWfSig`,
+  its equations `IWfEq`, the telescope), `Typing/IWfIH.v` (the
+  synthesized induction hypothesis typed through `dnth_wf`).
+- `Validity/IWf.v` (formation, `sup_i`), `Validity/IWfSp.v` (a `sup_i`'s
+  spine to the relation at its `DVec`), `Validity/IWfElim.v`
+  (`elim_IWf` and β), `Validity/DNthReds.v` (how `dnth` computes,
+  untyped, at any state).
+- `Validity/AlgDecIWf.v`: the decision cases, a part of its own.
+
+Decisions and deviations, in the order the proof met them:
+- **The annotations' agreement is declarative.** `IWfNf`'s `sup_i` case
+  relates the node's annotations to the type's by `IWfEq`, declarative
+  equations, not generic ones as `Wf`'s: symmetry moves them into the
+  other side's contexts, and `C` lives two binders deep (`Γ, x : A,
+  i : Fin N`), where the generic laws convert only the last entry. A
+  generic law `geq_tm_ctxconv2` converts the second-to-last entry for
+  the child index's other uses. `geq_tm_supi` takes the equations
+  declaratively too; the algorithm compares only shapes and children
+  (`actmnf_supi`, as `actmnf_supf`).
+- **Positions are a relation of their own** (`PosRel`): the child index
+  premise quantifies over related positions of `Fin N[a]`, and the
+  relation at `Fin` cannot occur inside `LR`'s own definition. Neutral
+  positions make the child indices generically equal at the position
+  variable, which the spine's generic annotations need at a neutral
+  length.
+- **The motive is index-agnostic** (`IWfElim`'s header): the induction
+  runs at the tree's own index, a `sup_i` sits at `Ot[a]`, and the
+  eliminations are compared at the scrutinee's index, which `IWfNf`
+  relates to `Ot[a]` (`LR_IWf_at`).
+- **`dnth`'s states up to joinability.** The child the induction
+  hypothesis reaches is a projection at the annotations `dnth`'s
+  `natrec` step writes, not the spine's, so the spine's motive compares
+  tuples and children up to reduction to a common term or to neutrals
+  (`Join`, `TC` in `DNthReds`).
+- **The two admissible premises are admissible in-tree.** `IWf_IH_wf`
+  types β's induction hypothesis and `IWf_ihty_wf` types the `ih` entry's
+  type from the motive (both through `dnth_wf`); the type checker builds
+  the latter instead of deciding it. The congruence's equation of the
+  induction hypotheses' types stays a premise; the algorithm's
+  `actmne_elimIWf` has the matching premise (`ac_ty` at the two `ih`
+  types), since the right motive moves into the left telescope only
+  along it (`IWf_ih_left`, `IWf_step_left`).
+- **Type validity of the rules' types.** `sup_i`'s type (the index
+  `Ot[a]`) and `elim_IWf`'s (the motive at the scrutinee) have
+  type-validity lemmas of their own (`V_supi_ty`, `V_elimIWf_ty`,
+  `V_elimIWf_supi_ty`); their `VS_` wrappers take the scrutinee first,
+  so that `s_lift` fixes the signature.
+- **Build-graph moves.** The `gwa_` lemmas of `elim_IWf`, `dnth` and the
+  induction hypothesis live in `GLift` (whose `gl_push` covers `IWf`),
+  and `Fundamental` exports `Lam` last, so that `LogRel.Def`'s
+  `gdecl_gwa` stays the one in scope downstream (`MetaV` broke on the
+  other order).
+- **Preservation at any index.** β fires at a `sup_i` of any annotations
+  at any index `m`; `RS_elimIWf_supi` equates the `sup_i` with the
+  canonical one at `m` (its output index is, by inversion) before the
+  declarative β, which is stated at `Ot[a]`.
 
 ## M17c: codes and branches (design, ahead)
 

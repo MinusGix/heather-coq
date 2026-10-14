@@ -152,6 +152,14 @@ From M8 on, the milestones check the extensions of Heather's kernel
   `dnth` (Heather's `IWf` design, its §3) is typed and valid (`V_dnth`),
   including the Unit-η and β conversions its typing crosses, and a
   neutral tuple projects by reduction. See `M17_DESIGN.md`.
+- Milestone 17b: indexed finitary trees. `IWf^{l,li}(I; x:S. n; x. o;
+  x i. c)(m)`, `sup_i` and `elim_IWf` hold at layers D and M through the
+  relation, validity, the algorithm, decidability, the type checker and
+  the consequences. A node sits at its output index `o[a]` and its
+  children, a `DVec`, at their child indices `c[a, i]`; the eliminator's
+  induction hypothesis reaches each child through `dnth`, and β fires at
+  a `sup_i` at any index. Canonicity: a closed term at `IWf` computes to
+  a `sup_i`. See `M17_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
 `M17_DESIGN.md`) for decisions, deviations from the paper and gotchas.
