@@ -61,6 +61,7 @@ theories/Typing/DNth.v
 theories/Typing/DNthG.v
 theories/Typing/IWfIH.v
 theories/Typing/WfScope.v
+theories/Typing/WfScopeIWf.v
 theories/Typing/RecEq.v
 theories/Typing/AlgStruct.v
 theories/Typing/CtxConv.v

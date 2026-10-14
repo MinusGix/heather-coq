@@ -1965,6 +1965,36 @@ Proof using Hrb HΓ.
   - exact (brLv_t_id 54 (k :: k' :: nil) eq_refl eq_refl).
 Qed.
 
+(** The weakened payload types of the indexed trees (M17c): [rr_ctx]'s
+    [cbn] computes a global under one or two weakenings to its
+    substitution by a shift, which [rr_sh] turns back into the weakenings
+    the calls are typed at. *)
+Lemma subst_lshift2_ty (T : ty) : T[lshift 2] = T⟨↑⟩⟨↑⟩.
+Proof. rewrite <- subst_lshift1_ty, <- subst_lshift1_ty. rewrite subst_comp_ty. reflexivity. Qed.
+Lemma subst_lshift2 (t : tm) : t[lshift 2] = t⟨↑⟩⟨↑⟩.
+Proof. rewrite <- subst_lshift1, <- subst_lshift1. rewrite subst_comp. reflexivity. Qed.
+Ltac rr_sh := rewrite ?subst_lshift2_ty, ?subst_lshift2, ?subst_lshift1_ty, ?subst_lshift1.
+(** [supi]'s and [elim_IWf]'s scopes: [rr_ctx_W]'s, with the children's tuple type pushed
+    through the substitutions as [gs_norm] does (RecSBase), so that
+    [iwfFam]'s weakenings are not computed into shifts. *)
+Ltac rr_ctx_I os :=
+  cbn [brΓ brLocs cexts br_nu br_ng br_nl br_ar ucsubst mkLocs call_ty call_lv br_calls lext fold_left];
+  rewrite ?gs_cext; rewrite wkc_inst' by reflexivity; rewrite Γ_id;
+  repeat apply lsub_wf_lcons; [exact (lsub_wf_id G lM eq_refl Γ HΓ) | ..];
+  repeat rr_wkb_rw;
+  cbn [gsubst GSubst_ctx GSubst_ty GSubst_tm]; rewrite ?uc_ext, ?gc_ext;
+  rewrite ?us_iwfcsty, ?us_iwfihty, ?us_iwfstepty, ?us_iwfmotty, ?gs_iwfcsty, ?gs_iwfihty, ?gs_iwfstepty,
+          ?gs_iwfmotty;
+  rewrite ?us_El_raw, ?us_DVec_raw, ?gs_El_raw, ?gs_DVec_raw, ?usubst_lsingle, ?gs_tm_subst_raw,
+    ?usubst_iwfFam, ?gs_iwfFam_raw, ?usubst_ren_ty', ?usubst_ren', ?grs_ty_raw, ?grs_tm_raw;
+  rewrite ?lvren_ush_uext' by reflexivity;
+  rewrite ?(lvsubst_id l1 lvar (fun _ => eq_refl)), ?(lvsubst_id l2 lvar (fun _ => eq_refl));
+  unfold os; unfold uext, gext_s, gv, gu; try unfold lsingle; try unfold lsucc;
+  cbn [length Nat.ltb Nat.leb Nat.sub nth lvsubst ucsubst usubst_tm usubst_ty ulsubst gcsubst gsubst_tm
+       gsubst_ty glsubst pctx pty ptm subst_tm subst_ty lcomp gsubst GSubst_tm GSubst_ty GSubst_ctx subst
+       Subst_tm Subst_ty lext fold_left llk lcons'];
+  rr_sl0; rr_sh.
+
 (** ** Dependent tuples and indexed trees (M17c): the payloads through
     [GW_br], as [Wf]'s. *)
 
@@ -2047,7 +2077,7 @@ Proof using Hrb HΓ.
   refine (rr_br 57 (k :: ki :: nil) os (x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: nil) ltac:(cbv; lia) eq_refl eq_refl eq_refl
             (Forall_cons _ Wk (Forall_cons _ Wki (Forall_nil _))) Ho Hxs (GW_br 57 (k :: ki :: nil) os HG_rr _) _ _ _).
   - unfold os; gw_solve.
-  - rr_ctx; eassumption.
+  - rr_ctx; rr_sh; eassumption.
   - rr_res.
   - exact (brLv_T_id 57 (k :: ki :: nil) eq_refl eq_refl).
 Qed.
@@ -2086,7 +2116,7 @@ Proof using Hrb HΓ.
   refine (rr_br 58 (k :: ki :: nil) os (x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: nil) ltac:(cbv; lia) eq_refl eq_refl eq_refl
             (Forall_cons _ Wk (Forall_cons _ Wki (Forall_nil _))) Ho Hxs (GW_br 58 (k :: ki :: nil) os HG_rr _) _ _ _).
   - unfold os; gw_solve.
-  - rr_ctx; eassumption.
+  - rr_ctx; rr_sh; eassumption.
   - rr_res.
   - exact (brLv_t_id 58 (k :: ki :: nil) eq_refl eq_refl).
 Qed.
@@ -2128,7 +2158,7 @@ Proof using Hrb HΓ.
             eq_refl eq_refl eq_refl (Forall_cons _ Wk (Forall_cons _ Wki (Forall_nil _))) Ho Hxs
             (GW_br 59 (k :: ki :: nil) os HG_rr _) _ _ _).
   - unfold os; gw_solve.
-  - rr_ctx; eassumption.
+  - rr_ctx_I os; eassumption.
   - rr_res.
   - exact (brLv_t_id 59 (k :: ki :: nil) eq_refl eq_refl).
 Qed.
@@ -2187,7 +2217,7 @@ Proof using Hrb HΓ.
             (Forall_cons _ Wk (Forall_cons _ Wki (Forall_cons _ Wk' (Forall_nil _)))) Ho Hxs
             (GW_br 60 (k :: ki :: k' :: nil) os HG_rr _) _ _ _).
   - unfold os; gw_solve.
-  - rr_ctx_W os; eassumption.
+  - rr_ctx_I os; eassumption.
   - rr_res.
   - exact (brLv_t_id 60 (k :: ki :: k' :: nil) eq_refl eq_refl).
 Qed.

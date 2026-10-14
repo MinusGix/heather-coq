@@ -9,7 +9,7 @@
     are moved into the branch scope by universe and global weakening under
     their own binders ([MT_br], [Mt_br]), instantiated by [motT_wf] and
     [mott_wf], and weakened past the recursive calls' locals. *)
-From DeLaM.Typing Require Export InvAny AlgStruct WfScope.
+From DeLaM.Typing Require Export InvAny AlgStruct WfScope WfScopeIWf.
 
 (** ** The motives in the branch scope *)
 
@@ -300,7 +300,7 @@ Ltac code_side :=
    and indexed trees (M17c): the memoised
    scope automation of [RecWf], after the instances are normalised by
    computation *)
-Ltac code_side_W := wnorm; wtop.
+Ltac code_side_W := first [assumption | wnorm; wtop].
 
 (** The side conditions: levels, the scrutinees' contexts and typings. *)
 Ltac code_side_k k :=
@@ -337,6 +337,7 @@ Ltac wf60_pre G0 :=
                 ,, iwfihty (lvar 2) (lvar 1) (lvar 0) (gv 8) (gv 7) (gu 6) (gu 5) (gu 4) (gv 3) @ lmax lzero (lvar 0)
                 ⊢[ lD ] ])
     by exact (proj1 (br60_scope G0 ltac:(assumption)));
+  let Hh := fresh "H60h" in pose proof (br60_head G0 ltac:(assumption)) as Hh; unfold gv, gu in Hh;
   pose proof H as Hn; unfold gv, gu in Hn;
   cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
        rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add
