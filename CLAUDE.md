@@ -25,14 +25,16 @@ list of proof-engineering gotchas. Follow it.
 
 - `nix develop path:. --command make -j4` (Coq 8.20, Equations, smpl from
   the flake). A clean build takes 10 to 26 minutes, depending on the
-  machine. Latest: the M17c tree (2026-10-14, the codes and branches
-  55–60) took 1544 s wall at -j4 (critical path 1386 s), against 1304 s
-  (critical path 1109 s) for the M17b tree, on the same kind of 4-core
-  cloud machine but not back to back. Files untouched by M17c timed
-  alike (`RulesS` 88 s → 74 s); the growth is in the recursor lemmas
-  that case on every branch (`gfree_redt` +315 s, `redt_usubst`,
-  `redt_leq`, `redt_ren` about +130 s each, `wf_brG_60` 95 s, by
-  `tools/proofs.py --diff` of the two builds' `decls.tsv`). Before
+  machine. Latest: the M17c tree after its build-time pass (2026-10-14)
+  took 1318 s wall at -j4 (critical path 1149 s, CPU 3146 s), against
+  1544 s (critical path 1386 s, CPU 3938 s) for the M17c tree before
+  it, back to back on one 4-core cloud machine, and 1304 s (critical
+  path 1109 s) for M17b. The pass inverted `Some X = Some v` by
+  `Some_inj` instead of `injection` (which reduced `elim_IWf`'s big
+  reduct) and guarded `split` and `apply` by goal shape (`gfree_redt`,
+  `redt_ren`, `redt_usubst`, `redt_leq`, `dnf_redt`). Left on the path:
+  `wf_brG_60` (`RecWf`, 110 s), which types `dnth` by its unfolding.
+  Before
   that, on faster machines: 473 s wall at -j4 after the Typing metatheory's
   syntax parts were split off (2026-10-12, `ReductionBase`, `GRenRec`,
   `SubstRec`, `PresupAux`, `WfNthReds`), against 546 s for the tree
