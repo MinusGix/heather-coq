@@ -6,6 +6,7 @@
     under their own binding). *)
 From DeLaM.Typing Require Export Inversion WfScope.
 From DeLaM.Typing Require Export RecEq.
+From DeLaM.Typing Require Import IWfIHG.
 From DeLaM.Validity Require Export ReducibleP GSubRelW GvarS GSubRelE.
 
 (** ** Converting a global binding
@@ -251,10 +252,6 @@ Qed.
 
 (** ** The branch scopes at equal motives *)
 
-Lemma wfc_ext_inv {G i Γ A l} : [ G ; Γ ,, A @ l ⊢[ i ] ] ->
-  [ G ; Γ ⊢[ i ] ] /\ [ G ; Γ ⊢[ i ] A @ l ] /\ lwf (gL G) l.
-Proof. intros H; inversion H; subst; auto. Qed.
-
 Lemma wkr_shift_S {j Δ Γ A l} : wkr (rshift j) Δ Γ -> wkr (rshift (S j)) (Δ ,, A @ l) Γ.
 Proof. intros H. exact (wkr_step _ _ _ A l H). Qed.
 
@@ -323,6 +320,41 @@ Proof. intros -> ->; intros; apply wf_elimSq; rewrite ?SubstCommute.liftshift_si
 
 (** Side conditions in a concrete branch scope: levels, lookups, weakenings,
     and the typing of the objects (contexts at D, codes at C, boxes at M). *)
+(** A global under two binders (M17c: the indexed trees' child index
+    [X⟨↑⟩⟨↑⟩]), as [wf_gv_up]/[wf_gu_up] under one. *)
+Lemma lsub_tail_shift2_var g A la B lb : lsub_tail (lshift 2) (cvar g) (cvar g ,, A @ la ,, B @ lb).
+Proof. split; [reflexivity | intros n; cbn; f_equal; lia]. Qed.
+Lemma wf_gv_up2 G i g A la B lb U i' l : i <> lV -> [ G ; cvar g ,, A @ la ,, B @ lb ⊢[ typeof i ] ] ->
+  in_gctx (gΨ G) U (gdTy (cvar g) i' l) -> lle i' i ->
+  [ G ; cvar g ,, A @ la ,, B @ lb ⊢[ i ] tyGvar U (lshift 2) @ l ].
+Proof.
+  intros Hv HΓ Hin Hle. eapply wft_gvar; eauto using lsub_tail_shift2_var.
+  all: try (intros ? ? ? HB; exfalso; exact (no_in_ctx_var _ _ _ _ HB)); cbn; exact I.
+Qed.
+Lemma wf_gu_up2 G i g A la B lb u U i' l : [ G ; cvar g ,, A @ la ,, B @ lb ⊢[ typeof i ] ] ->
+  in_gctx (gΨ G) u (gdTm (cvar g) i' (tyGvar U (lshift 0)) l) -> lle i' i ->
+  [ G ; cvar g ,, A @ la ,, B @ lb ⊢[ i ] gvar u (lshift 2) : tyGvar U (lshift 2) @ l ].
+Proof.
+  intros HΓ Hin Hle. change (tyGvar U (lshift 2)) with ((tyGvar U (lshift 0))[lshift 2]).
+  eapply wf_gvar; eauto using lsub_tail_shift2_var.
+  all: try (intros ? ? ? HB; exfalso; exact (no_in_ctx_var _ _ _ _ HB)); cbn; exact I.
+Qed.
+
+Lemma wf_gu_upT G i g A la u T T' i' l : [ G ; cvar g ,, A @ la ⊢[ typeof i ] ] ->
+  in_gctx (gΨ G) u (gdTm (cvar g) i' T l) -> lle i' i -> T[lshift 1] = T' ->
+  [ G ; cvar g ,, A @ la ⊢[ i ] gvar u (lshift 1) : T' @ l ].
+Proof.
+  intros HΓ Hin Hle <-. eapply wf_gvar; eauto using lsub_tail_shift1_var.
+  all: try (intros ? ? ? HB; exfalso; exact (no_in_ctx_var _ _ _ _ HB)); cbn; exact I.
+Qed.
+Lemma wf_gu_up2T G i g A la B lb u T T' i' l : [ G ; cvar g ,, A @ la ,, B @ lb ⊢[ typeof i ] ] ->
+  in_gctx (gΨ G) u (gdTm (cvar g) i' T l) -> lle i' i -> T[lshift 2] = T' ->
+  [ G ; cvar g ,, A @ la ,, B @ lb ⊢[ i ] gvar u (lshift 2) : T' @ l ].
+Proof.
+  intros HΓ Hin Hle <-. eapply wf_gvar; eauto using lsub_tail_shift2_var.
+  all: try (intros ? ? ? HB; exfalso; exact (no_in_ctx_var _ _ _ _ HB)); cbn; exact I.
+Qed.
+
 Ltac br_lvl := cbn; repeat split; try lia.
 Ltac br_tac :=
   repeat first
@@ -334,7 +366,12 @@ Ltac br_tac :=
       | |- context [tmElimW _ _ _ _ _ _ _ _] => idtac
       (* and finitary ones (M15b) *)
       | |- context [tyWf _ _ _] => idtac | |- context [tmWf _ _ _] => idtac
-      | |- context [tmSupf _ _ _ _ _] => idtac | |- context [tmElimWf _ _ _ _ _ _ _] => idtac end;
+      | |- context [tmSupf _ _ _ _ _] => idtac | |- context [tmElimWf _ _ _ _ _ _ _] => idtac
+      (* dependent tuples and indexed ones (M17c) *)
+      | |- context [tyDVec _ _ _] => idtac | |- context [tmDVec _ _ _] => idtac
+      | |- context [tyIWf _ _ _ _ _ _ _ _] => idtac | |- context [tmIWf _ _ _ _ _ _ _ _] => idtac
+      | |- context [tmSupi _ _ _ _ _ _ _ _ _] => idtac
+      | |- context [tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _] => idtac end;
       solve [unfold gv, gu; wnorm; wtop]
     | glookup
     | apply wkr_id | apply wkr_shift_S
@@ -350,8 +387,12 @@ Ltac br_tac :=
     | apply wft_id | apply wf_idrefl | eapply wf_code_id
     | eapply wf_J_eq; [reflexivity | ..]
     | match goal with |- context [ren (gv _) _] => unfold gv, gu;
+        cbn [ren Ren_ty Ren_tm ren_ty ren_tm lren r2l rdrop rshift1]
+      | |- context [ren (gu _) _] => unfold gv, gu;
         cbn [ren Ren_ty Ren_tm ren_ty ren_tm lren r2l rdrop rshift1] end
     | apply wf_var0_gv | eapply wf_gv_up | eapply wf_gu_up | eapply wf_gv_single2
+    | eapply wf_gv_up2 | eapply wf_gu_up2
+    | eapply wf_gu_upT; [ | glookup | | reflexivity ] | eapply wf_gu_up2T; [ | glookup | | reflexivity ]
     (* strict equality (M10c) *)
     | apply wft_seq | apply wft_sempty | apply wf_srefl | eapply wf_code_seq | apply wf_code_sempty
     | eapply wf_elimSEmpty
@@ -405,6 +446,41 @@ Ltac br50_pre G0 HG0 :=
   destruct (br50_scope G0 HG0) as (H1 & H2 & H3 & H4);
   unfold brG, gctx_uwk in H1, H2, H3, H4; cbn [gL gΨ] in H1, H2, H3, H4.
 
+(** [elim_IWf]'s (M17c), as [elim_Wf]'s ([br60_scope]), with the scope's
+    context also in [wty]'s normal form, for the goals [br_tac] types by
+    [RecWf]'s automation. *)
+Lemma br60_head G0 : [ ⊢ brG 60 G0 ] ->
+  [ brG 60 G0 ; cvar 9 ⊢[ lC ] tmElimIWf (lvar 2) (lvar 1) (lvar 0) (gv 8) (gv 7) (gu 6) (gu 5) (gu 4) (gv 3)
+      (gu 2) (gu 1) (gu 0) : tyGvar 3 (lsingle2 (gu 1) (gu 0)) @ lvar 0 ].
+Proof.
+  intros HG0. destruct (br60_scope G0 HG0) as (_ & _ & Hc).
+  w_lookups 60 (gΨ (brG 60 G0)).
+  assert (HS : @IWfSig (brG 60 G0) lC (cvar 9) (lvar 2) (lvar 1) (gv 8) (gv 7) (gu 6) (gu 5) (gu 4))
+    by (unfold IWfSig; repeat split; [lvl_ok | lvl_ok | ..]; unfold gv, gu; wnorm; wtop).
+  pose proof HS as (Wl & Wli & HX & HA & HN & HO & HC).
+  assert (Wl' : lwf (gL (brG 60 G0)) (lvar 0)) by lvl_ok.
+  assert (HM : [ brG 60 G0 ; cvar 9 ,, gv 8 @ lvar 1
+                 ,, iwfmotty (lvar 2) (lvar 1) (gv 8) (gv 7) (gu 6) (gu 5) (gu 4) @ lmax (lvar 2) (lvar 1)
+                 ⊢[ lC ] gv 3 @ lvar 0 ])
+    by (unfold gv, gu; wnorm; wtop).
+  eapply wf_elimIWf_eq;
+    [ unfold gv, gu; wnorm; reflexivity | discriminate | exact Wl | exact Wli | exact Wl'
+    | exact HX | exact HA | exact HN | exact HO | exact HC
+    | exact (IWf_mot_wf_g (i := lC) ltac:(discriminate) Wl Wli HX HA HN HO HC) | exact HM
+    | exact (IWf_cs_wf_g (i := lC) ltac:(discriminate) Wl Wli HX HA HN HO HC)
+    | exact (IWf_ihty_wf_g (i := lC) ltac:(discriminate) HS Wl' HM) | exact Hc | | ].
+  all: unfold gv, gu; wnorm; wtop.
+Qed.
+
+Ltac br60_pre G0 HG0 :=
+  let H1 := fresh "H60c" in let H2 := fresh "H60s" in let H3 := fresh "H60u" in let H4 := fresh "H60e" in
+  let Hn := fresh "H60n" in
+  destruct (br60_scope G0 HG0) as (H1 & H2 & H3); pose proof (br60_head G0 HG0) as H4;
+  unfold brG, gctx_uwk in H1, H2, H3, H4; cbn [gL gΨ] in H1, H2, H3, H4;
+  pose proof H1 as Hn; unfold gv, gu in Hn;
+  cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
+       rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add] in Hn.
+
 Lemma brΓ_conv {G Γ MT MT' Mt Mt' l1 l2 l1' l2'} k : k < nbr ->
   [ recGT G ; recΓT Γ ⊢[ lM ] MT ≅ MT' @ lvren l1 (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt ≅ Mt' @ lvren l2 (ush 1) ] ->
@@ -422,6 +498,7 @@ Proof.
   all: match goal with |- context [brG ?kk ?G0] => w_lookups kk (gΨ (brG kk G0)) end.
   all: br_prep.
   all: try (match goal with |- context [brG 50 ?G0] => br50_pre G0 HG0 end).
+  all: try (match goal with |- context [brG 60 ?G0] => br60_pre G0 HG0 end).
   all: br_fin HMT HMt HG0 HB.
 Qed.
 

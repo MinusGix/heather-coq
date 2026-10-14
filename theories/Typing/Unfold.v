@@ -278,6 +278,10 @@ Ltac unf_peel_push :=
   (* [sup_f]'s children's length and [elim_Wf]'s step telescope (M15b) *)
   repeat progress (rewrite ?unf_subst, ?unf_lsingle, ?unf_tmNth, ?unf_lsingle_ty, ?unf_ren_ty, ?unf_ren;
           cbn [unf_o unf_tm unf_ctx unf_ty]);
+  (* [sup_i]'s children's family and [elim_IWf]'s step telescope (M17c) *)
+  repeat progress (rewrite ?unf_iwfFam, ?unf_tmDNth, ?unf_subst, ?unf_lsingle, ?unf_lsingle_ty, ?unf_lsingle2_ty,
+                           ?unf_ren_ty, ?unf_ren;
+          cbn [unf_o unf_tm unf_ctx unf_ty]);
   reflexivity.
 
 Lemma redT_unf_map l1 l2 MT Mt bs l Δ c :

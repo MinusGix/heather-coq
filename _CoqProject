@@ -154,6 +154,7 @@ theories/Validity/RecSSum.v
 theories/Validity/RecSW.v
 theories/Validity/RecSNe.v
 theories/Validity/RecSWf.v
+theories/Validity/RecSIWf.v
 theories/Validity/RecSSq.v
 theories/Validity/RecS.v
 theories/Validity/RecFT.v

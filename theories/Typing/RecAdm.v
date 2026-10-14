@@ -296,14 +296,16 @@ Ltac code_side :=
   | |- [ _ ; _ ⊢[ _ ] _ : _ @ _ ] => progress wfd
   end; try assumption.
 
-(* W-types (M13b) and finitary well-founded trees (M15b): the memoised
+(* W-types (M13b), finitary well-founded trees (M15b), dependent tuples
+   and indexed trees (M17c): the memoised
    scope automation of [RecWf], after the instances are normalised by
    computation *)
 Ltac code_side_W := wnorm; wtop.
 
 (** The side conditions: levels, the scrutinees' contexts and typings. *)
 Ltac code_side_k k :=
-  let b := eval cbv in (orb (andb (Nat.leb 39 k) (Nat.ltb k 43)) (andb (Nat.leb 47 k) (Nat.ltb k 51))) in
+  let b := eval cbv in (orb (orb (andb (Nat.leb 39 k) (Nat.ltb k 43)) (andb (Nat.leb 47 k) (Nat.ltb k 51)))
+                            (andb (Nat.leb 55 k) (Nat.ltb k 61))) in
   lazymatch b with true => code_side_W | false => code_side end.
 Ltac br_side k HΓ :=
   first
@@ -327,7 +329,20 @@ Ltac wf50_pre G0 :=
   cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
        rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle Nat.eqb Nat.add
        tmNth nthMot nthBase nthStep] in Hn.
-Ltac br_pre kk G0 := tryif constr_eq kk 50 then wf50_pre G0 else idtac.
+(** [elim_IWf]'s (M17c), as [elim_Wf]'s ([br60_scope]). *)
+Ltac wf60_pre G0 :=
+  let H := fresh "H60c" in let Hn := fresh "H60n" in
+  assert (H : [ brG 60 G0 ; cvar 9 ,, gv 7 @ lvar 2
+                ,, iwfcsty (lvar 2) (lvar 1) (gv 8) (gv 7) (gu 6) (gu 5) (gu 4) @ lmax (lvar 2) (lvar 1)
+                ,, iwfihty (lvar 2) (lvar 1) (lvar 0) (gv 8) (gv 7) (gu 6) (gu 5) (gu 4) (gv 3) @ lmax lzero (lvar 0)
+                ⊢[ lD ] ])
+    by exact (proj1 (br60_scope G0 ltac:(assumption)));
+  pose proof H as Hn; unfold gv, gu in Hn;
+  cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
+       rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add
+       tmNth nthMot nthBase nthStep] in Hn.
+Ltac br_pre kk G0 :=
+  tryif constr_eq kk 50 then wf50_pre G0 else tryif constr_eq kk 60 then wf60_pre G0 else idtac.
 
 Section Adm.
 Context {G : gctx} {Γ : ctx} (HΓ : [ G ; Γ ⊢[ lM ] ]) {l1 l2 : lvl} (Hl1 : lwf (gL G) l1) (Hl2 : lwf (gL G) l2)
