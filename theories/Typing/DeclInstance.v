@@ -240,6 +240,19 @@ Proof.
   - intros * Hl (Hn & Hn' & Hν) HF HFF.
     refine (conj _ (conj _ _)); [constructor; auto .. |].
     apply eqty_dvec; auto. exact (eqtm_wf_l Hty Hν).
+  (* indexed W-types: the motive's and the children's types are well formed
+     from the signature *)
+  - intros; apply eqty_iwf; auto.
+  - intros; apply eqtm_supi; auto.
+  - intros * Hlk Hlik Hl'k' HX HXX HA HAA HN HNN HO HOO HC HCC HM HMM EI Hc Hmm (Hn & Hn' & Hν).
+    pose proof (lequiv_wf_l _ _ _ Hlk) as Wl. pose proof (lequiv_wf_l _ _ _ Hlik) as Wli.
+    pose proof (lequiv_wf_l _ _ _ Hl'k') as Wl'.
+    assert (HS : IWfSig (G := G) (i := i) Γ l li X A N Ot C) by (unfold IWfSig; auto 8).
+    refine (conj _ (conj _ _)); [constructor; auto .. |].
+    apply eqtm_elimIWf; auto.
+    + exact (IWf_mot_wf Hty Hv HS).
+    + exact (IWf_cs_wf Hty Hv HS).
+    + exact (eqty_wf_l Hty EI).
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].

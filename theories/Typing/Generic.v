@@ -455,7 +455,52 @@ Class GenericEqLaws `{GenericEq} := {
   gne_ty_dvec {G Γ l l' ν ν' F F'} : lequiv (gL G) l l' ->
     [ G ; Γ ⊢ ν ~ ν' : tyNat @ lzero ] ->
     [ G ; Γ ,, tyFin ν @ lzero ⊢g F @ l ] -> [ G ; Γ ,, tyFin ν @ lzero ⊢ F ≈ F' @ l ] ->
-    [ G ; Γ ⊢ tyDVec l ν F ~ tyDVec l' ν' F' @ l ]
+    [ G ; Γ ⊢ tyDVec l ν F ~ tyDVec l' ν' F' @ l ] ;
+  (** indexed W-types (M17b): the congruences of [IWf] and [sup_i], and
+      [elim_IWf] is neutral on a neutral scrutinee. The induction
+      hypothesis's types are compared as [eqtm_elimIWf] states them
+      (M17_DESIGN.md); the motive's and the children's types are well formed
+      from the signature's typings *)
+  geq_ty_iwf {G Γ l li k ki X X' A A' N N' Ot Ot' C C' m m'} :
+    lequiv (gL G) l k -> lequiv (gL G) li ki ->
+    [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ⊢ X ≈ X' @ li ] ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
+    [ G ; Γ ,, A @ l ⊢g N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢ N ≈ N' : tyNat @ lzero ] ->
+    [ G ; Γ ,, A @ l ⊢g Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢ Ot ≈ Ot' : X⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢g C : X⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢ m ≈ m' : X @ li ] ->
+    [ G ; Γ ⊢ tyIWf l li X A N Ot C m ≈ tyIWf k ki X' A' N' Ot' C' m' @ lmax l li ] ;
+  geq_tm_supi {G Γ l li k ki X X' A A' N N' Ot Ot' C C' a a' cs cs'} :
+    lequiv (gL G) l k -> lequiv (gL G) li ki ->
+    [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ⊢ X ≈ X' @ li ] ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
+    [ G ; Γ ,, A @ l ⊢g N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢ N ≈ N' : tyNat @ lzero ] ->
+    [ G ; Γ ,, A @ l ⊢g Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢ Ot ≈ Ot' : X⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢g C : X⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢ a ≈ a' : A @ l ] ->
+    [ G ; Γ ⊢ cs ≈ cs' : tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a) @ lmax l li ] ->
+    [ G ; Γ ⊢ tmSupi l li X A N Ot C a cs ≈ tmSupi k ki X' A' N' Ot' C' a' cs'
+        : tyIWf l li X A N Ot C Ot[lsingle a] @ lmax l li ] ;
+  gne_tm_elimIWf {G Γ l li l' k ki k' X X' A A' N N' Ot Ot' C C' M M' c c' m m' ν ν'} :
+    lequiv (gL G) l k -> lequiv (gL G) li ki -> lequiv (gL G) l' k' ->
+    [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ⊢ X ≈ X' @ li ] ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
+    [ G ; Γ ,, A @ l ⊢g N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢ N ≈ N' : tyNat @ lzero ] ->
+    [ G ; Γ ,, A @ l ⊢g Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢ Ot ≈ Ot' : X⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢g C : X⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li ⊢g M @ l' ] ->
+    [ G ; Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li ⊢ M ≈ M' @ l' ] ->
+    [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ⊢
+        iwfihty l li l' X A N Ot C M ≈ iwfihty k ki k' X' A' N' Ot' C' M' @ lmax lzero l' ] ->
+    [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l'
+        ⊢ c ≈ c' : iwfstepty l li X A N Ot C M @ l' ] ->
+    [ G ; Γ ⊢ m ≈ m' : X @ li ] ->
+    [ G ; Γ ⊢ ν ~ ν' : tyIWf l li X A N Ot C m @ lmax l li ] ->
+    [ G ; Γ ⊢ tmElimIWf l li l' X A N Ot C M c m ν ~ tmElimIWf k ki k' X' A' N' Ot' C' M' c' m' ν'
+        : M[lsingle2 m ν] @ l' ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].
