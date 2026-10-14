@@ -96,6 +96,38 @@ Qed.
 
 #[local] Hint Resolve dnf_peelU dnf_peelG dnf_peelL dnf_tup_nth : dnfr.
 
+(** [dnth] and [elim_IWf]'s family and induction hypothesis (M17b). *)
+Lemma dnf_tmDNth l n F cs i : dnftm n -> dnfty F -> dnftm cs -> dnftm i -> dnftm (tmDNth l n F cs i).
+Proof.
+  intros; unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
+  (* [exact I] and [split] only on goals of their shape: tried on a
+     [dnftm] of a renaming, they unfold it *)
+  cbn [dnftm dnfty];
+    repeat first [ lazymatch goal with |- True => exact I | |- _ /\ _ => split end
+                 | assumption | apply ren_dnf_ty | apply ren_dnf
+                 | apply lk_dnf_lsingle | (apply subst_dnf_ty; [|apply lk_dnf_lsingle])
+                 | (apply subst_dnf; [|apply lk_dnf_lsingle]) | progress cbn [dnftm dnfty] ].
+Qed.
+Lemma dnf_iwfFam l li X A N Ot C a : dnfty X -> dnfty A -> dnftm N -> dnftm Ot -> dnftm C -> dnftm a ->
+  dnfty (iwfFam l li X A N Ot C a).
+Proof.
+  intros; unfold iwfFam; cbn [dnfty dnftm]; repeat split; auto using ren_dnf_ty, ren_dnf.
+  apply subst_dnf; auto. apply lk_dnf_llift, lk_dnf_lsingle; auto.
+Qed.
+Lemma dnf_iwfIH l li l' X A N Ot C M c a cs : dnfty X -> dnfty A -> dnftm N -> dnftm Ot -> dnftm C ->
+  dnfty M -> dnftm c -> dnftm a -> dnftm cs -> dnftm (iwfIH l li l' X A N Ot C M c a cs).
+Proof.
+  intros; unfold iwfIH.
+  assert (Hn : dnftm (tmDNth (lmax l li) N[lsingle a]⟨↑⟩ (iwfFam l li X A N Ot C a)⟨rlift ↑⟩ cs⟨↑⟩ (var 0))).
+  { apply dnf_tmDNth; auto using ren_dnf_ty, ren_dnf, dnf_iwfFam; [|exact I].
+    apply ren_dnf, subst_dnf; auto using lk_dnf_lsingle. }
+  pose proof (dnf_iwfFam l li X A N Ot C a ltac:(assumption) ltac:(assumption) ltac:(assumption)
+                ltac:(assumption) ltac:(assumption) ltac:(assumption)) as HF.
+  unfold iwfFam in HF; cbn [dnfty dnftm] in HF.
+  revert Hn; generalize (tmDNth (lmax l li) N[lsingle a]⟨↑⟩ (iwfFam l li X A N Ot C a)⟨rlift ↑⟩ cs⟨↑⟩ (var 0)); intros x Hn.
+  cbn [dnftm dnfty]; intuition auto using ren_dnf_ty, ren_dnf, subst_dnf, lk_dnf_lsingle.
+Qed.
+
 Lemma dnf_redT l1 l2 rb l Δ c r : dnftm rb -> dnfctx Δ -> dnfty c ->
   redT l1 l2 rb l Δ c = Some r -> dnftm r.
 Proof.
@@ -103,6 +135,9 @@ Proof.
   destruct c; cbn [redT] in E; first [discriminate E | apply Some_inj in E; subst r]; cbn in Hc;
     repeat first [ apply dnf_peelL | apply dnf_peelG | apply dnf_peelU | apply dnf_tup_nth ];
     cbn [dnfo dnftm dnfty dnfctx recT rect]; intuition auto.
+  (* [IWf]'s (M17c): its components under the shape's binder *)
+  all: repeat first [ lazymatch goal with |- True => exact I | |- _ /\ _ => split end | assumption
+                    | apply ren_dnf_ty | apply ren_dnf | progress cbn [dnftm dnfty] ].
 Qed.
 Lemma dnf_redt l1 l2 rb l Δ T c r : dnftm rb -> dnfctx Δ -> dnfty T -> dnftm c ->
   redt l1 l2 rb l Δ T c = Some r -> dnftm r.
@@ -120,12 +155,26 @@ Proof.
     | apply subst_dnf_ty; [intuition auto | first [apply lk_dnf_lsucc | apply lk_dnf_lsingle; first [exact I | intuition auto]
                                                   | apply lk_dnf_lsingle2; cbn [dnftm]; intuition auto]]
     (* [sup_f]'s children's length (M15b) *)
-    | apply subst_dnf; [intuition auto | apply lk_dnf_lsingle; intuition auto] ].
+    | apply subst_dnf; [intuition auto | apply lk_dnf_lsingle; intuition auto]
+    (* [sup_i]'s and [elim_IWf]'s (M17c), below *)
+    | idtac ].
   (* [elimW]'s step telescope (M13b): renamings nested under the payload binders *)
   all: repeat first [ progress cbn [dnftm dnfty] | apply ren_dnf_ty | apply ren_dnf | apply subst_dnf_ty
                     | apply lk_dnf_lsingle | split | exact I ]; intuition auto.
+  (* [sup_i]'s children and [elim_IWf]'s step telescope (M17c) *)
+  all: repeat first [ lazymatch goal with |- True => exact I | |- _ /\ _ => split end | assumption
+                    | lazymatch goal with |- dnfty (iwfFam _ _ _ _ _ _ _ _) => apply dnf_iwfFam end
+                    (* by shape: [apply dnf_tmDNth] on another [app] unfolds [tmDNth] *)
+                    | lazymatch goal with |- dnftm (tmDNth _ _ _ _ _) => apply dnf_tmDNth end
+                    | apply ren_dnf_ty | apply ren_dnf
+                    | apply subst_dnf_ty | apply subst_dnf | apply lk_dnf_lsingle | apply lk_dnf_lsingle2
+                    | apply lk_dnf_llift | progress cbn [dnftm dnfty] ].
 Qed.
 
+(* [IWf] (M17b): [dnth], the family and the induction hypothesis stay folded
+   in [typed_dnf], for their lemmas *)
+Local Arguments tmDNth : simpl never. Local Arguments iwfFam : simpl never.
+Local Arguments iwfIH : simpl never.
 Theorem typed_dnf :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> dnfctx Γ) /\
@@ -138,7 +187,7 @@ Proof.
   apply typing_mut; intros; cbn in *;
     try match goal with H : in_gctx _ _ _ |- _ => pose proof (in_gctx_dnf _ _ _ H); cbn in * end;
     repeat match goal with H : _ /\ _ |- _ => destruct H end;
-    repeat split; eauto using subst_dnf_ty, subst_dnf, ren_dnf_ty, ren_dnf, in_ctx_dnf with nf.
+    repeat split; eauto using subst_dnf_ty, subst_dnf, ren_dnf_ty, ren_dnf, in_ctx_dnf, dnf_tmDNth, dnf_iwfFam with nf.
   all: try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle2; cbn; tauto]].
   all: try solve [apply subst_dnf_ty; auto; intros n; apply dnfl_llk; auto].
   all: try solve [apply subst_dnf; auto; intros n; apply dnfl_llk; auto].
@@ -152,7 +201,13 @@ Proof.
                    cbn; intuition auto ].
   all: try solve [ eapply dnf_redT; [ .. | eassumption ]; cbn; intuition auto
                  | eapply dnf_redt; [ .. | eassumption ]; cbn; intuition auto ].
-  all: try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle3; auto using dnf_wIH, dnf_wfIH]].
+  all: try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle3; auto using dnf_wIH, dnf_wfIH, dnf_iwfIH]].
+  (* [DVec]'s successor reduct (M17a): the head's and the tail's instances *)
+  all: try solve [ repeat first [ progress cbn [dnftm dnfty] | apply subst_dnf_ty | apply ren_dnf_ty | apply ren_dnf
+                                | apply lk_dnf_lsingle | split | exact I ]; intuition auto ].
+  (* [elim_IWf]'s β (M17b): the motive at the [sup_i]'s index and itself *)
+  all: try solve [apply subst_dnf_ty; [assumption | apply lk_dnf_lsingle2; cbn [dnftm dnfty];
+                  intuition auto using subst_dnf, lk_dnf_lsingle]].
   (* η of the meta-functions (M5): the weakened function *)
   all: apply gren_dnf_all.
 Qed.

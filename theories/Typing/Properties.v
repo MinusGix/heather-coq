@@ -296,6 +296,33 @@ Lemma wf_ctx_sq G i Δ l A : lwf (gL G) l -> [ G ; Δ ⊢[ i ] A @ l ] -> [ G ; 
   [ G ; Δ ,, tySq l A @ l ⊢[ typeof i ] ].
 Proof. intros Hl HA HΔ. apply wfc_ext; [exact HΔ | now apply wft_sq_typeof | exact Hl]. Qed.
 #[export] Hint Resolve wf_ctx_sq wft_sq_typeof : wk.
+(** [DVec]'s family context (M17a). *)
+Lemma wft_fin_typeof G i Δ n : i <> lV -> [ G ; Δ ⊢[ i ] n : tyNat @ lzero ] ->
+  [ G ; Δ ⊢[ typeof i ] tyFin n @ lzero ].
+Proof.
+  intros Hv Hn. apply wft_fin; [destruct i; cbn; congruence | eapply lift_tm; [exact Hn | apply lle_self_typeof]].
+Qed.
+Lemma wf_ctx_fin G i Δ n : i <> lV -> [ G ; Δ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Δ ⊢[ typeof i ] ] ->
+  [ G ; Δ ,, tyFin n @ lzero ⊢[ typeof i ] ].
+Proof. intros Hv Hn HΔ. apply wfc_ext; [exact HΔ | now apply wft_fin_typeof | exact I]. Qed.
+Lemma wf_ctx_fin_zero G i Δ : compt i -> [ G ; Δ ⊢[ typeof i ] ] ->
+  [ G ; Δ ,, tyFin zero @ lzero ⊢[ typeof i ] ].
+Proof. intros Hc HΔ. apply wf_ctx_fin; [now apply compt_notV | apply wf_zero; [now apply compt_notV | exact HΔ] | exact HΔ]. Qed.
+Lemma wf_ctx_fin_succ G i Δ n : compt i -> [ G ; Δ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Δ ⊢[ typeof i ] ] ->
+  [ G ; Δ ,, tyFin (succ n) @ lzero ⊢[ typeof i ] ].
+Proof. intros Hc Hn HΔ. apply wf_ctx_fin; [now apply compt_notV | apply wf_succ; [now apply compt_notV | exact Hn] | exact HΔ]. Qed.
+Lemma wft_fin_zero_typeof G i Δ : compt i -> [ G ; Δ ⊢[ typeof i ] ] -> [ G ; Δ ⊢[ typeof i ] tyFin zero @ lzero ].
+Proof. intros Hc HΔ. apply wft_fin_typeof; [now apply compt_notV | apply wf_zero; [now apply compt_notV | exact HΔ]]. Qed.
+Lemma wft_fin_succ_typeof G i Δ n : compt i -> [ G ; Δ ⊢[ i ] n : tyNat @ lzero ] ->
+  [ G ; Δ ⊢[ typeof i ] tyFin (succ n) @ lzero ].
+Proof. intros Hc Hn. apply wft_fin_typeof; [now apply compt_notV | apply wf_succ; [now apply compt_notV | exact Hn]]. Qed.
+#[export] Hint Resolve wft_fin_typeof wft_fin_zero_typeof wft_fin_succ_typeof
+  wf_ctx_fin wf_ctx_fin_zero wf_ctx_fin_succ : wk.
+(** [DVec]'s successor, at a reduct spelled up to syntax (its renamed tail). *)
+Lemma eqty_dvec_succ' G i Γ l n F T : compt i -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyFin (succ n) @ lzero ⊢[ i ] F @ l ] -> tySig l l (dvecHd n F) (dvecTl l n F) = T ->
+  [ G ; Γ ⊢[ i ] tyDVec l (succ n) F ≅ T @ l ].
+Proof. intros ? ? ? ? <-. now apply eqty_dvec_succ. Qed.
 #[export] Hint Extern 3 (lwf _ (lmax _ _)) => (cbn; split; eauto using lequiv_wf_l, lequiv_wf_r) : wk.
 (** A computing layer sees layer-C definitions (M9). *)
 Lemma compt_lle_C i : compt i -> lle lC i.
@@ -509,6 +536,45 @@ Ltac wk_Wmot :=
                  | apply wf_ctx_W; fix_layer; solve [eauto 12 with wk] ]
   end.
 
+(** [IWf] (M17b): a premise under binders whose types, like its own,
+    commute with the renaming only by an equation, closed by congruence
+    down to the renamed leaves. *)
+Ltac wk_rext :=
+  let n := fresh "n" in intros n;
+  do 6 try (destruct n as [|n]; rlk_simpl; rewrite ?Nat.add_1_r; try solve [reflexivity | lia]);
+  rlk_simpl; rewrite ?Nat.add_1_r; first [reflexivity | lia].
+Ltac wk_leaf := first [ reflexivity
+  | rewrite ?ren_ren_comp_ty, ?ren_ren_comp; first [apply ren_ext_ty | apply ren_ext_tm]; wk_rext ].
+Ltac wk_cong := lazymatch goal with
+  | |- ?x = ?y => let h := rhead x in
+      lazymatch h with
+      | ren_ty => wk_leaf | ren_tm => wk_leaf | @ren => wk_leaf
+      | _ => first [reflexivity | f_equal]
+      end
+  end.
+Ltac wk_eqI := push_ren; wk_rewrite; push_ren; wk_rewrite; push_ren; fold_subst; repeat wk_cong.
+Ltac wk_Ictx :=
+  repeat apply wfc_ext; fix_layer;
+  first [ solve [eauto 12 with wk]
+        | solve [push_ren; eauto 12 with wk]
+        | eapply lift_ty; [ match goal with
+                            | IH : forall Δ r, wkr r Δ _ -> _ -> _ |- _ =>
+                                eapply IH; [ repeat (eapply wkr_up'; [ | reflexivity]); eassumption | wk_Ictx ]
+                            end
+                          | apply lle_self_typeof ] ].
+Ltac wk_Iprem lem :=
+  match goal with
+  | IH : forall Δ r, wkr r Δ _ -> _ -> _ |- _ =>
+      eapply lem; [ eapply IH; [ repeat (eapply wkr_up'; [ | reflexivity]); eassumption | ] | .. ];
+      [ idtac | solve [wk_eqI] .. ]; wk_Ictx
+  end.
+Ltac wk_I :=
+  fix_layer;
+  first [ solve [wk_premise]
+        | solve [wk_Iprem wf_tm_regctx] | solve [wk_Iprem eq_tm_regctx]
+        | solve [wk_Iprem wf_ty_regboth] | solve [wk_Iprem eq_ty_regall]
+        | solve [wk_Iprem wf_tm_regtm] ].
+
 Ltac wk_manual :=
   match goal with
   (* [W] (M13a) *)
@@ -525,6 +591,22 @@ Ltac wk_manual :=
   | |- eq_tm _ _ _ (tmElimWf _ _ _ _ _ _ (tmSupf _ _ _ _ _)) _ _ _ =>
       eapply eqtm_elimWf_supf; first [solve [wk_Wfmot] | solve [wk_Wstep] | wk_premise]
   | |- eq_tm _ _ _ (tmElimWf _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimWf; first [solve [wk_Wfmot] | solve [wk_Wstep] | wk_premise]
+  (* the codes of [DVec] and [IWf] (M17c) *)
+  | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) (tyEl _ _) _ => eapply eqty_El_iwf; wk_I
+  | |- eq_ty _ _ _ (tyDVec _ _ _) (tyEl _ _) _ => eapply eqty_El_dvec; wk_I
+  | |- wf_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ => eapply wf_code_iwf; wk_I
+  | |- eq_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwf; wk_I
+  | |- wf_tm _ _ _ (tmDVec _ _ _) _ _ => eapply wf_code_dvec; wk_I
+  | |- eq_tm _ _ _ (tmDVec _ _ _) _ _ _ => eapply eqtm_code_dvec; wk_I
+  (* [IWf] (M17b) *)
+  | |- wf_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ => eapply wft_iwf; wk_I
+  | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ _ => eapply eqty_iwf; wk_I
+  | |- wf_tm _ _ _ (tmSupi _ _ _ _ _ _ _ _ _) _ _ => eapply wf_supi; wk_I
+  | |- eq_tm _ _ _ (tmSupi _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_supi; wk_I
+  | |- wf_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_elimIWf; wk_I
+  | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ (tmSupi _ _ _ _ _ _ _ _ _)) _ _ _ =>
+      wk_rewrite; push_ren; eapply eqtm_elimIWf_supi; wk_I
+  | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimIWf; wk_I
   (* [ind_∥∥] (M16a): its step's type, through the induction hypotheses *)
   | |- wf_tm _ _ _ (tmElimSq _ _ _ _ _ _) _ _ => eapply wf_elimSq; wk_premise
   | |- eq_tm _ _ _ (tmElimSq _ _ _ _ _ (tmSq _ _ _)) _ _ _ => eapply eqtm_elimSq_sq; wk_premise
@@ -566,6 +648,10 @@ Ltac wk_manual :=
   | |- wf_tm _ _ _ (uapp _ _) _ _ => eapply wf_uapp; try wk_upi_body; wk_premise
   | |- eq_tm _ _ _ (uapp (ulam _ _ _ _) _) _ _ _ => eapply eqtm_ubeta; try wk_upi_body; wk_premise
   | |- eq_tm _ _ _ (uapp _ _) _ _ _ => eapply eqtm_uapp; try wk_upi_body; wk_premise
+  (* dependent tuples (M17a): the tail's index annotation shifts the length *)
+  | |- eq_ty _ _ _ (tyDVec _ (succ _) _) (tySig _ _ _ _) _ =>
+      eapply eqty_dvec_succ'; [wk_premise .. |];
+      repeat (f_equal; try ren_comm); rlk_simpl; reflexivity
   (* dependent pairs (M8) *)
   | |- eq_tm _ _ _ (tmPair _ _ _ _ (tmFst _ _ _ _ _) (tmSnd _ _ _ _ _)) _ _ _ =>
       eapply eqtm_sig_eta; wk_premise

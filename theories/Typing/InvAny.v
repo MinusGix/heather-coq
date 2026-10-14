@@ -272,6 +272,35 @@ Lemma inva_elimWf {G i Γ l l' A N M c t T k} : [ G ; Γ ⊢[ i ] tmElimWf l l' 
     lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ typeof i ] T ≅ M[lsingle t] @ k ].
 Proof. inv_tm_any. Qed.
 
+(** Indexed finitary trees (M17b). *)
+Lemma inva_supi {G i Γ l li X A N Ot C a cs T k} : [ G ; Γ ⊢[ i ] tmSupi l li X A N Ot C a cs : T @ k ] ->
+  (i <> lV /\
+    lwf (gL G) l /\ lwf (gL G) li /\
+    [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\ [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C : X⟨↑⟩⟨↑⟩ @ li ] /\
+    [ G ; Γ ⊢[ i ] a : A @ l ] /\
+    [ G ; Γ ⊢[ i ] cs : tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a) @ lmax l li ]) /\
+    lvl_eq (gL G) k (lmax l li) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyIWf l li X A N Ot C Ot[lsingle a] @ k ].
+Proof. inv_tm_any. Qed.
+
+Lemma inva_elimIWf {G i Γ l li l' X A N Ot C M c m t T k} : 
+  [ G ; Γ ⊢[ i ] tmElimIWf l li l' X A N Ot C M c m t : T @ k ] ->
+  (i <> lV /\ lwf (gL G) l' /\
+    lwf (gL G) l /\ lwf (gL G) li /\
+    [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\ [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C : X⟨↑⟩⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, X @ li ⊢[ i ] iwfmotty l li X A N Ot C @ lmax l li ] /\
+    [ G ; Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li ⊢[ i ] M @ l' ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] iwfcsty l li X A N Ot C @ lmax l li ] /\
+    [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ⊢[ i ] iwfihty l li l' X A N Ot C M @ lmax lzero l' ] /\
+    [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l'
+        ⊢[ i ] c : iwfstepty l li X A N Ot C M @ l' ] /\
+    [ G ; Γ ⊢[ i ] m : X @ li ] /\ [ G ; Γ ⊢[ i ] t : tyIWf l li X A N Ot C m @ lmax l li ]) /\
+    lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ typeof i ] T ≅ M[lsingle2 m t] @ k ].
+Proof. inv_tm_any. Qed.
+
 (** Strict equality's codes (M10c). *)
 Lemma inva_code_seq {G i Γ l s t u T k} : [ G ; Γ ⊢[ i ] tmSEq l s t u : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
@@ -325,6 +354,22 @@ Proof. inv_tm_any. Qed.
 Lemma inva_code_sq {G i Γ l s T k} : [ G ; Γ ⊢[ i ] tmSqCode l s : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ]) /\
     lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU l @ k ].
+Proof. inv_tm_any. Qed.
+
+(** The codes of [DVec] and [IWf] (M17c). *)
+Lemma inva_code_dvec {G i Γ l n f T k} : [ G ; Γ ⊢[ i ] tmDVec l n f : T @ k ] ->
+  (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] /\
+    [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] f : tyU l @ lsuc l ]) /\
+    lvl_eq (gL G) k (lsuc l) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU l @ k ].
+Proof. inv_tm_any. Qed.
+Lemma inva_code_iwf {G i Γ l li x s n o c m T k} : [ G ; Γ ⊢[ i ] tmIWf l li x s n o c m : T @ k ] ->
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) li /\
+    [ G ; Γ ⊢[ i ] x : tyU li @ lsuc li ] /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] /\
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o : tyEl li x⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] c : tyEl li x⟨↑⟩⟨↑⟩ @ li ] /\
+    [ G ; Γ ⊢[ i ] m : tyEl li x @ li ]) /\
+    lvl_eq (gL G) k (lsuc (lmax l li)) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU (lmax l li) @ k ].
 Proof. inv_tm_any. Qed.
 
 (** ** The M-only heads *)

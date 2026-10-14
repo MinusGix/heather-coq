@@ -10,13 +10,14 @@
     contextual types) do not depend on the ambient context, so local
     weakening leaves [ac_ctx] untouched. *)
 From DeLaM.Syntax Require Export LevelRed.
+From DeLaM.Syntax Require Import LevelLwf.
 From DeLaM.Typing Require Export Algorithmic Properties GWeakening.
 
 Ltac push_ren_in H := revert H; push_ren; intros H.
 
 Lemma posty_ren W r : posty W -> posty W⟨r⟩.
 Proof.
-  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum | apply posty_W | apply posty_wf | idtac].
+  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum | apply posty_W | apply posty_wf | apply posty_iwf | idtac].
   apply posty_ne, whne_ty_ren; assumption.
 Qed.
 
@@ -42,6 +43,11 @@ Definition AW_tmnf G Γ t t' T : Prop := forall Δ r, wkr r Δ Γ -> ac_tmnf G �
 Definition AW_tmne G Γ t t' T : Prop := forall Δ r, wkr r Δ Γ -> ac_tmne G Δ t⟨r⟩ t'⟨r⟩ T⟨r⟩.
 Definition AW_tmnee G Γ t t' T : Prop := forall Δ r, wkr r Δ Γ -> ac_tmnee G Δ t⟨r⟩ t'⟨r⟩ T⟨r⟩.
 Definition AW_sub G Γ d d' Θ : Prop := forall Δ r, wkr r Δ Γ -> ac_sub G Δ (lren d r) (lren d' r) Θ.
+
+Lemma ac_ty_eq4 {G Γ Γ' T1 T2 U1 U2} : ac_ty G Γ T1 T2 -> Γ = Γ' -> T1 = U1 -> T2 = U2 -> ac_ty G Γ' U1 U2.
+Proof. now intros ? -> -> ->. Qed.
+Lemma ac_tm_eq5 {G Γ Γ' t1 t2 u1 u2 T T'} : ac_tm G Γ t1 t2 T -> Γ = Γ' -> t1 = u1 -> t2 = u2 -> T = T' -> ac_tm G Γ' u1 u2 T'.
+Proof. now intros ? -> -> -> ->. Qed.
 
 (** The recursors: motives under [⇑r], branches under [⇑ⁿr]. *)
 Lemma W_branches {G Γ MT Mt l1 l2 bs bs' Δ r} : wkr r Δ Γ ->
@@ -138,7 +144,14 @@ Proof.
           | (* [elim_Wf]'s step (M15a): likewise *)
             unfold AW_tmne, AW_tmnee, AW_ty, AW_tm in *;
             let Δ := fresh "Δ" in let r := fresh "r" in let Hr := fresh "Hr" in
-            intros Δ r Hr; W_norm; W_inst Hr; eapply actmne_elimWf; try eassumption; W_norm; eassumption ].
+            intros Δ r Hr; W_norm; W_inst Hr; eapply actmne_elimWf; try eassumption; W_norm; eassumption
+          | (* [elim_IWf]'s (M17b): likewise *)
+            unfold AW_tmne, AW_tmnee, AW_ty, AW_tm in *;
+            let Δ := fresh "Δ" in let r := fresh "r" in let Hr := fresh "Hr" in
+            intros Δ r Hr; W_norm; W_inst Hr; eapply actmne_elimIWf; try eassumption;
+            (* its telescopes commute with [r] only by an equation (as in [wk_I]) *)
+            first [ match goal with H : ac_ty _ _ _ _ |- ac_ty _ _ _ _ => eapply (ac_ty_eq4 H); solve [wk_eqI] end
+                  | match goal with H : ac_tm _ _ _ _ _ |- ac_tm _ _ _ _ _ => eapply (ac_tm_eq5 H); solve [wk_eqI] end ] ].
 Qed.
 
 (** ** Global weakening
@@ -151,7 +164,7 @@ Ltac push_gren_in H := revert H; push_gren; intros H.
 
 Lemma posty_gren W ξ : posty W -> posty W⟪ξ⟫.
 Proof.
-  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum | apply posty_W | apply posty_wf | idtac].
+  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum | apply posty_W | apply posty_wf | apply posty_iwf | idtac].
   apply posty_ne, whne_ty_gren; assumption.
 Qed.
 
@@ -333,7 +346,8 @@ Ltac U_norm1 :=
   rewrite ?usubst_lsingle_ty, ?usubst_lsingle, ?usubst_tmNth, ?usubst_lsingle2_ty, ?usubst_lsucc_ty, ?usubst_gren_ctx', ?usubst_gren_ty', ?usubst_gren_tm',
           ?usubst_ren', ?usubst_ren_ty', ?gctx_uwk_usubst, ?ucren_ush_usubst, ?uren_ush_usubst_tm,
           ?ubvars_uupn, ?mkrb_usubst, ?motT_usubst, ?mott_usubst, ?wrapMT_usubst, ?wrapMt_usubst,
-          ?recGT_usubst, ?recΓT_usubst, ?recGt_usubst, ?recΓt_usubst, ?usubst_gsingle_ty;
+          ?recGT_usubst, ?recΓT_usubst, ?recGt_usubst, ?recΓt_usubst, ?usubst_gsingle_ty,
+          ?usubst_iwfFam, ?usubst_tmDNth;
   cbn [gousubst]; upush.
 (* twice, as [W_norm] *)
 Ltac U_norm := U_norm1; U_norm1.
@@ -584,6 +598,12 @@ Proof.
     first [ solve [eapply L_act_red; eassumption] | solve [eapply L_actm_red; eassumption]
           | solve [eapply L_acs_pt; eassumption]
           | match goal with |- AL_tmne _ _ (elimt _ _ _ _ _ _ (boxt _)) _ _ => solve [L_case_glob] end
-          | L_case ].
+          | L_case
+          | (* [elim_IWf]'s (M17b): its induction hypothesis's type is [≡ₗ] by [iwfihty_leq] *)
+            unfold AL_ty, AL_tm, AL_tmne, AL_tmnee in *; let x := fresh "x" in let E := fresh "E" in intros x E; linv E; subst;
+            eapply actmne_elimIWf;
+            first [ L_prem
+                  | match goal with IH : forall T2, ty_leq _ T2 -> ac_ty _ _ _ T2 |- _ =>
+                      apply IH, iwfihty_leq; assumption end ] ].
 Qed.
 

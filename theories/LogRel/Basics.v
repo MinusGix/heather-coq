@@ -48,6 +48,7 @@ Proof.
   - eapply LRw; [split|..]; eauto.
   - eapply LRwf; eauto.
   - eapply LRsq; eauto.
+  - eapply LRiwf; eauto.
 Qed.
 
 Theorem cumul_down n m G Γ T T' l R :
@@ -97,6 +98,10 @@ Proof.
     all: intros; match goal with IH : _ |- LR _ _ _ _ _ _ _ _ => eapply IH; lia end.
   - match goal with Hs : lequiv _ l l1 |- _ => rewrite (lequiv_measure_eq _ _ _ Hs) in Hle end.
     eapply LRsq; eauto.
+  - match goal with Hs : lequiv _ l (lmax l1 li1) |- _ =>
+      rewrite (lequiv_measure_eq _ _ _ Hs), lmeasure_max in Hle end.
+    eapply LRiwf; eauto.
+    all: intros; match goal with IH : _ |- LR _ _ _ _ _ _ _ _ => eapply IH; lia end.
 Qed.
 
 (** A type at level [l] is related identically at every stage above
@@ -170,6 +175,7 @@ Proof.
   - eapply LRw; eauto using releq_trans, releq_sym.
   - eapply LRwf; eauto using releq_trans, releq_sym.
   - eapply LRsq; eauto using releq_trans, releq_sym.
+  - eapply LRiwf; eauto using releq_trans, releq_sym.
 Qed.
 
 Theorem LR_lconv n rec G Γ T T' l l' R :
@@ -196,7 +202,10 @@ Proof.
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l l1 l2 A A' RA R Hl Hl2 Hw HT HT' HA HAA HRA Hps Hpt HR];
+                | G Γ T T' l l1 l2 A A' RA R Hl Hl2 Hw HT HT' HA HAA HRA Hps Hpt HR
+                | G Γ T T' l l1 li1 l2 li2 X X' A A' N N' Ot Ot' C C' m m' idxR domR R Hl Hl2 Hli2 Hw Hwi
+                    HT HT' HX HX' HA HA' HN HN' HO HO' HC HC' Hmt Hmt' HXX HAA HNN HOO HCC Hmm
+                    idxAd Hisym Histr domAd arAd otAd chAd ixAd HR];
     intros Hl'.
   - eapply LRnat; eauto using lequiv_trans, tyred_lconv.
   - eapply (LRU n rec G Γ T T' l' l1 l2); eauto using lequiv_trans, tyred_lconv.
@@ -219,6 +228,8 @@ Proof.
       eauto using lequiv_trans, tyred_lconv.
   - eapply (LRwf n rec G Γ T T' l' l1 l2 A A' N N' domR); eauto using lequiv_trans, tyred_lconv.
   - eapply (LRsq n rec G Γ T T' l' l1 l2 A A' RA); eauto using lequiv_trans, tyred_lconv.
+  - eapply (LRiwf n rec G Γ T T' l' l1 li1 l2 li2 X X' A A' N N' Ot Ot' C C' m m' idxR domR);
+      eauto using lequiv_trans, tyred_lconv.
 Qed.
 
 End Basics.

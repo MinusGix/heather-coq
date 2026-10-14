@@ -448,10 +448,15 @@ Lemma gs_elimWf l l' A N M c t :
 Proof. reflexivity. Qed.
 (** Propositional truncation (M16a). *)
 Lemma gs_tySq l A : (tySq l A)⦃σ⦄ = tySq l A⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tyDVec l n F : (tyDVec l n F)⦃σ⦄ = tyDVec l n⦃σ⦄ F⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_sq l A a : (tmSq l A a)⦃σ⦄ = tmSq l A⦃σ⦄ a⦃σ⦄. Proof. reflexivity. Qed.
 Lemma gs_elimSq l l' A M c t : (tmElimSq l l' A M c t)⦃σ⦄ = tmElimSq l l' A⦃σ⦄ M⦃σ⦄ c⦃σ⦄ t⦃σ⦄.
 Proof. reflexivity. Qed.
 Lemma gs_tmSqCode l s : (tmSqCode l s)⦃σ⦄ = tmSqCode l s⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tmDVec l n f : (tmDVec l n f)⦃σ⦄ = tmDVec l n⦃σ⦄ f⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tmIWf l li x s n o c m :
+  (tmIWf l li x s n o c m)⦃σ⦄ = tmIWf l li x⦃σ⦄ s⦃σ⦄ n⦃σ⦄ o⦃σ⦄ c⦃σ⦄ m⦃σ⦄.
+Proof. reflexivity. Qed.
 (** [nth] and [elim_Wf]'s induction hypothesis (M15a). *)
 Lemma gs_tmNth l T k cs i : (tmNth l T k cs i)⦃σ⦄ = tmNth l T⦃σ⦄ k⦃σ⦄ cs⦃σ⦄ i⦃σ⦄.
 Proof.
@@ -464,6 +469,47 @@ Lemma gs_wfIH l l' A N M c a cs :
 Proof.
   unfold wfIH. rewrite gs_lam, gs_elimWf, gs_tmNth, gs_var, gs_tyFin.
   repeat rewrite ?gsubst_ren_ty', ?gsubst_ren, ?gsubst_subst, ?gs_tyWf. reflexivity.
+Qed.
+(** [IWf], [dnth] and [elim_IWf]'s induction hypothesis (M17b). *)
+Lemma gs_tyIWf l li X A N Ot C m :
+  (tyIWf l li X A N Ot C m)⦃σ⦄ = tyIWf l li X⦃σ⦄ A⦃σ⦄ N⦃σ⦄ Ot⦃σ⦄ C⦃σ⦄ m⦃σ⦄.
+Proof. reflexivity. Qed.
+Lemma gs_supi l li X A N Ot C a cs :
+  (tmSupi l li X A N Ot C a cs)⦃σ⦄ = tmSupi l li X⦃σ⦄ A⦃σ⦄ N⦃σ⦄ Ot⦃σ⦄ C⦃σ⦄ a⦃σ⦄ cs⦃σ⦄.
+Proof. reflexivity. Qed.
+Lemma gs_elimIWf l li l' X A N Ot C M c m t :
+  (tmElimIWf l li l' X A N Ot C M c m t)⦃σ⦄
+  = tmElimIWf l li l' X⦃σ⦄ A⦃σ⦄ N⦃σ⦄ Ot⦃σ⦄ C⦃σ⦄ M⦃σ⦄ c⦃σ⦄ m⦃σ⦄ t⦃σ⦄.
+Proof. reflexivity. Qed.
+Lemma gs_llift_single (b a : tm) : b[llift (lsingle a)]⦃σ⦄ = b⦃σ⦄[llift (lsingle a⦃σ⦄)].
+Proof.
+  rewrite gsubst_subst. apply subst_ext; intros [|[|n]]; rewrite ?llk_glsubst, ?llk_llift; cbn; auto.
+  rewrite gsubst_ren. reflexivity.
+Qed.
+Lemma gs_single_ty0 (M : ty) a : M[lsingle a]⦃σ⦄ = M⦃σ⦄[lsingle a⦃σ⦄].
+Proof. rewrite gsubst_subst_ty; reflexivity. Qed.
+Lemma gs_single0 (b a : tm) : b[lsingle a]⦃σ⦄ = b⦃σ⦄[lsingle a⦃σ⦄].
+Proof. rewrite gsubst_subst; reflexivity. Qed.
+Lemma gs_tmDNth l n F cs i : (tmDNth l n F cs i)⦃σ⦄ = tmDNth l n⦃σ⦄ F⦃σ⦄ cs⦃σ⦄ i⦃σ⦄.
+Proof.
+  unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
+  repeat progress (cbn [gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty];
+    try change (gsubst_tm ?x ?σ) with x⦃σ⦄; try change (gsubst_ty ?x ?σ) with x⦃σ⦄;
+    rewrite ?gsubst_ren_ty', ?gsubst_ren, ?gs_single_ty0).
+  reflexivity.
+Qed.
+Lemma gs_iwfFam l li X A N Ot C a :
+  (iwfFam l li X A N Ot C a)⦃σ⦄ = iwfFam l li X⦃σ⦄ A⦃σ⦄ N⦃σ⦄ Ot⦃σ⦄ C⦃σ⦄ a⦃σ⦄.
+Proof.
+  unfold iwfFam. rewrite gs_tyIWf, gs_llift_single.
+  repeat rewrite ?gsubst_ren_ty', ?gsubst_ren. reflexivity.
+Qed.
+Lemma gs_iwfIH l li l' X A N Ot C M c a cs :
+  (iwfIH l li l' X A N Ot C M c a cs)⦃σ⦄
+  = iwfIH l li l' X⦃σ⦄ A⦃σ⦄ N⦃σ⦄ Ot⦃σ⦄ C⦃σ⦄ M⦃σ⦄ c⦃σ⦄ a⦃σ⦄ cs⦃σ⦄.
+Proof.
+  unfold iwfIH. rewrite gs_lam, gs_elimIWf, gs_tmDNth, gs_var, gs_tyFin.
+  repeat rewrite ?gsubst_ren_ty', ?gsubst_ren, ?gs_iwfFam, ?gs_llift_single, ?gs_single_ty0, ?gs_single0. reflexivity.
 Qed.
 End PushGS.
 
@@ -521,10 +567,19 @@ Ltac push_gsubst_at h k := lazymatch h with
   | @tmElimWf => k gs_elimWf
   | @tmNth => k gs_tmNth
   | @wfIH => k gs_wfIH
+  | @tyIWf => k gs_tyIWf
+  | @tmSupi => k gs_supi
+  | @tmElimIWf => k gs_elimIWf
+  | @tmDNth => k gs_tmDNth
+  | @iwfFam => k gs_iwfFam
+  | @iwfIH => k gs_iwfIH
   | @tySq => k gs_tySq
+  | @tyDVec => k gs_tyDVec
   | @tmSq => k gs_sq
   | @tmElimSq => k gs_elimSq
   | @tmSqCode => k gs_tmSqCode
+  | @tmDVec => k gs_tmDVec
+  | @tmIWf => k gs_tmIWf
   | @tmSig => k gs_tmSig
   | @tmPair => k gs_pair
   | @tmFst => k gs_fst
@@ -659,6 +714,9 @@ Ltac gs_obj Hσ Hin := pose proof (gsw_var _ _ _ Hσ _ _ Hin) as Ho; cbn in Ho.
 
 Ltac gs_manual :=
   match goal with
+  (* [DVec]'s successor (M17a): the tail's index annotation is renamed *)
+  | |- eq_ty _ _ _ (tyDVec _ (succ _) _) (tySig _ _ _ _) _ =>
+      rewrite ?gs_ren; eapply eqty_dvec_succ; gs_premise
   | Hσ : gsub_wf _ ?σ _, Hc : gctx_var _ ?g |- wf_ctx _ _ (pctx (?σ ?g)) =>
       let Ho := fresh "Ho" in pose proof (gsw_var _ _ _ Hσ _ _ (gctx_var_in _ _ Hc)) as Ho; cbn in Ho;
       destruct (σ g); cbn [pctx]; try contradiction;
@@ -833,8 +891,33 @@ Ltac gs_Wprem :=
                  [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gsub] end | gs_eqW]]
         | gs_premise ].
 
+(** [IWf] (M17b): as [W]'s, and its equal motives, induction hypotheses'
+    types and induction hypothesis, whose binders and types hold shifted
+    types and [dnth]. *)
+Ltac gs_IH := match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gsub] end.
+Ltac gs_Iprem :=
+  first [ gs_Wprem
+        | solve [eapply eq_ty_regall; [gs_IH | gs_eqW ..]]
+        | solve [eapply wf_tm_regtm; [gs_IH | gs_eqW ..]] ].
+
 Ltac gs_manual2 :=
   match goal with
+  (* the codes of [DVec] and [IWf] (M17c) *)
+  | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) (tyEl _ _) _ => eapply eqty_El_iwf; gs_Iprem
+  | |- eq_ty _ _ _ (tyDVec _ _ _) (tyEl _ _) _ => eapply eqty_El_dvec; gs_Iprem
+  | |- wf_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ => eapply wf_code_iwf; gs_Iprem
+  | |- eq_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwf; gs_Iprem
+  | |- wf_tm _ _ _ (tmDVec _ _ _) _ _ => eapply wf_code_dvec; gs_Iprem
+  | |- eq_tm _ _ _ (tmDVec _ _ _) _ _ _ => eapply eqtm_code_dvec; gs_Iprem
+  (* [IWf] (M17b) *)
+  | |- wf_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ => eapply wft_iwf; gs_Iprem
+  | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ _ => eapply eqty_iwf; gs_Iprem
+  | |- wf_tm _ _ _ (tmSupi _ _ _ _ _ _ _ _ _) _ _ => eapply wf_supi; gs_Iprem
+  | |- eq_tm _ _ _ (tmSupi _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_supi; gs_Iprem
+  | |- wf_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_elimIWf; gs_Iprem
+  | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ (tmSupi _ _ _ _ _ _ _ _ _)) _ _ _ =>
+      gs_rewrite; eapply eqtm_elimIWf_supi; gs_Iprem
+  | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimIWf; gs_Iprem
   (* [Wf] (M15a) *)
   | |- wf_tm _ _ _ (tmSupf _ _ _ _ _) _ _ => eapply wf_supf; gs_Wprem
   | |- eq_tm _ _ _ (tmSupf _ _ _ _ _) _ _ _ => eapply eqtm_supf; gs_Wprem

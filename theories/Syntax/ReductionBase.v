@@ -76,6 +76,13 @@ Inductive red : tm -> tm -> Prop :=
    scrutinee reduces *)
 | red_elimSq_sq l l' A M c k C a : red (tmElimSq l l' A M c (tmSq k C a)) (c[lsingle a])
 | red_elimSq l l' A M c t t' : red t t' -> red (tmElimSq l l' A M c t) (tmElimSq l l' A M c t')
+(* indexed finitary trees (M17b): β at a [sup_i] of any annotations, at any
+   index; the scrutinee reduces *)
+| red_elimIWf_supi l li l' X A N Ot C M c m k ki X' A' N' Ot' C' a cs :
+    red (tmElimIWf l li l' X A N Ot C M c m (tmSupi k ki X' A' N' Ot' C' a cs))
+        (c[lsingle3 a cs (iwfIH l li l' X A N Ot C M c a cs)])
+| red_elimIWf l li l' X A N Ot C M c m t t' : red t t' ->
+    red (tmElimIWf l li l' X A N Ot C M c m t) (tmElimIWf l li l' X A N Ot C M c m t')
 (* the identity type (M11a): J computes on refl, ignoring the annotations and
    the right endpoint as the other β rules do; otherwise its proof reduces *)
 | red_J_refl l l' A a M c u k B b : red (tmJ l l' A a M c u (tmRefl k B b)) c
@@ -105,13 +112,22 @@ with red_ty : ty -> ty -> Prop :=
 | red_El_wf l l0 s n : red_ty (tyEl l (tmWf l0 s n)) (tyWf l0 (tyEl l0 s) n)
 (* the code of ∥·∥ (M16b) *)
 | red_El_sq l l0 s : red_ty (tyEl l (tmSqCode l0 s)) (tySq l0 (tyEl l0 s))
+(* the codes of DVec and IWf (M17c): the terms ride across, the index
+   type's and the shapes' codes decode *)
+| red_El_dvec l l0 n f : red_ty (tyEl l (tmDVec l0 n f)) (tyDVec l0 n (tyEl l0 f))
+| red_El_iwf l l0 li x s n o c m :
+    red_ty (tyEl l (tmIWf l0 li x s n o c m)) (tyIWf l0 li (tyEl li x) (tyEl l0 s) n o c m)
 (* length-indexed tuples and finite indices (M14a): compute on the length *)
 | red_vec_zero l A : red_ty (tyVec l A zero) (tyUnit l)
 | red_vec_succ l A n : red_ty (tyVec l A (succ n)) (tySig l l A (tyVec l A⟨↑⟩ n⟨↑⟩))
 | red_vec l A n n' : red n n' -> red_ty (tyVec l A n) (tyVec l A n')
 | red_fin_zero : red_ty (tyFin zero) (tyEmpty lzero)
 | red_fin_succ n : red_ty (tyFin (succ n)) (tySum lzero lzero (tyUnit lzero) (tyFin n))
-| red_fin n n' : red n n' -> red_ty (tyFin n) (tyFin n').
+| red_fin n n' : red n n' -> red_ty (tyFin n) (tyFin n')
+(* dependent tuples (M17a): compute on the length *)
+| red_dvec_zero l F : red_ty (tyDVec l zero F) (tyUnit l)
+| red_dvec_succ l n F : red_ty (tyDVec l (succ n) F) (tySig l l (dvecHd n F) (dvecTl l n F))
+| red_dvec l n n' F : red n n' -> red_ty (tyDVec l n F) (tyDVec l n' F).
 
 Scheme red_mut := Induction for red Sort Prop
   with red_ty_mut := Induction for red_ty Sort Prop.
@@ -183,7 +199,10 @@ Proof.
         | Hr : red (tmSup _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSupf _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSq _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmSupi _ _ _ _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSqCode _ _) _ |- _ => inversion Hr
+        | Hr : red (tmDVec _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmIWf _ _ _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red_ty (tyPi _ _ _ _) _ |- _ => inversion Hr
         end;
     try congruence; try (f_equal; eauto).
@@ -255,6 +274,9 @@ Lemma reds_J l l' A a M c u e e' : reds e e' -> reds (tmJ l l' A a M c u e) (tmJ
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_elimWf l l' A N M c t t' : reds t t' -> reds (tmElimWf l l' A N M c t) (tmElimWf l l' A N M c t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_elimIWf l li l' X A N Ot C M c m t t' : reds t t' ->
+  reds (tmElimIWf l li l' X A N Ot C M c m t) (tmElimIWf l li l' X A N Ot C M c m t').
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_elimSq l l' A M c t t' : reds t t' -> reds (tmElimSq l l' A M c t) (tmElimSq l l' A M c t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_El l t t' : reds t t' -> reds_ty (tyEl l t) (tyEl l t').
@@ -262,6 +284,8 @@ Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with 
 Lemma reds_vec l A n n' : reds n n' -> reds_ty (tyVec l A n) (tyVec l A n').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_fin n n' : reds n n' -> reds_ty (tyFin n) (tyFin n').
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_dvec l n n' F : reds n n' -> reds_ty (tyDVec l n F) (tyDVec l n' F).
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 
 (** ** Stability under renaming *)

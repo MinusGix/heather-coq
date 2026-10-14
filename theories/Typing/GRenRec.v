@@ -272,11 +272,16 @@ Lemma gren_elimWf l l' A N M c t :
 Proof. reflexivity. Qed.
 (** Propositional truncation (M16a). *)
 Lemma gren_tySq l A : (tySq l A)⟪ξ⟫ = tySq l A⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tyDVec l n F : (tyDVec l n F)⟪ξ⟫ = tyDVec l n⟪ξ⟫ F⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_sq l A a : (tmSq l A a)⟪ξ⟫ = tmSq l A⟪ξ⟫ a⟪ξ⟫. Proof. reflexivity. Qed.
 Lemma gren_elimSq l l' A M c t :
   (tmElimSq l l' A M c t)⟪ξ⟫ = tmElimSq l l' A⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ t⟪ξ⟫.
 Proof. reflexivity. Qed.
 Lemma gren_tmSqCode l s : (tmSqCode l s)⟪ξ⟫ = tmSqCode l s⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tmDVec l n f : (tmDVec l n f)⟪ξ⟫ = tmDVec l n⟪ξ⟫ f⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tmIWf l li x s n o c m :
+  (tmIWf l li x s n o c m)⟪ξ⟫ = tmIWf l li x⟪ξ⟫ s⟪ξ⟫ n⟪ξ⟫ o⟪ξ⟫ c⟪ξ⟫ m⟪ξ⟫.
+Proof. reflexivity. Qed.
 Lemma gren_tmNth l T k cs i : (tmNth l T k cs i)⟪ξ⟫ = tmNth l T⟪ξ⟫ k⟪ξ⟫ cs⟪ξ⟫ i⟪ξ⟫.
 Proof.
   unfold tmNth, nthMot, nthBase, nthStep. cbn [gren GRen_tm gren_tm GRen_ty gren_ty].
@@ -288,6 +293,42 @@ Lemma gren_wfIH l l' A N M c a cs :
 Proof.
   unfold wfIH. rewrite gren_lam, gren_elimWf, gren_tmNth, gren_var, gren_tyFin.
   repeat rewrite ?gren_ren_ty', ?gren_ren, ?gren_single, ?gren_tyWf. reflexivity.
+Qed.
+(** Indexed trees (M17b), [dnth] and [elim_IWf]'s induction hypothesis. *)
+Lemma gren_tyIWf l li X A N Ot C m :
+  (tyIWf l li X A N Ot C m)⟪ξ⟫ = tyIWf l li X⟪ξ⟫ A⟪ξ⟫ N⟪ξ⟫ Ot⟪ξ⟫ C⟪ξ⟫ m⟪ξ⟫.
+Proof. reflexivity. Qed.
+Lemma gren_supi l li X A N Ot C a cs :
+  (tmSupi l li X A N Ot C a cs)⟪ξ⟫ = tmSupi l li X⟪ξ⟫ A⟪ξ⟫ N⟪ξ⟫ Ot⟪ξ⟫ C⟪ξ⟫ a⟪ξ⟫ cs⟪ξ⟫.
+Proof. reflexivity. Qed.
+Lemma gren_elimIWf l li l' X A N Ot C M c m t :
+  (tmElimIWf l li l' X A N Ot C M c m t)⟪ξ⟫ =
+  tmElimIWf l li l' X⟪ξ⟫ A⟪ξ⟫ N⟪ξ⟫ Ot⟪ξ⟫ C⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ m⟪ξ⟫ t⟪ξ⟫.
+Proof. reflexivity. Qed.
+Lemma gren_llift_single (b a : tm) : b[llift (lsingle a)]⟪ξ⟫ = b⟪ξ⟫[llift (lsingle a⟪ξ⟫)].
+Proof.
+  rewrite gren_subst. apply subst_ext; intros [|[|n]]; rewrite ?llk_glren, ?llk_llift; cbn; auto.
+  change (gren_tm ?x ?ξ0) with x⟪ξ0⟫. rewrite gren_ren. reflexivity.
+Qed.
+Lemma gren_tmDNth l n F cs i : (tmDNth l n F cs i)⟪ξ⟫ = tmDNth l n⟪ξ⟫ F⟪ξ⟫ cs⟪ξ⟫ i⟪ξ⟫.
+Proof.
+  unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
+  repeat progress (cbn [gren GRen_tm gren_tm GRen_ty gren_ty];
+    change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫;
+    rewrite ?gren_ren_ty', ?gren_ren, ?gren_single_ty, ?gren_single).
+  reflexivity.
+Qed.
+Lemma gren_iwfIH l li l' X A N Ot C M c a cs :
+  (iwfIH l li l' X A N Ot C M c a cs)⟪ξ⟫ = iwfIH l li l' X⟪ξ⟫ A⟪ξ⟫ N⟪ξ⟫ Ot⟪ξ⟫ C⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ a⟪ξ⟫ cs⟪ξ⟫.
+Proof.
+  unfold iwfIH, iwfFam. rewrite gren_lam, gren_elimIWf, gren_tmDNth, gren_var, gren_tyFin.
+  repeat rewrite ?gren_ren_ty', ?gren_ren, ?gren_single, ?gren_tyIWf, ?gren_llift_single. reflexivity.
+Qed.
+Lemma gren_iwfFam l li X A N Ot C a :
+  (iwfFam l li X A N Ot C a)⟪ξ⟫ = iwfFam l li X⟪ξ⟫ A⟪ξ⟫ N⟪ξ⟫ Ot⟪ξ⟫ C⟪ξ⟫ a⟪ξ⟫.
+Proof.
+  unfold iwfFam. rewrite gren_tyIWf.
+  repeat rewrite ?gren_ren_ty', ?gren_ren, ?gren_llift_single. reflexivity.
 Qed.
 (** [UΠ]'s scope and instances. *)
 Lemma gren_uren_ctx (Γ : ctx) ρ : Γ⟨ρ⟩ᵤ⟪ξ⟫ = Γ⟪ξ⟫⟨ρ⟩ᵤ.
@@ -378,9 +419,18 @@ Ltac push_gren_at h k := lazymatch h with
   | @tmNth => k gren_tmNth
   | @wfIH => k gren_wfIH
   | @tySq => k gren_tySq
+  | @tyDVec => k gren_tyDVec
+  | @tyIWf => k gren_tyIWf
+  | @tmSupi => k gren_supi
+  | @tmElimIWf => k gren_elimIWf
+  | @tmDNth => k gren_tmDNth
+  | @iwfIH => k gren_iwfIH
+  | @iwfFam => k gren_iwfFam
   | @tmSq => k gren_sq
   | @tmElimSq => k gren_elimSq
   | @tmSqCode => k gren_tmSqCode
+  | @tmDVec => k gren_tmDVec
+  | @tmIWf => k gren_tmIWf
   end.
 Ltac push_gren := repeat match goal with
   | |- context [@gren _ _ ?t _] => let h := head_of t in push_gren_at h ltac:(fun L => rewrite L)
@@ -393,6 +443,11 @@ Ltac gren_rewrite :=
 
 (** ** Reduction under global renaming *)
 
+(** [DVec]'s successor step (M17a): the head's and the tail's instances. *)
+Lemma red_dvec_succ_gren l n F ξ :
+  red_ty (tyDVec l (succ n) F)⟪ξ⟫ (tySig l l (dvecHd n F) (dvecTl l n F))⟪ξ⟫.
+Proof. push_gren. gren_rewrite. push_gren. rewrite !gren_ren. constructor. Qed.
+
 Lemma red_gren_both :
   (forall t u, red t u -> forall ξ, red t⟪ξ⟫ u⟪ξ⟫) /\
   (forall T U, red_ty T U -> forall ξ, red_ty T⟪ξ⟫ U⟪ξ⟫).
@@ -401,13 +456,15 @@ Proof.
     change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫;
     change (gcren ?x ?ξ) with x⟪ξ⟫.
   all: rewrite ?gren_single2, ?gren_single, ?gren_single3, ?gren_wIH, ?gren_wfIH, ?gren_gsingle; try now constructor.
+  all: rewrite ?gren_iwfIH; try now constructor.
   all: try (constructor; auto; fail).
   all: first [ constructor; now apply redT_gren | constructor; now apply redt_gren
              | rewrite <- usubst_gren; now constructor
              (* δ: the body's instance *)
              | rewrite gren_subst; now constructor
              (* [Vec]'s successor step: the tail's shifts *)
-             | rewrite gren_ren_ty', gren_ren; now constructor ].
+             | rewrite gren_ren_ty', gren_ren; now constructor
+             | now apply red_dvec_succ_gren ].
 Qed.
 
 Lemma red_gren t u ξ : red t u -> red t⟪ξ⟫ u⟪ξ⟫.

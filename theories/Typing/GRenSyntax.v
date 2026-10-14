@@ -125,6 +125,30 @@ Proof.
   repeat rewrite ?gren_ren_ty', ?gren_ren. reflexivity.
 Qed.
 
+(** [sup_i]'s children and [elim_IWf]'s step telescope (M17c). *)
+Lemma gren_llift_single_raw (b a : tm) ξ : b[llift (lsingle a)]⟪ξ⟫ = b⟪ξ⟫[llift (lsingle a⟪ξ⟫)].
+Proof.
+  rewrite gren_subst. apply subst_ext; intros [|[|n]]; rewrite ?llk_glren, ?llk_llift; cbn; auto.
+  change (gren_tm ?x ?ξ0) with x⟪ξ0⟫. rewrite gren_ren. reflexivity.
+Qed.
+Lemma gren_tmDNth_raw l n F cs i ξ :
+  gren_tm (tmDNth l n F cs i) ξ = tmDNth l (gren_tm n ξ) (gren_ty F ξ) (gren_tm cs ξ) (gren_tm i ξ).
+Proof.
+  unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
+  repeat progress (cbn [gren GRen_tm gren_tm GRen_ty gren_ty];
+    change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫;
+    rewrite ?gren_ren_ty', ?gren_ren, ?gren_single_ty, ?gren_single).
+  reflexivity.
+Qed.
+Lemma gren_iwfFam_raw l li X A N Ot C a ξ :
+  gren_ty (iwfFam l li X A N Ot C a) ξ =
+  iwfFam l li (gren_ty X ξ) (gren_ty A ξ) (gren_tm N ξ) (gren_tm Ot ξ) (gren_tm C ξ) (gren_tm a ξ).
+Proof.
+  unfold iwfFam. cbn [gren_ty]. fold gren_ty gren_tm.
+  change (gren_tm ?x ?ξ0) with x⟪ξ0⟫; change (gren_ty ?x ?ξ0) with x⟪ξ0⟫.
+  repeat rewrite ?gren_ren_ty', ?gren_ren, ?gren_llift_single_raw. reflexivity.
+Qed.
+
 Ltac gpeel_push :=
   repeat first [ rewrite <- peelL_gren | rewrite <- peelG_gren | rewrite <- peelU_gren ];
   unfold rb_br; rewrite tup_nth_gren;
@@ -147,6 +171,11 @@ Ltac gpeel_push :=
     repeat progress (cbn [glren lsingle gren_tm gren_ty]; fold gren_ty gren_tm;
       rewrite ?gren_ty_subst_raw, ?gren_tm_subst_raw, ?gren_tmNth_raw, ?gren_ren_ty_raw, ?gren_ren_tm_raw,
         ?gren_ren_ty', ?gren_ren) end;
+  (* [sup_i]'s children and [elim_IWf]'s step telescope (M17c) *)
+  try match goal with |- context [tmSupi _ _ _ _ _ _ _ _ _] =>
+    repeat progress (cbn [glren lsingle lsingle2 gren_tm gren_ty]; fold gren_ty gren_tm gcren;
+      rewrite ?gren_ty_subst_raw, ?gren_tm_subst_raw, ?gren_tmDNth_raw, ?gren_iwfFam_raw, ?gren_ren_ty_raw,
+        ?gren_ren_tm_raw, ?gren_ren_ty', ?gren_ren) end;
   rewrite ?gren_tm_subst_raw; cbn [glren lsingle];
   reflexivity.
 

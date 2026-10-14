@@ -240,7 +240,10 @@ Proof using EL VL.
                   | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                       [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd IHdom codAd IHcod HR
                   | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd IHdom arAd HR
-                  | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ IHRQ Hqs Hqt HR];
+                  | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ IHRQ Hqs Hqt HR
+                  | G Γ T T' l l1 li1 l2 li2 X X' A A' N N' Ot Ot' Ch Ch' m m' idxR domR R Hl Hl2 Hli2 Hw Hwi
+                      HT HT' HX HX' HA HA' HN HN' HO HO' HCh HCh' Hmt Hmt' HXX HAA HNN HOO HChh Hmm
+                      idxAd IHidx Hisym Histr domAd IHdom arAd otAd chAd ixAd HR];
     intros T'' R' H2;
     inversion H2 as [? ? ? ? ? ? Hk HTk HTk' HkR
                     | ? ? ? ? ? k1 k2 ? Hk Hk2 Hkn HTk HTk' HkR
@@ -264,7 +267,10 @@ Proof using EL VL.
                     | ? ? ? ? ? k1 k2 k3 k4 C D C' D' domR' codR' ?
                         [Hk Hk3 Hk4 Hkw1 Hkw2 HTk HTk' HC HC' HD HD' HCC HDD] domAd' codAd' HkR
                     | ? ? ? ? ? k1 k2 C C' M M' domR' ? Hk Hk2 Hkw HTk HTk' HC HC' HkN HkN' HCC HkNN domAd' arAd' HkR
-                    | ? ? ? ? ? k1 k2 C C' RQ' ? Hk Hk2 Hkw HTk HTk' HC HCC HRQ' Hqs' Hqt' HkR];
+                    | ? ? ? ? ? k1 k2 C C' RQ' ? Hk Hk2 Hkw HTk HTk' HC HCC HRQ' Hqs' Hqt' HkR
+                    | ? ? ? ? ? k1 ki1 k2 ki2 jX jX' jA jA' jN jN' jO jO' jC jC' q q' idxR' domR' ? Hk Hk2 Hki2 Hkw Hkwi
+                        HTk HTk' HjX HjX' HjA HjA' HjN HjN' HjO HjO' HjC HjC' Hq Hq' HjXX HjAA HjNN HjOO HjCC Hqq
+                        idxAd' Hisym' Histr' domAd' arAd' otAd' chAd' ixAd' HkR];
     subst; try (agree; try ne_absurd).
   (* contextual types, and mismatches with them *)
   all: try solve [eapply ModRel_irrel; eassumption].
@@ -320,6 +326,12 @@ Proof using EL VL.
                               eapply IH end; eauto.
   - (* ∥·∥: the carriers' relations agree *)
     apply SqRel_releq. eapply IHRQ; eassumption.
+  - (* IWf: the index's and the shapes' relations agree *)
+    apply IWfRel_releq.
+    + intros; match goal with IH : forall (ρ : kwk _ _) T'' R', _ -> releq (idxR _) _ |- _ =>
+                                eapply IH end; eauto.
+    + intros; match goal with IH : forall (ρ : kwk _ _) T'' R', _ -> releq (domR _) _ |- _ =>
+                                eapply IH end; eauto.
 Qed.
 
 (** ** Inversion by the left type's normal form *)
@@ -353,7 +365,10 @@ Proof using EL H.
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; auto.
 Qed.
 
@@ -383,7 +398,10 @@ Proof using EL H.
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -413,7 +431,10 @@ Proof using EL H.
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -445,7 +466,10 @@ Proof using EL H.
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 15.
 Qed.
 
@@ -479,7 +503,10 @@ Proof using EL H.
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 20.
 Qed.
 
@@ -516,7 +543,10 @@ Proof using EL H.
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; do 6 eexists; eauto 25.
 Qed.
 
@@ -546,7 +576,10 @@ Proof using EL H.
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -577,7 +610,10 @@ Proof using EL H.
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -607,7 +643,10 @@ Proof using EL H.
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; try open_mod; agree; try solve [inversion HV0]; eauto.
 Qed.
 
@@ -642,7 +681,10 @@ Proof using EL H.
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
@@ -678,7 +720,10 @@ Proof using EL H.
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
@@ -714,7 +759,10 @@ Proof using EL H.
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
@@ -753,9 +801,73 @@ Proof using EL H.
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 4 eexists; eauto 20.
+Qed.
+
+(** Indexed W-types (M17b). *)
+Lemma LR_inv_iwf {iL iLi iX iA iN iO iC im l'} : [ G ; Γ ⊢g T ⤳* tyIWf iL iLi iX iA iN iO iC im @ l' ] ->
+  exists k2 ki2 X' A' N' Ot' C' m' (idxR domR : DomRel G Γ),
+    lequiv (gL G) l (lmax iL iLi) /\ lequiv (gL G) k2 iL /\ lequiv (gL G) ki2 iLi /\
+    lwf (gL G) iL /\ lwf (gL G) iLi /\
+    [ G ; Γ ⊢g T ⤳* tyIWf iL iLi iX iA iN iO iC im @ l ] /\
+    [ G ; Γ ⊢g T' ⤳* tyIWf k2 ki2 X' A' N' Ot' C' m' @ l ] /\
+    [ G ; Γ ⊢g iX @ iLi ] /\ [ G ; Γ ⊢g X' @ iLi ] /\ [ G ; Γ ⊢g iA @ iL ] /\ [ G ; Γ ⊢g A' @ iL ] /\
+    [ G ; Γ ,, iA @ iL ⊢g iN : tyNat @ lzero ] /\ [ G ; Γ ,, A' @ iL ⊢g N' : tyNat @ lzero ] /\
+    [ G ; Γ ,, iA @ iL ⊢g iO : iX⟨↑⟩ @ iLi ] /\ [ G ; Γ ,, A' @ iL ⊢g Ot' : X'⟨↑⟩ @ iLi ] /\
+    [ G ; Γ ,, iA @ iL ,, tyFin iN @ lzero ⊢g iC : iX⟨↑⟩⟨↑⟩ @ iLi ] /\
+    [ G ; Γ ,, A' @ iL ,, tyFin N' @ lzero ⊢g C' : X'⟨↑⟩⟨↑⟩ @ iLi ] /\
+    [ G ; Γ ⊢g im : iX @ iLi ] /\ [ G ; Γ ⊢g m' : X' @ iLi ] /\
+    [ G ; Γ ⊢ iX ≈ X' @ iLi ] /\ [ G ; Γ ⊢ iA ≈ A' @ iL ] /\ [ G ; Γ ,, iA @ iL ⊢ iN ≈ N' : tyNat @ lzero ] /\
+    [ G ; Γ ,, iA @ iL ⊢ iO ≈ Ot' : iX⟨↑⟩ @ iLi ] /\
+    [ G ; Γ ,, iA @ iL ,, tyFin iN @ lzero ⊢ iC ≈ C' : iX⟨↑⟩⟨↑⟩ @ iLi ] /\
+    [ G ; Γ ⊢ im ≈ m' : iX @ iLi ] /\
+    (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ iX) (kty ρ X') iLi (idxR ρ)) /\
+    (forall (ρ : kwk G Γ) x y, idxR ρ x y -> idxR ρ y x) /\
+    (forall (ρ : kwk G Γ) x y z, idxR ρ x y -> idxR ρ y z -> idxR ρ x z) /\
+    (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ iA) (kty ρ A') iL (domR ρ)) /\
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' ->
+        NatRel (kw_G ρ) (kw_Δ ρ) (ktml ρ iN)[lsingle a] (ktml ρ N')[lsingle a']) /\
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' ->
+        idxR ρ (ktml ρ iO)[lsingle a] (ktml ρ Ot')[lsingle a']) /\
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' -> forall p p',
+        PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ iN)[lsingle a] (ktml ρ N')[lsingle a'] p p' ->
+        idxR ρ (ktmll ρ iC)[lsingle2 a p] (ktmll ρ C')[lsingle2 a' p']) /\
+    (forall ρ : kwk G Γ, idxR ρ (ktm ρ im) (ktm ρ m')) /\
+    releq R (IWfRel G Γ iL iLi iX iA iN iO iC idxR domR im).
+Proof using EL H.
+  intros HN; revert HN.
+  destruct H as [G Γ T T' l R Hl HT HT' HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
+                | G Γ T T' l V V' R HT HT' HV HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
+                    HRA HRB Hpa Hta Hpb Htb HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+    intros HN; try open_mod; agree; try ne_absurd.
+  do 10 eexists; eauto 40.
 Qed.
 
 (** Propositional truncation (M16a). *)
@@ -788,7 +900,10 @@ Proof using EL H.
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 3 eexists; eauto 20.
 Qed.
@@ -817,7 +932,10 @@ Proof using EL H.
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; first [exact (conj Hj HM) | agree; try ne_absurd].
 Qed.
 
@@ -845,7 +963,10 @@ Proof using EL H.
                 | G Γ T T' l k1 k2 l3 l4 A0 B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; first [exact (conj Hj HM) | agree; try ne_absurd].
 Qed.
 
@@ -882,7 +1003,10 @@ Proof using EL H.
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 3 eexists; eauto 20.
 Qed.
@@ -921,7 +1045,10 @@ Proof using EL H.
                 | G Γ T T' l k1 k2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 5 eexists; eauto 20.
 Qed.

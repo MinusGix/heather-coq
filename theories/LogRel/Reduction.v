@@ -63,7 +63,10 @@ Proof.
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros T1 T1' H1 H1'.
   - eapply LRnat; eauto using tyred_trans.
   - eapply LRU with (l1 := l1) (l2 := l2); eauto using tyred_trans.
@@ -82,6 +85,8 @@ Proof.
   - eapply (LRw n rec G Γ T1 T1' l l1 l2 l3 l4 A B A' B' domR codR); [split|..]; eauto using tyred_trans.
   - eapply (LRwf n rec G Γ T1 T1' l l1 l2 A A' N N' domR); eauto using tyred_trans.
   - eapply (LRsq n rec G Γ T1 T1' l l1 l2 A A' RQ); eauto using tyred_trans.
+  - eapply (LRiwf n rec G Γ T1 T1' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR);
+      eauto using tyred_trans.
 Qed.
 
 Theorem LR_red_tm n rec G Γ T T' l R :
@@ -109,7 +114,10 @@ Proof.
                 | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
                     [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
                 | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
-                | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR];
+                | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
     intros t t' t1 t1' Htt H1 H1';
     first [exact (ModRel_red_tm HM _ _ _ _ Htt H1 H1') | apply HR; apply HR in Htt].
   - inversion Htt as [? ? w w' Hw Hw' Heq Hnf]; subst.
@@ -214,6 +222,14 @@ Proof.
       eapply tmred_conv; [apply ge_typeof | exact H1' |].
       eapply eqty_trans; [apply HT'|]. eapply eqty_lconv; [|exact Hl].
       apply eqty_sym, geq_ty_sound, geq_ty_sq; auto using lequiv_sym.
+  - (* IWf: as W *)
+    destruct (IWfRel_inv Htt) as (w & w' & Hr & Hr' & Heq & Hn).
+    econstructor; [| | exact Heq | exact Hn].
+    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|now apply lequiv_sym].
+      eapply tmred_conv; [apply ge_typeof | exact H1' |].
+      eapply eqty_trans; [apply HT'|]. eapply eqty_lconv; [|exact Hl].
+      apply eqty_sym, geq_ty_sound, geq_ty_iwf; auto using lequiv_sym.
 Qed.
 
 End Reduction.

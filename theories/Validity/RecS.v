@@ -7,7 +7,7 @@
     the branches' validity at [ψ = levels ++ φ], [σ] extended by the
     code's pieces, [e] by the recursive calls), and proves the recursion
     lemmas by induction on the code's C-typing. *)
-From DeLaM.Validity Require Export RecSBase RecSNat RecSSig RecSId RecSSEq RecSSum RecSW RecSNe RecSWf RecSSq.
+From DeLaM.Validity Require Export RecSBase RecSNat RecSSig RecSId RecSSEq RecSSum RecSW RecSNe RecSWf RecSSq RecSIWf.
 
 Section Rec.
 Context {EP EM : GenericEq} {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM} {EMl : GenericEqM EP EM}.
@@ -1020,7 +1020,11 @@ Proof using EL ELM ELP EMl HG0 HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR H
     | solve [eapply Rt_supf; eassumption] | solve [eapply Rt_elimWf; eassumption]
     (* propositional truncation (M16b) *)
     | solve [eapply RT_sq; eassumption] | solve [eapply Rt_codesq; eassumption]
-    | solve [eapply Rt_sq; eassumption] | solve [eapply Rt_elimSq; eassumption] ].
+    | solve [eapply Rt_sq; eassumption] | solve [eapply Rt_elimSq; eassumption]
+    (* dependent tuples and indexed trees (M17c) *)
+    | solve [eapply RT_dvec; eassumption] | solve [eapply Rt_codedvec; eassumption]
+    | solve [eapply RT_iwf; eassumption] | solve [eapply Rt_codeiwf; eassumption]
+    | solve [eapply Rt_supi; eassumption] | solve [eapply Rt_elimIWf; eassumption] ].
 Qed.
 
 (** The recursion lemmas, for a code typed at C in the left context. *)

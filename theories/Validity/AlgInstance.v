@@ -118,6 +118,19 @@ Proof.
            (eqtm_wf_l Hty E) (eqtm_wf_r Hty E) (eqty_refl _ _ _ _ _ (eqtm_wf_ty Hty E))).
 Qed.
 
+Lemma alg_tm_ctxconv2 {G Γ A A' la la' B lb t t' T l} : [ G ; Γ ⊢[ i ] A ≅ A' @ la ] ->
+  lequiv (gL G) la la' -> [ G ; Γ ,, A' @ la' ,, B @ lb ⊢[ i ] ] ->
+  alg_eq_tm G (Γ ,, A @ la ,, B @ lb) t t' T l -> alg_eq_tm G (Γ ,, A' @ la' ,, B @ lb) t t' T l.
+Proof.
+  intros EA Hl HΓ' (E & D). destruct (alg_ctx_ext EA Hl) as [Hctx HG].
+  destruct (stab2_B Hty EA Hl HΓ') as [HB Hlb].
+  assert (Hctx2 : [ G ⊢[ i ] Γ ,, A @ la ,, B @ lb ≅ Γ ,, A' @ la' ,, B @ lb ])
+    by (apply eqc_ext; [exact Hctx | exact HB | exact (eqty_refl _ _ _ _ _ HB) | exact (lequiv_refl _ _ Hlb)]).
+  refine (conj (mv_eqtm Hty (stab2_lsub Hty EA Hl HΓ') E) _).
+  exact (proj1 (proj2 (proj2 (proj2 (proj2 ac_conv_all)))) _ _ _ _ _ D i G _ T l Hi (GEq_refl _ HG) Hctx2
+           (eqtm_wf_l Hty E) (eqtm_wf_r Hty E) (eqty_refl _ _ _ _ _ (eqtm_wf_ty Hty E))).
+Qed.
+
 (** η: the terms reduce to whnfs, and the premise's applications along. *)
 Lemma alg_funext {G Γ l l' A B t t'} : [ G ; Γ ⊢[ i ] t : tyPi l l' A B @ lmax l l' ] ->
   [ G ; Γ ⊢[ i ] t' : tyPi l l' A B @ lmax l l' ] ->
@@ -310,6 +323,7 @@ Proof.
   - intros * EA Hl HΓ' X. exact (alg_ty_ctxconv EA Hl HΓ' X).
   - intros * EA Hl HΓ' X. exact (alg_tmne_ctxconv EA Hl HΓ' X).
   - intros * EA Hl HΓ' X. exact (alg_tm_ctxconv EA Hl HΓ' X).
+  - intros * EA Hl HΓ' X. exact (alg_tm_ctxconv2 EA Hl HΓ' X).
   (* weak head closure *)
   - intros * HT HT' (E & D). refine (conj (@geq_ty_exp DE DEL _ _ _ _ _ _ _ HT HT' E) _).
     destruct (ainv_ty D) as (W0 & W0' & Hr & Hr' & Hw & Hw' & D').
@@ -605,6 +619,37 @@ Proof.
     refine (conj (@geq_tm_code_sq DE DEL _ _ _ _ _ _ Hl Es) _).
     eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmSqCode | apply whnf_tmSqCode |].
     exact (actmnf_code_sq _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) Ds).
+  (* dependent tuples at a neutral length (M17a) *)
+  - intros * Hl ((Hn & Hn' & E) & T0 & D & ET) HF (EF & DF).
+    refine (conj (@gne_ty_dvec DE DEL _ _ _ _ _ _ _ _ Hl (conj Hn (conj Hn' E)) HF EF) _).
+    destruct (ne_nee D ET) as (W0 & X & _). exact (actne_dvec _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) X DF).
+  (* indexed W-types (M17b) *)
+  - intros * Hl Hli HX (EX & DX) HA (EA & DA) HN (EN & DN) HO (EO & DO) HC (EC & DC) (Em & Dm).
+    refine (conj (@geq_ty_iwf DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hl Hli HX EX HA EA HN EN HO EO HC EC Em) _).
+    eapply act_red; [constructor | constructor | apply whnf_tyIWf | apply whnf_tyIWf |].
+    eapply actnf_iwf; first [eapply lequiv_leqv; eassumption | eassumption].
+  - intros * Hl Hli HX EX HA EA HN EN HO EO HC EC (Ea & Da) (Ecs & Dcs).
+    refine (conj (@geq_tm_supi DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hl Hli HX EX HA EA HN EN HO EO HC EC Ea Ecs) _).
+    eapply actm_red; [constructor | apply whnf_tyIWf | constructor | constructor | apply whnf_supi | apply whnf_supi |].
+    eapply actmnf_supi; eassumption.
+  - intros * H1 H2 H3 HX (EX & DX) HA (EA & DA) HN (EN & DN) HO (EO & DO) HC (EC & DC) HM (EM & DM) (EI & DI)
+      (Ec & Dc) (Em & Dm) ((Hn & Hn' & Eν) & T0 & Dν & ETν).
+    pose proof (@gne_tm_elimIWf DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H1 H2 H3 HX EX HA EA HN EN HO EO HC EC HM EM EI Ec Em
+                  (conj Hn (conj Hn' Eν))) as Y.
+    refine (conj Y _). destruct Y as (_ & _ & EY).
+    destruct (ne_nee Dν ETν) as (W0 & Xν & _).
+    exists M[lsingle2 m ν]. split.
+    + eapply actmne_elimIWf; first [eapply lequiv_leqv; eassumption | eassumption].
+    + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EY))).
+  (* the codes of DVec and IWf (M17c) *)
+  - intros * Hl Hn (En & Dn) (Ef & Df).
+    refine (conj (@geq_tm_code_dvec DE DEL _ _ _ _ _ _ _ _ Hl Hn En Ef) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmDVec | apply whnf_tmDVec |].
+    exact (actmnf_code_dvec _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) Dn Df).
+  - intros * Hl Hli Hx (Ex & Dx) Hs (Es & Ds) Hn (En & Dn) (Eo & Dov) (Ec & Dc) (Em & Dm).
+    refine (conj (@geq_tm_code_iwf DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hl Hli Hx Ex Hs Es Hn En Eo Ec Em) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmIWf | apply whnf_tmIWf |].
+    eapply actmnf_code_iwf; first [eapply lequiv_leqv; eassumption | eassumption].
 Qed.
 
 End Alg.

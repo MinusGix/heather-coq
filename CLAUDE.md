@@ -1,7 +1,7 @@
 # DeLaM formalization: notes for agents
 
 Start by reading `README.md`, then `HEATHER.md` (Heather's extensions: the
-forward agenda), `M16_DESIGN.md` (current milestone), `M15_DESIGN.md`, `M14_DESIGN.md`, `M13_DESIGN.md`, `M12_DESIGN.md`, `M11_DESIGN.md`, `M10_DESIGN.md`, `M9_DESIGN.md`,
+forward agenda), `M17_DESIGN.md` (current milestone), `M16_DESIGN.md`, `M15_DESIGN.md`, `M14_DESIGN.md`, `M13_DESIGN.md`, `M12_DESIGN.md`, `M11_DESIGN.md`, `M10_DESIGN.md`, `M9_DESIGN.md`,
 `M8_DESIGN.md`, `M7_DESIGN.md`, `M6_DESIGN.md`, `M5_DESIGN.md`,
 `M4_DESIGN.md`, `M3_DESIGN.md`, `M2_DESIGN.md` and `M1_DESIGN.md`. The latter holds the M1
 current status, the ordered next steps, deviations from the paper, and a
@@ -24,8 +24,18 @@ list of proof-engineering gotchas. Follow it.
 ## Build
 
 - `nix develop path:. --command make -j4` (Coq 8.20, Equations, smpl from
-  the flake). A clean build takes 10 to 22 minutes, depending on the
-  machine. Latest: 473 s wall at -j4 after the Typing metatheory's
+  the flake). A clean build takes 10 to 26 minutes, depending on the
+  machine. Latest: the M17c tree after its build-time pass (2026-10-14)
+  took 1318 s wall at -j4 (critical path 1149 s, CPU 3146 s), against
+  1544 s (critical path 1386 s, CPU 3938 s) for the M17c tree before
+  it, back to back on one 4-core cloud machine, and 1304 s (critical
+  path 1109 s) for M17b. The pass inverted `Some X = Some v` by
+  `Some_inj` instead of `injection` (which reduced `elim_IWf`'s big
+  reduct) and guarded `split` and `apply` by goal shape (`gfree_redt`,
+  `redt_ren`, `redt_usubst`, `redt_leq`, `dnf_redt`). Left on the path:
+  `wf_brG_60` (`RecWf`, 110 s), which types `dnth` by its unfolding.
+  Before
+  that, on faster machines: 473 s wall at -j4 after the Typing metatheory's
   syntax parts were split off (2026-10-12, `ReductionBase`, `GRenRec`,
   `SubstRec`, `PresupAux`, `WfNthReds`), against 546 s for the tree
   before it, back to back on a faster 4-core machine (critical path

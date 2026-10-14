@@ -775,6 +775,134 @@ Proof.
   - exact (ctxconv_tm (extc HEl HEE Hl) Hd Hn').
 Qed.
 
+(** Dependent tuples and indexed W-types (M17c), along [StaticCode]'s
+    [_q] forms. *)
+Lemma pc_dvec {Γ l l' n n' F F'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F @ l ] -> [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F ≅ F' @ l ] ->
+  [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F' @ l ] ->
+  [ G ; Γ ⊢[ i ] tyDVec l n F @ l ] /\ [ G ; Γ ⊢[ i ] tyDVec l' n' F' @ l ].
+Proof.
+  intros Hv Hl Hn Hnn Hn' HF HFF HF'. split; [apply wft_dvec; eauto using lequiv_wf_l |].
+  assert (HF0 : [ G ; Γ ⊢[ i ] tyFin n @ lzero ]) by (apply wft_fin; assumption).
+  assert (HFF0 : [ G ; Γ ⊢[ i ] tyFin n ≅ tyFin n' @ lzero ]) by (apply eqty_fin; assumption).
+  eapply wft_lconv; [| exact Hl]. apply wft_dvec; [exact Hv | exact (lequiv_wf_r _ _ _ Hl) | exact Hn' |].
+  eapply wft_lconv; [| apply lequiv_sym, Hl].
+  exact (ctxconv_ty (extc HF0 HFF0 (lequiv_refl (gL G) lzero I)) Hd HF').
+Qed.
+
+Lemma pc_iwf {Γ l li k ki X X' A A' N N' Ot Ot' C C' m m'} : i <> lV ->
+  lequiv (gL G) l k -> lequiv (gL G) li ki ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X ≅ X' @ li ] -> [ G ; Γ ⊢[ i ] X' @ li ] ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢[ i ] Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C : X⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C' : X⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢[ i ] m : X @ li ] -> [ G ; Γ ⊢[ i ] m' : X @ li ] ->
+  [ G ; Γ ⊢[ i ] tyIWf l li X A N Ot C m @ lmax l li ] /\
+  [ G ; Γ ⊢[ i ] tyIWf k ki X' A' N' Ot' C' m' @ lmax l li ].
+Proof.
+  intros Hv Q1 Q2 HX HXX HX' HA HAA HA' HN HNN HN' HO HO' HC HC' Hm Hm'.
+  split; [apply wft_iwf; eauto using lequiv_wf_l |].
+  exact (sc_iwf_q HiD Hv Q1 Q2 HX' HXX HA HA' HAA HN HN' HNN HO' HC' Hm').
+Qed.
+
+Lemma pc_supi {Γ l li k ki X X' A A' N N' Ot Ot' C C' a a' cs cs'} : i <> lV ->
+  lequiv (gL G) l k -> lequiv (gL G) li ki ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X ≅ X' @ li ] -> [ G ; Γ ⊢[ i ] X' @ li ] ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢[ i ] Ot ≅ Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C : X⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C' : X⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] cs : tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a) @ lmax l li ] ->
+  [ G ; Γ ⊢[ i ] cs' : tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a) @ lmax l li ] ->
+  [ G ; Γ ⊢[ i ] tmSupi l li X A N Ot C a cs : tyIWf l li X A N Ot C Ot[lsingle a] @ lmax l li ] /\
+  [ G ; Γ ⊢[ i ] tmSupi k ki X' A' N' Ot' C' a' cs' : tyIWf l li X A N Ot C Ot[lsingle a] @ lmax l li ].
+Proof.
+  intros Hv Q1 Q2 HX HXX HX' HA HAA HA' HN HNN HN' HO HOO HO' HC HCC HC' Haa Ha Ha' Hcs Hcs'.
+  split; [apply wf_supi; eauto using lequiv_wf_l |].
+  exact (sc_supi_q HiD Hv Q1 Q2 HX HX' HXX HA HA' HAA HN HN' HNN HO HO' HOO HC HC' HCC Ha Ha' Haa Hcs').
+Qed.
+
+Lemma pc_elimIWf {Γ l li l' k ki k' X X' A A' N N' Ot Ot' C C' M M' c c' m m' t t'} : i <> lV ->
+  lequiv (gL G) l k -> lequiv (gL G) li ki -> lequiv (gL G) l' k' ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X ≅ X' @ li ] -> [ G ; Γ ⊢[ i ] X' @ li ] ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢[ i ] Ot ≅ Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C : X⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C' : X⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, X @ li ⊢[ i ] iwfmotty l li X A N Ot C @ lmax l li ] ->
+  [ G ; Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li ⊢[ i ] M ≅ M' @ l' ] ->
+  [ G ; Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li ⊢[ i ] M' @ l' ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] iwfcsty l li X A N Ot C @ lmax l li ] ->
+  [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ⊢[ i ] iwfihty l li l' X A N Ot C M @ lmax lzero l' ] ->
+  [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ⊢[ i ]
+      iwfihty l li l' X A N Ot C M ≅ iwfihty k ki k' X' A' N' Ot' C' M' @ lmax lzero l' ] ->
+  [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ⊢[ i ] iwfihty k ki k' X' A' N' Ot' C' M' @ lmax lzero l' ] ->
+  [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l'
+      ⊢[ i ] c : iwfstepty l li X A N Ot C M @ l' ] ->
+  [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l'
+      ⊢[ i ] c' : iwfstepty l li X A N Ot C M @ l' ] ->
+  [ G ; Γ ⊢[ i ] m ≅ m' : X @ li ] -> [ G ; Γ ⊢[ i ] m : X @ li ] -> [ G ; Γ ⊢[ i ] m' : X @ li ] ->
+  [ G ; Γ ⊢[ i ] t ≅ t' : tyIWf l li X A N Ot C m @ lmax l li ] ->
+  [ G ; Γ ⊢[ i ] t : tyIWf l li X A N Ot C m @ lmax l li ] ->
+  [ G ; Γ ⊢[ i ] t' : tyIWf l li X A N Ot C m @ lmax l li ] ->
+  [ G ; Γ ⊢[ i ] tmElimIWf l li l' X A N Ot C M c m t : M[lsingle2 m t] @ l' ] /\
+  [ G ; Γ ⊢[ i ] tmElimIWf k ki k' X' A' N' Ot' C' M' c' m' t' : M[lsingle2 m t] @ l' ].
+Proof.
+  intros Hv Q1 Q2 Q3 HX HXX HX' HA HAA HA' HN HNN HN' HO HOO HO' HC HCC HC' HMot HM HMM HM' HCs HI EI HI'
+    Hc Hc' Hmm Hm Hm' Htt Ht Ht'.
+  split; [apply wf_elimIWf; eauto using lequiv_wf_l |].
+  exact (sc_elimIWf_q HiD Hv Q1 Q2 Q3 HX HX' HXX HA HA' HAA HN HN' HNN HO HO' HOO HC HC' HCC HM HM' HMM
+           HI HI' EI Hc' Hm Hm' Hmm Ht Ht' Htt).
+Qed.
+
+(** The codes of [DVec] and [IWf] (M17c), along [StaticCode]'s [_q] forms. *)
+Lemma pc_code_dvec {Γ l l' n n' f f'} : i <> lV -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] f : tyU l @ lsuc l ] ->
+  [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] f' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] tmDVec l n f : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmDVec l' n' f' : tyU l @ lsuc l ].
+Proof.
+  intros Hv Hl Hn Hnn Hn' Hf Hf'. split; [apply wf_code_dvec; eauto using lequiv_wf_l |].
+  exact (sc_code_dvec_q HiD Hv Hl Hn Hn' Hnn Hf').
+Qed.
+
+Lemma pc_code_iwf {Γ l li k ki x x' s s' n n' o o' c c' m m'} : i <> lV ->
+  lequiv (gL G) l k -> lequiv (gL G) li ki ->
+  [ G ; Γ ⊢[ i ] x : tyU li @ lsuc li ] -> [ G ; Γ ⊢[ i ] x ≅ x' : tyU li @ lsuc li ] ->
+  [ G ; Γ ⊢[ i ] x' : tyU li @ lsuc li ] ->
+  [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n' : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o : tyEl li x⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o' : tyEl li x⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] c : tyEl li x⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] c' : tyEl li x⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢[ i ] m : tyEl li x @ li ] -> [ G ; Γ ⊢[ i ] m' : tyEl li x @ li ] ->
+  [ G ; Γ ⊢[ i ] tmIWf l li x s n o c m : tyU (lmax l li) @ lsuc (lmax l li) ] /\
+  [ G ; Γ ⊢[ i ] tmIWf k ki x' s' n' o' c' m' : tyU (lmax l li) @ lsuc (lmax l li) ].
+Proof.
+  intros Hv Q1 Q2 Hx Hxx Hx' Hs Hss Hs' Hn Hnn Hn' Ho Ho' Hc Hc' Hm Hm'.
+  split; [apply wf_code_iwf; eauto using lequiv_wf_l |].
+  exact (sc_code_iwf_q HiD Hv Q1 Q2 Hx' Hxx Hs Hs' Hss Hn Hn' Hnn Ho' Hc' Hm').
+Qed.
+
 End Cases.
 
 Theorem presupposition_C :
@@ -834,7 +962,11 @@ Proof.
              | solve [eapply pc_code_sq; eassumption]
              (* propositional truncation at C (M16b) *)
              | solve [eapply pc_tySq; eassumption] | solve [eapply pc_sq; eassumption]
-             | solve [eapply pc_elimSq; eassumption] ].
+             | solve [eapply pc_elimSq; eassumption]
+             (* dependent tuples and indexed W-types, with their codes (M17c) *)
+             | solve [eapply pc_dvec; eassumption] | solve [eapply pc_iwf; eassumption]
+             | solve [eapply pc_supi; eassumption] | solve [eapply pc_elimIWf; eassumption]
+             | solve [eapply pc_code_dvec; eassumption] | solve [eapply pc_code_iwf; eassumption] ].
 Qed.
 
 Lemma eqty_wf_C {G i Γ T T' l} : lle i lC -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->

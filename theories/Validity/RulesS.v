@@ -177,9 +177,18 @@ Ltac s_push_at h k := lazymatch h with
   | @tmSEq => k gs_tmSEq
   | @tmJ => k gs_J
   | @tySq => k gs_tySq
+  | @tyDVec => k gs_tyDVec
   | @tmSq => k gs_sq
   | @tmElimSq => k gs_elimSq
   | @tmSqCode => k gs_tmSqCode
+  | @tmDVec => k gs_tmDVec
+  | @tmIWf => k gs_tmIWf
+  | @tyIWf => k gs_tyIWf
+  | @tmSupi => k gs_supi
+  | @tmElimIWf => k gs_elimIWf
+  | @tmDNth => k gs_tmDNth
+  | @iwfFam => k gs_iwfFam
+  | @iwfIH => k gs_iwfIH
   end.
 Ltac s_push := repeat match goal with
   | |- context [@gsubst _ _ ?t _] => let h := head_of t in s_push_at h ltac:(fun L => rewrite L)
@@ -190,7 +199,9 @@ Ltac s_push := repeat match goal with
 Ltac s_lwf := first [eassumption | eapply lequiv_wf_l; eassumption | eapply lequiv_wf_r; eassumption].
 Ltac s_side :=
   first [ eassumption | apply lequiv_refl; s_lwf | apply lequiv_sym; eassumption | s_lwf
-        | eapply VTyG_refl_l; eassumption | eapply VTy_refl_l; eassumption ].
+        | eapply VTyG_refl_l; eassumption | eapply VTy_refl_l; eassumption
+        (* [IWf]'s signature (M17b) *)
+        | lazymatch goal with |- context [IWfSig] => unfold IWfSig; repeat split; first [s_lwf | eassumption] end ].
 
 (** The two sides differ ([σ] and [σ']), so the rule-shaped wrappers do
     not apply: the general lemmas do. *)
@@ -245,7 +256,18 @@ Ltac fts_case :=
   | solve [simple eapply V_sq; s_side] | solve [simple eapply V_sq_intro; s_side]
   | solve [simple eapply V_sq_irr; s_side] | solve [simple eapply V_elimSq; s_side]
   (* the code of ∥·∥ (M16b) *)
-  | solve [simple eapply V_code_sq; s_side] | solve [simple eapply V_El_sq; s_side] ].
+  | solve [simple eapply V_code_sq; s_side] | solve [simple eapply V_El_sq; s_side]
+  (* dependent tuples (M17a) *)
+  | solve [simple eapply V_dvec; s_side] | solve [simple eapply V_dvec_zero; s_side]
+  | solve [simple eapply V_dvec_succ; s_side]
+  (* indexed well-founded trees (M17b) *)
+  | solve [simple eapply V_iwf; s_side] | solve [simple eapply V_supi; s_side]
+  | solve [simple eapply V_elimIWf; s_side] | solve [simple eapply V_elimIWf_supi; s_side]
+  | solve [simple eapply V_supi_ty; s_side] | solve [simple eapply V_elimIWf_ty_at; s_side]
+  | solve [simple eapply V_elimIWf_supi_ty; s_side]
+  (* the codes of DVec and IWf (M17c) *)
+  | solve [simple eapply V_code_dvec; s_side] | solve [simple eapply V_El_dvec; s_side]
+  | solve [simple eapply V_code_iwf; s_side] | solve [simple eapply V_El_iwf; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=
@@ -749,6 +771,120 @@ Proof using EL VL VN.
   apply VS_code_fin; exact Vn.
 Qed.
 
+(** Dependent tuples (M17a). *)
+Lemma VS_dvec {G Γ l l' n n' F F'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTmS G Γ n n' tyNat lzero -> VTyS G (Γ ,, tyFin n @ lzero) F F' l ->
+  VTyS G Γ (tyDVec l n F) (tyDVec l' n' F') l.
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_dvec_zero {G Γ l l' F F'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTyS G (Γ ,, tyFin zero @ lzero) F F' l -> VTyS G Γ (tyDVec l zero F) (tyUnit l') l.
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_dvec_succ {G Γ l l' n n' F F'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTmS G Γ n n' tyNat lzero -> VTyS G (Γ ,, tyFin (succ n) @ lzero) F F' l ->
+  VTyS G Γ (tyDVec l (succ n) F) (tySig l' l' (dvecHd n' F') (dvecTl l' n' F')) l.
+Proof using EL VL VN. intros; s_lift. Qed.
+
+(** Indexed well-founded trees (M17b). *)
+Lemma VS_iwf {G Γ l li l' li' X X' A A' N N' Ot Ot' C C' m m'} :
+  lwf (gL G) l -> lwf (gL G) li -> lequiv (gL G) l' l -> lequiv (gL G) li' li ->
+  VTyS G Γ X X' li -> VTyS G Γ A A' l -> VTmS G (Γ ,, A @ l) N N' tyNat lzero ->
+  VTmS G (Γ ,, A @ l) Ot Ot' X⟨↑⟩ li -> VTmS G (Γ ,, A @ l ,, tyFin N @ lzero) C C' X⟨↑⟩⟨↑⟩ li ->
+  VTmS G Γ m m' X li ->
+  VTyS G Γ (tyIWf l li X A N Ot C m) (tyIWf l' li' X' A' N' Ot' C' m') (lmax l li).
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_supi {G Γ l li l' li' X X' A A' N N' Ot Ot' C C' a a' cs cs'} :
+  lwf (gL G) l -> lwf (gL G) li -> lequiv (gL G) l' l -> lequiv (gL G) li' li ->
+  VTyS G Γ X X' li -> VTyS G Γ A A' l -> VTmS G (Γ ,, A @ l) N N' tyNat lzero ->
+  VTmS G (Γ ,, A @ l) Ot Ot' X⟨↑⟩ li -> VTmS G (Γ ,, A @ l ,, tyFin N @ lzero) C C' X⟨↑⟩⟨↑⟩ li ->
+  VTmS G Γ a a' A l -> VTmS G Γ cs cs' (tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a)) (lmax l li) ->
+  VTmS G Γ (tmSupi l li X A N Ot C a cs) (tmSupi l' li' X' A' N' Ot' C' a' cs')
+    (tyIWf l li X A N Ot C Ot[lsingle a]) (lmax l li).
+Proof using EL VL VN. intros; s_lift. Qed.
+(* the constructor's type, at its output index *)
+Lemma VS_supi_ty {G Γ l li X A N Ot C a cs} :
+  lwf (gL G) l -> lwf (gL G) li ->
+  VTyS G Γ X X li -> VTyS G Γ A A l -> VTmS G (Γ ,, A @ l) N N tyNat lzero ->
+  VTmS G (Γ ,, A @ l) Ot Ot X⟨↑⟩ li -> VTmS G (Γ ,, A @ l ,, tyFin N @ lzero) C C X⟨↑⟩⟨↑⟩ li ->
+  VTmS G Γ a a A l -> VTmS G Γ cs cs (tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a)) (lmax l li) ->
+  VTyS G Γ (tyIWf l li X A N Ot C Ot[lsingle a]) (tyIWf l li X A N Ot C Ot[lsingle a]) (lmax l li).
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_elimIWf {ly G Γ l li l' l3 li3 l4 X X' A A' N N' Ot Ot' C C' M M' c c' m m' t t'} :
+  lwf (gL G) l -> lwf (gL G) li -> lwf (gL G) l' ->
+  lequiv (gL G) l l3 -> lequiv (gL G) li li3 -> lequiv (gL G) l' l4 ->
+  [ G ; Γ ⊢[ ly ] X @ li ] -> [ G ; Γ ⊢[ ly ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ ly ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ ly ] Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ ly ] C : X⟨↑⟩⟨↑⟩ @ li ] ->
+  lle ly ge_layer -> typeof ly = ly ->
+  VTyS G Γ X X' li -> VTyS G Γ A A' l -> VTmS G (Γ ,, A @ l) N N' tyNat lzero ->
+  VTmS G (Γ ,, A @ l) Ot Ot' X⟨↑⟩ li -> VTmS G (Γ ,, A @ l ,, tyFin N @ lzero) C C' X⟨↑⟩⟨↑⟩ li ->
+  VTyS G (Γ ,, X @ li) (iwfmotty l li X A N Ot C) (iwfmotty l li X A N Ot C) (lmax l li) ->
+  VTyS G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M' l' ->
+  VTyS G (Γ ,, A @ l) (iwfcsty l li X A N Ot C) (iwfcsty l li X A N Ot C) (lmax l li) ->
+  VTyS G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
+    (iwfihty l li l' X A N Ot C M) (iwfihty l3 li3 l4 X' A' N' Ot' C' M') (lmax lzero l') ->
+  VTmS G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
+    c c' (iwfstepty l li X A N Ot C M) l' ->
+  VTmS G Γ m m' X li -> VTmS G Γ t t' (tyIWf l li X A N Ot C m) (lmax l li) ->
+  VTmS G Γ (tmElimIWf l li l' X A N Ot C M c m t) (tmElimIWf l3 li3 l4 X' A' N' Ot' C' M' c' m' t')
+    M[lsingle2 m t] l'.
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_elimIWf_supi {ly G Γ l li l' X A N Ot C M c a cs} :
+  lwf (gL G) l -> lwf (gL G) li -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ ly ] X @ li ] -> [ G ; Γ ⊢[ ly ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ ly ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ ly ] Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ ly ] C : X⟨↑⟩⟨↑⟩ @ li ] ->
+  lle ly ge_layer -> typeof ly = ly ->
+  VTyS G Γ X X li -> VTyS G Γ A A l -> VTmS G (Γ ,, A @ l) N N tyNat lzero ->
+  VTmS G (Γ ,, A @ l) Ot Ot X⟨↑⟩ li -> VTmS G (Γ ,, A @ l ,, tyFin N @ lzero) C C X⟨↑⟩⟨↑⟩ li ->
+  VTyS G (Γ ,, X @ li) (iwfmotty l li X A N Ot C) (iwfmotty l li X A N Ot C) (lmax l li) ->
+  VTyS G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M l' ->
+  VTyS G (Γ ,, A @ l) (iwfcsty l li X A N Ot C) (iwfcsty l li X A N Ot C) (lmax l li) ->
+  VTyS G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
+    (iwfihty l li l' X A N Ot C M) (iwfihty l li l' X A N Ot C M) (lmax lzero l') ->
+  VTmS G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
+    c c (iwfstepty l li X A N Ot C M) l' ->
+  VTmS G Γ a a A l -> VTmS G Γ cs cs (tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a)) (lmax l li) ->
+  VTmS G Γ (tmElimIWf l li l' X A N Ot C M c Ot[lsingle a] (tmSupi l li X A N Ot C a cs))
+    c[lsingle3 a cs (iwfIH l li l' X A N Ot C M c a cs)]
+    M[lsingle2 Ot[lsingle a] (tmSupi l li X A N Ot C a cs)] l'.
+Proof using EL VL VN. intros; s_lift. Qed.
+
+(* the eliminator's type, at a scrutinee and at a [sup_i] *)
+Lemma VS_elimIWf_ty {ly G Γ l li l' X A N Ot C M c m t} :
+  VTmS G Γ t t (tyIWf l li X A N Ot C m) (lmax l li) ->
+  VTyS G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M l' ->
+  lwf (gL G) l -> lwf (gL G) li -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ ly ] X @ li ] -> [ G ; Γ ⊢[ ly ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ ly ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ ly ] Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ ly ] C : X⟨↑⟩⟨↑⟩ @ li ] ->
+  lle ly ge_layer -> typeof ly = ly ->
+  VTyS G Γ X X li -> VTyS G Γ A A l -> VTmS G (Γ ,, A @ l) N N tyNat lzero ->
+  VTmS G (Γ ,, A @ l) Ot Ot X⟨↑⟩ li -> VTmS G (Γ ,, A @ l ,, tyFin N @ lzero) C C X⟨↑⟩⟨↑⟩ li ->
+  VTyS G (Γ ,, X @ li) (iwfmotty l li X A N Ot C) (iwfmotty l li X A N Ot C) (lmax l li) ->
+  VTyS G (Γ ,, A @ l) (iwfcsty l li X A N Ot C) (iwfcsty l li X A N Ot C) (lmax l li) ->
+  VTyS G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
+    (iwfihty l li l' X A N Ot C M) (iwfihty l li l' X A N Ot C M) (lmax lzero l') ->
+  VTmS G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
+    c c (iwfstepty l li X A N Ot C M) l' ->
+  VTmS G Γ m m X li ->
+  VTyS G Γ M[lsingle2 m t] M[lsingle2 m t] l'.
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_elimIWf_supi_ty {ly G Γ l li l' X A N Ot C M c a cs} :
+  lwf (gL G) l -> lwf (gL G) li -> lwf (gL G) l' ->
+  [ G ; Γ ⊢[ ly ] X @ li ] -> [ G ; Γ ⊢[ ly ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ ly ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ ly ] Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ ly ] C : X⟨↑⟩⟨↑⟩ @ li ] ->
+  lle ly ge_layer -> typeof ly = ly ->
+  VTyS G Γ X X li -> VTyS G Γ A A l -> VTmS G (Γ ,, A @ l) N N tyNat lzero ->
+  VTmS G (Γ ,, A @ l) Ot Ot X⟨↑⟩ li -> VTmS G (Γ ,, A @ l ,, tyFin N @ lzero) C C X⟨↑⟩⟨↑⟩ li ->
+  VTyS G (Γ ,, X @ li) (iwfmotty l li X A N Ot C) (iwfmotty l li X A N Ot C) (lmax l li) ->
+  VTyS G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M l' ->
+  VTyS G (Γ ,, A @ l) (iwfcsty l li X A N Ot C) (iwfcsty l li X A N Ot C) (lmax l li) ->
+  VTyS G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
+    (iwfihty l li l' X A N Ot C M) (iwfihty l li l' X A N Ot C M) (lmax lzero l') ->
+  VTmS G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
+    c c (iwfstepty l li X A N Ot C M) l' ->
+  VTmS G Γ a a A l -> VTmS G Γ cs cs (tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a)) (lmax l li) ->
+  VTyS G Γ M[lsingle2 Ot[lsingle a] (tmSupi l li X A N Ot C a cs)]
+    M[lsingle2 Ot[lsingle a] (tmSupi l li X A N Ot C a cs)] l'.
+Proof using EL VL VN. intros; s_lift. Qed.
+
 (** Finitary well-founded trees (M15a). *)
 Lemma VS_wf {G Γ l l' A A' N N'} : lwf (gL G) l -> lequiv (gL G) l' l ->
   VTyS G Γ A A' l -> VTmS G (Γ ,, A @ l) N N' tyNat lzero -> VTyS G Γ (tyWf l A N) (tyWf l' A' N') l.
@@ -853,6 +989,44 @@ Proof using EL VL VN.
   apply VS_code_sq; [exact Hw | apply lequiv_refl, Hw | exact Vs].
 Qed.
 
+(** The codes of DVec and IWf (M17c). *)
+Lemma VS_code_dvec {G Γ l l' n n' f f'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTmS G Γ n n' tyNat lzero -> VTmS G (Γ ,, tyFin n @ lzero) f f' (tyU l) (lsuc l) ->
+  VTmS G Γ (tmDVec l n f) (tmDVec l' n' f') (tyU l) (lsuc l).
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_El_dvec {G Γ l n f} : lwf (gL G) l ->
+  VTmS G Γ n n tyNat lzero -> VTmS G (Γ ,, tyFin n @ lzero) f f (tyU l) (lsuc l) ->
+  VTyS G Γ (tyDVec l n (tyEl l f)) (tyEl l (tmDVec l n f)) l.
+Proof using EL VL VN.
+  intros Hw Vn Vf. eapply (VTyS_trans_diag EP EM (T2 := tyEl l (tmDVec l n f))); [s_diag V_El_dvec|].
+  apply VS_El; [exact Hw | apply lequiv_refl, Hw |].
+  apply VS_code_dvec; [exact Hw | apply lequiv_refl, Hw | exact Vn | exact Vf].
+Qed.
+Lemma VS_code_iwf {G Γ l li l' li' x x' s s' n n' o o' c c' m m'} :
+  lwf (gL G) l -> lwf (gL G) li -> lequiv (gL G) l l' -> lequiv (gL G) li li' ->
+  VTmS G Γ x x' (tyU li) (lsuc li) -> VTmS G Γ s s' (tyU l) (lsuc l) ->
+  VTmS G (Γ ,, tyEl l s @ l) n n' tyNat lzero ->
+  VTmS G (Γ ,, tyEl l s @ l) o o' (tyEl li x⟨↑⟩) li ->
+  VTmS G (Γ ,, tyEl l s @ l ,, tyFin n @ lzero) c c' (tyEl li x⟨↑⟩⟨↑⟩) li ->
+  VTmS G Γ m m' (tyEl li x) li ->
+  VTmS G Γ (tmIWf l li x s n o c m) (tmIWf l' li' x' s' n' o' c' m')
+    (tyU (lmax l li)) (lsuc (lmax l li)).
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_El_iwf {G Γ l li x s n o c m} : lwf (gL G) l -> lwf (gL G) li ->
+  VTmS G Γ x x (tyU li) (lsuc li) -> VTmS G Γ s s (tyU l) (lsuc l) ->
+  VTmS G (Γ ,, tyEl l s @ l) n n tyNat lzero ->
+  VTmS G (Γ ,, tyEl l s @ l) o o (tyEl li x⟨↑⟩) li ->
+  VTmS G (Γ ,, tyEl l s @ l ,, tyFin n @ lzero) c c (tyEl li x⟨↑⟩⟨↑⟩) li ->
+  VTmS G Γ m m (tyEl li x) li ->
+  VTyS G Γ (tyIWf l li (tyEl li x) (tyEl l s) n o c m) (tyEl (lmax l li) (tmIWf l li x s n o c m)) (lmax l li).
+Proof using EL VL VN.
+  intros Hw Hwi Vx Vs Vn Vo Vc Vm.
+  eapply (VTyS_trans_diag EP EM (T2 := tyEl (lmax l li) (tmIWf l li x s n o c m))); [s_diag V_El_iwf|].
+  assert (Hwm : lwf (gL G) (lmax l li)) by (cbn; split; assumption).
+  apply VS_El; [exact Hwm | apply lequiv_refl, Hwm |].
+  apply VS_code_iwf; try assumption; apply lequiv_refl; assumption.
+Qed.
+
 End Rules.
 
 End RulesS.
@@ -927,4 +1101,15 @@ Ltac vs_rules side :=
   | solve [simple eapply VS_elimSq_sq; side]
   | solve [simple eapply VS_sq_single; side] | solve [simple eapply VS_sq_single_sq; side]
   (* the code of ∥·∥ (M16b) *)
-  | solve [simple eapply VS_code_sq; side] | solve [simple eapply VS_El_sq; side] ].
+  | solve [simple eapply VS_code_sq; side] | solve [simple eapply VS_El_sq; side]
+  (* dependent tuples (M17a) *)
+  | solve [simple eapply VS_dvec; side] | solve [simple eapply VS_dvec_zero; side]
+  | solve [simple eapply VS_dvec_succ; side]
+  (* indexed well-founded trees (M17b) *)
+  | solve [simple eapply VS_iwf; side] | solve [simple eapply VS_supi; side]
+  | solve [simple eapply VS_elimIWf; side] | solve [simple eapply VS_elimIWf_supi; side]
+  | solve [simple eapply VS_supi_ty; side] | solve [simple eapply VS_elimIWf_ty; side]
+  | solve [simple eapply VS_elimIWf_supi_ty; side]
+  (* the codes of DVec and IWf (M17c) *)
+  | solve [simple eapply VS_code_dvec; side] | solve [simple eapply VS_El_dvec; side]
+  | solve [simple eapply VS_code_iwf; side] | solve [simple eapply VS_El_iwf; side] ].

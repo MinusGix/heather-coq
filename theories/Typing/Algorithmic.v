@@ -34,7 +34,9 @@ Inductive posty : ty -> Prop :=
 (* well-founded trees (M13a): no η *)
 | posty_W l l' A B : posty (tyW l l' A B)
 (* finitary well-founded trees (M15a): no η *)
-| posty_wf l A N : posty (tyWf l A N).
+| posty_wf l A N : posty (tyWf l A N)
+(* indexed W-types (M17b): no η *)
+| posty_iwf l li X A N Ot C m : posty (tyIWf l li X A N Ot C m).
 
 Inductive ac_ty : gctx -> ctx -> ty -> ty -> Prop :=
 | act_red G Γ T T' W W' : reds_ty T W -> reds_ty T' W' -> whnf_ty W -> whnf_ty W' ->
@@ -80,6 +82,13 @@ with ac_tynf : gctx -> ctx -> ty -> ty -> Prop :=
 (* finitary well-founded trees (M15a): the arities at Nat under the shape *)
 | actnf_wf G Γ l l' A A' N N' : leqv l l' -> ac_ty G Γ A A' -> ac_tm G (Γ ,, A @ l) N N' tyNat ->
     ac_tynf G Γ (tyWf l A N) (tyWf l' A' N')
+(* indexed W-types (M17b): the signature as [Wf]'s, the output and child
+   indices at the index type under their binders, and the indices *)
+| actnf_iwf G Γ l li k ki X X' A A' N N' Ot Ot' C C' m m' : leqv l k -> leqv li ki ->
+    ac_ty G Γ X X' -> ac_ty G Γ A A' -> ac_tm G (Γ ,, A @ l) N N' tyNat ->
+    ac_tm G (Γ ,, A @ l) Ot Ot' X⟨↑⟩ -> ac_tm G (Γ ,, A @ l ,, tyFin N @ lzero) C C' X⟨↑⟩⟨↑⟩ ->
+    ac_tm G Γ m m' X ->
+    ac_tynf G Γ (tyIWf l li X A N Ot C m) (tyIWf k ki X' A' N' Ot' C' m')
 (* propositional truncation (M16a) *)
 | actnf_sq G Γ l l' A A' : leqv l l' -> ac_ty G Γ A A' -> ac_tynf G Γ (tySq l A) (tySq l' A')
 (* the identity type (M11a): endpoints compared at the left carrier *)
@@ -97,6 +106,10 @@ with ac_tyne : gctx -> ctx -> ty -> ty -> Prop :=
 | actne_vec G Γ l l' A A' ν ν' W : leqv l l' -> ac_ty G Γ A A' -> ac_tmnee G Γ ν ν' W ->
     ac_tyne G Γ (tyVec l A ν) (tyVec l' A' ν')
 | actne_fin G Γ ν ν' W : ac_tmnee G Γ ν ν' W -> ac_tyne G Γ (tyFin ν) (tyFin ν')
+(* dependent tuples at a neutral length (M17a): the families under the
+   left length's index type *)
+| actne_dvec G Γ l l' ν ν' F F' W : leqv l l' -> ac_tmnee G Γ ν ν' W ->
+    ac_ty G (Γ ,, tyFin ν @ lzero) F F' -> ac_tyne G Γ (tyDVec l ν F) (tyDVec l' ν' F')
 
 with ac_ctx : gctx -> ctx -> ctx -> Prop :=
 | acc_nil G : ac_ctx G cnil cnil
@@ -183,6 +196,13 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmnf_supf G Γ l A N k k' C D C' D' a a' cs cs' : ac_tm G Γ a a' A ->
     ac_tm G Γ cs cs' (tyVec l (tyWf l A N) N[lsingle a]) ->
     ac_tmnf G Γ (tmSupf k C D a cs) (tmSupf k' C' D' a' cs') (tyWf l A N)
+(* [sup_i] (M17b): as [sup_f]'s, the children at their [DVec] type; the
+   annotations are the type's up to equality, at any index *)
+| actmnf_supi G Γ l li X A N Ot C m k ki X1 A1 N1 O1 C1 k' ki' X1' A1' N1' O1' C1' a a' cs cs' :
+    ac_tm G Γ a a' A ->
+    ac_tm G Γ cs cs' (tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a)) ->
+    ac_tmnf G Γ (tmSupi k ki X1 A1 N1 O1 C1 a cs) (tmSupi k' ki' X1' A1' N1' O1' C1' a' cs')
+      (tyIWf l li X A N Ot C m)
 (* the codes of Empty and + (M12c) *)
 | actmnf_code_empty G Γ l k k' : leqv k k' -> ac_tmnf G Γ (tmEmpty k) (tmEmpty k') (tyU l)
 | actmnf_code_sum G Γ l l1 l2 l3 l4 s s' t t' : leqv l1 l3 -> leqv l2 l4 ->
@@ -208,6 +228,17 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 (* the code of ∥·∥ (M16b) *)
 | actmnf_code_sq G Γ l k k' s s' : leqv k k' -> ac_tm G Γ s s' (tyU k) ->
     ac_tmnf G Γ (tmSqCode k s) (tmSqCode k' s') (tyU l)
+(* the codes of [DVec] and [IWf] (M17c), structurally, the binders'
+   contexts at the left components as [IWf]'s *)
+| actmnf_code_dvec G Γ l k k' n n' f f' : leqv k k' ->
+    ac_tm G Γ n n' tyNat -> ac_tm G (Γ ,, tyFin n @ lzero) f f' (tyU k) ->
+    ac_tmnf G Γ (tmDVec k n f) (tmDVec k' n' f') (tyU l)
+| actmnf_code_iwf G Γ l k k' ki ki' x x' s s' n n' o o' c c' m m' : leqv k k' -> leqv ki ki' ->
+    ac_tm G Γ x x' (tyU ki) -> ac_tm G Γ s s' (tyU k) ->
+    ac_tm G (Γ ,, tyEl k s @ k) n n' tyNat -> ac_tm G (Γ ,, tyEl k s @ k) o o' (tyEl ki x⟨↑⟩) ->
+    ac_tm G (Γ ,, tyEl k s @ k ,, tyFin n @ lzero) c c' (tyEl ki x⟨↑⟩⟨↑⟩) ->
+    ac_tm G Γ m m' (tyEl ki x) ->
+    ac_tmnf G Γ (tmIWf k ki x s n o c m) (tmIWf k' ki' x' s' n' o' c' m') (tyU l)
 
 with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_var G Γ n T l : in_ctx Γ n T l -> ac_tmne G Γ (var n) (var n) T
@@ -331,6 +362,20 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
       c c' (wfstepty l1 A N M) ->
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (tmElimWf l1 l2 A N M c ν) (tmElimWf l3 l4 A' N' M' c' ν') M[lsingle ν]
+(* [elim_IWf] (M17b): as [elim_Wf], with the indices compared and the
+   induction hypothesis's types compared as [eqtm_elimIWf] states them *)
+| actmne_elimIWf G Γ l li l' k ki k' X X' A A' N N' Ot Ot' C C' M M' c c' m m' ν ν' W :
+    leqv l k -> leqv li ki -> leqv l' k' ->
+    ac_ty G Γ X X' -> ac_ty G Γ A A' -> ac_tm G (Γ ,, A @ l) N N' tyNat ->
+    ac_tm G (Γ ,, A @ l) Ot Ot' X⟨↑⟩ -> ac_tm G (Γ ,, A @ l ,, tyFin N @ lzero) C C' X⟨↑⟩⟨↑⟩ ->
+    ac_ty G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M' ->
+    ac_ty G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
+      (iwfihty l li l' X A N Ot C M) (iwfihty k ki k' X' A' N' Ot' C' M') ->
+    ac_tm G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
+      c c' (iwfstepty l li X A N Ot C M) ->
+    ac_tm G Γ m m' X -> ac_tmnee G Γ ν ν' W ->
+    ac_tmne G Γ (tmElimIWf l li l' X A N Ot C M c m ν) (tmElimIWf k ki k' X' A' N' Ot' C' M' c' m' ν')
+      M[lsingle2 m ν]
 (* [ind_∥∥] (M16a): the carriers, and the motives at the left carrier's
    squash; the scrutinees are neutral and, as [elim_Empty]'s, never compared,
    and neither are the steps (irrelevance at the step's squash type) *)

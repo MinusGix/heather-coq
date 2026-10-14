@@ -19,6 +19,7 @@
     The Π case records the generic equality of domains and codomains (the
     paper records it for the whole Π type, which is derivable). *)
 From DeLaM.Typing Require Export Generic.
+From DeLaM.Typing Require Import PresupIWf.
 
 (** ** Parameters of the layered relation (M2_DESIGN.md, D5)
 
@@ -161,6 +162,8 @@ Definition ktm {G Γ} (ρ : kwk G Γ) (t : tm) : tm := t⟦kw_γ ρ⟧⟨kw_r ρ
 (** Under one local binder. *)
 Definition ktyl {G Γ} (ρ : kwk G Γ) (T : ty) : ty := T⟦kw_γ ρ⟧⟨rlift (kw_r ρ)⟩.
 Definition ktml {G Γ} (ρ : kwk G Γ) (t : tm) : tm := t⟦kw_γ ρ⟧⟨rlift (kw_r ρ)⟩.
+(** Under two local binders ([IWf]'s child index, M17b). *)
+Definition ktmll {G Γ} (ρ : kwk G Γ) (t : tm) : tm := t⟦kw_γ ρ⟧⟨rlift (rlift (kw_r ρ))⟩.
 
 (** A purely local weakening. *)
 Definition kw_loc {G Γ Δ} (r : wk) (Hr : r : Δ ≤ Γ) (HΔ : [ G ; Δ ⊢g ]) : kwk G Γ :=
@@ -480,6 +483,129 @@ Scheme WfRel_mut := Induction for WfRel Sort Prop
   with VecSp_mut := Induction for VecSp Sort Prop.
 Combined Scheme WfRel_comb from WfRel_mut, WfNf_mut, VecSp_mut.
 
+(** ** Indexed W-types (M17_DESIGN.md, M17b)
+
+    [Wf]'s three families with the index an index of the families: each
+    child sits at its own index. The families are indexed, besides [Wf]'s
+    data, by the index type [X], the output index [Ot] (under the shape
+    binder) and the child index [C] (under the shape and position
+    binders), and by the index relation [idxR] (the relation at [X] in
+    every world):
+    - [IWfRel m]: both sides reduce, at the left [IWf(m)], to whnfs related
+      generically and by [IWfNf m];
+    - [IWfNf m]: two [sup_i]s whose annotations agree with the type's,
+      whose shapes are related in every world, whose output index [Ot[a]]
+      is related to [m] at [X] in every world (the constructor is at its
+      result index, read through conversion), and whose children are
+      related in every world by the spine at the family of child indices
+      [C[a, i]]; or two neutrals;
+    - [DVecISp c k]: the relation at [DVec(k; i. IWf(c))] spelled out, as
+      [VecSp], for a family [c] of indices under the position binder: at a
+      successor its first projections are related by [IWfRel] at the
+      head's index [c[inl ⟨⟩]] and its second by the spine at the moved
+      family [c[inr j]] ([posMv]).
+    Unlike [Wf]'s, the agreement of the annotations ([IWfEq]) is a
+    declarative equation: symmetry moves it into the other side's
+    contexts, two binders deep for [C], and the generic laws convert only
+    the last context entry. The projections' annotations are generic, as
+    [Wf]'s: the spine of a [sup_i] comes from [Σ]'s relation, which
+    relates the projections only at generic annotations. *)
+
+(** The type family of the children at a family of child indices [c]
+    (under the position binder). *)
+Definition iwfFamT (l li : lvl) (X A : ty) (N Ot C c : tm) : ty :=
+  tyIWf l li X⟨↑⟩ A⟨↑⟩ N⟨rlift ↑⟩ Ot⟨rlift ↑⟩ C⟨rlift (rlift ↑)⟩ c.
+(** The head position of [Fin (S k)], and a family moved to the tail. *)
+Definition posHd (k : tm) : tm := tmInl lzero lzero (tyUnit lzero) (tyFin k) (tmTriv lzero).
+Definition posTl (k p : tm) : tm := tmInr lzero lzero (tyUnit lzero) (tyFin k) p.
+Definition posMv (k c : tm) : tm := c⟨rlift ↑⟩[lsingle (posTl k⟨↑⟩ (var 0))].
+
+Inductive IWfRel : forall (G : gctx) (Γ : ctx) (l li : lvl) (X A : ty) (N Ot C : tm)
+    (idxR domR : DomRel G Γ), tm -> tm -> tm -> Prop :=
+| iwfrel G Γ l li X A N Ot C idxR domR m t t' w w' :
+    [ G ; Γ ⊢g t ⤳* w : tyIWf l li X A N Ot C m @ lmax l li ] ->
+    [ G ; Γ ⊢g t' ⤳* w' : tyIWf l li X A N Ot C m @ lmax l li ] ->
+    [ G ; Γ ⊢ w ≈ w' : tyIWf l li X A N Ot C m @ lmax l li ] ->
+    IWfNf G Γ l li X A N Ot C idxR domR m w w' -> IWfRel G Γ l li X A N Ot C idxR domR m t t'
+with IWfNf : forall (G : gctx) (Γ : ctx) (l li : lvl) (X A : ty) (N Ot C : tm)
+    (idxR domR : DomRel G Γ), tm -> tm -> tm -> Prop :=
+| iwfnf_sup G Γ l li X A N Ot C idxR domR m k ki k' ki' X1 A1 N1 O1 C1 X1' A1' N1' O1' C1' a a' cs cs' :
+    IWfEq (G := G) (i := ge_layer) Γ l li k ki X X1 A A1 N N1 Ot O1 C C1 ->
+    IWfEq (G := G) (i := ge_layer) Γ l li k' ki' X X1' A A1' N N1' Ot O1' C C1' ->
+    (forall ρ : kwk G Γ, domR ρ (ktm ρ a) (ktm ρ a')) ->
+    (forall ρ : kwk G Γ, idxR ρ (ktml ρ Ot)[lsingle (ktm ρ a)] (ktm ρ m)) ->
+    (forall ρ : kwk G Γ,
+       DVecISp (kw_G ρ) (kw_Δ ρ) l li (kty ρ X) (kty ρ A) (ktml ρ N) (ktml ρ Ot) (ktmll ρ C)
+         (fun ρ' => idxR (kw_comp ρ ρ')) (fun ρ' => domR (kw_comp ρ ρ'))
+         (ktmll ρ C)[llift (lsingle (ktm ρ a))] (ktml ρ N)[lsingle (ktm ρ a)] (ktm ρ cs) (ktm ρ cs')) ->
+    IWfNf G Γ l li X A N Ot C idxR domR m (tmSupi k ki X1 A1 N1 O1 C1 a cs) (tmSupi k' ki' X1' A1' N1' O1' C1' a' cs')
+| iwfnf_ne G Γ l li X A N Ot C idxR domR m ν ν' :
+    [ G ; Γ ⊢ ν ~ ν' : tyIWf l li X A N Ot C m @ lmax l li ] -> IWfNf G Γ l li X A N Ot C idxR domR m ν ν'
+with DVecISp : forall (G : gctx) (Γ : ctx) (l li : lvl) (X A : ty) (N Ot C : tm)
+    (idxR domR : DomRel G Γ), tm -> tm -> tm -> tm -> Prop :=
+| visp_zero G Γ l li X A N Ot C idxR domR c k cs cs' :
+    [ G ; Γ ⊢g k ⤳* zero : tyNat @ lzero ] ->
+    UnitRel G Γ (lmax l li) cs cs' -> DVecISp G Γ l li X A N Ot C idxR domR c k cs cs'
+| visp_succ G Γ l li X A N Ot C idxR domR c k m cs cs' w w' :
+    [ G ; Γ ⊢g k ⤳* succ m : tyNat @ lzero ] ->
+    [ G ; Γ ⊢g cs ⤳* w : tySig (lmax l li) (lmax l li) (dvecHd m (iwfFamT l li X A N Ot C c))
+                            (dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c)) @ lmax (lmax l li) (lmax l li) ] ->
+    [ G ; Γ ⊢g cs' ⤳* w' : tySig (lmax l li) (lmax l li) (dvecHd m (iwfFamT l li X A N Ot C c))
+                            (dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c)) @ lmax (lmax l li) (lmax l li) ] ->
+    whnf w -> whnf w' ->
+    [ G ; Γ ⊢ w ≈ w' : tySig (lmax l li) (lmax l li) (dvecHd m (iwfFamT l li X A N Ot C c))
+                         (dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c)) @ lmax (lmax l li) (lmax l li) ] ->
+    (forall la lb A2 B2 la' lb' A2' B2',
+       lequiv (gL G) la (lmax l li) -> lequiv (gL G) lb (lmax l li) ->
+       lequiv (gL G) la' (lmax l li) -> lequiv (gL G) lb' (lmax l li) ->
+       [ G ; Γ ⊢ dvecHd m (iwfFamT l li X A N Ot C c) ≈ A2 @ lmax l li ] ->
+       [ G ; Γ ,, dvecHd m (iwfFamT l li X A N Ot C c) @ lmax l li
+           ⊢ dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c) ≈ B2 @ lmax l li ] ->
+       [ G ; Γ ⊢ dvecHd m (iwfFamT l li X A N Ot C c) ≈ A2' @ lmax l li ] ->
+       [ G ; Γ ,, dvecHd m (iwfFamT l li X A N Ot C c) @ lmax l li
+           ⊢ dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c) ≈ B2' @ lmax l li ] ->
+       IWfRel G Γ l li X A N Ot C idxR domR c[lsingle (posHd m)]
+         (tmFst la lb A2 B2 w) (tmFst la' lb' A2' B2' w')) ->
+    (forall la lb A2 B2 la' lb' A2' B2',
+       lequiv (gL G) la (lmax l li) -> lequiv (gL G) lb (lmax l li) ->
+       lequiv (gL G) la' (lmax l li) -> lequiv (gL G) lb' (lmax l li) ->
+       [ G ; Γ ⊢ dvecHd m (iwfFamT l li X A N Ot C c) ≈ A2 @ lmax l li ] ->
+       [ G ; Γ ,, dvecHd m (iwfFamT l li X A N Ot C c) @ lmax l li
+           ⊢ dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c) ≈ B2 @ lmax l li ] ->
+       [ G ; Γ ⊢ dvecHd m (iwfFamT l li X A N Ot C c) ≈ A2' @ lmax l li ] ->
+       [ G ; Γ ,, dvecHd m (iwfFamT l li X A N Ot C c) @ lmax l li
+           ⊢ dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c) ≈ B2' @ lmax l li ] ->
+       DVecISp G Γ l li X A N Ot C idxR domR (posMv m c) m
+         (tmSnd la lb A2 B2 w) (tmSnd la' lb' A2' B2' w')) ->
+    DVecISp G Γ l li X A N Ot C idxR domR c k cs cs'
+| visp_ne G Γ l li X A N Ot C idxR domR c k ν cs cs' :
+    [ G ; Γ ⊢g k ⤳* ν : tyNat @ lzero ] -> [ G ; Γ ⊢ ν ~ ν : tyNat @ lzero ] ->
+    NeRel G Γ (tyDVec (lmax l li) ν (iwfFamT l li X A N Ot C c)) (tyDVec (lmax l li) ν (iwfFamT l li X A N Ot C c))
+      (lmax l li) cs cs' ->
+    DVecISp G Γ l li X A N Ot C idxR domR c k cs cs'.
+
+Scheme IWfRel_mut := Induction for IWfRel Sort Prop
+  with IWfNf_mut := Induction for IWfNf Sort Prop
+  with DVecISp_mut := Induction for DVecISp Sort Prop.
+Combined Scheme IWfRel_comb from IWfRel_mut, IWfNf_mut, DVecISp_mut.
+
+(** Related positions of [Fin k] and [Fin k']: the canonical ones, [posHd]
+    and [posTl] at the lengths' predecessors, and neutrals. They are what
+    the children's spine reaches, and what the child index premise of
+    [LRiwf] quantifies over (the relation at [Fin] cannot occur there: it
+    is the relation being defined). The neutrals are what makes the child
+    indices generically equal under a position binder (at the variable),
+    which the spine's generic annotations need at a neutral length. *)
+Inductive PosRel (G : gctx) (Γ : ctx) : tm -> tm -> tm -> tm -> Prop :=
+| pos_hd k k' m m' :
+    [ G ; Γ ⊢g k ⤳* succ m : tyNat @ lzero ] -> [ G ; Γ ⊢g k' ⤳* succ m' : tyNat @ lzero ] ->
+    NatRel G Γ m m' -> PosRel G Γ k k' (posHd m) (posHd m')
+| pos_tl k k' m m' p p' :
+    [ G ; Γ ⊢g k ⤳* succ m : tyNat @ lzero ] -> [ G ; Γ ⊢g k' ⤳* succ m' : tyNat @ lzero ] ->
+    PosRel G Γ m m' p p' -> PosRel G Γ k k' (posTl m p) (posTl m' p')
+| pos_ne k k' p p' :
+    [ G ; Γ ⊢g k ≅ k' : tyNat @ lzero ] -> [ G ; Γ ⊢ p ~ p' : tyFin k @ lzero ] -> PosRel G Γ k k' p p'.
+
 (** ** The type-level data of a binder former
 
     [Π] and [Σ] (and later formers of the same shape) share it: both sides
@@ -732,6 +858,38 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
     (* the carrier's relation is a PER, as [LRsum]'s summands' *)
     (forall x y, RA x y -> RA y x) -> (forall x y z, RA x y -> RA y z -> RA x z) ->
     releq R (SqRel G Γ l1 A RA) ->
+    LR n rec G Γ T T' l R
+| LRiwf G Γ T T' l l1 li1 l2 li2 X X' A A' N N' Ot Ot' C C' m m' (idxR domR : DomRel G Γ) R :
+    lequiv (gL G) l (lmax l1 li1) -> lequiv (gL G) l2 l1 -> lequiv (gL G) li2 li1 ->
+    lwf (gL G) l1 -> lwf (gL G) li1 ->
+    [ G ; Γ ⊢g T ⤳* tyIWf l1 li1 X A N Ot C m @ l ] -> [ G ; Γ ⊢g T' ⤳* tyIWf l2 li2 X' A' N' Ot' C' m' @ l ] ->
+    [ G ; Γ ⊢g X @ li1 ] -> [ G ; Γ ⊢g X' @ li1 ] -> [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢g A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢g N : tyNat @ lzero ] -> [ G ; Γ ,, A' @ l1 ⊢g N' : tyNat @ lzero ] ->
+    [ G ; Γ ,, A @ l1 ⊢g Ot : X⟨↑⟩ @ li1 ] -> [ G ; Γ ,, A' @ l1 ⊢g Ot' : X'⟨↑⟩ @ li1 ] ->
+    [ G ; Γ ,, A @ l1 ,, tyFin N @ lzero ⊢g C : X⟨↑⟩⟨↑⟩ @ li1 ] ->
+    [ G ; Γ ,, A' @ l1 ,, tyFin N' @ lzero ⊢g C' : X'⟨↑⟩⟨↑⟩ @ li1 ] ->
+    [ G ; Γ ⊢g m : X @ li1 ] -> [ G ; Γ ⊢g m' : X' @ li1 ] ->
+    [ G ; Γ ⊢ X ≈ X' @ li1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ,, A @ l1 ⊢ N ≈ N' : tyNat @ lzero ] ->
+    [ G ; Γ ,, A @ l1 ⊢ Ot ≈ Ot' : X⟨↑⟩ @ li1 ] ->
+    [ G ; Γ ,, A @ l1 ,, tyFin N @ lzero ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩ @ li1 ] ->
+    [ G ; Γ ⊢ m ≈ m' : X @ li1 ] ->
+    (* the index type, in every world; its relation is a PER, as [LRid]'s
+       carrier's (symmetry moves the output index along it) *)
+    (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ X) (kty ρ X') li1 (idxR ρ)) ->
+    (forall (ρ : kwk G Γ) x y, idxR ρ x y -> idxR ρ y x) ->
+    (forall (ρ : kwk G Γ) x y z, idxR ρ x y -> idxR ρ y z -> idxR ρ x z) ->
+    (* the shapes, the arity and the output and child indices at related shapes *)
+    (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ A) (kty ρ A') l1 (domR ρ)) ->
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' ->
+        NatRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N)[lsingle a] (ktml ρ N')[lsingle a']) ->
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' ->
+        idxR ρ (ktml ρ Ot)[lsingle a] (ktml ρ Ot')[lsingle a']) ->
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' -> forall p p',
+        PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N)[lsingle a] (ktml ρ N')[lsingle a'] p p' ->
+        idxR ρ (ktmll ρ C)[lsingle2 a p] (ktmll ρ C')[lsingle2 a' p']) ->
+    (* the index *)
+    (forall ρ : kwk G Γ, idxR ρ (ktm ρ m) (ktm ρ m')) ->
+    releq R (IWfRel G Γ l1 li1 X A N Ot C idxR domR m) ->
     LR n rec G Γ T T' l R.
 
 (** ** Stages *)

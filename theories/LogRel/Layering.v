@@ -24,6 +24,10 @@ Fixpoint mltt_ty (T : ty) : Prop :=
   | tyWf _ A _ => mltt_ty A
   (* [∥·∥]'s relation keeps its carrier's (M16a) *)
   | tySq _ A => mltt_ty A
+  (* [DVec]'s family is its reducts' components (M17a) *)
+  | tyDVec _ _ F => mltt_ty F
+  (* [IWf]'s index and shape relations are relations at those types (M17b) *)
+  | tyIWf _ _ X A _ _ _ _ => mltt_ty X /\ mltt_ty A
   | tyCTyp _ _ | tyCTrm _ _ _ | tyCPi _ _ | tyTPi _ _ _ _ => False
   | _ => True
   end.
@@ -62,7 +66,8 @@ Lemma mltt_red {T W} : reds_ty T W -> mltt_ty T -> mltt_ty W.
 Proof.
   induction 1 as [| T U W Hs _ IH]; [exact id |].
   intros H; apply IH; destruct Hs; cbn in *; try tauto.
-  split; [exact H | apply mltt_ren, H].
+  - split; [exact H | apply mltt_ren, H].
+  - split; [apply mltt_subst, H | apply mltt_subst, mltt_ren, mltt_ren, H].
 Qed.
 
 Lemma mltt_ctx_lookup {Γ n A l} : in_ctx Γ n A l -> mltt_ctx Γ -> mltt_ty A.
@@ -131,7 +136,10 @@ Proof.
                      [Hl H3 H4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] Hdom IHdom Hcod IHcod HR
                  | G Γ T T' l l1 l2 A A' N N' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN
                      Hdom IHdom arAd HR
-                 | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ IHRQ Hqs Hqt HR]; intros Hm Hm'.
+                 | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ IHRQ Hqs Hqt HR
+                 | G Γ T T' l l1 li1 l2 li2 X X' A A' N N' Ot Ot' C C' m m' idxR domR R Hl Hl2 Hli2 Hw Hwi
+                     HT HT' HX HX' HA HA' HN HN' HO HO' HC HC' Hmt Hmt' HXX HAA HNN HOO HCC Hmm
+                     Hidx IHidx Hisym Histr Hdom IHdom Har Hot Hch Hix HR]; intros Hm Hm'.
   - eapply LRnat; eassumption.
   - eapply LRU; try eassumption.
     intros t t'; rewrite (HR t t'); split; apply (URel_layer (n := n) Hn);
@@ -174,6 +182,9 @@ Proof.
   - pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT) Hm) as HmA.
     pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT') Hm') as HmA'.
     eapply LRsq; try eassumption. apply IHRQ; assumption.
+  - pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT) Hm) as [HmX HmA].
+    pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT') Hm') as [HmX' HmA'].
+    eapply LRiwf; try eassumption; intros ρ; [apply IHidx | apply IHdom]; apply mltt_ren, mltt_gwa; assumption.
 Qed.
 
 End Layering.

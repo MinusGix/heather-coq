@@ -140,6 +140,10 @@ Class GenericEqLaws `{GenericEq} := {
   geq_tm_ctxconv {G Γ A A' la la' t t' T l} :
     [ G ; Γ ⊢g A ≅ A' @ la ] -> lequiv (gL G) la la' -> [ G ; Γ ,, A' @ la' ⊢g ] ->
     [ G ; Γ ,, A @ la ⊢ t ≈ t' : T @ l ] -> [ G ; Γ ,, A' @ la' ⊢ t ≈ t' : T @ l ] ;
+  (** and of the second-to-last entry, for [IWf]'s child family (M17b) *)
+  geq_tm_ctxconv2 {G Γ A A' la la' B lb t t' T l} :
+    [ G ; Γ ⊢g A ≅ A' @ la ] -> lequiv (gL G) la la' -> [ G ; Γ ,, A' @ la' ,, B @ lb ⊢g ] ->
+    [ G ; Γ ,, A @ la ,, B @ lb ⊢ t ≈ t' : T @ l ] -> [ G ; Γ ,, A' @ la' ,, B @ lb ⊢ t ≈ t' : T @ l ] ;
 
   (** Weak head closure *)
   geq_ty_exp {G Γ T T' W W' l} :
@@ -449,7 +453,75 @@ Class GenericEqLaws `{GenericEq} := {
   (** the code of [∥·∥] (M16b) *)
   geq_tm_code_sq {G Γ l l' s s'} : lequiv (gL G) l l' ->
     [ G ; Γ ⊢ s ≈ s' : tyU l @ lsuc l ] ->
-    [ G ; Γ ⊢ tmSqCode l s ≈ tmSqCode l' s' : tyU l @ lsuc l ]
+    [ G ; Γ ⊢ tmSqCode l s ≈ tmSqCode l' s' : tyU l @ lsuc l ] ;
+  (** dependent tuples at a neutral length (M17a): [Vec]'s law, with the
+      family under the index *)
+  gne_ty_dvec {G Γ l l' ν ν' F F'} : lequiv (gL G) l l' ->
+    [ G ; Γ ⊢ ν ~ ν' : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyFin ν @ lzero ⊢g F @ l ] -> [ G ; Γ ,, tyFin ν @ lzero ⊢ F ≈ F' @ l ] ->
+    [ G ; Γ ⊢ tyDVec l ν F ~ tyDVec l' ν' F' @ l ] ;
+  (** indexed W-types (M17b): the congruences of [IWf] and [sup_i], and
+      [elim_IWf] is neutral on a neutral scrutinee. The induction
+      hypothesis's types are compared as [eqtm_elimIWf] states them
+      (M17_DESIGN.md); the motive's and the children's types are well formed
+      from the signature's typings *)
+  geq_ty_iwf {G Γ l li k ki X X' A A' N N' Ot Ot' C C' m m'} :
+    lequiv (gL G) l k -> lequiv (gL G) li ki ->
+    [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ⊢ X ≈ X' @ li ] ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
+    [ G ; Γ ,, A @ l ⊢g N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢ N ≈ N' : tyNat @ lzero ] ->
+    [ G ; Γ ,, A @ l ⊢g Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢ Ot ≈ Ot' : X⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢g C : X⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢ m ≈ m' : X @ li ] ->
+    [ G ; Γ ⊢ tyIWf l li X A N Ot C m ≈ tyIWf k ki X' A' N' Ot' C' m' @ lmax l li ] ;
+  (* the annotations of [sup_i] agree declaratively, as the relation's
+     [IWfEq] states them: the algorithm compares only the shapes and the
+     children ([actmnf_supf]'s convention) *)
+  geq_tm_supi {G Γ l li k ki X X' A A' N N' Ot Ot' C C' a a' cs cs'} :
+    lequiv (gL G) l k -> lequiv (gL G) li ki ->
+    [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ⊢g X ≅ X' @ li ] ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢g A ≅ A' @ l ] ->
+    [ G ; Γ ,, A @ l ⊢g N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢g N ≅ N' : tyNat @ lzero ] ->
+    [ G ; Γ ,, A @ l ⊢g Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢g Ot ≅ Ot' : X⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢g C : X⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢g C ≅ C' : X⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢ a ≈ a' : A @ l ] ->
+    [ G ; Γ ⊢ cs ≈ cs' : tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a) @ lmax l li ] ->
+    [ G ; Γ ⊢ tmSupi l li X A N Ot C a cs ≈ tmSupi k ki X' A' N' Ot' C' a' cs'
+        : tyIWf l li X A N Ot C Ot[lsingle a] @ lmax l li ] ;
+  gne_tm_elimIWf {G Γ l li l' k ki k' X X' A A' N N' Ot Ot' C C' M M' c c' m m' ν ν'} :
+    lequiv (gL G) l k -> lequiv (gL G) li ki -> lequiv (gL G) l' k' ->
+    [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ⊢ X ≈ X' @ li ] ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
+    [ G ; Γ ,, A @ l ⊢g N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢ N ≈ N' : tyNat @ lzero ] ->
+    [ G ; Γ ,, A @ l ⊢g Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢ Ot ≈ Ot' : X⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢g C : X⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li ⊢g M @ l' ] ->
+    [ G ; Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li ⊢ M ≈ M' @ l' ] ->
+    [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ⊢
+        iwfihty l li l' X A N Ot C M ≈ iwfihty k ki k' X' A' N' Ot' C' M' @ lmax lzero l' ] ->
+    [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l'
+        ⊢ c ≈ c' : iwfstepty l li X A N Ot C M @ l' ] ->
+    [ G ; Γ ⊢ m ≈ m' : X @ li ] ->
+    [ G ; Γ ⊢ ν ~ ν' : tyIWf l li X A N Ot C m @ lmax l li ] ->
+    [ G ; Γ ⊢ tmElimIWf l li l' X A N Ot C M c m ν ~ tmElimIWf k ki k' X' A' N' Ot' C' M' c' m' ν'
+        : M[lsingle2 m ν] @ l' ] ;
+  (** the codes of [DVec] and [IWf] (M17c), as [Wf]'s *)
+  geq_tm_code_dvec {G Γ l l' n n' f f'} : lequiv (gL G) l l' ->
+    [ G ; Γ ⊢g n : tyNat @ lzero ] -> [ G ; Γ ⊢ n ≈ n' : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyFin n @ lzero ⊢ f ≈ f' : tyU l @ lsuc l ] ->
+    [ G ; Γ ⊢ tmDVec l n f ≈ tmDVec l' n' f' : tyU l @ lsuc l ] ;
+  geq_tm_code_iwf {G Γ l li k ki x x' s s' n n' o o' c c' m m'} :
+    lequiv (gL G) l k -> lequiv (gL G) li ki ->
+    [ G ; Γ ⊢g x : tyU li @ lsuc li ] -> [ G ; Γ ⊢ x ≈ x' : tyU li @ lsuc li ] ->
+    [ G ; Γ ⊢g s : tyU l @ lsuc l ] -> [ G ; Γ ⊢ s ≈ s' : tyU l @ lsuc l ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢g n : tyNat @ lzero ] -> [ G ; Γ ,, tyEl l s @ l ⊢ n ≈ n' : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢ o ≈ o' : tyEl li x⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢ c ≈ c' : tyEl li x⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢ m ≈ m' : tyEl li x @ li ] ->
+    [ G ; Γ ⊢ tmIWf l li x s n o c m ≈ tmIWf k ki x' s' n' o' c' m' : tyU (lmax l li) @ lsuc (lmax l li) ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

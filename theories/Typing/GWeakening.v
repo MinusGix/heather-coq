@@ -32,6 +32,14 @@ Proof. now intros ? -> ->. Qed.
 Lemma wf_ty_regboth G i Δ Δ' T T' l :
   [ G ; Δ' ⊢[ i ] T' @ l ] -> Δ' = Δ -> T' = T -> [ G ; Δ ⊢[ i ] T @ l ].
 Proof. now intros ? -> ->. Qed.
+(** [elim_IWf]'s congruence and β (M17b): an equation of types in a shifted
+    context, and a term that commutes with the weakening by an equation. *)
+Lemma eq_ty_regall G i Δ Δ' T1 T2 T T' l :
+  [ G ; Δ' ⊢[ i ] T1 ≅ T2 @ l ] -> Δ' = Δ -> T1 = T -> T2 = T' -> [ G ; Δ ⊢[ i ] T ≅ T' @ l ].
+Proof. now intros ? -> -> ->. Qed.
+Lemma wf_tm_regtm G i Δ x x' T T' l :
+  [ G ; Δ ⊢[ i ] x' : T' @ l ] -> x' = x -> T' = T -> [ G ; Δ ⊢[ i ] x : T @ l ].
+Proof. now intros ? -> ->. Qed.
 Lemma wf_ty_regty G i Δ A A' l : [ G ; Δ ⊢[ i ] A @ l ] -> A = A' -> [ G ; Δ ⊢[ i ] A' @ l ].
 Proof. now intros ? ->. Qed.
 Lemma eq_ty_regty G i Δ A B A' B' l :
@@ -41,6 +49,8 @@ Proof. now intros ? -> ->. Qed.
 (* twice: [case]'s branch types (M12b) shift summands inside an injection,
    which the first pass exposes *)
 Ltac gw_eq := push_gren; gren_rewrite; push_gren; gren_rewrite; push_gren; first [reflexivity | f_equal; reflexivity].
+(* [IWf]'s telescope (M17b) nests deeper: as many rounds as change the goal *)
+Ltac gw_eq' := repeat progress (push_gren; gren_rewrite); first [reflexivity | f_equal; reflexivity].
 
 #[export] Hint Resolve in_ctx_gren in_gctx_gwk gctx_var_gwk lsub_tail_gren nfl_gren : gwk.
 #[export] Hint Constructors gwk_wf : gwk.
@@ -92,7 +102,11 @@ Ltac gw_premise :=
         | solve [eapply wf_ty_regboth;
                  [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq | gw_eq]]
         | solve [eapply eq_tm_regctx;
-                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq | gw_eq]] ].
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq | gw_eq]]
+        | solve [eapply eq_ty_regall;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq' | gw_eq' | gw_eq']]
+        | solve [eapply wf_tm_regtm;
+                 [match goal with IH : _ |- _ => eapply IH; solve [eauto 8 with gwk] end | gw_eq' | gw_eq']] ].
 
 (** The lookup-typed local substitution of [u^δ]/[U^δ]. *)
 Ltac gw_entries :=
@@ -241,6 +255,25 @@ Ltac gw_manual :=
   (* meta-functions (M5): bodies under the global binder, as letbox's *)
   (* the identity type (M11a): [J]'s motive context commutes by an equation *)
   (* finitary well-founded trees (M15a): the arity's instance commutes by an equation *)
+  (* dependent tuples (M17a): the tail's index annotation shifts the length *)
+  | |- eq_ty _ _ _ (tyDVec _ (succ _) _) (tySig _ _ _ _) _ => gren_rewrite; eapply eqty_dvec_succ; gw_premise
+  (* the codes of DVec and IWf (M17c): the shifted index code commutes by an
+     equation, and the decodings come before [IWf]'s and [DVec]'s congruences *)
+  | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) (tyEl _ _) _ => eapply eqty_El_iwf; gw_premise
+  | |- eq_ty _ _ _ (tyDVec _ _ _) (tyEl _ _) _ => eapply eqty_El_dvec; gw_premise
+  | |- wf_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ => eapply wf_code_iwf; gw_premise
+  | |- eq_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwf; gw_premise
+  | |- wf_tm _ _ _ (tmDVec _ _ _) _ _ => eapply wf_code_dvec; gw_premise
+  | |- eq_tm _ _ _ (tmDVec _ _ _) _ _ _ => eapply eqtm_code_dvec; gw_premise
+  (* indexed finitary trees (M17b): the shifted index type commutes by an equation *)
+  | |- wf_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ => eapply wft_iwf; gw_premise
+  | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ _ => eapply eqty_iwf; gw_premise
+  | |- wf_tm _ _ _ (tmSupi _ _ _ _ _ _ _ _ _) _ _ => eapply wf_supi; gw_premise
+  | |- eq_tm _ _ _ (tmSupi _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_supi; gw_premise
+  | |- wf_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_elimIWf; gw_premise
+  | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ (tmSupi _ _ _ _ _ _ _ _ _)) _ _ _ =>
+      gren_rewrite; push_gren; eapply eqtm_elimIWf_supi; gw_premise
+  | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimIWf; gw_premise
   | |- wf_tm _ _ _ (tmSupf _ _ _ _ _) _ _ => eapply wf_supf; gw_premise
   | |- eq_tm _ _ _ (tmSupf _ _ _ _ _) _ _ _ => eapply eqtm_supf; gw_premise
   | |- wf_tm _ _ _ (tmElimWf _ _ _ _ _ _ _) _ _ => eapply wf_elimWf; gw_premise
@@ -482,11 +515,16 @@ Lemma gwa_elimW l l' l'' A B M c t :
   (tmElimW l l' l'' A B M c t)⟦γ⟧ = tmElimW l l' l'' A⟦γ⟧ B⟦γ⟧ M⟦γ⟧ c⟦γ⟧ t⟦γ⟧.
 Proof. now destruct γ. Qed.
 Lemma gwa_tySq l A : (tySq l A)⟦γ⟧ = tySq l A⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tyDVec l n F : (tyDVec l n F)⟦γ⟧ = tyDVec l n⟦γ⟧ F⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_sq l A a : (tmSq l A a)⟦γ⟧ = tmSq l A⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_elimSq l l' A M c t :
   (tmElimSq l l' A M c t)⟦γ⟧ = tmElimSq l l' A⟦γ⟧ M⟦γ⟧ c⟦γ⟧ t⟦γ⟧.
 Proof. now destruct γ. Qed.
 Lemma gwa_tmSqCode l s : (tmSqCode l s)⟦γ⟧ = tmSqCode l s⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tmDVec l n f : (tmDVec l n f)⟦γ⟧ = tmDVec l n⟦γ⟧ f⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_tmIWf l li x s n o c m :
+  (tmIWf l li x s n o c m)⟦γ⟧ = tmIWf l li x⟦γ⟧ s⟦γ⟧ n⟦γ⟧ o⟦γ⟧ c⟦γ⟧ m⟦γ⟧.
+Proof. now destruct γ. Qed.
 Lemma gwa_inl l l' A B a : (tmInl l l' A B a)⟦γ⟧ = tmInl l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_inr l l' A B a : (tmInr l l' A B a)⟦γ⟧ = tmInr l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_case l l' l'' A B M c1 c2 t :
@@ -581,9 +619,12 @@ Ltac push_gwa_at h k := lazymatch h with
   | @tmSEq => k gwa_tmSEq
   | @tmJ => k gwa_J
   | @tySq => k gwa_tySq
+  | @tyDVec => k gwa_tyDVec
   | @tmSq => k gwa_sq
   | @tmElimSq => k gwa_elimSq
   | @tmSqCode => k gwa_tmSqCode
+  | @tmDVec => k gwa_tmDVec
+  | @tmIWf => k gwa_tmIWf
   end.
 Ltac push_gwa := repeat match goal with
   | |- context [@gwa _ _ _ ?t] => let h := head_of t in push_gwa_at h ltac:(fun L => rewrite L)

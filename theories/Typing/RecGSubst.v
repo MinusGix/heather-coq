@@ -325,6 +325,37 @@ Proof.
   repeat rewrite ?gsubst_ren_ty, ?gsubst_ren. reflexivity.
 Qed.
 
+(** [sup_i]'s children's family and [elim_IWf]'s step telescope (M17c). *)
+Lemma gs_llift_single_raw (b a : tm) σ :
+  gsubst_tm (subst_tm b (llift (lsingle a))) σ = subst_tm (gsubst_tm b σ) (llift (lsingle (gsubst_tm a σ))).
+Proof.
+  rewrite gs_tm_subst_raw. apply subst_ext; intros [|[|n]]; rewrite ?llk_glsubst, ?llk_llift; cbn; auto.
+  apply gsubst_ren.
+Qed.
+Lemma gs_single_tm_raw (b a : tm) σ :
+  gsubst_tm (subst_tm b (lsingle a)) σ = subst_tm (gsubst_tm b σ) (lsingle (gsubst_tm a σ)).
+Proof. rewrite gs_tm_subst_raw. apply subst_ext; intros [|n]; rewrite llk_glsubst; reflexivity. Qed.
+Lemma gs_single_ty_raw (M : ty) a σ :
+  gsubst_ty (subst_ty M (lsingle a)) σ = subst_ty (gsubst_ty M σ) (lsingle (gsubst_tm a σ)).
+Proof. rewrite gs_ty_subst_raw. apply subst_ext_ty; intros [|n]; rewrite llk_glsubst; reflexivity. Qed.
+Lemma gs_tmDNth_raw l n F cs i σ :
+  gsubst_tm (tmDNth l n F cs i) σ = tmDNth l (gsubst_tm n σ) (gsubst_ty F σ) (gsubst_tm cs σ) (gsubst_tm i σ).
+Proof.
+  unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
+  repeat progress (cbn [glsubst lsingle gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty]; fold gsubst_ty gsubst_tm;
+    rewrite ?gs_ty_subst_raw, ?gs_tm_subst_raw, ?gs_ren_ty_raw, ?gs_ren_tm_raw).
+  reflexivity.
+Qed.
+Lemma gs_iwfFam_raw l li X A N Ot C a σ :
+  gsubst_ty (iwfFam l li X A N Ot C a) σ =
+  iwfFam l li (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_tm Ot σ) (gsubst_tm C σ) (gsubst_tm a σ).
+Proof.
+  unfold iwfFam. cbn [gsubst_ty]. fold gsubst_ty gsubst_tm.
+  rewrite ?gs_llift_single_raw.
+  change (gsubst_tm ?x ?σ0) with x⦃σ0⦄; change (gsubst_ty ?x ?σ0) with x⦃σ0⦄.
+  repeat rewrite ?gsubst_ren_ty, ?gsubst_ren. reflexivity.
+Qed.
+
 Ltac gpeel_push Hσ :=
   repeat first [ rewrite <- peelL_gsubst by hd_tac
                | rewrite <- peelG_gsubst by first [hd_tac | exact Hσ]
@@ -341,6 +372,13 @@ Ltac gpeel_push Hσ :=
   try match goal with |- context [tmSupf _ _ _ (var 2) (var 1)] =>
     repeat progress (cbn [glsubst lsingle gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty]; fold gsubst_ty gsubst_tm gcsubst glsubst;
       rewrite ?gs_ty_subst_raw, ?gs_tm_subst_raw, ?gs_tmNth_raw, ?gsubst_ren_ty, ?gsubst_ren, ?gs_ren_ty_raw, ?gs_ren_tm_raw) end;
+  try (lazymatch goal with
+       | |- context [iwfFam _ _ _ _ _ _ _ _] => idtac
+       | |- context [tmDNth _ _ _ _ _] => idtac
+       end;
+    repeat progress (cbn [lsingle2 gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty]; fold gsubst_ty gsubst_tm gcsubst glsubst;
+      rewrite ?gs_iwfFam_raw, ?gs_tmDNth_raw, ?gs_single_tm_raw, ?gs_single_ty_raw, ?gs_llift_single_raw,
+        ?gsubst_ren_ty, ?gsubst_ren, ?gs_ren_ty_raw, ?gs_ren_tm_raw));
   rewrite ?gs_tm_subst_raw; cbn [glsubst lsingle];
   reflexivity.
 

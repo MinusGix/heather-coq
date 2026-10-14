@@ -252,9 +252,15 @@ M15b outcome.
    so `DVec`/`IWf` land here as siblings of `Vec`/`Wf`. The two pairs are
    translations, not conversions: at a neutral length they are distinct
    neutral types, and `elim_IWf`'s ih goes through `dnth` where
-   `elim_Wf`'s goes through `nth`. The relation probe checks `dnth`'s
-   index lemma first: the ih's type is `F[i]` only up to β, one step more
-   than `V_nth` (M15a) needed.
+   `elim_Wf`'s goes through `nth`. `dnth`'s index lemma (the ih's type
+   is `F[i]` only up to β, one step more than `V_nth` (M15a) needed)
+   holds: `V_dnth`, M17a, with `DVec` at D and M (M17_DESIGN.md). `IWf`
+   itself holds at D and M through every consequence (M17b): the
+   relation is `Wf`'s with the index an index of the families, and
+   Heather's rules needed no change. Its codes and the six branches
+   55–60 hold too (M17c), their scopes derived from the layer-C rules:
+   Heather's `rec.rs` has none for `IWf` yet, so these are the statement
+   to check its branches against.
 5. The rest (Id, Empty, +, W, Vec/Fin/Wf, sEmpty, Squash). `Id` is done (M11a and
    M11b, M11_DESIGN.md). `Empty` and `+` are done, with codes and
    recursor branches (M12a–c, M12_DESIGN.md). `W` is done, with its

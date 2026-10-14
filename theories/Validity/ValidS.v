@@ -27,21 +27,6 @@ Proof.
     destruct HΓ as (HΓ & _). apply VTy_wk1. eapply IH; eassumption.
 Qed.
 
-Lemma VTy_single {G Γ A B B' a a' l l'} :
-  VTy G (Γ ,, A @ l) B B' l' -> VTm G Γ a a' A l -> VTy G Γ B[lsingle a] B'[lsingle a'] l'.
-Proof.
-  intros HB Ha Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
-  rewrite !single_subst_ty, !lift_single_ty by assumption.
-  exact (HB _ _ _ (SubRel_cons Hd (Ha _ _ _ Hd))).
-Qed.
-
-Lemma VTyG_single {G Γ A B B' a a' l l'} :
-  VTyG G (Γ ,, A @ l) B B' l' -> VTmG G Γ a a' A l -> VTyG G Γ B[lsingle a] B'[lsingle a'] l'.
-Proof.
-  intros HB Ha G' γ Hγ. pose proof (HB _ _ Hγ) as X. rewrite gwa_cext in X.
-  rewrite !gwa_subst_ty, !gwa_lsingle. exact (VTy_single X (Ha _ _ Hγ)).
-Qed.
-
 (** The motive of [J] at an endpoint and a proof (M11a). *)
 Lemma VTy_Jmot {G Γ l1 l2 A a M M' u u' e e'} :
   VTy G (Γ ,, A @ l1) (tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0)) (tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0)) l1 ->

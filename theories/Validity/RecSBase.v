@@ -826,6 +826,85 @@ Lemma redt_elimSq_inst k0 Δ T k k' A M c t : dnftm (bs 54) -> gdnf σ -> LK dnf
                  :: rect k Δ (tySq k A) t :: nil) e]).
 Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
 
+(** Dependent tuples and indexed trees (M17c): the family's call is under
+    the position, the indexed tree's under the shape and its positions. *)
+Lemma redT_dvec_inst k0 Δ k n F : dnftm (bs 55) -> gdnf σ -> LK dnftm e -> dnfctx Δ -> dnftm n -> dnfty F ->
+  dnftm (rect lzero Δ tyNat n) -> dnftm (recT k (cext Δ (tyFin n) lzero) F) ->
+  redT l1 l2 rb k0 Δ (tyDVec k n F) =
+  Some (((usubst_tm (bs 55) (uext (k :: nil) φ))⦃gext_s (GCtx Δ :: GTm n :: GTy F :: nil) σ⦄)
+          [lext (rect lzero Δ tyNat n :: recT k (cext Δ (tyFin n) lzero) F :: nil) e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_codedvec_inst k0 Δ T k n f : dnftm (bs 56) -> gdnf σ -> LK dnftm e -> dnfctx Δ -> dnftm n -> dnftm f ->
+  dnftm (rect lzero Δ tyNat n) -> dnftm (rect (lsuc k) (cext Δ (tyFin n) lzero) (tyU k) f) ->
+  redt l1 l2 rb k0 Δ T (tmDVec k n f) =
+  Some (((usubst_tm (bs 56) (uext (k :: nil) φ))⦃gext_s (GCtx Δ :: GTm n :: GTm f :: nil) σ⦄)
+          [lext (rect lzero Δ tyNat n :: rect (lsuc k) (cext Δ (tyFin n) lzero) (tyU k) f :: nil) e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redT_iwf_inst k0 Δ k ki X A N Ot C m : dnftm (bs 57) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  dnfty X -> dnfty A -> dnftm N -> dnftm Ot -> dnftm C -> dnftm m ->
+  dnftm (recT ki Δ X) -> dnftm (recT k Δ A) -> dnftm (rect lzero (cext Δ A k) tyNat N) ->
+  dnftm (rect ki (cext Δ A k) X⟨↑⟩ Ot) -> dnftm (rect ki (cext (cext Δ A k) (tyFin N) lzero) X⟨↑⟩⟨↑⟩ C) ->
+  dnftm (rect ki Δ X m) ->
+  redT l1 l2 rb k0 Δ (tyIWf k ki X A N Ot C m) =
+  Some (((usubst_tm (bs 57) (uext (k :: ki :: nil) φ))
+           ⦃gext_s (GCtx Δ :: GTy X :: GTy A :: GTm N :: GTm Ot :: GTm C :: GTm m :: nil) σ⦄)
+          [lext (recT ki Δ X :: recT k Δ A :: rect lzero (cext Δ A k) tyNat N :: rect ki (cext Δ A k) X⟨↑⟩ Ot
+                 :: rect ki (cext (cext Δ A k) (tyFin N) lzero) X⟨↑⟩⟨↑⟩ C :: rect ki Δ X m :: nil) e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_codeiwf_inst k0 Δ T k ki x s n o c m : dnftm (bs 58) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  dnftm x -> dnftm s -> dnftm n -> dnftm o -> dnftm c -> dnftm m ->
+  dnftm (rect (lsuc ki) Δ (tyU ki) x) -> dnftm (rect (lsuc k) Δ (tyU k) s) ->
+  dnftm (rect lzero (cext Δ (tyEl k s) k) tyNat n) -> dnftm (rect ki (cext Δ (tyEl k s) k) (tyEl ki x⟨↑⟩) o) ->
+  dnftm (rect ki (cext (cext Δ (tyEl k s) k) (tyFin n) lzero) (tyEl ki x⟨↑⟩⟨↑⟩) c) ->
+  dnftm (rect ki Δ (tyEl ki x) m) ->
+  redt l1 l2 rb k0 Δ T (tmIWf k ki x s n o c m) =
+  Some (((usubst_tm (bs 58) (uext (k :: ki :: nil) φ))
+           ⦃gext_s (GCtx Δ :: GTm x :: GTm s :: GTm n :: GTm o :: GTm c :: GTm m :: nil) σ⦄)
+          [lext (rect (lsuc ki) Δ (tyU ki) x :: rect (lsuc k) Δ (tyU k) s
+                 :: rect lzero (cext Δ (tyEl k s) k) tyNat n :: rect ki (cext Δ (tyEl k s) k) (tyEl ki x⟨↑⟩) o
+                 :: rect ki (cext (cext Δ (tyEl k s) k) (tyFin n) lzero) (tyEl ki x⟨↑⟩⟨↑⟩) c
+                 :: rect ki Δ (tyEl ki x) m :: nil) e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_supi_inst k0 Δ T k ki X A N Ot C a cs : dnftm (bs 59) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  dnfty X -> dnfty A -> dnftm N -> dnftm Ot -> dnftm C -> dnftm a -> dnftm cs ->
+  dnftm (recT ki Δ X) -> dnftm (recT k Δ A) -> dnftm (rect lzero (cext Δ A k) tyNat N) ->
+  dnftm (rect ki (cext Δ A k) X⟨↑⟩ Ot) -> dnftm (rect ki (cext (cext Δ A k) (tyFin N) lzero) X⟨↑⟩⟨↑⟩ C) ->
+  dnftm (rect k Δ A a) ->
+  dnftm (rect (lmax k ki) Δ (tyDVec (lmax k ki) (subst_tm N (lsingle a)) (iwfFam k ki X A N Ot C a)) cs) ->
+  redt l1 l2 rb k0 Δ T (tmSupi k ki X A N Ot C a cs) =
+  Some (((usubst_tm (bs 59) (uext (k :: ki :: nil) φ))
+           ⦃gext_s (GCtx Δ :: GTy X :: GTy A :: GTm N :: GTm Ot :: GTm C :: GTm a :: GTm cs :: nil) σ⦄)
+          [lext (recT ki Δ X :: recT k Δ A :: rect lzero (cext Δ A k) tyNat N :: rect ki (cext Δ A k) X⟨↑⟩ Ot
+                 :: rect ki (cext (cext Δ A k) (tyFin N) lzero) X⟨↑⟩⟨↑⟩ C :: rect k Δ A a
+                 :: rect (lmax k ki) Δ (tyDVec (lmax k ki) (subst_tm N (lsingle a)) (iwfFam k ki X A N Ot C a)) cs
+                 :: nil) e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
+Lemma redt_elimIWf_inst k0 Δ T k ki k' X A N Ot C M c m t : dnftm (bs 60) -> gdnf σ -> LK dnftm e -> dnfctx Δ ->
+  dnfty X -> dnfty A -> dnftm N -> dnftm Ot -> dnftm C -> dnfty M -> dnftm c -> dnftm m -> dnftm t ->
+  dnftm (recT ki Δ X) -> dnftm (recT k Δ A) -> dnftm (rect lzero (cext Δ A k) tyNat N) ->
+  dnftm (rect ki (cext Δ A k) X⟨↑⟩ Ot) -> dnftm (rect ki (cext (cext Δ A k) (tyFin N) lzero) X⟨↑⟩⟨↑⟩ C) ->
+  dnftm (recT k' (cext (cext Δ X ki) (iwfmotty k ki X A N Ot C) (lmax k ki)) M) ->
+  dnftm (rect k' (cext (cext (cext Δ A k) (iwfcsty k ki X A N Ot C) (lmax k ki))
+                    (iwfihty k ki k' X A N Ot C M) (lmax lzero k'))
+            (iwfstepty k ki X A N Ot C M) c) ->
+  dnftm (rect ki Δ X m) -> dnftm (rect (lmax k ki) Δ (tyIWf k ki X A N Ot C m) t) ->
+  redt l1 l2 rb k0 Δ T (tmElimIWf k ki k' X A N Ot C M c m t) =
+  Some (((usubst_tm (bs 60) (uext (k :: ki :: k' :: nil) φ))
+           ⦃gext_s (GCtx Δ :: GTy X :: GTy A :: GTm N :: GTm Ot :: GTm C :: GTy M :: GTm c :: GTm m :: GTm t :: nil) σ⦄)
+          [lext (recT ki Δ X :: recT k Δ A :: rect lzero (cext Δ A k) tyNat N :: rect ki (cext Δ A k) X⟨↑⟩ Ot
+                 :: rect ki (cext (cext Δ A k) (tyFin N) lzero) X⟨↑⟩⟨↑⟩ C
+                 :: recT k' (cext (cext Δ X ki) (iwfmotty k ki X A N Ot C) (lmax k ki)) M
+                 :: rect k' (cext (cext (cext Δ A k) (iwfcsty k ki X A N Ot C) (lmax k ki))
+                               (iwfihty k ki k' X A N Ot C M) (lmax lzero k'))
+                      (iwfstepty k ki X A N Ot C M) c
+                 :: rect ki Δ X m :: rect (lmax k ki) Δ (tyIWf k ki X A N Ot C m) t :: nil) e]).
+Proof using . intros. rewrite <- branch_inst by first [forall_tac | assumption]. reflexivity. Qed.
+
 End Red.
 
 Lemma gdnf_gext_s os σ : Forall dnfo os -> gdnf σ -> gdnf (gext_s os σ).
@@ -921,6 +1000,46 @@ Proof. tel_push. rewrite ?usubst_tmNth, ?gs_tmNth_raw; tel_push. reflexivity. Qe
 Lemma gs_wfstepty l (A : ty) (N : tm) (M : ty) σ :
   gsubst_ty (wfstepty l A N M) σ = wfstepty l (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_ty M σ).
 Proof. tel_push. rewrite ?usubst_tmNth, ?gs_tmNth_raw; tel_push. reflexivity. Qed.
+
+(** [elim_IWf]'s step telescope (M17c), likewise, [dnth] for [nth]. *)
+Lemma us_iwfmotty l li (X A : ty) (N Ot C : tm) φ :
+  usubst_ty (iwfmotty l li X A N Ot C) φ
+  = iwfmotty (lvsubst l φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ) (usubst_tm Ot φ)
+      (usubst_tm C φ).
+Proof. try unfold lsingle2. tel_push. reflexivity. Qed.
+Lemma us_iwfcsty l li (X A : ty) (N Ot C : tm) φ :
+  usubst_ty (iwfcsty l li X A N Ot C) φ
+  = iwfcsty (lvsubst l φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ) (usubst_tm Ot φ)
+      (usubst_tm C φ).
+Proof. try unfold lsingle2. tel_push. reflexivity. Qed.
+Lemma us_iwfihty l li l' (X A : ty) (N Ot C : tm) (M : ty) φ :
+  usubst_ty (iwfihty l li l' X A N Ot C M) φ
+  = iwfihty (lvsubst l φ) (lvsubst li φ) (lvsubst l' φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ)
+      (usubst_tm Ot φ) (usubst_tm C φ) (usubst_ty M φ).
+Proof. unfold lsingle2. tel_push. rewrite ?usubst_tmDNth; tel_push. reflexivity. Qed.
+Lemma us_iwfstepty l li (X A : ty) (N Ot C : tm) (M : ty) φ :
+  usubst_ty (iwfstepty l li X A N Ot C M) φ
+  = iwfstepty (lvsubst l φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ) (usubst_tm Ot φ)
+      (usubst_tm C φ) (usubst_ty M φ).
+Proof. try unfold lsingle2. tel_push. reflexivity. Qed.
+Lemma gs_iwfmotty l li (X A : ty) (N Ot C : tm) σ :
+  gsubst_ty (iwfmotty l li X A N Ot C) σ
+  = iwfmotty l li (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_tm Ot σ) (gsubst_tm C σ).
+Proof. try unfold lsingle2. tel_push. reflexivity. Qed.
+Lemma gs_iwfcsty l li (X A : ty) (N Ot C : tm) σ :
+  gsubst_ty (iwfcsty l li X A N Ot C) σ
+  = iwfcsty l li (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_tm Ot σ) (gsubst_tm C σ).
+Proof. try unfold lsingle2. tel_push. reflexivity. Qed.
+Lemma gs_iwfihty l li l' (X A : ty) (N Ot C : tm) (M : ty) σ :
+  gsubst_ty (iwfihty l li l' X A N Ot C M) σ
+  = iwfihty l li l' (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_tm Ot σ) (gsubst_tm C σ)
+      (gsubst_ty M σ).
+Proof. unfold lsingle2. tel_push. rewrite ?gs_tmDNth_raw; tel_push. reflexivity. Qed.
+Lemma gs_iwfstepty l li (X A : ty) (N Ot C : tm) (M : ty) σ :
+  gsubst_ty (iwfstepty l li X A N Ot C M) σ
+  = iwfstepty l li (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_tm Ot σ) (gsubst_tm C σ)
+      (gsubst_ty M σ).
+Proof. try unfold lsingle2. tel_push. reflexivity. Qed.
 
 Lemma uc_ext Γ T l φ : ucsubst (Γ ,, T @ l) φ = ucsubst Γ φ ,, usubst_ty T φ @ lvsubst l φ.
 Proof. reflexivity. Qed.
@@ -1775,11 +1894,31 @@ Ltac gs_dnf :=
   | H : [ _ ; _ ⊢[ lC ] ?t : _ @ _ ] |- _ =>
       lazymatch goal with _ : dnftm t |- _ => fail | _ => pose proof (wf_tm_dnf H) end
   end.
+(** A code's type under a binder, as [tyEl]'s argument (M17c: the indexed
+    trees' codes): the substitutions are pushed through [tyEl] as
+    equations, before [cbn] would unfold them into their fixpoints. *)
+Lemma us_El_raw l t φ : usubst_ty (tyEl l t) φ = tyEl (lvsubst l φ) (usubst_tm t φ).
+Proof using . reflexivity. Qed.
+Lemma gs_El_raw l t σ : gsubst_ty (tyEl l t) σ = tyEl l (gsubst_tm t σ).
+Proof using . reflexivity. Qed.
+Lemma us_DVec_raw l n F φ : usubst_ty (tyDVec l n F) φ = tyDVec (lvsubst l φ) (usubst_tm n φ) (usubst_ty F φ).
+Proof using . reflexivity. Qed.
+Lemma gs_DVec_raw l n F σ : gsubst_ty (tyDVec l n F) σ = tyDVec l (gsubst_tm n σ) (gsubst_ty F σ).
+Proof using . reflexivity. Qed.
+
 Ltac gs_norm :=
   cbn [gsubst GSubst_ctx GSubst_ty GSubst_tm gcons]; rewrite ?uc_ext, ?gc_ext;
   rewrite ?us_wfcsty, ?us_wfihty, ?us_wfstepty, ?gs_wfcsty, ?gs_wfihty, ?gs_wfstepty,
           ?us_wfty, ?us_wihty, ?us_wstepty, ?gs_wfty, ?gs_wihty, ?gs_wstepty;
-  inst_cbn; cbn [gcons pctx pty ptm]; lsh0.
+  rewrite ?us_El_raw, ?us_DVec_raw, ?gs_El_raw, ?gs_DVec_raw, ?usubst_lsingle, ?gs_tm_subst_raw;
+  rewrite ?us_iwfcsty, ?us_iwfihty, ?us_iwfstepty, ?us_iwfmotty, ?gs_iwfcsty, ?gs_iwfihty, ?gs_iwfstepty,
+          ?gs_iwfmotty, ?usubst_iwfFam, ?gs_iwfFam_raw;
+  (* the declared types under a binder (M17c) *)
+  rewrite ?us_El_raw, ?gs_El_raw, ?usubst_ren_ty', ?usubst_ren', ?grs_ty_raw, ?grs_tm_raw, ?gs_tm_subst_raw;
+  inst_cbn; cbn [gcons pctx pty ptm]; lsh0;
+  (* and under the formers [inst_cbn] pushed through (the indexed trees'
+     children's tuple type, declared unfolded) *)
+  rewrite ?usubst_ren_ty', ?usubst_ren', ?grs_ty_raw, ?grs_tm_raw; inst_cbn; cbn [gcons pctx pty ptm]; lsh0.
 
 (** ** The recursion lemmas' hypotheses, bundled
 

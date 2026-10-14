@@ -8,7 +8,7 @@
     negative answer inverts the algorithm on the left side's head ([ainv_*]);
     neutrals infer a unique type ([ac_infer_uniq]). Decidability is in
     [Prop] (H1). *)
-From DeLaM.Validity Require Export AlgDecNe AlgDecCode AlgDecId AlgDecW.
+From DeLaM.Validity Require Export AlgDecNe AlgDecCode AlgDecId AlgDecW AlgDecIWf.
 
 (** ** Decidability *)
 
@@ -32,6 +32,7 @@ Proof.
     | solve [eapply Dc_actnf_tpi; eassumption]
     | solve [eapply Dc_actne_gvar; eassumption] | solve [eapply Dc_actne_El; eassumption]
     | solve [eapply Dc_actne_vec; eassumption] | solve [eapply Dc_actne_fin; eassumption]
+    | solve [eapply Dc_actne_dvec; eassumption]
     | solve [eapply Dc_acc_nil] | solve [eapply Dc_acc_var] | solve [eapply Dc_acc_ext; eassumption]
     | solve [eapply Dc_actm_red; eassumption]
     | solve [eapply Dc_actmnf_code_nat] | solve [eapply Dc_actmnf_code_U]
@@ -67,11 +68,14 @@ Proof.
     | solve [eapply Dc_actmne_elimW; eassumption]
     | solve [eapply Dc_actnf_wf; eassumption] | solve [eapply Dc_actmnf_supf; eassumption]
     | solve [eapply Dc_actmne_elimWf; eassumption]
+    | solve [eapply Dc_actnf_iwf; eassumption] | solve [eapply Dc_actmnf_supi; eassumption]
+    | solve [eapply Dc_actmne_elimIWf; eassumption]
     | solve [eapply Dc_actmnf_code_empty; eassumption] | solve [eapply Dc_actmnf_code_sum; eassumption]
     | solve [eapply Dc_actmnf_code_vec; eassumption] | solve [eapply Dc_actmnf_code_fin; eassumption]
     | solve [eapply Dc_actmnf_code_sq; eassumption]
     | solve [eapply Dc_actmnf_code_W; eassumption]
-    | solve [eapply Dc_actmnf_code_wf; eassumption] ].
+    | solve [eapply Dc_actmnf_code_wf; eassumption]
+    | solve [eapply Dc_actmnf_code_dvec; eassumption] | solve [eapply Dc_actmnf_code_iwf; eassumption] ].
 Qed.
 
 (** Algorithmic conversion of well-formed types (typed terms) of the

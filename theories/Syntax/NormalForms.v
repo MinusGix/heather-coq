@@ -33,6 +33,8 @@ Inductive whne : tm -> Prop :=
 | whne_elimWf l l' A N M c t : whne t -> whne (tmElimWf l l' A N M c t)
 (* propositional truncation's eliminator on a neutral (M16a) *)
 | whne_elimSq l l' A M c t : whne t -> whne (tmElimSq l l' A M c t)
+(* indexed finitary trees' eliminator on a neutral (M17b) *)
+| whne_elimIWf l li l' X A N Ot C M c m t : whne t -> whne (tmElimIWf l li l' X A N Ot C M c m t)
 (* J on a neutral proof (M11a) *)
 | whne_J l l' A a M c u e : whne e -> whne (tmJ l l' A a M c u e).
 
@@ -69,14 +71,18 @@ Inductive whnf : tm -> Prop :=
 | whnf_sup l l' A B a f : whnf (tmSup l l' A B a f)
 | whnf_supf l A N a cs : whnf (tmSupf l A N a cs)
 | whnf_sq l A a : whnf (tmSq l A a)
-| whnf_tmSqCode l s : whnf (tmSqCode l s).
+| whnf_supi l li X A N Ot C a cs : whnf (tmSupi l li X A N Ot C a cs)
+| whnf_tmSqCode l s : whnf (tmSqCode l s)
+| whnf_tmDVec l n f : whnf (tmDVec l n f)
+| whnf_tmIWf l li x s n o c m : whnf (tmIWf l li x s n o c m).
 
 Inductive whne_ty : ty -> Prop :=
 | whne_tyGvar U d : whne_ty (tyGvar U d)
 | whne_tyEl l t : whne t -> whne_ty (tyEl l t)
 (* length-indexed tuples and finite indices at a neutral length (M14a) *)
 | whne_tyVec l A n : whne n -> whne_ty (tyVec l A n)
-| whne_tyFin n : whne n -> whne_ty (tyFin n).
+| whne_tyFin n : whne n -> whne_ty (tyFin n)
+| whne_tyDVec l n F : whne n -> whne_ty (tyDVec l n F).
 
 Inductive whnf_ty : ty -> Prop :=
 | whnf_ty_ne T : whne_ty T -> whnf_ty T
@@ -97,7 +103,8 @@ Inductive whnf_ty : ty -> Prop :=
 | whnf_tyEmpty l : whnf_ty (tyEmpty l)
 | whnf_tyId l A a b : whnf_ty (tyId l A a b)
 | whnf_tyWf l A N : whnf_ty (tyWf l A N)
-| whnf_tySq l A : whnf_ty (tySq l A).
+| whnf_tySq l A : whnf_ty (tySq l A)
+| whnf_tyIWf l li X A N Ot C m : whnf_ty (tyIWf l li X A N Ot C m).
 
 #[export] Hint Constructors whne whnf whne_ty whnf_ty : whnf.
 
@@ -225,6 +232,10 @@ Lemma whne_ty_not_Sq l A : ~ whne_ty (tySq l A).
 Proof. inversion 1. Qed.
 Lemma whne_not_sq l A a : ~ whne (tmSq l A a).
 Proof. inversion 1. Qed.
+Lemma whne_ty_not_IWf l li X A N Ot C m : ~ whne_ty (tyIWf l li X A N Ot C m).
+Proof. inversion 1. Qed.
+Lemma whne_not_supi l li X A N Ot C a cs : ~ whne (tmSupi l li X A N Ot C a cs).
+Proof. inversion 1. Qed.
 Lemma whne_not_srefl l A a : ~ whne (srefl l A a).
 Proof. inversion 1. Qed.
 Lemma whne_ty_not_Id l A a b : ~ whne_ty (tyId l A a b).
@@ -250,4 +261,8 @@ Proof. inversion 1. Qed.
 Lemma whne_not_code_wf l s n : ~ whne (tmWf l s n).
 Proof. inversion 1. Qed.
 Lemma whne_not_code_sq l s : ~ whne (tmSqCode l s).
+Proof. inversion 1. Qed.
+Lemma whne_not_code_dvec l n f : ~ whne (tmDVec l n f).
+Proof. inversion 1. Qed.
+Lemma whne_not_code_iwf l li x s n o c m : ~ whne (tmIWf l li x s n o c m).
 Proof. inversion 1. Qed.

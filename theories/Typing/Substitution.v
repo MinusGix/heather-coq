@@ -180,7 +180,7 @@ Proof. now rewrite llk_llift. Qed.
 Ltac sub_rw1 :=
   push_subst;
   rewrite ?llk_llift0, ?single_subst_ty, ?single_subst, ?single2_subst, ?single2_subst_ty, ?lsucc_subst_ty,
-          ?single3_subst, ?subst_wIH, ?subst_wfIH, ?subst_tmNth,
+          ?single3_subst, ?subst_wIH, ?subst_wfIH, ?subst_tmNth, ?subst_iwfIH, ?subst_iwfFam,
           ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty, ?liftshift_llift by eauto with nf;
   push_subst.
 (* twice: [case]'s branch types (M12b) shift summands inside an injection,
@@ -191,6 +191,8 @@ Ltac sub_rw := sub_rw1; sub_rw1.
 #[export] Hint Resolve wfc_ext wft_nat wft_El lequiv_wf_l lequiv_wf_r wf_ctx_nat compt_notV : sub.
 #[export] Hint Resolve wf_ctx_empty wft_empty_typeof wf_ctx_sum wft_sum_typeof : sub.
 #[export] Hint Resolve wf_ctx_sq wft_sq_typeof : sub.
+#[export] Hint Resolve wft_fin_typeof wft_fin_zero_typeof wft_fin_succ_typeof
+  wf_ctx_fin wf_ctx_fin_zero wf_ctx_fin_succ : sub.
 (* a [lmax] of levels known only through [lequiv] (M12b, [case]'s motive) *)
 #[export] Hint Extern 3 (lwf _ (lmax _ _)) => (cbn; split; eauto using lequiv_wf_l, lequiv_wf_r) : sub.
 #[export] Hint Extern 1 (ty_leq _ _) =>
@@ -583,8 +585,78 @@ Ltac sub_Wstep :=
           [ match goal with IH : forall Δ d, lsub_wf _ _ Δ d _ -> _ |- _ => eapply IH; solve [sub_Wsub] end
           | sub_eqW | sub_eqW ] ].
 
+(** [elim_IWf]'s induction hypothesis's type at its instance (M17b):
+    the instance under the [Π]'s binder commutes with a substitution. *)
+Lemma llift_single2_subst_ty (T : ty) a cs d : LK nftm d ->
+  T[llift (lsingle2 a cs)][llift d] = T[llift (llift (llift d))][llift (lsingle2 a[d] cs[d])].
+Proof.
+  intros Hd. apply subst2_eq_ty; intros [|[|[|n]]]; rewrite ?llk_llift; cbn; rewrite ?llk_llift; cbn; auto.
+  all: change (ren_tm ?x ?r) with x⟨r⟩.
+  - rewrite shift_llift. reflexivity.
+  - rewrite shift_llift. reflexivity.
+  - rewrite Nat.add_0_r, Nat.add_1_r. change (ren_tm ?x ?r) with x⟨r⟩.
+    rewrite shift_llift, shift2_single2 by apply Hd. reflexivity.
+Qed.
+
+(** [IWf] (M17b): a premise under binders whose types, like its own,
+    commute with the substitution only by an equation, as [Properties]'
+    [wk_I]: the lifted substitution is built along the premise's context
+    as it comes, and both sides then agree down to the renamed leaves. *)
+Ltac sub_eqI :=
+  do 4 (sub_rw1; rewrite ?llift_single2_subst_ty, ?subst_tmDNth, ?lift2shift_llift_ty, ?lift2shift_llift, ?lift3shift_llift,
+                         ?llk_llift_S, ?llk_llift0 by eauto with nf);
+  push_ren; push_subst; fold_subst; repeat wk_cong.
+Ltac sub_Isub :=
+  first [ eassumption
+        | eapply lsub_wf_lift_g; [ sub_Isub | eapply lift_ty; [ sub_Ity | apply lle_self_typeof ] | eauto with sub ]
+        (* a context entry the premise's [push_subst] pushed (M17c: [El s]) *)
+        | eapply lsub_wf_lift_g';
+          [ sub_Isub | eapply lift_ty; [ sub_Ity | apply lle_self_typeof ] | eauto using lequiv_wf_l with sub
+          | push_subst; reflexivity ] ]
+with sub_Ity :=
+  first [ match goal with IH : forall Δ d, lsub_wf _ _ Δ d _ -> wf_ty _ _ _ _ _ |- _ => eapply IH; solve [sub_Isub] end
+        | push_subst; eapply wft_fin;
+          [ eauto with sub
+          | eapply wf_tm_retype;
+            [ match goal with IH : forall Δ d, lsub_wf _ _ Δ d _ -> wf_tm _ _ _ _ _ _ |- _ =>
+                eapply IH; solve [sub_Isub] end
+            | sub_rw; reflexivity ] ]
+        | push_subst; eapply wft_El;
+          [ eauto with sub | eauto using lequiv_wf_l with sub
+          | eapply wf_tm_retype;
+            [ match goal with IH : forall Δ d, lsub_wf _ _ Δ d _ -> wf_tm _ _ _ _ _ _ |- _ =>
+                eapply IH; solve [sub_Isub] end
+            | sub_rw; reflexivity ] ] ].
+Ltac sub_Iprem lem :=
+  match goal with
+  | IH : forall Δ d, lsub_wf _ _ Δ d _ -> _ |- _ =>
+      eapply lem; [ eapply IH; solve [sub_Isub] | solve [sub_eqI] .. ]
+  end.
+Ltac sub_I :=
+  fix_layer;
+  first [ solve [sub_premise]
+        | solve [sub_Iprem wf_tm_regctx] | solve [sub_Iprem eq_tm_regctx]
+        | solve [sub_Iprem wf_ty_regboth] | solve [sub_Iprem eq_ty_regall]
+        | solve [sub_Iprem wf_tm_regtm] ].
+
 Ltac sub_manual2 :=
   match goal with
+  (* the codes of [DVec] and [IWf] (M17c) *)
+  | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) (tyEl _ _) _ => eapply eqty_El_iwf; sub_I
+  | |- eq_ty _ _ _ (tyDVec _ _ _) (tyEl _ _) _ => eapply eqty_El_dvec; sub_I
+  | |- wf_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ => eapply wf_code_iwf; sub_I
+  | |- eq_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwf; sub_I
+  | |- wf_tm _ _ _ (tmDVec _ _ _) _ _ => eapply wf_code_dvec; sub_I
+  | |- eq_tm _ _ _ (tmDVec _ _ _) _ _ _ => eapply eqtm_code_dvec; sub_I
+  (* [IWf] (M17b) *)
+  | |- wf_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ => eapply wft_iwf; sub_I
+  | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ _ => eapply eqty_iwf; sub_I
+  | |- wf_tm _ _ _ (tmSupi _ _ _ _ _ _ _ _ _) _ _ => eapply wf_supi; sub_I
+  | |- eq_tm _ _ _ (tmSupi _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_supi; sub_I
+  | |- wf_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_elimIWf; sub_I
+  | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ (tmSupi _ _ _ _ _ _ _ _ _)) _ _ _ =>
+      eapply eqtm_elimIWf_supi; sub_I
+  | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimIWf; sub_I
   (* [Wf] (M15a) *)
   | |- wf_tm _ _ _ (tmSupf _ _ _ _ _) _ _ => eapply wf_supf; sub_premise
   | |- eq_tm _ _ _ (tmSupf _ _ _ _ _) _ _ _ => eapply eqtm_supf; sub_premise

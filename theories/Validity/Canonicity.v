@@ -10,7 +10,9 @@
       [UΠ], a context or type abstraction at [CΠ]/[TΠ], a pair at [Σ], [⟨⟩]
       at [Unit], [srefl] at [sEq], and nothing at [sEmpty] (M10a), [refl] at
       [Id] (M11a), nothing at [Empty] (M12a), an injection at [+]
-      (M12b), [sup] at [W] (M13a) and [sup_f] at [Wf] (M15a).
+      (M12b), [sup] at [W] (M13a), [sup_f] at [Wf] (M15a), [|a|] at [∥A∥]
+      (M16a) and [sup_i] at [IWf] (M17b); the universe's codes include
+      [DVec]'s and [IWf]'s (M17c).
 
     Closed whnfs are not neutral ([no_closed_neutral]). A value's typing
     inversion equates its type with its canonical type former, and head
@@ -27,7 +29,8 @@ Definition canon_head (h : nat) (w : tm) : Prop :=
          (exists l s t u, w = tmId l s t u) \/ (exists l s t u, w = tmSEq l s t u) \/
          (exists l, w = tmSEmpty l) \/ (exists l, w = tmEmpty l) \/ (exists l l' s t, w = tmSum l l' s t) \/
          (exists l l' s t, w = tmW l l' s t) \/ (exists l s n, w = tmVec l s n) \/ (exists n, w = tmFin n) \/
-         (exists l s n, w = tmWf l s n) \/ exists l s, w = tmSqCode l s
+         (exists l s n, w = tmWf l s n) \/ (exists l s, w = tmSqCode l s) \/
+         (exists l n f, w = tmDVec l n f) \/ exists l li x s n o c m, w = tmIWf l li x s n o c m
   | 3 => exists l l' A t, w = lam l l' A t
   | 4 => exists T, w = boxT T
   | 5 => exists t, w = boxt t
@@ -42,6 +45,7 @@ Definition canon_head (h : nat) (w : tm) : Prop :=
   | 17 => exists l l' A B a f, w = tmSup l l' A B a f
   | 18 => exists l A N a cs, w = tmSupf l A N a cs
   | 19 => exists l A a, w = tmSq l A a
+  | 20 => exists l li X A N Ot C a cs, w = tmSupi l li X A N Ot C a cs
   | _ => False
   end.
 
@@ -68,11 +72,12 @@ Proof.
           | pose proof (inv_code_W Hi Hx) as X
           | pose proof (inv_code_vec Hi Hx) as X | pose proof (inv_code_fin Hi Hx) as X
           | pose proof (inv_code_wf Hi Hx) as X | pose proof (inv_sq Hi Hx) as X
-          | pose proof (inv_code_sq Hi Hx) as X ];
+          | pose proof (inv_code_sq Hi Hx) as X | pose proof (inv_supi Hi Hx) as Xs
+          | pose proof (inv_code_dvec Hi Hx) as X | pose proof (inv_code_iwf Hi Hx) as X ];
     repeat match goal with H : exists _, _ |- _ => destruct H | H : _ /\ _ |- _ => destruct H end;
     match goal with E : [ _ ; _ ⊢[ _ ] W ≅ _ @ _ ] |- _ =>
       rewrite (decl_head_c Hc E HW); [| auto with whnf] end;
-    cbn; eauto 20.
+    cbn; first [solve [eauto 20] | repeat (first [left; solve [eauto 12] | right]); solve [eauto 12]].
 Qed.
 
 (** ** Types *)
@@ -82,11 +87,12 @@ Theorem closed_type_canonicity {G i T k} : compt i -> closed_ok i G -> [ G ; cni
 Proof.
   intros Hc HG HT. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (tgt_whnf Hc HT) as (W & Hr & Hw & E). exists W; split; [exact Hr | split; [exact Hw | split; [| exact E]]].
-  pose proof (eqty_wf_r Hi E) as HW. intros Hn. destruct Hn as [U d | l ν Hν | l A ν Hν | ν Hν].
+  pose proof (eqty_wf_r Hi E) as HW. intros Hn. destruct Hn as [U d | l ν Hν | l A ν Hν | ν Hν | l ν F Hν].
   - destruct (tyGvar_decl HW) as (Δ & i' & l' & Hin). exact (closed_ok_tyGvar HG Hin).
   - destruct (inv_ty_El HW) as ((_ & _ & Ht) & _). exact (no_closed_neutral_ok HG Ht Hν).
   - destruct (inv_ty_vec HW) as ((_ & _ & _ & Ht) & _). exact (no_closed_neutral_ok HG Ht Hν).
   - destruct (inv_ty_fin HW) as ((_ & Ht) & _). exact (no_closed_neutral_ok HG Ht Hν).
+  - destruct (inv_ty_dvec HW) as ((_ & _ & Ht & _) & _). exact (no_closed_neutral_ok HG Ht Hν).
 Qed.
 
 (** ** Terms *)

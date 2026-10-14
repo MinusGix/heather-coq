@@ -294,6 +294,12 @@ formers, so it gets worse with every extension:
   `rewrite` motive then carries the block, and `Qed` re-checks it: 20 s in
   `redt_gren`. `fold gren_ty gren_tm` after the `cbn` (`gpeel_push`,
   both copies). A `Qed` much slower than its tactics is the symptom.
+  The same block appears under a former whose argument `cbn` cannot
+  reduce (M17c: `gsubst_ty (tyEl l (usubst_tm x⟨↑⟩ φ)) σ`, a weakened
+  payload in a declared type), and then no commutation lemma matches.
+  Push the substitutions through the former by its equation first
+  (`us_El_raw`, `gs_DVec_raw` in `gs_norm`, RecSBase), then commute them
+  past the weakening (`usubst_ren'`, `grs_tm_raw`), and `cbn` last.
 - **`injection` on a big constructor term.** `injection` on two `mkrb`
   blocks unfolds the whole bundle (6 s, and 4 s more at `Qed`). Prove the
   injectivity once by projections (`mkrb_inj` through `tup_nth`) or on
@@ -332,7 +338,15 @@ formers, so it gets worse with every extension:
   (`tmNth_ren`); `fold ren_ty ren_tm` first, 0.3 s.
 - **`injection`/`inversion` on `Some r = Some r'`** with a big unfolded
   reduct copies the reduct into the projection's default value:
-  `apply Some_inj in E` (`Syntax/Recursor.v`) instead.
+  `apply Some_inj in E` (`Syntax/Recursor.v`) instead. Each new
+  former's reduct grows the cost in every `redt` lemma still using
+  `injection`: `elim_IWf`'s cost `redt_ren` and `redt_usubst` 130 s
+  each until they moved to `Some_inj` (2026-10-14).
+- **A bare `split` in a repeated peeler** hnf's every goal that is not
+  yet a conjunction, unfolding definitions to look for one: 71% of
+  `gfree_redt` (510 s for `Unfold`). Split only `|- _ /\ _` (a
+  `lazymatch`), and add a last `progress hnf` alternative for the goals
+  that needed it (2026-10-14, `gf_peel`, `dnf_redt`).
 - **Pointwise proofs of shifted leaves.** `(T⟨↑⟩⟨↑⟩)[llift (lsingle c)]
   = T⟨↑⟩` by `subst_comp`/`subst_ext` and one case per variable cost
   75 s in `nth_reds_succ`; `shift_cancel` (`SubstCommute`) rewrites

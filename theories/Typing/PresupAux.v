@@ -1322,6 +1322,81 @@ Lemma wk_under_eqty {Γ X Y T T' lx ly k} : [ G ; Γ ,, Y @ ly ,, X⟨↑⟩ @ l
   [ G ; Γ ,, X @ lx ⊢[ i ] T ≅ T' @ k ] -> [ G ; Γ ,, Y @ ly ,, X⟨↑⟩ @ lx ⊢[ i ] T⟨rlift ↑⟩ ≅ T'⟨rlift ↑⟩ @ k ].
 Proof using Hi. intros HΔ HT. eapply weakening_r; eauto. apply wkr_up, wkr_shift1. Qed.
 
+(** ** Dependent tuples (M17a) *)
+
+(** The canonical indices of [Fin (succ m)]. *)
+Lemma fin_inl_wf {Γ m} : compt i -> [ G ; Γ ⊢[ i ] m : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tmInl lzero lzero (tyUnit lzero) (tyFin m) (tmTriv lzero) : tyFin (succ m) @ lzero ].
+Proof using Hi Hv.
+  intros Hc Hm. pose proof (ctx_of_wf_tm Hi Hm) as HΓ.
+  eapply wf_conv; [| rewrite Hi; apply eqty_fin_succ; assumption].
+  eapply wf_lconv; [| apply lequiv_sym, lmax_idem; exact I].
+  apply wf_inl; try exact I; auto using wft_fin.
+  - apply wft_unit; [exact Hv | now rewrite Hi | exact I].
+  - apply wf_triv; [exact Hv | now rewrite Hi | exact I].
+Qed.
+
+Lemma fin_inr_wf {Γ m b} : compt i -> [ G ; Γ ⊢[ i ] m : tyNat @ lzero ] ->
+  [ G ; Γ ⊢[ i ] b : tyFin m @ lzero ] ->
+  [ G ; Γ ⊢[ i ] tmInr lzero lzero (tyUnit lzero) (tyFin m) b : tyFin (succ m) @ lzero ].
+Proof using Hi Hv.
+  intros Hc Hm Hb. pose proof (ctx_of_wf_tm Hi Hm) as HΓ.
+  eapply wf_conv; [| rewrite Hi; apply eqty_fin_succ; assumption].
+  eapply wf_lconv; [| apply lequiv_sym, lmax_idem; exact I].
+  apply wf_inr; try exact I; auto using wft_fin.
+  apply wft_unit; [exact Hv | now rewrite Hi | exact I].
+Qed.
+
+Lemma pre_dvec_r {Γ l l' n n' F' } : lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F' @ l ] -> [ G ; Γ ⊢[ i ] tyDVec l' n' F' @ l ].
+Proof using Hi Hv.
+  intros Hl Hnn Hn' HF'.
+  assert (HF2 : [ G ; Γ ,, tyFin n' @ lzero ⊢[ i ] F' @ l ]).
+  { eapply (stab_ty Hi (eqty_fin _ _ _ _ _ Hv Hnn)); [apply lequiv_refl; exact I | |exact HF'].
+    apply ext_wf; [now apply wft_fin | exact I]. }
+  eapply wft_lconv with (l' := l'); [|exact Hl].
+  apply wft_dvec; eauto using lequiv_wf_r. eapply wft_lconv; [exact HF2 | now apply lequiv_sym].
+Qed.
+
+Lemma pre_dvec_zero {Γ l F} : compt i -> lwf (gL G) l -> [ G ; Γ ,, tyFin zero @ lzero ⊢[ i ] F @ l ] ->
+  [ G ; Γ ⊢[ i ] tyDVec l zero F @ l ] /\ [ G ; Γ ⊢[ i ] tyUnit l @ l ].
+Proof using Hi Hv.
+  intros Hc Hl HF. pose proof (ctx_of_wf_ty Hi HF) as HΓF.
+  assert (HΓ : [ G ; Γ ⊢[ i ] ]) by (inversion HΓF; assumption). split.
+  - apply wft_dvec; auto. apply wf_zero; [exact Hv | now rewrite Hi].
+  - apply wft_unit; [exact Hv | now rewrite Hi | exact Hl].
+Qed.
+
+Lemma pre_dvec_succ {Γ l n F} : compt i -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyFin (succ n) @ lzero ⊢[ i ] F @ l ] ->
+  [ G ; Γ ⊢[ i ] tyDVec l (succ n) F @ l ] /\
+  [ G ; Γ ⊢[ i ] tySig l l (dvecHd n F) (dvecTl l n F) @ l ].
+Proof using Hi Hv.
+  intros Hc Hl Hn HF. split.
+  - apply wft_dvec; auto. apply wf_succ; [exact Hv | exact Hn].
+  - assert (HH : [ G ; Γ ⊢[ i ] dvecHd n F @ l ]) by exact (wf_ty_single Hi HF (fin_inl_wf Hc Hn)).
+    pose proof (ext_wf HH Hl) as HΓH.
+    assert (Hn1 : [ G ; Γ ,, dvecHd n F @ l ⊢[ i ] n⟨↑⟩ : tyNat @ lzero ])
+      by exact (wk1_tm G i Hi _ _ _ _ _ _ HΓH Hn).
+    assert (HΔ : [ G ; Γ ,, dvecHd n F @ l ,, tyFin n⟨↑⟩ @ lzero ⊢[ i ] ])
+      by (apply ext_wf; [now apply wft_fin | exact I]).
+    assert (Hn2 : [ G ; Γ ,, dvecHd n F @ l ,, tyFin n⟨↑⟩ @ lzero ⊢[ i ] n⟨↑⟩⟨↑⟩ : tyNat @ lzero ])
+      by exact (wk1_tm G i Hi _ _ _ _ _ _ HΔ Hn1).
+    assert (HF1 : [ G ; Γ ,, dvecHd n F @ l ,, tyFin (succ n⟨↑⟩) @ lzero ⊢[ i ] F⟨rlift ↑⟩ @ l ]).
+    { apply (wk_under_ty (X := tyFin (succ n))); [|exact HF].
+      apply ext_wf; [apply wft_fin; [exact Hv | now apply wf_succ] | exact I]. }
+    assert (HF2 : [ G ; Γ ,, dvecHd n F @ l ,, tyFin n⟨↑⟩ @ lzero ,, tyFin (succ n⟨↑⟩⟨↑⟩) @ lzero
+                    ⊢[ i ] F⟨rlift ↑⟩⟨rlift ↑⟩ @ l ]).
+    { apply (wk_under_ty (X := tyFin (succ n⟨↑⟩))); [|exact HF1].
+      apply ext_wf; [apply wft_fin; [exact Hv | now apply wf_succ] | exact I]. }
+    assert (Hinr : [ G ; Γ ,, dvecHd n F @ l ,, tyFin n⟨↑⟩ @ lzero
+                     ⊢[ i ] tmInr lzero lzero (tyUnit lzero) (tyFin n⟨↑⟩⟨↑⟩) (var 0) : tyFin (succ n⟨↑⟩⟨↑⟩) @ lzero ])
+      by (apply fin_inr_wf; [exact Hc | exact Hn2 | exact (var0_wf G i Hi _ _ _ HΔ)]).
+    eapply wft_lconv; [|apply lequiv_sym, lmax_idem, Hl].
+    apply wft_sig; auto. apply wft_dvec; auto. exact (wf_ty_single Hi HF2 Hinr).
+Qed.
+
 Lemma lwf_max {l l'} : lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) (lmax l l').
 Proof using . intros; cbn; split; assumption. Qed.
 

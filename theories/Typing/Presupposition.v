@@ -3,7 +3,7 @@
     Every judgment's components are well formed: the type of a typed term,
     both sides of a type equality, both sides of a term equality (and its
     type).  For layers with [typeof i = i]. *)
-From DeLaM.Typing Require Export PresupAux MInst.
+From DeLaM.Typing Require Export PresupAux PresupIWf MInst.
 
 (** ** Global variables
 
@@ -251,11 +251,16 @@ Proof. intros H1 H2 H3 H4 H5; exact (proj2 (ctx_conv_ext Hi H1 H2 H3 H4 H5)). Qe
 #[export] Hint Resolve wft_nat wft_pi wft_U wft_El wf_code_nat wf_code_U wf_code_pi wf_zero
   wf_succ wf_natrec wf_lam wf_app wfc_ext in_ctx_wf wf_ty_single wf_tm_single
   wft_sig wf_code_sig wf_pair wf_fst wf_snd wft_seq wf_srefl wf_elimSEmpty wft_id wf_idrefl wf_J wf_code_id wf_code_seq wf_elimEmpty wft_sum wf_inl wf_inr
-  wft_sq wf_sq wf_elimSq ctx_of_wf_ty ctx_of_wf_tm ctx_of_eqty ctx_of_eqtm lequiv_wf_l lequiv_wf_r compt_notV : presup.
+  wft_sq wf_sq wf_elimSq wft_dvec ctx_of_wf_ty ctx_of_wf_tm ctx_of_eqty ctx_of_eqtm lequiv_wf_l lequiv_wf_r compt_notV : presup.
 #[export] Hint Extern 1 (lwf _ _) =>
   solve [cbn; repeat split; eauto using lequiv_wf_l, lequiv_wf_r] : presup.
 #[export] Hint Extern 1 =>
   match goal with Hi : typeof ?i = ?i |- context [typeof ?i] => rewrite Hi end : presup.
+
+(** [IWf]'s signature, from the rules' premises (M17b). *)
+Ltac iwf_leaf := first [eassumption | eapply lequiv_wf_l; eassumption | eapply lequiv_wf_r; eassumption].
+Ltac iwf_bundle := first [iwf_leaf | eapply IWfEq_intro; iwf_leaf
+  | unfold IWfSig; repeat match goal with |- _ /\ _ => split end; iwf_leaf].
 
 Theorem presupposition :
   (forall G, [ ⊢ G ] -> True) /\
@@ -403,7 +408,21 @@ Proof.
                         | eapply pre_tySq_r; eassumption
                         | eapply pre_sq_r; eassumption
                         | eapply pre_elimSq_r; eassumption
-                        | eapply pre_elimSq_sq_rhs; eassumption ]].
+                        | eapply pre_elimSq_sq_rhs; eassumption
+                        | eapply pre_codedvec_r; eassumption
+                        | eapply pre_codeiwf_r; eassumption ]].
+  (* indexed well-founded trees (M17b): the signature's premises bundled *)
+  all: try solve [first
+         [ eapply pre_iwf_r; iwf_bundle
+         | eapply pre_supi_ty; iwf_bundle
+         | eapply pre_supi_r; iwf_bundle
+         | eapply pre_elimIWf_beta_l; iwf_bundle
+         | eapply pre_elimIWf_beta_ty; iwf_bundle
+         | eapply pre_elimIWf_beta; iwf_bundle
+         | match goal with Ht : wf_tm _ _ _ ?t (tyIWf _ _ _ _ _ _ _ _) _ |- wf_ty _ _ _ (_[lsingle2 _ ?t]) _ =>
+             (eapply pre_elimIWf_ty; [.. | exact Ht]); iwf_bundle end
+         | eapply pre_elimIWf_r; iwf_bundle
+         | eapply wft_iwf; iwf_leaf | eapply wf_supi; iwf_leaf | eapply wf_elimIWf; iwf_leaf ]].
   all: try solve [eauto 4 with presup].
   all: first [ solve [eapply pre_pi_r; eassumption] | solve [eapply pre_U_r; eauto with presup]
              | solve [eapply pre_El_r; eassumption] | solve [eapply pre_codeU_r; eauto with presup]
@@ -489,6 +508,11 @@ Proof.
              | solve [eapply proj2;
                       first [eapply pre_vec_zero | eapply pre_vec_succ | eapply pre_fin_zero | eapply pre_fin_succ];
                       eassumption]
+             (* dependent tuples (M17a) *)
+             | solve [eapply pre_dvec_r; eassumption]
+             | solve [apply wft_dvec; eauto using lequiv_wf_l]
+             | solve [eapply proj1; first [eapply pre_dvec_zero | eapply pre_dvec_succ]; eassumption]
+             | solve [eapply proj2; first [eapply pre_dvec_zero | eapply pre_dvec_succ]; eassumption]
              (* the codes of Vec and Fin (M14b) *)
              | solve [eapply pre_codevec_r; eassumption]
              | solve [eapply wf_code_vec; eauto 3 with presup]
@@ -524,7 +548,14 @@ Proof.
              | solve [eapply pre_codesq_r; eassumption]
              | solve [eapply wf_code_sq; eauto 3 with presup]
              | solve [eapply wft_El; eauto with presup; eapply wf_code_sq; eassumption]
-             | solve [apply wft_sq; eauto 3 with presup; apply wft_El; eauto with presup] ].
+             | solve [apply wft_sq; eauto 3 with presup; apply wft_El; eauto with presup]
+             (* the codes of DVec and IWf (M17c) *)
+             | solve [eapply pre_codedvec_r; eassumption]
+             | solve [eapply pre_codeiwf_r; eassumption]
+             | solve [eapply proj1; first [eapply pre_El_dvec | eapply pre_El_iwf]; iwf_leaf]
+             | solve [eapply proj2; first [eapply pre_El_dvec | eapply pre_El_iwf]; iwf_leaf]
+             | solve [eapply wf_code_dvec; eauto 3 with presup]
+             | solve [eapply wf_code_iwf; eauto 3 with presup] ].
 Qed.
 
 Section Named.
@@ -557,3 +588,29 @@ Lemma eqctx_id {Γ Γ'} : [ G ⊢[ i ] Γ ≅ Γ' ] -> [ G ; Γ' ⊢[ i ] lshift
 Proof using Hi. intros H; exact (proj2 (proj2 (P7 _ _ _ _ H Hi))). Qed.
 
 End Named.
+
+(** Context conversion of the second-to-last entry (M17b: [IWf]'s child
+    family lives in [Γ ,, A ,, Fin N]). *)
+Lemma stab2_B {G i} (Hi : typeof i = i) {Γ A A' la la' B lb} :
+  [ G ; Γ ⊢[ i ] A ≅ A' @ la ] -> lequiv (gL G) la la' -> [ G ; Γ ,, A' @ la' ,, B @ lb ⊢[ i ] ] ->
+  [ G ; Γ ,, A @ la ⊢[ i ] B @ lb ] /\ lwf (gL G) lb.
+Proof.
+  intros EA Hl HΓ'. inversion HΓ' as [| |? ? ? ? ? HΓA' HB Hlb]; subst.
+  pose proof (eqty_wf_l Hi EA) as HA.
+  assert (HΓA : [ G ; Γ ,, A @ la ⊢[ i ] ]) by exact (ext_wf Hi HA (lequiv_wf_l _ _ _ Hl)).
+  split; [| exact Hlb].
+  refine (stab_ty Hi (A := A') (l := la') _ _ HΓA HB).
+  - eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | now apply lequiv_sym].
+  - now apply lequiv_sym.
+Qed.
+
+Lemma stab2_lsub {G i} (Hi : typeof i = i) {Γ A A' la la' B lb} :
+  [ G ; Γ ⊢[ i ] A ≅ A' @ la ] -> lequiv (gL G) la la' -> [ G ; Γ ,, A' @ la' ,, B @ lb ⊢[ i ] ] ->
+  [ G ; Γ ,, A' @ la' ,, B @ lb ⊢[ i ] lshift 0 : Γ ,, A @ la ,, B @ lb ].
+Proof.
+  intros EA Hl HΓ'. destruct (stab2_B Hi EA Hl HΓ') as [HB0 Hlb].
+  pose proof (eqty_wf_l Hi EA) as HA. pose proof (eqty_wf_r Hi EA) as HA'.
+  assert (Hid0 : [ G ; Γ ⊢[ i ] lshift 0 : Γ ]) by (eapply lsub_wf_id; eauto using ctx_of_wf_ty).
+  pose proof (ctx_conv_ext2 Hi Hid0 HA EA HA' Hl) as Hid1.
+  exact (ctx_conv_ext2 Hi Hid1 HB0 (eqty_refl _ _ _ _ _ HB0) HB0 (lequiv_refl _ _ Hlb)).
+Qed.

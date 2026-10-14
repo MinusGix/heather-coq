@@ -144,6 +144,28 @@ Proof.
     rewrite !ren_ren_comp. apply ren_ext_tm; intros m; rlk_simpl; lia.
 Qed.
 
+(** [elim_IWf]'s child index and motive, under two binders (M17b). *)
+Lemma lift2shift_llift (t : tm) d :
+  t⟨rlift (rlift ↑)⟩[llift (llift (llift d))] = t[llift (llift d)]⟨rlift (rlift ↑)⟩.
+Proof.
+  rewrite (ren_subst _ _ _ (lren (llift (llift d)) (rlift (rlift ↑)))),
+          (subst_ren _ _ (lren (llift (llift d)) (rlift (rlift ↑)))); auto.
+  - intros n; now rewrite llk_lren.
+  - intros [|[|n]]; rewrite llk_lren; rlk_simpl; rewrite ?llk_llift; cbn; try reflexivity.
+    rewrite ?llk_llift. cbn. change (ren_tm ?x ?r) with x⟨r⟩.
+    rewrite !ren_ren_comp. apply ren_ext_tm; intros m; rlk_simpl; lia.
+Qed.
+Lemma lift2shift_llift_ty (T : ty) d :
+  T⟨rlift (rlift ↑)⟩[llift (llift (llift d))] = T[llift (llift d)]⟨rlift (rlift ↑)⟩.
+Proof.
+  rewrite (ren_subst_ty _ _ _ (lren (llift (llift d)) (rlift (rlift ↑)))),
+          (subst_ren_ty _ _ (lren (llift (llift d)) (rlift (rlift ↑)))); auto.
+  - intros n; now rewrite llk_lren.
+  - intros [|[|n]]; rewrite llk_lren; rlk_simpl; rewrite ?llk_llift; cbn; try reflexivity.
+    rewrite ?llk_llift. cbn. change (ren_tm ?x ?r) with x⟨r⟩.
+    rewrite !ren_ren_comp. apply ren_ext_tm; intros m; rlk_simpl; lia.
+Qed.
+
 (** [nth] (M15a): no side condition. *)
 Lemma subst_tmNth l T k cs i d : (tmNth l T k cs i)[d] = tmNth l T[d] k[d] cs[d] i[d].
 Proof.
@@ -210,6 +232,54 @@ Proof.
   reflexivity.
 Qed.
 End Nf.
+
+(** [dnth] and [elim_IWf]'s induction hypothesis (M17b): [dnth]'s family
+    is instantiated under its binders, so the instances need [d] normal. *)
+Lemma subst_tmDNth l n F cs i d : LK nftm d ->
+  (tmDNth l n F cs i)[d] = tmDNth l n[d] F[llift d] cs[d] i[d].
+Proof.
+  intros Hd.
+  unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS. push_subst.
+  repeat progress (
+    repeat match goal with
+      | |- context [subst (subst ?B (lsingle ?u)) ?e] =>
+          let H := fresh in assert (H : LK nftm e) by (repeat apply lk_llift; exact Hd);
+          rewrite (single_subst_ty e H B u); clear H; push_subst
+      end;
+    rewrite ?llk_llift; cbn [llk];
+    rewrite ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty, ?liftshift_llift).
+  reflexivity.
+Qed.
+Lemma llift_single_subst (c a : tm) d : LK nftm d ->
+  c[llift (lsingle a)][llift d] = c[llift (llift d)][llift (lsingle a[d])].
+Proof.
+  intros Hd. apply subst2_eq; intros [|[|n]]; rewrite ?llk_llift; cbn; rewrite ?llk_llift; cbn; auto.
+  - change (ren_tm ?x ?r) with x⟨r⟩. rewrite shift_llift. reflexivity.
+  - rewrite Nat.add_0_r, Nat.add_1_r. change (ren_tm ?x ?r) with x⟨r⟩.
+    rewrite shift_llift, shift_single by apply Hd. reflexivity.
+Qed.
+Lemma subst_iwfIH l li l' X A N Ot C M c a cs d : LK nftm d ->
+  (iwfIH l li l' X A N Ot C M c a cs)[d] =
+  iwfIH l li l' X[d] A[d] N[llift d] Ot[llift d] C[llift (llift d)] M[llift (llift d)]
+    c[llift (llift (llift d))] a[d] cs[d].
+Proof.
+  intros Hd. unfold iwfIH, iwfFam. rewrite subst_lam, subst_tyFin, subst_elimIWf, subst_tmDNth, subst_var, (llk_llift d 0)
+    by (repeat apply lk_llift; exact Hd).
+  repeat progress (push_subst; rewrite ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty, ?liftshift_llift,
+    ?lift3shift_llift, ?lift2shift_llift, ?lift2shift_llift_ty, ?(single_subst d Hd),
+    ?(llift_single_subst _ _ _ Hd)).
+  reflexivity.
+Qed.
+
+Lemma subst_iwfFam l li X A N Ot C a d : LK nftm d ->
+  (iwfFam l li X A N Ot C a)[llift d] =
+  iwfFam l li X[d] A[d] N[llift d] Ot[llift d] C[llift (llift d)] a[d].
+Proof.
+  intros Hd. unfold iwfFam. push_subst.
+  rewrite ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty, ?liftshift_llift,
+    ?lift2shift_llift, ?lift2shift_llift_ty, ?(llift_single_subst _ _ _ Hd).
+  reflexivity.
+Qed.
 
 Lemma lsucc_subst_ty (M : ty) d : M[lsucc][llift (llift d)] = M[llift d][lsucc].
 Proof.

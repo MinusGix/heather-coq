@@ -27,7 +27,7 @@ Proof. destruct c; cbn [redT]; intros [= <-]; f_equal; peel_push r. Qed.
 Lemma redt_ren l1 l2 rb l Δ T c v r : redt l1 l2 rb l Δ T c = Some v ->
   redt l1 l2 rb⟨r⟩ l Δ T c = Some v⟨r⟩.
 Proof.
-  destruct c; cbn [redt]; redt_case T; intros E; inversion E; subst; f_equal; peel_push r.
+  destruct c; cbn [redt]; redt_case T; intros E; first [discriminate E | apply Some_inj in E; subst v]; f_equal; peel_push r.
 Qed.
 
 Lemma red_ubeta_ren n l T b ls r : length ls = n -> red (uapp (ulam n l T⟨r⟩ b⟨r⟩) ls) b[uext ls lvar]ᵤ⟨r⟩.
@@ -100,6 +100,69 @@ Proof.
   rewrite <- lsingle_ren. ren_comm.
 Qed.
 
+(** [dnth] and [elim_IWf]'s induction hypothesis (M17b), as [nth] and
+    [wfIH]. *)
+Ltac rext := intros [|?n]; rlk_simpl; first [reflexivity | lia | revert n; rext].
+Ltac ren_comm10 := first [ reflexivity
+  | rewrite ?ren_ren_comp_ty, ?ren_ren_comp; first [apply ren_ext_ty | apply ren_ext_tm]; rext ].
+(** Congruence down to the renamed leaves, which [ren_comm10] closes. *)
+Ltac rhead t := lazymatch t with ?f _ => rhead f | _ => t end.
+Ltac ren_cong := lazymatch goal with
+  | |- ?x = ?y => let h := rhead x in
+      lazymatch h with
+      | ren_ty => ren_comm10 | ren_tm => ren_comm10 | @ren => ren_comm10
+      | _ => first [reflexivity | f_equal]
+      end
+  end.
+Lemma tmDNth_ren l n F cs i r :
+  (tmDNth l n F cs i)⟨r⟩ = tmDNth l n⟨r⟩ F⟨rlift r⟩ cs⟨r⟩ i⟨r⟩.
+Proof.
+  unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
+  rewrite ?lsingle_ren_ty, ?lsingle_ren.
+  cbn [ren Ren_tm Ren_ty ren_tm ren_ty rlk]. fold ren_ty ren_tm.
+  rewrite ?lsingle_ren_ty, ?lsingle_ren.
+  cbn [ren Ren_tm Ren_ty ren_tm ren_ty rlk]. fold ren_ty ren_tm.
+  repeat ren_cong.
+Qed.
+Lemma llift_lsingle_ren (t : tm) s r :
+  t[llift (lsingle s)]⟨rlift r⟩ = t⟨rlift (rlift r)⟩[llift (lsingle s⟨r⟩)].
+Proof.
+  rewrite (subst_ren _ _ (lcons (lcons (r2l (rup r)) s⟨r⟩⟨↑⟩) (var 0))),
+          (ren_subst _ _ _ (lcons (lcons (r2l (rup r)) s⟨r⟩⟨↑⟩) (var 0))); auto.
+  all: intros [|[|n]]; rewrite ?llk_llift; cbn [llk lsingle]; rewrite ?llk_r2l; rlk_simpl; cbn;
+    rewrite ?llk_r2l; rlk_simpl; auto.
+  all: try (apply ren_swap; intros; rlk_simpl; reflexivity).
+  all: try (f_equal; rlk_simpl; lia).
+  rewrite Nat.add_0_r, Nat.add_1_r; rlk_simpl; reflexivity.
+Qed.
+Lemma iwfIH_ren l li l' X A N Ot C M c a cs r :
+  (iwfIH l li l' X A N Ot C M c a cs)⟨r⟩ =
+  iwfIH l li l' X⟨r⟩ A⟨r⟩ N⟨rlift r⟩ Ot⟨rlift r⟩ C⟨rlift (rlift r)⟩ M⟨rlift (rlift r)⟩
+    c⟨rlift (rlift (rlift r))⟩ a⟨r⟩ cs⟨r⟩.
+Proof.
+  unfold iwfIH, iwfFam. change (ren (lam ?l1 ?l2 ?X ?Y) ?r0) with (lam l1 l2 X⟨r0⟩ Y⟨rlift r0⟩).
+  change (ren (tyFin ?n) ?r0) with (tyFin n⟨r0⟩).
+  rewrite lsingle_ren. f_equal.
+  change (ren (tmElimIWf ?k1 ?k2 ?k3 ?X ?Y ?Z ?W ?V ?U ?u ?v ?w) ?r0)
+    with (tmElimIWf k1 k2 k3 X⟨r0⟩ Y⟨r0⟩ Z⟨rlift r0⟩ W⟨rlift r0⟩ V⟨rlift (rlift r0)⟩ U⟨rlift (rlift r0)⟩
+            u⟨rlift (rlift (rlift r0))⟩ v⟨r0⟩ w⟨r0⟩).
+  rewrite tmDNth_ren, llift_lsingle_ren. f_equal; try ren_comm.
+  f_equal; try ren_comm.
+  - rewrite <- lsingle_ren. ren_comm.
+  - cbn [ren Ren_tm Ren_ty ren_ty]. fold ren_ty ren_tm.
+    f_equal; try ren_comm.
+    etransitivity; [apply (ren_swap _ _ _ (rlift r) (rlift ↑)); rext|].
+    change (ren_tm ?x ?r0) with x⟨r0⟩. rewrite llift_lsingle_ren. reflexivity.
+Qed.
+
+Lemma iwfFam_ren l li X A N Ot C a r :
+  (iwfFam l li X A N Ot C a)⟨rlift r⟩ =
+  iwfFam l li X⟨r⟩ A⟨r⟩ N⟨rlift r⟩ Ot⟨rlift r⟩ C⟨rlift (rlift r)⟩ a⟨r⟩.
+Proof.
+  unfold iwfFam. cbn [ren Ren_tm Ren_ty ren_ty]. fold ren_ty ren_tm.
+  rewrite llift_lsingle_ren. f_equal; ren_comm.
+Qed.
+
 (** [Vec]'s successor step (M14a): the tail's shifts commute with renaming. *)
 Lemma red_vec_succ_ren l A n r :
   red_ty (tyVec l A (succ n))⟨r⟩ (tySig l l A (tyVec l A⟨↑⟩ n⟨↑⟩))⟨r⟩.
@@ -109,6 +172,21 @@ Proof.
   constructor.
 Qed.
 
+(** [DVec]'s successor step (M17a): the head's and the tail's instances
+    commute with renaming. *)
+Lemma red_dvec_succ_ren l n F r :
+  red_ty (tyDVec l (succ n) F)⟨r⟩ (tySig l l (dvecHd n F) (dvecTl l n F))⟨r⟩.
+Proof.
+  assert (E : (tySig l l (dvecHd n F) (dvecTl l n F))⟨r⟩
+              = tySig l l (dvecHd n⟨r⟩ F⟨rlift r⟩) (dvecTl l n⟨r⟩ F⟨rlift r⟩)).
+  { change ((tySig l l ?A ?B)⟨r⟩) with (tySig l l A⟨r⟩ B⟨rlift r⟩).
+    rewrite !lsingle_ren_ty. f_equal.
+    change ((tyDVec l ?m ?G)⟨?r0⟩) with (tyDVec l m⟨r0⟩ G⟨rlift r0⟩).
+    rewrite lsingle_ren_ty. cbn [ren Ren_tm Ren_ty ren_tm ren_ty rlk]. fold ren_ty ren_tm.
+    repeat (f_equal; try ren_comm). all: rlk_simpl; reflexivity. }
+  rewrite E. constructor.
+Qed.
+
 Lemma red_ren_both :
   (forall t u, red t u -> forall r, red t⟨r⟩ u⟨r⟩) /\
   (forall T U, red_ty T U -> forall r, red_ty T⟨r⟩ U⟨r⟩).
@@ -116,6 +194,7 @@ Proof.
   apply red_both; intros; cbn;
     first [ now constructor
           | now apply red_vec_succ_ren
+          | now apply red_dvec_succ_ren
           | now apply red_ubeta_ren
           | constructor; first [now apply redT_ren | now apply redt_ren]
           | cbn [ren_tm]; rewrite <- gsubst_ren; constructor
@@ -123,6 +202,7 @@ Proof.
             first [rewrite lsingle2_ren | rewrite lsingle_ren]; constructor
           | change (ren_tm ?x ?r) with x⟨r⟩; rewrite lsingle3_ren, wIH_ren; constructor
           | change (ren_tm ?x ?r) with x⟨r⟩; rewrite lsingle3_ren, wfIH_ren; constructor
+          | change (ren_tm ?x ?r) with x⟨r⟩; rewrite lsingle3_ren, iwfIH_ren; constructor
           (* δ: the body's instance *)
           | erewrite subst_ren by (intros; apply llk_lren); constructor ].
 Qed.

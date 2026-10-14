@@ -96,6 +96,7 @@ Proof.
   1-4: intros; intuition eauto using whne_ty_ren, whne_ren, decl_wk_eqty, decl_wk_eqtm.
   (* context conversion *)
   1-4: intros; intuition eauto using stab_eqty, stab_eqtm.
+  - intros * EA Hl HΓ' H. exact (mv_eqtm Hty (stab2_lsub Hty EA Hl HΓ') H).
   (* weak head closure *)
   - intros * [_ _ HT] [_ _ HT'] HW.
     eauto using eqty_trans, eqty_sym.
@@ -236,6 +237,26 @@ Proof.
     apply eqtm_sq_irr; eauto using lequiv_wf_l, eqtm_wf_l.
   (* the code of ∥·∥ *)
   - intros; apply eqtm_code_sq; auto.
+  (* dependent tuples at a neutral length *)
+  - intros * Hl (Hn & Hn' & Hν) HF HFF.
+    refine (conj _ (conj _ _)); [constructor; auto .. |].
+    apply eqty_dvec; auto. exact (eqtm_wf_l Hty Hν).
+  (* indexed W-types: the motive's and the children's types are well formed
+     from the signature *)
+  - intros; apply eqty_iwf; auto.
+  - intros; apply eqtm_supi; auto.
+  - intros * Hlk Hlik Hl'k' HX HXX HA HAA HN HNN HO HOO HC HCC HM HMM EI Hc Hmm (Hn & Hn' & Hν).
+    pose proof (lequiv_wf_l _ _ _ Hlk) as Wl. pose proof (lequiv_wf_l _ _ _ Hlik) as Wli.
+    pose proof (lequiv_wf_l _ _ _ Hl'k') as Wl'.
+    assert (HS : IWfSig (G := G) (i := i) Γ l li X A N Ot C) by (unfold IWfSig; auto 8).
+    refine (conj _ (conj _ _)); [constructor; auto .. |].
+    apply eqtm_elimIWf; auto.
+    + exact (IWf_mot_wf Hty Hv HS).
+    + exact (IWf_cs_wf Hty Hv HS).
+    + exact (eqty_wf_l Hty EI).
+  (* the codes of DVec and IWf (M17c) *)
+  - intros; apply eqtm_code_dvec; auto.
+  - intros; apply eqtm_code_iwf; auto.
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].
