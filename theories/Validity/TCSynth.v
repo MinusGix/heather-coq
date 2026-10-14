@@ -7,6 +7,7 @@
     normalized, and its head must be the matching former, whose
     components give the result. *)
 From DeLaM.Validity Require Export TCType Uniform.
+From DeLaM.Typing Require Import IWfIH.
 
 Section Step.
 Context (n : nat) (IH : IHsz n).
@@ -979,6 +980,68 @@ Proof.
   left; eexists; eexists; exact (wf_elimSq _ _ _ _ _ _ _ _ _ Hv Hl Hl' HA HM Hcc Ht).
 Qed.
 
+(** Indexed finitary trees (M17b; layers D and M): the signature as the
+    type's ([dec_iwf_sig]), the children at their [DVec], and the
+    induction hypothesis's type built from the motive ([IWf_ihty_wf]). *)
+Lemma sy_supi l li X A N Ot C a cs : sz_tm (tmSupi l li X A N Ot C a cs) <= n ->
+  SYD (tmSupi l li X A N Ot C a cs).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | Hc];
+    [| right; intros T k H; destruct (inva_supi H) as ((H0 & _) & _); contradiction].
+  pose proof (compt_typeof_self _ Hc) as Hi. assert (Hv : i <> lV) by (apply compt_notV; exact Hc).
+  destruct (dec_iwf_sig n IH l li X A N Ot C ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) G i Γ Hc
+              ltac:(rewrite <- Hi; exact HΓ)) as [HS | Hn];
+    [| right; intros T k H; destruct (inva_supi H) as ((_ & Hs) & _); apply Hn; unfold IWfSig; tauto].
+  pose proof HS as (Hl & Hli & HX & HA & HN & HO & HC).
+  destruct (ihC a ltac:(szl) G i Γ A l ltac:(rewrite Hi; exact HA)) as [Ha | Hn];
+    [| right; intros T k H; destruct (inva_supi H) as ((_ & _ & _ & _ & _ & _ & _ & _ & Ha & _) & _);
+       contradiction].
+  destruct (ihC cs ltac:(szl) G i Γ _ _ ltac:(rewrite Hi; exact (IWf_csa_wf Hi Hv HS Ha))) as [Hcs | Hn];
+    [| right; intros T k H; destruct (inva_supi H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & Hcs) & _);
+       contradiction].
+  left; eexists; eexists; apply wf_supi; assumption.
+Qed.
+
+Lemma sy_elimIWf l li l' X A N Ot C M c m t : sz_tm (tmElimIWf l li l' X A N Ot C M c m t) <= n ->
+  SYD (tmElimIWf l li l' X A N Ot C M c m t).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | Hc];
+    [| right; intros T k H; destruct (inva_elimIWf H) as ((H0 & _) & _); contradiction].
+  pose proof (compt_typeof_self _ Hc) as Hi. assert (Hv : i <> lV) by (apply compt_notV; exact Hc).
+  destruct (lwf_Dec (gL G) l') as [Hl' | Hn];
+    [| right; intros T k H; destruct (inva_elimIWf H) as ((_ & H0 & _) & _); contradiction].
+  destruct (dec_iwf_sig n IH l li X A N Ot C ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) G i Γ Hc
+              ltac:(rewrite <- Hi; exact HΓ)) as [HS | Hn];
+    [| right; intros T k H; destruct (inva_elimIWf H) as ((_ & _ & Hs) & _); apply Hn; unfold IWfSig; tauto].
+  pose proof HS as (Hl & Hli & HX & HA & HN & HO & HC).
+  pose proof (IWf_mot_wf Hi Hv HS) as Hmot.
+  assert (HΓM : [ G ; Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li ⊢[ typeof i ] ])
+    by (rewrite Hi; apply (ext_wf Hi Hmot); exact (lwf_max Hl Hli)).
+  destruct (ihT M ltac:(szl) G i _ l' HΓM) as [HM | Hn];
+    [| right; intros T k H; destruct (inva_elimIWf H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & HM & _) & _);
+       contradiction].
+  pose proof (IWf_ihty_wf Hi Hv HS Hl' HM) as HI.
+  assert (HΘ : [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l'
+                 ⊢[ i ] ])
+    by (apply (ext_wf Hi HI); apply lwf_max; [exact I | exact Hl']).
+  pose proof (eqty_wf_l Hi (IWf_step_eq Hi Hv (IWfEq_refl HS) HM (eqty_refl _ _ _ _ _ HM) HΘ)) as HSt.
+  destruct (ihC c ltac:(szl) G i _ _ _ ltac:(rewrite Hi; exact HSt)) as [Hc0 | Hn];
+    [| right; intros T k H;
+       destruct (inva_elimIWf H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Hc0 & _) & _);
+       contradiction].
+  destruct (ihC m ltac:(szl) G i Γ X li ltac:(rewrite Hi; exact HX)) as [Hm | Hn];
+    [| right; intros T k H;
+       destruct (inva_elimIWf H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Hm & _) & _);
+       contradiction].
+  destruct (ihC t ltac:(szl) G i Γ _ _ ltac:(rewrite Hi; exact (IWf_ty_wf Hi Hv HS Hm))) as [Ht | Hn];
+    [| right; intros T k H;
+       destruct (inva_elimIWf H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Ht) & _);
+       contradiction].
+  left; eexists; eexists; apply wf_elimIWf; first [exact Hc | assumption | exact (IWf_cs_wf Hi Hv HS)].
+Qed.
+
 (** ** The step *)
 
 Lemma sy_step t : sz_tm t <= n -> synth t -> SYD t.
@@ -996,7 +1059,7 @@ Proof.
           | apply sy_code_seq | apply sy_code_sempty | apply sy_inl | apply sy_inr | apply sy_case
           | apply sy_code_empty | apply sy_code_sum | apply sy_sup | apply sy_elimW | apply sy_codeW
           | apply sy_code_vec | apply sy_code_fin | apply sy_supf | apply sy_elimWf | apply sy_code_wf
-          | apply sy_sq | apply sy_elimSq | apply sy_code_sq ]; assumption.
+          | apply sy_sq | apply sy_elimSq | apply sy_code_sq | apply sy_supi | apply sy_elimIWf ]; assumption.
 Qed.
 
 End Step.

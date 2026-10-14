@@ -359,6 +359,51 @@ Proof.
   - right; intros H; exact (Q (proj2 (inv_ty_dvec H))).
 Qed.
 
+(** Indexed finitary trees (M17b; layers D and M). The signature is shared
+    with [sup_i]'s and [elim_IWf]'s synthesis ([TCSynth]). *)
+Lemma dec_iwf_sig l li X A N Ot C :
+  sz_ty X < n -> sz_ty A < n -> sz_tm N < n -> sz_tm Ot < n -> sz_tm C < n ->
+  forall G i Γ, compt i -> [ G ; Γ ⊢[ i ] ] ->
+  IWfSig (G := G) (i := i) Γ l li X A N Ot C \/ ~ IWfSig (G := G) (i := i) Γ l li X A N Ot C.
+Proof.
+  intros SX SA SN SO SC G i Γ Hc HΓ.
+  pose proof (compt_notV _ Hc) as Hv. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (lwf_Dec (gL G) l) as [Hl | Hn]; [| right; intros (H & _); contradiction].
+  destruct (lwf_Dec (gL G) li) as [Hli | Hn]; [| right; intros (_ & H & _); contradiction].
+  assert (HΓ' : [ G ; Γ ⊢[ typeof i ] ]) by (rewrite Hi; exact HΓ).
+  destruct (ihT X SX G i Γ li HΓ') as [HX | Hn]; [| right; intros (_ & _ & H & _); contradiction].
+  destruct (ihT A SA G i Γ l HΓ') as [HA | Hn]; [| right; intros (_ & _ & _ & H & _); contradiction].
+  pose proof (ext_wf Hi HA Hl) as HΓA.
+  assert (HNat : [ G ; Γ ,, A @ l ⊢[ typeof i ] tyNat @ lzero ])
+    by (rewrite Hi; apply wft_nat; [exact Hv | rewrite Hi; exact HΓA]).
+  destruct (ihC N SN G i _ _ _ HNat) as [HN | Hn]; [| right; intros (_ & _ & _ & _ & H & _); contradiction].
+  assert (HX1 : [ G ; Γ ,, A @ l ⊢[ typeof i ] X⟨↑⟩ @ li ])
+    by (rewrite Hi; eapply (wk1_ty G i Hi); [exact HΓA | exact HX]).
+  destruct (ihC Ot SO G i _ _ _ HX1) as [HO | Hn]; [| right; intros (_ & _ & _ & _ & _ & H & _); contradiction].
+  assert (HF : [ G ; Γ ,, A @ l ⊢[ i ] tyFin N @ lzero ]) by (apply wft_fin; [exact Hv | exact HN]).
+  assert (HΓAF : [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] ]) by (apply (ext_wf Hi HF); exact I).
+  assert (HX2 : [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ typeof i ] X⟨↑⟩⟨↑⟩ @ li ])
+    by (rewrite Hi; eapply (wk1_ty G i Hi); [exact HΓAF | eapply (wk1_ty G i Hi); [exact HΓA | exact HX]]).
+  destruct (ihC C SC G i _ _ _ HX2) as [HC | Hn]; [| right; intros (_ & _ & _ & _ & _ & _ & H); contradiction].
+  left; unfold IWfSig; auto 8.
+Qed.
+
+Lemma dec_tyIWf l li X A N Ot C m : sz_ty (tyIWf l li X A N Ot C m) <= n -> TYD (tyIWf l li X A N Ot C m).
+Proof.
+  intros Hsz G i Γ k HΓ.
+  destruct (compt_dec i) as [Hc | Hc]; [| right; intros H; destruct (inv_ty_iwf H) as ((H0 & _) & _); contradiction].
+  pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (dec_iwf_sig l li X A N Ot C ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) G i Γ Hc
+              ltac:(rewrite <- Hi; exact HΓ)) as [HS | Hn];
+    [| right; intros H; destruct (inv_ty_iwf H) as ((_ & Hs) & _); apply Hn; unfold IWfSig; tauto].
+  pose proof HS as (Hl & Hli & HX & HA & HN & HO & HC).
+  destruct (ihC m ltac:(szl) G i Γ X li ltac:(rewrite Hi; exact HX)) as [Hm | Hn];
+    [| right; intros H; destruct (inv_ty_iwf H) as ((_ & _ & _ & _ & _ & _ & _ & _ & Hm) & _); contradiction].
+  destruct (lvl_eq_dec (gL G) k (lmax l li)) as [Q | Q].
+  - left; eapply wft_lvl; [exact Q | apply wft_iwf; assumption].
+  - right; intros H; exact (Q (proj2 (inv_ty_iwf H))).
+Qed.
+
 Lemma ty_step T : sz_ty T <= n -> TYD T.
 Proof.
   intros Hsz. destruct T;
@@ -367,7 +412,7 @@ Proof.
           | apply dec_tyUPi | apply dec_tyCPi | apply dec_tyTPi | apply dec_tySig | apply dec_tyUnit
           | apply dec_tySEq | apply dec_tySEmpty | apply dec_tyId | apply dec_tyEmpty | apply dec_tySum
           | apply dec_tyW | apply dec_tyVec | apply dec_tyFin | apply dec_tyWf | apply dec_tySq
-          | apply dec_tyDVec ];
+          | apply dec_tyDVec | apply dec_tyIWf ];
     assumption.
 Qed.
 

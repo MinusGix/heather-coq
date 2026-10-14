@@ -6,7 +6,8 @@
     [ih] entry's instance [Π^{0,l'}(Fin N[a/x]). M[C[a/x, i], dnth(cs↑; i)]].
     The declarative rules state the induction hypothesis's type a premise
     and β's induction hypothesis typed, so nothing in [Presupposition]
-    needs this; [elim_IWf]'s validity does (its λs at a [sup_i]). The
+    needs this; [elim_IWf]'s validity does (its λs at a [sup_i]), and the
+    type checker the [ih] entry's type from the motive ([IWf_ihty_wf]). The
     right-hand side of a congruence is typed in the right-hand signature,
     whose premises [IWf_prem_r] moves there ([pre_elimIWf_r]'s
     conversions). *)
@@ -64,6 +65,21 @@ Proof.
     all: intros [|[|n]]; pw.
     all: first [exact Eu | exact (eq_sym Eu) | exact Ev | exact (eq_sym Ev) | idtac].
     rewrite <- Ev. f_equal. subst v. rewrite ?ren_ren_comp_ty. reflexivity.
+Qed.
+
+(** The [ih] entry's type as its codomain at the bound shape and children,
+    under the twice-weakened signature. *)
+Lemma IWf_E_ihcod l li l' (X A : ty) (N Ot C : tm) (M : ty) :
+  iwfihty l li l' X A N Ot C M =
+  tyPi lzero l' (tyFin (N⟨rlift ↑⟩⟨rlift ↑⟩)[lsingle (var 1)])
+    (iwfcod l li X⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩
+       C⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ M⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ (var 1) (var 0)).
+Proof.
+  f_equal.
+  - f_equal. teq_core.
+  - rewrite !ren_ren_comp_ty. f_equal. f_equal.
+    + teq_core.
+    + unfold iwfFam. f_equal; [teq_core |]. push_ren. f_equal; first [teq_core | ren_comm].
 Qed.
 
 Section IWfIH.
@@ -220,6 +236,55 @@ Proof using Hi Hv.
   rewrite (nf_id_ty (iwfstepty l li X A N Ot C M)) in X0, Y0 by exact N1.
   rewrite (nf_id_ty (iwfstepty k ki X' A' N' Ot' C' M')) in Y0 by exact N2.
   eapply wf_lconv; [eapply (conv_tm' Hi); [exact X0 | exact (eqty_sym' Y0)] | exact (lequiv_sym _ _ _ H')].
+Qed.
+
+(** The induction hypothesis's codomain and type, typed from the motive:
+    the premise [wf_elimIWf] states is admissible once [dnth] is typed
+    (the type checker builds it). *)
+Lemma IWf_cod_wf {Γ l li l' X A N Ot C M a cs} : IWfSig Γ l li X A N Ot C ->
+  [ G ; Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] ->
+  [ G ; Γ ⊢[ i ] cs : tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a) @ lmax l li ] ->
+  [ G ; Γ ,, tyFin N[lsingle a] @ lzero ⊢[ i ] iwfcod l li X A N Ot C M a cs @ l' ].
+Proof using Hi Hv.
+  intros HS HM Ha Hcs. pose proof HS as (Hl & Hli & HX & HA & HN & HO & HC).
+  pose proof (IWfSig_nf HS) as (NX & NA & NN & NO & NC).
+  assert (HF : [ G ; Γ ⊢[ i ] tyFin N[lsingle a] @ lzero ])
+    by (apply wft_fin; [exact Hv | exact (wf_tm_single Hi HN Ha)]).
+  assert (HΓ1 : [ G ; Γ ,, tyFin N[lsingle a] @ lzero ⊢[ i ] ]) by (apply (ext_wf Hi); [exact HF | exact I]).
+  pose proof (IWf_M_wk1 Hi Hv HS HΓ1 HM) as HM1.
+  pose proof (IWf_ci_wf HS Ha) as Hci.
+  pose proof (IWf_dnth_wf HS Ha Hcs) as Hd.
+  assert (E : iwfFam l li X A N Ot C a
+             = (iwfmotty l li X⟨↑⟩ A⟨↑⟩ N⟨rlift ↑⟩ Ot⟨rlift ↑⟩ C⟨rlift (rlift ↑)⟩)[lsingle C[llift (lsingle a)]])
+    by (unfold iwfFam; rewrite IWf_E_mot by auto using ren_nf_ty, ren_nf; reflexivity).
+  exact (wf_ty_subst Hi HM1 (lsub_wf_single2' Hi HΓ1 Hci (ltac:(eapply wf_tm_retype; [exact Hd | exact E])))).
+Qed.
+
+Lemma IWf_ihty_wf {Γ l li l' X A N Ot C M} : IWfSig Γ l li X A N Ot C -> lwf (gL G) l' ->
+  [ G ; Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ⊢[ i ] iwfihty l li l' X A N Ot C M @ lmax lzero l' ].
+Proof using Hi Hv.
+  intros HS Hl' HM. pose proof HS as (Hl & Hli & HX & HA & HN & HO & HC).
+  pose proof (IWfSig_nf HS) as (NX & NA & NN & NO & NC).
+  pose proof (ext_wf Hi HA Hl) as HΓA.
+  pose proof (IWf_cs_wf Hi Hv HS) as HCs.
+  assert (HΘ : [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ⊢[ i ] ])
+    by (apply (ext_wf Hi); [exact HCs | exact (lwf_max Hl Hli)]).
+  pose proof (IWfSig_wk1 Hi Hv HS HΓA) as HS1.
+  pose proof (IWfSig_wk1 Hi Hv HS1 HΘ) as HS2.
+  pose proof (IWf_M_wk1 Hi Hv HS1 HΘ (IWf_M_wk1 Hi Hv HS HΓA HM)) as HM2.
+  assert (Ha : [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ⊢[ i ] var 1 : A⟨↑⟩⟨↑⟩ @ l ])
+    by (apply wf_var; [rewrite Hi; exact HΘ | repeat constructor]).
+  assert (Hcs : [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ⊢[ i ] var 0
+                  : tyDVec (lmax l li) (N⟨rlift ↑⟩⟨rlift ↑⟩)[lsingle (var 1)]
+                      (iwfFam l li X⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩
+                         C⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ (var 1)) @ lmax l li ]).
+  { eapply wf_tm_retype; [apply wf_var; [rewrite Hi; exact HΘ | constructor] |].
+    unfold iwfFam. push_ren. push_subst. f_equal; [teq_core |]. f_equal; first [teq_core | ren_comm]. }
+  rewrite IWf_E_ihcod. apply wft_pi; [exact Hv | exact I | exact Hl' | |].
+  - apply wft_fin; [exact Hv | exact (wf_tm_single Hi (proj1 (proj2 (proj2 (proj2 (proj2 HS2))))) Ha)].
+  - exact (IWf_cod_wf HS2 HM2 Ha Hcs).
 Qed.
 
 End IWfIH.
