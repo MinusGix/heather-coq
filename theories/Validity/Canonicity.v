@@ -10,7 +10,8 @@
       [UΠ], a context or type abstraction at [CΠ]/[TΠ], a pair at [Σ], [⟨⟩]
       at [Unit], [srefl] at [sEq], and nothing at [sEmpty] (M10a), [refl] at
       [Id] (M11a), nothing at [Empty] (M12a), an injection at [+]
-      (M12b), [sup] at [W] (M13a) and [sup_f] at [Wf] (M15a).
+      (M12b), [sup] at [W] (M13a), [sup_f] at [Wf] (M15a), [|a|] at [∥A∥]
+      (M16a) and [sup_i] at [IWf] (M17b).
 
     Closed whnfs are not neutral ([no_closed_neutral]). A value's typing
     inversion equates its type with its canonical type former, and head
@@ -42,6 +43,7 @@ Definition canon_head (h : nat) (w : tm) : Prop :=
   | 17 => exists l l' A B a f, w = tmSup l l' A B a f
   | 18 => exists l A N a cs, w = tmSupf l A N a cs
   | 19 => exists l A a, w = tmSq l A a
+  | 20 => exists l li X A N Ot C a cs, w = tmSupi l li X A N Ot C a cs
   | _ => False
   end.
 
@@ -68,7 +70,7 @@ Proof.
           | pose proof (inv_code_W Hi Hx) as X
           | pose proof (inv_code_vec Hi Hx) as X | pose proof (inv_code_fin Hi Hx) as X
           | pose proof (inv_code_wf Hi Hx) as X | pose proof (inv_sq Hi Hx) as X
-          | pose proof (inv_code_sq Hi Hx) as X ];
+          | pose proof (inv_code_sq Hi Hx) as X | pose proof (inv_supi Hi Hx) as Xs ];
     repeat match goal with H : exists _, _ |- _ => destruct H | H : _ /\ _ |- _ => destruct H end;
     match goal with E : [ _ ; _ ⊢[ _ ] W ≅ _ @ _ ] |- _ =>
       rewrite (decl_head_c Hc E HW); [| auto with whnf] end;
