@@ -155,8 +155,9 @@ Built as planned for (b), with N1 and N2. Full build green, no admits;
   on `opaque-globals-analysis` (a recursor branch for `u^δ`, or unfolding
   for analysis). Not machine-checked: a concrete typed instance.
 - **Not proved here.** N1's premise is derivable from `⊢ Ψ` (body at C in
-  its prefix, lifted and weakened); argued, not proved. Consistency still
-  assumes `ctx_only` (since settled: Follow-up, item 3).
+  its prefix, lifted and weakened); argued, not proved (since proved:
+  Follow-up, item 2). Consistency still assumes `ctx_only` (since settled:
+  Follow-up, item 3).
 
 **Cost.** 64 files, about 990 lines added and 240 changed, against about
 4000 in 56 files for Σ (M8a). By area: syntax and substitution laws
@@ -234,6 +235,43 @@ after `Subst.v`), `Typing/Unfold.v` ~410 (the theorem's proof is the
 generic rule dispatch plus 13 manual cases), `ConsistencyDef.v` 50,
 `DefStuck.v` 120.
 
+## Follow-up: open item 2, N1 is admissible (2026-10-15)
+
+`Typing/DefAdm.v` (~170 lines, a leaf after `StaticCodeEq`). Full build
+green, no admits; every statement below is closed under the global
+context.
+
+- **N1's premise is derivable** (`n1_adm`, `n1_adm_eq`). Given `⊢ G` and
+  `in_gctx (gΨ G) u (gdDef Δ T l t₀)`, the body is typed at C in `G`
+  (`gctx_decl_ok` already weakens `wfg_def`'s premise along the prefix);
+  the Static Code Lemma (`static_code`, the `≡ₗ` direction) carries it to
+  any level-equivalent `t` with well-formed levels, with `t₀ ≅ t` at C;
+  `lift_tm` takes it to any use layer `i ≥ C`. No new metatheory was
+  needed: the lifting lemma, global weakening and the Static Code Lemma
+  were all in place.
+- **The rules without it are admissible**: `wf_gdef_adm`,
+  `eqtm_gdef_adm`, `eqtm_delta_adm`. Each trades the body premise for
+  `tm_lwf (gL G) t` (both sides' for the congruence), which is necessary:
+  a typed occurrence's body has well-formed levels (`wf_gdef_lwf`). With
+  `t = t₀` that premise comes from `⊢ G` too, so for the declared body
+  the rules are exactly Heather's.
+- **The translation** (`occ`, `occ_wf`, `occ_eq`, `occ_delta`). `occ Ψ u δ`
+  is `gdef u t₀ δ` when `nth_error Ψ u` is a definition (its body weakened
+  as `in_gctx` reads it, `occ_def`), `gvar u δ` otherwise (`occ_tm`): a
+  function, so total. Heather's term bindings are `htrm`: opaque
+  (`gdTm Δ i T l`) or defined at C (`gdDef Δ T l t₀`, used at `c ≤ j`).
+  The images of Heather's three rules for `u^δ` are derivable: the use
+  rule (`occ_wf`, either kind of binding, no body premise), the
+  congruence (`occ_eq`, from `δ ≅ δ'` alone) and δ (`occ_delta`,
+  `u^δ ≅ t₀[δ]` at D/M).
+- **Scope of the claim.** Heather's rule set and ours differ only in
+  those three rules (M9's (b): every other rule is shared, and `occ` is
+  the identity elsewhere), so a Heather derivation translates rule by
+  rule, by induction on it. That induction is not itself a Coq theorem:
+  there is no inductive for Heather's rule set to run it on. Writing one
+  is open item 5, and with `DefAdm.v` its translation theorem is the
+  dispatch over shared rules plus these three cases.
+
 ## Open items (for later rounds)
 
 What M9 argued rather than proved, or left at the old scope. None blocks
@@ -247,7 +285,7 @@ M10; each is a standalone round. Ordered by value to Heather first.
    Outcome's canonicity finding into a checked counterexample for
    `H/issues/opaque-globals-analysis.md`, which Heather closed its
    definitions issue citing our check.
-2. **N1 is admissible.** Prove the premise `wf_gdef` adds (the body typed
+2. **N1 is admissible.** Done (Follow-up, item 2). Prove the premise `wf_gdef` adds (the body typed
    at the use layer) is derivable from `⊢ Ψ`: the body is checked at C in
    its prefix, lifted to `j ≥ C`, weakened to `Ψ`. With it, prove that the
    translation from Heather's syntax (`u^δ ↦ gdef u t₀ δ` when `Ψ` defines
