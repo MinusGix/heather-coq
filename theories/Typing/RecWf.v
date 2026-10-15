@@ -5,7 +5,7 @@
     (04:1150–1300) are well formed in the universe-weakened [G]. *)
 From DeLaM.Typing Require Export USubstitution.
 From DeLaM.Syntax Require Import SubstCommute.
-From DeLaM.Typing Require Import TypedDnf.
+From DeLaM.Typing Require Import TypedDnf DNthCore.
 
 Lemma in_gctx_nth Ψ n D : nth_error Ψ n = Some D -> in_gctx Ψ n (gdecl_ren D (Nat.add (S n))).
 Proof.
@@ -368,6 +368,69 @@ Lemma eqtm_gvar_eq G i Γ u Δ i' T T' l d d' : [ G ; Γ ⊢[ typeof i ] ] ->
   [ G ; Γ ⊢[ i ] gvar u d ≅ gvar u d' : T' @ l ].
 Proof. intros; subst; eapply eqtm_gvar; eauto. Qed.
 
+(** [dnth]'s typing at the expected type ([DNthCore.dnth_wf_core]): the
+    length's and the family's instances under [m] locals are premises,
+    each typed under abstract locals by [dnth_ext] below. *)
+Lemma wf_dnth_eq G i Γ l n F cs t T : compt i -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] ] ->
+  [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F @ l ] ->
+  (forall m Δ, m <= 10 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
+     [ G ; Δ ⊢[ i ] n⟨rshift m⟩ : tyNat @ lzero ]) ->
+  (forall m Δ e K x, m <= 9 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
+     [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x : tyFin n⟨rshift m⟩ @ lzero ] ->
+     [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x)] @ l ]) ->
+  (forall m Δ, m <= 2 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
+     [ G ; Δ ⊢[ i ] var 0 : tyFin n⟨rshift m⟩ @ lzero ] -> [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (var 0)] @ l ]) ->
+  (forall m Δ e K x e' K' x', m <= 8 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
+     [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x : tyFin n⟨rshift m⟩ @ lzero ] ->
+     [ G ; Δ ⊢[ i ] app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x' : tyFin n⟨rshift m⟩ @ lzero ] ->
+     [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x
+                  ≅ app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x' : tyFin n⟨rshift m⟩ @ lzero ] ->
+     [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x)]
+                  ≅ F⟨rlift (rshift m)⟩[lsingle (app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x')] @ l ]) ->
+  (forall m Δ e K x, m <= 2 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
+     [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x : tyFin n⟨rshift m⟩ @ lzero ] ->
+     [ G ; Δ ⊢[ i ] var 0 : tyFin n⟨rshift m⟩ @ lzero ] ->
+     [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x ≅ var 0 : tyFin n⟨rshift m⟩ @ lzero ] ->
+     [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x)]
+                  ≅ F⟨rlift (rshift m)⟩[lsingle (var 0)] @ l ]) ->
+  [ G ; Γ ⊢[ i ] cs : tyDVec l n F @ l ] -> [ G ; Γ ⊢[ i ] t : tyFin n @ lzero ] -> F[lsingle t] = T ->
+  [ G ; Γ ⊢[ i ] tmDNth l n F cs t : T @ l ].
+Proof.
+  intros Hc Hl HΓ Hn HF NW FW FV FE FE0 Hcs Ht <-.
+  exact (dnth_wf_core Hc Hl HΓ (wf_tm_nf Hn) (wf_ty_nf HF) Hn HF NW FW FV FE FE0 Hcs Ht).
+Qed.
+Lemma eqtm_retype_dnc G i Δ x y T T' l : [ G ; Δ ⊢[ i ] x ≅ y : T' @ l ] -> T' = T -> [ G ; Δ ⊢[ i ] x ≅ y : T @ l ].
+Proof. now intros ? ->. Qed.
+
+(** [Δ] extending [Γ] by a concrete number of locals, as [Γ] and as many
+    abstract locals. *)
+Lemma ctx_extn_S m Δ Γ : ctx_extn (S m) Δ Γ ->
+  exists Δ' T l, Δ = (Δ' ,, T @ l) /\ ctx_extn m Δ' Γ.
+Proof. destruct Δ; cbn; try contradiction; eauto. Qed.
+Ltac ext_inv H :=
+  lazymatch type of H with
+  | ctx_extn 0 _ _ => cbn in H; subst
+  | ctx_extn (S _) _ _ =>
+      let D := fresh "D" in let T := fresh "T" in let l := fresh "l" in
+      let E := fresh "E" in let H' := fresh "Hx" in
+      destruct (ctx_extn_S _ _ _ H) as (D & T & l & E & H'); clear H; subst;
+      ext_inv H'
+  end.
+(** A premise of [wf_dnth_eq]: one goal per number of locals up to the
+    bound, under abstract locals. *)
+Lemma dnf_of_wf G i Γ t T l : [ G ; Γ ⊢[ i ] t : T @ l ] -> dnftm t.
+Proof. intros H. exact (proj1 (proj1 (proj2 (proj2 (proj2 typed_dnf))) _ _ _ _ _ _ H)). Qed.
+(** The index's abstract parts are in deep normal form, by its typing
+    ([wdnf] needs them, for the global instances it reaches). *)
+Ltac dnf_hyps :=
+  repeat match goal with
+  | H : [ _ ; _ ⊢[ _ ] app ?e _ _ _ _ _ : _ @ _ ] |- _ =>
+      is_var e; lazymatch goal with
+      | _ : dnftm e |- _ => fail
+      | _ => let Hd := fresh "Hd" in pose proof (dnf_of_wf _ _ _ _ _ _ H) as Hd; cbn [dnftm dnfty] in Hd;
+             repeat match goal with Hc : _ /\ _ |- _ => destruct Hc end
+      end
+  end.
 (** A global instance's substitution is in deep normal form: by
     computation, but past [dnth] by its lemma ([cbn] unfolds it to a
     conjunction per node). *)
@@ -377,6 +440,7 @@ Ltac wdnf :=
             repeat first [ lazymatch goal with
                            | |- True => exact I | |- _ /\ _ => split
                            | |- dnftm (tmDNth _ _ _ _ _) => apply dnf_tmDNth
+                           | |- dnftm ?t => is_var t; assumption
                            | |- ~ labsorb _ _ =>
                                let H := fresh in intro H;
                                first [ exact (False_ind _ H) | cbn [labsorb] in H; discriminate H ] end
@@ -396,10 +460,38 @@ Ltac inv_in_ctx :=
       apply in_ctx_ext_inv in H; destruct H as [(-> & -> & ->) | (? & ? & -> & -> & H)]
   end.
 
+(** A term typed by a hypothesis, at its type up to computation: the
+    index of [dnth]'s family under abstract locals ([wf_dnth_eq]). *)
+Ltac wty_hyp :=
+  lazymatch goal with
+  | |- [ _ ; _ ⊢[ _ ] ?t : _ @ _ ] =>
+      match goal with H : [ _ ; _ ⊢[ _ ] t : _ @ _ ] |- _ => eapply dnc_retype; [exact H | cbn; reflexivity] end
+  | |- [ _ ; _ ⊢[ _ ] ?t ≅ ?t' : _ @ _ ] =>
+      match goal with H : [ _ ; _ ⊢[ _ ] t ≅ t' : _ @ _ ] |- _ => eapply eqtm_retype_dnc; [exact H | cbn; reflexivity] end
+  end.
+
 Ltac wnorm :=
   cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
        rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add
        tmNth nthMot nthBase nthStep].
+Ltac wnorm_in H :=
+  cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
+       rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add
+       tmNth nthMot nthBase nthStep] in H.
+
+(** The premises' hypotheses at their normal forms, as [wty] meets their
+    terms. *)
+Ltac wnorm_hyps :=
+  repeat match goal with
+  | H : [ _ ; _ ⊢[ _ ] app ?e _ _ _ _ _ : _ @ _ ] |- _ => is_var e; progress wnorm_in H
+  | H : [ _ ; _ ⊢[ _ ] app ?e _ _ _ _ _ ≅ _ : _ @ _ ] |- _ => is_var e; progress wnorm_in H
+  | H : [ _ ; _ ⊢[ _ ] var _ : _ @ _ ] |- _ => progress wnorm_in H
+  end.
+Ltac dnth_ext tac :=
+  let m := fresh "m" in let D := fresh "D" in let Hm := fresh "Hm" in let Hx := fresh "Hx" in
+  intros m D; repeat lazymatch goal with |- forall _ : tm, _ => intro | |- forall _ : ty, _ => intro end; intros Hm Hx; intros;
+  dnf_hyps;
+  repeat (destruct m as [|m]; [ext_inv Hx; wnorm_hyps; tac | try (exfalso; lia)]); fail "dnth_ext: an instance is left".
 
 (** A former at its own level, or converted to the goal's (M15b: [nth]'s
     functions live at [l ⊔ l] and [0 ⊔ l], its motive's uses at [l]). *)
@@ -462,7 +554,9 @@ with wty :=
             | eapply wf_lconv; [ eapply wf_var_eq; [ wctx | solve [repeat constructor] | reflexivity ] | lalg ]
             | eapply wf_lconv;
               [ eapply wf_conv; [ eapply wf_var; [ wctx | solve [repeat constructor] ] | wnorm; wconv ]
-              | lalg ] ]
+              | lalg ]
+            (* [dnth]'s family's index under abstract locals ([wf_dnth_eq]) *)
+            | wty_hyp ]
   | |- [ _ ; _ ⊢[ _ ] gvar _ (lshift 0) : _ @ _ ] =>
       eapply wf_gu; [ wctx | glookup | unfold lle; cbn; lia | cbn; intuition congruence ]
   (* a term global at an instance ([sup_f]'s children's length, M15b) *)
@@ -470,14 +564,16 @@ with wty :=
       eapply wf_gvar_eq; [ wctx | glookup | unfold lle; cbn; lia
                          | split; [reflexivity | intros; cbn; f_equal; lia] | wdnf
                          | let H := fresh "Hin" in intros ? ? ? H; inv_in_ctx; wty | wnorm; reflexivity ]
-  | |- [ ?G ; ?Γ ⊢[ ?i ] app _ ?l ?l' ?A ?B ?s : ?T @ _ ] =>
+  | |- [ ?G ; ?Γ ⊢[ ?i ] app ?e ?l ?l' ?A ?B ?s : ?T @ _ ] =>
+      (* [dnth]'s family's index under abstract locals ([wf_dnth_eq]) *)
+      first [ is_var e; wty_hyp |
       wbind G Γ i A l ltac:(fun HA => tm_lv l' ltac:(
         let E := fresh "E" in
         tryif assert (E : B[lsingle s] = T) by (wnorm; reflexivity)
         then (clear E; eapply wf_app_eq'; [ wnorm; reflexivity | discriminate | lvl_ok | lvl_ok | exact HA | wty | wty | wty ])
         (* [dnth]'s applications, at their types up to β (M17c) *)
         else (apply wf_conv with (T' := B[lsingle s]);
-          [ eapply wf_app; [ discriminate | lvl_ok | lvl_ok | exact HA | wty | wty | wty ] | wnorm; weq ])))
+          [ eapply wf_app; [ discriminate | lvl_ok | lvl_ok | exact HA | wty | wty | wty ] | wnorm; weq ]))) ]
   | |- [ ?G ; ?Γ ⊢[ ?i ] tmSup ?l _ ?A _ _ _ : _ @ _ ] =>
       wbind G Γ i A l ltac:(fun HA =>
         eapply wf_sup_eq; [ discriminate | lvl_ok | lvl_ok | exact HA | wty | wty | wty | reflexivity ])
@@ -552,14 +648,13 @@ with wty :=
   | |- [ _ ; _ ⊢[ _ ] tmInr _ _ _ _ _ : _ @ _ ] =>
       eapply wf_lconv; [ eapply wf_conv; [ apply wf_inr; [ discriminate | lvl_ok | lvl_ok | wty | wty | wty ]
                                         | wnorm; wconv ] | lalg ]
-  | |- [ _ ; _ ⊢[ _ ] tmDNth ?l ?n ?F ?cs ?j : _ @ _ ] =>
-      (* the unfolding normalised by [cbv] on the closed term: [cbn] on
-         the goal took a quarter of the scope's time *)
-      let t := eval cbv [tmDNth dnthMot dnthBase dnthStep dnthEmb dnthFam dnthRes dnthFamS
-                         ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l
-                         rdrop rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk
-                         lsingle lsingle2 Nat.eqb Nat.add] in (tmDNth l n F cs j) in
-      change (tmDNth l n F cs j) with t; wty
+  (* [dnth] by its lemma, the length and the family under abstract locals
+     ([wf_dnth_eq]) *)
+  | |- [ ?G ; ?Γ ⊢[ ?i ] tmDNth ?l ?n _ _ _ : _ @ _ ] =>
+      wbind G Γ i (tyFin n) lzero ltac:(fun _ => tm_lv l ltac:(eapply wf_dnth_eq;
+        [ first [exact compt_D | exact compt_M] | lvl_ok | wctx | wty | wty
+        | dnth_ext ltac:(wty) | dnth_ext ltac:(wnorm; wty) | dnth_ext ltac:(wnorm; wty) | dnth_ext ltac:(wnorm; weq) | dnth_ext ltac:(wnorm; weq)
+        | wty | wty | wnorm; reflexivity ]))
   | |- [ ?G ; ?Γ ⊢[ ?i ] tyDVec ?l ?n _ @ _ ] =>
       wbind G Γ i (tyFin n) lzero ltac:(fun _ => ty_lv l ltac:(apply wft_dvec; [ discriminate | lvl_ok | wty | wty ]))
   | |- [ ?G ; ?Γ ⊢[ ?i ] tyIWf ?l ?li _ ?A _ _ _ _ @ _ ] =>
@@ -626,9 +721,10 @@ with weqt :=
             [ wnorm; reflexivity | first [exact compt_D | exact compt_M] | lvl_ok | lvl_ok | exact HA | wty | wty | wty ])
         | weqt ])
   | |- [ _ ; _ ⊢[ _ ] _ ≅ app (lam _ _ _ _) _ _ _ _ _ : _ @ _ ] => apply eqtm_sym; weqt
-  | |- [ ?G ; ?Γ ⊢[ ?i ] app _ ?l ?l' ?A _ _ ≅ app _ _ _ _ _ _ : _ @ _ ] =>
+  | |- [ ?G ; ?Γ ⊢[ ?i ] app ?e ?l ?l' ?A _ _ ≅ app _ _ _ _ _ _ : _ @ _ ] =>
+      first [ is_var e; wty_hyp |
       wbind G Γ i A l ltac:(fun HA => etm_lv l' ltac:(
-        eapply eqtm_app_eq; [ wnorm; reflexivity | discriminate | lalg | lalg | exact HA | weq | weq | weqt | weqt ]))
+        eapply eqtm_app_eq; [ wnorm; reflexivity | discriminate | lalg | lalg | exact HA | weq | weq | weqt | weqt ])) ]
   | |- [ _ ; _ ⊢[ _ ] gvar _ _ ≅ gvar _ _ : _ @ _ ] =>
       eapply eqtm_gvar_eq; [ wctx | glookup | unfold lle; cbn; lia
                            | split; [reflexivity | intros; cbn; f_equal; lia] | wdnf
@@ -643,6 +739,9 @@ with weqt :=
   | |- [ _ ; _ ⊢[ _ ] tmInr _ _ _ _ _ ≅ tmInr _ _ _ _ _ : tyFin (succ _) @ _ ] =>
       eapply eqtm_conv; [ eapply eqtm_lconv; [ eapply eqtm_inr; [ discriminate | lalg | lalg | weq | weq | weqt ] | lalg ]
                         | wnorm; wconv ]
+  (* [dnth]'s family's index under abstract locals, at its premise's
+     equation ([wf_dnth_eq]) *)
+  | |- [ _ ; _ ⊢[ _ ] _ ≅ _ : _ @ _ ] => wty_hyp
   end
 with wtopq :=
   lazymatch goal with
