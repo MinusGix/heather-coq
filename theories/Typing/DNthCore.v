@@ -206,12 +206,12 @@ Context {Γ : ctx} {n : tm} {F : ty} {l : lvl} (Hl : lwf (gL G) l) (HΓ : [ G ; 
   (Hn : [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) (HF : [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F @ l ])
   (NW : forall m Δ, m <= 10 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
      [ G ; Δ ⊢[ i ] n⟨rshift m⟩ : tyNat @ lzero ])
-  (FW : forall m Δ e K x, m <= 9 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
+  (FW : forall m Δ e K x, 2 <= m <= 9 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
      [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x : tyFin n⟨rshift m⟩ @ lzero ] ->
      [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x)] @ l ])
-  (FV : forall m Δ, m <= 2 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
+  (FV : forall m Δ, 2 <= m <= 2 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
      [ G ; Δ ⊢[ i ] var 0 : tyFin n⟨rshift m⟩ @ lzero ] -> [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (var 0)] @ l ])
-  (FE : forall m Δ e K x e' K' x', m <= 8 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
+  (FE : forall m Δ e K x e' K' x', 6 <= m <= 8 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
      [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x : tyFin n⟨rshift m⟩ @ lzero ] ->
      [ G ; Δ ⊢[ i ] app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x' : tyFin n⟨rshift m⟩ @ lzero ] ->
      [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x
@@ -261,7 +261,7 @@ Proof using Hc NW Nn.
 Qed.
 
 (** β at an embedding's instance: the family at [(λy. b) s] against [b[s/y]]. *)
-Lemma fam_beta {Δ m K b s e' K' x'} : m <= 8 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] -> [ G ; Δ ⊢[ i ] K : tyNat @ lzero ] ->
+Lemma fam_beta {Δ m K b s e' K' x'} : 6 <= m <= 8 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] -> [ G ; Δ ⊢[ i ] K : tyNat @ lzero ] ->
   [ G ; Δ ,, tyFin K @ lzero ⊢[ i ] b : tyFin n⟨rshift (S m)⟩ @ lzero ] -> [ G ; Δ ⊢[ i ] s : tyFin K @ lzero ] ->
   b[lsingle s] = app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x' ->
   [ G ; Δ ⊢[ i ] app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x' : tyFin n⟨rshift m⟩ @ lzero ] ->
