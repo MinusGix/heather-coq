@@ -368,3 +368,40 @@ Decisions and deviations, in the order the proof met them:
   them as equations before `cbn` (the gotcha in `M1_DESIGN.md`, raw
   fixpoints). `AlgPrereq`'s branch automation gained globals under two
   binders (`wf_gv_up2`, `wf_gu_up2T`).
+
+## `dnth`'s typing before weakening (2026-10-15)
+
+`elim_IWf`'s branch scope (`wf_brG_60`) holds `dnth` in its induction
+hypothesis's type. `RecWf`'s automation typed it by its unfolding (a
+`natrec` with β and Unit-η conversions), 85 s on the critical path,
+because `dnth_wf` (`DNth`) needs weakening, substitution and inversion,
+which come after `RecWf`. Now:
+- **`DNthCore`** holds the derivation, ported from `DNth`, with
+  the family's instances as premises instead of metatheory: `n` under
+  `m` locals (`NW`), `F` at an index under `m` locals (`FW`, `FV`) and
+  at equal indices (`FE`, `FE0`). Each premise ranges over the numbers
+  of locals the derivation uses (`2 <= m <= 9` for `FW` …), and an index
+  is an application `e K x` or `var 0`, not any term, since a
+  substitution holding an abstract term does not compute (`lcons'`
+  inspects it) and the automation must normalize its instances. The two
+  uses of inversion became direct derivations (`HEm`, `HRest`). It needs
+  only `Declarative` and `SubstCommute`.
+- **`DNth`** derives `dnth_wf` and its parts from `DNthCore`'s, the
+  premises discharged by weakening and substitution (`extn_wkr`,
+  `fam_wf`, `fam_eq`); its own copy of the derivation is gone, and its
+  statements (used by `DNthG`, `DVecNth`, `IWfIH`) are unchanged.
+- **`RecWf`** types `dnth` by `wf_dnth_eq` (the core at the expected
+  type), each premise discharged under abstract locals by `dnth_ext`
+  (one goal per number of locals, the abstract index typed by its
+  hypothesis, `wty_hyp`). The automation and every other branch moved
+  to `RecWfBase`, whose `wty` reaches the lemma through an `Ltac` hook
+  (`wdnth`) that `RecWf` redefines (`::=`), so `RecWfBase` builds beside
+  `DNthCore` and only `wf_brG_60` waits for it. `RecWf` keeps
+  `wf_brG_60` and `wf_brG`; its users (and `WfScope`'s `br60_scope`,
+  through the hook) are unchanged.
+
+Clean builds at -j4, back to back on one 4-core machine: 1189 s →
+1121 s wall, critical path 1047 s → 973 s, CPU 2826 s → 2762 s;
+`wf_brG_60` 85 s → 24 s. `DNthCore` (61 s) is now on the path, but
+`TypedDnf` then `RecWfBase` finish only 10 s before it, so splitting its
+`dnth_step_wf` (50 s) by branch, `RecS`-style, would buy at most that.
