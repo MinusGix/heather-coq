@@ -472,8 +472,7 @@ Proof.
     refine (conj X _). destruct X as (_ & _ & EX).
     destruct (ne_nee Dν ETν) as (W0 & Xν & _).
     exists M[lsingle2 u ν]. split.
-    + exact (actmne_J _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24)
-               DA Da DM Dc Du Xν).
+    + exact (actmne_J _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H24) DM Dc Xν).
     + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
   - intros * Hl Hs (Es & Ds) (Et & Dt) (Eu & Du).
     refine (conj (@geq_tm_code_id DE DEL _ _ _ _ _ _ _ _ _ _ Hl Hs Es Et Eu) _).
@@ -522,8 +521,7 @@ Proof.
     refine (conj X _). destruct X as (_ & _ & EX).
     destruct (ne_nee Dν ETν) as (W0 & Xν & _).
     exists M[lsingle ν]. split.
-    + exact (actmne_case _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H14) (lequiv_leqv _ _ _ H25)
-               (lequiv_leqv _ _ _ H36) DA DB DM Dc1 Dc2 Xν).
+    + exact (actmne_case _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H36) DM Dc1 Dc2 Xν).
     + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
   (* the codes of Empty and + (M12c) *)
   - intros * HΓ Hl. refine (conj (@geq_tm_code_empty DE DEL _ _ _ _ HΓ Hl) _).
@@ -549,8 +547,7 @@ Proof.
     refine (conj X _). destruct X as (_ & _ & EX).
     destruct (ne_nee Dν ETν) as (W0 & Xν & _).
     exists M[lsingle ν]. split.
-    + exact (actmne_elimW _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H14) (lequiv_leqv _ _ _ H25)
-               (lequiv_leqv _ _ _ H36) DA DB DM Dc Xν).
+    + exact (actmne_elimW _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H36) DM Dc Xν).
     + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
   (* the code of W (M13b), as Σ's *)
   - intros * H13 H24 Hs (Es & Ds) (Et & Dt).
@@ -589,8 +586,7 @@ Proof.
     refine (conj X _). destruct X as (_ & _ & EX).
     destruct (ne_nee Dν ETν) as (W0 & Xν & _).
     exists M[lsingle ν]. split.
-    + exact (actmne_elimWf _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H13) (lequiv_leqv _ _ _ H24)
-               DA DN DM Dc Xν).
+    + exact (actmne_elimWf _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (lequiv_leqv _ _ _ H24) DM Dc Xν).
     + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
   (* the code of Wf (M15b) *)
   - intros * Hl Hs (Es & Ds) (En & Dn).

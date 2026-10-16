@@ -1,7 +1,7 @@
 # DeLaM formalization: notes for agents
 
 Start by reading `README.md`, then `HEATHER.md` (Heather's extensions: the
-forward agenda), `M17_DESIGN.md` (current milestone), `M16_DESIGN.md`, `M15_DESIGN.md`, `M14_DESIGN.md`, `M13_DESIGN.md`, `M12_DESIGN.md`, `M11_DESIGN.md`, `M10_DESIGN.md`, `M9_DESIGN.md`,
+forward agenda), `ELIM_CONGRUENCE.md` (typed eliminator congruence), `M17_DESIGN.md` (current milestone), `M16_DESIGN.md`, `M15_DESIGN.md`, `M14_DESIGN.md`, `M13_DESIGN.md`, `M12_DESIGN.md`, `M11_DESIGN.md`, `M10_DESIGN.md`, `M9_DESIGN.md`,
 `M8_DESIGN.md`, `M7_DESIGN.md`, `M6_DESIGN.md`, `M5_DESIGN.md`,
 `M4_DESIGN.md`, `M3_DESIGN.md`, `M2_DESIGN.md` and `M1_DESIGN.md`. The latter holds the M1
 current status, the ordered next steps, deviations from the paper, and a

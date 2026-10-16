@@ -620,6 +620,38 @@ Lemma sum_inj_c {G i Γ l l1 l2 l3 l4 A A' B B'} : compt i ->
   lequiv (gL G) l3 l1 /\ lequiv (gL G) l4 l2 /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] /\ [ G ; Γ ⊢[ i ] B ≅ B' @ l2 ].
 Proof. intros Hc H. destruct Hc as [-> | ->]; [exact (decl_sum_inj H) | exact (declM_sum_inj H)]. Qed.
 
+(** Two eliminations of equal scrutinees: the scrutinees' types are equal,
+    at equivalent levels (typed eliminator congruence). *)
+Lemma eqty_meet {G i Γ T T' W k k'} : typeof i = i -> lwf (gL G) k ->
+  [ G ; Γ ⊢[ i ] T ≅ W @ k ] -> [ G ; Γ ⊢[ i ] T' ≅ W @ k' ] ->
+  lequiv (gL G) k k' /\ [ G ; Γ ⊢[ i ] T ≅ T' @ k ].
+Proof.
+  intros Hi Wk E0 E1.
+  assert (E : lequiv (gL G) k k').
+  { destruct (ty_lvl_uniq (eqty_wf_r Hi E0) (eqty_wf_r Hi E1)) as [<- | E];
+      [exact (lequiv_refl _ _ Wk) | exact E]. }
+  split; [exact E |]. eapply eqty_trans; [exact E0 |]. apply eqty_sym.
+  eapply eqty_lconv; [exact E1 | exact E].
+Qed.
+Lemma eqty_chain {G i Γ T T' T'' W W' k k' k''} : typeof i = i -> lwf (gL G) k -> lwf (gL G) k' ->
+  [ G ; Γ ⊢[ i ] T ≅ W @ k ] -> [ G ; Γ ⊢[ i ] T' ≅ W @ k' ] ->
+  [ G ; Γ ⊢[ i ] T' ≅ W' @ k' ] -> [ G ; Γ ⊢[ i ] T'' ≅ W' @ k'' ] -> [ G ; Γ ⊢[ i ] T ≅ T'' @ k ].
+Proof.
+  intros Hi Wk Wk' E0 E1 E2 E3.
+  destruct (eqty_meet Hi Wk E0 E1) as (Ek & E). destruct (eqty_meet Hi Wk' E2 E3) as (_ & E').
+  eapply eqty_trans; [exact E |]. eapply eqty_lconv; [exact E' | exact Ek].
+Qed.
+
+Lemma case_annots {G i Γ l1 l2 l4 l5 A A' B B' W} : typeof i = i -> compt i ->
+  lwf (gL G) l1 -> lwf (gL G) l2 ->
+  [ G ; Γ ⊢[ i ] tySum l1 l2 A B ≅ W @ lmax l1 l2 ] -> [ G ; Γ ⊢[ i ] tySum l4 l5 A' B' ≅ W @ lmax l4 l5 ] ->
+  lequiv (gL G) l1 l4 /\ lequiv (gL G) l2 l5 /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] /\ [ G ; Γ ⊢[ i ] B ≅ B' @ l2 ].
+Proof.
+  intros Hi Hc W1 W2 E0 E1. destruct (eqty_meet (k := lmax l1 l2) Hi (conj W1 W2) E0 E1) as (_ & E).
+  destruct (sum_inj_c Hc E) as (E14 & E25 & EA & EB).
+  split; [exact (lequiv_sym _ _ _ E14) | split; [exact (lequiv_sym _ _ _ E25) | auto]].
+Qed.
+
 (** An injection's payload, at the summand of a [+] type it has. *)
 Lemma inl_payload {G i Γ l l' A B k1 k2 C D a m} : compt i ->
   [ G ; Γ ⊢[ i ] tmInl k1 k2 C D a : tySum l l' A B @ m ] -> [ G ; Γ ⊢[ i ] a : A @ l ].
@@ -766,21 +798,20 @@ Proof.
 Qed.
 
 Lemma S_actmne_case {G Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c1 c1' c2 c2' ν ν' W} :
-  leqv l1 l4 -> leqv l2 l5 -> leqv l3 l6 -> S_ty G Γ A A' -> S_ty G Γ B B' ->
-  S_ty G (Γ ,, tySum l1 l2 A B @ lmax l1 l2) M M' ->
+  leqv l3 l6 -> S_ty G (Γ ,, tySum l1 l2 A B @ lmax l1 l2) M M' ->
   S_tm G (Γ ,, A @ l1) c1 c1' M⟨rlift ↑⟩[lsingle (tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] ->
   S_tm G (Γ ,, B @ l2) c2 c2' M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] ->
   S_ne G Γ ν ν' W ->
   S_ne G Γ (tmCase l1 l2 l3 A B M c1 c2 ν) (tmCase l4 l5 l6 A' B' M' c1' c2' ν') M[lsingle ν].
 Proof.
-  intros H14 H25 H36 IHA IHB IHM IHc1 IHc2 IHν i k k' X X' Hc Hx Hx'.
+  intros H36 IHM IHc1 IHc2 IHν i k k' X X' Hc Hx Hx'.
   pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (inv_case Hi Hx) as ((_ & W1 & W2 & W3 & HA & HB & HM & Hc1 & Hc2 & Hν) & Hk & HX).
   destruct (inv_case Hi Hx') as ((_ & W4 & W5 & W6 & HA' & HB' & HM' & Hc1' & Hc2' & Hν') & Hk' & HX').
-  pose proof (leqv_lequiv _ _ _ W1 W4 H14) as E14. pose proof (leqv_lequiv _ _ _ W2 W5 H25) as E25.
   pose proof (leqv_lequiv _ _ _ W3 W6 H36) as E36.
-  pose proof (IHA i l1 Hc HA (wft_lconv _ _ _ _ _ _ HA' E14)) as EA.
-  pose proof (IHB i l2 Hc HB (wft_lconv _ _ _ _ _ _ HB' E25)) as EB.
+  (* the summands, through the scrutinees' types *)
+  destruct (IHν i _ _ _ _ Hc Hν Hν') as (E0 & E1 & _).
+  destruct (case_annots Hi Hc W1 W2 E0 E1) as (E14 & E25 & EA & EB).
   destruct (case_right_left (M := M) (c1' := c1') (c2' := c2') (ν' := ν') Hc E14 E25 E36 HA HB HA' HB' EA EB HM') as [HM'3 Hbr].
   pose proof (IHM i l3 Hc HM HM'3) as EM.
   destruct (Hbr HM EM Hc1' Hc2' Hν') as (_ & _ & Hc1'2 & Hc2'2 & Hν'1).
@@ -804,6 +835,25 @@ Lemma W_inj_c {G i Γ l l1 l2 l3 l4 A A' B B'} : compt i ->
   lequiv (gL G) l3 l1 /\ lequiv (gL G) l4 l2 /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] /\
   [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ].
 Proof. intros Hc H. destruct Hc as [-> | ->]; [exact (decl_W_inj H) | exact (declM_W_inj H)]. Qed.
+
+(** The annotations of two [elim_W]s of equal scrutinees. *)
+Lemma W_annots_eq {G i Γ l1 l2 l4 l5 A A' B B'} : compt i ->
+  [ G ; Γ ⊢[ i ] tyW l1 l2 A B ≅ tyW l4 l5 A' B' @ lmax l1 l2 ] ->
+  lequiv (gL G) l1 l4 /\ lequiv (gL G) l2 l5 /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] /\
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ].
+Proof.
+  intros Hc E. destruct (W_inj_c Hc E) as (E14 & E25 & EA & EB).
+  split; [exact (lequiv_sym _ _ _ E14) | split; [exact (lequiv_sym _ _ _ E25) | auto]].
+Qed.
+Lemma W_annots {G i Γ l1 l2 l4 l5 A A' B B' W} : typeof i = i -> compt i ->
+  lwf (gL G) l1 -> lwf (gL G) l2 ->
+  [ G ; Γ ⊢[ i ] tyW l1 l2 A B ≅ W @ lmax l1 l2 ] -> [ G ; Γ ⊢[ i ] tyW l4 l5 A' B' ≅ W @ lmax l4 l5 ] ->
+  lequiv (gL G) l1 l4 /\ lequiv (gL G) l2 l5 /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] /\
+  [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ].
+Proof.
+  intros Hi Hc W1 W2 E0 E1. apply (W_annots_eq Hc).
+  exact (proj2 (eqty_meet (k := lmax l1 l2) Hi (conj W1 W2) E0 E1)).
+Qed.
 
 (** Propositional truncation (M16a). *)
 Lemma sq_inj_c {G i Γ l l1 l2 A A'} : compt i ->
@@ -1033,24 +1083,22 @@ Proof.
 Qed.
 
 Lemma S_actmne_elimW {G Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c c' ν ν' W} :
-  leqv l1 l4 -> leqv l2 l5 -> leqv l3 l6 -> S_ty G Γ A A' -> S_ty G (Γ ,, A @ l1) B B' ->
+  leqv l3 l6 ->
   S_ty G (Γ ,, tyW l1 l2 A B @ lmax l1 l2) M M' ->
   S_tm G (Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ,, wihty l1 l2 l3 A B M @ lmax l2 l3)
     c c' (wstepty l1 l2 A B M) ->
   S_ne G Γ ν ν' W ->
   S_ne G Γ (tmElimW l1 l2 l3 A B M c ν) (tmElimW l4 l5 l6 A' B' M' c' ν') M[lsingle ν].
 Proof.
-  intros H14 H25 H36 IHA IHB IHM IHc IHν i k k' X X' Hc Hx Hx'.
+  intros H36 IHM IHc IHν i k k' X X' Hc Hx Hx'.
   pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (inv_elimW Hi Hx) as ((_ & W1 & W2 & W3 & HA & HB & HM & HF & HI & Hc0 & Hν) & Hk & HX).
   destruct (inv_elimW Hi Hx') as ((_ & W4 & W5 & W6 & HA' & HB' & HM' & HF' & HI' & Hc0' & Hν') & Hk' & HX').
-  pose proof (leqv_lequiv _ _ _ W1 W4 H14) as E14. pose proof (leqv_lequiv _ _ _ W2 W5 H25) as E25.
   pose proof (leqv_lequiv _ _ _ W3 W6 H36) as E36.
-  pose proof (IHA i l1 Hc HA (wft_lconv _ _ _ _ _ _ HA' E14)) as EA.
+  (* the shapes and the positions, through the scrutinees' types *)
+  destruct (IHν i _ _ _ _ Hc Hν Hν') as (E0 & E1 & _).
+  destruct (W_annots Hi Hc W1 W2 E0 E1) as (E14 & E25 & EA & EB).
   pose proof (ext_wf Hi HA W1) as HΓA.
-  assert (EA4 : [ G ; Γ ⊢[ i ] A' ≅ A @ l4 ])
-    by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | exact (lequiv_sym _ _ _ E14)]).
-  pose proof (IHB i l2 Hc HB (wft_lconv _ _ _ _ _ _ (stab_ty Hi EA4 (lequiv_sym _ _ _ E14) HΓA HB') E25)) as EB.
   assert (WL : lwf (gL G) (lmax l1 l2)) by (cbn; split; assumption).
   assert (HL : lequiv (gL G) (lmax l4 l5) (lmax l1 l2)) by (apply lequiv_max; now apply lequiv_sym).
   assert (HW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ]) by (apply wft_W; first [assumption | (apply compt_notV; eassumption)]).
@@ -1095,6 +1143,15 @@ Lemma Wf_inj_c {G i Γ l l1 l2 A A' N N'} : compt i ->
   [ G ; Γ ⊢[ i ] tyWf l1 A N ≅ tyWf l2 A' N' @ l ] ->
   lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢[ i ] N ≅ N' : tyNat @ lzero ].
 Proof. intros Hc H. destruct Hc as [-> | ->]; [exact (decl_Wf_inj H) | exact (declM_Wf_inj H)]. Qed.
+
+(** The annotations of two [elim_Wf]s of equal scrutinees. *)
+Lemma Wf_annots {G i Γ l1 l3 A A' N N' W} : typeof i = i -> compt i -> lwf (gL G) l1 ->
+  [ G ; Γ ⊢[ i ] tyWf l1 A N ≅ W @ l1 ] -> [ G ; Γ ⊢[ i ] tyWf l3 A' N' ≅ W @ l3 ] ->
+  lequiv (gL G) l1 l3 /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] /\ [ G ; Γ ,, A @ l1 ⊢[ i ] N ≅ N' : tyNat @ lzero ].
+Proof.
+  intros Hi Hc W1 E0 E1. destruct (eqty_meet Hi W1 E0 E1) as (E13 & E).
+  destruct (Wf_inj_c Hc E) as (_ & EA & EN). auto.
+Qed.
 
 Lemma S_actnf_wf {G Γ l l' A A' N N'} : leqv l l' -> S_ty G Γ A A' -> S_tm G (Γ ,, A @ l) N N' tyNat ->
   S_ty G Γ (tyWf l A N) (tyWf l' A' N').
@@ -1227,23 +1284,24 @@ Proof.
 Qed.
 
 Lemma S_actmne_elimWf {G Γ l1 l2 l3 l4 A A' N N' M M' c c' ν ν' W} :
-  leqv l1 l3 -> leqv l2 l4 -> S_ty G Γ A A' -> S_tm G (Γ ,, A @ l1) N N' tyNat ->
+  leqv l2 l4 ->
   S_ty G (Γ ,, tyWf l1 A N @ l1) M M' ->
   S_tm G (Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ,, wfihty l1 l2 A N M @ lmax lzero l2)
     c c' (wfstepty l1 A N M) ->
   S_ne G Γ ν ν' W ->
   S_ne G Γ (tmElimWf l1 l2 A N M c ν) (tmElimWf l3 l4 A' N' M' c' ν') M[lsingle ν].
 Proof.
-  intros H13 H24 IHA IHN IHM IHc IHν i k k' X X' Hc Hx Hx'.
+  intros H24 IHM IHc IHν i k k' X X' Hc Hx Hx'.
   pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (inv_elimWf Hi Hx) as ((_ & W1 & W2 & HA & HN & HM & HC & HI & Hc0 & Hν) & Hk & HX).
   destruct (inv_elimWf Hi Hx') as ((_ & W3 & W4 & HA' & HN' & HM' & HC' & HI' & Hc0' & Hν') & Hk' & HX').
-  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
-  pose proof (IHA i l1 Hc HA (wft_lconv _ _ _ _ _ _ HA' E13)) as EA.
+  pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
+  (* the shapes and the arities, through the scrutinees' types *)
+  destruct (IHν i _ _ _ _ Hc Hν Hν') as (E0 & E1 & _).
+  destruct (Wf_annots Hi Hc W1 E0 E1) as (E13 & EA & EN).
   pose proof (ext_wf Hi HA W1) as HΓA.
   assert (EA3 : [ G ; Γ ⊢[ i ] A' ≅ A @ l3 ])
     by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | exact (lequiv_sym _ _ _ E13)]).
-  pose proof (IHN i lzero Hc HN (stab_tm Hi EA3 (lequiv_sym _ _ _ E13) HΓA HN')) as EN.
   assert (HW : [ G ; Γ ⊢[ i ] tyWf l1 A N @ l1 ]) by (apply wft_wf; first [(apply compt_notV; exact Hc) | assumption]).
   assert (EW : [ G ; Γ ⊢[ i ] tyWf l1 A N ≅ tyWf l3 A' N' @ l1 ]) by (apply eqty_wf; first [(apply compt_notV; exact Hc) | assumption]).
   assert (EW' : [ G ; Γ ⊢[ i ] tyWf l3 A' N' ≅ tyWf l1 A N @ l3 ])
@@ -1333,6 +1391,27 @@ Proof.
   intros Hi HS Hlk Hlik EX EA EN EO EC. pose proof HS as (Hl & Hli & HX & HA & HN & HO & HC).
   exact (IWfEq_intro Hlk Hlik EX EA EN EO EC Hl Hli HX HA HN HO HC (eqty_wf_r Hi EX) (eqty_wf_r Hi EA)
            (eqtm_wf_r Hi EN) (eqtm_wf_r Hi EO) (eqtm_wf_r Hi EC)).
+Qed.
+
+(** The signatures and the indices of two [elim_IWf]s of equal scrutinees. *)
+Lemma IWf_annots_eq {G i Γ l li k ki X X' A A' N N' Ot Ot' C C' m m'} : typeof i = i -> compt i ->
+  IWfSig (G := G) (i := i) Γ l li X A N Ot C ->
+  [ G ; Γ ⊢[ i ] tyIWf l li X A N Ot C m ≅ tyIWf k ki X' A' N' Ot' C' m' @ lmax l li ] ->
+  IWfEq (G := G) (i := i) Γ l li k ki X X' A A' N N' Ot Ot' C C' /\ [ G ; Γ ⊢[ i ] m ≅ m' : X @ li ].
+Proof.
+  intros Hi Hc HS E. destruct (IWf_inj_c Hc E) as (E1 & E2 & EX & EA & EN & EO & EC & Em).
+  split; [exact (IWfEq_of_eqs Hi HS (lequiv_sym _ _ _ E1) (lequiv_sym _ _ _ E2) EX EA EN EO EC) | exact Em].
+Qed.
+
+Lemma IWf_annots {G i Γ l li k ki X X' A A' N N' Ot Ot' C C' m m' W} : typeof i = i -> compt i ->
+  IWfSig (G := G) (i := i) Γ l li X A N Ot C ->
+  [ G ; Γ ⊢[ i ] tyIWf l li X A N Ot C m ≅ W @ lmax l li ] ->
+  [ G ; Γ ⊢[ i ] tyIWf k ki X' A' N' Ot' C' m' ≅ W @ lmax k ki ] ->
+  IWfEq (G := G) (i := i) Γ l li k ki X X' A A' N N' Ot Ot' C C' /\ [ G ; Γ ⊢[ i ] m ≅ m' : X @ li ].
+Proof.
+  intros Hi Hc HS E0 E1. pose proof HS as (Hl & Hli & _).
+  apply (IWf_annots_eq Hi Hc HS).
+  exact (proj2 (eqty_meet (k := lmax l li) Hi (conj Hl Hli) E0 E1)).
 Qed.
 
 (** The motive's and the children's contexts along equal signatures. *)
@@ -1491,42 +1570,34 @@ Proof.
 Qed.
 
 Lemma S_actmne_elimIWf {G Γ l li l' k ki k' X X' A A' N N' Ot Ot' C C' M M' c c' m m' ν ν' W} :
-  leqv l k -> leqv li ki -> leqv l' k' ->
-  S_ty G Γ X X' -> S_ty G Γ A A' -> S_tm G (Γ ,, A @ l) N N' tyNat ->
-  S_tm G (Γ ,, A @ l) Ot Ot' X⟨↑⟩ -> S_tm G (Γ ,, A @ l ,, tyFin N @ lzero) C C' X⟨↑⟩⟨↑⟩ ->
+  leqv l' k' ->
   S_ty G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M' ->
   S_ty G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
     (iwfihty l li l' X A N Ot C M) (iwfihty k ki k' X' A' N' Ot' C' M') ->
   S_tm G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
     c c' (iwfstepty l li X A N Ot C M) ->
-  S_tm G Γ m m' X -> S_ne G Γ ν ν' W ->
+  S_ne G Γ ν ν' W ->
   S_ne G Γ (tmElimIWf l li l' X A N Ot C M c m ν) (tmElimIWf k ki k' X' A' N' Ot' C' M' c' m' ν')
     M[lsingle2 m ν].
 Proof.
-  intros H1 H2 H3 IHX IHA IHN IHO IHC IHM IHI IHc IHm IHν i q q' T T' Hc Hx Hx'.
+  intros H3 IHM IHI IHc IHν i q q' T T' Hc Hx Hx'.
   pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (inv_elimIWf Hi Hx)
     as ((_ & W3 & W1 & W2 & HX & HA & HN & HO & HC & Hmot & HM & Hcs & HI & Hc0 & Hm & Hν) & Hq & HT).
   destruct (inv_elimIWf Hi Hx')
     as ((_ & W3' & W1' & W2' & HX' & HA' & HN' & HO' & HC' & Hmot' & HM' & Hcs' & HI' & Hc0' & Hm' & Hν') & Hq' & HT').
-  pose proof (leqv_lequiv _ _ _ W1 W1' H1) as E1. pose proof (leqv_lequiv _ _ _ W2 W2' H2) as E2.
   pose proof (leqv_lequiv _ _ _ W3 W3' H3) as E3.
   assert (HS : IWfSig (G := G) (i := i) Γ l li X A N Ot C) by (unfold IWfSig; auto 8).
-  assert (HS' : IWfSig (G := G) (i := i) Γ k ki X' A' N' Ot' C') by (unfold IWfSig; auto 8).
-  pose proof (IHX i li Hc HX (wft_lconv _ _ _ _ _ _ HX' E2)) as EX.
-  pose proof (IHA i l Hc HA (wft_lconv _ _ _ _ _ _ HA' E1)) as EA.
-  destruct (IWf_r_mv Hi Hv HS HS' E1 E2 EX EA) as (_ & _ & HN'l & HO'l & HC'l).
-  pose proof (IHN i lzero Hc HN HN'l) as EN.
-  pose proof (IHO i li Hc HO HO'l) as EO.
-  pose proof (IHC i li Hc HC (HC'l EN)) as EC.
-  pose proof (IWfEq_of_eqs Hi HS E1 E2 EX EA EN EO EC) as HE.
+  (* the signatures and the indices, through the scrutinees' types *)
+  destruct (IHν i _ _ _ _ Hc Hν Hν') as (F0 & F1 & _).
+  destruct (IWf_annots Hi Hc HS F0 F1) as (HE & Em).
+  pose proof HE as (E1 & E2 & _ & EX & EA & EN & EO & EC & _).
   pose proof (IHM i l' Hc HM (IWf_mot_left Hi Hv HE E3 HM')) as EM.
   pose proof (IHI i (lmax lzero l') Hc HI (IWf_ih_left Hi Hv HE E3 HI')) as EI.
   pose proof (IHc i l' Hc Hc0 (IWf_step_left Hi Hv HE E3 HM EM HI HI' EI Hc0')) as Ec.
   (* the indices and the scrutinees *)
   assert (Hm'l : [ G ; Γ ⊢[ i ] m' : X @ li ])
     by (eapply (conv_tm' Hi); [eapply wf_lconv; [exact Hm' | exact E2] | exact EX]).
-  pose proof (IHm i li Hc Hm Hm'l) as Em.
   pose proof (IWf_ty_eq Hi Hv HE Em) as ETy.
   assert (Hν'l : [ G ; Γ ⊢[ i ] ν' : tyIWf l li X A N Ot C m @ lmax l li ])
     by (eapply (conv_tm' Hi); [eapply wf_lconv; [exact Hν' | exact (lequiv_max _ _ _ _ _ E1 E2)] | exact ETy]).
@@ -2089,21 +2160,28 @@ Proof.
 Qed.
 
 
-Lemma S_actmne_J {G Γ l1 l2 l3 l4 A A' a a' M M' c c' u u' ν ν' W} : leqv l1 l3 -> leqv l2 l4 ->
-  S_ty G Γ A A' -> S_tm G Γ a a' A ->
+Lemma J_annots {G i Γ l1 l3 A A' a a' u u' W} : typeof i = i -> compt i -> lwf (gL G) l1 ->
+  [ G ; Γ ⊢[ i ] tyId l1 A a u ≅ W @ l1 ] -> [ G ; Γ ⊢[ i ] tyId l3 A' a' u' ≅ W @ l3 ] ->
+  lequiv (gL G) l1 l3 /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] /\
+  [ G ; Γ ⊢[ i ] a ≅ a' : A @ l1 ] /\ [ G ; Γ ⊢[ i ] u ≅ u' : A @ l1 ].
+Proof.
+  intros Hi Hc W1 E0 E1. destruct (eqty_meet Hi W1 E0 E1) as (E13 & E).
+  destruct (id_inj_c Hc E) as (_ & EA & Ea & Eu). auto.
+Qed.
+
+Lemma S_actmne_J {G Γ l1 l2 l3 l4 A A' a a' M M' c c' u u' ν ν' W} : leqv l2 l4 ->
   S_ty G (Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1) M M' ->
-  S_tm G Γ c c' M[lsingle2 a (tmRefl l1 A a)] -> S_tm G Γ u u' A -> S_ne G Γ ν ν' W ->
+  S_tm G Γ c c' M[lsingle2 a (tmRefl l1 A a)] -> S_ne G Γ ν ν' W ->
   S_ne G Γ (tmJ l1 l2 A a M c u ν) (tmJ l3 l4 A' a' M' c' u' ν') M[lsingle2 u ν].
 Proof.
-  intros H13 H24 IHA IHa IHM IHc IHu IHν i k k' X X' Hc Hx Hx'.
+  intros H24 IHM IHc IHν i k k' X X' Hc Hx Hx'.
   pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (inv_J Hi Hx) as ((_ & W1 & W2 & HA & Ha & HI & HM & Hcc & Hu & He) & Hk & HX).
   destruct (inv_J Hi Hx') as ((_ & W3 & W4 & HA' & Ha' & HI' & HM' & Hc' & Hu' & He') & Hk' & HX').
-  pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
-  pose proof (IHA i l1 Hc HA (wft_lconv _ _ _ _ _ _ HA' E13)) as EA.
-  assert (F : forall x, [ G ; Γ ⊢[ i ] x : A' @ l3 ] -> [ G ; Γ ⊢[ i ] x : A @ l1 ]).
-  { intros x Hx0. eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ Hx0 E13) | rewrite Hi; exact EA]. }
-  pose proof (IHa i l1 Hc Ha (F _ Ha')) as Ea. pose proof (IHu i l1 Hc Hu (F _ Hu')) as Eu.
+  pose proof (leqv_lequiv _ _ _ W2 W4 H24) as E24.
+  (* the scrutinees, and through their types the annotations *)
+  destruct (IHν i l1 l3 _ _ Hc He He') as (E0 & E1 & Eν).
+  destruct (J_annots Hi Hc W1 E0 E1) as (E13 & EA & Ea & Eu).
   (* the motive, in the left context *)
   pose proof (J_ctx_conv Hi Hc E13 HA HA' EA Ea) as Hid.
   pose proof (wf_ty_subst Hi HM' Hid) as HM'1. rewrite nf_id_ty in HM'1 by exact (wf_ty_nf HM').
@@ -2123,7 +2201,6 @@ Proof.
   assert (Hc'1 : [ G ; Γ ⊢[ i ] c' : M[lsingle2 a (tmRefl l1 A a)] @ l2 ]).
   { eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ Hc' E24) | rewrite Hi; exact HMs]. }
   pose proof (IHc i l2 Hc Hcc Hc'1) as Ec.
-  destruct (IHν i l1 l3 _ _ Hc He He') as (_ & _ & Eν).
   pose proof (eqtm_J _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hv E13 E24 HA EA Ea HI HM EM Ec Eu Eν) as Econg.
   (* the result types *)
   pose proof (eqtm_wf_r Hi Eu) as Hu'1. pose proof (eqtm_wf_r Hi Eν) as He'1.

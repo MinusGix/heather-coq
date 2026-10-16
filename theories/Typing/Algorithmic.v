@@ -324,11 +324,14 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_elimSEmpty G Γ l1 l2 l3 l4 M M' ν ν' : leqv l1 l3 -> leqv l2 l4 ->
     ac_ty G Γ M M' -> whne ν -> whne ν' ->
     ac_tmne G Γ (elimSEmpty l1 l2 M ν) (elimSEmpty l3 l4 M' ν') M
-(* [J] (M11a): every component compared, the scrutinees as neutrals *)
-| actmne_J G Γ l1 l2 l3 l4 A A' a a' M M' c c' u u' ν ν' W : leqv l1 l3 -> leqv l2 l4 ->
-    ac_ty G Γ A A' -> ac_tm G Γ a a' A ->
+(* [J] (M11a): the scrutinees as neutrals, then the motives and the base
+   cases in the left [J]'s telescope.  The scrutinee's type [Id A a u] and
+   its level are not compared: equal scrutinees have equal types, so
+   [Id]'s injectivity makes them equal (typed eliminator congruence,
+   ELIM_CONGRUENCE.md) *)
+| actmne_J G Γ l1 l2 l3 l4 A A' a a' M M' c c' u u' ν ν' W : leqv l2 l4 ->
     ac_ty G (Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1) M M' ->
-    ac_tm G Γ c c' M[lsingle2 a (tmRefl l1 A a)] -> ac_tm G Γ u u' A ->
+    ac_tm G Γ c c' M[lsingle2 a (tmRefl l1 A a)] ->
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (tmJ l1 l2 A a M c u ν) (tmJ l3 l4 A' a' M' c' u' ν') M[lsingle2 u ν]
 (* [Empty]'s eliminator (M12a): the motives at the left scrutinee's type;
@@ -337,43 +340,47 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_elimEmpty G Γ l1 l2 l3 l4 M M' ν ν' : leqv l1 l3 -> leqv l2 l4 ->
     ac_ty G (Γ ,, tyEmpty l2 @ l2) M M' -> whne ν -> whne ν' ->
     ac_tmne G Γ (elimEmpty l1 l2 M ν) (elimEmpty l3 l4 M' ν') M[lsingle ν]
-(* [case] (M12b): every component compared, the scrutinees as neutrals *)
+(* [case] (M12b): the scrutinees as neutrals, then the motives and the
+   branches in the left [case]'s telescope; the summands and their levels
+   are the scrutinee's type's, as [J]'s *)
 | actmne_case G Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c1 c1' c2 c2' ν ν' W :
-    leqv l1 l4 -> leqv l2 l5 -> leqv l3 l6 -> ac_ty G Γ A A' -> ac_ty G Γ B B' ->
+    leqv l3 l6 ->
     ac_ty G (Γ ,, tySum l1 l2 A B @ lmax l1 l2) M M' ->
     ac_tm G (Γ ,, A @ l1) c1 c1' M⟨rlift ↑⟩[lsingle (tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] ->
     ac_tm G (Γ ,, B @ l2) c2 c2' M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] ->
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (tmCase l1 l2 l3 A B M c1 c2 ν) (tmCase l4 l5 l6 A' B' M' c1' c2' ν') M[lsingle ν]
-(* [elim_W] (M13a): every component compared, the step under its telescope,
-   the scrutinees as neutrals *)
+(* [elim_W] (M13a): the scrutinees as neutrals, then the motives, and the
+   steps under the left telescope; the shapes, the positions and their
+   levels are the scrutinee's type's, as [J]'s *)
 | actmne_elimW G Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c c' ν ν' W :
-    leqv l1 l4 -> leqv l2 l5 -> leqv l3 l6 -> ac_ty G Γ A A' -> ac_ty G (Γ ,, A @ l1) B B' ->
+    leqv l3 l6 ->
     ac_ty G (Γ ,, tyW l1 l2 A B @ lmax l1 l2) M M' ->
     ac_tm G (Γ ,, A @ l1 ,, wfty l1 l2 A B @ lmax l2 (lmax l1 l2) ,, wihty l1 l2 l3 A B M @ lmax l2 l3)
       c c' (wstepty l1 l2 A B M) ->
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (tmElimW l1 l2 l3 A B M c ν) (tmElimW l4 l5 l6 A' B' M' c' ν') M[lsingle ν]
-(* [elim_Wf] (M15a): as [elim_W] *)
+(* [elim_Wf] (M15a): as [elim_W]; the shapes and the arities are the
+   scrutinee's type's *)
 | actmne_elimWf G Γ l1 l2 l3 l4 A A' N N' M M' c c' ν ν' W :
-    leqv l1 l3 -> leqv l2 l4 -> ac_ty G Γ A A' -> ac_tm G (Γ ,, A @ l1) N N' tyNat ->
+    leqv l2 l4 ->
     ac_ty G (Γ ,, tyWf l1 A N @ l1) M M' ->
     ac_tm G (Γ ,, A @ l1 ,, wfcsty l1 A N @ l1 ,, wfihty l1 l2 A N M @ lmax lzero l2)
       c c' (wfstepty l1 A N M) ->
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (tmElimWf l1 l2 A N M c ν) (tmElimWf l3 l4 A' N' M' c' ν') M[lsingle ν]
-(* [elim_IWf] (M17b): as [elim_Wf], with the indices compared and the
-   induction hypothesis's types compared as [eqtm_elimIWf] states them *)
+(* [elim_IWf] (M17b): as [elim_Wf]; the signature, the index and their
+   levels are the scrutinee's type's.  The induction hypothesis's types are
+   compared as [eqtm_elimIWf] states them: the right one still carries the
+   right signature (ELIM_CONGRUENCE.md) *)
 | actmne_elimIWf G Γ l li l' k ki k' X X' A A' N N' Ot Ot' C C' M M' c c' m m' ν ν' W :
-    leqv l k -> leqv li ki -> leqv l' k' ->
-    ac_ty G Γ X X' -> ac_ty G Γ A A' -> ac_tm G (Γ ,, A @ l) N N' tyNat ->
-    ac_tm G (Γ ,, A @ l) Ot Ot' X⟨↑⟩ -> ac_tm G (Γ ,, A @ l ,, tyFin N @ lzero) C C' X⟨↑⟩⟨↑⟩ ->
+    leqv l' k' ->
     ac_ty G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M' ->
     ac_ty G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
       (iwfihty l li l' X A N Ot C M) (iwfihty k ki k' X' A' N' Ot' C' M') ->
     ac_tm G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
       c c' (iwfstepty l li X A N Ot C M) ->
-    ac_tm G Γ m m' X -> ac_tmnee G Γ ν ν' W ->
+    ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (tmElimIWf l li l' X A N Ot C M c m ν) (tmElimIWf k ki k' X' A' N' Ot' C' M' c' m' ν')
       M[lsingle2 m ν]
 (* [ind_∥∥] (M16a): the carriers, and the motives at the left carrier's
