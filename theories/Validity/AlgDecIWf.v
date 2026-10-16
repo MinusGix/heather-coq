@@ -57,19 +57,16 @@ Proof.
 Qed.
 
 Lemma Dc_actmne_elimIWf {G Γ l li l' k ki k' X X0 A A0 N N0 Ot Ot0 C C0 M M0 c c0 m m0 ν ν0 W} :
-  Dc_ty G Γ X X0 -> Dc_ty G Γ A A0 -> Dc_tm G (Γ ,, A @ l) N N0 tyNat ->
-  Dc_tm G (Γ ,, A @ l) Ot Ot0 X⟨↑⟩ -> Dc_tm G (Γ ,, A @ l ,, tyFin N @ lzero) C C0 X⟨↑⟩⟨↑⟩ ->
   Dc_ty G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M0 ->
   Dc_ty G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
     (iwfihty l li l' X A N Ot C M) (iwfihty k ki k' X0 A0 N0 Ot0 C0 M0) ->
   Dc_tm G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
     c c0 (iwfstepty l li X A N Ot C M) ->
-  Dc_tm G Γ m m0 X ->
   ac_tmnee G Γ ν ν0 W -> Dc_nee G Γ ν ν0 W ->
   Dc_ne G Γ (tmElimIWf l li l' X A N Ot C M c m ν) (tmElimIWf k ki k' X0 A0 N0 Ot0 C0 M0 c0 m0 ν0)
     M[lsingle2 m ν].
 Proof.
-  intros IHX IHA IHN IHO IHC IHM IHI IHc IHm Dν0 IHν x i q q' T T' Hc Hx Hx'.
+  intros IHM IHI IHc Dν0 IHν x i q q' T T' Hc Hx Hx'.
   pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
   destruct x; try solve [refute_con].
   match goal with |- Dec (ac_tmne _ _ _ (tmElimIWf ?p1 ?p2 ?p3 ?p4 ?p5 ?p6 ?p7 ?p8 ?p9 ?p10 ?p11 ?p12) _) =>
@@ -82,28 +79,15 @@ Proof.
   destruct (IHν ν' i _ _ _ _ Hc Hν Hν') as [Dν | Hneg];
     [| right; intros D; destruct (ainv_elimIWf D)
          as (k2 & ki2 & k2' & X2 & A2 & N2 & O2 & C2 & M2 & c2 & m2 & ν2 & W0 & E
-             & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Dν2);
+             & _ & _ & _ & _ & Dν2);
        injection E as <- <- <- <- <- <- <- <- <- <- <- <-;
        rewrite <- (ac_nee_uniq Dν0 Dν2) in Dν2; exact (Hneg Dν2)].
-  destruct (leqv_dec l l5) as [H1 | Hneg]; [| refute].
-  destruct (leqv_dec li li5) as [H2 | Hneg]; [| refute].
-  destruct (leqv_dec l' l5') as [H3 | Hneg]; [| refute].
-  pose proof (leqv_lequiv _ _ _ W1 W1' H1) as E1. pose proof (leqv_lequiv _ _ _ W2 W2' H2) as E2.
-  pose proof (leqv_lequiv _ _ _ W3 W3' H3) as E3.
   assert (HS : IWfSig (G := G) (i := i) Γ l li X A N Ot C) by (unfold IWfSig; auto 8).
-  assert (HS' : IWfSig (G := G) (i := i) Γ l5 li5 X' A' N' Ot' C') by (unfold IWfSig; auto 8).
-  destruct (IHX X' i _ _ Hc HX HX') as [DX | Hneg]; [| refute].
-  destruct (IHA A' i _ _ Hc HA HA') as [DA | Hneg]; [| refute].
-  pose proof (ac_ty_sound Hc DX HX (wft_lconv _ _ _ _ _ _ HX' E2)) as EX.
-  pose proof (ac_ty_sound Hc DA HA (wft_lconv _ _ _ _ _ _ HA' E1)) as EA.
-  destruct (IWf_r_mv Hi Hv HS HS' E1 E2 EX EA) as (_ & _ & HN'l & HO'l & HC'l).
-  destruct (IHN N' i lzero Hc HN HN'l) as [DN | Hneg]; [| refute].
-  pose proof (ac_tm_sound Hc DN HN HN'l) as EN.
-  destruct (IHO Ot' i li Hc HO HO'l) as [DO | Hneg]; [| refute].
-  pose proof (ac_tm_sound Hc DO HO HO'l) as EO.
-  destruct (IHC C' i li Hc HC (HC'l EN)) as [DC | Hneg]; [| refute].
-  pose proof (ac_tm_sound Hc DC HC (HC'l EN)) as EC.
-  pose proof (IWfEq_of_eqs Hi HS E1 E2 EX EA EN EO EC) as HE0.
+  (* the signatures, through the scrutinees' types *)
+  destruct (ac_nee_sound' Dν Hc Hν Hν') as (F0 & F1 & _).
+  destruct (IWf_annots Hi Hc HS F0 F1) as (HE0 & _).
+  destruct (leqv_dec l' l5') as [H3 | Hneg]; [| refute].
+  pose proof (leqv_lequiv _ _ _ W3 W3' H3) as E3.
   pose proof (IWf_mot_left Hi Hv HE0 E3 HM') as HM'l.
   destruct (IHM M' i l' l' Hc HM HM'l) as [DM | Hneg]; [| refute].
   pose proof (ac_ty_sound Hc DM HM HM'l) as EM.
@@ -111,10 +95,7 @@ Proof.
   destruct (IHI _ i _ _ Hc HI HI'l) as [DI | Hneg]; [| refute].
   pose proof (ac_ty_sound Hc DI HI HI'l) as EI.
   pose proof (IWf_step_left Hi Hv HE0 E3 HM EM HI HI' EI Hc0') as Hc0'l.
-  destruct (IHc c' i l' Hc Hc0 Hc0'l) as [Dc | Hneg]; [| refute].
-  assert (Hm'l : [ G ; Γ ⊢[ i ] m' : X @ li ])
-    by (eapply (conv_tm' Hi); [eapply wf_lconv; [exact Hm' | exact E2] | exact EX]).
-  destruct (IHm m' i li Hc Hm Hm'l) as [Dm | Hneg]; [left; eapply actmne_elimIWf; eassumption | refute].
+  destruct (IHc c' i l' Hc Hc0 Hc0'l) as [Dc | Hneg]; [left; eapply actmne_elimIWf; eassumption | refute].
 Qed.
 
 (** The codes of [DVec] and [IWf] (M17c), as the types'. *)

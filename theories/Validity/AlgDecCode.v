@@ -337,13 +337,12 @@ Proof.
 Qed.
 
 Lemma Dc_actmne_J {G Γ l1 l2 l3 l4 A A0 a a0 M M0 c c0 u u0 ν ν0 W} :
-  Dc_ty G Γ A A0 -> Dc_tm G Γ a a0 A ->
   Dc_ty G (Γ ,, A @ l1 ,, tyId l1 A⟨↑⟩ a⟨↑⟩ (var 0) @ l1) M M0 ->
-  Dc_tm G Γ c c0 M[lsingle2 a (tmRefl l1 A a)] -> Dc_tm G Γ u u0 A ->
+  Dc_tm G Γ c c0 M[lsingle2 a (tmRefl l1 A a)] ->
   ac_tmnee G Γ ν ν0 W -> Dc_nee G Γ ν ν0 W ->
   Dc_ne G Γ (tmJ l1 l2 A a M c u ν) (tmJ l3 l4 A0 a0 M0 c0 u0 ν0) M[lsingle2 u ν].
 Proof.
-  intros IHA IHa IHM IHc IHu Dν0 IHν x i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  intros IHM IHc Dν0 IHν x i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
   assert (Hv : i <> lV) by (destruct Hc as [-> | ->]; discriminate).
   destruct x; try solve [refute_con].
   match goal with |- Dec (ac_tmne _ _ _ (tmJ ?p1 ?p2 ?p3 ?p4 ?p5 ?p6 ?p7 ?p8) _) =>
@@ -351,19 +350,14 @@ Proof.
   destruct (inv_J Hi Hx) as ((_ & W1 & W2 & HA & Ha & HI & HM & Hcc & Hu & He) & _ & _).
   destruct (inv_J Hi Hx') as ((_ & W5 & W6 & HA' & Ha' & HI' & HM' & Hc' & Hu' & He') & _ & _).
   destruct (IHν ν' i _ _ _ _ Hc He He') as [Dν | N];
-    [| right; intros D; destruct (ainv_J D) as (l7 & l8 & A2 & a2 & M2 & c2 & u2 & ν2 & W3 & E & _ & _ & _ & _ & _
-                                                & _ & _ & Dν2);
+    [| right; intros D; destruct (ainv_J D) as (l7 & l8 & A2 & a2 & M2 & c2 & u2 & ν2 & W3 & E & _ & _ & _ & Dν2);
        injection E as <- <- <- <- <- <- <- <-; rewrite <- (ac_nee_uniq Dν0 Dν2) in Dν2; exact (N Dν2)].
-  destruct (leqv_dec l1 l5) as [H15 | N]; [| refute].
+  (* the carriers and the points, through the scrutinees' types *)
+  destruct (ac_nee_sound' Dν Hc He He') as (E0 & E1 & _).
+  destruct (J_annots Hi Hc W1 E0 E1) as (E15 & EA & Ea & _).
+  pose proof (eqtm_wf_r Hi Ea) as Ha'1.
   destruct (leqv_dec l2 l6) as [H26 | N]; [| refute].
-  pose proof (leqv_lequiv _ _ _ W1 W5 H15) as E15. pose proof (leqv_lequiv _ _ _ W2 W6 H26) as E26.
-  destruct (IHA A' i _ _ Hc HA HA') as [DA | N]; [| refute].
-  pose proof (ac_ty_sound Hc DA HA (wft_lconv _ _ _ _ _ _ HA' E15)) as EA.
-  assert (F : forall y, [ G ; Γ ⊢[ i ] y : A' @ l5 ] -> [ G ; Γ ⊢[ i ] y : A @ l1 ]).
-  { intros y Hy. eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ Hy E15) | rewrite Hi; exact EA]. }
-  pose proof (F _ Ha') as Ha'1.
-  destruct (IHa a' i l1 Hc Ha Ha'1) as [Da | N]; [| refute].
-  pose proof (ac_tm_sound Hc Da Ha Ha'1) as Ea.
+  pose proof (leqv_lequiv _ _ _ W2 W6 H26) as E26.
   (* the other motive, in this context *)
   pose proof (J_ctx_conv Hi Hc E15 HA HA' EA Ea) as Hid.
   pose proof (wf_ty_subst Hi HM' Hid) as HM'1. rewrite nf_id_ty in HM'1 by exact (wf_ty_nf HM').
@@ -380,7 +374,6 @@ Proof.
   { eapply eqty_trans; [exact (eqty_subst Hi EM (lsub_eq_l Hs)) | exact (wf_ty_func Hi HM'1 Hs)]. }
   assert (Hc'1 : [ G ; Γ ⊢[ i ] c' : M[lsingle2 a (tmRefl l1 A a)] @ l2 ]).
   { eapply wf_conv; [exact (wf_lconv _ _ _ _ _ _ _ Hc' E26) | rewrite Hi; exact HMs]. }
-  destruct (IHc c' i l2 Hc Hcc Hc'1) as [Dc | N]; [| refute].
-  destruct (IHu u' i l1 Hc Hu (F _ Hu')) as [Du | N]; [left; eapply actmne_J; eassumption | refute].
+  destruct (IHc c' i l2 Hc Hcc Hc'1) as [Dc | N]; [left; eapply actmne_J; eassumption | refute].
 Qed.
 
