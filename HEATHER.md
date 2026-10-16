@@ -110,8 +110,13 @@ Cross-checks between the two sides, newest last.
   `Validity/DefStuck.v`); at D it holds. Consistency holds at both D and M
   (`Validity/ConsistencyDef.v`), by unfolding every definition, code
   included, which preserves every judgment. This bears on
-  `issues/opaque-globals-analysis.md`. Loose ends (N1's admissibility, a
-  Heather-faithful rule set) are listed under M9_DESIGN.md, Open items.
+  `issues/opaque-globals-analysis.md`. N1 is admissible
+  (`Typing/DefAdm.v`): the body's typing at the use layer follows from
+  `⊢ Ψ`, so Heather's `u^δ` translates to `gdef u t₀ δ` (or `gvar u δ`)
+  by a total map under which Heather's use, congruence and δ rules are
+  derivable. The loose end left (a Heather-faithful rule set, to state
+  the whole-derivation translation in Coq) is under M9_DESIGN.md, Open
+  items.
 - **Squash's relation (probe, 2026-10-08).** MX §27's "normalizing-total"
   clause needs one refinement, and is otherwise not new here.
   `probes/SquashProbe.v` states the clause over the development's LR, with

@@ -75,6 +75,7 @@ theories/Typing/DecSide.v
 theories/Typing/GConv.v
 theories/Typing/StaticCode.v
 theories/Typing/StaticCodeEq.v
+theories/Typing/DefAdm.v
 theories/Typing/IWfIHG.v
 theories/Typing/TypedRed.v
 theories/Typing/Generic.v
