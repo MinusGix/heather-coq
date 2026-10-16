@@ -409,6 +409,17 @@ formers, so it gets worse with every extension:
   its kin need `GSubstitution`) reopens a section over the same
   variables and passes them to the moved lemmas explicitly
   (`lle_D_i Hi Hv`).
+- **A derivation needed before its metatheory** (2026-10-15, `dnth` in
+  `RecWf`). An early file typing a derived former by unfolding it
+  re-proves the derivation in every instance; instead, state the
+  derivation once with the metatheory it uses as premises
+  (`DNthCore`: the family's instances under weakenings, bounded by the
+  depth the derivation reaches), discharge them by the metatheory where
+  it exists (`DNth`) and by the automation at concrete instances where
+  it does not (`RecWf`). An automation whose one case needs a late file
+  calls it through an `Ltac` hook (`Ltac wdnth := fail …` in the early
+  file, `Ltac wdnth ::= …` in the late one), so only the lemmas using
+  that case wait for it (`RecWfBase`/`RecWf`).
 - Measure before guessing (see `CLAUDE.md`, Build, for the tools):
   `tools/build-profile` for a timed build and its report,
   `tools/proofs.py` for the slowest proofs (tactics vs `Qed`),

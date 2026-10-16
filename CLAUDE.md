@@ -25,17 +25,21 @@ list of proof-engineering gotchas. Follow it.
 
 - `nix develop path:. --command make -j4` (Coq 8.20, Equations, smpl from
   the flake). A clean build takes 10 to 26 minutes, depending on the
-  machine. Latest: the M17c tree after its build-time pass (2026-10-14)
+  machine. Latest: typing `dnth` by a lemma in `RecWf` (2026-10-15)
+  took 1121 s wall at -j4 (critical path 973 s, CPU 2762 s), against
+  1189 s (critical path 1047 s, CPU 2826 s) for the tree before it,
+  back to back on one 4-core cloud machine: `wf_brG_60` went from 85 s
+  to 24 s, and `DNth`'s derivation left the path. The path now starts
+  `SubstCommute` → `DNthCore` (61 s, `dnth_step_wf` 50 s) → `RecWf`.
+  Before that: the M17c tree after its build-time pass (2026-10-14)
   took 1318 s wall at -j4 (critical path 1149 s, CPU 3146 s), against
   1544 s (critical path 1386 s, CPU 3938 s) for the M17c tree before
   it, back to back on one 4-core cloud machine, and 1304 s (critical
   path 1109 s) for M17b. The pass inverted `Some X = Some v` by
   `Some_inj` instead of `injection` (which reduced `elim_IWf`'s big
   reduct) and guarded `split` and `apply` by goal shape (`gfree_redt`,
-  `redt_ren`, `redt_usubst`, `redt_leq`, `dnf_redt`). Left on the path:
-  `wf_brG_60` (`RecWf`, 110 s), which types `dnth` by its unfolding.
-  Before
-  that, on faster machines: 473 s wall at -j4 after the Typing metatheory's
+  `redt_ren`, `redt_usubst`, `redt_leq`, `dnf_redt`). Before that, on
+  faster machines: 473 s wall at -j4 after the Typing metatheory's
   syntax parts were split off (2026-10-12, `ReductionBase`, `GRenRec`,
   `SubstRec`, `PresupAux`, `WfNthReds`), against 546 s for the tree
   before it, back to back on a faster 4-core machine (critical path
@@ -93,7 +97,8 @@ list of proof-engineering gotchas. Follow it.
   last file before it waits for everything in between. The Validity
   per-former files (`Pi` … `WfElim`) each require only the formers they
   use, and wide files are split into parts that build in parallel
-  (`LevelEq*`, `AlgDec*`, `GRenSyntax`, `RecReductCases`, `RecS*`),
+  (`LevelEq*`, `AlgDec*`, `GRenSyntax`, `RecReductCases`, `RecS*`,
+  `RecWfBase`),
   with the old name kept as the file that exports them. A metatheory
   file's syntactic lemmas (commutations, the recursors' data under an
   operation, untyped reductions) and its per-former lemmas go in a file
