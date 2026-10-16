@@ -153,6 +153,13 @@ Cross-checks between the two sides, newest last.
     irrelevance arm as at `sEq`. Codes and Heather's four recursor
     branches (`ty_squash`, `tm_squash`, `tm_squash_in`, `tm_elim_squash`)
     as half of M12c (about 30 files, 1000 to 1300 lines).
+- **Typed eliminator congruence** (`H/issues/conversion-typed-eliminator-congruence.md`).
+  Conversion's neutral `J`, `case`, `elim_W`, `elim_Wf` and `elim_IWf` no
+  longer compare what the scrutinee's type forces: every type component and
+  its level (ELIM_CONGRUENCE.md has the table). Soundness, completeness and
+  decidability re-proved. Not dropped: the motives, their levels, the
+  branches, and `elim_IWf`'s induction-hypothesis types, which mirror
+  `eqtm_elimIWf`'s admissible premise and wait on a `dnth` congruence.
 
 ## Beyond type formers
 
