@@ -340,6 +340,36 @@ Lemma unf_gsingle (t : tm) o : unf_tm (gsubst_tm t (gsingle o)) = gsubst_tm (unf
 Proof. apply (proj1 (proj2 unf_gsubst_all)); intros [|i]; reflexivity. Qed.
 
 
+(** ** Idempotence
+
+    [unf] is a normal form: a second pass changes nothing. The model of
+    Heather's [docs/no-uip-model.md] (§4) stores box values unfolded, and
+    needs this to read a stored value as its own normal form. The [gdef]
+    case is [unf_subst] and the induction hypothesis on the body; the
+    local substitutions are equal lookup-wise ([unf_l_canon]: [unf_l]'s
+    outputs are normal). *)
+
+Lemma unf_l_idem_of d : LK (fun t => unf_tm (unf_tm t) = unf_tm t) d -> unf_l (unf_l d) = unf_l d.
+Proof. intros H; apply unf_l_canon; [auto with nf | intros n; rewrite llk_unf; apply H]. Qed.
+
+Lemma unf_idem_all :
+  let Pty T := unf_ty (unf_ty T) = unf_ty T in
+  let Ptm t := unf_tm (unf_tm t) = unf_tm t in
+  let Pctx Γ := unf_ctx (unf_ctx Γ) = unf_ctx Γ in
+  (forall T, Pty T) /\ (forall t, Ptm t) /\ (forall Γ, Pctx Γ) /\ (forall d, LK Ptm d).
+Proof.
+  syn_start3; try lk_cases; cbn [unf_ty unf_tm unf_ctx]; try solve [f_equal; auto using unf_l_idem_of].
+  (* gdef *)
+  rewrite unf_subst. f_equal; auto using unf_l_idem_of.
+Qed.
+Lemma unf_idem_ty (T : ty) : unf_ty (unf_ty T) = unf_ty T. Proof. apply (proj1 unf_idem_all). Qed.
+Lemma unf_idem (t : tm) : unf_tm (unf_tm t) = unf_tm t. Proof. apply (proj1 (proj2 unf_idem_all)). Qed.
+Lemma unf_idem_ctx (Γ : ctx) : unf_ctx (unf_ctx Γ) = unf_ctx Γ. Proof. apply (proj1 (proj2 (proj2 unf_idem_all))). Qed.
+Lemma unf_l_idem d : unf_l (unf_l d) = unf_l d.
+Proof. apply unf_l_idem_of; intros n; apply unf_idem. Qed.
+Lemma unf_o_idem o : unf_o (unf_o o) = unf_o o.
+Proof. destruct o; cbn; f_equal; auto using unf_idem_ctx, unf_idem_ty, unf_idem. Qed.
+
 (** ** Normal forms and level equivalence *)
 
 Lemma unf_dnf_all :

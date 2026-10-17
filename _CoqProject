@@ -67,6 +67,7 @@ theories/Typing/WfScopeIWf.v
 theories/Typing/RecEq.v
 theories/Typing/AlgStruct.v
 theories/Typing/CtxConv.v
+theories/Typing/BoxFibre.v
 theories/Typing/InvAny.v
 theories/Typing/PresupC.v
 theories/Typing/Unfold.v

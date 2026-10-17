@@ -405,3 +405,22 @@ Clean builds at -j4, back to back on one 4-core machine: 1189 s →
 `wf_brG_60` 85 s → 24 s. `DNthCore` (61 s) is now on the path, but
 `TypedDnf` then `RecWfBase` finish only 10 s before it, so splitting its
 `dnth_step_wf` (50 s) by branch, `RecS`-style, would buy at most that.
+
+## Two lemmas for Heather's no-UIP model (2026-10-17)
+
+The independent review of Heather's `docs/no-uip-model.md` §4
+(`docs/no-uip-model-review.md` there) suggested mechanizing two lemmas
+its fixes rest on. Both are checked, with no admits or axioms:
+- **`□`'s fibres are invariant under D-conversion**
+  (`Typing/BoxFibre.v`, a leaf file). `box_fibre_ty_iff` takes
+  `eqty_CTyp`'s premises (`Δ ≅ Δ'` at D, `l ≡ₗ l'`) and gives
+  `[Δ ⊢[lC] T @ l] ↔ [Δ' ⊢[lC] T @ l']`; `box_fibre_tm_iff` takes
+  `eqty_CTrm`'s (and `T ≅ T'` at D) and gives the same for C-terms. Both
+  are corollaries of `ctxconv_ty`/`ctxconv_tm`, with `wf_conv` at C
+  converting at `typeof lC = lD`. The model needs them to take `CΠ`/`TΠ`
+  over conversion classes (its review's R2).
+- **`unf` is idempotent** (`unf_idem`, `unf_idem_ty`, `unf_idem_ctx`,
+  `unf_l_idem`, `unf_o_idem`, `Syntax/Unfold.v`), by one mutual
+  induction: the `gdef` case is `unf_subst` with the induction hypothesis
+  on the body, and the local substitutions are equal lookup-wise
+  (`unf_l_canon`). The model stores box values unfolded (its R3).
