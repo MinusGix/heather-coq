@@ -1664,17 +1664,13 @@ Lemma Y_actmne_elimIWf {G Γ l li l' k ki k' X X' A A' N N' Ot Ot' C C' M M' c c
   leqv l' k' ->
   ac_ty G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M' ->
   Y_ty G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M' ->
-  ac_ty G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
-    (iwfihty l li l' X A N Ot C M) (iwfihty k ki k' X' A' N' Ot' C' M') ->
-  Y_ty G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
-    (iwfihty l li l' X A N Ot C M) (iwfihty k ki k' X' A' N' Ot' C' M') ->
   Y_tm G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
     c c' (iwfstepty l li X A N Ot C M) ->
   ac_tmnee G Γ ν ν' W -> Y_nee G Γ ν ν' W ->
   Y_ne G Γ (tmElimIWf l li l' X A N Ot C M c m ν) (tmElimIWf k ki k' X' A' N' Ot' C' M' c' m' ν')
     M[lsingle2 m ν].
 Proof.
-  intros H3 DM IHM DI IHI IHc Dν IHν i q q' Z Z' Hc Hx Hx'.
+  intros H3 DM IHM IHc Dν IHν i q q' Z Z' Hc Hx Hx'.
   pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
   destruct (inv_elimIWf Hi Hx)
     as ((_ & W3 & W1 & W2 & HX & HA & HN & HO & HC & Hmot & HM & Hcs & HI & Hc0 & Hm & Hν) & _ & _).
@@ -1689,7 +1685,7 @@ Proof.
   pose proof (ctx_of_wf_ty Hi HA) as HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
   destruct (IWf_fwd Hc HE) as (HctxA & HctxAF & EX1 & EX2 & HctxM & HctxCs).
   pose proof (IWf_mot_left Hi Hv HE E3 HM') as HM'l. pose proof (ac_ty_sound Hc DM HM HM'l) as EM.
-  pose proof (IWf_ih_left Hi Hv HE E3 HI') as HI'l. pose proof (ac_ty_sound Hc DI HI HI'l) as EI.
+  pose proof (IWf_ih_left Hi Hv HE E3 HI') as HI'l. pose proof (IWf_ihty_eq Hc HE E3 EM HI'l) as EI.
   pose proof (IWf_step_left Hi Hv HE E3 HM EM HI HI' EI Hc0') as Hc0'l.
   assert (WL : lwf (gL G) (lmax lzero l')) by (cbn; split; [exact I | exact W3]).
   pose proof (IWf_step_eq Hi Hv HE HM EM (ext_wf Hi HI WL)) as ES.
@@ -1700,9 +1696,8 @@ Proof.
     by (eapply (conv_tm' Hi); [eapply wf_lconv; [exact Hm' | exact E2] | exact EX]).
   destruct (IHν i _ _ _ _ Hc Hν Hν') as (W' & Xν).
   exists M'[lsingle2 m' ν'].
-  eapply actmne_elimIWf; [exact (leqv_sym _ _ H3) | | | | exact Xν].
+  eapply actmne_elimIWf; [exact (leqv_sym _ _ H3) | | | exact Xν].
   - exact (cv_ty HG Hc (IHM i l' l' Hc HM HM'l) HctxM HM'l HM).
-  - exact (cv_ty HG Hc (IHI i _ _ Hc HI HI'l) HctxCs HI'l HI).
   - exact (cv_tm HG Hc (IHc i l' Hc Hc0 Hc0'l) HctxT Hc0'l Hc0 (eqty_sym _ _ _ _ _ _ ES)).
 Qed.
 
@@ -1976,8 +1971,6 @@ Lemma ainv_elimIWf {G Γ l li l' X A N Ot C M c m ν Y T} :
   exists k ki k' X' A' N' Ot' C' M' c' m' ν' W, Y = tmElimIWf k ki k' X' A' N' Ot' C' M' c' m' ν' /\
     leqv l' k' /\
     ac_ty G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M' /\
-    ac_ty G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
-      (iwfihty l li l' X A N Ot C M) (iwfihty k ki k' X' A' N' Ot' C' M') /\
     ac_tm G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
       c c' (iwfstepty l li X A N Ot C M) /\ ac_tmnee G Γ ν ν' W.
 Proof. intros H; inversion H; subst; do 13 eexists; split; [reflexivity|]; repeat split; eassumption. Qed.
@@ -4464,21 +4457,17 @@ Lemma T_actmne_elimIWf {G Γ l li l' k ki k' X X' A A' N N' Ot Ot' C C' M M' c c
   leqv l' k' ->
   ac_ty G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M' ->
   T_ty G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M' ->
-  ac_ty G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
-    (iwfihty l li l' X A N Ot C M) (iwfihty k ki k' X' A' N' Ot' C' M') ->
-  T_ty G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
-    (iwfihty l li l' X A N Ot C M) (iwfihty k ki k' X' A' N' Ot' C' M') ->
   T_tm G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
     c c' (iwfstepty l li X A N Ot C M) ->
   ac_tmnee G Γ ν ν' W -> T_nee G Γ ν ν' W ->
   T_ne G Γ (tmElimIWf l li l' X A N Ot C M c m ν) (tmElimIWf k ki k' X' A' N' Ot' C' M' c' m' ν')
     M[lsingle2 m ν].
 Proof.
-  intros H3 DM IHM DI IHI IHc Dν IHν
+  intros H3 DM IHM IHc Dν IHν
     x'' T'' i q q' q'' Z Z' Z'' Hc Hx Hx' Hx'' D2.
   pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
   destruct (ainv_elimIWf D2) as (k5 & ki5 & k6 & X'' & A'' & N'' & O'' & C'' & M'' & c'' & m'' & ν'' & Wν & ->
-                                 & F3' & DM2 & DI2 & Dc2 & Dν2).
+                                 & F3' & DM2 & Dc2 & Dν2).
   destruct (inv_elimIWf Hi Hx)
     as ((_ & W3 & W1 & W2 & HX & HA & HN & HO & HC & Hmot & HM & Hcs & HI & Hc0 & Hm & Hν) & _ & _).
   destruct (inv_elimIWf Hi Hx')
@@ -4515,10 +4504,9 @@ Proof.
   pose proof (IWf_ih_left Hi Hv HE E3 HI') as HI'l.
   pose proof (IWf_ih_left Hi Hv HE2 F3 HI'') as HI''k.
   pose proof (IWf_ih_left Hi Hv HE13 G3 HI'') as HI''l.
-  pose proof (IHI _ i _ _ _ Hc HI HI'l HI''l (cv_ty HG Hc DI2 HctxCs' HI' HI''k)) as XI.
-  pose proof (ac_ty_sound Hc DI HI HI'l) as EI.
-  pose proof (ac_ty_sound Hc XI HI HI''l) as EI13.
-  pose proof (ac_ty_sound Hc DI2 HI' HI''k) as EI2.
+  pose proof (IWf_ihty_eq Hc HE E3 EM HI'l) as EI.
+  pose proof (IWf_ihty_eq Hc HE13 G3 EM13 HI''l) as EI13.
+  pose proof (IWf_ihty_eq Hc HE2 F3 EM2 HI''k) as EI2.
   (* the steps, at the left telescope *)
   pose proof (IWf_step_left Hi Hv HE E3 HM EM HI HI' EI Hc0') as Hc0'l.
   pose proof (IWf_step_left Hi Hv HE13 G3 HM EM13 HI HI'' EI13 Hc0'') as Hc0''l.
@@ -4547,7 +4535,7 @@ Proof.
   assert (Hm''k : [ G ; Γ ⊢[ i ] m'' : X' @ ki ])
     by (eapply (conv_tm' Hi); [eapply wf_lconv; [exact Hm'' | exact F2] | exact EX2]).
   assert (EXk : [ G ; Γ ⊢[ i ] X ≅ X' @ ki ]) by (eapply eqty_lconv; [exact EX | exact (lequiv_sym _ _ _ E2)]).
-  eapply actmne_elimIWf; [exact (leqv_trans _ _ _ H3 F3') | exact XM | exact XI
+  eapply actmne_elimIWf; [exact (leqv_trans _ _ _ H3 F3') | exact XM
                          | exact (IHc c'' i l' Hc Hc0 Hc0'l Hc0''l Dc2') |].
   exact (IHν ν'' Wν i _ _ _ _ _ _ Hc Hν Hν' Hν'' Dν2).
 Qed.

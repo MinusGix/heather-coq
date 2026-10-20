@@ -370,14 +370,11 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (tmElimWf l1 l2 A N M c ν) (tmElimWf l3 l4 A' N' M' c' ν') M[lsingle ν]
 (* [elim_IWf] (M17b): as [elim_Wf]; the signature, the index and their
-   levels are the scrutinee's type's.  The induction hypothesis's types are
-   compared as [eqtm_elimIWf] states them: the right one still carries the
-   right signature (ELIM_CONGRUENCE.md) *)
+   levels are the scrutinee's type's, and so are the induction hypothesis's
+   types once the motives are equal ([IWf_ihty_eq], ELIM_CONGRUENCE.md) *)
 | actmne_elimIWf G Γ l li l' k ki k' X X' A A' N N' Ot Ot' C C' M M' c c' m m' ν ν' W :
     leqv l' k' ->
     ac_ty G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M' ->
-    ac_ty G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
-      (iwfihty l li l' X A N Ot C M) (iwfihty k ki k' X' A' N' Ot' C' M') ->
     ac_tm G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
       c c' (iwfstepty l li X A N Ot C M) ->
     ac_tmnee G Γ ν ν' W ->

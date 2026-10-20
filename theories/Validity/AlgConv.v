@@ -2044,10 +2044,6 @@ Lemma C_actmne_elimIWf {G Γ l li l' k ki k' X X' A A' N N' Ot Ot' C C' M M' c c
   leqv l' k' ->
   ac_ty G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M' ->
   C_ty G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M' ->
-  ac_ty G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
-    (iwfihty l li l' X A N Ot C M) (iwfihty k ki k' X' A' N' Ot' C' M') ->
-  C_ty G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
-    (iwfihty l li l' X A N Ot C M) (iwfihty k ki k' X' A' N' Ot' C' M') ->
   ac_tm G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
     c c' (iwfstepty l li X A N Ot C M) ->
   C_tm G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
@@ -2056,7 +2052,7 @@ Lemma C_actmne_elimIWf {G Γ l li l' k ki k' X X' A A' N N' Ot Ot' C C' M M' c c
   C_ne G Γ (tmElimIWf l li l' X A N Ot C M c m ν) (tmElimIWf k ki k' X' A' N' Ot' C' M' c' m' ν')
     M[lsingle2 m ν].
 Proof.
-  intros H3 DM IHM DI IHI Dc IHc Dν IHν
+  intros H3 DM IHM Dc IHc Dν IHν
     i G2 Γ2 q q' T T' Hc HE Hctx Hx Hx' x x' Hsx Hsx'.
   spa_triv. pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (inv_elimIWf Hi Hx)
@@ -2071,7 +2067,7 @@ Proof.
   pose proof (IWf_mot_left Hi Hv HE0 E3 HM') as HM'l.
   pose proof (ac_ty_sound Hc DM HM HM'l) as EM.
   pose proof (IWf_ih_left Hi Hv HE0 E3 HI') as HI'l.
-  pose proof (ac_ty_sound Hc DI HI HI'l) as EI.
+  pose proof (IWf_ihty_eq Hc HE0 E3 EM HI'l) as EI.
   pose proof (IWf_step_left Hi Hv HE0 E3 HM EM HI HI' EI Hc0') as Hc0'l.
   assert (Hm'l : [ G ; Γ ⊢[ i ] m' : X @ li ])
     by (eapply (conv_tm' Hi); [eapply wf_lconv; [exact Hm' | exact E2] | exact EX]).
@@ -2094,9 +2090,8 @@ Proof.
     by exact (eqctx_ext_refl HctxCs (gconv_ty HE HI) (GEq_lwf HE WL')).
   destruct (IHν i G2 Γ2 _ _ _ _ Hc HE Hctx Hν Hν' _ _ spa_refl spa_refl) as (Wν & Xν & _).
   exists M[lsingle2 m ν]. split.
-  - eapply actmne_elimIWf; [exact H3 | | | | exact Xν].
+  - eapply actmne_elimIWf; [exact H3 | | | exact Xν].
     + exact (IHM i G2 _ l' l' Hc HE HctxM HM HM'l).
-    + exact (IHI i G2 _ _ _ Hc HE HctxCs HI HI'l).
     + exact (IHc i G2 _ _ l' Hc HE HctxT Hc0 Hc0'l (eqty_refl _ _ _ _ _ (gconv_ty HE (wf_tm_ty Hi Hc0)))
                _ _ spa_refl spa_refl).
   - refine (ne_refl _ Hc HE Hx Hx'). eapply actmne_elimIWf; eassumption.
