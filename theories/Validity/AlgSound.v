@@ -11,6 +11,7 @@
     from [AlgPrereq]. *)
 From DeLaM.Typing Require Export Algorithmic.
 From DeLaM.Validity Require Export AlgPrereq DeclConsequences.
+From DeLaM.Validity Require Export IWfIhEq.
 
 (** ** Helpers *)
 
@@ -1572,15 +1573,13 @@ Qed.
 Lemma S_actmne_elimIWf {G Γ l li l' k ki k' X X' A A' N N' Ot Ot' C C' M M' c c' m m' ν ν' W} :
   leqv l' k' ->
   S_ty G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M' ->
-  S_ty G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
-    (iwfihty l li l' X A N Ot C M) (iwfihty k ki k' X' A' N' Ot' C' M') ->
   S_tm G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
     c c' (iwfstepty l li X A N Ot C M) ->
   S_ne G Γ ν ν' W ->
   S_ne G Γ (tmElimIWf l li l' X A N Ot C M c m ν) (tmElimIWf k ki k' X' A' N' Ot' C' M' c' m' ν')
     M[lsingle2 m ν].
 Proof.
-  intros H3 IHM IHI IHc IHν i q q' T T' Hc Hx Hx'.
+  intros H3 IHM IHc IHν i q q' T T' Hc Hx Hx'.
   pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (inv_elimIWf Hi Hx)
     as ((_ & W3 & W1 & W2 & HX & HA & HN & HO & HC & Hmot & HM & Hcs & HI & Hc0 & Hm & Hν) & Hq & HT).
@@ -1593,7 +1592,8 @@ Proof.
   destruct (IWf_annots Hi Hc HS F0 F1) as (HE & Em).
   pose proof HE as (E1 & E2 & _ & EX & EA & EN & EO & EC & _).
   pose proof (IHM i l' Hc HM (IWf_mot_left Hi Hv HE E3 HM')) as EM.
-  pose proof (IHI i (lmax lzero l') Hc HI (IWf_ih_left Hi Hv HE E3 HI')) as EI.
+  (* the induction hypothesis's types: forced by the signatures and the motives *)
+  pose proof (IWf_ihty_eq Hc HE E3 EM (IWf_ih_left Hi Hv HE E3 HI')) as EI.
   pose proof (IHc i l' Hc Hc0 (IWf_step_left Hi Hv HE E3 HM EM HI HI' EI Hc0')) as Ec.
   (* the indices and the scrutinees *)
   assert (Hm'l : [ G ; Γ ⊢[ i ] m' : X @ li ])

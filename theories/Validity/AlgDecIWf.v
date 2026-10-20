@@ -58,15 +58,13 @@ Qed.
 
 Lemma Dc_actmne_elimIWf {G Γ l li l' k ki k' X X0 A A0 N N0 Ot Ot0 C C0 M M0 c c0 m m0 ν ν0 W} :
   Dc_ty G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M0 ->
-  Dc_ty G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li)
-    (iwfihty l li l' X A N Ot C M) (iwfihty k ki k' X0 A0 N0 Ot0 C0 M0) ->
   Dc_tm G (Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ,, iwfihty l li l' X A N Ot C M @ lmax lzero l')
     c c0 (iwfstepty l li X A N Ot C M) ->
   ac_tmnee G Γ ν ν0 W -> Dc_nee G Γ ν ν0 W ->
   Dc_ne G Γ (tmElimIWf l li l' X A N Ot C M c m ν) (tmElimIWf k ki k' X0 A0 N0 Ot0 C0 M0 c0 m0 ν0)
     M[lsingle2 m ν].
 Proof.
-  intros IHM IHI IHc Dν0 IHν x i q q' T T' Hc Hx Hx'.
+  intros IHM IHc Dν0 IHν x i q q' T T' Hc Hx Hx'.
   pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
   destruct x; try solve [refute_con].
   match goal with |- Dec (ac_tmne _ _ _ (tmElimIWf ?p1 ?p2 ?p3 ?p4 ?p5 ?p6 ?p7 ?p8 ?p9 ?p10 ?p11 ?p12) _) =>
@@ -79,7 +77,7 @@ Proof.
   destruct (IHν ν' i _ _ _ _ Hc Hν Hν') as [Dν | Hneg];
     [| right; intros D; destruct (ainv_elimIWf D)
          as (k2 & ki2 & k2' & X2 & A2 & N2 & O2 & C2 & M2 & c2 & m2 & ν2 & W0 & E
-             & _ & _ & _ & _ & Dν2);
+             & _ & _ & _ & Dν2);
        injection E as <- <- <- <- <- <- <- <- <- <- <- <-;
        rewrite <- (ac_nee_uniq Dν0 Dν2) in Dν2; exact (Hneg Dν2)].
   assert (HS : IWfSig (G := G) (i := i) Γ l li X A N Ot C) by (unfold IWfSig; auto 8).
@@ -92,8 +90,7 @@ Proof.
   destruct (IHM M' i l' l' Hc HM HM'l) as [DM | Hneg]; [| refute].
   pose proof (ac_ty_sound Hc DM HM HM'l) as EM.
   pose proof (IWf_ih_left Hi Hv HE0 E3 HI') as HI'l.
-  destruct (IHI _ i _ _ Hc HI HI'l) as [DI | Hneg]; [| refute].
-  pose proof (ac_ty_sound Hc DI HI HI'l) as EI.
+  pose proof (IWf_ihty_eq Hc HE0 E3 EM HI'l) as EI.
   pose proof (IWf_step_left Hi Hv HE0 E3 HM EM HI HI' EI Hc0') as Hc0'l.
   destruct (IHc c' i l' Hc Hc0 Hc0'l) as [Dc | Hneg]; [left; eapply actmne_elimIWf; eassumption | refute].
 Qed.

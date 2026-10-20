@@ -157,9 +157,10 @@ Cross-checks between the two sides, newest last.
   Conversion's neutral `J`, `case`, `elim_W`, `elim_Wf` and `elim_IWf` no
   longer compare what the scrutinee's type forces: every type component and
   its level (ELIM_CONGRUENCE.md has the table). Soundness, completeness and
-  decidability re-proved. Not dropped: the motives, their levels, the
-  branches, and `elim_IWf`'s induction-hypothesis types, which mirror
-  `eqtm_elimIWf`'s admissible premise and wait on a `dnth` congruence.
+  decidability re-proved. `elim_IWf`'s induction-hypothesis types are not
+  compared either (2026-10-20): they follow from the signatures and the
+  motives through `dnth`'s index lemma (`Validity/IWfIhEq.v`). Not dropped:
+  the motives, their levels and the branches.
 
 ## Beyond type formers
 
