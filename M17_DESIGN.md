@@ -295,10 +295,11 @@ Decisions and deviations, in the order the proof met them:
   types β's induction hypothesis and `IWf_ihty_wf` types the `ih` entry's
   type from the motive (both through `dnth_wf`); the type checker builds
   the latter instead of deciding it. The congruence's equation of the
-  induction hypotheses' types stays a premise; the algorithm's
-  `actmne_elimIWf` has the matching premise (`ac_ty` at the two `ih`
-  types), since the right motive moves into the left telescope only
-  along it (`IWf_ih_left`, `IWf_step_left`).
+  induction hypotheses' types stays a premise. The algorithm's
+  `actmne_elimIWf` had the matching premise (`ac_ty` at the two `ih`
+  types) until 2026-10-20, when `IWf_ihty_eq` (`Validity/IWfIhEq.v`,
+  ELIM_CONGRUENCE.md) derived the equation from the signatures' and the
+  motives' at the computing layers.
 - **Type validity of the rules' types.** `sup_i`'s type (the index
   `Ot[a]`) and `elim_IWf`'s (the motive at the scrutinee) have
   type-validity lemmas of their own (`V_supi_ty`, `V_elimIWf_ty`,
