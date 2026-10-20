@@ -11,6 +11,13 @@ of the build (`_CoqProject` lists `theories/` only). Compile one with
   It checks the derived `dnth` with a first-order family, β on open data
   at a computed index, fording's F2/F3 lowerings, and index inversion
   (`M10_DESIGN.md` S8).
+- `IwfLowering.v`: the generator's lowering of Heather's
+  `docs/iwf-former-design.md` §8.1 in this syntax at layer D, for `Vec`,
+  F1–F3 (§8.2), `All` over `List a` (§12.1) and `Even`/`Odd` over
+  `Σ(tag). Nat` (§12.2): typing, β at open indices and form A, by the M17b
+  rules, with negative controls (`M17_DESIGN.md`, "The generator's
+  lowerings"). It needs the theories compiled: `coqc -Q theories DeLaM
+  probes/IwfLowering.v` (about 25 minutes).
 - `NoUipComponents.v`: the components lemma of Heather's
   `docs/no-uip-model.md` §3, over reflexive-graph contexts with groupoid
   fibres. It checks that the strict propositions (`sEq`, `Squash`,

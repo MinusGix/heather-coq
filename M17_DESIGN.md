@@ -425,3 +425,85 @@ its fixes rest on. Both are checked, with no admits or axioms:
   induction: the `gdef` case is `unf_subst` with the induction hypothesis
   on the body, and the local substitutions are equal lookup-wise
   (`unf_l_canon`). The model stores box values unfolded (its R3).
+
+## The generator's lowerings, in the formalization's rules (2026-10-20)
+
+Heather's `docs/iwf-former-design.md` §13 step 6 (the generator) lowers
+a surface family to one `IWf` (§8.1). `probes/IwfLowering.v` writes that
+lowering in this syntax at layer D for the families §8.2 and §12 name,
+and derives, with the M17b rules and nothing else, each family's typing,
+its constructors' β through `elim_IWf` at an open index, and §8.3's
+form A where it applies. `probes/IwfProbe.v` checks the same lowerings
+in plain Coq; this one checks them against the rules. No family needed a
+rule the frozen §1–§6 lack, so the task's abort criterion was not hit.
+There are no admits or axioms (`Print Assumptions` at the end of the
+file).
+
+| family | index | checked |
+|---|---|---|
+| `Vec a` | `Nat` | typing; `vhead (vcons n y xs) ≡ y` by form A; `len (vcons …) ≡ S (len xs)`, the child through `dnth` |
+| F3 `Cons(n, x : Fin n, xs)` | `Nat` | typing; `head (cons n x xs) ≡ x : Fin n` by form A, the result type depending on the index |
+| F1 `Node(l : T 0, r : T n) : T (S n)` | `Nat` | typing; `left (node n l r) ≡ l : T 0` by form A |
+| F2 `Node(n, l r : T n) : T (n + n)` | `Nat` | typing; β at the stuck index `n + n` (`size (node n l r) ≡ S (size r)`) |
+| `All p : List a → Type` (§12.1) | `List a` (tier 0's `Wf`) | typing; `allHead (allCons xs x px rest) ≡ px` by form A |
+| `Even`/`Odd` (§12.2) | `Σ(b : Bool). Nat` | typing; `toNat (esucc n o) ≡ S (toNat o)`, the child at the other tag; `Odd 0 → Empty` by form A |
+
+Negative controls: a constructor at an index other than its output
+index has no derivation (`nil3_not_at_one`, `leaf1_not_at_one`,
+`node1_not_at_zero`), nor one at the other family's tag
+(`ezero_not_odd`). `inv_supi` and `decl_IWf_inj` give the indices'
+conversion, a large elimination into `⌜Unit⌝`/`⌜Empty⌝` turns it into
+`Unit ≅ Empty`, and `decl_head` refutes that.
+
+Findings, for the generator (Heather's §8.1, §8.3, §12.1, §12.2):
+- **The child index and the step carry the position through the tag's
+  case (a convoy).** §8.1's "case on the tag, then on the literal
+  position" does not typecheck as written: the position `i : Fin N[x]`
+  has a type that mentions the tag, and a case on `x` does not refine
+  `i`'s type. So the case on the tag returns `Π(i : Fin N[z]). I` and is
+  applied to `i` (F1's `c`). A step that uses the children or the
+  induction hypothesis at a literal position does the same, with
+  `Π(cs : DVec N[z] …)` or `Π(ih : Π(i : Fin N[z]). M …)` (`len`, F1's
+  `left`, F2's `size`, `toNat`). A child index that ignores the position
+  (Vec, F2, F3, All, Even/Odd) needs no convoy, and neither does a form A
+  arm that reads only the payload (`vhead`, F3's `head`, `allHead`).
+- **Form A needs only `I`'s own eliminator, into `Ty 0`.** The motive
+  cases on the index by `natrec` (Vec, F1, F3), by `elim_Wf` (§12.1: at
+  `List a`, tier 0's lowering, nothing more is needed), or by the
+  projections and then `Bool`'s case and `natrec` (§12.2, at the Σ
+  index; no Σ-η, since the output indices are literal pairs). The arms
+  are codes: `⌜Unit⌝` at the impossible indices, and at the possible ones
+  the result type's code (`a`, `⌜Fin k⌝`, `p y`, `⌜Empty⌝`). So the one
+  requirement beyond `I`'s eliminator is on the *result*: it must have a
+  code. When the result is a value of the family itself (F1's `left`,
+  `T 0`), the arm is the family's own code `tmIWf(⌜I⌝; ⌜S⌝; n; o; c; 0)`,
+  so `I` and the shapes must have codes too. For `Nat` they do; at
+  `List a` they do (`a` is a code and `List` decodes from `tmWf`), but an
+  inversion to `All p xs` was not checked.
+- **§12.2 needs nothing new** for families over a common `I_tag`: one
+  shape summand per constructor of either family, indices pairing a tag
+  with a number, and mutual recursion as one `elim_IWf`. A tag-dependent
+  `I_tag` (`Σ(b). I_b` with `I_b` varying) would need the motive's case
+  on `snd j` at a type depending on `fst j`, a convoy again. Not checked.
+- F2 at `n + n` is tier 2 (index abstraction), the elaborator's, so not
+  checked here; β at the stuck index is.
+
+The checker (`pty`, `ptm`, `pconv`, `ptmconv`) is syntax directed over
+`Declarative`'s rules, with conversions through weak-head normal forms
+by `Preservation`'s soundness of reduction and `elim_IWf` typed from
+`IWfIH`'s lemmas. Three things kept it usable:
+- Substitutions are normalized by `lazy`, not `cbn` (`cbn`'s refolding
+  made `dnth`'s reduction steps take minutes; `lazy` takes 0.1 s).
+- The induction hypothesis stays folded (`iwfIH`), typed by
+  `IWf_IH_wf`, never through `dnth`'s unfolding. The cost: the checker
+  cannot normalize a step whose body passes the hypothesis under a
+  binder, since `lcons'` inspects the substituted term (as `DNthCore`'s
+  note says for abstract terms). F2's `size` therefore counts the right spine only;
+  `size l + size r` through `natrec` would need a commutation lemma for
+  `iwfIH`.
+- Each family's type and conversion at any index are lemmas proved once
+  (`F1T_wf`, `AllT_conv_4`, …) and reached through `Ltac` hooks
+  (`pfam_ty`, `pfam_conv`), as `RecWfBase`'s `wdnth`; `All`'s are per
+  depth, over any context whose entries at `d`, `S d` are `p`, `a`.
+  Without them `allCons` took 12 minutes and the file ran out of memory.
+The file is not in the build; it compiles in about 25 minutes and 6 GB of memory.
