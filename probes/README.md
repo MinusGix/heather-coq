@@ -67,3 +67,20 @@ of the build (`_CoqProject` lists `theories/` only). Compile one with
   Tau-Tau rule fails at `spin` (`spin_not_euttT`), and Milner's image-infinite
   LTS shows the coincidence fails once branching is nondeterministic
   (`Milner.milner`). Standalone: `coqc probes/ItreeDepthBisim.v`.
+- `MCoind.v`: Heather's indexed coinductive `M` (`H/docs/kernel-coinduction-design.md`)
+  as a negative coinductive record with primitive projections. The
+  kernel's β (`m_out_corec`) holds by `eq_refl` at an open index; the
+  design's `Unit`-carrier constructor types only unindexed, and the
+  indexed one takes `out`'s type as its carrier; negative controls for
+  the kernel's verdicts (no η, two `corec`s of one tree distinct, a tree
+  not its reconstruction); bisimilarity as an `M` instance, unindexed
+  and indexed; and the bridge `Bisim t u ⇔ ∀ n, Same (approx n t)
+  (approx n u)`, right to left under UIP on the shapes, free for
+  decidable shapes (`M18_DESIGN.md`). Standalone: `coqc probes/MCoind.v`.
+- `MRelProbe.v`: the relation at `M`, `∀ n. MRelₙ` with a generic
+  equality clause at every depth, over an abstract interface whose
+  hypotheses are the development's laws: a Kripke PER closed under
+  conversion, neutrals, `out`'s validity with the full relation at the
+  children, and `corec`'s validity by induction on the depth with the
+  carrier's relation as a premise only (`M18_DESIGN.md`). Standalone:
+  `coqc probes/MRelProbe.v`.

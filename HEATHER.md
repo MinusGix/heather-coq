@@ -35,6 +35,7 @@ Surveyed at Heather `02c692bf` (2026-09-27).
 | `Wf` former design | `H/docs/wf-former-design.md` |
 | Audit of the 53 ch. 05/06 lemmas vs the kernel | `H/docs/ch05-06-lemma-audit.md` |
 | Interaction trees investigation | `H/docs/interaction-trees-fit.md` |
+| Coinductive `M` former design | `H/docs/kernel-coinduction-design.md` |
 | Issue tracker | `H/issues/*.md` (`H/scripts/issue`) |
 | Kernel source: typing, reduction, recursor telescopes | `H/crates/kernel/src/{typing,reduce,rec,term,conv}.rs` |
 
@@ -57,6 +58,7 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | `sEmpty`, `elim_sEmpty` | irrelevant empty type | sprop-design | MX §18, §21.4 | — | **done** (M10a; at code with branches 27, 28, 30, M10c) |
 | `Squash`, `ind_∥∥` | normalizing-total irrelevance | MX §27 | sketch only | full pass done here (`issues/metatheory-ch07-squash.md`, closed on M16); the payload must be self-related (see findings) | **done** (M16a at D and M: the probe's relation (`probes/SquashProbe.v`), proof irrelevance, β, no η, canonicity to a `squash`; M16b: code `∥s∥`, every layer but V, branches 51–54) |
 | `DVec`, `IWf`, `sup_i`, `elim_IWf` | finitary inductive families, no stored index equation | iwf-former-design §1–§6 (frozen 2026-10-13) | doc §9 (sketch) | the ih's type is `F[i]` only up to β (doc §3) | **M17 done**: `DVec` and `V_dnth` (M17a), `IWf` with β on open data (M17b), D and M; codes, every layer but V, branches 55–60 derived before `rec.rs` has them (M17c) |
+| `M`, `corec`, `out` | negative coinductive, indexed (Petersson–Synek), apomorphic `corec`, β only under `out`, no η | kernel-coinduction-design §1–§2 (kernel landed 2026-10-21, heather#111) | doc §9 (questions) | the relation at `M` without the carrier (§9 Q1); `li` in the level | **M18a done**: probes only, theories untouched. The ω-relation works with a generic clause at every depth; `li` is needed; the algorithm is a generic instance; β needs no index conversion; the bridge needs UIP on shapes; the design's `in` types only unindexed (M18_DESIGN.md). M18b (in-tree, D and M) planned |
 | Bodied globals `u := t`, δ at p/m only | not a former | DESIGN.md, MX §23–25 | **none** | ch. 07 bill (`issues/metatheory-ch07-definitions.md`) | **done** (M9): occurrences carry their body (`gdef`); δ as reduction; §26 items 1–4; canonicity at D; consistency at D and M |
 | `NatLit`, evaluator accelerations | representation | DESIGN.md | n/a | claimed to have no semantic content; nothing to prove here | out of scope |
 
@@ -161,6 +163,22 @@ Cross-checks between the two sides, newest last.
   compared either (2026-10-20): they follow from the signatures and the
   motives through `dnth`'s index lemma (`Validity/IWfIhEq.v`). Not dropped:
   the motives, their levels and the branches.
+- **Coinduction: the indexed `M` (M18a).** Heather's kernel rules for `M`,
+  `corec` and `out` (heather#111) are right as implemented; checked by two
+  standalone probes before any change here (M18_DESIGN.md). The design's
+  §9 Q1 relation, `∀ n. MRelₙ` without the carrier, works as a
+  per-former case only if every depth keeps the generic equality of the
+  two sides' whnfs: observations alone relate two `corec`s of one stream
+  that conversion separates (`probes/MCoind.v`, `zeros_same`). `li` must
+  stay in the family level: the relation is stratified by level, and the
+  index type's relation is needed at the family's stage. β is sound at
+  an open, computed child index with no index conversion; the algorithm
+  is an instance of the generic equivalence with two new laws, its two
+  arms. The bridge `Bisim ⇔ Π n. Same(approx n)` holds with UIP on the
+  shapes. One correction to the design text, not the kernel: §1.4's
+  constructor `in` at carrier `Unit` types only when `I` is `Unit`; the
+  indexed constructor's carrier is `out`'s type itself
+  (`MCoind.in_`).
 
 ## Beyond type formers
 
@@ -288,5 +306,11 @@ M15b outcome.
    M14_DESIGN.md). `Wf` is done, with its code and four recursor branches
    (M15a–b, M15_DESIGN.md). `Squash` is done, with its code and four
    recursor branches (M16a–b, M16_DESIGN.md).
+
+6. Coinduction: Heather's indexed `M` (H `docs/kernel-coinduction-design.md`),
+   implemented in its kernel before this check. M18a (M18_DESIGN.md)
+   answers the design's §9 Q1–Q3 with two probes and finds no wrong
+   kernel rule; M18b puts the former in-tree at D and M, M18c adds codes
+   once Heather's codes round has them.
 
 Side task, any time: the ITree depth-indexed bisimilarity question.
