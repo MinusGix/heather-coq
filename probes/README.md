@@ -16,8 +16,19 @@ of the build (`_CoqProject` lists `theories/` only). Compile one with
   F1–F3 (§8.2), `All` over `List a` (§12.1) and `Even`/`Odd` over
   `Σ(tag). Nat` (§12.2): typing, β at open indices and form A, by the M17b
   rules, with negative controls (`M17_DESIGN.md`, "The generator's
-  lowerings"). It needs the theories compiled: `coqc -Q theories DeLaM
-  probes/IwfLowering.v` (about 25 minutes).
+  lowerings"). It needs the theories compiled and `IwfCheck.v`, the
+  syntax-directed checker the lowering probes share: `coqc -Q theories
+  DeLaM -Q probes Probes probes/IwfCheck.v`, then the same for
+  `probes/IwfLowering.v` (about 25 to 35 minutes).
+- `IwfLowering2.v`: a mutual pair over a tag-dependent index
+  `Σ(b : Bool). I_b` (`I_inl = Nat`, `I_inr = Bool`): typing, β across the
+  tags, form A whose motive cases on `snd j` through a convoy, negative
+  controls (`M17_DESIGN.md`, "The two cases left unchecked"). After
+  `IwfCheck.v`, about 13 minutes.
+- `IwfLowering3.v`: form A into the family itself at a `List a` index,
+  `allTail : All p (x :: xs) → All p xs`, with `List`'s, the shapes' and
+  `All`'s codes. After `IwfLowering.v` (it reuses `All`'s typing lemmas),
+  about 63 minutes and under 13 GB of memory.
 - `NoUipComponents.v`: the components lemma of Heather's
   `docs/no-uip-model.md` §3, over reflexive-graph contexts with groupoid
   fibres. It checks that the strict propositions (`sEq`, `Squash`,

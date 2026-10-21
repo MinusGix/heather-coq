@@ -478,13 +478,14 @@ Findings, for the generator (Heather's §8.1, §8.3, §12.1, §12.2):
   code. When the result is a value of the family itself (F1's `left`,
   `T 0`), the arm is the family's own code `tmIWf(⌜I⌝; ⌜S⌝; n; o; c; 0)`,
   so `I` and the shapes must have codes too. For `Nat` they do; at
-  `List a` they do (`a` is a code and `List` decodes from `tmWf`), but an
-  inversion to `All p xs` was not checked.
+  `List a` they do (`a` is a code and `List` decodes from `tmWf`), and the
+  inversion to `All p xs` is checked below (2026-10-21).
 - **§12.2 needs nothing new** for families over a common `I_tag`: one
   shape summand per constructor of either family, indices pairing a tag
   with a number, and mutual recursion as one `elim_IWf`. A tag-dependent
   `I_tag` (`Σ(b). I_b` with `I_b` varying) would need the motive's case
-  on `snd j` at a type depending on `fst j`, a convoy again. Not checked.
+  on `snd j` at a type depending on `fst j`, a convoy again. Checked
+  below (2026-10-21).
 - F2 at `n + n` is tier 2 (index abstraction), the elaborator's, so not
   checked here; β at the stuck index is.
 
@@ -506,4 +507,73 @@ by `Preservation`'s soundness of reduction and `elim_IWf` typed from
   (`pfam_ty`, `pfam_conv`), as `RecWfBase`'s `wdnth`; `All`'s are per
   depth, over any context whose entries at `d`, `S d` are `p`, `a`.
   Without them `allCons` took 12 minutes and the file ran out of memory.
-The file is not in the build; it compiles in about 25 minutes and 6 GB of memory.
+The file is not in the build; it compiles in about 25 minutes and 6 GB of
+memory (34 minutes on the 4-core cloud machine of 2026-10-21).
+
+## The two cases left unchecked (2026-10-21)
+
+The checker moved to `probes/IwfCheck.v` (its Ltac at the top level, so
+that other files can use it; `IwfLowering.v` is otherwise unchanged and
+recompiles closed), and the two cases above are checked in two more
+probe files, with the same method: the M17b rules only, the induction
+hypothesis folded, each family's pieces proved once behind the hooks,
+negative controls, `Print Assumptions` closed. No case needed a rule
+the frozen §1–§6 lack, so the abort criterion was not hit.
+
+| file | family | index | checked |
+|---|---|---|---|
+| `IwfLowering2.v` | `A : Nat → Type`, `B : Bool → Type`: `anil : A 0`, `acons(n, y : Nat, h : B true) : A (S n)`, `bleaf : B false`, `bnode(n, c : A n) : B true` | `Σ(b : Bool). El(case b of ⌜Nat⌝ \| ⌜Bool⌝)` | typing; β across the tags both ways (`size_acons`, `size_bnode`); form A at both tags (`apay_beta : pay (acons n y h) ≡ y`, `bpay_beta : pay (bnode n c) ≡ n`); `bleaf` not at `B true`, `anil` not in `B` |
+| `IwfLowering3.v` | `All p` of `IwfLowering.v` | `List a` | the codes `⌜List a⌝`, the shapes', `⌜All p m⌝` (`allC_ty`), `El ⌜All p m⌝ ≅ All p m` (`allC_el`); `allTail : All p (x :: xs) → All p xs` by form A, typing and β at an open `allCons` (`allTail_beta`) |
+
+Findings, for the generator (Heather's §8.1, §8.3, §12.1, §12.2):
+- **A tag-dependent index type is a Σ over a large elimination.** With
+  `I_b` varying, the index type is `Σ(b : Bool). El(I(b))`, where `I` is
+  the tag's case into `Ty 0` with each `I_b`'s code as an arm. So the
+  `I_tag` must have codes, the same requirement form A puts on its
+  result. A literal pair `(tag, v)` types through the case's β (`v : Nat`
+  against `El(I(inl ⟨⟩))`), so the output and child indices need no
+  annotation beyond the pair's.
+- **The motive's case on `snd j` is a convoy on `fst j`.** `snd j` has
+  type `El(I(fst j))`, which a case on `fst j` does not refine. So the
+  case on the tag returns `Π(v : El(I(z))). Ty 0`, each arm a `λ` that
+  eliminates its own `I_b` (`natrec` at `Nat`, `Bool`'s case), and is
+  applied to `snd j`. The negative control separating two indices with
+  the same tag is the same convoy (`Dv`). The step needed nothing new:
+  `pay` reads only payloads, and `size` carries the induction hypothesis
+  through both levels of its case on the shape (tag, then constructor),
+  the inner case's motive being the outer one's at `inl`/`inr` of its
+  own variable.
+- **Form A into the family itself at `List a` needs a convoy in the
+  motive too.** The motive at index `j` is `El(elim_Wf(j; …))`, whose
+  `cons` arm returns `⌜All p (tail)⌝`. The tail is the index's child, in
+  `cs : Vec(N[b]; List)`, whose type mentions the shape, so `List`'s
+  case on the shape returns `Π(cs : Vec(N[z]; List)). Ty` and is applied
+  to `cs`. In general: the motive's index elimination carries whatever
+  of the index's own data (children, or a dependent component) the
+  result type reads.
+- **The codes exist and decode up to the components' `El`.**
+  `⌜All p m⌝ := tmIWf(⌜List a⌝; ⌜Unit⌝ + Σ(xs : ⌜List a⌝). Σ(x : a). p x;
+  n; o; c; m)` with `⌜List a⌝ := tmWf(⌜Unit⌝ + a; n)`, all typed from
+  `a` and `p x` being codes. `El ⌜All p m⌝` reduces to `IWf(El ⌜List a⌝;
+  El ⌜S⌝; …)(m)`, which converts with `All p m` component by component
+  (`El` of `tmWf`, `tmSum`, `tmSig`), not syntactically; the arity,
+  output and child index are shared. The motive lands in `Ty (0 ⊔ 0)`,
+  `IWf`'s level, so the codes are at `U (0 ⊔ 0)` and the motive's
+  `elim_Wf` at its successor.
+
+The checker's costs, for the record (they are this probe's, not the
+kernel's): `IwfLowering2.v` takes about 13 minutes and `IwfLowering3.v`
+about 63 minutes and under 13 GB of memory, on one 4-core cloud machine.
+Two devices kept them feasible, as the hooks did for `IwfLowering.v`:
+- each step is typed once in its telescope (`sizeStep_wf`, `payStep_wf`,
+  `tailStep_wf_4`) and reached through a hook that normalizes the
+  lemma's statement as `pn` normalizes goals, keyed on the step's head;
+  without it every β retyped its step, and `apay_beta` and `allTail_wf`
+  ran out of memory;
+- the signature's components are proved once in the context the
+  signature binds (`abO_wf` over `Γ, x : S`), not at an abstract shape:
+  a substitution of an abstract term does not compute (`lcons'`), so
+  the abstract version did not normalize.
+`allTail_wf` is stated at `allTail_beta`'s depth (one unused variable)
+so that one step lemma serves both; the step's typing is about a
+quarter of the file's time.
