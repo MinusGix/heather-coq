@@ -1108,13 +1108,15 @@ Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd
              (kw_lequiv ρ Hla) (kw_lequiv ρ Hlb) (kw_lequiv ρ Hla') (kw_lequiv ρ Hlb') HA1 HB1 HA1' HB1').
 Qed.
 
-(** ** The observations of related [corec]s *)
-Lemma obs_at n (IH : CorecAt n) (W : kwk G Δ) j0 j0' y y' :
+(** ** The β-reducts of related [corec]s, related at [out]'s type *)
+Lemma pair_at n (IH : CorecAt n) (W : kwk G Δ) j0 j0' y y' :
   mI W j0 j0' -> LRtm kc (kw_G W) (kw_Δ W) (sY W)[lsingle j0] (qY W)[lsingle j0'] y y' ->
-  MObs (MRn n) (kw_G W) (kw_Δ W) l l' li (sX W) (sA W) (sB W) (sC W) k k' ki (rX W) (rA W) (rB W) (rC W)
-    (fun ρ => mS (kw_comp W ρ)) (fun ρ => mP (kw_comp W ρ)) j0 j0' (crL W j0 y) (crR W j0' y').
+  MOutR (MRn n) (kw_G W) (kw_Δ W) l l' li (sX W) (sA W) (sB W) (sC W) k k' ki (rX W) (rA W) (rB W) (rC W)
+    (fun ρ => mS (kw_comp W ρ)) (fun ρ => mP (kw_comp W ρ)) j0 j0'
+    (mOutCorec l l' li (sX W) (sA W) (sB W) (sC W) kc (sY W) (sc W) j0 y)
+    (mOutCorec k k' ki (rX W) (rA W) (rB W) (rC W) kc' (rY W) (rc W) j0' y').
 Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd.
-  intros hjj hy. unfold MObs. intros * Ann Ann'.
+  intros hjj hy. unfold MOutR.
   pose proof (m_side Hwl Hwl' Hwli Hk Hk' Hki VX VA VB VC Hd) as HMD.
   pose proof (MSide_kw W HMD) as HMW.
   pose proof (proj1 (mIdx_iff VX Hd W _ _) hjj) as hjL.
@@ -1136,10 +1138,13 @@ Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd
   pose proof (eqty_wf_l ge_typeof (geq_ty_sound EPi)) as HB.
   pose proof (eqty_wf_l ge_typeof (geq_ty_sound RB')) as HB'.
   pose proof (M_out_eq ge_typeof ge_notV (MEq_of_MGeq HG) Hj0 Hj0' (geq_tm_sound Em)) as ES.
-  destruct (red_at W _ _ _ _ _ _ hjj hj hj' hy _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Ann Ann') as [RL RR].
-  refine (SigRel_red _ RL RR).
-  pose proof (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ RL)) as Hw.
-  pose proof (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ RR)) as Hw'.
+  destruct (esc_at W) as (_ & HY & _ & Hc & _).
+  destruct (rside_at W j0 j0' j0 j0' y y' hjj hj hj' hy) as (HS' & HYr & Hcr & _ & Hj0r & _ & Hyr).
+  pose proof (pre_out_corec ge_typeof ge_notV HS (kw_lwf W Hwc) HY Hc Hj0 Hy) as Hw.
+  pose proof (tmred_wf _ _ _ _ _ _ _ (tmred_lconv _ _ _ _ _
+                (tmred_refl _ _ _ (pre_out_corec ge_typeof ge_notV HS' (lequiv_wf_l _ _ _ (kw_lequiv W Hkc))
+                                     HYr Hcr Hj0r Hyr))
+                (lequiv_max _ _ _ _ _ H1 Hff))) as Hw'.
   refine (SigRel_intro HΔW W1 Hf HA HB HA' HB' (geq_ty_trans EA (geq_ty_sym EA)) (geq_ty_trans EPi (geq_ty_sym EPi))
             (geq_ty_sym EA) RB' ES Hw Hw' ltac:(unfold mOutCorec; apply whnf_pair)
             ltac:(unfold mOutCorec; apply whnf_pair) _ _ _).
@@ -1222,6 +1227,19 @@ Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd
       intros ρ''. eapply kw_eqv_trans; [exact (kw_eqv_assoc (kw_comp W ρ) ρ' ρ'') |].
       eapply kw_eqv_trans; [exact (kw_eqv_assoc W ρ (kw_comp ρ' ρ'')) |].
       exact (kw_eqv_comp_l W (kw_eqv_sym (kw_eqv_assoc ρ ρ' ρ''))).
+Qed.
+
+(** ** The observations of related [corec]s *)
+Lemma obs_at n (IH : CorecAt n) (W : kwk G Δ) j0 j0' y y' :
+  mI W j0 j0' -> LRtm kc (kw_G W) (kw_Δ W) (sY W)[lsingle j0] (qY W)[lsingle j0'] y y' ->
+  MObs (MRn n) (kw_G W) (kw_Δ W) l l' li (sX W) (sA W) (sB W) (sC W) k k' ki (rX W) (rA W) (rB W) (rC W)
+    (fun ρ => mS (kw_comp W ρ)) (fun ρ => mP (kw_comp W ρ)) j0 j0' (crL W j0 y) (crR W j0' y').
+Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd.
+  intros hjj hy. unfold MObs. intros * Ann Ann'.
+  pose proof (proj1 (mIdx_iff VX Hd W _ _) hjj) as hjL.
+  pose proof (LRtm_trans hjL (LRtm_sym hjL)) as hj. pose proof (LRtm_trans (LRtm_sym hjL) hjL) as hj'.
+  destruct (red_at W _ _ _ _ _ _ hjj hj hj' hy _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Ann Ann') as [RL RR].
+  exact (SigRel_red (pair_at n IH W j0 j0' y y' hjj hy) RL RR).
 Qed.
 
 End CorecV.
