@@ -132,6 +132,7 @@ theories/Validity/DVecNthReds.v
 theories/Validity/DNthReds.v
 theories/Validity/IWfElim.v
 theories/Validity/IWfCode.v
+theories/Validity/M.v
 theories/Validity/WfElim.v
 theories/Validity/Squash.v
 theories/Validity/Fundamental.v
