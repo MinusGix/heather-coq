@@ -593,6 +593,63 @@ Proof using EL VL VN VX VA VB VC Hwl Hwl' Hwli Hk Hk' Hki Hd.
   - exact (m_imon VX Hd U ρ _ _ h3).
 Qed.
 
+(** ** β's reduct's [case] at a neutral continuation *)
+Local Notation mL U o := (tyM l l' li (sX U) (sA U) (sB U) (sC U) o).
+Local Notation mR U o := (tyM k k' ki (rX U) (rA U) (rB U) (rC U) o).
+Local Notation brL U o := (tmCorec l l' li (sX U)⟨↑⟩ (sA U)⟨rlift ↑⟩ (sB U)⟨rlift (rlift ↑)⟩
+  (sC U)⟨rlift (rlift (rlift ↑))⟩ kc (sY U)⟨rlift ↑⟩ (sc U)⟨rlift (rlift ↑)⟩ o⟨↑⟩ (var 0)).
+Local Notation brR U o := (tmCorec k k' ki (rX U)⟨↑⟩ (rA U)⟨rlift ↑⟩ (rB U)⟨rlift (rlift ↑)⟩
+  (rC U)⟨rlift (rlift (rlift ↑))⟩ kc' (rY U)⟨rlift ↑⟩ (rc U)⟨rlift (rlift ↑)⟩ o⟨↑⟩ (var 0)).
+
+Lemma case_ne_at (W : kwk G Δ) o o' ν ν' :
+  LRtm li (kw_G W) (kw_Δ W) (sX W) (qX W) o o' ->
+  [ kw_G W ; kw_Δ W ⊢ ν ~ ν' : tySum kc (mlvl l l' li) (sY W)[lsingle o] (mL W o) @ lmax kc (mlvl l l' li) ] ->
+  [ kw_G W ; kw_Δ W ⊢ tmCase kc (mlvl l l' li) (mlvl l l' li) (sY W)[lsingle o] (mL W o) (mL W o)⟨↑⟩
+                        (brL W o) (var 0) ν
+                    ~ tmCase kc' (mlvl k k' ki) (mlvl k k' ki) (rY W)[lsingle o'] (mR W o') (mR W o')⟨↑⟩
+                        (brR W o') (var 0) ν' : mL W o @ mlvl l l' li ].
+Proof using EL VL VN VX VA VB VC VY Vc Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd.
+  intros h Hν.
+  destruct (esc_at W) as (HG & HY & EY & Hc & Hc' & Ec).
+  pose proof HG as (H1 & H2 & H3 & HS & EX & EA & EB & EC).
+  pose proof (kw_lwf W Hwc) as Wc. pose proof (kw_lwf W Hwli) as Wli.
+  pose proof HS as (W1 & W2 & Wi & _).
+  assert (Hf : lwf (gL (kw_G W)) (mlvl l l' li)) by (cbn; repeat split; assumption).
+  destruct (LRtm_escape h) as [Ho _].
+  destruct (case_parts HS Wc HY Hc Ho) as (HYo & HMo & HM1 & _ & Hv).
+  destruct (rA1 Hd W VY o o' h) as [RY HRY]. destruct (escape_ty _ _ _ _ _ _ _ _ HRY) as (_ & _ & EYo).
+  pose proof (MGeq_M HG (LRtm_geq h)) as EMo.
+  pose proof (wft_sum _ _ _ _ _ _ _ ge_notV Wc Hf HYo HMo) as HSum.
+  pose proof (ext_wf_g HSum (lwf_max Wc Hf)) as HΓS.
+  pose proof (geq_ty_wk (wkr_shift1 _ _ _) HΓS EMo) as EM.
+  pose proof (lequiv_sym _ _ _ (kw_lequiv W Hkc)) as Hkc'.
+  pose proof (lequiv_mlvl H1 H2 H3) as Hff.
+  (* the [corec] branches *)
+  pose proof (ext_wf_g HYo Wc) as HΓY.
+  pose proof (MGeq_wk1 HG HΓY) as HG1. pose proof HG1 as (_ & _ & _ & HS1 & EX1 & EA1 & EB1 & EC1).
+  pose proof HS1 as (_ & _ & _ & HX1 & HA1 & HB1 & HC1).
+  pose proof (ext_wf_g HX1 Wli) as HΓYX.
+  pose proof (wk_under_ty ge_typeof HΓYX HY) as HY1.
+  pose proof (ext_wf_g HY1 Wc) as HΓYXY.
+  pose proof (geq_ty_wk (wkr_up _ _ _ _ _ (wkr_shift1 _ _ _)) HΓYX EY) as EY1.
+  assert (Ec1 : [ kw_G W ; kw_Δ W ,, (sY W)[lsingle o] @ kc ,, (sX W)⟨↑⟩ @ li ,, (sY W)⟨rlift ↑⟩ @ kc
+                  ⊢ (sc W)⟨rlift (rlift ↑)⟩ ≈ (rc W)⟨rlift (rlift ↑)⟩
+                  : (mStepTy l l' li (sX W)⟨↑⟩ (sA W)⟨rlift ↑⟩ (sB W)⟨rlift (rlift ↑)⟩
+                       (sC W)⟨rlift (rlift (rlift ↑))⟩ kc (sY W)⟨rlift ↑⟩)⟨↑⟩ @ Lc ]).
+  { rewrite <- mStepTy_wk. apply (geq_tm_wk (r := rlift (rlift ↑)) (Γ := kw_Δ W ,, sX W @ li ,, sY W @ kc));
+      [wkr_tac | exact HΓYXY | exact Ec]. }
+  assert (Hvar : [ kw_G W ; kw_Δ W ,, (sY W)[lsingle o] @ kc ⊢ var 0 ≈ var 0
+                   : (sY W)⟨rlift ↑⟩[lsingle o⟨↑⟩] @ kc ]).
+  { rewrite <- seed_wk. apply gne_tm_geq, gne_tm_var. apply wf_var; [rewrite ge_typeof; exact HΓY | constructor]. }
+  pose proof (geq_tm_sound (geq_tm_wk (wkr_shift1 _ _ _) HΓY (LRtm_geq h))) as Eoo.
+  pose proof (geq_tm_corec H1 H2 H3 Hkc' HX1 (geq_ty_sound EX1) HA1 (geq_ty_sound EA1) HB1 (geq_ty_sound EB1)
+                HC1 (geq_tm_sound EC1) Eoo HY1 EY1 Ec1 Hvar) as Eb1.
+  pose proof (gne_tm_geq (gne_tm_var Hv)) as Eb2.
+  pose proof (gne_tm_case (M := (mL W o)⟨↑⟩) (M' := (mR W o')⟨↑⟩) Hkc' Hff Hff HYo EYo HMo EMo HM1 EM
+                ltac:(rewrite shift_inj_single; exact Eb1) ltac:(rewrite shift_inj_single; exact Eb2) Hν) as Hne.
+  rewrite shift_single_ty in Hne by exact (wf_ty_nf HMo). exact Hne.
+Qed.
+
 End CorecV.
 
 End MCorecV.
