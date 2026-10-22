@@ -172,16 +172,21 @@ From M8 on, the milestones check the extensions of Heather's kernel
   fundamental theorem's `corec` case (`probes/MRelProbe.v`). No kernel
   rule needed a change. See `M18_DESIGN.md`.
 
-No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
-`M18_DESIGN.md`) for decisions, deviations from the paper and gotchas.
+No admits, no axioms.
 
 Documents:
 
-- `M1_DESIGN.md`: milestone 1 scope, the shape decisions, deviations from
-  the paper, status, next steps, and proof-engineering gotchas.
-- `SYNTAX_SPIKE.md` / `spike/Syntax.v`: why the syntax is hand-written, and
-  the representation, including the global-substitution part that the main
-  tree doesn't contain yet.
+- `HEATHER.md`: what Heather's kernel adds to DeLaM, what this repo
+  checks of it, and the order of the coming milestones.
+- `docs/design/`: one design doc per milestone (`M1_DESIGN.md` to
+  `M18_DESIGN.md`) with its decisions, deviations from the paper and
+  outcome, plus `ELIM_CONGRUENCE.md` (typed eliminator congruence) and
+  `SYNTAX_SPIKE.md` (why the syntax is hand-written; the spike is
+  `spike/Syntax.v`). `M1_DESIGN.md` holds the shape decisions and the
+  deviations from the paper that the later milestones build on. The
+  text above and the theories' comments cite these docs by file name.
+- `docs/gotchas.md`: proof-engineering and build-time gotchas.
+- `probes/README.md`: the standalone probes.
 - `../logrel-coq-spike/SPIKE_UNIVERSES.md`: why the logical relation must
   be `Prop`-valued.
 

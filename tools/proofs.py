@@ -7,7 +7,7 @@ declarations (a `Lemma`/`Definition`/... statement up to its `Qed`,
 `Defined` or the next declaration), and prints the slowest ones with
 `file:line`, split into the time of their tactics and of their `Qed`
 (the kernel re-check). A `Qed` much slower than its tactics is the
-symptom of a raw fixpoint or a big term left in the proof (M1_DESIGN.md,
+symptom of a raw fixpoint or a big term left in the proof (docs/gotchas.md,
 build-time gotchas).
 
 Usage (from the repository root):

@@ -366,7 +366,7 @@ Decisions and deviations, in the order the proof met them:
   `DVec(N[a]; i. iwfFam …)` carry weakenings and substitutions of
   payloads; `gs_norm` (RecSBase) and the branch tactics (`sr_ctx_IWf`,
   `res_eq_IWf`, `rr_ctx_I`, `rr_sh`) push the substitutions through
-  them as equations before `cbn` (the gotcha in `M1_DESIGN.md`, raw
+  them as equations before `cbn` (the gotcha in `docs/gotchas.md`, raw
   fixpoints). `AlgPrereq`'s branch automation gained globals under two
   binders (`wf_gv_up2`, `wf_gu_up2T`).
 
