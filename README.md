@@ -165,9 +165,15 @@ From M8 on, the milestones check the extensions of Heather's kernel
   rules and β stay at D and M), and the code recursor's six branches
   55–60, whose scopes are derived from the layer-C rules ahead of
   Heather's `rec.rs`. See `M17_DESIGN.md`.
+- Milestone 18a: Heather's indexed coinductive former `M` (`corec`,
+  `out`), checked before it enters the theories, by two standalone
+  probes: the rules in a Rocq model with the bridge to finite
+  approximations (`probes/MCoind.v`), and the relation at `M` with the
+  fundamental theorem's `corec` case (`probes/MRelProbe.v`). No kernel
+  rule needed a change. See `M18_DESIGN.md`.
 
 No admits, no axioms. See the `M*_DESIGN.md` files (`M1_DESIGN.md` to
-`M17_DESIGN.md`) for decisions, deviations from the paper and gotchas.
+`M18_DESIGN.md`) for decisions, deviations from the paper and gotchas.
 
 Documents:
 

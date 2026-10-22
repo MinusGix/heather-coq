@@ -1,0 +1,330 @@
+# M18: Heather's indexed coinductive former (`M`, `corec`, `out`), design
+
+Status: **M18a done** (2026-10-21): the rules checked against the
+relation's shape and against a model, with two probes, before any change
+to the theories. **M18b** (the former in-tree at layers D and M) and
+**M18c** (codes) are planned below. Why now: Heather's kernel has the
+former already (MinusGix/heather#111, merged 2026-10-21), implemented and
+tested ahead of this repo's check, and its design asks three questions
+here (`H/docs/kernel-coinduction-design.md` §9, "the design" below).
+
+Heather's rules (the design §1–§2; `H/crates/kernel/src/term.rs`, the
+`MSig` section, has the schemas that typing, both reducers and conversion
+share; `H/crates/kernel/tests/m.rs` pins the verdicts):
+- **Formation.** `M^{l,l',li}(I; i. S; i s. P; i s p. o)(j) @ l ⊔ l' ⊔ li`,
+  for `I @ li`, `S @ l` under `i : I`, `P @ l'` under `i, s`, `o : I`
+  under `i, s, p`, and `j : I`. Shapes depend on the index, the child's
+  index is computed, nothing is stored.
+- **Elimination.** `out(σ; j; m) : Σ(s : S[j]). Π(p : P[j, s]). M(σ)(o[j, s, p])`,
+  the only eliminator, neutral on a neutral `m`.
+- **Introduction.** `corec^{k}(σ; i. X; i x. c; j; x) : M(σ)(j)` with
+  `X @ k` under `i : I` at any `k`, the step
+  `c : Σ(s : S). Π(p : P). X[o] +^{k,f} M(o)` under `i, x : X`, and
+  `x : X[j]`: the apomorphism.
+- **β.** `out(corec(…; j; x)) ⇝ pair(fst r, λp. case(snd r p; y. corec(…;
+  o[j, fst r, p]; y); t. t))` with `r := c[j, x]`, only under `out`.
+- **Conversion.** No η. `M` types structurally; two `corec`s by carrier
+  level, carrier, step (at the left step type), seed, the signature and
+  index read off the type; a `corec` against anything else is not
+  convertible; two `out`s by their scrutinees only.
+- **Layers.** P and M only (here: D and M, `compt i`).
+
+## Verdict
+
+No kernel rule is wrong. Each of Q1–Q3 has a yes, with one refinement of
+the proposed relation and one correction to the design text (not to the
+kernel):
+
+1. **Q1, the relation.** The ω-intersection works and keeps `M` a
+   per-former case, with no carrier in it, **provided every depth keeps
+   the clause of generic equality** (both sides reduce to whnfs related by
+   `≈`, `WRel`'s first clauses). The observations alone are coarser than
+   the kernel's conversion: they relate two `corec`s that conversion
+   separates, and escape, hence completeness, would fail. The design's
+   text has the clause ("the whnfs are declaratively equal"), but it
+   should read "generically", since the algorithmic instance needs it.
+   **The family level must contain `li`**, as `IWf`'s does, because the
+   relation is stratified by level (below).
+2. **Q2, decidability.** The algorithm fits the generic equivalence as an
+   instance: the `corec` arm and the `out` arm are exactly the two generic
+   laws the relation's proofs use (`geq_corec`, the neutral law of `out`'s
+   projections), and the forced annotations are forced as
+   `ELIM_CONGRUENCE.md` describes, through `M`'s injectivity. β is sound
+   at an open, computed child index with no index conversion at all: the
+   reduct's child sits at `o[j, fst r, p]`, which is the index `out`'s
+   type asks for at the shape `fst r`.
+3. **Q3, the bridge.** `Bisim t u ⇔ Π n. Same(approx n t, approx n u)` is
+   checked. Left to right needs nothing. Right to left is a `corec` into
+   `Bisim` and needs UIP on the shapes, which holds when they have
+   decidable equality (Hedberg).
+
+The correction, for Heather's design §1.4: the constructor
+`in(σ; j; s; f) := corec(_. Unit; _ _. pair(s, λp. inr(f p)); j; ⟨⟩)`
+types only when `I` is `Unit`. Its step is checked under the bound index
+`i`, where `s : S[j]` is not an `S[i]` and `f p : M(o[j, s, p])` is not an
+`M(o[i, s, p])`. At an indexed `M` (every coinductive predicate) the
+constructor takes `out`'s type itself as its carrier:
+
+```
+in(σ; j; s; f) := corec^{f}(σ; i. Σ(s : S[i]). Π(p : P[i, s]). M(o[i, s, p]);
+                            i x. pair(fst x, λp. inr(snd x p)); j; pair(s, f))
+out(in(σ; j; s; f)) ⇝ pair(s, λp. case(inr(f p); …; t. t)) ⇝ pair(s, λp. f p) ≡η pair(s, f)
+```
+
+with the carrier at the family level `f`. The kernel's tests use the
+unindexed form only (`Stream`'s `cons`), so they are right as they stand;
+the elaborator's `codata` constructors (design §6) must use this one.
+
+## M18a: the probes
+
+Both are standalone (`coqc probes/<file>`, a few seconds each), closed
+under the global context. Neither needs the theories: the first models
+the rules in Rocq, the second checks the relation's arguments over an
+abstract interface. Each was kept to what a full in-tree round would
+otherwise answer only after weeks of work.
+
+### `probes/MCoind.v`: the rules in a model, and the bridge
+
+The former as a negative coinductive record with primitive projections
+(`CoInductive M j := mkM { out : {s : S j & ∀ p, M (o j s p)} }`), whose
+`cofix` unfolds only under a projection and which has no η: Rocq's form of
+the same discipline. `corec` is a `cofix` with the kernel's step type.
+
+- `out_corec`: β as `m_out_corec` writes it, by `eq_refl`, at an open
+  index, carrier, step and seed. Rocq's type checker accepts the reduct
+  at `out`'s type at `j`, with the `case`'s motive at the computed child
+  index `o j (projT1 r) p`.
+- `in_`/`out_in`: the indexed constructor above, `out (in_ j s f) =
+  existT s f` by `eq_refl` (Π-η only). `in_unit_fails`: the design's
+  `Unit`-carrier form at an indexed `M`, refused with "`s` has type `S j`
+  while it is expected to have type `S i`". `in_unit`/`out_in_unit`: the
+  same form at `I := Unit` types and computes.
+- Negative controls, each a `Goal` whose `reflexivity` fails, mirroring
+  `m.rs`: no η (`t = mkM (out t)`); two `corec`s of one stream, over the
+  carriers `unit` and `nat`, are distinct (`zeros_u = zeros_n`); a tree is
+  not its reconstruction `in (out t)`; a `corec` that rebuilds a variable
+  is not the variable.
+- `zeros_same`: the two distinct `zeros` have the same approximation at
+  every depth, and `zeros_bisim` makes them bisimilar through the bridge.
+  This is the counterexample of Q1: observations do not see carriers.
+- `Bisim` (the design §4) as an instance of the indexed `M`: index the
+  pair of trees, shape `shape t = shape u`, positions the left root's,
+  the right child at the position moved by `eq_rect`. `bisim_refl` is a
+  proof by coinduction, a `corec` whose carrier is the relation (here
+  `fst ix = snd ix`).
+- `IBisim`, the indexed variant: at an indexed `M` the two children sit at
+  `o j s p` and `o j s' (e ▸ p)`, so the index is `Σ(j). M j × M j` and
+  the right child is moved to the left child's index along the shapes'
+  equation (`ikid_moved`, a `J` on `e`). `ibisim_refl` checks it. The
+  design writes §4 unindexed; the indexed form needs this one transport
+  more and nothing else.
+- The bridge: `bisim_approx` (left to right, induction on `n`, no
+  assumption) and `approx_bisim` (right to left, a `corec` with carrier
+  `Approx (t, u) := ∀ n, Same (approx n t) (approx n u)`). The step takes
+  the shapes' equation from depth 1 and, at depth `n + 1`, moves the
+  child's sameness from that depth's equation to depth 1's by `UIP_S`.
+  `approx_bisim_dec` discharges `UIP_S` by `UIP_dec`. This is
+  `probes/ItreeDepthBisim.v`'s `UIP_Cmd`, now for the general indexed
+  former's encoding rather than a hand-written `CoInductive`.
+
+### `probes/MRelProbe.v`: the relation at `M`
+
+The terms, the Kripke worlds (a preorder; weakening of terms left
+implicit), conversion (an equivalence), the generic equivalence at `M`
+(`geqM`, `gneM`) and the relations of the signature's components are
+section variables, and what the development provides for them is a
+hypothesis. The relation is left-indexed, as `IWfRel`:
+
+```
+MRn 0     w m t t' := geqM w m t t'
+MRn (n+1) w m t t' := geqM w m t t'
+                    ∧ shR w m (fst (out t)) (fst (out t'))
+                    ∧ ∀ w' ≥ w, ∀ p p', posR w' m (fst (out t)) p p' →
+                        MRn n w' (o[m, fst (out t), p]) (snd (out t) p) (snd (out t') p')
+MR w m t t' := ∀ n, MRn n w m t t'
+```
+
+Checked (no admits, no axioms):
+- `MR_escape`: the depth-0 clause.
+- A Kripke PER closed under conversion and under a related index change:
+  `MRn_mono`, `MRn_conv`, `MRn_idx`, `MRn_sym`, `MRn_trans` (and their
+  `MR_` forms). Symmetry and transitivity move the right side's positions
+  to the left shape (`pos_sh`) and the child indices along `o`'s
+  relation; they need the index related to itself, which the type's
+  relation gives.
+- `MR_ne`: neutrals, by induction on the depth, from `out`'s neutral
+  laws.
+- `MR_out`: related trees have related shapes and children related at
+  *every* depth. The depth quantifier moves inside the Kripke and
+  position quantifiers, so `out t ~ out t'` holds at
+  `Σ(s : S[m]). Π(p). M(o)` with the full relation at the child, which is
+  what `SigRel`/`PiRel` need.
+- `MR_corec`: for related indices and seeds related by the carrier's
+  relation, the two `corec`s are related, by induction on the depth with
+  the index and the seed generalized. The step's validity is read at the
+  step type: on `inl y` (a new seed) the induction hypothesis at the child
+  index, on `inr t` (an existing tree) `M`'s full relation there, on a
+  neutral `case`'s neutral law and `MR_ne`. β and `case`'s β are
+  conversions. The carrier's relation `X` is a premise of this lemma
+  only; it is never part of the relation.
+
+What each hypothesis is in the development (for M18b):
+
+| probe | development |
+|---|---|
+| `le`, `*_mono` | `kwk`, `kw_comp`; the relations' weakening lemmas (`LogRel/Weakening.v`) |
+| `conv`, `*_conv` | closure under typed weak-head expansion (`LogRel/Reduction.v`) and irrelevance at convertible types (`LR_irrel`) |
+| `idxR`, `idx_*` | `LRiwf`'s index premise in every world, with its PER premises |
+| `shR`, `sh_*`, `sh_idx` | the shapes' `domR` at an index, `LR` in every world at related indices |
+| `posR`, `pos_*`, `pos_sh` | the positions' relation: `LR` at `P[m, s]` for related shapes, `codR`-style; `pos_sh` is irrelevance between `P[m, s]` and `P[m, s']` |
+| `o_rel` | `LRiwf`'s premise on the child index, here at related positions of `P` |
+| `geqM`, `gneM`, `geq_*` | `≈`/`~` at `M(m)` and `GenericEqLaws`; `geq_idx` is `geq_tm_conv` along `M`'s congruence |
+| `gne_fstout`, `gne_kid` | `gne_tm_fst`/`gne_tm_snd`/`gne_tm_app` after a new `gne_tm_out`, and `LR_neutral` at `S[m]` |
+| `beta_fst`, `beta_kid`, `case_inl`, `case_inr` | the reductions `out(corec) ⇝ …`, `fst`/`snd` of a pair, `app` of a λ, `case` of `inl`/`inr`, typed (subject reduction) |
+| `case_ne` | `case`'s neutral law (`gne_tm_case`) at the constant motive `M(i)` |
+| `geq_corec` | the new generic law `geq_tm_corec` (the kernel's `corec` arm) with the escapes of `X`, `c` and `x`'s validity |
+| `step_valid` | the fundamental theorem's hypothesis for `c` at related substitutions, read through `SigRel`, `PiRel` and `SumRel` |
+| `X`, `X_mono` | the fundamental theorem's hypothesis for `X` at its level `k` |
+
+Not checked by the probes (the in-tree round's work, with no new kind of
+argument): the syntax and its substitution and renaming lemmas, the
+annotation variants (every choice of equivalent annotations on the
+projections, as `SigRel` and `WNf` quantify), the typing of the reduct
+(presupposition, subject reduction), injectivity of `M`, level
+invariance, and the algorithm's PER and decidability proofs.
+
+## Q1: the relation at `M`
+
+**It is a per-former case.** `MRn` is a `Fixpoint` on the depth over the
+components' relations, so `LRm` is a new constructor of `LR` with
+`LRiwf`'s premises minus the arity (the index type in every world with
+its PER premises, the shapes at related indices, the positions at related
+shapes, the child index at related positions, the index) and
+`releq R (MR …)`. It mentions no other case and no carrier, and needs no
+change to the reducibility universe. The ω-intersection is a plain
+definition in `Prop`, so no `CoInductive` and no guard checker are
+involved, as the design asks.
+
+**The generic clause at every depth is necessary.** Without it, `MR`
+relates `zeros_u` and `zeros_n` (`MCoind.v`: same approximations at every
+depth), escape would make them generically equal, and at the algorithmic
+instance that is the kernel's `two_corecs_of_one_tree_are_distinct`
+contradicted. With it, escape is the depth-0 clause, and the observations
+are what `out`'s validity needs (`MR_out`). The neutral case and
+`corec`'s case produce both halves (`MR_ne`, `MR_corec`).
+
+**The positions' relation quantifies over every proof of the shapes'**,
+as `WNf`'s children premise quantifies over `ha`. That is what lets the
+depth quantifier move inside (`MR_out`): each depth's shape proof would
+otherwise fix its own position relation. In the probe the position
+relation does not depend on the proof at all, which is what irrelevance
+gives.
+
+**`li` must be in the family level.** The relation at level `f` is
+`LR (lmeasure f) (LRbelow (lmeasure f))`, and a universe is related only
+at a stage above it (`LRU`'s `lmeasure l1 < n`); a relation at a lower
+level moves up a stage (`LogRel_stage`, `LogRel_up`) but never down. The
+`M` case needs the index type's relation (the shapes are related at
+related indices, and the fundamental theorem gets those from `S`'s
+validity, which takes the index's relation), so `I @ li` must be related
+at stage `lmeasure f`. Without `li` in `f`, `M(U_0; _. Unit; _ _. Empty;
+…)(j)` would be a type at level 0 whose index type `U_0` has no relation
+at stage 0. This is the architecture, not consistency: in a set model
+`M(j)` is no bigger than its shapes and positions make it. So `l ⊔ l' ⊔
+li` is the right choice for Heather, as `IWf`'s `l ⊔ li` is, and dropping
+`li` later would mean changing the reducibility universe.
+
+`corec`'s carrier is free (any `k`). Its relation is used only in the
+fundamental theorem's `corec` case, at the carrier's own stage; the
+step's validity lives at `lmeasure (l ⊔ k ⊔ f)`, and the `M(o)` summand's
+relation there is `M`'s own (`LogRel_stage` keeps the relation).
+
+## Q2: decidability and typed congruence
+
+The algorithm of the design §2.1 needs two new generic laws and nothing
+else, and both are the kernel's arms:
+
+- `geq_tm_corec`: at `M(σ)(j)`, `k ≡ k'`, `X ≈ X'` under `i : I`,
+  `c ≈ c'` at the left step type under `i, x : X`, `x ≈ x'` at `X[j]`.
+  It is `MR_corec`'s `geq_corec`.
+- `gne_tm_out`: `ν ~ ν' : M(σ)(j)` gives `out(ν) ~ out(ν')` at `out`'s
+  type. With `Σ`'s neutral laws it gives `gne_fstout`/`gne_kid`.
+
+Completeness is the fundamental theorem at the algorithmic instance, as
+for every former; `MR`'s generic clause is what carries it through `M`.
+"A `corec` against anything else is NotConvertible" needs no law: the
+algorithm has no rule relating them, and completeness shows no
+declarative equation does either (it would have an algorithmic
+derivation). Decidability goes by induction on the left side's reflexive
+derivation, as `actmnf_supi`'s: a `corec`'s premises are its carrier,
+step and seed, all subterms, and no rule unfolds a `corec` outside an
+`out` the term contains.
+
+Typed congruence (`ELIM_CONGRUENCE.md`): the forced annotations are
+forced as for the other formers, through an injectivity lemma `M_inj_c`
+(the type's relation records the components' equations, as `LRiwf`'s
+does). For `corec` the signature and index of each side are those of its
+synthesized type, equal to the checking type's by inversion and
+`M_inj_c`. The carrier's level is compared, for the reason the motive's
+level is (`ac_ty`'s soundness is at one level). For `out` the scrutinees
+determine everything, as at `elim_IWf`. A nit, not a bug: the kernel's
+`corec` arm (`conv.rs`) says "the type's own [signature] is used", but it
+builds the step type from the left `corec`'s signature (`g1`); under
+typing the two are convertible, and either telescope is the same
+judgement (`ELIM_CONGRUENCE.md`, "The motives and branches are compared
+in the left elimination's telescope").
+
+**β at an open, computed child index is sound with no index argument.**
+The reduct's child is `corec(…; o[j, fst r, p]; y)` with
+`y : X[o[j, fst r, p]]` from the step's type at `j`, and `out`'s type at
+the shape `fst r` asks for `M(o[j, fst r, p])`: the same term. Unlike
+`elim_IWf`'s β (M17b, "Preservation at any index", which needed the
+`sup_i`'s output index converted to the eliminator's), nothing here is
+read off a constructor. The one conversion subject reduction needs is
+between `out`'s annotations and the `corec`'s, by inversion and `M_inj_c`
+(the kernel's reducers use the `corec`'s, `reduce.rs` and `eval.rs`'s
+`fire_out`). `MCoind.out_corec` has Rocq check the reduct's typing at an
+open index.
+
+## Q3: the bridge
+
+Checked in `MCoind.v` for the unindexed former (the ITree case): left to
+right by induction, right to left by `corec` under `UIP_S`, discharged by
+decidable equality. For Heather: `Bisim` with `Id` shapes (the design §4)
+gets the bridge exactly when the shapes form a set; with Heather's
+no-UIP model (`H/docs/no-uip-model.md`) that is a hypothesis on the
+event types (commands and answers with decidable equality, say), never
+free. `Validity/Hedberg.v` has Hedberg's argument in this syntax. If a
+`Bisim` is ever stated with `sEq` shapes, its per-depth proofs would be
+convertible and the merge would need nothing, but `sEq` has no eliminator
+to move the positions with (the design §4), so `Id` it is.
+
+## M18b: the former in-tree (plan)
+
+At layers D and M, M17b's route. Syntax: `tyM l l' li I S P O j`,
+`tmCorec l l' li I S P O k X c j x`, `tmOut l l' li I S P O j m`, the
+signature's scopes as `IWf`'s (`S` under one binder, `P` under two, `O`
+under three; `X` under one, `c` under two). Reduction
+`red_out_corec` with `m_out_corec`'s reduct (the step type `mStepTy` and
+the out type `mOutTy` as definitions, as `iwfstepty`), `out`'s congruence
+on its scrutinee, `whne_out`. Rules: `wft_M`, `wf_corec`, `wf_out`,
+`eqty_M`, `eqtm_corec` (congruence, carrier level included),
+`eqtm_out`, `eqtm_out_corec` (β), all gated by `compt i`.
+
+Then, in M17b's order: presupposition (the reduct's typing:
+`PresupM.v`), the relation (`LRm` over `MRn`, the probe's definition at
+the development's annotations), escape, irrelevance, symmetry,
+transitivity, weakening, level invariance, neutrals (`MR_ne`), validity
+(`Validity/M.v`: formation, `out`; `Validity/MCorec.v`: `MR_corec` with
+the step's validity), the algorithm (`actmnf_corec`, `actmne_out`) and
+decidability (`AlgDecM.v`), canonicity (a closed term at `M` reduces to a
+`corec`), and the consequences. Expected cost: below M17b, since the
+relation is one `Fixpoint` rather than three mutual families and there is
+no `dnth`; the widest piece is `corec`'s telescope in the generic laws'
+annotation variants.
+
+## M18c: codes (plan)
+
+When Heather's codes round gives `M` its four branches (the design §5:
+`ty_m`, `tm_m`, `tm_corec`, `tm_out`), derive their scopes from the
+layer-C rules here first, as M17c did for `IWf`.
