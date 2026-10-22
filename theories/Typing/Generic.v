@@ -144,6 +144,13 @@ Class GenericEqLaws `{GenericEq} := {
   geq_tm_ctxconv2 {G Γ A A' la la' B lb t t' T l} :
     [ G ; Γ ⊢g A ≅ A' @ la ] -> lequiv (gL G) la la' -> [ G ; Γ ,, A' @ la' ,, B @ lb ⊢g ] ->
     [ G ; Γ ,, A @ la ,, B @ lb ⊢ t ≈ t' : T @ l ] -> [ G ; Γ ,, A' @ la' ,, B @ lb ⊢ t ≈ t' : T @ l ] ;
+  (** and of any entries, along a context equivalence, for [M]'s signature, whose families bind
+      up to three entries that symmetry and transitivity move to the other
+      side's contexts (M18b) *)
+  geq_ty_ctxeq {G Γ Γ' T T' l} :
+    [ G ⊢[ ge_layer ] Γ ≅ Γ' ] -> [ G ; Γ ⊢ T ≈ T' @ l ] -> [ G ; Γ' ⊢ T ≈ T' @ l ] ;
+  geq_tm_ctxeq {G Γ Γ' t t' T l} :
+    [ G ⊢[ ge_layer ] Γ ≅ Γ' ] -> [ G ; Γ ⊢ t ≈ t' : T @ l ] -> [ G ; Γ' ⊢ t ≈ t' : T @ l ] ;
 
   (** Weak head closure *)
   geq_ty_exp {G Γ T T' W W' l} :

@@ -173,9 +173,6 @@ End SigDir.
     children's, whose codomain is the induction hypothesis in a world. *)
 Section MIrrel.
 
-Lemma LK_lsingle3 a b c : nftm a -> nftm b -> nftm c -> LK nftm (lsingle3 a b c).
-Proof using. intros Ha Hb Hc [|[|[|n]]]; cbn; auto. Qed.
-
 Lemma MGen_dir {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C'' m m' m'' t t'} :
   [ G ; Γ ⊢g tyM r1 r2 ri X' A' B' C' m' ≅ tyM s1 s2 si X'' A'' B'' C'' m'' @ mlvl l1 l2 li ] ->
   MGen G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' m m' t t' ->
@@ -273,8 +270,6 @@ Qed.
 Lemma lequiv_mlvl {L l1 l2 li r1 r2 ri} :
   lequiv L l1 r1 -> lequiv L l2 r2 -> lequiv L li ri -> lequiv L (mlvl l1 l2 li) (mlvl r1 r2 ri).
 Proof using. intros. now apply lequiv_max; [apply lequiv_max|]. Qed.
-
-Ltac kw_nf := unfold kty, ktyl, ktyll, ktmlll, ktm; first [apply ren_nf_ty | apply ren_nf].
 
 (** One direction, by induction on the depth. *)
 Lemma MRn_dir n : forall G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
@@ -650,6 +645,69 @@ Proof using EL VL.
     + exact (wf_tm_nf Hmm').
     + exact (wf_tm_nf Hnm').
 Qed.
+
+(** [LR] at worlds acting alike: the relations agree. *)
+Lemma LR_kw_eqv_irrel {n rec G Γ} {ρ1 ρ2 : kwk G Γ} : kw_eqv ρ1 ρ2 ->
+  forall T T1 T2 l R1 R2, LR n rec (kw_G ρ1) (kw_Δ ρ1) T T1 l R1 -> LR n rec (kw_G ρ2) (kw_Δ ρ2) T T2 l R2 ->
+  releq R1 R2.
+Proof using EL VL.
+  intros Eρ T T1 T2 l R1 R2 H1 H2. exact (LR_irrel _ _ _ _ _ _ _ _ _ _ H1 (LR_kw_eqv Eρ _ _ _ _ H2)).
+Qed.
+
+(** A side from [LRm]'s premises, the invariance by irrelevance. *)
+Lemma MSide_of_LR {n rec G Γ l1 l2 li r1 r2 ri X X' A A' B B' C C' idxR shR posR} :
+  lequiv (gL G) r1 l1 -> lequiv (gL G) r2 l2 -> lequiv (gL G) ri li ->
+  lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) li ->
+  [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ,, X @ li ⊢g A @ l1 ] -> [ G ; Γ ,, X @ li ,, A @ l1 ⊢g B @ l2 ] ->
+  [ G ; Γ ,, X @ li ,, A @ l1 ,, B @ l2 ⊢g C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢ X ≈ X' @ li ] -> [ G ; Γ ,, X @ li ⊢ A ≈ A' @ l1 ] ->
+  [ G ; Γ ,, X @ li ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
+  [ G ; Γ ,, X @ li ,, A @ l1 ,, B @ l2 ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ X) (kty ρ X') li (idxR ρ)) ->
+  (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
+      LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ A)[lsingle x] (ktyl ρ A')[lsingle x'] l1 (shR ρ x x')) ->
+  (forall (ρ : kwk G Γ) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
+      LR n rec (kw_G ρ) (kw_Δ ρ) (ktyll ρ B)[lsingle2 x a] (ktyll ρ B')[lsingle2 x' a'] l2
+        (posR ρ x x' a a')) ->
+  (forall (ρ : kwk G Γ) x x' a a' p p', idxR ρ x x' -> shR ρ x x' a a' -> posR ρ x x' a a' p p' ->
+      idxR ρ (ktmlll ρ C)[lsingle3 x a p] (ktmlll ρ C')[lsingle3 x' a' p']) ->
+  (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
+      [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ A)[lsingle x] @ l1
+          ⊢ (ktyll ρ B)[llift (lsingle x)] ≈ (ktyll ρ B')[llift (lsingle x')] @ l2 ]) ->
+  (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
+      [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ A)[lsingle x] @ l1 ,, (ktyll ρ B)[llift (lsingle x)] @ l2
+          ⊢ (ktmlll ρ C)[llift (llift (lsingle x))] ≈ (ktmlll ρ C')[llift (llift (lsingle x'))]
+          : (kty ρ X)⟨↑⟩⟨↑⟩ @ li ]) ->
+  (forall (ρ : kwk G Γ) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
+      [ kw_G ρ ; kw_Δ ρ ,, (ktyll ρ B)[lsingle2 x a] @ l2
+          ⊢ (ktmlll ρ C)[llift (lsingle2 x a)] ≈ (ktmlll ρ C')[llift (lsingle2 x' a')] : (kty ρ X)⟨↑⟩ @ li ]) ->
+  (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x', idxR ρ x x' ->
+      idxR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x')) ->
+  (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
+      shR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x') (ktm ρ' a) (ktm ρ' a')) ->
+  (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x' a a' p p', idxR ρ x x' -> shR ρ x x' a a' ->
+      posR ρ x x' a a' p p' ->
+      posR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x') (ktm ρ' a) (ktm ρ' a') (ktm ρ' p) (ktm ρ' p')) ->
+  MSide G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR.
+Proof using EL VL.
+  intros Hr1 Hr2 Hri W1 W2 Wi HX HA HB HC HXX HAA HBB HCC Hidx Hsh Hpos ch gB gC gCa imon shmon posmon.
+  assert (Ii : forall ρ1 ρ2, kw_eqv ρ1 ρ2 -> releq (idxR ρ1) (idxR ρ2)).
+  { intros ρ1 ρ2 Eρ. pose proof (Hidx ρ2) as H2. rewrite <- (kty_eqv Eρ) in H2.
+    exact (LR_kw_eqv_irrel Eρ _ _ _ _ _ _ (Hidx ρ1) H2). }
+  assert (Is : forall ρ1 ρ2, kw_eqv ρ1 ρ2 -> forall x x', idxR ρ1 x x' -> releq (shR ρ1 x x') (shR ρ2 x x')).
+  { intros ρ1 ρ2 Eρ x x' h. pose proof (Hsh ρ2 x x' (proj1 (Ii ρ1 ρ2 Eρ x x') h)) as H2.
+    rewrite <- (ktyl_eqv Eρ) in H2. exact (LR_kw_eqv_irrel Eρ _ _ _ _ _ _ (Hsh ρ1 x x' h) H2). }
+  assert (Ip : forall ρ1 ρ2, kw_eqv ρ1 ρ2 -> forall x x' a a', idxR ρ1 x x' -> shR ρ1 x x' a a' ->
+                 releq (posR ρ1 x x' a a') (posR ρ2 x x' a a')).
+  { intros ρ1 ρ2 Eρ x x' a a' h ha.
+    pose proof (Hpos ρ2 x x' a a' (proj1 (Ii ρ1 ρ2 Eρ x x') h) (proj1 (Is ρ1 ρ2 Eρ x x' h a a') ha)) as H2.
+    rewrite <- (ktyll_eqv Eρ) in H2. exact (LR_kw_eqv_irrel Eρ _ _ _ _ _ _ (Hpos ρ1 x x' a a' h ha) H2). }
+  eapply MSide_intro; try eassumption.
+  - intros ρ1 ρ2 Eρ x x' h. exact (proj1 (Ii ρ1 ρ2 Eρ x x') h).
+  - intros ρ1 ρ2 Eρ x x' a a' h ha. exact (proj1 (Is ρ1 ρ2 Eρ x x' h a a') ha).
+  - intros ρ1 ρ2 Eρ x x' a a' p p' h ha hp. exact (proj1 (Ip ρ1 ρ2 Eρ x x' a a' h ha p p') hp).
+Qed.
+
 
 (** ** Inversion by the left type's normal form *)
 

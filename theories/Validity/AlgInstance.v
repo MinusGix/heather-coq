@@ -131,6 +131,21 @@ Proof.
            (eqtm_wf_l Hty E) (eqtm_wf_r Hty E) (eqty_refl _ _ _ _ _ (eqtm_wf_ty Hty E))).
 Qed.
 
+Lemma alg_ty_ctxeq {G Γ Γ' T T' l} : [ G ⊢[ i ] Γ ≅ Γ' ] -> alg_eq_ty G Γ T T' l -> alg_eq_ty G Γ' T T' l.
+Proof.
+  intros Hctx (E & D). pose proof (eqc_lsub_id Hty Hctx) as Hid. pose proof (ctx_glob _ _ _ (ctx_of_eqty Hty E)) as HG.
+  refine (conj (mv_eqty Hty Hid E) _).
+  exact (proj1 ac_conv_all _ _ _ _ D i G _ l l Hi (GEq_refl _ HG) Hctx (eqty_wf_l Hty E) (eqty_wf_r Hty E)).
+Qed.
+
+Lemma alg_tm_ctxeq {G Γ Γ' t t' T l} : [ G ⊢[ i ] Γ ≅ Γ' ] -> alg_eq_tm G Γ t t' T l -> alg_eq_tm G Γ' t t' T l.
+Proof.
+  intros Hctx (E & D). pose proof (eqc_lsub_id Hty Hctx) as Hid. pose proof (ctx_glob _ _ _ (ctx_of_eqtm Hty E)) as HG.
+  refine (conj (mv_eqtm Hty Hid E) _).
+  exact (proj1 (proj2 (proj2 (proj2 (proj2 ac_conv_all)))) _ _ _ _ _ D i G _ T l Hi (GEq_refl _ HG) Hctx
+           (eqtm_wf_l Hty E) (eqtm_wf_r Hty E) (eqty_refl _ _ _ _ _ (eqtm_wf_ty Hty E))).
+Qed.
+
 (** η: the terms reduce to whnfs, and the premise's applications along. *)
 Lemma alg_funext {G Γ l l' A B t t'} : [ G ; Γ ⊢[ i ] t : tyPi l l' A B @ lmax l l' ] ->
   [ G ; Γ ⊢[ i ] t' : tyPi l l' A B @ lmax l l' ] ->
@@ -324,6 +339,8 @@ Proof.
   - intros * EA Hl HΓ' X. exact (alg_tmne_ctxconv EA Hl HΓ' X).
   - intros * EA Hl HΓ' X. exact (alg_tm_ctxconv EA Hl HΓ' X).
   - intros * EA Hl HΓ' X. exact (alg_tm_ctxconv2 EA Hl HΓ' X).
+  - intros * Hc X. exact (alg_ty_ctxeq Hc X).
+  - intros * Hc X. exact (alg_tm_ctxeq Hc X).
   (* weak head closure *)
   - intros * HT HT' (E & D). refine (conj (@geq_ty_exp DE DEL _ _ _ _ _ _ _ HT HT' E) _).
     destruct (ainv_ty D) as (W0 & W0' & Hr & Hr' & Hw & Hw' & D').

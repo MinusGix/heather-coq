@@ -106,6 +106,43 @@ Proof using Hi Hv.
     eapply wf_conv; [exact (M_mv_tm Hi Jid3 HC3) | rewrite Hi; eapply eqty_lconv; [exact EX3 | exact Hkil]].
 Qed.
 
+(** A signature at equivalent levels. *)
+Lemma MSig_lconv {Γ l l' li k k' ki X A B C} :
+  MSig (G := G) (i := i) Γ l l' li X A B C ->
+  lequiv (gL G) l k -> lequiv (gL G) l' k' -> lequiv (gL G) li ki ->
+  MSig (G := G) (i := i) Γ k k' ki X A B C.
+Proof using Hi Hv.
+  intros HS H1 H2 H3. pose proof HS as (Hl & Hl' & Hli & HX & HA & HB & HC).
+  apply (MEq_sig_r Hi Hv (l := l) (l' := l') (li := li) (X := X) (A := A) (B := B) (C := C)).
+  apply MEq_intro; first [assumption | now apply eqty_refl | now apply eqtm_refl].
+Qed.
+
+(** The contexts of two equal signatures are equivalent. *)
+Lemma MEq_ctxeq {Γ l l' li k k' ki X X' A A' B B' C C'} :
+  MEq (G := G) (i := i) Γ l l' li k k' ki X X' A A' B B' C C' ->
+  [ G ⊢[ i ] Γ ,, X @ li ≅ Γ ,, X' @ ki ] /\
+  [ G ⊢[ i ] Γ ,, X @ li ,, A @ l ≅ Γ ,, X' @ ki ,, A' @ k ] /\
+  [ G ⊢[ i ] Γ ,, X @ li ,, A @ l ,, B @ l' ≅ Γ ,, X' @ ki ,, A' @ k ,, B' @ k' ].
+Proof using Hi.
+  intros (Hlk & Hlk' & Hlik & (Hl & Hl' & Hli & HX & HA & HB & HC) & HXX & HAA & HBB & _).
+  pose proof (eqc_ext _ _ _ _ _ _ _ _ (eqc_refl _ _ _ (ctx_of_wf_ty Hi HX)) HX HXX Hlik) as H1.
+  pose proof (eqc_ext _ _ _ _ _ _ _ _ H1 HA HAA Hlk) as H2.
+  pose proof (eqc_ext _ _ _ _ _ _ _ _ H2 HB HBB Hlk') as H3.
+  tauto.
+Qed.
+
+(** Two converted entries: the contexts are equivalent. *)
+Lemma ctx2_conv {Γ A A' la la' B B' lb lb'} :
+  [ G ; Γ ⊢[ i ] A ≅ A' @ la ] -> lequiv (gL G) la la' ->
+  [ G ; Γ ,, A @ la ⊢[ i ] B ≅ B' @ lb ] -> lequiv (gL G) lb lb' ->
+  [ G ⊢[ i ] Γ ,, A @ la ,, B @ lb ≅ Γ ,, A' @ la' ,, B' @ lb' ].
+Proof using Hi.
+  intros EA Hla EB Hlb.
+  pose proof (eqty_wf_l Hi EA) as HA. pose proof (eqty_wf_l Hi EB) as HB.
+  apply eqc_ext; [apply eqc_ext; [exact (eqc_refl _ _ _ (ctx_of_wf_ty Hi HA)) | exact HA | exact EA | exact Hla]
+                 | exact HB | exact EB | exact Hlb].
+Qed.
+
 End MDecl.
 
 Section MAux.
@@ -251,6 +288,25 @@ Proof using EL.
   - pose proof (geq_tm_wk (r := rlift (rlift (rlift ↑))) ltac:(eapply wkr_up'; [eapply wkr_up'; [eapply wkr_up';
         [apply wkr_shift1 | reflexivity] | reflexivity] | reflexivity]) H3 HCC) as X0.
     rewrite M_E_X3 in X0. exact X0.
+Qed.
+
+(** The other side's view: its signature first. *)
+Lemma MGeq_flip {G Γ l l' li X A B C k k' ki X' A' B' C'} :
+  MGeq G Γ l l' li X A B C k k' ki X' A' B' C' -> MGeq G Γ k k' ki X' A' B' C' l l' li X A B C.
+Proof using EL.
+  intros HG. pose proof (MEq_of_MGeq HG) as HE.
+  pose proof (MEq_sig_r ge_typeof ge_notV HE) as HS'.
+  destruct (MEq_ctxeq ge_typeof HE) as (Q1 & Q2 & Q3).
+  destruct HG as (H1 & H2 & H3 & (W1 & W2 & Wi & HX & HA & HB & HC) & HXX & HAA & HBB & HCC).
+  pose proof (lequiv_sym _ _ _ H1) as H1'. pose proof (lequiv_sym _ _ _ H2) as H2'.
+  pose proof (lequiv_sym _ _ _ H3) as H3'.
+  assert (EX3 : [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢g X⟨↑⟩⟨↑⟩⟨↑⟩ ≅ X'⟨↑⟩⟨↑⟩⟨↑⟩ @ li ])
+    by (eapply wk3_eqty; [exact ge_typeof | exact (ctx_of_wf_tm ge_typeof HC) | exact (geq_ty_sound HXX)]).
+  refine (conj H1' (conj H2' (conj H3' (conj HS' (conj _ (conj _ (conj _ _))))))).
+  - exact (geq_ty_lconv (geq_ty_sym HXX) H3').
+  - exact (geq_ty_ctxeq Q1 (geq_ty_lconv (geq_ty_sym HAA) H1')).
+  - exact (geq_ty_ctxeq Q2 (geq_ty_lconv (geq_ty_sym HBB) H2')).
+  - exact (geq_tm_ctxeq Q3 (geq_tm_lconv (geq_tm_conv (geq_tm_sym HCC) EX3) H3')).
 Qed.
 
 (** ** [out]'s annotations along equal signatures *)
@@ -600,4 +656,105 @@ Proof using EL.
   apply geq_ty_pi; [exact Hl2 | exact (lequiv_max _ _ _ _ _ (lequiv_max _ _ _ _ _ Hl1 Hl2) Hli) | exact HB | exact HBB | exact K].
 Qed.
 
+(** ** The other side's view
+
+    The relations with both sides' arguments swapped. *)
+Definition mflipI {G Γ} (idxR : DomRel G Γ) : DomRel G Γ := fun ρ x x' => idxR ρ x' x.
+Definition mflipS {G Γ} (shR : MShRel G Γ) : MShRel G Γ := fun ρ x x' a a' => shR ρ x' x a' a.
+Definition mflipP {G Γ} (posR : MPosRel G Γ) : MPosRel G Γ :=
+  fun ρ x x' a a' p p' => posR ρ x' x a' a p' p.
+
+Lemma MSide_flip {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR} :
+  MSide G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR ->
+  MSide G Γ r1 r2 ri X' A' B' C' l1 l2 li X A B C (mflipI idxR) (mflipS shR) (mflipP posR).
+Proof using EL.
+  intros HM. pose proof (ms_geq HM) as HG.
+  pose proof HG as (H1 & H2 & H3 & (W1 & W2 & Wi & HX & HA & HB & HC) & HXX & _).
+  pose proof (lequiv_sym _ _ _ H1) as H1'. pose proof (lequiv_sym _ _ _ H2) as H2'.
+  pose proof (lequiv_sym _ _ _ H3) as H3'.
+  pose proof (lequiv_wf_r _ _ _ H1) as W1'. pose proof (lequiv_wf_r _ _ _ H2) as W2'.
+  assert (EXρ : forall ρ : kwk G Γ, [ kw_G ρ ; kw_Δ ρ ⊢g kty ρ X ≅ kty ρ X' @ li ])
+    by (intros ρ; exact (kw_eqty ρ (geq_ty_sound HXX))).
+  unfold mflipI, mflipS, mflipP. split.
+  - exact (MGeq_flip HG).
+  - intros ρ x x' h. eapply geq_tm_lconv; [| exact (kw_lequiv ρ H3')].
+    exact (geq_tm_conv (geq_tm_sym (ms_eI HM ρ x' x h)) (EXρ ρ)).
+  - intros ρ x x' h. exact (geq_ty_lconv (geq_ty_sym (ms_gA HM ρ x' x h)) (kw_lequiv ρ H1')).
+  - intros ρ x x' a a' h ha. eapply geq_tm_lconv; [| exact (kw_lequiv ρ H1')].
+    exact (geq_tm_conv (geq_tm_sym (ms_eS HM ρ x' x a' a h ha)) (geq_ty_sound (ms_gA HM ρ x' x h))).
+  - intros ρ x x' a a' h ha. exact (geq_ty_lconv (geq_ty_sym (ms_gBa HM ρ x' x a' a h ha)) (kw_lequiv ρ H2')).
+  - intros ρ x x' a a' p p' h ha hp. eapply geq_tm_lconv; [| exact (kw_lequiv ρ H2')].
+    exact (geq_tm_conv (geq_tm_sym (ms_eP HM ρ x' x a' a p' p h ha hp)) (geq_ty_sound (ms_gBa HM ρ x' x a' a h ha))).
+  - intros ρ x x' a a' p p' h ha hp. exact (ms_ch HM ρ x' x a' a p' p h ha hp).
+  - intros ρ x x' h. pose proof (geq_ty_sound (ms_gA HM ρ x' x h)) as EA.
+    eapply geq_ty_ctxconv; [exact EA | exact (kw_lequiv ρ H1) | apply ext_wf_g; [| exact (kw_lwf ρ W1')] |].
+    + eapply wft_lconv; [exact (eqty_wf_r ge_typeof EA) | exact (kw_lequiv ρ H1')].
+    + exact (geq_ty_lconv (geq_ty_sym (ms_gB HM ρ x' x h)) (kw_lequiv ρ H2')).
+  - intros ρ x x' h. pose proof (geq_ty_sound (ms_gA HM ρ x' x h)) as EA.
+    pose proof (geq_ty_sound (ms_gB HM ρ x' x h)) as EB.
+    pose proof (ms_gC HM ρ x' x h) as GC.
+    pose proof (ctx_of_eqtm ge_typeof (geq_tm_sound GC)) as HΓ2.
+    pose proof (ctx_pre HΓ2) as HΓ1.
+    assert (EX2 : [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ A)[lsingle x'] @ l1 ,, (ktyll ρ B)[llift (lsingle x')] @ l2
+                    ⊢g (kty ρ X)⟨↑⟩⟨↑⟩ ≅ (kty ρ X')⟨↑⟩⟨↑⟩ @ li ])
+      by exact (wk1_eqty _ ge_layer ge_typeof _ _ _ _ _ _ HΓ2 (wk1_eqty _ ge_layer ge_typeof _ _ _ _ _ _ HΓ1 (EXρ ρ))).
+    pose proof (ctx2_conv ge_typeof EA (kw_lequiv ρ H1) EB (kw_lequiv ρ H2)) as Q.
+    exact (geq_tm_ctxeq Q (geq_tm_lconv (geq_tm_conv (geq_tm_sym GC) EX2) (kw_lequiv ρ H3'))).
+  - intros ρ x x' a a' h ha. pose proof (geq_ty_sound (ms_gBa HM ρ x' x a' a h ha)) as EB.
+    pose proof (ms_gCa HM ρ x' x a' a h ha) as GC.
+    pose proof (ctx_of_eqtm ge_typeof (geq_tm_sound GC)) as HΓ1.
+    assert (EX1 : [ kw_G ρ ; kw_Δ ρ ,, (ktyll ρ B)[lsingle2 x' a'] @ l2 ⊢g (kty ρ X)⟨↑⟩ ≅ (kty ρ X')⟨↑⟩ @ li ])
+      by exact (wk1_eqty _ ge_layer ge_typeof _ _ _ _ _ _ HΓ1 (EXρ ρ)).
+    eapply geq_tm_ctxconv; [exact EB | exact (kw_lequiv ρ H2) | apply ext_wf_g; [| exact (kw_lwf ρ W2')] |].
+    + eapply wft_lconv; [exact (eqty_wf_r ge_typeof EB) | exact (kw_lequiv ρ H2')].
+    + exact (geq_tm_lconv (geq_tm_conv (geq_tm_sym GC) EX1) (kw_lequiv ρ H3')).
+  - intros ρ ρ' x x' h. exact (ms_imon HM ρ ρ' x' x h).
+  - intros ρ ρ' x x' a a' h ha. exact (ms_shmon HM ρ ρ' x' x a' a h ha).
+  - intros ρ ρ' x x' a a' p p' h ha hp. exact (ms_posmon HM ρ ρ' x' x a' a p' p h ha hp).
+  - intros ρ1 ρ2 Eρ x x' h. exact (ms_iinv HM ρ1 ρ2 Eρ x' x h).
+  - intros ρ1 ρ2 Eρ x x' a a' h ha. exact (ms_shinv HM ρ1 ρ2 Eρ x' x a' a h ha).
+  - intros ρ1 ρ2 Eρ x x' a a' p p' h ha hp. exact (ms_posinv HM ρ1 ρ2 Eρ x' x a' a p' p h ha hp).
+Qed.
+
+(** ** A child of related indices, shapes and positions *)
+
+Lemma LK_lsingle3 a b c : nftm a -> nftm b -> nftm c -> LK nftm (lsingle3 a b c).
+Proof using. intros Ha Hb Hc [|[|[|n]]]; cbn; auto. Qed.
+
+Lemma MSide_child {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR m m'}
+    (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) a a' p p' :
+  MSide G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR -> nftm m -> nftm m' ->
+  (forall ρ, idxR ρ (ktm ρ m) (ktm ρ m')) ->
+  shR ρ (ktm ρ m) (ktm ρ m') a a' ->
+  posR (kw_comp ρ ρ') (ktm (kw_comp ρ ρ') m) (ktm (kw_comp ρ ρ') m') (ktm ρ' a) (ktm ρ' a') p p' ->
+  nftm (ktmlll (kw_comp ρ ρ') C)[lsingle3 (ktm (kw_comp ρ ρ') m) (ktm ρ' a) p] /\
+  nftm (ktmlll (kw_comp ρ ρ') C')[lsingle3 (ktm (kw_comp ρ ρ') m') (ktm ρ' a') p'] /\
+  (forall ρ'' : kwk (kw_G ρ') (kw_Δ ρ'), idxR (kw_comp (kw_comp ρ ρ') ρ'')
+      (ktm ρ'' (ktmlll (kw_comp ρ ρ') C)[lsingle3 (ktm (kw_comp ρ ρ') m) (ktm ρ' a) p])
+      (ktm ρ'' (ktmlll (kw_comp ρ ρ') C')[lsingle3 (ktm (kw_comp ρ ρ') m') (ktm ρ' a') p'])).
+Proof using EL.
+  intros HM Nm Nm' I ha hp.
+  set (ρ1 := kw_comp ρ ρ').
+  assert (Sa : shR ρ1 (ktm ρ1 m) (ktm ρ1 m') (ktm ρ' a) (ktm ρ' a')).
+  { subst ρ1. rewrite !ktm_comp. exact (ms_shmon HM ρ ρ' _ _ _ _ (I ρ) ha). }
+  pose proof (geq_tm_sound (ms_eP HM ρ1 _ _ _ _ _ _ (I ρ1) Sa hp)) as Ep.
+  pose proof (wf_tm_nf (eqtm_wf_l ge_typeof Ep)) as Np.
+  pose proof (wf_tm_nf (eqtm_wf_r ge_typeof Ep)) as Np'.
+  assert (Nr : forall t : tm, nftm (ktm ρ1 t)) by (intros; unfold ktm; apply ren_nf).
+  assert (Nr' : forall t : tm, nftm (ktm ρ' t)) by (intros; unfold ktm; apply ren_nf).
+  assert (Nl : forall t : tm, nftm (ktmlll ρ1 t)) by (intros; unfold ktmlll; apply ren_nf).
+  refine (conj _ (conj _ _)).
+  - apply subst_nf; [apply Nl | apply LK_lsingle3; auto].
+  - apply subst_nf; [apply Nl | apply LK_lsingle3; auto].
+  - intros ρ''.
+    pose proof (ms_shmon HM ρ1 ρ'' _ _ _ _ (I ρ1) Sa) as Sa'.
+    pose proof (ms_posmon HM ρ1 ρ'' _ _ _ _ _ _ (I ρ1) Sa hp) as hp'.
+    rewrite <- !(ktm_comp ρ1 ρ'') in Sa', hp'.
+    pose proof (ms_ch HM _ _ _ _ _ _ _ (I (kw_comp ρ1 ρ'')) Sa' hp') as Y.
+    rewrite !ktm_lsingle3, <- !(ktmlll_comp ρ1 ρ''), <- !(ktm_comp ρ1 ρ''). exact Y.
+Qed.
+
 End MAuxSide.
+
+(** Normality of syntax in a world. *)
+Ltac kw_nf := unfold kty, ktyl, ktyll, ktmlll, ktm; first [apply ren_nf_ty | apply ren_nf].

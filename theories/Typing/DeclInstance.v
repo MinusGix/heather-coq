@@ -97,6 +97,8 @@ Proof.
   (* context conversion *)
   1-4: intros; intuition eauto using stab_eqty, stab_eqtm.
   - intros * EA Hl HΓ' H. exact (mv_eqtm Hty (stab2_lsub Hty EA Hl HΓ') H).
+  - intros * Hc H. exact (mv_eqty Hty (eqc_lsub_id Hty Hc) H).
+  - intros * Hc H. exact (mv_eqtm Hty (eqc_lsub_id Hty Hc) H).
   (* weak head closure *)
   - intros * [_ _ HT] [_ _ HT'] HW.
     eauto using eqty_trans, eqty_sym.

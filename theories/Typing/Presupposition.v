@@ -628,3 +628,14 @@ Proof.
   pose proof (ctx_conv_ext2 Hi Hid0 HA EA HA' Hl) as Hid1.
   exact (ctx_conv_ext2 Hi Hid1 HB0 (eqty_refl _ _ _ _ _ HB0) HB0 (lequiv_refl _ _ Hlb)).
 Qed.
+
+(** The identity from a context equivalence. *)
+Lemma eqc_lsub_id {G i} (Hi : typeof i = i) {Γ Γ'} : [ G ⊢[ i ] Γ ≅ Γ' ] -> [ G ; Γ' ⊢[ i ] lshift 0 : Γ ].
+Proof.
+  intros H; revert Hi.
+  induction H as [G0 i0 HG | G0 i0 g HG Hg | G0 i0 Γ Γ' A A' l l' _ IH HA HAA Hl]; intros Hi.
+  - apply lsub_wf_id; [exact Hi | now apply wfc_nil].
+  - apply lsub_wf_id; [exact Hi | now apply wfc_var].
+  - exact (proj2 (ctx_conv_ext Hi (IH Hi) HA HAA (eqty_wf_r Hi HAA) Hl)).
+Qed.
+
