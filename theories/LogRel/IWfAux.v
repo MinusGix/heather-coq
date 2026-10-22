@@ -208,9 +208,6 @@ Qed.
 
 End IWfAux.
 
-Lemma ren_id_tm (t : tm) : nftm t -> t⟨rshift 0⟩ = t.
-Proof. intros H. rewrite (ren_as_subst _ _ (lshift 0)); [apply subst_id; auto|]; intros; cbn; f_equal; lia. Qed.
-
 Lemma liftshift_single_var (t : tm) : nftm t -> t⟨rlift ↑⟩[lsingle (var 0)] = t.
 Proof.
   intros Ht. rewrite (ren_subst _ _ _ (lshift 0)).
@@ -227,21 +224,6 @@ Qed.
     escape gives at related positions. *)
 Section IWfGeq.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
-
-(** The world of the context itself, and of its extension by one entry. *)
-Definition kw_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) : kwk G Γ := kw_loc wk_id (wkwf_id Γ) HΓ.
-Definition kw_wk1 {G Γ A l} (HΓA : [ G ; Γ ,, A @ l ⊢g ]) : kwk G Γ :=
-  kw_loc wk1 (wkwf_step _ _ _ _ _ (wkwf_id Γ)) HΓA.
-
-Lemma ktm_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) t : nftm t -> ktm (kw_self HΓ) t = t.
-Proof. intros H. unfold ktm, kw_self, kw_loc; cbn [kw_γ kw_r gwa wk_ren]. now apply ren_id_tm. Qed.
-Lemma ktml_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) t : nftm t -> ktml (kw_self HΓ) t = t.
-Proof.
-  intros H. unfold ktml, kw_self, kw_loc; cbn [kw_γ kw_r gwa wk_ren].
-  rewrite <- (ren_id_tm t H) at 2. apply ren_ext_tm. intros [|n]; rlk_simpl; cbn; lia.
-Qed.
-Lemma kty_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) T : nfty T -> kty (kw_self HΓ) T = T.
-Proof. intros H. unfold kty, kw_self, kw_loc; cbn [kw_γ kw_r gwa wk_ren]. now apply ren_id_ty. Qed.
 
 (** Families under [Fin n] moved to [Fin w] at [n ≅ w]. *)
 Lemma fin_stab_eqty {G Γ n w T T' L} : [ G ; Γ ⊢g n ≅ w : tyNat @ lzero ] ->
