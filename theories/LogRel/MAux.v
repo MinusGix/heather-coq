@@ -309,6 +309,28 @@ Proof using EL.
   - exact (geq_tm_ctxeq Q3 (geq_tm_lconv (geq_tm_conv (geq_tm_sym HCC) EX3) H3')).
 Qed.
 
+(** Composed: the second's equalities moved to the first's contexts and
+    levels. *)
+Lemma MGeq_trans {G Γ l l' li X A B C k k' ki X' A' B' C' r r' ri X'' A'' B'' C''} :
+  MGeq G Γ l l' li X A B C k k' ki X' A' B' C' -> MGeq G Γ k k' ki X' A' B' C' r r' ri X'' A'' B'' C'' ->
+  MGeq G Γ l l' li X A B C r r' ri X'' A'' B'' C''.
+Proof using EL.
+  intros H12 H23. pose proof (MEq_sym ge_typeof ge_notV (MEq_of_MGeq H12)) as HE.
+  destruct (MEq_ctxeq ge_typeof HE) as (Q1 & Q2 & Q3).
+  destruct H12 as (H1 & H2 & H3 & HS & HXX & HAA & HBB & HCC).
+  pose proof HS as (W1 & W2 & Wi & HX & HA & HB & HC).
+  destruct H23 as (K1 & K2 & K3 & _ & GXX & GAA & GBB & GCC).
+  assert (EX3 : [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢g X'⟨↑⟩⟨↑⟩⟨↑⟩ ≅ X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ])
+    by (eapply wk3_eqty; [exact ge_typeof | exact (ctx_of_wf_tm ge_typeof HC)
+                         | exact (eqty_sym _ _ _ _ _ _ (geq_ty_sound HXX))]).
+  refine (conj (lequiv_trans _ _ _ _ H1 K1) (conj (lequiv_trans _ _ _ _ H2 K2)
+            (conj (lequiv_trans _ _ _ _ H3 K3) (conj HS (conj _ (conj _ (conj _ _))))))).
+  - exact (geq_ty_trans HXX (geq_ty_lconv GXX H3)).
+  - exact (geq_ty_trans HAA (geq_ty_ctxeq Q1 (geq_ty_lconv GAA H1))).
+  - exact (geq_ty_trans HBB (geq_ty_ctxeq Q2 (geq_ty_lconv GBB H2))).
+  - exact (geq_tm_trans HCC (geq_tm_conv (geq_tm_ctxeq Q3 (geq_tm_lconv GCC H3)) EX3)).
+Qed.
+
 (** ** [out]'s annotations along equal signatures *)
 
 Lemma MEq_of_MAnn {G Γ l l' li X A B C j k k' ki X1 A1 B1 C1 j1} :
