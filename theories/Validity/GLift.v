@@ -4,7 +4,7 @@
     [Fundamental] so that the [Wf] eliminator's [nth] lemmas can lift the
     validity lemmas they compose, M15a). *)
 From DeLaM.Validity Require Export Vec.
-From DeLaM.LogRel Require IWfAux.
+From DeLaM.LogRel Require IWfAux MAux.
 
 (** ** Lifting to global weakenings
 
@@ -128,6 +128,9 @@ Ltac gl_push_at h k := lazymatch h with
   | @tmDNth => k gwa_tmDNth
   | @iwfIH => k gwa_iwfIH
   | @iwfFam => k gwa_iwfFam
+  | @tyM => k MAux.gwa_tyM
+  | @tmCorec => k MAux.gwa_corec
+  | @tmOut => k MAux.gwa_out
   end.
 Ltac gl_push := repeat match goal with
   | |- context [@gwa _ _ _ ?t] => let h := head_of t in gl_push_at h ltac:(fun L => rewrite L)

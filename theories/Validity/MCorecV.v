@@ -7,7 +7,7 @@
     a further [corec] (related at depth [n] by the induction hypothesis)
     or a finished [M] term (related at every depth). *)
 From DeLaM.Validity Require Export MCorec.
-From DeLaM.Validity Require Import RelIntro.
+From DeLaM.Validity Require Import RelIntro MStepV.
 From DeLaM.LogRel Require Import MAux MIdx.
 From DeLaM.Typing Require Import PresupM.
 
@@ -1321,9 +1321,9 @@ Context {G : gctx} {Γ : ctx} {l l' li k k' ki kc kc' : lvl} {X X' A A' B B' Y Y
   (VB : VTyG G (Γ ,, X @ li ,, A @ l) B B' l')
   (VC : VTmG G (Γ ,, X @ li ,, A @ l ,, B @ l') C C' X⟨↑⟩⟨↑⟩⟨↑⟩ li)
   (VY : VTyG G (Γ ,, X @ li) Y Y' kc)
-  (Vstep : VTyG G (Γ ,, X @ li) (mStepTy l l' li X A B C kc Y) (mStepTy k k' ki X' A' B' C' kc' Y')
-             (lmax l (lmax kc (mlvl l l' li))))
   (Vc : VTmG G (Γ ,, X @ li ,, Y @ kc) c c' (mStepTy l l' li X A B C kc Y)⟨↑⟩ (lmax l (lmax kc (mlvl l l' li))))
+  (HX : [ G ; Γ ⊢g X @ li ]) (HA : [ G ; Γ ,, X @ li ⊢g A @ l ]) (HB : [ G ; Γ ,, X @ li ,, A @ l ⊢g B @ l' ])
+  (HC : [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢g C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ]) (HY : [ G ; Γ ,, X @ li ⊢g Y @ kc ])
   (Vm : VTm G Γ m m' X li) (Vy : VTm G Γ y y' Y[lsingle m] kc).
 
 (** The premises at related substitutions, in the identity world: the
@@ -1356,7 +1356,8 @@ Qed.
 
 Lemma V_corec : VTm G Γ (tmCorec l l' li X A B C kc Y c m y) (tmCorec k k' ki X' A' B' C' kc' Y' c' m' y')
   (tyM l l' li X A B C m) (mlvl l l' li).
-Proof using EL VL VN VX VA VB VC VY Vstep Vc Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Vm Vy.
+Proof using EL VL VN VX VA VB VC VY Vc Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc HX HA HB HC HY Vm Vy.
+  pose proof (VG_mStepTy Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc VX VA VB VC VY HX HA HB HC HY) as Vstep.
   intros Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ.
   rewrite !subst_corec, !subst_tyM.
   pose proof (Vm _ _ _ Hd) as Xm.
@@ -1384,7 +1385,8 @@ Qed.
 Lemma V_out_corec :
   VTm G Γ (tmOut l l' li X A B C m (tmCorec l l' li X A B C kc Y c m y)) (mOutCorec k k' ki X' A' B' C' kc' Y' c' m' y')
     (mOutTy l l' li X A B C m) (lmax l (mlvl l l' li)).
-Proof using EL VL VN VX VA VB VC VY Vstep Vc Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Vm Vy.
+Proof using EL VL VN VX VA VB VC VY Vc Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc HX HA HB HC HY Vm Vy.
+  pose proof (VG_mStepTy Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc VX VA VB VC VY HX HA HB HC HY) as Vstep.
   intros Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd']. pose proof (SubRel_ctx Hd) as HΔ.
   rewrite subst_out, subst_corec, !subst_mOutTy, (subst_mOutCorec _ _ _ _ _ _ _ _ _ _ _ _ _ Nd') by assumption.
   pose proof (Vm _ _ _ Hd) as Xm. destruct (LRtm_escape Xm) as [Hmd Hm'd].
