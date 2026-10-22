@@ -246,6 +246,7 @@ Fixpoint dnfty (T : ty) : Prop :=
   | tySq _ A => dnfty A
   | tyDVec _ n F => dnftm n /\ dnfty F
   | tyIWf _ _ X A N Ot C m => dnfty X /\ dnfty A /\ dnftm N /\ dnftm Ot /\ dnftm C /\ dnftm m
+  | tyM _ _ _ X A B C j => dnfty X /\ dnfty A /\ dnfty B /\ dnftm C /\ dnftm j
   | tyEl _ t => dnftm t
   | tyGvar _ d => dnfl d
   | tyCTyp Δ _ => dnfctx Δ
@@ -296,6 +297,9 @@ with dnftm (t : tm) : Prop :=
   | tmSqCode _ s => dnftm s
   | tmDVec _ n f => dnftm n /\ dnftm f
   | tmIWf _ _ x s n o c m => dnftm x /\ dnftm s /\ dnftm n /\ dnftm o /\ dnftm c /\ dnftm m
+  | tmCorec _ _ _ X A B C _ Y c j y =>
+      dnfty X /\ dnfty A /\ dnfty B /\ dnftm C /\ dnfty Y /\ dnftm c /\ dnftm j /\ dnftm y
+  | tmOut _ _ _ X A B C j m => dnfty X /\ dnfty A /\ dnfty B /\ dnftm C /\ dnftm j /\ dnftm m
   | tmRefl _ A a => dnfty A /\ dnftm a
   | tmId _ s t u => dnftm s /\ dnftm t /\ dnftm u
   | tmSEq _ s t u => dnftm s /\ dnftm t /\ dnftm u

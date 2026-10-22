@@ -36,6 +36,9 @@ Fixpoint ty_leq (T T' : ty) {struct T} : Prop :=
   | tyIWf l li X A N Ot C m, tyIWf l' li' X' A' N' Ot' C' m' =>
       leqv l l' /\ leqv li li' /\ ty_leq X X' /\ ty_leq A A' /\ tm_leq N N' /\ tm_leq Ot Ot' /\
       tm_leq C C' /\ tm_leq m m'
+  | tyM l l1 li X A B C j, tyM l' l1' li' X' A' B' C' j' =>
+      leqv l l' /\ leqv l1 l1' /\ leqv li li' /\ ty_leq X X' /\ ty_leq A A' /\ ty_leq B B' /\
+      tm_leq C C' /\ tm_leq j j'
   | tyUnit l, tyUnit l' | tySEmpty l, tySEmpty l' | tyEmpty l, tyEmpty l' => leqv l l'
   | tySEq l A a b, tySEq l' A' a' b' => leqv l l' /\ ty_leq A A' /\ tm_leq a a' /\ tm_leq b b'
   | tyId l A a b, tyId l' A' a' b' => leqv l l' /\ ty_leq A A' /\ tm_leq a a' /\ tm_leq b b'
@@ -129,6 +132,12 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
   | tmElimIWf l li l2 X A N Ot C M c m t, tmElimIWf l' li' l2' X' A' N' Ot' C' M' c' m' t' =>
       leqv l l' /\ leqv li li' /\ leqv l2 l2' /\ ty_leq X X' /\ ty_leq A A' /\ tm_leq N N' /\
       tm_leq Ot Ot' /\ tm_leq C C' /\ ty_leq M M' /\ tm_leq c c' /\ tm_leq m m' /\ tm_leq t t'
+  | tmCorec l l1 li X A B C k Y c j y, tmCorec l' l1' li' X' A' B' C' k' Y' c' j' y' =>
+      leqv l l' /\ leqv l1 l1' /\ leqv li li' /\ ty_leq X X' /\ ty_leq A A' /\ ty_leq B B' /\
+      tm_leq C C' /\ leqv k k' /\ ty_leq Y Y' /\ tm_leq c c' /\ tm_leq j j' /\ tm_leq y y'
+  | tmOut l l1 li X A B C j m, tmOut l' l1' li' X' A' B' C' j' m' =>
+      leqv l l' /\ leqv l1 l1' /\ leqv li li' /\ ty_leq X X' /\ ty_leq A A' /\ ty_leq B B' /\
+      tm_leq C C' /\ tm_leq j j' /\ tm_leq m m'
   | _, _ => False
   end
 with ctx_leq (Γ Γ' : ctx) {struct Γ} : Prop :=
