@@ -122,4 +122,18 @@ Proof using EL.
   eapply geq_tm_conv; [exact GEQ | exact ES].
 Qed.
 
+(** Anti-reduction, as [SigRel_red]. *)
+Lemma PiRel_red {G Γ l1 l2 l3 l4 A B A' B' domR codR t t' u u'} :
+  PiRel G Γ l1 l2 l3 l4 A B A' B' domR codR u u' ->
+  [ G ; Γ ⊢g t ⤳* u : tyPi l1 l2 A B @ lmax l1 l2 ] -> [ G ; Γ ⊢g t' ⤳* u' : tyPi l3 l4 A' B' @ lmax l1 l2 ] ->
+  PiRel G Γ l1 l2 l3 l4 A B A' B' domR codR t t'.
+Proof using .
+  intros (w & w' & R1 & R2 & Hrest) H1 H2. exists w, w'.
+  exact (conj (tmred_trans _ _ _ _ _ H1 R1) (conj (tmred_trans _ _ _ _ _ H2 R2) Hrest)).
+Qed.
+
+(** The world of one more local acts as the shift. *)
+Lemma kwk1_ty {G Δ A l} (Hw1 : wk1 : (Δ ,, A @ l) ≤ Δ) HΔA (T : ty) : kty (kw_loc (G := G) wk1 Hw1 HΔA) T = T⟨↑⟩.
+Proof using . unfold kty, kw_loc; cbn [kw_γ kw_r gwa]. reflexivity. Qed.
+
 End RelIntro.
