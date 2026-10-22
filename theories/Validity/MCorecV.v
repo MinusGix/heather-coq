@@ -348,6 +348,17 @@ Proof using .
 Qed.
 
 (** A child's type in a world. *)
+(** [MOutR] at every depth is [MOutR] at [MR], as in [MR_out]. *)
+Lemma MOutR_lim {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' u u'} :
+  (forall n, MOutR (MRn n) G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' u u') ->
+  MOutR MR G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' u u'.
+Proof using .
+  intros Hn. unfold MOutR in Hn |- *. refine (SigRel_lim _ _ Hn).
+  - intros n ρ0 a a' h h' v v' Hv. exact Hv.
+  - intros ρ0 a a' h v v' Hv. refine (PiRel_lim _ Hv).
+    intros ρ' p p' hp w w' Hw n. exact (Hw n).
+Qed.
+
 Lemma kw_kid {G Γ} (ρ : kwk G Γ) l l' li (X A B : ty) (C j a : tm) :
   ktyl ρ (tyM l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩ C[llift (lsingle2 j a)]) =
   tyM l l' li (kty ρ X)⟨↑⟩ (ktyl ρ A)⟨rlift ↑⟩ (ktyll ρ B)⟨rlift (rlift ↑)⟩ (ktmlll ρ C)⟨rlift (rlift (rlift ↑))⟩
@@ -1299,5 +1310,131 @@ Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd
 Qed.
 
 End CorecV.
+
+(** ** The rules *)
+
+Section CorecRules.
+Context {G : gctx} {Γ : ctx} {l l' li k k' ki kc kc' : lvl} {X X' A A' B B' Y Y' : ty} {C C' c c' m m' y y' : tm}
+  (Hwl : lwf (gL G) l) (Hwl' : lwf (gL G) l') (Hwli : lwf (gL G) li) (Hwc : lwf (gL G) kc)
+  (Hk : lequiv (gL G) k l) (Hk' : lequiv (gL G) k' l') (Hki : lequiv (gL G) ki li) (Hkc : lequiv (gL G) kc' kc)
+  (VX : VTyG G Γ X X' li) (VA : VTyG G (Γ ,, X @ li) A A' l)
+  (VB : VTyG G (Γ ,, X @ li ,, A @ l) B B' l')
+  (VC : VTmG G (Γ ,, X @ li ,, A @ l ,, B @ l') C C' X⟨↑⟩⟨↑⟩⟨↑⟩ li)
+  (VY : VTyG G (Γ ,, X @ li) Y Y' kc)
+  (Vstep : VTyG G (Γ ,, X @ li) (mStepTy l l' li X A B C kc Y) (mStepTy k k' ki X' A' B' C' kc' Y')
+             (lmax l (lmax kc (mlvl l l' li))))
+  (Vc : VTmG G (Γ ,, X @ li ,, Y @ kc) c c' (mStepTy l l' li X A B C kc Y)⟨↑⟩ (lmax l (lmax kc (mlvl l l' li))))
+  (Vm : VTm G Γ m m' X li) (Vy : VTm G Γ y y' Y[lsingle m] kc).
+
+(** The premises at related substitutions, in the identity world: the
+    index related by the canonical relation, the seed at the carrier,
+    and the normal forms the identity world's renamings need. *)
+Lemma corec_self {Δ d d'} (Hd : SubRel G Γ Δ d d') (HΔ : [ G ; Δ ⊢g ]) :
+  mIdx (G := G) (X := X) (X' := X') (l := l) (l' := l') (li := li) Δ d d' (kw_self HΔ) m[d] m'[d'] /\
+  LRtm kc G Δ Y[llift d][lsingle m[d]] Y[llift d'][lsingle m'[d']] y[d] y'[d'] /\
+  nftm m[d] /\ nftm m'[d'] /\ nftm y[d] /\ nftm y'[d'] /\
+  nfty Y[llift d] /\ nfty Y[llift d'] /\ nfty Y'[llift d'] /\ nftm c[llift (llift d)] /\ nftm c'[llift (llift d')].
+Proof using EL VL VN VX VY Vc Hwli Hwc Vm Vy.
+  destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
+  pose proof (Vm _ _ _ Hd) as Xm. pose proof (Vy _ _ _ Hd) as Xy.
+  rewrite (single_subst_ty _ Nd), (single_subst_ty _ Nd') in Xy.
+  destruct (LRtm_escape Xm) as [Hmd Hm'd]. destruct (LRtm_escape Xy) as [Hyd Hy'd].
+  pose proof (VTy_refl_l (VTyG_loc VY) _ _ _ (SubRel_cons Hd Xm)) as TY.
+  rewrite <- (lift_single_ty _ _ _ Nd), <- (lift_single_ty _ _ _ Nd') in TY.
+  destruct (VTyG_loc VX _ _ _ Hd) as [RX HRX]. destruct (escape_ty _ _ _ _ _ _ _ _ HRX) as (HXD & _ & _).
+  pose proof (SubRel_lift Hd (VTy_refl_l (VTyG_loc VX)) HXD Hwli) as Hl1.
+  destruct (VTyG_loc VY _ _ _ Hl1) as [RY HRY]. destruct (escape_ty _ _ _ _ _ _ _ _ HRY) as (HYD & HYD' & _).
+  destruct (VTy_refl_l (VTyG_loc VY) _ _ _ Hl1) as [RY0 HRY0].
+  destruct (escape_ty _ _ _ _ _ _ _ _ HRY0) as (_ & HYD0 & _).
+  pose proof (SubRel_lift Hl1 (VTy_refl_l (VTyG_loc VY)) HYD Hwc) as Hl2.
+  destruct (LRtm_escape (VTmG_loc Vc _ _ _ Hl2)) as [Hcd Hc'd].
+  refine (conj _ (conj (LRtm_irrel_r Xy TY) (conj (wf_tm_nf Hmd) (conj (wf_tm_nf Hm'd) (conj (wf_tm_nf Hyd)
+            (conj (wf_tm_nf Hy'd) (conj (wf_ty_nf HYD) (conj (wf_ty_nf HYD0) (conj (wf_ty_nf HYD') (conj (wf_tm_nf Hcd) (wf_tm_nf Hc'd))))))))))).
+  apply (mIdx_iff VX Hd). pose proof (LRtm_kw (kw_self HΔ) Xm) as Z.
+  rewrite !ktm_self in Z by exact (wf_tm_nf Hmd) || exact (wf_tm_nf Hm'd). exact Z.
+Qed.
+
+Lemma V_corec : VTm G Γ (tmCorec l l' li X A B C kc Y c m y) (tmCorec k k' ki X' A' B' C' kc' Y' c' m' y')
+  (tyM l l' li X A B C m) (mlvl l l' li).
+Proof using EL VL VN VX VA VB VC VY Vstep Vc Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Vm Vy.
+  intros Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ.
+  rewrite !subst_corec, !subst_tyM.
+  pose proof (Vm _ _ _ Hd) as Xm.
+  destruct (corec_self Hd HΔ) as (hjj & hy & Nm & Nm' & Ny & Ny' & NY & NYd & NY' & Nc & Nc').
+  destruct (MGeq_nf (ms_geq (m_side Hwl Hwl' Hwli Hk Hk' Hki VX VA VB VC Hd)))
+    as (NX & NA & NB & NC & NX' & NA' & NB' & NC').
+  eapply LRtm_irrel_r.
+  - eexists; split; [exact (LR_M_at Hwl Hwl' Hwli Hk Hk' Hki VX VA VB VC _ _ _ _ _ Hd Xm) |].
+    intros n.
+    assert (hy' : LRtm kc (kw_G (kw_self HΔ)) (kw_Δ (kw_self HΔ)) (ktyl (kw_self HΔ) Y[llift d])[lsingle m[d]]
+                    (ktyl (kw_self HΔ) Y[llift d'])[lsingle m'[d']] y[d] y'[d'])
+      by (rewrite !ktyl_self by assumption; exact hy).
+    pose proof (corec_all Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc VX VA VB VC VY Vstep Vc Hd n (kw_self HΔ) _ _ _ _ hjj hy')
+      as H.
+    rewrite !kty_self, !ktyl_self, !ktyll_self, !ktmlll_self, !ktmll_self in H by assumption.
+    eapply MRn_impl; [| | exact H]; intros ρ *.
+    + exact (proj1 (mSh_eqv (kw_eqv_self HΔ ρ) _ _ _ _)).
+    + exact (proj2 (mPos_eqv (kw_eqv_self HΔ ρ) _ _ _ _ _ _)).
+  - pose proof (VTm_trans Vm (VTm_sym Vm) _ _ _ Hd) as Xmm.
+    eexists. exact (LR_M_at Hwl Hwl' Hwli (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') (lequiv_refl _ _ Hwli)
+                      (VTyG_refl_l VX) (VTyG_refl_l VA) (VTyG_refl_l VB) (VTmG_trans VC (VTmG_sym VC))
+                      _ _ _ _ _ Hd Xmm).
+Qed.
+
+Lemma V_out_corec :
+  VTm G Γ (tmOut l l' li X A B C m (tmCorec l l' li X A B C kc Y c m y)) (mOutCorec k k' ki X' A' B' C' kc' Y' c' m' y')
+    (mOutTy l l' li X A B C m) (lmax l (mlvl l l' li)).
+Proof using EL VL VN VX VA VB VC VY Vstep Vc Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Vm Vy.
+  intros Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd']. pose proof (SubRel_ctx Hd) as HΔ.
+  rewrite subst_out, subst_corec, !subst_mOutTy, (subst_mOutCorec _ _ _ _ _ _ _ _ _ _ _ _ _ Nd') by assumption.
+  pose proof (Vm _ _ _ Hd) as Xm. destruct (LRtm_escape Xm) as [Hmd Hm'd].
+  destruct (corec_self Hd HΔ) as (hjj & hy & Nm & Nm' & Ny & Ny' & NY & NYd & NY' & Nc & Nc').
+  pose proof (ms_geq (m_side Hwl Hwl' Hwli Hk Hk' Hki VX VA VB VC Hd)) as HG.
+  destruct (MGeq_nf HG) as (NX & NA & NB & NC & NX' & NA' & NB' & NC').
+  pose proof (MEq_of_MGeq HG) as HE. pose proof (MEq_sig_r ge_typeof ge_notV HE) as HS'.
+  pose proof HE as (_ & _ & _ & HS & HXX & _).
+  assert (Hm'' : [ G ; Δ ⊢g m'[d'] : X'[d'] @ ki ]).
+  { eapply wf_lconv; [eapply wf_conv; [exact Hm'd | rewrite ge_typeof; exact (eqty_sym _ _ _ _ _ _ HXX)] | exact Hki]. }
+  set (ρ0 := kw_self HΔ).
+  assert (hy' : LRtm kc (kw_G ρ0) (kw_Δ ρ0) (ktyl ρ0 Y[llift d])[lsingle m[d]]
+                  (ktyl ρ0 Y[llift d'])[lsingle m'[d']] y[d] y'[d'])
+    by (unfold ρ0; rewrite !ktyl_self by assumption; exact hy).
+  (* the reducts, related at [out]'s type *)
+  assert (Hn := fun n => pair_at Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc VX VA VB VC VY Vstep Vc Hd n
+                  (corec_all Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc VX VA VB VC VY Vstep Vc Hd n) ρ0 _ _ _ _ hjj hy').
+  pose proof (MOutR_lim Hn) as Hp.
+  pose proof (LR_out_kw Hwl Hwl' Hwli Hk Hk' Hki VX VA VB VC Hd ρ0 _ _ Nm Nm' (fun ρ => m_imon VX Hd ρ0 ρ _ _ hjj))
+    as Hout.
+  (* [out] of the left [corec] steps to its reduct *)
+  pose proof (proj1 (mIdx_iff VX Hd ρ0 _ _) hjj) as hjL.
+  pose proof (LRtm_trans hjL (LRtm_sym hjL)) as hj. pose proof (LRtm_trans (LRtm_sym hjL) hjL) as hj'.
+  pose proof (red_at Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc VX VA VB VC VY Vc Hd ρ0 _ _ _ _ _ _ hjj hj hj' hy') as R.
+  unfold ρ0 in Hp, Hout, R.
+  rewrite !kty_self, !ktyl_self, !ktyll_self, !ktmlll_self in Hp, Hout, R by assumption.
+  rewrite !ktmll_self in Hp by assumption. rewrite !ktmll_self in R by assumption.
+  rewrite ?(ktyl_self HΔ Y[llift d] NY), ?(ktyl_self HΔ Y'[llift d'] NY') in R.
+  rewrite ?(ktyl_self HΔ Y[llift d] NY), ?(ktyl_self HΔ Y'[llift d'] NY') in Hp.
+  destruct (R _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (MAnn_refl HS Hmd) (MAnn_refl HS' Hm'')) as [RL RR].
+  (* the right-hand type: [out]'s type at the left signature on both sides *)
+  pose proof (VTm_trans Vm (VTm_sym Vm) _ _ _ Hd) as Xmm.
+  pose proof (wf_tm_nf (proj2 (LRtm_escape Xmm))) as Nmd'.
+  assert (hi0 : forall ρ : kwk (kw_G ρ0) (kw_Δ ρ0),
+             mIdx (X := X) (X' := X) (l := l) (l' := l') (li := li) Δ d d' (kw_comp ρ0 ρ) (ktm ρ m[d]) (ktm ρ m[d'])).
+  { intros ρ. apply (mIdx_iff (VTyG_refl_l VX) Hd). pose proof (LRtm_kw (kw_comp ρ0 ρ) Xmm) as Z.
+    rewrite !ktm_comp in Z. unfold ρ0 in Z. rewrite !ktm_self in Z by assumption. exact Z. }
+  pose proof (LR_out_kw Hwl Hwl' Hwli (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') (lequiv_refl _ _ Hwli)
+                (VTyG_refl_l VX) (VTyG_refl_l VA) (VTyG_refl_l VB) (VTmG_trans VC (VTmG_sym VC)) Hd ρ0 _ _
+                Nm Nmd' hi0) as Hout0.
+  destruct (MGeq_nf (ms_geq (m_side Hwl Hwl' Hwli (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl')
+              (lequiv_refl _ _ Hwli) (VTyG_refl_l VX) (VTyG_refl_l VA) (VTyG_refl_l VB)
+              (VTmG_trans VC (VTmG_sym VC)) Hd))) as (_ & _ & _ & _ & NX0 & NA0 & NB0 & NC0).
+  unfold ρ0 in Hout0. rewrite !kty_self, !ktyl_self, !ktyll_self, !ktmlll_self in Hout0 by assumption.
+  eapply LRtm_irrel_r.
+  - eapply LRtm_red; [| exact RL | exact (tmred_refl _ _ _ (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ RR)))].
+    unfold LRtm, LRrel. rewrite lmeasure_out. eexists. split; [exact Hout | exact Hp].
+  - unfold LRty, LogRel. rewrite lmeasure_out. eexists. exact Hout0.
+Qed.
+
+End CorecRules.
 
 End MCorecV.
