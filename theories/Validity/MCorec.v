@@ -267,10 +267,6 @@ Qed.
 
 (** ** Syntax in a world *)
 
-Lemma gwa_mOutCorec γ l l' li X A B C k Y c j y :
-  (mOutCorec l l' li X A B C k Y c j y)⟦γ⟧ = mOutCorec l l' li X⟦γ⟧ A⟦γ⟧ B⟦γ⟧ C⟦γ⟧ k Y⟦γ⟧ c⟦γ⟧ j⟦γ⟧ y⟦γ⟧.
-Proof using . destruct γ; cbn [gwa]; [reflexivity | apply gren_mOutCorec ..]. Qed.
-
 Section KwOut.
 Context {G : gctx} {Γ : ctx} (ρ : kwk G Γ).
 

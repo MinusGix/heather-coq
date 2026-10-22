@@ -19,6 +19,10 @@ Lemma gwa_corec γ l l' li X A B C k Y c j y :
   (tmCorec l l' li X A B C k Y c j y)⟦γ⟧ = tmCorec l l' li X⟦γ⟧ A⟦γ⟧ B⟦γ⟧ C⟦γ⟧ k Y⟦γ⟧ c⟦γ⟧ j⟦γ⟧ y⟦γ⟧.
 Proof. now destruct γ. Qed.
 
+Lemma gwa_mOutCorec γ l l' li X A B C k Y c j y :
+  (mOutCorec l l' li X A B C k Y c j y)⟦γ⟧ = mOutCorec l l' li X⟦γ⟧ A⟦γ⟧ B⟦γ⟧ C⟦γ⟧ k Y⟦γ⟧ c⟦γ⟧ j⟦γ⟧ y⟦γ⟧.
+Proof. destruct γ; cbn [gwa]; [reflexivity | apply gren_mOutCorec ..]. Qed.
+
 Lemma gwa_lsingle3' (a b c : tm) γ : (lsingle3 a b c)⟦γ⟧ = lsingle3 a⟦γ⟧ b⟦γ⟧ c⟦γ⟧.
 Proof. now destruct γ. Qed.
 
