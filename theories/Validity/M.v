@@ -129,6 +129,15 @@ Proof using EL.
       eapply ctx_lvl_ty; [exact HA' | now apply lequiv_sym | exact HB'].
 Qed.
 
+(** [out]'s own annotations. *)
+Lemma MAnn_refl {G Γ l l' li X A B C j} : MSig (G := G) (i := ge_layer) Γ l l' li X A B C ->
+  [ G ; Γ ⊢g j : X @ li ] -> MAnn G Γ l l' li X A B C j l l' li X A B C j.
+Proof using .
+  intros (Hl & Hl' & Hli & HX & HA & HB & HC) Hj.
+  refine (conj (lequiv_refl _ _ Hl) (conj (lequiv_refl _ _ Hl') (conj (lequiv_refl _ _ Hli) _))).
+  repeat split; first [apply eqty_refl | apply eqtm_refl]; assumption.
+Qed.
+
 (** ** [Σ]'s and [Π]'s relations as limits
 
     A pair related at every depth of a family of codomain relations is
@@ -681,5 +690,80 @@ Proof using EL VL VN VX VA VB VC Hwl Hwl' Hwli Hk Hk' Hki Hd.
 Qed.
 
 End MKw.
+
+Lemma subst_mOutTy l l' li X A B C j d : LK nftm d ->
+  (mOutTy l l' li X A B C j)[d] =
+  mOutTy l l' li X[d] A[llift d] B[llift (llift d)] C[llift (llift (llift d))] j[d].
+Proof using .
+  intros Hd. meq.
+  all: rewrite ?Nat.add_0_r; repeat change (ren_tm ?x ?r) with x⟨r⟩; change (subst_tm ?x ?e) with x[e];
+    rewrite ?shift_llift, ?shift_single by apply Hd; reflexivity.
+Qed.
+
+Lemma lmeasure_out l l' li : lmeasure (lmax l (mlvl l l' li)) = lmeasure (mlvl l l' li).
+Proof using . rewrite !lmeasure_max; lia. Qed.
+
+(** ** [out] *)
+
+Section OutV.
+Context {G : gctx} {Γ : ctx} {l l' li k k' ki : lvl} {X X' A A' B B' : ty} {C C' m m' t t' : tm}
+  (Hwl : lwf (gL G) l) (Hwl' : lwf (gL G) l') (Hwli : lwf (gL G) li)
+  (Hk : lequiv (gL G) k l) (Hk' : lequiv (gL G) k' l') (Hki : lequiv (gL G) ki li)
+  (VX : VTyG G Γ X X' li) (VA : VTyG G (Γ ,, X @ li) A A' l)
+  (VB : VTyG G (Γ ,, X @ li ,, A @ l) B B' l')
+  (VC : VTmG G (Γ ,, X @ li ,, A @ l ,, B @ l') C C' X⟨↑⟩⟨↑⟩⟨↑⟩ li)
+  (Vm : VTm G Γ m m' X li) (Vt : VTm G Γ t t' (tyM l l' li X A B C m) (mlvl l l' li)).
+
+Lemma V_out : VTm G Γ (tmOut l l' li X A B C m t) (tmOut k k' ki X' A' B' C' m' t')
+  (mOutTy l l' li X A B C m) (lmax l (mlvl l l' li)).
+Proof using EL VL VN Hwl Hwl' Hwli Hk Hk' Hki VX VA VB VC Vm Vt.
+  intros Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd']. pose proof (SubRel_ctx Hd) as HΔ.
+  rewrite !subst_out, !subst_mOutTy by assumption.
+  pose proof (Vm _ _ _ Hd) as Xm. pose proof (Vt _ _ _ Hd) as Xt. rewrite !subst_tyM in Xt.
+  destruct (LRtm_escape Xm) as [Hmd Hm'd]. destruct (LRtm_escape Xt) as [Htd Ht'd].
+  pose proof (wf_tm_nf Hmd) as Nm. pose proof (wf_tm_nf Hm'd) as Nm'.
+  pose proof (wf_tm_nf Htd) as Nt. pose proof (wf_tm_nf Ht'd) as Nt'.
+  (* the trees, by [M]'s relation at the substituted signatures *)
+  destruct Xt as (R & HR & Ht).
+  pose proof (LR_M_at Hwl Hwl' Hwli Hk Hk' Hki VX VA VB VC _ _ _ _ _ Hd Xm) as HM1.
+  apply (LR_irrel _ _ _ _ _ _ _ _ _ _ HR HM1) in Ht.
+  (* the signatures' typings, for [out]'s own annotations *)
+  pose proof (ms_geq (m_side Hwl Hwl' Hwli Hk Hk' Hki VX VA VB VC Hd)) as HG.
+  pose proof (MEq_of_MGeq HG) as HE. pose proof (MEq_sig_r ge_typeof ge_notV HE) as HS'.
+  pose proof HE as (_ & _ & _ & HS & HXX & _).
+  assert (Hm'' : [ G ; Δ ⊢g m'[d'] : X'[d'] @ ki ]).
+  { eapply wf_lconv; [eapply wf_conv; [exact Hm'd | rewrite ge_typeof; exact (eqty_sym _ _ _ _ _ _ HXX)] | exact Hki]. }
+  set (ρ0 := kw_self HΔ).
+  assert (hi : forall ρ : kwk (kw_G ρ0) (kw_Δ ρ0),
+             mIdx (X := X) (X' := X') (l := l) (l' := l') (li := li) Δ d d' (kw_comp ρ0 ρ) (ktm ρ m[d]) (ktm ρ m'[d'])).
+  { intros ρ. apply (mIdx_iff VX Hd). pose proof (LRtm_kw (kw_comp ρ0 ρ) Xm) as Y.
+    rewrite !ktm_comp in Y. unfold ρ0 in Y. rewrite !ktm_self in Y by assumption. exact Y. }
+  pose proof (LR_out_kw Hwl Hwl' Hwli Hk Hk' Hki VX VA VB VC Hd ρ0 _ _ Nm Nm' hi) as Hout.
+  pose proof (MR_out Ht ρ0) as Hobs.
+  destruct (MGeq_nf HG) as (NX & NA & NB & NC & NX' & NA' & NB' & NC').
+  unfold ρ0 in Hout, Hobs.
+  rewrite !kty_self, !ktyl_self, !ktyll_self, !ktmlll_self in Hout, Hobs by assumption.
+  rewrite !ktm_self in Hobs by assumption.
+  specialize (Hobs _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (MAnn_refl HS Hmd) (MAnn_refl HS' Hm'')).
+  (* the right-hand type: [out]'s type at the left signature on both sides *)
+  pose proof (VTm_trans Vm (VTm_sym Vm) _ _ _ Hd) as Xmm.
+  pose proof (wf_tm_nf (proj2 (LRtm_escape Xmm))) as Nmd'.
+  assert (hi0 : forall ρ : kwk (kw_G ρ0) (kw_Δ ρ0),
+             mIdx (X := X) (X' := X) (l := l) (l' := l') (li := li) Δ d d' (kw_comp ρ0 ρ) (ktm ρ m[d]) (ktm ρ m[d'])).
+  { intros ρ. apply (mIdx_iff (VTyG_refl_l VX) Hd). pose proof (LRtm_kw (kw_comp ρ0 ρ) Xmm) as Y.
+    rewrite !ktm_comp in Y. unfold ρ0 in Y. rewrite !ktm_self in Y by assumption. exact Y. }
+  pose proof (LR_out_kw Hwl Hwl' Hwli (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') (lequiv_refl _ _ Hwli)
+                (VTyG_refl_l VX) (VTyG_refl_l VA) (VTyG_refl_l VB) (VTmG_trans VC (VTmG_sym VC)) Hd ρ0 _ _
+                Nm Nmd' hi0) as Hout0.
+  destruct (MGeq_nf (ms_geq (m_side Hwl Hwl' Hwli (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl')
+              (lequiv_refl _ _ Hwli) (VTyG_refl_l VX) (VTyG_refl_l VA) (VTyG_refl_l VB)
+              (VTmG_trans VC (VTmG_sym VC)) Hd))) as (_ & _ & _ & _ & NX0 & NA0 & NB0 & NC0).
+  unfold ρ0 in Hout0. rewrite !kty_self, !ktyl_self, !ktyll_self, !ktmlll_self in Hout0 by assumption.
+  eapply LRtm_irrel_r.
+  - unfold LRtm, LRrel. rewrite lmeasure_out. eexists. split; [exact Hout | exact Hobs].
+  - unfold LRty, LogRel. rewrite lmeasure_out. eexists. exact Hout0.
+Qed.
+
+End OutV.
 
 End MV.
