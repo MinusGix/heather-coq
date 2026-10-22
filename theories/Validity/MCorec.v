@@ -17,6 +17,69 @@ From DeLaM.Validity Require Export M Sum.
 From DeLaM.LogRel Require Import MAux.
 From DeLaM.Typing Require Import PresupM.
 
+(** ** Syntax: β's reduct in pieces *)
+
+(** [meq], through the leaves whose pointwise comparison unfolds a
+    substituted entry. *)
+Local Ltac mfold := repeat change (ren_ty ?x ?r) with x⟨r⟩; repeat change (subst_ty ?x ?e) with x[e];
+  repeat change (ren_tm ?x ?r) with x⟨r⟩; repeat change (subst_tm ?x ?e) with x[e].
+Local Ltac meq' := meq; repeat (rewrite ?Nat.add_0_r, ?llk_llift; mfold; meq).
+
+(** The reduct's second component and the body of its λ. *)
+Definition mBody (l l' li : lvl) (X A B : ty) (C : tm) (k : lvl) (Y : ty) (c j y : tm) : tm :=
+  tmCase k (mlvl l l' li) (mlvl l l' li)
+    Y⟨rlift ↑⟩[lsingle (mOutIdx l l' li X A B C k Y c j y)]
+    (tyM l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩
+       (mOutIdx l l' li X A B C k Y c j y))
+    (tyM l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩
+       (mOutIdx l l' li X A B C k Y c j y))⟨↑⟩
+    (tmCorec l l' li X⟨↑⟩⟨↑⟩ A⟨rlift ↑⟩⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩
+       C⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩ k Y⟨rlift ↑⟩⟨rlift ↑⟩
+       c⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ (mOutIdx l l' li X A B C k Y c j y)⟨↑⟩ (var 0))
+    (var 0)
+    (app (tmSnd l (lmax k (mlvl l l' li)) A[lsingle j] (mStepSnd l l' li X A B C k Y j) c[lsingle2 j y])⟨↑⟩
+       l' (lmax k (mlvl l l' li))
+       B[lsingle2 j (mOutFst l l' li X A B C k Y c j y)]⟨↑⟩
+       (tySum k (mlvl l l' li) Y⟨rlift ↑⟩[lsingle (mOutIdx l l' li X A B C k Y c j y)]
+          (tyM l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩
+             (mOutIdx l l' li X A B C k Y c j y)))⟨rlift ↑⟩
+       (var 0)).
+Arguments mBody : simpl never.
+
+Definition mLam (l l' li : lvl) (X A B : ty) (C : tm) (k : lvl) (Y : ty) (c j y : tm) : tm :=
+  lam l' (mlvl l l' li) B[lsingle2 j (mOutFst l l' li X A B C k Y c j y)] (mBody l l' li X A B C k Y c j y).
+Arguments mLam : simpl never.
+
+Lemma mOutCorec_pair l l' li X A B C k Y c j y :
+  mOutCorec l l' li X A B C k Y c j y =
+  tmPair l (mlvl l l' li) A[lsingle j]
+    (tyPi l' (mlvl l l' li) B[llift (lsingle j)]
+       (tyM l l' li X⟨↑⟩⟨↑⟩ A⟨rlift ↑⟩⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩
+          C⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩ C[llift (llift (lsingle j))]))
+    (mOutFst l l' li X A B C k Y c j y) (mLam l l' li X A B C k Y c j y).
+Proof using . reflexivity. Qed.
+
+(** The λ's body at a position: [case] on the step's second projection
+    applied to it, the child index [C[j, fst r, p]] *)
+Notation mIdxP l l' li X A B C k Y c j y p := (C[lsingle3 j (mOutFst l l' li X A B C k Y c j y) p]).
+
+Lemma mBody_single l l' li X A B C k Y c j y p :
+  nfty X -> nfty A -> nfty B -> nftm C -> nfty Y -> nftm c -> nftm j -> nftm y ->
+  (mBody l l' li X A B C k Y c j y)[lsingle p] =
+  tmCase k (mlvl l l' li) (mlvl l l' li) Y[lsingle (mIdxP l l' li X A B C k Y c j y p)]
+    (tyM l l' li X A B C (mIdxP l l' li X A B C k Y c j y p))
+    (tyM l l' li X A B C (mIdxP l l' li X A B C k Y c j y p))⟨↑⟩
+    (tmCorec l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩ k Y⟨rlift ↑⟩
+       c⟨rlift (rlift ↑)⟩ (mIdxP l l' li X A B C k Y c j y p)⟨↑⟩ (var 0))
+    (var 0)
+    (app (tmSnd l (lmax k (mlvl l l' li)) A[lsingle j] (mStepSnd l l' li X A B C k Y j) c[lsingle2 j y])
+       l' (lmax k (mlvl l l' li)) B[lsingle2 j (mOutFst l l' li X A B C k Y c j y)]
+       (tySum k (mlvl l l' li) Y⟨rlift ↑⟩[lsingle (mOutIdx l l' li X A B C k Y c j y)]
+          (tyM l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩
+             (mOutIdx l l' li X A B C k Y c j y)))
+       p).
+Proof using . intros. unfold mBody. meq'. Qed.
+
 Section MCorec.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
@@ -192,5 +255,45 @@ Proof using EL VL.
   - rewrite (LRtm_stage (lmeasure_le_l Hlv)). exact (iff_sym (LRrel_canon _ _ _ _ _ _ _ HRA u v)).
   - rewrite (LRtm_stage (lmeasure_le_r Hlv)). exact (iff_sym (LRrel_canon _ _ _ _ _ _ _ HRB u v)).
 Qed.
+
+(** ** Syntax in a world *)
+
+Lemma gwa_mOutCorec γ l l' li X A B C k Y c j y :
+  (mOutCorec l l' li X A B C k Y c j y)⟦γ⟧ = mOutCorec l l' li X⟦γ⟧ A⟦γ⟧ B⟦γ⟧ C⟦γ⟧ k Y⟦γ⟧ c⟦γ⟧ j⟦γ⟧ y⟦γ⟧.
+Proof using . destruct γ; cbn [gwa]; [reflexivity | apply gren_mOutCorec ..]. Qed.
+
+Section KwOut.
+Context {G : gctx} {Γ : ctx} (ρ : kwk G Γ).
+
+Lemma ktm_mOutCorec l l' li X A B C k Y c j y :
+  ktm ρ (mOutCorec l l' li X A B C k Y c j y) =
+  mOutCorec l l' li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C) k (ktyl ρ Y) (ktmll ρ c) (ktm ρ j) (ktm ρ y).
+Proof using . unfold ktm, kty, ktyl, ktyll, ktmll, ktmlll. now rewrite gwa_mOutCorec, mOutCorec_ren. Qed.
+
+Lemma ktm_mLam l l' li X A B C k Y c j y :
+  ktm ρ (mLam l l' li X A B C k Y c j y) =
+  mLam l l' li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C) k (ktyl ρ Y) (ktmll ρ c) (ktm ρ j) (ktm ρ y).
+Proof using .
+  pose proof (ktm_mOutCorec l l' li X A B C k Y c j y) as Eo.
+  rewrite !mOutCorec_pair, ktm_pair in Eo. now injection Eo.
+Qed.
+
+Lemma ktm_mOutFst l l' li X A B C k Y c j y :
+  ktm ρ (mOutFst l l' li X A B C k Y c j y) =
+  mOutFst l l' li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C) k (ktyl ρ Y) (ktmll ρ c) (ktm ρ j) (ktm ρ y).
+Proof using .
+  pose proof (ktm_mOutCorec l l' li X A B C k Y c j y) as Eo.
+  rewrite !mOutCorec_pair, ktm_pair in Eo. now injection Eo.
+Qed.
+
+Lemma ktml_mBody l l' li X A B C k Y c j y :
+  ktml ρ (mBody l l' li X A B C k Y c j y) =
+  mBody l l' li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C) k (ktyl ρ Y) (ktmll ρ c) (ktm ρ j) (ktm ρ y).
+Proof using .
+  pose proof (ktm_mLam l l' li X A B C k Y c j y) as Eo.
+  unfold mLam at 1 in Eo. rewrite ktm_lam in Eo. unfold mLam in Eo. now injection Eo.
+Qed.
+
+End KwOut.
 
 End MCorec.
