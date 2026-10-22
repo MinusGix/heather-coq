@@ -176,6 +176,62 @@ Proof using EL.
   exact R.
 Qed.
 
+
+(** ** The λ's application annotations, from a shape to an equal one *)
+Lemma single2_split (B : ty) j a : nftm j -> B[llift (lsingle j)][lsingle a] = B[lsingle2 j a].
+Proof using . intros. meq'. Qed.
+Lemma single2_split_tm (C : tm) j a : nftm j -> C[llift (llift (lsingle j))][llift (lsingle a)] = C[llift (lsingle2 j a)].
+Proof using . intros. meq'. Qed.
+
+Lemma ann_conv {G Γ l l' li X A B C j a1 a2 A1 B1} :
+  MSig (G := G) (i := ge_layer) Γ l l' li X A B C -> [ G ; Γ ⊢g j : X @ li ] ->
+  [ G ; Γ ⊢g a1 ≅ a2 : A[lsingle j] @ l ] ->
+  [ G ; Γ ⊢ B[lsingle2 j a2] ≈ A1 @ l' ] ->
+  [ G ; Γ ,, B[lsingle2 j a2] @ l' ⊢ tyM l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩
+                                       C[llift (lsingle2 j a2)] ≈ B1 @ mlvl l l' li ] ->
+  [ G ; Γ ⊢g B[lsingle2 j a1] ≅ A1 @ l' ] /\
+  [ G ; Γ ,, B[lsingle2 j a1] @ l' ⊢g tyM l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩
+                                        C[llift (lsingle2 j a1)] ≅ B1 @ mlvl l l' li ].
+Proof using EL.
+  intros HS Hj Ea HA1 HB1.
+  pose proof HS as (Hl & Hl' & Hli & HX & HA & HB & HC).
+  pose proof (wf_tm_nf Hj) as Nj.
+  pose proof (M_lift1 ge_typeof HA Hl Hj) as H1.
+  pose proof (wf_ty_single ge_typeof HA Hj) as HAj.
+  pose proof (wf_ty_subst ge_typeof HB H1) as HBj.
+  pose proof (eqtm_wf_l ge_typeof Ea) as Ha1. pose proof (eqtm_wf_r ge_typeof Ea) as Ha2.
+  pose proof (lsub_eq_single ge_typeof Ha1 Ha2 Ea) as Es.
+  pose proof (wf_ty_func ge_typeof HBj Es) as EB0. rewrite !single2_split in EB0 by exact Nj.
+  split; [exact (eqty_trans _ _ _ _ _ _ _ EB0 (geq_ty_sound HA1)) |].
+  pose proof (eqty_wf_l ge_typeof EB0) as HBa1.
+  pose proof (ext_wf_g HAj Hl) as HΓ1. pose proof (ext_wf_g HBj Hl') as HΓ2.
+  assert (H2 : [ G ; Γ ,, A[lsingle j] @ l ,, B[llift (lsingle j)] @ l' ⊢[ ge_layer ] llift (llift (lsingle j))
+                 : Γ ,, X @ li ,, A @ l ,, B @ l' ])
+    by (eapply (lsub_wf_lift' G ge_layer ge_typeof); [exact H1 | exact HBj | exact Hl' | reflexivity]).
+  assert (HCj : [ G ; Γ ,, A[lsingle j] @ l ,, B[llift (lsingle j)] @ l' ⊢g C[llift (llift (lsingle j))]
+                  : X⟨↑⟩⟨↑⟩ @ li ])
+    by (eapply wf_tm_retype; [exact (wf_tm_subst ge_typeof HC H2) | apply M_E_X3j, (wf_ty_nf HX)]).
+  assert (Es2 : [ G ; Γ ,, B[lsingle2 j a1] @ l' ⊢[ ge_layer ] llift (lsingle a1) ≅ llift (lsingle a2)
+                  : Γ ,, A[lsingle j] @ l ,, B[llift (lsingle j)] @ l' ]).
+  { eapply (lsub_eq_lift_g G ge_layer); rewrite ?ge_typeof.
+    - exact Es.
+    - exact HBa1.
+    - exact Hl'.
+    - rewrite !single2_split by exact Nj. exact EB0.
+    - symmetry. apply single2_split, Nj. }
+  pose proof (wf_tm_func ge_typeof HCj Es2) as EC.
+  rewrite !single2_split_tm in EC by exact Nj.
+  pose proof (ext_wf_g HBa1 Hl') as HΓB.
+  pose proof (MSig_wk1 ge_typeof ge_notV HS HΓB) as HS1.
+  pose proof (eqtm_wf_l ge_typeof EC) as Hix.
+  assert (EX : (X⟨↑⟩⟨↑⟩)[llift (lsingle a1)] = X⟨↑⟩) by (pose proof (wf_ty_nf HX); meq').
+  rewrite EX in EC, Hix.
+  pose proof (MEq_of_MAnn HS1 (MAnn_refl HS1 Hix)) as HE1.
+  pose proof (M_ty_eq ge_typeof ge_notV HE1 EC) as EM.
+  pose proof (geq_ty_ctxconv (eqty_sym _ _ _ _ _ _ EB0) (lequiv_refl _ _ Hl') HΓB HB1) as HB1'.
+  exact (eqty_trans _ _ _ _ _ _ _ EM (geq_ty_sound HB1')).
+Qed.
+
 (** ** [corec] at related premises *)
 
 Section CorecV.
