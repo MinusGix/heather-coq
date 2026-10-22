@@ -265,6 +265,15 @@ Ltac gw_manual :=
   | |- eq_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwf; gw_premise
   | |- wf_tm _ _ _ (tmDVec _ _ _) _ _ => eapply wf_code_dvec; gw_premise
   | |- eq_tm _ _ _ (tmDVec _ _ _) _ _ _ => eapply eqtm_code_dvec; gw_premise
+  (* indexed coinductive types (M18b): the step and out types commute by equations *)
+  | |- wf_ty _ _ _ (tyM _ _ _ _ _ _ _ _) _ => eapply wft_M; gw_premise
+  | |- eq_ty _ _ _ (tyM _ _ _ _ _ _ _ _) _ _ => eapply eqty_M; gw_premise
+  | |- wf_tm _ _ _ (tmCorec _ _ _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_corec; gw_premise
+  | |- eq_tm _ _ _ (tmCorec _ _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_corec; gw_premise
+  | |- wf_tm _ _ _ (tmOut _ _ _ _ _ _ _ _ _) _ _ => eapply wf_out; gw_premise
+  | |- eq_tm _ _ _ (tmOut _ _ _ _ _ _ _ _ (tmCorec _ _ _ _ _ _ _ _ _ _ _ _)) _ _ _ =>
+      gren_rewrite; push_gren; eapply eqtm_out_corec; gw_premise
+  | |- eq_tm _ _ _ (tmOut _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_out; gw_premise
   (* indexed finitary trees (M17b): the shifted index type commutes by an equation *)
   | |- wf_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ => eapply wft_iwf; gw_premise
   | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ _ => eapply eqty_iwf; gw_premise

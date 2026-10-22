@@ -171,6 +171,16 @@ Proof.
                     | apply lk_dnf_llift | progress cbn [dnftm dnfty] ].
 Qed.
 
+(** [M] (M18b): [out]-of-[corec]'s reduct, and the instances in its rules. *)
+Ltac dnf_M := repeat first
+  [ lazymatch goal with |- True => exact I | |- _ /\ _ => split end | assumption
+  | apply ren_dnf_ty | apply ren_dnf
+  | apply subst_dnf_ty | apply subst_dnf | apply lk_dnf_lsingle | apply lk_dnf_lsingle2
+  | apply lk_dnf_llift | progress cbn [dnftm dnfty] ].
+Lemma dnf_mOutCorec l l' li X A B C k Y c j y : dnfty X -> dnfty A -> dnfty B -> dnftm C ->
+  dnfty Y -> dnftm c -> dnftm j -> dnftm y -> dnftm (mOutCorec l l' li X A B C k Y c j y).
+Proof. intros; unfold mOutCorec; dnf_M. Qed.
+
 (* [IWf] (M17b): [dnth], the family and the induction hypothesis stay folded
    in [typed_dnf], for their lemmas *)
 Local Arguments tmDNth : simpl never. Local Arguments iwfFam : simpl never.
@@ -208,6 +218,8 @@ Proof.
   (* [elim_IWf]'s β (M17b): the motive at the [sup_i]'s index and itself *)
   all: try solve [apply subst_dnf_ty; [assumption | apply lk_dnf_lsingle2; cbn [dnftm dnfty];
                   intuition auto using subst_dnf, lk_dnf_lsingle]].
+  (* [M]'s out type and β (M18b) *)
+  all: try solve [apply dnf_mOutCorec; assumption | dnf_M].
   (* η of the meta-functions (M5): the weakened function *)
   all: apply gren_dnf_all.
 Qed.

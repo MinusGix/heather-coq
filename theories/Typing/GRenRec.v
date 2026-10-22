@@ -330,6 +330,38 @@ Proof.
   unfold iwfFam. rewrite gren_tyIWf.
   repeat rewrite ?gren_ren_ty', ?gren_ren, ?gren_llift_single. reflexivity.
 Qed.
+(** Indexed coinductive types (M18b): [out]-of-[corec]'s reduct. *)
+Lemma gren_tyM l l' li X A B C j :
+  (tyM l l' li X A B C j)⟪ξ⟫ = tyM l l' li X⟪ξ⟫ A⟪ξ⟫ B⟪ξ⟫ C⟪ξ⟫ j⟪ξ⟫.
+Proof. reflexivity. Qed.
+Lemma gren_corec l l' li X A B C k Y c j y :
+  (tmCorec l l' li X A B C k Y c j y)⟪ξ⟫ = tmCorec l l' li X⟪ξ⟫ A⟪ξ⟫ B⟪ξ⟫ C⟪ξ⟫ k Y⟪ξ⟫ c⟪ξ⟫ j⟪ξ⟫ y⟪ξ⟫.
+Proof. reflexivity. Qed.
+Lemma gren_out l l' li X A B C j m :
+  (tmOut l l' li X A B C j m)⟪ξ⟫ = tmOut l l' li X⟪ξ⟫ A⟪ξ⟫ B⟪ξ⟫ C⟪ξ⟫ j⟪ξ⟫ m⟪ξ⟫.
+Proof. reflexivity. Qed.
+Ltac gren_llk := intros n; do 4 try (destruct n as [|n]);
+  rewrite ?llk_glren, ?llk_llift; cbn; rewrite ?llk_glren, ?llk_llift; cbn; rewrite ?llk_glren, ?llk_llift; cbn;
+  rewrite ?llk_glren, ?llk_llift; cbn; auto;
+  repeat change (gren_tm ?x ?ξ0) with x⟪ξ0⟫; repeat change (ren_tm ?x ?r) with x⟨r⟩; rewrite ?gren_ren; reflexivity.
+Lemma gren_llift_single_ty (B : ty) a : B[llift (lsingle a)]⟪ξ⟫ = B⟪ξ⟫[llift (lsingle a⟪ξ⟫)].
+Proof. rewrite gren_subst_ty. apply subst_ext_ty; gren_llk. Qed.
+Lemma gren_llift2_single (b a : tm) : b[llift (llift (lsingle a))]⟪ξ⟫ = b⟪ξ⟫[llift (llift (lsingle a⟪ξ⟫))].
+Proof. rewrite gren_subst. apply subst_ext; gren_llk. Qed.
+Lemma gren_llift_single2 (b a a' : tm) :
+  b[llift (lsingle2 a a')]⟪ξ⟫ = b⟪ξ⟫[llift (lsingle2 a⟪ξ⟫ a'⟪ξ⟫)].
+Proof. rewrite gren_subst. apply subst_ext; gren_llk. Qed.
+Lemma gren_mOutCorec l l' li X A B C k Y c j y :
+  (mOutCorec l l' li X A B C k Y c j y)⟪ξ⟫ =
+  mOutCorec l l' li X⟪ξ⟫ A⟪ξ⟫ B⟪ξ⟫ C⟪ξ⟫ k Y⟪ξ⟫ c⟪ξ⟫ j⟪ξ⟫ y⟪ξ⟫.
+Proof.
+  unfold mOutCorec.
+  repeat progress (cbn [gren GRen_tm gren_tm GRen_ty gren_ty];
+    change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫;
+    rewrite ?gren_ren_ty', ?gren_ren, ?gren_single_ty, ?gren_single, ?gren_single2, ?gren_single2_ty,
+      ?gren_llift_single_ty, ?gren_llift_single, ?gren_llift2_single, ?gren_llift_single2).
+  reflexivity.
+Qed.
 (** [UΠ]'s scope and instances. *)
 Lemma gren_uren_ctx (Γ : ctx) ρ : Γ⟨ρ⟩ᵤ⟪ξ⟫ = Γ⟪ξ⟫⟨ρ⟩ᵤ.
 Proof. symmetry; apply (proj1 (proj2 (proj2 uren_gren_all))). Qed.
@@ -426,6 +458,10 @@ Ltac push_gren_at h k := lazymatch h with
   | @tmDNth => k gren_tmDNth
   | @iwfIH => k gren_iwfIH
   | @iwfFam => k gren_iwfFam
+  | @tyM => k gren_tyM
+  | @tmCorec => k gren_corec
+  | @tmOut => k gren_out
+  | @mOutCorec => k gren_mOutCorec
   | @tmSq => k gren_sq
   | @tmElimSq => k gren_elimSq
   | @tmSqCode => k gren_tmSqCode
@@ -439,7 +475,7 @@ Ltac push_gren := repeat match goal with
 Ltac gren_rewrite :=
   rewrite ?gren_single_ty, ?gren_single, ?gren_single2, ?gren_single3, ?gren_single2_ty, ?gren_lsucc_ty, ?gren_ren_ty', ?gren_ren,
           ?gren_letbox_ty, ?gcren_shift_up, ?gren_gsingle, ?gren_gsingle_ty, ?gren_shift_up_tm, ?mkrb_gren, ?motT_gren, ?mott_gren,
-          ?wrapMT_gren, ?wrapMt_gren.
+          ?wrapMT_gren, ?wrapMt_gren, ?gren_llift_single_ty, ?gren_llift_single, ?gren_llift2_single, ?gren_llift_single2.
 
 (** ** Reduction under global renaming *)
 
@@ -457,6 +493,7 @@ Proof.
     change (gcren ?x ?ξ) with x⟪ξ⟫.
   all: rewrite ?gren_single2, ?gren_single, ?gren_single3, ?gren_wIH, ?gren_wfIH, ?gren_gsingle; try now constructor.
   all: rewrite ?gren_iwfIH; try now constructor.
+  all: rewrite ?gren_mOutCorec; try now constructor.
   all: try (constructor; auto; fail).
   all: first [ constructor; now apply redT_gren | constructor; now apply redt_gren
              | rewrite <- usubst_gren; now constructor

@@ -152,7 +152,8 @@ Proof. symmetry; apply (proj1 gsubst_ren_all). Qed.
 Ltac wk_rewrite :=
   rewrite ?single_ren_ty, ?single_ren, ?lsucc_ren_ty, ?single2_ren, ?lsingle2_ren_ty, ?gsingle_ren_ty, <- ?gren_ren,
           ?shift_lift, ?shift_lift_ty, ?liftshift_lift_ty, ?liftshift_lift, ?lsingle3_ren,
-          ?mkrb_ren, ?motT_ren, ?mott_ren, ?wrapMT_ren, ?wrapMt_ren.
+          ?mkrb_ren, ?motT_ren, ?mott_ren, ?wrapMT_ren, ?wrapMt_ren,
+          ?llift_lsingle_ren_ty, ?llift_lsingle_ren, ?llift2_lsingle_ren, ?llift_lsingle2_ren.
 
 #[export] Hint Resolve wfc_ext : wk.
 #[export] Hint Resolve in_ctx_wkr : wk.
@@ -598,6 +599,16 @@ Ltac wk_manual :=
   | |- eq_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwf; wk_I
   | |- wf_tm _ _ _ (tmDVec _ _ _) _ _ => eapply wf_code_dvec; wk_I
   | |- eq_tm _ _ _ (tmDVec _ _ _) _ _ _ => eapply eqtm_code_dvec; wk_I
+  (* [M] (M18b) *)
+  | |- wf_ty _ _ _ (tyM _ _ _ _ _ _ _ _) _ => eapply wft_M; wk_I
+  | |- eq_ty _ _ _ (tyM _ _ _ _ _ _ _ _) _ _ => eapply eqty_M; wk_I
+  | |- wf_tm _ _ _ (tmCorec _ _ _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_corec; wk_I
+  | |- eq_tm _ _ _ (tmCorec _ _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_corec; wk_I
+  (* [out]'s type: the renamed signature's shifts commute by an equation *)
+  | |- wf_tm _ _ _ (tmOut _ _ _ _ _ _ _ _ _) _ _ => eapply wf_tm_retype; [eapply wf_out; wk_I | wk_eqI]
+  | |- eq_tm _ _ _ (tmOut _ _ _ _ _ _ _ _ (tmCorec _ _ _ _ _ _ _ _ _ _ _ _)) _ _ _ =>
+      wk_rewrite; push_ren; eapply eq_tm_retype; [eapply eqtm_out_corec; wk_I | wk_eqI]
+  | |- eq_tm _ _ _ (tmOut _ _ _ _ _ _ _ _ _) _ _ _ => eapply eq_tm_retype; [eapply eqtm_out; wk_I | wk_eqI]
   (* [IWf] (M17b) *)
   | |- wf_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ => eapply wft_iwf; wk_I
   | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ _ => eapply eqty_iwf; wk_I

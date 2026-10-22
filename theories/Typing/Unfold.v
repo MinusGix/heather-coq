@@ -268,6 +268,17 @@ Proof.
   rewrite ?unf_ren_ty, ?unf_ren, ?unf_lsingle, ?unf_subst, unf_iwfFam. reflexivity.
 Qed.
 
+(** [M]'s [out]-of-[corec] reduct (M18b). *)
+Lemma unf_mOutCorec l l' li X A B C k Y c j y :
+  unf_tm (mOutCorec l l' li X A B C k Y c j y) =
+  mOutCorec l l' li (unf_ty X) (unf_ty A) (unf_ty B) (unf_tm C) k (unf_ty Y) (unf_tm c) (unf_tm j) (unf_tm y).
+Proof.
+  unfold mOutCorec.
+  repeat progress (cbn [unf_tm unf_ty];
+    rewrite ?unf_ren_ty, ?unf_ren, ?unf_subst_ty, ?unf_subst, ?unf_llift, ?unf_lsingle, ?unf_lsingle2).
+  reflexivity.
+Qed.
+
 Ltac unf_peel_push :=
   repeat first [ rewrite <- peelL_unf by hd_tac
                | rewrite <- peelG_unf by hd_tac
@@ -326,7 +337,7 @@ Ltac unf_rw_all :=
     ?unf_ren_ty, ?unf_ren, ?unf_gren_ty, ?unf_gren, ?unf_gren_ctx,
     ?unf_uren_ty, ?unf_uren, ?unf_uren_ctx, ?unf_usubst_ty, ?unf_usubst, ?unf_usubst_ctx,
     ?unf_gsingle_ty, ?unf_gsingle, ?motT_wrap_unf, ?mott_wrap_unf, ?mkrb_unf, ?wrapMT_unf, ?wrapMt_unf,
-    ?unf_wIH, ?unf_wfIH, ?unf_tmNth, ?unf_iwfIH, ?unf_tmDNth, ?unf_iwfFam, ?recGT_unf, ?recGt_unf, ?recΓT_unf, ?recΓt_unf, ?unf_G_uwk in *.
+    ?unf_wIH, ?unf_wfIH, ?unf_tmNth, ?unf_iwfIH, ?unf_tmDNth, ?unf_iwfFam, ?unf_mOutCorec, ?recGT_unf, ?recGt_unf, ?recΓT_unf, ?recΓt_unf, ?unf_G_uwk in *.
 
 Ltac unf_norm := unf_push; do 2 (unf_rw_all; unf_push).
 

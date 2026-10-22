@@ -281,6 +281,85 @@ Proof.
   reflexivity.
 Qed.
 
+(** [M]'s [out]-of-[corec] reduct (M18b): its instances sit under up to
+    three binders. *)
+Lemma llift_single_subst_ty (B : ty) a d : LK nftm d ->
+  B[llift (lsingle a)][llift d] = B[llift (llift d)][llift (lsingle a[d])].
+Proof.
+  intros Hd. apply subst2_eq_ty; intros [|[|n]]; rewrite ?llk_llift; cbn; rewrite ?llk_llift; cbn; auto.
+  - change (ren_tm ?x ?r) with x⟨r⟩. rewrite shift_llift. reflexivity.
+  - rewrite Nat.add_0_r, Nat.add_1_r. change (ren_tm ?x ?r) with x⟨r⟩.
+    rewrite shift_llift, shift_single by apply Hd. reflexivity.
+Qed.
+Lemma llift2_single_subst (c a : tm) d : LK nftm d ->
+  c[llift (llift (lsingle a))][llift (llift d)] = c[llift (llift (llift d))][llift (llift (lsingle a[d]))].
+Proof.
+  intros Hd. apply subst2_eq; intros [|[|[|n]]]; rewrite ?llk_llift; cbn; rewrite ?llk_llift; cbn; auto.
+  all: rewrite ?Nat.add_0_r, ?Nat.add_1_r; rewrite ?llk_llift; cbn; rewrite ?llk_llift.
+  all: repeat change (ren_tm ?x ?r) with x⟨r⟩.
+  all: rewrite ?shift_llift, ?shift_single by apply Hd; reflexivity.
+Qed.
+Lemma llift2_single_subst_ty (c : ty) a d : LK nftm d ->
+  c[llift (llift (lsingle a))][llift (llift d)] = c[llift (llift (llift d))][llift (llift (lsingle a[d]))].
+Proof.
+  intros Hd. apply subst2_eq_ty; intros [|[|[|n]]]; rewrite ?llk_llift; cbn; rewrite ?llk_llift; cbn; auto.
+  all: rewrite ?Nat.add_0_r, ?Nat.add_1_r; rewrite ?llk_llift; cbn; rewrite ?llk_llift.
+  all: repeat change (ren_tm ?x ?r) with x⟨r⟩.
+  all: rewrite ?shift_llift, ?shift_single by apply Hd; reflexivity.
+Qed.
+Lemma llift3_single_subst (c a : tm) d : LK nftm d ->
+  c[llift (llift (llift (lsingle a)))][llift (llift (llift d))] =
+  c[llift (llift (llift (llift d)))][llift (llift (llift (lsingle a[d])))].
+Proof.
+  intros Hd. apply subst2_eq; intros [|[|[|[|n]]]]; rewrite ?llk_llift; cbn; rewrite ?llk_llift; cbn; auto.
+  all: rewrite ?Nat.add_0_r, ?Nat.add_1_r; rewrite ?llk_llift; cbn; rewrite ?llk_llift; cbn; rewrite ?llk_llift.
+  all: repeat change (ren_tm ?x ?r) with x⟨r⟩.
+  all: rewrite ?shift_llift, ?shift_single by apply Hd; reflexivity.
+Qed.
+Lemma llift_single2_subst (c a b : tm) d : LK nftm d ->
+  c[llift (lsingle2 a b)][llift d] = c[llift (llift (llift d))][llift (lsingle2 a[d] b[d])].
+Proof.
+  intros Hd. apply subst2_eq; intros [|[|[|n]]]; rewrite ?llk_llift; cbn; rewrite ?llk_llift; cbn; auto.
+  all: rewrite ?Nat.add_0_r, ?Nat.add_1_r; rewrite ?llk_llift; cbn; rewrite ?llk_llift.
+  all: repeat change (ren_tm ?x ?r) with x⟨r⟩.
+  all: rewrite ?shift_llift, ?shift2_single2 by apply Hd; reflexivity.
+Qed.
+
+Ltac lk_solve Hd := repeat apply lk_llift; exact Hd.
+Ltac msubst_step Hd :=
+  match goal with
+  | |- context [subst (subst ?B (lsingle ?u)) ?e] =>
+      let H := fresh in assert (H : LK nftm e) by lk_solve Hd;
+      first [rewrite (single_subst_ty e H B u) | rewrite (single_subst e H B u)]; clear H
+  | |- context [subst (subst ?B (lsingle2 ?u ?v)) ?e] =>
+      let H := fresh in assert (H : LK nftm e) by lk_solve Hd;
+      first [rewrite (single2_subst_ty e H B u v) | rewrite (single2_subst e H B u v)]; clear H
+  | |- context [subst (subst ?B (llift (lsingle ?u))) (llift ?e)] =>
+      let H := fresh in assert (H : LK nftm e) by lk_solve Hd;
+      first [rewrite (llift_single_subst_ty B u e H) | rewrite (llift_single_subst B u e H)]; clear H
+  | |- context [subst (subst ?B (llift (llift (lsingle ?u)))) (llift (llift ?e))] =>
+      let H := fresh in assert (H : LK nftm e) by lk_solve Hd;
+      first [rewrite (llift2_single_subst_ty B u e H) | rewrite (llift2_single_subst B u e H)]; clear H
+  | |- context [subst (subst ?B (llift (llift (llift (lsingle ?u))))) (llift (llift (llift ?e)))] =>
+      let H := fresh in assert (H : LK nftm e) by lk_solve Hd;
+      rewrite (llift3_single_subst B u e H); clear H
+  | |- context [subst (subst ?B (llift (lsingle2 ?u ?v))) (llift ?e)] =>
+      let H := fresh in assert (H : LK nftm e) by lk_solve Hd;
+      rewrite (llift_single2_subst B u v e H); clear H
+  end.
+
+Lemma subst_mOutCorec l l' li X A B C k Y c j y d : LK nftm d ->
+  (mOutCorec l l' li X A B C k Y c j y)[d] =
+  mOutCorec l l' li X[d] A[llift d] B[llift (llift d)] C[llift (llift (llift d))] k Y[llift d]
+    c[llift (llift d)] j[d] y[d].
+Proof.
+  intros Hd. unfold mOutCorec.
+  repeat progress (push_subst; repeat msubst_step Hd;
+    rewrite ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty, ?liftshift_llift,
+      ?lift3shift_llift, ?lift2shift_llift, ?lift2shift_llift_ty, ?(llk_llift _ 0)).
+  reflexivity.
+Qed.
+
 Lemma lsucc_subst_ty (M : ty) d : M[lsucc][llift (llift d)] = M[llift d][lsucc].
 Proof.
   apply subst2_eq_ty; intros [|n]; cbn.

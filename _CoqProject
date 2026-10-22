@@ -55,6 +55,7 @@ theories/Typing/UInst.v
 theories/Typing/MInst.v
 theories/Typing/PresupAux.v
 theories/Typing/PresupIWf.v
+theories/Typing/PresupM.v
 theories/Typing/DVecEq.v
 theories/Typing/Presupposition.v
 theories/Typing/Inversion.v
