@@ -849,19 +849,17 @@ Proof.
       exact (IH _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (MSide_kw (kw_comp ρ ρ') HMf) N1 N2 Ic _ _ Z).
 Qed.
 
-Lemma MRn_flip n : MFlipAt n.
+(** The observations, given the children's. *)
+Lemma MObs_flip n (IH : MFlipAt n) {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR m m'}
+    (HM : MSide G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR) (Nm : nftm m) (Nm' : nftm m')
+    (I : forall ρ, idxR ρ (ktm ρ m) (ktm ρ m')) t t' :
+  MObs (MRn n) G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' t' t ->
+  MObs (MRn n) G Γ r1 r2 ri X' A' B' C' l1 l2 li X A B C (mflipS shR) (mflipP posR) m' m t t'.
 Proof.
-  induction n as [|n IH]; intros G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR m m' HM Nm Nm' I t t' Ht.
-  all: pose proof (ms_geq HM) as HG; pose proof (MSide_flip HM) as HMf.
-  all: pose proof HG as (H1 & H2 & H3 & (W1 & W2 & Wi & _) & _).
-  all: assert (Hm : lequiv (gL G) (mlvl r1 r2 ri) (mlvl l1 l2 li))
-         by (apply lequiv_mlvl; apply lequiv_sym; assumption).
-  all: destruct Ht as [(w & w' & R1 & R2 & Wh & Wh' & E1 & E2) Ht]; split;
-    [ exists w', w; refine (conj _ (conj _ (conj Wh' (conj Wh (conj _ _)))));
-      [ eapply tmred_lconv; [exact R2 | exact Hm] | eapply tmred_lconv; [exact R1 | exact Hm]
-      | eapply geq_tm_lconv; [apply geq_tm_sym, E2 | exact Hm]
-      | eapply geq_tm_lconv; [apply geq_tm_sym, E1 | exact Hm] ] |].
-  1: exact Logic.I.
+  intros Ht. pose proof (ms_geq HM) as HG; pose proof (MSide_flip HM) as HMf.
+  pose proof HG as (H1 & H2 & H3 & (W1 & W2 & Wi & _) & _).
+  assert (Hm : lequiv (gL G) (mlvl r1 r2 ri) (mlvl l1 l2 li))
+    by (apply lequiv_mlvl; apply lequiv_sym; assumption).
   intros k1 k2 ki X1 A1 B1 C1 j1 k1' k2' ki' X1' A1' B1' C1' j1' Ann Ann'.
   specialize (Ht k1' k2' ki' X1' A1' B1' C1' j1' k1 k2 ki X1 A1 B1 C1 j1 Ann' Ann).
   pose proof (lequiv_sym _ _ _ H1) as H1'.
@@ -880,6 +878,22 @@ Proof.
   - intros ρ a a' ha ha' v v'. split; intros Z.
     + exact (MPi_flip n IH HM Nm Nm' I ρ a' a ha v v' Z).
     + exact (MPi_flip n IH HMf Nm' Nm I ρ a a' ha' v' v Z).
+Qed.
+
+Lemma MRn_flip n : MFlipAt n.
+Proof.
+  induction n as [|n IH]; intros G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR m m' HM Nm Nm' I t t' Ht.
+  all: pose proof (ms_geq HM) as HG.
+  all: pose proof HG as (H1 & H2 & H3 & (W1 & W2 & Wi & _) & _).
+  all: assert (Hm : lequiv (gL G) (mlvl r1 r2 ri) (mlvl l1 l2 li))
+         by (apply lequiv_mlvl; apply lequiv_sym; assumption).
+  all: destruct Ht as [(w & w' & R1 & R2 & Wh & Wh' & E1 & E2) Ht]; split;
+    [ exists w', w; refine (conj _ (conj _ (conj Wh' (conj Wh (conj _ _)))));
+      [ eapply tmred_lconv; [exact R2 | exact Hm] | eapply tmred_lconv; [exact R1 | exact Hm]
+      | eapply geq_tm_lconv; [apply geq_tm_sym, E2 | exact Hm]
+      | eapply geq_tm_lconv; [apply geq_tm_sym, E1 | exact Hm] ] |].
+  1: exact Logic.I.
+  intros ρ. exact (MObs_flip n IH (MSide_kw ρ HM) ltac:(kw_nf) ltac:(kw_nf) (MIdx_kw ρ I) _ _ (Ht ρ)).
 Qed.
 
 End MFlip.

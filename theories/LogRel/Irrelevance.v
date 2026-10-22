@@ -271,23 +271,44 @@ Lemma lequiv_mlvl {L l1 l2 li r1 r2 ri} :
   lequiv L l1 r1 -> lequiv L l2 r2 -> lequiv L li ri -> lequiv L (mlvl l1 l2 li) (mlvl r1 r2 ri).
 Proof using. intros. now apply lequiv_max; [apply lequiv_max|]. Qed.
 
-(** One direction, by induction on the depth. *)
-Lemma MRn_dir n : forall G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
+(** One direction at a depth. *)
+Definition MDirAt n := forall G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
     idxR idxR' shR shR' posR posR' m m' m'',
   MIrrHyps G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C'' idxR idxR' shR shR' posR posR' m m' m'' ->
   forall t t', MRn n G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' t t' ->
     MRn n G Γ l1 l2 li X A B C s1 s2 si X'' A'' B'' C'' shR' posR' m m'' t t'.
+
+(** The hypotheses in a world. *)
+Lemma MIrrHyps_kw {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
+    idxR idxR' shR shR' posR posR' m m' m''} (ρ : kwk G Γ) :
+  MIrrHyps G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C'' idxR idxR' shR shR' posR posR' m m' m'' ->
+  MIrrHyps (kw_G ρ) (kw_Δ ρ) l1 l2 li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C)
+    r1 r2 ri (kty ρ X') (ktyl ρ A') (ktyll ρ B') (ktmlll ρ C') s1 s2 si (kty ρ X'') (ktyl ρ A'') (ktyll ρ B'') (ktmlll ρ C'')
+    (fun ρ' => idxR (kw_comp ρ ρ')) (fun ρ' => idxR' (kw_comp ρ ρ')) (fun ρ' => shR (kw_comp ρ ρ'))
+    (fun ρ' => shR' (kw_comp ρ ρ')) (fun ρ' => posR (kw_comp ρ ρ')) (fun ρ' => posR' (kw_comp ρ ρ'))
+    (ktm ρ m) (ktm ρ m') (ktm ρ m'').
 Proof using EL.
-  induction n as [|n IH]; intros G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
-    idxR idxR' shR shR' posR posR' m m' m'' H t t' Ht.
-  all: pose proof H as (HM1 & HM2 & HSr & HPr & Nm & Nm' & Nm'' & I1 & I2).
-  all: pose proof (ms_geq HM1) as HG1; pose proof (ms_geq HM2) as HG2.
-  all: destruct (MSide_root HM1 Nm Nm' I1) as (Em1 & EA1 & EB1 & EC1).
-  all: destruct (MSide_root HM2 Nm Nm'' I2) as (Em2 & EA2 & EB2 & EC2).
-  all: assert (ET : [ G ; Γ ⊢g tyM r1 r2 ri X' A' B' C' m' ≅ tyM s1 s2 si X'' A'' B'' C'' m'' @ mlvl l1 l2 li ])
-    by (eapply eqty_trans; [apply eqty_sym, geq_ty_sound, (MGeq_M HG1 Em1) | exact (geq_ty_sound (MGeq_M HG2 Em2))]).
-  all: destruct Ht as [Hg Ht]; split; [exact (MGen_dir ET Hg) |].
-  1: exact I.
+  intros (HM1 & HM2 & HS & HP & _ & _ & _ & I1 & I2).
+  refine (conj (MSide_kw ρ HM1) (conj (MSide_kw ρ HM2) (conj _ (conj _ (conj _ (conj _ (conj _ (conj _ _)))))))).
+  3-5: kw_nf.
+  - intros ρ'. exact (HS (kw_comp ρ ρ')).
+  - intros ρ'. exact (HP (kw_comp ρ ρ')).
+  - intros ρ'. cbn beta. rewrite <- !ktm_comp. exact (I1 (kw_comp ρ ρ')).
+  - intros ρ'. cbn beta. rewrite <- !ktm_comp. exact (I2 (kw_comp ρ ρ')).
+Qed.
+
+(** The observations, given the children's. *)
+Lemma MObs_dir n (IH : MDirAt n) {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
+    idxR idxR' shR shR' posR posR' m m' m''} :
+  MIrrHyps G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C'' idxR idxR' shR shR' posR posR' m m' m'' ->
+  forall t t', MObs (MRn n) G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' t t' ->
+    MObs (MRn n) G Γ l1 l2 li X A B C s1 s2 si X'' A'' B'' C'' shR' posR' m m'' t t'.
+Proof using EL.
+  intros H t t' Ht.
+  pose proof H as (HM1 & HM2 & HSr & HPr & Nm & Nm' & Nm'' & I1 & I2).
+  pose proof (ms_geq HM1) as HG1; pose proof (ms_geq HM2) as HG2.
+  destruct (MSide_root HM1 Nm Nm' I1) as (Em1 & EA1 & EB1 & EC1).
+  destruct (MSide_root HM2 Nm Nm'' I2) as (Em2 & EA2 & EB2 & EC2).
   intros k1 k2 ki X1 A1 B1 C1 j1 k1' k2' ki' X1' A1' B1' C1' j1' Ann Ann''.
   pose proof HG1 as (Hr1 & Hr2 & Hri & (W1 & W2 & Wi & _) & HXX' & _).
   pose proof HG2 as (Hs1 & Hs2 & Hsi & _).
@@ -352,6 +373,22 @@ Proof using EL.
       intros ρ' p p' hp hp'. intros t2 t2'; split; intros Ht2.
       * eapply IH; [exact (MIrrHyps_swap (MIrrHyps_child ρ ρ' a a' p p' H ha hp')) | exact Ht2].
       * eapply IH; [exact (MIrrHyps_child ρ ρ' a a' p p' H ha hp') | exact Ht2].
+Qed.
+
+(** One direction, by induction on the depth. *)
+Lemma MRn_dir n : MDirAt n.
+Proof using EL.
+  induction n as [|n IH]; intros G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
+    idxR idxR' shR shR' posR posR' m m' m'' H t t' Ht.
+  all: pose proof H as (HM1 & HM2 & HSr & HPr & Nm & Nm' & Nm'' & I1 & I2).
+  all: pose proof (ms_geq HM1) as HG1; pose proof (ms_geq HM2) as HG2.
+  all: destruct (MSide_root HM1 Nm Nm' I1) as (Em1 & EA1 & EB1 & EC1).
+  all: destruct (MSide_root HM2 Nm Nm'' I2) as (Em2 & EA2 & EB2 & EC2).
+  all: assert (ET : [ G ; Γ ⊢g tyM r1 r2 ri X' A' B' C' m' ≅ tyM s1 s2 si X'' A'' B'' C'' m'' @ mlvl l1 l2 li ])
+    by (eapply eqty_trans; [apply eqty_sym, geq_ty_sound, (MGeq_M HG1 Em1) | exact (geq_ty_sound (MGeq_M HG2 Em2))]).
+  all: destruct Ht as [Hg Ht]; split; [exact (MGen_dir ET Hg) |].
+  1: exact I.
+  intros ρ. exact (MObs_dir n IH (MIrrHyps_kw ρ H) _ _ (Ht ρ)).
 Qed.
 
 Lemma MR_irrel {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''

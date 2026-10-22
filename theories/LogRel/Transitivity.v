@@ -452,6 +452,62 @@ Proof using EL.
                                 N1 N2 N3 J1 J3) x z) Z).
 Qed.
 
+(** The hypotheses in a world. *)
+Lemma MTransHyps_kw {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
+    I1 I2 S1 S2 P1 P2 m m' m''} (ρ : kwk G Γ) :
+  MTransHyps G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C'' I1 I2 S1 S2 P1 P2 m m' m'' ->
+  MTransHyps (kw_G ρ) (kw_Δ ρ) l1 l2 li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C)
+    r1 r2 ri (kty ρ X') (ktyl ρ A') (ktyll ρ B') (ktmlll ρ C') s1 s2 si (kty ρ X'') (ktyl ρ A'') (ktyll ρ B'') (ktmlll ρ C'')
+    (fun ρ' => I1 (kw_comp ρ ρ')) (fun ρ' => I2 (kw_comp ρ ρ')) (fun ρ' => S1 (kw_comp ρ ρ'))
+    (fun ρ' => S2 (kw_comp ρ ρ')) (fun ρ' => P1 (kw_comp ρ ρ')) (fun ρ' => P2 (kw_comp ρ ρ'))
+    (ktm ρ m) (ktm ρ m') (ktm ρ m'').
+Proof using EL.
+  intros (HM1 & HM2 & _ & _ & _ & I1m & I2m & Sc & Si & Pi & Pr & P12).
+  refine (conj (MSide_kw ρ HM1) (conj (MSide_kw ρ HM2) (conj _ (conj _ (conj _
+            (conj (MIdx_kw ρ I1m) (conj (MIdx_kw ρ I2m) _))))))).
+  1-3: kw_nf.
+  refine (conj _ (conj (MShIrr_kw ρ Si) (conj (MPosIrr_kw ρ Pi) (conj _ _)))).
+  - intros ρ'. exact (Sc _).
+  - intros ρ'. exact (Pr _).
+  - intros ρ'. exact (P12 _).
+Qed.
+
+(** The observations, given the children's. *)
+Lemma MObs_trans n (IH : MTransAt n) {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
+    I1 I2 S1 S2 P1 P2 m m' m''} :
+  MTransHyps G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C'' I1 I2 S1 S2 P1 P2 m m' m'' ->
+  forall t1 t2 t3,
+    MObs (MRn n) G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' S1 P1 m m' t1 t2 ->
+    MObs (MRn n) G Γ r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C'' S2 P2 m' m'' t2 t3 ->
+    MObs (MRn n) G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' S1 P1 m m' t1 t3.
+Proof using EL.
+  intros H t1 t2 t3 H12 H23.
+  pose proof H as (HM1 & HM2 & Nm & Nm' & Nm'' & I1m & I2m & Sc & _).
+  pose proof (ms_geq HM1) as HG1; pose proof (ms_geq HM2) as HG2.
+  destruct (MSide_root HM1 Nm Nm' I1m) as (Em1 & EA1 & EB1 & EC1).
+  destruct (MSide_root HM2 Nm' Nm'' I2m) as (Em2 & EA2 & EB2 & EC2).
+  pose proof HG1 as (Hr1 & Hr2 & Hri & (W1 & W2 & Wi & _) & _).
+  pose proof HG2 as (Hs1 & Hs2 & Hsi & _ & HXX2 & _).
+  assert (Hm : lequiv (gL G) (mlvl l1 l2 li) (mlvl r1 r2 ri)) by (apply lequiv_mlvl; assumption).
+  intros k1 k2 ki X1 A1 B1 C1 j1 k1' k2' ki' X1' A1' B1' C1' j1' Ann Ann'.
+  (* the middle annotations, at the third signature *)
+  assert (Ann'' : MAnn G Γ s1 s2 si X'' A'' B'' C'' m'' k1' k2' ki' X1' A1' B1' C1' j1').
+  { refine (MAnn_conv (MEq_sym ge_typeof ge_notV (MEq_of_MGeq HG2)) _ Ann').
+    eapply eqtm_lconv; [| exact (lequiv_sym _ _ _ Hsi)].
+    eapply eqtm_conv; [| rewrite ge_typeof; exact (eqty_sym _ _ _ _ _ _ (geq_ty_sound HXX2))].
+    apply eqtm_sym, geq_tm_sound, Em2. }
+  specialize (H12 k1 k2 ki X1 A1 B1 C1 j1 k1' k2' ki' X1' A1' B1' C1' j1' Ann Ann').
+  specialize (H23 k1' k2' ki' X1' A1' B1' C1' j1' k1' k2' ki' X1' A1' B1' C1' j1' Ann' Ann'').
+  pose proof (geq_ty_sound EA1) as DA1. pose proof (geq_ty_sound EA2) as DA2.
+  assert (Wm : lwf (gL G) (mlvl l1 l2 li)) by (split; [split|]; assumption).
+  refine (SigRel_trans (lequiv_sym _ _ _ Hr1) (lequiv_sym _ _ _ Hm) (lequiv_sym _ _ _ Hs1)
+            (lequiv_sym _ _ _ (lequiv_mlvl Hs1 Hs2 Hsi)) W1 Wm (eqty_wf_l ge_typeof DA1)
+            (eqty_wf_r ge_typeof DA1) (eqty_wf_r ge_typeof DA2) EA1 (M_outB_geq HG1 EB1 EC1)
+            EA2 (M_outB_geq HG2 EB2 EC2) _ _ _ _ _ H12 H23).
+  - intros ρ a b c h1 h2. exact (Sc ρ _ _ _ a b c (I1m ρ) (I2m ρ) h1 h2).
+  - intros ρ a b c h1 h2 h u v w Y1 Y2. exact (MPi_trans n IH H ρ a b c h1 h2 h u v w Y1 Y2).
+Qed.
+
 Lemma MRn_trans n : MTransAt n.
 Proof using EL.
   induction n as [|n IH]; intros G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
@@ -474,23 +530,7 @@ Proof using EL.
         eapply geq_tm_conv_l; [exact E2 | apply eqty_sym, geq_ty_sound, (MGeq_M HG1 Em1) | exact Hm]
       | eapply geq_tm_trans; [exact E1' | eapply geq_tm_lconv; [exact E2 | exact Hm]] ] |].
   1: exact Logic.I.
-  intros k1 k2 ki X1 A1 B1 C1 j1 k1' k2' ki' X1' A1' B1' C1' j1' Ann Ann'.
-  (* the middle annotations, at the third signature *)
-  assert (Ann'' : MAnn G Γ s1 s2 si X'' A'' B'' C'' m'' k1' k2' ki' X1' A1' B1' C1' j1').
-  { refine (MAnn_conv (MEq_sym ge_typeof ge_notV (MEq_of_MGeq HG2)) _ Ann').
-    eapply eqtm_lconv; [| exact (lequiv_sym _ _ _ Hsi)].
-    eapply eqtm_conv; [| rewrite ge_typeof; exact (eqty_sym _ _ _ _ _ _ (geq_ty_sound HXX2))].
-    apply eqtm_sym, geq_tm_sound, Em2. }
-  specialize (H12 k1 k2 ki X1 A1 B1 C1 j1 k1' k2' ki' X1' A1' B1' C1' j1' Ann Ann').
-  specialize (H23 k1' k2' ki' X1' A1' B1' C1' j1' k1' k2' ki' X1' A1' B1' C1' j1' Ann' Ann'').
-  pose proof (geq_ty_sound EA1) as DA1. pose proof (geq_ty_sound EA2) as DA2.
-  assert (Wm : lwf (gL G) (mlvl l1 l2 li)) by (split; [split|]; assumption).
-  refine (SigRel_trans (lequiv_sym _ _ _ Hr1) (lequiv_sym _ _ _ Hm) (lequiv_sym _ _ _ Hs1)
-            (lequiv_sym _ _ _ (lequiv_mlvl Hs1 Hs2 Hsi)) W1 Wm (eqty_wf_l ge_typeof DA1)
-            (eqty_wf_r ge_typeof DA1) (eqty_wf_r ge_typeof DA2) EA1 (M_outB_geq HG1 EB1 EC1)
-            EA2 (M_outB_geq HG2 EB2 EC2) _ _ _ _ _ H12 H23).
-  - intros ρ a b c h1 h2. exact (Sc ρ _ _ _ a b c (I1m ρ) (I2m ρ) h1 h2).
-  - intros ρ a b c h1 h2 h u v w Y1 Y2. exact (MPi_trans n IH H ρ a b c h1 h2 h u v w Y1 Y2).
+  intros ρ. exact (MObs_trans n IH (MTransHyps_kw ρ H) _ _ _ (H12 ρ) (H23 ρ)).
 Qed.
 
 End MTrans.

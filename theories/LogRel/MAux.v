@@ -678,6 +678,12 @@ Proof using EL.
   apply geq_ty_pi; [exact Hl2 | exact (lequiv_max _ _ _ _ _ (lequiv_max _ _ _ _ _ Hl1 Hl2) Hli) | exact HB | exact HBB | exact K].
 Qed.
 
+(** An index related in every world, seen from a world. *)
+Lemma MIdx_kw {G Γ} {idxR : DomRel G Γ} {m m'} (ρ : kwk G Γ) :
+  (forall ρ, idxR ρ (ktm ρ m) (ktm ρ m')) ->
+  forall ρ' : kwk (kw_G ρ) (kw_Δ ρ), idxR (kw_comp ρ ρ') (ktm ρ' (ktm ρ m)) (ktm ρ' (ktm ρ m')).
+Proof using. intros I ρ'. rewrite <- !ktm_comp. exact (I (kw_comp ρ ρ')). Qed.
+
 (** ** The other side's view
 
     The relations with both sides' arguments swapped. *)

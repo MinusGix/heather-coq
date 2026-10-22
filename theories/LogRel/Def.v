@@ -660,6 +660,45 @@ Definition MGen (G : gctx) (Γ : ctx) (l1 l2 li : lvl) (X A B : ty) (C : tm)
     [ G ; Γ ⊢ w ≈ w' : tyM l1 l2 li X A B C m @ mlvl l1 l2 li ] /\
     [ G ; Γ ⊢ w ≈ w' : tyM r1 r2 ri X' A' B' C' m' @ mlvl l1 l2 li ].
 
+(** The relation's type, for [MObs]'s recursive argument. *)
+Definition MRelTy : Type := forall (G : gctx) (Γ : ctx), lvl -> lvl -> lvl -> ty -> ty -> ty -> tm ->
+  lvl -> lvl -> lvl -> ty -> ty -> ty -> tm -> MShRel G Γ -> MPosRel G Γ -> tm -> tm -> tm -> tm -> Prop.
+
+(** [out]'s observations in one context, the children by [MRec]: for
+    every choice of equivalent annotations on the two [out]s, [Σ]'s
+    relation at [out]'s type. *)
+Definition MObs (MRec : MRelTy) (G : gctx) (Γ : ctx) (l1 l2 li : lvl) (X A B : ty) (C : tm)
+    (r1 r2 ri : lvl) (X' A' B' : ty) (C' : tm)
+    (shR : MShRel G Γ) (posR : MPosRel G Γ) (m m' t t' : tm) : Prop :=
+  forall k1 k2 ki X1 A1 B1 C1 j1 k1' k2' ki' X1' A1' B1' C1' j1',
+  MAnn G Γ l1 l2 li X A B C m k1 k2 ki X1 A1 B1 C1 j1 ->
+  MAnn G Γ r1 r2 ri X' A' B' C' m' k1' k2' ki' X1' A1' B1' C1' j1' ->
+  SigRel G Γ l1 (mlvl l1 l2 li) r1 (mlvl r1 r2 ri)
+    A[lsingle m] (tyPi l2 (mlvl l1 l2 li) B[llift (lsingle m)] (mKidTy l1 l2 li X A B C m))
+    A'[lsingle m'] (tyPi r2 (mlvl r1 r2 ri) B'[llift (lsingle m')] (mKidTy r1 r2 ri X' A' B' C' m'))
+    (fun ρ => shR ρ (ktm ρ m) (ktm ρ m'))
+    (fun ρ a a' _ =>
+       PiRel (kw_G ρ) (kw_Δ ρ) l2 (mlvl l1 l2 li) r2 (mlvl r1 r2 ri)
+         (ktyl ρ B[llift (lsingle m)])[lsingle a] (ktyll ρ (mKidTy l1 l2 li X A B C m))[llift (lsingle a)]
+         (ktyl ρ B'[llift (lsingle m')])[lsingle a'] (ktyll ρ (mKidTy r1 r2 ri X' A' B' C' m'))[llift (lsingle a')]
+         (fun ρ' => posR (kw_comp ρ ρ') (ktm (kw_comp ρ ρ') m) (ktm (kw_comp ρ ρ') m') (ktm ρ' a) (ktm ρ' a'))
+         (fun ρ' p p' _ =>
+            MRec (kw_G ρ') (kw_Δ ρ')
+              l1 l2 li (kty (kw_comp ρ ρ') X) (ktyl (kw_comp ρ ρ') A) (ktyll (kw_comp ρ ρ') B)
+              (ktmlll (kw_comp ρ ρ') C)
+              r1 r2 ri (kty (kw_comp ρ ρ') X') (ktyl (kw_comp ρ ρ') A') (ktyll (kw_comp ρ ρ') B')
+              (ktmlll (kw_comp ρ ρ') C')
+              (fun ρ'' => shR (kw_comp (kw_comp ρ ρ') ρ''))
+              (fun ρ'' => posR (kw_comp (kw_comp ρ ρ') ρ''))
+              (ktmlll (kw_comp ρ ρ') C)[lsingle3 (ktm (kw_comp ρ ρ') m) (ktm ρ' a) p]
+              (ktmlll (kw_comp ρ ρ') C')[lsingle3 (ktm (kw_comp ρ ρ') m') (ktm ρ' a') p']))
+    (tmOut k1 k2 ki X1 A1 B1 C1 j1 t) (tmOut k1' k2' ki' X1' A1' B1' C1' j1' t').
+
+(** The observations are made in every world, with the annotations in
+    the world's context: a weakened tree's [out] may carry annotations
+    that are no weakening, and moving [Σ]'s relation from one [out]'s
+    annotations to another's at a neutral scrutinee would need the
+    neutrals' reflection, which comes after weakening. *)
 Fixpoint MRn (n : nat) (G : gctx) (Γ : ctx) (l1 l2 li : lvl) (X A B : ty) (C : tm)
     (r1 r2 ri : lvl) (X' A' B' : ty) (C' : tm)
     (shR : MShRel G Γ) (posR : MPosRel G Γ) (m m' t t' : tm) {struct n} : Prop :=
@@ -667,29 +706,11 @@ Fixpoint MRn (n : nat) (G : gctx) (Γ : ctx) (l1 l2 li : lvl) (X A B : ty) (C : 
   match n with
   | 0 => True
   | S n =>
-      forall k1 k2 ki X1 A1 B1 C1 j1 k1' k2' ki' X1' A1' B1' C1' j1',
-      MAnn G Γ l1 l2 li X A B C m k1 k2 ki X1 A1 B1 C1 j1 ->
-      MAnn G Γ r1 r2 ri X' A' B' C' m' k1' k2' ki' X1' A1' B1' C1' j1' ->
-      SigRel G Γ l1 (mlvl l1 l2 li) r1 (mlvl r1 r2 ri)
-        A[lsingle m] (tyPi l2 (mlvl l1 l2 li) B[llift (lsingle m)] (mKidTy l1 l2 li X A B C m))
-        A'[lsingle m'] (tyPi r2 (mlvl r1 r2 ri) B'[llift (lsingle m')] (mKidTy r1 r2 ri X' A' B' C' m'))
-        (fun ρ => shR ρ (ktm ρ m) (ktm ρ m'))
-        (fun ρ a a' _ =>
-           PiRel (kw_G ρ) (kw_Δ ρ) l2 (mlvl l1 l2 li) r2 (mlvl r1 r2 ri)
-             (ktyl ρ B[llift (lsingle m)])[lsingle a] (ktyll ρ (mKidTy l1 l2 li X A B C m))[llift (lsingle a)]
-             (ktyl ρ B'[llift (lsingle m')])[lsingle a'] (ktyll ρ (mKidTy r1 r2 ri X' A' B' C' m'))[llift (lsingle a')]
-             (fun ρ' => posR (kw_comp ρ ρ') (ktm (kw_comp ρ ρ') m) (ktm (kw_comp ρ ρ') m') (ktm ρ' a) (ktm ρ' a'))
-             (fun ρ' p p' _ =>
-                MRn n (kw_G ρ') (kw_Δ ρ')
-                  l1 l2 li (kty (kw_comp ρ ρ') X) (ktyl (kw_comp ρ ρ') A) (ktyll (kw_comp ρ ρ') B)
-                  (ktmlll (kw_comp ρ ρ') C)
-                  r1 r2 ri (kty (kw_comp ρ ρ') X') (ktyl (kw_comp ρ ρ') A') (ktyll (kw_comp ρ ρ') B')
-                  (ktmlll (kw_comp ρ ρ') C')
-                  (fun ρ'' => shR (kw_comp (kw_comp ρ ρ') ρ''))
-                  (fun ρ'' => posR (kw_comp (kw_comp ρ ρ') ρ''))
-                  (ktmlll (kw_comp ρ ρ') C)[lsingle3 (ktm (kw_comp ρ ρ') m) (ktm ρ' a) p]
-                  (ktmlll (kw_comp ρ ρ') C')[lsingle3 (ktm (kw_comp ρ ρ') m') (ktm ρ' a') p']))
-        (tmOut k1 k2 ki X1 A1 B1 C1 j1 t) (tmOut k1' k2' ki' X1' A1' B1' C1' j1' t')
+      forall ρ : kwk G Γ,
+      MObs (MRn n) (kw_G ρ) (kw_Δ ρ) l1 l2 li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C)
+        r1 r2 ri (kty ρ X') (ktyl ρ A') (ktyll ρ B') (ktmlll ρ C')
+        (fun ρ' => shR (kw_comp ρ ρ')) (fun ρ' => posR (kw_comp ρ ρ'))
+        (ktm ρ m) (ktm ρ m') (ktm ρ t) (ktm ρ t')
   end.
 
 Definition MR (G : gctx) (Γ : ctx) (l1 l2 li : lvl) (X A B : ty) (C : tm)

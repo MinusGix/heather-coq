@@ -492,7 +492,7 @@ Lemma MRn_impl n : forall G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C'
   MRn n G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR' posR' m m' t t'.
 Proof using .
   induction n as [|n IH]; intros * Hs Hp [Hg Ho]; (split; [exact Hg|]); [exact I|].
-  intros * HA HA'. eapply SigRel_impl; [| | exact (Ho _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ HA HA')].
+  intros ρ0; unfold MObs; intros * HA HA'. eapply SigRel_impl; [| | exact (Ho ρ0 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ HA HA')].
   - intros ρ a a'. apply Hs.
   - intros ρ a a' h h' u u'. apply PiRel_impl.
     + intros ρ' p p'. apply Hp.
