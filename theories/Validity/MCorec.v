@@ -334,6 +334,72 @@ Lemma ktmll_single2 {G Δ} (ρ : kwk G Δ) (t : tm) e a p : LK nftm e ->
   (ktmll ρ t[llift (llift e)])[lsingle2 a p] = t⟦kw_γ ρ⟧[lcons (lcons (kwsub ρ e) a) p].
 Proof using . intros Ne. rewrite ktmll_subst_lift2. apply lift2_single2, kwsub_nf, Ne. Qed.
 
+(** ** [out] of a [corec], typed
+
+    At any annotations on [out] equal to the signature and to an index
+    [j] equal to the [corec]'s own [j0]: one step to β's reduct, at
+    [out]'s type at [j]. *)
+Lemma tmred_out_corec {G Γ l l' li X A B C kc Y c j0 y j k1 k2 ki X1 A1 B1 C1 j1} :
+  MSig (G := G) (i := ge_layer) Γ l l' li X A B C -> lwf (gL G) kc ->
+  [ G ; Γ ,, X @ li ⊢g Y @ kc ] ->
+  [ G ; Γ ,, X @ li ,, Y @ kc ⊢g c : (mStepTy l l' li X A B C kc Y)⟨↑⟩ @ lmax l (lmax kc (mlvl l l' li)) ] ->
+  [ G ; Γ ⊢g j0 : X @ li ] -> [ G ; Γ ⊢g y : Y[lsingle j0] @ kc ] -> [ G ; Γ ⊢g j0 ≅ j : X @ li ] ->
+  MAnn G Γ l l' li X A B C j k1 k2 ki X1 A1 B1 C1 j1 ->
+  [ G ; Γ ⊢g tmOut k1 k2 ki X1 A1 B1 C1 j1 (tmCorec l l' li X A B C kc Y c j0 y)
+      ⤳* mOutCorec l l' li X A B C kc Y c j0 y : mOutTy l l' li X A B C j @ lmax l (mlvl l l' li) ].
+Proof using EL.
+  intros HS Hkc HY Hc Hj0 Hy Ej Ann.
+  pose proof HS as (Hl & Hl' & Hli & HX & HA & HB & HC).
+  pose proof (eqtm_wf_r ge_typeof Ej) as Hj.
+  pose proof (MEq_of_MAnn HS (MAnn_refl HS Hj0)) as HE0.
+  pose proof Ann as (K1 & K2 & Ki & EX1 & EA1 & EB1 & EC1 & Ej1).
+  assert (Hcor : [ G ; Γ ⊢g tmCorec l l' li X A B C kc Y c j0 y : tyM l l' li X A B C j0 @ mlvl l l' li ])
+    by (apply wf_corec; auto using ge_compt).
+  assert (Hcor' : [ G ; Γ ⊢g tmCorec l l' li X A B C kc Y c j0 y : tyM l l' li X A B C j @ mlvl l l' li ]).
+  { eapply wf_conv; [exact Hcor | rewrite ge_typeof].
+    exact (M_ty_eq ge_typeof ge_notV HE0 (eqtm_sym _ _ _ _ _ _ _ Ej)). }
+  pose proof (tmred_wf _ _ _ _ _ _ _ (tmred_out_ann HS Ann (tmred_refl _ _ _ Hcor'))) as Hwf.
+  assert (E1 : [ G ; Γ ⊢g tmOut l l' li X A B C j0 (tmCorec l l' li X A B C kc Y c j0 y)
+                 ≅ tmOut k1 k2 ki X1 A1 B1 C1 j1 (tmCorec l l' li X A B C kc Y c j0 y)
+                 : mOutTy l l' li X A B C j0 @ lmax l (mlvl l l' li) ]).
+  { apply eqtm_out; auto using ge_compt, lequiv_sym, eqtm_refl.
+    exact (eqtm_trans _ _ _ _ _ _ _ _ Ej Ej1). }
+  assert (E2 : [ G ; Γ ⊢g tmOut l l' li X A B C j0 (tmCorec l l' li X A B C kc Y c j0 y)
+                 ≅ mOutCorec l l' li X A B C kc Y c j0 y : mOutTy l l' li X A B C j0 @ lmax l (mlvl l l' li) ])
+    by (apply eqtm_out_corec; auto using ge_compt).
+  split; [exact Hwf | econstructor; [apply red_out_corec | constructor] |].
+  eapply eqtm_conv; [exact (eqtm_trans _ _ _ _ _ _ _ _ (eqtm_sym _ _ _ _ _ _ _ E1) E2) | rewrite ge_typeof].
+  exact (M_out_eq ge_typeof ge_notV HE0 Hj Hj0 (eqtm_sym _ _ _ _ _ _ _ Ej)).
+Qed.
+
+(** The right-hand step at its own signature, carrier and context, from
+    its typing at the left-hand ones (as in [pre_corec_r]). *)
+Lemma pre_step_r {G Γ l l' li k k' ki X X' A A' B B' C C' kc kc' Y Y' c'} :
+  MEq (G := G) (i := ge_layer) Γ l l' li k k' ki X X' A A' B B' C C' -> lequiv (gL G) kc kc' ->
+  [ G ; Γ ,, X @ li ⊢g Y ≅ Y' @ kc ] -> [ G ; Γ ,, X @ li ⊢g Y @ kc ] -> [ G ; Γ ,, X @ li ⊢g Y' @ kc ] ->
+  [ G ; Γ ,, X @ li ,, Y @ kc ⊢g c' : (mStepTy l l' li X A B C kc Y)⟨↑⟩ @ lmax l (lmax kc (mlvl l l' li)) ] ->
+  [ G ; Γ ,, X' @ ki ⊢g Y' @ kc' ] /\
+  [ G ; Γ ,, X' @ ki ,, Y' @ kc' ⊢g c' : (mStepTy k k' ki X' A' B' C' kc' Y')⟨↑⟩
+      @ lmax k (lmax kc' (mlvl k k' ki)) ].
+Proof using .
+  intros HE Hkc HYY HY HY' Hc'.
+  pose proof (MEq_ids ge_typeof ge_notV HE) as (Hid1 & _).
+  pose proof HE as (Hlk & Hlk' & Hlik & HS & HXX & _).
+  assert (Hff : lequiv (gL G) (mlvl l l' li) (mlvl k k' ki))
+    by exact (lequiv_max _ _ _ _ _ (lequiv_max _ _ _ _ _ Hlk Hlk') Hlik).
+  assert (HLc : lequiv (gL G) (lmax l (lmax kc (mlvl l l' li))) (lmax k (lmax kc' (mlvl k k' ki))))
+    by exact (lequiv_max _ _ _ _ _ Hlk (lequiv_max _ _ _ _ _ Hkc Hff)).
+  assert (HΓXY : [ G ; Γ ,, X @ li ,, Y @ kc ⊢g ]) by exact (ext_wf_g HY (lequiv_wf_l _ _ _ Hkc)).
+  pose proof (M_id ge_typeof Hid1 HY HYY HY' Hkc) as HidY.
+  assert (ES : [ G ; Γ ,, X @ li ,, Y @ kc ⊢g (mStepTy l l' li X A B C kc Y)⟨↑⟩
+                 ≅ (mStepTy k k' ki X' A' B' C' kc' Y')⟨↑⟩ @ lmax l (lmax kc (mlvl l l' li)) ])
+    by exact (M_wk_eqty ge_typeof (M_step_eq ge_typeof ge_notV HE Hkc HY HYY) (wkr_shift1 _ _ _) HΓXY).
+  split.
+  - eapply wft_lconv; [exact (M_mv_ty ge_typeof Hid1 HY') | apply lequiv_sym, Hkc].
+  - eapply wf_lconv; [| apply lequiv_sym, HLc].
+    exact (M_mv_tm ge_typeof HidY (conv_tm' ge_typeof Hc' (eqty_sym _ _ _ _ _ _ ES))).
+Qed.
+
 (** ** [corec] at related premises *)
 
 Section CorecV.
@@ -391,6 +457,37 @@ Proof using EL VL VN Vc Vstep Hd.
   rewrite <- !gwa_mStepTy, (kw_mStepTy U _ _ _ _ _ _ _ _ _ _ Nd), (kw_mStepTy U _ _ _ _ _ _ _ _ _ _ Nd') in Xc.
   rewrite <- !gwa_mStepTy, (kw_mStepTy U _ _ _ _ _ _ _ _ _ _ Nd), (kw_mStepTy U _ _ _ _ _ _ _ _ _ _ Nd') in Xs.
   exact (LRtm_irrel_r Xc Xs).
+Qed.
+
+(** The premises' escapes in a world: the signatures, the carrier and
+    the step (both steps in the left-hand context at the left-hand step
+    type). *)
+Lemma esc_at (U : kwk G Δ) :
+  MGeq (kw_G U) (kw_Δ U) l l' li (sX U) (sA U) (sB U) (sC U) k k' ki (rX U) (rA U) (rB U) (rC U) /\
+  [ kw_G U ; kw_Δ U ,, sX U @ li ⊢g sY U @ kc ] /\ [ kw_G U ; kw_Δ U ,, sX U @ li ⊢ sY U ≈ rY U @ kc ] /\
+  [ kw_G U ; kw_Δ U ,, sX U @ li ,, sY U @ kc ⊢g sc U
+      : (mStepTy l l' li (sX U) (sA U) (sB U) (sC U) kc (sY U))⟨↑⟩ @ Lc ] /\
+  [ kw_G U ; kw_Δ U ,, sX U @ li ,, sY U @ kc ⊢g rc U
+      : (mStepTy l l' li (sX U) (sA U) (sB U) (sC U) kc (sY U))⟨↑⟩ @ Lc ] /\
+  [ kw_G U ; kw_Δ U ,, sX U @ li ,, sY U @ kc ⊢ sc U ≈ rc U
+      : (mStepTy l l' li (sX U) (sA U) (sB U) (sC U) kc (sY U))⟨↑⟩ @ Lc ].
+Proof using EL VL VN VX VA VB VC VY Vc Hwl Hwl' Hwli Hwc Hk Hk' Hki Hd.
+  pose proof (MSide_kw U (m_side Hwl Hwl' Hwli Hk Hk' Hki VX VA VB VC Hd)) as HM.
+  pose proof (SubRel_kw _ _ _ U _ _ Hd) as HdU.
+  pose proof (VTyG_loc (VTyG_gwk VX (kw_gok U))) as VXU.
+  destruct (VXU _ _ _ HdU) as [RX HRX]. destruct (escape_ty _ _ _ _ _ _ _ _ HRX) as (HXD & _ & _).
+  pose proof (SubRel_lift HdU (VTy_refl_l VXU) HXD (kw_lwf U Hwli)) as Hl1.
+  pose proof (VY _ _ (kw_gok U)) as VYU. rewrite gwa_cext in VYU.
+  destruct (VYU _ _ _ Hl1) as [RY HRY]. destruct (escape_ty _ _ _ _ _ _ _ _ HRY) as (HYD & _ & EY).
+  pose proof (SubRel_lift Hl1 (VTy_refl_l VYU) HYD (kw_lwf U Hwc)) as Hl2.
+  pose proof (Vc _ _ (kw_gok U)) as VcU. rewrite !gwa_cext, gwa_ren_ty, gwa_mStepTy in VcU.
+  pose proof (VcU _ _ _ Hl2) as Xc. destruct (LRtm_escape Xc) as [Hc Hc']. pose proof (LRtm_geq Xc) as Ec.
+  rewrite !shift_llift_ty, <- !gwa_mStepTy, (kw_mStepTy U _ _ _ _ _ _ _ _ _ _ Nd) in Hc, Hc', Ec.
+  rewrite <- !(ktmll_subst_lift2 U c d) in Hc, Ec. rewrite <- !(ktmll_subst_lift2 U c' d') in Hc', Ec.
+  rewrite <- !(ktyl_subst_lift U d Y) in HYD, EY, Hc, Hc', Ec.
+  rewrite <- !(ktyl_subst_lift U d' Y') in EY.
+  rewrite <- !(kty_subst U X d) in HYD, EY, Hc, Hc', Ec.
+  exact (conj (ms_geq HM) (conj HYD (conj EY (conj Hc (conj Hc' Ec))))).
 Qed.
 
 End CorecV.
