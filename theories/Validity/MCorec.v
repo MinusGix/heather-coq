@@ -80,6 +80,15 @@ Lemma mBody_single l l' li X A B C k Y c j y p :
        p).
 Proof using . intros. unfold mBody. meq'. Qed.
 
+(** The step type under a substitution. *)
+Lemma subst_mStepTy_lift l l' li X A B C k Y e : LK nftm e ->
+  (mStepTy l l' li X A B C k Y)[llift e] =
+  mStepTy l l' li X[e] A[llift e] B[llift (llift e)] C[llift (llift (llift e))] k Y[llift e].
+Proof using .
+  intros He. meq'.
+  all: repeat (rewrite ?shift_llift, ?shift_single by apply He; mfold; meq').
+Qed.
+
 Section MCorec.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
@@ -295,5 +304,95 @@ Proof using .
 Qed.
 
 End KwOut.
+
+Lemma gwa_mStepTy γ l l' li X A B C k Y :
+  (mStepTy l l' li X A B C k Y)⟦γ⟧ = mStepTy l l' li X⟦γ⟧ A⟦γ⟧ B⟦γ⟧ C⟦γ⟧ k Y⟦γ⟧.
+Proof using .
+  repeat rewrite ?gwa_tySig, ?gwa_tyPi, ?gwa_tySum, ?gwa_tyM, ?gwa_subst_ty, ?gwa_lsingle, ?gwa_ren_ty, ?gwa_ren.
+  reflexivity.
+Qed.
+
+(** The step type at a world's substitution. *)
+Lemma kw_mStepTy {G Δ} (ρ : kwk G Δ) d l l' li X A B C k Y : LK nftm d ->
+  (mStepTy l l' li X A B C k Y)⟦kw_γ ρ⟧[llift (kwsub ρ d)] =
+  mStepTy l l' li (kty ρ X[d]) (ktyl ρ A[llift d]) (ktyll ρ B[llift (llift d)])
+    (ktmlll ρ C[llift (llift (llift d))]) k (ktyl ρ Y[llift d]).
+Proof using .
+  intros Nd. rewrite gwa_mStepTy, (subst_mStepTy_lift _ _ _ _ _ _ _ _ _ _ (kwsub_nf ρ d Nd)).
+  now rewrite kty_subst, !ktyl_subst_lift, ktyll_subst_lift', ktmlll_subst_lift.
+Qed.
+
+Lemma ktmll_subst_lift2 {G Δ} (ρ : kwk G Δ) (t : tm) e :
+  ktmll ρ t[llift (llift e)] = t⟦kw_γ ρ⟧[llift (llift (kwsub ρ e))].
+Proof using .
+  unfold ktmll, kwsub. rewrite gwa_subst, subst_ren_lren.
+  apply subst_ext. intros n. rewrite llk_lren.
+  destruct n as [|[|n]]; repeat rewrite ?llk_llift_gwa, ?llk_llift, ?llk_lren; try reflexivity.
+  change (ren_tm ?x ?r') with x⟨r'⟩. rewrite !ren_ren_comp. apply ren_ext_tm. intros k. rlk_simpl. lia.
+Qed.
+Lemma ktmll_single2 {G Δ} (ρ : kwk G Δ) (t : tm) e a p : LK nftm e ->
+  (ktmll ρ t[llift (llift e)])[lsingle2 a p] = t⟦kw_γ ρ⟧[lcons (lcons (kwsub ρ e) a) p].
+Proof using . intros Ne. rewrite ktmll_subst_lift2. apply lift2_single2, kwsub_nf, Ne. Qed.
+
+(** ** [corec] at related premises *)
+
+Section CorecV.
+Context {G : gctx} {Γ : ctx} {l l' li k k' ki kc kc' : lvl} {X X' A A' B B' Y Y' : ty} {C C' c c' : tm}
+  (Hwl : lwf (gL G) l) (Hwl' : lwf (gL G) l') (Hwli : lwf (gL G) li) (Hwc : lwf (gL G) kc)
+  (Hk : lequiv (gL G) k l) (Hk' : lequiv (gL G) k' l') (Hki : lequiv (gL G) ki li) (Hkc : lequiv (gL G) kc' kc)
+  (VX : VTyG G Γ X X' li) (VA : VTyG G (Γ ,, X @ li) A A' l)
+  (VB : VTyG G (Γ ,, X @ li ,, A @ l) B B' l')
+  (VC : VTmG G (Γ ,, X @ li ,, A @ l ,, B @ l') C C' X⟨↑⟩⟨↑⟩⟨↑⟩ li)
+  (VY : VTyG G (Γ ,, X @ li) Y Y' kc)
+  (Vstep : VTyG G (Γ ,, X @ li) (mStepTy l l' li X A B C kc Y) (mStepTy k k' ki X' A' B' C' kc' Y')
+             (lmax l (lmax kc (mlvl l l' li))))
+  (Vc : VTmG G (Γ ,, X @ li ,, Y @ kc) c c' (mStepTy l l' li X A B C kc Y)⟨↑⟩ (lmax l (lmax kc (mlvl l l' li))))
+  {Δ : ctx} {d d' : lsub} (Hd : SubRel G Γ Δ d d').
+
+Let Lc := lmax l (lmax kc (mlvl l l' li)).
+Let Nd := proj1 (SubRel_nf _ _ _ _ _ Hd).
+Let Nd' := proj2 (SubRel_nf _ _ _ _ _ Hd).
+
+(** The premises in a world [U], at [d] and at [d']. *)
+Local Notation sX U := (kty U X[d]).
+Local Notation sA U := (ktyl U A[llift d]).
+Local Notation sB U := (ktyll U B[llift (llift d)]).
+Local Notation sC U := (ktmlll U C[llift (llift (llift d))]).
+Local Notation sY U := (ktyl U Y[llift d]).
+Local Notation sc U := (ktmll U c[llift (llift d)]).
+Local Notation qX U := (kty U X[d']).
+Local Notation qY U := (ktyl U Y[llift d']).
+Local Notation rX U := (kty U X'[d']).
+Local Notation rA U := (ktyl U A'[llift d']).
+Local Notation rB U := (ktyll U B'[llift (llift d')]).
+Local Notation rC U := (ktmlll U C'[llift (llift (llift d'))]).
+Local Notation rY U := (ktyl U Y'[llift d']).
+Local Notation rc U := (ktmll U c'[llift (llift d')]).
+
+(** The step at related indices and seeds, at both sides' own step
+    types. *)
+Lemma c_at (U : kwk G Δ) j0 j0' y0 y0' :
+  LRtm li (kw_G U) (kw_Δ U) (sX U) (qX U) j0 j0' ->
+  LRtm kc (kw_G U) (kw_Δ U) (sY U)[lsingle j0] (qY U)[lsingle j0'] y0 y0' ->
+  LRtm Lc (kw_G U) (kw_Δ U)
+    (mStepTy l l' li (sX U) (sA U) (sB U) (sC U) kc (sY U))[lsingle j0]
+    (mStepTy k k' ki (rX U) (rA U) (rB U) (rC U) kc' (rY U))[lsingle j0']
+    (sc U)[lsingle2 j0 y0] (rc U)[lsingle2 j0' y0'].
+Proof using EL VL VN Vc Vstep Hd.
+  intros hj hy. pose proof (SubRel_kw _ _ _ U _ _ Hd) as HdU.
+  rewrite !kty_subst in hj. rewrite !ktyl_subst_single in hy.
+  pose proof (Vc _ _ (kw_gok U)) as VcU. rewrite !gwa_cext, gwa_ren_ty, gwa_mStepTy in VcU.
+  pose proof (VcU _ _ _ (SubRel_cons (SubRel_cons HdU hj) hy)) as Xc.
+  rewrite !shift_cons_ty', <- !(ktmll_single2 _ _ _ _ _ Nd), <- !(ktmll_single2 _ _ _ _ _ Nd') in Xc.
+  pose proof (Vstep _ _ (kw_gok U)) as VsU. rewrite gwa_cext, !gwa_mStepTy in VsU.
+  pose proof (VsU _ _ _ (SubRel_cons HdU hj)) as Xs.
+  rewrite <- (lift_single_ty _ _ _ (kwsub_nf U _ Nd)), <- (lift_single_ty _ _ _ (kwsub_nf U _ Nd')) in Xc.
+  rewrite <- (lift_single_ty _ _ _ (kwsub_nf U _ Nd)), <- (lift_single_ty _ _ _ (kwsub_nf U _ Nd')) in Xs.
+  rewrite <- !gwa_mStepTy, (kw_mStepTy U _ _ _ _ _ _ _ _ _ _ Nd), (kw_mStepTy U _ _ _ _ _ _ _ _ _ _ Nd') in Xc.
+  rewrite <- !gwa_mStepTy, (kw_mStepTy U _ _ _ _ _ _ _ _ _ _ Nd), (kw_mStepTy U _ _ _ _ _ _ _ _ _ _ Nd') in Xs.
+  exact (LRtm_irrel_r Xc Xs).
+Qed.
+
+End CorecV.
 
 End MCorec.
