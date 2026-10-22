@@ -19,7 +19,7 @@ Usage (from the repository root, inside the dev shell):
 
 The profile's "total" column counts a tactic's time including the
 tactics it calls; "local" excludes them. A big `eauto`/`first` self time
-with few successes is a search that mostly fails (M1_DESIGN.md,
+with few successes is a search that mostly fails (docs/gotchas.md,
 build-time gotchas). The profiler adds overhead, so its seconds read
 high; the sentence times printed next to it come from the same run.
 """

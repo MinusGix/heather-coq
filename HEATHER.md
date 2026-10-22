@@ -13,6 +13,9 @@ them, and how far we have machine-checked them.
 
 Surveyed at Heather `02c692bf` (2026-09-27).
 
+The milestone design docs cited below by name (`M8_DESIGN.md`, …,
+`ELIM_CONGRUENCE.md`, `SYNTAX_SPIKE.md`) are in `docs/design/`.
+
 ## Direction of authority
 
 - We transcribe Heather's declarative rules and prove them here. Heather's
