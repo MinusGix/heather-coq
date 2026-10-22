@@ -28,6 +28,9 @@ Fixpoint mltt_ty (T : ty) : Prop :=
   | tyDVec _ _ F => mltt_ty F
   (* [IWf]'s index and shape relations are relations at those types (M17b) *)
   | tyIWf _ _ X A _ _ _ _ => mltt_ty X /\ mltt_ty A
+  (* [M]'s index, shape and position relations are relations at those
+     types (M18b) *)
+  | tyM _ _ _ X A B _ _ => mltt_ty X /\ mltt_ty A /\ mltt_ty B
   | tyCTyp _ _ | tyCTrm _ _ _ | tyCPi _ _ | tyTPi _ _ _ _ => False
   | _ => True
   end.
@@ -41,13 +44,15 @@ Fixpoint mltt_ctx (Γ : ctx) : Prop :=
 Lemma mltt_ren (T : ty) r0 : mltt_ty T -> mltt_ty T⟨r0⟩.
 Proof.
   revert r0; induction T; intros r0 H; cbn in *; try tauto.
-  all: first [destruct H; split; [apply IHT1 | apply IHT2]; assumption | apply IHT; assumption].
+  all: first [destruct H as (H1 & H2 & H3); split; [|split]; [apply IHT1 | apply IHT2 | apply IHT3]; assumption
+             | destruct H; split; [apply IHT1 | apply IHT2]; assumption | apply IHT; assumption].
 Qed.
 
 Lemma mltt_subst (T : ty) e : mltt_ty T -> mltt_ty T[e].
 Proof.
   revert e; induction T; intros e H; cbn in *; try tauto.
-  all: first [destruct H; split; [apply IHT1 | apply IHT2]; assumption | apply IHT; assumption].
+  all: first [destruct H as (H1 & H2 & H3); split; [|split]; [apply IHT1 | apply IHT2 | apply IHT3]; assumption
+             | destruct H; split; [apply IHT1 | apply IHT2]; assumption | apply IHT; assumption].
 Qed.
 
 Lemma mltt_gren (T : ty) ξ : mltt_ty T -> mltt_ty T⟪ξ⟫.
@@ -139,7 +144,10 @@ Proof.
                  | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ IHRQ Hqs Hqt HR
                  | G Γ T T' l l1 li1 l2 li2 X X' A A' N N' Ot Ot' C C' m m' idxR domR R Hl Hl2 Hli2 Hw Hwi
                      HT HT' HX HX' HA HA' HN HN' HO HO' HC HC' Hmt Hmt' HXX HAA HNN HOO HCC Hmm
-                     Hidx IHidx Hisym Histr Hdom IHdom Har Hot Hch Hix HR]; intros Hm Hm'.
+                     Hidx IHidx Hisym Histr Hdom IHdom Har Hot Hch Hix HR
+                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                     HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR]; intros Hm Hm'.
   - eapply LRnat; eassumption.
   - eapply LRU; try eassumption.
     intros t t'; rewrite (HR t t'); split; apply (URel_layer (n := n) Hn);
@@ -185,6 +193,13 @@ Proof.
   - pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT) Hm) as [HmX HmA].
     pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT') Hm') as [HmX' HmA'].
     eapply LRiwf; try eassumption; intros ρ; [apply IHidx | apply IHdom]; apply mltt_ren, mltt_gwa; assumption.
+  - pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT) Hm) as (LX & LA & LB).
+    pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT') Hm') as (LX' & LA' & LB').
+    eapply LRm; try eassumption.
+    + intros ρ; apply IHmidx; apply mltt_ren, mltt_gwa; assumption.
+    + intros ρ x x' hx; apply IHmsh; [exact hx | ..]; apply mltt_subst, mltt_ren, mltt_gwa; assumption.
+    + intros ρ x x' a a' hx ha; apply IHmpos; [exact hx | exact ha | ..];
+        apply mltt_subst, mltt_ren, mltt_gwa; assumption.
 Qed.
 
 End Layering.

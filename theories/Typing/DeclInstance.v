@@ -257,6 +257,12 @@ Proof.
   (* the codes of DVec and IWf (M17c) *)
   - intros; apply eqtm_code_dvec; auto.
   - intros; apply eqtm_code_iwf; auto.
+  (* indexed coinductive types (M18b) *)
+  - intros; apply eqty_M; auto.
+  - intros; apply eqtm_corec; auto.
+  - intros * Hlk Hl'k' Hlik HX HXX HA HAA HB HBB HC HCC Hjj (Hn & Hn' & Hν).
+    refine (conj _ (conj _ _)); [constructor; auto .. |].
+    apply eqtm_out; auto.
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].
