@@ -345,6 +345,90 @@ Proof using EL VL VN VX VA VB VC VY Vc Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd.
     exact (tmred_out_corec HS' (lequiv_wf_l _ _ _ (kw_lequiv U Hkc)) HYr Hcr Hj0r Hyr Ejr Ann').
 Qed.
 
+(** ** The signature's families at related arguments, in a world, at any
+    related substitutions [e], [e'] (the premises' own, or one side's
+    twice). *)
+Section Fam.
+Context {e e' : lsub} (He : SubRel G Γ Δ e e') (U : kwk G Δ).
+
+Let Ne := proj1 (SubRel_nf _ _ _ _ _ He).
+Let Ne' := proj2 (SubRel_nf _ _ _ _ _ He).
+
+Lemma rA1 {T T' l0} (VT : VTyG G (Γ ,, X @ li) T T' l0) x x' :
+  LRtm li (kw_G U) (kw_Δ U) (kty U X[e]) (kty U X[e']) x x' ->
+  LRty l0 (kw_G U) (kw_Δ U) (ktyl U T[llift e])[lsingle x] (ktyl U T'[llift e'])[lsingle x'].
+Proof using EL VL VN He.
+  intros hx. rewrite !kty_subst in hx.
+  pose proof (VT _ _ (kw_gok U)) as VTU. rewrite gwa_cext in VTU.
+  destruct (VTU _ _ _ (SubRel_cons (SubRel_kw _ _ _ U _ _ He) hx)) as [R HR].
+  rewrite <- !ktyl_subst_single in HR. exact (ex_intro _ _ HR).
+Qed.
+
+Lemma rB2 {T T' l0} (VT : VTyG G (Γ ,, X @ li ,, A @ l) T T' l0) x x' a a' :
+  LRtm li (kw_G U) (kw_Δ U) (kty U X[e]) (kty U X[e']) x x' ->
+  LRtm l (kw_G U) (kw_Δ U) (ktyl U A[llift e])[lsingle x] (ktyl U A[llift e'])[lsingle x'] a a' ->
+  LRty l0 (kw_G U) (kw_Δ U) (ktyll U T[llift (llift e)])[lsingle2 x a] (ktyll U T'[llift (llift e')])[lsingle2 x' a'].
+Proof using EL VL VN He.
+  intros hx ha. rewrite !kty_subst in hx. rewrite !ktyl_subst_single in ha.
+  pose proof (VT _ _ (kw_gok U)) as VTU. rewrite !gwa_cext in VTU.
+  destruct (VTU _ _ _ (SubRel_cons (SubRel_cons (SubRel_kw _ _ _ U _ _ He) hx) ha)) as [R HR].
+  rewrite <- (ktyll_subst_single2 U e Ne), <- (ktyll_subst_single2 U e' Ne') in HR. exact (ex_intro _ _ HR).
+Qed.
+
+Lemma rC3 {t t'} (Vt : VTmG G (Γ ,, X @ li ,, A @ l ,, B @ l') t t' X⟨↑⟩⟨↑⟩⟨↑⟩ li) x x' a a' q q' :
+  LRtm li (kw_G U) (kw_Δ U) (kty U X[e]) (kty U X[e']) x x' ->
+  LRtm l (kw_G U) (kw_Δ U) (ktyl U A[llift e])[lsingle x] (ktyl U A[llift e'])[lsingle x'] a a' ->
+  LRtm l' (kw_G U) (kw_Δ U) (ktyll U B[llift (llift e)])[lsingle2 x a] (ktyll U B[llift (llift e')])[lsingle2 x' a']
+    q q' ->
+  LRtm li (kw_G U) (kw_Δ U) (kty U X[e]) (kty U X[e'])
+    (ktmlll U t[llift (llift (llift e))])[lsingle3 x a q] (ktmlll U t'[llift (llift (llift e'))])[lsingle3 x' a' q'].
+Proof using EL VL VN He.
+  intros hx ha hq. rewrite !kty_subst in hx |- *. rewrite !ktyl_subst_single in ha.
+  rewrite (ktyll_subst_single2 U e Ne), (ktyll_subst_single2 U e' Ne') in hq.
+  pose proof (Vt _ _ (kw_gok U)) as VtU. rewrite !gwa_cext, !gwa_ren_ty in VtU.
+  pose proof (VtU _ _ _ (SubRel_cons (SubRel_cons (SubRel_cons (SubRel_kw _ _ _ U _ _ He) hx) ha) hq)) as Y0.
+  rewrite !shift_cons_ty' in Y0.
+  rewrite (ktmlll_subst_single3 U e Ne), (ktmlll_subst_single3 U e' Ne'). exact Y0.
+Qed.
+
+End Fam.
+
+(** A claimed shape and position, seen from the own ones: the position
+    at the own shape (for the step's continuation), and the claimed child
+    indices related to the own ones and to each other. *)
+Lemma pos_at (U : kwk G Δ) i i' j0 j0' y y' a a' p p' :
+  mI U i i' -> LRtm li (kw_G U) (kw_Δ U) (sX U) (sX U) i j0 -> LRtm li (kw_G U) (kw_Δ U) (qX U) (qX U) i' j0' ->
+  LRtm kc (kw_G U) (kw_Δ U) (sY U)[lsingle j0] (qY U)[lsingle j0'] y y' ->
+  mS U i i' a a' ->
+  LRtm l (kw_G U) (kw_Δ U) (sA U)[lsingle i] (sA U)[lsingle i] a (fL U j0 y) ->
+  LRtm l (kw_G U) (kw_Δ U) (ktyl U A[llift d'])[lsingle i'] (ktyl U A[llift d'])[lsingle i'] a' (fR U j0' y') ->
+  mP U i i' a a' p p' ->
+  LRtm l' (kw_G U) (kw_Δ U) (sB U)[lsingle2 j0 (fL U j0 y)] (rB U)[lsingle2 j0' (fR U j0' y')] p p' /\
+  LRtm li (kw_G U) (kw_Δ U) (sX U) (sX U) (sC U)[lsingle3 i a p] (iL U j0 y p) /\
+  LRtm li (kw_G U) (kw_Δ U) (qX U) (qX U) (rC U)[lsingle3 i' a' p'] (iR U j0' y' p') /\
+  mI U (sC U)[lsingle3 i a p] (rC U)[lsingle3 i' a' p'].
+Proof using EL VL VN VX VA VB VC Hd.
+  intros hi hj hj' hy ha ha0 ha0' hp.
+  pose proof (proj1 (mSh_iff VX VA Hd U i i' a a' hi) ha) as haA.
+  pose proof (proj1 (mPos_iff VX VA VB Hd U i i' a a' p p' hi ha) hp) as hpB.
+  pose proof (SubRel_refl_l Hd) as Hdl. pose proof (SubRel_refl_r Hd) as Hdr.
+  (* the left side, at [d] twice *)
+  pose proof (rA1 Hdl U (VTyG_refl_l VA) i j0 hj) as TAl.
+  pose proof (LRtm_conv_r ha0 TAl) as hal.
+  pose proof (rB2 Hdl U (VTyG_refl_l VB) i j0 a (fL U j0 y) hj hal) as TBl.
+  pose proof (LRtm_conv_r (LRtm_trans hpB (LRtm_sym hpB)) TBl) as hpl.
+  (* the right side, at [d'] twice *)
+  pose proof (rA1 Hdr U (VTyG_refl_l VA) i' j0' hj') as TAr.
+  pose proof (LRtm_conv_r ha0' TAr) as har.
+  pose proof (rB2 Hdr U (VTyG_refl_l VB) i' j0' a' (fR U j0' y') hj' har) as TBr.
+  pose proof (LRtm_conv_r (LRtm_trans (LRtm_sym hpB) hpB) TBr) as hpr.
+  refine (conj _ (conj _ (conj _ (m_ch VX VA VB VC Hd U i i' a a' p p' hi ha hp)))).
+  - eapply LRtm_conv_r; [eapply LRtm_conv_l; [exact hpB | exact (LRty_sym TBl)] |].
+    exact (rB2 Hdr U VB i' j0' a' (fR U j0' y') hj' har).
+  - exact (rC3 Hdl U (VTmG_trans VC (VTmG_sym VC)) i j0 a (fL U j0 y) p p hj hal hpl).
+  - exact (rC3 Hdr U (VTmG_trans (VTmG_sym VC) VC) i' j0' a' (fR U j0' y') p' p' hj' har hpr).
+Qed.
+
 End CorecV.
 
 End MCorecV.
