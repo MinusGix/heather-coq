@@ -324,6 +324,29 @@ Proof using . intros (E1 & E2 & E3 & E4 & E5) (F1 & F2 & F3 & F4 & F5); repeat s
 Lemma ktyl_tyPi {G Γ} (ρ : kwk G Γ) l l' A B : ktyl ρ (tyPi l l' A B) = tyPi l l' (ktyl ρ A) (ktyll ρ B).
 Proof using . unfold ktyl, ktyll. now rewrite gwa_tyPi. Qed.
 
+Lemma ktmll_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) t : nftm t -> ktmll (kw_self HΓ) t = t.
+Proof using .
+  intros H. unfold ktmll, kw_self, kw_loc; cbn [kw_γ kw_r gwa wk_ren].
+  rewrite <- (ren_id_tm t H) at 2. apply ren_ext_tm. intros [|[|n]]; rlk_simpl; cbn; lia.
+Qed.
+
+(** [MObs] along included shapes' relations and including positions'
+    relations, as [MRn_impl]. *)
+Lemma MObs_impl n {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C'}
+    (shR shR' : MShRel G Γ) (posR posR' : MPosRel G Γ) m m' t t' :
+  (forall ρ x x' a a', shR ρ x x' a a' -> shR' ρ x x' a a') ->
+  (forall ρ x x' a a' p p', posR' ρ x x' a a' p p' -> posR ρ x x' a a' p p') ->
+  MObs (MRn n) G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' t t' ->
+  MObs (MRn n) G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR' posR' m m' t t'.
+Proof using .
+  intros Hs Hp Ho; unfold MObs; intros * HA HA'.
+  eapply SigRel_impl; [| | exact (Ho _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ HA HA')].
+  - intros ρ a a'. apply Hs.
+  - intros ρ a a' h h' u u'. apply PiRel_impl.
+    + intros ρ' p p'. apply Hp.
+    + intros ρ' p p' hp hp' v v'. apply MRn_impl; intros *; [apply Hs | apply Hp].
+Qed.
+
 (** A child's type in a world. *)
 Lemma kw_kid {G Γ} (ρ : kwk G Γ) l l' li (X A B : ty) (C j a : tm) :
   ktyl ρ (tyM l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩ C[llift (lsingle2 j a)]) =
@@ -1240,6 +1263,39 @@ Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd
   pose proof (LRtm_trans hjL (LRtm_sym hjL)) as hj. pose proof (LRtm_trans (LRtm_sym hjL) hjL) as hj'.
   destruct (red_at W _ _ _ _ _ _ hjj hj hj' hy _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Ann Ann') as [RL RR].
   exact (SigRel_red (pair_at n IH W j0 j0' y y' hjj hy) RL RR).
+Qed.
+
+(** ** The depth induction *)
+Lemma gen_at (U : kwk G Δ) j0 j0' y y' :
+  mI U j0 j0' -> LRtm kc (kw_G U) (kw_Δ U) (sY U)[lsingle j0] (qY U)[lsingle j0'] y y' ->
+  MGen (kw_G U) (kw_Δ U) l l' li (sX U) (sA U) (sB U) (sC U) k k' ki (rX U) (rA U) (rB U) (rC U)
+    j0 j0' (crL U j0 y) (crR U j0' y').
+Proof using EL VL VN VX VA VB VC VY Vc Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd.
+  intros hjj hy.
+  pose proof (proj1 (mIdx_iff VX Hd U _ _) hjj) as hjL.
+  pose proof (LRtm_trans hjL (LRtm_sym hjL)) as hj. pose proof (LRtm_trans (LRtm_sym hjL) hjL) as hj'.
+  destruct (typ_at U j0 j0' j0 j0' y y' hjj hj hj' hy) as (HL & HR & Ecr).
+  pose proof (LR_M_kw Hwl Hwl' Hwli Hk Hk' Hki VX VA VB VC Hd U _ _ hjj) as HRM.
+  destruct (escape_ty _ _ _ _ _ _ _ _ HRM) as (_ & _ & ETM). pose proof (geq_ty_sound ETM) as DM.
+  exists (crL U j0 y), (crR U j0' y').
+  refine (conj (tmred_refl _ _ _ HL) (conj (tmred_refl _ _ _ _) (conj (whnf_corec _ _ _ _ _ _ _ _ _ _ _ _)
+            (conj (whnf_corec _ _ _ _ _ _ _ _ _ _ _ _) (conj Ecr (geq_tm_conv Ecr DM)))))).
+  eapply wf_conv; [exact HR | rewrite ge_typeof; exact (eqty_sym _ _ _ _ _ _ DM)].
+Qed.
+
+Lemma corec_all n : CorecAt n.
+Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd.
+  induction n as [|n IH]; intros U j0 j0' y y' hjj hy;
+    (split; [exact (gen_at U j0 j0' y y' hjj hy) |]); [exact Logic.I |].
+  intros ρ. cbv beta.
+  pose proof (m_imon VX Hd U ρ _ _ hjj) as hjj2.
+  pose proof (LRtm_kw ρ hy) as hy2. rewrite !kty_lsingle, <- !(ktyl_comp U ρ) in hy2.
+  pose proof (obs_at n IH (kw_comp U ρ) _ _ _ _ hjj2 hy2) as Ho.
+  rewrite !ktm_corec, <- ?(kty_comp U ρ), <- ?(ktyl_comp U ρ), <- ?(ktyll_comp U ρ), <- ?(ktmlll_comp U ρ),
+    <- ?(ktmll_comp' U ρ).
+  refine (MObs_impl n _ _ _ _ _ _ _ _ _ _ Ho); intros *.
+  - exact (proj1 (mSh_eqv (kw_eqv_assoc U ρ ρ0) _ _ _ _)).
+  - exact (proj2 (mPos_eqv (kw_eqv_assoc U ρ ρ0) _ _ _ _ _ _)).
 Qed.
 
 End CorecV.
