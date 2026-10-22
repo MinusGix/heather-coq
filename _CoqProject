@@ -108,6 +108,7 @@ theories/Validity/Basic.v
 theories/Validity/Pi.v
 theories/Validity/Red.v
 theories/Validity/App.v
+theories/Validity/RelIntro.v
 theories/Validity/Lam.v
 theories/Validity/PiComp.v
 theories/Validity/Natrec.v
