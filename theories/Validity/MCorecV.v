@@ -178,6 +178,76 @@ Proof using EL.
 Qed.
 
 
+(** ** β's reduct's projections *)
+Lemma out_parts {G Γ l l' li X A B C kc Y c j y} :
+  MSig (G := G) (i := ge_layer) Γ l l' li X A B C -> lwf (gL G) kc ->
+  [ G ; Γ ,, X @ li ⊢g Y @ kc ] ->
+  [ G ; Γ ,, X @ li ,, Y @ kc ⊢g c : (mStepTy l l' li X A B C kc Y)⟨↑⟩ @ lmax l (lmax kc (mlvl l l' li)) ] ->
+  [ G ; Γ ⊢g j : X @ li ] -> [ G ; Γ ⊢g y : Y[lsingle j] @ kc ] ->
+  [ G ; Γ ⊢g A[lsingle j] @ l ] /\
+  [ G ; Γ ,, A[lsingle j] @ l ⊢g tyPi l' (mlvl l l' li) B[llift (lsingle j)] (mKidTy l l' li X A B C j) @ mlvl l l' li ] /\
+  [ G ; Γ ⊢g mOutFst l l' li X A B C kc Y c j y : A[lsingle j] @ l ] /\
+  [ G ; Γ ⊢g mLam l l' li X A B C kc Y c j y
+      : (tyPi l' (mlvl l l' li) B[llift (lsingle j)] (mKidTy l l' li X A B C j))[lsingle (mOutFst l l' li X A B C kc Y c j y)]
+      @ mlvl l l' li ].
+Proof using EL.
+  intros HS Hk HY Hc Hj Hy.
+  pose proof HS as (Hl & Hl' & Hli & HX & HA & HB & HC).
+  pose proof (MSig_nf HS) as (NX & NA & NB & NC).
+  assert (Hf : lwf (gL G) (mlvl l l' li)) by (cbn; repeat split; assumption).
+  destruct (pre_out_corec_parts ge_typeof ge_notV HS Hk HY Hc Hj Hy _ _ (mBody l l' li X A B C kc Y c j y)
+              ltac:(unfold mOutCorec, mBody; reflexivity)) as (Ha & HBa & Hb).
+  assert (Nj : nftm j) by exact (wf_tm_nf Hj).
+  refine (conj (wf_ty_single ge_typeof HA Hj) (conj (M_outB_wf ge_typeof ge_notV HS Hj) (conj Ha _))).
+  rewrite M_E_pair by assumption.
+  eapply wf_lconv; [| apply lequiv_sym, M_lv_f; assumption].
+  unfold mLam. apply wf_lam; auto using ge_notV.
+Qed.
+
+Section OutProj.
+Context {G : gctx} {Γ : ctx} {l l' li : lvl} {X A B : ty} {C : tm} {kc : lvl} {Y : ty} {c j y : tm}
+  {la lb : lvl} {A1 B1 : ty}
+  (HS : MSig (G := G) (i := ge_layer) Γ l l' li X A B C) (Hk : lwf (gL G) kc)
+  (HY : [ G ; Γ ,, X @ li ⊢g Y @ kc ])
+  (Hc : [ G ; Γ ,, X @ li ,, Y @ kc ⊢g c : (mStepTy l l' li X A B C kc Y)⟨↑⟩ @ lmax l (lmax kc (mlvl l l' li)) ])
+  (Hj : [ G ; Γ ⊢g j : X @ li ]) (Hy : [ G ; Γ ⊢g y : Y[lsingle j] @ kc ])
+  (Hla : lequiv (gL G) la l) (Hlb : lequiv (gL G) lb (mlvl l l' li))
+  (HA1 : [ G ; Γ ⊢g A[lsingle j] ≅ A1 @ l ])
+  (HB1 : [ G ; Γ ,, A[lsingle j] @ l ⊢g tyPi l' (mlvl l l' li) B[llift (lsingle j)] (mKidTy l l' li X A B C j)
+           ≅ B1 @ mlvl l l' li ]).
+
+Lemma out_fst_red :
+  [ G ; Γ ⊢g tmFst la lb A1 B1 (mOutCorec l l' li X A B C kc Y c j y) ⤳* mOutFst l l' li X A B C kc Y c j y
+      : A[lsingle j] @ l ].
+Proof using EL HS Hk HY Hc Hj Hy Hla Hlb HA1 HB1.
+  pose proof HS as (Hl & Hl' & Hli & _).
+  assert (Hf : lwf (gL G) (mlvl l l' li)) by (cbn; repeat split; assumption).
+  destruct (out_parts HS Hk HY Hc Hj Hy) as (HA0 & HB0 & Ha & Hb).
+  rewrite mOutCorec_pair. exact (tmred_fst_beta Hl Hf Hla Hlb HA0 HB0 Ha Hb HA1 HB1).
+Qed.
+
+Lemma out_snd_red :
+  [ G ; Γ ⊢g tmSnd la lb A1 B1 (mOutCorec l l' li X A B C kc Y c j y) ⤳* mLam l l' li X A B C kc Y c j y
+      : tyPi l' (mlvl l l' li) B[lsingle2 j (tmFst la lb A1 B1 (mOutCorec l l' li X A B C kc Y c j y))]
+          (tyM l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩
+             C[llift (lsingle2 j (tmFst la lb A1 B1 (mOutCorec l l' li X A B C kc Y c j y)))])
+      @ lmax l' (mlvl l l' li) ].
+Proof using EL HS Hk HY Hc Hj Hy Hla Hlb HA1 HB1.
+  pose proof HS as (Hl & Hl' & Hli & _).
+  pose proof (MSig_nf HS) as (NX & NA & NB & NC). assert (Nj : nftm j) by exact (wf_tm_nf Hj).
+  assert (Hf : lwf (gL G) (mlvl l l' li)) by (cbn; repeat split; assumption).
+  destruct (out_parts HS Hk HY Hc Hj Hy) as (HA0 & HB0 & Ha & Hb).
+  pose proof (tmred_eq _ _ _ _ _ _ _ out_fst_red) as Ef.
+  pose proof (eqtm_wf_l ge_typeof Ef) as Hx.
+  pose proof (wf_ty_func ge_typeof HB0 (lsub_eq_single ge_typeof Ha Hx (eqtm_sym _ _ _ _ _ _ _ Ef))) as EB.
+  rewrite mOutCorec_pair in Hx, EB |- *.
+  pose proof (tmred_conv _ _ _ _ _ ge_typeof (tmred_snd_beta Hl Hf Hla Hlb HA0 HB0 Ha Hb HA1 HB1) EB) as R.
+  rewrite M_E_pair in R by assumption.
+  exact (tmred_lconv _ _ _ _ _ R (M_lv_f _ _ _ _ Hl Hl' Hli)).
+Qed.
+
+End OutProj.
+
 (** ** The λ's application annotations, from a shape to an equal one *)
 Lemma single2_split (B : ty) j a : nftm j -> B[llift (lsingle j)][lsingle a] = B[lsingle2 j a].
 Proof using . intros. meq'. Qed.
@@ -247,6 +317,12 @@ Lemma LRtm_tyeq {l0 G Γ T T' t t'} : LRtm l0 G Γ T T' t t' -> [ G ; Γ ⊢ T �
 Proof using EL. intros (R & HR & _). exact (proj2 (proj2 (escape_ty _ _ _ _ _ _ _ _ HR))). Qed.
 Lemma LRty_tyeq {l0 G Γ T T'} : LRty l0 G Γ T T' -> [ G ; Γ ⊢ T ≈ T' @ l0 ].
 Proof using EL. intros (R & HR). exact (proj2 (proj2 (escape_ty _ _ _ _ _ _ _ _ HR))). Qed.
+
+Lemma kw_eqv_trans {G Γ} {ρ1 ρ2 ρ3 : kwk G Γ} : kw_eqv ρ1 ρ2 -> kw_eqv ρ2 ρ3 -> kw_eqv ρ1 ρ3.
+Proof using . intros (E1 & E2 & E3 & E4 & E5) (F1 & F2 & F3 & F4 & F5); repeat split; congruence. Qed.
+
+Lemma ktyl_tyPi {G Γ} (ρ : kwk G Γ) l l' A B : ktyl ρ (tyPi l l' A B) = tyPi l l' (ktyl ρ A) (ktyll ρ B).
+Proof using . unfold ktyl, ktyll. now rewrite gwa_tyPi. Qed.
 
 (** A child's type in a world. *)
 Lemma kw_kid {G Γ} (ρ : kwk G Γ) l l' li (X A B : ty) (C j a : tm) :
@@ -1030,6 +1106,122 @@ Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd
       <- !(ktmll_comp' W ρ).
     exact (kid_at n IH (kw_comp W ρ) _ _ _ _ _ _ p p' la lb A1 B1 la' lb' A1' B1' hx hy3 hs ha3 ha3' hp
              (kw_lequiv ρ Hla) (kw_lequiv ρ Hlb) (kw_lequiv ρ Hla') (kw_lequiv ρ Hlb') HA1 HB1 HA1' HB1').
+Qed.
+
+(** ** The observations of related [corec]s *)
+Lemma obs_at n (IH : CorecAt n) (W : kwk G Δ) j0 j0' y y' :
+  mI W j0 j0' -> LRtm kc (kw_G W) (kw_Δ W) (sY W)[lsingle j0] (qY W)[lsingle j0'] y y' ->
+  MObs (MRn n) (kw_G W) (kw_Δ W) l l' li (sX W) (sA W) (sB W) (sC W) k k' ki (rX W) (rA W) (rB W) (rC W)
+    (fun ρ => mS (kw_comp W ρ)) (fun ρ => mP (kw_comp W ρ)) j0 j0' (crL W j0 y) (crR W j0' y').
+Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd.
+  intros hjj hy. unfold MObs. intros * Ann Ann'.
+  pose proof (m_side Hwl Hwl' Hwli Hk Hk' Hki VX VA VB VC Hd) as HMD.
+  pose proof (MSide_kw W HMD) as HMW.
+  pose proof (proj1 (mIdx_iff VX Hd W _ _) hjj) as hjL.
+  pose proof (LRtm_trans hjL (LRtm_sym hjL)) as hj. pose proof (LRtm_trans (LRtm_sym hjL) hjL) as hj'.
+  destruct (args_at W j0 j0' j0 j0' y y' hjj hj hj' hy)
+    as (_ & Hj0 & _ & _ & Hj0' & _ & _ & _ & Hy & _ & _).
+  destruct (esc_at W) as (HG & _).
+  pose proof HG as (H1 & H2 & H3 & HS & _).
+  pose proof HS as (W1 & W2 & Wi & _).
+  pose proof (MGeq_ctx HG) as HΔW.
+  assert (Hf : lwf (gL (kw_G W)) (mlvl l l' li)) by (cbn; repeat split; assumption).
+  pose proof (lequiv_mlvl H1 H2 H3) as Hff.
+  assert (I : forall ρ, mI (kw_comp W ρ) (ktm ρ j0) (ktm ρ j0')) by (intros ρ; exact (m_imon VX Hd W ρ _ _ hjj)).
+  destruct (MSide_root HMW (wf_tm_nf Hj0) (wf_tm_nf Hj0') I) as (Em & EA & EB & EC).
+  pose proof (M_outB_geq HG EB EC) as EPi.
+  pose proof (geq_ty_sound EA) as DA.
+  pose proof (eqty_wf_l ge_typeof DA) as HA. pose proof (eqty_wf_r ge_typeof DA) as HA'.
+  pose proof (geq_ty_ctxconv DA (lequiv_refl _ _ W1) (ext_wf_g HA' W1) (geq_ty_sym EPi)) as RB'.
+  pose proof (eqty_wf_l ge_typeof (geq_ty_sound EPi)) as HB.
+  pose proof (eqty_wf_l ge_typeof (geq_ty_sound RB')) as HB'.
+  pose proof (M_out_eq ge_typeof ge_notV (MEq_of_MGeq HG) Hj0 Hj0' (geq_tm_sound Em)) as ES.
+  destruct (red_at W _ _ _ _ _ _ hjj hj hj' hy _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Ann Ann') as [RL RR].
+  refine (SigRel_red _ RL RR).
+  pose proof (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ RL)) as Hw.
+  pose proof (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ RR)) as Hw'.
+  refine (SigRel_intro HΔW W1 Hf HA HB HA' HB' (geq_ty_trans EA (geq_ty_sym EA)) (geq_ty_trans EPi (geq_ty_sym EPi))
+            (geq_ty_sym EA) RB' ES Hw Hw' ltac:(unfold mOutCorec; apply whnf_pair)
+            ltac:(unfold mOutCorec; apply whnf_pair) _ _ _).
+  - (* the shapes escape *)
+    intros ρ x x' h. rewrite kty_lsingle. exact (ms_eS HMW ρ _ _ x x' (I ρ) h).
+  - (* the children's functions escape *)
+    intros ρ x x' h u u' Hu. cbv beta in Hu.
+    rewrite !ktyl_Pi_single. rewrite !kw_B_single, !kw_mKid in Hu. rewrite !kw_B_single, !kw_mKid.
+    rewrite !mKid_single in Hu by kw_nf. rewrite !mKid_single by kw_nf.
+    pose proof (ms_gBa HMW ρ _ _ x x' (I ρ) h) as GB.
+    pose proof (eqty_wf_l ge_typeof (geq_ty_sound GB)) as HBx.
+    pose proof (MGeq_M (MGeq_wk1 (MGeq_kw ρ HG) (ext_wf_g HBx (kw_lwf ρ W2))) (ms_gCa HMW ρ _ _ x x' (I ρ) h)) as K.
+    eapply geq_tm_lconv; [| apply lequiv_sym, M_lv_f; apply (kw_lwf ρ); assumption].
+    exact (PiRel_geq Hu (geq_ty_sound (geq_ty_pi (kw_lequiv ρ H2) (kw_lequiv ρ Hff) HBx GB K))).
+  - (* the Kripke clause *)
+    intros ρ la lb la' lb' Aa Ba Aa' Ba' Hla Hlb Hla' Hlb' HA1 HB1 HA1' HB1'. cbv beta.
+    (* the world's own premises *)
+    pose proof (I ρ) as hjj2.
+    pose proof (LRtm_kw ρ hy) as hy2. rewrite !kty_lsingle, <- !(ktyl_comp W ρ) in hy2.
+    pose proof (proj1 (mIdx_iff VX Hd _ _ _) hjj2) as hjL2.
+    pose proof (LRtm_trans hjL2 (LRtm_sym hjL2)) as hj2. pose proof (LRtm_trans (LRtm_sym hjL2) hjL2) as hj2'.
+    destruct (args_at (kw_comp W ρ) _ _ _ _ _ _ hjj2 hj2 hj2' hy2)
+      as (_ & Hj2 & _ & _ & Hj2' & _ & _ & _ & Hy2 & _ & _).
+    destruct (esc_at (kw_comp W ρ)) as (HG2 & HY2 & _ & Hc2 & _).
+    destruct (rside_at (kw_comp W ρ) _ _ _ _ _ _ hjj2 hj2 hj2' hy2) as (HS2' & HYr2 & Hcr2 & _ & Hj2r & _ & Hyr2).
+    pose proof HG2 as (_ & _ & _ & HS2 & _).
+    pose proof (kw_lwf (kw_comp W ρ) Hwc) as Wc2.
+    pose proof (lequiv_wf_l _ _ _ (kw_lequiv (kw_comp W ρ) Hkc)) as Wc2'.
+    destruct (steps_at (kw_comp W ρ) _ _ _ _ hjL2 hy2) as [Ff _].
+    (* the annotations at the world's own types *)
+    rewrite !kty_lsingle, <- !(ktyl_comp W ρ) in HA1, HA1', HB1, HB1'.
+    rewrite !ktyl_tyPi, !ktyl_llift_single, !kw_mKid in HB1, HB1'.
+    rewrite <- (kty_comp W ρ), <- (ktyl_comp W ρ), <- !(ktyll_comp W ρ), <- (ktmlll_comp W ρ) in HB1, HB1'.
+    (* the pairs at the world's own premises *)
+    rewrite !ktm_mOutCorec, <- !(kty_comp W ρ), <- !(ktyl_comp W ρ), <- !(ktyll_comp W ρ), <- !(ktmlll_comp W ρ),
+      <- !(ktmll_comp' W ρ).
+    (* the first projections *)
+    pose proof (kw_lequiv (kw_comp W ρ) Hk) as HkW.
+    pose proof (kw_lequiv ρ Hff) as Hffρ.
+    pose proof (out_fst_red HS2 Wc2 HY2 Hc2 Hj2 Hy2 (kw_lequiv ρ Hla) (kw_lequiv ρ Hlb)
+                  (geq_ty_sound HA1) (geq_ty_sound HB1)) as RF.
+    pose proof (eqty_wf_l ge_typeof (geq_ty_sound HA1')) as HrA.
+    assert (HB1r : [ kw_G ρ ; kw_Δ ρ ,, (rA (kw_comp W ρ))[lsingle (ktm ρ j0')] @ k
+                     ⊢g tyPi k' (mlvl k k' ki) (rB (kw_comp W ρ))[llift (lsingle (ktm ρ j0'))]
+                          (mKidTy k k' ki (rX (kw_comp W ρ)) (rA (kw_comp W ρ)) (rB (kw_comp W ρ)) (rC (kw_comp W ρ))
+                             (ktm ρ j0')) ≅ Ba' @ mlvl k k' ki ]).
+    { apply geq_ty_sound. eapply geq_ty_lconv; [| exact (lequiv_sym _ _ _ Hffρ)].
+      eapply geq_ty_ctxconv; [exact (eqty_refl _ _ _ _ _ HrA) | exact (lequiv_sym _ _ _ HkW) | | exact HB1'].
+      apply ext_wf_g; [eapply wft_lconv; [exact HrA | exact HkW] | exact (lequiv_wf_l _ _ _ HkW)]. }
+    pose proof (out_fst_red HS2' Wc2' HYr2 Hcr2 Hj2r Hyr2
+                  (lequiv_trans _ _ _ _ (kw_lequiv ρ Hla') (lequiv_sym _ _ _ HkW))
+                  (lequiv_trans _ _ _ _ (kw_lequiv ρ Hlb') Hffρ)
+                  (geq_ty_sound (geq_ty_lconv HA1' HkW)) HB1r) as RF'.
+    pose proof (tmred_lconv _ _ _ _ _ RF' (lequiv_sym _ _ _ HkW)) as RF'l.
+    pose proof (LRtm_red Ff RF RF'l) as Xf.
+    assert (h := proj2 (mSh_iff VX VA Hd _ _ _ _ _ hjj2) (LRtm_irrel_r Xf (rA1 Hd _ (VTyG_refl_l VA) _ _ hjL2))).
+    refine (ex_intro _ h _).
+    (* the second projections, the λs *)
+    rewrite !kw_B_single, <- !(ktyll_comp W ρ), !kw_mKid. rewrite !mKid_single by kw_nf.
+    rewrite <- ?(kty_comp W ρ), <- ?(ktyl_comp W ρ), <- ?(ktyll_comp W ρ), <- ?(ktmlll_comp W ρ).
+    pose proof (out_snd_red HS2 Wc2 HY2 Hc2 Hj2 Hy2 (kw_lequiv ρ Hla) (kw_lequiv ρ Hlb)
+                  (geq_ty_sound HA1) (geq_ty_sound HB1)) as RS.
+    pose proof (out_snd_red HS2' Wc2' HYr2 Hcr2 Hj2r Hyr2
+                  (lequiv_trans _ _ _ _ (kw_lequiv ρ Hla') (lequiv_sym _ _ _ HkW))
+                  (lequiv_trans _ _ _ _ (kw_lequiv ρ Hlb') Hffρ)
+                  (geq_ty_sound (geq_ty_lconv HA1' HkW)) HB1r) as RS'.
+    refine (PiRel_red _ RS (tmred_lconv _ _ _ _ _ RS' (lequiv_max _ _ _ _ _ (kw_lequiv ρ H2) Hffρ))).
+    pose proof (LRtm_red_l (LRtm_trans Ff (LRtm_sym Ff)) RF) as hx0.
+    pose proof (LRtm_red_l (LRtm_trans (LRtm_sym Ff) Ff) RF'l) as hx1.
+    pose proof (LRtm_irrel_r (LRtm_conv_l hx1 (rA1 (SubRel_refl_r Hd) _ VA _ _ hj2'))
+                  (rA1 (SubRel_refl_r Hd) _ (VTyG_refl_l VA) _ _ hj2')) as hx0'.
+    eapply PiRel_impl; [| | exact (lam_at n IH (kw_comp W ρ) _ _ _ _ _ _ hjj2 hy2 h hx0 hx0')].
+    + intros ρ' p p' hp. cbv beta in hp |- *. rewrite !(ktm_comp ρ ρ') in hp.
+      exact (proj2 (mPos_eqv (kw_eqv_assoc W ρ ρ') _ _ _ _ _ _) hp).
+    + intros ρ' p p' hh hh' u u' Hu. cbv beta in Hu |- *.
+      rewrite ?kty_comp, ?ktyl_comp, ?ktyll_comp, ?ktmlll_comp, ?ktm_comp in Hu.
+      rewrite ?kty_comp, ?ktyl_comp, ?ktyll_comp, ?ktmlll_comp, ?ktm_comp.
+      refine (mrn_eqv n (fun ρ'' => kw_comp (kw_comp (kw_comp W ρ) ρ') ρ'')
+                (fun ρ'' => kw_comp W (kw_comp (kw_comp ρ ρ') ρ'')) _ _ _ _ _ _ _ _ _ _ _ _ _ Hu).
+      intros ρ''. eapply kw_eqv_trans; [exact (kw_eqv_assoc (kw_comp W ρ) ρ' ρ'') |].
+      eapply kw_eqv_trans; [exact (kw_eqv_assoc W ρ (kw_comp ρ' ρ'')) |].
+      exact (kw_eqv_comp_l W (kw_eqv_sym (kw_eqv_assoc ρ ρ' ρ''))).
 Qed.
 
 End CorecV.

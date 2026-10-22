@@ -132,6 +132,16 @@ Proof using .
   exact (conj (tmred_trans _ _ _ _ _ H1 R1) (conj (tmred_trans _ _ _ _ _ H2 R2) Hrest)).
 Qed.
 
+(** Related functions escape at the left type, given the two types' equality. *)
+Lemma PiRel_geq {G Γ l1 l2 l3 l4 A B A' B'} {domR : DomRel G Γ} {codR : CodRel G Γ domR} {t t'} :
+  PiRel G Γ l1 l2 l3 l4 A B A' B' domR codR t t' ->
+  [ G ; Γ ⊢g tyPi l1 l2 A B ≅ tyPi l3 l4 A' B' @ lmax l1 l2 ] ->
+  [ G ; Γ ⊢ t ≈ t' : tyPi l1 l2 A B @ lmax l1 l2 ].
+Proof using EL.
+  intros (w & w' & R1 & R2 & _ & _ & E1 & _) ES.
+  eapply geq_tm_exp; [exact R1 | exact (tmred_conv _ _ _ _ _ ge_typeof R2 (eqty_sym _ _ _ _ _ _ ES)) | exact E1].
+Qed.
+
 (** The world of one more local acts as the shift. *)
 Lemma kwk1_ty {G Δ A l} (Hw1 : wk1 : (Δ ,, A @ l) ≤ Δ) HΔA (T : ty) : kty (kw_loc (G := G) wk1 Hw1 HΔA) T = T⟨↑⟩.
 Proof using . unfold kty, kw_loc; cbn [kw_γ kw_r gwa]. reflexivity. Qed.
