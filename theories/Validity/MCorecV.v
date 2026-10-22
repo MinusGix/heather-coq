@@ -7,7 +7,7 @@
     a further [corec] (related at depth [n] by the induction hypothesis)
     or a finished [M] term (related at every depth). *)
 From DeLaM.Validity Require Export MCorec.
-From DeLaM.LogRel Require Import MAux.
+From DeLaM.LogRel Require Import MAux MIdx.
 From DeLaM.Typing Require Import PresupM.
 
 Local Ltac mfold := repeat change (ren_ty ?x ?r) with x⟨r⟩; repeat change (subst_ty ?x ?e) with x[e];
@@ -427,6 +427,73 @@ Proof using EL VL VN VX VA VB VC Hd.
     exact (rB2 Hdr U VB i' j0' a' (fR U j0' y') hj' har).
   - exact (rC3 Hdl U (VTmG_trans VC (VTmG_sym VC)) i j0 a (fL U j0 y) p p hj hal hpl).
   - exact (rC3 Hdr U (VTmG_trans (VTmG_sym VC) VC) i' j0' a' (fR U j0' y') p' p' hj' har hpr).
+Qed.
+
+
+(** ** [MRn] at related indices
+
+    The canonical relations are irrelevant in both indices, so [MRn] at
+    the [corec]'s own indices is [MRn] at any related claimed ones
+    ([MRn_idx]). *)
+Lemma mS_irr : MShIrr mI mS.
+Proof using EL VL VN VX VA Hd.
+  intros ρ x y y' hy hy' a a'.
+  rewrite (mSh_iff VX VA Hd ρ x y a a' hy), (mSh_iff VX VA Hd ρ x y' a a' hy').
+  pose proof (rA1 Hd ρ (VTyG_refl_l VA) x y (proj1 (mIdx_iff VX Hd ρ _ _) hy)) as T1.
+  pose proof (rA1 Hd ρ (VTyG_refl_l VA) x y' (proj1 (mIdx_iff VX Hd ρ _ _) hy')) as T2.
+  split; intros H; [exact (LRtm_irrel_r H T2) | exact (LRtm_irrel_r H T1)].
+Qed.
+
+Lemma mS_irr_l : MShIrr (mflipI mI) (mflipS mS).
+Proof using EL VL VN VX VA Hd.
+  intros ρ x y y' hy hy' a a'. unfold mflipI, mflipS in *.
+  rewrite (mSh_iff VX VA Hd ρ y x a' a hy), (mSh_iff VX VA Hd ρ y' x a' a hy').
+  pose proof (rA1 Hd ρ (VTyG_refl_l VA) y x (proj1 (mIdx_iff VX Hd ρ _ _) hy)) as T1.
+  pose proof (rA1 Hd ρ (VTyG_refl_l VA) y' x (proj1 (mIdx_iff VX Hd ρ _ _) hy')) as T2.
+  split; intros H; [exact (LRtm_irrel_l H T2) | exact (LRtm_irrel_l H T1)].
+Qed.
+
+Lemma mP_irr : MPosIrr mI mS mP.
+Proof using EL VL VN VX VA VB Hd.
+  intros ρ x y y' a b b' hy hy' hb hb' p p'.
+  rewrite (mPos_iff VX VA VB Hd ρ x y a b p p' hy hb), (mPos_iff VX VA VB Hd ρ x y' a b' p p' hy' hb').
+  pose proof (rB2 Hd ρ (VTyG_refl_l VB) x y a b (proj1 (mIdx_iff VX Hd ρ _ _) hy)
+                (proj1 (mSh_iff VX VA Hd ρ _ _ _ _ hy) hb)) as T1.
+  pose proof (rB2 Hd ρ (VTyG_refl_l VB) x y' a b' (proj1 (mIdx_iff VX Hd ρ _ _) hy')
+                (proj1 (mSh_iff VX VA Hd ρ _ _ _ _ hy') hb')) as T2.
+  split; intros H; [exact (LRtm_irrel_r H T2) | exact (LRtm_irrel_r H T1)].
+Qed.
+
+Lemma mP_irr_l : MPosIrr (mflipI mI) (mflipS mS) (mflipP mP).
+Proof using EL VL VN VX VA VB Hd.
+  intros ρ x y y' a b b' hy hy' hb hb' p p'. unfold mflipI, mflipS, mflipP in *.
+  rewrite (mPos_iff VX VA VB Hd ρ y x b a p' p hy hb), (mPos_iff VX VA VB Hd ρ y' x b' a p' p hy' hb').
+  pose proof (rB2 Hd ρ (VTyG_refl_l VB) y x b a (proj1 (mIdx_iff VX Hd ρ _ _) hy)
+                (proj1 (mSh_iff VX VA Hd ρ _ _ _ _ hy) hb)) as T1.
+  pose proof (rB2 Hd ρ (VTyG_refl_l VB) y' x b' a (proj1 (mIdx_iff VX Hd ρ _ _) hy')
+                (proj1 (mSh_iff VX VA Hd ρ _ _ _ _ hy') hb')) as T2.
+  split; intros H; [exact (LRtm_irrel_l H T2) | exact (LRtm_irrel_l H T1)].
+Qed.
+
+(** In a world. *)
+Lemma mrn_idx_at n (U : kwk G Δ) m m' m1 m1' t t' :
+  mI U m m' -> mI U m m1' -> mI U m1 m1' ->
+  MRn n (kw_G U) (kw_Δ U) l l' li (sX U) (sA U) (sB U) (sC U) k k' ki (rX U) (rA U) (rB U) (rC U)
+    (fun ρ => mS (kw_comp U ρ)) (fun ρ => mP (kw_comp U ρ)) m m' t t' ->
+  MRn n (kw_G U) (kw_Δ U) l l' li (sX U) (sA U) (sB U) (sC U) k k' ki (rX U) (rA U) (rB U) (rC U)
+    (fun ρ => mS (kw_comp U ρ)) (fun ρ => mP (kw_comp U ρ)) m1 m1' t t'.
+Proof using EL VL VN VX VA VB VC Hwl Hwl' Hwli Hk Hk' Hki Hd.
+  intros h1 h2 h3.
+  assert (NF : forall x x', mI U x x' -> nftm x /\ nftm x').
+  { intros x x' hx. destruct (LRtm_escape (proj1 (mIdx_iff VX Hd U _ _) hx)) as [Hx Hx'].
+    exact (conj (wf_tm_nf Hx) (wf_tm_nf Hx')). }
+  destruct (NF _ _ h1) as [N N']. destruct (NF _ _ h3) as [N1 N1'].
+  apply (MRn_idx n (MSide_kw U (m_side Hwl Hwl' Hwli Hk Hk' Hki VX VA VB VC Hd))
+           (MShIrr_kw U mS_irr) (MPosIrr_kw U mP_irr) (MShIrr_kw U mS_irr_l) (MPosIrr_kw U mP_irr_l)
+           N N' N1 N1'); intros ρ.
+  - exact (m_imon VX Hd U ρ _ _ h1).
+  - exact (m_imon VX Hd U ρ _ _ h2).
+  - exact (m_imon VX Hd U ρ _ _ h3).
 Qed.
 
 End CorecV.
