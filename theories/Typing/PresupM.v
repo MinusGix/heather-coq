@@ -531,10 +531,11 @@ Lemma pre_out_corec_parts {Γ l l' li X A B C k Y c j y} : MSig Γ l l' li X A B
   [ G ; Γ ,, X @ li ⊢[ i ] Y @ k ] ->
   [ G ; Γ ,, X @ li ,, Y @ k ⊢[ i ] c : (mStepTy l l' li X A B C k Y)⟨↑⟩ @ lmax l (lmax k (mlvl l l' li)) ] ->
   [ G ; Γ ⊢[ i ] j : X @ li ] -> [ G ; Γ ⊢[ i ] y : Y[lsingle j] @ k ] ->
-  forall P a b, mOutCorec l l' li X A B C k Y c j y = tmPair l (mlvl l l' li) A[lsingle j] P a b ->
-  [ G ; Γ ⊢[ i ] a : A[lsingle j] @ l ] /\
-  [ G ; Γ ⊢[ i ] b : tyPi l' (mlvl l l' li) B[lsingle2 j a]
-      (tyM l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩ C[llift (lsingle2 j a)])
+  forall P a b, mOutCorec l l' li X A B C k Y c j y =
+    tmPair l (mlvl l l' li) A[lsingle j] P a (lam l' (mlvl l l' li) B[lsingle2 j a] b) ->
+  [ G ; Γ ⊢[ i ] a : A[lsingle j] @ l ] /\ [ G ; Γ ⊢[ i ] B[lsingle2 j a] @ l' ] /\
+  [ G ; Γ ,, B[lsingle2 j a] @ l' ⊢[ i ] b
+      : tyM l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩ C[llift (lsingle2 j a)]
       @ mlvl l l' li ].
 Proof using Hi Hv.
   intros HS Hk HY Hc Hj Hy P0 a0 b0 Eq0.
@@ -630,16 +631,13 @@ Proof using Hi Hv.
     - exact (M_wk_tm Ho (wkr_shift1 _ _ _) HΓ1Y).
     - eapply wf_tm_retype; [apply wf_var; [rewrite Hi; exact HΓ1Y | constructor] | apply M_E_seed]. }
   (* the λ over the positions *)
-  unfold mOutCorec in Eq0. injection Eq0; intros; subst a0 b0. split; [exact Hs|].
-  eapply wf_lconv; [| apply lequiv_sym, M_lv_f; assumption].
-  apply wf_lam; [exact Hv | exact Hl' | exact Hf | exact HBjs |].
+  unfold mOutCorec in Eq0. injection Eq0; intros; subst a0 b0. refine (conj Hs (conj HBjs _)).
   eapply wf_tm_retype; [| apply shift_single_ty, (wf_ty_nf HMB)].
   apply wf_case; [exact Hv | exact Hk | exact Hf | exact Hf | exact HYA | exact HMB
                  | exact (M_wk_ty HMB (wkr_shift1 _ _ _) HΓ1S) | | | exact Hscr].
   - rewrite M_E_mot. exact Hc1.
   - rewrite M_E_mot. apply wf_var; [rewrite Hi; exact HΓ1M | constructor].
 Qed.
-
 
 Lemma pre_out_corec {Γ l l' li X A B C k Y c j y} : MSig Γ l l' li X A B C -> lwf (gL G) k ->
   [ G ; Γ ,, X @ li ⊢[ i ] Y @ k ] ->
@@ -652,10 +650,12 @@ Proof using Hi Hv.
   pose proof (MSig_nf HS) as (NX & NA & NB & NC).
   assert (Nj : nftm j) by exact (wf_tm_nf Hj).
   assert (Hf : lwf (gL G) (mlvl l l' li)) by (cbn; repeat split; assumption).
-  destruct (pre_out_corec_parts HS Hk HY Hc Hj Hy _ _ _ ltac:(unfold mOutCorec; reflexivity)) as [Hs Hb].
+  destruct (pre_out_corec_parts HS Hk HY Hc Hj Hy _ _ _ ltac:(unfold mOutCorec; reflexivity)) as (Hs & HBs & Hb).
   unfold mOutCorec.
   apply wf_pair; [exact Hv | exact Hl | exact Hf | exact (wf_ty_single Hi HA Hj) | exact (M_outB_wf HS Hj) | exact Hs |].
-  rewrite M_E_pair by assumption. exact Hb.
+  rewrite M_E_pair by assumption.
+  eapply wf_lconv; [| apply lequiv_sym, M_lv_f; assumption].
+  apply wf_lam; [exact Hv | exact Hl' | exact Hf | exact HBs | exact Hb].
 Qed.
 
 End MAux.
