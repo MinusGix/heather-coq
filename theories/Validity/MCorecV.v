@@ -79,6 +79,103 @@ Proof using EL.
   - apply wf_var; [rewrite ge_typeof; exact HΓM | constructor].
 Qed.
 
+
+(** ** [case] at a non-dependent motive, typed
+
+    β's reduct cases at the motive [M(o)⟨↑⟩]: the scrutinee's reduct
+    decides the branch, as in [V_case]. *)
+Lemma shift_inj_single (T : ty) u : T⟨↑⟩⟨rlift ↑⟩[lsingle u] = T⟨↑⟩.
+Proof using . rewrite shift_lift_ty. apply shift_single_ty, ren_nf_ty. Qed.
+
+Lemma case_red_inl {G Δ k f Ya Mb c1 c2 e k1 k2 C D a} :
+  lwf (gL G) k -> lwf (gL G) f -> [ G ; Δ ⊢g Ya @ k ] -> [ G ; Δ ⊢g Mb @ f ] ->
+  [ G ; Δ ,, tySum k f Ya Mb @ lmax k f ⊢g Mb⟨↑⟩ @ f ] ->
+  [ G ; Δ ,, Ya @ k ⊢g c1 : Mb⟨↑⟩ @ f ] -> [ G ; Δ ,, Mb @ f ⊢g c2 : Mb⟨↑⟩ @ f ] ->
+  [ G ; Δ ⊢g e ⤳* tmInl k1 k2 C D a : tySum k f Ya Mb @ lmax k f ] ->
+  lequiv (gL G) k1 k -> lequiv (gL G) k2 f -> [ G ; Δ ⊢g Ya ≅ C @ k ] -> [ G ; Δ ⊢g Mb ≅ D @ f ] ->
+  [ G ; Δ ⊢g a : Ya @ k ] ->
+  [ G ; Δ ⊢g tmCase k f f Ya Mb Mb⟨↑⟩ c1 c2 e ⤳* c1[lsingle a] : Mb @ f ].
+Proof using EL.
+  intros Hk Hf HY HM HM1 Hc1 Hc2 Hr H1 H2 HC HD Ha. pose proof (wf_ty_nf HM) as NM.
+  rewrite <- (shift_inj_single Mb (tmInl k f Ya⟨↑⟩ Mb⟨↑⟩ (var 0))) in Hc1.
+  rewrite <- (shift_inj_single Mb (tmInr k f Ya⟨↑⟩ Mb⟨↑⟩ (var 0))) in Hc2.
+  pose proof (case_inl_eq Hk Hf Hf HY HM HM1 Hc1 Hc2 (tmred_eq _ _ _ _ _ _ _ Hr) H1 H2 HC HD Ha) as Eq.
+  rewrite (shift_single_ty _ _ NM) in Eq.
+  split; [exact (eqtm_wf_l ge_typeof Eq) | | exact Eq].
+  eapply reds_trans; [apply reds_case, (tmred_red _ _ _ _ _ _ _ Hr)|].
+  econstructor; [apply red_case_inl | constructor].
+Qed.
+
+Lemma case_red_inr {G Δ k f Ya Mb c1 c2 e k1 k2 C D b} :
+  lwf (gL G) k -> lwf (gL G) f -> [ G ; Δ ⊢g Ya @ k ] -> [ G ; Δ ⊢g Mb @ f ] ->
+  [ G ; Δ ,, tySum k f Ya Mb @ lmax k f ⊢g Mb⟨↑⟩ @ f ] ->
+  [ G ; Δ ,, Ya @ k ⊢g c1 : Mb⟨↑⟩ @ f ] -> [ G ; Δ ,, Mb @ f ⊢g c2 : Mb⟨↑⟩ @ f ] ->
+  [ G ; Δ ⊢g e ⤳* tmInr k1 k2 C D b : tySum k f Ya Mb @ lmax k f ] ->
+  lequiv (gL G) k1 k -> lequiv (gL G) k2 f -> [ G ; Δ ⊢g Ya ≅ C @ k ] -> [ G ; Δ ⊢g Mb ≅ D @ f ] ->
+  [ G ; Δ ⊢g b : Mb @ f ] ->
+  [ G ; Δ ⊢g tmCase k f f Ya Mb Mb⟨↑⟩ c1 c2 e ⤳* c2[lsingle b] : Mb @ f ].
+Proof using EL.
+  intros Hk Hf HY HM HM1 Hc1 Hc2 Hr H1 H2 HC HD Hb. pose proof (wf_ty_nf HM) as NM.
+  rewrite <- (shift_inj_single Mb (tmInl k f Ya⟨↑⟩ Mb⟨↑⟩ (var 0))) in Hc1.
+  rewrite <- (shift_inj_single Mb (tmInr k f Ya⟨↑⟩ Mb⟨↑⟩ (var 0))) in Hc2.
+  pose proof (case_inr_eq Hk Hf Hf HY HM HM1 Hc1 Hc2 (tmred_eq _ _ _ _ _ _ _ Hr) H1 H2 HC HD Hb) as Eq.
+  rewrite (shift_single_ty _ _ NM) in Eq.
+  split; [exact (eqtm_wf_l ge_typeof Eq) | | exact Eq].
+  eapply reds_trans; [apply reds_case, (tmred_red _ _ _ _ _ _ _ Hr)|].
+  econstructor; [apply red_case_inr | constructor].
+Qed.
+
+Lemma case_red_ne {G Δ k f Ya Mb c1 c2 e ν} :
+  lwf (gL G) k -> lwf (gL G) f -> [ G ; Δ ⊢g Ya @ k ] -> [ G ; Δ ⊢g Mb @ f ] ->
+  [ G ; Δ ,, tySum k f Ya Mb @ lmax k f ⊢g Mb⟨↑⟩ @ f ] ->
+  [ G ; Δ ,, Ya @ k ⊢g c1 : Mb⟨↑⟩ @ f ] -> [ G ; Δ ,, Mb @ f ⊢g c2 : Mb⟨↑⟩ @ f ] ->
+  [ G ; Δ ⊢g e ⤳* ν : tySum k f Ya Mb @ lmax k f ] ->
+  [ G ; Δ ⊢g tmCase k f f Ya Mb Mb⟨↑⟩ c1 c2 e ⤳* tmCase k f f Ya Mb Mb⟨↑⟩ c1 c2 ν : Mb @ f ].
+Proof using EL.
+  intros Hk Hf HY HM HM1 Hc1 Hc2 Hr. pose proof (wf_ty_nf HM) as NM.
+  rewrite <- (shift_inj_single Mb (tmInl k f Ya⟨↑⟩ Mb⟨↑⟩ (var 0))) in Hc1.
+  rewrite <- (shift_inj_single Mb (tmInr k f Ya⟨↑⟩ Mb⟨↑⟩ (var 0))) in Hc2.
+  pose proof (case_cong Hk Hf Hf HY HM HM1 Hc1 Hc2 (tmred_eq _ _ _ _ _ _ _ Hr)) as Eq.
+  rewrite (shift_single_ty _ _ NM) in Eq.
+  split; [exact (eqtm_wf_l ge_typeof Eq) | apply reds_case, (tmred_red _ _ _ _ _ _ _ Hr) | exact Eq].
+Qed.
+
+
+(** A child's type at a position. *)
+Lemma kid_single l l' li (X A B : ty) (C j a p : tm) :
+  nfty X -> nfty A -> nfty B -> nftm C -> nftm j -> nftm a ->
+  (tyM l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩ C[llift (lsingle2 j a)])[lsingle p] =
+  tyM l l' li X A B C C[lsingle3 j a p].
+Proof using . intros. meq'. Qed.
+
+(** ** β's reduct applied to a position: its λ's β. *)
+Lemma lam_app_red {G Γ l l' li X A B C kc Y c j y p la lb A1 B1} :
+  MSig (G := G) (i := ge_layer) Γ l l' li X A B C -> lwf (gL G) kc ->
+  [ G ; Γ ,, X @ li ⊢g Y @ kc ] ->
+  [ G ; Γ ,, X @ li ,, Y @ kc ⊢g c : (mStepTy l l' li X A B C kc Y)⟨↑⟩ @ lmax l (lmax kc (mlvl l l' li)) ] ->
+  [ G ; Γ ⊢g j : X @ li ] -> [ G ; Γ ⊢g y : Y[lsingle j] @ kc ] ->
+  [ G ; Γ ⊢g p : B[lsingle2 j (mOutFst l l' li X A B C kc Y c j y)] @ l' ] ->
+  lequiv (gL G) la l' -> lequiv (gL G) lb (mlvl l l' li) ->
+  [ G ; Γ ⊢g B[lsingle2 j (mOutFst l l' li X A B C kc Y c j y)] ≅ A1 @ l' ] ->
+  [ G ; Γ ,, B[lsingle2 j (mOutFst l l' li X A B C kc Y c j y)] @ l'
+      ⊢g tyM l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩
+           C[llift (lsingle2 j (mOutFst l l' li X A B C kc Y c j y))] ≅ B1 @ mlvl l l' li ] ->
+  [ G ; Γ ⊢g app (mLam l l' li X A B C kc Y c j y) la lb A1 B1 p
+      ⤳* (mBody l l' li X A B C kc Y c j y)[lsingle p]
+      : tyM l l' li X A B C (mIdxP l l' li X A B C kc Y c j y p) @ mlvl l l' li ].
+Proof using EL.
+  intros HS Hk HY Hc Hj Hy Hp Hla Hlb HA1 HB1.
+  pose proof HS as (Hl & Hl' & Hli & HX & HA & HB & HC).
+  assert (Hf : lwf (gL G) (mlvl l l' li)) by (cbn; repeat split; assumption).
+  destruct (pre_out_corec_parts ge_typeof ge_notV HS Hk HY Hc Hj Hy _ _ (mBody l l' li X A B C kc Y c j y)
+              ltac:(unfold mOutCorec, mBody; reflexivity)) as (Ha & HBa & Hb).
+  pose proof (eqty_wf_l ge_typeof HB1) as HB0.
+  pose proof (tmred_beta Hl' Hf Hla Hlb HBa HB0 Hb Hp HA1 HB1) as R.
+  rewrite kid_single in R by first [exact (wf_ty_nf HX) | exact (wf_ty_nf HA) | exact (wf_ty_nf HB)
+                                   | exact (wf_tm_nf HC) | exact (wf_tm_nf Hj) | exact (wf_tm_nf Ha)].
+  exact R.
+Qed.
+
 (** ** [corec] at related premises *)
 
 Section CorecV.
