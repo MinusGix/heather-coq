@@ -32,6 +32,12 @@ Proof. intros H [|n]; rewrite !llk_llift; [reflexivity | now rewrite H]. Qed.
 Lemma gwa_llift2 (d : lsub) γ n : llk (llift (llift d))⟦γ⟧ n = llk (llift (llift d⟦γ⟧)) n.
 Proof. rewrite llk_llift_gwa. apply llk_llift_ext, llk_llift_gwa. Qed.
 
+(** [out]'s type's substitutions, for [gl_push] *)
+Lemma gwa_llift_single_ty (B : ty) a γ : B[llift (lsingle a)]⟦γ⟧ = B⟦γ⟧[llift (lsingle a⟦γ⟧)].
+Proof. rewrite gwa_subst_ty. apply subst_ext_ty. intros n. now rewrite llk_llift_gwa, gwa_lsingle. Qed.
+Lemma gwa_llift2_single (t : tm) a γ : t[llift (llift (lsingle a))]⟦γ⟧ = t⟦γ⟧[llift (llift (lsingle a⟦γ⟧))].
+Proof. rewrite gwa_subst. apply subst_ext. intros n. now rewrite gwa_llift2, gwa_lsingle. Qed.
+
 (** ** Renamings composed under binders *)
 
 Lemma ren_wk_comp_lift2_ty (T : ty) (ρ ρ' : wk) :
