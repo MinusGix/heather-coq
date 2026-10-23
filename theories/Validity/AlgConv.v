@@ -494,7 +494,7 @@ Proof.
     try match goal with Hn : whne_ty ?V |- _ => rewrite (whne_ty_head V Hn) in E end;
     destruct W2; cbn in E; try discriminate;
     first [ apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum
-          | apply posty_W | apply posty_wf | apply posty_iwf | apply posty_ne; inversion Hw2; subst; first [assumption | constructor] ].
+          | apply posty_W | apply posty_wf | apply posty_iwf | apply posty_M | apply posty_ne; inversion Hw2; subst; first [assumption | constructor] ].
 Qed.
 
 Lemma head_pi W : ty_head W = 3 -> exists m m' A B, W = tyPi m m' A B.

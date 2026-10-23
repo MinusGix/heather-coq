@@ -17,7 +17,7 @@ Ltac push_ren_in H := revert H; push_ren; intros H.
 
 Lemma posty_ren W r : posty W -> posty W⟨r⟩.
 Proof.
-  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum | apply posty_W | apply posty_wf | apply posty_iwf | idtac].
+  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum | apply posty_W | apply posty_wf | apply posty_iwf | apply posty_M | idtac].
   apply posty_ne, whne_ty_ren; assumption.
 Qed.
 
@@ -151,7 +151,16 @@ Proof.
             intros Δ r Hr; W_norm; W_inst Hr; eapply actmne_elimIWf; try eassumption;
             (* its telescopes commute with [r] only by an equation (as in [wk_I]) *)
             first [ match goal with H : ac_ty _ _ _ _ |- ac_ty _ _ _ _ => eapply (ac_ty_eq4 H); solve [wk_eqI] end
-                  | match goal with H : ac_tm _ _ _ _ _ |- ac_tm _ _ _ _ _ => eapply (ac_tm_eq5 H); solve [wk_eqI] end ] ].
+                  | match goal with H : ac_tm _ _ _ _ _ |- ac_tm _ _ _ _ _ => eapply (ac_tm_eq5 H); solve [wk_eqI] end ]
+          | (* [corec]'s step (M18b): its step type, likewise *)
+            unfold AW_tmnf, AW_ty, AW_tm in *;
+            let Δ := fresh "Δ" in let r := fresh "r" in let Hr := fresh "Hr" in
+            intros Δ r Hr; W_norm; W_inst Hr; eapply actmnf_corec; try eassumption;
+            match goal with H : ac_tm _ _ _ _ _ |- ac_tm _ _ _ _ _ => eapply (ac_tm_eq5 H); solve [wk_eqI] end
+          | (* [out]'s type (M18b): likewise *)
+            unfold AW_tmne, AW_tmnee in *;
+            let Δ := fresh "Δ" in let r := fresh "r" in let Hr := fresh "Hr" in
+            intros Δ r Hr; W_inst Hr; eapply ac_tmne_eq; [eapply actmne_out; eassumption | solve [wk_eqI]] ].
 Qed.
 
 (** ** Global weakening
@@ -164,7 +173,7 @@ Ltac push_gren_in H := revert H; push_gren; intros H.
 
 Lemma posty_gren W ξ : posty W -> posty W⟪ξ⟫.
 Proof.
-  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum | apply posty_W | apply posty_wf | apply posty_iwf | idtac].
+  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum | apply posty_W | apply posty_wf | apply posty_iwf | apply posty_M | idtac].
   apply posty_ne, whne_ty_gren; assumption.
 Qed.
 
@@ -224,7 +233,7 @@ Ltac mk_gwk Hγ G G' :=
 Ltac G_norm1 :=
   push_gren; cbn [gwk_fn gdecl_ren goren];
   rewrite ?gren_letbox_ty by reflexivity;
-  rewrite ?gren_single_ty, ?gren_single, ?gren_single2_ty, ?gren_lsucc_ty, ?gren_ren, ?gren_ren_ty', ?gren_uren_ctx, ?gcren_shift_up,
+  rewrite ?gren_single_ty, ?gren_single, ?gren_single2_ty, ?gren_lsucc_ty, ?gren_llift_single_ty, ?gren_llift2_single, ?gren_ren, ?gren_ren_ty', ?gren_uren_ctx, ?gcren_shift_up,
           ?gren_shift_up_tm, ?mkrb_gren, ?motT_gren, ?mott_gren, ?wrapMT_gren, ?wrapMt_gren,
           ?recΓT_gren, ?recΓt_gren, ?gren_gsingle_ty;
   cbn [gwk_fn gdecl_ren goren]; push_gren.
@@ -343,7 +352,7 @@ Qed.
 (** Every other rule is closed by one tactic, as for local weakening. *)
 Ltac U_norm1 :=
   upush;
-  rewrite ?usubst_lsingle_ty, ?usubst_lsingle, ?usubst_tmNth, ?usubst_lsingle2_ty, ?usubst_lsucc_ty, ?usubst_gren_ctx', ?usubst_gren_ty', ?usubst_gren_tm',
+  rewrite ?usubst_lsingle_ty, ?usubst_lsingle, ?usubst_llift_single_ty, ?usubst_llift2_single, ?usubst_tmNth, ?usubst_lsingle2_ty, ?usubst_lsucc_ty, ?usubst_gren_ctx', ?usubst_gren_ty', ?usubst_gren_tm',
           ?usubst_ren', ?usubst_ren_ty', ?gctx_uwk_usubst, ?ucren_ush_usubst, ?uren_ush_usubst_tm,
           ?ubvars_uupn, ?mkrb_usubst, ?motT_usubst, ?mott_usubst, ?wrapMT_usubst, ?wrapMt_usubst,
           ?recGT_usubst, ?recΓT_usubst, ?recGt_usubst, ?recΓt_usubst, ?usubst_gsingle_ty,

@@ -36,7 +36,9 @@ Inductive posty : ty -> Prop :=
 (* finitary well-founded trees (M15a): no η *)
 | posty_wf l A N : posty (tyWf l A N)
 (* indexed W-types (M17b): no η *)
-| posty_iwf l li X A N Ot C m : posty (tyIWf l li X A N Ot C m).
+| posty_iwf l li X A N Ot C m : posty (tyIWf l li X A N Ot C m)
+(* indexed coinductive types (M18b): no η *)
+| posty_M l l' li X A B C j : posty (tyM l l' li X A B C j).
 
 Inductive ac_ty : gctx -> ctx -> ty -> ty -> Prop :=
 | act_red G Γ T T' W W' : reds_ty T W -> reds_ty T' W' -> whnf_ty W -> whnf_ty W' ->
@@ -89,6 +91,12 @@ with ac_tynf : gctx -> ctx -> ty -> ty -> Prop :=
     ac_tm G (Γ ,, A @ l) Ot Ot' X⟨↑⟩ -> ac_tm G (Γ ,, A @ l ,, tyFin N @ lzero) C C' X⟨↑⟩⟨↑⟩ ->
     ac_tm G Γ m m' X ->
     ac_tynf G Γ (tyIWf l li X A N Ot C m) (tyIWf k ki X' A' N' Ot' C' m')
+(* indexed coinductive types (M18b): the signature under its binders, at
+   the left components, and the indices *)
+| actnf_M G Γ l l' li k k' ki X X' A A' B B' C C' j j' : leqv l k -> leqv l' k' -> leqv li ki ->
+    ac_ty G Γ X X' -> ac_ty G (Γ ,, X @ li) A A' -> ac_ty G (Γ ,, X @ li ,, A @ l) B B' ->
+    ac_tm G (Γ ,, X @ li ,, A @ l ,, B @ l') C C' X⟨↑⟩⟨↑⟩⟨↑⟩ -> ac_tm G Γ j j' X ->
+    ac_tynf G Γ (tyM l l' li X A B C j) (tyM k k' ki X' A' B' C' j')
 (* propositional truncation (M16a) *)
 | actnf_sq G Γ l l' A A' : leqv l l' -> ac_ty G Γ A A' -> ac_tynf G Γ (tySq l A) (tySq l' A')
 (* the identity type (M11a): endpoints compared at the left carrier *)
@@ -203,6 +211,17 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tm G Γ cs cs' (tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a)) ->
     ac_tmnf G Γ (tmSupi k ki X1 A1 N1 O1 C1 a cs) (tmSupi k' ki' X1' A1' N1' O1' C1' a' cs')
       (tyIWf l li X A N Ot C m)
+(* [corec] (M18b): the carrier's level, the carriers, the steps at the
+   type's step type and the seeds; the signature and the index are the
+   type's up to equality ([sup_i]'s convention); no other rule relates a
+   [corec] *)
+| actmnf_corec G Γ l l' li X A B C j k1 k2 k3 X1 A1 B1 C1 j1 k1' k2' k3' X1' A1' B1' C1' j1'
+    kc kc' Y Y' c c' y y' : leqv kc kc' ->
+    ac_ty G (Γ ,, X @ li) Y Y' ->
+    ac_tm G (Γ ,, X @ li ,, Y @ kc) c c' (mStepTy l l' li X A B C kc Y)⟨↑⟩ ->
+    ac_tm G Γ y y' Y[lsingle j] ->
+    ac_tmnf G Γ (tmCorec k1 k2 k3 X1 A1 B1 C1 kc Y c j1 y) (tmCorec k1' k2' k3' X1' A1' B1' C1' kc' Y' c' j1' y')
+      (tyM l l' li X A B C j)
 (* the codes of Empty and + (M12c) *)
 | actmnf_code_empty G Γ l k k' : leqv k k' -> ac_tmnf G Γ (tmEmpty k) (tmEmpty k') (tyU l)
 | actmnf_code_sum G Γ l l1 l2 l3 l4 s s' t t' : leqv l1 l3 -> leqv l2 l4 ->
@@ -380,6 +399,11 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (tmElimIWf l li l' X A N Ot C M c m ν) (tmElimIWf k ki k' X' A' N' Ot' C' M' c' m' ν')
       M[lsingle2 m ν]
+(* [out] (M18b): the scrutinees as neutrals; the signature, the index and
+   their levels are the scrutinee's type's, as [elim_IWf]'s *)
+| actmne_out G Γ l l' li k k' ki X X' A A' B B' C C' j j' ν ν' W :
+    ac_tmnee G Γ ν ν' W ->
+    ac_tmne G Γ (tmOut l l' li X A B C j ν) (tmOut k k' ki X' A' B' C' j' ν') (mOutTy l l' li X A B C j)
 (* [ind_∥∥] (M16a): the carriers, and the motives at the left carrier's
    squash; the scrutinees are neutral and, as [elim_Empty]'s, never compared,
    and neither are the steps (irrelevance at the step's squash type) *)
