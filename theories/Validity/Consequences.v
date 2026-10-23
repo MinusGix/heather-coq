@@ -169,6 +169,23 @@ Proof using EL red_eqty.
   injection Heq as <- <- <- <- <- <- <- <-. auto 10.
 Qed.
 
+(** Indexed coinductive types (M18b): every annotation and the index. *)
+Lemma M_inj {G Γ l l1 l2 li1 k1 k2 ki X X' A A' B B' C C' m m'} :
+  [ G ; Γ ⊢g tyM l1 l2 li1 X A B C m ≅ tyM k1 k2 ki X' A' B' C' m' @ l ] -> lwf (gL G) l ->
+  lequiv (gL G) k1 l1 /\ lequiv (gL G) k2 l2 /\ lequiv (gL G) ki li1 /\ [ G ; Γ ⊢ X ≈ X' @ li1 ] /\
+  [ G ; Γ ,, X @ li1 ⊢ A ≈ A' @ l1 ] /\ [ G ; Γ ,, X @ li1 ,, A @ l1 ⊢ B ≈ B' @ l2 ] /\
+  [ G ; Γ ,, X @ li1 ,, A @ l1 ,, B @ l2 ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li1 ] /\ [ G ; Γ ⊢ m ≈ m' : X @ li1 ].
+Proof using EL red_eqty.
+  intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
+  pose proof (eqty_wf_l ge_typeof H) as HP.
+  destruct (LR_inv_M HR (tyred_refl _ _ HP))
+    as (r1 & r2 & ri & X2 & A2 & B2 & C2 & m2 & idxR & shR & posR & _ & H1 & H2 & H3 & _ & _ & _ & _ & HT'
+        & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & HXX & HAA & HBB & HCC & Hmm & _).
+  pose proof (tyred_refl _ _ (eqty_wf_r ge_typeof H)) as HT'0.
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' HT'0 (whnf_tyM _ _ _ _ _ _ _ _) (whnf_tyM _ _ _ _ _ _ _ _)) as Heq.
+  injection Heq as <- <- <- <- <- <- <- <-. auto 10.
+Qed.
+
 (** Propositional truncation (M16a): the carriers, and the levels. *)
 Lemma sq_inj {G Γ l l1 l2 A A'} :
   [ G ; Γ ⊢g tySq l1 A ≅ tySq l2 A' @ l ] -> lwf (gL G) l ->

@@ -698,7 +698,7 @@ Qed.
 Lemma VS_red {G Γ lhs rhs T k} : [ G ; Γ ⊢[ lM ] lhs : T @ k ] -> [ G ; Γ ⊢[ lM ] lhs ≅ rhs : T @ k ] ->
   (forall σ e, gdnf σ -> LK dnftm e -> red lhs⦃σ⦄[e] rhs⦃σ⦄[e]) -> VTmSM G Γ rhs rhs T k ->
   VTmSM G Γ lhs rhs T k.
-Proof using ELM EMl.
+Proof using ELM ELP EMl.
   intros Hw Heq Hred Vr.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
