@@ -84,3 +84,15 @@ of the build (`_CoqProject` lists `theories/` only). Compile one with
   children, and `corec`'s validity by induction on the depth with the
   carrier's relation as a premise only (`M18_DESIGN.md`). Standalone:
   `coqc probes/MRelProbe.v`.
+- `CodeDomainModel.v`: the domain-model method of Carneiro et al.,
+  "Definitional Inversion, Without Normalisation" (arXiv:2607.13662;
+  Heather's `issues/definitional-inversion-domain-model.md`), at a code
+  former: MLTTη plus first-order codes, `□`, `box` with literal
+  congruence, an `elim_Typ`-shaped recursor and `letbox`. It checks the
+  model's soundness (codes a flat summand, code variables interpreted by
+  codes), Static Code and `Code`'s disjointness from soundness alone, the
+  `Code` clause and its §2.7 laws, the fundamental theorem's cases for the
+  new rules (the recursor by induction on the code), and Π-injectivity
+  from adequacy, over the paper's cases for MLTTη and an abstract
+  syntactic metatheory (`HEATHER.md`, Findings). Standalone: `coqc
+  probes/CodeDomainModel.v`.

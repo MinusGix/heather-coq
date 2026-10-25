@@ -182,6 +182,21 @@ Cross-checks between the two sides, newest last.
   constructor `in` at carrier `Unit` types only when `I` is `Unit`; the
   indexed constructor's carrier is `out`'s type itself
   (`MCoind.in_`).
+- **Definitional inversion without normalisation, at the code layer**
+  (`H/issues/definitional-inversion-domain-model.md`). The domain model
+  and relation of Carneiro et al. (arXiv:2607.13662) extend to a code
+  former in DeLaM's shape (`probes/CodeDomainModel.v`): codes are a flat
+  summand kept as syntax, code variables are interpreted by codes, the
+  `Code` clause compares codes literally and satisfies the §2.7 laws, the
+  recursor's case goes by induction on the code, and Π-injectivity's
+  proof is unchanged. The four layer-M equations `AlgSound.v` takes from
+  `DeclConsequences` (`declM_inst_c_eq`, `declM_inst_t_eq`,
+  `declM_motT_eq`, `declM_mott_eq`) are global functionality, not
+  inversions; the relation cannot produce them (it is `⊤` at `⊥` and has
+  no escape), so a development by this method needs syntactic global
+  functionality, whose DeLaM-specific case, `box`, is `static_gsubst`
+  (`Typing/GStatic.v`). Not checked: the rest of that lemma, codes with
+  binders and contexts, levels.
 
 ## Beyond type formers
 
