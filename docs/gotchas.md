@@ -51,6 +51,13 @@ milestone design docs record further gotchas met per former.
 - Per-case constructor search (`wk_step` in `Typing/Properties.v`, trying
   each constructor under `solve`) is robust and fast. Use it instead of
   `econstructor`, which commits to the first unifying constructor.
+- `destruct` on a constructor-indexed hypothesis (`whnf w`, `whne w`, …)
+  introduces the constructor's fields under the binder names of its
+  declaration (`whnf_corec l l' li X A B C k Y c j y` brings an `X`). A
+  later `pose proof … as X` then fails because `X` is taken, and inside
+  `first [ … ]` that shows only as "No applicable tactic". Name such facts
+  so that no constructor's binder can clash (`Xc` in `Canonicity.v`'s
+  `value_canon`), or use `as ?X`.
 
 ## Build-time gotchas (2026-09-29 perf pass, clean build 513 s → 168 s)
 
