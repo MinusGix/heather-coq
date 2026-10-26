@@ -81,6 +81,17 @@ Proof.
 Qed.
 
 
+(** The coinductive heads' inversion at any layer (M18b); here rather than
+    in [InvAny], whose users don't need it. *)
+Lemma inva_corec {G i Γ l l' li X A B C k0 Y c j y T k} :
+  [ G ; Γ ⊢[ i ] tmCorec l l' li X A B C k0 Y c j y : T @ k ] ->
+  compt i /\ lvl_eq (gL G) k (mlvl l l' li) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyM l l' li X A B C j @ k ].
+Proof. inv_tm_any. Qed.
+Lemma inva_out {G i Γ l l' li X A B C j m T k} :
+  [ G ; Γ ⊢[ i ] tmOut l l' li X A B C j m : T @ k ] ->
+  compt i /\ lvl_eq (gL G) k (lmax l (mlvl l l' li)) /\ [ G ; Γ ⊢[ typeof i ] T ≅ mOutTy l l' li X A B C j @ k ].
+Proof. inv_tm_any. Qed.
+
 (** ** The theorem *)
 
 Ltac uq_same :=
@@ -169,6 +180,8 @@ Proof.
       | destruct (inva_elimSq H1) as (_ & Hk & E); destruct (inva_elimSq H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_supi H1) as (_ & Hk & E); destruct (inva_supi H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_elimIWf H1) as (_ & Hk & E); destruct (inva_elimIWf H2) as (_ & Hk' & E'); uq_same
+      | destruct (inva_corec H1) as (_ & Hk & E); destruct (inva_corec H2) as (_ & Hk' & E'); uq_same
+      | destruct (inva_out H1) as (_ & Hk & E); destruct (inva_out H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_code_empty H1) as (_ & Hk & E); destruct (inva_code_empty H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_code_sum H1) as (_ & Hk & E); destruct (inva_code_sum H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_code_W H1) as (_ & Hk & E); destruct (inva_code_W H2) as (_ & Hk' & E'); uq_same
