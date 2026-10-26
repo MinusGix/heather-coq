@@ -338,7 +338,8 @@ annotations included. Files:
 - `LogRel/Def.v`: `LRm` over `MRn` (the probe's definition at the
   development's annotations: `MGen`, the generic clause, at every depth;
   `MObs`, `out`'s observations through `SigRel` and `PiRel` themselves).
-  `LogRel/MAux.v` has the Kripke-world syntax, `kw_eqv` (below) and
+  `LogRel/MAux.v` has the Kripke-world syntax, `kw_eqv` (below, since
+  removed) and
   `MSide`, what one `LRm` gives about its two signatures in every world;
   the rest of `LogRel` has one case each.
 - `LogRel/MIdx.v`: `MRn_idx` (below).
@@ -418,6 +419,84 @@ Follow-ups:
   worlds" below.
 - **Canonicity and productivity at `M`** (heather-coq#39), as planned,
   now that the former is in-tree.
+
+## Associative worlds (heather-coq#61, after M18b)
+
+Kripke worlds (`kwk`, `LogRel/Def.v`) now compose associatively, and the
+identity world is a unit on both sides, by `eq_refl`:
+`kw_comp_assoc`, `kw_comp_id_l` and `kw_comp_id_r` are `reflexivity`, so
+`idxR (kw_comp (kw_comp ρ ρ') ρ'')` and `idxR (kw_comp ρ (kw_comp ρ' ρ''))`
+are one proposition and nothing moves between them.
+
+**Representation.** A world over `(G, Γ)` stores what it does to a later
+world rather than its own data:
+- `kw_gk : gweak -> gweak` and `kw_rk : wk -> wk`, a later weakening
+  followed by the world's own (`kw_gk γ0` is `γ0` after `γ`);
+- `kw_gokk` and `kw_wfk`, its two well-formedness proofs as transformers
+  of a later world's (`gwk_ok γ0 G' (kw_G ρ) -> gwk_ok (kw_gk γ0) G' G`,
+  and likewise for the local OPE);
+- `kw_gcoh`/`kw_rcoh`: the maps are composition with the data
+  (`kw_gk γ0 = gwk_comp γ0 (kw_gk gwk_id)`), boxed into `SProp` (`SBox`);
+- `kw_G`, `kw_Δ`, `kw_ctx` as before.
+
+`kw_comp` is then function composition in every field but the coherence
+ones, which are in `SProp` and so convertible whatever their proofs; the
+record has primitive projections, so a world is its own η-expansion and
+the identity world (`kw_id`, `kw_self` is now it) is a unit by β and η.
+The plain data are definitions: `kw_γ ρ := kw_gk ρ gwk_id`,
+`kw_r ρ := kw_rk ρ wk_id`, `kw_gok`, `kw_wf`, at their old types, so every
+statement over worlds reads as before. The composite's data are
+propositional (`kw_γ_comp`, `kw_r_comp`), from the coherence: the
+equations on `gweak`/`wk` are decidable, so `sunbox` gets them back out
+of `SProp` without an axiom. `kw_mk` builds a world from data and proofs
+(the old constructor's signature); `kw_loc` and `kw_mk` compute their
+data at the identity by a `match`, so `unfold kw_loc; cbn [kw_γ kw_gk
+kw_r kw_rk]` gives the data as before.
+
+**Why this shape.** Composition of the first-order OPEs (`gwk_comp`,
+`wk_comp`) is associative only by induction, and the proof fields of
+the old record (`gwk_ok_comp …`, `kw_comp_wf …`) differ between the two
+associations. Representations that compose by function composition are
+definitionally associative; the proofs become transformers composed the
+same way (a pair of them would need a commuting conversion of the
+`match`es, so they are two fields). Storing the plain proofs in `SProp`
+instead would need `wk_wf` and `gwk_ok` decidable, which needs decidable
+equality of the whole syntax; only the coherence goes to `SProp`, and
+its equations are over `gweak`/`wk`, whose equality `decide equality`
+gives. No axiom: `Print Assumptions` of the main theorems is still empty.
+
+**What went.** `kw_eqv` and its lemmas (`MAux.v`), `MSide`'s three
+invariance fields and `MSide_intro`'s premises (one `MSide_of_LR` is
+left), `LR_kw_eqv`, `LR_kw_eqv_irrel`, `mSh_eqv`/`mPos_eqv`, `mrn_eqv`,
+`kw_eqv_trans`; `corec`'s depth induction (`pair_at`, `corec_all`,
+`V_corec`) now closes its children by `exact`. Beyond `M`, the same
+reassociation was in `W`, `Wf` and `IWf`: `WNf_kw`, `WfNf_kw`, `IWfNf_kw`
+and their `*Rel_kw` lose their premises relating the relations at the
+two associations, `Weakening`'s `W`/`Wf`/`IWf` cases no longer prove
+them by irrelevance, and the spine lemmas (`Wf.v`, `IWfSp.v`, `WfElim.v`)
+no longer move along `WfDom_assoc`/`KDom_assoc` (removed). In all, the
+theories lose about 180 lines net (the representation adds about 120,
+most of them `kw_gk kw_rk kw_mk` added to `cbn` lists; the removals
+are about 300).
+
+**Time.** Clean builds of the base (`eb7e28d`) and this branch, back to
+back at -j4 on one 4-core cloud machine (`tools/build-profile --clean`):
+1584 s and 1476 s wall, 3787 s and 3610 s CPU. The difference is
+drift, not the change: files the change does not touch moved by up to
+25 % between the runs, in both directions (`Typing/TypedDnf` 119 s →
+143 s, `Validity/DVecNthReds`'s example 132 s → 108 s). The 15 files
+the change touches take about 100 s of CPU together (97 s → 79 s), so
+whatever it saves in proof time is below what one build-to-build
+comparison can see; the saving is in proof size and in what later
+formers no longer have to state.
+
+**For later formers.** A Kripke clause at a composite world needs no
+invariance premise: state it at `kw_comp ρ ρ'` and use it at either
+association. To read a world's data, rewrite with `kw_γ_comp`/`kw_r_comp`
+(a `cbn` exposes `kw_gk ρ (kw_gk ρ' gwk_id)` instead); a `cbn` list that
+should reduce `kw_γ`/`kw_r` of a built world names `kw_gk`/`kw_rk` (and
+`kw_mk` for a world `kw_mk` builds) too, as primitive projections reduce
+under `cbn [...]` only when listed (`docs/gotchas.md`).
 
 ## M18c: codes (plan)
 

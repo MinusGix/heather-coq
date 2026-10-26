@@ -72,7 +72,8 @@ shape and family data change in the recursive premise.
 - Child applications are related for every choice of equivalent
   annotations, as in `PiRel`.
 - The weakened data are not definitionally the composed data
-  (`kw_comp` is associative only propositionally), so the relation's
+  (`kw_comp` is associative only propositionally; by `eq_refl` since
+  heather-coq#61, `M18_DESIGN.md` "Associative worlds"), so the relation's
   weakening, irrelevance and symmetry go through one transport lemma: `WRel`
   respects generically equal `S`, `T` and pointwise equivalent `domR`,
   `codR` (`codR` for any two proofs of the shapes' relation).
