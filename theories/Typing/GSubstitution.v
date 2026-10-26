@@ -493,7 +493,7 @@ Proof. rewrite gsubst_subst; reflexivity. Qed.
 Lemma gs_tmDNth l n F cs i : (tmDNth l n F cs i)⦃σ⦄ = tmDNth l n⦃σ⦄ F⦃σ⦄ cs⦃σ⦄ i⦃σ⦄.
 Proof.
   unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
-  repeat progress (cbn [gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty];
+  repeat progress (cbn [gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty]; fold gsubst_ty gsubst_tm;
     try change (gsubst_tm ?x ?σ) with x⦃σ⦄; try change (gsubst_ty ?x ?σ) with x⦃σ⦄;
     rewrite ?gsubst_ren_ty', ?gsubst_ren, ?gs_single_ty0).
   reflexivity.
@@ -540,7 +540,7 @@ Lemma gs_mOutCorec l l' li X A B C k Y c j y :
   mOutCorec l l' li X⦃σ⦄ A⦃σ⦄ B⦃σ⦄ C⦃σ⦄ k Y⦃σ⦄ c⦃σ⦄ j⦃σ⦄ y⦃σ⦄.
 Proof.
   unfold mOutCorec.
-  repeat progress (cbn [gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty];
+  repeat progress (cbn [gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty]; fold gsubst_ty gsubst_tm;
     try change (gsubst_tm ?x ?σ) with x⦃σ⦄; try change (gsubst_ty ?x ?σ) with x⦃σ⦄;
     rewrite ?gsubst_ren_ty', ?gsubst_ren, ?gs_single_ty0, ?gs_single0, ?gs_single2_0, ?gs_single2_ty0,
       ?gs_llift_single_ty, ?gs_llift_single, ?gs_llift2_single, ?gs_llift_single2).

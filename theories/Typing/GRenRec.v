@@ -313,7 +313,7 @@ Qed.
 Lemma gren_tmDNth l n F cs i : (tmDNth l n F cs i)⟪ξ⟫ = tmDNth l n⟪ξ⟫ F⟪ξ⟫ cs⟪ξ⟫ i⟪ξ⟫.
 Proof.
   unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
-  repeat progress (cbn [gren GRen_tm gren_tm GRen_ty gren_ty];
+  repeat progress (cbn [gren GRen_tm gren_tm GRen_ty gren_ty]; fold gren_ty gren_tm;
     change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫;
     rewrite ?gren_ren_ty', ?gren_ren, ?gren_single_ty, ?gren_single).
   reflexivity.
@@ -356,7 +356,7 @@ Lemma gren_mOutCorec l l' li X A B C k Y c j y :
   mOutCorec l l' li X⟪ξ⟫ A⟪ξ⟫ B⟪ξ⟫ C⟪ξ⟫ k Y⟪ξ⟫ c⟪ξ⟫ j⟪ξ⟫ y⟪ξ⟫.
 Proof.
   unfold mOutCorec.
-  repeat progress (cbn [gren GRen_tm gren_tm GRen_ty gren_ty];
+  repeat progress (cbn [gren GRen_tm gren_tm GRen_ty gren_ty]; fold gren_ty gren_tm;
     change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫;
     rewrite ?gren_ren_ty', ?gren_ren, ?gren_single_ty, ?gren_single, ?gren_single2, ?gren_single2_ty,
       ?gren_llift_single_ty, ?gren_llift_single, ?gren_llift2_single, ?gren_llift_single2).
@@ -488,7 +488,7 @@ Lemma red_gren_both :
   (forall t u, red t u -> forall ξ, red t⟪ξ⟫ u⟪ξ⟫) /\
   (forall T U, red_ty T U -> forall ξ, red_ty T⟪ξ⟫ U⟪ξ⟫).
 Proof.
-  apply red_both; intros; cbn [gren GRen_tm gren_tm GRen_ty gren_ty];
+  apply red_both; intros; cbn [gren GRen_tm gren_tm GRen_ty gren_ty]; fold gren_ty gren_tm;
     change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫;
     change (gcren ?x ?ξ) with x⟪ξ⟫.
   all: rewrite ?gren_single2, ?gren_single, ?gren_single3, ?gren_wIH, ?gren_wfIH, ?gren_gsingle; try now constructor.

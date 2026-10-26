@@ -135,7 +135,7 @@ Lemma gren_tmDNth_raw l n F cs i ξ :
   gren_tm (tmDNth l n F cs i) ξ = tmDNth l (gren_tm n ξ) (gren_ty F ξ) (gren_tm cs ξ) (gren_tm i ξ).
 Proof.
   unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
-  repeat progress (cbn [gren GRen_tm gren_tm GRen_ty gren_ty];
+  repeat progress (cbn [gren GRen_tm gren_tm GRen_ty gren_ty]; fold gren_ty gren_tm;
     change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫;
     rewrite ?gren_ren_ty', ?gren_ren, ?gren_single_ty, ?gren_single).
   reflexivity.
