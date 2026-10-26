@@ -1104,7 +1104,7 @@ Lemma sy_corec l l' li X A B C kc Y c j y : sz_tm (tmCorec l l' li X A B C kc Y 
 Proof.
   intros Hsz G i Γ HΓ.
   destruct (compt_dec i) as [Hc | Hn]; [| right; intros T k H; exact (Hn (proj1 (inva_corec H)))].
-  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (dec_m_sig n IH l l' li X A B C ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) G i Γ Hc HΓ) as [HS | Hn];
     [| right; intros T k H; destruct (inv_corec Hi H) as ((_ & Hs) & _); apply Hn; unfold MSig; tauto].
   pose proof HS as (Hl & Hl' & Hli & HX & HA & HB & HC).
@@ -1131,7 +1131,7 @@ Lemma sy_out l l' li X A B C j m : sz_tm (tmOut l l' li X A B C j m) <= n -> SYD
 Proof.
   intros Hsz G i Γ HΓ.
   destruct (compt_dec i) as [Hc | Hn]; [| right; intros T k H; exact (Hn (proj1 (inva_out H)))].
-  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (dec_m_sig n IH l l' li X A B C ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) G i Γ Hc HΓ) as [HS | Hn];
     [| right; intros T k H; destruct (inv_out Hi H) as ((_ & Hs) & _); apply Hn; unfold MSig; tauto].
   pose proof HS as (Hl & Hl' & Hli & HX & HA & HB & HC).
