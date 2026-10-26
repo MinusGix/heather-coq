@@ -2,8 +2,8 @@
 
     The statements [Dc_*], the uniqueness of inferred types, the tactics
     the cases share, and the decidability of neutrality. The cases are
-    split over [AlgDecNe], [AlgDecCode], [AlgDecId] and [AlgDecW], which
-    build in parallel; [AlgDec] puts them together. *)
+    split over [AlgDecNe], [AlgDecCode], [AlgDecId], [AlgDecW], [AlgDecIWf]
+    and [AlgDecM], which build in parallel; [AlgDec] puts them together. *)
 From DeLaM.Typing Require Export StaticCodeEq.
 From DeLaM.Validity Require Export AlgComplete.
 
