@@ -161,10 +161,10 @@ Proof.
   assert (Hw1 : wk1 : (Δ ,, tyFin m @ lzero) ≤ Δ) by (constructor; constructor).
   pose proof (LRty_kw (kw_loc wk1 Hw1 HΔm) HRm) as HR1.
   assert (h0 : LRtm lzero G (Δ ,, tyFin m @ lzero) (tyFin m)⟨↑⟩ (tyFin m')⟨↑⟩ (var 0) (var 0)).
-  { unfold kty, kw_loc in HR1; cbn [kw_G kw_Δ kw_γ kw_r gwa] in HR1.
+  { unfold kty, kw_loc in HR1; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa kw_mk] in HR1.
     change (wk_ren wk1) with ↑ in HR1. apply var0_LRtm; [exact HR1 | exact HΔm]. }
   pose proof (HF (kw_loc wk1 Hw1 HΔm) (var 0) (var 0)) as K.
-  unfold ktyl, ktm, kw_loc in K; cbn [kw_G kw_Δ kw_γ kw_r gwa] in K.
+  unfold ktyl, ktm, kw_loc in K; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa kw_mk] in K.
   change (wk_ren wk1) with ↑ in K.
   destruct (K h0) as [R HR].
   rewrite !liftshift_single_var_ty in HR by assumption.
@@ -262,7 +262,7 @@ Proof.
   pose proof (eqty_wf_r ge_typeof (tyred_eq _ _ _ _ _ _ HT')) as HS'.
   destruct (inv_ty_sig HS') as ((_ & _ & _ & HA0' & _) & _).
   pose proof (HD (kw_loc wk_id (wkwf_id Δ) HΔ)) as [RA HRA].
-  unfold kty, kw_loc in HRA; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in HRA.
+  unfold kty, kw_loc in HRA; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in HRA.
   rewrite !ren_id_ty in HRA by (eapply wf_ty_nf; eassumption).
   destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HA & HA' & HAA).
   assert (HΔA : [ G ; Δ ,, dvecHd k F @ l ⊢g ]) by now apply ext_wf_g.

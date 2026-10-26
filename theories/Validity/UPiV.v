@@ -155,7 +155,7 @@ Qed.
 Lemma kw_uwk_ctx n {G Γ} (ρ : kwk G Γ) : [ gctx_uwk n (kw_G ρ) ; (kw_Δ ρ)⟨ush n⟩ᵤ ⊢g ].
 Proof using . exact (uwk_ctx n (kw_ctx ρ)). Qed.
 Definition kw_uwk n {G Γ} (ρ : kwk G Γ) : kwk (gctx_uwk n G) Γ⟨ush n⟩ᵤ :=
-  mkKwk (gctx_uwk n (kw_G ρ)) (kw_Δ ρ)⟨ush n⟩ᵤ (kw_γ ρ) (kw_r ρ) (kw_uwk_gok n ρ) (kw_uwk_wf n ρ)
+  kw_mk (gctx_uwk n (kw_G ρ)) (kw_Δ ρ)⟨ush n⟩ᵤ (kw_γ ρ) (kw_r ρ) (kw_uwk_gok n ρ) (kw_uwk_wf n ρ)
     (kw_uwk_ctx n ρ).
 
 Lemma ktm_kw_uwk n {G Γ} (ρ : kwk G Γ) t : ktm (kw_uwk n ρ) t = ktm ρ t.
@@ -537,7 +537,7 @@ Proof using ELM ELP EMl HG0 Hkk Hks HΓ0 Hφ VT Vu.
     by (eapply wf_tm_nf, eqtm_wf_r; [apply ge_typeof | apply tmred_eq; eassumption]).
   assert (NW' : nftm w')
     by (eapply wf_tm_nf, eqtm_wf_r; [apply ge_typeof | apply tmred_eq; eassumption]).
-  unfold ρ0, kty, ktm, kw_loc in Kk, HIk, HIr; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in Kk, HIk, HIr.
+  unfold ρ0, kty, ktm, kw_loc in Kk, HIk, HIr; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in Kk, HIk, HIr.
   rewrite !ren_id_ty in HIk, HIr by first [exact NA | exact NAr].
   rewrite !ren_id_tm in Kk by first [exact NW | exact NW'].
   (* the applications reduce to the whnfs' *)
@@ -640,7 +640,7 @@ Proof using ELM ELP EMl HG0 Hn HΓ0 Hφ VT Vu Vuw.
     destruct (escape_tm _ _ _ _ _ _ _ _ HIb _ _ Kb) as (_ & _ & Eb).
     assert (NW : nftm w⟨ush n⟩ᵤ) by exact (dnftm_nftm _ (proj1 (proj2 uren_dnf_all) w (ush n))).
     assert (NW' : nftm w'⟨ush n⟩ᵤ) by exact (dnftm_nftm _ (proj1 (proj2 uren_dnf_all) w' (ush n))).
-    unfold ρ0, kty, ktm, kw_loc in Eb; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in Eb.
+    unfold ρ0, kty, ktm, kw_loc in Eb; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in Eb.
     rewrite (ren_id_tm _ NW), (ren_id_tm _ NW') in Eb.
     rewrite ren_id_ty in Eb by (apply dnfty_nfty, subst_dnf_ty;
       [ apply (proj1 gsubst_dnf_all); [apply (proj1 uren_dnf_all) | exact (gdnf_guwkn _ _ (gdnf_guwkn _ _ Nσ))]

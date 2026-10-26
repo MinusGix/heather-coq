@@ -192,9 +192,9 @@ Lemma SubRel_gwa {G Γ Δ d d' G' γ} : SubRel G Γ Δ d d' -> gwk_ok γ G' G ->
   SubRel G' Γ⟦γ⟧ Δ⟦γ⟧ d⟦γ⟧ d'⟦γ⟧.
 Proof.
   intros H Hγ HG. destruct (SubRel_dnf _ _ _ _ _ H) as [N N'].
-  pose (ρ := mkKwk (G := G) (Γ := Δ) G' Δ⟦γ⟧ γ wk_id Hγ (wkwf_id _) (gwa_ctx Hγ HG (SubRel_ctx H))).
+  pose (ρ := kw_mk (G := G) (Γ := Δ) G' Δ⟦γ⟧ γ wk_id Hγ (wkwf_id _) (gwa_ctx Hγ HG (SubRel_ctx H))).
   eapply SubRel_ext; [| | exact (SubRel_kw _ _ _ ρ _ _ H)]; intros n;
-    rewrite llk_kwsub, llk_gwa; unfold ktm; cbn [kw_r kw_γ ρ];
+    rewrite llk_kwsub, llk_gwa; unfold ktm; cbn [kw_r kw_rk kw_γ kw_gk ρ kw_mk];
     apply ren_id_tm, dnftm_nftm, dnf_gwa; auto.
 Qed.
 

@@ -128,7 +128,7 @@ Proof using . constructor. Qed.
 
 Lemma ktml_kid {G Δ} (HΔ : [ G ; Δ ⊢g ]) (t : tm) : nftm t -> ktml (kid HΔ) t = t.
 Proof using .
-  intros Nt. unfold ktml, kid, kw_loc; cbn [kw_γ kw_r gwa wk_ren].
+  intros Nt. unfold ktml, kid, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk].
   rewrite <- (ren_id_tm t Nt) at 2. apply ren_ext_tm. intros n. rewrite rlk_rlift. destruct n; cbn; lia.
 Qed.
 
@@ -200,8 +200,7 @@ Proof using EL VL.
   - intros ρ. pose proof (Hsp (kw_comp (kid HΔ) ρ)) as Y.
     rewrite kty_comp, ktml_comp, !ktm_comp, (kty_kid HΔ _ NA), (ktml_kid HΔ _ NN), (ktm_kid HΔ _ Nk),
       (ktm_kid HΔ _ Ncs), (ktm_kid HΔ _ Ncs') in Y.
-    eapply (proj2 (proj2 WfRel_dir_all)); [exact Y|].
-    intros ρ0. exact (WfDom_assoc HD (kid HΔ) ρ ρ0).
+    exact Y.
 Qed.
 
 Lemma lift_single_tm (t : tm) d a : LK nftm d -> t[llift d][lsingle a] = t[lcons d a].
@@ -862,7 +861,7 @@ Proof using EL H13 H24 HN Hwl Hwl' VA VL VM VN VNt Vc Vcs Vih.
   assert (Hr1 : wkr ↑ (Δ0 ,, tyFin N⟦γ⟧[llift e][lsingle a] @ lzero) Δ0) by exact (wkr_shift1 _ _ _).
   pose proof (ext_wf_g HBa2 Hwlz) as HΔa.
   pose proof (domAdi (kw_loc wk1 Hw1 HΔa)) as DOM1.
-  unfold kty, kw_loc in DOM1; cbn [kw_G kw_Δ kw_γ kw_r gwa] in DOM1; change (wk_ren wk1) with ↑ in DOM1.
+  unfold kty, kw_loc in DOM1; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa kw_mk] in DOM1; change (wk_ren wk1) with ↑ in DOM1.
   apply (proj2 (LogRel_stage _ _ _ _ _ _ _ HleI)) in DOM1.
   pose proof (LRtm_inv DOM1 (var0_LRtm (ex_intro _ _ DOM1) HΔa)) as hv.
   assert (RBa0 : [ G0 ; Δ0 ⊢ tyFin N⟦γ⟧[llift e][lsingle a] ≈ tyFin N⟦γ⟧[llift e][lsingle a] @ lzero ])
@@ -881,7 +880,7 @@ Proof using EL H13 H24 HN Hwl Hwl' VA VL VM VN VNt Vc Vcs Vih.
                 (tyFin N⟦γ⟧[llift e][lsingle a])⟨↑⟩ (wfcod l A⟦γ⟧[e] N⟦γ⟧[llift e] M⟦γ⟧[llift e] a cs)⟨rlift ↑⟩
                 (lequiv_refl _ _ Hwlz) (lequiv_refl _ _ Hwl'0) (lequiv_refl _ _ Hwlz) (lequiv_refl _ _ Hwl'0))
     as K0.
-  unfold kty, ktyl, ktm, kw_loc in K0; cbn [kw_G kw_Δ kw_γ kw_r gwa] in K0; change (wk_ren wk1) with ↑ in K0.
+  unfold kty, ktyl, ktm, kw_loc in K0; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa kw_mk] in K0; change (wk_ren wk1) with ↑ in K0.
   pose proof (K0 (geq_ty_wk Hr1 HΔa RBa0) (geq_ty_wk (wkr_up _ _ _ _ _ Hr1) HΔaa RCod)
                 (geq_ty_wk Hr1 HΔa (geq_ty_sym HPP2))) as K1.
   unshelve epose proof (K1 _) as K2.
@@ -889,7 +888,7 @@ Proof using EL H13 H24 HN Hwl Hwl' VA VL VM VN VNt Vc Vcs Vih.
     - apply geq_ty_sound. exact (geq_ty_wk Hr1 HΔa HPP2).
     - apply geq_ty_sym. exact (geq_ty_wk (wkr_up _ _ _ _ _ Hr1) HΔaa HQQ2). }
   pose proof (codAdi (kw_loc wk1 Hw1 HΔa) (var 0) (var 0) hv) as COD1.
-  unfold ktyl, kw_loc in COD1; cbn [kw_G kw_Δ kw_γ kw_r gwa] in COD1; change (wk_ren wk1) with ↑ in COD1.
+  unfold ktyl, kw_loc in COD1; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa kw_mk] in COD1; change (wk_ren wk1) with ↑ in COD1.
   destruct (escape_tm _ _ _ _ _ _ _ _ COD1 _ _ K2) as (_ & _ & Hg).
   rewrite liftshift_single_var_ty in Hg by exact (wf_ty_nf HCod).
   pose proof (geq_tm_funext Hwlz Hwl'0 HBa2 HCod Hλ Hλ' Hg) as GEQ.

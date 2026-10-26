@@ -436,20 +436,6 @@ Proof using EL VL VN VX VA VB.
   now rewrite !kty_lsingle2, <- !ktyll_comp in Y.
 Qed.
 
-(** At worlds acting alike. *)
-Lemma mSh_eqv {Δ d d'} {ρ1 ρ2 : kwk G Δ} : kw_eqv ρ1 ρ2 ->
-  forall x x', releq (mSh Δ d d' ρ1 x x') (mSh Δ d d' ρ2 x x').
-Proof using .
-  intros Eρ x x'. unfold mSh. rewrite !(ktyl_eqv Eρ). destruct Eρ as (HG & HΔ & _).
-  unfold LRrel. rewrite HG, HΔ. apply releq_refl.
-Qed.
-Lemma mPos_eqv {Δ d d'} {ρ1 ρ2 : kwk G Δ} : kw_eqv ρ1 ρ2 ->
-  forall x x' a a', releq (mPos Δ d d' ρ1 x x' a a') (mPos Δ d d' ρ2 x x' a a').
-Proof using .
-  intros Eρ x x' a a'. unfold mPos. rewrite !(ktyll_eqv Eρ). destruct Eρ as (HG & HΔ & _).
-  unfold LRrel. rewrite HG, HΔ. apply releq_refl.
-Qed.
-
 (** The relations form a side of [LRm] ([MSide]): what [out]'s and
     [corec]'s validity read off them. *)
 Lemma m_side {Δ d d'} : SubRel G Γ Δ d d' ->
@@ -684,9 +670,7 @@ Proof using EL VL VN VX VA VB VC Hwl Hwl' Hwli Hk Hk' Hki Hd.
       pose proof (m_ch VX VA VB VC Hd (kw_comp ρ0 (kw_comp ρ ρ')) _ _ _ _ _ _ (hi (kw_comp ρ ρ')) Hsh hp) as hc.
       rewrite !kw_mKid, !mKid_single, !kw_kid_single by first [kw_nf | assumption].
       rewrite <- !kty_comp, <- !ktyl_comp, <- !ktyll_comp, <- !ktmlll_comp, <- !ktm_comp.
-      eapply LR_releq; [exact (LR_M_kw (kw_comp ρ0 (kw_comp ρ ρ')) _ _ hc) | apply MR_releq].
-      * intros ρ'' x x'. apply mSh_eqv, kw_eqv_assoc.
-      * intros ρ'' x x' b b'. apply mPos_eqv, kw_eqv_assoc.
+      exact (LR_M_kw (kw_comp ρ0 (kw_comp ρ ρ')) _ _ hc).
 Qed.
 
 End MKw.

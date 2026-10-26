@@ -260,14 +260,6 @@ Proof.
   exact (LR_irrel _ _ _ _ _ _ _ _ _ _ Y1 Y2).
 Qed.
 
-Lemma KDom_assoc {G Δ n l A} {d : DomRel G Δ} (HD : KDom G Δ n l A d) (ρ : kwk G Δ)
-  (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) ρ'' :
-  releq (d (kw_comp (kw_comp ρ ρ') ρ'')) (d (kw_comp ρ (kw_comp ρ' ρ''))).
-Proof.
-  revert ρ''. apply (KDom_releq (n := n) (l := l) (A := kty ρ' (kty ρ A))); [|exact (KDom_comp ρ' (KDom_comp ρ HD))].
-  intros ρ0. destruct (HD (kw_comp (kw_comp ρ ρ') ρ0)) as [A2 Y2]. rewrite !kty_comp in Y2. eauto.
-Qed.
-
 Lemma LR_iwf_rel {G Δ l li X A N Ot C c T' R} {ix dm : DomRel G Δ} :
   LogRel (lmax l li) G Δ (tyIWf l li X A N Ot C c) T' (lmax l li) R ->
   KDom G Δ (lmeasure (lmax l li)) li X ix -> KDom G Δ (lmeasure (lmax l li)) l A dm ->

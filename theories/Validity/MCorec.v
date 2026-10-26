@@ -96,9 +96,9 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 
 (** The identity world acts trivially on normal forms. *)
 Lemma kw_loc_id_ty {G Δ HΔ} (T : ty) : nfty T -> kty (kw_loc (G := G) wk_id (wkwf_id Δ) HΔ) T = T.
-Proof using . intros NT; unfold kty, kw_loc; cbn [kw_γ kw_r gwa wk_ren]; now apply ren_id_ty. Qed.
+Proof using . intros NT; unfold kty, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk]; now apply ren_id_ty. Qed.
 Lemma kw_loc_id_tyl {G Δ HΔ} (T : ty) : nfty T -> ktyl (kw_loc (G := G) wk_id (wkwf_id Δ) HΔ) T = T.
-Proof using . intros NT; unfold ktyl, kw_loc; cbn [kw_γ kw_r gwa wk_ren]; now apply ren_lift_id_ty. Qed.
+Proof using . intros NT; unfold ktyl, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk]; now apply ren_lift_id_ty. Qed.
 
 Lemma lmeasure_le_l {G L l1 l2} : lequiv (gL G) L (lmax l1 l2) -> lmeasure l1 <= lmeasure L.
 Proof using . intros H; rewrite (lequiv_measure _ _ _ H), lmeasure_max; lia. Qed.

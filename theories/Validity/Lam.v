@@ -157,7 +157,7 @@ Proof.
     - eapply geq_ty_ctxconv; [| apply lequiv_refl, Hwl | exact HΔAA' |].
       + apply geq_ty_sound. exact (geq_ty_wk Hr1 HΔA HAdd').
       + apply geq_ty_sym. exact (geq_ty_wk (wkr_up _ _ _ _ _ Hr1) HΔAA HBdd').
-    - unfold piCod, ktyl, ktm, kty, kw_loc in K1; cbn [kw_G kw_Δ kw_γ kw_r gwa] in K1.
+    - unfold piCod, ktyl, ktm, kty, kw_loc in K1; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa kw_mk] in K1.
       change (wk_ren wk1) with ↑ in K1.
       destruct K1 as (R1 & HR1 & HK1).
       destruct (escape_tm _ _ _ _ _ _ _ _ HR1 _ _ HK1) as (_ & _ & Hg).

@@ -135,7 +135,7 @@ Lemma kw_push_ctx : [ Gp π (kw_G ρ) ; (kw_Δ ρ)[pφ π]ᵤ ⊢g ].
 Proof using Hp. exact (pg_ctx (uperm_grow _ _ _ _ (kw_gL ρ) Hp) (kw_ctx ρ)). Qed.
 
 Definition kw_push : kwk (Gp π G) (Γ[pφ π]ᵤ) :=
-  mkKwk (Gp π (kw_G ρ)) ((kw_Δ ρ)[pφ π]ᵤ) (kw_γ ρ) (kw_r ρ) kw_push_gok kw_push_wf kw_push_ctx.
+  kw_mk (Gp π (kw_G ρ)) ((kw_Δ ρ)[pφ π]ᵤ) (kw_γ ρ) (kw_r ρ) kw_push_gok kw_push_wf kw_push_ctx.
 
 Lemma kty_push T : kty kw_push T[pφ π]ᵤ = (kty ρ T)[pφ π]ᵤ.
 Proof using . unfold kty; cbn. now rewrite usubst_ren_ty, usubst_gwa_ty. Qed.
@@ -184,7 +184,7 @@ Lemma kw_pull_ctx : [ Gp πi (kw_G ρ') ; (kw_Δ ρ')[pφ πi]ᵤ ⊢g ].
 Proof using Hpi. exact (pg_ctx Hpi (kw_ctx ρ')). Qed.
 
 Definition kw_pull : kwk G Γ :=
-  mkKwk (Gp πi (kw_G ρ')) ((kw_Δ ρ')[pφ πi]ᵤ) (kw_γ ρ') (kw_r ρ') kw_pull_gok kw_pull_wf kw_pull_ctx.
+  kw_mk (Gp πi (kw_G ρ')) ((kw_Δ ρ')[pφ πi]ᵤ) (kw_γ ρ') (kw_r ρ') kw_pull_gok kw_pull_wf kw_pull_ctx.
 
 Lemma pull_G : Gp π (kw_G kw_pull) = kw_G ρ'.
 Proof using . unfold Gp; cbn. exact (rt_gctx (proj1 (proj2 Hp)) _ (kw_glob ρ')). Qed.
@@ -500,7 +500,7 @@ Proof using Hk. destruct Hk as (_ & _ & Eg & Er). rewrite ktml_us. unfold ktml. 
 Lemma kcorr_comp (ρ0 : kwk (kw_G ρ) (kw_Δ ρ)) (ρ0' : kwk (kw_G ρ') (kw_Δ ρ')) :
   kcorr π ρ0 ρ0' -> kcorr π (kw_comp ρ ρ0) (kw_comp ρ' ρ0').
 Proof using Hk.
-  destruct Hk as (_ & _ & Eg & Er). intros (E1 & E2 & Eg0 & Er0). unfold kcorr; cbn [kw_comp kw_G kw_Δ kw_γ kw_r].
+  destruct Hk as (_ & _ & Eg & Er). intros (E1 & E2 & Eg0 & Er0). unfold kcorr; rewrite !kw_γ_comp, !kw_r_comp.
   split; [exact E1 | split; [exact E2 | split; congruence]].
 Qed.
 
@@ -2643,7 +2643,7 @@ Proof using HΓ.
   exact (gwa_ctx (γ := gwk_id) grow_gok (wfg_grow L (S L) Ψ ltac:(lia) (ctx_glob _ _ _ HΓ)) HΓ).
 Qed.
 Definition kw_grow : kwk (mkG L Ψ) Γ :=
-  mkKwk (mkG (S L) Ψ) Γ gwk_id wk_id grow_gok (wkwf_id _) grow_ctx.
+  kw_mk (mkG (S L) Ψ) Γ gwk_id wk_id grow_gok (wkwf_id _) grow_ctx.
 
 End Grow.
 
@@ -2660,7 +2660,7 @@ Proof using EL VL VPP.
   destruct (escape_ty _ _ _ _ _ _ _ _ H) as (HT & HT' & _). pose proof (ctx_of_ty HT) as HΓ.
   pose proof (ctx_glob _ _ _ HΓ) as HG.
   destruct (LR_kwk n _ _ _ _ _ _ H (kw_grow HΓ)) as (R1 & H1 & E1).
-  unfold kty in H1; cbn [kw_grow kw_γ kw_r kw_G kw_Δ gwa] in H1.
+  unfold kty in H1; cbn [kw_grow kw_γ kw_gk kw_r kw_rk kw_G kw_Δ gwa kw_mk] in H1.
   cbn [wk_ren] in H1.
   rewrite !ren_id_ty in H1 by first [exact (wf_ty_nf HT) | exact (wf_ty_nf HT')].
   destruct (LR_perm n _ _ _ _ _ _ H1 (rot L) (roti L) (uperm_rot L)) as (R2 & H2 & E2).
@@ -2672,7 +2672,7 @@ Proof using EL VL VPP.
     <- (lvren_as_lvsubst _ _ (pφ (ush 1))) in H2 by reflexivity.
   exists R2. split; [exact H2 |].
   intros t t' Ht. destruct (escape_tm _ _ _ _ _ _ _ _ H _ _ Ht) as (Ht1 & Ht2 & _).
-  pose proof (E1 t t' Ht) as X. unfold ktm in X; cbn [kw_grow kw_γ kw_r gwa] in X.
+  pose proof (E1 t t' Ht) as X. unfold ktm in X; cbn [kw_grow kw_γ kw_gk kw_r kw_rk gwa kw_mk] in X.
   cbn [wk_ren] in X.
   rewrite !ren_id_tm' in X by first [exact (wf_tm_nf Ht1) | exact (wf_tm_nf Ht2)].
   apply (E2 _ _ (wf_tm_dnf Ht1) (wf_tm_dnf Ht2)) in X.

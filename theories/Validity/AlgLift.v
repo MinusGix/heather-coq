@@ -338,24 +338,24 @@ Proof.
     assert (Hwk : wk1 : (Γ ,, A @ l1) ≤ Γ) by (constructor; constructor).
     pose proof (IHdom (kw_loc (E := DEP) wk1 Hwk HΓA)) as XA.
     pose proof (domAd (kw_loc (E := DEP) wk1 Hwk HΓA)) as HRA.
-    unfold kty, kw_loc in XA, HRA; cbn [kw_G kw_Δ kw_γ kw_r gwa] in XA, HRA.
+    unfold kty, kw_loc in XA, HRA; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa kw_mk] in XA, HRA.
     change (wk_ren wk1) with ↑ in XA, HRA.
     pose proof (var0_dom (i := lD) (Hi := compt_D) eq_refl HRA HΓA HAA) as ha0.
     pose proof (IHcod (kw_loc (E := DEP) wk1 Hwk HΓA) (var 0) (var 0) ha0) as XB.
-    unfold ktyl, kw_loc in XB; cbn [kw_G kw_Δ kw_γ kw_r gwa] in XB. change (wk_ren wk1) with ↑ in XB.
+    unfold ktyl, kw_loc in XB; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa kw_mk] in XB. change (wk_ren wk1) with ↑ in XB.
     rewrite liftshift_single_var_ty in XB by exact (wf_ty_nf HB).
     exact (lift_pi compt_D HT Hl Hw1 Hw2 HA HB XA XB).
   - assert (HΓ : [ G ; Γ ⊢[ lD ] ]) by exact (ctx_of_wf_ty (i := lD) eq_refl HA).
     pose proof (IHdom (kw_loc (E := DEP) wk_id (wkwf_id Γ) HΓ)) as XA.
     pose proof (domAd (kw_loc (E := DEP) wk_id (wkwf_id Γ) HΓ)) as HRA.
-    unfold kty, kw_loc in XA, HRA; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in XA, HRA.
+    unfold kty, kw_loc in XA, HRA; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in XA, HRA.
     rewrite ren_id_ty in XA by exact (wf_ty_nf HA).
     rewrite !ren_id_ty in HRA by first [exact (wf_ty_nf HA) | exact (wf_ty_nf HA')].
     apply (lift_sig compt_D HT Hl Hw1 Hw2 HA HB XA). intros p Hp Hpt.
     pose proof (wf_fst _ _ _ _ _ _ _ _ (compt_notV _ compt_D) Hw1 Hw2 HA HB Hpt) as Hf.
     pose proof (ne_dom (i := lD) (Hi := compt_D) eq_refl HRA (whne_fst _ _ _ _ _ Hp) Hf HAA) as ha.
     pose proof (IHcod (kw_loc (E := DEP) wk_id (wkwf_id Γ) HΓ) _ _ ha) as XB.
-    unfold ktyl, kw_loc in XB; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in XB.
+    unfold ktyl, kw_loc in XB; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in XB.
     rewrite ren_lift_id_ty in XB by exact (wf_ty_nf HB). exact XB.
   - exact (lift_unit HT).
   - exact (lift_seq HT).
@@ -424,11 +424,11 @@ Proof.
     assert (Hwk : wk1 : (Γ ,, A @ l1) ≤ Γ) by (constructor; constructor).
     pose proof (IHdom (kw_loc (E := DEM) wk1 Hwk HΓA)) as XA.
     pose proof (domAd (kw_loc (E := DEM) wk1 Hwk HΓA)) as HRA.
-    unfold kty, kw_loc in XA, HRA; cbn [kw_G kw_Δ kw_γ kw_r gwa] in XA, HRA.
+    unfold kty, kw_loc in XA, HRA; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa kw_mk] in XA, HRA.
     change (wk_ren wk1) with ↑ in XA, HRA.
     pose proof (var0_dom (i := lM) (Hi := compt_M) eq_refl HRA HΓA HAA) as ha0.
     pose proof (IHcod (kw_loc (E := DEM) wk1 Hwk HΓA) (var 0) (var 0) ha0) as XB.
-    unfold ktyl, kw_loc in XB; cbn [kw_G kw_Δ kw_γ kw_r gwa] in XB. change (wk_ren wk1) with ↑ in XB.
+    unfold ktyl, kw_loc in XB; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa kw_mk] in XB. change (wk_ren wk1) with ↑ in XB.
     rewrite liftshift_single_var_ty in XB by exact (wf_ty_nf HB).
     exact (lift_pi compt_M HT Hl Hw1 Hw2 HA HB XA XB).
   - destruct HM as [T T' l Δ Δ' k k' R Hl Hk HT HT' HΔ Hgeq HR
@@ -460,14 +460,14 @@ Proof.
   - assert (HΓ : [ G ; Γ ⊢[ lM ] ]) by exact (ctx_of_wf_ty (i := lM) eq_refl HA).
     pose proof (IHdom (kw_loc (E := DEM) wk_id (wkwf_id Γ) HΓ)) as XA.
     pose proof (domAd (kw_loc (E := DEM) wk_id (wkwf_id Γ) HΓ)) as HRA.
-    unfold kty, kw_loc in XA, HRA; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in XA, HRA.
+    unfold kty, kw_loc in XA, HRA; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in XA, HRA.
     rewrite ren_id_ty in XA by exact (wf_ty_nf HA).
     rewrite !ren_id_ty in HRA by first [exact (wf_ty_nf HA) | exact (wf_ty_nf HA')].
     apply (lift_sig compt_M HT Hl Hw1 Hw2 HA HB XA). intros p Hp Hpt.
     pose proof (wf_fst _ _ _ _ _ _ _ _ (compt_notV _ compt_M) Hw1 Hw2 HA HB Hpt) as Hf.
     pose proof (ne_dom (i := lM) (Hi := compt_M) eq_refl HRA (whne_fst _ _ _ _ _ Hp) Hf HAA) as ha.
     pose proof (IHcod (kw_loc (E := DEM) wk_id (wkwf_id Γ) HΓ) _ _ ha) as XB.
-    unfold ktyl, kw_loc in XB; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in XB.
+    unfold ktyl, kw_loc in XB; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in XB.
     rewrite ren_lift_id_ty in XB by exact (wf_ty_nf HB). exact XB.
   - exact (lift_unit HT).
   - exact (lift_seq HT).

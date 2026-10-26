@@ -58,7 +58,7 @@ Proof.
   exists w, w'. refine (conj Hw (conj Hw' _)).
   intros a a' ha la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1'.
   pose proof (HK (kw_loc wk_id (wkwf_id Δ) HΔ) a a' ha la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4) as K.
-  unfold kty, ktm, ktyl, kw_loc in K; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in K.
+  unfold kty, ktm, ktyl, kw_loc in K; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in K.
   rewrite (ren_id_tm w), (ren_id_tm w') in K
     by (eapply wf_tm_nf, eqtm_wf_r; [apply ge_typeof | apply tmred_eq; eassumption]).
   rewrite (ren_id_ty A), (ren_id_ty A'), (ren_lift_id_ty B), (ren_lift_id_ty B') in K by assumption.
@@ -106,7 +106,7 @@ Proof.
   { cbn [wk_ren]. rewrite !ren_id_ty by eauto using wf_ty_nf.
     apply (LRtm_stage (l := l)); [rewrite lmeasure_max; lia | exact Hs]. }
   pose proof (K s[d] s'[d'] ha l l' l3 l4 A[d] B[llift d] A'[d'] B'[llift d']) as K1.
-  unfold piCod, kty, ktm, ktyl, kw_loc in K1; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in K1.
+  unfold piCod, kty, ktm, ktyl, kw_loc in K1; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in K1.
   rewrite !ren_lift_id_ty in K1 by eauto using wf_ty_nf.
   (* reflexive left annotations *)
   destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (_ & _ & HAA).

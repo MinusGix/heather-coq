@@ -58,6 +58,13 @@ milestone design docs record further gotchas met per former.
   `first [ … ]` that shows only as "No applicable tactic". Name such facts
   so that no constructor's binder can clash (`Xc` in `Canonicity.v`'s
   `value_canon`), or use `as ?X`.
+- `kwk` has primitive projections (`M18_DESIGN.md` "Associative
+  worlds"), and `cbn [ … ]` reduces a primitive projection of a record
+  only when the projection is in its list. `kw_γ`/`kw_r` are definitions
+  over `kw_gk`/`kw_rk`, so `cbn [kw_γ kw_r]` alone unfolds them, gets
+  stuck on `kw_gk {| … |}` and folds back, silently. List `kw_gk kw_rk`
+  as well (and `kw_mk` for a world it builds). At a composite world,
+  rewrite with `kw_γ_comp`/`kw_r_comp` instead of a `cbn`.
 
 ## Build-time gotchas (2026-09-29 perf pass, clean build 513 s → 168 s)
 
