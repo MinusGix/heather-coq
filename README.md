@@ -171,6 +171,15 @@ From M8 on, the milestones check the extensions of Heather's kernel
   approximations (`probes/MCoind.v`), and the relation at `M` with the
   fundamental theorem's `corec` case (`probes/MRelProbe.v`). No kernel
   rule needed a change. See `M18_DESIGN.md`.
+- Milestone 18b: the indexed coinductive former in-tree.
+  `M^{l,l',li}(I; S; P; o)(j)`, `corec` and `out` hold at layers D and M
+  through the relation (`LRm`: the ω-intersection of the depth
+  approximations `MRn`, with the generic clause at every depth),
+  validity (`corec`'s by induction on the depth), the fundamental
+  theorem, the algorithm, decidability, the type checker and the
+  consequences. β fires only under `out`, at a `corec` of any
+  annotations. A closed term at `M` computes to a `corec`. No kernel rule
+  needed a change. See `M18_DESIGN.md`.
 
 No admits, no axioms.
 
