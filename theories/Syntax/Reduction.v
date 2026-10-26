@@ -177,12 +177,20 @@ Ltac mrext := intros [|?n]; rlk_simpl; rewrite ?Nat.add_1_r, ?Nat.add_0_r; rlk_s
   first [reflexivity | lia | revert n; mrext].
 Ltac mren_comm := first [ reflexivity
   | rewrite ?ren_ren_comp_ty, ?ren_ren_comp; first [apply ren_ext_ty | apply ren_ext_tm]; mrext ].
-Ltac mcong := lazymatch goal with |- _ = _ => first [reflexivity | mren_comm | f_equal] end.
-Ltac mren_push := repeat first
-  [ progress (cbn [ren Ren_tm Ren_ty ren_tm ren_ty]; fold ren_ty ren_tm)
-  | rewrite lsingle_ren_ty | rewrite lsingle_ren | rewrite lsingle2_ren | rewrite lsingle2_ren_ty
-  | rewrite llift_lsingle_ren_ty | rewrite llift_lsingle_ren | rewrite llift2_lsingle_ren
-  | rewrite llift_lsingle2_ren | rewrite ren_shift_lift ].
+(* [f_equal] first unless a side is a renaming: a failing [mren_comm]
+   rewrites the whole equation (#60) *)
+Ltac mcong := lazymatch goal with
+  | |- ren _ _ = _ => first [reflexivity | mren_comm | f_equal]
+  | |- _ = ren _ _ => first [reflexivity | mren_comm | f_equal]
+  | |- _ = _ => first [reflexivity | f_equal | mren_comm] end.
+(* Each pass pushes the renaming through the constructors, then rewrites
+   every law as often as it applies: a failed [rewrite] traverses the whole
+   term, so one law at a time between pushes cost 12 s (#60). *)
+Ltac mren_push := repeat progress
+  (cbn [ren Ren_tm Ren_ty ren_tm ren_ty]; fold ren_ty ren_tm;
+   rewrite ?lsingle_ren_ty, ?lsingle_ren, ?lsingle2_ren, ?lsingle2_ren_ty,
+     ?llift_lsingle_ren_ty, ?llift_lsingle_ren, ?llift2_lsingle_ren,
+     ?llift_lsingle2_ren, ?ren_shift_lift).
 Lemma mOutCorec_ren l l' li X A B C k Y c j y r :
   (mOutCorec l l' li X A B C k Y c j y)⟨r⟩ =
   mOutCorec l l' li X⟨r⟩ A⟨rlift r⟩ B⟨rlift (rlift r)⟩ C⟨rlift (rlift (rlift r))⟩ k Y⟨rlift r⟩

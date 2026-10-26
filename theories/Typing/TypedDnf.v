@@ -219,7 +219,11 @@ Proof.
   all: try solve [apply subst_dnf_ty; [assumption | apply lk_dnf_lsingle2; cbn [dnftm dnfty];
                   intuition auto using subst_dnf, lk_dnf_lsingle]].
   (* [M]'s out type and β (M18b) *)
-  all: try solve [apply dnf_mOutCorec; assumption | dnf_M].
+  (* by shape: [apply dnf_mOutCorec] on another goal unfolds it to unify,
+     seconds per goal (#60) *)
+  all: try solve [ lazymatch goal with |- dnftm (mOutCorec _ _ _ _ _ _ _ _ _ _ _ _) =>
+                     apply dnf_mOutCorec; assumption end
+                 | dnf_M ].
   (* η of the meta-functions (M5): the weakened function *)
   all: apply gren_dnf_all.
 Qed.
