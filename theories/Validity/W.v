@@ -301,7 +301,7 @@ Lemma rel_at_id {G Δ X Y x y n l} {dR : DomRel G Δ} (HΔ : [ G ; Δ ⊢g ]) :
   LRtm l G Δ X Y x y.
 Proof.
   intros NX NY Nx Ny Hn HD h. pose proof (HD (kw_loc wk_id (wkwf_id Δ) HΔ)) as X0.
-  unfold kty, ktm, kw_loc in X0, h; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in X0, h.
+  unfold kty, ktm, kw_loc in X0, h; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in X0, h.
   rewrite !ren_id_ty in X0 by assumption. rewrite !ren_id_tm in h by assumption.
   exact (LRtm_of (proj2 (LogRel_stage _ _ _ _ _ _ _ Hn) X0) h).
 Qed.
@@ -312,7 +312,7 @@ Lemma WhRel_at_id {G Δ T l t t'} (HΔ : [ G ; Δ ⊢g ]) : nfty T -> nftm t -> 
     (ktm (kw_loc wk_id (wkwf_id Δ) HΔ) t) (ktm (kw_loc wk_id (wkwf_id Δ) HΔ) t') ->
   WhRel G Δ T l t t'.
 Proof.
-  intros NT Nt Nt' H. unfold kty, ktm, kw_loc in H; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in H.
+  intros NT Nt Nt' H. unfold kty, ktm, kw_loc in H; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in H.
   now rewrite ren_id_ty, !ren_id_tm in H.
 Qed.
 

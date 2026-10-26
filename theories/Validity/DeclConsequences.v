@@ -415,7 +415,7 @@ Proof.
   exact (gwa_ctx (γ := gwk_id) grown_gok (wfg_grow L (n + L) Ψ ltac:(lia) (ctx_glob _ _ _ HΓ)) HΓ).
 Qed.
 Definition kw_grown : @kwk DEM (mkG L Ψ) Γ :=
-  mkKwk (mkG (n + L) Ψ) Γ gwk_id wk_id grown_gok (wkwf_id _) grown_ctx.
+  kw_mk (mkG (n + L) Ψ) Γ gwk_id wk_id grown_gok (wkwf_id _) grown_ctx.
 End Grow.
 
 Lemma declM_upi_body {G Γ n l A l' A'} : [ G ; Γ ⊢[ lM ] tyUPi n l A ≅ tyUPi n l' A' @ lomega ] ->
@@ -433,7 +433,7 @@ Proof.
   pose proof (HI (kw_grown (n := n) HΓ) (utop n L) (utop n L) (utop_length n L)
                  (lequivs_refl _ _ (utop_lwf n L))) as X.
   destruct (escape_ty _ _ _ _ _ _ _ _ X) as (_ & _ & Y). apply geq_ty_sound in Y.
-  unfold kty in Y; cbn [kw_grown kw_γ kw_r kw_G kw_Δ gwa wk_ren] in Y.
+  unfold kty in Y; cbn [kw_grown kw_γ kw_gk kw_r kw_rk kw_G kw_Δ gwa wk_ren kw_mk] in Y.
   pose proof (wf_ty_nf HU) as NA. pose proof (wf_ty_nf HU') as NA'.
   pose proof (wf_ty_dnf HU) as DA. pose proof (wf_ty_dnf HU') as DA'.
   pose proof (wf_ty_lwf HU) as WA. pose proof (wf_ty_lwf HU') as WA'.

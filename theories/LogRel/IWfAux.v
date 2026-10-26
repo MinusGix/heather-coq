@@ -25,7 +25,7 @@ Proof.
 Qed.
 Lemma ktmll_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) t :
   ktmll (kw_comp ρ ρ') t = ktmll ρ' (ktmll ρ t).
-Proof. unfold ktmll; cbn. now rewrite gwa_ren, gwa_comp_tm, ren_wk_comp_lift2. Qed.
+Proof. unfold ktmll; rewrite kw_γ_comp, kw_r_comp. now rewrite gwa_ren, gwa_comp_tm, ren_wk_comp_lift2. Qed.
 
 (** ** The children's family *)
 
@@ -369,18 +369,18 @@ Proof.
     { pose proof (iwfFamT_nf _ _ _ _ _ _ _ _ (wf_ty_nf (eqty_wf_l ge_typeof HF))) as Nc.
       pose proof (iwfFamT_nf _ _ _ _ _ _ _ _ (wf_ty_nf (eqty_wf_r ge_typeof HF))) as Nc'.
       assert (E1 : forall t, nftm t -> (ktml ρ1 t)[lsingle (var 0)] = t).
-      { intros t Ht. unfold ktml, ρ1, kw_wk1, kw_loc; cbn [kw_γ kw_r gwa]. change (wk_ren wk1) with ↑.
+      { intros t Ht. unfold ktml, ρ1, kw_wk1, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa kw_mk]. change (wk_ren wk1) with ↑.
         now apply liftshift_single_var. }
       assert (HΓν' : [ G ; Γ ,, tyFin ν @ lzero ⊢[ typeof ge_layer ] ]) by (rewrite ge_typeof; exact HΓν).
       pose proof (HP ρ1 (var 0) (var 0)) as Y. rewrite !E1 in Y by assumption. apply Y.
-      unfold ktm, ρ1, kw_wk1, kw_loc; cbn [kw_G kw_Δ kw_γ kw_r gwa]. change (wk_ren wk1) with ↑.
+      unfold ktm, ρ1, kw_wk1, kw_loc; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa kw_mk]. change (wk_ren wk1) with ↑.
       apply pos_ne.
       - exact (wk1_eqtm_g _ _ _ _ _ _ _ _ _ HΓν' Enn).
       - apply gne_tm_var. eapply wf_conv; [exact (var0_wf_g _ _ _ _ _ HΓν') |].
         rewrite ge_typeof. change (tyFin n⟨↑⟩) with (tyFin n)⟨↑⟩. apply (wk1_eqty_g _ _ _ _ _ _ _ _ HΓν').
         apply eqty_fin; [exact ge_notV | exact En]. }
     pose proof (iwf_geq_at (IWfEq_kw ρ1 HE) (IWfGeq_kw ρ1 HE HG) Hc) as Y.
-    unfold kty, ktml, ktmll, ρ1, kw_wk1, kw_loc in Y; cbn [kw_G kw_Δ kw_γ kw_r gwa] in Y.
+    unfold kty, ktml, ktmll, ρ1, kw_wk1, kw_loc in Y; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa kw_mk] in Y.
     change (wk_ren wk1) with ↑ in Y. exact Y.
 Qed.
 

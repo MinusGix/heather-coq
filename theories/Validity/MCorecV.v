@@ -326,7 +326,7 @@ Proof using . unfold ktyl, ktyll. now rewrite gwa_tyPi. Qed.
 
 Lemma ktmll_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) t : nftm t -> ktmll (kw_self HΓ) t = t.
 Proof using .
-  intros H. unfold ktmll, kw_self, kw_loc; cbn [kw_γ kw_r gwa wk_ren].
+  intros H. unfold ktmll, kw_self, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk].
   rewrite <- (ren_id_tm t H) at 2. apply ren_ext_tm. intros [|[|n]]; rlk_simpl; cbn; lia.
 Qed.
 

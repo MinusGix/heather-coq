@@ -31,13 +31,13 @@ End KwSyntax.
 
 Lemma ktml_kid' {G Δ} (HΔ : [ G ; Δ ⊢g ]) (t : tm) : nftm t -> ktml (kid HΔ) t = t.
 Proof.
-  intros Nt. unfold ktml, kid, kw_loc; cbn [kw_γ kw_r gwa wk_ren].
+  intros Nt. unfold ktml, kid, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk].
   rewrite <- (ren_id_tm t Nt) at 2. apply ren_ext_tm. intros n. rewrite rlk_rlift. destruct n; cbn; lia.
 Qed.
 
 Lemma ktmll_kid {G Δ} (HΔ : [ G ; Δ ⊢g ]) (t : tm) : nftm t -> ktmll (kid HΔ) t = t.
 Proof.
-  intros Nt. unfold ktmll, kid, kw_loc; cbn [kw_γ kw_r gwa wk_ren].
+  intros Nt. unfold ktmll, kid, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk].
   rewrite <- (ren_id_tm t Nt) at 2. apply ren_ext_tm. intros n. rewrite !rlk_rlift.
   destruct n as [|[|n]]; cbn; rewrite ?rlk_rlift; cbn; lia.
 Qed.

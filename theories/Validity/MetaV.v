@@ -100,13 +100,13 @@ Qed.
 
 (** The world one global binding up. *)
 Definition kw_gstep {G Θ} D (HG : [ ⊢ gext G D ]) (HΘ : [ G ; Θ ⊢g ]) : kwk G Θ :=
-  mkKwk (gext G D) Θ⟦gwk_step gwk_id⟧ (gwk_step gwk_id) wk_id (gwk_ok_step G D) (wkwf_id _)
+  kw_mk (gext G D) Θ⟦gwk_step gwk_id⟧ (gwk_step gwk_id) wk_id (gwk_ok_step G D) (wkwf_id _)
     (gwa_ctx (gwk_ok_step G D) HG HΘ).
 
 Lemma ktm_gstep {G Θ D HG HΘ} (t : tm) : ktm (@kw_gstep G Θ D HG HΘ) t = t⟪S⟫.
-Proof. unfold ktm; cbn [kw_gstep kw_γ kw_r gwa]. rewrite ren_id_tm; [reflexivity | apply dnftm_nftm, gren_dnf_all]. Qed.
+Proof. unfold ktm; cbn [kw_gstep kw_γ kw_gk kw_r kw_rk gwa kw_mk]. rewrite ren_id_tm; [reflexivity | apply dnftm_nftm, gren_dnf_all]. Qed.
 Lemma kbody_gstep {G Θ D HG HΘ} (T : ty) : kbody (@kw_gstep G Θ D HG HΘ) T = T⟪gupr S⟫.
-Proof. unfold kbody; cbn [kw_gstep kw_γ kw_r gwk_up' gwa]. rewrite ren_id_ty; [reflexivity | apply dnfty_nfty, gren_dnf_all]. Qed.
+Proof. unfold kbody; cbn [kw_gstep kw_γ kw_gk kw_r kw_rk gwk_up' gwa kw_mk]. rewrite ren_id_ty; [reflexivity | apply dnfty_nfty, gren_dnf_all]. Qed.
 
 (** The η body at a world. *)
 Lemma kbodyt_ceta {G Γ} (ρ : kwk G Γ) (u : tm) :
@@ -521,7 +521,7 @@ Proof.
   assert (NW : nftm w) by exact (wf_tm_nf (eqtm_wf_r (i := lM) eq_refl (tmred_eq _ _ _ _ _ _ _ Hw))).
   assert (NW' : nftm w') by exact (wf_tm_nf (eqtm_wf_r (i := lM) eq_refl (tmred_eq _ _ _ _ _ _ _ Hw'))).
   unfold ρ0, kty, ktm, kbody, kw_loc in Kk, HIk, HIr;
-    cbn [kw_G kw_Δ kw_γ kw_r gwk_up' gwa wk_ren] in Kk, HIk, HIr.
+    cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwk_up' gwa wk_ren kw_mk] in Kk, HIk, HIr.
   rewrite !ren_id_ty in HIk, HIr by first [exact NA | exact NAr].
   rewrite !ren_id_tm in Kk by first [exact NW | exact NW'].
   destruct (escape_ty _ _ _ _ _ _ _ _ HIk) as (HIA & HIA' & _). rewrite HM in HIA, HIA'.
@@ -1094,7 +1094,7 @@ Proof.
   assert (NW : nftm w) by exact (wf_tm_nf (eqtm_wf_r (i := lM) eq_refl (tmred_eq _ _ _ _ _ _ _ Hw))).
   assert (NW' : nftm w') by exact (wf_tm_nf (eqtm_wf_r (i := lM) eq_refl (tmred_eq _ _ _ _ _ _ _ Hw'))).
   unfold ρ0, kty, ktm, kbody, kw_loc in Kk, HIk, HIr;
-    cbn [kw_G kw_Δ kw_γ kw_r gwk_up' gwa wk_ren] in Kk, HIk, HIr.
+    cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwk_up' gwa wk_ren kw_mk] in Kk, HIk, HIr.
   rewrite !ren_id_ty in HIk, HIr by first [exact NB | exact NBr].
   rewrite !ren_id_tm in Kk by first [exact NW | exact NW'].
   destruct (escape_ty _ _ _ _ _ _ _ _ HIk) as (HIB & HIB' & _). rewrite HM in HIB, HIB'.

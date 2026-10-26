@@ -1027,27 +1027,27 @@ Qed.
 
 Lemma kty_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) T :
   kty (kw_comp ρ ρ') T = kty ρ' (kty ρ T).
-Proof. unfold kty; cbn. now rewrite gwa_ren_ty, gwa_comp_ty, ren_wk_comp_ty. Qed.
+Proof. unfold kty; rewrite kw_γ_comp, kw_r_comp. now rewrite gwa_ren_ty, gwa_comp_ty, ren_wk_comp_ty. Qed.
 Lemma ktm_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) t :
   ktm (kw_comp ρ ρ') t = ktm ρ' (ktm ρ t).
-Proof. unfold ktm; cbn. now rewrite gwa_ren, gwa_comp_tm, ren_wk_comp. Qed.
+Proof. unfold ktm; rewrite kw_γ_comp, kw_r_comp. now rewrite gwa_ren, gwa_comp_tm, ren_wk_comp. Qed.
 Lemma ktyl_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) T :
   ktyl (kw_comp ρ ρ') T = ktyl ρ' (ktyl ρ T).
-Proof. unfold ktyl; cbn. now rewrite gwa_ren_ty, gwa_comp_ty, ren_wk_comp_lift_ty. Qed.
+Proof. unfold ktyl; rewrite kw_γ_comp, kw_r_comp. now rewrite gwa_ren_ty, gwa_comp_ty, ren_wk_comp_lift_ty. Qed.
 
 Lemma gwk_up'_comp γ' γ : gwk_comp (gwk_up' γ') (gwk_up' γ) = gwk_up' (gwk_comp γ' γ).
 Proof. destruct γ', γ; cbn; rewrite ?gwk_comp_id_r; reflexivity. Qed.
 
 Lemma kbody_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) T :
   kbody (kw_comp ρ ρ') T = kbody ρ' (kbody ρ T).
-Proof. unfold kbody; cbn. now rewrite gwa_ren_ty, gwa_comp_ty, gwk_up'_comp, ren_wk_comp_ty. Qed.
+Proof. unfold kbody; rewrite kw_γ_comp, kw_r_comp. now rewrite gwa_ren_ty, gwa_comp_ty, gwk_up'_comp, ren_wk_comp_ty. Qed.
 Lemma kbodyt_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) t :
   kbodyt (kw_comp ρ ρ') t = kbodyt ρ' (kbodyt ρ t).
-Proof. unfold kbodyt; cbn. now rewrite gwa_ren, gwa_comp_tm, gwk_up'_comp, ren_wk_comp. Qed.
+Proof. unfold kbodyt; rewrite kw_γ_comp, kw_r_comp. now rewrite gwa_ren, gwa_comp_tm, gwk_up'_comp, ren_wk_comp. Qed.
 
 Lemma gwa_comp_ctx' (Δ : ctx) {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) :
   Δ⟦kw_γ (kw_comp ρ ρ')⟧ = Δ⟦kw_γ ρ⟧⟦kw_γ ρ'⟧.
-Proof. cbn. now rewrite gwa_comp_ctx. Qed.
+Proof. rewrite kw_γ_comp. now rewrite gwa_comp_ctx. Qed.
 
 (** ** Kripke weakenings on constructors *)
 
@@ -1142,7 +1142,7 @@ Proof.
 Qed.
 Lemma ktml_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) t :
   ktml (kw_comp ρ ρ') t = ktml ρ' (ktml ρ t).
-Proof. unfold ktml; cbn. now rewrite gwa_ren, gwa_comp_tm, ren_wk_comp_lift. Qed.
+Proof. unfold ktml; rewrite kw_γ_comp, kw_r_comp. now rewrite gwa_ren, gwa_comp_tm, ren_wk_comp_lift. Qed.
 
 (** ** Natural numbers: the normal forms' shapes (M15a) *)
 
@@ -1313,18 +1313,18 @@ Proof.
 Qed.
 
 (** The world of the context itself, and of its extension by one entry. *)
-Definition kw_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) : kwk G Γ := kw_loc wk_id (wkwf_id Γ) HΓ.
+Definition kw_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) : kwk G Γ := kw_id HΓ.
 Definition kw_wk1 {G Γ A l} (HΓA : [ G ; Γ ,, A @ l ⊢g ]) : kwk G Γ :=
   kw_loc wk1 (wkwf_step _ _ _ _ _ (wkwf_id Γ)) HΓA.
 
 Lemma ktm_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) t : nftm t -> ktm (kw_self HΓ) t = t.
-Proof. intros H. unfold ktm, kw_self, kw_loc; cbn [kw_γ kw_r gwa wk_ren]. now apply ren_id_tm. Qed.
+Proof. intros H. unfold ktm, kw_self, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk]. now apply ren_id_tm. Qed.
 Lemma ktml_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) t : nftm t -> ktml (kw_self HΓ) t = t.
 Proof.
-  intros H. unfold ktml, kw_self, kw_loc; cbn [kw_γ kw_r gwa wk_ren].
+  intros H. unfold ktml, kw_self, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk].
   rewrite <- (ren_id_tm t H) at 2. apply ren_ext_tm. intros [|n]; rlk_simpl; cbn; lia.
 Qed.
 Lemma kty_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) T : nfty T -> kty (kw_self HΓ) T = T.
-Proof. intros H. unfold kty, kw_self, kw_loc; cbn [kw_γ kw_r gwa wk_ren]. now apply ren_id_ty. Qed.
+Proof. intros H. unfold kty, kw_self, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk]. now apply ren_id_ty. Qed.
 
 End Escape.

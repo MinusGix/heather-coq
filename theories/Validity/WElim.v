@@ -515,7 +515,7 @@ Proof using EL H14 H25 H36 HB Hwl Hwl' Hwl'' VA VB VL VM VN Vc Vfty Vih.
   assert (Hr1 : wkr ↑ (Δ0 ,, B⟦γ⟧[llift e][lsingle a] @ l') Δ0) by exact (wkr_shift1 _ _ _).
   pose proof (ext_wf_g HBa2 Hwl'0) as HΔa.
   pose proof (domAdi (kw_loc wk1 Hw1 HΔa)) as DOM1.
-  unfold kty, kw_loc in DOM1; cbn [kw_G kw_Δ kw_γ kw_r gwa] in DOM1; change (wk_ren wk1) with ↑ in DOM1.
+  unfold kty, kw_loc in DOM1; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa kw_mk] in DOM1; change (wk_ren wk1) with ↑ in DOM1.
   apply (proj2 (LogRel_stage _ _ _ _ _ _ _ HleI)) in DOM1.
   pose proof (LRtm_inv DOM1 (var0_LRtm (ex_intro _ _ DOM1) HΔa)) as hv.
   assert (RBa0 : [ G0 ; Δ0 ⊢ B⟦γ⟧[llift e][lsingle a] ≈ B⟦γ⟧[llift e][lsingle a] @ l' ])
@@ -533,7 +533,7 @@ Proof using EL H14 H25 H36 HB Hwl Hwl' Hwl'' VA VB VL VM VN Vc Vfty Vih.
                 B⟦γ⟧[llift e][lsingle a]⟨↑⟩ (wcod l l' A⟦γ⟧[e] B⟦γ⟧[llift e] M⟦γ⟧[llift e] a f)⟨rlift ↑⟩
                 (lequiv_refl _ _ Hwl'0) (lequiv_refl _ _ Hwl''0) (lequiv_refl _ _ Hwl'0) (lequiv_refl _ _ Hwl''0))
     as K0.
-  unfold kty, ktyl, ktm, kw_loc in K0; cbn [kw_G kw_Δ kw_γ kw_r gwa] in K0; change (wk_ren wk1) with ↑ in K0.
+  unfold kty, ktyl, ktm, kw_loc in K0; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa kw_mk] in K0; change (wk_ren wk1) with ↑ in K0.
   pose proof (K0 (geq_ty_wk Hr1 HΔa RBa0) (geq_ty_wk (wkr_up _ _ _ _ _ Hr1) HΔaa RCod)
                 (geq_ty_wk Hr1 HΔa (geq_ty_sym HPP2))) as K1.
   unshelve epose proof (K1 _) as K2.
@@ -541,7 +541,7 @@ Proof using EL H14 H25 H36 HB Hwl Hwl' Hwl'' VA VB VL VM VN Vc Vfty Vih.
     - apply geq_ty_sound. exact (geq_ty_wk Hr1 HΔa HPP2).
     - apply geq_ty_sym. exact (geq_ty_wk (wkr_up _ _ _ _ _ Hr1) HΔaa HQQ2). }
   pose proof (codAdi (kw_loc wk1 Hw1 HΔa) (var 0) (var 0) hv) as COD1.
-  unfold ktyl, kw_loc in COD1; cbn [kw_G kw_Δ kw_γ kw_r gwa] in COD1; change (wk_ren wk1) with ↑ in COD1.
+  unfold ktyl, kw_loc in COD1; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa kw_mk] in COD1; change (wk_ren wk1) with ↑ in COD1.
   destruct (escape_tm _ _ _ _ _ _ _ _ COD1 _ _ K2) as (_ & _ & Hg).
   rewrite liftshift_single_var_ty in Hg by exact (wf_ty_nf HCod).
   pose proof (geq_tm_funext Hwl'0 Hwl''0 HBa2 HCod Hλ Hλ' Hg) as GEQ.

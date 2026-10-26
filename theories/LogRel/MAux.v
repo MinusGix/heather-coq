@@ -160,13 +160,13 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 
 Lemma ktyll_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) T :
   ktyll (kw_comp ρ ρ') T = ktyll ρ' (ktyll ρ T).
-Proof. unfold ktyll; cbn. now rewrite gwa_ren_ty, gwa_comp_ty, ren_wk_comp_lift2_ty. Qed.
+Proof. unfold ktyll; rewrite kw_γ_comp, kw_r_comp. now rewrite gwa_ren_ty, gwa_comp_ty, ren_wk_comp_lift2_ty. Qed.
 Lemma ktmll_comp' {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) t :
   ktmll (kw_comp ρ ρ') t = ktmll ρ' (ktmll ρ t).
-Proof. unfold ktmll; cbn. now rewrite gwa_ren, gwa_comp_tm, ren_wk_comp_lift2'. Qed.
+Proof. unfold ktmll; rewrite kw_γ_comp, kw_r_comp. now rewrite gwa_ren, gwa_comp_tm, ren_wk_comp_lift2'. Qed.
 Lemma ktmlll_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) t :
   ktmlll (kw_comp ρ ρ') t = ktmlll ρ' (ktmlll ρ t).
-Proof. unfold ktmlll; cbn. now rewrite gwa_ren, gwa_comp_tm, ren_wk_comp_lift3. Qed.
+Proof. unfold ktmlll; rewrite kw_γ_comp, kw_r_comp. now rewrite gwa_ren, gwa_comp_tm, ren_wk_comp_lift3. Qed.
 
 (** ** [M]'s syntax in a world *)
 
@@ -450,17 +450,12 @@ Proof. intros (E1 & E2 & E3 & E4 & E5). repeat split; intros; symmetry; auto. Qe
 
 Lemma kw_eqv_assoc {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) (ρ'' : kwk (kw_G ρ') (kw_Δ ρ')) :
   kw_eqv (kw_comp (kw_comp ρ ρ') ρ'') (kw_comp ρ (kw_comp ρ' ρ'')).
-Proof.
-  repeat split; cbn [kw_γ kw_r kw_comp]; intros.
-  - now rewrite <- !gwa_comp_ty.
-  - now rewrite <- !gwa_comp_tm.
-  - now rewrite !rlk_wk_comp.
-Qed.
+Proof. repeat split. Qed.
 
 Lemma kw_eqv_comp_l {G Γ} (ρ : kwk G Γ) {ρ1 ρ2 : kwk (kw_G ρ) (kw_Δ ρ)} :
   kw_eqv ρ1 ρ2 -> kw_eqv (kw_comp ρ ρ1) (kw_comp ρ ρ2).
 Proof.
-  intros (E1 & E2 & E3 & E4 & E5). refine (conj E1 (conj E2 _)). cbn [kw_γ kw_r kw_comp].
+  intros (E1 & E2 & E3 & E4 & E5). refine (conj E1 (conj E2 _)). rewrite !kw_γ_comp, !kw_r_comp.
   repeat split; intros.
   - now rewrite <- !gwa_comp_ty.
   - now rewrite <- !gwa_comp_tm.
@@ -468,12 +463,7 @@ Proof.
 Qed.
 
 Lemma kw_eqv_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) (ρ : kwk G Γ) : kw_eqv (kw_comp (kw_self HΓ) ρ) ρ.
-Proof.
-  repeat split; cbn [kw_γ kw_r kw_comp kw_self kw_loc]; intros.
-  - now rewrite gwk_comp_id_r.
-  - now rewrite gwk_comp_id_r.
-  - rewrite rlk_wk_comp. cbn [wk_ren]. now rewrite rlk_shift0.
-Qed.
+Proof. repeat split. Qed.
 
 Section KwEqv.
 Context {G Γ} {ρ1 ρ2 : kwk G Γ} (Hρ : kw_eqv ρ1 ρ2).
@@ -508,17 +498,17 @@ End KwEqv.
 (** The identity world on the signature's components. *)
 Lemma ktyl_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) T : nfty T -> ktyl (kw_self HΓ) T = T.
 Proof.
-  intros H. unfold ktyl, kw_self, kw_loc; cbn [kw_γ kw_r gwa wk_ren].
+  intros H. unfold ktyl, kw_self, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk].
   rewrite <- (ren_id_ty T H) at 2. apply ren_ext_ty. intros [|n]; rlk_simpl; cbn; lia.
 Qed.
 Lemma ktyll_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) T : nfty T -> ktyll (kw_self HΓ) T = T.
 Proof.
-  intros H. unfold ktyll, kw_self, kw_loc; cbn [kw_γ kw_r gwa wk_ren].
+  intros H. unfold ktyll, kw_self, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk].
   rewrite <- (ren_id_ty T H) at 2. apply ren_ext_ty. intros [|[|n]]; rlk_simpl; cbn; lia.
 Qed.
 Lemma ktmlll_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) t : nftm t -> ktmlll (kw_self HΓ) t = t.
 Proof.
-  intros H. unfold ktmlll, kw_self, kw_loc; cbn [kw_γ kw_r gwa wk_ren].
+  intros H. unfold ktmlll, kw_self, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk].
   rewrite <- (ren_id_tm t H) at 2. apply ren_ext_tm. intros [|[|[|n]]]; rlk_simpl; cbn; lia.
 Qed.
 

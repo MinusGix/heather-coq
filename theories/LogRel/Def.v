@@ -147,21 +147,77 @@ Definition NeRel (G : gctx) (Γ : ctx) (V V' : ty) (l : lvl) : tm -> tm -> Prop 
 (** ** Kripke weakenings
 
     [ρ : (G', Δ) ≤ (G, Γ)]: a global weakening [γ : G' ≤ G] followed by a
-    local one [r : Δ ≤ Γ⟦γ⟧] (OPE data for both, closed under
-    composition).  The generic laws take the underlying renamings.  With
-    [γ] the identity, the action on syntax is literally the local one. *)
+    local one [r : Δ ≤ Γ⟦γ⟧] (OPE data for both).  The generic laws take
+    the underlying renamings.  With [γ] the identity, the action on syntax
+    is literally the local one.
 
+    Composition is associative, and the identity world a unit, by
+    [eq_refl] (heather-coq#61, M18_DESIGN.md "Associative worlds"). A world
+    stores its weakenings as what they do to a later one ([kw_gk γ0] is
+    [γ0] after [γ], [kw_rk r0] is [r0] after [r]) and its two
+    well-formedness proofs as what they do to a later one's
+    ([kw_gokk], [kw_wfk]), so that composition is function composition in
+    every field. That the stored maps are composition with [γ] and [r]
+    ([kw_gcoh], [kw_rcoh]) is in [SProp]: any two proofs are convertible,
+    and the equations, decidable, come back out ([kw_gk_coh]). The record
+    has primitive projections, so a world is its own η-expansion. [kw_γ],
+    [kw_r], [kw_gok] and [kw_wf] are the plain data and proofs, and
+    [kw_mk] builds a world from them. *)
+
+(** A proposition squashed into [SProp]. *)
+Inductive SBox (P : Prop) : SProp := sbox : P -> SBox P.
+Arguments sbox {P}.
+Inductive sEmpty : SProp := .
+
+Definition sunbox {P : Prop} (d : {P} + {~ P}) (b : SBox P) : P :=
+  match d with
+  | left p => p
+  | right n => sEmpty_rect (fun _ => P) (match b with sbox p => False_sind sEmpty (n p) end)
+  end.
+
+Definition gweak_eq_dec (γ γ' : gweak) : {γ = γ'} + {γ <> γ'}.
+Proof. decide equality. Defined.
+Definition wk_eq_dec (r r' : wk) : {r = r'} + {r <> r'}.
+Proof. decide equality. Defined.
+
+Lemma wk_comp_assoc (r'' r' r : wk) : wk_comp r'' (wk_comp r' r) = wk_comp (wk_comp r'' r') r.
+Proof.
+  revert r' r; induction r'' as [|r'' IH|r'' IH]; intros r' r; [reflexivity | cbn; now rewrite IH |].
+  destruct r' as [|r'|r']; [reflexivity | cbn; now rewrite IH |].
+  destruct r as [|r|r]; cbn; now rewrite ?IH.
+Qed.
+Lemma gwk_comp_assoc (γ'' γ' γ : gweak) : gwk_comp γ'' (gwk_comp γ' γ) = gwk_comp (gwk_comp γ'' γ') γ.
+Proof.
+  revert γ' γ; induction γ'' as [|γ'' IH|γ'' IH]; intros γ' γ; [reflexivity | cbn; now rewrite IH |].
+  destruct γ' as [|γ'|γ']; [reflexivity | cbn; now rewrite IH |].
+  destruct γ as [|γ|γ]; cbn; now rewrite ?IH.
+Qed.
+Lemma wk_comp_id_r (r : wk) : wk_comp r wk_id = r.
+Proof. induction r; cbn; congruence. Qed.
+
+#[projections(primitive)]
 Record kwk (G : gctx) (Γ : ctx) : Type := mkKwk {
   kw_G : gctx ;
   kw_Δ : ctx ;
-  kw_γ : gweak ;
-  kw_r : wk ;
-  kw_gok : gwk_ok kw_γ kw_G G ;
-  kw_wf : kw_r : kw_Δ ≤ Γ⟦kw_γ⟧ ;
+  kw_gk : gweak -> gweak ;
+  kw_rk : wk -> wk ;
+  kw_gcoh : forall γ0, SBox (kw_gk γ0 = gwk_comp γ0 (kw_gk gwk_id)) ;
+  kw_rcoh : forall r0, SBox (kw_rk r0 = wk_comp r0 (kw_rk wk_id)) ;
+  kw_gokk : forall γ0 G', gwk_ok γ0 G' kw_G -> gwk_ok (kw_gk γ0) G' G ;
+  kw_wfk : forall γ0 Ξ r0, r0 : Ξ ≤ kw_Δ⟦γ0⟧ -> kw_rk r0 : Ξ ≤ Γ⟦kw_gk γ0⟧ ;
   kw_ctx : [ kw_G ; kw_Δ ⊢g ]
 }.
-Arguments kw_G {G Γ}. Arguments kw_Δ {G Γ}. Arguments kw_γ {G Γ}. Arguments kw_r {G Γ}.
-Arguments kw_gok {G Γ}. Arguments kw_wf {G Γ}. Arguments kw_ctx {G Γ}.
+Arguments kw_G {G Γ}. Arguments kw_Δ {G Γ}. Arguments kw_gk {G Γ}. Arguments kw_rk {G Γ}.
+Arguments kw_gcoh {G Γ}. Arguments kw_rcoh {G Γ}. Arguments kw_gokk {G Γ}. Arguments kw_wfk {G Γ}.
+Arguments kw_ctx {G Γ}.
+
+(** The plain data and proofs. *)
+Definition kw_γ {G Γ} (ρ : kwk G Γ) : gweak := kw_gk ρ gwk_id.
+Definition kw_r {G Γ} (ρ : kwk G Γ) : wk := kw_rk ρ wk_id.
+Definition kw_gok {G Γ} (ρ : kwk G Γ) : gwk_ok (kw_γ ρ) (kw_G ρ) G :=
+  kw_gokk ρ gwk_id (kw_G ρ) (gwk_ok_id _).
+Definition kw_wf {G Γ} (ρ : kwk G Γ) : kw_r ρ : kw_Δ ρ ≤ Γ⟦kw_γ ρ⟧ :=
+  kw_wfk ρ gwk_id (kw_Δ ρ) wk_id (wkwf_id _).
 
 Definition kty {G Γ} (ρ : kwk G Γ) (T : ty) : ty := T⟦kw_γ ρ⟧⟨kw_r ρ⟩.
 Definition ktm {G Γ} (ρ : kwk G Γ) (t : tm) : tm := t⟦kw_γ ρ⟧⟨kw_r ρ⟩.
@@ -174,22 +230,99 @@ Definition ktyll {G Γ} (ρ : kwk G Γ) (T : ty) : ty := T⟦kw_γ ρ⟧⟨rlift
 (** Under three ([M]'s child index, M18b). *)
 Definition ktmlll {G Γ} (ρ : kwk G Γ) (t : tm) : tm := t⟦kw_γ ρ⟧⟨rlift (rlift (rlift (kw_r ρ)))⟩.
 
-(** A purely local weakening. *)
+Lemma kw_gk_coh {G Γ} (ρ : kwk G Γ) γ0 : kw_gk ρ γ0 = gwk_comp γ0 (kw_γ ρ).
+Proof. exact (sunbox (gweak_eq_dec _ _) (kw_gcoh ρ γ0)). Qed.
+Lemma kw_rk_coh {G Γ} (ρ : kwk G Γ) r0 : kw_rk ρ r0 = wk_comp r0 (kw_r ρ).
+Proof. exact (sunbox (wk_eq_dec _ _) (kw_rcoh ρ r0)). Qed.
+
+(** A world from its data. At the identity the maps are the data by
+    [match], so that [kw_γ] and [kw_r] of a world built here compute to
+    the data under [cbn [kw_γ kw_gk kw_r kw_rk kw_mk]]. *)
+Definition kw_mk_gk (γ : gweak) (γ0 : gweak) : gweak :=
+  match γ0 with gwk_id => γ | _ => gwk_comp γ0 γ end.
+Definition kw_mk_rk (r : wk) (r0 : wk) : wk :=
+  match r0 with wk_id => r | _ => wk_comp r0 r end.
+Lemma kw_mk_gk_eq γ γ0 : kw_mk_gk γ γ0 = gwk_comp γ0 γ.
+Proof. now destruct γ0. Qed.
+Lemma kw_mk_rk_eq r r0 : kw_mk_rk r r0 = wk_comp r0 r.
+Proof. now destruct r0. Qed.
+
+Lemma kw_mk_wfk {Γ Δ γ r} (Hr : r : Δ ≤ Γ⟦γ⟧) γ0 Ξ r0 :
+  r0 : Ξ ≤ Δ⟦γ0⟧ -> kw_mk_rk r r0 : Ξ ≤ Γ⟦kw_mk_gk γ γ0⟧.
+Proof.
+  intros H. rewrite kw_mk_rk_eq, kw_mk_gk_eq, <- gwa_comp_ctx.
+  eapply wk_comp_wf; [exact H | apply wk_wf_gwa, Hr].
+Qed.
+
+Definition kw_mk {G Γ} (G' : gctx) (Δ : ctx) (γ : gweak) (r : wk)
+    (Hγ : gwk_ok γ G' G) (Hr : r : Δ ≤ Γ⟦γ⟧) (HΔ : [ G' ; Δ ⊢g ]) : kwk G Γ :=
+  {| kw_G := G' ; kw_Δ := Δ ;
+     kw_gk := fun γ0 => match γ0 with gwk_id => γ | _ => gwk_comp γ0 γ end ;
+     kw_rk := fun r0 => match r0 with wk_id => r | _ => wk_comp r0 r end ;
+     kw_gcoh := fun γ0 => sbox (kw_mk_gk_eq γ γ0) ; kw_rcoh := fun r0 => sbox (kw_mk_rk_eq r r0) ;
+     kw_gokk := fun γ0 G'' H => eq_ind _ (fun γ1 => gwk_ok γ1 G'' G) (gwk_ok_comp H Hγ) _ (eq_sym (kw_mk_gk_eq γ γ0)) ;
+     kw_wfk := kw_mk_wfk Hr ; kw_ctx := HΔ |}.
+
+(** A purely local weakening. Under [unfold kw_loc], [cbn [kw_γ kw_gk kw_r kw_rk kw_mk]]
+    computes its data. *)
+Lemma kw_loc_wfk {Γ Δ r} (Hr : r : Δ ≤ Γ) γ0 Ξ r0 :
+  r0 : Ξ ≤ Δ⟦γ0⟧ -> kw_mk_rk r r0 : Ξ ≤ Γ⟦γ0⟧.
+Proof.
+  intros H. rewrite kw_mk_rk_eq. eapply wk_comp_wf; [exact H | apply wk_wf_gwa, Hr].
+Qed.
+
 Definition kw_loc {G Γ Δ} (r : wk) (Hr : r : Δ ≤ Γ) (HΔ : [ G ; Δ ⊢g ]) : kwk G Γ :=
-  {| kw_G := G ; kw_Δ := Δ ; kw_γ := gwk_id ; kw_r := r ;
-     kw_gok := gwk_ok_id G ; kw_wf := Hr ; kw_ctx := HΔ |}.
+  {| kw_G := G ; kw_Δ := Δ ; kw_gk := fun γ0 => γ0 ;
+     kw_rk := fun r0 => match r0 with wk_id => r | _ => wk_comp r0 r end ;
+     kw_gcoh := fun γ0 => sbox (eq_sym (gwk_comp_id_r γ0)) ; kw_rcoh := fun r0 => sbox (kw_mk_rk_eq r r0) ;
+     kw_gokk := fun γ0 G' H => H ; kw_wfk := kw_loc_wfk Hr ; kw_ctx := HΔ |}.
+
+(** The identity world: a unit of [kw_comp] on both sides by [eq_refl]. *)
+Definition kw_id {G Γ} (HΓ : [ G ; Γ ⊢g ]) : kwk G Γ :=
+  {| kw_G := G ; kw_Δ := Γ ; kw_gk := fun γ0 => γ0 ; kw_rk := fun r0 => r0 ;
+     kw_gcoh := fun γ0 => sbox (eq_sym (gwk_comp_id_r γ0)) ;
+     kw_rcoh := fun r0 => sbox (eq_sym (wk_comp_id_r r0)) ;
+     kw_gokk := fun γ0 G' H => H ; kw_wfk := fun γ0 Ξ r0 H => H ; kw_ctx := HΓ |}.
 
 (** Composition: first [ρ], then [ρ']. *)
-Lemma kw_comp_wf {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) :
-  wk_comp (kw_r ρ') (kw_r ρ) : kw_Δ ρ' ≤ Γ⟦gwk_comp (kw_γ ρ') (kw_γ ρ)⟧.
+Lemma kw_comp_gcoh {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) γ0 :
+  kw_gk ρ (kw_gk ρ' γ0) = gwk_comp γ0 (kw_gk ρ (kw_gk ρ' gwk_id)).
 Proof.
-  rewrite <- gwa_comp_ctx. eapply wk_comp_wf; [exact (kw_wf ρ') | apply wk_wf_gwa, kw_wf].
+  change (kw_gk ρ' gwk_id) with (kw_γ ρ').
+  rewrite (kw_gk_coh ρ (kw_gk ρ' γ0)), (kw_gk_coh ρ' γ0), (kw_gk_coh ρ (kw_γ ρ')). symmetry; apply gwk_comp_assoc.
+Qed.
+Lemma kw_comp_rcoh {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) r0 :
+  kw_rk ρ (kw_rk ρ' r0) = wk_comp r0 (kw_rk ρ (kw_rk ρ' wk_id)).
+Proof.
+  change (kw_rk ρ' wk_id) with (kw_r ρ').
+  rewrite (kw_rk_coh ρ (kw_rk ρ' r0)), (kw_rk_coh ρ' r0), (kw_rk_coh ρ (kw_r ρ')). symmetry; apply wk_comp_assoc.
 Qed.
 
 Definition kw_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) : kwk G Γ :=
-  {| kw_G := kw_G ρ' ; kw_Δ := kw_Δ ρ' ; kw_γ := gwk_comp (kw_γ ρ') (kw_γ ρ) ;
-     kw_r := wk_comp (kw_r ρ') (kw_r ρ) ; kw_gok := gwk_ok_comp (kw_gok ρ') (kw_gok ρ) ;
-     kw_wf := kw_comp_wf ρ ρ' ; kw_ctx := kw_ctx ρ' |}.
+  {| kw_G := kw_G ρ' ; kw_Δ := kw_Δ ρ' ;
+     kw_gk := fun γ0 => kw_gk ρ (kw_gk ρ' γ0) ; kw_rk := fun r0 => kw_rk ρ (kw_rk ρ' r0) ;
+     kw_gcoh := fun γ0 => sbox (kw_comp_gcoh ρ ρ' γ0) ;
+     kw_rcoh := fun r0 => sbox (kw_comp_rcoh ρ ρ' r0) ;
+     kw_gokk := fun γ0 G' H => kw_gokk ρ (kw_gk ρ' γ0) G' (kw_gokk ρ' γ0 G' H) ;
+     kw_wfk := fun γ0 Ξ r0 H => kw_wfk ρ (kw_gk ρ' γ0) Ξ (kw_rk ρ' r0) (kw_wfk ρ' γ0 Ξ r0 H) ;
+     kw_ctx := kw_ctx ρ' |}.
+
+(** The laws, by [eq_refl]. *)
+Lemma kw_comp_assoc {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) (ρ'' : kwk (kw_G ρ') (kw_Δ ρ')) :
+  kw_comp (kw_comp ρ ρ') ρ'' = kw_comp ρ (kw_comp ρ' ρ'').
+Proof. reflexivity. Qed.
+Lemma kw_comp_id_l {G Γ} (HΓ : [ G ; Γ ⊢g ]) (ρ : kwk G Γ) : kw_comp (kw_id HΓ) ρ = ρ.
+Proof. reflexivity. Qed.
+Lemma kw_comp_id_r {G Γ} (ρ : kwk G Γ) : kw_comp ρ (kw_id (kw_ctx ρ)) = ρ.
+Proof. reflexivity. Qed.
+
+(** The data of a composite. *)
+Lemma kw_γ_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) :
+  kw_γ (kw_comp ρ ρ') = gwk_comp (kw_γ ρ') (kw_γ ρ).
+Proof. exact (kw_gk_coh ρ (kw_γ ρ')). Qed.
+Lemma kw_r_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) :
+  kw_r (kw_comp ρ ρ') = wk_comp (kw_r ρ') (kw_r ρ).
+Proof. exact (kw_rk_coh ρ (kw_r ρ')). Qed.
 
 (** ** Dependent functions
 
@@ -1096,5 +1229,6 @@ Ltac open_poly :=
   repeat match goal with P : PolyFacts _ _ _ _ _ _ _ _ _ _ _ _ _ _ |- _ => destruct P end.
 
 Arguments mkKwk {E G Γ}.
-Arguments kw_G {E G Γ}. Arguments kw_Δ {E G Γ}. Arguments kw_γ {E G Γ}. Arguments kw_r {E G Γ}.
-Arguments kw_gok {E G Γ}. Arguments kw_wf {E G Γ}. Arguments kw_ctx {E G Γ}.
+Arguments kw_G {E G Γ}. Arguments kw_Δ {E G Γ}. Arguments kw_gk {E G Γ}. Arguments kw_rk {E G Γ}.
+Arguments kw_gcoh {E G Γ}. Arguments kw_rcoh {E G Γ}. Arguments kw_gokk {E G Γ}. Arguments kw_wfk {E G Γ}.
+Arguments kw_ctx {E G Γ}.

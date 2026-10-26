@@ -171,7 +171,7 @@ Proof.
   exists w, w'. refine (conj Hw (conj Hw' _)).
   intros la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1'.
   pose proof (HK (kw_loc wk_id (wkwf_id Δ) HΔ) la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4) as K.
-  unfold kty, ktm, ktyl, kw_loc in K; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in K.
+  unfold kty, ktm, ktyl, kw_loc in K; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in K.
   rewrite (ren_id_tm w), (ren_id_tm w') in K
     by (eapply wf_tm_nf, eqtm_wf_r; [apply ge_typeof | apply tmred_eq; eassumption]).
   rewrite (ren_id_ty A), (ren_id_ty A'), (ren_lift_id_ty B), (ren_lift_id_ty B') in K by assumption.
@@ -183,7 +183,7 @@ Lemma piDom_id {G l l' A A' Δ d d' HΔ a a'} : nfty A[d] -> nfty A'[d'] ->
   @piDom E LP G l l' A A' Δ d d' (kw_loc wk_id (wkwf_id Δ) HΔ) a a' ->
   LRtm l G Δ A[d] A'[d'] a a'.
 Proof.
-  intros N N' h. unfold piDom, kty, kw_loc in h; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in h.
+  intros N N' h. unfold piDom, kty, kw_loc in h; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in h.
   rewrite !ren_id_ty in h by assumption.
   apply (LRtm_stage (n := lmeasure (lmax l l'))); [rewrite lmeasure_max; lia | exact h].
 Qed.
@@ -192,7 +192,7 @@ Lemma piCod_id {G l l' A A' B B' Δ d d' HΔ a a' h b b'} : nfty B[llift d] -> n
   @piCod E LP G l l' A A' B B' Δ d d' (kw_loc wk_id (wkwf_id Δ) HΔ) a a' h b b' ->
   LRtm l' G Δ B[llift d][lsingle a] B'[llift d'][lsingle a'] b b'.
 Proof.
-  intros N N' c. unfold piCod, ktyl, kw_loc in c; cbn [kw_G kw_Δ kw_γ kw_r gwa wk_ren] in c.
+  intros N N' c. unfold piCod, ktyl, kw_loc in c; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in c.
   rewrite !ren_lift_id_ty in c by assumption.
   apply (LRtm_stage (n := lmeasure (lmax l l'))); [rewrite lmeasure_max; lia | exact c].
 Qed.
@@ -394,11 +394,11 @@ Proof.
   (* at the identity world, the Σ's own annotations *)
   set (ρ0 := kw_loc wk_id (wkwf_id Δ) HΔ).
   assert (Eid : forall T : ty, nfty T -> kty ρ0 T = T)
-    by (intros T NT; unfold kty, ρ0, kw_loc; cbn [kw_γ kw_r gwa wk_ren]; now apply ren_id_ty).
+    by (intros T NT; unfold kty, ρ0, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk]; now apply ren_id_ty).
   assert (Eidl : forall T : ty, nfty T -> ktyl ρ0 T = T)
-    by (intros T NT; unfold ktyl, ρ0, kw_loc; cbn [kw_γ kw_r gwa wk_ren]; now apply ren_lift_id_ty).
+    by (intros T NT; unfold ktyl, ρ0, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk]; now apply ren_lift_id_ty).
   assert (Eidt : forall t : tm, nftm t -> ktm ρ0 t = t)
-    by (intros t Nt0; unfold ktm, ρ0, kw_loc; cbn [kw_γ kw_r gwa wk_ren]; now apply ren_id_tm).
+    by (intros t Nt0; unfold ktm, ρ0, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk]; now apply ren_id_tm).
   destruct (K ρ0 l l' l l' A[d] B[llift d] A[d] B[llift d]
               (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl'))
     as (h & c).

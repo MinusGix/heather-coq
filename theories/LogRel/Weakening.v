@@ -195,7 +195,7 @@ Qed.
 Lemma vp_ty_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) {Δ A A' l} :
   vp_ty lr_vp (kw_G ρ') Δ⟦kw_γ ρ⟧⟦kw_γ ρ'⟧ A A' l ->
   vp_ty lr_vp (kw_G (kw_comp ρ ρ')) Δ⟦kw_γ (kw_comp ρ ρ')⟧ A A' l.
-Proof. cbn. rewrite gwa_comp_ctx. exact id. Qed.
+Proof. rewrite kw_γ_comp, gwa_comp_ctx. exact id. Qed.
 
 Lemma wf_gext_ty_inv {G Δ i l} : [ ⊢ gext G (gdTy Δ i l) ] -> [ G ; Δ ⊢[ lD ] ] /\ lwf (gL G) l.
 Proof. intros H; inversion H; subst; auto. Qed.

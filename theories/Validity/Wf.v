@@ -96,12 +96,12 @@ Context {G : gctx} {Δ : ctx} (HΔ : [ G ; Δ ⊢g ]).
 Definition kid : kwk G Δ := kw_loc wk_id (wkwf_id Δ) HΔ.
 
 Lemma kty_kid (T : ty) : nfty T -> kty kid T = T.
-Proof. intros NT. unfold kty, kid, kw_loc; cbn [kw_γ kw_r gwa wk_ren]. now rewrite ren_id_ty. Qed.
+Proof. intros NT. unfold kty, kid, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk]. now rewrite ren_id_ty. Qed.
 Lemma ktm_kid (t : tm) : nftm t -> ktm kid t = t.
-Proof. intros Nt. unfold ktm, kid, kw_loc; cbn [kw_γ kw_r gwa wk_ren]. now rewrite ren_id_tm. Qed.
+Proof. intros Nt. unfold ktm, kid, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk]. now rewrite ren_id_tm. Qed.
 Lemma ktyl_kid (T : ty) : nfty T -> ktyl kid T = T.
 Proof.
-  intros NT. unfold ktyl, kid, kw_loc; cbn [kw_γ kw_r gwa wk_ren].
+  intros NT. unfold ktyl, kid, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk].
   rewrite <- (ren_id_ty T NT) at 2. apply ren_ext_ty. intros n. rewrite rlk_rlift. destruct n; cbn; lia.
 Qed.
 

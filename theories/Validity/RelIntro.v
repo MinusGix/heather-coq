@@ -15,11 +15,11 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 
 (** The identity world acts trivially on normal forms. *)
 Lemma kwid_ty {G Δ HΔ} (T : ty) : nfty T -> kty (kw_loc (G := G) wk_id (wkwf_id Δ) HΔ) T = T.
-Proof using . intros NT; unfold kty, kw_loc; cbn [kw_γ kw_r gwa wk_ren]; now apply ren_id_ty. Qed.
+Proof using . intros NT; unfold kty, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk]; now apply ren_id_ty. Qed.
 Lemma kwid_tyl {G Δ HΔ} (T : ty) : nfty T -> ktyl (kw_loc (G := G) wk_id (wkwf_id Δ) HΔ) T = T.
-Proof using . intros NT; unfold ktyl, kw_loc; cbn [kw_γ kw_r gwa wk_ren]; now apply ren_lift_id_ty. Qed.
+Proof using . intros NT; unfold ktyl, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk]; now apply ren_lift_id_ty. Qed.
 Lemma kwid_tm {G Δ HΔ} (t : tm) : nftm t -> ktm (kw_loc (G := G) wk_id (wkwf_id Δ) HΔ) t = t.
-Proof using . intros Nt; unfold ktm, kw_loc; cbn [kw_γ kw_r gwa wk_ren]; now apply ren_id_tm. Qed.
+Proof using . intros Nt; unfold ktm, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk]; now apply ren_id_tm. Qed.
 
 (** The Kripke clause of [Π]'s relation. *)
 Definition PiK {G Δ} (l1 l2 : lvl) (A B A' B' : ty) (domR : DomRel G Δ) (codR : CodRel G Δ domR) (w w' : tm) : Prop :=
@@ -63,7 +63,7 @@ Proof using EL.
                 (geq_ty_wk Hr1 HΔA RA')
                 (geq_ty_wk (wkr_up _ _ _ _ _ Hr1) HΔAA' RB')) as K1.
   apply Ec in K1.
-  unfold ktyl, ktm, kty, kw_loc in K1; cbn [kw_G kw_Δ kw_γ kw_r gwa] in K1.
+  unfold ktyl, ktm, kty, kw_loc in K1; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa kw_mk] in K1.
   change (wk_ren wk1) with ↑ in K1. rewrite liftshift_single_var_ty in K1 by exact NB.
   assert (Hw'l : [ G ; Δ ⊢g w' : tyPi l1 l2 A B @ lmax l1 l2 ])
     by (eapply wf_conv; [exact Hw' | rewrite ge_typeof; first [exact ES | exact (eqty_sym _ _ _ _ _ _ ES)]]).
@@ -144,6 +144,6 @@ Qed.
 
 (** The world of one more local acts as the shift. *)
 Lemma kwk1_ty {G Δ A l} (Hw1 : wk1 : (Δ ,, A @ l) ≤ Δ) HΔA (T : ty) : kty (kw_loc (G := G) wk1 Hw1 HΔA) T = T⟨↑⟩.
-Proof using . unfold kty, kw_loc; cbn [kw_γ kw_r gwa]. reflexivity. Qed.
+Proof using . unfold kty, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa kw_mk]. reflexivity. Qed.
 
 End RelIntro.
