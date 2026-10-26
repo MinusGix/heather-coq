@@ -177,12 +177,12 @@ Ltac mrext := intros [|?n]; rlk_simpl; rewrite ?Nat.add_1_r, ?Nat.add_0_r; rlk_s
   first [reflexivity | lia | revert n; mrext].
 Ltac mren_comm := first [ reflexivity
   | rewrite ?ren_ren_comp_ty, ?ren_ren_comp; first [apply ren_ext_ty | apply ren_ext_tm]; mrext ].
-(* [f_equal] first unless a side is a renaming: a failing [mren_comm]
+(* Congruence first unless a side is a renaming: a failing [mren_comm]
    rewrites the whole equation (#60) *)
 Ltac mcong := lazymatch goal with
-  | |- ren _ _ = _ => first [reflexivity | mren_comm | f_equal]
-  | |- _ = ren _ _ => first [reflexivity | mren_comm | f_equal]
-  | |- _ = _ => first [reflexivity | f_equal | mren_comm] end.
+  | |- ren _ _ = _ => first [reflexivity | mren_comm | cong_spine]
+  | |- _ = ren _ _ => first [reflexivity | mren_comm | cong_spine]
+  | |- _ = _ => first [reflexivity | cong_spine | mren_comm] end.
 (* Each pass pushes the renaming through the constructors, then rewrites
    every law as often as it applies: a failed [rewrite] traverses the whole
    term, so one law at a time between pushes cost 12 s (#60). *)

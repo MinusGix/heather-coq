@@ -64,8 +64,8 @@ Lemma uren_as_usubst_all :
 Proof.
   assert (Hl : forall l ρ φ, (forall n, φ n = lvar (ρ n)) -> lvren l ρ = lvsubst l φ).
   { intros; now apply lvren_as_lvsubst. }
-  syn_start3; try lk_cases; cbn; try solve [f_equal; eauto using uup_as, uupn_as].
-  all: f_equal; try lsub_eq; try (apply map_ext; intros); eauto using uup_as, uupn_as.
+  syn_start3; try lk_cases; cbn; try solve [cong_spine; eauto using uup_as, uupn_as].
+  all: cong_spine; try lsub_eq; try (apply map_ext; intros); eauto using uup_as, uupn_as.
 Qed.
 
 Definition usubst_ren_tm t := proj1 (proj2 usubst_ren_all) t.
@@ -165,8 +165,8 @@ Proof.
   assert (Hl : forall l φ, (forall n, φ n = lvar n) -> lvsubst l φ = l).
   { intros; now apply lvsubst_id. }
   syn_start3; try lk_cases_dnf; cbn in *; try tauto;
-    try solve [f_equal; intuition eauto with subst].
-  all: f_equal; repeat match goal with H : _ /\ _ |- _ => destruct H end.
+    try solve [cong_spine; intuition eauto with subst].
+  all: cong_spine; repeat match goal with H : _ /\ _ |- _ => destruct H end.
   all: first
     [ (* a defined global's body *)
       match goal with IH : dnftm ?b -> _ |- _ ?b _ = ?b => apply IH; assumption end

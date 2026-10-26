@@ -104,12 +104,31 @@ formers, so it gets worse with every extension:
   `rewrite` motive then carries the block, and `Qed` re-checks it: 20 s in
   `redt_gren`. `fold gren_ty gren_tm` after the `cbn` (`gpeel_push`,
   both copies). A `Qed` much slower than its tactics is the symptom.
+  `change (gren_tm ?x ?ξ) with x⟪ξ⟫` does not catch the block: M18b's
+  and M17's push lemmas (`gren_mOutCorec`, `gs_tmDNth`, …) spent 12 to
+  24 s each in `Qed` until their loops ran `fold` after the `cbn` (#60).
   The same block appears under a former whose argument `cbn` cannot
   reduce (M17c: `gsubst_ty (tyEl l (usubst_tm x⟨↑⟩ φ)) σ`, a weakened
   payload in a declared type), and then no commutation lemma matches.
   Push the substitutions through the former by its equation first
   (`us_El_raw`, `gs_DVec_raw` in `gs_norm`, RecSBase), then commute them
   past the weakening (`usubst_ren'`, `grs_tm_raw`), and `cbn` last.
+- **`f_equal` on a wide constructor.** `f_equal` tries to close each
+  argument's equation by conversion, which unfolds the operations on
+  both sides when they differ (`uren_tm A ρ = uren_tm A ρ'`): 3.5 s for
+  one `corec` or `elim_IWf` case (twelve arguments) of a syntax-wide
+  law, so every `*_all` law of `Subst`, `GSubst` and `Universe` doubled
+  with M18b. `cong_spine` (`Subst`) peels the application spine with
+  `f_equal2` and closes only syntactically equal arguments: those three
+  files went from 114 s to about 50 s (#60). Use it in place of
+  `f_equal` in a syntax-wide induction.
+- **One law per pass in a rewriting loop.** `repeat first [cbn …
+  | rewrite L1 | … | rewrite L9]` fails every earlier law before the one
+  that applies, and each failed `rewrite` traverses the whole term
+  (`mOutCorec_ren`'s push: 12 s). One pass of `cbn …; rewrite ?L1, …,
+  ?L9` under `repeat progress` makes as many passes as the term is deep
+  (3 s). The same holds for a congruence step that tries a rewriting
+  tactic before `f_equal` on goals it cannot close (`mcong`, 16 s → 4 s).
 - **`injection` on a big constructor term.** `injection` on two `mkrb`
   blocks unfolds the whole bundle (6 s, and 4 s more at `Qed`). Prove the
   injectivity once by projections (`mkrb_inj` through `tup_nth`) or on
@@ -124,6 +143,11 @@ formers, so it gets worse with every extension:
   theorem's dispatcher, a failed `eassumption` against `VTyS …` hypotheses
   retries with both sides unfolded. `Local Opaque VTyS VTmS VCtxS VCtxEqS`
   around the theorem took `FundamentalS`'s cases from 19 s to 6 s.
+  A lemma tried by `apply` on every leftover goal of a mutual induction
+  is the same: `apply dnf_mOutCorec` unified `mOutCorec` (simpl never,
+  but still δ-unfoldable) with twenty other goals' terms, up to 12 s
+  each; `typed_dnf` went from 89 s to 26 s once it ran under a
+  `lazymatch` on the goal's head (#60).
 - **A failing search under binders.** `apply wnf_sup; eauto` spent 16 s in
   the one premise it could not solve (a `forall ρ` with ten binders); guard
   `eauto` by the goal's shape. A dispatcher's applies are the same story

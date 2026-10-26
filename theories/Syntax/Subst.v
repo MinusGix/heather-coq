@@ -155,10 +155,20 @@ Ltac lsub_eq :=
   repeat first [ rewrite llk_lren | rewrite llk_lcomp | rewrite llk_glren | rewrite llk_glsubst
                | rewrite llk_ulren | rewrite llk_ulsubst ].
 
+(** Congruence on one application spine: [f a1 … an = g b1 … bn] to the
+    [ai = bi] that are not syntactically equal. [f_equal] tries to close
+    each argument's equation by conversion, which unfolds the operations
+    on both sides: 3.5 s on [corec]'s twelve arguments (#60). *)
+Ltac cong_spine :=
+  lazymatch goal with
+  | |- ?a = ?a => reflexivity
+  | |- ?f ?x = ?g ?y => refine (@f_equal2 _ _ _ (fun h z => h z) f g x y _ _); [cong_spine | ]
+  end.
+
 Ltac law_auto :=
   cbn; try solve [eauto with subst | symmetry; eauto with subst];
-  try solve [f_equal; eauto with subst];
-  try solve [f_equal; try lsub_eq; eauto with subst].
+  try solve [cong_spine; eauto with subst];
+  try solve [cong_spine; try lsub_eq; eauto with subst].
 
 (** ** Renaming *)
 
