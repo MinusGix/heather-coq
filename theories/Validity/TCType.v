@@ -6,6 +6,7 @@
     decided in the order the rule's presuppositions need, and a failure is
     refuted by inversion. *)
 From DeLaM.Validity Require Export TCBase.
+From DeLaM.Typing Require Import PresupM.
 
 (** The induction hypothesis: every problem about syntax of size < [n]. *)
 Definition IHsz (n : nat) : Prop :=
@@ -402,6 +403,48 @@ Proof.
   - left; eapply wft_lvl; [exact Q | apply wft_iwf; assumption].
   - right; intros H; exact (Q (proj2 (inv_ty_iwf H))).
 Qed.
+(** Indexed coinductive types (M18b), at the computational layers only;
+    the signature is shared with [corec]'s and [out]'s synthesis. *)
+Lemma dec_m_sig l l' li X A B C :
+  sz_ty X < n -> sz_ty A < n -> sz_ty B < n -> sz_tm C < n ->
+  forall G i Γ, compt i -> [ G ; Γ ⊢[ typeof i ] ] ->
+  MSig (G := G) (i := i) Γ l l' li X A B C \/ ~ MSig (G := G) (i := i) Γ l l' li X A B C.
+Proof.
+  intros SX SA SB SC G i Γ Hc HΓ.
+  destruct (lwf_Dec (gL G) l) as [Hl | Hn]; [| right; intros (H & _); contradiction].
+  destruct (lwf_Dec (gL G) l') as [Hl' | Hn]; [| right; intros (_ & H & _); contradiction].
+  destruct (lwf_Dec (gL G) li) as [Hli | Hn]; [| right; intros (_ & _ & H & _); contradiction].
+  destruct (ihT X SX G i Γ li HΓ) as [HX | Hn]; [| right; intros (_ & _ & _ & H & _); contradiction].
+  assert (HΓX : [ G ; Γ ,, X @ li ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HX) | exact Hli]).
+  destruct (ihT A SA G i _ l HΓX) as [HA | Hn]; [| right; intros (_ & _ & _ & _ & H & _); contradiction].
+  assert (HΓXA : [ G ; Γ ,, X @ li ,, A @ l ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓX | exact (lift_to_typeof_ty HA) | exact Hl]).
+  destruct (ihT B SB G i _ l' HΓXA) as [HB | Hn]; [| right; intros (_ & _ & _ & _ & _ & H & _); contradiction].
+  assert (HΓXAB : [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓXA | exact (lift_to_typeof_ty HB) | exact Hl']).
+  pose proof (wk1_ty_g G i _ _ _ _ _ HΓX HX) as HX1.
+  pose proof (wk1_ty_g G i _ _ _ _ _ HΓXA HX1) as HX2.
+  pose proof (wk1_ty_g G i _ _ _ _ _ HΓXAB HX2) as HX3.
+  destruct (ihC C SC G i _ _ _ (lift_to_typeof_ty HX3)) as [HC | Hn];
+    [| right; intros (_ & _ & _ & _ & _ & _ & H); contradiction].
+  left; unfold MSig; auto 8.
+Qed.
+
+Lemma dec_tyM l l' li X A B C j : sz_ty (tyM l l' li X A B C j) <= n -> TYD (tyM l l' li X A B C j).
+Proof.
+  intros Hsz G i Γ k HΓ.
+  destruct (compt_dec i) as [Hc | Hn]; [| right; intros H; exact (Hn (proj1 (proj1 (inv_ty_M H))))].
+  destruct (dec_m_sig l l' li X A B C ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) G i Γ Hc HΓ) as [HS | Hn];
+    [| right; intros H; destruct (inv_ty_M H) as ((_ & Hs) & _); apply Hn; unfold MSig; tauto].
+  pose proof HS as (Hl & Hl' & Hli & HX & HA & HB & HC).
+  destruct (ihC j ltac:(szl) G i Γ X li (lift_to_typeof_ty HX)) as [Hj | Hn];
+    [| right; intros H; destruct (inv_ty_M H) as ((_ & _ & _ & _ & _ & _ & _ & _ & Hj) & _); contradiction].
+  destruct (lvl_eq_dec (gL G) k (mlvl l l' li)) as [Q | Q].
+  - left; eapply wft_lvl; [exact Q | apply wft_M; assumption].
+  - right; intros H; exact (Q (proj2 (inv_ty_M H))).
+Qed.
+
 
 Lemma ty_step T : sz_ty T <= n -> TYD T.
 Proof.
@@ -411,7 +454,7 @@ Proof.
           | apply dec_tyUPi | apply dec_tyCPi | apply dec_tyTPi | apply dec_tySig | apply dec_tyUnit
           | apply dec_tySEq | apply dec_tySEmpty | apply dec_tyId | apply dec_tyEmpty | apply dec_tySum
           | apply dec_tyW | apply dec_tyVec | apply dec_tyFin | apply dec_tyWf | apply dec_tySq
-          | apply dec_tyDVec | apply dec_tyIWf ];
+          | apply dec_tyDVec | apply dec_tyIWf | apply dec_tyM ];
     assumption.
 Qed.
 
