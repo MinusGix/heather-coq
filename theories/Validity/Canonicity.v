@@ -21,33 +21,33 @@
 From DeLaM.Validity Require Export Consistency.
 
 (** The values at a type head ([ty_head]). *)
-Definition canon_head (h : nat) (w : tm) : Prop :=
+Definition canon_head (h : ty_hd) (w : tm) : Prop :=
   match h with
-  | 1 => w = zero \/ exists t, w = succ t
-  | 2 => w = tmNat \/ (exists l, w = tmU l) \/ (exists l l' s t, w = tmPi l l' s t) \/
-         (exists l l' s t, w = tmSig l l' s t) \/ (exists l, w = tmUnit l) \/
-         (exists l s t u, w = tmId l s t u) \/ (exists l s t u, w = tmSEq l s t u) \/
-         (exists l, w = tmSEmpty l) \/ (exists l, w = tmEmpty l) \/ (exists l l' s t, w = tmSum l l' s t) \/
-         (exists l l' s t, w = tmW l l' s t) \/ (exists l s n, w = tmVec l s n) \/ (exists n, w = tmFin n) \/
-         (exists l s n, w = tmWf l s n) \/ (exists l s, w = tmSqCode l s) \/
-         (exists l n f, w = tmDVec l n f) \/ exists l li x s n o c m, w = tmIWf l li x s n o c m
-  | 3 => exists l l' A t, w = lam l l' A t
-  | 4 => exists T, w = boxT T
-  | 5 => exists t, w = boxt t
-  | 6 => exists n l T t, w = ulam n l T t
-  | 7 => exists l T t, w = clam l T t
-  | 8 => exists Δ l l' T t, w = tlam Δ l l' T t
-  | 10 => exists l l' A B a b, w = tmPair l l' A B a b
-  | 11 => exists l, w = tmTriv l
-  | 12 => exists l A a, w = srefl l A a
-  | 14 => exists l A a, w = tmRefl l A a
-  | 16 => (exists l l' A B a, w = tmInl l l' A B a) \/ exists l l' A B b, w = tmInr l l' A B b
-  | 17 => exists l l' A B a f, w = tmSup l l' A B a f
-  | 18 => exists l A N a cs, w = tmSupf l A N a cs
-  | 19 => exists l A a, w = tmSq l A a
-  | 20 => exists l li X A N Ot C a cs, w = tmSupi l li X A N Ot C a cs
-  | 21 => exists l l' li X A B C k Y c j y, w = tmCorec l l' li X A B C k Y c j y
-  | _ => False
+  | hdNat => w = zero \/ exists t, w = succ t
+  | hdU => w = tmNat \/ (exists l, w = tmU l) \/ (exists l l' s t, w = tmPi l l' s t) \/
+           (exists l l' s t, w = tmSig l l' s t) \/ (exists l, w = tmUnit l) \/
+           (exists l s t u, w = tmId l s t u) \/ (exists l s t u, w = tmSEq l s t u) \/
+           (exists l, w = tmSEmpty l) \/ (exists l, w = tmEmpty l) \/ (exists l l' s t, w = tmSum l l' s t) \/
+           (exists l l' s t, w = tmW l l' s t) \/ (exists l s n, w = tmVec l s n) \/ (exists n, w = tmFin n) \/
+           (exists l s n, w = tmWf l s n) \/ (exists l s, w = tmSqCode l s) \/
+           (exists l n f, w = tmDVec l n f) \/ exists l li x s n o c m, w = tmIWf l li x s n o c m
+  | hdPi => exists l l' A t, w = lam l l' A t
+  | hdCTyp => exists T, w = boxT T
+  | hdCTrm => exists t, w = boxt t
+  | hdUPi => exists n l T t, w = ulam n l T t
+  | hdCPi => exists l T t, w = clam l T t
+  | hdTPi => exists Δ l l' T t, w = tlam Δ l l' T t
+  | hdSig => exists l l' A B a b, w = tmPair l l' A B a b
+  | hdUnit => exists l, w = tmTriv l
+  | hdSEq => exists l A a, w = srefl l A a
+  | hdId => exists l A a, w = tmRefl l A a
+  | hdSum => (exists l l' A B a, w = tmInl l l' A B a) \/ exists l l' A B b, w = tmInr l l' A B b
+  | hdW => exists l l' A B a f, w = tmSup l l' A B a f
+  | hdWf => exists l A N a cs, w = tmSupf l A N a cs
+  | hdSq => exists l A a, w = tmSq l A a
+  | hdIWf => exists l li X A N Ot C a cs, w = tmSupi l li X A N Ot C a cs
+  | hdM => exists l l' li X A B C k Y c j y, w = tmCorec l l' li X A B C k Y c j y
+  | hdNe | hdErr | hdSEmpty | hdEmpty => False
   end.
 
 (** A value has the canonical shape of its whnf type. *)

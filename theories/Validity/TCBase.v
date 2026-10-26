@@ -129,17 +129,17 @@ Qed.
 
 (** ** Views of a whnf type by its head *)
 
-Lemma pi_view W : (exists m m' A B, W = tyPi m m' A B) \/ ty_head W <> 3.
+Lemma pi_view W : (exists m m' A B, W = tyPi m m' A B) \/ ty_head W <> hdPi.
 Proof. destruct W; first [left; do 4 eexists; reflexivity | right; discriminate]. Qed.
-Lemma ctyp_view W : (exists Δ l, W = tyCTyp Δ l) \/ ty_head W <> 4.
+Lemma ctyp_view W : (exists Δ l, W = tyCTyp Δ l) \/ ty_head W <> hdCTyp.
 Proof. destruct W; first [left; do 2 eexists; reflexivity | right; discriminate]. Qed.
-Lemma ctrm_view W : (exists Δ A l, W = tyCTrm Δ A l) \/ ty_head W <> 5.
+Lemma ctrm_view W : (exists Δ A l, W = tyCTrm Δ A l) \/ ty_head W <> hdCTrm.
 Proof. destruct W; first [left; do 3 eexists; reflexivity | right; discriminate]. Qed.
-Lemma upi_view W : (exists n l T, W = tyUPi n l T) \/ ty_head W <> 6.
+Lemma upi_view W : (exists n l T, W = tyUPi n l T) \/ ty_head W <> hdUPi.
 Proof. destruct W; first [left; do 3 eexists; reflexivity | right; discriminate]. Qed.
-Lemma cpi_view W : (exists l T, W = tyCPi l T) \/ ty_head W <> 7.
+Lemma cpi_view W : (exists l T, W = tyCPi l T) \/ ty_head W <> hdCPi.
 Proof. destruct W; first [left; do 2 eexists; reflexivity | right; discriminate]. Qed.
-Lemma tpi_view W : (exists Δ l l' T, W = tyTPi Δ l l' T) \/ ty_head W <> 8.
+Lemma tpi_view W : (exists Δ l l' T, W = tyTPi Δ l l' T) \/ ty_head W <> hdTPi.
 Proof. destruct W; first [left; do 4 eexists; reflexivity | right; discriminate]. Qed.
 
 (** A type equal to a whnf [W] and to a whnf former has [W]'s head. *)

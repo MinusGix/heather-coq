@@ -7,18 +7,23 @@
     bindings, since global variables are closed neutrals. *)
 From DeLaM.Validity Require Export Fundamental.
 
-(** The head of a type, neutral types sharing one. *)
-Definition ty_head (T : ty) : nat :=
+(** The head of a type, neutral types sharing one.  The heads are named,
+    so a match on a head ([canon_head]) says which former each case is. *)
+Inductive ty_hd :=
+  hdNe | hdNat | hdU | hdPi | hdCTyp | hdCTrm | hdUPi | hdCPi | hdTPi | hdErr | hdSig | hdUnit
+| hdSEq | hdSEmpty | hdId | hdEmpty | hdSum | hdW | hdWf | hdSq | hdIWf | hdM.
+
+Definition ty_head (T : ty) : ty_hd :=
   match T with
-  | tyGvar _ _ | tyEl _ _ | tyVec _ _ _ | tyFin _ | tyDVec _ _ _ => 0 | tyNat => 1 | tyU _ => 2 | tyPi _ _ _ _ => 3
-  | tyCTyp _ _ => 4 | tyCTrm _ _ _ => 5 | tyUPi _ _ _ => 6 | tyCPi _ _ => 7 | tyTPi _ _ _ _ => 8
-  | tyErr => 9 | tySig _ _ _ _ => 10 | tyUnit _ => 11 | tySEq _ _ _ _ => 12 | tySEmpty _ => 13
-  | tyId _ _ _ _ => 14 | tyEmpty _ => 15 | tySum _ _ _ _ => 16 | tyW _ _ _ _ => 17 | tyWf _ _ _ => 18
-  | tySq _ _ => 19 | tyIWf _ _ _ _ _ _ _ _ => 20
-  | tyM _ _ _ _ _ _ _ _ => 21
+  | tyGvar _ _ | tyEl _ _ | tyVec _ _ _ | tyFin _ | tyDVec _ _ _ => hdNe | tyNat => hdNat | tyU _ => hdU
+  | tyPi _ _ _ _ => hdPi | tyCTyp _ _ => hdCTyp | tyCTrm _ _ _ => hdCTrm | tyUPi _ _ _ => hdUPi
+  | tyCPi _ _ => hdCPi | tyTPi _ _ _ _ => hdTPi | tyErr => hdErr | tySig _ _ _ _ => hdSig
+  | tyUnit _ => hdUnit | tySEq _ _ _ _ => hdSEq | tySEmpty _ => hdSEmpty | tyId _ _ _ _ => hdId
+  | tyEmpty _ => hdEmpty | tySum _ _ _ _ => hdSum | tyW _ _ _ _ => hdW | tyWf _ _ _ => hdWf
+  | tySq _ _ => hdSq | tyIWf _ _ _ _ _ _ _ _ => hdIWf | tyM _ _ _ _ _ _ _ _ => hdM
   end.
 
-Lemma whne_ty_head V : whne_ty V -> ty_head V = 0.
+Lemma whne_ty_head V : whne_ty V -> ty_head V = hdNe.
 Proof. destruct 1; reflexivity. Qed.
 
 Section Consequences.
