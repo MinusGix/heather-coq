@@ -2,6 +2,9 @@
 From DeLaM.Typing Require Export Presupposition.
 From DeLaM.LogRel Require Export Def.
 
+Lemma ren_id_tm (t : tm) : nftm t -> t⟨rshift 0⟩ = t.
+Proof. intros H. rewrite (ren_as_subst _ _ (lshift 0)); [apply subst_id; auto|]; intros; cbn; f_equal; lia. Qed.
+
 Section Escape.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
 
@@ -440,6 +443,72 @@ Proof.
   - intros ρ; apply releq_sym', Hd.
 Qed.
 
+(** ** Heather's indexed [M] (M18b) *)
+
+Lemma MRn_gen {n G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' t t'} :
+  MRn n G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' t t' ->
+  MGen G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' m m' t t'.
+Proof using . destruct n; intros H; exact (proj1 H). Qed.
+
+Lemma MR_gen {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' t t'} :
+  MR G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' t t' ->
+  MGen G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' m m' t t'.
+Proof using . intros H. exact (MRn_gen (H 0)). Qed.
+
+(** [Σ]'s and [Π]'s relations along included component relations (the
+    domain contravariantly at [Π]). *)
+Lemma SigRel_impl {G Γ l1 l2 l3 l4 A B A' B'} {domR domR' : DomRel G Γ}
+    {codR : CodRel G Γ domR} {codR' : CodRel G Γ domR'} {t t'} :
+  (forall ρ a a', domR ρ a a' -> domR' ρ a a') ->
+  (forall ρ a a' h h' u u', codR ρ a a' h u u' -> codR' ρ a a' h' u u') ->
+  SigRel G Γ l1 l2 l3 l4 A B A' B' domR codR t t' -> SigRel G Γ l1 l2 l3 l4 A B A' B' domR' codR' t t'.
+Proof using .
+  intros Hd Hc (w & w' & H1 & H2 & H3 & H4 & H5 & H6 & HK).
+  exists w, w'. do 6 (split; [assumption|]).
+  intros ρ la lb la' lb' A1 B1 A1' B1' Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8.
+  destruct (HK ρ la lb la' lb' A1 B1 A1' B1' Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8) as [h Hh].
+  exists (Hd _ _ _ h). exact (Hc _ _ _ h _ _ _ Hh).
+Qed.
+
+Lemma PiRel_impl {G Γ l1 l2 l3 l4 A B A' B'} {domR domR' : DomRel G Γ}
+    {codR : CodRel G Γ domR} {codR' : CodRel G Γ domR'} {t t'} :
+  (forall ρ a a', domR' ρ a a' -> domR ρ a a') ->
+  (forall ρ a a' h h' u u', codR ρ a a' h u u' -> codR' ρ a a' h' u u') ->
+  PiRel G Γ l1 l2 l3 l4 A B A' B' domR codR t t' -> PiRel G Γ l1 l2 l3 l4 A B A' B' domR' codR' t t'.
+Proof using .
+  intros Hd Hc (w & w' & H1 & H2 & H3 & H4 & H5 & H6 & HK).
+  exists w, w'. do 6 (split; [assumption|]).
+  intros ρ a a' ha la lb la' lb' A1 B1 A1' B1' Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8.
+  exact (Hc _ _ _ (Hd _ _ _ ha) ha _ _ (HK ρ a a' (Hd _ _ _ ha) la lb la' lb' A1 B1 A1' B1' Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8)).
+Qed.
+
+(** [MRn] along included shapes' relations and including positions'
+    relations. *)
+Lemma MRn_impl n : forall G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C'
+    (shR shR' : MShRel G Γ) (posR posR' : MPosRel G Γ) m m' t t',
+  (forall ρ x x' a a', shR ρ x x' a a' -> shR' ρ x x' a a') ->
+  (forall ρ x x' a a' p p', posR' ρ x x' a a' p p' -> posR ρ x x' a a' p p') ->
+  MRn n G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' t t' ->
+  MRn n G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR' posR' m m' t t'.
+Proof using .
+  induction n as [|n IH]; intros * Hs Hp [Hg Ho]; (split; [exact Hg|]); [exact I|].
+  intros ρ0; unfold MObs; intros * HA HA'. eapply SigRel_impl; [| | exact (Ho ρ0 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ HA HA')].
+  - intros ρ a a'. apply Hs.
+  - intros ρ a a' h h' u u'. apply PiRel_impl.
+    + intros ρ' p p'. apply Hp.
+    + intros ρ' p p' hp hp' v v'. apply IH; intros *; [apply Hs | apply Hp].
+Qed.
+
+Lemma MR_releq {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C'} {shR shR' : MShRel G Γ}
+    {posR posR' : MPosRel G Γ} {m m'} :
+  (forall ρ x x', releq (shR ρ x x') (shR' ρ x x')) ->
+  (forall ρ x x' a a', releq (posR ρ x x' a a') (posR' ρ x x' a a')) ->
+  releq (MR G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m')
+        (MR G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR' posR' m m').
+Proof using .
+  intros Hs Hp t t'; split; intros H n; eapply MRn_impl; try exact (H n); intros *; first [apply Hs | apply Hp].
+Qed.
+
 (** ** Escape for contextual types *)
 
 Lemma ModRel_escape_ty {G Γ T T' l R} : ModRel G Γ T T' l R ->
@@ -506,7 +575,10 @@ Proof.
                 | G Γ T T' l l1 l2 A A' RA R Hl Hl2 Hw HT HT' HA HAA HRA Hps Hpt HR
                 | G Γ T T' l l1 li1 l2 li2 X X' A A' N N' Ot Ot' C C' m m' idxR domR R Hl Hl2 Hli2 Hw Hwi
                     HT HT' HX HX' HA HA' HN HN' HO HO' HC HC' Hmt Hmt' HXX HAA HNN HOO HCC Hmm
-                    idxAd Hisym Histr domAd arAd otAd chAd ixAd HR].
+                    idxAd Hisym Histr domAd arAd otAd chAd ixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR].
   all: try solve [exact (ModRel_escape_ty HM)].
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
@@ -528,6 +600,7 @@ Proof.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_wf; auto using lequiv_sym.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sq; auto using lequiv_sym.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_iwf; auto using lequiv_sym.
+  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_M; auto using lequiv_sym.
 Qed.
 
 (** ** Escape for terms *)
@@ -560,7 +633,10 @@ Proof.
                 | G Γ T T' l l1 l2 A A' RA R Hl Hl2 Hw HT HT' HA HAA HRA Hps Hpt HR
                 | G Γ T T' l l1 li1 l2 li2 X X' A A' N N' Ot Ot' C C' m m' idxR domR R Hl Hl2 Hli2 Hw Hwi
                     HT HT' HX HX' HA HA' HN HN' HO HO' HC HC' Hmt Hmt' HXX HAA HNN HOO HCC Hmm
-                    idxAd Hisym Histr domAd arAd otAd chAd ixAd HR];
+                    idxAd Hisym Histr domAd arAd otAd chAd ixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros t t' Htt; first [exact (ModRel_escape_tm HM _ _ Htt) | apply HR in Htt].
   - (* Nat *)
     destruct Htt as [t t' w w' Hw Hw' Heq _].
@@ -701,6 +777,17 @@ Proof.
     repeat split.
     + eapply conv_tm; [apply Hw' | exact HTW | exact Hl].
     + eapply conv_tm; [apply Hw'' | exact HTW | exact Hl].
+    + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTW | exact Hl].
+  - (* M: the generic clause *)
+    destruct (MR_gen Htt) as (w & w' & Hw' & Hw'' & _ & _ & Heq & _).
+    assert (HTW : [ G ; Γ ⊢g T ≅ tyM ml1 ml2 mli mX mA mB mC mm @ l ]) by apply HT.
+    assert (HM' : [ G ; Γ ⊢g tyM ml1 ml2 mli mX mA mB mC mm ≅ tyM mr1 mr2 mri mX' mA' mB' mC' mm' @ mlvl ml1 ml2 mli ])
+      by (apply geq_ty_sound, geq_ty_M; auto using lequiv_sym).
+    assert (Hw3 : [ G ; Γ ⊢g t' ⤳* w' : tyM ml1 ml2 mli mX mA mB mC mm @ mlvl ml1 ml2 mli ])
+      by (eapply tmred_conv; [apply ge_typeof | exact Hw'' | apply eqty_sym, HM']).
+    repeat split.
+    + eapply conv_tm; [apply Hw' | exact HTW | exact Hl].
+    + eapply conv_tm; [apply Hw3 | exact HTW | exact Hl].
     + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTW | exact Hl].
 Qed.
 
@@ -1224,5 +1311,20 @@ Proof.
   - exact (wk1_eqty_g _ _ _ _ _ _ _ _ HΓT HTT).
   - exact (wk1_eqtm_g _ _ _ _ _ _ _ _ _ HΓT Hm).
 Qed.
+
+(** The world of the context itself, and of its extension by one entry. *)
+Definition kw_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) : kwk G Γ := kw_loc wk_id (wkwf_id Γ) HΓ.
+Definition kw_wk1 {G Γ A l} (HΓA : [ G ; Γ ,, A @ l ⊢g ]) : kwk G Γ :=
+  kw_loc wk1 (wkwf_step _ _ _ _ _ (wkwf_id Γ)) HΓA.
+
+Lemma ktm_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) t : nftm t -> ktm (kw_self HΓ) t = t.
+Proof. intros H. unfold ktm, kw_self, kw_loc; cbn [kw_γ kw_r gwa wk_ren]. now apply ren_id_tm. Qed.
+Lemma ktml_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) t : nftm t -> ktml (kw_self HΓ) t = t.
+Proof.
+  intros H. unfold ktml, kw_self, kw_loc; cbn [kw_γ kw_r gwa wk_ren].
+  rewrite <- (ren_id_tm t H) at 2. apply ren_ext_tm. intros [|n]; rlk_simpl; cbn; lia.
+Qed.
+Lemma kty_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) T : nfty T -> kty (kw_self HΓ) T = T.
+Proof. intros H. unfold kty, kw_self, kw_loc; cbn [kw_γ kw_r gwa wk_ren]. now apply ren_id_ty. Qed.
 
 End Escape.

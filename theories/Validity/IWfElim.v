@@ -145,8 +145,6 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 
 (** ** Kripke weakenings of the step's pieces *)
 
-Definition ktyll {G Δ} (ρ : kwk G Δ) (T : ty) : ty := T⟦kw_γ ρ⟧⟨rlift (rlift (kw_r ρ))⟩.
-
 Section KwSubst2.
 Context {G : gctx} {Δ : ctx} (ρ : kwk G Δ) (e : lsub).
 

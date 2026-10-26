@@ -2,8 +2,9 @@
 
 Status: **M18a done** (2026-10-21): the rules checked against the
 relation's shape and against a model, with two probes, before any change
-to the theories. **M18b** (the former in-tree at layers D and M) and
-**M18c** (codes) are planned below. Why now: Heather's kernel has the
+to the theories. **M18b done** (2026-10-26): the former in-tree at
+layers D and M, every kernel rule as Heather has it (outcome below).
+**M18c** (codes) is planned below. Why now: Heather's kernel has the
 former already (MinusGix/heather#111, merged 2026-10-21), implemented and
 tested ahead of this repo's check, and its design asks three questions
 here (`H/docs/kernel-coinduction-design.md` §9, "the design" below).
@@ -301,6 +302,8 @@ to move the positions with (the design §4), so `Id` it is.
 
 ## M18b: the former in-tree (plan)
 
+The plan as written before the work; the outcome follows it.
+
 At layers D and M, M17b's route. Syntax: `tyM l l' li I S P O j`,
 `tmCorec l l' li I S P O k X c j x`, `tmOut l l' li I S P O j m`, the
 signature's scopes as `IWf`'s (`S` under one binder, `P` under two, `O`
@@ -322,6 +325,103 @@ decidability (`AlgDecM.v`), canonicity (a closed term at `M` reduces to a
 relation is one `Fixpoint` rather than three mutual families and there is
 no `dnth`; the widest piece is `corec`'s telescope in the generic laws'
 annotation variants.
+
+## M18b outcome
+
+Done, no admits or axioms (`Print Assumptions` of `ac_dec_all`,
+`decl_eqtm_dec_any`, `red_sound_all`, `closed_canonicity` and
+`consistency` is empty). `M`, `corec`, `out` and β hold at layers D and
+M through the relation, validity, the fundamental theorem, the
+algorithm, decidability, the type checker and the consequences. **No
+kernel rule is wrong**: every rule went in as Heather has it, the
+annotations included. Files:
+- `LogRel/Def.v`: `LRm` over `MRn` (the probe's definition at the
+  development's annotations: `MGen`, the generic clause, at every depth;
+  `MObs`, `out`'s observations through `SigRel` and `PiRel` themselves).
+  `LogRel/MAux.v` has the Kripke-world syntax, `kw_eqv` (below) and
+  `MSide`, what one `LRm` gives about its two signatures in every world;
+  the rest of `LogRel` has one case each.
+- `LogRel/MIdx.v`: `MRn_idx` (below).
+- `Typing/PresupM.v`: the signature `MSig`, its equations `MEq`, the step
+  type and `out`'s type well formed and equal along equal signatures,
+  the β-reduct typed (`pre_out_corec`).
+- `Validity/RelIntro.v`: `PiRel_intro`, `SigRel_intro` (below).
+- `Validity/M.v` (formation, `out`), `Validity/MStepV.v` (the step type's
+  and `out`'s type's validity), `Validity/MCorec.v` (β's reduct in pieces,
+  typed and related), `Validity/MCorecV.v` (`corec`'s depth induction).
+- `Validity/AlgDecM.v`: the decision cases, a part of its own.
+
+Decisions and deviations, in the order the proof met them:
+- **The relation is two-sided and proof-free.** Both signatures and both
+  indices are `MRn`'s arguments and the shapes' and positions'
+  relations are indexed by both sides, so symmetry is a flip of the
+  arguments (`MRn_flip`). The relations take no proofs of the index's or
+  the shapes' relation: the canonical relations validity uses (`LRrel`)
+  do not, so the positions premise's quantification over proofs (Q1) is
+  not needed in-tree.
+- **The observations are made in every world, with the annotations in
+  the world's context** (`MObs` quantifies over `MAnn`, `out`'s
+  annotations declaratively equal to the signature's). A weakened tree's
+  `out` may carry annotations that are not a weakening, and moving
+  `Σ`'s relation between two `out`s' annotations at a neutral scrutinee
+  would need reflection of neutrals, which comes after weakening.
+- **Worlds compose associatively only up to `kw_eqv`.** Two worlds are
+  equivalent when they have the same contexts and act alike on types,
+  terms and local renamings; both associations of a composite, and a
+  world after the identity, are. The shapes' and positions' relations
+  respect it (`MShIrr`/`MPosIrr`'s premises, `LR_kw_eqv`), so each child
+  in `corec`'s depth induction takes one conversion step. A world
+  composition associative on the nose would remove those steps here and
+  in `WNf_kw`'s reassociations (follow-up, below).
+- **`corec` is related at its own index, then moved to the claimed one.**
+  `MRn_idx` (`MIdx.v`) moves `MRn n` at indices `m, m'` to any indices
+  related to them, by `MRn_dir` on the right index and `MRn_flip` around
+  it on the left. The depth induction (`MCorecV.v`) proves its statement
+  only at the `corec`'s own index `j[d]`, where the step's validity
+  speaks, and the claimed child indices `o[j, a, p]` go through
+  `MRn_idx` once, instead of stating every fact twice and bridging.
+- **`Π`'s and `Σ`'s relations from their Kripke clauses** (`RelIntro.v`).
+  `out`'s observations are a `Σ` of a `Π` at relations that are not
+  `LR`'s; `PiRel_intro` and `SigRel_intro` give the generic equality the
+  relations ask for from the clause (extensionality at the variable, and
+  by the projections), the argument `V_lam` and `V_pair` make inline.
+- **`corec`'s and `out`'s rules have only their premises.** The step
+  type's validity (the two sides' step types related) is built in
+  `MStepV.v` from `Σ`, `Π`, `+` and `M` at the signature weakened past
+  the step's binders; `out`'s type's is read off `LR_out_kw` in the
+  identity world. Neither type is a premise of a rule, as in Heather.
+- **The algorithm's annotations as designed (Q2).** `actmnf_corec`
+  compares carrier level, carrier, step at the left step type and seed,
+  the signature and index read off the type; `actmne_out` compares the
+  scrutinees only, and its inferred type is the left `out`'s. Soundness
+  relates the annotations through `M_inj_c`, and `corec_parts` /
+  `corec_right` move a `corec`'s pieces, and the other side's, to the
+  type's telescope (`AlgSound.v`); every later part of the algorithm
+  uses those two lemmas.
+- **Canonicity's case is the plain one.** A closed term at `M` computes to
+  a `corec` (`canon_head` at `M`'s head), which the existing theorem
+  needed once `corec` was a whnf. Canonicity and productivity at `M`
+  proper are heather-coq#39, after M18b.
+- **Preservation at any annotations.** β fires at a `corec` of any
+  annotations under an `out` of any; `RS_out_corec` relates the two by
+  `M_inj_c` and applies the declarative β at the `corec`'s.
+- **Build notes.** `FundamentalM`'s rule dispatch passes its side tactic
+  delayed (`vs_rules ltac:(idtac; m_side)`): passed bare, Ltac ran it at
+  the call and the dispatch failed on goals it closed delayed. Its
+  rewrite pass gained a `tyM` trigger, so `out`'s type's lifted single
+  substitutions are pushed through the semantic substitution, as `GLift`'s
+  `gwa` push now is (`MAux.gwa_llift_single_ty`). Three section proofs
+  (`UPiV`'s `VS_red`, two in `FundamentalM`) now name `ELP` in their
+  `Proof using`, by Coq's own suggestion.
+
+Follow-ups:
+- **Associative world composition.** Making `kw_comp` associative on the
+  nose (or exposing it through a normalizing view) would remove the
+  `kw_eqv` conversions in `M`'s laws and `corec`'s depth induction, and
+  the reassociations `WNf_kw` does by irrelevance. Not needed for
+  correctness; it is proof-engineering cost only.
+- **Canonicity and productivity at `M`** (heather-coq#39), as planned,
+  now that the former is in-tree.
 
 ## M18c: codes (plan)
 

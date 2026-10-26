@@ -181,6 +181,8 @@ Ltac sub_rw1 :=
   push_subst;
   rewrite ?llk_llift0, ?single_subst_ty, ?single_subst, ?single2_subst, ?single2_subst_ty, ?lsucc_subst_ty,
           ?single3_subst, ?subst_wIH, ?subst_wfIH, ?subst_tmNth, ?subst_iwfIH, ?subst_iwfFam,
+          ?subst_mOutCorec, ?llift_single_subst_ty, ?llift_single_subst, ?llift2_single_subst_ty,
+          ?llift2_single_subst, ?llift_single2_subst,
           ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty, ?liftshift_llift by eauto with nf;
   push_subst.
 (* twice: [case]'s branch types (M12b) shift summands inside an injection,
@@ -648,6 +650,15 @@ Ltac sub_manual2 :=
   | |- eq_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwf; sub_I
   | |- wf_tm _ _ _ (tmDVec _ _ _) _ _ => eapply wf_code_dvec; sub_I
   | |- eq_tm _ _ _ (tmDVec _ _ _) _ _ _ => eapply eqtm_code_dvec; sub_I
+  (* [M] (M18b): [out]'s type commutes with the substitution by an equation *)
+  | |- wf_ty _ _ _ (tyM _ _ _ _ _ _ _ _) _ => eapply wft_M; sub_I
+  | |- eq_ty _ _ _ (tyM _ _ _ _ _ _ _ _) _ _ => eapply eqty_M; sub_I
+  | |- wf_tm _ _ _ (tmCorec _ _ _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_corec; sub_I
+  | |- eq_tm _ _ _ (tmCorec _ _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_corec; sub_I
+  | |- wf_tm _ _ _ (tmOut _ _ _ _ _ _ _ _ _) _ _ => eapply wf_tm_retype; [eapply wf_out; sub_I | sub_eqI]
+  | |- eq_tm _ _ _ (tmOut _ _ _ _ _ _ _ _ (tmCorec _ _ _ _ _ _ _ _ _ _ _ _)) _ _ _ =>
+      eapply eq_tm_retype; [eapply eqtm_out_corec; sub_I | sub_eqI]
+  | |- eq_tm _ _ _ (tmOut _ _ _ _ _ _ _ _ _) _ _ _ => eapply eq_tm_retype; [eapply eqtm_out; sub_I | sub_eqI]
   (* [IWf] (M17b) *)
   | |- wf_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ => eapply wft_iwf; sub_I
   | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) _ _ => eapply eqty_iwf; sub_I

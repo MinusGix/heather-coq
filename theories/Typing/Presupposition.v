@@ -3,7 +3,7 @@
     Every judgment's components are well formed: the type of a typed term,
     both sides of a type equality, both sides of a term equality (and its
     type).  For layers with [typeof i = i]. *)
-From DeLaM.Typing Require Export PresupAux PresupIWf MInst.
+From DeLaM.Typing Require Export PresupAux PresupIWf PresupM MInst.
 
 (** ** Global variables
 
@@ -262,6 +262,10 @@ Ltac iwf_leaf := first [eassumption | eapply lequiv_wf_l; eassumption | eapply l
 Ltac iwf_bundle := first [iwf_leaf | eapply IWfEq_intro; iwf_leaf
   | unfold IWfSig; repeat match goal with |- _ /\ _ => split end; iwf_leaf].
 
+(** [M]'s signature, as [IWf]'s (M18b). *)
+Ltac m_bundle := first [iwf_leaf | eapply MEq_intro; iwf_leaf
+  | unfold MSig; repeat match goal with |- _ /\ _ => split end; iwf_leaf].
+
 Theorem presupposition :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> True) /\
@@ -423,6 +427,16 @@ Proof.
              (eapply pre_elimIWf_ty; [.. | exact Ht]); iwf_bundle end
          | eapply pre_elimIWf_r; iwf_bundle
          | eapply wft_iwf; iwf_leaf | eapply wf_supi; iwf_leaf | eapply wf_elimIWf; iwf_leaf ]].
+  (* indexed coinductive types (M18b): as [IWf]'s *)
+  all: try solve [first
+         [ eapply pre_M_r; m_bundle
+         | eapply pre_corec_r; m_bundle
+         | eapply pre_out_r; m_bundle
+         | eapply pre_out_corec_l; m_bundle
+         | eapply pre_out_corec; m_bundle
+         | eapply M_out_wf; m_bundle
+         | eapply M_ty_wf; m_bundle
+         | eapply wft_M; iwf_leaf | eapply wf_corec; iwf_leaf | eapply wf_out; iwf_leaf ]].
   all: try solve [eauto 4 with presup].
   all: first [ solve [eapply pre_pi_r; eassumption] | solve [eapply pre_U_r; eauto with presup]
              | solve [eapply pre_El_r; eassumption] | solve [eapply pre_codeU_r; eauto with presup]
@@ -614,3 +628,14 @@ Proof.
   pose proof (ctx_conv_ext2 Hi Hid0 HA EA HA' Hl) as Hid1.
   exact (ctx_conv_ext2 Hi Hid1 HB0 (eqty_refl _ _ _ _ _ HB0) HB0 (lequiv_refl _ _ Hlb)).
 Qed.
+
+(** The identity from a context equivalence. *)
+Lemma eqc_lsub_id {G i} (Hi : typeof i = i) {Γ Γ'} : [ G ⊢[ i ] Γ ≅ Γ' ] -> [ G ; Γ' ⊢[ i ] lshift 0 : Γ ].
+Proof.
+  intros H; revert Hi.
+  induction H as [G0 i0 HG | G0 i0 g HG Hg | G0 i0 Γ Γ' A A' l l' _ IH HA HAA Hl]; intros Hi.
+  - apply lsub_wf_id; [exact Hi | now apply wfc_nil].
+  - apply lsub_wf_id; [exact Hi | now apply wfc_var].
+  - exact (proj2 (ctx_conv_ext Hi (IH Hi) HA HAA (eqty_wf_r Hi HAA) Hl)).
+Qed.
+

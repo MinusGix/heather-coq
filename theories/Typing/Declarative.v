@@ -132,6 +132,16 @@ with wf_ty : gctx -> layer -> ctx -> ty -> lvl -> Prop :=
     [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] C : X⟨↑⟩⟨↑⟩ @ li ] ->
     [ G ; Γ ⊢[ i ] m : X @ li ] ->
     [ G ; Γ ⊢[ i ] tyIWf l li X A N Ot C m @ lmax l li ]
+(* indexed coinductive types (M18b, M18_DESIGN.md; layers D and M): the
+   index type [X] at [li]; under the index the shapes [A] at [l]; under
+   the index and the shape the positions [B] at [l']; under those and a
+   position the child's index [C]. The type lives at [mlvl l l' li] *)
+| wft_M G i Γ l l' li X A B C j : compt i -> lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) li ->
+    [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ,, X @ li ⊢[ i ] A @ l ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢[ i ] j : X @ li ] ->
+    [ G ; Γ ⊢[ i ] tyM l l' li X A B C j @ mlvl l l' li ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | wft_lconv G i Γ T l l' : [ G ; Γ ⊢[ i ] T @ l' ] -> lequiv (gL G) l l' ->
@@ -435,6 +445,24 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] c : tyEl li x⟨↑⟩⟨↑⟩ @ li ] ->
     [ G ; Γ ⊢[ i ] m : tyEl li x @ li ] ->
     [ G ; Γ ⊢[ i ] tmIWf l li x s n o c m : tyU (lmax l li) @ lsuc (lmax l li) ]
+(* indexed coinductive types (M18b; layers D and M): [corec]'s carrier [Y]
+   at [k] under the index, its step [c] under the index and the state at
+   the step type weakened past the state, its seed at the carrier's
+   instance; [out] at the out type, [M]'s only eliminator *)
+| wf_corec G i Γ l l' li X A B C k Y c j y : compt i -> lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) li -> lwf (gL G) k ->
+    [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ,, X @ li ⊢[ i ] A @ l ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, X @ li ⊢[ i ] Y @ k ] ->
+    [ G ; Γ ,, X @ li ,, Y @ k ⊢[ i ] c : (mStepTy l l' li X A B C k Y)⟨↑⟩ @ lmax l (lmax k (mlvl l l' li)) ] ->
+    [ G ; Γ ⊢[ i ] j : X @ li ] -> [ G ; Γ ⊢[ i ] y : Y[lsingle j] @ k ] ->
+    [ G ; Γ ⊢[ i ] tmCorec l l' li X A B C k Y c j y : tyM l l' li X A B C j @ mlvl l l' li ]
+| wf_out G i Γ l l' li X A B C j m : compt i -> lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) li ->
+    [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ,, X @ li ⊢[ i ] A @ l ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢[ i ] j : X @ li ] -> [ G ; Γ ⊢[ i ] m : tyM l l' li X A B C j @ mlvl l l' li ] ->
+    [ G ; Γ ⊢[ i ] tmOut l l' li X A B C j m : mOutTy l l' li X A B C j @ lmax l (mlvl l l' li) ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | wf_conv G i Γ t T T' l : [ G ; Γ ⊢[ i ] t : T' @ l ] -> [ G ; Γ ⊢[ typeof i ] T ≅ T' @ l ] ->
@@ -624,6 +652,16 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] c : tyEl li x⟨↑⟩⟨↑⟩ @ li ] ->
     [ G ; Γ ⊢[ i ] m : tyEl li x @ li ] ->
     [ G ; Γ ⊢[ i ] tyIWf l li (tyEl li x) (tyEl l s) n o c m ≅ tyEl (lmax l li) (tmIWf l li x s n o c m) @ lmax l li ]
+(* indexed coinductive types (M18b; layers D and M) *)
+| eqty_M G i Γ l l' li k k' ki X X' A A' B B' C C' j j' : compt i ->
+    lequiv (gL G) l k -> lequiv (gL G) l' k' -> lequiv (gL G) li ki ->
+    [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X ≅ X' @ li ] ->
+    [ G ; Γ ,, X @ li ⊢[ i ] A @ l ] -> [ G ; Γ ,, X @ li ⊢[ i ] A ≅ A' @ l ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B @ l' ] -> [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B ≅ B' @ l' ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢[ i ] j ≅ j' : X @ li ] ->
+    [ G ; Γ ⊢[ i ] tyM l l' li X A B C j ≅ tyM k k' ki X' A' B' C' j' @ mlvl l l' li ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | eqty_refl G i Γ T l : [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] T ≅ T @ l ]
@@ -1192,6 +1230,40 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] m ≅ m' : tyEl li x @ li ] ->
     [ G ; Γ ⊢[ i ] tmIWf l li x s n o c m ≅ tmIWf k ki x' s' n' o' c' m'
         : tyU (lmax l li) @ lsuc (lmax l li) ]
+(* indexed coinductive types (M18b; layers D and M): the congruences,
+   [corec]'s with its carrier level, and β, whose reduct [mOutCorec]
+   carries [corec]'s annotations. No η *)
+| eqtm_corec G i Γ l l' li k k' ki kc kc' X X' A A' B B' C C' Y Y' c c' j j' y y' : compt i ->
+    lequiv (gL G) l k -> lequiv (gL G) l' k' -> lequiv (gL G) li ki -> lequiv (gL G) kc kc' ->
+    [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X ≅ X' @ li ] ->
+    [ G ; Γ ,, X @ li ⊢[ i ] A @ l ] -> [ G ; Γ ,, X @ li ⊢[ i ] A ≅ A' @ l ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B @ l' ] -> [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B ≅ B' @ l' ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, X @ li ⊢[ i ] Y @ kc ] -> [ G ; Γ ,, X @ li ⊢[ i ] Y ≅ Y' @ kc ] ->
+    [ G ; Γ ,, X @ li ,, Y @ kc ⊢[ i ] c ≅ c' : (mStepTy l l' li X A B C kc Y)⟨↑⟩ @ lmax l (lmax kc (mlvl l l' li)) ] ->
+    [ G ; Γ ⊢[ i ] j ≅ j' : X @ li ] -> [ G ; Γ ⊢[ i ] y ≅ y' : Y[lsingle j] @ kc ] ->
+    [ G ; Γ ⊢[ i ] tmCorec l l' li X A B C kc Y c j y ≅ tmCorec k k' ki X' A' B' C' kc' Y' c' j' y'
+        : tyM l l' li X A B C j @ mlvl l l' li ]
+| eqtm_out G i Γ l l' li k k' ki X X' A A' B B' C C' j j' m m' : compt i ->
+    lequiv (gL G) l k -> lequiv (gL G) l' k' -> lequiv (gL G) li ki ->
+    [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X ≅ X' @ li ] ->
+    [ G ; Γ ,, X @ li ⊢[ i ] A @ l ] -> [ G ; Γ ,, X @ li ⊢[ i ] A ≅ A' @ l ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B @ l' ] -> [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B ≅ B' @ l' ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢[ i ] j ≅ j' : X @ li ] -> [ G ; Γ ⊢[ i ] m ≅ m' : tyM l l' li X A B C j @ mlvl l l' li ] ->
+    [ G ; Γ ⊢[ i ] tmOut l l' li X A B C j m ≅ tmOut k k' ki X' A' B' C' j' m'
+        : mOutTy l l' li X A B C j @ lmax l (mlvl l l' li) ]
+| eqtm_out_corec G i Γ l l' li X A B C k Y c j y : compt i -> lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) li -> lwf (gL G) k ->
+    [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ,, X @ li ⊢[ i ] A @ l ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B @ l' ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, X @ li ⊢[ i ] Y @ k ] ->
+    [ G ; Γ ,, X @ li ,, Y @ k ⊢[ i ] c : (mStepTy l l' li X A B C k Y)⟨↑⟩ @ lmax l (lmax k (mlvl l l' li)) ] ->
+    [ G ; Γ ⊢[ i ] j : X @ li ] -> [ G ; Γ ⊢[ i ] y : Y[lsingle j] @ k ] ->
+    [ G ; Γ ⊢[ i ] tmOut l l' li X A B C j (tmCorec l l' li X A B C k Y c j y) ≅ mOutCorec l l' li X A B C k Y c j y
+        : mOutTy l l' li X A B C j @ lmax l (mlvl l l' li) ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | eqtm_refl G i Γ t T l : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ i ] t ≅ t : T @ l ]

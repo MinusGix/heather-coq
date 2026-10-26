@@ -148,13 +148,13 @@ Lemma unwrap_inv nu ng nl x b : unwrap nu ng nl x = Some b -> x = wrap nu ng nl 
 Proof.
   unfold unwrap, wrap.
   assert (EU : forall n x y, unwrapU n x = Some y -> x = wrapU n y)
-    by (induction n; intros [] y H; cbn in H; try discriminate; try (injection H; intros; subst; reflexivity);
+    by (induction n; intros x0 y H; destruct x0; cbn in H; try discriminate; try (injection H; intros; subst; reflexivity);
         cbn; f_equal; auto).
   assert (EG : forall n x y, unwrapG n x = Some y -> x = wrapG n y)
-    by (induction n; intros [] y H; cbn in H; try discriminate; try (injection H; intros; subst; reflexivity);
+    by (induction n; intros x0 y H; destruct x0; cbn in H; try discriminate; try (injection H; intros; subst; reflexivity);
         cbn; f_equal; auto).
   assert (EL : forall n x y, unwrapL n x = Some y -> x = wrapL n y)
-    by (induction n; intros [] y H; cbn in H; try discriminate; try (injection H; intros; subst; reflexivity);
+    by (induction n; intros x0 y H; destruct x0; cbn in H; try discriminate; try (injection H; intros; subst; reflexivity);
         cbn; f_equal; auto).
   destruct (unwrapU nu x) as [y|] eqn:Ey; [| discriminate].
   destruct (unwrapG ng y) as [z|] eqn:Ez; [| discriminate].
@@ -250,6 +250,7 @@ Fixpoint sz_ty (T : ty) : nat :=
   | tySq _ A => S (sz_ty A)
   | tyVec _ A n | tyWf _ A n | tyDVec _ n A => S (sz_ty A + sz_tm n)
   | tyIWf _ _ X A N Ot C m => S (sz_ty X + sz_ty A + sz_tm N + sz_tm Ot + sz_tm C + sz_tm m)
+  | tyM _ _ _ X A B C j => S (sz_ty X + sz_ty A + sz_ty B + sz_tm C + sz_tm j)
   | tyGvar _ d => S (sz_l d)
   | tyCTyp Δ _ => S (sz_ctx Δ)
   | tyCTrm Δ T _ => S (sz_ctx Δ + sz_ty T)
@@ -302,6 +303,8 @@ with sz_tm (t : tm) : nat :=
   | tmSupi _ _ X A N Ot C a cs => S (sz_ty X + sz_ty A + sz_tm N + sz_tm Ot + sz_tm C + sz_tm a + sz_tm cs)
   | tmElimIWf _ _ _ X A N Ot C M c m t =>
       S (sz_ty X + sz_ty A + sz_tm N + sz_tm Ot + sz_tm C + sz_ty M + sz_tm c + sz_tm m + sz_tm t)
+  | tmCorec _ _ _ X A B C _ Y c j y => S (sz_ty X + sz_ty A + sz_ty B + sz_tm C + sz_ty Y + sz_tm c + sz_tm j + sz_tm y)
+  | tmOut _ _ _ X A B C j m => S (sz_ty X + sz_ty A + sz_ty B + sz_tm C + sz_tm j + sz_tm m)
   end
 with sz_ctx (Γ : ctx) : nat :=
   match Γ with cnil | cvar _ => 1 | cext Γ A _ => S (sz_ctx Γ + sz_ty A) end

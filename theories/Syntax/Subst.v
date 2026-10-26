@@ -498,6 +498,7 @@ Fixpoint nfty (T : ty) : Prop :=
   | tySq _ A => nfty A
   | tyDVec _ n F => nftm n /\ nfty F
   | tyIWf _ _ X A N Ot C m => nfty X /\ nfty A /\ nftm N /\ nftm Ot /\ nftm C /\ nftm m
+  | tyM _ _ _ X A B C j => nfty X /\ nfty A /\ nfty B /\ nftm C /\ nftm j
   | tyEl _ t => nftm t
   | tyGvar _ d => nfl d
   | tyCTyp _ _ | tyCTrm _ _ _ => True
@@ -540,6 +541,9 @@ with nftm (t : tm) : Prop :=
   | tmSqCode _ s => nftm s
   | tmDVec _ n f => nftm n /\ nftm f
   | tmIWf _ _ x s n o c m => nftm x /\ nftm s /\ nftm n /\ nftm o /\ nftm c /\ nftm m
+  | tmCorec _ _ _ X A B C _ Y c j y =>
+      nfty X /\ nfty A /\ nfty B /\ nftm C /\ nfty Y /\ nftm c /\ nftm j /\ nftm y
+  | tmOut _ _ _ X A B C j m => nfty X /\ nfty A /\ nfty B /\ nftm C /\ nftm j /\ nftm m
   | tmRefl _ A a => nfty A /\ nftm a
   | tmId _ s t u => nftm s /\ nftm t /\ nftm u
   | tmSEq _ s t u => nftm s /\ nftm t /\ nftm u

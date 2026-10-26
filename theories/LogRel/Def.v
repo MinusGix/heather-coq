@@ -94,6 +94,12 @@ Proof. constructor; cbn; tauto. Qed.
 Definition LR_P : LRParams := {| lr_j := jP ; lr_vp := vp_empty |}.
 #[export] Instance LR_P_laws : VPLaws (@lr_vp LR_P) := vp_empty_laws.
 
+(** [M]'s children's type [M(σ)(C[j, s, p])], in [Γ, s, p] for [j] in
+    [Γ]: the codomain of [out]'s [Π] ([mOutTy], M18b). *)
+Notation mKidTy l l' li X A B C j :=
+  (tyM l l' li X⟨↑⟩⟨↑⟩ A⟨rlift ↑⟩⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩
+     C⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩ C[llift (llift (lsingle j))]).
+
 Section LRDef.
 Context `{E : GenericEq} `{LP : LRParams}.
 
@@ -164,6 +170,9 @@ Definition ktyl {G Γ} (ρ : kwk G Γ) (T : ty) : ty := T⟦kw_γ ρ⟧⟨rlift 
 Definition ktml {G Γ} (ρ : kwk G Γ) (t : tm) : tm := t⟦kw_γ ρ⟧⟨rlift (kw_r ρ)⟩.
 (** Under two local binders ([IWf]'s child index, M17b). *)
 Definition ktmll {G Γ} (ρ : kwk G Γ) (t : tm) : tm := t⟦kw_γ ρ⟧⟨rlift (rlift (kw_r ρ))⟩.
+Definition ktyll {G Γ} (ρ : kwk G Γ) (T : ty) : ty := T⟦kw_γ ρ⟧⟨rlift (rlift (kw_r ρ))⟩.
+(** Under three ([M]'s child index, M18b). *)
+Definition ktmlll {G Γ} (ρ : kwk G Γ) (t : tm) : tm := t⟦kw_γ ρ⟧⟨rlift (rlift (rlift (kw_r ρ)))⟩.
 
 (** A purely local weakening. *)
 Definition kw_loc {G Γ Δ} (r : wk) (Hr : r : Δ ≤ Γ) (HΔ : [ G ; Δ ⊢g ]) : kwk G Γ :=
@@ -606,6 +615,109 @@ Inductive PosRel (G : gctx) (Γ : ctx) : tm -> tm -> tm -> tm -> Prop :=
 | pos_ne k k' p p' :
     [ G ; Γ ⊢g k ≅ k' : tyNat @ lzero ] -> [ G ; Γ ⊢ p ~ p' : tyFin k @ lzero ] -> PosRel G Γ k k' p p'.
 
+(** ** Heather's indexed [M] (M18_DESIGN.md, Q1 and M18b)
+
+    The probe's ω-intersection ([probes/MRelProbe.v]) at the
+    development's annotations: [MR := ∀ n, MRn n], [MRn] by recursion on
+    the depth. At every depth both sides reduce to whnfs related
+    generically ([MGen], [PiRel]'s first clauses: the observations alone
+    would relate two [corec]s conversion separates). At depth [n + 1],
+    for every choice of equivalent annotations on [out] ([MAnn]), the two
+    [out]s are related by [Σ]'s relation at [out]'s type: their shapes by
+    the shapes' relation at the index, their children's functions by
+    [Π]'s relation over the positions' relation, at depth [n] at the child
+    index. Using [SigRel] and [PiRel] themselves is what gives every
+    observation its annotation variants, and makes [out]'s validity a
+    matter of moving the depth inside them.
+
+    The relation is two-sided, as [PiRel]: both signatures and both
+    indices are arguments, and the shapes' and positions' relations are
+    indexed by both sides' indices and shapes ([MShRel], [MPosRel]), so
+    that symmetry is a flip of the arguments. The relations do not depend
+    on proofs of the index's or shapes' relation (unlike [CodRel]): the
+    validity's canonical relations ([LRrel]) do not. The index's
+    relation is not an argument: only [LRm]'s premises use it. *)
+Definition MShRel (G : gctx) (Γ : ctx) := kwk G Γ -> tm -> tm -> tm -> tm -> Prop.
+Definition MPosRel (G : gctx) (Γ : ctx) := kwk G Γ -> tm -> tm -> tm -> tm -> tm -> tm -> Prop.
+
+(** Annotations [σ1; j1] declaratively equal to a signature and index
+    ([out]'s annotations are compared declaratively, [gne_tm_out]). *)
+Definition MAnn (G : gctx) (Γ : ctx) (l l' li : lvl) (X A B : ty) (C j : tm)
+    (k k' ki : lvl) (X1 A1 B1 : ty) (C1 j1 : tm) : Prop :=
+  lequiv (gL G) k l /\ lequiv (gL G) k' l' /\ lequiv (gL G) ki li /\
+  [ G ; Γ ⊢g X ≅ X1 @ li ] /\ [ G ; Γ ,, X @ li ⊢g A ≅ A1 @ l ] /\
+  [ G ; Γ ,, X @ li ,, A @ l ⊢g B ≅ B1 @ l' ] /\
+  [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢g C ≅ C1 : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+  [ G ; Γ ⊢g j ≅ j1 : X @ li ].
+
+(** Both sides reduce to whnfs related generically at both types. *)
+Definition MGen (G : gctx) (Γ : ctx) (l1 l2 li : lvl) (X A B : ty) (C : tm)
+    (r1 r2 ri : lvl) (X' A' B' : ty) (C' : tm) (m m' t t' : tm) : Prop :=
+  exists w w',
+    [ G ; Γ ⊢g t ⤳* w : tyM l1 l2 li X A B C m @ mlvl l1 l2 li ] /\
+    [ G ; Γ ⊢g t' ⤳* w' : tyM r1 r2 ri X' A' B' C' m' @ mlvl l1 l2 li ] /\
+    whnf w /\ whnf w' /\
+    [ G ; Γ ⊢ w ≈ w' : tyM l1 l2 li X A B C m @ mlvl l1 l2 li ] /\
+    [ G ; Γ ⊢ w ≈ w' : tyM r1 r2 ri X' A' B' C' m' @ mlvl l1 l2 li ].
+
+(** The relation's type, for [MObs]'s recursive argument. *)
+Definition MRelTy : Type := forall (G : gctx) (Γ : ctx), lvl -> lvl -> lvl -> ty -> ty -> ty -> tm ->
+  lvl -> lvl -> lvl -> ty -> ty -> ty -> tm -> MShRel G Γ -> MPosRel G Γ -> tm -> tm -> tm -> tm -> Prop.
+
+(** [out]'s observations in one context, the children by [MRec]: for
+    every choice of equivalent annotations on the two [out]s, [Σ]'s
+    relation at [out]'s type. *)
+Definition MObs (MRec : MRelTy) (G : gctx) (Γ : ctx) (l1 l2 li : lvl) (X A B : ty) (C : tm)
+    (r1 r2 ri : lvl) (X' A' B' : ty) (C' : tm)
+    (shR : MShRel G Γ) (posR : MPosRel G Γ) (m m' t t' : tm) : Prop :=
+  forall k1 k2 ki X1 A1 B1 C1 j1 k1' k2' ki' X1' A1' B1' C1' j1',
+  MAnn G Γ l1 l2 li X A B C m k1 k2 ki X1 A1 B1 C1 j1 ->
+  MAnn G Γ r1 r2 ri X' A' B' C' m' k1' k2' ki' X1' A1' B1' C1' j1' ->
+  SigRel G Γ l1 (mlvl l1 l2 li) r1 (mlvl r1 r2 ri)
+    A[lsingle m] (tyPi l2 (mlvl l1 l2 li) B[llift (lsingle m)] (mKidTy l1 l2 li X A B C m))
+    A'[lsingle m'] (tyPi r2 (mlvl r1 r2 ri) B'[llift (lsingle m')] (mKidTy r1 r2 ri X' A' B' C' m'))
+    (fun ρ => shR ρ (ktm ρ m) (ktm ρ m'))
+    (fun ρ a a' _ =>
+       PiRel (kw_G ρ) (kw_Δ ρ) l2 (mlvl l1 l2 li) r2 (mlvl r1 r2 ri)
+         (ktyl ρ B[llift (lsingle m)])[lsingle a] (ktyll ρ (mKidTy l1 l2 li X A B C m))[llift (lsingle a)]
+         (ktyl ρ B'[llift (lsingle m')])[lsingle a'] (ktyll ρ (mKidTy r1 r2 ri X' A' B' C' m'))[llift (lsingle a')]
+         (fun ρ' => posR (kw_comp ρ ρ') (ktm (kw_comp ρ ρ') m) (ktm (kw_comp ρ ρ') m') (ktm ρ' a) (ktm ρ' a'))
+         (fun ρ' p p' _ =>
+            MRec (kw_G ρ') (kw_Δ ρ')
+              l1 l2 li (kty (kw_comp ρ ρ') X) (ktyl (kw_comp ρ ρ') A) (ktyll (kw_comp ρ ρ') B)
+              (ktmlll (kw_comp ρ ρ') C)
+              r1 r2 ri (kty (kw_comp ρ ρ') X') (ktyl (kw_comp ρ ρ') A') (ktyll (kw_comp ρ ρ') B')
+              (ktmlll (kw_comp ρ ρ') C')
+              (fun ρ'' => shR (kw_comp (kw_comp ρ ρ') ρ''))
+              (fun ρ'' => posR (kw_comp (kw_comp ρ ρ') ρ''))
+              (ktmlll (kw_comp ρ ρ') C)[lsingle3 (ktm (kw_comp ρ ρ') m) (ktm ρ' a) p]
+              (ktmlll (kw_comp ρ ρ') C')[lsingle3 (ktm (kw_comp ρ ρ') m') (ktm ρ' a') p']))
+    (tmOut k1 k2 ki X1 A1 B1 C1 j1 t) (tmOut k1' k2' ki' X1' A1' B1' C1' j1' t').
+
+(** The observations are made in every world, with the annotations in
+    the world's context: a weakened tree's [out] may carry annotations
+    that are no weakening, and moving [Σ]'s relation from one [out]'s
+    annotations to another's at a neutral scrutinee would need the
+    neutrals' reflection, which comes after weakening. *)
+Fixpoint MRn (n : nat) (G : gctx) (Γ : ctx) (l1 l2 li : lvl) (X A B : ty) (C : tm)
+    (r1 r2 ri : lvl) (X' A' B' : ty) (C' : tm)
+    (shR : MShRel G Γ) (posR : MPosRel G Γ) (m m' t t' : tm) {struct n} : Prop :=
+  MGen G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' m m' t t' /\
+  match n with
+  | 0 => True
+  | S n =>
+      forall ρ : kwk G Γ,
+      MObs (MRn n) (kw_G ρ) (kw_Δ ρ) l1 l2 li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C)
+        r1 r2 ri (kty ρ X') (ktyl ρ A') (ktyll ρ B') (ktmlll ρ C')
+        (fun ρ' => shR (kw_comp ρ ρ')) (fun ρ' => posR (kw_comp ρ ρ'))
+        (ktm ρ m) (ktm ρ m') (ktm ρ t) (ktm ρ t')
+  end.
+
+Definition MR (G : gctx) (Γ : ctx) (l1 l2 li : lvl) (X A B : ty) (C : tm)
+    (r1 r2 ri : lvl) (X' A' B' : ty) (C' : tm)
+    (shR : MShRel G Γ) (posR : MPosRel G Γ) (m m' : tm) : tm -> tm -> Prop :=
+  fun t t' => forall n, MRn n G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' t t'.
+
 (** ** The type-level data of a binder former
 
     [Π] and [Σ] (and later formers of the same shape) share it: both sides
@@ -890,6 +1002,60 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
     (* the index *)
     (forall ρ : kwk G Γ, idxR ρ (ktm ρ m) (ktm ρ m')) ->
     releq R (IWfRel G Γ l1 li1 X A N Ot C idxR domR m) ->
+    LR n rec G Γ T T' l R
+| LRm G Γ T T' l l1 l2 li r1 r2 ri X X' A A' B B' C C' m m'
+    (idxR : DomRel G Γ) (shR : MShRel G Γ) (posR : MPosRel G Γ) R :
+    lequiv (gL G) l (mlvl l1 l2 li) ->
+    lequiv (gL G) r1 l1 -> lequiv (gL G) r2 l2 -> lequiv (gL G) ri li ->
+    lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) li ->
+    [ G ; Γ ⊢g T ⤳* tyM l1 l2 li X A B C m @ l ] -> [ G ; Γ ⊢g T' ⤳* tyM r1 r2 ri X' A' B' C' m' @ l ] ->
+    [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ⊢g X' @ li ] ->
+    [ G ; Γ ,, X @ li ⊢g A @ l1 ] -> [ G ; Γ ,, X' @ li ⊢g A' @ l1 ] ->
+    [ G ; Γ ,, X @ li ,, A @ l1 ⊢g B @ l2 ] -> [ G ; Γ ,, X' @ li ,, A' @ l1 ⊢g B' @ l2 ] ->
+    [ G ; Γ ,, X @ li ,, A @ l1 ,, B @ l2 ⊢g C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, X' @ li ,, A' @ l1 ,, B' @ l2 ⊢g C' : X'⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢g m : X @ li ] -> [ G ; Γ ⊢g m' : X' @ li ] ->
+    [ G ; Γ ⊢ X ≈ X' @ li ] -> [ G ; Γ ,, X @ li ⊢ A ≈ A' @ l1 ] ->
+    [ G ; Γ ,, X @ li ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
+    [ G ; Γ ,, X @ li ,, A @ l1 ,, B @ l2 ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢ m ≈ m' : X @ li ] ->
+    (* the index type, in every world *)
+    (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ X) (kty ρ X') li (idxR ρ)) ->
+    (* the shapes at related indices, the positions at related shapes, and
+       the child index at related positions *)
+    (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
+        LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ A)[lsingle x] (ktyl ρ A')[lsingle x'] l1 (shR ρ x x')) ->
+    (forall (ρ : kwk G Γ) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
+        LR n rec (kw_G ρ) (kw_Δ ρ) (ktyll ρ B)[lsingle2 x a] (ktyll ρ B')[lsingle2 x' a'] l2
+          (posR ρ x x' a a')) ->
+    (forall (ρ : kwk G Γ) x x' a a' p p', idxR ρ x x' -> shR ρ x x' a a' -> posR ρ x x' a a' p p' ->
+        idxR ρ (ktmlll ρ C)[lsingle3 x a p] (ktmlll ρ C')[lsingle3 x' a' p']) ->
+    (* the signature's families at related indices and shapes, generically
+       equal under their remaining binders (generic equality is not closed
+       under substitution, and the observations' annotations live there) *)
+    (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
+        [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ A)[lsingle x] @ l1
+            ⊢ (ktyll ρ B)[llift (lsingle x)] ≈ (ktyll ρ B')[llift (lsingle x')] @ l2 ]) ->
+    (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
+        [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ A)[lsingle x] @ l1 ,, (ktyll ρ B)[llift (lsingle x)] @ l2
+            ⊢ (ktmlll ρ C)[llift (llift (lsingle x))] ≈ (ktmlll ρ C')[llift (llift (lsingle x'))]
+            : (kty ρ X)⟨↑⟩⟨↑⟩ @ li ]) ->
+    (forall (ρ : kwk G Γ) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
+        [ kw_G ρ ; kw_Δ ρ ,, (ktyll ρ B)[lsingle2 x a] @ l2
+            ⊢ (ktmlll ρ C)[llift (lsingle2 x a)] ≈ (ktmlll ρ C')[llift (lsingle2 x' a')] : (kty ρ X)⟨↑⟩ @ li ]) ->
+    (* the three relations are Kripke-monotone (a consequence of weakening,
+       which the relation's metatheory proves only after irrelevance needs
+       it at [MRn]'s later worlds) *)
+    (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x', idxR ρ x x' ->
+        idxR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x')) ->
+    (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
+        shR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x') (ktm ρ' a) (ktm ρ' a')) ->
+    (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x' a a' p p', idxR ρ x x' -> shR ρ x x' a a' ->
+        posR ρ x x' a a' p p' ->
+        posR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x') (ktm ρ' a) (ktm ρ' a') (ktm ρ' p) (ktm ρ' p')) ->
+    (* the index *)
+    (forall ρ : kwk G Γ, idxR ρ (ktm ρ m) (ktm ρ m')) ->
+    releq R (MR G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m') ->
     LR n rec G Γ T T' l R.
 
 (** ** Stages *)

@@ -276,6 +276,38 @@ Proof.
                     | lazymatch goal with |- lsub_leq _ _ => apply leq_lsingle end ].
 Qed.
 
+(** [M]'s [out]-of-[corec] reduct (M18b). *)
+Lemma leq_mOutCorec l1 l2 li X A B C k Y c j y l1' l2' li' X' A' B' C' k' Y' c' j' y' :
+  leqv l1 l1' -> leqv l2 l2' -> leqv li li' -> ty_leq X X' -> ty_leq A A' -> ty_leq B B' ->
+  tm_leq C C' -> leqv k k' -> ty_leq Y Y' -> tm_leq c c' -> tm_leq j j' -> tm_leq y y' ->
+  tm_leq (mOutCorec l1 l2 li X A B C k Y c j y) (mOutCorec l1' l2' li' X' A' B' C' k' Y' c' j' y').
+Proof.
+  intros. unfold mOutCorec.
+  pose proof (proj1 leq_ren_all) as Rty. pose proof (proj1 (proj2 leq_ren_all)) as Rtm.
+  pose proof (proj1 leq_subst_all) as Sty. pose proof (proj1 (proj2 leq_subst_all)) as Stm.
+  cbn beta in Rty, Rtm, Sty, Stm.
+  repeat first
+    [ assumption
+    | lazymatch goal with
+      | |- _ /\ _ => split
+      | |- @eq nat _ _ => reflexivity
+      | |- leqv (lmax _ _) _ => apply leqv_lmax
+      | |- leqv _ _ => apply leqv_refl
+      | |- ty_leq (ren _ _) _ => apply Rty
+      | |- tm_leq (ren _ _) _ => apply Rtm
+      | |- ty_leq (subst _ _) _ => apply Sty
+      | |- tm_leq (subst _ _) _ => apply Stm
+      | |- ty_leq (ren_ty _ _) _ => apply Rty
+      | |- tm_leq (ren_tm _ _) _ => apply Rtm
+      | |- ty_leq (subst_ty _ _) _ => apply Sty
+      | |- tm_leq (subst_tm _ _) _ => apply Stm
+      | |- lsub_leq (lsingle _) _ => apply leq_lsingle
+      | |- lsub_leq (lsingle2 _ _) _ => apply leq_lsingle2
+      | |- lsub_leq (llift _) _ => apply leq_llift
+      | |- _ => progress cbn [tm_leq ty_leq]
+      end ].
+Qed.
+
 (** ** One step *)
 
 Lemma red_leq_both :
@@ -311,6 +343,8 @@ Proof.
       apply (proj1 (proj2 leq_subst_all)); [unfold lsingle3; split; [cbn; repeat split; auto | apply leq_wfIH; auto] | auto]
     | lazymatch goal with |- tm_leq _[lsingle3 _ _ (iwfIH _ _ _ _ _ _ _ _ _ _ _ _)] _ => idtac end;
       apply (proj1 (proj2 leq_subst_all)); [unfold lsingle3; split; [cbn; repeat split; auto | apply leq_iwfIH; auto] | auto]
+    | lazymatch goal with |- tm_leq (mOutCorec _ _ _ _ _ _ _ _ _ _ _ _) _ => idtac end;
+      apply leq_mOutCorec; auto
     | apply (proj1 (proj2 leq_subst_all)); cbn; repeat split; auto
     | apply (proj1 (proj2 leq_gsubst_all)); [apply leq_gsingle; cbn; auto | auto]
     | apply (proj1 (proj2 leq_usubst_all)); [apply leqv_uext; assumption | assumption] ].

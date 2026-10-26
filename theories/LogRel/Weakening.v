@@ -6,7 +6,7 @@
     is the original one at composite weakenings.  The universe case uses
     weakening one stage down. *)
 From DeLaM.LogRel Require Export Transitivity.
-From DeLaM.LogRel Require Import IWfAux.
+From DeLaM.LogRel Require Import IWfAux MAux.
 
 Section Weakening.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
@@ -223,6 +223,63 @@ Proof.
   exact (X (kw_glob_ty ρ (ctx_glob _ _ _ (ctx_of_ty H))) H).
 Qed.
 
+(** ** Heather's indexed [M] (M18b): the observations are made in every
+    world already, so a weakened relation is the original one at
+    composite worlds, re-associated ([MObs_dir] along the relations'
+    invariance, and their irrelevance in the right index). *)
+Lemma MGen_kw {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' m m' t t'} (ρ : kwk G Γ) :
+  MGen G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' m m' t t' ->
+  MGen (kw_G ρ) (kw_Δ ρ) l1 l2 li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C)
+    r1 r2 ri (kty ρ X') (ktyl ρ A') (ktyll ρ B') (ktmlll ρ C') (ktm ρ m) (ktm ρ m') (ktm ρ t) (ktm ρ t').
+Proof using EL.
+  intros (w & w' & R1 & R2 & Wh & Wh' & E1 & E2). exists (ktm ρ w), (ktm ρ w').
+  pose proof (kw_tmred ρ R1) as Y1. pose proof (kw_tmred ρ R2) as Y2.
+  pose proof (kw_geq_tm ρ E1) as Z1. pose proof (kw_geq_tm ρ E2) as Z2.
+  rewrite kty_tyM in Y1, Y2, Z1, Z2.
+  exact (conj Y1 (conj Y2 (conj (whnf_kw ρ _ Wh) (conj (whnf_kw ρ _ Wh') (conj Z1 Z2))))).
+Qed.
+
+Lemma MRn_kw n {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR m m'} (ρ : kwk G Γ)
+    (HM : MSide G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR)
+    (Si : MShIrr idxR shR) (Pi : MPosIrr idxR shR posR)
+    (I : forall ρ, idxR ρ (ktm ρ m) (ktm ρ m')) t t' :
+  MRn n G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' t t' ->
+  MRn n (kw_G ρ) (kw_Δ ρ) l1 l2 li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C)
+    r1 r2 ri (kty ρ X') (ktyl ρ A') (ktyll ρ B') (ktmlll ρ C')
+    (fun ρ' => shR (kw_comp ρ ρ')) (fun ρ' => posR (kw_comp ρ ρ')) (ktm ρ m) (ktm ρ m') (ktm ρ t) (ktm ρ t').
+Proof using EL.
+  destruct n as [|n]; intros [Hg Ho]; (split; [exact (MGen_kw ρ Hg)|]); [exact Logic.I|].
+  intros ρ'. pose proof (Ho (kw_comp ρ ρ')) as Y. pose proof (MSide_kw (kw_comp ρ ρ') HM) as HMa.
+  rewrite ?kty_comp, ?ktyl_comp, ?ktyll_comp, ?ktmlll_comp in Y, HMa.
+  rewrite (ktm_comp ρ ρ' m), (ktm_comp ρ ρ' m'), (ktm_comp ρ ρ' t), (ktm_comp ρ ρ' t') in Y.
+  pose proof (MSide_kw ρ' (MSide_kw ρ HM)) as HMb.
+  refine (MObs_dir n (MRn_dir n) _ _ _ Y).
+  refine (conj HMa (conj HMb (conj _ (conj _ (conj _ (conj _ (conj _ (conj _ _)))))))).
+  3-5: kw_nf.
+  - intros ρ1 x x' x'' h h'. cbn beta in h, h' |- *.
+    pose proof (kw_eqv_assoc ρ ρ' ρ1) as Eρ.
+    pose proof (ms_iinv HM _ _ (kw_eqv_sym Eρ) _ _ h') as h''.
+    eapply releq_trans; [exact (Si _ x x' x'' h h'') |].
+    intros a a'; split; intros ha.
+    + exact (ms_shinv HM _ _ Eρ _ _ _ _ h'' ha).
+    + exact (ms_shinv HM _ _ (kw_eqv_sym Eρ) _ _ _ _ h' ha).
+  - intros ρ1 x x' x'' a a' h h' ha. cbn beta in h, h', ha |- *.
+    pose proof (kw_eqv_assoc ρ ρ' ρ1) as Eρ.
+    pose proof (ms_iinv HM _ _ (kw_eqv_sym Eρ) _ _ h') as h''.
+    pose proof (proj1 (Si _ x x' x'' h h'' a a') ha) as ha''.
+    pose proof (ms_shinv HM _ _ Eρ _ _ _ _ h'' ha'') as ha'.
+    eapply releq_trans; [exact (Pi _ x x' x'' a a' a' h h'' ha ha'') |].
+    intros p p'; split; intros hp.
+    + exact (ms_posinv HM _ _ Eρ _ _ _ _ _ _ h'' ha'' hp).
+    + exact (ms_posinv HM _ _ (kw_eqv_sym Eρ) _ _ _ _ _ _ h' ha' hp).
+  - intros ρ1. pose proof (I (kw_comp (kw_comp ρ ρ') ρ1)) as J.
+    rewrite (ktm_comp (kw_comp ρ ρ') ρ1 m), (ktm_comp (kw_comp ρ ρ') ρ1 m'), (ktm_comp ρ ρ' m), (ktm_comp ρ ρ' m') in J.
+    exact J.
+  - intros ρ1. pose proof (I (kw_comp ρ (kw_comp ρ' ρ1))) as J.
+    rewrite (ktm_comp ρ (kw_comp ρ' ρ1) m), (ktm_comp ρ (kw_comp ρ' ρ1) m'), (ktm_comp ρ' ρ1 (ktm ρ m)), (ktm_comp ρ' ρ1 (ktm ρ m')) in J.
+    exact J.
+Qed.
+
 (** ** The statement *)
 
 Definition Pwk n := forall G Γ T T' l R,
@@ -275,7 +332,10 @@ Proof.
                 | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ IHRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd IHwidx Hwisym Hwistr wdomAd IHwdom warAd wotAd wchAd wixAd HR]; intros ρ.
+                    widxAd IHwidx Hwisym Hwistr wdomAd IHwdom warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR]; intros ρ.
   - exists (NatRel (kw_G ρ) (kw_Δ ρ)). split.
     + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
       rewrite kty_tyNat in X, X'.
@@ -633,6 +693,64 @@ Proof.
         pose proof (wdomAd (kw_comp ρ (kw_comp ρ2 ρ3))) as D2.
         repeat rewrite kty_comp in D1. repeat rewrite kty_comp in D2.
         exact (LR_irrel _ _ _ _ _ _ _ _ _ _ D1 D2).
+  - (* M: the data at composite worlds; the terms by [MRn_kw] *)
+    pose proof (MSide_of_LR Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HmX HmA HmB HmC HmXX HmAA HmBB HmCC
+                  midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon) as HM.
+    pose proof (MSide_kw ρ HM) as HMρ.
+    pose proof (MGeq_kw ρ (ms_geq HM)) as (_ & _ & _ & (_ & _ & _ & HXρ & HAρ & HBρ & HCρ) & GX & GA & GB & GC).
+    assert (Shirr : MShIrr midxR mshR)
+      by (intros ρ0 x y y' h h'; eapply LR_irrel; [exact (mshAd ρ0 x y h) | exact (mshAd ρ0 x y' h')]).
+    assert (Pirr : MPosIrr midxR mshR mposR)
+      by (intros ρ0 x y y' a b b' h h' ha ha'; eapply LR_irrel;
+          [exact (mposAd ρ0 x y a b h ha) | exact (mposAd ρ0 x y' a b' h' ha')]).
+    exists (MR (kw_G ρ) (kw_Δ ρ) ml1 ml2 mli (kty ρ mX) (ktyl ρ mA) (ktyll ρ mB) (ktmlll ρ mC)
+              mr1 mr2 mri (kty ρ mX') (ktyl ρ mA') (ktyll ρ mB') (ktmlll ρ mC')
+              (fun ρ' => mshR (kw_comp ρ ρ')) (fun ρ' => mposR (kw_comp ρ ρ')) (ktm ρ mm) (ktm ρ mm')). split.
+    + pose proof (kw_tyred ρ HT) as Y. pose proof (kw_tyred ρ HT') as Y'.
+      rewrite kty_tyM in Y, Y'.
+      eapply (LRm n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ T) (kty ρ T') l ml1 ml2 mli mr1 mr2 mri
+                (kty ρ mX) (kty ρ mX') (ktyl ρ mA) (ktyl ρ mA') (ktyll ρ mB) (ktyll ρ mB')
+                (ktmlll ρ mC) (ktmlll ρ mC') (ktm ρ mm) (ktm ρ mm')
+                (fun ρ' => midxR (kw_comp ρ ρ')) (fun ρ' => mshR (kw_comp ρ ρ')) (fun ρ' => mposR (kw_comp ρ ρ'))).
+      * exact (kw_lequiv ρ Hl).
+      * exact (kw_lequiv ρ Hmr1).
+      * exact (kw_lequiv ρ Hmr2).
+      * exact (kw_lequiv ρ Hmri).
+      * exact (kw_lwf ρ Hmw1).
+      * exact (kw_lwf ρ Hmw2).
+      * exact (kw_lwf ρ Hmwi).
+      * exact Y.
+      * exact Y'.
+      * exact HXρ.
+      * exact (kw_ty ρ HmX').
+      * exact HAρ.
+      * exact (kw_ty_l ρ HmX' Hmwi HmA').
+      * exact HBρ.
+      * exact (kw_ty_l2 ρ HmX' Hmwi HmA' Hmw1 HmB').
+      * exact HCρ.
+      * exact (kw_tm_l3 ρ HmX' Hmwi HmA' Hmw1 HmB' Hmw2 HmC').
+      * exact (kw_tm ρ Hmm).
+      * exact (kw_tm ρ Hmm').
+      * exact GX.
+      * exact GA.
+      * exact GB.
+      * exact GC.
+      * exact (kw_geq_tm ρ Hmmm).
+      * intros ρ'. cbn beta. rewrite <- !kty_comp. exact (midxAd (kw_comp ρ ρ')).
+      * intros ρ' x x' h. cbn beta in h |- *. rewrite <- !ktyl_comp. exact (mshAd (kw_comp ρ ρ') x x' h).
+      * intros ρ' x x' a a' h ha. cbn beta in h, ha |- *. rewrite <- !ktyll_comp.
+        exact (mposAd (kw_comp ρ ρ') x x' a a' h ha).
+      * exact (ms_ch HMρ).
+      * exact (ms_gB HMρ).
+      * exact (ms_gC HMρ).
+      * exact (ms_gCa HMρ).
+      * exact (ms_imon HMρ).
+      * exact (ms_shmon HMρ).
+      * exact (ms_posmon HMρ).
+      * exact (MIdx_kw ρ mixAd).
+      * apply releq_refl.
+    + intros t t' Ht. apply HR in Ht. intros k.
+      exact (MRn_kw k ρ HM Shirr Pirr mixAd t t' (Ht k)).
 Qed.
 
 Theorem LR_kwk n : Pwk n.

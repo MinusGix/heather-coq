@@ -301,6 +301,29 @@ Lemma inv_elimIWf {G i Γ l li l' X A N Ot C M c m t T k} : typeof i = i ->
     lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ i ] T ≅ M[lsingle2 m t] @ k ].
 Proof. inv_tm. Qed.
 
+(** Indexed coinductive types (M18b). *)
+Lemma inv_corec {G i Γ l l' li X A B C k0 Y c j y T k} : typeof i = i ->
+  [ G ; Γ ⊢[ i ] tmCorec l l' li X A B C k0 Y c j y : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ lwf (gL G) li /\ lwf (gL G) k0 /\
+    [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ,, X @ li ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B @ l' ] /\
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, X @ li ⊢[ i ] Y @ k0 ] /\
+    [ G ; Γ ,, X @ li ,, Y @ k0 ⊢[ i ] c : (mStepTy l l' li X A B C k0 Y)⟨↑⟩ @ lmax l (lmax k0 (mlvl l l' li)) ] /\
+    [ G ; Γ ⊢[ i ] j : X @ li ] /\ [ G ; Γ ⊢[ i ] y : Y[lsingle j] @ k0 ]) /\
+    lvl_eq (gL G) k (mlvl l l' li) /\ [ G ; Γ ⊢[ i ] T ≅ tyM l l' li X A B C j @ k ].
+Proof. inv_tm. Qed.
+
+Lemma inv_out {G i Γ l l' li X A B C j m T k} : typeof i = i ->
+  [ G ; Γ ⊢[ i ] tmOut l l' li X A B C j m : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ lwf (gL G) li /\
+    [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ,, X @ li ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B @ l' ] /\
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+    [ G ; Γ ⊢[ i ] j : X @ li ] /\ [ G ; Γ ⊢[ i ] m : tyM l l' li X A B C j @ mlvl l l' li ]) /\
+    lvl_eq (gL G) k (lmax l (mlvl l l' li)) /\ [ G ; Γ ⊢[ i ] T ≅ mOutTy l l' li X A B C j @ k ].
+Proof. inv_tm. Qed.
+
 (** Strict equality's codes (M10c). *)
 Lemma inv_code_seq {G i Γ l s t u T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSEq l s t u : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
@@ -625,6 +648,15 @@ Lemma inv_ty_iwf {G i Γ l li X A N Ot C m k} : [ G ; Γ ⊢[ i ] tyIWf l li X A
     lvl_eq (gL G) k (lmax l li).
 Proof. inv_ty. Qed.
 
+(** Indexed coinductive types (M18b). *)
+Lemma inv_ty_M {G i Γ l l' li X A B C j k} : [ G ; Γ ⊢[ i ] tyM l l' li X A B C j @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ lwf (gL G) li /\
+    [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ,, X @ li ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B @ l' ] /\
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\ [ G ; Γ ⊢[ i ] j : X @ li ]) /\
+    lvl_eq (gL G) k (mlvl l l' li).
+Proof. inv_ty. Qed.
+
 (** ** Lookups are deterministic *)
 
 Lemma in_ctx_det {Γ n T l T' l'} : in_ctx Γ n T l -> in_ctx Γ n T' l' -> T = T' /\ l = l'.
@@ -684,4 +716,5 @@ Proof.
   - exact (lvl_eq_uniq (proj2 (inv_ty_sq H)) (proj2 (inv_ty_sq H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_dvec H)) (proj2 (inv_ty_dvec H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_iwf H)) (proj2 (inv_ty_iwf H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_M H)) (proj2 (inv_ty_M H'))).
 Qed.

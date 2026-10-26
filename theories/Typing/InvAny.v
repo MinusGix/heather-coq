@@ -301,6 +301,29 @@ Lemma inva_elimIWf {G i Γ l li l' X A N Ot C M c m t T k} :
     lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ typeof i ] T ≅ M[lsingle2 m t] @ k ].
 Proof. inv_tm_any. Qed.
 
+(** Indexed coinductive types (M18b). *)
+Lemma inva_corec {G i Γ l l' li X A B C k0 Y c j y T k} :
+  [ G ; Γ ⊢[ i ] tmCorec l l' li X A B C k0 Y c j y : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ lwf (gL G) li /\ lwf (gL G) k0 /\
+    [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ,, X @ li ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B @ l' ] /\
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, X @ li ⊢[ i ] Y @ k0 ] /\
+    [ G ; Γ ,, X @ li ,, Y @ k0 ⊢[ i ] c : (mStepTy l l' li X A B C k0 Y)⟨↑⟩ @ lmax l (lmax k0 (mlvl l l' li)) ] /\
+    [ G ; Γ ⊢[ i ] j : X @ li ] /\ [ G ; Γ ⊢[ i ] y : Y[lsingle j] @ k0 ]) /\
+    lvl_eq (gL G) k (mlvl l l' li) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyM l l' li X A B C j @ k ].
+Proof. inv_tm_any. Qed.
+
+Lemma inva_out {G i Γ l l' li X A B C j m T k} :
+  [ G ; Γ ⊢[ i ] tmOut l l' li X A B C j m : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ lwf (gL G) li /\
+    [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ,, X @ li ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B @ l' ] /\
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+    [ G ; Γ ⊢[ i ] j : X @ li ] /\ [ G ; Γ ⊢[ i ] m : tyM l l' li X A B C j @ mlvl l l' li ]) /\
+    lvl_eq (gL G) k (lmax l (mlvl l l' li)) /\ [ G ; Γ ⊢[ typeof i ] T ≅ mOutTy l l' li X A B C j @ k ].
+Proof. inv_tm_any. Qed.
+
 (** Strict equality's codes (M10c). *)
 Lemma inva_code_seq {G i Γ l s t u T k} : [ G ; Γ ⊢[ i ] tmSEq l s t u : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\

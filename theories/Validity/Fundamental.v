@@ -7,7 +7,7 @@
     [FundamentalS] (layers C and P) and [FundamentalM] (layer M). *)
 (* [Lam] last: its chain leaves [LogRel.Def]'s [gdecl_gwa] in scope, which
    [DVec]'s and [IWfElim]'s (through [Typing.GWeakening]) would shadow *)
-From DeLaM.Validity Require Export Squash WElim Id PiComp Sigma Unit DVec IWfElim IWfCode Lam.
+From DeLaM.Validity Require Export Squash WElim Id PiComp Sigma Unit DVec IWfElim IWfCode MStepV MCorecV Lam.
 
 Section Fundamental.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.

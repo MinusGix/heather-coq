@@ -15,6 +15,7 @@ Definition ty_head (T : ty) : nat :=
   | tyErr => 9 | tySig _ _ _ _ => 10 | tyUnit _ => 11 | tySEq _ _ _ _ => 12 | tySEmpty _ => 13
   | tyId _ _ _ _ => 14 | tyEmpty _ => 15 | tySum _ _ _ _ => 16 | tyW _ _ _ _ => 17 | tyWf _ _ _ => 18
   | tySq _ _ => 19 | tyIWf _ _ _ _ _ _ _ _ => 20
+  | tyM _ _ _ _ _ _ _ _ => 21
   end.
 
 Lemma whne_ty_head V : whne_ty V -> ty_head V = 0.
@@ -168,6 +169,23 @@ Proof using EL red_eqty.
   injection Heq as <- <- <- <- <- <- <- <-. auto 10.
 Qed.
 
+(** Indexed coinductive types (M18b): every annotation and the index. *)
+Lemma M_inj {G Γ l l1 l2 li1 k1 k2 ki X X' A A' B B' C C' m m'} :
+  [ G ; Γ ⊢g tyM l1 l2 li1 X A B C m ≅ tyM k1 k2 ki X' A' B' C' m' @ l ] -> lwf (gL G) l ->
+  lequiv (gL G) k1 l1 /\ lequiv (gL G) k2 l2 /\ lequiv (gL G) ki li1 /\ [ G ; Γ ⊢ X ≈ X' @ li1 ] /\
+  [ G ; Γ ,, X @ li1 ⊢ A ≈ A' @ l1 ] /\ [ G ; Γ ,, X @ li1 ,, A @ l1 ⊢ B ≈ B' @ l2 ] /\
+  [ G ; Γ ,, X @ li1 ,, A @ l1 ,, B @ l2 ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li1 ] /\ [ G ; Γ ⊢ m ≈ m' : X @ li1 ].
+Proof using EL red_eqty.
+  intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
+  pose proof (eqty_wf_l ge_typeof H) as HP.
+  destruct (LR_inv_M HR (tyred_refl _ _ HP))
+    as (r1 & r2 & ri & X2 & A2 & B2 & C2 & m2 & idxR & shR & posR & _ & H1 & H2 & H3 & _ & _ & _ & _ & HT'
+        & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & HXX & HAA & HBB & HCC & Hmm & _).
+  pose proof (tyred_refl _ _ (eqty_wf_r ge_typeof H)) as HT'0.
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' HT'0 (whnf_tyM _ _ _ _ _ _ _ _) (whnf_tyM _ _ _ _ _ _ _ _)) as Heq.
+  injection Heq as <- <- <- <- <- <- <- <-. auto 10.
+Qed.
+
 (** Propositional truncation (M16a): the carriers, and the levels. *)
 Lemma sq_inj {G Γ l l1 l2 A A'} :
   [ G ; Γ ⊢g tySq l1 A ≅ tySq l2 A' @ l ] -> lwf (gL G) l ->
@@ -248,7 +266,10 @@ Proof using EL.
                 | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     try match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
     eexists; split; eauto using whnf_ty, gne_ty_whne_l.
 Qed.
@@ -292,7 +313,10 @@ Proof using EL.
                 | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros t t' Ht; first [exact (ModRel_whnf_tm HM _ _ Ht) | apply HR in Ht].
   - destruct Ht as [t t' w w' Hw _ _ Hnf]. exists w; split; [exact (tmred_back Hw HT Hl)|].
     destruct Hnf; eauto using whnf, gne_tm_whne_l.
@@ -322,6 +346,7 @@ Proof using EL.
     destruct Hnf; eauto using whnf, gne_tm_whne_l.
   - destruct (IWfRel_inv Ht) as (w & w' & Hr & _ & _ & Hnf). exists w; split; [exact (tmred_back Hr HT Hl) |].
     exact (IWfNf_whnf_l Hnf).
+  - destruct (MR_gen Ht) as (w & w' & Hr & _ & Hwh & _). exists w; split; [exact (tmred_back Hr HT Hl) | exact Hwh].
 Qed.
 
 Theorem whnf_normalization_ty {G Γ T l} : [ G ; Γ ⊢g T @ l ] -> lwf (gL G) l ->

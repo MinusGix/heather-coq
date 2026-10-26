@@ -135,6 +135,66 @@ Proof.
   all: try (f_equal; rlk_simpl; lia).
   rewrite Nat.add_0_r, Nat.add_1_r; rlk_simpl; reflexivity.
 Qed.
+(** [M]'s β reduct (M18b): the instances inside commute with renaming. *)
+Ltac lkr := repeat first
+  [ progress (rewrite ?llk_llift, ?llk_lren, ?llk_r2l, ?llk_lcomp)
+  | progress rlk_simpl
+  | progress cbn [llk lsingle lsingle2 lsingle3 lcons' r2l rlk Nat.add] ].
+Lemma llift_lsingle_ren_ty (T : ty) s r :
+  T[llift (lsingle s)]⟨rlift r⟩ = T⟨rlift (rlift r)⟩[llift (lsingle s⟨r⟩)].
+Proof.
+  rewrite (subst_ren_ty _ _ (lcons (lcons (r2l (rup r)) s⟨r⟩⟨↑⟩) (var 0))),
+          (ren_subst_ty _ _ _ (lcons (lcons (r2l (rup r)) s⟨r⟩⟨↑⟩) (var 0))); auto.
+  all: intros [|[|n]]; rewrite ?llk_llift; cbn [llk lsingle]; rewrite ?llk_r2l; rlk_simpl; cbn;
+    rewrite ?llk_r2l; rlk_simpl; auto.
+  all: try (apply ren_swap; intros; rlk_simpl; reflexivity).
+  all: try (f_equal; rlk_simpl; lia).
+  rewrite Nat.add_0_r, Nat.add_1_r; rlk_simpl; reflexivity.
+Qed.
+Lemma llift2_lsingle_ren (t : tm) s r :
+  t[llift (llift (lsingle s))]⟨rlift (rlift r)⟩ = t⟨rlift (rlift (rlift r))⟩[llift (llift (lsingle s⟨r⟩))].
+Proof.
+  rewrite (subst_ren _ _ (lren (llift (llift (lsingle s))) (rlift (rlift r)))),
+          (ren_subst _ _ _ (lren (llift (llift (lsingle s))) (rlift (rlift r)))); auto.
+  - intros [|[|[|n]]]; lkr; auto;
+      first [ cbn [ren_tm]; rewrite ?Nat.add_0_r; f_equal; rlk_simpl; rewrite ?Nat.add_0_r; lia
+            | change (ren_tm ?x ?r0) with x⟨r0⟩; ren_cong ].
+  - intros n; now rewrite llk_lren.
+Qed.
+Lemma llift_lsingle2_ren (t : tm) a b r :
+  t[llift (lsingle2 a b)]⟨rlift r⟩ = t⟨rlift (rlift (rlift r))⟩[llift (lsingle2 a⟨r⟩ b⟨r⟩)].
+Proof.
+  rewrite (subst_ren _ _ (lren (llift (lsingle2 a b)) (rlift r))),
+          (ren_subst _ _ _ (lren (llift (lsingle2 a b)) (rlift r))); auto.
+  - intros [|[|[|n]]]; lkr; auto;
+      first [ cbn [ren_tm]; rewrite ?Nat.add_0_r; f_equal; rlk_simpl; rewrite ?Nat.add_0_r; lia
+            | change (ren_tm ?x ?r0) with x⟨r0⟩; ren_cong ].
+  - intros n; now rewrite llk_lren.
+Qed.
+Lemma ren_shift_lift (t : tm) r : t⟨↑⟩⟨rlift r⟩ = t⟨r⟩⟨↑⟩.
+Proof. apply ren_swap; intros; rlk_simpl; reflexivity. Qed.
+Ltac mrext := intros [|?n]; rlk_simpl; rewrite ?Nat.add_1_r, ?Nat.add_0_r; rlk_simpl;
+  first [reflexivity | lia | revert n; mrext].
+Ltac mren_comm := first [ reflexivity
+  | rewrite ?ren_ren_comp_ty, ?ren_ren_comp; first [apply ren_ext_ty | apply ren_ext_tm]; mrext ].
+Ltac mcong := lazymatch goal with |- _ = _ => first [reflexivity | mren_comm | f_equal] end.
+Ltac mren_push := repeat first
+  [ progress (cbn [ren Ren_tm Ren_ty ren_tm ren_ty]; fold ren_ty ren_tm)
+  | rewrite lsingle_ren_ty | rewrite lsingle_ren | rewrite lsingle2_ren | rewrite lsingle2_ren_ty
+  | rewrite llift_lsingle_ren_ty | rewrite llift_lsingle_ren | rewrite llift2_lsingle_ren
+  | rewrite llift_lsingle2_ren | rewrite ren_shift_lift ].
+Lemma mOutCorec_ren l l' li X A B C k Y c j y r :
+  (mOutCorec l l' li X A B C k Y c j y)⟨r⟩ =
+  mOutCorec l l' li X⟨r⟩ A⟨rlift r⟩ B⟨rlift (rlift r)⟩ C⟨rlift (rlift (rlift r))⟩ k Y⟨rlift r⟩
+    c⟨rlift (rlift r)⟩ j⟨r⟩ y⟨r⟩.
+Proof.
+  unfold mOutCorec. mren_push.
+  repeat match goal with
+    | |- context [ren_ty ?x ?r0] => change (ren_ty x r0) with x⟨r0⟩
+    | |- context [ren_tm ?x ?r0] => change (ren_tm x r0) with x⟨r0⟩ end.
+  repeat mcong.
+Qed.
+
 Lemma iwfIH_ren l li l' X A N Ot C M c a cs r :
   (iwfIH l li l' X A N Ot C M c a cs)⟨r⟩ =
   iwfIH l li l' X⟨r⟩ A⟨r⟩ N⟨rlift r⟩ Ot⟨rlift r⟩ C⟨rlift (rlift r)⟩ M⟨rlift (rlift r)⟩
@@ -203,6 +263,7 @@ Proof.
           | change (ren_tm ?x ?r) with x⟨r⟩; rewrite lsingle3_ren, wIH_ren; constructor
           | change (ren_tm ?x ?r) with x⟨r⟩; rewrite lsingle3_ren, wfIH_ren; constructor
           | change (ren_tm ?x ?r) with x⟨r⟩; rewrite lsingle3_ren, iwfIH_ren; constructor
+          | change (ren_tm ?x ?r) with x⟨r⟩; rewrite mOutCorec_ren; constructor
           (* δ: the body's instance *)
           | erewrite subst_ren by (intros; apply llk_lren); constructor ].
 Qed.

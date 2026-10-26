@@ -695,7 +695,7 @@ Lemma FM_ubeta {l T t ls} : length ls = n -> Forall (lwf (gL G)) ls ->
   SemTmM (G_us G L' φ) (ucsubst Γ φ) (uapp (ulam n (lvsubst l (uupn n φ)) (usubst_ty T (uupn n φ)) (usubst_tm t (uupn n φ)))
       (map (fun l => lvsubst l φ) ls)) (usubst_tm t[uext ls lvar]ᵤ φ) (usubst_ty T[uext ls lvar]ᵤ φ)
     (lvsubst (lvsubst l (uext ls lvar)) φ).
-Proof using ELM EMl HS Hφ.
+Proof using ELM ELP EMl HS Hφ.
   intros Hlen Wls IT It Hw Heq.
   set (ks := map (fun l => lvsubst l φ) ls).
   assert (Hks : length ks = n) by (unfold ks; rewrite length_map; exact Hlen).
@@ -892,7 +892,7 @@ Qed.
 
 Lemma FM_ceta {G Γ l T t} : SemTmM G Γ t t (tyCPi l T) l ->
   SemTmM G Γ (clam l T (capp t⟪S⟫ (cvar 0))) t (tyCPi l T) l.
-Proof using ELM EMl. intros (HS & VT & Vt). exact (conj HS (conj VT (VS_ceta EP EM G Γ l T t Vt))). Qed.
+Proof using ELM ELP EMl. intros (HS & VT & Vt). exact (conj HS (conj VT (VS_ceta EP EM G Γ l T t Vt))). Qed.
 
 Lemma FM_teta {G Γ Δ l l' T t} : [ G ; Δ ⊢[ lD ] ] -> SemCtxP G Δ -> SemTmM G Γ t t (tyTPi Δ l l' T) l' ->
   SemTmM G Γ (tlam Δ l l' T (tapp t⟪S⟫ (tyGvar 0 (lshift 0)))) t (tyTPi Δ l l' T) l'.
@@ -982,7 +982,8 @@ Ltac m_ctx :=
         | solve [simple eapply VCtxS_tl; m_side]
         | solve [simple eapply VCtxS_ext; m_side] ].
 
-Ltac m_rules := vs_rules m_side.
+(* the side tactic delayed: passed bare, Ltac evaluates it at the call *)
+Ltac m_rules := vs_rules ltac:(idtac; m_side).
 
 Ltac m_ty :=
   first
@@ -1269,12 +1270,14 @@ Proof using ELM ELP EMl.
     repeat match goal with H : _ |- _ => progress rewrite ?usubst_ren_ty_mix, ?usubst_ren_mix in H end;
     (* [W]'s and [Wf]'s telescopes nest substitutions and weakenings under
        formers, which the first pass exposes (M13a, M15a); so does the
-       squash around [ind_∥∥]'s motive (M16a), and [DVec]'s reducts (M17a) *)
+       squash around [ind_∥∥]'s motive (M16a), [DVec]'s reducts (M17a), and
+       [M]'s step and [out]'s types (M18b) *)
     try (match goal with
          | H : context [tyW] |- _ => idtac | |- context [tyW] => idtac
          | H : context [tyWf] |- _ => idtac | |- context [tyWf] => idtac
          | |- context [tySq] => idtac
-         | H : context [tyDVec] |- _ => idtac | |- context [tyDVec] => idtac end;
+         | H : context [tyDVec] |- _ => idtac | |- context [tyDVec] => idtac
+         | H : context [tyM] |- _ => idtac | |- context [tyM] => idtac end;
          do 2 (us_rewrite_all; rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix;
                repeat match goal with H : _ |- _ => progress rewrite ?usubst_ren_ty_mix, ?usubst_ren_mix in H end)).
   (* the ω-layer goals and [uapp]'s; elsewhere only [w_dispatch]'s assumption

@@ -8,7 +8,7 @@
     negative answer inverts the algorithm on the left side's head ([ainv_*]);
     neutrals infer a unique type ([ac_infer_uniq]). Decidability is in
     [Prop] (H1). *)
-From DeLaM.Validity Require Export AlgDecNe AlgDecCode AlgDecId AlgDecW AlgDecIWf.
+From DeLaM.Validity Require Export AlgDecNe AlgDecCode AlgDecId AlgDecW AlgDecIWf AlgDecM.
 
 (** ** Decidability *)
 
@@ -70,6 +70,8 @@ Proof.
     | solve [eapply Dc_actmne_elimWf; eassumption]
     | solve [eapply Dc_actnf_iwf; eassumption] | solve [eapply Dc_actmnf_supi; eassumption]
     | solve [eapply Dc_actmne_elimIWf; eassumption]
+    | solve [eapply Dc_actnf_M; eassumption] | solve [eapply Dc_actmnf_corec; eassumption]
+    | solve [eapply Dc_actmne_out; eassumption]
     | solve [eapply Dc_actmnf_code_empty; eassumption] | solve [eapply Dc_actmnf_code_sum; eassumption]
     | solve [eapply Dc_actmnf_code_vec; eassumption] | solve [eapply Dc_actmnf_code_fin; eassumption]
     | solve [eapply Dc_actmnf_code_sq; eassumption]

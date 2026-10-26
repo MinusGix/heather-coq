@@ -2107,6 +2107,88 @@ Proof using Hty.
          | apply eqtm_elimIWf; auto].
 Qed.
 
+(** Indexed coinductive types (M18b; layer D here), along [MEq] and the
+    right-hand forms of [PresupM]. *)
+Lemma sc_M {Γ l l' li k k' ki X X' A A' B B' C C' j j'} : compt i ->
+  lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) li -> lwf (gL G) k -> lwf (gL G) k' -> lwf (gL G) ki ->
+  leqv l k -> leqv l' k' -> leqv li ki ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X' @ li ] /\ [ G ; Γ ⊢[ i ] X ≅ X' @ li ] ->
+  [ G ; Γ ,, X @ li ⊢[ i ] A @ l ] -> [ G ; Γ ,, X @ li ⊢[ i ] A' @ l ] /\ [ G ; Γ ,, X @ li ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B' @ l' ] /\ [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B ≅ B' @ l' ] ->
+  [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+  [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢[ i ] j : X @ li ] -> [ G ; Γ ⊢[ i ] j' : X @ li ] /\ [ G ; Γ ⊢[ i ] j ≅ j' : X @ li ] ->
+  [ G ; Γ ⊢[ i ] tyM k k' ki X' A' B' C' j' @ mlvl l l' li ] /\
+  [ G ; Γ ⊢[ i ] tyM l l' li X A B C j ≅ tyM k k' ki X' A' B' C' j' @ mlvl l l' li ].
+Proof using .
+  intros Hc Hl Hl' Hli Hk Hk' Hki E1 E2 E3 HX [HX' HXX] HA [HA' HAA] HB [HB' HBB] HC [HC' HCC] Hj [Hj' Hjj].
+  pose proof (lq Hl Hk E1) as Q1. pose proof (lq Hl' Hk' E2) as Q2. pose proof (lq Hli Hki E3) as Q3.
+  pose proof (compt_typeof_self _ Hc) as Hs. pose proof (compt_notV _ Hc) as Hv.
+  pose proof (MEq_intro Q1 Q2 Q3 HXX HAA HBB HCC Hl Hl' Hli HX HA HB HC HX' HA' HB' HC') as HE.
+  split; [exact (pre_M_r Hs Hv HE Hj') | apply eqty_M; auto].
+Qed.
+
+Lemma sc_corec {Γ l l' li k k' ki kc kc' X X' A A' B B' C C' Y Y' c c' j j' y y'} : compt i ->
+  lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) li -> lwf (gL G) kc ->
+  lwf (gL G) k -> lwf (gL G) k' -> lwf (gL G) ki -> lwf (gL G) kc' ->
+  leqv l k -> leqv l' k' -> leqv li ki -> leqv kc kc' ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X' @ li ] /\ [ G ; Γ ⊢[ i ] X ≅ X' @ li ] ->
+  [ G ; Γ ,, X @ li ⊢[ i ] A @ l ] -> [ G ; Γ ,, X @ li ⊢[ i ] A' @ l ] /\ [ G ; Γ ,, X @ li ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B' @ l' ] /\ [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B ≅ B' @ l' ] ->
+  [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+  [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, X @ li ⊢[ i ] Y @ kc ] ->
+  [ G ; Γ ,, X @ li ⊢[ i ] Y' @ kc ] /\ [ G ; Γ ,, X @ li ⊢[ i ] Y ≅ Y' @ kc ] ->
+  [ G ; Γ ,, X @ li ,, Y @ kc ⊢[ i ] c : (mStepTy l l' li X A B C kc Y)⟨↑⟩ @ lmax l (lmax kc (mlvl l l' li)) ] ->
+  [ G ; Γ ,, X @ li ,, Y @ kc ⊢[ i ] c' : (mStepTy l l' li X A B C kc Y)⟨↑⟩ @ lmax l (lmax kc (mlvl l l' li)) ] /\
+  [ G ; Γ ,, X @ li ,, Y @ kc ⊢[ i ] c ≅ c' : (mStepTy l l' li X A B C kc Y)⟨↑⟩
+      @ lmax l (lmax kc (mlvl l l' li)) ] ->
+  [ G ; Γ ⊢[ i ] j : X @ li ] -> [ G ; Γ ⊢[ i ] j' : X @ li ] /\ [ G ; Γ ⊢[ i ] j ≅ j' : X @ li ] ->
+  [ G ; Γ ⊢[ i ] y : Y[lsingle j] @ kc ] ->
+  [ G ; Γ ⊢[ i ] y' : Y[lsingle j] @ kc ] /\ [ G ; Γ ⊢[ i ] y ≅ y' : Y[lsingle j] @ kc ] ->
+  [ G ; Γ ⊢[ i ] tmCorec k k' ki X' A' B' C' kc' Y' c' j' y' : tyM l l' li X A B C j @ mlvl l l' li ] /\
+  [ G ; Γ ⊢[ i ] tmCorec l l' li X A B C kc Y c j y ≅ tmCorec k k' ki X' A' B' C' kc' Y' c' j' y'
+      : tyM l l' li X A B C j @ mlvl l l' li ].
+Proof using .
+  intros Hc Hl Hl' Hli Hkc Hk Hk' Hki Hkc' E1 E2 E3 E4 HX [HX' HXX] HA [HA' HAA] HB [HB' HBB] HC [HC' HCC]
+    HY [HY' HYY] Hc0 [Hc' Hcc] Hj [Hj' Hjj] Hy [Hy' Hyy].
+  pose proof (lq Hl Hk E1) as Q1. pose proof (lq Hl' Hk' E2) as Q2. pose proof (lq Hli Hki E3) as Q3.
+  pose proof (lq Hkc Hkc' E4) as Q4.
+  pose proof (compt_typeof_self _ Hc) as Hs. pose proof (compt_notV _ Hc) as Hv.
+  pose proof (MEq_intro Q1 Q2 Q3 HXX HAA HBB HCC Hl Hl' Hli HX HA HB HC HX' HA' HB' HC') as HE.
+  split; [exact (pre_corec_r Hs Hv HE Q4 HYY HY HY' Hc' Hj Hj' Hjj Hy') | apply eqtm_corec; auto].
+Qed.
+
+Lemma sc_out {Γ l l' li k k' ki X X' A A' B B' C C' j j' m m'} : compt i ->
+  lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) li -> lwf (gL G) k -> lwf (gL G) k' -> lwf (gL G) ki ->
+  leqv l k -> leqv l' k' -> leqv li ki ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X' @ li ] /\ [ G ; Γ ⊢[ i ] X ≅ X' @ li ] ->
+  [ G ; Γ ,, X @ li ⊢[ i ] A @ l ] -> [ G ; Γ ,, X @ li ⊢[ i ] A' @ l ] /\ [ G ; Γ ,, X @ li ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B @ l' ] ->
+  [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B' @ l' ] /\ [ G ; Γ ,, X @ li ,, A @ l ⊢[ i ] B ≅ B' @ l' ] ->
+  [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+  [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢[ i ] j : X @ li ] -> [ G ; Γ ⊢[ i ] j' : X @ li ] /\ [ G ; Γ ⊢[ i ] j ≅ j' : X @ li ] ->
+  [ G ; Γ ⊢[ i ] m : tyM l l' li X A B C j @ mlvl l l' li ] ->
+  [ G ; Γ ⊢[ i ] m' : tyM l l' li X A B C j @ mlvl l l' li ] /\
+  [ G ; Γ ⊢[ i ] m ≅ m' : tyM l l' li X A B C j @ mlvl l l' li ] ->
+  [ G ; Γ ⊢[ i ] tmOut k k' ki X' A' B' C' j' m' : mOutTy l l' li X A B C j @ lmax l (mlvl l l' li) ] /\
+  [ G ; Γ ⊢[ i ] tmOut l l' li X A B C j m ≅ tmOut k k' ki X' A' B' C' j' m'
+      : mOutTy l l' li X A B C j @ lmax l (mlvl l l' li) ].
+Proof using .
+  intros Hc Hl Hl' Hli Hk Hk' Hki E1 E2 E3 HX [HX' HXX] HA [HA' HAA] HB [HB' HBB] HC [HC' HCC]
+    Hj [Hj' Hjj] Hm [Hm' Hmm].
+  pose proof (lq Hl Hk E1) as Q1. pose proof (lq Hl' Hk' E2) as Q2. pose proof (lq Hli Hki E3) as Q3.
+  pose proof (compt_typeof_self _ Hc) as Hs. pose proof (compt_notV _ Hc) as Hv.
+  pose proof (MEq_intro Q1 Q2 Q3 HXX HAA HBB HCC Hl Hl' Hli HX HA HB HC HX' HA' HB' HC') as HE.
+  split; [exact (pre_out_r Hs Hv HE Hj Hj' Hjj Hm') | apply eqtm_out; auto].
+Qed.
+
 (** The codes of [Vec] and [Fin] (M14b; every layer but V), as [+]'s. *)
 Lemma sc_code_vec {Γ l l' s s' n n'} : i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
   [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
@@ -2604,6 +2686,8 @@ Proof.
     | solve [eapply sc_dvec; eauto]
     (* indexed W-types (M17b) *)
     | solve [eapply sc_iwf; eauto] | solve [eapply sc_supi; eauto] | solve [eapply sc_elimIWf; eauto]
+    (* indexed coinductive types (M18b) *)
+    | solve [eapply sc_M; eauto] | solve [eapply sc_corec; eauto] | solve [eapply sc_out; eauto]
     | solve [eapply sc_code_sq; eauto]
     (* the codes of DVec and IWf (M17c) *)
     | solve [eapply sc_code_dvec; eauto] | solve [eapply sc_code_iwf; eauto]

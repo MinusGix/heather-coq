@@ -144,6 +144,13 @@ Class GenericEqLaws `{GenericEq} := {
   geq_tm_ctxconv2 {G Γ A A' la la' B lb t t' T l} :
     [ G ; Γ ⊢g A ≅ A' @ la ] -> lequiv (gL G) la la' -> [ G ; Γ ,, A' @ la' ,, B @ lb ⊢g ] ->
     [ G ; Γ ,, A @ la ,, B @ lb ⊢ t ≈ t' : T @ l ] -> [ G ; Γ ,, A' @ la' ,, B @ lb ⊢ t ≈ t' : T @ l ] ;
+  (** and of any entries, along a context equivalence, for [M]'s signature, whose families bind
+      up to three entries that symmetry and transitivity move to the other
+      side's contexts (M18b) *)
+  geq_ty_ctxeq {G Γ Γ' T T' l} :
+    [ G ⊢[ ge_layer ] Γ ≅ Γ' ] -> [ G ; Γ ⊢ T ≈ T' @ l ] -> [ G ; Γ' ⊢ T ≈ T' @ l ] ;
+  geq_tm_ctxeq {G Γ Γ' t t' T l} :
+    [ G ⊢[ ge_layer ] Γ ≅ Γ' ] -> [ G ; Γ ⊢ t ≈ t' : T @ l ] -> [ G ; Γ' ⊢ t ≈ t' : T @ l ] ;
 
   (** Weak head closure *)
   geq_ty_exp {G Γ T T' W W' l} :
@@ -521,7 +528,50 @@ Class GenericEqLaws `{GenericEq} := {
     [ G ; Γ ,, tyEl l s @ l ⊢ o ≈ o' : tyEl li x⟨↑⟩ @ li ] ->
     [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢ c ≈ c' : tyEl li x⟨↑⟩⟨↑⟩ @ li ] ->
     [ G ; Γ ⊢ m ≈ m' : tyEl li x @ li ] ->
-    [ G ; Γ ⊢ tmIWf l li x s n o c m ≈ tmIWf k ki x' s' n' o' c' m' : tyU (lmax l li) @ lsuc (lmax l li) ]
+    [ G ; Γ ⊢ tmIWf l li x s n o c m ≈ tmIWf k ki x' s' n' o' c' m' : tyU (lmax l li) @ lsuc (lmax l li) ] ;
+  (** indexed coinductive types (M18b): the congruences of [M] and of
+      [corec] (the kernel's [corec] arm compares the carrier's level, the
+      carrier, the step at the left step type and the seed; the signature
+      and the index are the type's), and [out] is neutral on a neutral
+      scrutinee (M18_DESIGN.md, Q2) *)
+  geq_ty_M {G Γ l l' li k k' ki X X' A A' B B' C C' j j'} :
+    lequiv (gL G) l k -> lequiv (gL G) l' k' -> lequiv (gL G) li ki ->
+    [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ⊢ X ≈ X' @ li ] ->
+    [ G ; Γ ,, X @ li ⊢g A @ l ] -> [ G ; Γ ,, X @ li ⊢ A ≈ A' @ l ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ⊢g B @ l' ] -> [ G ; Γ ,, X @ li ,, A @ l ⊢ B ≈ B' @ l' ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢g C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢ j ≈ j' : X @ li ] ->
+    [ G ; Γ ⊢ tyM l l' li X A B C j ≈ tyM k k' ki X' A' B' C' j' @ mlvl l l' li ] ;
+  (* [corec]'s and [out]'s annotations (the signature, and [corec]'s
+     index) agree declaratively: the kernel reads them off the type and
+     compares only [corec]'s carrier level, carrier, step and seed, and
+     [out]'s scrutinees ([geq_tm_supi]'s convention) *)
+  geq_tm_corec {G Γ l l' li k k' ki kc kc' X X' A A' B B' C C' Y Y' c c' j j' y y'} :
+    lequiv (gL G) l k -> lequiv (gL G) l' k' -> lequiv (gL G) li ki -> lequiv (gL G) kc kc' ->
+    [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ⊢g X ≅ X' @ li ] ->
+    [ G ; Γ ,, X @ li ⊢g A @ l ] -> [ G ; Γ ,, X @ li ⊢g A ≅ A' @ l ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ⊢g B @ l' ] -> [ G ; Γ ,, X @ li ,, A @ l ⊢g B ≅ B' @ l' ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢g C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢g C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢g j ≅ j' : X @ li ] ->
+    [ G ; Γ ,, X @ li ⊢g Y @ kc ] -> [ G ; Γ ,, X @ li ⊢ Y ≈ Y' @ kc ] ->
+    [ G ; Γ ,, X @ li ,, Y @ kc ⊢ c ≈ c' : (mStepTy l l' li X A B C kc Y)⟨↑⟩
+        @ lmax l (lmax kc (mlvl l l' li)) ] ->
+    [ G ; Γ ⊢ y ≈ y' : Y[lsingle j] @ kc ] ->
+    [ G ; Γ ⊢ tmCorec l l' li X A B C kc Y c j y ≈ tmCorec k k' ki X' A' B' C' kc' Y' c' j' y'
+        : tyM l l' li X A B C j @ mlvl l l' li ] ;
+  gne_tm_out {G Γ l l' li k k' ki X X' A A' B B' C C' j j' ν ν'} :
+    lequiv (gL G) l k -> lequiv (gL G) l' k' -> lequiv (gL G) li ki ->
+    [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ⊢g X ≅ X' @ li ] ->
+    [ G ; Γ ,, X @ li ⊢g A @ l ] -> [ G ; Γ ,, X @ li ⊢g A ≅ A' @ l ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ⊢g B @ l' ] -> [ G ; Γ ,, X @ li ,, A @ l ⊢g B ≅ B' @ l' ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢g C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢g C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢g j ≅ j' : X @ li ] ->
+    [ G ; Γ ⊢ ν ~ ν' : tyM l l' li X A B C j @ mlvl l l' li ] ->
+    [ G ; Γ ⊢ tmOut l l' li X A B C j ν ~ tmOut k k' ki X' A' B' C' j' ν'
+        : mOutTy l l' li X A B C j @ lmax l (mlvl l l' li) ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

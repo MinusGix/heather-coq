@@ -292,6 +292,40 @@ Proof. reflexivity. Qed.
 Lemma subst_tmIWf l li x s n o c m :
   (tmIWf l li x s n o c m)[d] = tmIWf l li x[d] s[d] n[llift d] o[llift d] c[llift (llift d)] m[d].
 Proof. reflexivity. Qed.
+(** Indexed coinductive types (M18b): [A] binds the index, [B] the index
+    and the shape, [C] those and the position, [Y] the index, the step the
+    index and the state; [mOutCorec] is a definition. *)
+Lemma ren_tyM l l' li X A B C j :
+  (tyM l l' li X A B C j)⟨r⟩ =
+  tyM l l' li X⟨r⟩ A⟨rlift r⟩ B⟨rlift (rlift r)⟩ C⟨rlift (rlift (rlift r))⟩ j⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma ren_corec l l' li X A B C k Y c j y :
+  (tmCorec l l' li X A B C k Y c j y)⟨r⟩ =
+  tmCorec l l' li X⟨r⟩ A⟨rlift r⟩ B⟨rlift (rlift r)⟩ C⟨rlift (rlift (rlift r))⟩ k Y⟨rlift r⟩
+    c⟨rlift (rlift r)⟩ j⟨r⟩ y⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma ren_out l l' li X A B C j m :
+  (tmOut l l' li X A B C j m)⟨r⟩ =
+  tmOut l l' li X⟨r⟩ A⟨rlift r⟩ B⟨rlift (rlift r)⟩ C⟨rlift (rlift (rlift r))⟩ j⟨r⟩ m⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma ren_mOutCorec l l' li X A B C k Y c j y :
+  (mOutCorec l l' li X A B C k Y c j y)⟨r⟩ =
+  mOutCorec l l' li X⟨r⟩ A⟨rlift r⟩ B⟨rlift (rlift r)⟩ C⟨rlift (rlift (rlift r))⟩ k Y⟨rlift r⟩
+    c⟨rlift (rlift r)⟩ j⟨r⟩ y⟨r⟩.
+Proof. apply mOutCorec_ren. Qed.
+Lemma subst_tyM l l' li X A B C j :
+  (tyM l l' li X A B C j)[d] =
+  tyM l l' li X[d] A[llift d] B[llift (llift d)] C[llift (llift (llift d))] j[d].
+Proof. reflexivity. Qed.
+Lemma subst_corec l l' li X A B C k Y c j y :
+  (tmCorec l l' li X A B C k Y c j y)[d] =
+  tmCorec l l' li X[d] A[llift d] B[llift (llift d)] C[llift (llift (llift d))] k Y[llift d]
+    c[llift (llift d)] j[d] y[d].
+Proof. reflexivity. Qed.
+Lemma subst_out l l' li X A B C j m :
+  (tmOut l l' li X A B C j m)[d] =
+  tmOut l l' li X[d] A[llift d] B[llift (llift d)] C[llift (llift (llift d))] j[d] m[d].
+Proof. reflexivity. Qed.
 (** Defined globals (M9): the body stays in its own local scope. *)
 Lemma ren_gdef u b e : (gdef u b e)⟨r⟩ = gdef u b (lren e r). Proof. reflexivity. Qed.
 Lemma subst_gdef u b e : (gdef u b e)[d] = gdef u b (lcomp e d). Proof. reflexivity. Qed.
@@ -392,6 +426,10 @@ Ltac push_ren_at h k := lazymatch h with
   | @tmDNth => k ren_tmDNth
   | @iwfIH => k ren_iwfIH
   | @iwfFam => k ren_iwfFam
+  | @tyM => k ren_tyM
+  | @tmCorec => k ren_corec
+  | @tmOut => k ren_out
+  | @mOutCorec => k ren_mOutCorec
   end.
 Ltac push_ren := repeat match goal with
   | |- context [@ren _ _ ?t _] => let h := head_of t in push_ren_at h ltac:(fun L => rewrite L)
@@ -479,6 +517,9 @@ Ltac push_subst_at h k := lazymatch h with
   | @tmElimIWf => k subst_elimIWf
   | @tmDVec => k subst_tmDVec
   | @tmIWf => k subst_tmIWf
+  | @tyM => k subst_tyM
+  | @tmCorec => k subst_corec
+  | @tmOut => k subst_out
   end.
 Ltac push_subst := repeat match goal with
   | |- context [@subst _ _ ?t _] => let h := head_of t in push_subst_at h ltac:(fun L => rewrite L)

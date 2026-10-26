@@ -7,7 +7,7 @@
     normalized, and its head must be the matching former, whose
     components give the result. *)
 From DeLaM.Validity Require Export TCType Uniform.
-From DeLaM.Typing Require Import IWfIH IWfIHG.
+From DeLaM.Typing Require Import IWfIH IWfIHG PresupM.
 
 Section Step.
 Context (n : nat) (IH : IHsz n).
@@ -1096,6 +1096,52 @@ Proof.
   left; eexists; eexists; apply wf_elimIWf; assumption.
 Qed.
 
+(** Indexed coinductive types (M18b; the computational layers): the
+    signature as the type's ([dec_m_sig]); [corec]'s carrier, step at the
+    carrier's step type, index and seed; [out]'s index and scrutinee. *)
+Lemma sy_corec l l' li X A B C kc Y c j y : sz_tm (tmCorec l l' li X A B C kc Y c j y) <= n ->
+  SYD (tmCorec l l' li X A B C kc Y c j y).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | Hn]; [| right; intros T k H; exact (Hn (proj1 (inva_corec H)))].
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
+  destruct (dec_m_sig n IH l l' li X A B C ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) G i Γ Hc HΓ) as [HS | Hn];
+    [| right; intros T k H; destruct (inv_corec Hi H) as ((_ & Hs) & _); apply Hn; unfold MSig; tauto].
+  pose proof HS as (Hl & Hl' & Hli & HX & HA & HB & HC).
+  destruct (lwf_Dec (gL G) kc) as [Hkc | Hn];
+    [| right; intros T k H; destruct (inv_corec Hi H) as ((_ & _ & _ & _ & Hk & _) & _); contradiction].
+  assert (HΓX : [ G ; Γ ,, X @ li ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HX) | exact Hli]).
+  destruct (ihT Y ltac:(szl) G i _ kc HΓX) as [HY | Hn];
+    [| right; intros T k H; destruct (inv_corec Hi H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & HY & _) & _); contradiction].
+  assert (HΓXY : [ G ; Γ ,, X @ li ,, Y @ kc ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓX | exact (lift_to_typeof_ty HY) | exact Hkc]).
+  pose proof HΓXY as HΓXY'. rewrite Hi in HΓXY'.
+  pose proof (M_wk_ty Hi (M_step_wf Hi Hv HS Hkc HY) (wkr_shift1 _ _ _) HΓXY') as HSt.
+  destruct (ihC c ltac:(szl) G i _ _ _ (lift_to_typeof_ty HSt)) as [Hc0 | Hn];
+    [| right; intros T k H; destruct (inv_corec Hi H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Hc0 & _) & _); contradiction].
+  destruct (ihC j ltac:(szl) G i Γ X li (lift_to_typeof_ty HX)) as [Hj | Hn];
+    [| right; intros T k H; destruct (inv_corec Hi H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Hj & _) & _); contradiction].
+  destruct (ihC y ltac:(szl) G i Γ _ _ (lift_to_typeof_ty (wf_ty_single Hi HY Hj))) as [Hy | Hn];
+    [| right; intros T k H; destruct (inv_corec Hi H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Hy) & _); contradiction].
+  left; eexists; eexists; apply wf_corec; assumption.
+Qed.
+
+Lemma sy_out l l' li X A B C j m : sz_tm (tmOut l l' li X A B C j m) <= n -> SYD (tmOut l l' li X A B C j m).
+Proof.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | Hn]; [| right; intros T k H; exact (Hn (proj1 (inva_out H)))].
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
+  destruct (dec_m_sig n IH l l' li X A B C ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) G i Γ Hc HΓ) as [HS | Hn];
+    [| right; intros T k H; destruct (inv_out Hi H) as ((_ & Hs) & _); apply Hn; unfold MSig; tauto].
+  pose proof HS as (Hl & Hl' & Hli & HX & HA & HB & HC).
+  destruct (ihC j ltac:(szl) G i Γ X li (lift_to_typeof_ty HX)) as [Hj | Hn];
+    [| right; intros T k H; destruct (inv_out Hi H) as ((_ & _ & _ & _ & _ & _ & _ & _ & Hj & _) & _); contradiction].
+  destruct (ihC m ltac:(szl) G i Γ _ _ (lift_to_typeof_ty (M_ty_wf Hi Hv HS Hj))) as [Hm | Hn];
+    [| right; intros T k H; destruct (inv_out Hi H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & Hm) & _); contradiction].
+  left; eexists; eexists; apply wf_out; assumption.
+Qed.
+
 (** ** The step *)
 
 Lemma sy_step t : sz_tm t <= n -> synth t -> SYD t.
@@ -1114,7 +1160,7 @@ Proof.
           | apply sy_code_empty | apply sy_code_sum | apply sy_sup | apply sy_elimW | apply sy_codeW
           | apply sy_code_vec | apply sy_code_fin | apply sy_supf | apply sy_elimWf | apply sy_code_wf
           | apply sy_sq | apply sy_elimSq | apply sy_code_sq | apply sy_supi | apply sy_elimIWf
-          | apply sy_code_dvec | apply sy_code_iwf ]; assumption.
+          | apply sy_code_dvec | apply sy_code_iwf | apply sy_corec | apply sy_out ]; assumption.
 Qed.
 
 End Step.

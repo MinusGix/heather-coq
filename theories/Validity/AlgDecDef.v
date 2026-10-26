@@ -2,8 +2,8 @@
 
     The statements [Dc_*], the uniqueness of inferred types, the tactics
     the cases share, and the decidability of neutrality. The cases are
-    split over [AlgDecNe], [AlgDecCode], [AlgDecId] and [AlgDecW], which
-    build in parallel; [AlgDec] puts them together. *)
+    split over [AlgDecNe], [AlgDecCode], [AlgDecId], [AlgDecW], [AlgDecIWf]
+    and [AlgDecM], which build in parallel; [AlgDec] puts them together. *)
 From DeLaM.Typing Require Export StaticCodeEq.
 From DeLaM.Validity Require Export AlgComplete.
 
@@ -118,6 +118,7 @@ Definition tm_con (t : tm) : nat :=
   | tmWf _ _ _ => 55 | tmSq _ _ _ => 56 | tmElimSq _ _ _ _ _ _ => 57 | tmSqCode _ _ => 58
   | tmSupi _ _ _ _ _ _ _ _ _ => 59 | tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _ => 60
   | tmDVec _ _ _ => 61 | tmIWf _ _ _ _ _ _ _ _ => 62
+  | tmCorec _ _ _ _ _ _ _ _ _ _ _ _ => 63 | tmOut _ _ _ _ _ _ _ _ _ => 64
   end.
 
 Lemma ac_tmne_con {G Γ ν ν' T} : ac_tmne G Γ ν ν' T -> tm_con ν = tm_con ν'.
@@ -139,7 +140,7 @@ Qed.
 Ltac refute_con := right; let D := fresh "D" in intros D;
   let E := fresh "E" in
   first [ pose proof (ac_tmne_con D) as E
-        | pose proof (ac_tmnf_con D ltac:(first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum | apply posty_W | apply posty_wf | apply posty_iwf]) ltac:(let Hn := fresh in intros Hn; discriminate (whne_ne_head Hn))) as E
+        | pose proof (ac_tmnf_con D ltac:(first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum | apply posty_W | apply posty_wf | apply posty_iwf | apply posty_M]) ltac:(let Hn := fresh in intros Hn; discriminate (whne_ne_head Hn))) as E
         | pose proof (ac_tynf_head D) as E ];
   cbn in E; discriminate E.
 
@@ -152,7 +153,7 @@ Fixpoint is_whne (t : tm) : bool :=
   | uapp t _ | capp t _ | tapp t _ | tmFst _ _ _ _ t | tmSnd _ _ _ _ t | elimSEmpty _ _ _ t | elimEmpty _ _ _ t
   | tmJ _ _ _ _ _ _ _ t | tmCase _ _ _ _ _ _ _ _ t
   | tmElimW _ _ _ _ _ _ _ t | tmElimWf _ _ _ _ _ _ t | tmElimSq _ _ _ _ _ t
-  | tmElimIWf _ _ _ _ _ _ _ _ _ _ _ t => is_whne t
+  | tmElimIWf _ _ _ _ _ _ _ _ _ _ _ t | tmOut _ _ _ _ _ _ _ _ t => is_whne t
   | elimT _ _ _ _ _ t => match t with boxT (tyGvar _ _) => true | _ => is_whne t end
   | elimt _ _ _ _ _ _ t => match t with boxt (gvar _ _) | boxt (gdef _ _ _) => true | _ => is_whne t end
   | _ => false

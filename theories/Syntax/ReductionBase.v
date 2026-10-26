@@ -83,6 +83,14 @@ Inductive red : tm -> tm -> Prop :=
         (c[lsingle3 a cs (iwfIH l li l' X A N Ot C M c a cs)])
 | red_elimIWf l li l' X A N Ot C M c m t t' : red t t' ->
     red (tmElimIWf l li l' X A N Ot C M c m t) (tmElimIWf l li l' X A N Ot C M c m t')
+(* Heather's [M] (M18b): β fires only under [out], at a [corec] of any
+   annotations; the reduct reads the [corec]'s, as the kernel's does
+   ([m_out_corec]); the scrutinee reduces *)
+| red_out_corec l l' li X A B C j k1 k1' ki1 X1 A1 B1 C1 k Y c j1 y :
+    red (tmOut l l' li X A B C j (tmCorec k1 k1' ki1 X1 A1 B1 C1 k Y c j1 y))
+        (mOutCorec k1 k1' ki1 X1 A1 B1 C1 k Y c j1 y)
+| red_out l l' li X A B C j m m' : red m m' ->
+    red (tmOut l l' li X A B C j m) (tmOut l l' li X A B C j m')
 (* the identity type (M11a): J computes on refl, ignoring the annotations and
    the right endpoint as the other β rules do; otherwise its proof reduces *)
 | red_J_refl l l' A a M c u k B b : red (tmJ l l' A a M c u (tmRefl k B b)) c
@@ -203,6 +211,7 @@ Proof.
         | Hr : red (tmSqCode _ _) _ |- _ => inversion Hr
         | Hr : red (tmDVec _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmIWf _ _ _ _ _ _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmCorec _ _ _ _ _ _ _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red_ty (tyPi _ _ _ _) _ |- _ => inversion Hr
         end;
     try congruence; try (f_equal; eauto).
@@ -276,6 +285,9 @@ Lemma reds_elimWf l l' A N M c t t' : reds t t' -> reds (tmElimWf l l' A N M c t
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_elimIWf l li l' X A N Ot C M c m t t' : reds t t' ->
   reds (tmElimIWf l li l' X A N Ot C M c m t) (tmElimIWf l li l' X A N Ot C M c m t').
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_out l l' li X A B C j m m' : reds m m' ->
+  reds (tmOut l l' li X A B C j m) (tmOut l l' li X A B C j m').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_elimSq l l' A M c t t' : reds t t' -> reds (tmElimSq l l' A M c t) (tmElimSq l l' A M c t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.

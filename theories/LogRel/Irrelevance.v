@@ -5,6 +5,7 @@
     head normal forms are unique), the universe level and the Π components;
     the right-hand types only enter through conversion. *)
 From DeLaM.LogRel Require Export Modal.
+From DeLaM.LogRel Require Import MAux.
 
 Section Irrelevance.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
@@ -163,6 +164,305 @@ Qed.
 
 End SigDir.
 
+(** ** Indexed [M], one direction (M18b)
+
+    [MRn] at two right signatures and relations agreeing with each other
+    where both are defined, by induction on the depth: the generic
+    clauses move along the right types' conversion, the observations by
+    [SigRel_dir] at [out]'s type and, in its codomain, [PiRel_dir] at the
+    children's, whose codomain is the induction hypothesis in a world. *)
+Section MIrrel.
+
+Lemma MGen_dir {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C'' m m' m'' t t'} :
+  [ G ; Γ ⊢g tyM r1 r2 ri X' A' B' C' m' ≅ tyM s1 s2 si X'' A'' B'' C'' m'' @ mlvl l1 l2 li ] ->
+  MGen G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' m m' t t' ->
+  MGen G Γ l1 l2 li X A B C s1 s2 si X'' A'' B'' C'' m m'' t t'.
+Proof using EL.
+  intros ET (w & w' & H1 & H2 & H3 & H4 & H5 & H6). exists w, w'.
+  refine (conj H1 (conj _ (conj H3 (conj H4 (conj H5 _))))).
+  - eapply tmred_conv; [apply ge_typeof | exact H2 | exact ET].
+  - eapply geq_tm_conv; [exact H6 | exact ET].
+Qed.
+
+(** The hypotheses of one direction: the two sides, the relations'
+    agreement, and the indices. *)
+Definition MIrrHyps G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
+    (idxR idxR' : DomRel G Γ) (shR shR' : MShRel G Γ) (posR posR' : MPosRel G Γ) (m m' m'' : tm) : Prop :=
+  MSide G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR /\
+  MSide G Γ l1 l2 li X A B C s1 s2 si X'' A'' B'' C'' idxR' shR' posR' /\
+  (forall ρ x x' x'', idxR ρ x x' -> idxR' ρ x x'' -> releq (shR ρ x x') (shR' ρ x x'')) /\
+  (forall ρ x x' x'' a a', idxR ρ x x' -> idxR' ρ x x'' -> shR ρ x x' a a' ->
+     releq (posR ρ x x' a a') (posR' ρ x x'' a a')) /\
+  nftm m /\ nftm m' /\ nftm m'' /\
+  (forall ρ, idxR ρ (ktm ρ m) (ktm ρ m')) /\ (forall ρ, idxR' ρ (ktm ρ m) (ktm ρ m'')).
+
+Lemma MIrrHyps_swap {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
+    idxR idxR' shR shR' posR posR' m m' m''} :
+  MIrrHyps G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C'' idxR idxR' shR shR' posR posR' m m' m'' ->
+  MIrrHyps G Γ l1 l2 li X A B C s1 s2 si X'' A'' B'' C'' r1 r2 ri X' A' B' C' idxR' idxR shR' shR posR' posR m m'' m'.
+Proof using.
+  intros (H1 & H2 & HS & HP & N & N' & N'' & I1 & I2).
+  refine (conj H2 (conj H1 (conj _ (conj _ (conj N (conj N'' (conj N' (conj I2 I1)))))))).
+  - intros ρ x x'' x' h2 h1. apply releq_sym', (HS ρ x x' x'' h1 h2).
+  - intros ρ x x'' x' a a' h2 h1 ha. apply releq_sym', (HP ρ x x' x'' a a' h1 h2).
+    exact (proj2 (HS ρ x x' x'' h1 h2 a a') ha).
+Qed.
+
+(** The hypotheses at a child. *)
+Lemma MIrrHyps_child {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
+    idxR idxR' shR shR' posR posR' m m' m''} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) a a' p p' :
+  MIrrHyps G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C'' idxR idxR' shR shR' posR posR' m m' m'' ->
+  shR ρ (ktm ρ m) (ktm ρ m') a a' ->
+  posR (kw_comp ρ ρ') (ktm (kw_comp ρ ρ') m) (ktm (kw_comp ρ ρ') m') (ktm ρ' a) (ktm ρ' a') p p' ->
+  MIrrHyps (kw_G ρ') (kw_Δ ρ')
+    l1 l2 li (kty (kw_comp ρ ρ') X) (ktyl (kw_comp ρ ρ') A) (ktyll (kw_comp ρ ρ') B) (ktmlll (kw_comp ρ ρ') C)
+    r1 r2 ri (kty (kw_comp ρ ρ') X') (ktyl (kw_comp ρ ρ') A') (ktyll (kw_comp ρ ρ') B') (ktmlll (kw_comp ρ ρ') C')
+    s1 s2 si (kty (kw_comp ρ ρ') X'') (ktyl (kw_comp ρ ρ') A'') (ktyll (kw_comp ρ ρ') B'')
+      (ktmlll (kw_comp ρ ρ') C'')
+    (fun ρ'' => idxR (kw_comp (kw_comp ρ ρ') ρ'')) (fun ρ'' => idxR' (kw_comp (kw_comp ρ ρ') ρ''))
+    (fun ρ'' => shR (kw_comp (kw_comp ρ ρ') ρ'')) (fun ρ'' => shR' (kw_comp (kw_comp ρ ρ') ρ''))
+    (fun ρ'' => posR (kw_comp (kw_comp ρ ρ') ρ'')) (fun ρ'' => posR' (kw_comp (kw_comp ρ ρ') ρ''))
+    (ktmlll (kw_comp ρ ρ') C)[lsingle3 (ktm (kw_comp ρ ρ') m) (ktm ρ' a) p]
+    (ktmlll (kw_comp ρ ρ') C')[lsingle3 (ktm (kw_comp ρ ρ') m') (ktm ρ' a') p']
+    (ktmlll (kw_comp ρ ρ') C'')[lsingle3 (ktm (kw_comp ρ ρ') m'') (ktm ρ' a') p'].
+Proof using EL.
+  intros (HM1 & HM2 & HS & HP & Nm & Nm' & Nm'' & I1 & I2) ha hp.
+  set (ρ1 := kw_comp ρ ρ').
+  pose proof (proj1 (HS ρ _ _ _ (I1 ρ) (I2 ρ) a a') ha) as ha2.
+  (* the shapes, moved to [ρ1] *)
+  assert (Sa1 : shR ρ1 (ktm ρ1 m) (ktm ρ1 m') (ktm ρ' a) (ktm ρ' a')).
+  { subst ρ1. rewrite !ktm_comp. exact (ms_shmon HM1 ρ ρ' _ _ _ _ (I1 ρ) ha). }
+  assert (Sa2 : shR' ρ1 (ktm ρ1 m) (ktm ρ1 m'') (ktm ρ' a) (ktm ρ' a')).
+  { subst ρ1. rewrite !ktm_comp. exact (ms_shmon HM2 ρ ρ' _ _ _ _ (I2 ρ) ha2). }
+  pose proof (proj1 (HP ρ1 _ _ _ _ _ (I1 ρ1) (I2 ρ1) Sa1 p p') hp) as hp2.
+  (* the positions are normal *)
+  assert (Np : nftm p /\ nftm p').
+  { pose proof (geq_tm_sound (ms_eP HM1 ρ1 _ _ _ _ _ _ (I1 ρ1) Sa1 hp)) as Ep.
+    exact (conj (wf_tm_nf (eqtm_wf_l ge_typeof Ep)) (wf_tm_nf (eqtm_wf_r ge_typeof Ep))). }
+  destruct Np as [Np Np'].
+  assert (Nr : forall t : tm, nftm (ktm ρ1 t)) by (intros; unfold ktm; apply ren_nf).
+  assert (Nr' : forall t : tm, nftm (ktm ρ' t)) by (intros; unfold ktm; apply ren_nf).
+  assert (Nl : forall t : tm, nftm (ktmlll ρ1 t)) by (intros; unfold ktmlll; apply ren_nf).
+  (* the child indices in a world *)
+  assert (Hch : forall (R : DomRel G Γ) (S : MShRel G Γ) (P : MPosRel G Γ) X0 A0 B0 C0 k1 k2 ki X1 A1 B1 C1 n n' b b' q q',
+             MSide G Γ l1 l2 li X0 A0 B0 C0 k1 k2 ki X1 A1 B1 C1 R S P ->
+             (forall ρ, R ρ (ktm ρ n) (ktm ρ n')) ->
+             S ρ1 (ktm ρ1 n) (ktm ρ1 n') b b' -> P ρ1 (ktm ρ1 n) (ktm ρ1 n') b b' q q' ->
+             forall ρ'' : kwk (kw_G ρ') (kw_Δ ρ'),
+             R (kw_comp ρ1 ρ'') (ktm ρ'' (ktmlll ρ1 C0)[lsingle3 (ktm ρ1 n) b q])
+               (ktm ρ'' (ktmlll ρ1 C1)[lsingle3 (ktm ρ1 n') b' q'])).
+  { intros R S P X0 A0 B0 C0 k1 k2 ki X1 A1 B1 C1 n n' b b' q q' HM In Sb Pq ρ''.
+    pose proof (ms_shmon HM ρ1 ρ'' _ _ _ _ (In ρ1) Sb) as Sb'.
+    pose proof (ms_posmon HM ρ1 ρ'' _ _ _ _ _ _ (In ρ1) Sb Pq) as Pq'.
+    rewrite <- !ktm_comp in Sb', Pq'.
+    pose proof (ms_ch HM _ _ _ _ _ _ _ (In (kw_comp ρ1 ρ'')) Sb' Pq') as Y.
+    rewrite !ktm_lsingle3, <- !(ktmlll_comp ρ1 ρ''), <- !(ktm_comp ρ1 ρ''). exact Y. }
+  refine (conj (MSide_kw ρ1 HM1) (conj (MSide_kw ρ1 HM2) (conj _ (conj _ (conj _ (conj _ (conj _ (conj _ _)))))))).
+  - intros ρ''. exact (HS (kw_comp ρ1 ρ'')).
+  - intros ρ''. exact (HP (kw_comp ρ1 ρ'')).
+  - apply subst_nf; [apply Nl | apply LK_lsingle3; auto].
+  - apply subst_nf; [apply Nl | apply LK_lsingle3; auto].
+  - apply subst_nf; [apply Nl | apply LK_lsingle3; auto].
+  - intros ρ''. exact (Hch _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ HM1 I1 Sa1 hp ρ'').
+  - intros ρ''. exact (Hch _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ HM2 I2 Sa2 hp2 ρ'').
+Qed.
+
+Lemma lequiv_mlvl {L l1 l2 li r1 r2 ri} :
+  lequiv L l1 r1 -> lequiv L l2 r2 -> lequiv L li ri -> lequiv L (mlvl l1 l2 li) (mlvl r1 r2 ri).
+Proof using. intros. now apply lequiv_max; [apply lequiv_max|]. Qed.
+
+(** One direction at a depth. *)
+Definition MDirAt n := forall G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
+    idxR idxR' shR shR' posR posR' m m' m'',
+  MIrrHyps G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C'' idxR idxR' shR shR' posR posR' m m' m'' ->
+  forall t t', MRn n G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' t t' ->
+    MRn n G Γ l1 l2 li X A B C s1 s2 si X'' A'' B'' C'' shR' posR' m m'' t t'.
+
+(** The hypotheses in a world. *)
+Lemma MIrrHyps_kw {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
+    idxR idxR' shR shR' posR posR' m m' m''} (ρ : kwk G Γ) :
+  MIrrHyps G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C'' idxR idxR' shR shR' posR posR' m m' m'' ->
+  MIrrHyps (kw_G ρ) (kw_Δ ρ) l1 l2 li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C)
+    r1 r2 ri (kty ρ X') (ktyl ρ A') (ktyll ρ B') (ktmlll ρ C') s1 s2 si (kty ρ X'') (ktyl ρ A'') (ktyll ρ B'') (ktmlll ρ C'')
+    (fun ρ' => idxR (kw_comp ρ ρ')) (fun ρ' => idxR' (kw_comp ρ ρ')) (fun ρ' => shR (kw_comp ρ ρ'))
+    (fun ρ' => shR' (kw_comp ρ ρ')) (fun ρ' => posR (kw_comp ρ ρ')) (fun ρ' => posR' (kw_comp ρ ρ'))
+    (ktm ρ m) (ktm ρ m') (ktm ρ m'').
+Proof using EL.
+  intros (HM1 & HM2 & HS & HP & _ & _ & _ & I1 & I2).
+  refine (conj (MSide_kw ρ HM1) (conj (MSide_kw ρ HM2) (conj _ (conj _ (conj _ (conj _ (conj _ (conj _ _)))))))).
+  3-5: kw_nf.
+  - intros ρ'. exact (HS (kw_comp ρ ρ')).
+  - intros ρ'. exact (HP (kw_comp ρ ρ')).
+  - intros ρ'. cbn beta. rewrite <- !ktm_comp. exact (I1 (kw_comp ρ ρ')).
+  - intros ρ'. cbn beta. rewrite <- !ktm_comp. exact (I2 (kw_comp ρ ρ')).
+Qed.
+
+(** The observations, given the children's. *)
+Lemma MObs_dir n (IH : MDirAt n) {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
+    idxR idxR' shR shR' posR posR' m m' m''} :
+  MIrrHyps G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C'' idxR idxR' shR shR' posR posR' m m' m'' ->
+  forall t t', MObs (MRn n) G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' t t' ->
+    MObs (MRn n) G Γ l1 l2 li X A B C s1 s2 si X'' A'' B'' C'' shR' posR' m m'' t t'.
+Proof using EL.
+  intros H t t' Ht.
+  pose proof H as (HM1 & HM2 & HSr & HPr & Nm & Nm' & Nm'' & I1 & I2).
+  pose proof (ms_geq HM1) as HG1; pose proof (ms_geq HM2) as HG2.
+  destruct (MSide_root HM1 Nm Nm' I1) as (Em1 & EA1 & EB1 & EC1).
+  destruct (MSide_root HM2 Nm Nm'' I2) as (Em2 & EA2 & EB2 & EC2).
+  intros k1 k2 ki X1 A1 B1 C1 j1 k1' k2' ki' X1' A1' B1' C1' j1' Ann Ann''.
+  pose proof HG1 as (Hr1 & Hr2 & Hri & (W1 & W2 & Wi & _) & HXX' & _).
+  pose proof HG2 as (Hs1 & Hs2 & Hsi & _).
+  (* the second right annotations, at the first right signature *)
+  assert (Ann' : MAnn G Γ r1 r2 ri X' A' B' C' m' k1' k2' ki' X1' A1' B1' C1' j1').
+  { refine (MAnn_conv (MEq_trans ge_typeof ge_notV (MEq_sym ge_typeof ge_notV (MEq_of_MGeq HG1))
+                         (MEq_of_MGeq HG2)) _ Ann'').
+    eapply eqtm_lconv; [| exact (lequiv_sym _ _ _ Hri)].
+    eapply eqtm_conv; [| rewrite ge_typeof; exact (eqty_sym _ _ _ _ _ _ (geq_ty_sound HXX'))].
+    eapply eqtm_trans; [apply eqtm_sym, (geq_tm_sound Em1) | exact (geq_tm_sound Em2)]. }
+  specialize (Ht k1 k2 ki X1 A1 B1 C1 j1 k1' k2' ki' X1' A1' B1' C1' j1' Ann Ann').
+  pose proof (geq_ty_sound EA1) as DA1. pose proof (geq_ty_sound EA2) as DA2.
+  refine (SigRel_dir W1 (eqty_wf_l ge_typeof DA1) (eqty_wf_r ge_typeof DA1) (eqty_wf_r ge_typeof DA2)
+            EA1 EA2 (M_outB_geq HG1 EB1 EC1) (M_outB_geq HG2 EB2 EC2) _ _ _ _ _ Ht).
+  - pose proof (eqty_wf_l ge_typeof DA1) as HA.
+    eapply (eqty_trans _ _ _ _ (tySig l1 (mlvl l1 l2 li) A[lsingle m]
+              (tyPi l2 (mlvl l1 l2 li) B[llift (lsingle m)] (mKidTy l1 l2 li X A B C m)))); [apply eqty_sym|]; apply geq_ty_sound, geq_ty_sig;
+      first [ eassumption | apply lequiv_mlvl; assumption | exact (M_outB_geq HG1 EB1 EC1)
+            | exact (M_outB_geq HG2 EB2 EC2) ].
+  - intros ρ. exact (HSr ρ _ _ _ (I1 ρ) (I2 ρ)).
+  - intros ρ a a' ha ha'. cbv beta.
+    pose proof (ms_gBa HM1 ρ _ _ a a' (I1 ρ) ha) as GB1.
+    pose proof (ms_gBa HM2 ρ _ _ a a' (I2 ρ) ha') as GB2.
+    pose proof (ms_gCa HM1 ρ _ _ a a' (I1 ρ) ha) as GC1.
+    pose proof (ms_gCa HM2 ρ _ _ a a' (I2 ρ) ha') as GC2.
+    pose proof (geq_ty_sound GB1) as DB1. pose proof (geq_ty_sound GB2) as DB2.
+    pose proof (eqty_wf_l ge_typeof DB1) as HB.
+    pose proof (kw_lwf ρ W2) as W2'.
+    pose proof (ext_wf_g HB W2') as HΔB.
+    pose proof (MGeq_M (MGeq_wk1 (MGeq_kw ρ HG1) HΔB) GC1) as K1.
+    pose proof (MGeq_M (MGeq_wk1 (MGeq_kw ρ HG2) HΔB) GC2) as K2.
+    rewrite !kw_B_single, !kw_mKid. rewrite !mKid_single by kw_nf.
+    assert (Hdom : forall ρ' : kwk (kw_G ρ) (kw_Δ ρ),
+      releq (posR (kw_comp ρ ρ') (ktm (kw_comp ρ ρ') m) (ktm (kw_comp ρ ρ') m') (ktm ρ' a) (ktm ρ' a'))
+            (posR' (kw_comp ρ ρ') (ktm (kw_comp ρ ρ') m) (ktm (kw_comp ρ ρ') m'') (ktm ρ' a) (ktm ρ' a'))).
+    { intros ρ'.
+      assert (Sa1 : shR (kw_comp ρ ρ') (ktm (kw_comp ρ ρ') m) (ktm (kw_comp ρ ρ') m') (ktm ρ' a) (ktm ρ' a')).
+      { rewrite !(ktm_comp ρ ρ'). exact (ms_shmon HM1 ρ ρ' _ _ _ _ (I1 ρ) ha). }
+      exact (HPr (kw_comp ρ ρ') _ _ _ _ _ (I1 _) (I2 _) Sa1). }
+    assert (HP : [ kw_G ρ ; kw_Δ ρ ⊢g
+        tyPi r2 (mlvl r1 r2 ri) (ktyll ρ B')[lsingle2 (ktm ρ m') a']
+          (tyM r1 r2 ri (kty ρ X')⟨↑⟩ (ktyl ρ A')⟨rlift ↑⟩ (ktyll ρ B')⟨rlift (rlift ↑)⟩
+             (ktmlll ρ C')⟨rlift (rlift (rlift ↑))⟩ (ktmlll ρ C')[llift (lsingle2 (ktm ρ m') a')])
+        ≅ tyPi s2 (mlvl s1 s2 si) (ktyll ρ B'')[lsingle2 (ktm ρ m'') a']
+          (tyM s1 s2 si (kty ρ X'')⟨↑⟩ (ktyl ρ A'')⟨rlift ↑⟩ (ktyll ρ B'')⟨rlift (rlift ↑)⟩
+             (ktmlll ρ C'')⟨rlift (rlift (rlift ↑))⟩ (ktmlll ρ C'')[llift (lsingle2 (ktm ρ m'') a')])
+        @ lmax l2 (mlvl l1 l2 li) ]).
+    { eapply (eqty_trans _ _ _ _ (tyPi l2 (mlvl l1 l2 li) (ktyll ρ B)[lsingle2 (ktm ρ m) a]
+          (tyM l1 l2 li (kty ρ X)⟨↑⟩ (ktyl ρ A)⟨rlift ↑⟩ (ktyll ρ B)⟨rlift (rlift ↑)⟩
+             (ktmlll ρ C)⟨rlift (rlift (rlift ↑))⟩ (ktmlll ρ C)[llift (lsingle2 (ktm ρ m) a)])));
+        [apply eqty_sym|]; apply geq_ty_sound, geq_ty_pi;
+        first [ exact HB | exact GB1 | exact GB2 | exact K1 | exact K2
+              | apply kw_lequiv; assumption | apply lequiv_mlvl; apply kw_lequiv; assumption ]. }
+    intros t1 t1'; split; intros Ht1.
+    + refine (PiRel_dir W2' HB (eqty_wf_r ge_typeof DB1) (eqty_wf_r ge_typeof DB2) GB1 GB2 K1 K2 HP
+                Hdom _ _ _ Ht1).
+      intros ρ' p p' hp hp'. intros t2 t2'; split; intros Ht2.
+      * eapply IH; [exact (MIrrHyps_child ρ ρ' a a' p p' H ha hp) | exact Ht2].
+      * eapply IH; [exact (MIrrHyps_swap (MIrrHyps_child ρ ρ' a a' p p' H ha hp)) | exact Ht2].
+    + refine (PiRel_dir W2' HB (eqty_wf_r ge_typeof DB2) (eqty_wf_r ge_typeof DB1) GB2 GB1 K2 K1
+                (eqty_sym _ _ _ _ _ _ HP) (fun ρ' => releq_sym' (Hdom ρ')) _ _ _ Ht1).
+      intros ρ' p p' hp hp'. intros t2 t2'; split; intros Ht2.
+      * eapply IH; [exact (MIrrHyps_swap (MIrrHyps_child ρ ρ' a a' p p' H ha hp')) | exact Ht2].
+      * eapply IH; [exact (MIrrHyps_child ρ ρ' a a' p p' H ha hp') | exact Ht2].
+Qed.
+
+(** One direction, by induction on the depth. *)
+Lemma MRn_dir n : MDirAt n.
+Proof using EL.
+  induction n as [|n IH]; intros G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
+    idxR idxR' shR shR' posR posR' m m' m'' H t t' Ht.
+  all: pose proof H as (HM1 & HM2 & HSr & HPr & Nm & Nm' & Nm'' & I1 & I2).
+  all: pose proof (ms_geq HM1) as HG1; pose proof (ms_geq HM2) as HG2.
+  all: destruct (MSide_root HM1 Nm Nm' I1) as (Em1 & EA1 & EB1 & EC1).
+  all: destruct (MSide_root HM2 Nm Nm'' I2) as (Em2 & EA2 & EB2 & EC2).
+  all: assert (ET : [ G ; Γ ⊢g tyM r1 r2 ri X' A' B' C' m' ≅ tyM s1 s2 si X'' A'' B'' C'' m'' @ mlvl l1 l2 li ])
+    by (eapply eqty_trans; [apply eqty_sym, geq_ty_sound, (MGeq_M HG1 Em1) | exact (geq_ty_sound (MGeq_M HG2 Em2))]).
+  all: destruct Ht as [Hg Ht]; split; [exact (MGen_dir ET Hg) |].
+  1: exact I.
+  intros ρ. exact (MObs_dir n IH (MIrrHyps_kw ρ H) _ _ (Ht ρ)).
+Qed.
+
+Lemma MR_irrel {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C''
+    idxR idxR' shR shR' posR posR' m m' m''} :
+  MIrrHyps G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' s1 s2 si X'' A'' B'' C'' idxR idxR' shR shR' posR posR' m m' m'' ->
+  releq (MR G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m')
+        (MR G Γ l1 l2 li X A B C s1 s2 si X'' A'' B'' C'' shR' posR' m m'').
+Proof using EL.
+  intros H t t'; split; intros Ht n.
+  - eapply MRn_dir; [exact H | apply Ht].
+  - eapply MRn_dir; [exact (MIrrHyps_swap H) | apply Ht].
+Qed.
+
+(** A side from [LRm]'s premises, given the relations' invariance. *)
+Lemma MSide_intro {n rec G Γ l1 l2 li r1 r2 ri X X' A A' B B' C C' idxR shR posR} :
+  lequiv (gL G) r1 l1 -> lequiv (gL G) r2 l2 -> lequiv (gL G) ri li ->
+  lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) li ->
+  [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ,, X @ li ⊢g A @ l1 ] -> [ G ; Γ ,, X @ li ,, A @ l1 ⊢g B @ l2 ] ->
+  [ G ; Γ ,, X @ li ,, A @ l1 ,, B @ l2 ⊢g C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢ X ≈ X' @ li ] -> [ G ; Γ ,, X @ li ⊢ A ≈ A' @ l1 ] ->
+  [ G ; Γ ,, X @ li ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
+  [ G ; Γ ,, X @ li ,, A @ l1 ,, B @ l2 ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ X) (kty ρ X') li (idxR ρ)) ->
+  (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
+      LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ A)[lsingle x] (ktyl ρ A')[lsingle x'] l1 (shR ρ x x')) ->
+  (forall (ρ : kwk G Γ) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
+      LR n rec (kw_G ρ) (kw_Δ ρ) (ktyll ρ B)[lsingle2 x a] (ktyll ρ B')[lsingle2 x' a'] l2
+        (posR ρ x x' a a')) ->
+  (forall (ρ : kwk G Γ) x x' a a' p p', idxR ρ x x' -> shR ρ x x' a a' -> posR ρ x x' a a' p p' ->
+      idxR ρ (ktmlll ρ C)[lsingle3 x a p] (ktmlll ρ C')[lsingle3 x' a' p']) ->
+  (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
+      [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ A)[lsingle x] @ l1
+          ⊢ (ktyll ρ B)[llift (lsingle x)] ≈ (ktyll ρ B')[llift (lsingle x')] @ l2 ]) ->
+  (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
+      [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ A)[lsingle x] @ l1 ,, (ktyll ρ B)[llift (lsingle x)] @ l2
+          ⊢ (ktmlll ρ C)[llift (llift (lsingle x))] ≈ (ktmlll ρ C')[llift (llift (lsingle x'))]
+          : (kty ρ X)⟨↑⟩⟨↑⟩ @ li ]) ->
+  (forall (ρ : kwk G Γ) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
+      [ kw_G ρ ; kw_Δ ρ ,, (ktyll ρ B)[lsingle2 x a] @ l2
+          ⊢ (ktmlll ρ C)[llift (lsingle2 x a)] ≈ (ktmlll ρ C')[llift (lsingle2 x' a')] : (kty ρ X)⟨↑⟩ @ li ]) ->
+  (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x', idxR ρ x x' ->
+      idxR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x')) ->
+  (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
+      shR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x') (ktm ρ' a) (ktm ρ' a')) ->
+  (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x' a a' p p', idxR ρ x x' -> shR ρ x x' a a' ->
+      posR ρ x x' a a' p p' ->
+      posR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x') (ktm ρ' a) (ktm ρ' a') (ktm ρ' p) (ktm ρ' p')) ->
+  (forall ρ1 ρ2 : kwk G Γ, kw_eqv ρ1 ρ2 -> forall x x', idxR ρ1 x x' -> idxR ρ2 x x') ->
+  (forall ρ1 ρ2 : kwk G Γ, kw_eqv ρ1 ρ2 -> forall x x' a a', idxR ρ1 x x' ->
+      shR ρ1 x x' a a' -> shR ρ2 x x' a a') ->
+  (forall ρ1 ρ2 : kwk G Γ, kw_eqv ρ1 ρ2 -> forall x x' a a' p p', idxR ρ1 x x' ->
+      shR ρ1 x x' a a' -> posR ρ1 x x' a a' p p' -> posR ρ2 x x' a a' p p') ->
+  MSide G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR.
+Proof using EL.
+  intros Hr1 Hr2 Hri W1 W2 Wi HX HA HB HC HXX HAA HBB HCC Hidx Hsh Hpos ch gB gC gCa imon shmon posmon
+    iinv shinv posinv.
+  split; try assumption.
+  - refine (conj (lequiv_sym _ _ _ Hr1) (conj (lequiv_sym _ _ _ Hr2) (conj (lequiv_sym _ _ _ Hri) _))).
+    exact (conj (conj W1 (conj W2 (conj Wi (conj HX (conj HA (conj HB HC)))))) (conj HXX (conj HAA (conj HBB HCC)))).
+  - intros ρ x x' h. exact (proj2 (proj2 (escape_tm _ _ _ _ _ _ _ _ (Hidx ρ) x x' h))).
+  - intros ρ x x' h. exact (proj2 (proj2 (escape_ty _ _ _ _ _ _ _ _ (Hsh ρ x x' h)))).
+  - intros ρ x x' a a' h ha. exact (proj2 (proj2 (escape_tm _ _ _ _ _ _ _ _ (Hsh ρ x x' h) a a' ha))).
+  - intros ρ x x' a a' h ha. exact (proj2 (proj2 (escape_ty _ _ _ _ _ _ _ _ (Hpos ρ x x' a a' h ha)))).
+  - intros ρ x x' a a' p p' h ha hp.
+    exact (proj2 (proj2 (escape_tm _ _ _ _ _ _ _ _ (Hpos ρ x x' a a' h ha) p p' hp))).
+Qed.
+
+(** [LR] along worlds acting alike. *)
+Lemma LR_kw_eqv {n rec G Γ} {ρ1 ρ2 : kwk G Γ} : kw_eqv ρ1 ρ2 ->
+  forall T T' l R, LR n rec (kw_G ρ2) (kw_Δ ρ2) T T' l R -> LR n rec (kw_G ρ1) (kw_Δ ρ1) T T' l R.
+Proof using. intros (HG & HΔ & _) T T' l R. now rewrite HG, HΔ. Qed.
+
+End MIrrel.
+
 (** The binder cases ([Π], [Σ]): the right types are convertible, the
     domain and codomain relations irrelevant, and the term relations move
     along them by [dir]. *)
@@ -243,7 +543,10 @@ Proof using EL VL.
                   | G Γ T T' l l1 l2 A A' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ IHRQ Hqs Hqt HR
                   | G Γ T T' l l1 li1 l2 li2 X X' A A' N N' Ot Ot' Ch Ch' m m' idxR domR R Hl Hl2 Hli2 Hw Hwi
                       HT HT' HX HX' HA HA' HN HN' HO HO' HCh HCh' Hmt Hmt' HXX HAA HNN HOO HChh Hmm
-                      idxAd IHidx Hisym Histr domAd IHdom arAd otAd chAd ixAd HR];
+                      idxAd IHidx Hisym Histr domAd IHdom arAd otAd chAd ixAd HR
+                  | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                      Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                      HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros T'' R' H2;
     inversion H2 as [? ? ? ? ? ? Hk HTk HTk' HkR
                     | ? ? ? ? ? k1 k2 ? Hk Hk2 Hkn HTk HTk' HkR
@@ -270,7 +573,11 @@ Proof using EL VL.
                     | ? ? ? ? ? k1 k2 C C' RQ' ? Hk Hk2 Hkw HTk HTk' HC HCC HRQ' Hqs' Hqt' HkR
                     | ? ? ? ? ? k1 ki1 k2 ki2 jX jX' jA jA' jN jN' jO jO' jC jC' q q' idxR' domR' ? Hk Hk2 Hki2 Hkw Hkwi
                         HTk HTk' HjX HjX' HjA HjA' HjN HjN' HjO HjO' HjC HjC' Hq Hq' HjXX HjAA HjNN HjOO HjCC Hqq
-                        idxAd' Hisym' Histr' domAd' arAd' otAd' chAd' ixAd' HkR];
+                        idxAd' Hisym' Histr' domAd' arAd' otAd' chAd' ixAd' HkR
+                    | ? ? ? ? ? nl1 nl2 nli nr1 nr2 nri nX nX' nA nA' nB nB' nC nC' nm nm' nidxR nshR nposR ?
+                        Hk Hnr1 Hnr2 Hnri Hnw1 Hnw2 Hnwi HTk HTk' HnX HnX' HnA HnA' HnB HnB' HnC HnC' Hnm Hnm'
+                        HnXX HnAA HnBB HnCC Hnmm nidxAd nshAd nposAd nchAd ngB ngC ngCa nimon nshmon nposmon
+                        nixAd HkR];
     subst; try (agree; try ne_absurd).
   (* contextual types, and mismatches with them *)
   all: try solve [eapply ModRel_irrel; eassumption].
@@ -332,7 +639,112 @@ Proof using EL VL.
                                 eapply IH end; eauto.
     + intros; match goal with IH : forall (ρ : kwk _ _) T'' R', _ -> releq (domR _) _ |- _ =>
                                 eapply IH end; eauto.
+  - (* M: the two sides, and the index's, shapes' and positions' relations agree *)
+    assert (Ri : forall ρ, releq (midxR ρ) (nidxR ρ)) by (intros; eapply IHmidx, nidxAd).
+    assert (Rs : forall ρ x x' x'', midxR ρ x x' -> nidxR ρ x x'' -> releq (mshR ρ x x') (nshR ρ x x'')).
+    { intros ρ x x' x'' h h'. eapply IHmsh; [exact h | apply nshAd, h']. }
+    assert (Rp : forall ρ x x' x'' a a', midxR ρ x x' -> nidxR ρ x x'' -> mshR ρ x x' a a' ->
+                   releq (mposR ρ x x' a a') (nposR ρ x x'' a a')).
+    { intros ρ x x' x'' a a' h h' ha. eapply IHmpos; [exact h | exact ha |].
+      apply nposAd; [exact h' | apply (Rs ρ x x' x'' h h'), ha]. }
+    (* the first side's relations at worlds acting alike *)
+    assert (Ii : forall ρ1 ρ2, kw_eqv ρ1 ρ2 -> releq (midxR ρ1) (midxR ρ2)).
+    { intros ρ1 ρ2 Hρ. eapply IHmidx. rewrite (kty_eqv Hρ). apply (LR_kw_eqv Hρ), midxAd. }
+    assert (Is : forall ρ1 ρ2, kw_eqv ρ1 ρ2 -> forall x x', midxR ρ1 x x' ->
+                   releq (mshR ρ1 x x') (mshR ρ2 x x')).
+    { intros ρ1 ρ2 Hρ x x' h. eapply IHmsh; [exact h |]. rewrite (ktyl_eqv Hρ).
+      apply (LR_kw_eqv Hρ), mshAd, (Ii ρ1 ρ2 Hρ), h. }
+    assert (Ip : forall ρ1 ρ2, kw_eqv ρ1 ρ2 -> forall x x' a a', midxR ρ1 x x' -> mshR ρ1 x x' a a' ->
+                   releq (mposR ρ1 x x' a a') (mposR ρ2 x x' a a')).
+    { intros ρ1 ρ2 Hρ x x' a a' h ha. eapply IHmpos; [exact h | exact ha |].
+      rewrite (ktyll_eqv Hρ).
+      apply (LR_kw_eqv Hρ), mposAd; [apply (Ii ρ1 ρ2 Hρ), h | apply (Is ρ1 ρ2 Hρ x x' h), ha]. }
+    apply (MR_irrel (idxR := midxR) (idxR' := nidxR)).
+    refine (conj _ (conj _ (conj Rs (conj Rp (conj _ (conj _ (conj _ (conj mixAd nixAd)))))))).
+    + eapply MSide_intro; [eassumption .. | | |].
+      * intros ρ1 ρ2 Hρ x x' h. apply (Ii ρ1 ρ2 Hρ), h.
+      * intros ρ1 ρ2 Hρ x x' a a' h ha. apply (Is ρ1 ρ2 Hρ x x' h), ha.
+      * intros ρ1 ρ2 Hρ x x' a a' p p' h ha hp. apply (Ip ρ1 ρ2 Hρ x x' a a' h ha), hp.
+    + eapply MSide_intro; [eassumption .. | | |].
+      * intros ρ1 ρ2 Hρ x x' h.
+        apply (Ri ρ2), (Ii ρ1 ρ2 Hρ), (Ri ρ1), h.
+      * intros ρ1 ρ2 Hρ x x' a a' h ha.
+        pose proof (proj2 (Ri ρ1 x x') h) as h1.
+        pose proof (proj1 (Ii ρ1 ρ2 Hρ x x') h1) as h2.
+        apply (Rs ρ2 x x' x' h2 (proj1 (Ri ρ2 x x') h2)), (Is ρ1 ρ2 Hρ x x' h1), (Rs ρ1 x x' x' h1 h), ha.
+      * intros ρ1 ρ2 Hρ x x' a a' p p' h ha hp.
+        pose proof (proj2 (Ri ρ1 x x') h) as h1.
+        pose proof (proj1 (Ii ρ1 ρ2 Hρ x x') h1) as h2.
+        pose proof (proj2 (Rs ρ1 x x' x' h1 h a a') ha) as ha1.
+        apply (Rp ρ2 x x' x' a a' h2 (proj1 (Ri ρ2 x x') h2) (proj1 (Is ρ1 ρ2 Hρ x x' h1 a a') ha1)),
+          (Ip ρ1 ρ2 Hρ x x' a a' h1 ha1), (Rp ρ1 x x' x' a a' h1 h ha1), hp.
+    + exact (wf_tm_nf Hmm).
+    + exact (wf_tm_nf Hmm').
+    + exact (wf_tm_nf Hnm').
 Qed.
+
+(** [LR] at worlds acting alike: the relations agree. *)
+Lemma LR_kw_eqv_irrel {n rec G Γ} {ρ1 ρ2 : kwk G Γ} : kw_eqv ρ1 ρ2 ->
+  forall T T1 T2 l R1 R2, LR n rec (kw_G ρ1) (kw_Δ ρ1) T T1 l R1 -> LR n rec (kw_G ρ2) (kw_Δ ρ2) T T2 l R2 ->
+  releq R1 R2.
+Proof using EL VL.
+  intros Eρ T T1 T2 l R1 R2 H1 H2. exact (LR_irrel _ _ _ _ _ _ _ _ _ _ H1 (LR_kw_eqv Eρ _ _ _ _ H2)).
+Qed.
+
+(** A side from [LRm]'s premises, the invariance by irrelevance. *)
+Lemma MSide_of_LR {n rec G Γ l1 l2 li r1 r2 ri X X' A A' B B' C C' idxR shR posR} :
+  lequiv (gL G) r1 l1 -> lequiv (gL G) r2 l2 -> lequiv (gL G) ri li ->
+  lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) li ->
+  [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ,, X @ li ⊢g A @ l1 ] -> [ G ; Γ ,, X @ li ,, A @ l1 ⊢g B @ l2 ] ->
+  [ G ; Γ ,, X @ li ,, A @ l1 ,, B @ l2 ⊢g C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢ X ≈ X' @ li ] -> [ G ; Γ ,, X @ li ⊢ A ≈ A' @ l1 ] ->
+  [ G ; Γ ,, X @ li ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
+  [ G ; Γ ,, X @ li ,, A @ l1 ,, B @ l2 ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ X) (kty ρ X') li (idxR ρ)) ->
+  (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
+      LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ A)[lsingle x] (ktyl ρ A')[lsingle x'] l1 (shR ρ x x')) ->
+  (forall (ρ : kwk G Γ) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
+      LR n rec (kw_G ρ) (kw_Δ ρ) (ktyll ρ B)[lsingle2 x a] (ktyll ρ B')[lsingle2 x' a'] l2
+        (posR ρ x x' a a')) ->
+  (forall (ρ : kwk G Γ) x x' a a' p p', idxR ρ x x' -> shR ρ x x' a a' -> posR ρ x x' a a' p p' ->
+      idxR ρ (ktmlll ρ C)[lsingle3 x a p] (ktmlll ρ C')[lsingle3 x' a' p']) ->
+  (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
+      [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ A)[lsingle x] @ l1
+          ⊢ (ktyll ρ B)[llift (lsingle x)] ≈ (ktyll ρ B')[llift (lsingle x')] @ l2 ]) ->
+  (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
+      [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ A)[lsingle x] @ l1 ,, (ktyll ρ B)[llift (lsingle x)] @ l2
+          ⊢ (ktmlll ρ C)[llift (llift (lsingle x))] ≈ (ktmlll ρ C')[llift (llift (lsingle x'))]
+          : (kty ρ X)⟨↑⟩⟨↑⟩ @ li ]) ->
+  (forall (ρ : kwk G Γ) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
+      [ kw_G ρ ; kw_Δ ρ ,, (ktyll ρ B)[lsingle2 x a] @ l2
+          ⊢ (ktmlll ρ C)[llift (lsingle2 x a)] ≈ (ktmlll ρ C')[llift (lsingle2 x' a')] : (kty ρ X)⟨↑⟩ @ li ]) ->
+  (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x', idxR ρ x x' ->
+      idxR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x')) ->
+  (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
+      shR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x') (ktm ρ' a) (ktm ρ' a')) ->
+  (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x' a a' p p', idxR ρ x x' -> shR ρ x x' a a' ->
+      posR ρ x x' a a' p p' ->
+      posR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x') (ktm ρ' a) (ktm ρ' a') (ktm ρ' p) (ktm ρ' p')) ->
+  MSide G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR.
+Proof using EL VL.
+  intros Hr1 Hr2 Hri W1 W2 Wi HX HA HB HC HXX HAA HBB HCC Hidx Hsh Hpos ch gB gC gCa imon shmon posmon.
+  assert (Ii : forall ρ1 ρ2, kw_eqv ρ1 ρ2 -> releq (idxR ρ1) (idxR ρ2)).
+  { intros ρ1 ρ2 Eρ. pose proof (Hidx ρ2) as H2. rewrite <- (kty_eqv Eρ) in H2.
+    exact (LR_kw_eqv_irrel Eρ _ _ _ _ _ _ (Hidx ρ1) H2). }
+  assert (Is : forall ρ1 ρ2, kw_eqv ρ1 ρ2 -> forall x x', idxR ρ1 x x' -> releq (shR ρ1 x x') (shR ρ2 x x')).
+  { intros ρ1 ρ2 Eρ x x' h. pose proof (Hsh ρ2 x x' (proj1 (Ii ρ1 ρ2 Eρ x x') h)) as H2.
+    rewrite <- (ktyl_eqv Eρ) in H2. exact (LR_kw_eqv_irrel Eρ _ _ _ _ _ _ (Hsh ρ1 x x' h) H2). }
+  assert (Ip : forall ρ1 ρ2, kw_eqv ρ1 ρ2 -> forall x x' a a', idxR ρ1 x x' -> shR ρ1 x x' a a' ->
+                 releq (posR ρ1 x x' a a') (posR ρ2 x x' a a')).
+  { intros ρ1 ρ2 Eρ x x' a a' h ha.
+    pose proof (Hpos ρ2 x x' a a' (proj1 (Ii ρ1 ρ2 Eρ x x') h) (proj1 (Is ρ1 ρ2 Eρ x x' h a a') ha)) as H2.
+    rewrite <- (ktyll_eqv Eρ) in H2. exact (LR_kw_eqv_irrel Eρ _ _ _ _ _ _ (Hpos ρ1 x x' a a' h ha) H2). }
+  eapply MSide_intro; try eassumption.
+  - intros ρ1 ρ2 Eρ x x' h. exact (proj1 (Ii ρ1 ρ2 Eρ x x') h).
+  - intros ρ1 ρ2 Eρ x x' a a' h ha. exact (proj1 (Is ρ1 ρ2 Eρ x x' h a a') ha).
+  - intros ρ1 ρ2 Eρ x x' a a' p p' h ha hp. exact (proj1 (Ip ρ1 ρ2 Eρ x x' a a' h ha p p') hp).
+Qed.
+
 
 (** ** Inversion by the left type's normal form *)
 
@@ -368,7 +780,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; auto.
 Qed.
 
@@ -401,7 +816,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -434,7 +852,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -469,7 +890,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 15.
 Qed.
 
@@ -506,7 +930,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 20.
 Qed.
 
@@ -546,7 +973,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; do 6 eexists; eauto 25.
 Qed.
 
@@ -579,7 +1009,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -613,7 +1046,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -646,7 +1082,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try solve [inversion HV0]; eauto.
 Qed.
 
@@ -684,7 +1123,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
@@ -723,7 +1165,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
@@ -762,7 +1207,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
@@ -804,7 +1252,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 4 eexists; eauto 20.
 Qed.
@@ -865,9 +1316,90 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 10 eexists; eauto 40.
+Qed.
+
+(** Indexed [M] (M18b). *)
+Lemma LR_inv_M {ul1 ul2 uli uX uA uB uC um l'} : [ G ; Γ ⊢g T ⤳* tyM ul1 ul2 uli uX uA uB uC um @ l' ] ->
+  exists r1 r2 ri X' A' B' C' m' (idxR : DomRel G Γ) (shR : MShRel G Γ) (posR : MPosRel G Γ),
+    lequiv (gL G) l (mlvl ul1 ul2 uli) /\
+    lequiv (gL G) r1 ul1 /\ lequiv (gL G) r2 ul2 /\ lequiv (gL G) ri uli /\
+    lwf (gL G) ul1 /\ lwf (gL G) ul2 /\ lwf (gL G) uli /\
+    [ G ; Γ ⊢g T ⤳* tyM ul1 ul2 uli uX uA uB uC um @ l ] /\ [ G ; Γ ⊢g T' ⤳* tyM r1 r2 ri X' A' B' C' m' @ l ] /\
+    [ G ; Γ ⊢g uX @ uli ] /\ [ G ; Γ ⊢g X' @ uli ] /\
+    [ G ; Γ ,, uX @ uli ⊢g uA @ ul1 ] /\ [ G ; Γ ,, X' @ uli ⊢g A' @ ul1 ] /\
+    [ G ; Γ ,, uX @ uli ,, uA @ ul1 ⊢g uB @ ul2 ] /\ [ G ; Γ ,, X' @ uli ,, A' @ ul1 ⊢g B' @ ul2 ] /\
+    [ G ; Γ ,, uX @ uli ,, uA @ ul1 ,, uB @ ul2 ⊢g uC : uX⟨↑⟩⟨↑⟩⟨↑⟩ @ uli ] /\
+    [ G ; Γ ,, X' @ uli ,, A' @ ul1 ,, B' @ ul2 ⊢g C' : X'⟨↑⟩⟨↑⟩⟨↑⟩ @ uli ] /\
+    [ G ; Γ ⊢g um : uX @ uli ] /\ [ G ; Γ ⊢g m' : X' @ uli ] /\
+    [ G ; Γ ⊢ uX ≈ X' @ uli ] /\ [ G ; Γ ,, uX @ uli ⊢ uA ≈ A' @ ul1 ] /\
+    [ G ; Γ ,, uX @ uli ,, uA @ ul1 ⊢ uB ≈ B' @ ul2 ] /\
+    [ G ; Γ ,, uX @ uli ,, uA @ ul1 ,, uB @ ul2 ⊢ uC ≈ C' : uX⟨↑⟩⟨↑⟩⟨↑⟩ @ uli ] /\
+    [ G ; Γ ⊢ um ≈ m' : uX @ uli ] /\
+    (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ uX) (kty ρ X') uli (idxR ρ)) /\
+    (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
+        LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ uA)[lsingle x] (ktyl ρ A')[lsingle x'] ul1 (shR ρ x x')) /\
+    (forall (ρ : kwk G Γ) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
+        LR n rec (kw_G ρ) (kw_Δ ρ) (ktyll ρ uB)[lsingle2 x a] (ktyll ρ B')[lsingle2 x' a'] ul2
+          (posR ρ x x' a a')) /\
+    (forall (ρ : kwk G Γ) x x' a a' p p', idxR ρ x x' -> shR ρ x x' a a' -> posR ρ x x' a a' p p' ->
+        idxR ρ (ktmlll ρ uC)[lsingle3 x a p] (ktmlll ρ C')[lsingle3 x' a' p']) /\
+    (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
+        [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ uA)[lsingle x] @ ul1
+            ⊢ (ktyll ρ uB)[llift (lsingle x)] ≈ (ktyll ρ B')[llift (lsingle x')] @ ul2 ]) /\
+    (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
+        [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ uA)[lsingle x] @ ul1 ,, (ktyll ρ uB)[llift (lsingle x)] @ ul2
+            ⊢ (ktmlll ρ uC)[llift (llift (lsingle x))] ≈ (ktmlll ρ C')[llift (llift (lsingle x'))]
+            : (kty ρ uX)⟨↑⟩⟨↑⟩ @ uli ]) /\
+    (forall (ρ : kwk G Γ) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
+        [ kw_G ρ ; kw_Δ ρ ,, (ktyll ρ uB)[lsingle2 x a] @ ul2
+            ⊢ (ktmlll ρ uC)[llift (lsingle2 x a)] ≈ (ktmlll ρ C')[llift (lsingle2 x' a')] : (kty ρ uX)⟨↑⟩ @ uli ]) /\
+    (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x', idxR ρ x x' ->
+        idxR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x')) /\
+    (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
+        shR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x') (ktm ρ' a) (ktm ρ' a')) /\
+    (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x' a a' p p', idxR ρ x x' -> shR ρ x x' a a' ->
+        posR ρ x x' a a' p p' ->
+        posR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x') (ktm ρ' a) (ktm ρ' a') (ktm ρ' p) (ktm ρ' p')) /\
+    (forall ρ : kwk G Γ, idxR ρ (ktm ρ um) (ktm ρ m')) /\
+    releq R (MR G Γ ul1 ul2 uli uX uA uB uC r1 r2 ri X' A' B' C' shR posR um m').
+Proof using EL H.
+  intros HN; revert HN.
+  destruct H as [G Γ T T' l R Hl HT HT' HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
+                | G Γ T T' l V V' R HT HT' HV HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
+                    HRA HRB Hpa Hta Hpb Htb HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+    intros HN; try open_mod; agree; try ne_absurd.
+  do 11 eexists; eauto 50.
 Qed.
 
 (** Propositional truncation (M16a). *)
@@ -903,7 +1435,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 3 eexists; eauto 20.
 Qed.
@@ -935,7 +1470,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; first [exact (conj Hj HM) | agree; try ne_absurd].
 Qed.
 
@@ -966,7 +1504,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; first [exact (conj Hj HM) | agree; try ne_absurd].
 Qed.
 
@@ -1006,7 +1547,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 3 eexists; eauto 20.
 Qed.
@@ -1048,7 +1592,10 @@ Proof using EL H.
                 | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
                 | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
                     HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
-                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR];
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 5 eexists; eauto 20.
 Qed.

@@ -131,6 +131,21 @@ Proof.
            (eqtm_wf_l Hty E) (eqtm_wf_r Hty E) (eqty_refl _ _ _ _ _ (eqtm_wf_ty Hty E))).
 Qed.
 
+Lemma alg_ty_ctxeq {G Γ Γ' T T' l} : [ G ⊢[ i ] Γ ≅ Γ' ] -> alg_eq_ty G Γ T T' l -> alg_eq_ty G Γ' T T' l.
+Proof.
+  intros Hctx (E & D). pose proof (eqc_lsub_id Hty Hctx) as Hid. pose proof (ctx_glob _ _ _ (ctx_of_eqty Hty E)) as HG.
+  refine (conj (mv_eqty Hty Hid E) _).
+  exact (proj1 ac_conv_all _ _ _ _ D i G _ l l Hi (GEq_refl _ HG) Hctx (eqty_wf_l Hty E) (eqty_wf_r Hty E)).
+Qed.
+
+Lemma alg_tm_ctxeq {G Γ Γ' t t' T l} : [ G ⊢[ i ] Γ ≅ Γ' ] -> alg_eq_tm G Γ t t' T l -> alg_eq_tm G Γ' t t' T l.
+Proof.
+  intros Hctx (E & D). pose proof (eqc_lsub_id Hty Hctx) as Hid. pose proof (ctx_glob _ _ _ (ctx_of_eqtm Hty E)) as HG.
+  refine (conj (mv_eqtm Hty Hid E) _).
+  exact (proj1 (proj2 (proj2 (proj2 (proj2 ac_conv_all)))) _ _ _ _ _ D i G _ T l Hi (GEq_refl _ HG) Hctx
+           (eqtm_wf_l Hty E) (eqtm_wf_r Hty E) (eqty_refl _ _ _ _ _ (eqtm_wf_ty Hty E))).
+Qed.
+
 (** η: the terms reduce to whnfs, and the premise's applications along. *)
 Lemma alg_funext {G Γ l l' A B t t'} : [ G ; Γ ⊢[ i ] t : tyPi l l' A B @ lmax l l' ] ->
   [ G ; Γ ⊢[ i ] t' : tyPi l l' A B @ lmax l l' ] ->
@@ -324,6 +339,8 @@ Proof.
   - intros * EA Hl HΓ' X. exact (alg_tmne_ctxconv EA Hl HΓ' X).
   - intros * EA Hl HΓ' X. exact (alg_tm_ctxconv EA Hl HΓ' X).
   - intros * EA Hl HΓ' X. exact (alg_tm_ctxconv2 EA Hl HΓ' X).
+  - intros * Hc X. exact (alg_ty_ctxeq Hc X).
+  - intros * Hc X. exact (alg_tm_ctxeq Hc X).
   (* weak head closure *)
   - intros * HT HT' (E & D). refine (conj (@geq_ty_exp DE DEL _ _ _ _ _ _ _ HT HT' E) _).
     destruct (ainv_ty D) as (W0 & W0' & Hr & Hr' & Hw & Hw' & D').
@@ -646,6 +663,23 @@ Proof.
     refine (conj (@geq_tm_code_iwf DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hl Hli Hx Ex Hs Es Hn En Eo Ec Em) _).
     eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmIWf | apply whnf_tmIWf |].
     eapply actmnf_code_iwf; first [eapply lequiv_leqv; eassumption | eassumption].
+  (* indexed coinductive types (M18b) *)
+  - intros * Hl Hl' Hli HX (EX & DX) HA (EA & DA) HB (EB & DB) HC (EC & DC) (Ej & Dj).
+    refine (conj (@geq_ty_M DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hl Hl' Hli HX EX HA EA HB EB HC EC Ej) _).
+    eapply act_red; [constructor | constructor | apply whnf_tyM | apply whnf_tyM |].
+    eapply actnf_M; first [eapply lequiv_leqv; eassumption | eassumption].
+  - intros * Hl Hl' Hli Hkc HX EX HA EA HB EB HC EC Ej HY (EY & DY) (Ec & Dc) (Ey & Dy).
+    refine (conj (@geq_tm_corec DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hl Hl' Hli Hkc HX EX HA EA HB EB HC EC Ej HY EY Ec Ey) _).
+    eapply actm_red; [constructor | apply whnf_tyM | constructor | constructor | apply whnf_corec | apply whnf_corec |].
+    eapply actmnf_corec; first [eapply lequiv_leqv; eassumption | eassumption].
+  - intros * Hl Hl' Hli HX EX HA EA HB EB HC EC Ej ((Hn & Hn' & Eν) & T0 & Dν & ETν).
+    pose proof (@gne_tm_out DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hl Hl' Hli HX EX HA EA HB EB HC EC Ej
+                  (conj Hn (conj Hn' Eν))) as Y.
+    refine (conj Y _). destruct Y as (_ & _ & EY).
+    destruct (ne_nee Dν ETν) as (W0 & Xν & _).
+    exists (mOutTy l l' li X A B C j). split.
+    + eapply actmne_out; exact Xν.
+    + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EY))).
 Qed.
 
 End Alg.

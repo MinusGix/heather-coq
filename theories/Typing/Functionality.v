@@ -860,6 +860,33 @@ Ltac fun_IWf :=
       fun_IWf_lifts X A N d; eapply eqtm_elimIWf; fun_Ip
   end.
 
+(** [M] (M18b): as [IWf]'s, the substitutions lifted along the
+    signature's contexts and, for [corec], the carrier's; [out]'s type is
+    retyped to its pushed instance. *)
+Ltac fun_M_lifts X A B d :=
+  let HnX := fresh "HnX" in let HnA := fresh "HnA" in let HnB := fresh "HnB" in
+  match goal with
+  | wX : wf_ty _ _ _ X ?li, wA : wf_ty _ _ (_ ,, X @ _) A ?l,
+    wB : wf_ty _ _ (_ ,, X @ _ ,, A @ _) B ?l', Hd : lsub_eq _ _ _ d _ _ |- _ =>
+      pose proof (lsub_eq_r Hd);
+      fun_Ilift Hd X li HnX; fun_Ilift HnX A l HnA; fun_Ilift HnA B l' HnB
+  end.
+Ltac fun_M :=
+  match goal with
+  | |- eq_ty _ _ _ (tyM _ _ _ (@subst _ _ ?X ?d) (@subst _ _ ?A _) (@subst _ _ ?B _) _ _) _ _ =>
+      fun_M_lifts X A B d; eapply eqty_M; fun_Ip
+  | |- eq_tm _ _ _ (tmCorec _ _ _ (@subst _ _ ?X ?d) (@subst _ _ ?A _) (@subst _ _ ?B _) _ _
+                     (@subst _ _ ?Y _) _ _ _) _ _ _ =>
+      fun_M_lifts X A B d;
+      match goal with
+      | HnX : lsub_eq _ _ _ (llift d) _ (_ ,, X @ _), wY : wf_ty _ _ (_ ,, X @ _) Y ?k |- _ =>
+          let HnY := fresh "HnY" in fun_Ilift HnX Y k HnY
+      end;
+      eapply eqtm_corec; fun_Ip
+  | |- eq_tm _ _ _ (tmOut _ _ _ (@subst _ _ ?X ?d) (@subst _ _ ?A _) (@subst _ _ ?B _) _ _ _) _ _ _ =>
+      fun_M_lifts X A B d; eapply eq_tm_retype; [eapply eqtm_out; fun_Ip | sub_eqI]
+  end.
+
 (** The codes of [DVec] and [IWf] (M17c): as [IWf]'s, with the index
     type [El s] lifted from the code's typing and congruence. *)
 Ltac fun_codeEl s d :=
@@ -921,6 +948,7 @@ Proof.
   all: try fun_Wf.
   all: try fun_IWf.
   all: try fun_Code.
+  all: try fun_M.
   all: try (timeout 3 any_rule fung_premise).
   all: try (timeout 3 fung_step).
   (* code of Π and natrec: the binder premises need the substituted

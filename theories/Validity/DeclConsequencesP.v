@@ -97,6 +97,13 @@ Theorem decl_IWf_inj {G Γ l l1 li1 l2 li2 X X' A A' N N' Ot Ot' C C' m m'} :
   [ G ; Γ ,, A @ l1 ,, tyFin N @ lzero ⊢[ lD ] C ≅ C' : X⟨↑⟩⟨↑⟩ @ li1 ] /\ [ G ; Γ ⊢[ lD ] m ≅ m' : X @ li1 ].
 Proof. intros H; exact (IWf_inj (E := DEP) (LP := LR_P) redP_ty H (lwfD_eqty H)). Qed.
 
+Theorem decl_M_inj {G Γ l l1 l2 li1 k1 k2 ki X X' A A' B B' C C' m m'} :
+  [ G ; Γ ⊢[ lD ] tyM l1 l2 li1 X A B C m ≅ tyM k1 k2 ki X' A' B' C' m' @ l ] ->
+  lequiv (gL G) k1 l1 /\ lequiv (gL G) k2 l2 /\ lequiv (gL G) ki li1 /\ [ G ; Γ ⊢[ lD ] X ≅ X' @ li1 ] /\
+  [ G ; Γ ,, X @ li1 ⊢[ lD ] A ≅ A' @ l1 ] /\ [ G ; Γ ,, X @ li1 ,, A @ l1 ⊢[ lD ] B ≅ B' @ l2 ] /\
+  [ G ; Γ ,, X @ li1 ,, A @ l1 ,, B @ l2 ⊢[ lD ] C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li1 ] /\ [ G ; Γ ⊢[ lD ] m ≅ m' : X @ li1 ].
+Proof. intros H; exact (M_inj (E := DEP) (LP := LR_P) redP_ty H (lwfD_eqty H)). Qed.
+
 Theorem decl_seq_inj {G Γ l l1 l2 A A' a a' b b'} :
   [ G ; Γ ⊢[ lD ] tySEq l1 A a b ≅ tySEq l2 A' a' b' @ l ] ->
   lequiv (gL G) l2 l1 /\ [ G ; Γ ⊢[ lD ] A ≅ A' @ l1 ] /\

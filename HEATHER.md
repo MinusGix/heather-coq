@@ -61,7 +61,7 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | `sEmpty`, `elim_sEmpty` | irrelevant empty type | sprop-design | MX §18, §21.4 | — | **done** (M10a; at code with branches 27, 28, 30, M10c) |
 | `Squash`, `ind_∥∥` | normalizing-total irrelevance | MX §27 | sketch only | full pass done here (`issues/metatheory-ch07-squash.md`, closed on M16); the payload must be self-related (see findings) | **done** (M16a at D and M: the probe's relation (`probes/SquashProbe.v`), proof irrelevance, β, no η, canonicity to a `squash`; M16b: code `∥s∥`, every layer but V, branches 51–54) |
 | `DVec`, `IWf`, `sup_i`, `elim_IWf` | finitary inductive families, no stored index equation | iwf-former-design §1–§6 (frozen 2026-10-13) | doc §9 (sketch) | the ih's type is `F[i]` only up to β (doc §3) | **M17 done**: `DVec` and `V_dnth` (M17a), `IWf` with β on open data (M17b), D and M; codes, every layer but V, branches 55–60 derived before `rec.rs` has them (M17c) |
-| `M`, `corec`, `out` | negative coinductive, indexed (Petersson–Synek), apomorphic `corec`, β only under `out`, no η | kernel-coinduction-design §1–§2 (kernel landed 2026-10-21, heather#111) | doc §9 (questions) | the relation at `M` without the carrier (§9 Q1); `li` in the level | **M18a done**: probes only, theories untouched. The ω-relation works with a generic clause at every depth; `li` is needed; the algorithm is a generic instance; β needs no index conversion; the bridge needs UIP on shapes; the design's `in` types only unindexed (M18_DESIGN.md). M18b (in-tree, D and M) planned |
+| `M`, `corec`, `out` | negative coinductive, indexed (Petersson–Synek), apomorphic `corec`, β only under `out`, no η | kernel-coinduction-design §1–§2 (kernel landed 2026-10-21, heather#111) | doc §9 (questions) | the relation at `M` without the carrier (§9 Q1); `li` in the level | **M18a done**: probes only, theories untouched. The ω-relation works with a generic clause at every depth; `li` is needed; the algorithm is a generic instance; β needs no index conversion; the bridge needs UIP on shapes; the design's `in` types only unindexed (M18_DESIGN.md). **M18b done** (2026-10-26): in-tree at D and M through the relation, validity, the algorithm, decidability, the type checker and the consequences; no rule changed. M18c (codes) planned |
 | Bodied globals `u := t`, δ at p/m only | not a former | DESIGN.md, MX §23–25 | **none** | ch. 07 bill (`issues/metatheory-ch07-definitions.md`) | **done** (M9): occurrences carry their body (`gdef`); δ as reduction; §26 items 1–4; canonicity at D; consistency at D and M |
 | `NatLit`, evaluator accelerations | representation | DESIGN.md | n/a | claimed to have no semantic content; nothing to prove here | out of scope |
 
@@ -182,6 +182,12 @@ Cross-checks between the two sides, newest last.
   constructor `in` at carrier `Unit` types only when `I` is `Unit`; the
   indexed constructor's carrier is `out`'s type itself
   (`MCoind.in_`).
+- **Coinduction in-tree (M18b).** The former holds at D and M with every
+  kernel rule as implemented, annotations included: `corec`'s conversion
+  compares carrier level, carrier, step at the left step type and seed,
+  and `out`'s the scrutinees, as `conv.rs` does; β fires at a `corec` of
+  any annotations, as the reducers do. Canonicity and productivity at
+  `M` are heather-coq#39.
 - **Definitional inversion without normalisation, at the code layer**
   (`H/issues/definitional-inversion-domain-model.md`). The domain model
   and relation of Carneiro et al. (arXiv:2607.13662) extend to a code
@@ -328,7 +334,8 @@ M15b outcome.
 6. Coinduction: Heather's indexed `M` (H `docs/kernel-coinduction-design.md`),
    implemented in its kernel before this check. M18a (M18_DESIGN.md)
    answers the design's §9 Q1–Q3 with two probes and finds no wrong
-   kernel rule; M18b puts the former in-tree at D and M, M18c adds codes
-   once Heather's codes round has them.
+   kernel rule; M18b put the former in-tree at D and M (done
+   2026-10-26, no rule changed); M18c adds codes once Heather's codes
+   round has them.
 
 Side task, any time: the ITree depth-indexed bisimilarity question.

@@ -13,7 +13,7 @@
     β-reduct is typed by the hypothesis [RecRedTyped], a premise of the
     theorems here. *)
 From DeLaM.Validity Require Export Canonicity.
-From DeLaM.Typing Require Import IWfIH.
+From DeLaM.Typing Require Import IWfIH PresupM.
 
 (* the Σ rules ask for [i <> lV] (M8d); a computing layer is not V *)
 Local Hint Resolve compt_notV : core.
@@ -891,6 +891,45 @@ Proof.
   exact (eqty_dvec _ _ _ _ _ _ _ _ _ (compt_notV _ Hc) (lequiv_refl _ _ Wl) Hn (IH _ _ _ _ _ Hc Hn) HF (eqty_refl _ _ _ _ _ HF)).
 Qed.
 
+(** Heather's [M] (M18b): [out]'s congruence on its scrutinee, and [out] of
+    a [corec], whose β is at the [corec]'s annotations: injectivity of the
+    scrutinee's type relates them to [out]'s. *)
+Lemma RS_out l l' li X A B C j m m' : RS_tm m m' ->
+  RS_tm (tmOut l l' li X A B C j m) (tmOut l l' li X A B C j m').
+Proof.
+  intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_out Hi Hx) as ((_ & Wl & Wl' & Wli & HX & HA & HB & HC & Hj & Hm) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  apply eqtm_out; first [exact Hc | apply lequiv_refl; assumption | exact (IH _ _ _ _ _ Hc Hm) | assumption
+                        | apply eqty_refl; assumption | apply eqtm_refl; assumption].
+Qed.
+
+Lemma RS_out_corec l l' li X A B C j k1 k1' ki1 X1 A1 B1 C1 kc Y c j1 y :
+  RS_tm (tmOut l l' li X A B C j (tmCorec k1 k1' ki1 X1 A1 B1 C1 kc Y c j1 y))
+        (mOutCorec k1 k1' ki1 X1 A1 B1 C1 kc Y c j1 y).
+Proof.
+  intros G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
+  destruct (inv_out Hi Hx) as ((_ & Wl & Wl' & Wli & HX & HA & HB & HC & Hj & Hm) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  destruct (inv_corec Hi Hm)
+    as ((_ & W1 & W2 & W3 & Wkc & HX1 & HA1 & HB1 & HC1 & HY & Hc0 & Hj1 & Hy) & _ & EM).
+  destruct (M_inj_c Hc EM) as (E1 & E2 & E3 & EX & EA & EB & EC & Ej).
+  pose proof (MEq_of_inj Hi E1 E2 E3 EX EA EB EC) as HE.
+  assert (Hcong : [ G ; Γ ⊢[ i ] tmOut l l' li X A B C j (tmCorec k1 k1' ki1 X1 A1 B1 C1 kc Y c j1 y)
+                     ≅ tmOut k1 k1' ki1 X1 A1 B1 C1 j1 (tmCorec k1 k1' ki1 X1 A1 B1 C1 kc Y c j1 y)
+                     : mOutTy l l' li X A B C j @ lmax l (mlvl l l' li) ])
+    by (apply eqtm_out; first [exact Hc | exact (lequiv_sym _ _ _ E1) | exact (lequiv_sym _ _ _ E2)
+                              | exact (lequiv_sym _ _ _ E3) | assumption | apply eqtm_refl; assumption]).
+  pose proof (eqtm_out_corec _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hc W1 W2 W3 Wkc HX1 HA1 HB1 HC1 HY Hc0 Hj1 Hy) as Hb.
+  pose proof (M_out_eq Hi Hv HE Hj (eqtm_wf_r Hi Ej) Ej) as EO.
+  eapply eqtm_trans; [exact Hcong |].
+  eapply eqtm_conv; [| rewrite Hi; exact EO].
+  eapply eqtm_lconv; [exact Hb |].
+  pose proof (lequiv_sym _ _ _ E1) as F1. pose proof (lequiv_sym _ _ _ E2) as F2.
+  pose proof (lequiv_sym _ _ _ E3) as F3.
+  exact (lequiv_max _ _ _ _ _ F1 (lequiv_max _ _ _ _ _ (lequiv_max _ _ _ _ _ F1 F2) F3)).
+Qed.
+
 (** ** Soundness of reduction *)
 
 Theorem red_sound_all (HR : RecRedTyped) :
@@ -921,6 +960,7 @@ Proof.
     | solve [apply RS_elimW_sup] | solve [apply RS_elimW; assumption]
     | solve [apply RS_elimWf_supf] | solve [apply RS_elimWf; assumption]
     | solve [apply RS_elimIWf_supi] | solve [apply RS_elimIWf; assumption]
+    | solve [apply RS_out_corec] | solve [apply RS_out; assumption]
     | solve [apply RS_El_empty] | solve [apply RS_El_sum] | solve [apply RS_El_W]
     | solve [apply RS_vec_zero] | solve [apply RS_vec_succ] | solve [apply RS_vec; assumption]
     | solve [apply RS_fin_zero] | solve [apply RS_fin_succ] | solve [apply RS_fin; assumption]
