@@ -97,7 +97,7 @@ Proof.
   match goal with |- Dec (ac_tmnf _ _ _ (tmWf ?a ?b ?c) _) => rename a into k', b into s', c into n' end.
   destruct (code_wf_prem Hc Hx) as (W1 & Hs & Hn).
   destruct (code_wf_prem Hc Hx') as (W5 & Hs' & Hn').
-  pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_notV _ Hc) as Hv.
   destruct (leqv_dec k k') as [H15 | N]; [| refute].
   pose proof (leqv_lequiv _ _ _ W1 W5 H15) as E15.
   pose proof (ctx_of_wf_tm Hi Hs) as HΓ.

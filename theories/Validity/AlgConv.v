@@ -498,21 +498,21 @@ Proof.
           | apply posty_W | apply posty_wf | apply posty_iwf | apply posty_M | apply posty_ne; inversion Hw2; subst; first [assumption | constructor] ].
 Qed.
 
-Lemma head_pi W : ty_head W = 3 -> exists m m' A B, W = tyPi m m' A B.
+Lemma head_pi W : ty_head W = hdPi -> exists m m' A B, W = tyPi m m' A B.
 Proof. destruct W; cbn; intros E; try discriminate; eauto. Qed.
-Lemma head_sum W : ty_head W = 16 -> exists m m' A B, W = tySum m m' A B.
+Lemma head_sum W : ty_head W = hdSum -> exists m m' A B, W = tySum m m' A B.
 Proof. destruct W; cbn; intros E; try discriminate; eauto. Qed.
-Lemma head_W W : ty_head W = 17 -> exists m m' A B, W = tyW m m' A B.
+Lemma head_W W : ty_head W = hdW -> exists m m' A B, W = tyW m m' A B.
 Proof. destruct W; cbn; intros E; try discriminate; eauto. Qed.
-Lemma head_wf W : ty_head W = 18 -> exists m A N, W = tyWf m A N.
+Lemma head_wf W : ty_head W = hdWf -> exists m A N, W = tyWf m A N.
 Proof. destruct W; cbn; intros E; try discriminate; eauto. Qed.
-Lemma head_upi W : ty_head W = 6 -> exists n m T, W = tyUPi n m T.
+Lemma head_upi W : ty_head W = hdUPi -> exists n m T, W = tyUPi n m T.
 Proof. destruct W; cbn; intros E; try discriminate; eauto. Qed.
-Lemma head_cpi W : ty_head W = 7 -> exists m T, W = tyCPi m T.
+Lemma head_cpi W : ty_head W = hdCPi -> exists m T, W = tyCPi m T.
 Proof. destruct W; cbn; intros E; try discriminate; eauto. Qed.
-Lemma head_tpi W : ty_head W = 8 -> exists Δ m m' T, W = tyTPi Δ m m' T.
+Lemma head_tpi W : ty_head W = hdTPi -> exists Δ m m' T, W = tyTPi Δ m m' T.
 Proof. destruct W; cbn; intros E; try discriminate; eauto. Qed.
-Lemma head_sig W : ty_head W = 10 -> exists m m' A B, W = tySig m m' A B.
+Lemma head_sig W : ty_head W = hdSig -> exists m m' A B, W = tySig m m' A B.
 Proof. destruct W; cbn; intros E; try discriminate; eauto. Qed.
 
 (** The head of the new type, from its equation with the old. *)
@@ -1965,7 +1965,7 @@ Proof.
 Qed.
 
 (** Indexed W-types (M17b). *)
-Lemma head_iwf W : ty_head W = 20 -> exists l li X A N Ot C m, W = tyIWf l li X A N Ot C m.
+Lemma head_iwf W : ty_head W = hdIWf -> exists l li X A N Ot C m, W = tyIWf l li X A N Ot C m.
 Proof. destruct W; cbn; intros E; try discriminate; eauto 10. Qed.
 
 (** A signature carried to an equal global context. *)
@@ -2099,7 +2099,7 @@ Proof.
 Qed.
 
 (** Indexed coinductive types (M18b). *)
-Lemma head_M W : ty_head W = 21 -> exists l l' li X A B C j, W = tyM l l' li X A B C j.
+Lemma head_M W : ty_head W = hdM -> exists l l' li X A B C j, W = tyM l l' li X A B C j.
 Proof. destruct W; cbn; intros E; try discriminate; eauto 10. Qed.
 
 Lemma C_actnf_M {G Γ l l' li k k' ki X X' A A' B B' C C' j j'} : leqv l k -> leqv l' k' -> leqv li ki ->

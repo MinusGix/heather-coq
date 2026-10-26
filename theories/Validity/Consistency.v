@@ -35,7 +35,7 @@ Proof.
 Qed.
 
 (** A whnf type other than a universe is not equal to one. *)
-Lemma not_univ {G i Γ W l k} : compt i -> whnf_ty W -> ty_head W <> 2 -> ~ [ G ; Γ ⊢[ i ] W ≅ tyU l @ k ].
+Lemma not_univ {G i Γ W l k} : compt i -> whnf_ty W -> ty_head W <> hdU -> ~ [ G ; Γ ⊢[ i ] W ≅ tyU l @ k ].
 Proof. intros Hc Hw Hh E. exact (Hh (decl_head_c Hc E Hw (whnf_tyU _))). Qed.
 
 (** The scrutinee inherits [closed_ok i G \/ gfree_tm ν] from the neutral. *)

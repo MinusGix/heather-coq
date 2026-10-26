@@ -59,8 +59,8 @@ Lemma synth_dec t : synth t \/ ~ synth t.
 Proof. destruct t; cbn; tauto. Qed.
 
 (** The head of a checked term's type. *)
-Definition chk_head (t : tm) : nat :=
-  match t with lam _ _ _ _ => 3 | boxT _ => 4 | boxt _ => 5 | _ => 0 end.
+Definition chk_head (t : tm) : ty_hd :=
+  match t with lam _ _ _ _ => hdPi | boxT _ => hdCTyp | boxt _ => hdCTrm | _ => hdNe end.
 
 Lemma chk_ty {G i Γ t T k} : ~ synth t -> [ G ; Γ ⊢[ i ] t : T @ k ] ->
   exists F, whnf_ty F /\ ty_head F = chk_head t /\ [ G ; Γ ⊢[ typeof i ] T ≅ F @ k ].
