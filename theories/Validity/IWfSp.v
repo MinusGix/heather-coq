@@ -187,9 +187,7 @@ Proof.
       rewrite (ktyl_dvecTl ρ') in KB1, KB1'. rewrite (kty_dvecHd ρ') in KA1, KB1, KA1', KB1'.
       rewrite (ktyl_iwfFamT ρ') in KA1, KB1, KA1', KB1'.
       pose proof (Hs' la lb _ _ la' lb' _ _ K1 K2 K1' K2' KA1 KB1 KA1' KB1') as Z.
-      eapply (proj2 (proj2 IWfRel_dir_all)); [exact Z| |].
-      * intros ρ''. exact (KDom_assoc HX ρ ρ' ρ'').
-      * intros ρ''. exact (KDom_assoc HA ρ ρ' ρ'').
+      exact Z.
 Qed.
 
 Section SpineK.
@@ -241,12 +239,8 @@ Proof.
     rewrite kty_comp, kty_comp, ktml_comp, ktml_comp, ktmll_comp, ktml_comp, ktm_comp in Y.
     rewrite <- (ktml_posMv ρ) in H, HK.
     apply (Y T' R H). destruct HK as [Hown HK]. split.
-    + eapply (proj2 (proj2 IWfRel_dir_all)); [exact Hown| |].
-      * intros ρ0. apply releq_sym', (KDom_assoc HX ρ ρ' ρ0).
-      * intros ρ0. apply releq_sym', (KDom_assoc HA ρ ρ' ρ0).
-    + intros ρ''. eapply (proj2 (proj2 IWfRel_dir_all)); [exact (HK ρ'')| |].
-      * intros ρ0. apply releq_sym', (KDom_assoc HX ρ ρ' (kw_comp ρ'' ρ0)).
-      * intros ρ0. apply releq_sym', (KDom_assoc HA ρ ρ' (kw_comp ρ'' ρ0)).
+    + exact Hown.
+    + exact HK.
   - intros ν ν' Hνν k Hk c HF ρ. pose proof (kw_tmred ρ Hk) as Hkρ. rewrite kty_tyNat in Hkρ.
     exact (IVecQ_ne (kw_lwf ρ HwL) (HFρ _ _ ρ (tmred_wf _ _ _ _ _ _ _ Hk) HF) Hkρ
              (gne_tm_whne_l (kw_gne_tm ρ Hνν))).
@@ -277,9 +271,7 @@ Proof.
     rewrite kty_comp, kty_comp, ktml_comp, ktml_comp, ktmll_comp, ktml_comp, !ktm_comp in Z.
     rewrite (kty_kid HΔ _ NX), (kty_kid HΔ _ NA), (ktml_kid' HΔ _ NN), (ktml_kid' HΔ _ NO), (ktmll_kid HΔ _ NC),
       (ktml_kid' HΔ _ Nc), (ktm_kid HΔ _ Nk), (ktm_kid HΔ _ Ncs), (ktm_kid HΔ _ Ncs') in Z.
-    eapply (proj2 (proj2 IWfRel_dir_all)); [exact Z| |].
-    + intros ρ0. exact (KDom_assoc HX (kid HΔ) ρ ρ0).
-    + intros ρ0. exact (KDom_assoc HA (kid HΔ) ρ ρ0).
+    exact Z.
 Qed.
 
 End SpineK.

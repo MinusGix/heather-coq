@@ -402,8 +402,8 @@ Proof using EL.
   - eapply MRn_dir; [exact (MIrrHyps_swap H) | apply Ht].
 Qed.
 
-(** A side from [LRm]'s premises, given the relations' invariance. *)
-Lemma MSide_intro {n rec G Γ l1 l2 li r1 r2 ri X X' A A' B B' C C' idxR shR posR} :
+(** A side from [LRm]'s premises. *)
+Lemma MSide_of_LR {n rec G Γ l1 l2 li r1 r2 ri X X' A A' B B' C C' idxR shR posR} :
   lequiv (gL G) r1 l1 -> lequiv (gL G) r2 l2 -> lequiv (gL G) ri li ->
   lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) li ->
   [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ,, X @ li ⊢g A @ l1 ] -> [ G ; Γ ,, X @ li ,, A @ l1 ⊢g B @ l2 ] ->
@@ -436,15 +436,9 @@ Lemma MSide_intro {n rec G Γ l1 l2 li r1 r2 ri X X' A A' B B' C C' idxR shR pos
   (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x' a a' p p', idxR ρ x x' -> shR ρ x x' a a' ->
       posR ρ x x' a a' p p' ->
       posR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x') (ktm ρ' a) (ktm ρ' a') (ktm ρ' p) (ktm ρ' p')) ->
-  (forall ρ1 ρ2 : kwk G Γ, kw_eqv ρ1 ρ2 -> forall x x', idxR ρ1 x x' -> idxR ρ2 x x') ->
-  (forall ρ1 ρ2 : kwk G Γ, kw_eqv ρ1 ρ2 -> forall x x' a a', idxR ρ1 x x' ->
-      shR ρ1 x x' a a' -> shR ρ2 x x' a a') ->
-  (forall ρ1 ρ2 : kwk G Γ, kw_eqv ρ1 ρ2 -> forall x x' a a' p p', idxR ρ1 x x' ->
-      shR ρ1 x x' a a' -> posR ρ1 x x' a a' p p' -> posR ρ2 x x' a a' p p') ->
   MSide G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR.
 Proof using EL.
-  intros Hr1 Hr2 Hri W1 W2 Wi HX HA HB HC HXX HAA HBB HCC Hidx Hsh Hpos ch gB gC gCa imon shmon posmon
-    iinv shinv posinv.
+  intros Hr1 Hr2 Hri W1 W2 Wi HX HA HB HC HXX HAA HBB HCC Hidx Hsh Hpos ch gB gC gCa imon shmon posmon.
   split; try assumption.
   - refine (conj (lequiv_sym _ _ _ Hr1) (conj (lequiv_sym _ _ _ Hr2) (conj (lequiv_sym _ _ _ Hri) _))).
     exact (conj (conj W1 (conj W2 (conj Wi (conj HX (conj HA (conj HB HC)))))) (conj HXX (conj HAA (conj HBB HCC)))).
@@ -455,11 +449,6 @@ Proof using EL.
   - intros ρ x x' a a' p p' h ha hp.
     exact (proj2 (proj2 (escape_tm _ _ _ _ _ _ _ _ (Hpos ρ x x' a a' h ha) p p' hp))).
 Qed.
-
-(** [LR] along worlds acting alike. *)
-Lemma LR_kw_eqv {n rec G Γ} {ρ1 ρ2 : kwk G Γ} : kw_eqv ρ1 ρ2 ->
-  forall T T' l R, LR n rec (kw_G ρ2) (kw_Δ ρ2) T T' l R -> LR n rec (kw_G ρ1) (kw_Δ ρ1) T T' l R.
-Proof using. intros (HG & HΔ & _) T T' l R. now rewrite HG, HΔ. Qed.
 
 End MIrrel.
 
@@ -640,111 +629,20 @@ Proof using EL VL.
     + intros; match goal with IH : forall (ρ : kwk _ _) T'' R', _ -> releq (domR _) _ |- _ =>
                                 eapply IH end; eauto.
   - (* M: the two sides, and the index's, shapes' and positions' relations agree *)
-    assert (Ri : forall ρ, releq (midxR ρ) (nidxR ρ)) by (intros; eapply IHmidx, nidxAd).
     assert (Rs : forall ρ x x' x'', midxR ρ x x' -> nidxR ρ x x'' -> releq (mshR ρ x x') (nshR ρ x x'')).
     { intros ρ x x' x'' h h'. eapply IHmsh; [exact h | apply nshAd, h']. }
     assert (Rp : forall ρ x x' x'' a a', midxR ρ x x' -> nidxR ρ x x'' -> mshR ρ x x' a a' ->
                    releq (mposR ρ x x' a a') (nposR ρ x x'' a a')).
     { intros ρ x x' x'' a a' h h' ha. eapply IHmpos; [exact h | exact ha |].
       apply nposAd; [exact h' | apply (Rs ρ x x' x'' h h'), ha]. }
-    (* the first side's relations at worlds acting alike *)
-    assert (Ii : forall ρ1 ρ2, kw_eqv ρ1 ρ2 -> releq (midxR ρ1) (midxR ρ2)).
-    { intros ρ1 ρ2 Hρ. eapply IHmidx. rewrite (kty_eqv Hρ). apply (LR_kw_eqv Hρ), midxAd. }
-    assert (Is : forall ρ1 ρ2, kw_eqv ρ1 ρ2 -> forall x x', midxR ρ1 x x' ->
-                   releq (mshR ρ1 x x') (mshR ρ2 x x')).
-    { intros ρ1 ρ2 Hρ x x' h. eapply IHmsh; [exact h |]. rewrite (ktyl_eqv Hρ).
-      apply (LR_kw_eqv Hρ), mshAd, (Ii ρ1 ρ2 Hρ), h. }
-    assert (Ip : forall ρ1 ρ2, kw_eqv ρ1 ρ2 -> forall x x' a a', midxR ρ1 x x' -> mshR ρ1 x x' a a' ->
-                   releq (mposR ρ1 x x' a a') (mposR ρ2 x x' a a')).
-    { intros ρ1 ρ2 Hρ x x' a a' h ha. eapply IHmpos; [exact h | exact ha |].
-      rewrite (ktyll_eqv Hρ).
-      apply (LR_kw_eqv Hρ), mposAd; [apply (Ii ρ1 ρ2 Hρ), h | apply (Is ρ1 ρ2 Hρ x x' h), ha]. }
     apply (MR_irrel (idxR := midxR) (idxR' := nidxR)).
     refine (conj _ (conj _ (conj Rs (conj Rp (conj _ (conj _ (conj _ (conj mixAd nixAd)))))))).
-    + eapply MSide_intro; [eassumption .. | | |].
-      * intros ρ1 ρ2 Hρ x x' h. apply (Ii ρ1 ρ2 Hρ), h.
-      * intros ρ1 ρ2 Hρ x x' a a' h ha. apply (Is ρ1 ρ2 Hρ x x' h), ha.
-      * intros ρ1 ρ2 Hρ x x' a a' p p' h ha hp. apply (Ip ρ1 ρ2 Hρ x x' a a' h ha), hp.
-    + eapply MSide_intro; [eassumption .. | | |].
-      * intros ρ1 ρ2 Hρ x x' h.
-        apply (Ri ρ2), (Ii ρ1 ρ2 Hρ), (Ri ρ1), h.
-      * intros ρ1 ρ2 Hρ x x' a a' h ha.
-        pose proof (proj2 (Ri ρ1 x x') h) as h1.
-        pose proof (proj1 (Ii ρ1 ρ2 Hρ x x') h1) as h2.
-        apply (Rs ρ2 x x' x' h2 (proj1 (Ri ρ2 x x') h2)), (Is ρ1 ρ2 Hρ x x' h1), (Rs ρ1 x x' x' h1 h), ha.
-      * intros ρ1 ρ2 Hρ x x' a a' p p' h ha hp.
-        pose proof (proj2 (Ri ρ1 x x') h) as h1.
-        pose proof (proj1 (Ii ρ1 ρ2 Hρ x x') h1) as h2.
-        pose proof (proj2 (Rs ρ1 x x' x' h1 h a a') ha) as ha1.
-        apply (Rp ρ2 x x' x' a a' h2 (proj1 (Ri ρ2 x x') h2) (proj1 (Is ρ1 ρ2 Hρ x x' h1 a a') ha1)),
-          (Ip ρ1 ρ2 Hρ x x' a a' h1 ha1), (Rp ρ1 x x' x' a a' h1 h ha1), hp.
+    + eapply MSide_of_LR; eassumption.
+    + eapply MSide_of_LR; eassumption.
     + exact (wf_tm_nf Hmm).
     + exact (wf_tm_nf Hmm').
     + exact (wf_tm_nf Hnm').
 Qed.
-
-(** [LR] at worlds acting alike: the relations agree. *)
-Lemma LR_kw_eqv_irrel {n rec G Γ} {ρ1 ρ2 : kwk G Γ} : kw_eqv ρ1 ρ2 ->
-  forall T T1 T2 l R1 R2, LR n rec (kw_G ρ1) (kw_Δ ρ1) T T1 l R1 -> LR n rec (kw_G ρ2) (kw_Δ ρ2) T T2 l R2 ->
-  releq R1 R2.
-Proof using EL VL.
-  intros Eρ T T1 T2 l R1 R2 H1 H2. exact (LR_irrel _ _ _ _ _ _ _ _ _ _ H1 (LR_kw_eqv Eρ _ _ _ _ H2)).
-Qed.
-
-(** A side from [LRm]'s premises, the invariance by irrelevance. *)
-Lemma MSide_of_LR {n rec G Γ l1 l2 li r1 r2 ri X X' A A' B B' C C' idxR shR posR} :
-  lequiv (gL G) r1 l1 -> lequiv (gL G) r2 l2 -> lequiv (gL G) ri li ->
-  lwf (gL G) l1 -> lwf (gL G) l2 -> lwf (gL G) li ->
-  [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ,, X @ li ⊢g A @ l1 ] -> [ G ; Γ ,, X @ li ,, A @ l1 ⊢g B @ l2 ] ->
-  [ G ; Γ ,, X @ li ,, A @ l1 ,, B @ l2 ⊢g C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
-  [ G ; Γ ⊢ X ≈ X' @ li ] -> [ G ; Γ ,, X @ li ⊢ A ≈ A' @ l1 ] ->
-  [ G ; Γ ,, X @ li ,, A @ l1 ⊢ B ≈ B' @ l2 ] ->
-  [ G ; Γ ,, X @ li ,, A @ l1 ,, B @ l2 ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
-  (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ X) (kty ρ X') li (idxR ρ)) ->
-  (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
-      LR n rec (kw_G ρ) (kw_Δ ρ) (ktyl ρ A)[lsingle x] (ktyl ρ A')[lsingle x'] l1 (shR ρ x x')) ->
-  (forall (ρ : kwk G Γ) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
-      LR n rec (kw_G ρ) (kw_Δ ρ) (ktyll ρ B)[lsingle2 x a] (ktyll ρ B')[lsingle2 x' a'] l2
-        (posR ρ x x' a a')) ->
-  (forall (ρ : kwk G Γ) x x' a a' p p', idxR ρ x x' -> shR ρ x x' a a' -> posR ρ x x' a a' p p' ->
-      idxR ρ (ktmlll ρ C)[lsingle3 x a p] (ktmlll ρ C')[lsingle3 x' a' p']) ->
-  (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
-      [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ A)[lsingle x] @ l1
-          ⊢ (ktyll ρ B)[llift (lsingle x)] ≈ (ktyll ρ B')[llift (lsingle x')] @ l2 ]) ->
-  (forall (ρ : kwk G Γ) x x', idxR ρ x x' ->
-      [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ A)[lsingle x] @ l1 ,, (ktyll ρ B)[llift (lsingle x)] @ l2
-          ⊢ (ktmlll ρ C)[llift (llift (lsingle x))] ≈ (ktmlll ρ C')[llift (llift (lsingle x'))]
-          : (kty ρ X)⟨↑⟩⟨↑⟩ @ li ]) ->
-  (forall (ρ : kwk G Γ) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
-      [ kw_G ρ ; kw_Δ ρ ,, (ktyll ρ B)[lsingle2 x a] @ l2
-          ⊢ (ktmlll ρ C)[llift (lsingle2 x a)] ≈ (ktmlll ρ C')[llift (lsingle2 x' a')] : (kty ρ X)⟨↑⟩ @ li ]) ->
-  (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x', idxR ρ x x' ->
-      idxR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x')) ->
-  (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x' a a', idxR ρ x x' -> shR ρ x x' a a' ->
-      shR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x') (ktm ρ' a) (ktm ρ' a')) ->
-  (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x' a a' p p', idxR ρ x x' -> shR ρ x x' a a' ->
-      posR ρ x x' a a' p p' ->
-      posR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x') (ktm ρ' a) (ktm ρ' a') (ktm ρ' p) (ktm ρ' p')) ->
-  MSide G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR.
-Proof using EL VL.
-  intros Hr1 Hr2 Hri W1 W2 Wi HX HA HB HC HXX HAA HBB HCC Hidx Hsh Hpos ch gB gC gCa imon shmon posmon.
-  assert (Ii : forall ρ1 ρ2, kw_eqv ρ1 ρ2 -> releq (idxR ρ1) (idxR ρ2)).
-  { intros ρ1 ρ2 Eρ. pose proof (Hidx ρ2) as H2. rewrite <- (kty_eqv Eρ) in H2.
-    exact (LR_kw_eqv_irrel Eρ _ _ _ _ _ _ (Hidx ρ1) H2). }
-  assert (Is : forall ρ1 ρ2, kw_eqv ρ1 ρ2 -> forall x x', idxR ρ1 x x' -> releq (shR ρ1 x x') (shR ρ2 x x')).
-  { intros ρ1 ρ2 Eρ x x' h. pose proof (Hsh ρ2 x x' (proj1 (Ii ρ1 ρ2 Eρ x x') h)) as H2.
-    rewrite <- (ktyl_eqv Eρ) in H2. exact (LR_kw_eqv_irrel Eρ _ _ _ _ _ _ (Hsh ρ1 x x' h) H2). }
-  assert (Ip : forall ρ1 ρ2, kw_eqv ρ1 ρ2 -> forall x x' a a', idxR ρ1 x x' -> shR ρ1 x x' a a' ->
-                 releq (posR ρ1 x x' a a') (posR ρ2 x x' a a')).
-  { intros ρ1 ρ2 Eρ x x' a a' h ha.
-    pose proof (Hpos ρ2 x x' a a' (proj1 (Ii ρ1 ρ2 Eρ x x') h) (proj1 (Is ρ1 ρ2 Eρ x x' h a a') ha)) as H2.
-    rewrite <- (ktyll_eqv Eρ) in H2. exact (LR_kw_eqv_irrel Eρ _ _ _ _ _ _ (Hpos ρ1 x x' a a' h ha) H2). }
-  eapply MSide_intro; try eassumption.
-  - intros ρ1 ρ2 Eρ x x' h. exact (proj1 (Ii ρ1 ρ2 Eρ x x') h).
-  - intros ρ1 ρ2 Eρ x x' a a' h ha. exact (proj1 (Is ρ1 ρ2 Eρ x x' h a a') ha).
-  - intros ρ1 ρ2 Eρ x x' a a' p p' h ha hp. exact (proj1 (Ip ρ1 ρ2 Eρ x x' a a' h ha p p') hp).
-Qed.
-
 
 (** ** Inversion by the left type's normal form *)
 

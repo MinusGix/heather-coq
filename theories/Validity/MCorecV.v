@@ -318,9 +318,6 @@ Proof using EL. intros (R & HR & _). exact (proj2 (proj2 (escape_ty _ _ _ _ _ _ 
 Lemma LRty_tyeq {l0 G Γ T T'} : LRty l0 G Γ T T' -> [ G ; Γ ⊢ T ≈ T' @ l0 ].
 Proof using EL. intros (R & HR). exact (proj2 (proj2 (escape_ty _ _ _ _ _ _ _ _ HR))). Qed.
 
-Lemma kw_eqv_trans {G Γ} {ρ1 ρ2 ρ3 : kwk G Γ} : kw_eqv ρ1 ρ2 -> kw_eqv ρ2 ρ3 -> kw_eqv ρ1 ρ3.
-Proof using . intros (E1 & E2 & E3 & E4 & E5) (F1 & F2 & F3 & F4 & F5); repeat split; congruence. Qed.
-
 Lemma ktyl_tyPi {G Γ} (ρ : kwk G Γ) l l' A B : ktyl ρ (tyPi l l' A B) = tyPi l l' (ktyl ρ A) (ktyll ρ B).
 Proof using . unfold ktyl, ktyll. now rewrite gwa_tyPi. Qed.
 
@@ -1012,17 +1009,6 @@ Proof using EL VL VN VX VA VB VC Hwl Hwl' Hwli Hk Hk' Hki Hd.
   exact (tmred_conv _ _ _ _ _ ge_typeof R2 (eqty_sym _ _ _ _ _ _ (geq_ty_sound ETM))).
 Qed.
 
-(** Along worlds acting alike. *)
-Lemma mrn_eqv n {G1 Γ1} (σ1 σ2 : kwk G1 Γ1 -> kwk G Δ) (Hσ : forall ρ, kw_eqv (σ1 ρ) (σ2 ρ))
-    X0 A0 B0 C0 X1 A1 B1 C1 m m' t t' :
-  MRn n G1 Γ1 l l' li X0 A0 B0 C0 k k' ki X1 A1 B1 C1 (fun ρ => mS (σ1 ρ)) (fun ρ => mP (σ1 ρ)) m m' t t' ->
-  MRn n G1 Γ1 l l' li X0 A0 B0 C0 k k' ki X1 A1 B1 C1 (fun ρ => mS (σ2 ρ)) (fun ρ => mP (σ2 ρ)) m m' t t'.
-Proof using .
-  apply MRn_impl; intros *.
-  - exact (proj1 (mSh_eqv (Hσ ρ) _ _ _ _)).
-  - exact (proj2 (mPos_eqv (Hσ ρ) _ _ _ _ _ _)).
-Qed.
-
 Local Notation kidL U j a := (tyM l l' li (sX U)⟨↑⟩ (sA U)⟨rlift ↑⟩ (sB U)⟨rlift (rlift ↑)⟩
   (sC U)⟨rlift (rlift (rlift ↑))⟩ (sC U)[llift (lsingle2 j a)]).
 Local Notation kidR U j a := (tyM k k' ki (rX U)⟨↑⟩ (rA U)⟨rlift ↑⟩ (rB U)⟨rlift (rlift ↑)⟩
@@ -1251,16 +1237,10 @@ Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd
     pose proof (LRtm_irrel_r (LRtm_conv_l hx1 (rA1 (SubRel_refl_r Hd) _ VA _ _ hj2'))
                   (rA1 (SubRel_refl_r Hd) _ (VTyG_refl_l VA) _ _ hj2')) as hx0'.
     eapply PiRel_impl; [| | exact (lam_at n IH (kw_comp W ρ) _ _ _ _ _ _ hjj2 hy2 h hx0 hx0')].
-    + intros ρ' p p' hp. cbv beta in hp |- *. rewrite !(ktm_comp ρ ρ') in hp.
-      exact (proj2 (mPos_eqv (kw_eqv_assoc W ρ ρ') _ _ _ _ _ _) hp).
+    + intros ρ' p p' hp. cbv beta in hp |- *. rewrite !(ktm_comp ρ ρ') in hp. exact hp.
     + intros ρ' p p' hh hh' u u' Hu. cbv beta in Hu |- *.
       rewrite ?kty_comp, ?ktyl_comp, ?ktyll_comp, ?ktmlll_comp, ?ktm_comp in Hu.
-      rewrite ?kty_comp, ?ktyl_comp, ?ktyll_comp, ?ktmlll_comp, ?ktm_comp.
-      refine (mrn_eqv n (fun ρ'' => kw_comp (kw_comp (kw_comp W ρ) ρ') ρ'')
-                (fun ρ'' => kw_comp W (kw_comp (kw_comp ρ ρ') ρ'')) _ _ _ _ _ _ _ _ _ _ _ _ _ Hu).
-      intros ρ''. eapply kw_eqv_trans; [exact (kw_eqv_assoc (kw_comp W ρ) ρ' ρ'') |].
-      eapply kw_eqv_trans; [exact (kw_eqv_assoc W ρ (kw_comp ρ' ρ'')) |].
-      exact (kw_eqv_comp_l W (kw_eqv_sym (kw_eqv_assoc ρ ρ' ρ''))).
+      rewrite ?kty_comp, ?ktyl_comp, ?ktyll_comp, ?ktmlll_comp, ?ktm_comp. exact Hu.
 Qed.
 
 (** ** The observations of related [corec]s *)
@@ -1304,9 +1284,7 @@ Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd
   pose proof (obs_at n IH (kw_comp U ρ) _ _ _ _ hjj2 hy2) as Ho.
   rewrite !ktm_corec, <- ?(kty_comp U ρ), <- ?(ktyl_comp U ρ), <- ?(ktyll_comp U ρ), <- ?(ktmlll_comp U ρ),
     <- ?(ktmll_comp' U ρ).
-  refine (MObs_impl n _ _ _ _ _ _ _ _ _ _ Ho); intros *.
-  - exact (proj1 (mSh_eqv (kw_eqv_assoc U ρ ρ0) _ _ _ _)).
-  - exact (proj2 (mPos_eqv (kw_eqv_assoc U ρ ρ0) _ _ _ _ _ _)).
+  exact Ho.
 Qed.
 
 End CorecV.
@@ -1373,9 +1351,7 @@ Proof using EL VL VN VX VA VB VC VY Vc Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc HX HA HB
     pose proof (corec_all Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc VX VA VB VC VY Vstep Vc Hd n (kw_self HΔ) _ _ _ _ hjj hy')
       as H.
     rewrite !kty_self, !ktyl_self, !ktyll_self, !ktmlll_self, !ktmll_self in H by assumption.
-    eapply MRn_impl; [| | exact H]; intros ρ *.
-    + exact (proj1 (mSh_eqv (kw_eqv_self HΔ ρ) _ _ _ _)).
-    + exact (proj2 (mPos_eqv (kw_eqv_self HΔ ρ) _ _ _ _ _ _)).
+    exact H.
   - pose proof (VTm_trans Vm (VTm_sym Vm) _ _ _ Hd) as Xmm.
     eexists. exact (LR_M_at Hwl Hwl' Hwli (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') (lequiv_refl _ _ Hwli)
                       (VTyG_refl_l VX) (VTyG_refl_l VA) (VTyG_refl_l VB) (VTmG_trans VC (VTmG_sym VC))

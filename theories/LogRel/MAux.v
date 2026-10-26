@@ -1,12 +1,13 @@
-(** * The relation at [M]: syntax in Kripke worlds, equivalent worlds,
-      and the facts one side of [LRm] gives (M18b)
+(** * The relation at [M]: syntax in Kripke worlds, and the facts one
+      side of [LRm] gives (M18b)
 
     What the laws of [MR] (irrelevance, symmetry, transitivity,
-    weakening) share: [M]'s syntax commutes with a world, worlds that act
-    alike on syntax ([kw_eqv]: the two associations of a composite, a
-    world after the identity) relate alike, and [MSide] bundles what one
-    [LRm] gives about its two signatures and its relations in every
-    world, closed under moving to a world ([MSide_kw]). *)
+    weakening) share: [M]'s syntax commutes with a world, and [MSide]
+    bundles what one [LRm] gives about its two signatures and its
+    relations in every world, closed under moving to a world
+    ([MSide_kw]). The two associations of a composite world, and a world
+    after the identity, are the same world ([kw_comp_assoc]), so the
+    relations need no invariance between them. *)
 From DeLaM.LogRel Require Export Escape.
 
 Lemma gwa_tyM γ l l' li X A B C j :
@@ -435,66 +436,6 @@ Qed.
 
 End KwBinders.
 
-(** ** Worlds acting alike on syntax
-
-    The two associations of a composite world, and a world after the
-    identity, are not equal ([kw_comp] composes proofs), but act alike;
-    the relations of [LRm] at such worlds agree by irrelevance. *)
-Definition kw_eqv {G Γ} (ρ1 ρ2 : kwk G Γ) : Prop :=
-  kw_G ρ1 = kw_G ρ2 /\ kw_Δ ρ1 = kw_Δ ρ2 /\
-  (forall T : ty, T⟦kw_γ ρ1⟧ = T⟦kw_γ ρ2⟧) /\ (forall t : tm, t⟦kw_γ ρ1⟧ = t⟦kw_γ ρ2⟧) /\
-  (forall k, rlk (kw_r ρ1) k = rlk (kw_r ρ2) k).
-
-Lemma kw_eqv_sym {G Γ} {ρ1 ρ2 : kwk G Γ} : kw_eqv ρ1 ρ2 -> kw_eqv ρ2 ρ1.
-Proof. intros (E1 & E2 & E3 & E4 & E5). repeat split; intros; symmetry; auto. Qed.
-
-Lemma kw_eqv_assoc {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) (ρ'' : kwk (kw_G ρ') (kw_Δ ρ')) :
-  kw_eqv (kw_comp (kw_comp ρ ρ') ρ'') (kw_comp ρ (kw_comp ρ' ρ'')).
-Proof. repeat split. Qed.
-
-Lemma kw_eqv_comp_l {G Γ} (ρ : kwk G Γ) {ρ1 ρ2 : kwk (kw_G ρ) (kw_Δ ρ)} :
-  kw_eqv ρ1 ρ2 -> kw_eqv (kw_comp ρ ρ1) (kw_comp ρ ρ2).
-Proof.
-  intros (E1 & E2 & E3 & E4 & E5). refine (conj E1 (conj E2 _)). rewrite !kw_γ_comp, !kw_r_comp.
-  repeat split; intros.
-  - now rewrite <- !gwa_comp_ty.
-  - now rewrite <- !gwa_comp_tm.
-  - now rewrite !rlk_wk_comp, E5.
-Qed.
-
-Lemma kw_eqv_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) (ρ : kwk G Γ) : kw_eqv (kw_comp (kw_self HΓ) ρ) ρ.
-Proof. repeat split. Qed.
-
-Section KwEqv.
-Context {G Γ} {ρ1 ρ2 : kwk G Γ} (Hρ : kw_eqv ρ1 ρ2).
-
-Lemma rlk_lift_eqv r r' : (forall k, rlk r k = rlk r' k) -> forall k, rlk (rlift r) k = rlk (rlift r') k.
-Proof. intros H [|k]; rewrite !rlk_rlift; [reflexivity | now rewrite H]. Qed.
-
-Lemma kty_eqv T : kty ρ1 T = kty ρ2 T.
-Proof. destruct Hρ as (_ & _ & E3 & _ & E5). unfold kty. rewrite E3. now apply ren_ext_ty. Qed.
-Lemma ktm_eqv t : ktm ρ1 t = ktm ρ2 t.
-Proof. destruct Hρ as (_ & _ & _ & E4 & E5). unfold ktm. rewrite E4. now apply ren_ext_tm. Qed.
-Lemma ktyl_eqv T : ktyl ρ1 T = ktyl ρ2 T.
-Proof. destruct Hρ as (_ & _ & E3 & _ & E5). unfold ktyl. rewrite E3. now apply ren_ext_ty, rlk_lift_eqv. Qed.
-Lemma ktml_eqv t : ktml ρ1 t = ktml ρ2 t.
-Proof. destruct Hρ as (_ & _ & _ & E4 & E5). unfold ktml. rewrite E4. now apply ren_ext_tm, rlk_lift_eqv. Qed.
-Lemma ktyll_eqv T : ktyll ρ1 T = ktyll ρ2 T.
-Proof.
-  destruct Hρ as (_ & _ & E3 & _ & E5). unfold ktyll. rewrite E3. now apply ren_ext_ty, rlk_lift_eqv, rlk_lift_eqv.
-Qed.
-Lemma ktmll_eqv t : ktmll ρ1 t = ktmll ρ2 t.
-Proof.
-  destruct Hρ as (_ & _ & _ & E4 & E5). unfold ktmll. rewrite E4. now apply ren_ext_tm, rlk_lift_eqv, rlk_lift_eqv.
-Qed.
-Lemma ktmlll_eqv t : ktmlll ρ1 t = ktmlll ρ2 t.
-Proof.
-  destruct Hρ as (_ & _ & _ & E4 & E5). unfold ktmlll. rewrite E4.
-  now apply ren_ext_tm, rlk_lift_eqv, rlk_lift_eqv, rlk_lift_eqv.
-Qed.
-
-End KwEqv.
-
 (** The identity world on the signature's components. *)
 Lemma ktyl_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) T : nfty T -> ktyl (kw_self HΓ) T = T.
 Proof.
@@ -515,9 +456,7 @@ Qed.
 (** ** One side of [LRm]
 
     What an [LRm] derivation gives about its two signatures and its three
-    relations, with the [LR] premises replaced by their escapes and the
-    relations' agreement at worlds acting alike ([kw_eqv]) added, which
-    irrelevance provides. *)
+    relations, with the [LR] premises replaced by their escapes. *)
 End MAux.
 
 Record MSide `{E : GenericEq} (G : gctx) (Γ : ctx) (l1 l2 li : lvl) (X A B : ty) (C : tm)
@@ -551,12 +490,7 @@ Record MSide `{E : GenericEq} (G : gctx) (Γ : ctx) (l1 l2 li : lvl) (X A B : ty
     shR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x') (ktm ρ' a) (ktm ρ' a') ;
   ms_posmon : forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) x x' a a' p p', idxR ρ x x' -> shR ρ x x' a a' ->
     posR ρ x x' a a' p p' ->
-    posR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x') (ktm ρ' a) (ktm ρ' a') (ktm ρ' p) (ktm ρ' p') ;
-  ms_iinv : forall ρ1 ρ2 : kwk G Γ, kw_eqv ρ1 ρ2 -> forall x x', idxR ρ1 x x' -> idxR ρ2 x x' ;
-  ms_shinv : forall ρ1 ρ2 : kwk G Γ, kw_eqv ρ1 ρ2 -> forall x x' a a', idxR ρ1 x x' ->
-    shR ρ1 x x' a a' -> shR ρ2 x x' a a' ;
-  ms_posinv : forall ρ1 ρ2 : kwk G Γ, kw_eqv ρ1 ρ2 -> forall x x' a a' p p', idxR ρ1 x x' ->
-    shR ρ1 x x' a a' -> posR ρ1 x x' a a' p p' -> posR ρ2 x x' a a' p p'
+    posR (kw_comp ρ ρ') (ktm ρ' x) (ktm ρ' x') (ktm ρ' a) (ktm ρ' a') (ktm ρ' p) (ktm ρ' p')
 }.
 
 Arguments ms_geq {E G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR}.
@@ -572,9 +506,6 @@ Arguments ms_gCa {E G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR}.
 Arguments ms_imon {E G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR}.
 Arguments ms_shmon {E G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR}.
 Arguments ms_posmon {E G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR}.
-Arguments ms_iinv {E G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR}.
-Arguments ms_shinv {E G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR}.
-Arguments ms_posinv {E G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR}.
 
 Section MAuxSide.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
@@ -600,7 +531,7 @@ Lemma MSide_kw {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR} (ρ : 
     r1 r2 ri (kty ρ X') (ktyl ρ A') (ktyll ρ B') (ktmlll ρ C')
     (fun ρ' => idxR (kw_comp ρ ρ')) (fun ρ' => shR (kw_comp ρ ρ')) (fun ρ' => posR (kw_comp ρ ρ')).
 Proof using EL.
-  intros [HG eI gA eS gBa eP ch gB gC gCa imon shmon posmon iinv shinv posinv].
+  intros [HG eI gA eS gBa eP ch gB gC gCa imon shmon posmon].
   split; cbn beta.
   - exact (MGeq_kw ρ HG).
   - intros ρ' x x' h. rewrite <- kty_comp. exact (eI _ x x' h).
@@ -612,15 +543,9 @@ Proof using EL.
   - intros ρ' x x' h. rewrite <- ktyl_comp, <- !ktyll_comp. exact (gB _ x x' h).
   - intros ρ' x x' h. rewrite <- ktyl_comp, <- ktyll_comp, <- !ktmlll_comp, <- kty_comp. exact (gC _ x x' h).
   - intros ρ' x x' a a' h ha. rewrite <- ktyll_comp, <- !ktmlll_comp, <- kty_comp. exact (gCa _ x x' a a' h ha).
-  - intros ρ' ρ'' x x' h. exact (iinv _ _ (kw_eqv_assoc ρ ρ' ρ'') _ _ (imon (kw_comp ρ ρ') ρ'' x x' h)).
-  - intros ρ' ρ'' x x' a a' h ha.
-    exact (shinv _ _ (kw_eqv_assoc ρ ρ' ρ'') _ _ _ _ (imon (kw_comp ρ ρ') ρ'' x x' h) (shmon (kw_comp ρ ρ') ρ'' x x' a a' h ha)).
-  - intros ρ' ρ'' x x' a a' p p' h ha hp.
-    exact (posinv _ _ (kw_eqv_assoc ρ ρ' ρ'') _ _ _ _ _ _ (imon (kw_comp ρ ρ') ρ'' x x' h) (shmon (kw_comp ρ ρ') ρ'' x x' a a' h ha)
-             (posmon (kw_comp ρ ρ') ρ'' x x' a a' p p' h ha hp)).
-  - intros ρ1 ρ2 Eρ. exact (iinv _ _ (kw_eqv_comp_l ρ Eρ)).
-  - intros ρ1 ρ2 Eρ. exact (shinv _ _ (kw_eqv_comp_l ρ Eρ)).
-  - intros ρ1 ρ2 Eρ. exact (posinv _ _ (kw_eqv_comp_l ρ Eρ)).
+  - intros ρ' ρ'' x x' h. exact (imon (kw_comp ρ ρ') ρ'' x x' h).
+  - intros ρ' ρ'' x x' a a' h ha. exact (shmon (kw_comp ρ ρ') ρ'' x x' a a' h ha).
+  - intros ρ' ρ'' x x' a a' p p' h ha hp. exact (posmon (kw_comp ρ ρ') ρ'' x x' a a' p p' h ha hp).
 Qed.
 
 (** ** At the context itself: the index, the shapes' type, the positions'
@@ -739,9 +664,6 @@ Proof using EL.
   - intros ρ ρ' x x' h. exact (ms_imon HM ρ ρ' x' x h).
   - intros ρ ρ' x x' a a' h ha. exact (ms_shmon HM ρ ρ' x' x a' a h ha).
   - intros ρ ρ' x x' a a' p p' h ha hp. exact (ms_posmon HM ρ ρ' x' x a' a p' p h ha hp).
-  - intros ρ1 ρ2 Eρ x x' h. exact (ms_iinv HM ρ1 ρ2 Eρ x' x h).
-  - intros ρ1 ρ2 Eρ x x' a a' h ha. exact (ms_shinv HM ρ1 ρ2 Eρ x' x a' a h ha).
-  - intros ρ1 ρ2 Eρ x x' a a' p p' h ha hp. exact (ms_posinv HM ρ1 ρ2 Eρ x' x a' a p' p h ha hp).
 Qed.
 
 (** ** A child of related indices, shapes and positions *)

@@ -365,14 +365,13 @@ Decisions and deviations, in the order the proof met them:
   `out` may carry annotations that are not a weakening, and moving
   `Σ`'s relation between two `out`s' annotations at a neutral scrutinee
   would need reflection of neutrals, which comes after weakening.
-- **Worlds compose associatively only up to `kw_eqv`.** Two worlds are
-  equivalent when they have the same contexts and act alike on types,
+- **Worlds compose associatively only up to `kw_eqv`** (as built in
+  M18b; superseded by "Associative worlds" below). Two worlds were
+  equivalent when they had the same contexts and acted alike on types,
   terms and local renamings; both associations of a composite, and a
-  world after the identity, are. The shapes' and positions' relations
-  respect it (`MShIrr`/`MPosIrr`'s premises, `LR_kw_eqv`), so each child
-  in `corec`'s depth induction takes one conversion step. A world
-  composition associative on the nose would remove those steps here and
-  in `WNf_kw`'s reassociations (follow-up, below).
+  world after the identity, were. The shapes' and positions' relations
+  respected it (`MSide`'s invariance fields, `LR_kw_eqv`), so each child
+  in `corec`'s depth induction took one conversion step.
 - **`corec` is related at its own index, then moved to the claimed one.**
   `MRn_idx` (`MIdx.v`) moves `MRn n` at indices `m, m'` to any indices
   related to them, by `MRn_dir` on the right index and `MRn_flip` around
@@ -415,11 +414,8 @@ Decisions and deviations, in the order the proof met them:
   `Proof using`, by Coq's own suggestion.
 
 Follow-ups:
-- **Associative world composition.** Making `kw_comp` associative on the
-  nose (or exposing it through a normalizing view) would remove the
-  `kw_eqv` conversions in `M`'s laws and `corec`'s depth induction, and
-  the reassociations `WNf_kw` does by irrelevance. Not needed for
-  correctness; it is proof-engineering cost only.
+- **Associative world composition.** Done (heather-coq#61): "Associative
+  worlds" below.
 - **Canonicity and productivity at `M`** (heather-coq#39), as planned,
   now that the former is in-tree.
 

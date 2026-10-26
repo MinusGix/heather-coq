@@ -127,14 +127,6 @@ Proof.
   exact (LR_irrel _ _ _ _ _ _ _ _ _ _ X1 X2).
 Qed.
 
-Lemma WfDom_assoc {G Δ l A} {d : DomRel G Δ} (HD : WfDom G Δ l A d) (ρ : kwk G Δ)
-  (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) ρ'' :
-  releq (d (kw_comp (kw_comp ρ ρ') ρ'')) (d (kw_comp ρ (kw_comp ρ' ρ''))).
-Proof.
-  revert ρ''. apply (WfDom_releq (l := l) (A := kty ρ' (kty ρ A))); [|exact (WfDom_comp ρ' (WfDom_comp ρ HD))].
-  intros ρ0. destruct (HD (kw_comp (kw_comp ρ ρ') ρ0)) as [A2 X2]. rewrite !kty_comp in X2. eauto.
-Qed.
-
 Lemma WfDom_of {G Δ l A A'} {domR : DomRel G Δ} :
   (forall ρ : kwk G Δ, LogRel l (kw_G ρ) (kw_Δ ρ) (kty ρ A) (kty ρ A') l (domR ρ)) -> WfDom G Δ l A domR.
 Proof. intros H ρ. eauto. Qed.
@@ -361,8 +353,7 @@ Proof.
       pose proof (kw_geq_ty ρ' HA1'x) as KA1'. pose proof (kw_geq_ty_l ρ' HWfρ Hwlρ HB1'x) as KB1'.
       rewrite (ktyl_vecsh ρ') in KB1, KB1'. rewrite !kty_tyWf in KA1, KB1, KA1', KB1'.
       pose proof (Hs' la lb _ _ la' lb' _ _ K1 K2 K1' K2' KA1 KB1 KA1' KB1') as Z.
-      eapply (proj2 (proj2 WfRel_dir_all)); [exact Z|].
-      intros ρ''. exact (WfDom_assoc HD ρ ρ' ρ'').
+      exact Z.
 Qed.
 
 Section SpineK.
@@ -391,10 +382,8 @@ Proof.
     intros ρ' T' R H cs cs' HK.
     pose proof (IH (kw_comp ρ ρ')) as X. rewrite kty_comp, ktml_comp, ktm_comp in X.
     apply (X T' R H). destruct HK as [Hown HK]. split.
-    + eapply (proj2 (proj2 WfRel_dir_all)); [exact Hown|].
-      intros ρ0. apply releq_sym', (WfDom_assoc HD ρ ρ' ρ0).
-    + intros ρ''. eapply (proj2 (proj2 WfRel_dir_all)); [exact (HK ρ'')|].
-      intros ρ0. apply releq_sym', (WfDom_assoc HD ρ ρ' (kw_comp ρ'' ρ0)).
+    + exact Hown.
+    + exact HK.
   - intros ν ν' Hνν k Hk ρ. pose proof (kw_tmred ρ Hk) as Hkρ. rewrite kty_tyNat in Hkρ.
     pose proof (kw_ty ρ HWf) as HWfρ. rewrite kty_tyWf in HWfρ.
     exact (VecQ_ne (kw_lwf ρ Hwl) HWfρ Hkρ (gne_tm_whne_l (kw_gne_tm ρ Hνν))).

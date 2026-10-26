@@ -200,8 +200,7 @@ Proof using EL VL.
   - intros ρ. pose proof (Hsp (kw_comp (kid HΔ) ρ)) as Y.
     rewrite kty_comp, ktml_comp, !ktm_comp, (kty_kid HΔ _ NA), (ktml_kid HΔ _ NN), (ktm_kid HΔ _ Nk),
       (ktm_kid HΔ _ Ncs), (ktm_kid HΔ _ Ncs') in Y.
-    eapply (proj2 (proj2 WfRel_dir_all)); [exact Y|].
-    intros ρ0. exact (WfDom_assoc HD (kid HΔ) ρ ρ0).
+    exact Y.
 Qed.
 
 Lemma lift_single_tm (t : tm) d a : LK nftm d -> t[llift d][lsingle a] = t[lcons d a].
