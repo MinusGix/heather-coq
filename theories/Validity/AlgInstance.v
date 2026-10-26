@@ -663,6 +663,23 @@ Proof.
     refine (conj (@geq_tm_code_iwf DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hl Hli Hx Ex Hs Es Hn En Eo Ec Em) _).
     eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmIWf | apply whnf_tmIWf |].
     eapply actmnf_code_iwf; first [eapply lequiv_leqv; eassumption | eassumption].
+  (* indexed coinductive types (M18b) *)
+  - intros * Hl Hl' Hli HX (EX & DX) HA (EA & DA) HB (EB & DB) HC (EC & DC) (Ej & Dj).
+    refine (conj (@geq_ty_M DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hl Hl' Hli HX EX HA EA HB EB HC EC Ej) _).
+    eapply act_red; [constructor | constructor | apply whnf_tyM | apply whnf_tyM |].
+    eapply actnf_M; first [eapply lequiv_leqv; eassumption | eassumption].
+  - intros * Hl Hl' Hli Hkc HX EX HA EA HB EB HC EC Ej HY (EY & DY) (Ec & Dc) (Ey & Dy).
+    refine (conj (@geq_tm_corec DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hl Hl' Hli Hkc HX EX HA EA HB EB HC EC Ej HY EY Ec Ey) _).
+    eapply actm_red; [constructor | apply whnf_tyM | constructor | constructor | apply whnf_corec | apply whnf_corec |].
+    eapply actmnf_corec; first [eapply lequiv_leqv; eassumption | eassumption].
+  - intros * Hl Hl' Hli HX EX HA EA HB EB HC EC Ej ((Hn & Hn' & Eν) & T0 & Dν & ETν).
+    pose proof (@gne_tm_out DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hl Hl' Hli HX EX HA EA HB EB HC EC Ej
+                  (conj Hn (conj Hn' Eν))) as Y.
+    refine (conj Y _). destruct Y as (_ & _ & EY).
+    destruct (ne_nee Dν ETν) as (W0 & Xν & _).
+    exists (mOutTy l l' li X A B C j). split.
+    + eapply actmne_out; exact Xν.
+    + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EY))).
 Qed.
 
 End Alg.
