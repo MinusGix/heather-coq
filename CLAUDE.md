@@ -2,7 +2,7 @@
 
 Start by reading `README.md` (status, milestone by milestone), then
 `HEATHER.md` (Heather's extensions: the forward agenda),
-`docs/design/M18_DESIGN.md` (the current milestone) and
+`docs/design/M18_DESIGN.md` (the current milestone; M18b done, M18c next) and
 `docs/gotchas.md` (proof-engineering and build-time gotchas; follow
 them).
 
@@ -34,9 +34,9 @@ these docs by bare file name.
 
 - `nix develop path:. --command make -j4` (Coq 8.20, Equations, smpl from
   the flake). A clean build takes 10 to 26 minutes, depending on the
-  machine. Latest: typing `dnth` by a lemma in `RecWf` (2026-10-15)
-  took 1121 s wall at -j4 (critical path 973 s, CPU 2762 s) on a 4-core
-  cloud machine; the path starts `SubstCommute` → `DNthCore` → `RecWf`.
+  machine. Latest: M18b, the `M` former in-tree (2026-10-26), took
+  1313 s wall at -j4 (critical path 1186 s, CPU 3181 s) on a 4-core
+  cloud machine; the path starts `SubstCommute` → `TypedDnf` → `RecWf`.
   Machines differ by up to 2x, so compare builds on one machine
   only, back to back; the history of earlier measurements is in git
   (`git log -p CLAUDE.md`). The critical path (Syntax → Typing metatheory → Validity →
