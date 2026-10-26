@@ -13,7 +13,7 @@ Lemma Dc_actnf_iwf {G Γ l li k ki X X0 A A0 N N0 Ot Ot0 C C0 m m0} :
   Dc_tynf G Γ (tyIWf l li X A N Ot C m) (tyIWf k ki X0 A0 N0 Ot0 C0 m0).
 Proof.
   intros IHX IHA IHN IHO IHC IHm Y i q q' Hc HY HY'.
-  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct Y; try solve [refute_con | refute].
   match goal with |- Dec (ac_tynf _ _ _ (tyIWf ?p1 ?p2 ?p3 ?p4 ?p5 ?p6 ?p7 ?p8)) =>
     rename p1 into l5, p2 into li5, p3 into X', p4 into A', p5 into N', p6 into Ot', p7 into C', p8 into m' end.
@@ -44,7 +44,7 @@ Lemma Dc_actmnf_supi {G Γ l li X A N Ot C m k ki X1 A1 N1 O1 C1 k0 ki0 X0 A0 N0
     (tyIWf l li X A N Ot C m).
 Proof.
   intros IHa IHcs x i q Hc Hw Hx.
-  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct x; try solve [refute_con | refute].
   match goal with |- Dec (ac_tmnf _ _ _ (tmSupi _ _ _ _ _ _ _ ?e ?g) _) => rename e into a', g into cs' end.
   destruct (supi_parts Hc Hw) as (HS & _ & Ha & Hcs & _ & _).
@@ -65,7 +65,7 @@ Lemma Dc_actmne_elimIWf {G Γ l li l' k ki k' X X0 A A0 N N0 Ot Ot0 C C0 M M0 c 
     M[lsingle2 m ν].
 Proof.
   intros IHM IHc Dν0 IHν x i q q' T T' Hc Hx Hx'.
-  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct x; try solve [refute_con].
   match goal with |- Dec (ac_tmne _ _ _ (tmElimIWf ?p1 ?p2 ?p3 ?p4 ?p5 ?p6 ?p7 ?p8 ?p9 ?p10 ?p11 ?p12) _) =>
     rename p1 into l5, p2 into li5, p3 into l5', p4 into X', p5 into A', p6 into N', p7 into Ot',
@@ -105,7 +105,7 @@ Proof.
   match goal with |- Dec (ac_tmnf _ _ _ (tmDVec ?a ?b ?c) _) => rename a into k', b into n', c into f' end.
   destruct (code_dvec_prem Hc Hx) as (W1 & Hn & Hf).
   destruct (code_dvec_prem Hc Hx') as (W5 & Hn' & Hf').
-  pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_notV _ Hc) as Hv.
   destruct (leqv_dec k k') as [H15 | N]; [| refute].
   pose proof (leqv_lequiv _ _ _ W1 W5 H15) as E15.
   destruct (IHn n' i _ Hc Hn Hn') as [Dn | N]; [| refute].
@@ -127,7 +127,7 @@ Lemma Dc_actmnf_code_iwf {G Γ l k k0 ki ki0 x x0 s s0 n n0 o o0 c c0 m m0} :
   Dc_tmnf G Γ (tmIWf k ki x s n o c m) (tmIWf k0 ki0 x0 s0 n0 o0 c0 m0) (tyU l).
 Proof.
   intros IHx IHs IHN IHO IHC IHm Y i q Hc Ht Ht'.
-  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct Y; try solve [refute_con].
   match goal with |- Dec (ac_tmnf _ _ _ (tmIWf ?p1 ?p2 ?p3 ?p4 ?p5 ?p6 ?p7 ?p8) _) =>
     rename p1 into k', p2 into ki', p3 into x', p4 into s', p5 into n', p6 into o', p7 into c', p8 into m' end.

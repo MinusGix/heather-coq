@@ -657,9 +657,6 @@ Proof. intros H; red; intros; apply actmnf_boxt, tm_leq_sym, H. Qed.
 
 (** ** Neutral terms *)
 
-Lemma compt_notV {i} : compt i -> i <> lV.
-Proof. intros [-> | ->]; discriminate. Qed.
-
 Lemma Y_actmnee_red {G Γ ν ν' T W} : Y_ne G Γ ν ν' T -> reds_ty T W -> whnf_ty W -> Y_nee G Γ ν ν' W.
 Proof.
   intros IH _ _ i k k' A A' Hc Hν Hν'. pose proof (compt_typeof_self _ Hc) as Hi.
@@ -1141,7 +1138,7 @@ Lemma Y_actmnf_code_wf {G Γ l k k' s s' n n'} : leqv k k' ->
 Proof.
   intros Hk0 Ds IHs Dn IHn i m Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (code_wf_prem Hc Hx) as (W1 & Hs & Hn). destruct (code_wf_prem Hc Hx') as (W3 & Hs' & Hn').
-  pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_notV _ Hc) as Hv.
   pose proof (leqv_lequiv _ _ _ W1 W3 Hk0) as E13.
   pose proof (ctx_of_wf_tm Hi Hs) as HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
   assert (HΓt : [ G ; Γ ⊢[ typeof i ] ]) by (rewrite Hi; exact HΓ).
@@ -1169,7 +1166,7 @@ Lemma Y_actmnf_code_dvec {G Γ l k k' n n' f f'} : leqv k k' ->
 Proof.
   intros Hk0 Dn IHn Df IHf i m Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
   destruct (code_dvec_prem Hc Hx) as (W1 & Hn & Hf). destruct (code_dvec_prem Hc Hx') as (W3 & Hn' & Hf').
-  pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_notV _ Hc) as Hv.
   pose proof (leqv_lequiv _ _ _ W1 W3 Hk0) as E13.
   pose proof (ctx_of_wf_tm Hi Hn) as HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
   pose proof (ac_tm_sound Hc Dn Hn Hn') as En.
@@ -1196,7 +1193,7 @@ Lemma Y_actmnf_code_iwf {G Γ l k k' ki ki' x x' s s' n n' o o' c c' m m'} : leq
   Y_tmnf G Γ (tmIWf k ki x s n o c m) (tmIWf k' ki' x' s' n' o' c' m') (tyU l).
 Proof.
   intros Hk0 Hki0 Dx IHx Ds IHs DN IHN DO IHO DC IHC Dm IHm i q Hc Ht Ht'.
-  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (iwfc_ac_eq Hc Ht Ht' Hk0 Hki0 Dx Ds DN DO DC) as (HE & Hx1 & Hs1 & Hm & Hm'l).
   pose proof HE as (E13 & E24 & HS & EX & _ & _ & _ & _ & _ & _ & HN'l & HO'l & HC'l).
   pose proof HS as (_ & _ & _ & _ & HN & HO & HC).
@@ -1706,7 +1703,7 @@ Lemma Y_actnf_iwf {G Γ l li k ki X X' A A' N N' Ot Ot' C C' m m'} : leqv l k ->
   Y_tynf G Γ (tyIWf l li X A N Ot C m) (tyIWf k ki X' A' N' Ot' C' m').
 Proof.
   intros Hl Hli DX IHX DA IHA DN IHN DO IHO DC IHC Dm IHm i q q' Hc HT HT'.
-  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (inv_ty_iwf HT) as ((_ & W1 & W2 & HX & HA & HN & HO & HC & Hm) & _).
   destruct (inv_ty_iwf HT') as ((_ & W3 & W4 & HX' & HA' & HN' & HO' & HC' & Hm') & _).
   pose proof (leqv_lequiv _ _ _ W1 W3 Hl) as E1. pose proof (leqv_lequiv _ _ _ W2 W4 Hli) as E2.
@@ -1732,7 +1729,7 @@ Lemma Y_actmnf_supi {G Γ l li X A N Ot C m k ki X1 A1 N1 O1 C1 k' ki' X1' A1' N
   Y_tmnf G Γ (tmSupi k ki X1 A1 N1 O1 C1 a cs) (tmSupi k' ki' X1' A1' N1' O1' C1' a' cs')
     (tyIWf l li X A N Ot C m).
 Proof.
-  intros Da IHa IHcs i q Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  intros Da IHa IHcs i q Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (supi_parts Hc Ht) as (HS & _ & Ha & Hcs & _ & _).
   destruct (supi_parts Hc Ht') as (_ & _ & Ha' & Hcs' & _ & _).
   pose proof (ctx_of_wf_tm Hi Ha) as HΓ.
@@ -1753,7 +1750,7 @@ Lemma Y_actmne_elimIWf {G Γ l li l' k ki k' X X' A A' N N' Ot Ot' C C' M M' c c
     M[lsingle2 m ν].
 Proof.
   intros H3 DM IHM IHc Dν IHν i q q' Z Z' Hc Hx Hx'.
-  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (inv_elimIWf Hi Hx)
     as ((_ & W3 & W1 & W2 & HX & HA & HN & HO & HC & Hmot & HM & Hcs & HI & Hc0 & Hm & Hν) & _ & _).
   destruct (inv_elimIWf Hi Hx')
@@ -1822,7 +1819,7 @@ Lemma Y_actmnf_corec {G Γ l l' li X A B C j k1 k2 k3 X1 A1 B1 C1 j1 k1' k2' k3'
   Y_tmnf G Γ (tmCorec k1 k2 k3 X1 A1 B1 C1 kc Y c j1 y) (tmCorec k1' k2' k3' X1' A1' B1' C1' kc' Y' c' j1' y')
     (tyM l l' li X A B C j).
 Proof.
-  intros Hkc DY IHY IHc IHy i q Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  intros Hkc DY IHY IHc IHy i q Hc Ht Ht'. pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (corec_parts Hc Ht) as (HE & Wkc & Ej & HY & Hc0 & Hy & _).
   destruct (corec_parts Hc Ht') as (_ & Wkc' & _ & HY' & Hc0' & Hy' & _).
   pose proof (leqv_lequiv _ _ _ Wkc Wkc' Hkc) as Ekc.
@@ -2600,7 +2597,7 @@ Lemma T_actne_dvec {G Γ l l' ν ν' F F' W} : leqv l l' -> ac_tmnee G Γ ν ν'
   T_ty G (Γ ,, tyFin ν @ lzero) F F' -> T_tyne G Γ (tyDVec l ν F) (tyDVec l' ν' F').
 Proof.
   intros Hl DN IH IHF X'' i k k' k'' Hc HX HX' HX'' D2. pose proof (compt_typeof_self _ Hc) as Hi.
-  pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_notV _ Hc) as Hv.
   destruct (ainv_dvec D2) as (l'' & ν'' & F'' & W2 & -> & Hl2 & Dν2 & DF2).
   destruct (inv_ty_dvec HX) as ((_ & _ & Hν & HF) & _).
   destruct (inv_ty_dvec HX') as ((_ & _ & Hν' & HF') & _).
@@ -3419,14 +3416,14 @@ Lemma code_sig_prem {G i Γ l l1 l2 s t k} : compt i -> [ G ; Γ ⊢[ i ] tmSig 
   [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t : tyU l2 @ lsuc l2 ].
 Proof.
   intros Hc H. destruct (proj1 (inv_code_sig (compt_typeof_self _ Hc) H)) as (_ & W1 & W2 & Hs & Ht).
-  exact (conj (compt_notV Hc) (conj W1 (conj W2 (conj Hs Ht)))).
+  exact (conj (compt_notV _ Hc) (conj W1 (conj W2 (conj Hs Ht)))).
 Qed.
 Lemma code_W_prem {G i Γ l l1 l2 s t k} : compt i -> [ G ; Γ ⊢[ i ] tmW l1 l2 s t : tyU l @ k ] ->
   i <> lV /\ lwf (gL G) l1 /\ lwf (gL G) l2 /\ [ G ; Γ ⊢[ i ] s : tyU l1 @ lsuc l1 ] /\
   [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t : tyU l2 @ lsuc l2 ].
 Proof.
   intros Hc H. destruct (proj1 (inv_code_W (compt_typeof_self _ Hc) H)) as (_ & W1 & W2 & Hs & Ht).
-  exact (conj (compt_notV Hc) (conj W1 (conj W2 (conj Hs Ht)))).
+  exact (conj (compt_notV _ Hc) (conj W1 (conj W2 (conj Hs Ht)))).
 Qed.
 
 Lemma T_actmnf_code_sig {G Γ l l1 l2 l3 l4 s s' t t'} : leqv l1 l3 -> leqv l2 l4 ->
@@ -3579,7 +3576,7 @@ Proof.
   destruct (code_wf_prem Hc Hx) as (W1 & Hs & Hn).
   destruct (code_wf_prem Hc Hx') as (W3 & Hs' & Hn').
   destruct (code_wf_prem Hc Hx'') as (W5 & Hs'' & Hn'').
-  pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_notV _ Hc) as Hv.
   pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W3 W5 H35) as E35.
   pose proof (ctx_of_wf_tm Hi Hs) as HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
   assert (HΓt : [ G ; Γ ⊢[ typeof i ] ]) by (rewrite Hi; exact HΓ).
@@ -3628,7 +3625,7 @@ Proof.
   destruct (code_dvec_prem Hc Hx) as (W1 & Hn & Hf).
   destruct (code_dvec_prem Hc Hx') as (W3 & Hn' & Hf').
   destruct (code_dvec_prem Hc Hx'') as (W5 & Hn'' & Hf'').
-  pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_notV _ Hc) as Hv.
   pose proof (leqv_lequiv _ _ _ W1 W3 H13) as E13. pose proof (leqv_lequiv _ _ _ W3 W5 H35) as E35.
   pose proof (ctx_of_wf_tm Hi Hn) as HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
   pose proof (ac_tm_sound Hc Dn Hn Hn') as En.
@@ -3668,7 +3665,7 @@ Lemma T_actmnf_code_iwf {G Γ l k k' ki ki' x x' s s' n n' o o' c c' m m'} : leq
   T_tmnf G Γ (tmIWf k ki x s n o c m) (tmIWf k' ki' x' s' n' o' c' m') (tyU l).
 Proof.
   intros Hk Hki Dx IHx Ds IHs DN IHN DO IHO DC IHC Dm IHm y'' i q Hc Ht Ht' Ht'' D2.
-  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (ainv_code_iwf D2) as (k5 & ki5 & x'' & s'' & n'' & o'' & c'' & m'' & -> & Hk2 & Hki2
                                   & Dx2 & Ds2 & DN2 & DO2 & DC2 & Dm2).
   destruct (iwfc_ac_eq Hc Ht Ht' Hk Hki Dx Ds DN DO DC) as (HE & Hx1 & Hs1 & Hm & Hm'l).
@@ -4565,7 +4562,7 @@ Lemma T_actnf_iwf {G Γ l li k ki X X' A A' N N' Ot Ot' C C' m m'} : leqv l k ->
   T_tynf G Γ (tyIWf l li X A N Ot C m) (tyIWf k ki X' A' N' Ot' C' m').
 Proof.
   intros Hl Hli DX IHX DA IHA DN IHN DO IHO DC IHC Dm IHm T'' i q q' q'' Hc HT HT' HT'' D2.
-  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (ainv_iwf D2) as (k5 & ki5 & X'' & A'' & N'' & O'' & C'' & m'' & -> & Hl2 & Hli2
                              & DX2 & DA2 & DN2 & DO2 & DC2 & Dm2).
   destruct (inv_ty_iwf HT) as ((_ & W1 & W2 & HX & HA & HN & HO & HC & Hm) & _).
@@ -4608,7 +4605,7 @@ Lemma T_actmnf_supi {G Γ l li X A N Ot C m k ki X1 A1 N1 O1 C1 k' ki' X1' A1' N
     (tyIWf l li X A N Ot C m).
 Proof.
   intros Da IHa IHcs t'' i q Hc Ht Ht' Ht'' D2.
-  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (ainv_supi D2) as (k5 & ki5 & X5 & A5 & N5 & O5 & C5 & a'' & cs'' & -> & Da2 & Dcs2).
   destruct (supi_parts Hc Ht) as (HS & _ & Ha & Hcs & _ & _).
   destruct (supi_parts Hc Ht') as (_ & _ & Ha' & Hcs' & _ & _).
@@ -4635,7 +4632,7 @@ Lemma T_actmne_elimIWf {G Γ l li l' k ki k' X X' A A' N N' Ot Ot' C C' M M' c c
 Proof.
   intros H3 DM IHM IHc Dν IHν
     x'' T'' i q q' q'' Z Z' Z'' Hc Hx Hx' Hx'' D2.
-  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (ainv_elimIWf D2) as (k5 & ki5 & k6 & X'' & A'' & N'' & O'' & C'' & M'' & c'' & m'' & ν'' & Wν & ->
                                  & F3' & DM2 & Dc2 & Dν2).
   destruct (inv_elimIWf Hi Hx)
@@ -4770,7 +4767,7 @@ Lemma T_actmnf_corec {G Γ l l' li X A B C j k1 k2 k3 X1 A1 B1 C1 j1 k1' k2' k3'
     (tyM l l' li X A B C j).
 Proof.
   intros Hkc DY IHY IHc IHy t'' i q Hc Ht Ht' Ht'' D2.
-  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV Hc) as Hv.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
   destruct (ainv_corec D2) as (k1'' & k2'' & k3'' & X1'' & A1'' & B1'' & C1'' & kc'' & Y'' & c'' & j1'' & y''
                                & -> & Hkc2 & DY2 & Dc2 & Dy2).
   destruct (corec_parts Hc Ht) as (HE & Wkc & Ej & HY & Hc0 & Hy & _).

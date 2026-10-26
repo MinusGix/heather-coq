@@ -11,7 +11,7 @@ From DeLaM.Validity Require Export AlgLift.
 Section Alg.
 Context (i : layer) (Hi : compt i).
 Let Hty : typeof i = i := compt_typeof_self i Hi.
-Let Hv : i <> lV := compt_notV Hi.
+Let Hv : i <> lV := compt_notV _ Hi.
 
 Definition alg_ne_ty G Γ V V' l := decl_ne_ty i G Γ V V' l /\ ac_tyne G Γ V V'.
 Definition alg_eq_ty G Γ T T' l := [ G ; Γ ⊢[ i ] T ≅ T' @ l ] /\ ac_ty G Γ T T'.
