@@ -34,11 +34,16 @@ these docs by bare file name.
 
 - `nix develop path:. --command make -j4` (Coq 8.20, Equations, smpl from
   the flake). A clean build takes 10 to 26 minutes, depending on the
-  machine. Latest: M18b with #60's build-time fixes (2026-10-26) took
-  1229 s wall at -j4 (critical path 1048 s, CPU 3117 s) on a 4-core
-  cloud machine, against 1440 s for M18b and 1091 s for the tree before
-  it, back to back on that machine; the path starts `SubstCommute` →
-  `DNthCore` → `RecWf`.
+  machine. Latest: `par:` in the typing inductions, `Print Assumptions`
+  out of `make` and a computed `closed_brDecls` (2026-10-27) took 1063 s
+  and 1045 s wall at -j4 (critical path 874 s and 875 s) on a 4-core
+  cloud machine, against 1174 s (critical path 1009 s) for the tree
+  before, run between them; the path starts `SubstCommute` → `DNthCore`
+  → `RecWf`. The same machine took anywhere from 976 s to 1609 s for
+  that tree over one day, so only back-to-back runs compare. The
+  `.timing` files count the main process only: `par:`'s workers are
+  not in the "CPU" total, and they slow the files built beside them
+  (about 6% here).
   Machines differ by up to 2x, so compare builds on one machine
   only, back to back; the history of earlier measurements is in git
   (`git log -p CLAUDE.md`). The critical path (Syntax → Typing metatheory → Validity →

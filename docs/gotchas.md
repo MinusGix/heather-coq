@@ -261,6 +261,35 @@ formers, so it gets worse with every extension:
   calls it through an `Ltac` hook (`Ltac wdnth := fail …` in the early
   file, `Ltac wdnth ::= …` in the late one), so only the lemmas using
   that case wait for it (`RecWfBase`/`RecWf`).
+- **One proof, one core** (2026-10-27). A mutual induction over the
+  judgments is one proof, and a file-level build cannot split it: the
+  typing inductions held 322 s of the critical path on one core. Run the
+  case tactic under `par:`, which checks each goal in a worker process
+  (`-async-proofs-tac-j` in `_CoqProject`, 3 workers):
+  `apply typing_mut; intros. par: ((T0); (T1); …; (Tn)).` for what was
+  `apply typing_mut; intros; T0. all: T1. … all: Tn.` (`weakening_all`
+  56 s → about 25 s). Each `all:` stage goes in its own parentheses: in
+  `T0; split; [a | b]` a goal that `T0` closes leaves the dispatch with
+  no goals, which fails ("expected 0 tactics"), while `T0; (split; [a |
+  b])` runs the stage per goal. `par:` needs the tactic to close each
+  goal or leave it untouched, and goals without evars, so a proof that
+  ends in positional selectors or bullets (`Functionality`,
+  `GStatic.equiv_gsubst`) stays as it was; so does lemma-level
+  parallelism, `coqc -async-proofs on`, which made `RulesS` twice as
+  slow. The same applies to a `br_all` table proof (`brRes_wf`,
+  `brΓ_conv`).
+- **`Print Assumptions` walks every proof term below it**: 30 s each
+  for the consequences at the end of the build, where nothing ran
+  beside them. They are in `checks/Assumptions.v`, run by `make
+  assumptions`, not by `make`; add a new main result there.
+- **Computing, not `cbn`-ing, a fact about concrete data.**
+  `closed_brDecls` ran `cbn` over each of the 60 branch scopes to see
+  that a global substitution under their binders leaves them alone:
+  88 s on the critical path, rebuilding the `nth`/`dnth` telescopes
+  symbolically. `vm_compute` decides each one at an abstract
+  substitution in milliseconds (0.2 s in all). When the data is
+  concrete and the goal an equation that holds by computation, try
+  `vm_compute; reflexivity` first.
 - Measure before guessing (see `CLAUDE.md`, Build, for the tools):
   `tools/build-profile` for a timed build and its report,
   `tools/proofs.py` for the slowest proofs (tactics vs `Qed`),
