@@ -106,47 +106,53 @@ Proof.
   cbn [dnftm dnfty]; intuition auto using ren_dnf_ty, ren_dnf, subst_dnf, lk_dnf_lsingle.
 Qed.
 
+(** Goal-directed: each lemma chosen by the goal's head. Left to a
+    [first] of [apply]s, each failing one unfolded its conclusion against
+    the goal (13 s of [dnf_redt], 0.5 s now; docs/gotchas.md). *)
+Ltac dnf_step := lazymatch goal with
+  | |- True => exact I
+  | |- _ /\ _ => split
+  | |- dnftm (peelL _ _) => apply dnf_peelL
+  | |- dnftm (peelG _ _) => apply dnf_peelG
+  | |- dnftm (peelU _ _) => apply dnf_peelU
+  | |- dnftm (tup_nth _ _) => apply dnf_tup_nth
+  | |- dnftm (rb_br _ _) => unfold rb_br
+  | |- dnfty (iwfFam _ _ _ _ _ _ _ _) => apply dnf_iwfFam
+  | |- dnftm (tmDNth _ _ _ _ _) => apply dnf_tmDNth
+  | |- dnftm (tmNth _ _ _ _ _) => apply dnf_tmNth
+  | |- dnftm (wIH _ _ _ _ _ _ _ _ _) => apply dnf_wIH
+  | |- dnftm (wfIH _ _ _ _ _ _ _ _) => apply dnf_wfIH
+  | |- dnftm (iwfIH _ _ _ _ _ _ _ _ _ _ _ _) => apply dnf_iwfIH
+  | |- dnfty (ren _ _) => apply ren_dnf_ty
+  | |- dnfty (ren_ty _ _) => apply ren_dnf_ty
+  | |- dnftm (ren _ _) => apply ren_dnf
+  | |- dnftm (ren_tm _ _) => apply ren_dnf
+  | |- dnfty (subst _ _) => apply subst_dnf_ty
+  | |- dnfty (subst_ty _ _) => apply subst_dnf_ty
+  | |- dnftm (subst _ _) => apply subst_dnf
+  | |- dnftm (subst_tm _ _) => apply subst_dnf
+  | |- LK dnftm (lsingle _) => apply lk_dnf_lsingle
+  | |- LK dnftm (lsingle2 _ _) => apply lk_dnf_lsingle2
+  | |- LK dnftm (llift _) => apply lk_dnf_llift
+  | |- LK dnftm lsucc => apply lk_dnf_lsucc
+  | |- dnftm (recT _ _ _ _ _ _) => unfold recT
+  | |- dnftm (rect _ _ _ _ _ _ _) => unfold rect
+  | |- _ => first [assumption | progress cbn [dnfo dnftm dnfty dnfctx]]
+  end.
+
 Lemma dnf_redT l1 l2 rb l Δ c r : dnftm rb -> dnfctx Δ -> dnfty c ->
   redT l1 l2 rb l Δ c = Some r -> dnftm r.
 Proof.
   intros Hrb HΔ Hc E. unfold rb_br in E.
   destruct c; cbn [redT] in E; first [discriminate E | apply Some_inj in E; subst r]; cbn in Hc;
-    repeat first [ apply dnf_peelL | apply dnf_peelG | apply dnf_peelU | apply dnf_tup_nth ];
-    cbn [dnfo dnftm dnfty dnfctx recT rect]; intuition auto.
-  (* [IWf]'s (M17c): its components under the shape's binder *)
-  all: repeat first [ lazymatch goal with |- True => exact I | |- _ /\ _ => split end | assumption
-                    | apply ren_dnf_ty | apply ren_dnf | progress cbn [dnftm dnfty] ].
+    repeat match goal with H : _ /\ _ |- _ => destruct H end; repeat dnf_step.
 Qed.
 Lemma dnf_redt l1 l2 rb l Δ T c r : dnftm rb -> dnfctx Δ -> dnfty T -> dnftm c ->
   redt l1 l2 rb l Δ T c = Some r -> dnftm r.
 Proof.
   intros Hrb HΔ HT Hc E. unfold rb_br in E.
   destruct c; cbn [redt] in E; redt_case T; first [discriminate E | apply Some_inj in E; subst r]; cbn in Hc, HT;
-    repeat first [ apply dnf_peelL | apply dnf_peelG | apply dnf_peelU | apply dnf_tup_nth ];
-    cbn [dnfo dnftm dnfty dnfctx recT rect]; intuition auto.
-  all: first
-    [ apply ren_dnf_ty; intuition auto | apply ren_dnf; intuition auto
-    (* [case]'s branch types (M12c): the motive and the summands shifted *)
-    | solve [apply subst_dnf_ty; [apply ren_dnf_ty; intuition auto
-                                 | apply lk_dnf_lsingle; cbn [dnftm]; repeat split; try exact I;
-                                   apply ren_dnf_ty; intuition auto]]
-    | apply subst_dnf_ty; [intuition auto | first [apply lk_dnf_lsucc | apply lk_dnf_lsingle; first [exact I | intuition auto]
-                                                  | apply lk_dnf_lsingle2; cbn [dnftm]; intuition auto]]
-    (* [sup_f]'s children's length (M15b) *)
-    | apply subst_dnf; [intuition auto | apply lk_dnf_lsingle; intuition auto]
-    (* [sup_i]'s and [elim_IWf]'s (M17c), below *)
-    | idtac ].
-  (* [elimW]'s step telescope (M13b): renamings nested under the payload binders *)
-  all: repeat first [ progress cbn [dnftm dnfty] | apply ren_dnf_ty | apply ren_dnf | apply subst_dnf_ty
-                    | apply lk_dnf_lsingle | split | exact I ]; intuition auto.
-  (* [sup_i]'s children and [elim_IWf]'s step telescope (M17c) *)
-  all: repeat first [ lazymatch goal with |- True => exact I | |- _ /\ _ => split end | assumption
-                    | lazymatch goal with |- dnfty (iwfFam _ _ _ _ _ _ _ _) => apply dnf_iwfFam end
-                    (* by shape: [apply dnf_tmDNth] on another [app] unfolds [tmDNth] *)
-                    | lazymatch goal with |- dnftm (tmDNth _ _ _ _ _) => apply dnf_tmDNth end
-                    | apply ren_dnf_ty | apply ren_dnf
-                    | apply subst_dnf_ty | apply subst_dnf | apply lk_dnf_lsingle | apply lk_dnf_lsingle2
-                    | apply lk_dnf_llift | progress cbn [dnftm dnfty] ].
+    repeat match goal with H : _ /\ _ |- _ => destruct H end; repeat dnf_step.
 Qed.
 
 (** [M] (M18b): [out]-of-[corec]'s reduct, and the instances in its rules. *)
