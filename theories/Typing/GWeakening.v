@@ -4,6 +4,8 @@
     under [Ψ'], at every layer.  The only binder of the global dimension so
     far is [letbox]'s body, typed under [Ψ, U] / [Ψ, u] with the local
     context globally shifted: it is handled by [gwk_up]. *)
+(* [≡ₗ]'s laws first, as in [USubstitution] (which needs only [LevelEqURen]) *)
+From DeLaM.Syntax Require Export LevelEq.
 From DeLaM.Typing Require Export GRenRec RecWf TypedDnf.
 
 (** ** The theorem *)
