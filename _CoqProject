@@ -6,6 +6,7 @@ theories/Syntax/Level.v
 theories/Syntax/Term.v
 theories/Syntax/Subst.v
 theories/Syntax/GSubst.v
+theories/Syntax/TemplateEq.v
 theories/Syntax/Universe.v
 theories/Syntax/Recursor.v
 theories/Syntax/LevelEqDef.v

@@ -10,7 +10,7 @@
     [RecWf]'s scope automation by typing the concrete [n] and [F] under
     [m] abstract locals, which is what lets [elim_IWf]'s scope type its
     [dnth] without unfolding it (110 s of the critical path before). *)
-From DeLaM.Syntax Require Import SubstCommute.
+From DeLaM.Syntax Require Import SubstCommute TemplateEq.
 From DeLaM.Typing Require Export Declarative.
 
 (** ** Iterated weakenings *)
@@ -102,14 +102,18 @@ Ltac tq := refold; push_ren; push_subst; dpw;
   | |- var _ = var _ => f_equal; lia
   | |- _ = _ => progress (refold; push_ren; push_subst; dpw)
   end; n_eq.
-(** The motive's equations: congruence, then pointwise. *)
-Ltac meq := push_subst; tcong; try solve [dpw]; try teq_core; try solve [f_equal; try reflexivity; fin_sub]; try solve [tq].
+(** The motive's equations: by computation on a template ([geq],
+    [TemplateEq]), else congruence, then pointwise. *)
+Ltac meq_pw := push_subst; tcong; try solve [dpw]; try teq_core; try solve [f_equal; try reflexivity; fin_sub]; try solve [tq].
+Ltac meq := first [ geq | meq_pw ].
 (** A local substitution's term that the equation discards (it lands
     on no variable of the type), generalized so that [meq] does not
     push the renamings through it. *)
 Ltac gen_big := repeat match goal with |- context [llift (lsingle ?b)] =>
   lazymatch b with var _ => fail | _ => tryif is_var b then fail else
     let x := fresh "b" in generalize b; intros x end end.
+(** [gen_big] only for the pointwise tactics: [geq] computes through [b]. *)
+Ltac meq_big := first [ geq | gen_big; meq_pw ].
 
 
 (** [Δ] is [Γ] extended by [m] locals. *)
@@ -530,7 +534,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
       nshift. exact (FW 8 _ _ _ _ ltac:(lia) Hr8' HjD6 HbE'). }
     eapply dnc_retype; [eapply wf_app; [exact Hv | exact I | exact Hl | exact HF5 | exact HFres | | wvar] | meq].
     eapply wf_lconv; [| apply dnc_lq_0l, Hl].
-    eapply dnc_retype; [eapply wf_app; [exact Hv | exact Hl | exact Hl | exact HDV | exact HPi | | ] | gen_big; meq].
+    eapply dnc_retype; [eapply wf_app; [exact Hv | exact Hl | exact Hl | exact HDV | exact HPi | | ] | meq_big].
     + (* the recursive call at the shifted embedding *)
       assert (Hr4 : [ G ; Δj ⊢[ i ] var 4 : tyPi lzero l (dnthEmb n)⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩
           (tyPi l l (tyDVec l (var 1) (dnthFam n F)) (tyPi lzero l (tyFin (var 2)) (dnthRes n F)))⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ @ l ])
@@ -607,7 +611,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
       assert (HA : [ G ; Δj ⊢[ i ] dvecHd (var 5) (dnthFamS n F) @ l ]) by (sig_hd Hr6 Hj Hk5 He3 Hx').
       assert (HB2 : [ G ; Δj ,, dvecHd (var 5) (dnthFamS n F) @ l ⊢[ i ] dvecTl l (var 5) (dnthFamS n F) @ l ])
         by (sig_tl HA).
-      eapply dnc_retype; [apply wf_snd; [exact Hv | exact Hl | exact Hl | exact HA | exact HB2 |] | unfold dnthFamS; push_subst; gen_big; meq].
+      eapply dnc_retype; [apply wf_snd; [exact Hv | exact Hl | exact Hl | exact HA | exact HB2 |] | unfold dnthFamS; push_subst; meq_big].
       eapply wf_lconv; [| apply dnc_lq_ll, Hl]. eapply wf_conv; [| rewrite Hi; exact (eqty_sym _ _ _ _ _ _ EQ)].
       wvar. push_ren. unfold dnthFamS. meq.
   - (* the scrutinee *) apply sum_of_fin; [wvar | wvar].
