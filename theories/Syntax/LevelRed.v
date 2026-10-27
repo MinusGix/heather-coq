@@ -155,6 +155,13 @@ Ltac leq_step :=
     | |- tm_leq (ren_tm _ _) (ren_tm _ _) => apply (proj1 (proj2 leq_ren_all))
     | |- ty_leq (ren_ty _ _) (ren_ty _ _) => apply (proj1 leq_ren_all)
     | |- ty_leq (subst_ty _ _) (subst_ty _ _) => apply (proj1 leq_subst_all)
+    (* the same through the classes' notations ([T⟨r⟩], [T[d]]): left to
+       [leq_any], they failed its seven other lemmas first (80% of
+       [redt_leq]) *)
+    | |- tm_leq (ren _ _) (ren _ _) => apply (proj1 (proj2 leq_ren_all))
+    | |- ty_leq (ren _ _) (ren _ _) => apply (proj1 leq_ren_all)
+    | |- ty_leq (subst _ _) (subst _ _) => apply (proj1 leq_subst_all)
+    | |- @eq nat _ _ => reflexivity
     (* [sup_f]'s children's length (M15b) *)
     | |- tm_leq (subst_tm _ _) (subst_tm _ _) => apply (proj1 (proj2 leq_subst_all))
     | |- lsub_leq (lsingle _) (lsingle _) => unfold lsingle
