@@ -38,8 +38,11 @@ these docs by bare file name.
   out of `make` and a computed `closed_brDecls` (2026-10-27) took 1063 s
   and 1045 s wall at -j4 (critical path 874 s and 875 s) on a 4-core
   cloud machine, against 1174 s (critical path 1009 s) for the tree
-  before, run between them; the path starts `SubstCommute` → `DNthCore`
-  → `RecWf`. The same machine took anywhere from 976 s to 1609 s for
+  before, run between them. Then `TemplateEq.geq` for `dnth`'s
+  substitution equations and `tmNth`/`tmDNth` sealed with `simpl never`
+  took 1029 s and 1002 s (critical path 891 s and 865 s, CPU 2737 s and
+  2595 s), back to back; the path starts `SubstCommute` → `TypedDnf` →
+  `RecWf`. The same machine took anywhere from 976 s to 1609 s for
   that tree over one day, so only back-to-back runs compare. The
   `.timing` files count the main process only: `par:`'s workers are
   not in the "CPU" total, and they slow the files built beside them

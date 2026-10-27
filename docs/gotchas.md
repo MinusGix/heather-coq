@@ -290,6 +290,18 @@ formers, so it gets worse with every extension:
   substitution in milliseconds (0.2 s in all). When the data is
   concrete and the goal an equation that holds by computation, try
   `vm_compute; reflexivity` first.
+- **Substitution equations over opaque atoms: compute on a template**
+  (2026-10-27). `dnth`'s motive equations (`F⟨rlift ↑⟩…[lsingle (…
+  n⟨↑⟩ …)] = …`) were proved by rewriting lookups pointwise: 17 of them
+  took 48 s of `dnth_step_wf`, in ~30k `rewrite`s. `TemplateEq.geq`
+  puts global variables for `F` and `n`, where the operations compute,
+  proves that equation by `vm_compute`, and substitutes `F` and `n`
+  back by the commutation laws of global substitution: 6 s for the
+  lemma. Two traps: an atom left as a Coq variable gets `lcons'`'s
+  match stuck, and `vm_compute` reads a stuck match back with every
+  branch normalized (210 s for one goal; `geq` checks first), and a
+  failing `exact` of a near-miss falls to conversion, which unfolds the
+  operations on the atoms (40 s; `geq` compares syntactically first).
 - Measure before guessing (see `CLAUDE.md`, Build, for the tools):
   `tools/build-profile` for a timed build and its report,
   `tools/proofs.py` for the slowest proofs (tactics vs `Qed`),
