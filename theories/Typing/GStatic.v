@@ -242,39 +242,42 @@ Theorem equiv_gsubst :
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; try exact I.
-  (* the recursors: their scopes *)
-  all: try solve [gst_rec].
-  (* [UΠ]: the body under [guwkn n] *)
-  all: try solve [ cbn [gsubst GSubst_ty GSubst_tm gsubst_ty gsubst_tm]; f_equal;
-                   match goal with IH : forall σ τ, gsub_equiv (gctx_uwk _ _) σ τ -> _ -> _ |- _ =>
-                     apply IH; [apply gsub_equiv_uwkn; assumption | apply gdnf_guwkn; assumption] end ].
-  all: cbn [gsubst GSubst_ty GSubst_tm GSubst_ctx]; simpl; try solve [eauto | f_equal; eauto].
-  (* the meta-functions (M5), and letbox: under the new binding *)
-  all: try solve [ f_equal; eauto; match goal with IH : forall σ τ, gsub_equiv (gext _ _) σ τ -> _ |- _ =>
-         apply IH; [apply gsub_equiv_up; assumption | intros [|n]; cbn; auto using dnfo_goren] end ].
-  (* defined globals (M9): the same global, the body by its hypothesis *)
-  all: try solve [ match goal with
-         | Ha : gsub_equiv _ ?σ ?τ, Hin : in_gctx _ ?x (gdDef _ _ _ _), Hτ : forall n, dnfo (?τ n)
-           |- pdef _ _ _ = _ =>
-             assert (Ed : glsubst d σ = glsubst d τ)
-               by (change (glsubst d σ) with d⦃σ⦄; change (glsubst d τ) with d⦃τ⦄;
-                   eapply glsubst_agree_entries; [eassumption |];
-                   intros ?n ?A ?k HA; match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ =>
-                     eapply IH; eassumption end);
-             rewrite Ed;
-             destruct (Ha _ _ Hin) as [E | [(j & E1 & E2) | (j & ? & _ & _)]];
-               [rewrite E | rewrite E1, E2; cbn [id_obj] | discriminate];
-             f_equal; match goal with IH : forall σ τ, gsub_equiv _ σ τ -> _ |- _ => eapply IH; eassumption end
-         end ].
-  (* context variables *)
-  1: match goal with
-    | Ha : gsub_equiv _ ?σ ?τ, Hc : gctx_var _ ?g |- _ =>
-        destruct (Ha _ _ (gctx_var_in _ _ Hc)) as [E | [(j & E1 & E2) | (j & _ & E1 & E2)]];
-          [now rewrite E | now rewrite E1, E2 | now rewrite E1, E2]
-     end.
-  (* global variables *)
-  1-2: match goal with
+  apply typing_mut; intros.
+  (* each case by the first stage that closes it, under [par:] *)
+  par: (
+    (try exact I);
+    (* the recursors: their scopes *)
+    (try solve [gst_rec]);
+    (* [UΠ]: the body under [guwkn n] *)
+    (try solve [ cbn [gsubst GSubst_ty GSubst_tm gsubst_ty gsubst_tm]; f_equal;
+                 match goal with IH : forall σ τ, gsub_equiv (gctx_uwk _ _) σ τ -> _ -> _ |- _ =>
+                   apply IH; [apply gsub_equiv_uwkn; assumption | apply gdnf_guwkn; assumption] end ]);
+    (cbn [gsubst GSubst_ty GSubst_tm GSubst_ctx]; simpl; try solve [eauto | f_equal; eauto]);
+    (* the meta-functions (M5), and letbox: under the new binding *)
+    (try solve [ f_equal; eauto; match goal with IH : forall σ τ, gsub_equiv (gext _ _) σ τ -> _ |- _ =>
+       apply IH; [apply gsub_equiv_up; assumption | intros [|n]; cbn; auto using dnfo_goren] end ]);
+    (* defined globals (M9): the same global, the body by its hypothesis *)
+    (try solve [ match goal with
+       | Ha : gsub_equiv _ ?σ ?τ, Hin : in_gctx _ ?x (gdDef _ _ _ _), Hτ : forall n, dnfo (?τ n)
+         |- pdef _ _ _ = _ =>
+           assert (Ed : glsubst d σ = glsubst d τ)
+             by (change (glsubst d σ) with d⦃σ⦄; change (glsubst d τ) with d⦃τ⦄;
+                 eapply glsubst_agree_entries; [eassumption |];
+                 intros ?n ?A ?k HA; match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ =>
+                   eapply IH; eassumption end);
+           rewrite Ed;
+           destruct (Ha _ _ Hin) as [E | [(j & E1 & E2) | (j & ? & _ & _)]];
+             [rewrite E | rewrite E1, E2; cbn [id_obj] | discriminate];
+           f_equal; match goal with IH : forall σ τ, gsub_equiv _ σ τ -> _ |- _ => eapply IH; eassumption end
+       end ]);
+    (* context variables *)
+    (try solve [ match goal with
+       | Ha : gsub_equiv _ ?σ ?τ, Hc : gctx_var _ ?g |- _ =>
+           destruct (Ha _ _ (gctx_var_in _ _ Hc)) as [E | [(j & E1 & E2) | (j & _ & E1 & E2)]];
+             [now rewrite E | now rewrite E1, E2 | now rewrite E1, E2]
+       end ]);
+    (* global variables *)
+    (try solve [ match goal with
        | Ha : gsub_equiv _ ?σ ?τ, Hin : in_gctx _ ?x _, Hτ : forall n, dnfo (?τ n) |- _ =>
            assert (Ed : glsubst d σ = glsubst d τ)
              by (change (glsubst d σ) with d⦃σ⦄; change (glsubst d τ) with d⦃τ⦄;
@@ -286,11 +289,10 @@ Proof.
                  apply (proj2 (proj2 (proj2 gsubst_dnf_all))); assumption);
            rewrite Ed; destruct (Ha _ _ Hin) as [E | [(j & E1 & E2) | (j & ? & _ & _)]];
              [ | | discriminate];
-             [now rewrite E | rewrite E1, E2; cbn [id_obj]]
-       end.
-  1: exact (eq_sym (pty_id_obj _ _ Nd)).
-  1: exact (eq_sym (ptm_id_obj _ _ Nd)).
-  (* letbox: under the new binding *)
-  all: f_equal; eauto; match goal with IH : forall σ τ, gsub_equiv (gext _ _) σ τ -> _ |- _ =>
-         apply IH; [apply gsub_equiv_up; assumption | intros [|n]; cbn; auto using dnfo_goren] end.
+             [now rewrite E | rewrite E1, E2; cbn [id_obj];
+                first [exact (eq_sym (pty_id_obj _ _ Nd)) | exact (eq_sym (ptm_id_obj _ _ Nd))]]
+       end ]);
+    (* letbox: under the new binding *)
+    (f_equal; eauto; match goal with IH : forall σ τ, gsub_equiv (gext _ _) σ τ -> _ |- _ =>
+       apply IH; [apply gsub_equiv_up; assumption | intros [|n]; cbn; auto using dnfo_goren] end)).
 Qed.

@@ -272,9 +272,11 @@ formers, so it gets worse with every extension:
   `T0; split; [a | b]` a goal that `T0` closes leaves the dispatch with
   no goals, which fails ("expected 0 tactics"), while `T0; (split; [a |
   b])` runs the stage per goal. `par:` needs the tactic to close each
-  goal or leave it untouched, and goals without evars, so a proof that
-  ends in positional selectors or bullets (`Functionality`,
-  `GStatic.equiv_gsubst`) stays as it was; so does lemma-level
+  goal or leave it untouched, and goals without evars. A proof that
+  ends in positional selectors takes each selected tactic as one more
+  `try solve [...]` stage when that tactic fails on the other goals
+  (`GStatic.equiv_gsubst`, 23 s → 11 s); one with bullets
+  (`Functionality`) stays as it was, and so does lemma-level
   parallelism, `coqc -async-proofs on`, which made `RulesS` twice as
   slow. The same applies to a `br_all` table proof (`brRes_wf`,
   `brΓ_conv`).
