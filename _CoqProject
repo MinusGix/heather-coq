@@ -150,6 +150,10 @@ theories/Validity/GSubRel.v
 theories/Validity/GSubRelW.v
 theories/Validity/GSubRelE.v
 theories/Validity/ValidS.v
+theories/Validity/RulesSBase.v
+theories/Validity/RulesSCore.v
+theories/Validity/RulesSIWf.v
+theories/Validity/RulesSIWfSupi.v
 theories/Validity/RulesS.v
 theories/Validity/GvarS.v
 theories/Validity/Delta.v
@@ -170,6 +174,7 @@ theories/Validity/RecSW.v
 theories/Validity/RecSNe.v
 theories/Validity/RecSWf.v
 theories/Validity/RecSIWf.v
+theories/Validity/RecSIWfElim.v
 theories/Validity/RecSSq.v
 theories/Validity/RecS.v
 theories/Validity/RecFT.v

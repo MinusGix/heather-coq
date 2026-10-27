@@ -99,7 +99,7 @@ these docs by bare file name.
   per-former files (`Pi` … `WfElim`) each require only the formers they
   use, and wide files are split into parts that build in parallel
   (`LevelEq*`, `AlgDec*`, `GRenSyntax`, `RecReductCases`, `RecS*`,
-  `RecWfBase`),
+  `RecWfBase`, `RulesS*`),
   with the old name kept as the file that exports them. A metatheory
   file's syntactic lemmas (commutations, the recursors' data under an
   operation, untyped reductions) and its per-former lemmas go in a file
