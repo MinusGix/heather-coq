@@ -16,6 +16,7 @@
 From DeLaM.Validity Require Export M Sum.
 From DeLaM.LogRel Require Import MAux.
 From DeLaM.Typing Require Import PresupM.
+From DeLaM.Syntax Require Import TemplateEq.
 
 (** ** Syntax: β's reduct in pieces *)
 
@@ -64,7 +65,7 @@ Proof using . reflexivity. Qed.
 Notation mIdxP l l' li X A B C k Y c j y p := (C[lsingle3 j (mOutFst l l' li X A B C k Y c j y) p]).
 
 Lemma mBody_single l l' li X A B C k Y c j y p :
-  nfty X -> nfty A -> nfty B -> nftm C -> nfty Y -> nftm c -> nftm j -> nftm y ->
+  nfty X -> nfty A -> nfty B -> nftm C -> nfty Y -> nftm c -> nftm j -> nftm y -> nftm p ->
   (mBody l l' li X A B C k Y c j y)[lsingle p] =
   tmCase k (mlvl l l' li) (mlvl l l' li) Y[lsingle (mIdxP l l' li X A B C k Y c j y p)]
     (tyM l l' li X A B C (mIdxP l l' li X A B C k Y c j y p))
@@ -78,7 +79,10 @@ Lemma mBody_single l l' li X A B C k Y c j y p :
           (tyM l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩
              (mOutIdx l l' li X A B C k Y c j y)))
        p).
-Proof using . intros. unfold mBody. meq'. Qed.
+Proof using .
+  (* by computation ([TemplateEq]): [p] is an atom too, hence normal *)
+  intros. unfold mBody. geq.
+Qed.
 
 (** The step type under a substitution. *)
 Lemma subst_mStepTy_lift l l' li X A B C k Y e : LK nftm e ->

@@ -911,7 +911,7 @@ Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd
   pose proof (eqtm_sym _ _ _ _ _ _ _ (geq_tm_sound (LRtm_geq ha0))) as Eaf.
   destruct (ann_conv HS Hj0 Eaf HA1 HB1) as [HA1d HB1d].
   pose proof (lam_app_red HS Wc HY Hc Hj0 Hy Hp Hla Hlb HA1d HB1d) as LA.
-  rewrite mBody_single in LA by first [kw_nf | exact (wf_tm_nf Hj0) | exact (wf_tm_nf Hy)].
+  rewrite mBody_single in LA by first [kw_nf | exact (wf_tm_nf Hj0) | exact (wf_tm_nf Hy) | exact (wf_tm_nf Hp)].
   pose proof (geq_ty_sound (LRty_tyeq (rA1 (SubRel_refl_r Hd) W VA j0' j0' hj'))) as EAr.
   assert (Eaf' : [ kw_G W ; kw_Δ W ⊢g fR W j0' y' ≅ a' : (rA W)[lsingle j0'] @ k ]).
   { eapply eqtm_lconv; [eapply eqtm_conv; [exact (eqtm_sym _ _ _ _ _ _ _ (geq_tm_sound (LRtm_geq ha0')))
@@ -927,7 +927,7 @@ Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd
   destruct (ann_conv HS' Hj0r Eaf' HA1'k HB1'k) as [HA1r HB1r].
   pose proof (lam_app_red HS' Wc' HYr Hcr Hj0r Hyr Hp' (lequiv_trans _ _ _ _ Hla' (lequiv_sym _ _ _ Hk'W))
                 (lequiv_trans _ _ _ _ Hlb' Hff) HA1r HB1r) as LA'.
-  rewrite mBody_single in LA' by first [kw_nf | exact (wf_tm_nf Hj0r) | exact (wf_tm_nf Hyr)].
+  rewrite mBody_single in LA' by first [kw_nf | exact (wf_tm_nf Hj0r) | exact (wf_tm_nf Hyr) | exact (wf_tm_nf Hp')].
   (* the [case]s' pieces *)
   destruct (LRtm_escape hcl) as [_ HiL]. destruct (LRtm_escape hcr) as [_ HiRq].
   pose proof (geq_ty_sound (LRty_tyeq (VTyG_kw W VX (SubRel_refl_r Hd)))) as EXr.
