@@ -214,14 +214,6 @@ Proof. destruct D; cbn; f_equal; auto using gshift_up_ctx, gshift_up_ty, gshift_
 Lemma wf_ctx_tail G i Γ g : [ G ; Γ ⊢[ i ] ] -> ctx_tail Γ = cvar g -> gctx_var G g.
 Proof. induction 1; cbn; intros Ht; try discriminate; auto. now injection Ht as ->. Qed.
 
-Lemma gctx_var_in G g : gctx_var G g -> in_gctx (gΨ G) g gdCtx.
-Proof.
-  unfold gctx_var. generalize (gΨ G) as Ψ; intros Ψ; revert g.
-  induction Ψ as [|D Ψ IH]; intros [|g] H; cbn in H; try discriminate.
-  - injection H as ->. exact (ing_here Ψ gdCtx).
-  - exact (ing_there Ψ _ D g (IH g H)).
-Qed.
-
 (** ** Pushing a typed global substitution under one global binder *)
 
 Lemma gobj_wf_gwk G' o D γ L'' Ψ'' :
@@ -257,21 +249,6 @@ Proof.
 Qed.
 
 (** ** Pushing a typed global substitution into the recursors' scopes *)
-
-Lemma in_gctx_uren Ψ n D ρ : in_gctx Ψ n D ->
-  in_gctx (map (fun D => gdecl_uren D ρ) Ψ) n (gdecl_uren D ρ).
-Proof. induction 1; cbn; rewrite gdecl_ren_uren; now constructor. Qed.
-
-Lemma in_gctx_uren_inv Ψ n D' ρ : in_gctx (map (fun D => gdecl_uren D ρ) Ψ) n D' ->
-  exists D, in_gctx Ψ n D /\ D' = gdecl_uren D ρ.
-Proof.
-  revert n D'; induction Ψ as [|D0 Ψ IH]; intros n D' H; [inversion H|].
-  change (in_gctx (gdecl_uren D0 ρ :: map (fun D => gdecl_uren D ρ) Ψ) n D') in H.
-  inversion H; subst.
-  - exists (gdecl_ren D0 S); split; [constructor | symmetry; apply gdecl_ren_uren].
-  - match goal with Hm : in_gctx _ _ _ |- _ => destruct (IH _ _ Hm) as (D1 & HD1 & ->) end.
-    exists (gdecl_ren D1 S); split; [now constructor | symmetry; apply gdecl_ren_uren].
-Qed.
 
 Lemma gdecl_gsubst_uren D n σ : gdnf σ ->
   gdecl_gsubst (gdecl_uren D (ush n)) (guwkn n σ) = gdecl_uren (gdecl_gsubst D σ) (ush n).

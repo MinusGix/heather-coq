@@ -7,7 +7,7 @@
     variable, of the function weakened under the binder; on typed syntax
     that instance is the identity ([equiv_gsubst]). Presuppositions of the
     new rules. *)
-From DeLaM.Typing Require Export UInst GStatic TypedRed.
+From DeLaM.Typing Require Export UInst GSubstitution GStatic TypedRed.
 
 (** ** Single global substitutions *)
 

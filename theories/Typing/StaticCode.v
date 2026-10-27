@@ -7,7 +7,7 @@
     step is a global variable's local substitution, whose entries are
     converted from the last to the first by functionality ([telescope]). *)
 From DeLaM.Syntax Require Import LevelLwf.
-From DeLaM.Typing Require Export CtxConv GStatic.
+From DeLaM.Typing Require Export CtxConv GSubstitution GStatic.
 
 Lemma lle_D_typeof i : lle i lD -> typeof i = lD.
 Proof. destruct i; unfold lle; cbn; intros; try reflexivity; lia. Qed.

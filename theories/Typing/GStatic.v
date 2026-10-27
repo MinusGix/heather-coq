@@ -5,7 +5,10 @@
     agree on those send it to the same code: this is what makes [box c]
     related to itself under related global substitutions, as boxed code
     is equal only to itself (06:534, 07a:390). *)
-From DeLaM.Typing Require Export GSubstitution.
+(* not [GSubstitution]: the theorem needs only the recursors' laws
+   ([RecGSubst]), so it builds beside the typing metatheory *)
+From DeLaM.Syntax Require Export LevelEq.
+From DeLaM.Typing Require Export Declarative Lifting RecSpec RecGSubst GRenRec.
 
 Definition static_decl (D : gdecl) : Prop :=
   match D with
@@ -222,10 +225,15 @@ Ltac gst_branch :=
     IH : forall k, k < nbr -> forall σ' τ', gsub_equiv (brG k _) σ' τ' -> _ -> _ |- _ =>
       apply (IH k Hk); [apply gsub_equiv_brG; assumption | exact (gdnf_gbsub _ _ Hτ)]
   end.
+Lemma gst_elimT l1 l2 rb l Δ t σ : (elimT l1 l2 rb l Δ t)⦃σ⦄ = elimT l1 l2 rb⦃σ⦄ l Δ⦃σ⦄ t⦃σ⦄.
+Proof. reflexivity. Qed.
+Lemma gst_elimt l1 l2 rb l Δ T t σ :
+  (elimt l1 l2 rb l Δ T t)⦃σ⦄ = elimt l1 l2 rb⦃σ⦄ l Δ⦃σ⦄ T⦃σ⦄ t⦃σ⦄.
+Proof. reflexivity. Qed.
 Ltac gst_rec :=
   lazymatch goal with
-  | |- (elimT _ _ (mkrb _ _ _) _ _ _)⦃_⦄ = _ => rewrite !gs_elimT
-  | |- (elimt _ _ (mkrb _ _ _) _ _ _ _)⦃_⦄ = _ => rewrite !gs_elimt
+  | |- (elimT _ _ (mkrb _ _ _) _ _ _)⦃_⦄ = _ => rewrite !gst_elimT
+  | |- (elimt _ _ (mkrb _ _ _) _ _ _ _)⦃_⦄ = _ => rewrite !gst_elimt
   end;
   rewrite !mkrb_gsubst; f_equal;
   try (apply mkrb_congr; [gst_scope | gst_scope | gst_branch]); eauto.

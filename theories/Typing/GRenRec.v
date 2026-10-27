@@ -512,3 +512,28 @@ Lemma reds_gren t u ξ : reds t u -> reds t⟪ξ⟫ u⟪ξ⟫.
 Proof. unfold reds; induction 1; [constructor|econstructor; eauto using red_gren]. Qed.
 Lemma reds_ty_gren T U ξ : reds_ty T U -> reds_ty T⟪ξ⟫ U⟪ξ⟫.
 Proof. unfold reds_ty; induction 1; [constructor|econstructor; eauto using red_ty_gren]. Qed.
+
+(** Global declarations: a context variable's, and under a universe
+    renaming ([GStatic] and [GSubstitution] use them). *)
+Lemma gctx_var_in G g : gctx_var G g -> in_gctx (gΨ G) g gdCtx.
+Proof.
+  unfold gctx_var. generalize (gΨ G) as Ψ; intros Ψ; revert g.
+  induction Ψ as [|D Ψ IH]; intros [|g] H; cbn in H; try discriminate.
+  - injection H as ->. exact (ing_here Ψ gdCtx).
+  - exact (ing_there Ψ _ D g (IH g H)).
+Qed.
+
+Lemma in_gctx_uren Ψ n D ρ : in_gctx Ψ n D ->
+  in_gctx (map (fun D => gdecl_uren D ρ) Ψ) n (gdecl_uren D ρ).
+Proof. induction 1; cbn; rewrite gdecl_ren_uren; now constructor. Qed.
+
+Lemma in_gctx_uren_inv Ψ n D' ρ : in_gctx (map (fun D => gdecl_uren D ρ) Ψ) n D' ->
+  exists D, in_gctx Ψ n D /\ D' = gdecl_uren D ρ.
+Proof.
+  revert n D'; induction Ψ as [|D0 Ψ IH]; intros n D' H; [inversion H|].
+  change (in_gctx (gdecl_uren D0 ρ :: map (fun D => gdecl_uren D ρ) Ψ) n D') in H.
+  inversion H; subst.
+  - exists (gdecl_ren D0 S); split; [constructor | symmetry; apply gdecl_ren_uren].
+  - match goal with Hm : in_gctx _ _ _ |- _ => destruct (IH _ _ Hm) as (D1 & HD1 & ->) end.
+    exists (gdecl_ren D1 S); split; [now constructor | symmetry; apply gdecl_ren_uren].
+Qed.

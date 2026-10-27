@@ -9,7 +9,7 @@
     equal (07a:390), as boxed code is equal only to itself.  Validity is one-sided, so [σ] and [σ'] are also each related
     to themselves.  Symmetry needs the validity of the bindings' contexts
     and types ([GValid]), which is part of the fundamental theorem. *)
-From DeLaM.Typing Require Export GStatic.
+From DeLaM.Typing Require Export GSubstitution GStatic.
 From DeLaM.Validity Require Export Payload PiComp Natrec Id.
 
 #[local] Existing Instance LR_P.
