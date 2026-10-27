@@ -182,7 +182,15 @@ formers, so it gets worse with every extension:
   `apply Some_inj in E` (`Syntax/Recursor.v`) instead. Each new
   former's reduct grows the cost in every `redt` lemma still using
   `injection`: `elim_IWf`'s cost `redt_ren` and `redt_usubst` 130 s
-  each until they moved to `Some_inj` (2026-10-14).
+  each until they moved to `Some_inj` (2026-10-14). The same holds of
+  any constructor whose components are big: `injection` builds a
+  projection with a default value for every component. Take the one
+  component needed by `f_equal (fun t => match t with C _ … x => x | _
+  => t end) H`, or state the constructor's injectivity once
+  (`IWfElim.supi_inj`) and destruct it: `IWfElim` went from 37 s to
+  17 s (2026-10-27). `RecReductCases`' 49 `injection Hred as <-` became
+  `apply Some_inj in Hred; rewrite <- Hred` (with its refutations by
+  a bare `discriminate`, below: 82 s to 29 s).
 - **A bare `split` in a repeated peeler** hnf's every goal that is not
   yet a conjunction, unfolding definitions to look for one: 71% of
   `gfree_redt` (510 s for `Unfold`). Split only `|- _ /\ _` (a
