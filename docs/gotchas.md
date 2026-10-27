@@ -302,6 +302,15 @@ formers, so it gets worse with every extension:
   branch normalized (210 s for one goal; `geq` checks first), and a
   failing `exact` of a near-miss falls to conversion, which unfolds the
   operations on the atoms (40 s; `geq` compares syntactically first).
+- **`cbn` where `cbv` would do, and `cbn; lia` on a judgment**
+  (2026-10-27). `wnorm` normalised the branch scopes' typings with
+  `cbn [...]`; their terms are closed up to global variables, so
+  `cbv beta iota zeta delta [...]` (same list) computes the same normal
+  form without `cbn`'s refolding: `RecAdm` 160 s → 88 s, `WfScope`
+  50 s → 23 s, `AlgPrereq` 62 s → 35 s, with `br_side` no longer trying
+  `solve [cbn; lia]` on typing judgments (a third of `brRes_wf`). `cbv`
+  leaves a raw `fix` where an operation is stuck on a variable, so it is
+  for closed data only.
 - Measure before guessing (see `CLAUDE.md`, Build, for the tools):
   `tools/build-profile` for a timed build and its report,
   `tools/proofs.py` for the slowest proofs (tactics vs `Qed`),

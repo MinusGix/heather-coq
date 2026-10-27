@@ -307,9 +307,17 @@ Ltac code_side_k k :=
   let b := eval cbv in (orb (orb (andb (Nat.leb 39 k) (Nat.ltb k 43)) (andb (Nat.leb 47 k) (Nat.ltb k 51)))
                             (andb (Nat.leb 55 k) (Nat.ltb k 61))) in
   lazymatch b with true => code_side_W | false => code_side end.
+(** [cbn; lia] only off the judgments: on one, [cbn] normalised the
+    whole judgment before [lia] failed (a third of [brRes_wf]). *)
+Ltac br_arith := lazymatch goal with
+  | |- [ _ ; _ ⊢[ _ ] ] => fail
+  | |- [ _ ; _ ⊢[ _ ] _ @ _ ] => fail
+  | |- [ _ ; _ ⊢[ _ ] _ : _ @ _ ] => fail
+  | |- _ => solve [cbn; lia]
+  end.
 Ltac br_side k HΓ :=
   first
-  [ solve [cbn; lia]
+  [ br_arith
   | solve [apply lwf_ush; assumption]
   | apply (wf_wkc_br _ _ k ltac:(lia) HΓ)
   | eapply wf_boxT; [ br_side k HΓ | br_side k HΓ | br_side k HΓ | unfold gv, gu; code_side_k k ]
