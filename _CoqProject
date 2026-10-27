@@ -18,6 +18,7 @@ theories/Syntax/LevelEqRen.v
 theories/Syntax/LevelEqURen.v
 theories/Syntax/LevelEqSubst.v
 theories/Syntax/LevelEq.v
+theories/Syntax/LevelEqInv.v
 theories/Syntax/LevelDec.v
 theories/Syntax/LevelAx.v
 theories/Syntax/NormalForms.v
