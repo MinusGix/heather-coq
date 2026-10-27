@@ -43,10 +43,14 @@ these docs by bare file name.
   never` took 1029 s and 1002 s (CPU 2737 s and 2595 s), back to back;
   then `gnorm` (reduction states by computation), `wnorm` by `cbv` and
   `br_side` off the judgments took 953 s against 961 s (critical path
-  839 s and 822 s, CPU 2300 s and 2463 s), back to back. Their CPU was
-  off the critical path, which now runs `SubstCommute` → `TypedDnf` →
-  `RecWf` → the Typing metatheory → `RulesS` → `RecSIWf` →
-  `RecReductCases`. The same machine took anywhere from 976 s to 1609 s for
+  839 s and 822 s, CPU 2300 s and 2463 s), back to back. Then
+  `mBody_single` by `geq`, `RecReductCases` by `Some_inj`, and
+  `RulesS` and `RecSIWf` split into parallel parts took 848 s against
+  928 s (critical path 727 s and 816 s, CPU 2163 s and 2237 s), back to
+  back. The critical path now runs `SubstCommute` → `TypedDnf` →
+  `RecWf` → the Typing metatheory (`RecGSubst`, `GStatic`) →
+  `IWfElim` → `RulesSIWfSupi` → `RecSIWf` → `FundamentalM` → the
+  algorithm (`AlgSound`, `AlgPER`). The same machine took anywhere from 976 s to 1609 s for
   that tree over one day, so only back-to-back runs compare. The
   `.timing` files count the main process only: `par:`'s workers are
   not in the "CPU" total, and they slow the files built beside them
