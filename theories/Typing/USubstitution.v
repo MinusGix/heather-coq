@@ -9,7 +9,7 @@
 (* the laws of [≡ₗ] first: re-exporting them after this file's other
    imports would shadow later names (Context's [gwk_id] by Subst's) *)
 From DeLaM.Syntax Require Export LevelEq.
-From DeLaM.Typing Require Export RecLaws.
+From DeLaM.Typing Require Export Declarative RecLaws.
 
 (** ** Lookups *)
 

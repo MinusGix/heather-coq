@@ -36,6 +36,7 @@ theories/Typing/RecSpec.v
 theories/Typing/Algorithmic.v
 theories/Typing/Declarative.v
 theories/Typing/Paper.v
+theories/Typing/RecLawsRedt.v
 theories/Typing/RecLaws.v
 theories/Typing/USubstitution.v
 theories/Typing/RecWfBase.v
