@@ -1361,7 +1361,7 @@ Proof using EL H13 H24 HS Hi3 Hwl Hwl' Hwli VA VC VL VM VN VNt VO VX Vc Vcs Vih 
     !iwfstepty_llift3, !IWf_E6 in Xc by assumption.
   (* the canonical [sup_i], related to the trees at the scrutinee's index *)
   pose proof (LRtm_geq Hox) as EOx.
-  destruct (elimIWf_WLR Hγ (SubRel_refl_l He) Hox) as (ix0 & dm0 & HWox & _ & _).
+  pose proof (elimIWf_WLR Hγ (SubRel_refl_l He) Hox) as (ix0 & dm0 & HWox & _ & _).
   destruct (escape_ty _ _ _ _ _ _ _ _ HWox) as (_ & _ & ETOx). pose proof (geq_ty_sound ETOx) as DTOx.
   pose proof HE1 as (Hk & Hki & _ & HXX1 & HAA1 & HNN1 & HOO1 & HCC1 & _).
   pose proof HE1' as (Hk' & Hki' & _ & HXX1' & HAA1' & HNN1' & HOO1' & HCC1' & _).

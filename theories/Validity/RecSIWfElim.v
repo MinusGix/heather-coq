@@ -182,7 +182,7 @@ Proof using EL ELM ELP EMl HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR Hσ H
   destruct (Rtcall HΘ CS1 Hw' Hw1' Ek' ES1 Hc Ec ltac:(assumption) IHc)
     as (Hc' & Hcc & _ & Hc'R1 & X7 & X7r).
   pose proof (ctxconv_tm CS0 (i := lC) eq_refl (wf_conv _ _ _ _ _ _ _ Hc' (eqty_sym _ _ _ _ _ _ ES0))) as Hc'R.
-  destruct (Rtcall HΔL HΔ Hwi Hwi1 Eki HXX Hm Em ltac:(assumption) IHm) as (Hm' & Hmm & _ & Hm'R1 & X8 & X8r).
+  pose proof (Rtcall HΔL HΔ Hwi Hwi1 Eki HXX Hm Em ltac:(assumption) IHm) as (Hm' & Hmm & _ & Hm'R1 & X8 & X8r).
   pose proof (ctxconv_tm HΔ (i := lC) eq_refl (wf_conv _ _ _ _ _ _ _ Hm' (eqty_sym _ _ _ _ _ _ HXX))) as Hm'R.
   pose proof (IWf_ty_eq (i := lD) eq_refl ltac:(discriminate) HE Hmm) as HWW.
   destruct (Rtcall (k := lmax k ki) (k1 := lmax k1 ki1) HΔL HΔ (conj Hw Hwi) (conj Hw1 Hwi1) (leqv_lmax Ek Eki)

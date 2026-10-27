@@ -1502,7 +1502,7 @@ Proof using EL VL.
                       (Ecod ρ a')) _ _ _ X1 X3 Ev).
   - (* contextual types *)
     assert (HM3 : ModRel G Γ T3 T3 l R3).
-    { destruct (ModRel_red_r HM) as [(Δ & k & HT2) | (Δ & A & k & HT2)];
+    { pose proof (ModRel_red_r HM) as [(Δ & k & HT2) | (Δ & A & k & HT2)];
         pose proof (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3) as EW;
         destruct W3; cbn in EW; try contradiction.
       - exact (proj2 (LR_inv_CTyp H3 HT3)).

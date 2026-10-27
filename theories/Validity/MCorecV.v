@@ -904,7 +904,7 @@ Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd
     exact (MRn_red n HG HM RL RR). }
   (* β on both sides *)
   pose proof (kw_lequiv W Hk') as Hk'W. pose proof (kw_lequiv W Hkc) as HkcW.
-  destruct (LRtm_escape hpB) as [Hp Hp0].
+  pose proof (LRtm_escape hpB) as [Hp Hp0].
   pose proof (geq_ty_sound (LRtm_tyeq hpB)) as EpB.
   assert (Hp' : [ kw_G W ; kw_Δ W ⊢g p' : (rB W)[lsingle2 j0' (fR W j0' y')] @ k' ]).
   { eapply wf_lconv; [eapply wf_conv; [exact Hp0 | rewrite ge_typeof; exact (eqty_sym _ _ _ _ _ _ EpB)] | exact Hk'W]. }
@@ -929,7 +929,7 @@ Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd
                 (lequiv_trans _ _ _ _ Hlb' Hff) HA1r HB1r) as LA'.
   rewrite mBody_single in LA' by first [kw_nf | exact (wf_tm_nf Hj0r) | exact (wf_tm_nf Hyr) | exact (wf_tm_nf Hp')].
   (* the [case]s' pieces *)
-  destruct (LRtm_escape hcl) as [_ HiL]. destruct (LRtm_escape hcr) as [_ HiRq].
+  pose proof (LRtm_escape hcl) as [_ HiL]. pose proof (LRtm_escape hcr) as [_ HiRq].
   pose proof (geq_ty_sound (LRty_tyeq (VTyG_kw W VX (SubRel_refl_r Hd)))) as EXr.
   assert (HiR : [ kw_G W ; kw_Δ W ⊢g iR W j0' y' p' : rX W @ ki ]).
   { eapply wf_lconv; [eapply wf_conv; [exact HiRq | rewrite ge_typeof; exact (eqty_sym _ _ _ _ _ _ EXr)]
@@ -940,7 +940,9 @@ Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd
   assert (Hlv : lequiv (gL (kw_G W)) (lmax kc' (mlvl k k' ki)) (lmax kc (mlvl l l' li)))
     by exact (lequiv_max _ _ _ _ _ HkcW (lequiv_sym _ _ _ Hff)).
   pose proof (lequiv_wf_r _ _ _ Hff) as Hf'.
-  destruct (LRtm_sum_rel Xs) as (w & w' & Hrw & Hrw' & _ & Nww).
+  (* [pose proof … as pat], not [destruct]: [destruct] of a term abstracts it
+     in the goal and the whole context (4 s here) *)
+  pose proof (LRtm_sum_rel Xs) as (w & w' & Hrw & Hrw' & _ & Nww).
   pose proof (tmred_lconv _ _ _ _ _ (tmred_conv _ _ _ _ _ ge_typeof Hrw' ESum) Hlv) as HrwR.
   (* the children's types, side to side *)
   pose proof (LR_M_kw Hwl Hwl' Hwli Hk Hk' Hki VX VA VB VC Hd W _ _ hI) as HRM.
@@ -961,7 +963,7 @@ Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd
                   | k1 k2 k1' k2' Ca Da Ca' Da' b b' Hk1 Hk2 Hk1' Hk2' ECa ECa' EDa EDa' Rb
                   | ν ν' Hν].
   - (* [inl]: a further [corec], related at depth [n] *)
-    destruct (LRtm_escape Rb) as [Hb Hb0].
+    pose proof (LRtm_escape Rb) as [Hb Hb0].
     assert (Hb' : [ kw_G W ; kw_Δ W ⊢g b' : (rY W)[lsingle (iR W j0' y' p')] @ kc' ]).
     { eapply wf_lconv; [eapply wf_conv; [exact Hb0 | rewrite ge_typeof; exact (eqty_sym _ _ _ _ _ _ DY)] | exact HkcW]. }
     pose proof (case_red_inl Wc Hf HYo HMo HM1 Hbr Hv Hrw Hk1 Hk2 (geq_ty_sound ECa) (geq_ty_sound EDa) Hb) as RL.
@@ -974,7 +976,7 @@ Proof using EL VL VN VX VA VB VC VY Vc Vstep Hwl Hwl' Hwli Hwc Hk Hk' Hki Hkc Hd
     refine (conj _ (conj (tmred_trans _ _ _ _ _ LA RL) (tmred_trans _ _ _ _ _ LAf (tmred_lconv _ _ _ _ _ RR Hff)))).
     exact (IH W _ _ _ _ hI (LRtm_irrel_r Rb (rA1 Hd W (VTyG_refl_l VY) _ _ hiLR))).
   - (* [inr]: a finished [M] term, related at every depth *)
-    destruct (LRtm_escape Rb) as [Hb Hb0].
+    pose proof (LRtm_escape Rb) as [Hb Hb0].
     assert (Hb' : [ kw_G W ; kw_Δ W ⊢g b' : mR W (iR W j0' y' p') @ mlvl k k' ki ]).
     { eapply wf_lconv; [eapply wf_conv; [exact Hb0 | rewrite ge_typeof; exact (eqty_sym _ _ _ _ _ _ DM)] | exact Hf'f]. }
     pose proof (case_red_inr Wc Hf HYo HMo HM1 Hbr Hv Hrw Hk1 Hk2 (geq_ty_sound ECa) (geq_ty_sound EDa) Hb) as RL.
