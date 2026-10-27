@@ -101,9 +101,17 @@ Proof.
   unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
   pose proof lwf_ren_ty as Rty. pose proof lwf_ren_tm as Rtm.
   pose proof lwf_subst_ty as Sty. cbn beta in Rty, Rtm, Sty.
-  cbn [tm_lwf ty_lwf]; repeat split.
-  all: repeat first [ assumption | exact I | apply Sty | lazymatch goal with |- lsub_lwf _ _ => apply lwf_lsingle end | apply Rty | apply Rtm
-                    | progress cbn [ty_lwf tm_lwf lsub_lwf]; repeat split ].
+  (* by the goal's shape, as [LevelRed.leq_tmDNth]: [repeat split] also
+     split the relation inside each substitution of a concrete term *)
+  repeat lazymatch goal with
+    | |- True => exact I
+    | |- _ /\ _ => split
+    | |- tm_lwf _ (ren _ _) => apply Rtm
+    | |- ty_lwf _ (ren _ _) => apply Rty
+    | |- ty_lwf _ (subst _ _) => apply Sty
+    | |- lsub_lwf _ _ => apply lwf_lsingle
+    | |- _ => first [assumption | progress hnf]
+    end.
 Qed.
 
 Lemma iwfihty_lwf L l li l' X A N Ot C M : lwf L l -> lwf L li -> lwf L l' ->

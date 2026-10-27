@@ -96,9 +96,25 @@ Proof.
   unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
   pose proof (proj1 leq_ren_all) as Rty. pose proof (proj1 (proj2 leq_ren_all)) as Rtm.
   pose proof (proj1 leq_subst_all) as Sty. cbn beta in Rty, Rtm, Sty.
-  cbn [tm_leq ty_leq]; repeat split.
-  all: repeat first [ assumption | apply leqv_refl | apply Sty | lazymatch goal with |- lsub_leq _ _ => apply leq_lsingle end | apply Rty | apply Rtm
-                    | progress cbn [ty_leq tm_leq lsub_leq]; repeat split | reflexivity ].
+  (* by the goal's shape, a constructor's relation unfolded one layer at a
+     time: [cbn [tm_leq ty_leq]; repeat split] also split the relation
+     inside each substitution of a concrete term, computing the
+     substitution, and its goals then met [assumption] first (25 s → 1 s) *)
+  repeat lazymatch goal with
+    | |- True => exact I
+    | |- _ /\ _ => split
+    | |- tm_leq (ren _ _) (ren _ _) => apply Rtm
+    | |- tm_leq (ren_tm _ _) (ren_tm _ _) => apply Rtm
+    | |- ty_leq (ren _ _) (ren _ _) => apply Rty
+    | |- ty_leq (ren_ty _ _) (ren_ty _ _) => apply Rty
+    | |- ty_leq (subst _ _) (subst _ _) => apply Sty
+    | |- ty_leq (subst_ty _ _) (subst_ty _ _) => apply Sty
+    | |- lsub_leq _ _ => apply leq_lsingle
+    | |- leqv _ _ => first [assumption | apply leqv_refl]
+    | |- @eq _ _ _ => reflexivity
+    | |- forall _, _ => intros; reflexivity
+    | |- _ => first [assumption | progress hnf]
+    end.
 Qed.
 Lemma leq_iwfFam k1 k2 X A N Ot C a k1' k2' X' A' N' Ot' C' a' :
   leqv k1 k1' -> leqv k2 k2' -> ty_leq X X' -> ty_leq A A' -> tm_leq N N' ->
