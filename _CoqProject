@@ -8,6 +8,7 @@ theories/Syntax/Subst.v
 theories/Syntax/GSubst.v
 theories/Syntax/TemplateEq.v
 theories/Syntax/Universe.v
+theories/Syntax/DnfSyntax.v
 theories/Syntax/Recursor.v
 theories/Syntax/LevelEqDef.v
 theories/Syntax/LevelEqBase.v

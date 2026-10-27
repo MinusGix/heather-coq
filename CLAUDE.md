@@ -108,7 +108,7 @@ these docs by bare file name.
   file's syntactic lemmas (commutations, the recursors' data under an
   operation, untyped reductions) and its per-former lemmas go in a file
   of their own that requires only what they use (`ReductionBase`,
-  `GRenRec`, `SubstRec`, `WfNthReds`, `PresupAux`); `tools/depgraph.py FILE.v --decls` lists each
+  `GRenRec`, `SubstRec`, `WfNthReds`, `PresupAux`, `DnfSyntax`); `tools/depgraph.py FILE.v --decls` lists each
   declaration's latest needed module. A sectioned
   file splits by bundling its hypotheses into a class, as `RecS` does
   (`RecSBase.v`; the recipe is in `docs/gotchas.md`'s build-time
