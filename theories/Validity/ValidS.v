@@ -5,7 +5,7 @@
     context's validity (and, for terms, converts back with the type's
     validity); transitivity and conversion use a substitution related to
     itself. *)
-From DeLaM.Validity Require Export GSubRel.
+From DeLaM.Validity Require Export GSubRel Fundamental.
 
 Section ValidS.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.

@@ -10,7 +10,7 @@
     to themselves.  Symmetry needs the validity of the bindings' contexts
     and types ([GValid]), which is part of the fundamental theorem. *)
 From DeLaM.Typing Require Export GStatic.
-From DeLaM.Validity Require Export Payload.
+From DeLaM.Validity Require Export Payload PiComp Natrec Id.
 
 #[local] Existing Instance LR_P.
 
