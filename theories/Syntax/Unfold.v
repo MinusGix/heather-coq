@@ -681,10 +681,20 @@ Lemma gfree_peelL b a : gfree_tm b -> gfree_tm a -> gfree_tm (peelL b a).
 Proof. destruct b; cbn; auto using gfree_lsingle with unf. Qed.
 
 Ltac gf_peel := repeat first
-  [ apply gfree_peelL | apply gfree_peelG | apply gfree_peelU | apply gfree_rb_br
+  (* by the goal's head: a failing [apply] of a peeling lemma unfolds its
+     conclusion against the goal (85% of [gfree_redt], as in [redt_leq]) *)
+  [ lazymatch goal with
+    | |- gfree_tm (peelL _ _) => apply gfree_peelL
+    | |- gfree_tm (peelG _ _) => apply gfree_peelG
+    | |- gfree_tm (peelU _ _) => apply gfree_peelU
+    | |- gfree_tm (rb_br _ _) => apply gfree_rb_br
+    | |- gfree_ty (ren _ _) => apply gfree_ren_ty
+    | |- gfree_ty (ren_ty _ _) => apply gfree_ren_ty
+    | |- gfree_tm (ren _ _) => apply gfree_ren
+    | |- gfree_tm (ren_tm _ _) => apply gfree_ren
+    end
   | progress cbn [gfree_o gfree_tm gfree_ty gfree_ctx recT rect]
   | lazymatch goal with |- _ /\ _ => split end | assumption
-  | apply gfree_ren_ty | apply gfree_ren
   | apply gfree_subst_ty; [| repeat apply gfree_llift;
                               first [apply gfree_lsingle | apply gfree_lsingle2 | apply gfree_lsingle3 | apply gfree_lsucc]]
   | apply gfree_subst; [| repeat apply gfree_llift;
