@@ -11,7 +11,7 @@
     The rules build in parts beside one another: the tactics
     ([RulesSBase]), [IWf]'s eliminator ([RulesSIWf], [RulesSIWfSupi]
     and their [Ty] parts, a third of the time) and the rest ([RulesSCore]). *)
-From DeLaM.Validity Require Export RulesSCore RulesSIWf RulesSIWfTy RulesSIWfSupi RulesSIWfSupiTy.
+From DeLaM.Validity Require Export RulesSCore RulesSCoreW RulesSIWf RulesSIWfTy RulesSIWfSupi RulesSIWfSupiTy.
 
 (** Each rule's semantic lemma, its side conditions closed by [side]
     (the fundamental theorems at P and M). A new rule is added here. *)

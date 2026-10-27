@@ -154,6 +154,7 @@ theories/Validity/GSubRelE.v
 theories/Validity/ValidS.v
 theories/Validity/RulesSBase.v
 theories/Validity/RulesSCore.v
+theories/Validity/RulesSCoreW.v
 theories/Validity/RulesSIWf.v
 theories/Validity/RulesSIWfTy.v
 theories/Validity/RulesSIWfSupi.v
@@ -194,6 +195,9 @@ theories/Validity/IWfIhEq.v
 theories/Validity/AlgPrereq.v
 theories/Validity/AlgSound.v
 theories/Validity/AlgConv.v
+theories/Validity/AlgPERBase.v
+theories/Validity/AlgPERSym.v
+theories/Validity/AlgPERTrans.v
 theories/Validity/AlgPER.v
 theories/Validity/AlgLift.v
 theories/Validity/AlgInstance.v
