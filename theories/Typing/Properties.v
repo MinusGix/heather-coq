@@ -4,7 +4,7 @@
     - (local) weakening of every judgment, at every layer: the weakened
       context is well formed at [typeof i]; context extensions use lifting,
       and the letbox body uses global weakening. *)
-From DeLaM.Typing Require Export Lifting.
+From DeLaM.Typing Require Export GWeakening Lifting.
 
 (** ** Lookup under weakening *)
 

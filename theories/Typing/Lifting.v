@@ -4,7 +4,7 @@
     "M only" are upward closed), and [typeof] is monotone.  Premises at a
     fixed layer (the [box] contents at C, contexts of contextual types at
     P) are unchanged. *)
-From DeLaM.Typing Require Export GWeakening.
+From DeLaM.Typing Require Export Declarative.
 
 Lemma lle_refl i : lle i i.
 Proof. unfold lle; lia. Qed.
