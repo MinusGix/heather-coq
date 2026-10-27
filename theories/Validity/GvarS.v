@@ -5,7 +5,8 @@
     global variables) or to objects related by [⊩^{≥P}_P] in the
     substituted binding context, which are instantiated at the related
     local substitutions ([VSub]). *)
-From DeLaM.Validity Require Export RulesS LayerV.
+(* not [RulesS]: its rules wait for the eliminators' heavy parts *)
+From DeLaM.Validity Require Export RulesSBase LayerV.
 
 #[local] Existing Instance LR_P.
 

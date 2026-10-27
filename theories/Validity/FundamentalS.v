@@ -6,7 +6,7 @@
     PER/conversion lemma of [ValidS], or a context lemma.  Well-formed
     global contexts are semantic ([GValid]), which gives the validity of
     the global variables' bindings. *)
-From DeLaM.Validity Require Export Delta.
+From DeLaM.Validity Require Export RulesS Delta.
 
 #[local] Existing Instance LR_P.
 
