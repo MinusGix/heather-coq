@@ -47,10 +47,13 @@ these docs by bare file name.
   `mBody_single` by `geq`, `RecReductCases` by `Some_inj`, and
   `RulesS` and `RecSIWf` split into parallel parts took 848 s against
   928 s (critical path 727 s and 816 s, CPU 2163 s and 2237 s), back to
-  back. The critical path now runs `SubstCommute` → `TypedDnf` →
-  `RecWf` → the Typing metatheory (`RecGSubst`, `GStatic`) →
-  `IWfElim` → `RulesSIWfSupi` → `RecSIWf` → `FundamentalM` → the
-  algorithm (`AlgSound`, `AlgPER`). The same machine took anywhere from 976 s to 1609 s for
+  back. Then `DnfSyntax`, trimmed `Require`s (`RecGSubst`, `Lifting`,
+  `Consequences`), `equiv_gsubst` under `par:`, projections for
+  `injection` and `lequiv_sym` without `now` took 743 s against 839 s
+  (critical path 605 s and 718 s, CPU 2074 s and 2150 s), back to
+  back. The critical path now runs `Reduction` → `GRenSyntax` →
+  `GRenRec` → the Typing metatheory → `LevelInv` → `MCorec(V)` →
+  `RulesSIWfSupi` → `RecSIWf` → `FundamentalM` → `AlgPER`. The same machine took anywhere from 976 s to 1609 s for
   that tree over one day, so only back-to-back runs compare. The
   `.timing` files count the main process only: `par:`'s workers are
   not in the "CPU" total, and they slow the files built beside them
