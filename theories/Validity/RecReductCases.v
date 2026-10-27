@@ -2257,7 +2257,7 @@ Lemma rr_T_all {l Δ c r} : lwf (gL G) l -> [ G ; Δ ⊢[ lD ] ] -> [ G ; Δ ⊢
   redT l1 l2 (mkrb MT Mt bs) l Δ c = Some r -> [ G ; Γ ⊢[ lM ] r : motT (wrapMT MT) l Δ (boxT c) @ l1 ].
 Proof using Hrb HΓ.
   intros Wl HΔ Hc Hred.
-  destruct c; try (cbn in Hred; discriminate Hred);
+  destruct c; try discriminate Hred;
   first
   [ solve [ destruct (inv_ty_nat Hc) as (_ & Hk);
             pose proof (lvl_eq_lequiv' Hk I) as E;
@@ -2487,7 +2487,7 @@ Lemma C_lam {G Δ k k' A B b} : lwf (gL G) k -> lwf (gL G) k' -> [ G ; Δ ⊢[ l
   [ G ; Δ ,, A @ k ⊢[ lC ] b : B @ k' ] -> RTC G Δ (lam k k' A b) (tyPi k k' A B) (lmax k k').
 Proof.
   intros Wk Wk' HA Hb Hc Γ l1 l2 MT Mt bs HΓ Hrb HΔ l T r El ET Hred.
-  destruct T; try (cbn in Hred; discriminate Hred).
+  destruct T; try discriminate Hred.
   match type of Hred with context [ redt _ _ _ _ _ (tyPi ?a ?b' ?c ?d) _ ] =>
     rename a into k1, b' into k2, c into A1, d into B1 end.
   destruct (decl_pi_inj ET) as (E1 & E2 & EA & EB).

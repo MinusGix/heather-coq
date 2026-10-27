@@ -311,6 +311,11 @@ formers, so it gets worse with every extension:
   `solve [cbn; lia]` on typing judgments (a third of `brRes_wf`). `cbv`
   leaves a raw `fix` where an operation is stuck on a variable, so it is
   for closed data only.
+- **`cbn in H; discriminate H` to refute `f x = Some r`** (2026-10-27).
+  `rr_T_all` ran `cbn in Hred` on every former's reduct to find the ones
+  where `redT` is `None`: `cbn` normalised each `Some` reduct in full
+  before `discriminate` failed (18 s). `discriminate` alone takes the
+  head normal form, which is all it needs (0.1 s).
 - Measure before guessing (see `CLAUDE.md`, Build, for the tools):
   `tools/build-profile` for a timed build and its report,
   `tools/proofs.py` for the slowest proofs (tactics vs `Qed`),
