@@ -414,10 +414,12 @@ Ltac wty_hyp :=
   end.
 
 Ltac wnorm :=
+  try unfold tmNth, nthMot, nthBase, nthStep;
   cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
        rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add
        tmNth nthMot nthBase nthStep].
 Ltac wnorm_in H :=
+  try unfold tmNth, nthMot, nthBase, nthStep in H;
   cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
        rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add
        tmNth nthMot nthBase nthStep] in H.
