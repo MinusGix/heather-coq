@@ -284,7 +284,8 @@ Lemma ktm_mLam l l' li X A B C k Y c j y :
   mLam l l' li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C) k (ktyl ρ Y) (ktmll ρ c) (ktm ρ j) (ktm ρ y).
 Proof using .
   pose proof (ktm_mOutCorec l l' li X A B C k Y c j y) as Eo.
-  rewrite !mOutCorec_pair, ktm_pair in Eo. now injection Eo.
+  rewrite !mOutCorec_pair, ktm_pair in Eo.
+  exact (f_equal (fun t => match t with tmPair _ _ _ _ _ b => b | _ => t end) Eo).
 Qed.
 
 Lemma ktm_mOutFst l l' li X A B C k Y c j y :
@@ -292,7 +293,8 @@ Lemma ktm_mOutFst l l' li X A B C k Y c j y :
   mOutFst l l' li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C) k (ktyl ρ Y) (ktmll ρ c) (ktm ρ j) (ktm ρ y).
 Proof using .
   pose proof (ktm_mOutCorec l l' li X A B C k Y c j y) as Eo.
-  rewrite !mOutCorec_pair, ktm_pair in Eo. now injection Eo.
+  rewrite !mOutCorec_pair, ktm_pair in Eo.
+  exact (f_equal (fun t => match t with tmPair _ _ _ _ a _ => a | _ => t end) Eo).
 Qed.
 
 Lemma ktml_mBody l l' li X A B C k Y c j y :
@@ -300,7 +302,8 @@ Lemma ktml_mBody l l' li X A B C k Y c j y :
   mBody l l' li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C) k (ktyl ρ Y) (ktmll ρ c) (ktm ρ j) (ktm ρ y).
 Proof using .
   pose proof (ktm_mLam l l' li X A B C k Y c j y) as Eo.
-  unfold mLam at 1 in Eo. rewrite ktm_lam in Eo. unfold mLam in Eo. now injection Eo.
+  unfold mLam at 1 in Eo. rewrite ktm_lam in Eo. unfold mLam in Eo.
+  exact (f_equal (fun t => match t with lam _ _ _ b => b | _ => t end) Eo).
 Qed.
 
 End KwOut.
