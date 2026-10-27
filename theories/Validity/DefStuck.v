@@ -115,6 +115,3 @@ Proof.
   split; [exact Gdef_no_opaque | split; [exact stuck_rec_wf |]].
   intros (W & w & _ & _ & _ & Hr & _ & Hn & _). exact (stuck_rec_no_value (ex_intro _ w (conj Hr Hn))).
 Qed.
-
-Print Assumptions closed_canonicity_fails_M.
-Print Assumptions stuck_rec_not_numeral.

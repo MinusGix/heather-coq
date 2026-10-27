@@ -469,5 +469,3 @@ Proof.
     (try any_rule ltac:(eauto with unf));
     (try unf_manual)).
 Qed.
-
-Print Assumptions unfolding.

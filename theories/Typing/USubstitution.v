@@ -516,8 +516,6 @@ Proof.
     (first [us_upi | us_manual])).
 Qed.
 
-Print Assumptions usubstitution.
-
 (** ** Universe weakening: [n] fresh levels *)
 
 Lemma uwk_as_usubst n : forall i, (fun j => lvar (ush n j)) i = lvar (ush n i).

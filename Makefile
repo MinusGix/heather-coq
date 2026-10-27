@@ -8,9 +8,13 @@ clean: Makefile.coq
 Makefile.coq: _CoqProject
 	coq_makefile -f _CoqProject -o Makefile.coq
 
+# The axiom check (checks/Assumptions.v), kept out of [all]: see its header.
+assumptions: all
+	coqc -Q theories DeLaM -w -notation-overridden checks/Assumptions.v
+
 force _CoqProject Makefile: ;
 
 %: Makefile.coq force
 	@+$(MAKE) -f Makefile.coq $@
 
-.PHONY: all clean force
+.PHONY: all clean force assumptions
