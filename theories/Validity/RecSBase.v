@@ -2202,6 +2202,32 @@ Ltac sr_ctx_Wf :=
   repeat wkb_rw; cbn [gsubst GSubst_ctx GSubst_ty GSubst_tm]; rewrite ?uc_ext, ?gc_ext;
   rewrite ?us_wfcsty, ?us_wfihty, ?us_wfstepty, ?gs_wfcsty, ?gs_wfihty, ?gs_wfstepty; inst_cbn; lsh0.
 
+(** The calls' contexts of the indexed trees' branches: [sr_ctx_Wf]'s, with
+    the indexed telescope's types and the weakened index type pushed
+    through the substitutions. *)
+Ltac sr_ctx_IWf :=
+  cbn [brΓ brLocs cexts br_nu br_ng br_nl br_ar ucsubst mkLocs call_ty call_lv br_calls]; rewrite ?gs_cext;
+  rewrite wkc_inst' by reflexivity; rewrite ?lvren_ush_uext' by reflexivity;
+  repeat apply SubRel_cons; [first [exact RecH.He | exact He'r] | ..];
+  repeat wkb_rw; cbn [gsubst GSubst_ctx GSubst_ty GSubst_tm]; rewrite ?uc_ext, ?gc_ext;
+  rewrite ?us_El_raw, ?us_DVec_raw, ?gs_El_raw, ?gs_DVec_raw, ?usubst_lsingle, ?gs_tm_subst_raw,
+    ?usubst_iwfFam, ?gs_iwfFam_raw;
+  rewrite ?us_iwfmotty, ?us_iwfcsty, ?us_iwfihty, ?us_iwfstepty, ?gs_iwfmotty, ?gs_iwfcsty, ?gs_iwfihty,
+    ?gs_iwfstepty;
+  rewrite ?us_El_raw, ?gs_El_raw, ?usubst_ren_ty', ?usubst_ren', ?grs_ty_raw, ?grs_tm_raw; inst_cbn; lsh0;
+  rewrite ?usubst_ren_ty', ?usubst_ren', ?grs_ty_raw, ?grs_tm_raw; inst_cbn; cbn [gcons pctx pty ptm]; lsh0.
+
+(** The results whose type substitutes a payload into another ([supi]'s
+    output index, [elim_IWf]'s motive instance): the instantiated local
+    substitution computed down to the payload. *)
+Ltac res_eq_IWf := cbn [brRes call_ty br_head br_nu br_ng br_nl br_ar]; wkb_rw; inst_cbn;
+  cbn [lnorm ldrop ulsubst glsubst lcons' usubst_tm gsubst_tm ptm lvsubst nth Nat.leb Nat.sub]; lsh0;
+  rewrite ?Nat.add_0_r; reflexivity.
+
+Lemma leqv_lmax {a b c d} : leqv a c -> leqv b d -> leqv (lmax a b) (lmax c d).
+Proof using . intros E1 E2 v. cbn. rewrite E1, E2. reflexivity. Qed.
+
+
 (** [J]'s motive context shifts its carrier and point: the shifts are
     computed before the global substitution reaches them. *)
 Ltac J_cbn := try unfold lsingle2; cbn [ren Ren_ty Ren_tm ren_ty ren_tm lren r2l rdrop rshift1]; inst_cbn;

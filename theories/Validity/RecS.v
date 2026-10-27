@@ -7,7 +7,7 @@
     the branches' validity at [ψ = levels ++ φ], [σ] extended by the
     code's pieces, [e] by the recursive calls), and proves the recursion
     lemmas by induction on the code's C-typing. *)
-From DeLaM.Validity Require Export RecSBase RecSNat RecSSig RecSId RecSSEq RecSSum RecSW RecSNe RecSWf RecSSq RecSIWf.
+From DeLaM.Validity Require Export RecSBase RecSNat RecSSig RecSId RecSSEq RecSSum RecSW RecSNe RecSWf RecSSq RecSIWf RecSIWfElim.
 
 Section Rec.
 Context {EP EM : GenericEq} {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM} {EMl : GenericEqM EP EM}.
