@@ -259,7 +259,7 @@ Lemma rr_T_nat {l Δ r} : [ G ; Δ ⊢[ lD ] ] -> redT l1 l2 (mkrb MT Mt bs) l �
 Proof using Hrb HΓ.
   intros HΔ Hred.
   assert (Er : r = peelLs (peelGs (peelUs (wrap 0 1 0 (bs 0)) nil) (GCtx Δ :: nil)) nil)
-    by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redT] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r.
   rewrite peel_wrap by first [reflexivity | repeat constructor; exact (wf_ctx_dnf HΔ) | exact (Hbd 0 ltac:(lia))].
   pose proof HG_rr as HG.
@@ -304,7 +304,7 @@ Ltac rr_T_bind kb F invF l Δ k k' A B r :=
   pose proof (wf_ty_dnf HA) as HAd; pose proof (wf_ty_dnf HB) as HBd; pose proof (wf_ctx_dnf HΔ) as HΔd;
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 3 2 (bs kb)) (k :: k' :: nil)) (GCtx Δ :: GTy A :: GTy B :: nil))
                      (elimT l1 l2 (mkrb MT Mt bs) k Δ (boxT A) :: elimT l1 l2 (mkrb MT Mt bs) k' (Δ ,, A @ k) (boxT B) :: nil))
-    by (cbn [redT] in Hred; injection Hred as <-; reflexivity);
+    by (cbn [redT] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity);
   subst r; pose proof HG_rr as HG; pose proof (Hbd kb ltac:(lia)) as Hb;
   assert (HΔA : [ G ; Δ ,, A @ k ⊢[ lD ] ]) by (apply wfc_ext; [exact HΔ | exact (lift_ty HA HCD') | exact Wk]);
   pose proof (recT_wf Wk HΔ HA) as Hx1; pose proof (recT_wf Wk' HΔA HB) as Hx2;
@@ -346,7 +346,7 @@ Proof using Hrb HΓ.
   destruct (inv_ty_U Hc) as ((_ & _ & Wk) & _).
   pose proof (wf_ctx_dnf HΔ) as HΔd.
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 1 0 (bs 2)) (k :: nil)) (GCtx Δ :: nil)) nil)
-    by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redT] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 2 ltac:(lia)) as Hb2.
   assert (Ho : Forall dnfo (GCtx Δ :: nil)) by (apply Forall_cons; [exact HΔd | apply Forall_nil]).
   assert (Hσ : [ G ⊢ gext_s (GCtx Δ :: nil) gid :
@@ -369,7 +369,7 @@ Proof using Hrb HΓ.
   pose proof (wf_ctx_dnf HΔ) as HΔd. pose proof (wf_tm_dnf Ht) as Htd.
   set (x1 := elimt l1 l2 (mkrb MT Mt bs) (lsuc k) Δ (tyU k) (boxt t)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 2 1 (bs 3)) (k :: nil)) (GCtx Δ :: GTm t :: nil)) (x1 :: nil))
-    by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redT] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 3 ltac:(lia)) as Hb3.
   assert (HU : [ G ; Δ ⊢[ lD ] tyU k @ lsuc k ]) by (apply wft_U; [discriminate | exact HΔ | exact Wk]).
   pose proof (rect_wf (lwf_suc Wk) HΔ HU Ht) as Hx1. pose proof (wf_tm_dnf Hx1) as Hx1d.
@@ -405,7 +405,7 @@ Proof using Hrb HΓ.
   destruct (inv_ty_unit Hc) as ((_ & _ & Wk) & _).
   pose proof (wf_ctx_dnf HΔ) as HΔd.
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 1 0 (bs 14)) (k :: nil)) (GCtx Δ :: nil)) nil)
-    by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redT] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 14 ltac:(lia)) as Hb14.
   assert (Ho : Forall dnfo (GCtx Δ :: nil)) by (apply Forall_cons; [exact HΔd | apply Forall_nil]).
   assert (Hσ : [ G ⊢ gext_s (GCtx Δ :: nil) gid :
@@ -428,7 +428,7 @@ Proof using Hrb HΓ.
   intros HΔ Wl HT HV Hred.
   pose proof (wf_ctx_dnf HΔ) as HΔd. pose proof (wf_ty_dnf HT) as HTd. pose proof (wf_tm_dnf HV) as HVd.
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 3 0 (bs 4)) (l :: nil)) (GCtx Δ :: GTy T :: GTm (var n) :: nil)) nil)
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 4 ltac:(lia)) as Hb.
   assert (Ho : Forall dnfo (GCtx Δ :: GTy T :: GTm (var n) :: nil))
     by (repeat apply Forall_cons; [exact HΔd | exact HTd | exact HVd | apply Forall_nil]).
@@ -456,7 +456,7 @@ Ltac rr_t_closed k nu ls :=
     let Ho := fresh "Ho" in let Hσ := fresh "Hσ" in let Hd := fresh "Hd" in let X := fresh "X" in
     pose proof (wf_ctx_dnf HΔ) as HΔd;
     assert (Er : r = peelLs (peelGs (peelUs (wrap nu 1 0 (bs k)) ls) (GCtx Δ :: nil)) nil)
-      by (cbn [redt] in Hred; injection Hred as <-; reflexivity);
+      by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity);
     subst r; pose proof HG_rr as HG; pose proof (Hbd k ltac:(lia)) as Hb;
     assert (Ho : Forall dnfo (GCtx Δ :: nil)) by (apply Forall_cons; [exact HΔd | apply Forall_nil]);
     rewrite peel_wrap by first [reflexivity | exact Ho | apply Forall_nil | exact Hb];
@@ -538,7 +538,7 @@ Proof using Hrb HΓ.
   pose proof (wf_ctx_dnf HΔ) as HΔd. pose proof (wf_tm_dnf Ht) as Htd.
   set (x1 := elimt l1 l2 (mkrb MT Mt bs) lzero Δ tyNat (boxt t)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 0 2 1 (bs 9)) nil) (GCtx Δ :: GTm t :: nil)) (x1 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG.
   pose proof (rect_wf (l := lzero) I HΔ (ctm_ty Ht) Ht) as Hx1. pose proof (wf_tm_dnf Hx1) as Hx1d.
   assert (Ho : Forall dnfo (GCtx Δ :: GTm t :: nil))
@@ -565,7 +565,7 @@ Ltac rr_t_bind kb l Δ T k k' s t r :=
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 3 2 (bs kb)) (k :: k' :: nil)) (GCtx Δ :: GTm s :: GTm t :: nil))
                      (elimt l1 l2 (mkrb MT Mt bs) (lsuc k) Δ (tyU k) (boxt s)
                       :: elimt l1 l2 (mkrb MT Mt bs) (lsuc k') (Δ ,, tyEl k s @ k) (tyU k') (boxt t) :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity);
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity);
   subst r; pose proof HG_rr as HG; pose proof (Hbd kb ltac:(lia)) as Hb;
   assert (HΔs : [ G ; Δ ,, tyEl k s @ k ⊢[ lD ] ])
     by (apply wfc_ext; [exact HΔ | apply wft_El; [discriminate | exact Wk | exact (lift_tm Hs HCD')] | exact Wk]);
@@ -618,7 +618,7 @@ Proof using Hrb HΓ.
   set (x4 := elimt l1 l2 (mkrb MT Mt bs) lzero Δ tyNat (boxt t)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 5 4 (bs 10)) (k :: nil))
                              (GCtx Δ :: GTy M :: GTm s :: GTm z :: GTm t :: nil)) (x1 :: x2 :: x3 :: x4 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 10 ltac:(lia)) as Hb.
   assert (HΔN : [ G ; Δ ,, tyNat @ lzero ⊢[ lD ] ])
     by (apply wfc_ext; [exact HΔ | apply wft_nat; [discriminate | exact HΔ] | exact I]).
@@ -667,7 +667,7 @@ Proof using Hrb HΓ.
   set (x2 := elimt l1 l2 (mkrb MT Mt bs) k' (Δ ,, A @ k) B (boxt b)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 4 2 (bs 11)) (k :: k' :: nil)) (GCtx Δ :: GTy A :: GTy B :: GTm b :: nil))
                      (x1 :: x2 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 11 ltac:(lia)) as Hb.
   assert (HΔA : [ G ; Δ ,, A @ k ⊢[ lD ] ]) by (apply wfc_ext; [exact HΔ | exact (lift_ty HA HCD') | exact Wk]).
   pose proof (recT_wf Wk HΔ HA) as Hx1. pose proof (rect_wf Wk' HΔA HB Hbt) as Hx2.
@@ -709,7 +709,7 @@ Proof using Hrb HΓ.
   set (x4 := elimt l1 l2 (mkrb MT Mt bs) k Δ A (boxt a)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 5 4 (bs 12)) (k :: k' :: nil))
                              (GCtx Δ :: GTy A :: GTy B :: GTm f :: GTm a :: nil)) (x1 :: x2 :: x3 :: x4 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 12 ltac:(lia)) as Hb.
   assert (HΔA : [ G ; Δ ,, A @ k ⊢[ lD ] ]) by (apply wfc_ext; [exact HΔ | exact (lift_ty HA HCD') | exact Wk]).
   assert (Wkk : lwf (gL G) (lmax k k')) by (split; assumption).
@@ -757,7 +757,7 @@ Proof using Hrb HΓ.
   set (x4 := elimt l1 l2 (mkrb MT Mt bs) k' Δ (B[lsingle a]) (boxt b)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 5 4 (bs 16)) (k :: k' :: nil))
                              (GCtx Δ :: GTy A :: GTy B :: GTm a :: GTm b :: nil)) (x1 :: x2 :: x3 :: x4 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 16 ltac:(lia)) as Hb.
   assert (HΔA : [ G ; Δ ,, A @ k ⊢[ lD ] ]) by (apply wfc_ext; [exact HΔ | exact (lift_ty HA HCD') | exact Wk]).
   pose proof (recT_wf Wk HΔ HA) as Hx1. pose proof (recT_wf Wk' HΔA HB) as Hx2.
@@ -798,7 +798,7 @@ Ltac rr_t_proj kb l Δ k k' A B p :=
     assert (Er : r = peelLs (peelGs (peelUs (wrap 2 4 3 (bs kb)) (k :: k' :: nil)) (GCtx Δ :: GTy A :: GTy B :: GTm p :: nil))
                        (elimT l1 l2 (mkrb MT Mt bs) k Δ (boxT A) :: elimT l1 l2 (mkrb MT Mt bs) k' (Δ ,, A @ k) (boxT B)
                         :: elimt l1 l2 (mkrb MT Mt bs) (lmax k k') Δ (tySig k k' A B) (boxt p) :: nil))
-      by (cbn [redt] in Hred; injection Hred as <-; reflexivity);
+      by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity);
     subst r end;
   pose proof HG_rr as HG; pose proof (Hbd kb ltac:(lia)) as Hb;
   assert (HΔA : [ G ; Δ ,, A @ k ⊢[ lD ] ]) by (apply wfc_ext; [exact HΔ | exact (lift_ty HA HCD') | exact Wk]);
@@ -861,7 +861,7 @@ Proof using Hrb HΓ.
   set (x3 := elimt l1 l2 (mkrb MT Mt bs) k Δ A (boxt b)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 4 3 (bs 21)) (k :: nil)) (GCtx Δ :: GTy A :: GTm a :: GTm b :: nil))
                      (x1 :: x2 :: x3 :: nil))
-    by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redT] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 21 ltac:(lia)) as Hb.
   pose proof (recT_wf Wk HΔ HA) as Hx1.
   pose proof (rect_wf Wk HΔ (ctm_ty Ha) Ha) as Hx2. pose proof (rect_wf Wk HΔ (ctm_ty Hb') Hb') as Hx3.
@@ -901,7 +901,7 @@ Proof using Hrb HΓ.
   set (x3 := elimt l1 l2 (mkrb MT Mt bs) k Δ (tyEl k s) (boxt u)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 4 3 (bs 22)) (k :: nil)) (GCtx Δ :: GTm s :: GTm t :: GTm u :: nil))
                      (x1 :: x2 :: x3 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 22 ltac:(lia)) as Hb.
   assert (HU : [ G ; Δ ⊢[ lD ] tyU k @ lsuc k ]) by (apply wft_U; [discriminate | exact HΔ | exact Wk]).
   pose proof (rect_wf (lwf_suc Wk) HΔ HU Hs) as Hx1.
@@ -940,7 +940,7 @@ Proof using Hrb HΓ.
   set (x2 := elimt l1 l2 (mkrb MT Mt bs) k Δ A (boxt a)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 3 2 (bs 23)) (k :: nil)) (GCtx Δ :: GTy A :: GTm a :: nil))
                      (x1 :: x2 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 23 ltac:(lia)) as Hb.
   pose proof (recT_wf Wk HΔ HA) as Hx1. pose proof (rect_wf Wk HΔ (ctm_ty Ha) Ha) as Hx2.
   assert (Ho : Forall dnfo (GCtx Δ :: GTy A :: GTm a :: nil))
@@ -984,7 +984,7 @@ Proof using Hrb HΓ.
   set (x6 := elimt l1 l2 (mkrb MT Mt bs) k Δ (tyId k A a u) (boxt e0)).
   set (os := GCtx Δ :: GTy A :: GTm a :: GTy M :: GTm c :: GTm u :: GTm e0 :: nil).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 7 6 (bs 24)) (k :: k' :: nil)) os) (x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 24 ltac:(lia)) as Hb.
   assert (HΔA : [ G ; Δ ,, A @ k ⊢[ lD ] ]) by (apply wfc_ext; [exact HΔ | exact (lift_ty HA HCD') | exact Wk]).
   assert (HΔM : [ G ; Δ ,, A @ k ,, tyId k A⟨↑⟩ a⟨↑⟩ (var 0) @ k ⊢[ lD ] ])
@@ -1034,7 +1034,7 @@ Proof using Hrb HΓ.
   set (x3 := elimt l1 l2 (mkrb MT Mt bs) k Δ A (boxt b)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 4 3 (bs 25)) (k :: nil)) (GCtx Δ :: GTy A :: GTm a :: GTm b :: nil))
                      (x1 :: x2 :: x3 :: nil))
-    by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redT] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 25 ltac:(lia)) as Hb.
   pose proof (recT_wf Wk HΔ HA) as Hx1.
   pose proof (rect_wf Wk HΔ (ctm_ty Ha) Ha) as Hx2. pose proof (rect_wf Wk HΔ (ctm_ty Hb') Hb') as Hx3.
@@ -1074,7 +1074,7 @@ Proof using Hrb HΓ.
   set (x3 := elimt l1 l2 (mkrb MT Mt bs) k Δ (tyEl k s) (boxt u)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 4 3 (bs 26)) (k :: nil)) (GCtx Δ :: GTm s :: GTm t :: GTm u :: nil))
                      (x1 :: x2 :: x3 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 26 ltac:(lia)) as Hb.
   assert (HU : [ G ; Δ ⊢[ lD ] tyU k @ lsuc k ]) by (apply wft_U; [discriminate | exact HΔ | exact Wk]).
   pose proof (rect_wf (lwf_suc Wk) HΔ HU Hs) as Hx1.
@@ -1113,7 +1113,7 @@ Proof using Hrb HΓ.
   set (x2 := elimt l1 l2 (mkrb MT Mt bs) k Δ A (boxt a)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 3 2 (bs 29)) (k :: nil)) (GCtx Δ :: GTy A :: GTm a :: nil))
                      (x1 :: x2 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 29 ltac:(lia)) as Hb.
   pose proof (recT_wf Wk HΔ HA) as Hx1. pose proof (rect_wf Wk HΔ (ctm_ty Ha) Ha) as Hx2.
   assert (Ho : Forall dnfo (GCtx Δ :: GTy A :: GTm a :: nil))
@@ -1144,7 +1144,7 @@ Proof using Hrb HΓ.
   destruct (inv_ty_sempty Hc) as ((_ & _ & Wk) & _).
   pose proof (wf_ctx_dnf HΔ) as HΔd.
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 1 0 (bs 27)) (k :: nil)) (GCtx Δ :: nil)) nil)
-    by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redT] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 27 ltac:(lia)) as Hb14.
   assert (Ho : Forall dnfo (GCtx Δ :: nil)) by (apply Forall_cons; [exact HΔd | apply Forall_nil]).
   assert (Hσ : [ G ⊢ gext_s (GCtx Δ :: nil) gid :
@@ -1181,7 +1181,7 @@ Proof using Hrb HΓ.
   set (x2 := elimt l1 l2 (mkrb MT Mt bs) k Δ (tySEmpty k) (boxt e0)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 3 2 (bs 30)) (k' :: k :: nil)) (GCtx Δ :: GTy M :: GTm e0 :: nil))
                      (x1 :: x2 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 30 ltac:(lia)) as Hb.
   pose proof (recT_wf Wk' HΔ HM) as Hx1. pose proof (rect_wf Wk HΔ (ctm_ty He0) He0) as Hx2.
   assert (Ho : Forall dnfo (GCtx Δ :: GTy M :: GTm e0 :: nil))
@@ -1214,7 +1214,7 @@ Proof using Hrb HΓ.
   destruct (inv_ty_empty Hc) as ((_ & _ & Wk) & _).
   pose proof (wf_ctx_dnf HΔ) as HΔd.
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 1 0 (bs 31)) (k :: nil)) (GCtx Δ :: nil)) nil)
-    by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redT] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 31 ltac:(lia)) as Hb.
   assert (Ho : Forall dnfo (GCtx Δ :: nil)) by (apply Forall_cons; [exact HΔd | apply Forall_nil]).
   assert (Hσ : [ G ⊢ gext_s (GCtx Δ :: nil) gid :
@@ -1253,7 +1253,7 @@ Proof using Hrb HΓ.
   set (x2 := elimt l1 l2 (mkrb MT Mt bs) k' Δ (tyEmpty k') (boxt t)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 3 2 (bs 33)) (k :: k' :: nil)) (GCtx Δ :: GTy M :: GTm t :: nil))
                      (x1 :: x2 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 33 ltac:(lia)) as Hb.
   pose proof (recT_wf Wk HΔE HM) as Hx1. pose proof (rect_wf Wk' HΔ (ctm_ty Ht) Ht) as Hx2.
   assert (Ho : Forall dnfo (GCtx Δ :: GTy M :: GTm t :: nil))
@@ -1287,7 +1287,7 @@ Proof using Hrb HΓ.
   set (x2 := elimT l1 l2 (mkrb MT Mt bs) k' Δ (boxT B)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 3 2 (bs 34)) (k :: k' :: nil)) (GCtx Δ :: GTy A :: GTy B :: nil))
                      (x1 :: x2 :: nil))
-    by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redT] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 34 ltac:(lia)) as Hb.
   pose proof (recT_wf Wk HΔ HA) as Hx1. pose proof (recT_wf Wk' HΔ HB) as Hx2.
   assert (Ho : Forall dnfo (GCtx Δ :: GTy A :: GTy B :: nil))
@@ -1321,7 +1321,7 @@ Proof using Hrb HΓ.
   set (x2 := elimt l1 l2 (mkrb MT Mt bs) (lsuc k') Δ (tyU k') (boxt t)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 3 2 (bs 35)) (k :: k' :: nil)) (GCtx Δ :: GTm s :: GTm t :: nil))
                      (x1 :: x2 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 35 ltac:(lia)) as Hb.
   pose proof (rect_wf (lwf_suc Wk) HΔ (ctm_ty Hs) Hs) as Hx1.
   pose proof (rect_wf (lwf_suc Wk') HΔ (ctm_ty Ht) Ht) as Hx2.
@@ -1357,7 +1357,7 @@ Ltac rr_t_inj kb U l Δ k k' A B a r :=
   let Da := lazymatch U with 1 => constr:(gdTm (cvar 2) lC (gv 1) k) | _ => constr:(gdTm (cvar 2) lC (gv 0) k') end in
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 4 3 (bs kb)) (k :: k' :: nil)) (GCtx Δ :: GTy A :: GTy B :: GTm a :: nil))
                      (elimT l1 l2 (mkrb MT Mt bs) k Δ (boxT A) :: elimT l1 l2 (mkrb MT Mt bs) k' Δ (boxT B) :: x3 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity);
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity);
   subst r; pose proof HG_rr as HG; pose proof (Hbd kb ltac:(lia)) as Hb;
   pose proof (recT_wf Wk HΔ HA) as Hx1; pose proof (recT_wf Wk' HΔ HB) as Hx2;
   let Wa := lazymatch U with 1 => constr:(Wk) | _ => constr:(Wk') end in
@@ -1425,7 +1425,7 @@ Proof using Hrb HΓ.
   set (os := GCtx Δ :: GTy A :: GTy B :: GTy M :: GTm c1 :: GTm c2 :: GTm t :: nil).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 3 7 6 (bs 38)) (k :: k' :: k'' :: nil)) os)
                      (x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 38 ltac:(lia)) as Hb.
   pose proof (recT_wf Wk HΔ HA) as Hx1. pose proof (recT_wf Wk' HΔ HB) as Hx2.
   pose proof (recT_wf Wk'' HΔS HM) as Hx3.
@@ -1497,7 +1497,7 @@ Proof using Hrb HΓ.
                (tyPi k' (lmax k k') B[lsingle a] (tyW k k' A B)⟨↑⟩) (boxt f)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 5 4 (bs 41)) (k :: k' :: nil))
                              (GCtx Δ :: GTy A :: GTy B :: GTm a :: GTm f :: nil)) (x1 :: x2 :: x3 :: x4 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 41 ltac:(lia)) as Hb.
   assert (HΔA : [ G ; Δ ,, A @ k ⊢[ lD ] ]) by (apply wfc_ext; [exact HΔ | exact (lift_ty HA HCD') | exact Wk]).
   assert (Wf : lwf (gL G) (lmax k' (lmax k k'))) by (cbn; repeat split; assumption).
@@ -1571,7 +1571,7 @@ Proof using Hrb HΓ.
   set (os := GCtx Δ :: GTy A :: GTy B :: GTy M :: GTm c :: GTm t :: nil).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 3 6 5 (bs 42)) (k :: k' :: k'' :: nil)) os)
                      (x1 :: x2 :: x3 :: x4 :: x5 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 42 ltac:(lia)) as Hb.
   pose proof (recT_wf Wk HΔ HA) as Hx1. pose proof (recT_wf Wk' HΔA HB) as Hx2.
   pose proof (recT_wf Wk'' HΔW HM) as Hx3.
@@ -1623,7 +1623,7 @@ Proof using Hrb HΓ.
   set (x2 := elimt l1 l2 (mkrb MT Mt bs) lzero Δ tyNat (boxt n)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 3 2 (bs 43)) (k :: nil)) (GCtx Δ :: GTy A :: GTm n :: nil))
                      (x1 :: x2 :: nil))
-    by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redT] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 43 ltac:(lia)) as Hb.
   pose proof (recT_wf Wk HΔ HA) as Hx1. pose proof (rect_wf (l := lzero) I HΔ (ctm_ty Hn) Hn) as Hx2.
   assert (Ho : Forall dnfo (GCtx Δ :: GTy A :: GTm n :: nil))
@@ -1657,7 +1657,7 @@ Proof using Hrb HΓ.
   set (x2 := elimt l1 l2 (mkrb MT Mt bs) lzero Δ tyNat (boxt n)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 3 2 (bs 44)) (k :: nil)) (GCtx Δ :: GTm s :: GTm n :: nil))
                      (x1 :: x2 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG. pose proof (Hbd 44 ltac:(lia)) as Hb.
   pose proof (rect_wf (lwf_suc Wk) HΔ (ctm_ty Hs) Hs) as Hx1.
   pose proof (rect_wf (l := lzero) I HΔ (ctm_ty Hn) Hn) as Hx2.
@@ -1690,7 +1690,7 @@ Proof using Hrb HΓ.
   pose proof (wf_ctx_dnf HΔ) as HΔd. pose proof (wf_tm_dnf Hn) as Hnd.
   set (x1 := elimt l1 l2 (mkrb MT Mt bs) lzero Δ tyNat (boxt n)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 0 2 1 (bs 45)) nil) (GCtx Δ :: GTm n :: nil)) (x1 :: nil))
-    by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redT] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG.
   pose proof (rect_wf (l := lzero) I HΔ (ctm_ty Hn) Hn) as Hx1. pose proof (wf_tm_dnf Hx1) as Hx1d.
   assert (Ho : Forall dnfo (GCtx Δ :: GTm n :: nil))
@@ -1718,7 +1718,7 @@ Proof using Hrb HΓ.
   pose proof (wf_ctx_dnf HΔ) as HΔd. pose proof (wf_tm_dnf Hn) as Hnd.
   set (x1 := elimt l1 l2 (mkrb MT Mt bs) lzero Δ tyNat (boxt n)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 0 2 1 (bs 46)) nil) (GCtx Δ :: GTm n :: nil)) (x1 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof HG_rr as HG.
   pose proof (rect_wf (l := lzero) I HΔ (ctm_ty Hn) Hn) as Hx1. pose proof (wf_tm_dnf Hx1) as Hx1d.
   assert (Ho : Forall dnfo (GCtx Δ :: GTm n :: nil))
@@ -1751,7 +1751,7 @@ Proof using Hrb HΓ.
   set (x2 := elimt l1 l2 (mkrb MT Mt bs) lzero (Δ ,, A @ k) tyNat (boxt N)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 3 2 (bs 47)) (k :: nil)) (GCtx Δ :: GTy A :: GTm N :: nil))
                      (x1 :: x2 :: nil))
-    by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redT] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof (recT_wf Wk HΔ HA) as Hx1. pose proof (rect_wf (l := lzero) I HΔA (ctm_ty HN) HN) as Hx2.
   gs_dnf. pose proof (wf_ctx_dnf HΔ) as HΔd.
   assert (Ho : Forall dnfo (GCtx Δ :: GTy A :: GTm N :: nil)) by (rr_dnf).
@@ -1776,7 +1776,7 @@ Proof using Hrb HΓ.
   set (x2 := elimt l1 l2 (mkrb MT Mt bs) lzero (Δ ,, tyEl k s @ k) tyNat (boxt n)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 3 2 (bs 48)) (k :: nil)) (GCtx Δ :: GTm s :: GTm n :: nil))
                      (x1 :: x2 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof (rect_wf (lwf_suc Wk) HΔ (ctm_ty Hs) Hs) as Hx1.
   pose proof (rect_wf (l := lzero) I HΔE (ctm_ty Hn) Hn) as Hx2.
   gs_dnf. pose proof (wf_ctx_dnf HΔ) as HΔd.
@@ -1804,7 +1804,7 @@ Proof using Hrb HΓ.
   set (x4 := elimt l1 l2 (mkrb MT Mt bs) k Δ (tyVec k (tyWf k A N) N[lsingle a]) (boxt cs)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 5 4 (bs 49)) (k :: nil))
                              (GCtx Δ :: GTy A :: GTm N :: GTm a :: GTm cs :: nil)) (x1 :: x2 :: x3 :: x4 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof (recT_wf Wk HΔ HA) as Hx1. pose proof (rect_wf (l := lzero) I HΔA (ctm_ty HN) HN) as Hx2.
   pose proof (rect_wf Wk HΔ (ctm_ty Ha) Ha) as Hx3. pose proof (rect_wf Wk HΔ (ctm_ty Hcs) Hcs) as Hx4.
   gs_dnf. pose proof (wf_ctx_dnf HΔ) as HΔd.
@@ -1844,7 +1844,7 @@ Proof using Hrb HΓ.
   set (x5 := elimt l1 l2 (mkrb MT Mt bs) k Δ (tyWf k A N) (boxt t)).
   set (os := GCtx Δ :: GTy A :: GTm N :: GTy M :: GTm c :: GTm t :: nil).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 6 5 (bs 50)) (k :: k' :: nil)) os) (x1 :: x2 :: x3 :: x4 :: x5 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof (recT_wf Wk HΔ HA) as Hx1. pose proof (rect_wf (l := lzero) I HΔA (ctm_ty HN) HN) as Hx2.
   pose proof (recT_wf Wk' HΔW HM) as Hx3. pose proof (rect_wf Wk' HΔS (ctm_ty Hc) Hc) as Hx4.
   pose proof (rect_wf Wk HΔ (ctm_ty Ht) Ht) as Hx5.
@@ -1870,7 +1870,7 @@ Proof using Hrb HΓ.
   destruct (inv_ty_sq Hc) as ((_ & Wk & HA) & _).
   set (x1 := elimT l1 l2 (mkrb MT Mt bs) k Δ (boxT A)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 2 1 (bs 51)) (k :: nil)) (GCtx Δ :: GTy A :: nil)) (x1 :: nil))
-    by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redT] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof (recT_wf Wk HΔ HA) as Hx1.
   gs_dnf. pose proof (wf_ctx_dnf HΔ) as HΔd.
   assert (Ho : Forall dnfo (GCtx Δ :: GTy A :: nil)) by (rr_dnf).
@@ -1891,7 +1891,7 @@ Proof using Hrb HΓ.
   intros HΔ Wk Hs Hred.
   set (x1 := elimt l1 l2 (mkrb MT Mt bs) (lsuc k) Δ (tyU k) (boxt s)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 2 1 (bs 52)) (k :: nil)) (GCtx Δ :: GTm s :: nil)) (x1 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof (rect_wf (lwf_suc Wk) HΔ (ctm_ty Hs) Hs) as Hx1.
   gs_dnf. pose proof (wf_ctx_dnf HΔ) as HΔd.
   assert (Ho : Forall dnfo (GCtx Δ :: GTm s :: nil)) by (rr_dnf).
@@ -1914,7 +1914,7 @@ Proof using Hrb HΓ.
   set (x2 := elimt l1 l2 (mkrb MT Mt bs) k Δ A (boxt a)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 3 2 (bs 53)) (k :: nil)) (GCtx Δ :: GTy A :: GTm a :: nil))
                      (x1 :: x2 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof (recT_wf Wk HΔ HA) as Hx1. pose proof (rect_wf Wk HΔ (ctm_ty Ha) Ha) as Hx2.
   gs_dnf. pose proof (wf_ctx_dnf HΔ) as HΔd.
   assert (Ho : Forall dnfo (GCtx Δ :: GTy A :: GTm a :: nil)) by (rr_dnf).
@@ -1944,7 +1944,7 @@ Proof using Hrb HΓ.
   set (x4 := elimt l1 l2 (mkrb MT Mt bs) k Δ (tySq k A) (boxt t)).
   set (os := GCtx Δ :: GTy A :: GTy M :: GTm c :: GTm t :: nil).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 5 4 (bs 54)) (k :: k' :: nil)) os) (x1 :: x2 :: x3 :: x4 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof (recT_wf Wk HΔ HA) as Hx1. pose proof (recT_wf Wk' HΔS HM) as Hx2.
   pose proof (rect_wf Wk' HΔA (ctm_ty Hc) Hc) as Hx3. pose proof (rect_wf Wk HΔ (ctm_ty Ht) Ht) as Hx4.
   gs_dnf. pose proof (wf_ctx_dnf HΔ) as HΔd.
@@ -2010,7 +2010,7 @@ Proof using Hrb HΓ.
   set (x2 := elimT l1 l2 (mkrb MT Mt bs) k (Δ ,, tyFin n @ lzero) (boxT F)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 3 2 (bs 55)) (k :: nil)) (GCtx Δ :: GTm n :: GTy F :: nil))
                      (x1 :: x2 :: nil))
-    by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redT] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof (rect_wf (l := lzero) I HΔ (ctm_ty Hn) Hn) as Hx1. pose proof (recT_wf Wk HΔF HF) as Hx2.
   gs_dnf. pose proof (wf_ctx_dnf HΔ) as HΔd.
   assert (Ho : Forall dnfo (GCtx Δ :: GTm n :: GTy F :: nil)) by (rr_dnf).
@@ -2035,7 +2035,7 @@ Proof using Hrb HΓ.
   set (x2 := elimt l1 l2 (mkrb MT Mt bs) (lsuc k) (Δ ,, tyFin n @ lzero) (tyU k) (boxt f)).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 1 3 2 (bs 56)) (k :: nil)) (GCtx Δ :: GTm n :: GTm f :: nil))
                      (x1 :: x2 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof (rect_wf (l := lzero) I HΔ (ctm_ty Hn) Hn) as Hx1.
   pose proof (rect_wf (lwf_suc Wk) HΔF (ctm_ty Hf) Hf) as Hx2.
   gs_dnf. pose proof (wf_ctx_dnf HΔ) as HΔd.
@@ -2067,7 +2067,7 @@ Proof using Hrb HΓ.
   set (os := GCtx Δ :: GTy X :: GTy A :: GTm N :: GTm Ot :: GTm C :: GTm m :: nil).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 7 6 (bs 57)) (k :: ki :: nil)) os)
                      (x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: nil))
-    by (cbn [redT] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redT] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof (recT_wf Wki HΔ HX) as Hx1. pose proof (recT_wf Wk HΔ HA) as Hx2.
   pose proof (rect_wf (l := lzero) I HΔA (ctm_ty HN) HN) as Hx3. pose proof (rect_wf Wki HΔA (ctm_ty HO) HO) as Hx4.
   pose proof (rect_wf Wki HΔAF (ctm_ty HC) HC) as Hx5. pose proof (rect_wf Wki HΔ (ctm_ty Hm) Hm) as Hx6.
@@ -2105,7 +2105,7 @@ Proof using Hrb HΓ.
   set (os := GCtx Δ :: GTm x :: GTm s :: GTm n :: GTm o :: GTm c :: GTm m :: nil).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 7 6 (bs 58)) (k :: ki :: nil)) os)
                      (x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof (rect_wf (lwf_suc Wki) HΔ (ctm_ty Hx) Hx) as Hx1.
   pose proof (rect_wf (lwf_suc Wk) HΔ (ctm_ty Hs) Hs) as Hx2.
   pose proof (rect_wf (l := lzero) I HΔE (ctm_ty Hn) Hn) as Hx3. pose proof (rect_wf Wki HΔE (ctm_ty Ho') Ho') as Hx4.
@@ -2146,7 +2146,7 @@ Proof using Hrb HΓ.
   set (os := GCtx Δ :: GTy X :: GTy A :: GTm N :: GTm Ot :: GTm C :: GTm a :: GTm cs :: nil).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 2 8 7 (bs 59)) (k :: ki :: nil)) os)
                      (x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: x7 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof (recT_wf Wki HΔ HX) as Hx1. pose proof (recT_wf Wk HΔ HA) as Hx2.
   pose proof (rect_wf (l := lzero) I HΔA (ctm_ty HN) HN) as Hx3. pose proof (rect_wf Wki HΔA (ctm_ty HO) HO) as Hx4.
   pose proof (rect_wf Wki HΔAF (ctm_ty HC) HC) as Hx5. pose proof (rect_wf Wk HΔ (ctm_ty Ha) Ha) as Hx6.
@@ -2203,7 +2203,7 @@ Proof using Hrb HΓ.
   set (os := GCtx Δ :: GTy X :: GTy A :: GTm N :: GTm Ot :: GTm C :: GTy M :: GTm c :: GTm m :: GTm t :: nil).
   assert (Er : r = peelLs (peelGs (peelUs (wrap 3 10 9 (bs 60)) (k :: ki :: k' :: nil)) os)
                      (x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: x7 :: x8 :: x9 :: nil))
-    by (cbn [redt] in Hred; injection Hred as <-; reflexivity).
+    by (cbn [redt] in Hred; apply Some_inj in Hred; rewrite <- Hred; reflexivity).
   subst r. pose proof (recT_wf Wki HΔ HX) as Hx1. pose proof (recT_wf Wk HΔ HA) as Hx2.
   pose proof (rect_wf (l := lzero) I HΔA (ctm_ty HN) HN) as Hx3. pose proof (rect_wf Wki HΔA (ctm_ty HO) HO) as Hx4.
   pose proof (rect_wf Wki HΔAF (ctm_ty HC) HC) as Hx5. pose proof (recT_wf Wk' HΔXM HM) as Hx6.
