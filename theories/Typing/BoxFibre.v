@@ -22,7 +22,7 @@ Lemma box_fibre_ty {G Δ Δ' l l' T} : [ G ⊢[ lD ] Δ ≅ Δ' ] -> lequiv (gL 
   [ G ; Δ ⊢[ lC ] T @ l ] -> [ G ; Δ' ⊢[ lC ] T @ l' ].
 Proof.
   intros Hc Hl HT. apply (ctxconv_ty Hc (i := lC) eq_refl).
-  eapply wft_lconv; [exact HT | now apply lequiv_sym].
+  eapply wft_lconv; [exact HT | solve [apply lequiv_sym; assumption]].
 Qed.
 
 Lemma box_fibre_ty_iff {G Δ Δ' l l' T} : [ G ⊢[ lD ] Δ ≅ Δ' ] -> lequiv (gL G) l l' ->
@@ -38,7 +38,7 @@ Lemma box_fibre_tm {G Δ Δ' T T' l l' t} : [ G ⊢[ lD ] Δ ≅ Δ' ] ->
   [ G ; Δ ⊢[ lC ] t : T @ l ] -> [ G ; Δ' ⊢[ lC ] t : T' @ l' ].
 Proof.
   intros Hc HT Hl Ht. apply (ctxconv_tm Hc (i := lC) eq_refl).
-  eapply wf_lconv with (l' := l); [| now apply lequiv_sym].
+  eapply wf_lconv with (l' := l); [| solve [apply lequiv_sym; assumption]].
   eapply wf_conv; [exact Ht | exact (eqty_sym _ _ _ _ _ _ HT)].
 Qed.
 
@@ -47,8 +47,8 @@ Lemma box_fibre_tm_iff {G Δ Δ' T T' l l' t} : [ G ⊢[ lD ] Δ ≅ Δ' ] ->
   [ G ; Δ ⊢[ lC ] t : T @ l ] <-> [ G ; Δ' ⊢[ lC ] t : T' @ l' ].
 Proof.
   intros Hc HT Hl; split; [now apply box_fibre_tm |].
-  apply box_fibre_tm; [now apply eqctx_sym_D | | now apply lequiv_sym].
+  apply box_fibre_tm; [now apply eqctx_sym_D | | solve [apply lequiv_sym; assumption]].
   (* [T' ≅ T] over [Δ'], at [l'] *)
-  eapply eqty_lconv with (l' := l); [| now apply lequiv_sym].
+  eapply eqty_lconv with (l' := l); [| solve [apply lequiv_sym; assumption]].
   exact (ctxconv_eqty Hc (i := lD) eq_refl (eqty_sym _ _ _ _ _ _ HT)).
 Qed.

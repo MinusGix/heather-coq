@@ -1789,12 +1789,12 @@ Proof.
   pose proof (gconv_ty HE HA) as HA2. pose proof (gconv_tm HE Hi Ha) as Ha2.
   pose proof (gconv_ty HE HB) as HB2.
   assert (EW2 : [ G2 ; Γ ⊢[ i ] tyW l l' A B ≅ tyW m1 m2 A2 B2 @ lmax l l' ])
-    by (apply eqty_W; first [(apply compt_notV; exact Hc) | exact Hc | now apply lequiv_sym | assumption]).
+    by (apply eqty_W; first [(apply compt_notV; exact Hc) | exact Hc | solve [apply lequiv_sym; assumption] | assumption]).
   assert (HBa : [ G2 ; Γ ⊢[ i ] B[lsingle a] @ l' ]) by exact (wf_ty_single Hi HB2 Ha2).
   pose proof (ext_wf Hi HBa Wl') as HΓB.
   assert (EF : [ G2 ; Γ ⊢[ i ] tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩
                  ≅ tyPi m2 (lmax m1 m2) B2[lsingle a] (tyW m1 m2 A2 B2)⟨↑⟩ @ lmax l' (lmax l l') ]).
-  { apply eqty_pi; first [exact Hv | now apply lequiv_sym | apply lequiv_max; now apply lequiv_sym | exact HBa
+  { apply eqty_pi; first [exact Hv | solve [apply lequiv_sym; assumption] | apply lequiv_max; solve [apply lequiv_sym; assumption] | exact HBa
                          | idtac].
     - exact (eqty_single Hi EB Ha2).
     - exact (wk1_eqty _ _ Hi _ _ _ _ _ _ HΓB EW2). }
@@ -1821,7 +1821,7 @@ Proof.
   destruct (ac_nee_sound' Dν Hc Hν Hν') as (E0 & E1 & _).
   destruct (W_annots Hi Hc W1 W2 E0 E1) as (E14 & E25 & EA & EB).
   assert (WL : lwf (gL G) (lmax l1 l2)) by (cbn; split; assumption).
-  assert (HL : lequiv (gL G) (lmax l4 l5) (lmax l1 l2)) by (apply lequiv_max; now apply lequiv_sym).
+  assert (HL : lequiv (gL G) (lmax l4 l5) (lmax l1 l2)) by (apply lequiv_max; solve [apply lequiv_sym; assumption]).
   assert (HW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ]) by (apply wft_W; first [assumption | (apply compt_notV; eassumption)]).
   assert (EW' : [ G ; Γ ⊢[ i ] tyW l4 l5 A' B' ≅ tyW l1 l2 A B @ lmax l4 l5 ]).
   { eapply eqty_lconv; [apply eqty_sym, eqty_W; first [assumption | (apply compt_notV; eassumption)] | exact HL]. }
@@ -1879,15 +1879,15 @@ Proof.
   pose proof (lequiv_wf_r _ _ _ E1) as Wl.
   pose proof (eqty_wf_l Hi EAC) as HA. pose proof (eqtm_wf_l Hi END) as HN.
   assert (Ha1 : [ G ; Γ ⊢[ i ] a : A @ l ]).
-  { eapply wf_conv; [eapply wf_lconv; [exact Ha | now apply lequiv_sym] | rewrite Hi; exact EAC]. }
+  { eapply wf_conv; [eapply wf_lconv; [exact Ha | solve [apply lequiv_sym; assumption]] | rewrite Hi; exact EAC]. }
   assert (HW : [ G ; Γ ⊢[ i ] tyWf l A N @ l ]) by (apply wft_wf; first [(apply compt_notV; exact Hc) | assumption]).
   assert (EW : [ G ; Γ ⊢[ i ] tyWf l A N ≅ tyWf k C D @ l ])
-    by (apply eqty_wf; first [(apply compt_notV; exact Hc) | assumption | now apply lequiv_sym]).
+    by (apply eqty_wf; first [(apply compt_notV; exact Hc) | assumption | solve [apply lequiv_sym; assumption]]).
   assert (ECs : [ G ; Γ ⊢[ i ] tyVec l (tyWf l A N) N[lsingle a] ≅ tyVec k (tyWf k C D) D[lsingle a] @ l ]).
-  { apply eqty_vec; first [exact Hv | now apply lequiv_sym | exact HW | exact EW | idtac].
+  { apply eqty_vec; first [exact Hv | solve [apply lequiv_sym; assumption] | exact HW | exact EW | idtac].
     exact (Wf_Na_eq Hi HN END Ha1 Ha1 (eqtm_refl _ _ _ _ _ _ Ha1)). }
   refine (conj Wl (conj HA (conj HN (conj Ha1 _)))).
-  eapply wf_conv; [eapply wf_lconv; [exact Hcs | now apply lequiv_sym] | rewrite Hi; exact ECs].
+  eapply wf_conv; [eapply wf_lconv; [exact Hcs | solve [apply lequiv_sym; assumption]] | rewrite Hi; exact ECs].
 Qed.
 
 Lemma C_actmnf_supf {G Γ l A N k k' C D C' D' a a' cs cs'} : ac_tm G Γ a a' A -> C_tm G Γ a a' A ->
@@ -1909,9 +1909,9 @@ Proof.
   pose proof (gconv_ty HE HA) as HA2. pose proof (gconv_tm HE Hi Ha) as Ha2.
   pose proof (gconv_tm HE Hi HN) as HN2.
   assert (EW2 : [ G2 ; Γ ⊢[ i ] tyWf l A N ≅ tyWf m1 A2 N2 @ l ])
-    by (apply eqty_wf; first [(apply compt_notV; exact Hc) | exact Hc | now apply lequiv_sym | assumption]).
+    by (apply eqty_wf; first [(apply compt_notV; exact Hc) | exact Hc | solve [apply lequiv_sym; assumption] | assumption]).
   assert (ECs : [ G2 ; Γ ⊢[ i ] tyVec l (tyWf l A N) N[lsingle a] ≅ tyVec m1 (tyWf m1 A2 N2) N2[lsingle a] @ l ]).
-  { apply eqty_vec; first [exact Hv | now apply lequiv_sym | exact (eqty_wf_l Hi EW2) | exact EW2 | idtac].
+  { apply eqty_vec; first [exact Hv | solve [apply lequiv_sym; assumption] | exact (eqty_wf_l Hi EW2) | exact EW2 | idtac].
     exact (Wf_Na_eq Hi HN2 EN Ha2 Ha2 (eqtm_refl _ _ _ _ _ _ Ha2)). }
   apply actmnf_supf.
   - exact (IHa i G2 Γ2 A2 l Hc HE Hctx Ha Ha' (eqty_sym _ _ _ _ _ _ EA) _ _ spa_refl spa_refl).

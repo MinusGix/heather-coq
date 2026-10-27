@@ -81,7 +81,7 @@ Lemma pre_CTrm_r {G Γ Δ Δ' T' l l'} :
 Proof.
   intros HΓ HΔ' Hid HT' Hl. apply wft_CTrm; eauto using lequiv_wf_r.
   pose proof (wf_ty_subst (i := lD) eq_refl HT' Hid) as X. rewrite nf_id_ty in X by exact (wf_ty_nf HT').
-  eapply wft_lconv; [exact X | now apply lequiv_sym].
+  eapply wft_lconv; [exact X | solve [apply lequiv_sym; assumption]].
 Qed.
 
 Lemma pre_letbox_ty {G Γ l1 l2 A M M' t t0} :
@@ -112,7 +112,7 @@ Proof.
   eapply (conv_tm' (i := lM) eq_refl (T' := M'[lsingle t0])).
   - apply wf_letboxT; eauto using lequiv_wf_r.
     eapply (conv_tm' (i := lM) eq_refl); [exact Ht0 | now apply eqty_sym].
-  - eapply eqty_lconv; [exact (pre_letbox_ty HMM HM' Htt Ht Ht0) | now apply lequiv_sym].
+  - eapply eqty_lconv; [exact (pre_letbox_ty HMM HM' Htt Ht Ht0) | solve [apply lequiv_sym; assumption]].
 Qed.
 
 Lemma pre_letboxt_r {G Γ l1 l2 l3 l4 Δ Δ' T T' M M' t2 t t0} :
@@ -134,7 +134,7 @@ Proof.
   eapply (conv_tm' (i := lM) eq_refl (T' := M'[lsingle t0])).
   - apply wf_letboxt; eauto using lequiv_wf_r.
     eapply (conv_tm' (i := lM) eq_refl); [exact Ht0 | now apply eqty_sym].
-  - eapply eqty_lconv; [exact (pre_letbox_ty HMM HM' Htt Ht Ht0) | now apply lequiv_sym].
+  - eapply eqty_lconv; [exact (pre_letbox_ty HMM HM' Htt Ht Ht0) | solve [apply lequiv_sym; assumption]].
 Qed.
 
 (** letbox β: the contractum is typed by the global substitution lemma. *)
@@ -214,7 +214,7 @@ Proof.
   intros HM HM' H1 H2 H3 HΔ' HΔΔ HMT' HMt' Hc Hb Ht'.
   eapply wf_conv; [| exact HM]. eapply wf_lconv; [| exact H1].
   apply wf_elimT; eauto using lequiv_wf_r.
-  - eapply wft_lconv; [exact HM' | now apply lequiv_sym].
+  - eapply wft_lconv; [exact HM' | solve [apply lequiv_sym; assumption]].
   - eapply wf_conv; [exact Ht' |]. apply eqty_sym, eqty_CTyp; [exact (ctx_of_tm_M Ht') | exact HΔΔ | exact H3].
 Qed.
 
@@ -235,7 +235,7 @@ Proof.
   intros HM HM' H1 H2 H3 HΔ HΔ' HΔΔ HT HT' HTT HMT' HMt' Hc Hb Ht'.
   eapply wf_conv; [| exact HM]. eapply wf_lconv; [| exact H2].
   apply wf_elimt; eauto using lequiv_wf_r.
-  - eapply wft_lconv; [exact HM' | now apply lequiv_sym].
+  - eapply wft_lconv; [exact HM' | solve [apply lequiv_sym; assumption]].
   - eapply wf_conv; [exact Ht' |]. apply eqty_sym, eqty_CTrm; [exact (ctx_of_tm_M Ht') | assumption ..].
 Qed.
 
@@ -616,8 +616,8 @@ Proof.
   assert (HΓA : [ G ; Γ ,, A @ la ⊢[ i ] ]) by exact (ext_wf Hi HA (lequiv_wf_l _ _ _ Hl)).
   split; [| exact Hlb].
   refine (stab_ty Hi (A := A') (l := la') _ _ HΓA HB).
-  - eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | now apply lequiv_sym].
-  - now apply lequiv_sym.
+  - eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | solve [apply lequiv_sym; assumption]].
+  - solve [apply lequiv_sym; assumption].
 Qed.
 
 Lemma stab2_lsub {G i} (Hi : typeof i = i) {Γ A A' la la' B lb} :

@@ -191,6 +191,13 @@ formers, so it gets worse with every extension:
   17 s (2026-10-27). `RecReductCases`' 49 `injection Hred as <-` became
   `apply Some_inj in Hred; rewrite <- Hred` (with its refutations by
   a bare `discriminate`, below: 82 s to 29 s).
+- **`now apply lemma` as a `first` alternative**: when the lemma applies
+  but its premise is not a hypothesis, `easy` runs `inversion` on every
+  hypothesis before `now` fails, judgments included (240 inversions, 5 s
+  for one `first` in `AlgSound.S_actmnf_sup`). Close the premise by
+  name, `solve [apply lequiv_sym; assumption]`: the 420 `now apply
+  lequiv_sym` became that, and `AlgSound` went from 18 s to 7 s
+  (2026-10-27).
 - **A bare `split` in a repeated peeler** hnf's every goal that is not
   yet a conjunction, unfolding definitions to look for one: 71% of
   `gfree_redt` (510 s for `Unfold`). Split only `|- _ /\ _` (a

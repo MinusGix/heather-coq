@@ -732,7 +732,7 @@ Proof.
   destruct (inv_sup Hi Ht) as (_ & _ & ESup).
   destruct (W_inj_c Hc ESup) as (Ekl & Ek'l' & EAC & EBD).
   assert (Hsup : [ G ; Γ ⊢[ i ] tmSup l l' A B a f ≅ tmSup k k' C D a f : tyW l l' A B @ lmax l l' ])
-    by (apply eqtm_sup; first [exact Hc | now apply compt_notV | assumption | now apply lequiv_sym | apply eqtm_refl; assumption]).
+    by (apply eqtm_sup; first [exact Hc | now apply compt_notV | assumption | solve [apply lequiv_sym; assumption] | apply eqtm_refl; assumption]).
   assert (Hcong : [ G ; Γ ⊢[ i ] tmElimW l l' l'' A B M c (tmSup k k' C D a f)
                      ≅ tmElimW l l' l'' A B M c (tmSup l l' A B a f) : M[lsingle (tmSup k k' C D a f)] @ l'' ]).
   { apply eqtm_elimW; first [exact Hc | now apply compt_notV | apply lequiv_refl; assumption | apply eqtm_sym, Hsup | assumption
@@ -764,7 +764,7 @@ Proof.
   destruct (inv_supf Hi Ht) as (_ & _ & ESup).
   destruct (Wf_inj_c Hc ESup) as (Ekl & EAC & END).
   assert (Hsup : [ G ; Γ ⊢[ i ] tmSupf l A N a cs ≅ tmSupf k C D a cs : tyWf l A N @ l ])
-    by (apply eqtm_supf; first [(apply compt_notV; exact Hc) | exact Hc | assumption | now apply lequiv_sym | apply eqtm_refl; assumption]).
+    by (apply eqtm_supf; first [(apply compt_notV; exact Hc) | exact Hc | assumption | solve [apply lequiv_sym; assumption] | apply eqtm_refl; assumption]).
   assert (Hcong : [ G ; Γ ⊢[ i ] tmElimWf l l' A N M c (tmSupf k C D a cs)
                      ≅ tmElimWf l l' A N M c (tmSupf l A N a cs) : M[lsingle (tmSupf k C D a cs)] @ l' ]).
   { apply eqtm_elimWf; first [(apply compt_notV; exact Hc) | exact Hc | apply lequiv_refl; assumption | apply eqtm_sym, Hsup | assumption

@@ -124,9 +124,9 @@ Proof using EL.
   - apply tyred_refl. eapply wft_lconv; [apply HF; assumption | exact HL].
   - apply tyred_refl. eapply wft_lconv; [| eapply lequiv_trans; [exact HL | exact (lequiv_sym _ _ _ Hm)]].
     apply HF; [eauto using lequiv_wf_l | eauto using lequiv_wf_l | |].
-    + eapply lconv_ty; [exact HA' | now apply lequiv_sym].
-    + eapply (lconv_ty (l := l2)); [|now apply lequiv_sym].
-      eapply ctx_lvl_ty; [exact HA' | now apply lequiv_sym | exact HB'].
+    + eapply lconv_ty; [exact HA' | solve [apply lequiv_sym; assumption]].
+    + eapply (lconv_ty (l := l2)); [|solve [apply lequiv_sym; assumption]].
+      eapply ctx_lvl_ty; [exact HA' | solve [apply lequiv_sym; assumption] | exact HB'].
 Qed.
 
 (** [out]'s own annotations. *)

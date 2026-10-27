@@ -64,7 +64,7 @@ Lemma LR_unit_red {G Δ l l' T T'} : lwf (gL G) l -> lequiv (gL G) l l' ->
 Proof.
   intros Hw Hl HT HT'. exists (UnitRel G Δ l).
   eapply LRunit with (l1 := l) (l2 := l');
-    [now apply lequiv_refl | now apply lequiv_sym | exact Hw | exact HT | exact HT' | apply releq_refl].
+    [now apply lequiv_refl | solve [apply lequiv_sym; assumption] | exact Hw | exact HT | exact HT' | apply releq_refl].
 Qed.
 
 Lemma LR_empty_red {G Δ l l' T T'} : lwf (gL G) l -> lequiv (gL G) l l' ->
@@ -72,7 +72,7 @@ Lemma LR_empty_red {G Δ l l' T T'} : lwf (gL G) l -> lequiv (gL G) l l' ->
 Proof.
   intros Hw Hl HT HT'. exists (EmptyRel G Δ l).
   eapply LRempty with (l1 := l) (l2 := l');
-    [now apply lequiv_refl | now apply lequiv_sym | exact Hw | exact HT | exact HT' | apply releq_refl].
+    [now apply lequiv_refl | solve [apply lequiv_sym; assumption] | exact Hw | exact HT | exact HT' | apply releq_refl].
 Qed.
 
 (** ** [Vec] *)
@@ -99,8 +99,8 @@ Proof.
   eexists. eapply (LRsig _ _ _ _ _ _ _ l l l' l' A (tyVec l A⟨↑⟩ k⟨↑⟩) A' (tyVec l' A'⟨↑⟩ k'⟨↑⟩) domR codR);
     [split | | | apply releq_refl].
   - apply lequiv_sym, lmax_idem, Hw.
-  - now apply lequiv_sym.
-  - now apply lequiv_sym.
+  - solve [apply lequiv_sym; assumption].
+  - solve [apply lequiv_sym; assumption].
   - exact Hw.
   - exact Hw.
   - exact HT.
@@ -125,7 +125,7 @@ Proof.
   pose proof HRA as [RA HRA0].
   destruct (escape_ty _ _ _ _ _ _ _ _ HRA0) as (HA & HA'0 & HAA).
   pose proof (lequiv_wf_r _ _ _ Hl) as Hw'.
-  assert (HA' : [ G ; Δ ⊢g A' @ l' ]) by (eapply wft_lconv; [exact HA'0 | now apply lequiv_sym]).
+  assert (HA' : [ G ; Δ ⊢g A' @ l' ]) by (eapply wft_lconv; [exact HA'0 | solve [apply lequiv_sym; assumption]]).
   revert m m'.
   apply (NatRel_mut G Δ (fun m m' _ => LRty l G Δ (tyVec l A m) (tyVec l' A' m'))
                         (fun w w' _ => LRty l G Δ (tyVec l A w) (tyVec l' A' w'))).
@@ -229,7 +229,7 @@ Proof.
   pose proof (Vn _ _ _ Hd) as Hn. rewrite subst_tyNat in Hn. apply LRtm_nat in Hn.
   destruct (NatRel_escape Hn) as (Hk & Hk' & _).
   pose proof (lequiv_wf_r _ _ _ Hl) as Hw'.
-  assert (HA' : [ G ; Δ ⊢g A'[d'] @ l' ]) by (eapply wft_lconv; [exact HA'0 | now apply lequiv_sym]).
+  assert (HA' : [ G ; Δ ⊢g A'[d'] @ l' ]) by (eapply wft_lconv; [exact HA'0 | solve [apply lequiv_sym; assumption]]).
   apply (LR_vec_sig Hw Hl (ex_intro _ _ HRA0) (LR_vec_nat Hw Hl (ex_intro _ _ HRA0) Hn));
     [exact (tyred_vec_succ Hw HA Hk) |].
   eapply tyred_lconv; [|exact Hl].
@@ -273,8 +273,8 @@ Proof.
   apply tyred_step; [exact HEl | constructor |].
   eapply eqty_trans; [exact HEq|].
   eapply (eqty_trans _ _ _ _ (tyEl k (tmVec k s n))).
-  - apply eqty_El; [exact ge_notV | now apply lequiv_sym | apply eqtm_refl, Hc].
-  - apply (eqty_lconv _ _ _ _ _ l k); [|now apply lequiv_sym].
+  - apply eqty_El; [exact ge_notV | solve [apply lequiv_sym; assumption] | apply eqtm_refl, Hc].
+  - apply (eqty_lconv _ _ _ _ _ l k); [|solve [apply lequiv_sym; assumption]].
     apply eqty_sym, eqty_El_vec; [exact ge_compt | exact Wk | exact Hsk | exact Hn].
 Qed.
 
@@ -324,7 +324,7 @@ Proof.
   intros la lb Hla Hlb. rewrite LRbelow_spec by (rewrite ?lmeasure_suc; lia).
   exists R. eapply LR_red_ty; [exact HR | |]; push_subst.
   - apply tyred_El_vec; [exact Hla | now apply lequiv_refl | exact Hsd | exact Hnd].
-  - apply tyred_El_vec; [exact Hlb | now apply lequiv_sym | exact Hs'd' | exact Hn'd'].
+  - apply tyred_El_vec; [exact Hlb | solve [apply lequiv_sym; assumption] | exact Hs'd' | exact Hn'd'].
 Qed.
 
 Lemma V_El_fin {G Γ n} : VTm G Γ n n tyNat lzero -> VTy G Γ (tyFin n) (tyEl lzero (tmFin n)) lzero.

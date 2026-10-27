@@ -23,8 +23,8 @@ Proof.
   apply tyred_step; [exact HEl | constructor |].
   eapply eqty_trans; [exact HEq|].
   eapply (eqty_trans _ _ _ _ (tyEl k (tmDVec k n f))).
-  - apply eqty_El; [exact ge_notV | now apply lequiv_sym | apply eqtm_refl, Hc].
-  - apply (eqty_lconv _ _ _ _ _ l k); [|now apply lequiv_sym].
+  - apply eqty_El; [exact ge_notV | solve [apply lequiv_sym; assumption] | apply eqtm_refl, Hc].
+  - apply (eqty_lconv _ _ _ _ _ l k); [|solve [apply lequiv_sym; assumption]].
     apply eqty_sym, eqty_El_dvec; [exact ge_compt | exact Wk | exact Hn | exact Hf].
 Qed.
 
@@ -51,7 +51,7 @@ Proof.
   intros la lb Hla Hlb. rewrite LRbelow_spec by (rewrite ?lmeasure_suc; lia).
   exists R. eapply LR_red_ty; [exact HR | |]; push_subst.
   - apply tyred_El_dvec; [exact Hla | now apply lequiv_refl | exact (eqtm_wf_l ge_typeof Hgeq')].
-  - apply tyred_El_dvec; [exact Hlb | now apply lequiv_sym | exact (eqtm_wf_r ge_typeof Hgeq')].
+  - apply tyred_El_dvec; [exact Hlb | solve [apply lequiv_sym; assumption] | exact (eqtm_wf_r ge_typeof Hgeq')].
 Qed.
 
 Lemma V_El_dvec {G Γ l n f} : lwf (gL G) l ->
@@ -82,8 +82,8 @@ Proof.
   apply tyred_step; [exact HEl | constructor |].
   eapply eqty_trans; [exact HEq|].
   eapply (eqty_trans _ _ _ _ (tyEl (lmax l li) (tmIWf l li x s n o c m))).
-  - apply eqty_El; [exact ge_notV | now apply lequiv_sym | apply eqtm_refl, Hc].
-  - apply (eqty_lconv _ _ _ _ _ L (lmax l li)); [|now apply lequiv_sym].
+  - apply eqty_El; [exact ge_notV | solve [apply lequiv_sym; assumption] | apply eqtm_refl, Hc].
+  - apply (eqty_lconv _ _ _ _ _ L (lmax l li)); [|solve [apply lequiv_sym; assumption]].
     apply eqty_sym, eqty_El_iwf; [exact ge_compt | exact Wl | exact Wli | exact Hx | exact Hs
                                  | exact Hn | exact Ho | exact Hc1 | exact Hm].
 Qed.

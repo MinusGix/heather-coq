@@ -110,8 +110,8 @@ Lemma poly_trans {F G Γ T1 T2 T3 l l1 l2 l3 l4 k3 k4 A1 B1 A2 B2 A3 B3} :
 Proof using EL.
   intros [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12]
          [_ Hk3 Hk4 _ _ _ HT3 _ HA3 _ HB3 HA23 HB23].
-  assert (Hl13 : lequiv (gL G) l1 l3) by now apply lequiv_sym.
-  assert (Hl24 : lequiv (gL G) l2 l4) by now apply lequiv_sym.
+  assert (Hl13 : lequiv (gL G) l1 l3) by solve [apply lequiv_sym; assumption].
+  assert (Hl24 : lequiv (gL G) l2 l4) by solve [apply lequiv_sym; assumption].
   assert (HA13 : [ G ; Γ ⊢ A1 ≈ A3 @ l1 ])
     by (eapply geq_ty_trans; [exact HA12 | eapply geq_ty_lconv; [exact HA23 | exact Hl13]]).
   assert (HB23' : [ G ; Γ ,, A1 @ l1 ⊢ B2 ≈ B3 @ l2 ]).
@@ -774,7 +774,7 @@ Proof using EL.
       assert (HΔ1 : [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ B1)[lsingle (ktm ρ a)] @ l2 ⊢g ])
         by (apply ext_wf_g; [exact HB1a | exact V2]).
       assert (HΔ2 : [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ B2)[lsingle (ktm ρ a')] @ l4 ⊢g ])
-        by (apply ext_wf_g; [eapply lconv_ty; [exact HB2a | now apply lequiv_sym] | exact (kw_lwf ρ W4)]).
+        by (apply ext_wf_g; [eapply lconv_ty; [exact HB2a | solve [apply lequiv_sym; assumption]] | exact (kw_lwf ρ W4)]).
       assert (EW1 : [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ B1)[lsingle (ktm ρ a)] @ l2
                       ⊢ (tyW l1 l2 (kty ρ A1) (ktyl ρ B1))⟨↑⟩ ≈ (tyW l3 l4 (kty ρ A2) (ktyl ρ B2))⟨↑⟩ @ lmax l1 l2 ])
         by exact (geq_ty_wk (wkr_shift1 _ _ _) HΔ1 EW).
@@ -1421,8 +1421,8 @@ Proof using EL VL.
     destruct P1 as [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12].
     destruct P2 as [Hk Hk3 Hk4 _ _ _ HT3 HA2' HA3 HB2' HB3 HA23 HB23].
     assert (HΓ : [ G ; Γ ⊢g ]) by exact (ctx_of_ty HA1).
-    assert (Hl13 : lequiv (gL G) l1 l3) by now apply lequiv_sym.
-    assert (Hl24 : lequiv (gL G) l2 l4) by now apply lequiv_sym.
+    assert (Hl13 : lequiv (gL G) l1 l3) by solve [apply lequiv_sym; assumption].
+    assert (Hl24 : lequiv (gL G) l2 l4) by solve [apply lequiv_sym; assumption].
     (* the composite domain and its relation to the second *)
     assert (Hdom3 : forall ρ, LR n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ A1) (kty ρ A3) l1 (domR1 ρ))
       by (intros ρ; exact (proj1 (IHdom ρ _ _ (LR_lconv _ _ _ _ _ _ _ _ _ (domAd2 ρ) (kw_lequiv ρ Hl13))))).
@@ -1528,10 +1528,10 @@ Proof using EL VL.
     assert (Hdiag : forall (ρ : kwk G Γ) Δ Δ', vp_ctx lr_vp (kw_G ρ) Δ Δ' -> vp_ctx lr_vp (kw_G ρ) Δ' Δ')
       by (intros ρ Δ Δ' h; exact (vpl_ctx_trans (vpl_ctx_sym h) h)).
     assert (Hgeq13 : [ G ; Γ ⊢ tyCPi l1 U1 ≈ tyCPi m2 U3 @ l1 ])
-      by (eapply geq_ty_trans; [exact Hgeq | eapply geq_ty_lconv; [exact Hgeq2 | now apply lequiv_sym]]).
+      by (eapply geq_ty_trans; [exact Hgeq | eapply geq_ty_lconv; [exact Hgeq2 | solve [apply lequiv_sym; assumption]]]).
     assert (HR13 : releq R (CPiRel G Γ l1 m2 U1 U3 instR)).
     { assert (HP : [ G ; Γ ⊢g tyCPi l2 U2 ≅ tyCPi m2 U3 @ l1 ])
-        by (eapply eqty_lconv; [apply geq_ty_sound, Hgeq2 | now apply lequiv_sym]).
+        by (eapply eqty_lconv; [apply geq_ty_sound, Hgeq2 | solve [apply lequiv_sym; assumption]]).
       eapply releq_trans; [exact HR|]. intros t t'; split.
       - apply (CPiRel_dir HP); intros; apply releq_refl.
       - apply (CPiRel_dir (eqty_sym _ _ _ _ _ _ HP)); intros; apply releq_refl. }
@@ -1577,10 +1577,10 @@ Proof using EL VL.
                    (vpl_ty_ctx (vpl_ctx_gwk (kw_gok ρ) (kw_glob ρ) HΔ)
                       (vpl_ty_trans (vpl_ty_sym h) h)))).
     assert (Hgeq13 : [ G ; Γ ⊢ tyTPi Δ1 l1 l2 U1 ≈ tyTPi Δ3 m3 m4 U3 @ l2 ])
-      by (eapply geq_ty_trans; [exact Hgeq | eapply geq_ty_lconv; [exact Hgeq2 | now apply lequiv_sym]]).
+      by (eapply geq_ty_trans; [exact Hgeq | eapply geq_ty_lconv; [exact Hgeq2 | solve [apply lequiv_sym; assumption]]]).
     assert (HR13 : releq R (TPiRel G Γ Δ1 Δ3 l1 l2 m3 m4 U1 U3 instR)).
     { assert (HP : [ G ; Γ ⊢g tyTPi Δ2 l3 l4 U2 ≅ tyTPi Δ3 m3 m4 U3 @ l2 ])
-        by (eapply eqty_lconv; [apply geq_ty_sound, Hgeq2 | now apply lequiv_sym]).
+        by (eapply eqty_lconv; [apply geq_ty_sound, Hgeq2 | solve [apply lequiv_sym; assumption]]).
       eapply releq_trans; [exact HR|]. intros t t'; split.
       - apply (TPiRel_dir HP); intros; apply releq_refl.
       - apply (TPiRel_dir (eqty_sym _ _ _ _ _ _ HP)); intros; apply releq_refl. }
@@ -1626,8 +1626,8 @@ Proof using EL VL.
     destruct P1 as [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12].
     destruct P2 as [Hk Hk3 Hk4 _ _ _ HT3 HA2' HA3 HB2' HB3 HA23 HB23].
     assert (HΓ : [ G ; Γ ⊢g ]) by exact (ctx_of_ty HA1).
-    assert (Hl13 : lequiv (gL G) l1 l3) by now apply lequiv_sym.
-    assert (Hl24 : lequiv (gL G) l2 l4) by now apply lequiv_sym.
+    assert (Hl13 : lequiv (gL G) l1 l3) by solve [apply lequiv_sym; assumption].
+    assert (Hl24 : lequiv (gL G) l2 l4) by solve [apply lequiv_sym; assumption].
     (* the composite domain and its relation to the second *)
     assert (Hdom3 : forall ρ, LR n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ A1) (kty ρ A3) l1 (domR1 ρ))
       by (intros ρ; exact (proj1 (IHdom ρ _ _ (LR_lconv _ _ _ _ _ _ _ _ _ (domAd2 ρ) (kw_lequiv ρ Hl13))))).
@@ -1785,8 +1785,8 @@ Proof using EL VL.
     pose proof (poly_trans P1 P2) as P13.
     destruct P1 as [Hl Hl3 Hl4 Hw1 Hw2 HT1 HT2 HA1 HA2 HB1 HB2 HA12 HB12].
     destruct P2 as [Hk Hk3 Hk4 _ _ _ HT3 HA2' HA3 HB2' HB3 HA23 HB23].
-    assert (Hl13 : lequiv (gL G) l1 l3) by now apply lequiv_sym.
-    assert (Hl24 : lequiv (gL G) l2 l4) by now apply lequiv_sym.
+    assert (Hl13 : lequiv (gL G) l1 l3) by solve [apply lequiv_sym; assumption].
+    assert (Hl24 : lequiv (gL G) l2 l4) by solve [apply lequiv_sym; assumption].
     assert (Hdom3 : forall ρ, LR n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ A1) (kty ρ A3) l1 (domR1 ρ))
       by (intros ρ; exact (proj1 (IHdom ρ _ _ (LR_lconv _ _ _ _ _ _ _ _ _ (domAd2 ρ) (kw_lequiv ρ Hl13))))).
     assert (Hrefl : forall ρ a a', domR1 ρ a a' -> domR1 ρ a a).

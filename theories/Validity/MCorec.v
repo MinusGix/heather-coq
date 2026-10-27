@@ -140,9 +140,9 @@ Proof using EL VL.
     as (h & c).
   set (ρ0 := kw_loc wk_id (wkwf_id Γ) HΓ) in *.
   (* the typings of the right-hand annotations at its own levels *)
-  assert (HA23 : [ G ; Γ ⊢g A2 @ l3 ]) by (eapply lconv_ty; [exact HA2 | now apply lequiv_sym]).
+  assert (HA23 : [ G ; Γ ⊢g A2 @ l3 ]) by (eapply lconv_ty; [exact HA2 | solve [apply lequiv_sym; assumption]]).
   assert (HB23 : [ G ; Γ ,, A2 @ l3 ⊢g B2 @ l4 ]).
-  { apply (lconv_ty (l := l2)); [|now apply lequiv_sym].
+  { apply (lconv_ty (l := l2)); [|solve [apply lequiv_sym; assumption]].
     eapply (stab_ty ge_typeof (eqty_refl _ _ _ _ _ HA2) (lequiv_sym _ _ _ H3)); [|exact HB2].
     apply ext_wf_g; [exact HA23 | eauto using lequiv_wf_l]. }
   assert (Hw'3 : [ G ; Γ ⊢g p' ⤳* w' : tySig l3 l4 A2 B2 @ lmax l3 l4 ])
@@ -154,7 +154,7 @@ Proof using EL VL.
   { apply (LRtm_stage (lmeasure_le_l Hlv)). exists (domR ρ0). exact (conj HD h). }
   pose proof (tmred_fst_cong Hw1 Hw2 HA HB Hw) as Rf.
   assert (Rf' : [ G ; Γ ⊢g tmFst l3 l4 A2 B2 p' ⤳* tmFst l3 l4 A2 B2 w' : A2 @ l1 ]).
-  { eapply tmred_lconv; [apply tmred_fst_cong; eauto using lequiv_wf_l | now apply lequiv_sym]. }
+  { eapply tmred_lconv; [apply tmred_fst_cong; eauto using lequiv_wf_l | solve [apply lequiv_sym; assumption]]. }
   pose proof (LRtm_red Hf Rf Rf') as Hfp.
   split; [exact Hfp|].
   (* the second projections *)
@@ -181,7 +181,7 @@ Proof using EL VL.
   assert (HB2l : [ G ; Γ ,, A2 @ l3 ⊢g B2 @ l2 ]) by exact (lconv_ty HB23 H4).
   assert (Rs' : [ G ; Γ ⊢g tmSnd l3 l4 A2 B2 p' ⤳* tmSnd l3 l4 A2 B2 w'
                   : B2[lsingle (tmFst l3 l4 A2 B2 w')] @ l2 ]).
-  { apply (tmred_lconv _ _ _ _ l4); [|now apply lequiv_sym].
+  { apply (tmred_lconv _ _ _ _ l4); [|solve [apply lequiv_sym; assumption]].
     eapply tmred_conv; [apply ge_typeof | apply tmred_snd_cong; eauto using lequiv_wf_l |].
     eapply eqty_lconv; [|exact H4].
     apply (wf_ty_func ge_typeof HB2l). apply (lsub_eq_single ge_typeof).
@@ -238,9 +238,9 @@ Proof using EL VL.
   assert (Hc : LRtm l2 G Γ B[lsingle a] B2[lsingle a'] (app w l1 l2 A B a) (app w' l3 l4 A2 B2 a')).
   { apply (LRtm_stage (lmeasure_le_r Hlv)). eexists. exact (conj HC c). }
   (* the typings of the right-hand annotations at its own levels *)
-  assert (HA23 : [ G ; Γ ⊢g A2 @ l3 ]) by (eapply lconv_ty; [exact HA2 | now apply lequiv_sym]).
+  assert (HA23 : [ G ; Γ ⊢g A2 @ l3 ]) by (eapply lconv_ty; [exact HA2 | solve [apply lequiv_sym; assumption]]).
   assert (HB23 : [ G ; Γ ,, A2 @ l3 ⊢g B2 @ l4 ]).
-  { apply (lconv_ty (l := l2)); [|now apply lequiv_sym].
+  { apply (lconv_ty (l := l2)); [|solve [apply lequiv_sym; assumption]].
     eapply (stab_ty ge_typeof (eqty_refl _ _ _ _ _ HA2) (lequiv_sym _ _ _ H3)); [|exact HB2].
     apply ext_wf_g; [exact HA23 | eauto using lequiv_wf_l]. }
   assert (Hw'3 : [ G ; Γ ⊢g f' ⤳* w' : tyPi l3 l4 A2 B2 @ lmax l3 l4 ])
@@ -249,7 +249,7 @@ Proof using EL VL.
   assert (Hat'3 : [ G ; Γ ⊢g a' : A2 @ l3 ]).
   { eapply wf_lconv; [eapply wf_conv; [exact Hat' | rewrite ge_typeof; exact (eqty_sym _ _ _ _ _ _ (geq_ty_sound HAA))] | exact H3]. }
   eapply LRtm_red; [exact Hc | apply tmred_app_cong; assumption |].
-  apply (tmred_lconv _ _ _ _ l4); [|now apply lequiv_sym].
+  apply (tmred_lconv _ _ _ _ l4); [|solve [apply lequiv_sym; assumption]].
   apply tmred_app_cong; eauto using lequiv_wf_l.
 Qed.
 

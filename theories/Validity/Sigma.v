@@ -273,9 +273,9 @@ Proof.
   { eapply (wf_ty_subst ge_typeof HB). apply (lsub_wf_lift _ _ ge_typeof); auto.
     exact (SubRel_wf_l _ _ _ _ _ Hd). }
   pose proof (geq_ty_sound HAA') as HAAs.
-  assert (HA'3 : [ G ; Δ ⊢g A'[d'] @ l3 ]) by (eapply lconv_ty; [exact HA'd' | now apply lequiv_sym]).
+  assert (HA'3 : [ G ; Δ ⊢g A'[d'] @ l3 ]) by (eapply lconv_ty; [exact HA'd' | solve [apply lequiv_sym; assumption]]).
   assert (HB'3 : [ G ; Δ ,, A'[d'] @ l3 ⊢g B'[llift d'] @ l4 ]).
-  { eapply (lconv_ty (l := l')); [|now apply lequiv_sym].
+  { eapply (lconv_ty (l := l')); [|solve [apply lequiv_sym; assumption]].
     eapply (stab_ty ge_typeof HAAs (lequiv_sym _ _ _ H3)); [|exact HB'd'].
     apply ext_wf_g; [exact HA'3 | eauto using lequiv_wf_l]. }
   repeat split; auto using geq_ty_sound.
@@ -298,7 +298,7 @@ Proof.
   destruct (sig_annots Hwl H3 H4 HB VA VB Hd) as (HAd & HBd & HAd' & HBd' & HA'3 & HB'3 & EA & EB).
   push_subst.
   eapply LRtm_red; [exact Hf | apply tmred_fst_cong; assumption |].
-  eapply (tmred_lconv _ _ _ _ l3); [|now apply lequiv_sym].
+  eapply (tmred_lconv _ _ _ _ l3); [|solve [apply lequiv_sym; assumption]].
   eapply tmred_conv; [apply ge_typeof | apply tmred_fst_cong; eauto using lequiv_wf_l |].
   eapply eqty_lconv; [apply eqty_sym, EA | exact H3].
 Qed.
@@ -340,16 +340,16 @@ Proof.
     apply geq_ty_sound, E1. }
   assert (Hsp' : [ G ; Δ ⊢g tmSnd l3 l4 A'[d'] B'[llift d'] p'[d'] ⤳* tmSnd l3 l4 A'[d'] B'[llift d'] w'
                    : B[llift d'][lsingle (tmFst l3 l4 A'[d'] B'[llift d'] w')] @ l' ]).
-  { eapply (tmred_lconv _ _ _ _ l4); [|now apply lequiv_sym].
+  { eapply (tmred_lconv _ _ _ _ l4); [|solve [apply lequiv_sym; assumption]].
     eapply tmred_conv; [apply ge_typeof | apply tmred_snd_cong; eauto using lequiv_wf_l |].
     eapply (eqty_lconv _ _ _ _ _ _ l'); [|exact H4].
     pose proof (tmred_eq _ _ _ _ _ _ _ Hfp') as Ef.
     assert (CA : forall t, [ G ; Δ ⊢g t : A'[d'] @ l3 ] -> [ G ; Δ ⊢g t : A[d'] @ l ]).
-    { intros t Ht. eapply (wf_lconv _ _ _ _ _ _ l3); [|now apply lequiv_sym].
+    { intros t Ht. eapply (wf_lconv _ _ _ _ _ _ l3); [|solve [apply lequiv_sym; assumption]].
       eapply wf_conv; [exact Ht | rewrite ge_typeof; eapply eqty_lconv; [exact EA | exact H3]]. }
     assert (Ef' : [ G ; Δ ⊢g tmFst l3 l4 A'[d'] B'[llift d'] p'[d'] ≅ tmFst l3 l4 A'[d'] B'[llift d'] w'
                       : A[d'] @ l ]).
-    { eapply (eqtm_lconv _ _ _ _ _ _ _ l3); [|now apply lequiv_sym].
+    { eapply (eqtm_lconv _ _ _ _ _ _ _ l3); [|solve [apply lequiv_sym; assumption]].
       eapply eqtm_conv; [exact Ef | rewrite ge_typeof; eapply eqty_lconv; [exact EA | exact H3]]. }
     eapply (eqty_trans _ _ _ _ (B'[llift d'][lsingle (tmFst l3 l4 A'[d'] B'[llift d'] w')])).
     - apply (wf_ty_func ge_typeof (eqty_wf_r ge_typeof EB)).
@@ -490,8 +490,8 @@ Proof.
     by (apply wf_pair; auto using ge_compt, ge_notV).
   assert (HF' : [ G ; Δ ⊢g tmPair l3 l4 A'[d'] B'[llift d'] a'[d'] b'[d'] : tySig l l' A[d'] B[llift d'] @ lmax l l' ]).
   { eapply (wf_conv _ _ _ _ _ (tySig l3 l4 A'[d'] B'[llift d'])); [| rewrite ge_typeof; apply eqty_sig;
-                        [exact ge_notV | now apply lequiv_sym | now apply lequiv_sym | exact HAd' | exact EA | exact EB]].
-    eapply (wf_lconv _ _ _ _ _ _ (lmax l3 l4)); [|apply lequiv_max; now apply lequiv_sym].
+                        [exact ge_notV | solve [apply lequiv_sym; assumption] | solve [apply lequiv_sym; assumption] | exact HAd' | exact EA | exact EB]].
+    eapply (wf_lconv _ _ _ _ _ _ (lmax l3 l4)); [|apply lequiv_max; solve [apply lequiv_sym; assumption]].
     apply wf_pair; eauto using ge_compt, ge_notV, lequiv_wf_l. }
   eapply LRtm_of; [exact HP|]. push_subst.
   apply (SigRel_of_proj HΔ Hwl Hwl' HAd HBd HAd' HBd' RA RB RA'' RB'' ES HF HF' (whnf_pair _ _ _ _ _ _)
@@ -534,7 +534,7 @@ Proof.
     eapply (stab_eqty ge_typeof EA3ρ (lequiv_refl _ _ (kw_lwf ρ Hw3)) HΔ'3).
     eapply eqty_lconv with (l' := l'); [| apply lequiv_refl; exact Hwl'ρ].
     eapply (stab_eqty ge_typeof (eqty_refl _ _ _ _ _ HAd'ρ) (lequiv_sym _ _ _ H3ρ));
-      [apply ext_wf_g; [eapply lconv_ty; [exact HAd'ρ | now apply lequiv_sym] | exact (kw_lwf ρ Hw3)] |].
+      [apply ext_wf_g; [eapply lconv_ty; [exact HAd'ρ | solve [apply lequiv_sym; assumption]] | exact (kw_lwf ρ Hw3)] |].
     eapply eqty_trans; [apply eqty_sym, EBρ | now apply geq_ty_sound]. }
   (* the first projections *)
   assert (Rf : [ kw_G ρ ; kw_Δ ρ ⊢g tmFst la lb A1 B1 (tmPair l l' (kty ρ A[d]) (ktyl ρ B[llift d]) (ktm ρ a[d]) (ktm ρ b[d]))
@@ -542,10 +542,10 @@ Proof.
     by (apply tmred_fst_beta; auto using geq_ty_sound).
   assert (Rf' : [ kw_G ρ ; kw_Δ ρ ⊢g tmFst la' lb' A1' B1' (tmPair l3 l4 (kty ρ A'[d']) (ktyl ρ B'[llift d']) (ktm ρ a'[d']) (ktm ρ b'[d']))
                    ⤳* ktm ρ a'[d'] : kty ρ A[d'] @ l ]).
-  { eapply (tmred_lconv _ _ _ _ l3); [|now apply lequiv_sym].
+  { eapply (tmred_lconv _ _ _ _ l3); [|solve [apply lequiv_sym; assumption]].
     eapply tmred_conv; [apply ge_typeof | apply tmred_fst_beta; eauto using lequiv_wf_l |].
-    - eapply lequiv_trans; [exact Hla' | now apply lequiv_sym].
-    - eapply lequiv_trans; [exact Hlb' | now apply lequiv_sym].
+    - eapply lequiv_trans; [exact Hla' | solve [apply lequiv_sym; assumption]].
+    - eapply lequiv_trans; [exact Hlb' | solve [apply lequiv_sym; assumption]].
     - apply eqty_sym, EA3ρ. }
   pose proof (LRtm_red Haρ Rf Rf') as Hfst.
   assert (h : @piDom E LP G l l' A A Δ d d' ρ
@@ -560,10 +560,10 @@ Proof.
     by (apply tmred_snd_beta; auto using geq_ty_sound).
   assert (Rs' : [ kw_G ρ ; kw_Δ ρ ⊢g tmSnd la' lb' A1' B1' (tmPair l3 l4 (kty ρ A'[d']) (ktyl ρ B'[llift d']) (ktm ρ a'[d']) (ktm ρ b'[d']))
                    ⤳* ktm ρ b'[d'] : (ktyl ρ B[llift d'])[lsingle (ktm ρ a[d'])] @ l' ]).
-  { eapply (tmred_lconv _ _ _ _ l4); [|now apply lequiv_sym].
+  { eapply (tmred_lconv _ _ _ _ l4); [|solve [apply lequiv_sym; assumption]].
     eapply tmred_conv; [apply ge_typeof | apply tmred_snd_beta; eauto using lequiv_wf_l |].
-    - eapply lequiv_trans; [exact Hla' | now apply lequiv_sym].
-    - eapply lequiv_trans; [exact Hlb' | now apply lequiv_sym].
+    - eapply lequiv_trans; [exact Hla' | solve [apply lequiv_sym; assumption]].
+    - eapply lequiv_trans; [exact Hlb' | solve [apply lequiv_sym; assumption]].
     - eapply eqty_lconv; [apply eqty_sym, EBaρ | exact H4ρ]. }
   pose proof (LRtm_red Hbρ Rs Rs') as X.
   (* back to the first projections as indices *)
@@ -729,12 +729,12 @@ Proof.
   pose proof (conv_U' Hs (lequiv_sym _ _ _ H1)) as Hs1.
   destruct (El_annot Hs H1) as [HA _].
   assert (HΓ : [ G ; Δ ,, tyEl k1 s @ k1 ⊢g ])
-    by (apply ext_wf_g; [eapply lconv_ty; [exact HA | now apply lequiv_sym] | eauto using lequiv_wf_l]).
+    by (apply ext_wf_g; [eapply lconv_ty; [exact HA | solve [apply lequiv_sym; assumption]] | eauto using lequiv_wf_l]).
   pose proof (stab_tm ge_typeof (eqty_refl _ _ _ _ _ HA) (lequiv_sym _ _ _ H1) HΓ Ht) as Ht1.
   pose proof (conv_U' Ht1 (lequiv_sym _ _ _ H2)) as Ht2.
   assert (Hc : [ G ; Δ ⊢g tmSig k1 k2 s t : tyU (lmax k1 k2) @ lsuc (lmax k1 k2) ])
     by (apply wf_code_sig; eauto using ge_compt, ge_notV, lequiv_wf_l).
-  assert (Hm : lequiv (gL G) (lmax l1 l2) (lmax k1 k2)) by (apply lequiv_max; now apply lequiv_sym).
+  assert (Hm : lequiv (gL G) (lmax l1 l2) (lmax k1 k2)) by (apply lequiv_max; solve [apply lequiv_sym; assumption]).
   destruct (El_annot Hc (lequiv_trans _ _ _ _ Hla Hm)) as [HEl HEq].
   eapply tyred_lconv; [|exact Hm].
   apply tyred_step; [exact HEl | constructor |].

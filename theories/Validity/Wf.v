@@ -469,8 +469,8 @@ Proof.
   apply tyred_step; [exact HEl | constructor |].
   eapply eqty_trans; [exact HEq|].
   eapply (eqty_trans _ _ _ _ (tyEl k (tmWf k s n))).
-  - apply eqty_El; [exact ge_notV | now apply lequiv_sym | apply eqtm_refl, Hc].
-  - apply (eqty_lconv _ _ _ _ _ l k); [|now apply lequiv_sym].
+  - apply eqty_El; [exact ge_notV | solve [apply lequiv_sym; assumption] | apply eqtm_refl, Hc].
+  - apply (eqty_lconv _ _ _ _ _ l k); [|solve [apply lequiv_sym; assumption]].
     apply eqty_sym, eqty_El_wf; [exact ge_compt | exact Wk | exact Hsk | exact Hnk].
 Qed.
 
@@ -513,7 +513,7 @@ Proof.
   intros la lb Hla Hlb. rewrite LRbelow_spec by (rewrite ?lmeasure_suc; lia).
   eexists. eapply LR_red_ty; [exact (LR_Wf_here Hw (lequiv_sym _ _ _ Hl) VA Vn _ _ _ Hd) | |]; push_subst.
   - apply tyred_El_wf; [exact Hla | now apply lequiv_refl | exact Hsd | exact Hnd].
-  - apply tyred_El_wf; [exact Hlb | now apply lequiv_sym | exact Hs'd' | exact Hn'd'].
+  - apply tyred_El_wf; [exact Hlb | solve [apply lequiv_sym; assumption] | exact Hs'd' | exact Hn'd'].
 Qed.
 
 End CodeWfV.

@@ -235,7 +235,7 @@ Proof using EL VL.
     + eapply (MRctyp _ _ _ _ _ Δ Δ3 k k3); try eassumption.
       intros t t'; rewrite (HR t t'); split.
       * apply CTypRel_conv_r; assumption.
-      * apply CTypRel_conv_r; [now apply vpl_ctx_sym | now apply lequiv_sym | now apply eqty_sym].
+      * apply CTypRel_conv_r; [now apply vpl_ctx_sym | solve [apply lequiv_sym; assumption] | now apply eqty_sym].
     + intros t2 t3 H2 H3 Et. apply HR in H2. apply HR3 in H3. apply HR.
       destruct H2 as (w2 & w2' & Hw2 & Hw2' & E2 & _ & N2 & _).
       destruct H3 as (w3 & w3' & Hw3 & Hw3' & E3 & _ & N3 & _).
@@ -267,7 +267,7 @@ Proof using EL VL.
     + eapply (MRctrm _ _ _ _ _ Δ Δ3 A A3 k k3); try eassumption.
       intros t t'; rewrite (HR t t'); split.
       * apply CTrmRel_conv_r; assumption.
-      * apply CTrmRel_conv_r; [now apply vpl_ctx_sym | | now apply lequiv_sym | now apply eqty_sym].
+      * apply CTrmRel_conv_r; [now apply vpl_ctx_sym | | solve [apply lequiv_sym; assumption] | now apply eqty_sym].
         exact HAA'.
     + intros t2 t3 H2 H3 Et. apply HR in H2. apply HR3 in H3. apply HR.
       destruct H2 as (w2 & w2' & Hw2 & Hw2' & E2 & _ & N2 & _).
@@ -612,7 +612,7 @@ Proof using EL.
       assert (HΔ1 : [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ B1)[lsingle (ktm ρ a)] @ l2 ⊢g ])
         by (apply ext_wf_g; [exact HB1a | exact V2]).
       assert (HΔ3 : [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ B3)[lsingle (ktm ρ a3)] @ l4 ⊢g ])
-        by (apply ext_wf_g; [eapply lconv_ty; [exact HB3a | now apply lequiv_sym] | exact (kw_lwf ρ W4)]).
+        by (apply ext_wf_g; [eapply lconv_ty; [exact HB3a | solve [apply lequiv_sym; assumption]] | exact (kw_lwf ρ W4)]).
       assert (EW1 : [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ B1)[lsingle (ktm ρ a)] @ l2
                       ⊢ (tyW l1 l2 (kty ρ A1) (ktyl ρ B1))⟨↑⟩ ≈ (tyW l3 l4 (kty ρ A3) (ktyl ρ B3))⟨↑⟩ @ lmax l1 l2 ])
         by exact (geq_ty_wk (wkr_shift1 _ _ _) HΔ1 EW).
@@ -1807,7 +1807,7 @@ Proof using EL VL.
     destruct (LR_inv_seq H3 HT3) as (s4 & A4 & a4 & b4 & _ & Hl4 & Hw3 & _ & HA3 & HA34 & Ha34 & Hb34 & HR3).
     assert (Q : lequiv (gL G) s2 s3) by exact (leqv_lequiv _ _ _ (lequiv_wf_l _ _ _ Hl2) Hw3 E3).
     assert (Hl31 : lequiv (gL G) s3 s1) by (eapply lequiv_trans; [apply lequiv_sym, Q | exact Hl2]).
-    assert (Hl13 : lequiv (gL G) s1 s3) by now apply lequiv_sym.
+    assert (Hl13 : lequiv (gL G) s1 s3) by solve [apply lequiv_sym; assumption].
     assert (EA13 : [ G ; Γ ⊢ SA ≈ A3 @ s1 ]).
     { eapply geq_ty_leq_r; [exact HSAA | eapply geq_ty_lconv; [exact (geq_ty_refl_l HA34) | exact Hl13]
                            | exact EA]. }
@@ -1842,7 +1842,7 @@ Proof using EL VL.
                                     & HRA3 & Hra3 & Hrb3 & Hps3 & Hpt3 & HR3).
     assert (Q : lequiv (gL G) s2 s3) by exact (leqv_lequiv _ _ _ (lequiv_wf_l _ _ _ Hl2) Hw3 E3).
     assert (Hl31 : lequiv (gL G) s3 s1) by (eapply lequiv_trans; [apply lequiv_sym, Q | exact Hl2]).
-    assert (Hl13 : lequiv (gL G) s1 s3) by now apply lequiv_sym.
+    assert (Hl13 : lequiv (gL G) s1 s3) by solve [apply lequiv_sym; assumption].
     assert (EA13 : [ G ; Γ ⊢ IA ≈ A3 @ s1 ]).
     { eapply geq_ty_leq_r; [exact HIAA | eapply geq_ty_lconv; [exact (geq_ty_refl_l HA34) | exact Hl13]
                            | exact EA]. }

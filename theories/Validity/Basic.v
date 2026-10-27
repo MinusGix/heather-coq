@@ -17,8 +17,8 @@ Lemma El_annot {G Γ la l c} :
 Proof.
   intros Hc Hl. pose proof (conv_U' Hc (lequiv_sym _ _ _ Hl)) as Hca.
   split.
-  - eapply (wft_lconv _ _ _ _ _ la); [apply wft_El; eauto using lequiv_wf_l, ge_notV | now apply lequiv_sym].
-  - eapply (eqty_lconv _ _ _ _ _ _ la); [|now apply lequiv_sym].
+  - eapply (wft_lconv _ _ _ _ _ la); [apply wft_El; eauto using lequiv_wf_l, ge_notV | solve [apply lequiv_sym; assumption]].
+  - eapply (eqty_lconv _ _ _ _ _ _ la); [|solve [apply lequiv_sym; assumption]].
     apply eqty_El; [exact ge_notV | exact Hl | now apply eqtm_refl].
 Qed.
 
@@ -28,7 +28,7 @@ Lemma tyred_El {G Γ t w la l} :
 Proof.
   intros [Ht Hr Hte] Hl.
   destruct (El_annot Ht Hl) as [HEl _]. split; [exact HEl | now apply reds_El |].
-  eapply (eqty_lconv _ _ _ _ _ _ la); [|now apply lequiv_sym].
+  eapply (eqty_lconv _ _ _ _ _ _ la); [|solve [apply lequiv_sym; assumption]].
   apply eqty_El; [exact ge_notV | apply lequiv_refl; eauto using lequiv_wf_l |].
   eapply eqtm_lconv; [|apply lequiv_suc, Hl].
   eapply eqtm_conv; [exact Hte | rewrite ge_typeof].
@@ -109,7 +109,7 @@ Proof.
                                                  | eauto using lequiv_wf_r] | now apply lequiv_suc]. }
   eapply LRU with (l1 := l) (l2 := l').
   - now apply lequiv_refl.
-  - now apply lequiv_sym.
+  - solve [apply lequiv_sym; assumption].
   - rewrite ?lmeasure_suc; lia.
   - apply tyred_refl, HU, lequiv_refl, Hwl.
   - apply tyred_refl, HU, Hl.
@@ -139,11 +139,11 @@ Lemma V_El {G Γ l l' t t'} :
 Proof.
   intros Hwl Hl Ht Δ d d' Hd. specialize (Ht _ _ _ Hd). rewrite !subst_tyU in Ht.
   apply (LRtm_U Hwl) in Ht. destruct Ht as (w & w' & Hw & Hw' & _ & _ & _ & HK).
-  destruct (HK l l') as [R HR]; [now apply lequiv_refl | now apply lequiv_sym |].
+  destruct (HK l l') as [R HR]; [now apply lequiv_refl | solve [apply lequiv_sym; assumption] |].
   rewrite LRbelow_spec in HR by (rewrite ?lmeasure_suc; lia).
   exists R. push_subst. eapply LR_red_ty; [exact HR | |].
   - apply tyred_El; [exact Hw | now apply lequiv_refl].
-  - apply tyred_El; [exact Hw' | now apply lequiv_sym].
+  - apply tyred_El; [exact Hw' | solve [apply lequiv_sym; assumption]].
 Qed.
 
 (** ** Codes of [Nat] and of universes *)
@@ -208,7 +208,7 @@ Proof.
   exists (URel (LRbelow (lmeasure (lsuc l))) G Δ l).
   eapply LRU with (l1 := l) (l2 := l').
   - now apply lequiv_refl.
-  - now apply lequiv_sym.
+  - solve [apply lequiv_sym; assumption].
   - rewrite ?lmeasure_suc; lia.
   - now apply tyred_El_U.
   - eapply (tyred_lconv _ _ (lsuc l) (lsuc l')); [|now apply lequiv_suc].

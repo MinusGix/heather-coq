@@ -120,9 +120,9 @@ Proof.
   destruct X as (R & HR & HX).
   (* typed reductions of the two applications *)
   assert (HAA's : [ G ; Δ ⊢g A[d'] ≅ A'[d'] @ l ]) by now apply geq_ty_sound.
-  assert (HA'3 : [ G ; Δ ⊢g A'[d'] @ l3 ]) by (eapply lconv_ty; [exact HA'd' | now apply lequiv_sym]).
+  assert (HA'3 : [ G ; Δ ⊢g A'[d'] @ l3 ]) by (eapply lconv_ty; [exact HA'd' | solve [apply lequiv_sym; assumption]]).
   assert (HB'3 : [ G ; Δ ,, A'[d'] @ l3 ⊢g B'[llift d'] @ l4 ]).
-  { eapply (lconv_ty (l := l')); [|now apply lequiv_sym].
+  { eapply (lconv_ty (l := l')); [|solve [apply lequiv_sym; assumption]].
     eapply (stab_ty ge_typeof HAA's (lequiv_sym _ _ _ H3)); [|exact HB'd'].
     apply ext_wf_g; [exact HA'3 | eauto using lequiv_wf_l]. }
   assert (Hs'3 : [ G ; Δ ⊢g s'[d'] : A'[d'] @ l3 ]).

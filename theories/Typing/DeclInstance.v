@@ -280,7 +280,7 @@ Proof.
   intros Hc HT Hl.
   pose proof (wf_ty_subst (i := lD) eq_refl HT (eqctx_id (i := lD) eq_refl Hc)) as X.
   rewrite nf_id_ty in X by exact (wf_ty_nf HT).
-  eapply wft_lconv; [exact X | now apply lequiv_sym].
+  eapply wft_lconv; [exact X | solve [apply lequiv_sym; assumption]].
 Qed.
 
 Ltac decl_elim_prem :=

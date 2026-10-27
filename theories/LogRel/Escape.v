@@ -583,18 +583,18 @@ Proof.
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
   - eapply geq_ty_lconv; [eapply geq_ty_U; [eapply tyred_ctx, HT|]|].
-    + now apply lequiv_sym.
+    + solve [apply lequiv_sym; assumption].
     + exact Hl.
   - now apply gne_ty_geq.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_pi; auto using lequiv_sym.
   - eapply geq_ty_lconv; [exact Hgeq | exact Hl].
   - eapply geq_ty_lconv; [exact Hgeq | exact Hl].
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sig; auto using lequiv_sym.
-  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_unit; [eapply tyred_ctx, HT | now apply lequiv_sym].
+  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_unit; [eapply tyred_ctx, HT | solve [apply lequiv_sym; assumption]].
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_seq; auto using lequiv_sym.
-  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sempty; [eapply tyred_ctx, HT | now apply lequiv_sym].
+  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sempty; [eapply tyred_ctx, HT | solve [apply lequiv_sym; assumption]].
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_id; auto using lequiv_sym.
-  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_empty; [eapply tyred_ctx, HT | now apply lequiv_sym].
+  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_empty; [eapply tyred_ctx, HT | solve [apply lequiv_sym; assumption]].
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sum; auto using lequiv_sym.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_W; auto using lequiv_sym.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_wf; auto using lequiv_sym.
@@ -1275,19 +1275,19 @@ Proof.
   - intros t t' w w' Ht Ht' _ _ IH l l' T T' Hl HT HTT.
     pose proof (lequiv_wf_l _ _ _ Hl) as Hw. pose proof (lequiv_wf_r _ _ _ Hl) as Hw'.
     pose proof (eqty_wf_r ge_typeof (geq_ty_sound HTT)) as HT'.
-    assert (HT'l : [ G ; Γ ⊢g T' @ l' ]) by (eapply wft_lconv; [exact HT' | now apply lequiv_sym]).
+    assert (HT'l : [ G ; Γ ⊢g T' @ l' ]) by (eapply wft_lconv; [exact HT' | solve [apply lequiv_sym; assumption]]).
     eapply geq_ty_exp; [exact (tyred_vec Hw HT Ht) | | exact (IH l l' T T' Hl HT HTT)].
     exact (tyred_lconv _ _ _ _ (tyred_vec Hw' HT'l Ht') Hl).
   - intros l l' T T' Hl HT HTT.
     pose proof (lequiv_wf_l _ _ _ Hl) as Hw. pose proof (lequiv_wf_r _ _ _ Hl) as Hw'.
     pose proof (eqty_wf_r ge_typeof (geq_ty_sound HTT)) as HT'.
-    assert (HT'l : [ G ; Γ ⊢g T' @ l' ]) by (eapply wft_lconv; [exact HT' | now apply lequiv_sym]).
+    assert (HT'l : [ G ; Γ ⊢g T' @ l' ]) by (eapply wft_lconv; [exact HT' | solve [apply lequiv_sym; assumption]]).
     eapply geq_ty_exp; [exact (tyred_vec_zero Hw HT) | exact (tyred_lconv _ _ _ _ (tyred_vec_zero Hw' HT'l) Hl) |].
     exact (geq_ty_unit (ctx_of_ty HT) Hl).
   - intros t t' Htt IH l l' T T' Hl HT HTT.
     pose proof (lequiv_wf_l _ _ _ Hl) as Hw. pose proof (lequiv_wf_r _ _ _ Hl) as Hw'.
     pose proof (eqty_wf_r ge_typeof (geq_ty_sound HTT)) as HT'.
-    assert (HT'l : [ G ; Γ ⊢g T' @ l' ]) by (eapply wft_lconv; [exact HT' | now apply lequiv_sym]).
+    assert (HT'l : [ G ; Γ ⊢g T' @ l' ]) by (eapply wft_lconv; [exact HT' | solve [apply lequiv_sym; assumption]]).
     destruct Htt as [t t' u u' Hu Hu' Huu Hn].
     pose proof (tmred_wf _ _ _ _ _ _ _ Hu) as Hk. pose proof (tmred_wf _ _ _ _ _ _ _ Hu') as Hk'.
     assert (HΓT : [ G ; Γ ,, T @ l ⊢g ]) by now apply ext_wf_g.

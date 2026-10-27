@@ -24,7 +24,7 @@ Lemma LR_empty_here {G Δ l l'} : [ G ; Δ ⊢g ] -> lwf (gL G) l -> lequiv (gL 
 Proof.
   intros HΔ Hw Hl. eapply LRempty with (l1 := l) (l2 := l').
   - now apply lequiv_refl.
-  - now apply lequiv_sym.
+  - solve [apply lequiv_sym; assumption].
   - exact Hw.
   - apply tyred_refl, wft_empty_g; [exact HΔ | now apply lequiv_refl].
   - apply tyred_refl, wft_empty_g; [exact HΔ | exact Hl].
@@ -150,8 +150,8 @@ Proof.
   apply tyred_step; [exact HEl | constructor |].
   eapply eqty_trans; [exact HEq|].
   eapply (eqty_trans _ _ _ _ (tyEl k (tmEmpty k)));
-    [apply eqty_El; [exact ge_notV | now apply lequiv_sym | now apply eqtm_refl]|].
-  apply (eqty_lconv _ _ _ _ _ l k); [|now apply lequiv_sym].
+    [apply eqty_El; [exact ge_notV | solve [apply lequiv_sym; assumption] | now apply eqtm_refl]|].
+  apply (eqty_lconv _ _ _ _ _ l k); [|solve [apply lequiv_sym; assumption]].
   apply eqty_sym, eqty_El_empty; [exact ge_compt | now rewrite ge_typeof | exact Hwk].
 Qed.
 
@@ -173,7 +173,7 @@ Proof.
   intros Hw Hl Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ. push_subst.
   apply (LRtm_U (l := l) Hw).
   assert (Hc : forall k, lequiv (gL G) l k -> [ G ; Δ ⊢g tmEmpty k : tyU l @ lsuc l ]).
-  { intros k Hk. apply (conv_U' (l := k)); [|now apply lequiv_sym].
+  { intros k Hk. apply (conv_U' (l := k)); [|solve [apply lequiv_sym; assumption]].
     apply wf_code_empty; [exact ge_notV | now rewrite ge_typeof | eauto using lequiv_wf_r]. }
   exists (tmEmpty l), (tmEmpty l').
   refine (conj (tmred_refl _ _ _ (Hc _ (lequiv_refl _ _ Hw)))
@@ -182,10 +182,10 @@ Proof.
   intros la lb Hla Hlb. rewrite LRbelow_spec by (rewrite ?lmeasure_suc; lia).
   exists (EmptyRel G Δ l). eapply LRempty with (l1 := l) (l2 := l').
   - now apply lequiv_refl.
-  - now apply lequiv_sym.
+  - solve [apply lequiv_sym; assumption].
   - exact Hw.
   - apply tyred_El_empty; [exact HΔ | exact Hla | now apply lequiv_refl].
-  - apply tyred_El_empty; [exact HΔ | exact Hlb | now apply lequiv_sym].
+  - apply tyred_El_empty; [exact HΔ | exact Hlb | solve [apply lequiv_sym; assumption]].
   - apply releq_refl.
 Qed.
 

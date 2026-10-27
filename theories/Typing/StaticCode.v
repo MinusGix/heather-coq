@@ -205,8 +205,8 @@ Proof.
   pose proof (ctx_of_wf_ty Hi HA) as HΓ.
   assert (HS : [ G ; Γ ⊢[ lD ] tySum l1 l2 A B @ lmax l1 l2 ]) by (apply wft_sum; assumption).
   assert (ESS : [ G ; Γ ⊢[ lD ] tySum l1 l2 A B ≅ tySum l4 l5 A' B' @ lmax l1 l2 ]) by (apply eqty_sum; assumption).
-  assert (HA'4 : [ G ; Γ ⊢[ lD ] A' @ l4 ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
-  assert (HB'5 : [ G ; Γ ⊢[ lD ] B' @ l5 ]) by (eapply wft_lconv; [exact HB' | now apply lequiv_sym]).
+  assert (HA'4 : [ G ; Γ ⊢[ lD ] A' @ l4 ]) by (eapply wft_lconv; [exact HA' | solve [apply lequiv_sym; assumption]]).
+  assert (HB'5 : [ G ; Γ ⊢[ lD ] B' @ l5 ]) by (eapply wft_lconv; [exact HB' | solve [apply lequiv_sym; assumption]]).
   pose proof (ext_wf Hi HA'4 W4) as HΓA'. pose proof (ext_wf Hi HB'5 W5) as HΓB'.
   pose proof (var0_wf _ _ Hi _ _ _ HΓA') as Hv0A. pose proof (var0_wf _ _ Hi _ _ _ HΓB') as Hv0B.
   assert (HvA : [ G ; Γ ,, A' @ l4 ⊢[ lD ] var 0 : A⟨↑⟩ @ l1 ]).
@@ -256,7 +256,7 @@ Proof.
   pose proof (ctx_of_wf_ty Hi HA) as HΓ.
   assert (HS : [ G ; Γ ⊢[ lD ] tySq l1 A @ l1 ]) by (apply wft_sq; assumption).
   assert (ESS : [ G ; Γ ⊢[ lD ] tySq l1 A ≅ tySq l3 A' @ l1 ]) by (apply eqty_sq; assumption).
-  assert (HA'3 : [ G ; Γ ⊢[ lD ] A' @ l3 ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
+  assert (HA'3 : [ G ; Γ ⊢[ lD ] A' @ l3 ]) by (eapply wft_lconv; [exact HA' | solve [apply lequiv_sym; assumption]]).
   pose proof (ext_wf Hi HA'3 W3) as HΓA'.
   assert (HwA : [ G ; Γ ,, A' @ l3 ⊢[ lD ] A⟨↑⟩ @ l1 ]) by exact (wk1_ty _ _ Hi _ _ _ _ _ HΓA' HA).
   assert (HwA' : [ G ; Γ ,, A' @ l3 ⊢[ lD ] A'⟨↑⟩ @ l1 ]) by exact (wk1_ty _ _ Hi _ _ _ _ _ HΓA' HA').

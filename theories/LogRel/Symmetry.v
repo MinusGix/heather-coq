@@ -246,7 +246,7 @@ Proof.
     destruct (HK lb la) as [R0 H0]; [eapply lequiv_trans; [eassumption | apply lequiv_sym, Hl].. |].
     rewrite LRbelow_spec in H0 by exact Hn.
     exists (flipR R0). rewrite LRbelow_spec by lia. unfold LogRel in *. rewrite Hm.
-    eapply LR_lconv; [exact (Hsym _ _ _ _ _ _ H0) | now apply lequiv_sym].
+    eapply LR_lconv; [exact (Hsym _ _ _ _ _ _ H0) | solve [apply lequiv_sym; assumption]].
 Qed.
 
 (** ** The shared type-level data of a binder former, flipped *)
@@ -256,23 +256,23 @@ Lemma poly_flip {F G Γ T T' l l1 l2 l3 l4 A B A' B'} :
 Proof.
   intros [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB].
   assert (Hm : lequiv (gL G) (lmax l3 l4) (lmax l1 l2)) by now apply lequiv_max.
-  assert (HA3 : [ G ; Γ ⊢g A @ l3 ]) by (eapply lconv_ty; [exact HA | now apply lequiv_sym]).
-  assert (HA'3 : [ G ; Γ ⊢g A' @ l3 ]) by (eapply lconv_ty; [exact HA' | now apply lequiv_sym]).
+  assert (HA3 : [ G ; Γ ⊢g A @ l3 ]) by (eapply lconv_ty; [exact HA | solve [apply lequiv_sym; assumption]]).
+  assert (HA'3 : [ G ; Γ ⊢g A' @ l3 ]) by (eapply lconv_ty; [exact HA' | solve [apply lequiv_sym; assumption]]).
   split.
   - eapply lequiv_trans; [exact Hl | apply lequiv_sym, Hm].
-  - now apply lequiv_sym.
-  - now apply lequiv_sym.
+  - solve [apply lequiv_sym; assumption].
+  - solve [apply lequiv_sym; assumption].
   - eauto using lequiv_wf_l.
   - eauto using lequiv_wf_l.
   - exact HT'.
   - exact HT.
   - exact HA'3.
   - exact HA3.
-  - eapply (lconv_ty (l := l2)); [|now apply lequiv_sym]. eapply ctx_lvl_ty; [exact HA' | now apply lequiv_sym | exact HB'].
-  - eapply (lconv_ty (l := l2)); [|now apply lequiv_sym]. eapply ctx_lvl_ty; [exact HA | now apply lequiv_sym | exact HB].
+  - eapply (lconv_ty (l := l2)); [|solve [apply lequiv_sym; assumption]]. eapply ctx_lvl_ty; [exact HA' | solve [apply lequiv_sym; assumption] | exact HB'].
+  - eapply (lconv_ty (l := l2)); [|solve [apply lequiv_sym; assumption]]. eapply ctx_lvl_ty; [exact HA | solve [apply lequiv_sym; assumption] | exact HB].
   - eapply geq_ty_lconv; [apply geq_ty_sym, HAA | exact Hl3].
   - eapply geq_ty_lconv; [|exact Hl4].
-    eapply geq_ty_ctxconv; [apply geq_ty_sound, HAA | now apply lequiv_sym | | apply geq_ty_sym, HBB].
+    eapply geq_ty_ctxconv; [apply geq_ty_sound, HAA | solve [apply lequiv_sym; assumption] | | apply geq_ty_sym, HBB].
     apply ext_wf_g; [exact HA'3 | eauto using lequiv_wf_l].
 Qed.
 
@@ -372,12 +372,12 @@ Proof.
     pose proof (lequiv_wf_l _ _ _ Hl3) as W3. pose proof (lequiv_wf_l _ _ _ Hl4) as W4.
     pose proof (lequiv_wf_r _ _ _ Hl3) as W1. pose proof (lequiv_wf_r _ _ _ Hl4) as W2.
     assert (Hm : lequiv (gL G) (lmax l3 l4) (lmax l1 l2)) by now apply lequiv_max.
-    assert (HA'3 : [ G ; Γ ⊢g A' @ l3 ]) by (eapply lconv_ty; [exact HA' | now apply lequiv_sym]).
+    assert (HA'3 : [ G ; Γ ⊢g A' @ l3 ]) by (eapply lconv_ty; [exact HA' | solve [apply lequiv_sym; assumption]]).
     assert (CA : forall X, [ G ; Γ ⊢ A ≈ X @ l1 ] -> [ G ; Γ ⊢ A' ≈ X @ l3 ]).
     { intros X HX. eapply geq_ty_lconv; [eapply geq_ty_trans; [apply geq_ty_sym, HAA | exact HX] | exact Hl3]. }
     assert (CB : forall X, [ G ; Γ ,, A @ l1 ⊢ B ≈ X @ l2 ] -> [ G ; Γ ,, A' @ l3 ⊢ B' ≈ X @ l4 ]).
     { intros X HX. eapply geq_ty_lconv; [|exact Hl4].
-      eapply geq_ty_ctxconv; [apply geq_ty_sound, HAA | now apply lequiv_sym | apply ext_wf_g; [exact HA'3 | exact W3] |].
+      eapply geq_ty_ctxconv; [apply geq_ty_sound, HAA | solve [apply lequiv_sym; assumption] | apply ext_wf_g; [exact HA'3 | exact W3] |].
       eapply geq_ty_trans; [apply geq_ty_sym, HBB | exact HX]. }
     apply wnf_sup; eauto using lequiv_trans, lequiv_sym.
     { (* the children's functions, flipped along their type's equality *)
@@ -400,18 +400,18 @@ Proof.
     (* the annotations, moved to the left positions *)
     assert (MA : forall X, [ kw_G ρ ; kw_Δ ρ ⊢ (ktyl ρ B')[lsingle (ktm ρ a')] ≈ X @ l4 ] ->
                    [ kw_G ρ ; kw_Δ ρ ⊢ (ktyl ρ B)[lsingle (ktm ρ a)] ≈ X @ l2 ]).
-    { intros X HX. eapply geq_ty_trans; [exact EC | eapply geq_ty_lconv; [exact HX | now apply lequiv_sym]]. }
+    { intros X HX. eapply geq_ty_trans; [exact EC | eapply geq_ty_lconv; [exact HX | solve [apply lequiv_sym; assumption]]]. }
     assert (MB : forall X, [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ B')[lsingle (ktm ρ a')] @ l4
                              ⊢ (tyW l3 l4 (kty ρ A') (ktyl ρ B'))⟨↑⟩ ≈ X @ lmax l3 l4 ] ->
                    [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ B)[lsingle (ktm ρ a)] @ l2
                              ⊢ (tyW l1 l2 (kty ρ A) (ktyl ρ B))⟨↑⟩ ≈ X @ lmax l1 l2 ]).
     { intros X HX.
       assert (HΔ' : [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ B')[lsingle (ktm ρ a')] @ l4 ⊢g ])
-        by (apply ext_wf_g; [eapply lconv_ty; [exact HB'a | now apply lequiv_sym] | exact (kw_lwf ρ W4)]).
+        by (apply ext_wf_g; [eapply lconv_ty; [exact HB'a | solve [apply lequiv_sym; assumption]] | exact (kw_lwf ρ W4)]).
       assert (Y : [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ B')[lsingle (ktm ρ a')] @ l4
                     ⊢ (tyW l1 l2 (kty ρ A) (ktyl ρ B))⟨↑⟩ ≈ X @ lmax l1 l2 ]).
       { eapply geq_ty_trans; [exact (geq_ty_wk (wkr_shift1 _ _ _) HΔ' EW)
-                             | eapply geq_ty_lconv; [exact HX | now apply lequiv_sym]]. }
+                             | eapply geq_ty_lconv; [exact HX | solve [apply lequiv_sym; assumption]]]. }
       eapply geq_ty_ctxconv; [| exact Q4 | apply ext_wf_g; [exact HBa | exact V2] | exact Y].
       eapply eqty_lconv; [apply eqty_sym, EC' | exact Q4]. }
     exact (IH ρ ha b b' Hbb la lb A1 B1 la' lb' A1' B1'
@@ -490,7 +490,7 @@ Proof.
     { intros X HX. eapply geq_ty_lconv; [eapply geq_ty_trans; [apply geq_ty_sym, HAA | exact HX] | exact Hl]. }
     assert (CN : forall X, [ G ; Γ ,, A @ l ⊢ N ≈ X : tyNat @ lzero ] -> [ G ; Γ ,, A' @ l' ⊢ N' ≈ X : tyNat @ lzero ]).
     { intros X HX.
-      eapply geq_tm_ctxconv; [apply geq_ty_sound, HAA | now apply lequiv_sym
+      eapply geq_tm_ctxconv; [apply geq_ty_sound, HAA | solve [apply lequiv_sym; assumption]
                              | apply ext_wf_g; [exact (lconv_ty HA' (lequiv_sym _ _ _ Hl)) | exact W'] |].
       eapply geq_tm_trans; [apply geq_tm_sym, HNN | exact HX]. }
     apply wfnf_sup.
@@ -516,7 +516,7 @@ Proof.
     pose proof (sigvec_eq (lequiv_sym _ _ _ Hl) W HWf EW Em) as ES.
     assert (Hml : lequiv (gL G) (lmax l' l') (lmax l l)) by now apply lequiv_max.
     assert (MA : forall X, [ G ; Γ ⊢ tyWf l' A' N' ≈ X @ l' ] -> [ G ; Γ ⊢ tyWf l A N ≈ X @ l ]).
-    { intros X HX. eapply geq_ty_trans; [exact EWg | eapply geq_ty_lconv; [exact HX | now apply lequiv_sym]]. }
+    { intros X HX. eapply geq_ty_trans; [exact EWg | eapply geq_ty_lconv; [exact HX | solve [apply lequiv_sym; assumption]]]. }
     assert (MB : forall X, [ G ; Γ ,, tyWf l' A' N' @ l' ⊢ tyVec l' (tyWf l' A' N')⟨↑⟩ m'⟨↑⟩ ≈ X @ l' ] ->
                    [ G ; Γ ,, tyWf l A N @ l ⊢ tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩ ≈ X @ l ]).
     { intros X HX.
@@ -524,7 +524,7 @@ Proof.
       assert (Y : [ G ; Γ ,, tyWf l' A' N' @ l' ⊢ tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩ ≈ X @ l ]).
       { eapply geq_ty_trans;
           [exact (geq_ty_wk (wkr_shift1 _ _ _) HΓ' (geq_vec_nat m m' Hmm l l' _ _ (lequiv_sym _ _ _ Hl) HWf EWg))
-          | eapply geq_ty_lconv; [exact HX | now apply lequiv_sym]]. }
+          | eapply geq_ty_lconv; [exact HX | solve [apply lequiv_sym; assumption]]]. }
       eapply geq_ty_ctxconv; [| exact Hl | apply ext_wf_g; [exact HWf | exact W] | exact Y].
       eapply eqty_lconv; [apply eqty_sym, EW | exact Hl]. }
     apply (vsp_succ G Γ l' A' N' (flipD d) k' m' cs' cs w' w).
@@ -596,7 +596,7 @@ Definition IWfFlipHyps G Γ l li X A N Ot C (ix dm : DomRel G Γ) l' li' X' A' N
 
 Lemma IWfFlip_lv {G Γ l li X A N Ot C ix dm l' li' X' A' N' Ot' C'} :
   IWfFlipHyps G Γ l li X A N Ot C ix dm l' li' X' A' N' Ot' C' -> lequiv (gL G) (lmax l' li') (lmax l li).
-Proof. intros ((Hl & Hli & _) & _). apply lequiv_max; now apply lequiv_sym. Qed.
+Proof. intros ((Hl & Hli & _) & _). apply lequiv_max; solve [apply lequiv_sym; assumption]. Qed.
 
 Lemma IWfFlipHyps_kw {G Γ l li X A N Ot C ix dm l' li' X' A' N' Ot' C'} (ρ : kwk G Γ) :
   IWfFlipHyps G Γ l li X A N Ot C ix dm l' li' X' A' N' Ot' C' ->
@@ -934,7 +934,7 @@ Proof.
   - assert (Hm : lmeasure l2 = lmeasure l1) by (eapply lequiv_measure; eauto).
     eapply (LRU n (LRbelow n) G Γ T' T l l2 l1).
     + eapply lequiv_trans; [exact Hl | apply lequiv_suc, lequiv_sym, Hl2].
-    + now apply lequiv_sym.
+    + solve [apply lequiv_sym; assumption].
     + lia.
     + exact HT'.
     + exact HT.
