@@ -333,6 +333,31 @@ formers, so it gets worse with every extension:
   where `redT` is `None`: `cbn` normalised each `Some` reduct in full
   before `discriminate` failed (18 s). `discriminate` alone takes the
   head normal form, which is all it needs (0.1 s).
+- **`cbn [tm_leq]; repeat split` over unfolded reducts** (2026-10-27).
+  A leaf such as `tm_leq t[d] t'[d']` with `t` a concrete term is not
+  stuck: `split` whnf's it, computing the substitution, and splits the
+  relation of the substituted term, so the substitution lemma is never
+  used and every node of the result becomes a goal (`leq_tmDNth`,
+  `lwf_tmDNth`: 26 s each). Unfold one layer at a time by the goal's
+  shape (`lazymatch`: `True`, `_ /\ _`, the `ren`/`subst` nodes in both
+  spellings, then `assumption` or `progress hnf`): 1 s each. The same
+  loop by head took `dnf_redt` from 14 s to 0.6 s.
+- **Opaque by default, measured** (2026-10-27). On the old blind
+  scripts, `Local Opaque` of the predicate or relation (`dnftm dnfty`;
+  `tm_leq ty_leq lsub_leq`), with each `cbn [...]` of it run under
+  `with_strategy transparent [...]`, took `dnf_redt` from 13 s to 7 s
+  and `leq_tmDNth` from 25 s to 7 s without changing the script.
+  Choosing the step by the goal's shape took them to 0.6 s and 1 s.
+  Opacity of the operations (`ren_tm`, `subst_tm`, the `peel*`) bought
+  little (13 s → 10 s), and `Strategy` levels on `gren_tm` changed
+  neither `redt_gren`'s tactics nor its `Qed`. A new predicate on the
+  syntax can be opaque from the start; for the existing ones, rewrite
+  the hot proofs goal-directed instead.
+- **The commutation lemmas' `Qed`** (`redt_gren`: 13 s of tactics,
+  15 s of `Qed`). Proving the equation by constructor congruence
+  (`f_equal` down to the leaves, rewriting only there) made both worse
+  (20 s and 22 s). With every case `abstract`ed, the cases' own kernel
+  checks took 9 s and the case split 6 s more.
 - Measure before guessing (see `CLAUDE.md`, Build, for the tools):
   `tools/build-profile` for a timed build and its report,
   `tools/proofs.py` for the slowest proofs (tactics vs `Qed`),
