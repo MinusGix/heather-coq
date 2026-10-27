@@ -96,9 +96,9 @@ Proof.
   - apply tyred_refl, HF; auto.
   - apply tyred_refl. eapply wft_lconv; [|apply lequiv_sym, Hm].
     apply HF; [eauto using lequiv_wf_l | eauto using lequiv_wf_l | |].
-    + eapply lconv_ty; [exact HA'd | now apply lequiv_sym].
-    + eapply (lconv_ty (l := l')); [|now apply lequiv_sym].
-      eapply ctx_lvl_ty; [exact HA'd | now apply lequiv_sym | exact HB'd].
+    + eapply lconv_ty; [exact HA'd | solve [apply lequiv_sym; assumption]].
+    + eapply (lconv_ty (l := l')); [|solve [apply lequiv_sym; assumption]].
+      eapply ctx_lvl_ty; [exact HA'd | solve [apply lequiv_sym; assumption] | exact HB'd].
   - exact HAd.
   - exact HA'd.
   - exact HBd.

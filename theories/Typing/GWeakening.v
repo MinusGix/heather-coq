@@ -4,6 +4,8 @@
     under [Ψ'], at every layer.  The only binder of the global dimension so
     far is [letbox]'s body, typed under [Ψ, U] / [Ψ, u] with the local
     context globally shifted: it is handled by [gwk_up]. *)
+(* [≡ₗ]'s laws first, as in [USubstitution] (which needs only [LevelEqURen]) *)
+From DeLaM.Syntax Require Export LevelEq.
 From DeLaM.Typing Require Export GRenRec RecWf TypedDnf.
 
 (** ** The theorem *)
@@ -348,9 +350,11 @@ Theorem gweakening :
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> forall L' Ψ' (γ : gweak), gL G <= L' -> gwk_wf γ Ψ' (gΨ G) ->
      [ ⊢ mkG L' Ψ' ] -> [ mkG L' Ψ' ⊢[ i ] Γ⟪γ⟫ ≅ Γ'⟪γ⟫ ]).
 Proof.
-  apply typing_mut; intros; try exact I; push_gren; gren_rewrite; push_gren.
-  (* manual cases first: a failing [gw_step] backtracks through every rule *)
-  all: first [solve [gw_manual] | gw_step].
+  apply typing_mut; intros.
+  par: (
+    (try exact I; push_gren; gren_rewrite; push_gren);
+    (* manual cases first: a failing [gw_step] backtracks through every rule *)
+    (first [solve [gw_manual] | gw_step])).
 Qed.
 
 (** ** Named corollaries, for a weakening [γ : G' ≤ G] *)

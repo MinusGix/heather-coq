@@ -19,12 +19,12 @@ Proof.
   pose proof (conv_U' Hs (lequiv_sym _ _ _ H1)) as Hs1.
   destruct (El_annot Hs H1) as [HA _].
   assert (HΓ : [ G ; Δ ,, tyEl k1 s @ k1 ⊢g ])
-    by (apply ext_wf_g; [eapply lconv_ty; [exact HA | now apply lequiv_sym] | eauto using lequiv_wf_l]).
+    by (apply ext_wf_g; [eapply lconv_ty; [exact HA | solve [apply lequiv_sym; assumption]] | eauto using lequiv_wf_l]).
   pose proof (stab_tm ge_typeof (eqty_refl _ _ _ _ _ HA) (lequiv_sym _ _ _ H1) HΓ Ht) as Ht1.
   pose proof (conv_U' Ht1 (lequiv_sym _ _ _ H2)) as Ht2.
   assert (Hc : [ G ; Δ ⊢g tmPi k1 k2 s t : tyU (lmax k1 k2) @ lsuc (lmax k1 k2) ])
     by (apply wf_code_pi; eauto using ge_notV, lequiv_wf_l).
-  assert (Hm : lequiv (gL G) (lmax l1 l2) (lmax k1 k2)) by (apply lequiv_max; now apply lequiv_sym).
+  assert (Hm : lequiv (gL G) (lmax l1 l2) (lmax k1 k2)) by (apply lequiv_max; solve [apply lequiv_sym; assumption]).
   destruct (El_annot Hc (lequiv_trans _ _ _ _ Hla Hm)) as [HEl HEq].
   eapply tyred_lconv; [|exact Hm].
   apply tyred_step; [exact HEl | constructor |].

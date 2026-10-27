@@ -178,7 +178,7 @@ Proof.
       by (eapply eqty_trans; [apply eqty_sym|]; apply geq_ty_sound; eassumption).
     intros t t'; rewrite (HR t t'), (HR2 t t'); split.
     + apply CTypRel_conv_r; assumption.
-    + apply CTypRel_conv_r; [now apply vpl_ctx_sym | now apply lequiv_sym | now apply eqty_sym].
+    + apply CTypRel_conv_r; [now apply vpl_ctx_sym | solve [apply lequiv_sym; assumption] | now apply eqty_sym].
   - assert (HΔ' : vp_ctx lr_vp G Δ' Δ'') by (eapply vpl_ctx_trans; [apply vpl_ctx_sym|]; eassumption).
     assert (Hk' : lequiv (gL G) k' k'') by (eapply lequiv_trans; [apply lequiv_sym|]; eassumption).
     assert (HC : [ G ; Γ ⊢g tyCTrm Δ' A' k' ≅ tyCTrm Δ'' A'' k'' @ lzero ])
@@ -189,7 +189,7 @@ Proof.
       eapply vpl_ty_trans; [apply vpl_ty_sym|]; eassumption. }
     intros t t'; rewrite (HR t t'), (HR2 t t'); split.
     + apply CTrmRel_conv_r; assumption.
-    + apply CTrmRel_conv_r; [now apply vpl_ctx_sym | | now apply lequiv_sym | now apply eqty_sym].
+    + apply CTrmRel_conv_r; [now apply vpl_ctx_sym | | solve [apply lequiv_sym; assumption] | now apply eqty_sym].
       eapply vpl_ty_lconv; [exact Hk'|]. eapply vpl_ty_ctx; [exact HΔ'|]. now apply vpl_ty_sym.
 Qed.
 
@@ -235,7 +235,7 @@ Proof.
       * eapply geq_ty_trans; eassumption.
       * intros t t'; rewrite (HR t t'); split.
         -- apply CTypRel_conv_r; auto.
-        -- apply CTypRel_conv_r; [now apply vpl_ctx_sym | now apply lequiv_sym | now apply eqty_sym].
+        -- apply CTypRel_conv_r; [now apply vpl_ctx_sym | solve [apply lequiv_sym; assumption] | now apply eqty_sym].
     + intros t1 t2 t3 H12 H23. apply HR in H12. apply HR' in H23. apply HR.
       exact (CTypRel_trans (vpl_ctx_sym HΔ) (lequiv_sym _ _ _ Hk) HC21
                (vpl_ctx_sym HΔ') (lequiv_sym _ _ _ Hk') (eqty_sym _ _ _ _ _ _ HC23) H12 H23).
@@ -256,7 +256,7 @@ Proof.
       * eapply geq_ty_trans; eassumption.
       * intros t t'; rewrite (HR t t'); split.
         -- apply CTrmRel_conv_r; auto.
-        -- apply CTrmRel_conv_r; [now apply vpl_ctx_sym | | now apply lequiv_sym | now apply eqty_sym].
+        -- apply CTrmRel_conv_r; [now apply vpl_ctx_sym | | solve [apply lequiv_sym; assumption] | now apply eqty_sym].
            eapply vpl_ty_lconv; [exact Hk'|]. eapply vpl_ty_ctx; [exact HΔ' | now apply vpl_ty_sym].
     + intros t1 t2 t3 H12 H23. apply HR in H12. apply HR' in H23. apply HR.
       exact (CTrmRel_trans (vpl_ctx_sym HΔ) HA' (lequiv_sym _ _ _ Hk) HC21

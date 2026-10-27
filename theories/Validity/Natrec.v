@@ -224,7 +224,7 @@ Proof.
   destruct (VM _ _ _ Hlift') as [RM' HRM']. destruct (escape_ty _ _ _ _ _ _ _ _ HRM') as (HMd'0 & HM'd' & EqM').
   pose proof (geq_ty_sound EqM') as EqM'd.
   assert (HMd' : [ G ; Δ ,, tyNat @ lzero ⊢g M'[llift d'] @ l' ])
-    by (eapply wft_lconv; [exact HM'd' | now apply lequiv_sym]).
+    by (eapply wft_lconv; [exact HM'd' | solve [apply lequiv_sym; assumption]]).
   assert (Hsd' : [ G ; Δ ⊢g s'[d'] : M'[llift d'][lsingle zero] @ l' ]).
   { pose proof (Vs _ _ _ (SubRel_refl_r Hd)) as Xs'. rewrite !single_zero_subst_ty in Xs' by assumption.
     destruct (LRtm_escape Xs') as [_ Hs'0].

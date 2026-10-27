@@ -380,8 +380,6 @@ Lemma gsubst_id_ctx (Γ : ctx) σ : dnfctx Γ -> (forall i, σ i = GId i) -> Γ�
 Proof. intros; apply (proj1 (proj2 (proj2 gsubst_id_all))); auto. Qed.
 End GLaws.
 
-Print Assumptions gsubst_gsubst.
-
 (** ** Global renaming: outputs are deep-normal; identity on deep-normal input *)
 
 Lemma dnfl_lcons' d t : dnfl d -> dnftm t -> dnfl (lcons' d t).

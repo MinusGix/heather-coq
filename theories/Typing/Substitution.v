@@ -810,13 +810,15 @@ Theorem substitution_all :
      forall Δ d, [ G ; Δ ⊢[ i ] d : Γ ] -> [ G ; Δ ⊢[ i ] t[d] ≅ t'[d] : T[d] @ l ]) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; try exact I; try sub_ctx;
+  apply typing_mut; intros.
+  par: (
+    (try exact I; try sub_ctx;
     try match goal with c : compt ?i |- _ => pose proof (compt_notV _ c) end;
-    cbn [typeof] in *; sub_rw.
-  all: try solve [eapply lsub_wf_var; eassumption].
-  all: try sub_step.
-  all: try sub_manual.
-  all: sub_manual2.
+    cbn [typeof] in *; sub_rw);
+    (try solve [eapply lsub_wf_var; eassumption]);
+    (try sub_step);
+    (try sub_manual);
+    (sub_manual2)).
 Qed.
 
 

@@ -4,7 +4,7 @@
     "M only" are upward closed), and [typeof] is monotone.  Premises at a
     fixed layer (the [box] contents at C, contexts of contextual types at
     P) are unchanged. *)
-From DeLaM.Typing Require Export GWeakening.
+From DeLaM.Typing Require Export Declarative.
 
 Lemma lle_refl i : lle i i.
 Proof. unfold lle; lia. Qed.
@@ -41,9 +41,11 @@ Theorem lifting :
      [ G ; Γ ⊢[ j ] t ≅ t' : T @ l ]) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> forall j, lle i j -> [ G ⊢[ j ] Γ ≅ Γ' ]).
 Proof.
-  apply typing_mut; intros; try exact I;
-    try match goal with H : lle lM ?j |- _ => apply lle_M in H; subst j end.
-  all: lift_step.
+  apply typing_mut; intros.
+  par: (
+    (try exact I;
+    try match goal with H : lle lM ?j |- _ => apply lle_M in H; subst j end);
+    (lift_step)).
 Qed.
 
 Lemma lift_ty {G i j Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] -> lle i j -> [ G ; Γ ⊢[ j ] T @ l ].

@@ -463,9 +463,9 @@ Theorem unfolding :
      [ unf_G G ; unf_ctx Γ ⊢[ i ] unf_tm t ≅ unf_tm t' : unf_ty T @ l ]) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> [ unf_G G ⊢[ i ] unf_ctx Γ ≅ unf_ctx Γ' ]).
 Proof.
-  apply typing_mut; intros; unf_norm.
-  all: try any_rule ltac:(eauto with unf).
-  all: try unf_manual.
+  apply typing_mut; intros.
+  par: (
+    (unf_norm);
+    (try any_rule ltac:(eauto with unf));
+    (try unf_manual)).
 Qed.
-
-Print Assumptions unfolding.

@@ -13,6 +13,7 @@
     [RecWf] can use it before weakening exists; here they are
     discharged by weakening and substitution. *)
 From DeLaM.Typing Require Export Inversion.
+From DeLaM.Syntax Require Import TemplateEq.
 From DeLaM.Typing Require DNthCore.
 
 (** ** Iterated weakenings *)
@@ -95,8 +96,10 @@ Ltac tq := refold; push_ren; push_subst; pw;
   | |- var _ = var _ => f_equal; lia
   | |- _ = _ => progress (refold; push_ren; push_subst; pw)
   end; n_eq.
-(** The motive's equations: congruence, then pointwise. *)
-Ltac meq := push_subst; tcong; try solve [pw]; try teq_core; try solve [f_equal; try reflexivity; fin_sub]; try solve [tq].
+(** The motive's equations: by computation on a template ([geq],
+    [TemplateEq]), else congruence, then pointwise. *)
+Ltac meq_pw := push_subst; tcong; try solve [pw]; try teq_core; try solve [f_equal; try reflexivity; fin_sub]; try solve [tq].
+Ltac meq := first [ geq | meq_pw ].
 
 Section DNth.
 Context {G : gctx} {i : layer} (Hc : compt i).

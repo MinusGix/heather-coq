@@ -7,7 +7,7 @@
     step is a global variable's local substitution, whose entries are
     converted from the last to the first by functionality ([telescope]). *)
 From DeLaM.Syntax Require Import LevelLwf.
-From DeLaM.Typing Require Export CtxConv GStatic.
+From DeLaM.Typing Require Export CtxConv GSubstitution GStatic.
 
 Lemma lle_D_typeof i : lle i lD -> typeof i = lD.
 Proof. destruct i; unfold lle; cbn; intros; try reflexivity; lia. Qed.
@@ -69,18 +69,20 @@ Theorem typed_lwf :
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; try exact I;
+  apply typing_mut; intros.
+  par: (
+    (try exact I;
     (* guarded: a failing [apply elimT_lwf] unfolds the recursor against every former *)
     try solve [lazymatch goal with
                | |- tm_lwf _ (elimT _ _ _ _ _ _) => apply elimT_lwf; auto
                | |- tm_lwf _ (elimt _ _ _ _ _ _ _) => apply elimt_lwf; auto end];
-    cbn [ty_lwf tm_lwf ctx_lwf lsub_lwf]; try tauto.
-  (* global variables: the entries of the local substitution *)
-  all: try solve [eapply lsub_lwf_entries; [eassumption|]; intros ?n ?A ?k ?Hin;
-                  match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH; eassumption end].
-  (* defined globals (M9): the body too *)
-  all: split; [assumption |]; eapply lsub_lwf_entries; [eassumption|]; intros ?n ?A ?k ?Hin;
-    match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH; eassumption end.
+    cbn [ty_lwf tm_lwf ctx_lwf lsub_lwf]; try tauto);
+    (* global variables: the entries of the local substitution *)
+    (try solve [eapply lsub_lwf_entries; [eassumption|]; intros ?n ?A ?k ?Hin;
+                  match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH; eassumption end]);
+    (* defined globals (M9): the body too *)
+    (split; [assumption |]; eapply lsub_lwf_entries; [eassumption|]; intros ?n ?A ?k ?Hin;
+    match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH; eassumption end)).
 Qed.
 
 Lemma wf_ty_lwf {G i Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] -> ty_lwf (gL G) T.
@@ -203,8 +205,8 @@ Proof.
   pose proof (ctx_of_wf_ty Hi HA) as HΓ.
   assert (HS : [ G ; Γ ⊢[ lD ] tySum l1 l2 A B @ lmax l1 l2 ]) by (apply wft_sum; assumption).
   assert (ESS : [ G ; Γ ⊢[ lD ] tySum l1 l2 A B ≅ tySum l4 l5 A' B' @ lmax l1 l2 ]) by (apply eqty_sum; assumption).
-  assert (HA'4 : [ G ; Γ ⊢[ lD ] A' @ l4 ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
-  assert (HB'5 : [ G ; Γ ⊢[ lD ] B' @ l5 ]) by (eapply wft_lconv; [exact HB' | now apply lequiv_sym]).
+  assert (HA'4 : [ G ; Γ ⊢[ lD ] A' @ l4 ]) by (eapply wft_lconv; [exact HA' | solve [apply lequiv_sym; assumption]]).
+  assert (HB'5 : [ G ; Γ ⊢[ lD ] B' @ l5 ]) by (eapply wft_lconv; [exact HB' | solve [apply lequiv_sym; assumption]]).
   pose proof (ext_wf Hi HA'4 W4) as HΓA'. pose proof (ext_wf Hi HB'5 W5) as HΓB'.
   pose proof (var0_wf _ _ Hi _ _ _ HΓA') as Hv0A. pose proof (var0_wf _ _ Hi _ _ _ HΓB') as Hv0B.
   assert (HvA : [ G ; Γ ,, A' @ l4 ⊢[ lD ] var 0 : A⟨↑⟩ @ l1 ]).
@@ -254,7 +256,7 @@ Proof.
   pose proof (ctx_of_wf_ty Hi HA) as HΓ.
   assert (HS : [ G ; Γ ⊢[ lD ] tySq l1 A @ l1 ]) by (apply wft_sq; assumption).
   assert (ESS : [ G ; Γ ⊢[ lD ] tySq l1 A ≅ tySq l3 A' @ l1 ]) by (apply eqty_sq; assumption).
-  assert (HA'3 : [ G ; Γ ⊢[ lD ] A' @ l3 ]) by (eapply wft_lconv; [exact HA' | now apply lequiv_sym]).
+  assert (HA'3 : [ G ; Γ ⊢[ lD ] A' @ l3 ]) by (eapply wft_lconv; [exact HA' | solve [apply lequiv_sym; assumption]]).
   pose proof (ext_wf Hi HA'3 W3) as HΓA'.
   assert (HwA : [ G ; Γ ,, A' @ l3 ⊢[ lD ] A⟨↑⟩ @ l1 ]) by exact (wk1_ty _ _ Hi _ _ _ _ _ HΓA' HA).
   assert (HwA' : [ G ; Γ ,, A' @ l3 ⊢[ lD ] A'⟨↑⟩ @ l1 ]) by exact (wk1_ty _ _ Hi _ _ _ _ _ HΓA' HA').
@@ -2646,8 +2648,10 @@ Theorem static_code :
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; try exact I; sc_prep; cbn in *; sc_prep.
-  all: first
+  apply typing_mut; intros.
+  par: (
+    (try exact I; sc_prep; cbn in *; sc_prep);
+    (first
     [ (* the same syntax *)
       solve [split; [econstructor; eauto | first [apply eqty_refl | apply eqtm_refl]; econstructor; eauto]]
     | solve [sc_conv_case]
@@ -2695,7 +2699,7 @@ Proof.
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x
         |- _ /\ eq_tm _ _ _ (succ _) _ _ _ =>
           destruct (IH x E W); split; [apply wf_succ | apply eqtm_succ]; assumption
-      end ].
+      end ])).
 Qed.
 
 (** Named forms. *)

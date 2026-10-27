@@ -299,36 +299,3 @@ Lemma reds_fin n n' : reds n n' -> reds_ty (tyFin n) (tyFin n').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_dvec l n n' F : reds n n' -> reds_ty (tyDVec l n F) (tyDVec l n' F).
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
-
-(** ** Stability under renaming *)
-
-Lemma lsingle_ren (b s : tm) r : b[lsingle s]⟨r⟩ = b⟨rlift r⟩[lsingle s⟨r⟩].
-Proof.
-  rewrite (subst_ren _ _ (lcons (r2l r) s⟨r⟩)), (ren_subst _ _ _ (lcons (r2l r) s⟨r⟩)); auto.
-  all: intros [|n]; cbn; rewrite ?llk_r2l, ?rlk_rup; cbn; auto; f_equal; lia.
-Qed.
-
-Lemma lsingle2_ren (z t q : tm) r :
-  z[lsingle2 t q]⟨r⟩ = z⟨rlift (rlift r)⟩[lsingle2 t⟨r⟩ q⟨r⟩].
-Proof.
-  rewrite (subst_ren _ _ (lcons (lcons (r2l r) t⟨r⟩) q⟨r⟩)),
-          (ren_subst _ _ _ (lcons (lcons (r2l r) t⟨r⟩) q⟨r⟩)); auto.
-  all: intros [|[|n]]; cbn; rewrite ?llk_r2l, ?rlk_rup; cbn; rewrite ?rlk_rup; cbn;
-    auto; f_equal; lia.
-Qed.
-
-Lemma lsingle2_ren_ty (M : ty) t q r :
-  M[lsingle2 t q]⟨r⟩ = M⟨rlift (rlift r)⟩[lsingle2 t⟨r⟩ q⟨r⟩].
-Proof.
-  rewrite (subst_ren_ty _ _ (lcons (lcons (r2l r) t⟨r⟩) q⟨r⟩)),
-          (ren_subst_ty _ _ _ (lcons (lcons (r2l r) t⟨r⟩) q⟨r⟩)); auto.
-  all: intros [|[|n]]; cbn; rewrite ?llk_r2l, ?rlk_rup; cbn; rewrite ?rlk_rup; cbn;
-    auto; f_equal; lia.
-Qed.
-
-(** The reducts commute with local renaming (which does not enter the
-    code, [Δ] or the index). *)
-Lemma tup_nth_ren t k r : tup_nth t⟨r⟩ k = (tup_nth t k)⟨r⟩.
-Proof. revert t; induction k; intros []; cbn; auto. Qed.
-Lemma peelL_ren b a r : peelL b⟨r⟩ a⟨r⟩ = (peelL b a)⟨r⟩.
-Proof. destruct b; cbn; auto. symmetry; apply lsingle_ren. Qed.

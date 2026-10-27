@@ -5,7 +5,10 @@
     agree on those send it to the same code: this is what makes [box c]
     related to itself under related global substitutions, as boxed code
     is equal only to itself (06:534, 07a:390). *)
-From DeLaM.Typing Require Export GSubstitution.
+(* not [GSubstitution]: the theorem needs only the recursors' laws
+   ([RecGSubst]), so it builds beside the typing metatheory *)
+From DeLaM.Syntax Require Export LevelEq.
+From DeLaM.Typing Require Export Declarative Lifting RecSpec RecGSubst GRenRec.
 
 Definition static_decl (D : gdecl) : Prop :=
   match D with
@@ -75,14 +78,16 @@ Theorem static_gsubst :
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; try exact I;
+  apply typing_mut; intros.
+  par: (
+    (try exact I;
     try match goal with Hi : lle lM lC |- _ => destruct (lle_C_notM Hi eq_refl) end;
     try match goal with Hi : lle ?i lC |- _ =>
       repeat match goal with IH : lle i lC -> _ |- _ => specialize (IH Hi) end end;
     cbn [gsubst GSubst_ty GSubst_tm]; simpl;
-    try solve [eauto | cbn; intuition (eauto with leq)].
-  (* global variables: level-equivalent images, at level-equivalent local substitutions *)
-  all: match goal with
+    try solve [eauto | cbn; intuition (eauto with leq)]);
+    (* global variables: level-equivalent images, at level-equivalent local substitutions *)
+    (match goal with
        (* a defined global: the same name, and its body, related (M9) *)
        | Ha : gsub_agree _ ?σ ?σ', Hin : in_gctx _ ?x (gdDef _ _ _ _) |- _ =>
            apply pdef_leq; [ exact (Ha _ _ Hin I)
@@ -94,7 +99,7 @@ Proof.
     change (glsubst ?d ?s) with d⦃s⦄;
     (eapply glsubst_leq_entries; [eassumption |]);
     intros ?n ?A ?k HA; match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH end;
-    eassumption.
+    eassumption)).
 Qed.
 
 (** ** Substitutions that differ by identity expansions
@@ -220,10 +225,15 @@ Ltac gst_branch :=
     IH : forall k, k < nbr -> forall σ' τ', gsub_equiv (brG k _) σ' τ' -> _ -> _ |- _ =>
       apply (IH k Hk); [apply gsub_equiv_brG; assumption | exact (gdnf_gbsub _ _ Hτ)]
   end.
+Lemma gst_elimT l1 l2 rb l Δ t σ : (elimT l1 l2 rb l Δ t)⦃σ⦄ = elimT l1 l2 rb⦃σ⦄ l Δ⦃σ⦄ t⦃σ⦄.
+Proof. reflexivity. Qed.
+Lemma gst_elimt l1 l2 rb l Δ T t σ :
+  (elimt l1 l2 rb l Δ T t)⦃σ⦄ = elimt l1 l2 rb⦃σ⦄ l Δ⦃σ⦄ T⦃σ⦄ t⦃σ⦄.
+Proof. reflexivity. Qed.
 Ltac gst_rec :=
   lazymatch goal with
-  | |- (elimT _ _ (mkrb _ _ _) _ _ _)⦃_⦄ = _ => rewrite !gs_elimT
-  | |- (elimt _ _ (mkrb _ _ _) _ _ _ _)⦃_⦄ = _ => rewrite !gs_elimt
+  | |- (elimT _ _ (mkrb _ _ _) _ _ _)⦃_⦄ = _ => rewrite !gst_elimT
+  | |- (elimt _ _ (mkrb _ _ _) _ _ _ _)⦃_⦄ = _ => rewrite !gst_elimt
   end;
   rewrite !mkrb_gsubst; f_equal;
   try (apply mkrb_congr; [gst_scope | gst_scope | gst_branch]); eauto.
@@ -240,39 +250,42 @@ Theorem equiv_gsubst :
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; try exact I.
-  (* the recursors: their scopes *)
-  all: try solve [gst_rec].
-  (* [UΠ]: the body under [guwkn n] *)
-  all: try solve [ cbn [gsubst GSubst_ty GSubst_tm gsubst_ty gsubst_tm]; f_equal;
-                   match goal with IH : forall σ τ, gsub_equiv (gctx_uwk _ _) σ τ -> _ -> _ |- _ =>
-                     apply IH; [apply gsub_equiv_uwkn; assumption | apply gdnf_guwkn; assumption] end ].
-  all: cbn [gsubst GSubst_ty GSubst_tm GSubst_ctx]; simpl; try solve [eauto | f_equal; eauto].
-  (* the meta-functions (M5), and letbox: under the new binding *)
-  all: try solve [ f_equal; eauto; match goal with IH : forall σ τ, gsub_equiv (gext _ _) σ τ -> _ |- _ =>
-         apply IH; [apply gsub_equiv_up; assumption | intros [|n]; cbn; auto using dnfo_goren] end ].
-  (* defined globals (M9): the same global, the body by its hypothesis *)
-  all: try solve [ match goal with
-         | Ha : gsub_equiv _ ?σ ?τ, Hin : in_gctx _ ?x (gdDef _ _ _ _), Hτ : forall n, dnfo (?τ n)
-           |- pdef _ _ _ = _ =>
-             assert (Ed : glsubst d σ = glsubst d τ)
-               by (change (glsubst d σ) with d⦃σ⦄; change (glsubst d τ) with d⦃τ⦄;
-                   eapply glsubst_agree_entries; [eassumption |];
-                   intros ?n ?A ?k HA; match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ =>
-                     eapply IH; eassumption end);
-             rewrite Ed;
-             destruct (Ha _ _ Hin) as [E | [(j & E1 & E2) | (j & ? & _ & _)]];
-               [rewrite E | rewrite E1, E2; cbn [id_obj] | discriminate];
-             f_equal; match goal with IH : forall σ τ, gsub_equiv _ σ τ -> _ |- _ => eapply IH; eassumption end
-         end ].
-  (* context variables *)
-  1: match goal with
-    | Ha : gsub_equiv _ ?σ ?τ, Hc : gctx_var _ ?g |- _ =>
-        destruct (Ha _ _ (gctx_var_in _ _ Hc)) as [E | [(j & E1 & E2) | (j & _ & E1 & E2)]];
-          [now rewrite E | now rewrite E1, E2 | now rewrite E1, E2]
-     end.
-  (* global variables *)
-  1-2: match goal with
+  apply typing_mut; intros.
+  (* each case by the first stage that closes it, under [par:] *)
+  par: (
+    (try exact I);
+    (* the recursors: their scopes *)
+    (try solve [gst_rec]);
+    (* [UΠ]: the body under [guwkn n] *)
+    (try solve [ cbn [gsubst GSubst_ty GSubst_tm gsubst_ty gsubst_tm]; f_equal;
+                 match goal with IH : forall σ τ, gsub_equiv (gctx_uwk _ _) σ τ -> _ -> _ |- _ =>
+                   apply IH; [apply gsub_equiv_uwkn; assumption | apply gdnf_guwkn; assumption] end ]);
+    (cbn [gsubst GSubst_ty GSubst_tm GSubst_ctx]; simpl; try solve [eauto | f_equal; eauto]);
+    (* the meta-functions (M5), and letbox: under the new binding *)
+    (try solve [ f_equal; eauto; match goal with IH : forall σ τ, gsub_equiv (gext _ _) σ τ -> _ |- _ =>
+       apply IH; [apply gsub_equiv_up; assumption | intros [|n]; cbn; auto using dnfo_goren] end ]);
+    (* defined globals (M9): the same global, the body by its hypothesis *)
+    (try solve [ match goal with
+       | Ha : gsub_equiv _ ?σ ?τ, Hin : in_gctx _ ?x (gdDef _ _ _ _), Hτ : forall n, dnfo (?τ n)
+         |- pdef _ _ _ = _ =>
+           assert (Ed : glsubst d σ = glsubst d τ)
+             by (change (glsubst d σ) with d⦃σ⦄; change (glsubst d τ) with d⦃τ⦄;
+                 eapply glsubst_agree_entries; [eassumption |];
+                 intros ?n ?A ?k HA; match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ =>
+                   eapply IH; eassumption end);
+           rewrite Ed;
+           destruct (Ha _ _ Hin) as [E | [(j & E1 & E2) | (j & ? & _ & _)]];
+             [rewrite E | rewrite E1, E2; cbn [id_obj] | discriminate];
+           f_equal; match goal with IH : forall σ τ, gsub_equiv _ σ τ -> _ |- _ => eapply IH; eassumption end
+       end ]);
+    (* context variables *)
+    (try solve [ match goal with
+       | Ha : gsub_equiv _ ?σ ?τ, Hc : gctx_var _ ?g |- _ =>
+           destruct (Ha _ _ (gctx_var_in _ _ Hc)) as [E | [(j & E1 & E2) | (j & _ & E1 & E2)]];
+             [now rewrite E | now rewrite E1, E2 | now rewrite E1, E2]
+       end ]);
+    (* global variables *)
+    (try solve [ match goal with
        | Ha : gsub_equiv _ ?σ ?τ, Hin : in_gctx _ ?x _, Hτ : forall n, dnfo (?τ n) |- _ =>
            assert (Ed : glsubst d σ = glsubst d τ)
              by (change (glsubst d σ) with d⦃σ⦄; change (glsubst d τ) with d⦃τ⦄;
@@ -284,11 +297,10 @@ Proof.
                  apply (proj2 (proj2 (proj2 gsubst_dnf_all))); assumption);
            rewrite Ed; destruct (Ha _ _ Hin) as [E | [(j & E1 & E2) | (j & ? & _ & _)]];
              [ | | discriminate];
-             [now rewrite E | rewrite E1, E2; cbn [id_obj]]
-       end.
-  1: exact (eq_sym (pty_id_obj _ _ Nd)).
-  1: exact (eq_sym (ptm_id_obj _ _ Nd)).
-  (* letbox: under the new binding *)
-  all: f_equal; eauto; match goal with IH : forall σ τ, gsub_equiv (gext _ _) σ τ -> _ |- _ =>
-         apply IH; [apply gsub_equiv_up; assumption | intros [|n]; cbn; auto using dnfo_goren] end.
+             [now rewrite E | rewrite E1, E2; cbn [id_obj];
+                first [exact (eq_sym (pty_id_obj _ _ Nd)) | exact (eq_sym (ptm_id_obj _ _ Nd))]]
+       end ]);
+    (* letbox: under the new binding *)
+    (f_equal; eauto; match goal with IH : forall σ τ, gsub_equiv (gext _ _) σ τ -> _ |- _ =>
+       apply IH; [apply gsub_equiv_up; assumption | intros [|n]; cbn; auto using dnfo_goren] end)).
 Qed.

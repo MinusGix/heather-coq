@@ -83,7 +83,7 @@ Lemma case_inl_eq {G Δ l1 l2 l3 A B M c1 c2 e k1 k2 C D a} :
 Proof.
   intros Hw1 Hw2 Hw3 HA HB HM Hc1 Hc2 Hee Hk1 Hk2 HAC HBD Ha.
   assert (Hinl : [ G ; Δ ⊢g tmInl l1 l2 A B a ≅ tmInl k1 k2 C D a : tySum l1 l2 A B @ lmax l1 l2 ])
-    by (apply eqtm_inl; [exact ge_notV | now apply lequiv_sym | now apply lequiv_sym | exact HAC | exact HBD
+    by (apply eqtm_inl; [exact ge_notV | solve [apply lequiv_sym; assumption] | solve [apply lequiv_sym; assumption] | exact HAC | exact HBD
                         | now apply eqtm_refl]).
   assert (Her : [ G ; Δ ⊢g e ≅ tmInl l1 l2 A B a : tySum l1 l2 A B @ lmax l1 l2 ])
     by (eapply eqtm_trans; [exact Hee | now apply eqtm_sym]).
@@ -105,7 +105,7 @@ Lemma case_inr_eq {G Δ l1 l2 l3 A B M c1 c2 e k1 k2 C D b} :
 Proof.
   intros Hw1 Hw2 Hw3 HA HB HM Hc1 Hc2 Hee Hk1 Hk2 HAC HBD Hb0.
   assert (Hinr : [ G ; Δ ⊢g tmInr l1 l2 A B b ≅ tmInr k1 k2 C D b : tySum l1 l2 A B @ lmax l1 l2 ])
-    by (apply eqtm_inr; [exact ge_notV | now apply lequiv_sym | now apply lequiv_sym | exact HAC | exact HBD
+    by (apply eqtm_inr; [exact ge_notV | solve [apply lequiv_sym; assumption] | solve [apply lequiv_sym; assumption] | exact HAC | exact HBD
                         | now apply eqtm_refl]).
   assert (Her : [ G ; Δ ⊢g e ≅ tmInr l1 l2 A B b : tySum l1 l2 A B @ lmax l1 l2 ])
     by (eapply eqtm_trans; [exact Hee | now apply eqtm_sym]).
@@ -128,8 +128,8 @@ Proof.
   destruct (LR_tm_per _ _ _ _ _ _ _ HRB) as [SyB TrB].
   eapply (LRsum _ _ _ _ _ _ _ l1 l2 l3 l4 A A' B B' RA RB).
   - apply lequiv_refl, lwf_max; assumption.
-  - now apply lequiv_sym.
-  - now apply lequiv_sym.
+  - solve [apply lequiv_sym; assumption].
+  - solve [apply lequiv_sym; assumption].
   - exact Hw1.
   - exact Hw2.
   - apply tyred_refl, (eqty_wf_l ge_typeof EV).
@@ -174,7 +174,7 @@ Proof.
   refine (conj (tmred_refl _ _ _ (eqtm_wf_l ge_typeof Dinl))
            (conj (tmred_refl _ _ _ (eqtm_wf_r ge_typeof Dinl)) (conj (geq_tm_inl H13 H24 EA EB Ea) _))).
   apply sumnf_inl;
-    [ now apply lequiv_refl | now apply lequiv_refl | now apply lequiv_sym | now apply lequiv_sym
+    [ now apply lequiv_refl | now apply lequiv_refl | solve [apply lequiv_sym; assumption] | solve [apply lequiv_sym; assumption]
     | exact (geq_ty_trans EA (geq_ty_sym EA)) | exact EA
     | exact (geq_ty_trans EB (geq_ty_sym EB)) | exact EB
     | exact (LRtm_inv HRA Xa) ].
@@ -197,7 +197,7 @@ Proof.
   refine (conj (tmred_refl _ _ _ (eqtm_wf_l ge_typeof Dinr))
            (conj (tmred_refl _ _ _ (eqtm_wf_r ge_typeof Dinr)) (conj (geq_tm_inr H13 H24 EA EB Eb) _))).
   apply sumnf_inr;
-    [ now apply lequiv_refl | now apply lequiv_refl | now apply lequiv_sym | now apply lequiv_sym
+    [ now apply lequiv_refl | now apply lequiv_refl | solve [apply lequiv_sym; assumption] | solve [apply lequiv_sym; assumption]
     | exact (geq_ty_trans EA (geq_ty_sym EA)) | exact EA
     | exact (geq_ty_trans EB (geq_ty_sym EB)) | exact EB
     | exact (LRtm_inv HRB Xb) ].
@@ -223,8 +223,8 @@ Proof.
   apply tyred_step; [exact HEl | constructor |].
   eapply eqty_trans; [exact HEq|].
   eapply (eqty_trans _ _ _ _ (tyEl (lmax k1 k2) (tmSum k1 k2 s t))).
-  - apply eqty_El; [exact ge_notV | now apply lequiv_sym | apply eqtm_refl, Hc].
-  - apply (eqty_lconv _ _ _ _ _ (lmax l1 l2) (lmax k1 k2)); [|now apply lequiv_sym].
+  - apply eqty_El; [exact ge_notV | solve [apply lequiv_sym; assumption] | apply eqtm_refl, Hc].
+  - apply (eqty_lconv _ _ _ _ _ (lmax l1 l2) (lmax k1 k2)); [|solve [apply lequiv_sym; assumption]].
     apply eqty_sym, eqty_El_sum; [exact ge_compt | exact Wk1 | exact Wk2 | exact Hsk | exact Htk].
 Qed.
 
@@ -263,7 +263,7 @@ Proof.
   intros la lb Hla Hlb. rewrite LRbelow_spec by (rewrite ?lmeasure_suc; lia).
   exists R. eapply LR_red_ty; [exact HR | |]; push_subst.
   - apply tyred_El_sum; [exact Hla | now apply lequiv_refl | now apply lequiv_refl | exact Hsd | exact Htd].
-  - apply tyred_El_sum; [exact Hlb | now apply lequiv_sym | now apply lequiv_sym | exact Hs'd' | exact Ht'd'].
+  - apply tyred_El_sum; [exact Hlb | solve [apply lequiv_sym; assumption] | solve [apply lequiv_sym; assumption] | exact Hs'd' | exact Ht'd'].
 Qed.
 
 (** ** [case] *)
@@ -366,7 +366,7 @@ Proof.
     { apply Mat, (LRtm_of HSdd). eexists _, (tmInl l1 l2 A[d] B[d] a).
       pose proof (wf_inl _ _ _ _ _ _ _ _ ge_notV Hw1 Hw2 HA HB Ha) as Hinl.
       refine (conj Hrw (conj (tmred_refl _ _ _ Hinl) (conj _ _))).
-      - apply geq_tm_sym, geq_tm_inl; [now apply lequiv_sym | now apply lequiv_sym | exact HC | exact HD | exact Eaa].
+      - apply geq_tm_sym, geq_tm_inl; [solve [apply lequiv_sym; assumption] | solve [apply lequiv_sym; assumption] | exact HC | exact HD | exact Eaa].
       - apply sumnf_inl; [exact Hk1 | exact Hk2 | now apply lequiv_refl | now apply lequiv_refl
                          | exact HC | exact EAd | exact HD | exact EBd | exact Raa]. }
     pose proof (LRtm_conv_l Xc XT2) as Xc2.
@@ -401,7 +401,7 @@ Proof.
     { apply Mat, (LRtm_of HSdd). eexists _, (tmInr l1 l2 A[d] B[d] a).
       pose proof (wf_inr _ _ _ _ _ _ _ _ ge_notV Hw1 Hw2 HA HB Ha) as Hinr.
       refine (conj Hrw (conj (tmred_refl _ _ _ Hinr) (conj _ _))).
-      - apply geq_tm_sym, geq_tm_inr; [now apply lequiv_sym | now apply lequiv_sym | exact HC | exact HD | exact Eaa].
+      - apply geq_tm_sym, geq_tm_inr; [solve [apply lequiv_sym; assumption] | solve [apply lequiv_sym; assumption] | exact HC | exact HD | exact Eaa].
       - apply sumnf_inr; [exact Hk1 | exact Hk2 | now apply lequiv_refl | now apply lequiv_refl
                          | exact HC | exact EAd | exact HD | exact EBd | exact Raa]. }
     pose proof (LRtm_conv_l Xc XT2) as Xc2.

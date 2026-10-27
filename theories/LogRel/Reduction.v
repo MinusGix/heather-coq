@@ -36,7 +36,7 @@ Proof.
     destruct Htt as (w & w' & Hw & Hw' & Htt);
     exists w, w'; refine (conj _ (conj _ Htt)).
   all: eapply tmred_trans; [|eassumption].
-  all: eapply tmred_along; [eassumption | eassumption | now apply lequiv_sym].
+  all: eapply tmred_along; [eassumption | eassumption | solve [apply lequiv_sym; assumption]].
 Qed.
 
 (** ** [M] (M18b): [out] of the expansions reduces to [out] of the
@@ -201,12 +201,12 @@ Proof.
     first [exact (ModRel_red_tm HM _ _ _ _ Htt H1 H1') | apply HR; apply HR in Htt].
   - inversion Htt as [? ? w w' Hw Hw' Heq Hnf]; subst.
     econstructor; [| |exact Heq|exact Hnf].
-    + eapply tmred_trans; [|exact Hw]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
-    + eapply tmred_trans; [|exact Hw']. eapply tmred_along; [exact H1' | exact HT' | now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hw]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
+    + eapply tmred_trans; [|exact Hw']. eapply tmred_along; [exact H1' | exact HT' | solve [apply lequiv_sym; assumption]].
   - destruct Htt as (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & HK).
     exists w, w'. refine (conj _ (conj _ (conj Hnf (conj Hnf' (conj Heq HK))))).
-    + eapply tmred_trans; [|exact Hw]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
-    + eapply tmred_trans; [|exact Hw']. eapply (tmred_lconv _ _ _ _ l); [|now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hw]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
+    + eapply tmred_trans; [|exact Hw']. eapply (tmred_lconv _ _ _ _ l); [|solve [apply lequiv_sym; assumption]].
       eapply tmred_conv; [apply ge_typeof | exact H1' |].
       eapply eqty_trans; [apply HT'|]. eapply eqty_lconv.
       * apply eqty_U; [exact ge_notV | rewrite ge_typeof; eapply tyred_ctx, HT | exact Hl2].
@@ -217,95 +217,95 @@ Proof.
     + eapply tmred_trans; [|exact Hν']. eapply tmred_conv; [apply ge_typeof | exact H1' | apply HT'].
   - destruct Htt as (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK).
     exists w, w'. refine (conj _ (conj _ (conj Hnf (conj Hnf' (conj Heq (conj Heq' HK)))))).
-    + eapply tmred_trans; [|exact Hw]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
-    + eapply tmred_trans; [|exact Hw']. eapply tmred_along; [exact H1' | exact HT' | now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hw]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
+    + eapply tmred_trans; [|exact Hw']. eapply tmred_along; [exact H1' | exact HT' | solve [apply lequiv_sym; assumption]].
   - (* CΠ *)
     destruct Htt as (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK).
     exists w, w'. refine (conj _ (conj _ (conj Hnf (conj Hnf' (conj Heq (conj Heq' HK)))))).
-    + eapply tmred_trans; [|exact Hw]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
-    + eapply tmred_trans; [|exact Hw']. eapply tmred_along; [exact H1' | exact HT' | now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hw]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
+    + eapply tmred_trans; [|exact Hw']. eapply tmred_along; [exact H1' | exact HT' | solve [apply lequiv_sym; assumption]].
   - (* TΠ *)
     destruct Htt as (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK).
     exists w, w'. refine (conj _ (conj _ (conj Hnf (conj Hnf' (conj Heq (conj Heq' HK)))))).
-    + eapply tmred_trans; [|exact Hw]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
-    + eapply tmred_trans; [|exact Hw']. eapply tmred_along; [exact H1' | exact HT' | now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hw]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
+    + eapply tmred_trans; [|exact Hw']. eapply tmred_along; [exact H1' | exact HT' | solve [apply lequiv_sym; assumption]].
   - (* Σ *)
     destruct Htt as (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK).
     exists w, w'. refine (conj _ (conj _ (conj Hnf (conj Hnf' (conj Heq (conj Heq' HK)))))).
-    + eapply tmred_trans; [|exact Hw]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
-    + eapply tmred_trans; [|exact Hw']. eapply tmred_along; [exact H1' | exact HT' | now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hw]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
+    + eapply tmred_trans; [|exact Hw']. eapply tmred_along; [exact H1' | exact HT' | solve [apply lequiv_sym; assumption]].
   - (* Unit *)
     destruct Htt as (w & w' & Hr & Hr' & Hn & Hn'). exists w, w'.
     refine (conj _ (conj _ (conj Hn Hn'))).
-    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
     + eapply tmred_trans; [|exact Hr']. apply (unit_tmred_conv Hl2).
-      eapply tmred_along; [exact H1' | exact HT' | eapply lequiv_trans; [exact Hl2 | now apply lequiv_sym]].
+      eapply tmred_along; [exact H1' | exact HT' | eapply lequiv_trans; [exact Hl2 | solve [apply lequiv_sym; assumption]]].
   - (* sEq: the right side at the left's type *)
     destruct Htt as (w & w' & Hr & Hr' & Hn & Hn'). exists w, w'.
     refine (conj _ (conj _ (conj Hn Hn'))).
-    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
-    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
+    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|solve [apply lequiv_sym; assumption]].
       eapply tmred_conv; [apply ge_typeof | exact H1' |].
       eapply eqty_trans; [apply HT'|]. eapply eqty_lconv; [|exact Hl].
       apply eqty_sym, geq_ty_sound, geq_ty_seq; auto using lequiv_sym.
   - (* sEmpty *)
     destruct Htt as (w & w' & Hr & Hr' & Hn & Hn'). exists w, w'.
     refine (conj _ (conj _ (conj Hn Hn'))).
-    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
     + eapply tmred_trans; [|exact Hr']. apply (sempty_tmred_conv Hl2).
-      eapply tmred_along; [exact H1' | exact HT' | eapply lequiv_trans; [exact Hl2 | now apply lequiv_sym]].
+      eapply tmred_along; [exact H1' | exact HT' | eapply lequiv_trans; [exact Hl2 | solve [apply lequiv_sym; assumption]]].
   - (* Id: the right side at the left's type, as for sEq *)
     destruct Htt as (w & w' & Hr & Hr' & Heq & Hn). exists w, w'.
     refine (conj _ (conj _ (conj Heq Hn))).
-    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
-    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
+    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|solve [apply lequiv_sym; assumption]].
       eapply tmred_conv; [apply ge_typeof | exact H1' |].
       eapply eqty_trans; [apply HT'|]. eapply eqty_lconv; [|exact Hl].
       apply eqty_sym, geq_ty_sound, geq_ty_id; auto using lequiv_sym.
   - (* Empty *)
     destruct Htt as (w & w' & Hr & Hr' & Hn). exists w, w'.
     refine (conj _ (conj _ Hn)).
-    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
     + eapply tmred_trans; [|exact Hr']. apply (empty_tmred_conv Hl2).
-      eapply tmred_along; [exact H1' | exact HT' | eapply lequiv_trans; [exact Hl2 | now apply lequiv_sym]].
+      eapply tmred_along; [exact H1' | exact HT' | eapply lequiv_trans; [exact Hl2 | solve [apply lequiv_sym; assumption]]].
   - (* +: the right side at the left's type, as for Id *)
     destruct Htt as (w & w' & Hr & Hr' & Heq & Hn). exists w, w'.
     refine (conj _ (conj _ (conj Heq Hn))).
-    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
-    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
+    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|solve [apply lequiv_sym; assumption]].
       eapply tmred_conv; [apply ge_typeof | exact H1' |].
       eapply eqty_trans; [apply HT'|]. eapply eqty_lconv; [|exact Hl].
       apply eqty_sym, geq_ty_sound, geq_ty_sum; auto using lequiv_sym.
   - (* W: the right side at the left's type, as for + *)
     destruct (WRel_inv Htt) as (w & w' & Hr & Hr' & Heq & Hn).
     econstructor; [| | exact Heq | exact Hn].
-    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
-    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
+    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|solve [apply lequiv_sym; assumption]].
       eapply tmred_conv; [apply ge_typeof | exact H1' |].
       eapply eqty_trans; [apply HT'|]. eapply eqty_lconv; [|exact Hl].
       apply eqty_sym, geq_ty_sound, geq_ty_W; auto using lequiv_sym.
   - (* Wf: as W *)
     destruct (WfRel_inv Htt) as (w & w' & Hr & Hr' & Heq & Hn).
     econstructor; [| | exact Heq | exact Hn].
-    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
-    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
+    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|solve [apply lequiv_sym; assumption]].
       eapply tmred_conv; [apply ge_typeof | exact H1' |].
       eapply eqty_trans; [apply HT'|]. eapply eqty_lconv; [|exact Hl].
       apply eqty_sym, geq_ty_sound, geq_ty_wf; auto using lequiv_sym.
   - (* ∥·∥: each side alone, the right one at the left's type *)
     destruct Htt as [(w & Hr & Hn) (w' & Hr' & Hn')]. split.
     + exists w. split; [| exact Hn].
-      eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
+      eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
     + exists w'. split; [| exact Hn'].
-      eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|now apply lequiv_sym].
+      eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|solve [apply lequiv_sym; assumption]].
       eapply tmred_conv; [apply ge_typeof | exact H1' |].
       eapply eqty_trans; [apply HT'|]. eapply eqty_lconv; [|exact Hl].
       apply eqty_sym, geq_ty_sound, geq_ty_sq; auto using lequiv_sym.
   - (* IWf: as W *)
     destruct (IWfRel_inv Htt) as (w & w' & Hr & Hr' & Heq & Hn).
     econstructor; [| | exact Heq | exact Hn].
-    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
-    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|now apply lequiv_sym].
+    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
+    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|solve [apply lequiv_sym; assumption]].
       eapply tmred_conv; [apply ge_typeof | exact H1' |].
       eapply eqty_trans; [apply HT'|]. eapply eqty_lconv; [|exact Hl].
       apply eqty_sym, geq_ty_sound, geq_ty_iwf; auto using lequiv_sym.
@@ -313,8 +313,8 @@ Proof.
     pose proof (MSide_of_LR Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HmX HmA HmB HmC HmXX HmAA HmBB HmCC
                   midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon) as HM.
     intros k. refine (MRn_red k (ms_geq HM) (Htt k) _ _).
-    + eapply tmred_along; [exact H1 | exact HT | now apply lequiv_sym].
-    + eapply tmred_along; [exact H1' | exact HT' | now apply lequiv_sym].
+    + eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
+    + eapply tmred_along; [exact H1' | exact HT' | solve [apply lequiv_sym; assumption]].
 Qed.
 
 End Reduction.

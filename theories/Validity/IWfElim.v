@@ -233,7 +233,8 @@ Lemma ktml_iwfbody {G Δ} (ρ : kwk G Δ) l li l' X A N Ot C M c a cs :
   iwfbody l li l' (kty ρ X) (kty ρ A) (ktml ρ N) (ktml ρ Ot) (ktmll ρ C) (ktyll ρ M) (ktm3 ρ c) (ktm ρ a) (ktm ρ cs).
 Proof using .
   pose proof (ktm_iwfIH ρ l li l' X A N Ot C M c a cs) as H. unfold iwfIH in H. rewrite ktm_lam in H.
-  injection H as _ H. exact H.
+  (* the body, by projection: [injection] states every component's equation *)
+  exact (f_equal (fun t => match t with lam _ _ _ b => b | _ => t end) H).
 Qed.
 
 Lemma ktml_iwfdnth {G Δ} (ρ : kwk G Δ) l li X A N Ot C a cs :
@@ -241,9 +242,16 @@ Lemma ktml_iwfdnth {G Δ} (ρ : kwk G Δ) l li X A N Ot C a cs :
   iwfdnth l li (kty ρ X) (kty ρ A) (ktml ρ N) (ktml ρ Ot) (ktmll ρ C) (ktm ρ a) (ktm ρ cs).
 Proof using .
   pose proof (ktml_iwfbody ρ l li lzero X A N Ot C tyNat (var 0) a cs) as H.
-  unfold ktml in H. rewrite gwa_elimIWf in H. cbn [ren_tm] in H. injection H; intros.
-  match goal with Hd : _ = tmDNth _ _ _ _ _ |- _ => exact Hd end.
+  unfold ktml in H. rewrite gwa_elimIWf in H. cbn [ren_tm] in H.
+  exact (f_equal (fun t => match t with tmElimIWf _ _ _ _ _ _ _ _ _ _ _ s => s | _ => t end) H).
 Qed.
+
+(** [sup_i]'s injectivity, stated once: [injection] on a [sup_i] of
+    substituted components elaborates each component's equation (seconds). *)
+Lemma supi_inj {l li X A N Ot C a cs l' li' X' A' N' Ot' C' a' cs'} :
+  tmSupi l li X A N Ot C a cs = tmSupi l' li' X' A' N' Ot' C' a' cs' ->
+  l = l' /\ li = li' /\ X = X' /\ A = A' /\ N = N' /\ Ot = Ot' /\ C = C' /\ a = a' /\ cs = cs'.
+Proof using . intros Hs; injection Hs; intros; subst; repeat split. Qed.
 
 Lemma ktyl_iwfcod {G Δ} (ρ : kwk G Δ) l li (X A : ty) (N Ot C : tm) (M : ty) (a cs : tm) :
   ktyl ρ (iwfcod l li X A N Ot C M a cs) =
@@ -1353,7 +1361,7 @@ Proof using EL H13 H24 HS Hi3 Hwl Hwl' Hwli VA VC VL VM VN VNt VO VX Vc Vcs Vih 
     !iwfstepty_llift3, !IWf_E6 in Xc by assumption.
   (* the canonical [sup_i], related to the trees at the scrutinee's index *)
   pose proof (LRtm_geq Hox) as EOx.
-  destruct (elimIWf_WLR Hγ (SubRel_refl_l He) Hox) as (ix0 & dm0 & HWox & _ & _).
+  pose proof (elimIWf_WLR Hγ (SubRel_refl_l He) Hox) as (ix0 & dm0 & HWox & _ & _).
   destruct (escape_ty _ _ _ _ _ _ _ _ HWox) as (_ & _ & ETOx). pose proof (geq_ty_sound ETOx) as DTOx.
   pose proof HE1 as (Hk & Hki & _ & HXX1 & HAA1 & HNN1 & HOO1 & HCC1 & _).
   pose proof HE1' as (Hk' & Hki' & _ & HXX1' & HAA1' & HNN1' & HOO1' & HCC1' & _).
@@ -1432,7 +1440,7 @@ Proof using EL H13 H24 HS Hi3 Hwl Hwl' Hwli VA VC VL VM VN VNt VO VX Vc Vcs Vih 
   pose proof (wf_tm_nf (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ Hw'))) as Nw'.
   cbn in Nw, Nw'. destruct Nw as (_ & _ & _ & _ & _ & Na & Ncs). destruct Nw' as (_ & _ & _ & _ & _ & Na' & Ncs').
   destruct (IWfNf_sup_inv Nn) as (k2 & ki2 & X2 & A2 & N2 & O2 & C2 & a2 & cs2 & Heq & HE1 & HE1' & Ha & Hix & Hsp).
-  injection Heq; intros; subst.
+  destruct (supi_inj Heq) as (? & ? & ? & ? & ? & ? & ? & ? & ?); subst.
   destruct (elimIWf_step Hγ He HX HA Hxx HE1 HE1' Ha Hix Hsp IH Na Na' Ncs Ncs') as (Xs & Lred & Rred).
   eapply elimIWf_back; [exact Hγ | exact He | exact Hxx | exact HX | exact HA | exact Hss | exact Hw | exact Hw'
                        | apply whnf_supi | apply whnf_supi |].
@@ -1539,7 +1547,7 @@ Proof using EL H13 H24 HS Hi3 Hwl Hwl' Hwli VA VC VL VM VN VNt VO VX Vc Vcs Vih 
   { eapply tmred_whnf_det; [exact Hw' | apply tmred_refl, (tmred_wf _ _ _ _ _ _ _ Hw') | exact (IWfNf_whnf_r Hn)
                            | apply whnf_supi]. }
   destruct (IWfNf_sup_inv Hn) as (k2 & ki2 & X2 & A2 & N2 & O2 & C2 & a2 & cs2 & Heq & HE1 & HE1' & Ha & Hix & Hsp).
-  injection Heq; intros; subst k2 ki2 X2 A2 N2 O2 C2 a2 cs2.
+  destruct (supi_inj Heq) as (? & ? & ? & ? & ? & ? & ? & ? & ?); subst k2 ki2 X2 A2 N2 O2 C2 a2 cs2.
   pose proof (fun ρ => proj2 (proj2 elimIWf_core_all) _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (Hsp ρ)) as IH.
   pose proof (wf_tm_nf (tmred_wf _ _ _ _ _ _ _ Hw)) as Nw. pose proof (wf_tm_nf (tmred_wf _ _ _ _ _ _ _ Hw')) as Nw'.
   cbn in Nw, Nw'. destruct Nw as (_ & _ & _ & _ & _ & Na & Ncs). destruct Nw' as (_ & _ & _ & _ & _ & Na' & Ncs').

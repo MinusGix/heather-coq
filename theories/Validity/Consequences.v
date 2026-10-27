@@ -5,7 +5,7 @@
     judgment, which the fundamental theorems give ([Reducible]).  Closed
     canonicity also needs a global context without type or term
     bindings, since global variables are closed neutrals. *)
-From DeLaM.Validity Require Export Fundamental.
+From DeLaM.Validity Require Export Basic.
 
 (** The head of a type, neutral types sharing one.  The heads are named,
     so a match on a head ([canon_head]) says which former each case is. *)

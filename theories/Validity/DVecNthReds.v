@@ -3,9 +3,11 @@
     Heather's design (its §3) says [dnth(3; F; cs; inr (inl ⟨⟩))]
     reduces to [fst (snd cs)] for a neutral [cs]: the projection never
     looks at the tuple. Checked here on that instance, for any [cs] in
-    normal form, by stepping the reduction. It needs only the syntax
-    ([WfNthReds]' [teq]), so it builds beside the metatheory; [DNthReds]
-    reuses its [rstep] and [tpush] for [dnth]'s states in general. *)
+    normal form, by stepping the reduction and computing each state's
+    normal form ([tnorm]). It needs only the syntax, so it builds beside
+    the metatheory; [DNthReds] reuses its [rstep] and [tpush] for
+    [dnth]'s states in general. *)
+From DeLaM.Syntax Require Import TemplateEq.
 From DeLaM.Validity Require Import WfNthReds.
 
 (** One reduction step, at the redex the congruences reach. *)
@@ -19,6 +21,10 @@ Ltac tpush := repeat (match goal with
   | |- context [@subst tm _ ?t _] => let h := head_of t in push_subst_at h ltac:(fun L => rewrite L)
   end); pw.
 
+(** The next state to its normal form, by computation ([TemplateEq]):
+    [F] and [cs] are its atoms. *)
+Ltac tnorm := graw; lazymatch goal with |- Relation_Operators.clos_refl_trans_1n _ _ ?S _ => gnorm S end.
+
 Section DNthReds.
 Context (l : lvl) (F : ty) (NF : nfty F) (cs : tm) (Ncs : nftm cs).
 
@@ -29,18 +35,7 @@ Lemma dnth_reds_example : exists A B A' B',
        (tmFst l l A B (tmSnd l l A' B' cs)).
 Proof.
   do 4 eexists. unfold tmDNth.
-  rstep. unfold dnthStep at 1. tpush.
-  rstep. tpush.
-  rstep. tpush.
-  rstep. tpush.
-  rstep. tpush.
-  rstep. unfold dnthStep at 1. tpush.
-  rstep. tpush.
-  rstep. tpush.
-  rstep. tpush.
-  rstep. tpush.
-  apply reds_eq. lazymatch goal with |- tmFst _ _ _ _ (tmSnd _ _ _ _ ?z) = _ =>
-    assert (Ez : z = cs) by (repeat change (ren_tm ?x ?r) with x⟨r⟩; teq); rewrite Ez end.
-  reflexivity.
+  do 10 (rstep; tnorm).
+  apply reds_eq. reflexivity.
 Qed.
 End DNthReds.

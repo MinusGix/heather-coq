@@ -778,7 +778,7 @@ Proof using Hi Hv.
   assert (Hf2 : [ G ; Γ ,, tyFin n' @ lzero ⊢[ i ] f' : tyU l @ lsuc l ]).
   { eapply (stab_tm Hi (eqty_fin _ _ _ _ _ Hv Hnn)); [apply lequiv_refl; exact I | | exact Hf'].
     apply (ext_wf Hi); [now apply wft_fin | exact I]. }
-  apply (conv_U Hi Hv (l := l')); [|now apply lequiv_sym].
+  apply (conv_U Hi Hv (l := l')); [|solve [apply lequiv_sym; assumption]].
   apply wf_code_dvec; eauto using lequiv_wf_r. exact (conv_U Hi Hv Hf2 Hl).
 Qed.
 

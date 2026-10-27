@@ -234,7 +234,7 @@ Proof.
   intros HF Hm. destruct (NatRel_escape Hm) as (_ & Hm' & Hmm).
   destruct (DFam_escape HF (LR_fin_nat HΔ Hm)) as (HF0 & HF0' & HFF).
   refine (conj HF0 (conj _ HFF)).
-  apply (wft_lconv _ _ _ _ l' l); [|now apply lequiv_sym].
+  apply (wft_lconv _ _ _ _ l' l); [|solve [apply lequiv_sym; assumption]].
   eapply (stab_ty ge_typeof); [| apply (lequiv_refl _ lzero I) | |exact HF0'].
   - apply eqty_fin; [exact ge_notV | exact (geq_tm_sound Hmm)].
   - apply ext_wf_g; [apply wft_fin; [exact ge_notV | exact Hm'] | exact I].
@@ -275,8 +275,8 @@ Proof.
   eexists. eapply (LRsig _ _ _ _ _ _ _ l l l' l' (dvecHd k F) (dvecTl l k F) (dvecHd k' F') (dvecTl l' k' F')
                      domR codR); [split | | | apply releq_refl].
   - apply lequiv_sym, lmax_idem, Hw.
-  - now apply lequiv_sym.
-  - now apply lequiv_sym.
+  - solve [apply lequiv_sym; assumption].
+  - solve [apply lequiv_sym; assumption].
   - exact Hw.
   - exact Hw.
   - exact HT.

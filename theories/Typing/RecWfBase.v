@@ -413,12 +413,17 @@ Ltac wty_hyp :=
       match goal with H : [ _ ; _ ⊢[ _ ] t ≅ t' : _ @ _ ] |- _ => eapply eqtm_retype_eq; [exact H | cbn; reflexivity] end
   end.
 
+(** By [cbv], not [cbn]: the scopes' terms are closed up to global
+    variables, so every operation computes and no raw fixpoint is left;
+    [cbn]'s refolding cost a third of the branch tables (docs/gotchas.md). *)
 Ltac wnorm :=
-  cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
+  try unfold tmNth, nthMot, nthBase, nthStep;
+  cbv beta iota zeta delta [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
        rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add
        tmNth nthMot nthBase nthStep].
 Ltac wnorm_in H :=
-  cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
+  try unfold tmNth, nthMot, nthBase, nthStep in H;
+  cbv beta iota zeta delta [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
        rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add
        tmNth nthMot nthBase nthStep] in H.
 

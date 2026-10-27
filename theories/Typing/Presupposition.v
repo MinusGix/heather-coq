@@ -81,7 +81,7 @@ Lemma pre_CTrm_r {G Γ Δ Δ' T' l l'} :
 Proof.
   intros HΓ HΔ' Hid HT' Hl. apply wft_CTrm; eauto using lequiv_wf_r.
   pose proof (wf_ty_subst (i := lD) eq_refl HT' Hid) as X. rewrite nf_id_ty in X by exact (wf_ty_nf HT').
-  eapply wft_lconv; [exact X | now apply lequiv_sym].
+  eapply wft_lconv; [exact X | solve [apply lequiv_sym; assumption]].
 Qed.
 
 Lemma pre_letbox_ty {G Γ l1 l2 A M M' t t0} :
@@ -112,7 +112,7 @@ Proof.
   eapply (conv_tm' (i := lM) eq_refl (T' := M'[lsingle t0])).
   - apply wf_letboxT; eauto using lequiv_wf_r.
     eapply (conv_tm' (i := lM) eq_refl); [exact Ht0 | now apply eqty_sym].
-  - eapply eqty_lconv; [exact (pre_letbox_ty HMM HM' Htt Ht Ht0) | now apply lequiv_sym].
+  - eapply eqty_lconv; [exact (pre_letbox_ty HMM HM' Htt Ht Ht0) | solve [apply lequiv_sym; assumption]].
 Qed.
 
 Lemma pre_letboxt_r {G Γ l1 l2 l3 l4 Δ Δ' T T' M M' t2 t t0} :
@@ -134,7 +134,7 @@ Proof.
   eapply (conv_tm' (i := lM) eq_refl (T' := M'[lsingle t0])).
   - apply wf_letboxt; eauto using lequiv_wf_r.
     eapply (conv_tm' (i := lM) eq_refl); [exact Ht0 | now apply eqty_sym].
-  - eapply eqty_lconv; [exact (pre_letbox_ty HMM HM' Htt Ht Ht0) | now apply lequiv_sym].
+  - eapply eqty_lconv; [exact (pre_letbox_ty HMM HM' Htt Ht Ht0) | solve [apply lequiv_sym; assumption]].
 Qed.
 
 (** letbox β: the contractum is typed by the global substitution lemma. *)
@@ -214,7 +214,7 @@ Proof.
   intros HM HM' H1 H2 H3 HΔ' HΔΔ HMT' HMt' Hc Hb Ht'.
   eapply wf_conv; [| exact HM]. eapply wf_lconv; [| exact H1].
   apply wf_elimT; eauto using lequiv_wf_r.
-  - eapply wft_lconv; [exact HM' | now apply lequiv_sym].
+  - eapply wft_lconv; [exact HM' | solve [apply lequiv_sym; assumption]].
   - eapply wf_conv; [exact Ht' |]. apply eqty_sym, eqty_CTyp; [exact (ctx_of_tm_M Ht') | exact HΔΔ | exact H3].
 Qed.
 
@@ -235,7 +235,7 @@ Proof.
   intros HM HM' H1 H2 H3 HΔ HΔ' HΔΔ HT HT' HTT HMT' HMt' Hc Hb Ht'.
   eapply wf_conv; [| exact HM]. eapply wf_lconv; [| exact H2].
   apply wf_elimt; eauto using lequiv_wf_r.
-  - eapply wft_lconv; [exact HM' | now apply lequiv_sym].
+  - eapply wft_lconv; [exact HM' | solve [apply lequiv_sym; assumption]].
   - eapply wf_conv; [exact Ht' |]. apply eqty_sym, eqty_CTrm; [exact (ctx_of_tm_M Ht') | assumption ..].
 Qed.
 
@@ -279,74 +279,76 @@ Theorem presupposition :
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> typeof i = i ->
      [ G ; Γ ⊢[ i ] ] /\ [ G ; Γ' ⊢[ i ] ] /\ [ G ; Γ' ⊢[ i ] lshift 0 : Γ ]).
 Proof.
-  apply typing_mut; intros; try exact I;
+  apply typing_mut; intros.
+  par: (
+    (try exact I;
     match goal with Hi : typeof ?i = ?i |- _ => rewrite ?Hi in * end;
     repeat match goal with IH : ?i = ?i -> _ |- _ => specialize (IH eq_refl) end;
     repeat match goal with IH : typeof ?j = ?j -> _ |- _ => specialize (IH eq_refl) end;
     repeat match goal with H : _ /\ _ |- _ => destruct H end;
-    try match goal with c : compt ?i |- _ => pose proof (compt_notV _ c) end.
-  all: repeat match goal with |- _ /\ _ => split end.
-  (* depth 3 here, 4 only for the few goals left at the end: failing
+    try match goal with c : compt ?i |- _ => pose proof (compt_notV _ c) end);
+    (repeat match goal with |- _ /\ _ => split end);
+    (* depth 3 here, 4 only for the few goals left at the end: failing
      depth-4 searches on the goals the passes below close cost most *)
-  all: try solve [eauto 3 with presup].
-  (* level and type conversions *)
-  all: try solve [eapply wft_lconv; eassumption].
-  all: try solve [eapply wf_lconv; eassumption].
-  all: try solve [eapply conv_tm'; eassumption].
-  (* contexts *)
-  all: try solve [apply wfc_nil; auto | apply wfc_var; auto].
-  all: try solve [eapply lsub_wf_id; eauto using wfc_nil, wfc_var].
-  all: try solve [eapply ext_wf; eauto].
-  all: try solve [match goal with
+    (try solve [eauto 3 with presup]);
+    (* level and type conversions *)
+    (try solve [eapply wft_lconv; eassumption]);
+    (try solve [eapply wf_lconv; eassumption]);
+    (try solve [eapply conv_tm'; eassumption]);
+    (* contexts *)
+    (try solve [apply wfc_nil; auto | apply wfc_var; auto]);
+    (try solve [eapply lsub_wf_id; eauto using wfc_nil, wfc_var]);
+    (try solve [eapply ext_wf; eauto]);
+    (try solve [match goal with
                   | Hid : lsub_wf _ _ ?Γ' _ ?Γ, HAA : eq_ty _ _ ?Γ ?A ?A' ?l, HA : wf_ty _ _ ?Γ ?A ?l,
                     HA' : wf_ty _ _ ?Γ ?A' ?l, Hl : lequiv _ ?l ?l', Hi : typeof ?i = ?i
                     |- _ => first [exact (ctx_conv_ext1 Hi Hid HA HAA HA' Hl)
                                  | exact (ctx_conv_ext2 Hi Hid HA HAA HA' Hl)]
-                  end].
-  (* global variables *)
-  all: try solve [first [eapply wft_gvar | eapply wf_gvar | eapply wf_gdef]; eauto;
-                  match goal with Hi : typeof ?i = ?i |- _ => rewrite Hi end; eauto].
-  all: try solve [eapply pre_gvar_ty; eauto using typeof_self_notV;
-                  eapply lsub_wf_prem; eauto using typeof_self_notV].
-  all: try solve [eapply pre_gdef_ty; eauto using typeof_self_notV;
-                  eapply lsub_wf_prem; eauto using typeof_self_notV].
-  all: try solve [eapply pre_gvar_r; eauto using typeof_self_notV, lsub_wf_prem].
-  (* defined globals (M9): the other instance, and δ's reduct *)
-  all: try solve [eapply pre_gdef_r; eauto using typeof_self_notV, lsub_wf_prem].
-  all: try solve [eapply wf_gdef; eauto using compt_lle_C;
-                  match goal with Hi : typeof ?i = ?i |- _ => rewrite Hi end; eauto].
-  all: try solve [eapply wf_tm_subst_g; [eassumption | eapply lsub_wf_prem; eauto using typeof_self_notV]].
-  (* contextual types, box, letbox *)
-  all: try solve [eapply wft_CTyp; eauto using lequiv_wf_l, lequiv_wf_r, ctx_of_tm_M, ctx_of_eqtm_M].
-  all: try solve [eapply wft_CTrm; eauto using lequiv_wf_l, lequiv_wf_r, ctx_of_tm_M, ctx_of_eqtm_M].
-  all: try solve [eapply pre_CTrm_r; eauto].
-  all: try solve [eapply (wf_ty_single (i := lM) eq_refl); [eassumption|];
-                  first [eapply wf_boxT | eapply wf_boxt]; eauto using ctx_of_ext, ctx_of_ty_M].
-  all: try solve [first [eapply wf_boxT | eapply wf_boxt]; eauto].
-  all: try solve [first [eapply wf_letboxT | eapply wf_letboxt]; eauto using lequiv_wf_l, lequiv_wf_r;
-                  first [eapply wf_boxT | eapply wf_boxt]; eauto using ctx_of_ext, ctx_of_ty_M].
-  all: try solve [eapply pre_letboxT_r; eauto].
-  all: try solve [match goal with |- wf_tm _ _ _ (letboxt _ _ ?D' ?T' _ _ _) _ _ =>
+                  end]);
+    (* global variables *)
+    (try solve [first [eapply wft_gvar | eapply wf_gvar | eapply wf_gdef]; eauto;
+                  match goal with Hi : typeof ?i = ?i |- _ => rewrite Hi end; eauto]);
+    (try solve [eapply pre_gvar_ty; eauto using typeof_self_notV;
+                  eapply lsub_wf_prem; eauto using typeof_self_notV]);
+    (try solve [eapply pre_gdef_ty; eauto using typeof_self_notV;
+                  eapply lsub_wf_prem; eauto using typeof_self_notV]);
+    (try solve [eapply pre_gvar_r; eauto using typeof_self_notV, lsub_wf_prem]);
+    (* defined globals (M9): the other instance, and δ's reduct *)
+    (try solve [eapply pre_gdef_r; eauto using typeof_self_notV, lsub_wf_prem]);
+    (try solve [eapply wf_gdef; eauto using compt_lle_C;
+                  match goal with Hi : typeof ?i = ?i |- _ => rewrite Hi end; eauto]);
+    (try solve [eapply wf_tm_subst_g; [eassumption | eapply lsub_wf_prem; eauto using typeof_self_notV]]);
+    (* contextual types, box, letbox *)
+    (try solve [eapply wft_CTyp; eauto using lequiv_wf_l, lequiv_wf_r, ctx_of_tm_M, ctx_of_eqtm_M]);
+    (try solve [eapply wft_CTrm; eauto using lequiv_wf_l, lequiv_wf_r, ctx_of_tm_M, ctx_of_eqtm_M]);
+    (try solve [eapply pre_CTrm_r; eauto]);
+    (try solve [eapply (wf_ty_single (i := lM) eq_refl); [eassumption|];
+                  first [eapply wf_boxT | eapply wf_boxt]; eauto using ctx_of_ext, ctx_of_ty_M]);
+    (try solve [first [eapply wf_boxT | eapply wf_boxt]; eauto]);
+    (try solve [first [eapply wf_letboxT | eapply wf_letboxt]; eauto using lequiv_wf_l, lequiv_wf_r;
+                  first [eapply wf_boxT | eapply wf_boxt]; eauto using ctx_of_ext, ctx_of_ty_M]);
+    (try solve [eapply pre_letboxT_r; eauto]);
+    (try solve [match goal with |- wf_tm _ _ _ (letboxt _ _ ?D' ?T' _ _ _) _ _ =>
                     match goal with Hc : eq_ctx _ _ ?D ?D', HTT : eq_ty _ _ ?D ?T ?T' _ |- _ =>
-                      eapply (pre_letboxt_r (Δ := D) (T := T)); eauto end end].
-  all: try solve [eapply pre_letboxT_beta_r; eauto].
-  all: try solve [eapply pre_letboxt_beta_r; eauto].
-  (* the recursors *)
-  all: try solve [first [eapply wf_elimT | eapply wf_elimt]; eauto using lequiv_wf_l;
+                      eapply (pre_letboxt_r (Δ := D) (T := T)); eauto end end]);
+    (try solve [eapply pre_letboxT_beta_r; eauto]);
+    (try solve [eapply pre_letboxt_beta_r; eauto]);
+    (* the recursors *)
+    (try solve [first [eapply wf_elimT | eapply wf_elimt]; eauto using lequiv_wf_l;
                   (* the branches, from the branch equations *)
                   intros ?k ?Hk; match goal with IH : forall k, k < nbr -> _ = _ -> _ /\ _ |- _ =>
-                    exact (proj1 (IH k Hk eq_refl)) end].
-  all: try solve [first [eapply pre_elimT_r | eapply pre_elimt_r]; eassumption].
-  (* universe polymorphism (UInst) *)
-  all: try solve [first [ solve [eapply wft_upi; eauto using lequiv_wf_l]
+                    exact (proj1 (IH k Hk eq_refl)) end]);
+    (try solve [first [eapply pre_elimT_r | eapply pre_elimt_r]; eassumption]);
+    (* universe polymorphism (UInst) *)
+    (try solve [first [ solve [eapply wft_upi; eauto using lequiv_wf_l]
                         | solve [eapply pre_upi_r; eauto] | solve [eapply pre_ulam_r; eauto]
                         | solve [eapply wf_ulam; eauto using lequiv_wf_l]
                         | solve [eapply wf_uapp; eauto using lequivs_lwf_l] | solve [eapply pre_uapp_r; eauto]
                         | solve [eapply pre_ubeta_l; eauto] | solve [eapply pre_ubeta_r; eauto]
-                        | solve [eapply pre_ueta_l; eauto] ]].
-  all: try solve [eapply pre_uapp_l; eauto using lequivs_lwf_l; eapply wf_ulam; eassumption].
-  (* meta-functions (MInst) *)
-  all: try solve [first
+                        | solve [eapply pre_ueta_l; eauto] ]]);
+    (try solve [eapply pre_uapp_l; eauto using lequivs_lwf_l; eapply wf_ulam; eassumption]);
+    (* meta-functions (MInst) *)
+    (try solve [first
          [ solve [eapply wft_cpi; eauto using lequiv_wf_l] | solve [eapply wft_tpi; eauto using lequiv_wf_l]
          | solve [eapply wf_clam; eauto using lequiv_wf_l] | solve [eapply wf_tlam; eauto using lequiv_wf_l]
          | solve [eapply wf_capp; eauto] | solve [eapply wf_tapp; eauto]
@@ -356,11 +358,11 @@ Proof.
          | solve [eapply pre_cbeta_l; eauto] | solve [eapply pre_tbeta_l; eauto]
          | solve [eapply pre_ceta_l; eauto] | solve [eapply pre_teta_l; eauto]
          | solve [eapply inst_c_ty; eauto] | solve [eapply inst_c_tm; eauto]
-         | solve [eapply inst_t_ty; eauto] | solve [eapply inst_t_tm; eauto] ]].
-  (* right-hand sides of congruences *)
+         | solve [eapply inst_t_ty; eauto] | solve [eapply inst_t_tm; eauto] ]]);
+    (* right-hand sides of congruences *)
   (* the rules' right-hand-side lemmas first: a failing [eauto 4] costs
      more than all of them *)
-  all: try solve [first [ eapply pre_pi_r; eassumption
+    (try solve [first [ eapply pre_pi_r; eassumption
                         | eapply pre_El_r; eassumption
                         | eapply pre_codepi_r; eassumption
                         | eapply pre_natrec_r; eassumption
@@ -414,9 +416,9 @@ Proof.
                         | eapply pre_elimSq_r; eassumption
                         | eapply pre_elimSq_sq_rhs; eassumption
                         | eapply pre_codedvec_r; eassumption
-                        | eapply pre_codeiwf_r; eassumption ]].
-  (* indexed well-founded trees (M17b): the signature's premises bundled *)
-  all: try solve [first
+                        | eapply pre_codeiwf_r; eassumption ]]);
+    (* indexed well-founded trees (M17b): the signature's premises bundled *)
+    (try solve [first
          [ eapply pre_iwf_r; iwf_bundle
          | eapply pre_supi_ty; iwf_bundle
          | eapply pre_supi_r; iwf_bundle
@@ -426,9 +428,9 @@ Proof.
          | match goal with Ht : wf_tm _ _ _ ?t (tyIWf _ _ _ _ _ _ _ _) _ |- wf_ty _ _ _ (_[lsingle2 _ ?t]) _ =>
              (eapply pre_elimIWf_ty; [.. | exact Ht]); iwf_bundle end
          | eapply pre_elimIWf_r; iwf_bundle
-         | eapply wft_iwf; iwf_leaf | eapply wf_supi; iwf_leaf | eapply wf_elimIWf; iwf_leaf ]].
-  (* indexed coinductive types (M18b): as [IWf]'s *)
-  all: try solve [first
+         | eapply wft_iwf; iwf_leaf | eapply wf_supi; iwf_leaf | eapply wf_elimIWf; iwf_leaf ]]);
+    (* indexed coinductive types (M18b): as [IWf]'s *)
+    (try solve [first
          [ eapply pre_M_r; m_bundle
          | eapply pre_corec_r; m_bundle
          | eapply pre_out_r; m_bundle
@@ -436,9 +438,9 @@ Proof.
          | eapply pre_out_corec; m_bundle
          | eapply M_out_wf; m_bundle
          | eapply M_ty_wf; m_bundle
-         | eapply wft_M; iwf_leaf | eapply wf_corec; iwf_leaf | eapply wf_out; iwf_leaf ]].
-  all: try solve [eauto 4 with presup].
-  all: first [ solve [eapply pre_pi_r; eassumption] | solve [eapply pre_U_r; eauto with presup]
+         | eapply wft_M; iwf_leaf | eapply wf_corec; iwf_leaf | eapply wf_out; iwf_leaf ]]);
+    (try solve [eauto 4 with presup]);
+    (first [ solve [eapply pre_pi_r; eassumption] | solve [eapply pre_U_r; eauto with presup]
              | solve [eapply pre_El_r; eassumption] | solve [eapply pre_codeU_r; eauto with presup]
              | solve [eapply pre_codepi_r; eassumption]
              | solve [eapply pre_natrec_r; eassumption]
@@ -569,7 +571,7 @@ Proof.
              | solve [eapply proj1; first [eapply pre_El_dvec | eapply pre_El_iwf]; iwf_leaf]
              | solve [eapply proj2; first [eapply pre_El_dvec | eapply pre_El_iwf]; iwf_leaf]
              | solve [eapply wf_code_dvec; eauto 3 with presup]
-             | solve [eapply wf_code_iwf; eauto 3 with presup] ].
+             | solve [eapply wf_code_iwf; eauto 3 with presup] ])).
 Qed.
 
 Section Named.
@@ -614,8 +616,8 @@ Proof.
   assert (HΓA : [ G ; Γ ,, A @ la ⊢[ i ] ]) by exact (ext_wf Hi HA (lequiv_wf_l _ _ _ Hl)).
   split; [| exact Hlb].
   refine (stab_ty Hi (A := A') (l := la') _ _ HΓA HB).
-  - eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | now apply lequiv_sym].
-  - now apply lequiv_sym.
+  - eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | solve [apply lequiv_sym; assumption]].
+  - solve [apply lequiv_sym; assumption].
 Qed.
 
 Lemma stab2_lsub {G i} (Hi : typeof i = i) {Γ A A' la la' B lb} :

@@ -44,6 +44,3 @@ Proof. intros Hc HG. exact (consistency_def Hc HG univ_ctx_nil). Qed.
 Corollary consistency_M_def {G t l1 l2 l l' k} : no_opaque G ->
   ~ [ G ; cnil ⊢[ lM ] t : tyPi l1 l2 (tyU l) (tyEl l' (var 0)) @ k ].
 Proof. exact (consistency_def_closed compt_M). Qed.
-
-Print Assumptions consistency_def.
-Print Assumptions consistency_M_def.

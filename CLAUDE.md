@@ -34,11 +34,40 @@ these docs by bare file name.
 
 - `nix develop path:. --command make -j4` (Coq 8.20, Equations, smpl from
   the flake). A clean build takes 10 to 26 minutes, depending on the
-  machine. Latest: M18b with #60's build-time fixes (2026-10-26) took
-  1229 s wall at -j4 (critical path 1048 s, CPU 3117 s) on a 4-core
-  cloud machine, against 1440 s for M18b and 1091 s for the tree before
-  it, back to back on that machine; the path starts `SubstCommute` →
-  `DNthCore` → `RecWf`.
+  machine. Latest: `par:` in the typing inductions, `Print Assumptions`
+  out of `make` and a computed `closed_brDecls` (2026-10-27) took 1063 s
+  and 1045 s wall at -j4 (critical path 874 s and 875 s) on a 4-core
+  cloud machine, against 1174 s (critical path 1009 s) for the tree
+  before, run between them. Then `TemplateEq.geq` (substitution
+  equations by computation) and `tmNth`/`tmDNth` sealed with `simpl
+  never` took 1029 s and 1002 s (CPU 2737 s and 2595 s), back to back;
+  then `gnorm` (reduction states by computation), `wnorm` by `cbv` and
+  `br_side` off the judgments took 953 s against 961 s (critical path
+  839 s and 822 s, CPU 2300 s and 2463 s), back to back. Then
+  `mBody_single` by `geq`, `RecReductCases` by `Some_inj`, and
+  `RulesS` and `RecSIWf` split into parallel parts took 848 s against
+  928 s (critical path 727 s and 816 s, CPU 2163 s and 2237 s), back to
+  back. Then `DnfSyntax`, trimmed `Require`s (`RecGSubst`, `Lifting`,
+  `Consequences`), `equiv_gsubst` under `par:`, projections for
+  `injection` and `lequiv_sym` without `now` took 743 s against 839 s
+  (critical path 605 s and 718 s, CPU 2074 s and 2150 s), back to
+  back. Then goal-directed peelers off the path (`leq_step`'s
+  notation arms, `gf_peel`, the `tmDNth` lemmas, `dnf_redt`) took
+  744 s against 753 s (critical path 615 s and 613 s, CPU 1961 s and
+  2098 s), back to back: CPU only. Then the path's files split by what
+  their parts need (`ReductionRen`, `GRenRedt`, `RecLawsRedt`,
+  `LevelEqInv`, `AlgPER*`, `RulesSCoreW`, `RecSIWf*`), `pose proof … as`
+  for `destruct` of a lemma's conclusion and trimmed `Require`s took
+  699 s against 734 s (critical path 523 s and 604 s, CPU 1968 s and
+  1924 s), back to back. The critical path now runs `Reduction` →
+  `GRenRedt` (48 s, `redt_gren`) → the Typing metatheory → `LevelInv` →
+  the IWf formers → `RulesSCoreW` → `RecS*` → `FundamentalM` →
+  `AlgPERTrans`; at -j4 the build is now nearly CPU-bound (CPU / 4 is
+  490 s). The same machine took anywhere from 976 s to 1609 s for
+  that tree over one day, so only back-to-back runs compare. The
+  `.timing` files count the main process only: `par:`'s workers are
+  not in the "CPU" total, and they slow the files built beside them
+  (about 6% here).
   Machines differ by up to 2x, so compare builds on one machine
   only, back to back; the history of earlier measurements is in git
   (`git log -p CLAUDE.md`). The critical path (Syntax → Typing metatheory → Validity →
@@ -86,13 +115,14 @@ these docs by bare file name.
   last file before it waits for everything in between. The Validity
   per-former files (`Pi` … `WfElim`) each require only the formers they
   use, and wide files are split into parts that build in parallel
-  (`LevelEq*`, `AlgDec*`, `GRenSyntax`, `RecReductCases`, `RecS*`,
-  `RecWfBase`),
+  (`LevelEq*`, `AlgDec*`, `AlgPER*`, `GRenSyntax`, `GRenRec*`,
+  `RecReductCases`, `RecS*`, `RecWfBase`, `RulesS*`),
   with the old name kept as the file that exports them. A metatheory
   file's syntactic lemmas (commutations, the recursors' data under an
   operation, untyped reductions) and its per-former lemmas go in a file
   of their own that requires only what they use (`ReductionBase`,
-  `GRenRec`, `SubstRec`, `WfNthReds`, `PresupAux`); `tools/depgraph.py FILE.v --decls` lists each
+  `ReductionRen`, `RecLawsRedt`, `GRenRedt`, `LevelEqInv`, `SubstRec`,
+  `WfNthReds`, `PresupAux`, `DnfSyntax`); `tools/depgraph.py FILE.v --decls` lists each
   declaration's latest needed module. A sectioned
   file splits by bundling its hypotheses into a class, as `RecS` does
   (`RecSBase.v`; the recipe is in `docs/gotchas.md`'s build-time

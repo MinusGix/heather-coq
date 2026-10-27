@@ -4,7 +4,7 @@
     - (local) weakening of every judgment, at every layer: the weakened
       context is well formed at [typeof i]; context extensions use lifting,
       and the letbox body uses global weakening. *)
-From DeLaM.Typing Require Export Lifting.
+From DeLaM.Typing Require Export GWeakening Lifting.
 
 (** ** Lookup under weakening *)
 
@@ -129,9 +129,11 @@ Theorem ctx_extract :
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> [ G ; Γ ⊢[ typeof i ] ]) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; rewrite ?typeof_idem in *; auto.
-  all: try solve [destruct i; cbn in *; auto].
-  all: match goal with H : wf_ctx _ _ (cext _ _ _) |- _ => inversion H; subst; auto end.
+  apply typing_mut; intros.
+  par: (
+    (rewrite ?typeof_idem in *; auto);
+    (try solve [destruct i; cbn in *; auto]);
+    (match goal with H : wf_ctx _ _ (cext _ _ _) |- _ => inversion H; subst; auto end)).
 Qed.
 
 (** ** Weakening *)
@@ -749,10 +751,12 @@ Theorem weakening_all :
      forall Δ r, wkr r Δ Γ -> [ G ; Δ ⊢[ typeof i ] ] -> [ G ; Δ ⊢[ i ] t⟨r⟩ ≅ t'⟨r⟩ : T⟨r⟩ @ l ]) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; try exact I; try wk_ctx; cbn [typeof] in *; push_ren; wk_rewrite; push_ren.
-  all: try wk_step.
-  all: try wk_manual.
-  all: any_rule wk_premise.
+  apply typing_mut; intros.
+  par: (
+    (try exact I; try wk_ctx; cbn [typeof] in *; push_ren; wk_rewrite; push_ren);
+    (try wk_step);
+    (try wk_manual);
+    (any_rule wk_premise)).
 Qed.
 
 (** The M1 form: layers with [typeof i = i]. *)

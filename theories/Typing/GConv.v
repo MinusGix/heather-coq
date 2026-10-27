@@ -7,7 +7,7 @@
     global variable by its identity object ([id_obj]), which is typed in
     [G2] by conversion and acts as the identity on typed syntax
     ([equiv_gsubst]). The top-binding case is [gbind] (AlgPrereq). *)
-From DeLaM.Typing Require Export CtxConv GStatic.
+From DeLaM.Typing Require Export CtxConv GSubstitution GStatic.
 
 Definition gdecl_eq (G2 : gctx) (D D2 : gdecl) : Prop :=
   match D, D2 with

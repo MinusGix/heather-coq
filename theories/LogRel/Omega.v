@@ -7,7 +7,7 @@
     [kwk] worlds, whose level growth replaces the paper's universe
     weakenings (M3_DESIGN.md E14). Every property is proved from the finite
     relation's. *)
-From DeLaM.LogRel Require Export LevelInv.
+From DeLaM.LogRel Require Export Reduction LevelInv.
 
 Section Omega.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.

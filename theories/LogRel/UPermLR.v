@@ -11,7 +11,7 @@
     choice. The backward directions are the forward ones along [πi],
     followed by the round trips. *)
 From DeLaM.Typing Require Export UPerm StaticCode.
-From DeLaM.LogRel Require Export LevelInv.
+From DeLaM.LogRel Require Export Reduction LevelInv.
 From DeLaM.LogRel Require Import MAux.
 
 Definition Gp (π : nat -> nat) (G : gctx) : gctx := G_us G (gL G) (pφ π).

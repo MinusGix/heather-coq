@@ -70,9 +70,9 @@ Proof.
   - specialize (IH eq_refl). pose proof (eqty_wf_r (i := lD) eq_refl HAA) as HA'.
     apply eqc_ext.
     + exact IH.
-    + eapply wft_lconv; [exact (ctxconv_ty (i := lD) HΓ eq_refl HA') | now apply lequiv_sym].
-    + eapply eqty_lconv; [exact (ctxconv_eqty (i := lD) HΓ eq_refl (eqty_sym _ _ _ _ _ _ HAA)) | now apply lequiv_sym].
-    + now apply lequiv_sym.
+    + eapply wft_lconv; [exact (ctxconv_ty (i := lD) HΓ eq_refl HA') | solve [apply lequiv_sym; assumption]].
+    + eapply eqty_lconv; [exact (ctxconv_eqty (i := lD) HΓ eq_refl (eqty_sym _ _ _ _ _ _ HAA)) | solve [apply lequiv_sym; assumption]].
+    + solve [apply lequiv_sym; assumption].
 Qed.
 
 Lemma eqctx_trans_D {G Γ1 Γ2 Γ3} :

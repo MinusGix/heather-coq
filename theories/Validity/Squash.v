@@ -99,7 +99,7 @@ Proof.
   destruct (LR_tm_per _ _ _ _ _ _ _ HRA) as [Sy Tr].
   eapply (LRsq _ _ _ _ _ _ _ l l' A A' RA).
   - now apply lequiv_refl.
-  - now apply lequiv_sym.
+  - solve [apply lequiv_sym; assumption].
   - exact Hw.
   - apply tyred_refl, (eqty_wf_l ge_typeof EV).
   - apply tyred_refl, (eqty_wf_r ge_typeof EV).
@@ -135,7 +135,7 @@ Proof.
     apply sqnf_sq; [now apply lequiv_refl | exact (geq_ty_refl_l EAA) |].
     exact (LRtm_trans Xa (LRtm_sym Xa)).
   - exists (tmSq l' A'[d'] a'[d']). split; [exact (tmred_refl _ _ _ (eqtm_wf_r ge_typeof HS)) |].
-    apply sqnf_sq; [now apply lequiv_sym | exact EA |].
+    apply sqnf_sq; [solve [apply lequiv_sym; assumption] | exact EA |].
     eapply LRtm_irrel_r; [| exact (VTy_refl_l VA _ _ _ (SubRel_refl_l Hd))].
     eapply LRtm_conv_l; [exact (LRtm_trans (LRtm_sym Xa) Xa) | exact (ex_intro _ _ HRA)].
 Qed.
@@ -168,8 +168,8 @@ Proof.
   apply tyred_step; [exact HEl | constructor |].
   eapply eqty_trans; [exact HEq|].
   eapply (eqty_trans _ _ _ _ (tyEl k (tmSqCode k s))).
-  - apply eqty_El; [exact ge_notV | now apply lequiv_sym | apply eqtm_refl, Hc].
-  - apply (eqty_lconv _ _ _ _ _ l k); [|now apply lequiv_sym].
+  - apply eqty_El; [exact ge_notV | solve [apply lequiv_sym; assumption] | apply eqtm_refl, Hc].
+  - apply (eqty_lconv _ _ _ _ _ l k); [|solve [apply lequiv_sym; assumption]].
     apply eqty_sym, eqty_El_sq; [exact ge_compt | exact Wk | exact Hsk].
 Qed.
 
@@ -203,7 +203,7 @@ Proof.
   intros la lb Hla Hlb. rewrite LRbelow_spec by (rewrite ?lmeasure_suc; lia).
   exists R. eapply LR_red_ty; [exact HR | |]; push_subst.
   - apply tyred_El_sq; [exact Hla | now apply lequiv_refl | exact Hsd].
-  - apply tyred_El_sq; [exact Hlb | now apply lequiv_sym | exact Hs'd'].
+  - apply tyred_El_sq; [exact Hlb | solve [apply lequiv_sym; assumption] | exact Hs'd'].
 Qed.
 
 Section ElimSqAt.

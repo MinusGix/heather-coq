@@ -335,14 +335,19 @@ End ExtG.
 (** ** The branch scopes, per branch *)
 
 Lemma brDecls_cons k : k < nbr -> exists D Ds, brDecls k = D :: Ds.
-Proof. intros Hk; br_all ltac:(destruct k; [cbn; eauto|]); lia. Qed.
+(* the head by conversion: [cbn] normalised every branch's whole list (5 s) *)
+Proof. intros Hk; br_all ltac:(destruct k; [do 2 eexists; reflexivity|]); lia. Qed.
 
 Lemma closed_brDecls k : k < nbr -> closed_decls (brDecls k).
-Proof. intros Hk; br_all ltac:(destruct k; [cbn; repeat split; intros; reflexivity|]); lia. Qed.
+(* [vm_compute] decides each concrete entry at an abstract [τ] in
+   milliseconds; [cbn] spent 88 s on the critical path here (rebuilding
+   the [nth]/[dnth] telescopes symbolically). *)
+Proof. intros Hk; br_all ltac:(destruct k; [vm_compute; repeat split; intros; reflexivity|]); lia. Qed.
 
 Lemma brLocs_lwf k wT wt a1 a2 L : k < nbr -> lwf L a1 -> lwf L a2 ->
   Forall (fun '(_, l) => lwf L l) (brLocs k wT wt a1 a2).
-Proof. intros Hk H1 H2; br_all ltac:(destruct k; [cbn; repeat constructor; assumption|]); lia. Qed.
+(* [brLocs] alone unfolded: [cbn] also rebuilt the locals' types (6 s) *)
+Proof. intros Hk H1 H2; br_all ltac:(destruct k; [cbv beta iota zeta delta [brLocs]; repeat constructor; assumption|]); lia. Qed.
 
 Lemma uren_ok_ush n L : uren_ok (ush n) (n + L) L.
 Proof. intros m Hm; unfold ush; lia. Qed.

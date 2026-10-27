@@ -629,8 +629,6 @@ Lemma subst_id (t : tm) d : nftm t -> (forall n, llk d n = var n) -> t[d] = t.
 Proof. intros; apply (proj1 (proj2 subst_id_all)); auto. Qed.
 End Laws.
 
-Print Assumptions subst_subst.
-
 (** ** Syntactic composition of renamings *)
 
 Fixpoint rcomp (r1 r2 : rsub) : rsub :=         (* first r1, then r2 *)

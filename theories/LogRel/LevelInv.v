@@ -8,8 +8,8 @@
     generic laws [g*_leq] relate the normal forms themselves. The proof
     follows transitivity (Transitivity.v), with the second derivation
     replaced by the self-relation of [T3]. *)
-From DeLaM.Syntax Require Export LevelRed.
-From DeLaM.LogRel Require Export Reduction.
+From DeLaM.Syntax Require Export LevelRed LevelEqInv.
+From DeLaM.LogRel Require Export Transitivity.
 From DeLaM.LogRel Require Import IWfAux MAux.
 
 (** ** Kripke weakenings respect [≡ₗ] *)
@@ -235,7 +235,7 @@ Proof using EL VL.
     + eapply (MRctyp _ _ _ _ _ Δ Δ3 k k3); try eassumption.
       intros t t'; rewrite (HR t t'); split.
       * apply CTypRel_conv_r; assumption.
-      * apply CTypRel_conv_r; [now apply vpl_ctx_sym | now apply lequiv_sym | now apply eqty_sym].
+      * apply CTypRel_conv_r; [now apply vpl_ctx_sym | solve [apply lequiv_sym; assumption] | now apply eqty_sym].
     + intros t2 t3 H2 H3 Et. apply HR in H2. apply HR3 in H3. apply HR.
       destruct H2 as (w2 & w2' & Hw2 & Hw2' & E2 & _ & N2 & _).
       destruct H3 as (w3 & w3' & Hw3 & Hw3' & E3 & _ & N3 & _).
@@ -267,7 +267,7 @@ Proof using EL VL.
     + eapply (MRctrm _ _ _ _ _ Δ Δ3 A A3 k k3); try eassumption.
       intros t t'; rewrite (HR t t'); split.
       * apply CTrmRel_conv_r; assumption.
-      * apply CTrmRel_conv_r; [now apply vpl_ctx_sym | | now apply lequiv_sym | now apply eqty_sym].
+      * apply CTrmRel_conv_r; [now apply vpl_ctx_sym | | solve [apply lequiv_sym; assumption] | now apply eqty_sym].
         exact HAA'.
     + intros t2 t3 H2 H3 Et. apply HR in H2. apply HR3 in H3. apply HR.
       destruct H2 as (w2 & w2' & Hw2 & Hw2' & E2 & _ & N2 & _).
@@ -302,74 +302,6 @@ Definition Pleq n := forall G Γ T1 T2 l R,
   LR n (LRbelow n) G Γ T3 T3 l R3 -> ty_leq T2 T3 ->
   LR n (LRbelow n) G Γ T1 T3 l R /\
   (forall t1 t2 t3, R t1 t2 -> R3 t3 t3 -> tm_leq t2 t3 -> R t1 t3).
-
-Lemma ty_leq_pi_inv {l3 l4 A2 B2 W} : ty_leq (tyPi l3 l4 A2 B2) W ->
-  exists k3 k4 A3 B3, W = tyPi k3 k4 A3 B3 /\ leqv l3 k3 /\ leqv l4 k4 /\ ty_leq A2 A3 /\ ty_leq B2 B3.
-Proof using . destruct W; cbn; try contradiction; intros; do 4 eexists; intuition eauto. Qed.
-Lemma ty_leq_sig_inv {l3 l4 A2 B2 W} : ty_leq (tySig l3 l4 A2 B2) W ->
-  exists k3 k4 A3 B3, W = tySig k3 k4 A3 B3 /\ leqv l3 k3 /\ leqv l4 k4 /\ ty_leq A2 A3 /\ ty_leq B2 B3.
-Proof using . destruct W; cbn; try contradiction; intros; do 4 eexists; intuition eauto. Qed.
-Lemma ty_leq_U_inv {l2 W} : ty_leq (tyU l2) W -> exists l3, W = tyU l3 /\ leqv l2 l3.
-Proof using . destruct W; cbn; try contradiction; eauto. Qed.
-Lemma ty_leq_unit_inv {l2 W} : ty_leq (tyUnit l2) W -> exists l3, W = tyUnit l3 /\ leqv l2 l3.
-Proof using . destruct W; cbn; try contradiction; eauto. Qed.
-Lemma ty_leq_seq_inv {l2 A2 a2 b2 W} : ty_leq (tySEq l2 A2 a2 b2) W ->
-  exists l3 A3 a3 b3, W = tySEq l3 A3 a3 b3 /\ leqv l2 l3 /\ ty_leq A2 A3 /\ tm_leq a2 a3 /\ tm_leq b2 b3.
-Proof using . destruct W; cbn; try contradiction; intros; do 4 eexists; intuition eauto. Qed.
-Lemma ty_leq_id_inv {l2 A2 a2 b2 W} : ty_leq (tyId l2 A2 a2 b2) W ->
-  exists l3 A3 a3 b3, W = tyId l3 A3 a3 b3 /\ leqv l2 l3 /\ ty_leq A2 A3 /\ tm_leq a2 a3 /\ tm_leq b2 b3.
-Proof using . destruct W; cbn; try contradiction; intros; do 4 eexists; intuition eauto. Qed.
-Lemma tm_leq_refl_inv {l C c w} : tm_leq (tmRefl l C c) w ->
-  exists l' C' c', w = tmRefl l' C' c' /\ leqv l l' /\ ty_leq C C' /\ tm_leq c c'.
-Proof using . destruct w; cbn; try contradiction; intros; do 3 eexists; intuition eauto. Qed.
-Lemma ty_leq_sempty_inv {l2 W} : ty_leq (tySEmpty l2) W -> exists l3, W = tySEmpty l3 /\ leqv l2 l3.
-Proof using . destruct W; cbn; try contradiction; eauto. Qed.
-Lemma ty_leq_empty_inv {l2 W} : ty_leq (tyEmpty l2) W -> exists l3, W = tyEmpty l3 /\ leqv l2 l3.
-Proof using . destruct W; cbn; try contradiction; eauto. Qed.
-Lemma ty_leq_sum_inv {l3 l4 A2 B2 W} : ty_leq (tySum l3 l4 A2 B2) W ->
-  exists k3 k4 A3 B3, W = tySum k3 k4 A3 B3 /\ leqv l3 k3 /\ leqv l4 k4 /\ ty_leq A2 A3 /\ ty_leq B2 B3.
-Proof using . destruct W; cbn; try contradiction; intros; do 4 eexists; intuition eauto. Qed.
-Lemma tm_leq_inl_inv {l l' C D c w} : tm_leq (tmInl l l' C D c) w ->
-  exists k k' C' D' c', w = tmInl k k' C' D' c' /\ leqv l k /\ leqv l' k' /\ ty_leq C C' /\ ty_leq D D' /\ tm_leq c c'.
-Proof using . destruct w; cbn; try contradiction; intros; do 5 eexists; intuition eauto. Qed.
-Lemma tm_leq_inr_inv {l l' C D c w} : tm_leq (tmInr l l' C D c) w ->
-  exists k k' C' D' c', w = tmInr k k' C' D' c' /\ leqv l k /\ leqv l' k' /\ ty_leq C C' /\ ty_leq D D' /\ tm_leq c c'.
-Proof using . destruct w; cbn; try contradiction; intros; do 5 eexists; intuition eauto. Qed.
-Lemma ty_leq_nat_inv {W} : ty_leq tyNat W -> W = tyNat.
-Proof using . destruct W; cbn; try contradiction; auto. Qed.
-Lemma ty_leq_cpi_inv {l2 U2 W} : ty_leq (tyCPi l2 U2) W ->
-  exists k U3, W = tyCPi k U3 /\ leqv l2 k /\ ty_leq U2 U3.
-Proof using . destruct W; cbn; try contradiction; intros; do 2 eexists; intuition eauto. Qed.
-Lemma ty_leq_tpi_inv {Δ2 l3 l4 U2 W} : ty_leq (tyTPi Δ2 l3 l4 U2) W ->
-  exists Δ3 k3 k4 U3, W = tyTPi Δ3 k3 k4 U3 /\ ctx_leq Δ2 Δ3 /\ leqv l3 k3 /\ leqv l4 k4 /\ ty_leq U2 U3.
-Proof using . destruct W; cbn; try contradiction; intros; do 4 eexists; intuition eauto. Qed.
-
-Lemma ty_leq_W_inv {l3 l4 A2 B2 W} : ty_leq (tyW l3 l4 A2 B2) W ->
-  exists k3 k4 A3 B3, W = tyW k3 k4 A3 B3 /\ leqv l3 k3 /\ leqv l4 k4 /\ ty_leq A2 A3 /\ ty_leq B2 B3.
-Proof using . destruct W; cbn; try contradiction; intros; do 4 eexists; intuition eauto. Qed.
-Lemma tm_leq_sup_inv {l l' C D a f w} : tm_leq (tmSup l l' C D a f) w ->
-  exists k k' C' D' a' f', w = tmSup k k' C' D' a' f' /\ leqv l k /\ leqv l' k' /\ ty_leq C C' /\
-    ty_leq D D' /\ tm_leq a a' /\ tm_leq f f'.
-Proof using . destruct w; cbn; try contradiction; intros; do 6 eexists; intuition eauto. Qed.
-
-Lemma ty_leq_wf_inv {l A N W} : ty_leq (tyWf l A N) W ->
-  exists l' A' N', W = tyWf l' A' N' /\ leqv l l' /\ ty_leq A A' /\ tm_leq N N'.
-Proof using . destruct W; cbn; try contradiction; intros; do 3 eexists; intuition eauto. Qed.
-Lemma ty_leq_sq_inv {l2 A2 W} : ty_leq (tySq l2 A2) W ->
-  exists l3 A3, W = tySq l3 A3 /\ leqv l2 l3 /\ ty_leq A2 A3.
-Proof using . destruct W; cbn; try contradiction; intros; do 2 eexists; intuition eauto. Qed.
-Lemma tm_leq_supf_inv {l A N a cs w} : tm_leq (tmSupf l A N a cs) w ->
-  exists l' A' N' a' cs', w = tmSupf l' A' N' a' cs' /\ leqv l l' /\ ty_leq A A' /\ tm_leq N N' /\
-    tm_leq a a' /\ tm_leq cs cs'.
-Proof using . destruct w; cbn; try contradiction; intros; do 5 eexists; intuition eauto. Qed.
-Lemma ty_leq_iwf_inv {l li X A N Ot C m W} : ty_leq (tyIWf l li X A N Ot C m) W ->
-  exists l' li' X' A' N' Ot' C' m', W = tyIWf l' li' X' A' N' Ot' C' m' /\ leqv l l' /\ leqv li li' /\
-    ty_leq X X' /\ ty_leq A A' /\ tm_leq N N' /\ tm_leq Ot Ot' /\ tm_leq C C' /\ tm_leq m m'.
-Proof using . destruct W; cbn; try contradiction; intros; do 8 eexists; intuition eauto. Qed.
-Lemma tm_leq_supi_inv {l li X A N Ot C a cs w} : tm_leq (tmSupi l li X A N Ot C a cs) w ->
-  exists l' li' X' A' N' Ot' C' a' cs', w = tmSupi l' li' X' A' N' Ot' C' a' cs' /\ leqv l l' /\ leqv li li' /\
-    ty_leq X X' /\ ty_leq A A' /\ tm_leq N N' /\ tm_leq Ot Ot' /\ tm_leq C C' /\ tm_leq a a' /\ tm_leq cs cs'.
-Proof using . destruct w; cbn; try contradiction; intros; do 9 eexists; intuition eauto. Qed.
 
 (** ** The universe *)
 
@@ -612,7 +544,7 @@ Proof using EL.
       assert (HΔ1 : [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ B1)[lsingle (ktm ρ a)] @ l2 ⊢g ])
         by (apply ext_wf_g; [exact HB1a | exact V2]).
       assert (HΔ3 : [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ B3)[lsingle (ktm ρ a3)] @ l4 ⊢g ])
-        by (apply ext_wf_g; [eapply lconv_ty; [exact HB3a | now apply lequiv_sym] | exact (kw_lwf ρ W4)]).
+        by (apply ext_wf_g; [eapply lconv_ty; [exact HB3a | solve [apply lequiv_sym; assumption]] | exact (kw_lwf ρ W4)]).
       assert (EW1 : [ kw_G ρ ; kw_Δ ρ ,, (ktyl ρ B1)[lsingle (ktm ρ a)] @ l2
                       ⊢ (tyW l1 l2 (kty ρ A1) (ktyl ρ B1))⟨↑⟩ ≈ (tyW l3 l4 (kty ρ A3) (ktyl ρ B3))⟨↑⟩ @ lmax l1 l2 ])
         by exact (geq_ty_wk (wkr_shift1 _ _ _) HΔ1 EW).
@@ -1152,11 +1084,6 @@ Proof using . intros H; unfold ktyll; apply (proj1 leq_ren_all), ty_leq_gwa, H. 
 Lemma ktmlll_leq {G Γ} (ρ : kwk G Γ) t t' : tm_leq t t' -> tm_leq (ktmlll ρ t) (ktmlll ρ t').
 Proof using . intros H; unfold ktmlll; apply (proj1 (proj2 leq_ren_all)), tm_leq_gwa, H. Qed.
 
-Lemma ty_leq_M_inv {l l' li X A B C m W} : ty_leq (tyM l l' li X A B C m) W ->
-  exists k k' ki X' A' B' C' m', W = tyM k k' ki X' A' B' C' m' /\ leqv l k /\ leqv l' k' /\ leqv li ki /\
-    ty_leq X X' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq C C' /\ tm_leq m m'.
-Proof using . destruct W; cbn; try contradiction; intros; do 8 eexists; intuition eauto. Qed.
-
 (** The first signature against the third, from the first pair's and the
     third's self-equality: the third's moved to the first's contexts
     entry by entry. *)
@@ -1575,7 +1502,7 @@ Proof using EL VL.
                       (Ecod ρ a')) _ _ _ X1 X3 Ev).
   - (* contextual types *)
     assert (HM3 : ModRel G Γ T3 T3 l R3).
-    { destruct (ModRel_red_r HM) as [(Δ & k & HT2) | (Δ & A & k & HT2)];
+    { pose proof (ModRel_red_r HM) as [(Δ & k & HT2) | (Δ & A & k & HT2)];
         pose proof (tyred_leq ET HT2 HT3 ltac:(eauto with whnf) Hnw3) as EW;
         destruct W3; cbn in EW; try contradiction.
       - exact (proj2 (LR_inv_CTyp H3 HT3)).
@@ -1807,7 +1734,7 @@ Proof using EL VL.
     destruct (LR_inv_seq H3 HT3) as (s4 & A4 & a4 & b4 & _ & Hl4 & Hw3 & _ & HA3 & HA34 & Ha34 & Hb34 & HR3).
     assert (Q : lequiv (gL G) s2 s3) by exact (leqv_lequiv _ _ _ (lequiv_wf_l _ _ _ Hl2) Hw3 E3).
     assert (Hl31 : lequiv (gL G) s3 s1) by (eapply lequiv_trans; [apply lequiv_sym, Q | exact Hl2]).
-    assert (Hl13 : lequiv (gL G) s1 s3) by now apply lequiv_sym.
+    assert (Hl13 : lequiv (gL G) s1 s3) by solve [apply lequiv_sym; assumption].
     assert (EA13 : [ G ; Γ ⊢ SA ≈ A3 @ s1 ]).
     { eapply geq_ty_leq_r; [exact HSAA | eapply geq_ty_lconv; [exact (geq_ty_refl_l HA34) | exact Hl13]
                            | exact EA]. }
@@ -1842,7 +1769,7 @@ Proof using EL VL.
                                     & HRA3 & Hra3 & Hrb3 & Hps3 & Hpt3 & HR3).
     assert (Q : lequiv (gL G) s2 s3) by exact (leqv_lequiv _ _ _ (lequiv_wf_l _ _ _ Hl2) Hw3 E3).
     assert (Hl31 : lequiv (gL G) s3 s1) by (eapply lequiv_trans; [apply lequiv_sym, Q | exact Hl2]).
-    assert (Hl13 : lequiv (gL G) s1 s3) by now apply lequiv_sym.
+    assert (Hl13 : lequiv (gL G) s1 s3) by solve [apply lequiv_sym; assumption].
     assert (EA13 : [ G ; Γ ⊢ IA ≈ A3 @ s1 ]).
     { eapply geq_ty_leq_r; [exact HIAA | eapply geq_ty_lconv; [exact (geq_ty_refl_l HA34) | exact Hl13]
                            | exact EA]. }

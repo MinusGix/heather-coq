@@ -68,7 +68,7 @@ Proof.
     by (eapply eqty_lconv; [exact (eqty_sym _ _ _ _ _ _ EA) | exact (lequiv_sym _ _ _ E17)]).
   pose proof (wft_lconv _ _ _ _ _ _ (stab_ty Hi EA7 (lequiv_sym _ _ _ E17) HΓA HB') E28) as HB'A.
   assert (WL : lwf (gL G) (lmax l1 l2)) by (cbn; split; assumption).
-  assert (HL : lequiv (gL G) (lmax l7 l8) (lmax l1 l2)) by (apply lequiv_max; now apply lequiv_sym).
+  assert (HL : lequiv (gL G) (lmax l7 l8) (lmax l1 l2)) by (apply lequiv_max; solve [apply lequiv_sym; assumption]).
   assert (HW : [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ]) by (apply wft_W; first [assumption | (apply compt_notV; eassumption)]).
   assert (EW' : [ G ; Γ ⊢[ i ] tyW l7 l8 A' B' ≅ tyW l1 l2 A B @ lmax l7 l8 ]).
   { eapply eqty_lconv; [apply eqty_sym, eqty_W; first [assumption | (apply compt_notV; eassumption)] | exact HL]. }

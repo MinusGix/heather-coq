@@ -222,5 +222,3 @@ Proof. intros; apply (proj1 (proj2 usubst_id_all)); auto. Qed.
 Lemma usubst_id_ctx (Γ : ctx) φ : dnfctx Γ -> (forall n, φ n = lvar n) -> Γ[φ]ᵤ = Γ.
 Proof. intros; apply (proj1 (proj2 (proj2 usubst_id_all))); auto. Qed.
 End ULaws.
-
-Print Assumptions usubst_gsubst.

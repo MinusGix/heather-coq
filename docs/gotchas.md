@@ -182,7 +182,22 @@ formers, so it gets worse with every extension:
   `apply Some_inj in E` (`Syntax/Recursor.v`) instead. Each new
   former's reduct grows the cost in every `redt` lemma still using
   `injection`: `elim_IWf`'s cost `redt_ren` and `redt_usubst` 130 s
-  each until they moved to `Some_inj` (2026-10-14).
+  each until they moved to `Some_inj` (2026-10-14). The same holds of
+  any constructor whose components are big: `injection` builds a
+  projection with a default value for every component. Take the one
+  component needed by `f_equal (fun t => match t with C _ … x => x | _
+  => t end) H`, or state the constructor's injectivity once
+  (`IWfElim.supi_inj`) and destruct it: `IWfElim` went from 37 s to
+  17 s (2026-10-27). `RecReductCases`' 49 `injection Hred as <-` became
+  `apply Some_inj in Hred; rewrite <- Hred` (with its refutations by
+  a bare `discriminate`, below: 82 s to 29 s).
+- **`now apply lemma` as a `first` alternative**: when the lemma applies
+  but its premise is not a hypothesis, `easy` runs `inversion` on every
+  hypothesis before `now` fails, judgments included (240 inversions, 5 s
+  for one `first` in `AlgSound.S_actmnf_sup`). Close the premise by
+  name, `solve [apply lequiv_sym; assumption]`: the 420 `now apply
+  lequiv_sym` became that, and `AlgSound` went from 18 s to 7 s
+  (2026-10-27).
 - **A bare `split` in a repeated peeler** hnf's every goal that is not
   yet a conjunction, unfolding definitions to look for one: 71% of
   `gfree_redt` (510 s for `Unfold`). Split only `|- _ /\ _` (a
@@ -261,6 +276,120 @@ formers, so it gets worse with every extension:
   calls it through an `Ltac` hook (`Ltac wdnth := fail …` in the early
   file, `Ltac wdnth ::= …` in the late one), so only the lemmas using
   that case wait for it (`RecWfBase`/`RecWf`).
+- **One proof, one core** (2026-10-27). A mutual induction over the
+  judgments is one proof, and a file-level build cannot split it: the
+  typing inductions held 322 s of the critical path on one core. Run the
+  case tactic under `par:`, which checks each goal in a worker process
+  (`-async-proofs-tac-j` in `_CoqProject`, 3 workers):
+  `apply typing_mut; intros. par: ((T0); (T1); …; (Tn)).` for what was
+  `apply typing_mut; intros; T0. all: T1. … all: Tn.` (`weakening_all`
+  56 s → about 25 s). Each `all:` stage goes in its own parentheses: in
+  `T0; split; [a | b]` a goal that `T0` closes leaves the dispatch with
+  no goals, which fails ("expected 0 tactics"), while `T0; (split; [a |
+  b])` runs the stage per goal. `par:` needs the tactic to close each
+  goal or leave it untouched, and goals without evars. A proof that
+  ends in positional selectors takes each selected tactic as one more
+  `try solve [...]` stage when that tactic fails on the other goals
+  (`GStatic.equiv_gsubst`, 23 s → 11 s); one with bullets
+  (`Functionality`) stays as it was, and so does lemma-level
+  parallelism, `coqc -async-proofs on`, which made `RulesS` twice as
+  slow. The same applies to a `br_all` table proof (`brRes_wf`,
+  `brΓ_conv`).
+- **`Print Assumptions` walks every proof term below it**: 30 s each
+  for the consequences at the end of the build, where nothing ran
+  beside them. They are in `checks/Assumptions.v`, run by `make
+  assumptions`, not by `make`; add a new main result there.
+- **Computing, not `cbn`-ing, a fact about concrete data.**
+  `closed_brDecls` ran `cbn` over each of the 60 branch scopes to see
+  that a global substitution under their binders leaves them alone:
+  88 s on the critical path, rebuilding the `nth`/`dnth` telescopes
+  symbolically. `vm_compute` decides each one at an abstract
+  substitution in milliseconds (0.2 s in all). When the data is
+  concrete and the goal an equation that holds by computation, try
+  `vm_compute; reflexivity` first.
+- **Substitution equations over opaque atoms: compute on a template**
+  (2026-10-27). `dnth`'s motive equations (`F⟨rlift ↑⟩…[lsingle (…
+  n⟨↑⟩ …)] = …`) were proved by rewriting lookups pointwise: 17 of them
+  took 48 s of `dnth_step_wf`, in ~30k `rewrite`s. `TemplateEq.geq`
+  puts global variables for `F` and `n`, where the operations compute,
+  proves that equation by `vm_compute`, and substitutes `F` and `n`
+  back by the commutation laws of global substitution: 6 s for the
+  lemma. Two traps: an atom left as a Coq variable gets `lcons'`'s
+  match stuck, and `vm_compute` reads a stuck match back with every
+  branch normalized (210 s for one goal; `geq` checks first), and a
+  failing `exact` of a near-miss falls to conversion, which unfolds the
+  operations on the atoms (40 s; `geq` compares syntactically first).
+- **`cbn` where `cbv` would do, and `cbn; lia` on a judgment**
+  (2026-10-27). `wnorm` normalised the branch scopes' typings with
+  `cbn [...]`; their terms are closed up to global variables, so
+  `cbv beta iota zeta delta [...]` (same list) computes the same normal
+  form without `cbn`'s refolding: `RecAdm` 160 s → 88 s, `WfScope`
+  50 s → 23 s, `AlgPrereq` 62 s → 35 s, with `br_side` no longer trying
+  `solve [cbn; lia]` on typing judgments (a third of `brRes_wf`). `cbv`
+  leaves a raw `fix` where an operation is stuck on a variable, so it is
+  for closed data only.
+- **`cbn in H; discriminate H` to refute `f x = Some r`** (2026-10-27).
+  `rr_T_all` ran `cbn in Hred` on every former's reduct to find the ones
+  where `redT` is `None`: `cbn` normalised each `Some` reduct in full
+  before `discriminate` failed (18 s). `discriminate` alone takes the
+  head normal form, which is all it needs (0.1 s).
+- **`cbn [tm_leq]; repeat split` over unfolded reducts** (2026-10-27).
+  A leaf such as `tm_leq t[d] t'[d']` with `t` a concrete term is not
+  stuck: `split` whnf's it, computing the substitution, and splits the
+  relation of the substituted term, so the substitution lemma is never
+  used and every node of the result becomes a goal (`leq_tmDNth`,
+  `lwf_tmDNth`: 26 s each). Unfold one layer at a time by the goal's
+  shape (`lazymatch`: `True`, `_ /\ _`, the `ren`/`subst` nodes in both
+  spellings, then `assumption` or `progress hnf`): 1 s each. The same
+  loop by head took `dnf_redt` from 14 s to 0.6 s.
+- **Opaque by default, measured** (2026-10-27). On the old blind
+  scripts, `Local Opaque` of the predicate or relation (`dnftm dnfty`;
+  `tm_leq ty_leq lsub_leq`), with each `cbn [...]` of it run under
+  `with_strategy transparent [...]`, took `dnf_redt` from 13 s to 7 s
+  and `leq_tmDNth` from 25 s to 7 s without changing the script.
+  Choosing the step by the goal's shape took them to 0.6 s and 1 s.
+  Opacity of the operations (`ren_tm`, `subst_tm`, the `peel*`) bought
+  little (13 s → 10 s), and `Strategy` levels on `gren_tm` changed
+  neither `redt_gren`'s tactics nor its `Qed`. A new predicate on the
+  syntax can be opaque from the start; for the existing ones, rewrite
+  the hot proofs goal-directed instead.
+- **The commutation lemmas' `Qed`** (`redt_gren`: 13 s of tactics,
+  15 s of `Qed`). Proving the equation by constructor congruence
+  (`f_equal` down to the leaves, rewriting only there) made both worse
+  (20 s and 22 s). With every case `abstract`ed, the cases' own kernel
+  checks took 9 s and the case split 6 s more. Under `par:` (each
+  former's case in a worker) the tactics took 7 s; the `Qed` stays.
+- **A lemma waiting for the file it sits in** (2026-10-27, the path's
+  head). `redt_gren` sat in `GRenSyntax` and reduction under global
+  renaming in `GRenRec`, so `GRenRec`'s 19 s of recursor laws waited
+  for 41 s of reducts they never use: 77 s on the path, now `GRenRedt`
+  beside `GRenRecBase` (52 s). `Reduction`'s renaming commutations
+  (25 s) needed only `Subst`, not `Universe`, and `RecLaws`' reducts
+  under universe substitution only `Universe`, not `Declarative`
+  (`ReductionRen`, `RecLawsRedt`). `tools/depgraph.py FILE.v` shows
+  such a group as many seconds ready long before the file starts.
+- **`destruct (lemma args) as pat` in a big context** (2026-10-27).
+  `destruct` of a term abstracts every occurrence of it in the goal
+  and the context before the case split; a proof of a lemma's
+  conclusion never occurs there, so the search only costs. `kid_at`
+  spent 4.3 s in `destruct (LRtm_sum_rel Xs) as (…)` and 0.5 s in each
+  `destruct (LRtm_escape …)`; `pose proof (…) as (…)` takes the same
+  pattern in 0.01 s (`MCorecV` 22 s → 15 s). Keep `destruct` for data
+  whose occurrences should be replaced (`destruct (kw_γ ρ)`).
+- **`destruct W; cbn` to refute a mismatched `ty_leq (C …) W`**: every
+  constructor of `W` is computed before `contradiction` sees `False`.
+  `try exact (False_ind _ H)` first refutes those cases by conversion
+  (`LevelEqInv`).
+- **`par:` over a proof's side goals.** A proof that ends in many
+  independent side goals (`Rt_elimIWf`'s nine) can dispatch them in
+  one `par: lazymatch goal with … end`, by the goal's shape (28 s →
+  18 s). It does not help where each goal is fast: `redt_usubst`'s
+  cases (4 s) took as long under `par:`.
+- **A `Require` hidden in `Ltac`.** The `.glob` misses names used only
+  inside tactics, hints and instances, so `tools/depgraph.py` can
+  suggest dropping a `Require` the file needs (`FundamentalS` uses
+  `RulesS`' `vs_rules` only through a tactic). Check a trimmed
+  `Require` by compiling.
 - Measure before guessing (see `CLAUDE.md`, Build, for the tools):
   `tools/build-profile` for a timed build and its report,
   `tools/proofs.py` for the slowest proofs (tactics vs `Qed`),

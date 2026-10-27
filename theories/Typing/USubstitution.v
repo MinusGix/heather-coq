@@ -8,8 +8,8 @@
     weakening is the special case of a renaming. *)
 (* the laws of [≡ₗ] first: re-exporting them after this file's other
    imports would shadow later names (Context's [gwk_id] by Subst's) *)
-From DeLaM.Syntax Require Export LevelEq.
-From DeLaM.Typing Require Export RecLaws.
+From DeLaM.Syntax Require Export LevelEqURen.
+From DeLaM.Typing Require Export Declarative RecLaws.
 
 (** ** Lookups *)
 
@@ -509,12 +509,12 @@ Theorem usubstitution :
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> forall L' φ, usub_ok φ L' (gL G) ->
      [ G_us G L' φ ⊢[ i ] ucsubst Γ φ ≅ ucsubst Γ' φ ]).
 Proof.
-  unfold G_us. apply typing_mut; intros; us_spec; us_push; us_rewrite_all.
-  all: try us_step.
-  all: first [us_upi | us_manual].
+  unfold G_us. apply typing_mut; intros.
+  par: (
+    (us_spec; us_push; us_rewrite_all);
+    (try us_step);
+    (first [us_upi | us_manual])).
 Qed.
-
-Print Assumptions usubstitution.
 
 (** ** Universe weakening: [n] fresh levels *)
 

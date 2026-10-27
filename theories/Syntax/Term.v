@@ -994,6 +994,11 @@ Definition mOutCorec (l l' li : lvl) (X A B : ty) (C : tm) (k : lvl) (Y : ty) (c
 (** Kept folded by [cbn]: the operations reach it through its own
     commutation lemmas ([mOutCorec_ren] …). *)
 Arguments mOutCorec : simpl never.
+(** [nth] and [dnth] likewise: [cbn] would rebuild their derivations'
+    telescopes (docs/gotchas.md, build-time gotchas); a proof that needs
+    the body unfolds it by name. *)
+Arguments tmNth : simpl never.
+Arguments tmDNth : simpl never.
 
 (** ** Global substitution
 
