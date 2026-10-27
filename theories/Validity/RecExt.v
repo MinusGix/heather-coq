@@ -338,7 +338,10 @@ Lemma brDecls_cons k : k < nbr -> exists D Ds, brDecls k = D :: Ds.
 Proof. intros Hk; br_all ltac:(destruct k; [cbn; eauto|]); lia. Qed.
 
 Lemma closed_brDecls k : k < nbr -> closed_decls (brDecls k).
-Proof. intros Hk; br_all ltac:(destruct k; [cbn; repeat split; intros; reflexivity|]); lia. Qed.
+(* [vm_compute] decides each concrete entry at an abstract [τ] in
+   milliseconds; [cbn] spent 88 s on the critical path here (rebuilding
+   the [nth]/[dnth] telescopes symbolically). *)
+Proof. intros Hk; br_all ltac:(destruct k; [vm_compute; repeat split; intros; reflexivity|]); lia. Qed.
 
 Lemma brLocs_lwf k wT wt a1 a2 L : k < nbr -> lwf L a1 -> lwf L a2 ->
   Forall (fun '(_, l) => lwf L l) (brLocs k wT wt a1 a2).
