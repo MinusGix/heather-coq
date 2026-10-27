@@ -7,7 +7,7 @@
     becomes its entries followed by the image: lengths grow by the image's
     length and the tail condition of typed local substitutions shifts
     ("tail expansion"). *)
-From DeLaM.Typing Require Export RecGSubst.
+From DeLaM.Typing Require Export Functionality RecGSubst.
 
 (** ** Typed global substitutions *)
 

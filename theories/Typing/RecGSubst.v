@@ -6,7 +6,7 @@
     are not headed by a variable ([hd_ok]; bundles built by [mkrb] satisfy
     this by computation). Mirrors the local-substitution laws of
     [Substitution]. *)
-From DeLaM.Typing Require Export Functionality.
+From DeLaM.Typing Require Export SubstRec.
 
 Definition gupn (n : nat) (σ : gsub) : gsub := Nat.iter n gup σ.
 (** A global substitution moved into branch [k]'s scope. *)
