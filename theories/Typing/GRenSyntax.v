@@ -181,10 +181,14 @@ Ltac gpeel_push :=
 
 Lemma redT_gren l1 l2 rb l Δ c v ξ : redT l1 l2 rb l Δ c = Some v ->
   redT l1 l2 rb⟪ξ⟫ l Δ⟪ξ⟫ c⟪ξ⟫ = Some v⟪ξ⟫.
-Proof. destruct c; cbn [redT gren GRen_ty gren_ty]; intros E; first [discriminate E | apply Some_inj in E; subst v]; f_equal; gpeel_push. Qed.
+Proof.
+  destruct c; cbn [redT gren GRen_ty gren_ty]; intros E.
+  par: (first [discriminate E | apply Some_inj in E; subst v]; f_equal; gpeel_push).
+Qed.
 Lemma redt_gren l1 l2 rb l Δ T c v ξ : redt l1 l2 rb l Δ T c = Some v ->
   redt l1 l2 rb⟪ξ⟫ l Δ⟪ξ⟫ T⟪ξ⟫ c⟪ξ⟫ = Some v⟪ξ⟫.
 Proof.
-  destruct c; cbn [redt gren GRen_tm gren_tm]; redt_case T; cbn [gren_ty]; fold gren_ty gren_tm;
-    intros E; first [discriminate E | apply Some_inj in E; subst v]; f_equal; gpeel_push.
+  destruct c; cbn [redt gren GRen_tm gren_tm]; redt_case T; cbn [gren_ty]; fold gren_ty gren_tm; intros E.
+  (* each former's case in a worker (13 s in all) *)
+  par: (first [discriminate E | apply Some_inj in E; subst v]; f_equal; gpeel_push).
 Qed.
