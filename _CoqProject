@@ -155,7 +155,9 @@ theories/Validity/ValidS.v
 theories/Validity/RulesSBase.v
 theories/Validity/RulesSCore.v
 theories/Validity/RulesSIWf.v
+theories/Validity/RulesSIWfTy.v
 theories/Validity/RulesSIWfSupi.v
+theories/Validity/RulesSIWfSupiTy.v
 theories/Validity/RulesS.v
 theories/Validity/GvarS.v
 theories/Validity/Delta.v

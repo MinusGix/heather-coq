@@ -227,15 +227,17 @@ Proof using EL ELM ELP EMl HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR Hσ H
             ltac:(cbn; repeat split; assumption)
             (GS_br EP EM 60 (k :: ki :: k' :: nil) eq_refl Hσ _)
             (GS_br EP EM 60 (k1 :: ki1 :: k1' :: nil) eq_refl (GSubRel_refl_r EP EM Hσ) _) _ _ _ _ _ _ _).
-  - gs_solve.
-  - gs_solve.
-  - sr_ctx_IWf; [exact X1 | exact X2 | exact X3 | exact X4 | exact X5 | exact X6 | exact X7 | exact X8 | exact X9].
-  - sr_ctx_IWf; [exact X1r | exact X2r | exact X3r | exact X4r | exact X5r | exact X6r | exact X7r | exact X8r | exact X9r].
-  - first [J_res | res_eq_IWf].
-  - first [J_res | res_eq_IWf].
-  - first [J_res | res_eq_IWf].
-  - apply redt_elimIWf_inst; inst_side 60.
-  - apply redt_elimIWf_inst; inst_side 60.
+  (* the side goals by shape, each in a worker: the two contexts' relations
+     alone take 12 s, the whole 25 s *)
+  par: lazymatch goal with
+    | |- context [GSall] => gs_solve
+    | |- redt _ _ _ _ _ _ _ = _ => apply redt_elimIWf_inst; inst_side 60
+    | |- context [brΓ _ _ (wrapMT MT') _ _ _] =>
+        sr_ctx_IWf; [exact X1r | exact X2r | exact X3r | exact X4r | exact X5r | exact X6r | exact X7r | exact X8r | exact X9r]
+    | |- context [brΓ _ _ (wrapMT MT) _ _ _] =>
+        sr_ctx_IWf; [exact X1 | exact X2 | exact X3 | exact X4 | exact X5 | exact X6 | exact X7 | exact X8 | exact X9]
+    | |- _ => first [J_res | res_eq_IWf]
+    end.
 Qed.
 
 End Rec.
