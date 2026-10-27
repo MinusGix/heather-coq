@@ -51,7 +51,10 @@ these docs by bare file name.
   `Consequences`), `equiv_gsubst` under `par:`, projections for
   `injection` and `lequiv_sym` without `now` took 743 s against 839 s
   (critical path 605 s and 718 s, CPU 2074 s and 2150 s), back to
-  back. The critical path now runs `Reduction` → `GRenSyntax` →
+  back. Then goal-directed peelers off the path (`leq_step`'s
+  notation arms, `gf_peel`, the `tmDNth` lemmas, `dnf_redt`) took
+  744 s against 753 s (critical path 615 s and 613 s, CPU 1961 s and
+  2098 s), back to back: CPU only. The critical path now runs `Reduction` → `GRenSyntax` →
   `GRenRec` → the Typing metatheory → `LevelInv` → `MCorec(V)` →
   `RulesSIWfSupi` → `RecSIWf` → `FundamentalM` → `AlgPER`. The same machine took anywhere from 976 s to 1609 s for
   that tree over one day, so only back-to-back runs compare. The
