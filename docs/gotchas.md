@@ -357,7 +357,39 @@ formers, so it gets worse with every extension:
   15 s of `Qed`). Proving the equation by constructor congruence
   (`f_equal` down to the leaves, rewriting only there) made both worse
   (20 s and 22 s). With every case `abstract`ed, the cases' own kernel
-  checks took 9 s and the case split 6 s more.
+  checks took 9 s and the case split 6 s more. Under `par:` (each
+  former's case in a worker) the tactics took 7 s; the `Qed` stays.
+- **A lemma waiting for the file it sits in** (2026-10-27, the path's
+  head). `redt_gren` sat in `GRenSyntax` and reduction under global
+  renaming in `GRenRec`, so `GRenRec`'s 19 s of recursor laws waited
+  for 41 s of reducts they never use: 77 s on the path, now `GRenRedt`
+  beside `GRenRecBase` (52 s). `Reduction`'s renaming commutations
+  (25 s) needed only `Subst`, not `Universe`, and `RecLaws`' reducts
+  under universe substitution only `Universe`, not `Declarative`
+  (`ReductionRen`, `RecLawsRedt`). `tools/depgraph.py FILE.v` shows
+  such a group as many seconds ready long before the file starts.
+- **`destruct (lemma args) as pat` in a big context** (2026-10-27).
+  `destruct` of a term abstracts every occurrence of it in the goal
+  and the context before the case split; a proof of a lemma's
+  conclusion never occurs there, so the search only costs. `kid_at`
+  spent 4.3 s in `destruct (LRtm_sum_rel Xs) as (…)` and 0.5 s in each
+  `destruct (LRtm_escape …)`; `pose proof (…) as (…)` takes the same
+  pattern in 0.01 s (`MCorecV` 22 s → 15 s). Keep `destruct` for data
+  whose occurrences should be replaced (`destruct (kw_γ ρ)`).
+- **`destruct W; cbn` to refute a mismatched `ty_leq (C …) W`**: every
+  constructor of `W` is computed before `contradiction` sees `False`.
+  `try exact (False_ind _ H)` first refutes those cases by conversion
+  (`LevelEqInv`).
+- **`par:` over a proof's side goals.** A proof that ends in many
+  independent side goals (`Rt_elimIWf`'s nine) can dispatch them in
+  one `par: lazymatch goal with … end`, by the goal's shape (28 s →
+  18 s). It does not help where each goal is fast: `redt_usubst`'s
+  cases (4 s) took as long under `par:`.
+- **A `Require` hidden in `Ltac`.** The `.glob` misses names used only
+  inside tactics, hints and instances, so `tools/depgraph.py` can
+  suggest dropping a `Require` the file needs (`FundamentalS` uses
+  `RulesS`' `vs_rules` only through a tactic). Check a trimmed
+  `Require` by compiling.
 - Measure before guessing (see `CLAUDE.md`, Build, for the tools):
   `tools/build-profile` for a timed build and its report,
   `tools/proofs.py` for the slowest proofs (tactics vs `Qed`),
