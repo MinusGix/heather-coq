@@ -1107,16 +1107,18 @@ Theorem gsubstitution :
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> forall Ψ' σ, [ gwk_to G Ψ' ⊢ σ : G ] -> compt i ->
      [ gwk_to G Ψ' ⊢[ i ] Γ⦃σ⦄ ≅ Γ'⦃σ⦄ ]).
 Proof.
-  apply typing_mut; intros; try exact I; unfold gwk_to in *; push_gsubst; gs_rewrite; push_gsubst.
-  (* manual cases first, when they close the goal: a failing [gs_step]
+  apply typing_mut; intros.
+  par: (
+    (try exact I; unfold gwk_to in *; push_gsubst; gs_rewrite; push_gsubst);
+    (* manual cases first, when they close the goal: a failing [gs_step]
      backtracks through every rule *)
-  all: try (notrec; first [solve [gs_J] | solve [gs_manual] | solve [gs_manual2] | solve [gs_upi]]).
-  all: try (notrec; gs_step).
-  all: try (notrec; gs_manual).
-  all: try (notrec; gs_manual2).
-  all: try (notrec; any_rule gs_premise).
-  all: try (notrec; gs_upi).
-  all: gs_rec.
+    (try (notrec; first [solve [gs_J] | solve [gs_manual] | solve [gs_manual2] | solve [gs_upi]]));
+    (try (notrec; gs_step));
+    (try (notrec; gs_manual));
+    (try (notrec; gs_manual2));
+    (try (notrec; any_rule gs_premise));
+    (try (notrec; gs_upi));
+    (gs_rec)).
 Qed.
 
 (** ** Declared bindings are well formed *)

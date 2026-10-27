@@ -263,7 +263,9 @@ Theorem fundamentalS :
      SemTm G Γ t t' T l) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> i = lD -> SemCtxEq G Γ Γ').
 Proof using ELM ELP.
-  apply typing_mut; intros; try exact I;
+  apply typing_mut; intros.
+  par: (
+    (try exact I;
     try match goal with H : lM = lD |- _ => discriminate H end;
     ft_prep;
     repeat match goal with
@@ -275,8 +277,8 @@ Proof using ELM ELP.
     unfold SemTy, SemTm, SemCtxEq in *; unfold SemCtx in *;
     repeat match goal with H : _ /\ _ |- _ => destruct H end;
     f_types;
-    repeat split.
-  all: f_goal.
+    repeat split);
+    (f_goal)).
 Qed.
 
 (** ** Layers below P (C, V): lift the derivation to P *)

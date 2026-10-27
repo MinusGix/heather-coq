@@ -69,18 +69,20 @@ Theorem typed_lwf :
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; try exact I;
+  apply typing_mut; intros.
+  par: (
+    (try exact I;
     (* guarded: a failing [apply elimT_lwf] unfolds the recursor against every former *)
     try solve [lazymatch goal with
                | |- tm_lwf _ (elimT _ _ _ _ _ _) => apply elimT_lwf; auto
                | |- tm_lwf _ (elimt _ _ _ _ _ _ _) => apply elimt_lwf; auto end];
-    cbn [ty_lwf tm_lwf ctx_lwf lsub_lwf]; try tauto.
-  (* global variables: the entries of the local substitution *)
-  all: try solve [eapply lsub_lwf_entries; [eassumption|]; intros ?n ?A ?k ?Hin;
-                  match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH; eassumption end].
-  (* defined globals (M9): the body too *)
-  all: split; [assumption |]; eapply lsub_lwf_entries; [eassumption|]; intros ?n ?A ?k ?Hin;
-    match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH; eassumption end.
+    cbn [ty_lwf tm_lwf ctx_lwf lsub_lwf]; try tauto);
+    (* global variables: the entries of the local substitution *)
+    (try solve [eapply lsub_lwf_entries; [eassumption|]; intros ?n ?A ?k ?Hin;
+                  match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH; eassumption end]);
+    (* defined globals (M9): the body too *)
+    (split; [assumption |]; eapply lsub_lwf_entries; [eassumption|]; intros ?n ?A ?k ?Hin;
+    match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH; eassumption end)).
 Qed.
 
 Lemma wf_ty_lwf {G i Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] -> ty_lwf (gL G) T.
@@ -2646,8 +2648,10 @@ Theorem static_code :
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; try exact I; sc_prep; cbn in *; sc_prep.
-  all: first
+  apply typing_mut; intros.
+  par: (
+    (try exact I; sc_prep; cbn in *; sc_prep);
+    (first
     [ (* the same syntax *)
       solve [split; [econstructor; eauto | first [apply eqty_refl | apply eqtm_refl]; econstructor; eauto]]
     | solve [sc_conv_case]
@@ -2695,7 +2699,7 @@ Proof.
       | IH : forall x, tm_leq ?t x -> tm_lwf _ x -> _ /\ _, E : tm_leq ?t ?x, W : tm_lwf _ ?x
         |- _ /\ eq_tm _ _ _ (succ _) _ _ _ =>
           destruct (IH x E W); split; [apply wf_succ | apply eqtm_succ]; assumption
-      end ].
+      end ])).
 Qed.
 
 (** Named forms. *)

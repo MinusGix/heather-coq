@@ -468,12 +468,13 @@ Proof.
   pose proof (wf_brG (ctx_glob _ _ _ HΓ) k Hk) as HG0.
   pose proof (wf_wkc_br G Γ k Hk HΓ) as HB.
   br_all ltac:(try (destruct k as [|k])).
-  all: try (exfalso; lia).
-  all: match goal with |- context [brG ?kk ?G0] => w_lookups kk (gΨ (brG kk G0)) end.
-  all: br_prep.
-  all: try (match goal with |- context [brG 50 ?G0] => br50_pre G0 HG0 end).
-  all: try (match goal with |- context [brG 60 ?G0] => br60_pre G0 HG0 end).
-  all: br_fin HMT HMt HG0 HB.
+  par: (
+    (try (exfalso; lia));
+    (match goal with |- context [brG ?kk ?G0] => w_lookups kk (gΨ (brG kk G0)) end);
+    (br_prep);
+    (try (match goal with |- context [brG 50 ?G0] => br50_pre G0 HG0 end));
+    (try (match goal with |- context [brG 60 ?G0] => br60_pre G0 HG0 end));
+    (br_fin HMT HMt HG0 HB)).
 Qed.
 
 (** A branch typed in the right recursor's scope is typed in the left's. *)

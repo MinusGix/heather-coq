@@ -75,14 +75,16 @@ Theorem static_gsubst :
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; try exact I;
+  apply typing_mut; intros.
+  par: (
+    (try exact I;
     try match goal with Hi : lle lM lC |- _ => destruct (lle_C_notM Hi eq_refl) end;
     try match goal with Hi : lle ?i lC |- _ =>
       repeat match goal with IH : lle i lC -> _ |- _ => specialize (IH Hi) end end;
     cbn [gsubst GSubst_ty GSubst_tm]; simpl;
-    try solve [eauto | cbn; intuition (eauto with leq)].
-  (* global variables: level-equivalent images, at level-equivalent local substitutions *)
-  all: match goal with
+    try solve [eauto | cbn; intuition (eauto with leq)]);
+    (* global variables: level-equivalent images, at level-equivalent local substitutions *)
+    (match goal with
        (* a defined global: the same name, and its body, related (M9) *)
        | Ha : gsub_agree _ ?σ ?σ', Hin : in_gctx _ ?x (gdDef _ _ _ _) |- _ =>
            apply pdef_leq; [ exact (Ha _ _ Hin I)
@@ -94,7 +96,7 @@ Proof.
     change (glsubst ?d ?s) with d⦃s⦄;
     (eapply glsubst_leq_entries; [eassumption |]);
     intros ?n ?A ?k HA; match goal with IH : forall n A k, in_ctx _ n A k -> _ |- _ => eapply IH end;
-    eassumption.
+    eassumption)).
 Qed.
 
 (** ** Substitutions that differ by identity expansions

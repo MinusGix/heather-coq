@@ -1255,7 +1255,9 @@ Theorem fundamentalM_us :
         SemTmMω EP EM (G_us G L' φ) (ucsubst Γ φ) (usubst_tm t φ) (usubst_tm t' φ) (usubst_ty T φ))) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof using ELM ELP EMl.
-  apply typing_mut; intros; try exact I;
+  apply typing_mut; intros.
+  par: (
+    (try exact I;
     try match goal with H : ?x = lM |- _ => lazymatch x with lM => fail | _ => discriminate H end end;
     ft_prep;
     repeat match goal with
@@ -1279,27 +1281,27 @@ Proof using ELM ELP EMl.
          | H : context [tyDVec] |- _ => idtac | |- context [tyDVec] => idtac
          | H : context [tyM] |- _ => idtac | |- context [tyM] => idtac end;
          do 2 (us_rewrite_all; rewrite ?usubst_ren_mix, ?usubst_ren_ty_mix;
-               repeat match goal with H : _ |- _ => progress rewrite ?usubst_ren_ty_mix, ?usubst_ren_mix in H end)).
-  (* the ω-layer goals and [uapp]'s; elsewhere only [w_dispatch]'s assumption
+               repeat match goal with H : _ |- _ => progress rewrite ?usubst_ren_ty_mix, ?usubst_ren_mix in H end)));
+    (* the ω-layer goals and [uapp]'s; elsewhere only [w_dispatch]'s assumption
      case applies, and its lemmas fail slowly *)
-  all: try solve [lazymatch goal with
+    (try solve [lazymatch goal with
                   | |- SemTyMω _ _ _ _ _ _ => w_dispatch | |- SemTmMω _ _ _ _ _ _ _ => w_dispatch
                   | |- context [uapp] => w_dispatch
-                  | _ => try unfold keep in *; eassumption end].
-  all: try solve [ first [simple eapply (FM_tygvar_us EP EM) | simple eapply (FM_gvar_us EP EM)]; eassumption ].
-  all: try solve [ first [ simple eapply (FM_gdef_us EP EM) | simple eapply (FM_gdef_eq_us EP EM)
-                         | simple eapply (FM_delta_us EP EM) ]; eassumption ].
-  all: m_P.
-  all: try solve [ first [ simple eapply (FM_CTyp EP EM) | simple eapply (FM_CTyp_eq EP EM)
+                  | _ => try unfold keep in *; eassumption end]);
+    (try solve [ first [simple eapply (FM_tygvar_us EP EM) | simple eapply (FM_gvar_us EP EM)]; eassumption ]);
+    (try solve [ first [ simple eapply (FM_gdef_us EP EM) | simple eapply (FM_gdef_eq_us EP EM)
+                         | simple eapply (FM_delta_us EP EM) ]; eassumption ]);
+    (m_P);
+    (try solve [ first [ simple eapply (FM_CTyp EP EM) | simple eapply (FM_CTyp_eq EP EM)
                          | simple eapply (FM_CTrm EP EM) | simple eapply (FM_CTrm_eq EP EM)
                          | simple eapply (FM_boxT EP EM) | simple eapply (FM_boxt EP EM)
                          | simple eapply (FM_boxT_eq EP EM) | simple eapply (FM_boxt_eq EP EM)
                          | simple eapply (FM_letboxT EP EM) | simple eapply (FM_letboxT_cong EP EM)
                          | simple eapply (FM_letboxT_beta EP EM)
                          | simple eapply (FM_letboxt EP EM) | simple eapply (FM_letboxt_cong EP EM)
-                         | simple eapply (FM_letboxt_beta EP EM) ]; eassumption ].
-  (* the meta-functions (M5) *)
-  all: try solve [ first
+                         | simple eapply (FM_letboxt_beta EP EM) ]; eassumption ]);
+    (* the meta-functions (M5) *)
+    (try solve [ first
     [ solve [simple eapply (FM_cpi EP EM); eassumption] | solve [simple eapply (FM_cpi_eq EP EM); eassumption]
     | solve [simple eapply (FM_tpi EP EM); eassumption] | solve [simple eapply (FM_tpi_eq EP EM); eassumption]
     | solve [simple eapply (FM_clam EP EM); eassumption] | solve [simple eapply (FM_clam_eq EP EM); eassumption]
@@ -1308,22 +1310,22 @@ Proof using ELM ELP EMl.
     | solve [simple eapply (FM_tapp EP EM); eassumption] | solve [simple eapply (FM_tapp_eq EP EM); eassumption]
     | solve [simple eapply (FM_cbeta EP EM); eassumption] | solve [simple eapply (FM_tbeta EP EM); eassumption]
     | solve [rewrite ?usubst_gren_tm'; simple eapply (FM_ceta EP EM); eassumption]
-    | solve [rewrite ?usubst_gren_tm'; simple eapply (FM_teta EP EM); eassumption] ] ].
-  all: unfold SemTyM, SemTmM, SemCtxM in *;
-    repeat match goal with H : _ /\ _ |- _ => destruct H end; m_types; repeat split.
-  all: try m_goal.
-  (* the recursors on code *)
-  all: try match goal with
+    | solve [rewrite ?usubst_gren_tm'; simple eapply (FM_teta EP EM); eassumption] ] ]);
+    (unfold SemTyM, SemTmM, SemCtxM in *;
+    repeat match goal with H : _ /\ _ |- _ => destruct H end; m_types; repeat split);
+    (try m_goal);
+    (* the recursors on code *)
+    (try match goal with
            | H : eq_tm _ lM _ (elimT _ _ _ _ _ _) _ _ _ |- _ => pose proof (eqtm_wf_r (i := lM) eq_refl H)
            | H : eq_tm _ lM _ (elimt _ _ _ _ _ _ _) _ _ _ |- _ => pose proof (eqtm_wf_r (i := lM) eq_refl H)
-           end.
-  all: first
+           end);
+    (first
     [ solve [simple eapply (VS_elimT_beta EP EM);
              [eassumption | apply redT_usubst; eassumption | eassumption | eassumption]]
     | solve [simple eapply (VS_elimt_beta EP EM);
              [eassumption | apply redt_usubst; eassumption | eassumption | eassumption]]
     | solve [simple eapply (FM_elimT EP EM); m_rec_side]
-    | solve [simple eapply (FM_elimt EP EM); m_rec_side] ].
+    | solve [simple eapply (FM_elimt EP EM); m_rec_side] ])).
 Qed.
 
 (** ** At the identity universe substitution *)

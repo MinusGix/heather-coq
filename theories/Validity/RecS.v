@@ -981,14 +981,16 @@ Theorem rec_code :
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> True) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof using EL ELM ELP EMl HG0 HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR HΓ0 Hσ Hφ VBr VBr' VMT VMTl VMTr VMt VMtl VMtr VΓ VΓT VΓbr VΓt.
-  apply typing_mut; intros; try exact I;
+  apply typing_mut; intros.
+  par: (
+    (try exact I;
     (* the rules at M do not type code *)
     match goal with Ei : ?i = lC, EG : ?G = G' |- _ => first [discriminate Ei | subst i G] end;
     repeat match goal with IH : lC = lC -> G' = G' -> _ |- _ => specialize (IH eq_refl eq_refl) end;
     cbn [typeof] in *;
     (* the rules of the computing layers do not type code (M8_DESIGN.md I1) *)
-    try match goal with c : compt lC |- _ => destruct c; discriminate end.
-  all: first
+    try match goal with c : compt lC |- _ => destruct c; discriminate end);
+    (first
     [ solve [apply RT_nat | apply RT_U | apply RT_gvar | apply Rt_nat | apply Rt_zero | apply Rt_U | apply Rt_gvar | apply Rt_gdef]
     | solve [eapply Rt_var; eassumption]
     | solve [eapply RT_pi; eassumption] | solve [eapply RT_El; eassumption] | solve [eapply RT_lconv; eassumption]
@@ -1024,7 +1026,7 @@ Proof using EL ELM ELP EMl HG0 HMT HMT' HMt HMt' Hbs Hbs' He Hl1 Hl2 HrbL HrbR H
     (* dependent tuples and indexed trees (M17c) *)
     | solve [eapply RT_dvec; eassumption] | solve [eapply Rt_codedvec; eassumption]
     | solve [eapply RT_iwf; eassumption] | solve [eapply Rt_codeiwf; eassumption]
-    | solve [eapply Rt_supi; eassumption] | solve [eapply Rt_elimIWf; eassumption] ].
+    | solve [eapply Rt_supi; eassumption] | solve [eapply Rt_elimIWf; eassumption] ])).
 Qed.
 
 (** The recursion lemmas, for a code typed at C in the left context. *)

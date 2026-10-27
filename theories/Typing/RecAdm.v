@@ -353,18 +353,22 @@ Context {G : gctx} {Γ : ctx} (HΓ : [ G ; Γ ⊢[ lM ] ]) {l1 l2 : lvl} (Hl1 : 
 Lemma brΓ_wf k : k < nbr -> [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] ].
 Proof using HMT HMt Hl1 Hl2 HΓ.
   intros Hk. pose proof (wf_brG (ctx_glob _ _ _ HΓ) k Hk) as HG'.
-  br_all ltac:(try (destruct k as [|k])). all: try (exfalso; lia).
-  all: unfold brΓ; cbn [brLocs cexts mkLocs call_ty call_lv br_calls br_nu br_ng br_ar].
-  all: match goal with |- [ brG ?kk ?G0 ; _ ⊢[ _ ] ] => w_lookups kk (gΨ (brG kk G0)); br_pre kk G0; br_ctx kk HΓ HMT HMt; br_side kk HΓ end.
+  br_all ltac:(try (destruct k as [|k])).
+  par: (
+    (try (exfalso; lia));
+    (unfold brΓ; cbn [brLocs cexts mkLocs call_ty call_lv br_calls br_nu br_ng br_ar]);
+    (match goal with |- [ brG ?kk ?G0 ; _ ⊢[ _ ] ] => w_lookups kk (gΨ (brG kk G0)); br_pre kk G0; br_ctx kk HΓ HMT HMt; br_side kk HΓ end)).
 Qed.
 
 Lemma brRes_wf k : k < nbr ->
   [ brG k G ; brΓ k Γ (wrapMT MT) (wrapMt Mt) l1 l2 ⊢[ lM ] brRes k (wrapMT MT) (wrapMt Mt) @ brLv k l1 l2 ].
 Proof using HMT HMt Hl1 Hl2 HΓ.
   intros Hk. pose proof (wf_brG (ctx_glob _ _ _ HΓ) k Hk) as HG'.
-  br_all ltac:(try (destruct k as [|k])). all: try (exfalso; lia).
-  all: unfold brΓ, brLv; cbn [brLocs cexts brRes br_isT mkLocs call_ty call_lv br_calls br_nu br_ng br_ar br_head br_nl].
-  all: match goal with |- [ brG ?kk ?G0 ; _ ⊢[ _ ] _ @ _ ] => w_lookups kk (gΨ (brG kk G0)); br_pre kk G0; br_inst kk HΓ HMT HMt; br_side kk HΓ end.
+  br_all ltac:(try (destruct k as [|k])).
+  par: (
+    (try (exfalso; lia));
+    (unfold brΓ, brLv; cbn [brLocs cexts brRes br_isT mkLocs call_ty call_lv br_calls br_nu br_ng br_ar br_head br_nl]);
+    (match goal with |- [ brG ?kk ?G0 ; _ ⊢[ _ ] _ @ _ ] => w_lookups kk (gΨ (brG kk G0)); br_pre kk G0; br_inst kk HΓ HMT HMt; br_side kk HΓ end)).
 Qed.
 
 End Adm.

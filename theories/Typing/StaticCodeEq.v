@@ -62,7 +62,9 @@ Theorem static_code_eq :
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> lle i lC -> tm_leq t t') /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> lle i lC -> ctx_leq Γ Γ').
 Proof.
-  apply typing_mut; intros; try exact I;
+  apply typing_mut; intros.
+  par: (
+    (try exact I;
     (* the computing and M-only rules do not apply below D *)
     try match goal with
         | Hc : compt ?i, Hle : lle ?i lC |- _ => exfalso; exact (lle_C_not_compt Hle Hc)
@@ -79,7 +81,7 @@ Proof.
             | eapply ty_leq_trans; eassumption | eapply tm_leq_trans; eassumption]
     | solve [split; [reflexivity | eapply lsub_leq_entries; eassumption]]
     | solve [split; [reflexivity | split; [assumption | eapply lsub_leq_entries; eassumption]]]
-    | solve [cbn; repeat split; try assumption; eapply lequiv_leqv; eassumption] ].
+    | solve [cbn; repeat split; try assumption; eapply lequiv_leqv; eassumption] ])).
 Qed.
 
 Corollary static_code_eqty {G i Γ T T' l} : lle i lC -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> ty_leq T T'.

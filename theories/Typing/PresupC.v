@@ -916,21 +916,23 @@ Theorem presupposition_C :
      [ G ; Γ ⊢[ i ] t : T @ l ] /\ [ G ; Γ ⊢[ i ] t' : T @ l ]) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> True).
 Proof.
-  apply typing_mut; intros; try exact I;
+  apply typing_mut; intros.
+  par: (
+    (try exact I;
     (* the computing and M-only rules do not apply below D *)
     try match goal with
         | Hc : compt ?i, Hle : lle ?i lC |- _ => exfalso; exact (lle_C_not_compt Hle Hc)
         | Hle : lle lM lC |- _ => exfalso; exact (lle_C_not_M Hle eq_refl)
         end;
     repeat match goal with IH : lle ?j lC -> _, Hle : lle ?j lC |- _ => specialize (IH Hle) end;
-    repeat match goal with H : _ /\ _ |- _ => destruct H end.
-  all: try solve [split; auto].
-  all: try solve [split; eapply wf_conv; eassumption].
-  all: try solve [split; eapply wft_lconv; eassumption].
-  all: try solve [split; eapply wf_lconv; eassumption].
-  all: try solve [split; apply wf_succ; assumption].
-  all: try solve [split; first [eapply wft_gvar | eapply wf_gvar]; eassumption].
-  all: first [ solve [eapply pc_pi; eassumption] | solve [eapply pc_El; eassumption]
+    repeat match goal with H : _ /\ _ |- _ => destruct H end);
+    (try solve [split; auto]);
+    (try solve [split; eapply wf_conv; eassumption]);
+    (try solve [split; eapply wft_lconv; eassumption]);
+    (try solve [split; eapply wf_lconv; eassumption]);
+    (try solve [split; apply wf_succ; assumption]);
+    (try solve [split; first [eapply wft_gvar | eapply wf_gvar]; eassumption]);
+    (first [ solve [eapply pc_pi; eassumption] | solve [eapply pc_El; eassumption]
              | solve [eapply pc_U; eassumption] | solve [eapply pc_codeU; eassumption]
              | solve [eapply pc_codepi; eassumption] | solve [eapply pc_natrec; eassumption]
              | solve [eapply pc_lam; eassumption] | solve [eapply pc_app; eassumption]
@@ -966,7 +968,7 @@ Proof.
              (* dependent tuples and indexed W-types, with their codes (M17c) *)
              | solve [eapply pc_dvec; eassumption] | solve [eapply pc_iwf; eassumption]
              | solve [eapply pc_supi; eassumption] | solve [eapply pc_elimIWf; eassumption]
-             | solve [eapply pc_code_dvec; eassumption] | solve [eapply pc_code_iwf; eassumption] ].
+             | solve [eapply pc_code_dvec; eassumption] | solve [eapply pc_code_iwf; eassumption] ])).
 Qed.
 
 Lemma eqty_wf_C {G i Γ T T' l} : lle i lC -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->

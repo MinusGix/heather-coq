@@ -194,38 +194,40 @@ Theorem typed_dnf :
   (forall G i Γ t t' T l, [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> dnftm t /\ dnftm t' /\ dnfty T) /\
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> dnfctx Γ /\ dnfctx Γ').
 Proof.
-  apply typing_mut; intros; cbn in *;
+  apply typing_mut; intros.
+  par: (
+    (cbn in *;
     try match goal with H : in_gctx _ _ _ |- _ => pose proof (in_gctx_dnf _ _ _ H); cbn in * end;
     repeat match goal with H : _ /\ _ |- _ => destruct H end;
-    repeat split; eauto using subst_dnf_ty, subst_dnf, ren_dnf_ty, ren_dnf, in_ctx_dnf, dnf_tmDNth, dnf_iwfFam with nf.
-  all: try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle2; cbn; tauto]].
-  all: try solve [apply subst_dnf_ty; auto; intros n; apply dnfl_llk; auto].
-  all: try solve [apply subst_dnf; auto; intros n; apply dnfl_llk; auto].
-  all: try solve [apply gsubst_dnf_all; auto; apply dnfo_gsingle; cbn; auto].
-  (* the recursors: branches, motive instances, reducts *)
-  all: try match goal with
+    repeat split; eauto using subst_dnf_ty, subst_dnf, ren_dnf_ty, ren_dnf, in_ctx_dnf, dnf_tmDNth, dnf_iwfFam with nf);
+    (try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle2; cbn; tauto]]);
+    (try solve [apply subst_dnf_ty; auto; intros n; apply dnfl_llk; auto]);
+    (try solve [apply subst_dnf; auto; intros n; apply dnfl_llk; auto]);
+    (try solve [apply gsubst_dnf_all; auto; apply dnfo_gsingle; cbn; auto]);
+    (* the recursors: branches, motive instances, reducts *)
+    (try match goal with
        | IH : forall k, k < nbr -> dnftm (?bs k) /\ _ |- dnftm (?bs ?n) => exact (proj1 (IH n ltac:(lia)))
-       end.
-  all: try solve [ repeat first [ apply subst_dnf_ty | apply gsubst_dnf_all | apply usubst_dnf_all
+       end);
+    (try solve [ repeat first [ apply subst_dnf_ty | apply gsubst_dnf_all | apply usubst_dnf_all
                                 | apply uren_dnf_all | apply dnfo_gup | apply dnfo_gsingle | apply lk_dnf_lsingle ];
-                   cbn; intuition auto ].
-  all: try solve [ eapply dnf_redT; [ .. | eassumption ]; cbn; intuition auto
-                 | eapply dnf_redt; [ .. | eassumption ]; cbn; intuition auto ].
-  all: try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle3; auto using dnf_wIH, dnf_wfIH, dnf_iwfIH]].
-  (* [DVec]'s successor reduct (M17a): the head's and the tail's instances *)
-  all: try solve [ repeat first [ progress cbn [dnftm dnfty] | apply subst_dnf_ty | apply ren_dnf_ty | apply ren_dnf
-                                | apply lk_dnf_lsingle | split | exact I ]; intuition auto ].
-  (* [elim_IWf]'s β (M17b): the motive at the [sup_i]'s index and itself *)
-  all: try solve [apply subst_dnf_ty; [assumption | apply lk_dnf_lsingle2; cbn [dnftm dnfty];
-                  intuition auto using subst_dnf, lk_dnf_lsingle]].
-  (* [M]'s out type and β (M18b) *)
+                   cbn; intuition auto ]);
+    (try solve [ eapply dnf_redT; [ .. | eassumption ]; cbn; intuition auto
+                 | eapply dnf_redt; [ .. | eassumption ]; cbn; intuition auto ]);
+    (try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle3; auto using dnf_wIH, dnf_wfIH, dnf_iwfIH]]);
+    (* [DVec]'s successor reduct (M17a): the head's and the tail's instances *)
+    (try solve [ repeat first [ progress cbn [dnftm dnfty] | apply subst_dnf_ty | apply ren_dnf_ty | apply ren_dnf
+                                | apply lk_dnf_lsingle | split | exact I ]; intuition auto ]);
+    (* [elim_IWf]'s β (M17b): the motive at the [sup_i]'s index and itself *)
+    (try solve [apply subst_dnf_ty; [assumption | apply lk_dnf_lsingle2; cbn [dnftm dnfty];
+                  intuition auto using subst_dnf, lk_dnf_lsingle]]);
+    (* [M]'s out type and β (M18b) *)
   (* by shape: [apply dnf_mOutCorec] on another goal unfolds it to unify,
      seconds per goal (#60) *)
-  all: try solve [ lazymatch goal with |- dnftm (mOutCorec _ _ _ _ _ _ _ _ _ _ _ _) =>
+    (try solve [ lazymatch goal with |- dnftm (mOutCorec _ _ _ _ _ _ _ _ _ _ _ _) =>
                      apply dnf_mOutCorec; assumption end
-                 | dnf_M ].
-  (* η of the meta-functions (M5): the weakened function *)
-  all: apply gren_dnf_all.
+                 | dnf_M ]);
+    (* η of the meta-functions (M5): the weakened function *)
+    (apply gren_dnf_all)).
 Qed.
 
 Theorem typed_nf :
@@ -271,8 +273,10 @@ Theorem typed_dnf_ctx :
   (forall G i Γ Γ', [ G ⊢[ i ] Γ ≅ Γ' ] -> dnfctx Γ /\ dnfctx Γ').
 Proof.
   destruct typed_dnf as (_ & _ & Hty & _ & Heq & _).
-  apply typing_mut; intros; cbn in *; try exact I; eauto; try tauto.
-  all: repeat split; try tauto; eauto; eapply Heq; eassumption.
+  apply typing_mut; intros.
+  par: (
+    (cbn in *; try exact I; eauto; try tauto);
+    (repeat split; try tauto; eauto; eapply Heq; eassumption)).
 Qed.
 
 Lemma wf_ty_dnf_ctx {G i Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] -> dnfctx Γ.
