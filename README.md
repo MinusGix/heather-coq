@@ -189,9 +189,10 @@ Documents:
   checks of it, and the order of the coming milestones.
 - `docs/design/`: one design doc per milestone (`M1_DESIGN.md` to
   `M18_DESIGN.md`) with its decisions, deviations from the paper and
-  outcome, plus `ELIM_CONGRUENCE.md` (typed eliminator congruence) and
+  outcome, plus `ELIM_CONGRUENCE.md` (typed eliminator congruence),
   `SYNTAX_SPIKE.md` (why the syntax is hand-written; the spike is
-  `spike/Syntax.v`). `M1_DESIGN.md` holds the shape decisions and the
+  `spike/Syntax.v`) and `LAYER_STRUCTURE.md` (side conditions on layer
+  structures, from `probes/LayerStructure.v`). `M1_DESIGN.md` holds the shape decisions and the
   deviations from the paper that the later milestones build on. The
   text above and the theories' comments cite these docs by file name.
 - `docs/gotchas.md`: proof-engineering and build-time gotchas.

@@ -8,9 +8,10 @@
     condition is necessary: for each, a structure that meets the other
     five has a well-typed closed numeral without a normal form, or a
     conversion between two distinct numerals (section [Counterexamples]).
-    The {code, program} × meta-depth grid meets all six, at every depth
-    and with a partial top level; DeLaM is its depth-1 slice (section
-    [Grid]).
+    The {code, program} × meta-depth grid meets all six, at every depth,
+    with a partial top level, and with each program row hosting its own
+    code (the reflexive cell R of issue #47); DeLaM is its depth-1 slice
+    (section [The grid]).
 
     The toy's code is closed and untyped: [Code c] holds a closed
     layer-[c] term [s] of any type [A], as [box A s], tagged with its type
