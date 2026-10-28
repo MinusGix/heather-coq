@@ -59,7 +59,8 @@ Context {L : Type}.
 Inductive ty : Type :=
 | tNat
 | tArr (A B : ty)
-| tCode (c : L).
+| tCode (c : L)
+| tBox (c : L) (A : ty).
 
 Inductive tm : Type :=
 | var (x : nat)
@@ -71,7 +72,10 @@ Inductive tm : Type :=
 | csize (t : tm)
 | run (c : L) (B : ty) (t d : tm)
 | quote (c : L) (t : tm)
-| fix_ (A : ty) (t : tm).
+| fix_ (A : ty) (t : tm)
+| cfold (T : ty) (b z t : tm)
+| tbox (s : tm)
+| trun (t : tm).
 
 Definition upren (ξ : nat -> nat) (x : nat) : nat :=
   match x with 0 => 0 | S x => S (ξ x) end.
@@ -90,6 +94,9 @@ Fixpoint ren (ξ : nat -> nat) (t : tm) : tm :=
   | run c B t d => run c B (ren ξ t) (ren ξ d)
   | quote c t => quote c (ren ξ t)
   | fix_ A t => fix_ A (ren (upren ξ) t)
+  | cfold T b z t => cfold T (ren ξ b) (ren ξ z) (ren ξ t)
+  | tbox s => tbox s
+  | trun t => trun (ren ξ t)
   end.
 
 Definition up (σ : nat -> tm) (x : nat) : tm :=
@@ -107,6 +114,9 @@ Fixpoint subst (σ : nat -> tm) (t : tm) : tm :=
   | run c B t d => run c B (subst σ t) (subst σ d)
   | quote c t => quote c (subst σ t)
   | fix_ A t => fix_ A (subst (up σ) t)
+  | cfold T b z t => cfold T (subst σ b) (subst σ z) (subst σ t)
+  | tbox s => tbox s
+  | trun t => trun (subst σ t)
   end.
 
 Definition scons (u : tm) (σ : nat -> tm) (x : nat) : tm :=
@@ -115,8 +125,33 @@ Definition scons (u : tm) (σ : nat -> tm) (x : nat) : tm :=
 Fixpoint size (t : tm) : nat :=
   match t with
   | var _ | lit _ => 1
-  | lam _ t | succ t | box _ t | csize t | quote _ t | fix_ _ t => S (size t)
+  | lam _ t | succ t | box _ t | csize t | quote _ t | fix_ _ t | tbox t | trun t =>
+      S (size t)
   | app t u | run _ _ t u => S (size t + size u)
+  | cfold _ b z t => S (size b + size z + size t)
+  end.
+
+(** The fold with a fixed motive [T]: every node of the code becomes
+    [b k l r], with [k] a tag for the node (and its data) and [l], [r]
+    the folds of up to two children ([z] where there is none).  It is
+    structural on the code's syntax and never runs it. *)
+Definition node (b : tm) (k : nat) (l r : tm) : tm := app (app (app b (lit k)) l) r.
+
+Fixpoint foldtm (b z : tm) (s : tm) : tm :=
+  match s with
+  | var x => node b (16 * x) z z
+  | lam _ t => node b 1 (foldtm b z t) z
+  | app t u => node b 2 (foldtm b z t) (foldtm b z u)
+  | lit k => node b (16 * k + 3) z z
+  | succ t => node b 4 (foldtm b z t) z
+  | box _ s => node b 5 (foldtm b z s) z
+  | csize t => node b 6 (foldtm b z t) z
+  | run _ _ t d => node b 7 (foldtm b z t) (foldtm b z d)
+  | quote _ t => node b 8 (foldtm b z t) z
+  | fix_ _ t => node b 9 (foldtm b z t) z
+  | cfold _ b' z' t => node b 10 (foldtm b z t) (node b 11 (foldtm b z b') (foldtm b z z'))
+  | tbox s => node b 12 (foldtm b z s) z
+  | trun t => node b 13 (foldtm b z t) z
   end.
 
 (** *** Substitution lemmas *)
@@ -177,6 +212,9 @@ Lemma subst_single_comp σ u t :
   subst σ (subst (scons u var) t) = subst (scons (subst σ u) σ) t.
 Proof. rewrite subst_subst; apply subst_ext; intros []; reflexivity. Qed.
 
+Lemma subst_foldtm σ b z s : subst σ (foldtm b z s) = foldtm (subst σ b) (subst σ z) s.
+Proof. induction s; cbn [foldtm]; unfold node; cbn [subst]; congruence. Qed.
+
 (** *** Reduction: weak head, call by name, untyped *)
 
 Inductive red : tm -> tm -> Prop :=
@@ -191,14 +229,18 @@ Inductive red : tm -> tm -> Prop :=
 | r_run c B t t' d : red t t' -> red (run c B t d) (run c B t' d)
 | r_quote_box c A s : red (quote c (box A s)) (box (tCode c) (box A s))
 | r_quote c t t' : red t t' -> red (quote c t) (quote c t')
-| r_fix A t : red (fix_ A t) (subst (scons (fix_ A t) var) t).
+| r_fix A t : red (fix_ A t) (subst (scons (fix_ A t) var) t)
+| r_cfold_box T b z A s : red (cfold T b z (box A s)) (foldtm b z s)
+| r_cfold T b z t t' : red t t' -> red (cfold T b z t) (cfold T b z t')
+| r_trun_box s : red (trun (tbox s)) s
+| r_trun t t' : red t t' -> red (trun t) (trun t').
 
 Inductive reds : tm -> tm -> Prop :=
 | reds_refl t : reds t t
 | reds_step t t' t'' : red t t' -> reds t' t'' -> reds t t''.
 
 Definition value (t : tm) : Prop :=
-  match t with lam _ _ | lit _ | box _ _ => True | _ => False end.
+  match t with lam _ _ | lit _ | box _ _ | tbox _ => True | _ => False end.
 
 (** [t ⇓ v]. *)
 Definition evalto (t v : tm) : Prop := reds t v /\ value v.
@@ -214,6 +256,7 @@ Proof.
            | H : red (lam _ _) _ |- _ => inversion H
            | H : red (lit _) _ |- _ => inversion H
            | H : red (box _ _) _ |- _ => inversion H
+           | H : red (tbox _) _ |- _ => inversion H
            end;
     f_equal; auto.
 Qed.
@@ -271,6 +314,7 @@ Fixpoint wf_ty (k : L) (A : ty) : Prop :=
   | tNat => True
   | tArr A B => wf_ty k A /\ wf_ty k B
   | tCode c => hosts k c
+  | tBox c A => hosts k c /\ wf_ty k A
   end.
 
 (** [Γ ⊢ⱼ t : A].  Types are checked where they are introduced. *)
@@ -295,6 +339,13 @@ Inductive typed : L -> list ty -> tm -> ty -> Prop :=
 | ty_fix j Γ A t :
     total j = false -> wf_ty (typeof j) A -> typed j (A :: Γ) t A ->
     typed j Γ (fix_ A t) A
+| ty_cfold j Γ c T b z t :
+    typed j Γ b (tArr tNat (tArr T (tArr T T))) -> typed j Γ z T ->
+    typed j Γ t (tCode c) -> typed j Γ (cfold T b z t) T
+| ty_tbox j Γ c A s :
+    hosts (typeof j) c -> lle c j -> wf_ty (typeof c) A -> typed c [] s A ->
+    typed j Γ (tbox s) (tBox c A)
+| ty_trun j Γ c A t : lle c j -> typed j Γ t (tBox c A) -> typed j Γ (trun t) A
 | ty_lift i j Γ t A : lle i j -> typed i Γ t A -> typed j Γ t A.
 
 (** [Γ ⊢ⱼ t ≡ t' : A]: congruences everywhere, computation only at
@@ -341,7 +392,20 @@ Inductive conv : L -> list ty -> tm -> tm -> ty -> Prop :=
 | cv_quote_box j Γ c c' A s :
     computes j = true -> hosts (typeof c') c -> hosts (typeof j) c' ->
     typed j Γ (box A s) (tCode c) ->
-    conv j Γ (quote c (box A s)) (box (tCode c) (box A s)) (tCode c').
+    conv j Γ (quote c (box A s)) (box (tCode c) (box A s)) (tCode c')
+| cv_cfold j Γ c T b b' z z' t t' :
+    conv j Γ b b' (tArr tNat (tArr T (tArr T T))) -> conv j Γ z z' T ->
+    conv j Γ t t' (tCode c) -> conv j Γ (cfold T b z t) (cfold T b' z' t') T
+| cv_tbox j Γ c A s s' :
+    hosts (typeof j) c -> lle c j -> wf_ty (typeof c) A -> conv c [] s s' A ->
+    conv j Γ (tbox s) (tbox s') (tBox c A)
+| cv_trun j Γ c A t t' : lle c j -> conv j Γ t t' (tBox c A) -> conv j Γ (trun t) (trun t') A
+| cv_cfold_box j Γ c T b z A s :
+    computes j = true -> typed j Γ b (tArr tNat (tArr T (tArr T T))) -> typed j Γ z T ->
+    typed j Γ (box A s) (tCode c) -> conv j Γ (cfold T b z (box A s)) (foldtm b z s) T
+| cv_trun_box j Γ c A s :
+    computes j = true -> hosts (typeof j) c -> lle c j -> wf_ty (typeof c) A ->
+    typed c [] s A -> conv j Γ (trun (tbox s)) s A.
 
 (** *** The side conditions *)
 
@@ -371,6 +435,10 @@ Fixpoint R (A : ty) : tm -> tm -> Prop :=
   | tArr A B => fun t t' => forall u u', R A u u' -> R B (app t u) (app t' u')
   | tCode c => fun t t' => exists A s,
       evalto t (box A s) /\ evalto t' (box A s) /\ wf_ty (typeof c) A /\ typed c [] s A
+  (* typed code is related by its contents' relation: no syntactic
+     comparison, since nothing analyses it *)
+  | tBox c A => fun t t' => exists s s',
+      evalto t (tbox s) /\ evalto t' (tbox s') /\ (total c = true -> R A s s')
   end.
 
 Lemma R_sym A t t' : R A t t' -> R A t' t.
@@ -379,6 +447,7 @@ Proof.
   - destruct H as (k & H1 & H2); eauto.
   - intros u u' Hu; apply IHA2, H, IHA1, Hu.
   - destruct H as (A & s & H1 & H2 & H3); eauto 6.
+  - destruct H as (s & s' & H1 & H2 & H3); exists s', s; split; [| split]; auto.
 Qed.
 
 Lemma R_trans A t t' t'' : R A t t' -> R A t' t'' -> R A t t''.
@@ -391,6 +460,10 @@ Proof.
     apply H', (IHA1 _ u); [apply R_sym, Hu | exact Hu].
   - destruct H as (A & s & H1 & H2 & H3 & H4), H' as (A' & s' & H1' & H2' & _).
     pose proof (evalto_det _ _ _ H2 H1') as E; injection E as -> ->; eauto 6.
+  - destruct H as (s & s1 & H1 & H2 & H3), H' as (s1' & s2 & H1' & H2' & H3').
+    pose proof (evalto_det _ _ _ H2 H1') as E; injection E as <-.
+    exists s, s2; split; [| split]; auto.
+    intros Ht; apply (IHA _ s1); auto.
 Qed.
 
 Lemma R_refl_l A t t' : R A t t' -> R A t t.
@@ -407,6 +480,7 @@ Proof.
   - intros u u' Hu; apply (IHA2 _ (app t1 u) _ (app t1' u')); [| | apply HR, Hu].
     all: apply (reds_cong (fun t => app t _)); [intros; constructor; assumption | assumption].
   - destruct HR as (A & s & H1 & H2 & H3); eauto 7 using evalto_expand.
+  - destruct HR as (s & s' & H1 & H2 & H3); eauto 7 using evalto_expand.
 Qed.
 
 Lemma R_red1 A t t1 t' : red t t1 -> R A t1 t' -> R A t t'.
@@ -439,6 +513,13 @@ Qed.
 
 Lemma closed_subst c s A σ : typed c [] s A -> subst σ s = s.
 Proof. intros H; apply (typed_subst_closed _ _ _ _ H); cbn; lia. Qed.
+
+(** Typing is stable under extending the context at its end. *)
+Lemma typed_app j Γ t A Δ : typed j Γ t A -> typed j (Γ ++ Δ) t A.
+Proof.
+  induction 1; econstructor; eauto.
+  rewrite nth_error_app1; [assumption | apply nth_error_Some; congruence].
+Qed.
 
 Lemma Rsub_var_nil : Rsub [] var var.
 Proof. intros [] ?; discriminate. Qed.
@@ -521,6 +602,43 @@ Proof.
     apply R_sym, (R_red1 _ _ d'); [constructor; exact Hne |]; apply R_sym, Hd.
 Qed.
 
+(** The fold: by induction on the code's syntax, from its branches alone.
+    No theorem about the code's contents is needed, at any depth. *)
+Lemma R_foldtm T b b' z z' s :
+  R (tArr tNat (tArr T (tArr T T))) b b' -> R T z z' -> R T (foldtm b z s) (foldtm b' z' s).
+Proof.
+  intros Hb Hz.
+  assert (Hn : forall k l l' r r', R T l l' -> R T r r' -> R T (node b k l r) (node b' k l' r'))
+    by (intros k l l' r r' Hl Hr; apply Hb; [apply R_lit | exact Hl | exact Hr]).
+  induction s; cbn [foldtm]; auto.
+Qed.
+
+Lemma R_cfold c T b b' z z' t t' :
+  R (tArr tNat (tArr T (tArr T T))) b b' -> R T z z' -> R (tCode c) t t' ->
+  R T (cfold T b z t) (cfold T b' z' t').
+Proof.
+  intros Hb Hz (A & s & [H _] & [H' _] & _).
+  assert (Hc : forall b0 z0 t0 t1, reds t0 t1 -> reds (cfold T b0 z0 t0) (cfold T b0 z0 t1))
+    by (intros b0 z0; apply (reds_cong (fun t => cfold T b0 z0 t)); constructor; assumption).
+  apply (R_expand _ _ _ _ _ (Hc _ _ _ _ H) (Hc _ _ _ _ H')).
+  apply (R_red1 _ _ (foldtm b z s)); [constructor |].
+  apply R_sym, (R_red1 _ _ (foldtm b' z' s)); [constructor |].
+  apply R_sym, R_foldtm; assumption.
+Qed.
+
+Lemma R_tbox c A s s' : (total c = true -> R A s s') -> R (tBox c A) (tbox s) (tbox s').
+Proof. intros H; exists s, s'; split; [| split]; auto; apply evalto_value; exact I. Qed.
+
+Lemma R_trun c A t t' : total c = true -> R (tBox c A) t t' -> R A (trun t) (trun t').
+Proof.
+  intros Hc (s & s' & [H _] & [H' _] & Hs).
+  assert (Hr : forall t0 t1, reds t0 t1 -> reds (trun t0) (trun t1))
+    by (apply reds_cong; constructor; assumption).
+  apply (R_expand _ _ _ _ _ (Hr _ _ H) (Hr _ _ H')).
+  apply (R_red1 _ _ s); [constructor |].
+  apply R_sym, (R_red1 _ _ s'); [constructor |]; apply R_sym, Hs, Hc.
+Qed.
+
 (** *** The fundamental theorem, by recursion on the meta depth *)
 
 Section FT.
@@ -537,7 +655,8 @@ Proof.
   induction Hty as [j Γ x A Hx | j Γ A B t HA Ht IHt | j Γ A B t u Ht IHt Hu IHu
     | j Γ k | j Γ t Ht IHt | j Γ c A s Hh HA Hs _ | j Γ c t Ht IHt
     | j Γ c B t d He Hh HB Ht IHt Hd IHd | j Γ c c' t Hh Hh' Ht IHt
-    | j Γ A t Hp HA Ht _ | i j Γ t A Hij Ht IHt];
+    | j Γ A t Hp HA Ht _ | j Γ c T b z t Hb IHb Hz IHz Ht IHt
+    | j Γ c A s Hh Hcj HA Hs IHs | j Γ c A t Hcj Ht IHt | i j Γ t A Hij Ht IHt];
     intros Hn Htot σ σ' Hσ; cbn.
   - apply Hσ, Hx.
   - apply R_lam; intros u u' Hu; apply IHt; auto using Rsub_cons.
@@ -553,6 +672,11 @@ Proof.
     + exact (Htotal _ _ (Hlift _ _ He) Htot).
   - apply R_quote; [assumption | apply IHt; assumption].
   - congruence.
+  - apply (R_cfold c); [apply IHb | apply IHz | apply IHt]; assumption.
+  - (* typed code: its contents lift into [j], so they are no deeper *)
+    apply R_tbox; intros Hc; rewrite <- (subst_var s).
+    apply IHs; [pose proof (Hdepth _ _ Hcj); lia | exact Hc | exact Rsub_var_nil].
+  - apply (R_trun c); [exact (Htotal _ _ Hcj Htot) | apply IHt; assumption].
   - apply IHt; [pose proof (Hdepth _ _ Hij); lia | exact (Htotal _ _ Hij Htot) | exact Hσ].
 Qed.
 
@@ -600,7 +724,10 @@ Proof.
     | j Γ A t t' Hp _ _ _
     | j Γ A B t u _ HA Ht Hu | j Γ k _ | j Γ c A s _ Hb
     | j Γ c B s d _ He Hh HB Hs Hd | j Γ c A B s d _ Hne He Hh HB Hb Hd
-    | j Γ c c' A s _ Hh Hh' Hb];
+    | j Γ c c' A s _ Hh Hh' Hb
+    | j Γ c T b b' z z' t t' _ IHb _ IHz _ IHt | j Γ c A s s' Hh Hcj HA _ IH
+    | j Γ c A t t' Hcj _ IH | j Γ c T b z A s _ Hb Hz _
+    | j Γ c A s _ Hh Hcj HA Hs];
     intros Htot σ σ' Hσ; cbn [subst].
   - exact (FT_typed _ _ _ _ Ht Htot _ _ Hσ).
   - apply R_sym, IH; [exact Htot | apply Rsub_sym, Hσ].
@@ -633,6 +760,16 @@ Proof.
     destruct (R_code_inv _ _ _ _ Hr) as [HA Hs].
     apply (R_red1 _ _ (box (tCode c) (box A s))); [constructor |].
     apply R_box; [exact Hh | constructor; assumption].
+  - apply (R_cfold c); [apply IHb | apply IHz | apply IHt]; assumption.
+  - apply R_tbox; intros Hc; rewrite <- (subst_var s), <- (subst_var s').
+    exact (IH Hc _ _ Rsub_var_nil).
+  - apply (R_trun c); [exact (Htotal _ _ Hcj Htot) | apply IH; assumption].
+  - rewrite subst_foldtm.
+    apply (R_red1 _ _ (foldtm (subst σ b) (subst σ z) s)); [constructor |].
+    apply R_foldtm; [exact (FT_typed _ _ _ _ Hb Htot _ _ Hσ) | exact (FT_typed _ _ _ _ Hz Htot _ _ Hσ)].
+  - rewrite (closed_subst _ _ _ _ Hs).
+    apply (R_red1 _ _ s); [constructor |].
+    exact (FT_closed _ _ _ Hs (Htotal _ _ Hcj Htot)).
 Qed.
 
 (** Conversion is sound for numerals at total layers. *)
@@ -662,6 +799,7 @@ Ltac inv_value_red := match goal with
   | H : red (lam _ _) _ |- _ => inversion H
   | H : red (lit _) _ |- _ => inversion H
   | H : red (box _ _) _ |- _ => inversion H
+  | H : red (tbox _) _ |- _ => inversion H
   end.
 
 Section Diverge.
@@ -1196,3 +1334,88 @@ Qed.
 
 Lemma R_no_own_eval c : ~ ls_evals (gridR 1 2) (gP 0) c.
 Proof. destruct c; cbn; lia. Qed.
+
+(** ** Own-level evaluation is not definable (Lawvere, Tarski) *)
+
+(** Where a layer hosts its own code, no term of that layer is an
+    evaluator for it, not even up to conversion and only on the diagonal:
+    given [e] with [e ⌜f⌝ ⌜f⌝ ≡ f ⌜f⌝] for every [f : Code c → Nat], the
+    term [d := λx. succ (e x x)] has [d ⌜d⌝ ≡ succ (d ⌜d⌝)], and conversion
+    soundness separates the two.  The proof uses β, [succ] and
+    [conv_sound] only, so it holds of any extension of the analysis that
+    keeps conversion sound: an analysis at a layer's own depth can compute
+    anything from code but its meaning. *)
+Section Undefinable.
+Variable Λ : LS.
+Hypotheses (Hgood : good Λ).
+Variables (c p : ls_L Λ).
+Hypotheses (Hcc : ls_hosts Λ (ls_typeof Λ c) c) (Hpc : ls_hosts Λ (ls_typeof Λ p) c)
+  (Hle : ls_le Λ c p) (Hcomp : ls_computes Λ p = true) (Htot : ls_total Λ p = true).
+
+Definition uB : ty (ls_L Λ) := tArr (tCode c) tNat.
+Definition ud (e : tm (ls_L Λ)) : tm (ls_L Λ) := lam (tCode c) (succ (app (app e (var 0)) (var 0))).
+
+Theorem no_own_eval e : typed Λ c [] e (tArr (tCode c) uB) ->
+  ~ (forall f, typed Λ c [] f uB ->
+       conv Λ p [] (app (app e (box uB f)) (box uB f)) (app f (box uB f)) tNat).
+Proof.
+  intros He Hspec.
+  assert (Hb : typed Λ c [tCode c] (succ (app (app e (var 0)) (var 0))) tNat).
+  { apply ty_succ, (ty_app _ _ _ (tCode c)); [| apply ty_var; reflexivity].
+    apply (ty_app _ _ _ (tCode c)); [apply (typed_app _ _ [] _ _ [tCode c] He) |].
+    apply ty_var; reflexivity. }
+  assert (Hd : typed Λ c [] (ud e) uB) by (apply ty_lam; assumption).
+  assert (Hbox : typed Λ p [] (box uB (ud e)) (tCode c))
+    by (apply ty_box; [exact Hpc | split; [exact Hcc | exact I] | exact Hd]).
+  set (Ω := app (ud e) (box uB (ud e))).
+  assert (Hconv : conv Λ p [] Ω (succ Ω) tNat).
+  { apply (cv_trans _ _ _ _ (succ (app (app e (box uB (ud e))) (box uB (ud e))))).
+    - pose proof (cv_beta Λ p [] (tCode c) tNat _ (box uB (ud e)) Hcomp Hpc
+                    (ty_lift _ _ _ _ _ _ Hle Hb) Hbox) as H.
+      cbn [subst scons] in H; rewrite (closed_subst _ _ _ _ _ He) in H; exact H.
+    - apply cv_succ, Hspec, Hd. }
+  destruct Hgood as [Hs Hsd He' Hdp Ht Hl].
+  destruct (conv_sound _ He' Hdp Ht Hl Hs Hsd _ _ _ Hconv Htot) as (k & [H1 _] & H2).
+  assert (H3 : evalto (succ Ω) (lit (S k))).
+  { split; [| exact I].
+    apply (reds_trans _ (succ (lit k))); [apply reds_cong; [constructor; assumption | exact H1] |].
+    econstructor; [constructor | constructor]. }
+  pose proof (evalto_det _ _ _ H2 H3) as E; injection E; lia.
+Qed.
+
+End Undefinable.
+
+(** In the grid with each row hosting its own code: R = [P₀] cannot
+    evaluate [C₀]. *)
+Corollary no_own_eval_R e :
+  typed (gridR 1 2) (gC 0) [] e (tArr (tCode (gC 0)) (tArr (tCode (gC 0)) tNat)) ->
+  ~ (forall f, typed (gridR 1 2) (gC 0) [] f (tArr (tCode (gC 0)) tNat) ->
+       conv (gridR 1 2) (gP 0) []
+         (app (app e (box (tArr (tCode (gC 0)) tNat) f)) (box (tArr (tCode (gC 0)) tNat) f))
+         (app f (box (tArr (tCode (gC 0)) tNat) f)) tNat).
+Proof.
+  apply (no_own_eval (gridR 1 2) (grid_good 1 true 2) (gC 0) (gP 0)); cbn; try lia; reflexivity.
+Qed.
+
+(** What R can do with its own code: fold it with any fixed motive, here
+    into code again (a code-to-code transformation, as a partial
+    evaluator is), and run it when it is typed code. *)
+Example R_folds_own_code :
+  typed (gridR 1 2) (gP 0) []
+    (cfold (tCode (gC 0)) (lam tNat (lam (tCode (gC 0)) (lam (tCode (gC 0)) (var 1))))
+       (box tNat (lit 0)) (box tNat (succ (lit 5))))
+    (tCode (gC 0)).
+Proof.
+  apply ty_cfold with (c := gC 0).
+  - apply ty_lam; [exact I |]; apply ty_lam; [cbn; lia |]; apply ty_lam; [cbn; lia |].
+    apply ty_var; reflexivity.
+  - apply ty_box; cbn; [lia | exact I | apply ty_lit].
+  - apply ty_box; cbn; [lia | exact I | apply ty_succ, ty_lit].
+Qed.
+
+Example R_runs_own_typed_code :
+  typed (gridR 1 2) (gP 0) [] (lam (tBox (gC 0) tNat) (trun (var 0))) (tArr (tBox (gC 0) tNat) tNat).
+Proof.
+  apply ty_lam; [cbn; split; [lia | exact I] |].
+  apply ty_trun with (c := gC 0); [cbn; lia | apply ty_var; reflexivity].
+Qed.
