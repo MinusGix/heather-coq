@@ -644,3 +644,554 @@ Qed.
 
 End FT.
 End Rules.
+
+(** All six side conditions. *)
+Record good (Λ : LS) : Prop := {
+  g_static : static_code Λ;
+  g_sdown : static_down Λ;
+  g_eval : eval_up Λ;
+  g_depth : depth_mono Λ;
+  g_total : total_down Λ;
+  g_lift : eval_lift Λ;
+}.
+
+(** ** Terms without a normal form *)
+
+Ltac inv_value_red := match goal with
+  | H : red (lam _ _) _ |- _ => inversion H
+  | H : red (lit _) _ |- _ => inversion H
+  | H : red (box _ _) _ |- _ => inversion H
+  end.
+
+Section Diverge.
+Context {L : Type}.
+Local Notation tm := (tm L).
+
+(** General recursion: [fix x. x]. *)
+Definition loop : tm := fix_ tNat (var 0).
+
+Lemma loop_reds t v : reds t v -> t = loop -> v = loop.
+Proof.
+  induction 1 as [| t t1 t2 Hs _ IH]; intros E; [exact E |].
+  apply IH; subst; inversion Hs; reflexivity.
+Qed.
+
+Lemma loop_diverges : ~ exists v, evalto loop v.
+Proof. intros (v & H & Hv); rewrite (loop_reds _ _ H eq_refl) in Hv; exact Hv. Qed.
+
+(** The liar: [d := λx. succ (run x (λ_. 0) x)] applied to its own code,
+    [d ⌜d⌝ ⇝ succ (d ⌜d⌝)].  Lawvere's diagonal: [run] makes every code
+    of a function on codes that function. *)
+Section Liar.
+Variable c : L.
+
+Definition lB : ty L := tArr (tCode c) tNat.
+Definition ldflt : tm := lam (tCode c) (lit 0).
+Definition ld : tm := lam (tCode c) (succ (app (run c lB (var 0) ldflt) (var 0))).
+Definition lY : tm := app (run c lB (box lB ld) ldflt) (box lB ld).
+Definition lΩ : tm := app ld (box lB ld).
+
+Inductive LInv : tm -> Prop :=
+| li_Ω : LInv lΩ
+| li_Y : LInv (succ lY)
+| li_succ t : LInv t -> LInv (succ t).
+
+Lemma LInv_not_lit t : LInv t -> forall k, t <> lit k.
+Proof. destruct 1; discriminate. Qed.
+
+Lemma red_lY t : red lY t -> t = lΩ.
+Proof.
+  intros Hr; inversion Hr; subst; try inv_value_red.
+  match goal with H : red (run _ _ _ _) _ |- _ => inversion H; subst end.
+  - reflexivity.
+  - contradiction.
+  - inv_value_red.
+Qed.
+
+Lemma LInv_red t t' : LInv t -> red t t' -> LInv t'.
+Proof.
+  intros H; revert t'; induction H as [| | t H IH]; intros t' Hr.
+  - inversion Hr; subst; [exact li_Y |].
+    match goal with H : red ld _ |- _ => inversion H end.
+  - inversion Hr; subst.
+    match goal with H : red lY _ |- _ => rewrite (red_lY _ H) end.
+    exact (li_succ _ li_Ω).
+  - inversion Hr; subst.
+    + exfalso; exact (LInv_not_lit _ H _ eq_refl).
+    + apply li_succ, IH; assumption.
+Qed.
+
+Lemma liar_diverges : ~ exists v, evalto lΩ v.
+Proof.
+  intros (v & H & Hv).
+  assert (Hi : LInv v).
+  { pose proof li_Ω as Hi; clear Hv; induction H as [| t t1 t2 Hs _ IH]; [exact Hi |].
+    exact (IH (LInv_red _ _ Hi Hs)). }
+  destruct Hi; exact Hv.
+Qed.
+
+End Liar.
+
+Lemma run_loop_diverges c : ~ exists v, evalto (run c tNat (box tNat loop) (lit 0)) v.
+Proof.
+  intros (v & H & Hv); inversion H; subst; [exact Hv |].
+  match goal with Hs : red (run _ _ _ _) _ |- _ => inversion Hs; subst end.
+  - apply loop_diverges; eexists; split; eassumption.
+  - contradiction.
+  - inv_value_red.
+Qed.
+
+End Diverge.
+
+(** Typing the liar: [d] is typed at a layer [a] that runs [c]-code, and
+    must be [c]-code itself, so [Code c] is a type of [c]'s own programs. *)
+Section LiarTyped.
+Variable Λ : LS.
+Local Notation typeof := (ls_typeof Λ).
+Local Notation hosts := (ls_hosts Λ).
+
+Lemma ld_typed a c : ls_evals Λ a c -> hosts (typeof a) c -> hosts (typeof c) c ->
+  typed Λ a [] (ld c) (lB c).
+Proof.
+  intros He Ha Hc; unfold ld, lB, ldflt.
+  apply ty_lam; [exact Ha |].
+  apply ty_succ, (ty_app _ _ _ (tCode c)); [| apply ty_var; reflexivity].
+  apply ty_run; [exact He | exact Ha | split; [exact Hc | exact I] | apply ty_var; reflexivity |].
+  apply ty_lam; [exact Ha | apply ty_lit].
+Qed.
+
+Lemma lΩ_typed j c : typed Λ c [] (ld c) (lB c) -> typed Λ j [] (ld c) (lB c) ->
+  hosts (typeof j) c -> hosts (typeof c) c -> typed Λ j [] (lΩ c) tNat.
+Proof.
+  intros Hc Hj Hh Hcc; apply (ty_app _ _ _ (tCode c)); [exact Hj |].
+  apply ty_box; [exact Hh | split; [exact Hcc | exact I] | exact Hc].
+Qed.
+
+(** Two codes equal by β, told apart by [csize]: [(λx. x) 0] and [0]. *)
+Definition s1 {L} : tm L := app (lam tNat (var 0)) (lit 0).
+
+Lemma s1_typed c : typed Λ c [] s1 tNat.
+Proof. apply (ty_app _ _ _ tNat); [apply ty_lam; [exact I | apply ty_var; reflexivity] | apply ty_lit]. Qed.
+
+Lemma collapse j c : hosts (typeof j) c -> ls_computes Λ j = true ->
+  conv Λ c [] s1 (lit 0) tNat -> conv Λ j [] (lit 4) (lit 1) tNat.
+Proof.
+  intros Hh Hj Hc.
+  apply (cv_trans _ _ _ _ (csize (box tNat s1))).
+  { apply cv_sym, (cv_csize_box _ _ _ c); [exact Hj | apply ty_box; auto using s1_typed; exact I]. }
+  apply (cv_trans _ _ _ _ (csize (box tNat (lit 0)))).
+  { apply (cv_csize _ _ _ c), cv_box; [exact Hh | exact I | exact Hc]. }
+  apply (cv_csize_box _ _ _ c); [exact Hj | apply ty_box; [exact Hh | exact I | apply ty_lit]].
+Qed.
+
+Lemma collapse_unsound j : conv Λ j [] (lit 4) (lit 1) tNat ->
+  ~ (forall t t', conv Λ j [] t t' tNat -> exists k, evalto t (lit k) /\ evalto t' (lit k)).
+Proof.
+  intros H Hs; destruct (Hs _ _ H) as (k & H4 & H1).
+  apply evalto_value_inv in H4, H1; try exact I; congruence.
+Qed.
+
+End LiarTyped.
+
+(** ** The grid: {code, program} × meta depth, plus V *)
+
+Inductive cell := gV | gC (k : nat) | gP (k : nat).
+
+Definition cell_eq_dec (x y : cell) : {x = y} + {x <> y}.
+Proof. decide equality; apply Nat.eq_dec. Defined.
+
+Definition level (x : cell) : nat := match x with gV => 0 | gC k | gP k => k end.
+
+(** [C_k ≤ C_k'], [C_k ≤ P_k'] and [P_k ≤ P_k'] for [k ≤ k'], never
+    [P_k ≤ C_k']: a program does not become code. *)
+Definition gle (x y : cell) : Prop :=
+  match x, y with
+  | gV, _ => True
+  | gC k, gC k' | gC k, gP k' | gP k, gP k' => k <= k'
+  | _, _ => False
+  end.
+
+(** [C_k]'s programs and their types are [P_k]'s. *)
+Definition gtypeof (x : cell) : cell := match x with gV => gP 0 | gC k | gP k => gP k end.
+Definition gcomputes (x : cell) : bool := match x with gP _ => true | _ => false end.
+
+(** [P_k'] hosts [C_k] for [k < k' ≤ n]; with [refl], also for [k = k']:
+    every program row may then analyse its own code (the reflexive cell
+    R, below). *)
+Definition ghosts (n : nat) (refl : bool) (x c : cell) : Prop :=
+  match x, c with
+  | gP k', gC k => (if refl then k <= k' else k < k') /\ k' <= n
+  | _, _ => False
+  end.
+
+(** [n] meta levels; code is hosted reflexively when [hrefl], run at its
+    own level when [erefl]; total below level [m]. *)
+Definition grid_gen (n : nat) (hrefl erefl : bool) (m : nat) : LS := {|
+  ls_L := cell;
+  ls_dec := cell_eq_dec;
+  ls_le := gle;
+  ls_typeof := gtypeof;
+  ls_computes := gcomputes;
+  ls_hosts := ghosts n hrefl;
+  ls_evals := fun x c => ghosts n erefl (gtypeof x) c /\ gle c x;
+  ls_total := fun x => level x <? m;
+  ls_depth := level;
+|}.
+
+Definition grid n m := grid_gen n false false m.
+
+Ltac solve_cond :=
+  intros;
+  repeat match goal with x : cell |- _ => destruct x end;
+  cbn -[Nat.ltb] in *; rewrite ?Nat.ltb_lt in *;
+  intuition (try discriminate; try lia; try congruence).
+
+(** The grid meets every side condition, at every depth [n], with code
+    hosted at its own level or not, and partial from any level [m] up. *)
+Theorem grid_good n hrefl m : good (grid_gen n hrefl false m).
+Proof.
+  constructor; unfold static_code, static_down, eval_up, depth_mono, total_down,
+    eval_lift; cbn -[Nat.ltb]; destruct hrefl; solve_cond.
+Qed.
+
+Corollary grid_normalization n hrefl m j t :
+  typed (grid_gen n hrefl false m) j [] t tNat -> level j < m ->
+  exists k, evalto t (lit k).
+Proof.
+  intros H Hj; destruct (grid_good n hrefl m) as [Hs Hsd He Hd Ht Hl].
+  apply (normalization _ He Hd Ht Hl j); [exact H | cbn; apply Nat.ltb_lt, Hj].
+Qed.
+
+Corollary grid_conv_sound n hrefl m j t t' :
+  conv (grid_gen n hrefl false m) j [] t t' tNat -> level j < m ->
+  exists k, evalto t (lit k) /\ evalto t' (lit k).
+Proof.
+  intros H Hj; destruct (grid_good n hrefl m) as [Hs Hsd He Hd Ht Hl].
+  apply (conv_sound _ He Hd Ht Hl Hs Hsd j); [exact H | cbn; apply Nat.ltb_lt, Hj].
+Qed.
+
+(** *** A partial top level *)
+
+(** With [fix] at level [n] only, every lower level still normalizes
+    ([grid_normalization] at [m = n]), and the top really is partial. *)
+Lemma partial_top n : typed (grid n n) (gP n) [] loop tNat /\ ~ exists v : tm cell, evalto loop v.
+Proof.
+  split; [| exact loop_diverges].
+  apply ty_fix; [cbn; apply Nat.ltb_irrefl | exact I | apply ty_var; reflexivity].
+Qed.
+
+(** *** Depth two: □□, T and 4 *)
+
+Section Depth2.
+Local Notation G := (grid 2 3).
+
+(** [□□]: code of code, at [P₂]. *)
+Example boxbox : typed G (gP 2) [] (box (tCode (gC 0)) (box tNat (lit 7))) (tCode (gC 1)).
+Proof.
+  apply ty_box; cbn; [lia | lia |].
+  apply ty_box; cbn; [lia | exact I | apply ty_lit].
+Qed.
+
+(** Axiom 4, [□A → □□A], as [quote]. *)
+Definition four : tm cell := lam (tCode (gC 0)) (quote (gC 0) (var 0)).
+
+Example four_typed : typed G (gP 2) [] four (tArr (tCode (gC 0)) (tCode (gC 1))).
+Proof.
+  apply ty_lam; cbn; [lia |].
+  apply ty_quote with (c := gC 0); cbn; [lia | lia | apply ty_var; reflexivity].
+Qed.
+
+(** Axiom T twice, [□□A → A]: run the outer code, then the inner. *)
+Definition eval2 : tm cell :=
+  lam (tCode (gC 1))
+    (run (gC 0) tNat (run (gC 1) (tCode (gC 0)) (var 0) (box tNat (lit 0))) (lit 0)).
+
+Example eval2_typed : typed G (gP 2) [] eval2 (tArr (tCode (gC 1)) tNat).
+Proof.
+  apply ty_lam; cbn; [lia |].
+  apply ty_run; cbn; [lia | lia | exact I | | apply ty_lit].
+  apply ty_run; cbn; [lia | lia | lia | apply ty_var; reflexivity |].
+  apply ty_box; cbn; [lia | exact I | apply ty_lit].
+Qed.
+
+Example eval2_four : evalto (app eval2 (app four (box tNat (lit 7)))) (lit 7).
+Proof.
+  split; [| exact I].
+  repeat (eapply reds_step; [solve [repeat constructor] |]); cbn; apply reds_refl.
+Qed.
+
+End Depth2.
+
+(** ** DeLaM is the grid's depth-1 slice *)
+
+Inductive layer := lV | lC | lD | lM.
+
+Definition layer_eq_dec (x y : layer) : {x = y} + {x <> y}.
+Proof. decide equality. Defined.
+
+(** As [Typing/Context.v]: [typeof], [compt], [lle]. *)
+Definition dtypeof (i : layer) : layer := match i with lM => lM | _ => lD end.
+Definition dcomputes (i : layer) : bool := match i with lD | lM => true | _ => false end.
+Definition lrank (i : layer) : nat := match i with lV => 0 | lC => 1 | lD => 2 | lM => 3 end.
+Definition dlle (i j : layer) : Prop := lrank i <= lrank j.
+Definition ddepth (i : layer) : nat := match i with lM => 1 | _ => 0 end.
+Definition dhosts (k c : layer) : Prop := k = lM /\ c = lC.
+
+Definition dls (le : layer -> layer -> Prop) (comp : layer -> bool)
+    (hosts evals : layer -> layer -> Prop) (tot : layer -> bool) : LS := {|
+  ls_L := layer;
+  ls_dec := layer_eq_dec;
+  ls_le := le;
+  ls_typeof := dtypeof;
+  ls_computes := comp;
+  ls_hosts := hosts;
+  ls_evals := evals;
+  ls_total := tot;
+  ls_depth := ddepth;
+|}.
+
+(** DeLaM: [□] at M over C, with the recursors and [letbox] there. *)
+Definition delam : LS := dls dlle dcomputes dhosts dhosts (fun _ => true).
+
+Ltac solve_dcond :=
+  intros;
+  repeat match goal with x : layer |- _ => destruct x end;
+  cbn in *; unfold dlle, dhosts in *; cbn in *;
+  intuition (try discriminate; try lia; try congruence).
+
+Theorem delam_good : good delam.
+Proof.
+  constructor; unfold static_code, static_down, eval_up, depth_mono, total_down,
+    eval_lift; cbn; solve_dcond.
+Qed.
+
+Definition emb (i : layer) : cell :=
+  match i with lV => gV | lC => gC 0 | lD => gP 0 | lM => gP 1 end.
+
+Lemma emb_inj i j : emb i = emb j -> i = j.
+Proof. destruct i, j; cbn; congruence. Qed.
+
+Lemma emb_le i j : dlle i j <-> gle (emb i) (emb j).
+Proof. unfold dlle; destruct i, j; cbn; lia. Qed.
+
+Lemma emb_typeof i : emb (dtypeof i) = gtypeof (emb i).
+Proof. destruct i; reflexivity. Qed.
+
+Lemma emb_computes i : dcomputes i = gcomputes (emb i).
+Proof. destruct i; reflexivity. Qed.
+
+Lemma emb_depth i : ddepth (dtypeof i) = level (gtypeof (emb i)).
+Proof. destruct i; reflexivity. Qed.
+
+Lemma emb_hosts k c : dhosts k c <-> ghosts 1 false (emb k) (emb c).
+Proof. unfold dhosts; destruct k, c; cbn; intuition (try discriminate; try lia). Qed.
+
+Lemma emb_evals j c : dhosts j c <->
+  ls_evals (grid 1 2) (emb j) (emb c).
+Proof. unfold dhosts; destruct j, c; cbn; intuition (try discriminate; try lia). Qed.
+
+Lemma emb_total i : ls_total delam i = ls_total (grid 1 2) (emb i).
+Proof. destruct i; reflexivity. Qed.
+
+(** The slice is [V, C₀, P₀, P₁]; of depth-1 cells only [C₁], code of M,
+    is missing, and nothing hosts it, so [□□] and axiom 4 are not
+    formable. *)
+Lemma emb_image x : (exists i, emb i = x) <-> x = gV \/ x = gC 0 \/ x = gP 0 \/ x = gP 1.
+Proof.
+  split; [intros [[] <-]; cbn; tauto |].
+  intros [-> | [-> | [-> | ->]]]; [exists lV | exists lC | exists lD | exists lM]; reflexivity.
+Qed.
+
+Lemma grid1_C1_unhosted k : ~ ghosts 1 false k (gC 1).
+Proof. destruct k; cbn; lia. Qed.
+
+(** ** Counterexamples: each side condition is needed *)
+
+(** For each condition, a structure that meets the other five, in which
+    normalization or conversion soundness fails. *)
+
+(** *** (S1) Analysed code computes: DeLaM with C computing *)
+
+Definition cx_static : LS :=
+  dls dlle (fun i => match i with lV => false | _ => true end) dhosts dhosts (fun _ => true).
+
+Lemma cx_static_others : static_down cx_static /\ eval_up cx_static /\
+  depth_mono cx_static /\ total_down cx_static /\ eval_lift cx_static.
+Proof.
+  unfold static_down, eval_up, depth_mono, total_down, eval_lift; cbn.
+  repeat split; solve_dcond.
+Qed.
+
+Lemma cx_static_fails : ~ static_code cx_static.
+Proof. intros H; discriminate (H lM lC (conj eq_refl eq_refl)). Qed.
+
+(** [csize ⌜(λx. x) 0⌝ ≡ csize ⌜0⌝] at M: [4 ≡ 1]. *)
+Lemma cx_static_collapse : conv cx_static lM [] (lit 4) (lit 1) tNat.
+Proof.
+  apply (collapse cx_static lM lC); [split; reflexivity | reflexivity |].
+  apply (cv_beta cx_static lC [] tNat tNat (var 0) (lit 0));
+    [reflexivity | exact I | apply ty_var; reflexivity | apply ty_lit].
+Qed.
+
+(** *** (W1) A computing layer lifts into analysed code: DeLaM with D ≤ C *)
+
+Definition cx_sdown : LS :=
+  dls (fun i j => dlle i j \/ (i = lD /\ j = lC)) dcomputes dhosts dhosts (fun _ => true).
+
+Lemma cx_sdown_others : static_code cx_sdown /\ eval_up cx_sdown /\
+  depth_mono cx_sdown /\ total_down cx_sdown /\ eval_lift cx_sdown.
+Proof.
+  unfold static_code, eval_up, depth_mono, total_down, eval_lift; cbn.
+  repeat split; solve_dcond.
+Qed.
+
+Lemma cx_sdown_fails : ~ static_down cx_sdown.
+Proof. intros H; discriminate (H lD lC (or_intror (conj eq_refl eq_refl)) eq_refl). Qed.
+
+Lemma cx_sdown_collapse : conv cx_sdown lM [] (lit 4) (lit 1) tNat.
+Proof.
+  apply (collapse cx_sdown lM lC); [split; reflexivity | reflexivity |].
+  apply cv_lift with (i := lD); [right; split; reflexivity |].
+  apply (cv_beta cx_sdown lD [] tNat tNat (var 0) (lit 0));
+    [reflexivity | exact I | apply ty_var; reflexivity | apply ty_lit].
+Qed.
+
+(** *** (S2) Evaluation at the code's own depth: the reflexive cell with T *)
+
+(** Every program row hosts and runs its own code.  This is the cell R of
+    the Weaver/Löb design (issue #47) given T at R itself. *)
+Definition cx_eval : LS := grid_gen 1 true true 2.
+
+Lemma cx_eval_others : static_code cx_eval /\ static_down cx_eval /\
+  depth_mono cx_eval /\ total_down cx_eval /\ eval_lift cx_eval.
+Proof.
+  unfold static_code, static_down, depth_mono, total_down, eval_lift; cbn -[Nat.ltb].
+  repeat split; solve_cond.
+Qed.
+
+Lemma cx_eval_fails : ~ eval_up cx_eval.
+Proof.
+  intros H; assert (Hc : ls_evals cx_eval (gC 0) (gC 0)) by (cbn; lia).
+  specialize (H _ _ Hc ltac:(cbn; lia)); cbn in H; lia.
+Qed.
+
+Lemma cx_eval_liar : typed cx_eval (gP 0) [] (lΩ (gC 0)) tNat /\
+  ls_total cx_eval (gP 0) = true /\ ~ exists v, evalto (lΩ (gC 0)) v.
+Proof.
+  split; [| split; [reflexivity | apply liar_diverges]].
+  assert (Hd : typed cx_eval (gC 0) [] (ld (gC 0)) (lB (gC 0)))
+    by (apply ld_typed; cbn; lia).
+  apply lΩ_typed; [exact Hd | apply ty_lift with (i := (gC 0)); [cbn; lia | exact Hd] | cbn; lia | cbn; lia].
+Qed.
+
+(** *** (W2) Lifting lowers the depth: [C₁ ≤ C₀] *)
+
+(** Code of M lowered into code of D, which D hosts (reflexively). *)
+Definition cx_depth : LS := {|
+  ls_L := cell;
+  ls_dec := cell_eq_dec;
+  ls_le := fun x y => gle x y \/ (x = gC 1 /\ y = gC 0);
+  ls_typeof := gtypeof;
+  ls_computes := gcomputes;
+  ls_hosts := ghosts 1 true;
+  ls_evals := fun x c => ghosts 1 false (gtypeof x) c /\ gle c x;
+  ls_total := fun _ => true;
+  ls_depth := level;
+|}.
+
+Lemma cx_depth_others : static_code cx_depth /\ static_down cx_depth /\
+  eval_up cx_depth /\ total_down cx_depth /\ eval_lift cx_depth.
+Proof.
+  unfold static_code, static_down, eval_up, total_down, eval_lift; cbn.
+  repeat split; solve_cond.
+Qed.
+
+Lemma cx_depth_fails : ~ depth_mono cx_depth.
+Proof. intros H; specialize (H (gC 1) (gC 0) (or_intror (conj eq_refl eq_refl))); cbn in H; lia. Qed.
+
+Lemma cx_depth_liar : typed cx_depth (gC 1) [] (lΩ (gC 0)) tNat /\
+  ~ exists v, evalto (lΩ (gC 0)) v.
+Proof.
+  split; [| apply liar_diverges].
+  assert (Hd : typed cx_depth (gC 1) [] (ld (gC 0)) (lB (gC 0)))
+    by (apply ld_typed; cbn; lia).
+  apply lΩ_typed; [apply ty_lift with (i := (gC 1)); [right; split; reflexivity | exact Hd]
+                  | exact Hd | cbn; lia | cbn; lia].
+Qed.
+
+(** *** (W3) A partial layer lifts into a total one: DeLaM with D partial *)
+
+Definition cx_total : LS :=
+  dls dlle dcomputes dhosts dhosts (fun i => match i with lD => false | _ => true end).
+
+Lemma cx_total_others : static_code cx_total /\ static_down cx_total /\
+  eval_up cx_total /\ depth_mono cx_total /\ eval_lift cx_total.
+Proof.
+  unfold static_code, static_down, eval_up, depth_mono, eval_lift; cbn.
+  repeat split; solve_dcond.
+Qed.
+
+Lemma cx_total_fails : ~ total_down cx_total.
+Proof.
+  intros H; assert (Hle : ls_le cx_total lD lM) by (cbn; unfold dlle; cbn; lia).
+  discriminate (H _ _ Hle eq_refl).
+Qed.
+
+Lemma cx_total_loop : typed cx_total lM [] loop tNat /\ ~ exists v : tm layer, evalto loop v.
+Proof.
+  split; [| apply loop_diverges].
+  apply ty_lift with (i := lD); [cbn; unfold dlle; cbn; lia |].
+  apply ty_fix; [reflexivity | exact I | apply ty_var; reflexivity].
+Qed.
+
+(** *** (W4) A total layer runs code that does not lift into it *)
+
+(** C and D partial, M total, and neither C nor D lifts into M. *)
+Definition cx_lift : LS :=
+  dls (fun i j => dlle i j /\ ~ ((i = lC \/ i = lD) /\ j = lM)) dcomputes dhosts dhosts
+    (fun i => match i with lC | lD => false | _ => true end).
+
+Lemma cx_lift_others : static_code cx_lift /\ static_down cx_lift /\
+  eval_up cx_lift /\ depth_mono cx_lift /\ total_down cx_lift.
+Proof.
+  unfold static_code, static_down, eval_up, depth_mono, total_down; cbn.
+  repeat split; solve_dcond.
+Qed.
+
+Lemma cx_lift_fails : ~ eval_lift cx_lift.
+Proof.
+  intros H; destruct (H lM lC (conj eq_refl eq_refl)) as [_ Hn].
+  apply Hn; split; [left |]; reflexivity.
+Qed.
+
+Lemma cx_lift_loop : typed cx_lift lM [] (run lC tNat (box tNat loop) (lit 0)) tNat /\
+  ~ exists v, evalto (run lC tNat (box tNat loop) (lit 0)) v.
+Proof.
+  split; [| apply run_loop_diverges].
+  apply ty_run; [split; reflexivity | split; reflexivity | exact I | | apply ty_lit].
+  apply ty_box; [split; reflexivity | exact I |].
+  apply ty_fix; [reflexivity | exact I | apply ty_var; reflexivity].
+Qed.
+
+(** ** The reflexive cell R (issue #47) *)
+
+(** R's code is hosted at R itself, analysed there but run only one level
+    up.  In the grid that is reflexive hosting with evaluation still
+    strictly upward, [grid_gen n true false m], which [grid_good] covers:
+    every program row may analyse its own code.  Running it at its own
+    level, [grid_gen n true true m], is [cx_eval]: the liar. *)
+Definition gridR (n m : nat) : LS := grid_gen n true false m.
+
+Example R_analyses_own_code :
+  typed (gridR 1 2) (gP 0) [] (csize (box tNat (lit 0))) tNat.
+Proof. apply ty_csize with (c := gC 0), ty_box; cbn; [lia | exact I | apply ty_lit]. Qed.
+
+Example R_runs_below : typed (gridR 1 2) (gP 1) []
+  (lam (tCode (gC 0)) (run (gC 0) tNat (var 0) (lit 0))) (tArr (tCode (gC 0)) tNat).
+Proof.
+  apply ty_lam; cbn; [lia |].
+  apply ty_run; cbn; [lia | lia | exact I | apply ty_var; reflexivity | apply ty_lit].
+Qed.
+
+Lemma R_no_own_eval c : ~ ls_evals (gridR 1 2) (gP 0) c.
+Proof. destruct c; cbn; lia. Qed.
