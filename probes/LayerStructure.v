@@ -16,12 +16,22 @@
     The toy's code is closed and untyped: [Code c] holds a closed
     layer-[c] term [s] of any type [A], as [box A s], tagged with its type
     (DeLaM's code of types, read as Σ A. □A).  On code there is
-    - an analysis [csize] (a fold with a fixed motive, standing in for the
-      recursors): the size of the syntax tree;
+    - an analysis [csize]: the size of the syntax tree;
+    - a fold [cfold T b z t] with any fixed motive [T] (section [Syntax],
+      [foldtm]): structural on the code, it never runs it;
     - an evaluation [run c B t d] (T, with a type conditional): [s] if [t]
       is [box B s], [d] if its tag is not [B];
+    - a fuelled evaluation [runk n c B t d]: [run] that caps the fuel of
+      every fuelled run inside the code it runs at [n - 1];
     - [quote c t] (axiom 4): [box A s] boxed again, as code one level up.
-    General recursion [fix] is typable only at partial layers.
+    Typed code [tBox c A], with [tbox] and its evaluation [trun], is the
+    S4 box: nothing analyses it.  General recursion [fix] is typable only
+    at partial layers.
+
+    Section [Own-level evaluation is not definable] and the last section
+    answer what a layer can do with code of its own depth: fold it
+    (normalization holds), run it when typed, or run it with fuel, but no
+    term of the layer evaluates its untyped code, even up to conversion.
 
     Standalone, no axioms: [coqc probes/LayerStructure.v]. *)
 From Coq Require Import List Arith Lia.
@@ -75,7 +85,8 @@ Inductive tm : Type :=
 | fix_ (A : ty) (t : tm)
 | cfold (T : ty) (b z t : tm)
 | tbox (s : tm)
-| trun (t : tm).
+| trun (t : tm)
+| runk (n : nat) (c : L) (B : ty) (t d : tm).
 
 Definition upren (ξ : nat -> nat) (x : nat) : nat :=
   match x with 0 => 0 | S x => S (ξ x) end.
@@ -97,6 +108,7 @@ Fixpoint ren (ξ : nat -> nat) (t : tm) : tm :=
   | cfold T b z t => cfold T (ren ξ b) (ren ξ z) (ren ξ t)
   | tbox s => tbox s
   | trun t => trun (ren ξ t)
+  | runk n c B t d => runk n c B (ren ξ t) (ren ξ d)
   end.
 
 Definition up (σ : nat -> tm) (x : nat) : tm :=
@@ -117,6 +129,7 @@ Fixpoint subst (σ : nat -> tm) (t : tm) : tm :=
   | cfold T b z t => cfold T (subst σ b) (subst σ z) (subst σ t)
   | tbox s => tbox s
   | trun t => trun (subst σ t)
+  | runk n c B t d => runk n c B (subst σ t) (subst σ d)
   end.
 
 Definition scons (u : tm) (σ : nat -> tm) (x : nat) : tm :=
@@ -127,7 +140,7 @@ Fixpoint size (t : tm) : nat :=
   | var _ | lit _ => 1
   | lam _ t | succ t | box _ t | csize t | quote _ t | fix_ _ t | tbox t | trun t =>
       S (size t)
-  | app t u | run _ _ t u => S (size t + size u)
+  | app t u | run _ _ t u | runk _ _ _ t u => S (size t + size u)
   | cfold _ b z t => S (size b + size z + size t)
   end.
 
@@ -152,7 +165,56 @@ Fixpoint foldtm (b z : tm) (s : tm) : tm :=
   | cfold _ b' z' t => node b 10 (foldtm b z t) (node b 11 (foldtm b z b') (foldtm b z z'))
   | tbox s => node b 12 (foldtm b z s) z
   | trun t => node b 13 (foldtm b z t) z
+  | runk _ _ _ t d => node b 14 (foldtm b z t) (foldtm b z d)
   end.
+
+(** Fuel.  Running code with fuel [S n] caps every fuelled run in it at
+    [n] ([capk]).  Code under [box] is left alone: it is capped when it is
+    run. *)
+Fixpoint capk (n : nat) (t : tm) : tm :=
+  match t with
+  | var x => var x
+  | lam A t => lam A (capk n t)
+  | app t u => app (capk n t) (capk n u)
+  | lit k => lit k
+  | succ t => succ (capk n t)
+  | box A s => box A s
+  | csize t => csize (capk n t)
+  | run c B t d => run c B (capk n t) (capk n d)
+  | quote c t => quote c (capk n t)
+  | fix_ A t => fix_ A (capk n t)
+  | cfold T b z t => cfold T (capk n b) (capk n z) (capk n t)
+  | tbox s => tbox (capk n s)
+  | trun t => trun (capk n t)
+  | runk m c B t d => runk (Nat.min m n) c B (capk n t) (capk n d)
+  end.
+
+(** Every fuelled run outside [box] has fuel below [N]. *)
+Fixpoint fuel_lt (N : nat) (t : tm) : Prop :=
+  match t with
+  | var _ | lit _ | box _ _ => True
+  | lam _ t | succ t | csize t | quote _ t | fix_ _ t | tbox t | trun t => fuel_lt N t
+  | app t u | run _ _ t u => fuel_lt N t /\ fuel_lt N u
+  | cfold _ b z t => fuel_lt N b /\ fuel_lt N z /\ fuel_lt N t
+  | runk m _ _ t d => m < N /\ fuel_lt N t /\ fuel_lt N d
+  end.
+
+Lemma fuel_lt_mono N N' t : N <= N' -> fuel_lt N t -> fuel_lt N' t.
+Proof. intros HN; induction t; cbn; intuition lia. Qed.
+
+Lemma fuel_bound t : exists N, fuel_lt N t.
+Proof.
+  induction t; cbn;
+    repeat match goal with H : exists N, fuel_lt N _ |- _ => destruct H end;
+    try solve [exists 0; exact I | eauto].
+  all: first
+    [ exists (x + x0 + S n); repeat split; try lia; eapply fuel_lt_mono; try eassumption; lia
+    | exists (x + x0 + x1); repeat split; eapply fuel_lt_mono; try eassumption; lia
+    | exists (x + x0); split; eapply fuel_lt_mono; try eassumption; lia ].
+Qed.
+
+Lemma fuel_lt_capk n t : fuel_lt (S n) (capk n t).
+Proof. induction t; cbn; intuition lia. Qed.
 
 (** *** Substitution lemmas *)
 
@@ -233,7 +295,11 @@ Inductive red : tm -> tm -> Prop :=
 | r_cfold_box T b z A s : red (cfold T b z (box A s)) (foldtm b z s)
 | r_cfold T b z t t' : red t t' -> red (cfold T b z t) (cfold T b z t')
 | r_trun_box s : red (trun (tbox s)) s
-| r_trun t t' : red t t' -> red (trun t) (trun t').
+| r_trun t t' : red t t' -> red (trun t) (trun t')
+| r_runk_zero c B t d : red (runk 0 c B t d) d
+| r_runk_hit n c B s d : red (runk (S n) c B (box B s) d) (capk n s)
+| r_runk_miss n c A B s d : A <> B -> red (runk (S n) c B (box A s) d) d
+| r_runk n c B t t' d : red t t' -> red (runk (S n) c B t d) (runk (S n) c B t' d).
 
 Inductive reds : tm -> tm -> Prop :=
 | reds_refl t : reds t t
@@ -346,6 +412,9 @@ Inductive typed : L -> list ty -> tm -> ty -> Prop :=
     hosts (typeof j) c -> lle c j -> wf_ty (typeof c) A -> typed c [] s A ->
     typed j Γ (tbox s) (tBox c A)
 | ty_trun j Γ c A t : lle c j -> typed j Γ t (tBox c A) -> typed j Γ (trun t) A
+| ty_runk n j Γ c B t d :
+    hosts (typeof j) c -> lle c j -> wf_ty (typeof c) B ->
+    typed j Γ t (tCode c) -> typed j Γ d B -> typed j Γ (runk n c B t d) B
 | ty_lift i j Γ t A : lle i j -> typed i Γ t A -> typed j Γ t A.
 
 (** [Γ ⊢ⱼ t ≡ t' : A]: congruences everywhere, computation only at
@@ -405,7 +474,21 @@ Inductive conv : L -> list ty -> tm -> tm -> ty -> Prop :=
     typed j Γ (box A s) (tCode c) -> conv j Γ (cfold T b z (box A s)) (foldtm b z s) T
 | cv_trun_box j Γ c A s :
     computes j = true -> hosts (typeof j) c -> lle c j -> wf_ty (typeof c) A ->
-    typed c [] s A -> conv j Γ (trun (tbox s)) s A.
+    typed c [] s A -> conv j Γ (trun (tbox s)) s A
+| cv_runk n j Γ c B t t' d d' :
+    hosts (typeof j) c -> lle c j -> wf_ty (typeof c) B ->
+    conv j Γ t t' (tCode c) -> conv j Γ d d' B ->
+    conv j Γ (runk n c B t d) (runk n c B t' d') B
+| cv_runk_zero j Γ c B t d :
+    computes j = true -> hosts (typeof j) c -> lle c j -> wf_ty (typeof c) B ->
+    typed j Γ t (tCode c) -> typed j Γ d B -> conv j Γ (runk 0 c B t d) d B
+| cv_runk_hit n j Γ c B s d :
+    computes j = true -> hosts (typeof j) c -> lle c j -> wf_ty (typeof c) B ->
+    typed c [] s B -> typed j Γ d B -> conv j Γ (runk (S n) c B (box B s) d) (capk n s) B
+| cv_runk_miss n j Γ c A B s d :
+    computes j = true -> A <> B -> hosts (typeof j) c -> lle c j -> wf_ty (typeof c) B ->
+    typed j Γ (box A s) (tCode c) -> typed j Γ d B ->
+    conv j Γ (runk (S n) c B (box A s) d) d B.
 
 (** *** The side conditions *)
 
@@ -639,50 +722,88 @@ Proof.
   apply R_sym, (R_red1 _ _ s'); [constructor |]; apply R_sym, Hs, Hc.
 Qed.
 
+Lemma typed_capk n j Γ t A : typed j Γ t A -> typed j Γ (capk n t) A.
+Proof. induction 1; cbn; eauto using typed. Qed.
+
+(** A fuelled run, given the theorem for its contents at lower fuel. *)
+Lemma R_runk m c B t t' d d' :
+  (forall m', m = S m' -> forall s, typed c [] s B -> R B (capk m' s) (capk m' s)) ->
+  R (tCode c) t t' -> R B d d' -> R B (runk m c B t d) (runk m c B t' d').
+Proof.
+  intros HB HR Hd; destruct m as [|m'].
+  - apply (R_red1 _ _ d); [constructor |].
+    apply R_sym, (R_red1 _ _ d'); [constructor |]; apply R_sym, Hd.
+  - destruct HR as (A & s & [Ht Hv] & [Ht' _] & HA & Hs).
+    assert (Hc : forall d0 t0 t1, reds t0 t1 -> reds (runk (S m') c B t0 d0) (runk (S m') c B t1 d0))
+      by (intros d0; apply (reds_cong (fun t => runk (S m') c B t d0)); constructor; assumption).
+    apply (R_expand _ _ _ _ _ (Hc _ _ _ Ht) (Hc _ _ _ Ht')).
+    destruct (ty_eq_dec A B) as [-> | Hne].
+    + apply (R_red1 _ _ (capk m' s)); [constructor |].
+      apply R_sym, (R_red1 _ _ (capk m' s)); [constructor |]; apply (HB m' eq_refl), Hs.
+    + apply (R_red1 _ _ d); [constructor; exact Hne |].
+      apply R_sym, (R_red1 _ _ d'); [constructor; exact Hne |]; apply R_sym, Hd.
+Qed.
+
 (** *** The fundamental theorem, by recursion on the meta depth *)
 
 Section FT.
 Hypotheses (Heval : eval_up) (Hdepth : depth_mono) (Htotal : total_down)
   (Hlift : eval_lift).
 
-(** The only case that needs the depth is evaluation: [run] at [j] checks
-    its code's contents at a layer of lower depth ([eval_up]), so it uses
-    the theorem below [j]'s depth.  Nothing else looks inside a [box]. *)
-Lemma FT_depth n : forall j Γ t A, typed j Γ t A -> depth (typeof j) < n ->
-  total j = true -> forall σ σ', Rsub Γ σ σ' -> R A (subst σ t) (subst σ' t).
+(** The depth is needed only at [run]: [run] at [j] checks its code's
+    contents at a layer of lower depth ([eval_up]), so it uses the theorem
+    below [j]'s depth.  A fuelled run at the code's own depth uses it at
+    lower fuel instead: its contents are capped below the fuel it was
+    given.  Nothing else looks inside a [box]. *)
+Lemma FT_depth n : forall N j Γ t A, typed j Γ t A -> fuel_lt N t ->
+  depth (typeof j) < n -> total j = true ->
+  forall σ σ', Rsub Γ σ σ' -> R A (subst σ t) (subst σ' t).
 Proof.
-  induction n as [|n IHn]; intros j Γ t A Hty; [intros; lia |].
+  induction n as [|n IHn]; [intros; lia |].
+  intros N; induction N as [N IHN] using lt_wf_ind; intros j Γ t A Hty.
   induction Hty as [j Γ x A Hx | j Γ A B t HA Ht IHt | j Γ A B t u Ht IHt Hu IHu
     | j Γ k | j Γ t Ht IHt | j Γ c A s Hh HA Hs _ | j Γ c t Ht IHt
     | j Γ c B t d He Hh HB Ht IHt Hd IHd | j Γ c c' t Hh Hh' Ht IHt
     | j Γ A t Hp HA Ht _ | j Γ c T b z t Hb IHb Hz IHz Ht IHt
-    | j Γ c A s Hh Hcj HA Hs IHs | j Γ c A t Hcj Ht IHt | i j Γ t A Hij Ht IHt];
-    intros Hn Htot σ σ' Hσ; cbn.
+    | j Γ c A s Hh Hcj HA Hs IHs | j Γ c A t Hcj Ht IHt
+    | m j Γ c B t d Hh Hcj HB Ht IHt Hd IHd | i j Γ t A Hij Ht IHt];
+    intros Hf Hn Htot σ σ' Hσ; cbn in Hf; cbn [subst].
   - apply Hσ, Hx.
   - apply R_lam; intros u u' Hu; apply IHt; auto using Rsub_cons.
-  - apply (IHt Hn Htot _ _ Hσ), IHu; assumption.
+  - destruct Hf as [Hf1 Hf2]; apply (IHt Hf1 Hn Htot _ _ Hσ), IHu; assumption.
   - apply R_lit.
   - apply R_succ, IHt; assumption.
   - apply R_box; assumption.
   - apply (R_csize c), IHt; assumption.
-  - apply R_run; [| apply IHt | apply IHd]; try assumption.
-    intros s Hs; rewrite <- (subst_var s).
-    apply (IHn c []); [exact Hs | | | exact Rsub_var_nil].
+  - destruct Hf as [Hf1 Hf2].
+    apply R_run; [| apply IHt | apply IHd]; try assumption.
+    intros s Hs; rewrite <- (subst_var s); destruct (fuel_bound s) as [Ns HNs].
+    apply (IHn Ns c []); [exact Hs | exact HNs | | | exact Rsub_var_nil].
     + pose proof (Heval _ _ He Hh); lia.
     + exact (Htotal _ _ (Hlift _ _ He) Htot).
   - apply R_quote; [assumption | apply IHt; assumption].
   - congruence.
-  - apply (R_cfold c); [apply IHb | apply IHz | apply IHt]; assumption.
+  - destruct Hf as (Hf1 & Hf2 & Hf3).
+    apply (R_cfold c); [apply IHb | apply IHz | apply IHt]; assumption.
   - (* typed code: its contents lift into [j], so they are no deeper *)
     apply R_tbox; intros Hc; rewrite <- (subst_var s).
-    apply IHs; [pose proof (Hdepth _ _ Hcj); lia | exact Hc | exact Rsub_var_nil].
+    apply IHs; [exact Hf | pose proof (Hdepth _ _ Hcj); lia | exact Hc | exact Rsub_var_nil].
   - apply (R_trun c); [exact (Htotal _ _ Hcj Htot) | apply IHt; assumption].
-  - apply IHt; [pose proof (Hdepth _ _ Hij); lia | exact (Htotal _ _ Hij Htot) | exact Hσ].
+  - destruct Hf as (Hm & Hf1 & Hf2).
+    apply R_runk; [| apply IHt | apply IHd]; try assumption.
+    intros m' -> s Hs; rewrite <- (subst_var (capk m' s)).
+    apply (IHN (S m') Hm c []); [apply typed_capk, Hs | apply fuel_lt_capk | | | exact Rsub_var_nil].
+    + pose proof (Hdepth _ _ Hcj); lia.
+    + exact (Htotal _ _ Hcj Htot).
+  - apply IHt; [exact Hf | pose proof (Hdepth _ _ Hij); lia | exact (Htotal _ _ Hij Htot) | exact Hσ].
 Qed.
 
 Theorem FT_typed j Γ t A : typed j Γ t A -> total j = true ->
   forall σ σ', Rsub Γ σ σ' -> R A (subst σ t) (subst σ' t).
-Proof. intros H; apply (FT_depth (S (depth (typeof j))) _ _ _ _ H); lia. Qed.
+Proof.
+  intros H; destruct (fuel_bound t) as [N HN].
+  apply (FT_depth (S (depth (typeof j))) N _ _ _ _ H HN); lia.
+Qed.
 
 Lemma FT_closed j t A : typed j [] t A -> total j = true -> R A t t.
 Proof.
@@ -727,7 +848,9 @@ Proof.
     | j Γ c c' A s _ Hh Hh' Hb
     | j Γ c T b b' z z' t t' _ IHb _ IHz _ IHt | j Γ c A s s' Hh Hcj HA _ IH
     | j Γ c A t t' Hcj _ IH | j Γ c T b z A s _ Hb Hz _
-    | j Γ c A s _ Hh Hcj HA Hs];
+    | j Γ c A s _ Hh Hcj HA Hs
+    | m j Γ c B t t' d d' Hh Hcj HB _ IHt _ IHd | j Γ c B t d _ Hh Hcj HB Ht Hd
+    | m j Γ c B s d _ Hh Hcj HB Hs Hd | m j Γ c A B s d _ Hne Hh Hcj HB Hb Hd];
     intros Htot σ σ' Hσ; cbn [subst].
   - exact (FT_typed _ _ _ _ Ht Htot _ _ Hσ).
   - apply R_sym, IH; [exact Htot | apply Rsub_sym, Hσ].
@@ -770,6 +893,17 @@ Proof.
   - rewrite (closed_subst _ _ _ _ Hs).
     apply (R_red1 _ _ s); [constructor |].
     exact (FT_closed _ _ _ Hs (Htotal _ _ Hcj Htot)).
+  - apply R_runk; [| apply IHt | apply IHd]; try assumption.
+    intros m' _ s Hs; apply (FT_closed c); [apply typed_capk, Hs |].
+    exact (Htotal _ _ Hcj Htot).
+  - apply (R_red1 _ _ (subst σ d)); [constructor |].
+    exact (FT_typed _ _ _ _ Hd Htot _ _ Hσ).
+  - assert (Hs' := typed_capk m _ _ _ _ Hs).
+    rewrite (closed_subst _ _ _ _ Hs').
+    apply (R_red1 _ _ (capk m s)); [constructor |].
+    exact (FT_closed _ _ _ Hs' (Htotal _ _ Hcj Htot)).
+  - apply (R_red1 _ _ (subst σ d)); [constructor; exact Hne |].
+    exact (FT_typed _ _ _ _ Hd Htot _ _ Hσ).
 Qed.
 
 (** Conversion is sound for numerals at total layers. *)
@@ -1418,4 +1552,62 @@ Example R_runs_own_typed_code :
 Proof.
   apply ty_lam; [cbn; split; [lia | exact I] |].
   apply ty_trun with (c := gC 0); [cbn; lia | apply ty_var; reflexivity].
+Qed.
+
+(** ** Own-level evaluation with fuel *)
+
+(** A fuelled run needs no depth condition: any layer may run code it
+    hosts and that lifts into it, its own depth's included, with fuel
+    ([ty_runk]; normalization and conversion soundness above cover it).
+    The liar with fuel [n], [d⌜d⌝] for [d := λx. succ (runk n x (λ_. 0) x)],
+    answers [n + 1]: each run caps the fuel of the next, and the last one
+    falls back to [λ_. 0].  It is the liar's never-ending delay cut off
+    after [n] steps. *)
+Section FuelLiar.
+Context {L : Type}.
+Variable c : L.
+
+Definition dk (n : nat) : tm L := lam (tCode c) (succ (app (runk n c (lB c) (var 0) (ldflt c)) (var 0))).
+
+Lemma evalto_succ (t : tm L) k : evalto t (lit k) -> evalto (succ t) (lit (S k)).
+Proof.
+  intros [H _]; split; [| exact I].
+  apply (reds_trans _ (succ (lit k))); [apply reds_cong; [constructor; assumption | exact H] |].
+  econstructor; [constructor | constructor].
+Qed.
+
+Lemma dk_eval n m : n <= m -> evalto (app (dk n) (box (lB c) (dk m))) (lit (S n)).
+Proof.
+  revert m; induction n as [|n IH]; intros m Hnm.
+  - split; [| exact I].
+    eapply reds_step; [apply r_beta |]; cbn.
+    eapply reds_step; [apply r_succ, r_app, r_runk_zero |].
+    eapply reds_step; [apply r_succ, r_beta |]; cbn.
+    eapply reds_step; [apply r_succ_lit | constructor].
+  - destruct (IH m ltac:(lia)) as [H _].
+    split; [| exact I].
+    eapply reds_step; [apply r_beta |]; cbn.
+    eapply reds_step; [apply r_succ, r_app, r_runk_hit |].
+    replace (capk n (dk m)) with (dk n) by (unfold dk; cbn; f_equal; f_equal; f_equal; f_equal; lia).
+    apply (reds_trans _ (succ (lit (S n)))); [apply reds_cong; [constructor; assumption | exact H] |].
+    econstructor; [constructor | constructor].
+Qed.
+
+Theorem fuel_liar n : evalto (app (dk n) (box (lB c) (dk n))) (lit (S n)).
+Proof. apply dk_eval; lia. Qed.
+
+End FuelLiar.
+
+(** It is typed at R itself, with no evaluation capability: in [gridR],
+    [P₀] runs nothing of [C₀] unfuelled ([R_no_own_eval]). *)
+Example fuel_liar_typed n :
+  typed (gridR 1 2) (gP 0) [] (app (dk (gC 0) n) (box (lB (gC 0)) (dk (gC 0) n))) tNat.
+Proof.
+  assert (Hd : typed (gridR 1 2) (gC 0) [] (dk (gC 0) n) (lB (gC 0))).
+  { apply ty_lam; [cbn; lia |].
+    apply ty_succ, ty_app with (A := tCode (gC 0)); [| apply ty_var; reflexivity].
+    apply ty_runk; cbn; [lia | lia | split; [lia | exact I] | apply ty_var; reflexivity |].
+    apply ty_lam; [cbn; lia | apply ty_lit]. }
+  apply ty_app with (A := tCode (gC 0)); [apply ty_lift with (i := gC 0); [cbn; lia | exact Hd] |].
+  apply ty_box; cbn; [lia | split; [lia | exact I] | exact Hd].
 Qed.

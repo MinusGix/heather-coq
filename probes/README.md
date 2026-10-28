@@ -106,5 +106,10 @@ of the build (`_CoqProject` lists `theories/` only). Compile one with
   liar, a loop, `4 ≡ 1`). The {code, program} × depth grid meets all six
   at any depth, with a partial top level and with each row hosting its
   own code (the reflexive cell R of #47); DeLaM embeds as its depth-1
-  slice; at depth 2, `□□`, axiom 4 and T twice. Standalone, no axioms:
-  `coqc probes/LayerStructure.v` (a few seconds).
+  slice; at depth 2, `□□`, axiom 4 and T twice. At a layer's own depth:
+  a fold with any fixed motive, typed code with its evaluation, and
+  fuelled evaluation of untyped code all keep normalization (the liar
+  with fuel `n` answers `n + 1`), while no term evaluates untyped code of
+  its own depth, even up to conversion (`no_own_eval`, Lawvere's
+  diagonal). Standalone, no axioms: `coqc probes/LayerStructure.v` (a
+  few seconds).

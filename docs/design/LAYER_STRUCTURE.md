@@ -33,10 +33,13 @@ evaluation got a flag of its own, because the results separate it from
 analysis.
 
 On code: `box A s` (a closed layer-`c` term `s` of type `A`, tagged with
-`A`), the analysis `csize` (a fold with a fixed motive: the size of the
-syntax tree), `run c B t d` (evaluation with a type conditional: `s` if
-`t` is `box B s`, else `d`), and `quote` (axiom 4: `box A s` boxed again,
-as code one level up).
+`A`), the analyses `csize` (the size of the syntax tree) and `cfold` (a
+fold with any fixed motive), `run c B t d` (evaluation with a type
+conditional: `s` if `t` is `box B s`, else `d`), its fuelled variant
+`runk`, and `quote` (axiom 4: `box A s` boxed again, as code one level
+up). Typed code `tBox c A`, with `tbox` and `trun`, is the S4 box, which
+nothing analyses. The last three were added for the question in "Code at
+its own depth" below.
 
 Simplifications against DeLaM, each a place where the result could
 change in the real system:
@@ -45,7 +48,8 @@ change in the real system:
 - code is untyped, tagged by its type: `Code c` reads as Σ A. □A, the
   analogue of DeLaM's code of types with `elim_Typ`'s type conditional.
   This is what lets the liar be stated without Löb;
-- the analysis has a fixed motive, so it cannot decode code into a type;
+- the folds have a fixed motive: there is no dependent recursor, so no
+  fold can decode code into a type;
 - simple types, weak-head call-by-name reduction, and a relation that
   does not mention layers at all.
 
@@ -179,15 +183,87 @@ with `C_k` run only from `P_{k+1}`:
   a slot for R, and that the boundary #47 draws (no T at R) is the toy's
   S2 exactly.
 
+## Code at its own depth: analysis, evaluation, fuel
+
+What can a layer do with code of its own depth, given that it may not
+`run` it? All of the following hold in `gridR` (each program row hosts
+its own code), which meets all six conditions, so normalization and
+conversion soundness cover them.
+
+- **Fold it, with any fixed motive** (`cfold`, `R_folds_own_code`). The
+  fold is structural on the code's syntax and never runs it, so its case
+  in the fundamental theorem goes by induction on the code (`R_foldtm`)
+  and needs no condition on depth at all. The motive can be `Code c`
+  itself, so code-to-code transformations of one's own code are fine:
+  rewriting, instrumenting, specializing. That is a partial evaluator's
+  shape: it emits residual code and does not run it.
+- **Run it when it is typed** (`tBox c A`, `trun`,
+  `R_runs_own_typed_code`). Evaluation of typed code at its own depth is
+  the S4 box of Davies and Pfenning, and it normalizes: the relation at
+  `□A` is the relation at `A` on the contents, structural in the type,
+  with no stratification by depth. The only premise is that the code
+  lifts into the layer that runs it.
+- **Run it with fuel** (`runk`, `fuel_liar_typed`). Running with fuel
+  `S n` caps every fuelled run inside the code at `n`. The fundamental
+  theorem then goes by induction on the fuel within one depth
+  (`FT_depth`). The liar with fuel `n` is typable at R and evaluates to
+  `n + 1` (`fuel_liar`): each unfolding is one step of the never-ending
+  delay, and the last falls back to the default. This is #47's
+  `run : ▷A → Delay A`, cut at `n`.
+
+What it cannot do is evaluate its *untyped* code. That is a theorem, not
+only a missing primitive. **`no_own_eval`** (Lawvere's diagonal, Tarski's
+undefinability): where a layer hosts its own code, no term `e` of that
+layer satisfies `e ⌜f⌝ ⌜f⌝ ≡ f ⌜f⌝` for every `f : Code c → Nat`, even
+only up to conversion and only on the diagonal. From such an `e`,
+`d := λx. succ (e x x)` has `d ⌜d⌝ ≡ succ (d ⌜d⌝)`, which conversion
+soundness refutes. The proof uses only β, `succ` and `conv_sound`, so it
+holds of any extension of the analyses that keeps conversion sound:
+whatever folds are added, they compute everything about own-level code
+except its meaning.
+
+So the line is not "analysis versus evaluation" but **universal code
+versus evaluation without a bound**:
+- typed code with evaluation at its own depth is safe (S4);
+- untyped code (a type conditional on codes, as `run`'s tag test or
+  DeLaM's code of types with `elim_Typ` give) with analysis at its own
+  depth is safe;
+- untyped code with fuelled evaluation at its own depth is safe;
+- untyped code with unbounded evaluation at its own depth is the liar
+  (`cx_eval`).
+
+**The dependent recursor (argued, not checked).** A recursor whose motive
+is a type family can take the motive "the meaning of the code" (`λA. A`
+over typed code, or `λ⌜A⌝. El ⌜A⌝` over code of types). Its branches then
+rebuild every node as the node itself, and the fold *is* an evaluator:
+over typed code it is `trun`, over untyped code it is `run`. So at its
+own depth, a dependent recursor is safe exactly where the evaluator it
+can express is safe:
+- over typed code, with the motive `λA. A`;
+- over code of types, only if `El` of the own depth's code types is not
+  available at that depth. If it is, the recursor rebuilds the type
+  conditional, and then `run`.
+
+That is the case to check before #49 lets a layer host its own code:
+DeLaM's M has `elim_Typ` with a motive into its universes.
+
+Implications for Heather's tactics, read off the toy:
+- a tactic may inspect, rewrite and specialize tactic code freely;
+- it may run its own typed code (S4);
+- it may run its own untyped code only with fuel or through a
+  `Delay`-valued run;
+- it may run untyped code fully only from the level above.
+
 ## For the refactor (#49)
 
 The layer signature can be `LS`'s fields with S1, W1, S2, W2 and, once
 partiality is wanted, W3 and W4. DeLaM meets them. Before trusting the
 list in the dependent setting, three things differ from the toy:
-- a recursor whose motive is a type family can decode code into a type,
-  and decoding is a form of evaluation. So hosting at one's own depth
-  (conjecture 2's relaxation) may need S2 to cover `elim_Typ` into a
-  universe, not only `letbox`;
+- a recursor whose motive is a type family can express an evaluator
+  ("Code at its own depth" above). So hosting at one's own depth
+  (conjecture 2's relaxation) needs S2 to cover `elim_Trm` and
+  `elim_Typ` with such motives, not only `letbox`, unless the code they
+  analyse is typed;
 - the relation in the theories is layered (`LogRel/Layering.v`), so
   conjecture 3 may come back as a real condition there;
 - code there is contextual, with global substitution; the toy's code is
