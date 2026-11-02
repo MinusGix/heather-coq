@@ -179,7 +179,7 @@ with `C_k` run only from `P_{k+1}`:
   term. With untyped code it needs no Löb: the type conditional in `run`
   supplies the diagonal.
 - Löb itself (`fix z. M : ▷A`, code that contains itself) is not in this
-  toy. It is #47's probe. The finding here is that the grid already has
+  toy. It is #47's probe, now `probes/Lob.v` (`LOB.md`). The finding here is that the grid already has
   a slot for R, and that the boundary #47 draws (no T at R) is the toy's
   S2 exactly.
 

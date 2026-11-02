@@ -113,3 +113,14 @@ of the build (`_CoqProject` lists `theories/` only). Compile one with
   its own depth, even up to conversion (`no_own_eval`, Lawvere's
   diagonal). Standalone, no axioms: `coqc probes/LayerStructure.v` (a
   few seconds).
+- `Lob.v`: Löb at the reflexive cell R (issues #47, #54, `LOB.md`). Two
+  layers, R ≤ U, and `▷A`, R's typed closed code with `lfix z. M : ▷A`
+  (Löb), the GL axiom, K and a size analysis; T only at U, and at R a
+  fuelled run and a grounded release (`lfix`-headed code refused).
+  Normalization at both layers, so `▷Empty` is empty; R cannot prove
+  `▷Empty → Empty` (a model with holes) while U can; the fuelled liar
+  answers `n` with fuel `n`, the cut of the liar's never-ending trace.
+  Four side conditions, each with a counterexample: no T at R, Löb's body
+  closed, `lfix` not unfolded by conversion, and code formers that keep
+  `lfix`-headed code ungrounded. Standalone, no axioms: `coqc
+  probes/Lob.v` (a few seconds).
