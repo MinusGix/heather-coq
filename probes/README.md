@@ -98,12 +98,13 @@ of the build (`_CoqProject` lists `theories/` only). Compile one with
   probes/CodeDomainModel.v`.
 - `LayerStructure.v`: layer structures as capability tuples (issue #48,
   `LAYER_STRUCTURE.md`). STLC with `Nat` and closed, type-tagged code
-  (`box`, a size analysis, a type-dispatching `run`, `quote`) and `fix`,
-  over a layer structure. Under six side conditions it normalizes at
-  total layers and its conversion is sound for numerals, by a
-  fundamental theorem by induction on the meta depth. Each condition has
-  a structure meeting the other five that loses one of the two (the
-  liar, a loop, `4 ≡ 1`). The {code, program} × depth grid meets all six
+  (`box`, a size analysis, a type-dispatching `run`, `quote`, the
+  dependent eliminator `tcast` into typed code) and `fix`, over a layer
+  structure. Under seven side conditions it normalizes at total layers
+  and its conversion is sound for numerals, by a fundamental theorem by
+  induction on the meta depth. Each condition has a structure meeting
+  the other six that loses one of the two (the liar, a loop, `4 ≡ 1`).
+  The {code, program} × depth grid meets all seven
   at any depth, with a partial top level and with each row hosting its
   own code (the reflexive cell R of #47); DeLaM embeds as its depth-1
   slice; at depth 2, `□□`, axiom 4 and T twice. At a layer's own depth:
@@ -111,5 +112,6 @@ of the build (`_CoqProject` lists `theories/` only). Compile one with
   fuelled evaluation of untyped code all keep normalization (the liar
   with fuel `n` answers `n + 1`), while no term evaluates untyped code of
   its own depth, even up to conversion (`no_own_eval`, Lawvere's
-  diagonal). Standalone, no axioms: `coqc probes/LayerStructure.v` (a
+  diagonal), and the dependent eliminator at its own depth is the liar
+  again, with no own-depth `run` (`cx_cast_liar`). Standalone, no axioms: `coqc probes/LayerStructure.v` (a
   few seconds).

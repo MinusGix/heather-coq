@@ -3,12 +3,12 @@
     Heather-coq issue #48 (`docs/design/LAYER_STRUCTURE.md` has the
     findings).  A toy calculus, STLC with [Nat] and code, is parameterized
     by a layer structure: a type of layers with a few capabilities each.
-    Under six side conditions it normalizes at every total layer and its
+    Under seven side conditions it normalizes at every total layer and its
     conversion is sound for numerals (section [Metatheory]).  Each
     condition is necessary: for each, a structure that meets the other
-    five has a well-typed closed numeral without a normal form, or a
+    six has a well-typed closed numeral without a normal form, or a
     conversion between two distinct numerals (section [Counterexamples]).
-    The {code, program} × meta-depth grid meets all six, at every depth,
+    The {code, program} × meta-depth grid meets all seven, at every depth,
     with a partial top level, and with each program row hosting its own
     code (the reflexive cell R of issue #47); DeLaM is its depth-1 slice
     (section [The grid]).
@@ -23,15 +23,23 @@
       is [box B s], [d] if its tag is not [B];
     - a fuelled evaluation [runk n c B t d]: [run] that caps the fuel of
       every fuelled run inside the code it runs at [n - 1];
-    - [quote c t] (axiom 4): [box A s] boxed again, as code one level up.
+    - [quote c t] (axiom 4): [box A s] boxed again, as code one level up;
+    - [tcast c B t d], the dependent eliminator into typed code: [tbox s]
+      if [t] is [box B s], [d] if its tag is not [B].
     Typed code [tBox c A], with [tbox] and its evaluation [trun], is the
     S4 box: nothing analyses it.  General recursion [fix] is typable only
     at partial layers.
 
-    Section [Own-level evaluation is not definable] and the last section
+    Sections [Own-level evaluation is not definable] and [Own-level
+    evaluation with fuel]
     answer what a layer can do with code of its own depth: fold it
     (normalization holds), run it when typed, or run it with fuel, but no
     term of the layer evaluates its untyped code, even up to conversion.
+    Section [The dependent eliminator of untyped code] shows that a
+    dependent eliminator handing own-depth contents back as typed code is
+    such an evaluator ([trun ∘ tcast = run]): it needs its own condition
+    (S3), and without it the liar returns though nothing runs untyped code
+    of its own depth.
 
     Standalone, no axioms: [coqc probes/LayerStructure.v]. *)
 From Coq Require Import List Arith Lia.
@@ -46,6 +54,8 @@ Import ListNotations.
     - [ls_hosts k c]: [Code c] is a type at type layer [k], with [box] and
       the analysis [csize];
     - [ls_evals j c]: layer [j] may [run] layer-[c] code;
+    - [ls_casts j c]: layer [j] may [tcast] layer-[c] code, the dependent
+      eliminator of untyped code into typed code (section [Syntax]);
     - [ls_total]: [fix] is not typable;
     - [ls_depth]: the meta depth, read at a type layer.
     [ls_le] says what lifts into what. *)
@@ -57,6 +67,7 @@ Record LS := {
   ls_computes : ls_L -> bool;
   ls_hosts : ls_L -> ls_L -> Prop;
   ls_evals : ls_L -> ls_L -> Prop;
+  ls_casts : ls_L -> ls_L -> Prop;
   ls_total : ls_L -> bool;
   ls_depth : ls_L -> nat;
 }.
@@ -86,7 +97,8 @@ Inductive tm : Type :=
 | cfold (T : ty) (b z t : tm)
 | tbox (s : tm)
 | trun (t : tm)
-| runk (n : nat) (c : L) (B : ty) (t d : tm).
+| runk (n : nat) (c : L) (B : ty) (t d : tm)
+| tcast (c : L) (B : ty) (t d : tm).
 
 Definition upren (ξ : nat -> nat) (x : nat) : nat :=
   match x with 0 => 0 | S x => S (ξ x) end.
@@ -109,6 +121,7 @@ Fixpoint ren (ξ : nat -> nat) (t : tm) : tm :=
   | tbox s => tbox s
   | trun t => trun (ren ξ t)
   | runk n c B t d => runk n c B (ren ξ t) (ren ξ d)
+  | tcast c B t d => tcast c B (ren ξ t) (ren ξ d)
   end.
 
 Definition up (σ : nat -> tm) (x : nat) : tm :=
@@ -130,6 +143,7 @@ Fixpoint subst (σ : nat -> tm) (t : tm) : tm :=
   | tbox s => tbox s
   | trun t => trun (subst σ t)
   | runk n c B t d => runk n c B (subst σ t) (subst σ d)
+  | tcast c B t d => tcast c B (subst σ t) (subst σ d)
   end.
 
 Definition scons (u : tm) (σ : nat -> tm) (x : nat) : tm :=
@@ -140,7 +154,7 @@ Fixpoint size (t : tm) : nat :=
   | var _ | lit _ => 1
   | lam _ t | succ t | box _ t | csize t | quote _ t | fix_ _ t | tbox t | trun t =>
       S (size t)
-  | app t u | run _ _ t u | runk _ _ _ t u => S (size t + size u)
+  | app t u | run _ _ t u | runk _ _ _ t u | tcast _ _ t u => S (size t + size u)
   | cfold _ b z t => S (size b + size z + size t)
   end.
 
@@ -166,6 +180,7 @@ Fixpoint foldtm (b z : tm) (s : tm) : tm :=
   | tbox s => node b 12 (foldtm b z s) z
   | trun t => node b 13 (foldtm b z t) z
   | runk _ _ _ t d => node b 14 (foldtm b z t) (foldtm b z d)
+  | tcast _ _ t d => node b 15 (foldtm b z t) (foldtm b z d)
   end.
 
 (** Fuel.  Running code with fuel [S n] caps every fuelled run in it at
@@ -187,6 +202,7 @@ Fixpoint capk (n : nat) (t : tm) : tm :=
   | tbox s => tbox (capk n s)
   | trun t => trun (capk n t)
   | runk m c B t d => runk (Nat.min m n) c B (capk n t) (capk n d)
+  | tcast c B t d => tcast c B (capk n t) (capk n d)
   end.
 
 (** Every fuelled run outside [box] has fuel below [N]. *)
@@ -194,7 +210,7 @@ Fixpoint fuel_lt (N : nat) (t : tm) : Prop :=
   match t with
   | var _ | lit _ | box _ _ => True
   | lam _ t | succ t | csize t | quote _ t | fix_ _ t | tbox t | trun t => fuel_lt N t
-  | app t u | run _ _ t u => fuel_lt N t /\ fuel_lt N u
+  | app t u | run _ _ t u | tcast _ _ t u => fuel_lt N t /\ fuel_lt N u
   | cfold _ b z t => fuel_lt N b /\ fuel_lt N z /\ fuel_lt N t
   | runk m _ _ t d => m < N /\ fuel_lt N t /\ fuel_lt N d
   end.
@@ -299,7 +315,10 @@ Inductive red : tm -> tm -> Prop :=
 | r_runk_zero c B t d : red (runk 0 c B t d) d
 | r_runk_hit n c B s d : red (runk (S n) c B (box B s) d) (capk n s)
 | r_runk_miss n c A B s d : A <> B -> red (runk (S n) c B (box A s) d) d
-| r_runk n c B t t' d : red t t' -> red (runk (S n) c B t d) (runk (S n) c B t' d).
+| r_runk n c B t t' d : red t t' -> red (runk (S n) c B t d) (runk (S n) c B t' d)
+| r_tcast_hit c B s d : red (tcast c B (box B s) d) (tbox s)
+| r_tcast_miss c A B s d : A <> B -> red (tcast c B (box A s) d) d
+| r_tcast c B t t' d : red t t' -> red (tcast c B t d) (tcast c B t' d).
 
 Inductive reds : tm -> tm -> Prop :=
 | reds_refl t : reds t t
@@ -368,6 +387,7 @@ Local Notation typeof := (ls_typeof Λ).
 Local Notation computes := (ls_computes Λ).
 Local Notation hosts := (ls_hosts Λ).
 Local Notation evals := (ls_evals Λ).
+Local Notation casts := (ls_casts Λ).
 Local Notation total := (ls_total Λ).
 Local Notation depth := (ls_depth Λ).
 Local Notation ty := (ty L).
@@ -415,6 +435,9 @@ Inductive typed : L -> list ty -> tm -> ty -> Prop :=
 | ty_runk n j Γ c B t d :
     hosts (typeof j) c -> lle c j -> wf_ty (typeof c) B ->
     typed j Γ t (tCode c) -> typed j Γ d B -> typed j Γ (runk n c B t d) B
+| ty_tcast j Γ c B t d :
+    casts j c -> hosts (typeof j) c -> wf_ty (typeof c) B ->
+    typed j Γ t (tCode c) -> typed j Γ d (tBox c B) -> typed j Γ (tcast c B t d) (tBox c B)
 | ty_lift i j Γ t A : lle i j -> typed i Γ t A -> typed j Γ t A.
 
 (** [Γ ⊢ⱼ t ≡ t' : A]: congruences everywhere, computation only at
@@ -488,7 +511,18 @@ Inductive conv : L -> list ty -> tm -> tm -> ty -> Prop :=
 | cv_runk_miss n j Γ c A B s d :
     computes j = true -> A <> B -> hosts (typeof j) c -> lle c j -> wf_ty (typeof c) B ->
     typed j Γ (box A s) (tCode c) -> typed j Γ d B ->
-    conv j Γ (runk (S n) c B (box A s) d) d B.
+    conv j Γ (runk (S n) c B (box A s) d) d B
+| cv_tcast j Γ c B t t' d d' :
+    casts j c -> hosts (typeof j) c -> wf_ty (typeof c) B ->
+    conv j Γ t t' (tCode c) -> conv j Γ d d' (tBox c B) ->
+    conv j Γ (tcast c B t d) (tcast c B t' d') (tBox c B)
+| cv_tcast_hit j Γ c B s d :
+    computes j = true -> casts j c -> hosts (typeof j) c -> wf_ty (typeof c) B ->
+    typed c [] s B -> typed j Γ d (tBox c B) -> conv j Γ (tcast c B (box B s) d) (tbox s) (tBox c B)
+| cv_tcast_miss j Γ c A B s d :
+    computes j = true -> A <> B -> casts j c -> hosts (typeof j) c -> wf_ty (typeof c) B ->
+    typed j Γ (box A s) (tCode c) -> typed j Γ d (tBox c B) ->
+    conv j Γ (tcast c B (box A s) d) d (tBox c B).
 
 (** *** The side conditions *)
 
@@ -498,6 +532,10 @@ Definition static_code := forall k c, hosts k c -> computes c = false.
 Definition static_down := forall i j, lle i j -> computes j = false -> computes i = false.
 (** (S2) Evaluation is strictly upward in meta depth. *)
 Definition eval_up := forall j c, evals j c -> hosts (typeof j) c ->
+  depth (typeof c) < depth (typeof j).
+(** (S3) The dependent eliminator of untyped code is strictly upward in
+    meta depth, as [run] is: [tcast] followed by [trun] is [run]. *)
+Definition cast_up := forall j c, casts j c -> hosts (typeof j) c ->
   depth (typeof c) < depth (typeof j).
 (** (W2) Lifting never lowers the meta depth. *)
 Definition depth_mono := forall i j, lle i j -> depth (typeof i) <= depth (typeof j).
@@ -744,11 +782,29 @@ Proof.
       apply R_sym, (R_red1 _ _ d'); [constructor; exact Hne |]; apply R_sym, Hd.
 Qed.
 
+(** The dependent eliminator, given the theorem for the code's contents:
+    its hit case is typed code, related by its contents' relation. *)
+Lemma R_tcast c B t t' d d' :
+  (forall s, typed c [] s B -> total c = true -> R B s s) ->
+  R (tCode c) t t' -> R (tBox c B) d d' -> R (tBox c B) (tcast c B t d) (tcast c B t' d').
+Proof.
+  intros HB (A & s & [Ht Hv] & [Ht' _] & HA & Hs) Hd.
+  assert (Hc : forall d0 t0 t1, reds t0 t1 -> reds (tcast c B t0 d0) (tcast c B t1 d0))
+    by (intros d0; apply (reds_cong (fun t => tcast c B t d0)); constructor; assumption).
+  apply (R_expand _ _ _ _ _ (Hc _ _ _ Ht) (Hc _ _ _ Ht')).
+  destruct (ty_eq_dec A B) as [-> | Hne].
+  - apply (R_red1 _ _ (tbox s)); [constructor |].
+    apply R_sym, (R_red1 _ _ (tbox s)); [constructor |].
+    apply R_tbox; intros Hc'; apply HB; assumption.
+  - apply (R_red1 _ _ d); [constructor; exact Hne |].
+    apply R_sym, (R_red1 _ _ d'); [constructor; exact Hne |]; apply R_sym, Hd.
+Qed.
+
 (** *** The fundamental theorem, by recursion on the meta depth *)
 
 Section FT.
 Hypotheses (Heval : eval_up) (Hdepth : depth_mono) (Htotal : total_down)
-  (Hlift : eval_lift).
+  (Hlift : eval_lift) (Hcast : cast_up).
 
 (** The depth is needed only at [run]: [run] at [j] checks its code's
     contents at a layer of lower depth ([eval_up]), so it uses the theorem
@@ -766,7 +822,8 @@ Proof.
     | j Γ c B t d He Hh HB Ht IHt Hd IHd | j Γ c c' t Hh Hh' Ht IHt
     | j Γ A t Hp HA Ht _ | j Γ c T b z t Hb IHb Hz IHz Ht IHt
     | j Γ c A s Hh Hcj HA Hs IHs | j Γ c A t Hcj Ht IHt
-    | m j Γ c B t d Hh Hcj HB Ht IHt Hd IHd | i j Γ t A Hij Ht IHt];
+    | m j Γ c B t d Hh Hcj HB Ht IHt Hd IHd | j Γ c B t d Hk Hh HB Ht IHt Hd IHd
+    | i j Γ t A Hij Ht IHt];
     intros Hf Hn Htot σ σ' Hσ; cbn in Hf; cbn [subst].
   - apply Hσ, Hx.
   - apply R_lam; intros u u' Hu; apply IHt; auto using Rsub_cons.
@@ -795,6 +852,12 @@ Proof.
     apply (IHN (S m') Hm c []); [apply typed_capk, Hs | apply fuel_lt_capk | | | exact Rsub_var_nil].
     + pose proof (Hdepth _ _ Hcj); lia.
     + exact (Htotal _ _ Hcj Htot).
+  - (* the dependent eliminator: its contents were typed below [j]'s depth *)
+    destruct Hf as [Hf1 Hf2].
+    apply R_tcast; [| apply IHt | apply IHd]; try assumption.
+    intros s Hs Hc; rewrite <- (subst_var s); destruct (fuel_bound s) as [Ns HNs].
+    apply (IHn Ns c []); [exact Hs | exact HNs | | exact Hc | exact Rsub_var_nil].
+    pose proof (Hcast _ _ Hk Hh); lia.
   - apply IHt; [exact Hf | pose proof (Hdepth _ _ Hij); lia | exact (Htotal _ _ Hij Htot) | exact Hσ].
 Qed.
 
@@ -850,7 +913,9 @@ Proof.
     | j Γ c A t t' Hcj _ IH | j Γ c T b z A s _ Hb Hz _
     | j Γ c A s _ Hh Hcj HA Hs
     | m j Γ c B t t' d d' Hh Hcj HB _ IHt _ IHd | j Γ c B t d _ Hh Hcj HB Ht Hd
-    | m j Γ c B s d _ Hh Hcj HB Hs Hd | m j Γ c A B s d _ Hne Hh Hcj HB Hb Hd];
+    | m j Γ c B s d _ Hh Hcj HB Hs Hd | m j Γ c A B s d _ Hne Hh Hcj HB Hb Hd
+    | j Γ c B t t' d d' Hk Hh HB _ IHt _ IHd | j Γ c B s d _ Hk Hh HB Hs Hd
+    | j Γ c A B s d _ Hne Hk Hh HB Hb Hd];
     intros Htot σ σ' Hσ; cbn [subst].
   - exact (FT_typed _ _ _ _ Ht Htot _ _ Hσ).
   - apply R_sym, IH; [exact Htot | apply Rsub_sym, Hσ].
@@ -904,6 +969,12 @@ Proof.
     exact (FT_closed _ _ _ Hs' (Htotal _ _ Hcj Htot)).
   - apply (R_red1 _ _ (subst σ d)); [constructor; exact Hne |].
     exact (FT_typed _ _ _ _ Hd Htot _ _ Hσ).
+  - apply R_tcast; [| apply IHt | apply IHd]; try assumption.
+    intros s Hs Hc; exact (FT_closed c _ _ Hs Hc).
+  - apply (R_red1 _ _ (tbox s)); [constructor |].
+    apply R_tbox; intros Hc; exact (FT_closed c _ _ Hs Hc).
+  - apply (R_red1 _ _ (subst σ d)); [constructor; exact Hne |].
+    exact (FT_typed _ _ _ _ Hd Htot _ _ Hσ).
 Qed.
 
 (** Conversion is sound for numerals at total layers. *)
@@ -917,7 +988,7 @@ Qed.
 End FT.
 End Rules.
 
-(** All six side conditions. *)
+(** All seven side conditions. *)
 Record good (Λ : LS) : Prop := {
   g_static : static_code Λ;
   g_sdown : static_down Λ;
@@ -925,7 +996,19 @@ Record good (Λ : LS) : Prop := {
   g_depth : depth_mono Λ;
   g_total : total_down Λ;
   g_lift : eval_lift Λ;
+  g_cast : cast_up Λ;
 }.
+
+Corollary good_normalization Λ (Hg : good Λ) j t : typed Λ j [] t tNat ->
+  ls_total Λ j = true -> exists k, evalto t (lit k).
+Proof. exact (normalization Λ (g_eval _ Hg) (g_depth _ Hg) (g_total _ Hg) (g_lift _ Hg) (g_cast _ Hg) j t). Qed.
+
+Corollary good_conv_sound Λ (Hg : good Λ) j t t' : conv Λ j [] t t' tNat ->
+  ls_total Λ j = true -> exists k, evalto t (lit k) /\ evalto t' (lit k).
+Proof.
+  exact (conv_sound Λ (g_eval _ Hg) (g_depth _ Hg) (g_total _ Hg) (g_lift _ Hg) (g_cast _ Hg)
+    (g_static _ Hg) (g_sdown _ Hg) j t t').
+Qed.
 
 (** ** Terms without a normal form *)
 
@@ -1107,6 +1190,7 @@ Definition grid_gen (n : nat) (hrefl erefl : bool) (m : nat) : LS := {|
   ls_computes := gcomputes;
   ls_hosts := ghosts n hrefl;
   ls_evals := fun x c => ghosts n erefl (gtypeof x) c /\ gle c x;
+  ls_casts := fun x c => ghosts n false (gtypeof x) c /\ gle c x;
   ls_total := fun x => level x <? m;
   ls_depth := level;
 |}.
@@ -1124,23 +1208,23 @@ Ltac solve_cond :=
 Theorem grid_good n hrefl m : good (grid_gen n hrefl false m).
 Proof.
   constructor; unfold static_code, static_down, eval_up, depth_mono, total_down,
-    eval_lift; cbn -[Nat.ltb]; destruct hrefl; solve_cond.
+    eval_lift, cast_up; cbn -[Nat.ltb]; destruct hrefl; solve_cond.
 Qed.
 
 Corollary grid_normalization n hrefl m j t :
   typed (grid_gen n hrefl false m) j [] t tNat -> level j < m ->
   exists k, evalto t (lit k).
 Proof.
-  intros H Hj; destruct (grid_good n hrefl m) as [Hs Hsd He Hd Ht Hl].
-  apply (normalization _ He Hd Ht Hl j); [exact H | cbn; apply Nat.ltb_lt, Hj].
+  intros H Hj; apply (good_normalization _ (grid_good n hrefl m) j); [exact H |].
+  cbn; apply Nat.ltb_lt, Hj.
 Qed.
 
 Corollary grid_conv_sound n hrefl m j t t' :
   conv (grid_gen n hrefl false m) j [] t t' tNat -> level j < m ->
   exists k, evalto t (lit k) /\ evalto t' (lit k).
 Proof.
-  intros H Hj; destruct (grid_good n hrefl m) as [Hs Hsd He Hd Ht Hl].
-  apply (conv_sound _ He Hd Ht Hl Hs Hsd j); [exact H | cbn; apply Nat.ltb_lt, Hj].
+  intros H Hj; apply (good_conv_sound _ (grid_good n hrefl m) j); [exact H |].
+  cbn; apply Nat.ltb_lt, Hj.
 Qed.
 
 (** *** A partial top level *)
@@ -1219,6 +1303,7 @@ Definition dls (le : layer -> layer -> Prop) (comp : layer -> bool)
   ls_computes := comp;
   ls_hosts := hosts;
   ls_evals := evals;
+  ls_casts := evals;
   ls_total := tot;
   ls_depth := ddepth;
 |}.
@@ -1235,7 +1320,7 @@ Ltac solve_dcond :=
 Theorem delam_good : good delam.
 Proof.
   constructor; unfold static_code, static_down, eval_up, depth_mono, total_down,
-    eval_lift; cbn; solve_dcond.
+    eval_lift, cast_up; cbn; solve_dcond.
 Qed.
 
 Definition emb (i : layer) : cell :=
@@ -1280,7 +1365,7 @@ Proof. destruct k; cbn; lia. Qed.
 
 (** ** Counterexamples: each side condition is needed *)
 
-(** For each condition, a structure that meets the other five, in which
+(** For each condition, a structure that meets the other six, in which
     normalization or conversion soundness fails. *)
 
 (** *** (S1) Analysed code computes: DeLaM with C computing *)
@@ -1289,9 +1374,9 @@ Definition cx_static : LS :=
   dls dlle (fun i => match i with lV => false | _ => true end) dhosts dhosts (fun _ => true).
 
 Lemma cx_static_others : static_down cx_static /\ eval_up cx_static /\
-  depth_mono cx_static /\ total_down cx_static /\ eval_lift cx_static.
+  depth_mono cx_static /\ total_down cx_static /\ eval_lift cx_static /\ cast_up cx_static.
 Proof.
-  unfold static_down, eval_up, depth_mono, total_down, eval_lift; cbn.
+  unfold static_down, eval_up, depth_mono, total_down, eval_lift, cast_up; cbn.
   repeat split; solve_dcond.
 Qed.
 
@@ -1312,9 +1397,9 @@ Definition cx_sdown : LS :=
   dls (fun i j => dlle i j \/ (i = lD /\ j = lC)) dcomputes dhosts dhosts (fun _ => true).
 
 Lemma cx_sdown_others : static_code cx_sdown /\ eval_up cx_sdown /\
-  depth_mono cx_sdown /\ total_down cx_sdown /\ eval_lift cx_sdown.
+  depth_mono cx_sdown /\ total_down cx_sdown /\ eval_lift cx_sdown /\ cast_up cx_sdown.
 Proof.
-  unfold static_code, eval_up, depth_mono, total_down, eval_lift; cbn.
+  unfold static_code, eval_up, depth_mono, total_down, eval_lift, cast_up; cbn.
   repeat split; solve_dcond.
 Qed.
 
@@ -1336,9 +1421,9 @@ Qed.
 Definition cx_eval : LS := grid_gen 1 true true 2.
 
 Lemma cx_eval_others : static_code cx_eval /\ static_down cx_eval /\
-  depth_mono cx_eval /\ total_down cx_eval /\ eval_lift cx_eval.
+  depth_mono cx_eval /\ total_down cx_eval /\ eval_lift cx_eval /\ cast_up cx_eval.
 Proof.
-  unfold static_code, static_down, depth_mono, total_down, eval_lift; cbn -[Nat.ltb].
+  unfold static_code, static_down, depth_mono, total_down, eval_lift, cast_up; cbn -[Nat.ltb].
   repeat split; solve_cond.
 Qed.
 
@@ -1368,14 +1453,15 @@ Definition cx_depth : LS := {|
   ls_computes := gcomputes;
   ls_hosts := ghosts 1 true;
   ls_evals := fun x c => ghosts 1 false (gtypeof x) c /\ gle c x;
+  ls_casts := fun x c => ghosts 1 false (gtypeof x) c /\ gle c x;
   ls_total := fun _ => true;
   ls_depth := level;
 |}.
 
 Lemma cx_depth_others : static_code cx_depth /\ static_down cx_depth /\
-  eval_up cx_depth /\ total_down cx_depth /\ eval_lift cx_depth.
+  eval_up cx_depth /\ total_down cx_depth /\ eval_lift cx_depth /\ cast_up cx_depth.
 Proof.
-  unfold static_code, static_down, eval_up, total_down, eval_lift; cbn.
+  unfold static_code, static_down, eval_up, total_down, eval_lift, cast_up; cbn.
   repeat split; solve_cond.
 Qed.
 
@@ -1398,9 +1484,9 @@ Definition cx_total : LS :=
   dls dlle dcomputes dhosts dhosts (fun i => match i with lD => false | _ => true end).
 
 Lemma cx_total_others : static_code cx_total /\ static_down cx_total /\
-  eval_up cx_total /\ depth_mono cx_total /\ eval_lift cx_total.
+  eval_up cx_total /\ depth_mono cx_total /\ eval_lift cx_total /\ cast_up cx_total.
 Proof.
-  unfold static_code, static_down, eval_up, depth_mono, eval_lift; cbn.
+  unfold static_code, static_down, eval_up, depth_mono, eval_lift, cast_up; cbn.
   repeat split; solve_dcond.
 Qed.
 
@@ -1425,9 +1511,9 @@ Definition cx_lift : LS :=
     (fun i => match i with lC | lD => false | _ => true end).
 
 Lemma cx_lift_others : static_code cx_lift /\ static_down cx_lift /\
-  eval_up cx_lift /\ depth_mono cx_lift /\ total_down cx_lift.
+  eval_up cx_lift /\ depth_mono cx_lift /\ total_down cx_lift /\ cast_up cx_lift.
 Proof.
-  unfold static_code, static_down, eval_up, depth_mono, total_down; cbn.
+  unfold static_code, static_down, eval_up, depth_mono, total_down, cast_up; cbn.
   repeat split; solve_dcond.
 Qed.
 
@@ -1508,8 +1594,7 @@ Proof.
                     (ty_lift _ _ _ _ _ _ Hle Hb) Hbox) as H.
       cbn [subst scons] in H; rewrite (closed_subst _ _ _ _ _ He) in H; exact H.
     - apply cv_succ, Hspec, Hd. }
-  destruct Hgood as [Hs Hsd He' Hdp Ht Hl].
-  destruct (conv_sound _ He' Hdp Ht Hl Hs Hsd _ _ _ Hconv Htot) as (k & [H1 _] & H2).
+  destruct (good_conv_sound _ Hgood _ _ _ Hconv Htot) as (k & [H1 _] & H2).
   assert (H3 : evalto (succ Ω) (lit (S k))).
   { split; [| exact I].
     apply (reds_trans _ (succ (lit k))); [apply reds_cong; [constructor; assumption | exact H1] |].
@@ -1611,3 +1696,175 @@ Proof.
   apply ty_app with (A := tCode (gC 0)); [apply ty_lift with (i := gC 0); [cbn; lia | exact Hd] |].
   apply ty_box; cbn; [lia | split; [lia | exact I] | exact Hd].
 Qed.
+
+(** ** The dependent eliminator of untyped code *)
+
+(** [tcast c B t d] eliminates untyped code [t : Code c] (Σ A. □A) into
+    typed code [□B]: [tbox s] if [t] is [box B s], [d] otherwise.  It is
+    the dependent eliminator whose motive is the family [X ↦ □X] over the
+    code's type tag, read at [B] by the type conditional.  Each half is
+    harmless at a layer's own depth: the type conditional is what [cfold]
+    and [csize] already observe, and [trun] of own-depth typed code is the
+    S4 box ([R_runs_own_typed_code]).  Together they are [run]:
+    [run c B t d] behaves as [trun (tcast c B t (tbox d))]
+    ([tcast_hit_is_run], [tcast_miss_is_run]).  So (S3)
+    [cast_up] asks of [tcast] what (S2) [eval_up] asks of [run], and this
+    section shows it is needed: [cx_cast] meets the other six conditions,
+    [eval_up] included, and has the liar.
+
+    A motive that keeps the contents as untyped code, [X ↦ Code c'], adds
+    nothing to [cfold]: in a simply typed toy the family is then constant.
+    The danger is exactly a family that hands the contents back at their
+    own type [X], as typed code ([X ↦ □X]) or as a value ([X ↦ X], which is
+    [run] itself). *)
+
+(** [trun ∘ tcast] is [run]: on a hit both reduce to the contents, on a
+    miss both to the default. *)
+Lemma tcast_hit_is_run {L} (c : L) B s d :
+  reds (trun (tcast c B (box B s) (tbox d))) s /\ reds (run c B (box B s) d) s.
+Proof.
+  split; [| econstructor; [apply r_run_hit | constructor]].
+  econstructor; [apply r_trun, r_tcast_hit |].
+  econstructor; [apply r_trun_box | constructor].
+Qed.
+
+Lemma tcast_miss_is_run {L} (c : L) A B s d : A <> B ->
+  reds (trun (tcast c B (box A s) (tbox d))) d /\ reds (run c B (box A s) d) d.
+Proof.
+  intros Hne; split; [| econstructor; [apply r_run_miss, Hne | constructor]].
+  econstructor; [apply r_trun, r_tcast_miss, Hne |].
+  econstructor; [apply r_trun_box | constructor].
+Qed.
+
+(** From above, the dependent eliminator is covered by [grid_good]: [P₁]
+    casts [C₀] code, also when every row hosts its own code. *)
+Example R_casts_below : typed (gridR 1 2) (gP 1) []
+  (lam (tCode (gC 0)) (tcast (gC 0) tNat (var 0) (tbox (lit 0))))
+  (tArr (tCode (gC 0)) (tBox (gC 0) tNat)).
+Proof.
+  apply ty_lam; cbn; [lia |].
+  apply ty_tcast; cbn; [lia | lia | exact I | apply ty_var; reflexivity |].
+  apply ty_tbox; cbn; [lia | lia | exact I | apply ty_lit].
+Qed.
+
+(** *** (S3) The dependent eliminator at the code's own depth *)
+
+(** [gridR 1 2] (each program row hosts its own code, runs only code
+    below), with [tcast] also of the row's own code. *)
+Definition cx_cast : LS := {|
+  ls_L := cell;
+  ls_dec := cell_eq_dec;
+  ls_le := gle;
+  ls_typeof := gtypeof;
+  ls_computes := gcomputes;
+  ls_hosts := ghosts 1 true;
+  ls_evals := fun x c => ghosts 1 false (gtypeof x) c /\ gle c x;
+  ls_casts := fun x c => ghosts 1 true (gtypeof x) c /\ gle c x;
+  ls_total := fun x => level x <? 2;
+  ls_depth := level;
+|}.
+
+Lemma cx_cast_others : static_code cx_cast /\ static_down cx_cast /\ eval_up cx_cast /\
+  depth_mono cx_cast /\ total_down cx_cast /\ eval_lift cx_cast.
+Proof.
+  unfold static_code, static_down, eval_up, depth_mono, total_down, eval_lift; cbn -[Nat.ltb].
+  repeat split; solve_cond.
+Qed.
+
+Lemma cx_cast_fails : ~ cast_up cx_cast.
+Proof.
+  intros H; assert (Hc : ls_casts cx_cast (gP 0) (gC 0)) by (cbn; lia).
+  specialize (H _ _ Hc ltac:(cbn; lia)); cbn in H; lia.
+Qed.
+
+(** [cx_cast] runs no code of its own depth: [run] is still strictly
+    upward. *)
+Lemma cx_cast_no_own_eval x c : ls_evals cx_cast x c -> level c < level (gtypeof x).
+Proof. destruct x, c; cbn; lia. Qed.
+
+(** The liar through the dependent eliminator:
+    [cd := λx. succ (trun (tcast x (tbox (λ_. 0))) x)], and
+    [cd ⌜cd⌝ ⇝ succ (cd ⌜cd⌝)] in three steps. *)
+Section CastLiar.
+Context {L : Type}.
+Variable c : L.
+Local Notation tm := (tm L).
+
+Definition cdflt : tm := tbox (ldflt c).
+Definition cd : tm := lam (tCode c) (succ (app (trun (tcast c (lB c) (var 0) cdflt)) (var 0))).
+Definition cY1 : tm := app (trun (tcast c (lB c) (box (lB c) cd) cdflt)) (box (lB c) cd).
+Definition cY2 : tm := app (trun (tbox cd)) (box (lB c) cd).
+Definition cΩ : tm := app cd (box (lB c) cd).
+
+Inductive CInv : tm -> Prop :=
+| ci_Ω : CInv cΩ
+| ci_Y1 : CInv cY1
+| ci_Y2 : CInv cY2
+| ci_succ t : CInv t -> CInv (succ t).
+
+Lemma CInv_not_value t : CInv t -> ~ value t.
+Proof. destruct 1; cbn; tauto. Qed.
+
+Lemma CInv_red t t' : CInv t -> red t t' -> CInv t'.
+Proof.
+  intros H; revert t'; induction H as [| | | t H IH]; intros t' Hr.
+  - inversion Hr; subst; [exact (ci_succ _ ci_Y1) |].
+    match goal with H : red cd _ |- _ => inversion H end.
+  - inversion Hr; subst.
+    match goal with H : red (trun _) _ |- _ => inversion H; subst end.
+    match goal with H : red (tcast _ _ _ _) _ |- _ => inversion H; subst end.
+    + exact ci_Y2.
+    + contradiction.
+    + inv_value_red.
+  - inversion Hr; subst.
+    match goal with H : red (trun _) _ |- _ => inversion H; subst end.
+    + exact ci_Ω.
+    + inv_value_red.
+  - inversion Hr; subst.
+    + inversion H.
+    + apply ci_succ, IH; assumption.
+Qed.
+
+Theorem cast_liar_diverges : ~ exists v, evalto cΩ v.
+Proof.
+  intros (v & H & Hv).
+  assert (Hi : CInv v).
+  { pose proof ci_Ω as Hi; clear Hv; induction H as [| t t1 t2 Hs _ IH]; [exact Hi |].
+    exact (IH (CInv_red _ _ Hi Hs)). }
+  exact (CInv_not_value _ Hi Hv).
+Qed.
+
+End CastLiar.
+
+(** It is typed at the total layer [P₀]: [cd] at [C₀], whose types are
+    [P₀]'s, and [P₀] hosts and casts [C₀]. *)
+Theorem cx_cast_liar : typed cx_cast (gP 0) [] (cΩ (gC 0)) tNat /\
+  ls_total cx_cast (gP 0) = true /\ ~ exists v, evalto (cΩ (gC 0)) v.
+Proof.
+  split; [| split; [reflexivity | apply cast_liar_diverges]].
+  assert (Hd : typed cx_cast (gC 0) [] (cd (gC 0)) (lB (gC 0))).
+  { apply ty_lam; [cbn; lia |].
+    apply ty_succ, ty_app with (A := tCode (gC 0)); [| apply ty_var; reflexivity].
+    apply ty_trun with (c := gC 0); [cbn; lia |].
+    apply ty_tcast; cbn; [lia | lia | split; [lia | exact I] | apply ty_var; reflexivity |].
+    apply ty_tbox; cbn; [lia | lia | split; [lia | exact I] |].
+    apply ty_lam; [cbn; lia | apply ty_lit]. }
+  apply ty_app with (A := tCode (gC 0)); [apply ty_lift with (i := gC 0); [cbn; lia | exact Hd] |].
+  apply ty_box; cbn; [lia | split; [lia | exact I] | exact Hd].
+Qed.
+
+(** So [cx_cast] is not normalizing, though it runs nothing of its own
+    depth: the condition on [tcast] is not implied by the others. *)
+Corollary cx_cast_not_normalizing :
+  ~ (forall j t, typed cx_cast j [] t tNat -> ls_total cx_cast j = true ->
+       exists k, evalto t (lit k)).
+Proof.
+  intros Hn; destruct cx_cast_liar as (Hty & Ht & Hd).
+  destruct (Hn _ _ Hty Ht) as (k & Hk); apply Hd; eauto.
+Qed.
+
+(** Everything this file states depends on no axiom. *)
+Print Assumptions grid_normalization.
+Print Assumptions grid_conv_sound.
+Print Assumptions cx_cast_liar.
+Print Assumptions no_own_eval_R.
