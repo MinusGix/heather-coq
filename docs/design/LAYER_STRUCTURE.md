@@ -2,6 +2,8 @@
 
 Status: **probe done** (2026-10-28), `probes/LayerStructure.v`,
 standalone, no axioms (`Print Assumptions` closed for every result
+below). The dependent eliminator, condition S3 and the answer for
+DeLaM's recursors were added on 2026-11-02 ("The dependent eliminator"
 below). The theories are untouched, and the layer-signature refactor of
 `compt` (#49) is not started; this note is its input.
 
@@ -38,8 +40,11 @@ fold with any fixed motive), `run c B t d` (evaluation with a type
 conditional: `s` if `t` is `box B s`, else `d`), its fuelled variant
 `runk`, and `quote` (axiom 4: `box A s` boxed again, as code one level
 up). Typed code `tBox c A`, with `tbox` and `trun`, is the S4 box, which
-nothing analyses. The last three were added for the question in "Code at
-its own depth" below.
+nothing analyses. `tcast c B t d` is the dependent eliminator of untyped
+code into typed code: `tbox s` if `t` is `box B s`, else `d`, under its
+own capability `ls_casts`. `cfold`, typed code and `runk` were added for
+the question in "Code at its own depth" below, `tcast` for the one in
+"The dependent eliminator".
 
 Simplifications against DeLaM, each a place where the result could
 change in the real system:
@@ -48,41 +53,44 @@ change in the real system:
 - code is untyped, tagged by its type: `Code c` reads as Σ A. □A, the
   analogue of DeLaM's code of types with `elim_Typ`'s type conditional.
   This is what lets the liar be stated without Löb;
-- the folds have a fixed motive: there is no dependent recursor, so no
-  fold can decode code into a type;
+- the folds have a fixed motive. The one dependent eliminator is the
+  shallow `tcast`, whose motive is `X ↦ □X` over the type tag; there is
+  no structural recursor with a type-family motive (why that is enough
+  is in "The dependent eliminator");
 - simple types, weak-head call-by-name reduction, and a relation that
   does not mention layers at all.
 
 ## Results
 
-Six side conditions:
+Seven side conditions:
 
 | | Condition | Used by | Fails in | Failure |
 |---|---|---|---|---|
 | S1 | `static_code`: hosted (so analysed) code is static | conversion | `cx_static`: DeLaM with C computing | `csize ⌜(λx. x) 0⌝ ≡ csize ⌜0⌝`, so `4 ≡ 1` at M |
 | W1 | `static_down`: nothing computing lifts into a static layer | conversion | `cx_sdown`: DeLaM with D ≤ C | the same, through the lift |
 | S2 | `eval_up`: `run` at `j` of `c`-code needs `depth(typeof c) < depth(typeof j)` | normalization | `cx_eval`: the grid with every row running its own code | the liar |
+| S3 | `cast_up`: `tcast` at `j` of `c`-code needs `depth(typeof c) < depth(typeof j)` | normalization | `cx_cast`: the grid with every row hosting and casting its own code, `run` strictly upward | the liar through `trun ∘ tcast` |
 | W2 | `depth_mono`: lifting never lowers the depth | normalization | `cx_depth`: code of M lifts into code of D (C₁ ≤ C₀) | the liar |
 | W3 | `total_down`: nothing partial lifts into a total layer | normalization | `cx_total`: DeLaM with D partial | `fix x. x` at M |
 | W4 | `eval_lift`: a layer runs only code that lifts into it | normalization | `cx_lift`: M runs partial C-code that does not lift into M | `run ⌜fix x. x⌝` at M |
 
-Each counterexample structure meets the other five conditions
+Each counterexample structure meets the other six conditions
 (`cx_*_others`), fails its own (`cx_*_fails`), and has a closed,
 well-typed numeral at a total layer without a normal form, or a
 conversion between two distinct numerals.
 
 Under the conditions:
-- `normalization` (S2, W2, W3, W4): a closed numeral at a total layer
-  evaluates to a literal;
-- `conv_sound` (all six): a conversion between closed numerals at a total
+- `normalization` (S2, S3, W2, W3, W4): a closed numeral at a total
+  layer evaluates to a literal;
+- `conv_sound` (all seven): a conversion between closed numerals at a total
   layer relates two terms with the same literal.
 
 The proof is a fundamental theorem by induction on the meta depth, then
 on the derivation (`FT_depth`). The relation itself is not stratified:
 code is related when both sides evaluate to one and the same well-typed
 `box` (syntactic equality, because `csize` sees syntax). The depth is
-used only at `run`: its code's contents were typed at a lower depth, so
-the theorem at that depth applies to them. Nothing else looks inside a
+used only at `run` and `tcast`: their code's contents were typed at a
+lower depth, so the theorem at that depth applies to them. Nothing else looks inside a
 `box`.
 
 The liar (`lΩ`) is Lawvere's diagonal: `d := λx. succ (run x (λ_. 0) x)`
@@ -141,7 +149,7 @@ depth   code      program
           ↖ V, below everything
 ```
 
-- `grid_good`: the grid meets all six conditions for every depth `n`,
+- `grid_good`: the grid meets all seven conditions for every depth `n`,
   every totality bound `m`, and both values of `hrefl`. So it normalizes
   (`grid_normalization`) and its conversion is sound (`grid_conv_sound`).
 - **DeLaM is the depth-1 slice.** `emb : V, C, D, M ↦ V, C₀, P₀, P₁`
@@ -232,38 +240,112 @@ versus evaluation without a bound**:
 - untyped code with unbounded evaluation at its own depth is the liar
   (`cx_eval`).
 
-**The dependent recursor (argued, not checked).** A recursor whose motive
-is a type family can take the motive "the meaning of the code" (`λA. A`
-over typed code, or `λ⌜A⌝. El ⌜A⌝` over code of types). Its branches then
-rebuild every node as the node itself, and the fold *is* an evaluator:
-over typed code it is `trun`, over untyped code it is `run`. So at its
-own depth, a dependent recursor is safe exactly where the evaluator it
-can express is safe:
-- over typed code, with the motive `λA. A`;
-- over code of types, only if `El` of the own depth's code types is not
-  available at that depth. If it is, the recursor rebuilds the type
-  conditional, and then `run`.
-
-That is the case to check before #49 lets a layer host its own code:
-DeLaM's M has `elim_Typ` with a motive into its universes.
+The dependent eliminator below adds one line to this list: untyped code
+eliminated at its own depth into typed code (or into its own type) is
+the liar again.
 
 Implications for Heather's tactics, read off the toy:
 - a tactic may inspect, rewrite and specialize tactic code freely;
 - it may run its own typed code (S4);
 - it may run its own untyped code only with fuel or through a
   `Delay`-valued run;
-- it may run untyped code fully only from the level above.
+- it may run untyped code fully only from the level above;
+- it may not turn its own untyped code into its own typed code (a
+  `tcast` at its own depth), since S4 then runs it.
+
+## The dependent eliminator (2026-11-02)
+
+The question the first round left open: a recursor whose motive is a
+type family can take the motive "the meaning of the code", so is it an
+evaluator, and is it then safe at its own depth only where that
+evaluator is? Checked in the toy with the shallow dependent eliminator
+`tcast`, then read off DeLaM's rules for `elim_Typ` and `elim_Trm`.
+
+**In the toy.** `tcast c B t d : □B` for `t : Code c` and `d : □B` is
+the dependent eliminator of `Code c` (Σ A. □A) with motive `X ↦ □X`,
+read at `B` by the type conditional. Each half is safe at a layer's own
+depth: the type conditional alone is what `cfold` already observes, and
+`trun` of own-depth typed code is S4. Together they are `run`
+(`tcast_hit_is_run`, `tcast_miss_is_run`: `trun (tcast c B t (tbox d))`
+and `run c B t d` reduce to the same contents or default).
+- **Safe from above (S3).** `cast_up` asks of `tcast` what S2 asks of
+  `run`. Under it, `FT_depth` covers `tcast` by the theorem at the lower
+  depth, exactly as for `run`, and the grid meets it at every depth,
+  with own-depth hosting too (`grid_good`, `R_casts_below`).
+- **The liar without it (`cx_cast`).** `gridR 1 2` with `tcast` of each
+  row's own code meets the other six conditions, `eval_up` included:
+  no layer runs untyped code of its own depth (`cx_cast_no_own_eval`).
+  Yet `cd := λx. succ (trun (tcast x (tbox (λ_. 0))) x)` at `C₀` has
+  `cd ⌜cd⌝ ⇝ succ (cd ⌜cd⌝)` in three steps, typed at the total layer
+  `P₀` (`cx_cast_liar`, `cx_cast_not_normalizing`). So S3 is not
+  implied by the other conditions: S2 has to cover every eliminator
+  that hands own-depth contents back at their own type, not only `run`.
+
+Why the shallow eliminator is the whole question, in the toy:
+- a motive that keeps the contents as code, `X ↦ Code c'`, is constant
+  in a simply typed calculus, so its folds are `cfold`, safe at any
+  depth;
+- a motive that hands them back at their own type, `X ↦ □X` or
+  `X ↦ X`, is `tcast` or `run` at the root already; a structural
+  recursor adds nothing to the liar, which needs only the root.
+- the structural recursor with the meaning motive needs that motive at
+  open subterms too: indexed by the subterm's context, `⟦Γ⟧ → A`. This
+  is the point at which DeLaM's recursors differ, below.
+
+**In DeLaM: `elim_Typ` at M does not block own-depth hosting.** Read
+off the rules (04:1130 to 1300, `Typing/Declarative.v`'s `wf_elimT`,
+`wft_gvar`, `wf_gvar` and `Typing/Context.v`'s `lsub_tail`), not checked
+in Coq:
+1. **The branches cannot use the code's parts as programs.** Every
+   branch binds a fresh context variable `g` and the parts as global
+   variables over contexts ending in `g` (`U_S : DTyp[g]`,
+   `u_t : DTrm[g, x : U_S]`, ...). A global over `Δ` is usable at a
+   layer only under a local substitution `δ : Γ → Δ` with
+   `lsub_tail δ Δ Γ`: `Γ` and `Δ` end in the same way (04:990). The
+   branch's local context extends the recursor's `Γ`, which does not end
+   in the fresh `g`. So a branch can box the parts again (code to code),
+   but cannot use them as terms or types of M, whatever the motive. In
+   the toy's terms, the recursors are folds with code-valued branches:
+   `cfold`, never `run`.
+2. **No motive is the meaning.** The motive is formed over
+   `x_T : CTyp[g] ℓ` with `g` fresh, and the index of a contextual type
+   `CTrm[Δ] T` is checked in `Δ` at D (`wft_CTrm`), so no index mentions
+   M's local `x_T`. There is no type-level `letbox`. So
+   `Σ (x : CTyp[Δ] ℓ). CTrm[Δ] ⟦x⟧`, the toy's `Code c`, is not formable,
+   and neither is a motive `x_T ↦ □⟦x_T⟧`, the toy's `tcast`. A motive
+   into M's universes, `El (dec x_T)`, decodes the simply typed part of a
+   type code into M's universe, but its `El` branch cannot evaluate
+   the term code `u_t` (by 1), and the decoded type cannot index code.
+3. **The eliminators that do hand contents back are typed.**
+   `letbox_Trm` takes `CTrm[Δ] T` to a global of type `T`: the S4 `trun`,
+   safe at its own depth. `letbox_Typ` takes a type code to a type
+   global, which can index `CTrm` but comes with no term of that type.
+
+So for #49, own-depth hosting (`P_k` hosting `C_k`) may keep `box`,
+`letbox_Typ`, `letbox_Trm` and both recursors at `P_k` itself, as long as
+the signature's rules keep 1 and 2: branch globals under `lsub_tail`,
+contextual indices checked in `Δ` only, and no former that takes a type
+code to a type usable as a code index or packages a type code with a
+term code of that type (a type-level `letbox`, a Σ of the two, or a type
+case into `CTrm`). Adding one of those is S3's case and needs the
+strictly upward condition. Two things are not settled by this reading:
+at its own depth `C_k`'s syntax contains `P_k`'s own formers, so the
+recursors need branches for `CTyp`, `CTrm`, `box` and the recursors
+themselves (the argument in 1 is per branch and does not change, but
+those rules are not written); and the toy's code is closed and simply
+typed, so it does not check 1 and 2 themselves, only that what they
+exclude is the danger.
 
 ## For the refactor (#49)
 
-The layer signature can be `LS`'s fields with S1, W1, S2, W2 and, once
-partiality is wanted, W3 and W4. DeLaM meets them. Before trusting the
-list in the dependent setting, three things differ from the toy:
-- a recursor whose motive is a type family can express an evaluator
-  ("Code at its own depth" above). So hosting at one's own depth
-  (conjecture 2's relaxation) needs S2 to cover `elim_Trm` and
-  `elim_Typ` with such motives, not only `letbox`, unless the code they
-  analyse is typed;
+The layer signature can be `LS`'s fields with S1, W1, S2, S3, W2 and,
+once partiality is wanted, W3 and W4. DeLaM meets them. Before trusting
+the list in the dependent setting, three things differ from the toy:
+- S2 and S3 must cover every eliminator that hands own-depth contents
+  back at their own type. DeLaM's recursors do not ("The dependent
+  eliminator", 1 and 2), so own-depth hosting needs no depth condition
+  on `elim_Typ` or `elim_Trm`, only that the refactor keeps
+  `lsub_tail` on branch globals and contextual indices closed over `Δ`;
 - the relation in the theories is layered (`LogRel/Layering.v`), so
   conjecture 3 may come back as a real condition there;
 - code there is contextual, with global substitution; the toy's code is
