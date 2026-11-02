@@ -192,7 +192,8 @@ Documents:
   outcome, plus `ELIM_CONGRUENCE.md` (typed eliminator congruence),
   `SYNTAX_SPIKE.md` (why the syntax is hand-written; the spike is
   `spike/Syntax.v`) and `LAYER_STRUCTURE.md` (side conditions on layer
-  structures, from `probes/LayerStructure.v`). `M1_DESIGN.md` holds the shape decisions and the
+  structures, from `probes/LayerStructure.v`) and `LOB.md` (Löb at the
+  reflexive cell R, from `probes/Lob.v`). `M1_DESIGN.md` holds the shape decisions and the
   deviations from the paper that the later milestones build on. The
   text above and the theories' comments cite these docs by file name.
 - `docs/gotchas.md`: proof-engineering and build-time gotchas.
