@@ -583,6 +583,36 @@ Proof using EL.
   - exact (geq_tm_ctxeq Q3 (geq_tm_lconv (geq_tm_conv (geq_tm_sym GC) EX3) Hkli)).
 Qed.
 
+(** Composed along the middle family, at its levels. *)
+Lemma IWiGeq_trans {G Γ l lp li k kp ki X X' X'' A A' A'' N N' N'' D D' D'' Ot Ot' Ot'' C C' C''} :
+  IWiEq (G := G) (i := ge_layer) Γ l lp li k kp ki X X' A A' N N' D D' Ot Ot' C C' ->
+  IWiGeq G Γ l lp li X X' A A' N N' D D' Ot Ot' C C' ->
+  IWiGeq G Γ k kp ki X' X'' A' A'' N' N'' D' D'' Ot' Ot'' C' C'' ->
+  IWiGeq G Γ l lp li X X'' A A'' N N'' D D'' Ot Ot'' C C''.
+Proof using EL.
+  intros HE (GX & GA & GN & GD & GO & GC) (KX & KA & KN & KD & KO & KC).
+  pose proof HE as (Hlk & Hlpk & Hlik & _).
+  pose proof (IWiEq_sym ge_typeof ge_notV HE)
+    as (Hkl & Hkpl & Hkli & (Hk & Hkp & Hki & HX & HA & HN & HD & HO & HC) & HXX & HAA & HNN & HDD & _).
+  pose proof (ctx_of_ty HX) as HΓ.
+  assert (Q1 : [ G ⊢[ ge_layer ] Γ ,, A' @ k ≅ Γ ,, A @ l ])
+    by exact (eqc_ext _ _ _ _ _ _ _ _ (eqc_refl _ _ _ HΓ) HA HAA Hkl).
+  assert (Q2 : [ G ⊢[ ge_layer ] Γ ,, A' @ k ,, tyFin N' @ lzero ≅ Γ ,, A @ l ,, tyFin N @ lzero ]).
+  { apply eqc_ext; [exact Q1 | apply wft_fin; [exact ge_notV | exact HN] | apply eqty_fin; [exact ge_notV | exact HNN]
+                   | exact (lequiv_refl (gL G) lzero I)]. }
+  assert (Q3 : [ G ⊢[ ge_layer ] Γ ,, A' @ k ,, tyFin N' @ lzero ,, D' @ kp ≅ Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ])
+    by exact (eqc_ext _ _ _ _ _ _ _ _ Q2 HD HDD Hkpl).
+  assert (HΓA : [ G ; Γ ,, A' @ k ⊢g ]) by exact (ext_wf_g HA Hk).
+  assert (EX1 : [ G ; Γ ,, A' @ k ⊢g X'⟨↑⟩ ≅ X⟨↑⟩ @ ki ]) by exact (wk1_eqty G ge_layer ge_typeof _ _ _ _ _ _ HΓA HXX).
+  assert (EX3 : [ G ; Γ ,, A' @ k ,, tyFin N' @ lzero ,, D' @ kp ⊢g X'⟨↑⟩⟨↑⟩⟨↑⟩ ≅ X⟨↑⟩⟨↑⟩⟨↑⟩ @ ki ])
+    by (eapply wk3_eqty; [exact ge_typeof | exact (ctx_of_tm HC) | exact HXX]).
+  refine (conj (geq_ty_trans GX (geq_ty_lconv KX Hlik)) (conj (geq_ty_trans GA (geq_ty_lconv KA Hlk))
+            (conj (geq_tm_trans GN (geq_tm_ctxeq Q1 KN)) (conj (geq_ty_trans GD (geq_ty_ctxeq Q2 (geq_ty_lconv KD Hlpk)))
+            (conj _ _))))).
+  - exact (geq_tm_trans GO (geq_tm_ctxeq Q1 (geq_tm_lconv (geq_tm_conv KO EX1) Hlik))).
+  - exact (geq_tm_trans GC (geq_tm_ctxeq Q3 (geq_tm_lconv (geq_tm_conv KC EX3) Hlik))).
+Qed.
+
 Lemma IWiSig_lconv {G Γ l lp li k kp ki X A N D Ot C} :
   IWiSig (G := G) (i := ge_layer) Γ l lp li X A N D Ot C ->
   lequiv (gL G) l k -> lequiv (gL G) lp kp -> lequiv (gL G) li ki ->

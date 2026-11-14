@@ -16,19 +16,6 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 Section KwRel.
 Context {G : gctx} {Γ : ctx} (ρ : kwk G Γ).
 
-Lemma NatRel_kw : forall t t', NatRel G Γ t t' -> NatRel (kw_G ρ) (kw_Δ ρ) (ktm ρ t) (ktm ρ t').
-Proof using EL.
-  apply (NatRel_mut G Γ (fun t t' _ => NatRel (kw_G ρ) (kw_Δ ρ) (ktm ρ t) (ktm ρ t'))
-                        (fun t t' _ => NatNf (kw_G ρ) (kw_Δ ρ) (ktm ρ t) (ktm ρ t'))).
-  - intros t t' w w' Hw Hw' Heq _ IH.
-    pose proof (kw_tmred ρ Hw) as Hw1. pose proof (kw_tmred ρ Hw') as Hw1'.
-    pose proof (kw_geq_tm ρ Heq) as Heq1. rewrite kty_tyNat in Hw1, Hw1', Heq1.
-    econstructor; [exact Hw1 | exact Hw1' | exact Heq1 | exact IH].
-  - rewrite ktm_zero; constructor.
-  - intros; rewrite !ktm_succ; now constructor.
-  - intros ν ν' H; constructor. pose proof (kw_gne_tm ρ H) as X. now rewrite kty_tyNat in X.
-Qed.
-
 Lemma NeRel_kw V V' l t t' : NeRel G Γ V V' l t t' ->
   NeRel (kw_G ρ) (kw_Δ ρ) (kty ρ V) (kty ρ V') l (ktm ρ t) (ktm ρ t').
 Proof using EL.
