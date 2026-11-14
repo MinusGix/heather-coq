@@ -9,8 +9,8 @@
     binders ([VG_lift2_ty], [VG_lift3_tm]). *)
 From DeLaM.Validity Require Export IWiElimBase.
 From DeLaM.Typing Require Import IWiIH.
-From DeLaM.LogRel Require Import IWfAux IWiAux.
-From DeLaM.Validity Require Import DVecNth WfNth WfElim M.
+From DeLaM.LogRel Require Import IWfAux IWiAux MAux.
+From DeLaM.Validity Require Import DVecNth WfNth WfElim M MCorec.
 
 (** ** Validity under inserted binders *)
 
@@ -81,12 +81,57 @@ Proof using EL VL VN.
            VXγ VAγ VNγ VDγ VOγ VCγ Vmγ).
 Qed.
 
-Lemma kγ_tyll' {G Δ} (ρ : kwk G Δ) (T : ty) γ e :
-  ktyll ρ T⟦γ⟧[llift (llift e)] = T⟦gwk_comp (kw_γ ρ) γ⟧[llift (llift (kwsub ρ e))].
-Proof using . now rewrite ktyll_subst_lift', gwa_comp_ty. Qed.
 Lemma kγ_tmlll {G Δ} (ρ : kwk G Δ) (t : tm) γ e :
   ktmlll ρ t⟦γ⟧[llift (llift (llift e))] = t⟦gwk_comp (kw_γ ρ) γ⟧[llift (llift (llift (kwsub ρ e)))].
 Proof using . now rewrite ktmlll_subst_lift, gwa_comp_tm. Qed.
+
+Lemma ktml_lam {G Δ} (ρ : kwk G Δ) l l' A t : ktml ρ (lam l l' A t) = lam l l' (ktyl ρ A) (ktmll ρ t).
+Proof using . unfold ktml, ktyl, ktmll. now rewrite gwa_lam. Qed.
+Lemma ktyl_tyPi' {G Δ} (ρ : kwk G Δ) l l' A B : ktyl ρ (tyPi l l' A B) = tyPi l l' (ktyl ρ A) (ktyll ρ B).
+Proof using . unfold ktyl, ktyll. now rewrite gwa_tyPi. Qed.
+
+(** λ-introduction under two binders: two double λs whose bodies are
+    related at related arguments in every world are related at the
+    [Π]s. *)
+Lemma LRtm_lam2_K {L G Δ l1 l2 l3 k1 k2 k3 A A' B B' C T b b'} :
+  LRty L G Δ (tyPi l1 (lmax l2 l3) A (tyPi l2 l3 B C)) T ->
+  lequiv (gL G) k1 l1 -> lequiv (gL G) k2 l2 -> lequiv (gL G) k3 l3 ->
+  [ G ; Δ ⊢ A ≈ A' @ l1 ] -> nfty B' -> nftm b -> nftm b' ->
+  (forall (ρ : kwk G Δ) i i' T1, LRtm l1 (kw_G ρ) (kw_Δ ρ) (kty ρ A) T1 i i' ->
+     [ kw_G ρ ; kw_Δ ρ ⊢ (ktyl ρ B)[lsingle i] ≈ (ktyl ρ B')[lsingle i'] @ l2 ]) ->
+  (forall (ρ : kwk G Δ) i i' T1 y y' T2, LRtm l1 (kw_G ρ) (kw_Δ ρ) (kty ρ A) T1 i i' ->
+     LRtm l2 (kw_G ρ) (kw_Δ ρ) (ktyl ρ B)[lsingle i] T2 y y' ->
+     LRtm l3 (kw_G ρ) (kw_Δ ρ) (ktyll ρ C)[lsingle2 i y] (ktyll ρ C)[lsingle2 i y]
+       (ktmll ρ b)[lsingle2 i y] (ktmll ρ b')[lsingle2 i' y']) ->
+  LRtm L G Δ (tyPi l1 (lmax l2 l3) A (tyPi l2 l3 B C)) T
+    (lam l1 (lmax l2 l3) A (lam l2 l3 B b)) (lam k1 (lmax k2 k3) A' (lam k2 k3 B' b')).
+Proof using EL VL VN.
+  intros HT H1 H2 H3 EA NB' Nb Nb' EB HK.
+  pose proof HT as [R HR].
+  destruct (escape_ty _ _ _ _ _ _ _ _ HR) as (HPi & _ & _).
+  pose proof (wf_ty_nf HPi) as NPi. cbn [nfty] in NPi. destruct NPi as (_ & NB & _).
+  destruct (LR_inv_pi HR (tyred_refl _ _ HPi)) as (p3 & p4 & P2 & Q2 & domR & codR & PF & domAd & codAd & HRR).
+  destruct PF as [Hlv _ _ _ _ _ _ _ _ _ _ _ _].
+  pose proof (lmeasure_le_l Hlv) as Hle1. pose proof (lmeasure_le_r Hlv) as Hle2.
+  apply (LRtm_lam_K HT H1 (lequiv_max _ _ _ _ _ H2 H3) EA); [cbn; auto | cbn; auto |].
+  intros ρ i i' T1 Hi.
+  pose proof (domAd ρ) as DOM. apply (proj2 (LogRel_stage _ _ _ _ _ _ _ Hle1)) in DOM.
+  pose proof (LRtm_inv DOM (LRtm_irrel_r Hi (ex_intro _ _ DOM))) as hy.
+  pose proof (codAd ρ i i' hy) as COD. apply (proj2 (LogRel_stage _ _ _ _ _ _ _ Hle2)) in COD.
+  destruct (LRtm_escape Hi) as [Hit Hi't]. pose proof (wf_tm_nf Hit) as Ni. pose proof (wf_tm_nf Hi't) as Ni'.
+  rewrite ktyl_tyPi', subst_tyPi in COD |- *. rewrite !ktml_lam, !subst_lam.
+  apply LR_refl_l in COD. apply (LRtm_lam_K (ex_intro _ _ COD) (kw_lequiv ρ H2) (kw_lequiv ρ H3) (EB ρ i i' T1 Hi)).
+  - apply subst_nf; [apply ren_nf | apply lk_llift, lk_lsingle, Ni].
+  - apply subst_nf; [apply ren_nf | apply lk_llift, lk_lsingle, Ni'].
+  - intros ρ' y y' T2 Hy.
+    rewrite kty_single, <- ktyl_comp in Hy.
+    pose proof (LRtm_kw ρ' Hi) as Hi2. rewrite <- kty_comp in Hi2.
+    pose proof (HK (kw_comp ρ ρ') _ _ _ _ _ _ Hi2 Hy) as X0.
+    assert (Ni2 : nftm (ktm ρ' i)) by apply ren_nf. assert (Ni2' : nftm (ktm ρ' i')) by apply ren_nf.
+    rewrite ktyl_llift_single, <- !ktmll_llift_single, <- ktyll_comp, <- !ktmll_comp,
+      llift_single_single_ty, !llift_single_single by assumption.
+    exact X0.
+Qed.
 
 End Lift.
 
@@ -99,11 +144,6 @@ Notation iwiFc l lp li X A N D Ot C :=
      D⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩
      C⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩ (var 2)).
 
-Lemma iwi_n3_single (N : tm) : N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (var 2)] = N⟨↑⟩⟨↑⟩.
-Proof using .
-  rewrite !ren_ren_comp, ren_as_r2l, (ren_as_r2l N), subst_comp. apply subst_ext.
-  intros [|n]; pw.
-Qed.
 Lemma iwi_d3_single (D : ty) :
   D⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩[llift (lsingle (var 2))] = D⟨rlift ↑⟩⟨rlift ↑⟩.
 Proof using .
@@ -209,8 +249,8 @@ Lemma elimIWi_VF :
     (iwiFc l lp li X A N D Ot C) (iwiFc l3 lp3 li3 X' A' N' D' Ot' C') L.
 Proof using EL Hi3 H13 HS Hp3 Hwl Hwli Hwlp VA VC VD VL VN VNt VO VX.
   pose proof elimIWi_ctx as (HΘ & HS3 & HN2 & Hv2).
-  pose proof (IWi_fam_wf ge_typeof ge_notV HS3 Hv2) as HFam. rewrite iwi_n3_single in HFam.
-  pose proof (IWi_famcod_wf ge_typeof ge_notV HS3 Hv2) as HCod. rewrite iwi_n3_single, iwi_d3_single in HCod.
+  pose proof (IWi_fam_wf ge_typeof ge_notV HS3 Hv2) as HFam. rewrite n3_single in HFam.
+  pose proof (IWi_famcod_wf ge_typeof ge_notV HS3 Hv2) as HCod. rewrite n3_single, iwi_d3_single in HCod.
   split; [exact HFam |].
   eapply VTyG_lconv; [| exact (iwiL_pi _ _ _ _ Hwl Hwlp Hwli)].
   unfold iwiFam. rewrite !iwi_d3_single.
@@ -240,7 +280,7 @@ Proof using EL Hi3 H13 HS Hp3 Hwl Hwli Hwlp VA VC VD VL VN VNt VO VX.
   assert (HLL : lequiv (gL G) L (iwiL l3 lp3 li3)) by (repeat apply lequiv_max; assumption).
   pose proof elimIWi_ctx as (_ & _ & HN2 & _). pose proof elimIWi_VF as (HFam & VF).
   apply (V_dnth HwL HLL HN2 (VTmG_retype (VG_shift_tm (VG_shift_tm VNt)) eq_refl) HFam VF).
-  - eapply VG_var; [repeat constructor |]. rewrite IWi_E_var1, iwi_n3_single. reflexivity.
+  - eapply VG_var; [repeat constructor |]. rewrite IWi_E_var1, n3_single. reflexivity.
   - vvar.
 Qed.
 
@@ -302,8 +342,8 @@ Proof using EL Hi3 H13 HS Hp3 Hwl Hwli Hwlp VA VC VD VL VN VNt VO VX.
   rewrite !iwi_dnthv_subst in X0 by assumption.
   rewrite !iwiFc_single_subst in X0
     by first [assumption | rewrite <- kγ_ty; apply ren_nf_ty | rewrite <- kγ_tml; apply ren_nf
-             | rewrite <- kγ_tyll'; apply ren_nf_ty | rewrite <- kγ_tmlll; apply ren_nf].
-  rewrite <- !kγ_ty, <- !kγ_tml, <- !kγ_tyll', <- !kγ_tmlll in X0.
+             | rewrite <- kγ_tyll; apply ren_nf_ty | rewrite <- kγ_tmlll; apply ren_nf].
+  rewrite <- !kγ_ty, <- !kγ_tml, <- !kγ_tyll, <- !kγ_tmlll in X0.
   exact X0.
 Qed.
 
