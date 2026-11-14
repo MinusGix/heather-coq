@@ -68,6 +68,35 @@ Proof.
   cbn. f_equal. change (ren_tm ?x ?r) with x⟨r⟩. change (subst_tm ?x ?d) with x[d]. teq_core.
 Qed.
 
+(** A field's codomain at a position, and the families at a shape and a
+    position. *)
+Lemma iwiFamCodT_single l lp li (X A : ty) (N : tm) (D : ty) (Ot C c p : tm) :
+  nfty X -> nfty A -> nftm N -> nfty D -> nftm Ot -> nftm C ->
+  (iwiFamCodT l lp li X A N D Ot C c)[llift (lsingle p)] =
+  tyIWi l lp li X⟨↑⟩ A⟨↑⟩ N⟨rlift ↑⟩ D⟨rlift (rlift ↑)⟩ Ot⟨rlift ↑⟩ C⟨rlift (rlift (rlift ↑))⟩ c[llift (lsingle p)].
+Proof. intros. unfold iwiFamCodT. push_subst. f_equal. all: teq_core. Qed.
+
+Lemma llift_single_single_ty (T : ty) (a p : tm) : nftm a -> T[llift (lsingle a)][lsingle p] = T[lsingle2 a p].
+Proof.
+  intros Ha. apply subst_subst_ty. intros [|[|n]]; cbn; rewrite ?llk_llift; cbn; auto.
+  - change (ren_tm ?x ?r) with x⟨r⟩. now rewrite shift_single by exact Ha.
+  - replace (n + 0 + 1) with (S n) by lia. cbn. now rewrite !Nat.add_0_r.
+Qed.
+
+Lemma llift2_single_llift_single (t a p : tm) : nftm a ->
+  t[llift (llift (lsingle a))][llift (lsingle p)] = t[llift (lsingle2 a p)].
+Proof. intros Ha. revert Ha. generalize a p. intros x q N. meq. Qed.
+
+Lemma llift2_single_single2 (t a p y : tm) : nftm a ->
+  t[llift (llift (lsingle a))][lsingle2 p y] = t[lsingle3 a p y].
+Proof. intros Ha. revert Ha. generalize a p y. intros x q z N. meq. Qed.
+
+Lemma posMv2_single2 m (c p y : tm) : nftm m -> (posMv2 m c)[lsingle2 p y] = c[lsingle2 (posTl m p) y].
+Proof.
+  intros Hm. unfold posMv2, posTl. teq_core. f_equal. cbn. f_equal.
+  change (ren_tm ?x ?r) with x⟨r⟩. change (subst_tm ?x ?d) with x[d]. teq_core.
+Qed.
+
 (** ** Canonical related positions
 
     [PosRel] without its neutral clause: what a spine reaches. *)
@@ -81,6 +110,10 @@ Inductive PosCan `{GenericEq} (G : gctx) (Γ : ctx) : tm -> tm -> tm -> tm -> Pr
 
 Section IWiAux.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
+
+(** The domains' relation, its sides swapped. *)
+Definition iflipP {G Γ} (pdR : IPosDomRel G Γ) : IPosDomRel G Γ := fun ρ a a' p p' y y' => pdR ρ a' a p' p y' y.
+
 
 Lemma PosCan_rel {G Γ k k' p p'} : PosCan G Γ k k' p p' -> PosRel G Γ k k' p p'.
 Proof using . induction 1; [apply pos_hd | apply pos_tl]; assumption. Qed.
@@ -496,6 +529,69 @@ Proof using EL.
     apply (geq_ty_wk (wkr_shift1 _ _ _) HΓH). apply (iwi_dvec_geq HE HG _ _ Hmm).
     + rewrite <- !iwiFamT_mv. exact (dvecMv_eqty ge_typeof ge_notV ge_compt Hm Hm' Em HF1w HF1).
     + exact (IWiPosGeq_tl HP Hn Hn').
+Qed.
+
+(** A [sup]'s field families at a shape, in a later world, at a position
+    (and an argument). *)
+Lemma ktyl_iwiD_single {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) (D : ty) a p :
+  (ktyl ρ' (ktyll ρ D)[llift (lsingle (ktm ρ a))])[lsingle p] =
+  (ktyll (kw_comp ρ ρ') D)[lsingle2 (ktm (kw_comp ρ ρ') a) p].
+Proof using . rewrite ktyl_llift_single, <- ktyll_comp, <- ktm_comp. apply llift_single_single_ty. unfold ktm; apply ren_nf. Qed.
+
+Lemma ktmll_iwiC_single {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) (C : tm) a p :
+  (ktmll ρ' (ktmlll ρ C)[llift (llift (lsingle (ktm ρ a)))])[llift (lsingle p)] =
+  (ktmlll (kw_comp ρ ρ') C)[llift (lsingle2 (ktm (kw_comp ρ ρ') a) p)].
+Proof using .
+  rewrite ktmll_llift2_single, <- ktmlll_comp, <- ktm_comp. apply llift2_single_llift_single. unfold ktm; apply ren_nf.
+Qed.
+
+Lemma ktm_iwiC_single2 {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) (C : tm) a p y :
+  ktm ρ' ((ktmlll ρ C)[llift (llift (lsingle (ktm ρ a)))][lsingle2 p y]) =
+  (ktmlll (kw_comp ρ ρ') C)[lsingle3 (ktm (kw_comp ρ ρ') a) (ktm ρ' p) (ktm ρ' y)].
+Proof using .
+  rewrite llift2_single_single2 by (unfold ktm; apply ren_nf).
+  rewrite ktm_lsingle3, <- ktmlll_comp, <- ktm_comp. reflexivity.
+Qed.
+
+(** The other side's view, and the signature at equivalent levels. *)
+Lemma IWiGeq_flip {G Γ l lp li k kp ki X X' A A' N N' D D' Ot Ot' C C'} :
+  IWiEq (G := G) (i := ge_layer) Γ l lp li k kp ki X X' A A' N N' D D' Ot Ot' C C' ->
+  IWiGeq G Γ l lp li X X' A A' N N' D D' Ot Ot' C C' ->
+  IWiGeq G Γ k kp ki X' X A' A N' N D' D Ot' Ot C' C.
+Proof using EL.
+  intros HE (GX & GA & GN & GD & GO & GC).
+  pose proof HE as (Hlk & Hlpk & Hlik & (Hl & Hlp & Hli & HX & HA & HN & HD & HO & HC) & HXX & HAA & HNN & HDD & _).
+  pose proof (lequiv_sym _ _ _ Hlk) as Hkl. pose proof (lequiv_sym _ _ _ Hlpk) as Hkpl.
+  pose proof (lequiv_sym _ _ _ Hlik) as Hkli.
+  pose proof (ctx_of_ty HX) as HΓ.
+  assert (Q1 : [ G ⊢[ ge_layer ] Γ ,, A @ l ≅ Γ ,, A' @ k ])
+    by exact (eqc_ext _ _ _ _ _ _ _ _ (eqc_refl _ _ _ HΓ) HA HAA Hlk).
+  assert (Q2 : [ G ⊢[ ge_layer ] Γ ,, A @ l ,, tyFin N @ lzero ≅ Γ ,, A' @ k ,, tyFin N' @ lzero ]).
+  { apply eqc_ext; [exact Q1 | apply wft_fin; [exact ge_notV | exact HN] | apply eqty_fin; [exact ge_notV | exact HNN]
+                   | exact (lequiv_refl (gL G) lzero I)]. }
+  assert (Q3 : [ G ⊢[ ge_layer ] Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ≅ Γ ,, A' @ k ,, tyFin N' @ lzero ,, D' @ kp ])
+    by exact (eqc_ext _ _ _ _ _ _ _ _ Q2 HD HDD Hlpk).
+  assert (HΓA : [ G ; Γ ,, A @ l ⊢g ]) by exact (ext_wf_g HA Hl).
+  assert (EX1 : [ G ; Γ ,, A @ l ⊢g X⟨↑⟩ ≅ X'⟨↑⟩ @ li ]) by exact (wk1_eqty G ge_layer ge_typeof _ _ _ _ _ _ HΓA HXX).
+  assert (EX3 : [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢g X⟨↑⟩⟨↑⟩⟨↑⟩ ≅ X'⟨↑⟩⟨↑⟩⟨↑⟩ @ li ])
+    by (eapply wk3_eqty; [exact ge_typeof | exact (ctx_of_tm HC) | exact HXX]).
+  refine (conj (geq_ty_lconv (geq_ty_sym GX) Hkli) (conj (geq_ty_lconv (geq_ty_sym GA) Hkl)
+            (conj _ (conj _ (conj _ _))))).
+  - exact (geq_tm_ctxeq Q1 (geq_tm_sym GN)).
+  - exact (geq_ty_ctxeq Q2 (geq_ty_lconv (geq_ty_sym GD) Hkpl)).
+  - exact (geq_tm_ctxeq Q1 (geq_tm_lconv (geq_tm_conv (geq_tm_sym GO) EX1) Hkli)).
+  - exact (geq_tm_ctxeq Q3 (geq_tm_lconv (geq_tm_conv (geq_tm_sym GC) EX3) Hkli)).
+Qed.
+
+Lemma IWiSig_lconv {G Γ l lp li k kp ki X A N D Ot C} :
+  IWiSig (G := G) (i := ge_layer) Γ l lp li X A N D Ot C ->
+  lequiv (gL G) l k -> lequiv (gL G) lp kp -> lequiv (gL G) li ki ->
+  IWiSig (G := G) (i := ge_layer) Γ k kp ki X A N D Ot C.
+Proof using .
+  intros HS H1 H2 H3. pose proof HS as (Hl & Hlp & Hli & HX & HA & HN & HD & HO & HC).
+  apply (IWiEq_sig_r ge_typeof ge_notV (l := l) (lp := lp) (li := li)
+           (X := X) (A := A) (N := N) (D := D) (Ot := Ot) (C := C)).
+  apply IWiEq_intro; first [assumption | now apply eqty_refl | now apply eqtm_refl].
 Qed.
 
 End IWiAux.
