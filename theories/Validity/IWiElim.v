@@ -18,7 +18,7 @@
 From DeLaM.Validity Require Export IWiElimBase.
 From DeLaM.Typing Require Import IWiIH.
 From DeLaM.LogRel Require Import IWfAux IWiAux.
-From DeLaM.Validity Require Import DNthReds MCorec IWfSp IWiSp IWiElimDnth.
+From DeLaM.Validity Require Import DNthReds MCorec IWfSp IWiSp IWiElimDnth Id.
 
 Section IWiElimV.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
@@ -1267,6 +1267,208 @@ Proof using EL H13 H24 HS Hi3 Hp3 Hwl Hwl' Hwli Hwlp VA VC VD VL VM VN VNt VO VX
     exact (geq_tm_sound (LRtm_geq X2)).
 Qed.
 
+Lemma supii_inj {k1 kp1 ki1 X1 A1 N1 D1 O1 C1 a1 cs1 k2 kp2 ki2 X2 A2 N2 D2 O2 C2 a2 cs2} :
+  tmSupii k1 kp1 ki1 X1 A1 N1 D1 O1 C1 a1 cs1 = tmSupii k2 kp2 ki2 X2 A2 N2 D2 O2 C2 a2 cs2 ->
+  k1 = k2 /\ kp1 = kp2 /\ ki1 = ki2 /\ X1 = X2 /\ A1 = A2 /\ N1 = N2 /\ D1 = D2 /\ O1 = O2 /\ C1 = C2 /\
+  a1 = a2 /\ cs1 = cs2.
+Proof using . intros Hs; injection Hs; intros; subst; repeat split. Qed.
+
+(** At a [sup_ii]: the scrutinee reaches it, so the eliminations step to
+    the step at its shape and children. *)
+Lemma elimIWi_c_sup {G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0} {ix dm : DomRel G0 Δ0} {pd : IPosDomRel G0 Δ0}
+    {k kp ki X1 A1 N1 D1 O1 C1 k' kp' ki' X1' A1' N1' D1' O1' C1' a a' cs cs'} :
+  (forall ρ : kwk G0 Δ0,
+     elimIWi_mspine (kw_G ρ) (kw_Δ ρ) k1 kp1 ki1 (kty ρ X0) (kty ρ A0) (ktml ρ N0) (ktyll ρ D0) (ktml ρ O0)
+       (ktmlll ρ C0) (fun ρ' => ix (kw_comp ρ ρ')) (fun ρ' => dm (kw_comp ρ ρ')) (fun ρ' => pd (kw_comp ρ ρ'))
+       (fun p y y' => exists p', pd ρ (ktm ρ a) (ktm ρ a') p p' y y')
+       (ktyll ρ D0)[llift (lsingle (ktm ρ a))] (ktmlll ρ C0)[llift (llift (lsingle (ktm ρ a)))]
+       (ktml ρ N0)[lsingle (ktm ρ a)] (ktm ρ cs) (ktm ρ cs')) ->
+  elimIWi_mrel G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0 ix dm pd
+    (tmSupii k kp ki X1 A1 N1 D1 O1 C1 a cs) (tmSupii k' kp' ki' X1' A1' N1' D1' O1' C1' a' cs').
+Proof using EL H13 H24 HS Hi3 Hp3 Hwl Hwl' Hwli Hwlp VA VC VD VL VM VN VNt VO VX Vc Vcs Vih Vmot.
+  intros IH γ e e' Hh x x' Hxx s s' Hss Js Js'.
+  pose proof Hh as (Hγ & He & E1 & E2 & E3 & E4 & E5 & E6 & E7 & E8 & E9 & HK).
+  subst k1 kp1 ki1 X0 A0 N0 D0 O0 C0.
+  destruct (IWiRel_inv Hss) as (w & w' & Hw & Hw' & _ & Nn).
+  assert (Nsi : forall k kp ki X1 A1 N1 D1 O1 C1 a cs, ~ whne (tmSupii k kp ki X1 A1 N1 D1 O1 C1 a cs))
+    by (intros * Hn; inversion Hn).
+  assert (w = tmSupii k kp ki X1 A1 N1 D1 O1 C1 a cs) as ->.
+  { eapply reds_whnf_det; [exact (tmred_red _ _ _ _ _ _ _ Hw)
+                          | exact (join_whnf _ _ Js (whnf_supii _ _ _ _ _ _ _ _ _ _ _) (Nsi _ _ _ _ _ _ _ _ _ _ _))
+                          | exact (IWiNf_whnf_l Nn) | apply whnf_supii]. }
+  assert (w' = tmSupii k' kp' ki' X1' A1' N1' D1' O1' C1' a' cs') as ->.
+  { eapply reds_whnf_det; [exact (tmred_red _ _ _ _ _ _ _ Hw')
+                          | exact (join_whnf _ _ Js' (whnf_supii _ _ _ _ _ _ _ _ _ _ _) (Nsi _ _ _ _ _ _ _ _ _ _ _))
+                          | exact (IWiNf_whnf_r Nn) | apply whnf_supii]. }
+  pose proof (wf_tm_nf (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ Hw))) as Nw.
+  pose proof (wf_tm_nf (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ Hw'))) as Nw'.
+  cbn in Nw, Nw'. destruct Nw as (_ & _ & _ & _ & _ & _ & Na & Ncs).
+  destruct Nw' as (_ & _ & _ & _ & _ & _ & Na' & Ncs').
+  destruct (IWiNf_sup_inv Nn)
+    as (k2 & kp2 & ki2 & X2 & A2 & N2 & D2 & O2 & C2 & a2 & cs2 & Heq & HE1 & HE1' & Ha & Hix & Hsp).
+  destruct (supii_inj Heq) as (? & ? & ? & ? & ? & ? & ? & ? & ? & ? & ?); subst.
+  destruct (elimIWi_step Hγ He HK Hxx HE1 HE1' Ha Hix Hsp IH Na Na' Ncs Ncs') as (Xs & Lred & Rred).
+  eapply elimIWi_back; [exact Hγ | exact He | exact Hxx | exact HK | exact Hss | exact Hw | exact Hw'
+                       | apply whnf_supii | apply whnf_supii |].
+  exact (LRtm_red Xs Lred Rred).
+Qed.
+
+(** The motives, by mutual induction on the relation, its normal forms and
+    the spine. *)
+Lemma elimIWi_core_all :
+  (forall G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0 (ix dm : DomRel G0 Δ0) (pd : IPosDomRel G0 Δ0) m t t',
+     IWiRel G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0 ix dm pd m t t' ->
+     elimIWi_mrel G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0 ix dm pd t t') /\
+  (forall G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0 (ix dm : DomRel G0 Δ0) (pd : IPosDomRel G0 Δ0) m t t',
+     IWiNf G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0 ix dm pd m t t' ->
+     elimIWi_mrel G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0 ix dm pd t t') /\
+  (forall G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0 (ix dm : DomRel G0 Δ0) (pd : IPosDomRel G0 Δ0) yR d cf k cs cs',
+     DVecWSp G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0 ix dm pd yR d cf k cs cs' ->
+     elimIWi_mspine G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0 ix dm pd yR d cf k cs cs').
+Proof using EL H13 H24 HS Hi3 Hp3 Hwl Hwl' Hwli Hwlp VA VC VD VL VM VN VNt VO VX Vc Vcs Vih Vmot.
+  apply (IWiRel_comb
+    (fun G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0 ix dm pd m t t' _ =>
+       elimIWi_mrel G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0 ix dm pd t t')
+    (fun G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0 ix dm pd m t t' _ =>
+       elimIWi_mrel G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0 ix dm pd t t')
+    (fun G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0 ix dm pd yR d cf k cs cs' _ =>
+       elimIWi_mspine G0 Δ0 k1 kp1 ki1 X0 A0 N0 D0 O0 C0 ix dm pd yR d cf k cs cs')).
+  - intros. eapply elimIWi_c_rel; eassumption.
+  - intros. eapply elimIWi_c_sup; eassumption.
+  - intros. eapply elimIWi_c_ne; eassumption.
+  - intros. eapply elimIWi_c_zero; eassumption.
+  - intros. eapply elimIWi_c_succ; eassumption.
+  - intros. eapply elimIWi_c_vne; eassumption.
+Qed.
+
+(** ** [elim_IWi] and its β rule *)
+
+Lemma V_elimIWi {m m' t t'} : VTm G Γ m m' X li -> VTm G Γ t t' (tyIWi l lp li X A N D Ot C m) L ->
+  VTm G Γ (tmElimIWi l lp li l' X A N D Ot C M c m t) (tmElimIWi l3 lp3 li3 l4 X' A' N' D' Ot' C' M' c' m' t')
+    M[lsingle2 m t] l'.
+Proof using EL H13 H24 HS Hi3 Hp3 Hwl Hwl' Hwli Hwlp VA VC VD VL VM VN VNt VO VX Vc Vcs Vih Vmot.
+  intros Vm Vt Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
+  rewrite !single2_subst_ty by assumption. rewrite !subst_elimIWi.
+  pose proof (Vm _ _ _ Hd) as Xm.
+  pose proof (VTm_trans Vm (VTm_sym Vm) _ _ _ Hd) as Xmm.
+  destruct (elimIWi_WLR (gwk_ok_id G) Hd Xmm) as (ix & dm & pd & HW & HK). cbn [gwa] in HW, HK.
+  pose proof (Vt _ _ _ Hd) as Xt. rewrite !subst_tyIWi in Xt.
+  pose proof (LRtm_inv HW Xt) as Rt.
+  assert (Xm0 : LRtm li G Δ X[d] X[d] m[d] m'[d'])
+    by exact (LRtm_irrel_r Xm (VTy_refl_l (VTyG_loc VX) _ _ _ (SubRel_refl_l Hd))).
+  pose proof (proj1 elimIWi_core_all _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Rt gwk_id d d'
+                (conj (gwk_ok_id G) (conj Hd (conj eq_refl (conj eq_refl (conj eq_refl (conj eq_refl (conj eq_refl
+                   (conj eq_refl (conj eq_refl (conj eq_refl (conj eq_refl HK)))))))))))
+                _ _ Xm0 _ _ Rt (join_refl _) (join_refl _)) as Y.
+  unfold elimIWi_goal in Y. cbn [gwa] in Y.
+  eapply LRtm_irrel_r; [exact Y|].
+  pose proof (VTm_trans Vt (VTm_sym Vt) _ _ _ Hd) as Xtt. rewrite !subst_tyIWi in Xtt.
+  exact (elimIWi_mot (γ := gwk_id) (gwk_ok_id G) Hd Xmm Xtt).
+Qed.
+
+(** The eliminator's type, relating the two motives. *)
+Lemma V_elimIWi_ty {m m' t t'} : VTm G Γ m m' X li -> VTm G Γ t t' (tyIWi l lp li X A N D Ot C m) L ->
+  VTy G Γ M[lsingle2 m t] M'[lsingle2 m' t'] l'.
+Proof using EL H13 H24 HS Hi3 Hp3 Hwl Hwl' Hwli Hwlp VA VC VD VL VM VN VNt VO VX Vc Vcs Vih Vmot.
+  intros Vm Vt Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
+  destruct (elimIWi_nf (gwk_ok_id G) Hd) as (NX & NA & NN & ND & NO & NC & _).
+  destruct (elimIWi_nf (gwk_ok_id G) (SubRel_refl_r Hd)) as (NX' & NA' & NN' & ND' & NO' & NC' & _).
+  cbn [gwa] in NX, NA, NN, ND, NO, NC, NX', NA', NN', ND', NO', NC'.
+  rewrite !single2_subst_ty, !lift2_single2_ty by assumption.
+  pose proof (SubRel_cons Hd (Vm _ _ _ Hd)) as Hm.
+  apply (VTyG_loc VM), SubRel_cons; [exact Hm|].
+  pose proof (Vt _ _ _ Hd) as Xt. rewrite !subst_tyIWi in Xt.
+  pose proof (VTyG_loc Vmot _ _ _ Hm) as XI.
+  rewrite !iwimotty_cons in XI |- * by assumption.
+  exact (LRtm_irrel_r Xt XI).
+Qed.
+
+Lemma V_elimIWi_supii_ty {a a' cs cs'} : VTm G Γ a a' A l ->
+  VTm G Γ cs cs' (tyDVec L N[lsingle a] (iwiFam l lp li X A N D Ot C a)) L ->
+  VTy G Γ M[lsingle2 Ot[lsingle a] (tmSupii l lp li X A N D Ot C a cs)]
+    M'[lsingle2 Ot'[lsingle a'] (tmSupii l3 lp3 li3 X' A' N' D' Ot' C' a' cs')] l'.
+Proof using EL H13 H24 HS Hi3 Hp3 Hwl Hwl' Hwli Hwlp VA VC VD VL VM VN VNt VO VX Vc Vcs Vih Vmot.
+  intros Va Vks.
+  pose proof (lequiv_sym _ _ _ H13) as H31. pose proof (lequiv_sym _ _ _ Hp3) as Hp31.
+  pose proof (lequiv_sym _ _ _ Hi3) as Hi31.
+  exact (V_elimIWi_ty (V_supii_idx2 VO Va) (V_supii Hwl Hwlp Hwli H31 Hp31 Hi31 VX VA VNt VD VO VC Va Vks)).
+Qed.
+
+(** β, the right-hand side built from the right pieces. *)
+Lemma V_elimIWi_supii {a a' cs cs'} : VTm G Γ a a' A l ->
+  VTm G Γ cs cs' (tyDVec L N[lsingle a] (iwiFam l lp li X A N D Ot C a)) L ->
+  VTm G Γ (tmElimIWi l lp li l' X A N D Ot C M c Ot[lsingle a] (tmSupii l lp li X A N D Ot C a cs))
+    c'[lsingle3 a' cs' (iwiIH l3 lp3 li3 l4 X' A' N' D' Ot' C' M' c' a' cs')]
+    M[lsingle2 Ot[lsingle a] (tmSupii l lp li X A N D Ot C a cs)] l'.
+Proof using EL H13 H24 HS Hi3 Hp3 Hwl Hwl' Hwli Hwlp VA VC VD VL VM VN VNt VO VX Vc Vcs Vih Vmot.
+  intros Va Vks Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
+  pose proof (V_supii Hwl Hwlp Hwli (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwlp) (lequiv_refl _ _ Hwli)
+                (VTyG_refl_l VX) (VTyG_refl_l VA) (VTmG_refl_l VNt) (VTyG_refl_l VD) (VTmG_refl_l VO)
+                (VTmG_refl_l VC) Va Vks) as Vs.
+  pose proof (V_supii_idx (VTmG_refl_l VO) Va) as Vo.
+  pose proof (Vo _ _ _ Hd) as Xo.
+  pose proof (Vs _ _ _ Hd) as Xs0. pose proof Xs0 as Xs. rewrite !subst_tyIWi, !subst_supii in Xs.
+  rewrite !single2_subst_ty, single3_subst, subst_iwiIH, !subst_elimIWi, !subst_supii by assumption.
+  destruct (elimIWi_WLR (gwk_ok_id G) Hd Xo) as (ix & dm & pd & HW & HK). cbn [gwa] in HW, HK.
+  pose proof (LRtm_inv HW Xs) as Rs.
+  destruct (IWiRel_inv Rs) as (w & w' & Hw & Hw' & _ & Hn).
+  assert (w = tmSupii l lp li X[d] A[d] N[llift d] D[llift (llift d)] Ot[llift d] C[llift (llift (llift d))]
+                a[d] cs[d]) as ->.
+  { eapply tmred_whnf_det; [exact Hw | apply tmred_refl, (tmred_wf _ _ _ _ _ _ _ Hw) | exact (IWiNf_whnf_l Hn)
+                           | apply whnf_supii]. }
+  assert (w' = tmSupii l lp li X[d'] A[d'] N[llift d'] D[llift (llift d')] Ot[llift d'] C[llift (llift (llift d'))]
+                 a'[d'] cs'[d']) as ->.
+  { eapply tmred_whnf_det; [exact Hw' | apply tmred_refl, (tmred_wf _ _ _ _ _ _ _ Hw') | exact (IWiNf_whnf_r Hn)
+                           | apply whnf_supii]. }
+  destruct (IWiNf_sup_inv Hn)
+    as (k2 & kp2 & ki2 & X2 & A2 & N2 & D2 & O2 & C2 & a2 & cs2 & Heq & HE1 & HE1' & Ha & Hix & Hsp).
+  destruct (supii_inj Heq) as (? & ? & ? & ? & ? & ? & ? & ? & ? & ? & ?); subst k2 kp2 ki2 X2 A2 N2 D2 O2 C2 a2 cs2.
+  pose proof (fun ρ => proj2 (proj2 elimIWi_core_all) _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (Hsp ρ)) as IH.
+  pose proof (wf_tm_nf (tmred_wf _ _ _ _ _ _ _ Hw)) as Nw. pose proof (wf_tm_nf (tmred_wf _ _ _ _ _ _ _ Hw')) as Nw'.
+  cbn in Nw, Nw'. destruct Nw as (_ & _ & _ & _ & _ & _ & Na & Ncs).
+  destruct Nw' as (_ & _ & _ & _ & _ & _ & Na' & Ncs').
+  assert (Xoo : LRtm li G Δ X[d] X[d] Ot[lsingle a][d] Ot[lsingle a][d'])
+    by exact (LRtm_irrel_r Xo (VTy_refl_l (VTyG_loc VX) _ _ _ (SubRel_refl_l Hd))).
+  destruct (elimIWi_step (γ := gwk_id) (gwk_ok_id G) Hd HK Xoo HE1 HE1' Ha Hix Hsp IH Na Na' Ncs Ncs')
+    as (X2 & Lred & Rred).
+  cbn [gwa] in X2, Lred, Rred.
+  pose proof (LRtm_red X2 Lred (tmred_refl _ _ _ (eqtm_wf_r ge_typeof (tmred_eq _ _ _ _ _ _ _ Rred)))) as Y.
+  eapply LRtm_irrel_r; [exact Y|].
+  pose proof (VTm_trans Vs (VTm_sym Vs) _ _ _ Hd) as Xss. rewrite !subst_tyIWi, !subst_supii in Xss.
+  pose proof (VTm_trans Vo (VTm_sym Vo) _ _ _ Hd) as Xoo'.
+  exact (elimIWi_mot (γ := gwk_id) (gwk_ok_id G) Hd Xoo' Xss).
+Qed.
+
 End ElimAt.
+
+(** The eliminator's type with the scrutinee's premise first, so that a
+    proof search applying it fixes the signature from the scrutinee's type. *)
+Lemma V_elimIWi_ty_at {G Γ l lp li l' l3 lp3 li3 l4 X X' A A' D D' N N' Ot Ot' C C' M M' c c' m m' t t'} :
+  VTm G Γ t t' (tyIWi l lp li X A N D Ot C m) (iwiL l lp li) ->
+  VTyG G (Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li) M M' l' ->
+  VTm G Γ m m' X li ->
+  lwf (gL G) l -> lwf (gL G) lp -> lwf (gL G) li -> lwf (gL G) l' ->
+  lequiv (gL G) l l3 -> lequiv (gL G) lp lp3 -> lequiv (gL G) li li3 -> lequiv (gL G) l' l4 ->
+  IWiSig (G := G) (i := ge_layer) Γ l lp li X A N D Ot C ->
+  VTyG G Γ X X' li -> VTyG G Γ A A' l ->
+  VTmG G (Γ ,, A @ l) N N' tyNat lzero ->
+  VTyG G (Γ ,, A @ l ,, tyFin N @ lzero) D D' lp ->
+  VTmG G (Γ ,, A @ l) Ot Ot' X⟨↑⟩ li ->
+  VTmG G (Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp) C C' X⟨↑⟩⟨↑⟩⟨↑⟩ li ->
+  VTyG G (Γ ,, X @ li) (iwimotty l lp li X A N D Ot C) (iwimotty l lp li X A N D Ot C) (iwiL l lp li) ->
+  VTyG G (Γ ,, A @ l) (iwicsty l lp li X A N D Ot C) (iwicsty l lp li X A N D Ot C) (iwiL l lp li) ->
+  VTyG G (Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li)
+    (iwiihty l lp li l' X A N D Ot C M) (iwiihty l3 lp3 li3 l4 X' A' N' D' Ot' C' M') (lmax lzero (lmax lp l')) ->
+  VTmG G (Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li
+            ,, iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l'))
+    c c' (iwistepty l lp li X A N D Ot C M) l' ->
+  VTy G Γ M[lsingle2 m t] M'[lsingle2 m' t'] l'.
+Proof using EL VL VN.
+  intros Vt VM Vm. intros.
+  eapply (V_elimIWi_ty (l := l) (lp := lp) (li := li) (l3 := l3) (lp3 := lp3) (li3 := li3) (l4 := l4) (X := X)
+            (X' := X') (A := A) (A' := A') (N := N) (N' := N') (D := D) (D' := D') (Ot := Ot) (Ot' := Ot') (C := C)
+            (C' := C') (c := c) (c' := c'));
+    eassumption.
+Qed.
 
 End IWiElimV.
