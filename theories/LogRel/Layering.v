@@ -31,6 +31,7 @@ Fixpoint mltt_ty (T : ty) : Prop :=
   (* [M]'s index, shape and position relations are relations at those
      types (M18b) *)
   | tyM _ _ _ X A B _ _ => mltt_ty X /\ mltt_ty A /\ mltt_ty B
+  | tyIWi _ _ _ X A _ D _ _ _ => mltt_ty X /\ mltt_ty A /\ mltt_ty D
   | tyCTyp _ _ | tyCTrm _ _ _ | tyCPi _ _ | tyTPi _ _ _ _ => False
   | _ => True
   end.

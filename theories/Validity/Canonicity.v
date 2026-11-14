@@ -47,6 +47,7 @@ Definition canon_head (h : ty_hd) (w : tm) : Prop :=
   | hdSq => exists l A a, w = tmSq l A a
   | hdIWf => exists l li X A N Ot C a cs, w = tmSupi l li X A N Ot C a cs
   | hdM => exists l l' li X A B C k Y c j y, w = tmCorec l l' li X A B C k Y c j y
+  | hdIWi => exists l lp li X A N D Ot C a cs, w = tmSupii l lp li X A N D Ot C a cs
   | hdNe | hdErr | hdSEmpty | hdEmpty => False
   end.
 

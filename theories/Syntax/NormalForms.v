@@ -37,6 +37,8 @@ Inductive whne : tm -> Prop :=
 | whne_elimIWf l li l' X A N Ot C M c m t : whne t -> whne (tmElimIWf l li l' X A N Ot C M c m t)
 (* [M]'s one eliminator on a neutral (M18b) *)
 | whne_out l l' li X A B C j m : whne m -> whne (tmOut l l' li X A B C j m)
+(* [IWi]'s eliminator on a neutral (M19) *)
+| whne_elimIWi l lp li l' X A N D Ot C M c m t : whne t -> whne (tmElimIWi l lp li l' X A N D Ot C M c m t)
 (* J on a neutral proof (M11a) *)
 | whne_J l l' A a M c u e : whne e -> whne (tmJ l l' A a M c u e).
 
@@ -77,7 +79,8 @@ Inductive whnf : tm -> Prop :=
 | whnf_tmSqCode l s : whnf (tmSqCode l s)
 | whnf_tmDVec l n f : whnf (tmDVec l n f)
 | whnf_tmIWf l li x s n o c m : whnf (tmIWf l li x s n o c m)
-| whnf_corec l l' li X A B C k Y c j y : whnf (tmCorec l l' li X A B C k Y c j y).
+| whnf_corec l l' li X A B C k Y c j y : whnf (tmCorec l l' li X A B C k Y c j y)
+| whnf_supii l lp li X A N D Ot C a cs : whnf (tmSupii l lp li X A N D Ot C a cs).
 
 Inductive whne_ty : ty -> Prop :=
 | whne_tyGvar U d : whne_ty (tyGvar U d)
@@ -108,7 +111,8 @@ Inductive whnf_ty : ty -> Prop :=
 | whnf_tyWf l A N : whnf_ty (tyWf l A N)
 | whnf_tySq l A : whnf_ty (tySq l A)
 | whnf_tyIWf l li X A N Ot C m : whnf_ty (tyIWf l li X A N Ot C m)
-| whnf_tyM l l' li X A B C j : whnf_ty (tyM l l' li X A B C j).
+| whnf_tyM l l' li X A B C j : whnf_ty (tyM l l' li X A B C j)
+| whnf_tyIWi l lp li X A N D Ot C m : whnf_ty (tyIWi l lp li X A N D Ot C m).
 
 #[export] Hint Constructors whne whnf whne_ty whnf_ty : whnf.
 
@@ -243,6 +247,10 @@ Proof. inversion 1. Qed.
 Lemma whne_ty_not_M l l' li X A B C j : ~ whne_ty (tyM l l' li X A B C j).
 Proof. inversion 1. Qed.
 Lemma whne_not_corec l l' li X A B C k Y c j y : ~ whne (tmCorec l l' li X A B C k Y c j y).
+Proof. inversion 1. Qed.
+Lemma whne_ty_not_IWi l lp li X A N D Ot C m : ~ whne_ty (tyIWi l lp li X A N D Ot C m).
+Proof. inversion 1. Qed.
+Lemma whne_not_supii l lp li X A N D Ot C a cs : ~ whne (tmSupii l lp li X A N D Ot C a cs).
 Proof. inversion 1. Qed.
 Lemma whne_not_srefl l A a : ~ whne (srefl l A a).
 Proof. inversion 1. Qed.

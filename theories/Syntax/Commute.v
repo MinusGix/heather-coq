@@ -326,6 +326,56 @@ Lemma subst_out l l' li X A B C j m :
   (tmOut l l' li X A B C j m)[d] =
   tmOut l l' li X[d] A[llift d] B[llift (llift d)] C[llift (llift (llift d))] j[d] m[d].
 Proof. reflexivity. Qed.
+(** Indexed families with infinitary children (M19_DESIGN.md): as
+    [IWf]'s, with [D] binding the shape and the position and [C] those and
+    the argument; [iwiFam], [iwiIH] are definitions. *)
+Lemma ren_tyIWi l lp li X A N D Ot C m :
+  (tyIWi l lp li X A N D Ot C m)⟨r⟩ =
+  tyIWi l lp li X⟨r⟩ A⟨r⟩ N⟨rlift r⟩ D⟨rlift (rlift r)⟩ Ot⟨rlift r⟩ C⟨rlift (rlift (rlift r))⟩ m⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma ren_supii l lp li X A N D Ot C a cs :
+  (tmSupii l lp li X A N D Ot C a cs)⟨r⟩ =
+  tmSupii l lp li X⟨r⟩ A⟨r⟩ N⟨rlift r⟩ D⟨rlift (rlift r)⟩ Ot⟨rlift r⟩ C⟨rlift (rlift (rlift r))⟩ a⟨r⟩ cs⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma ren_elimIWi l lp li l' X A N D Ot C M c m t :
+  (tmElimIWi l lp li l' X A N D Ot C M c m t)⟨r⟩ =
+  tmElimIWi l lp li l' X⟨r⟩ A⟨r⟩ N⟨rlift r⟩ D⟨rlift (rlift r)⟩ Ot⟨rlift r⟩ C⟨rlift (rlift (rlift r))⟩
+    M⟨rlift (rlift r)⟩ c⟨rlift (rlift (rlift r))⟩ m⟨r⟩ t⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma ren_iwiIH l lp li l' X A N D Ot C M c a cs :
+  (iwiIH l lp li l' X A N D Ot C M c a cs)⟨r⟩ =
+  iwiIH l lp li l' X⟨r⟩ A⟨r⟩ N⟨rlift r⟩ D⟨rlift (rlift r)⟩ Ot⟨rlift r⟩ C⟨rlift (rlift (rlift r))⟩
+    M⟨rlift (rlift r)⟩ c⟨rlift (rlift (rlift r))⟩ a⟨r⟩ cs⟨r⟩.
+Proof. apply iwiIH_ren. Qed.
+Lemma ren_iwiFam l lp li X A N D Ot C a :
+  (iwiFam l lp li X A N D Ot C a)⟨rlift r⟩ =
+  iwiFam l lp li X⟨r⟩ A⟨r⟩ N⟨rlift r⟩ D⟨rlift (rlift r)⟩ Ot⟨rlift r⟩ C⟨rlift (rlift (rlift r))⟩ a⟨r⟩.
+Proof. apply iwiFam_ren. Qed.
+Lemma ren_iwiFamCod l lp li X A N D Ot C a :
+  (iwiFamCod l lp li X A N D Ot C a)⟨rlift (rlift r)⟩ =
+  iwiFamCod l lp li X⟨r⟩ A⟨r⟩ N⟨rlift r⟩ D⟨rlift (rlift r)⟩ Ot⟨rlift r⟩ C⟨rlift (rlift (rlift r))⟩ a⟨r⟩.
+Proof. apply iwiFamCod_ren. Qed.
+Lemma subst_tyIWi l lp li X A N D Ot C m :
+  (tyIWi l lp li X A N D Ot C m)[d] =
+  tyIWi l lp li X[d] A[d] N[llift d] D[llift (llift d)] Ot[llift d] C[llift (llift (llift d))] m[d].
+Proof. reflexivity. Qed.
+Lemma subst_supii l lp li X A N D Ot C a cs :
+  (tmSupii l lp li X A N D Ot C a cs)[d] =
+  tmSupii l lp li X[d] A[d] N[llift d] D[llift (llift d)] Ot[llift d] C[llift (llift (llift d))] a[d] cs[d].
+Proof. reflexivity. Qed.
+Lemma subst_elimIWi l lp li l' X A N D Ot C M c m t :
+  (tmElimIWi l lp li l' X A N D Ot C M c m t)[d] =
+  tmElimIWi l lp li l' X[d] A[d] N[llift d] D[llift (llift d)] Ot[llift d] C[llift (llift (llift d))]
+    M[llift (llift d)] c[llift (llift (llift d))] m[d] t[d].
+Proof. reflexivity. Qed.
+Lemma ren_tmIWi l lp li x s n d0 o c m :
+  (tmIWi l lp li x s n d0 o c m)⟨r⟩ =
+  tmIWi l lp li x⟨r⟩ s⟨r⟩ n⟨rlift r⟩ d0⟨rlift (rlift r)⟩ o⟨rlift r⟩ c⟨rlift (rlift (rlift r))⟩ m⟨r⟩.
+Proof. reflexivity. Qed.
+Lemma subst_tmIWi l lp li x s n d0 o c m :
+  (tmIWi l lp li x s n d0 o c m)[d] =
+  tmIWi l lp li x[d] s[d] n[llift d] d0[llift (llift d)] o[llift d] c[llift (llift (llift d))] m[d].
+Proof. reflexivity. Qed.
 (** Defined globals (M9): the body stays in its own local scope. *)
 Lemma ren_gdef u b e : (gdef u b e)⟨r⟩ = gdef u b (lren e r). Proof. reflexivity. Qed.
 Lemma subst_gdef u b e : (gdef u b e)[d] = gdef u b (lcomp e d). Proof. reflexivity. Qed.
@@ -430,6 +480,13 @@ Ltac push_ren_at h k := lazymatch h with
   | @tmCorec => k ren_corec
   | @tmOut => k ren_out
   | @mOutCorec => k ren_mOutCorec
+  | @tyIWi => k ren_tyIWi
+  | @tmSupii => k ren_supii
+  | @tmElimIWi => k ren_elimIWi
+  | @tmIWi => k ren_tmIWi
+  | @iwiIH => k ren_iwiIH
+  | @iwiFam => k ren_iwiFam
+  | @iwiFamCod => k ren_iwiFamCod
   end.
 Ltac push_ren := repeat match goal with
   | |- context [@ren _ _ ?t _] => let h := head_of t in push_ren_at h ltac:(fun L => rewrite L)
@@ -520,6 +577,10 @@ Ltac push_subst_at h k := lazymatch h with
   | @tyM => k subst_tyM
   | @tmCorec => k subst_corec
   | @tmOut => k subst_out
+  | @tyIWi => k subst_tyIWi
+  | @tmSupii => k subst_supii
+  | @tmElimIWi => k subst_elimIWi
+  | @tmIWi => k subst_tmIWi
   end.
 Ltac push_subst := repeat match goal with
   | |- context [@subst _ _ ?t _] => let h := head_of t in push_subst_at h ltac:(fun L => rewrite L)

@@ -509,6 +509,7 @@ Fixpoint nfty (T : ty) : Prop :=
   | tyDVec _ n F => nftm n /\ nfty F
   | tyIWf _ _ X A N Ot C m => nfty X /\ nfty A /\ nftm N /\ nftm Ot /\ nftm C /\ nftm m
   | tyM _ _ _ X A B C j => nfty X /\ nfty A /\ nfty B /\ nftm C /\ nftm j
+  | tyIWi _ _ _ X A N D Ot C m => nfty X /\ nfty A /\ nftm N /\ nfty D /\ nftm Ot /\ nftm C /\ nftm m
   | tyEl _ t => nftm t
   | tyGvar _ d => nfl d
   | tyCTyp _ _ | tyCTrm _ _ _ => True
@@ -554,6 +555,11 @@ with nftm (t : tm) : Prop :=
   | tmCorec _ _ _ X A B C _ Y c j y =>
       nfty X /\ nfty A /\ nfty B /\ nftm C /\ nfty Y /\ nftm c /\ nftm j /\ nftm y
   | tmOut _ _ _ X A B C j m => nfty X /\ nfty A /\ nfty B /\ nftm C /\ nftm j /\ nftm m
+  | tmSupii _ _ _ X A N D Ot C a cs =>
+      nfty X /\ nfty A /\ nftm N /\ nfty D /\ nftm Ot /\ nftm C /\ nftm a /\ nftm cs
+  | tmElimIWi _ _ _ _ X A N D Ot C M c m t =>
+      nfty X /\ nfty A /\ nftm N /\ nfty D /\ nftm Ot /\ nftm C /\ nfty M /\ nftm c /\ nftm m /\ nftm t
+  | tmIWi _ _ _ x s n d o c m => nftm x /\ nftm s /\ nftm n /\ nftm d /\ nftm o /\ nftm c /\ nftm m
   | tmRefl _ A a => nfty A /\ nftm a
   | tmId _ s t u => nftm s /\ nftm t /\ nftm u
   | tmSEq _ s t u => nftm s /\ nftm t /\ nftm u

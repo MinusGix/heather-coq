@@ -14,7 +14,7 @@ Definition ne_head (t : tm) : bool :=
   | tmFst _ _ _ _ _ | tmSnd _ _ _ _ _ | elimSEmpty _ _ _ _ | tmJ _ _ _ _ _ _ _ _
   | elimEmpty _ _ _ _ | tmCase _ _ _ _ _ _ _ _ _ | tmElimW _ _ _ _ _ _ _ _
   | tmElimWf _ _ _ _ _ _ _ | tmElimSq _ _ _ _ _ _ | tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _
-  | tmOut _ _ _ _ _ _ _ _ _ => true
+  | tmOut _ _ _ _ _ _ _ _ _ | tmElimIWi _ _ _ _ _ _ _ _ _ _ _ _ _ _ => true
   | _ => false
   end.
 Lemma whne_ne_head {t} : whne t -> ne_head t = true.

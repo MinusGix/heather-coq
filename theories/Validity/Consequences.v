@@ -11,7 +11,7 @@ From DeLaM.Validity Require Export Basic.
     so a match on a head ([canon_head]) says which former each case is. *)
 Inductive ty_hd :=
   hdNe | hdNat | hdU | hdPi | hdCTyp | hdCTrm | hdUPi | hdCPi | hdTPi | hdErr | hdSig | hdUnit
-| hdSEq | hdSEmpty | hdId | hdEmpty | hdSum | hdW | hdWf | hdSq | hdIWf | hdM.
+| hdSEq | hdSEmpty | hdId | hdEmpty | hdSum | hdW | hdWf | hdSq | hdIWf | hdM | hdIWi.
 
 Definition ty_head (T : ty) : ty_hd :=
   match T with
@@ -21,6 +21,7 @@ Definition ty_head (T : ty) : ty_hd :=
   | tyUnit _ => hdUnit | tySEq _ _ _ _ => hdSEq | tySEmpty _ => hdSEmpty | tyId _ _ _ _ => hdId
   | tyEmpty _ => hdEmpty | tySum _ _ _ _ => hdSum | tyW _ _ _ _ => hdW | tyWf _ _ _ => hdWf
   | tySq _ _ => hdSq | tyIWf _ _ _ _ _ _ _ _ => hdIWf | tyM _ _ _ _ _ _ _ _ => hdM
+  | tyIWi _ _ _ _ _ _ _ _ _ _ => hdIWi
   end.
 
 Lemma whne_ty_head V : whne_ty V -> ty_head V = hdNe.
