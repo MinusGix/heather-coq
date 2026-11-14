@@ -109,7 +109,11 @@ these docs by bare file name.
      rebuilt. Restoring took 0.1 s; one changed late file then rebuilt
      29 files in 15 s. After a green build of `main`, `tools/tree-cache
      save /mnt/project-files/build-cache/` (`--kind vo` after a full
-     `make` saves the `.vo` tree the same way).
+     `make` saves the `.vo` tree the same way: 83 MB, restored in
+     1.2 s, after which `make` rebuilds from the first changed file).
+     The full `make` on this tree took 527 s wall and 1587 s CPU at -j4
+     (2026-11-14, with the flambda Coq; no back-to-back run of the tree
+     before).
   2. On a proof: `tools/coq-session start FILE.v LEMMA`, then
      `tools/coq-session try 'tac. tac.'` as often as needed: one
      `coqtop` keeps the state before the proof, runs the tactics, prints
