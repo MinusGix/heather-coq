@@ -577,4 +577,123 @@ Qed.
 
 End WSpine.
 
+(** ** [sup_ii] *)
+
+Section SupiiV.
+Context {G : gctx} {Γ : ctx} {l lp li k kp ki : lvl} {X X' A A' D D' : ty} {N N' Ot Ot' C C' a a' cs cs' : tm}
+  (Hwl : lwf (gL G) l) (Hwlp : lwf (gL G) lp) (Hwli : lwf (gL G) li)
+  (Hk : lequiv (gL G) k l) (Hkp : lequiv (gL G) kp lp) (Hki : lequiv (gL G) ki li)
+  (VX : VTyG G Γ X X' li) (VA : VTyG G Γ A A' l)
+  (VNt : VTmG G (Γ ,, A @ l) N N' tyNat lzero)
+  (VD : VTyG G (Γ ,, A @ l ,, tyFin N @ lzero) D D' lp)
+  (VO : VTmG G (Γ ,, A @ l) Ot Ot' X⟨↑⟩ li)
+  (VC : VTmG G (Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp) C C' X⟨↑⟩⟨↑⟩⟨↑⟩ li)
+  (Va : VTm G Γ a a' A l)
+  (Vcs : VTm G Γ cs cs' (tyDVec (iwiL l lp li) N[lsingle a] (iwiFam l lp li X A N D Ot C a)) (iwiL l lp li)).
+
+(** The constructor's index. *)
+Lemma V_supii_idx : VTm G Γ Ot[lsingle a] Ot[lsingle a] X li.
+Proof using EL VL VO Va.
+  intros Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
+  pose proof (VTm_trans Va (VTm_sym Va)) as Vaa.
+  pose proof (VTmG_loc (VTmG_refl_l VO) _ _ _ (SubRel_cons Hd (Vaa _ _ _ Hd))) as Y.
+  rewrite !shift_cons_ty in Y. rewrite !single_subst, !lift_single_tm by assumption. exact Y.
+Qed.
+
+Lemma V_supii_idx2 : VTm G Γ Ot[lsingle a] Ot'[lsingle a'] X li.
+Proof using EL VO Va.
+  intros Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
+  pose proof (VTmG_loc VO _ _ _ (SubRel_cons Hd (Va _ _ _ Hd))) as Y.
+  rewrite !shift_cons_ty in Y. rewrite !single_subst, !lift_single_tm by assumption. exact Y.
+Qed.
+
+Lemma V_supii_ty : VTy G Γ (tyIWi l lp li X A N D Ot C Ot[lsingle a])
+  (tyIWi k kp ki X' A' N' D' Ot' C' Ot'[lsingle a']) (iwiL l lp li).
+Proof using EL Hk Hkp Hki Hwl Hwli Hwlp VA VC VD VL VN VNt VO VX Va.
+  exact (V_iwi_at Hwl Hwlp Hwli Hk Hkp Hki VX VA VNt VD VO VC V_supii_idx2).
+Qed.
+
+Lemma V_supii : VTm G Γ (tmSupii l lp li X A N D Ot C a cs) (tmSupii k kp ki X' A' N' D' Ot' C' a' cs')
+  (tyIWi l lp li X A N D Ot C Ot[lsingle a]) (iwiL l lp li).
+Proof using EL Hk Hkp Hki Hwl Hwli Hwlp VA VC VD VL VN VNt VO VX Va Vcs.
+  intros Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd']. pose proof (SubRel_ctx Hd) as HΔ.
+  pose proof (VTyG_refl_l VX) as VXX. pose proof (VTyG_refl_l VA) as VAA.
+  pose proof (VTmG_refl_l VNt) as VNN. pose proof (VTyG_refl_l VD) as VDD.
+  pose proof (VTmG_refl_l VO) as VOO. pose proof (VTmG_refl_l VC) as VCC.
+  pose proof (lequiv_refl _ _ Hwl) as Rl. pose proof (lequiv_refl _ _ Hwlp) as Rlp.
+  pose proof (lequiv_refl _ _ Hwli) as Rli.
+  pose proof (LR_IWi_at Hwl Hwlp Hwli Rl Rlp Rli VXX VAA VNN VDD VOO VCC _ _ _ _ _ Hd (V_supii_idx _ _ _ Hd)) as HW.
+  eapply LRtm_of; [exact HW|]. rewrite !subst_supii.
+  (* escapes *)
+  destruct (VTyG_loc VX _ _ _ Hd) as [RX HRX]. destruct (escape_ty _ _ _ _ _ _ _ _ HRX) as (HXd & HX'd & EX).
+  destruct (VTyG_loc VA _ _ _ Hd) as [RA HRA]. destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HAd & HA'd & EA).
+  assert (Hlift : SubRel G (Γ ,, A @ l) (Δ ,, A[d] @ l) (llift d) (llift d'))
+    by exact (SubRel_lift Hd (VTy_refl_l (VTyG_loc VA)) HAd Hwl).
+  pose proof (VTmG_loc VNt _ _ _ Hlift) as XN. rewrite !subst_tyNat in XN.
+  destruct (LRtm_escape XN) as [HNd HN'd]. pose proof (LRtm_geq XN) as EN.
+  pose proof (VTmG_loc VO _ _ _ Hlift) as XO. rewrite !shift_llift_ty in XO.
+  destruct (LRtm_escape XO) as [HOd HO'd]. pose proof (LRtm_geq XO) as EO.
+  assert (HFd : [ G ; Δ ,, A[d] @ l ⊢g (tyFin N)[llift d] @ lzero ])
+    by (rewrite subst_tyFin; apply wft_fin; [exact ge_notV | exact HNd]).
+  assert (Hlift2 : SubRel G (Γ ,, A @ l ,, tyFin N @ lzero) (Δ ,, A[d] @ l ,, (tyFin N)[llift d] @ lzero)
+                     (llift (llift d)) (llift (llift d')))
+    by exact (SubRel_lift Hlift (V_fin (VTmG_loc (VTmG_refl_l VNt))) HFd I).
+  destruct (VTyG_loc VD _ _ _ Hlift2) as [RD HRD]. destruct (escape_ty _ _ _ _ _ _ _ _ HRD) as (HDd & HD'd & ED).
+  rewrite subst_tyFin in HDd, ED.
+  assert (Hlift3 : SubRel G (Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp)
+                     (Δ ,, A[d] @ l ,, tyFin N[llift d] @ lzero ,, D[llift (llift d)] @ lp)
+                     (llift (llift (llift d))) (llift (llift (llift d')))).
+  { pose proof (SubRel_lift Hlift2 (VTy_refl_l (VTyG_loc VD))) as Z. rewrite subst_tyFin in Z.
+    exact (Z HDd Hwlp). }
+  pose proof (VTmG_loc VC _ _ _ Hlift3) as XC. rewrite !shift_llift_ty in XC.
+  destruct (LRtm_escape XC) as [HCd HC'd]. pose proof (LRtm_geq XC) as EC.
+  pose proof (Va _ _ _ Hd) as Xa. pose proof (LRtm_geq Xa) as Ea.
+  pose proof (Vcs _ _ _ Hd) as Xcs.
+  rewrite !subst_tyDVec, !single_subst, !subst_iwiFam in Xcs by assumption.
+  pose proof (LRtm_geq Xcs) as Ecs.
+  pose proof (geq_tm_supii (lequiv_sym _ _ _ Hk) (lequiv_sym _ _ _ Hkp) (lequiv_sym _ _ _ Hki)
+                HXd (geq_ty_sound EX) HAd (geq_ty_sound EA) HNd (geq_tm_sound EN) HDd (geq_ty_sound ED)
+                HOd (geq_tm_sound EO) HCd (geq_tm_sound EC) Ea Ecs) as Dsup.
+  pose proof (geq_tm_sound Dsup) as Dsup'.
+  rewrite single_subst by assumption.
+  eapply iwirel; [exact (tmred_refl _ _ _ (eqtm_wf_l ge_typeof Dsup'))
+                 | exact (tmred_refl _ _ _ (eqtm_wf_r ge_typeof Dsup')) | exact Dsup |].
+  (* the related shapes, in every world *)
+  assert (hdom : forall ρ : kwk G Δ, iwiDom (l := l) (lp := lp) (li := li) (A := A) (A' := A) Δ d d' ρ
+                   (ktm ρ a[d]) (ktm ρ a'[d'])).
+  { intros ρ. unfold iwiDom. apply (LRtm_stage K_l). exact (LRtm_kw ρ Xa). }
+  apply iwinf_sup.
+  - exact (IWiEq_intro Rl Rlp Rli (geq_ty_sound (geq_ty_refl_l EX)) (geq_ty_sound (geq_ty_refl_l EA))
+             (geq_tm_sound (geq_tm_refl_l EN)) (geq_ty_sound (geq_ty_refl_l ED)) (geq_tm_sound (geq_tm_refl_l EO))
+             (geq_tm_sound (geq_tm_refl_l EC)) Hwl Hwlp Hwli HXd HAd HNd HDd HOd HCd HXd HAd HNd HDd HOd HCd).
+  - apply IWiEq_intro; auto using geq_ty_sound, geq_tm_sound, lequiv_sym.
+  - exact hdom.
+  - intros ρ. rewrite ktm_single.
+    pose proof (iwi_ot VXX VAA VOO Hd ρ _ _ (hdom ρ)) as Y.
+    destruct (LR_tm_per _ _ _ _ _ _ _ (iwiIdx_canon (l := l) (lp := lp) VXX Hd ρ)) as [Sy Tr].
+    exact (Tr _ _ _ Y (Sy _ _ Y)).
+  - intros ρ. destruct (LRtm_kw ρ Xcs) as (R & HR & Hc).
+    rewrite kty_tyDVec, ktm_single, iwiFam_T, ktyl_iwiFamT, ktyl_llift_single, ktmll_llift2_single in HR.
+    destruct (escape_ty _ _ _ _ _ _ _ _ HR) as (HT & _ & _).
+    destruct (inv_ty_dvec HT) as ((_ & _ & _ & HFam) & _).
+    pose proof (kw_lwf ρ Hwl) as Hwlρ. pose proof (kw_lwf ρ Hwlp) as Hwlpρ. pose proof (kw_lwf ρ Hwli) as Hwliρ.
+    assert (Na : nftm (ktm ρ a[d])) by (unfold ktm; apply ren_nf).
+    refine (DVecWSp_of_LR (N0 := ktml ρ N[llift d']) (kw_ctx ρ) Hwlρ Hwlpρ Hwliρ _ _ _ _ _ _
+              (KDom_comp ρ (fun ρ0 => ex_intro _ _ (iwiIdx_canon (l := l) (lp := lp) VXX Hd ρ0)))
+              (KDom_comp ρ (fun ρ0 => ex_intro _ _ (iwiDom_canon (lp := lp) (li := li) VAA Hd ρ0)))
+              _ _ _ _ _ (iwi_arity VAA VNN Hd ρ _ _ (hdom ρ)) _ _ _ HFam _ _ _ HR _ _ Hc).
+    all: try first [unfold kty; apply ren_nf_ty | unfold ktml; apply ren_nf | unfold ktyll; apply ren_nf_ty
+                   | unfold ktmlll; apply ren_nf].
+    + intros ρ' a0 a0' h. pose proof (iwi_arity VAA VNN Hd (kw_comp ρ ρ') a0 a0' h) as Y.
+      now rewrite !ktml_comp in Y.
+    + intros ρ' a0 a0' h p p' Hp. rewrite <- !ktml_comp in Hp.
+      pose proof (iwiPd_canon VAA VNN VDD Hd (kw_comp ρ ρ') a0 a0' h p p' Hp) as Y.
+      rewrite !ktyll_comp in Y. eexists. exact Y.
+    + intros ρ' a0 a0' p p' y y' [Hp _]. now rewrite !ktml_comp in Hp.
+    + intros p y y' (p' & Hp & Hy). apply (LRtm_stage K_lp) in Hy.
+      rewrite llift_single_single_ty by exact Na. eexists. exact Hy.
+Qed.
+
+End SupiiV.
+
 End IWiV.
