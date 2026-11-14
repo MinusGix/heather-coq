@@ -18,7 +18,7 @@
 From DeLaM.Validity Require Export IWiElimBase.
 From DeLaM.Typing Require Import IWiIH.
 From DeLaM.LogRel Require Import IWfAux IWiAux.
-From DeLaM.Validity Require Import DNthReds MCorec IWfSp.
+From DeLaM.Validity Require Import DNthReds MCorec IWfSp IWiSp IWiElimDnth.
 
 Section IWiElimV.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.

@@ -152,6 +152,7 @@ theories/Validity/MCorecV.v
 theories/Validity/IWi.v
 theories/Validity/IWiSp.v
 theories/Validity/IWiElimBase.v
+theories/Validity/IWiElimDnth.v
 theories/Validity/IWiElim.v
 theories/Validity/WfElim.v
 theories/Validity/Squash.v
