@@ -8,6 +8,7 @@
     converted from the last to the first by functionality ([telescope]). *)
 From DeLaM.Syntax Require Import LevelLwf.
 From DeLaM.Typing Require Export CtxConv GSubstitution GStatic.
+From DeLaM.Typing Require Import PresupIWi.
 
 Lemma lle_D_typeof i : lle i lD -> typeof i = lD.
 Proof. destruct i; unfold lle; cbn; intros; try reflexivity; lia. Qed.
@@ -710,6 +711,83 @@ Proof using Hv.
 Qed.
 
 End IWfGen.
+
+(** ** [elim_IWi]'s telescope at any layer but V (M19a), as [IWfGen]. *)
+Section IWiGen.
+Context {G : gctx} {i : layer} (Hv : i <> lV).
+
+Let up {Γ T l} (H : [ G ; Γ ⊢[ i ] T @ l ]) : [ G ; Γ ⊢[ typeof i ] T @ l ] :=
+  lift_ty H (lle_self_typeof i).
+Let ctxi {Γ T l} (H : [ G ; Γ ⊢[ i ] T @ l ]) : [ G ; Γ ⊢[ typeof i ] ] :=
+  proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ H.
+
+(** The signature weakened past one local. *)
+Lemma IWi_wk_g {Γ Y ly l lp li X A N D Ot C} : lwf (gL G) l -> lwf (gL G) lp -> [ G ; Γ ,, Y @ ly ⊢[ typeof i ] ] ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] A @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, Y @ ly ⊢[ i ] X⟨↑⟩ @ li ] /\ [ G ; Γ ,, Y @ ly ⊢[ i ] A⟨↑⟩ @ l ] /\
+  [ G ; Γ ,, Y @ ly ,, A⟨↑⟩ @ l ⊢[ i ] N⟨rlift ↑⟩ : tyNat @ lzero ] /\
+  [ G ; Γ ,, Y @ ly ,, A⟨↑⟩ @ l ,, tyFin N⟨rlift ↑⟩ @ lzero ⊢[ i ] D⟨rlift (rlift ↑)⟩ @ lp ] /\
+  [ G ; Γ ,, Y @ ly ,, A⟨↑⟩ @ l ⊢[ i ] Ot⟨rlift ↑⟩ : X⟨↑⟩⟨↑⟩ @ li ] /\
+  [ G ; Γ ,, Y @ ly ,, A⟨↑⟩ @ l ,, tyFin N⟨rlift ↑⟩ @ lzero ,, D⟨rlift (rlift ↑)⟩ @ lp
+      ⊢[ i ] C⟨rlift (rlift (rlift ↑))⟩ : X⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ @ li ].
+Proof using Hv.
+  intros Hl Hlp HY HX HA HN HD HO HC.
+  assert (HA1 : [ G ; Γ ,, Y @ ly ⊢[ i ] A⟨↑⟩ @ l ]) by exact (wk1_ty_g G i _ _ _ _ _ HY HA).
+  assert (H1 : [ G ; Γ ,, Y @ ly ,, A⟨↑⟩ @ l ⊢[ typeof i ] ]) by exact (wfc_ext _ _ _ _ _ HY (up HA1) Hl).
+  assert (HN1 : [ G ; Γ ,, Y @ ly ,, A⟨↑⟩ @ l ⊢[ i ] N⟨rlift ↑⟩ : tyNat @ lzero ]) by exact (wku_tm_g H1 HN).
+  assert (HF1 : [ G ; Γ ,, Y @ ly ,, A⟨↑⟩ @ l ⊢[ i ] tyFin N⟨rlift ↑⟩ @ lzero ]) by (apply wft_fin; assumption).
+  assert (H2 : [ G ; Γ ,, Y @ ly ,, A⟨↑⟩ @ l ,, tyFin N⟨rlift ↑⟩ @ lzero ⊢[ typeof i ] ])
+    by exact (wfc_ext _ _ _ _ _ H1 (up HF1) I).
+  assert (HD1 : [ G ; Γ ,, Y @ ly ,, A⟨↑⟩ @ l ,, tyFin N⟨rlift ↑⟩ @ lzero ⊢[ i ] D⟨rlift (rlift ↑)⟩ @ lp ]).
+  { eapply (proj1 (proj2 (proj2 weakening_all))); [exact HD | | exact H2].
+    eapply wkr_up'; [eapply wkr_up'; [apply wkr_shift1 | reflexivity] | reflexivity]. }
+  assert (H3 : [ G ; Γ ,, Y @ ly ,, A⟨↑⟩ @ l ,, tyFin N⟨rlift ↑⟩ @ lzero ,, D⟨rlift (rlift ↑)⟩ @ lp ⊢[ typeof i ] ])
+    by exact (wfc_ext _ _ _ _ _ H2 (up HD1) Hlp).
+  refine (conj (wk1_ty_g G i _ _ _ _ _ HY HX) (conj HA1 (conj HN1 (conj HD1 (conj _ _))))).
+  - eapply wf_tm_retype; [exact (wku_tm_g H1 HO) | apply IWf_E_ren].
+  - eapply wf_tm_retype; [eapply (proj1 (proj2 (proj2 (proj2 weakening_all)))); [exact HC | | exact H3]
+                         | apply IWi_E_ren3].
+    eapply wkr_up'; [eapply wkr_up'; [eapply wkr_up'; [apply wkr_shift1 | reflexivity] | reflexivity] | reflexivity].
+Qed.
+
+Lemma IWi_mot_wf_g {Γ l lp li X A N D Ot C} : lwf (gL G) l -> lwf (gL G) lp -> lwf (gL G) li ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] A @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, X @ li ⊢[ i ] iwimotty l lp li X A N D Ot C @ iwiL l lp li ].
+Proof using Hv.
+  intros Hl Hlp Hli HX HA HN HD HO HC.
+  assert (H1 : [ G ; Γ ,, X @ li ⊢[ typeof i ] ]) by exact (wfc_ext _ _ _ _ _ (ctxi HX) (up HX) Hli).
+  destruct (IWi_wk_g Hl Hlp H1 HX HA HN HD HO HC) as (X1 & A1 & N1 & D1 & O1 & C1).
+  apply wft_iwi; auto. apply wf_var; [exact H1 | constructor].
+Qed.
+
+Lemma IWi_cs_wf_g {Γ l lp li X A N D Ot C} : lwf (gL G) l -> lwf (gL G) lp -> lwf (gL G) li ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] A @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] iwicsty l lp li X A N D Ot C @ iwiL l lp li ].
+Proof using Hv.
+  intros Hl Hlp Hli HX HA HN HD HO HC.
+  assert (H1 : [ G ; Γ ,, A @ l ⊢[ typeof i ] ]) by exact (wfc_ext _ _ _ _ _ (ctxi HA) (up HA) Hl).
+  assert (HF : [ G ; Γ ,, A @ l ⊢[ i ] tyFin N @ lzero ]) by (apply wft_fin; assumption).
+  assert (H2 : [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ typeof i ] ]) by exact (wfc_ext _ _ _ _ _ H1 (up HF) I).
+  assert (H3 : [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ typeof i ] ]) by exact (wfc_ext _ _ _ _ _ H2 (up HD) Hlp).
+  destruct (IWi_wk_g Hl Hlp H1 HX HA HN HD HO HC) as (X1 & A1 & N1 & D1 & O1 & C1).
+  destruct (IWi_wk_g Hl Hlp H2 X1 A1 N1 D1 O1 C1) as (X2 & A2 & N2 & D2 & O2 & C2).
+  destruct (IWi_wk_g Hl Hlp H3 X2 A2 N2 D2 O2 C2) as (X3 & A3 & N3 & D3 & O3 & C3).
+  apply wft_dvec; [exact Hv | cbn; auto | exact HN |].
+  eapply wft_lconv; [| exact (iwiL_pi _ _ _ _ Hl Hlp Hli)].
+  apply wft_pi; [exact Hv | exact Hlp | cbn; auto | exact HD |].
+  apply wft_iwi; auto.
+Qed.
+
+End IWiGen.
 
 Section SC.
 Context {G : gctx} {i : layer} (Hi : lle i lD).
@@ -2109,6 +2187,292 @@ Proof using Hty.
          | apply eqtm_elimIWf; auto].
 Qed.
 
+(** Infinitary indexed families (M19a), as [IWf]'s along [PresupIWi]. *)
+Lemma sc_iwi_sig_r {Γ l lp li k kp ki X X' A A' N N' D D' Ot' C'} : i <> lV ->
+  lequiv (gL G) l k -> lequiv (gL G) lp kp -> lequiv (gL G) li ki ->
+  [ G ; Γ ⊢[ i ] X' @ li ] -> [ G ; Γ ⊢[ i ] X ≅ X' @ li ] ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D' @ lp ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D ≅ D' @ lp ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢[ i ] X' @ ki ] /\ [ G ; Γ ⊢[ i ] A' @ k ] /\ [ G ; Γ ,, A' @ k ⊢[ i ] N' : tyNat @ lzero ] /\
+  [ G ; Γ ,, A' @ k ,, tyFin N' @ lzero ⊢[ i ] D' @ kp ] /\
+  [ G ; Γ ,, A' @ k ⊢[ i ] Ot' : X'⟨↑⟩ @ ki ] /\
+  [ G ; Γ ,, A' @ k ,, tyFin N' @ lzero ,, D' @ kp ⊢[ i ] C' : X'⟨↑⟩⟨↑⟩⟨↑⟩ @ ki ].
+Proof using Hty.
+  intros Hv Q1 Qp Q2 HX' HXX HA HA' HAA HN HN' HNN HD HD' HDD HO' HC'.
+  pose proof (sc_ext HA HAA Q1) as Hc1.
+  assert (HF : [ G ; Γ ,, A @ l ⊢[ i ] tyFin N @ lzero ]) by (apply wft_fin; assumption).
+  assert (HFF : [ G ; Γ ,, A @ l ⊢[ i ] tyFin N ≅ tyFin N' @ lzero ]) by (apply eqty_fin; assumption).
+  assert (Hc2 : [ G ⊢[ lD ] Γ ,, A @ l ,, tyFin N @ lzero ≅ Γ ,, A' @ k ,, tyFin N' @ lzero ])
+    by (apply eqc_ext; [exact Hc1 | exact (sc_ty HF) | exact (sc_eqty HFF) | apply lequiv_refl; exact I]).
+  assert (Hc3 : [ G ⊢[ lD ] Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ≅ Γ ,, A' @ k ,, tyFin N' @ lzero ,, D' @ kp ])
+    by (apply eqc_ext; [exact Hc2 | exact (sc_ty HD) | exact (sc_eqty HDD) | exact Qp]).
+  pose proof (sc_ctx HF) as HΓA.
+  assert (HΓAN : [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ lD ] ])
+    by (apply wfc_ext; [exact HΓA | exact (sc_ty HF) | exact I]).
+  assert (HΓAND : [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ lD ] ])
+    by (apply wfc_ext; [exact HΓAN | exact (sc_ty HD) | exact (lequiv_wf_l _ _ _ Qp)]).
+  pose proof (eqty_sym _ _ _ _ _ _ (sc_eqty HXX)) as EX0.
+  pose proof (wk1_eqty G lD eq_refl _ _ _ _ _ _ HΓA EX0) as EX1.
+  pose proof (wk1_eqty G lD eq_refl _ _ _ _ _ _ HΓAN EX1) as EX2.
+  pose proof (wk1_eqty G lD eq_refl _ _ _ _ _ _ HΓAND EX2) as EX3.
+  refine (conj _ (conj _ (conj (sc_ctm Hc1 HN') (conj _ (conj _ _))))).
+  - eapply wft_lconv; [exact HX' | apply lequiv_sym, Q2].
+  - eapply wft_lconv; [exact HA' | apply lequiv_sym, Q1].
+  - exact (sc_cty Hc2 (wft_lconv _ _ _ _ _ _ HD' (lequiv_sym _ _ _ Qp))).
+  - exact (sc_ctm Hc1 (wf_lconv _ _ _ _ _ _ _ (sc_conv HO' EX1) (lequiv_sym _ _ _ Q2))).
+  - exact (sc_ctm Hc3 (wf_lconv _ _ _ _ _ _ _ (sc_conv HC' EX3) (lequiv_sym _ _ _ Q2))).
+Qed.
+
+Lemma sc_iwi_q {Γ l lp li k kp ki X X' A A' N N' D D' Ot' C' m'} : i <> lV ->
+  lequiv (gL G) l k -> lequiv (gL G) lp kp -> lequiv (gL G) li ki ->
+  [ G ; Γ ⊢[ i ] X' @ li ] -> [ G ; Γ ⊢[ i ] X ≅ X' @ li ] ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D' @ lp ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D ≅ D' @ lp ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢[ i ] m' : X @ li ] ->
+  [ G ; Γ ⊢[ i ] tyIWi k kp ki X' A' N' D' Ot' C' m' @ iwiL l lp li ].
+Proof using Hty.
+  intros Hv Q1 Qp Q2 HX' HXX HA HA' HAA HN HN' HNN HD HD' HDD HO' HC' Hm'.
+  destruct (sc_iwi_sig_r Hv Q1 Qp Q2 HX' HXX HA HA' HAA HN HN' HNN HD HD' HDD HO' HC')
+    as (X2 & A2 & N2 & D2 & O2 & C2).
+  eapply wft_lconv; [| exact (IWi_lvl_eq Q1 Qp Q2)].
+  apply wft_iwi; [exact Hv | exact (lequiv_wf_r _ _ _ Q1) | exact (lequiv_wf_r _ _ _ Qp) | exact (lequiv_wf_r _ _ _ Q2)
+                 | exact X2 | exact A2 | exact N2 | exact D2 | exact O2 | exact C2 |].
+  exact (wf_lconv _ _ _ _ _ _ _ (sc_conv Hm' (eqty_sym _ _ _ _ _ _ (sc_eqty HXX))) (lequiv_sym _ _ _ Q2)).
+Qed.
+
+Lemma sc_iwi {Γ l lp li k kp ki X X' A A' N N' D D' Ot Ot' C C' m m'} : i <> lV ->
+  lwf (gL G) l -> lwf (gL G) lp -> lwf (gL G) li -> lwf (gL G) k -> lwf (gL G) kp -> lwf (gL G) ki ->
+  leqv l k -> leqv lp kp -> leqv li ki ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X' @ li ] /\ [ G ; Γ ⊢[ i ] X ≅ X' @ li ] ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] /\ [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D' @ lp ] /\ [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D ≅ D' @ lp ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot' : X⟨↑⟩ @ li ] /\ [ G ; Γ ,, A @ l ⊢[ i ] Ot ≅ Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢[ i ] m : X @ li ] -> [ G ; Γ ⊢[ i ] m' : X @ li ] /\ [ G ; Γ ⊢[ i ] m ≅ m' : X @ li ] ->
+  [ G ; Γ ⊢[ i ] tyIWi k kp ki X' A' N' D' Ot' C' m' @ iwiL l lp li ] /\
+  [ G ; Γ ⊢[ i ] tyIWi l lp li X A N D Ot C m ≅ tyIWi k kp ki X' A' N' D' Ot' C' m' @ iwiL l lp li ].
+Proof using Hty.
+  intros Hv Hl Hlp Hli Hk Hkp Hki E1 Ep E2 HX [HX' HXX] HA [HA' HAA] HN [HN' HNN] HD [HD' HDD] HO [HO' HOO]
+    HC [HC' HCC] Hm [Hm' Hmm].
+  pose proof (lq Hl Hk E1) as Q1. pose proof (lq Hlp Hkp Ep) as Qp. pose proof (lq Hli Hki E2) as Q2.
+  split; [exact (sc_iwi_q Hv Q1 Qp Q2 HX' HXX HA HA' HAA HN HN' HNN HD HD' HDD HO' HC' Hm') | apply eqty_iwi; auto].
+Qed.
+
+Lemma sc_supii_q {Γ l lp li k kp ki X X' A A' N N' D D' Ot Ot' C C' a a' cs'} : i <> lV ->
+  lequiv (gL G) l k -> lequiv (gL G) lp kp -> lequiv (gL G) li ki ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X' @ li ] -> [ G ; Γ ⊢[ i ] X ≅ X' @ li ] ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D' @ lp ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D ≅ D' @ lp ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢[ i ] Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot ≅ Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] cs' : tyDVec (iwiL l lp li) N[lsingle a] (iwiFam l lp li X A N D Ot C a) @ iwiL l lp li ] ->
+  [ G ; Γ ⊢[ i ] tmSupii k kp ki X' A' N' D' Ot' C' a' cs' : tyIWi l lp li X A N D Ot C Ot[lsingle a] @ iwiL l lp li ].
+Proof using Hty.
+  intros Hv Q1 Qp Q2 HX HX' HXX HA HA' HAA HN HN' HNN HD HD' HDD HO HO' HOO HC HC' HCC Ha Ha' Haa Hcs'.
+  destruct (sc_iwi_sig_r Hv Q1 Qp Q2 HX' HXX HA HA' HAA HN HN' HNN HD HD' HDD HO' HC')
+    as (X2 & A2 & N2 & D2 & O2 & C2).
+  pose proof (IWiEq_intro (i := lD) Q1 Qp Q2 (sc_eqty HXX) (sc_eqty HAA) (sc_eqtm HNN) (sc_eqty HDD) (sc_eqtm HOO)
+                (sc_eqtm HCC) (lequiv_wf_l _ _ _ Q1) (lequiv_wf_l _ _ _ Qp) (lequiv_wf_l _ _ _ Q2) (sc_ty HX) (sc_ty HA)
+                (sc_tm HN) (sc_ty HD) (sc_tm HO) (sc_tm HC) (sc_ty HX') (sc_ty HA') (sc_tm HN') (sc_ty HD')
+                (sc_tm HO') (sc_tm HC')) as HE.
+  pose proof (IWi_csa_eq (i := lD) eq_refl lD_notV_sc HE (sc_tm Ha) (sc_tm Ha') (sc_eqtm Haa)) as Ecs.
+  pose proof (IWi_ty_eq (i := lD) eq_refl lD_notV_sc HE
+                (IWf_single_eq (i := lD) eq_refl (wf_ty_nf HX) (sc_tm HO) (sc_eqtm HOO)
+                   (sc_tm Ha) (sc_tm Ha') (sc_eqtm Haa))) as Ety.
+  pose proof (IWi_lvl_eq Q1 Qp Q2) as HLK.
+  apply (sc_conv (T' := tyIWi k kp ki X' A' N' D' Ot' C' Ot'[lsingle a'])); [| exact Ety].
+  eapply wf_lconv; [| exact HLK].
+  apply wf_supii; [exact Hv | exact (lequiv_wf_r _ _ _ Q1) | exact (lequiv_wf_r _ _ _ Qp) | exact (lequiv_wf_r _ _ _ Q2)
+                  | exact X2 | exact A2 | exact N2 | exact D2 | exact O2 | exact C2 | |].
+  - exact (wf_lconv _ _ _ _ _ _ _ (sc_conv Ha' (eqty_sym _ _ _ _ _ _ (sc_eqty HAA))) (lequiv_sym _ _ _ Q1)).
+  - exact (wf_lconv _ _ _ _ _ _ _ (sc_conv Hcs' (eqty_sym _ _ _ _ _ _ Ecs)) (lequiv_sym _ _ _ HLK)).
+Qed.
+
+Lemma sc_supii {Γ l lp li k kp ki X X' A A' N N' D D' Ot Ot' C C' a a' cs cs'} : i <> lV ->
+  lwf (gL G) l -> lwf (gL G) lp -> lwf (gL G) li -> lwf (gL G) k -> lwf (gL G) kp -> lwf (gL G) ki ->
+  leqv l k -> leqv lp kp -> leqv li ki ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X' @ li ] /\ [ G ; Γ ⊢[ i ] X ≅ X' @ li ] ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] /\ [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D' @ lp ] /\ [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D ≅ D' @ lp ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot' : X⟨↑⟩ @ li ] /\ [ G ; Γ ,, A @ l ⊢[ i ] Ot ≅ Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] /\ [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] cs : tyDVec (iwiL l lp li) N[lsingle a] (iwiFam l lp li X A N D Ot C a) @ iwiL l lp li ] ->
+  [ G ; Γ ⊢[ i ] cs' : tyDVec (iwiL l lp li) N[lsingle a] (iwiFam l lp li X A N D Ot C a) @ iwiL l lp li ] /\
+  [ G ; Γ ⊢[ i ] cs ≅ cs' : tyDVec (iwiL l lp li) N[lsingle a] (iwiFam l lp li X A N D Ot C a) @ iwiL l lp li ] ->
+  [ G ; Γ ⊢[ i ] tmSupii k kp ki X' A' N' D' Ot' C' a' cs' : tyIWi l lp li X A N D Ot C Ot[lsingle a] @ iwiL l lp li ] /\
+  [ G ; Γ ⊢[ i ] tmSupii l lp li X A N D Ot C a cs ≅ tmSupii k kp ki X' A' N' D' Ot' C' a' cs'
+      : tyIWi l lp li X A N D Ot C Ot[lsingle a] @ iwiL l lp li ].
+Proof using Hty.
+  intros Hv Hl Hlp Hli Hk Hkp Hki E1 Ep E2 HX [HX' HXX] HA [HA' HAA] HN [HN' HNN] HD [HD' HDD] HO [HO' HOO]
+    HC [HC' HCC] Ha [Ha' Haa] Hcs [Hcs' Hcscs].
+  pose proof (lq Hl Hk E1) as Q1. pose proof (lq Hlp Hkp Ep) as Qp. pose proof (lq Hli Hki E2) as Q2.
+  split; [exact (sc_supii_q Hv Q1 Qp Q2 HX HX' HXX HA HA' HAA HN HN' HNN HD HD' HDD HO HO' HOO HC HC' HCC
+                   Ha Ha' Haa Hcs')
+         | apply eqtm_supii; auto].
+Qed.
+
+Lemma sc_elimIWi_q {Γ l lp li l' k kp ki k' X X' A A' N N' D D' Ot Ot' C C' M M' c' m m' t t'} : i <> lV ->
+  lequiv (gL G) l k -> lequiv (gL G) lp kp -> lequiv (gL G) li ki -> lequiv (gL G) l' k' ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X' @ li ] -> [ G ; Γ ⊢[ i ] X ≅ X' @ li ] ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D' @ lp ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D ≅ D' @ lp ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢[ i ] Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot ≅ Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] M' @ l' ] ->
+  [ G ; Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] M ≅ M' @ l' ] ->
+  [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l') ] ->
+  [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] iwiihty k kp ki k' X' A' N' D' Ot' C' M' @ lmax lzero (lmax lp l') ] ->
+  [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] 
+      iwiihty l lp li l' X A N D Ot C M ≅ iwiihty k kp ki k' X' A' N' D' Ot' C' M' @ lmax lzero (lmax lp l') ] ->
+  [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ,, iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l')
+      ⊢[ i ] c' : iwistepty l lp li X A N D Ot C M @ l' ] ->
+  [ G ; Γ ⊢[ i ] m : X @ li ] -> [ G ; Γ ⊢[ i ] m' : X @ li ] -> [ G ; Γ ⊢[ i ] m ≅ m' : X @ li ] ->
+  [ G ; Γ ⊢[ i ] t : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] ->
+  [ G ; Γ ⊢[ i ] t' : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] ->
+  [ G ; Γ ⊢[ i ] t ≅ t' : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] ->
+  [ G ; Γ ⊢[ i ] tmElimIWi k kp ki k' X' A' N' D' Ot' C' M' c' m' t' : M[lsingle2 m t] @ l' ].
+Proof using Hty.
+  intros Hv Q1 Qp Q2 Q3 HX HX' HXX HA HA' HAA HN HN' HNN HD HD' HDD HO HO' HOO HC HC' HCC HM HM' HMM HI HI' EI Hc'
+    Hm Hm' Hmm Ht Ht' Htt.
+  destruct (sc_iwi_sig_r Hv Q1 Qp Q2 HX' HXX HA HA' HAA HN HN' HNN HD HD' HDD HO' HC')
+    as (X2 & A2 & N2 & D2 & O2 & C2).
+  pose proof (lequiv_wf_r _ _ _ Q1) as Wk. pose proof (lequiv_wf_r _ _ _ Qp) as Wkp.
+  pose proof (lequiv_wf_r _ _ _ Q2) as Wki.
+  pose proof (lequiv_wf_l _ _ _ Qp) as Wlp.
+  pose proof (lequiv_wf_l _ _ _ Q3) as Wl'. pose proof (lequiv_wf_r _ _ _ Q3) as Wk'.
+  pose proof (IWiEq_intro (i := lD) Q1 Qp Q2 (sc_eqty HXX) (sc_eqty HAA) (sc_eqtm HNN) (sc_eqty HDD) (sc_eqtm HOO)
+                (sc_eqtm HCC) (lequiv_wf_l _ _ _ Q1) (lequiv_wf_l _ _ _ Qp) (lequiv_wf_l _ _ _ Q2) (sc_ty HX) (sc_ty HA)
+                (sc_tm HN) (sc_ty HD) (sc_tm HO) (sc_tm HC) (sc_ty HX') (sc_ty HA') (sc_tm HN') (sc_ty HD')
+                (sc_tm HO') (sc_tm HC')) as HE.
+  pose proof HE as (_ & _ & _ & HS & _).
+  pose proof (IWi_lvl_eq Q1 Qp Q2) as HLK.
+  assert (HLI : lequiv (gL G) (lmax lzero (lmax lp l')) (lmax lzero (lmax kp k')))
+    by (apply lequiv_max; [apply lequiv_refl; exact I | apply lequiv_max; assumption]).
+  (* the contexts of the motive, the induction hypothesis and the step, along equations at P *)
+  assert (CM : [ G ⊢[ lD ] Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li
+                 ≅ Γ ,, X' @ ki ,, iwimotty k kp ki X' A' N' D' Ot' C' @ iwiL k kp ki ])
+    by (apply eqc_ext; [exact (sc_ext HX HXX Q2) | exact (IWi_mot_wf (i := lD) eq_refl lD_notV_sc HS)
+                       | exact (IWi_mot_eq (i := lD) eq_refl lD_notV_sc HE) | exact HLK]).
+  assert (CC : [ G ⊢[ lD ] Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li
+                 ≅ Γ ,, A' @ k ,, iwicsty k kp ki X' A' N' D' Ot' C' @ iwiL k kp ki ])
+    by (apply eqc_ext; [exact (sc_ext HA HAA Q1) | exact (IWi_cs_wf (i := lD) eq_refl lD_notV_sc HS)
+                       | exact (IWi_cs_eq (i := lD) eq_refl lD_notV_sc HE) | exact HLK]).
+  assert (CT : [ G ⊢[ lD ] Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li
+                   ,, iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l')
+                 ≅ Γ ,, A' @ k ,, iwicsty k kp ki X' A' N' D' Ot' C' @ iwiL k kp ki
+                   ,, iwiihty k kp ki k' X' A' N' D' Ot' C' M' @ lmax lzero (lmax kp k') ])
+    by (apply eqc_ext; [exact CC | exact (sc_ty HI) | exact (sc_eqty EI) | exact HLI]).
+  assert (HΘ : [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li
+                   ,, iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l') ⊢[ lD ] ])
+    by (apply wfc_ext; [exact (sc_ctx HI) | exact (sc_ty HI) | cbn; auto]).
+  pose proof (IWi_step_eq (i := lD) eq_refl lD_notV_sc HE (sc_ty HM) (sc_eqty HMM) HΘ) as ES.
+  apply (sc_conv (T' := M'[lsingle2 m' t'])).
+  - eapply wf_lconv with (l' := k'); [| exact Q3].
+    apply wf_elimIWi; [exact Hv | exact Wk | exact Wkp | exact Wki | exact Wk' | exact X2 | exact A2 | exact N2
+                      | exact D2 | exact O2 | exact C2 | | | | | | |].
+    + exact (IWi_mot_wf_g Hv Wk Wkp Wki X2 A2 N2 D2 O2 C2).
+    + exact (wft_lconv _ _ _ _ _ _ (sc_cty CM HM') (lequiv_sym _ _ _ Q3)).
+    + exact (IWi_cs_wf_g Hv Wk Wkp Wki X2 A2 N2 D2 O2 C2).
+    + exact (wft_lconv _ _ _ _ _ _ (sc_cty CC HI') (lequiv_sym _ _ _ HLI)).
+    + exact (wf_lconv _ _ _ _ _ _ _ (sc_ctm CT (sc_conv Hc' (eqty_sym _ _ _ _ _ _ ES))) (lequiv_sym _ _ _ Q3)).
+    + exact (wf_lconv _ _ _ _ _ _ _ (sc_conv Hm' (eqty_sym _ _ _ _ _ _ (sc_eqty HXX))) (lequiv_sym _ _ _ Q2)).
+    + exact (wf_lconv _ _ _ _ _ _ _
+               (sc_conv Ht' (eqty_sym _ _ _ _ _ _ (IWi_ty_eq (i := lD) eq_refl lD_notV_sc HE (sc_eqtm Hmm))))
+               (lequiv_sym _ _ _ HLK)).
+  - exact (IWi_mot_inst_eq (i := lD) eq_refl lD_notV_sc HS (sc_ty HM) (sc_eqty HMM) (sc_tm Hm) (sc_tm Hm')
+             (sc_eqtm Hmm) (sc_tm Ht) (sc_tm Ht') (sc_eqtm Htt)).
+Qed.
+
+Lemma sc_elimIWi {Γ l lp li l' k kp ki k' X X' A A' N N' D D' Ot Ot' C C' M M' c c' m m' t t'} : i <> lV ->
+  lwf (gL G) l -> lwf (gL G) lp -> lwf (gL G) li -> lwf (gL G) l' ->
+  lwf (gL G) k -> lwf (gL G) kp -> lwf (gL G) ki -> lwf (gL G) k' ->
+  leqv l k -> leqv lp kp -> leqv li ki -> leqv l' k' ->
+  ty_leq X X' -> ty_leq A A' -> tm_leq N N' -> ty_leq D D' -> tm_leq Ot Ot' -> tm_leq C C' -> ty_leq M M' ->
+  ty_lwf (gL G) X' -> ty_lwf (gL G) A' -> tm_lwf (gL G) N' -> ty_lwf (gL G) D' -> tm_lwf (gL G) Ot' ->
+  tm_lwf (gL G) C' -> ty_lwf (gL G) M' ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X' @ li ] /\ [ G ; Γ ⊢[ i ] X ≅ X' @ li ] ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] /\ [ G ; Γ ⊢[ i ] A ≅ A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] /\ [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D' @ lp ] /\ [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D ≅ D' @ lp ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot' : X⟨↑⟩ @ li ] /\ [ G ; Γ ,, A @ l ⊢[ i ] Ot ≅ Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, X @ li ⊢[ i ] iwimotty l lp li X A N D Ot C @ iwiL l lp li ] ->
+  [ G ; Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] M' @ l' ] /\
+  [ G ; Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] M ≅ M' @ l' ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] iwicsty l lp li X A N D Ot C @ iwiL l lp li ] ->
+  [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l') ] ->
+  (forall x, ty_leq (iwiihty l lp li l' X A N D Ot C M) x -> ty_lwf (gL G) x ->
+     [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] x @ lmax lzero (lmax lp l') ] /\
+     [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] iwiihty l lp li l' X A N D Ot C M ≅ x @ lmax lzero (lmax lp l') ]) ->
+  [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ,, iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l')
+      ⊢[ i ] c : iwistepty l lp li X A N D Ot C M @ l' ] ->
+  [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ,, iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l')
+      ⊢[ i ] c' : iwistepty l lp li X A N D Ot C M @ l' ] /\
+  [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ,, iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l')
+      ⊢[ i ] c ≅ c' : iwistepty l lp li X A N D Ot C M @ l' ] ->
+  [ G ; Γ ⊢[ i ] m : X @ li ] -> [ G ; Γ ⊢[ i ] m' : X @ li ] /\ [ G ; Γ ⊢[ i ] m ≅ m' : X @ li ] ->
+  [ G ; Γ ⊢[ i ] t : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] ->
+  [ G ; Γ ⊢[ i ] t' : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] /\
+  [ G ; Γ ⊢[ i ] t ≅ t' : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] ->
+  [ G ; Γ ⊢[ i ] tmElimIWi k kp ki k' X' A' N' D' Ot' C' M' c' m' t' : M[lsingle2 m t] @ l' ] /\
+  [ G ; Γ ⊢[ i ] tmElimIWi l lp li l' X A N D Ot C M c m t ≅ tmElimIWi k kp ki k' X' A' N' D' Ot' C' M' c' m' t'
+      : M[lsingle2 m t] @ l' ].
+Proof using Hty.
+  intros Hc Hl Hlp Hli Hl' Hk Hkp Hki Hk' E1 Ep E2 E3 EX EA EN ED EO EC EM WX WA WN WD WO WC WM
+    HX [HX' HXX] HA [HA' HAA] HN [HN' HNN] HD [HD' HDD] HO [HO' HOO] HC [HC' HCC] HMot HM [HM' HMM] HCs HI IHI
+    Hc0 [Hc' Hcc] Hm [Hm' Hmm] Ht [Ht' Htt].
+  pose proof (lq Hl Hk E1) as Q1. pose proof (lq Hlp Hkp Ep) as Qp. pose proof (lq Hli Hki E2) as Q2.
+  pose proof (lq Hl' Hk' E3) as Q3.
+  destruct (IHI _ (iwiihty_leq _ _ _ _ _ _ _ _ _ _ _ k kp ki k' X' A' N' D' Ot' C' M' E1 Ep E2 E3 EX EA EN ED EO EC EM)
+                (iwiihty_lwf _ _ _ _ _ _ _ _ _ _ _ _ Hk Hkp Hki Hk' WX WA WN WD WO WC WM)) as [HI' EI].
+  split; [exact (sc_elimIWi_q Hc Q1 Qp Q2 Q3 HX HX' HXX HA HA' HAA HN HN' HNN HD HD' HDD HO HO' HOO HC HC' HCC
+                   HM HM' HMM HI HI' EI Hc' Hm Hm' Hmm Ht Ht' Htt)
+         | apply eqtm_elimIWi; auto].
+Qed.
+
 (** Indexed coinductive types (M18b; layer D here), along [MEq] and the
     right-hand forms of [PresupM]. *)
 Lemma sc_M {Γ l l' li k k' ki X X' A A' B B' C C' j j'} : compt i ->
@@ -2690,6 +3054,8 @@ Proof.
     | solve [eapply sc_dvec; eauto]
     (* indexed W-types (M17b) *)
     | solve [eapply sc_iwf; eauto] | solve [eapply sc_supi; eauto] | solve [eapply sc_elimIWf; eauto]
+    (* infinitary indexed families (M19a) *)
+    | solve [eapply sc_iwi; eauto] | solve [eapply sc_supii; eauto] | solve [eapply sc_elimIWi; eauto]
     (* indexed coinductive types (M18b) *)
     | solve [eapply sc_M; eauto] | solve [eapply sc_corec; eauto] | solve [eapply sc_out; eauto]
     | solve [eapply sc_code_sq; eauto]

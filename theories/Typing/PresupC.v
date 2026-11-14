@@ -870,6 +870,93 @@ Proof using HiD.
            HI HI' EI Hc' Hm Hm' Hmm Ht Ht' Htt).
 Qed.
 
+(** Infinitary indexed families (M19a), as [IWf]'s. *)
+Lemma pc_iwi {Γ l lp li k kp ki X X' A A' N N' D D' Ot Ot' C C' m m'} : i <> lV ->
+  lequiv (gL G) l k -> lequiv (gL G) lp kp -> lequiv (gL G) li ki ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X ≅ X' @ li ] -> [ G ; Γ ⊢[ i ] X' @ li ] ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D ≅ D' @ lp ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D' @ lp ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢[ i ] Ot ≅ Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢[ i ] m : X @ li ] -> [ G ; Γ ⊢[ i ] m' : X @ li ] ->
+  [ G ; Γ ⊢[ i ] tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] /\
+  [ G ; Γ ⊢[ i ] tyIWi k kp ki X' A' N' D' Ot' C' m' @ iwiL l lp li ].
+Proof using HiD.
+  intros Hv Q1 Qp Q2 HX HXX HX' HA HAA HA' HN HNN HN' HD HDD HD' HO HOO HO' HC HCC HC' Hm Hm'.
+  split; [apply wft_iwi; eauto using lequiv_wf_l |].
+  exact (sc_iwi_q HiD Hv Q1 Qp Q2 HX' HXX HA HA' HAA HN HN' HNN HD HD' HDD HO' HC' Hm').
+Qed.
+
+Lemma pc_supii {Γ l lp li k kp ki X X' A A' N N' D D' Ot Ot' C C' a a' cs cs'} : i <> lV ->
+  lequiv (gL G) l k -> lequiv (gL G) lp kp -> lequiv (gL G) li ki ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X ≅ X' @ li ] -> [ G ; Γ ⊢[ i ] X' @ li ] ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D ≅ D' @ lp ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D' @ lp ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢[ i ] Ot ≅ Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
+  [ G ; Γ ⊢[ i ] cs : tyDVec (iwiL l lp li) N[lsingle a] (iwiFam l lp li X A N D Ot C a) @ iwiL l lp li ] ->
+  [ G ; Γ ⊢[ i ] cs' : tyDVec (iwiL l lp li) N[lsingle a] (iwiFam l lp li X A N D Ot C a) @ iwiL l lp li ] ->
+  [ G ; Γ ⊢[ i ] tmSupii l lp li X A N D Ot C a cs : tyIWi l lp li X A N D Ot C Ot[lsingle a] @ iwiL l lp li ] /\
+  [ G ; Γ ⊢[ i ] tmSupii k kp ki X' A' N' D' Ot' C' a' cs' : tyIWi l lp li X A N D Ot C Ot[lsingle a] @ iwiL l lp li ].
+Proof using HiD.
+  intros Hv Q1 Qp Q2 HX HXX HX' HA HAA HA' HN HNN HN' HD HDD HD' HO HOO HO' HC HCC HC' Haa Ha Ha' Hcs Hcs'.
+  split; [apply wf_supii; eauto using lequiv_wf_l |].
+  exact (sc_supii_q HiD Hv Q1 Qp Q2 HX HX' HXX HA HA' HAA HN HN' HNN HD HD' HDD HO HO' HOO HC HC' HCC Ha Ha' Haa Hcs').
+Qed.
+
+Lemma pc_elimIWi {Γ l lp li l' k kp ki k' X X' A A' N N' D D' Ot Ot' C C' M M' c c' m m' t t'} : i <> lV ->
+  lequiv (gL G) l k -> lequiv (gL G) lp kp -> lequiv (gL G) li ki -> lequiv (gL G) l' k' ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] X ≅ X' @ li ] -> [ G ; Γ ⊢[ i ] X' @ li ] ->
+  [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N ≅ N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D ≅ D' @ lp ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D' @ lp ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢[ i ] Ot ≅ Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot' : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, X @ li ⊢[ i ] iwimotty l lp li X A N D Ot C @ iwiL l lp li ] ->
+  [ G ; Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] M @ l' ] ->
+  [ G ; Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] M ≅ M' @ l' ] ->
+  [ G ; Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] M' @ l' ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] iwicsty l lp li X A N D Ot C @ iwiL l lp li ] ->
+  [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l') ] ->
+  [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] 
+      iwiihty l lp li l' X A N D Ot C M ≅ iwiihty k kp ki k' X' A' N' D' Ot' C' M' @ lmax lzero (lmax lp l') ] ->
+  [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] iwiihty k kp ki k' X' A' N' D' Ot' C' M' @ lmax lzero (lmax lp l') ] ->
+  [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ,, iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l')
+      ⊢[ i ] c : iwistepty l lp li X A N D Ot C M @ l' ] ->
+  [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ,, iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l')
+      ⊢[ i ] c' : iwistepty l lp li X A N D Ot C M @ l' ] ->
+  [ G ; Γ ⊢[ i ] m ≅ m' : X @ li ] -> [ G ; Γ ⊢[ i ] m : X @ li ] -> [ G ; Γ ⊢[ i ] m' : X @ li ] ->
+  [ G ; Γ ⊢[ i ] t ≅ t' : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] ->
+  [ G ; Γ ⊢[ i ] t : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] ->
+  [ G ; Γ ⊢[ i ] t' : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] ->
+  [ G ; Γ ⊢[ i ] tmElimIWi l lp li l' X A N D Ot C M c m t : M[lsingle2 m t] @ l' ] /\
+  [ G ; Γ ⊢[ i ] tmElimIWi k kp ki k' X' A' N' D' Ot' C' M' c' m' t' : M[lsingle2 m t] @ l' ].
+Proof using HiD.
+  intros Hv Q1 Qp Q2 Q3 HX HXX HX' HA HAA HA' HN HNN HN' HD HDD HD' HO HOO HO' HC HCC HC' HMot HM HMM HM' HCs HI EI HI'
+    Hc Hc' Hmm Hm Hm' Htt Ht Ht'.
+  split; [apply wf_elimIWi; eauto using lequiv_wf_l |].
+  exact (sc_elimIWi_q HiD Hv Q1 Qp Q2 Q3 HX HX' HXX HA HA' HAA HN HN' HNN HD HD' HDD HO HO' HOO HC HC' HCC
+           HM HM' HMM HI HI' EI Hc' Hm Hm' Hmm Ht Ht' Htt).
+Qed.
+
 (** The codes of [DVec] and [IWf] (M17c), along [StaticCode]'s [_q] forms. *)
 Lemma pc_code_dvec {Γ l l' n n' f f'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
@@ -968,7 +1055,10 @@ Proof.
              (* dependent tuples and indexed W-types, with their codes (M17c) *)
              | solve [eapply pc_dvec; eassumption] | solve [eapply pc_iwf; eassumption]
              | solve [eapply pc_supi; eassumption] | solve [eapply pc_elimIWf; eassumption]
-             | solve [eapply pc_code_dvec; eassumption] | solve [eapply pc_code_iwf; eassumption] ])).
+             | solve [eapply pc_code_dvec; eassumption] | solve [eapply pc_code_iwf; eassumption]
+             (* infinitary indexed families (M19a) *)
+             | solve [eapply pc_iwi; eassumption] | solve [eapply pc_supii; eassumption]
+             | solve [eapply pc_elimIWi; eassumption] ])).
 Qed.
 
 Lemma eqty_wf_C {G i Γ T T' l} : lle i lC -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->
