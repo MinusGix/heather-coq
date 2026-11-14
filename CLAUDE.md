@@ -91,6 +91,10 @@ these docs by bare file name.
   costs at least 0.35 s to start), and 0.5 to 4 s of unannotated section
   proofs in about thirty files.
 - The inner loop, from a fresh container (2026-11-14):
+  0. `tools/dev-shell` for `nix develop path:.`: with the binary cache
+     in `/mnt/project-files/build-cache/nix/` (450 MB) a fresh store had
+     the shell in 14 s, against about 7 minutes of building Coq 8.20.0,
+     Equations and smpl (and no failing fetch of smpl's source).
   1. `tools/tree-cache restore /mnt/project-files/build-cache/`, then
      `make -j4 vos`: the `.vos` tree of the last saved build (10 MB),
      with only the files whose source changed, and their dependents,
@@ -108,10 +112,11 @@ these docs by bare file name.
      -async-proofs-tac-j 3 -vok FILE.v`. It writes no `.vos`, so nothing
      downstream is invalidated. Run `make vos` again only after
      changing a statement, a notation, a hint or an `Ltac` that other
-     files use: a `.vos` holds source positions, so even a proof-only
-     edit changes its bytes, and `make` (mtimes) rebuilds every
-     dependent's `.vos` after any edit.
-  4. Before review: `make -j4 vos && make -j4 vok`, or the full `make`.
+     files use. `make` goes by mtimes, so after any edit it rebuilds
+     every dependent's `.vos`; comparing bytes would not help, since a
+     `.vos` is reproducible but an `idtac.` added inside one proof of
+     `Substitution.v` changed it.
+  4. Before review: the full `make`, as before.
 - Profiling (tools are in `tools/`, each documents itself in its header):
   - `tools/build-profile [-j N] [--clean] [--profile] [--label L]`: a timed
     build (`make TIMING=1`) and its report in `_profile/L/report.txt`:
