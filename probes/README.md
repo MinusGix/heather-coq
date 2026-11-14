@@ -29,6 +29,16 @@ of the build (`_CoqProject` lists `theories/` only). Compile one with
   `allTail : All p (x :: xs) → All p xs`, with `List`'s, the shapes' and
   `All`'s codes. After `IwfLowering.v` (it reuses `All`'s typing lemmas),
   about 63 minutes and under 13 GB of memory.
+- `PruneVecWf.v`: retiring `Vec` and `Wf` into `DVec` and `IWf` (Heather's
+  `docs/iwf-former-design.md` §10), at a generic instance at layer D, with
+  `IwfCheck.v`'s checker. The translated formation, introduction,
+  computation and elimination rules hold (β on open data included); the
+  eliminator's motive reaches the generic index by `Unit`'s η, which layer
+  C lacks (`generic_index_not_C`); `nth`'s tail equation holds at a neutral
+  length (`nth_tail`) and `dnth`'s is not a conversion
+  (`dnth_tail_not_conv`, by the algorithm's completeness)
+  (`docs/design/PRUNE_VEC_WF.md`). After `IwfCheck.v`, about 70 s against
+  a `.vos` tree with `-vok`.
 - `NoUipComponents.v`: the components lemma of Heather's
   `docs/no-uip-model.md` §3, over reflexive-graph contexts with groupoid
   fibres. It checks that the strict propositions (`sEq`, `Squash`,
