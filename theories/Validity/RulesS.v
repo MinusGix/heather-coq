@@ -96,6 +96,8 @@ Ltac vs_rules side :=
   (* the codes of DVec and IWf (M17c) *)
   | solve [simple eapply VS_code_dvec; side] | solve [simple eapply VS_El_dvec; side]
   | solve [simple eapply VS_code_iwf; side] | solve [simple eapply VS_El_iwf; side]
+  (* the code of IWi (M19c) *)
+  | solve [simple eapply VS_code_iwi; side] | solve [simple eapply VS_El_iwi; side]
   (* indexed coinductive types (M18b) *)
   | solve [simple eapply VS_M; side] | solve [simple eapply VS_mOutTy; side]
   | solve [simple eapply VS_out; side] | solve [simple eapply VS_corec; side]

@@ -961,9 +961,12 @@ Ltac gs_manual2 :=
   match goal with
   (* the codes of [DVec] and [IWf] (M17c) *)
   | |- eq_ty _ _ _ (tyIWf _ _ _ _ _ _ _ _) (tyEl _ _) _ => eapply eqty_El_iwf; gs_Iprem
+  | |- eq_ty _ _ _ (tyIWi _ _ _ _ _ _ _ _ _ _) (tyEl _ _) _ => eapply eqty_El_iwi; gs_Iprem
   | |- eq_ty _ _ _ (tyDVec _ _ _) (tyEl _ _) _ => eapply eqty_El_dvec; gs_Iprem
   | |- wf_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ => eapply wf_code_iwf; gs_Iprem
   | |- eq_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwf; gs_Iprem
+  | |- wf_tm _ _ _ (tmIWi _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_code_iwi; gs_Iprem
+  | |- eq_tm _ _ _ (tmIWi _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwi; gs_Iprem
   | |- wf_tm _ _ _ (tmDVec _ _ _) _ _ => eapply wf_code_dvec; gs_Iprem
   | |- eq_tm _ _ _ (tmDVec _ _ _) _ _ _ => eapply eqtm_code_dvec; gs_Iprem
   (* [M] (M18b): [out]'s type and β's reduct retyped to their pushed instances *)

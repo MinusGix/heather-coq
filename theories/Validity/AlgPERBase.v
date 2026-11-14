@@ -307,6 +307,51 @@ Proof.
   repeat split; assumption.
 Qed.
 
+(** The code of [IWi] (M19c): its signature's equation from the codes'
+    derivations. *)
+Lemma iwic_ac_eq {G i Γ l q k k' kp kp' ki ki' x x' s s' n n' d d' o o' c c' m m'} : compt i ->
+  [ G ; Γ ⊢[ i ] tmIWi k kp ki x s n d o c m : tyU l @ q ] ->
+  [ G ; Γ ⊢[ i ] tmIWi k' kp' ki' x' s' n' d' o' c' m' : tyU l @ q ] ->
+  leqv k k' -> leqv kp kp' -> leqv ki ki' ->
+  ac_tm G Γ x x' (tyU ki) -> ac_tm G Γ s s' (tyU k) -> ac_tm G (Γ ,, tyEl k s @ k) n n' tyNat ->
+  ac_tm G (Γ ,, tyEl k s @ k ,, tyFin n @ lzero) d d' (tyU kp) ->
+  ac_tm G (Γ ,, tyEl k s @ k) o o' (tyEl ki x⟨↑⟩) ->
+  ac_tm G (Γ ,, tyEl k s @ k ,, tyFin n @ lzero ,, tyEl kp d @ kp) c c' (tyEl ki x⟨↑⟩⟨↑⟩⟨↑⟩) ->
+  IWiEq (G := G) (i := i) Γ k kp ki k' kp' ki' (tyEl ki x) (tyEl ki' x') (tyEl k s) (tyEl k' s') n n'
+    (tyEl kp d) (tyEl kp' d') o o' c c' /\
+  [ G ; Γ ⊢[ i ] x' : tyU ki @ lsuc ki ] /\ [ G ; Γ ⊢[ i ] s' : tyU k @ lsuc k ] /\
+  [ G ; Γ ,, tyEl k s @ k ,, tyFin n @ lzero ⊢[ i ] d' : tyU kp @ lsuc kp ] /\
+  [ G ; Γ ⊢[ i ] m : tyEl ki x @ ki ] /\ [ G ; Γ ⊢[ i ] m' : tyEl ki x @ ki ].
+Proof.
+  intros Hc Ht Ht' Hk0 Hkp0 Hki0 Dx Ds DN Dd DO DC.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
+  destruct (code_iwi_prem Hc Ht) as (Wa & Wb & Wc & Hx & Hs & HN & Hd & HO & HC & Hm).
+  destruct (code_iwi_prem Hc Ht') as (Wd & We & Wf & Hx' & Hs' & HN' & Hd' & HO' & HC' & Hm').
+  pose proof (leqv_lequiv _ _ _ Wa Wd Hk0) as E14. pose proof (leqv_lequiv _ _ _ Wb We Hkp0) as E25.
+  pose proof (leqv_lequiv _ _ _ Wc Wf Hki0) as E36.
+  pose proof (code_U_conv Hc E36 Hx') as Hx1. pose proof (code_U_conv Hc E14 Hs') as Hs1.
+  pose proof (ac_tm_sound Hc Dx Hx Hx1) as Ex. pose proof (ac_tm_sound Hc Ds Hs Hs1) as Es.
+  assert (HS : IWiSig (G := G) (i := i) Γ k kp ki (tyEl ki x) (tyEl k s) n (tyEl kp d) o c)
+    by (unfold IWiSig; repeat split; first [assumption | apply wft_El; assumption]).
+  assert (HS' : IWiSig (G := G) (i := i) Γ k' kp' ki' (tyEl ki' x') (tyEl k' s') n' (tyEl kp' d') o' c')
+    by (unfold IWiSig; repeat split; first [assumption | apply wft_El; assumption]).
+  assert (EX : [ G ; Γ ⊢[ i ] tyEl ki x ≅ tyEl ki' x' @ ki ]) by (apply eqty_El; assumption).
+  assert (EA : [ G ; Γ ⊢[ i ] tyEl k s ≅ tyEl k' s' @ k ]) by (apply eqty_El; assumption).
+  destruct (IWi_r_mv Hi Hv HS HS' E14 E25 E36 EX EA) as (_ & _ & HN'l & HO'l & HDC).
+  pose proof (ac_tm_sound Hc DN HN HN'l) as EN.
+  assert (Hd'l : [ G ; Γ ,, tyEl k s @ k ,, tyFin n @ lzero ⊢[ i ] d' : tyU kp @ lsuc kp ]).
+  { apply (code_U_conv Hc E25). eapply (IWi_d_mv Hi Hv); [| | exact E14 | exact EA | exact HN | exact HN' | exact EN | exact Hd'];
+      apply wft_El; assumption. }
+  assert (ED : [ G ; Γ ,, tyEl k s @ k ,, tyFin n @ lzero ⊢[ i ] tyEl kp d ≅ tyEl kp' d' @ kp ])
+    by (apply eqty_El; [exact Hv | exact E25 | exact (ac_tm_sound Hc Dd Hd Hd'l)]).
+  destruct (HDC EN) as (_ & HC'l).
+  assert (Hm'l : [ G ; Γ ⊢[ i ] m' : tyEl ki x @ ki ])
+    by (eapply (conv_tm' Hi); [eapply wf_lconv; [exact Hm' | exact E36] | exact EX]).
+  refine (conj (IWiEq_of_eqs Hi HS E14 E25 E36 EX EA EN ED (ac_tm_sound Hc DO HO HO'l)
+                  (ac_tm_sound Hc DC HC (HC'l ED))) _).
+  repeat split; assumption.
+Qed.
+
 Lemma wf_cs_conv {G i Γ l A N a a'} : compt i -> lwf (gL G) l ->
   [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] -> [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] ->

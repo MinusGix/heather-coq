@@ -529,6 +529,19 @@ Class GenericEqLaws `{GenericEq} := {
     [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢ c ≈ c' : tyEl li x⟨↑⟩⟨↑⟩ @ li ] ->
     [ G ; Γ ⊢ m ≈ m' : tyEl li x @ li ] ->
     [ G ; Γ ⊢ tmIWf l li x s n o c m ≈ tmIWf k ki x' s' n' o' c' m' : tyU (lmax l li) @ lsuc (lmax l li) ] ;
+  (** the code of [IWi] (M19c), as [IWf]'s *)
+  geq_tm_code_iwi {G Γ l lp li k kp ki x x' s s' n n' d d' o o' c c' m m'} :
+    lequiv (gL G) l k -> lequiv (gL G) lp kp -> lequiv (gL G) li ki ->
+    [ G ; Γ ⊢g x : tyU li @ lsuc li ] -> [ G ; Γ ⊢ x ≈ x' : tyU li @ lsuc li ] ->
+    [ G ; Γ ⊢g s : tyU l @ lsuc l ] -> [ G ; Γ ⊢ s ≈ s' : tyU l @ lsuc l ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢g n : tyNat @ lzero ] -> [ G ; Γ ,, tyEl l s @ l ⊢ n ≈ n' : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢g d : tyU lp @ lsuc lp ] ->
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢ d ≈ d' : tyU lp @ lsuc lp ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢ o ≈ o' : tyEl li x⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ,, tyEl lp d @ lp ⊢ c ≈ c' : tyEl li x⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢ m ≈ m' : tyEl li x @ li ] ->
+    [ G ; Γ ⊢ tmIWi l lp li x s n d o c m ≈ tmIWi k kp ki x' s' n' d' o' c' m'
+        : tyU (iwiL l lp li) @ lsuc (iwiL l lp li) ] ;
   (** indexed coinductive types (M18b): the congruences of [M] and of
       [corec] (the kernel's [corec] arm compares the carrier's level, the
       carrier, the step at the left step type and the seed; the signature

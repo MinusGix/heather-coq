@@ -80,7 +80,8 @@ Inductive whnf : tm -> Prop :=
 | whnf_tmDVec l n f : whnf (tmDVec l n f)
 | whnf_tmIWf l li x s n o c m : whnf (tmIWf l li x s n o c m)
 | whnf_corec l l' li X A B C k Y c j y : whnf (tmCorec l l' li X A B C k Y c j y)
-| whnf_supii l lp li X A N D Ot C a cs : whnf (tmSupii l lp li X A N D Ot C a cs).
+| whnf_supii l lp li X A N D Ot C a cs : whnf (tmSupii l lp li X A N D Ot C a cs)
+| whnf_tmIWi l lp li x s n d o c m : whnf (tmIWi l lp li x s n d o c m).
 
 Inductive whne_ty : ty -> Prop :=
 | whne_tyGvar U d : whne_ty (tyGvar U d)
@@ -281,4 +282,6 @@ Proof. inversion 1. Qed.
 Lemma whne_not_code_dvec l n f : ~ whne (tmDVec l n f).
 Proof. inversion 1. Qed.
 Lemma whne_not_code_iwf l li x s n o c m : ~ whne (tmIWf l li x s n o c m).
+Proof. inversion 1. Qed.
+Lemma whne_not_code_iwi l lp li x s n d o c m : ~ whne (tmIWi l lp li x s n d o c m).
 Proof. inversion 1. Qed.

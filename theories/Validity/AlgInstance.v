@@ -663,6 +663,11 @@ Proof using .
     refine (conj (@geq_tm_code_iwf DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hl Hli Hx Ex Hs Es Hn En Eo Ec Em) _).
     eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmIWf | apply whnf_tmIWf |].
     eapply actmnf_code_iwf; first [eapply lequiv_leqv; eassumption | eassumption].
+  (* the code of IWi (M19c) *)
+  - intros * Hl Hlp Hli Hx (Ex & Dx) Hs (Es & Ds) Hn (En & Dn) Hd (Ed & Dd) (Eo & Dov) (Ec & Dc) (Em & Dm).
+    refine (conj (geq_tm_code_iwi (GenericEqLaws := DEL) Hl Hlp Hli Hx Ex Hs Es Hn En Hd Ed Eo Ec Em) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmIWi | apply whnf_tmIWi |].
+    eapply actmnf_code_iwi; first [eapply lequiv_leqv; eassumption | eassumption].
   (* indexed coinductive types (M18b) *)
   - intros * Hl Hl' Hli HX (EX & DX) HA (EA & DA) HB (EB & DB) HC (EC & DC) (Ej & Dj).
     refine (conj (geq_ty_M (GenericEqLaws := DEL) Hl Hl' Hli HX EX HA EA HB EB HC EC Ej) _).

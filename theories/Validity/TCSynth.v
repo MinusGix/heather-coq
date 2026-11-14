@@ -1051,6 +1051,44 @@ Proof using ihC.
   left; eexists; eexists; exact (wf_code_iwf _ _ _ _ _ _ _ _ _ _ _ Hv Hl Hli Hx Hs HN HO HC Hm).
 Qed.
 
+Lemma sy_code_iwi l lp li x s N d Ot C m : sz_tm (tmIWi l lp li x s N d Ot C m) <= n ->
+  SYD (tmIWi l lp li x s N d Ot C m).
+Proof using ihC.
+  intros Hsz G i Γ HΓ.
+  notV.
+  destruct (lwf_Dec (gL G) l) as [Hl | N0]; [| right; intros T k H; destruct (inva_code_iwi H) as (P & _); tauto].
+  destruct (lwf_Dec (gL G) lp) as [Hlp | N0]; [| right; intros T k H; destruct (inva_code_iwi H) as (P & _); tauto].
+  destruct (lwf_Dec (gL G) li) as [Hli | N0]; [| right; intros T k H; destruct (inva_code_iwi H) as (P & _); tauto].
+  destruct (ihC x ltac:(szl) G i Γ _ _ (HUniv HΓ Hli)) as [Hx | N0];
+    [| right; intros T k H; destruct (inva_code_iwi H) as (P & _); tauto].
+  destruct (ihC s ltac:(szl) G i Γ _ _ (HUniv HΓ Hl)) as [Hs | N0];
+    [| right; intros T k H; destruct (inva_code_iwi H) as (P & _); tauto].
+  assert (HA : [ G ; Γ ⊢[ i ] tyEl l s @ l ]) by (apply wft_El; assumption).
+  assert (HX : [ G ; Γ ⊢[ i ] tyEl li x @ li ]) by (apply wft_El; assumption).
+  assert (HΓA : [ G ; Γ ,, tyEl l s @ l ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HA) | exact Hl]).
+  destruct (ihC N ltac:(szl) G i _ _ _ (HNat HΓA)) as [HN | N0];
+    [| right; intros T k H; destruct (inva_code_iwi H) as (P & _); tauto].
+  assert (HF : [ G ; Γ ,, tyEl l s @ l ⊢[ i ] tyFin N @ lzero ]) by (apply wft_fin; [exact Hv | exact HN]).
+  assert (HΓAF : [ G ; Γ ,, tyEl l s @ l ,, tyFin N @ lzero ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓA | exact (lift_to_typeof_ty HF) | exact I]).
+  destruct (ihC d ltac:(szl) G i _ _ _ (HUniv HΓAF Hlp)) as [Hd | N0];
+    [| right; intros T k H; destruct (inva_code_iwi H) as (P & _); tauto].
+  pose proof (wk1_ty_g G i _ _ _ _ _ HΓA HX) as HX1.
+  destruct (ihC Ot ltac:(szl) G i _ _ _ (lift_to_typeof_ty HX1)) as [HO | N0];
+    [| right; intros T k H; destruct (inva_code_iwi H) as (P & _); tauto].
+  assert (HD : [ G ; Γ ,, tyEl l s @ l ,, tyFin N @ lzero ⊢[ i ] tyEl lp d @ lp ]) by (apply wft_El; assumption).
+  assert (HΓAFD : [ G ; Γ ,, tyEl l s @ l ,, tyFin N @ lzero ,, tyEl lp d @ lp ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓAF | exact (lift_to_typeof_ty HD) | exact Hlp]).
+  pose proof (wk1_ty_g G i _ _ _ _ _ HΓAF HX1) as HX2.
+  pose proof (wk1_ty_g G i _ _ _ _ _ HΓAFD HX2) as HX3.
+  destruct (ihC C ltac:(szl) G i _ _ _ (lift_to_typeof_ty HX3)) as [HC | N0];
+    [| right; intros T k H; destruct (inva_code_iwi H) as (P & _); tauto].
+  destruct (ihC m ltac:(szl) G i Γ _ _ (lift_to_typeof_ty HX)) as [Hm | N0];
+    [| right; intros T k H; destruct (inva_code_iwi H) as (P & _); tauto].
+  left; eexists; eexists; exact (wf_code_iwi _ _ _ _ _ _ _ _ _ _ _ _ _ Hv Hl Hlp Hli Hx Hs HN Hd HO HC Hm).
+Qed.
+
 Lemma sy_elimIWf l li l' X A N Ot C M c m t : sz_tm (tmElimIWf l li l' X A N Ot C M c m t) <= n ->
   SYD (tmElimIWf l li l' X A N Ot C M c m t).
 Proof using ihC ihT.
@@ -1223,7 +1261,7 @@ Proof using ihC ihS ihT ihX.
           | apply sy_code_empty | apply sy_code_sum | apply sy_sup | apply sy_elimW | apply sy_codeW
           | apply sy_code_vec | apply sy_code_fin | apply sy_supf | apply sy_elimWf | apply sy_code_wf
           | apply sy_sq | apply sy_elimSq | apply sy_code_sq | apply sy_supi | apply sy_elimIWf
-          | apply sy_code_dvec | apply sy_code_iwf | apply sy_supii | apply sy_elimIWi
+          | apply sy_code_dvec | apply sy_code_iwf | apply sy_code_iwi | apply sy_supii | apply sy_elimIWi
           | apply sy_corec | apply sy_out ]; assumption.
 Qed.
 

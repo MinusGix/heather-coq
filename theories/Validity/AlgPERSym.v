@@ -867,6 +867,41 @@ Proof.
   - exact (cv_tm HG Hc (IHm i ki Hc Hm Hm'l) (eqc_refl _ _ _ HΓ) Hm'l Hm (eqty_sym _ _ _ _ _ _ EX)).
 Qed.
 
+Lemma Y_actmnf_code_iwi {G Γ l k k' kp kp' ki ki' x x' s s' n n' d d' o o' c c' m m'} :
+  leqv k k' -> leqv kp kp' -> leqv ki ki' ->
+  ac_tm G Γ x x' (tyU ki) -> Y_tm G Γ x x' (tyU ki) -> ac_tm G Γ s s' (tyU k) -> Y_tm G Γ s s' (tyU k) ->
+  ac_tm G (Γ ,, tyEl k s @ k) n n' tyNat -> Y_tm G (Γ ,, tyEl k s @ k) n n' tyNat ->
+  ac_tm G (Γ ,, tyEl k s @ k ,, tyFin n @ lzero) d d' (tyU kp) ->
+  Y_tm G (Γ ,, tyEl k s @ k ,, tyFin n @ lzero) d d' (tyU kp) ->
+  ac_tm G (Γ ,, tyEl k s @ k) o o' (tyEl ki x⟨↑⟩) -> Y_tm G (Γ ,, tyEl k s @ k) o o' (tyEl ki x⟨↑⟩) ->
+  ac_tm G (Γ ,, tyEl k s @ k ,, tyFin n @ lzero ,, tyEl kp d @ kp) c c' (tyEl ki x⟨↑⟩⟨↑⟩⟨↑⟩) ->
+  Y_tm G (Γ ,, tyEl k s @ k ,, tyFin n @ lzero ,, tyEl kp d @ kp) c c' (tyEl ki x⟨↑⟩⟨↑⟩⟨↑⟩) ->
+  ac_tm G Γ m m' (tyEl ki x) -> Y_tm G Γ m m' (tyEl ki x) ->
+  Y_tmnf G Γ (tmIWi k kp ki x s n d o c m) (tmIWi k' kp' ki' x' s' n' d' o' c' m') (tyU l).
+Proof.
+  intros Hk0 Hkp0 Hki0 Dx IHx Ds IHs DN IHN Dd IHd DO IHO DC IHC Dm IHm i q Hc Ht Ht'.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
+  destruct (iwic_ac_eq Hc Ht Ht' Hk0 Hkp0 Hki0 Dx Ds DN Dd DO DC) as (HE & Hx1 & Hs1 & Hd1 & Hm & Hm'l).
+  pose proof HE as (E14 & E25 & E36 & HS & EX & _ & _ & _ & _ & _ & _ & _ & HN'l & _ & HO'l & HC'l).
+  pose proof HS as (_ & _ & _ & _ & _ & HN & _ & HO & HC).
+  destruct (code_iwi_prem Hc Ht) as (_ & _ & _ & Hx & Hs & _ & Hd & _).
+  pose proof (ctx_of_wf_tm Hi Hx) as HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
+  assert (HΓt : [ G ; Γ ⊢[ typeof i ] ]) by (rewrite Hi; exact HΓ).
+  destruct (IWi_fwd Hc HE) as (HctxA & HctxAF & HctxAFD & EX1 & EX3 & _ & _).
+  assert (EUx : [ G ; Γ ⊢[ i ] tyU ki ≅ tyU ki' @ lsuc ki ]) by (apply eqty_U; assumption).
+  assert (EUs : [ G ; Γ ⊢[ i ] tyU k ≅ tyU k' @ lsuc k ]) by (apply eqty_U; assumption).
+  assert (EUd : [ G ; Γ ,, tyEl k s @ k ,, tyFin n @ lzero ⊢[ i ] tyU kp ≅ tyU kp' @ lsuc kp ])
+    by (apply eqty_U; [exact Hv | rewrite Hi; exact (ctx_of_wf_tm Hi Hd) | exact E25]).
+  apply actmnf_code_iwi; [exact (leqv_sym _ _ Hk0) | exact (leqv_sym _ _ Hkp0) | exact (leqv_sym _ _ Hki0) | | | | | | |].
+  - exact (cv_tm HG Hc (IHx i _ Hc Hx Hx1) (eqc_refl _ _ _ HΓ) Hx1 Hx (eqty_sym _ _ _ _ _ _ EUx)).
+  - exact (cv_tm HG Hc (IHs i _ Hc Hs Hs1) (eqc_refl _ _ _ HΓ) Hs1 Hs (eqty_sym _ _ _ _ _ _ EUs)).
+  - exact (cv_tm HG Hc (IHN i lzero Hc HN HN'l) HctxA HN'l HN (eqty_refl _ _ _ _ _ (wf_tm_ty Hi HN))).
+  - exact (cv_tm HG Hc (IHd i _ Hc Hd Hd1) HctxAF Hd1 Hd (eqty_sym _ _ _ _ _ _ EUd)).
+  - exact (cv_tm HG Hc (IHO i ki Hc HO HO'l) HctxA HO'l HO EX1).
+  - exact (cv_tm HG Hc (IHC i ki Hc HC HC'l) HctxAFD HC'l HC EX3).
+  - exact (cv_tm HG Hc (IHm i ki Hc Hm Hm'l) (eqc_refl _ _ _ HΓ) Hm'l Hm (eqty_sym _ _ _ _ _ _ EX)).
+Qed.
+
 (** The second projections are compared at the other side's first
     projection: the conversion lemma moves them. *)
 Lemma Y_actmnf_sig_eta {G Γ l l' A B w w'} :
@@ -1732,5 +1767,6 @@ Proof.
     | solve [eapply Y_actmnf_code_sq; eassumption]
     | solve [eapply Y_actmnf_code_W; eassumption]
     | solve [eapply Y_actmnf_code_wf; eassumption]
-    | solve [eapply Y_actmnf_code_dvec; eassumption] | solve [eapply Y_actmnf_code_iwf; eassumption] ].
+    | solve [eapply Y_actmnf_code_dvec; eassumption] | solve [eapply Y_actmnf_code_iwf; eassumption]
+    | solve [eapply Y_actmnf_code_iwi; eassumption] ].
 Qed.

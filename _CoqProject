@@ -155,6 +155,7 @@ theories/Validity/IWiSp.v
 theories/Validity/IWiElimBase.v
 theories/Validity/IWiElimDnth.v
 theories/Validity/IWiElim.v
+theories/Validity/IWiCode.v
 theories/Validity/WfElim.v
 theories/Validity/Squash.v
 theories/Validity/Fundamental.v

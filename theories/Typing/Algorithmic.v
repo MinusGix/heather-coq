@@ -276,6 +276,16 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tm G (Γ ,, tyEl k s @ k ,, tyFin n @ lzero) c c' (tyEl ki x⟨↑⟩⟨↑⟩) ->
     ac_tm G Γ m m' (tyEl ki x) ->
     ac_tmnf G Γ (tmIWf k ki x s n o c m) (tmIWf k' ki' x' s' n' o' c' m') (tyU l)
+(* the code of [IWi] (M19c), as [IWf]'s *)
+| actmnf_code_iwi G Γ l k k' kp kp' ki ki' x x' s s' n n' d d' o o' c c' m m' :
+    leqv k k' -> leqv kp kp' -> leqv ki ki' ->
+    ac_tm G Γ x x' (tyU ki) -> ac_tm G Γ s s' (tyU k) ->
+    ac_tm G (Γ ,, tyEl k s @ k) n n' tyNat ->
+    ac_tm G (Γ ,, tyEl k s @ k ,, tyFin n @ lzero) d d' (tyU kp) ->
+    ac_tm G (Γ ,, tyEl k s @ k) o o' (tyEl ki x⟨↑⟩) ->
+    ac_tm G (Γ ,, tyEl k s @ k ,, tyFin n @ lzero ,, tyEl kp d @ kp) c c' (tyEl ki x⟨↑⟩⟨↑⟩⟨↑⟩) ->
+    ac_tm G Γ m m' (tyEl ki x) ->
+    ac_tmnf G Γ (tmIWi k kp ki x s n d o c m) (tmIWi k' kp' ki' x' s' n' d' o' c' m') (tyU l)
 
 with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_var G Γ n T l : in_ctx Γ n T l -> ac_tmne G Γ (var n) (var n) T

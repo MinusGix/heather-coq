@@ -662,6 +662,9 @@ Ltac sub_manual2 :=
   | |- eq_ty _ _ _ (tyDVec _ _ _) (tyEl _ _) _ => eapply eqty_El_dvec; sub_I
   | |- wf_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ => eapply wf_code_iwf; sub_I
   | |- eq_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwf; sub_I
+  | |- eq_ty _ _ _ (tyIWi _ _ _ _ _ _ _ _ _ _) (tyEl _ _) _ => eapply eqty_El_iwi; sub_I
+  | |- wf_tm _ _ _ (tmIWi _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_code_iwi; sub_I
+  | |- eq_tm _ _ _ (tmIWi _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwi; sub_I
   | |- wf_tm _ _ _ (tmDVec _ _ _) _ _ => eapply wf_code_dvec; sub_I
   | |- eq_tm _ _ _ (tmDVec _ _ _) _ _ _ => eapply eqtm_code_dvec; sub_I
   (* [M] (M18b): [out]'s type commutes with the substitution by an equation *)

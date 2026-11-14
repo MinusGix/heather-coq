@@ -420,7 +420,8 @@ Proof.
                         | eapply pre_elimSq_r; eassumption
                         | eapply pre_elimSq_sq_rhs; eassumption
                         | eapply pre_codedvec_r; eassumption
-                        | eapply pre_codeiwf_r; eassumption ]]);
+                        | eapply pre_codeiwf_r; eassumption
+                        | eapply pre_codeiwi_r; eassumption ]]);
     (* indexed well-founded trees (M17b): the signature's premises bundled *)
     (try solve [first
          [ eapply pre_iwf_r; iwf_bundle
@@ -587,7 +588,12 @@ Proof.
              | solve [eapply proj1; first [eapply pre_El_dvec | eapply pre_El_iwf]; iwf_leaf]
              | solve [eapply proj2; first [eapply pre_El_dvec | eapply pre_El_iwf]; iwf_leaf]
              | solve [eapply wf_code_dvec; eauto 3 with presup]
-             | solve [eapply wf_code_iwf; eauto 3 with presup] ])).
+             | solve [eapply wf_code_iwf; eauto 3 with presup]
+             (* the code of IWi (M19c) *)
+             | solve [eapply pre_codeiwi_r; eassumption]
+             | solve [eapply proj1; eapply pre_El_iwi; iwf_leaf]
+             | solve [eapply proj2; eapply pre_El_iwi; iwf_leaf]
+             | solve [eapply wf_code_iwi; eauto 3 with presup] ])).
 Qed.
 
 Section Named.

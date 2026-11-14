@@ -260,6 +260,8 @@ Proof using .
   (* the codes of DVec and IWf (M17c) *)
   - intros; apply eqtm_code_dvec; auto.
   - intros; apply eqtm_code_iwf; auto.
+  (* the code of IWi (M19c) *)
+  - intros; apply eqtm_code_iwi; auto.
   (* indexed coinductive types (M18b) *)
   - intros; apply eqty_M; auto.
   - intros; apply eqtm_corec; auto.

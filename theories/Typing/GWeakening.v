@@ -265,6 +265,9 @@ Ltac gw_manual :=
   | |- eq_ty _ _ _ (tyDVec _ _ _) (tyEl _ _) _ => eapply eqty_El_dvec; gw_premise
   | |- wf_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ => eapply wf_code_iwf; gw_premise
   | |- eq_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwf; gw_premise
+  | |- eq_ty _ _ _ (tyIWi _ _ _ _ _ _ _ _ _ _) (tyEl _ _) _ => eapply eqty_El_iwi; gw_premise
+  | |- wf_tm _ _ _ (tmIWi _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_code_iwi; gw_premise
+  | |- eq_tm _ _ _ (tmIWi _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwi; gw_premise
   | |- wf_tm _ _ _ (tmDVec _ _ _) _ _ => eapply wf_code_dvec; gw_premise
   | |- eq_tm _ _ _ (tmDVec _ _ _) _ _ _ => eapply eqtm_code_dvec; gw_premise
   (* indexed coinductive types (M18b): the step and out types commute by equations *)
@@ -547,6 +550,9 @@ Lemma gwa_tmDVec l n f : (tmDVec l n f)⟦γ⟧ = tmDVec l n⟦γ⟧ f⟦γ⟧. 
 Lemma gwa_tmIWf l li x s n o c m :
   (tmIWf l li x s n o c m)⟦γ⟧ = tmIWf l li x⟦γ⟧ s⟦γ⟧ n⟦γ⟧ o⟦γ⟧ c⟦γ⟧ m⟦γ⟧.
 Proof. now destruct γ. Qed.
+Lemma gwa_tmIWi l lp li x s n d o c m :
+  (tmIWi l lp li x s n d o c m)⟦γ⟧ = tmIWi l lp li x⟦γ⟧ s⟦γ⟧ n⟦γ⟧ d⟦γ⟧ o⟦γ⟧ c⟦γ⟧ m⟦γ⟧.
+Proof. now destruct γ. Qed.
 Lemma gwa_inl l l' A B a : (tmInl l l' A B a)⟦γ⟧ = tmInl l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_inr l l' A B a : (tmInr l l' A B a)⟦γ⟧ = tmInr l l' A⟦γ⟧ B⟦γ⟧ a⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_case l l' l'' A B M c1 c2 t :
@@ -647,6 +653,7 @@ Ltac push_gwa_at h k := lazymatch h with
   | @tmSqCode => k gwa_tmSqCode
   | @tmDVec => k gwa_tmDVec
   | @tmIWf => k gwa_tmIWf
+  | @tmIWi => k gwa_tmIWi
   end.
 Ltac push_gwa := repeat match goal with
   | |- context [@gwa _ _ _ ?t] => let h := head_of t in push_gwa_at h ltac:(fun L => rewrite L)

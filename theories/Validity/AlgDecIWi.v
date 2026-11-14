@@ -107,3 +107,53 @@ Proof.
   pose proof (IWi_step_left Hi Hv HE0 E3 HM EM HI HI' EI Hc0') as Hc0'l.
   destruct (IHc c' i l' Hc Hc0 Hc0'l) as [Dc | Hneg]; [left; eapply actmne_elimIWi; eassumption | refute].
 Qed.
+
+(** The code of [IWi] (M19c), as [IWf]'s: the right domain code is moved
+    into the left contexts once the arities are compared ([IWi_d_mv]). *)
+Lemma Dc_actmnf_code_iwi {G Γ l k k0 kp kp0 ki ki0 x x0 s s0 n n0 d d0 o o0 c c0 m m0} :
+  Dc_tm G Γ x x0 (tyU ki) -> Dc_tm G Γ s s0 (tyU k) -> Dc_tm G (Γ ,, tyEl k s @ k) n n0 tyNat ->
+  Dc_tm G (Γ ,, tyEl k s @ k ,, tyFin n @ lzero) d d0 (tyU kp) ->
+  Dc_tm G (Γ ,, tyEl k s @ k) o o0 (tyEl ki x⟨↑⟩) ->
+  Dc_tm G (Γ ,, tyEl k s @ k ,, tyFin n @ lzero ,, tyEl kp d @ kp) c c0 (tyEl ki x⟨↑⟩⟨↑⟩⟨↑⟩) ->
+  Dc_tm G Γ m m0 (tyEl ki x) ->
+  Dc_tmnf G Γ (tmIWi k kp ki x s n d o c m) (tmIWi k0 kp0 ki0 x0 s0 n0 d0 o0 c0 m0) (tyU l).
+Proof.
+  intros IHx IHs IHN IHd IHO IHC IHm Y i q Hc Ht Ht'.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
+  destruct Y; try solve [refute_con].
+  match goal with |- Dec (ac_tmnf _ _ _ (tmIWi ?p1 ?p2 ?p3 ?p4 ?p5 ?p6 ?p7 ?p8 ?p9 ?p10) _) =>
+    rename p1 into k', p2 into kp', p3 into ki', p4 into x', p5 into s', p6 into n', p7 into d', p8 into o',
+      p9 into c', p10 into m' end.
+  destruct (code_iwi_prem Hc Ht) as (Wa & Wb & Wc & Hx & Hs & HN & Hd & HO & HC & Hm).
+  destruct (code_iwi_prem Hc Ht') as (Wd & We & Wf & Hx' & Hs' & HN' & Hd' & HO' & HC' & Hm').
+  destruct (leqv_dec k k') as [H1 | Hneg]; [| refute].
+  destruct (leqv_dec kp kp') as [H2 | Hneg]; [| refute].
+  destruct (leqv_dec ki ki') as [H3 | Hneg]; [| refute].
+  pose proof (leqv_lequiv _ _ _ Wa Wd H1) as E14. pose proof (leqv_lequiv _ _ _ Wb We H2) as E25.
+  pose proof (leqv_lequiv _ _ _ Wc Wf H3) as E36.
+  pose proof (code_U_conv Hc E36 Hx') as Hx1. pose proof (code_U_conv Hc E14 Hs') as Hs1.
+  destruct (IHx x' i _ Hc Hx Hx1) as [Dx | Hneg]; [| refute].
+  destruct (IHs s' i _ Hc Hs Hs1) as [Ds | Hneg]; [| refute].
+  pose proof (ac_tm_sound Hc Dx Hx Hx1) as Ex. pose proof (ac_tm_sound Hc Ds Hs Hs1) as Es.
+  assert (HS : IWiSig (G := G) (i := i) Γ k kp ki (tyEl ki x) (tyEl k s) n (tyEl kp d) o c)
+    by (unfold IWiSig; repeat split; first [assumption | apply wft_El; assumption]).
+  assert (HS' : IWiSig (G := G) (i := i) Γ k' kp' ki' (tyEl ki' x') (tyEl k' s') n' (tyEl kp' d') o' c')
+    by (unfold IWiSig; repeat split; first [assumption | apply wft_El; assumption]).
+  assert (EX : [ G ; Γ ⊢[ i ] tyEl ki x ≅ tyEl ki' x' @ ki ]) by (apply eqty_El; assumption).
+  assert (EA : [ G ; Γ ⊢[ i ] tyEl k s ≅ tyEl k' s' @ k ]) by (apply eqty_El; assumption).
+  destruct (IWi_r_mv Hi Hv HS HS' E14 E25 E36 EX EA) as (_ & _ & HN'l & HO'l & HDC).
+  destruct (IHN n' i lzero Hc HN HN'l) as [DN | Hneg]; [| refute].
+  pose proof (ac_tm_sound Hc DN HN HN'l) as EN.
+  assert (Hd'l : [ G ; Γ ,, tyEl k s @ k ,, tyFin n @ lzero ⊢[ i ] d' : tyU kp @ lsuc kp ]).
+  { apply (code_U_conv Hc E25). eapply (IWi_d_mv Hi Hv); [| | exact E14 | exact EA | exact HN | exact HN' | exact EN | exact Hd'];
+      apply wft_El; assumption. }
+  destruct (IHd d' i _ Hc Hd Hd'l) as [Dd | Hneg]; [| refute].
+  assert (ED : [ G ; Γ ,, tyEl k s @ k ,, tyFin n @ lzero ⊢[ i ] tyEl kp d ≅ tyEl kp' d' @ kp ])
+    by (apply eqty_El; [exact Hv | exact E25 | exact (ac_tm_sound Hc Dd Hd Hd'l)]).
+  destruct (HDC EN) as (_ & HC'l).
+  destruct (IHO o' i ki Hc HO HO'l) as [DO | Hneg]; [| refute].
+  destruct (IHC c' i ki Hc HC (HC'l ED)) as [DC | Hneg]; [| refute].
+  assert (Hm'l : [ G ; Γ ⊢[ i ] m' : tyEl ki x @ ki ])
+    by (eapply (conv_tm' Hi); [eapply wf_lconv; [exact Hm' | exact E36] | exact EX]).
+  destruct (IHm m' i ki Hc Hm Hm'l) as [Dm | Hneg]; [left; apply actmnf_code_iwi; assumption | refute].
+Qed.

@@ -458,6 +458,16 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] c : tyEl li x⟨↑⟩⟨↑⟩ @ li ] ->
     [ G ; Γ ⊢[ i ] m : tyEl li x @ li ] ->
     [ G ; Γ ⊢[ i ] tmIWf l li x s n o c m : tyU (lmax l li) @ lsuc (lmax l li) ]
+(* the code of [IWi] (M19c), as [IWf]'s with the domains' code [d] under
+   [x : El s, i : Fin n]; it lives at [iwiL l lp li], as its type *)
+| wf_code_iwi G i Γ l lp li x s n d o c m : i <> lV -> lwf (gL G) l -> lwf (gL G) lp -> lwf (gL G) li ->
+    [ G ; Γ ⊢[ i ] x : tyU li @ lsuc li ] -> [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] d : tyU lp @ lsuc lp ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o : tyEl li x⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ,, tyEl lp d @ lp ⊢[ i ] c : tyEl li x⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢[ i ] m : tyEl li x @ li ] ->
+    [ G ; Γ ⊢[ i ] tmIWi l lp li x s n d o c m : tyU (iwiL l lp li) @ lsuc (iwiL l lp li) ]
 (* indexed coinductive types (M18b; layers D and M): [corec]'s carrier [Y]
    at [k] under the index, its step [c] under the index and the state at
    the step type weakened past the state, its seed at the carrier's
@@ -691,6 +701,15 @@ with eq_ty : gctx -> layer -> ctx -> ty -> ty -> lvl -> Prop :=
     [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] c : tyEl li x⟨↑⟩⟨↑⟩ @ li ] ->
     [ G ; Γ ⊢[ i ] m : tyEl li x @ li ] ->
     [ G ; Γ ⊢[ i ] tyIWf l li (tyEl li x) (tyEl l s) n o c m ≅ tyEl (lmax l li) (tmIWf l li x s n o c m) @ lmax l li ]
+| eqty_El_iwi G i Γ l lp li x s n d o c m : compt i -> lwf (gL G) l -> lwf (gL G) lp -> lwf (gL G) li ->
+    [ G ; Γ ⊢[ i ] x : tyU li @ lsuc li ] -> [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] d : tyU lp @ lsuc lp ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o : tyEl li x⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ,, tyEl lp d @ lp ⊢[ i ] c : tyEl li x⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢[ i ] m : tyEl li x @ li ] ->
+    [ G ; Γ ⊢[ i ] tyIWi l lp li (tyEl li x) (tyEl l s) n (tyEl lp d) o c m
+        ≅ tyEl (iwiL l lp li) (tmIWi l lp li x s n d o c m) @ iwiL l lp li ]
 (* indexed coinductive types (M18b; layers D and M) *)
 | eqty_M G i Γ l l' li k k' ki X X' A A' B B' C C' j j' : compt i ->
     lequiv (gL G) l k -> lequiv (gL G) l' k' -> lequiv (gL G) li ki ->
@@ -1282,6 +1301,19 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] m ≅ m' : tyEl li x @ li ] ->
     [ G ; Γ ⊢[ i ] tmIWf l li x s n o c m ≅ tmIWf k ki x' s' n' o' c' m'
         : tyU (lmax l li) @ lsuc (lmax l li) ]
+| eqtm_code_iwi G i Γ l lp li k kp ki x x' s s' n n' d d' o o' c c' m m' : i <> lV ->
+    lequiv (gL G) l k -> lequiv (gL G) lp kp -> lequiv (gL G) li ki ->
+    [ G ; Γ ⊢[ i ] x : tyU li @ lsuc li ] -> [ G ; Γ ⊢[ i ] x ≅ x' : tyU li @ lsuc li ] ->
+    [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] d : tyU lp @ lsuc lp ] ->
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] d ≅ d' : tyU lp @ lsuc lp ] ->
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o ≅ o' : tyEl li x⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ,, tyEl lp d @ lp ⊢[ i ] c ≅ c' : tyEl li x⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢[ i ] m ≅ m' : tyEl li x @ li ] ->
+    [ G ; Γ ⊢[ i ] tmIWi l lp li x s n d o c m ≅ tmIWi k kp ki x' s' n' d' o' c' m'
+        : tyU (iwiL l lp li) @ lsuc (iwiL l lp li) ]
 (* indexed coinductive types (M18b; layers D and M): the congruences,
    [corec]'s with its carrier level, and β, whose reduct [mOutCorec]
    carries [corec]'s annotations. No η *)

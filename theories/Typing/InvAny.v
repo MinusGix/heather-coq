@@ -429,6 +429,16 @@ Lemma inva_code_iwf {G i Γ l li x s n o c m T k} : [ G ; Γ ⊢[ i ] tmIWf l li
     [ G ; Γ ⊢[ i ] m : tyEl li x @ li ]) /\
     lvl_eq (gL G) k (lsuc (lmax l li)) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU (lmax l li) @ k ].
 Proof. inv_tm_any. Qed.
+Lemma inva_code_iwi {G i Γ l lp li x s n d o c m T k} : [ G ; Γ ⊢[ i ] tmIWi l lp li x s n d o c m : T @ k ] ->
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) lp /\ lwf (gL G) li /\
+    [ G ; Γ ⊢[ i ] x : tyU li @ lsuc li ] /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] /\
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] d : tyU lp @ lsuc lp ] /\
+    [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o : tyEl li x⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ,, tyEl lp d @ lp ⊢[ i ] c : tyEl li x⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+    [ G ; Γ ⊢[ i ] m : tyEl li x @ li ]) /\
+    lvl_eq (gL G) k (lsuc (iwiL l lp li)) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyU (iwiL l lp li) @ k ].
+Proof. inv_tm_any. Qed.
 
 (** ** The M-only heads *)
 
@@ -447,7 +457,7 @@ Proof. intros H Hm. induction H; cbn in Hm; first [contradiction | auto]. Qed.
     until M19c gives it its rule (M19_DESIGN.md). *)
 Definition junk (t : tm) : Prop :=
   match t with
-  | tmErr | tmTy _ | tmTup _ _ | bindU _ | bindG _ | bindL _ | tmIWi _ _ _ _ _ _ _ _ _ _ => True
+  | tmErr | tmTy _ | tmTup _ _ | bindU _ | bindG _ | bindL _ => True
   | _ => False
   end.
 

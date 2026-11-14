@@ -168,7 +168,8 @@ Qed.
 
 Ltac f_lwf :=
   first [ eassumption | exact I | eapply lequiv_wf_l; eassumption | eapply lequiv_wf_r; eassumption
-        | progress cbn [lwf]; first [split; f_lwf | f_lwf] ].
+        | progress cbn [lwf]; first [split; f_lwf | f_lwf]
+        | match goal with |- _ /\ _ => split; f_lwf end ].
 Ltac f_side0 :=
   first [ eassumption | typeclasses eauto | apply lequiv_refl; f_lwf | apply lequiv_sym; eassumption | f_lwf
         | exact ge_lle_D | reflexivity ].

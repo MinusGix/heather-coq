@@ -138,6 +138,7 @@ Ltac gl_push_at h k := lazymatch h with
   | @tmSqCode => k gwa_tmSqCode
   | @tmDVec => k gwa_tmDVec
   | @tmIWf => k gwa_tmIWf
+  | @tmIWi => k gwa_tmIWi
   | @tyIWf => k IWfAux.gwa_tyIWf
   | @tmSupi => k IWfAux.gwa_supi
   | @tmElimIWf => k gwa_elimIWf

@@ -131,6 +131,9 @@ with red_ty : ty -> ty -> Prop :=
 | red_El_dvec l l0 n f : red_ty (tyEl l (tmDVec l0 n f)) (tyDVec l0 n (tyEl l0 f))
 | red_El_iwf l l0 li x s n o c m :
     red_ty (tyEl l (tmIWf l0 li x s n o c m)) (tyIWf l0 li (tyEl li x) (tyEl l0 s) n o c m)
+(* the code of IWi (M19c): the domain's code decodes too *)
+| red_El_iwi l l0 lp li x s n d o c m :
+    red_ty (tyEl l (tmIWi l0 lp li x s n d o c m)) (tyIWi l0 lp li (tyEl li x) (tyEl l0 s) n (tyEl lp d) o c m)
 (* length-indexed tuples and finite indices (M14a): compute on the length *)
 | red_vec_zero l A : red_ty (tyVec l A zero) (tyUnit l)
 | red_vec_succ l A n : red_ty (tyVec l A (succ n)) (tySig l l A (tyVec l A⟨↑⟩ n⟨↑⟩))
@@ -219,6 +222,7 @@ Proof.
         | Hr : red (tmIWf _ _ _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmCorec _ _ _ _ _ _ _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmSupii _ _ _ _ _ _ _ _ _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmIWi _ _ _ _ _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red_ty (tyPi _ _ _ _) _ |- _ => inversion Hr
         end;
     try congruence; try (f_equal; eauto).

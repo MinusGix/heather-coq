@@ -187,6 +187,7 @@ Ltac s_push_at h k := lazymatch h with
   | @tmSqCode => k gs_tmSqCode
   | @tmDVec => k gs_tmDVec
   | @tmIWf => k gs_tmIWf
+  | @tmIWi => k gs_tmIWi
   | @tyIWf => k gs_tyIWf
   | @tmSupi => k gs_supi
   | @tmElimIWf => k gs_elimIWf
@@ -292,7 +293,9 @@ Ltac fts_case :=
   | solve [simple eapply V_iwi_at; s_side] | solve [simple eapply V_supii; s_side]
   | solve [simple eapply V_elimIWi; s_side] | solve [simple eapply V_elimIWi_supii; s_side]
   | solve [simple eapply V_supii_ty; s_side] | solve [simple eapply V_elimIWi_ty_at; s_side]
-  | solve [simple eapply V_elimIWi_supii_ty; s_side] ].
+  | solve [simple eapply V_elimIWi_supii_ty; s_side]
+  (* the code of IWi (M19c) *)
+  | solve [simple eapply V_code_iwi; s_side] | solve [simple eapply V_El_iwi; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=

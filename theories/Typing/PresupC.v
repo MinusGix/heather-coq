@@ -990,6 +990,30 @@ Proof using HiD.
   exact (sc_code_iwf_q HiD Hv Q1 Q2 Hx' Hxx Hs Hs' Hss Hn Hn' Hnn Ho' Hc' Hm').
 Qed.
 
+Lemma pc_code_iwi {Γ l lp li k kp ki x x' s s' n n' d d' o o' c c' m m'} : i <> lV ->
+  lequiv (gL G) l k -> lequiv (gL G) lp kp -> lequiv (gL G) li ki ->
+  [ G ; Γ ⊢[ i ] x : tyU li @ lsuc li ] -> [ G ; Γ ⊢[ i ] x ≅ x' : tyU li @ lsuc li ] ->
+  [ G ; Γ ⊢[ i ] x' : tyU li @ lsuc li ] ->
+  [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s ≅ s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
+  [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n ≅ n' : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n' : tyNat @ lzero ] ->
+  [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] d : tyU lp @ lsuc lp ] ->
+  [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] d ≅ d' : tyU lp @ lsuc lp ] ->
+  [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ⊢[ i ] d' : tyU lp @ lsuc lp ] ->
+  [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o : tyEl li x⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, tyEl l s @ l ⊢[ i ] o' : tyEl li x⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ,, tyEl lp d @ lp ⊢[ i ] c : tyEl li x⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, tyEl l s @ l ,, tyFin n @ lzero ,, tyEl lp d @ lp ⊢[ i ] c' : tyEl li x⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢[ i ] m : tyEl li x @ li ] -> [ G ; Γ ⊢[ i ] m' : tyEl li x @ li ] ->
+  [ G ; Γ ⊢[ i ] tmIWi l lp li x s n d o c m : tyU (iwiL l lp li) @ lsuc (iwiL l lp li) ] /\
+  [ G ; Γ ⊢[ i ] tmIWi k kp ki x' s' n' d' o' c' m' : tyU (iwiL l lp li) @ lsuc (iwiL l lp li) ].
+Proof using HiD.
+  intros Hv Q1 Q3 Q2 Hx Hxx Hx' Hs Hss Hs' Hn Hnn Hn' HdD HddD HdD' Ho Ho' Hc Hc' Hm Hm'.
+  split; [apply wf_code_iwi; eauto using lequiv_wf_l |].
+  exact (sc_code_iwi_q HiD Hv Q1 Q3 Q2 Hx' Hxx Hs Hs' Hss Hn Hn' Hnn HdD HdD' HddD Ho' Hc' Hm').
+Qed.
+
 End Cases.
 
 Theorem presupposition_C :
@@ -1058,7 +1082,9 @@ Proof.
              | solve [eapply pc_code_dvec; eassumption] | solve [eapply pc_code_iwf; eassumption]
              (* infinitary indexed families (M19a) *)
              | solve [eapply pc_iwi; eassumption] | solve [eapply pc_supii; eassumption]
-             | solve [eapply pc_elimIWi; eassumption] ])).
+             | solve [eapply pc_elimIWi; eassumption]
+             (* the code of IWi (M19c) *)
+             | solve [eapply pc_code_iwi; eassumption] ])).
 Qed.
 
 Lemma eqty_wf_C {G i Γ T T' l} : lle i lC -> [ G ; Γ ⊢[ i ] T ≅ T' @ l ] ->
