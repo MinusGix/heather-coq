@@ -226,6 +226,7 @@ theories/Validity/AlgDecCode.v
 theories/Validity/AlgDecId.v
 theories/Validity/AlgDecW.v
 theories/Validity/AlgDecIWf.v
+theories/Validity/AlgDecIWi.v
 theories/Validity/AlgDecM.v
 theories/Validity/AlgDec.v
 theories/Validity/Consistency.v
