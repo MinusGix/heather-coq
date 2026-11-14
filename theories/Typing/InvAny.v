@@ -324,6 +324,41 @@ Lemma inva_out {G i Γ l l' li X A B C j m T k} :
     lvl_eq (gL G) k (lmax l (mlvl l l' li)) /\ [ G ; Γ ⊢[ typeof i ] T ≅ mOutTy l l' li X A B C j @ k ].
 Proof. inv_tm_any. Qed.
 
+(** Indexed families with infinitary children (M19b). *)
+Lemma inva_supii {G i Γ l lp li X A N D Ot C a cs T k} :
+  [ G ; Γ ⊢[ i ] tmSupii l lp li X A N D Ot C a cs : T @ k ] ->
+  (i <> lV /\
+    lwf (gL G) l /\ lwf (gL G) lp /\ lwf (gL G) li /\
+    [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+    [ G ; Γ ⊢[ i ] a : A @ l ] /\
+    [ G ; Γ ⊢[ i ] cs : tyDVec (iwiL l lp li) N[lsingle a] (iwiFam l lp li X A N D Ot C a) @ iwiL l lp li ]) /\
+    lvl_eq (gL G) k (iwiL l lp li) /\ [ G ; Γ ⊢[ typeof i ] T ≅ tyIWi l lp li X A N D Ot C Ot[lsingle a] @ k ].
+Proof. inv_tm_any. Qed.
+
+Lemma inva_elimIWi {G i Γ l lp li l' X A N D Ot C M c m t T k} :
+  [ G ; Γ ⊢[ i ] tmElimIWi l lp li l' X A N D Ot C M c m t : T @ k ] ->
+  (i <> lV /\ lwf (gL G) l' /\
+    lwf (gL G) l /\ lwf (gL G) lp /\ lwf (gL G) li /\
+    [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, X @ li ⊢[ i ] iwimotty l lp li X A N D Ot C @ iwiL l lp li ] /\
+    [ G ; Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] M @ l' ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] iwicsty l lp li X A N D Ot C @ iwiL l lp li ] /\
+    [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ]
+        iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l') ] /\
+    [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ,, iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l')
+        ⊢[ i ] c : iwistepty l lp li X A N D Ot C M @ l' ] /\
+    [ G ; Γ ⊢[ i ] m : X @ li ] /\ [ G ; Γ ⊢[ i ] t : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ]) /\
+    lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ typeof i ] T ≅ M[lsingle2 m t] @ k ].
+Proof. inv_tm_any. Qed.
+
 (** Strict equality's codes (M10c). *)
 Lemma inva_code_seq {G i Γ l s t u T k} : [ G ; Γ ⊢[ i ] tmSEq l s t u : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
@@ -408,9 +443,13 @@ Definition m_only (t : tm) : Prop :=
 Lemma typed_m_only {G i Γ t T k} : [ G ; Γ ⊢[ i ] t : T @ k ] -> m_only t -> i = lM.
 Proof. intros H Hm. induction H; cbn in Hm; first [contradiction | auto]. Qed.
 
-(** The bundle's nodes and [tmErr] are never typed. *)
+(** The bundle's nodes and [tmErr] are never typed, nor is [IWi]'s code
+    until M19c gives it its rule (M19_DESIGN.md). *)
 Definition junk (t : tm) : Prop :=
-  match t with tmErr | tmTy _ | tmTup _ _ | bindU _ | bindG _ | bindL _ => True | _ => False end.
+  match t with
+  | tmErr | tmTy _ | tmTup _ _ | bindU _ | bindG _ | bindL _ | tmIWi _ _ _ _ _ _ _ _ _ _ => True
+  | _ => False
+  end.
 
 Lemma no_junk {G i Γ t T k} : [ G ; Γ ⊢[ i ] t : T @ k ] -> junk t -> False.
 Proof. intros H Hj. induction H; cbn in Hj; first [contradiction | auto]. Qed.

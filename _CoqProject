@@ -89,6 +89,7 @@ theories/Typing/StaticCode.v
 theories/Typing/StaticCodeEq.v
 theories/Typing/DefAdm.v
 theories/Typing/IWfIHG.v
+theories/Typing/IWiIHG.v
 theories/Typing/TypedRed.v
 theories/Typing/Generic.v
 theories/Typing/DeclInstance.v

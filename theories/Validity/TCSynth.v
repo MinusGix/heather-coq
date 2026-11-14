@@ -7,7 +7,7 @@
     normalized, and its head must be the matching former, whose
     components give the result. *)
 From DeLaM.Validity Require Export TCType Uniform.
-From DeLaM.Typing Require Import IWfIH IWfIHG PresupM.
+From DeLaM.Typing Require Import IWfIH IWfIHG IWiIHG PresupM.
 
 Section Step.
 Context (n : nat) (IH : IHsz n).
@@ -1096,6 +1096,69 @@ Proof using ihC ihT.
   left; eexists; eexists; apply wf_elimIWf; assumption.
 Qed.
 
+(** Indexed infinitary trees (M19b; every layer but V): as [IWf]'s,
+    with the signature's domain family ([dec_iwi_sig]) and the step
+    telescope's induction hypothesis of two binders ([IWiIHG]). *)
+Lemma sy_supii l lp li X A N D Ot C a cs : sz_tm (tmSupii l lp li X A N D Ot C a cs) <= n ->
+  SYD (tmSupii l lp li X A N D Ot C a cs).
+Proof using ihC ihT.
+  intros Hsz G i Γ HΓ.
+  notV.
+  destruct (dec_iwi_sig n IH l lp li X A N D Ot C ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl)
+              G i Γ Hv HΓ) as [HS | Hn];
+    [| right; intros T k H; destruct (inva_supii H) as ((_ & Hs) & _); apply Hn; unfold IWiSig; tauto].
+  pose proof HS as (Hl & Hlp & Hli & HX & HA & HN & HD & HO & HC).
+  destruct (ihC a ltac:(szl) G i Γ A l (lift_to_typeof_ty HA)) as [Ha | Hn];
+    [| right; intros T k H; destruct (inva_supii H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Ha & _) & _);
+       contradiction].
+  destruct (ihC cs ltac:(szl) G i Γ _ _ (lift_to_typeof_ty (IWi_csa_wf_g Hv HS Ha))) as [Hcs | Hn];
+    [| right; intros T k H; destruct (inva_supii H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Hcs) & _);
+       contradiction].
+  left; eexists; eexists; apply wf_supii; assumption.
+Qed.
+
+Lemma sy_elimIWi l lp li l' X A N D Ot C M c m t : sz_tm (tmElimIWi l lp li l' X A N D Ot C M c m t) <= n ->
+  SYD (tmElimIWi l lp li l' X A N D Ot C M c m t).
+Proof using ihC ihT.
+  intros Hsz G i Γ HΓ.
+  notV.
+  destruct (lwf_Dec (gL G) l') as [Hl' | Hn];
+    [| right; intros T k H; destruct (inva_elimIWi H) as ((_ & H0 & _) & _); contradiction].
+  destruct (dec_iwi_sig n IH l lp li X A N D Ot C ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl)
+              G i Γ Hv HΓ) as [HS | Hn];
+    [| right; intros T k H; destruct (inva_elimIWi H) as ((_ & _ & Hs) & _); apply Hn; unfold IWiSig; tauto].
+  pose proof HS as (Hl & Hlp & Hli & HX & HA & HN & HD & HO & HC).
+  pose proof (IWi_mot_wf_g Hv Hl Hlp Hli HX HA HN HD HO HC) as Hmot.
+  assert (HΓX : [ G ; Γ ,, X @ li ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HX) | exact Hli]).
+  assert (HΓM : [ G ; Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓX | exact (lift_to_typeof_ty Hmot) | exact (iwiL_wf Hl Hlp Hli)]).
+  destruct (ihT M ltac:(szl) G i _ l' HΓM) as [HM | Hn];
+    [| right; intros T k H; destruct (inva_elimIWi H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & HM & _) & _);
+       contradiction].
+  pose proof (IWi_cs_wf_g Hv Hl Hlp Hli HX HA HN HD HO HC) as HCs.
+  pose proof (IWi_ihty_wf_g Hv HS Hl' HM) as HI.
+  assert (HΓA : [ G ; Γ ,, A @ l ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HA) | exact Hl]).
+  assert (HΓAC : [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓA | exact (lift_to_typeof_ty HCs) | exact (iwiL_wf Hl Hlp Hli)]).
+  assert (HΘ : [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li
+                   ,, iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l') ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓAC | exact (lift_to_typeof_ty HI) | apply lwf_max; [exact I | exact (lwf_max Hlp Hl')]]).
+  pose proof (IWi_step_wf_g Hv HS HM HΘ) as HSt.
+  destruct (ihC c ltac:(szl) G i _ _ _ (lift_to_typeof_ty HSt)) as [Hc0 | Hn];
+    [| right; intros T k H; destruct (inva_elimIWi H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Hc0 & _) & _);
+       contradiction].
+  destruct (ihC m ltac:(szl) G i Γ X li (lift_to_typeof_ty HX)) as [Hm | Hn];
+    [| right; intros T k H; destruct (inva_elimIWi H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Hm & _) & _);
+       contradiction].
+  assert (HT : [ G ; Γ ⊢[ i ] tyIWi l lp li X A N D Ot C m @ iwiL l lp li ]) by (apply wft_iwi; assumption).
+  destruct (ihC t ltac:(szl) G i Γ _ _ (lift_to_typeof_ty HT)) as [Ht | Hn];
+    [| right; intros T k H; destruct (inva_elimIWi H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Ht) & _);
+       contradiction].
+  left; eexists; eexists; apply wf_elimIWi; assumption.
+Qed.
+
 (** Indexed coinductive types (M18b; the computational layers): the
     signature as the type's ([dec_m_sig]); [corec]'s carrier, step at the
     carrier's step type, index and seed; [out]'s index and scrutinee. *)
@@ -1160,7 +1223,8 @@ Proof using ihC ihS ihT ihX.
           | apply sy_code_empty | apply sy_code_sum | apply sy_sup | apply sy_elimW | apply sy_codeW
           | apply sy_code_vec | apply sy_code_fin | apply sy_supf | apply sy_elimWf | apply sy_code_wf
           | apply sy_sq | apply sy_elimSq | apply sy_code_sq | apply sy_supi | apply sy_elimIWf
-          | apply sy_code_dvec | apply sy_code_iwf | apply sy_corec | apply sy_out ]; assumption.
+          | apply sy_code_dvec | apply sy_code_iwf | apply sy_supii | apply sy_elimIWi
+          | apply sy_corec | apply sy_out ]; assumption.
 Qed.
 
 End Step.
