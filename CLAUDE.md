@@ -2,12 +2,12 @@
 
 Start by reading `README.md` (status, milestone by milestone), then
 `HEATHER.md` (Heather's extensions: the forward agenda),
-`docs/design/M18_DESIGN.md` (the current milestone; M18b done, M18c next) and
+`docs/design/M19_DESIGN.md` (the latest milestone, `IWi`, done; M18c, `M`'s codes, waits on Heather) and
 `docs/gotchas.md` (proof-engineering and build-time gotchas; follow
 them).
 
 The design notes of the finished milestones, `M1_DESIGN.md` to
-`M17_DESIGN.md`, are in `docs/design/` with `ELIM_CONGRUENCE.md` (typed
+`M18_DESIGN.md`, are in `docs/design/` with `ELIM_CONGRUENCE.md` (typed
 eliminator congruence) and `SYNTAX_SPIKE.md` (why the syntax is
 hand-written). They record each former's decisions, deviations from the
 paper and outcome; read the one for a former before changing it.

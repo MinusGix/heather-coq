@@ -76,3 +76,31 @@ Proof.
   w_lookups 60 (gΨ (brG 60 G0)). unfold gu.
   eapply wf_gu; [ exact HC | glookup | unfold lle; cbn; lia | cbn; intuition congruence ].
 Qed.
+
+(** The IWi elimination branch's step scope (M19c), as [br60_scope]. *)
+Lemma br64_scope G0 : [ ⊢ brG 64 G0 ] ->
+  [ brG 64 G0 ; cvar 10 ,, gv 8 @ lvar 3
+      ,, iwicsty (lvar 3) (lvar 2) (lvar 1) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) @ iwiL (lvar 3) (lvar 2) (lvar 1)
+      ,, iwiihty (lvar 3) (lvar 2) (lvar 1) (lvar 0) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) (gv 3) @ lmax lzero (lmax (lvar 2) (lvar 0))
+      ⊢[ lD ] ] /\
+  [ brG 64 G0 ; cvar 10 ,, gv 8 @ lvar 3
+      ,, iwicsty (lvar 3) (lvar 2) (lvar 1) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) @ iwiL (lvar 3) (lvar 2) (lvar 1)
+      ,, iwiihty (lvar 3) (lvar 2) (lvar 1) (lvar 0) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) (gv 3) @ lmax lzero (lmax (lvar 2) (lvar 0))
+      ⊢[ lD ] iwistepty (lvar 3) (lvar 2) (lvar 1) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) (gv 3) @ lvar 0 ] /\
+  [ brG 64 G0 ; cvar 10 ,, gv 8 @ lvar 3
+      ,, iwicsty (lvar 3) (lvar 2) (lvar 1) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) @ iwiL (lvar 3) (lvar 2) (lvar 1)
+      ,, iwiihty (lvar 3) (lvar 2) (lvar 1) (lvar 0) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) (gv 3) @ lmax lzero (lmax (lvar 2) (lvar 0))
+      ⊢[ lC ] gu 2 : iwistepty (lvar 3) (lvar 2) (lvar 1) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) (gv 3) @ lvar 0 ].
+Proof.
+  intros HG0.
+  pose proof (gctx_decl_ok _ _ _ HG0 (in_gctx_nth (gΨ (brG 64 G0)) 2 _ eq_refl)) as Hok.
+  destruct Hok as (HC & HS & _).
+  match type of HS with [ _ ; ?D ⊢[ _ ] ?T @ _ ] =>
+    change D with (cvar 10 ,, gv 8 @ lvar 3
+      ,, iwicsty (lvar 3) (lvar 2) (lvar 1) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) @ iwiL (lvar 3) (lvar 2) (lvar 1)
+      ,, iwiihty (lvar 3) (lvar 2) (lvar 1) (lvar 0) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) (gv 3) @ lmax lzero (lmax (lvar 2) (lvar 0))) in HC, HS;
+    change T with (iwistepty (lvar 3) (lvar 2) (lvar 1) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) (gv 3)) in HS end.
+  refine (conj HC (conj HS _)).
+  w_lookups 64 (gΨ (brG 64 G0)). unfold gu.
+  eapply wf_gu; [ exact HC | glookup | unfold lle; cbn; lia | cbn; intuition congruence ].
+Qed.

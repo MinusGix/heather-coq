@@ -29,7 +29,7 @@ Definition wrap (nu ng nl : nat) (b : tm) : tm := wrapU nu (wrapG ng (wrapL nl b
 
 (** The number of branches, and the branch-indexed case split: [br_all t]
     runs [t] [nbr] times, as [do nbr t] would (M8_DESIGN.md J2, S0). *)
-Notation nbr := 61 (only parsing).
+Notation nbr := 65 (only parsing).
 Ltac br_do n tac := lazymatch n with O => idtac | S ?m => tac; br_do m tac end.
 Ltac br_all tac := br_do constr:(nbr) tac.
 
@@ -68,6 +68,9 @@ Definition bSq := 51.    Definition bSq' := 52.    Definition bSqIn := 53.  Defi
     [t'_DVec], [t_IWf], [t'_IWf], [t_supi], [t_elimIWf]. *)
 Definition bDVec := 55.  Definition bDVec' := 56.  Definition bIWf := 57.  Definition bIWf' := 58.
 Definition bSupi := 59.  Definition bElimIWf := 60.
+(** Indexed infinitary trees' (M19c): [t_IWi], [t'_IWi], [t_sup_ii],
+    [t_elimIWi]. *)
+Definition bIWi := 61.   Definition bIWi' := 62.   Definition bSupii := 63. Definition bElimIWi := 64.
 
 (** The arity [(levels, globals, locals)] of branch [k]. *)
 Definition br_ar (k : nat) : nat * nat * nat :=
@@ -133,13 +136,17 @@ Definition br_ar (k : nat) : nat * nat * nat :=
   | 58 => (2, 7, 6)       (* ℓ ℓi; g u_x u_s u_n u_o u_c u_m; x_x x_s x_n x_o x_c x_m. t'_IWf *)
   | 59 => (2, 8, 7)       (* ℓ ℓi; g U_X U_A u_N u_O u_C u_a u_cs; x_X … x_cs. t_supi *)
   | 60 => (3, 10, 9)      (* ℓ ℓi ℓ'; g U_X U_A u_N u_O u_C U_M u_c u_m u_t; x_X … x_t. t_elimIWf *)
+  | 61 => (3, 8, 7)       (* ℓ ℓp ℓi; g U_X U_A u_N U_D u_O u_C u_m; x_X … x_m. t_IWi *)
+  | 62 => (3, 8, 7)       (* ℓ ℓp ℓi; g u_x u_s u_n u_d u_o u_c u_m; x_x … x_m. t'_IWi *)
+  | 63 => (3, 9, 8)       (* ℓ ℓp ℓi; g U_X U_A u_N U_D u_O u_C u_a u_cs; x_X … x_cs. t_sup_ii *)
+  | 64 => (4, 11, 10)     (* ℓ ℓp ℓi ℓ'; g U_X U_A u_N U_D u_O u_C U_M u_c u_m u_t; x_X … x_t. t_elimIWi *)
   | _ => (0, 0, 0)
   end.
 
 (** Whether branch [k] is a type branch (typed at [l₁], recursing on
     [elim_Typ]) or a term branch. *)
 Definition br_isT (k : nat) : bool :=
-  match k with 0 | 1 | 2 | 3 | 13 | 14 | 21 | 25 | 27 | 31 | 34 | 39 | 43 | 45 | 47 | 51 | 55 | 57 => true | _ => false end.
+  match k with 0 | 1 | 2 | 3 | 13 | 14 | 21 | 25 | 27 | 31 | 34 | 39 | 43 | 45 | 47 | 51 | 55 | 57 | 61 => true | _ => false end.
 
 Definition wrapMT (MT : ty) : tm := bindU (bindG (bindL (tmTy MT))).
 Definition wrapMt (Mt : ty) : tm := bindU (bindG (bindG (bindL (tmTy Mt)))).
@@ -272,6 +279,20 @@ Definition redT (l : lvl) (Δ : ctx) (c : ty) : option tm :=
               (rect lzero (cext Δ A k) tyNat N))
               (rect ki (cext Δ A k) X⟨↑⟩ Ot))
               (rect ki (cext (cext Δ A k) (tyFin N) lzero) X⟨↑⟩⟨↑⟩ C))
+              (rect ki Δ X m))
+  (* indexed infinitary trees (M19c): the domain's call is under the shape
+     and the position, the child index's under the domain too *)
+  | tyIWi k kp ki X A N D Ot C m =>
+      Some (peelL (peelL (peelL (peelL (peelL (peelL (peelL
+              (peelG (peelG (peelG (peelG (peelG (peelG (peelG (peelG
+                 (peelU (peelU (peelU (rb_br rb bIWi) k) kp) ki)
+                 (GCtx Δ)) (GTy X)) (GTy A)) (GTm N)) (GTy D)) (GTm Ot)) (GTm C)) (GTm m))
+              (recT ki Δ X))
+              (recT k Δ A))
+              (rect lzero (cext Δ A k) tyNat N))
+              (recT kp (cext (cext Δ A k) (tyFin N) lzero) D))
+              (rect ki (cext Δ A k) X⟨↑⟩ Ot))
+              (rect ki (cext (cext (cext Δ A k) (tyFin N) lzero) D kp) X⟨↑⟩⟨↑⟩⟨↑⟩ C))
               (rect ki Δ X m))
   | _ => None
   end.
@@ -519,6 +540,49 @@ Definition redt (l : lvl) (Δ : ctx) (T : ty) (c : tm) : option tm :=
                  (iwfstepty k ki X A N Ot C M) c))
               (rect ki Δ X m))
               (rect (lmax k ki) Δ (tyIWf k ki X A N Ot C m) t))
+  (* indexed infinitary trees (M19c), as [IWf]'s *)
+  | tmIWi k kp ki x s n d o c m =>
+      Some (peelL (peelL (peelL (peelL (peelL (peelL (peelL
+              (peelG (peelG (peelG (peelG (peelG (peelG (peelG (peelG
+                 (peelU (peelU (peelU (rb_br rb bIWi') k) kp) ki)
+                 (GCtx Δ)) (GTm x)) (GTm s)) (GTm n)) (GTm d)) (GTm o)) (GTm c)) (GTm m))
+              (rect (lsuc ki) Δ (tyU ki) x))
+              (rect (lsuc k) Δ (tyU k) s))
+              (rect lzero (cext Δ (tyEl k s) k) tyNat n))
+              (rect (lsuc kp) (cext (cext Δ (tyEl k s) k) (tyFin n) lzero) (tyU kp) d))
+              (rect ki (cext Δ (tyEl k s) k) (tyEl ki x⟨↑⟩) o))
+              (rect ki (cext (cext (cext Δ (tyEl k s) k) (tyFin n) lzero) (tyEl kp d) kp) (tyEl ki x⟨↑⟩⟨↑⟩⟨↑⟩) c))
+              (rect ki Δ (tyEl ki x) m))
+  | tmSupii k kp ki X A N D Ot C a cs =>
+      Some (peelL (peelL (peelL (peelL (peelL (peelL (peelL (peelL
+              (peelG (peelG (peelG (peelG (peelG (peelG (peelG (peelG (peelG
+                 (peelU (peelU (peelU (rb_br rb bSupii) k) kp) ki)
+                 (GCtx Δ)) (GTy X)) (GTy A)) (GTm N)) (GTy D)) (GTm Ot)) (GTm C)) (GTm a)) (GTm cs))
+              (recT ki Δ X))
+              (recT k Δ A))
+              (rect lzero (cext Δ A k) tyNat N))
+              (recT kp (cext (cext Δ A k) (tyFin N) lzero) D))
+              (rect ki (cext Δ A k) X⟨↑⟩ Ot))
+              (rect ki (cext (cext (cext Δ A k) (tyFin N) lzero) D kp) X⟨↑⟩⟨↑⟩⟨↑⟩ C))
+              (rect k Δ A a))
+              (rect (iwiL k kp ki) Δ (tyDVec (iwiL k kp ki) (subst_tm N (lsingle a)) (iwiFam k kp ki X A N D Ot C a)) cs))
+  | tmElimIWi k kp ki k' X A N D Ot C M c m t =>
+      Some (peelL (peelL (peelL (peelL (peelL (peelL (peelL (peelL (peelL (peelL
+              (peelG (peelG (peelG (peelG (peelG (peelG (peelG (peelG (peelG (peelG (peelG
+                 (peelU (peelU (peelU (peelU (rb_br rb bElimIWi) k) kp) ki) k')
+                 (GCtx Δ)) (GTy X)) (GTy A)) (GTm N)) (GTy D)) (GTm Ot)) (GTm C)) (GTy M)) (GTm c)) (GTm m)) (GTm t))
+              (recT ki Δ X))
+              (recT k Δ A))
+              (rect lzero (cext Δ A k) tyNat N))
+              (recT kp (cext (cext Δ A k) (tyFin N) lzero) D))
+              (rect ki (cext Δ A k) X⟨↑⟩ Ot))
+              (rect ki (cext (cext (cext Δ A k) (tyFin N) lzero) D kp) X⟨↑⟩⟨↑⟩⟨↑⟩ C))
+              (recT k' (cext (cext Δ X ki) (iwimotty k kp ki X A N D Ot C) (iwiL k kp ki)) M))
+              (rect k' (cext (cext (cext Δ A k) (iwicsty k kp ki X A N D Ot C) (iwiL k kp ki))
+                          (iwiihty k kp ki k' X A N D Ot C M) (lmax lzero (lmax kp k')))
+                 (iwistepty k kp ki X A N D Ot C M) c))
+              (rect ki Δ X m))
+              (rect (iwiL k kp ki) Δ (tyIWi k kp ki X A N D Ot C m) t))
   | _ => None
   end.
 

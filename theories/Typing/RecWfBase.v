@@ -106,11 +106,12 @@ Ltac glookups_from Ψ n :=
   | _ => idtac
   end.
 Ltac glookups Ψ := glookups_from Ψ 0.
-(* in a branch scope: W's (39-42), Wf's (47-50, M15b) and DVec's and IWf's
-   (55-60, M17c) only, the scopes that use [RecWf]'s memoised automation *)
+(* in a branch scope: W's (39-42), Wf's (47-50, M15b), DVec's and IWf's
+   (55-60, M17c) and IWi's (61-64, M19c) only, the scopes that use
+   [RecWf]'s memoised automation *)
 Ltac w_lookups k Ψ :=
   let b := eval cbv in (orb (orb (andb (Nat.leb 39 k) (Nat.ltb k 43)) (andb (Nat.leb 47 k) (Nat.ltb k 51)))
-                            (andb (Nat.leb 55 k) (Nat.ltb k 61))) in
+                            (andb (Nat.leb 55 k) (Nat.ltb k 65))) in
   lazymatch b with true => glookups Ψ | false => idtac end.
 
 Ltac lvl_ok := cbn; repeat split; try lia.
@@ -316,6 +317,17 @@ Lemma wf_supi_eq G i Γ l li X A N Ot C a cs T : i <> lV -> lwf (gL G) l -> lwf 
   [ G ; Γ ⊢[ i ] cs : tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a) @ lmax l li ] ->
   tyIWf l li X A N Ot C Ot[lsingle a] = T -> [ G ; Γ ⊢[ i ] tmSupi l li X A N Ot C a cs : T @ lmax l li ].
 Proof. intros; subst; apply wf_supi; auto. Qed.
+Lemma wf_supii_eq G i Γ l lp li X A N D Ot C a cs T : i <> lV ->
+  lwf (gL G) l -> lwf (gL G) lp -> lwf (gL G) li ->
+  [ G ; Γ ⊢[ i ] X @ li ] -> [ G ; Γ ⊢[ i ] A @ l ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] ->
+  [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] ->
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+  [ G ; Γ ⊢[ i ] a : A @ l ] ->
+  [ G ; Γ ⊢[ i ] cs : tyDVec (iwiL l lp li) N[lsingle a] (iwiFam l lp li X A N D Ot C a) @ iwiL l lp li ] ->
+  tyIWi l lp li X A N D Ot C Ot[lsingle a] = T -> [ G ; Γ ⊢[ i ] tmSupii l lp li X A N D Ot C a cs : T @ iwiL l lp li ].
+Proof. intros; subst; apply wf_supii; auto. Qed.
 Lemma wf_elimEmpty_eq G i Γ l l' M t T : i <> lV -> lwf (gL G) l -> lwf (gL G) l' ->
   [ G ; Γ ,, tyEmpty l' @ l' ⊢[ i ] M @ l ] -> [ G ; Γ ⊢[ i ] t : tyEmpty l' @ l' ] ->
   M[lsingle t] = T -> [ G ; Γ ⊢[ i ] elimEmpty l l' M t : T @ l ].
@@ -383,6 +395,7 @@ Ltac wdnf :=
             repeat first [ lazymatch goal with
                            | |- True => exact I | |- _ /\ _ => split
                            | |- dnftm (tmDNth _ _ _ _ _) => apply dnf_tmDNth
+                           | |- dnftm (ren_tm ?t _) => is_var t; apply ren_dnf; assumption
                            | |- dnftm ?t => is_var t; assumption
                            | |- ~ labsorb _ _ =>
                                let H := fresh in intro H;
@@ -408,24 +421,48 @@ Ltac inv_in_ctx :=
 Ltac wty_hyp :=
   lazymatch goal with
   | |- [ _ ; _ ⊢[ _ ] ?t : _ @ _ ] =>
-      match goal with H : [ _ ; _ ⊢[ _ ] t : _ @ _ ] |- _ => eapply wf_retype_eq; [exact H | cbn; reflexivity] end
+      first [ match goal with H : [ _ ; _ ⊢[ _ ] t : _ @ _ ] |- _ => eapply wf_retype_eq; [exact H | cbn; reflexivity] end
+            (* its weakening, under a binder of the family (M19c) *)
+            | match goal with H : forall _ _, _ -> [ _ ; _ ⊢[ _ ] t : _ @ _ ] |- _ =>
+                eapply wf_retype_eq; [apply H; assumption | cbn; reflexivity] end ]
   | |- [ _ ; _ ⊢[ _ ] ?t ≅ ?t' : _ @ _ ] =>
-      match goal with H : [ _ ; _ ⊢[ _ ] t ≅ t' : _ @ _ ] |- _ => eapply eqtm_retype_eq; [exact H | cbn; reflexivity] end
+      first [ match goal with H : [ _ ; _ ⊢[ _ ] t ≅ t' : _ @ _ ] |- _ => eapply eqtm_retype_eq; [exact H | cbn; reflexivity] end
+            | match goal with H : forall _ _, _ -> [ _ ; _ ⊢[ _ ] t ≅ t' : _ @ _ ] |- _ =>
+                eapply eqtm_retype_eq; [apply H; assumption | cbn; reflexivity] end
+            | match goal with H : forall _ _, _ -> [ _ ; _ ⊢[ _ ] t' ≅ t : _ @ _ ] |- _ =>
+                eapply eqtm_retype_eq; [apply eqtm_sym; apply H; assumption | cbn; reflexivity] end ]
   end.
 
 (** By [cbv], not [cbn]: the scopes' terms are closed up to global
     variables, so every operation computes and no raw fixpoint is left;
     [cbn]'s refolding cost a third of the branch tables (docs/gotchas.md). *)
+(** A renaming of an abstract term ([dnth]'s index under a binder of its
+    family, M19c) is stuck, and [cbv] leaves [ren_tm]'s unfolded
+    fixpoint there: folded back, so that the goal and the premise's
+    hypothesis ([wf_dnth_eq]) agree. Only a goal with a stuck renaming
+    pays for it. *)
+Ltac wrefold :=
+  let rt := eval cbv beta iota zeta delta [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
+       rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add
+       tmNth nthMot nthBase nthStep] in ren_tm in
+  change rt with ren_tm.
+Ltac wrefold_in H :=
+  let rt := eval cbv beta iota zeta delta [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
+       rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add
+       tmNth nthMot nthBase nthStep] in ren_tm in
+  change rt with ren_tm in H.
 Ltac wnorm :=
   try unfold tmNth, nthMot, nthBase, nthStep;
   cbv beta iota zeta delta [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
        rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add
-       tmNth nthMot nthBase nthStep].
+       tmNth nthMot nthBase nthStep];
+  try lazymatch goal with |- context [_ (rshift _)] => wrefold end.
 Ltac wnorm_in H :=
   try unfold tmNth, nthMot, nthBase, nthStep in H;
   cbv beta iota zeta delta [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
        rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add
-       tmNth nthMot nthBase nthStep] in H.
+       tmNth nthMot nthBase nthStep] in H;
+  try lazymatch type of H with context [_ (rshift _)] => wrefold_in H end.
 
 (** The premises' hypotheses at their normal forms, as [wty] meets their
     terms. *)
@@ -434,6 +471,9 @@ Ltac wnorm_hyps :=
   | H : [ _ ; _ ⊢[ _ ] app ?e _ _ _ _ _ : _ @ _ ] |- _ => is_var e; progress wnorm_in H
   | H : [ _ ; _ ⊢[ _ ] app ?e _ _ _ _ _ ≅ _ : _ @ _ ] |- _ => is_var e; progress wnorm_in H
   | H : [ _ ; _ ⊢[ _ ] var _ : _ @ _ ] |- _ => progress wnorm_in H
+  (* the index one local deeper ([DNthCore.wk_tm], M19c) *)
+  | H : forall _ _, _ -> [ _ ; _ ⊢[ _ ] _ : _ @ _ ] |- _ => progress wnorm_in H
+  | H : forall _ _, _ -> [ _ ; _ ⊢[ _ ] _ ≅ _ : _ @ _ ] |- _ => progress wnorm_in H
   end.
 
 (** A former at its own level, or converted to the goal's (M15b: [nth]'s
@@ -513,7 +553,7 @@ with wty :=
                          | let H := fresh "Hin" in intros ? ? ? H; inv_in_ctx; wty | wnorm; reflexivity ]
   | |- [ ?G ; ?Γ ⊢[ ?i ] app ?e ?l ?l' ?A ?B ?s : ?T @ _ ] =>
       (* [dnth]'s family's index under abstract locals ([wf_dnth_eq]) *)
-      first [ is_var e; wty_hyp |
+      first [ first [ is_var e | lazymatch e with ren_tm _ _ => idtac end ]; wty_hyp |
       wbind G Γ i A l ltac:(fun HA => tm_lv l' ltac:(
         let E := fresh "E" in
         tryif assert (E : B[lsingle s] = T) by (wnorm; reflexivity)
@@ -583,6 +623,8 @@ with wty :=
   | |- [ _ ; _ ⊢[ _ ] tmSqCode _ _ : _ @ _ ] => apply wf_code_sq; [ discriminate | lvl_ok | wty ]
   (* dependent tuples and indexed trees (M17c) *)
   | |- [ _ ; _ ⊢[ _ ] iwfFam _ _ _ _ _ _ _ _ @ _ ] => unfold iwfFam; wty
+  (* indexed infinitary trees (M19c) *)
+  | |- [ _ ; _ ⊢[ _ ] iwiFam _ _ _ _ _ _ _ _ _ _ @ _ ] => unfold iwiFam, iwiFamCod; wty
   (* [dnth]'s injections, at a sum or at the [Fin (S n)] it is *)
   | |- [ _ ; _ ⊢[ _ ] tmTriv _ : _ @ _ ] => apply wf_triv; [ discriminate | wctx | lvl_ok ]
   | |- [ _ ; _ ⊢[ _ ] tmInl ?l ?l' _ _ _ : tySum _ _ _ _ @ _ ] =>
@@ -613,6 +655,17 @@ with wty :=
       wbind G Γ i A l ltac:(fun HA =>
         eapply wf_supi_eq; [ discriminate | lvl_ok | lvl_ok | wty | exact HA | wty | wty | wtop | wty | wty
                            | wnorm; reflexivity ])
+  | |- [ ?G ; ?Γ ⊢[ ?i ] tyIWi ?l ?lp ?li _ ?A _ _ _ _ _ @ _ ] =>
+      wbind G Γ i A l ltac:(fun HA =>
+        ty_lv (iwiL l lp li) ltac:(apply wft_iwi;
+          [ discriminate | lvl_ok | lvl_ok | lvl_ok | wty | exact HA | wty | wtop | wty | wtop | wty ]))
+  | |- [ ?G ; ?Γ ⊢[ ?i ] tmIWi ?l _ _ _ ?s _ _ _ _ _ : _ @ _ ] =>
+      wbind G Γ i (tyEl l s) l ltac:(fun _ =>
+        apply wf_code_iwi; [ discriminate | lvl_ok | lvl_ok | lvl_ok | wty | wty | wty | wtop | wty | wtop | wty ])
+  | |- [ ?G ; ?Γ ⊢[ ?i ] tmSupii ?l _ _ _ ?A _ _ _ _ _ _ : _ @ _ ] =>
+      wbind G Γ i A l ltac:(fun HA =>
+        eapply wf_supii_eq; [ discriminate | lvl_ok | lvl_ok | lvl_ok | wty | exact HA | wty | wtop | wty | wtop
+                            | wty | wty | wnorm; reflexivity ])
   end
 (** The three conversions [nth]'s unfolding crosses (M15b): [Fin 0] is
     empty, [Fin (S n)] a sum and [Vec(A; S n)] a pair. *)
@@ -646,10 +699,24 @@ with weq :=
   | |- [ ?G ; ?Γ ⊢[ ?i ] tyDVec ?l ?n _ ≅ tyDVec _ _ _ @ _ ] =>
       wbind G Γ i (tyFin n) lzero ltac:(fun _ =>
         ety_lv l ltac:(eapply eqty_dvec; [ discriminate | lalg | wty | weqt | wty | weq ]))
+  (* a type global at two instances: the field's position type at two
+     indices, under its binder (M19c) *)
+  | |- [ _ ; _ ⊢[ _ ] tyGvar _ _ ≅ tyGvar _ _ @ _ ] =>
+      eapply eqty_gvar; [ discriminate | wctx | glookup | unfold lle; cbn; lia
+                        | split; [reflexivity | intros; cbn; f_equal; lia] | wdnf
+                        | split; [reflexivity | intros; cbn; f_equal; lia] | wdnf
+                        | let H := fresh "Hin" in intros ? ? ? H; inv_in_ctx; wty
+                        | let H := fresh "Hin" in intros ? ? ? H; inv_in_ctx; wty_conv
+                        | let H := fresh "Hin" in intros ? ? ? H; inv_in_ctx; weqt ]
   | |- [ ?G ; ?Γ ⊢[ ?i ] tyIWf ?l ?li _ ?A _ _ _ _ ≅ tyIWf _ _ _ _ _ _ _ _ @ _ ] =>
       wbind G Γ i A l ltac:(fun HA =>
         ety_lv (lmax l li) ltac:(eapply eqty_iwf;
           [ discriminate | lalg | lalg | wty | weq | exact HA | weq | wty | weqt | wty | weqt | wtop | wtopq | weqt ]))
+  | |- [ ?G ; ?Γ ⊢[ ?i ] tyIWi ?l ?lp ?li _ ?A _ _ _ _ _ ≅ tyIWi _ _ _ _ _ _ _ _ _ _ @ _ ] =>
+      wbind G Γ i A l ltac:(fun HA =>
+        ety_lv (iwiL l lp li) ltac:(eapply eqty_iwi;
+          [ discriminate | lalg | lalg | lalg | wty | weq | exact HA | weq | wty | weqt | wtop | wtopqT
+          | wty | weqt | wtop | wtopq | weqt ]))
   | |- [ _ ; _ ⊢[ _ ] tyFin _ ≅ tyFin _ @ _ ] => apply eqty_fin; [ discriminate | weqt ]
   end
 with weqt :=
@@ -666,7 +733,7 @@ with weqt :=
         | weqt ])
   | |- [ _ ; _ ⊢[ _ ] _ ≅ app (lam _ _ _ _) _ _ _ _ _ : _ @ _ ] => apply eqtm_sym; weqt
   | |- [ ?G ; ?Γ ⊢[ ?i ] app ?e ?l ?l' ?A _ _ ≅ app _ _ _ _ _ _ : _ @ _ ] =>
-      first [ is_var e; wty_hyp |
+      first [ first [ is_var e | lazymatch e with ren_tm _ _ => idtac end ]; wty_hyp |
       wbind G Γ i A l ltac:(fun HA => etm_lv l' ltac:(
         eapply eqtm_app_eq; [ wnorm; reflexivity | discriminate | lalg | lalg | exact HA | weq | weq | weqt | weqt ])) ]
   | |- [ _ ; _ ⊢[ _ ] gvar _ _ ≅ gvar _ _ : _ @ _ ] =>
@@ -674,7 +741,7 @@ with weqt :=
                            | split; [reflexivity | intros; cbn; f_equal; lia] | wdnf
                            | split; [reflexivity | intros; cbn; f_equal; lia] | wdnf
                            | let H := fresh "Hin" in intros ? ? ? H; inv_in_ctx; wty
-                           | let H := fresh "Hin" in intros ? ? ? H; inv_in_ctx; wty
+                           | let H := fresh "Hin" in intros ? ? ? H; inv_in_ctx; wty_conv
                            | let H := fresh "Hin" in intros ? ? ? H; inv_in_ctx; weqt | wnorm; reflexivity ]
   (* an injection at [Fin (S n)], as the sum it is *)
   | |- [ _ ; _ ⊢[ _ ] tmInl _ _ _ _ _ ≅ tmInl _ _ _ _ _ : tyFin (succ _) @ _ ] =>
@@ -687,6 +754,15 @@ with weqt :=
      equation ([wf_dnth_eq]) *)
   | |- [ _ ; _ ⊢[ _ ] _ ≅ _ : _ @ _ ] => wty_hyp
   end
+with wtopqT :=
+  lazymatch goal with
+  | |- [ ?G ; ?Γ ⊢[ ?i ] _ ≅ _ @ _ ] =>
+      let HΓ := fresh "HΓ" in assert (HΓ : [ G ; Γ ⊢[ typeof i ] ]) by (wnorm; wctx); weq
+  end
+(** A substitution's entry at the other instance's type: the local at
+    its own type, converted (the field's argument, M19c). *)
+with wty_conv :=
+  first [ wty | eapply wf_conv; [ wty | wnorm; weq ] ]
 with wtopq :=
   lazymatch goal with
   | |- [ ?G ; ?Γ ⊢[ ?i ] _ ≅ _ : _ @ _ ] =>
@@ -740,6 +816,14 @@ Proof using HG.
   intros Hk. pose proof (uwk_glob (br_nu k) G HG) as Hu.
   unfold brG, gctx_uwk in *; cbn [gL gΨ] in *.
   assert (k = 47 \/ k = 48 \/ k = 49 \/ k = 50) as [E|[E|[E|E]]] by lia; subst k;
+    cbn [brDecls List.app br_nu br_ar] in *; unfold gv, gu; wnorm; wglob.
+Qed.
+
+Lemma wf_brG_IWi k : 61 <= k < 64 -> [ ⊢ brG k G ].
+Proof using HG.
+  intros Hk. pose proof (uwk_glob (br_nu k) G HG) as Hu.
+  unfold brG, gctx_uwk in *; cbn [gL gΨ] in *.
+  assert (k = 61 \/ k = 62 \/ k = 63) as [E|[E|E]] by lia; subst k;
     cbn [brDecls List.app br_nu br_ar] in *; unfold gv, gu; wnorm; wglob.
 Qed.
 

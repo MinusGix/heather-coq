@@ -75,6 +75,7 @@ theories/Typing/IWfIH.v
 theories/Typing/IWiIH.v
 theories/Typing/WfScope.v
 theories/Typing/WfScopeIWf.v
+theories/Typing/WfScopeIWi.v
 theories/Typing/RecEq.v
 theories/Typing/AlgStruct.v
 theories/Typing/CtxConv.v
@@ -201,6 +202,10 @@ theories/Validity/RecSIWf.v
 theories/Validity/RecSIWfCode.v
 theories/Validity/RecSIWfSupi.v
 theories/Validity/RecSIWfElim.v
+theories/Validity/RecSIWi.v
+theories/Validity/RecSIWiCode.v
+theories/Validity/RecSIWiSupi.v
+theories/Validity/RecSIWiElim.v
 theories/Validity/RecSSq.v
 theories/Validity/RecS.v
 theories/Validity/RecFT.v

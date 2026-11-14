@@ -300,6 +300,61 @@ Definition brDecls (k : nat) : list gdecl :=
            gdTm (cvar 3 ,, gv 1 @ lvar 2) lC (gv 2)⟨↑⟩ (lvar 1);
            gdTm (cvar 2 ,, gv 0 @ lvar 2) lC tyNat lzero;
            gdTy (cvar 1) lC (lvar 2); gdTy (cvar 0) lC (lvar 1); gdCtx]
+  (* indexed infinitary trees (M19c), as IWf's with the domain after the
+     arity: the levels ℓ ℓp ℓi (ℓ') bound in that order *)
+  (* ℓ ℓp ℓi; g, U_X : (g ⊢C @ℓi), U_A : (g ⊢C @ℓ), u_N : (g, x : U_A^id ⊢C Nat @0),
+     U_D : (g, x, i : Fin u_N^id ⊢C @ℓp), u_O : (g, x ⊢C U_X^↑ @ℓi),
+     u_C : (g, x, i, y : U_D^id ⊢C U_X^↑↑↑ @ℓi), u_m : (g ⊢C U_X^id @ℓi) *)
+  | 61 => [gdTm (cvar 6) lC (gv 5) (lvar 0);
+           gdTm (cvar 5 ,, gv 3 @ lvar 2 ,, tyFin (gu 2) @ lzero ,, gv 1 @ lvar 1) lC (gv 4)⟨↑⟩⟨↑⟩⟨↑⟩ (lvar 0);
+           gdTm (cvar 4 ,, gv 2 @ lvar 2) lC (gv 3)⟨↑⟩ (lvar 0);
+           gdTy (cvar 3 ,, gv 1 @ lvar 2 ,, tyFin (gu 0) @ lzero) lC (lvar 1);
+           gdTm (cvar 2 ,, gv 0 @ lvar 2) lC tyNat lzero;
+           gdTy (cvar 1) lC (lvar 2); gdTy (cvar 0) lC (lvar 0); gdCtx]
+  (* ℓ ℓp ℓi; g, u_x : (g ⊢C Ty ℓi), u_s : (g ⊢C Ty ℓ), u_n : (g, x : El ℓ u_s^id ⊢C Nat),
+     u_d : (g, x, i : Fin u_n^id ⊢C Ty ℓp), u_o : (g, x ⊢C El ℓi u_x^↑),
+     u_c : (g, x, i, y : El ℓp u_d^id ⊢C El ℓi u_x^↑↑↑), u_m : (g ⊢C El ℓi u_x^id) *)
+  | 62 => [gdTm (cvar 6) lC (tyEl (lvar 0) (gu 5)) (lvar 0);
+           gdTm (cvar 5 ,, tyEl (lvar 2) (gu 3) @ lvar 2 ,, tyFin (gu 2) @ lzero ,, tyEl (lvar 1) (gu 1) @ lvar 1) lC
+             (tyEl (lvar 0) (gu 4)⟨↑⟩⟨↑⟩⟨↑⟩) (lvar 0);
+           gdTm (cvar 4 ,, tyEl (lvar 2) (gu 2) @ lvar 2) lC (tyEl (lvar 0) (gu 3)⟨↑⟩) (lvar 0);
+           gdTm (cvar 3 ,, tyEl (lvar 2) (gu 1) @ lvar 2 ,, tyFin (gu 0) @ lzero) lC (tyU (lvar 1)) (lsuc (lvar 1));
+           gdTm (cvar 2 ,, tyEl (lvar 2) (gu 0) @ lvar 2) lC tyNat lzero;
+           gdTm (cvar 1) lC (tyU (lvar 2)) (lsuc (lvar 2));
+           gdTm (cvar 0) lC (tyU (lvar 0)) (lsuc (lvar 0)); gdCtx]
+  (* ℓ ℓp ℓi; g, U_X, U_A, u_N, U_D, u_O, u_C, u_a : (g ⊢C U_A^id @ℓ),
+     u_cs : (g ⊢C DVec^{iwiL}(u_N^{id,u_a/x}; k. iwiFam u_a) @iwiL) *)
+  | 63 => [gdTm (cvar 7) lC (tyDVec (iwiL (lvar 2) (lvar 1) (lvar 0)) (gu 4)[lsingle (gu 0)]
+                               (iwiFam (lvar 2) (lvar 1) (lvar 0) (gv 6) (gv 5) (gu 4) (gv 3) (gu 2) (gu 1) (gu 0)))
+             (iwiL (lvar 2) (lvar 1) (lvar 0));
+           gdTm (cvar 6) lC (gv 4) (lvar 2);
+           gdTm (cvar 5 ,, gv 3 @ lvar 2 ,, tyFin (gu 2) @ lzero ,, gv 1 @ lvar 1) lC (gv 4)⟨↑⟩⟨↑⟩⟨↑⟩ (lvar 0);
+           gdTm (cvar 4 ,, gv 2 @ lvar 2) lC (gv 3)⟨↑⟩ (lvar 0);
+           gdTy (cvar 3 ,, gv 1 @ lvar 2 ,, tyFin (gu 0) @ lzero) lC (lvar 1);
+           gdTm (cvar 2 ,, gv 0 @ lvar 2) lC tyNat lzero;
+           gdTy (cvar 1) lC (lvar 2); gdTy (cvar 0) lC (lvar 0); gdCtx]
+  (* ℓ ℓp ℓi ℓ'; g, U_X, U_A, u_N, U_D, u_O, u_C,
+     U_M : (g, j : U_X^id, z : iwimotty @iwiL ⊢C @ℓ'),
+     u_c : (g, a : U_A^id, cs : iwicsty, ih : iwiihty ⊢C iwistepty @ℓ'),
+     u_m : (g ⊢C U_X^id @ℓi), u_t : (g ⊢C IWi(…)(u_m^id) @iwiL) *)
+  | 64 => [gdTm (cvar 9) lC (tyIWi (lvar 3) (lvar 2) (lvar 1) (gv 8) (gv 7) (gu 6) (gv 5) (gu 4) (gu 3) (gu 0))
+             (iwiL (lvar 3) (lvar 2) (lvar 1));
+           gdTm (cvar 8) lC (gv 7) (lvar 1);
+           gdTm (cvar 7 ,, gv 5 @ lvar 3
+                        ,, iwicsty (lvar 3) (lvar 2) (lvar 1) (gv 6) (gv 5) (gu 4) (gv 3) (gu 2) (gu 1)
+                             @ iwiL (lvar 3) (lvar 2) (lvar 1)
+                        ,, iwiihty (lvar 3) (lvar 2) (lvar 1) (lvar 0) (gv 6) (gv 5) (gu 4) (gv 3) (gu 2) (gu 1) (gv 0)
+                             @ lmax lzero (lmax (lvar 2) (lvar 0))) lC
+             (iwistepty (lvar 3) (lvar 2) (lvar 1) (gv 6) (gv 5) (gu 4) (gv 3) (gu 2) (gu 1) (gv 0)) (lvar 0);
+           gdTy (cvar 6 ,, gv 5 @ lvar 1
+                        ,, iwimotty (lvar 3) (lvar 2) (lvar 1) (gv 5) (gv 4) (gu 3) (gv 2) (gu 1) (gu 0)
+                             @ iwiL (lvar 3) (lvar 2) (lvar 1))
+             lC (lvar 0);
+           gdTm (cvar 5 ,, gv 3 @ lvar 3 ,, tyFin (gu 2) @ lzero ,, gv 1 @ lvar 2) lC (gv 4)⟨↑⟩⟨↑⟩⟨↑⟩ (lvar 1);
+           gdTm (cvar 4 ,, gv 2 @ lvar 3) lC (gv 3)⟨↑⟩ (lvar 1);
+           gdTy (cvar 3 ,, gv 1 @ lvar 3 ,, tyFin (gu 0) @ lzero) lC (lvar 2);
+           gdTm (cvar 2 ,, gv 0 @ lvar 3) lC tyNat lzero;
+           gdTy (cvar 1) lC (lvar 3); gdTy (cvar 0) lC (lvar 1); gdCtx]
   | _ => []
   end.
 
@@ -505,6 +560,48 @@ Definition br_calls (k : nat) : list rcall :=
             rct (lvar 1) (cvar 9) (gv 8) (boxt (gu 1));
             rct (lmax (lvar 2) (lvar 1)) (cvar 9) (tyIWf (lvar 2) (lvar 1) (gv 8) (gv 7) (gu 6) (gu 5) (gu 4) (gu 1))
               (boxt (gu 0)) ]
+  (* indexed infinitary trees (M19c); [br_calls_derived] checks them *)
+  | 61 => [ rcT (lvar 0) (cvar 7) (boxT (gv 6)); rcT (lvar 2) (cvar 7) (boxT (gv 5));
+            rct lzero (cvar 7 ,, gv 5 @ lvar 2) tyNat (boxt (gu 4));
+            rcT (lvar 1) (cvar 7 ,, gv 5 @ lvar 2 ,, tyFin (gu 4) @ lzero) (boxT (gv 3));
+            rct (lvar 0) (cvar 7 ,, gv 5 @ lvar 2) (gv 6)⟨↑⟩ (boxt (gu 2));
+            rct (lvar 0) (cvar 7 ,, gv 5 @ lvar 2 ,, tyFin (gu 4) @ lzero ,, gv 3 @ lvar 1) (gv 6)⟨↑⟩⟨↑⟩⟨↑⟩ (boxt (gu 1));
+            rct (lvar 0) (cvar 7) (gv 6) (boxt (gu 0)) ]
+  | 62 => [ rct (lsuc (lvar 0)) (cvar 7) (tyU (lvar 0)) (boxt (gu 6));
+            rct (lsuc (lvar 2)) (cvar 7) (tyU (lvar 2)) (boxt (gu 5));
+            rct lzero (cvar 7 ,, tyEl (lvar 2) (gu 5) @ lvar 2) tyNat (boxt (gu 4));
+            rct (lsuc (lvar 1)) (cvar 7 ,, tyEl (lvar 2) (gu 5) @ lvar 2 ,, tyFin (gu 4) @ lzero) (tyU (lvar 1)) (boxt (gu 3));
+            rct (lvar 0) (cvar 7 ,, tyEl (lvar 2) (gu 5) @ lvar 2) (tyEl (lvar 0) (gu 6)⟨↑⟩) (boxt (gu 2));
+            rct (lvar 0) (cvar 7 ,, tyEl (lvar 2) (gu 5) @ lvar 2 ,, tyFin (gu 4) @ lzero ,, tyEl (lvar 1) (gu 3) @ lvar 1)
+              (tyEl (lvar 0) (gu 6)⟨↑⟩⟨↑⟩⟨↑⟩) (boxt (gu 1));
+            rct (lvar 0) (cvar 7) (tyEl (lvar 0) (gu 6)) (boxt (gu 0)) ]
+  | 63 => [ rcT (lvar 0) (cvar 8) (boxT (gv 7)); rcT (lvar 2) (cvar 8) (boxT (gv 6));
+            rct lzero (cvar 8 ,, gv 6 @ lvar 2) tyNat (boxt (gu 5));
+            rcT (lvar 1) (cvar 8 ,, gv 6 @ lvar 2 ,, tyFin (gu 5) @ lzero) (boxT (gv 4));
+            rct (lvar 0) (cvar 8 ,, gv 6 @ lvar 2) (gv 7)⟨↑⟩ (boxt (gu 3));
+            rct (lvar 0) (cvar 8 ,, gv 6 @ lvar 2 ,, tyFin (gu 5) @ lzero ,, gv 4 @ lvar 1) (gv 7)⟨↑⟩⟨↑⟩⟨↑⟩ (boxt (gu 2));
+            rct (lvar 2) (cvar 8) (gv 6) (boxt (gu 1));
+            rct (iwiL (lvar 2) (lvar 1) (lvar 0)) (cvar 8)
+              (tyDVec (iwiL (lvar 2) (lvar 1) (lvar 0)) (gu 5)[lsingle (gu 1)]
+                 (iwiFam (lvar 2) (lvar 1) (lvar 0) (gv 7) (gv 6) (gu 5) (gv 4) (gu 3) (gu 2) (gu 1))) (boxt (gu 0)) ]
+  | 64 => [ rcT (lvar 1) (cvar 10) (boxT (gv 9)); rcT (lvar 3) (cvar 10) (boxT (gv 8));
+            rct lzero (cvar 10 ,, gv 8 @ lvar 3) tyNat (boxt (gu 7));
+            rcT (lvar 2) (cvar 10 ,, gv 8 @ lvar 3 ,, tyFin (gu 7) @ lzero) (boxT (gv 6));
+            rct (lvar 1) (cvar 10 ,, gv 8 @ lvar 3) (gv 9)⟨↑⟩ (boxt (gu 5));
+            rct (lvar 1) (cvar 10 ,, gv 8 @ lvar 3 ,, tyFin (gu 7) @ lzero ,, gv 6 @ lvar 2) (gv 9)⟨↑⟩⟨↑⟩⟨↑⟩ (boxt (gu 4));
+            rcT (lvar 0) (cvar 10 ,, gv 9 @ lvar 1
+                         ,, iwimotty (lvar 3) (lvar 2) (lvar 1) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4)
+                              @ iwiL (lvar 3) (lvar 2) (lvar 1))
+              (boxT (gv 3));
+            rct (lvar 0) (cvar 10 ,, gv 8 @ lvar 3
+                         ,, iwicsty (lvar 3) (lvar 2) (lvar 1) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4)
+                              @ iwiL (lvar 3) (lvar 2) (lvar 1)
+                         ,, iwiihty (lvar 3) (lvar 2) (lvar 1) (lvar 0) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) (gv 3)
+                              @ lmax lzero (lmax (lvar 2) (lvar 0)))
+              (iwistepty (lvar 3) (lvar 2) (lvar 1) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) (gv 3)) (boxt (gu 2));
+            rct (lvar 1) (cvar 10) (gv 9) (boxt (gu 1));
+            rct (iwiL (lvar 3) (lvar 2) (lvar 1)) (cvar 10)
+              (tyIWi (lvar 3) (lvar 2) (lvar 1) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) (gu 1)) (boxt (gu 0)) ]
   | _ => []
   end.
 
@@ -594,6 +691,16 @@ Definition br_head (k : nat) : rcall :=
             (boxt (tmSupi (lvar 1) (lvar 0) (gv 6) (gv 5) (gu 4) (gu 3) (gu 2) (gu 1) (gu 0)))
   | 60 => rct (lvar 0) (cvar 9) (tyGvar 3 (lsingle2 (gu 1) (gu 0)))
             (boxt (tmElimIWf (lvar 2) (lvar 1) (lvar 0) (gv 8) (gv 7) (gu 6) (gu 5) (gu 4) (gv 3) (gu 2) (gu 1) (gu 0)))
+  | 61 => rcT (iwiL (lvar 2) (lvar 1) (lvar 0)) (cvar 7)
+            (boxT (tyIWi (lvar 2) (lvar 1) (lvar 0) (gv 6) (gv 5) (gu 4) (gv 3) (gu 2) (gu 1) (gu 0)))
+  | 62 => rct (lsuc (iwiL (lvar 2) (lvar 1) (lvar 0))) (cvar 7) (tyU (iwiL (lvar 2) (lvar 1) (lvar 0)))
+            (boxt (tmIWi (lvar 2) (lvar 1) (lvar 0) (gu 6) (gu 5) (gu 4) (gu 3) (gu 2) (gu 1) (gu 0)))
+  | 63 => rct (iwiL (lvar 2) (lvar 1) (lvar 0)) (cvar 8)
+            (tyIWi (lvar 2) (lvar 1) (lvar 0) (gv 7) (gv 6) (gu 5) (gv 4) (gu 3) (gu 2) (gu 3)[lsingle (gu 1)])
+            (boxt (tmSupii (lvar 2) (lvar 1) (lvar 0) (gv 7) (gv 6) (gu 5) (gv 4) (gu 3) (gu 2) (gu 1) (gu 0)))
+  | 64 => rct (lvar 0) (cvar 10) (tyGvar 3 (lsingle2 (gu 1) (gu 0)))
+            (boxt (tmElimIWi (lvar 3) (lvar 2) (lvar 1) (lvar 0) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) (gv 3)
+                     (gu 2) (gu 1) (gu 0)))
   | _ => rcT lzero cnil (boxT tyErr)
   end.
 

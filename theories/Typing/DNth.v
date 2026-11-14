@@ -273,18 +273,27 @@ Proof using .
   - destruct Δ; try contradiction. exact (wkr_shiftS _ (IH _ Hx)).
 Qed.
 
-Let NW m Δ (_ : m <= 10) (Hx : DNthCore.ctx_extn m Δ Γ) (HΔ : [ G ; Δ ⊢[ i ] ]) :=
+Let NW m Δ (_ : m <= 11) (Hx : DNthCore.ctx_extn m Δ Γ) (HΔ : [ G ; Δ ⊢[ i ] ]) :=
   n_wk (extn_wkr Hx) HΔ.
-Let FW m Δ (e : tm) (K : tm) (x : tm) (_ : 2 <= m <= 9) (Hx : DNthCore.ctx_extn m Δ Γ) (HΔ : [ G ; Δ ⊢[ i ] ]) :=
-  @fam_wf _ n F l Hn HF Δ (rshift m) (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (extn_wkr Hx) HΔ.
-Let FV m Δ (_ : 2 <= m <= 2) (Hx : DNthCore.ctx_extn m Δ Γ) (HΔ : [ G ; Δ ⊢[ i ] ]) :=
-  @fam_wf _ n F l Hn HF Δ (rshift m) (var 0) (extn_wkr Hx) HΔ.
+Let FW m Δ (e : tm) (K : tm) (x : tm) (_ : 2 <= m <= 9) (Hx : DNthCore.ctx_extn m Δ Γ) (HΔ : [ G ; Δ ⊢[ i ] ])
+    Ht (_ : DNthCore.wk_tm G i Δ (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (tyFin n⟨rshift m⟩)) :=
+  @fam_wf _ n F l Hn HF Δ (rshift m) (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (extn_wkr Hx) HΔ Ht.
+Let FV m Δ (_ : 2 <= m <= 2) (Hx : DNthCore.ctx_extn m Δ Γ) (HΔ : [ G ; Δ ⊢[ i ] ]) Ht
+    (_ : DNthCore.wk_tm G i Δ (var 0) (tyFin n⟨rshift m⟩)) :=
+  @fam_wf _ n F l Hn HF Δ (rshift m) (var 0) (extn_wkr Hx) HΔ Ht.
 Let FE m Δ (e : tm) (K : tm) (x : tm) (e' : tm) (K' : tm) (x' : tm) (_ : 6 <= m <= 8)
-    (Hx : DNthCore.ctx_extn m Δ Γ) (HΔ : [ G ; Δ ⊢[ i ] ]) :=
+    (Hx : DNthCore.ctx_extn m Δ Γ) (HΔ : [ G ; Δ ⊢[ i ] ]) Ht Ht' Htt
+    (_ : DNthCore.wk_tm G i Δ (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (tyFin n⟨rshift m⟩))
+    (_ : DNthCore.wk_tm G i Δ (app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x') (tyFin n⟨rshift m⟩))
+    (_ : DNthCore.wk_eq G i Δ (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x)
+           (app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x') (tyFin n⟨rshift m⟩)) :=
   @fam_eq _ n F l Hn HF Δ (rshift m) (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x)
-    (app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x') (extn_wkr Hx) HΔ.
-Let FE0 m Δ (e : tm) (K : tm) (x : tm) (_ : m <= 2) (Hx : DNthCore.ctx_extn m Δ Γ) (HΔ : [ G ; Δ ⊢[ i ] ]) :=
-  @fam_eq _ n F l Hn HF Δ (rshift m) (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (var 0) (extn_wkr Hx) HΔ.
+    (app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x') (extn_wkr Hx) HΔ Ht Ht' Htt.
+Let FE0 m Δ (e : tm) (K : tm) (x : tm) (_ : m <= 2) (Hx : DNthCore.ctx_extn m Δ Γ) (HΔ : [ G ; Δ ⊢[ i ] ]) Ht Ht' Htt
+    (_ : DNthCore.wk_tm G i Δ (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (tyFin n⟨rshift m⟩))
+    (_ : DNthCore.wk_tm G i Δ (var 0) (tyFin n⟨rshift m⟩))
+    (_ : DNthCore.wk_eq G i Δ (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (var 0) (tyFin n⟨rshift m⟩)) :=
+  @fam_eq _ n F l Hn HF Δ (rshift m) (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (var 0) (extn_wkr Hx) HΔ Ht Ht' Htt.
 
 Lemma dnth_mot_wf : [ G ; Γ ,, tyNat @ lzero ⊢[ i ] dnthMot l n F @ l ].
 Proof using Hc Hl Hn HF. exact (DNthCore.dnth_mot_wf Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0). Qed.

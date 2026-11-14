@@ -24,6 +24,9 @@ Proof using . rewrite ren_ren_comp_ty. apply ren_ext_ty; intros [|m]; rlk_simpl;
 Lemma liftS_ty (T : ty) k : T⟨rlift (rshift k)⟩⟨rlift ↑⟩ = T⟨rlift (rshift (S k))⟩.
 Proof using . rewrite ren_ren_comp_ty. apply ren_ext_ty; intros [|m]; rlk_simpl; cbn; lia. Qed.
 
+Lemma shiftS_lift_tm (t : tm) k : t⟨rshift (S k)⟩⟨rlift ↑⟩ = t⟨rshift (S (S k))⟩.
+Proof using . unfold rshift1. rewrite ren_ren_comp. apply ren_ext_tm; intros m. rlk_simpl. rewrite Nat.add_succ_r. cbn. lia. Qed.
+
 Lemma shift_add_tm (t : tm) a b : t⟨rshift a⟩⟨rshift b⟩ = t⟨rshift (a + b)⟩.
 Proof using . rewrite ren_ren_comp. apply ren_ext_tm; intros m; rlk_simpl; cbn; lia. Qed.
 Lemma lift_add_ty (T : ty) a b : T⟨rlift (rshift a)⟩⟨rlift (rshift b)⟩ = T⟨rlift (rshift (a + b))⟩.
@@ -32,8 +35,11 @@ Proof using . rewrite ren_ren_comp_ty. apply ren_ext_ty; intros [|m]; rlk_simpl;
 Lemma shift_lift_tm (t : tm) k a : t⟨rshift (S k)⟩⟨rlift (rshift a)⟩ = t⟨rshift (S k + a)⟩.
 Proof using . rewrite ren_ren_comp. apply ren_ext_tm; intros m; rlk_simpl; cbn; rewrite ?Nat.add_succ_r; cbn; rlk_simpl; cbn; lia. Qed.
 
+Lemma shift_lift2_tm (t : tm) k a : t⟨rshift (S (S k))⟩⟨rlift (rlift (rshift a))⟩ = t⟨rshift (S (S k) + a)⟩.
+Proof using . rewrite ren_ren_comp. apply ren_ext_tm; intros m; rlk_simpl; cbn; rewrite ?Nat.add_succ_r; cbn; rlk_simpl; cbn; lia. Qed.
+
 (** Iterated weakenings to one [rshift k] (and [rlift (rshift k)]). *)
-Ltac nshift_go := unfold rshift1; repeat first [ rewrite shift_add_tm | rewrite shift_lift_tm | rewrite lift_add_ty
+Ltac nshift_go := unfold rshift1; repeat first [ rewrite shift_add_tm | rewrite shift_lift_tm | rewrite shift_lift2_tm | rewrite lift_add_ty
   | match goal with |- context [rshift (?a + ?b)] =>
       let c := eval compute in (a + b) in change (a + b) with c end ].
 (** In a judgement, the context is left alone. *)
@@ -176,6 +182,12 @@ Proof using .
   intros Nn NF. unfold dnthMot, dnthEmb, dnthFam, dnthRes. push_subst. meq.
 Qed.
 
+(** An index typed in [Δ] and in [Δ] extended by any one local: what the
+    family needs of its index under a binder of its own ([IWi]'s field
+    family [Π(d : D). IWi(c)], M19c), which [RecWf] cannot get by weakening. *)
+Notation wk_tm G i Δ t T := (forall X lx, [ G ; Δ ,, X @ lx ⊢[ i ] ] -> [ G ; Δ ,, X @ lx ⊢[ i ] t⟨↑⟩ : T⟨↑⟩ @ lzero ]).
+Notation wk_eq G i Δ t t' T := (forall X lx, [ G ; Δ ,, X @ lx ⊢[ i ] ] -> [ G ; Δ ,, X @ lx ⊢[ i ] t⟨↑⟩ ≅ t'⟨↑⟩ : T⟨↑⟩ @ lzero ]).
+
 Section DNthCore.
 Context {G : gctx} {i : layer} (Hc : compt i).
 
@@ -214,30 +226,36 @@ Section Schema.
 Context {Γ : ctx} {n : tm} {F : ty} {l : lvl} (Hl : lwf (gL G) l) (HΓ : [ G ; Γ ⊢[ i ] ])
   (Nn : nftm n) (NF : nfty F)
   (Hn : [ G ; Γ ⊢[ i ] n : tyNat @ lzero ]) (HF : [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F @ l ])
-  (NW : forall m Δ, m <= 10 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
+  (NW : forall m Δ, m <= 11 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
      [ G ; Δ ⊢[ i ] n⟨rshift m⟩ : tyNat @ lzero ])
   (FW : forall m Δ e K x, 2 <= m <= 9 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
      [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x : tyFin n⟨rshift m⟩ @ lzero ] ->
+     wk_tm G i Δ (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (tyFin n⟨rshift m⟩) ->
      [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x)] @ l ])
   (FV : forall m Δ, 2 <= m <= 2 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
-     [ G ; Δ ⊢[ i ] var 0 : tyFin n⟨rshift m⟩ @ lzero ] -> [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (var 0)] @ l ])
+     [ G ; Δ ⊢[ i ] var 0 : tyFin n⟨rshift m⟩ @ lzero ] -> wk_tm G i Δ (var 0) (tyFin n⟨rshift m⟩) ->
+     [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (var 0)] @ l ])
   (FE : forall m Δ e K x e' K' x', 6 <= m <= 8 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
      [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x : tyFin n⟨rshift m⟩ @ lzero ] ->
      [ G ; Δ ⊢[ i ] app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x' : tyFin n⟨rshift m⟩ @ lzero ] ->
      [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x
                   ≅ app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x' : tyFin n⟨rshift m⟩ @ lzero ] ->
+     wk_tm G i Δ (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (tyFin n⟨rshift m⟩) -> wk_tm G i Δ (app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x') (tyFin n⟨rshift m⟩) ->
+     wk_eq G i Δ (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x') (tyFin n⟨rshift m⟩) ->
      [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x)]
                   ≅ F⟨rlift (rshift m)⟩[lsingle (app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x')] @ l ])
   (FE0 : forall m Δ e K x, m <= 2 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
      [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x : tyFin n⟨rshift m⟩ @ lzero ] ->
      [ G ; Δ ⊢[ i ] var 0 : tyFin n⟨rshift m⟩ @ lzero ] ->
      [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x ≅ var 0 : tyFin n⟨rshift m⟩ @ lzero ] ->
+     wk_tm G i Δ (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (tyFin n⟨rshift m⟩) -> wk_tm G i Δ (var 0) (tyFin n⟨rshift m⟩) ->
+     wk_eq G i Δ (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (var 0) (tyFin n⟨rshift m⟩) ->
      [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x)]
                   ≅ F⟨rlift (rshift m)⟩[lsingle (var 0)] @ l ]).
 
 (** An embedding applied at an index of [Fin k], in a context [Δ] where
     the embedding is [ev], [k] is [K], and [Δ] extends [Γ] by [m] locals. *)
-Lemma emb_app_wf {Δ m ev K t} : m <= 9 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
+Lemma emb_app_wf {Δ m ev K t} : m <= 10 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
   [ G ; Δ ⊢[ i ] K : tyNat @ lzero ] ->
   [ G ; Δ ⊢[ i ] ev : tyPi lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) @ lmax lzero lzero ] ->
   [ G ; Δ ⊢[ i ] t : tyFin K @ lzero ] ->
@@ -252,7 +270,7 @@ Proof using Hc NW Nn.
     now rewrite shiftS_single.
 Qed.
 
-Lemma emb_app_eq {Δ m ev K t t'} : m <= 9 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
+Lemma emb_app_eq {Δ m ev K t t'} : m <= 10 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
   [ G ; Δ ⊢[ i ] K : tyNat @ lzero ] ->
   [ G ; Δ ⊢[ i ] ev : tyPi lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) @ lmax lzero lzero ] ->
   [ G ; Δ ⊢[ i ] t ≅ t' : tyFin K @ lzero ] ->
@@ -270,15 +288,47 @@ Proof using Hc NW Nn.
     | exact (eqty_refl _ _ _ _ _ HFK) | exact (eqty_refl _ _ _ _ _ HC) | exact (eqtm_refl _ _ _ _ _ _ He) | exact Ht].
 Qed.
 
+(** A [λ]-embedding's parts one local deeper: its domain's length, its
+    body and its argument ([wk_tm], for [fam_beta]). *)
+Definition wk_parts Δ K b s m : Prop :=
+  forall X lx, [ G ; Δ ,, X @ lx ⊢[ i ] ] ->
+    [ G ; Δ ,, X @ lx ⊢[ i ] K⟨↑⟩ : tyNat @ lzero ] /\
+    [ G ; Δ ,, X @ lx ,, tyFin K⟨↑⟩ @ lzero ⊢[ i ] b⟨rlift ↑⟩ : tyFin n⟨rshift (S (S m))⟩ @ lzero ] /\
+    [ G ; Δ ,, X @ lx ⊢[ i ] s⟨↑⟩ : tyFin K⟨↑⟩ @ lzero ].
+
+(** The embedding's application and its β, one local deeper. *)
+Lemma beta_wk {Δ m K b s} : m <= 9 -> ctx_extn m Δ Γ ->
+  [ G ; Δ ,, tyFin K @ lzero ⊢[ i ] b : tyFin n⟨rshift (S m)⟩ @ lzero ] -> wk_parts Δ K b s m ->
+  wk_tm G i Δ (app (lam lzero lzero (tyFin K) b) lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) s) (tyFin n⟨rshift m⟩) /\
+  wk_eq G i Δ (app (lam lzero lzero (tyFin K) b) lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) s) b[lsingle s] (tyFin n⟨rshift m⟩).
+Proof using Hc NW Nn.
+  intros Hm Hr _ HP. split; intros X lx HX; destruct (HP X lx HX) as (HKX & HbX & HsX);
+    assert (HrX : ctx_extn (S m) (Δ ,, X @ lx) Γ) by exact Hr;
+    assert (HFKX : [ G ; Δ ,, X @ lx ⊢[ i ] tyFin K⟨↑⟩ @ lzero ]) by (apply wft_fin; [exact Hv | exact HKX]);
+    assert (HXK : [ G ; Δ ,, X @ lx ,, tyFin K⟨↑⟩ @ lzero ⊢[ i ] ]) by (cext; [exact HFKX | exact I]).
+  - push_ren. rewrite ?shiftS_lift_tm, ?shiftS_tm.
+    apply (emb_app_wf (m := S m)); [lia | exact HrX | exact HX | exact HKX | | exact HsX].
+    apply wf_lam; [exact Hv | exact I | exact I | exact HFKX | exact HbX].
+  - rewrite single_ren. push_ren. rewrite ?shiftS_lift_tm, ?shiftS_tm.
+    assert (HCX : [ G ; Δ ,, X @ lx ,, tyFin K⟨↑⟩ @ lzero ⊢[ i ] tyFin n⟨rshift (S (S m))⟩ @ lzero ])
+      by (apply wft_fin; [exact Hv|]; apply (NW (S (S m))); [lia | exact HrX | exact HXK]).
+    assert (EX : (tyFin n⟨rshift (S (S m))⟩)[lsingle s⟨↑⟩] = tyFin n⟨rshift (S m)⟩)
+      by (change ((tyFin n⟨rshift (S (S m))⟩)[lsingle s⟨↑⟩]) with (tyFin (n⟨rshift (S (S m))⟩[lsingle s⟨↑⟩])); now rewrite shiftS_single).
+    rewrite <- EX. exact (eqtm_beta _ _ _ lzero lzero _ _ _ _ Hc I I HFKX HCX HbX HsX).
+Qed.
+
 (** β at an embedding's instance: the family at [(λy. b) s] against [b[s/y]]. *)
 Lemma fam_beta {Δ m K b s e' K' x'} : 6 <= m <= 8 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] -> [ G ; Δ ⊢[ i ] K : tyNat @ lzero ] ->
   [ G ; Δ ,, tyFin K @ lzero ⊢[ i ] b : tyFin n⟨rshift (S m)⟩ @ lzero ] -> [ G ; Δ ⊢[ i ] s : tyFin K @ lzero ] ->
   b[lsingle s] = app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x' ->
   [ G ; Δ ⊢[ i ] app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x' : tyFin n⟨rshift m⟩ @ lzero ] ->
+  wk_parts Δ K b s m ->
+  wk_tm G i Δ (app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x') (tyFin n⟨rshift m⟩) ->
   [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (app (lam lzero lzero (tyFin K) b) lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) s)]
       ≅ F⟨rlift (rshift m)⟩[lsingle (app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x')] @ l ].
 Proof using Hc NW Nn FE.
-  intros Hm Hr HΔ HK Hb Hs Eb Hbs. rewrite <- Eb in Hbs.
+  intros Hm Hr HΔ HK Hb Hs Eb Hbs HP HW2. destruct (beta_wk (m := m) ltac:(lia) Hr Hb HP) as (HW1 & HWb). rewrite Eb in HWb.
+  rewrite <- Eb in Hbs.
   assert (HFK : [ G ; Δ ⊢[ i ] tyFin K @ lzero ]) by (apply wft_fin; [exact Hv | exact HK]).
   assert (HΔK : [ G ; Δ ,, tyFin K @ lzero ⊢[ i ] ]) by (cext; [exact HFK | exact I]).
   assert (HC : [ G ; Δ ,, tyFin K @ lzero ⊢[ i ] tyFin n⟨rshift (S m)⟩ @ lzero ])
@@ -290,17 +340,20 @@ Proof using Hc NW Nn FE.
   assert (Hβ : [ G ; Δ ⊢[ i ] app (lam lzero lzero (tyFin K) b) lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) s ≅ b[lsingle s] : tyFin n⟨rshift m⟩ @ lzero ])
     by (rewrite <- E; exact (eqtm_beta _ _ _ lzero lzero _ _ _ _ Hc I I HFK HC Hb Hs)).
   rewrite Eb in Hβ.
-  exact (FE m Δ _ _ _ _ _ _ ltac:(lia) Hr HΔ (emb_app_wf (m := m) ltac:(lia) Hr HΔ HK Hlam Hs) ltac:(rewrite <- Eb; exact Hbs) Hβ).
+  exact (FE m Δ _ _ _ _ _ _ ltac:(lia) Hr HΔ (emb_app_wf (m := m) ltac:(lia) Hr HΔ HK Hlam Hs) ltac:(rewrite <- Eb; exact Hbs) Hβ
+    HW1 HW2 HWb).
 Qed.
 
 (** β at an embedding's instance: the family at [(λy. b) s] against [b[s/y]]. *)
 Lemma fam_beta0 {Δ m K b s} : m <= 2 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] -> [ G ; Δ ⊢[ i ] K : tyNat @ lzero ] ->
   [ G ; Δ ,, tyFin K @ lzero ⊢[ i ] b : tyFin n⟨rshift (S m)⟩ @ lzero ] -> [ G ; Δ ⊢[ i ] s : tyFin K @ lzero ] ->
   b[lsingle s] = var 0 -> [ G ; Δ ⊢[ i ] var 0 : tyFin n⟨rshift m⟩ @ lzero ] ->
+  wk_parts Δ K b s m -> wk_tm G i Δ (var 0) (tyFin n⟨rshift m⟩) ->
   [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (app (lam lzero lzero (tyFin K) b) lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) s)]
       ≅ F⟨rlift (rshift m)⟩[lsingle (var 0)] @ l ].
 Proof using Hc NW Nn FE0.
-  intros Hm Hr HΔ HK Hb Hs Eb Hbs. rewrite <- Eb in Hbs.
+  intros Hm Hr HΔ HK Hb Hs Eb Hbs HP HW2. destruct (beta_wk (m := m) ltac:(lia) Hr Hb HP) as (HW1 & HWb). rewrite Eb in HWb.
+  rewrite <- Eb in Hbs.
   assert (HFK : [ G ; Δ ⊢[ i ] tyFin K @ lzero ]) by (apply wft_fin; [exact Hv | exact HK]).
   assert (HΔK : [ G ; Δ ,, tyFin K @ lzero ⊢[ i ] ]) by (cext; [exact HFK | exact I]).
   assert (HC : [ G ; Δ ,, tyFin K @ lzero ⊢[ i ] tyFin n⟨rshift (S m)⟩ @ lzero ])
@@ -312,10 +365,11 @@ Proof using Hc NW Nn FE0.
   assert (Hβ : [ G ; Δ ⊢[ i ] app (lam lzero lzero (tyFin K) b) lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) s ≅ b[lsingle s] : tyFin n⟨rshift m⟩ @ lzero ])
     by (rewrite <- E; exact (eqtm_beta _ _ _ lzero lzero _ _ _ _ Hc I I HFK HC Hb Hs)).
   rewrite Eb in Hβ.
-  exact (FE0 m Δ _ _ _ ltac:(lia) Hr HΔ (emb_app_wf (m := m) ltac:(lia) Hr HΔ HK Hlam Hs) ltac:(rewrite <- Eb; exact Hbs) Hβ).
+  exact (FE0 m Δ _ _ _ ltac:(lia) Hr HΔ (emb_app_wf (m := m) ltac:(lia) Hr HΔ HK Hlam Hs) ltac:(rewrite <- Eb; exact Hbs) Hβ
+    HW1 HW2 HWb).
 Qed.
 
-Lemma dnth_emb_wf {Δ m K} : m <= 9 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] -> [ G ; Δ ⊢[ i ] K : tyNat @ lzero ] ->
+Lemma dnth_emb_wf {Δ m K} : m <= 10 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] -> [ G ; Δ ⊢[ i ] K : tyNat @ lzero ] ->
   [ G ; Δ ⊢[ i ] tyPi lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) @ lzero ].
 Proof using Hc NW Nn.
   intros Hm Hr HΔ HK.
@@ -324,6 +378,57 @@ Proof using Hc NW Nn.
   eapply wft_lconv; [| exact lq_00]. apply wft_pi; [exact Hv | exact I | exact I | exact HFK |].
   apply wft_fin; [exact Hv|]. apply (NW (S m)); [lia | exact Hr | exact HΔK].
 Qed.
+
+(** ** Indices one local deeper ([wk_tm])
+
+    The derivation's indices are concrete (variables, injections, the
+    embeddings and their [λ]s), so their weakenings are typed again from
+    scratch, in the context extended by the abstract local. *)
+Ltac wnat := lazymatch goal with
+  | |- [ _ ; _ ⊢[ _ ] var _ : _ @ _ ] => solve [wvar]
+  | |- [ _ ; _ ⊢[ _ ] succ _ : _ @ _ ] => apply wf_succ; [exact Hv | wnat]
+  | |- [ _ ; _ ⊢[ _ ] zero : _ @ _ ] => apply wf_zero; [exact Hv | rewrite Hi; assumption]
+  | |- [ _ ; _ ⊢[ _ ] _ : tyNat @ _ ] => apply NW; [lia | ext_n | assumption]
+  end.
+Ltac wfin := lazymatch goal with
+  | |- [ _ ; _ ⊢[ _ ] tmInl _ _ _ _ _ : tyFin (succ _) @ _ ] =>
+      apply fin_of_sum; [wnat | apply wf_inl; [exact Hv | exact I | exact I
+        | apply wft_unit; [exact Hv | rewrite Hi; assumption | exact I] | apply wft_fin; [exact Hv | wnat] | wfin]]
+  | |- [ _ ; _ ⊢[ _ ] tmInr _ _ _ _ _ : tyFin (succ _) @ _ ] =>
+      apply fin_of_sum; [wnat | apply wf_inr; [exact Hv | exact I | exact I
+        | apply wft_unit; [exact Hv | rewrite Hi; assumption | exact I] | apply wft_fin; [exact Hv | wnat] | wfin]]
+  | |- [ _ ; _ ⊢[ _ ] tmTriv _ : _ @ _ ] => apply wf_triv; [exact Hv | rewrite Hi; assumption | exact I]
+  | |- [ _ ; _ ⊢[ _ ] app _ _ _ _ _ _ : _ @ _ ] => widx
+  | |- [ _ ; _ ⊢[ _ ] var _ : tyFin zero @ _ ] =>
+      first [ solve [wvar] | eapply wf_conv; [wvar | rewrite Hi;
+        first [ apply eqty_fin_zero; [exact Hc | rewrite Hi; assumption]
+              | apply eqty_sym, eqty_fin_zero; [exact Hc | rewrite Hi; assumption] ]] ]
+  | |- [ _ ; _ ⊢[ _ ] var _ : tyFin (succ _) @ _ ] => first [ solve [wvar] | apply fin_of_sum; [wnat | solve [wvar]] ]
+  | |- [ _ ; _ ⊢[ _ ] var _ : _ @ _ ] => solve [wvar]
+  end
+with wemb := lazymatch goal with
+  | |- [ _ ; _ ⊢[ _ ] var _ : _ @ _ ] => eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]; solve [wvar]
+  | |- [ ?D ; ?Δ ⊢[ ?j ] lam lzero lzero (tyFin ?K) _ : _ @ _ ] =>
+      let HK := fresh "HK" in assert (HK : [ D ; Δ ⊢[ j ] tyFin K @ lzero ]) by (apply wft_fin; [exact Hv | wnat]);
+      let HD := fresh "HD" in assert (HD : [ D ; Δ ,, tyFin K @ lzero ⊢[ j ] ]) by (cext; [exact HK | exact I]);
+      apply wf_lam; [exact Hv | exact I | exact I | exact HK | wfin]
+  end
+with widx := lazymatch goal with
+  | |- [ _ ; _ ⊢[ _ ] app _ lzero lzero (tyFin _) (tyFin _) _ : tyFin _ @ lzero ] =>
+      eapply emb_app_wf; [lia | ext_n | assumption | wnat | wemb | wfin]
+  end.
+Ltac wkidx :=
+  let X := fresh "X" in let lx := fresh "lx" in let HX := fresh "HX" in
+  intros X lx HX; push_ren; rlk_simpl; cbn [rlk Nat.add]; nshift; wfin.
+(** [wk_parts] of a concrete embedding. *)
+Ltac wkparts :=
+  let X := fresh "X" in let lx := fresh "lx" in let HX := fresh "HX" in
+  intros X lx HX; split; [| split]; push_ren; rlk_simpl; cbn [rlk Nat.add]; nshift;
+  [ wnat
+  | lazymatch goal with |- [ ?D ; ?Δ ,, ?A @ ?la ⊢[ ?j ] _ : _ @ _ ] =>
+      let HD := fresh "HD" in assert (HD : [ D ; Δ ,, A @ la ⊢[ j ] ]) by (cext; [nshift; apply wft_fin; [exact Hv | wnat] | exact I])
+    end; wfin
+  | wfin ].
 
 Lemma dnth_mot_wf : [ G ; Γ ,, tyNat @ lzero ⊢[ i ] dnthMot l n F @ l ].
 Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
@@ -337,7 +442,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
   assert (HF2 : [ G ; Δ2 ⊢[ i ] tyFin (var 1) @ lzero ]) by (apply wft_fin; [exact Hv | exact Hk2]).
   assert (H3 : [ G ; Δ2 ,, tyFin (var 1) @ lzero ⊢[ i ] ]) by (cext; [exact HF2 | exact I]).
   assert (HFam : [ G ; Δ2 ,, tyFin (var 1) @ lzero ⊢[ i ] dnthFam n F @ l ]).
-  { unfold dnthFam. nshift. apply (FW 3); [lia | ext_n | exact H3 |].
+  { unfold dnthFam. nshift. apply (FW 3); [lia | ext_n | exact H3 | | wkidx].
     apply (emb_app_wf (m := 3)); [lia | ext_n | exact H3 | wvar | | wvar].
     eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]. wvar. }
   assert (HD : [ G ; Δ2 ⊢[ i ] tyDVec l (var 1) (dnthFam n F) @ l ])
@@ -353,7 +458,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
   apply wft_pi; [exact Hv | exact Hl | exact Hl | exact HD |].
   eapply wft_lconv; [| apply lequiv_sym, dnc_lq_0l, Hl].
   apply wft_pi; [exact Hv | exact I | exact Hl | exact HF3 |].
-  unfold dnthRes. nshift. apply (FW 4); [lia | ext_n | exact H4 |].
+  unfold dnthRes. nshift. apply (FW 4); [lia | ext_n | exact H4 | | wkidx].
   apply (emb_app_wf (m := 4)); [lia | ext_n | exact H4 | wvar | | wvar].
   eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]. wvar.
 Qed.
@@ -371,7 +476,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
   assert (H1' : [ G ; Γ1 ,, tyFin zero @ lzero ⊢[ i ] ]) by (cext; [exact HF1 | exact I]).
   assert (HD0 : [ G ; Γ1 ⊢[ i ] tyDVec l zero F⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 1) lzero lzero (tyFin zero) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))] @ l ]).
   { apply wft_dvec; [exact Hv | exact Hl | exact (Hz _ H1) |]. nshift.
-    apply (FW 2); [lia | ext_n | exact H1' |].
+    apply (FW 2); [lia | ext_n | exact H1' | | wkidx].
     apply (emb_app_wf (m := 2)); [lia | ext_n | exact H1' | exact (Hz _ H1') | | wvar].
     eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]. wvar. }
   set (Γ2 := Γ1 ,, tyDVec l zero F⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 1) lzero lzero (tyFin zero) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))] @ l).
@@ -390,7 +495,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
   eapply wf_lconv; [| apply lequiv_sym, dnc_lq_0l, Hl].
   apply wf_lam; [exact Hv | exact I | exact Hl | exact HF2 |].
   eapply dnc_retype; [apply wf_elimEmpty; [exact Hv | exact Hl | exact I | |] |].
-  - nshift. apply (FW 4); [lia | ext_n | exact H4 |].
+  - nshift. apply (FW 4); [lia | ext_n | exact H4 | | wkidx].
     apply (emb_app_wf (m := 4)); [lia | ext_n | exact H4 | exact (Hz _ H4) | |].
     + eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]. wvar.
     + eapply wf_conv; [wvar | exact (EZ _ H4)].
@@ -407,7 +512,7 @@ Ltac sig_hd Hr HΔ Hk He Hx :=
   replace (dvecHd (var 5) (dnthFamS n F))
     with (F⟨rlift (rshift 6)⟩[lsingle (app (var 3) lzero lzero (tyFin (succ (var 5))) (tyFin n⟨rshift 7⟩)
             (tmInl lzero lzero (tyUnit lzero) (tyFin (var 5)) (tmTriv lzero)))]) by (unfold dnthFamS; meq);
-  apply (FW 6); [lia | exact Hr | exact HΔ | exact (emb_app_wf (m := 6) ltac:(lia) Hr HΔ (wf_succ _ _ _ _ Hv Hk) He Hx)].
+  apply (FW 6); [lia | exact Hr | exact HΔ | exact (emb_app_wf (m := 6) ltac:(lia) Hr HΔ (wf_succ _ _ _ _ Hv Hk) He Hx) | wkidx].
 Ltac sig_tl HA :=
   lazymatch goal with |- [ _ ; ?D ⊢[ _ ] _ @ _ ] =>
     let HD := fresh "HD" in assert (HD : [ G ; D ⊢[ i ] ]) by (cext; [exact HA | exact Hl]);
@@ -418,7 +523,7 @@ Ltac sig_tl HA :=
     let HD1 := fresh "HD1" in
     assert (HD1 : [ G ; D ,, tyFin (var 6) @ lzero ⊢[ i ] ]) by (cext; [apply wft_fin; [exact Hv | exact Hk] | exact I]);
     apply wft_dvec; [exact Hv | exact Hl | exact Hk |];
-    apply (FW 8); [lia | ext_n | exact HD1 |];
+    apply (FW 8); [lia | ext_n | exact HD1 | | wkidx];
     apply (emb_app_wf (m := 8)); [lia | ext_n | exact HD1 | apply wf_succ; [exact Hv | wvar]
                                  | eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]; wvar |];
     apply fin_of_sum; [wvar | apply wf_inr; [exact Hv | exact I | exact I | apply wft_unit; [exact Hv | rewrite Hi; exact HD1 | exact I]
@@ -442,7 +547,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
   assert (He' : [ G ; Δe ,, tyFin (succ (var 2)) @ lzero ⊢[ i ] ]) by (cext; [exact HFe | exact I]).
   assert (HD1 : [ G ; Δe ⊢[ i ] tyDVec l (succ (var 2)) F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 1) lzero lzero (tyFin (succ (var 3))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))] @ l ]).
   { apply wft_dvec; [exact Hv | exact Hl | apply Hsucc; wvar |]. nshift.
-    apply (FW 4); [lia | ext_n | exact He' |].
+    apply (FW 4); [lia | ext_n | exact He' | | wkidx].
     apply (emb_app_wf (m := 4)); [lia | ext_n | exact He' | apply Hsucc; wvar | | wvar].
     eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]. wvar. }
   set (Δc := Δe ,, tyDVec l (succ (var 2)) F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 1) lzero lzero (tyFin (succ (var 3))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))] @ l).
@@ -464,7 +569,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
   assert (HiS : [ G ; Δi ,, tySum lzero lzero (tyUnit lzero) (tyFin (var 4)) @ lmax lzero lzero ⊢[ i ] ])
     by (cext; [exact HS | cbn; auto]).
   eapply dnc_retype; [apply wf_case; [exact Hv | exact I | exact I | exact Hl | exact (HU _ Hii) | exact HB | | | | ] | meq].
-  - (* the motive *) nshift. apply (FW 6); [lia | ext_n | exact HiS |].
+  - (* the motive *) nshift. apply (FW 6); [lia | ext_n | exact HiS | | wkidx].
     apply (emb_app_wf (m := 6)); [lia | ext_n | exact HiS | apply Hsucc; wvar | |].
     + eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]. wvar.
     + apply fin_of_sum; [wvar | wvar].
@@ -476,7 +581,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
     assert (HFS1 : [ G ; Δu ⊢[ i ] tyFin (succ (var 5)) @ lzero ]) by (apply wft_fin; [exact Hv | apply Hsucc, Hk5]).
     assert (Hu' : [ G ; Δu ,, tyFin (succ (var 5)) @ lzero ⊢[ i ] ]) by (cext; [exact HFS1 | exact I]).
     assert (HFS : [ G ; Δu ,, tyFin (succ (var 5)) @ lzero ⊢[ i ] dnthFamS n F @ l ]).
-    { unfold dnthFamS. nshift. apply (FW 7); [lia | ext_n | exact Hu' |].
+    { unfold dnthFamS. nshift. apply (FW 7); [lia | ext_n | exact Hu' | | wkidx].
       apply (emb_app_wf (m := 7)); [lia | ext_n | exact Hu' | apply Hsucc; wvar | | wvar].
       eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]. wvar. }
     pose proof (eqty_dvec_succ _ _ _ _ _ _ Hc Hl Hk5 HFS) as EQ.
@@ -500,8 +605,16 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
           | exact (eqty_refl _ _ _ _ _ (HU _ Hu)) | exact (eqty_refl _ _ _ _ _ HF5) |].
         apply eqtm_unit_eta; [exact Hc | exact I | wvar | exact Ht]. }
       refine (eqty_rw _ _ (FE 6 _ _ _ _ _ _ _ ltac:(lia) Hr6 Hu (emb_app_wf (m := 6) ltac:(lia) Hr6 Hu (Hsucc _ _ Hk5) He3 Hx)
-        (emb_app_wf (m := 6) ltac:(lia) Hr6 Hu (Hsucc _ _ Hk5) He3 Hx') (emb_app_eq (m := 6) ltac:(lia) Hr6 Hu (Hsucc _ _ Hk5) He3 Exx)));
-        unfold dnthFamS; meq.
+        (emb_app_wf (m := 6) ltac:(lia) Hr6 Hu (Hsucc _ _ Hk5) He3 Hx') (emb_app_eq (m := 6) ltac:(lia) Hr6 Hu (Hsucc _ _ Hk5) He3 Exx)
+        _ _ _)); [unfold dnthFamS; meq | unfold dnthFamS; meq | wkidx | wkidx |].
+      (* the unit's η, one local deeper *)
+      intros X lx HX. push_ren. rlk_simpl. cbn [rlk Nat.add]. nshift.
+      apply (emb_app_eq (m := 7)); [lia | ext_n | exact HX | wnat | wemb |].
+      apply fin_of_sum_eq; [wnat |].
+      apply eqtm_inl; [exact Hv | exact (lequiv_refl (gL G) lzero I) | exact (lequiv_refl (gL G) lzero I)
+        | apply eqty_refl; apply wft_unit; [exact Hv | rewrite Hi; exact HX | exact I]
+        | apply eqty_refl; apply wft_fin; [exact Hv | wnat] |].
+      apply eqtm_unit_eta; [exact Hc | exact I | wvar | apply wf_triv; [exact Hv | rewrite Hi; exact HX | exact I]].
   - (* inr: the recursive call at [λy. e (inr y)], the tail and the index (β) *)
     set (Δj := Δi ,, tyFin (var 4) @ lzero).
     assert (Hj : [ G ; Δj ⊢[ i ] ]) by (cext; [exact HB | exact I]).
@@ -518,7 +631,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
     { apply (emb_app_wf (m := 7) ltac:(lia) Hr7 Hj5 (Hsucc _ _ Hk6)); [eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]; wvar |].
       apply fin_of_sum; [exact Hk6 | apply wf_inr; [exact Hv | exact I | exact I | exact (HU _ Hj5) | exact HF6 | wvar]]. }
     assert (HFres : [ G ; Δj ,, tyFin (var 5) @ lzero ⊢[ i ] F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 4) lzero lzero (tyFin (succ (var 6))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 6)) (var 0)))] @ l ])
-      by (nshift; exact (FW 7 _ _ _ _ ltac:(lia) Hr7 Hj5 HbE)).
+      by (nshift; refine (FW 7 _ _ _ _ ltac:(lia) Hr7 Hj5 HbE _); wkidx).
     assert (HDV : [ G ; Δj ⊢[ i ] tyDVec l (var 5) F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 4) lzero lzero (tyFin (succ (var 6))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 6)) (var 0)))] @ l ]) by (apply wft_dvec; [exact Hv | exact Hl | exact Hk5 | exact HFres]).
     assert (HjD : [ G ; Δj ,, tyDVec l (var 5) F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 4) lzero lzero (tyFin (succ (var 6))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 6)) (var 0)))] @ l ⊢[ i ] ]) by (cext; [exact HDV | exact Hl]).
     assert (Hk6' : [ G ; Δj ,, tyDVec l (var 5) F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 4) lzero lzero (tyFin (succ (var 6))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 6)) (var 0)))] @ l ⊢[ i ] var 6 : tyNat @ lzero ]) by wvar.
@@ -531,7 +644,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
       apply fin_of_sum; [exact Hk7 | apply wf_inr; [exact Hv | exact I | exact I | exact (HU _ HjD6) | apply wft_fin; [exact Hv | exact Hk7] | wvar]]. }
     assert (HPi : [ G ; Δj ,, tyDVec l (var 5) F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 4) lzero lzero (tyFin (succ (var 6))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 6)) (var 0)))] @ l ⊢[ i ] tyPi lzero l (tyFin (var 6)) F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 5) lzero lzero (tyFin (succ (var 7))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 7)) (var 0)))] @ l ]).
     { eapply wft_lconv; [| apply lequiv_sym, dnc_lq_0l, Hl]. apply wft_pi; [exact Hv | exact I | exact Hl | exact HF6' |].
-      nshift. exact (FW 8 _ _ _ _ ltac:(lia) Hr8' HjD6 HbE'). }
+      nshift. refine (FW 8 _ _ _ _ ltac:(lia) Hr8' HjD6 HbE' _); wkidx. }
     eapply dnc_retype; [eapply wf_app; [exact Hv | exact I | exact Hl | exact HF5 | exact HFres | | wvar] | meq].
     eapply wf_lconv; [| apply dnc_lq_0l, Hl].
     eapply dnc_retype; [eapply wf_app; [exact Hv | exact Hl | exact Hl | exact HDV | exact HPi | | ] | meq_big].
@@ -554,7 +667,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
         assert (HEa : [ G ; ΔE ,, tyFin (var 6) @ lzero ⊢[ i ] ]) by (cext; [apply wft_fin; [exact Hv | exact Hk6E] | exact I]).
         assert (HDd : [ G ; ΔE ⊢[ i ] tyDVec l (var 6) F⟨rlift (rshift 8)⟩[lsingle (app (var 1) lzero lzero (tyFin (var 7)) (tyFin n⟨rshift 9⟩) (var 0))] @ l ]).
         { apply wft_dvec; [exact Hv | exact Hl | exact Hk6E |].
-          apply (FW 8); [lia | ext_n | exact HEa |].
+          apply (FW 8); [lia | ext_n | exact HEa | | wkidx].
           apply (emb_app_wf (m := 8)); [lia | ext_n | exact HEa | wvar | eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]; wvar | wvar]. }
         assert (HEb : [ G ; ΔE ,, tyDVec l (var 6) F⟨rlift (rshift 8)⟩[lsingle (app (var 1) lzero lzero (tyFin (var 7)) (tyFin n⟨rshift 9⟩) (var 0))] @ l ⊢[ i ] ])
           by (cext; [exact HDd | exact Hl]).
@@ -566,7 +679,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
         apply wft_pi; [exact Hv | exact Hl | exact Hl | exact HDd |].
         eapply wft_lconv; [| apply lequiv_sym, dnc_lq_0l, Hl].
         apply wft_pi; [exact Hv | exact I | exact Hl | exact HFg |].
-        apply (FW 9); [lia | ext_n | exact HEc |].
+        apply (FW 9); [lia | ext_n | exact HEc | | wkidx].
         apply (emb_app_wf (m := 9)); [lia | ext_n | exact HEc | wvar | eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]; wvar | wvar]. }
       eapply wf_lconv; [| apply dnc_lq_ll, Hl].
       eapply wf_conv; [eapply wf_app; [exact Hv | exact I | exact Hl | exact HEm | exact HRest | eapply wf_lconv; [exact Hr4 | apply dnc_lq_0l, Hl] |] |].
@@ -574,7 +687,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
         unfold dnthEmb; push_ren; rlk_simpl; nshift; reflexivity.
       * rewrite Hi.
         assert (EF : [ G ; Δj ,, tyFin (var 5) @ lzero ⊢[ i ] F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 4) lzero lzero (tyFin (succ (var 6))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 6)) (var 0)))] ≅ F⟨rlift (rshift 7)⟩[lsingle (app (lam lzero lzero (tyFin (var 6)) (app (var 5) lzero lzero (tyFin (succ (var 7))) (tyFin n⟨rshift 9⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 7)) (var 0)))) lzero lzero (tyFin (var 6)) (tyFin n⟨rshift 8⟩) (var 0))] @ l ]).
-        { apply eqty_sym. refine (eqty_rw eq_refl _ (fam_beta (m := 7) ltac:(lia) Hr7 Hj5 Hk6 _ _ _ HbE)); [meq | | | meq].
+        { apply eqty_sym. refine (eqty_rw eq_refl _ (fam_beta (m := 7) ltac:(lia) Hr7 Hj5 Hk6 _ _ _ HbE _ _)); [meq | | | meq | wkparts | wkidx].
           - assert (Hk7a : [ G ; Δj ,, tyFin (var 5) @ lzero ,, tyFin (var 6) @ lzero ⊢[ i ] var 7 : tyNat @ lzero ]) by wvar.
             apply (emb_app_wf (m := 8) ltac:(lia) Hr8 Hj56 (Hsucc _ _ Hk7a)); [eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]; wvar |].
             apply fin_of_sum; [wvar | apply wf_inr; [exact Hv | exact I | exact I | exact (HU _ Hj56) | apply wft_fin; [exact Hv | wvar] | wvar]].
@@ -584,7 +697,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
         assert (Hk8 : [ G ; Δj ,, tyDVec l (var 5) F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 4) lzero lzero (tyFin (succ (var 6))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 6)) (var 0)))] @ l ,, tyFin (var 6) @ lzero ,, tyFin (var 7) @ lzero ⊢[ i ] var 8 : tyNat @ lzero ]) by wvar.
         assert (Hr9 : ctx_extn 9 (Δj ,, tyDVec l (var 5) F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 4) lzero lzero (tyFin (succ (var 6))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 6)) (var 0)))] @ l ,, tyFin (var 6) @ lzero ,, tyFin (var 7) @ lzero) Γ) by ext_n.
         assert (EF8 : [ G ; Δj ,, tyDVec l (var 5) F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 4) lzero lzero (tyFin (succ (var 6))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 6)) (var 0)))] @ l ,, tyFin (var 6) @ lzero ⊢[ i ] F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 5) lzero lzero (tyFin (succ (var 7))) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 7)) (var 0)))] ≅ F⟨rlift (rshift 8)⟩[lsingle (app (lam lzero lzero (tyFin (var 7)) (app (var 6) lzero lzero (tyFin (succ (var 8))) (tyFin n⟨rshift 10⟩) (tmInr lzero lzero (tyUnit lzero) (tyFin (var 8)) (var 0)))) lzero lzero (tyFin (var 7)) (tyFin n⟨rshift 9⟩) (var 0))] @ l ]).
-        { apply eqty_sym. refine (eqty_rw eq_refl _ (fam_beta (m := 8) ltac:(lia) Hr8' HjD6 Hk7 _ _ _ HbE')); [meq | | | meq].
+        { apply eqty_sym. refine (eqty_rw eq_refl _ (fam_beta (m := 8) ltac:(lia) Hr8' HjD6 Hk7 _ _ _ HbE' _ _)); [meq | | | meq | wkparts | wkidx].
           - apply (emb_app_wf (m := 9) ltac:(lia) Hr9 Hj7 (Hsucc _ _ Hk8)); [eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]; wvar |].
             apply fin_of_sum; [exact Hk8 | apply wf_inr; [exact Hv | exact I | exact I | exact (HU _ Hj7) | apply wft_fin; [exact Hv | exact Hk8] | wvar]].
           - wvar. }
@@ -599,7 +712,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
       assert (HFS1 : [ G ; Δj ⊢[ i ] tyFin (succ (var 5)) @ lzero ]) by (apply wft_fin; [exact Hv | apply Hsucc, Hk5]).
       assert (Hj' : [ G ; Δj ,, tyFin (succ (var 5)) @ lzero ⊢[ i ] ]) by (cext; [exact HFS1 | exact I]).
       assert (HFS : [ G ; Δj ,, tyFin (succ (var 5)) @ lzero ⊢[ i ] dnthFamS n F @ l ]).
-      { unfold dnthFamS. nshift. apply (FW 7); [lia | ext_n | exact Hj' |].
+      { unfold dnthFamS. nshift. apply (FW 7); [lia | ext_n | exact Hj' | | wkidx].
         apply (emb_app_wf (m := 7)); [lia | ext_n | exact Hj' | apply Hsucc; wvar | | wvar].
         eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]. wvar. }
       pose proof (eqty_dvec_succ _ _ _ _ _ _ Hc Hl Hk5 HFS) as EQ.
@@ -636,7 +749,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
   eapply dnc_retype; [eapply wf_app; [exact Hv | exact Hl | exact Hl | exact HDV | | | exact Hcs] |].
   - eapply wft_lconv; [| apply lequiv_sym, dnc_lq_0l, Hl]. apply wft_pi; [exact Hv | exact I | exact Hl | exact HFn1 |].
     replace (F⟨rlift ↑⟩) with (F⟨rlift (rshift 2)⟩[lsingle (var 0)]) by meq.
-    apply (FV 2); [lia | ext_n | exact HΓD1 | wvar].
+    apply (FV 2); [lia | ext_n | exact HΓD1 | wvar | wkidx].
   - assert (HN : [ G ; Γ ⊢[ i ] natrec l (dnthMot l n F) (dnthBase l n F) (dnthStep l n F) n : tyPi lzero l (tyPi lzero lzero (tyFin n) (tyFin n⟨↑⟩)) (tyPi l l (tyDVec l n⟨↑⟩ F⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 1) lzero lzero (tyFin n⟨↑⟩⟨↑⟩) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))]) (tyPi lzero l (tyFin n⟨↑⟩⟨↑⟩) F⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 2) lzero lzero (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))])) @ l ]).
     { eapply dnc_retype; [apply wf_natrec; [exact Hv | exact Hl | exact dnth_mot_wf | exact dnth_base_wf | exact dnth_step_wf | exact Hn] |].
       unfold dnthMot, dnthEmb, dnthFam, dnthRes. meq. }
@@ -648,7 +761,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
     assert (HE1 : [ G ; ΓE ,, tyFin n⟨↑⟩ @ lzero ⊢[ i ] ]) by (cext; [apply wft_fin; [exact Hv | exact Hn1E] | exact I]).
     assert (HDE : [ G ; ΓE ⊢[ i ] tyDVec l n⟨↑⟩ F⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 1) lzero lzero (tyFin n⟨↑⟩⟨↑⟩) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))] @ l ]).
     { apply wft_dvec; [exact Hv | exact Hl | exact Hn1E |]. nshift.
-      apply (FW 2); [lia | ext_n | exact HE1 |].
+      apply (FW 2); [lia | ext_n | exact HE1 | | wkidx].
       apply (emb_app_wf (m := 2)); [lia | ext_n | exact HE1 | apply (NW 2); [lia | ext_n | exact HE1] | | wvar].
       eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]. wvar. }
     assert (HD : [ G ; ΓE ,, tyDVec l n⟨↑⟩ F⟨rlift ↑⟩⟨rlift ↑⟩[lsingle (app (var 1) lzero lzero (tyFin n⟨↑⟩⟨↑⟩) (tyFin n⟨↑⟩⟨↑⟩⟨↑⟩) (var 0))] @ l ⊢[ i ] ])
@@ -663,7 +776,7 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
       apply wft_pi; [exact Hv | exact Hl | exact Hl | exact HDE |].
       eapply wft_lconv; [| apply lequiv_sym, dnc_lq_0l, Hl].
       apply wft_pi; [exact Hv | exact I | exact Hl | apply wft_fin; [exact Hv | exact Hn2D] |].
-      nshift. apply (FW 3); [lia | ext_n | exact HD1 |].
+      nshift. apply (FW 3); [lia | ext_n | exact HD1 | | wkidx].
       apply (emb_app_wf (m := 3)); [lia | ext_n | exact HD1 | apply (NW 3); [lia | ext_n | exact HD1] | | wvar].
       eapply wf_lconv; [| exact (lequiv_sym _ _ _ lq_00)]. wvar. }
     eapply wf_lconv; [| apply dnc_lq_ll, Hl].
@@ -675,11 +788,11 @@ Proof using Hc Hl HΓ Nn NF Hn HF NW FW FV FE FE0.
       assert (Hn1 : [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] n⟨rshift 1⟩ : tyNat @ lzero ]) by exact (NW 1 _ ltac:(lia) Hr1 HΓn).
       assert (Hn2 : [ G ; Γ ,, tyDVec l n F @ l ,, tyFin n⟨↑⟩ @ lzero ⊢[ i ] n⟨rshift 2⟩ : tyNat @ lzero ]) by exact (NW 2 _ ltac:(lia) Hr2 HΓD1).
       assert (E1 : [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F ≅ F⟨rlift (rshift 1)⟩[lsingle (app (lam lzero lzero (tyFin n⟨rshift 1⟩) (var 0)) lzero lzero (tyFin n⟨rshift 1⟩) (tyFin n⟨rshift 2⟩) (var 0))] @ l ]).
-      { apply eqty_sym. refine (eqty_rw eq_refl _ (fam_beta0 (m := 1) ltac:(lia) Hr1 HΓn Hn1 _ _ _ _)); [meq | | wvar | reflexivity | wvar].
+      { apply eqty_sym. refine (eqty_rw eq_refl _ (fam_beta0 (m := 1) ltac:(lia) Hr1 HΓn Hn1 _ _ _ _ _ _)); [meq | | wvar | reflexivity | wvar | wkparts | wkidx].
         assert (HX : [ G ; Γ ,, tyFin n @ lzero ,, tyFin n⟨rshift 1⟩ @ lzero ⊢[ i ] ]) by (cext; [apply wft_fin; [exact Hv | exact Hn1] | exact I]).
         wvar. }
       assert (E2 : [ G ; Γ ,, tyDVec l n F @ l ,, tyFin n⟨↑⟩ @ lzero ⊢[ i ] F⟨rlift ↑⟩ ≅ F⟨rlift (rshift 2)⟩[lsingle (app (lam lzero lzero (tyFin n⟨rshift 2⟩) (var 0)) lzero lzero (tyFin n⟨rshift 2⟩) (tyFin n⟨rshift 3⟩) (var 0))] @ l ]).
-      { apply eqty_sym. refine (eqty_rw eq_refl _ (fam_beta0 (m := 2) ltac:(lia) Hr2 HΓD1 Hn2 _ _ _ _)); [meq | | wvar | reflexivity | wvar].
+      { apply eqty_sym. refine (eqty_rw eq_refl _ (fam_beta0 (m := 2) ltac:(lia) Hr2 HΓD1 Hn2 _ _ _ _ _ _)); [meq | | wvar | reflexivity | wvar | wkparts | wkidx].
         assert (HX : [ G ; Γ ,, tyDVec l n F @ l ,, tyFin n⟨↑⟩ @ lzero ,, tyFin n⟨rshift 2⟩ @ lzero ⊢[ i ] ]) by (cext; [apply wft_fin; [exact Hv | exact Hn2] | exact I]).
         wvar. }
       assert (EPi : [ G ; Γ ⊢[ i ] tyPi l l (tyDVec l n F) (tyPi lzero l (tyFin n⟨↑⟩) F⟨rlift ↑⟩)

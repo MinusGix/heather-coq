@@ -1,8 +1,8 @@
 # M19: indexed families with infinitary children (`IWi`), design
 
-Status: **M19a done; M19b in progress** (2026-11-14): the relation,
-validity and the fundamental theorem are done ("M19b outcome" below);
-the algorithm, decidability, the type checker and canonicity are next.
+Status: **done** (2026-11-14): M19a, M19b ("M19b outcome" below; the
+algorithm, decidability, the type checker and canonicity followed it)
+and M19c ("M19c outcome").
 
 `IWi` is `IWf` (M17b) whose children are functions: a constructor has a
 finite tuple of recursive fields, and field `i` is a function from its own
@@ -149,6 +149,61 @@ Files, in dependency order, beside `IWf`'s:
   the eliminator, its type, β and β's type).
 
 No admits; no new axioms.
+
+## M19c outcome (the code and layer C)
+
+No admits; no new axioms. The code `tmIWi l lp li x s n d o c m`
+decodes to `IWi(El x; El s; n; El d; o; c)(m)`; `IWi`, `sup_ii`,
+`elim_IWi` and the code are typed at every layer but V (β stays at D and
+M), and the code recursor has the four branches `t_IWi`, `t'_IWi`,
+`t_sup_ii`, `t_elim_IWi` at 61–64 (`nbr = 65`). Staged in two commits,
+as M17c:
+- **The code at D and M, then the lift to C**: typing through the
+  metatheory, validity (`Validity/IWiCode.v`), the algorithm and its
+  decidability, canonicity, preservation and synthesis. The algorithm's
+  code case compares the arities before the domains, so the right
+  domain code, typed over the right shape and arity, moves into the left
+  contexts (`IWi_d_mv`, AlgSound) before it is compared.
+- **The branches**: reducts (`Syntax/Recursor.v`), scopes (`RecSpec`,
+  levels `ℓ ℓp ℓi (ℓ')` bound in that order, checked by
+  `br_calls_derived`), the laws (`RecLaws`, `SubstRec`, `RecLawsRedt`,
+  `RecGSubst`, `GRenRedt`), the scopes' well-formedness (`RecWf`), their
+  admissibility (`RecAdm`, with the eliminator's head typed in
+  `Typing/WfScopeIWi.v`), the reducts' typing (`RecReductCases`,
+  `AlgPrereq`) and the relation: `Validity/RecSIWi.v`, `RecSIWiCode.v`,
+  `RecSIWiSupi.v`, `RecSIWiElim.v`, one lemma per branch, wired into
+  `RecS`'s `rec_code` and building in parallel as `RecSIWf*` do.
+
+Decisions and deviations, in the order the proof met them:
+- **The scopes are derived, not transcribed.** Heather's `rec.rs` has no
+  `IWi` branches yet; the four scopes are stated from the layer-C rules
+  and are the reference Heather's are to be checked against. The
+  domain's call `x_D` sits under the shape and a position, the child
+  index's `x_C` under the domain too; `t_elim_IWi`'s calls exclude the
+  step telescope's types, as `t_elimIWf`'s do.
+- **`dnth`'s family instances, weakened once (DNthCore).** `IWi`'s
+  family `F(j) = Π(d : D(a, j)). IWi(…)(C(a, j, d))` puts the index
+  under a binder, so typing `dnth`'s steps needs each instance also at
+  `t⟨↑⟩` in `Δ, X` for any `X`. `RecWf` runs before weakening exists
+  (local weakening needs `GWeakening`, which needs `wf_brG`), so
+  `DNthCore` takes these weakened instances as premises (`wk_tm`,
+  `wk_eq`; `FW`, `FV`, `FE` and `FE0` carry them, and `NW`'s bound rises
+  to 11 locals): `DNth` discharges them by weakening, and `RecWf`'s
+  automation types them under the abstract binder (`wty_hyp`'s
+  quantified hypotheses). The β steps' weakened instances come from
+  `beta_wk`, the abstract index's from `wk_parts`.
+- **The weakened instances normalise back to renamings.** `RecWfBase`'s
+  `wnorm` computes `t⟨↑⟩` into `ren_tm`'s fixpoint; `wrefold` folds the
+  unfolded fixpoint back to `ren_tm` so the quantified hypotheses match.
+  The automation also gained `tyGvar` equations (`eqty_gvar`) and a
+  conversion fallback (`wty_conv`) for the equality instances.
+- **Globals under three binders.** The child index `X⟨↑⟩⟨↑⟩⟨↑⟩`: `rr_sh`
+  (RecReductCases) and `AlgPrereq`'s `wf_gv_up3`/`wf_gu_up3T`, as M17c's
+  under two.
+- **Right payloads at the left levels**, as M17c's: the domain is
+  related by `RTcall` along the shape's and the arity's context equation
+  at the right levels, then moved to the left levels' context
+  (`ctxconv_ty`); `IWiEq_intro` packs the signature's equations.
 
 ## Staging
 
