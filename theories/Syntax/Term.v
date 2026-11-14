@@ -987,6 +987,32 @@ Notation iwfstepty l li X A N Ot C M :=
      (tmSupi l li X⟨↑⟩⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩
         C⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ (var 2) (var 1))]).
 
+(** The step telescope of [elim_IWi] (M19), as [IWf]'s: the motive's
+    scrutinee type in [Γ, j : X]; the children's type in [Γ, a : A]; the
+    induction hypothesis's in [Γ, a, cs],
+    [Π^{0}(i : Fin N[a]). Π^{lp}(y : D[a, i]). M[C[a, i, y], app(dnth(cs; i), y)]];
+    the step's in [Γ, a, cs, ih]. *)
+Notation iwimotty l lp li X A N D Ot C :=
+  (tyIWi l lp li X⟨↑⟩ A⟨↑⟩ N⟨rlift ↑⟩ D⟨rlift (rlift ↑)⟩ Ot⟨rlift ↑⟩ C⟨rlift (rlift (rlift ↑))⟩ (var 0)).
+Notation iwicsty l lp li X A N D Ot C :=
+  (tyDVec (iwiL l lp li) N
+     (tyPi lp (iwiL l lp li) D
+        (tyIWi l lp li X⟨↑⟩⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ D⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ C⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩ C))).
+Notation iwiihty l lp li l' X A N D Ot C M :=
+  (tyPi lzero (lmax lp l') (tyFin N⟨↑⟩)
+     (tyPi lp l' D⟨rlift ↑⟩
+        M⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩[lsingle2 C⟨rlift (rlift ↑)⟩
+           (app (tmDNth (iwiL l lp li) N⟨↑⟩⟨↑⟩⟨↑⟩
+                   (tyPi lp (iwiL l lp li) D⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩
+                      (tyIWi l lp li X⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ D⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ C⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩ C⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩))
+                   (var 2) (var 1))
+              lp (iwiL l lp li) D⟨rlift ↑⟩⟨↑⟩
+              (tyIWi l lp li X⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ D⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ C⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩ C⟨rlift (rlift ↑)⟩⟨rlift ↑⟩)
+              (var 0))])).
+Notation iwistepty l lp li X A N D Ot C M :=
+  (M⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩[lsingle2 Ot⟨↑⟩⟨↑⟩
+     (tmSupii l lp li X⟨↑⟩⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ D⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ C⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩ (var 2) (var 1))]).
+
 (** ** Heather's indexed [M] (M18_DESIGN.md, M18b)
 
     The schemas [H/crates/kernel/src/term.rs]'s [MSig] section shares

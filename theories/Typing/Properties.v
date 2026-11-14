@@ -620,6 +620,15 @@ Ltac wk_manual :=
   | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ (tmSupi _ _ _ _ _ _ _ _ _)) _ _ _ =>
       wk_rewrite; push_ren; eapply eqtm_elimIWf_supi; wk_I
   | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimIWf; wk_I
+  (* [IWi] (M19) *)
+  | |- wf_ty _ _ _ (tyIWi _ _ _ _ _ _ _ _ _ _) _ => eapply wft_iwi; wk_I
+  | |- eq_ty _ _ _ (tyIWi _ _ _ _ _ _ _ _ _ _) _ _ => eapply eqty_iwi; wk_I
+  | |- wf_tm _ _ _ (tmSupii _ _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_supii; wk_I
+  | |- eq_tm _ _ _ (tmSupii _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_supii; wk_I
+  | |- wf_tm _ _ _ (tmElimIWi _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_elimIWi; wk_I
+  | |- eq_tm _ _ _ (tmElimIWi _ _ _ _ _ _ _ _ _ _ _ _ _ (tmSupii _ _ _ _ _ _ _ _ _ _ _)) _ _ _ =>
+      wk_rewrite; push_ren; eapply eqtm_elimIWi_supii; wk_I
+  | |- eq_tm _ _ _ (tmElimIWi _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimIWi; wk_I
   (* [ind_∥∥] (M16a): its step's type, through the induction hypotheses *)
   | |- wf_tm _ _ _ (tmElimSq _ _ _ _ _ _) _ _ => eapply wf_elimSq; wk_premise
   | |- eq_tm _ _ _ (tmElimSq _ _ _ _ _ (tmSq _ _ _)) _ _ _ => eapply eqtm_elimSq_sq; wk_premise
