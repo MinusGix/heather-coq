@@ -735,6 +735,74 @@ Proof using EL VA VC VD VL VM VN VNt VO VX Vc Vcs Vih Vmot.
   eapply LRtm_irrel_r; [exact Y | exact (VTyG_kw ρ (VTyG_refl_l VXγ) (SubRel_refl_l He))].
 Qed.
 
+(** The signatures at the two sides of a related substitution, with
+    their generic equality. *)
+Lemma elimIWi_sig2 {G0 γ Δ0 e e'} : gwk_ok γ G0 G -> SubRel G0 Γ⟦γ⟧ Δ0 e e' ->
+  IWiEq (G := G0) (i := ge_layer) Δ0 l lp li l3 lp3 li3 (sX γ e) (sX' γ e') (sA γ e) (sA' γ e') (sN γ e) (sN' γ e')
+    (sD γ e) (sD' γ e') (sO γ e) (sO' γ e') (sC γ e) (sC' γ e') /\
+  IWiGeq G0 Δ0 l lp li (sX γ e) (sX' γ e') (sA γ e) (sA' γ e') (sN γ e) (sN' γ e') (sD γ e) (sD' γ e')
+    (sO γ e) (sO' γ e') (sC γ e) (sC' γ e').
+Proof using EL H13 Hi3 Hp3 Hwl Hwl' Hwli Hwlp VA VC VD VL VM VN VNt VO VX Vc Vcs Vih Vmot.
+  intros Hγ He.
+  destruct (elimIWi_at Hγ He) as (HX0 & EX & HA0 & EA & HN0 & EN & HD0 & ED & HO0 & EO & HC0 & EC & _).
+  pose proof (lwf_weaken _ _ _ (proj1 Hγ) Hwl) as Hwl0. pose proof (lwf_weaken _ _ _ (proj1 Hγ) Hwli) as Hwli0.
+  pose proof (lwf_weaken _ _ _ (proj1 Hγ) Hwlp) as Hwlp0.
+  split; [| exact (conj EX (conj EA (conj EN (conj ED (conj EO EC)))))].
+  apply IWiEq_intro;
+    first [ exact (lequiv_weaken _ _ _ _ (proj1 Hγ) H13) | exact (lequiv_weaken _ _ _ _ (proj1 Hγ) Hp3)
+          | exact (lequiv_weaken _ _ _ _ (proj1 Hγ) Hi3)
+          | apply geq_ty_sound; assumption | apply geq_tm_sound; assumption | assumption
+          | exact (eqty_wf_r ge_typeof (geq_ty_sound EX)) | exact (eqty_wf_r ge_typeof (geq_ty_sound EA))
+          | exact (eqtm_wf_r ge_typeof (geq_tm_sound EN)) | exact (eqty_wf_r ge_typeof (geq_ty_sound ED))
+          | exact (eqtm_wf_r ge_typeof (geq_tm_sound EO)) | exact (eqtm_wf_r ge_typeof (geq_tm_sound EC)) ].
+Qed.
+
+(** A field's domain and codomain at related shapes and positions in a
+    world, generically equal to another signature's at another
+    substitution. *)
+Lemma elimIWi_ann {G0 γ Δ0 e e2 kl klp kli Xr Ar Nr Or Dg Cg} (ρ : kwk G0 Δ0) {b b' i q} :
+  gwk_ok γ G0 G -> SubRel G0 Γ⟦γ⟧ Δ0 e e2 ->
+  VTyG G0 (Γ⟦γ⟧ ,, A⟦γ⟧ @ l ,, tyFin N⟦γ⟧ @ lzero) D⟦γ⟧ Dg lp ->
+  VTmG G0 (Γ⟦γ⟧ ,, A⟦γ⟧ @ l ,, tyFin N⟦γ⟧ @ lzero ,, D⟦γ⟧ @ lp) C⟦γ⟧ Cg X⟦γ⟧⟨↑⟩⟨↑⟩⟨↑⟩ li ->
+  IWiEq (G := G0) (i := ge_layer) Δ0 l lp li kl klp kli (sX γ e) Xr (sA γ e) Ar (sN γ e) Nr
+    (sD γ e) Dg[llift (llift e2)] (sO γ e) Or (sC γ e) Cg[llift (llift (llift e2))] ->
+  IWiGeq G0 Δ0 l lp li (sX γ e) Xr (sA γ e) Ar (sN γ e) Nr
+    (sD γ e) Dg[llift (llift e2)] (sO γ e) Or (sC γ e) Cg[llift (llift (llift e2))] ->
+  LRtm l (kw_G ρ) (kw_Δ ρ) (kty ρ (sA γ e)) (kty ρ (sA γ e2)) b b' ->
+  LRtm lzero (kw_G ρ) (kw_Δ ρ) (tyFin (ktml ρ (sN γ e))[lsingle b]) (tyFin (ktml ρ (sN γ e2))[lsingle b']) i q ->
+  [ kw_G ρ ; kw_Δ ρ ⊢g (ktyll ρ (sD γ e))[lsingle2 b i] @ lp ] /\
+  [ kw_G ρ ; kw_Δ ρ ⊢ (ktyll ρ (sD γ e))[lsingle2 b i] ≈ (ktyll ρ Dg[llift (llift e2)])[lsingle2 b' q] @ lp ] /\
+  [ kw_G ρ ; kw_Δ ρ ,, (ktyll ρ (sD γ e))[lsingle2 b i] @ lp
+      ⊢ tyIWi l lp li (kty ρ (sX γ e))⟨↑⟩ (kty ρ (sA γ e))⟨↑⟩ (ktml ρ (sN γ e))⟨rlift ↑⟩
+          (ktyll ρ (sD γ e))⟨rlift (rlift ↑)⟩ (ktml ρ (sO γ e))⟨rlift ↑⟩
+          (ktmlll ρ (sC γ e))⟨rlift (rlift (rlift ↑))⟩ (ktmlll ρ (sC γ e))[llift (lsingle2 b i)]
+        ≈ tyIWi kl klp kli (kty ρ Xr)⟨↑⟩ (kty ρ Ar)⟨↑⟩ (ktml ρ Nr)⟨rlift ↑⟩
+          (ktyll ρ Dg[llift (llift e2)])⟨rlift (rlift ↑)⟩ (ktml ρ Or)⟨rlift ↑⟩
+          (ktmlll ρ Cg[llift (llift (llift e2))])⟨rlift (rlift (rlift ↑))⟩
+          (ktmlll ρ Cg[llift (llift (llift e2))])[llift (lsingle2 b' q)] @ L ].
+Proof using EL Hwlp VL VN.
+  intros Hγ He VDg VCg HE HG Hb Hi.
+  destruct (SubRel_nf _ _ _ _ _ He) as [Ne Ne2].
+  pose proof (SubRel_kw _ _ _ ρ _ _ He) as Heρ.
+  rewrite !kty_subst in Hb. rewrite !ktml_subst_single in Hi.
+  assert (Hi' : LRtm lzero (kw_G ρ) (kw_Δ ρ) (tyFin N⟦γ⟧⟦kw_γ ρ⟧)[lcons (kwsub ρ e) b]
+                  (tyFin N⟦γ⟧⟦kw_γ ρ⟧)[lcons (kwsub ρ e2) b'] i q) by (rewrite !subst_tyFin; exact Hi).
+  pose proof (SubRel_cons (SubRel_cons Heρ Hb) Hi') as Hs.
+  pose proof (VDg _ _ (kw_gok ρ)) as VDρ. rewrite !gwa_cext, gwa_tyFin in VDρ.
+  destruct (VDρ _ _ _ Hs) as [R HR]. destruct (escape_ty _ _ _ _ _ _ _ _ HR) as (HDd & _ & ED).
+  pose proof (kw_lwf ρ (lwf_weaken _ _ _ (proj1 Hγ) Hwlp)) as Hwlpρ.
+  pose proof (SubRel_lift Hs (VTy_refl_l VDρ) HDd Hwlpρ) as Hs2.
+  pose proof (VCg _ _ (kw_gok ρ)) as VCρ. rewrite !gwa_cext, gwa_tyFin, !gwa_ren_ty in VCρ.
+  pose proof (LRtm_geq (VCρ _ _ _ Hs2)) as EC.
+  rewrite !shift_llift_ty, !shift_cons_ty', <- kty_subst in EC.
+  rewrite <- (ktyll_subst_single2 ρ e Ne) in HDd, ED, EC. rewrite <- (ktyll_subst_single2 ρ e2 Ne2) in ED.
+  rewrite <- (ktmlll_subst_lift_single2 ρ e Ne), <- (ktmlll_subst_lift_single2 ρ e2 Ne2) in EC.
+  refine (conj HDd (conj ED _)).
+  pose proof (IWiEq_kw ρ HE) as HEρ. pose proof (IWiGeq_kw ρ HE HG) as HGρ.
+  pose proof (ext_wf_g HDd Hwlpρ) as HΓd.
+  exact (iwi_geq_at (IWiEq_wk1 ge_typeof ge_notV HEρ HΓd) (IWiGeq_wk1 HEρ HGρ HΓd) EC).
+Qed.
+
 End ElimAt.
 
 End IWiElimV.
