@@ -571,7 +571,51 @@ Class GenericEqLaws `{GenericEq} := {
     [ G ; Γ ⊢g j ≅ j' : X @ li ] ->
     [ G ; Γ ⊢ ν ~ ν' : tyM l l' li X A B C j @ mlvl l l' li ] ->
     [ G ; Γ ⊢ tmOut l l' li X A B C j ν ~ tmOut k k' ki X' A' B' C' j' ν'
-        : mOutTy l l' li X A B C j @ lmax l (mlvl l l' li) ]
+        : mOutTy l l' li X A B C j @ lmax l (mlvl l l' li) ] ;
+  (** indexed families with infinitary children (M19b), as [IWf]'s *)
+  geq_ty_iwi {G Γ l lp li k kp ki X X' A A' N N' D D' Ot Ot' C C' m m'} :
+    lequiv (gL G) l k -> lequiv (gL G) lp kp -> lequiv (gL G) li ki ->
+    [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ⊢ X ≈ X' @ li ] ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
+    [ G ; Γ ,, A @ l ⊢g N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢ N ≈ N' : tyNat @ lzero ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢g D @ lp ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢ D ≈ D' @ lp ] ->
+    [ G ; Γ ,, A @ l ⊢g Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢ Ot ≈ Ot' : X⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢g C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢ m ≈ m' : X @ li ] ->
+    [ G ; Γ ⊢ tyIWi l lp li X A N D Ot C m ≈ tyIWi k kp ki X' A' N' D' Ot' C' m' @ iwiL l lp li ] ;
+  geq_tm_supii {G Γ l lp li k kp ki X X' A A' N N' D D' Ot Ot' C C' a a' cs cs'} :
+    lequiv (gL G) l k -> lequiv (gL G) lp kp -> lequiv (gL G) li ki ->
+    [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ⊢g X ≅ X' @ li ] ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢g A ≅ A' @ l ] ->
+    [ G ; Γ ,, A @ l ⊢g N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢g N ≅ N' : tyNat @ lzero ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢g D @ lp ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢g D ≅ D' @ lp ] ->
+    [ G ; Γ ,, A @ l ⊢g Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢g Ot ≅ Ot' : X⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢g C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢g C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ⊢ a ≈ a' : A @ l ] ->
+    [ G ; Γ ⊢ cs ≈ cs' : tyDVec (iwiL l lp li) N[lsingle a] (iwiFam l lp li X A N D Ot C a) @ iwiL l lp li ] ->
+    [ G ; Γ ⊢ tmSupii l lp li X A N D Ot C a cs ≈ tmSupii k kp ki X' A' N' D' Ot' C' a' cs'
+        : tyIWi l lp li X A N D Ot C Ot[lsingle a] @ iwiL l lp li ] ;
+  gne_tm_elimIWi {G Γ l lp li l' k kp ki k' X X' A A' N N' D D' Ot Ot' C C' M M' c c' m m' ν ν'} :
+    lequiv (gL G) l k -> lequiv (gL G) lp kp -> lequiv (gL G) li ki -> lequiv (gL G) l' k' ->
+    [ G ; Γ ⊢g X @ li ] -> [ G ; Γ ⊢ X ≈ X' @ li ] ->
+    [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ⊢ A ≈ A' @ l ] ->
+    [ G ; Γ ,, A @ l ⊢g N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢ N ≈ N' : tyNat @ lzero ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢g D @ lp ] -> [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢ D ≈ D' @ lp ] ->
+    [ G ; Γ ,, A @ l ⊢g Ot : X⟨↑⟩ @ li ] -> [ G ; Γ ,, A @ l ⊢ Ot ≈ Ot' : X⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢g C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
+    [ G ; Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li ⊢g M @ l' ] ->
+    [ G ; Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li ⊢ M ≈ M' @ l' ] ->
+    [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ⊢
+        iwiihty l lp li l' X A N D Ot C M ≈ iwiihty k kp ki k' X' A' N' D' Ot' C' M' @ lmax lzero (lmax lp l') ] ->
+    [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ,, iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l')
+        ⊢ c ≈ c' : iwistepty l lp li X A N D Ot C M @ l' ] ->
+    [ G ; Γ ⊢ m ≈ m' : X @ li ] ->
+    [ G ; Γ ⊢ ν ~ ν' : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] ->
+    [ G ; Γ ⊢ tmElimIWi l lp li l' X A N D Ot C M c m ν ~ tmElimIWi k kp ki k' X' A' N' D' Ot' C' M' c' m' ν'
+        : M[lsingle2 m ν] @ l' ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

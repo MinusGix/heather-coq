@@ -535,7 +535,10 @@ Proof using EL VL.
                       idxAd IHidx Hisym Histr domAd IHdom arAd otAd chAd ixAd HR
                   | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                       Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                      HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                      HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd IHvidx Hvisym Hvistr vdomAd IHvdom varAd votAd vpdAd IHvpd vpdE vchAd vgC vixAd HR];
     intros T'' R' H2;
     inversion H2 as [? ? ? ? ? ? Hk HTk HTk' HkR
                     | ? ? ? ? ? k1 k2 ? Hk Hk2 Hkn HTk HTk' HkR
@@ -566,7 +569,11 @@ Proof using EL VL.
                     | ? ? ? ? ? nl1 nl2 nli nr1 nr2 nri nX nX' nA nA' nB nB' nC nC' nm nm' nidxR nshR nposR ?
                         Hk Hnr1 Hnr2 Hnri Hnw1 Hnw2 Hnwi HTk HTk' HnX HnX' HnA HnA' HnB HnB' HnC HnC' Hnm Hnm'
                         HnXX HnAA HnBB HnCC Hnmm nidxAd nshAd nposAd nchAd ngB ngC ngCa nimon nshmon nposmon
-                        nixAd HkR];
+                        nixAd HkR
+                    | ? ? ? ? ? j1 jp1 ji1 j2 jp2 ji2 kX kX' kA kA' kN kN' kD kD' kO kO' kC kC' q q' kidxR kdomR kpdR ?
+                        Hk Hj2 Hjp2 Hji2 Hjw Hjwp Hjwi HTk HTk' HkX HkX' HkA HkA' HkN HkN' HkD HkD' HkO HkO' HkC HkC'
+                        Hq Hq' HkXX HkAA HkNN HkDD HkOO HkCC Hqq kidxAd Hkisym Hkistr kdomAd karAd kotAd kpdAd kpdE
+                        kchAd kgC kixAd HkR];
     subst; try (agree; try ne_absurd).
   (* contextual types, and mismatches with them *)
   all: try solve [eapply ModRel_irrel; eassumption].
@@ -642,6 +649,24 @@ Proof using EL VL.
     + exact (wf_tm_nf Hmm).
     + exact (wf_tm_nf Hmm').
     + exact (wf_tm_nf Hnm').
+  - (* IWi: the index's and the shapes' relations agree, and the domains'
+       relations where the relation reads them: against a right position
+       related along either right length ([PosRel_retarget]) *)
+    assert (Hd : forall ρ, releq (vdomR ρ) (kdomR ρ))
+      by (intros; match goal with IH : forall (ρ : kwk _ _) T'' R', _ -> releq (vdomR _) _ |- _ =>
+                                    eapply IH end; eauto).
+    apply IWiRel_releq.
+    + intros; match goal with IH : forall (ρ : kwk _ _) T'' R', _ -> releq (vidxR _) _ |- _ =>
+                                eapply IH end; eauto.
+    + exact Hd.
+    + intros ρ a a' p y y' ha (p' & Hy).
+      pose proof (vpdE _ _ _ _ _ _ _ Hy) as Hp.
+      destruct (PosRel_retarget Hp _ (karAd ρ a a' (proj1 (Hd ρ a a') ha))) as (p2 & Hp2).
+      exists p2. eapply IHvpd; [exact ha | exact Hp | exact (kpdAd ρ a a' (proj1 (Hd ρ a a') ha) p p2 Hp2) | exact Hy].
+    + intros ρ a a' p y y' ha (p' & Hy).
+      pose proof (kpdE _ _ _ _ _ _ _ Hy) as Hp.
+      destruct (PosRel_retarget Hp _ (varAd ρ a a' ha)) as (p2 & Hp2).
+      exists p2. apply (proj2 (IHvpd ρ a a' ha p p2 Hp2 _ _ (kpdAd ρ a a' (proj1 (Hd ρ a a') ha) p p' Hp) y y')), Hy.
 Qed.
 
 (** ** Inversion by the left type's normal form *)
@@ -681,7 +706,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; auto.
 Qed.
 
@@ -717,7 +745,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -753,7 +784,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -791,7 +825,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 15.
 Qed.
 
@@ -831,7 +868,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 20.
 Qed.
 
@@ -874,7 +914,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; do 6 eexists; eauto 25.
 Qed.
 
@@ -910,7 +953,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -947,7 +993,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd; eauto 7.
 Qed.
 
@@ -983,7 +1032,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try solve [inversion HV0]; eauto.
 Qed.
 
@@ -1024,7 +1076,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
@@ -1066,7 +1121,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
@@ -1108,7 +1166,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 6 eexists; refine (conj _ _); [split|]; eauto 20.
 Qed.
@@ -1153,7 +1214,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 4 eexists; eauto 20.
 Qed.
@@ -1217,10 +1281,90 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 10 eexists; eauto 40.
 Qed.
+
+Lemma LR_inv_iwi {iL iLp iLi iX iA iN iD iO iC im l'} : [ G ; Γ ⊢g T ⤳* tyIWi iL iLp iLi iX iA iN iD iO iC im @ l' ] ->
+  exists k2 kp2 ki2 X' A' N' D' Ot' C' m' (idxR domR : DomRel G Γ) (pdR : IPosDomRel G Γ),
+    lequiv (gL G) l (iwiL iL iLp iLi) /\ lequiv (gL G) k2 iL /\ lequiv (gL G) kp2 iLp /\ lequiv (gL G) ki2 iLi /\
+    lwf (gL G) iL /\ lwf (gL G) iLp /\ lwf (gL G) iLi /\
+    [ G ; Γ ⊢g T ⤳* tyIWi iL iLp iLi iX iA iN iD iO iC im @ l ] /\
+    [ G ; Γ ⊢g T' ⤳* tyIWi k2 kp2 ki2 X' A' N' D' Ot' C' m' @ l ] /\
+    [ G ; Γ ⊢g iX @ iLi ] /\ [ G ; Γ ⊢g X' @ iLi ] /\ [ G ; Γ ⊢g iA @ iL ] /\ [ G ; Γ ⊢g A' @ iL ] /\
+    [ G ; Γ ,, iA @ iL ⊢g iN : tyNat @ lzero ] /\ [ G ; Γ ,, A' @ iL ⊢g N' : tyNat @ lzero ] /\
+    [ G ; Γ ,, iA @ iL ,, tyFin iN @ lzero ⊢g iD @ iLp ] /\ [ G ; Γ ,, A' @ iL ,, tyFin N' @ lzero ⊢g D' @ iLp ] /\
+    [ G ; Γ ,, iA @ iL ⊢g iO : iX⟨↑⟩ @ iLi ] /\ [ G ; Γ ,, A' @ iL ⊢g Ot' : X'⟨↑⟩ @ iLi ] /\
+    [ G ; Γ ,, iA @ iL ,, tyFin iN @ lzero ,, iD @ iLp ⊢g iC : iX⟨↑⟩⟨↑⟩⟨↑⟩ @ iLi ] /\
+    [ G ; Γ ,, A' @ iL ,, tyFin N' @ lzero ,, D' @ iLp ⊢g C' : X'⟨↑⟩⟨↑⟩⟨↑⟩ @ iLi ] /\
+    [ G ; Γ ⊢g im : iX @ iLi ] /\ [ G ; Γ ⊢g m' : X' @ iLi ] /\
+    [ G ; Γ ⊢ iX ≈ X' @ iLi ] /\ [ G ; Γ ⊢ iA ≈ A' @ iL ] /\ [ G ; Γ ,, iA @ iL ⊢ iN ≈ N' : tyNat @ lzero ] /\
+    [ G ; Γ ,, iA @ iL ,, tyFin iN @ lzero ⊢ iD ≈ D' @ iLp ] /\
+    [ G ; Γ ,, iA @ iL ⊢ iO ≈ Ot' : iX⟨↑⟩ @ iLi ] /\
+    [ G ; Γ ,, iA @ iL ,, tyFin iN @ lzero ,, iD @ iLp ⊢ iC ≈ C' : iX⟨↑⟩⟨↑⟩⟨↑⟩ @ iLi ] /\
+    [ G ; Γ ⊢ im ≈ m' : iX @ iLi ] /\
+    (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ iX) (kty ρ X') iLi (idxR ρ)) /\
+    (forall (ρ : kwk G Γ) x y, idxR ρ x y -> idxR ρ y x) /\
+    (forall (ρ : kwk G Γ) x y z, idxR ρ x y -> idxR ρ y z -> idxR ρ x z) /\
+    (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ iA) (kty ρ A') iL (domR ρ)) /\
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' ->
+        NatRel (kw_G ρ) (kw_Δ ρ) (ktml ρ iN)[lsingle a] (ktml ρ N')[lsingle a']) /\
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' ->
+        idxR ρ (ktml ρ iO)[lsingle a] (ktml ρ Ot')[lsingle a']) /\
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' -> forall p p',
+        PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ iN)[lsingle a] (ktml ρ N')[lsingle a'] p p' ->
+        LR n rec (kw_G ρ) (kw_Δ ρ) (ktyll ρ iD)[lsingle2 a p] (ktyll ρ D')[lsingle2 a' p'] iLp (pdR ρ a a' p p')) /\
+    (forall (ρ : kwk G Γ) a a' p p' y y', pdR ρ a a' p p' y y' ->
+        PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ iN)[lsingle a] (ktml ρ N')[lsingle a'] p p') /\
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' -> forall p p' y y', pdR ρ a a' p p' y y' ->
+        idxR ρ (ktmlll ρ iC)[lsingle3 a p y] (ktmlll ρ C')[lsingle3 a' p' y']) /\
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' -> forall p p',
+        PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ iN)[lsingle a] (ktml ρ N')[lsingle a'] p p' ->
+        [ kw_G ρ ; kw_Δ ρ ,, (ktyll ρ iD)[lsingle2 a p] @ iLp
+            ⊢ (ktmlll ρ iC)[llift (lsingle2 a p)] ≈ (ktmlll ρ C')[llift (lsingle2 a' p')] : (kty ρ iX)⟨↑⟩ @ iLi ]) /\
+    (forall ρ : kwk G Γ, idxR ρ (ktm ρ im) (ktm ρ m')) /\
+    releq R (IWiRel G Γ iL iLp iLi iX iA iN iD iO iC idxR domR pdR im).
+Proof using EL H.
+  intros HN; revert HN.
+  destruct H as [G Γ T T' l R Hl HT HT' HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hn HT HT' HR
+                | G Γ T T' l V V' R HT HT' HV HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l R Hj HM
+                | G Γ T T' l n1 n2 T1 T1' instR R Hj Hn1 Hn2 Hnw HT HT' HT1 HT1' Hgeq instAd HR
+                | G Γ T T' l Δ1 Δ1' n1 n2 n3 n4 T1 T1' instR R Hj Hn1 Hn3 Hn4 Hnw1 Hnw2 HT HT' HΔ HT1 HT1'
+                    Hgeq instAd HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l k1 k2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 SA SA' sa sa' sb sb' R Hl Hl2 Hw HT HT' HSA HSAA Hsaa Hsbb HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l s1 s2 IA IA' ia ia' ib ib' RA R Hl Hl2 Hw HT HT' HIA HIAA Hiaa Hibb HRA Hra Hrb Hps Hpt HR
+                | G Γ T T' l s1 s2 R Hl Hl2 Hw HT HT' HR
+                | G Γ T T' l u1 u2 u3 u4 UA UA' UB UB' RA RB R Hl Hl3 Hl4 Hw1 Hw2 HT HT' HUA HUAA HUB HUBB
+                    HRA HRB Hpa Hta Hpb Htb HR
+                | G Γ T T' l l1 l2 l3 l4 A B A' B' domR codR R
+                    [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB] domAd codAd HR
+                | G Γ T T' l q1 q2 WA WA' WN WN' domR R Hl Hl2 Hw HT HT' HA HA' HNt HNt' HAA HNN domAd arAd HR
+                | G Γ T T' l q1 q2 WA WA' RQ R Hl Hl2 Hw HT HT' HA HAA HRQ Hqs Hqt HR
+                | G Γ T T' l wl1 wli1 wl2 wli2 wX wX' wA wA' wN wN' wO wO' wC wC' wm wm' widxR wdomR R Hl Hl2 Hwli2 Hw Hwwi
+                    HT HT' HwX HwX' HwA HwA' HwN HwN' HwO HwO' HwC HwC' Hwm Hwm' HwXX HwAA HwNN HwOO HwCC Hwmm
+                    widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
+                | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
+                    Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
+    intros HN; try open_mod; agree; try ne_absurd.
+  do 13 eexists; eauto 50.
+Qed.
+
 
 (** Indexed [M] (M18b). *)
 Lemma LR_inv_M {ul1 ul2 uli uX uA uB uC um l'} : [ G ; Γ ⊢g T ⤳* tyM ul1 ul2 uli uX uA uB uC um @ l' ] ->
@@ -1295,7 +1439,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 11 eexists; eauto 50.
 Qed.
@@ -1336,7 +1483,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 3 eexists; eauto 20.
 Qed.
@@ -1371,7 +1521,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; first [exact (conj Hj HM) | agree; try ne_absurd].
 Qed.
 
@@ -1405,7 +1558,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; first [exact (conj Hj HM) | agree; try ne_absurd].
 Qed.
 
@@ -1448,7 +1604,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 3 eexists; eauto 20.
 Qed.
@@ -1493,7 +1652,10 @@ Proof using EL H.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC' Hvm Hvm'
+                    HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd vpdAd vpdE vchAd vgC vixAd HR];
     intros HN; try open_mod; agree; try ne_absurd.
   do 5 eexists; eauto 20.
 Qed.
