@@ -161,13 +161,13 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 
 Lemma ktyll_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) T :
   ktyll (kw_comp ρ ρ') T = ktyll ρ' (ktyll ρ T).
-Proof. unfold ktyll; rewrite kw_γ_comp, kw_r_comp. now rewrite gwa_ren_ty, gwa_comp_ty, ren_wk_comp_lift2_ty. Qed.
+Proof using . unfold ktyll; rewrite kw_γ_comp, kw_r_comp. now rewrite gwa_ren_ty, gwa_comp_ty, ren_wk_comp_lift2_ty. Qed.
 Lemma ktmll_comp' {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) t :
   ktmll (kw_comp ρ ρ') t = ktmll ρ' (ktmll ρ t).
-Proof. unfold ktmll; rewrite kw_γ_comp, kw_r_comp. now rewrite gwa_ren, gwa_comp_tm, ren_wk_comp_lift2'. Qed.
+Proof using . unfold ktmll; rewrite kw_γ_comp, kw_r_comp. now rewrite gwa_ren, gwa_comp_tm, ren_wk_comp_lift2'. Qed.
 Lemma ktmlll_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) t :
   ktmlll (kw_comp ρ ρ') t = ktmlll ρ' (ktmlll ρ t).
-Proof. unfold ktmlll; rewrite kw_γ_comp, kw_r_comp. now rewrite gwa_ren, gwa_comp_tm, ren_wk_comp_lift3. Qed.
+Proof using . unfold ktmlll; rewrite kw_γ_comp, kw_r_comp. now rewrite gwa_ren, gwa_comp_tm, ren_wk_comp_lift3. Qed.
 
 (** ** [M]'s syntax in a world *)
 
@@ -176,31 +176,31 @@ Context {G : gctx} {Γ : ctx} (ρ : kwk G Γ).
 
 Lemma kty_tyM l l' li X A B C j :
   kty ρ (tyM l l' li X A B C j) = tyM l l' li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C) (ktm ρ j).
-Proof. unfold kty, ktm, ktyl, ktyll, ktmlll; now rewrite gwa_tyM. Qed.
+Proof using . unfold kty, ktm, ktyl, ktyll, ktmlll; now rewrite gwa_tyM. Qed.
 Lemma ktm_out l l' li X A B C j t :
   ktm ρ (tmOut l l' li X A B C j t) =
   tmOut l l' li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C) (ktm ρ j) (ktm ρ t).
-Proof. unfold kty, ktm, ktyl, ktyll, ktmlll; now rewrite gwa_out. Qed.
+Proof using . unfold kty, ktm, ktyl, ktyll, ktmlll; now rewrite gwa_out. Qed.
 Lemma ktm_corec l l' li X A B C k Y c j y :
   ktm ρ (tmCorec l l' li X A B C k Y c j y) =
   tmCorec l l' li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C) k (ktyl ρ Y) (ktmll ρ c) (ktm ρ j) (ktm ρ y).
-Proof. unfold kty, ktm, ktyl, ktyll, ktmll, ktmlll; now rewrite gwa_corec. Qed.
+Proof using . unfold kty, ktm, ktyl, ktyll, ktmll, ktmlll; now rewrite gwa_corec. Qed.
 
 (** Instances at an index, a shape and a position. *)
 Lemma kty_lsingle (T : ty) a : kty ρ T[lsingle a] = (ktyl ρ T)[lsingle (ktm ρ a)].
-Proof. unfold kty, ktyl, ktm. now rewrite gwa_subst_ty, gwa_lsingle, lsingle_ren_ty. Qed.
+Proof using . unfold kty, ktyl, ktm. now rewrite gwa_subst_ty, gwa_lsingle, lsingle_ren_ty. Qed.
 
 Lemma kty_lsingle2 (T : ty) a b : kty ρ T[lsingle2 a b] = (ktyll ρ T)[lsingle2 (ktm ρ a) (ktm ρ b)].
-Proof. unfold kty, ktyll, ktm. now rewrite gwa_subst_ty, gwa_lsingle2, lsingle2_ren_ty. Qed.
+Proof using . unfold kty, ktyll, ktm. now rewrite gwa_subst_ty, gwa_lsingle2, lsingle2_ren_ty. Qed.
 
 Lemma ktm_lsingle3 (t : tm) a b c :
   ktm ρ t[lsingle3 a b c] = (ktmlll ρ t)[lsingle3 (ktm ρ a) (ktm ρ b) (ktm ρ c)].
-Proof.
+Proof using .
   unfold ktm, ktmlll. rewrite gwa_subst, gwa_lsingle3'. apply lsingle3_ren.
 Qed.
 
 Lemma ktyl_llift_single (T : ty) a : ktyl ρ T[llift (lsingle a)] = (ktyll ρ T)[llift (lsingle (ktm ρ a))].
-Proof.
+Proof using .
   unfold ktyl, ktyll, ktm. rewrite gwa_subst_ty.
   rewrite (subst_ext_ty _ (llift (lsingle a))⟦kw_γ ρ⟧ (llift (lsingle a)⟦kw_γ ρ⟧)) by apply llk_llift_gwa.
   rewrite gwa_lsingle, llift_lsingle_ren_ty. reflexivity.
@@ -208,7 +208,7 @@ Qed.
 
 Lemma ktml_llift_single2 (t : tm) a b :
   ktml ρ t[llift (lsingle2 a b)] = (ktmlll ρ t)[llift (lsingle2 (ktm ρ a) (ktm ρ b))].
-Proof.
+Proof using .
   unfold ktml, ktmlll, ktm. rewrite gwa_subst.
   rewrite (subst_ext _ (llift (lsingle2 a b))⟦kw_γ ρ⟧ (llift (lsingle2 a b)⟦kw_γ ρ⟧)) by apply llk_llift_gwa.
   rewrite gwa_lsingle2, llift_lsingle2_ren. reflexivity.
@@ -216,7 +216,7 @@ Qed.
 
 Lemma ktmll_llift2_single (t : tm) a :
   ktmll ρ t[llift (llift (lsingle a))] = (ktmlll ρ t)[llift (llift (lsingle (ktm ρ a)))].
-Proof.
+Proof using .
   unfold ktmll, ktmlll, ktm. rewrite gwa_subst.
   rewrite (subst_ext _ (llift (llift (lsingle a)))⟦kw_γ ρ⟧ (llift (llift (lsingle a⟦kw_γ ρ⟧))))
     by (intros n; rewrite gwa_llift2, gwa_lsingle; reflexivity).
@@ -226,7 +226,7 @@ Qed.
 Lemma kw_mKid l l' li X A B C j :
   ktyll ρ (mKidTy l l' li X A B C j) =
   mKidTy l l' li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C) (ktm ρ j).
-Proof.
+Proof using .
   unfold ktyll, kty, ktyl, ktmlll, ktm. rewrite gwa_tyM, !gwa_ren_ty, !gwa_ren, gwa_subst.
   rewrite (subst_ext _ (llift (llift (lsingle j)))⟦kw_γ ρ⟧ (llift (llift (lsingle j⟦kw_γ ρ⟧))))
     by (intros n; rewrite gwa_llift2, gwa_lsingle; reflexivity).
@@ -234,7 +234,7 @@ Proof.
 Qed.
 
 Lemma kw_B_single (T : ty) m a : (ktyl ρ T[llift (lsingle m)])[lsingle a] = (ktyll ρ T)[lsingle2 (ktm ρ m) a].
-Proof.
+Proof using .
   rewrite ktyl_llift_single. assert (N : nftm (ktm ρ m)) by (unfold ktm; apply ren_nf).
   revert N. generalize (ktm ρ m) (ktyll ρ T). intros x U N. meq.
 Qed.
@@ -245,7 +245,7 @@ End KwM.
 Lemma mKid_single l l' li (X A B : ty) (C j a : tm) : nfty X -> nfty A -> nfty B -> nftm C -> nftm j ->
   (mKidTy l l' li X A B C j)[llift (lsingle a)] =
   tyM l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩ C[llift (lsingle2 j a)].
-Proof. intros. meq. Qed.
+Proof using . intros. meq. Qed.
 
 
 
@@ -382,45 +382,45 @@ Local Notation HG' := (kw_glob ρ).
 
 Lemma kw_wkr_l2 {A B l l'} :
   wkr (rlift (rlift (kw_r ρ))) (kw_Δ ρ ,, kty ρ A @ l ,, ktyl ρ B @ l') ((Γ ,, A @ l ,, B @ l')⟦kw_γ ρ⟧).
-Proof.
+Proof using .
   pose proof (kw_wkr_l ρ (A := A) (l := l)) as W. rewrite gwa_cext in W.
   rewrite !gwa_cext. eapply wkr_up'; [exact W | reflexivity].
 Qed.
 Lemma kw_wkr_l3 {A B C l l' l''} :
   wkr (rlift (rlift (rlift (kw_r ρ))))
     (kw_Δ ρ ,, kty ρ A @ l ,, ktyl ρ B @ l' ,, ktyll ρ C @ l'') ((Γ ,, A @ l ,, B @ l' ,, C @ l'')⟦kw_γ ρ⟧).
-Proof.
+Proof using .
   pose proof (kw_wkr_l2 (A := A) (B := B) (l := l) (l' := l')) as W. rewrite !gwa_cext in W.
   rewrite !gwa_cext. eapply wkr_up'; [exact W | reflexivity].
 Qed.
 
 Lemma kw_ext_l2 {A B l l'} : [ G ; Γ ⊢g A @ l ] -> lwf (gL G) l -> [ G ; Γ ,, A @ l ⊢g B @ l' ] -> lwf (gL G) l' ->
   [ kw_G ρ ; kw_Δ ρ ,, kty ρ A @ l ,, ktyl ρ B @ l' ⊢g ].
-Proof. intros HA Hl HB Hl'. apply ext_wf_g; [exact (kw_ty_l ρ HA Hl HB) | exact (kw_lwf ρ Hl')]. Qed.
+Proof using . intros HA Hl HB Hl'. apply ext_wf_g; [exact (kw_ty_l ρ HA Hl HB) | exact (kw_lwf ρ Hl')]. Qed.
 
 Lemma kw_ty_l2 {A B l l' T l''} : [ G ; Γ ⊢g A @ l ] -> lwf (gL G) l -> [ G ; Γ ,, A @ l ⊢g B @ l' ] -> lwf (gL G) l' ->
   [ G ; Γ ,, A @ l ,, B @ l' ⊢g T @ l'' ] -> [ kw_G ρ ; kw_Δ ρ ,, kty ρ A @ l ,, ktyl ρ B @ l' ⊢g ktyll ρ T @ l'' ].
-Proof. intros HA Hl HB Hl' H. exact (wf_ty_wkr kw_wkr_l2 (kw_ext_l2 HA Hl HB Hl') (gwa_ty Hγ HG' H)). Qed.
+Proof using . intros HA Hl HB Hl' H. exact (wf_ty_wkr kw_wkr_l2 (kw_ext_l2 HA Hl HB Hl') (gwa_ty Hγ HG' H)). Qed.
 Lemma kw_geq_ty_l2 {A B l l' T T' l''} : [ G ; Γ ⊢g A @ l ] -> lwf (gL G) l -> [ G ; Γ ,, A @ l ⊢g B @ l' ] ->
   lwf (gL G) l' -> [ G ; Γ ,, A @ l ,, B @ l' ⊢ T ≈ T' @ l'' ] ->
   [ kw_G ρ ; kw_Δ ρ ,, kty ρ A @ l ,, ktyl ρ B @ l' ⊢ ktyll ρ T ≈ ktyll ρ T' @ l'' ].
-Proof. intros HA Hl HB Hl' H. exact (geq_ty_wk kw_wkr_l2 (kw_ext_l2 HA Hl HB Hl') (geq_ty_gwa Hγ HG' H)). Qed.
+Proof using EL. intros HA Hl HB Hl' H. exact (geq_ty_wk kw_wkr_l2 (kw_ext_l2 HA Hl HB Hl') (geq_ty_gwa Hγ HG' H)). Qed.
 
 Lemma kw_ext_l3 {A B C l l' l''} : [ G ; Γ ⊢g A @ l ] -> lwf (gL G) l -> [ G ; Γ ,, A @ l ⊢g B @ l' ] -> lwf (gL G) l' ->
   [ G ; Γ ,, A @ l ,, B @ l' ⊢g C @ l'' ] -> lwf (gL G) l'' ->
   [ kw_G ρ ; kw_Δ ρ ,, kty ρ A @ l ,, ktyl ρ B @ l' ,, ktyll ρ C @ l'' ⊢g ].
-Proof. intros HA Hl HB Hl' HC Hl''. apply ext_wf_g; [exact (kw_ty_l2 HA Hl HB Hl' HC) | exact (kw_lwf ρ Hl'')]. Qed.
+Proof using . intros HA Hl HB Hl' HC Hl''. apply ext_wf_g; [exact (kw_ty_l2 HA Hl HB Hl' HC) | exact (kw_lwf ρ Hl'')]. Qed.
 
 Lemma kty_shift3 (T : ty) : T⟨↑⟩⟨↑⟩⟨↑⟩⟦kw_γ ρ⟧⟨rlift (rlift (rlift (kw_r ρ)))⟩ = (kty ρ T)⟨↑⟩⟨↑⟩⟨↑⟩.
-Proof. unfold kty. rewrite !gwa_ren_ty, !shift_lift_ty. reflexivity. Qed.
+Proof using . unfold kty. rewrite !gwa_ren_ty, !shift_lift_ty. reflexivity. Qed.
 Lemma kty_shift2 (T : ty) : T⟨↑⟩⟨↑⟩⟦kw_γ ρ⟧⟨rlift (rlift (kw_r ρ))⟩ = (kty ρ T)⟨↑⟩⟨↑⟩.
-Proof. unfold kty. now rewrite !gwa_ren_ty, !shift_lift_ty. Qed.
+Proof using . unfold kty. now rewrite !gwa_ren_ty, !shift_lift_ty. Qed.
 
 Lemma kw_tm_l3 {A B C l l' l'' t T} : [ G ; Γ ⊢g A @ l ] -> lwf (gL G) l -> [ G ; Γ ,, A @ l ⊢g B @ l' ] ->
   lwf (gL G) l' -> [ G ; Γ ,, A @ l ,, B @ l' ⊢g C @ l'' ] -> lwf (gL G) l'' ->
   [ G ; Γ ,, A @ l ,, B @ l' ,, C @ l'' ⊢g t : T⟨↑⟩⟨↑⟩⟨↑⟩ @ l ] ->
   [ kw_G ρ ; kw_Δ ρ ,, kty ρ A @ l ,, ktyl ρ B @ l' ,, ktyll ρ C @ l'' ⊢g ktmlll ρ t : (kty ρ T)⟨↑⟩⟨↑⟩⟨↑⟩ @ l ].
-Proof.
+Proof using .
   intros HA Hl HB Hl' HC Hl'' H. rewrite <- kty_shift3.
   exact (wf_tm_wkr kw_wkr_l3 (kw_ext_l3 HA Hl HB Hl' HC Hl'') (gwa_tm Hγ HG' H)).
 Qed.
@@ -429,7 +429,7 @@ Lemma kw_geq_tm_l3 {A B C l l' l'' t t' T} : [ G ; Γ ⊢g A @ l ] -> lwf (gL G)
   [ G ; Γ ,, A @ l ,, B @ l' ,, C @ l'' ⊢ t ≈ t' : T⟨↑⟩⟨↑⟩⟨↑⟩ @ l ] ->
   [ kw_G ρ ; kw_Δ ρ ,, kty ρ A @ l ,, ktyl ρ B @ l' ,, ktyll ρ C @ l''
       ⊢ ktmlll ρ t ≈ ktmlll ρ t' : (kty ρ T)⟨↑⟩⟨↑⟩⟨↑⟩ @ l ].
-Proof.
+Proof using EL.
   intros HA Hl HB Hl' HC Hl'' H. rewrite <- kty_shift3.
   exact (geq_tm_wk kw_wkr_l3 (kw_ext_l3 HA Hl HB Hl' HC Hl'') (geq_tm_gwa Hγ HG' H)).
 Qed.
@@ -438,17 +438,17 @@ End KwBinders.
 
 (** The identity world on the signature's components. *)
 Lemma ktyl_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) T : nfty T -> ktyl (kw_self HΓ) T = T.
-Proof.
+Proof using .
   intros H. unfold ktyl, kw_self, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk].
   rewrite <- (ren_id_ty T H) at 2. apply ren_ext_ty. intros [|n]; rlk_simpl; cbn; lia.
 Qed.
 Lemma ktyll_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) T : nfty T -> ktyll (kw_self HΓ) T = T.
-Proof.
+Proof using .
   intros H. unfold ktyll, kw_self, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk].
   rewrite <- (ren_id_ty T H) at 2. apply ren_ext_ty. intros [|[|n]]; rlk_simpl; cbn; lia.
 Qed.
 Lemma ktmlll_self {G Γ} (HΓ : [ G ; Γ ⊢g ]) t : nftm t -> ktmlll (kw_self HΓ) t = t.
-Proof.
+Proof using .
   intros H. unfold ktmlll, kw_self, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk].
   rewrite <- (ren_id_tm t H) at 2. apply ren_ext_tm. intros [|[|[|n]]]; rlk_simpl; cbn; lia.
 Qed.

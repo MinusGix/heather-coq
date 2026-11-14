@@ -33,7 +33,7 @@ Lemma dnth_reds_example : exists A B A' B',
           (tmInr lzero lzero (tyUnit lzero) (tyFin (succ (succ zero)))
              (tmInl lzero lzero (tyUnit lzero) (tyFin (succ zero)) (tmTriv lzero))))
        (tmFst l l A B (tmSnd l l A' B' cs)).
-Proof.
+Proof using NF Ncs.
   do 4 eexists. unfold tmDNth.
   do 10 (rstep; tnorm).
   apply reds_eq. reflexivity.

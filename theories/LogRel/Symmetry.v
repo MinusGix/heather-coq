@@ -15,13 +15,13 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 (** ** Declarative and generic helpers *)
 
 Lemma lconv_ty {G Γ T l l'} : [ G ; Γ ⊢g T @ l ] -> lequiv (gL G) l l' -> [ G ; Γ ⊢g T @ l' ].
-Proof. intros; eapply wft_lconv; eauto using lequiv_sym. Qed.
+Proof using . intros; eapply wft_lconv; eauto using lequiv_sym. Qed.
 
 (** Changing the level annotation of the last context entry. *)
 Lemma ctx_lvl_ty {G Γ A la la' T l} :
   [ G ; Γ ⊢g A @ la ] -> lequiv (gL G) la la' ->
   [ G ; Γ ,, A @ la ⊢g T @ l ] -> [ G ; Γ ,, A @ la' ⊢g T @ l ].
-Proof.
+Proof using .
   intros HA Hl HT. eapply (stab_ty ge_typeof (eqty_refl _ _ _ _ _ HA) Hl); [|exact HT].
   apply ext_wf_g; [now apply (lconv_ty HA) | eauto using lequiv_wf_r].
 Qed.
@@ -29,7 +29,7 @@ Qed.
 Lemma ctx_lvl_tm {G Γ A la la' t T l} :
   [ G ; Γ ⊢g A @ la ] -> lequiv (gL G) la la' ->
   [ G ; Γ ,, A @ la ⊢g t : T @ l ] -> [ G ; Γ ,, A @ la' ⊢g t : T @ l ].
-Proof.
+Proof using .
   intros HA Hl Ht. eapply (stab_tm ge_typeof (eqty_refl _ _ _ _ _ HA) Hl); [|exact Ht].
   apply ext_wf_g; [now apply (lconv_ty HA) | eauto using lequiv_wf_r].
 Qed.
@@ -37,7 +37,7 @@ Qed.
 Lemma ctx_lvl_geq {G Γ A la la' T T' l} :
   [ G ; Γ ⊢g A @ la ] -> lequiv (gL G) la la' ->
   [ G ; Γ ,, A @ la ⊢ T ≈ T' @ l ] -> [ G ; Γ ,, A @ la' ⊢ T ≈ T' @ l ].
-Proof.
+Proof using EL.
   intros HA Hl HT. eapply geq_ty_ctxconv; [apply eqty_refl, HA | exact Hl | | exact HT].
   apply ext_wf_g; [now apply (lconv_ty HA) | eauto using lequiv_wf_r].
 Qed.
@@ -45,7 +45,7 @@ Qed.
 Lemma tmred_U_conv {G Γ t w l1 l2} :
   [ G ; Γ ⊢g t ⤳* w : tyU l1 @ lsuc l1 ] -> lequiv (gL G) l1 l2 ->
   [ G ; Γ ⊢g t ⤳* w : tyU l2 @ lsuc l2 ].
-Proof.
+Proof using .
   intros Ht Hl. eapply tmred_lconv; [|apply lequiv_suc, lequiv_sym, Hl].
   eapply tmred_conv; [apply ge_typeof | exact Ht |].
   apply eqty_U; [exact ge_notV | rewrite ge_typeof; eapply ctx_of_tm, Ht | exact Hl].
@@ -54,7 +54,7 @@ Qed.
 Lemma geq_U_conv {G Γ w w' l1 l2} :
   [ G ; Γ ⊢g ] -> [ G ; Γ ⊢ w ≈ w' : tyU l1 @ lsuc l1 ] -> lequiv (gL G) l1 l2 ->
   [ G ; Γ ⊢ w ≈ w' : tyU l2 @ lsuc l2 ].
-Proof.
+Proof using EL.
   intros HΓ Hw Hl. eapply geq_tm_lconv; [|apply lequiv_suc, lequiv_sym, Hl].
   eapply geq_tm_conv; [exact Hw |].
   apply eqty_U; [exact ge_notV | now rewrite ge_typeof | exact Hl].
@@ -63,7 +63,7 @@ Qed.
 (** ** Natural numbers and neutrals *)
 
 Lemma NatRel_sym G Γ : forall t t', NatRel G Γ t t' -> NatRel G Γ t' t.
-Proof.
+Proof using EL.
   apply (NatRel_mut G Γ (fun t t' _ => NatRel G Γ t' t) (fun t t' _ => NatNf G Γ t' t)).
   - intros t t' w w' Hw Hw' Heq _ IH. econstructor; eauto using geq_tm_sym.
   - constructor.
@@ -72,10 +72,10 @@ Proof.
 Qed.
 
 Lemma NatRel_flip G Γ : releq (flipR (NatRel G Γ)) (NatRel G Γ).
-Proof. intros t t'; split; apply NatRel_sym. Qed.
+Proof using EL. intros t t'; split; apply NatRel_sym. Qed.
 
 Lemma NeRel_flip G Γ V V' l : releq (flipR (NeRel G Γ V V' l)) (NeRel G Γ V' V l).
-Proof.
+Proof using EL.
   intros t t'; unfold flipR, NeRel; split; intros (ν & ν' & H1 & H2 & H3 & H4);
     exists ν', ν; eauto 6 using gne_tm_sym.
 Qed.
@@ -96,7 +96,7 @@ Context {G : gctx} {Γ : ctx} {l1 l2 l3 l4 : lvl} {A B A' B' : ty}
 Lemma PiRel_flip t t' :
   PiRel G Γ l1 l2 l3 l4 A B A' B' domR codR t' t ->
   PiRel G Γ l3 l4 l1 l2 A' B' A B (flipD domR) (flipC codR) t t'.
-Proof.
+Proof using EL H13 H24 HA HA'.
   intros (w1 & w2 & Hw1 & Hw2 & Hnf1 & Hnf2 & Heq1 & Heq2 & HK).
   assert (Hm : lequiv (gL G) (lmax l3 l4) (lmax l1 l2)) by now apply lequiv_max.
   exists w2, w1.
@@ -125,7 +125,7 @@ Qed.
 Lemma SigRel_flip t t' :
   SigRel G Γ l1 l2 l3 l4 A B A' B' domR codR t' t ->
   SigRel G Γ l3 l4 l1 l2 A' B' A B (flipD domR) (flipC codR) t t'.
-Proof.
+Proof using EL H13 H24 HA HA'.
   intros (w1 & w2 & Hw1 & Hw2 & Hnf1 & Hnf2 & Heq1 & Heq2 & HK).
   assert (Hm : lequiv (gL G) (lmax l3 l4) (lmax l1 l2)) by now apply lequiv_max.
   exists w2, w1.
@@ -166,7 +166,7 @@ Lemma CPiRel_flip {G Γ l1 l2 T1 T1'} {instR : CInstRel G Γ} :
   lequiv (gL G) l2 l1 ->
   (forall ρ Δ Δ' h h', releq (instR ρ Δ Δ' h) (instR ρ Δ Δ' h')) ->
   releq (flipR (CPiRel G Γ l1 l2 T1 T1' instR)) (CPiRel G Γ l2 l1 T1' T1 (flipCI instR)).
-Proof.
+Proof using EL.
   intros Hl Hsame t t'; unfold flipR; split.
   - intros (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK). exists w', w.
     refine (conj _ (conj _ (conj Hnf' (conj Hnf (conj _ (conj _ _)))))).
@@ -203,7 +203,7 @@ Lemma TPiRel_flip {G Γ Δ1 Δ1' l1 l2 l3 l4 T1 T1'} {instR : TInstRel G Γ Δ1 
   (forall ρ A A' h h', releq (instR ρ A A' h) (instR ρ A A' h')) ->
   releq (flipR (TPiRel G Γ Δ1 Δ1' l1 l2 l3 l4 T1 T1' instR))
         (TPiRel G Γ Δ1' Δ1 l3 l4 l1 l2 T1' T1 (flipTI HΔ H13 instR)).
-Proof.
+Proof using EL.
   intros Hl Hsame t t'; unfold flipR; split.
   - intros (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & Heq' & HK). exists w', w.
     refine (conj _ (conj _ (conj Hnf' (conj Hnf (conj _ (conj _ _)))))).
@@ -235,7 +235,7 @@ Definition Psym n := forall G Γ T T' l R,
 Lemma URel_flip n G Γ l1 l2 t t' :
   Psym (lmeasure l1) -> lmeasure l1 < n -> lequiv (gL G) l1 l2 ->
   URel (LRbelow n) G Γ l1 t t' -> URel (LRbelow n) G Γ l2 t' t.
-Proof.
+Proof using EL.
   intros Hsym Hn Hl (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & HK).
   assert (Hm : lmeasure l2 = lmeasure l1) by (symmetry; eapply lequiv_measure; eauto).
   exists w', w. refine (conj _ (conj _ (conj Hnf' (conj Hnf (conj _ _))))).
@@ -253,7 +253,7 @@ Qed.
 
 Lemma poly_flip {F G Γ T T' l l1 l2 l3 l4 A B A' B'} :
   PolyFacts G Γ F T T' l l1 l2 l3 l4 A B A' B' -> PolyFacts G Γ F T' T l l3 l4 l1 l2 A' B' A B.
-Proof.
+Proof using EL.
   intros [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB].
   assert (Hm : lequiv (gL G) (lmax l3 l4) (lmax l1 l2)) by now apply lequiv_max.
   assert (HA3 : [ G ; Γ ⊢g A @ l3 ]) by (eapply lconv_ty; [exact HA | solve [apply lequiv_sym; assumption]]).
@@ -284,7 +284,7 @@ Lemma IdRel_flip {G Γ l1 l2 A A' a a' b b' RA t t'} :
   [ G ; Γ ⊢g A @ l1 ] -> RA a a' -> RA b b' ->
   (forall x y, RA x y -> RA y x) -> (forall x y z, RA x y -> RA y z -> RA x z) ->
   IdRel G Γ l1 A a b RA t' t -> IdRel G Γ l2 A' a' b' (flipR RA) t t'.
-Proof.
+Proof using EL.
   intros Hl2 HAA Haa Hbb HA Hra Hrb Hs Ht (w' & w & Hw' & Hw & Heq & Hn).
   assert (HV : [ G ; Γ ⊢g tyId l1 A a b ≅ tyId l2 A' a' b' @ l1 ])
     by (apply geq_ty_sound, geq_ty_id; auto using lequiv_sym).
@@ -309,7 +309,7 @@ Lemma SumRel_flip {G Γ l1 l2 l3 l4 A A' B B' RA RB t t'} :
   lequiv (gL G) l3 l1 -> lequiv (gL G) l4 l2 ->
   [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ⊢ B ≈ B' @ l2 ] ->
   SumRel G Γ l1 l2 A B RA RB t' t -> SumRel G Γ l3 l4 A' B' (flipR RA) (flipR RB) t t'.
-Proof.
+Proof using EL.
   intros Hl3 Hl4 HAA HBB (w' & w & Hw' & Hw & Heq & Hn).
   assert (Hm : lequiv (gL G) (lmax l3 l4) (lmax l1 l2)) by now apply lequiv_max.
   assert (HV : [ G ; Γ ⊢g tySum l1 l2 A B ≅ tySum l3 l4 A' B' @ lmax l1 l2 ])
@@ -345,7 +345,7 @@ Lemma WRel_flip :
     (forall (ρ : kwk G Γ) x y (h : d ρ x y),
         [ kw_G ρ ; kw_Δ ρ ⊢ (ktyl ρ B)[lsingle x] ≈ (ktyl ρ B')[lsingle y] @ l2 ]) ->
     WRel G Γ l3 l4 A' B' (flipD d) (flipC c) v u.
-Proof.
+Proof using EL.
   apply (WRel_mut
     (fun G Γ l1 l2 A B d c u v _ => forall l3 l4 A' B', lequiv (gL G) l3 l1 -> lequiv (gL G) l4 l2 ->
        [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢g A' @ l1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] ->
@@ -446,7 +446,7 @@ Definition WfFlipHyps G Γ l A N (d : DomRel G Γ) l' A' N' :=
 Lemma WfFlipHyps_kw {G Γ l A N d l' A' N'} (ρ : kwk G Γ) :
   WfFlipHyps G Γ l A N d l' A' N' ->
   WfFlipHyps (kw_G ρ) (kw_Δ ρ) l (kty ρ A) (ktml ρ N) (fun ρ' => d (kw_comp ρ ρ')) l' (kty ρ A') (ktml ρ N').
-Proof.
+Proof using EL.
   intros (Hl & HA & HAA & HNN & HC). pose proof (lequiv_wf_r _ _ _ Hl) as W.
   refine (conj (kw_lequiv ρ Hl) (conj (kw_ty ρ HA) (conj (kw_geq_ty ρ HAA) (conj (kw_geq_nat_l ρ HA W HNN) _)))).
   intros ρ' x y h. rewrite <- !ktml_comp. exact (HC (kw_comp ρ ρ') x y h).
@@ -456,7 +456,7 @@ Qed.
 Lemma WfFlip_data {G Γ l A N d l' A' N'} : WfFlipHyps G Γ l A N d l' A' N' ->
   lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢g tyWf l A N @ l ] /\ [ G ; Γ ⊢g tyWf l' A' N' @ l' ] /\
   [ G ; Γ ⊢ tyWf l A N ≈ tyWf l' A' N' @ l ] /\ [ G ; Γ ⊢g tyWf l A N ≅ tyWf l' A' N' @ l ].
-Proof.
+Proof using EL.
   intros (Hl & HA & HAA & HNN & _).
   pose proof (geq_ty_wf (lequiv_sym _ _ _ Hl) HA HAA HNN) as EWg.
   pose proof (geq_ty_sound EWg) as EW.
@@ -472,7 +472,7 @@ Lemma WfRel_flip_all :
   (forall G Γ l A N d k cs cs', VecSp G Γ l A N d k cs cs' ->
      forall l' A' N', WfFlipHyps G Γ l A N d l' A' N' ->
      forall k', NatRel G Γ k k' -> VecSp G Γ l' A' N' (flipD d) k' cs' cs).
-Proof.
+Proof using EL.
   apply WfRel_comb.
   - intros G Γ l A N d t t' w w' Hw Hw' Heq _ IH l' A' N' Hy.
     destruct (WfFlip_data Hy) as (W & W' & HWf & HWf' & EWg & EW).
@@ -570,7 +570,7 @@ End WfFlip.
 Section IWfFlip.
 
 Lemma PosRel_sym {G Γ k k' p p'} : PosRel G Γ k k' p p' -> PosRel G Γ k' k p' p.
-Proof.
+Proof using EL.
   induction 1 as [k k' m m' Hk Hk' Hm | k k' m m' p p' Hk Hk' _ IH | k k' p p' Ek Hp].
   - apply pos_hd; [exact Hk' | exact Hk | now apply NatRel_sym].
   - apply pos_tl; [exact Hk' | exact Hk | exact IH].
@@ -596,14 +596,14 @@ Definition IWfFlipHyps G Γ l li X A N Ot C (ix dm : DomRel G Γ) l' li' X' A' N
 
 Lemma IWfFlip_lv {G Γ l li X A N Ot C ix dm l' li' X' A' N' Ot' C'} :
   IWfFlipHyps G Γ l li X A N Ot C ix dm l' li' X' A' N' Ot' C' -> lequiv (gL G) (lmax l' li') (lmax l li).
-Proof. intros ((Hl & Hli & _) & _). apply lequiv_max; solve [apply lequiv_sym; assumption]. Qed.
+Proof using . intros ((Hl & Hli & _) & _). apply lequiv_max; solve [apply lequiv_sym; assumption]. Qed.
 
 Lemma IWfFlipHyps_kw {G Γ l li X A N Ot C ix dm l' li' X' A' N' Ot' C'} (ρ : kwk G Γ) :
   IWfFlipHyps G Γ l li X A N Ot C ix dm l' li' X' A' N' Ot' C' ->
   IWfFlipHyps (kw_G ρ) (kw_Δ ρ) l li (kty ρ X) (kty ρ A) (ktml ρ N) (ktml ρ Ot) (ktmll ρ C)
     (fun ρ' => ix (kw_comp ρ ρ')) (fun ρ' => dm (kw_comp ρ ρ'))
     l' li' (kty ρ X') (kty ρ A') (ktml ρ N') (ktml ρ Ot') (ktmll ρ C').
-Proof.
+Proof using EL.
   intros (HE & Hs & Ht & Hd & Har & Hot & Hch & HG & Hie).
   refine (conj (IWfEq_kw ρ HE) (conj (fun ρ' => Hs _) (conj (fun ρ' => Ht _)
             (conj _ (conj _ (conj _ (conj _ (conj (IWfGeq_kw ρ HE HG) _)))))))).
@@ -618,7 +618,7 @@ Lemma IWfFlipHyps_flip {G Γ l li X A N Ot C ix dm l' li' X' A' N' Ot' C'} :
   IWfFlipHyps G Γ l li X A N Ot C ix dm l' li' X' A' N' Ot' C' ->
   IWfGeq G Γ l' li' X' X A' A N' N Ot' Ot C' C ->
   IWfFlipHyps G Γ l' li' X' A' N' Ot' C' (flipD ix) (flipD dm) l li X A N Ot C.
-Proof.
+Proof using EL.
   intros (HE & Hs & Ht & Hd & Har & Hot & Hch & _ & Hie) HG'.
   pose proof HE as (Hll & Hlli & _ & HXX & HAA & _).
   pose proof (lequiv_sym _ _ _ Hll) as Hll'.
@@ -657,7 +657,7 @@ Lemma IWfRel_flip_all :
      (forall (ρ : kwk G Γ) p p', PosRel (kw_G ρ) (kw_Δ ρ) (ktm ρ k) (ktm ρ k') p p' ->
         ix ρ (ktml ρ c)[lsingle p] (ktml ρ c')[lsingle p']) ->
      DVecISp G Γ l' li' X' A' N' Ot' C' (flipD ix) (flipD dm) c' k' cs' cs).
-Proof.
+Proof using EL.
   apply IWfRel_comb.
   - intros G Γ l li X A N Ot C ix dm m t t' w w' Hw Hw' Heq _ IH l' li' X' A' N' Ot' C' m' Hy ET Hix.
     pose proof (IWfFlip_lv Hy) as Hml.
@@ -817,7 +817,7 @@ Lemma MPi_flip n (IH : MFlipAt n) {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' id
     (I : forall ρ, idxR ρ (ktm ρ m) (ktm ρ m')) (ρ : kwk G Γ) a a' (ha : shR ρ (ktm ρ m) (ktm ρ m') a a') u u' :
   MKidRel n G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' ρ a a' u' u ->
   MKidRel n G Γ r1 r2 ri X' A' B' C' l1 l2 li X A B C (mflipS shR) (mflipP posR) m' m ρ a' a u u'.
-Proof.
+Proof using EL.
   pose proof (MSide_flip HM) as HMf.
   pose proof (ms_geq HM) as HG.
   pose proof HG as (H1 & H2 & H3 & (W1 & W2 & Wi & _) & _).
@@ -855,7 +855,7 @@ Lemma MObs_flip n (IH : MFlipAt n) {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' i
     (I : forall ρ, idxR ρ (ktm ρ m) (ktm ρ m')) t t' :
   MObs (MRn n) G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' t' t ->
   MObs (MRn n) G Γ r1 r2 ri X' A' B' C' l1 l2 li X A B C (mflipS shR) (mflipP posR) m' m t t'.
-Proof.
+Proof using EL.
   intros Ht. pose proof (ms_geq HM) as HG; pose proof (MSide_flip HM) as HMf.
   pose proof HG as (H1 & H2 & H3 & (W1 & W2 & Wi & _) & _).
   assert (Hm : lequiv (gL G) (mlvl r1 r2 ri) (mlvl l1 l2 li))
@@ -881,7 +881,7 @@ Proof.
 Qed.
 
 Lemma MRn_flip n : MFlipAt n.
-Proof.
+Proof using EL.
   induction n as [|n IH]; intros G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR m m' HM Nm Nm' I t t' Ht.
   all: pose proof (ms_geq HM) as HG.
   all: pose proof HG as (H1 & H2 & H3 & (W1 & W2 & Wi & _) & _).
@@ -901,7 +901,7 @@ End MFlip.
 (** ** Symmetry *)
 
 Lemma LR_sym_step n : (forall m, m < n -> Psym m) -> Psym n.
-Proof.
+Proof using EL VL.
   intros IHn G Γ T T' l R H.
   induction H as [G Γ T T' l R Hl HT HT' HR
                  | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
@@ -1303,13 +1303,13 @@ Proof.
 Qed.
 
 Theorem LR_sym n : Psym n.
-Proof.
+Proof using EL VL.
   induction n as [n IHn] using (well_founded_induction lt_wf).
   apply LR_sym_step, IHn.
 Qed.
 
 Corollary LogRel_sym l G Γ T T' l' R :
   LogRel l G Γ T T' l' R -> LogRel l G Γ T' T l' (flipR R).
-Proof. apply LR_sym. Qed.
+Proof using EL VL. apply LR_sym. Qed.
 
 End Symmetry.

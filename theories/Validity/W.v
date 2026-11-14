@@ -19,10 +19,10 @@ Section KwSyntax.
 Context {G : gctx} {Γ : ctx} (ρ : kwk G Γ).
 
 Lemma kty_single (T : ty) a : kty ρ T[lsingle a] = (ktyl ρ T)[lsingle (ktm ρ a)].
-Proof. unfold kty, ktyl, ktm. now rewrite gwa_subst_ty, gwa_lsingle, lsingle_ren_ty. Qed.
+Proof using . unfold kty, ktyl, ktm. now rewrite gwa_subst_ty, gwa_lsingle, lsingle_ren_ty. Qed.
 
 Lemma ktyl_shift (T : ty) : ktyl ρ T⟨↑⟩ = (kty ρ T)⟨↑⟩.
-Proof. unfold kty, ktyl. now rewrite gwa_ren_ty, shift_lift_ty. Qed.
+Proof using . unfold kty, ktyl. now rewrite gwa_ren_ty, shift_lift_ty. Qed.
 
 End KwSyntax.
 
@@ -30,32 +30,32 @@ Section Telescope.
 Context (d : lsub) (Hd : LK nftm d).
 
 Lemma wfty_llift l l' (A B : ty) : (wfty l l' A B)[llift d] = wfty l l' A[d] B[llift d].
-Proof. sub_eqW. Qed.
+Proof using . sub_eqW. Qed.
 
 Lemma wihty_llift2 l l' l'' (A B M : ty) :
   (wihty l l' l'' A B M)[llift (llift d)] = wihty l l' l'' A[d] B[llift d] M[llift d].
-Proof. sub_eqW. Qed.
+Proof using Hd. sub_eqW. Qed.
 
 Lemma wstepty_llift3 l l' (A B M : ty) :
   (wstepty l l' A B M)[llift (llift (llift d))] = wstepty l l' A[d] B[llift d] M[llift d].
-Proof. sub_eqW. Qed.
+Proof using Hd. sub_eqW. Qed.
 
 Lemma shift3_single3 (u a f h : tm) : nftm u -> u⟨↑⟩⟨↑⟩⟨↑⟩[lsingle3 a f h] = u.
-Proof.
+Proof using .
   intros Nu. rewrite !ren_ren_comp, (ren_subst _ _ _ (lshift 0)).
   - apply subst_id; [exact Nu | intros; cbn; f_equal; lia].
   - intros n; pw.
 Qed.
 
 Lemma lift_single2_ty (T : ty) a f : T[llift (llift d)][lsingle2 a f] = T[lcons (lcons d a) f].
-Proof.
+Proof using Hd.
   apply subst_subst_ty. intros [|[|m]]; rewrite !llk_llift; [reflexivity | reflexivity |].
   change (ren_tm (ren_tm ?x ?r) ?r') with x⟨r⟩⟨r'⟩. cbn [llk]. now rewrite shift2_single2 by apply Hd.
 Qed.
 
 Lemma lift_single3_ty (T : ty) a f h :
   T[llift (llift (llift d))][lsingle3 a f h] = T[lcons (lcons (lcons d a) f) h].
-Proof.
+Proof using Hd.
   apply subst_subst_ty. intros [|[|[|m]]]; rewrite !llk_llift; [reflexivity .. |].
   change (ren_tm (ren_tm (ren_tm ?x ?r) ?r') ?r'') with x⟨r⟩⟨r'⟩⟨r''⟩. cbn [llk].
   now rewrite shift3_single3 by apply Hd.
@@ -63,7 +63,7 @@ Qed.
 
 Lemma lift_single3 (t a f h : tm) :
   t[llift (llift (llift d))][lsingle3 a f h] = t[lcons (lcons (lcons d a) f) h].
-Proof.
+Proof using Hd.
   apply subst_subst. intros [|[|[|m]]]; rewrite !llk_llift; [reflexivity .. |].
   change (ren_tm (ren_tm (ren_tm ?x ?r) ?r') ?r'') with x⟨r⟩⟨r'⟩⟨r''⟩. cbn [llk].
   now rewrite shift3_single3 by apply Hd.
@@ -73,21 +73,21 @@ End Telescope.
 
 (** The telescope and the induction hypothesis under global weakenings. *)
 Lemma gwa_wfty γ l l' (A B : ty) : (wfty l l' A B)⟦γ⟧ = wfty l l' A⟦γ⟧ B⟦γ⟧.
-Proof. repeat rewrite ?gwa_tyPi, ?gwa_ren_ty, ?gwa_tyW. reflexivity. Qed.
+Proof using . repeat rewrite ?gwa_tyPi, ?gwa_ren_ty, ?gwa_tyW. reflexivity. Qed.
 Lemma gwa_wihty γ l l' l'' (A B M : ty) : (wihty l l' l'' A B M)⟦γ⟧ = wihty l l' l'' A⟦γ⟧ B⟦γ⟧ M⟦γ⟧.
-Proof.
+Proof using .
   repeat rewrite ?gwa_tyPi, ?gwa_subst_ty, ?gwa_lsingle, ?gwa_app, ?gwa_var, ?gwa_ren_ty, ?gwa_ren, ?gwa_tyW.
   reflexivity.
 Qed.
 Lemma gwa_wstepty γ l l' (A B M : ty) : (wstepty l l' A B M)⟦γ⟧ = wstepty l l' A⟦γ⟧ B⟦γ⟧ M⟦γ⟧.
-Proof.
+Proof using .
   repeat rewrite ?gwa_subst_ty, ?gwa_lsingle, ?gwa_sup, ?gwa_var, ?gwa_ren_ty, ?gwa_ren. reflexivity.
 Qed.
 Lemma gwa_lsingle3 (a f h : tm) γ : (lsingle3 a f h)⟦γ⟧ = lsingle3 a⟦γ⟧ f⟦γ⟧ h⟦γ⟧.
-Proof. now destruct γ. Qed.
+Proof using . now destruct γ. Qed.
 Lemma gwa_wIH γ l l' l'' (A B M : ty) (c a f : tm) :
   (wIH l l' l'' A B M c a f)⟦γ⟧ = wIH l l' l'' A⟦γ⟧ B⟦γ⟧ M⟦γ⟧ c⟦γ⟧ a⟦γ⟧ f⟦γ⟧.
-Proof. destruct γ; cbn [gwa]; [reflexivity | apply gren_wIH ..]. Qed.
+Proof using . destruct γ; cbn [gwa]; [reflexivity | apply gren_wIH ..]. Qed.
 
 (** Kripke weakenings under three binders, and under substitutions. *)
 Definition ktm3 {G Δ} (ρ : kwk G Δ) (t : tm) : tm := t⟦kw_γ ρ⟧⟨rlift (rlift (rlift (kw_r ρ)))⟩.
@@ -96,7 +96,7 @@ Section KwSubst.
 Context {G : gctx} {Δ : ctx} (ρ : kwk G Δ) (e : lsub).
 
 Lemma ktyl_subst_lift (T : ty) : ktyl ρ T[llift e] = T⟦kw_γ ρ⟧[llift (kwsub ρ e)].
-Proof.
+Proof using .
   unfold ktyl, kwsub. rewrite gwa_subst_ty, subst_ren_lren_ty.
   apply subst_ext_ty. intros n. rewrite llk_lren, llk_llift_gwa.
   destruct n; rewrite !llk_llift; [reflexivity|].
@@ -105,7 +105,7 @@ Qed.
 
 Lemma ktm3_subst_lift (t : tm) :
   ktm3 ρ t[llift (llift (llift e))] = t⟦kw_γ ρ⟧[llift (llift (llift (kwsub ρ e)))].
-Proof.
+Proof using .
   unfold ktm3, kwsub. rewrite gwa_subst, subst_ren_lren.
   apply subst_ext. intros n. rewrite llk_lren.
   destruct n as [|[|[|n]]]; repeat rewrite ?llk_llift_gwa, ?llk_llift, ?llk_lren; try reflexivity.
@@ -117,18 +117,18 @@ End KwSubst.
 Lemma ktm_wIH {G Δ} (ρ : kwk G Δ) l l' l'' (A B M : ty) (c a f : tm) :
   ktm ρ (wIH l l' l'' A B M c a f) =
   wIH l l' l'' (kty ρ A) (ktyl ρ B) (ktyl ρ M) (ktm3 ρ c) (ktm ρ a) (ktm ρ f).
-Proof. unfold ktm, kty, ktyl, ktm3. now rewrite gwa_wIH, ren_wIH. Qed.
+Proof using . unfold ktm, kty, ktyl, ktm3. now rewrite gwa_wIH, ren_wIH. Qed.
 
 (** The induction hypothesis's body and codomain at a position. *)
 Lemma liftshift_llift_single_ty (T : ty) y : nfty T -> T⟨rlift ↑⟩[llift (lsingle y)] = T.
-Proof.
+Proof using .
   intros NT. rewrite (ren_subst_ty _ _ _ (lshift 0)).
   - apply subst_id_ty; [exact NT | intros; cbn; f_equal; lia].
   - intros [|n]; pw.
 Qed.
 Lemma lift3shift_llift3_single (t y : tm) : nftm t ->
   t⟨rlift (rlift (rlift ↑))⟩[llift (llift (llift (lsingle y)))] = t.
-Proof.
+Proof using .
   intros Nt. rewrite (ren_subst _ _ _ (lshift 0)).
   - apply subst_id; [exact Nt | intros; cbn; f_equal; lia].
   - intros [|[|[|n]]]; pw.
@@ -138,7 +138,7 @@ Lemma wbody_single l l' l'' (A B M : ty) (c a f y : tm) :
   nfty A -> nfty B -> nfty M -> nftm c -> nftm a -> nftm f ->
   (wbody l l' l'' A B M c a f)[lsingle y] =
   tmElimW l l' l'' A B M c (app f l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩ y).
-Proof.
+Proof using .
   intros NA NB NM Nc Na Nf. rewrite subst_elimW, subst_app.
   assert (NBa : nfty B[lsingle a]) by (apply subst_nf_ty; [exact NB | intros [|n]; cbn; auto]).
   rewrite shift_single_ty, !liftshift_llift_single_ty, lift3shift_llift3_single, shift_single, shift_single_ty
@@ -149,7 +149,7 @@ Qed.
 Lemma wcod_single l l' (A B M : ty) (a f y : tm) :
   nfty A -> nfty B -> nfty M -> nftm a -> nftm f -> nftm y ->
   (wcod l l' A B M a f)[lsingle y] = M[lsingle (app f l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩ y)].
-Proof.
+Proof using .
   intros NA NB NM Na Nf Ny.
   rewrite (single_subst_ty (lsingle y)) by (intros [|n]; cbn; auto).
   assert (NBa : nfty B[lsingle a]) by (apply subst_nf_ty; [exact NB | intros [|n]; cbn; auto]).
@@ -173,7 +173,7 @@ Lemma LR_W_here Δ d d' : SubRel G Γ Δ d d' ->
     (WRel G Δ l l' A[d] B[llift d]
        (piDom (A := A) (A' := A') (l := l) (l' := l') Δ d d')
        (piCod (A := A) (A' := A') (B := B) (B' := B') (l := l) (l' := l') Δ d d')).
-Proof.
+Proof using EL H3 H4 HB Hwl Hwl' VA VB VL VN.
   intros Hd.
   destruct (poly_here (F := tyW) (A := A) (A' := A') (B := B) (B' := B') Hwl Hwl' H3 H4 HB VA VB Δ d d'
               ltac:(intros; apply wft_W; auto using ge_compt, ge_notV) ltac:(reflexivity) Hd) as (P & Hdom & Hcod).
@@ -181,7 +181,7 @@ Proof.
 Qed.
 
 Lemma V_W : VTy G Γ (tyW l l' A B) (tyW l3 l4 A' B') (lmax l l').
-Proof. intros Δ d d' Hd. eexists. exact (LR_W_here _ _ _ Hd). Qed.
+Proof using EL H3 H4 HB Hwl Hwl' VA VB VL VN. intros Δ d d' Hd. eexists. exact (LR_W_here _ _ _ Hd). Qed.
 
 End WTy.
 
@@ -189,7 +189,7 @@ End WTy.
 
 Lemma WhRel_kw {G Δ T l t t'} (ρ : kwk G Δ) : WhRel G Δ T l t t' ->
   WhRel (kw_G ρ) (kw_Δ ρ) (kty ρ T) l (ktm ρ t) (ktm ρ t').
-Proof.
+Proof using EL.
   intros (w & w' & H & H' & N & N' & Ew). exists (ktm ρ w), (ktm ρ w').
   exact (conj (kw_tmred ρ H) (conj (kw_tmred ρ H') (conj (whnf_kw ρ _ N) (conj (whnf_kw ρ _ N')
            (kw_geq_tm ρ Ew))))).
@@ -199,7 +199,7 @@ Qed.
 Lemma kty_fty {G Δ} (ρ : kwk G Δ) l l' (A B : ty) a :
   kty ρ (tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩)
   = tyPi l' (lmax l l') (ktyl ρ B)[lsingle (ktm ρ a)] (tyW l l' (kty ρ A) (ktyl ρ B))⟨↑⟩.
-Proof. now rewrite kty_tyPi, kty_single, ktyl_shift, kty_tyW. Qed.
+Proof using . now rewrite kty_tyPi, kty_single, ktyl_shift, kty_tyW. Qed.
 
 (** An application's reduction in its function, through equivalent
     annotations. *)
@@ -209,7 +209,7 @@ Lemma tmred_app_annot {G Γ l l' la lb A0 B0 A1 B1 t w s} :
   [ G ; Γ ⊢g A0 ≅ A1 @ l ] -> [ G ; Γ ,, A0 @ l ⊢g B0 ≅ B1 @ l' ] ->
   [ G ; Γ ⊢g t ⤳* w : tyPi l l' A0 B0 @ lmax l l' ] ->
   [ G ; Γ ⊢g app t la lb A1 B1 s ⤳* app w la lb A1 B1 s : B0[lsingle s] @ l' ].
-Proof.
+Proof using .
   intros Hl Hl' H1 H2 HA0 HB0 Hs HA1 HB1 [Ht Hr Heq].
   pose proof (eqtm_wf_r ge_typeof Heq) as Hw.
   assert (Ann : forall u, [ G ; Γ ⊢g u : tyPi l l' A0 B0 @ lmax l l' ] ->
@@ -227,7 +227,7 @@ Qed.
 Lemma WRel_red {G Δ l1 l2 A B d c t t' u u'} :
   WRel G Δ l1 l2 A B d c u u' -> [ G ; Δ ⊢g t ⤳* u : tyW l1 l2 A B @ lmax l1 l2 ] ->
   [ G ; Δ ⊢g t' ⤳* u' : tyW l1 l2 A B @ lmax l1 l2 ] -> WRel G Δ l1 l2 A B d c t t'.
-Proof.
+Proof using .
   intros H Ht Ht'. destruct (WRel_inv H) as (w & w' & Hw & Hw' & Ew & Nw).
   econstructor; [exact (tmred_trans _ _ _ _ _ Ht Hw) | exact (tmred_trans _ _ _ _ _ Ht' Hw')
                 | exact Ew | exact Nw].
@@ -236,14 +236,14 @@ Qed.
 Lemma ktml_wbody {G Δ} (ρ : kwk G Δ) l l' l'' (A B M : ty) (c a f : tm) :
   ktml ρ (wbody l l' l'' A B M c a f) =
   wbody l l' l'' (kty ρ A) (ktyl ρ B) (ktyl ρ M) (ktm3 ρ c) (ktm ρ a) (ktm ρ f).
-Proof.
+Proof using .
   pose proof (ktm_wIH ρ l l' l'' A B M c a f) as X. unfold wIH in X. rewrite ktm_lam in X.
   injection X as _ X. exact X.
 Qed.
 
 Lemma ktyl_wcod {G Δ} (ρ : kwk G Δ) l l' (A B M : ty) (a f : tm) :
   ktyl ρ (wcod l l' A B M a f) = wcod l l' (kty ρ A) (ktyl ρ B) (ktyl ρ M) (ktm ρ a) (ktm ρ f).
-Proof.
+Proof using .
   unfold ktyl, kty, ktm.
   repeat rewrite ?gwa_subst_ty, ?gwa_lsingle, ?gwa_app, ?gwa_ren_ty, ?gwa_ren, ?gwa_var, ?gwa_tyW.
   rewrite lsingle_ren_ty. f_equal.
@@ -257,18 +257,18 @@ Qed.
 
 (** Kripke weakenings after a global weakening and a substitution. *)
 Lemma kγ_ty {G Δ} (ρ : kwk G Δ) (T : ty) γ e : kty ρ T⟦γ⟧[e] = T⟦gwk_comp (kw_γ ρ) γ⟧[kwsub ρ e].
-Proof. now rewrite kty_subst, gwa_comp_ty. Qed.
+Proof using . now rewrite kty_subst, gwa_comp_ty. Qed.
 Lemma kγ_tyl {G Δ} (ρ : kwk G Δ) (T : ty) γ e :
   ktyl ρ T⟦γ⟧[llift e] = T⟦gwk_comp (kw_γ ρ) γ⟧[llift (kwsub ρ e)].
-Proof. now rewrite ktyl_subst_lift, gwa_comp_ty. Qed.
+Proof using . now rewrite ktyl_subst_lift, gwa_comp_ty. Qed.
 Lemma kγ_tm3 {G Δ} (ρ : kwk G Δ) (t : tm) γ e :
   ktm3 ρ t⟦γ⟧[llift (llift (llift e))] = t⟦gwk_comp (kw_γ ρ) γ⟧[llift (llift (llift (kwsub ρ e)))].
-Proof. now rewrite ktm3_subst_lift, gwa_comp_tm. Qed.
+Proof using . now rewrite ktm3_subst_lift, gwa_comp_tm. Qed.
 
 (** A reduction towards a whnf is on the way to it; so [WRel] is closed
     under reduction too. *)
 Lemma reds_to_whnf t u w : reds t u -> reds t w -> whnf w -> reds u w.
-Proof.
+Proof using .
   intros H; revert w; induction H as [t|t v u Htv Hvu IH]; intros w Hw Nw; [exact Hw|].
   destruct Hw as [|y z Hr Hrs].
   - exfalso; exact (whnf_no_red _ _ Nw Htv).
@@ -277,7 +277,7 @@ Qed.
 
 Lemma tmred_to_whnf {G Δ t u w T l} : [ G ; Δ ⊢g t ⤳* u : T @ l ] -> [ G ; Δ ⊢g t ⤳* w : T @ l ] -> whnf w ->
   [ G ; Δ ⊢g u ⤳* w : T @ l ].
-Proof.
+Proof using .
   intros [Ht Hr Heq] [_ Hr' Heq'] Nw. split.
   - exact (eqtm_wf_r ge_typeof Heq).
   - exact (reds_to_whnf _ _ _ Hr Hr' Nw).
@@ -287,7 +287,7 @@ Qed.
 Lemma WRel_red_fwd {G Δ l1 l2 A B d c t t' u u'} :
   WRel G Δ l1 l2 A B d c t t' -> [ G ; Δ ⊢g t ⤳* u : tyW l1 l2 A B @ lmax l1 l2 ] ->
   [ G ; Δ ⊢g t' ⤳* u' : tyW l1 l2 A B @ lmax l1 l2 ] -> WRel G Δ l1 l2 A B d c u u'.
-Proof.
+Proof using EL.
   intros H Hu Hu'. destruct (WRel_inv H) as (w & w' & Hw & Hw' & Ew & Nw).
   econstructor; [exact (tmred_to_whnf Hu Hw (WNf_whnf_l Nw)) | exact (tmred_to_whnf Hu' Hw' (WNf_whnf_r Nw))
                 | exact Ew | exact Nw].
@@ -299,7 +299,7 @@ Lemma rel_at_id {G Δ X Y x y n l} {dR : DomRel G Δ} (HΔ : [ G ; Δ ⊢g ]) :
   (forall ρ, LR n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ X) (kty ρ Y) l (dR ρ)) ->
   dR (kw_loc wk_id (wkwf_id Δ) HΔ) (ktm (kw_loc wk_id (wkwf_id Δ) HΔ) x) (ktm (kw_loc wk_id (wkwf_id Δ) HΔ) y) ->
   LRtm l G Δ X Y x y.
-Proof.
+Proof using .
   intros NX NY Nx Ny Hn HD h. pose proof (HD (kw_loc wk_id (wkwf_id Δ) HΔ)) as X0.
   unfold kty, ktm, kw_loc in X0, h; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in X0, h.
   rewrite !ren_id_ty in X0 by assumption. rewrite !ren_id_tm in h by assumption.
@@ -311,7 +311,7 @@ Lemma WhRel_at_id {G Δ T l t t'} (HΔ : [ G ; Δ ⊢g ]) : nfty T -> nftm t -> 
     (kty (kw_loc wk_id (wkwf_id Δ) HΔ) T) l
     (ktm (kw_loc wk_id (wkwf_id Δ) HΔ) t) (ktm (kw_loc wk_id (wkwf_id Δ) HΔ) t') ->
   WhRel G Δ T l t t'.
-Proof.
+Proof using .
   intros NT Nt Nt' H. unfold kty, ktm, kw_loc in H; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in H.
   now rewrite ren_id_ty, !ren_id_tm in H.
 Qed.
@@ -324,7 +324,7 @@ Lemma WRel_canon {G Δ l1 l2 A B A1 B1 A2 B2 n} {d1 d2 : DomRel G Δ} {c1 : CodR
   (forall ρ, LR n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ A) (kty ρ A2) l1 (d2 ρ)) ->
   (forall ρ x y h, LR n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (ktyl ρ B)[lsingle x] (ktyl ρ B2)[lsingle y] l2 (c2 ρ x y h)) ->
   releq (WRel G Δ l1 l2 A B d1 c1) (WRel G Δ l1 l2 A B d2 c2).
-Proof.
+Proof using EL VL.
   intros D1 C1 D2 C2. apply WRel_releq.
   - intros ρ. exact (LR_irrel _ _ _ _ _ _ _ _ _ _ (D1 ρ) (D2 ρ)).
   - intros ρ x y h h'. exact (LR_irrel _ _ _ _ _ _ _ _ _ _ (C1 ρ x y h) (C2 ρ x y h')).
@@ -342,7 +342,7 @@ Context {G : gctx} {Γ : ctx} {l l' l3 l4 : lvl} {A A' B B' : ty} {a a' f f' : t
   (Vf : VTm G Γ f f' (tyPi l' (lmax l l') B[lsingle a] (tyW l l' A B)⟨↑⟩) (lmax l' (lmax l l'))).
 
 Lemma V_sup : VTm G Γ (tmSup l l' A B a f) (tmSup l3 l4 A' B' a' f') (tyW l l' A B) (lmax l l').
-Proof.
+Proof using EL H3 H4 HB Hwl Hwl' VA VB VL VN Va Vf.
   intros Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   pose proof (VTyG_loc VA) as VAl. pose proof (VTyG_loc VB) as VBl.
   pose proof (VTy_refl_l VAl) as VAA. pose proof (VTy_refl_l VBl) as VBB.
@@ -468,7 +468,7 @@ Lemma tyred_El_W {G Δ la l1 l2 k1 k2 s t} :
   [ G ; Δ ⊢g s : tyU l1 @ lsuc l1 ] -> [ G ; Δ ,, tyEl k1 s @ l1 ⊢g t : tyU l2 @ lsuc l2 ] ->
   lequiv (gL G) la (lmax l1 l2) ->
   [ G ; Δ ⊢g tyEl la (tmW k1 k2 s t) ⤳* tyW k1 k2 (tyEl k1 s) (tyEl k2 t) @ lmax l1 l2 ].
-Proof.
+Proof using .
   intros H1 H2 Hs Ht Hla.
   pose proof (conv_U' Hs (lequiv_sym _ _ _ H1)) as Hs1.
   destruct (El_annot Hs H1) as [HA _].
@@ -497,7 +497,7 @@ Context {G : gctx} {Γ : ctx} {l1 l2 l3 l4 : lvl} {s s' t t' : tm}
 
 Lemma V_code_W :
   VTm G Γ (tmW l1 l2 s t) (tmW l3 l4 s' t') (tyU (lmax l1 l2)) (lsuc (lmax l1 l2)).
-Proof.
+Proof using EL H13 H24 Hs Ht Hw1 Hw2 VL VN Vs Vt.
   (* facts in [Γ] *)
   destruct (El_annot Hs (lequiv_refl _ _ Hw1)) as [HA _].
   destruct (El_annot Ht (lequiv_refl _ _ Hw2)) as [HB _].
@@ -543,7 +543,7 @@ Lemma V_El_W {G Γ l l' s t} :
   [ G ; Γ ⊢g s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢g t : tyU l' @ lsuc l' ] ->
   VTmG G Γ s s (tyU l) (lsuc l) -> VTmG G (Γ ,, tyEl l s @ l) t t (tyU l') (lsuc l') ->
   VTy G Γ (tyW l l' (tyEl l s) (tyEl l' t)) (tyEl (lmax l l') (tmW l l' s t)) (lmax l l').
-Proof.
+Proof using EL VL VN.
   intros Hw Hw' Hs Ht Vs Vt Δ d d' Hd.
   destruct (El_annot Hs (lequiv_refl _ _ Hw)) as [HA _].
   destruct (El_annot Ht (lequiv_refl _ _ Hw')) as [HB _].

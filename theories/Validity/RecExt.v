@@ -28,7 +28,7 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 
 Lemma SubRel_uwk {L Ψ Γ Δ d d'} : [ ⊢ mkG L Ψ ] -> ctx_lwf L Γ ->
   SubRel (mkG L Ψ) Γ Δ d d' -> SubRel (gctx_uwk 1 (mkG L Ψ)) Γ⟨ush 1⟩ᵤ Δ⟨ush 1⟩ᵤ (uwk d) (uwk d').
-Proof.
+Proof using EL VL VPP.
   intros HG WΓ Hd.
   assert (Hgrow : gwk_ok gwk_id (mkG (S L) Ψ) (mkG L Ψ)) by exact (conj (le_S _ _ (le_n _)) (gwkwf_id _)).
   pose proof (wfg_grow L (S L) Ψ (le_S _ _ (le_n _)) HG) as HG'.
@@ -50,7 +50,7 @@ Qed.
 
 Lemma SubRel_uwkn {n G Γ Δ d d'} : [ ⊢ G ] -> ctx_lwf (gL G) Γ ->
   SubRel G Γ Δ d d' -> SubRel (gctx_uwk n G) Γ⟨ush n⟩ᵤ Δ⟨ush n⟩ᵤ (uwkn n d) (uwkn n d').
-Proof.
+Proof using EL VL VPP.
   destruct G as [L Ψ]. intros HG WΓ Hd.
   assert (Hgrow : gwk_ok gwk_id (mkG (n + L) Ψ) (mkG L Ψ)) by exact (conj (Nat.le_add_l _ _) (gwkwf_id _)).
   pose proof (wfg_grow L (n + L) Ψ (Nat.le_add_l _ _) HG) as HG'.
@@ -78,13 +78,13 @@ Local Notation GSubRel := (GSubRel EP EM).
 
 Lemma GRel0_ext {G' G σ σ' τ τ'} : (forall i, σ i = τ i) -> (forall i, σ' i = τ' i) ->
   GRel0 EP EM G' G σ σ' -> GRel0 EP EM G' G τ τ'.
-Proof.
+Proof using .
   intros H H' R n D Hin. rewrite <- H, <- H', <- (gdecl_gsubst_ext D σ τ H). exact (R _ _ Hin).
 Qed.
 
 Lemma GSubRel_ext {G' G σ σ' τ τ'} : (forall i, σ i = τ i) -> (forall i, σ' i = τ' i) ->
   GSubRel G' G σ σ' -> GSubRel G' G τ τ'.
-Proof.
+Proof using .
   intros H H' [HL Hl Hr R Rl Rr]. constructor; [exact HL | exact (gsub_wf_ext H Hl) | exact (gsub_wf_ext H' Hr)
     | exact (GRel0_ext H H' R) | exact (GRel0_ext H H Rl) | exact (GRel0_ext H' H' Rr)].
 Qed.
@@ -104,7 +104,7 @@ Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM}.
 Lemma GObjRel_uwk {L Ψ D D' o o'} : [ ⊢ mkG L Ψ ] -> lwf L (decl_lvl D) -> decl_layer_ok D ->
   gobj_wf (mkG L Ψ) o D -> gobj_wf (mkG L Ψ) o' D' -> GObjRel EP EM (mkG L Ψ) D o o' ->
   GObjRel EP EM (gctx_uwk 1 (mkG L Ψ)) (gdecl_uren D S) (gouren o S) (gouren o' S).
-Proof.
+Proof using ELM ELP.
   intros HG Hl Hi Ho Ho'. destruct D as [|Δ i k|Δ i A k|Δ A k t]; destruct o, o'; cbn [GObjRel gouren gdecl_uren] in *;
     try tauto; try (intros; assumption).
   - (* contexts *)
@@ -135,7 +135,7 @@ Qed.
 Lemma GObjRel_uwkn {n L Ψ D D' o o'} : [ ⊢ mkG L Ψ ] -> lwf L (decl_lvl D) -> decl_layer_ok D ->
   gobj_wf (mkG L Ψ) o D -> gobj_wf (mkG L Ψ) o' D' -> GObjRel EP EM (mkG L Ψ) D o o' ->
   GObjRel EP EM (gctx_uwk n (mkG L Ψ)) (gdecl_uren D (ush n)) (gouren o (ush n)) (gouren o' (ush n)).
-Proof.
+Proof using ELM ELP.
   intros HG Hl Hi Ho Ho'. destruct D as [|Δ i k|Δ i A k|Δ A k t]; destruct o, o'; cbn [GObjRel gouren gdecl_uren] in *;
     try tauto; try (intros; assumption).
   - (* contexts *)
@@ -188,7 +188,7 @@ Context (EP EM : GenericEq) {ELP : @GenericEqLaws EP} {ELM : @GenericEqLaws EM}.
 
 Lemma GSubRel_uwk {G' G σ σ'} : [ ⊢ G ] -> GSubRel EP EM G' G σ σ' ->
   GSubRel EP EM (gctx_uwk 1 G') (gctx_uwk 1 G) (guwk σ) (guwk σ').
-Proof.
+Proof using ELM ELP.
   intros HG [HL Hl Hr H1 H2 H3]. destruct G' as [L' Ψ']. destruct G as [L Ψ].
   pose proof (gsw_glob _ _ _ Hl) as HG'. pose proof (gsw_dnf _ _ _ Hl) as Nσ. pose proof (gsw_dnf _ _ _ Hr) as Nσ'.
   assert (Fact : forall n D0, in_gctx Ψ n D0 -> forall τ, lwf L' (decl_lvl (gdecl_gsubst D0 τ)) /\
@@ -214,7 +214,7 @@ Qed.
 
 Lemma GSubRel_uwkn {n G' G σ σ'} : [ ⊢ G ] -> GSubRel EP EM G' G σ σ' ->
   GSubRel EP EM (gctx_uwk n G') (gctx_uwk n G) (guwkn n σ) (guwkn n σ').
-Proof.
+Proof using ELM ELP.
   intros HG [HL Hl Hr H1 H2 H3]. destruct G' as [L' Ψ']. destruct G as [L Ψ].
   pose proof (gsw_glob _ _ _ Hl) as HG'. pose proof (gsw_dnf _ _ _ Hl) as Nσ. pose proof (gsw_dnf _ _ _ Hr) as Nσ'.
   assert (Fact : forall m D0, in_gctx Ψ m D0 -> forall τ, lwf L' (decl_lvl (gdecl_gsubst D0 τ)) /\
@@ -242,7 +242,7 @@ Qed.
 Lemma GSubRel_gup {G' G σ σ' D} : GSubRel EP EM G' G σ σ' ->
   [ ⊢ gext G' (gdecl_gsubst D σ) ] -> gdecl_gsubst D σ' = gdecl_gsubst D σ ->
   GSubRel EP EM (gext G' (gdecl_gsubst D σ)) (gext G D) (gup σ) (gup σ').
-Proof.
+Proof using .
   intros Hσ HG ED.
   assert (Hγ : gwk_ok (gwk_step gwk_id) (gext G' (gdecl_gsubst D σ)) G')
     by (split; [reflexivity | constructor; constructor]).
@@ -273,7 +273,7 @@ Lemma SubRel_gwkn {G Γ Δ d d' D Ds} : SubRel G Γ Δ d d' ->
   [ ⊢ mkG (gL G) ((D :: Ds) ++ gΨ G) ] ->
   SubRel (mkG (gL G) ((D :: Ds) ++ gΨ G)) (gcren Γ (ush (length (D :: Ds))))
     (gcren Δ (ush (length (D :: Ds)))) (gwkn (length (D :: Ds)) d) (gwkn (length (D :: Ds)) d').
-Proof.
+Proof using EL VL.
   intros Hd HG. destruct (SubRel_dnf _ _ _ _ _ Hd) as [N N'].
   assert (Hγ : gwk_ok (gwk_stepn (length (D :: Ds))) (mkG (gL G) ((D :: Ds) ++ gΨ G)) G)
     by (split; [reflexivity | apply gwk_stepn_wf]).
@@ -289,7 +289,7 @@ Proof.
 Qed.
 
 Lemma CtxRel_cexts_pre {G} As : forall Γ Γ', CtxRel G (cexts Γ As) (cexts Γ' As) -> CtxRel G Γ Γ'.
-Proof.
+Proof using .
   induction As as [|[A l] As IH]; intros Γ Γ' H; cbn [cexts] in H; [exact H|].
   exact (CtxRel_tl (IH _ _ H)).
 Qed.
@@ -297,7 +297,7 @@ Qed.
 Lemma SubRel_cexts {G} As : forall Γ Δ d d', SubRel G Γ Δ d d' ->
   CtxRel G (cexts Γ As) (cexts Γ As) -> Forall (fun '(_, l) => lwf (gL G) l) As ->
   SubRel G (cexts Γ As) (cexts Δ (cexts_sub As d)) (lliftn (length As) d) (lliftn (length As) d').
-Proof.
+Proof using EL VL VN.
   induction As as [|[A l] As IH]; intros Γ Δ d d' Hd HC HL; cbn [cexts cexts_sub length]; [exact Hd|].
   inversion HL as [|x y Hl HL']; subst.
   pose proof (CtxRel_cexts_pre As (Γ ,, A @ l) (Γ ,, A @ l) HC) as HC0. cbn [CtxRel] in HC0. destruct HC0 as (_ & _ & HA & _).
@@ -320,7 +320,7 @@ Fixpoint closed_decls (Ds : list gdecl) : Prop :=
 Lemma GSubRel_gupn {G' G σ σ'} Ds : GSubRel EP EM G' G σ σ' -> closed_decls Ds ->
   [ ⊢ mkG (gL G') (Ds ++ gΨ G') ] ->
   GSubRel EP EM (mkG (gL G') (Ds ++ gΨ G')) (mkG (gL G) (Ds ++ gΨ G)) (gupn (length Ds) σ) (gupn (length Ds) σ').
-Proof.
+Proof using .
   intros Hσ. induction Ds as [|D Ds IH]; intros HC HG; cbn [length List.app].
   - destruct G' as [L' Ψ'], G as [L Ψ]; exact Hσ.
   - destruct HC as [HD HC].

@@ -83,7 +83,52 @@ these docs by bare file name.
   replaces the final `make`. A section lemma's proof is skipped by `vos`
   only with a `Proof using` clause; `tools/proof-using FILE.v ...` adds
   Coq's suggested clauses (run it on a sectioned file that `make TIMED=1
-  vos` shows taking nearly its full time).
+  vos` shows taking nearly its full time; `--vok` runs it in a tree
+  that has only `.vos` files). 2026-11-14: `vos` alone took 108 s, 55 s
+  of its 233 s CPU in three files whose section lemmas had no clause
+  (`DVecNthReds`, `GSubstitution`, `GRenRecBase`); with the clauses,
+  85 s and 174 s CPU. Then Coq on an flambda OCaml (`flake.nix`; 8 to
+  12% less time on `DVecNthReds`, `RecAdm` and `LevelRed`) took 80 s and
+  136 s, and clauses for 35 more section files (every sectioned file
+  with 0.8 s or more of `vos` time) 61 s and 108 s. What is left is a
+  chain 80 files deep (each file costs at least 0.35 s to start).
+  `tools/add_proof_using.py` fails on `UPermV` and `StaticCode`, which
+  are not annotated. A new section lemma needs its clause, or `vos`
+  runs its proof: `Set Suggest Proof Using.` prints it.
+- The inner loop, from a fresh container (2026-11-14):
+  0. `tools/dev-shell` for `nix develop path:.`: with the binary cache
+     in `/mnt/project-files/build-cache/nix/` (450 MB) a fresh store had
+     the shell in 14 s, against about 7 minutes of building Coq 8.20.0,
+     Equations and smpl (and no failing fetch of smpl's source), and
+     the flambda OCaml toolchain before them. A `.vo`/`.vos` tree is
+     bound to the Coq binary that made it: after `flake.nix` changes,
+     refill the cache (the recipe is in the script) and rebuild.
+  1. `tools/tree-cache restore /mnt/project-files/build-cache/`, then
+     `make -j4 vos`: the `.vos` tree of the last saved build (10 MB),
+     with only the files whose source changed, and their dependents,
+     rebuilt. Restoring took 0.1 s; one changed late file then rebuilt
+     29 files in 15 s. After a green build of `main`, `tools/tree-cache
+     save /mnt/project-files/build-cache/` (`--kind vo` after a full
+     `make` saves the `.vo` tree the same way: 83 MB, restored in
+     1.2 s, after which `make` rebuilds from the first changed file).
+     The full `make` on this tree took 527 s wall and 1587 s CPU at -j4
+     (2026-11-14, with the flambda Coq; no back-to-back run of the tree
+     before).
+  2. On a proof: `tools/coq-session start FILE.v LEMMA`, then
+     `tools/coq-session try 'tac. tac.'` as often as needed: one
+     `coqtop` keeps the state before the proof, runs the tactics, prints
+     the goals and rolls back. A retry on `RecAdm`'s last lemma took
+     0.01 s; compiling a truncated copy pays the file's prefix every
+     time (57 s there).
+  3. A finished file: `coqc -Q theories DeLaM -w -notation-overridden
+     -async-proofs-tac-j 3 -vok FILE.v`. It writes no `.vos`, so nothing
+     downstream is invalidated. Run `make vos` again only after
+     changing a statement, a notation, a hint or an `Ltac` that other
+     files use. `make` goes by mtimes, so after any edit it rebuilds
+     every dependent's `.vos`; comparing bytes would not help, since a
+     `.vos` is reproducible but an `idtac.` added inside one proof of
+     `Substitution.v` changed it.
+  4. Before review: the full `make`, as before.
 - Profiling (tools are in `tools/`, each documents itself in its header):
   - `tools/build-profile [-j N] [--clean] [--profile] [--label L]`: a timed
     build (`make TIMING=1`) and its report in `_profile/L/report.txt`:

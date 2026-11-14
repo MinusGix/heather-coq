@@ -37,27 +37,27 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 (** ** Helpers *)
 
 Lemma gne_tm_typed_l {G Γ ν ν' T l} : [ G ; Γ ⊢ ν ~ ν' : T @ l ] -> [ G ; Γ ⊢g ν : T @ l ].
-Proof. intros H; exact (eqtm_wf_l ge_typeof (geq_tm_sound (gne_tm_geq H))). Qed.
+Proof using EL. intros H; exact (eqtm_wf_l ge_typeof (geq_tm_sound (gne_tm_geq H))). Qed.
 Lemma gne_tm_typed_r {G Γ ν ν' T l} : [ G ; Γ ⊢ ν ~ ν' : T @ l ] -> [ G ; Γ ⊢g ν' : T @ l ].
-Proof. intros H; exact (eqtm_wf_r ge_typeof (geq_tm_sound (gne_tm_geq H))). Qed.
+Proof using EL. intros H; exact (eqtm_wf_r ge_typeof (geq_tm_sound (gne_tm_geq H))). Qed.
 
 (** Convert a neutral equality along [T ⤳* W] (and a level equivalence). *)
 Lemma gne_tm_red {G Γ ν ν' T W l l'} :
   [ G ; Γ ⊢ ν ~ ν' : T @ l ] -> [ G ; Γ ⊢g T ⤳* W @ l ] -> lequiv (gL G) l' l ->
   [ G ; Γ ⊢ ν ~ ν' : W @ l' ].
-Proof.
+Proof using EL.
   intros Hν HT Hl. eapply gne_tm_lconv; [|exact Hl]. eapply gne_tm_conv; [exact Hν | apply HT].
 Qed.
 
 Lemma gne_tmred_refl {G Γ ν ν' T l} : [ G ; Γ ⊢ ν ~ ν' : T @ l ] ->
   [ G ; Γ ⊢g ν ⤳* ν : T @ l ] /\ [ G ; Γ ⊢g ν' ⤳* ν' : T @ l ].
-Proof. intros H; split; apply tmred_refl; eauto using gne_tm_typed_l, gne_tm_typed_r. Qed.
+Proof using EL. intros H; split; apply tmred_refl; eauto using gne_tm_typed_l, gne_tm_typed_r. Qed.
 
 (** ** Contextual types *)
 
 Lemma ModRel_neutral {G Γ T T' l R} : ModRel G Γ T T' l R -> forall ν ν',
   [ G ; Γ ⊢ ν ~ ν' : T @ l ] -> [ G ; Γ ⊢ ν ~ ν' : T' @ l ] -> R ν ν'.
-Proof.
+Proof using EL.
   destruct 1 as [T T' l Δ Δ' k k' R Hl Hk HT HT' HΔ Hgeq HR
                 | T T' l Δ Δ' A A' k k' R Hl Hk HT HT' HΔ HA HA' Hgeq HR];
     intros ν ν' Hν Hν'; apply HR;
@@ -92,7 +92,7 @@ Context {G : gctx} {Γ : ctx} {l1 l2 l3 l4 : lvl} {A B A' B' : ty}
 Lemma PiRel_neutral ν ν' :
   [ G ; Γ ⊢ ν ~ ν' : tyPi l1 l2 A B @ lmax l1 l2 ] -> [ G ; Γ ⊢ ν ~ ν' : tyPi l3 l4 A' B' @ lmax l1 l2 ] ->
   PiRel G Γ l1 l2 l3 l4 A B A' B' domR codR ν ν'.
-Proof.
+Proof using EL Ecod Edom HA HA' HAA HBB Hw1 Ncod.
   intros HP HP'.
   destruct (gne_tmred_refl HP) as [H1 _]. destruct (gne_tmred_refl HP') as [_ H2].
   exists ν, ν'.
@@ -145,7 +145,7 @@ Qed.
 Lemma SigRel_neutral ν ν' :
   [ G ; Γ ⊢ ν ~ ν' : tySig l1 l2 A B @ lmax l1 l2 ] -> [ G ; Γ ⊢ ν ~ ν' : tySig l3 l4 A' B' @ lmax l1 l2 ] ->
   SigRel G Γ l1 l2 l3 l4 A B A' B' domR codR ν ν'.
-Proof.
+Proof using EL Ecod Edom HA HAA HBB Hw1 Ncod Ndom.
   intros HP HP'.
   destruct (gne_tmred_refl HP) as [H1 _]. destruct (gne_tmred_refl HP') as [_ H2].
   exists ν, ν'.
@@ -224,14 +224,14 @@ Definition MPosNe {G Γ} (idxR : DomRel G Γ) (shR : MShRel G Γ) (posR : MPosRe
 
 Lemma MShNe_kw {G Γ idxR shR A A' l} (ρ : kwk G Γ) : MShNe idxR shR A A' l ->
   MShNe (fun ρ' => idxR (kw_comp ρ ρ')) (fun ρ' => shR (kw_comp ρ ρ')) (ktyl ρ A) (ktyl ρ A') l.
-Proof.
+Proof using .
   intros H ρ' x x' ν ν' h H1 H2. rewrite <- !(ktyl_comp ρ ρ') in H1, H2. exact (H _ x x' ν ν' h H1 H2).
 Qed.
 
 Lemma MPosNe_kw {G Γ idxR shR posR B B' l} (ρ : kwk G Γ) : MPosNe idxR shR posR B B' l ->
   MPosNe (fun ρ' => idxR (kw_comp ρ ρ')) (fun ρ' => shR (kw_comp ρ ρ')) (fun ρ' => posR (kw_comp ρ ρ'))
     (ktyll ρ B) (ktyll ρ B') l.
-Proof.
+Proof using .
   intros H ρ' x x' a a' ν ν' h ha H1 H2. rewrite <- !(ktyll_comp ρ ρ') in H1, H2.
   exact (H _ x x' a a' ν ν' h ha H1 H2).
 Qed.
@@ -240,14 +240,14 @@ Qed.
     a world. *)
 Lemma ktyl_Pi_single {G Γ} (ρ : kwk G Γ) l l' A B a :
   (ktyl ρ (tyPi l l' A B))[lsingle a] = tyPi l l' (ktyl ρ A)[lsingle a] (ktyll ρ B)[llift (lsingle a)].
-Proof. unfold ktyl, ktyll. now rewrite gwa_tyPi. Qed.
+Proof using . unfold ktyl, ktyll. now rewrite gwa_tyPi. Qed.
 
 Lemma kw_kid_single {G Γ} (ρ : kwk G Γ) l l' li (X A B : ty) (C j a p : tm) :
   nfty X -> nfty A -> nfty B -> nftm C -> nftm j -> nftm a ->
   (ktyl ρ (tyM l l' li X⟨↑⟩ A⟨rlift ↑⟩ B⟨rlift (rlift ↑)⟩ C⟨rlift (rlift (rlift ↑))⟩
      C[llift (lsingle2 j a)]))[lsingle p] =
   tyM l l' li (kty ρ X) (ktyl ρ A) (ktyll ρ B) (ktmlll ρ C) (ktmlll ρ C)[lsingle3 (ktm ρ j) (ktm ρ a) p].
-Proof.
+Proof using .
   intros. unfold ktyl, ktyll, kty, ktmlll, ktm. rewrite gwa_tyM, !gwa_ren_ty, !gwa_ren, gwa_subst.
   rewrite (subst_ext _ (llift (lsingle2 j a))⟦kw_γ ρ⟧ (llift (lsingle2 j⟦kw_γ ρ⟧ a⟦kw_γ ρ⟧)))
     by (intros n; rewrite llk_llift_gwa, gwa_lsingle2; reflexivity).
@@ -269,7 +269,7 @@ Lemma MObs_ne k (IH : MNeAt k) {G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR 
   [ G ; Γ ⊢ ν ~ ν' : tyM l1 l2 li X A B C m @ mlvl l1 l2 li ] ->
   [ G ; Γ ⊢ ν ~ ν' : tyM r1 r2 ri X' A' B' C' m' @ mlvl l1 l2 li ] ->
   MObs (MRn k) G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' ν ν'.
-Proof.
+Proof using EL.
   intros Hν Hν'. pose proof (ms_geq HM) as HG. pose proof (MEq_of_MGeq HG) as HE.
   pose proof HG as (H1 & H2 & H3 & HS & HXX & _).
   pose proof HS as (W1 & W2 & Wi & HX & _).
@@ -358,7 +358,7 @@ Proof.
 Qed.
 
 Lemma MRn_ne k : MNeAt k.
-Proof.
+Proof using EL.
   induction k as [|k IH]; intros G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' idxR shR posR m m'
     HM Nm Nm' I Hsh Hpos ν ν' Hν Hν'.
   all: split; [ destruct (gne_tmred_refl Hν) as [R1 _]; destruct (gne_tmred_refl Hν') as [_ R2];
@@ -376,7 +376,7 @@ End MNe.
 Theorem LR_neutral n G Γ T T' l R :
   LR n (LRbelow n) G Γ T T' l R -> forall ν ν',
   [ G ; Γ ⊢ ν ~ ν' : T @ l ] -> [ G ; Γ ⊢ ν ~ ν' : T' @ l ] -> R ν ν'.
-Proof.
+Proof using EL VL VN.
   induction 1 as [G Γ T T' l R Hl HT HT' HR
                  | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                  | G Γ T T' l V V' R HT HT' HV HR

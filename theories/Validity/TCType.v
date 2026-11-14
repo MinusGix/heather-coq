@@ -36,10 +36,10 @@ Ltac at_M inv :=
   end.
 
 Lemma dec_tyErr : TYD tyErr.
-Proof. intros G i Γ k _. right; apply no_ty_err. Qed.
+Proof using . intros G i Γ k _. right; apply no_ty_err. Qed.
 
 Lemma dec_tyNat : TYD tyNat.
-Proof.
+Proof using .
   intros G i Γ k HΓ. destruct (layer_eq_dec i lV) as [-> | Hv]; [right; apply no_ty_V |].
   destruct (lvl_eq_dec (gL G) k lzero) as [Q | Q].
   - left; exact (wft_lvl Q (wft_nat _ _ _ Hv HΓ)).
@@ -47,7 +47,7 @@ Proof.
 Qed.
 
 Lemma dec_tyU l : TYD (tyU l).
-Proof.
+Proof using .
   intros G i Γ k HΓ. destruct (layer_eq_dec i lV) as [-> | Hv]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_U H) as ((_ & _ & X) & _); contradiction].
   destruct (lvl_eq_dec (gL G) k (lsuc l)) as [Q | Q].
@@ -56,7 +56,7 @@ Proof.
 Qed.
 
 Lemma dec_tyPi l l' A B : sz_ty (tyPi l l' A B) <= n -> TYD (tyPi l l' A B).
-Proof.
+Proof using ihT.
   intros Hsz G i Γ k HΓ. destruct (layer_eq_dec i lV) as [-> | Hv]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_pi H) as ((_ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros H; destruct (inv_ty_pi H) as ((_ & _ & X & _) & _); contradiction].
@@ -71,7 +71,7 @@ Proof.
 Qed.
 
 Lemma dec_tyEl l t : sz_ty (tyEl l t) <= n -> TYD (tyEl l t).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ k HΓ. destruct (layer_eq_dec i lV) as [-> | Hv]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_El H) as ((_ & X & _) & _); contradiction].
   assert (HU : [ G ; Γ ⊢[ typeof i ] tyU l @ lsuc l ])
@@ -84,7 +84,7 @@ Proof.
 Qed.
 
 Lemma dec_tyGvar U d : sz_ty (tyGvar U d) <= n -> TYD (tyGvar U d).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ k HΓ. destruct (layer_eq_dec i lV) as [-> | Hv]; [right; apply no_ty_V |].
   pose proof (ctx_glob _ _ _ HΓ) as HG.
   destruct (in_gctx_dec (gΨ G) U) as [(D & Hin) | N];
@@ -110,7 +110,7 @@ Proof.
 Qed.
 
 Lemma dec_tyCTyp Δ l : sz_ty (tyCTyp Δ l) <= n -> TYD (tyCTyp Δ l).
-Proof.
+Proof using ihX.
   intros Hsz G i Γ k HΓ. at_M @inv_ty_CTyp. pose proof (ctx_glob _ _ _ HΓ) as HG.
   destruct (ihX Δ ltac:(szl) G lD HG) as [HΔ | N]; [| right; intros H; destruct (inv_ty_CTyp H) as ((_ & _ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_CTyp H) as ((_ & _ & _ & X) & _); contradiction].
@@ -120,7 +120,7 @@ Proof.
 Qed.
 
 Lemma dec_tyCTrm Δ A l : sz_ty (tyCTrm Δ A l) <= n -> TYD (tyCTrm Δ A l).
-Proof.
+Proof using ihT ihX.
   intros Hsz G i Γ k HΓ. at_M @inv_ty_CTrm. pose proof (ctx_glob _ _ _ HΓ) as HG.
   destruct (ihX Δ ltac:(szl) G lD HG) as [HΔ | N]; [| right; intros H; destruct (inv_ty_CTrm H) as ((_ & _ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_CTrm H) as ((_ & _ & _ & _ & X) & _); contradiction].
@@ -131,7 +131,7 @@ Proof.
 Qed.
 
 Lemma dec_tyUPi m l T : sz_ty (tyUPi m l T) <= n -> TYD (tyUPi m l T).
-Proof.
+Proof using ihT.
   intros Hsz G i Γ k HΓ. at_M @inv_ty_upi.
   destruct (lt_dec 0 m) as [Hm | N]; [| right; intros H; destruct (inv_ty_upi H) as ((_ & _ & X & _) & _); contradiction].
   destruct (lwf_Dec (m + gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_upi H) as ((_ & _ & _ & X & _) & _); contradiction].
@@ -143,7 +143,7 @@ Proof.
 Qed.
 
 Lemma dec_tyCPi l T : sz_ty (tyCPi l T) <= n -> TYD (tyCPi l T).
-Proof.
+Proof using ihT.
   intros Hsz G i Γ k HΓ. at_M @inv_ty_cpi. pose proof (ctx_glob _ _ _ HΓ) as HG.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_cpi H) as ((_ & _ & X & _) & _); contradiction].
   destruct (ihT T ltac:(szl) (gext G gdCtx) lM Γ⟪S⟫ l (ctx_S (wfg_ctx' HG) HΓ)) as [HT | N];
@@ -154,7 +154,7 @@ Proof.
 Qed.
 
 Lemma dec_tyTPi Δ l l' T : sz_ty (tyTPi Δ l l' T) <= n -> TYD (tyTPi Δ l l' T).
-Proof.
+Proof using ihT ihX.
   intros Hsz G i Γ k HΓ. at_M @inv_ty_tpi. pose proof (ctx_glob _ _ _ HΓ) as HG.
   destruct (ihX Δ ltac:(szl) G lD HG) as [HΔ | N]; [| right; intros H; destruct (inv_ty_tpi H) as ((_ & _ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_tpi H) as ((_ & _ & _ & X & _) & _); contradiction].
@@ -167,7 +167,7 @@ Proof.
 Qed.
 
 Lemma dec_tySig l l' A B : sz_ty (tySig l l' A B) <= n -> TYD (tySig l l' A B).
-Proof.
+Proof using ihT.
   intros Hsz G i Γ k HΓ.
   destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_sig H) as ((_ & X & _) & _); contradiction].
@@ -183,7 +183,7 @@ Proof.
 Qed.
 
 Lemma dec_tyUnit l : TYD (tyUnit l).
-Proof.
+Proof using .
   intros G i Γ k HΓ.
   destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_unit H) as ((_ & _ & X) & _); contradiction].
@@ -194,7 +194,7 @@ Qed.
 
 (** Strict equality (M10a; at every layer but V since M10c). *)
 Lemma dec_tySEq l A a b : sz_ty (tySEq l A a b) <= n -> TYD (tySEq l A a b).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ k HΓ.
   destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_seq H) as ((_ & X & _) & _); contradiction].
@@ -211,7 +211,7 @@ Qed.
 
 (** The identity type (M11a; at every layer but V since M11b). *)
 Lemma dec_tyId l A a b : sz_ty (tyId l A a b) <= n -> TYD (tyId l A a b).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ k HΓ.
   destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_id H) as ((_ & X & _) & _); contradiction].
@@ -227,7 +227,7 @@ Proof.
 Qed.
 
 Lemma dec_tySEmpty l : TYD (tySEmpty l).
-Proof.
+Proof using .
   intros G i Γ k HΓ.
   destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_sempty H) as ((_ & _ & X) & _); contradiction].
@@ -238,7 +238,7 @@ Qed.
 
 (** The empty type (M12a; at every layer but V since M12c). *)
 Lemma dec_tyEmpty l : TYD (tyEmpty l).
-Proof.
+Proof using .
   intros G i Γ k HΓ.
   destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_empty H) as ((_ & _ & X) & _); contradiction].
@@ -249,7 +249,7 @@ Qed.
 
 (** Binary sums (M12b; at every layer but V since M12c). *)
 Lemma dec_tySum l l' A B : sz_ty (tySum l l' A B) <= n -> TYD (tySum l l' A B).
-Proof.
+Proof using ihT.
   intros Hsz G i Γ k HΓ.
   destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_sum H) as ((_ & X & _) & _); contradiction].
@@ -266,7 +266,7 @@ Qed.
 
 (** Well-founded trees (M13a): the computing layers only. *)
 Lemma dec_tyW l l' A B : sz_ty (tyW l l' A B) <= n -> TYD (tyW l l' A B).
-Proof.
+Proof using ihT.
   intros Hsz G i Γ k HΓ.
   destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_W H) as ((_ & X & _) & _); contradiction].
@@ -284,7 +284,7 @@ Qed.
 
 (** [Vec] and [Fin] (M14a): every layer but V since M14b. *)
 Lemma dec_tyVec l A t : sz_ty (tyVec l A t) <= n -> TYD (tyVec l A t).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ k HΓ.
   destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_vec H) as ((_ & X & _) & _); contradiction].
@@ -299,7 +299,7 @@ Proof.
 Qed.
 
 Lemma dec_tyFin t : sz_ty (tyFin t) <= n -> TYD (tyFin t).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ k HΓ.
   destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   assert (HN : [ G ; Γ ⊢[ typeof i ] tyNat @ lzero ]) by (apply wft_nat; [exact (typeof_notV i) | rewrite typeof_idem; exact HΓ]).
@@ -312,7 +312,7 @@ Qed.
 
 (** Finitary well-founded trees (M15a; every layer but V since M15b). *)
 Lemma dec_tyWf l A N : sz_ty (tyWf l A N) <= n -> TYD (tyWf l A N).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ k HΓ.
   destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N0]; [| right; intros H; destruct (inv_ty_wf H) as ((_ & X & _) & _); contradiction].
@@ -330,7 +330,7 @@ Qed.
 
 (** Propositional truncation (M16a; every layer but V since M16b). *)
 Lemma dec_tySq l A : sz_ty (tySq l A) <= n -> TYD (tySq l A).
-Proof.
+Proof using ihT.
   intros Hsz G i Γ k HΓ.
   destruct (layer_eq_dec i lV) as [-> | Hc]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_sq H) as ((_ & X & _) & _); contradiction].
@@ -343,7 +343,7 @@ Qed.
 
 (** Dependent tuples (M17a; every layer but V since M17c). *)
 Lemma dec_tyDVec l t F : sz_ty (tyDVec l t F) <= n -> TYD (tyDVec l t F).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ k HΓ.
   destruct (layer_eq_dec i lV) as [-> | Hv]; [right; apply no_ty_V |].
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; destruct (inv_ty_dvec H) as ((_ & X & _) & _); contradiction].
@@ -366,7 +366,7 @@ Lemma dec_iwf_sig l li X A N Ot C :
   sz_ty X < n -> sz_ty A < n -> sz_tm N < n -> sz_tm Ot < n -> sz_tm C < n ->
   forall G i Γ, i <> lV -> [ G ; Γ ⊢[ typeof i ] ] ->
   IWfSig (G := G) (i := i) Γ l li X A N Ot C \/ ~ IWfSig (G := G) (i := i) Γ l li X A N Ot C.
-Proof.
+Proof using ihC ihT.
   intros SX SA SN SO SC G i Γ Hv HΓ.
   destruct (lwf_Dec (gL G) l) as [Hl | Hn]; [| right; intros (H & _); contradiction].
   destruct (lwf_Dec (gL G) li) as [Hli | Hn]; [| right; intros (_ & H & _); contradiction].
@@ -390,7 +390,7 @@ Proof.
 Qed.
 
 Lemma dec_tyIWf l li X A N Ot C m : sz_ty (tyIWf l li X A N Ot C m) <= n -> TYD (tyIWf l li X A N Ot C m).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ k HΓ.
   destruct (layer_eq_dec i lV) as [-> | Hv]; [right; apply no_ty_V |].
   destruct (dec_iwf_sig l li X A N Ot C ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) G i Γ Hv HΓ)
@@ -409,7 +409,7 @@ Lemma dec_m_sig l l' li X A B C :
   sz_ty X < n -> sz_ty A < n -> sz_ty B < n -> sz_tm C < n ->
   forall G i Γ, compt i -> [ G ; Γ ⊢[ typeof i ] ] ->
   MSig (G := G) (i := i) Γ l l' li X A B C \/ ~ MSig (G := G) (i := i) Γ l l' li X A B C.
-Proof.
+Proof using ihC ihT.
   intros SX SA SB SC G i Γ Hc HΓ.
   destruct (lwf_Dec (gL G) l) as [Hl | Hn]; [| right; intros (H & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | Hn]; [| right; intros (_ & H & _); contradiction].
@@ -432,7 +432,7 @@ Proof.
 Qed.
 
 Lemma dec_tyM l l' li X A B C j : sz_ty (tyM l l' li X A B C j) <= n -> TYD (tyM l l' li X A B C j).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ k HΓ.
   destruct (compt_dec i) as [Hc | Hn]; [| right; intros H; exact (Hn (proj1 (proj1 (inv_ty_M H))))].
   destruct (dec_m_sig l l' li X A B C ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) G i Γ Hc HΓ) as [HS | Hn];
@@ -447,7 +447,7 @@ Qed.
 
 
 Lemma ty_step T : sz_ty T <= n -> TYD T.
-Proof.
+Proof using ihC ihT ihX.
   intros Hsz. destruct T;
     first [ apply dec_tyErr | apply dec_tyNat | apply dec_tyU
           | apply dec_tyPi | apply dec_tyEl | apply dec_tyGvar | apply dec_tyCTyp | apply dec_tyCTrm
@@ -461,7 +461,7 @@ Qed.
 (** ** Contexts *)
 
 Lemma cx_step Γ : sz_ctx Γ <= n -> CXD Γ.
-Proof.
+Proof using ihT ihX.
   intros Hsz G i HG. destruct Γ as [| g | Γ A l].
   - left; exact (wfc_nil _ _ HG).
   - destruct (gctx_var_dec G g) as [Y | N]; [left; exact (wfc_var _ _ _ HG Y) | right; intros H; inversion H; contradiction].

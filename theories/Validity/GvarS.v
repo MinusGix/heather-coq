@@ -17,7 +17,7 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 
 Lemma SubRel_geq G : forall Δ Θ e e', SubRel G Δ Θ e e' -> forall n A k, in_ctx Δ n A k ->
   [ G ; Θ ⊢ llk e n ≈ llk e' n : A[e] @ k ].
-Proof.
+Proof using EL.
   induction Δ as [| g | Δ IH B kB]; intros Θ e e' H n A k Hin; inversion Hin; subst;
     cbn [SubRel] in H; destruct H as [Ht Hh]; rewrite shift_subst_ty.
   - exact (LRtm_geq Hh).
@@ -26,7 +26,7 @@ Proof.
 Qed.
 
 Lemma SubRel_geq_lsub {G Δ Θ e e'} : SubRel G Δ Θ e e' -> dnfl e -> dnfl e' -> geq_lsub G Θ e e' Δ.
-Proof.
+Proof using EL VL.
   intros H N N'. destruct (SubRel_tail _ _ _ _ _ H) as [T T'].
   pose proof (SubRel_wf_l _ _ _ _ _ H) as [_ _ _ W]. pose proof (SubRel_wf_r H) as [_ _ _ W'].
   constructor; auto; [exact (SubRel_ctx H) | exact (SubRel_geq _ _ _ _ _ H)].
@@ -37,34 +37,34 @@ Definition VSubK (G : gctx) (Γ : ctx) (δ δ' : lsub) (Δ : ctx) : Prop :=
   forall G' γ, gwk_ok γ G' G -> VSub G' Γ⟦γ⟧ δ⟦γ⟧ δ'⟦γ⟧ Δ⟦γ⟧.
 
 Lemma subst_comp_ty (T : ty) d e : T[d][e] = T[d[e]].
-Proof. apply subst_subst_ty; intros n; now rewrite llk_lcomp. Qed.
+Proof using . apply subst_subst_ty; intros n; now rewrite llk_lcomp. Qed.
 Lemma subst_comp (t : tm) d e : t[d][e] = t[d[e]].
-Proof. apply subst_subst; intros n; now rewrite llk_lcomp. Qed.
+Proof using . apply subst_subst; intros n; now rewrite llk_lcomp. Qed.
 
 Lemma VTyG_inst {G Γ Δ T T' δ δ' l} : VTyG G Δ T T' l -> VSubK G Γ δ δ' Δ ->
   VTyG G Γ T[δ] T'[δ'] l.
-Proof.
+Proof using .
   intros H Hδ G' γ Hγ Θ e e' He. rewrite !gwa_subst_ty, !subst_comp_ty.
   exact (H _ _ Hγ _ _ _ (Hδ _ _ Hγ _ _ _ He)).
 Qed.
 
 Lemma VTmG_inst {G Γ Δ A t t' δ δ' l} : VTmG G Δ t t' A l -> VTyG G Δ A A l ->
   VSubK G Γ δ δ' Δ -> VSubK G Γ δ δ Δ -> VTmG G Γ t[δ] t'[δ'] A[δ] l.
-Proof.
+Proof using EL VL.
   intros H HA Hδ Hδδ G' γ Hγ Θ e e' He. rewrite !gwa_subst_ty, !gwa_subst, !subst_comp_ty, !subst_comp.
   pose proof (H _ _ Hγ _ _ _ (Hδ _ _ Hγ _ _ _ He)) as X.
   eapply LRtm_irrel_r; [exact X|]. exact (HA _ _ Hγ _ _ _ (Hδδ _ _ Hγ _ _ _ He)).
 Qed.
 
 Lemma subst_tyGvar U d e : (tyGvar U d)[e] = tyGvar U d[e].
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma subst_gvar u d e : (gvar u d)[e] = gvar u d[e].
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 
 (** A global variable sent to a global variable: a neutral. *)
 Lemma VTyG_gvar_ne {G Γ x Δ i' l δ δ'} : in_gctx (gΨ G) x (gdTy Δ i' l) -> lle i' ge_layer ->
   dnfl δ -> dnfl δ' -> VSubK G Γ δ δ' Δ -> VTyG G Γ (tyGvar x δ) (tyGvar x δ') l.
-Proof.
+Proof using EL VL.
   intros Hin Hi N N' Hδ G' γ Hγ Θ e e' He. rewrite !gwa_tyGvar, !subst_tyGvar.
   pose proof (Hδ _ _ Hγ _ _ _ He) as X. destruct (SubRel_dnf _ _ _ _ _ He) as [Ne Ne'].
   pose proof (SubRel_geq_lsub X (dnfl_lcomp _ _ (dnfl_gwa _ _ N) Ne) (dnfl_lcomp _ _ (dnfl_gwa _ _ N') Ne'))
@@ -78,7 +78,7 @@ Qed.
 Lemma VTmG_gvar_ne {G Γ x Δ i' A l δ δ'} : in_gctx (gΨ G) x (gdTm Δ i' A l) -> lle i' ge_layer ->
   dnfl δ -> dnfl δ' -> VSubK G Γ δ δ' Δ -> VSubK G Γ δ δ Δ -> VTyG G Δ A A l ->
   VTmG G Γ (gvar x δ) (gvar x δ') A[δ] l.
-Proof.
+Proof using EL VL VN.
   intros Hin Hi N N' Hδ Hδδ HA G' γ Hγ Θ e e' He.
   rewrite !gwa_gvar, !gwa_subst_ty, !subst_comp_ty, !subst_gvar.
   pose proof (Hδ _ _ Hγ _ _ _ He) as X. destruct (SubRel_dnf _ _ _ _ _ He) as [Ne Ne'].
@@ -160,7 +160,7 @@ Local Notation VTyS := (@VTyS EP EM E LP).
 Local Notation VTmS := (@VTmS EP EM E LP).
 
 Lemma dnfl_gs {G' G σ σ' d} : GSubRel G' G σ σ' -> dnfl d -> dnfl d⦃σ⦄ /\ dnfl d⦃σ'⦄.
-Proof.
+Proof using .
   intros Hσ N. split; apply (proj2 (proj2 (proj2 gsubst_dnf_all))); auto;
     [exact (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) | exact (gsw_dnf _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ))].
 Qed.
@@ -169,7 +169,7 @@ Lemma VSubKS {i0 G Γ Δ d d'} : [ G ; Γ ⊢[ i0 ] ] -> [ G ; Δ ⊢[ lD ] ] ->
   lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
   (forall n A k, in_ctx Δ n A k -> VTmS G Γ (llk d n) (llk d' n) A[d] k) ->
   forall G' σ σ', GSubRel G' G σ σ' -> VSubK G' Γ⦃σ⦄ d⦃σ⦄ d'⦃σ'⦄ Δ⦃σ⦄.
-Proof.
+Proof using EL VL.
   intros HΓ HΔ VΔ Ht Nd Ht' Nd' Hv G' σ σ' Hσ G'' γ Hγ.
   destruct (dnfl_gs (d := d) Hσ Nd) as [Nd1 _]. destruct (dnfl_gs (d := d') Hσ Nd') as [_ Nd2].
   apply VSub_intro.
@@ -193,7 +193,7 @@ Lemma VTyS_inst {i0 G Γ Δ A d d' l} : [ G ; Γ ⊢[ i0 ] ] -> [ G ; Δ ⊢[ lD
   lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
   (forall n B k, in_ctx Δ n B k -> VTmS G Γ (llk d n) (llk d' n) B[d] k) ->
   VTyS G Δ A A l -> VTyS G Γ A[d] A[d'] l.
-Proof.
+Proof using EL VL.
   intros HΓ HΔ VΔ Ht Nd Ht' Nd' Hv HA G' σ σ' Hσ. rewrite !gsubst_subst_ty.
   exact (VTyG_inst (HA _ _ _ Hσ) (VSubKS HΓ HΔ VΔ Ht Nd Ht' Nd' Hv _ _ _ Hσ)).
 Qed.
@@ -211,7 +211,7 @@ Lemma VS_tygvar {i0 G Γ U Δ i' l d d'}
   lsub_tail d Δ Γ -> dnfl d -> lsub_tail d' Δ Γ -> dnfl d' ->
   (forall n A k, in_ctx Δ n A k -> VTmS G Γ (llk d n) (llk d' n) A[d] k) ->
   VTyS G Γ (tyGvar U d) (tyGvar U d') l.
-Proof.
+Proof using EL VL.
   intros Hin Hi HiM HΓ HΔ VΔ Ht Nd Ht' Nd' Hv G' σ σ' Hσ.
   pose proof (VSubKS HΓ HΔ VΔ Ht Nd Ht' Nd' Hv _ _ _ Hσ) as K.
   destruct (dnfl_gs (d := d) Hσ Nd) as [Nd1 _]. destruct (dnfl_gs (d := d') Hσ Nd') as [_ Nd2].
@@ -237,7 +237,7 @@ Lemma VS_gvar {i0 G Γ u Δ i' A l d d'}
   (forall n B k, in_ctx Δ n B k -> VTmS G Γ (llk d n) (llk d' n) B[d] k) ->
   (forall n B k, in_ctx Δ n B k -> VTmS G Γ (llk d n) (llk d n) B[d] k) ->
   VTmS G Γ (gvar u d) (gvar u d') A[d] l.
-Proof.
+Proof using EL VL VN.
   intros Hin Hi HΓ HA VΔ VA Ht Nd Ht' Nd' Hv Hvv G' σ σ' Hσ.
   pose proof (ctx_of_wf_ty (i := lD) eq_refl HA) as HΔ.
   pose proof (mltt_wf_ctx (gs_ctx EP EM Hσ HΔ compt_D) ltac:(discriminate)) as MΔ.

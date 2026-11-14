@@ -61,11 +61,11 @@ Section KwBody.
 Context `{E : GenericEq}.
 
 Lemma lk_dnf_kwsub {G Γ} (ρ : kwk G Γ) e : LK dnftm e -> LK dnftm (kwsub ρ e).
-Proof. intros He n. rewrite llk_kwsub. unfold ktm. apply ren_dnf, dnf_gwa, He. Qed.
+Proof using . intros He n. rewrite llk_kwsub. unfold ktm. apply ren_dnf, dnf_gwa, He. Qed.
 
 Lemma kbody_body (T : ty) σ e {G Γ} (ρ : kwk G Γ) :
   kbody ρ (T⦃gup σ⦄[gwk e]) = T⦃gup (gsub_wk σ (kw_γ ρ))⦄[gwk (kwsub ρ e)].
-Proof.
+Proof using .
   unfold kbody, kwsub. rewrite gwa_subst_ty, gwa_gsubst_ty, subst_ren_lren_ty.
   transitivity (T⦃gup (gsub_wk σ (kw_γ ρ))⦄[lren (gwk e)⟦gwk_up' (kw_γ ρ)⟧ (kw_r ρ)]).
   - f_equal. apply (proj1 gsubst_ext_all). intros n; apply gsub_wk_gup.
@@ -75,7 +75,7 @@ Qed.
 
 Lemma kbodyt_body (t : tm) σ e {G Γ} (ρ : kwk G Γ) :
   kbodyt ρ (t⦃gup σ⦄[gwk e]) = t⦃gup (gsub_wk σ (kw_γ ρ))⦄[gwk (kwsub ρ e)].
-Proof.
+Proof using .
   unfold kbodyt, kwsub. rewrite gwa_subst, gwa_gsubst_tm, subst_ren_lren.
   transitivity (t⦃gup (gsub_wk σ (kw_γ ρ))⦄[lren (gwk e)⟦gwk_up' (kw_γ ρ)⟧ (kw_r ρ)]).
   - f_equal. apply (proj1 (proj2 gsubst_ext_all)). intros n; apply gsub_wk_gup.
@@ -87,13 +87,13 @@ Qed.
     extended by [o]. *)
 Lemma kbody_inst (T : ty) σ e {G Γ} (ρ : kwk G Γ) o : gdnf σ -> LK dnftm e ->
   (kbody ρ (T⦃gup σ⦄[gwk e]))⦃gsingle o⦄ = T⦃gcons (gsub_wk σ (kw_γ ρ)) o⦄[kwsub ρ e].
-Proof.
+Proof using .
   intros Hσ He. rewrite kbody_body.
   apply body_reduct_ty; [apply gdnf_gsub_wk, Hσ | apply lk_dnf_kwsub, He].
 Qed.
 Lemma kbodyt_inst (t : tm) σ e {G Γ} (ρ : kwk G Γ) o : gdnf σ -> LK dnftm e ->
   (kbodyt ρ (t⦃gup σ⦄[gwk e]))⦃gsingle o⦄ = t⦃gcons (gsub_wk σ (kw_γ ρ)) o⦄[kwsub ρ e].
-Proof.
+Proof using .
   intros Hσ He. rewrite kbodyt_body.
   apply letbox_reduct; [apply gdnf_gsub_wk, Hσ | apply lk_dnf_kwsub, He].
 Qed.
@@ -104,21 +104,21 @@ Definition kw_gstep {G Θ} D (HG : [ ⊢ gext G D ]) (HΘ : [ G ; Θ ⊢g ]) : k
     (gwa_ctx (gwk_ok_step G D) HG HΘ).
 
 Lemma ktm_gstep {G Θ D HG HΘ} (t : tm) : ktm (@kw_gstep G Θ D HG HΘ) t = t⟪S⟫.
-Proof. unfold ktm; cbn [kw_gstep kw_γ kw_gk kw_r kw_rk gwa kw_mk]. rewrite ren_id_tm; [reflexivity | apply dnftm_nftm, gren_dnf_all]. Qed.
+Proof using . unfold ktm; cbn [kw_gstep kw_γ kw_gk kw_r kw_rk gwa kw_mk]. rewrite ren_id_tm; [reflexivity | apply dnftm_nftm, gren_dnf_all]. Qed.
 Lemma kbody_gstep {G Θ D HG HΘ} (T : ty) : kbody (@kw_gstep G Θ D HG HΘ) T = T⟪gupr S⟫.
-Proof. unfold kbody; cbn [kw_gstep kw_γ kw_gk kw_r kw_rk gwk_up' gwa kw_mk]. rewrite ren_id_ty; [reflexivity | apply dnfty_nfty, gren_dnf_all]. Qed.
+Proof using . unfold kbody; cbn [kw_gstep kw_γ kw_gk kw_r kw_rk gwk_up' gwa kw_mk]. rewrite ren_id_ty; [reflexivity | apply dnfty_nfty, gren_dnf_all]. Qed.
 
 (** The η body at a world. *)
 Lemma kbodyt_ceta {G Γ} (ρ : kwk G Γ) (u : tm) :
   kbodyt ρ (capp u⟪S⟫ (cvar 0)) = capp (ktm ρ u)⟪S⟫ (cvar 0).
-Proof.
+Proof using .
   transitivity (capp u⟪S⟫⟦gwk_up' (kw_γ ρ)⟧⟨kw_r ρ⟩ (cvar 0)); [unfold kbodyt; destruct (kw_γ ρ); reflexivity |].
   unfold ktm. rewrite gwa_up'_shift_tm, <- gren_ren. reflexivity.
 Qed.
 
 Lemma kbodyt_teta {G Γ} (ρ : kwk G Γ) (u : tm) :
   kbodyt ρ (tapp u⟪S⟫ (tyGvar 0 (lshift 0))) = tapp (ktm ρ u)⟪S⟫ (tyGvar 0 (lshift 0)).
-Proof.
+Proof using .
   transitivity (tapp u⟪S⟫⟦gwk_up' (kw_γ ρ)⟧⟨kw_r ρ⟩ (tyGvar 0 (lshift 0))); [unfold kbodyt; destruct (kw_γ ρ); reflexivity |].
   unfold ktm. rewrite gwa_up'_shift_tm, <- gren_ren. reflexivity.
 Qed.
@@ -162,7 +162,7 @@ Context `{E : GenericEq}.
 Lemma tmred_ceta_app {G Γ l T t w} : lwf (gL G) l -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] ->
   [ G ; Γ ⊢[ lM ] t ⤳* w : tyCPi l T @ l ] ->
   [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] capp t⟪S⟫ (cvar 0) ⤳* capp w⟪S⟫ (cvar 0) : T @ l ].
-Proof.
+Proof using .
   intros Hl HT H.
   pose proof (ctx_glob _ _ _ (ctx_of_wf_ty (i := lM) eq_refl HT)) as HG1.
   assert (HG2 : [ ⊢ gext (gext G gdCtx) gdCtx ]) by (apply wfg_ctx, HG1).
@@ -181,7 +181,7 @@ Lemma tmred_teta_app {G Γ Δ l l' T t w} : [ G ; Δ ⊢[ lD ] ] -> lwf (gL G) l
   [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] T @ l' ] ->
   [ G ; Γ ⊢[ lM ] t ⤳* w : tyTPi Δ l l' T @ l' ] ->
   [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] tapp t⟪S⟫ (tyGvar 0 (lshift 0)) ⤳* tapp w⟪S⟫ (tyGvar 0 (lshift 0)) : T @ l' ].
-Proof.
+Proof using .
   intros HΔ Hl Hl' HT H.
   pose proof (ctx_glob _ _ _ (ctx_of_wf_ty (i := lM) eq_refl HT)) as HG1.
   pose proof (gwk_ctx (gwk_ok_step G (gdTy Δ lD l)) HG1 HΔ) as HΔ1.
@@ -236,7 +236,7 @@ Let HM := @gm_layer_M EP EM EMl.
 Lemma GSubRel_cons_c {G G' σ σ' Δ0 Δ0'} :
   GSubRel G' G σ σ' -> vp_ctx (vpM EP EM) G' Δ0 Δ0' ->
   GSubRel G' (gext G gdCtx) (gcons σ (GCtx Δ0)) (gcons σ' (GCtx Δ0')).
-Proof.
+Proof using ELM ELP.
   intros Hw (HD & HP & HPM).
   apply (GSubRel_cons2 EP EM Hw); cbn [gdecl_gsubst gobj_wf dnfo GObjRel].
   - exact (wf_ctx_dnf (eqctx_wf_l (i := lD) eq_refl HD)).
@@ -252,19 +252,19 @@ Qed.
 Lemma GSubRel_ext_c {G G' σ σ' Δ} (ρ : @kwk EM G' Δ) {Δ0 Δ0'} :
   GSubRel G' G σ σ' -> vp_ctx (vpM EP EM) (kw_G ρ) Δ0 Δ0' ->
   GSubRel (kw_G ρ) (gext G gdCtx) (gcons (gsub_wk σ (kw_γ ρ)) (GCtx Δ0)) (gcons (gsub_wk σ' (kw_γ ρ)) (GCtx Δ0')).
-Proof.
+Proof using ELM ELP.
   intros Hσ h. exact (GSubRel_cons_c (GSubRel_wk EP EM Hσ (kw_gok ρ) (kw_glob ρ)) h).
 Qed.
 
 (** The local substitutions at the world, under the extension. *)
 Lemma SubRel_ext {G' Γ σ Δ d d'} (ρ : @kwk EM G' Δ) o : SubRelM G' Γ⦃σ⦄ Δ d d' ->
   SubRelM (kw_G ρ) (Γ⟪S⟫)⦃gcons (gsub_wk σ (kw_γ ρ)) o⦄ (kw_Δ ρ) (kwsub ρ d) (kwsub ρ d').
-Proof. intros H. rewrite gcons_shift_ctx, <- gwa_gsubst_ctx. exact (SubRel_kw _ _ _ ρ _ _ H). Qed.
+Proof using ELM ELP. intros H. rewrite gcons_shift_ctx, <- gwa_gsubst_ctx. exact (SubRel_kw _ _ _ ρ _ _ H). Qed.
 
 (** Pushed under the binder, to itself. *)
 Lemma GSubRel_up_c {G G' σ σ'} : GSubRel G' G σ σ' ->
   GSubRel (gext G' gdCtx) (gext G gdCtx) (gsub_up_id gdCtx σ) (gsub_up_id gdCtx σ').
-Proof.
+Proof using .
   intros Hσ. pose proof (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as HG'.
   apply (GSubRel_up_id EP EM (D := gdCtx) Hσ); cbn [gdecl_gsubst gdecl_ren id_obj gobj_wf GObjRel];
     try reflexivity.
@@ -275,20 +275,20 @@ Section Bodies.
 Variables (G : gctx) (Γ : ctx) (G' : gctx) (σ σ' : gsub) (Δ : ctx) (d d' : lsub).
 Hypothesis (Hσ : GSubRel G' G σ σ') (Hd : SubRelM G' Γ⦃σ⦄ Δ d d').
 
-Lemma mv_G' : [ ⊢ G' ]. Proof. exact (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)). Qed.
-Lemma mv_L : gL G <= gL G'. Proof. exact (gsr_L _ _ _ _ _ _ Hσ). Qed.
+Lemma mv_G' : [ ⊢ G' ]. Proof using Hσ. exact (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)). Qed.
+Lemma mv_L : gL G <= gL G'. Proof using Hσ. exact (gsr_L _ _ _ _ _ _ Hσ). Qed.
 Lemma mv_Δ : [ G' ; Δ ⊢[ lM ] ].
-Proof. pose proof (SubRel_ctx Hd) as X. rewrite HM in X. exact X. Qed.
-Lemma mv_Nσ : gdnf σ. Proof. exact (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)). Qed.
-Lemma mv_Nσ' : gdnf σ'. Proof. exact (gsw_dnf _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ)). Qed.
-Lemma mv_Nd : LK dnftm d. Proof. exact (proj1 (SubRel_dnf _ _ _ _ _ Hd)). Qed.
-Lemma mv_Nd' : LK dnftm d'. Proof. exact (proj2 (SubRel_dnf _ _ _ _ _ Hd)). Qed.
+Proof using HM Hd. pose proof (SubRel_ctx Hd) as X. rewrite HM in X. exact X. Qed.
+Lemma mv_Nσ : gdnf σ. Proof using Hσ. exact (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)). Qed.
+Lemma mv_Nσ' : gdnf σ'. Proof using Hσ. exact (gsw_dnf _ _ _ (gsr_wf_r _ _ _ _ _ _ Hσ)). Qed.
+Lemma mv_Nd : LK dnftm d. Proof using ELM Hd. exact (proj1 (SubRel_dnf _ _ _ _ _ Hd)). Qed.
+Lemma mv_Nd' : LK dnftm d'. Proof using ELM Hd. exact (proj2 (SubRel_dnf _ _ _ _ _ Hd)). Qed.
 
 (** A body valid under a context binding, at the growth instance. *)
 Lemma VTy_grow_c {T T' l} : [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T @ l ] -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] T' @ l ] ->
   VTySM (gext G gdCtx) Γ⟪S⟫ T T' l ->
   LRtyM l (gext G' gdCtx) Δ⟪S⟫ T⦃gup σ⦄[gwk d] T'⦃gup σ'⦄[gwk d'].
-Proof.
+Proof using ELM ELP Hd Hσ.
   intros HT HT' VT.
   pose proof (VT _ _ _ (GSubRel_up_c Hσ) _ gwk_id (gwk_ok_id _)) as X; cbn [gwa] in X.
   rewrite <- (gsubst_up_id_ty _ _ σ HT), <- (gsubst_up_id_ty _ _ σ' HT') in X.
@@ -298,7 +298,7 @@ Qed.
 Lemma VTm_grow_c {t t' T l} : [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] t : T @ l ] -> [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] t' : T @ l ] ->
   VTmSM (gext G gdCtx) Γ⟪S⟫ t t' T l ->
   LRtmM l (gext G' gdCtx) Δ⟪S⟫ T⦃gup σ⦄[gwk d] T⦃gup σ⦄[gwk d'] t⦃gup σ⦄[gwk d] t'⦃gup σ'⦄[gwk d'].
-Proof.
+Proof using ELM ELP Hd Hσ.
   intros Ht Ht' Vt.
   pose proof (Vt _ _ _ (GSubRel_up_c Hσ) _ gwk_id (gwk_ok_id _)) as X; cbn [gwa] in X.
   rewrite <- (gsubst_up_id_tm _ _ σ Ht), <- (gsubst_up_id_tm _ _ σ' Ht'),
@@ -312,7 +312,7 @@ Lemma VTy_inst_c {T T' l} (VT : VTySM (gext G gdCtx) Γ⟪S⟫ T T' l) (ρ : @kw
   (h : vp_ctx (vpM EP EM) (kw_G ρ) Δ0 Δ0') :
   LRtyM l (kw_G ρ) (kw_Δ ρ) (kbody ρ T⦃gup σ⦄[gwk d])⦃gsingle (GCtx Δ0)⦄
     (kbody ρ T'⦃gup σ'⦄[gwk d'])⦃gsingle (GCtx Δ0')⦄.
-Proof.
+Proof using ELM ELP Hd Hσ.
   rewrite !kbody_inst by first [exact mv_Nσ | exact mv_Nσ' | exact mv_Nd | exact mv_Nd'].
   pose proof (VT _ _ _ (GSubRel_ext_c ρ Hσ h) _ gwk_id (gwk_ok_id _)) as X; cbn [gwa] in X.
   exact (X _ _ _ (SubRel_ext ρ _ Hd)).
@@ -322,7 +322,7 @@ Lemma VTm_inst_c {t t' T l} (Vt : VTmSM (gext G gdCtx) Γ⟪S⟫ t t' T l) (ρ :
   LRtmM l (kw_G ρ) (kw_Δ ρ) (kbody ρ T⦃gup σ⦄[gwk d])⦃gsingle (GCtx Δ0)⦄
     (kbody ρ T⦃gup σ⦄[gwk d'])⦃gsingle (GCtx Δ0)⦄
     (kbodyt ρ t⦃gup σ⦄[gwk d])⦃gsingle (GCtx Δ0)⦄ (kbodyt ρ t'⦃gup σ'⦄[gwk d'])⦃gsingle (GCtx Δ0')⦄.
-Proof.
+Proof using ELM ELP Hd Hσ.
   rewrite !kbody_inst, !kbodyt_inst by first [exact mv_Nσ | exact mv_Nσ' | exact mv_Nd | exact mv_Nd'].
   pose proof (Vt _ _ _ (GSubRel_ext_c ρ Hσ h) _ gwk_id (gwk_ok_id _)) as X; cbn [gwa] in X.
   exact (X _ _ _ (SubRel_ext ρ _ Hd)).
@@ -347,7 +347,7 @@ Lemma cpi_LR {G' σ σ' Δ d d'} (Hσ : GSubRel G' G σ σ') (Hd : SubRelM G' Γ
   @LR EM LRM (lmeasure l) (@LRbelow EM LRM (lmeasure l)) G' Δ (tyCPi l T⦃gup σ⦄[gwk d]) (tyCPi l' T'⦃gup σ'⦄[gwk d']) l
     (@CPiRel EM LRM G' Δ l l' T⦃gup σ⦄[gwk d] T'⦃gup σ'⦄[gwk d']
        (canonC G' Δ T⦃gup σ⦄[gwk d] T'⦃gup σ'⦄[gwk d'] l)).
-Proof.
+Proof using ELM ELP HM HT HT' Hl VT.
   destruct (VTy_grow_c _ _ _ _ _ _ _ _ Hσ Hd HT HT' VT) as [R0 H0].
   destruct (escape_ty _ _ _ _ _ _ _ _ H0) as (HX & HX' & EXX).
   rewrite HM in HX, HX'.
@@ -375,7 +375,7 @@ Proof.
 Qed.
 
 Lemma VS_cpi : VTySM G Γ (tyCPi l T) (tyCPi l' T') l.
-Proof.
+Proof using ELM ELP HM HT HT' Hl VT.
   apply (VTyS_intro_loc EP EM). intros G' σ σ' Hσ Δ d d' Hd.
   eexists. exact (cpi_LR Hσ Hd).
 Qed.
@@ -395,7 +395,7 @@ Hypothesis (Hl : lequiv (gL G) l l') (HT : [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] 
   (Vt : VTmSM (gext G gdCtx) Γ⟪S⟫ t t' T l).
 
 Lemma VS_clam : VTmSM G Γ (clam l T t) (clam l' T' t') (tyCPi l T) l.
-Proof.
+Proof using ELM ELP HM HT HT' Hl Ht Ht' VT VTT Vt.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Δ d d' Hd.
   pose proof (GSubRel_refl_l EP EM Hσ) as Hσσ.
   set (A := T⦃gup σ⦄[gwk d]). set (Ar := T⦃gup σ⦄[gwk d']). set (A' := T'⦃gup σ'⦄[gwk d']).
@@ -479,7 +479,7 @@ Hypothesis (HΔ1 : [ G ; Δ1 ⊢[ lD ] ]) (HΔ1' : [ G ; Δ1' ⊢[ lD ] ])
   (Vt : VTmSM G Γ t t' (tyCPi l T) l).
 
 Lemma VS_capp : VTmSM G Γ (capp t Δ1) (capp t' Δ1') T⦃gsingle (GCtx Δ1)⦄ l.
-Proof.
+Proof using ELM ELP HM HΔ1 HΔ1' VEqM VEqP Vt.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ d d' Hd.
   pose proof (GSubRel_refl_l EP EM Hσ) as Hσσ. pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
@@ -544,7 +544,7 @@ Lemma VS_cbeta {G Γ l T t Δ1} : lwf (gL G) l -> [ gext G gdCtx ; Γ⟪S⟫ ⊢
   [ gext G gdCtx ; Γ⟪S⟫ ⊢[ lM ] t : T @ l ] -> [ G ; Δ1 ⊢[ lD ] ] ->
   VCtxSP G Δ1 -> VCtxSPM G Δ1 -> VTmSM (gext G gdCtx) Γ⟪S⟫ t t T l ->
   VTmSM G Γ (capp (clam l T t) Δ1) t⦃gsingle (GCtx Δ1)⦄ T⦃gsingle (GCtx Δ1)⦄ l.
-Proof.
+Proof using ELM ELP HM.
   intros Hl HT Ht HΔ1 VΔP VΔM Vt.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
   pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
@@ -581,7 +581,7 @@ Variables (G : gctx) (Γ : ctx) (l : lvl) (T : ty) (t : tm).
 Hypothesis (Vt : VTmSM G Γ t t (tyCPi l T) l).
 
 Lemma VS_ceta : VTmSM G Γ (clam l T (capp t⟪S⟫ (cvar 0))) t (tyCPi l T) l.
-Proof.
+Proof using ELM HM Vt.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ d d' Hd.
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
   destruct (SubRel_dnf _ _ _ _ _ Hd) as [Nd Nd'].
@@ -659,7 +659,7 @@ End CEta.
 
 Lemma wf_ty_gvar_id_D {G0 U Δ Y l} : in_gctx (gΨ G0) U (gdTy Δ lD l) -> [ G0 ⊢[ lD ] Δ ≅ Y ] ->
   [ G0 ; Y ⊢[ lD ] tyGvar U (lshift 0) @ l ].
-Proof.
+Proof using .
   intros Hin Hc. destruct (eqctx_id_at Hc (i := lD) eq_refl) as [Hw Hn Ht Hv].
   eapply wft_gvar; [discriminate | exact Hw | exact Hin | apply lle_refl | exact Ht | exact I | exact Hv].
 Qed.
@@ -668,7 +668,7 @@ Qed.
 Lemma vp_ty_gvar0_at {G Δ l} : [ G ; Δ ⊢[ lD ] ] -> [ ⊢ gext G (gdTy Δ lD l) ] ->
   @CtxRelG EP LR_P G Δ Δ -> @CtxRelG EM LR_P G Δ Δ ->
   vp_ty (vpM EP EM) (gext G (gdTy Δ lD l)) Δ⟪S⟫ (tyGvar 0 (lshift 0)) (tyGvar 0 (lshift 0)) l.
-Proof.
+Proof using ELM ELP.
   intros HD HG1 XP XM.
   pose proof (gwk_ok_step G (gdTy Δ lD l)) as Hγ1.
   pose proof (gwk_ctx Hγ1 HG1 HD) as HDs.
@@ -689,13 +689,13 @@ Hypothesis (HΔ1 : [ G ; Δ1 ⊢[ lD ] ]) (VΔP : VCtxSP G Δ1) (VΔM : VCtxSPM 
 Local Notation D := (gdTy Δ1 lD l1).
 
 Lemma lle_D_C_false : ~ lle lD lC.
-Proof. unfold lle; cbn; lia. Qed.
+Proof using . unfold lle; cbn; lia. Qed.
 
 (** Extended by related types. *)
 Lemma GSubRel_cons_t {G' σ σ' A A'} :
   GSubRel G' G σ σ' -> vp_ty (vpM EP EM) G' Δ1⦃σ⦄ A A' l1 ->
   GSubRel G' (gext G D) (gcons σ (GTy A)) (gcons σ' (GTy A')).
-Proof.
+Proof using ELM ELP EMl HΔ1 VΔM VΔP.
   intros Hw (HA & HP & HPM).
   pose proof (GSubRel_refl_r EP EM Hw) as Hwr.
   pose proof (gs_ctx EP EM Hw HΔ1 compt_D) as HD. pose proof (gs_ctx EP EM Hwr HΔ1 compt_D) as HDr.
@@ -717,7 +717,7 @@ Qed.
 Lemma GSubRel_ext_t {G' σ σ' Δ} (ρ : @kwk EM G' Δ) {A A'} :
   GSubRel G' G σ σ' -> vp_ty (vpM EP EM) (kw_G ρ) Δ1⦃σ⦄⟦kw_γ ρ⟧ A A' l1 ->
   GSubRel (kw_G ρ) (gext G D) (gcons (gsub_wk σ (kw_γ ρ)) (GTy A)) (gcons (gsub_wk σ' (kw_γ ρ)) (GTy A')).
-Proof.
+Proof using ELM ELP EMl HΔ1 VΔM VΔP.
   intros Hσ h. rewrite gwa_gsubst_ctx in h.
   exact (GSubRel_cons_t (GSubRel_wk EP EM Hσ (kw_gok ρ) (kw_glob ρ)) h).
 Qed.
@@ -725,7 +725,7 @@ Qed.
 (** The bound variable, related to itself. *)
 Lemma vp_ty_gvar0 {G' σ σ'} : GSubRel G' G σ σ' -> lwf (gL G') l1 ->
   vp_ty (vpM EP EM) (gext G' (gdTy Δ1⦃σ⦄ lD l1)) Δ1⦃σ⦄⟪S⟫ (tyGvar 0 (lshift 0)) (tyGvar 0 (lshift 0)) l1.
-Proof.
+Proof using ELM ELP HΔ1 VΔM VΔP.
   intros Hσ Hl1'. pose proof (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as HG'.
   pose proof (gs_ctx EP EM Hσ HΔ1 compt_D) as HD.
   exact (vp_ty_gvar0_at HD (wf_gext_ty (i := lD) HG' HD (or_intror eq_refl) Hl1')
@@ -736,7 +736,7 @@ Qed.
 (** Pushed under the binder, to [U^id]. *)
 Lemma GSubRel_up_t {G' σ σ'} : GSubRel G' G σ σ' -> lwf (gL G) l1 ->
   GSubRel (gext G' (gdTy Δ1⦃σ⦄ lD l1)) (gext G D) (gsub_up_id D σ) (gsub_up_id D σ').
-Proof.
+Proof using ELM ELP EMl HΔ1 VΔM VΔP.
   intros Hσ Hl1. pose proof (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as HG'.
   pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
   pose proof (gs_ctx EP EM Hσ HΔ1 compt_D) as HD. pose proof (gs_ctx EP EM Hσr HΔ1 compt_D) as HDr.
@@ -770,7 +770,7 @@ Hypothesis (Hσ : GSubRel G' G σ σ') (Hd : SubRelM G' Γ⦃σ⦄ Δ d d') (Hl1
 Lemma VTy_grow_t {T T' l} : [ gext G D ; Γ⟪S⟫ ⊢[ lM ] T @ l ] -> [ gext G D ; Γ⟪S⟫ ⊢[ lM ] T' @ l ] ->
   VTySM (gext G D) Γ⟪S⟫ T T' l ->
   LRtyM l (gext G' (gdTy Δ1⦃σ⦄ lD l1)) Δ⟪S⟫ T⦃gup σ⦄[gwk d] T'⦃gup σ'⦄[gwk d'].
-Proof.
+Proof using ELM ELP EMl Hd Hl1 HΔ1 Hσ VΔM VΔP.
   intros HT HT' VT. pose proof (GSubRel_up_t Hσ Hl1) as Hu.
   pose proof (VT _ _ _ Hu _ gwk_id (gwk_ok_id _)) as X; cbn [gwa] in X.
   rewrite <- (gsubst_up_id_ty _ _ σ HT), <- (gsubst_up_id_ty _ _ σ' HT') in X.
@@ -780,7 +780,7 @@ Qed.
 Lemma VTm_grow_t {t t' T l} : [ gext G D ; Γ⟪S⟫ ⊢[ lM ] t : T @ l ] -> [ gext G D ; Γ⟪S⟫ ⊢[ lM ] t' : T @ l ] ->
   VTmSM (gext G D) Γ⟪S⟫ t t' T l ->
   LRtmM l (gext G' (gdTy Δ1⦃σ⦄ lD l1)) Δ⟪S⟫ T⦃gup σ⦄[gwk d] T⦃gup σ⦄[gwk d'] t⦃gup σ⦄[gwk d] t'⦃gup σ'⦄[gwk d'].
-Proof.
+Proof using ELM ELP EMl Hd Hl1 HΔ1 Hσ VΔM VΔP.
   intros Ht Ht' Vt. pose proof (GSubRel_up_t Hσ Hl1) as Hu.
   pose proof (Vt _ _ _ Hu _ gwk_id (gwk_ok_id _)) as X; cbn [gwa] in X.
   rewrite <- (gsubst_up_id_tm _ _ σ Ht), <- (gsubst_up_id_tm _ _ σ' Ht'),
@@ -793,7 +793,7 @@ Lemma VTy_inst_t {T T' l} (VT : VTySM (gext G D) Γ⟪S⟫ T T' l) (ρ : @kwk EM
   (h : vp_ty (vpM EP EM) (kw_G ρ) Δ1⦃σ⦄⟦kw_γ ρ⟧ A A' l1) :
   LRtyM l (kw_G ρ) (kw_Δ ρ) (kbody ρ T⦃gup σ⦄[gwk d])⦃gsingle (GTy A)⦄
     (kbody ρ T'⦃gup σ'⦄[gwk d'])⦃gsingle (GTy A')⦄.
-Proof.
+Proof using ELM ELP EMl Hd HΔ1 Hσ VΔM VΔP.
   rewrite !kbody_inst by first [exact (mv_Nσ _ _ _ _ Hσ) | exact (mv_Nσ' _ _ _ _ Hσ)
                                 | exact (proj1 (SubRel_dnf _ _ _ _ _ Hd)) | exact (proj2 (SubRel_dnf _ _ _ _ _ Hd))].
   pose proof (VT _ _ _ (GSubRel_ext_t ρ Hσ h) _ gwk_id (gwk_ok_id _)) as X; cbn [gwa] in X.
@@ -804,7 +804,7 @@ Lemma VTm_inst_t {t t' T l} (Vt : VTmSM (gext G D) Γ⟪S⟫ t t' T l) (ρ : @kw
   LRtmM l (kw_G ρ) (kw_Δ ρ) (kbody ρ T⦃gup σ⦄[gwk d])⦃gsingle (GTy A)⦄
     (kbody ρ T⦃gup σ⦄[gwk d'])⦃gsingle (GTy A)⦄
     (kbodyt ρ t⦃gup σ⦄[gwk d])⦃gsingle (GTy A)⦄ (kbodyt ρ t'⦃gup σ'⦄[gwk d'])⦃gsingle (GTy A')⦄.
-Proof.
+Proof using ELM ELP EMl Hd HΔ1 Hσ VΔM VΔP.
   rewrite !kbody_inst, !kbodyt_inst by first [exact (mv_Nσ _ _ _ _ Hσ) | exact (mv_Nσ' _ _ _ _ Hσ)
                                 | exact (proj1 (SubRel_dnf _ _ _ _ _ Hd)) | exact (proj2 (SubRel_dnf _ _ _ _ _ Hd))].
   pose proof (Vt _ _ _ (GSubRel_ext_t ρ Hσ h) _ gwk_id (gwk_ok_id _)) as X; cbn [gwa] in X.
@@ -823,7 +823,7 @@ Definition canonT (G' : gctx) (Δ : ctx) (Θ : ctx) (m : lvl) (A A' : ty) (k : l
 (** The right-hand local substitutions, at the right-hand context. *)
 Lemma SubRel_r_at {G Γ G' σ σ' Δ d d'} : VCtxSM G Γ -> GSubRel G' G σ σ' -> SubRelM G' Γ⦃σ⦄ Δ d d' ->
   SubRelM G' Γ⦃σ'⦄ Δ d' d'.
-Proof.
+Proof using ELM ELP.
   intros VΓ Hσ Hd. pose proof (VΓ _ _ _ Hσ _ _ (gwk_ok_id G')) as XΓ; cbn [gwa] in XΓ.
   exact (SubRel_transport _ _ _ _ _ _ (CtxRel_sym _ _ _ XΓ) (SubRel_refl_r Hd)).
 Qed.
@@ -845,7 +845,7 @@ Lemma tpi_LR {G' σ σ' Δ d d'} (Hσ : GSubRel G' G σ σ') (Hd : SubRelM G' Γ
     (tyTPi Δ1⦃σ⦄ l1 l2 T⦃gup σ⦄[gwk d]) (tyTPi Δ1'⦃σ'⦄ l3 l4 T'⦃gup σ'⦄[gwk d']) l2
     (@TPiRel EM LRM G' Δ Δ1⦃σ⦄ Δ1'⦃σ'⦄ l1 l2 l3 l4 T⦃gup σ⦄[gwk d] T'⦃gup σ'⦄[gwk d']
        (canonT G' Δ Δ1⦃σ⦄ l1 T⦃gup σ⦄[gwk d] T'⦃gup σ'⦄[gwk d'] l2)).
-Proof.
+Proof using ELM ELP H13 H24 HM HT HT' HTr HΔ1 HΔ1' VEqM VEqP VT VTr VΓ VΔM VΔM' VΔP VΔP'.
   pose proof (lequiv_wf_l _ _ _ H13) as Hw1. pose proof (lequiv_wf_l _ _ _ H24) as Hw2.
   pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
   pose proof (SubRel_r_at VΓ Hσ Hd) as Hdr.
@@ -884,7 +884,7 @@ Proof.
 Qed.
 
 Lemma VS_tpi : VTySM G Γ (tyTPi Δ1 l1 l2 T) (tyTPi Δ1' l3 l4 T') l2.
-Proof.
+Proof using ELM ELP H13 H24 HM HT HT' HTr HΔ1 HΔ1' VEqM VEqP VT VTr VΓ VΔM VΔM' VΔP VΔP'.
   apply (VTyS_intro_loc EP EM). intros G' σ σ' Hσ Δ d d' Hd.
   eexists. exact (tpi_LR Hσ Hd).
 Qed.
@@ -897,7 +897,7 @@ Lemma tmred_teta_body_ctx {G Γ Δ Δ' l k k' B b} : [ G ; Γ ⊢[ lM ] ] -> [ G
   [ G ⊢[ lD ] Δ ≅ Δ' ] -> lequiv (gL G) l k -> lwf (gL G) k' ->
   [ gext G (gdTy Δ' lD k) ; Γ⟪S⟫ ⊢[ lM ] B @ k' ] -> [ gext G (gdTy Δ' lD k) ; Γ⟪S⟫ ⊢[ lM ] b : B @ k' ] ->
   [ gext G (gdTy Δ lD l) ; Γ⟪S⟫ ⊢[ lM ] tapp (tlam Δ' k k' B b)⟪S⟫ (tyGvar 0 (lshift 0)) ⤳* b : B @ k' ].
-Proof.
+Proof using .
   intros HΓ HΔ HΔ' HDD Hlk Hk' HB Hb.
   pose proof (lequiv_wf_l _ _ _ Hlk) as Hl. pose proof (lequiv_wf_r _ _ _ Hlk) as Hk.
   pose proof (ctx_glob _ _ _ HΓ) as HG.
@@ -944,7 +944,7 @@ Hypothesis (H13 : lequiv (gL G) l1 l3) (H24 : lequiv (gL G) l2 l4)
   (Vt3 : VTmSM (gext G (gdTy Δ1' lD l3)) Γ⟪S⟫ t' t' T' l4).
 
 Lemma VS_tlam : VTmSM G Γ (tlam Δ1 l1 l2 T t) (tlam Δ1' l3 l4 T' t') (tyTPi Δ1 l1 l2 T) l2.
-Proof.
+Proof using ELM ELP H13 H24 HM HT HT' Ht Ht' Ht3 HΔ1 HΔ1' VEqP VT VTT Vt Vt3 VΓ VΔM VΔM' VΔP VΔP'.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ d d' Hd.
   pose proof (GSubRel_refl_l EP EM Hσ) as Hσσ. pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
   pose proof (SubRel_r_at VΓ Hσ Hd) as Hdr.
@@ -1048,7 +1048,7 @@ Hypothesis (HΔ1 : [ G ; Δ1 ⊢[ lD ] ]) (HA : [ G ; Δ1 ⊢[ lD ] A @ l ]) (HA
 
 (** The arguments, related at the substitutions. *)
 Lemma tapp_arg {G' σ σ'} : GSubRel G' G σ σ' -> vp_ty (@lr_vp LRM) G' Δ1⦃σ⦄ A⦃σ⦄ A'⦃σ'⦄ l.
-Proof.
+Proof using ELP EMl HA HA' HΔ1 VAM VAP VΔP.
   intros Hσ. pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
   pose proof (gs_ctx EP EM Hσ HΔ1 compt_D) as HD. pose proof (gs_ctx EP EM Hσr HΔ1 compt_D) as HDr.
   pose proof (CtxRelG_escape_P EP EM (VΔP _ _ _ Hσ) HD HDr) as [_ HDDr].
@@ -1059,7 +1059,7 @@ Proof.
 Qed.
 
 Lemma VS_tapp : VTmSM G Γ (tapp t A) (tapp t' A') T⦃gsingle (GTy A)⦄ l'.
-Proof.
+Proof using ELM ELP HA HA' HM HΔ1 VAM VAP Vt VΔP.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ d d' Hd.
   pose proof (GSubRel_refl_l EP EM Hσ) as Hσσ. pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
@@ -1119,7 +1119,7 @@ Lemma VS_tbeta {G Γ Δ1 l l' T t A} : lwf (gL G) l -> lwf (gL G) l' -> [ G ; Δ
   VCtxSP G Δ1 -> VCtxSPM G Δ1 -> @VTyS EP EM EP LR_P G Δ1 A A l -> @VTyS EP EM EM LR_P G Δ1 A A l ->
   VTmSM (gext G (gdTy Δ1 lD l)) Γ⟪S⟫ t t T l' ->
   VTmSM G Γ (tapp (tlam Δ1 l l' T t) A) t⦃gsingle (GTy A)⦄ T⦃gsingle (GTy A)⦄ l'.
-Proof.
+Proof using ELM ELP HM.
   intros Hl Hl' HΔ1 HT Ht HA VΔP VΔM VAP VAM Vt.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
@@ -1153,7 +1153,7 @@ Hypothesis (HΔ1 : [ G ; Δ1 ⊢[ lD ] ]) (VΔP : VCtxSP G Δ1) (VΔM : VCtxSPM 
   (Vt : VTmSM G Γ t t (tyTPi Δ1 l l' T) l').
 
 Lemma VS_teta : VTmSM G Γ (tlam Δ1 l l' T (tapp t⟪S⟫ (tyGvar 0 (lshift 0)))) t (tyTPi Δ1 l l' T) l'.
-Proof.
+Proof using ELM ELP HM HΔ1 Vt VΔM VΔP.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ d d' Hd.
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
   destruct (SubRel_dnf _ _ _ _ _ Hd) as [Nd Nd'].
@@ -1232,7 +1232,7 @@ End TEta.
 
 Lemma VTyS_inst_c {G Γ T l Δ1} : [ G ; Δ1 ⊢[ lD ] ] -> VCtxSP G Δ1 -> VCtxSPM G Δ1 ->
   VTySM (gext G gdCtx) Γ⟪S⟫ T T l -> VTySM G Γ T⦃gsingle (GCtx Δ1)⦄ T⦃gsingle (GCtx Δ1)⦄ l.
-Proof.
+Proof using ELM ELP EMl.
   intros HΔ1 VΔP VΔM VT.
   apply (VTyS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
   pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
@@ -1252,7 +1252,7 @@ Qed.
 Lemma VTyS_inst_t {G Γ T l l' Δ1 A} : [ G ; Δ1 ⊢[ lD ] ] -> [ G ; Δ1 ⊢[ lD ] A @ l ] ->
   VCtxSP G Δ1 -> VCtxSPM G Δ1 -> @VTyS EP EM EP LR_P G Δ1 A A l -> @VTyS EP EM EM LR_P G Δ1 A A l ->
   VTySM (gext G (gdTy Δ1 lD l)) Γ⟪S⟫ T T l' -> VTySM G Γ T⦃gsingle (GTy A)⦄ T⦃gsingle (GTy A)⦄ l'.
-Proof.
+Proof using ELM ELP EMl.
   intros HΔ1 HA VΔP VΔM VAP VAM VT.
   apply (VTyS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
@@ -1272,7 +1272,7 @@ Lemma VTyS_inst_c2 {G Γ1 T l Δ1 Δ2} : [ G ; Δ1 ⊢[ lD ] ] -> [ G ; Δ2 ⊢[
   @VCtxEqS EP LR_P EP EM G Δ1 Δ2 -> @VCtxEqS EM LR_P EP EM G Δ1 Δ2 ->
   VTySM (gext G gdCtx) Γ1 T T l ->
   VTySM G Γ1⦃gsingle (GCtx Δ1)⦄ T⦃gsingle (GCtx Δ1)⦄ T⦃gsingle (GCtx Δ2)⦄ l.
-Proof.
+Proof using ELM ELP EMl.
   intros HΔ1 HΔ2 VEP VEM VT.
   apply (VTyS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
   pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.
@@ -1294,7 +1294,7 @@ Lemma VTyS_inst_t2 {G Γ1 T l l' Δ1 A A'} : [ G ; Δ1 ⊢[ lD ] ] -> [ G ; Δ1 
   VCtxSP G Δ1 -> VCtxSPM G Δ1 -> @VTyS EP EM EP LR_P G Δ1 A A' l -> @VTyS EP EM EM LR_P G Δ1 A A' l ->
   VTySM (gext G (gdTy Δ1 lD l)) Γ1 T T l' ->
   VTySM G Γ1⦃gsingle (GTy A)⦄ T⦃gsingle (GTy A)⦄ T⦃gsingle (GTy A')⦄ l'.
-Proof.
+Proof using ELM ELP EMl.
   intros HΔ1 HA HA' VΔP VΔM VAP VAM VT.
   apply (VTyS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
@@ -1316,7 +1316,7 @@ Lemma VTyS_inst_ct2 {G Γ1 T l0 l Δ1 Δ2 A1 A2} :
   VTySM (gext (gext G gdCtx) (gdTy (cvar 0) lD l0)) Γ1 T T l ->
   VTySM G Γ1⦃gcons (gsingle (GCtx Δ1)) (GTy A1)⦄ T⦃gcons (gsingle (GCtx Δ1)) (GTy A1)⦄
     T⦃gcons (gsingle (GCtx Δ2)) (GTy A2)⦄ l.
-Proof.
+Proof using ELM ELP EMl.
   intros HΔ1 HΔ2 VΔP VEP VEM HA1 HA2 VAP VAM VT.
   apply (VTyS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
   pose proof (GSubRel_refl_r EP EM Hσ) as Hσr.

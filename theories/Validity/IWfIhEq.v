@@ -113,14 +113,14 @@ Context {E : GenericEq} {EL : GenericEqLaws} {LP : LRParams} {VL : VPLaws lr_vp}
 
 Lemma VTyS_gid {G Γ T T' l} : [ ⊢ G ] -> dnfctx Γ -> dnfty T -> dnfty T' ->
   @VTyS EP EM E LP G Γ T T' l -> VTyG G Γ T T' l.
-Proof.
+Proof using .
   intros HG NΓ NT NT' H. pose proof (H _ _ _ (GSubRel_gid EP EM HG)) as X.
   rewrite gsubst_id_ctx, !gsubst_id_ty in X by first [assumption | intros; reflexivity]. exact X.
 Qed.
 
 Lemma VTmS_gid {G Γ t t' T l} : [ ⊢ G ] -> dnfctx Γ -> dnftm t -> dnftm t' -> dnfty T ->
   @VTmS EP EM E LP G Γ t t' T l -> VTmG G Γ t t' T l.
-Proof.
+Proof using .
   intros HG NΓ Nt Nt' NT H. pose proof (H _ _ _ (GSubRel_gid EP EM HG)) as X.
   rewrite gsubst_id_ctx, !gsubst_id_ty, !gsubst_id in X by first [assumption | intros; reflexivity]. exact X.
 Qed.
@@ -139,7 +139,7 @@ Lemma IWf_ihty_geq {G Γ l li l' l3 li3 l4 X X' A A' N N' Ot Ot' C C' M M'} :
   VTyG G (Γ ,, X @ li ,, iwfmotty l li X A N Ot C @ lmax l li) M M' l' ->
   [ G ; Γ ,, A @ l ,, iwfcsty l li X A N Ot C @ lmax l li ⊢g
       iwfihty l li l' X A N Ot C M ≅ iwfihty l3 li3 l4 X' A' N' Ot' C' M' @ lmax lzero l' ].
-Proof.
+Proof using EL VL VN.
   intros Hwl Hwli Hwl' H13 Hi3 H24 HS HM HIr VΘ VX VA VNt VO VC Vmot VM.
   pose proof (IWf_ihty_wf ge_typeof ge_notV HS Hwl' HM) as HI.
   pose proof (VG_iwfihty Hwl Hwli Hwl' H13 Hi3 H24 HS HM VX VA VNt VO VC Vmot VM) as V.

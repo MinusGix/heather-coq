@@ -17,7 +17,7 @@ Section KwRel.
 Context {G : gctx} {Γ : ctx} (ρ : kwk G Γ).
 
 Lemma NatRel_kw : forall t t', NatRel G Γ t t' -> NatRel (kw_G ρ) (kw_Δ ρ) (ktm ρ t) (ktm ρ t').
-Proof.
+Proof using EL.
   apply (NatRel_mut G Γ (fun t t' _ => NatRel (kw_G ρ) (kw_Δ ρ) (ktm ρ t) (ktm ρ t'))
                         (fun t t' _ => NatNf (kw_G ρ) (kw_Δ ρ) (ktm ρ t) (ktm ρ t'))).
   - intros t t' w w' Hw Hw' Heq _ IH.
@@ -31,15 +31,15 @@ Qed.
 
 Lemma NeRel_kw V V' l t t' : NeRel G Γ V V' l t t' ->
   NeRel (kw_G ρ) (kw_Δ ρ) (kty ρ V) (kty ρ V') l (ktm ρ t) (ktm ρ t').
-Proof.
+Proof using EL.
   intros (ν & ν' & H1 & H2 & H3 & H4). exists (ktm ρ ν), (ktm ρ ν').
   exact (conj (kw_tmred ρ H1) (conj (kw_tmred ρ H2) (conj (kw_gne_tm ρ H3) (kw_gne_tm ρ H4)))).
 Qed.
 
 Lemma whnf_kw t : whnf t -> whnf (ktm ρ t).
-Proof. intros; apply whnf_ren, whnf_gwa; assumption. Qed.
+Proof using . intros; apply whnf_ren, whnf_gwa; assumption. Qed.
 Lemma whne_ty_kw V : whne_ty V -> whne_ty (kty ρ V).
-Proof. intros; apply whne_ty_ren, whne_ty_gwa; assumption. Qed.
+Proof using . intros; apply whne_ty_ren, whne_ty_gwa; assumption. Qed.
 
 (** The shared type-level data of a binder former, weakened; [F] commutes
     with the weakening as [Π] and [Σ] do. *)
@@ -48,7 +48,7 @@ Lemma poly_kw {F T T' l l1 l2 l3 l4 A B A' B'} :
   PolyFacts G Γ F T T' l l1 l2 l3 l4 A B A' B' ->
   PolyFacts (kw_G ρ) (kw_Δ ρ) F (kty ρ T) (kty ρ T') l l1 l2 l3 l4
     (kty ρ A) (ktyl ρ B) (kty ρ A') (ktyl ρ B').
-Proof.
+Proof using EL.
   intros HF [Hl Hl3 Hl4 Hw1 Hw2 HT HT' HA HA' HB HB' HAA HBB].
   pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'. rewrite HF in X, X'.
   split.
@@ -77,7 +77,7 @@ Lemma WNf_kw {G Γ l1 l2 A B} {domR : DomRel G Γ} {codR : CodRel G Γ domR} {w 
   WNf G Γ l1 l2 A B domR codR w w' -> forall ρ : kwk G Γ,
   WNf (kw_G ρ) (kw_Δ ρ) l1 l2 (kty ρ A) (ktyl ρ B)
     (fun ρ' => domR (kw_comp ρ ρ')) (fun ρ' x x' h => codR (kw_comp ρ ρ') x x' h) (ktm ρ w) (ktm ρ w').
-Proof.
+Proof using EL.
   destruct 1 as [G Γ l1 l2 A B domR codR k1 k2 k1' k2' C D C' D' a a' f f' Hk1 Hk2 Hk1' Hk2' HC HC' HD HD' Ha Hwf Hf
                 | G Γ l1 l2 A B domR codR ν ν' Hν];
     intros ρ.
@@ -103,7 +103,7 @@ Lemma WRel_kw {G Γ l1 l2 A B} {domR : DomRel G Γ} {codR : CodRel G Γ domR} (�
   forall t t', WRel G Γ l1 l2 A B domR codR t t' ->
   WRel (kw_G ρ) (kw_Δ ρ) l1 l2 (kty ρ A) (ktyl ρ B)
     (fun ρ' => domR (kw_comp ρ ρ')) (fun ρ' x x' h => codR (kw_comp ρ ρ') x x' h) (ktm ρ t) (ktm ρ t').
-Proof.
+Proof using EL.
   intros t t' H. destruct (WRel_inv H) as (w & w' & Hw & Hw' & Heq & Hn).
   pose proof (kw_tmred ρ Hw) as Y. pose proof (kw_tmred ρ Hw') as Y'. pose proof (kw_geq_tm ρ Heq) as Z.
   rewrite kty_tyW in Y, Y', Z.
@@ -115,7 +115,7 @@ Qed.
 Lemma WfNf_kw {G Γ l A N} {d : DomRel G Γ} {w w'} :
   WfNf G Γ l A N d w w' -> forall ρ : kwk G Γ,
   WfNf (kw_G ρ) (kw_Δ ρ) l (kty ρ A) (ktml ρ N) (fun ρ' => d (kw_comp ρ ρ')) (ktm ρ w) (ktm ρ w').
-Proof.
+Proof using EL.
   destruct 1 as [G Γ l A N d k k' C C' M M' a a' cs cs' Hk Hk' HC HC' HM HM' Ha Hcs
                 | G Γ l A N d ν ν' Hν];
     intros ρ.
@@ -134,7 +134,7 @@ Qed.
 Lemma WfRel_kw {G Γ l A N} {d : DomRel G Γ} (ρ : kwk G Γ) :
   forall t t', WfRel G Γ l A N d t t' ->
   WfRel (kw_G ρ) (kw_Δ ρ) l (kty ρ A) (ktml ρ N) (fun ρ' => d (kw_comp ρ ρ')) (ktm ρ t) (ktm ρ t').
-Proof.
+Proof using EL.
   intros t t' H. destruct (WfRel_inv H) as (w & w' & Hw & Hw' & Heq & Hn).
   pose proof (kw_tmred ρ Hw) as Y. pose proof (kw_tmred ρ Hw') as Y'. pose proof (kw_geq_tm ρ Heq) as Z.
   rewrite kty_tyWf in Y, Y', Z.
@@ -148,7 +148,7 @@ Lemma IWfNf_kw {G Γ l li X A N Ot C} {ix dm : DomRel G Γ} {m w w'} :
   IWfNf G Γ l li X A N Ot C ix dm m w w' -> forall ρ : kwk G Γ,
   IWfNf (kw_G ρ) (kw_Δ ρ) l li (kty ρ X) (kty ρ A) (ktml ρ N) (ktml ρ Ot) (ktmll ρ C)
     (fun ρ' => ix (kw_comp ρ ρ')) (fun ρ' => dm (kw_comp ρ ρ')) (ktm ρ m) (ktm ρ w) (ktm ρ w').
-Proof.
+Proof using EL.
   destruct 1 as [G Γ l li X A N Ot C ix dm m k ki k' ki' X1 A1 N1 O1 C1 X1' A1' N1' O1' C1' a a' cs cs'
                    E1 E2 Hd Ho Hcs
                 | G Γ l li X A N Ot C ix dm m ν ν' Hν];
@@ -166,7 +166,7 @@ Lemma IWfRel_kw {G Γ l li X A N Ot C} {ix dm : DomRel G Γ} {m} (ρ : kwk G Γ)
   forall t t', IWfRel G Γ l li X A N Ot C ix dm m t t' ->
   IWfRel (kw_G ρ) (kw_Δ ρ) l li (kty ρ X) (kty ρ A) (ktml ρ N) (ktml ρ Ot) (ktmll ρ C)
     (fun ρ' => ix (kw_comp ρ ρ')) (fun ρ' => dm (kw_comp ρ ρ')) (ktm ρ m) (ktm ρ t) (ktm ρ t').
-Proof.
+Proof using EL.
   intros t t' H. destruct (IWfRel_inv H) as (w & w' & Hw & Hw' & Heq & Hn).
   pose proof (kw_tmred ρ Hw) as Y. pose proof (kw_tmred ρ Hw') as Y'. pose proof (kw_geq_tm ρ Heq) as Z.
   rewrite kty_tyIWf in Y, Y', Z.
@@ -178,30 +178,30 @@ Qed.
 Lemma vp_ty_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) {Δ A A' l} :
   vp_ty lr_vp (kw_G ρ') Δ⟦kw_γ ρ⟧⟦kw_γ ρ'⟧ A A' l ->
   vp_ty lr_vp (kw_G (kw_comp ρ ρ')) Δ⟦kw_γ (kw_comp ρ ρ')⟧ A A' l.
-Proof. rewrite kw_γ_comp, gwa_comp_ctx. exact id. Qed.
+Proof using . rewrite kw_γ_comp, gwa_comp_ctx. exact id. Qed.
 
 Lemma wf_gext_ty_inv {G Δ i l} : [ ⊢ gext G (gdTy Δ i l) ] -> [ G ; Δ ⊢[ lD ] ] /\ lwf (gL G) l.
-Proof. intros H; inversion H; subst; auto. Qed.
+Proof using . intros H; inversion H; subst; auto. Qed.
 
 (** The extended global context of a world. *)
 Lemma kw_glob_ctx {G Γ} (ρ : kwk G Γ) : [ ⊢ gext (kw_G ρ) gdCtx ].
-Proof. apply wfg_ctx, kw_glob. Qed.
+Proof using . apply wfg_ctx, kw_glob. Qed.
 Lemma kw_glob_ty {G Γ} (ρ : kwk G Γ) {Δ l} : [ ⊢ gext G (gdTy Δ lD l) ] ->
   [ ⊢ gext (kw_G ρ) (gdTy Δ⟦kw_γ ρ⟧ lD l) ].
-Proof.
+Proof using .
   intros H. destruct (wf_gext_ty_inv H) as [HΔ Hl].
   apply wfg_ty; [apply kw_glob | exact (gwa_ctx (kw_gok ρ) (kw_glob ρ) HΔ) | right; reflexivity | exact (kw_lwf ρ Hl)].
 Qed.
 
 Lemma kw_body_ty_c {G Γ} (ρ : kwk G Γ) {T l} : [ gext G gdCtx ; Γ⟪S⟫ ⊢g T @ l ] ->
   [ gext (kw_G ρ) gdCtx ; (kw_Δ ρ)⟪S⟫ ⊢g kbody ρ T @ l ].
-Proof.
+Proof using .
   intros H. pose proof (kw_body_ty ρ (D := gdCtx) (T := T) (l := l)) as X. rewrite gdecl_gwa_ctx in X.
   exact (X (kw_glob_ctx ρ) H).
 Qed.
 Lemma kw_body_ty_t {G Γ} (ρ : kwk G Γ) {Δ l1 T l} : [ gext G (gdTy Δ lD l1) ; Γ⟪S⟫ ⊢g T @ l ] ->
   [ gext (kw_G ρ) (gdTy Δ⟦kw_γ ρ⟧ lD l1) ; (kw_Δ ρ)⟪S⟫ ⊢g kbody ρ T @ l ].
-Proof.
+Proof using .
   intros H. pose proof (kw_body_ty ρ (D := gdTy Δ lD l1) (T := T) (l := l)) as X. rewrite gdecl_gwa_ty in X.
   exact (X (kw_glob_ty ρ (ctx_glob _ _ _ (ctx_of_ty H))) H).
 Qed.
@@ -259,7 +259,7 @@ Definition Pwk n := forall G Γ T T' l R,
 Lemma URel_kw n G Γ (ρ : kwk G Γ) l1 t t' :
   Pwk (lmeasure l1) -> lmeasure l1 < n -> lwf (gL G) l1 ->
   URel (LRbelow n) G Γ l1 t t' -> URel (LRbelow n) (kw_G ρ) (kw_Δ ρ) l1 (ktm ρ t) (ktm ρ t').
-Proof.
+Proof using EL.
   intros Hwk Hn Hl1 (w & w' & Hw & Hw' & Hnf & Hnf' & Heq & HK).
   exists (ktm ρ w), (ktm ρ w').
   pose proof (kw_tmred ρ Hw) as Hw1. pose proof (kw_tmred ρ Hw') as Hw1'.
@@ -275,7 +275,7 @@ Qed.
 (** ** Weakening *)
 
 Lemma LR_kwk_step n : (forall m, m < n -> Pwk m) -> Pwk n.
-Proof.
+Proof using EL VL.
   (* by induction: the identity type's carrier relation is at [Γ] only (M11a) *)
   intros IHn G Γ T T' l R H.
   induction H as [G Γ T T' l R Hl HT HT' HR
@@ -698,7 +698,7 @@ Proof.
 Qed.
 
 Theorem LR_kwk n : Pwk n.
-Proof.
+Proof using EL VL.
   induction n as [n IHn] using (well_founded_induction lt_wf).
   apply LR_kwk_step, IHn.
 Qed.
@@ -707,6 +707,6 @@ Qed.
 Corollary LR_wk n G Γ T T' l R :
   LR n (LRbelow n) G Γ T T' l R -> forall Δ (ρ : wk), ρ : Δ ≤ Γ -> [ G ; Δ ⊢g ] ->
   exists R', LR n (LRbelow n) G Δ T⟨ρ⟩ T'⟨ρ⟩ l R' /\ forall t t', R t t' -> R' t⟨ρ⟩ t'⟨ρ⟩.
-Proof. intros H Δ ρ Hρ HΔ. exact (LR_kwk n _ _ _ _ _ _ H (kw_loc ρ Hρ HΔ)). Qed.
+Proof using EL VL. intros H Δ ρ Hρ HΔ. exact (LR_kwk n _ _ _ _ _ _ H (kw_loc ρ Hρ HΔ)). Qed.
 
 End Weakening.

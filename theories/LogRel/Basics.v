@@ -7,27 +7,27 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 (** ** Measures of levels *)
 
 Lemma lequiv_measure_eq L l l' : lequiv L l l' -> lmeasure l = lmeasure l'.
-Proof. apply lequiv_measure. Qed.
+Proof using . apply lequiv_measure. Qed.
 
 Lemma lmeasure_max l1 l2 : lmeasure (lmax l1 l2) = Nat.max (lmeasure l1) (lmeasure l2).
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma lmeasure_suc l : lmeasure (lsuc l) = S (lmeasure l).
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 
 (** ** The universe relation only depends on [rec] at its level *)
 
 Lemma URel_ext rec rec' G Γ l0 : rec l0 = rec' l0 -> URel rec G Γ l0 = URel rec' G Γ l0.
-Proof. intros Hr. unfold URel. now rewrite Hr. Qed.
+Proof using . intros Hr. unfold URel. now rewrite Hr. Qed.
 
 Lemma URel_below n m G Γ l0 : lmeasure l0 < n -> lmeasure l0 < m ->
   URel (LRbelow n) G Γ l0 = URel (LRbelow m) G Γ l0.
-Proof. intros Hn Hm. apply URel_ext. now rewrite !LRbelow_spec. Qed.
+Proof using . intros Hn Hm. apply URel_ext. now rewrite !LRbelow_spec. Qed.
 
 (** ** Cumulativity of stages *)
 
 Theorem cumul_up n m G Γ T T' l R :
   n <= m -> LR n (LRbelow n) G Γ T T' l R -> LR m (LRbelow m) G Γ T T' l R.
-Proof.
+Proof using .
   intros Hnm H; induction H; open_poly.
   - eapply LRnat; eauto.
   - match goal with HR : releq _ (URel _ _ _ _) |- _ => rewrite (URel_below n m) in HR by lia end.
@@ -54,7 +54,7 @@ Qed.
 
 Theorem cumul_down n m G Γ T T' l R :
   lmeasure l <= n -> LR m (LRbelow m) G Γ T T' l R -> LR n (LRbelow n) G Γ T T' l R.
-Proof.
+Proof using .
   intros Hl H; revert Hl; induction H; intros Hle; open_poly.
   - eapply LRnat; eauto.
   - assert (lmeasure l1 < n).
@@ -113,7 +113,7 @@ Qed.
     [lmeasure l]. *)
 Corollary LogRel_stage n G Γ T T' l R :
   lmeasure l <= n -> LogRel l G Γ T T' l R <-> LR n (LRbelow n) G Γ T T' l R.
-Proof.
+Proof using .
   intros Hn; split; intros H.
   - eapply cumul_up; [exact Hn | exact H].
   - eapply cumul_down; [lia | exact H].
@@ -124,7 +124,7 @@ Qed.
 
 Lemma NeRel_lconv G Γ V V' l l' :
   lequiv (gL G) l' l -> releq (NeRel G Γ V V' l) (NeRel G Γ V V' l').
-Proof.
+Proof using EL.
   intros Hl t t'; unfold NeRel; split; intros (ν & ν' & H1 & H2 & H3 & H4);
     exists ν, ν'; refine (conj _ (conj _ (conj _ _)));
     eauto using tmred_lconv, gne_tm_lconv, lequiv_sym.
@@ -133,14 +133,14 @@ Qed.
 (** ** Saturation: the term relation matters only up to [releq] *)
 
 Lemma releq_refl R : releq R R.
-Proof. intros ??; reflexivity. Qed.
+Proof using . intros ??; reflexivity. Qed.
 Lemma releq_sym R R' : releq R R' -> releq R' R.
-Proof. intros H ??; symmetry; apply H. Qed.
+Proof using . intros H ??; symmetry; apply H. Qed.
 Lemma releq_trans R R' R'' : releq R R' -> releq R' R'' -> releq R R''.
-Proof. intros H H' ??; etransitivity; [apply H | apply H']. Qed.
+Proof using . intros H H' ??; etransitivity; [apply H | apply H']. Qed.
 
 Lemma ModRel_releq G Γ T T' l R R' : ModRel G Γ T T' l R -> releq R R' -> ModRel G Γ T T' l R'.
-Proof.
+Proof using .
   destruct 1; intros HR'.
   - eapply MRctyp; eauto using releq_trans, releq_sym.
   - eapply MRctrm; eauto using releq_trans, releq_sym.
@@ -148,7 +148,7 @@ Qed.
 
 Lemma ModRel_lconv G Γ T T' l l' R :
   ModRel G Γ T T' l R -> lequiv (gL G) l' l -> ModRel G Γ T T' l' R.
-Proof.
+Proof using .
   destruct 1 as [T T' l Δ Δ' k k' R Hl Hk HT HT' HΔ Hgeq HR
                 | T T' l Δ Δ' A A' k k' R Hl Hk HT HT' HΔ HA HA' Hgeq HR]; intros Hl'.
   - exact (MRctyp _ _ _ _ _ _ _ _ _ _ (lequiv_trans _ _ _ _ Hl' Hl) Hk
@@ -159,7 +159,7 @@ Qed.
 
 Lemma LR_releq n rec G Γ T T' l R R' :
   LR n rec G Γ T T' l R -> releq R R' -> LR n rec G Γ T T' l R'.
-Proof.
+Proof using .
   destruct 1; intros HR'.
   - eapply LRnat; eauto using releq_trans, releq_sym.
   - eapply LRU; eauto using releq_trans, releq_sym.
@@ -186,7 +186,7 @@ Qed.
 
 Theorem LR_lconv n rec G Γ T T' l l' R :
   LR n rec G Γ T T' l R -> lequiv (gL G) l' l -> LR n rec G Γ T T' l' R.
-Proof.
+Proof using EL.
   destruct 1 as [G Γ T T' l R Hl HT HT' HR
                 | G Γ T T' l l1 l2 R Hl Hl2 Hn HT HT' HR
                 | G Γ T T' l V V' R HT HT' HV HR

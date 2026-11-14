@@ -31,7 +31,7 @@ Definition wfDom Δ d d' : DomRel G Δ :=
 Lemma wf_arity {Δ d d'} (ρ : kwk G Δ) a a' : SubRel G Γ Δ d d' ->
   LRtm l (kw_G ρ) (kw_Δ ρ) (kty ρ A[d]) (kty ρ A'[d']) a a' ->
   NatRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N[llift d])[lsingle a] (ktml ρ N'[llift d'])[lsingle a'].
-Proof.
+Proof using EL VA VL VNt.
   intros Hd ha. pose proof (SubRel_kw _ _ _ ρ _ _ Hd) as Hdρ.
   assert (Ha : LRtm l (kw_G ρ) (kw_Δ ρ) A⟦kw_γ ρ⟧[kwsub ρ d] A⟦kw_γ ρ⟧[kwsub ρ d'] a a').
   { rewrite !kty_subst in ha. eapply LRtm_irrel_r; [exact ha|].
@@ -44,14 +44,14 @@ Qed.
 
 Lemma wfDom_canon {Δ d d'} : SubRel G Γ Δ d d' ->
   forall ρ : kwk G Δ, LogRel l (kw_G ρ) (kw_Δ ρ) (kty ρ A[d]) (kty ρ A'[d']) l (wfDom Δ d d' ρ).
-Proof.
+Proof using EL VA VL.
   intros Hd ρ. unfold wfDom. destruct (VTyG_kw ρ VA Hd) as [R HR].
   exact (LR_canon _ _ _ _ _ _ _ HR).
 Qed.
 
 Lemma LR_Wf_here Δ d d' : SubRel G Γ Δ d d' ->
   LogRel l G Δ (tyWf l A N)[d] (tyWf l' A' N')[d'] l (WfRel G Δ l A[d] N[llift d] (wfDom Δ d d')).
-Proof.
+Proof using EL Hl' Hwl VA VL VN VNt.
   intros Hd. pose proof (SubRel_ctx Hd) as HΔ.
   destruct (VTyG_loc VA _ _ _ Hd) as [RA HRA].
   destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HAd & HA'd & HAA).
@@ -84,7 +84,7 @@ Proof.
 Qed.
 
 Lemma V_wf : VTy G Γ (tyWf l A N) (tyWf l' A' N') l.
-Proof. intros Δ d d' Hd. eexists. exact (LR_Wf_here _ _ _ Hd). Qed.
+Proof using EL Hl' Hwl VA VL VN VNt. intros Δ d d' Hd. eexists. exact (LR_Wf_here _ _ _ Hd). Qed.
 
 End WfTy.
 
@@ -96,11 +96,11 @@ Context {G : gctx} {Δ : ctx} (HΔ : [ G ; Δ ⊢g ]).
 Definition kid : kwk G Δ := kw_loc wk_id (wkwf_id Δ) HΔ.
 
 Lemma kty_kid (T : ty) : nfty T -> kty kid T = T.
-Proof. intros NT. unfold kty, kid, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk]. now rewrite ren_id_ty. Qed.
+Proof using . intros NT. unfold kty, kid, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk]. now rewrite ren_id_ty. Qed.
 Lemma ktm_kid (t : tm) : nftm t -> ktm kid t = t.
-Proof. intros Nt. unfold ktm, kid, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk]. now rewrite ren_id_tm. Qed.
+Proof using . intros Nt. unfold ktm, kid, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk]. now rewrite ren_id_tm. Qed.
 Lemma ktyl_kid (T : ty) : nfty T -> ktyl kid T = T.
-Proof.
+Proof using .
   intros NT. unfold ktyl, kid, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk].
   rewrite <- (ren_id_ty T NT) at 2. apply ren_ext_ty. intros n. rewrite rlk_rlift. destruct n; cbn; lia.
 Qed.
@@ -118,22 +118,22 @@ Definition WfDom G Δ l A (domR : DomRel G Δ) :=
 
 Lemma WfDom_comp {G Δ l A} {domR : DomRel G Δ} (ρ : kwk G Δ) : WfDom G Δ l A domR ->
   WfDom (kw_G ρ) (kw_Δ ρ) l (kty ρ A) (fun ρ' => domR (kw_comp ρ ρ')).
-Proof. intros H ρ'. destruct (H (kw_comp ρ ρ')) as [A1 X]. rewrite kty_comp in X. eauto. Qed.
+Proof using . intros H ρ'. destruct (H (kw_comp ρ ρ')) as [A1 X]. rewrite kty_comp in X. eauto. Qed.
 
 Lemma WfDom_releq {G Δ l A} {d1 d2 : DomRel G Δ} : WfDom G Δ l A d1 -> WfDom G Δ l A d2 ->
   forall ρ, releq (d1 ρ) (d2 ρ).
-Proof.
+Proof using EL VL.
   intros H1 H2 ρ. destruct (H1 ρ) as [A1 X1]. destruct (H2 ρ) as [A2 X2].
   exact (LR_irrel _ _ _ _ _ _ _ _ _ _ X1 X2).
 Qed.
 
 Lemma WfDom_of {G Δ l A A'} {domR : DomRel G Δ} :
   (forall ρ : kwk G Δ, LogRel l (kw_G ρ) (kw_Δ ρ) (kty ρ A) (kty ρ A') l (domR ρ)) -> WfDom G Δ l A domR.
-Proof. intros H ρ. eauto. Qed.
+Proof using . intros H ρ. eauto. Qed.
 
 Lemma LR_wf_rel {G Δ l A N T' R} {domR : DomRel G Δ} :
   LogRel l G Δ (tyWf l A N) T' l R -> WfDom G Δ l A domR -> releq R (WfRel G Δ l A N domR).
-Proof.
+Proof using EL VL.
   intros H HD. destruct (escape_ty _ _ _ _ _ _ _ _ H) as (HW & _ & _).
   destruct (LR_inv_wf H (tyred_refl _ _ HW))
     as (m2 & C' & M' & domR' & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & domAd & _ & HR).
@@ -151,7 +151,7 @@ Context {G : gctx} {Δ : ctx} {l : lvl} {A : ty} {N : tm} {domR : DomRel G Δ}
 Lemma VecSp_of_LR : forall k k', NatRel G Δ k k' ->
   forall T' R, LogRel l G Δ (tyVec l (tyWf l A N) k) T' l R ->
   forall cs cs', R cs cs' -> VecSp G Δ l A N domR k cs cs'.
-Proof.
+Proof using EL HD HWf Hwl VL.
   pose proof (ctx_of_ty HWf) as HΔ. pose proof (wf_ty_nf HWf) as NW.
   apply (NatRel_mut G Δ
     (fun k k' _ => forall T' R, LogRel l G Δ (tyVec l (tyWf l A N) k) T' l R ->
@@ -227,7 +227,7 @@ End Spine.
 
 Lemma ktyl_vecsh {G Γ} (ρ : kwk G Γ) l (T : ty) (m : tm) :
   ktyl ρ (tyVec l T⟨↑⟩ m⟨↑⟩) = tyVec l (kty ρ T)⟨↑⟩ (ktm ρ m)⟨↑⟩.
-Proof.
+Proof using .
   transitivity (tyVec l (ktyl ρ T⟨↑⟩) (ktml ρ m⟨↑⟩)).
   { unfold ktyl, ktml. now rewrite gwa_tyVec, ren_tyVec. }
   now rewrite ktyl_shift, ktml_shift.
@@ -251,7 +251,7 @@ Lemma VecSp_succ_at {G Γ l A N d k m cs cs' w w' T T' l0 l0'} : VecSp G Γ l A 
        [ G ; Γ ⊢ tyWf l A N ≈ A1' @ l ] ->
        [ G ; Γ ,, tyWf l A N @ l ⊢ tyVec l (tyWf l A N)⟨↑⟩ m⟨↑⟩ ≈ B1' @ l ] ->
        VecSp G Γ l A N d m (tmSnd la lb A1 B1 w) (tmSnd la' lb' A1' B1' w')).
-Proof.
+Proof using EL.
   intros H Hk Hr Nw Hr' Nw'.
   destruct (VecSp_succ_inv H Hk) as (w0 & w0' & Hr0 & Hr0' & Nw0 & Nw0' & _ & Hf & Hs).
   assert (w0 = w) as -> by (eapply tmred_whnf_det; [exact Hr0 | exact Hr | exact Nw0 | exact Nw]).
@@ -273,7 +273,7 @@ Definition VecQ G Δ l A N (d : DomRel G Δ) k :=
 
 Lemma VecQ_zero {G Δ l A N} {d : DomRel G Δ} {k} : lwf (gL G) l -> [ G ; Δ ⊢g tyWf l A N @ l ] ->
   [ G ; Δ ⊢g k ⤳* zero : tyNat @ lzero ] -> VecQ G Δ l A N d k.
-Proof.
+Proof using EL.
   intros Hwl HWf Hk T' R H cs cs' [Hown _].
   assert (Hred : [ G ; Δ ⊢g tyVec l (tyWf l A N) k ⤳* tyUnit l @ l ])
     by (eapply tyred_trans; [exact (tyred_vec Hwl HWf Hk) | exact (tyred_vec_zero Hwl HWf)]).
@@ -283,7 +283,7 @@ Qed.
 
 Lemma VecQ_ne {G Δ l A N} {d : DomRel G Δ} {k ν} : lwf (gL G) l -> [ G ; Δ ⊢g tyWf l A N @ l ] ->
   [ G ; Δ ⊢g k ⤳* ν : tyNat @ lzero ] -> whne ν -> VecQ G Δ l A N d k.
-Proof.
+Proof using EL.
   intros Hwl HWf Hk Nν T' R H cs cs' [Hown _].
   destruct (LR_inv_ne H (tyred_vec Hwl HWf Hk) (whne_tyVec _ _ _ Nν)) as (V' & _ & HVV & HR).
   apply (proj2 (HR _ _)).
@@ -296,7 +296,7 @@ Lemma VecQ_succ {G Δ l A N} {d : DomRel G Δ} {k m} : lwf (gL G) l -> [ G ; Δ 
   WfDom G Δ l A d -> [ G ; Δ ⊢g m : tyNat @ lzero ] -> [ G ; Δ ⊢g k ⤳* succ m : tyNat @ lzero ] ->
   (forall ρ : kwk G Δ, VecQ (kw_G ρ) (kw_Δ ρ) l (kty ρ A) (ktml ρ N) (fun ρ' => d (kw_comp ρ ρ')) (ktm ρ m)) ->
   VecQ G Δ l A N d k.
-Proof.
+Proof using EL VL.
   intros Hwl HWf HD Hm Hk IH T' R H cs cs' [Hown HK].
   pose proof (ctx_of_ty HWf) as HΔ.
   assert (Hred : [ G ; Δ ⊢g tyVec l (tyWf l A N) k
@@ -365,7 +365,7 @@ Context {G : gctx} {Δ : ctx} {l : lvl} {A : ty} {N : tm} {domR : DomRel G Δ}
     weakening). *)
 Lemma LR_of_VecSp_all : forall k k', NatRel G Δ k k' ->
   forall ρ : kwk G Δ, VecQ (kw_G ρ) (kw_Δ ρ) l (kty ρ A) (ktml ρ N) (fun ρ' => domR (kw_comp ρ ρ')) (ktm ρ k).
-Proof.
+Proof using EL HD HWf Hwl VL.
   apply (NatRel_mut G Δ
     (fun k k' _ => forall ρ : kwk G Δ,
        VecQ (kw_G ρ) (kw_Δ ρ) l (kty ρ A) (ktml ρ N) (fun ρ' => domR (kw_comp ρ ρ')) (ktm ρ k))
@@ -394,7 +394,7 @@ End SpineK.
 (** ** [sup_f] *)
 
 Lemma VTmG_refl_l {G Γ t t' T l} : VTmG G Γ t t' T l -> VTmG G Γ t t T l.
-Proof. intros H. exact (VTmG_trans H (VTmG_sym H)). Qed.
+Proof using EL VL. intros H. exact (VTmG_trans H (VTmG_sym H)). Qed.
 
 Section SupfV.
 Context {G : gctx} {Γ : ctx} {l l' : lvl} {A A' : ty} {N N' a a' cs cs' : tm}
@@ -404,7 +404,7 @@ Context {G : gctx} {Γ : ctx} {l l' : lvl} {A A' : ty} {N N' a a' cs cs' : tm}
   (Va : VTm G Γ a a' A l) (Vcs : VTm G Γ cs cs' (tyVec l (tyWf l A N) N[lsingle a]) l).
 
 Lemma V_supf : VTm G Γ (tmSupf l A N a cs) (tmSupf l' A' N' a' cs') (tyWf l A N) l.
-Proof.
+Proof using EL Hl' Hwl VA VL VN VNt Va Vcs.
   intros Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   pose proof (VTyG_refl_l VA) as VAA. pose proof (VTmG_refl_l VNt) as VNN.
   pose proof (LR_Wf_here Hwl (lequiv_refl _ _ Hwl) VAA VNN _ _ _ Hd) as HW.
@@ -456,7 +456,7 @@ End SupfV.
 Lemma tyred_El_wf {G Δ la l k s n} : lequiv (gL G) la l -> lequiv (gL G) k l ->
   [ G ; Δ ⊢g s : tyU l @ lsuc l ] -> [ G ; Δ ,, tyEl k s @ l ⊢g n : tyNat @ lzero ] ->
   [ G ; Δ ⊢g tyEl la (tmWf k s n) ⤳* tyWf k (tyEl k s) n @ l ].
-Proof.
+Proof using .
   intros Hla Hk Hs Hn.
   pose proof (lequiv_wf_l _ _ _ Hk) as Wk.
   pose proof (conv_U' Hs (lequiv_sym _ _ _ Hk)) as Hsk.
@@ -483,7 +483,7 @@ Context {G : gctx} {Γ : ctx} {l l' : lvl} {s s' n n' : tm}
   (Vn : VTmG G (Γ ,, tyEl l s @ l) n n' tyNat lzero).
 
 Lemma V_code_wf : VTm G Γ (tmWf l s n) (tmWf l' s' n') (tyU l) (lsuc l).
-Proof.
+Proof using EL Hl Hn Hs Hw VL VN Vn Vs.
   destruct (El_annot Hs (lequiv_refl _ _ Hw)) as [HA _].
   pose proof (V_ElG Hw Hl Vs) as VA.
   intros Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ.
@@ -522,7 +522,7 @@ Lemma V_El_wf {G Γ l s n} : lwf (gL G) l ->
   [ G ; Γ ⊢g s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢g n : tyNat @ lzero ] ->
   VTmG G Γ s s (tyU l) (lsuc l) -> VTmG G (Γ ,, tyEl l s @ l) n n tyNat lzero ->
   VTy G Γ (tyWf l (tyEl l s) n) (tyEl l (tmWf l s n)) l.
-Proof.
+Proof using EL VL VN.
   intros Hw Hs Hn Vs Vn Δ d d' Hd.
   pose proof (V_ElG Hw (lequiv_refl _ _ Hw) Vs) as VA.
   pose proof (LR_Wf_here Hw (lequiv_refl _ _ Hw) VA Vn _ _ _ Hd) as HP.
