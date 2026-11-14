@@ -216,6 +216,62 @@ Proof.
   exact (IWfEq_of_eqs Hi HS E1 E2 EX EA EN (ac_tm_sound Hc DO HO HO'l) (ac_tm_sound Hc DC HC (HC'l EN))).
 Qed.
 
+
+(** The same for [IWi] (M19b), with the domain's context. *)
+Lemma IWi_fwd {G i Γ l lp li k kp ki X X' A A' N N' D D' Ot Ot' C C'} : compt i ->
+  IWiEq (G := G) (i := i) Γ l lp li k kp ki X X' A A' N N' D D' Ot Ot' C C' ->
+  [ G ⊢[ i ] Γ ,, A @ l ≅ Γ ,, A' @ k ] /\
+  [ G ⊢[ i ] Γ ,, A @ l ,, tyFin N @ lzero ≅ Γ ,, A' @ k ,, tyFin N' @ lzero ] /\
+  [ G ⊢[ i ] Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ≅ Γ ,, A' @ k ,, tyFin N' @ lzero ,, D' @ kp ] /\
+  [ G ; Γ ,, A @ l ⊢[ i ] X'⟨↑⟩ ≅ X⟨↑⟩ @ li ] /\
+  [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] X'⟨↑⟩⟨↑⟩⟨↑⟩ ≅ X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+  [ G ⊢[ i ] Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li
+      ≅ Γ ,, X' @ ki ,, iwimotty k kp ki X' A' N' D' Ot' C' @ iwiL k kp ki ] /\
+  [ G ⊢[ i ] Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li
+      ≅ Γ ,, A' @ k ,, iwicsty k kp ki X' A' N' D' Ot' C' @ iwiL k kp ki ].
+Proof.
+  intros Hc HE. pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
+  pose proof HE as (Hlk & Hlpk & Hlik & HS & EX & EA & EN & ED & _).
+  pose proof HS as (Hl & Hlp & Hli & HX & HA & HN & HD & _).
+  pose proof (ctx_of_wf_ty Hi HA) as HΓ.
+  pose proof (ext_wf Hi HA Hl) as HΓA.
+  assert (HF : [ G ; Γ ,, A @ l ⊢[ i ] tyFin N @ lzero ]) by (apply wft_fin; [exact Hv | exact HN]).
+  assert (HΓAF : [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] ]) by (apply (ext_wf Hi HF); exact I).
+  pose proof (ext_wf Hi HD Hlp) as HΓAFD.
+  assert (HctxA : [ G ⊢[ i ] Γ ,, A @ l ≅ Γ ,, A' @ k ])
+    by (apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | exact HA | exact EA | exact Hlk]).
+  assert (HctxAF : [ G ⊢[ i ] Γ ,, A @ l ,, tyFin N @ lzero ≅ Γ ,, A' @ k ,, tyFin N' @ lzero ])
+    by (apply eqc_ext; [exact HctxA | exact HF | apply eqty_fin; [exact Hv | exact EN] | apply lequiv_refl; exact I]).
+  pose proof (wk1_eqty _ _ Hi _ _ _ _ _ _ HΓA (eqty_sym _ _ _ _ _ _ EX)) as EX1.
+  refine (conj HctxA (conj HctxAF (conj _ (conj EX1 (conj _ (conj _ _)))))).
+  - apply eqc_ext; [exact HctxAF | exact HD | exact ED | exact Hlpk].
+  - exact (wk1_eqty _ _ Hi _ _ _ _ _ _ HΓAFD (wk1_eqty _ _ Hi _ _ _ _ _ _ HΓAF EX1)).
+  - apply eqc_ext; [apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | exact HX | exact EX | exact Hlik]
+                   | exact (IWi_mot_wf Hi Hv HS) | exact (IWi_mot_eq Hi Hv HE) | exact (IWi_lvl_eq Hlk Hlpk Hlik)].
+  - apply eqc_ext; [exact HctxA | exact (IWi_cs_wf Hi Hv HS) | exact (IWi_cs_eq Hi Hv HE)
+                   | exact (IWi_lvl_eq Hlk Hlpk Hlik)].
+Qed.
+
+(** Two [IWi] signatures the algorithm relates are equal. *)
+Lemma iwi_ac_eq {G i Γ l lp li k kp ki X X' A A' N N' D D' Ot Ot' C C'} : compt i ->
+  lequiv (gL G) l k -> lequiv (gL G) lp kp -> lequiv (gL G) li ki ->
+  IWiSig (G := G) (i := i) Γ l lp li X A N D Ot C -> IWiSig (G := G) (i := i) Γ k kp ki X' A' N' D' Ot' C' ->
+  ac_ty G Γ X X' -> ac_ty G Γ A A' -> ac_tm G (Γ ,, A @ l) N N' tyNat ->
+  ac_ty G (Γ ,, A @ l ,, tyFin N @ lzero) D D' ->
+  ac_tm G (Γ ,, A @ l) Ot Ot' X⟨↑⟩ -> ac_tm G (Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp) C C' X⟨↑⟩⟨↑⟩⟨↑⟩ ->
+  IWiEq (G := G) (i := i) Γ l lp li k kp ki X X' A A' N N' D D' Ot Ot' C C'.
+Proof.
+  intros Hc E1 E2 E3 HS HS' DX DA DN DD DO DC.
+  pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
+  pose proof HS as (_ & _ & _ & HX & HA & HN & HD & HO & HC). pose proof HS' as (_ & _ & _ & HX' & HA' & _).
+  pose proof (ac_ty_sound Hc DX HX (wft_lconv _ _ _ _ _ _ HX' E3)) as EX.
+  pose proof (ac_ty_sound Hc DA HA (wft_lconv _ _ _ _ _ _ HA' E1)) as EA.
+  destruct (IWi_r_mv Hi Hv HS HS' E1 E2 E3 EX EA) as (_ & _ & HN'l & HO'l & HDC).
+  pose proof (ac_tm_sound Hc DN HN HN'l) as EN.
+  destruct (HDC EN) as (HD'l & HC'l).
+  pose proof (ac_ty_sound Hc DD HD HD'l) as ED.
+  exact (IWiEq_of_eqs Hi HS E1 E2 E3 EX EA EN ED (ac_tm_sound Hc DO HO HO'l) (ac_tm_sound Hc DC HC (HC'l ED))).
+Qed.
 (** The code of [IWf] (M17c): its signature's equation from the codes'
     derivations. *)
 Lemma iwfc_ac_eq {G i Γ l q k k' ki ki' x x' s s' n n' o o' c c' m m'} : compt i ->
