@@ -89,7 +89,7 @@ these docs by bare file name.
   (`DVecNthReds`, `GSubstitution`, `GRenRecBase`); with the clauses,
   85 s and 174 s CPU. Then Coq on an flambda OCaml (`flake.nix`; 8 to
   12% less time on `DVecNthReds`, `RecAdm` and `LevelRed`) took 80 s and
-  136 s, and clauses for 36 more section files (every sectioned file
+  136 s, and clauses for 35 more section files (every sectioned file
   with 0.8 s or more of `vos` time) 61 s and 108 s. What is left is a
   chain 80 files deep (each file costs at least 0.35 s to start).
   `tools/add_proof_using.py` fails on `UPermV` and `StaticCode`, which
