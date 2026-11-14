@@ -5,7 +5,7 @@ new container starts from the last build instead of from nothing.
   tools/tree-cache save    DIR [--kind vos|vo]   after `make vos` / `make`
   tools/tree-cache restore DIR [--kind vos|vo]   before the first `make`
 
-`save` writes DIR/delam-KIND-COQVERSION.tar.gz: every output of that kind
+`save` writes DIR/delam-KIND-COQVERSION-BINARY.tar.gz: every output of that kind
 under theories/ (`.vos`, or `.vo` with `.vos`/`.vok`/`.glob`/`.aux`) and a
 manifest of each source's SHA-256.
 
@@ -17,8 +17,9 @@ from a tree that is up to date except where the sources say otherwise.
 Coq checks each loaded file's digest itself, so a wrong restore fails
 loudly ("makes inconsistent assumptions"), it cannot pass silently.
 
-A cache made by another Coq version is never used (the version is in the
-file name). The cloud threads' shared folder is the intended DIR:
+A cache made by another Coq binary is never used: the file name holds the
+version and a hash of `coqc`'s resolved path (its nix store path), since
+two builds of one version write incompatible files. The cloud threads' shared folder is the intended DIR:
 `/mnt/project-files/build-cache/`.
 """
 import hashlib, json, os, subprocess, sys, tarfile, time
@@ -46,7 +47,10 @@ def outputs_of(v, exts):
 def archive(dirname, kind):
     ver = subprocess.run(['coqc', '-print-version'], capture_output=True,
                          text=True, check=True).stdout.split()[0]
-    return os.path.join(dirname, f'delam-{kind}-{ver}.tar.gz')
+    import shutil
+    exe = os.path.realpath(shutil.which('coqc'))
+    tag = hashlib.sha256(exe.encode()).hexdigest()[:8]
+    return os.path.join(dirname, f'delam-{kind}-{ver}-{tag}.tar.gz')
 
 
 def main():

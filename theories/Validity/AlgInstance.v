@@ -36,14 +36,14 @@ Local Notation DEL := (DeclEqLaws i Hi).
 (** A neutral pair at a type equal to [T] is neutral at its reduced type. *)
 Lemma ne_nee {G Γ t t' T0 T l} : ac_tmne G Γ t t' T0 -> [ G ; Γ ⊢[ i ] T ≅ T0 @ l ] ->
   exists W0, ac_tmnee G Γ t t' W0 /\ whnf_ty W0 /\ [ G ; Γ ⊢[ i ] T ≅ W0 @ l ].
-Proof.
+Proof using Hty.
   intros D ET. destruct (tgt_whnf Hi (eqty_wf_r Hty ET)) as (W0 & Hr & Hw & E0).
   exists W0. exact (conj (actmnee_red _ _ _ _ _ _ D Hr Hw) (conj Hw (eqty_trans _ _ _ _ _ _ _ ET E0))).
 Qed.
 
 (** Reduction reaches a whnf through every reduct. *)
 Lemma reds_whnf_mid t u z : reds t u -> reds t z -> whnf z -> reds u z.
-Proof.
+Proof using .
   intros H; induction H as [t | t v u Htv Hvu IH]; intros Hz Hw; [exact Hz |].
   inversion Hz; subst.
   - destruct (whnf_no_red _ _ Hw Htv).
@@ -53,19 +53,19 @@ Qed.
 
 (** The left side of a term derivation may take reduction steps. *)
 Lemma ac_tm_red_l {G Γ u v u' T} : ac_tm G Γ u u' T -> reds u v -> ac_tm G Γ v u' T.
-Proof.
+Proof using .
   intros D Hr. destruct (ainv_tm D) as (W & w & w' & HrT & HwT & Hr1 & Hr2 & Hw & Hw' & D').
   exact (actm_red _ _ _ _ _ _ _ _ HrT HwT (reds_whnf_mid _ _ _ Hr Hr1 Hw) Hr2 Hw Hw' D').
 Qed.
 Lemma ac_tm_red_r {G Γ u u' v' T} : ac_tm G Γ u u' T -> reds u' v' -> ac_tm G Γ u v' T.
-Proof.
+Proof using .
   intros D Hr. destruct (ainv_tm D) as (W & w & w' & HrT & HwT & Hr1 & Hr2 & Hw & Hw' & D').
   exact (actm_red _ _ _ _ _ _ _ _ HrT HwT Hr1 (reds_whnf_mid _ _ _ Hr Hr2 Hw') Hw Hw' D').
 Qed.
 
 (** Normalization of a typed term. *)
 Lemma tgt_whnf_tm {G Γ t T k} : [ G ; Γ ⊢[ i ] t : T @ k ] -> exists w, reds t w /\ whnf w.
-Proof.
+Proof using Hi.
   intros Ht. destruct Hi as [-> | ->].
   - exact (decl_whnf_normalization_tm Ht).
   - exact (declM_whnf_normalization_tm Ht).
@@ -75,7 +75,7 @@ Qed.
 
 Lemma alg_ctx_ext {G Γ A A' la la'} : [ G ; Γ ⊢[ i ] A ≅ A' @ la ] -> lequiv (gL G) la la' ->
   [ G ⊢[ i ] Γ ,, A @ la ≅ Γ ,, A' @ la' ] /\ [ ⊢ G ].
-Proof.
+Proof using Hty.
   intros EA Hl. pose proof (ctx_of_eqty Hty EA) as HΓ.
   split; [apply eqc_ext; [exact (eqc_refl _ _ _ HΓ) | exact (eqty_wf_l Hty EA) | exact EA | exact Hl]
          | exact (ctx_glob _ _ _ HΓ)].
@@ -83,7 +83,7 @@ Qed.
 
 Lemma alg_tyne_ctxconv {G Γ A A' la la' V V' l} : [ G ; Γ ⊢[ i ] A ≅ A' @ la ] -> lequiv (gL G) la la' ->
   [ G ; Γ ,, A' @ la' ⊢[ i ] ] -> alg_ne_ty G (Γ ,, A @ la) V V' l -> alg_ne_ty G (Γ ,, A' @ la') V V' l.
-Proof.
+Proof using Hty.
   intros EA Hl HΓ' ((Hn & Hn' & E) & D). destruct (alg_ctx_ext EA Hl) as [Hctx HG].
   refine (conj (conj Hn (conj Hn' (stab_eqty Hty EA Hl HΓ' E))) _).
   exact (proj1 (proj2 (proj2 ac_conv_all)) _ _ _ _ D i G _ l l Hi (GEq_refl _ HG) Hctx
@@ -92,7 +92,7 @@ Qed.
 
 Lemma alg_ty_ctxconv {G Γ A A' la la' T T' l} : [ G ; Γ ⊢[ i ] A ≅ A' @ la ] -> lequiv (gL G) la la' ->
   [ G ; Γ ,, A' @ la' ⊢[ i ] ] -> alg_eq_ty G (Γ ,, A @ la) T T' l -> alg_eq_ty G (Γ ,, A' @ la') T T' l.
-Proof.
+Proof using Hty.
   intros EA Hl HΓ' (E & D). destruct (alg_ctx_ext EA Hl) as [Hctx HG].
   refine (conj (stab_eqty Hty EA Hl HΓ' E) _).
   exact (proj1 ac_conv_all _ _ _ _ D i G _ l l Hi (GEq_refl _ HG) Hctx (eqty_wf_l Hty E) (eqty_wf_r Hty E)).
@@ -100,7 +100,7 @@ Qed.
 
 Lemma alg_tmne_ctxconv {G Γ A A' la la' t t' T l} : [ G ; Γ ⊢[ i ] A ≅ A' @ la ] -> lequiv (gL G) la la' ->
   [ G ; Γ ,, A' @ la' ⊢[ i ] ] -> alg_ne_tm G (Γ ,, A @ la) t t' T l -> alg_ne_tm G (Γ ,, A' @ la') t t' T l.
-Proof.
+Proof using Hty.
   intros EA Hl HΓ' ((Hn & Hn' & E) & T0 & D & ET). destruct (alg_ctx_ext EA Hl) as [Hctx HG].
   refine (conj (conj Hn (conj Hn' (stab_eqtm Hty EA Hl HΓ' E))) _).
   destruct (proj1 (proj2 (proj2 (proj2 (proj2 (proj2 (proj2 ac_conv_all)))))) _ _ _ _ _ D i G _ l l T T Hi
@@ -111,7 +111,7 @@ Qed.
 
 Lemma alg_tm_ctxconv {G Γ A A' la la' t t' T l} : [ G ; Γ ⊢[ i ] A ≅ A' @ la ] -> lequiv (gL G) la la' ->
   [ G ; Γ ,, A' @ la' ⊢[ i ] ] -> alg_eq_tm G (Γ ,, A @ la) t t' T l -> alg_eq_tm G (Γ ,, A' @ la') t t' T l.
-Proof.
+Proof using Hty.
   intros EA Hl HΓ' (E & D). destruct (alg_ctx_ext EA Hl) as [Hctx HG].
   refine (conj (stab_eqtm Hty EA Hl HΓ' E) _).
   exact (proj1 (proj2 (proj2 (proj2 (proj2 ac_conv_all)))) _ _ _ _ _ D i G _ T l Hi (GEq_refl _ HG) Hctx
@@ -121,7 +121,7 @@ Qed.
 Lemma alg_tm_ctxconv2 {G Γ A A' la la' B lb t t' T l} : [ G ; Γ ⊢[ i ] A ≅ A' @ la ] ->
   lequiv (gL G) la la' -> [ G ; Γ ,, A' @ la' ,, B @ lb ⊢[ i ] ] ->
   alg_eq_tm G (Γ ,, A @ la ,, B @ lb) t t' T l -> alg_eq_tm G (Γ ,, A' @ la' ,, B @ lb) t t' T l.
-Proof.
+Proof using Hty.
   intros EA Hl HΓ' (E & D). destruct (alg_ctx_ext EA Hl) as [Hctx HG].
   destruct (stab2_B Hty EA Hl HΓ') as [HB Hlb].
   assert (Hctx2 : [ G ⊢[ i ] Γ ,, A @ la ,, B @ lb ≅ Γ ,, A' @ la' ,, B @ lb ])
@@ -132,14 +132,14 @@ Proof.
 Qed.
 
 Lemma alg_ty_ctxeq {G Γ Γ' T T' l} : [ G ⊢[ i ] Γ ≅ Γ' ] -> alg_eq_ty G Γ T T' l -> alg_eq_ty G Γ' T T' l.
-Proof.
+Proof using Hty.
   intros Hctx (E & D). pose proof (eqc_lsub_id Hty Hctx) as Hid. pose proof (ctx_glob _ _ _ (ctx_of_eqty Hty E)) as HG.
   refine (conj (mv_eqty Hty Hid E) _).
   exact (proj1 ac_conv_all _ _ _ _ D i G _ l l Hi (GEq_refl _ HG) Hctx (eqty_wf_l Hty E) (eqty_wf_r Hty E)).
 Qed.
 
 Lemma alg_tm_ctxeq {G Γ Γ' t t' T l} : [ G ⊢[ i ] Γ ≅ Γ' ] -> alg_eq_tm G Γ t t' T l -> alg_eq_tm G Γ' t t' T l.
-Proof.
+Proof using Hty.
   intros Hctx (E & D). pose proof (eqc_lsub_id Hty Hctx) as Hid. pose proof (ctx_glob _ _ _ (ctx_of_eqtm Hty E)) as HG.
   refine (conj (mv_eqtm Hty Hid E) _).
   exact (proj1 (proj2 (proj2 (proj2 (proj2 ac_conv_all)))) _ _ _ _ _ D i G _ T l Hi (GEq_refl _ HG) Hctx
@@ -151,7 +151,7 @@ Lemma alg_funext {G Γ l l' A B t t'} : [ G ; Γ ⊢[ i ] t : tyPi l l' A B @ lm
   [ G ; Γ ⊢[ i ] t' : tyPi l l' A B @ lmax l l' ] ->
   ac_tm G (Γ ,, A @ l) (app t⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0)) (app t'⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0)) B ->
   ac_tm G Γ t t' (tyPi l l' A B).
-Proof.
+Proof using Hi.
   intros Ht Ht' D. destruct (tgt_whnf_tm Ht) as (w & Hr & Hw). destruct (tgt_whnf_tm Ht') as (w' & Hr' & Hw').
   eapply actm_red; [constructor | exact (whnf_tyPi _ _ _ _) | exact Hr | exact Hr' | exact Hw | exact Hw' |].
   apply actmnf_eta.
@@ -164,7 +164,7 @@ Lemma alg_natrec {G Γ l l' M M' s s' z z' ν ν' T0} : leqv l l' ->
   ac_tmne G Γ ν ν' T0 -> [ G ; Γ ⊢[ i ] tyNat ≅ T0 @ lzero ] ->
   [ G ; Γ ⊢[ i ] natrec l M s z ν : M[lsingle ν] @ l ] ->
   exists T1, ac_tmne G Γ (natrec l M s z ν) (natrec l' M' s' z' ν') T1 /\ [ G ; Γ ⊢[ i ] M[lsingle ν] ≅ T1 @ l ].
-Proof.
+Proof using Hty.
   intros Hl DM Ds Dz Dν ET Hx. destruct (ne_nee Dν ET) as (W0 & Xν & _).
   exists M[lsingle ν]. split; [exact (actmne_natrec _ _ _ _ _ _ _ _ _ _ _ _ _ Hl DM Ds Dz Xν) |].
   exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty Hx)).
@@ -175,7 +175,7 @@ Lemma alg_app {G Γ l1 l2 l3 l4 A A' B B' ν ν' s s' T0} :
   [ G ; Γ ⊢[ i ] s : A @ l1 ] -> [ G ; Γ ⊢[ i ] s' : A @ l1 ] -> ac_tm G Γ s s' A ->
   exists T1, ac_tmne G Γ (app ν l1 l2 A B s) (app ν' l3 l4 A' B' s') T1 /\
     [ G ; Γ ⊢[ i ] B[lsingle s] ≅ T1 @ l2 ].
-Proof.
+Proof using Hty.
   intros ET Dν Hs Hs' Ds. destruct (ne_nee Dν ET) as (W0 & Xν & Hw0 & EW).
   destruct (head_pi W0 (eq_sym (decl_head_c Hi EW (whnf_tyPi _ _ _ _) Hw0))) as (m & m' & A0 & B0 & ->).
   destruct (pi_inj_c Hi EW) as (_ & _ & EA0 & EB0).
@@ -193,7 +193,7 @@ Lemma alg_sig_ext {G Γ l l' A B t t'} : lwf (gL G) l -> lwf (gL G) l' ->
   ac_tm G Γ (tmFst l l' A B t) (tmFst l l' A B t') A ->
   ac_tm G Γ (tmSnd l l' A B t) (tmSnd l l' A B t') B[lsingle (tmFst l l' A B t)] ->
   ac_tm G Γ t t' (tySig l l' A B).
-Proof.
+Proof using Hty Hv.
   intros W1 W2 HA HB Ht Ht' D1 D2.
   destruct (tgt_whnf_tm Ht) as (w & Hr & Hw). destruct (tgt_whnf_tm Ht') as (w' & Hr' & Hw').
   pose proof (red_tm_sound Hi Ht Hr Hw) as Ew. pose proof (red_tm_sound Hi Ht' Hr' Hw') as Ew'.
@@ -225,7 +225,7 @@ Qed.
 Lemma alg_fst {G Γ l1 l2 l3 l4 A A' B B' ν ν' T0} :
   [ G ; Γ ⊢[ i ] tySig l1 l2 A B ≅ T0 @ lmax l1 l2 ] -> ac_tmne G Γ ν ν' T0 ->
   exists T1, ac_tmne G Γ (tmFst l1 l2 A B ν) (tmFst l3 l4 A' B' ν') T1 /\ [ G ; Γ ⊢[ i ] A ≅ T1 @ l1 ].
-Proof.
+Proof using Hty.
   intros ET Dν. destruct (ne_nee Dν ET) as (W0 & Xν & Hw0 & EW).
   destruct (head_sig W0 (eq_sym (decl_head_c Hi EW (whnf_tySig _ _ _ _) Hw0))) as (m & m' & A0 & B0 & ->).
   destruct (sig_inj_c Hi EW) as (_ & _ & EA0 & _).
@@ -237,7 +237,7 @@ Lemma alg_snd {G Γ l1 l2 l3 l4 A A' B B' ν ν' T0} :
   [ G ; Γ ⊢[ i ] ν : tySig l1 l2 A B @ lmax l1 l2 ] ->
   exists T1, ac_tmne G Γ (tmSnd l1 l2 A B ν) (tmSnd l3 l4 A' B' ν') T1 /\
     [ G ; Γ ⊢[ i ] B[lsingle (tmFst l1 l2 A B ν)] ≅ T1 @ l2 ].
-Proof.
+Proof using Hty Hv.
   intros ET Dν Hν. destruct (ne_nee Dν ET) as (W0 & Xν & Hw0 & EW).
   destruct (head_sig W0 (eq_sym (decl_head_c Hi EW (whnf_tySig _ _ _ _) Hw0))) as (m & m' & A0 & B0 & ->).
   destruct (sig_inj_c Hi EW) as (Em1 & Em2 & EA0 & EB0).
@@ -251,7 +251,7 @@ Qed.
 
 (** The substitutions of global variables. *)
 Lemma alg_lsub {G Γ d d' Δ} : @geq_lsub AlgEq G Γ d d' Δ -> @geq_lsub DE G Γ d d' Δ /\ ac_sub G Γ d d' Δ.
-Proof.
+Proof using .
   intros [HΓ Ht Hd Ht' Hd' Hw Hw' He]. split.
   - constructor; auto. intros n A k Hin. exact (proj1 (He n A k Hin)).
   - apply acs_pt. intros n A k Hin. exact (proj2 (He n A k Hin)).
@@ -260,7 +260,7 @@ Qed.
 (** ** The laws *)
 
 Lemma AlgEqLaws : @GenericEqLaws AlgEq.
-Proof.
+Proof using .
   constructor; cbn; unfold alg_ne_ty, alg_eq_ty, alg_ne_tm, alg_eq_tm, decl_ne_ty, decl_ne_tm.
   (* neutral forms *)
   5-8: intros * ((Hn & Hn' & _) & _); assumption.

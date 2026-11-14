@@ -1970,9 +1970,9 @@ Qed.
     substitution by a shift, which [rr_sh] turns back into the weakenings
     the calls are typed at. *)
 Lemma subst_lshift2_ty (T : ty) : T[lshift 2] = T⟨↑⟩⟨↑⟩.
-Proof. rewrite <- subst_lshift1_ty, <- subst_lshift1_ty. rewrite subst_comp_ty. reflexivity. Qed.
+Proof using . rewrite <- subst_lshift1_ty, <- subst_lshift1_ty. rewrite subst_comp_ty. reflexivity. Qed.
 Lemma subst_lshift2 (t : tm) : t[lshift 2] = t⟨↑⟩⟨↑⟩.
-Proof. rewrite <- subst_lshift1, <- subst_lshift1. rewrite subst_comp. reflexivity. Qed.
+Proof using . rewrite <- subst_lshift1, <- subst_lshift1. rewrite subst_comp. reflexivity. Qed.
 Ltac rr_sh := rewrite ?subst_lshift2_ty, ?subst_lshift2, ?subst_lshift1_ty, ?subst_lshift1.
 (** [supi]'s and [elim_IWf]'s scopes: [rr_ctx_W]'s, with the children's tuple type pushed
     through the substitutions as [gs_norm] does (RecSBase), so that

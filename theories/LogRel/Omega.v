@@ -44,26 +44,26 @@ Inductive LRω (G : gctx) (Γ : ctx) (T T' : ty) (R : tm -> tm -> Prop) : Prop :
 (** ** Helpers *)
 
 Lemma kty_tyUPi {G Γ} (ρ : kwk G Γ) n l A : kty ρ (tyUPi n l A) = tyUPi n l (kty ρ A).
-Proof. unfold kty; destruct (kw_γ ρ); reflexivity. Qed.
+Proof using . unfold kty; destruct (kw_γ ρ); reflexivity. Qed.
 Lemma ktm_uapp {G Γ} (ρ : kwk G Γ) t ls : ktm ρ (uapp t ls) = uapp (ktm ρ t) ls.
-Proof. unfold ktm; destruct (kw_γ ρ); reflexivity. Qed.
+Proof using . unfold ktm; destruct (kw_γ ρ); reflexivity. Qed.
 
 Lemma upi_agree {G Γ T n l A n' l' A' k k'} :
   [ G ; Γ ⊢g T ⤳* tyUPi n l A @ k ] -> [ G ; Γ ⊢g T ⤳* tyUPi n' l' A' @ k' ] ->
   n' = n /\ l' = l /\ A' = A.
-Proof.
+Proof using .
   intros H1 H2. assert (Eq : tyUPi n l A = tyUPi n' l' A')
     by (eapply tyred_whnf_det; [exact H1 | exact H2 | constructor | constructor]).
   injection Eq; auto.
 Qed.
 
 Lemma lequivs_sym L ls ls' : Forall2 (lequiv L) ls ls' -> Forall2 (lequiv L) ls' ls.
-Proof. induction 1; constructor; auto using lequiv_sym. Qed.
+Proof using . induction 1; constructor; auto using lequiv_sym. Qed.
 
 (** The instance levels of equivalent levels at equivalent level lists. *)
 Lemma lequiv_ilv {L L' n l l' ls ls'} : L <= L' -> lequiv (n + L) l l' -> length ls = n ->
   Forall2 (lequiv L') ls ls' -> lequiv L' (lvsubst l (uext ls lvar)) (lvsubst l' (uext ls' lvar)).
-Proof.
+Proof using .
   intros HL Hl Hn Hls. subst n.
   eapply lequiv_trans.
   - eapply lequiv_lvsubst; [exact (usub_ok_uext _ _ _ _ (lequivs_lwf_l _ _ _ Hls) (usub_ok_id _)) |].
@@ -74,21 +74,21 @@ Qed.
 (** A relation at one stage, moved to an equivalent level. *)
 Lemma LogRel_move {l0 l1 G Γ T T' R} : lequiv (gL G) l1 l0 ->
   LogRel l0 G Γ T T' l0 R -> LogRel l1 G Γ T T' l1 R.
-Proof.
+Proof using EL.
   intros El H. unfold LogRel in *. rewrite (lequiv_measure _ _ _ El).
   exact (LR_lconv _ _ _ _ _ _ _ _ _ H El).
 Qed.
 
 Lemma tyred_eqω {G Γ T W} : [ G ; Γ ⊢g T ⤳* W @ lomega ] -> [ G ; Γ ⊢g T ≅ W @ lomega ].
-Proof. now intros []. Qed.
+Proof using . now intros []. Qed.
 
 Lemma tmred_convω {G Γ t w T T'} : [ G ; Γ ⊢g t ⤳* w : T @ lomega ] -> [ G ; Γ ⊢g T ≅ T' @ lomega ] ->
   [ G ; Γ ⊢g t ⤳* w : T' @ lomega ].
-Proof. intros H Heq. eapply tmred_conv; [apply ge_typeof | exact H | exact Heq]. Qed.
+Proof using . intros H Heq. eapply tmred_conv; [apply ge_typeof | exact H | exact Heq]. Qed.
 
 Lemma wf_convω {G Γ t T T'} : [ G ; Γ ⊢g t : T @ lomega ] -> [ G ; Γ ⊢g T' ≅ T @ lomega ] ->
   [ G ; Γ ⊢g t : T' @ lomega ].
-Proof. intros H Heq. eapply wf_conv; [exact H | now rewrite ge_typeof]. Qed.
+Proof using . intros H Heq. eapply wf_conv; [exact H | now rewrite ge_typeof]. Qed.
 
 (** ** Irrelevance *)
 
@@ -97,7 +97,7 @@ Lemma UPiRel_dir {G Γ n l l' k' A A' B'} {iR iR' : UInstRel G Γ}
   (Hi : forall ρ ls ls', length ls = n -> Forall2 (lequiv (gL (kw_G ρ))) ls ls' ->
           releq (iR ρ ls ls') (iR' ρ ls ls')) t t' :
   UPiRel G Γ n l l' A A' iR t t' -> UPiRel G Γ n l k' A B' iR' t t'.
-Proof.
+Proof using EL.
   intros (w & w' & Hw & Hw' & Hnf & Hnf' & E1 & E2 & HK).
   exists w, w'. refine (conj Hw (conj (tmred_convω Hw' HP) (conj Hnf (conj Hnf' (conj E1 (conj _ _)))))).
   - eapply geq_tm_conv; [exact E2 | exact HP].
@@ -105,13 +105,13 @@ Proof.
 Qed.
 
 Lemma LRω_releq {G Γ T T' R R'} : LRω G Γ T T' R -> releq R R' -> LRω G Γ T T' R'.
-Proof.
+Proof using .
   intros [n l l' A A' iR Hn Hl HT HT' HTT HI HR] Hrq.
   apply (LRupi _ _ _ _ _ n l l' A A' iR); auto. eapply releq_trans; [apply releq_sym, Hrq | exact HR].
 Qed.
 
 Theorem LRω_irrel {G Γ T T' T'' R R'} : LRω G Γ T T' R -> LRω G Γ T T'' R' -> releq R R'.
-Proof.
+Proof using EL VL.
   intros [n l l' A A' iR Hn Hl HT HT' HTT HI HR] [n2 k k' B B' iR' Hn2 Hk HT2 HT2' HTT2 HI2 HR2].
   destruct (upi_agree HT HT2) as (-> & -> & ->).
   assert (Hi : forall ρ ls ls', length ls = n -> Forall2 (lequiv (gL (kw_G ρ))) ls ls' ->
@@ -130,7 +130,7 @@ Qed.
 Lemma UPiRel_flip {G Γ n l l' A A'} {iR : UInstRel G Γ} t t' :
   UPiRel G Γ n l l' A A' iR t t' ->
   UPiRel G Γ n l' l A' A (fun ρ ls ls' => flipR (iR ρ ls' ls)) t' t.
-Proof.
+Proof using EL.
   intros (w & w' & Hw & Hw' & Hnf & Hnf' & E1 & E2 & HK).
   exists w', w. refine (conj Hw' (conj Hw (conj Hnf' (conj Hnf (conj _ (conj _ _)))))).
   - apply geq_tm_sym, E2.
@@ -140,7 +140,7 @@ Proof.
 Qed.
 
 Theorem LRω_sym {G Γ T T' R} : LRω G Γ T T' R -> LRω G Γ T' T (flipR R).
-Proof.
+Proof using EL VL.
   intros [n l l' A A' iR Hn Hl HT HT' HTT HI HR].
   apply (LRupi _ _ _ _ _ n l' l A' A (fun ρ ls ls' => flipR (iR ρ ls' ls))).
   - exact Hn.
@@ -162,7 +162,7 @@ Qed.
 
 Theorem LRω_trans {G Γ T1 T2 T3 R12 R23} : LRω G Γ T1 T2 R12 -> LRω G Γ T2 T3 R23 ->
   LRω G Γ T1 T3 R12 /\ (forall t1 t2 t3, R12 t1 t2 -> R23 t2 t3 -> R12 t1 t3).
-Proof.
+Proof using EL VL.
   intros [n l l' A A' iR Hn Hl HT HT' HTT HI HR] [n2 k k' B B' iR2 Hn2 Hk HT2 HT2' HTT2 HI2 HR2].
   destruct (upi_agree HT' HT2) as (-> & -> & ->).
   (* the instances compose *)
@@ -206,18 +206,18 @@ Proof.
 Qed.
 
 Corollary LRω_refl_l {G Γ T T' R} : LRω G Γ T T' R -> LRω G Γ T T R.
-Proof. intros H. exact (proj1 (LRω_trans H (LRω_sym H))). Qed.
+Proof using EL VL. intros H. exact (proj1 (LRω_trans H (LRω_sym H))). Qed.
 Corollary LRω_refl_r {G Γ T T' R} : LRω G Γ T T' R -> LRω G Γ T' T' (flipR R).
-Proof. intros H. exact (LRω_refl_l (LRω_sym H)). Qed.
+Proof using EL VL. intros H. exact (LRω_refl_l (LRω_sym H)). Qed.
 Corollary LRω_tm_refl_l {G Γ T T' R t t'} : LRω G Γ T T' R -> R t t' -> R t t.
-Proof. intros H Ht. exact (proj2 (LRω_trans H (LRω_sym H)) t t' t Ht Ht). Qed.
+Proof using EL VL. intros H Ht. exact (proj2 (LRω_trans H (LRω_sym H)) t t' t Ht Ht). Qed.
 
 (** ** Kripke weakening *)
 
 Theorem LRω_kwk {G Γ T T' R} : LRω G Γ T T' R -> forall ρ : kwk G Γ,
   exists R', LRω (kw_G ρ) (kw_Δ ρ) (kty ρ T) (kty ρ T') R' /\
     forall t t', R t t' -> R' (ktm ρ t) (ktm ρ t').
-Proof.
+Proof using EL.
   intros [n l l' A A' iR Hn Hl HT HT' HTT HI HR] ρ.
   set (iR' := fun (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) ls ls' => iR (kw_comp ρ ρ') ls ls').
   exists (UPiRel (kw_G ρ) (kw_Δ ρ) n l l' (kty ρ A) (kty ρ A') iR'). split.
@@ -243,14 +243,14 @@ Qed.
 
 Theorem LRω_red_ty {G Γ T T' R T1 T1'} : LRω G Γ T T' R ->
   [ G ; Γ ⊢g T1 ⤳* T @ lomega ] -> [ G ; Γ ⊢g T1' ⤳* T' @ lomega ] -> LRω G Γ T1 T1' R.
-Proof.
+Proof using .
   intros [n l l' A A' iR Hn Hl HT HT' HTT HI HR] H1 H1'.
   apply (LRupi _ _ _ _ _ n l l' A A' iR); eauto using tyred_trans.
 Qed.
 
 Theorem LRω_red_tm {G Γ T T' R} : LRω G Γ T T' R -> forall t t' t1 t1', R t t' ->
   [ G ; Γ ⊢g t1 ⤳* t : T @ lomega ] -> [ G ; Γ ⊢g t1' ⤳* t' : T' @ lomega ] -> R t1 t1'.
-Proof.
+Proof using .
   intros [n l l' A A' iR Hn Hl HT HT' HTT HI HR] t t' t1 t1' Htt H1 H1'.
   apply HR in Htt. apply HR. destruct Htt as (w & w' & Hw & Hw' & Hrest).
   exists w, w'. refine (conj _ (conj _ Hrest)).
@@ -262,7 +262,7 @@ Qed.
 
 Theorem LRω_escape_ty {G Γ T T' R} : LRω G Γ T T' R ->
   [ G ; Γ ⊢g T @ lomega ] /\ [ G ; Γ ⊢g T' @ lomega ] /\ [ G ; Γ ⊢ T ≈ T' @ lomega ].
-Proof.
+Proof using EL.
   intros [n l l' A A' iR Hn Hl HT HT' HTT HI HR].
   refine (conj (tyred_wf _ _ _ _ _ _ HT) (conj (tyred_wf _ _ _ _ _ _ HT') _)).
   eapply geq_ty_exp; [exact HT | exact HT' | exact HTT].
@@ -270,7 +270,7 @@ Qed.
 
 Theorem LRω_escape_tm {G Γ T T' R} : LRω G Γ T T' R -> forall t t', R t t' ->
   [ G ; Γ ⊢g t : T @ lomega ] /\ [ G ; Γ ⊢g t' : T @ lomega ] /\ [ G ; Γ ⊢ t ≈ t' : T @ lomega ].
-Proof.
+Proof using EL.
   intros [n l l' A A' iR Hn Hl HT HT' HTT HI HR] t t' Htt.
   apply HR in Htt. destruct Htt as (w & w' & Hw & Hw' & Hnf & Hnf' & E1 & E2 & HK).
   pose proof (tyred_eqω HT) as ET.
@@ -287,11 +287,11 @@ Qed.
 
 Lemma ty_leq_upi_inv {n l A W} : ty_leq (tyUPi n l A) W ->
   exists k C, W = tyUPi n k C /\ leqv l k /\ ty_leq A C.
-Proof. destruct W; cbn; try contradiction. intros (-> & ? & ?). do 2 eexists; eauto. Qed.
+Proof using . destruct W; cbn; try contradiction. intros (-> & ? & ?). do 2 eexists; eauto. Qed.
 
 Theorem LRω_leq {G Γ T1 T2 T3 R R3} : LRω G Γ T1 T2 R -> LRω G Γ T3 T3 R3 -> ty_leq T2 T3 ->
   LRω G Γ T1 T3 R /\ (forall t1 t2 t3, R t1 t2 -> R3 t3 t3 -> tm_leq t2 t3 -> R t1 t3).
-Proof.
+Proof using EL VL.
   intros [n l l' A A' iR Hn Hl HT HT' HTT HI HR] [n3 k k' C C' iR3 Hn3 Hk HT3 HT3' HTT3 HI3 HR3] ET.
   destruct (upi_agree HT3 HT3') as (_ & -> & ->).
   pose proof (reds_ty_whnf_leq _ _ _ _ ET (tyred_red _ _ _ _ _ _ HT') (tyred_red _ _ _ _ _ _ HT3)

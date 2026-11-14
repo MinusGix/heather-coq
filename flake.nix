@@ -7,8 +7,17 @@
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
+      # Coq on an OCaml with flambda: Coq's build then compiles itself at
+      # -O3. Measured 2026-11-14, same Coq and OCaml versions: 8 to 12%
+      # less time on three heavy files, 14% less CPU for `make vos`.
+      ocamlPackages = pkgs.ocaml-ng.ocamlPackages_4_14.overrideScope (_: prev: {
+        ocaml = prev.ocaml.override { flambdaSupport = true; };
+      });
       coqPackages = pkgs.coqPackages_8_20.overrideScope (_: prev: {
-        coq = prev.coq.override { version = "8.20.0"; };
+        coq = prev.coq.override {
+          version = "8.20.0";
+          customOCamlPackages = ocamlPackages;
+        };
       });
       # smpl is not packaged in nixpkgs for Coq 8.20.
       smpl = coqPackages.mkCoqDerivation {

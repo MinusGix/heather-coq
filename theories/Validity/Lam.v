@@ -6,7 +6,7 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 
 Lemma subst_lift_ren_single_tm (b : tm) d (ρ : rsub) a :
   b[llift d]⟨rlift ρ⟩[lsingle a] = b[lcons (lren d ρ) a].
-Proof.
+Proof using .
   rewrite subst_ren_lren, (subst_subst _ _ _ (lcons (lren d ρ) a)); [reflexivity|].
   intros [|n]; rewrite llk_lren, llk_llift; cbn; [reflexivity|].
   change (ren_tm ?x ?r) with x⟨r⟩. rewrite shift_lift, shift_single by apply ren_nf.
@@ -15,7 +15,7 @@ Qed.
 
 Lemma ktml_subst_single {G Δ} (ρ : kwk G Δ) (b : tm) d a :
   (ktml ρ b[llift d])[lsingle a] = b⟦kw_γ ρ⟧[lcons (kwsub ρ d) a].
-Proof.
+Proof using .
   unfold ktml. rewrite gwa_subst.
   rewrite (subst_ext _ (llift d)⟦kw_γ ρ⟧ (llift d⟦kw_γ ρ⟧)).
   - apply subst_lift_ren_single_tm.
@@ -33,7 +33,7 @@ Context {G : gctx} {Γ : ctx} {l l' l3 l4 : lvl} {A A' B : ty} {t t' : tm}
   (Vt : VTmG G (Γ ,, A @ l) t t' B l').
 
 Lemma V_lam : VTm G Γ (lam l l' A t) (lam l3 l4 A' t') (tyPi l l' A B) (lmax l l').
-Proof.
+Proof using EL H3 H4 HB Ht Hwl Hwl' VA VB VL VN Vt.
   intros Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ.
   pose proof (LR_pi_here Hwl Hwl' (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') HB
                 (VTyG_refl_l VA) VB _ _ _ Hd) as HP.

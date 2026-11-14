@@ -27,7 +27,7 @@ Section S.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 Lemma ktmll_subst_single2 {G Δ} (ρ : kwk G Δ) (c : tm) d a p :
   (ktmll ρ c[llift (llift d)])[lsingle2 a p] = c⟦kw_γ ρ⟧[lcons (lcons (kwsub ρ d) a) p].
-Proof.
+Proof using .
   unfold ktmll. rewrite gwa_subst.
   rewrite (subst_ext _ (llift (llift d))⟦kw_γ ρ⟧ (llift (llift d⟦kw_γ ρ⟧))).
   - apply subst_lift2_ren_single2.
@@ -38,10 +38,10 @@ Proof.
 Qed.
 
 Lemma shift_cons_ty (T : ty) d a : T⟨↑⟩[lcons d a] = T[d].
-Proof. apply ren_subst_ty; intros n; now rewrite rlk_shift1. Qed.
+Proof using . apply ren_subst_ty; intros n; now rewrite rlk_shift1. Qed.
 
 Lemma lift2shift_lift (C : tm) r : C⟨rlift (rlift ↑)⟩⟨rlift (rlift (rlift r))⟩ = C⟨rlift (rlift r)⟩⟨rlift (rlift ↑)⟩.
-Proof.
+Proof using .
   rewrite !ren_ren_comp. apply ren_ext_tm; intros [|[|n]]; rlk_simpl; auto;
     destruct n; rlk_simpl; auto; lia.
 Qed.
@@ -50,7 +50,7 @@ Qed.
 Lemma ktyl_iwfFamT {G Δ} (ρ : kwk G Δ) l li X A N Ot C c :
   ktyl ρ (iwfFamT l li X A N Ot C c) =
   iwfFamT l li (kty ρ X) (kty ρ A) (ktml ρ N) (ktml ρ Ot) (ktmll ρ C) (ktml ρ c).
-Proof.
+Proof using .
   unfold iwfFamT, ktyl, kty, ktml, ktmll. rewrite gwa_tyIWf, !gwa_ren_ty, !gwa_ren. cbn.
   now rewrite shift_lift_ty, shift_lift_ty, liftshift_lift, liftshift_lift, lift2shift_lift.
 Qed.
@@ -58,7 +58,7 @@ Qed.
 (** Related positions are related at [Fin]. *)
 Lemma PosRel_LRtm {G Δ k k' p p'} : PosRel G Δ k k' p p' -> NatRel G Δ k k' ->
   LRtm lzero G Δ (tyFin k) (tyFin k') p p'.
-Proof.
+Proof using EL VL VN.
   induction 1 as [k k' m m' Hk Hk' Hmm | k k' m m' p p' Hk Hk' _ IH | k k' p p' Ek Hp]; intros Hkk.
   - destruct (NatRel_escape Hmm) as (Hm & _ & _).
     pose proof (LRtm_fin_inl (LR_fin_nat (ctx_of_tm Hm) Hmm)) as X.
@@ -86,9 +86,9 @@ Context {G : gctx} {Γ : ctx} {l li l' li' : lvl} {X X' A A' : ty} {N N' Ot Ot' 
 
 Let K := lmeasure (lmax l li).
 Lemma K_l : lmeasure l <= K.
-Proof. unfold K; rewrite lmeasure_max; lia. Qed.
+Proof using li. unfold K; rewrite lmeasure_max; lia. Qed.
 Lemma K_li : lmeasure li <= K.
-Proof. unfold K; rewrite lmeasure_max; lia. Qed.
+Proof using l. unfold K; rewrite lmeasure_max; lia. Qed.
 
 (** The index type's and the shapes' relations, in every world. *)
 Definition iwfIdx Δ d d' : DomRel G Δ :=
@@ -98,13 +98,13 @@ Definition iwfDom Δ d d' : DomRel G Δ :=
 
 Lemma iwfIdx_canon {Δ d d'} : SubRel G Γ Δ d d' ->
   forall ρ : kwk G Δ, LR K (LRbelow K) (kw_G ρ) (kw_Δ ρ) (kty ρ X[d]) (kty ρ X'[d']) li (iwfIdx Δ d d' ρ).
-Proof.
+Proof using EL VL VX.
   intros Hd ρ. destruct (VTyG_kw ρ VX Hd) as [R HR].
   exact (LR_canon _ _ _ _ _ _ _ (LogRel_up K_li HR)).
 Qed.
 Lemma iwfDom_canon {Δ d d'} : SubRel G Γ Δ d d' ->
   forall ρ : kwk G Δ, LR K (LRbelow K) (kw_G ρ) (kw_Δ ρ) (kty ρ A[d]) (kty ρ A'[d']) l (iwfDom Δ d d' ρ).
-Proof.
+Proof using EL VA VL.
   intros Hd ρ. destruct (VTyG_kw ρ VA Hd) as [R HR].
   exact (LR_canon _ _ _ _ _ _ _ (LogRel_up K_l HR)).
 Qed.
@@ -112,7 +112,7 @@ Qed.
 (** A term related at the left index type, related by the index relation. *)
 Lemma iwfIdx_of {Δ d d'} (Hd : SubRel G Γ Δ d d') (ρ : kwk G Δ) x x' :
   LRtm li (kw_G ρ) (kw_Δ ρ) (kty ρ X[d]) (kty ρ X[d']) x x' -> iwfIdx Δ d d' ρ x x'.
-Proof.
+Proof using EL VL VX.
   intros Hx. unfold iwfIdx. apply (LRtm_stage K_li).
   eapply LRtm_irrel_r; [exact Hx | exact (VTyG_kw ρ VX Hd)].
 Qed.
@@ -120,7 +120,7 @@ Qed.
 (** Related shapes in a world, at the left shape type. *)
 Lemma iwfDom_at {Δ d d'} (Hd : SubRel G Γ Δ d d') (ρ : kwk G Δ) a a' : iwfDom Δ d d' ρ a a' ->
   LRtm l (kw_G ρ) (kw_Δ ρ) A⟦kw_γ ρ⟧[kwsub ρ d] A⟦kw_γ ρ⟧[kwsub ρ d'] a a'.
-Proof.
+Proof using EL VA VL.
   intros ha. pose proof (SubRel_kw _ _ _ ρ _ _ Hd) as Hdρ.
   unfold iwfDom in ha. apply (LRtm_stage K_l) in ha. rewrite !kty_subst in ha.
   eapply LRtm_irrel_r; [exact ha|]. exact (VTy_refl_l (VA _ _ (kw_gok ρ)) _ _ _ Hdρ).
@@ -128,7 +128,7 @@ Qed.
 
 Lemma iwf_arity {Δ d d'} (Hd : SubRel G Γ Δ d d') (ρ : kwk G Δ) a a' : iwfDom Δ d d' ρ a a' ->
   NatRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N[llift d])[lsingle a] (ktml ρ N'[llift d'])[lsingle a'].
-Proof.
+Proof using EL VA VL VNt.
   intros ha. pose proof (iwfDom_at Hd ρ a a' ha) as Ha. pose proof (SubRel_kw _ _ _ ρ _ _ Hd) as Hdρ.
   pose proof (VNt _ _ (kw_gok ρ)) as VNρ. rewrite gwa_cext in VNρ.
   pose proof (VNρ _ _ _ (SubRel_cons Hdρ Ha)) as Y.
@@ -138,7 +138,7 @@ Qed.
 
 Lemma iwf_ot {Δ d d'} (Hd : SubRel G Γ Δ d d') (ρ : kwk G Δ) a a' : iwfDom Δ d d' ρ a a' ->
   iwfIdx Δ d d' ρ (ktml ρ Ot[llift d])[lsingle a] (ktml ρ Ot'[llift d'])[lsingle a'].
-Proof.
+Proof using EL VA VL VO VX.
   intros ha. pose proof (iwfDom_at Hd ρ a a' ha) as Ha. pose proof (SubRel_kw _ _ _ ρ _ _ Hd) as Hdρ.
   pose proof (VO _ _ (kw_gok ρ)) as VOρ. rewrite gwa_cext in VOρ.
   pose proof (VOρ _ _ _ (SubRel_cons Hdρ Ha)) as Y.
@@ -149,7 +149,7 @@ Qed.
 Lemma iwf_ch {Δ d d'} (Hd : SubRel G Γ Δ d d') (ρ : kwk G Δ) a a' : iwfDom Δ d d' ρ a a' ->
   forall p p', PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N[llift d])[lsingle a] (ktml ρ N'[llift d'])[lsingle a'] p p' ->
   iwfIdx Δ d d' ρ (ktmll ρ C[llift (llift d)])[lsingle2 a p] (ktmll ρ C'[llift (llift d')])[lsingle2 a' p'].
-Proof.
+Proof using EL VA VC VL VN VNt VX.
   intros ha p p' Hp. pose proof (iwfDom_at Hd ρ a a' ha) as Ha. pose proof (SubRel_kw _ _ _ ρ _ _ Hd) as Hdρ.
   pose proof (PosRel_LRtm Hp (iwf_arity Hd ρ a a' ha)) as Xp. rewrite !ktml_subst_single in Xp.
   pose proof (VTmG_refl_l VNt _ _ (kw_gok ρ)) as VNρ. rewrite gwa_cext in VNρ.
@@ -169,7 +169,7 @@ Lemma LR_IWf_at Δ d d' mm mm' : SubRel G Γ Δ d d' -> LRtm li G Δ X[d] X[d'] 
   LogRel (lmax l li) G Δ (tyIWf l li X[d] A[d] N[llift d] Ot[llift d] C[llift (llift d)] mm)
     (tyIWf l' li' X'[d'] A'[d'] N'[llift d'] Ot'[llift d'] C'[llift (llift d')] mm') (lmax l li)
     (IWfRel G Δ l li X[d] A[d] N[llift d] Ot[llift d] C[llift (llift d)] (iwfIdx Δ d d') (iwfDom Δ d d') mm).
-Proof.
+Proof using EL Hl' Hli' Hwl Hwli VA VC VL VN VNt VO VX.
   intros Hd Xm. pose proof (SubRel_ctx Hd) as HΔ.
   destruct (VTyG_loc VX _ _ _ Hd) as [RX HRX]. destruct (escape_ty _ _ _ _ _ _ _ _ HRX) as (HXd & HX'd & EX).
   destruct (VTyG_loc VA _ _ _ Hd) as [RA HRA]. destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HAd & HA'd & EA).
@@ -235,10 +235,10 @@ Qed.
 Lemma LR_IWf_here Δ d d' : SubRel G Γ Δ d d' ->
   LogRel (lmax l li) G Δ (tyIWf l li X A N Ot C m)[d] (tyIWf l' li' X' A' N' Ot' C' m')[d'] (lmax l li)
     (IWfRel G Δ l li X[d] A[d] N[llift d] Ot[llift d] C[llift (llift d)] (iwfIdx Δ d d') (iwfDom Δ d d') m[d]).
-Proof. intros Hd. rewrite !subst_tyIWf. exact (LR_IWf_at Δ d d' _ _ Hd (Vm _ _ _ Hd)). Qed.
+Proof using EL Hl' Hli' Hwl Hwli VA VC VL VN VNt VO VX Vm. intros Hd. rewrite !subst_tyIWf. exact (LR_IWf_at Δ d d' _ _ Hd (Vm _ _ _ Hd)). Qed.
 
 Lemma V_iwf : VTy G Γ (tyIWf l li X A N Ot C m) (tyIWf l' li' X' A' N' Ot' C' m') (lmax l li).
-Proof. intros Δ d d' Hd. eexists. exact (LR_IWf_here _ _ _ Hd). Qed.
+Proof using EL Hl' Hli' Hwl Hwli VA VC VL VN VNt VO VX Vm. intros Δ d d' Hd. eexists. exact (LR_IWf_here _ _ _ Hd). Qed.
 
 End IWfTy.
 
@@ -251,11 +251,11 @@ Definition KDom G Δ n l A (d : DomRel G Δ) :=
 
 Lemma KDom_comp {G Δ n l A} {d : DomRel G Δ} (ρ : kwk G Δ) : KDom G Δ n l A d ->
   KDom (kw_G ρ) (kw_Δ ρ) n l (kty ρ A) (fun ρ' => d (kw_comp ρ ρ')).
-Proof. intros H ρ'. destruct (H (kw_comp ρ ρ')) as [A1 Y]. rewrite kty_comp in Y. eauto. Qed.
+Proof using . intros H ρ'. destruct (H (kw_comp ρ ρ')) as [A1 Y]. rewrite kty_comp in Y. eauto. Qed.
 
 Lemma KDom_releq {G Δ n l A} {d1 d2 : DomRel G Δ} : KDom G Δ n l A d1 -> KDom G Δ n l A d2 ->
   forall ρ, releq (d1 ρ) (d2 ρ).
-Proof.
+Proof using EL VL.
   intros H1 H2 ρ. destruct (H1 ρ) as [A1 Y1]. destruct (H2 ρ) as [A2 Y2].
   exact (LR_irrel _ _ _ _ _ _ _ _ _ _ Y1 Y2).
 Qed.
@@ -264,7 +264,7 @@ Lemma LR_iwf_rel {G Δ l li X A N Ot C c T' R} {ix dm : DomRel G Δ} :
   LogRel (lmax l li) G Δ (tyIWf l li X A N Ot C c) T' (lmax l li) R ->
   KDom G Δ (lmeasure (lmax l li)) li X ix -> KDom G Δ (lmeasure (lmax l li)) l A dm ->
   releq R (IWfRel G Δ l li X A N Ot C ix dm c).
-Proof.
+Proof using EL VL.
   intros H HX HA. destruct (escape_ty _ _ _ _ _ _ _ _ H) as (HW & _ & _).
   destruct (LR_inv_iwf H (tyred_refl _ _ HW))
     as (k2 & ki2 & X' & A' & N' & Ot' & C' & m' & idxR & domR
@@ -287,14 +287,14 @@ Let L := lmax l li.
 
 Lemma fin_stab_ty {k w T L'} : [ G ; Δ ⊢g k ≅ w : tyNat @ lzero ] ->
   [ G ; Δ ,, tyFin k @ lzero ⊢g T @ L' ] -> [ G ; Δ ,, tyFin w @ lzero ⊢g T @ L' ].
-Proof. intros Ek HT. exact (eqty_wf_l ge_typeof (fin_stab_eqty Ek (eqty_refl _ _ _ _ _ HT))). Qed.
+Proof using . intros Ek HT. exact (eqty_wf_l ge_typeof (fin_stab_eqty Ek (eqty_refl _ _ _ _ _ HT))). Qed.
 
 (** Relation to spine, at the spine's own world. *)
 Lemma DVecISp_of_LR : forall k k', NatRel G Δ k k' -> forall c,
   [ G ; Δ ,, tyFin k @ lzero ⊢g iwfFamT l li X A N Ot C c @ L ] ->
   forall T' R, LogRel L G Δ (tyDVec L k (iwfFamT l li X A N Ot C c)) T' L R ->
   forall cs cs', R cs cs' -> DVecISp G Δ l li X A N Ot C ix dm c k cs cs'.
-Proof.
+Proof using EL HA HX HwL HΔ NA NC NN NO NX VL.
   apply (NatRel_mut G Δ
     (fun k k' _ => forall c, [ G ; Δ ,, tyFin k @ lzero ⊢g iwfFamT l li X A N Ot C c @ L ] ->
        forall T' R, LogRel L G Δ (tyDVec L k (iwfFamT l li X A N Ot C c)) T' L R ->
@@ -379,7 +379,7 @@ End ISpine.
 (** ** [sup_i] *)
 
 Lemma iwfFam_T l li X A N Ot C a : iwfFam l li X A N Ot C a = iwfFamT l li X A N Ot C C[llift (lsingle a)].
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 
 Section SupiV.
 Context {G : gctx} {Γ : ctx} {l li l' li' : lvl} {X X' A A' : ty} {N N' Ot Ot' C C' a a' cs cs' : tm}
@@ -393,7 +393,7 @@ Context {G : gctx} {Γ : ctx} {l li l' li' : lvl} {X X' A A' : ty} {N N' Ot Ot' 
 
 (** The constructor's index. *)
 Lemma V_supi_idx : VTm G Γ Ot[lsingle a] Ot[lsingle a] X li.
-Proof.
+Proof using EL VL VO Va.
   intros Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   pose proof (VTm_trans Va (VTm_sym Va)) as Vaa.
   pose proof (VTmG_loc (VTmG_refl_l VO) _ _ _ (SubRel_cons Hd (Vaa _ _ _ Hd))) as Y.
@@ -402,7 +402,7 @@ Qed.
 
 (** The constructor's index on both sides, and its type. *)
 Lemma V_supi_idx2 : VTm G Γ Ot[lsingle a] Ot'[lsingle a'] X li.
-Proof.
+Proof using EL VO Va.
   intros Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   pose proof (VTmG_loc VO _ _ _ (SubRel_cons Hd (Va _ _ _ Hd))) as Y.
   rewrite !shift_cons_ty in Y. rewrite !single_subst, !lift_single_tm by assumption. exact Y.
@@ -410,11 +410,11 @@ Qed.
 
 Lemma V_supi_ty : VTy G Γ (tyIWf l li X A N Ot C Ot[lsingle a]) (tyIWf l' li' X' A' N' Ot' C' Ot'[lsingle a'])
   (lmax l li).
-Proof. exact (V_iwf Hwl Hwli Hl' Hli' VX VA VNt VO VC V_supi_idx2). Qed.
+Proof using EL Hl' Hli' Hwl Hwli VA VC VL VN VNt VO VX Va. exact (V_iwf Hwl Hwli Hl' Hli' VX VA VNt VO VC V_supi_idx2). Qed.
 
 Lemma V_supi : VTm G Γ (tmSupi l li X A N Ot C a cs) (tmSupi l' li' X' A' N' Ot' C' a' cs')
   (tyIWf l li X A N Ot C Ot[lsingle a]) (lmax l li).
-Proof.
+Proof using EL Hl' Hli' Hwl Hwli VA VC VL VN VNt VO VX Va Vcs.
   intros Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd']. pose proof (SubRel_ctx Hd) as HΔ.
   pose proof (VTyG_refl_l VX) as VXX. pose proof (VTyG_refl_l VA) as VAA.
   pose proof (VTmG_refl_l VNt) as VNN. pose proof (VTmG_refl_l VO) as VOO. pose proof (VTmG_refl_l VC) as VCC.

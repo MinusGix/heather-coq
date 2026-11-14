@@ -41,11 +41,11 @@ Local Notation LRM := (LR_M EP EM).
 Local Notation GSubRel := (GSubRel EP EM).
 
 Lemma gsub_wf_relevel {G' L Ψ σ} L2 : [ G' ⊢ σ : mkG L Ψ ] -> [ G' ⊢ σ : mkG L2 Ψ ].
-Proof. intros [H1 H2 H3]; split; assumption. Qed.
+Proof using . intros [H1 H2 H3]; split; assumption. Qed.
 
 Lemma GSubRel_relevel {G' L Ψ σ σ'} L2 : GSubRel G' (mkG L Ψ) σ σ' -> L2 <= gL G' ->
   GSubRel G' (mkG L2 Ψ) σ σ'.
-Proof.
+Proof using .
   intros [HL Hl Hr Hrel Hl0 Hr0] H2.
   constructor; [cbn; exact H2 | exact (gsub_wf_relevel L2 Hl) | exact (gsub_wf_relevel L2 Hr)
                | exact Hrel | exact Hl0 | exact Hr0].
@@ -53,7 +53,7 @@ Qed.
 
 Lemma VCtxS_relevel {E : GenericEq} {LP : LRParams} {L Ψ Γ} L2 : L <= L2 ->
   @VCtxS EP EM E LP (mkG L Ψ) Γ -> @VCtxS EP EM E LP (mkG L2 Ψ) Γ.
-Proof. intros HL V G' σ σ' Hσ. apply V, (GSubRel_relevel L Hσ). pose proof (gsr_L _ _ _ _ _ _ Hσ); cbn in *; lia. Qed.
+Proof using . intros HL V G' σ σ' Hσ. apply V, (GSubRel_relevel L Hσ). pose proof (gsr_L _ _ _ _ _ _ Hσ); cbn in *; lia. Qed.
 
 End Relevel.
 
@@ -150,17 +150,17 @@ Section At.
 Variables (G'' : gctx) (σ σ' : gsub) (Θ : ctx) (e e' : lsub).
 Hypothesis (Hσ : GSubRel G'' Gφ σ σ') (He : SubRelM G'' Γφ⦃σ⦄ Θ e e').
 
-Lemma at_L : L' <= gL G''. Proof. exact (gsr_L _ _ _ _ _ _ Hσ). Qed.
+Lemma at_L : L' <= gL G''. Proof using Hσ. exact (gsr_L _ _ _ _ _ _ Hσ). Qed.
 Lemma at_σ : GSubRel G'' (G_us G0 (gL G'') φ) σ σ'.
-Proof. exact (GSubRel_relevel EP EM (gL G'') Hσ (le_n _)). Qed.
+Proof using Hσ. exact (GSubRel_relevel EP EM (gL G'') Hσ (le_n _)). Qed.
 Lemma at_φ : usub_ok φ (gL G'') (gL G0).
-Proof. intros n Hn; exact (lwf_weaken _ _ _ at_L (Hφ n Hn)). Qed.
-Lemma at_l1 : lequiv (gL G'') (lvsubst l1 φ) (lvsubst l1' φ). Proof. exact (lequiv_weaken _ _ _ _ at_L Hl1). Qed.
-Lemma at_l2 : lequiv (gL G'') (lvsubst l2 φ) (lvsubst l2' φ). Proof. exact (lequiv_weaken _ _ _ _ at_L Hl2). Qed.
-Lemma at_Γ : VCtxSM (G_us G0 (gL G'') φ) Γφ. Proof. exact (VCtxS_relevel EP EM (gL G'') at_L VΓ). Qed.
-Lemma at_G : [ ⊢ G_us G0 (gL G'') φ ]. Proof. exact (wfg_grow _ _ _ at_L HG0). Qed.
+Proof using Hσ Hφ. intros n Hn; exact (lwf_weaken _ _ _ at_L (Hφ n Hn)). Qed.
+Lemma at_l1 : lequiv (gL G'') (lvsubst l1 φ) (lvsubst l1' φ). Proof using Hl1 Hσ. exact (lequiv_weaken _ _ _ _ at_L Hl1). Qed.
+Lemma at_l2 : lequiv (gL G'') (lvsubst l2 φ) (lvsubst l2' φ). Proof using Hl2 Hσ. exact (lequiv_weaken _ _ _ _ at_L Hl2). Qed.
+Lemma at_Γ : VCtxSM (G_us G0 (gL G'') φ) Γφ. Proof using Hσ VΓ. exact (VCtxS_relevel EP EM (gL G'') at_L VΓ). Qed.
+Lemma at_G : [ ⊢ G_us G0 (gL G'') φ ]. Proof using HG0 Hσ. exact (wfg_grow _ _ _ at_L HG0). Qed.
 Lemma at_Γwf : [ G_us G0 (gL G'') φ ; Γφ ⊢[ lM ] ].
-Proof.
+Proof using HG0 HΓ0 Hσ.
   pose proof (gwa_ctx (γ := gwk_id) (G' := G_us G0 (gL G'') φ) (G := Gφ) (conj at_L (gwkwf_id _)) at_G HΓ0) as X.
   exact X.
 Qed.
@@ -175,7 +175,7 @@ Lemma VS_elimT {k k' D D' s s' T0 T0' k0 k0'} :
   [ Gφ ; Γφ ⊢[ lM ] elimT (lvsubst l1' φ) (lvsubst l2' φ) rbR k' D' s' : T0' @ k0' ] ->
   VTmSM Gφ Γφ (elimT (lvsubst l1 φ) (lvsubst l2 φ) rbL k D s) (elimT (lvsubst l1' φ) (lvsubst l2' φ) rbR k' D' s')
     (motT (wrapMT (usubst_ty MT (uup φ))) k D s) (lvsubst l1 φ).
-Proof.
+Proof using ELM ELP EMl HG0 HMT HMT' HMt HMt' Hbs Hbs' Hl1 Hl2 HΓ0 Hφ VBr VBr' VMT VMTl VMTr VMt VMtl VMtr VΓ VΓT VΓbr VΓt.
   intros Hk Hkk HD HDD VDP VDM VEqP VEqM Vs Hw Hw'.
   apply (VTmS_intro_loc EP EM). intros G'' σ σ' Hσ Θ e e' He.
   pose proof (at_L _ _ _ Hσ) as HL.
@@ -296,7 +296,7 @@ Lemma VS_elimt {k k' D D' U U' s s' T0 T0' k0 k0'} :
   [ Gφ ; Γφ ⊢[ lM ] elimt (lvsubst l1' φ) (lvsubst l2' φ) rbR k' D' U' s' : T0' @ k0' ] ->
   VTmSM Gφ Γφ (elimt (lvsubst l1 φ) (lvsubst l2 φ) rbL k D U s) (elimt (lvsubst l1' φ) (lvsubst l2' φ) rbR k' D' U' s')
     (mott (wrapMt (usubst_ty Mt (uup φ))) k D U s) (lvsubst l2 φ).
-Proof.
+Proof using ELM ELP EMl HG0 HMT HMT' HMt HMt' Hbs Hbs' Hl1 Hl2 HΓ0 Hφ VBr VBr' VMT VMTl VMTr VMt VMtl VMtr VΓ VΓT VΓbr VΓt.
   intros Hk Hkk HD HDD HU HU' VDP VDM VEqP VEqM VUP VUM Vs Hw Hw'.
   apply (VTmS_intro_loc EP EM). intros G'' σ σ' Hσ Θ e e' He.
   pose proof (at_L _ _ _ Hσ) as HL.
@@ -431,7 +431,7 @@ Lemma VS_elimT_beta {G Γ l1 l2 rb l Δ c T k r} :
   [ G ; Γ ⊢[ lM ] elimT l1 l2 rb l Δ (boxT c) : T @ k ] -> redT l1 l2 rb l Δ c = Some r ->
   [ G ; Γ ⊢[ lM ] r : T @ k ] -> VTmSM G Γ r r T k ->
   VTmSM G Γ (elimT l1 l2 rb l Δ (boxT c)) r T k.
-Proof.
+Proof using ELM EMl.
   intros Hw Hred Hr Vr. destruct (elimT_prem Hw) as (MT & Mt & bs & -> & _).
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.
@@ -452,7 +452,7 @@ Lemma VS_elimt_beta {G Γ l1 l2 rb l Δ U c T k r} :
   [ G ; Γ ⊢[ lM ] elimt l1 l2 rb l Δ U (boxt c) : T @ k ] -> redt l1 l2 rb l Δ U c = Some r ->
   [ G ; Γ ⊢[ lM ] r : T @ k ] -> VTmSM G Γ r r T k ->
   VTmSM G Γ (elimt l1 l2 rb l Δ U (boxt c)) r T k.
-Proof.
+Proof using ELM EMl.
   intros Hw Hred Hr Vr. destruct (elimt_prem Hw) as (MT & Mt & bs & -> & _).
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
   pose proof (gsw_dnf _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as Nσ.

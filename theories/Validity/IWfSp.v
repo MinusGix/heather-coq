@@ -16,7 +16,7 @@ Section KwSyntax.
 Context {G : gctx} {Γ : ctx} (ρ : kwk G Γ).
 
 Lemma ktyl_dvecMv_eq n F : ktyl ρ (dvecMv n F) = dvecMv (ktm ρ n) (ktyl ρ F).
-Proof.
+Proof using .
   unfold dvecMv, ktyl, ktm. rewrite gwa_subst_ty, gwa_lsingle, lsingle_ren_ty, gwa_ren_ty.
   rewrite liftshift_lift_ty. f_equal. f_equal.
   unfold gwa; destruct (kw_γ ρ); cbn; f_equal; f_equal;
@@ -25,18 +25,18 @@ Proof.
 Qed.
 
 Lemma ktyl_dvecTl L n F : ktyl ρ (dvecTl L n F) = dvecTl L (ktm ρ n) (ktyl ρ F).
-Proof. rewrite !dvecTl_eq, ktyl_shift', kty_tyDVec, ktyl_dvecMv_eq. reflexivity. Qed.
+Proof using . rewrite !dvecTl_eq, ktyl_shift', kty_tyDVec, ktyl_dvecMv_eq. reflexivity. Qed.
 
 End KwSyntax.
 
 Lemma ktml_kid' {G Δ} (HΔ : [ G ; Δ ⊢g ]) (t : tm) : nftm t -> ktml (kid HΔ) t = t.
-Proof.
+Proof using .
   intros Nt. unfold ktml, kid, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk].
   rewrite <- (ren_id_tm t Nt) at 2. apply ren_ext_tm. intros n. rewrite rlk_rlift. destruct n; cbn; lia.
 Qed.
 
 Lemma ktmll_kid {G Δ} (HΔ : [ G ; Δ ⊢g ]) (t : tm) : nftm t -> ktmll (kid HΔ) t = t.
-Proof.
+Proof using .
   intros Nt. unfold ktmll, kid, kw_loc; cbn [kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk].
   rewrite <- (ren_id_tm t Nt) at 2. apply ren_ext_tm. intros n. rewrite !rlk_rlift.
   destruct n as [|[|n]]; cbn; rewrite ?rlk_rlift; cbn; lia.
@@ -44,7 +44,7 @@ Qed.
 
 Lemma fin_stab_ty' {G Δ k w T L'} : [ G ; Δ ⊢g k ≅ w : tyNat @ lzero ] ->
   [ G ; Δ ,, tyFin k @ lzero ⊢g T @ L' ] -> [ G ; Δ ,, tyFin w @ lzero ⊢g T @ L' ].
-Proof. intros Ek HT. exact (eqty_wf_l ge_typeof (fin_stab_eqty Ek (eqty_refl _ _ _ _ _ HT))). Qed.
+Proof using . intros Ek HT. exact (eqty_wf_l ge_typeof (fin_stab_eqty Ek (eqty_refl _ _ _ _ _ HT))). Qed.
 
 (** The spine at its own world and in every weakening, as [sup_i]'s premise
     provides it. *)
@@ -62,7 +62,7 @@ Definition IVecQ G Δ l li X A N Ot C (ix dm : DomRel G Δ) c k :=
 Lemma IVecQ_zero {G Δ l li X A N Ot C} {ix dm : DomRel G Δ} {c k} : lwf (gL G) (lmax l li) ->
   [ G ; Δ ,, tyFin k @ lzero ⊢g iwfFamT l li X A N Ot C c @ lmax l li ] ->
   [ G ; Δ ⊢g k ⤳* zero : tyNat @ lzero ] -> IVecQ G Δ l li X A N Ot C ix dm c k.
-Proof.
+Proof using EL.
   intros HwL HF Hk T' R H cs cs' [Hown _].
   pose proof (fin_stab_ty' (tmred_eq _ _ _ _ _ _ _ Hk) HF) as HF0.
   assert (Hred : [ G ; Δ ⊢g tyDVec (lmax l li) k (iwfFamT l li X A N Ot C c) ⤳* tyUnit (lmax l li) @ lmax l li ])
@@ -74,7 +74,7 @@ Qed.
 Lemma IVecQ_ne {G Δ l li X A N Ot C} {ix dm : DomRel G Δ} {c k ν} : lwf (gL G) (lmax l li) ->
   [ G ; Δ ,, tyFin k @ lzero ⊢g iwfFamT l li X A N Ot C c @ lmax l li ] ->
   [ G ; Δ ⊢g k ⤳* ν : tyNat @ lzero ] -> whne ν -> IVecQ G Δ l li X A N Ot C ix dm c k.
-Proof.
+Proof using EL.
   intros HwL HF Hk Nν T' R H cs cs' [Hown _].
   destruct (LR_inv_ne H (tyred_dvec HwL HF Hk) (whne_tyDVec _ _ _ Nν)) as (V' & _ & HVV & HR).
   apply (proj2 (HR _ _)).
@@ -109,7 +109,7 @@ Lemma DVecISp_succ_at {G Γ l li X A N Ot C ix dm c k m cs cs' w w' T T' l0 l0'}
        [ G ; Γ ,, dvecHd m (iwfFamT l li X A N Ot C c) @ lmax l li
            ⊢ dvecTl (lmax l li) m (iwfFamT l li X A N Ot C c) ≈ B2' @ lmax l li ] ->
        DVecISp G Γ l li X A N Ot C ix dm (posMv m c) m (tmSnd la lb A2 B2 w) (tmSnd la' lb' A2' B2' w')).
-Proof.
+Proof using EL.
   intros H Hk Hr Nw Hr' Nw'.
   destruct (DVecISp_succ_inv H Hk) as (w0 & w0' & Hr0 & Hr0' & Nw0 & Nw0' & _ & Hf & Hs).
   assert (w0 = w) as -> by (eapply tmred_whnf_det; [exact Hr0 | exact Hr | exact Nw0 | exact Nw]).
@@ -126,7 +126,7 @@ Lemma IVecQ_succ {G Δ l li X A N Ot C} {ix dm : DomRel G Δ} {c k m} : lwf (gL 
      IVecQ (kw_G ρ) (kw_Δ ρ) l li (kty ρ X) (kty ρ A) (ktml ρ N) (ktml ρ Ot) (ktmll ρ C)
        (fun ρ' => ix (kw_comp ρ ρ')) (fun ρ' => dm (kw_comp ρ ρ')) (ktml ρ (posMv m c)) (ktm ρ m)) ->
   IVecQ G Δ l li X A N Ot C ix dm c k.
-Proof.
+Proof using EL VL.
   intros HwL NX NA NN NO NC HF HX HA Hm Hk IH T' R H cs cs' [Hown HK].
   set (L := lmax l li) in *.
   pose proof (fin_stab_ty' (tmred_eq _ _ _ _ _ _ _ Hk) HF) as HF1.
@@ -203,7 +203,7 @@ Lemma LR_of_DVecISp_all : forall k k', NatRel G Δ k k' -> forall c,
   forall ρ : kwk G Δ,
     IVecQ (kw_G ρ) (kw_Δ ρ) l li (kty ρ X) (kty ρ A) (ktml ρ N) (ktml ρ Ot) (ktmll ρ C)
       (fun ρ' => ix (kw_comp ρ ρ')) (fun ρ' => dm (kw_comp ρ ρ')) (ktml ρ c) (ktm ρ k).
-Proof.
+Proof using EL HA HX HwL VL.
   assert (Nρ : forall ρ : kwk G Δ, nfty (kty ρ X) /\ nfty (kty ρ A) /\ nftm (ktml ρ N) /\ nftm (ktml ρ Ot)
                                     /\ nftm (ktmll ρ C))
     by (intros ρ; unfold kty, ktml, ktmll; repeat split; first [apply ren_nf_ty | apply ren_nf]).
@@ -256,7 +256,7 @@ Lemma LR_of_DVecISp_own {c k k' cs cs'} (HΔ : [ G ; Δ ⊢g ]) : NatRel G Δ k 
        (fun ρ' => ix (kw_comp ρ ρ')) (fun ρ' => dm (kw_comp ρ ρ')) (ktml ρ c) (ktm ρ k) (ktm ρ cs) (ktm ρ cs')) ->
   forall T' R, LogRel (lmax l li) G Δ (tyDVec (lmax l li) k (iwfFamT l li X A N Ot C c)) T' (lmax l li) R ->
   R cs cs'.
-Proof.
+Proof using EL HA HX HwL NA NC NN NO NX VL.
   intros Hkk Nc HF Ncs Ncs' Hsp T' R H.
   destruct (NatRel_escape Hkk) as (Hk & _ & _). pose proof (wf_tm_nf Hk) as Nk.
   pose proof (LR_of_DVecISp_all _ _ Hkk c HF (kid HΔ)) as Y. unfold IVecQ in Y.

@@ -29,18 +29,18 @@ Let Hv : i <> lV := compt_notV i Hi.
 
 (** Context well-formedness at [i] from any judgment at [i]. *)
 Lemma decl_ctx_ty G Γ T l : [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ i ] ].
-Proof. intros H. rewrite <- Hty. exact (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ H). Qed.
+Proof using Hty. intros H. rewrite <- Hty. exact (proj1 (proj2 (proj2 ctx_extract)) _ _ _ _ _ H). Qed.
 Lemma decl_ctx_tm G Γ t T l : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ i ] ].
-Proof.
+Proof using Hty.
   intros H. rewrite <- Hty. exact (proj1 (proj2 (proj2 (proj2 ctx_extract))) _ _ _ _ _ _ H).
 Qed.
 
 Lemma decl_wk_eqty G Γ Δ r T T' l : wkr r Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
   [ G ; Γ ⊢[ i ] T ≅ T' @ l ] -> [ G ; Δ ⊢[ i ] T⟨r⟩ ≅ T'⟨r⟩ @ l ].
-Proof. intros Hr HΔ H. eapply weakening_r; eauto. Qed.
+Proof using Hty. intros Hr HΔ H. eapply weakening_r; eauto. Qed.
 Lemma decl_wk_eqtm G Γ Δ r t t' T l : wkr r Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
   [ G ; Γ ⊢[ i ] t ≅ t' : T @ l ] -> [ G ; Δ ⊢[ i ] t⟨r⟩ ≅ t'⟨r⟩ : T⟨r⟩ @ l ].
-Proof. intros Hr HΔ H. eapply weakening_r; eauto. Qed.
+Proof using Hty. intros Hr HΔ H. eapply weakening_r; eauto. Qed.
 
 (** η-expansion at the identity: both sides of [funext] are η-equal to the
     λ of their application to [var 0]. *)
@@ -52,7 +52,7 @@ Lemma decl_funext G Γ l l' A B t t' :
   [ G ; Γ ,, A @ l ⊢[ i ] app t⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0)
                         ≅ app t'⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0) : B @ l' ] ->
   [ G ; Γ ⊢[ i ] t ≅ t' : tyPi l l' A B @ lmax l l' ].
-Proof.
+Proof using Hv.
   intros Hl Hl' HA HB Ht Ht' Happ.
   eapply eqtm_trans; [apply eqtm_sym, eqtm_eta; eauto|].
   eapply eqtm_trans; [|apply eqtm_eta; eauto].
@@ -68,7 +68,7 @@ Lemma decl_sig_ext G Γ l l' A B p p' :
   [ G ; Γ ⊢[ i ] tmFst l l' A B p ≅ tmFst l l' A B p' : A @ l ] ->
   [ G ; Γ ⊢[ i ] tmSnd l l' A B p ≅ tmSnd l l' A B p' : B[lsingle (tmFst l l' A B p)] @ l' ] ->
   [ G ; Γ ⊢[ i ] p ≅ p' : tySig l l' A B @ lmax l l' ].
-Proof.
+Proof using Hv.
   intros Hl Hl' HA HB Hp Hp' Hf Hs.
   eapply eqtm_trans; [apply eqtm_sym, eqtm_sig_eta; eauto|].
   eapply eqtm_trans; [|apply eqtm_sig_eta; eauto].
@@ -76,7 +76,7 @@ Proof.
 Qed.
 
 #[export] Instance DeclEqLaws : @GenericEqLaws DeclEq.
-Proof.
+Proof using .
   constructor; cbn; unfold decl_ne_ty, decl_ne_tm.
   (* subsumption, whne extraction *)
   1-8: now intuition.
@@ -268,7 +268,7 @@ Proof.
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].
-Proof. exact (@geq_ctx_sound _ DeclEqLaws G Γ Γ'). Qed.
+Proof using . exact (@geq_ctx_sound _ DeclEqLaws G Γ Γ'). Qed.
 
 End Decl.
 

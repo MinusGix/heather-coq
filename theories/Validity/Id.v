@@ -32,7 +32,7 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 
 Local Lemma convg {G Δ t t' T T' l} :
   [ G ; Δ ⊢g t ≅ t' : T' @ l ] -> [ G ; Δ ⊢g T ≅ T' @ l ] -> [ G ; Δ ⊢g t ≅ t' : T @ l ].
-Proof. intros H HT. apply eqtm_conv with (T' := T'); [exact H | now rewrite ge_typeof]. Qed.
+Proof using . intros H HT. apply eqtm_conv with (T' := T'); [exact H | now rewrite ge_typeof]. Qed.
 
 (** ** [J]'s reductions, typed *)
 
@@ -48,7 +48,7 @@ Context {G : gctx} {Δ : ctx} {l1 l2 : lvl} {A : ty} {a : tm} {M : ty} {c u : tm
 (** The motive, along equal proofs. *)
 Lemma J_motive_conv {e e'} : [ G ; Δ ⊢g e ≅ e' : tyId l1 A a u @ l1 ] ->
   [ G ; Δ ⊢g M[lsingle2 u e] ≅ M[lsingle2 u e'] @ l2 ].
-Proof.
+Proof using HA HM Ha Hu Hw1.
   intros Hee. apply (wf_ty_func ge_typeof HM).
   apply (lsub_eq_J ge_typeof ge_notV Hw1 HA Ha Hu Hu (eqtm_refl _ _ _ _ _ _ Hu)
            (eqtm_wf_l ge_typeof Hee) (eqtm_wf_r ge_typeof Hee) Hee).
@@ -61,7 +61,7 @@ Lemma J_refl_eq {e k C w} : [ G ; Δ ⊢g e ≅ tmRefl k C w : tyId l1 A a u @ l
   [ G ; Δ ⊢g a ≅ w : A @ l1 ] -> [ G ; Δ ⊢g u ≅ w : A @ l1 ] ->
   [ G ; Δ ⊢g tmJ l1 l2 A a M c u e ≅ c : M[lsingle2 u e] @ l2 ] /\
   [ G ; Δ ⊢g M[lsingle2 a (tmRefl l1 A a)] ≅ M[lsingle2 u e] @ l2 ].
-Proof.
+Proof using HA HI HM Ha Hc Hu Hw1 Hw2.
   intros Hee Hk HAC Haw Huw.
   assert (Hau : [ G ; Δ ⊢g a ≅ u : A @ l1 ]) by (eapply eqtm_trans; [exact Haw | now apply eqtm_sym]).
   assert (HId : [ G ; Δ ⊢g tyId l1 A a a ≅ tyId l1 A a u @ l1 ]).
@@ -99,7 +99,7 @@ Lemma LR_id_here {G Δ l l' A A' a a' b b' RA} : lwf (gL G) l -> lequiv (gL G) l
   [ G ; Δ ⊢ a ≈ a' : A @ l ] -> [ G ; Δ ⊢ b ≈ b' : A @ l ] ->
   LogRel l G Δ A A' l RA -> RA a a' -> RA b b' ->
   LogRel l G Δ (tyId l A a b) (tyId l' A' a' b') l (IdRel G Δ l A a b RA).
-Proof.
+Proof using EL VL.
   intros Hw Hl HA HAA Haa Hbb HRA Ra Rb.
   pose proof (geq_ty_sound (geq_ty_id Hl HA HAA Haa Hbb)) as EV.
   destruct (LR_tm_per _ _ _ _ _ _ _ HRA) as [Sy Tr].
@@ -124,7 +124,7 @@ Qed.
 Lemma V_id {G Γ l l' A A' a a' b b'} : lwf (gL G) l -> lequiv (gL G) l l' ->
   VTy G Γ A A' l -> VTm G Γ a a' A l -> VTm G Γ b b' A l ->
   VTy G Γ (tyId l A a b) (tyId l' A' a' b') l.
-Proof.
+Proof using EL VL.
   intros Hw Hl VA Va Vb Δ d d' Hd. push_subst.
   destruct (seq_at VA Va Hd) as (HA & EA & Ea). destruct (seq_at VA Vb Hd) as (_ & _ & Eb).
   destruct (VA _ _ _ Hd) as [RA HRA].
@@ -135,7 +135,7 @@ Qed.
 
 Lemma V_idrefl {G Γ l l' A A' a a'} : lwf (gL G) l -> lequiv (gL G) l l' ->
   VTy G Γ A A' l -> VTm G Γ a a' A l -> VTm G Γ (tmRefl l A a) (tmRefl l' A' a') (tyId l A a a) l.
-Proof.
+Proof using EL VL.
   intros Hw Hl VA Va Δ d d' Hd. push_subst.
   pose proof (VTy_refl_l VA) as VAA. pose proof (VTm_trans Va (VTm_sym Va)) as Vaa.
   destruct (seq_at VAA Vaa Hd) as (HA & EAA & Eaa).
@@ -163,7 +163,7 @@ Qed.
 Lemma tyred_El_id {G Δ la l k s t u} : lequiv (gL G) la l -> lequiv (gL G) k l ->
   [ G ; Δ ⊢g s : tyU l @ lsuc l ] -> [ G ; Δ ⊢g t : tyEl l s @ l ] -> [ G ; Δ ⊢g u : tyEl l s @ l ] ->
   [ G ; Δ ⊢g tyEl la (tmId k s t u) ⤳* tyId k (tyEl k s) t u @ l ].
-Proof.
+Proof using .
   intros Hla Hk Hs Ht Hu.
   assert (Hkl : lequiv (gL G) l k) by solve [apply lequiv_sym; assumption].
   pose proof (lequiv_wf_l _ _ _ Hk) as Hwk.
@@ -187,7 +187,7 @@ Qed.
 Lemma V_El_id {G Γ l s t u} : lwf (gL G) l ->
   VTm G Γ s s (tyU l) (lsuc l) -> VTm G Γ t t (tyEl l s) l -> VTm G Γ u u (tyEl l s) l ->
   VTy G Γ (tyId l (tyEl l s) t u) (tyEl l (tmId l s t u)) l.
-Proof.
+Proof using EL VL.
   intros Hw Vs Vt Vu Δ d d' Hd.
   pose proof (V_El Hw (lequiv_refl _ _ Hw) Vs) as VA.
   destruct (V_id Hw (lequiv_refl _ _ Hw) VA Vt Vu _ _ _ Hd) as [R HR].
@@ -203,7 +203,7 @@ Qed.
 Lemma V_code_id {G Γ l l' s s' t t' u u'} : lwf (gL G) l -> lequiv (gL G) l l' ->
   VTm G Γ s s' (tyU l) (lsuc l) -> VTm G Γ t t' (tyEl l s) l -> VTm G Γ u u' (tyEl l s) l ->
   VTm G Γ (tmId l s t u) (tmId l' s' t' u') (tyU l) (lsuc l).
-Proof.
+Proof using EL VL.
   intros Hw Hl Vs Vt Vu Δ d d' Hd.
   pose proof (V_El Hw Hl Vs) as VA.
   destruct (V_id Hw Hl VA Vt Vu _ _ _ Hd) as [R HR].
@@ -246,7 +246,7 @@ Lemma J_at {Δ d d'} : SubRel G Γ Δ d d' ->
   [ G ; Δ ,, A[d] @ l1 ,, tyId l1 A[d]⟨↑⟩ a[d]⟨↑⟩ (var 0) @ l1 ⊢g M[llift (llift d)] @ l2 ] /\
   [ G ; Δ ,, A[d] @ l1 ,, tyId l1 A[d]⟨↑⟩ a[d]⟨↑⟩ (var 0) @ l1 ⊢ M[llift (llift d)] ≈ M'[llift (llift d')] @ l2 ] /\
   [ G ; Δ ⊢ c[d] ≈ c'[d'] : M[llift (llift d)][lsingle2 a[d] (tmRefl l1 A[d] a[d])] @ l2 ].
-Proof.
+Proof using EL Hw1 VA VI VL VM VN Va Vc.
   intros Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   destruct (seq_at VA Va Hd) as (HA & EA & Ea).
   pose proof (SubRel_lift Hd (VTy_refl_l VA) HA Hw1) as Hd1.
@@ -262,7 +262,7 @@ Qed.
 Lemma V_J {l3 l4 u u' e e'} : lwf (gL G) l2 -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   VTm G Γ u u' A l1 -> VTm G Γ e e' (tyId l1 A a u) l1 ->
   VTm G Γ (tmJ l1 l2 A a M c u e) (tmJ l3 l4 A' a' M' c' u' e') M[lsingle2 u e] l2.
-Proof.
+Proof using EL Hw1 VA VI VL VM VN Va Vc.
   intros Hw2 H13 H24 Vu Ve Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   rewrite !single2_subst_ty by assumption. push_subst.
   pose proof (SubRel_refl_l Hd) as Hdd.
@@ -376,7 +376,7 @@ Qed.
 
 Lemma V_J_beta : lwf (gL G) l2 -> VTm G Γ c c M[lsingle2 a (tmRefl l1 A a)] l2 ->
   VTm G Γ (tmJ l1 l2 A a M c a (tmRefl l1 A a)) c M[lsingle2 a (tmRefl l1 A a)] l2.
-Proof.
+Proof using EL Hw1 VA VI VL VM VN Va Vc.
   intros Hw2 Vcc Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   destruct (J_at Hd) as (HA & _ & Ea & HI & HM & _ & Ec).
   pose proof (eqtm_wf_l ge_typeof (geq_tm_sound Ea)) as Ha.

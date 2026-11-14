@@ -87,14 +87,22 @@ these docs by bare file name.
   that has only `.vos` files). 2026-11-14: `vos` alone took 108 s, 55 s
   of its 233 s CPU in three files whose section lemmas had no clause
   (`DVecNthReds`, `GSubstitution`, `GRenRecBase`); with the clauses,
-  85 s and 174 s CPU. What is left is a chain 80 files deep (each file
-  costs at least 0.35 s to start), and 0.5 to 4 s of unannotated section
-  proofs in about thirty files.
+  85 s and 174 s CPU. Then Coq on an flambda OCaml (`flake.nix`; 8 to
+  12% less time on `DVecNthReds`, `RecAdm` and `LevelRed`) took 80 s and
+  136 s, and clauses for 36 more section files (every sectioned file
+  with 0.8 s or more of `vos` time) 61 s and 108 s. What is left is a
+  chain 80 files deep (each file costs at least 0.35 s to start).
+  `tools/add_proof_using.py` fails on `UPermV` and `StaticCode`, which
+  are not annotated. A new section lemma needs its clause, or `vos`
+  runs its proof: `Set Suggest Proof Using.` prints it.
 - The inner loop, from a fresh container (2026-11-14):
   0. `tools/dev-shell` for `nix develop path:.`: with the binary cache
      in `/mnt/project-files/build-cache/nix/` (450 MB) a fresh store had
      the shell in 14 s, against about 7 minutes of building Coq 8.20.0,
-     Equations and smpl (and no failing fetch of smpl's source).
+     Equations and smpl (and no failing fetch of smpl's source), and
+     the flambda OCaml toolchain before them. A `.vo`/`.vos` tree is
+     bound to the Coq binary that made it: after `flake.nix` changes,
+     refill the cache (the recipe is in the script) and rebuild.
   1. `tools/tree-cache restore /mnt/project-files/build-cache/`, then
      `make -j4 vos`: the `.vos` tree of the last saved build (10 MB),
      with only the files whose source changed, and their dependents,

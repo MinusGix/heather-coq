@@ -27,26 +27,26 @@ Ltac atM := match goal with |- _ \/ forall T k, ~ wf_tm _ ?i _ _ _ _ =>
   destruct (layer_eq_dec i lM) as [-> | NM]; [| right; intros ? ? ?H; exact (NM (typed_m_only H I))] end.
 
 Lemma ctx_idem {G i Γ} : [ G ; Γ ⊢[ typeof i ] ] -> [ G ; Γ ⊢[ typeof (typeof i) ] ].
-Proof. rewrite typeof_idem; exact (fun H => H). Qed.
+Proof using . rewrite typeof_idem; exact (fun H => H). Qed.
 
 Lemma sy_var m : SYD (var m).
-Proof.
+Proof using .
   intros G i Γ HΓ. destruct (in_ctx_dec Γ m) as [(T & l & Hin) | N].
   - left; exists T, l; exact (wf_var _ _ _ _ _ _ HΓ Hin).
   - right; intros T k H; destruct (inva_var H) as (T0 & l0 & (_ & Hin) & _); exact (N _ _ Hin).
 Qed.
 
 Lemma sy_junk t : junk t -> SYD t.
-Proof. intros Hj G i Γ _. right; intros T k H; exact (no_junk H Hj). Qed.
+Proof using . intros Hj G i Γ _. right; intros T k H; exact (no_junk H Hj). Qed.
 
 Lemma sy_nat : SYD tmNat.
-Proof. intros G i Γ HΓ. notV. left; eexists; eexists; exact (wf_code_nat _ _ _ Hv HΓ). Qed.
+Proof using . intros G i Γ HΓ. notV. left; eexists; eexists; exact (wf_code_nat _ _ _ Hv HΓ). Qed.
 
 Lemma sy_zero : SYD zero.
-Proof. intros G i Γ HΓ. notV. left; eexists; eexists; exact (wf_zero _ _ _ Hv HΓ). Qed.
+Proof using . intros G i Γ HΓ. notV. left; eexists; eexists; exact (wf_zero _ _ _ Hv HΓ). Qed.
 
 Lemma sy_U l : SYD (tmU l).
-Proof.
+Proof using .
   intros G i Γ HΓ. notV.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_U H) as ((_ & _ & X) & _); contradiction].
   left; eexists; eexists; exact (wf_code_U _ _ _ _ Hv HΓ Hl).
@@ -54,7 +54,7 @@ Qed.
 
 (** The unit type (M8c): the code and [⟨⟩], at every layer but V (M8d). *)
 Lemma sy_code_unit l : SYD (tmUnit l).
-Proof.
+Proof using .
   intros G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_unit H) as ((_ & _ & X) & _); contradiction].
@@ -62,7 +62,7 @@ Proof.
 Qed.
 
 Lemma sy_code_sempty l : SYD (tmSEmpty l).
-Proof.
+Proof using .
   intros G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_sempty H) as ((_ & _ & X) & _); contradiction].
@@ -70,7 +70,7 @@ Proof.
 Qed.
 
 Lemma sy_triv l : SYD (tmTriv l).
-Proof.
+Proof using .
   intros G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_triv H) as ((_ & _ & X) & _); contradiction].
@@ -78,12 +78,12 @@ Proof.
 Qed.
 
 Lemma HNat {G i Γ} : [ G ; Γ ⊢[ typeof i ] ] -> [ G ; Γ ⊢[ typeof i ] tyNat @ lzero ].
-Proof. intros HΓ; exact (wft_nat _ _ _ (typeof_notV i) (ctx_idem HΓ)). Qed.
+Proof using . intros HΓ; exact (wft_nat _ _ _ (typeof_notV i) (ctx_idem HΓ)). Qed.
 Lemma HUniv {G i Γ l} : [ G ; Γ ⊢[ typeof i ] ] -> lwf (gL G) l -> [ G ; Γ ⊢[ typeof i ] tyU l @ lsuc l ].
-Proof. intros HΓ Hl; exact (wft_U _ _ _ _ (typeof_notV i) (ctx_idem HΓ) Hl). Qed.
+Proof using . intros HΓ Hl; exact (wft_U _ _ _ _ (typeof_notV i) (ctx_idem HΓ) Hl). Qed.
 
 Lemma sy_succ t : sz_tm (succ t) <= n -> SYD (succ t).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ. notV.
   destruct (ihC t ltac:(szl) G i Γ _ _ (HNat HΓ)) as [Ht | N];
     [| right; intros T k H; destruct (inva_succ H) as ((_ & X) & _); contradiction].
@@ -91,7 +91,7 @@ Proof.
 Qed.
 
 Lemma sy_codepi l l' s t : sz_tm (tmPi l l' s t) <= n -> SYD (tmPi l l' s t).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ. notV.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_pi H) as ((_ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros T k H; destruct (inva_code_pi H) as ((_ & _ & X & _) & _); contradiction].
@@ -105,7 +105,7 @@ Proof.
 Qed.
 
 Lemma sy_natrec l M s z t : sz_tm (natrec l M s z t) <= n -> SYD (natrec l M s z t).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ. notV.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_natrec H) as ((_ & X & _) & _); contradiction].
   assert (HΓN : [ G ; Γ ,, tyNat @ lzero ⊢[ typeof i ] ]) by (apply wfc_ext; [exact HΓ | exact (HNat HΓ) | exact I]).
@@ -125,7 +125,7 @@ Proof.
 Qed.
 
 Lemma sy_app t l l' A B s : sz_tm (app t l l' A B s) <= n -> SYD (app t l l' A B s).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ. notV.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_app H) as ((_ & X & _) & _); contradiction].
   destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros T k H; destruct (inva_app H) as ((_ & _ & X & _) & _); contradiction].
@@ -143,7 +143,7 @@ Proof.
 Qed.
 
 Lemma sy_gvar u d : sz_tm (gvar u d) <= n -> SYD (gvar u d).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
   destruct (in_gctx_dec (gΨ G) u) as [(D & Hin) | N];
     [| right; intros T k H; destruct (inva_gvar H) as (? & ? & ? & ? & (_ & X & _) & _); exact (N _ X)].
@@ -168,7 +168,7 @@ Qed.
 (** A defined global (M9): [gvar]'s premises, the carried body level
     equivalent to the declared one, and the body checked at the use layer. *)
 Lemma sy_gdef u b d : sz_tm (gdef u b d) <= n -> SYD (gdef u b d).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ. pose proof (ctx_glob _ _ _ HΓ) as HG.
   destruct (in_gctx_dec (gΨ G) u) as [(D & Hin) | N];
     [| right; intros T k H; destruct (inva_gdef H) as (? & ? & ? & ? & (_ & X & _) & _); exact (N _ X)].
@@ -196,7 +196,7 @@ Qed.
 
 Lemma sy_letboxT l' l Δ M t' t : sz_tm (letboxT l' l Δ M t' t) <= n ->
   SYD (letboxT l' l Δ M t' t).
-Proof.
+Proof using ihC ihT ihX.
   intros Hsz G i Γ HΓ. atM. pose proof (ctx_glob _ _ _ HΓ) as HG.
   Ltac inv_lbT X := let H := fresh "H" in intros ? ? H; destruct (inv_letboxT eq_refl H) as (X & _).
   destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; inv_lbT X; destruct X as (_ & X & _); contradiction].
@@ -213,7 +213,7 @@ Qed.
 
 Lemma sy_letboxt l' l Δ A M t' t : sz_tm (letboxt l' l Δ A M t' t) <= n ->
   SYD (letboxt l' l Δ A M t' t).
-Proof.
+Proof using ihC ihT ihX.
   intros Hsz G i Γ HΓ. atM. pose proof (ctx_glob _ _ _ HΓ) as HG.
   Ltac inv_lbt X := let H := fresh "H" in intros ? ? H; destruct (inv_letboxt eq_refl H) as (X & _).
   destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; inv_lbt X; destruct X as (_ & X & _); contradiction].
@@ -233,7 +233,7 @@ Qed.
 
 Lemma sy_elimT l1 l2 rb l Δ t : sz_tm (elimT l1 l2 rb l Δ t) <= n ->
   SYD (elimT l1 l2 rb l Δ t).
-Proof.
+Proof using ihC ihT ihX.
   intros Hsz G i Γ HΓ. atM. pose proof (ctx_glob _ _ _ HΓ) as HG.
   destruct (rb_view rb) as [(MT & Mt & bs & ->) | N];
     [| right; intros T k H; destruct (inv_elimT eq_refl H) as (MT & Mt & bs & (E & _) & _); exact (N _ _ _ E)].
@@ -267,7 +267,7 @@ Qed.
 
 Lemma sy_elimt l1 l2 rb l Δ A t : sz_tm (elimt l1 l2 rb l Δ A t) <= n ->
   SYD (elimt l1 l2 rb l Δ A t).
-Proof.
+Proof using ihC ihT ihX.
   intros Hsz G i Γ HΓ. atM. pose proof (ctx_glob _ _ _ HΓ) as HG.
   destruct (rb_view rb) as [(MT & Mt & bs & ->) | N];
     [| right; intros T k H; destruct (inv_elimt eq_refl H) as (MT & Mt & bs & (E & _) & _); exact (N _ _ _ E)].
@@ -304,7 +304,7 @@ Qed.
 (** ** The abstractions, by their annotations (C1b) *)
 
 Lemma sy_ulam m l T b : sz_tm (ulam m l T b) <= n -> SYD (ulam m l T b).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ. atM.
   Ltac inv_ul X := let H := fresh "H" in intros ? ? H; destruct (inv_ulam eq_refl H) as (X & _).
   destruct (lt_dec 0 m) as [Hm | N]; [| right; inv_ul X; destruct X as (_ & _ & X & _); contradiction].
@@ -317,7 +317,7 @@ Proof.
 Qed.
 
 Lemma sy_clam l T b : sz_tm (clam l T b) <= n -> SYD (clam l T b).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ. atM. pose proof (ctx_glob _ _ _ HΓ) as HG.
   Ltac inv_cl X := let H := fresh "H" in intros ? ? H; destruct (inv_clam eq_refl H) as (X & _).
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; inv_cl X; destruct X as (_ & _ & X & _); contradiction].
@@ -330,7 +330,7 @@ Proof.
 Qed.
 
 Lemma sy_tlam Δ l l' T b : sz_tm (tlam Δ l l' T b) <= n -> SYD (tlam Δ l l' T b).
-Proof.
+Proof using ihC ihT ihX.
   intros Hsz G i Γ HΓ. atM. pose proof (ctx_glob _ _ _ HΓ) as HG.
   Ltac inv_tl X := let H := fresh "H" in intros ? ? H; destruct (inv_tlam eq_refl H) as (X & _).
   destruct (ihX Δ ltac:(szl) G lD HG) as [HΔ | N]; [| right; inv_tl X; destruct X as (_ & _ & X & _); contradiction].
@@ -348,7 +348,7 @@ Qed.
 
 (** A checked function of another former is untyped at this one. *)
 Lemma sy_uapp f ls : sz_tm (uapp f ls) <= n -> SYD (uapp f ls).
-Proof.
+Proof using ihS.
   intros Hsz G i Γ HΓ. atM.
   destruct (synth_dec f) as [Hs | Hs];
     [| right; intros T k H; destruct (inv_uapp eq_refl H) as (m & l & T0 & (_ & _ & _ & _ & _ & Ht) & _);
@@ -378,7 +378,7 @@ Proof.
 Qed.
 
 Lemma sy_capp f Δ : sz_tm (capp f Δ) <= n -> SYD (capp f Δ).
-Proof.
+Proof using ihS ihX.
   intros Hsz G i Γ HΓ. atM. pose proof (ctx_glob _ _ _ HΓ) as HG.
   destruct (synth_dec f) as [Hs | Hs];
     [| right; intros T k H; destruct (inv_capp eq_refl H) as (l & T0 & (_ & _ & _ & _ & Ht & _) & _);
@@ -403,7 +403,7 @@ Proof.
 Qed.
 
 Lemma sy_tapp f A : sz_tm (tapp f A) <= n -> SYD (tapp f A).
-Proof.
+Proof using ihS ihT.
   intros Hsz G i Γ HΓ. atM.
   destruct (synth_dec f) as [Hs | Hs];
     [| right; intros T k H; destruct (inv_tapp eq_refl H) as (Δ & l & l' & T0 & (_ & Ht & _) & _);
@@ -435,7 +435,7 @@ Qed.
 (** ** Dependent pairs (M8): at every layer but V (M8d) *)
 
 Lemma sy_codesig l l' s t : sz_tm (tmSig l l' s t) <= n -> SYD (tmSig l l' s t).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_sig H) as ((_ & X & _) & _); contradiction].
@@ -449,7 +449,7 @@ Proof.
   left; eexists; eexists; exact (wf_code_sig _ _ _ _ _ _ _ Hc Hl Hl' Hs Ht).
 Qed.
 Lemma sy_codeW l l' s t : sz_tm (tmW l l' s t) <= n -> SYD (tmW l l' s t).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_W H) as ((_ & X & _) & _); contradiction].
@@ -465,7 +465,7 @@ Qed.
 
 (** The codes of [Vec] and [Fin] (M14b): every layer but V. *)
 Lemma sy_code_vec l s m : sz_tm (tmVec l s m) <= n -> SYD (tmVec l s m).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_vec H) as ((_ & X & _) & _); contradiction].
@@ -476,7 +476,7 @@ Proof.
   left; eexists; eexists; exact (wf_code_vec _ _ _ _ _ _ Hc Hl Hs Hm).
 Qed.
 Lemma sy_code_fin m : sz_tm (tmFin m) <= n -> SYD (tmFin m).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (ihC m ltac:(szl) G i Γ _ _ (HNat HΓ)) as [Hm | N];
@@ -486,7 +486,7 @@ Qed.
 
 (** The identity type's code (M11b): every layer but V. *)
 Lemma sy_code_id l s t u : sz_tm (tmId l s t u) <= n -> SYD (tmId l s t u).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_id H) as ((_ & X & _) & _); contradiction].
@@ -502,7 +502,7 @@ Qed.
 
 (** Strict equality's codes (M10c; every layer but V). *)
 Lemma sy_code_seq l s t u : sz_tm (tmSEq l s t u) <= n -> SYD (tmSEq l s t u).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_code_seq H) as ((_ & X & _) & _); contradiction].
@@ -521,7 +521,7 @@ Lemma sy_sig_annot {G i Γ l l' A B} (P : Prop) :
   sz_ty A < n -> sz_ty B < n -> [ G ; Γ ⊢[ typeof i ] ] ->
   (P -> lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ]) ->
   (lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\ [ G ; Γ ,, A @ l ⊢[ i ] B @ l' ]) \/ ~ P.
-Proof.
+Proof using ihT.
   intros HzA HzB HΓ Inv.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros H; apply N, (Inv H)].
   destruct (lwf_Dec (gL G) l') as [Hl' | N]; [| right; intros H; apply N, (Inv H)].
@@ -532,7 +532,7 @@ Proof.
 Qed.
 
 Lemma sy_pair l l' A B a b : sz_tm (tmPair l l' A B a b) <= n -> SYD (tmPair l l' A B a b).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (sy_sig_annot (l := l) (l' := l') (A := A) (B := B)
@@ -551,7 +551,7 @@ Qed.
 Lemma sy_proj (fs : bool) l l' A B p :
   sz_tm (if fs then tmFst l l' A B p else tmSnd l l' A B p) <= n ->
   SYD (if fs then tmFst l l' A B p else tmSnd l l' A B p).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   assert (Inv : forall T k, [ G ; Γ ⊢[ i ] (if fs then tmFst l l' A B p else tmSnd l l' A B p) : T @ k ] ->
     i <> lV /\ lwf (gL G) l /\ lwf (gL G) l' /\ [ G ; Γ ⊢[ i ] A @ l ] /\
@@ -573,7 +573,7 @@ Qed.
 
 (** Strict equality (M10a; every layer but V since M10c). *)
 Lemma sy_srefl l A a : sz_tm (srefl l A a) <= n -> SYD (srefl l A a).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_srefl H) as ((_ & X & _) & _); contradiction].
@@ -585,7 +585,7 @@ Proof.
 Qed.
 
 Lemma sy_elimSEmpty l l' M e : sz_tm (elimSEmpty l l' M e) <= n -> SYD (elimSEmpty l l' M e).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_elimSEmpty H) as ((_ & X & _) & _); contradiction].
@@ -601,7 +601,7 @@ Qed.
 
 (** The empty type's eliminator (M12a; every layer but V since M12c). *)
 Lemma sy_elimEmpty l l' M t : sz_tm (elimEmpty l l' M t) <= n -> SYD (elimEmpty l l' M t).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_elimEmpty H) as ((_ & X & _) & _); contradiction].
@@ -618,7 +618,7 @@ Qed.
 
 (** The identity type (M11a; every layer but V since M11b). *)
 Lemma sy_refl l A a : sz_tm (tmRefl l A a) <= n -> SYD (tmRefl l A a).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_idrefl H) as ((_ & X & _) & _); contradiction].
@@ -631,7 +631,7 @@ Qed.
 
 (** [J]: its motive context's [Id] entry is built, not decided. *)
 Lemma sy_J l l' A a M c u e : sz_tm (tmJ l l' A a M c u e) <= n -> SYD (tmJ l l' A a M c u e).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   notV. rename Hv into Hc.
   pose proof (typeof_idem i) as Hty.
@@ -667,7 +667,7 @@ Qed.
 
 (** Binary sums (M12b; every layer but V since M12c). *)
 Lemma sy_inl l l' A B a : sz_tm (tmInl l l' A B a) <= n -> SYD (tmInl l l' A B a).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_inl H) as ((_ & X & _) & _); contradiction].
@@ -683,7 +683,7 @@ Proof.
 Qed.
 
 Lemma sy_inr l l' A B b : sz_tm (tmInr l l' A B b) <= n -> SYD (tmInr l l' A B b).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_inr H) as ((_ & X & _) & _); contradiction].
@@ -701,7 +701,7 @@ Qed.
 (** [case]: its branch types are built from the decided motive. *)
 Lemma sy_case l l' l'' A B M c1 c2 t : sz_tm (tmCase l l' l'' A B M c1 c2 t) <= n ->
   SYD (tmCase l l' l'' A B M c1 c2 t).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   notV. rename Hv into Hc.
   pose proof (typeof_idem i) as Hty.
@@ -746,7 +746,7 @@ Qed.
 
 (** The codes of [Empty] and [+] (M12c; every layer but V). *)
 Lemma sy_code_empty l : SYD (tmEmpty l).
-Proof.
+Proof using .
   intros G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N];
@@ -755,7 +755,7 @@ Proof.
 Qed.
 
 Lemma sy_code_sum l l' s t : sz_tm (tmSum l l' s t) <= n -> SYD (tmSum l l' s t).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ.
   notV. rename Hv into Hc.
   destruct (lwf_Dec (gL G) l) as [Hl | N];
@@ -773,7 +773,7 @@ Qed.
     function is checked at the function type its shape determines; that type
     is built at [typeof i], where the checker takes it. *)
 Lemma sy_sup l l' A B a f : sz_tm (tmSup l l' A B a f) <= n -> SYD (tmSup l l' A B a f).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   notV.
   pose proof (typeof_idem i) as Hty. pose proof (typeof_notV i) as Hv0.
@@ -802,7 +802,7 @@ Qed.
     lemmas), the step type at [typeof i], where the checker takes it. *)
 Lemma sy_elimW l l' l'' A B M c t : sz_tm (tmElimW l l' l'' A B M c t) <= n ->
   SYD (tmElimW l l' l'' A B M c t).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   notV.
   pose proof (typeof_idem i) as Hty. pose proof (typeof_notV i) as Hv0.
@@ -848,7 +848,7 @@ Qed.
     ([StaticCode]'s layer-generic [Wf_*_wf_g]), then lifted to [typeof i],
     where the checker takes them. *)
 Lemma sy_supf l A N a cs : sz_tm (tmSupf l A N a cs) <= n -> SYD (tmSupf l A N a cs).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   notV.
   destruct (lwf_Dec (gL G) l) as [Hl | N0];
@@ -872,7 +872,7 @@ Qed.
 
 (** The code of [Wf] (M15b). *)
 Lemma sy_code_wf l s m : sz_tm (tmWf l s m) <= n -> SYD (tmWf l s m).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ.
   notV.
   destruct (lwf_Dec (gL G) l) as [Hl | N0];
@@ -888,7 +888,7 @@ Qed.
 
 (** The code of [∥·∥] (M16b). *)
 Lemma sy_code_sq l s : sz_tm (tmSqCode l s) <= n -> SYD (tmSqCode l s).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ.
   notV.
   destruct (lwf_Dec (gL G) l) as [Hl | N0];
@@ -899,7 +899,7 @@ Proof.
 Qed.
 
 Lemma sy_elimWf l l' A N M c t : sz_tm (tmElimWf l l' A N M c t) <= n -> SYD (tmElimWf l l' A N M c t).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   notV.
   destruct (lwf_Dec (gL G) l) as [Hl | N0];
@@ -936,7 +936,7 @@ Qed.
 
 (** Propositional truncation (M16a; every layer but V since M16b). *)
 Lemma sy_sq l A a : sz_tm (tmSq l A a) <= n -> SYD (tmSq l A a).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   notV.
   destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_sq H) as ((_ & X & _) & _); contradiction].
@@ -949,7 +949,7 @@ Qed.
 
 (** [ind_∥∥]: its step's type is built from the decided motive. *)
 Lemma sy_elimSq l l' A M c t : sz_tm (tmElimSq l l' A M c t) <= n -> SYD (tmElimSq l l' A M c t).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   notV.
   pose proof (typeof_idem i) as Hty.
@@ -987,7 +987,7 @@ Qed.
     checker takes them. *)
 Lemma sy_supi l li X A N Ot C a cs : sz_tm (tmSupi l li X A N Ot C a cs) <= n ->
   SYD (tmSupi l li X A N Ot C a cs).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ.
   notV.
   destruct (dec_iwf_sig n IH l li X A N Ot C ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) G i Γ Hv HΓ)
@@ -1005,7 +1005,7 @@ Qed.
 
 (** The codes of [DVec] and [IWf] (M17c; every layer but V). *)
 Lemma sy_code_dvec l t f : sz_tm (tmDVec l t f) <= n -> SYD (tmDVec l t f).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ.
   notV.
   destruct (lwf_Dec (gL G) l) as [Hl | N0];
@@ -1020,7 +1020,7 @@ Proof.
 Qed.
 
 Lemma sy_code_iwf l li x s N Ot C m : sz_tm (tmIWf l li x s N Ot C m) <= n -> SYD (tmIWf l li x s N Ot C m).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ.
   notV.
   destruct (lwf_Dec (gL G) l) as [Hl | N0];
@@ -1053,7 +1053,7 @@ Qed.
 
 Lemma sy_elimIWf l li l' X A N Ot C M c m t : sz_tm (tmElimIWf l li l' X A N Ot C M c m t) <= n ->
   SYD (tmElimIWf l li l' X A N Ot C M c m t).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   notV.
   destruct (lwf_Dec (gL G) l') as [Hl' | Hn];
@@ -1101,7 +1101,7 @@ Qed.
     carrier's step type, index and seed; [out]'s index and scrutinee. *)
 Lemma sy_corec l l' li X A B C kc Y c j y : sz_tm (tmCorec l l' li X A B C kc Y c j y) <= n ->
   SYD (tmCorec l l' li X A B C kc Y c j y).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ HΓ.
   destruct (compt_dec i) as [Hc | Hn]; [| right; intros T k H; exact (Hn (proj1 (inva_corec H)))].
   pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
@@ -1128,7 +1128,7 @@ Proof.
 Qed.
 
 Lemma sy_out l l' li X A B C j m : sz_tm (tmOut l l' li X A B C j m) <= n -> SYD (tmOut l l' li X A B C j m).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ HΓ.
   destruct (compt_dec i) as [Hc | Hn]; [| right; intros T k H; exact (Hn (proj1 (inva_out H)))].
   pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
@@ -1145,7 +1145,7 @@ Qed.
 (** ** The step *)
 
 Lemma sy_step t : sz_tm t <= n -> synth t -> SYD t.
-Proof.
+Proof using ihC ihS ihT ihX.
   intros Hsz Hs. destruct t; cbn in Hs; try contradiction;
     first [ apply sy_var | apply sy_nat | apply sy_zero | apply sy_U
           | apply sy_junk; exact I

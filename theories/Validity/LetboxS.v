@@ -43,11 +43,11 @@ Context {G : gctx} {Θ D : ctx} {l1 l2 : lvl} {M : ty} {b : tm}
 
 Lemma wf_letboxT_at {s} : [ G ; Θ ⊢[ lM ] s : tyCTyp D l2 @ lzero ] ->
   [ G ; Θ ⊢[ lM ] letboxT l1 l2 D M b s : M[lsingle s] @ l1 ].
-Proof. intros; apply wf_letboxT; assumption. Qed.
+Proof using HD HM Hb Hl1 Hl2. intros; apply wf_letboxT; assumption. Qed.
 
 Lemma tmred_letboxT_cong {s w} : [ G ; Θ ⊢[ lM ] s ⤳* w : tyCTyp D l2 @ lzero ] ->
   [ G ; Θ ⊢[ lM ] letboxT l1 l2 D M b s ⤳* letboxT l1 l2 D M b w : M[lsingle s] @ l1 ].
-Proof.
+Proof using HD HM Hb Hl1 Hl2.
   intros [Hs Hr Heq]. split.
   - now apply wf_letboxT_at.
   - now apply reds_letboxT.
@@ -59,7 +59,7 @@ Qed.
 
 Lemma tmred_letboxT_beta {T} : [ G ; D ⊢[ lC ] T @ l2 ] ->
   [ G ; Θ ⊢[ lM ] letboxT l1 l2 D M b (boxT T) ⤳* b⦃gsingle (GTy T)⦄ : M[lsingle (boxT T)] @ l1 ].
-Proof.
+Proof using HD HM Hb Hl1 Hl2.
   intros HT. assert (HΘ : [ G ; Θ ⊢[ lM ] ]) by exact (ctx_of_ext (ctx_of_wf_ty (i := lM) eq_refl HM)).
   split.
   - apply wf_letboxT_at, wf_boxT; assumption.
@@ -116,7 +116,7 @@ Context {G : gctx} {Θ D : ctx} {A : ty} {l1 l2 : lvl} {M : ty} {b : tm}
 
 Lemma tmred_letboxt_cong {s w} : [ G ; Θ ⊢[ lM ] s ⤳* w : tyCTrm D A l2 @ lzero ] ->
   [ G ; Θ ⊢[ lM ] letboxt l1 l2 D A M b s ⤳* letboxt l1 l2 D A M b w : M[lsingle s] @ l1 ].
-Proof.
+Proof using HA HD HM Hb Hl1 Hl2.
   intros [Hs Hr Heq]. split.
   - apply wf_letboxt; assumption.
   - now apply reds_letboxt.
@@ -129,7 +129,7 @@ Qed.
 
 Lemma tmred_letboxt_beta {t} : [ G ; D ⊢[ lC ] t : A @ l2 ] ->
   [ G ; Θ ⊢[ lM ] letboxt l1 l2 D A M b (boxt t) ⤳* b⦃gsingle (GTm t)⦄ : M[lsingle (boxt t)] @ l1 ].
-Proof.
+Proof using HA HD HM Hb Hl1 Hl2.
   intros Ht. assert (HΘ : [ G ; Θ ⊢[ lM ] ]) by exact (ctx_of_ext (ctx_of_wf_ty (i := lM) eq_refl HM)).
   split.
   - apply wf_letboxt, wf_boxt; assumption.
@@ -174,12 +174,12 @@ Section IdInst.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp} `{VN : !VPNe}.
 
 Lemma gwa_lshift0 γ : (lshift 0)⟦γ⟧ = lshift 0.
-Proof. now destruct γ. Qed.
+Proof using . now destruct γ. Qed.
 
 (** The identity substitution is related to itself, at every global
     weakening. *)
 Lemma VSubK_id {G X} : [ G ; X ⊢[ lD ] ] -> CtxRelG G X X -> VSubK G X (lshift 0) (lshift 0) X.
-Proof.
+Proof using EL VL.
   intros HX HR G' γ Hγ. rewrite gwa_lshift0.
   apply VSub_intro; [exact (HR _ _ Hγ) | apply tail_id | apply tail_id | intros n; exact I | intros n; exact I |].
   intros n A k Hin Θ d d' Hd. pose proof (ctx_glob _ _ _ (SubRel_ctx Hd)) as HG'.
@@ -190,7 +190,7 @@ Qed.
 (** Related substitutions under a global weakening. *)
 Lemma SubRel_gwa {G Γ Δ d d' G' γ} : SubRel G Γ Δ d d' -> gwk_ok γ G' G -> [ ⊢ G' ] ->
   SubRel G' Γ⟦γ⟧ Δ⟦γ⟧ d⟦γ⟧ d'⟦γ⟧.
-Proof.
+Proof using EL VL.
   intros H Hγ HG. destruct (SubRel_dnf _ _ _ _ _ H) as [N N'].
   pose (ρ := kw_mk (G := G) (Γ := Δ) G' Δ⟦γ⟧ γ wk_id Hγ (wkwf_id _) (gwa_ctx Hγ HG (SubRel_ctx H))).
   eapply SubRel_ext; [| | exact (SubRel_kw _ _ _ ρ _ _ H)]; intros n;
@@ -233,7 +233,7 @@ Lemma VS_letboxT {G Γ l1 l2 l3 l4 Δ Δ' M M' t1 t2 t t0} :
   VTmSM (gext G (gdTy Δ' lC l4)) Γ⟪S⟫ t2 t2 (Mb M') l3 ->
   VTmSM G Γ t t0 (tyCTyp Δ l2) lzero ->
   VTmSM G Γ (letboxT l1 l2 Δ M t1 t) (letboxT l3 l4 Δ' M' t2 t0) M[lsingle t] l1.
-Proof.
+Proof using ELM ELP EMl.
   intros HG Hl13 Hl24 Hl1 Hl2 HΔ HΔ' HΔΔ' HM HM' Ht1 Ht2 Ht2' Ht Ht0 VΓ VΔP VΔM VEqP VEqM VM Vb Vb' Vt.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
   (* global facts *)
@@ -467,7 +467,7 @@ Lemma VS_letboxt {G Γ l1 l2 l3 l4 Δ Δ' A A' M M' t1 t2 t t0} :
   VTmSM (gext G (gdTm Δ' lC A' l4)) Γ⟪S⟫ t2 t2 (Mbt M') l3 ->
   VTmSM G Γ t t0 (tyCTrm Δ A l2) lzero ->
   VTmSM G Γ (letboxt l1 l2 Δ A M t1 t) (letboxt l3 l4 Δ' A' M' t2 t0) M[lsingle t] l1.
-Proof.
+Proof using ELM ELP EMl.
   intros HG Hl13 Hl24 Hl1 Hl2 HΔ HΔ' HΔΔ' HA HA' HAA' HM HM' Ht1 Ht2 Ht2' Ht Ht0 VΓ VΔP VΔM VEqP VEqM VAP VAM
     VM Vb Vb' Vt.
   pose proof (VTyS_trans EP EM VAP (VTyS_sym EP EM HG VΔP VAP)) as VAAP.
@@ -716,7 +716,7 @@ Lemma VS_letboxT_beta {G Γ l' l Δ M t' T} :
   VCtxSP G Δ -> VCtxSPM G Δ -> @VTyS EP EM EP LR_P G Δ T T l -> @VTyS EP EM EM LR_P G Δ T T l ->
   VTmSM (gext G (gdTy Δ lC l)) Γ⟪S⟫ t' t' (M⟪S⟫[lsingle (boxT (tyGvar 0 (lshift 0)))]) l' ->
   VTmSM G Γ (letboxT l' l Δ M t' (boxT T)) t'⦃gsingle (GTy T)⦄ M[lsingle (boxT T)] l'.
-Proof.
+Proof using ELM ELP EMl.
   intros HG Hl' Hl HΔ HT HM Ht' VΔP VΔM VTP VTM Vb.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
   pose proof (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as HG'.
@@ -775,7 +775,7 @@ Lemma VS_letboxt_beta {G Γ l' l Δ A M t' c} :
   @VTmS EP EM EP LR_P G Δ c c A l -> @VTmS EP EM EM LR_P G Δ c c A l ->
   VTmSM (gext G (gdTm Δ lC A l)) Γ⟪S⟫ t' t' (M⟪S⟫[lsingle (boxt (gvar 0 (lshift 0)))]) l' ->
   VTmSM G Γ (letboxt l' l Δ A M t' (boxt c)) t'⦃gsingle (GTm c)⦄ M[lsingle (boxt c)] l'.
-Proof.
+Proof using ELM ELP EMl.
   intros HG Hl' Hl HΔ HA Hc HM Ht' VΔP VΔM VAP VAM VcP VcM Vb.
   apply (VTmS_intro_loc EP EM). intros G' σ σ' Hσ Θ e e' He.
   pose proof (gsw_glob _ _ _ (gsr_wf_l _ _ _ _ _ _ Hσ)) as HG'.
