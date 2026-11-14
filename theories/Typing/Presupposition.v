@@ -3,7 +3,7 @@
     Every judgment's components are well formed: the type of a typed term,
     both sides of a type equality, both sides of a term equality (and its
     type).  For layers with [typeof i = i]. *)
-From DeLaM.Typing Require Export PresupAux PresupIWf PresupM MInst.
+From DeLaM.Typing Require Export PresupAux PresupIWf PresupIWi PresupM MInst.
 
 (** ** Global variables
 
@@ -262,6 +262,10 @@ Ltac iwf_leaf := first [eassumption | eapply lequiv_wf_l; eassumption | eapply l
 Ltac iwf_bundle := first [iwf_leaf | eapply IWfEq_intro; iwf_leaf
   | unfold IWfSig; repeat match goal with |- _ /\ _ => split end; iwf_leaf].
 
+(** [IWi]'s signature, as [IWf]'s (M19a). *)
+Ltac iwi_bundle := first [iwf_leaf | eapply IWiEq_intro; iwf_leaf
+  | unfold IWiSig; repeat match goal with |- _ /\ _ => split end; iwf_leaf].
+
 (** [M]'s signature, as [IWf]'s (M18b). *)
 Ltac m_bundle := first [iwf_leaf | eapply MEq_intro; iwf_leaf
   | unfold MSig; repeat match goal with |- _ /\ _ => split end; iwf_leaf].
@@ -429,6 +433,18 @@ Proof.
              (eapply pre_elimIWf_ty; [.. | exact Ht]); iwf_bundle end
          | eapply pre_elimIWf_r; iwf_bundle
          | eapply wft_iwf; iwf_leaf | eapply wf_supi; iwf_leaf | eapply wf_elimIWf; iwf_leaf ]]);
+    (* infinitary indexed families (M19a): as [IWf]'s *)
+    (try solve [first
+         [ eapply pre_iwi_r; iwi_bundle
+         | eapply pre_supii_ty; iwi_bundle
+         | eapply pre_supii_r; iwi_bundle
+         | eapply pre_elimIWi_beta_l; iwi_bundle
+         | eapply pre_elimIWi_beta_ty; iwi_bundle
+         | eapply pre_elimIWi_beta; iwi_bundle
+         | match goal with Ht : wf_tm _ _ _ ?t (tyIWi _ _ _ _ _ _ _ _ _ _) _ |- wf_ty _ _ _ (_[lsingle2 _ ?t]) _ =>
+             (eapply pre_elimIWi_ty; [.. | exact Ht]); iwi_bundle end
+         | eapply pre_elimIWi_r; iwi_bundle
+         | eapply wft_iwi; iwf_leaf | eapply wf_supii; iwf_leaf | eapply wf_elimIWi; iwf_leaf ]]);
     (* indexed coinductive types (M18b): as [IWf]'s *)
     (try solve [first
          [ eapply pre_M_r; m_bundle
