@@ -6,7 +6,7 @@
     is the original one at composite weakenings.  The universe case uses
     weakening one stage down. *)
 From DeLaM.LogRel Require Export Transitivity.
-From DeLaM.LogRel Require Import IWfAux MAux.
+From DeLaM.LogRel Require Import IWfAux MAux IWiAux.
 
 Section Weakening.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
@@ -160,6 +160,39 @@ Proof using EL.
   econstructor; [exact Y | exact Y' | exact Z | exact (IWfNf_kw Hn ρ)].
 Qed.
 
+(** ** Indexed families with infinitary children (M19b): as [IWf]'s. *)
+Lemma IWiNf_kw {G Γ l lp li X A N D Ot C} {ix dm : DomRel G Γ} {pd : IPosDomRel G Γ} {m w w'} :
+  IWiNf G Γ l lp li X A N D Ot C ix dm pd m w w' -> forall ρ : kwk G Γ,
+  IWiNf (kw_G ρ) (kw_Δ ρ) l lp li (kty ρ X) (kty ρ A) (ktml ρ N) (ktyll ρ D) (ktml ρ Ot) (ktmlll ρ C)
+    (fun ρ' => ix (kw_comp ρ ρ')) (fun ρ' => dm (kw_comp ρ ρ')) (fun ρ' => pd (kw_comp ρ ρ'))
+    (ktm ρ m) (ktm ρ w) (ktm ρ w').
+Proof using EL.
+  destruct 1 as [G Γ l lp li X A N D Ot C ix dm pd m k kp ki k' kp' ki' X1 A1 N1 D1 O1 C1 X1' A1' N1' D1' O1' C1'
+                   a a' cs cs' E1 E2 Hd Ho Hcs
+                | G Γ l lp li X A N D Ot C ix dm pd m ν ν' Hν];
+    intros ρ.
+  - rewrite !ktm_supii. apply iwinf_sup.
+    + exact (IWiEq_kw ρ E1).
+    + exact (IWiEq_kw ρ E2).
+    + intros ρ2. cbn beta. rewrite <- !ktm_comp. exact (Hd (kw_comp ρ ρ2)).
+    + intros ρ2. cbn beta. rewrite <- !ktm_comp, <- !ktml_comp. exact (Ho (kw_comp ρ ρ2)).
+    + intros ρ2. rewrite <- !ktm_comp, <- !ktml_comp, <- !ktyll_comp, <- !ktmlll_comp, <- !kty_comp.
+      exact (Hcs (kw_comp ρ ρ2)).
+  - apply iwinf_ne. pose proof (kw_gne_tm ρ Hν) as Y. rewrite kty_tyIWi in Y. exact Y.
+Qed.
+
+Lemma IWiRel_kw {G Γ l lp li X A N D Ot C} {ix dm : DomRel G Γ} {pd : IPosDomRel G Γ} {m} (ρ : kwk G Γ) :
+  forall t t', IWiRel G Γ l lp li X A N D Ot C ix dm pd m t t' ->
+  IWiRel (kw_G ρ) (kw_Δ ρ) l lp li (kty ρ X) (kty ρ A) (ktml ρ N) (ktyll ρ D) (ktml ρ Ot) (ktmlll ρ C)
+    (fun ρ' => ix (kw_comp ρ ρ')) (fun ρ' => dm (kw_comp ρ ρ')) (fun ρ' => pd (kw_comp ρ ρ'))
+    (ktm ρ m) (ktm ρ t) (ktm ρ t').
+Proof using EL.
+  intros t t' H. destruct (IWiRel_inv H) as (w & w' & Hw & Hw' & Heq & Hn).
+  pose proof (kw_tmred ρ Hw) as Y. pose proof (kw_tmred ρ Hw') as Y'. pose proof (kw_geq_tm ρ Heq) as Z.
+  rewrite kty_tyIWi in Y, Y', Z.
+  econstructor; [exact Y | exact Y' | exact Z | exact (IWiNf_kw Hn ρ)].
+Qed.
+
 (** ** Meta-functions: the domain of [TΠ] at composite worlds *)
 
 Lemma vp_ty_comp {G Γ} (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) {Δ A A' l} :
@@ -291,7 +324,11 @@ Proof using EL VL.
                     widxAd IHwidx Hwisym Hwistr wdomAd IHwdom warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR]; intros ρ.
+                    HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC'
+                    Hvm Hvm' HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd IHvidx Hvisym Hvistr vdomAd IHvdom varAd votAd
+                    vpdAd IHvpd vpdE vpdMon vchAd vgC vixAd HR]; intros ρ.
   - exists (NatRel (kw_G ρ) (kw_Δ ρ)). split.
     + pose proof (kw_tyred ρ HT) as X. pose proof (kw_tyred ρ HT') as X'.
       rewrite kty_tyNat in X, X'.
@@ -682,6 +719,78 @@ Proof using EL VL.
       * apply releq_refl.
     + intros t t' Ht. apply HR in Ht. intros k.
       exact (MRn_kw k ρ HM Shirr Pirr mixAd t t' (Ht k)).
+  - (* IWi: the data at composite worlds, as IWf *)
+    pose proof (lequiv_sym _ _ _ Hvl2) as Hl2'. pose proof (lequiv_sym _ _ _ Hvlp2) as Hlp2'.
+    pose proof (lequiv_sym _ _ _ Hvli2) as Hli2'.
+    pose proof (geq_ty_sound HvXX) as EX. pose proof (geq_ty_sound HvAA) as EA.
+    pose proof (geq_tm_sound HvNN) as EN. pose proof (geq_ty_sound HvDD) as ED.
+    pose proof (geq_tm_sound HvOO) as EO. pose proof (geq_tm_sound HvCC) as EC.
+    assert (HE : IWiEq (G := G) (i := ge_layer) Γ vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC').
+    { apply IWiEq_intro; [exact Hl2' | exact Hlp2' | exact Hli2' | exact EX | exact EA | exact EN | exact ED | exact EO
+        | exact EC | exact Hvw | exact Hvwp | exact Hvwi | exact HvX | exact HvA | exact HvN | exact HvD | exact HvO
+        | exact HvC | exact HvX' | exact HvA' | exact (eqtm_wf_r ge_typeof EN) | exact (eqty_wf_r ge_typeof ED)
+        | exact (eqtm_wf_r ge_typeof EO) | exact (eqtm_wf_r ge_typeof EC)]. }
+    assert (HG : IWiGeq G Γ vl1 vlp1 vli1 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC')
+      by exact (conj HvXX (conj HvAA (conj HvNN (conj HvDD (conj HvOO HvCC))))).
+    pose proof (IWiEq_kw ρ HE) as (_ & _ & _ & (_ & _ & _ & HXρ & HAρ & HNρ & HDρ & HOρ & HCρ) & _ & _ & _ & _ & _ & _
+                                   & _).
+    pose proof (IWiGeq_kw ρ HE HG) as (GX & GA & GN & GD & GO & GC).
+    exists (IWiRel (kw_G ρ) (kw_Δ ρ) vl1 vlp1 vli1 (kty ρ vX) (kty ρ vA) (ktml ρ vN) (ktyll ρ vD) (ktml ρ vO)
+              (ktmlll ρ vC) (fun ρ' => vidxR (kw_comp ρ ρ')) (fun ρ' => vdomR (kw_comp ρ ρ'))
+              (fun ρ' => vpdR (kw_comp ρ ρ')) (ktm ρ vm)). split.
+    + pose proof (kw_tyred ρ HT) as Y. pose proof (kw_tyred ρ HT') as Y'.
+      rewrite kty_tyIWi in Y, Y'.
+      eapply (LRiwi n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ T) (kty ρ T') l vl1 vlp1 vli1 vl2 vlp2 vli2
+                (kty ρ vX) (kty ρ vX') (kty ρ vA) (kty ρ vA') (ktml ρ vN) (ktml ρ vN') (ktyll ρ vD) (ktyll ρ vD')
+                (ktml ρ vO) (ktml ρ vO') (ktmlll ρ vC) (ktmlll ρ vC') (ktm ρ vm) (ktm ρ vm')
+                (fun ρ' => vidxR (kw_comp ρ ρ')) (fun ρ' => vdomR (kw_comp ρ ρ')) (fun ρ' => vpdR (kw_comp ρ ρ'))).
+      * exact (kw_lequiv ρ Hl).
+      * exact (kw_lequiv ρ Hvl2).
+      * exact (kw_lequiv ρ Hvlp2).
+      * exact (kw_lequiv ρ Hvli2).
+      * exact (kw_lwf ρ Hvw).
+      * exact (kw_lwf ρ Hvwp).
+      * exact (kw_lwf ρ Hvwi).
+      * exact Y.
+      * exact Y'.
+      * exact HXρ.
+      * exact (kw_ty ρ HvX').
+      * exact HAρ.
+      * exact (kw_ty ρ HvA').
+      * exact HNρ.
+      * exact (kw_tm_nat_l ρ HvA' Hvw HvN').
+      * exact HDρ.
+      * exact (kw_ty_ll ρ HvA' Hvw HvN' HvD').
+      * exact HOρ.
+      * pose proof (kw_tm_l' ρ HvA' Hvw HvO') as Z. rewrite ktyl_shift' in Z. exact Z.
+      * exact HCρ.
+      * pose proof (kw_tm_lll ρ HvA' Hvw HvN' HvD' Hvwp HvC') as Z. rewrite kty_shift3 in Z. exact Z.
+      * exact (kw_tm ρ Hvm).
+      * exact (kw_tm ρ Hvm').
+      * exact GX.
+      * exact GA.
+      * exact GN.
+      * exact GD.
+      * exact GO.
+      * exact GC.
+      * exact (kw_geq_tm ρ Hvmm).
+      * intros ρ'. cbn beta. rewrite <- !kty_comp. exact (vidxAd (kw_comp ρ ρ')).
+      * intros ρ' x y h. exact (Hvisym _ _ _ h).
+      * intros ρ' x y z h1 h2. exact (Hvistr _ _ _ _ h1 h2).
+      * intros ρ'. cbn beta. rewrite <- !kty_comp. exact (vdomAd (kw_comp ρ ρ')).
+      * intros ρ' a a' ha. cbn beta in ha. rewrite <- !ktml_comp. exact (varAd (kw_comp ρ ρ') a a' ha).
+      * intros ρ' a a' ha. cbn beta in ha |- *. rewrite <- !ktml_comp. exact (votAd (kw_comp ρ ρ') a a' ha).
+      * intros ρ' a a' ha p p' Hp. cbn beta in ha |- *. rewrite <- !ktml_comp in Hp. rewrite <- !ktyll_comp.
+        exact (vpdAd (kw_comp ρ ρ') a a' ha p p' Hp).
+      * intros ρ' a a' p p' y y' h. cbn beta in h. rewrite <- !ktml_comp. exact (vpdE _ _ _ _ _ _ _ h).
+      * intros ρ' ρ'' a a' p p' y y' h. cbn beta in h |- *. exact (vpdMon (kw_comp ρ ρ') ρ'' _ _ _ _ _ _ h).
+      * intros ρ' a a' ha p p' y y' hp. cbn beta in ha, hp |- *. rewrite <- !ktmlll_comp.
+        exact (vchAd (kw_comp ρ ρ') a a' ha p p' y y' hp).
+      * intros ρ' a a' ha p p' Hp. cbn beta in ha. rewrite <- !ktml_comp in Hp.
+        rewrite <- !ktyll_comp, <- !ktmlll_comp, <- kty_comp. exact (vgC (kw_comp ρ ρ') a a' ha p p' Hp).
+      * intros ρ'. cbn beta. rewrite <- !ktm_comp. exact (vixAd (kw_comp ρ ρ')).
+      * apply releq_refl.
+    + intros t t' Ht. apply HR in Ht. exact (IWiRel_kw ρ _ _ Ht).
 Qed.
 
 Theorem LR_kwk n : Pwk n.
