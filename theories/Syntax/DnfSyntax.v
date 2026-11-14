@@ -106,6 +106,39 @@ Proof.
   cbn [dnftm dnfty]; intuition auto using ren_dnf_ty, ren_dnf, subst_dnf, lk_dnf_lsingle.
 Qed.
 
+(** [IWi]'s field type and induction hypothesis (M19). *)
+Lemma dnf_iwiFamCod l lp li X A N D Ot C a : dnfty X -> dnfty A -> dnftm N -> dnfty D -> dnftm Ot ->
+  dnftm C -> dnftm a -> dnfty (iwiFamCod l lp li X A N D Ot C a).
+Proof.
+  intros; unfold iwiFamCod; cbn [dnfty dnftm]; repeat split; auto using ren_dnf_ty, ren_dnf.
+  apply subst_dnf; auto. apply lk_dnf_llift, lk_dnf_llift, lk_dnf_lsingle; auto.
+Qed.
+Lemma dnf_iwiFam l lp li X A N D Ot C a : dnfty X -> dnfty A -> dnftm N -> dnfty D -> dnftm Ot ->
+  dnftm C -> dnftm a -> dnfty (iwiFam l lp li X A N D Ot C a).
+Proof.
+  intros; unfold iwiFam; cbn [dnfty]; split; auto using dnf_iwiFamCod.
+  apply subst_dnf_ty; auto. apply lk_dnf_llift, lk_dnf_lsingle; auto.
+Qed.
+Lemma dnf_iwiIH l lp li l' X A N D Ot C M c a cs : dnfty X -> dnfty A -> dnftm N -> dnfty D -> dnftm Ot ->
+  dnftm C -> dnfty M -> dnftm c -> dnftm a -> dnftm cs -> dnftm (iwiIH l lp li l' X A N D Ot C M c a cs).
+Proof.
+  intros; unfold iwiIH.
+  pose proof (dnf_iwiFam l lp li X A N D Ot C a ltac:(assumption) ltac:(assumption) ltac:(assumption)
+                ltac:(assumption) ltac:(assumption) ltac:(assumption) ltac:(assumption)) as HF.
+  pose proof (dnf_iwiFamCod l lp li X A N D Ot C a ltac:(assumption) ltac:(assumption) ltac:(assumption)
+                ltac:(assumption) ltac:(assumption) ltac:(assumption) ltac:(assumption)) as HB.
+  assert (HD : dnfty D[llift (lsingle a)]) by (apply subst_dnf_ty; auto; apply lk_dnf_llift, lk_dnf_lsingle; auto).
+  assert (Hn : dnftm (tmDNth (iwiL l lp li) N[lsingle a]⟨↑⟩⟨↑⟩ (iwiFam l lp li X A N D Ot C a)⟨rlift ↑⟩⟨rlift ↑⟩
+                        cs⟨↑⟩⟨↑⟩ (var 1))).
+  { apply dnf_tmDNth; auto using ren_dnf_ty, ren_dnf; [|exact I].
+    apply ren_dnf, ren_dnf, subst_dnf; auto using lk_dnf_lsingle. }
+  revert Hn HF HB HD.
+  generalize (tmDNth (iwiL l lp li) N[lsingle a]⟨↑⟩⟨↑⟩ (iwiFam l lp li X A N D Ot C a)⟨rlift ↑⟩⟨rlift ↑⟩ cs⟨↑⟩⟨↑⟩ (var 1))
+             (iwiFam l lp li X A N D Ot C a) (iwiFamCod l lp li X A N D Ot C a) D[llift (lsingle a)].
+  intros x F B D' Hn HF HB HD.
+  cbn [dnftm dnfty]; intuition auto using ren_dnf_ty, ren_dnf, subst_dnf, lk_dnf_lsingle, lk_dnf_llift.
+Qed.
+
 (** Goal-directed: each lemma chosen by the goal's head. Left to a
     [first] of [apply]s, each failing one unfolded its conclusion against
     the goal (13 s of [dnf_redt], 0.5 s now; docs/gotchas.md). *)
@@ -123,6 +156,9 @@ Ltac dnf_step := lazymatch goal with
   | |- dnftm (wIH _ _ _ _ _ _ _ _ _) => apply dnf_wIH
   | |- dnftm (wfIH _ _ _ _ _ _ _ _) => apply dnf_wfIH
   | |- dnftm (iwfIH _ _ _ _ _ _ _ _ _ _ _ _) => apply dnf_iwfIH
+  | |- dnfty (iwiFam _ _ _ _ _ _ _ _ _ _) => apply dnf_iwiFam
+  | |- dnfty (iwiFamCod _ _ _ _ _ _ _ _ _ _) => apply dnf_iwiFamCod
+  | |- dnftm (iwiIH _ _ _ _ _ _ _ _ _ _ _ _ _ _) => apply dnf_iwiIH
   | |- dnfty (ren _ _) => apply ren_dnf_ty
   | |- dnfty (ren_ty _ _) => apply ren_dnf_ty
   | |- dnftm (ren _ _) => apply ren_dnf

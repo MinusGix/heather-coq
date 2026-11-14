@@ -32,6 +32,7 @@ Qed.
    in [typed_dnf], for their lemmas *)
 Local Arguments tmDNth : simpl never. Local Arguments iwfFam : simpl never.
 Local Arguments iwfIH : simpl never.
+Local Arguments iwiFam : simpl never. Local Arguments iwiIH : simpl never.
 Theorem typed_dnf :
   (forall G, [ ⊢ G ] -> True) /\
   (forall G i Γ, [ G ; Γ ⊢[ i ] ] -> dnfctx Γ) /\
@@ -46,7 +47,7 @@ Proof.
     (cbn in *;
     try match goal with H : in_gctx _ _ _ |- _ => pose proof (in_gctx_dnf _ _ _ H); cbn in * end;
     repeat match goal with H : _ /\ _ |- _ => destruct H end;
-    repeat split; eauto using subst_dnf_ty, subst_dnf, ren_dnf_ty, ren_dnf, in_ctx_dnf, dnf_tmDNth, dnf_iwfFam with nf);
+    repeat split; eauto using subst_dnf_ty, subst_dnf, ren_dnf_ty, ren_dnf, in_ctx_dnf, dnf_tmDNth, dnf_iwfFam, dnf_iwiFam with nf);
     (try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle2; cbn; tauto]]);
     (try solve [apply subst_dnf_ty; auto; intros n; apply dnfl_llk; auto]);
     (try solve [apply subst_dnf; auto; intros n; apply dnfl_llk; auto]);
@@ -60,7 +61,7 @@ Proof.
                    cbn; intuition auto ]);
     (try solve [ eapply dnf_redT; [ .. | eassumption ]; cbn; intuition auto
                  | eapply dnf_redt; [ .. | eassumption ]; cbn; intuition auto ]);
-    (try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle3; auto using dnf_wIH, dnf_wfIH, dnf_iwfIH]]);
+    (try solve [apply subst_dnf; [assumption | apply lk_dnf_lsingle3; auto using dnf_wIH, dnf_wfIH, dnf_iwfIH, dnf_iwiIH]]);
     (* [DVec]'s successor reduct (M17a): the head's and the tail's instances *)
     (try solve [ repeat first [ progress cbn [dnftm dnfty] | apply subst_dnf_ty | apply ren_dnf_ty | apply ren_dnf
                                 | apply lk_dnf_lsingle | split | exact I ]; intuition auto ]);

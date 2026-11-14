@@ -860,6 +860,29 @@ Ltac fun_IWf :=
       fun_IWf_lifts X A N d; eapply eqtm_elimIWf; fun_Ip
   end.
 
+(** [IWi] (M19a): as [IWf]'s, with one more lift, past the domain [D]
+    (the child index's context). *)
+Ltac fun_IWi_lifts X A N D d :=
+  let HnD := fresh "HnD" in
+  fun_IWf_lifts X A N d;
+  match goal with
+  | wD : wf_ty _ _ (_ ,, A @ _ ,, tyFin N @ _) D ?lp,
+    HnF : lsub_eq _ _ _ (llift (llift d)) _ (_ ,, A @ _ ,, tyFin N @ _) |- _ =>
+      fun_Ilift HnF D lp HnD
+  end.
+Ltac fun_IWi :=
+  match goal with
+  | |- eq_ty _ _ _ (tyIWi _ _ _ (@subst _ _ ?X ?d) (@subst _ _ ?A _) (@subst _ _ ?N _)
+                     (@subst _ _ ?D _) _ _ _) _ _ =>
+      fun_IWi_lifts X A N D d; eapply eqty_iwi; fun_Ip
+  | |- eq_tm _ _ _ (tmSupii _ _ _ (@subst _ _ ?X ?d) (@subst _ _ ?A _) (@subst _ _ ?N _)
+                     (@subst _ _ ?D _) _ _ _ _) _ _ _ =>
+      fun_IWi_lifts X A N D d; eapply eqtm_supii; fun_Ip
+  | |- eq_tm _ _ _ (tmElimIWi _ _ _ _ (@subst _ _ ?X ?d) (@subst _ _ ?A _) (@subst _ _ ?N _)
+                     (@subst _ _ ?D _) _ _ _ _ _ _) _ _ _ =>
+      fun_IWi_lifts X A N D d; eapply eqtm_elimIWi; fun_Ip
+  end.
+
 (** [M] (M18b): as [IWf]'s, the substitutions lifted along the
     signature's contexts and, for [corec], the carrier's; [out]'s type is
     retyped to its pushed instance. *)
@@ -947,6 +970,7 @@ Proof.
   all: try fun_J.
   all: try fun_Wf.
   all: try fun_IWf.
+  all: try fun_IWi.
   all: try fun_Code.
   all: try fun_M.
   all: try (timeout 3 any_rule fung_premise).
