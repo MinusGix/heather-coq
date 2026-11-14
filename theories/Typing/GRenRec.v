@@ -19,6 +19,7 @@ Proof.
     change (gcren ?x ?ξ) with x⟪ξ⟫.
   all: rewrite ?gren_single2, ?gren_single, ?gren_single3, ?gren_wIH, ?gren_wfIH, ?gren_gsingle; try now constructor.
   all: rewrite ?gren_iwfIH; try now constructor.
+  all: rewrite ?gren_iwiIH; try now constructor.
   all: rewrite ?gren_mOutCorec; try now constructor.
   all: try (constructor; auto; fail).
   all: first [ constructor; now apply redT_gren | constructor; now apply redt_gren
