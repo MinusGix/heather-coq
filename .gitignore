@@ -15,3 +15,5 @@ result
 _profile/
 *.prof.json.gz
 tools/__pycache__/
+.coq-session/
+.tree-cache-manifest.json

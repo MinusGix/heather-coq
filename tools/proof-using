@@ -4,7 +4,10 @@
 # which section variables it uses).
 #
 # Usage (repository root, inside `nix develop path:.`, dependencies built):
-#   tools/proof-using theories/X/A.v [theories/Y/B.v ...]
+#   tools/proof-using [--vok] theories/X/A.v [theories/Y/B.v ...]
+#
+#   --vok   compile against the `.vos` files (after `make vos`), for a
+#           tree that has no `.vo` files
 #
 # Compiles a copy of each file with `Set Suggest Proof Using.` after its
 # last `Require` (in parallel, one coqc per file) and applies Coq's first
@@ -17,6 +20,8 @@
 # time is running its proofs.
 set -euo pipefail
 command -v coqc >/dev/null || { echo 'run inside `nix develop path:.`' >&2; exit 1; }
+out_flag=-o
+if [ "${1:-}" = --vok ]; then out_flag=-vok; shift; fi
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 pids=()
@@ -31,7 +36,7 @@ at = reqs[-1].end() if reqs else 0
 open(dst, 'w', encoding='utf-8').write(s[:at] + 'Set Suggest Proof Using.\n' + s[at:])
 EOF
   ( cd "$tmp" && coqc -Q "$OLDPWD/theories" DeLaM -w -notation-overridden \
-      -o "$tmp/$b.vo" "$tmp/$b.v" > "$tmp/$b.out" 2>&1 \
+      $( [ $out_flag = -o ] && echo "-o $tmp/$b.vo" || echo -vok ) "$tmp/$b.v" > "$tmp/$b.out" 2>&1 \
       || { echo "coqc failed on $f:" >&2; tail -20 "$tmp/$b.out" >&2; exit 1; } ) &
   pids+=($!)
 done

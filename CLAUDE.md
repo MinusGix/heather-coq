@@ -83,7 +83,35 @@ these docs by bare file name.
   replaces the final `make`. A section lemma's proof is skipped by `vos`
   only with a `Proof using` clause; `tools/proof-using FILE.v ...` adds
   Coq's suggested clauses (run it on a sectioned file that `make TIMED=1
-  vos` shows taking nearly its full time).
+  vos` shows taking nearly its full time; `--vok` runs it in a tree
+  that has only `.vos` files). 2026-11-14: `vos` alone took 108 s, 55 s
+  of its 233 s CPU in three files whose section lemmas had no clause
+  (`DVecNthReds`, `GSubstitution`, `GRenRecBase`); with the clauses,
+  85 s and 174 s CPU. What is left is a chain 80 files deep (each file
+  costs at least 0.35 s to start), and 0.5 to 4 s of unannotated section
+  proofs in about thirty files.
+- The inner loop, from a fresh container (2026-11-14):
+  1. `tools/tree-cache restore /mnt/project-files/build-cache/`, then
+     `make -j4 vos`: the `.vos` tree of the last saved build (10 MB),
+     with only the files whose source changed, and their dependents,
+     rebuilt. Restoring took 0.1 s; one changed late file then rebuilt
+     29 files in 15 s. After a green build of `main`, `tools/tree-cache
+     save /mnt/project-files/build-cache/` (`--kind vo` after a full
+     `make` saves the `.vo` tree the same way).
+  2. On a proof: `tools/coq-session start FILE.v LEMMA`, then
+     `tools/coq-session try 'tac. tac.'` as often as needed: one
+     `coqtop` keeps the state before the proof, runs the tactics, prints
+     the goals and rolls back. A retry on `RecAdm`'s last lemma took
+     0.01 s; compiling a truncated copy pays the file's prefix every
+     time (57 s there).
+  3. A finished file: `coqc -Q theories DeLaM -w -notation-overridden
+     -async-proofs-tac-j 3 -vok FILE.v`. It writes no `.vos`, so nothing
+     downstream is invalidated. Run `make vos` again only after
+     changing a statement, a notation, a hint or an `Ltac` that other
+     files use: a `.vos` holds source positions, so even a proof-only
+     edit changes its bytes, and `make` (mtimes) rebuilds every
+     dependent's `.vos` after any edit.
+  4. Before review: `make -j4 vos && make -j4 vok`, or the full `make`.
 - Profiling (tools are in `tools/`, each documents itself in its header):
   - `tools/build-profile [-j N] [--clean] [--profile] [--label L]`: a timed
     build (`make TIMING=1`) and its report in `_profile/L/report.txt`:
