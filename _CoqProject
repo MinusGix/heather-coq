@@ -171,6 +171,11 @@ theories/Validity/RulesSIWf.v
 theories/Validity/RulesSIWfTy.v
 theories/Validity/RulesSIWfSupi.v
 theories/Validity/RulesSIWfSupiTy.v
+theories/Validity/RulesSIWiF.v
+theories/Validity/RulesSIWi.v
+theories/Validity/RulesSIWiTy.v
+theories/Validity/RulesSIWiSupi.v
+theories/Validity/RulesSIWiSupiTy.v
 theories/Validity/RulesS.v
 theories/Validity/GvarS.v
 theories/Validity/Delta.v
