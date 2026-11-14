@@ -209,6 +209,7 @@ theories/Validity/FundamentalM.v
 theories/Validity/Reducible.v
 theories/Validity/DeclConsequences.v
 theories/Validity/IWfIhEq.v
+theories/Validity/IWiIhEq.v
 theories/Validity/AlgPrereq.v
 theories/Validity/AlgSound.v
 theories/Validity/AlgConv.v

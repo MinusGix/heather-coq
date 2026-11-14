@@ -192,6 +192,30 @@ Proof using EL red_eqty.
   injection Heq as <- <- <- <- <- <- <- <-. auto 10.
 Qed.
 
+(** Indexed families with infinitary children (M19b): every annotation and
+    the index, as [IWf]'s. *)
+Lemma IWi_inj {G Γ l l1 lp1 li1 l2 lp2 li2 X X' A A' N N' D D' Ot Ot' C C' m m'} :
+  [ G ; Γ ⊢g tyIWi l1 lp1 li1 X A N D Ot C m ≅ tyIWi l2 lp2 li2 X' A' N' D' Ot' C' m' @ l ] -> lwf (gL G) l ->
+  lequiv (gL G) l2 l1 /\ lequiv (gL G) lp2 lp1 /\ lequiv (gL G) li2 li1 /\
+  [ G ; Γ ⊢ X ≈ X' @ li1 ] /\ [ G ; Γ ⊢ A ≈ A' @ l1 ] /\
+  [ G ; Γ ,, A @ l1 ⊢ N ≈ N' : tyNat @ lzero ] /\
+  [ G ; Γ ,, A @ l1 ,, tyFin N @ lzero ⊢ D ≈ D' @ lp1 ] /\
+  [ G ; Γ ,, A @ l1 ⊢ Ot ≈ Ot' : X⟨↑⟩ @ li1 ] /\
+  [ G ; Γ ,, A @ l1 ,, tyFin N @ lzero ,, D @ lp1 ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li1 ] /\
+  [ G ; Γ ⊢ m ≈ m' : X @ li1 ].
+Proof using EL red_eqty.
+  intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
+  pose proof (eqty_wf_l ge_typeof H) as HP.
+  destruct (LR_inv_iwi HR (tyred_refl _ _ HP))
+    as (k2 & kp2 & ki2 & X2 & A2 & N2 & D2 & O2 & C2 & m2 & idxR & domR & pdR & _ & Hk2 & Hkp2 & Hki2
+        & _ & _ & _ & _ & HT' & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _
+        & HXX & HAA & HNN & HDD & HOO & HCC & Hmm & _).
+  pose proof (tyred_refl _ _ (eqty_wf_r ge_typeof H)) as HT'0.
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' HT'0 (whnf_tyIWi _ _ _ _ _ _ _ _ _ _)
+                (whnf_tyIWi _ _ _ _ _ _ _ _ _ _)) as Heq.
+  injection Heq as <- <- <- <- <- <- <- <- <- <-. auto 12.
+Qed.
+
 (** Propositional truncation (M16a): the carriers, and the levels. *)
 Lemma sq_inj {G Γ l l1 l2 A A'} :
   [ G ; Γ ⊢g tySq l1 A ≅ tySq l2 A' @ l ] -> lwf (gL G) l ->

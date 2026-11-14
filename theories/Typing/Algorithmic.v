@@ -38,7 +38,9 @@ Inductive posty : ty -> Prop :=
 (* indexed W-types (M17b): no η *)
 | posty_iwf l li X A N Ot C m : posty (tyIWf l li X A N Ot C m)
 (* indexed coinductive types (M18b): no η *)
-| posty_M l l' li X A B C j : posty (tyM l l' li X A B C j).
+| posty_M l l' li X A B C j : posty (tyM l l' li X A B C j)
+(* indexed families with infinitary children (M19b): no η *)
+| posty_iwi l lp li X A N D Ot C m : posty (tyIWi l lp li X A N D Ot C m).
 
 Inductive ac_ty : gctx -> ctx -> ty -> ty -> Prop :=
 | act_red G Γ T T' W W' : reds_ty T W -> reds_ty T' W' -> whnf_ty W -> whnf_ty W' ->
@@ -97,6 +99,15 @@ with ac_tynf : gctx -> ctx -> ty -> ty -> Prop :=
     ac_ty G Γ X X' -> ac_ty G (Γ ,, X @ li) A A' -> ac_ty G (Γ ,, X @ li ,, A @ l) B B' ->
     ac_tm G (Γ ,, X @ li ,, A @ l ,, B @ l') C C' X⟨↑⟩⟨↑⟩⟨↑⟩ -> ac_tm G Γ j j' X ->
     ac_tynf G Γ (tyM l l' li X A B C j) (tyM k k' ki X' A' B' C' j')
+(* indexed families with infinitary children (M19b): [IWf]'s, with the
+   domain under the shape and the position, and the child index under
+   the argument too *)
+| actnf_iwi G Γ l lp li k kp ki X X' A A' N N' D D' Ot Ot' C C' m m' : leqv l k -> leqv lp kp -> leqv li ki ->
+    ac_ty G Γ X X' -> ac_ty G Γ A A' -> ac_tm G (Γ ,, A @ l) N N' tyNat ->
+    ac_ty G (Γ ,, A @ l ,, tyFin N @ lzero) D D' ->
+    ac_tm G (Γ ,, A @ l) Ot Ot' X⟨↑⟩ -> ac_tm G (Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp) C C' X⟨↑⟩⟨↑⟩⟨↑⟩ ->
+    ac_tm G Γ m m' X ->
+    ac_tynf G Γ (tyIWi l lp li X A N D Ot C m) (tyIWi k kp ki X' A' N' D' Ot' C' m')
 (* propositional truncation (M16a) *)
 | actnf_sq G Γ l l' A A' : leqv l l' -> ac_ty G Γ A A' -> ac_tynf G Γ (tySq l A) (tySq l' A')
 (* the identity type (M11a): endpoints compared at the left carrier *)
@@ -211,6 +222,13 @@ with ac_tmnf : gctx -> ctx -> tm -> tm -> ty -> Prop :=
     ac_tm G Γ cs cs' (tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a)) ->
     ac_tmnf G Γ (tmSupi k ki X1 A1 N1 O1 C1 a cs) (tmSupi k' ki' X1' A1' N1' O1' C1' a' cs')
       (tyIWf l li X A N Ot C m)
+(* [sup_ii] (M19b): as [sup_i]'s, the children at their [DVec] of
+   functions *)
+| actmnf_supii G Γ l lp li X A N D Ot C m k kp ki X1 A1 N1 D1 O1 C1 k' kp' ki' X1' A1' N1' D1' O1' C1' a a' cs cs' :
+    ac_tm G Γ a a' A ->
+    ac_tm G Γ cs cs' (tyDVec (iwiL l lp li) N[lsingle a] (iwiFam l lp li X A N D Ot C a)) ->
+    ac_tmnf G Γ (tmSupii k kp ki X1 A1 N1 D1 O1 C1 a cs) (tmSupii k' kp' ki' X1' A1' N1' D1' O1' C1' a' cs')
+      (tyIWi l lp li X A N D Ot C m)
 (* [corec] (M18b): the carrier's level, the carriers, the steps at the
    type's step type and the seeds; the signature and the index are the
    type's up to equality ([sup_i]'s convention); no other rule relates a
@@ -398,6 +416,16 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
       c c' (iwfstepty l li X A N Ot C M) ->
     ac_tmnee G Γ ν ν' W ->
     ac_tmne G Γ (tmElimIWf l li l' X A N Ot C M c m ν) (tmElimIWf k ki k' X' A' N' Ot' C' M' c' m' ν')
+      M[lsingle2 m ν]
+(* [elim_IWi] (M19b): as [elim_IWf] *)
+| actmne_elimIWi G Γ l lp li l' k kp ki k' X X' A A' N N' D D' Ot Ot' C C' M M' c c' m m' ν ν' W :
+    leqv l' k' ->
+    ac_ty G (Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li) M M' ->
+    ac_tm G (Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ,,
+               iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l'))
+      c c' (iwistepty l lp li X A N D Ot C M) ->
+    ac_tmnee G Γ ν ν' W ->
+    ac_tmne G Γ (tmElimIWi l lp li l' X A N D Ot C M c m ν) (tmElimIWi k kp ki k' X' A' N' D' Ot' C' M' c' m' ν')
       M[lsingle2 m ν]
 (* [out] (M18b): the scrutinees as neutrals; the signature, the index and
    their levels are the scrutinee's type's, as [elim_IWf]'s *)

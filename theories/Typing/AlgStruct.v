@@ -17,7 +17,7 @@ Ltac push_ren_in H := revert H; push_ren; intros H.
 
 Lemma posty_ren W r : posty W -> posty W⟨r⟩.
 Proof.
-  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum | apply posty_W | apply posty_wf | apply posty_iwf | apply posty_M | idtac].
+  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum | apply posty_W | apply posty_wf | apply posty_iwf | apply posty_M | apply posty_iwi | idtac].
   apply posty_ne, whne_ty_ren; assumption.
 Qed.
 
@@ -152,6 +152,12 @@ Proof.
             (* its telescopes commute with [r] only by an equation (as in [wk_I]) *)
             first [ match goal with H : ac_ty _ _ _ _ |- ac_ty _ _ _ _ => eapply (ac_ty_eq4 H); solve [wk_eqI] end
                   | match goal with H : ac_tm _ _ _ _ _ |- ac_tm _ _ _ _ _ => eapply (ac_tm_eq5 H); solve [wk_eqI] end ]
+          | (* [elim_IWi]'s (M19b): likewise *)
+            unfold AW_tmne, AW_tmnee, AW_ty, AW_tm in *;
+            let Δ := fresh "Δ" in let r := fresh "r" in let Hr := fresh "Hr" in
+            intros Δ r Hr; W_norm; W_inst Hr; eapply actmne_elimIWi; try eassumption;
+            first [ match goal with H : ac_ty _ _ _ _ |- ac_ty _ _ _ _ => eapply (ac_ty_eq4 H); solve [wk_eqI] end
+                  | match goal with H : ac_tm _ _ _ _ _ |- ac_tm _ _ _ _ _ => eapply (ac_tm_eq5 H); solve [wk_eqI] end ]
           | (* [corec]'s step (M18b): its step type, likewise *)
             unfold AW_tmnf, AW_ty, AW_tm in *;
             let Δ := fresh "Δ" in let r := fresh "r" in let Hr := fresh "Hr" in
@@ -173,7 +179,7 @@ Ltac push_gren_in H := revert H; push_gren; intros H.
 
 Lemma posty_gren W ξ : posty W -> posty W⟪ξ⟫.
 Proof.
-  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum | apply posty_W | apply posty_wf | apply posty_iwf | apply posty_M | idtac].
+  destruct 1; cbn; first [apply posty_nat | apply posty_U | apply posty_CTyp | apply posty_CTrm | apply posty_id | apply posty_sum | apply posty_W | apply posty_wf | apply posty_iwf | apply posty_M | apply posty_iwi | idtac].
   apply posty_ne, whne_ty_gren; assumption.
 Qed.
 
@@ -356,7 +362,7 @@ Ltac U_norm1 :=
           ?usubst_ren', ?usubst_ren_ty', ?gctx_uwk_usubst, ?ucren_ush_usubst, ?uren_ush_usubst_tm,
           ?ubvars_uupn, ?mkrb_usubst, ?motT_usubst, ?mott_usubst, ?wrapMT_usubst, ?wrapMt_usubst,
           ?recGT_usubst, ?recΓT_usubst, ?recGt_usubst, ?recΓt_usubst, ?usubst_gsingle_ty,
-          ?usubst_iwfFam, ?usubst_tmDNth;
+          ?usubst_iwfFam, ?usubst_iwiFam, ?usubst_tmDNth;
   cbn [gousubst]; upush.
 (* twice, as [W_norm] *)
 Ltac U_norm := U_norm1; U_norm1.
@@ -414,7 +420,15 @@ Theorem ac_us_all :
   (forall G Γ d d' Δ, ac_sub G Γ d d' Δ -> AU_sub G Γ d d' Δ).
 Proof.
   apply ac_mut; intros;
-    first [solve [eapply U_acs_pt; eassumption] | solve [eapply U_actmne_uapp; eassumption] | U_case].
+    first [solve [eapply U_acs_pt; eassumption] | solve [eapply U_actmne_uapp; eassumption] | U_case
+          | (* [elim_IWi]'s step (M19b): the normal forms of its telescope differ
+               in [dnth]'s arguments, equal after one more normalization *)
+            unfold AU_tm, AU_tmne, AU_tmnee, AU_ty in *;
+            let L' := fresh "L'" in let φ := fresh "φ" in
+            intros L' φ; U_norm; U_inst L' φ;
+            solve [eapply actmne_elimIWi; try ac_prem; try U_prem L' φ;
+                   match goal with H : ac_tm _ _ _ _ _ |- ac_tm _ _ _ _ _ =>
+                     eapply (ac_tm_eq5 H); solve [U_norm; reflexivity] end] ].
 Qed.
 
 (** ** Closure under [≡ₗ] on the right

@@ -1,6 +1,8 @@
 # M19: indexed families with infinitary children (`IWi`), design
 
-Status: **design** (2026-11-14). Nothing in the theories yet.
+Status: **M19a done; M19b in progress** (2026-11-14): the relation,
+validity and the fundamental theorem are done ("M19b outcome" below);
+the algorithm, decidability, the type checker and canonicity are next.
 
 `IWi` is `IWf` (M17b) whose children are functions: a constructor has a
 finite tuple of recursive fields, and field `i` is a function from its own
@@ -114,6 +116,39 @@ built from the spine's head premise. The child index `C[a, i, y]`
 depends on `y`, so relating two children's indices needs `C`'s validity
 at related `y ~ y'`, which the signature's premises give, as `M18b`'s
 child index did.
+
+## M19b outcome (validity)
+
+Files, in dependency order, beside `IWf`'s:
+
+- `LogRel/IWiAux.v`: the syntax in Kripke worlds, the signature in a
+  world (`IWiSig`), the field types generically equal. `IWi`'s cases of
+  symmetry, transitivity, weakening, neutral reflection, level invariance
+  and universe permutation sit in their files beside `IWf`'s.
+- `Validity/IWi.v`: formation and `sup_ii`; the canonical relations
+  (`IWiCan`) and applications of terms related at `Π`.
+- `Typing/IWiIH.v`: the synthesized induction hypothesis `iwiIH`, typed.
+  It is a `λ` under two binders (the field index and the position), so
+  validity needed `LRtm_lam2_K`, a `λ`-introduction under two binders in
+  every world.
+- `Validity/IWiSp.v`: the converse of `DVecWSp_of_LR`. A `sup_ii`'s
+  spine, in every world, is related at its `DVec` (`LR_of_DVecWSp_own`),
+  through `YOk` (a child's relation at a position) and `IKSpW` (the spine
+  at a Kripke weakening).
+- `Validity/IWiElimBase.v`, `IWiElimDnth.v`: the step telescope under
+  weakenings and substitutions, the positions an index of `Fin` reaches,
+  and the children's `dnth` valid, as `IWfElim`'s `elimIWf_Vdnth`.
+- `Validity/IWiElim.v`: `elim_IWi`'s validity. `elimIWi_ann` relates
+  the field annotations at related positions; `elimIWi_kgoal` is the
+  induction hypothesis's body in a world, at related positions `y ~ y'`
+  (the one part `IWf` has no counterpart for); `elimIWi_step` is the
+  step at `sup_ii`; `elimIWi_core_all` is the induction over `IWiRel`,
+  `IWiNf` and `DVecWSp`. `V_elimIWi`, its type and β follow.
+- `Validity/RulesSIWi*.v`: the lifted rules for `FundamentalS`, split as
+  `RulesSIWf*` is so they build in parallel (`F` formation and `sup_ii`,
+  the eliminator, its type, β and β's type).
+
+No admits; no new axioms.
 
 ## Staging
 

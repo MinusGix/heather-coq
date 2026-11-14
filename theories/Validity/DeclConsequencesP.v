@@ -97,6 +97,17 @@ Theorem decl_IWf_inj {G Γ l l1 li1 l2 li2 X X' A A' N N' Ot Ot' C C' m m'} :
   [ G ; Γ ,, A @ l1 ,, tyFin N @ lzero ⊢[ lD ] C ≅ C' : X⟨↑⟩⟨↑⟩ @ li1 ] /\ [ G ; Γ ⊢[ lD ] m ≅ m' : X @ li1 ].
 Proof. intros H; exact (IWf_inj (E := DEP) (LP := LR_P) redP_ty H (lwfD_eqty H)). Qed.
 
+Theorem decl_IWi_inj {G Γ l l1 lp1 li1 l2 lp2 li2 X X' A A' N N' D D' Ot Ot' C C' m m'} :
+  [ G ; Γ ⊢[ lD ] tyIWi l1 lp1 li1 X A N D Ot C m ≅ tyIWi l2 lp2 li2 X' A' N' D' Ot' C' m' @ l ] ->
+  lequiv (gL G) l2 l1 /\ lequiv (gL G) lp2 lp1 /\ lequiv (gL G) li2 li1 /\
+  [ G ; Γ ⊢[ lD ] X ≅ X' @ li1 ] /\ [ G ; Γ ⊢[ lD ] A ≅ A' @ l1 ] /\
+  [ G ; Γ ,, A @ l1 ⊢[ lD ] N ≅ N' : tyNat @ lzero ] /\
+  [ G ; Γ ,, A @ l1 ,, tyFin N @ lzero ⊢[ lD ] D ≅ D' @ lp1 ] /\
+  [ G ; Γ ,, A @ l1 ⊢[ lD ] Ot ≅ Ot' : X⟨↑⟩ @ li1 ] /\
+  [ G ; Γ ,, A @ l1 ,, tyFin N @ lzero ,, D @ lp1 ⊢[ lD ] C ≅ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li1 ] /\
+  [ G ; Γ ⊢[ lD ] m ≅ m' : X @ li1 ].
+Proof. intros H; exact (IWi_inj (E := DEP) (LP := LR_P) redP_ty H (lwfD_eqty H)). Qed.
+
 Theorem decl_M_inj {G Γ l l1 l2 li1 k1 k2 ki X X' A A' B B' C C' m m'} :
   [ G ; Γ ⊢[ lD ] tyM l1 l2 li1 X A B C m ≅ tyM k1 k2 ki X' A' B' C' m' @ l ] ->
   lequiv (gL G) k1 l1 /\ lequiv (gL G) k2 l2 /\ lequiv (gL G) ki li1 /\ [ G ; Γ ⊢[ lD ] X ≅ X' @ li1 ] /\
