@@ -653,7 +653,7 @@ Proof using EL.
                     HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
                 | G Γ T T' l l1 lp1 li1 l2 lp2 li2 X X' A A' N N' D D' Ot Ot' C C' m m' idxR domR pdR R
                     Hl Hl2 Hlp2 Hli2 Hw Hwp Hwi HT HT' HX HX' HA HA' HN HN' HD HD' HO HO' HC HC' Hmt Hmt'
-                    HXX HAA HNN HDD HOO HCC Hmm idxAd Hisym Histr domAd arAd otAd pdAd pdE chAd gCh ixAd HR].
+                    HXX HAA HNN HDD HOO HCC Hmm idxAd Hisym Histr domAd arAd otAd pdAd pdE pdMon chAd gCh ixAd HR].
   all: try solve [exact (ModRel_escape_ty HM)].
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
@@ -715,7 +715,7 @@ Proof using EL.
                     HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
                 | G Γ T T' l l1 lp1 li1 l2 lp2 li2 X X' A A' N N' D D' Ot Ot' C C' m m' idxR domR pdR R
                     Hl Hl2 Hlp2 Hli2 Hw Hwp Hwi HT HT' HX HX' HA HA' HN HN' HD HD' HO HO' HC HC' Hmt Hmt'
-                    HXX HAA HNN HDD HOO HCC Hmm idxAd Hisym Histr domAd arAd otAd pdAd pdE chAd gCh ixAd HR];
+                    HXX HAA HNN HDD HOO HCC Hmm idxAd Hisym Histr domAd arAd otAd pdAd pdE pdMon chAd gCh ixAd HR];
     intros t t' Htt; first [exact (ModRel_escape_tm HM _ _ Htt) | apply HR in Htt].
   - (* Nat *)
     destruct Htt as [t t' w w' Hw Hw' Heq _].

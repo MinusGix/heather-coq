@@ -95,6 +95,7 @@ theories/LogRel/Def.v
 theories/LogRel/Layering.v
 theories/LogRel/Escape.v
 theories/LogRel/IWfAux.v
+theories/LogRel/IWiAux.v
 theories/LogRel/MAux.v
 theories/LogRel/Basics.v
 theories/LogRel/Modal.v

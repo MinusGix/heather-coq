@@ -1376,6 +1376,11 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
         LR n rec (kw_G ρ) (kw_Δ ρ) (ktyll ρ D)[lsingle2 a p] (ktyll ρ D')[lsingle2 a' p'] lp1 (pdR ρ a a' p p')) ->
     (forall (ρ : kwk G Γ) a a' p p' y y', pdR ρ a a' p p' y y' ->
         PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N)[lsingle a] (ktml ρ N')[lsingle a'] p p') ->
+    (* the domains' relation is Kripke-monotone (a consequence of weakening,
+       which the relation's metatheory proves only after symmetry needs it:
+       the child indices are compared in later worlds; as [LRm]'s) *)
+    (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) a a' p p' y y', pdR ρ a a' p p' y y' ->
+        pdR (kw_comp ρ ρ') (ktm ρ' a) (ktm ρ' a') (ktm ρ' p) (ktm ρ' p') (ktm ρ' y) (ktm ρ' y')) ->
     (forall (ρ : kwk G Γ) a a', domR ρ a a' -> forall p p' y y', pdR ρ a a' p p' y y' ->
         idxR ρ (ktmlll ρ C)[lsingle3 a p y] (ktmlll ρ C')[lsingle3 a' p' y']) ->
     (* the child index at related shapes and positions, generically equal

@@ -223,7 +223,7 @@ Proof using EL.
                     HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
                 | G Γ T T' l il1 ilp1 ili1 il2 ilp2 ili2 iX iX' iA iA' iN iN' iD iD' iO iO' iC iC' im im' iidxR idomR ipdR R
                     Hl Hil2 Hilp2 Hili2 Hiw Hiwp Hiwi HT HT' HiX HiX' HiA HiA' HiN HiN' HiD HiD' HiO HiO' HiC HiC' Him Him'
-                    HiXX HiAA HiNN HiDD HiOO HiCC Himm iidxAd Hiisym Hiistr idomAd iarAd iotAd ipdAd ipdE ichAd igC iixAd HR];
+                    HiXX HiAA HiNN HiDD HiOO HiCC Himm iidxAd Hiisym Hiistr idomAd iarAd iotAd ipdAd ipdE ipdMon ichAd igC iixAd HR];
     intros Hl'.
   - eapply LRnat; eauto using lequiv_trans, tyred_lconv.
   - eapply (LRU n rec G Γ T T' l' l1 l2); eauto using lequiv_trans, tyred_lconv.
@@ -254,7 +254,7 @@ Proof using EL.
              (lequiv_trans _ _ _ _ Hl' Hl) Hil2 Hilp2 Hili2 Hiw Hiwp Hiwi
              (tyred_lconv _ _ _ _ HT Hl') (tyred_lconv _ _ _ _ HT' Hl')
              HiX HiX' HiA HiA' HiN HiN' HiD HiD' HiO HiO' HiC HiC' Him Him'
-             HiXX HiAA HiNN HiDD HiOO HiCC Himm iidxAd Hiisym Hiistr idomAd iarAd iotAd ipdAd ipdE ichAd igC iixAd HR).
+             HiXX HiAA HiNN HiDD HiOO HiCC Himm iidxAd Hiisym Hiistr idomAd iarAd iotAd ipdAd ipdE ipdMon ichAd igC iixAd HR).
 Qed.
 
 End Basics.

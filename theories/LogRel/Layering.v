@@ -151,7 +151,7 @@ Proof.
                      HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
                  | G Γ T T' l l1 lp1 li1 l2 lp2 li2 X X' A A' N N' D D' Ot Ot' C C' m m' idxR domR pdR R
                      Hl Hl2 Hlp2 Hli2 Hw Hwp Hwi HT HT' HX HX' HA HA' HN HN' HD HD' HO HO' HC HC' Hmt Hmt'
-                     HXX HAA HNN HDD HOO HCC Hmm Hidx IHidx Hisym Histr Hdom IHdom Har Hot Hpd IHpd Hpde Hch HgC Hix HR];
+                     HXX HAA HNN HDD HOO HCC Hmm Hidx IHidx Hisym Histr Hdom IHdom Har Hot Hpd IHpd Hpde HpdM Hch HgC Hix HR];
     intros Hm Hm'.
   - eapply LRnat; eassumption.
   - eapply LRU; try eassumption.

@@ -142,7 +142,7 @@ Proof.
                     HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
                 | G Γ T T' l il1 ilp1 ili1 il2 ilp2 ili2 iX iX' iA iA' iN iN' iD iD' iO iO' iC iC' im im' iidxR idomR ipdR R
                     Hl Hil2 Hilp2 Hili2 Hiw Hiwp Hiwi HT HT' HiX HiX' HiA HiA' HiN HiN' HiD HiD' HiO HiO' HiC HiC' Him Him'
-                    HiXX HiAA HiNN HiDD HiOO HiCC Himm iidxAd Hiisym Hiistr idomAd iarAd iotAd ipdAd ipdE ichAd igC iixAd HR];
+                    HiXX HiAA HiNN HiDD HiOO HiCC Himm iidxAd Hiisym Hiistr idomAd iarAd iotAd ipdAd ipdE ipdMon ichAd igC iixAd HR];
     intros T1 T1' H1 H1'.
   - eapply LRnat; eauto using tyred_trans.
   - eapply LRU with (l1 := l1) (l2 := l2); eauto using tyred_trans.
@@ -169,7 +169,7 @@ Proof.
   - exact (LRiwi n rec G Γ T1 T1' l _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ iidxR idomR ipdR R
              Hl Hil2 Hilp2 Hili2 Hiw Hiwp Hiwi (tyred_trans _ _ _ _ H1 HT) (tyred_trans _ _ _ _ H1' HT')
              HiX HiX' HiA HiA' HiN HiN' HiD HiD' HiO HiO' HiC HiC' Him Him'
-             HiXX HiAA HiNN HiDD HiOO HiCC Himm iidxAd Hiisym Hiistr idomAd iarAd iotAd ipdAd ipdE ichAd igC iixAd HR).
+             HiXX HiAA HiNN HiDD HiOO HiCC Himm iidxAd Hiisym Hiistr idomAd iarAd iotAd ipdAd ipdE ipdMon ichAd igC iixAd HR).
 Qed.
 
 Theorem LR_red_tm n rec G Γ T T' l R :
@@ -206,7 +206,7 @@ Proof.
                     HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
                 | G Γ T T' l il1 ilp1 ili1 il2 ilp2 ili2 iX iX' iA iA' iN iN' iD iD' iO iO' iC iC' im im' iidxR idomR ipdR R
                     Hl Hil2 Hilp2 Hili2 Hiw Hiwp Hiwi HT HT' HiX HiX' HiA HiA' HiN HiN' HiD HiD' HiO HiO' HiC HiC' Him Him'
-                    HiXX HiAA HiNN HiDD HiOO HiCC Himm iidxAd Hiisym Hiistr idomAd iarAd iotAd ipdAd ipdE ichAd igC iixAd HR];
+                    HiXX HiAA HiNN HiDD HiOO HiCC Himm iidxAd Hiisym Hiistr idomAd iarAd iotAd ipdAd ipdE ipdMon ichAd igC iixAd HR];
     intros t t' t1 t1' Htt H1 H1';
     first [exact (ModRel_red_tm HM _ _ _ _ Htt H1 H1') | apply HR; apply HR in Htt].
   - inversion Htt as [? ? w w' Hw Hw' Heq Hnf]; subst.
