@@ -34,6 +34,78 @@ Proof using .
   apply IWi_E_mot; assumption.
 Qed.
 
+(** The induction hypothesis in a world, and its body at an index and an
+    argument. *)
+Lemma ktm_iwiIH {G Δ} (ρ : kwk G Δ) l lp li l' X A N D Ot C M c a cs :
+  ktm ρ (iwiIH l lp li l' X A N D Ot C M c a cs) =
+  iwiIH l lp li l' (kty ρ X) (kty ρ A) (ktml ρ N) (ktyll ρ D) (ktml ρ Ot) (ktmlll ρ C) (ktyll ρ M) (ktmlll ρ c)
+    (ktm ρ a) (ktm ρ cs).
+Proof using . unfold ktm, kty, ktml, ktyll, ktmlll. now rewrite gwa_iwiIH, ren_iwiIH. Qed.
+
+Lemma ktmll_iwibody {G Δ} (ρ : kwk G Δ) l lp li l' X A N D Ot C M c a cs :
+  ktmll ρ (iwibody l lp li l' X A N D Ot C M c a cs) =
+  iwibody l lp li l' (kty ρ X) (kty ρ A) (ktml ρ N) (ktyll ρ D) (ktml ρ Ot) (ktmlll ρ C) (ktyll ρ M) (ktmlll ρ c)
+    (ktm ρ a) (ktm ρ cs).
+Proof using .
+  pose proof (ktm_iwiIH ρ l lp li l' X A N D Ot C M c a cs) as H. rewrite !iwiIH_body in H.
+  rewrite ktm_lam, ktml_lam in H.
+  (* the body, by projection: [injection] states every component's equation *)
+  exact (f_equal (fun t => match t with lam _ _ _ (lam _ _ _ b) => b | _ => t end) H).
+Qed.
+
+Lemma ktmll_iwiapp {G Δ} (ρ : kwk G Δ) l lp li X A N D Ot C a cs :
+  ktmll ρ (iwiapp l lp li X A N D Ot C a cs) =
+  iwiapp l lp li (kty ρ X) (kty ρ A) (ktml ρ N) (ktyll ρ D) (ktml ρ Ot) (ktmlll ρ C) (ktm ρ a) (ktm ρ cs).
+Proof using .
+  pose proof (ktmll_iwibody ρ l lp li lzero X A N D Ot C tyNat (var 0) a cs) as H.
+  unfold ktmll in H. rewrite gwa_elimIWi in H. cbn [ren_tm] in H.
+  exact (f_equal (fun t => match t with tmElimIWi _ _ _ _ _ _ _ _ _ _ _ _ _ s => s | _ => t end) H).
+Qed.
+
+Lemma ktyll_iwicod {G Δ} (ρ : kwk G Δ) l lp li X A N D Ot C (M : ty) a cs :
+  ktyll ρ (iwicod l lp li X A N D Ot C M a cs) =
+  iwicod l lp li (kty ρ X) (kty ρ A) (ktml ρ N) (ktyll ρ D) (ktml ρ Ot) (ktmlll ρ C) (ktyll ρ M) (ktm ρ a) (ktm ρ cs).
+Proof using .
+  rewrite <- ktmll_iwiapp, <- ktmll_llift2_single.
+  unfold ktyll, ktmll. rewrite gwa_subst_ty, gwa_lsingle2, !gwa_ren_ty, lsingle2_ren_ty. f_equal.
+  rewrite !ren_ren_comp_ty. apply ren_ext_ty. intros [|[|n]]; rlk_simpl; reflexivity.
+Qed.
+
+Lemma iwiapp_single2 l lp li (X A : ty) (N : tm) (D : ty) (Ot C a cs i y : tm) :
+  nfty X -> nfty A -> nftm N -> nfty D -> nftm Ot -> nftm C -> nftm a -> nftm cs -> nftm i -> nftm y ->
+  (iwiapp l lp li X A N D Ot C a cs)[lsingle2 i y] =
+  app (tmDNth (iwiL l lp li) N[lsingle a] (iwiFam l lp li X A N D Ot C a) cs i) lp (iwiL l lp li)
+    D[lsingle2 a i] (iwiFamCod l lp li X A N D Ot C a)[llift (lsingle i)] y.
+Proof using .
+  intros NX NA NN ND NO NC Na Ncs Ni Ny.
+  meq. rewrite subst_tmDNth by (apply lk_lsingle2; assumption). unfold iwiFam, iwiFamCod. meq.
+Qed.
+
+Lemma iwibody_single2 l lp li l' (X A : ty) (N : tm) (D : ty) (Ot C : tm) (M : ty) (c a cs i y : tm) :
+  nfty X -> nfty A -> nftm N -> nfty D -> nftm Ot -> nftm C -> nfty M -> nftm c -> nftm a -> nftm cs ->
+  nftm i -> nftm y ->
+  (iwibody l lp li l' X A N D Ot C M c a cs)[lsingle2 i y] =
+  tmElimIWi l lp li l' X A N D Ot C M c C[lsingle3 a i y]
+    (app (tmDNth (iwiL l lp li) N[lsingle a] (iwiFam l lp li X A N D Ot C a) cs i) lp (iwiL l lp li)
+       D[lsingle2 a i] (iwiFamCod l lp li X A N D Ot C a)[llift (lsingle i)] y).
+Proof using .
+  intros NX NA NN ND NO NC NM Nc Na Ncs Ni Ny.
+  rewrite subst_elimIWi, iwiapp_single2, llift2_single_single2 by assumption. f_equal; meq.
+Qed.
+
+Lemma iwicod_single2 l lp li (X A : ty) (N : tm) (D : ty) (Ot C : tm) (M : ty) (a cs i y : tm) :
+  nfty X -> nfty A -> nftm N -> nfty D -> nftm Ot -> nftm C -> nfty M -> nftm a -> nftm cs ->
+  nftm i -> nftm y ->
+  (iwicod l lp li X A N D Ot C M a cs)[lsingle2 i y] =
+  M[lsingle2 C[lsingle3 a i y]
+      (app (tmDNth (iwiL l lp li) N[lsingle a] (iwiFam l lp li X A N D Ot C a) cs i) lp (iwiL l lp li)
+         D[lsingle2 a i] (iwiFamCod l lp li X A N D Ot C a)[llift (lsingle i)] y)].
+Proof using .
+  intros NX NA NN ND NO NC NM Na Ncs Ni Ny.
+  rewrite (single2_subst_ty (lsingle2 i y)) by (apply lk_lsingle2; assumption).
+  rewrite iwiapp_single2, llift2_single_single2 by assumption. f_equal. meq.
+Qed.
+
 (** ** The eliminator at related premises *)
 
 Section ElimAt.
@@ -633,6 +705,34 @@ Proof using EL H13 H24 Hi3 Hp3 Hwl Hwl' Hwli Hwlp VA VC VD VL VM VN VNt VO VX Vc
   - (* a neutral index *)
     destruct (dn_case_ne Nm Ne1 Nc0 Ni (tmred_red _ _ _ _ _ _ _ Hk) Hiν Nν Du) as (X1 & HX1 & NX1).
     exact (elimIWi_app_ne Hh Hx Hss Hs HX1 NX1).
+Qed.
+
+(** ** The step at a [sup_ii] *)
+
+(** A child index in a world, at related shapes, positions and domain
+    elements. *)
+Lemma elimIWi_ci_kw {G0 γ Δ0 e e2 Cr} (ρ : kwk G0 Δ0) {b b' i i' y y'} :
+  gwk_ok γ G0 G -> SubRel G0 Γ⟦γ⟧ Δ0 e e2 ->
+  VTmG G0 (Γ⟦γ⟧ ,, A⟦γ⟧ @ l ,, tyFin N⟦γ⟧ @ lzero ,, D⟦γ⟧ @ lp) C⟦γ⟧ Cr X⟦γ⟧⟨↑⟩⟨↑⟩⟨↑⟩ li ->
+  LRtm l (kw_G ρ) (kw_Δ ρ) (kty ρ (sA γ e)) (kty ρ (sA γ e2)) b b' ->
+  LRtm lzero (kw_G ρ) (kw_Δ ρ) (tyFin (ktml ρ (sN γ e))[lsingle b]) (tyFin (ktml ρ (sN γ e2))[lsingle b']) i i' ->
+  LRtm lp (kw_G ρ) (kw_Δ ρ) (ktyll ρ (sD γ e))[lsingle2 b i] (ktyll ρ (sD γ e2))[lsingle2 b' i'] y y' ->
+  LRtm li (kw_G ρ) (kw_Δ ρ) (kty ρ (sX γ e)) (kty ρ (sX γ e))
+    (ktmlll ρ (sC γ e))[lsingle3 b i y] (ktmlll ρ Cr[llift (llift (llift e2))])[lsingle3 b' i' y'].
+Proof using EL VA VC VD VL VM VN VNt VO VX Vc Vcs Vih Vmot.
+  intros Hγ He VCr Hb Hi Hy.
+  destruct (elimIWi_loc Hγ) as (VXγ & _).
+  destruct (SubRel_nf _ _ _ _ _ He) as [Ne Ne2].
+  pose proof (SubRel_kw _ _ _ ρ _ _ He) as Heρ.
+  rewrite !kty_subst in Hb. rewrite !ktml_subst_single in Hi.
+  rewrite (ktyll_subst_single2 ρ e Ne), (ktyll_subst_single2 ρ e2 Ne2) in Hy.
+  assert (Hi' : LRtm lzero (kw_G ρ) (kw_Δ ρ) (tyFin N⟦γ⟧⟦kw_γ ρ⟧)[lcons (kwsub ρ e) b]
+                  (tyFin N⟦γ⟧⟦kw_γ ρ⟧)[lcons (kwsub ρ e2) b'] i i') by (rewrite !subst_tyFin; exact Hi).
+  pose proof (VCr _ _ (kw_gok ρ)) as VCρ. rewrite !gwa_cext, gwa_tyFin, !gwa_ren_ty in VCρ.
+  pose proof (VCρ _ _ _ (SubRel_cons (SubRel_cons (SubRel_cons Heρ Hb) Hi') Hy)) as Y.
+  rewrite (ktmlll_subst_single3 ρ e Ne), (ktmlll_subst_single3 ρ e2 Ne2).
+  rewrite !shift_cons_ty, <- !kty_subst in Y.
+  eapply LRtm_irrel_r; [exact Y | exact (VTyG_kw ρ (VTyG_refl_l VXγ) (SubRel_refl_l He))].
 Qed.
 
 End ElimAt.
