@@ -301,6 +301,41 @@ Lemma inv_elimIWf {G i Γ l li l' X A N Ot C M c m t T k} : typeof i = i ->
     lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ i ] T ≅ M[lsingle2 m t] @ k ].
 Proof. inv_tm. Qed.
 
+(** Infinitary indexed families (M19a). *)
+Lemma inv_supii {G i Γ l lp li X A N D Ot C a cs T k} : typeof i = i ->
+  [ G ; Γ ⊢[ i ] tmSupii l lp li X A N D Ot C a cs : T @ k ] ->
+  (i <> lV /\
+    lwf (gL G) l /\ lwf (gL G) lp /\ lwf (gL G) li /\
+    [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+    [ G ; Γ ⊢[ i ] a : A @ l ] /\
+    [ G ; Γ ⊢[ i ] cs : tyDVec (iwiL l lp li) N[lsingle a] (iwiFam l lp li X A N D Ot C a) @ iwiL l lp li ]) /\
+    lvl_eq (gL G) k (iwiL l lp li) /\ [ G ; Γ ⊢[ i ] T ≅ tyIWi l lp li X A N D Ot C Ot[lsingle a] @ k ].
+Proof. inv_tm. Qed.
+
+Lemma inv_elimIWi {G i Γ l lp li l' X A N D Ot C M c m t T k} : typeof i = i ->
+  [ G ; Γ ⊢[ i ] tmElimIWi l lp li l' X A N D Ot C M c m t : T @ k ] ->
+  (i <> lV /\ lwf (gL G) l' /\
+    lwf (gL G) l /\ lwf (gL G) lp /\ lwf (gL G) li /\
+    [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, X @ li ⊢[ i ] iwimotty l lp li X A N D Ot C @ iwiL l lp li ] /\
+    [ G ; Γ ,, X @ li ,, iwimotty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ] M @ l' ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] iwicsty l lp li X A N D Ot C @ iwiL l lp li ] /\
+    [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ⊢[ i ]
+        iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l') ] /\
+    [ G ; Γ ,, A @ l ,, iwicsty l lp li X A N D Ot C @ iwiL l lp li ,, iwiihty l lp li l' X A N D Ot C M @ lmax lzero (lmax lp l')
+        ⊢[ i ] c : iwistepty l lp li X A N D Ot C M @ l' ] /\
+    [ G ; Γ ⊢[ i ] m : X @ li ] /\ [ G ; Γ ⊢[ i ] t : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ]) /\
+    lvl_eq (gL G) k l' /\ [ G ; Γ ⊢[ i ] T ≅ M[lsingle2 m t] @ k ].
+Proof. inv_tm. Qed.
+
 (** Indexed coinductive types (M18b). *)
 Lemma inv_corec {G i Γ l l' li X A B C k0 Y c j y T k} : typeof i = i ->
   [ G ; Γ ⊢[ i ] tmCorec l l' li X A B C k0 Y c j y : T @ k ] ->
@@ -648,6 +683,17 @@ Lemma inv_ty_iwf {G i Γ l li X A N Ot C m k} : [ G ; Γ ⊢[ i ] tyIWf l li X A
     lvl_eq (gL G) k (lmax l li).
 Proof. inv_ty. Qed.
 
+(** Infinitary indexed families (M19a). *)
+Lemma inv_ty_iwi {G i Γ l lp li X A N D Ot C m k} : [ G ; Γ ⊢[ i ] tyIWi l lp li X A N D Ot C m @ k ] ->
+  (i <> lV /\ lwf (gL G) l /\ lwf (gL G) lp /\ lwf (gL G) li /\
+    [ G ; Γ ⊢[ i ] X @ li ] /\ [ G ; Γ ⊢[ i ] A @ l ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] /\
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ i ] D @ lp ] /\
+    [ G ; Γ ,, A @ l ⊢[ i ] Ot : X⟨↑⟩ @ li ] /\
+    [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] /\ [ G ; Γ ⊢[ i ] m : X @ li ]) /\
+    lvl_eq (gL G) k (iwiL l lp li).
+Proof. inv_ty. Qed.
+
 (** Indexed coinductive types (M18b). *)
 Lemma inv_ty_M {G i Γ l l' li X A B C j k} : [ G ; Γ ⊢[ i ] tyM l l' li X A B C j @ k ] ->
   (compt i /\ lwf (gL G) l /\ lwf (gL G) l' /\ lwf (gL G) li /\
@@ -717,4 +763,5 @@ Proof.
   - exact (lvl_eq_uniq (proj2 (inv_ty_dvec H)) (proj2 (inv_ty_dvec H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_iwf H)) (proj2 (inv_ty_iwf H'))).
   - exact (lvl_eq_uniq (proj2 (inv_ty_M H)) (proj2 (inv_ty_M H'))).
+  - exact (lvl_eq_uniq (proj2 (inv_ty_iwi H)) (proj2 (inv_ty_iwi H'))).
 Qed.

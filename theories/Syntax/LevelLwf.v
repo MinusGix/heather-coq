@@ -146,3 +146,42 @@ Proof.
   cbn [ty_leq tm_leq]; repeat split; try apply leqv_refl; try assumption; [apply Rtm; assumption |].
   apply Sty; [apply leq_lsingle2; [apply Rtm; assumption | assumption] | repeat apply Rty; assumption].
 Qed.
+
+(** [elim_IWi]'s (M19a), as [elim_IWf]'s. *)
+Lemma iwiihty_lwf L l lp li l' X A N D Ot C M : lwf L l -> lwf L lp -> lwf L li -> lwf L l' ->
+  ty_lwf L X -> ty_lwf L A -> tm_lwf L N -> ty_lwf L D -> tm_lwf L Ot -> tm_lwf L C -> ty_lwf L M ->
+  ty_lwf L (iwiihty l lp li l' X A N D Ot C M).
+Proof.
+  intros E1 E1p E2 E3 EX EA EN ED EO EC EM.
+  pose proof lwf_ren_ty as Rty. pose proof lwf_ren_tm as Rtm.
+  pose proof lwf_subst_ty as Sty. cbn beta in Rty, Rtm, Sty.
+  match goal with |- context [tmDNth ?k ?n ?F ?cs ?i] =>
+    assert (H : tm_lwf L (tmDNth k n F cs i)); [| revert H; generalize (tmDNth k n F cs i); intros x H] end.
+  { apply lwf_tmDNth; [repeat split; assumption | apply Rtm, Rtm, Rtm; assumption | | exact I | exact I].
+    cbn [ty_lwf]; repeat split; repeat first [ assumption | apply Rty | apply Rtm ]. }
+  cbn [ty_lwf tm_lwf]; repeat split; try assumption; [apply Rtm; assumption | apply Rty; assumption |].
+  apply Sty; [apply lwf_lsingle2; [apply Rtm; assumption |] | repeat apply Rty; assumption].
+  cbn [tm_lwf ty_lwf]; repeat split; repeat first [ assumption | apply Rty | apply Rtm ].
+Qed.
+
+Lemma iwiihty_leq l lp li l' X A N D Ot C M k kp ki k' X' A' N' D' Ot' C' M' :
+  leqv l k -> leqv lp kp -> leqv li ki -> leqv l' k' ->
+  ty_leq X X' -> ty_leq A A' -> tm_leq N N' -> ty_leq D D' -> tm_leq Ot Ot' -> tm_leq C C' -> ty_leq M M' ->
+  ty_leq (iwiihty l lp li l' X A N D Ot C M) (iwiihty k kp ki k' X' A' N' D' Ot' C' M').
+Proof.
+  intros E1 E1p E2 E3 EX EA EN ED EO EC EM.
+  pose proof (proj1 leq_ren_all) as Rty. pose proof (proj1 (proj2 leq_ren_all)) as Rtm.
+  pose proof (proj1 leq_subst_all) as Sty. cbn beta in Rty, Rtm, Sty.
+  match goal with |- ty_leq ?a ?b =>
+    match a with context [tmDNth ?k ?n ?F ?cs ?i] =>
+    match b with context [tmDNth ?k' ?n' ?F' ?cs' ?i'] =>
+    assert (H : tm_leq (tmDNth k n F cs i) (tmDNth k' n' F' cs' i'));
+    [| revert H; generalize (tmDNth k n F cs i) (tmDNth k' n' F' cs' i'); intros x x' H] end end end.
+  { apply leq_tmDNth; [repeat apply leqv_lmax; assumption | apply Rtm, Rtm, Rtm; assumption | | reflexivity | reflexivity].
+    cbn [ty_leq]; repeat split; repeat first [ assumption | apply leqv_lmax | apply Rty | apply Rtm ]. }
+  cbn [ty_leq tm_leq]; repeat split; try apply leqv_refl; try assumption;
+    try solve [repeat apply leqv_lmax; first [assumption | apply leqv_refl]];
+    try solve [apply Rtm; assumption | apply Rty; assumption].
+  apply Sty; [apply leq_lsingle2; [apply Rtm; assumption |] | repeat apply Rty; assumption].
+  cbn [tm_leq ty_leq]; repeat split; repeat first [ assumption | apply leqv_lmax | apply Rty | apply Rtm ].
+Qed.
