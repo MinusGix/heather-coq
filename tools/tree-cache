@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+"""Save a built tree's outputs and restore them into a fresh checkout, so a
+new container starts from the last build instead of from nothing.
+
+  tools/tree-cache save    DIR [--kind vos|vo]   after `make vos` / `make`
+  tools/tree-cache restore DIR [--kind vos|vo]   before the first `make`
+
+`save` writes DIR/delam-KIND-COQVERSION-BINARY.tar.gz: every output of that kind
+under theories/ (`.vos`, or `.vo` with `.vos`/`.vok`/`.glob`/`.aux`) and a
+manifest of each source's SHA-256.
+
+`restore` unpacks it, deletes the outputs of every source whose text
+differs from the manifest (or that no longer exists), and gives the rest
+one common mtime, newer than the sources. `make` then rebuilds exactly the
+changed files and whatever depends on them: its own mtime rule, started
+from a tree that is up to date except where the sources say otherwise.
+Coq checks each loaded file's digest itself, so a wrong restore fails
+loudly ("makes inconsistent assumptions"), it cannot pass silently.
+
+A cache made by another Coq binary is never used: the file name holds the
+version and a hash of `coqc`'s resolved path (its nix store path), since
+two builds of one version write incompatible files. The cloud threads' shared folder is the intended DIR:
+`/mnt/project-files/build-cache/`.
+"""
+import hashlib, json, os, subprocess, sys, tarfile, time
+
+KINDS = {'vos': ('.vos',), 'vo': ('.vo', '.vos', '.vok', '.glob', '.aux')}
+
+
+def sha(path):
+    return hashlib.sha256(open(path, 'rb').read()).hexdigest()
+
+
+def sources():
+    out = []
+    for d, _, fs in os.walk('theories'):
+        out += [os.path.join(d, f) for f in fs if f.endswith('.v')]
+    return sorted(out)
+
+
+def outputs_of(v, exts):
+    d, b = os.path.split(v[:-2])
+    for e in exts:
+        yield os.path.join(d, ('.' + b + e) if e == '.aux' else b + e)
+
+
+def archive(dirname, kind):
+    ver = subprocess.run(['coqc', '-print-version'], capture_output=True,
+                         text=True, check=True).stdout.split()[0]
+    import shutil
+    exe = os.path.realpath(shutil.which('coqc'))
+    tag = hashlib.sha256(exe.encode()).hexdigest()[:8]
+    return os.path.join(dirname, f'delam-{kind}-{ver}-{tag}.tar.gz')
+
+
+def main():
+    if len(sys.argv) < 3 or sys.argv[1] not in ('save', 'restore'):
+        sys.exit(__doc__)
+    cmd, dirname = sys.argv[1], sys.argv[2]
+    kind = sys.argv[4] if len(sys.argv) > 4 and sys.argv[3] == '--kind' else 'vos'
+    exts = KINDS[kind]
+    path = archive(dirname, kind)
+    if cmd == 'save':
+        os.makedirs(dirname, exist_ok=True)
+        srcs = sources()
+        files = [o for v in srcs for o in outputs_of(v, exts) if os.path.exists(o)]
+        manifest = {'sources': {v: sha(v) for v in srcs},
+                    'project': sha('_CoqProject'),
+                    'rev': subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()}
+        open('.tree-cache-manifest.json', 'w').write(json.dumps(manifest))
+        tmp = path + f'.tmp{os.getpid()}'
+        with tarfile.open(tmp, 'w:gz', compresslevel=3) as tf:
+            for f in ['.tree-cache-manifest.json'] + files:
+                tf.add(f)
+        os.replace(tmp, path)
+        os.unlink('.tree-cache-manifest.json')
+        print(f'saved {len(files)} files ({os.path.getsize(path) / 1e6:.1f} MB) to {path}')
+    else:
+        if not os.path.exists(path):
+            sys.exit(f'no cache at {path}')
+        t0 = time.time()
+        with tarfile.open(path) as tf:
+            tf.extractall('.', filter='data') if hasattr(tarfile, 'data_filter') else tf.extractall('.')
+        manifest = json.load(open('.tree-cache-manifest.json'))
+        os.unlink('.tree-cache-manifest.json')
+        if manifest['project'] != sha('_CoqProject'):
+            print('note: _CoqProject changed since the cache was made '
+                  '(new flags apply only to rebuilt files)')
+        now = time.time()
+        kept = stale = 0
+        cur = set(sources())
+        for v in set(manifest['sources']) | cur:
+            same = v in cur and manifest['sources'].get(v) == sha(v)
+            for o in outputs_of(v, exts):
+                if not os.path.exists(o):
+                    continue
+                if same:
+                    os.utime(o, (now, now)); kept += 1
+                else:
+                    os.unlink(o); stale += 1
+        changed = sorted(v for v in cur if manifest['sources'].get(v) != sha(v))
+        print(f'restored {kept} outputs from {manifest["rev"][:9]} in {time.time() - t0:.1f} s; '
+              f'{len(changed)} sources differ' + (': ' + ' '.join(changed[:8]) + (' …' if len(changed) > 8 else '') if changed else ''))
+
+
+if __name__ == '__main__':
+    main()

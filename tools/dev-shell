@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# The dev shell, taking Coq, Equations and smpl from a binary cache when
+# one is mounted, instead of building them (the flake pins Coq 8.20.0,
+# which cache.nixos.org does not hold: about 7 minutes per fresh
+# container, and smpl's source fetch fails in the cloud containers).
+#
+#   tools/dev-shell                      an interactive shell
+#   tools/dev-shell --command make -j4   one command
+#
+# The cache is a plain directory (default: the cloud threads' shared
+# folder). To fill or refresh it after the flake changes, from inside the
+# shell:
+#   nix copy --to "file://$DELAM_NIX_CACHE?compression=zstd" \
+#     $(dirname $(dirname $(command -v coqc))) \
+#     $(echo $COQPATH | tr : '\n' | sed 's|/lib/coq/.*||')
+# Without the directory this is `nix develop path:.`.
+set -euo pipefail
+cache=${DELAM_NIX_CACHE:-/mnt/project-files/build-cache/nix/}
+cd "$(dirname "$0")/.."
+if [ -f "$cache/nix-cache-info" ]; then
+  exec nix develop --extra-substituters "file://$cache" --option require-sigs false path:. "$@"
+fi
+exec nix develop path:. "$@"

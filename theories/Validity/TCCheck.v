@@ -19,7 +19,7 @@ Let ihC t : sz_tm t < n -> CKD t := proj1 (proj2 IH) t.
 Ltac szl := cbn [sz_ty sz_tm sz_ctx sz_l] in *; lia.
 
 Lemma ck_synth t : sz_tm t <= n -> synth t -> CKD t.
-Proof.
+Proof using IH.
   intros Hsz Hs G i Γ T k HT.
   pose proof (ctx_of_wf_ty (typeof_idem i) HT) as HΓ.
   destruct (sy_step n IH t Hsz Hs G i Γ HΓ) as [(T' & k' & Ht') | N]; [| right; intros H; exact (N _ _ H)].
@@ -32,7 +32,7 @@ Proof.
 Qed.
 
 Lemma ck_lam l l' A b : sz_tm (lam l l' A b) <= n -> CKD (lam l l' A b).
-Proof.
+Proof using ihC ihT.
   intros Hsz G i Γ T k HT.
   pose proof (ctx_of_wf_ty (typeof_idem i) HT) as HΓ.
   destruct (layer_eq_dec i lV) as [-> | Hv]; [right; intros H; eapply typed_V; [| exact H]; cbn; tauto |].
@@ -72,7 +72,7 @@ Proof.
 Qed.
 
 Lemma ck_boxT A0 : sz_tm (boxT A0) <= n -> CKD (boxT A0).
-Proof.
+Proof using ihT.
   intros Hsz G i Γ T k HT. pose proof (ctx_of_wf_ty (typeof_idem i) HT) as HΓ.
   destruct (layer_eq_dec i lM) as [-> | NM]; [| right; intros H; exact (NM (typed_m_only H I))].
   destruct (whnf_normalization_ty_c compt_M HT) as (W & _ & Hw & EW).
@@ -88,7 +88,7 @@ Proof.
 Qed.
 
 Lemma ck_boxt a : sz_tm (boxt a) <= n -> CKD (boxt a).
-Proof.
+Proof using ihC.
   intros Hsz G i Γ T k HT. pose proof (ctx_of_wf_ty (typeof_idem i) HT) as HΓ.
   destruct (layer_eq_dec i lM) as [-> | NM]; [| right; intros H; exact (NM (typed_m_only H I))].
   destruct (whnf_normalization_ty_c compt_M HT) as (W & _ & Hw & EW).
@@ -107,7 +107,7 @@ Qed.
 (** ** The step *)
 
 Lemma ck_step t : sz_tm t <= n -> CKD t.
-Proof.
+Proof using ihC ihT.
   intros Hsz. destruct (synth_dec t) as [Hs | Hs]; [exact (ck_synth t Hsz Hs) |].
   destruct t; cbn in Hs; try (exfalso; exact (Hs I));
     first [ apply ck_lam | apply ck_boxT | apply ck_boxt ];

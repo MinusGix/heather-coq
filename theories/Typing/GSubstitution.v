@@ -323,152 +323,152 @@ Qed.
 
 Section PushGS.
 Variable (σ : gsub).
-Lemma gs_tyNat : tyNat⦃σ⦄ = tyNat. Proof. reflexivity. Qed.
-Lemma gs_tyPi l l' A B : (tyPi l l' A B)⦃σ⦄ = tyPi l l' A⦃σ⦄ B⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tyU l : (tyU l)⦃σ⦄ = tyU l. Proof. reflexivity. Qed.
-Lemma gs_tyEl l t : (tyEl l t)⦃σ⦄ = tyEl l t⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tyCTyp Δ l : (tyCTyp Δ l)⦃σ⦄ = tyCTyp Δ⦃σ⦄ l. Proof. reflexivity. Qed.
-Lemma gs_tyCTrm Δ T l : (tyCTrm Δ T l)⦃σ⦄ = tyCTrm Δ⦃σ⦄ T⦃σ⦄ l. Proof. reflexivity. Qed.
-Lemma gs_var n : (var n)⦃σ⦄ = var n. Proof. reflexivity. Qed.
-Lemma gs_tmNat : tmNat⦃σ⦄ = tmNat. Proof. reflexivity. Qed.
-Lemma gs_tmPi l l' s t : (tmPi l l' s t)⦃σ⦄ = tmPi l l' s⦃σ⦄ t⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tmU l : (tmU l)⦃σ⦄ = tmU l. Proof. reflexivity. Qed.
-Lemma gs_zero : zero⦃σ⦄ = zero. Proof. reflexivity. Qed.
-Lemma gs_succ t : (succ t)⦃σ⦄ = succ t⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tyNat : tyNat⦃σ⦄ = tyNat. Proof using . reflexivity. Qed.
+Lemma gs_tyPi l l' A B : (tyPi l l' A B)⦃σ⦄ = tyPi l l' A⦃σ⦄ B⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tyU l : (tyU l)⦃σ⦄ = tyU l. Proof using . reflexivity. Qed.
+Lemma gs_tyEl l t : (tyEl l t)⦃σ⦄ = tyEl l t⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tyCTyp Δ l : (tyCTyp Δ l)⦃σ⦄ = tyCTyp Δ⦃σ⦄ l. Proof using . reflexivity. Qed.
+Lemma gs_tyCTrm Δ T l : (tyCTrm Δ T l)⦃σ⦄ = tyCTrm Δ⦃σ⦄ T⦃σ⦄ l. Proof using . reflexivity. Qed.
+Lemma gs_var n : (var n)⦃σ⦄ = var n. Proof using . reflexivity. Qed.
+Lemma gs_tmNat : tmNat⦃σ⦄ = tmNat. Proof using . reflexivity. Qed.
+Lemma gs_tmPi l l' s t : (tmPi l l' s t)⦃σ⦄ = tmPi l l' s⦃σ⦄ t⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tmU l : (tmU l)⦃σ⦄ = tmU l. Proof using . reflexivity. Qed.
+Lemma gs_zero : zero⦃σ⦄ = zero. Proof using . reflexivity. Qed.
+Lemma gs_succ t : (succ t)⦃σ⦄ = succ t⦃σ⦄. Proof using . reflexivity. Qed.
 Lemma gs_natrec l M s z t : (natrec l M s z t)⦃σ⦄ = natrec l M⦃σ⦄ s⦃σ⦄ z⦃σ⦄ t⦃σ⦄.
-Proof. reflexivity. Qed.
-Lemma gs_lam l l' A t : (lam l l' A t)⦃σ⦄ = lam l l' A⦃σ⦄ t⦃σ⦄. Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
+Lemma gs_lam l l' A t : (lam l l' A t)⦃σ⦄ = lam l l' A⦃σ⦄ t⦃σ⦄. Proof using . reflexivity. Qed.
 Lemma gs_app t l l' A B s : (app t l l' A B s)⦃σ⦄ = app t⦃σ⦄ l l' A⦃σ⦄ B⦃σ⦄ s⦃σ⦄.
-Proof. reflexivity. Qed.
-Lemma gs_boxT T : (boxT T)⦃σ⦄ = boxT T⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_boxt t : (boxt t)⦃σ⦄ = boxt t⦃σ⦄. Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
+Lemma gs_boxT T : (boxT T)⦃σ⦄ = boxT T⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_boxt t : (boxt t)⦃σ⦄ = boxt t⦃σ⦄. Proof using . reflexivity. Qed.
 Lemma gs_letboxT l' l Δ M t' t :
   (letboxT l' l Δ M t' t)⦃σ⦄ = letboxT l' l Δ⦃σ⦄ M⦃σ⦄ t'⦃gup σ⦄ t⦃σ⦄.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gs_letboxt l' l Δ T M t' t :
   (letboxt l' l Δ T M t' t)⦃σ⦄ = letboxt l' l Δ⦃σ⦄ T⦃σ⦄ M⦃σ⦄ t'⦃gup σ⦄ t⦃σ⦄.
-Proof. reflexivity. Qed.
-Lemma gs_cnil : cnil⦃σ⦄ = cnil. Proof. reflexivity. Qed.
-Lemma gs_cext Γ A l : (Γ ,, A @ l)⦃σ⦄ = Γ⦃σ⦄ ,, A⦃σ⦄ @ l. Proof. reflexivity. Qed.
-Lemma gs_lshift k : (lshift k)⦃σ⦄ = lshift k. Proof. reflexivity. Qed.
-Lemma gs_tyGvar U d : (tyGvar U d)⦃σ⦄ = pty (σ U) d⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_gvar u d : (gvar u d)⦃σ⦄ = ptm (σ u) d⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_cvar g : (cvar g)⦃σ⦄ = pctx (σ g). Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
+Lemma gs_cnil : cnil⦃σ⦄ = cnil. Proof using . reflexivity. Qed.
+Lemma gs_cext Γ A l : (Γ ,, A @ l)⦃σ⦄ = Γ⦃σ⦄ ,, A⦃σ⦄ @ l. Proof using . reflexivity. Qed.
+Lemma gs_lshift k : (lshift k)⦃σ⦄ = lshift k. Proof using . reflexivity. Qed.
+Lemma gs_tyGvar U d : (tyGvar U d)⦃σ⦄ = pty (σ U) d⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_gvar u d : (gvar u d)⦃σ⦄ = ptm (σ u) d⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_cvar g : (cvar g)⦃σ⦄ = pctx (σ g). Proof using . reflexivity. Qed.
 Lemma gs_elimT l1 l2 rb l Δ t : (elimT l1 l2 rb l Δ t)⦃σ⦄ = elimT l1 l2 rb⦃σ⦄ l Δ⦃σ⦄ t⦃σ⦄.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gs_elimt l1 l2 rb l Δ T t :
   (elimt l1 l2 rb l Δ T t)⦃σ⦄ = elimt l1 l2 rb⦃σ⦄ l Δ⦃σ⦄ T⦃σ⦄ t⦃σ⦄.
-Proof. reflexivity. Qed.
-Lemma gs_tyUPi n l T : (tyUPi n l T)⦃σ⦄ = tyUPi n l T⦃guwkn n σ⦄. Proof. reflexivity. Qed.
-Lemma gs_ulam n l T t : (ulam n l T t)⦃σ⦄ = ulam n l T⦃guwkn n σ⦄ t⦃guwkn n σ⦄. Proof. reflexivity. Qed.
-Lemma gs_uapp t ls : (uapp t ls)⦃σ⦄ = uapp t⦃σ⦄ ls. Proof. reflexivity. Qed.
-Lemma gs_tyCPi l T : (tyCPi l T)⦃σ⦄ = tyCPi l T⦃gup σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tyTPi Δ l l' T : (tyTPi Δ l l' T)⦃σ⦄ = tyTPi Δ⦃σ⦄ l l' T⦃gup σ⦄. Proof. reflexivity. Qed.
-Lemma gs_clam l T t : (clam l T t)⦃σ⦄ = clam l T⦃gup σ⦄ t⦃gup σ⦄. Proof. reflexivity. Qed.
-Lemma gs_capp t Δ : (capp t Δ)⦃σ⦄ = capp t⦃σ⦄ Δ⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tlam Δ l l' T t : (tlam Δ l l' T t)⦃σ⦄ = tlam Δ⦃σ⦄ l l' T⦃gup σ⦄ t⦃gup σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tapp t T : (tapp t T)⦃σ⦄ = tapp t⦃σ⦄ T⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tySig l l' A B : (tySig l l' A B)⦃σ⦄ = tySig l l' A⦃σ⦄ B⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tySum l l' A B : (tySum l l' A B)⦃σ⦄ = tySum l l' A⦃σ⦄ B⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_inl l l' A B a : (tmInl l l' A B a)⦃σ⦄ = tmInl l l' A⦃σ⦄ B⦃σ⦄ a⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_inr l l' A B a : (tmInr l l' A B a)⦃σ⦄ = tmInr l l' A⦃σ⦄ B⦃σ⦄ a⦃σ⦄. Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
+Lemma gs_tyUPi n l T : (tyUPi n l T)⦃σ⦄ = tyUPi n l T⦃guwkn n σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_ulam n l T t : (ulam n l T t)⦃σ⦄ = ulam n l T⦃guwkn n σ⦄ t⦃guwkn n σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_uapp t ls : (uapp t ls)⦃σ⦄ = uapp t⦃σ⦄ ls. Proof using . reflexivity. Qed.
+Lemma gs_tyCPi l T : (tyCPi l T)⦃σ⦄ = tyCPi l T⦃gup σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tyTPi Δ l l' T : (tyTPi Δ l l' T)⦃σ⦄ = tyTPi Δ⦃σ⦄ l l' T⦃gup σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_clam l T t : (clam l T t)⦃σ⦄ = clam l T⦃gup σ⦄ t⦃gup σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_capp t Δ : (capp t Δ)⦃σ⦄ = capp t⦃σ⦄ Δ⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tlam Δ l l' T t : (tlam Δ l l' T t)⦃σ⦄ = tlam Δ⦃σ⦄ l l' T⦃gup σ⦄ t⦃gup σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tapp t T : (tapp t T)⦃σ⦄ = tapp t⦃σ⦄ T⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tySig l l' A B : (tySig l l' A B)⦃σ⦄ = tySig l l' A⦃σ⦄ B⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tySum l l' A B : (tySum l l' A B)⦃σ⦄ = tySum l l' A⦃σ⦄ B⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_inl l l' A B a : (tmInl l l' A B a)⦃σ⦄ = tmInl l l' A⦃σ⦄ B⦃σ⦄ a⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_inr l l' A B a : (tmInr l l' A B a)⦃σ⦄ = tmInr l l' A⦃σ⦄ B⦃σ⦄ a⦃σ⦄. Proof using . reflexivity. Qed.
 Lemma gs_case l l' l'' A B M c1 c2 t :
   (tmCase l l' l'' A B M c1 c2 t)⦃σ⦄ = tmCase l l' l'' A⦃σ⦄ B⦃σ⦄ M⦃σ⦄ c1⦃σ⦄ c2⦃σ⦄ t⦃σ⦄.
-Proof. reflexivity. Qed.
-Lemma gs_tmSig l l' s t : (tmSig l l' s t)⦃σ⦄ = tmSig l l' s⦃σ⦄ t⦃σ⦄. Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
+Lemma gs_tmSig l l' s t : (tmSig l l' s t)⦃σ⦄ = tmSig l l' s⦃σ⦄ t⦃σ⦄. Proof using . reflexivity. Qed.
 Lemma gs_pair l l' A B a b : (tmPair l l' A B a b)⦃σ⦄ = tmPair l l' A⦃σ⦄ B⦃σ⦄ a⦃σ⦄ b⦃σ⦄.
-Proof. reflexivity. Qed.
-Lemma gs_fst l l' A B p : (tmFst l l' A B p)⦃σ⦄ = tmFst l l' A⦃σ⦄ B⦃σ⦄ p⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_snd l l' A B p : (tmSnd l l' A B p)⦃σ⦄ = tmSnd l l' A⦃σ⦄ B⦃σ⦄ p⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tyUnit l : (tyUnit l)⦃σ⦄ = tyUnit l. Proof. reflexivity. Qed.
-Lemma gs_tmUnit l : (tmUnit l)⦃σ⦄ = tmUnit l. Proof. reflexivity. Qed.
-Lemma gs_tmSEmpty l : (tmSEmpty l)⦃σ⦄ = tmSEmpty l. Proof. reflexivity. Qed.
-Lemma gs_tmEmpty l : (tmEmpty l)⦃σ⦄ = tmEmpty l. Proof. reflexivity. Qed.
-Lemma gs_tmSum l l' s t : (tmSum l l' s t)⦃σ⦄ = tmSum l l' s⦃σ⦄ t⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tmW l l' s t : (tmW l l' s t)⦃σ⦄ = tmW l l' s⦃σ⦄ t⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tmVec l s n : (tmVec l s n)⦃σ⦄ = tmVec l s⦃σ⦄ n⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tmWf l s n : (tmWf l s n)⦃σ⦄ = tmWf l s⦃σ⦄ n⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tmFin n : (tmFin n)⦃σ⦄ = tmFin n⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_triv l : (tmTriv l)⦃σ⦄ = tmTriv l. Proof. reflexivity. Qed.
-Lemma gs_tySEq l A a b : (tySEq l A a b)⦃σ⦄ = tySEq l A⦃σ⦄ a⦃σ⦄ b⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tySEmpty l : (tySEmpty l)⦃σ⦄ = tySEmpty l. Proof. reflexivity. Qed.
-Lemma gs_tyEmpty l : (tyEmpty l)⦃σ⦄ = tyEmpty l. Proof. reflexivity. Qed.
-Lemma gs_srefl l A a : (srefl l A a)⦃σ⦄ = srefl l A⦃σ⦄ a⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_elimSEmpty l l' M e : (elimSEmpty l l' M e)⦃σ⦄ = elimSEmpty l l' M⦃σ⦄ e⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_elimEmpty l l' M e : (elimEmpty l l' M e)⦃σ⦄ = elimEmpty l l' M⦃σ⦄ e⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tyId l A a b : (tyId l A a b)⦃σ⦄ = tyId l A⦃σ⦄ a⦃σ⦄ b⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_refl l A a : (tmRefl l A a)⦃σ⦄ = tmRefl l A⦃σ⦄ a⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tmId l s t u : (tmId l s t u)⦃σ⦄ = tmId l s⦃σ⦄ t⦃σ⦄ u⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tmSEq l s t u : (tmSEq l s t u)⦃σ⦄ = tmSEq l s⦃σ⦄ t⦃σ⦄ u⦃σ⦄. Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
+Lemma gs_fst l l' A B p : (tmFst l l' A B p)⦃σ⦄ = tmFst l l' A⦃σ⦄ B⦃σ⦄ p⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_snd l l' A B p : (tmSnd l l' A B p)⦃σ⦄ = tmSnd l l' A⦃σ⦄ B⦃σ⦄ p⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tyUnit l : (tyUnit l)⦃σ⦄ = tyUnit l. Proof using . reflexivity. Qed.
+Lemma gs_tmUnit l : (tmUnit l)⦃σ⦄ = tmUnit l. Proof using . reflexivity. Qed.
+Lemma gs_tmSEmpty l : (tmSEmpty l)⦃σ⦄ = tmSEmpty l. Proof using . reflexivity. Qed.
+Lemma gs_tmEmpty l : (tmEmpty l)⦃σ⦄ = tmEmpty l. Proof using . reflexivity. Qed.
+Lemma gs_tmSum l l' s t : (tmSum l l' s t)⦃σ⦄ = tmSum l l' s⦃σ⦄ t⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tmW l l' s t : (tmW l l' s t)⦃σ⦄ = tmW l l' s⦃σ⦄ t⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tmVec l s n : (tmVec l s n)⦃σ⦄ = tmVec l s⦃σ⦄ n⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tmWf l s n : (tmWf l s n)⦃σ⦄ = tmWf l s⦃σ⦄ n⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tmFin n : (tmFin n)⦃σ⦄ = tmFin n⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_triv l : (tmTriv l)⦃σ⦄ = tmTriv l. Proof using . reflexivity. Qed.
+Lemma gs_tySEq l A a b : (tySEq l A a b)⦃σ⦄ = tySEq l A⦃σ⦄ a⦃σ⦄ b⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tySEmpty l : (tySEmpty l)⦃σ⦄ = tySEmpty l. Proof using . reflexivity. Qed.
+Lemma gs_tyEmpty l : (tyEmpty l)⦃σ⦄ = tyEmpty l. Proof using . reflexivity. Qed.
+Lemma gs_srefl l A a : (srefl l A a)⦃σ⦄ = srefl l A⦃σ⦄ a⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_elimSEmpty l l' M e : (elimSEmpty l l' M e)⦃σ⦄ = elimSEmpty l l' M⦃σ⦄ e⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_elimEmpty l l' M e : (elimEmpty l l' M e)⦃σ⦄ = elimEmpty l l' M⦃σ⦄ e⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tyId l A a b : (tyId l A a b)⦃σ⦄ = tyId l A⦃σ⦄ a⦃σ⦄ b⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_refl l A a : (tmRefl l A a)⦃σ⦄ = tmRefl l A⦃σ⦄ a⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tmId l s t u : (tmId l s t u)⦃σ⦄ = tmId l s⦃σ⦄ t⦃σ⦄ u⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tmSEq l s t u : (tmSEq l s t u)⦃σ⦄ = tmSEq l s⦃σ⦄ t⦃σ⦄ u⦃σ⦄. Proof using . reflexivity. Qed.
 Lemma gs_J l l' A a M c u e :
   (tmJ l l' A a M c u e)⦃σ⦄ = tmJ l l' A⦃σ⦄ a⦃σ⦄ M⦃σ⦄ c⦃σ⦄ u⦃σ⦄ e⦃σ⦄.
-Proof. reflexivity. Qed.
-Lemma gs_gdef u b d : (gdef u b d)⦃σ⦄ = pdef (σ u) b⦃σ⦄ d⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tyW l l' A B : (tyW l l' A B)⦃σ⦄ = tyW l l' A⦃σ⦄ B⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tyVec l A n : (tyVec l A n)⦃σ⦄ = tyVec l A⦃σ⦄ n⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tyFin n : (tyFin n)⦃σ⦄ = tyFin n⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_sup l l' A B a f : (tmSup l l' A B a f)⦃σ⦄ = tmSup l l' A⦃σ⦄ B⦃σ⦄ a⦃σ⦄ f⦃σ⦄. Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
+Lemma gs_gdef u b d : (gdef u b d)⦃σ⦄ = pdef (σ u) b⦃σ⦄ d⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tyW l l' A B : (tyW l l' A B)⦃σ⦄ = tyW l l' A⦃σ⦄ B⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tyVec l A n : (tyVec l A n)⦃σ⦄ = tyVec l A⦃σ⦄ n⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tyFin n : (tyFin n)⦃σ⦄ = tyFin n⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_sup l l' A B a f : (tmSup l l' A B a f)⦃σ⦄ = tmSup l l' A⦃σ⦄ B⦃σ⦄ a⦃σ⦄ f⦃σ⦄. Proof using . reflexivity. Qed.
 Lemma gs_elimW l l' l'' A B M c t :
   (tmElimW l l' l'' A B M c t)⦃σ⦄ = tmElimW l l' l'' A⦃σ⦄ B⦃σ⦄ M⦃σ⦄ c⦃σ⦄ t⦃σ⦄.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 (** [elim_W]'s induction hypothesis (M13a). *)
 Lemma gs_wIH l l' l'' A B M c a f :
   (wIH l l' l'' A B M c a f)⦃σ⦄ = wIH l l' l'' A⦃σ⦄ B⦃σ⦄ M⦃σ⦄ c⦃σ⦄ a⦃σ⦄ f⦃σ⦄.
-Proof.
+Proof using .
   unfold wIH. rewrite gs_lam, gs_elimW, gs_app, gs_var.
   repeat rewrite ?gsubst_ren_ty', ?gsubst_ren, ?gsubst_subst_ty, ?gs_tyW. reflexivity.
 Qed.
-Lemma gs_tyWf l A N : (tyWf l A N)⦃σ⦄ = tyWf l A⦃σ⦄ N⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_supf l A N a cs : (tmSupf l A N a cs)⦃σ⦄ = tmSupf l A⦃σ⦄ N⦃σ⦄ a⦃σ⦄ cs⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tyWf l A N : (tyWf l A N)⦃σ⦄ = tyWf l A⦃σ⦄ N⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_supf l A N a cs : (tmSupf l A N a cs)⦃σ⦄ = tmSupf l A⦃σ⦄ N⦃σ⦄ a⦃σ⦄ cs⦃σ⦄. Proof using . reflexivity. Qed.
 Lemma gs_elimWf l l' A N M c t :
   (tmElimWf l l' A N M c t)⦃σ⦄ = tmElimWf l l' A⦃σ⦄ N⦃σ⦄ M⦃σ⦄ c⦃σ⦄ t⦃σ⦄.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 (** Propositional truncation (M16a). *)
-Lemma gs_tySq l A : (tySq l A)⦃σ⦄ = tySq l A⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tyDVec l n F : (tyDVec l n F)⦃σ⦄ = tyDVec l n⦃σ⦄ F⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_sq l A a : (tmSq l A a)⦃σ⦄ = tmSq l A⦃σ⦄ a⦃σ⦄. Proof. reflexivity. Qed.
+Lemma gs_tySq l A : (tySq l A)⦃σ⦄ = tySq l A⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tyDVec l n F : (tyDVec l n F)⦃σ⦄ = tyDVec l n⦃σ⦄ F⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_sq l A a : (tmSq l A a)⦃σ⦄ = tmSq l A⦃σ⦄ a⦃σ⦄. Proof using . reflexivity. Qed.
 Lemma gs_elimSq l l' A M c t : (tmElimSq l l' A M c t)⦃σ⦄ = tmElimSq l l' A⦃σ⦄ M⦃σ⦄ c⦃σ⦄ t⦃σ⦄.
-Proof. reflexivity. Qed.
-Lemma gs_tmSqCode l s : (tmSqCode l s)⦃σ⦄ = tmSqCode l s⦃σ⦄. Proof. reflexivity. Qed.
-Lemma gs_tmDVec l n f : (tmDVec l n f)⦃σ⦄ = tmDVec l n⦃σ⦄ f⦃σ⦄. Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
+Lemma gs_tmSqCode l s : (tmSqCode l s)⦃σ⦄ = tmSqCode l s⦃σ⦄. Proof using . reflexivity. Qed.
+Lemma gs_tmDVec l n f : (tmDVec l n f)⦃σ⦄ = tmDVec l n⦃σ⦄ f⦃σ⦄. Proof using . reflexivity. Qed.
 Lemma gs_tmIWf l li x s n o c m :
   (tmIWf l li x s n o c m)⦃σ⦄ = tmIWf l li x⦃σ⦄ s⦃σ⦄ n⦃σ⦄ o⦃σ⦄ c⦃σ⦄ m⦃σ⦄.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 (** [nth] and [elim_Wf]'s induction hypothesis (M15a). *)
 Lemma gs_tmNth l T k cs i : (tmNth l T k cs i)⦃σ⦄ = tmNth l T⦃σ⦄ k⦃σ⦄ cs⦃σ⦄ i⦃σ⦄.
-Proof.
+Proof using .
   unfold tmNth, nthMot, nthBase, nthStep. cbn [gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty].
   change (gsubst_tm ?x ?σ) with x⦃σ⦄; change (gsubst_ty ?x ?σ) with x⦃σ⦄.
   repeat rewrite ?gsubst_ren_ty', ?gsubst_ren. reflexivity.
 Qed.
 Lemma gs_wfIH l l' A N M c a cs :
   (wfIH l l' A N M c a cs)⦃σ⦄ = wfIH l l' A⦃σ⦄ N⦃σ⦄ M⦃σ⦄ c⦃σ⦄ a⦃σ⦄ cs⦃σ⦄.
-Proof.
+Proof using .
   unfold wfIH. rewrite gs_lam, gs_elimWf, gs_tmNth, gs_var, gs_tyFin.
   repeat rewrite ?gsubst_ren_ty', ?gsubst_ren, ?gsubst_subst, ?gs_tyWf. reflexivity.
 Qed.
 (** [IWf], [dnth] and [elim_IWf]'s induction hypothesis (M17b). *)
 Lemma gs_tyIWf l li X A N Ot C m :
   (tyIWf l li X A N Ot C m)⦃σ⦄ = tyIWf l li X⦃σ⦄ A⦃σ⦄ N⦃σ⦄ Ot⦃σ⦄ C⦃σ⦄ m⦃σ⦄.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gs_supi l li X A N Ot C a cs :
   (tmSupi l li X A N Ot C a cs)⦃σ⦄ = tmSupi l li X⦃σ⦄ A⦃σ⦄ N⦃σ⦄ Ot⦃σ⦄ C⦃σ⦄ a⦃σ⦄ cs⦃σ⦄.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gs_elimIWf l li l' X A N Ot C M c m t :
   (tmElimIWf l li l' X A N Ot C M c m t)⦃σ⦄
   = tmElimIWf l li l' X⦃σ⦄ A⦃σ⦄ N⦃σ⦄ Ot⦃σ⦄ C⦃σ⦄ M⦃σ⦄ c⦃σ⦄ m⦃σ⦄ t⦃σ⦄.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gs_llift_single (b a : tm) : b[llift (lsingle a)]⦃σ⦄ = b⦃σ⦄[llift (lsingle a⦃σ⦄)].
-Proof.
+Proof using .
   rewrite gsubst_subst. apply subst_ext; intros [|[|n]]; rewrite ?llk_glsubst, ?llk_llift; cbn; auto.
   rewrite gsubst_ren. reflexivity.
 Qed.
 Lemma gs_single_ty0 (M : ty) a : M[lsingle a]⦃σ⦄ = M⦃σ⦄[lsingle a⦃σ⦄].
-Proof. rewrite gsubst_subst_ty; reflexivity. Qed.
+Proof using . rewrite gsubst_subst_ty; reflexivity. Qed.
 Lemma gs_single0 (b a : tm) : b[lsingle a]⦃σ⦄ = b⦃σ⦄[lsingle a⦃σ⦄].
-Proof. rewrite gsubst_subst; reflexivity. Qed.
+Proof using . rewrite gsubst_subst; reflexivity. Qed.
 Lemma gs_tmDNth l n F cs i : (tmDNth l n F cs i)⦃σ⦄ = tmDNth l n⦃σ⦄ F⦃σ⦄ cs⦃σ⦄ i⦃σ⦄.
-Proof.
+Proof using .
   unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
   repeat progress (cbn [gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty]; fold gsubst_ty gsubst_tm;
     try change (gsubst_tm ?x ?σ) with x⦃σ⦄; try change (gsubst_ty ?x ?σ) with x⦃σ⦄;
@@ -477,45 +477,45 @@ Proof.
 Qed.
 Lemma gs_iwfFam l li X A N Ot C a :
   (iwfFam l li X A N Ot C a)⦃σ⦄ = iwfFam l li X⦃σ⦄ A⦃σ⦄ N⦃σ⦄ Ot⦃σ⦄ C⦃σ⦄ a⦃σ⦄.
-Proof.
+Proof using .
   unfold iwfFam. rewrite gs_tyIWf, gs_llift_single.
   repeat rewrite ?gsubst_ren_ty', ?gsubst_ren. reflexivity.
 Qed.
 Lemma gs_iwfIH l li l' X A N Ot C M c a cs :
   (iwfIH l li l' X A N Ot C M c a cs)⦃σ⦄
   = iwfIH l li l' X⦃σ⦄ A⦃σ⦄ N⦃σ⦄ Ot⦃σ⦄ C⦃σ⦄ M⦃σ⦄ c⦃σ⦄ a⦃σ⦄ cs⦃σ⦄.
-Proof.
+Proof using .
   unfold iwfIH. rewrite gs_lam, gs_elimIWf, gs_tmDNth, gs_var, gs_tyFin.
   repeat rewrite ?gsubst_ren_ty', ?gsubst_ren, ?gs_iwfFam, ?gs_llift_single, ?gs_single_ty0, ?gs_single0. reflexivity.
 Qed.
 (** Indexed coinductive types (M18b): [out]-of-[corec]'s reduct. *)
 Lemma gs_tyM l l' li X A B C j :
   (tyM l l' li X A B C j)⦃σ⦄ = tyM l l' li X⦃σ⦄ A⦃σ⦄ B⦃σ⦄ C⦃σ⦄ j⦃σ⦄.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gs_corec l l' li X A B C k Y c j y :
   (tmCorec l l' li X A B C k Y c j y)⦃σ⦄ = tmCorec l l' li X⦃σ⦄ A⦃σ⦄ B⦃σ⦄ C⦃σ⦄ k Y⦃σ⦄ c⦃σ⦄ j⦃σ⦄ y⦃σ⦄.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gs_out l l' li X A B C j m :
   (tmOut l l' li X A B C j m)⦃σ⦄ = tmOut l l' li X⦃σ⦄ A⦃σ⦄ B⦃σ⦄ C⦃σ⦄ j⦃σ⦄ m⦃σ⦄.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Ltac gs_llk := intros n; do 4 try (destruct n as [|n]);
   rewrite ?llk_glsubst, ?llk_llift; cbn; rewrite ?llk_glsubst, ?llk_llift; cbn;
   rewrite ?llk_glsubst, ?llk_llift; cbn; rewrite ?llk_glsubst, ?llk_llift; cbn; auto;
   rewrite ?gsubst_ren; reflexivity.
 Lemma gs_llift_single_ty (B : ty) a : B[llift (lsingle a)]⦃σ⦄ = B⦃σ⦄[llift (lsingle a⦃σ⦄)].
-Proof. rewrite gsubst_subst_ty. apply subst_ext_ty; gs_llk. Qed.
+Proof using . rewrite gsubst_subst_ty. apply subst_ext_ty; gs_llk. Qed.
 Lemma gs_llift2_single (b a : tm) : b[llift (llift (lsingle a))]⦃σ⦄ = b⦃σ⦄[llift (llift (lsingle a⦃σ⦄))].
-Proof. rewrite gsubst_subst. apply subst_ext; gs_llk. Qed.
+Proof using . rewrite gsubst_subst. apply subst_ext; gs_llk. Qed.
 Lemma gs_llift_single2 (b a a' : tm) : b[llift (lsingle2 a a')]⦃σ⦄ = b⦃σ⦄[llift (lsingle2 a⦃σ⦄ a'⦃σ⦄)].
-Proof. rewrite gsubst_subst. apply subst_ext; gs_llk. Qed.
+Proof using . rewrite gsubst_subst. apply subst_ext; gs_llk. Qed.
 Lemma gs_single2_0 (b a a' : tm) : b[lsingle2 a a']⦃σ⦄ = b⦃σ⦄[lsingle2 a⦃σ⦄ a'⦃σ⦄].
-Proof. rewrite gsubst_subst; reflexivity. Qed.
+Proof using . rewrite gsubst_subst; reflexivity. Qed.
 Lemma gs_single2_ty0 (B : ty) a a' : B[lsingle2 a a']⦃σ⦄ = B⦃σ⦄[lsingle2 a⦃σ⦄ a'⦃σ⦄].
-Proof. rewrite gsubst_subst_ty; reflexivity. Qed.
+Proof using . rewrite gsubst_subst_ty; reflexivity. Qed.
 Lemma gs_mOutCorec l l' li X A B C k Y c j y :
   (mOutCorec l l' li X A B C k Y c j y)⦃σ⦄ =
   mOutCorec l l' li X⦃σ⦄ A⦃σ⦄ B⦃σ⦄ C⦃σ⦄ k Y⦃σ⦄ c⦃σ⦄ j⦃σ⦄ y⦃σ⦄.
-Proof.
+Proof using .
   unfold mOutCorec.
   repeat progress (cbn [gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty]; fold gsubst_ty gsubst_tm;
     try change (gsubst_tm ?x ?σ) with x⦃σ⦄; try change (gsubst_ty ?x ?σ) with x⦃σ⦄;

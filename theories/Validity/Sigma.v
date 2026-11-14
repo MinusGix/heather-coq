@@ -15,12 +15,12 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 (** ** Syntax *)
 
 Lemma ktm_subst {G Δ} (ρ : kwk G Δ) (t : tm) d : ktm ρ t[d] = t⟦kw_γ ρ⟧[kwsub ρ d].
-Proof. unfold ktm, kwsub. now rewrite gwa_subst, subst_ren_lren. Qed.
+Proof using . unfold ktm, kwsub. now rewrite gwa_subst, subst_ren_lren. Qed.
 
 (** A single substitution after a substitution, in the Kripke form. *)
 Lemma kw_single_subst_ty {G Δ} (ρ : kwk G Δ) (B : ty) a d :
   (B[lsingle a])⟦kw_γ ρ⟧[kwsub ρ d] = (ktyl ρ B[llift d])[lsingle (ktm ρ a[d])].
-Proof.
+Proof using .
   assert (Nk : LK nftm (kwsub ρ d)) by (intros n; unfold kwsub; rewrite llk_lren; apply ren_nf).
   rewrite ktyl_subst_single, ktm_subst, gwa_subst_ty, gwa_lsingle.
   rewrite (single_subst_ty _ Nk), (lift_single_ty _ _ _ Nk). reflexivity.
@@ -28,7 +28,7 @@ Qed.
 
 Lemma kw_eqty_l {G Γ} (ρ : kwk G Γ) {A l B B' l'} : [ G ; Γ ⊢g A @ l ] -> lwf (gL G) l ->
   [ G ; Γ ,, A @ l ⊢g B ≅ B' @ l' ] -> [ kw_G ρ ; kw_Δ ρ ,, kty ρ A @ l ⊢g ktyl ρ B ≅ ktyl ρ B' @ l' ].
-Proof.
+Proof using .
   intros HA Hl H. exact (eqty_wkr (kw_wkr_l ρ) (kw_ext ρ HA Hl) (gwa_eqty (kw_gok ρ) (kw_glob ρ) H)).
 Qed.
 
@@ -48,7 +48,7 @@ Lemma LR_sig_here Δ d d' : SubRel G Γ Δ d d' ->
     (SigRel G Δ l l' l3 l4 A[d] B[llift d] A'[d'] B'[llift d']
        (piDom (A := A) (A' := A') (l := l) (l' := l') Δ d d')
        (piCod (A := A) (A' := A') (B := B) (B' := B') (l := l) (l' := l') Δ d d')).
-Proof.
+Proof using EL H3 H4 HB Hwl Hwl' VA VB VL VN.
   intros Hd.
   destruct (poly_here (F := tySig) (A := A) (A' := A') (B := B) (B' := B') Hwl Hwl' H3 H4 HB VA VB Δ d d'
               ltac:(intros; apply wft_sig; auto using ge_compt, ge_notV) ltac:(reflexivity) Hd) as (P & Hdom & Hcod).
@@ -56,13 +56,13 @@ Proof.
 Qed.
 
 Lemma V_sig : VTy G Γ (tySig l l' A B) (tySig l3 l4 A' B') (lmax l l').
-Proof. intros Δ d d' Hd. eexists. exact (LR_sig_here _ _ _ Hd). Qed.
+Proof using EL H3 H4 HB Hwl Hwl' VA VB VL VN. intros Δ d d' Hd. eexists. exact (LR_sig_here _ _ _ Hd). Qed.
 
 (** The codomain at related indices, in every world. *)
 Lemma codty_at {Δ d d'} (ρ : kwk G Δ) x x' : SubRel G Γ Δ d d' ->
   LRtm l (kw_G ρ) (kw_Δ ρ) (kty ρ A[d]) (kty ρ A[d']) x x' ->
   LRty l' (kw_G ρ) (kw_Δ ρ) (ktyl ρ B[llift d])[lsingle x] (ktyl ρ B'[llift d'])[lsingle x'].
-Proof.
+Proof using EL VB VL.
   intros Hd Hx. pose proof (SubRel_kw _ _ _ ρ _ _ Hd) as Hdρ.
   rewrite !kty_subst in Hx.
   pose proof (VB _ _ (kw_gok ρ)) as VBρ. rewrite gwa_cext in VBρ.
@@ -82,7 +82,7 @@ Lemma tmred_fst_cong {l l' A B t w} :
   [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ,, A @ l ⊢g B @ l' ] ->
   [ G ; Γ ⊢g t ⤳* w : tySig l l' A B @ lmax l l' ] ->
   [ G ; Γ ⊢g tmFst l l' A B t ⤳* tmFst l l' A B w : A @ l ].
-Proof.
+Proof using .
   intros Hl Hl' HA HB [Ht Hr Heq]. split.
   - apply wf_fst; auto using ge_compt, ge_notV.
   - now apply reds_fst.
@@ -94,7 +94,7 @@ Lemma tmred_snd_cong {l l' A B t w} :
   [ G ; Γ ⊢g A @ l ] -> [ G ; Γ ,, A @ l ⊢g B @ l' ] ->
   [ G ; Γ ⊢g t ⤳* w : tySig l l' A B @ lmax l l' ] ->
   [ G ; Γ ⊢g tmSnd l l' A B t ⤳* tmSnd l l' A B w : B[lsingle (tmFst l l' A B t)] @ l' ].
-Proof.
+Proof using .
   intros Hl Hl' HA HB [Ht Hr Heq]. split.
   - apply wf_snd; auto using ge_compt, ge_notV.
   - now apply reds_snd.
@@ -108,7 +108,7 @@ Lemma tmred_fst_beta {l l' la lb A0 B0 A1 B1 a b} :
   [ G ; Γ ⊢g a : A0 @ l ] -> [ G ; Γ ⊢g b : B0[lsingle a] @ l' ] ->
   [ G ; Γ ⊢g A0 ≅ A1 @ l ] -> [ G ; Γ ,, A0 @ l ⊢g B0 ≅ B1 @ l' ] ->
   [ G ; Γ ⊢g tmFst la lb A1 B1 (tmPair l l' A0 B0 a b) ⤳* a : A0 @ l ].
-Proof.
+Proof using .
   intros Hl Hl' H1 H2 HA0 HB0 Ha Hb HA1 HB1.
   assert (HP : [ G ; Γ ⊢g tmPair l l' A0 B0 a b : tySig l l' A0 B0 @ lmax l l' ])
     by (apply wf_pair; auto using ge_compt, ge_notV).
@@ -129,7 +129,7 @@ Lemma tmred_snd_beta {l l' la lb A0 B0 A1 B1 a b} :
   [ G ; Γ ⊢g a : A0 @ l ] -> [ G ; Γ ⊢g b : B0[lsingle a] @ l' ] ->
   [ G ; Γ ⊢g A0 ≅ A1 @ l ] -> [ G ; Γ ,, A0 @ l ⊢g B0 ≅ B1 @ l' ] ->
   [ G ; Γ ⊢g tmSnd la lb A1 B1 (tmPair l l' A0 B0 a b) ⤳* b : B0[lsingle a] @ l' ].
-Proof.
+Proof using .
   intros Hl Hl' H1 H2 HA0 HB0 Ha Hb HA1 HB1.
   pose proof (eqtm_snd_beta _ _ _ _ _ _ _ _ _ ge_compt Hl Hl' HA0 HB0 Ha Hb) as Eq2.
   pose proof (eqtm_wf_l ge_typeof Eq2) as Hlhs.
@@ -166,7 +166,7 @@ Lemma SigRel_id {G Δ l1 l2 l3 l4 A B A' B' domR codR t t'} (HΔ : [ G ; Δ ⊢g
       [ G ; Δ ⊢ A' ≈ A1' @ l1 ] -> [ G ; Δ ,, A' @ l1 ⊢ B' ≈ B1' @ l2 ] ->
       exists h : domR (kw_loc wk_id (wkwf_id Δ) HΔ) (tmFst la lb A1 B1 w) (tmFst la' lb' A1' B1' w'),
         codR (kw_loc wk_id (wkwf_id Δ) HΔ) _ _ h (tmSnd la lb A1 B1 w) (tmSnd la' lb' A1' B1' w').
-Proof.
+Proof using .
   intros NA NA' NB NB' (w & w' & Hw & Hw' & _ & _ & _ & _ & HK).
   exists w, w'. refine (conj Hw (conj Hw' _)).
   intros la lb la' lb' A1 B1 A1' B1' H1 H2 H3 H4 HA1 HB1 HA1' HB1'.
@@ -182,7 +182,7 @@ Qed.
 Lemma piDom_id {G l l' A A' Δ d d' HΔ a a'} : nfty A[d] -> nfty A'[d'] ->
   @piDom E LP G l l' A A' Δ d d' (kw_loc wk_id (wkwf_id Δ) HΔ) a a' ->
   LRtm l G Δ A[d] A'[d'] a a'.
-Proof.
+Proof using .
   intros N N' h. unfold piDom, kty, kw_loc in h; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in h.
   rewrite !ren_id_ty in h by assumption.
   apply (LRtm_stage (n := lmeasure (lmax l l'))); [rewrite lmeasure_max; lia | exact h].
@@ -191,7 +191,7 @@ Qed.
 Lemma piCod_id {G l l' A A' B B' Δ d d' HΔ a a' h b b'} : nfty B[llift d] -> nfty B'[llift d'] ->
   @piCod E LP G l l' A A' B B' Δ d d' (kw_loc wk_id (wkwf_id Δ) HΔ) a a' h b b' ->
   LRtm l' G Δ B[llift d][lsingle a] B'[llift d'][lsingle a'] b b'.
-Proof.
+Proof using .
   intros N N' c. unfold piCod, ktyl, kw_loc in c; cbn [kw_G kw_Δ kw_γ kw_gk kw_r kw_rk gwa wk_ren kw_mk] in c.
   rewrite !ren_lift_id_ty in c by assumption.
   apply (LRtm_stage (n := lmeasure (lmax l l'))); [rewrite lmeasure_max; lia | exact c].
@@ -217,7 +217,7 @@ Lemma proj_setup {Δ d d'} : SubRel G Γ Δ d d' -> VTm G Γ p p' (tySig l l' A 
     LRtm l' G Δ B[llift d][lsingle (tmFst l l' A[d] B[llift d] w)]
                 B[llift d'][lsingle (tmFst l3 l4 A'[d'] B'[llift d'] w')]
                 (tmSnd l l' A[d] B[llift d] w) (tmSnd l3 l4 A'[d'] B'[llift d'] w').
-Proof.
+Proof using EL H3 H4 HB Hwl Hwl' VA VB VL VN.
   intros Hd Vp. pose proof (SubRel_ctx Hd) as HΔ.
   pose proof (LR_sig_here Hwl Hwl' (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') HB
                 (VTyG_refl_l VA) (VTyG_refl_l VB) _ _ _ Hd) as HP.
@@ -260,7 +260,7 @@ Lemma sig_annots {Δ d d'} : SubRel G Γ Δ d d' ->
   [ G ; Δ ⊢g A[d'] @ l ] /\ [ G ; Δ ,, A[d'] @ l ⊢g B[llift d'] @ l' ] /\
   [ G ; Δ ⊢g A'[d'] @ l3 ] /\ [ G ; Δ ,, A'[d'] @ l3 ⊢g B'[llift d'] @ l4 ] /\
   [ G ; Δ ⊢g A[d'] ≅ A'[d'] @ l ] /\ [ G ; Δ ,, A[d'] @ l ⊢g B[llift d'] ≅ B'[llift d'] @ l' ].
-Proof.
+Proof using EL H3 H4 HB Hwl VA VB VL VN.
   intros Hd.
   pose proof (VTyG_loc VA) as VAl. pose proof (VTyG_loc VB) as VBl. pose proof (VTy_refl_l VAl) as VAA.
   destruct (VAl _ _ _ Hd) as [RA HRA]. destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HAd & _ & _).
@@ -292,7 +292,7 @@ Context {G : gctx} {Γ : ctx} {l l' l3 l4 : lvl} {A A' B B' : ty} {p p' : tm}
   (Vp : VTm G Γ p p' (tySig l l' A B) (lmax l l')).
 
 Lemma V_fst : VTm G Γ (tmFst l l' A B p) (tmFst l3 l4 A' B' p') A l.
-Proof.
+Proof using EL H3 H4 HB Hwl Hwl' VA VB VL VN Vp.
   intros Δ d d' Hd.
   destruct (proj_setup Hwl Hwl' H3 H4 HB VA VB Hd Vp) as (w & w' & Hw & Hw' & Hf & _).
   destruct (sig_annots Hwl H3 H4 HB VA VB Hd) as (HAd & HBd & HAd' & HBd' & HA'3 & HB'3 & EA & EB).
@@ -314,7 +314,7 @@ Context {G : gctx} {Γ : ctx} {l l' l3 l4 : lvl} {A A' B B' : ty} {p p' : tm}
   (Vp : VTm G Γ p p' (tySig l l' A B) (lmax l l')).
 
 Lemma V_snd : VTm G Γ (tmSnd l l' A B p) (tmSnd l3 l4 A' B' p') B[lsingle (tmFst l l' A B p)] l'.
-Proof.
+Proof using EL H3 H4 HB Hwl Hwl' VA VB VL VN Vp.
   intros Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   destruct (proj_setup Hwl Hwl' H3 H4 HB VA VB Hd Vp) as (w & w' & Hw & Hw' & Hf & Hs).
   destruct (sig_annots Hwl H3 H4 HB VA VB Hd) as (HAd & HBd & HAd' & HBd' & HA'3 & HB'3 & EA & EB).
@@ -386,7 +386,7 @@ Lemma SigRel_of_proj {G l l' A B Δ d d' w w'} (HΔ : [ G ; Δ ⊢g ]) :
         @piCod E LP G l l' A A B B Δ d d' ρ _ _ h (tmSnd la lb A1 B1 (ktm ρ w)) (tmSnd la' lb' A1' B1' (ktm ρ w'))) ->
   SigRel G Δ l l' l l' A[d] B[llift d] A[d'] B[llift d']
     (@piDom E LP G l l' A A Δ d d') (@piCod E LP G l l' A A B B Δ d d') w w'.
-Proof.
+Proof using EL.
   intros Hwl Hwl' HAd HBd HAd' HBd' RA RB RA' RB' ES Hw Hw' Nw Nw' K.
   pose proof (wf_ty_nf HAd) as NA. pose proof (wf_ty_nf HAd') as NA'.
   pose proof (wf_ty_nf HBd) as NB. pose proof (wf_ty_nf HBd') as NB'.
@@ -428,19 +428,19 @@ Context {G : gctx} {Γ : ctx} {l l' l3 l4 : lvl} {A A' B B' : ty} {a a' b b' : t
 (** A component's validity in a world, as [kty]/[ktm]. *)
 Lemma Va_at {Δ d d'} (ρ : kwk G Δ) : SubRel G Γ Δ d d' ->
   LRtm l (kw_G ρ) (kw_Δ ρ) (kty ρ A[d]) (kty ρ A[d']) (ktm ρ a[d]) (ktm ρ a'[d']).
-Proof.
+Proof using EL VL Va.
   intros Hd. rewrite !kty_subst, !ktm_subst. exact (Va _ _ (kw_gok ρ) _ _ _ (SubRel_kw _ _ _ ρ _ _ Hd)).
 Qed.
 Lemma Vb_at {Δ d d'} (ρ : kwk G Δ) : SubRel G Γ Δ d d' ->
   LRtm l' (kw_G ρ) (kw_Δ ρ) (ktyl ρ B[llift d])[lsingle (ktm ρ a[d])] (ktyl ρ B[llift d'])[lsingle (ktm ρ a[d'])]
     (ktm ρ b[d]) (ktm ρ b'[d']).
-Proof.
+Proof using EL VL Vb.
   intros Hd. rewrite <- !kw_single_subst_ty, !ktm_subst.
   exact (Vb _ _ (kw_gok ρ) _ _ _ (SubRel_kw _ _ _ ρ _ _ Hd)).
 Qed.
 
 Lemma V_pair : VTm G Γ (tmPair l l' A B a b) (tmPair l3 l4 A' B' a' b') (tySig l l' A B) (lmax l l').
-Proof.
+Proof using EL H3 H4 HB Hwl Hwl' VA VB VL VN Va Vb.
   intros Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   pose proof (LR_sig_here Hwl Hwl' (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') HB
                 (VTyG_refl_l VA) (VTyG_refl_l VB) _ _ _ Hd) as HP.
@@ -587,7 +587,7 @@ Context {G : gctx} {Γ : ctx} {l l' : lvl} {A B : ty} {a b : tm}
 Lemma beta_annots {Δ d d'} : SubRel G Γ Δ d d' ->
   [ G ; Δ ⊢g A[d] @ l ] /\ [ G ; Δ ,, A[d] @ l ⊢g B[llift d] @ l' ] /\
   [ G ; Δ ⊢g a[d] : A[d] @ l ] /\ [ G ; Δ ⊢g b[d] : B[llift d][lsingle a[d]] @ l' ].
-Proof.
+Proof using EL HB Hwl VA Va Vb.
   intros Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   destruct (VA _ _ _ Hd) as [RA HRA]. destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HAd & _ & _).
   assert (Hld : lsub_wf G ge_layer (Δ ,, A[d] @ l) (llift d) (Γ ,, A @ l))
@@ -599,14 +599,14 @@ Proof.
 Qed.
 
 Lemma V_fst_beta : VTm G Γ (tmFst l l' A B (tmPair l l' A B a b)) a A l.
-Proof.
+Proof using EL HB Hwl Hwl' VA Va Vb.
   intros Δ d d' Hd. destruct (beta_annots Hd) as (HAd & HBd & Had & Hbd).
   push_subst. eapply LRtm_red_l; [exact (Va _ _ _ Hd) |].
   apply tmred_fst_beta; auto using lequiv_refl, eqty_refl.
 Qed.
 
 Lemma V_snd_beta : VTm G Γ (tmSnd l l' A B (tmPair l l' A B a b)) b B[lsingle a] l'.
-Proof.
+Proof using EL HB Hwl Hwl' VA Va Vb.
   intros Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   destruct (beta_annots Hd) as (HAd & HBd & Had & Hbd).
   pose proof (Vb _ _ _ Hd) as Hb.
@@ -629,7 +629,7 @@ Context {G : gctx} {Γ : ctx} {l l' : lvl} {A B : ty} {p : tm}
 
 Lemma V_sig_eta : VTm G Γ (tmPair l l' A B (tmFst l l' A B p) (tmSnd l l' A B p)) p
                     (tySig l l' A B) (lmax l l').
-Proof.
+Proof using EL HA HB Hp Hwl Hwl' VA VB VL VN Vp.
   intros Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ. pose proof (SubRel_wf_l _ _ _ _ _ Hd) as Hsd.
   destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   pose proof (LR_sig_here Hwl Hwl' (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') HB VA VB _ _ _ Hd) as HP.
@@ -724,7 +724,7 @@ Lemma tyred_El_sig {G Δ la l1 l2 k1 k2 s t} :
   [ G ; Δ ⊢g s : tyU l1 @ lsuc l1 ] -> [ G ; Δ ,, tyEl k1 s @ l1 ⊢g t : tyU l2 @ lsuc l2 ] ->
   lequiv (gL G) la (lmax l1 l2) ->
   [ G ; Δ ⊢g tyEl la (tmSig k1 k2 s t) ⤳* tySig k1 k2 (tyEl k1 s) (tyEl k2 t) @ lmax l1 l2 ].
-Proof.
+Proof using .
   intros H1 H2 Hs Ht Hla.
   pose proof (conv_U' Hs (lequiv_sym _ _ _ H1)) as Hs1.
   destruct (El_annot Hs H1) as [HA _].
@@ -753,7 +753,7 @@ Context {G : gctx} {Γ : ctx} {l1 l2 l3 l4 : lvl} {s s' t t' : tm}
 
 Lemma V_code_sig :
   VTm G Γ (tmSig l1 l2 s t) (tmSig l3 l4 s' t') (tyU (lmax l1 l2)) (lsuc (lmax l1 l2)).
-Proof.
+Proof using EL H13 H24 Hs Ht Hw1 Hw2 VL VN Vs Vt.
   (* facts in [Γ] *)
   destruct (El_annot Hs (lequiv_refl _ _ Hw1)) as [HA _].
   destruct (El_annot Ht (lequiv_refl _ _ Hw2)) as [HB _].
@@ -799,7 +799,7 @@ Lemma V_El_sig {G Γ l l' s t} :
   [ G ; Γ ⊢g s : tyU l @ lsuc l ] -> [ G ; Γ ,, tyEl l s @ l ⊢g t : tyU l' @ lsuc l' ] ->
   VTmG G Γ s s (tyU l) (lsuc l) -> VTmG G (Γ ,, tyEl l s @ l) t t (tyU l') (lsuc l') ->
   VTy G Γ (tySig l l' (tyEl l s) (tyEl l' t)) (tyEl (lmax l l') (tmSig l l' s t)) (lmax l l').
-Proof.
+Proof using EL VL VN.
   intros Hw Hw' Hs Ht Vs Vt Δ d d' Hd.
   destruct (El_annot Hs (lequiv_refl _ _ Hw)) as [HA _].
   destruct (El_annot Ht (lequiv_refl _ _ Hw')) as [HB _].

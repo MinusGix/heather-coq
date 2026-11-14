@@ -42,14 +42,14 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 
 Local Lemma convg {G Δ t t' T T' l} :
   [ G ; Δ ⊢g t ≅ t' : T' @ l ] -> [ G ; Δ ⊢g T ≅ T' @ l ] -> [ G ; Δ ⊢g t ≅ t' : T @ l ].
-Proof. intros H HT. apply eqtm_conv with (T' := T'); [exact H | now rewrite ge_typeof]. Qed.
+Proof using . intros H HT. apply eqtm_conv with (T' := T'); [exact H | now rewrite ge_typeof]. Qed.
 
 (** ** [case]'s reductions, typed *)
 
 Lemma case_motive_conv {G Δ l1 l2 l3 A B M e e'} :
   [ G ; Δ ,, tySum l1 l2 A B @ lmax l1 l2 ⊢g M @ l3 ] ->
   [ G ; Δ ⊢g e ≅ e' : tySum l1 l2 A B @ lmax l1 l2 ] -> [ G ; Δ ⊢g M[lsingle e] ≅ M[lsingle e'] @ l3 ].
-Proof.
+Proof using .
   intros HM Hee. apply (wf_ty_func ge_typeof HM).
   apply (lsub_eq_single ge_typeof); [exact (eqtm_wf_l ge_typeof Hee) | exact (eqtm_wf_r ge_typeof Hee) | exact Hee].
 Qed.
@@ -62,7 +62,7 @@ Lemma case_cong {G Δ l1 l2 l3 A B M c1 c2 e e'} :
   [ G ; Δ ,, B @ l2 ⊢g c2 : M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] @ l3 ] ->
   [ G ; Δ ⊢g e ≅ e' : tySum l1 l2 A B @ lmax l1 l2 ] ->
   [ G ; Δ ⊢g tmCase l1 l2 l3 A B M c1 c2 e ≅ tmCase l1 l2 l3 A B M c1 c2 e' : M[lsingle e] @ l3 ].
-Proof.
+Proof using .
   intros Hw1 Hw2 Hw3 HA HB HM Hc1 Hc2 Hee.
   apply eqtm_case; first [exact ge_notV | now apply lequiv_refl | assumption | now apply eqty_refl
                          | now apply eqtm_refl].
@@ -80,7 +80,7 @@ Lemma case_inl_eq {G Δ l1 l2 l3 A B M c1 c2 e k1 k2 C D a} :
   lequiv (gL G) k1 l1 -> lequiv (gL G) k2 l2 -> [ G ; Δ ⊢g A ≅ C @ l1 ] -> [ G ; Δ ⊢g B ≅ D @ l2 ] ->
   [ G ; Δ ⊢g a : A @ l1 ] ->
   [ G ; Δ ⊢g tmCase l1 l2 l3 A B M c1 c2 e ≅ c1[lsingle a] : M[lsingle e] @ l3 ].
-Proof.
+Proof using .
   intros Hw1 Hw2 Hw3 HA HB HM Hc1 Hc2 Hee Hk1 Hk2 HAC HBD Ha.
   assert (Hinl : [ G ; Δ ⊢g tmInl l1 l2 A B a ≅ tmInl k1 k2 C D a : tySum l1 l2 A B @ lmax l1 l2 ])
     by (apply eqtm_inl; [exact ge_notV | solve [apply lequiv_sym; assumption] | solve [apply lequiv_sym; assumption] | exact HAC | exact HBD
@@ -102,7 +102,7 @@ Lemma case_inr_eq {G Δ l1 l2 l3 A B M c1 c2 e k1 k2 C D b} :
   lequiv (gL G) k1 l1 -> lequiv (gL G) k2 l2 -> [ G ; Δ ⊢g A ≅ C @ l1 ] -> [ G ; Δ ⊢g B ≅ D @ l2 ] ->
   [ G ; Δ ⊢g b : B @ l2 ] ->
   [ G ; Δ ⊢g tmCase l1 l2 l3 A B M c1 c2 e ≅ c2[lsingle b] : M[lsingle e] @ l3 ].
-Proof.
+Proof using .
   intros Hw1 Hw2 Hw3 HA HB HM Hc1 Hc2 Hee Hk1 Hk2 HAC HBD Hb0.
   assert (Hinr : [ G ; Δ ⊢g tmInr l1 l2 A B b ≅ tmInr k1 k2 C D b : tySum l1 l2 A B @ lmax l1 l2 ])
     by (apply eqtm_inr; [exact ge_notV | solve [apply lequiv_sym; assumption] | solve [apply lequiv_sym; assumption] | exact HAC | exact HBD
@@ -121,7 +121,7 @@ Lemma LR_sum_here {G Δ l1 l2 l3 l4 A A' B B' RA RB} : lwf (gL G) l1 -> lwf (gL 
   [ G ; Δ ⊢g A @ l1 ] -> [ G ; Δ ⊢ A ≈ A' @ l1 ] -> [ G ; Δ ⊢g B @ l2 ] -> [ G ; Δ ⊢ B ≈ B' @ l2 ] ->
   LogRel l1 G Δ A A' l1 RA -> LogRel l2 G Δ B B' l2 RB ->
   LogRel (lmax l1 l2) G Δ (tySum l1 l2 A B) (tySum l3 l4 A' B') (lmax l1 l2) (SumRel G Δ l1 l2 A B RA RB).
-Proof.
+Proof using EL VL.
   intros Hw1 Hw2 H13 H24 HA HAA HB HBB HRA HRB.
   pose proof (geq_ty_sound (geq_ty_sum H13 H24 HAA HBB)) as EV.
   destruct (LR_tm_per _ _ _ _ _ _ _ HRA) as [SyA TrA].
@@ -150,7 +150,7 @@ Qed.
 Lemma V_sum {G Γ l1 l2 l3 l4 A A' B B'} : lwf (gL G) l1 -> lwf (gL G) l2 ->
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   VTy G Γ A A' l1 -> VTy G Γ B B' l2 -> VTy G Γ (tySum l1 l2 A B) (tySum l3 l4 A' B') (lmax l1 l2).
-Proof.
+Proof using EL VL.
   intros Hw1 Hw2 H13 H24 VA VB Δ d d' Hd. push_subst.
   destruct (VA _ _ _ Hd) as [RA HRA]. destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HA & _ & EA).
   destruct (VB _ _ _ Hd) as [RB HRB]. destruct (escape_ty _ _ _ _ _ _ _ _ HRB) as (HB & _ & EB).
@@ -161,7 +161,7 @@ Lemma V_inl {G Γ l1 l2 l3 l4 A A' B B' a a'} : lwf (gL G) l1 -> lwf (gL G) l2 -
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   VTy G Γ A A' l1 -> VTy G Γ B B' l2 -> VTm G Γ a a' A l1 ->
   VTm G Γ (tmInl l1 l2 A B a) (tmInl l3 l4 A' B' a') (tySum l1 l2 A B) (lmax l1 l2).
-Proof.
+Proof using EL VL.
   intros Hw1 Hw2 H13 H24 VA VB Va Δ d d' Hd. push_subst.
   destruct (VTy_refl_l VA _ _ _ Hd) as [RA HRA]. destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HA & _ & EAA).
   destruct (VTy_refl_l VB _ _ _ Hd) as [RB HRB]. destruct (escape_ty _ _ _ _ _ _ _ _ HRB) as (HB & _ & EBB).
@@ -184,7 +184,7 @@ Lemma V_inr {G Γ l1 l2 l3 l4 A A' B B' b b'} : lwf (gL G) l1 -> lwf (gL G) l2 -
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   VTy G Γ A A' l1 -> VTy G Γ B B' l2 -> VTm G Γ b b' B l2 ->
   VTm G Γ (tmInr l1 l2 A B b) (tmInr l3 l4 A' B' b') (tySum l1 l2 A B) (lmax l1 l2).
-Proof.
+Proof using EL VL.
   intros Hw1 Hw2 H13 H24 VA VB Vb Δ d d' Hd. push_subst.
   destruct (VTy_refl_l VA _ _ _ Hd) as [RA HRA]. destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HA & _ & EAA).
   destruct (VTy_refl_l VB _ _ _ Hd) as [RB HRB]. destruct (escape_ty _ _ _ _ _ _ _ _ HRB) as (HB & _ & EBB).
@@ -211,7 +211,7 @@ Lemma tyred_El_sum {G Δ la l1 l2 k1 k2 s t} : lequiv (gL G) la (lmax l1 l2) ->
   lequiv (gL G) k1 l1 -> lequiv (gL G) k2 l2 ->
   [ G ; Δ ⊢g s : tyU l1 @ lsuc l1 ] -> [ G ; Δ ⊢g t : tyU l2 @ lsuc l2 ] ->
   [ G ; Δ ⊢g tyEl la (tmSum k1 k2 s t) ⤳* tySum k1 k2 (tyEl k1 s) (tyEl k2 t) @ lmax l1 l2 ].
-Proof.
+Proof using .
   intros Hla Hk1 Hk2 Hs Ht.
   pose proof (lequiv_wf_l _ _ _ Hk1) as Wk1. pose proof (lequiv_wf_l _ _ _ Hk2) as Wk2.
   pose proof (conv_U' Hs (lequiv_sym _ _ _ Hk1)) as Hsk. pose proof (conv_U' Ht (lequiv_sym _ _ _ Hk2)) as Htk.
@@ -231,7 +231,7 @@ Qed.
 Lemma V_El_sum {G Γ l l' s t} : lwf (gL G) l -> lwf (gL G) l' ->
   VTm G Γ s s (tyU l) (lsuc l) -> VTm G Γ t t (tyU l') (lsuc l') ->
   VTy G Γ (tySum l l' (tyEl l s) (tyEl l' t)) (tyEl (lmax l l') (tmSum l l' s t)) (lmax l l').
-Proof.
+Proof using EL VL.
   intros Hw Hw' Vs Vt Δ d d' Hd.
   pose proof (V_El Hw (lequiv_refl _ _ Hw) Vs) as VA. pose proof (V_El Hw' (lequiv_refl _ _ Hw') Vt) as VB.
   destruct (V_sum Hw Hw' (lequiv_refl _ _ Hw) (lequiv_refl _ _ Hw') VA VB _ _ _ Hd) as [R HR].
@@ -247,7 +247,7 @@ Lemma V_code_sum {G Γ l1 l2 l3 l4 s s' t t'} : lwf (gL G) l1 -> lwf (gL G) l2 -
   lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   VTm G Γ s s' (tyU l1) (lsuc l1) -> VTm G Γ t t' (tyU l2) (lsuc l2) ->
   VTm G Γ (tmSum l1 l2 s t) (tmSum l3 l4 s' t') (tyU (lmax l1 l2)) (lsuc (lmax l1 l2)).
-Proof.
+Proof using EL VL.
   intros Hw1 Hw2 H13 H24 Vs Vt Δ d d' Hd.
   pose proof (V_El Hw1 H13 Vs) as VA. pose proof (V_El Hw2 H24 Vt) as VB.
   destruct (V_sum Hw1 Hw2 H13 H24 VA VB _ _ _ Hd) as [R HR].
@@ -286,7 +286,7 @@ Lemma case_at {Δ d d'} : SubRel G Γ Δ d d' ->
       : M[llift d]⟨rlift ↑⟩[lsingle (tmInl l1 l2 A[d]⟨↑⟩ B[d]⟨↑⟩ (var 0))] @ l3 ] /\
   [ G ; Δ ,, B[d] @ l2 ⊢ c2[llift d] ≈ c2'[llift d']
       : M[llift d]⟨rlift ↑⟩[lsingle (tmInr l1 l2 A[d]⟨↑⟩ B[d]⟨↑⟩ (var 0))] @ l3 ].
-Proof.
+Proof using EL Hw1 Hw2 VA VB VL VM VN Vc1 Vc2.
   intros Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   destruct (VA _ _ _ Hd) as [RA HRA]. destruct (escape_ty _ _ _ _ _ _ _ _ HRA) as (HA & _ & EA).
   destruct (VB _ _ _ Hd) as [RB HRB]. destruct (escape_ty _ _ _ _ _ _ _ _ HRB) as (HB & _ & EB).
@@ -305,7 +305,7 @@ Qed.
 Lemma V_case {l4 l5 l6 t t'} : lequiv (gL G) l1 l4 -> lequiv (gL G) l2 l5 -> lequiv (gL G) l3 l6 ->
   VTm G Γ t t' (tySum l1 l2 A B) (lmax l1 l2) ->
   VTm G Γ (tmCase l1 l2 l3 A B M c1 c2 t) (tmCase l4 l5 l6 A' B' M' c1' c2' t') M[lsingle t] l3.
-Proof.
+Proof using EL Hw1 Hw2 Hw3 VA VB VL VM VN Vc1 Vc2.
   intros H14 H25 H36 Vt Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   rewrite !single_subst_ty by assumption. push_subst.
   pose proof (SubRel_refl_l Hd) as Hdd.
@@ -447,7 +447,7 @@ Qed.
 Lemma V_case_inl {a} :
   VTm G (Γ ,, A @ l1) c1 c1 M⟨rlift ↑⟩[lsingle (tmInl l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] l3 -> VTm G Γ a a A l1 ->
   VTm G Γ (tmCase l1 l2 l3 A B M c1 c2 (tmInl l1 l2 A B a)) c1[lsingle a] M[lsingle (tmInl l1 l2 A B a)] l3.
-Proof.
+Proof using EL Hw1 Hw2 Hw3 VA VB VL VM VN Vc1 Vc2.
   intros Vcc Va Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   destruct (case_at Hd) as (HA & _ & HB & _ & HM & _ & Ec1 & Ec2).
   destruct (VTy_refl_l VA _ _ _ Hd) as [RA2 HRA2]. destruct (escape_ty _ _ _ _ _ _ _ _ HRA2) as (_ & HA' & _).
@@ -470,7 +470,7 @@ Qed.
 Lemma V_case_inr {b} :
   VTm G (Γ ,, B @ l2) c2 c2 M⟨rlift ↑⟩[lsingle (tmInr l1 l2 A⟨↑⟩ B⟨↑⟩ (var 0))] l3 -> VTm G Γ b b B l2 ->
   VTm G Γ (tmCase l1 l2 l3 A B M c1 c2 (tmInr l1 l2 A B b)) c2[lsingle b] M[lsingle (tmInr l1 l2 A B b)] l3.
-Proof.
+Proof using EL Hw1 Hw2 Hw3 VA VB VL VM VN Vc1 Vc2.
   intros Vcc Vb Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   destruct (case_at Hd) as (HA & _ & HB & _ & HM & _ & Ec1 & Ec2).
   destruct (VTy_refl_l VA _ _ _ Hd) as [RA2 HRA2]. destruct (escape_ty _ _ _ _ _ _ _ _ HRA2) as (_ & HA' & _).

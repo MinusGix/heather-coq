@@ -20,27 +20,27 @@ Let Hd : typeof i = lD := lle_D_typeof i (lle_C_D Hle).
 Let HiD : lle i lD := lle_C_D Hle.
 
 Lemma ctxD_of_ty {Γ T l} : [ G ; Γ ⊢[ i ] T @ l ] -> [ G ; Γ ⊢[ lD ] ].
-Proof. intros H; rewrite <- Hd; exact (ctx_of_ty_any H). Qed.
+Proof using Hd. intros H; rewrite <- Hd; exact (ctx_of_ty_any H). Qed.
 Lemma ctxD_of_tm {Γ t T l} : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ lD ] ].
-Proof. intros H; rewrite <- Hd; exact (ctx_of_tm_any H). Qed.
+Proof using Hd. intros H; rewrite <- Hd; exact (ctx_of_tm_any H). Qed.
 Lemma tyD_of_tm {Γ t T l} : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ lD ] T @ l ].
-Proof. intros H; rewrite <- Hd; exact (wf_tm_ty_any H). Qed.
+Proof using Hd. intros H; rewrite <- Hd; exact (wf_tm_ty_any H). Qed.
 
 (** The extended contexts of a congruence are equivalent at D. *)
 Lemma extc {Γ A A' l l'} : [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> lequiv (gL G) l l' ->
   [ G ⊢[ lD ] Γ ,, A @ l ≅ Γ ,, A' @ l' ].
-Proof.
+Proof using Hd HiD.
   intros HA HAA Hl. apply eqc_ext; [apply eqc_refl, (ctxD_of_ty HA) | exact (lift_ty HA HiD)
                                    | exact (lift_eqty HAA HiD) | exact Hl].
 Qed.
 
 Lemma conv_at {Γ t T T' l} : [ G ; Γ ⊢[ i ] t : T' @ l ] -> [ G ; Γ ⊢[ lD ] T ≅ T' @ l ] ->
   [ G ; Γ ⊢[ i ] t : T @ l ].
-Proof. intros; eapply wf_conv; [eassumption | now rewrite Hd]. Qed.
+Proof using Hd. intros; eapply wf_conv; [eassumption | now rewrite Hd]. Qed.
 
 Lemma convU_at {Γ t l l'} : [ G ; Γ ⊢[ i ] t : tyU l @ lsuc l ] -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] t : tyU l' @ lsuc l' ].
-Proof.
+Proof using Hd.
   intros Ht Hl. eapply wf_lconv; [|apply lequiv_suc, lequiv_sym, Hl].
   apply (conv_at Ht). eapply eqty_lconv; [|apply lequiv_suc, Hl].
   apply eqty_U; [discriminate | exact (ctxD_of_tm Ht) | solve [apply lequiv_sym; assumption]].
@@ -50,7 +50,7 @@ Lemma pc_pi {Γ l1 l2 l3 l4 A A' B B'} : i <> lV -> lequiv (gL G) l1 l3 -> lequi
   [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
   [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
   [ G ; Γ ⊢[ i ] tyPi l1 l2 A B @ lmax l1 l2 ] /\ [ G ; Γ ⊢[ i ] tyPi l3 l4 A' B' @ lmax l1 l2 ].
-Proof.
+Proof using Hd HiD.
   intros Hv H13 H24 HA HAA HA' HB HB'. split; [apply wft_pi; eauto using lequiv_wf_l|].
   eapply wft_lconv with (l' := lmax l3 l4); [|now apply lequiv_max].
   apply wft_pi; eauto using lequiv_wf_r.
@@ -61,14 +61,14 @@ Qed.
 Lemma pc_El {Γ l l' t t'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] t : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] t' : tyU l @ lsuc l ] ->
   [ G ; Γ ⊢[ i ] tyEl l t @ l ] /\ [ G ; Γ ⊢[ i ] tyEl l' t' @ l ].
-Proof.
+Proof using Hd.
   intros Hv Hl Ht Ht'. split; [apply wft_El; eauto using lequiv_wf_l|].
   eapply wft_lconv; [|exact Hl]. apply wft_El; eauto using lequiv_wf_r. exact (convU_at Ht' Hl).
 Qed.
 
 Lemma pc_U {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tyU l' @ lsuc l ].
-Proof.
+Proof using .
   intros Hv HΓ Hl. split; [apply wft_U; eauto using lequiv_wf_l|].
   eapply wft_lconv; [|apply lequiv_suc, Hl]. apply wft_U; eauto using lequiv_wf_r.
 Qed.
@@ -76,7 +76,7 @@ Qed.
 Lemma pc_codeU {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] tmU l : tyU (lsuc l) @ lsuc (lsuc l) ] /\
   [ G ; Γ ⊢[ i ] tmU l' : tyU (lsuc l) @ lsuc (lsuc l) ].
-Proof.
+Proof using Hd.
   intros Hv HΓ Hl. split; [apply wf_code_U; eauto using lequiv_wf_l|].
   apply (convU_at (l := lsuc l')); [apply wf_code_U; eauto using lequiv_wf_r|].
   apply lequiv_suc, lequiv_sym, Hl.
@@ -89,7 +89,7 @@ Lemma pc_codepi {Γ l1 l2 l3 l4 s s' t t'} : i <> lV -> lequiv (gL G) l1 l3 -> l
   [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t' : tyU l2 @ lsuc l2 ] ->
   [ G ; Γ ⊢[ i ] tmPi l1 l2 s t : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ] /\
   [ G ; Γ ⊢[ i ] tmPi l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ].
-Proof.
+Proof using Hd HiD.
   intros Hv H13 H24 Hs Hss Hs' Ht Ht'. split; [apply wf_code_pi; eauto using lequiv_wf_l|].
   assert (HEl : [ G ; Γ ⊢[ i ] tyEl l1 s @ l1 ]) by (apply wft_El; eauto using lequiv_wf_l).
   assert (HEE : [ G ; Γ ⊢[ i ] tyEl l1 s ≅ tyEl l3 s' @ l1 ]) by (apply eqty_El; auto).
@@ -109,7 +109,7 @@ Lemma pc_natrec {Γ l l' M M' s s' z z' t t'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] t : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] t' : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] natrec l M s z t : M[lsingle t] @ l ] /\
   [ G ; Γ ⊢[ i ] natrec l' M' s' z' t' : M[lsingle t] @ l ].
-Proof.
+Proof using Hd HiD.
   intros Hv Hl HM HMM HM' Hs Hs' Hz Hz' Htt Ht Ht'.
   split; [apply wf_natrec; eauto using lequiv_wf_l|].
   pose proof (lift_eqty HMM HiD) as HMMd. pose proof (lift_ty HM HiD) as HMd.
@@ -139,7 +139,7 @@ Lemma pc_lam {Γ l1 l2 l3 l4 A A' B t t'} : i <> lV -> lequiv (gL G) l1 l3 -> le
   [ G ; Γ ,, A @ l1 ⊢[ i ] t : B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] t' : B @ l2 ] ->
   [ G ; Γ ⊢[ i ] lam l1 l2 A t : tyPi l1 l2 A B @ lmax l1 l2 ] /\
   [ G ; Γ ⊢[ i ] lam l3 l4 A' t' : tyPi l1 l2 A B @ lmax l1 l2 ].
-Proof.
+Proof using Hd HiD.
   intros Hv H13 H24 HA HAA HA' Ht Ht'. split; [apply wf_lam; eauto using lequiv_wf_l|].
   eapply wf_lconv with (l' := lmax l3 l4); [|now apply lequiv_max].
   apply (conv_at (T' := tyPi l3 l4 A' B)).
@@ -161,7 +161,7 @@ Lemma pc_app {Γ l1 l2 l3 l4 A A' B B' t t' s s'} : i <> lV ->
   [ G ; Γ ⊢[ i ] s ≅ s' : A @ l1 ] -> [ G ; Γ ⊢[ i ] s : A @ l1 ] -> [ G ; Γ ⊢[ i ] s' : A @ l1 ] ->
   [ G ; Γ ⊢[ i ] app t l1 l2 A B s : B[lsingle s] @ l2 ] /\
   [ G ; Γ ⊢[ i ] app t' l3 l4 A' B' s' : B[lsingle s] @ l2 ].
-Proof.
+Proof using Hd HiD.
   intros Hv H13 H24 HA HAA HA' HBB HB HB' Ht Ht' Hss Hs Hs'.
   split; [apply wf_app; eauto using lequiv_wf_l|].
   pose proof (lift_eqty HAA HiD) as HAAd. pose proof (lift_eqty HBB HiD) as HBBd.
@@ -189,7 +189,7 @@ Lemma pc_sig {Γ l1 l2 l3 l4 A A' B B'} : i <> lV -> lequiv (gL G) l1 l3 -> lequ
   [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
   [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
   [ G ; Γ ⊢[ i ] tySig l1 l2 A B @ lmax l1 l2 ] /\ [ G ; Γ ⊢[ i ] tySig l3 l4 A' B' @ lmax l1 l2 ].
-Proof.
+Proof using Hd HiD.
   intros Hv H13 H24 HA HAA HA' HB HB'. split; [apply wft_sig; eauto using lequiv_wf_l|].
   eapply wft_lconv with (l' := lmax l3 l4); [|now apply lequiv_max].
   apply wft_sig; eauto using lequiv_wf_r.
@@ -204,7 +204,7 @@ Lemma pc_codesig {Γ l1 l2 l3 l4 s s' t t'} : i <> lV -> lequiv (gL G) l1 l3 -> 
   [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t' : tyU l2 @ lsuc l2 ] ->
   [ G ; Γ ⊢[ i ] tmSig l1 l2 s t : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ] /\
   [ G ; Γ ⊢[ i ] tmSig l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ].
-Proof.
+Proof using Hd HiD.
   intros Hv H13 H24 Hs Hss Hs' Ht Ht'. split; [apply wf_code_sig; eauto using lequiv_wf_l|].
   assert (HEl : [ G ; Γ ⊢[ i ] tyEl l1 s @ l1 ]) by (apply wft_El; eauto using lequiv_wf_l).
   assert (HEE : [ G ; Γ ⊢[ i ] tyEl l1 s ≅ tyEl l3 s' @ l1 ]) by (apply eqty_El; auto).
@@ -218,7 +218,7 @@ Qed.
 Lemma sig_eqD {Γ l1 l2 l3 l4 A A' B B'} : lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B ≅ B' @ l2 ] ->
   [ G ; Γ ⊢[ lD ] tySig l1 l2 A B ≅ tySig l3 l4 A' B' @ lmax l1 l2 ].
-Proof.
+Proof using HiD.
   intros H13 H24 HA HAA HBB.
   apply eqty_sig; [discriminate | assumption | assumption | exact (lift_ty HA HiD)
                   | exact (lift_eqty HAA HiD) | exact (lift_eqty HBB HiD)].
@@ -233,7 +233,7 @@ Lemma pc_pair {Γ l1 l2 l3 l4 A A' B B' a a' b b'} : i <> lV ->
   [ G ; Γ ⊢[ i ] b : B[lsingle a] @ l2 ] -> [ G ; Γ ⊢[ i ] b' : B[lsingle a] @ l2 ] ->
   [ G ; Γ ⊢[ i ] tmPair l1 l2 A B a b : tySig l1 l2 A B @ lmax l1 l2 ] /\
   [ G ; Γ ⊢[ i ] tmPair l3 l4 A' B' a' b' : tySig l1 l2 A B @ lmax l1 l2 ].
-Proof.
+Proof using Hd HiD.
   intros Hv H13 H24 HA HAA HA' HBB HB HB' Haa Ha Ha' Hb Hb'.
   split; [apply wf_pair; eauto using lequiv_wf_l|].
   pose proof (lift_eqty HBB HiD) as HBBd.
@@ -261,7 +261,7 @@ Lemma pc_fst {Γ l1 l2 l3 l4 A A' B B' p p'} : i <> lV ->
   [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
   [ G ; Γ ⊢[ i ] p : tySig l1 l2 A B @ lmax l1 l2 ] -> [ G ; Γ ⊢[ i ] p' : tySig l1 l2 A B @ lmax l1 l2 ] ->
   [ G ; Γ ⊢[ i ] tmFst l1 l2 A B p : A @ l1 ] /\ [ G ; Γ ⊢[ i ] tmFst l3 l4 A' B' p' : A @ l1 ].
-Proof.
+Proof using Hd HiD.
   intros Hv H13 H24 HA HAA HA' HBB HB HB' Hp Hp'.
   split; [apply wf_fst; eauto using lequiv_wf_l|].
   eapply wf_lconv with (l' := l3); [|exact H13].
@@ -283,7 +283,7 @@ Lemma pc_snd {Γ l1 l2 l3 l4 A A' B B' p p'} : i <> lV ->
   [ G ; Γ ⊢[ i ] p : tySig l1 l2 A B @ lmax l1 l2 ] -> [ G ; Γ ⊢[ i ] p' : tySig l1 l2 A B @ lmax l1 l2 ] ->
   [ G ; Γ ⊢[ i ] tmSnd l1 l2 A B p : B[lsingle (tmFst l1 l2 A B p)] @ l2 ] /\
   [ G ; Γ ⊢[ i ] tmSnd l3 l4 A' B' p' : B[lsingle (tmFst l1 l2 A B p)] @ l2 ].
-Proof.
+Proof using Hd HiD.
   intros Hv H13 H24 HA HAA HA' HBB HB HB' Hpp Hp Hp'.
   split; [apply wf_snd; eauto using lequiv_wf_l|].
   pose proof (lift_eqty HBB HiD) as HBBd.
@@ -308,21 +308,21 @@ Qed.
 
 Lemma pc_unit {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] tyUnit l @ l ] /\ [ G ; Γ ⊢[ i ] tyUnit l' @ l ].
-Proof.
+Proof using .
   intros Hv HΓ Hl. split; [apply wft_unit; eauto using lequiv_wf_l|].
   eapply wft_lconv; [|exact Hl]. apply wft_unit; eauto using lequiv_wf_r.
 Qed.
 
 Lemma pc_codeunit {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] tmUnit l : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmUnit l' : tyU l @ lsuc l ].
-Proof.
+Proof using Hd.
   intros Hv HΓ Hl. split; [apply wf_code_unit; eauto using lequiv_wf_l|].
   apply (convU_at (l := l')); [apply wf_code_unit; eauto using lequiv_wf_r | solve [apply lequiv_sym; assumption]].
 Qed.
 
 Lemma pc_triv {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] tmTriv l : tyUnit l @ l ] /\ [ G ; Γ ⊢[ i ] tmTriv l' : tyUnit l @ l ].
-Proof.
+Proof using Hd.
   intros Hv HΓ Hl. split; [apply wf_triv; eauto using lequiv_wf_l|].
   eapply wf_lconv with (l' := l'); [|exact Hl].
   apply (conv_at (T' := tyUnit l')); [apply wf_triv; eauto using lequiv_wf_r|].
@@ -336,7 +336,7 @@ Lemma pc_gvar {Γ u Δ i' T l d d'} : [ G ; Γ ⊢[ typeof i ] ] ->
   (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d' n : A[d'] @ k ]) ->
   (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n ≅ llk d' n : A[d] @ k ]) ->
   [ G ; Γ ⊢[ i ] gvar u d : T[d] @ l ] /\ [ G ; Γ ⊢[ i ] gvar u d' : T[d] @ l ].
-Proof.
+Proof using Hd HiD.
   intros HΓ Hin Hi' Ht Hn Ht' Hn' He He' Hee. split; [eapply wf_gvar; eassumption|].
   pose proof HΓ as HΓD; rewrite Hd in HΓD.
   destruct (gctx_decl_ok _ _ _ (ctx_glob _ _ _ HΓD) Hin) as (_ & HT & _).
@@ -360,7 +360,7 @@ Lemma pc_gdef {Γ u Δ T l t0 t t' d d'} : [ G ; Γ ⊢[ typeof i ] ] ->
   (forall n A k, in_ctx Δ n A k -> [ G ; Γ ⊢[ i ] llk d n ≅ llk d' n : A[d] @ k ]) ->
   [ G ; Δ ⊢[ i ] t : T @ l ] -> [ G ; Δ ⊢[ i ] t' : T @ l ] ->
   [ G ; Γ ⊢[ i ] gdef u t d : T[d] @ l ] /\ [ G ; Γ ⊢[ i ] gdef u t' d' : T[d] @ l ].
-Proof.
+Proof using Hd HiD.
   intros HΓ Hin Hl Hl' Hi' Ht Hn Ht' Hn' He He' Hee Hb Hb'. split; [eapply wf_gdef; eassumption|].
   pose proof HΓ as HΓD; rewrite Hd in HΓD.
   destruct (gctx_decl_ok _ _ _ (ctx_glob _ _ _ HΓD) Hin) as (_ & HT & _).
@@ -383,7 +383,7 @@ Lemma pc_id {Γ l l' A A' a a' b b'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
   [ G ; Γ ⊢[ i ] b : A @ l ] -> [ G ; Γ ⊢[ i ] b' : A @ l ] ->
   [ G ; Γ ⊢[ i ] tyId l A a b @ l ] /\ [ G ; Γ ⊢[ i ] tyId l' A' a' b' @ l ].
-Proof.
+Proof using HiD.
   intros Hv Hl HA HAA HA' Ha Ha' Hb Hb'.
   split; [apply wft_id; eauto using lequiv_wf_l | exact (sc_id_q HiD Hv Hl HA' HAA Ha' Hb')].
 Qed.
@@ -392,7 +392,7 @@ Lemma pc_idrefl {Γ l l' A A' a a'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
   [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
   [ G ; Γ ⊢[ i ] tmRefl l A a : tyId l A a a @ l ] /\ [ G ; Γ ⊢[ i ] tmRefl l' A' a' : tyId l A a a @ l ].
-Proof.
+Proof using HiD.
   intros Hv Hl HA HAA HA' Haa Ha Ha'.
   split; [apply wf_idrefl; eauto using lequiv_wf_l | exact (sc_idrefl_q HiD Hv Hl HA HA' HAA Ha' Haa)].
 Qed.
@@ -403,7 +403,7 @@ Lemma pc_code_id {Γ l l' s s' t t' u u'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] t' : tyEl l s @ l ] ->
   [ G ; Γ ⊢[ i ] u : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u' : tyEl l s @ l ] ->
   [ G ; Γ ⊢[ i ] tmId l s t u : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmId l' s' t' u' : tyU l @ lsuc l ].
-Proof.
+Proof using HiD.
   intros Hv Hl Hs Hss Hs' Ht Ht' Hu Hu'.
   split; [apply wf_code_id; eauto using lequiv_wf_l | exact (sc_code_id_q HiD Hv Hl Hs' Hss Ht' Hu')].
 Qed.
@@ -423,7 +423,7 @@ Lemma pc_J {Γ l1 l2 l3 l4 A A' a a' M M' c c' u u' e e'} : i <> lV ->
   [ G ; Γ ⊢[ i ] e : tyId l1 A a u @ l1 ] -> [ G ; Γ ⊢[ i ] e' : tyId l1 A a u @ l1 ] ->
   [ G ; Γ ⊢[ i ] tmJ l1 l2 A a M c u e : M[lsingle2 u e] @ l2 ] /\
   [ G ; Γ ⊢[ i ] tmJ l3 l4 A' a' M' c' u' e' : M[lsingle2 u e] @ l2 ].
-Proof.
+Proof using HiD.
   intros Hv H13 H24 HId HA HAA HA' Haa Ha Ha' HMM HM HM' Hc Hc' Huu Hu Hu' Hee He He'.
   split; [apply wf_J; eauto using lequiv_wf_l |].
   exact (sc_J_q HiD Hv H13 H24 HA HA' HAA Ha Ha' Haa HM' HMM Hc' Hu Hu' Huu He He' Hee).
@@ -435,14 +435,14 @@ Lemma pc_seq {Γ l l' A A' a a' b b'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
   [ G ; Γ ⊢[ i ] b : A @ l ] -> [ G ; Γ ⊢[ i ] b' : A @ l ] ->
   [ G ; Γ ⊢[ i ] tySEq l A a b @ l ] /\ [ G ; Γ ⊢[ i ] tySEq l' A' a' b' @ l ].
-Proof.
+Proof using HiD.
   intros Hv Hl HA HAA HA' Ha Ha' Hb Hb'.
   split; [apply wft_seq; eauto using lequiv_wf_l | exact (sc_seq_q HiD Hv Hl HA' HAA Ha' Hb')].
 Qed.
 
 Lemma pc_sempty {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] tySEmpty l @ l ] /\ [ G ; Γ ⊢[ i ] tySEmpty l' @ l ].
-Proof.
+Proof using .
   intros Hv HΓ Hl. split; [apply wft_sempty; eauto using lequiv_wf_l|].
   eapply wft_lconv; [|exact Hl]. apply wft_sempty; eauto using lequiv_wf_r.
 Qed.
@@ -451,7 +451,7 @@ Lemma pc_srefl {Γ l l' A A' a a'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
   [ G ; Γ ⊢[ i ] a ≅ a' : A @ l ] -> [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
   [ G ; Γ ⊢[ i ] srefl l A a : tySEq l A a a @ l ] /\ [ G ; Γ ⊢[ i ] srefl l' A' a' : tySEq l A a a @ l ].
-Proof.
+Proof using HiD.
   intros Hv Hl HA HAA HA' Haa Ha Ha'.
   split; [apply wf_srefl; eauto using lequiv_wf_l | exact (sc_srefl_q HiD Hv Hl HA HA' HAA Ha' Haa)].
 Qed.
@@ -460,7 +460,7 @@ Lemma pc_elimSEmpty {Γ l1 l2 l3 l4 M M' e e'} : i <> lV -> lequiv (gL G) l1 l3 
   [ G ; Γ ⊢[ i ] M @ l2 ] -> [ G ; Γ ⊢[ i ] M ≅ M' @ l2 ] -> [ G ; Γ ⊢[ i ] M' @ l2 ] ->
   [ G ; Γ ⊢[ i ] e : tySEmpty l1 @ l1 ] -> [ G ; Γ ⊢[ i ] e' : tySEmpty l1 @ l1 ] ->
   [ G ; Γ ⊢[ i ] elimSEmpty l1 l2 M e : M @ l2 ] /\ [ G ; Γ ⊢[ i ] elimSEmpty l3 l4 M' e' : M @ l2 ].
-Proof.
+Proof using HiD.
   intros Hv H13 H24 HM HMM HM' He He'.
   split; [apply wf_elimSEmpty; eauto using lequiv_wf_l | exact (sc_elimSEmpty_q HiD Hv H13 H24 HM' HMM He')].
 Qed.
@@ -471,14 +471,14 @@ Lemma pc_code_seq {Γ l l' s s' t t' u u'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] t : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] t' : tyEl l s @ l ] ->
   [ G ; Γ ⊢[ i ] u : tyEl l s @ l ] -> [ G ; Γ ⊢[ i ] u' : tyEl l s @ l ] ->
   [ G ; Γ ⊢[ i ] tmSEq l s t u : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmSEq l' s' t' u' : tyU l @ lsuc l ].
-Proof.
+Proof using HiD.
   intros Hv Hl Hs Hss Hs' Ht Ht' Hu Hu'.
   split; [apply wf_code_seq; eauto using lequiv_wf_l | exact (sc_code_seq_q HiD Hv Hl Hs' Hss Ht' Hu')].
 Qed.
 
 Lemma pc_code_sempty {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] tmSEmpty l : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmSEmpty l' : tyU l @ lsuc l ].
-Proof.
+Proof using Hd.
   intros Hv HΓ Hl. split; [apply wf_code_sempty; eauto using lequiv_wf_l|].
   apply (convU_at (l := l')); [apply wf_code_sempty; eauto using lequiv_wf_r | solve [apply lequiv_sym; assumption]].
 Qed.
@@ -487,7 +487,7 @@ Qed.
 (** The empty type and binary sums (every layer but V since M12c). *)
 Lemma pc_empty {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] tyEmpty l @ l ] /\ [ G ; Γ ⊢[ i ] tyEmpty l' @ l ].
-Proof.
+Proof using .
   intros Hv HΓ Hl. split; [apply wft_empty; eauto using lequiv_wf_l|].
   eapply wft_lconv; [|exact Hl]. apply wft_empty; eauto using lequiv_wf_r.
 Qed.
@@ -499,7 +499,7 @@ Lemma pc_elimEmpty {Γ l1 l2 l3 l4 M M' t t'} : i <> lV -> lequiv (gL G) l1 l3 -
   [ G ; Γ ⊢[ i ] t : tyEmpty l2 @ l2 ] -> [ G ; Γ ⊢[ i ] t' : tyEmpty l2 @ l2 ] ->
   [ G ; Γ ⊢[ i ] elimEmpty l1 l2 M t : M[lsingle t] @ l1 ] /\
   [ G ; Γ ⊢[ i ] elimEmpty l3 l4 M' t' : M[lsingle t] @ l1 ].
-Proof.
+Proof using HiD.
   intros Hv H13 H24 HM HMM HM' Htt Ht Ht'.
   split; [apply wf_elimEmpty; eauto using lequiv_wf_l | exact (sc_elimEmpty_q HiD Hv H13 H24 HM' HMM Ht Ht' Htt)].
 Qed.
@@ -507,7 +507,7 @@ Qed.
 Lemma pc_sum {Γ l1 l2 l3 l4 A A' B B'} : i <> lV -> lequiv (gL G) l1 l3 -> lequiv (gL G) l2 l4 ->
   [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] -> [ G ; Γ ⊢[ i ] B @ l2 ] -> [ G ; Γ ⊢[ i ] B' @ l2 ] ->
   [ G ; Γ ⊢[ i ] tySum l1 l2 A B @ lmax l1 l2 ] /\ [ G ; Γ ⊢[ i ] tySum l3 l4 A' B' @ lmax l1 l2 ].
-Proof.
+Proof using .
   intros Hv H13 H24 HA HA' HB HB'.
   split; [apply wft_sum; eauto using lequiv_wf_l | exact (sc_sum_q Hv H13 H24 HA' HB')].
 Qed.
@@ -518,7 +518,7 @@ Lemma pc_inl {Γ l1 l2 l3 l4 A A' B B' a a'} : i <> lV -> lequiv (gL G) l1 l3 ->
   [ G ; Γ ⊢[ i ] a : A @ l1 ] -> [ G ; Γ ⊢[ i ] a' : A @ l1 ] ->
   [ G ; Γ ⊢[ i ] tmInl l1 l2 A B a : tySum l1 l2 A B @ lmax l1 l2 ] /\
   [ G ; Γ ⊢[ i ] tmInl l3 l4 A' B' a' : tySum l1 l2 A B @ lmax l1 l2 ].
-Proof.
+Proof using HiD.
   intros Hv H13 H24 HA HAA HA' HB HBB HB' Ha Ha'.
   split; [apply wf_inl; eauto using lequiv_wf_l | exact (sc_inl_q HiD Hv H13 H24 HA' HAA HB' HBB Ha')].
 Qed.
@@ -529,7 +529,7 @@ Lemma pc_inr {Γ l1 l2 l3 l4 A A' B B' b b'} : i <> lV -> lequiv (gL G) l1 l3 ->
   [ G ; Γ ⊢[ i ] b : B @ l2 ] -> [ G ; Γ ⊢[ i ] b' : B @ l2 ] ->
   [ G ; Γ ⊢[ i ] tmInr l1 l2 A B b : tySum l1 l2 A B @ lmax l1 l2 ] /\
   [ G ; Γ ⊢[ i ] tmInr l3 l4 A' B' b' : tySum l1 l2 A B @ lmax l1 l2 ].
-Proof.
+Proof using HiD.
   intros Hv H13 H24 HA HAA HA' HB HBB HB' Hb Hb'.
   split; [apply wf_inr; eauto using lequiv_wf_l | exact (sc_inr_q HiD Hv H13 H24 HA' HAA HB' HBB Hb')].
 Qed.
@@ -547,7 +547,7 @@ Lemma pc_case {Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c1 c1' c2 c2' t t'} : i <> lV
   [ G ; Γ ⊢[ i ] t : tySum l1 l2 A B @ lmax l1 l2 ] -> [ G ; Γ ⊢[ i ] t' : tySum l1 l2 A B @ lmax l1 l2 ] ->
   [ G ; Γ ⊢[ i ] tmCase l1 l2 l3 A B M c1 c2 t : M[lsingle t] @ l3 ] /\
   [ G ; Γ ⊢[ i ] tmCase l4 l5 l6 A' B' M' c1' c2' t' : M[lsingle t] @ l3 ].
-Proof.
+Proof using HiD.
   intros Hv H14 H25 H36 HA HAA HA' HB HBB HB' HM HMM HM' Hc1 Hc1' Hc2 Hc2' Htt Ht Ht'.
   split; [apply wf_case; eauto using lequiv_wf_l |].
   exact (sc_case_q HiD Hv H14 H25 H36 HA HA' HAA HB HB' HBB HM HM' HMM Hc1' Hc2' Ht Ht' Htt).
@@ -555,7 +555,7 @@ Qed.
 
 Lemma pc_code_empty {Γ l l'} : i <> lV -> [ G ; Γ ⊢[ typeof i ] ] -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] tmEmpty l : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmEmpty l' : tyU l @ lsuc l ].
-Proof.
+Proof using Hd.
   intros Hv HΓ Hl. split; [apply wf_code_empty; eauto using lequiv_wf_l|].
   apply (convU_at (l := l')); [apply wf_code_empty; eauto using lequiv_wf_r | solve [apply lequiv_sym; assumption]].
 Qed.
@@ -565,7 +565,7 @@ Lemma pc_code_sum {Γ l1 l2 l3 l4 s s' t t'} : i <> lV -> lequiv (gL G) l1 l3 ->
   [ G ; Γ ⊢[ i ] t : tyU l2 @ lsuc l2 ] -> [ G ; Γ ⊢[ i ] t' : tyU l2 @ lsuc l2 ] ->
   [ G ; Γ ⊢[ i ] tmSum l1 l2 s t : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ] /\
   [ G ; Γ ⊢[ i ] tmSum l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ].
-Proof.
+Proof using HiD.
   intros Hv H13 H24 Hs Hs' Ht Ht'.
   split; [apply wf_code_sum; eauto using lequiv_wf_l | exact (sc_code_sum_q HiD Hv H13 H24 Hs' Ht')].
 Qed.
@@ -575,7 +575,7 @@ Lemma pc_W {Γ l1 l2 l3 l4 A A' B B'} : i <> lV -> lequiv (gL G) l1 l3 -> lequiv
   [ G ; Γ ⊢[ i ] A @ l1 ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l1 ] -> [ G ; Γ ⊢[ i ] A' @ l1 ] ->
   [ G ; Γ ,, A @ l1 ⊢[ i ] B @ l2 ] -> [ G ; Γ ,, A @ l1 ⊢[ i ] B' @ l2 ] ->
   [ G ; Γ ⊢[ i ] tyW l1 l2 A B @ lmax l1 l2 ] /\ [ G ; Γ ⊢[ i ] tyW l3 l4 A' B' @ lmax l1 l2 ].
-Proof.
+Proof using HiD.
   intros Hv H13 H24 HA HAA HA' HB HB'.
   split; [apply wft_W; eauto using lequiv_wf_l | exact (sc_W_q HiD Hv H13 H24 HA HA' HAA HB')].
 Qed.
@@ -588,7 +588,7 @@ Lemma pc_sup {Γ l1 l2 l3 l4 A A' B B' a a' f f'} : i <> lV -> lequiv (gL G) l1 
   [ G ; Γ ⊢[ i ] f' : tyPi l2 (lmax l1 l2) B[lsingle a] (tyW l1 l2 A B)⟨↑⟩ @ lmax l2 (lmax l1 l2) ] ->
   [ G ; Γ ⊢[ i ] tmSup l1 l2 A B a f : tyW l1 l2 A B @ lmax l1 l2 ] /\
   [ G ; Γ ⊢[ i ] tmSup l3 l4 A' B' a' f' : tyW l1 l2 A B @ lmax l1 l2 ].
-Proof.
+Proof using HiD.
   intros Hv H13 H24 HA HAA HA' HB HBB HB' Haa Ha Ha' Hf Hf'.
   split; [apply wf_sup; eauto using lequiv_wf_l |].
   exact (sc_sup_q HiD Hv H13 H24 HA HA' HAA HB HB' HBB Ha Ha' Haa Hf').
@@ -611,7 +611,7 @@ Lemma pc_elimW {Γ l1 l2 l3 l4 l5 l6 A A' B B' M M' c c' t t'} : i <> lV ->
   [ G ; Γ ⊢[ i ] t : tyW l1 l2 A B @ lmax l1 l2 ] -> [ G ; Γ ⊢[ i ] t' : tyW l1 l2 A B @ lmax l1 l2 ] ->
   [ G ; Γ ⊢[ i ] tmElimW l1 l2 l3 A B M c t : M[lsingle t] @ l3 ] /\
   [ G ; Γ ⊢[ i ] tmElimW l4 l5 l6 A' B' M' c' t' : M[lsingle t] @ l3 ].
-Proof.
+Proof using HiD.
   intros Hv H14 H25 H36 HA HAA HA' HB HBB HB' HM HMM HM' HF HI Hc Hc' Htt Ht Ht'.
   split; [apply wf_elimW; eauto using lequiv_wf_l |].
   exact (sc_elimW_q HiD Hv H14 H25 H36 HA HA' HAA HB HB' HBB HM HM' HMM HF HI Hc' Ht Ht' Htt).
@@ -624,7 +624,7 @@ Lemma pc_codeW {Γ l1 l2 l3 l4 s s' t t'} : i <> lV -> lequiv (gL G) l1 l3 -> le
   [ G ; Γ ,, tyEl l1 s @ l1 ⊢[ i ] t' : tyU l2 @ lsuc l2 ] ->
   [ G ; Γ ⊢[ i ] tmW l1 l2 s t : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ] /\
   [ G ; Γ ⊢[ i ] tmW l3 l4 s' t' : tyU (lmax l1 l2) @ lsuc (lmax l1 l2) ].
-Proof.
+Proof using Hd HiD.
   intros Hv H13 H24 Hs Hss Hs' Ht Ht'. split; [apply wf_code_W; eauto using lequiv_wf_l|].
   assert (HEl : [ G ; Γ ⊢[ i ] tyEl l1 s @ l1 ]) by (apply wft_El; eauto using lequiv_wf_l).
   assert (HEE : [ G ; Γ ⊢[ i ] tyEl l1 s ≅ tyEl l3 s' @ l1 ]) by (apply eqty_El; auto).
@@ -640,7 +640,7 @@ Lemma pc_vec {Γ l l' A A' n n'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
   [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] tyVec l A n @ l ] /\ [ G ; Γ ⊢[ i ] tyVec l' A' n' @ l ].
-Proof.
+Proof using .
   intros Hv Hl HA HA' Hn Hn'. split; [apply wft_vec; eauto using lequiv_wf_l|].
   eapply wft_lconv with (l' := l'); [|exact Hl].
   apply wft_vec; eauto using lequiv_wf_r. eapply wft_lconv; [exact HA' | solve [apply lequiv_sym; assumption]].
@@ -649,13 +649,13 @@ Qed.
 Lemma pc_fin {Γ n n'} : i <> lV ->
   [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] tyFin n @ lzero ] /\ [ G ; Γ ⊢[ i ] tyFin n' @ lzero ].
-Proof. intros Hv Hn Hn'. split; apply wft_fin; assumption. Qed.
+Proof using . intros Hv Hn Hn'. split; apply wft_fin; assumption. Qed.
 
 Lemma pc_code_vec {Γ l l' s s' n n'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
   [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] tmVec l s n : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmVec l' s' n' : tyU l @ lsuc l ].
-Proof.
+Proof using Hd.
   intros Hv Hl Hs Hs' Hn Hn'. split; [apply wf_code_vec; eauto using lequiv_wf_l|].
   apply (convU_at (l := l')); [|solve [apply lequiv_sym; assumption]].
   apply wf_code_vec; eauto using lequiv_wf_r. exact (convU_at Hs' Hl).
@@ -664,7 +664,7 @@ Qed.
 Lemma pc_code_sq {Γ l l' s s'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] -> [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
   [ G ; Γ ⊢[ i ] tmSqCode l s : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmSqCode l' s' : tyU l @ lsuc l ].
-Proof.
+Proof using Hd.
   intros Hv Hl Hs Hs'. split; [apply wf_code_sq; eauto using lequiv_wf_l|].
   apply (convU_at (l := l')); [|solve [apply lequiv_sym; assumption]].
   apply wf_code_sq; eauto using lequiv_wf_r. exact (convU_at Hs' Hl).
@@ -674,7 +674,7 @@ Qed.
 Lemma pc_tySq {Γ l l' A A'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
   [ G ; Γ ⊢[ i ] tySq l A @ l ] /\ [ G ; Γ ⊢[ i ] tySq l' A' @ l ].
-Proof.
+Proof using .
   intros Hv Q HA HA'. split; [apply wft_sq; eauto using lequiv_wf_l |].
   eapply wft_lconv; [| exact Q].
   apply wft_sq; [exact Hv | eauto using lequiv_wf_r | eapply wft_lconv; [exact HA' | exact (lequiv_sym _ _ _ Q)]].
@@ -684,7 +684,7 @@ Lemma pc_sq {Γ l l' A A' a a'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
   [ G ; Γ ⊢[ i ] a : A @ l ] -> [ G ; Γ ⊢[ i ] a' : A @ l ] ->
   [ G ; Γ ⊢[ i ] tmSq l A a : tySq l A @ l ] /\ [ G ; Γ ⊢[ i ] tmSq l' A' a' : tySq l A @ l ].
-Proof.
+Proof using HiD.
   intros Hv Q HA HAA HA' Ha Ha'.
   split; [apply wf_sq; eauto using lequiv_wf_l | exact (sc_sq_q HiD Hv Q HA' HAA Ha')].
 Qed.
@@ -700,7 +700,7 @@ Lemma pc_elimSq {Γ l1 l2 l3 l4 A A' M M' c c' t t'} : i <> lV ->
   [ G ; Γ ⊢[ i ] t : tySq l1 A @ l1 ] -> [ G ; Γ ⊢[ i ] t' : tySq l1 A @ l1 ] ->
   [ G ; Γ ⊢[ i ] tmElimSq l1 l2 A M c t : tySq l2 M[lsingle t] @ l2 ] /\
   [ G ; Γ ⊢[ i ] tmElimSq l3 l4 A' M' c' t' : tySq l2 M[lsingle t] @ l2 ].
-Proof.
+Proof using HiD.
   intros Hv H13 H24 HA HAA HA' HM HMM HM' Hc Hc' Htt Ht Ht'.
   split; [apply wf_elimSq; eauto using lequiv_wf_l |].
   exact (sc_elimSq_q HiD Hv H13 H24 HA HA' HAA HM HM' HMM Hc' Ht Ht' Htt).
@@ -709,7 +709,7 @@ Qed.
 Lemma pc_code_fin {Γ n n'} : i <> lV ->
   [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ⊢[ i ] n' : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] tmFin n : tyU lzero @ lsuc lzero ] /\ [ G ; Γ ⊢[ i ] tmFin n' : tyU lzero @ lsuc lzero ].
-Proof. intros Hv Hn Hn'. split; apply wf_code_fin; assumption. Qed.
+Proof using . intros Hv Hn Hn'. split; apply wf_code_fin; assumption. Qed.
 
 (** Finitary well-founded trees and their code (every layer but V since
     M15b): the right telescope of [elim_Wf] from [static_code]'s, at the
@@ -718,7 +718,7 @@ Lemma pc_wf {Γ l l' A A' N N'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] A @ l ] -> [ G ; Γ ⊢[ i ] A ≅ A' @ l ] -> [ G ; Γ ⊢[ i ] A' @ l ] ->
   [ G ; Γ ,, A @ l ⊢[ i ] N : tyNat @ lzero ] -> [ G ; Γ ,, A @ l ⊢[ i ] N' : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] tyWf l A N @ l ] /\ [ G ; Γ ⊢[ i ] tyWf l' A' N' @ l ].
-Proof.
+Proof using HiD.
   intros Hv Hl HA HAA HA' HN HN'.
   split; [apply wft_wf; eauto using lequiv_wf_l | exact (sc_wf_q HiD Hv Hl HA HA' HAA HN')].
 Qed.
@@ -731,7 +731,7 @@ Lemma pc_supf {Γ l l' A A' N N' a a' cs cs'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] cs : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
   [ G ; Γ ⊢[ i ] cs' : tyVec l (tyWf l A N) N[lsingle a] @ l ] ->
   [ G ; Γ ⊢[ i ] tmSupf l A N a cs : tyWf l A N @ l ] /\ [ G ; Γ ⊢[ i ] tmSupf l' A' N' a' cs' : tyWf l A N @ l ].
-Proof.
+Proof using HiD.
   intros Hv Hl HA HAA HA' HN HNN HN' Haa Ha Ha' Hcs Hcs'.
   split; [apply wf_supf; eauto using lequiv_wf_l |].
   exact (sc_supf_q HiD Hv Hl HA HA' HAA HN HN' HNN Ha Ha' Haa Hcs').
@@ -754,7 +754,7 @@ Lemma pc_elimWf {Γ l1 l2 l3 l4 A A' N N' M M' c c' t t'} : i <> lV ->
   [ G ; Γ ⊢[ i ] t : tyWf l1 A N @ l1 ] -> [ G ; Γ ⊢[ i ] t' : tyWf l1 A N @ l1 ] ->
   [ G ; Γ ⊢[ i ] tmElimWf l1 l2 A N M c t : M[lsingle t] @ l2 ] /\
   [ G ; Γ ⊢[ i ] tmElimWf l3 l4 A' N' M' c' t' : M[lsingle t] @ l2 ].
-Proof.
+Proof using HiD.
   intros Hv H13 H24 HA HAA HA' HN HNN HN' HM HMM HM' HC HI Hc Hc' Htt Ht Ht'.
   split; [apply wf_elimWf; eauto using lequiv_wf_l |].
   exact (sc_elimWf_q HiD Hv H13 H24 HA HA' HAA HN HN' HNN HM HM' HMM HI Hc' Ht Ht' Htt).
@@ -765,7 +765,7 @@ Lemma pc_codewf {Γ l l' s s' n n'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ⊢[ i ] s' : tyU l @ lsuc l ] ->
   [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ,, tyEl l s @ l ⊢[ i ] n' : tyNat @ lzero ] ->
   [ G ; Γ ⊢[ i ] tmWf l s n : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmWf l' s' n' : tyU l @ lsuc l ].
-Proof.
+Proof using Hd HiD.
   intros Hv Hl Hs Hss Hs' Hn Hn'. split; [apply wf_code_wf; eauto using lequiv_wf_l|].
   assert (HEl : [ G ; Γ ⊢[ i ] tyEl l s @ l ]) by (apply wft_El; eauto using lequiv_wf_l).
   assert (HEE : [ G ; Γ ⊢[ i ] tyEl l s ≅ tyEl l' s' @ l ]) by (apply eqty_El; auto).
@@ -783,7 +783,7 @@ Lemma pc_dvec {Γ l l' n n' F F'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F @ l ] -> [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F ≅ F' @ l ] ->
   [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F' @ l ] ->
   [ G ; Γ ⊢[ i ] tyDVec l n F @ l ] /\ [ G ; Γ ⊢[ i ] tyDVec l' n' F' @ l ].
-Proof.
+Proof using Hd HiD.
   intros Hv Hl Hn Hnn Hn' HF HFF HF'. split; [apply wft_dvec; eauto using lequiv_wf_l |].
   assert (HF0 : [ G ; Γ ⊢[ i ] tyFin n @ lzero ]) by (apply wft_fin; assumption).
   assert (HFF0 : [ G ; Γ ⊢[ i ] tyFin n ≅ tyFin n' @ lzero ]) by (apply eqty_fin; assumption).
@@ -804,7 +804,7 @@ Lemma pc_iwf {Γ l li k ki X X' A A' N N' Ot Ot' C C' m m'} : i <> lV ->
   [ G ; Γ ⊢[ i ] m : X @ li ] -> [ G ; Γ ⊢[ i ] m' : X @ li ] ->
   [ G ; Γ ⊢[ i ] tyIWf l li X A N Ot C m @ lmax l li ] /\
   [ G ; Γ ⊢[ i ] tyIWf k ki X' A' N' Ot' C' m' @ lmax l li ].
-Proof.
+Proof using HiD.
   intros Hv Q1 Q2 HX HXX HX' HA HAA HA' HN HNN HN' HO HO' HC HC' Hm Hm'.
   split; [apply wft_iwf; eauto using lequiv_wf_l |].
   exact (sc_iwf_q HiD Hv Q1 Q2 HX' HXX HA HA' HAA HN HN' HNN HO' HC' Hm').
@@ -826,7 +826,7 @@ Lemma pc_supi {Γ l li k ki X X' A A' N N' Ot Ot' C C' a a' cs cs'} : i <> lV ->
   [ G ; Γ ⊢[ i ] cs' : tyDVec (lmax l li) N[lsingle a] (iwfFam l li X A N Ot C a) @ lmax l li ] ->
   [ G ; Γ ⊢[ i ] tmSupi l li X A N Ot C a cs : tyIWf l li X A N Ot C Ot[lsingle a] @ lmax l li ] /\
   [ G ; Γ ⊢[ i ] tmSupi k ki X' A' N' Ot' C' a' cs' : tyIWf l li X A N Ot C Ot[lsingle a] @ lmax l li ].
-Proof.
+Proof using HiD.
   intros Hv Q1 Q2 HX HXX HX' HA HAA HA' HN HNN HN' HO HOO HO' HC HCC HC' Haa Ha Ha' Hcs Hcs'.
   split; [apply wf_supi; eauto using lequiv_wf_l |].
   exact (sc_supi_q HiD Hv Q1 Q2 HX HX' HXX HA HA' HAA HN HN' HNN HO HO' HOO HC HC' HCC Ha Ha' Haa Hcs').
@@ -862,7 +862,7 @@ Lemma pc_elimIWf {Γ l li l' k ki k' X X' A A' N N' Ot Ot' C C' M M' c c' m m' t
   [ G ; Γ ⊢[ i ] t' : tyIWf l li X A N Ot C m @ lmax l li ] ->
   [ G ; Γ ⊢[ i ] tmElimIWf l li l' X A N Ot C M c m t : M[lsingle2 m t] @ l' ] /\
   [ G ; Γ ⊢[ i ] tmElimIWf k ki k' X' A' N' Ot' C' M' c' m' t' : M[lsingle2 m t] @ l' ].
-Proof.
+Proof using HiD.
   intros Hv Q1 Q2 Q3 HX HXX HX' HA HAA HA' HN HNN HN' HO HOO HO' HC HCC HC' HMot HM HMM HM' HCs HI EI HI'
     Hc Hc' Hmm Hm Hm' Htt Ht Ht'.
   split; [apply wf_elimIWf; eauto using lequiv_wf_l |].
@@ -877,7 +877,7 @@ Lemma pc_code_dvec {Γ l l' n n' f f'} : i <> lV -> lequiv (gL G) l l' ->
   [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] f : tyU l @ lsuc l ] ->
   [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] f' : tyU l @ lsuc l ] ->
   [ G ; Γ ⊢[ i ] tmDVec l n f : tyU l @ lsuc l ] /\ [ G ; Γ ⊢[ i ] tmDVec l' n' f' : tyU l @ lsuc l ].
-Proof.
+Proof using HiD.
   intros Hv Hl Hn Hnn Hn' Hf Hf'. split; [apply wf_code_dvec; eauto using lequiv_wf_l |].
   exact (sc_code_dvec_q HiD Hv Hl Hn Hn' Hnn Hf').
 Qed.
@@ -897,7 +897,7 @@ Lemma pc_code_iwf {Γ l li k ki x x' s s' n n' o o' c c' m m'} : i <> lV ->
   [ G ; Γ ⊢[ i ] m : tyEl li x @ li ] -> [ G ; Γ ⊢[ i ] m' : tyEl li x @ li ] ->
   [ G ; Γ ⊢[ i ] tmIWf l li x s n o c m : tyU (lmax l li) @ lsuc (lmax l li) ] /\
   [ G ; Γ ⊢[ i ] tmIWf k ki x' s' n' o' c' m' : tyU (lmax l li) @ lsuc (lmax l li) ].
-Proof.
+Proof using HiD.
   intros Hv Q1 Q2 Hx Hxx Hx' Hs Hss Hs' Hn Hnn Hn' Ho Ho' Hc Hc' Hm Hm'.
   split; [apply wf_code_iwf; eauto using lequiv_wf_l |].
   exact (sc_code_iwf_q HiD Hv Q1 Q2 Hx' Hxx Hs Hs' Hss Hn Hn' Hnn Ho' Hc' Hm').

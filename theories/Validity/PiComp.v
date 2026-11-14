@@ -7,13 +7,13 @@ Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws l
 (** ** Syntax *)
 
 Lemma lift_single_tm (b : tm) d a : LK nftm d -> b[llift d][lsingle a] = b[lcons d a].
-Proof.
+Proof using .
   intros Hd. apply subst_subst. intros [|n]; rewrite llk_llift; cbn; [reflexivity|].
   change (ren_tm ?x ?r) with x⟨r⟩. symmetry; apply shift_single, Hd.
 Qed.
 
 Lemma liftshift_single_ty (B : ty) a : nfty B -> B⟨rlift ↑⟩[llift (lsingle a)] = B.
-Proof.
+Proof using .
   intros HB. rewrite (ren_subst_ty _ _ _ (lshift 0)).
   - apply subst_id_ty; auto. intros; cbn; f_equal; lia.
   - intros [|n]; rewrite llk_llift; rlk_simpl; cbn; auto. f_equal; lia.
@@ -22,7 +22,7 @@ Qed.
 (** The η-body applied: [(t⟨↑⟩ x)[a/x] = t a]. *)
 Lemma eta_body_single (t : tm) l l' (A B : ty) a : nftm t -> nfty A -> nfty B ->
   (app t⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0))[lsingle a] = app t l l' A B a.
-Proof.
+Proof using .
   intros Ht HA HB. push_subst. rewrite shift_single, shift_single_ty, liftshift_single_ty by auto.
   reflexivity.
 Qed.
@@ -30,7 +30,7 @@ Qed.
 Lemma eta_body_subst_ren (t : tm) l l' (A B : ty) d (ρ : rsub) :
   (app t⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0))[llift d]⟨rlift ρ⟩ =
   app t[d]⟨ρ⟩⟨↑⟩ l l' A[d]⟨ρ⟩⟨↑⟩ B[llift d]⟨rlift ρ⟩⟨rlift ↑⟩ (var 0).
-Proof.
+Proof using .
   push_subst. rewrite llk_llift0, shift_llift, shift_llift_ty, liftshift_llift_ty.
   push_ren. rewrite shift_lift, shift_lift_ty, liftshift_lift_ty. reflexivity.
 Qed.
@@ -38,7 +38,7 @@ Qed.
 Lemma eta_body_kw {G Δ} (ρ : kwk G Δ) (t : tm) l l' (A B : ty) d :
   ktml ρ (app t⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0))[llift d] =
   app (ktm ρ t[d])⟨↑⟩ l l' (kty ρ A[d])⟨↑⟩ (ktyl ρ B[llift d])⟨rlift ↑⟩ (var 0).
-Proof.
+Proof using .
   unfold ktml, ktm, kty, ktyl.
   rewrite gwa_subst, (subst_ext _ (llift d)⟦kw_γ ρ⟧ (llift d⟦kw_γ ρ⟧)) by apply llk_llift_gwa.
   rewrite gwa_app, gwa_ren, !gwa_ren_ty, gwa_var, eta_body_subst_ren.
@@ -70,7 +70,7 @@ Lemma funext_K Δ d d' w w' : SubRel G Γ Δ d d' ->
   [ G ; Δ ⊢g w : tyPi l l' A[d] B[llift d] @ lmax l l' ] ->
   [ G ; Δ ⊢g w' : tyPi l l' A[d] B[llift d] @ lmax l l' ] ->
   PiK Δ d d' w w' -> [ G ; Δ ⊢ w ≈ w' : tyPi l l' A[d] B[llift d] @ lmax l l' ].
-Proof.
+Proof using EL HB Hwl Hwl' VA VB VL VN.
   intros Hd Hw Hw' K. pose proof (SubRel_ctx Hd) as HΔ.
   destruct (VA _ _ _ Hd) as [RA0 HRA0]. destruct (escape_ty _ _ _ _ _ _ _ _ HRA0) as (HAd & HAd' & HAdd').
   pose proof (SubRel_wf_l _ _ _ _ _ Hd) as Hwd.
@@ -125,7 +125,7 @@ Context {G : gctx} {Γ : ctx} {l l' : lvl} {A B : ty} {t s : tm}
   (VA : VTy G Γ A A l) (Vt : VTm G (Γ ,, A @ l) t t B l') (Vs : VTm G Γ s s A l).
 
 Lemma V_beta : VTm G Γ (app (lam l l' A t) l l' A B s) t[lsingle s] B[lsingle s] l'.
-Proof.
+Proof using EL HB Ht Hwl Hwl' VA Vs Vt.
   intros Δ d d' Hd. destruct (SubRel_nf _ _ _ _ _ Hd) as [Nd Nd'].
   pose proof (Vs _ _ _ Hd) as Hs. destruct (LRtm_escape Hs) as [Hsd _].
   pose proof (Vt _ _ _ (SubRel_cons Hd Hs)) as X.
@@ -160,7 +160,7 @@ Context {G : gctx} {Γ : ctx} {l l' : lvl} {A B : ty} {t : tm}
 
 Lemma V_eta : VTm G Γ (lam l l' A (app t⟨↑⟩ l l' A⟨↑⟩ B⟨rlift ↑⟩ (var 0))) t
                 (tyPi l l' A B) (lmax l l').
-Proof.
+Proof using EL HA HB Ht Hwl Hwl' VA VB VL VN Vt.
   intros Δ d d' Hd. pose proof (SubRel_ctx Hd) as HΔ.
   pose proof (SubRel_wf_l _ _ _ _ _ Hd) as Hsd.
   pose proof (LR_pi_here Hwl Hwl' (lequiv_refl _ _ Hwl) (lequiv_refl _ _ Hwl') HB VA VB

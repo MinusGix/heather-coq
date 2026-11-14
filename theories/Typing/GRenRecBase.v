@@ -174,145 +174,145 @@ Proof. apply gren_ext_all, gwk_upn_fn. Qed.
 
 Section PushG.
 Variable (ξ : nat -> nat).
-Lemma gren_tyNat : tyNat⟪ξ⟫ = tyNat. Proof. reflexivity. Qed.
-Lemma gren_tyPi l l' A B : (tyPi l l' A B)⟪ξ⟫ = tyPi l l' A⟪ξ⟫ B⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tyU l : (tyU l)⟪ξ⟫ = tyU l. Proof. reflexivity. Qed.
-Lemma gren_tyEl l t : (tyEl l t)⟪ξ⟫ = tyEl l t⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tyGvar U d : (tyGvar U d)⟪ξ⟫ = tyGvar (ξ U) d⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tyCTyp Δ l : (tyCTyp Δ l)⟪ξ⟫ = tyCTyp Δ⟪ξ⟫ l. Proof. reflexivity. Qed.
-Lemma gren_tyCTrm Δ T l : (tyCTrm Δ T l)⟪ξ⟫ = tyCTrm Δ⟪ξ⟫ T⟪ξ⟫ l. Proof. reflexivity. Qed.
-Lemma gren_var n : (var n)⟪ξ⟫ = var n. Proof. reflexivity. Qed.
-Lemma gren_tmNat : tmNat⟪ξ⟫ = tmNat. Proof. reflexivity. Qed.
-Lemma gren_tmPi l l' s t : (tmPi l l' s t)⟪ξ⟫ = tmPi l l' s⟪ξ⟫ t⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tmU l : (tmU l)⟪ξ⟫ = tmU l. Proof. reflexivity. Qed.
-Lemma gren_zero : zero⟪ξ⟫ = zero. Proof. reflexivity. Qed.
-Lemma gren_succ t : (succ t)⟪ξ⟫ = succ t⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tyNat : tyNat⟪ξ⟫ = tyNat. Proof using . reflexivity. Qed.
+Lemma gren_tyPi l l' A B : (tyPi l l' A B)⟪ξ⟫ = tyPi l l' A⟪ξ⟫ B⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tyU l : (tyU l)⟪ξ⟫ = tyU l. Proof using . reflexivity. Qed.
+Lemma gren_tyEl l t : (tyEl l t)⟪ξ⟫ = tyEl l t⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tyGvar U d : (tyGvar U d)⟪ξ⟫ = tyGvar (ξ U) d⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tyCTyp Δ l : (tyCTyp Δ l)⟪ξ⟫ = tyCTyp Δ⟪ξ⟫ l. Proof using . reflexivity. Qed.
+Lemma gren_tyCTrm Δ T l : (tyCTrm Δ T l)⟪ξ⟫ = tyCTrm Δ⟪ξ⟫ T⟪ξ⟫ l. Proof using . reflexivity. Qed.
+Lemma gren_var n : (var n)⟪ξ⟫ = var n. Proof using . reflexivity. Qed.
+Lemma gren_tmNat : tmNat⟪ξ⟫ = tmNat. Proof using . reflexivity. Qed.
+Lemma gren_tmPi l l' s t : (tmPi l l' s t)⟪ξ⟫ = tmPi l l' s⟪ξ⟫ t⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tmU l : (tmU l)⟪ξ⟫ = tmU l. Proof using . reflexivity. Qed.
+Lemma gren_zero : zero⟪ξ⟫ = zero. Proof using . reflexivity. Qed.
+Lemma gren_succ t : (succ t)⟪ξ⟫ = succ t⟪ξ⟫. Proof using . reflexivity. Qed.
 Lemma gren_natrec l M s z t : (natrec l M s z t)⟪ξ⟫ = natrec l M⟪ξ⟫ s⟪ξ⟫ z⟪ξ⟫ t⟪ξ⟫.
-Proof. reflexivity. Qed.
-Lemma gren_lam l l' A t : (lam l l' A t)⟪ξ⟫ = lam l l' A⟪ξ⟫ t⟪ξ⟫. Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
+Lemma gren_lam l l' A t : (lam l l' A t)⟪ξ⟫ = lam l l' A⟪ξ⟫ t⟪ξ⟫. Proof using . reflexivity. Qed.
 Lemma gren_app t l l' A B s : (app t l l' A B s)⟪ξ⟫ = app t⟪ξ⟫ l l' A⟪ξ⟫ B⟪ξ⟫ s⟪ξ⟫.
-Proof. reflexivity. Qed.
-Lemma gren_gvar u d : (gvar u d)⟪ξ⟫ = gvar (ξ u) d⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_gdef u b d : (gdef u b d)⟪ξ⟫ = gdef (ξ u) b⟪ξ⟫ d⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tyId l A a b : (tyId l A a b)⟪ξ⟫ = tyId l A⟪ξ⟫ a⟪ξ⟫ b⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_refl l A a : (tmRefl l A a)⟪ξ⟫ = tmRefl l A⟪ξ⟫ a⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tmId l s t u : (tmId l s t u)⟪ξ⟫ = tmId l s⟪ξ⟫ t⟪ξ⟫ u⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tmSEq l s t u : (tmSEq l s t u)⟪ξ⟫ = tmSEq l s⟪ξ⟫ t⟪ξ⟫ u⟪ξ⟫. Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
+Lemma gren_gvar u d : (gvar u d)⟪ξ⟫ = gvar (ξ u) d⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_gdef u b d : (gdef u b d)⟪ξ⟫ = gdef (ξ u) b⟪ξ⟫ d⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tyId l A a b : (tyId l A a b)⟪ξ⟫ = tyId l A⟪ξ⟫ a⟪ξ⟫ b⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_refl l A a : (tmRefl l A a)⟪ξ⟫ = tmRefl l A⟪ξ⟫ a⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tmId l s t u : (tmId l s t u)⟪ξ⟫ = tmId l s⟪ξ⟫ t⟪ξ⟫ u⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tmSEq l s t u : (tmSEq l s t u)⟪ξ⟫ = tmSEq l s⟪ξ⟫ t⟪ξ⟫ u⟪ξ⟫. Proof using . reflexivity. Qed.
 Lemma gren_J l l' A a M c u e :
   (tmJ l l' A a M c u e)⟪ξ⟫ = tmJ l l' A⟪ξ⟫ a⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ u⟪ξ⟫ e⟪ξ⟫.
-Proof. reflexivity. Qed.
-Lemma gren_boxT T : (boxT T)⟪ξ⟫ = boxT T⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_boxt t : (boxt t)⟪ξ⟫ = boxt t⟪ξ⟫. Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
+Lemma gren_boxT T : (boxT T)⟪ξ⟫ = boxT T⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_boxt t : (boxt t)⟪ξ⟫ = boxt t⟪ξ⟫. Proof using . reflexivity. Qed.
 Lemma gren_letboxT l' l Δ M t' t :
   (letboxT l' l Δ M t' t)⟪ξ⟫ = letboxT l' l Δ⟪ξ⟫ M⟪ξ⟫ t'⟪gupr ξ⟫ t⟪ξ⟫.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gren_letboxt l' l Δ T M t' t :
   (letboxt l' l Δ T M t' t)⟪ξ⟫ = letboxt l' l Δ⟪ξ⟫ T⟪ξ⟫ M⟪ξ⟫ t'⟪gupr ξ⟫ t⟪ξ⟫.
-Proof. reflexivity. Qed.
-Lemma gren_cnil : cnil⟪ξ⟫ = cnil. Proof. reflexivity. Qed.
-Lemma gren_cvar g : (cvar g)⟪ξ⟫ = cvar (ξ g). Proof. reflexivity. Qed.
-Lemma gren_cext Γ A l : (Γ ,, A @ l)⟪ξ⟫ = Γ⟪ξ⟫ ,, A⟪ξ⟫ @ l. Proof. reflexivity. Qed.
-Lemma gren_lshift k : (lshift k)⟪ξ⟫ = lshift k. Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
+Lemma gren_cnil : cnil⟪ξ⟫ = cnil. Proof using . reflexivity. Qed.
+Lemma gren_cvar g : (cvar g)⟪ξ⟫ = cvar (ξ g). Proof using . reflexivity. Qed.
+Lemma gren_cext Γ A l : (Γ ,, A @ l)⟪ξ⟫ = Γ⟪ξ⟫ ,, A⟪ξ⟫ @ l. Proof using . reflexivity. Qed.
+Lemma gren_lshift k : (lshift k)⟪ξ⟫ = lshift k. Proof using . reflexivity. Qed.
 Lemma gren_elimT l1 l2 rb l Δ t : (elimT l1 l2 rb l Δ t)⟪ξ⟫ = elimT l1 l2 rb⟪ξ⟫ l Δ⟪ξ⟫ t⟪ξ⟫.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gren_elimt l1 l2 rb l Δ T t :
   (elimt l1 l2 rb l Δ T t)⟪ξ⟫ = elimt l1 l2 rb⟪ξ⟫ l Δ⟪ξ⟫ T⟪ξ⟫ t⟪ξ⟫.
-Proof. reflexivity. Qed.
-Lemma gren_tyUPi n l T : (tyUPi n l T)⟪ξ⟫ = tyUPi n l T⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_ulam n l T t : (ulam n l T t)⟪ξ⟫ = ulam n l T⟪ξ⟫ t⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_uapp t ls : (uapp t ls)⟪ξ⟫ = uapp t⟪ξ⟫ ls. Proof. reflexivity. Qed.
-Lemma gren_tyCPi l T : (tyCPi l T)⟪ξ⟫ = tyCPi l T⟪gupr ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tyTPi Δ l l' T : (tyTPi Δ l l' T)⟪ξ⟫ = tyTPi Δ⟪ξ⟫ l l' T⟪gupr ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_clam l T t : (clam l T t)⟪ξ⟫ = clam l T⟪gupr ξ⟫ t⟪gupr ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_capp t Δ : (capp t Δ)⟪ξ⟫ = capp t⟪ξ⟫ Δ⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tlam Δ l l' T t : (tlam Δ l l' T t)⟪ξ⟫ = tlam Δ⟪ξ⟫ l l' T⟪gupr ξ⟫ t⟪gupr ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tapp t T : (tapp t T)⟪ξ⟫ = tapp t⟪ξ⟫ T⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tySig l l' A B : (tySig l l' A B)⟪ξ⟫ = tySig l l' A⟪ξ⟫ B⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tySum l l' A B : (tySum l l' A B)⟪ξ⟫ = tySum l l' A⟪ξ⟫ B⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_inl l l' A B a : (tmInl l l' A B a)⟪ξ⟫ = tmInl l l' A⟪ξ⟫ B⟪ξ⟫ a⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_inr l l' A B a : (tmInr l l' A B a)⟪ξ⟫ = tmInr l l' A⟪ξ⟫ B⟪ξ⟫ a⟪ξ⟫. Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
+Lemma gren_tyUPi n l T : (tyUPi n l T)⟪ξ⟫ = tyUPi n l T⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_ulam n l T t : (ulam n l T t)⟪ξ⟫ = ulam n l T⟪ξ⟫ t⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_uapp t ls : (uapp t ls)⟪ξ⟫ = uapp t⟪ξ⟫ ls. Proof using . reflexivity. Qed.
+Lemma gren_tyCPi l T : (tyCPi l T)⟪ξ⟫ = tyCPi l T⟪gupr ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tyTPi Δ l l' T : (tyTPi Δ l l' T)⟪ξ⟫ = tyTPi Δ⟪ξ⟫ l l' T⟪gupr ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_clam l T t : (clam l T t)⟪ξ⟫ = clam l T⟪gupr ξ⟫ t⟪gupr ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_capp t Δ : (capp t Δ)⟪ξ⟫ = capp t⟪ξ⟫ Δ⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tlam Δ l l' T t : (tlam Δ l l' T t)⟪ξ⟫ = tlam Δ⟪ξ⟫ l l' T⟪gupr ξ⟫ t⟪gupr ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tapp t T : (tapp t T)⟪ξ⟫ = tapp t⟪ξ⟫ T⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tySig l l' A B : (tySig l l' A B)⟪ξ⟫ = tySig l l' A⟪ξ⟫ B⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tySum l l' A B : (tySum l l' A B)⟪ξ⟫ = tySum l l' A⟪ξ⟫ B⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_inl l l' A B a : (tmInl l l' A B a)⟪ξ⟫ = tmInl l l' A⟪ξ⟫ B⟪ξ⟫ a⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_inr l l' A B a : (tmInr l l' A B a)⟪ξ⟫ = tmInr l l' A⟪ξ⟫ B⟪ξ⟫ a⟪ξ⟫. Proof using . reflexivity. Qed.
 Lemma gren_case l l' l'' A B M c1 c2 t :
   (tmCase l l' l'' A B M c1 c2 t)⟪ξ⟫ = tmCase l l' l'' A⟪ξ⟫ B⟪ξ⟫ M⟪ξ⟫ c1⟪ξ⟫ c2⟪ξ⟫ t⟪ξ⟫.
-Proof. reflexivity. Qed.
-Lemma gren_tmSig l l' s t : (tmSig l l' s t)⟪ξ⟫ = tmSig l l' s⟪ξ⟫ t⟪ξ⟫. Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
+Lemma gren_tmSig l l' s t : (tmSig l l' s t)⟪ξ⟫ = tmSig l l' s⟪ξ⟫ t⟪ξ⟫. Proof using . reflexivity. Qed.
 Lemma gren_pair l l' A B a b : (tmPair l l' A B a b)⟪ξ⟫ = tmPair l l' A⟪ξ⟫ B⟪ξ⟫ a⟪ξ⟫ b⟪ξ⟫.
-Proof. reflexivity. Qed.
-Lemma gren_fst l l' A B p : (tmFst l l' A B p)⟪ξ⟫ = tmFst l l' A⟪ξ⟫ B⟪ξ⟫ p⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_snd l l' A B p : (tmSnd l l' A B p)⟪ξ⟫ = tmSnd l l' A⟪ξ⟫ B⟪ξ⟫ p⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tyUnit l : (tyUnit l)⟪ξ⟫ = tyUnit l. Proof. reflexivity. Qed.
-Lemma gren_tmUnit l : (tmUnit l)⟪ξ⟫ = tmUnit l. Proof. reflexivity. Qed.
-Lemma gren_tmSEmpty l : (tmSEmpty l)⟪ξ⟫ = tmSEmpty l. Proof. reflexivity. Qed.
-Lemma gren_tmEmpty l : (tmEmpty l)⟪ξ⟫ = tmEmpty l. Proof. reflexivity. Qed.
-Lemma gren_tmSum l l' s t : (tmSum l l' s t)⟪ξ⟫ = tmSum l l' s⟪ξ⟫ t⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tmW l l' s t : (tmW l l' s t)⟪ξ⟫ = tmW l l' s⟪ξ⟫ t⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tmVec l s n : (tmVec l s n)⟪ξ⟫ = tmVec l s⟪ξ⟫ n⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tmWf l s n : (tmWf l s n)⟪ξ⟫ = tmWf l s⟪ξ⟫ n⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tmFin n : (tmFin n)⟪ξ⟫ = tmFin n⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_triv l : (tmTriv l)⟪ξ⟫ = tmTriv l. Proof. reflexivity. Qed.
-Lemma gren_tyW l l' A B : (tyW l l' A B)⟪ξ⟫ = tyW l l' A⟪ξ⟫ B⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tyVec l A n : (tyVec l A n)⟪ξ⟫ = tyVec l A⟪ξ⟫ n⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tyFin n : (tyFin n)⟪ξ⟫ = tyFin n⟪ξ⟫. Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
+Lemma gren_fst l l' A B p : (tmFst l l' A B p)⟪ξ⟫ = tmFst l l' A⟪ξ⟫ B⟪ξ⟫ p⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_snd l l' A B p : (tmSnd l l' A B p)⟪ξ⟫ = tmSnd l l' A⟪ξ⟫ B⟪ξ⟫ p⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tyUnit l : (tyUnit l)⟪ξ⟫ = tyUnit l. Proof using . reflexivity. Qed.
+Lemma gren_tmUnit l : (tmUnit l)⟪ξ⟫ = tmUnit l. Proof using . reflexivity. Qed.
+Lemma gren_tmSEmpty l : (tmSEmpty l)⟪ξ⟫ = tmSEmpty l. Proof using . reflexivity. Qed.
+Lemma gren_tmEmpty l : (tmEmpty l)⟪ξ⟫ = tmEmpty l. Proof using . reflexivity. Qed.
+Lemma gren_tmSum l l' s t : (tmSum l l' s t)⟪ξ⟫ = tmSum l l' s⟪ξ⟫ t⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tmW l l' s t : (tmW l l' s t)⟪ξ⟫ = tmW l l' s⟪ξ⟫ t⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tmVec l s n : (tmVec l s n)⟪ξ⟫ = tmVec l s⟪ξ⟫ n⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tmWf l s n : (tmWf l s n)⟪ξ⟫ = tmWf l s⟪ξ⟫ n⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tmFin n : (tmFin n)⟪ξ⟫ = tmFin n⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_triv l : (tmTriv l)⟪ξ⟫ = tmTriv l. Proof using . reflexivity. Qed.
+Lemma gren_tyW l l' A B : (tyW l l' A B)⟪ξ⟫ = tyW l l' A⟪ξ⟫ B⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tyVec l A n : (tyVec l A n)⟪ξ⟫ = tyVec l A⟪ξ⟫ n⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tyFin n : (tyFin n)⟪ξ⟫ = tyFin n⟪ξ⟫. Proof using . reflexivity. Qed.
 Lemma gren_sup l l' A B a f : (tmSup l l' A B a f)⟪ξ⟫ = tmSup l l' A⟪ξ⟫ B⟪ξ⟫ a⟪ξ⟫ f⟪ξ⟫.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gren_elimW l l' l'' A B M c t :
   (tmElimW l l' l'' A B M c t)⟪ξ⟫ = tmElimW l l' l'' A⟪ξ⟫ B⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ t⟪ξ⟫.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 (** [elim_W]'s induction hypothesis (M13a). *)
 Lemma gren_wIH l l' l'' A B M c a f :
   (wIH l l' l'' A B M c a f)⟪ξ⟫ = wIH l l' l'' A⟪ξ⟫ B⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ a⟪ξ⟫ f⟪ξ⟫.
-Proof.
+Proof using .
   unfold wIH. rewrite gren_lam, gren_elimW, gren_app, gren_var.
   repeat rewrite ?gren_ren_ty', ?gren_ren, ?gren_single_ty, ?gren_tyW. reflexivity.
 Qed.
 (** Wf trees (M15a), [nth] and [elim_Wf]'s induction hypothesis. *)
-Lemma gren_tyWf l A N : (tyWf l A N)⟪ξ⟫ = tyWf l A⟪ξ⟫ N⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tyWf l A N : (tyWf l A N)⟪ξ⟫ = tyWf l A⟪ξ⟫ N⟪ξ⟫. Proof using . reflexivity. Qed.
 Lemma gren_supf l A N a cs : (tmSupf l A N a cs)⟪ξ⟫ = tmSupf l A⟪ξ⟫ N⟪ξ⟫ a⟪ξ⟫ cs⟪ξ⟫.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gren_elimWf l l' A N M c t :
   (tmElimWf l l' A N M c t)⟪ξ⟫ = tmElimWf l l' A⟪ξ⟫ N⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ t⟪ξ⟫.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 (** Propositional truncation (M16a). *)
-Lemma gren_tySq l A : (tySq l A)⟪ξ⟫ = tySq l A⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tyDVec l n F : (tyDVec l n F)⟪ξ⟫ = tyDVec l n⟪ξ⟫ F⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_sq l A a : (tmSq l A a)⟪ξ⟫ = tmSq l A⟪ξ⟫ a⟪ξ⟫. Proof. reflexivity. Qed.
+Lemma gren_tySq l A : (tySq l A)⟪ξ⟫ = tySq l A⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tyDVec l n F : (tyDVec l n F)⟪ξ⟫ = tyDVec l n⟪ξ⟫ F⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_sq l A a : (tmSq l A a)⟪ξ⟫ = tmSq l A⟪ξ⟫ a⟪ξ⟫. Proof using . reflexivity. Qed.
 Lemma gren_elimSq l l' A M c t :
   (tmElimSq l l' A M c t)⟪ξ⟫ = tmElimSq l l' A⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ t⟪ξ⟫.
-Proof. reflexivity. Qed.
-Lemma gren_tmSqCode l s : (tmSqCode l s)⟪ξ⟫ = tmSqCode l s⟪ξ⟫. Proof. reflexivity. Qed.
-Lemma gren_tmDVec l n f : (tmDVec l n f)⟪ξ⟫ = tmDVec l n⟪ξ⟫ f⟪ξ⟫. Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
+Lemma gren_tmSqCode l s : (tmSqCode l s)⟪ξ⟫ = tmSqCode l s⟪ξ⟫. Proof using . reflexivity. Qed.
+Lemma gren_tmDVec l n f : (tmDVec l n f)⟪ξ⟫ = tmDVec l n⟪ξ⟫ f⟪ξ⟫. Proof using . reflexivity. Qed.
 Lemma gren_tmIWf l li x s n o c m :
   (tmIWf l li x s n o c m)⟪ξ⟫ = tmIWf l li x⟪ξ⟫ s⟪ξ⟫ n⟪ξ⟫ o⟪ξ⟫ c⟪ξ⟫ m⟪ξ⟫.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gren_tmNth l T k cs i : (tmNth l T k cs i)⟪ξ⟫ = tmNth l T⟪ξ⟫ k⟪ξ⟫ cs⟪ξ⟫ i⟪ξ⟫.
-Proof.
+Proof using .
   unfold tmNth, nthMot, nthBase, nthStep. cbn [gren GRen_tm gren_tm GRen_ty gren_ty].
   change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫.
   repeat rewrite ?gren_ren_ty', ?gren_ren. reflexivity.
 Qed.
 Lemma gren_wfIH l l' A N M c a cs :
   (wfIH l l' A N M c a cs)⟪ξ⟫ = wfIH l l' A⟪ξ⟫ N⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ a⟪ξ⟫ cs⟪ξ⟫.
-Proof.
+Proof using .
   unfold wfIH. rewrite gren_lam, gren_elimWf, gren_tmNth, gren_var, gren_tyFin.
   repeat rewrite ?gren_ren_ty', ?gren_ren, ?gren_single, ?gren_tyWf. reflexivity.
 Qed.
 (** Indexed trees (M17b), [dnth] and [elim_IWf]'s induction hypothesis. *)
 Lemma gren_tyIWf l li X A N Ot C m :
   (tyIWf l li X A N Ot C m)⟪ξ⟫ = tyIWf l li X⟪ξ⟫ A⟪ξ⟫ N⟪ξ⟫ Ot⟪ξ⟫ C⟪ξ⟫ m⟪ξ⟫.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gren_supi l li X A N Ot C a cs :
   (tmSupi l li X A N Ot C a cs)⟪ξ⟫ = tmSupi l li X⟪ξ⟫ A⟪ξ⟫ N⟪ξ⟫ Ot⟪ξ⟫ C⟪ξ⟫ a⟪ξ⟫ cs⟪ξ⟫.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gren_elimIWf l li l' X A N Ot C M c m t :
   (tmElimIWf l li l' X A N Ot C M c m t)⟪ξ⟫ =
   tmElimIWf l li l' X⟪ξ⟫ A⟪ξ⟫ N⟪ξ⟫ Ot⟪ξ⟫ C⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ m⟪ξ⟫ t⟪ξ⟫.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gren_llift_single (b a : tm) : b[llift (lsingle a)]⟪ξ⟫ = b⟪ξ⟫[llift (lsingle a⟪ξ⟫)].
-Proof.
+Proof using .
   rewrite gren_subst. apply subst_ext; intros [|[|n]]; rewrite ?llk_glren, ?llk_llift; cbn; auto.
   change (gren_tm ?x ?ξ0) with x⟪ξ0⟫. rewrite gren_ren. reflexivity.
 Qed.
 Lemma gren_tmDNth l n F cs i : (tmDNth l n F cs i)⟪ξ⟫ = tmDNth l n⟪ξ⟫ F⟪ξ⟫ cs⟪ξ⟫ i⟪ξ⟫.
-Proof.
+Proof using .
   unfold tmDNth, dnthMot, dnthBase, dnthStep, dnthEmb, dnthFam, dnthRes, dnthFamS.
   repeat progress (cbn [gren GRen_tm gren_tm GRen_ty gren_ty]; fold gren_ty gren_tm;
     change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫;
@@ -321,41 +321,41 @@ Proof.
 Qed.
 Lemma gren_iwfIH l li l' X A N Ot C M c a cs :
   (iwfIH l li l' X A N Ot C M c a cs)⟪ξ⟫ = iwfIH l li l' X⟪ξ⟫ A⟪ξ⟫ N⟪ξ⟫ Ot⟪ξ⟫ C⟪ξ⟫ M⟪ξ⟫ c⟪ξ⟫ a⟪ξ⟫ cs⟪ξ⟫.
-Proof.
+Proof using .
   unfold iwfIH, iwfFam. rewrite gren_lam, gren_elimIWf, gren_tmDNth, gren_var, gren_tyFin.
   repeat rewrite ?gren_ren_ty', ?gren_ren, ?gren_single, ?gren_tyIWf, ?gren_llift_single. reflexivity.
 Qed.
 Lemma gren_iwfFam l li X A N Ot C a :
   (iwfFam l li X A N Ot C a)⟪ξ⟫ = iwfFam l li X⟪ξ⟫ A⟪ξ⟫ N⟪ξ⟫ Ot⟪ξ⟫ C⟪ξ⟫ a⟪ξ⟫.
-Proof.
+Proof using .
   unfold iwfFam. rewrite gren_tyIWf.
   repeat rewrite ?gren_ren_ty', ?gren_ren, ?gren_llift_single. reflexivity.
 Qed.
 (** Indexed coinductive types (M18b): [out]-of-[corec]'s reduct. *)
 Lemma gren_tyM l l' li X A B C j :
   (tyM l l' li X A B C j)⟪ξ⟫ = tyM l l' li X⟪ξ⟫ A⟪ξ⟫ B⟪ξ⟫ C⟪ξ⟫ j⟪ξ⟫.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gren_corec l l' li X A B C k Y c j y :
   (tmCorec l l' li X A B C k Y c j y)⟪ξ⟫ = tmCorec l l' li X⟪ξ⟫ A⟪ξ⟫ B⟪ξ⟫ C⟪ξ⟫ k Y⟪ξ⟫ c⟪ξ⟫ j⟪ξ⟫ y⟪ξ⟫.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Lemma gren_out l l' li X A B C j m :
   (tmOut l l' li X A B C j m)⟪ξ⟫ = tmOut l l' li X⟪ξ⟫ A⟪ξ⟫ B⟪ξ⟫ C⟪ξ⟫ j⟪ξ⟫ m⟪ξ⟫.
-Proof. reflexivity. Qed.
+Proof using . reflexivity. Qed.
 Ltac gren_llk := intros n; do 4 try (destruct n as [|n]);
   rewrite ?llk_glren, ?llk_llift; cbn; rewrite ?llk_glren, ?llk_llift; cbn; rewrite ?llk_glren, ?llk_llift; cbn;
   rewrite ?llk_glren, ?llk_llift; cbn; auto;
   repeat change (gren_tm ?x ?ξ0) with x⟪ξ0⟫; repeat change (ren_tm ?x ?r) with x⟨r⟩; rewrite ?gren_ren; reflexivity.
 Lemma gren_llift_single_ty (B : ty) a : B[llift (lsingle a)]⟪ξ⟫ = B⟪ξ⟫[llift (lsingle a⟪ξ⟫)].
-Proof. rewrite gren_subst_ty. apply subst_ext_ty; gren_llk. Qed.
+Proof using . rewrite gren_subst_ty. apply subst_ext_ty; gren_llk. Qed.
 Lemma gren_llift2_single (b a : tm) : b[llift (llift (lsingle a))]⟪ξ⟫ = b⟪ξ⟫[llift (llift (lsingle a⟪ξ⟫))].
-Proof. rewrite gren_subst. apply subst_ext; gren_llk. Qed.
+Proof using . rewrite gren_subst. apply subst_ext; gren_llk. Qed.
 Lemma gren_llift_single2 (b a a' : tm) :
   b[llift (lsingle2 a a')]⟪ξ⟫ = b⟪ξ⟫[llift (lsingle2 a⟪ξ⟫ a'⟪ξ⟫)].
-Proof. rewrite gren_subst. apply subst_ext; gren_llk. Qed.
+Proof using . rewrite gren_subst. apply subst_ext; gren_llk. Qed.
 Lemma gren_mOutCorec l l' li X A B C k Y c j y :
   (mOutCorec l l' li X A B C k Y c j y)⟪ξ⟫ =
   mOutCorec l l' li X⟪ξ⟫ A⟪ξ⟫ B⟪ξ⟫ C⟪ξ⟫ k Y⟪ξ⟫ c⟪ξ⟫ j⟪ξ⟫ y⟪ξ⟫.
-Proof.
+Proof using .
   unfold mOutCorec.
   repeat progress (cbn [gren GRen_tm gren_tm GRen_ty gren_ty]; fold gren_ty gren_tm;
     change (gren_tm ?x ?ξ) with x⟪ξ⟫; change (gren_ty ?x ?ξ) with x⟪ξ⟫;
@@ -365,13 +365,13 @@ Proof.
 Qed.
 (** [UΠ]'s scope and instances. *)
 Lemma gren_uren_ctx (Γ : ctx) ρ : Γ⟨ρ⟩ᵤ⟪ξ⟫ = Γ⟪ξ⟫⟨ρ⟩ᵤ.
-Proof. symmetry; apply (proj1 (proj2 (proj2 uren_gren_all))). Qed.
+Proof using . symmetry; apply (proj1 (proj2 (proj2 uren_gren_all))). Qed.
 Lemma gren_uren_tm (t : tm) ρ : t⟨ρ⟩ᵤ⟪ξ⟫ = t⟪ξ⟫⟨ρ⟩ᵤ.
-Proof. symmetry; apply (proj1 (proj2 uren_gren_all)). Qed.
+Proof using . symmetry; apply (proj1 (proj2 uren_gren_all)). Qed.
 Lemma gren_usubst_ty (T : ty) φ : T[φ]ᵤ⟪ξ⟫ = T⟪ξ⟫[φ]ᵤ.
-Proof. symmetry; apply usubst_gren_ty. Qed.
+Proof using . symmetry; apply usubst_gren_ty. Qed.
 Lemma gren_usubst_tm (t : tm) φ : t[φ]ᵤ⟪ξ⟫ = t⟪ξ⟫[φ]ᵤ.
-Proof. symmetry; apply usubst_gren. Qed.
+Proof using . symmetry; apply usubst_gren. Qed.
 End PushG.
 
 (** Generated by [tools/gen_push.py] (M1_DESIGN.md, build-time gotchas):
