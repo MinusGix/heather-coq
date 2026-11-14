@@ -106,6 +106,17 @@ Proof using .
   rewrite iwiapp_single2, llift2_single_single2 by assumption. f_equal. meq.
 Qed.
 
+(** [IWiRel] is closed under expansion. *)
+Lemma IWiRel_red_bwd {G Δ l lp li X A N D Ot C ix dm pd m t t' u u'} :
+  [ G ; Δ ⊢g t ⤳* u : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] ->
+  [ G ; Δ ⊢g t' ⤳* u' : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] ->
+  IWiRel G Δ l lp li X A N D Ot C ix dm pd m u u' -> IWiRel G Δ l lp li X A N D Ot C ix dm pd m t t'.
+Proof using .
+  intros Ht Ht' H. destruct (IWiRel_inv H) as (w & w' & Hw & Hw' & Ew & Nw).
+  econstructor; [eapply tmred_trans; [exact Ht | exact Hw] | eapply tmred_trans; [exact Ht' | exact Hw']
+                | exact Ew | exact Nw].
+Qed.
+
 (** ** The eliminator at related premises *)
 
 Section ElimAt.
@@ -770,8 +781,10 @@ Lemma elimIWi_ann {G0 γ Δ0 e e2 kl klp kli Xr Ar Nr Or Dg Cg} (ρ : kwk G0 Δ0
     (sD γ e) Dg[llift (llift e2)] (sO γ e) Or (sC γ e) Cg[llift (llift (llift e2))] ->
   LRtm l (kw_G ρ) (kw_Δ ρ) (kty ρ (sA γ e)) (kty ρ (sA γ e2)) b b' ->
   LRtm lzero (kw_G ρ) (kw_Δ ρ) (tyFin (ktml ρ (sN γ e))[lsingle b]) (tyFin (ktml ρ (sN γ e2))[lsingle b']) i q ->
-  [ kw_G ρ ; kw_Δ ρ ⊢g (ktyll ρ (sD γ e))[lsingle2 b i] @ lp ] /\
-  [ kw_G ρ ; kw_Δ ρ ⊢ (ktyll ρ (sD γ e))[lsingle2 b i] ≈ (ktyll ρ Dg[llift (llift e2)])[lsingle2 b' q] @ lp ] /\
+  LRty lp (kw_G ρ) (kw_Δ ρ) (ktyll ρ (sD γ e))[lsingle2 b i] (ktyll ρ Dg[llift (llift e2)])[lsingle2 b' q] /\
+  [ kw_G ρ ; kw_Δ ρ ,, (ktyll ρ (sD γ e))[lsingle2 b i] @ lp
+      ⊢ (ktmlll ρ (sC γ e))[llift (lsingle2 b i)] ≈ (ktmlll ρ Cg[llift (llift (llift e2))])[llift (lsingle2 b' q)]
+      : (kty ρ (sX γ e))⟨↑⟩ @ li ] /\
   [ kw_G ρ ; kw_Δ ρ ,, (ktyll ρ (sD γ e))[lsingle2 b i] @ lp
       ⊢ tyIWi l lp li (kty ρ (sX γ e))⟨↑⟩ (kty ρ (sA γ e))⟨↑⟩ (ktml ρ (sN γ e))⟨rlift ↑⟩
           (ktyll ρ (sD γ e))⟨rlift (rlift ↑)⟩ (ktml ρ (sO γ e))⟨rlift ↑⟩
@@ -795,12 +808,235 @@ Proof using EL Hwlp VL VN.
   pose proof (VCg _ _ (kw_gok ρ)) as VCρ. rewrite !gwa_cext, gwa_tyFin, !gwa_ren_ty in VCρ.
   pose proof (LRtm_geq (VCρ _ _ _ Hs2)) as EC.
   rewrite !shift_llift_ty, !shift_cons_ty', <- kty_subst in EC.
-  rewrite <- (ktyll_subst_single2 ρ e Ne) in HDd, ED, EC. rewrite <- (ktyll_subst_single2 ρ e2 Ne2) in ED.
+  rewrite <- (ktyll_subst_single2 ρ e Ne) in HDd, HR, EC. rewrite <- (ktyll_subst_single2 ρ e2 Ne2) in HR.
   rewrite <- (ktmlll_subst_lift_single2 ρ e Ne), <- (ktmlll_subst_lift_single2 ρ e2 Ne2) in EC.
-  refine (conj HDd (conj ED _)).
+  refine (conj (ex_intro _ _ HR) (conj EC _)).
   pose proof (IWiEq_kw ρ HE) as HEρ. pose proof (IWiGeq_kw ρ HE HG) as HGρ.
   pose proof (ext_wf_g HDd Hwlpρ) as HΓd.
   exact (iwi_geq_at (IWiEq_wk1 ge_typeof ge_notV HEρ HΓd) (IWiGeq_wk1 HEρ HGρ HΓd) EC).
+Qed.
+
+(** The induction hypothesis's body in a world, at an index and an
+    argument: the motive at the children's spine, at the application of
+    [dnth]'s state to the argument. *)
+Local Notation kF ρ γ e a :=
+  (iwiFam l lp li (kty ρ (sX γ e)) (kty ρ (sA γ e)) (ktml ρ (sN γ e)) (ktyll ρ (sD γ e)) (ktml ρ (sO γ e))
+     (ktmlll ρ (sC γ e)) (ktm ρ a)).
+Local Notation kF' ρ γ e' a' :=
+  (iwiFam l3 lp3 li3 (kty ρ (sX' γ e')) (kty ρ (sA' γ e')) (ktml ρ (sN' γ e')) (ktyll ρ (sD' γ e'))
+     (ktml ρ (sO' γ e')) (ktmlll ρ (sC' γ e')) (ktm ρ a')).
+Local Notation kCod ρ γ e a :=
+  (iwiFamCod l lp li (kty ρ (sX γ e)) (kty ρ (sA γ e)) (ktml ρ (sN γ e)) (ktyll ρ (sD γ e)) (ktml ρ (sO γ e))
+     (ktmlll ρ (sC γ e)) (ktm ρ a)).
+Local Notation kCod' ρ γ e' a' :=
+  (iwiFamCod l3 lp3 li3 (kty ρ (sX' γ e')) (kty ρ (sA' γ e')) (ktml ρ (sN' γ e')) (ktyll ρ (sD' γ e'))
+     (ktml ρ (sO' γ e')) (ktmlll ρ (sC' γ e')) (ktm ρ a')).
+Local Notation kscr ρ γ e a cs i y :=
+  (app (tmDNth L (ktml ρ (sN γ e))[lsingle (ktm ρ a)] (kF ρ γ e a) (ktm ρ cs) i) lp L
+     (ktyll ρ (sD γ e))[lsingle2 (ktm ρ a) i] (kCod ρ γ e a)[llift (lsingle i)] y).
+Local Notation kscr' ρ γ e' a' cs' i' y' :=
+  (app (tmDNth (iwiL l3 lp3 li3) (ktml ρ (sN' γ e'))[lsingle (ktm ρ a')] (kF' ρ γ e' a') (ktm ρ cs') i') lp3
+     (iwiL l3 lp3 li3) (ktyll ρ (sD' γ e'))[lsingle2 (ktm ρ a') i'] (kCod' ρ γ e' a')[llift (lsingle i')] y').
+
+Lemma elimIWi_kgoal {G0 Δ0} {ix dm : DomRel G0 Δ0} {pd : IPosDomRel G0 Δ0} {a a' cs cs' γ e e'} (ρ : kwk G0 Δ0)
+    {i i' y y' T1 T2} :
+  gwk_ok γ G0 G -> SubRel G0 Γ⟦γ⟧ Δ0 e e' -> elimIWi_kd G0 Δ0 ix dm pd γ e e' ->
+  LRtm l G0 Δ0 (sA γ e) (sA γ e') a a' -> (forall ρ : kwk G0 Δ0, dm ρ (ktm ρ a) (ktm ρ a')) ->
+  LRtm L G0 Δ0 (iwicsty l lp li X⟦γ⟧ A⟦γ⟧ N⟦γ⟧ D⟦γ⟧ Ot⟦γ⟧ C⟦γ⟧)[lcons e a]
+    (iwicsty l lp li X⟦γ⟧ A⟦γ⟧ N⟦γ⟧ D⟦γ⟧ Ot⟦γ⟧ C⟦γ⟧)[lcons e' a'] cs cs' ->
+  (forall ρ : kwk G0 Δ0,
+     elimIWi_mspine (kw_G ρ) (kw_Δ ρ) l lp li (kty ρ (sX γ e)) (kty ρ (sA γ e)) (ktml ρ (sN γ e))
+       (ktyll ρ (sD γ e)) (ktml ρ (sO γ e)) (ktmlll ρ (sC γ e))
+       (fun ρ' => ix (kw_comp ρ ρ')) (fun ρ' => dm (kw_comp ρ ρ')) (fun ρ' => pd (kw_comp ρ ρ'))
+       (fun p y y' => exists p', pd ρ (ktm ρ a) (ktm ρ a') p p' y y')
+       (ktyll ρ (sD γ e))[llift (lsingle (ktm ρ a))] (ktmlll ρ (sC γ e))[llift (llift (lsingle (ktm ρ a)))]
+       (ktml ρ (sN γ e))[lsingle (ktm ρ a)] (ktm ρ cs) (ktm ρ cs')) ->
+  LRtm lzero (kw_G ρ) (kw_Δ ρ) (tyFin (ktml ρ (sN γ e))[lsingle (ktm ρ a)]) T1 i i' ->
+  LRtm lp (kw_G ρ) (kw_Δ ρ) (ktyll ρ (sD γ e))[lsingle2 (ktm ρ a) i] T2 y y' ->
+  LRtm l' (kw_G ρ) (kw_Δ ρ)
+    (ktyll ρ (sM γ e))[lsingle2 (ktmlll ρ (sC γ e))[lsingle3 (ktm ρ a) i y] (kscr ρ γ e a cs i y)]
+    (ktyll ρ (sM γ e))[lsingle2 (ktmlll ρ (sC γ e))[lsingle3 (ktm ρ a) i y] (kscr ρ γ e a cs i y)]
+    (tmElimIWi l lp li l' (kty ρ (sX γ e)) (kty ρ (sA γ e)) (ktml ρ (sN γ e)) (ktyll ρ (sD γ e)) (ktml ρ (sO γ e))
+       (ktmlll ρ (sC γ e)) (ktyll ρ (sM γ e)) (ktmlll ρ (sc γ e)) (ktmlll ρ (sC γ e))[lsingle3 (ktm ρ a) i y]
+       (kscr ρ γ e a cs i y))
+    (tmElimIWi l3 lp3 li3 l4 (kty ρ (sX' γ e')) (kty ρ (sA' γ e')) (ktml ρ (sN' γ e')) (ktyll ρ (sD' γ e'))
+       (ktml ρ (sO' γ e')) (ktmlll ρ (sC' γ e')) (ktyll ρ (sM' γ e')) (ktmlll ρ (sc' γ e'))
+       (ktmlll ρ (sC' γ e'))[lsingle3 (ktm ρ a') i' y'] (kscr' ρ γ e' a' cs' i' y')).
+Proof using EL H13 H24 HS Hi3 Hp3 Hwl Hwl' Hwli Hwlp VA VC VD VL VM VN VNt VO VX Vc Vcs Vih Vmot.
+  intros Hγ He HK Xa Ha Xcs IH Hi Hy.
+  pose proof HK as (HX & HA & Har & Hpd & HpdE).
+  pose proof (SubRel_ctx He) as HΔ0. destruct (SubRel_nf _ _ _ _ _ He) as [Ne Ne'].
+  destruct (elimIWi_loc Hγ) as (VXγ & VAγ & VNγ & VDγ & VOγ & VCγ & _).
+  destruct (elimIWi_nf Hγ He) as (NX & NA & NN & ND & NO & NC & NM & Nc).
+  pose proof (lwf_weaken _ _ _ (proj1 Hγ) Hwl) as Hwl0. pose proof (lwf_weaken _ _ _ (proj1 Hγ) Hwli) as Hwli0.
+  pose proof (lwf_weaken _ _ _ (proj1 Hγ) Hwlp) as Hwlp0.
+  assert (HwL : lwf (gL G0) L) by (repeat split; assumption).
+  destruct (LRtm_escape Xa) as [Hat Ha't]. pose proof (wf_tm_nf Hat) as Na. pose proof (wf_tm_nf Ha't) as Na'.
+  destruct (LRtm_escape Xcs) as [Hcst Hcs't]. pose proof (wf_tm_nf Hcst) as Ncs. pose proof (wf_tm_nf Hcs't) as Ncs'.
+  pose proof (SubRel_cons He Xa) as HS1. pose proof (SubRel_cons HS1 Xcs) as HS2.
+  (* the arities *)
+  pose proof (VTmG_loc (VTmG_refl_l VNγ) _ _ _ HS1) as XN. rewrite !subst_tyNat in XN.
+  apply LRtm_nat in XN. rewrite <- !lift_single_tm in XN by assumption.
+  pose proof (NatRel_kw ρ _ _ XN) as Hkkl. rewrite !ktm_single in Hkkl.
+  pose proof (LRtm_trans Xa (LRtm_sym Xa)) as Xaa.
+  pose proof (VTmG_loc (VTmG_refl_l VNγ) _ _ _ (SubRel_cons (SubRel_refl_l He) Xaa)) as XN0.
+  rewrite !subst_tyNat in XN0. apply LRtm_nat in XN0. rewrite <- !lift_single_tm in XN0 by assumption.
+  pose proof (LRtm_irrel_r Hi (LR_fin_nat (kw_ctx ρ) Hkkl)) as Yl.
+  pose proof (LRtm_kw ρ Xa) as Xaρ.
+  destruct (elimIWi_sig2 Hγ He) as [HE2 HG2].
+  destruct (elimIWi_ann ρ Hγ He VDγ VCγ HE2 HG2 Xaρ Yl) as (LD & GC & GCod).
+  pose proof (LRtm_irrel_r Hy LD) as Yy.
+  pose proof (elimIWi_dnth_kw Hwl Hwlp Hwli H13 Hp3 Hi3 HS VX VA VNt VD VO VC ρ Hγ HS2 Yl) as Xdn.
+  unfold iwiFieldT in Xdn.
+  destruct (LRtm_pi_K Xdn) as (w & w' & Hw & Hw' & Nw & Nw' & Eww & HLv & _ & _ & Hd0 & HCd0 & Happ).
+  assert (Nk : nfty (kty ρ (sX γ e)) /\ nfty (kty ρ (sA γ e)) /\ nftm (ktml ρ (sN γ e)) /\ nfty (ktyll ρ (sD γ e))
+               /\ nftm (ktml ρ (sO γ e)) /\ nftm (ktmlll ρ (sC γ e)) /\ nftm (ktm ρ a)
+               /\ nfty (kty ρ (sX' γ e')) /\ nfty (kty ρ (sA' γ e')) /\ nftm (ktml ρ (sN' γ e'))
+               /\ nfty (ktyll ρ (sD' γ e')) /\ nftm (ktml ρ (sO' γ e')) /\ nftm (ktmlll ρ (sC' γ e'))
+               /\ nftm (ktm ρ a') /\ nftm (ktm ρ cs) /\ nftm (ktm ρ cs') /\ nfty (ktyll ρ (sM γ e)))
+    by (unfold kty, ktml, ktyll, ktmlll, ktm; repeat split; first [apply ren_nf_ty | apply ren_nf]).
+  destruct Nk as (NkX & NkA & NkN & NkD & NkO & NkC & Nka & NkX' & NkA' & NkN' & NkD' & NkO' & NkC' & Nka'
+                  & Nkcs & Nkcs' & NkM).
+  destruct (LRtm_escape Yl) as [Hit Hi't]. pose proof (wf_tm_nf Hit) as Ni. pose proof (wf_tm_nf Hi't) as Ni'.
+  assert (EB : (kCod ρ γ e a)[llift (lsingle i)] =
+               tyIWi l lp li (kty ρ (sX γ e))⟨↑⟩ (kty ρ (sA γ e))⟨↑⟩ (ktml ρ (sN γ e))⟨rlift ↑⟩
+                 (ktyll ρ (sD γ e))⟨rlift (rlift ↑)⟩ (ktml ρ (sO γ e))⟨rlift ↑⟩
+                 (ktmlll ρ (sC γ e))⟨rlift (rlift (rlift ↑))⟩ (ktmlll ρ (sC γ e))[llift (lsingle2 (ktm ρ a) i)]).
+  { change (kCod ρ γ e a) with (iwiFamCodT l lp li (kty ρ (sX γ e)) (kty ρ (sA γ e)) (ktml ρ (sN γ e))
+             (ktyll ρ (sD γ e)) (ktml ρ (sO γ e)) (ktmlll ρ (sC γ e))
+             (ktmlll ρ (sC γ e))[llift (llift (lsingle (ktm ρ a)))]).
+    rewrite iwiFamCodT_single, llift2_single_llift_single by assumption. reflexivity. }
+  assert (EB' : (kCod' ρ γ e' a')[llift (lsingle i')] =
+               tyIWi l3 lp3 li3 (kty ρ (sX' γ e'))⟨↑⟩ (kty ρ (sA' γ e'))⟨↑⟩ (ktml ρ (sN' γ e'))⟨rlift ↑⟩
+                 (ktyll ρ (sD' γ e'))⟨rlift (rlift ↑)⟩ (ktml ρ (sO' γ e'))⟨rlift ↑⟩
+                 (ktmlll ρ (sC' γ e'))⟨rlift (rlift (rlift ↑))⟩ (ktmlll ρ (sC' γ e'))[llift (lsingle2 (ktm ρ a') i')]).
+  { change (kCod' ρ γ e' a') with (iwiFamCodT l3 lp3 li3 (kty ρ (sX' γ e')) (kty ρ (sA' γ e')) (ktml ρ (sN' γ e'))
+             (ktyll ρ (sD' γ e')) (ktml ρ (sO' γ e')) (ktmlll ρ (sC' γ e'))
+             (ktmlll ρ (sC' γ e'))[llift (llift (lsingle (ktm ρ a')))]).
+    rewrite iwiFamCodT_single, llift2_single_llift_single by assumption. reflexivity. }
+  pose proof (lequiv_weaken _ _ _ _ (proj1 Hγ) H13) as H13'. pose proof (lequiv_weaken _ _ _ _ (proj1 Hγ) Hp3) as Hp3'.
+  pose proof (lequiv_weaken _ _ _ _ (proj1 Hγ) Hi3) as Hi3'.
+  assert (HLL : lequiv (gL G0) L (iwiL l3 lp3 li3)) by (repeat apply lequiv_max; assumption).
+  pose proof (kw_lwf ρ Hwlp0) as Hwlpρ. pose proof (kw_lwf ρ HwL) as HwLρ.
+  destruct LD as [RD HRD]. destruct (escape_ty _ _ _ _ _ _ _ _ HRD) as (_ & HD't & ED).
+  destruct (Happ y y' _ Yy lp L lp3 (iwiL l3 lp3 li3) (ktyll ρ (sD γ e))[lsingle2 (ktm ρ a) i] (kCod ρ γ e a)[llift (lsingle i)]
+              (ktyll ρ (sD' γ e'))[lsingle2 (ktm ρ a') i'] (kCod' ρ γ e' a')[llift (lsingle i')]
+              (lequiv_refl _ _ Hwlpρ) (lequiv_refl _ _ HwLρ) (kw_lequiv ρ (lequiv_sym _ _ _ Hp3'))
+              (kw_lequiv ρ (lequiv_sym _ _ _ HLL)) (geq_ty_trans ED (geq_ty_sym ED)))
+    as (T3 & Xap).
+  { rewrite EB. exact (geq_ty_trans GCod (geq_ty_sym GCod)). }
+  { exact ED. }
+  { rewrite EB'. exact GCod. }
+  assert (LDl : LRty lp (kw_G ρ) (kw_Δ ρ) (ktyll ρ (sD γ e))[lsingle2 (ktm ρ a) i]
+                  (ktyll ρ (sD γ e'))[lsingle2 (ktm ρ a') i']).
+  { pose proof (SubRel_kw _ _ _ ρ _ _ He) as Heρ.
+    pose proof Xaρ as Hb. pose proof Yl as Hi0.
+    rewrite !kty_subst in Hb. rewrite !ktml_subst_single in Hi0.
+    assert (Hi1 : LRtm lzero (kw_G ρ) (kw_Δ ρ) (tyFin N⟦γ⟧⟦kw_γ ρ⟧)[lcons (kwsub ρ e) (ktm ρ a)]
+                    (tyFin N⟦γ⟧⟦kw_γ ρ⟧)[lcons (kwsub ρ e') (ktm ρ a')] i i') by (rewrite !subst_tyFin; exact Hi0).
+    pose proof (VTyG_refl_l VDγ _ _ (kw_gok ρ)) as VDρ. rewrite !gwa_cext, gwa_tyFin in VDρ.
+    destruct (VDρ _ _ _ (SubRel_cons (SubRel_cons Heρ Hb) Hi1)) as [R HR].
+    rewrite <- (ktyll_subst_single2 ρ e Ne), <- (ktyll_subst_single2 ρ e' Ne') in HR. exists R; exact HR. }
+  pose proof (LRtm_irrel_r Yy LDl) as Yy2.
+  assert (Ec : forall t : tm, t[llift (lsingle2 (ktm ρ a) i)][lsingle y] = t[lsingle3 (ktm ρ a) i y]).
+  { intros t. clear -Nka Ni. revert Nka Ni. generalize (ktm ρ a) i y. intros x q z N1 N2. meq. }
+  rewrite iwiCod_single, Ec in Xap by assumption.
+  destruct (IWiCan_comp ρ HK) as (HXρ & HAρ & Harρ & Hpdρ & HpdEρ).
+  destruct Xap as (R0 & HR0 & Hn0).
+  pose proof (proj1 (LR_iwi_rel HR0 HXρ HAρ Harρ Hpdρ HpdEρ _ _) Hn0) as Z.
+  destruct (LRtm_escape Yy) as [Hyt Hyt']. pose proof (LRtm_geq Yy) as Eyy.
+  pose proof (tmred_app_annot Hwlpρ HwLρ (lequiv_refl _ _ Hwlpρ) (lequiv_refl _ _ HwLρ) Hd0 HCd0 Hyt
+                (geq_ty_sound (geq_ty_trans ED (geq_ty_sym ED)))
+                (geq_ty_sound (eq_rect_r (fun B => [ _ ; _ ⊢ _ ≈ B @ _ ]) (geq_ty_trans GCod (geq_ty_sym GCod)) EB))
+                Hw) as Ra.
+  assert (Ec' : forall t : tm, t[llift (lsingle2 (ktm ρ a) i)][lsingle y'] = t[lsingle3 (ktm ρ a) i y']).
+  { intros t. clear -Nka Ni. revert Nka Ni. generalize (ktm ρ a) i y'. intros x q z N1 N2. meq. }
+  pose proof (tmred_app_annot Hwlpρ HwLρ (kw_lequiv ρ (lequiv_sym _ _ _ Hp3')) (kw_lequiv ρ (lequiv_sym _ _ _ HLL))
+                Hd0 HCd0 Hyt' (geq_ty_sound ED)
+                (geq_ty_sound (eq_rect_r (fun B => [ _ ; _ ⊢ _ ≈ B @ _ ]) GCod EB')) Hw') as Ra'.
+  pose proof (wf_ty_func ge_typeof HCd0 (lsub_eq_single ge_typeof Hyt' Hyt (eqtm_sym _ _ _ _ _ _ _ (geq_tm_sound Eyy))))
+    as EB0.
+  rewrite iwiCod_single in Ra by assumption. rewrite iwiCod_single in Ra' by assumption.
+  rewrite !iwiCod_single in EB0 by assumption. rewrite Ec in Ra, EB0. rewrite Ec' in Ra', EB0.
+  pose proof (IWiRel_red_bwd Ra (tmred_conv _ _ _ _ _ ge_typeof Ra' EB0) Z) as Hn.
+  clear Z Ra Ra' EB0 Hn0.
+  (* the child indices *)
+  pose proof (elimIWi_ci_kw ρ Hγ He VCγ Xaρ Yl Yy2) as Xx.
+  (* the induction hypothesis's premises in the world *)
+  assert (He1 : SubRel (kw_G ρ) Γ⟦gwk_comp (kw_γ ρ) γ⟧ (kw_Δ ρ) (kwsub ρ e) (kwsub ρ e')).
+  { pose proof (SubRel_kw _ _ _ ρ _ _ He) as Z. now rewrite gwa_comp_ctx in Z. }
+  assert (Hh : elimIWi_hyp (kw_G ρ) (kw_Δ ρ) l lp li (kty ρ (sX γ e)) (kty ρ (sA γ e)) (ktml ρ (sN γ e))
+                 (ktyll ρ (sD γ e)) (ktml ρ (sO γ e)) (ktmlll ρ (sC γ e))
+                 (fun ρ' => ix (kw_comp ρ ρ')) (fun ρ' => dm (kw_comp ρ ρ')) (fun ρ' => pd (kw_comp ρ ρ'))
+                 (gwk_comp (kw_γ ρ) γ) (kwsub ρ e) (kwsub ρ e')).
+  { pose proof (gwk_ok_comp (kw_gok ρ) Hγ) as Hγ1.
+    unfold elimIWi_hyp, elimIWi_kd.
+    rewrite <- (kγ_ty ρ X γ e), <- (kγ_ty ρ A γ e), <- (kγ_tml ρ N γ e), <- (kγ_tyll ρ D γ e),
+      <- (kγ_tml ρ Ot γ e), <- (kγ_tmlll ρ C γ e), <- (kγ_tml ρ N γ e').
+    refine (conj Hγ1 (conj He1 _)). repeat split; first [reflexivity | assumption]. }
+  pose proof (IWiEq_kw ρ (proj1 (elimIWi_sig Hγ He))) as (_ & _ & _ & HSρ & _).
+  destruct (LRtm_escape Xaρ) as [Haρ _].
+  pose proof (IWi_fam_wf ge_typeof ge_notV HSρ Haρ) as HFam. rewrite iwiFam_T in HFam.
+  pose proof (VTmG_loc (VTmG_refl_l VNγ) _ _ _ (SubRel_cons (SubRel_refl_l He) Xaa)) as XN1.
+  rewrite !subst_tyNat in XN1. apply LRtm_nat in XN1. rewrite <- !lift_single_tm in XN1 by assumption.
+  assert (HPG : IWiPosGeq (kw_G ρ) (kw_Δ ρ) lp li (kty ρ (sX γ e)) (ktml ρ (sN γ e))[lsingle (ktm ρ a)]
+                  (ktml ρ (sN γ e))[lsingle (ktm ρ a)] (ktyll ρ (sD γ e))[llift (lsingle (ktm ρ a))]
+                  (ktyll ρ (sD γ e))[llift (lsingle (ktm ρ a))] (ktmlll ρ (sC γ e))[llift (llift (lsingle (ktm ρ a)))]
+                  (ktmlll ρ (sC γ e))[llift (llift (lsingle (ktm ρ a)))]).
+  { intros ρ' p p' Hp. rewrite !ktyl_iwiD_single, !ktmll_iwiC_single, <- kty_comp. rewrite !ktm_comp_single in Hp.
+    pose proof (NatRel_kw (kw_comp ρ ρ') _ _ XN1) as Hk2. rewrite !ktm_single in Hk2.
+    destruct (elimIWi_sig Hγ He) as [HE0 HG0].
+    destruct (elimIWi_ann (kw_comp ρ ρ') Hγ (SubRel_refl_l He) (VTyG_refl_l VDγ) (VTmG_refl_l VCγ) HE0 HG0
+                (LRtm_kw (kw_comp ρ ρ') Xaa) (PosRel_LRtm Hp Hk2)) as ([R1 HR1] & GC1 & _).
+    destruct (escape_ty _ _ _ _ _ _ _ _ HR1) as (HDp & _ & EDp).
+    exact (conj HDp (conj EDp GC1)). }
+  (* the arities, against the other side's *)
+  pose proof (VTmG_loc VNγ _ _ _ HS1) as XNp. rewrite !subst_tyNat in XNp.
+  apply LRtm_nat in XNp. rewrite <- !lift_single_tm in XNp by assumption.
+  pose proof (NatRel_kw ρ _ _ XNp) as Hkkp. rewrite !ktm_single in Hkkp.
+  pose proof (LRtm_irrel_r Hi (LR_fin_nat (kw_ctx ρ) Hkkp)) as Yp.
+  destruct (NatRel_escape Hkkp) as (Hk & Hk' & _). pose proof (wf_tm_nf Hk) as Nk. pose proof (wf_tm_nf Hk') as Nk'.
+  pose proof (wf_ty_nf HFam) as NF.
+  assert (NF' : nfty (kF' ρ γ e' a')).
+  { unfold iwiFam, iwiFamCod. cbn. repeat split.
+    all: repeat first [assumption | apply ren_nf_ty | apply ren_nf | apply subst_nf_ty | apply subst_nf
+                      | apply lk_llift | apply lk_lsingle]. }
+  assert (Ne1 : nftm (lam lzero lzero (tyFin (ktml ρ (sN γ e))[lsingle (ktm ρ a)]) (var 0))) by (cbn; auto).
+  assert (Ne1' : nftm (lam lzero lzero (tyFin (ktml ρ (sN' γ e'))[lsingle (ktm ρ a')]) (var 0))) by (cbn; auto).
+  pose proof (IH ρ _ _ _ Hh HFam HPG (ktm ρ cs) (ktm ρ cs') Nkcs Nkcs' (tc_refl _) (tc_refl _) _ _ _ Hkkp Yp
+                _ _ _ _ Ne1 Ne1' (dn_top (L := L) Nk NF) (dn_top (L := iwiL l3 lp3 li3) Nk' NF') y y' lp L (ktyll ρ (sD γ e))[lsingle2 (ktm ρ a) i] (kCod ρ γ e a)[llift (lsingle i)]
+                lp3 (iwiL l3 lp3 li3) (ktyll ρ (sD' γ e'))[lsingle2 (ktm ρ a') i'] (kCod' ρ γ e' a')[llift (lsingle i')]
+                (lequiv_refl _ _ Hwlpρ) (lequiv_refl _ _ HwLρ) (kw_lequiv ρ (lequiv_sym _ _ _ Hp3'))
+                (kw_lequiv ρ (lequiv_sym _ _ _ HLL))) as X0.
+  match type of X0 with ?P -> _ => assert (HY : P) end.
+  2: { pose proof (X0 HY _ _ _ _ Xx Hn (reds_refl _) (reds_refl _)) as X1.
+    unfold elimIWi_goal in X1.
+    rewrite <- (kγ_ty ρ X γ e), <- (kγ_ty ρ A γ e), <- (kγ_tml ρ N γ e), <- (kγ_tyll ρ D γ e), <- (kγ_tml ρ Ot γ e),
+      <- (kγ_tmlll ρ C γ e), <- (kγ_tyll ρ M γ e), <- (kγ_tmlll ρ c γ e), <- (kγ_ty ρ X' γ e'), <- (kγ_ty ρ A' γ e'),
+      <- (kγ_tml ρ N' γ e'), <- (kγ_tyll ρ D' γ e'), <- (kγ_tml ρ Ot' γ e'), <- (kγ_tmlll ρ C' γ e'),
+      <- (kγ_tyll ρ M' γ e'), <- (kγ_tmlll ρ c' γ e') in X1.
+    exact X1. }
+  intros p p' Hpc Hip.
+  pose proof (NatRel_kw ρ _ _ XN1) as Hk0. rewrite !ktm_single in Hk0.
+  pose proof (LRtm_irrel_l (LRtm_sym Hip) (LR_fin_nat (kw_ctx ρ) Hk0)) as Hpi.
+  destruct (LRtm_escape Hpi) as [Hpt _]. pose proof (wf_tm_nf Hpt) as Np.
+  destruct (elimIWi_sig Hγ He) as [HE0 HG0].
+  destruct (elimIWi_ann ρ Hγ (SubRel_refl_l He) (VTyG_refl_l VDγ) (VTmG_refl_l VCγ) HE0 HG0
+              (LRtm_kw ρ Xaa) Hpi) as (LDpi & _ & GCodpi).
+  pose proof (LRtm_trans Hpi Yl) as Hpi'.
+  destruct (elimIWi_ann ρ Hγ He VDγ VCγ HE2 HG2 Xaρ Hpi') as (LDpi' & _ & GCodpi').
+  pose proof LDpi as [R3 HR3]. destruct (escape_ty _ _ _ _ _ _ _ _ HR3) as (_ & _ & EDpi).
+  pose proof LDpi' as [R4 HR4]. destruct (escape_ty _ _ _ _ _ _ _ _ HR4) as (_ & _ & EDpi').
+  rewrite llift_single_single_ty by assumption.
+  rewrite iwiFamCodT_single, llift2_single_llift_single by assumption. rewrite EB, EB'.
+  refine (conj _ (conj EDpi (conj GCodpi (conj EDpi' GCodpi')))).
+  (* the argument, at the position's domain *)
+  destruct (PosRel_retarget (PosCan_rel Hpc) _ Hkkl) as (p2 & Hp2).
+  destruct (Hpd ρ _ _ (Ha ρ) p p2 Hp2) as [D1 YD].
+  pose proof (LRtm_irrel_l Yy2 (LRty_trans LDpi LDl)) as Yp2.
+  assert (Hle : lmeasure lp <= lmeasure L) by (rewrite !lmeasure_max; lia).
+  destruct (proj1 (LRtm_stage Hle) Yp2) as (R2 & H2r & Hr2).
+  exists p2. exact (proj1 (LR_irrel _ _ _ _ _ _ _ _ _ _ H2r YD y y') Hr2).
 Qed.
 
 End ElimAt.
