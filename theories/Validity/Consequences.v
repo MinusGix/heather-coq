@@ -275,7 +275,11 @@ Proof using EL.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC'
+                    Hvm Hvm' HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd
+                    vpdAd vpdE vpdMon vchAd vgC vixAd HR];
     try match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
     eexists; split; eauto using whnf_ty, gne_ty_whne_l.
 Qed.
@@ -322,7 +326,11 @@ Proof using EL.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC'
+                    Hvm Hvm' HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd
+                    vpdAd vpdE vpdMon vchAd vgC vixAd HR];
     intros t t' Ht; first [exact (ModRel_whnf_tm HM _ _ Ht) | apply HR in Ht].
   - destruct Ht as [t t' w w' Hw _ _ Hnf]. exists w; split; [exact (tmred_back Hw HT Hl)|].
     destruct Hnf; eauto using whnf, gne_tm_whne_l.
@@ -353,6 +361,8 @@ Proof using EL.
   - destruct (IWfRel_inv Ht) as (w & w' & Hr & _ & _ & Hnf). exists w; split; [exact (tmred_back Hr HT Hl) |].
     exact (IWfNf_whnf_l Hnf).
   - destruct (MR_gen Ht) as (w & w' & Hr & _ & Hwh & _). exists w; split; [exact (tmred_back Hr HT Hl) | exact Hwh].
+  - destruct (IWiRel_inv Ht) as (w & w' & Hr & _ & _ & Hnf). exists w; split; [exact (tmred_back Hr HT Hl) |].
+    exact (IWiNf_whnf_l Hnf).
 Qed.
 
 Theorem whnf_normalization_ty {G Γ T l} : [ G ; Γ ⊢g T @ l ] -> lwf (gL G) l ->

@@ -328,7 +328,11 @@ Proof.
                      widxAd IHwidx Hwisym Hwistr wdomAd IHwdom warAd wotAd wchAd wixAd HR
                  | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                      Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                     HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                     HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                 | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                     Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC'
+                     Hvm Hvm' HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd IHvidx Hvisym Hvistr vdomAd IHvdom varAd votAd
+                     vpdAd IHvpd vpdE vpdMon vchAd vgC vixAd HR];
     try (cbn in Hj; discriminate).
   - exact (lift_posty compt_D HT whnf_tyNat posty_nat).
   - exact (lift_posty compt_D HT (whnf_tyU _) (posty_U _)).
@@ -415,7 +419,11 @@ Proof.
                      widxAd IHwidx Hwisym Hwistr wdomAd IHwdom warAd wotAd wchAd wixAd HR
                  | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                      Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                     HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR].
+                     HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                 | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                     Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC'
+                     Hvm Hvm' HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd IHvidx Hvisym Hvistr vdomAd IHvdom varAd votAd
+                     vpdAd IHvpd vpdE vpdMon vchAd vgC vixAd HR].
   - exact (lift_posty compt_M HT whnf_tyNat posty_nat).
   - exact (lift_posty compt_M HT (whnf_tyU _) (posty_U _)).
   - destruct HV as (HnV & _ & _). exact (lift_posty compt_M HT (whnf_ty_ne _ HnV) (posty_ne _ HnV)).
