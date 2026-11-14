@@ -372,6 +372,7 @@ Proof.
   - exact (lift_sq HT).
   - exact (lift_posty compt_D HT (whnf_tyIWf _ _ _ _ _ _ _ _) (posty_iwf _ _ _ _ _ _ _ _)).
   - exact (lift_posty compt_D HT (whnf_tyM _ _ _ _ _ _ _ _) (posty_M _ _ _ _ _ _ _ _)).
+  - exact (lift_posty compt_D HT (whnf_tyIWi _ _ _ _ _ _ _ _ _ _) (posty_iwi _ _ _ _ _ _ _ _ _ _)).
 Qed.
 
 (** The identity substitution is related to itself. *)
@@ -488,6 +489,7 @@ Proof.
   - exact (lift_sq HT).
   - exact (lift_posty compt_M HT (whnf_tyIWf _ _ _ _ _ _ _ _) (posty_iwf _ _ _ _ _ _ _ _)).
   - exact (lift_posty compt_M HT (whnf_tyM _ _ _ _ _ _ _ _) (posty_M _ _ _ _ _ _ _ _)).
+  - exact (lift_posty compt_M HT (whnf_tyIWi _ _ _ _ _ _ _ _ _ _) (posty_iwi _ _ _ _ _ _ _ _ _ _)).
 Qed.
 
 (** At M: at a well-formed level by reducibility, at ω through [UΠ]. *)
