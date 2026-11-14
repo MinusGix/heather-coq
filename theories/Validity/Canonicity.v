@@ -76,7 +76,7 @@ Proof.
           | pose proof (inv_code_wf Hi Hx) as X | pose proof (inv_sq Hi Hx) as X
           | pose proof (inv_code_sq Hi Hx) as X | pose proof (inv_supi Hi Hx) as Xs
           | pose proof (inv_code_dvec Hi Hx) as X | pose proof (inv_code_iwf Hi Hx) as X
-          | pose proof (inv_corec Hi Hx) as Xc ];
+          | pose proof (inv_corec Hi Hx) as Xc | pose proof (inv_supii Hi Hx) as Xs ];
     repeat match goal with H : exists _, _ |- _ => destruct H | H : _ /\ _ |- _ => destruct H end;
     match goal with E : [ _ ; _ ⊢[ _ ] W ≅ _ @ _ ] |- _ =>
       rewrite (decl_head_c Hc E HW); [| auto with whnf] end;
