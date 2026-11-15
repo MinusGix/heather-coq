@@ -656,7 +656,7 @@ Ltac push_gwa_at h k := lazymatch h with
   | @tmIWi => k gwa_tmIWi
   end.
 Ltac push_gwa := repeat match goal with
-  | |- context [@gwa _ _ _ ?t] => let h := head_of t in push_gwa_at h ltac:(fun L => rewrite L)
+  | |- context [@gwa _ _ _ ?t] => let h := head_of t in push_gwa_at h ltac:(fun L => rewrite !L)
   end.
 
 (** Normal forms, reduction, local weakenings. *)

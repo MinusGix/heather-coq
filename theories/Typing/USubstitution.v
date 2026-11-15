@@ -422,12 +422,12 @@ Ltac us_rw_all_at h k := lazymatch h with
   | @wrapMt => k wrapMt_usubst
   end.
 Ltac us_rw_all := repeat match goal with
-  | |- context [@usubst_ty ?t _] => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite L)
-  | H : context [@usubst_ty ?t _] |- _ => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite L in H)
-  | |- context [@usubst_tm ?t _] => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite L)
-  | H : context [@usubst_tm ?t _] |- _ => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite L in H)
-  | |- context [@ucsubst ?t _] => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite L)
-  | H : context [@ucsubst ?t _] |- _ => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite L in H)
+  | |- context [@usubst_ty ?t _] => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite !L)
+  | H : context [@usubst_ty ?t _] |- _ => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite !L in H)
+  | |- context [@usubst_tm ?t _] => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite !L)
+  | H : context [@usubst_tm ?t _] |- _ => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite !L in H)
+  | |- context [@ucsubst ?t _] => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite !L)
+  | H : context [@ucsubst ?t _] |- _ => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite !L in H)
   end.
 (* [IWf]'s telescope (M17b): pushing into [dnth]'s family and the step's
    [sup_i] exposes further instances, so those goals get more rounds *)

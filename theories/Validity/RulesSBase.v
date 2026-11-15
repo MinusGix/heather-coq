@@ -206,8 +206,8 @@ Ltac s_push_at h k := lazymatch h with
   | @iwiIH => k gs_iwiIH
   end.
 Ltac s_push := repeat match goal with
-  | |- context [@gsubst _ _ ?t _] => let h := head_of t in s_push_at h ltac:(fun L => rewrite L)
-  | H : context [@gsubst _ _ ?t _] |- _ => let h := head_of t in s_push_at h ltac:(fun L => rewrite L in H)
+  | |- context [@gsubst _ _ ?t _] => let h := head_of t in s_push_at h ltac:(fun L => rewrite !L)
+  | H : context [@gsubst _ _ ?t _] |- _ => let h := head_of t in s_push_at h ltac:(fun L => rewrite !L in H)
   end.
 
 (** Side conditions of the general lemmas: levels. *)

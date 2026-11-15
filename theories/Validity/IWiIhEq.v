@@ -76,6 +76,8 @@ Lemma VG_iwiihty {G Γ l lp li l' l3 lp3 li3 l4 X X' A A' N N' D D' Ot Ot' C C' 
     (iwiihty l lp li l' X A N D Ot C M) (iwiihty l3 lp3 li3 l4 X' A' N' D' Ot' C' M') (lmax lzero (lmax lp l')).
 Proof using EL VL VN.
   intros Hwl Hwlp Hwli Hwl' H13 Hp3 Hi3 H24 HS HI VX VA VNt VD VO VC Vmot VM.
+  (* atoms for [geq]: without them [meq] falls back to pointwise rewriting (20 s) *)
+  pose proof (IWiSig_nf HS) as (NX & NA & NN & ND & NO & NC).
   destruct (inv_ty_pi HI) as ((_ & _ & _ & HF0 & HB1) & _).
   destruct (inv_ty_pi HB1) as ((_ & _ & _ & HD1 & HB2) & _).
   pose proof (elimIWi_Vdnth Hwl Hwlp Hwli H13 Hp3 Hi3 HS VX VA VNt VD VO VC) as Vdn.
@@ -104,7 +106,7 @@ Proof using EL VL VN.
             now rewrite !IWi_E_ren3.
           + eapply VTmG_retype; [exact (VG_lift1_tm (VG_lift2_tm VC)) |]. ren_comm. }
       3: { eapply VG_var; [repeat constructor | reflexivity]. }
-      3: solve [cbn; f_equal; meq].
+      3: solve [TemplateEq.geq].
       2: eapply VEQ; [eapply VTmG_lconv; [exact (VG_shift_tm (B := D⟨rlift ↑⟩) (k := lp) Vdn) | apply lequiv_sym, iwiL_pi; assumption] | | |].
       (* the shifted [dnth] is the type's, and so is its type *)
       2: { rewrite ren_tmDNth; unfold iwiFam, iwiFamCod; f_equal.

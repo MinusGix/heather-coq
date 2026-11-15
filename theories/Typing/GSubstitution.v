@@ -664,7 +664,7 @@ Ltac push_gsubst_at h k := lazymatch h with
   | @tmJ => k gs_J
   end.
 Ltac push_gsubst := repeat match goal with
-  | |- context [@gsubst _ _ ?t _] => let h := head_of t in push_gsubst_at h ltac:(fun L => rewrite L)
+  | |- context [@gsubst _ _ ?t _] => let h := head_of t in push_gsubst_at h ltac:(fun L => rewrite !L)
   end.
 
 Lemma gs_single_ty (M : ty) a σ : M[lsingle a]⦃σ⦄ = M⦃σ⦄[lsingle a⦃σ⦄].

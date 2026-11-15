@@ -510,7 +510,7 @@ Ltac push_gren_at h k := lazymatch h with
   | @tmIWf => k gren_tmIWf
   end.
 Ltac push_gren := repeat match goal with
-  | |- context [@gren _ _ ?t _] => let h := head_of t in push_gren_at h ltac:(fun L => rewrite L)
+  | |- context [@gren _ _ ?t _] => let h := head_of t in push_gren_at h ltac:(fun L => rewrite !L)
   end.
 
 Ltac gren_rewrite :=

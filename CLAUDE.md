@@ -64,7 +64,11 @@ these docs by bare file name.
   the IWf formers → `RulesSCoreW` → `RecS*` → `FundamentalM` →
   `AlgPERTrans`; at -j4 the build is now nearly CPU-bound (CPU / 4 is
   490 s). The same machine took anywhere from 976 s to 1609 s for
-  that tree over one day, so only back-to-back runs compare. The
+  that tree over one day, so only back-to-back runs compare. With
+  M19 (`IWi`) the tree took 1130 s wall (critical path 847 s, CPU
+  3034 s); `rewrite !L` in the generated push tactics and `geq` in
+  `VG_iwiihty` then took 1015 s (752 s, 2778 s), back to back
+  (`docs/gotchas.md`, 2026-11-15). The
   `.timing` files count the main process only: `par:`'s workers are
   not in the "CPU" total, and they slow the files built beside them
   (about 6% here).

@@ -385,6 +385,26 @@ formers, so it gets worse with every extension:
   one `par: lazymatch goal with … end`, by the goal's shape (28 s →
   18 s). It does not help where each goal is fast: `redt_usubst`'s
   cases (4 s) took as long under `par:`.
+- **`meq` without atoms falls back silently** (2026-11-15). `meq` is
+  `first [geq | meq_pw]`, and `geq` needs an `nfty`/`nftm` hypothesis
+  for every type and term variable of the equation; without them it
+  fails at once and the pointwise fallback ran: 20 s of `VG_iwiihty`'s
+  26 s. `pose proof (IWiSig_nf HS) as (…)` first, then
+  `TemplateEq.geq` alone: 26 s → 3 s, and its `Qed` 5.7 s → 0.6 s.
+  Don't `cbn` before it (it unfolds the operations into raw `fix`es);
+  and `f_equal; meq` on one such goal ran 575 s, so time a new `meq`
+  (`time "tag"`) before keeping it. An equation with a `dnth` or `iwiFam`
+  inside did not finish under `geq` (`IWi_E4`).
+- **One occurrence per scan in the push tactics** (2026-11-15). The
+  generated push tactics (`gl_push`, `s_push`, `push_gwa`, …,
+  `tools/gen_push.py`) rewrote with `rewrite L`, which rewrites the
+  instances of the first match only, and then scanned every hypothesis
+  again from the top: quadratic in the number of hypotheses times their
+  size. `rewrite !L` rewrites every instance of the lemma before the next
+  scan: `VS_elimIWi*` (twenty premises) 37 s → 14 s each, `VS_elimIWf*`
+  12 s → 6 s; with the `meq` fix above, the full build went 1130 s →
+  1015 s wall (critical path 847 s → 752 s, CPU 3034 s → 2778 s), back
+  to back.
 - **A `Require` hidden in `Ltac`.** The `.glob` misses names used only
   inside tactics, hints and instances, so `tools/depgraph.py` can
   suggest dropping a `Require` the file needs (`FundamentalS` uses

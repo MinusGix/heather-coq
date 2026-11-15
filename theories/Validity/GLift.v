@@ -157,8 +157,8 @@ Ltac gl_push_at h k := lazymatch h with
   | @mOutCorec => k MAux.gwa_mOutCorec
   end.
 Ltac gl_push := repeat match goal with
-  | |- context [@gwa _ _ _ ?t] => let h := head_of t in gl_push_at h ltac:(fun L => rewrite L)
-  | H : context [@gwa _ _ _ ?t] |- _ => let h := head_of t in gl_push_at h ltac:(fun L => rewrite L in H)
+  | |- context [@gwa _ _ _ ?t] => let h := head_of t in gl_push_at h ltac:(fun L => rewrite !L)
+  | H : context [@gwa _ _ _ ?t] |- _ => let h := head_of t in gl_push_at h ltac:(fun L => rewrite !L in H)
   end.
 
 (** P-derivations are validated at an instance of any layer [≥ P]: their
