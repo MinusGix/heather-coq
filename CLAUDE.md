@@ -22,6 +22,9 @@ these docs by bare file name.
   rules). This repo replaces an earlier McTT-based attempt
   (`../refs/McTT`, frozen). The paper's own proof follows Abel et al. 2017;
   logrel-coq (`../refs/logrel-coq`) is the architectural template.
+- The milestone-by-milestone status, in full, is in
+  `docs/design/README.md` (the index of the design notes); `README.md`
+  is the outsider's overview and keeps one line per milestone.
 - Paper sources: `../heather/docs/delam/*.tex`. Ch. 4 = rules, ch. 5 =
   substitutions, ch. 6 = reduction, ch. 7 / 07a / 07b = logical relation,
   validity, fundamental theorem.

@@ -1,6 +1,7 @@
 # Heather: what its kernel adds to DeLaM, and what we check
 
-Heather (`~/Kairos/Code/heather`, written `H/` below; from this repo,
+Heather ([MinusGix/heather](https://github.com/MinusGix/heather);
+locally `~/Kairos/Code/heather`, written `H/` below; from this repo,
 `../../heather`) is a theorem-prover language whose Rust kernel implements
 the full four-layer DeLaM of ch. 04 plus extensions of its own. Not to be
 confused with `../heather`, the early Lean λΠ attempt that only holds the
