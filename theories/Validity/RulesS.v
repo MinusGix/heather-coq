@@ -11,7 +11,8 @@
     The rules build in parts beside one another: the tactics
     ([RulesSBase]), [IWf]'s eliminator ([RulesSIWf], [RulesSIWfSupi]
     and their [Ty] parts, a third of the time) and the rest ([RulesSCore]). *)
-From DeLaM.Validity Require Export RulesSCore RulesSCoreW RulesSIWf RulesSIWfTy RulesSIWfSupi RulesSIWfSupiTy.
+From DeLaM.Validity Require Export RulesSCore RulesSCoreW RulesSIWf RulesSIWfTy RulesSIWfSupi RulesSIWfSupiTy
+  RulesSIWiF RulesSIWi RulesSIWiTy RulesSIWiSupi RulesSIWiSupiTy.
 
 (** Each rule's semantic lemma, its side conditions closed by [side]
     (the fundamental theorems at P and M). A new rule is added here. *)
@@ -95,7 +96,14 @@ Ltac vs_rules side :=
   (* the codes of DVec and IWf (M17c) *)
   | solve [simple eapply VS_code_dvec; side] | solve [simple eapply VS_El_dvec; side]
   | solve [simple eapply VS_code_iwf; side] | solve [simple eapply VS_El_iwf; side]
+  (* the code of IWi (M19c) *)
+  | solve [simple eapply VS_code_iwi; side] | solve [simple eapply VS_El_iwi; side]
   (* indexed coinductive types (M18b) *)
   | solve [simple eapply VS_M; side] | solve [simple eapply VS_mOutTy; side]
   | solve [simple eapply VS_out; side] | solve [simple eapply VS_corec; side]
-  | solve [simple eapply VS_out_corec; side] ].
+  | solve [simple eapply VS_out_corec; side]
+  (* indexed families with infinitary children (M19b) *)
+  | solve [simple eapply VS_iwi; side] | solve [simple eapply VS_supii; side]
+  | solve [simple eapply VS_elimIWi; side] | solve [simple eapply VS_elimIWi_supii; side]
+  | solve [simple eapply VS_supii_ty; side] | solve [simple eapply VS_elimIWi_ty; side]
+  | solve [simple eapply VS_elimIWi_supii_ty; side] ].

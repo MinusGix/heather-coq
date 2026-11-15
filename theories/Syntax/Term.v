@@ -63,6 +63,12 @@ Inductive ty : Type :=
    its shapes *)
 | tyM (l l' li : lvl) (X A B : ty) (C j : tm)
     (* M^{l,l',li}(X; i. A; i s. B; i s p. C)(j) @ l ⊔ l' ⊔ li      A: +1, B: +2, C: +3 *)
+(* indexed families with infinitary children (M19a, M19_DESIGN.md): [IWf]'s
+   signature plus a domain [D] at [lp] for each field [i]; field [i] of a
+   node is a function from [D] whose child at [y] has index [C] *)
+| tyIWi (l lp li : lvl) (X A : ty) (N : tm) (D : ty) (Ot C m : tm)
+    (* IWi^{l,lp,li}(X; x : A. N; x i. D; x. O; x i y. C)(m) @ l ⊔ li ⊔ lp
+       N, O: +1, D: +2, C: +3 *)
 with tm : Type :=
 | var (n : nat)
 | tmErr
@@ -181,6 +187,16 @@ with tm : Type :=
     (* corec^{k}(σ; i. Y; i x. c; j; y) : M(σ)(j)      Y: +1, c: +2 *)
 | tmOut (l l' li : lvl) (X A B : ty) (C j m : tm)
     (* out(σ; j; m) : Σ(s : A[j]). Π(p : B[j, s]). M(σ)(C[j, s, p]) *)
+(* [IWi]'s constructor and eliminator (M19a), as [IWf]'s: the children
+   [cs] are a [DVec] of functions, the induction hypothesis takes a field
+   and a point of its domain *)
+| tmSupii (l lp li : lvl) (X A : ty) (N : tm) (D : ty) (Ot C a cs : tm)
+    (* sup^{l,lp,li}(σ; a; cs)      N, O: +1, D: +2, C: +3 *)
+| tmElimIWi (l lp li l' : lvl) (X A : ty) (N : tm) (D : ty) (Ot C : tm) (M : ty) (c m t : tm)
+    (* elim_IWi(σ; j z. M; a cs ih. c; m; t) : M[m/j, t/z] @ l'      M: +2, c: +3 *)
+(* the code of [IWi] (M19c) *)
+| tmIWi (l lp li : lvl) (x s n d o c m : tm)
+    (* code of IWi(El x; El s; n; El d; o; c)(m)      n, o: +1, d: +2, c: +3 *)
 with ctx : Type :=
 | cnil
 | cvar (g : nat)
@@ -276,6 +292,7 @@ Fixpoint ren_ty (T : ty) (r : rsub) {struct T} : ty :=
   | tyDVec l n F => tyDVec l (ren_tm n r) (ren_ty F (rlift r))
   | tyIWf l li X A N Ot C m => tyIWf l li (ren_ty X r) (ren_ty A r) (ren_tm N (rlift r)) (ren_tm Ot (rlift r)) (ren_tm C (rlift (rlift r))) (ren_tm m r)
   | tyM l l' li X A B C j => tyM l l' li (ren_ty X r) (ren_ty A (rlift r)) (ren_ty B (rlift (rlift r))) (ren_tm C (rlift (rlift (rlift r)))) (ren_tm j r)
+  | tyIWi l lp li X A N D Ot C m => tyIWi l lp li (ren_ty X r) (ren_ty A r) (ren_tm N (rlift r)) (ren_ty D (rlift (rlift r))) (ren_tm Ot (rlift r)) (ren_tm C (rlift (rlift (rlift r)))) (ren_tm m r)
   end
 with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
   match t with
@@ -350,6 +367,11 @@ with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
       tmCorec l l' li (ren_ty X r) (ren_ty A (rlift r)) (ren_ty B (rlift (rlift r))) (ren_tm C (rlift (rlift (rlift r)))) k (ren_ty Y (rlift r)) (ren_tm c (rlift (rlift r))) (ren_tm j r) (ren_tm y r)
   | tmOut l l' li X A B C j m =>
       tmOut l l' li (ren_ty X r) (ren_ty A (rlift r)) (ren_ty B (rlift (rlift r))) (ren_tm C (rlift (rlift (rlift r)))) (ren_tm j r) (ren_tm m r)
+  | tmSupii l lp li X A N D Ot C a cs =>
+      tmSupii l lp li (ren_ty X r) (ren_ty A r) (ren_tm N (rlift r)) (ren_ty D (rlift (rlift r))) (ren_tm Ot (rlift r)) (ren_tm C (rlift (rlift (rlift r)))) (ren_tm a r) (ren_tm cs r)
+  | tmElimIWi l lp li l' X A N D Ot C M c m t =>
+      tmElimIWi l lp li l' (ren_ty X r) (ren_ty A r) (ren_tm N (rlift r)) (ren_ty D (rlift (rlift r))) (ren_tm Ot (rlift r)) (ren_tm C (rlift (rlift (rlift r)))) (ren_ty M (rlift (rlift r))) (ren_tm c (rlift (rlift (rlift r)))) (ren_tm m r) (ren_tm t r)
+  | tmIWi l lp li x s0 n d o c m => tmIWi l lp li (ren_tm x r) (ren_tm s0 r) (ren_tm n (rlift r)) (ren_tm d (rlift (rlift r))) (ren_tm o (rlift r)) (ren_tm c (rlift (rlift (rlift r)))) (ren_tm m r)
   end
 with lren (d : lsub) (r : rsub) {struct d} : lsub :=
   match d with
@@ -396,6 +418,7 @@ Fixpoint gren_ty (T : ty) (ξ : nat -> nat) {struct T} : ty :=
   | tyDVec l n F => tyDVec l (gren_tm n ξ) (gren_ty F ξ)
   | tyIWf l li X A N Ot C m => tyIWf l li (gren_ty X ξ) (gren_ty A ξ) (gren_tm N ξ) (gren_tm Ot ξ) (gren_tm C ξ) (gren_tm m ξ)
   | tyM l l' li X A B C j => tyM l l' li (gren_ty X ξ) (gren_ty A ξ) (gren_ty B ξ) (gren_tm C ξ) (gren_tm j ξ)
+  | tyIWi l lp li X A N D Ot C m => tyIWi l lp li (gren_ty X ξ) (gren_ty A ξ) (gren_tm N ξ) (gren_ty D ξ) (gren_tm Ot ξ) (gren_tm C ξ) (gren_tm m ξ)
   end
 with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
   match t with
@@ -471,6 +494,11 @@ with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
       tmCorec l l' li (gren_ty X ξ) (gren_ty A ξ) (gren_ty B ξ) (gren_tm C ξ) k (gren_ty Y ξ) (gren_tm c ξ) (gren_tm j ξ) (gren_tm y ξ)
   | tmOut l l' li X A B C j m =>
       tmOut l l' li (gren_ty X ξ) (gren_ty A ξ) (gren_ty B ξ) (gren_tm C ξ) (gren_tm j ξ) (gren_tm m ξ)
+  | tmSupii l lp li X A N D Ot C a cs =>
+      tmSupii l lp li (gren_ty X ξ) (gren_ty A ξ) (gren_tm N ξ) (gren_ty D ξ) (gren_tm Ot ξ) (gren_tm C ξ) (gren_tm a ξ) (gren_tm cs ξ)
+  | tmElimIWi l lp li l' X A N D Ot C M c m t =>
+      tmElimIWi l lp li l' (gren_ty X ξ) (gren_ty A ξ) (gren_tm N ξ) (gren_ty D ξ) (gren_tm Ot ξ) (gren_tm C ξ) (gren_ty M ξ) (gren_tm c ξ) (gren_tm m ξ) (gren_tm t ξ)
+  | tmIWi l lp li x s0 n d o c m => tmIWi l lp li (gren_tm x ξ) (gren_tm s0 ξ) (gren_tm n ξ) (gren_tm d ξ) (gren_tm o ξ) (gren_tm c ξ) (gren_tm m ξ)
   end
 with gcren (Γ : ctx) (ξ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -514,6 +542,7 @@ Fixpoint uren_ty (T : ty) (ρ : nat -> nat) {struct T} : ty :=
   | tyDVec l n F => tyDVec (lvren l ρ) (uren_tm n ρ) (uren_ty F ρ)
   | tyIWf l li X A N Ot C m => tyIWf (lvren l ρ) (lvren li ρ) (uren_ty X ρ) (uren_ty A ρ) (uren_tm N ρ) (uren_tm Ot ρ) (uren_tm C ρ) (uren_tm m ρ)
   | tyM l l' li X A B C j => tyM (lvren l ρ) (lvren l' ρ) (lvren li ρ) (uren_ty X ρ) (uren_ty A ρ) (uren_ty B ρ) (uren_tm C ρ) (uren_tm j ρ)
+  | tyIWi l lp li X A N D Ot C m => tyIWi (lvren l ρ) (lvren lp ρ) (lvren li ρ) (uren_ty X ρ) (uren_ty A ρ) (uren_tm N ρ) (uren_ty D ρ) (uren_tm Ot ρ) (uren_tm C ρ) (uren_tm m ρ)
   end
 with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
   match t with
@@ -597,6 +626,11 @@ with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
       tmCorec (lvren l ρ) (lvren l' ρ) (lvren li ρ) (uren_ty X ρ) (uren_ty A ρ) (uren_ty B ρ) (uren_tm C ρ) (lvren k ρ) (uren_ty Y ρ) (uren_tm c ρ) (uren_tm j ρ) (uren_tm y ρ)
   | tmOut l l' li X A B C j m =>
       tmOut (lvren l ρ) (lvren l' ρ) (lvren li ρ) (uren_ty X ρ) (uren_ty A ρ) (uren_ty B ρ) (uren_tm C ρ) (uren_tm j ρ) (uren_tm m ρ)
+  | tmSupii l lp li X A N D Ot C a cs =>
+      tmSupii (lvren l ρ) (lvren lp ρ) (lvren li ρ) (uren_ty X ρ) (uren_ty A ρ) (uren_tm N ρ) (uren_ty D ρ) (uren_tm Ot ρ) (uren_tm C ρ) (uren_tm a ρ) (uren_tm cs ρ)
+  | tmElimIWi l lp li l' X A N D Ot C M c m t =>
+      tmElimIWi (lvren l ρ) (lvren lp ρ) (lvren li ρ) (lvren l' ρ) (uren_ty X ρ) (uren_ty A ρ) (uren_tm N ρ) (uren_ty D ρ) (uren_tm Ot ρ) (uren_tm C ρ) (uren_ty M ρ) (uren_tm c ρ) (uren_tm m ρ) (uren_tm t ρ)
+  | tmIWi l lp li x s0 n d o c m => tmIWi (lvren l ρ) (lvren lp ρ) (lvren li ρ) (uren_tm x ρ) (uren_tm s0 ρ) (uren_tm n ρ) (uren_tm d ρ) (uren_tm o ρ) (uren_tm c ρ) (uren_tm m ρ)
   end
 with ucren (Γ : ctx) (ρ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -639,6 +673,7 @@ Fixpoint subst_ty (T : ty) (d : lsub) {struct T} : ty :=
   | tyDVec l n F => tyDVec l (subst_tm n d) (subst_ty F (llift d))
   | tyIWf l li X A N Ot C m => tyIWf l li (subst_ty X d) (subst_ty A d) (subst_tm N (llift d)) (subst_tm Ot (llift d)) (subst_tm C (llift (llift d))) (subst_tm m d)
   | tyM l l' li X A B C j => tyM l l' li (subst_ty X d) (subst_ty A (llift d)) (subst_ty B (llift (llift d))) (subst_tm C (llift (llift (llift d)))) (subst_tm j d)
+  | tyIWi l lp li X A N D Ot C m => tyIWi l lp li (subst_ty X d) (subst_ty A d) (subst_tm N (llift d)) (subst_ty D (llift (llift d))) (subst_tm Ot (llift d)) (subst_tm C (llift (llift (llift d)))) (subst_tm m d)
   end
 with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
   match t with
@@ -717,6 +752,11 @@ with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
       tmCorec l l' li (subst_ty X d) (subst_ty A (llift d)) (subst_ty B (llift (llift d))) (subst_tm C (llift (llift (llift d)))) k (subst_ty Y (llift d)) (subst_tm c (llift (llift d))) (subst_tm j d) (subst_tm y d)
   | tmOut l l' li X A B C j m =>
       tmOut l l' li (subst_ty X d) (subst_ty A (llift d)) (subst_ty B (llift (llift d))) (subst_tm C (llift (llift (llift d)))) (subst_tm j d) (subst_tm m d)
+  | tmSupii l lp li X A N D Ot C a cs =>
+      tmSupii l lp li (subst_ty X d) (subst_ty A d) (subst_tm N (llift d)) (subst_ty D (llift (llift d))) (subst_tm Ot (llift d)) (subst_tm C (llift (llift (llift d)))) (subst_tm a d) (subst_tm cs d)
+  | tmElimIWi l lp li l' X A N D Ot C M c m t =>
+      tmElimIWi l lp li l' (subst_ty X d) (subst_ty A d) (subst_tm N (llift d)) (subst_ty D (llift (llift d))) (subst_tm Ot (llift d)) (subst_tm C (llift (llift (llift d)))) (subst_ty M (llift (llift d))) (subst_tm c (llift (llift (llift d)))) (subst_tm m d) (subst_tm t d)
+  | tmIWi l lp li x s0 n d0 o c m => tmIWi l lp li (subst_tm x d) (subst_tm s0 d) (subst_tm n (llift d)) (subst_tm d0 (llift (llift d))) (subst_tm o (llift d)) (subst_tm c (llift (llift (llift d)))) (subst_tm m d)
   end
 with lcomp (d' : lsub) (d : lsub) {struct d'} : lsub :=       (* d' ∘ d *)
   match d' with
@@ -893,6 +933,38 @@ Definition iwfIH (l li l' : lvl) (X A : ty) (N Ot C : tm) (M : ty) (c a cs : tm)
        c⟨rlift (rlift (rlift ↑))⟩ C[llift (lsingle a)]
        (tmDNth (lmax l li) N[lsingle a]⟨↑⟩ (iwfFam l li X A N Ot C a)⟨rlift ↑⟩ cs⟨↑⟩ (var 0))).
 
+(** ** [IWi]: indexed families with infinitary children (M19_DESIGN.md)
+
+    [IWf] whose field [k] is a function from its domain [D[a, k]]. The
+    family's level is [l ⊔ li ⊔ lp] ([iwiL]). *)
+Notation iwiL l lp li := (lmax (lmax l li) lp).
+
+(** Field [k]'s codomain, in [Γ, k, y] for [a] in [Γ]: [IWi(…)(C[a, k, y])]. *)
+Definition iwiFamCod (l lp li : lvl) (X A : ty) (N : tm) (D : ty) (Ot C a : tm) : ty :=
+  tyIWi l lp li X⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩ D⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩
+    Ot⟨rlift ↑⟩⟨rlift ↑⟩ C⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩
+    C[llift (llift (lsingle a))].
+
+(** [IWi]'s children: field [k]'s type, in [Γ, k : Fin N[a]] for [a] in
+    [Γ]: [Π^{lp, iwiL}(y : D[a, k]). IWi(…)(C[a, k, y])]. The children of
+    [sup(a; cs)] are a [DVec^{iwiL}(N[a]; k. iwiFam a)]. *)
+Definition iwiFam (l lp li : lvl) (X A : ty) (N : tm) (D : ty) (Ot C a : tm) : ty :=
+  tyPi lp (iwiL l lp li) D[llift (lsingle a)] (iwiFamCod l lp li X A N D Ot C a).
+
+(** [elim_IWi]'s induction hypothesis: [λ^{0}(i : Fin N[a]). λ^{lp}(y : D[a, i]).
+    elim_IWi(…; C[a, i, y]; app(dnth^{iwiL}(N[a]; k. iwiFam a; cs; i), y))]. *)
+Definition iwiIH (l lp li l' : lvl) (X A : ty) (N : tm) (D : ty) (Ot C : tm) (M : ty) (c a cs : tm) : tm :=
+  lam lzero (lmax lp l') (tyFin N[lsingle a])
+    (lam lp l' D[llift (lsingle a)]
+       (tmElimIWi l lp li l' X⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩ D⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩
+          Ot⟨rlift ↑⟩⟨rlift ↑⟩ C⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩
+          M⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ c⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩
+          C[llift (llift (lsingle a))]
+          (app (tmDNth (iwiL l lp li) N[lsingle a]⟨↑⟩⟨↑⟩ (iwiFam l lp li X A N D Ot C a)⟨rlift ↑⟩⟨rlift ↑⟩
+                  cs⟨↑⟩⟨↑⟩ (var 1))
+             lp (iwiL l lp li) D[llift (lsingle a)]⟨↑⟩ (iwiFamCod l lp li X A N D Ot C a)⟨rlift ↑⟩
+             (var 0)))).
+
 (** The step telescope of [elim_IWf], as [Wf]'s: the motive's scrutinee
     type in [Γ, j : I]; the children's type in [Γ, a : A] (where [N], [Ot]
     and [C] are at [a/x]); the induction hypothesis's in [Γ, a, cs]; the
@@ -914,6 +986,32 @@ Notation iwfstepty l li X A N Ot C M :=
   (M⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩[lsingle2 Ot⟨↑⟩⟨↑⟩
      (tmSupi l li X⟨↑⟩⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩
         C⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ (var 2) (var 1))]).
+
+(** The step telescope of [elim_IWi] (M19), as [IWf]'s: the motive's
+    scrutinee type in [Γ, j : X]; the children's type in [Γ, a : A]; the
+    induction hypothesis's in [Γ, a, cs],
+    [Π^{0}(i : Fin N[a]). Π^{lp}(y : D[a, i]). M[C[a, i, y], app(dnth(cs; i), y)]];
+    the step's in [Γ, a, cs, ih]. *)
+Notation iwimotty l lp li X A N D Ot C :=
+  (tyIWi l lp li X⟨↑⟩ A⟨↑⟩ N⟨rlift ↑⟩ D⟨rlift (rlift ↑)⟩ Ot⟨rlift ↑⟩ C⟨rlift (rlift (rlift ↑))⟩ (var 0)).
+Notation iwicsty l lp li X A N D Ot C :=
+  (tyDVec (iwiL l lp li) N
+     (tyPi lp (iwiL l lp li) D
+        (tyIWi l lp li X⟨↑⟩⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ D⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ C⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩ C))).
+Notation iwiihty l lp li l' X A N D Ot C M :=
+  (tyPi lzero (lmax lp l') (tyFin N⟨↑⟩)
+     (tyPi lp l' D⟨rlift ↑⟩
+        M⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩[lsingle2 C⟨rlift (rlift ↑)⟩
+           (app (tmDNth (iwiL l lp li) N⟨↑⟩⟨↑⟩⟨↑⟩
+                   (tyPi lp (iwiL l lp li) D⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩
+                      (tyIWi l lp li X⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ D⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ C⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩ C⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩))
+                   (var 2) (var 1))
+              lp (iwiL l lp li) D⟨rlift ↑⟩⟨↑⟩
+              (tyIWi l lp li X⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ D⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ C⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩ C⟨rlift (rlift ↑)⟩⟨rlift ↑⟩)
+              (var 0))])).
+Notation iwistepty l lp li X A N D Ot C M :=
+  (M⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩[lsingle2 Ot⟨↑⟩⟨↑⟩
+     (tmSupii l lp li X⟨↑⟩⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ D⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩ Ot⟨rlift ↑⟩⟨rlift ↑⟩⟨rlift ↑⟩ C⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩ (var 2) (var 1))]).
 
 (** ** Heather's indexed [M] (M18_DESIGN.md, M18b)
 
@@ -1071,6 +1169,7 @@ Fixpoint gsubst_ty (T : ty) (σ : gsub) {struct T} : ty :=
   | tyDVec l n F => tyDVec l (gsubst_tm n σ) (gsubst_ty F σ)
   | tyIWf l li X A N Ot C m => tyIWf l li (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_tm Ot σ) (gsubst_tm C σ) (gsubst_tm m σ)
   | tyM l l' li X A B C j => tyM l l' li (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_ty B σ) (gsubst_tm C σ) (gsubst_tm j σ)
+  | tyIWi l lp li X A N D Ot C m => tyIWi l lp li (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_ty D σ) (gsubst_tm Ot σ) (gsubst_tm C σ) (gsubst_tm m σ)
   end
 with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
   match t with
@@ -1148,6 +1247,11 @@ with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
       tmCorec l l' li (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_ty B σ) (gsubst_tm C σ) k (gsubst_ty Y σ) (gsubst_tm c σ) (gsubst_tm j σ) (gsubst_tm y σ)
   | tmOut l l' li X A B C j m =>
       tmOut l l' li (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_ty B σ) (gsubst_tm C σ) (gsubst_tm j σ) (gsubst_tm m σ)
+  | tmSupii l lp li X A N D Ot C a cs =>
+      tmSupii l lp li (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_ty D σ) (gsubst_tm Ot σ) (gsubst_tm C σ) (gsubst_tm a σ) (gsubst_tm cs σ)
+  | tmElimIWi l lp li l' X A N D Ot C M c m t =>
+      tmElimIWi l lp li l' (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_ty D σ) (gsubst_tm Ot σ) (gsubst_tm C σ) (gsubst_ty M σ) (gsubst_tm c σ) (gsubst_tm m σ) (gsubst_tm t σ)
+  | tmIWi l lp li x s0 n d o c m => tmIWi l lp li (gsubst_tm x σ) (gsubst_tm s0 σ) (gsubst_tm n σ) (gsubst_tm d σ) (gsubst_tm o σ) (gsubst_tm c σ) (gsubst_tm m σ)
   end
 with gcsubst (Γ : ctx) (σ : gsub) {struct Γ} : ctx :=
   match Γ with
@@ -1191,6 +1295,7 @@ Fixpoint usubst_ty (T : ty) (φ : nat -> lvl) {struct T} : ty :=
   | tyDVec l n F => tyDVec (lvsubst l φ) (usubst_tm n φ) (usubst_ty F φ)
   | tyIWf l li X A N Ot C m => tyIWf (lvsubst l φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ) (usubst_tm Ot φ) (usubst_tm C φ) (usubst_tm m φ)
   | tyM l l' li X A B C j => tyM (lvsubst l φ) (lvsubst l' φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_ty B φ) (usubst_tm C φ) (usubst_tm j φ)
+  | tyIWi l lp li X A N D Ot C m => tyIWi (lvsubst l φ) (lvsubst lp φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ) (usubst_ty D φ) (usubst_tm Ot φ) (usubst_tm C φ) (usubst_tm m φ)
   end
 with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
   match t with
@@ -1279,6 +1384,11 @@ with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
       tmCorec (lvsubst l φ) (lvsubst l' φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_ty B φ) (usubst_tm C φ) (lvsubst k φ) (usubst_ty Y φ) (usubst_tm c φ) (usubst_tm j φ) (usubst_tm y φ)
   | tmOut l l' li X A B C j m =>
       tmOut (lvsubst l φ) (lvsubst l' φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_ty B φ) (usubst_tm C φ) (usubst_tm j φ) (usubst_tm m φ)
+  | tmSupii l lp li X A N D Ot C a cs =>
+      tmSupii (lvsubst l φ) (lvsubst lp φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ) (usubst_ty D φ) (usubst_tm Ot φ) (usubst_tm C φ) (usubst_tm a φ) (usubst_tm cs φ)
+  | tmElimIWi l lp li l' X A N D Ot C M c m t =>
+      tmElimIWi (lvsubst l φ) (lvsubst lp φ) (lvsubst li φ) (lvsubst l' φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ) (usubst_ty D φ) (usubst_tm Ot φ) (usubst_tm C φ) (usubst_ty M φ) (usubst_tm c φ) (usubst_tm m φ) (usubst_tm t φ)
+  | tmIWi l lp li x s0 n d o c m => tmIWi (lvsubst l φ) (lvsubst lp φ) (lvsubst li φ) (usubst_tm x φ) (usubst_tm s0 φ) (usubst_tm n φ) (usubst_tm d φ) (usubst_tm o φ) (usubst_tm c φ) (usubst_tm m φ)
   end
 with ucsubst (Γ : ctx) (φ : nat -> lvl) {struct Γ} : ctx :=
   match Γ with

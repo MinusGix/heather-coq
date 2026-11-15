@@ -180,7 +180,7 @@ Proof. now rewrite llk_llift. Qed.
 Ltac sub_rw1 :=
   push_subst;
   rewrite ?llk_llift0, ?single_subst_ty, ?single_subst, ?single2_subst, ?single2_subst_ty, ?lsucc_subst_ty,
-          ?single3_subst, ?subst_wIH, ?subst_wfIH, ?subst_tmNth, ?subst_iwfIH, ?subst_iwfFam,
+          ?single3_subst, ?subst_wIH, ?subst_wfIH, ?subst_tmNth, ?subst_iwfIH, ?subst_iwfFam, ?subst_iwiIH, ?subst_iwiFam, ?subst_iwiFamCod,
           ?subst_mOutCorec, ?llift_single_subst_ty, ?llift_single_subst, ?llift2_single_subst_ty,
           ?llift2_single_subst, ?llift_single2_subst,
           ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty, ?liftshift_llift by eauto with nf;
@@ -600,13 +600,27 @@ Proof.
     rewrite shift_llift, shift2_single2 by apply Hd. reflexivity.
 Qed.
 
+(** [elim_IWi]'s (M19), under its two binders. *)
+Lemma llift2_single2_subst_ty (T : ty) a cs d : LK nftm d ->
+  T[llift (llift (lsingle2 a cs))][llift (llift d)] =
+  T[llift (llift (llift (llift d)))][llift (llift (lsingle2 a[d] cs[d]))].
+Proof.
+  intros Hd. apply subst2_eq_ty; intros [|[|[|[|n]]]]; rewrite ?llk_llift; cbn; rewrite ?llk_llift; cbn; auto.
+  all: change (ren_tm ?x ?r) with x⟨r⟩.
+  1,2: rewrite !shift_llift; reflexivity.
+  rewrite !Nat.add_0_r, !Nat.add_1_r. cbn. rewrite llk_llift. change (ren_tm ?x ?r) with x⟨r⟩.
+  rewrite !shift_llift, shift2_single2 by apply Hd. reflexivity.
+Qed.
+
 (** [IWf] (M17b): a premise under binders whose types, like its own,
     commute with the substitution only by an equation, as [Properties]'
     [wk_I]: the lifted substitution is built along the premise's context
     as it comes, and both sides then agree down to the renamed leaves. *)
 Ltac sub_eqI :=
-  do 4 (sub_rw1; rewrite ?llift_single2_subst_ty, ?subst_tmDNth, ?lift2shift_llift_ty, ?lift2shift_llift, ?lift3shift_llift,
-                         ?llk_llift_S, ?llk_llift0 by eauto with nf);
+  (* depth 10: [IWi]'s induction hypothesis (M19) has its instance under
+     two binders of the premise's context's two *)
+  do 4 (sub_rw1; rewrite ?llift_single2_subst_ty, ?llift2_single2_subst_ty, ?subst_tmDNth, ?lift2shift_llift_ty, ?lift2shift_llift, ?lift3shift_llift,
+                         ?llk_llift_S, ?llk_llift0, ?single2_subst_ty by eauto 10 with nf);
   push_ren; push_subst; fold_subst; repeat wk_cong.
 Ltac sub_Isub :=
   first [ eassumption
@@ -648,6 +662,9 @@ Ltac sub_manual2 :=
   | |- eq_ty _ _ _ (tyDVec _ _ _) (tyEl _ _) _ => eapply eqty_El_dvec; sub_I
   | |- wf_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ => eapply wf_code_iwf; sub_I
   | |- eq_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwf; sub_I
+  | |- eq_ty _ _ _ (tyIWi _ _ _ _ _ _ _ _ _ _) (tyEl _ _) _ => eapply eqty_El_iwi; sub_I
+  | |- wf_tm _ _ _ (tmIWi _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_code_iwi; sub_I
+  | |- eq_tm _ _ _ (tmIWi _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwi; sub_I
   | |- wf_tm _ _ _ (tmDVec _ _ _) _ _ => eapply wf_code_dvec; sub_I
   | |- eq_tm _ _ _ (tmDVec _ _ _) _ _ _ => eapply eqtm_code_dvec; sub_I
   (* [M] (M18b): [out]'s type commutes with the substitution by an equation *)
@@ -668,6 +685,15 @@ Ltac sub_manual2 :=
   | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ (tmSupi _ _ _ _ _ _ _ _ _)) _ _ _ =>
       eapply eqtm_elimIWf_supi; sub_I
   | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimIWf; sub_I
+  (* [IWi] (M19) *)
+  | |- wf_ty _ _ _ (tyIWi _ _ _ _ _ _ _ _ _ _) _ => eapply wft_iwi; sub_I
+  | |- eq_ty _ _ _ (tyIWi _ _ _ _ _ _ _ _ _ _) _ _ => eapply eqty_iwi; sub_I
+  | |- wf_tm _ _ _ (tmSupii _ _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_supii; sub_I
+  | |- eq_tm _ _ _ (tmSupii _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_supii; sub_I
+  | |- wf_tm _ _ _ (tmElimIWi _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_elimIWi; sub_I
+  | |- eq_tm _ _ _ (tmElimIWi _ _ _ _ _ _ _ _ _ _ _ _ _ (tmSupii _ _ _ _ _ _ _ _ _ _ _)) _ _ _ =>
+      eapply eqtm_elimIWi_supii; sub_I
+  | |- eq_tm _ _ _ (tmElimIWi _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimIWi; sub_I
   (* [Wf] (M15a) *)
   | |- wf_tm _ _ _ (tmSupf _ _ _ _ _) _ _ => eapply wf_supf; sub_premise
   | |- eq_tm _ _ _ (tmSupf _ _ _ _ _) _ _ _ => eapply eqtm_supf; sub_premise

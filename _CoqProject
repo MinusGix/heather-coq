@@ -63,6 +63,7 @@ theories/Typing/UInst.v
 theories/Typing/MInst.v
 theories/Typing/PresupAux.v
 theories/Typing/PresupIWf.v
+theories/Typing/PresupIWi.v
 theories/Typing/PresupM.v
 theories/Typing/DVecEq.v
 theories/Typing/Presupposition.v
@@ -71,8 +72,10 @@ theories/Typing/DNth.v
 theories/Typing/DNthCore.v
 theories/Typing/DNthG.v
 theories/Typing/IWfIH.v
+theories/Typing/IWiIH.v
 theories/Typing/WfScope.v
 theories/Typing/WfScopeIWf.v
+theories/Typing/WfScopeIWi.v
 theories/Typing/RecEq.v
 theories/Typing/AlgStruct.v
 theories/Typing/CtxConv.v
@@ -87,6 +90,7 @@ theories/Typing/StaticCode.v
 theories/Typing/StaticCodeEq.v
 theories/Typing/DefAdm.v
 theories/Typing/IWfIHG.v
+theories/Typing/IWiIHG.v
 theories/Typing/TypedRed.v
 theories/Typing/Generic.v
 theories/Typing/DeclInstance.v
@@ -94,6 +98,7 @@ theories/LogRel/Def.v
 theories/LogRel/Layering.v
 theories/LogRel/Escape.v
 theories/LogRel/IWfAux.v
+theories/LogRel/IWiAux.v
 theories/LogRel/MAux.v
 theories/LogRel/Basics.v
 theories/LogRel/Modal.v
@@ -146,6 +151,12 @@ theories/Validity/M.v
 theories/Validity/MCorec.v
 theories/Validity/MStepV.v
 theories/Validity/MCorecV.v
+theories/Validity/IWi.v
+theories/Validity/IWiSp.v
+theories/Validity/IWiElimBase.v
+theories/Validity/IWiElimDnth.v
+theories/Validity/IWiElim.v
+theories/Validity/IWiCode.v
 theories/Validity/WfElim.v
 theories/Validity/Squash.v
 theories/Validity/Fundamental.v
@@ -163,6 +174,11 @@ theories/Validity/RulesSIWf.v
 theories/Validity/RulesSIWfTy.v
 theories/Validity/RulesSIWfSupi.v
 theories/Validity/RulesSIWfSupiTy.v
+theories/Validity/RulesSIWiF.v
+theories/Validity/RulesSIWi.v
+theories/Validity/RulesSIWiTy.v
+theories/Validity/RulesSIWiSupi.v
+theories/Validity/RulesSIWiSupiTy.v
 theories/Validity/RulesS.v
 theories/Validity/GvarS.v
 theories/Validity/Delta.v
@@ -186,6 +202,10 @@ theories/Validity/RecSIWf.v
 theories/Validity/RecSIWfCode.v
 theories/Validity/RecSIWfSupi.v
 theories/Validity/RecSIWfElim.v
+theories/Validity/RecSIWi.v
+theories/Validity/RecSIWiCode.v
+theories/Validity/RecSIWiSupi.v
+theories/Validity/RecSIWiElim.v
 theories/Validity/RecSSq.v
 theories/Validity/RecS.v
 theories/Validity/RecFT.v
@@ -196,6 +216,7 @@ theories/Validity/FundamentalM.v
 theories/Validity/Reducible.v
 theories/Validity/DeclConsequences.v
 theories/Validity/IWfIhEq.v
+theories/Validity/IWiIhEq.v
 theories/Validity/AlgPrereq.v
 theories/Validity/AlgSound.v
 theories/Validity/AlgConv.v
@@ -212,6 +233,7 @@ theories/Validity/AlgDecCode.v
 theories/Validity/AlgDecId.v
 theories/Validity/AlgDecW.v
 theories/Validity/AlgDecIWf.v
+theories/Validity/AlgDecIWi.v
 theories/Validity/AlgDecM.v
 theories/Validity/AlgDec.v
 theories/Validity/Consistency.v

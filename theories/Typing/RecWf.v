@@ -14,24 +14,26 @@ From DeLaM.Typing Require Import TypedDnf DNthCore.
     each typed under abstract locals by [dnth_ext] below. *)
 Lemma wf_dnth_eq G i Γ l n F cs t T : compt i -> lwf (gL G) l -> [ G ; Γ ⊢[ i ] ] ->
   [ G ; Γ ⊢[ i ] n : tyNat @ lzero ] -> [ G ; Γ ,, tyFin n @ lzero ⊢[ i ] F @ l ] ->
-  (forall m Δ, m <= 10 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
+  (forall m Δ, m <= 11 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
      [ G ; Δ ⊢[ i ] n⟨rshift m⟩ : tyNat @ lzero ]) ->
   (forall m Δ e K x, 2 <= m <= 9 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
-     [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x : tyFin n⟨rshift m⟩ @ lzero ] ->
+     [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x : tyFin n⟨rshift m⟩ @ lzero ] -> wk_tm G i Δ (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (tyFin n⟨rshift m⟩) ->
      [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x)] @ l ]) ->
   (forall m Δ, 2 <= m <= 2 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
-     [ G ; Δ ⊢[ i ] var 0 : tyFin n⟨rshift m⟩ @ lzero ] -> [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (var 0)] @ l ]) ->
+     [ G ; Δ ⊢[ i ] var 0 : tyFin n⟨rshift m⟩ @ lzero ] -> wk_tm G i Δ (var 0) (tyFin n⟨rshift m⟩) ->
+     [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (var 0)] @ l ]) ->
   (forall m Δ e K x e' K' x', 6 <= m <= 8 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
      [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x : tyFin n⟨rshift m⟩ @ lzero ] ->
      [ G ; Δ ⊢[ i ] app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x' : tyFin n⟨rshift m⟩ @ lzero ] ->
-     [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x
-                  ≅ app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x' : tyFin n⟨rshift m⟩ @ lzero ] ->
+     [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x ≅ app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x' : tyFin n⟨rshift m⟩ @ lzero ] ->
+     wk_tm G i Δ (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (tyFin n⟨rshift m⟩) -> wk_tm G i Δ (app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x') (tyFin n⟨rshift m⟩) -> wk_eq G i Δ (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x') (tyFin n⟨rshift m⟩) ->
      [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x)]
                   ≅ F⟨rlift (rshift m)⟩[lsingle (app e' lzero lzero (tyFin K') (tyFin n⟨rshift (S m)⟩) x')] @ l ]) ->
   (forall m Δ e K x, m <= 2 -> ctx_extn m Δ Γ -> [ G ; Δ ⊢[ i ] ] ->
      [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x : tyFin n⟨rshift m⟩ @ lzero ] ->
      [ G ; Δ ⊢[ i ] var 0 : tyFin n⟨rshift m⟩ @ lzero ] ->
      [ G ; Δ ⊢[ i ] app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x ≅ var 0 : tyFin n⟨rshift m⟩ @ lzero ] ->
+     wk_tm G i Δ (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (tyFin n⟨rshift m⟩) -> wk_tm G i Δ (var 0) (tyFin n⟨rshift m⟩) -> wk_eq G i Δ (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x) (var 0) (tyFin n⟨rshift m⟩) ->
      [ G ; Δ ⊢[ i ] F⟨rlift (rshift m)⟩[lsingle (app e lzero lzero (tyFin K) (tyFin n⟨rshift (S m)⟩) x)]
                   ≅ F⟨rlift (rshift m)⟩[lsingle (var 0)] @ l ]) ->
   [ G ; Γ ⊢[ i ] cs : tyDVec l n F @ l ] -> [ G ; Γ ⊢[ i ] t : tyFin n @ lzero ] -> F[lsingle t] = T ->
@@ -96,6 +98,15 @@ Proof using HG.
   cbn [brDecls List.app br_nu br_ar] in *; unfold gv, gu; wnorm; wglob.
 Qed.
 
+(** [elim_IWi]'s branch (M19c), as [elim_IWf]'s: its induction
+    hypothesis's type applies a [dnth] to the field's argument. *)
+Lemma wf_brG_64 : [ ⊢ brG 64 G ].
+Proof using HG.
+  pose proof (uwk_glob (br_nu 64) G HG) as Hu.
+  unfold brG, gctx_uwk in *; cbn [gL gΨ] in *.
+  cbn [brDecls List.app br_nu br_ar] in *; unfold gv, gu; wnorm; wglob.
+Qed.
+
 Lemma wf_brG k : k < nbr -> [ ⊢ brG k G ].
 Proof using HG.
   intros Hk. assert (HW : 39 <= k < 43 \/ ~ 39 <= k < 43) by lia.
@@ -106,6 +117,10 @@ Proof using HG.
   destruct HI as [HI|HI]; [now apply (wf_brG_IWf HG)|].
   assert (H60 : k = 60 \/ k <> 60) by lia.
   destruct H60 as [->|H60]; [exact wf_brG_60|].
+  assert (HJ : 61 <= k < 64 \/ ~ 61 <= k < 64) by lia.
+  destruct HJ as [HJ|HJ]; [now apply (wf_brG_IWi HG)|].
+  assert (H64 : k = 64 \/ k <> 64) by lia.
+  destruct H64 as [->|H64]; [exact wf_brG_64|].
   pose proof (uwk_glob (br_nu k) G HG) as Hu.
   unfold brG, gctx_uwk in *; cbn [gL gΨ] in *.
   br_all ltac:(destruct k; [first [exfalso; lia | cbn [brDecls List.app br_nu br_ar] in *; unfold gv, gu;

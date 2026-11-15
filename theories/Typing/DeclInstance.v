@@ -6,6 +6,7 @@
     layer [i] (D or M); at such a layer [typeof i = i], so weakening and
     conversion stay inside the layer. *)
 From DeLaM.Typing Require Export Generic Presupposition StaticCode.
+From DeLaM.Typing Require Import PresupIWi.
 
 Section Decl.
 Context (i : layer) (Hi : compt i).
@@ -259,12 +260,26 @@ Proof using .
   (* the codes of DVec and IWf (M17c) *)
   - intros; apply eqtm_code_dvec; auto.
   - intros; apply eqtm_code_iwf; auto.
+  (* the code of IWi (M19c) *)
+  - intros; apply eqtm_code_iwi; auto.
   (* indexed coinductive types (M18b) *)
   - intros; apply eqty_M; auto.
   - intros; apply eqtm_corec; auto.
   - intros * Hlk Hl'k' Hlik HX HXX HA HAA HB HBB HC HCC Hjj (Hn & Hn' & Hν).
     refine (conj _ (conj _ _)); [constructor; auto .. |].
     apply eqtm_out; auto.
+  (* indexed families with infinitary children (M19b), as IWf's *)
+  - intros; apply eqty_iwi; auto.
+  - intros; apply eqtm_supii; auto.
+  - intros * Hlk Hlpk Hlik Hl'k' HX HXX HA HAA HN HNN HD HDD HO HOO HC HCC HM HMM EI Hc Hmm (Hn & Hn' & Hν).
+    pose proof (lequiv_wf_l _ _ _ Hlk) as Wl. pose proof (lequiv_wf_l _ _ _ Hlpk) as Wlp.
+    pose proof (lequiv_wf_l _ _ _ Hlik) as Wli. pose proof (lequiv_wf_l _ _ _ Hl'k') as Wl'.
+    assert (HS : IWiSig (G := G) (i := i) Γ l lp li X A N D Ot C) by (unfold IWiSig; auto 10).
+    refine (conj _ (conj _ _)); [constructor; auto .. |].
+    apply eqtm_elimIWi; auto.
+    + exact (IWi_mot_wf Hty Hv HS).
+    + exact (IWi_cs_wf Hty Hv HS).
+    + exact (eqty_wf_l Hty EI).
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].

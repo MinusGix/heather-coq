@@ -94,9 +94,9 @@ def main():
     for o in ops:
         holes = ' '.join('?t' if i == argpos else '_' for i in range(expl[o]))
         pat = f"@{o} {' '.join(['_'] * IMPL[o])} {holes}".replace('  ', ' ')
-        print(f"  | |- context [{pat}] => let h := head_of t in {name}_at h ltac:(fun L => rewrite L)")
+        print(f"  | |- context [{pat}] => let h := head_of t in {name}_at h ltac:(fun L => rewrite !L)")
         if hyps:
-            print(f"  | H : context [{pat}] |- _ => let h := head_of t in {name}_at h ltac:(fun L => rewrite L in H)")
+            print(f"  | H : context [{pat}] |- _ => let h := head_of t in {name}_at h ltac:(fun L => rewrite !L in H)")
     print("  end.")
 
 # number of implicit arguments of each operation (the explicit ones are read

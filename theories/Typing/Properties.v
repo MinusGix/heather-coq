@@ -578,6 +578,11 @@ Ltac wk_I :=
         | solve [wk_Iprem wf_ty_regboth] | solve [wk_Iprem eq_ty_regall]
         | solve [wk_Iprem wf_tm_regtm] ].
 
+Ltac wk_codeIWi G i Δ l lp s' n' d' :=
+  let Hd2 := fresh "Hd2" in
+  assert (Hd2 : [ G ; Δ ,, tyEl l s' @ l ,, tyFin n' @ lzero ⊢[ i ] d' : tyU lp @ lsuc lp ])
+    by first [solve [wk_premise] | solve [wk_I]];
+  pose proof (lift_tm Hd2 (lle_self_typeof i)).
 Ltac wk_manual :=
   match goal with
   (* [W] (M13a) *)
@@ -599,6 +604,14 @@ Ltac wk_manual :=
   | |- eq_ty _ _ _ (tyDVec _ _ _) (tyEl _ _) _ => eapply eqty_El_dvec; wk_I
   | |- wf_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ => eapply wf_code_iwf; wk_I
   | |- eq_tm _ _ _ (tmIWf _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_code_iwf; wk_I
+  (* the code of [IWi] (M19c): the child index's context holds the
+     domains' decoding [El d] under two binders, typed first *)
+  | |- eq_ty ?G ?i ?Δ (tyIWi ?l ?lp _ _ (tyEl _ ?s') ?n' (tyEl _ ?d') _ _ _) (tyEl _ _) _ =>
+      wk_codeIWi G i Δ l lp s' n' d'; eapply eqty_El_iwi; wk_I
+  | |- wf_tm ?G ?i ?Δ (tmIWi ?l ?lp _ _ ?s' ?n' ?d' _ _ _) _ _ =>
+      wk_codeIWi G i Δ l lp s' n' d'; eapply wf_code_iwi; wk_I
+  | |- eq_tm ?G ?i ?Δ (tmIWi ?l ?lp _ _ ?s' ?n' ?d' _ _ _) _ _ _ =>
+      wk_codeIWi G i Δ l lp s' n' d'; eapply eqtm_code_iwi; wk_I
   | |- wf_tm _ _ _ (tmDVec _ _ _) _ _ => eapply wf_code_dvec; wk_I
   | |- eq_tm _ _ _ (tmDVec _ _ _) _ _ _ => eapply eqtm_code_dvec; wk_I
   (* [M] (M18b) *)
@@ -620,6 +633,15 @@ Ltac wk_manual :=
   | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ (tmSupi _ _ _ _ _ _ _ _ _)) _ _ _ =>
       wk_rewrite; push_ren; eapply eqtm_elimIWf_supi; wk_I
   | |- eq_tm _ _ _ (tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimIWf; wk_I
+  (* [IWi] (M19) *)
+  | |- wf_ty _ _ _ (tyIWi _ _ _ _ _ _ _ _ _ _) _ => eapply wft_iwi; wk_I
+  | |- eq_ty _ _ _ (tyIWi _ _ _ _ _ _ _ _ _ _) _ _ => eapply eqty_iwi; wk_I
+  | |- wf_tm _ _ _ (tmSupii _ _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_supii; wk_I
+  | |- eq_tm _ _ _ (tmSupii _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_supii; wk_I
+  | |- wf_tm _ _ _ (tmElimIWi _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ => eapply wf_elimIWi; wk_I
+  | |- eq_tm _ _ _ (tmElimIWi _ _ _ _ _ _ _ _ _ _ _ _ _ (tmSupii _ _ _ _ _ _ _ _ _ _ _)) _ _ _ =>
+      wk_rewrite; push_ren; eapply eqtm_elimIWi_supii; wk_I
+  | |- eq_tm _ _ _ (tmElimIWi _ _ _ _ _ _ _ _ _ _ _ _ _ _) _ _ _ => eapply eqtm_elimIWi; wk_I
   (* [ind_∥∥] (M16a): its step's type, through the induction hypotheses *)
   | |- wf_tm _ _ _ (tmElimSq _ _ _ _ _ _) _ _ => eapply wf_elimSq; wk_premise
   | |- eq_tm _ _ _ (tmElimSq _ _ _ _ _ (tmSq _ _ _)) _ _ _ => eapply eqtm_elimSq_sq; wk_premise

@@ -139,7 +139,10 @@ Proof.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l il1 ilp1 ili1 il2 ilp2 ili2 iX iX' iA iA' iN iN' iD iD' iO iO' iC iC' im im' iidxR idomR ipdR R
+                    Hl Hil2 Hilp2 Hili2 Hiw Hiwp Hiwi HT HT' HiX HiX' HiA HiA' HiN HiN' HiD HiD' HiO HiO' HiC HiC' Him Him'
+                    HiXX HiAA HiNN HiDD HiOO HiCC Himm iidxAd Hiisym Hiistr idomAd iarAd iotAd ipdAd ipdE ipdMon ichAd igC iixAd HR];
     intros T1 T1' H1 H1'.
   - eapply LRnat; eauto using tyred_trans.
   - eapply LRU with (l1 := l1) (l2 := l2); eauto using tyred_trans.
@@ -163,6 +166,10 @@ Proof.
   - exact (LRm n rec G Γ T1 T1' l _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ midxR mshR mposR R Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi
              (tyred_trans _ _ _ _ H1 HT) (tyred_trans _ _ _ _ H1' HT') HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
              HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR).
+  - exact (LRiwi n rec G Γ T1 T1' l _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ iidxR idomR ipdR R
+             Hl Hil2 Hilp2 Hili2 Hiw Hiwp Hiwi (tyred_trans _ _ _ _ H1 HT) (tyred_trans _ _ _ _ H1' HT')
+             HiX HiX' HiA HiA' HiN HiN' HiD HiD' HiO HiO' HiC HiC' Him Him'
+             HiXX HiAA HiNN HiDD HiOO HiCC Himm iidxAd Hiisym Hiistr idomAd iarAd iotAd ipdAd ipdE ipdMon ichAd igC iixAd HR).
 Qed.
 
 Theorem LR_red_tm n rec G Γ T T' l R :
@@ -196,7 +203,10 @@ Proof.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l il1 ilp1 ili1 il2 ilp2 ili2 iX iX' iA iA' iN iN' iD iD' iO iO' iC iC' im im' iidxR idomR ipdR R
+                    Hl Hil2 Hilp2 Hili2 Hiw Hiwp Hiwi HT HT' HiX HiX' HiA HiA' HiN HiN' HiD HiD' HiO HiO' HiC HiC' Him Him'
+                    HiXX HiAA HiNN HiDD HiOO HiCC Himm iidxAd Hiisym Hiistr idomAd iarAd iotAd ipdAd ipdE ipdMon ichAd igC iixAd HR];
     intros t t' t1 t1' Htt H1 H1';
     first [exact (ModRel_red_tm HM _ _ _ _ Htt H1 H1') | apply HR; apply HR in Htt].
   - inversion Htt as [? ? w w' Hw Hw' Heq Hnf]; subst.
@@ -315,6 +325,14 @@ Proof.
     intros k. refine (MRn_red k (ms_geq HM) (Htt k) _ _).
     + eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
     + eapply tmred_along; [exact H1' | exact HT' | solve [apply lequiv_sym; assumption]].
+  - (* IWi: as IWf *)
+    destruct (IWiRel_inv Htt) as (w & w' & Hr & Hr' & Heq & Hn).
+    econstructor; [| | exact Heq | exact Hn].
+    + eapply tmred_trans; [|exact Hr]. eapply tmred_along; [exact H1 | exact HT | solve [apply lequiv_sym; assumption]].
+    + eapply tmred_trans; [|exact Hr']. eapply (tmred_lconv _ _ _ _ l); [|solve [apply lequiv_sym; assumption]].
+      eapply tmred_conv; [apply ge_typeof | exact H1' |].
+      eapply eqty_trans; [apply HT'|]. eapply eqty_lconv; [|exact Hl].
+      apply eqty_sym, geq_ty_sound, geq_ty_iwi; auto using lequiv_sym.
 Qed.
 
 End Reduction.

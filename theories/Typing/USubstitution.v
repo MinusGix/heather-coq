@@ -194,11 +194,41 @@ Proof.
   reflexivity.
 Qed.
 
+(** [IWi]'s field type and [elim_IWi]'s induction hypothesis (M19). *)
+Lemma usubst_iwiFamCod l lp li X A N D Ot C a φ :
+  usubst_ty (iwiFamCod l lp li X A N D Ot C a) φ =
+  iwiFamCod (lvsubst l φ) (lvsubst lp φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ)
+    (usubst_ty D φ) (usubst_tm Ot φ) (usubst_tm C φ) (usubst_tm a φ).
+Proof.
+  unfold iwiFamCod. cbn [usubst_tm usubst_ty lvsubst].
+  rewrite ?usubst_ren_ty', ?usubst_ren', ?usubst_llift2_single. reflexivity.
+Qed.
+Lemma usubst_iwiFam l lp li X A N D Ot C a φ :
+  usubst_ty (iwiFam l lp li X A N D Ot C a) φ =
+  iwiFam (lvsubst l φ) (lvsubst lp φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ)
+    (usubst_ty D φ) (usubst_tm Ot φ) (usubst_tm C φ) (usubst_tm a φ).
+Proof.
+  unfold iwiFam. cbn [usubst_tm usubst_ty lvsubst].
+  rewrite usubst_iwiFamCod, usubst_llift_single_ty. reflexivity.
+Qed.
+Lemma usubst_iwiIH l lp li l' X A N D Ot C M c a cs φ :
+  usubst_tm (iwiIH l lp li l' X A N D Ot C M c a cs) φ =
+  iwiIH (lvsubst l φ) (lvsubst lp φ) (lvsubst li φ) (lvsubst l' φ) (usubst_ty X φ) (usubst_ty A φ)
+    (usubst_tm N φ) (usubst_ty D φ) (usubst_tm Ot φ) (usubst_tm C φ) (usubst_ty M φ) (usubst_tm c φ)
+    (usubst_tm a φ) (usubst_tm cs φ).
+Proof.
+  unfold iwiIH.
+  repeat progress (cbn [usubst_tm usubst_ty lvsubst];
+    rewrite ?usubst_tmDNth, ?usubst_ren_ty', ?usubst_ren', ?usubst_lsingle, ?usubst_llift_single_ty,
+      ?usubst_llift2_single, ?usubst_iwiFam, ?usubst_iwiFamCod).
+  reflexivity.
+Qed.
+
 Ltac us_rewrite :=
   rewrite ?usubst_lsingle_ty, ?usubst_lsingle2_ty, ?usubst_lsucc_ty, ?usubst_lsingle, ?usubst_lsingle2,
     ?usubst_ren_ty', ?usubst_ren', ?usubst_gren_ty', ?usubst_gren_ctx', ?usubst_gsingle,
     ?usubst_gsingle_ty, ?usubst_gren_tm',
-    ?usubst_subst_ty', ?usubst_lsingle3, ?usubst_wIH, ?usubst_wfIH, ?usubst_tmNth, ?usubst_iwfIH, ?usubst_iwfFam, ?usubst_tmDNth, ?usubst_mOutCorec, ?motT_usubst, ?mott_usubst, ?mkrb_usubst, ?wrapMT_usubst, ?wrapMt_usubst.
+    ?usubst_subst_ty', ?usubst_lsingle3, ?usubst_wIH, ?usubst_wfIH, ?usubst_tmNth, ?usubst_iwfIH, ?usubst_iwfFam, ?usubst_iwiIH, ?usubst_iwiFam, ?usubst_iwiFamCod, ?usubst_tmDNth, ?usubst_mOutCorec, ?motT_usubst, ?mott_usubst, ?mkrb_usubst, ?wrapMT_usubst, ?wrapMt_usubst.
 
 Ltac us_push :=
   cbn [usubst_ty usubst_tm ucsubst ulsubst lvsubst gousubst gctx_usubst gdecl_usubst map gL gΨ gext typeof uup] in *.
@@ -370,6 +400,9 @@ Ltac us_rw_all_at h k := lazymatch h with
   | @tmNth => k usubst_tmNth
   | @iwfIH => k usubst_iwfIH
   | @iwfFam => k usubst_iwfFam
+  | @iwiIH => k usubst_iwiIH
+  | @iwiFam => k usubst_iwiFam
+  | @iwiFamCod => k usubst_iwiFamCod
   | @tmDNth => k usubst_tmDNth
   | @mOutCorec => k usubst_mOutCorec
   | @ren_ty => k usubst_ren_ty'
@@ -389,19 +422,20 @@ Ltac us_rw_all_at h k := lazymatch h with
   | @wrapMt => k wrapMt_usubst
   end.
 Ltac us_rw_all := repeat match goal with
-  | |- context [@usubst_ty ?t _] => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite L)
-  | H : context [@usubst_ty ?t _] |- _ => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite L in H)
-  | |- context [@usubst_tm ?t _] => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite L)
-  | H : context [@usubst_tm ?t _] |- _ => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite L in H)
-  | |- context [@ucsubst ?t _] => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite L)
-  | H : context [@ucsubst ?t _] |- _ => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite L in H)
+  | |- context [@usubst_ty ?t _] => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite !L)
+  | H : context [@usubst_ty ?t _] |- _ => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite !L in H)
+  | |- context [@usubst_tm ?t _] => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite !L)
+  | H : context [@usubst_tm ?t _] |- _ => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite !L in H)
+  | |- context [@ucsubst ?t _] => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite !L)
+  | H : context [@ucsubst ?t _] |- _ => let h := head_of t in us_rw_all_at h ltac:(fun L => rewrite !L in H)
   end.
 (* [IWf]'s telescope (M17b): pushing into [dnth]'s family and the step's
    [sup_i] exposes further instances, so those goals get more rounds *)
 Ltac us_rewrite_all := us_rw_all; us_push;
   try (match goal with
        | |- context [tmSupi] => idtac | |- context [tmDNth] => idtac
-       | H : context [tmSupi] |- _ => idtac | H : context [tmDNth] |- _ => idtac end;
+       | H : context [tmSupi] |- _ => idtac | H : context [tmDNth] |- _ => idtac
+       | |- context [tmSupii] => idtac | H : context [tmSupii] |- _ => idtac end;
        repeat (progress us_rw_all; us_push)).
 
 (** The branch premises: the induction hypotheses at [uupn nu φ]. *)
@@ -614,7 +648,7 @@ Lemma red_usubst_both :
   (forall T U, red_ty T U -> forall φ, red_ty (usubst_ty T φ) (usubst_ty U φ)).
 Proof.
   apply red_both; intros; cbn [usubst_tm usubst_ty ucsubst gousubst];
-    rewrite ?usubst_lsingle, ?usubst_lsingle2, ?usubst_lsingle3, ?usubst_wIH, ?usubst_wfIH, ?usubst_iwfIH, ?usubst_mOutCorec, ?usubst_gsingle; try now constructor.
+    rewrite ?usubst_lsingle, ?usubst_lsingle2, ?usubst_lsingle3, ?usubst_wIH, ?usubst_wfIH, ?usubst_iwfIH, ?usubst_iwiIH, ?usubst_mOutCorec, ?usubst_gsingle; try now constructor.
   all: try (constructor; auto; fail).
   (* δ: the body's instance *)
   all: try solve [change (usubst_tm (subst_tm ?b ?d) ?φ) with (b[d][φ]ᵤ); rewrite usubst_subst; constructor].

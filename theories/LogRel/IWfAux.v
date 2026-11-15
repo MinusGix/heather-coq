@@ -206,6 +206,35 @@ Proof using EL.
   injection Es as ->. exact Hm.
 Qed.
 
+(** Natural numbers and positions are related in every world (both
+    syntactic: their clauses are reductions, conversions and neutrals). *)
+Lemma NatRel_kw {G Γ} (ρ : kwk G Γ) : forall t t', NatRel G Γ t t' -> NatRel (kw_G ρ) (kw_Δ ρ) (ktm ρ t) (ktm ρ t').
+Proof using EL.
+  apply (NatRel_mut G Γ (fun t t' _ => NatRel (kw_G ρ) (kw_Δ ρ) (ktm ρ t) (ktm ρ t'))
+                        (fun t t' _ => NatNf (kw_G ρ) (kw_Δ ρ) (ktm ρ t) (ktm ρ t'))).
+  - intros t t' w w' Hw Hw' Heq _ IH.
+    pose proof (kw_tmred ρ Hw) as Hw1. pose proof (kw_tmred ρ Hw') as Hw1'.
+    pose proof (kw_geq_tm ρ Heq) as Heq1. rewrite kty_tyNat in Hw1, Hw1', Heq1.
+    econstructor; [exact Hw1 | exact Hw1' | exact Heq1 | exact IH].
+  - rewrite ktm_zero; constructor.
+  - intros; rewrite !ktm_succ; now constructor.
+  - intros ν ν' H; constructor. pose proof (kw_gne_tm ρ H) as X. now rewrite kty_tyNat in X.
+Qed.
+
+Lemma PosRel_kw {G Γ} (ρ : kwk G Γ) {k k' p p'} : PosRel G Γ k k' p p' ->
+  PosRel (kw_G ρ) (kw_Δ ρ) (ktm ρ k) (ktm ρ k') (ktm ρ p) (ktm ρ p').
+Proof using EL.
+  induction 1 as [k k' m m' Hk Hk' Hm | k k' m m' p p' Hk Hk' _ IH | k k' p p' Ek Hp].
+  - rewrite !ktm_posHd. apply pos_hd; [exact (kw_tmred_succ Hk ρ) | exact (kw_tmred_succ Hk' ρ) | exact (NatRel_kw ρ _ _ Hm)].
+  - rewrite !ktm_posTl. apply pos_tl; [exact (kw_tmred_succ Hk ρ) | exact (kw_tmred_succ Hk' ρ) | exact IH].
+  - apply pos_ne.
+    + assert (X : [ kw_G ρ ; kw_Δ ρ ⊢g ktm ρ k ≅ ktm ρ k' : kty ρ tyNat @ lzero ]).
+      { eapply weakening_r; [exact (gwa_eqtm (kw_gok ρ) (kw_glob ρ) Ek) | exact ge_typeof
+                            | apply wk_wf_wkr, (kw_wf ρ) | exact (kw_ctx ρ)]. }
+      now rewrite kty_tyNat in X.
+    + pose proof (kw_gne_tm ρ Hp) as X. now rewrite kty_tyFin in X.
+Qed.
+
 End IWfAux.
 
 Lemma liftshift_single_var (t : tm) : nftm t -> t⟨rlift ↑⟩[lsingle (var 0)] = t.

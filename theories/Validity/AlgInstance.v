@@ -663,6 +663,11 @@ Proof using .
     refine (conj (@geq_tm_code_iwf DE DEL _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hl Hli Hx Ex Hs Es Hn En Eo Ec Em) _).
     eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmIWf | apply whnf_tmIWf |].
     eapply actmnf_code_iwf; first [eapply lequiv_leqv; eassumption | eassumption].
+  (* the code of IWi (M19c) *)
+  - intros * Hl Hlp Hli Hx (Ex & Dx) Hs (Es & Ds) Hn (En & Dn) Hd (Ed & Dd) (Eo & Dov) (Ec & Dc) (Em & Dm).
+    refine (conj (geq_tm_code_iwi (GenericEqLaws := DEL) Hl Hlp Hli Hx Ex Hs Es Hn En Hd Ed Eo Ec Em) _).
+    eapply actm_red; [constructor | apply whnf_tyU | constructor | constructor | apply whnf_tmIWi | apply whnf_tmIWi |].
+    eapply actmnf_code_iwi; first [eapply lequiv_leqv; eassumption | eassumption].
   (* indexed coinductive types (M18b) *)
   - intros * Hl Hl' Hli HX (EX & DX) HA (EA & DA) HB (EB & DB) HC (EC & DC) (Ej & Dj).
     refine (conj (geq_ty_M (GenericEqLaws := DEL) Hl Hl' Hli HX EX HA EA HB EB HC EC Ej) _).
@@ -679,6 +684,24 @@ Proof using .
     destruct (ne_nee Dν ETν) as (W0 & Xν & _).
     exists (mOutTy l l' li X A B C j). split.
     + eapply actmne_out; exact Xν.
+    + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EY))).
+  (* indexed families with infinitary children (M19b), as IWf's *)
+  - intros * Hl Hlp Hli HX (EX & DX) HA (EA & DA) HN (EN & DN) HD (ED & DD) HO (EO & DO) HC (EC & DC) (Em & Dm).
+    refine (conj (geq_ty_iwi (GenericEqLaws := DEL) Hl Hlp Hli HX EX HA EA HN EN HD ED HO EO HC EC Em) _).
+    eapply act_red; [constructor | constructor | apply whnf_tyIWi | apply whnf_tyIWi |].
+    eapply actnf_iwi; first [eapply lequiv_leqv; eassumption | eassumption].
+  - intros * Hl Hlp Hli HX EX HA EA HN EN HD ED HO EO HC EC (Ea & Da) (Ecs & Dcs).
+    refine (conj (geq_tm_supii (GenericEqLaws := DEL) Hl Hlp Hli HX EX HA EA HN EN HD ED HO EO HC EC Ea Ecs) _).
+    eapply actm_red; [constructor | apply whnf_tyIWi | constructor | constructor | apply whnf_supii | apply whnf_supii |].
+    eapply actmnf_supii; eassumption.
+  - intros * H1 H2 H3 H4 HX (EX & DX) HA (EA & DA) HN (EN & DN) HD (ED & DD) HO (EO & DO) HC (EC & DC)
+      HM (EM & DM) (EI & DI) (Ec & Dc) (Em & Dm) ((Hn & Hn' & Eν) & T0 & Dν & ETν).
+    pose proof (gne_tm_elimIWi (GenericEqLaws := DEL) H1 H2 H3 H4 HX EX HA EA HN EN HD ED HO EO HC EC HM EM EI Ec Em
+                  (conj Hn (conj Hn' Eν))) as Y.
+    refine (conj Y _). destruct Y as (_ & _ & EY).
+    destruct (ne_nee Dν ETν) as (W0 & Xν & _).
+    exists M[lsingle2 m ν]. split.
+    + eapply actmne_elimIWi; first [eapply lequiv_leqv; eassumption | eassumption].
     + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EY))).
 Qed.
 

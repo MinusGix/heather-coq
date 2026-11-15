@@ -446,6 +446,59 @@ Proof using ihC ihT.
 Qed.
 
 
+(** Indexed families with infinitary children (M19b), as [IWf]'s with the
+    domain; the signature is shared with [sup_ii]'s and [elim_IWi]'s
+    synthesis ([TCSynth]). *)
+Lemma dec_iwi_sig l lp li X A N D Ot C :
+  sz_ty X < n -> sz_ty A < n -> sz_tm N < n -> sz_ty D < n -> sz_tm Ot < n -> sz_tm C < n ->
+  forall G i Γ, i <> lV -> [ G ; Γ ⊢[ typeof i ] ] ->
+  IWiSig (G := G) (i := i) Γ l lp li X A N D Ot C \/ ~ IWiSig (G := G) (i := i) Γ l lp li X A N D Ot C.
+Proof using ihC ihT.
+  intros SX SA SN SD SO SC G i Γ Hv HΓ.
+  destruct (lwf_Dec (gL G) l) as [Hl | Hn]; [| right; intros (H & _); contradiction].
+  destruct (lwf_Dec (gL G) lp) as [Hlp | Hn]; [| right; intros (_ & H & _); contradiction].
+  destruct (lwf_Dec (gL G) li) as [Hli | Hn]; [| right; intros (_ & _ & H & _); contradiction].
+  destruct (ihT X SX G i Γ li HΓ) as [HX | Hn]; [| right; intros (_ & _ & _ & H & _); contradiction].
+  destruct (ihT A SA G i Γ l HΓ) as [HA | Hn]; [| right; intros (_ & _ & _ & _ & H & _); contradiction].
+  assert (HΓA : [ G ; Γ ,, A @ l ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓ | exact (lift_to_typeof_ty HA) | exact Hl]).
+  assert (HNat : [ G ; Γ ,, A @ l ⊢[ typeof i ] tyNat @ lzero ])
+    by (apply wft_nat; [exact (typeof_notV i) | rewrite typeof_idem; exact HΓA]).
+  destruct (ihC N SN G i _ _ _ HNat) as [HN | Hn]; [| right; intros (_ & _ & _ & _ & _ & H & _); contradiction].
+  assert (HF : [ G ; Γ ,, A @ l ⊢[ i ] tyFin N @ lzero ]) by (apply wft_fin; [exact Hv | exact HN]).
+  assert (HΓAF : [ G ; Γ ,, A @ l ,, tyFin N @ lzero ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓA | exact (lift_to_typeof_ty HF) | exact I]).
+  destruct (ihT D SD G i _ lp HΓAF) as [HD | Hn];
+    [| right; intros (_ & _ & _ & _ & _ & _ & H & _); contradiction].
+  assert (HΓAFD : [ G ; Γ ,, A @ l ,, tyFin N @ lzero ,, D @ lp ⊢[ typeof i ] ])
+    by (apply wfc_ext; [exact HΓAF | exact (lift_to_typeof_ty HD) | exact Hlp]).
+  pose proof (wk1_ty_g G i _ _ _ _ _ HΓA HX) as HX1.
+  destruct (ihC Ot SO G i _ _ _ (lift_to_typeof_ty HX1)) as [HO | Hn];
+    [| right; intros (_ & _ & _ & _ & _ & _ & _ & H & _); contradiction].
+  pose proof (wk1_ty_g G i _ _ _ _ _ HΓAF HX1) as HX2.
+  pose proof (wk1_ty_g G i _ _ _ _ _ HΓAFD HX2) as HX3.
+  destruct (ihC C SC G i _ _ _ (lift_to_typeof_ty HX3)) as [HC | Hn];
+    [| right; intros (_ & _ & _ & _ & _ & _ & _ & _ & H); contradiction].
+  left; unfold IWiSig; auto 10.
+Qed.
+
+Lemma dec_tyIWi l lp li X A N D Ot C m :
+  sz_ty (tyIWi l lp li X A N D Ot C m) <= n -> TYD (tyIWi l lp li X A N D Ot C m).
+Proof using ihC ihT.
+  intros Hsz G i Γ k HΓ.
+  destruct (layer_eq_dec i lV) as [-> | Hv]; [right; apply no_ty_V |].
+  destruct (dec_iwi_sig l lp li X A N D Ot C ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl) ltac:(szl)
+              G i Γ Hv HΓ) as [HS | Hn];
+    [| right; intros H; destruct (inv_ty_iwi H) as ((_ & Hs) & _); apply Hn; unfold IWiSig; tauto].
+  pose proof HS as (Hl & Hlp & Hli & HX & HA & HN & HD & HO & HC).
+  destruct (ihC m ltac:(szl) G i Γ X li (lift_to_typeof_ty HX)) as [Hm | Hn];
+    [| right; intros H; destruct (inv_ty_iwi H) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & Hm) & _);
+       contradiction].
+  destruct (lvl_eq_dec (gL G) k (iwiL l lp li)) as [Q | Q].
+  - left; eapply wft_lvl; [exact Q | apply wft_iwi; assumption].
+  - right; intros H; exact (Q (proj2 (inv_ty_iwi H))).
+Qed.
+
 Lemma ty_step T : sz_ty T <= n -> TYD T.
 Proof using ihC ihT ihX.
   intros Hsz. destruct T;
@@ -454,7 +507,7 @@ Proof using ihC ihT ihX.
           | apply dec_tyUPi | apply dec_tyCPi | apply dec_tyTPi | apply dec_tySig | apply dec_tyUnit
           | apply dec_tySEq | apply dec_tySEmpty | apply dec_tyId | apply dec_tyEmpty | apply dec_tySum
           | apply dec_tyW | apply dec_tyVec | apply dec_tyFin | apply dec_tyWf | apply dec_tySq
-          | apply dec_tyDVec | apply dec_tyIWf | apply dec_tyM ];
+          | apply dec_tyDVec | apply dec_tyIWf | apply dec_tyM | apply dec_tyIWi ];
     assumption.
 Qed.
 

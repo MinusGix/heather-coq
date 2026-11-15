@@ -19,7 +19,7 @@
     The Π case records the generic equality of domains and codomains (the
     paper records it for the whole Π type, which is derivable). *)
 From DeLaM.Typing Require Export Generic.
-From DeLaM.Typing Require Import PresupIWf.
+From DeLaM.Typing Require Import PresupIWf PresupIWi.
 
 (** ** Parameters of the layered relation (M2_DESIGN.md, D5)
 
@@ -748,6 +748,156 @@ Inductive PosRel (G : gctx) (Γ : ctx) : tm -> tm -> tm -> tm -> Prop :=
 | pos_ne k k' p p' :
     [ G ; Γ ⊢g k ≅ k' : tyNat @ lzero ] -> [ G ; Γ ⊢ p ~ p' : tyFin k @ lzero ] -> PosRel G Γ k k' p p'.
 
+(** ** Indexed families with infinitary children (M19_DESIGN.md, M19b)
+
+    [IWf]'s three families with [W]'s children premise per field. Besides
+    [IWf]'s data and relations, the families are indexed by the domain
+    family [D] (under the shape and position binders) and by the domains'
+    relation [pdR]: [pdR ρ a a' p p'] is the relation at [D[a, p]] against
+    the right type's [D'[a', p']], for related shapes and related positions
+    ([PosRel]), in every world. It is indexed by both sides' shapes and
+    positions and does not depend on proofs of their relations, as [M]'s
+    [MPosRel], so that symmetry is a flip of its arguments.
+    - [IWiRel m]: both sides reduce, at the left [IWi(m)], to whnfs related
+      generically and by [IWiNf m];
+    - [IWiNf m]: two [sup]s whose annotations agree with the type's
+      ([IWiEq]), whose shapes are related in every world, whose output
+      index [Ot[a]] is related to [m], and whose children are related in
+      every world by the spine; or two neutrals;
+    - [DVecWSp yR d c k]: the relation at [DVec(k; i. Π(y : d). IWi(c))],
+      [DVecISp]'s with its head clause [W]'s children premise: the head
+      reduces to a whnf related generically at the field's [Π] (where
+      [elim_IWi]'s induction hypothesis takes it as a function), and its
+      applications to arguments related by [yR] at the head position (for
+      every choice of equivalent annotations, on the projection as
+      [DVecISp]'s and on the application as [WNf]'s) are related by
+      [IWiRel] at the child index [c[inl ⟨⟩, y]]. The tail is the spine
+      at the moved families ([posMvT], [posMv2]) and the relation [yR] at
+      the moved positions.
+    In a [sup]'s spine [yR p] is [pdR] at the [sup]s' shapes and the left
+    position, against some right position: the right type's positions are
+    not data of the families (the right type is not), and [pdR] is empty
+    off related positions ([LRiwi]'s premise), so the right position is
+    one related to [p]. *)
+Definition IPosDomRel (G : gctx) (Γ : ctx) := kwk G Γ -> tm -> tm -> tm -> tm -> tm -> tm -> Prop.
+
+(** A field's codomain at a family of child indices [c] (under the
+    position and domain binders), and its type at a domain family [d]
+    (under the position binder): [iwiFam a] is [iwiFamT] at [D[a]] and
+    [C[a]], syntactically. *)
+Definition iwiFamCodT (l lp li : lvl) (X A : ty) (N : tm) (D : ty) (Ot C c : tm) : ty :=
+  tyIWi l lp li X⟨↑⟩⟨↑⟩ A⟨↑⟩⟨↑⟩ N⟨rlift ↑⟩⟨rlift ↑⟩ D⟨rlift (rlift ↑)⟩⟨rlift (rlift ↑)⟩
+    Ot⟨rlift ↑⟩⟨rlift ↑⟩ C⟨rlift (rlift (rlift ↑))⟩⟨rlift (rlift (rlift ↑))⟩ c.
+Definition iwiFamT (l lp li : lvl) (X A : ty) (N : tm) (D : ty) (Ot C : tm) (d : ty) (c : tm) : ty :=
+  tyPi lp (iwiL l lp li) d (iwiFamCodT l lp li X A N D Ot C c).
+
+Lemma iwiFam_T l lp li X A N D Ot C a :
+  iwiFam l lp li X A N D Ot C a = iwiFamT l lp li X A N D Ot C D[llift (lsingle a)] C[llift (llift (lsingle a))].
+Proof using . reflexivity. Qed.
+
+(** A domain family, and a family of child indices (under the position and
+    domain binders), moved to the tail. *)
+Definition posMvT (k : tm) (d : ty) : ty := d⟨rlift ↑⟩[lsingle (posTl k⟨↑⟩ (var 0))].
+Definition posMv2 (k c : tm) : tm := c⟨rlift (rlift ↑)⟩[llift (lsingle (posTl k⟨↑⟩ (var 0)))].
+
+Inductive IWiRel : forall (G : gctx) (Γ : ctx) (l lp li : lvl) (X A : ty) (N : tm) (D : ty) (Ot C : tm)
+    (idxR domR : DomRel G Γ) (pdR : IPosDomRel G Γ), tm -> tm -> tm -> Prop :=
+| iwirel G Γ l lp li X A N D Ot C idxR domR pdR m t t' w w' :
+    [ G ; Γ ⊢g t ⤳* w : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] ->
+    [ G ; Γ ⊢g t' ⤳* w' : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] ->
+    [ G ; Γ ⊢ w ≈ w' : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] ->
+    IWiNf G Γ l lp li X A N D Ot C idxR domR pdR m w w' -> IWiRel G Γ l lp li X A N D Ot C idxR domR pdR m t t'
+with IWiNf : forall (G : gctx) (Γ : ctx) (l lp li : lvl) (X A : ty) (N : tm) (D : ty) (Ot C : tm)
+    (idxR domR : DomRel G Γ) (pdR : IPosDomRel G Γ), tm -> tm -> tm -> Prop :=
+| iwinf_sup G Γ l lp li X A N D Ot C idxR domR pdR m k kp ki k' kp' ki'
+    X1 A1 N1 D1 O1 C1 X1' A1' N1' D1' O1' C1' a a' cs cs' :
+    IWiEq (G := G) (i := ge_layer) Γ l lp li k kp ki X X1 A A1 N N1 D D1 Ot O1 C C1 ->
+    IWiEq (G := G) (i := ge_layer) Γ l lp li k' kp' ki' X X1' A A1' N N1' D D1' Ot O1' C C1' ->
+    (forall ρ : kwk G Γ, domR ρ (ktm ρ a) (ktm ρ a')) ->
+    (forall ρ : kwk G Γ, idxR ρ (ktml ρ Ot)[lsingle (ktm ρ a)] (ktm ρ m)) ->
+    (forall ρ : kwk G Γ,
+       DVecWSp (kw_G ρ) (kw_Δ ρ) l lp li (kty ρ X) (kty ρ A) (ktml ρ N) (ktyll ρ D) (ktml ρ Ot) (ktmlll ρ C)
+         (fun ρ' => idxR (kw_comp ρ ρ')) (fun ρ' => domR (kw_comp ρ ρ')) (fun ρ' => pdR (kw_comp ρ ρ'))
+         (fun p y y' => exists p', pdR ρ (ktm ρ a) (ktm ρ a') p p' y y')
+         (ktyll ρ D)[llift (lsingle (ktm ρ a))] (ktmlll ρ C)[llift (llift (lsingle (ktm ρ a)))]
+         (ktml ρ N)[lsingle (ktm ρ a)] (ktm ρ cs) (ktm ρ cs')) ->
+    IWiNf G Γ l lp li X A N D Ot C idxR domR pdR m
+      (tmSupii k kp ki X1 A1 N1 D1 O1 C1 a cs) (tmSupii k' kp' ki' X1' A1' N1' D1' O1' C1' a' cs')
+| iwinf_ne G Γ l lp li X A N D Ot C idxR domR pdR m ν ν' :
+    [ G ; Γ ⊢ ν ~ ν' : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] ->
+    IWiNf G Γ l lp li X A N D Ot C idxR domR pdR m ν ν'
+with DVecWSp : forall (G : gctx) (Γ : ctx) (l lp li : lvl) (X A : ty) (N : tm) (D : ty) (Ot C : tm)
+    (idxR domR : DomRel G Γ) (pdR : IPosDomRel G Γ), (tm -> tm -> tm -> Prop) -> ty -> tm -> tm -> tm -> tm -> Prop :=
+| wsp_zero G Γ l lp li X A N D Ot C idxR domR pdR yR d c k cs cs' :
+    [ G ; Γ ⊢g k ⤳* zero : tyNat @ lzero ] ->
+    UnitRel G Γ (iwiL l lp li) cs cs' -> DVecWSp G Γ l lp li X A N D Ot C idxR domR pdR yR d c k cs cs'
+| wsp_succ G Γ l lp li X A N D Ot C idxR domR pdR yR d c k m cs cs' w w' :
+    [ G ; Γ ⊢g k ⤳* succ m : tyNat @ lzero ] ->
+    [ G ; Γ ⊢g cs ⤳* w : tySig (iwiL l lp li) (iwiL l lp li) (dvecHd m (iwiFamT l lp li X A N D Ot C d c))
+          (dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c)) @ lmax (iwiL l lp li) (iwiL l lp li) ] ->
+    [ G ; Γ ⊢g cs' ⤳* w' : tySig (iwiL l lp li) (iwiL l lp li) (dvecHd m (iwiFamT l lp li X A N D Ot C d c))
+          (dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c)) @ lmax (iwiL l lp li) (iwiL l lp li) ] ->
+    whnf w -> whnf w' ->
+    [ G ; Γ ⊢ w ≈ w' : tySig (iwiL l lp li) (iwiL l lp li) (dvecHd m (iwiFamT l lp li X A N D Ot C d c))
+          (dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c)) @ lmax (iwiL l lp li) (iwiL l lp li) ] ->
+    (* the head, a function *)
+    (forall la lb A2 B2 la' lb' A2' B2',
+       lequiv (gL G) la (iwiL l lp li) -> lequiv (gL G) lb (iwiL l lp li) ->
+       lequiv (gL G) la' (iwiL l lp li) -> lequiv (gL G) lb' (iwiL l lp li) ->
+       [ G ; Γ ⊢ dvecHd m (iwiFamT l lp li X A N D Ot C d c) ≈ A2 @ iwiL l lp li ] ->
+       [ G ; Γ ,, dvecHd m (iwiFamT l lp li X A N D Ot C d c) @ iwiL l lp li
+           ⊢ dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c) ≈ B2 @ iwiL l lp li ] ->
+       [ G ; Γ ⊢ dvecHd m (iwiFamT l lp li X A N D Ot C d c) ≈ A2' @ iwiL l lp li ] ->
+       [ G ; Γ ,, dvecHd m (iwiFamT l lp li X A N D Ot C d c) @ iwiL l lp li
+           ⊢ dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c) ≈ B2' @ iwiL l lp li ] ->
+       WhRel G Γ (dvecHd m (iwiFamT l lp li X A N D Ot C d c)) (iwiL l lp li)
+         (tmFst la lb A2 B2 w) (tmFst la' lb' A2' B2' w')) ->
+    (* the head's applications to related arguments *)
+    (forall la lb A2 B2 la' lb' A2' B2',
+       lequiv (gL G) la (iwiL l lp li) -> lequiv (gL G) lb (iwiL l lp li) ->
+       lequiv (gL G) la' (iwiL l lp li) -> lequiv (gL G) lb' (iwiL l lp li) ->
+       [ G ; Γ ⊢ dvecHd m (iwiFamT l lp li X A N D Ot C d c) ≈ A2 @ iwiL l lp li ] ->
+       [ G ; Γ ,, dvecHd m (iwiFamT l lp li X A N D Ot C d c) @ iwiL l lp li
+           ⊢ dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c) ≈ B2 @ iwiL l lp li ] ->
+       [ G ; Γ ⊢ dvecHd m (iwiFamT l lp li X A N D Ot C d c) ≈ A2' @ iwiL l lp li ] ->
+       [ G ; Γ ,, dvecHd m (iwiFamT l lp li X A N D Ot C d c) @ iwiL l lp li
+           ⊢ dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c) ≈ B2' @ iwiL l lp li ] ->
+       forall y y', yR (posHd m) y y' ->
+       forall la2 lb2 A3 B3 la2' lb2' A3' B3',
+       lequiv (gL G) la2 lp -> lequiv (gL G) lb2 (iwiL l lp li) ->
+       lequiv (gL G) la2' lp -> lequiv (gL G) lb2' (iwiL l lp li) ->
+       [ G ; Γ ⊢ d[lsingle (posHd m)] ≈ A3 @ lp ] ->
+       [ G ; Γ ,, d[lsingle (posHd m)] @ lp
+           ⊢ (iwiFamCodT l lp li X A N D Ot C c)[llift (lsingle (posHd m))] ≈ B3 @ iwiL l lp li ] ->
+       [ G ; Γ ⊢ d[lsingle (posHd m)] ≈ A3' @ lp ] ->
+       [ G ; Γ ,, d[lsingle (posHd m)] @ lp
+           ⊢ (iwiFamCodT l lp li X A N D Ot C c)[llift (lsingle (posHd m))] ≈ B3' @ iwiL l lp li ] ->
+       IWiRel G Γ l lp li X A N D Ot C idxR domR pdR c[lsingle2 (posHd m) y]
+         (app (tmFst la lb A2 B2 w) la2 lb2 A3 B3 y) (app (tmFst la' lb' A2' B2' w') la2' lb2' A3' B3' y')) ->
+    (* the tail *)
+    (forall la lb A2 B2 la' lb' A2' B2',
+       lequiv (gL G) la (iwiL l lp li) -> lequiv (gL G) lb (iwiL l lp li) ->
+       lequiv (gL G) la' (iwiL l lp li) -> lequiv (gL G) lb' (iwiL l lp li) ->
+       [ G ; Γ ⊢ dvecHd m (iwiFamT l lp li X A N D Ot C d c) ≈ A2 @ iwiL l lp li ] ->
+       [ G ; Γ ,, dvecHd m (iwiFamT l lp li X A N D Ot C d c) @ iwiL l lp li
+           ⊢ dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c) ≈ B2 @ iwiL l lp li ] ->
+       [ G ; Γ ⊢ dvecHd m (iwiFamT l lp li X A N D Ot C d c) ≈ A2' @ iwiL l lp li ] ->
+       [ G ; Γ ,, dvecHd m (iwiFamT l lp li X A N D Ot C d c) @ iwiL l lp li
+           ⊢ dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c) ≈ B2' @ iwiL l lp li ] ->
+       DVecWSp G Γ l lp li X A N D Ot C idxR domR pdR (fun p => yR (posTl m p)) (posMvT m d) (posMv2 m c) m
+         (tmSnd la lb A2 B2 w) (tmSnd la' lb' A2' B2' w')) ->
+    DVecWSp G Γ l lp li X A N D Ot C idxR domR pdR yR d c k cs cs'
+| wsp_ne G Γ l lp li X A N D Ot C idxR domR pdR yR d c k ν cs cs' :
+    [ G ; Γ ⊢g k ⤳* ν : tyNat @ lzero ] -> [ G ; Γ ⊢ ν ~ ν : tyNat @ lzero ] ->
+    NeRel G Γ (tyDVec (iwiL l lp li) ν (iwiFamT l lp li X A N D Ot C d c))
+      (tyDVec (iwiL l lp li) ν (iwiFamT l lp li X A N D Ot C d c)) (iwiL l lp li) cs cs' ->
+    DVecWSp G Γ l lp li X A N D Ot C idxR domR pdR yR d c k cs cs'.
+
+Scheme IWiRel_mut := Induction for IWiRel Sort Prop
+  with IWiNf_mut := Induction for IWiNf Sort Prop
+  with DVecWSp_mut := Induction for DVecWSp Sort Prop.
+Combined Scheme IWiRel_comb from IWiRel_mut, IWiNf_mut, DVecWSp_mut.
+
 (** ** Heather's indexed [M] (M18_DESIGN.md, Q1 and M18b)
 
     The probe's ω-intersection ([probes/MRelProbe.v]) at the
@@ -1189,6 +1339,60 @@ Inductive LR (n : nat) (rec : lvl -> RedRel) : RedRel :=
     (* the index *)
     (forall ρ : kwk G Γ, idxR ρ (ktm ρ m) (ktm ρ m')) ->
     releq R (MR G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m') ->
+    LR n rec G Γ T T' l R
+| LRiwi G Γ T T' l l1 lp1 li1 l2 lp2 li2 X X' A A' N N' D D' Ot Ot' C C' m m'
+    (idxR domR : DomRel G Γ) (pdR : IPosDomRel G Γ) R :
+    lequiv (gL G) l (iwiL l1 lp1 li1) ->
+    lequiv (gL G) l2 l1 -> lequiv (gL G) lp2 lp1 -> lequiv (gL G) li2 li1 ->
+    lwf (gL G) l1 -> lwf (gL G) lp1 -> lwf (gL G) li1 ->
+    [ G ; Γ ⊢g T ⤳* tyIWi l1 lp1 li1 X A N D Ot C m @ l ] ->
+    [ G ; Γ ⊢g T' ⤳* tyIWi l2 lp2 li2 X' A' N' D' Ot' C' m' @ l ] ->
+    [ G ; Γ ⊢g X @ li1 ] -> [ G ; Γ ⊢g X' @ li1 ] -> [ G ; Γ ⊢g A @ l1 ] -> [ G ; Γ ⊢g A' @ l1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢g N : tyNat @ lzero ] -> [ G ; Γ ,, A' @ l1 ⊢g N' : tyNat @ lzero ] ->
+    [ G ; Γ ,, A @ l1 ,, tyFin N @ lzero ⊢g D @ lp1 ] -> [ G ; Γ ,, A' @ l1 ,, tyFin N' @ lzero ⊢g D' @ lp1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢g Ot : X⟨↑⟩ @ li1 ] -> [ G ; Γ ,, A' @ l1 ⊢g Ot' : X'⟨↑⟩ @ li1 ] ->
+    [ G ; Γ ,, A @ l1 ,, tyFin N @ lzero ,, D @ lp1 ⊢g C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li1 ] ->
+    [ G ; Γ ,, A' @ l1 ,, tyFin N' @ lzero ,, D' @ lp1 ⊢g C' : X'⟨↑⟩⟨↑⟩⟨↑⟩ @ li1 ] ->
+    [ G ; Γ ⊢g m : X @ li1 ] -> [ G ; Γ ⊢g m' : X' @ li1 ] ->
+    [ G ; Γ ⊢ X ≈ X' @ li1 ] -> [ G ; Γ ⊢ A ≈ A' @ l1 ] -> [ G ; Γ ,, A @ l1 ⊢ N ≈ N' : tyNat @ lzero ] ->
+    [ G ; Γ ,, A @ l1 ,, tyFin N @ lzero ⊢ D ≈ D' @ lp1 ] ->
+    [ G ; Γ ,, A @ l1 ⊢ Ot ≈ Ot' : X⟨↑⟩ @ li1 ] ->
+    [ G ; Γ ,, A @ l1 ,, tyFin N @ lzero ,, D @ lp1 ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li1 ] ->
+    [ G ; Γ ⊢ m ≈ m' : X @ li1 ] ->
+    (* the index type, in every world, a PER (as [LRiwf]'s) *)
+    (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ X) (kty ρ X') li1 (idxR ρ)) ->
+    (forall (ρ : kwk G Γ) x y, idxR ρ x y -> idxR ρ y x) ->
+    (forall (ρ : kwk G Γ) x y z, idxR ρ x y -> idxR ρ y z -> idxR ρ x z) ->
+    (* the shapes, the arity and the output index at related shapes *)
+    (forall ρ : kwk G Γ, LR n rec (kw_G ρ) (kw_Δ ρ) (kty ρ A) (kty ρ A') l1 (domR ρ)) ->
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' ->
+        NatRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N)[lsingle a] (ktml ρ N')[lsingle a']) ->
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' ->
+        idxR ρ (ktml ρ Ot)[lsingle a] (ktml ρ Ot')[lsingle a']) ->
+    (* the domains at related shapes and positions, their relation empty
+       off related positions, and the child index at related arguments *)
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' -> forall p p',
+        PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N)[lsingle a] (ktml ρ N')[lsingle a'] p p' ->
+        LR n rec (kw_G ρ) (kw_Δ ρ) (ktyll ρ D)[lsingle2 a p] (ktyll ρ D')[lsingle2 a' p'] lp1 (pdR ρ a a' p p')) ->
+    (forall (ρ : kwk G Γ) a a' p p' y y', pdR ρ a a' p p' y y' ->
+        PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N)[lsingle a] (ktml ρ N')[lsingle a'] p p') ->
+    (* the domains' relation is Kripke-monotone (a consequence of weakening,
+       which the relation's metatheory proves only after symmetry needs it:
+       the child indices are compared in later worlds; as [LRm]'s) *)
+    (forall (ρ : kwk G Γ) (ρ' : kwk (kw_G ρ) (kw_Δ ρ)) a a' p p' y y', pdR ρ a a' p p' y y' ->
+        pdR (kw_comp ρ ρ') (ktm ρ' a) (ktm ρ' a') (ktm ρ' p) (ktm ρ' p') (ktm ρ' y) (ktm ρ' y')) ->
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' -> forall p p' y y', pdR ρ a a' p p' y y' ->
+        idxR ρ (ktmlll ρ C)[lsingle3 a p y] (ktmlll ρ C')[lsingle3 a' p' y']) ->
+    (* the child index at related shapes and positions, generically equal
+       under the domain's binder (generic equality is not closed under
+       substitution, and the field types are compared there; as [LRm]'s) *)
+    (forall (ρ : kwk G Γ) a a', domR ρ a a' -> forall p p',
+        PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N)[lsingle a] (ktml ρ N')[lsingle a'] p p' ->
+        [ kw_G ρ ; kw_Δ ρ ,, (ktyll ρ D)[lsingle2 a p] @ lp1
+            ⊢ (ktmlll ρ C)[llift (lsingle2 a p)] ≈ (ktmlll ρ C')[llift (lsingle2 a' p')] : (kty ρ X)⟨↑⟩ @ li1 ]) ->
+    (* the index *)
+    (forall ρ : kwk G Γ, idxR ρ (ktm ρ m) (ktm ρ m')) ->
+    releq R (IWiRel G Γ l1 lp1 li1 X A N D Ot C idxR domR pdR m) ->
     LR n rec G Γ T T' l R.
 
 (** ** Stages *)

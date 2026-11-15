@@ -11,6 +11,7 @@
     indices related at [Fin] give related instances of the family. *)
 From DeLaM.Validity Require Export Vec.
 From DeLaM.Typing Require Import Inversion.
+From DeLaM.LogRel Require Import IWfAux.
 From DeLaM.Typing Require Export DVecEq.
 
 Section DVec.

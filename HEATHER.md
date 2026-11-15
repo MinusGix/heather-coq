@@ -62,25 +62,26 @@ that checks the ch. 07 obligations by hand. "Ours" is the status here.
 | `Squash`, `ind_∥∥` | normalizing-total irrelevance | MX §27 | sketch only | full pass done here (`issues/metatheory-ch07-squash.md`, closed on M16); the payload must be self-related (see findings) | **done** (M16a at D and M: the probe's relation (`probes/SquashProbe.v`), proof irrelevance, β, no η, canonicity to a `squash`; M16b: code `∥s∥`, every layer but V, branches 51–54) |
 | `DVec`, `IWf`, `sup_i`, `elim_IWf` | finitary inductive families, no stored index equation | iwf-former-design §1–§6 (frozen 2026-10-13) | doc §9 (sketch) | the ih's type is `F[i]` only up to β (doc §3) | **M17 done**: `DVec` and `V_dnth` (M17a), `IWf` with β on open data (M17b), D and M; codes, every layer but V, branches 55–60 derived before `rec.rs` has them (M17c) |
 | `M`, `corec`, `out` | negative coinductive, indexed (Petersson–Synek), apomorphic `corec`, β only under `out`, no η | kernel-coinduction-design §1–§2 (kernel landed 2026-10-21, heather#111) | doc §9 (questions) | the relation at `M` without the carrier (§9 Q1); `li` in the level | **M18a done**: probes only, theories untouched. The ω-relation works with a generic clause at every depth; `li` is needed; the algorithm is a generic instance; β needs no index conversion; the bridge needs UIP on shapes; the design's `in` types only unindexed (M18_DESIGN.md). **M18b done** (2026-10-26): in-tree at D and M through the relation, validity, the algorithm, decidability, the type checker and the consequences; no rule changed. M18c (codes) planned |
+| `IWi`, `sup_ii`, `elim_IWi` | indexed families whose recursive fields are functions (a tuple of fields, each with its own domain) | iwf-infinitary-design §3 | doc §9 (sketch) | the ih's type goes through `dnth` under the field's binder | **M19 done** (2026-11-14): at D and M through every consequence (M19a–b); code, every layer but V, branches 61–64 derived before `rec.rs` has them (M19c) |
 | Bodied globals `u := t`, δ at p/m only | not a former | DESIGN.md, MX §23–25 | **none** | ch. 07 bill (`issues/metatheory-ch07-definitions.md`) | **done** (M9): occurrences carry their body (`gdef`); δ as reduction; §26 items 1–4; canonicity at D; consistency at D and M |
 | `NatLit`, evaluator accelerations | representation | DESIGN.md | n/a | claimed to have no semantic content; nothing to prove here | out of scope |
 
 Code recursor: the paper has 13 branches (indexed 0–12), Heather has 56.
-Ours has 61 (`Typing/RecSpec.v`, `nbr = 61`): Heather's Σ and Unit
+Ours has 65 (`Typing/RecSpec.v`, `nbr = 65`): Heather's Σ and Unit
 branches are 13–20 (M8d), `Id` 21–24 (M11b), `sEq`/`sEmpty` 25–30
 (M10c, all of Heather's but `tm_transp`), `Empty` and `+` 31–38 (M12c),
 `W` 39–42 (M13b), `Vec` and `Fin` 43–46 (M14b), `Wf` 47–50 (M15b),
 `Squash` 51–54 (M16b), each group in Heather's order, appended as they
-came; then `DVec` and `IWf` 55–60 (M17c), which Heather's `rec.rs` does
-not have yet. Ten of Heather's recursive-call slots
+came; then `DVec` and `IWf` 55–60 (M17c) and `IWi` 61–64 (M19c), which
+Heather's `rec.rs` does not have yet. Ten of Heather's recursive-call slots
 (`Vec`/`Wf`/`sEq`/`sEmpty`/`transp` branches) had no declarative rule
 outside the kernel (`H/issues/uncovered-formers-recursor-rules.md`,
 closed 2026-10-16). The eight that are not `transp`'s are derived from
 the semantics here and validated by `rec_code` (M10c, M14b, M15b), and
 agree with `rec.rs` but for `elim_sEmpty`'s motive (M10_DESIGN.md, M10c
-outcome); `transp`'s two retire with `transp`. `IWf`'s six branches are
-derived here first, for Heather's `rec.rs` round to check against
-(M17_DESIGN.md).
+outcome); `transp`'s two retire with `transp`. `IWf`'s six branches and
+`IWi`'s four are derived here first, for Heather's `rec.rs` round to
+check against (M17_DESIGN.md, M19_DESIGN.md).
 
 ## Findings
 
@@ -337,5 +338,14 @@ M15b outcome.
    kernel rule; M18b put the former in-tree at D and M (done
    2026-10-26, no rule changed); M18c adds codes once Heather's codes
    round has them.
+
+7. Infinitary fields in indexed families: `IWi` (M19_DESIGN.md), the
+   kernel former for Heather's `k: (y: A) -> D(e)` fields, today lowered
+   to `W` plus two stored equations (H `docs/iwf-infinitary-design.md`
+   §3). Done (M19a–c, 2026-11-14): a tuple of function fields, each with
+   its own domain, chosen over a single position type; at D and M
+   through every consequence, its code at every layer but V, and the
+   four recursor branches 61–64, derived here before Heather's kernel
+   and `rec.rs` have them.
 
 Side task, any time: the ITree depth-indexed bisimilarity question.

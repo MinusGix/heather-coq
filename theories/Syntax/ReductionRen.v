@@ -236,3 +236,40 @@ Proof.
   unfold iwfFam. cbn [ren Ren_tm Ren_ty ren_ty]. fold ren_ty ren_tm.
   rewrite llift_lsingle_ren. f_equal; ren_comm.
 Qed.
+
+Lemma iwiFamCod_ren l lp li X A N D Ot C a r :
+  (iwiFamCod l lp li X A N D Ot C a)⟨rlift (rlift r)⟩ =
+  iwiFamCod l lp li X⟨r⟩ A⟨r⟩ N⟨rlift r⟩ D⟨rlift (rlift r)⟩ Ot⟨rlift r⟩ C⟨rlift (rlift (rlift r))⟩ a⟨r⟩.
+Proof.
+  unfold iwiFamCod. cbn [ren Ren_tm Ren_ty ren_ty]. fold ren_ty ren_tm.
+  rewrite llift2_lsingle_ren. f_equal; ren_comm.
+Qed.
+
+Lemma iwiFam_ren l lp li X A N D Ot C a r :
+  (iwiFam l lp li X A N D Ot C a)⟨rlift r⟩ =
+  iwiFam l lp li X⟨r⟩ A⟨r⟩ N⟨rlift r⟩ D⟨rlift (rlift r)⟩ Ot⟨rlift r⟩ C⟨rlift (rlift (rlift r))⟩ a⟨r⟩.
+Proof.
+  unfold iwiFam. cbn [ren Ren_tm Ren_ty ren_ty]. fold ren_ty ren_tm.
+  change (ren_ty (iwiFamCod ?a1 ?a2 ?a3 ?a4 ?a5 ?a6 ?a7 ?a8 ?a9 ?a10) ?r0)
+    with (iwiFamCod a1 a2 a3 a4 a5 a6 a7 a8 a9 a10)⟨r0⟩.
+  rewrite iwiFamCod_ren. change (ren_ty ?x ?r0) with x⟨r0⟩.
+  rewrite llift_lsingle_ren_ty. reflexivity.
+Qed.
+
+
+Lemma iwiIH_ren l lp li l' X A N D Ot C M c a cs r :
+  (iwiIH l lp li l' X A N D Ot C M c a cs)⟨r⟩ =
+  iwiIH l lp li l' X⟨r⟩ A⟨r⟩ N⟨rlift r⟩ D⟨rlift (rlift r)⟩ Ot⟨rlift r⟩ C⟨rlift (rlift (rlift r))⟩
+    M⟨rlift (rlift r)⟩ c⟨rlift (rlift (rlift r))⟩ a⟨r⟩ cs⟨r⟩.
+Proof.
+  unfold iwiIH; change (ren (lam ?l1 ?l2 ?X ?Y) ?r0) with (lam l1 l2 X⟨r0⟩ Y⟨rlift r0⟩);
+  change (ren (tyFin ?n) ?r0) with (tyFin n⟨r0⟩);
+  rewrite lsingle_ren; f_equal;
+  change (ren (lam ?l1 ?l2 ?X ?Y) ?r0) with (lam l1 l2 X⟨r0⟩ Y⟨rlift r0⟩);
+  rewrite llift_lsingle_ren_ty; f_equal;
+  change (ren (tmElimIWi ?k1 ?k2 ?k3 ?k4 ?X ?Y ?Z ?D0 ?W ?V ?U ?u ?v ?w) ?r0)
+    with (tmElimIWi k1 k2 k3 k4 X⟨r0⟩ Y⟨r0⟩ Z⟨rlift r0⟩ D0⟨rlift (rlift r0)⟩ W⟨rlift r0⟩ V⟨rlift (rlift (rlift r0))⟩ U⟨rlift (rlift r0)⟩
+            u⟨rlift (rlift (rlift r0))⟩ v⟨r0⟩ w⟨r0⟩);
+  change (ren (app ?t ?k1 ?k2 ?A0 ?B0 ?u) ?r0) with (app t⟨r0⟩ k1 k2 A0⟨r0⟩ B0⟨rlift r0⟩ u⟨r0⟩);
+  rewrite tmDNth_ren, llift2_lsingle_ren; f_equal; try ren_comm; f_equal; try ren_comm; [f_equal; try ren_comm; [rewrite <- lsingle_ren; ren_comm | rewrite <- iwiFam_ren; ren_comm] | rewrite <- llift_lsingle_ren_ty; ren_comm | rewrite <- iwiFamCod_ren; ren_comm].
+Qed.

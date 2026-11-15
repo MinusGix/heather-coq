@@ -415,3 +415,34 @@ Ltac shift_cancel := repeat match goal with
   | |- context [ (?A⟨↑⟩)[lsingle ?a] ] =>
       first [rewrite (shift_single_ty A a) by nf_side | rewrite (shift_single A a) by nf_side]
   end.
+
+(** [IWi]'s field type and [elim_IWi]'s induction hypothesis (M19). *)
+Lemma subst_iwiFamCod l lp li X A N D Ot C a d : LK nftm d ->
+  (iwiFamCod l lp li X A N D Ot C a)[llift (llift d)] =
+  iwiFamCod l lp li X[d] A[d] N[llift d] D[llift (llift d)] Ot[llift d] C[llift (llift (llift d))] a[d].
+Proof.
+  intros Hd. unfold iwiFamCod. push_subst.
+  rewrite ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty, ?liftshift_llift, ?lift2shift_llift,
+    ?lift2shift_llift_ty, ?lift3shift_llift, ?(llift2_single_subst _ _ _ Hd).
+  reflexivity.
+Qed.
+Lemma subst_iwiFam l lp li X A N D Ot C a d : LK nftm d ->
+  (iwiFam l lp li X A N D Ot C a)[llift d] =
+  iwiFam l lp li X[d] A[d] N[llift d] D[llift (llift d)] Ot[llift d] C[llift (llift (llift d))] a[d].
+Proof.
+  intros Hd. unfold iwiFam. push_subst.
+  rewrite (subst_iwiFamCod _ _ _ _ _ _ _ _ _ _ _ Hd), (llift_single_subst_ty _ _ _ Hd). reflexivity.
+Qed.
+Lemma subst_iwiIH l lp li l' X A N D Ot C M c a cs d : LK nftm d ->
+  (iwiIH l lp li l' X A N D Ot C M c a cs)[d] =
+  iwiIH l lp li l' X[d] A[d] N[llift d] D[llift (llift d)] Ot[llift d] C[llift (llift (llift d))]
+    M[llift (llift d)] c[llift (llift (llift d))] a[d] cs[d].
+Proof.
+  intros Hd. unfold iwiIH. push_subst. rewrite subst_tmDNth by (repeat apply lk_llift; exact Hd).
+  rewrite ?llk_llift; cbn [llk].
+  repeat progress (push_subst; rewrite ?shift_llift_ty, ?shift_llift, ?liftshift_llift_ty, ?liftshift_llift,
+    ?lift3shift_llift, ?lift2shift_llift, ?lift2shift_llift_ty, ?(single_subst d Hd),
+    ?(llift_single_subst_ty _ _ _ Hd), ?(llift2_single_subst _ _ _ Hd), ?(subst_iwiFam _ _ _ _ _ _ _ _ _ _ _ Hd),
+    ?(subst_iwiFamCod _ _ _ _ _ _ _ _ _ _ _ Hd)).
+  rewrite !llk_llift. reflexivity.
+Qed.

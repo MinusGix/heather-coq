@@ -46,6 +46,7 @@ Fixpoint unf_ty (T : ty) {struct T} : ty :=
   | tyDVec l n F => tyDVec l (unf_tm n) (unf_ty F)
   | tyIWf l li X A N Ot C m => tyIWf l li (unf_ty X) (unf_ty A) (unf_tm N) (unf_tm Ot) (unf_tm C) (unf_tm m)
   | tyM l l' li X A B C j => tyM l l' li (unf_ty X) (unf_ty A) (unf_ty B) (unf_tm C) (unf_tm j)
+  | tyIWi l lp li X A N D Ot C m => tyIWi l lp li (unf_ty X) (unf_ty A) (unf_tm N) (unf_ty D) (unf_tm Ot) (unf_tm C) (unf_tm m)
   | tyFin n => tyFin (unf_tm n)
   end
 with unf_tm (t : tm) {struct t} : tm :=
@@ -120,6 +121,11 @@ with unf_tm (t : tm) {struct t} : tm :=
   | tmCorec l l' li X A B C k Y c j y =>
       tmCorec l l' li (unf_ty X) (unf_ty A) (unf_ty B) (unf_tm C) k (unf_ty Y) (unf_tm c) (unf_tm j) (unf_tm y)
   | tmOut l l' li X A B C j m => tmOut l l' li (unf_ty X) (unf_ty A) (unf_ty B) (unf_tm C) (unf_tm j) (unf_tm m)
+  | tmSupii l lp li X A N D Ot C a cs =>
+      tmSupii l lp li (unf_ty X) (unf_ty A) (unf_tm N) (unf_ty D) (unf_tm Ot) (unf_tm C) (unf_tm a) (unf_tm cs)
+  | tmElimIWi l lp li l' X A N D Ot C M c m t =>
+      tmElimIWi l lp li l' (unf_ty X) (unf_ty A) (unf_tm N) (unf_ty D) (unf_tm Ot) (unf_tm C) (unf_ty M) (unf_tm c) (unf_tm m) (unf_tm t)
+  | tmIWi l lp li x s n d o c m => tmIWi l lp li (unf_tm x) (unf_tm s) (unf_tm n) (unf_tm d) (unf_tm o) (unf_tm c) (unf_tm m)
   | tmJ l l' A a M c u e =>
       tmJ l l' (unf_ty A) (unf_tm a) (unf_ty M) (unf_tm c) (unf_tm u) (unf_tm e)
   | gdef u b d => subst_tm (unf_tm b) (unf_l d)
@@ -435,6 +441,7 @@ Fixpoint gfree_ty (T : ty) {struct T} : Prop :=
   | tyDVec l n F => gfree_tm n /\ gfree_ty F
   | tyIWf l li X A N Ot C m => (gfree_ty X) /\ (gfree_ty A) /\ (gfree_tm N) /\ (gfree_tm Ot) /\ (gfree_tm C) /\ (gfree_tm m)
   | tyM l l' li X A B C j => gfree_ty X /\ gfree_ty A /\ gfree_ty B /\ gfree_tm C /\ gfree_tm j
+  | tyIWi l lp li X A N D Ot C m => gfree_ty X /\ gfree_ty A /\ gfree_tm N /\ gfree_ty D /\ gfree_tm Ot /\ gfree_tm C /\ gfree_tm m
   | tyFin n => gfree_tm n
   end
 with gfree_tm (t : tm) {struct t} : Prop :=
@@ -501,6 +508,11 @@ with gfree_tm (t : tm) {struct t} : Prop :=
   | tmCorec l l' li X A B C k Y c j y =>
       gfree_ty X /\ gfree_ty A /\ gfree_ty B /\ gfree_tm C /\ gfree_ty Y /\ gfree_tm c /\ gfree_tm j /\ gfree_tm y
   | tmOut l l' li X A B C j m => gfree_ty X /\ gfree_ty A /\ gfree_ty B /\ gfree_tm C /\ gfree_tm j /\ gfree_tm m
+  | tmSupii _ _ _ X A N D Ot C a cs =>
+      gfree_ty X /\ gfree_ty A /\ gfree_tm N /\ gfree_ty D /\ gfree_tm Ot /\ gfree_tm C /\ gfree_tm a /\ gfree_tm cs
+  | tmElimIWi _ _ _ _ X A N D Ot C M c m t =>
+      gfree_ty X /\ gfree_ty A /\ gfree_tm N /\ gfree_ty D /\ gfree_tm Ot /\ gfree_tm C /\ gfree_ty M /\ gfree_tm c /\ gfree_tm m /\ gfree_tm t
+  | tmIWi _ _ _ x s n d o c m => gfree_tm x /\ gfree_tm s /\ gfree_tm n /\ gfree_tm d /\ gfree_tm o /\ gfree_tm c /\ gfree_tm m
   | tmJ l l' A a M c u e => gfree_ty A /\ gfree_tm a /\ gfree_ty M /\ gfree_tm c /\ gfree_tm u /\ gfree_tm e
   | gdef u b d => False
   end

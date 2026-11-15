@@ -76,3 +76,14 @@ Lemma ty_leq_M_inv {l l' li X A B C m W} : ty_leq (tyM l l' li X A B C m) W ->
   exists k k' ki X' A' B' C' m', W = tyM k k' ki X' A' B' C' m' /\ leqv l k /\ leqv l' k' /\ leqv li ki /\
     ty_leq X X' /\ ty_leq A A' /\ ty_leq B B' /\ tm_leq C C' /\ tm_leq m m'.
 Proof. intros H; destruct W; try exact (False_ind _ H); revert H; cbn; intros; do 8 eexists; intuition eauto. Qed.
+
+Lemma ty_leq_iwi_inv {l lp li X A N D Ot C m W} : ty_leq (tyIWi l lp li X A N D Ot C m) W ->
+  exists l' lp' li' X' A' N' D' Ot' C' m', W = tyIWi l' lp' li' X' A' N' D' Ot' C' m' /\ leqv l l' /\
+    leqv lp lp' /\ leqv li li' /\ ty_leq X X' /\ ty_leq A A' /\ tm_leq N N' /\ ty_leq D D' /\
+    tm_leq Ot Ot' /\ tm_leq C C' /\ tm_leq m m'.
+Proof. intros H; destruct W; try exact (False_ind _ H); revert H; cbn; intros; do 10 eexists; intuition eauto. Qed.
+Lemma tm_leq_supii_inv {l lp li X A N D Ot C a cs w} : tm_leq (tmSupii l lp li X A N D Ot C a cs) w ->
+  exists l' lp' li' X' A' N' D' Ot' C' a' cs', w = tmSupii l' lp' li' X' A' N' D' Ot' C' a' cs' /\
+    leqv l l' /\ leqv lp lp' /\ leqv li li' /\ ty_leq X X' /\ ty_leq A A' /\ tm_leq N N' /\ ty_leq D D' /\
+    tm_leq Ot Ot' /\ tm_leq C C' /\ tm_leq a a' /\ tm_leq cs cs'.
+Proof. intros H; destruct w; try exact (False_ind _ H); revert H; cbn; intros; do 11 eexists; intuition eauto. Qed.

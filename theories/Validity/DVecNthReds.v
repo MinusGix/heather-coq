@@ -18,7 +18,7 @@ Ltac rstep := eapply Relation_Operators.rt1n_trans;
 (** Substitutions pushed through terms only: the annotations' types stay
     as they are, since reduction never looks at them. *)
 Ltac tpush := repeat (match goal with
-  | |- context [@subst tm _ ?t _] => let h := head_of t in push_subst_at h ltac:(fun L => rewrite L)
+  | |- context [@subst tm _ ?t _] => let h := head_of t in push_subst_at h ltac:(fun L => rewrite !L)
   end); pw.
 
 (** The next state to its normal form, by computation ([TemplateEq]):

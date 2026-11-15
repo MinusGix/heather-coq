@@ -75,6 +75,7 @@ Proof.
           | change (ren_tm ?x ?r) with x⟨r⟩; rewrite lsingle3_ren, wIH_ren; constructor
           | change (ren_tm ?x ?r) with x⟨r⟩; rewrite lsingle3_ren, wfIH_ren; constructor
           | change (ren_tm ?x ?r) with x⟨r⟩; rewrite lsingle3_ren, iwfIH_ren; constructor
+          | change (ren_tm ?x ?r) with x⟨r⟩; rewrite lsingle3_ren, iwiIH_ren; constructor
           | change (ren_tm ?x ?r) with x⟨r⟩; rewrite mOutCorec_ren; constructor
           (* δ: the body's instance *)
           | erewrite subst_ren by (intros; apply llk_lren); constructor ].

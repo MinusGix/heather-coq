@@ -404,7 +404,11 @@ Proof using EL VL VN.
                      widxAd IHwidx Hwisym Hwistr wdomAd IHwdom warAd wotAd wchAd wixAd HR
                  | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                      Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                     HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                     HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                 | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                     Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC'
+                     Hvm Hvm' HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd IHvidx Hvisym Hvistr vdomAd IHvdom varAd votAd
+                     vpdAd IHvpd vpdE vpdMon vchAd vgC vixAd HR];
     intros ν ν' Hν Hν'; first [exact (ModRel_neutral HM _ _ Hν Hν') | apply HR].
   - (* Nat *)
     pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HN.
@@ -551,6 +555,10 @@ Proof using EL VL VN.
     intros k. exact (MRn_ne k _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ HM (wf_tm_nf Hmm) (wf_tm_nf Hmm') mixAd
                        (fun ρ x x' v v' h => IHmsh ρ x x' h v v')
                        (fun ρ x x' a a' v v' h ha => IHmpos ρ x x' a a' h ha v v') _ _ HP HP').
+  - (* IWi: typed neutrals are related, as neutrals *)
+    pose proof (gne_tm_red Hν HT (lequiv_sym _ _ _ Hl)) as HP.
+    destruct (gne_tmred_refl HP) as [H1 H2].
+    econstructor; [exact H1 | exact H2 | exact (gne_tm_geq HP) | now apply iwinf_ne].
 Qed.
 
 End Neutral.

@@ -251,6 +251,7 @@ Fixpoint sz_ty (T : ty) : nat :=
   | tyVec _ A n | tyWf _ A n | tyDVec _ n A => S (sz_ty A + sz_tm n)
   | tyIWf _ _ X A N Ot C m => S (sz_ty X + sz_ty A + sz_tm N + sz_tm Ot + sz_tm C + sz_tm m)
   | tyM _ _ _ X A B C j => S (sz_ty X + sz_ty A + sz_ty B + sz_tm C + sz_tm j)
+  | tyIWi _ _ _ X A N D Ot C m => S (sz_ty X + sz_ty A + sz_tm N + sz_ty D + sz_tm Ot + sz_tm C + sz_tm m)
   | tyGvar _ d => S (sz_l d)
   | tyCTyp Δ _ => S (sz_ctx Δ)
   | tyCTrm Δ T _ => S (sz_ctx Δ + sz_ty T)
@@ -305,6 +306,10 @@ with sz_tm (t : tm) : nat :=
       S (sz_ty X + sz_ty A + sz_tm N + sz_tm Ot + sz_tm C + sz_ty M + sz_tm c + sz_tm m + sz_tm t)
   | tmCorec _ _ _ X A B C _ Y c j y => S (sz_ty X + sz_ty A + sz_ty B + sz_tm C + sz_ty Y + sz_tm c + sz_tm j + sz_tm y)
   | tmOut _ _ _ X A B C j m => S (sz_ty X + sz_ty A + sz_ty B + sz_tm C + sz_tm j + sz_tm m)
+  | tmSupii _ _ _ X A N D Ot C a cs => S (sz_ty X + sz_ty A + sz_tm N + sz_ty D + sz_tm Ot + sz_tm C + sz_tm a + sz_tm cs)
+  | tmElimIWi _ _ _ _ X A N D Ot C M c m t =>
+      S (sz_ty X + sz_ty A + sz_tm N + sz_ty D + sz_tm Ot + sz_tm C + sz_ty M + sz_tm c + sz_tm m + sz_tm t)
+  | tmIWi _ _ _ x s n d o c m => S (sz_tm x + sz_tm s + sz_tm n + sz_tm d + sz_tm o + sz_tm c + sz_tm m)
   end
 with sz_ctx (Γ : ctx) : nat :=
   match Γ with cnil | cvar _ => 1 | cext Γ A _ => S (sz_ctx Γ + sz_ty A) end

@@ -30,7 +30,8 @@ Definition canon_head (h : ty_hd) (w : tm) : Prop :=
            (exists l, w = tmSEmpty l) \/ (exists l, w = tmEmpty l) \/ (exists l l' s t, w = tmSum l l' s t) \/
            (exists l l' s t, w = tmW l l' s t) \/ (exists l s n, w = tmVec l s n) \/ (exists n, w = tmFin n) \/
            (exists l s n, w = tmWf l s n) \/ (exists l s, w = tmSqCode l s) \/
-           (exists l n f, w = tmDVec l n f) \/ exists l li x s n o c m, w = tmIWf l li x s n o c m
+           (exists l n f, w = tmDVec l n f) \/ (exists l li x s n o c m, w = tmIWf l li x s n o c m) \/
+           exists l lp li x s n d o c m, w = tmIWi l lp li x s n d o c m
   | hdPi => exists l l' A t, w = lam l l' A t
   | hdCTyp => exists T, w = boxT T
   | hdCTrm => exists t, w = boxt t
@@ -47,6 +48,7 @@ Definition canon_head (h : ty_hd) (w : tm) : Prop :=
   | hdSq => exists l A a, w = tmSq l A a
   | hdIWf => exists l li X A N Ot C a cs, w = tmSupi l li X A N Ot C a cs
   | hdM => exists l l' li X A B C k Y c j y, w = tmCorec l l' li X A B C k Y c j y
+  | hdIWi => exists l lp li X A N D Ot C a cs, w = tmSupii l lp li X A N D Ot C a cs
   | hdNe | hdErr | hdSEmpty | hdEmpty => False
   end.
 
@@ -74,8 +76,8 @@ Proof.
           | pose proof (inv_code_vec Hi Hx) as X | pose proof (inv_code_fin Hi Hx) as X
           | pose proof (inv_code_wf Hi Hx) as X | pose proof (inv_sq Hi Hx) as X
           | pose proof (inv_code_sq Hi Hx) as X | pose proof (inv_supi Hi Hx) as Xs
-          | pose proof (inv_code_dvec Hi Hx) as X | pose proof (inv_code_iwf Hi Hx) as X
-          | pose proof (inv_corec Hi Hx) as Xc ];
+          | pose proof (inv_code_dvec Hi Hx) as X | pose proof (inv_code_iwf Hi Hx) as X | pose proof (inv_code_iwi Hi Hx) as X
+          | pose proof (inv_corec Hi Hx) as Xc | pose proof (inv_supii Hi Hx) as Xs ];
     repeat match goal with H : exists _, _ |- _ => destruct H | H : _ /\ _ |- _ => destruct H end;
     match goal with E : [ _ ; _ ⊢[ _ ] W ≅ _ @ _ ] |- _ =>
       rewrite (decl_head_c Hc E HW); [| auto with whnf] end;

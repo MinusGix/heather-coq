@@ -356,6 +356,31 @@ Proof.
   repeat rewrite ?gsubst_ren_ty, ?gsubst_ren. reflexivity.
 Qed.
 
+(** [sup_ii]'s children's family and [elim_IWi]'s step telescope (M19c). *)
+Lemma gs_llift2_single_raw (b a : tm) σ :
+  gsubst_tm (subst_tm b (llift (llift (lsingle a)))) σ = subst_tm (gsubst_tm b σ) (llift (llift (lsingle (gsubst_tm a σ)))).
+Proof.
+  rewrite gs_tm_subst_raw. apply subst_ext; intros [|[|[|n]]]; rewrite ?llk_glsubst, ?llk_llift; cbn;
+    rewrite ?llk_glsubst, ?llk_llift; cbn; auto.
+  change (gsubst_tm ?x ?σ0) with x⦃σ0⦄. rewrite !gsubst_ren. reflexivity.
+Qed.
+Lemma gs_llift_single_ty_raw (B : ty) a σ :
+  gsubst_ty (subst_ty B (llift (lsingle a))) σ = subst_ty (gsubst_ty B σ) (llift (lsingle (gsubst_tm a σ))).
+Proof.
+  rewrite gs_ty_subst_raw. apply subst_ext_ty; intros [|[|n]]; rewrite ?llk_glsubst, ?llk_llift; cbn; auto.
+  apply gsubst_ren.
+Qed.
+Lemma gs_iwiFam_raw l lp li X A N D Ot C a σ :
+  gsubst_ty (iwiFam l lp li X A N D Ot C a) σ =
+  iwiFam l lp li (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_tm N σ) (gsubst_ty D σ) (gsubst_tm Ot σ) (gsubst_tm C σ)
+    (gsubst_tm a σ).
+Proof.
+  unfold iwiFam, iwiFamCod. cbn [gsubst_ty]. fold gsubst_ty gsubst_tm.
+  rewrite ?gs_llift2_single_raw, ?gs_llift_single_ty_raw.
+  change (gsubst_tm ?x ?σ0) with x⦃σ0⦄; change (gsubst_ty ?x ?σ0) with x⦃σ0⦄.
+  repeat rewrite ?gsubst_ren_ty, ?gsubst_ren. reflexivity.
+Qed.
+
 Ltac gpeel_push Hσ :=
   repeat first [ rewrite <- peelL_gsubst by hd_tac
                | rewrite <- peelG_gsubst by first [hd_tac | exact Hσ]
@@ -375,9 +400,10 @@ Ltac gpeel_push Hσ :=
   try (lazymatch goal with
        | |- context [iwfFam _ _ _ _ _ _ _ _] => idtac
        | |- context [tmDNth _ _ _ _ _] => idtac
+       | |- context [iwiFam _ _ _ _ _ _ _ _ _ _] => idtac
        end;
     repeat progress (cbn [lsingle2 gsubst GSubst_tm GSubst_ty gsubst_tm gsubst_ty]; fold gsubst_ty gsubst_tm gcsubst glsubst;
-      rewrite ?gs_iwfFam_raw, ?gs_tmDNth_raw, ?gs_single_tm_raw, ?gs_single_ty_raw, ?gs_llift_single_raw,
+      rewrite ?gs_iwfFam_raw, ?gs_iwiFam_raw, ?gs_tmDNth_raw, ?gs_single_tm_raw, ?gs_single_ty_raw, ?gs_llift_single_raw,
         ?gsubst_ren_ty, ?gsubst_ren, ?gs_ren_ty_raw, ?gs_ren_tm_raw));
   rewrite ?gs_tm_subst_raw; cbn [glsubst lsingle];
   reflexivity.

@@ -6,7 +6,7 @@
     under their own binding). *)
 From DeLaM.Typing Require Export Inversion WfScope.
 From DeLaM.Typing Require Export RecEq.
-From DeLaM.Typing Require Import WfScopeIWf.
+From DeLaM.Typing Require Import WfScopeIWf WfScopeIWi.
 From DeLaM.Validity Require Export ReducibleP GSubRelW GvarS GSubRelE.
 
 (** ** Converting a global binding
@@ -355,6 +355,35 @@ Proof.
   all: try (intros ? ? ? HB; exfalso; exact (no_in_ctx_var _ _ _ _ HB)); cbn; exact I.
 Qed.
 
+(** Under three binders (M19c: the infinitary trees' child index
+    [X⟨↑⟩⟨↑⟩⟨↑⟩]). *)
+Lemma lsub_tail_shift3_var g A la B lb E le :
+  lsub_tail (lshift 3) (cvar g) (cvar g ,, A @ la ,, B @ lb ,, E @ le).
+Proof. split; [reflexivity | intros n; cbn; f_equal; lia]. Qed.
+Lemma wf_gv_up3 G i g A la B lb E le U i' l : i <> lV ->
+  [ G ; cvar g ,, A @ la ,, B @ lb ,, E @ le ⊢[ typeof i ] ] ->
+  in_gctx (gΨ G) U (gdTy (cvar g) i' l) -> lle i' i ->
+  [ G ; cvar g ,, A @ la ,, B @ lb ,, E @ le ⊢[ i ] tyGvar U (lshift 3) @ l ].
+Proof.
+  intros Hv HΓ Hin Hle. eapply wft_gvar; eauto using lsub_tail_shift3_var.
+  all: try (intros ? ? ? HB; exfalso; exact (no_in_ctx_var _ _ _ _ HB)); cbn; exact I.
+Qed.
+Lemma wf_gu_up3 G i g A la B lb E le u U i' l : [ G ; cvar g ,, A @ la ,, B @ lb ,, E @ le ⊢[ typeof i ] ] ->
+  in_gctx (gΨ G) u (gdTm (cvar g) i' (tyGvar U (lshift 0)) l) -> lle i' i ->
+  [ G ; cvar g ,, A @ la ,, B @ lb ,, E @ le ⊢[ i ] gvar u (lshift 3) : tyGvar U (lshift 3) @ l ].
+Proof.
+  intros HΓ Hin Hle. change (tyGvar U (lshift 3)) with ((tyGvar U (lshift 0))[lshift 3]).
+  eapply wf_gvar; eauto using lsub_tail_shift3_var.
+  all: try (intros ? ? ? HB; exfalso; exact (no_in_ctx_var _ _ _ _ HB)); cbn; exact I.
+Qed.
+Lemma wf_gu_up3T G i g A la B lb E le u T T' i' l : [ G ; cvar g ,, A @ la ,, B @ lb ,, E @ le ⊢[ typeof i ] ] ->
+  in_gctx (gΨ G) u (gdTm (cvar g) i' T l) -> lle i' i -> T[lshift 3] = T' ->
+  [ G ; cvar g ,, A @ la ,, B @ lb ,, E @ le ⊢[ i ] gvar u (lshift 3) : T' @ l ].
+Proof.
+  intros HΓ Hin Hle <-. eapply wf_gvar; eauto using lsub_tail_shift3_var.
+  all: try (intros ? ? ? HB; exfalso; exact (no_in_ctx_var _ _ _ _ HB)); cbn; exact I.
+Qed.
+
 Ltac br_lvl := cbn; repeat split; try lia.
 Ltac br_tac :=
   repeat first
@@ -371,7 +400,11 @@ Ltac br_tac :=
       | |- context [tyDVec _ _ _] => idtac | |- context [tmDVec _ _ _] => idtac
       | |- context [tyIWf _ _ _ _ _ _ _ _] => idtac | |- context [tmIWf _ _ _ _ _ _ _ _] => idtac
       | |- context [tmSupi _ _ _ _ _ _ _ _ _] => idtac
-      | |- context [tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _] => idtac end;
+      | |- context [tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _] => idtac
+      (* infinitary ones (M19c) *)
+      | |- context [tyIWi _ _ _ _ _ _ _ _ _ _] => idtac | |- context [tmIWi _ _ _ _ _ _ _ _ _ _] => idtac
+      | |- context [tmSupii _ _ _ _ _ _ _ _ _ _ _] => idtac
+      | |- context [tmElimIWi _ _ _ _ _ _ _ _ _ _ _ _ _ _] => idtac end;
       solve [unfold gv, gu; wnorm; wtop]
     | glookup
     | apply wkr_id | apply wkr_shift_S
@@ -393,6 +426,7 @@ Ltac br_tac :=
     | apply wf_var0_gv | eapply wf_gv_up | eapply wf_gu_up | eapply wf_gv_single2
     | eapply wf_gv_up2 | eapply wf_gu_up2
     | eapply wf_gu_upT; [ | glookup | | reflexivity ] | eapply wf_gu_up2T; [ | glookup | | reflexivity ]
+    | eapply wf_gv_up3 | eapply wf_gu_up3 | eapply wf_gu_up3T; [ | glookup | | reflexivity ]
     (* strict equality (M10c) *)
     | apply wft_seq | apply wft_sempty | apply wf_srefl | eapply wf_code_seq | apply wf_code_sempty
     | eapply wf_elimSEmpty
@@ -455,6 +489,16 @@ Ltac br60_pre G0 HG0 :=
   cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
        rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add] in Hn.
 
+(** [elim_IWi]'s (M19c), as [elim_IWf]'s ([br64_scope], [br64_head]). *)
+Ltac br64_pre G0 HG0 :=
+  let H1 := fresh "H64c" in let H2 := fresh "H64s" in let H3 := fresh "H64u" in let H4 := fresh "H64e" in
+  let Hn := fresh "H64n" in
+  destruct (br64_scope G0 HG0) as (H1 & H2 & H3); pose proof (br64_head G0 HG0) as H4;
+  unfold brG, gctx_uwk in H1, H2, H3, H4; cbn [gL gΨ] in H1, H2, H3, H4;
+  pose proof H1 as Hn; unfold gv, gu in Hn;
+  cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
+       rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add] in Hn.
+
 Lemma brΓ_conv {G Γ MT MT' Mt Mt' l1 l2 l1' l2'} k : k < nbr ->
   [ recGT G ; recΓT Γ ⊢[ lM ] MT ≅ MT' @ lvren l1 (ush 1) ] ->
   [ recGt G ; recΓt Γ ⊢[ lM ] Mt ≅ Mt' @ lvren l2 (ush 1) ] ->
@@ -474,6 +518,7 @@ Proof.
     (br_prep);
     (try (match goal with |- context [brG 50 ?G0] => br50_pre G0 HG0 end));
     (try (match goal with |- context [brG 60 ?G0] => br60_pre G0 HG0 end));
+    (try (match goal with |- context [brG 64 ?G0] => br64_pre G0 HG0 end));
     (br_fin HMT HMt HG0 HB)).
 Qed.
 

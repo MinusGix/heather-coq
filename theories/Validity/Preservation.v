@@ -13,7 +13,7 @@
     β-reduct is typed by the hypothesis [RecRedTyped], a premise of the
     theorems here. *)
 From DeLaM.Validity Require Export Canonicity.
-From DeLaM.Typing Require Import IWfIH PresupM.
+From DeLaM.Typing Require Import IWfIH IWiIH PresupM.
 
 (* the Σ rules ask for [i <> lV] (M8d); a computing layer is not V *)
 Local Hint Resolve compt_notV : core.
@@ -269,6 +269,19 @@ Proof.
   - exact (eqty_El _ _ _ _ _ _ _ Hv (lequiv_sym _ _ _ E0) (eqtm_refl _ _ _ _ _ _ Ht)).
   - exact (eqty_lconv _ _ _ _ _ _ _
              (eqty_sym _ _ _ _ _ _ (eqty_El_iwf _ _ _ _ _ _ _ _ _ _ _ Hc Wl0 Wli Hx Hs Hn Ho Hc0 Hm))
+             (lequiv_sym _ _ _ E0)).
+Qed.
+Lemma RS_El_iwi l l0 lp li x s n0 d o c m :
+  RS_ty (tyEl l (tmIWi l0 lp li x s n0 d o c m)) (tyIWi l0 lp li (tyEl li x) (tyEl l0 s) n0 (tyEl lp d) o c m).
+Proof.
+  intros G i Γ k Hc HT. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_ty_El HT) as ((Hv & Wl & Ht) & Hk).
+  destruct (inv_code_iwi Hi Ht) as ((_ & Wl0 & Wlp & Wli & Hx & Hs & Hn & Hd & Ho & Hc0 & Hm) & _ & EU).
+  pose proof (U_inj_c Hc EU) as E0.
+  apply (retype_eqty Hk). eapply eqty_trans.
+  - exact (eqty_El _ _ _ _ _ _ _ Hv (lequiv_sym _ _ _ E0) (eqtm_refl _ _ _ _ _ _ Ht)).
+  - exact (eqty_lconv _ _ _ _ _ _ _
+             (eqty_sym _ _ _ _ _ _ (eqty_El_iwi _ _ _ _ _ _ _ _ _ _ _ _ _ Hc Wl0 Wlp Wli Hx Hs Hn Hd Ho Hc0 Hm))
              (lequiv_sym _ _ _ E0)).
 Qed.
 Lemma RS_El_fin l n : RS_ty (tyEl l (tmFin n)) (tyFin n).
@@ -824,6 +837,55 @@ Proof.
     [exact Ht | exact (eqtm_wf_l Hi Hsup0) | exact (eqtm_sym _ _ _ _ _ _ _ Hsup)].
 Qed.
 
+(** [elim_IWi] (M19b), as [elim_IWf]. *)
+Lemma RS_elimIWi l lp li l' X A N D Ot C M c m t t' : RS_tm t t' ->
+  RS_tm (tmElimIWi l lp li l' X A N D Ot C M c m t) (tmElimIWi l lp li l' X A N D Ot C M c m t').
+Proof.
+  intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_elimIWi Hi Hx)
+    as ((_ & W3 & W1 & W2 & W4 & HX & HA & HN & HD & HO & HC & Hmot & HM & HCs & HI & Hc0 & Hm & Ht) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  apply eqtm_elimIWi; first [exact Hc | exact (compt_notV _ Hc) | apply lequiv_refl; assumption
+                            | exact (IH _ _ _ _ _ Hc Ht) | assumption
+                            | apply eqty_refl; assumption | apply eqtm_refl; assumption].
+Qed.
+
+Lemma RS_elimIWi_supii l lp li l' X A N D Ot C M c m k kp ki X' A' N' D' Ot' C' a cs :
+  RS_tm (tmElimIWi l lp li l' X A N D Ot C M c m (tmSupii k kp ki X' A' N' D' Ot' C' a cs))
+        c[lsingle3 a cs (iwiIH l lp li l' X A N D Ot C M c a cs)].
+Proof.
+  intros G i Γ T q Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi. pose proof (compt_notV _ Hc) as Hv.
+  destruct (inv_elimIWi Hi Hx)
+    as ((_ & W3 & W1 & W2 & W4 & HX & HA & HN & HD & HO & HC & Hmot & HM & HCs & HI & Hc0 & Hm & Ht) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  destruct (supii_parts Hc Ht) as (HS & HE & Ha & Hcs & Eom & _).
+  pose proof HE as (Hlk & Hlpk & Hlik & _ & HXX & HAA & HNN & HDD & HOO & HCC & _).
+  pose proof (IWiSig_nf HS) as (NX & NA & NN & ND & NO & NC).
+  assert (Hsup0 : [ G ; Γ ⊢[ i ] tmSupii l lp li X A N D Ot C a cs ≅ tmSupii k kp ki X' A' N' D' Ot' C' a cs
+                    : tyIWi l lp li X A N D Ot C Ot[lsingle a] @ iwiL l lp li ])
+    by (apply eqtm_supii; first [exact Hc | exact (compt_notV _ Hc) | assumption | apply eqtm_refl; assumption]).
+  assert (Hsup : [ G ; Γ ⊢[ i ] tmSupii l lp li X A N D Ot C a cs ≅ tmSupii k kp ki X' A' N' D' Ot' C' a cs
+                   : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ]).
+  { eapply eqtm_conv; [exact Hsup0 | rewrite Hi].
+    exact (eqty_sym _ _ _ _ _ _ (IWi_ty_eq_idx Hi Hv HS Eom)). }
+  assert (Hcong : [ G ; Γ ⊢[ i ] tmElimIWi l lp li l' X A N D Ot C M c m (tmSupii k kp ki X' A' N' D' Ot' C' a cs)
+                     ≅ tmElimIWi l lp li l' X A N D Ot C M c Ot[lsingle a] (tmSupii l lp li X A N D Ot C a cs)
+                     : M[lsingle2 m (tmSupii k kp ki X' A' N' D' Ot' C' a cs)] @ l' ]).
+  { apply eqtm_elimIWi; first [exact Hc | exact (compt_notV _ Hc) | apply lequiv_refl; assumption | apply eqtm_sym, Hsup
+                             | apply eqtm_sym, Eom | assumption
+                             | apply eqty_refl; assumption | apply eqtm_refl; assumption]. }
+  pose proof (IWi_IH_wf Hi Hv HS W3 HM HI Hc0 Ha Hcs) as Hλ.
+  assert (Hb : [ G ; Γ ⊢[ i ] tmElimIWi l lp li l' X A N D Ot C M c Ot[lsingle a] (tmSupii l lp li X A N D Ot C a cs)
+                 ≅ c[lsingle3 a cs (iwiIH l lp li l' X A N D Ot C M c a cs)]
+                 : M[lsingle2 Ot[lsingle a] (tmSupii l lp li X A N D Ot C a cs)] @ l' ])
+    by (apply eqtm_elimIWi_supii; first [exact Hc | assumption]).
+  eapply eqtm_trans; [exact Hcong |].
+  eapply eqtm_conv; [exact Hb | rewrite Hi].
+  refine (wf_ty_func Hi HM (lsub_eq_single2 Hi Hm (eqtm_wf_l Hi Eom) (eqtm_sym _ _ _ _ _ _ _ Eom) _ _ _));
+    rewrite IWi_E_mot by assumption;
+    [exact Ht | exact (eqtm_wf_l Hi Hsup0) | exact (eqtm_sym _ _ _ _ _ _ _ Hsup)].
+Qed.
+
 (** [Vec] and [Fin] (M14a): the computation rules at a canonical length,
     and the congruence at the length. [Vec^l(A; 0) ⇝ Unit^l] keeps the
     level [l], which is what Heather's level-indexed [Unit] repaired. *)
@@ -961,11 +1023,12 @@ Proof.
     | solve [apply RS_elimWf_supf] | solve [apply RS_elimWf; assumption]
     | solve [apply RS_elimIWf_supi] | solve [apply RS_elimIWf; assumption]
     | solve [apply RS_out_corec] | solve [apply RS_out; assumption]
+    | solve [apply RS_elimIWi_supii] | solve [apply RS_elimIWi; assumption]
     | solve [apply RS_El_empty] | solve [apply RS_El_sum] | solve [apply RS_El_W]
     | solve [apply RS_vec_zero] | solve [apply RS_vec_succ] | solve [apply RS_vec; assumption]
     | solve [apply RS_fin_zero] | solve [apply RS_fin_succ] | solve [apply RS_fin; assumption]
     | solve [apply RS_El_vec] | solve [apply RS_El_fin] | solve [apply RS_El_wf]
-    | solve [apply RS_El_sq] | solve [apply RS_El_dvec] | solve [apply RS_El_iwf]
+    | solve [apply RS_El_sq] | solve [apply RS_El_dvec] | solve [apply RS_El_iwf] | solve [apply RS_El_iwi]
     | solve [apply RS_dvec_zero] | solve [apply RS_dvec_succ] | solve [apply RS_dvec; assumption] ].
 Qed.
 

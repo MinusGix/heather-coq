@@ -50,6 +50,7 @@ Proof using .
   - eapply LRsq; eauto.
   - eapply LRiwf; eauto.
   - eapply LRm; eauto.
+  - eapply LRiwi; eauto.
 Qed.
 
 Theorem cumul_down n m G Γ T T' l R :
@@ -106,6 +107,10 @@ Proof using .
   - match goal with Hs : lequiv _ l (mlvl l1 l2 li) |- _ =>
       rewrite (lequiv_measure_eq _ _ _ Hs), !lmeasure_max in Hle end.
     eapply LRm; eauto.
+    all: intros; match goal with IH : _ |- LR _ _ _ _ _ _ _ _ => eapply IH; [eassumption .. | lia] end.
+  - match goal with Hs : lequiv _ l (iwiL l1 lp1 li1) |- _ =>
+      rewrite (lequiv_measure_eq _ _ _ Hs), !lmeasure_max in Hle end.
+    eapply LRiwi; eauto.
     all: intros; match goal with IH : _ |- LR _ _ _ _ _ _ _ _ => eapply IH; [eassumption .. | lia] end.
 Qed.
 
@@ -182,6 +187,7 @@ Proof using .
   - eapply LRsq; eauto using releq_trans, releq_sym.
   - eapply LRiwf; eauto using releq_trans, releq_sym.
   - eapply LRm; eauto using releq_trans, releq_sym.
+  - eapply LRiwi; eauto using releq_trans, releq_sym.
 Qed.
 
 Theorem LR_lconv n rec G Γ T T' l l' R :
@@ -214,7 +220,10 @@ Proof using EL.
                     idxAd Hisym Histr domAd arAd otAd chAd ixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l il1 ilp1 ili1 il2 ilp2 ili2 iX iX' iA iA' iN iN' iD iD' iO iO' iC iC' im im' iidxR idomR ipdR R
+                    Hl Hil2 Hilp2 Hili2 Hiw Hiwp Hiwi HT HT' HiX HiX' HiA HiA' HiN HiN' HiD HiD' HiO HiO' HiC HiC' Him Him'
+                    HiXX HiAA HiNN HiDD HiOO HiCC Himm iidxAd Hiisym Hiistr idomAd iarAd iotAd ipdAd ipdE ipdMon ichAd igC iixAd HR];
     intros Hl'.
   - eapply LRnat; eauto using lequiv_trans, tyred_lconv.
   - eapply (LRU n rec G Γ T T' l' l1 l2); eauto using lequiv_trans, tyred_lconv.
@@ -241,6 +250,11 @@ Proof using EL.
       eauto using lequiv_trans, tyred_lconv.
   - eapply (LRm n rec G Γ T T' l' ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR);
       eauto using lequiv_trans, tyred_lconv.
+  - exact (LRiwi n rec G Γ T T' l' _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ iidxR idomR ipdR R
+             (lequiv_trans _ _ _ _ Hl' Hl) Hil2 Hilp2 Hili2 Hiw Hiwp Hiwi
+             (tyred_lconv _ _ _ _ HT Hl') (tyred_lconv _ _ _ _ HT' Hl')
+             HiX HiX' HiA HiA' HiN HiN' HiD HiD' HiO HiO' HiC HiC' Him Him'
+             HiXX HiAA HiNN HiDD HiOO HiCC Himm iidxAd Hiisym Hiistr idomAd iarAd iotAd ipdAd ipdE ipdMon ichAd igC iixAd HR).
 Qed.
 
 End Basics.

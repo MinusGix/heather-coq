@@ -860,6 +860,29 @@ Ltac fun_IWf :=
       fun_IWf_lifts X A N d; eapply eqtm_elimIWf; fun_Ip
   end.
 
+(** [IWi] (M19a): as [IWf]'s, with one more lift, past the domain [D]
+    (the child index's context). *)
+Ltac fun_IWi_lifts X A N D d :=
+  let HnD := fresh "HnD" in
+  fun_IWf_lifts X A N d;
+  match goal with
+  | wD : wf_ty _ _ (_ ,, A @ _ ,, tyFin N @ _) D ?lp,
+    HnF : lsub_eq _ _ _ (llift (llift d)) _ (_ ,, A @ _ ,, tyFin N @ _) |- _ =>
+      fun_Ilift HnF D lp HnD
+  end.
+Ltac fun_IWi :=
+  match goal with
+  | |- eq_ty _ _ _ (tyIWi _ _ _ (@subst _ _ ?X ?d) (@subst _ _ ?A _) (@subst _ _ ?N _)
+                     (@subst _ _ ?D _) _ _ _) _ _ =>
+      fun_IWi_lifts X A N D d; eapply eqty_iwi; fun_Ip
+  | |- eq_tm _ _ _ (tmSupii _ _ _ (@subst _ _ ?X ?d) (@subst _ _ ?A _) (@subst _ _ ?N _)
+                     (@subst _ _ ?D _) _ _ _ _) _ _ _ =>
+      fun_IWi_lifts X A N D d; eapply eqtm_supii; fun_Ip
+  | |- eq_tm _ _ _ (tmElimIWi _ _ _ _ (@subst _ _ ?X ?d) (@subst _ _ ?A _) (@subst _ _ ?N _)
+                     (@subst _ _ ?D _) _ _ _ _ _ _) _ _ _ =>
+      fun_IWi_lifts X A N D d; eapply eqtm_elimIWi; fun_Ip
+  end.
+
 (** [M] (M18b): as [IWf]'s, the substitutions lifted along the
     signature's contexts and, for [corec], the carrier's; [out]'s type is
     retyped to its pushed instance. *)
@@ -907,8 +930,37 @@ Ltac fun_codeEl s d :=
                                 | apply lle_self_typeof]
             | reflexivity ])
   end.
+(** The code of [IWi] (M19c): a code's decoding [El d] lifted along an
+    [lsub_eq] [Hd] already in hand, as [fun_codeEl]'s [El s]. *)
+Ltac fun_codeEl_at Hd s :=
+  lazymatch type of Hd with
+  | lsub_eq ?G ?i ?Δ ?d ?d' ?Γ =>
+      match goal with
+      | ws : wf_tm G _ Γ s (tyU ?l) ?ll |- _ =>
+          let Hs := fresh "Hs" in let Es := fresh "Es" in let HnD := fresh "HnD" in
+          assert (Hs : wf_tm G i Δ s[d] (tyU l) ll) by exact (wf_tm_subst_g ws (lsub_eq_l Hd));
+          assert (Es : eq_tm G i Δ s[d] s[d'] (tyU l) ll)
+            by (match goal with IH : forall Δ d d', _ -> eq_tm _ _ _ (subst ?x _) _ _ _ |- _ =>
+                  constr_eq x s; eapply IH; exact Hd end);
+          assert (HnD : lsub_eq G i (Δ ,, (tyEl l s)[d] @ l) (llift d) (llift d') (Γ ,, tyEl l s @ l))
+            by (eapply lsub_eq_lift_g;
+                [ exact Hd
+                | eapply lift_ty; [push_subst; apply wft_El; eauto with fung | apply lle_self_typeof]
+                | assumption
+                | eapply lift_eqty; [push_subst; apply eqty_El; eauto using lequiv_refl with fung
+                                    | apply lle_self_typeof]
+                | reflexivity ])
+      end
+  end.
 Ltac fun_Code :=
   match goal with
+  | |- eq_tm _ _ _ (tmIWi _ _ _ _ (@subst _ _ ?s ?d) (@subst _ _ ?n _) (@subst _ _ ?dd _) _ _ _) _ _ _ =>
+      let Hc := fresh "Hc" in
+      match goal with Hd : lsub_eq _ _ _ d _ _ |- _ => pose proof (lsub_eq_r Hd) end;
+      fun_codeEl s d;
+      match goal with HnA : lsub_eq _ _ (_ ,, (tyEl _ s)[d] @ _) _ _ _ |- _ =>
+        fun_Ilift HnA (tyFin n) lzero Hc; fun_codeEl_at Hc dd end;
+      eapply eqtm_code_iwi; fun_Ip
   | |- eq_tm _ _ _ (tmDVec _ (@subst _ _ ?n ?d) _) _ _ _ =>
       let Hc := fresh "Hc" in
       match goal with Hd : lsub_eq _ _ _ d _ _ |- _ => pose proof (lsub_eq_r Hd); fun_Ilift Hd (tyFin n) lzero Hc end;
@@ -947,6 +999,7 @@ Proof.
   all: try fun_J.
   all: try fun_Wf.
   all: try fun_IWf.
+  all: try fun_IWi.
   all: try fun_Code.
   all: try fun_M.
   all: try (timeout 3 any_rule fung_premise).

@@ -182,6 +182,8 @@ Proof.
       | destruct (inva_elimIWf H1) as (_ & Hk & E); destruct (inva_elimIWf H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_corec H1) as (_ & Hk & E); destruct (inva_corec H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_out H1) as (_ & Hk & E); destruct (inva_out H2) as (_ & Hk' & E'); uq_same
+      | destruct (inva_supii H1) as (_ & Hk & E); destruct (inva_supii H2) as (_ & Hk' & E'); uq_same
+      | destruct (inva_elimIWi H1) as (_ & Hk & E); destruct (inva_elimIWi H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_code_empty H1) as (_ & Hk & E); destruct (inva_code_empty H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_code_sum H1) as (_ & Hk & E); destruct (inva_code_sum H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_code_W H1) as (_ & Hk & E); destruct (inva_code_W H2) as (_ & Hk' & E'); uq_same
@@ -191,6 +193,7 @@ Proof.
       | destruct (inva_code_sq H1) as (_ & Hk & E); destruct (inva_code_sq H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_code_dvec H1) as (_ & Hk & E); destruct (inva_code_dvec H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_code_iwf H1) as (_ & Hk & E); destruct (inva_code_iwf H2) as (_ & Hk' & E'); uq_same
+      | destruct (inva_code_iwi H1) as (_ & Hk & E); destruct (inva_code_iwi H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_app H1) as (_ & Hk & E); destruct (inva_app H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_code_sig H1) as (_ & Hk & E); destruct (inva_code_sig H2) as (_ & Hk' & E'); uq_same
       | destruct (inva_pair H1) as (_ & Hk & E); destruct (inva_pair H2) as (_ & Hk' & E'); uq_same

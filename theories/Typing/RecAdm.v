@@ -9,7 +9,7 @@
     are moved into the branch scope by universe and global weakening under
     their own binders ([MT_br], [Mt_br]), instantiated by [motT_wf] and
     [mott_wf], and weakened past the recursive calls' locals. *)
-From DeLaM.Typing Require Export InvAny AlgStruct WfScope WfScopeIWf.
+From DeLaM.Typing Require Export InvAny AlgStruct WfScope WfScopeIWf WfScopeIWi.
 
 (** ** The motives in the branch scope *)
 
@@ -305,7 +305,7 @@ Ltac code_side_W := first [assumption | wnorm; wtop].
 (** The side conditions: levels, the scrutinees' contexts and typings. *)
 Ltac code_side_k k :=
   let b := eval cbv in (orb (orb (andb (Nat.leb 39 k) (Nat.ltb k 43)) (andb (Nat.leb 47 k) (Nat.ltb k 51)))
-                            (andb (Nat.leb 55 k) (Nat.ltb k 61))) in
+                            (andb (Nat.leb 55 k) (Nat.ltb k 65))) in
   lazymatch b with true => code_side_W | false => code_side end.
 (** [cbn; lia] only off the judgments: on one, [cbn] normalised the
     whole judgment before [lia] failed (a third of [brRes_wf]). *)
@@ -350,8 +350,23 @@ Ltac wf60_pre G0 :=
   cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
        rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add
        tmNth nthMot nthBase nthStep] in Hn.
+(** [elim_IWi]'s (M19c), as [elim_IWf]'s ([br64_scope]). *)
+Ltac wf64_pre G0 :=
+  let H := fresh "H64c" in let Hn := fresh "H64n" in
+  assert (H : [ brG 64 G0 ; cvar 10 ,, gv 8 @ lvar 3
+                ,, iwicsty (lvar 3) (lvar 2) (lvar 1) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) @ iwiL (lvar 3) (lvar 2) (lvar 1)
+                ,, iwiihty (lvar 3) (lvar 2) (lvar 1) (lvar 0) (gv 9) (gv 8) (gu 7) (gv 6) (gu 5) (gu 4) (gv 3)
+                     @ lmax lzero (lmax (lvar 2) (lvar 0))
+                ⊢[ lD ] ])
+    by exact (proj1 (br64_scope G0 ltac:(assumption)));
+  let Hh := fresh "H64h" in pose proof (br64_head G0 ltac:(assumption)) as Hh; unfold gv, gu in Hh;
+  pose proof H as Hn; unfold gv, gu in Hn;
+  cbn [typeof ren Ren_ty Ren_tm Ren_lsub subst Subst_ty Subst_tm Subst_lsub ren_ty ren_tm lren r2l rdrop
+       rshift1 rlift rup lcons' rlk subst_ty subst_tm lcomp lnorm ldrop llift llk lsingle lsingle2 Nat.eqb Nat.add
+       tmNth nthMot nthBase nthStep] in Hn.
 Ltac br_pre kk G0 :=
-  tryif constr_eq kk 50 then wf50_pre G0 else tryif constr_eq kk 60 then wf60_pre G0 else idtac.
+  tryif constr_eq kk 50 then wf50_pre G0 else tryif constr_eq kk 60 then wf60_pre G0 else
+  tryif constr_eq kk 64 then wf64_pre G0 else idtac.
 
 Section Adm.
 Context {G : gctx} {Γ : ctx} (HΓ : [ G ; Γ ⊢[ lM ] ]) {l1 l2 : lvl} (Hl1 : lwf (gL G) l1) (Hl2 : lwf (gL G) l2)

@@ -187,6 +187,7 @@ Ltac s_push_at h k := lazymatch h with
   | @tmSqCode => k gs_tmSqCode
   | @tmDVec => k gs_tmDVec
   | @tmIWf => k gs_tmIWf
+  | @tmIWi => k gs_tmIWi
   | @tyIWf => k gs_tyIWf
   | @tmSupi => k gs_supi
   | @tmElimIWf => k gs_elimIWf
@@ -197,10 +198,16 @@ Ltac s_push_at h k := lazymatch h with
   | @tmCorec => k gs_corec
   | @tmOut => k gs_out
   | @mOutCorec => k gs_mOutCorec
+  | @tyIWi => k gs_tyIWi
+  | @tmSupii => k gs_supii
+  | @tmElimIWi => k gs_elimIWi
+  | @iwiFam => k gs_iwiFam
+  | @iwiFamCod => k gs_iwiFamCod
+  | @iwiIH => k gs_iwiIH
   end.
 Ltac s_push := repeat match goal with
-  | |- context [@gsubst _ _ ?t _] => let h := head_of t in s_push_at h ltac:(fun L => rewrite L)
-  | H : context [@gsubst _ _ ?t _] |- _ => let h := head_of t in s_push_at h ltac:(fun L => rewrite L in H)
+  | |- context [@gsubst _ _ ?t _] => let h := head_of t in s_push_at h ltac:(fun L => rewrite !L)
+  | H : context [@gsubst _ _ ?t _] |- _ => let h := head_of t in s_push_at h ltac:(fun L => rewrite !L in H)
   end.
 
 (** Side conditions of the general lemmas: levels. *)
@@ -209,7 +216,9 @@ Ltac s_side :=
   first [ eassumption | apply lequiv_refl; s_lwf | apply lequiv_sym; eassumption | s_lwf
         | eapply VTyG_refl_l; eassumption | eapply VTy_refl_l; eassumption
         (* [IWf]'s signature (M17b) *)
-        | lazymatch goal with |- context [IWfSig] => unfold IWfSig; repeat split; first [s_lwf | eassumption] end ].
+        | lazymatch goal with |- context [IWfSig] => unfold IWfSig; repeat split; first [s_lwf | eassumption] end
+        (* [IWi]'s (M19b) *)
+        | lazymatch goal with |- context [IWiSig] => unfold IWiSig; repeat split; first [s_lwf | eassumption] end ].
 
 (** The two sides differ ([σ] and [σ']), so the rule-shaped wrappers do
     not apply: the general lemmas do. *)
@@ -279,7 +288,14 @@ Ltac fts_case :=
   (* indexed coinductive types (M18b) *)
   | solve [simple eapply V_M; s_side] | solve [simple eapply V_out; s_side]
   | solve [simple eapply V_mOutTy; s_side]
-  | solve [simple eapply V_corec; s_side] | solve [simple eapply V_out_corec; s_side] ].
+  | solve [simple eapply V_corec; s_side] | solve [simple eapply V_out_corec; s_side]
+  (* indexed families with infinitary children (M19b) *)
+  | solve [simple eapply V_iwi_at; s_side] | solve [simple eapply V_supii; s_side]
+  | solve [simple eapply V_elimIWi; s_side] | solve [simple eapply V_elimIWi_supii; s_side]
+  | solve [simple eapply V_supii_ty; s_side] | solve [simple eapply V_elimIWi_ty_at; s_side]
+  | solve [simple eapply V_elimIWi_supii_ty; s_side]
+  (* the code of IWi (M19c) *)
+  | solve [simple eapply V_code_iwi; s_side] | solve [simple eapply V_El_iwi; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=

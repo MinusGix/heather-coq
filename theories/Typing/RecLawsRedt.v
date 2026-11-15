@@ -97,6 +97,27 @@ Proof.
   rewrite ?usubst_ren_ty, ?usubst_ren_tm, ?usubst_llift_single_r. reflexivity.
 Qed.
 
+(** [sup_ii]'s children and [elim_IWi]'s step telescope (M19c) hold an
+    [iwiFam]. *)
+Lemma usubst_llift_single_ty_r (B : ty) a φ :
+  usubst_ty (subst_ty B (llift (lsingle a))) φ = subst_ty (usubst_ty B φ) (llift (lsingle (usubst_tm a φ))).
+Proof. apply (proj1 usubst_subst_all). intros [|[|n]]; rewrite ?llk_llift; cbn; rewrite ?usubst_ren_tm; reflexivity. Qed.
+Lemma usubst_llift2_single_r (b a : tm) φ :
+  usubst_tm (subst_tm b (llift (llift (lsingle a)))) φ =
+  subst_tm (usubst_tm b φ) (llift (llift (lsingle (usubst_tm a φ)))).
+Proof.
+  apply (proj1 (proj2 usubst_subst_all)).
+  intros [|[|[|n]]]; rewrite ?llk_llift; cbn; rewrite ?llk_llift; cbn; rewrite ?usubst_ren_tm; reflexivity.
+Qed.
+Lemma usubst_iwiFam_r l lp li X A N D Ot C a φ :
+  usubst_ty (iwiFam l lp li X A N D Ot C a) φ =
+  iwiFam (lvsubst l φ) (lvsubst lp φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_tm N φ)
+    (usubst_ty D φ) (usubst_tm Ot φ) (usubst_tm C φ) (usubst_tm a φ).
+Proof.
+  unfold iwiFam, iwiFamCod. cbn [usubst_tm usubst_ty lvsubst].
+  rewrite ?usubst_ren_ty, ?usubst_ren_tm, ?usubst_llift2_single_r, ?usubst_llift_single_ty_r. reflexivity.
+Qed.
+
 Ltac upeel_push :=
   repeat first [ rewrite <- peelL_usubst | rewrite <- peelG_usubst | rewrite <- peelU_usubst ];
   rewrite rb_br_usubst; cbn [gousubst usubst_tm ucsubst usubst_ty lvsubst recT rect];
@@ -107,7 +128,7 @@ Ltac upeel_push :=
   rewrite ?usubst_lsingle_tm, ?usubst_lsingle_ty, ?usubst_tmNth_r; cbn [usubst_tm usubst_ty lvsubst];
   rewrite ?usubst_ren_ty, ?usubst_ren_tm;
   (* [sup_i]'s children and [elim_IWf]'s step telescope (M17c) *)
-  rewrite ?usubst_iwfFam_r, ?usubst_tmDNth_r, ?usubst_lsingle2_ty; cbn [usubst_tm usubst_ty lvsubst];
+  rewrite ?usubst_iwfFam_r, ?usubst_iwiFam_r, ?usubst_tmDNth_r, ?usubst_lsingle2_ty; cbn [usubst_tm usubst_ty lvsubst];
   rewrite ?usubst_ren_ty, ?usubst_ren_tm, ?usubst_lsingle_tm;
   reflexivity.
 

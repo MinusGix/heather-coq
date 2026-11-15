@@ -11,7 +11,7 @@ From DeLaM.Validity Require Export Basic.
     so a match on a head ([canon_head]) says which former each case is. *)
 Inductive ty_hd :=
   hdNe | hdNat | hdU | hdPi | hdCTyp | hdCTrm | hdUPi | hdCPi | hdTPi | hdErr | hdSig | hdUnit
-| hdSEq | hdSEmpty | hdId | hdEmpty | hdSum | hdW | hdWf | hdSq | hdIWf | hdM.
+| hdSEq | hdSEmpty | hdId | hdEmpty | hdSum | hdW | hdWf | hdSq | hdIWf | hdM | hdIWi.
 
 Definition ty_head (T : ty) : ty_hd :=
   match T with
@@ -21,6 +21,7 @@ Definition ty_head (T : ty) : ty_hd :=
   | tyUnit _ => hdUnit | tySEq _ _ _ _ => hdSEq | tySEmpty _ => hdSEmpty | tyId _ _ _ _ => hdId
   | tyEmpty _ => hdEmpty | tySum _ _ _ _ => hdSum | tyW _ _ _ _ => hdW | tyWf _ _ _ => hdWf
   | tySq _ _ => hdSq | tyIWf _ _ _ _ _ _ _ _ => hdIWf | tyM _ _ _ _ _ _ _ _ => hdM
+  | tyIWi _ _ _ _ _ _ _ _ _ _ => hdIWi
   end.
 
 Lemma whne_ty_head V : whne_ty V -> ty_head V = hdNe.
@@ -191,6 +192,30 @@ Proof using EL red_eqty.
   injection Heq as <- <- <- <- <- <- <- <-. auto 10.
 Qed.
 
+(** Indexed families with infinitary children (M19b): every annotation and
+    the index, as [IWf]'s. *)
+Lemma IWi_inj {G Γ l l1 lp1 li1 l2 lp2 li2 X X' A A' N N' D D' Ot Ot' C C' m m'} :
+  [ G ; Γ ⊢g tyIWi l1 lp1 li1 X A N D Ot C m ≅ tyIWi l2 lp2 li2 X' A' N' D' Ot' C' m' @ l ] -> lwf (gL G) l ->
+  lequiv (gL G) l2 l1 /\ lequiv (gL G) lp2 lp1 /\ lequiv (gL G) li2 li1 /\
+  [ G ; Γ ⊢ X ≈ X' @ li1 ] /\ [ G ; Γ ⊢ A ≈ A' @ l1 ] /\
+  [ G ; Γ ,, A @ l1 ⊢ N ≈ N' : tyNat @ lzero ] /\
+  [ G ; Γ ,, A @ l1 ,, tyFin N @ lzero ⊢ D ≈ D' @ lp1 ] /\
+  [ G ; Γ ,, A @ l1 ⊢ Ot ≈ Ot' : X⟨↑⟩ @ li1 ] /\
+  [ G ; Γ ,, A @ l1 ,, tyFin N @ lzero ,, D @ lp1 ⊢ C ≈ C' : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li1 ] /\
+  [ G ; Γ ⊢ m ≈ m' : X @ li1 ].
+Proof using EL red_eqty.
+  intros H Hl. destruct (red_eqty _ _ _ _ _ H Hl) as [R HR].
+  pose proof (eqty_wf_l ge_typeof H) as HP.
+  destruct (LR_inv_iwi HR (tyred_refl _ _ HP))
+    as (k2 & kp2 & ki2 & X2 & A2 & N2 & D2 & O2 & C2 & m2 & idxR & domR & pdR & _ & Hk2 & Hkp2 & Hki2
+        & _ & _ & _ & _ & HT' & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _
+        & HXX & HAA & HNN & HDD & HOO & HCC & Hmm & _).
+  pose proof (tyred_refl _ _ (eqty_wf_r ge_typeof H)) as HT'0.
+  pose proof (tyred_whnf_det _ _ _ _ _ _ _ _ HT' HT'0 (whnf_tyIWi _ _ _ _ _ _ _ _ _ _)
+                (whnf_tyIWi _ _ _ _ _ _ _ _ _ _)) as Heq.
+  injection Heq as <- <- <- <- <- <- <- <- <- <-. auto 12.
+Qed.
+
 (** Propositional truncation (M16a): the carriers, and the levels. *)
 Lemma sq_inj {G Γ l l1 l2 A A'} :
   [ G ; Γ ⊢g tySq l1 A ≅ tySq l2 A' @ l ] -> lwf (gL G) l ->
@@ -274,7 +299,11 @@ Proof using EL.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC'
+                    Hvm Hvm' HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd
+                    vpdAd vpdE vpdMon vchAd vgC vixAd HR];
     try match goal with HM : ModRel _ _ _ _ _ _ |- _ => destruct HM end;
     eexists; split; eauto using whnf_ty, gne_ty_whne_l.
 Qed.
@@ -321,7 +350,11 @@ Proof using EL.
                     widxAd Hwisym Hwistr wdomAd warAd wotAd wchAd wixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                    Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT HT' HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC'
+                    Hvm Hvm' HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd Hvisym Hvistr vdomAd varAd votAd
+                    vpdAd vpdE vpdMon vchAd vgC vixAd HR];
     intros t t' Ht; first [exact (ModRel_whnf_tm HM _ _ Ht) | apply HR in Ht].
   - destruct Ht as [t t' w w' Hw _ _ Hnf]. exists w; split; [exact (tmred_back Hw HT Hl)|].
     destruct Hnf; eauto using whnf, gne_tm_whne_l.
@@ -352,6 +385,8 @@ Proof using EL.
   - destruct (IWfRel_inv Ht) as (w & w' & Hr & _ & _ & Hnf). exists w; split; [exact (tmred_back Hr HT Hl) |].
     exact (IWfNf_whnf_l Hnf).
   - destruct (MR_gen Ht) as (w & w' & Hr & _ & Hwh & _). exists w; split; [exact (tmred_back Hr HT Hl) | exact Hwh].
+  - destruct (IWiRel_inv Ht) as (w & w' & Hr & _ & _ & Hnf). exists w; split; [exact (tmred_back Hr HT Hl) |].
+    exact (IWiNf_whnf_l Hnf).
 Qed.
 
 Theorem whnf_normalization_ty {G Γ T l} : [ G ; Γ ⊢g T @ l ] -> lwf (gL G) l ->

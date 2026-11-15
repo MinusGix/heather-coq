@@ -266,6 +266,10 @@ Proof. exact (wkb_ren nu ng 7 w r). Qed.
 Lemma wkb_ren8 nu ng w r :
   (wkb nu ng 8 w)⟨rlift (rlift (rlift (rlift (rlift (rlift (rlift (rlift r)))))))⟩ = wkb nu ng 8 w⟨r⟩.
 Proof. exact (wkb_ren nu ng 8 w r). Qed.
+(* [elim_IWi]'s branch (M19c) has ten locals *)
+Lemma wkb_ren9 nu ng w r :
+  (wkb nu ng 9 w)⟨rlift (rlift (rlift (rlift (rlift (rlift (rlift (rlift (rlift r))))))))⟩ = wkb nu ng 9 w⟨r⟩.
+Proof. exact (wkb_ren nu ng 9 w r). Qed.
 
 Lemma brLocs_ren k wT wt a1 a2 r : k < nbr ->
   cexts_ren (brLocs k wT wt a1 a2) r = brLocs k wT⟨r⟩ wt⟨r⟩ a1 a2.
@@ -273,7 +277,7 @@ Proof.
   intros Hk.
   br_all ltac:(destruct k; [cbn [brLocs cexts_ren mkLocs call_ty call_lv br_calls br_nu br_ng br_ar];
     rewrite ?motT_ren, ?mott_ren, ?wkb_ren0, ?wkb_ren1, ?wkb_ren2, ?wkb_ren3, ?wkb_ren4, ?wkb_ren5,
-      ?wkb_ren6, ?wkb_ren7, ?wkb_ren8;
+      ?wkb_ren6, ?wkb_ren7, ?wkb_ren8, ?wkb_ren9;
     reflexivity|]).
   lia.
 Qed.

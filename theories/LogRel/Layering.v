@@ -31,6 +31,7 @@ Fixpoint mltt_ty (T : ty) : Prop :=
   (* [M]'s index, shape and position relations are relations at those
      types (M18b) *)
   | tyM _ _ _ X A B _ _ => mltt_ty X /\ mltt_ty A /\ mltt_ty B
+  | tyIWi _ _ _ X A _ D _ _ _ => mltt_ty X /\ mltt_ty A /\ mltt_ty D
   | tyCTyp _ _ | tyCTrm _ _ _ | tyCPi _ _ | tyTPi _ _ _ _ => False
   | _ => True
   end.
@@ -147,7 +148,11 @@ Proof.
                      Hidx IHidx Hisym Histr Hdom IHdom Har Hot Hch Hix HR
                  | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                      Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                     HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR]; intros Hm Hm'.
+                     HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                 | G Γ T T' l l1 lp1 li1 l2 lp2 li2 X X' A A' N N' D D' Ot Ot' C C' m m' idxR domR pdR R
+                     Hl Hl2 Hlp2 Hli2 Hw Hwp Hwi HT HT' HX HX' HA HA' HN HN' HD HD' HO HO' HC HC' Hmt Hmt'
+                     HXX HAA HNN HDD HOO HCC Hmm Hidx IHidx Hisym Histr Hdom IHdom Har Hot Hpd IHpd Hpde HpdM Hch HgC Hix HR];
+    intros Hm Hm'.
   - eapply LRnat; eassumption.
   - eapply LRU; try eassumption.
     intros t t'; rewrite (HR t t'); split; apply (URel_layer (n := n) Hn);
@@ -199,6 +204,13 @@ Proof.
     + intros ρ; apply IHmidx; apply mltt_ren, mltt_gwa; assumption.
     + intros ρ x x' hx; apply IHmsh; [exact hx | ..]; apply mltt_subst, mltt_ren, mltt_gwa; assumption.
     + intros ρ x x' a a' hx ha; apply IHmpos; [exact hx | exact ha | ..];
+        apply mltt_subst, mltt_ren, mltt_gwa; assumption.
+  - pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT) Hm) as (HmX & HmA & HmD).
+    pose proof (mltt_red (tyred_red _ _ _ _ _ _ HT') Hm') as (HmX' & HmA' & HmD').
+    eapply LRiwi; try eassumption.
+    + intros ρ; apply IHidx; apply mltt_ren, mltt_gwa; assumption.
+    + intros ρ; apply IHdom; apply mltt_ren, mltt_gwa; assumption.
+    + intros ρ a a' ha p p' hp; apply IHpd; [exact ha | exact hp | ..];
         apply mltt_subst, mltt_ren, mltt_gwa; assumption.
 Qed.
 

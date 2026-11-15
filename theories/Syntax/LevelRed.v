@@ -129,15 +129,41 @@ Proof.
   apply Stm; [apply leq_llift, leq_lsingle|]; assumption.
 Qed.
 
+Lemma leqv_lsuc a b : leqv a b -> leqv (lsuc a) (lsuc b).
+Proof using . intros H v; cbn; now rewrite H. Qed.
+Lemma leqv_lmax a b a' b' : leqv a a' -> leqv b b' -> leqv (lmax a b) (lmax a' b').
+Proof using . intros H H' v; cbn; now rewrite H, H'. Qed.
+
+(** [IWi]'s field type and its codomain (M19). *)
+Lemma leq_iwiFamCod k1 k2 k3 X A N D Ot C a k1' k2' k3' X' A' N' D' Ot' C' a' :
+  leqv k1 k1' -> leqv k2 k2' -> leqv k3 k3' -> ty_leq X X' -> ty_leq A A' -> tm_leq N N' ->
+  ty_leq D D' -> tm_leq Ot Ot' -> tm_leq C C' -> tm_leq a a' ->
+  ty_leq (iwiFamCod k1 k2 k3 X A N D Ot C a) (iwiFamCod k1' k2' k3' X' A' N' D' Ot' C' a').
+Proof.
+  intros E1 E2 E3 EX EA EN ED EO EC Ea. unfold iwiFamCod.
+  pose proof (proj1 leq_ren_all) as Rty. pose proof (proj1 (proj2 leq_ren_all)) as Rtm.
+  pose proof (proj1 (proj2 leq_subst_all)) as Stm. cbn beta in Rty, Rtm, Stm.
+  cbn [ty_leq]; repeat split; auto.
+  all: repeat first [ assumption | apply Rty | apply Rtm ].
+  apply Stm; [apply leq_llift, leq_llift, leq_lsingle|]; assumption.
+Qed.
+Lemma leq_iwiFam k1 k2 k3 X A N D Ot C a k1' k2' k3' X' A' N' D' Ot' C' a' :
+  leqv k1 k1' -> leqv k2 k2' -> leqv k3 k3' -> ty_leq X X' -> ty_leq A A' -> tm_leq N N' ->
+  ty_leq D D' -> tm_leq Ot Ot' -> tm_leq C C' -> tm_leq a a' ->
+  ty_leq (iwiFam k1 k2 k3 X A N D Ot C a) (iwiFam k1' k2' k3' X' A' N' D' Ot' C' a').
+Proof.
+  intros. unfold iwiFam. split; [|split; [|split]].
+  - assumption.
+  - repeat apply leqv_lmax; assumption.
+  - apply (proj1 leq_subst_all); [apply leq_llift, leq_lsingle|]; assumption.
+  - apply leq_iwiFamCod; assumption.
+Qed.
+
 (** ** The β reducts *)
 
 Section Reducts.
 Context {l1 l2 l1' l2' rb rb'} (E1 : leqv l1 l1') (E2 : leqv l2 l2') (Erb : tm_leq rb rb').
 
-Lemma leqv_lsuc a b : leqv a b -> leqv (lsuc a) (lsuc b).
-Proof using . intros H v; cbn; now rewrite H. Qed.
-Lemma leqv_lmax a b a' b' : leqv a a' -> leqv b b' -> leqv (lmax a b) (lmax a' b').
-Proof using . intros H H' v; cbn; now rewrite H, H'. Qed.
 
 (** Goal-directed: peel the reducts' structure down to the hypotheses.
     A failing [apply] of a peeling lemma unfolds its conclusion against the
@@ -186,6 +212,7 @@ Ltac leq_step :=
     | |- lsub_leq (llift _) (llift _) => apply leq_llift
     | |- tm_leq (tmDNth _ _ _ _ _) (tmDNth _ _ _ _ _) => apply leq_tmDNth
     | |- ty_leq (iwfFam _ _ _ _ _ _ _ _) (iwfFam _ _ _ _ _ _ _ _) => apply leq_iwfFam
+    | |- ty_leq (iwiFam _ _ _ _ _ _ _ _ _ _) (iwiFam _ _ _ _ _ _ _ _ _ _) => apply leq_iwiFam
     | |- ?R ?a _ =>
         let h := leq_head a in
         tryif is_constructor h
@@ -299,6 +326,35 @@ Proof.
                     | lazymatch goal with |- lsub_leq _ _ => apply leq_lsingle end ].
 Qed.
 
+(** [elim_IWi]'s induction hypothesis (M19). *)
+Lemma leq_iwiIH k1 k2 k3 k4 X A N D Ot C M c a cs k1' k2' k3' k4' X' A' N' D' Ot' C' M' c' a' cs' :
+  leqv k1 k1' -> leqv k2 k2' -> leqv k3 k3' -> leqv k4 k4' -> ty_leq X X' -> ty_leq A A' -> tm_leq N N' ->
+  ty_leq D D' -> tm_leq Ot Ot' -> tm_leq C C' -> ty_leq M M' -> tm_leq c c' -> tm_leq a a' -> tm_leq cs cs' ->
+  tm_leq (iwiIH k1 k2 k3 k4 X A N D Ot C M c a cs) (iwiIH k1' k2' k3' k4' X' A' N' D' Ot' C' M' c' a' cs').
+Proof.
+  intros E1 E2 E3 E4 EX EA EN ED EO EC EM Ec Ea Ecs. unfold iwiIH.
+  pose proof (proj1 leq_ren_all) as Rty. pose proof (proj1 (proj2 leq_ren_all)) as Rtm.
+  pose proof (proj1 leq_subst_all) as Sty. pose proof (proj1 (proj2 leq_subst_all)) as Stm.
+  cbn beta in Rty, Rtm, Sty, Stm.
+  pose proof (leq_iwiFam _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ E1 E2 E3 EX EA EN ED EO EC Ea) as HF.
+  pose proof (leq_iwiFamCod _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ E1 E2 E3 EX EA EN ED EO EC Ea) as HB.
+  (* [dnth] and the families kept folded *)
+  assert (H : tm_leq (tmDNth (iwiL k1 k2 k3) N[lsingle a]⟨↑⟩⟨↑⟩ (iwiFam k1 k2 k3 X A N D Ot C a)⟨rlift ↑⟩⟨rlift ↑⟩
+                        cs⟨↑⟩⟨↑⟩ (var 1))
+                     (tmDNth (iwiL k1' k2' k3') N'[lsingle a']⟨↑⟩⟨↑⟩ (iwiFam k1' k2' k3' X' A' N' D' Ot' C' a')⟨rlift ↑⟩⟨rlift ↑⟩
+                        cs'⟨↑⟩⟨↑⟩ (var 1))).
+  { apply leq_tmDNth; [repeat apply leqv_lmax; assumption | apply Rtm, Rtm, Stm; [apply leq_lsingle|]; assumption
+                     | apply Rty, Rty, HF | apply Rtm, Rtm; assumption | reflexivity]. }
+  revert H HF HB.
+  generalize (tmDNth (iwiL k1 k2 k3) N[lsingle a]⟨↑⟩⟨↑⟩ (iwiFam k1 k2 k3 X A N D Ot C a)⟨rlift ↑⟩⟨rlift ↑⟩ cs⟨↑⟩⟨↑⟩ (var 1))
+             (tmDNth (iwiL k1' k2' k3') N'[lsingle a']⟨↑⟩⟨↑⟩ (iwiFam k1' k2' k3' X' A' N' D' Ot' C' a')⟨rlift ↑⟩⟨rlift ↑⟩ cs'⟨↑⟩⟨↑⟩ (var 1))
+             (iwiFamCod k1 k2 k3 X A N D Ot C a) (iwiFamCod k1' k2' k3' X' A' N' D' Ot' C' a').
+  intros x x' B B' H _ HB.
+  cbn [tm_leq ty_leq]; repeat split; auto using leqv_lmax.
+  all: repeat first [ assumption | apply Rty | apply Rtm | apply Sty | apply Stm
+                    | lazymatch goal with |- lsub_leq _ _ => first [apply leq_lsingle | apply leq_llift] end ].
+Qed.
+
 (** [M]'s [out]-of-[corec] reduct (M18b). *)
 Lemma leq_mOutCorec l1 l2 li X A B C k Y c j y l1' l2' li' X' A' B' C' k' Y' c' j' y' :
   leqv l1 l1' -> leqv l2 l2' -> leqv li li' -> ty_leq X X' -> ty_leq A A' -> ty_leq B B' ->
@@ -366,6 +422,8 @@ Proof.
       apply (proj1 (proj2 leq_subst_all)); [unfold lsingle3; split; [cbn; repeat split; auto | apply leq_wfIH; auto] | auto]
     | lazymatch goal with |- tm_leq _[lsingle3 _ _ (iwfIH _ _ _ _ _ _ _ _ _ _ _ _)] _ => idtac end;
       apply (proj1 (proj2 leq_subst_all)); [unfold lsingle3; split; [cbn; repeat split; auto | apply leq_iwfIH; auto] | auto]
+    | lazymatch goal with |- tm_leq _[lsingle3 _ _ (iwiIH _ _ _ _ _ _ _ _ _ _ _ _ _ _)] _ => idtac end;
+      apply (proj1 (proj2 leq_subst_all)); [unfold lsingle3; split; [cbn; repeat split; auto | apply leq_iwiIH; auto] | auto]
     | lazymatch goal with |- tm_leq (mOutCorec _ _ _ _ _ _ _ _ _ _ _ _) _ => idtac end;
       apply leq_mOutCorec; auto
     | apply (proj1 (proj2 leq_subst_all)); cbn; repeat split; auto

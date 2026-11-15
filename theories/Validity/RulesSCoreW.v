@@ -306,6 +306,36 @@ Proof using EL VL VN.
   apply VS_code_iwf; try assumption; apply lequiv_refl; assumption.
 Qed.
 
+(** The code of [IWi] (M19c). *)
+Lemma VS_code_iwi {G Γ l lp li l' lp' li' x x' s s' n n' d d' o o' c c' m m'} :
+  lwf (gL G) l -> lwf (gL G) lp -> lwf (gL G) li ->
+  lequiv (gL G) l l' -> lequiv (gL G) lp lp' -> lequiv (gL G) li li' ->
+  VTmS G Γ x x' (tyU li) (lsuc li) -> VTmS G Γ s s' (tyU l) (lsuc l) ->
+  VTmS G (Γ ,, tyEl l s @ l) n n' tyNat lzero ->
+  VTmS G (Γ ,, tyEl l s @ l ,, tyFin n @ lzero) d d' (tyU lp) (lsuc lp) ->
+  VTmS G (Γ ,, tyEl l s @ l) o o' (tyEl li x⟨↑⟩) li ->
+  VTmS G (Γ ,, tyEl l s @ l ,, tyFin n @ lzero ,, tyEl lp d @ lp) c c' (tyEl li x⟨↑⟩⟨↑⟩⟨↑⟩) li ->
+  VTmS G Γ m m' (tyEl li x) li ->
+  VTmS G Γ (tmIWi l lp li x s n d o c m) (tmIWi l' lp' li' x' s' n' d' o' c' m')
+    (tyU (iwiL l lp li)) (lsuc (iwiL l lp li)).
+Proof using EL VL VN. intros; s_lift. Qed.
+Lemma VS_El_iwi {G Γ l lp li x s n d o c m} : lwf (gL G) l -> lwf (gL G) lp -> lwf (gL G) li ->
+  VTmS G Γ x x (tyU li) (lsuc li) -> VTmS G Γ s s (tyU l) (lsuc l) ->
+  VTmS G (Γ ,, tyEl l s @ l) n n tyNat lzero ->
+  VTmS G (Γ ,, tyEl l s @ l ,, tyFin n @ lzero) d d (tyU lp) (lsuc lp) ->
+  VTmS G (Γ ,, tyEl l s @ l) o o (tyEl li x⟨↑⟩) li ->
+  VTmS G (Γ ,, tyEl l s @ l ,, tyFin n @ lzero ,, tyEl lp d @ lp) c c (tyEl li x⟨↑⟩⟨↑⟩⟨↑⟩) li ->
+  VTmS G Γ m m (tyEl li x) li ->
+  VTyS G Γ (tyIWi l lp li (tyEl li x) (tyEl l s) n (tyEl lp d) o c m)
+    (tyEl (iwiL l lp li) (tmIWi l lp li x s n d o c m)) (iwiL l lp li).
+Proof using EL VL VN.
+  intros Hw Hwp Hwi Vx Vs Vn Vd Vo Vc Vm.
+  eapply (VTyS_trans_diag EP EM (T2 := tyEl (iwiL l lp li) (tmIWi l lp li x s n d o c m))); [s_diag V_El_iwi|].
+  assert (Hwm : lwf (gL G) (iwiL l lp li)) by (cbn; repeat split; assumption).
+  apply VS_El_w; [exact Hwm | apply lequiv_refl, Hwm |].
+  apply VS_code_iwi; try assumption; apply lequiv_refl; assumption.
+Qed.
+
 (** Indexed coinductive types (M18b). *)
 Lemma VS_M {G Γ l l' li k k' ki X X' A A' B B' C C' m m'} :
   lwf (gL G) l -> lwf (gL G) l' -> lwf (gL G) li ->

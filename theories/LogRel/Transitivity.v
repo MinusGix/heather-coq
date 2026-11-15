@@ -7,7 +7,7 @@
     which needs [a] related to itself (the induction hypothesis on the
     domain composed with its own symmetric) and left irrelevance. *)
 From DeLaM.LogRel Require Export Symmetry.
-From DeLaM.LogRel Require Import IWfAux MAux.
+From DeLaM.LogRel Require Import IWfAux MAux IWiAux.
 
 Section Transitivity.
 Context `{E : GenericEq} `{EL : !GenericEqLaws} `{LP : LRParams} `{VL : VPLaws lr_vp}.
@@ -1361,6 +1361,470 @@ Qed.
 
 End IWfTrans.
 
+(** ** Indexed families with infinitary children, composed (M19b)
+
+    As [IWf]: the second derivation is inverted at the middle tree's
+    shape, and the spines compose along a middle length. At a field, as
+    [W]: the middle tree's children are applied to the left argument,
+    which is related to itself at the left family ([Pr], from the
+    domains' relation's reflexivity) and, by the right argument, to the
+    third at the second family ([P12], from its transitivity and left
+    irrelevance). The middle position is the one canonically related to
+    the left. *)
+Section IWiTrans.
+
+Definition IWiTransHyps G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 (ix1 dm1 : DomRel G Γ) (pd1 : IPosDomRel G Γ)
+    l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 (dm2 : DomRel G Γ) (pd2 : IPosDomRel G Γ) :=
+  IWiFlipHyps G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 /\
+  (forall ρ x y z, dm1 ρ x y -> dm2 ρ y z -> dm1 ρ x z) /\
+  (forall (ρ : kwk G Γ) a a' a'' p p' p'' y y'', dm1 ρ a a' -> dm1 ρ a a'' -> pd1 ρ a a'' p p'' y y'' ->
+     PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N1)[lsingle a] (ktml ρ N2)[lsingle a'] p p' -> pd1 ρ a a' p p' y y) /\
+  (forall (ρ : kwk G Γ) a a' a'' p p' p'' y y'', dm1 ρ a a' -> dm1 ρ a a'' -> dm2 ρ a' a'' ->
+     pd1 ρ a a'' p p'' y y'' ->
+     PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ N1)[lsingle a] (ktml ρ N2)[lsingle a'] p p' ->
+     exists p3, pd2 ρ a' a'' p' p3 y y'').
+
+Lemma IWiTransHyps_kw {G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 dm2 pd2}
+    (ρ : kwk G Γ) :
+  IWiTransHyps G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 dm2 pd2 ->
+  IWiTransHyps (kw_G ρ) (kw_Δ ρ) l1 lp1 li1 (kty ρ X1) (kty ρ A1) (ktml ρ N1) (ktyll ρ D1) (ktml ρ Ot1)
+    (ktmlll ρ C1) (fun ρ' => ix1 (kw_comp ρ ρ')) (fun ρ' => dm1 (kw_comp ρ ρ')) (fun ρ' => pd1 (kw_comp ρ ρ'))
+    l2 lp2 li2 (kty ρ X2) (kty ρ A2) (ktml ρ N2) (ktyll ρ D2) (ktml ρ Ot2) (ktmlll ρ C2)
+    (fun ρ' => dm2 (kw_comp ρ ρ')) (fun ρ' => pd2 (kw_comp ρ ρ')).
+Proof using EL.
+  intros (Hy & Td & Pr & P12). refine (conj (IWiFlipHyps_kw ρ Hy) (conj _ (conj _ _))).
+  - intros ρ' x y z. exact (Td (kw_comp ρ ρ') x y z).
+  - intros ρ' a a' a'' p p' p'' y y'' h h' hp Hp. rewrite <- !ktml_comp in Hp.
+    exact (Pr (kw_comp ρ ρ') _ _ _ _ _ _ _ _ h h' hp Hp).
+  - intros ρ' a a' a'' p p' p'' y y'' h h' h2 hp Hp. rewrite <- !ktml_comp in Hp.
+    exact (P12 (kw_comp ρ ρ') _ _ _ _ _ _ _ _ h h' h2 hp Hp).
+Qed.
+
+Lemma IWiNf_whnf_l {G Γ l lp li X A N D Ot C ix dm pd m w w'} :
+  IWiNf G Γ l lp li X A N D Ot C ix dm pd m w w' -> whnf w.
+Proof using EL. destruct 1; [apply whnf_supii | apply whnf_ne; exact (gne_tm_whne_l H)]. Qed.
+Lemma IWiNf_whnf_r {G Γ l lp li X A N D Ot C ix dm pd m w w'} :
+  IWiNf G Γ l lp li X A N D Ot C ix dm pd m w w' -> whnf w'.
+Proof using EL. destruct 1; [apply whnf_supii | apply whnf_ne; exact (gne_tm_whne_r H)]. Qed.
+
+Lemma IWiNf_sup_inv {G Γ l lp li X A N D Ot C} {ix dm : DomRel G Γ} {pd : IPosDomRel G Γ}
+    {m k kp ki X1 A1 N1 D1 O1 C1 a cs w} :
+  IWiNf G Γ l lp li X A N D Ot C ix dm pd m (tmSupii k kp ki X1 A1 N1 D1 O1 C1 a cs) w ->
+  exists k' kp' ki' X1' A1' N1' D1' O1' C1' a' cs', w = tmSupii k' kp' ki' X1' A1' N1' D1' O1' C1' a' cs' /\
+    IWiEq (G := G) (i := ge_layer) Γ l lp li k kp ki X X1 A A1 N N1 D D1 Ot O1 C C1 /\
+    IWiEq (G := G) (i := ge_layer) Γ l lp li k' kp' ki' X X1' A A1' N N1' D D1' Ot O1' C C1' /\
+    (forall ρ : kwk G Γ, dm ρ (ktm ρ a) (ktm ρ a')) /\
+    (forall ρ : kwk G Γ, ix ρ (ktml ρ Ot)[lsingle (ktm ρ a)] (ktm ρ m)) /\
+    (forall ρ : kwk G Γ,
+       DVecWSp (kw_G ρ) (kw_Δ ρ) l lp li (kty ρ X) (kty ρ A) (ktml ρ N) (ktyll ρ D) (ktml ρ Ot) (ktmlll ρ C)
+         (fun ρ' => ix (kw_comp ρ ρ')) (fun ρ' => dm (kw_comp ρ ρ')) (fun ρ' => pd (kw_comp ρ ρ'))
+         (fun p y y' => exists p', pd ρ (ktm ρ a) (ktm ρ a') p p' y y')
+         (ktyll ρ D)[llift (lsingle (ktm ρ a))] (ktmlll ρ C)[llift (llift (lsingle (ktm ρ a)))]
+         (ktml ρ N)[lsingle (ktm ρ a)] (ktm ρ cs) (ktm ρ cs')).
+Proof using EL.
+  intros H. remember (tmSupii k kp ki X1 A1 N1 D1 O1 C1 a cs) as s eqn:Es. destruct H.
+  - injection Es as -> -> -> -> -> -> -> -> -> -> ->. do 11 eexists; split; [reflexivity|]. eauto 20.
+  - subst. exfalso. pose proof (gne_tm_whne_l H) as Hw. inversion Hw.
+Qed.
+
+Lemma IWiNf_ne_inv {G Γ l lp li X A N D Ot C} {ix dm : DomRel G Γ} {pd : IPosDomRel G Γ} {m ν w} :
+  whne ν -> IWiNf G Γ l lp li X A N D Ot C ix dm pd m ν w ->
+  [ G ; Γ ⊢ ν ~ w : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ].
+Proof using . intros Hν H. destruct H; [inversion Hν | exact H]. Qed.
+
+(** A spine at a length of a known shape. *)
+Lemma DVecWSp_zero_inv {G Γ l lp li X A N D Ot C ix dm pd yR d c k cs cs'} :
+  DVecWSp G Γ l lp li X A N D Ot C ix dm pd yR d c k cs cs' ->
+  [ G ; Γ ⊢g k ⤳* zero : tyNat @ lzero ] -> UnitRel G Γ (iwiL l lp li) cs cs'.
+Proof using EL.
+  destruct 1 as [? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? Hk|? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? m ? ? ? ? Hk
+                |? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ν ? ? Hk Hν]; intros Hz; [assumption| |].
+  - assert (Y : succ m = zero) by (eapply tmred_whnf_det; [exact Hk | exact Hz | constructor | constructor]).
+    discriminate Y.
+  - assert (Y : ν = zero)
+      by (eapply tmred_whnf_det; [exact Hk | exact Hz | constructor; exact (gne_tm_whne_l Hν) | constructor]).
+    subst ν. pose proof (gne_tm_whne_l Hν) as Z. inversion Z.
+Qed.
+
+Lemma DVecWSp_succ_inv {G Γ l lp li X A N D Ot C ix dm pd yR d c k m cs cs'} :
+  DVecWSp G Γ l lp li X A N D Ot C ix dm pd yR d c k cs cs' ->
+  [ G ; Γ ⊢g k ⤳* succ m : tyNat @ lzero ] ->
+  exists w w',
+    [ G ; Γ ⊢g cs ⤳* w : tySig (iwiL l lp li) (iwiL l lp li) (dvecHd m (iwiFamT l lp li X A N D Ot C d c))
+          (dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c)) @ lmax (iwiL l lp li) (iwiL l lp li) ] /\
+    [ G ; Γ ⊢g cs' ⤳* w' : tySig (iwiL l lp li) (iwiL l lp li) (dvecHd m (iwiFamT l lp li X A N D Ot C d c))
+          (dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c)) @ lmax (iwiL l lp li) (iwiL l lp li) ] /\
+    whnf w /\ whnf w' /\
+    [ G ; Γ ⊢ w ≈ w' : tySig (iwiL l lp li) (iwiL l lp li) (dvecHd m (iwiFamT l lp li X A N D Ot C d c))
+          (dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c)) @ lmax (iwiL l lp li) (iwiL l lp li) ] /\
+    (forall la lb A2 B2 la' lb' A2' B2',
+       lequiv (gL G) la (iwiL l lp li) -> lequiv (gL G) lb (iwiL l lp li) ->
+       lequiv (gL G) la' (iwiL l lp li) -> lequiv (gL G) lb' (iwiL l lp li) ->
+       [ G ; Γ ⊢ dvecHd m (iwiFamT l lp li X A N D Ot C d c) ≈ A2 @ iwiL l lp li ] ->
+       [ G ; Γ ,, dvecHd m (iwiFamT l lp li X A N D Ot C d c) @ iwiL l lp li
+           ⊢ dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c) ≈ B2 @ iwiL l lp li ] ->
+       [ G ; Γ ⊢ dvecHd m (iwiFamT l lp li X A N D Ot C d c) ≈ A2' @ iwiL l lp li ] ->
+       [ G ; Γ ,, dvecHd m (iwiFamT l lp li X A N D Ot C d c) @ iwiL l lp li
+           ⊢ dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c) ≈ B2' @ iwiL l lp li ] ->
+       WhRel G Γ (dvecHd m (iwiFamT l lp li X A N D Ot C d c)) (iwiL l lp li)
+         (tmFst la lb A2 B2 w) (tmFst la' lb' A2' B2' w')) /\
+    (forall la lb A2 B2 la' lb' A2' B2',
+       lequiv (gL G) la (iwiL l lp li) -> lequiv (gL G) lb (iwiL l lp li) ->
+       lequiv (gL G) la' (iwiL l lp li) -> lequiv (gL G) lb' (iwiL l lp li) ->
+       [ G ; Γ ⊢ dvecHd m (iwiFamT l lp li X A N D Ot C d c) ≈ A2 @ iwiL l lp li ] ->
+       [ G ; Γ ,, dvecHd m (iwiFamT l lp li X A N D Ot C d c) @ iwiL l lp li
+           ⊢ dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c) ≈ B2 @ iwiL l lp li ] ->
+       [ G ; Γ ⊢ dvecHd m (iwiFamT l lp li X A N D Ot C d c) ≈ A2' @ iwiL l lp li ] ->
+       [ G ; Γ ,, dvecHd m (iwiFamT l lp li X A N D Ot C d c) @ iwiL l lp li
+           ⊢ dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c) ≈ B2' @ iwiL l lp li ] ->
+       forall y y', yR (posHd m) y y' ->
+       forall la2 lb2 A3 B3 la2' lb2' A3' B3',
+       lequiv (gL G) la2 lp -> lequiv (gL G) lb2 (iwiL l lp li) ->
+       lequiv (gL G) la2' lp -> lequiv (gL G) lb2' (iwiL l lp li) ->
+       [ G ; Γ ⊢ d[lsingle (posHd m)] ≈ A3 @ lp ] ->
+       [ G ; Γ ,, d[lsingle (posHd m)] @ lp
+           ⊢ (iwiFamCodT l lp li X A N D Ot C c)[llift (lsingle (posHd m))] ≈ B3 @ iwiL l lp li ] ->
+       [ G ; Γ ⊢ d[lsingle (posHd m)] ≈ A3' @ lp ] ->
+       [ G ; Γ ,, d[lsingle (posHd m)] @ lp
+           ⊢ (iwiFamCodT l lp li X A N D Ot C c)[llift (lsingle (posHd m))] ≈ B3' @ iwiL l lp li ] ->
+       IWiRel G Γ l lp li X A N D Ot C ix dm pd c[lsingle2 (posHd m) y]
+         (app (tmFst la lb A2 B2 w) la2 lb2 A3 B3 y) (app (tmFst la' lb' A2' B2' w') la2' lb2' A3' B3' y')) /\
+    (forall la lb A2 B2 la' lb' A2' B2',
+       lequiv (gL G) la (iwiL l lp li) -> lequiv (gL G) lb (iwiL l lp li) ->
+       lequiv (gL G) la' (iwiL l lp li) -> lequiv (gL G) lb' (iwiL l lp li) ->
+       [ G ; Γ ⊢ dvecHd m (iwiFamT l lp li X A N D Ot C d c) ≈ A2 @ iwiL l lp li ] ->
+       [ G ; Γ ,, dvecHd m (iwiFamT l lp li X A N D Ot C d c) @ iwiL l lp li
+           ⊢ dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c) ≈ B2 @ iwiL l lp li ] ->
+       [ G ; Γ ⊢ dvecHd m (iwiFamT l lp li X A N D Ot C d c) ≈ A2' @ iwiL l lp li ] ->
+       [ G ; Γ ,, dvecHd m (iwiFamT l lp li X A N D Ot C d c) @ iwiL l lp li
+           ⊢ dvecTl (iwiL l lp li) m (iwiFamT l lp li X A N D Ot C d c) ≈ B2' @ iwiL l lp li ] ->
+       DVecWSp G Γ l lp li X A N D Ot C ix dm pd (fun p => yR (posTl m p)) (posMvT m d) (posMv2 m c) m
+         (tmSnd la lb A2 B2 w) (tmSnd la' lb' A2' B2' w')).
+Proof using EL.
+  destruct 1 as [? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? Hk|? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? m0 ? ? w w' Hk
+                   Hcs Hcs' Hn Hn' Heq Hf Ha Hs
+                |? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ν ? ? Hk Hν]; intros Hsk.
+  - assert (Y : zero = succ m) by (eapply tmred_whnf_det; [exact Hk | exact Hsk | constructor | constructor]).
+    discriminate Y.
+  - assert (Y : succ m0 = succ m) by (eapply tmred_whnf_det; [exact Hk | exact Hsk | constructor | constructor]).
+    injection Y as ->. exists w, w'. eauto 10.
+  - assert (Y : ν = succ m)
+      by (eapply tmred_whnf_det; [exact Hk | exact Hsk | constructor; exact (gne_tm_whne_l Hν) | constructor]).
+    subst ν. pose proof (gne_tm_whne_l Hν) as Z. inversion Z.
+Qed.
+
+Lemma DVecWSp_ne_inv {G Γ l lp li X A N D Ot C ix dm pd yR d c k ν cs cs'} :
+  DVecWSp G Γ l lp li X A N D Ot C ix dm pd yR d c k cs cs' ->
+  [ G ; Γ ⊢g k ⤳* ν : tyNat @ lzero ] -> whne ν ->
+  NeRel G Γ (tyDVec (iwiL l lp li) ν (iwiFamT l lp li X A N D Ot C d c))
+    (tyDVec (iwiL l lp li) ν (iwiFamT l lp li X A N D Ot C d c)) (iwiL l lp li) cs cs'.
+Proof using EL.
+  destruct 1 as [? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? Hk|? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? m0 ? ? ? ? Hk
+                |? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ν0 ? ? Hk Hν0 Hne]; intros Hνk Hν.
+  - assert (Y : zero = ν) by (eapply tmred_whnf_det; [exact Hk | exact Hνk | constructor | now constructor]).
+    subst ν. inversion Hν.
+  - assert (Y : succ m0 = ν) by (eapply tmred_whnf_det; [exact Hk | exact Hνk | constructor | now constructor]).
+    subst ν. inversion Hν.
+  - assert (Y : ν0 = ν)
+      by (eapply tmred_whnf_det; [exact Hk | exact Hνk | constructor; exact (gne_tm_whne_l Hν0) | now constructor]).
+    now subst ν0.
+Qed.
+
+(** The relation depends on the domains' relation only through its
+    existential over the right position, at related shapes. *)
+Lemma IWiRel_pd_mono :
+  (forall G Γ l lp li X A N D Ot C ix dm pd m t t', IWiRel G Γ l lp li X A N D Ot C ix dm pd m t t' ->
+     forall pd' : IPosDomRel G Γ,
+     (forall ρ a a' p y y', dm ρ a a' -> (exists p', pd' ρ a a' p p' y y') -> exists p', pd ρ a a' p p' y y') ->
+     IWiRel G Γ l lp li X A N D Ot C ix dm pd' m t t') /\
+  (forall G Γ l lp li X A N D Ot C ix dm pd m t t', IWiNf G Γ l lp li X A N D Ot C ix dm pd m t t' ->
+     forall pd' : IPosDomRel G Γ,
+     (forall ρ a a' p y y', dm ρ a a' -> (exists p', pd' ρ a a' p p' y y') -> exists p', pd ρ a a' p p' y y') ->
+     IWiNf G Γ l lp li X A N D Ot C ix dm pd' m t t') /\
+  (forall G Γ l lp li X A N D Ot C ix dm pd yR d c k cs cs',
+     DVecWSp G Γ l lp li X A N D Ot C ix dm pd yR d c k cs cs' ->
+     forall (pd' : IPosDomRel G Γ) yR',
+     (forall ρ a a' p y y', dm ρ a a' -> (exists p', pd' ρ a a' p p' y y') -> exists p', pd ρ a a' p p' y y') ->
+     (forall p y y', yR' p y y' -> yR p y y') ->
+     DVecWSp G Γ l lp li X A N D Ot C ix dm pd' yR' d c k cs cs').
+Proof using EL.
+  apply IWiRel_comb.
+  - intros G Γ l lp li X A N D Ot C ix dm pd m t t' w w' Hw Hw' Heq _ IH pd' Hpd.
+    econstructor; [exact Hw | exact Hw' | exact Heq | exact (IH pd' Hpd)].
+  - intros G Γ l lp li X A N D Ot C ix dm pd m k kp ki k' kp' ki' X1 A1 N1 D1 O1 C1 X1' A1' N1' D1' O1' C1'
+      a a' cs cs' E1 E2 Hd Ho Hcs IH pd' Hpd.
+    apply iwinf_sup; [exact E1 | exact E2 | exact Hd | exact Ho |].
+    intros ρ. apply (IH ρ (fun ρ' => pd' (kw_comp ρ ρ'))).
+    + intros ρ' b b' p y y' h H. exact (Hpd (kw_comp ρ ρ') b b' p y y' h H).
+    + intros p y y' H. exact (Hpd ρ _ _ p y y' (Hd ρ) H).
+  - intros G Γ l lp li X A N D Ot C ix dm pd m ν ν' Hν pd' _. apply iwinf_ne; exact Hν.
+  - intros G Γ l lp li X A N D Ot C ix dm pd yR d c k cs cs' Hk Hu pd' yR' _ _. apply wsp_zero; assumption.
+  - intros G Γ l lp li X A N D Ot C ix dm pd yR d c k m cs cs' w w' Hk Hcs Hcs' Hwh Hwh' Heq Hfst Happ IHapp
+      Hsnd IHsnd pd' yR' Hpd HY.
+    apply (wsp_succ G Γ l lp li X A N D Ot C ix dm pd' yR' d c k m cs cs' w w' Hk Hcs Hcs' Hwh Hwh' Heq Hfst).
+    + intros la lb A2 B2 la' lb' A2' B2' H1 H2 H3 H4 H5 H6 H7 H8 y y' Hyy
+        la2 lb2 A3 B3 la2' lb2' A3' B3' J1 J2 J3 J4 J5 J6 J7 J8.
+      exact (IHapp la lb A2 B2 la' lb' A2' B2' H1 H2 H3 H4 H5 H6 H7 H8 y y' (HY _ _ _ Hyy)
+               la2 lb2 A3 B3 la2' lb2' A3' B3' J1 J2 J3 J4 J5 J6 J7 J8 pd' Hpd).
+    + intros la lb A2 B2 la' lb' A2' B2' H1 H2 H3 H4 H5 H6 H7 H8.
+      exact (IHsnd la lb A2 B2 la' lb' A2' B2' H1 H2 H3 H4 H5 H6 H7 H8 pd' (fun p => yR' (posTl m p)) Hpd
+               (fun p y y' H => HY _ _ _ H)).
+  - intros G Γ l lp li X A N D Ot C ix dm pd yR d c k ν cs cs' Hk Hν Hne pd' yR' _ _.
+    exact (wsp_ne G Γ l lp li X A N D Ot C ix dm pd' yR' d c k ν cs cs' Hk Hν Hne).
+Qed.
+
+Lemma IWiRel_trans_all :
+  (forall G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 m1 t1 t2,
+     IWiRel G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 m1 t1 t2 ->
+     forall l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 ix2 dm2 pd2 m2 t3,
+     IWiTransHyps G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 dm2 pd2 ->
+     [ G ; Γ ⊢g tyIWi l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 m1 ≅ tyIWi l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 m2 @ iwiL l1 lp1 li1 ] ->
+     IWiRel G Γ l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 ix2 dm2 pd2 m2 t2 t3 ->
+     IWiRel G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 m1 t1 t3) /\
+  (forall G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 m1 t1 t2,
+     IWiNf G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 m1 t1 t2 ->
+     forall l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 ix2 dm2 pd2 m2 t3,
+     IWiTransHyps G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 dm2 pd2 ->
+     [ G ; Γ ⊢g tyIWi l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 m1 ≅ tyIWi l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 m2 @ iwiL l1 lp1 li1 ] ->
+     IWiNf G Γ l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 ix2 dm2 pd2 m2 t2 t3 ->
+     IWiNf G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 m1 t1 t3) /\
+  (forall G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 yR1 d1 c1 k1 cs1 cs2,
+     DVecWSp G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 yR1 d1 c1 k1 cs1 cs2 ->
+     forall l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 ix2 dm2 pd2 yR2 yR3 d2 c2 k2 cs3,
+     IWiTransHyps G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 dm2 pd2 ->
+     NatRel G Γ k1 k2 ->
+     [ G ; Γ ,, tyFin k1 @ lzero ⊢g iwiFamT l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 d1 c1
+         ≅ iwiFamT l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 d2 c2 @ iwiL l1 lp1 li1 ] ->
+     IWiPosGeq G Γ lp1 li1 X1 k1 k2 d1 d2 c1 c2 ->
+     (forall p p', PosCan G Γ k1 k2 p p' -> forall y y', yR3 p y y' -> yR1 p y y) ->
+     (forall p p', PosCan G Γ k1 k2 p p' -> forall y y', yR3 p y y' -> yR2 p' y y') ->
+     (forall p p', PosCan G Γ k1 k2 p p' -> forall y, yR1 p y y ->
+        [ G ; Γ ⊢g c1[lsingle2 p y] ≅ c2[lsingle2 p' y] : X1 @ li1 ]) ->
+     DVecWSp G Γ l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 ix2 dm2 pd2 yR2 d2 c2 k2 cs2 cs3 ->
+     DVecWSp G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 yR3 d1 c1 k1 cs1 cs3).
+Proof using EL.
+  apply IWiRel_comb.
+  - intros G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 m1 t1 t2 w1 w2 Hw1 Hw2 Heq Hn IH
+      l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 ix2 dm2 pd2 m2 t3 Hy ET H2.
+    pose proof (IWiFlip_lv (proj1 Hy)) as Hml.
+    destruct (IWiRel_inv H2) as (w2' & w3 & Hw2' & Hw3 & Heq2 & Hn2).
+    assert (HV : [ G ; Γ ⊢g tyIWi l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 m2 ≅ tyIWi l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 m1
+                   @ iwiL l2 lp2 li2 ])
+      by (eapply eqty_lconv; [apply eqty_sym, ET | exact Hml]).
+    assert (Ew : w2' = w2)
+      by (eapply tmred_whnf_det; [exact Hw2' | exact Hw2 | exact (IWiNf_whnf_l Hn2) | exact (IWiNf_whnf_r Hn)]).
+    subst w2'.
+    econstructor; [exact Hw1 | | |].
+    + eapply tmred_lconv; [eapply tmred_conv; [apply ge_typeof | exact Hw3 | exact HV] | apply lequiv_sym, Hml].
+    + eapply geq_tm_trans; [exact Heq|].
+      eapply geq_tm_lconv; [eapply geq_tm_conv; [exact Heq2 | exact HV] | apply lequiv_sym, Hml].
+    + exact (IH l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 ix2 dm2 pd2 m2 w3 Hy ET Hn2).
+  - intros G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 m1 k kp ki k' kp' ki' Xa Aa Na Da Oa Ca Xb Ab Nb Db Ob Cb
+      a a' cs cs' E1 E2 Hd Ho Hcs IH l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 ix2 dm2 pd2 m2 t3 Hy ET H2.
+    destruct (IWiNf_sup_inv H2) as (k'' & kp'' & ki'' & Xc & Ac & Nc & Dc & Oc & Cc & a'' & cs'' & -> & _ & E3
+                                    & Hd2 & _ & Hcs2).
+    destruct Hy as (Hy0 & Td & Pr & P12).
+    pose proof Hy0 as (HE & _ & _ & Hesc & Har & _ & Hpe & _ & Hch & Hpg & _ & Hie).
+    apply iwinf_sup.
+    + exact E1.
+    + exact (IWiEq_trans ge_typeof ge_notV HE E3).
+    + intros ρ. exact (Td ρ _ _ _ (Hd ρ) (Hd2 ρ)).
+    + exact Ho.
+    + intros ρ. destruct (Hesc ρ _ _ (Hd ρ)) as (Ha & Ha' & Haa).
+      pose proof (Td ρ _ _ _ (Hd ρ) (Hd2 ρ)) as h13.
+      refine (IH ρ l2 lp2 li2 (kty ρ X2) (kty ρ A2) (ktml ρ N2) (ktyll ρ D2) (ktml ρ Ot2) (ktmlll ρ C2)
+                (fun ρ' => ix2 (kw_comp ρ ρ')) (fun ρ' => dm2 (kw_comp ρ ρ')) (fun ρ' => pd2 (kw_comp ρ ρ'))
+                (fun p' y' y'' => exists p'', pd2 ρ (ktm ρ a') (ktm ρ a'') p' p'' y' y'')
+                (fun p y y'' => exists p'', pd1 ρ (ktm ρ a) (ktm ρ a'') p p'' y y'')
+                (ktyll ρ D2)[llift (lsingle (ktm ρ a'))] (ktmlll ρ C2)[llift (llift (lsingle (ktm ρ a')))]
+                (ktml ρ N2)[lsingle (ktm ρ a')] (ktm ρ cs'')
+                (IWiTransHyps_kw ρ (conj Hy0 (conj Td (conj Pr P12)))) (Har ρ _ _ (Hd ρ)) _ _ _ _ _ (Hcs2 ρ)).
+      * exact (IWi_fam_eq ge_typeof ge_notV (IWiEq_kw ρ HE) Ha Ha' Haa).
+      * intros ρ' p p' Hp. rewrite !ktm_comp_single in Hp.
+        rewrite !ktyl_iwiD_single, !ktmll_iwiC_single, <- kty_comp.
+        exact (Hpg _ _ _ (Hd (kw_comp ρ ρ')) p p' Hp).
+      * intros p p' Hpc y y'' (p'' & H). exists p'.
+        exact (Pr ρ _ _ _ _ _ _ _ _ (Hd ρ) h13 H (PosCan_rel Hpc)).
+      * intros p p' Hpc y y'' (p'' & H).
+        exact (P12 ρ _ _ _ _ _ _ _ _ (Hd ρ) h13 (Hd2 ρ) H (PosCan_rel Hpc)).
+      * intros p p' Hpc y (p1 & Hp1).
+        pose proof (Hpe ρ _ _ _ _ _ _ Hp1) as Hr. rewrite (PosCan_det_r Hpc _ Hr) in Hp1.
+        rewrite !llift2_single_single2 by (unfold ktm; apply ren_nf).
+        exact (geq_tm_sound (Hie ρ _ _ (Hch ρ _ _ (Hd ρ) _ _ _ _ Hp1))).
+  - intros G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 m1 ν ν' Hν l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 ix2 dm2 pd2 m2 t3
+      Hy ET H2.
+    pose proof (IWiFlip_lv (proj1 Hy)) as Hml.
+    pose proof (IWiNf_ne_inv (gne_tm_whne_r Hν) H2) as Hν2.
+    assert (HV : [ G ; Γ ⊢g tyIWi l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 m2 ≅ tyIWi l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 m1
+                   @ iwiL l2 lp2 li2 ])
+      by (eapply eqty_lconv; [apply eqty_sym, ET | exact Hml]).
+    apply iwinf_ne. eapply gne_tm_trans; [exact Hν |].
+    eapply gne_tm_lconv; [eapply gne_tm_conv; [exact Hν2 | exact HV] | apply lequiv_sym, Hml].
+  - intros G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 yR1 d1 c1 k1 cs1 cs2 Hk Hu
+      l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 ix2 dm2 pd2 yR2 yR3 d2 c2 k2 cs3 Hy Hkk _ _ _ _ _ H2.
+    pose proof (DVecWSp_zero_inv H2 (NatRel_inv_zero Hkk Hk)) as Hu2.
+    apply wsp_zero; [exact Hk|].
+    eapply UnitRel_trans; [exact Hu | apply (UnitRel_lconv (IWiFlip_lv (proj1 Hy))), Hu2].
+  - intros G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 yR1 d1 c1 k1 m1 cs1 cs2 w1 w2 Hk Hcs1 Hcs2 Hwh1 Hwh2 Heq
+      Hfst Happ IHapp Hsnd IHsnd l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 ix2 dm2 pd2 yR2 yR3 d2 c2 k2 cs3
+      Hy Hkk HF HP R11 R23 HIX0 H2.
+    pose proof (proj1 Hy) as Hy0. pose proof Hy0 as (HE & _).
+    pose proof HE as (Hll & Hllp & Hlli & HS & _).
+    pose proof HS as (Wl & Wlp & Wli & _).
+    pose proof (IWiSig_nf HS) as (NX1 & NA1 & NN1 & ND1 & NO1 & NC1).
+    pose proof (IWiSig_nf (IWiEq_sig_r ge_typeof ge_notV HE)) as (NX2 & NA2 & NN2 & ND2 & NO2 & NC2).
+    pose proof (IWiFlip_lv Hy0) as Hml. pose proof (lequiv_sym _ _ _ Hml) as Hml'.
+    assert (HL : lwf (gL G) (iwiL l1 lp1 li1)) by (repeat split; cbn; auto).
+    assert (HL2 : lwf (gL G) (iwiL l2 lp2 li2)) by exact (lequiv_wf_l _ _ _ Hml).
+    assert (Hml2 : lequiv (gL G) (lmax (iwiL l2 lp2 li2) (iwiL l2 lp2 li2)) (lmax (iwiL l1 lp1 li1) (iwiL l1 lp1 li1)))
+      by now apply lequiv_max.
+    destruct (NatRel_inv_succ Hkk Hk) as (m2 & Hk2 & Hmm).
+    destruct (DVecWSp_succ_inv H2 Hk2) as (w2' & w3 & Hcs2' & Hcs3 & Hwh2' & Hwh3 & Heq2 & Hfst2 & Happ2 & Hsnd2).
+    assert (Ew : w2' = w2) by (eapply tmred_whnf_det; [exact Hcs2' | exact Hcs2 | exact Hwh2' | exact Hwh2]).
+    subst w2'.
+    pose proof (geq_tm_sound (NatRel_geq Hmm)) as Em.
+    pose proof (eqtm_wf_l ge_typeof Em) as Hm1. pose proof (eqtm_wf_r ge_typeof Em) as Hm2.
+    pose proof (wf_tm_nf Hm1) as Nm1. pose proof (wf_tm_nf Hm2) as Nm2.
+    pose proof (ctx_of_tm Hm1) as HΓ.
+    pose proof (tmred_eq _ _ _ _ _ _ _ Hk) as Ek.
+    set (F1 := iwiFamT l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 d1 c1) in *.
+    set (F2 := iwiFamT l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 d2 c2) in *.
+    pose proof (fin_stab_eqty Ek HF) as HF1.
+    pose proof (eqty_wf_l ge_typeof HF1) as HF1w.
+    pose proof (dvec_sig_eqty ge_typeof ge_notV ge_compt Hml' HL Hm1 Hm2 Em HF1w HF1) as ES.
+    assert (HV : [ G ; Γ ⊢g tySig (iwiL l2 lp2 li2) (iwiL l2 lp2 li2) (dvecHd m2 F2) (dvecTl (iwiL l2 lp2 li2) m2 F2)
+                   ≅ tySig (iwiL l1 lp1 li1) (iwiL l1 lp1 li1) (dvecHd m1 F1) (dvecTl (iwiL l1 lp1 li1) m1 F1)
+                   @ lmax (iwiL l2 lp2 li2) (iwiL l2 lp2 li2) ])
+      by (eapply eqty_lconv; [apply eqty_sym, ES | exact Hml2]).
+    pose proof (dvecHd_eqty ge_typeof ge_notV ge_compt Hm1 Hm2 Em HF1w HF1) as EH.
+    assert (HH : [ G ; Γ ⊢g dvecHd m1 F1 @ iwiL l1 lp1 li1 ])
+      by exact (wf_ty_single ge_typeof HF1w (fin_inl_wf ge_typeof ge_notV ge_compt Hm1)).
+    assert (HH2 : [ G ; Γ ⊢g dvecHd m2 F2 @ iwiL l2 lp2 li2 ])
+      by (eapply wft_lconv; [exact (eqty_wf_r ge_typeof EH) | exact Hml]).
+    assert (HΓ1 : [ G ; Γ ,, dvecHd m1 F1 @ iwiL l1 lp1 li1 ⊢g ]) by (apply ext_wf_g; [exact HH | exact HL]).
+    assert (HΓ2 : [ G ; Γ ,, dvecHd m2 F2 @ iwiL l2 lp2 li2 ⊢g ]) by (apply ext_wf_g; [exact HH2 | exact HL2]).
+    pose proof Hy0 as (_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & HGy & _).
+    destruct (iwi_succ_geq HE HGy Hk Hk2 Hmm HF HP) as [GH GT].
+    assert (RA : [ G ; Γ ⊢ dvecHd m1 F1 ≈ dvecHd m1 F1 @ iwiL l1 lp1 li1 ])
+      by exact (geq_ty_trans GH (geq_ty_sym GH)).
+    assert (RB : [ G ; Γ ,, dvecHd m1 F1 @ iwiL l1 lp1 li1 ⊢ dvecTl (iwiL l1 lp1 li1) m1 F1
+                   ≈ dvecTl (iwiL l1 lp1 li1) m1 F1 @ iwiL l1 lp1 li1 ])
+      by exact (geq_ty_trans (GT _ _ HΓ1) (geq_ty_sym (GT _ _ HΓ1))).
+    assert (MA : forall Y, [ G ; Γ ⊢ dvecHd m1 F1 ≈ Y @ iwiL l1 lp1 li1 ] ->
+                  [ G ; Γ ⊢ dvecHd m2 F2 ≈ Y @ iwiL l2 lp2 li2 ]).
+    { intros Y HY. eapply geq_ty_lconv; [eapply geq_ty_trans; [apply geq_ty_sym, GH | exact HY] | exact Hml]. }
+    assert (MB : forall Y, [ G ; Γ ,, dvecHd m1 F1 @ iwiL l1 lp1 li1 ⊢ dvecTl (iwiL l1 lp1 li1) m1 F1 ≈ Y
+                              @ iwiL l1 lp1 li1 ] ->
+                  [ G ; Γ ,, dvecHd m2 F2 @ iwiL l2 lp2 li2 ⊢ dvecTl (iwiL l2 lp2 li2) m2 F2 ≈ Y @ iwiL l2 lp2 li2 ]).
+    { intros Y HY. eapply geq_ty_lconv; [| exact Hml].
+      eapply geq_ty_trans; [apply geq_ty_sym, (GT _ _ HΓ2) |].
+      exact (geq_ty_ctxconv EH Hml' HΓ2 HY). }
+    assert (R1 : lequiv (gL G) (iwiL l1 lp1 li1) (iwiL l1 lp1 li1)) by now apply lequiv_refl.
+    assert (Rp : lequiv (gL G) lp1 lp1) by now apply lequiv_refl.
+    (* the head position: its domains and child indices *)
+    pose proof (wf_tm_nf (eqtm_wf_l ge_typeof Ek)) as Nk.
+    pose proof (wf_tm_nf (eqtm_wf_l ge_typeof (tmred_eq _ _ _ _ _ _ _ Hk2))) as Nk2.
+    destruct (HP (kw_self HΓ) (posHd m1) (posHd m2)) as (Hd0 & Gd & Gc).
+    { rewrite !ktm_self by assumption. apply pos_hd; [exact Hk | exact Hk2 | exact Hmm]. }
+    pose proof (iwiFamT_nf _ _ _ _ _ _ _ _ _ _ _ (wf_ty_nf (eqty_wf_l ge_typeof HF))) as (Nd1 & Nc1).
+    pose proof (iwiFamT_nf _ _ _ _ _ _ _ _ _ _ _ (wf_ty_nf (eqty_wf_r ge_typeof HF))) as (Nd2 & Nc2).
+    rewrite ktyl_self in Hd0 by assumption. rewrite !ktyl_self in Gd by assumption.
+    rewrite ktyl_self, !ktmll_self, kty_self in Gc by assumption.
+    assert (HΓd : [ G ; Γ ,, d1[lsingle (posHd m1)] @ lp1 ⊢g ]) by exact (ext_wf_g Hd0 Wlp).
+    assert (Ed : [ G ; Γ ⊢g d1[lsingle (posHd m1)] ≅ d2[lsingle (posHd m2)] @ lp1 ]) by exact (geq_ty_sound Gd).
+    assert (Hd0' : [ G ; Γ ⊢g d2[lsingle (posHd m2)] @ lp2 ])
+      by (eapply wft_lconv; [exact (eqty_wf_r ge_typeof Ed) | exact (lequiv_sym _ _ _ Hllp)]).
+    assert (HΓd2 : [ G ; Γ ,, d2[lsingle (posHd m2)] @ lp2 ⊢g ])
+      by exact (ext_wf_g Hd0' (lequiv_wf_r _ _ _ Hllp)).
+    assert (RD : [ G ; Γ ⊢ d1[lsingle (posHd m1)] ≈ d1[lsingle (posHd m1)] @ lp1 ])
+      by exact (geq_ty_trans Gd (geq_ty_sym Gd)).
+    assert (MD : forall Y, [ G ; Γ ⊢ d1[lsingle (posHd m1)] ≈ Y @ lp1 ] -> [ G ; Γ ⊢ d2[lsingle (posHd m2)] ≈ Y @ lp2 ]).
+    { intros Y HY. eapply geq_ty_lconv; [eapply geq_ty_trans; [apply geq_ty_sym, Gd | exact HY]
+                                        | exact (lequiv_sym _ _ _ Hllp)]. }
+    assert (Ec : [ G ; Γ ,, d1[lsingle (posHd m1)] @ lp1
+                   ⊢ (iwiFamCodT l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 c1)[llift (lsingle (posHd m1))]
+                   ≈ (iwiFamCodT l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 c2)[llift (lsingle (posHd m2))] @ iwiL l1 lp1 li1 ]).
+    { rewrite !iwiFamCodT_single by assumption.
+      exact (iwi_geq_at (IWiEq_wk1 ge_typeof ge_notV HE HΓd) (IWiGeq_wk1 HE HGy HΓd) Gc). }
+    assert (RC : [ G ; Γ ,, d1[lsingle (posHd m1)] @ lp1
+                   ⊢ (iwiFamCodT l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 c1)[llift (lsingle (posHd m1))]
+                   ≈ (iwiFamCodT l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 c1)[llift (lsingle (posHd m1))] @ iwiL l1 lp1 li1 ])
+      by exact (geq_ty_trans Ec (geq_ty_sym Ec)).
+    assert (MC : forall Y, [ G ; Γ ,, d1[lsingle (posHd m1)] @ lp1
+                             ⊢ (iwiFamCodT l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 c1)[llift (lsingle (posHd m1))] ≈ Y
+                             @ iwiL l1 lp1 li1 ] ->
+                  [ G ; Γ ,, d2[lsingle (posHd m2)] @ lp2
+                             ⊢ (iwiFamCodT l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 c2)[llift (lsingle (posHd m2))] ≈ Y
+                             @ iwiL l2 lp2 li2 ]).
+    { intros Y HY. eapply geq_ty_lconv; [| exact Hml].
+      refine (geq_ty_ctxconv Ed Hllp HΓd2 _).
+      eapply geq_ty_trans; [apply geq_ty_sym, Ec | exact HY]. }
+    pose proof (pc_hd G Γ k1 k2 m1 m2 Hk Hk2 Hmm) as Phd.
+    apply (wsp_succ G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 yR3 d1 c1 k1 m1 cs1 cs3 w1 w3).
+    + exact Hk.
+    + exact Hcs1.
+    + eapply tmred_lconv; [eapply tmred_conv; [apply ge_typeof | exact Hcs3 | exact HV] | apply lequiv_sym, Hml2].
+    + exact Hwh1.
+    + exact Hwh3.
+    + eapply geq_tm_trans; [exact Heq|].
+      eapply geq_tm_lconv; [eapply geq_tm_conv; [exact Heq2 | exact HV] | apply lequiv_sym, Hml2].
+    + intros la lb Ax Bx la'' lb'' Ax'' Bx'' H1 H2' H3 H4 HAx HBx HAx'' HBx''.
+      eapply WhRel_trans; [exact (Hfst la lb Ax Bx _ _ _ _ H1 H2' R1 R1 HAx HBx RA RB) |].
+      pose proof (Hfst2 (iwiL l1 lp1 li1) (iwiL l1 lp1 li1) _ _ la'' lb'' Ax'' Bx'' Hml' Hml'
+                    (lequiv_trans _ _ _ _ H3 Hml') (lequiv_trans _ _ _ _ H4 Hml')
+                    (MA _ RA) (MB _ RB) (MA _ HAx'') (MB _ HBx'')) as Y2.
+      eapply WhRel_conv; [exact Y2 | | exact Hml'].
+      eapply eqty_lconv; [apply eqty_sym, geq_ty_sound, GH | exact Hml].
+    + intros la lb Ax Bx la'' lb'' Ax'' Bx'' H1 H2' H3 H4 HAx HBx HAx'' HBx'' y y'' Hyy
+        la2 lb2 Ay By la2'' lb2'' Ay'' By'' J1 J2 J3 J4 HAy HBy HAy'' HBy''.
+      pose proof (R11 _ _ Phd y y'' Hyy) as Hy11.
+      pose proof (R23 _ _ Phd y y'' Hyy) as Hy23.
+      pose proof (IWi_ty_eq ge_typeof ge_notV HE (HIX0 _ _ Phd y Hy11)) as ET0.
+      pose proof (Happ2 (iwiL l1 lp1 li1) (iwiL l1 lp1 li1) _ _ la'' lb'' Ax'' Bx'' Hml' Hml'
+                    (lequiv_trans _ _ _ _ H3 Hml') (lequiv_trans _ _ _ _ H4 Hml')
+                    (MA _ RA) (MB _ RB) (MA _ HAx'') (MB _ HBx'') y y'' Hy23
+                    lp1 (iwiL l1 lp1 li1) _ _ la2'' lb2'' Ay'' By'' Hllp Hml'
+                    (lequiv_trans _ _ _ _ J3 Hllp) (lequiv_trans _ _ _ _ J4 Hml')
+                    (MD _ RD) (MC _ RC) (MD _ HAy'') (MC _ HBy'')) as Y2.
+      exact (IHapp la lb Ax Bx _ _ _ _ H1 H2' R1 R1 HAx HBx RA RB y y Hy11
+               la2 lb2 Ay By _ _ _ _ J1 J2 Rp R1 HAy HBy RD RC
+               l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 ix2 dm2 pd2 _ _ Hy ET0 Y2).
+    + intros la lb Ax Bx la'' lb'' Ax'' Bx'' H1 H2' H3 H4 HAx HBx HAx'' HBx''.
+      pose proof (Hsnd2 (iwiL l1 lp1 li1) (iwiL l1 lp1 li1) _ _ la'' lb'' Ax'' Bx'' Hml' Hml'
+                    (lequiv_trans _ _ _ _ H3 Hml') (lequiv_trans _ _ _ _ H4 Hml')
+                    (MA _ RA) (MB _ RB) (MA _ HAx'') (MB _ HBx'')) as Y2.
+      refine (IHsnd la lb Ax Bx _ _ _ _ H1 H2' R1 R1 HAx HBx RA RB
+               l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 ix2 dm2 pd2 (fun p => yR2 (posTl m2 p)) (fun p => yR3 (posTl m1 p))
+               (posMvT m2 d2) (posMv2 m2 c2) m2 _ Hy Hmm _ (IWiPosGeq_tl HP Hk Hk2) _ _ _ Y2).
+      * rewrite <- !iwiFamT_mv. exact (dvecMv_eqty ge_typeof ge_notV ge_compt Hm1 Hm2 Em HF1w HF1).
+      * intros p p' Hpc y y'' H. exact (R11 _ _ (pc_tl G Γ k1 k2 m1 m2 p p' Hk Hk2 Hpc) y y'' H).
+      * intros p p' Hpc y y'' H. exact (R23 _ _ (pc_tl G Γ k1 k2 m1 m2 p p' Hk Hk2 Hpc) y y'' H).
+      * intros p p' Hpc y H. rewrite !posMv2_single2 by assumption.
+        exact (HIX0 _ _ (pc_tl G Γ k1 k2 m1 m2 p p' Hk Hk2 Hpc) y H).
+  - intros G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 yR1 d1 c1 k1 ν1 cs1 cs2 Hk Hν1 Hne
+      l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 ix2 dm2 pd2 yR2 yR3 d2 c2 k2 cs3 Hy Hkk HF _ _ _ _ H2.
+    pose proof (IWiFlip_lv (proj1 Hy)) as Hml. pose proof (lequiv_sym _ _ _ Hml) as Hml'.
+    destruct (NatRel_inv_ne Hkk Hk (gne_tm_whne_l Hν1)) as (ν2 & Hk2 & Hνν).
+    pose proof (DVecWSp_ne_inv H2 Hk2 (gne_tm_whne_r Hνν)) as Hne2.
+    apply (wsp_ne G Γ l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 ix1 dm1 pd1 yR3 d1 c1 k1 ν1 cs1 cs3); [exact Hk | exact Hν1 |].
+    pose proof (geq_tm_sound (gne_tm_geq Hνν)) as Eν.
+    pose proof (tmred_eq _ _ _ _ _ _ _ Hk) as Ek.
+    pose proof (fin_stab_eqty Ek HF) as HFν.
+    assert (EV : [ G ; Γ ⊢g tyDVec (iwiL l1 lp1 li1) ν1 (iwiFamT l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 d1 c1)
+                    ≅ tyDVec (iwiL l2 lp2 li2) ν2 (iwiFamT l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 d2 c2) @ iwiL l1 lp1 li1 ]).
+    { apply eqty_dvec; [exact (compt_notV _ ge_compt) | exact Hml' | exact (eqtm_wf_l ge_typeof Eν) | exact Eν
+                       | exact (eqty_wf_l ge_typeof HFν) | exact HFν]. }
+    assert (EV' : [ G ; Γ ⊢g tyDVec (iwiL l2 lp2 li2) ν2 (iwiFamT l2 lp2 li2 X2 A2 N2 D2 Ot2 C2 d2 c2)
+                     ≅ tyDVec (iwiL l1 lp1 li1) ν1 (iwiFamT l1 lp1 li1 X1 A1 N1 D1 Ot1 C1 d1 c1) @ iwiL l2 lp2 li2 ])
+      by (eapply eqty_lconv; [apply eqty_sym, EV | exact Hml]).
+    pose proof (NeRel_conv2 EV' EV' Hne2) as Hne2'.
+    apply (NeRel_lconv _ _ _ _ _ _ (lequiv_sym _ _ _ Hml)) in Hne2'.
+    pose proof (eqty_wf_l ge_typeof EV) as HV1.
+    eapply NeRel_trans; [apply eqty_refl, HV1 | apply eqty_refl, HV1 | exact Hne | exact Hne2'].
+Qed.
+
+End IWiTrans.
+
 (** ** Transitivity *)
 
 Lemma LR_trans_step n : (forall m, m < n -> Ptrans m) -> Ptrans n.
@@ -1392,7 +1856,11 @@ Proof using EL VL.
                      widxAd IHwidx Hwisym Hwistr wdomAd IHwdom warAd wotAd wchAd wixAd HR
                  | G Γ T1 T2 l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                      Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT1 HT2 HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                     HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                     HmXX HmAA HmBB HmCC Hmmm midxAd IHmidx mshAd IHmsh mposAd IHmpos mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                 | G Γ T1 T2 l vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC' vm vm' vidxR vdomR vpdR R
+                     Hl Hvl2 Hvlp2 Hvli2 Hvw Hvwp Hvwi HT1 HT2 HvX HvX' HvA HvA' HvN HvN' HvD HvD' HvO HvO' HvC HvC'
+                     Hvm Hvm' HvXX HvAA HvNN HvDD HvOO HvCC Hvmm vidxAd IHvidx Hvisym Hvistr vdomAd IHvdom varAd votAd
+                     vpdAd IHvpd vpdE vpdMon vchAd vgC vixAd HR];
     intros T3 R23 H2.
   - (* Nat *)
     destruct (LR_inv_nat H2 HT2) as (_ & HT3 & HR2).
@@ -2150,6 +2618,196 @@ Proof using EL VL.
                     (conj Sc (conj Shirr (conj Pirr (conj Prefl P12))))))))))).
       intros t1 t2 t3 Y1 Y2. apply HR. apply HR in Y1. apply HR2 in Y2. intros k.
       exact (MRn_trans k _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ HT t1 t2 t3 (Y1 k) (Y2 k)).
+  - (* IWi: as IWf. The domains' relation of the composite is [vpdR] at a
+       right position related to the third's (the right positions are the
+       third type's), which the term relation sees only through its
+       existential over the right position ([IWiRel_pd_mono]); the terms by
+       [IWiRel_trans_all] *)
+    destruct (LR_inv_iwi H2 HT2) as (k3 & kp3 & ki3 & X3 & A3 & N3 & D3 & O3 & C3 & m3 & idxR2 & domR2 & pdR2 & _
+        & Hk3 & Hkp3 & Hki3 & W2 & Wp2 & Wi2 & _ & HT3 & _ & HX3 & _ & HA3 & _ & HN3 & _ & HD3 & _ & HO3 & _ & HC3
+        & _ & Hm3 & HXX23 & HAA23 & HNN23 & HDD23 & HOO23 & HCC23 & Hmm23
+        & idxAd2 & _ & _ & domAd2 & arAd2 & otAd2 & pdAd2 & _ & _ & chAd2 & gC2 & ixAd2 & HR2).
+    pose proof (lequiv_sym _ _ _ Hvl2) as Hl2'. pose proof (lequiv_sym _ _ _ Hvlp2) as Hlp2'.
+    pose proof (lequiv_sym _ _ _ Hvli2) as Hli2'.
+    pose proof (geq_ty_sound HvXX) as EX. pose proof (geq_ty_sound HvAA) as EA.
+    pose proof (geq_tm_sound HvNN) as EN. pose proof (geq_ty_sound HvDD) as ED.
+    pose proof (geq_tm_sound HvOO) as EO. pose proof (geq_tm_sound HvCC) as EC. pose proof (geq_tm_sound Hvmm) as Em.
+    assert (HE : IWiEq (G := G) (i := ge_layer) Γ vl1 vlp1 vli1 vl2 vlp2 vli2 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC').
+    { apply IWiEq_intro; [exact Hl2' | exact Hlp2' | exact Hli2' | exact EX | exact EA | exact EN | exact ED | exact EO
+        | exact EC | exact Hvw | exact Hvwp | exact Hvwi | exact HvX | exact HvA | exact HvN | exact HvD | exact HvO
+        | exact HvC | exact HvX' | exact HvA' | exact (eqtm_wf_r ge_typeof EN) | exact (eqty_wf_r ge_typeof ED)
+        | exact (eqtm_wf_r ge_typeof EO) | exact (eqtm_wf_r ge_typeof EC)]. }
+    assert (HG : IWiGeq G Γ vl1 vlp1 vli1 vX vX' vA vA' vN vN' vD vD' vO vO' vC vC')
+      by exact (conj HvXX (conj HvAA (conj HvNN (conj HvDD (conj HvOO HvCC))))).
+    assert (Hy : IWiFlipHyps G Γ vl1 vlp1 vli1 vX vA vN vD vO vC vidxR vdomR vpdR vl2 vlp2 vli2 vX' vA' vN' vD' vO' vC').
+    { refine (conj HE (conj Hvisym (conj Hvistr (conj _ (conj varAd (conj votAd (conj vpdE (conj vpdMon
+                (conj vchAd (conj _ (conj HG _))))))))))).
+      - intros ρ a a' h.
+        destruct (escape_tm _ _ _ _ _ _ _ _ (vdomAd ρ) a a' h) as (Ha & Ha' & Haa).
+        exact (conj Ha (conj Ha' (geq_tm_sound Haa))).
+      - intros ρ a a' h p p' Hp.
+        destruct (escape_ty _ _ _ _ _ _ _ _ (vpdAd ρ a a' h p p' Hp)) as (HDa & _ & GDa).
+        exact (conj HDa (conj GDa (vgC ρ a a' h p p' Hp))).
+      - intros ρ x y h. exact (proj2 (proj2 (escape_tm _ _ _ _ _ _ _ _ (vidxAd ρ) x y h))). }
+    pose proof (IWi_ty_eq ge_typeof ge_notV HE Em) as ET.
+    (* the index and shape relations compose *)
+    assert (Hidx2 : forall ρ, LR n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ vX') (kty ρ X3) vli1 (idxR2 ρ))
+      by (intros ρ; exact (LR_lconv _ _ _ _ _ _ _ _ _ (idxAd2 ρ) (kw_lequiv ρ Hli2'))).
+    assert (Hidx3 : forall ρ, LR n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ vX) (kty ρ X3) vli1 (vidxR ρ))
+      by (intros ρ; exact (proj1 (IHvidx ρ _ _ (Hidx2 ρ)))).
+    assert (Ti : forall ρ x y z, vidxR ρ x y -> idxR2 ρ y z -> vidxR ρ x z)
+      by (intros ρ; exact (proj2 (IHvidx ρ _ _ (Hidx2 ρ)))).
+    assert (Hdom2 : forall ρ, LR n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ vA') (kty ρ A3) vl1 (domR2 ρ))
+      by (intros ρ; exact (LR_lconv _ _ _ _ _ _ _ _ _ (domAd2 ρ) (kw_lequiv ρ Hl2'))).
+    assert (Hdom3 : forall ρ, LR n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (kty ρ vA) (kty ρ A3) vl1 (vdomR ρ))
+      by (intros ρ; exact (proj1 (IHvdom ρ _ _ (Hdom2 ρ)))).
+    assert (Hrefl : forall ρ a a', vdomR ρ a a' -> vdomR ρ a a).
+    { intros ρ a a' ha.
+      exact (proj2 (IHvdom ρ _ _ (LR_sym _ _ _ _ _ _ _ (vdomAd ρ))) a a' a ha ha). }
+    assert (H12 : forall ρ a a', vdomR ρ a a' -> domR2 ρ a a')
+      by (intros ρ a a' ha; exact (proj1 (LR_irrel_left _ _ _ _ _ _ _ _ _ (Hdom3 ρ) (Hdom2 ρ) a a') ha)).
+    assert (Td : forall ρ x y z, vdomR ρ x y -> domR2 ρ y z -> vdomR ρ x z)
+      by (intros ρ; exact (proj2 (IHvdom ρ _ _ (Hdom2 ρ)))).
+    assert (Ar3 : forall ρ a a', vdomR ρ a a' -> NatRel (kw_G ρ) (kw_Δ ρ) (ktml ρ vN)[lsingle a] (ktml ρ N3)[lsingle a'])
+      by (intros ρ a a' ha; eapply NatRel_trans; [exact (varAd ρ a a (Hrefl ρ a a' ha)) | exact (arAd2 ρ a a' (H12 ρ a a' ha))]).
+    (* the domains: irrelevance of the right position, reflexivity at the
+       left argument, and the composite through the middle position *)
+    assert (Hpd2 : forall ρ a a' (h : domR2 ρ a a') p p',
+              PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ vN')[lsingle a] (ktml ρ N3)[lsingle a'] p p' ->
+              LR n (LRbelow n) (kw_G ρ) (kw_Δ ρ) (ktyll ρ vD')[lsingle2 a p] (ktyll ρ D3)[lsingle2 a' p'] vlp1
+                (pdR2 ρ a a' p p'))
+      by (intros ρ a a' h p p' Hp; exact (LR_lconv _ _ _ _ _ _ _ _ _ (pdAd2 ρ a a' h p p' Hp) (kw_lequiv ρ Hlp2'))).
+    assert (Pir : forall ρ a a1 a2 p p1 p2, vdomR ρ a a1 -> vdomR ρ a a2 ->
+              PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ vN)[lsingle a] (ktml ρ vN')[lsingle a1] p p1 ->
+              PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ vN)[lsingle a] (ktml ρ vN')[lsingle a2] p p2 ->
+              releq (vpdR ρ a a1 p p1) (vpdR ρ a a2 p p2))
+      by (intros ρ a a1 a2 p p1 p2 h1 h2 Hp1 Hp2; eapply LR_irrel; [exact (vpdAd ρ a a1 h1 p p1 Hp1) | exact (vpdAd ρ a a2 h2 p p2 Hp2)]).
+    assert (Pr : forall (ρ : kwk G Γ) a a' a'' p p' p'' y y'', vdomR ρ a a' -> vdomR ρ a a'' -> vpdR ρ a a'' p p'' y y'' ->
+              PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ vN)[lsingle a] (ktml ρ vN')[lsingle a'] p p' -> vpdR ρ a a' p p' y y).
+    { intros ρ a a' a'' p p' p'' y y'' h h' hy Hp.
+      pose proof (vpdE ρ _ _ _ _ _ _ hy) as Hp''.
+      pose proof (proj2 (IHvpd ρ a a'' h' p p'' Hp'' _ _ (LR_sym _ _ _ _ _ _ _ (vpdAd ρ a a'' h' p p'' Hp'')))
+                    y y'' y hy hy) as X.
+      exact (proj1 (Pir ρ a a'' a' p p'' p' h' h Hp'' Hp y y) X). }
+    assert (P12s : forall (ρ : kwk G Γ) a a' a'' p p' p'' p3 y y'', vdomR ρ a a' -> vdomR ρ a a'' -> domR2 ρ a' a'' ->
+              vpdR ρ a a'' p p'' y y'' ->
+              PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ vN)[lsingle a] (ktml ρ vN')[lsingle a'] p p' ->
+              PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ vN')[lsingle a'] (ktml ρ N3)[lsingle a''] p' p3 ->
+              pdR2 ρ a' a'' p' p3 y y'').
+    { intros ρ a a' a'' p p' p'' p3 y y'' h h' h2 hy Hp Hp3.
+      pose proof (vpdE ρ _ _ _ _ _ _ hy) as Hp''.
+      pose proof (proj1 (Pir ρ a a'' a' p p'' p' h' h Hp'' Hp y y'') hy) as X.
+      pose proof (Hpd2 ρ a' a'' h2 p' p3 Hp3) as L23.
+      pose proof (proj1 (IHvpd ρ a a' h p p' Hp _ _ L23)) as C13.
+      exact (proj1 (LR_irrel_left _ _ _ _ _ _ _ _ _ C13 L23 y y'') X). }
+    assert (P12 : forall (ρ : kwk G Γ) a a' a'' p p' p'' y y'', vdomR ρ a a' -> vdomR ρ a a'' -> domR2 ρ a' a'' ->
+              vpdR ρ a a'' p p'' y y'' ->
+              PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ vN)[lsingle a] (ktml ρ vN')[lsingle a'] p p' ->
+              exists p3, pdR2 ρ a' a'' p' p3 y y'').
+    { intros ρ a a' a'' p p' p'' y y'' h h' h2 hy Hp.
+      destruct (PosRel_split (PosRel_sym Hp) _ (arAd2 ρ a' a'' h2)) as (p3 & Hp3 & _).
+      exists p3. exact (P12s ρ a a' a'' p p' p'' p3 y y'' h h' h2 hy Hp Hp3). }
+    (* the composite's domains' relation *)
+    pose (pdR13 := fun (ρ : kwk G Γ) a a'' p p'' y y'' =>
+                     PosRel (kw_G ρ) (kw_Δ ρ) (ktml ρ vN)[lsingle a] (ktml ρ N3)[lsingle a''] p p'' /\
+                     (exists q, vpdR ρ a a'' p q y y'')).
+    assert (HR13 : releq R (IWiRel G Γ vl1 vlp1 vli1 vX vA vN vD vO vC vidxR vdomR pdR13 vm)).
+    { eapply releq_trans; [exact HR|]. intros t t'; split; intros Y.
+      - refine (proj1 IWiRel_pd_mono _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Y _ _).
+        intros ρ a a' p y y' _ (p' & _ & q & X). exists q. exact X.
+      - refine (proj1 IWiRel_pd_mono _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Y _ _).
+        intros ρ a a' p y y' h (q & X).
+        destruct (PosRel_split (vpdE ρ _ _ _ _ _ _ X) _ (Ar3 ρ a a' h)) as (p' & Hp' & _).
+        exists p'. split; [exact Hp' | exists q; exact X]. }
+    (* the composite signature *)
+    assert (HG23 : IWiGeq G Γ vl2 vlp2 vli2 vX' X3 vA' A3 vN' N3 vD' D3 vO' O3 vC' C3)
+      by exact (conj HXX23 (conj HAA23 (conj HNN23 (conj HDD23 (conj HOO23 HCC23))))).
+    pose proof (IWiGeq_trans HE HG HG23) as (GX & GA & GN & GD & GO & GC).
+    pose proof (IWiSig_lconv (conj W2 (conj Wp2 (conj Wi2 (conj HX3 (conj HA3 (conj HN3 (conj HD3 (conj HO3 HC3))))))))
+                  Hvl2 Hvlp2 Hvli2) as (_ & _ & _ & H3X & H3A & H3N & H3D & H3O & H3C).
+    split.
+    + eapply (LRiwi n (LRbelow n) G Γ T1 T3 l vl1 vlp1 vli1 k3 kp3 ki3 vX X3 vA A3 vN N3 vD D3 vO O3 vC C3 vm m3
+                vidxR vdomR pdR13 R).
+      * exact Hl.
+      * exact (lequiv_trans _ _ _ _ Hk3 Hvl2).
+      * exact (lequiv_trans _ _ _ _ Hkp3 Hvlp2).
+      * exact (lequiv_trans _ _ _ _ Hki3 Hvli2).
+      * exact Hvw.
+      * exact Hvwp.
+      * exact Hvwi.
+      * exact HT1.
+      * exact HT3.
+      * exact HvX.
+      * exact H3X.
+      * exact HvA.
+      * exact H3A.
+      * exact HvN.
+      * exact H3N.
+      * exact HvD.
+      * exact H3D.
+      * exact HvO.
+      * exact H3O.
+      * exact HvC.
+      * exact H3C.
+      * exact Hvm.
+      * eapply wf_lconv; [exact Hm3 | exact Hli2'].
+      * exact GX.
+      * exact GA.
+      * exact GN.
+      * exact GD.
+      * exact GO.
+      * exact GC.
+      * eapply geq_tm_trans; [exact Hvmm|].
+        eapply geq_tm_lconv; [eapply geq_tm_conv; [exact Hmm23 | exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ EX) Hvli2)]
+                             | exact Hli2'].
+      * exact Hidx3.
+      * exact Hvisym.
+      * exact Hvistr.
+      * exact Hdom3.
+      * exact Ar3.
+      * intros ρ a a' ha. exact (Ti ρ _ _ _ (votAd ρ a a (Hrefl ρ a a' ha)) (otAd2 ρ a a' (H12 ρ a a' ha))).
+      * intros ρ a a'' h p p'' Hp.
+        pose proof (Hrefl ρ a a'' h) as haa.
+        destruct (PosRel_split Hp _ (varAd ρ a a haa)) as (q' & Hp1 & Hp2).
+        pose proof (proj1 (IHvpd ρ a a haa p q' Hp1 _ _ (Hpd2 ρ a a'' (H12 ρ a a'' h) q' p'' Hp2))) as C13.
+        destruct (PosRel_split Hp _ (varAd ρ a a'' h)) as (q & Hq & _).
+        eapply LR_releq; [exact C13 |]. intros y y''; split.
+        -- intros X. split; [exact Hp |]. exists q. exact (proj1 (Pir ρ a a a'' p q' q haa h Hp1 Hq y y'') X).
+        -- intros (_ & q0 & X). pose proof (vpdE ρ _ _ _ _ _ _ X) as Hq0.
+           exact (proj1 (Pir ρ a a'' a p q0 q' h haa Hq0 Hp1 y y'') X).
+      * intros ρ a a'' p p'' y y'' (Hp & _). exact Hp.
+      * intros ρ ρ' a a'' p p'' y y'' (Hp & q & X). split.
+        -- pose proof (PosRel_kw ρ' Hp) as Y. rewrite !ktm_single, <- !ktml_comp in Y. exact Y.
+        -- exists (ktm ρ' q). exact (vpdMon ρ ρ' _ _ _ _ _ _ X).
+      * intros ρ a a'' h p p'' y y'' (Hp & q & X).
+        pose proof (Hrefl ρ a a'' h) as haa.
+        destruct (PosRel_split Hp _ (varAd ρ a a haa)) as (q' & Hp1 & Hp2).
+        pose proof (vchAd ρ a a haa p q' y y (Pr ρ a a a'' p q' q y y'' haa h X Hp1)) as I1.
+        pose proof (chAd2 ρ a a'' (H12 ρ a a'' h) q' p'' y y''
+                      (P12s ρ a a a'' p q' q p'' y y'' haa h (H12 ρ a a'' h) X Hp1 Hp2)) as I2.
+        exact (Ti ρ _ _ _ I1 I2).
+      * intros ρ a a'' h p p'' Hp.
+        pose proof (Hrefl ρ a a'' h) as haa.
+        destruct (PosRel_split Hp _ (varAd ρ a a haa)) as (q' & Hp1 & Hp2).
+        destruct (escape_ty _ _ _ _ _ _ _ _ (vpdAd ρ a a haa p q' Hp1)) as (HDa & _ & GDa).
+        pose proof (vgC ρ a a haa p q' Hp1) as G1.
+        pose proof (gC2 ρ a a'' (H12 ρ a a'' h) q' p'' Hp2) as G2.
+        assert (HΔ1 : [ kw_G ρ ; kw_Δ ρ ,, (ktyll ρ vD)[lsingle2 a p] @ vlp1 ⊢g ])
+          by exact (ext_wf_g HDa (kw_lwf ρ Hvwp)).
+        assert (EX1 : [ kw_G ρ ; kw_Δ ρ ,, (ktyll ρ vD)[lsingle2 a p] @ vlp1
+                        ⊢g (kty ρ vX')⟨↑⟩ ≅ (kty ρ vX)⟨↑⟩ @ vli2 ])
+          by exact (wk1_eqty _ ge_layer ge_typeof _ _ _ _ _ _ HΔ1
+                      (kw_eqty ρ (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ EX) Hvli2))).
+        assert (ED1 : [ kw_G ρ ; kw_Δ ρ ⊢g (ktyll ρ vD')[lsingle2 a q'] ≅ (ktyll ρ vD)[lsingle2 a p] @ vlp2 ])
+          by exact (eqty_lconv _ _ _ _ _ _ _ (eqty_sym _ _ _ _ _ _ (geq_ty_sound GDa)) (kw_lequiv ρ Hvlp2)).
+        eapply geq_tm_trans; [exact G1 |].
+        eapply geq_tm_lconv; [eapply geq_tm_conv; [exact (geq_tm_ctxconv ED1 (kw_lequiv ρ Hvlp2) HΔ1 G2) | exact EX1]
+                             | exact (kw_lequiv ρ Hli2')].
+      * intros ρ. exact (Ti ρ _ _ _ (vixAd ρ) (ixAd2 ρ)).
+      * exact HR13.
+    + intros t1 t2 t3 H12' H23'. apply HR. apply HR in H12'. apply HR2 in H23'.
+      exact (proj1 IWiRel_trans_all _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H12' _ _ _ _ _ _ _ _ _ idxR2 domR2 pdR2 _ _
+               (conj Hy (conj Td (conj Pr P12))) ET H23').
 Qed.
 
 Theorem LR_trans n : Ptrans n.

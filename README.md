@@ -180,6 +180,18 @@ From M8 on, the milestones check the extensions of Heather's kernel
   consequences. β fires only under `out`, at a `corec` of any
   annotations. A closed term at `M` computes to a `corec`. No kernel rule
   needed a change. See `M18_DESIGN.md`.
+- Milestone 19a–b: indexed families with infinitary children.
+  `IWi^{l,lp,li}(I; x:S. n; x i. D; x. o; x i y. c)(m)`, `sup_ii` and
+  `elim_IWi`: `IWf` whose recursive fields are functions, field `i` from
+  its own domain `D[a, i]` into the family at the child index
+  `c[a, i, y]`. They hold at layers D and M through the relation,
+  validity, the fundamental theorem, the algorithm, decidability, the
+  type checker and canonicity (a closed term at `IWi` computes to a
+  `sup_ii`). See `M19_DESIGN.md`.
+- Milestone 19c: the code of `IWi`, the lift of `IWi`, `sup_ii` and
+  `elim_IWi` to every layer but V, and the code recursor's four
+  branches 61–64, whose scopes are derived from the layer-C rules ahead
+  of Heather's `rec.rs`. See `M19_DESIGN.md`.
 
 No admits, no axioms.
 
@@ -188,7 +200,7 @@ Documents:
 - `HEATHER.md`: what Heather's kernel adds to DeLaM, what this repo
   checks of it, and the order of the coming milestones.
 - `docs/design/`: one design doc per milestone (`M1_DESIGN.md` to
-  `M18_DESIGN.md`) with its decisions, deviations from the paper and
+  `M19_DESIGN.md`) with its decisions, deviations from the paper and
   outcome, plus `ELIM_CONGRUENCE.md` (typed eliminator congruence),
   `SYNTAX_SPIKE.md` (why the syntax is hand-written; the spike is
   `spike/Syntax.v`) and `LAYER_STRUCTURE.md` (side conditions on layer

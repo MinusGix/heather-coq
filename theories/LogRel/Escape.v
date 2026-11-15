@@ -443,6 +443,78 @@ Proof using .
   - intros ρ; apply releq_sym', Hd.
 Qed.
 
+(** ** Indexed families with infinitary children (M19b) *)
+
+Lemma IWiRel_inv {G Γ l lp li X A N D Ot C idxR domR pdR m t t'} :
+  IWiRel G Γ l lp li X A N D Ot C idxR domR pdR m t t' ->
+  exists w w', [ G ; Γ ⊢g t ⤳* w : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] /\
+    [ G ; Γ ⊢g t' ⤳* w' : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] /\
+    [ G ; Γ ⊢ w ≈ w' : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] /\
+    IWiNf G Γ l lp li X A N D Ot C idxR domR pdR m w w'.
+Proof using . destruct 1; eauto 7. Qed.
+
+Lemma IWiRel_wf {G Γ l lp li X A N D Ot C idxR domR pdR m t t'} :
+  IWiRel G Γ l lp li X A N D Ot C idxR domR pdR m t t' ->
+  [ G ; Γ ⊢g t : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ] /\
+  [ G ; Γ ⊢g t' : tyIWi l lp li X A N D Ot C m @ iwiL l lp li ].
+Proof using .
+  intros (w & w' & Hw & Hw' & _ & _)%IWiRel_inv.
+  exact (conj (tmred_wf _ _ _ _ _ _ _ Hw) (tmred_wf _ _ _ _ _ _ _ Hw')).
+Qed.
+
+(** The three families along pointwise equivalent index and shape
+    relations and domain relations that agree where the families read
+    them: at related shapes, against some right position. The spine's
+    argument relation along an inclusion (it is a premise of the head). *)
+Definition IPDIncl {G Γ} (domR : DomRel G Γ) (pdR pdR' : IPosDomRel G Γ) : Prop :=
+  forall ρ a a' p y y', domR ρ a a' -> (exists p', pdR ρ a a' p p' y y') -> exists p', pdR' ρ a a' p p' y y'.
+
+Lemma IWiRel_dir_all :
+  (forall G Γ l lp li X A N D Ot C idxR domR pdR m t t', IWiRel G Γ l lp li X A N D Ot C idxR domR pdR m t t' ->
+     forall (idxR' domR' : DomRel G Γ) (pdR' : IPosDomRel G Γ),
+     (forall ρ, releq (idxR ρ) (idxR' ρ)) -> (forall ρ, releq (domR ρ) (domR' ρ)) -> IPDIncl domR pdR' pdR ->
+     IWiRel G Γ l lp li X A N D Ot C idxR' domR' pdR' m t t') /\
+  (forall G Γ l lp li X A N D Ot C idxR domR pdR m t t', IWiNf G Γ l lp li X A N D Ot C idxR domR pdR m t t' ->
+     forall (idxR' domR' : DomRel G Γ) (pdR' : IPosDomRel G Γ),
+     (forall ρ, releq (idxR ρ) (idxR' ρ)) -> (forall ρ, releq (domR ρ) (domR' ρ)) -> IPDIncl domR pdR' pdR ->
+     IWiNf G Γ l lp li X A N D Ot C idxR' domR' pdR' m t t') /\
+  (forall G Γ l lp li X A N D Ot C idxR domR pdR yR d c k t t',
+     DVecWSp G Γ l lp li X A N D Ot C idxR domR pdR yR d c k t t' ->
+     forall (idxR' domR' : DomRel G Γ) (pdR' : IPosDomRel G Γ) (yR' : tm -> tm -> tm -> Prop),
+     (forall ρ, releq (idxR ρ) (idxR' ρ)) -> (forall ρ, releq (domR ρ) (domR' ρ)) -> IPDIncl domR pdR' pdR ->
+     (forall p y y', yR' p y y' -> yR p y y') ->
+     DVecWSp G Γ l lp li X A N D Ot C idxR' domR' pdR' yR' d c k t t').
+Proof using .
+  apply IWiRel_comb; intros.
+  - econstructor; eauto.
+  - apply iwinf_sup; auto.
+    + intros ρ. match goal with E : forall ρ, releq (domR ρ) (domR' ρ), H : forall ρ, domR ρ _ _ |- _ => apply E, H end.
+    + intros ρ. match goal with E : forall ρ, releq (idxR ρ) (idxR' ρ), H : forall ρ, idxR ρ _ _ |- _ => apply E, H end.
+    + intros ρ. match goal with IH : forall ρ, forall _ _ _ _, _ |- _ => apply IH end.
+      * intros ρ'. match goal with E : forall ρ, releq (idxR ρ) (idxR' ρ) |- _ => apply E end.
+      * intros ρ'. match goal with E : forall ρ, releq (domR ρ) (domR' ρ) |- _ => apply E end.
+      * intros ρ' a0 a0' p y y' h. match goal with E : IPDIncl _ _ _ |- _ => exact (E _ a0 a0' p y y' h) end.
+      * intros p y y' h. match goal with E : IPDIncl _ _ _, Hd : forall ρ, domR ρ _ _ |- _ => exact (E ρ _ _ p y y' (Hd ρ) h) end.
+  - apply iwinf_ne; assumption.
+  - apply wsp_zero; assumption.
+  - eapply wsp_succ; eauto.
+  - eapply wsp_ne; eauto.
+Qed.
+
+Lemma IWiRel_releq {G Γ l lp li X A N D Ot C} {idxR idxR' domR domR' : DomRel G Γ} {pdR pdR' : IPosDomRel G Γ} {m} :
+  (forall ρ, releq (idxR ρ) (idxR' ρ)) -> (forall ρ, releq (domR ρ) (domR' ρ)) ->
+  IPDIncl domR pdR pdR' -> IPDIncl domR pdR' pdR ->
+  releq (IWiRel G Γ l lp li X A N D Ot C idxR domR pdR m) (IWiRel G Γ l lp li X A N D Ot C idxR' domR' pdR' m).
+Proof using .
+  intros Hi Hd Hp Hp' t t'; split; intros H; eapply (proj1 IWiRel_dir_all); try exact H.
+  - exact Hi.
+  - exact Hd.
+  - exact Hp'.
+  - intros ρ; apply releq_sym', Hi.
+  - intros ρ; apply releq_sym', Hd.
+  - intros ρ a a' p y y' h. apply Hp. apply Hd, h.
+Qed.
+
 (** ** Heather's indexed [M] (M18b) *)
 
 Lemma MRn_gen {n G Γ l1 l2 li X A B C r1 r2 ri X' A' B' C' shR posR m m' t t'} :
@@ -578,7 +650,10 @@ Proof using EL.
                     idxAd Hisym Histr domAd arAd otAd chAd ixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR].
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l l1 lp1 li1 l2 lp2 li2 X X' A A' N N' D D' Ot Ot' C C' m m' idxR domR pdR R
+                    Hl Hl2 Hlp2 Hli2 Hw Hwp Hwi HT HT' HX HX' HA HA' HN HN' HD HD' HO HO' HC HC' Hmt Hmt'
+                    HXX HAA HNN HDD HOO HCC Hmm idxAd Hisym Histr domAd arAd otAd pdAd pdE pdMon chAd gCh ixAd HR].
   all: try solve [exact (ModRel_escape_ty HM)].
   all: split; [apply HT | split; [apply HT' | eapply geq_ty_exp; [exact HT | exact HT' |]]].
   - eapply geq_ty_lconv; [|exact Hl]. eapply geq_ty_nat, tyred_ctx, HT.
@@ -601,6 +676,7 @@ Proof using EL.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_sq; auto using lequiv_sym.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_iwf; auto using lequiv_sym.
   - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_M; auto using lequiv_sym.
+  - eapply geq_ty_lconv; [|exact Hl]. apply geq_ty_iwi; auto using lequiv_sym.
 Qed.
 
 (** ** Escape for terms *)
@@ -636,7 +712,10 @@ Proof using EL.
                     idxAd Hisym Histr domAd arAd otAd chAd ixAd HR
                 | G Γ T T' l ml1 ml2 mli mr1 mr2 mri mX mX' mA mA' mB mB' mC mC' mm mm' midxR mshR mposR R
                     Hl Hmr1 Hmr2 Hmri Hmw1 Hmw2 Hmwi HT HT' HmX HmX' HmA HmA' HmB HmB' HmC HmC' Hmm Hmm'
-                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR];
+                    HmXX HmAA HmBB HmCC Hmmm midxAd mshAd mposAd mchAd mgB mgC mgCa mimon mshmon mposmon mixAd HR
+                | G Γ T T' l l1 lp1 li1 l2 lp2 li2 X X' A A' N N' D D' Ot Ot' C C' m m' idxR domR pdR R
+                    Hl Hl2 Hlp2 Hli2 Hw Hwp Hwi HT HT' HX HX' HA HA' HN HN' HD HD' HO HO' HC HC' Hmt Hmt'
+                    HXX HAA HNN HDD HOO HCC Hmm idxAd Hisym Histr domAd arAd otAd pdAd pdE pdMon chAd gCh ixAd HR];
     intros t t' Htt; first [exact (ModRel_escape_tm HM _ _ Htt) | apply HR in Htt].
   - (* Nat *)
     destruct Htt as [t t' w w' Hw Hw' Heq _].
@@ -788,6 +867,13 @@ Proof using EL.
     repeat split.
     + eapply conv_tm; [apply Hw' | exact HTW | exact Hl].
     + eapply conv_tm; [apply Hw3 | exact HTW | exact Hl].
+    + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTW | exact Hl].
+  - (* IWi: related weak-head normal forms *)
+    destruct (IWiRel_inv Htt) as (w & w' & Hw' & Hw'' & Heq & _).
+    assert (HTW : [ G ; Γ ⊢g T ≅ tyIWi l1 lp1 li1 X A N D Ot C m @ l ]) by apply HT.
+    repeat split.
+    + eapply conv_tm; [apply Hw' | exact HTW | exact Hl].
+    + eapply conv_tm; [apply Hw'' | exact HTW | exact Hl].
     + eapply conv_geq_tm; [eapply geq_tm_exp; eauto | apply eqty_sym, HTW | exact Hl].
 Qed.
 
@@ -1185,6 +1271,21 @@ Proof using EL.
     by (eapply tmred_whnf_det; [exact Hw | exact Hν | exact (NatNf_whnf_l Hn) | now constructor]).
   subst w. inversion Hn; subst; try solve [inversion Nν].
   eexists; split; [exact Hw' | assumption].
+Qed.
+
+(** A position related along one right length, related along another
+    length related to the left one. *)
+Lemma PosRel_retarget {G Γ k k1 p p1} : PosRel G Γ k k1 p p1 -> forall k2, NatRel G Γ k k2 ->
+  exists p2, PosRel G Γ k k2 p p2.
+Proof using EL.
+  induction 1 as [k k1 m m1 Hk Hk1 _ | k k1 m m1 p p1 Hk Hk1 _ IH | k k1 p p1 _ Hp]; intros k2 Hkk.
+  - destruct (NatRel_inv_succ Hkk Hk) as (m2 & Hk2 & Hm2).
+    exists (posHd m2). exact (pos_hd _ _ _ _ _ _ Hk Hk2 Hm2).
+  - destruct (NatRel_inv_succ Hkk Hk) as (m2 & Hk2 & Hm2).
+    destruct (IH _ Hm2) as (p2 & Hp2).
+    exists (posTl m2 p2). exact (pos_tl _ _ _ _ _ _ _ _ Hk Hk2 Hp2).
+  - exists p. apply pos_ne; [exact (geq_tm_sound (NatRel_geq Hkk)) |].
+    eapply gne_tm_trans; [exact Hp | apply gne_tm_sym, Hp].
 Qed.
 
 (** Neutrals along convertible types on both sides. *)

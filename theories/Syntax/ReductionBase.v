@@ -83,6 +83,12 @@ Inductive red : tm -> tm -> Prop :=
         (c[lsingle3 a cs (iwfIH l li l' X A N Ot C M c a cs)])
 | red_elimIWf l li l' X A N Ot C M c m t t' : red t t' ->
     red (tmElimIWf l li l' X A N Ot C M c m t) (tmElimIWf l li l' X A N Ot C M c m t')
+(* indexed families with infinitary children (M19): as [IWf]'s *)
+| red_elimIWi_supii l lp li l' X A N D Ot C M c m k kp ki X' A' N' D' Ot' C' a cs :
+    red (tmElimIWi l lp li l' X A N D Ot C M c m (tmSupii k kp ki X' A' N' D' Ot' C' a cs))
+        (c[lsingle3 a cs (iwiIH l lp li l' X A N D Ot C M c a cs)])
+| red_elimIWi l lp li l' X A N D Ot C M c m t t' : red t t' ->
+    red (tmElimIWi l lp li l' X A N D Ot C M c m t) (tmElimIWi l lp li l' X A N D Ot C M c m t')
 (* Heather's [M] (M18b): β fires only under [out], at a [corec] of any
    annotations; the reduct reads the [corec]'s, as the kernel's does
    ([m_out_corec]); the scrutinee reduces *)
@@ -125,6 +131,9 @@ with red_ty : ty -> ty -> Prop :=
 | red_El_dvec l l0 n f : red_ty (tyEl l (tmDVec l0 n f)) (tyDVec l0 n (tyEl l0 f))
 | red_El_iwf l l0 li x s n o c m :
     red_ty (tyEl l (tmIWf l0 li x s n o c m)) (tyIWf l0 li (tyEl li x) (tyEl l0 s) n o c m)
+(* the code of IWi (M19c): the domain's code decodes too *)
+| red_El_iwi l l0 lp li x s n d o c m :
+    red_ty (tyEl l (tmIWi l0 lp li x s n d o c m)) (tyIWi l0 lp li (tyEl li x) (tyEl l0 s) n (tyEl lp d) o c m)
 (* length-indexed tuples and finite indices (M14a): compute on the length *)
 | red_vec_zero l A : red_ty (tyVec l A zero) (tyUnit l)
 | red_vec_succ l A n : red_ty (tyVec l A (succ n)) (tySig l l A (tyVec l A⟨↑⟩ n⟨↑⟩))
@@ -212,6 +221,8 @@ Proof.
         | Hr : red (tmDVec _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmIWf _ _ _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red (tmCorec _ _ _ _ _ _ _ _ _ _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmSupii _ _ _ _ _ _ _ _ _ _ _) _ |- _ => inversion Hr
+        | Hr : red (tmIWi _ _ _ _ _ _ _ _ _ _) _ |- _ => inversion Hr
         | Hr : red_ty (tyPi _ _ _ _) _ |- _ => inversion Hr
         end;
     try congruence; try (f_equal; eauto).
@@ -285,6 +296,9 @@ Lemma reds_elimWf l l' A N M c t t' : reds t t' -> reds (tmElimWf l l' A N M c t
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_elimIWf l li l' X A N Ot C M c m t t' : reds t t' ->
   reds (tmElimIWf l li l' X A N Ot C M c m t) (tmElimIWf l li l' X A N Ot C M c m t').
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_elimIWi l lp li l' X A N D Ot C M c m t t' : reds t t' ->
+  reds (tmElimIWi l lp li l' X A N D Ot C M c m t) (tmElimIWi l lp li l' X A N D Ot C M c m t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_out l l' li X A B C j m m' : reds m m' ->
   reds (tmOut l l' li X A B C j m) (tmOut l l' li X A B C j m').
