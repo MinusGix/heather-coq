@@ -1,7 +1,7 @@
 # M16: propositional truncation (`Squash`), design
 
-Status: **done**. M16a (2026-10-10) and M16b (2026-10-13), outcomes at
-the end. Why now: `HEATHER.md` item 5
+Status: **done**. M16a (2026-10-10), M16b (2026-10-13) and M16c, the
+release `∥Empty∥ → Empty` (2026-11-18), outcomes at the end. Why now: `HEATHER.md` item 5
 lists `Squash` as the last former of Heather's kernel without a check here,
 and its relation was settled by a probe (`probes/SquashProbe.v`,
 heather-coq#8). Heather's `issues/metatheory-ch07-squash.md` owns the full
@@ -242,3 +242,79 @@ theorem stays closed under the global context: `Print Assumptions` of
   unified before `lequiv_sym` applies): give the symmetric proof
   directly.
 
+
+## M16c: the release of a squashed absurdity (2026-11-18)
+
+Minus asked for `∥Empty∥ → Empty` (2026-11-18). Without it the squash-headed
+eliminator only ever reaches `∥B∥`, so a squashed absurdity can never rule
+a case out. Heather proposes it as a fixed former
+(`H/issues/sprop-inductives-and-squash-bridges.md`, scope point (b);
+`H/docs/language/strict-conditions-design.md` §4.2). Its one stated risk
+was that the squash relation would have to know that a squash's payload
+is related. The probe's relation (M16a) already keeps that (`SqNf`'s
+`RA a a`), so here the former is cheap.
+
+**Why it is sound here and not at other types.** A general `∥A∥ → A` with
+β breaks against irrelevance: `squash(0) ≡ squash(1)` at `∥Nat∥` would
+give `0 ≡ 1`. At `Empty` the same chain gives an equation that `Empty`'s
+own irrelevance (M12, 2026-10-06) already has. For the same reason β adds
+no equation, and it holds only so that `unsquash(squash ν)` reduces in an
+open context. No closed term of `∥Empty∥` exists
+(`Canonicity.closed_sq_empty_empty`), so β never fires in a closed
+program.
+
+Decisions:
+- **Syntax.** `tmUnsq l t`: `unsquash^l(t) : Empty^l` for
+  `t : ∥Empty^l∥^l`. It is appended to `tm`, has one level and no
+  binder, and is not a code.
+- **Reduction.** `red_unsq_sq`: `unsquash(squash^k(C; a)) ⇝ a`, at any
+  annotations. `red_unsq`: the scrutinee reduces. `whne_unsq`: the
+  release on a neutral is neutral.
+- **Rules, at layers D and M (`compt i`).** `wf_unsq` and its congruence
+  `eqtm_unsq`. β is not a rule: it is `eqtm_empty_irr` once the payload
+  is typed at `Empty`, which `inv_sq` and `sq_inj_c` give
+  (`Preservation.RS_unsq_sq`). The congruence is a rule, as `srefl`'s
+  is, so that the substitution lemmas need no irrelevance.
+- **The generic equivalence** gains `gne_tm_unsq`: the release is neutral
+  on neutral scrutinees, each related to itself, as `elim_Empty` is.
+- **Algorithm.** `actmne_unsq` compares the levels and asks only that
+  both scrutinees be neutral. It compares nothing else, as at
+  `elim_Empty`.
+- **Not at C, no recursor branch.** The code layer has no
+  irrelevance at `Empty`, and the code recursor would need a branch for a
+  term former at C. Lifting the release to C, with its branch in
+  Heather's `rec.rs`, is a separate step if a code-level customer
+  appears.
+
+Outcome:
+- **Validity** (`Validity/Unsq.v`) works one side at a time, as
+  `V_elimSq` does (`unsq_side`). At a `squash a`, the payload's
+  self-relation at `Empty` is a neutral `ν ~ ν` it reduces to, so the
+  release reduces by β to `a` and on to `ν`. At a neutral scrutinee the
+  release is neutral (`gne_tm_unsq`). `EmptyRel` compares the two
+  sides' neutrals with nothing, so the two sides are never compared.
+  `VS_unsq` lifts it along global substitutions (`RulesSCoreW`), and both
+  fundamental theorems took the new rules with no other change.
+- **Typing metatheory**: `pre_unsq_r` and `pre_unsq_ty` (`PresupAux`)
+  for presupposition, `sc_unsq` for static code, `inv_unsq` and
+  `inva_unsq`. Weakening, substitution, functionality, the global
+  operations and the universe operations took the new rules unchanged.
+  They needed only the push lemmas (`ren_unsq`, `subst_unsq`, `gs_unsq`,
+  `gren_unsq`, `gwa_unsq`) in their tables.
+- **Algorithm**: `S_`, `C_`, `Y_`, `T_` and `Dc_actmne_unsq`,
+  `ainv_unsq`, `tm_con` 65, `is_whne` and `ne_head`.
+- **Consequences**: preservation (`RS_unsq`, `RS_unsq_sq`), type
+  uniqueness, type checking (`sy_unsq`, deciding `compt i` first) and
+  `neutral_univ_gen`'s case (one more positional pattern in
+  `Consistency.v`'s `induction ... as`).
+- **Checked.** A clean `make -j4` took 631 s wall and 1857 s CPU on
+  the 2026-11-18 cloud machine of this round (no back-to-back run of the
+  tree before). `Print Assumptions` of `consistency`,
+  `closed_canonicity`, `closed_sq_empty_empty`, `decl_eqtm_dec_any`,
+  `fundamentalS`, `fundamentalM`, `type_uniq`, `red_sound_tm`,
+  `rec_code` and `V_unsq` lists nothing.
+- **Cost.** 46 files, about 450 lines, against M16a's 1580: the former
+  has no binder and no type of its own, and its β is irrelevance.
+- **Gotcha.** `eqtm_unsq` has no `lwf` premise (the `lequiv` carries it),
+  so presupposition's dispatcher needs `eauto using lequiv_wf_l` for
+  `wf_unsq` and `pre_unsq_ty`, not `eassumption`.
