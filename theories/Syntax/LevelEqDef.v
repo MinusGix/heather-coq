@@ -138,6 +138,7 @@ with tm_leq (t t' : tm) {struct t} : Prop :=
   | tmOut l l1 li X A B C j m, tmOut l' l1' li' X' A' B' C' j' m' =>
       leqv l l' /\ leqv l1 l1' /\ leqv li li' /\ ty_leq X X' /\ ty_leq A A' /\ ty_leq B B' /\
       tm_leq C C' /\ tm_leq j j' /\ tm_leq m m'
+  | tmUnsq l t, tmUnsq l' t' => leqv l l' /\ tm_leq t t'
   | _, _ => False
   end
 with ctx_leq (Γ Γ' : ctx) {struct Γ} : Prop :=

@@ -305,6 +305,7 @@ with sz_tm (t : tm) : nat :=
       S (sz_ty X + sz_ty A + sz_tm N + sz_tm Ot + sz_tm C + sz_ty M + sz_tm c + sz_tm m + sz_tm t)
   | tmCorec _ _ _ X A B C _ Y c j y => S (sz_ty X + sz_ty A + sz_ty B + sz_tm C + sz_ty Y + sz_tm c + sz_tm j + sz_tm y)
   | tmOut _ _ _ X A B C j m => S (sz_ty X + sz_ty A + sz_ty B + sz_tm C + sz_tm j + sz_tm m)
+  | tmUnsq _ t => S (sz_tm t)
   end
 with sz_ctx (Γ : ctx) : nat :=
   match Γ with cnil | cvar _ => 1 | cext Γ A _ => S (sz_ctx Γ + sz_ty A) end

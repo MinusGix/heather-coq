@@ -37,6 +37,8 @@ Inductive whne : tm -> Prop :=
 | whne_elimIWf l li l' X A N Ot C M c m t : whne t -> whne (tmElimIWf l li l' X A N Ot C M c m t)
 (* [M]'s one eliminator on a neutral (M18b) *)
 | whne_out l l' li X A B C j m : whne m -> whne (tmOut l l' li X A B C j m)
+(* the release of a squashed absurdity on a neutral (M16c) *)
+| whne_unsq l t : whne t -> whne (tmUnsq l t)
 (* J on a neutral proof (M11a) *)
 | whne_J l l' A a M c u e : whne e -> whne (tmJ l l' A a M c u e).
 

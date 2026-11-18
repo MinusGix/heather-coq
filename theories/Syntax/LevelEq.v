@@ -86,6 +86,7 @@ with tm_lwf (L : nat) (t : tm) {struct t} : Prop :=
       ty_lwf L B /\ tm_lwf L C /\ lwf L k /\ ty_lwf L Y /\ tm_lwf L c /\ tm_lwf L j /\ tm_lwf L y
   | tmOut l l' li X A B C j m => lwf L l /\ lwf L l' /\ lwf L li /\ ty_lwf L X /\ ty_lwf L A /\
       ty_lwf L B /\ tm_lwf L C /\ tm_lwf L j /\ tm_lwf L m
+  | tmUnsq l t => lwf L l /\ tm_lwf L t
   | tmCase l1 l2 l3 A B M c1 c2 t => lwf L l1 /\ lwf L l2 /\ lwf L l3 /\ ty_lwf L A /\ ty_lwf L B /\
       ty_lwf L M /\ tm_lwf L c1 /\ tm_lwf L c2 /\ tm_lwf L t
   | succ t => tm_lwf L t

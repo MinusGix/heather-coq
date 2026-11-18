@@ -554,6 +554,7 @@ with nftm (t : tm) : Prop :=
   | tmCorec _ _ _ X A B C _ Y c j y =>
       nfty X /\ nfty A /\ nfty B /\ nftm C /\ nfty Y /\ nftm c /\ nftm j /\ nftm y
   | tmOut _ _ _ X A B C j m => nfty X /\ nfty A /\ nfty B /\ nftm C /\ nftm j /\ nftm m
+  | tmUnsq _ t => nftm t
   | tmRefl _ A a => nfty A /\ nftm a
   | tmId _ s t u => nftm s /\ nftm t /\ nftm u
   | tmSEq _ s t u => nftm s /\ nftm t /\ nftm u

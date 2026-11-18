@@ -300,6 +300,7 @@ with dnftm (t : tm) : Prop :=
   | tmCorec _ _ _ X A B C _ Y c j y =>
       dnfty X /\ dnfty A /\ dnfty B /\ dnftm C /\ dnfty Y /\ dnftm c /\ dnftm j /\ dnftm y
   | tmOut _ _ _ X A B C j m => dnfty X /\ dnfty A /\ dnfty B /\ dnftm C /\ dnftm j /\ dnftm m
+  | tmUnsq _ t => dnftm t
   | tmRefl _ A a => dnfty A /\ dnftm a
   | tmId _ s t u => dnftm s /\ dnftm t /\ dnftm u
   | tmSEq _ s t u => dnftm s /\ dnftm t /\ dnftm u

@@ -181,6 +181,9 @@ with tm : Type :=
     (* corec^{k}(σ; i. Y; i x. c; j; y) : M(σ)(j)      Y: +1, c: +2 *)
 | tmOut (l l' li : lvl) (X A B : ty) (C j m : tm)
     (* out(σ; j; m) : Σ(s : A[j]). Π(p : B[j, s]). M(σ)(C[j, s, p]) *)
+(* the release of a squashed absurdity (M16c): [Empty] is irrelevant, so
+   nothing is read from the squash *)
+| tmUnsq (l : lvl) (t : tm)               (* unsquash^l(t) : Empty^l, t : ∥Empty^l∥^l *)
 with ctx : Type :=
 | cnil
 | cvar (g : nat)
@@ -350,6 +353,7 @@ with ren_tm (t : tm) (r : rsub) {struct t} : tm :=
       tmCorec l l' li (ren_ty X r) (ren_ty A (rlift r)) (ren_ty B (rlift (rlift r))) (ren_tm C (rlift (rlift (rlift r)))) k (ren_ty Y (rlift r)) (ren_tm c (rlift (rlift r))) (ren_tm j r) (ren_tm y r)
   | tmOut l l' li X A B C j m =>
       tmOut l l' li (ren_ty X r) (ren_ty A (rlift r)) (ren_ty B (rlift (rlift r))) (ren_tm C (rlift (rlift (rlift r)))) (ren_tm j r) (ren_tm m r)
+  | tmUnsq l t => tmUnsq l (ren_tm t r)
   end
 with lren (d : lsub) (r : rsub) {struct d} : lsub :=
   match d with
@@ -471,6 +475,7 @@ with gren_tm (t : tm) (ξ : nat -> nat) {struct t} : tm :=
       tmCorec l l' li (gren_ty X ξ) (gren_ty A ξ) (gren_ty B ξ) (gren_tm C ξ) k (gren_ty Y ξ) (gren_tm c ξ) (gren_tm j ξ) (gren_tm y ξ)
   | tmOut l l' li X A B C j m =>
       tmOut l l' li (gren_ty X ξ) (gren_ty A ξ) (gren_ty B ξ) (gren_tm C ξ) (gren_tm j ξ) (gren_tm m ξ)
+  | tmUnsq l t => tmUnsq l (gren_tm t ξ)
   end
 with gcren (Γ : ctx) (ξ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -597,6 +602,7 @@ with uren_tm (t : tm) (ρ : nat -> nat) {struct t} : tm :=
       tmCorec (lvren l ρ) (lvren l' ρ) (lvren li ρ) (uren_ty X ρ) (uren_ty A ρ) (uren_ty B ρ) (uren_tm C ρ) (lvren k ρ) (uren_ty Y ρ) (uren_tm c ρ) (uren_tm j ρ) (uren_tm y ρ)
   | tmOut l l' li X A B C j m =>
       tmOut (lvren l ρ) (lvren l' ρ) (lvren li ρ) (uren_ty X ρ) (uren_ty A ρ) (uren_ty B ρ) (uren_tm C ρ) (uren_tm j ρ) (uren_tm m ρ)
+  | tmUnsq l t => tmUnsq (lvren l ρ) (uren_tm t ρ)
   end
 with ucren (Γ : ctx) (ρ : nat -> nat) {struct Γ} : ctx :=
   match Γ with
@@ -717,6 +723,7 @@ with subst_tm (t : tm) (d : lsub) {struct t} : tm :=
       tmCorec l l' li (subst_ty X d) (subst_ty A (llift d)) (subst_ty B (llift (llift d))) (subst_tm C (llift (llift (llift d)))) k (subst_ty Y (llift d)) (subst_tm c (llift (llift d))) (subst_tm j d) (subst_tm y d)
   | tmOut l l' li X A B C j m =>
       tmOut l l' li (subst_ty X d) (subst_ty A (llift d)) (subst_ty B (llift (llift d))) (subst_tm C (llift (llift (llift d)))) (subst_tm j d) (subst_tm m d)
+  | tmUnsq l t => tmUnsq l (subst_tm t d)
   end
 with lcomp (d' : lsub) (d : lsub) {struct d'} : lsub :=       (* d' ∘ d *)
   match d' with
@@ -1148,6 +1155,7 @@ with gsubst_tm (t : tm) (σ : gsub) {struct t} : tm :=
       tmCorec l l' li (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_ty B σ) (gsubst_tm C σ) k (gsubst_ty Y σ) (gsubst_tm c σ) (gsubst_tm j σ) (gsubst_tm y σ)
   | tmOut l l' li X A B C j m =>
       tmOut l l' li (gsubst_ty X σ) (gsubst_ty A σ) (gsubst_ty B σ) (gsubst_tm C σ) (gsubst_tm j σ) (gsubst_tm m σ)
+  | tmUnsq l t => tmUnsq l (gsubst_tm t σ)
   end
 with gcsubst (Γ : ctx) (σ : gsub) {struct Γ} : ctx :=
   match Γ with
@@ -1279,6 +1287,7 @@ with usubst_tm (t : tm) (φ : nat -> lvl) {struct t} : tm :=
       tmCorec (lvsubst l φ) (lvsubst l' φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_ty B φ) (usubst_tm C φ) (lvsubst k φ) (usubst_ty Y φ) (usubst_tm c φ) (usubst_tm j φ) (usubst_tm y φ)
   | tmOut l l' li X A B C j m =>
       tmOut (lvsubst l φ) (lvsubst l' φ) (lvsubst li φ) (usubst_ty X φ) (usubst_ty A φ) (usubst_ty B φ) (usubst_tm C φ) (usubst_tm j φ) (usubst_tm m φ)
+  | tmUnsq l t => tmUnsq (lvsubst l φ) (usubst_tm t φ)
   end
 with ucsubst (Γ : ctx) (φ : nat -> lvl) {struct Γ} : ctx :=
   match Γ with

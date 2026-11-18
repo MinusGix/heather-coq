@@ -240,6 +240,9 @@ Lemma subst_sq l A a : (tmSq l A a)[d] = tmSq l A[d] a[d]. Proof. reflexivity. Q
 Lemma subst_elimSq l l' A M c t :
   (tmElimSq l l' A M c t)[d] = tmElimSq l l' A[d] M[llift d] c[llift d] t[d].
 Proof. reflexivity. Qed.
+(** The release of a squashed absurdity (M16c). *)
+Lemma ren_unsq l t : (tmUnsq l t)⟨r⟩ = tmUnsq l t⟨r⟩. Proof. reflexivity. Qed.
+Lemma subst_unsq l t : (tmUnsq l t)[d] = tmUnsq l t[d]. Proof. reflexivity. Qed.
 (** Dependent tuples (M17a): [F] binds the position. *)
 Lemma ren_tyDVec l n F : (tyDVec l n F)⟨r⟩ = tyDVec l n⟨r⟩ F⟨rlift r⟩. Proof. reflexivity. Qed.
 Lemma subst_tyDVec l n F : (tyDVec l n F)[d] = tyDVec l n[d] F[llift d]. Proof. reflexivity. Qed.
@@ -429,6 +432,7 @@ Ltac push_ren_at h k := lazymatch h with
   | @tyM => k ren_tyM
   | @tmCorec => k ren_corec
   | @tmOut => k ren_out
+  | @tmUnsq => k ren_unsq
   | @mOutCorec => k ren_mOutCorec
   end.
 Ltac push_ren := repeat match goal with
@@ -520,6 +524,7 @@ Ltac push_subst_at h k := lazymatch h with
   | @tyM => k subst_tyM
   | @tmCorec => k subst_corec
   | @tmOut => k subst_out
+  | @tmUnsq => k subst_unsq
   end.
 Ltac push_subst := repeat match goal with
   | |- context [@subst _ _ ?t _] => let h := head_of t in push_subst_at h ltac:(fun L => rewrite L)

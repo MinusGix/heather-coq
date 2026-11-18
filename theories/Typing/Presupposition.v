@@ -415,6 +415,9 @@ Proof.
                         | eapply pre_sq_r; eassumption
                         | eapply pre_elimSq_r; eassumption
                         | eapply pre_elimSq_sq_rhs; eassumption
+                        | eapply pre_unsq_r; eassumption
+                        | solve [eapply pre_unsq_ty; eauto using lequiv_wf_l]
+                        | solve [eapply wf_unsq; eauto using lequiv_wf_l]
                         | eapply pre_codedvec_r; eassumption
                         | eapply pre_codeiwf_r; eassumption ]]);
     (* indexed well-founded trees (M17b): the signature's premises bundled *)

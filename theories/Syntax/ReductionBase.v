@@ -91,6 +91,10 @@ Inductive red : tm -> tm -> Prop :=
         (mOutCorec k1 k1' ki1 X1 A1 B1 C1 k Y c j1 y)
 | red_out l l' li X A B C j m m' : red m m' ->
     red (tmOut l l' li X A B C j m) (tmOut l l' li X A B C j m')
+(* the release of a squashed absurdity (M16c): β at a [squash] of any
+   annotations returns the payload; the scrutinee reduces *)
+| red_unsq_sq l k C a : red (tmUnsq l (tmSq k C a)) a
+| red_unsq l t t' : red t t' -> red (tmUnsq l t) (tmUnsq l t')
 (* the identity type (M11a): J computes on refl, ignoring the annotations and
    the right endpoint as the other β rules do; otherwise its proof reduces *)
 | red_J_refl l l' A a M c u k B b : red (tmJ l l' A a M c u (tmRefl k B b)) c
@@ -290,6 +294,8 @@ Lemma reds_out l l' li X A B C j m m' : reds m m' ->
   reds (tmOut l l' li X A B C j m) (tmOut l l' li X A B C j m').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_elimSq l l' A M c t t' : reds t t' -> reds (tmElimSq l l' A M c t) (tmElimSq l l' A M c t').
+Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
+Lemma reds_unsq l t t' : reds t t' -> reds (tmUnsq l t) (tmUnsq l t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
 Lemma reds_El l t t' : reds t t' -> reds_ty (tyEl l t) (tyEl l t').
 Proof. unfold reds, reds_ty; induction 1; [constructor|econstructor; eauto with red]. Qed.
