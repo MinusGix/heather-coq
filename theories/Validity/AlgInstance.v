@@ -680,6 +680,13 @@ Proof using .
     exists (mOutTy l l' li X A B C j). split.
     + eapply actmne_out; exact Xν.
     + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EY))).
+  (* the release of a squashed absurdity (M16c) *)
+  - intros * Hl ((Hn & Hn2 & Eν) & _) ((Hn' & Hn2' & Eν') & _).
+    pose proof (gne_tm_unsq (GenericEqLaws := DEL) Hl (conj Hn (conj Hn2 Eν)) (conj Hn' (conj Hn2' Eν'))) as X.
+    refine (conj X _). destruct X as (_ & _ & EX).
+    exists (tyEmpty l). split.
+    + exact (actmne_unsq _ _ _ _ _ _ (lequiv_leqv _ _ _ Hl) Hn Hn').
+    + exact (eqty_refl _ _ _ _ _ (wf_tm_ty Hty (eqtm_wf_l Hty EX))).
 Qed.
 
 End Alg.

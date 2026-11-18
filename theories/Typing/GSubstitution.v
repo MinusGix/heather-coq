@@ -498,6 +498,8 @@ Proof using . reflexivity. Qed.
 Lemma gs_out l l' li X A B C j m :
   (tmOut l l' li X A B C j m)⦃σ⦄ = tmOut l l' li X⦃σ⦄ A⦃σ⦄ B⦃σ⦄ C⦃σ⦄ j⦃σ⦄ m⦃σ⦄.
 Proof using . reflexivity. Qed.
+Lemma gs_unsq l t : (tmUnsq l t)⦃σ⦄ = tmUnsq l t⦃σ⦄.
+Proof using . reflexivity. Qed.
 Ltac gs_llk := intros n; do 4 try (destruct n as [|n]);
   rewrite ?llk_glsubst, ?llk_llift; cbn; rewrite ?llk_glsubst, ?llk_llift; cbn;
   rewrite ?llk_glsubst, ?llk_llift; cbn; rewrite ?llk_glsubst, ?llk_llift; cbn; auto;
@@ -588,6 +590,7 @@ Ltac push_gsubst_at h k := lazymatch h with
   | @tyM => k gs_tyM
   | @tmCorec => k gs_corec
   | @tmOut => k gs_out
+  | @tmUnsq => k gs_unsq
   | @mOutCorec => k gs_mOutCorec
   | @tySq => k gs_tySq
   | @tyDVec => k gs_tyDVec

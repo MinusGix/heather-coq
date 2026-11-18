@@ -256,6 +256,11 @@ Proof using EL VL VN.
   eapply VTmS_single; eassumption.
 Qed.
 
+(** The release of a squashed absurdity (M16c). *)
+Lemma VS_unsq {G Γ l l' t t'} : lwf (gL G) l -> lequiv (gL G) l l' ->
+  VTmS G Γ t t' (tySq l (tyEmpty l)) l -> VTmS G Γ (tmUnsq l t) (tmUnsq l' t') (tyEmpty l) l.
+Proof using EL VL VN. intros; s_lift. Qed.
+
 (** The code of ∥·∥ (M16b). *)
 Lemma VS_code_sq {G Γ l l' s s'} : lwf (gL G) l -> lequiv (gL G) l l' ->
   VTmS G Γ s s' (tyU l) (lsuc l) -> VTmS G Γ (tmSqCode l s) (tmSqCode l' s') (tyU l) (lsuc l).

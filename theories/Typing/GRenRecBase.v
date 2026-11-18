@@ -341,6 +341,8 @@ Proof using . reflexivity. Qed.
 Lemma gren_out l l' li X A B C j m :
   (tmOut l l' li X A B C j m)⟪ξ⟫ = tmOut l l' li X⟪ξ⟫ A⟪ξ⟫ B⟪ξ⟫ C⟪ξ⟫ j⟪ξ⟫ m⟪ξ⟫.
 Proof using . reflexivity. Qed.
+Lemma gren_unsq l t : (tmUnsq l t)⟪ξ⟫ = tmUnsq l t⟪ξ⟫.
+Proof using . reflexivity. Qed.
 Ltac gren_llk := intros n; do 4 try (destruct n as [|n]);
   rewrite ?llk_glren, ?llk_llift; cbn; rewrite ?llk_glren, ?llk_llift; cbn; rewrite ?llk_glren, ?llk_llift; cbn;
   rewrite ?llk_glren, ?llk_llift; cbn; auto;
@@ -462,6 +464,7 @@ Ltac push_gren_at h k := lazymatch h with
   | @tyM => k gren_tyM
   | @tmCorec => k gren_corec
   | @tmOut => k gren_out
+  | @tmUnsq => k gren_unsq
   | @mOutCorec => k gren_mOutCorec
   | @tmSq => k gren_sq
   | @tmElimSq => k gren_elimSq
