@@ -1142,6 +1142,20 @@ Proof using ihC.
   left; eexists; eexists; apply wf_out; assumption.
 Qed.
 
+(** The release of a squashed absurdity (M16c; layers D and M). *)
+Lemma sy_unsq l t : sz_tm (tmUnsq l t) <= n -> SYD (tmUnsq l t).
+Proof using ihC.
+  intros Hsz G i Γ HΓ.
+  destruct (compt_dec i) as [Hc | Hn]; [| right; intros T k H; exact (Hn (proj1 (proj1 (inva_unsq H))))].
+  pose proof (compt_notV _ Hc) as Hv.
+  destruct (lwf_Dec (gL G) l) as [Hl | N]; [| right; intros T k H; destruct (inva_unsq H) as ((_ & X & _) & _); contradiction].
+  pose proof (wft_empty _ _ _ _ Hv HΓ Hl) as HE.
+  pose proof (wft_sq _ _ _ _ _ Hv Hl HE) as HS.
+  destruct (ihC t ltac:(szl) G i Γ _ _ (lift_to_typeof_ty HS)) as [Ht | N];
+    [| right; intros T k H; destruct (inva_unsq H) as ((_ & _ & X) & _); contradiction].
+  left; eexists; eexists; exact (wf_unsq _ _ _ _ _ Hc Hl Ht).
+Qed.
+
 (** ** The step *)
 
 Lemma sy_step t : sz_tm t <= n -> synth t -> SYD t.
@@ -1160,7 +1174,7 @@ Proof using ihC ihS ihT ihX.
           | apply sy_code_empty | apply sy_code_sum | apply sy_sup | apply sy_elimW | apply sy_codeW
           | apply sy_code_vec | apply sy_code_fin | apply sy_supf | apply sy_elimWf | apply sy_code_wf
           | apply sy_sq | apply sy_elimSq | apply sy_code_sq | apply sy_supi | apply sy_elimIWf
-          | apply sy_code_dvec | apply sy_code_iwf | apply sy_corec | apply sy_out ]; assumption.
+          | apply sy_code_dvec | apply sy_code_iwf | apply sy_corec | apply sy_out | apply sy_unsq ]; assumption.
 Qed.
 
 End Step.

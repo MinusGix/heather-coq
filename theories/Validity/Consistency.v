@@ -63,7 +63,7 @@ Proof.
                   | l1 l2 l3 A0 B M c1 c2 e Hn IH | l1 l2 l3 A0 B M c e Hn IH
                   | l1 l2 A0 N0 M c e Hn IH | l1 l2 A0 M c e Hn IH
                   | l1 l2 l3 X0 A0 N0 O0 C0 M c m0 e Hn IH | l1 l2 l3 X0 A0 B0 C0 j0 e Hn IH
-                  | l1 l2 A0 a0 M c u e Hn IH];
+                  | l1 e Hn IH | l1 l2 A0 a0 M c u e Hn IH];
     intros Hok X k Hx.
   - destruct (inv_var Hi Hx) as (T0 & l0 & (_ & Hin) & _ & E).
     destruct (HΓ _ _ _ Hin) as (l & ->). exists l; exact E.
@@ -99,6 +99,7 @@ Proof.
   - destruct (inv_elimIWf Hi Hx)
       as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & He) & _). scrutinee_clash IH Hok.
   - destruct (inv_out Hi Hx) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & He) & _). scrutinee_clash IH Hok.
+  - destruct (inv_unsq Hi Hx) as ((_ & _ & He) & _). scrutinee_clash IH Hok.
   - destruct (inv_J Hi Hx) as ((_ & _ & _ & _ & _ & _ & _ & _ & _ & He) & _). scrutinee_clash IH Hok.
 Qed.
 

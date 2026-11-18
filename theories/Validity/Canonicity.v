@@ -151,10 +151,9 @@ Proof.
 Qed.
 
 (** No closed term of [∥Empty∥] either (M16a): a closed term at [∥A∥]
-    computes to a [squash] whose payload is a closed term of [A]. This is
-    the closed-context half of [∥Empty∥ → Empty]. The internal function
-    has no rule: [ind_∥∥]'s result is again a squash (M16_DESIGN.md), and
-    nothing releases a squash into [Empty]. *)
+    computes to a [squash] whose payload is a closed term of [A]. So the
+    release [unsquash] (M16c) never meets a closed scrutinee, and its β
+    fires only under a hypothesis. *)
 Corollary closed_sq_empty_empty {G i t l l' k} : compt i -> closed_ok i G ->
   ~ [ G ; cnil ⊢[ i ] t : tySq l (tyEmpty l') @ k ].
 Proof.
