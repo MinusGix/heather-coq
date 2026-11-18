@@ -593,6 +593,29 @@ Proof.
   - eapply eqtm_conv; [exact (lvl_eq_eqtm Hk Econg) | rewrite Hi; exact HX].
 Qed.
 
+(** The release of a squashed absurdity (M16c): the scrutinees are not
+    compared, irrelevance at the squash relates them. *)
+Lemma S_actmne_unsq {G Γ l l' ν ν'} : leqv l l' -> S_ne G Γ (tmUnsq l ν) (tmUnsq l' ν') (tyEmpty l).
+Proof.
+  intros Hl i k k' X X' Hc Hx Hx'. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_unsq Hi Hx) as ((_ & W & Hν) & Hk & HX).
+  destruct (inv_unsq Hi Hx') as ((_ & W' & Hν') & Hk' & HX').
+  pose proof (leqv_lequiv _ _ _ W W' Hl) as E. pose proof (compt_notV _ Hc) as Hv.
+  pose proof (ctx_of_wf_tm Hi Hν) as HΓ.
+  assert (HE : [ G ; Γ ⊢[ i ] tyEmpty l ≅ tyEmpty l' @ l ])
+    by (apply eqty_empty; [exact Hv | rewrite Hi; exact HΓ | exact E]).
+  assert (HS : [ G ; Γ ⊢[ i ] tySq l (tyEmpty l) ≅ tySq l' (tyEmpty l') @ l ])
+    by (apply eqty_sq; [exact Hv | exact E | apply wft_empty; [exact Hv | rewrite Hi; exact HΓ | exact W] | exact HE]).
+  assert (Hν'1 : [ G ; Γ ⊢[ i ] ν' : tySq l (tyEmpty l) @ l ])
+    by (eapply wf_conv; [eapply wf_lconv; [exact Hν' | exact E] | rewrite Hi; exact HS]).
+  pose proof (eqtm_sq_irr _ _ _ _ _ _ _ Hc W Hν Hν'1) as Eν.
+  pose proof (eqtm_unsq _ _ _ _ _ _ _ Hc E Eν) as Econg.
+  split; [exact HX | split].
+  - eapply eqty_trans; [exact HX' |]. apply eqty_sym, (lvl_eq_eqty Hk').
+    eapply eqty_lconv; [exact HE | exact (lequiv_sym _ _ _ E)].
+  - eapply eqtm_conv; [exact (lvl_eq_eqtm Hk Econg) | rewrite Hi; exact HX].
+Qed.
+
 (** [Π] injectivity at a computing layer. *)
 Lemma pi_inj_c {G i Γ l l1 l2 l3 l4 A A' B B'} : compt i ->
   [ G ; Γ ⊢[ i ] tyPi l1 l2 A B ≅ tyPi l3 l4 A' B' @ l ] ->
@@ -2940,6 +2963,7 @@ Proof.
     | solve [eapply S_actmne_elimIWf; eassumption]
     | solve [eapply S_actnf_M; eassumption] | solve [eapply S_actmnf_corec; eassumption]
     | solve [eapply S_actmne_out; eassumption]
+    | solve [eapply S_actmne_unsq; eassumption]
     | solve [eapply S_actne_vec; eassumption] | solve [eapply S_actne_fin; eassumption]
     | solve [eapply S_actne_dvec; eassumption] ].
 Qed.

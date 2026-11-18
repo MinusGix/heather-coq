@@ -62,6 +62,7 @@ Proof.
     | solve [eapply Dc_actnf_empty; eassumption] | solve [eapply Dc_actmne_elimEmpty; eassumption]
     | solve [eapply Dc_actnf_sq; eassumption] | solve [eapply Dc_actmnf_sq_irr]
     | solve [eapply Dc_actmne_elimSq; eassumption]
+    | solve [eapply Dc_actmne_unsq; eassumption]
     | solve [eapply Dc_actnf_sum; eassumption] | solve [eapply Dc_actmnf_inl; eassumption]
     | solve [eapply Dc_actmnf_inr; eassumption] | solve [eapply Dc_actmne_case; eassumption]
     | solve [eapply Dc_actnf_W; eassumption] | solve [eapply Dc_actmnf_sup; eassumption]

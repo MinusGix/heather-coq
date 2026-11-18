@@ -294,6 +294,17 @@ Proof.
   destruct (whne_dec ν') as [Hn' | N]; [left; apply actmne_elimEmpty; assumption | refute].
 Qed.
 
+(** The release of a squashed absurdity (M16c): the scrutinees are not
+    compared. *)
+Lemma Dc_actmne_unsq {G Γ l l0 ν ν0} : whne ν -> Dc_ne G Γ (tmUnsq l ν) (tmUnsq l0 ν0) (tyEmpty l).
+Proof.
+  intros Hn x i k k' X X' Hc Hx Hx'.
+  destruct x; try solve [refute_con].
+  match goal with |- Dec (ac_tmne _ _ _ (tmUnsq ?p1 ?p2) _) => rename p1 into l', p2 into ν' end.
+  destruct (leqv_dec l l') as [Hl | N]; [| refute].
+  destruct (whne_dec ν') as [Hn' | N]; [left; apply actmne_unsq; assumption | refute].
+Qed.
+
 (** Propositional truncation (M16a): as at [Empty], the scrutinees are not
     compared, and neither are the steps. *)
 Lemma Dc_actnf_sq {G Γ l l0 A A0} : Dc_ty G Γ A A0 -> Dc_tynf G Γ (tySq l A) (tySq l0 A0).

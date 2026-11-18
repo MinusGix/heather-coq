@@ -1636,6 +1636,16 @@ Proof.
   - exact (ne_refl (actmne_elimEmpty _ _ _ _ _ _ _ _ _ _ H13 H24 DM Hn Hn') Hc HE Hx Hx').
 Qed.
 
+(** The release of a squashed absurdity (M16c). *)
+Lemma C_actmne_unsq {G Γ l l' ν ν'} : leqv l l' -> whne ν -> whne ν' ->
+  C_ne G Γ (tmUnsq l ν) (tmUnsq l' ν') (tyEmpty l).
+Proof.
+  intros Hl Hn Hn' i G2 Γ2 k k' X X' Hc HE Hctx Hx Hx' x x' Hsx Hsx'. spa_triv.
+  exists (tyEmpty l). split.
+  - apply actmne_unsq; assumption.
+  - exact (ne_refl (actmne_unsq _ _ _ _ _ _ Hl Hn Hn') Hc HE Hx Hx').
+Qed.
+
 (** Propositional truncation (M16a). *)
 Lemma C_actnf_sq {G Γ l l' A A'} : leqv l l' -> C_ty G Γ A A' -> C_tynf G Γ (tySq l A) (tySq l' A').
 Proof.
@@ -2383,6 +2393,7 @@ Proof.
     | solve [eapply C_actnf_empty; eassumption] | solve [eapply C_actmne_elimEmpty; eassumption]
     | solve [eapply C_actnf_sq; eassumption] | solve [eapply C_actmnf_sq_irr]
     | solve [eapply C_actmne_elimSq; eassumption]
+    | solve [eapply C_actmne_unsq; eassumption]
     | solve [eapply C_actnf_sum; eassumption] | solve [eapply C_actmnf_inl; eassumption]
     | solve [eapply C_actmnf_inr; eassumption] | solve [eapply C_actmne_case; eassumption]
     | solve [eapply C_actmnf_code_empty; eassumption] | solve [eapply C_actmnf_code_sum; eassumption]

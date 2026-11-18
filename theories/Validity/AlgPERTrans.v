@@ -14,7 +14,7 @@ Definition ne_head (t : tm) : bool :=
   | tmFst _ _ _ _ _ | tmSnd _ _ _ _ _ | elimSEmpty _ _ _ _ | tmJ _ _ _ _ _ _ _ _
   | elimEmpty _ _ _ _ | tmCase _ _ _ _ _ _ _ _ _ | tmElimW _ _ _ _ _ _ _ _
   | tmElimWf _ _ _ _ _ _ _ | tmElimSq _ _ _ _ _ _ | tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _
-  | tmOut _ _ _ _ _ _ _ _ _ => true
+  | tmOut _ _ _ _ _ _ _ _ _ | tmUnsq _ _ => true
   | _ => false
   end.
 Lemma whne_ne_head {t} : whne t -> ne_head t = true.
@@ -74,6 +74,9 @@ Lemma ainv_elimEmpty {G Γ l1 l2 M ν X T} : ac_tmne G Γ (elimEmpty l1 l2 M ν)
   exists l3 l4 M' ν', X = elimEmpty l3 l4 M' ν' /\ leqv l1 l3 /\ leqv l2 l4 /\
     ac_ty G (Γ ,, tyEmpty l2 @ l2) M M' /\ whne ν'.
 Proof. intros H; inversion H; subst; do 4 eexists; eauto. Qed.
+Lemma ainv_unsq {G Γ l ν X T} : ac_tmne G Γ (tmUnsq l ν) X T ->
+  exists l' ν', X = tmUnsq l' ν' /\ leqv l l' /\ whne ν'.
+Proof. intros H; inversion H; subst; do 2 eexists; eauto. Qed.
 Lemma ainv_sq {G Γ l A X} : ac_tynf G Γ (tySq l A) X ->
   exists l' A', X = tySq l' A' /\ leqv l l' /\ ac_ty G Γ A A'.
 Proof. intros H; ainv H. Qed.
@@ -2136,6 +2139,15 @@ Proof.
   exact (IHM M'' i _ _ _ Hc HM HM'1 HM''1 DM2').
 Qed.
 
+(** The release of a squashed absurdity (M16c). *)
+Lemma T_actmne_unsq {G Γ l l' ν ν'} : leqv l l' -> whne ν -> whne ν' ->
+  T_ne G Γ (tmUnsq l ν) (tmUnsq l' ν') (tyEmpty l).
+Proof.
+  intros Hl Hn Hn' x'' T' i k k' k'' X X' X'' Hc Hx Hx' Hx'' D2.
+  destruct (ainv_unsq D2) as (l'' & ν'' & -> & Hl' & Hn'').
+  exact (actmne_unsq _ _ _ _ _ _ (leqv_trans _ _ _ Hl Hl') Hn Hn'').
+Qed.
+
 (** Propositional truncation (M16a). *)
 Lemma T_actnf_sq {G Γ l l' A A'} : leqv l l' -> T_ty G Γ A A' -> T_tynf G Γ (tySq l A) (tySq l' A').
 Proof.
@@ -2899,6 +2911,7 @@ Proof.
     | solve [eapply T_actmne_J; eassumption] | solve [eapply T_actmnf_code_id; eassumption]
     | solve [eapply T_actmnf_code_seq; eassumption] | solve [eapply T_actmnf_code_sempty; eassumption]
     | solve [eapply T_actnf_empty; eassumption] | solve [eapply T_actmne_elimEmpty; eassumption]
+    | solve [eapply T_actmne_unsq; eassumption]
     | solve [eapply T_actnf_sq; eassumption] | solve [eapply T_actmnf_sq_irr]
     | solve [eapply T_actmne_elimSq; eassumption]
     | solve [eapply T_actnf_sum; eassumption] | solve [eapply T_actmnf_inl; eassumption]

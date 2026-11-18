@@ -324,6 +324,12 @@ Lemma inv_out {G i Γ l l' li X A B C j m T k} : typeof i = i ->
     lvl_eq (gL G) k (lmax l (mlvl l l' li)) /\ [ G ; Γ ⊢[ i ] T ≅ mOutTy l l' li X A B C j @ k ].
 Proof. inv_tm. Qed.
 
+(** The release of a squashed absurdity (M16c). *)
+Lemma inv_unsq {G i Γ l t T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmUnsq l t : T @ k ] ->
+  (compt i /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] t : tySq l (tyEmpty l) @ l ]) /\
+    lvl_eq (gL G) k l /\ [ G ; Γ ⊢[ i ] T ≅ tyEmpty l @ k ].
+Proof. inv_tm. Qed.
+
 (** Strict equality's codes (M10c). *)
 Lemma inv_code_seq {G i Γ l s t u T k} : typeof i = i -> [ G ; Γ ⊢[ i ] tmSEq l s t u : T @ k ] ->
   (i <> lV /\ lwf (gL G) l /\ [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] /\
