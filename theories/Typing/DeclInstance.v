@@ -265,6 +265,11 @@ Proof using .
   - intros * Hlk Hl'k' Hlik HX HXX HA HAA HB HBB HC HCC Hjj (Hn & Hn' & Hν).
     refine (conj _ (conj _ _)); [constructor; auto .. |].
     apply eqtm_out; auto.
+  (* the release of a squashed absurdity (M16c) *)
+  - intros * Hl (Hn & _ & Hν) (Hn' & _ & Hν').
+    refine (conj _ (conj _ _)); [constructor; auto .. |].
+    apply eqtm_unsq; auto.
+    apply eqtm_sq_irr; eauto using lequiv_wf_l, eqtm_wf_l.
 Qed.
 
 Lemma decl_geq_ctx {G Γ Γ'} : @geq_ctx DeclEq G Γ Γ' -> [ G ⊢[ i ] Γ ≅ Γ' ].

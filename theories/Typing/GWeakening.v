@@ -534,6 +534,7 @@ Lemma gwa_elimSq l l' A M c t :
   (tmElimSq l l' A M c t)⟦γ⟧ = tmElimSq l l' A⟦γ⟧ M⟦γ⟧ c⟦γ⟧ t⟦γ⟧.
 Proof. now destruct γ. Qed.
 Lemma gwa_tmSqCode l s : (tmSqCode l s)⟦γ⟧ = tmSqCode l s⟦γ⟧. Proof. now destruct γ. Qed.
+Lemma gwa_unsq l t : (tmUnsq l t)⟦γ⟧ = tmUnsq l t⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_tmDVec l n f : (tmDVec l n f)⟦γ⟧ = tmDVec l n⟦γ⟧ f⟦γ⟧. Proof. now destruct γ. Qed.
 Lemma gwa_tmIWf l li x s n o c m :
   (tmIWf l li x s n o c m)⟦γ⟧ = tmIWf l li x⟦γ⟧ s⟦γ⟧ n⟦γ⟧ o⟦γ⟧ c⟦γ⟧ m⟦γ⟧.
@@ -638,6 +639,7 @@ Ltac push_gwa_at h k := lazymatch h with
   | @tmSqCode => k gwa_tmSqCode
   | @tmDVec => k gwa_tmDVec
   | @tmIWf => k gwa_tmIWf
+  | @tmUnsq => k gwa_unsq
   end.
 Ltac push_gwa := repeat match goal with
   | |- context [@gwa _ _ _ ?t] => let h := head_of t in push_gwa_at h ltac:(fun L => rewrite L)

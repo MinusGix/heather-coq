@@ -1100,6 +1100,14 @@ Proof.
   exact (cv_ty HG Hc (IHM i l1 l1 Hc HM HM'2) Hctx HM'2 HM).
 Qed.
 
+(** The release of a squashed absurdity (M16c). *)
+Lemma Y_actmne_unsq {G Γ l l' ν ν'} : leqv l l' -> whne ν -> whne ν' ->
+  Y_ne G Γ (tmUnsq l ν) (tmUnsq l' ν') (tyEmpty l).
+Proof.
+  intros Hl Hn Hn' i k k' X X' Hc Hx Hx'.
+  exists (tyEmpty l'). exact (actmne_unsq _ _ _ _ _ _ (leqv_sym _ _ Hl) Hn' Hn).
+Qed.
+
 (** Propositional truncation (M16a). *)
 Lemma Y_actnf_sq {G Γ l l' A A'} : leqv l l' -> Y_ty G Γ A A' -> Y_tynf G Γ (tySq l A) (tySq l' A').
 Proof.
@@ -1619,6 +1627,7 @@ Proof.
     | solve [eapply Y_actmne_J; eassumption] | solve [eapply Y_actmnf_code_id; eassumption]
     | solve [eapply Y_actmnf_code_seq; eassumption] | solve [eapply Y_actmnf_code_sempty; eassumption]
     | solve [eapply Y_actnf_empty; eassumption] | solve [eapply Y_actmne_elimEmpty; eassumption]
+    | solve [eapply Y_actmne_unsq; eassumption]
     | solve [eapply Y_actnf_sq; eassumption] | solve [eapply Y_actmnf_sq_irr]
     | solve [eapply Y_actmne_elimSq; eassumption]
     | solve [eapply Y_actnf_sum; eassumption] | solve [eapply Y_actmnf_inl; eassumption]

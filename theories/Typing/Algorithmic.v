@@ -410,6 +410,10 @@ with ac_tmne : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmne_elimSq G Γ l1 l2 l3 l4 A A' M M' c c' ν ν' : leqv l1 l3 -> leqv l2 l4 ->
     ac_ty G Γ A A' -> ac_ty G (Γ ,, tySq l1 A @ l1) M M' -> whne ν -> whne ν' ->
     ac_tmne G Γ (tmElimSq l1 l2 A M c ν) (tmElimSq l3 l4 A' M' c' ν') (tySq l2 M[lsingle ν])
+(* the release of a squashed absurdity (M16c): the scrutinees are neutral
+   and, as [elim_Empty]'s, never compared *)
+| actmne_unsq G Γ l l' ν ν' : leqv l l' -> whne ν -> whne ν' ->
+    ac_tmne G Γ (tmUnsq l ν) (tmUnsq l' ν') (tyEmpty l)
 
 with ac_tmnee : gctx -> ctx -> tm -> tm -> ty -> Prop :=
 | actmnee_red G Γ ν ν' T W : ac_tmne G Γ ν ν' T -> reds_ty T W -> whnf_ty W ->

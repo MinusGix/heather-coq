@@ -118,7 +118,7 @@ Definition tm_con (t : tm) : nat :=
   | tmWf _ _ _ => 55 | tmSq _ _ _ => 56 | tmElimSq _ _ _ _ _ _ => 57 | tmSqCode _ _ => 58
   | tmSupi _ _ _ _ _ _ _ _ _ => 59 | tmElimIWf _ _ _ _ _ _ _ _ _ _ _ _ => 60
   | tmDVec _ _ _ => 61 | tmIWf _ _ _ _ _ _ _ _ => 62
-  | tmCorec _ _ _ _ _ _ _ _ _ _ _ _ => 63 | tmOut _ _ _ _ _ _ _ _ _ => 64
+  | tmCorec _ _ _ _ _ _ _ _ _ _ _ _ => 63 | tmOut _ _ _ _ _ _ _ _ _ => 64 | tmUnsq _ _ => 65
   end.
 
 Lemma ac_tmne_con {G Γ ν ν' T} : ac_tmne G Γ ν ν' T -> tm_con ν = tm_con ν'.
@@ -153,7 +153,7 @@ Fixpoint is_whne (t : tm) : bool :=
   | uapp t _ | capp t _ | tapp t _ | tmFst _ _ _ _ t | tmSnd _ _ _ _ t | elimSEmpty _ _ _ t | elimEmpty _ _ _ t
   | tmJ _ _ _ _ _ _ _ t | tmCase _ _ _ _ _ _ _ _ t
   | tmElimW _ _ _ _ _ _ _ t | tmElimWf _ _ _ _ _ _ t | tmElimSq _ _ _ _ _ t
-  | tmElimIWf _ _ _ _ _ _ _ _ _ _ _ t | tmOut _ _ _ _ _ _ _ _ t => is_whne t
+  | tmElimIWf _ _ _ _ _ _ _ _ _ _ _ t | tmOut _ _ _ _ _ _ _ _ t | tmUnsq _ t => is_whne t
   | elimT _ _ _ _ _ t => match t with boxT (tyGvar _ _) => true | _ => is_whne t end
   | elimt _ _ _ _ _ _ t => match t with boxt (gvar _ _) | boxt (gdef _ _ _) => true | _ => is_whne t end
   | _ => false

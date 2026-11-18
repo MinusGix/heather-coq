@@ -196,6 +196,7 @@ Ltac s_push_at h k := lazymatch h with
   | @tyM => k gs_tyM
   | @tmCorec => k gs_corec
   | @tmOut => k gs_out
+  | @tmUnsq => k gs_unsq
   | @mOutCorec => k gs_mOutCorec
   end.
 Ltac s_push := repeat match goal with
@@ -279,7 +280,8 @@ Ltac fts_case :=
   (* indexed coinductive types (M18b) *)
   | solve [simple eapply V_M; s_side] | solve [simple eapply V_out; s_side]
   | solve [simple eapply V_mOutTy; s_side]
-  | solve [simple eapply V_corec; s_side] | solve [simple eapply V_out_corec; s_side] ].
+  | solve [simple eapply V_corec; s_side] | solve [simple eapply V_out_corec; s_side]
+  | solve [simple eapply V_unsq; s_side] ].
 
 (** Typings at a layer below the instance's are lifted to it. *)
 Ltac gl_liftL :=

@@ -967,6 +967,30 @@ Proof using Hi Hv.
     apply eqty_sq; [exact Hv | exact H24 | exact HMs | exact HMt].
 Qed.
 
+(** The release of a squashed absurdity (M16c): the right-hand side of its
+    congruence, at the left's type. *)
+Lemma pre_unsq_r {Γ l l' t'} : compt i -> lequiv (gL G) l l' ->
+  [ G ; Γ ⊢[ i ] t' : tySq l (tyEmpty l) @ l ] -> [ G ; Γ ⊢[ i ] tmUnsq l' t' : tyEmpty l @ l ].
+Proof using Hi Hv.
+  intros Hc Hl Ht.
+  pose proof (ctx_of_wf_tm Hi Ht) as HΓ.
+  assert (HE : [ G ; Γ ⊢[ i ] tyEmpty l ≅ tyEmpty l' @ l ])
+    by (apply eqty_empty; [exact Hv | rewrite Hi; exact HΓ | exact Hl]).
+  assert (HEl : [ G ; Γ ⊢[ i ] tyEmpty l @ l ])
+    by (apply wft_empty; [exact Hv | rewrite Hi; exact HΓ | exact (lequiv_wf_l _ _ _ Hl)]).
+  assert (HS : [ G ; Γ ⊢[ i ] tySq l (tyEmpty l) ≅ tySq l' (tyEmpty l') @ l ])
+    by (apply eqty_sq; [exact Hv | exact Hl | exact HEl | exact HE]).
+  assert (Ht' : [ G ; Γ ⊢[ i ] t' : tySq l' (tyEmpty l') @ l' ])
+    by (eapply wf_lconv; [eapply conv_tm'; [exact Ht | apply eqty_sym, HS] | exact (lequiv_sym _ _ _ Hl)]).
+  eapply conv_tm'; [eapply wf_lconv; [apply wf_unsq; [exact Hc | exact (lequiv_wf_r _ _ _ Hl) | exact Ht'] | exact Hl] | exact HE].
+Qed.
+
+Lemma pre_unsq_ty {Γ l t} : compt i -> lwf (gL G) l ->
+  [ G ; Γ ⊢[ i ] t : tySq l (tyEmpty l) @ l ] -> [ G ; Γ ⊢[ i ] tyEmpty l @ l ].
+Proof using Hi Hv.
+  intros Hc Hl Ht. apply wft_empty; [exact Hv | rewrite Hi; exact (ctx_of_wf_tm Hi Ht) | exact Hl].
+Qed.
+
 (** β's right-hand side, at the motive's instance at the [squash]. *)
 Lemma sq_single (M : ty) l A a : nfty A ->
   M⟨rlift ↑⟩[lsingle (tmSq l A⟨↑⟩ (var 0))][lsingle a] = M[lsingle (tmSq l A a)].

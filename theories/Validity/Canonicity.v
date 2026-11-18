@@ -150,6 +150,21 @@ Proof.
   exact C.
 Qed.
 
+(** No closed term of [∥Empty∥] either (M16a): a closed term at [∥A∥]
+    computes to a [squash] whose payload is a closed term of [A]. So the
+    release [unsquash] (M16c) never meets a closed scrutinee, and its β
+    fires only under a hypothesis. *)
+Corollary closed_sq_empty_empty {G i t l l' k} : compt i -> closed_ok i G ->
+  ~ [ G ; cnil ⊢[ i ] t : tySq l (tyEmpty l') @ k ].
+Proof.
+  intros Hc HG Ht. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (closed_canonicity_whnf Hc HG (whnf_tySq _ _) Ht) as (w & _ & _ & E & (l1 & A & a & ->)).
+  destruct (inv_sq Hi (eqtm_wf_r Hi E)) as ((_ & _ & _ & Ha) & _ & ET).
+  assert (EA : [ G ; cnil ⊢[ i ] A ≅ tyEmpty l' @ l1 ]).
+  { destruct Hc as [-> | ->]; [exact (proj2 (decl_sq_inj (eqty_sym _ _ _ _ _ _ ET))) | exact (proj2 (declM_sq_inj (eqty_sym _ _ _ _ _ _ ET)))]. }
+  rewrite <- Hi in EA. exact (closed_empty_empty Hc HG (wf_conv _ _ _ _ _ _ _ Ha (eqty_sym _ _ _ _ _ _ EA))).
+Qed.
+
 (** A closed proof of [sEq^l(A; a; b)] computes to [srefl], and its
     endpoints are then equal (MX §18: [sEq] imports no equation). *)
 Corollary closed_seq_canonicity {G i t l A a b k} : compt i -> closed_ok i G ->

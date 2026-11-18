@@ -144,6 +144,12 @@ From M8 on, the milestones check the extensions of Heather's kernel
   and `ind_∥∥` to every layer but V (the computing rules, β and proof
   irrelevance stay at D and M), and the code recursor's four branches
   51–54, whose scopes agree with Heather's `rec.rs`. See `M16_DESIGN.md`.
+- Milestone 16c: the release `unsquash^l(t) : Empty^l` of `t : ∥Empty^l∥`
+  at layers D and M, with β at a `squash` (which `Empty`'s irrelevance
+  already gives) and its neutral law. It is sound because `Empty` is
+  irrelevant, and validity needs nothing new, since M16a's relation
+  already relates each squash's payload. No closed term of `∥Empty∥`
+  exists (`closed_sq_empty_empty`). See `M16_DESIGN.md`.
 
 - Milestone 17a: dependent vectors. `DVec^l(k; i. F)` (a `Vec` whose
   element type depends on the position `i : Fin k`) holds at layers D

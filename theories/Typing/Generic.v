@@ -571,7 +571,12 @@ Class GenericEqLaws `{GenericEq} := {
     [ G ; Γ ⊢g j ≅ j' : X @ li ] ->
     [ G ; Γ ⊢ ν ~ ν' : tyM l l' li X A B C j @ mlvl l l' li ] ->
     [ G ; Γ ⊢ tmOut l l' li X A B C j ν ~ tmOut k k' ki X' A' B' C' j' ν'
-        : mOutTy l l' li X A B C j @ lmax l (mlvl l l' li) ]
+        : mOutTy l l' li X A B C j @ lmax l (mlvl l l' li) ] ;
+  (** the release of a squashed absurdity (M16c) is neutral on neutral
+      scrutinees, each related to itself, as [elim_Empty] is *)
+  gne_tm_unsq {G Γ l l' ν ν'} : lequiv (gL G) l l' ->
+    [ G ; Γ ⊢ ν ~ ν : tySq l (tyEmpty l) @ l ] -> [ G ; Γ ⊢ ν' ~ ν' : tySq l (tyEmpty l) @ l ] ->
+    [ G ; Γ ⊢ tmUnsq l ν ~ tmUnsq l' ν' : tyEmpty l @ l ]
 }.
 
 Lemma geq_ctx_sound `{GenericEqLaws} {G Γ Γ'} : geq_ctx G Γ Γ' -> [ G ⊢[ ge_layer ] Γ ≅ Γ' ].

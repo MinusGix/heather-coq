@@ -930,6 +930,29 @@ Proof.
   exact (lequiv_max _ _ _ _ _ F1 (lequiv_max _ _ _ _ _ (lequiv_max _ _ _ _ _ F1 F2) F3)).
 Qed.
 
+(** The release of a squashed absurdity (M16c): the congruence at the
+    scrutinee, and β at a [squash] of any annotations, which is [Empty]'s
+    irrelevance once the payload is typed at [Empty] (by injectivity). *)
+Lemma RS_unsq l t t' : RS_tm t t' -> RS_tm (tmUnsq l t) (tmUnsq l t').
+Proof.
+  intros IH G i Γ T k Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_unsq Hi Hx) as ((_ & W & Ht) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  exact (eqtm_unsq _ _ _ _ _ _ _ Hc (lequiv_refl _ _ W) (IH _ _ _ _ _ Hc Ht)).
+Qed.
+
+Lemma RS_unsq_sq l k C a : RS_tm (tmUnsq l (tmSq k C a)) a.
+Proof.
+  intros G i Γ T m Hc Hx. pose proof (compt_typeof_self _ Hc) as Hi.
+  destruct (inv_unsq Hi Hx) as ((_ & W & Ht) & Hk & ET).
+  refine (retype_eqtm Hi _ Hk ET).
+  destruct (inv_sq Hi Ht) as ((_ & _ & _ & Ha) & _ & ESq).
+  destruct (sq_inj_c Hc ESq) as (Ekl & EAC).
+  assert (Ha' : [ G ; Γ ⊢[ i ] a : tyEmpty l @ l ])
+    by (eapply wf_conv; [eapply wf_lconv; [exact Ha | exact (lequiv_sym _ _ _ Ekl)] | rewrite Hi; exact EAC]).
+  apply eqtm_empty_irr; [exact Hc | exact W | apply wf_unsq; assumption | exact Ha'].
+Qed.
+
 (** ** Soundness of reduction *)
 
 Theorem red_sound_all (HR : RecRedTyped) :
@@ -961,6 +984,7 @@ Proof.
     | solve [apply RS_elimWf_supf] | solve [apply RS_elimWf; assumption]
     | solve [apply RS_elimIWf_supi] | solve [apply RS_elimIWf; assumption]
     | solve [apply RS_out_corec] | solve [apply RS_out; assumption]
+    | solve [apply RS_unsq_sq] | solve [apply RS_unsq; assumption]
     | solve [apply RS_El_empty] | solve [apply RS_El_sum] | solve [apply RS_El_W]
     | solve [apply RS_vec_zero] | solve [apply RS_vec_succ] | solve [apply RS_vec; assumption]
     | solve [apply RS_fin_zero] | solve [apply RS_fin_succ] | solve [apply RS_fin; assumption]

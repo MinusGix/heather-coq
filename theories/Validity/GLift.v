@@ -131,6 +131,7 @@ Ltac gl_push_at h k := lazymatch h with
   | @tyM => k MAux.gwa_tyM
   | @tmCorec => k MAux.gwa_corec
   | @tmOut => k MAux.gwa_out
+  | @tmUnsq => k gwa_unsq
   | @mOutCorec => k MAux.gwa_mOutCorec
   end.
 Ltac gl_push := repeat match goal with

@@ -463,6 +463,11 @@ with wf_tm : gctx -> layer -> ctx -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ,, X @ li ,, A @ l ,, B @ l' ⊢[ i ] C : X⟨↑⟩⟨↑⟩⟨↑⟩ @ li ] ->
     [ G ; Γ ⊢[ i ] j : X @ li ] -> [ G ; Γ ⊢[ i ] m : tyM l l' li X A B C j @ mlvl l l' li ] ->
     [ G ; Γ ⊢[ i ] tmOut l l' li X A B C j m : mOutTy l l' li X A B C j @ lmax l (mlvl l l' li) ]
+(* the release of a squashed absurdity (M16c; layers D and M): [Empty] is
+   irrelevant, so the release reads nothing from the squash *)
+| wf_unsq G i Γ l t : compt i -> lwf (gL G) l ->
+    [ G ; Γ ⊢[ i ] t : tySq l (tyEmpty l) @ l ] ->
+    [ G ; Γ ⊢[ i ] tmUnsq l t : tyEmpty l @ l ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | wf_conv G i Γ t T T' l : [ G ; Γ ⊢[ i ] t : T' @ l ] -> [ G ; Γ ⊢[ typeof i ] T ≅ T' @ l ] ->
@@ -1264,6 +1269,13 @@ with eq_tm : gctx -> layer -> ctx -> tm -> tm -> ty -> lvl -> Prop :=
     [ G ; Γ ⊢[ i ] j : X @ li ] -> [ G ; Γ ⊢[ i ] y : Y[lsingle j] @ k ] ->
     [ G ; Γ ⊢[ i ] tmOut l l' li X A B C j (tmCorec l l' li X A B C k Y c j y) ≅ mOutCorec l l' li X A B C k Y c j y
         : mOutTy l l' li X A B C j @ lmax l (mlvl l l' li) ]
+(* the release of a squashed absurdity (M16c): its congruence. Its β
+   ([unsquash(squash a) ≅ a]) is [Empty]'s irrelevance, so it is no rule;
+   the congruence is one, as [srefl]'s is, so that the substitution lemmas
+   need no irrelevance *)
+| eqtm_unsq G i Γ l l' t t' : compt i -> lequiv (gL G) l l' ->
+    [ G ; Γ ⊢[ i ] t ≅ t' : tySq l (tyEmpty l) @ l ] ->
+    [ G ; Γ ⊢[ i ] tmUnsq l t ≅ tmUnsq l' t' : tyEmpty l @ l ]
 (* the generic rules last: [econstructor]-based dispatchers ([any_rule])
    try the rules in order, and these unify with every goal *)
 | eqtm_refl G i Γ t T l : [ G ; Γ ⊢[ i ] t : T @ l ] -> [ G ; Γ ⊢[ i ] t ≅ t : T @ l ]

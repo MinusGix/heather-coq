@@ -2191,6 +2191,17 @@ Proof using .
   split; [exact (pre_out_r Hs Hv HE Hj Hj' Hjj Hm') | apply eqtm_out; auto].
 Qed.
 
+(** The release of a squashed absurdity (M16c; layers D and M). *)
+Lemma sc_unsq {Γ l l' t t'} : compt i -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
+  [ G ; Γ ⊢[ i ] t : tySq l (tyEmpty l) @ l ] ->
+  [ G ; Γ ⊢[ i ] t' : tySq l (tyEmpty l) @ l ] /\ [ G ; Γ ⊢[ i ] t ≅ t' : tySq l (tyEmpty l) @ l ] ->
+  [ G ; Γ ⊢[ i ] tmUnsq l' t' : tyEmpty l @ l ] /\ [ G ; Γ ⊢[ i ] tmUnsq l t ≅ tmUnsq l' t' : tyEmpty l @ l ].
+Proof using .
+  intros Hc Hl Hl' E Ht [Ht' Htt]. pose proof (lq Hl Hl' E) as Q.
+  pose proof (compt_typeof_self _ Hc) as Hs. pose proof (compt_notV _ Hc) as Hv.
+  split; [exact (pre_unsq_r Hs Hv Hc Q Ht') | apply eqtm_unsq; auto].
+Qed.
+
 (** The codes of [Vec] and [Fin] (M14b; every layer but V), as [+]'s. *)
 Lemma sc_code_vec {Γ l l' s s' n n'} : i <> lV -> lwf (gL G) l -> lwf (gL G) l' -> leqv l l' ->
   [ G ; Γ ⊢[ i ] s : tyU l @ lsuc l ] ->
@@ -2692,6 +2703,7 @@ Proof.
     | solve [eapply sc_iwf; eauto] | solve [eapply sc_supi; eauto] | solve [eapply sc_elimIWf; eauto]
     (* indexed coinductive types (M18b) *)
     | solve [eapply sc_M; eauto] | solve [eapply sc_corec; eauto] | solve [eapply sc_out; eauto]
+    | solve [eapply sc_unsq; eauto]
     | solve [eapply sc_code_sq; eauto]
     (* the codes of DVec and IWf (M17c) *)
     | solve [eapply sc_code_dvec; eauto] | solve [eapply sc_code_iwf; eauto]

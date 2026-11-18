@@ -98,4 +98,6 @@ Ltac vs_rules side :=
   (* indexed coinductive types (M18b) *)
   | solve [simple eapply VS_M; side] | solve [simple eapply VS_mOutTy; side]
   | solve [simple eapply VS_out; side] | solve [simple eapply VS_corec; side]
-  | solve [simple eapply VS_out_corec; side] ].
+  | solve [simple eapply VS_out_corec; side]
+  (* the release of a squashed absurdity (M16c) *)
+  | solve [simple eapply VS_unsq; side] ].

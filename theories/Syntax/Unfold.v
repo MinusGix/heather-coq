@@ -120,6 +120,7 @@ with unf_tm (t : tm) {struct t} : tm :=
   | tmCorec l l' li X A B C k Y c j y =>
       tmCorec l l' li (unf_ty X) (unf_ty A) (unf_ty B) (unf_tm C) k (unf_ty Y) (unf_tm c) (unf_tm j) (unf_tm y)
   | tmOut l l' li X A B C j m => tmOut l l' li (unf_ty X) (unf_ty A) (unf_ty B) (unf_tm C) (unf_tm j) (unf_tm m)
+  | tmUnsq l t => tmUnsq l (unf_tm t)
   | tmJ l l' A a M c u e =>
       tmJ l l' (unf_ty A) (unf_tm a) (unf_ty M) (unf_tm c) (unf_tm u) (unf_tm e)
   | gdef u b d => subst_tm (unf_tm b) (unf_l d)
@@ -501,6 +502,7 @@ with gfree_tm (t : tm) {struct t} : Prop :=
   | tmCorec l l' li X A B C k Y c j y =>
       gfree_ty X /\ gfree_ty A /\ gfree_ty B /\ gfree_tm C /\ gfree_ty Y /\ gfree_tm c /\ gfree_tm j /\ gfree_tm y
   | tmOut l l' li X A B C j m => gfree_ty X /\ gfree_ty A /\ gfree_ty B /\ gfree_tm C /\ gfree_tm j /\ gfree_tm m
+  | tmUnsq l t => gfree_tm t
   | tmJ l l' A a M c u e => gfree_ty A /\ gfree_tm a /\ gfree_ty M /\ gfree_tm c /\ gfree_tm u /\ gfree_tm e
   | gdef u b d => False
   end
